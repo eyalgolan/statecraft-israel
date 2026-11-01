@@ -194,4 +194,76 @@ public class TimelineCourseCliTests
         Assert.Equal("", mixed.Out);
         Assert.Contains("--timeline-course", mixed.Err);
     }
+
+    [Fact]
+    // R-ALT-011: a card that is pending but unanswered when the game is saved is not a row (only answered events are).
+    public void APendingUnansweredCardIsNotARow()
+    {
+        var root = Root("legacy");
+        var c = ContentLoader.Load(root);
+        var played = GameSession.New(c, 1, Mode.Historical);
+        for (int turn = 0; turn < 30 && !played.State.PendingEvents.Contains("parent"); turn++) played.Step(Array.Empty<Command>());
+        var save = Path.Combine(root, "pending.save");
+        File.WriteAllText(save, played.Save.Write());
+        Assert.Contains("parent", GameSession.Load(c, File.ReadAllText(save), out _).State.PendingEvents);   // still pending after the reload
+
+        var output = new StringWriter();
+        Assert.Equal(0, TimelineCourse.Run(c, save, output, new StringWriter()));
+        Assert.Equal(Header + "\n", output.ToString().Replace("\r\n", "\n"));
+    }
+
+    [Theory]
+    // R-ALT-011: a save cut short, or one whose answer was edited to an option that does not exist, is a save error (exit 1,
+    // no table), not a crash: GameSession.Load reports both as SaveException.
+    [InlineData("truncated")]
+    [InlineData("edited")]
+    public void ATruncatedOrEditedSaveIsASaveErrorNotACrash(string damage)
+    {
+        var root = Root("legacy");
+        var c = ContentLoader.Load(root);
+        var played = GameSession.New(c, 1, Mode.Historical);
+        Choose(played, "parent", "road");
+        var text = played.Save.Write();
+        var answer = "event parent road\n";
+        Assert.Contains(answer, text);
+        text = damage == "truncated"
+            ? text.Substring(0, text.IndexOf(answer, StringComparison.Ordinal) + "event par".Length)
+            : text.Replace(answer, "event parent nowhere\n");
+        var save = Path.Combine(root, damage + ".save");
+        File.WriteAllText(save, text);
+
+        var output = new StringWriter(); var errors = new StringWriter();
+        Assert.Equal(1, TimelineCourse.Run(c, save, output, errors));
+        Assert.Equal("", output.ToString());
+        Assert.StartsWith("Save error", errors.ToString());
+        Assert.DoesNotContain("cannot read", errors.ToString());
+    }
+
+    [Theory]
+    // R-ALT-011: the course replays the save as it is, so a flag that would change or extend a run is refused beside it
+    // rather than silently ignored, like another mode.
+    [InlineData("--set", "tax_per_capita_per_year=0.00007")]
+    [InlineData("--show", "morale")]
+    [InlineData("--until", "1950-01-01")]
+    [InlineData("--every", "2")]
+    [InlineData("--seed", "5")]
+    [InlineData("--turns", "3")]
+    [InlineData("--preview", null)]
+    [InlineData("--release-gate", null)]
+    [InlineData("--auto", "historical")]
+    public async Task AFlagTheCourseWouldIgnoreIsRefused(string flag, string? value)
+    {
+        var root = Root("legacy");
+        var c = ContentLoader.Load(root);
+        var save = Path.Combine(root, "new.save");
+        File.WriteAllText(save, GameSession.New(c, 1, Mode.Historical).Save.Write());
+        var args = new List<string> { "--content", root, "--timeline-course", save, flag };
+        if (value != null) args.Add(value);
+
+        var run = await Cli(args.ToArray());
+        Assert.True(run.Exit == 1, $"exit {run.Exit}: {run.Out}{run.Err}");
+        Assert.Equal("", run.Out);
+        Assert.Contains("--timeline-course", run.Err);
+        Assert.Contains(flag, run.Err);
+    }
 }

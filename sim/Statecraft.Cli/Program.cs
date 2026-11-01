@@ -24,7 +24,9 @@ foreach (var flag in new[] { "--content", "--seed", "--turns", "--auto", "--unti
 var autoMode = Arg("--auto");
 if (autoMode != null && autoMode != "historical") { Console.Error.WriteLine($"Unknown --auto mode: '{autoMode}'"); return 1; }
 var coursePath = Arg("--timeline-course");
-var otherModes = new[] { "--preview", "--release-gate", "--timeline-report", "--auto" }.Where(m => Array.IndexOf(args, m) >= 0).ToList();
+// The course replays the save as it is: another mode, or a flag that would change or extend a run, is refused, not ignored.
+var otherModes = new[] { "--preview", "--release-gate", "--timeline-report", "--auto", "--set", "--show", "--until", "--every", "--seed", "--turns" }
+    .Where(m => Array.IndexOf(args, m) >= 0).ToList();
 if (coursePath != null && otherModes.Count > 0)
 { Console.Error.WriteLine($"--timeline-course runs on its own, not with {string.Join(", ", otherModes)}"); return 1; }
 
