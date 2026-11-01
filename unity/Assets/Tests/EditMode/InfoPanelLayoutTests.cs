@@ -939,4 +939,40 @@ public class InfoPanelLayoutTests
         },text:text,hebrew:hebrew,unit:()=>f.token);
     }
 
+    // #2072: a unit's card with an attack refusal (a truce the player accepted, R-COMBAT-009, with an enemy next to it) and a
+    // reinforce refusal (Training.Reinforce in the city it stands in) lists both in the UI's language: in English each is the
+    // sim's own text, in Hebrew no refusal line has a Latin letter (the town in Hebrew too).
+    [Test]
+    public void CardRefusesAttackAndReinforceInTheUiLanguage([Values(false,true)] bool hebrew)
+    {
+        var f=MilitaryFixture("infantry");var g=f.session;var c=g.Content;var s=g.State;
+        var namesHe=SettlementPlacer.Parse(MapFile(SettlementPlacer.DefaultFileName)).ToDictionary(t=>t.Id,t=>t.NameHe);
+        var at=c.SettlementHexes.First(h=>s.Cities.ContainsKey(h.Id)&&namesHe.ContainsKey(h.Id));
+        c.Hexes=c.Hexes.Concat(new[] { (at.Q,at.R),(at.Q+1,at.R) }.Where(x=>c.HexAt(x.Item1,x.Item2)==null)   // the city's hex and the
+            .Select(x=>new MapHex { Q=x.Item1,R=x.Item2,Biome="coastal_plain",Land=true })).ToList();          // enemy's, beside the board
+        s.Units[f.id]=new Unit(f.id,s.Units[f.id].Type,at.Q,at.R,side:Movement.PlayerSide,strength:6,full:10);
+        s.Units[9000]=new Unit(9000,c.UnitTypes.First(t=>t.Side!=""&&t.Side!=Movement.PlayerSide&&t.Class=="infantry").Id,at.Q+1,at.R,side:"egypt",strength:6);
+        s.ChosenOptions["first_truce"]="accept";
+        var text=hebrew?UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text,"strings.he.yaml"):Text;
+        var bridge=new SimBridge(g,text);
+        var attackWhy=Combat.Check(c,s,f.id,at.Q+1,at.R,spent:bridge.Spent);
+        var home=c.SettlementHexes.First(h=>h.Q==at.Q&&h.R==at.R&&s.Cities.ContainsKey(h.Id));   // the city the card reinforces from
+        var n=System.Math.Max(1,System.Math.Min(Training.Room(s,s.Units[f.id]),Training.Available(s,home.Id,bridge.Queued)));
+        var reinforceWhy=Training.Reinforce(c,s.Clone(),f.id,home.Id,n,new List<Cause>());
+        Assert.IsNotNull(attackWhy,"the truce refuses the attack");Assert.IsNotNull(reinforceWhy,"the city refuses the reinforcement");
+        using var ui=new UiTestKit();
+        var info=new InfoPanelPresenter(ui.Root,bridge,text,Names(),selectedUnit:()=>f.token,townNamesHe:namesHe);
+        info.ShowUnit();
+        var lines=ui.Q<Label>("info-reason").text.Split('\n');
+        if (hebrew)
+        {
+            Assert.GreaterOrEqual(lines.Length,2,"both refusals are listed");
+            CollectionAssert.Contains(lines,SimBridge.ReasonText(text,attackWhy!,c,namesHe),"the attack refusal, in Hebrew");
+            CollectionAssert.Contains(lines,SimBridge.ReasonText(text,reinforceWhy!,c,namesHe),"the reinforce refusal, in Hebrew");
+            foreach (var line in lines) StringAssert.DoesNotMatch("[A-Za-z]",line,"a refusal line in the sim's English");
+        }
+        else { CollectionAssert.Contains(lines,attackWhy);CollectionAssert.Contains(lines,reinforceWhy); }
+        info.Dispose();
+    }
+
 }

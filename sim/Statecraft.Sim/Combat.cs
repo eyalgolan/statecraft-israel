@@ -82,6 +82,17 @@ namespace Statecraft.Sim
         static List<Unit> Defenders(GameState s, Unit attacker, int q, int r) =>
             s.Units.Values.Where(x => x.Q == q && x.R == r && Military(x) && Player(x) != Player(attacker)).ToList();
 
+        /// <summary><see cref="Check"/>'s own refusals (#2072); the unit, side and existing-order ones are Orders.Refused*. The UI
+        /// maps each to its own string (SimBridge.ReasonText). The English is the reason a turn's Rejected list and a save carry,
+        /// so it does not change; <see cref="RefusedArms"/> is a format, its values filled in invariantly.</summary>
+        public const string RefusedNoHex = "An attack names a hex";
+        public const string RefusedTruce = "A truce is in force";
+        public const string RefusedOutOfRange = "That hex is beyond the unit's range";
+        public const string RefusedNotAdjacent = "That hex is not next to the unit";
+        public const string RefusedNoEnemy = "There is no enemy unit on that hex";
+        public const string RefusedNoPoints = "That unit has no movement points left this turn";
+        public const string RefusedArms = "An attack needs {0} Arms and the stock has {1}";
+
         /// <summary>R-COMBAT-001's refusals: null when the player may strike (q, r), else the reason shown to the player.
         /// Changes nothing: the unit card asks it for each enemy hex before it offers that hex (#754). Refused for an unknown
         /// unit, a halutz, an enemy unit, no hex, a hex not next to it (artillery: beyond its range), a hex with no enemy unit,
@@ -91,21 +102,20 @@ namespace Statecraft.Sim
         public static string? Check(Content c, GameState s, int unitId, int? q, int? r, bool enemy = false,
                                     IReadOnlyDictionary<int, int>? spent = null)
         {
-            if (!s.Units.TryGetValue(unitId, out var u)) return "There is no such unit";
-            if (!Military(u)) return "Only a military unit takes that order";
-            if (Player(u) == enemy) return "That unit is not yours";
-            if (q == null || r == null) return "An attack names a hex";
-            if (!enemy && TruceInForce(s)) return "A truce is in force";   // R-COMBAT-009
+            if (!s.Units.TryGetValue(unitId, out var u)) return Orders.RefusedNoUnit;
+            if (!Military(u)) return Orders.RefusedNotMilitary;
+            if (Player(u) == enemy) return Orders.RefusedNotYours;
+            if (q == null || r == null) return RefusedNoHex;
+            if (!enemy && TruceInForce(s)) return RefusedTruce;   // R-COMBAT-009
             var target = Hex(q.Value, r.Value);
-            if (enemy && u.Order == Attack && u.OrderTarget == target) return "That unit already has that order";
-            if (!InReach(c, u, q.Value, r.Value)) return Guns(c, u) ? "That hex is beyond the unit's range" : "That hex is not next to the unit";
-            if (Defenders(s, u, q.Value, r.Value).Count == 0) return "There is no enemy unit on that hex";
-            if (!enemy && spent != null && Movement.PointsLeft(c, s, unitId, spent) == 0)
-                return "That unit has no movement points left this turn";
+            if (enemy && u.Order == Attack && u.OrderTarget == target) return Orders.RefusedAlready;
+            if (!InReach(c, u, q.Value, r.Value)) return Guns(c, u) ? RefusedOutOfRange : RefusedNotAdjacent;
+            if (Defenders(s, u, q.Value, r.Value).Count == 0) return RefusedNoEnemy;
+            if (!enemy && spent != null && Movement.PointsLeft(c, s, unitId, spent) == 0) return RefusedNoPoints;
             if (enemy || !SpendsArms(c)) return null; // before Need, so gdd-0.3 never reads a price
             var mvp = c.RulesAt(s.Date).Mvp!;
             var need = Need(c, mvp, u);
-            return s.Arms < need ? FormattableString.Invariant($"An attack needs {need} Arms and the stock has {s.Arms}") : null;
+            return s.Arms < need ? string.Format(CultureInfo.InvariantCulture, RefusedArms, need, s.Arms) : null;
         }
 
         /// <summary>R-ENEMY-001: gives the enemy AI's military unit a standing attack on (q, r) for resolver step 2, replacing
