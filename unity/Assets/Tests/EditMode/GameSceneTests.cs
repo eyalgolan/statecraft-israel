@@ -655,6 +655,26 @@ public class GameSceneTests
         Assert.AreEqual(DisplayStyle.Flex, Ui.Q("toast").style.display.value);
     }
 
+    /// <summary>#2152: the game reports earned achievements to the store set in PlatformServices.Current (a Steam build's).</summary>
+    [Test]
+    public void TheGameReportsAchievementsToTheCurrentStore()
+    {
+        var fake = new FakePlatform();
+        PlatformServices.Current = fake;
+        try
+        {
+            var root = Boot();
+            Assert.AreEqual(0, fake.Unlocks.Count, "a new game has earned nothing");
+            var finished = GameSession.New(Inputs.Content, GoldenRun.Seed, Mode.Historical);
+            finished.State.Objectives["railway"] = new DateTime(1949, 3, 15);
+            finished.State.GameOver = GameOverCodes.MvpEnded;
+            root.Bridge!.Replace(finished);
+            Assert.AreEqual(1, fake.Unlocks.Count);
+            CollectionAssert.AreEqual(new[] { "CAMPAIGN_DONE", "OBJ_RAILWAY" }, fake.Unlocks[0]);
+        }
+        finally { PlatformServices.Current = null!; }
+    }
+
     [Test]
     public void AppendAddsALineOrShowsItAlone()
     {

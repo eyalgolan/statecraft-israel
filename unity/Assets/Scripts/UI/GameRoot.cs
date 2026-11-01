@@ -419,6 +419,9 @@ namespace Statecraft.Game.UI
             // is its two presses; a smoke run has none.
             end = Own(new EndScreenPresenter(root, bridge, text, newGame == null ? null : newGame.Press, show: !endClosed));
             endClosed = false;
+            // The store's achievements (#2152): a no-op unless a Steam build set PlatformServices.Current. A smoke run (the
+            // golden seed, scripted turns) is not the player's game, so it reports nothing.
+            if (smoke == 0) Own(new AchievementReporter(bridge, () => PlatformServices.Current));
 
             // An outcome clip holds the pointer while it shows and in the frame it closes (the skipping click selects no hex).
             Func<Vector2, bool> overUi = p => opening?.HoldsThePointer == true || outcomes?.HoldsThePointer == true || UiPointer.IsOverUi(root.panel, p, Screen.height);
