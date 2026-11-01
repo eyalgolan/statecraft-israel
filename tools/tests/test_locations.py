@@ -39,3 +39,4 @@ def test_issue_1008_roster_and_separate_adjacent_positions():
     assert by_id["ad_halom_bridge"]["id"] != "isdud"
     assert by_id["jerusalem"]["managed_city"] is True
     assert by_id["east_jerusalem_old_city"]["managed_city"] is False
+    assert {l["id"] for l in LOCATIONS if l["priority"] == "optional"} == {"umm_rashrash"}
