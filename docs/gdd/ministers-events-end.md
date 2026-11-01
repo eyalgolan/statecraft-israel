@@ -6,7 +6,7 @@ As a player of the MVP, I want the game to run its events and my chosen minister
 
 ## Rules
 
-- The MVP runs 44 turns (monthly), from 15 May 1948 to 15 January 1952: D-B1 fixes the start and the monthly grid [S2], and the owner ended the MVP on 15 January 1952, keeping the 15th grid with no adjusted turn (D-E5, decided 15 October 2026 [S2]). The GDD text still says "approximately 48 turns" [S1]; the owner settled 44 turns [S2].
+- The MVP runs 44 turns (monthly), from 15 May 1948 to 15 January 1952: D-B1 fixes the start and the monthly grid [S2], and the owner ended the MVP on 15 January 1952, keeping the 15th grid with no adjusted turn (D-E5, decided 15 October 2026 [S2]). This supersedes the earlier approximate 48-turn estimate in [S1].
 - Objective cards and scoring belong to the first phase (#379, `objectives-and-score.md`; D-B2, D-B6 [S2]) and are not restated here. This section covers only what the final phase adds: every card complete, the end screen (D-H4, decided 17 October 2026 [S6] and built as R-END-005 and R-END-006, `docs/rules/mvp.md`), defeat (D-B5, decided 15 October 2026 [S2]), the events (D-H1 and D-H2, decided 17 October 2026 [S5]) and the ministers (D-H3, first slice decided 17 October and 18 October 2026 and built as R-MIN-001 to R-MIN-003, and declared complete for the MVP on 23 October 2026 [S7]) [S2].
 - Defeat: not all objectives are required to finish. The game is lost when Money and Food are exhausted for several turns in a row or on a war loss, and coalition collapse is off in the MVP (D-B5, decided 15 October 2026 [S2]). The defeat is built in this phase, with the counter set then (`Q-GOV-2`, decided 15 October 2026 [S4]). A war loss is enemy units holding the hex of one of the player's cities at turn end (`Q-WAR-5`, decided 15 October 2026 [S4]); "Money exhausted" is a debt at or above the debt ceiling (`Q-DEF-1`, owner, 17 October 2026, [#784](https://github.com/eyalgolan/statecraft-israel/issues/784#issuecomment-6232838937) [S5]; built as R-END-001, `docs/rules/mvp.md`).
 - The war-survival objective completes on the last armistice event, the Syria-Israel agreement of 20 July 1949 (D-B2 [S2]; [S3]). The four signings were Egypt on 24 February 1949, Lebanon on 23 March 1949, Jordan on 3 April 1949 and Syria on 20 July 1949 [S3].
@@ -43,7 +43,7 @@ As a player of the MVP, I want the game to run its events and my chosen minister
 - [S6] The owner's decision on #784, 17 October 2026 (D-H2, D-H3, D-H4 as recommended), https://github.com/eyalgolan/statecraft-israel/issues/784#issuecomment-6231517464, checked 2026-10-21
 - [S7] The owner's decision on #1513, 23 October 2026 ("Yes, complete (Recommended)"), https://github.com/eyalgolan/statecraft-israel/issues/1513#issuecomment-6372357178, checked 2026-10-23
 
-## Open questions
+## Resolved questions
 
-- Bonus amounts and the timing formula's remaining parts (GDD "MVP completion rules" [S1]).
-- The GDD's "approximately 48 turns" [S1] against the decided 44 turns [S2]: a one-line GDD fix for the owner.
+- Objective scoring is 100 points per completed objective, plus 5 points per calendar month early, capped at 60; these are tunable design values (D-B2 and D-B6, owner, 14 October 2026, [#456](https://github.com/eyalgolan/statecraft-israel/pull/456)).
+- The MVP is 44 monthly turns from 15 May 1948 through 15 January 1952. This replaces the earlier approximate 48-turn estimate (D-B1 and D-E5, owner, 15 October 2026 [S2]; see [GDD MVP scope](../GDD.md#MVP-scope-1948-to-1951)).
