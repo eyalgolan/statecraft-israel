@@ -51,6 +51,7 @@ public class EventScrollLifecycleReleaseTests
         var scroll = ScrollDown(ui);
         card.Render();
         Assert.AreEqual(First, card.Shown!.Id);
+        Assert.AreSame(scroll, ui.Q<ScrollView>("event-scroll"), "the same scroller, not a rebuilt one");
         Assert.AreEqual(Offset, scroll.scrollOffset.y, 0.01f, "the same event keeps its place");
     }
 
@@ -62,10 +63,11 @@ public class EventScrollLifecycleReleaseTests
         using var ui = new UiTestKit();
         using var card = new EventCardPresenter(ui.Root, new SimBridge(Pending(First), text), text, null);
         var scroll = ScrollDown(ui);
-        card.Collapse();
+        ui.Press("event-hide");                               // the card's Hide button
         Assert.IsTrue(card.Collapsed, "precondition: collapsed");
-        card.Reopen();
+        ui.Press("event-reopen");                             // "Decision waiting"
         Assert.IsFalse(card.Collapsed);
+        Assert.AreSame(scroll, ui.Q<ScrollView>("event-scroll"), "the same scroller, not a rebuilt one");
         Assert.AreEqual(First, card.Shown!.Id);
         Assert.AreEqual(Offset, scroll.scrollOffset.y, 0.01f, "the reopened card is where the player left it");
     }
@@ -84,6 +86,7 @@ public class EventScrollLifecycleReleaseTests
         s.PendingEvents.Clear(); s.PendingEvents.Add(Second);
         card.Render();
         Assert.AreEqual(Second, card.Shown!.Id, "precondition: the other event shows");
+        Assert.AreEqual(1000f, scroll.verticalScroller.highValue, "the range still holds: the presenter reset the offset, no clamp did");
         Assert.AreEqual(0f, scroll.scrollOffset.y, 0.01f, "a new event opens at its text");
     }
 
@@ -100,6 +103,7 @@ public class EventScrollLifecycleReleaseTests
         bridge.Replace(Pending(First));                       // raises Changed: the card renders
         Assert.AreNotSame(old, bridge.Session, "precondition: a new session");
         Assert.AreEqual(First, card.Shown!.Id, "precondition: the same event id");
+        Assert.AreEqual(1000f, scroll.verticalScroller.highValue, "the range still holds: the presenter reset the offset, no clamp did");
         Assert.AreEqual(0f, scroll.scrollOffset.y, 0.01f, "a new session (New Game, a load) forgets the old place");
     }
 }

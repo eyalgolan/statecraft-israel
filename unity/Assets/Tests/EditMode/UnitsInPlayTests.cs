@@ -1319,7 +1319,6 @@ public class UnitsInPlayTests
         finally { foreach (var m in new[] { plain, again, prop }) UnityEngine.Object.DestroyImmediate(m); }
     }
 
-    // Release regression coverage; prepared only until native execution.
     const string NumberHe = "number_he: מספר בדיקה, number_he_sources: " + HeSource + ", number_he_review: agent-checked, ";
 
     /// <summary>#1219 item 2, on a fixture row: number_he shows only in the Hebrew subtitle and falls back to the
@@ -1343,7 +1342,7 @@ public class UnitsInPlayTests
         Assert.IsTrue(UnitData.IsWikipediaOnly(u));
 
         var fallback = ProseCard(ProseUnit(), He).Subtitle;
-        StringAssert.Contains("1", fallback, "no number_he: the Hebrew subtitle keeps the English number");
+        Assert.AreEqual(he.Subtitle.Replace("מספר בדיקה", "1"), fallback, "no number_he: the Hebrew subtitle has the English number in its place");
         StringAssert.DoesNotContain("מספר בדיקה", fallback);
     }
 
