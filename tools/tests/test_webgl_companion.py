@@ -101,7 +101,8 @@ assert.equal(elements['companion-title'].textContent, payload.title);
 def test_cached_stock_page_receives_the_bridge_dom_and_literal_payload():
     # Execute the real current stock page's supported cached-HTML URL refresh before loading the new player's plugin.
     page = re.sub(r'\{\{\{ JSON\.stringify\((\w+)\) \}\}\}', r'"\1"', stale.rendered())
-    script = re.search(r'<script>(.*)</script>', page, re.S).group(1).split('fetch(location.href')[0]
+    # The page's inline script: from its first <script> to its last </script> (our own template, not a filter).
+    script = page[page.index('<script>') + len('<script>'):page.rindex('</script>')].split('fetch(location.href')[0]
     current = page.replace('aaaa', '1111').replace('bbbb', '2222')
     code = DRIVER + script + '\nuseCurrentPage(' + json.dumps(current) + ');\n'
     code += "assert.equal(loaderUrl, 'Build/1111.loader.js'); assert.equal(config.dataUrl, 'Build/2222.data');\n"
