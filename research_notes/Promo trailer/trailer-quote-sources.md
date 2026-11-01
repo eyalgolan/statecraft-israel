@@ -4,7 +4,7 @@ Researched 2026-10-15. Draft for issue #639: the sources first, before any video
 
 ## Purpose
 
-The trailer shows seven attributed quotation cards from five speakers. The only record of them in the repository is the caption files `site/public/media/promo-trailer.en.vtt` and `site/public/media/promo-trailer.he.vtt`. This note records, for each card: the text as shown, whether it is verbatim, an excerpt or a different rendering, the full original sentence, the speaker and role, the date and occasion, the original language, who translated it, the source URL, and a status. It uses the rows of the quote source sheet proposed in #639.
+The trailer shows seven attributed quotation cards from five speakers. The only record of them in the repository is the caption files `site/public/media/promo-trailer.en.vtt` and `site/public/media/promo-trailer.he.vtt`. Those files were removed with the website on 31 Oct 2026; read them with `git show ddc77b826:site/public/media/promo-trailer.en.vtt` (and `.he.vtt`). This note records, for each card: the text as shown, whether it is verbatim, an excerpt or a different rendering, the full original sentence, the speaker and role, the date and occasion, the original language, who translated it, the source URL, and a status. It uses the rows of the quote source sheet proposed in #639.
 
 ## Conventions
 

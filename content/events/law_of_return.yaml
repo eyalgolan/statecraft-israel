@@ -6,7 +6,6 @@ text: 'The Knesset is ready to vote on the Law of Return, which gives every Jew 
 # (https://he.wikipedia.org/wiki/חוק_השבות).
 title_he: חוק השבות
 text_he: 'הכנסת עומדת להצביע על חוק השבות, המעניק לכל יהודי את הזכות לעלות לישראל. ההחלטה אם הממשלה תתמוך בו בידי {prime_minister}.'
-text_he_review: agent-checked
 anchor: hard
 office: prime_minister
 # Passed unanimously on 5 July 1950.

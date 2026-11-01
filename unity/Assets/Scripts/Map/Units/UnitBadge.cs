@@ -12,6 +12,11 @@ namespace Statecraft.Game.Map.Units
     {
         /// <summary>The plate's width at map scale (m): about a third of a figure's height, as in the promo.</summary>
         public const float SizeM = 1400f;
+        /// <summary>The largest share of the screen's height a plate is drawn at (owner, 31 October 2026, "Shrink up close
+        /// (Recommended)"): a badge as big as it is in a 30 km view keeps <see cref="SizeM"/>; a nearer camera draws it smaller,
+        /// so it never grows past this. Just over the largest a plate is drawn from 30 km out (0.142, 154 of 1080 pixels, at the
+        /// view's lower edge; UnitBadgeScreenCapTests), so every view from there out is unchanged.</summary>
+        public const float MaxScreenShare = 0.15f;
         /// <summary>Clearance (m) between the token's top and the plate's lower edge.</summary>
         public const float LiftM = 1300f;
         /// <summary>A rifleman's height (m, real) and the corvette's mast top (m, real): the token's top before scaling.</summary>
@@ -20,6 +25,14 @@ namespace Statecraft.Game.Map.Units
         public const float GlyphLift = 0.02f;
         /// <summary>The promo badge's dark navy and its ivory glyph (the selection ring's colour).</summary>
         public static readonly Color PlateColour = new Color(0.10f, 0.13f, 0.20f), GlyphColour = MapScene.SelectionColour;
+
+        /// <summary>The plate's width (m) for a perspective camera whose projection scales y by <paramref name="m11"/>
+        /// (Camera.projectionMatrix[1, 1]) and that sees the plate <paramref name="depth"/> metres ahead: a plate w wide spans
+        /// w m11 / (2 depth) of the screen's height, so <see cref="SizeM"/>, or less to keep that within
+        /// <see cref="MaxScreenShare"/>. SizeM for an orthographic camera (m11 is then not a perspective scale) or a plate
+        /// behind the camera.</summary>
+        public static float SizeFor(float depth, float m11, bool orthographic) =>
+            orthographic || depth <= 0f || m11 <= 0f ? SizeM : Mathf.Min(SizeM, 2f * MaxScreenShare * depth / m11);
 
         /// <summary>A rounded square, 1 x 1 centred on the origin, corner radius 0.22.</summary>
         public static Mesh PlateMesh()

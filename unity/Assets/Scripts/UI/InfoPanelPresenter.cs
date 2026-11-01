@@ -363,7 +363,7 @@ namespace Statecraft.Game.UI
             // The enemy units there (Combat's defenders: a side, not Israel's; Check has made sure there is one).
             var names = s.Units.Values.Where(u => u.Q == q && u.R == r && u.Side != "" && u.Side != Movement.PlayerSide).Select(u => unitName?.Invoke(u.Id)).Where(n => !string.IsNullOrEmpty(n)).ToList();
             var who = names.Count > 0 ? string.Join(", ", names) : string.Format(CultureInfo.InvariantCulture, "{0},{1}", q, r);
-            var bands = Combat.Outcomes(c, s, p.Row).Select(b => text.Format(b.Retreat ? "unit.attack_band_retreat" : "unit.attack_band",
+            var bands = Combat.Outcomes(c, s, p.Row, unit).Select(b => text.Format(b.Retreat ? "unit.attack_band_retreat" : "unit.attack_band",
                 b.Faces, b.Of, b.AttackersLose, b.DefendersLose));
             return text.Format("unit.attack_odds", who, p.RatioPercent) + "\n" + string.Join("\n", bands);   // one band a line
         }
@@ -625,10 +625,14 @@ namespace Statecraft.Game.UI
             if (control != "" && !(zone != null && regions.Control?.At(q, r, date).side == Control1948.Side.Dmz)) parts.Add(control);
             // the sub-district only while the map draws the sub-district bands (before the first sourced line, or with no side data)
             var sub = regions.Subdistricts.ShowsOn(date) && regions.ControlPeriod(date) == null ? regions.Subdistricts.SubdistrictAt(q, r) : null;
-            if (zone != null) parts.Add(text.Format("info.armistice_zone", zone.Name, zone.Agreement, DateText(zone.Signed)));
-            else if (sub != null) parts.Add(text.Format("info.region", sub.Name, sub.District));
+            string N(string key, string english) => regions.Names.Pick(key, english, text["ui.lang"] == UiLanguage.Hebrew);
+            if (zone != null) parts.Add(text.Format("info.armistice_zone", N("zone." + zone.Key + ".name", zone.Name),
+                N("zone." + zone.Key + ".agreement", zone.Agreement), DateText(zone.Signed)));
+            else if (sub != null) parts.Add(text.Format("info.region", N("subdistrict." + sub.Key + ".name", sub.Name),
+                N("subdistrict." + sub.Key + ".district", sub.District)));
             foreach (var l in regions.LinesAt(q, r, date))
-                    parts.Add(text.Format(l.LowAccuracy ? "info.armistice_line_low" : "info.armistice_line", l.Name, l.Agreement, DateText(l.Signed)));
+                parts.Add(text.Format(l.LowAccuracy ? "info.armistice_line_low" : "info.armistice_line", N("line." + l.Key + ".name", l.Name),
+                    N("line." + l.Key + ".agreement", l.Agreement), DateText(l.Signed)));
             return string.Join("\n", parts);
         }
 
@@ -749,8 +753,8 @@ namespace Statecraft.Game.UI
                 showReachable?.Invoke(hexes);
             }
             moveButton.style.display = moves != null ? DisplayStyle.Flex : DisplayStyle.None;
-            // Fortify and Hold (#754): each offered only where the sim's Orders.Check takes it; else the sim's reason, as given,
-            // on Israel's units only (an enemy's card would only repeat the sim's English "That unit is not yours").
+            // Fortify and Hold (#754): each offered only where the sim's Orders.Check takes it; else the sim's reason, in the UI's
+            // language (#2045), on Israel's units only (an enemy's card would only repeat "That unit is not yours").
             var orderUnit = OrderUnit(); var shownUnit = ShownUnit();
             var own = unit?.Token.Unit.Side == UnitData.Israel;
             var refusals = new List<string>();
@@ -758,7 +762,7 @@ namespace Statecraft.Game.UI
             {
                 var why = orderUnit is int ou ? Orders.Check(c, s, ou, order) : null;
                 button.style.display = orderUnit != null && why == null ? DisplayStyle.Flex : DisplayStyle.None;
-                if (why != null && own && !refusals.Contains(why)) refusals.Add(why);
+                if (why != null && own && SimBridge.ReasonText(text, why) is var said && !refusals.Contains(said)) refusals.Add(said);
             }
             // Attack (#754): offered where the sim's Combat.Check takes some hex; its refusals in reach show as the others'.
             var attacks = AttackTargets();

@@ -62,10 +62,13 @@ namespace Statecraft.Game.UI
         string? loggedCentres;
 
         /// <summary>The buttons ButtonCentres reports, by name.</summary>
-        public static readonly string[] Buttons = { "start-continue", "start-new-game", "start-star", "start-listen" };
+        public static readonly string[] Buttons = { "start-continue", "start-new-game", "start-opening-replay", "start-star", "start-listen" };
 
         /// <summary>Continue is offered: the session continues the autosave.</summary>
         public bool Resumed { get; private set; }
+
+        /// <summary>The no-save New Game route: its session already exists, so NewGamePresenter.Started does not fire.</summary>
+        public event Action? FreshGameOpened;
 
         readonly DeclarationRecording? recording;
 
@@ -211,7 +214,7 @@ namespace Statecraft.Game.UI
         void NewGame()
         {
             if (!IsOpen) return;
-            if (!Resumed) { Close(); return; }   // nothing to wipe: the session is already a new game
+            if (!Resumed) { Close(); FreshGameOpened?.Invoke(); return; }   // nothing to wipe: the session is already a new game
             newGame.Press();                      // arms on the first press; the second starts the new game (Started closes)
         }
 
@@ -225,7 +228,12 @@ namespace Statecraft.Game.UI
         /// bottom) with the panel at the foot over the audience. In a narrower window that is tall enough for the painting's
         /// full-width 16:9 band and the panel under it (a phone held upright, a square window), the band and the panel are
         /// stacked and centred together (BandClass), so nothing of the painting is cropped. Otherwise (16:10, 4:3) it fills
-        /// the window anchored at its top centre, so both sides are cropped alike and the aisle stays in the middle.</summary>
+        /// the window anchored at its top centre, so both sides are cropped alike and the aisle stays in the middle.
+        /// The body's band top is put on a whole screen pixel. The layout rounds each edge inside the panel to a screen
+        /// pixel from its unrounded position, so at a fractional top the panel can come out a pixel taller at one top and a
+        /// pixel shorter at the next: on a phone held upright with the recording's row shown, the panel's height and the
+        /// centred top then chased each other within one layout, Unity's "Layout update is struggling" error. A whole-pixel
+        /// top moves the panel by whole pixels only, so its height no longer depends on where Fit puts it.</summary>
         void Fit()
         {
             var size = screen.layout.size;
@@ -236,9 +244,11 @@ namespace Statecraft.Game.UI
                 && bandHeight + panelHeight + BodyPadding <= size.y;
             screen.EnableInClassList(BandClass, band);
             var top = band ? Mathf.Floor((size.y - bandHeight - panelHeight - BodyPadding) / 2f) : 0f;
+            var pixels = screen.panel?.scaledPixelsPerPoint ?? 1f;
+            if (float.IsNaN(pixels) || pixels <= 0) pixels = 1f;
             art.style.top = band ? top : new StyleLength(StyleKeyword.Null);
             art.style.height = band ? bandHeight : new StyleLength(StyleKeyword.Null);
-            body.style.top = band ? top + bandHeight : new StyleLength(StyleKeyword.Null);
+            body.style.top = band ? Mathf.Round((top + bandHeight) * pixels) / pixels : new StyleLength(StyleKeyword.Null);
             body.style.justifyContent = band ? Justify.FlexStart : new StyleEnum<Justify>(StyleKeyword.Null);
         }
 

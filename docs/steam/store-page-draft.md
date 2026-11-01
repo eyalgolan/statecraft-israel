@@ -361,7 +361,7 @@ coming-soon-kit.md section 2. The README's 1568 x 882 shots stay too small. No A
 | --- | --- | --- |
 | Trailer 1: gameplay, from the real build | None | **No asset.** The 1920 x 1080, 60 fps capture and cut are the pending trailer part of issue #45. The report recommends 30 to 60 seconds with gameplay in the first 5 seconds. `docs/images/build-gameplay.mp4` (1920 x 1080, about 11 s, real gameplay, commit f93fd5e) shows the kind of footage but is too short to be the trailer |
 | Trailer 2: "Cinematic teaser (AI-generated, not gameplay)", category General / Cinematic | The final demo2 cut (in progress) | **Conditional.** Music is cleared by D-M. Still needed: the owner's amendment to RELEASING.md's "real build only" trailer rule, and the final cut itself, which is being re-cut and has no file to name yet |
-| Not for Steam | `site/public/media/promo-trailer-720p.mp4` (demo 1, the README trailer) | Excluded by the report and by issue #424: it shows the AI ministers as a game screen and quotes a living person |
+| Not for Steam | The README's cinematic trailer (demo 1) | Excluded by the report and by issue #424: it shows the AI ministers as a game screen and quotes a living person |
 | Not assessed | `promo/demo3/out/demo3.mp4` | A third promo video exists locally. The report does not cover it, so this draft places it nowhere |
 
 ### Images and clips inside "About this game" (15 MB in total, clips up to 12 seconds, per the report)

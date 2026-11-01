@@ -6,7 +6,6 @@ text: 'Mapai is divided over closing the Ministry of Rationing and Supply, and {
 # (https://he.wikipedia.org/wiki/הממשלה_השנייה; https://he.wikipedia.org/wiki/יעקב_גרי).
 title_he: סגירת משרד האספקה והקיצוב
 text_he: 'מפא״י חלוקה בשאלת סגירת משרד האספקה והקיצוב, והמועמד של {prime_minister} לתפקיד שר המסחר והתעשייה הוא איש העסקים יעקב גרי, שאינו חבר כנסת. לפי החוק באותה עת, צירוף שר מחייב את הממשלה להתפטר ולקבל מחדש את אמון הכנסת.'
-text_he_review: agent-checked
 anchor: hard
 office: prime_minister
 # Ben-Gurion resigned on 15 October 1950; the same coalition was approved 69-42 on 1 November 1950.

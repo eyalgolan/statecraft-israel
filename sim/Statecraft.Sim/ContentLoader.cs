@@ -245,6 +245,7 @@ namespace Statecraft.Sim
                     if (v == null) throw new ContentException(file, key, "must be a map");
                     foreach (DictionaryEntry kv in (IDictionary)v)
                     {
+                        if (kv.Value == null) throw new ContentException(file, key + "." + kv.Key, "empty entry");
                         if (kv.Key is string sk) Encodable(file, key + "." + sk, sk);
                         if (kv.Value is string sv) Encodable(file, key + "." + kv.Key, sv);
                     }
