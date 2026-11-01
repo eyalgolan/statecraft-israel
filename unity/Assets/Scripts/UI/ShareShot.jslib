@@ -16,6 +16,8 @@ mergeInto(LibraryManager.library, {
     if (window.statecraftReleaseArm) window.statecraftReleaseArm.cancel();
     window.statecraftShareAttempt = (window.statecraftShareAttempt || 0) + 1;
     window.statecraftShareFailed = false;
+    // A late clipboard callback from an older action must not act after a reset or a new main action (#1897).
+    window.statecraftShareCopySerial = (window.statecraftShareCopySerial || 0) + 1;
   },
   $StatecraftBeginReleaseArm__deps: ["$StatecraftInvalidateShareAttempt"],
   $StatecraftBeginReleaseArm: function () {
@@ -88,8 +90,6 @@ mergeInto(LibraryManager.library, {
   StatecraftShareKeep__deps: ["$StatecraftInvalidateShareAttempt"],
   StatecraftShareKeep: function (pngPtr, length, namePtr) {
     StatecraftInvalidateShareAttempt();
-    // A late rejected write from an old panel must not download after a new capture replaced its picture.
-    window.statecraftShareCopySerial = (window.statecraftShareCopySerial || 0) + 1;
     window.statecraftShareCopied = 0;
     var bytes = HEAPU8.slice(pngPtr, pngPtr + length);
     window.statecraftShareFile = new File([bytes], UTF8ToString(namePtr), { type: "image/png" });
@@ -144,7 +144,10 @@ mergeInto(LibraryManager.library, {
       if (!canShare) { download(file); return; }
       // A cancelled sheet (AbortError) is not a failure. Any other refusal (an iframe without web-share, a share target
       // that fails) downloads the picture instead, and StatecraftShareFailed tells the panel to show the share links.
-      navigator.share({ files: [file], text: text }).catch(function (e) {
+      var shared;
+      try { shared = navigator.share({ files: [file], text: text }); }
+      catch (e) { shared = Promise.reject(e); }   // a synchronous throw takes the same fallback as a rejection (#1897)
+      shared.catch(function (e) {
         if (e && e.name === "AbortError") return;
         download(file); // download checks the captured token before either side effect
       });
