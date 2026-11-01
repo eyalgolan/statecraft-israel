@@ -131,19 +131,26 @@ namespace Statecraft.Sim
                         "the advisors and How to play stay English or Hebrew only, for now (owner, 24 October 2026, #1604)");
         }
 
+        /// <summary>How a writer unblocks a stale translation without a translator (owner, 1 November 2026: "Refuse + say how
+        /// to fix (Recommended)"): delete the entry and the text shows in English. Not for Hebrew, whose files must equal the
+        /// inline Hebrew, so a deleted entry is a missing one.</summary>
+        static string Unblock(TranslationSet set, string where, string entry, string what) =>
+            set.Lang == Translations.Hebrew ? "" : $"; update the entry, or delete {entry} from {where} and the {what} shows in English";
+
         /// <summary>A translated event exists and translates exactly its options: an event is all or none, so a card never
         /// shows one button in English.</summary>
         static void CheckEvents(TranslationSet set, IReadOnlyList<GameEvent> events)
         {
             var where = Where(set, Translations.EventsFile);
+            var unblock = Unblock(set, where, "its block", "event");
             foreach (var t in set.Events)
             {
-                var e = events.FirstOrDefault(x => x.Id == t.Id) ?? throw new ContentException(where, t.Id, "no event has this id");
+                var e = events.FirstOrDefault(x => x.Id == t.Id) ?? throw new ContentException(where, t.Id, "no event has this id" + unblock);
                 foreach (var o in t.Options)
-                    if (!e.Options.Any(x => x.Id == o.Key)) throw new ContentException(where, $"{t.Id}.options.{o.Key}", "the event has no such option");
+                    if (!e.Options.Any(x => x.Id == o.Key)) throw new ContentException(where, $"{t.Id}.options.{o.Key}", "the event has no such option" + unblock);
                 foreach (var o in e.Options)
                     if (!t.Options.Any(x => x.Key == o.Id))
-                        throw new ContentException(where, $"{t.Id}.options.{o.Id}", "required: a translated event translates every option (all or none)");
+                        throw new ContentException(where, $"{t.Id}.options.{o.Id}", "required: a translated event translates every option (all or none)" + unblock);
             }
         }
 
@@ -153,6 +160,7 @@ namespace Statecraft.Sim
         static void CheckContent(TranslationSet set, Func<string, YamlNode?> yaml)
         {
             var where = Where(set, Translations.ContentFile);
+            var unblock = Unblock(set, where, "it", "field");
             var offered = new Dictionary<string, HashSet<string>?>(StringComparer.Ordinal);
             foreach (var t in set.Content)
             {
@@ -160,11 +168,11 @@ namespace Statecraft.Sim
                 if (!offered.TryGetValue(file, out var keys))
                 {
                     var root = yaml(file);
-                    if (root == null && !HebrewOverlay.UnityReads.Contains(file)) throw new ContentException(where, t.Key, $"no content file {file}");
+                    if (root == null && !HebrewOverlay.UnityReads.Contains(file)) throw new ContentException(where, t.Key, $"no content file {file}" + unblock);
                     offered[file] = keys = root == null ? null : new HashSet<string>(Translations.Fields(file, root).Select(f => f.Key.ToString()), StringComparer.Ordinal);
                 }
                 if (keys != null && !keys.Contains(t.Key))
-                    throw new ContentException(where, t.Key, "not a translatable field: it has no Hebrew form in its file (docs/translations.md, \"Content keys\")");
+                    throw new ContentException(where, t.Key, "not a translatable field: it has no Hebrew form in its file (docs/translations.md, \"Content keys\")" + unblock);
             }
         }
 

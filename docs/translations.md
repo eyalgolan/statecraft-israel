@@ -116,6 +116,10 @@ separate call, made where a language is adopted.
 - **The checks:** each language is parsed, must name itself (`CheckDeclaredLanguage`), may not translate the advisors or
   How to play unless it is Hebrew, translates only events that exist (an event a ruleset leaves out counts) and every
   option of each, and keys only fields that `Fields` offers. A read failure is reported with its file.
+- **A stale translation:** when an event or a record changes so that a translation no longer matches it, the load is
+  refused (owner, 1 November 2026: "Refuse + say how to fix (Recommended)"), so nothing stale ships. The error says how to
+  unblock without a translator: update the entry, or delete it from the language's file, and that text shows in English.
+  Not for `he/`, which must equal the inline Hebrew.
 - **Hebrew:** a `translations/he/` that is present must match the inline Hebrew of the events and the content exactly:
   the same events, texts, options and review flags, and the same fields and flags, none missing and none extra.
   `he/ui.yaml` is not compared with `strings.he.yaml` yet; that comes with the UI move (step 4).

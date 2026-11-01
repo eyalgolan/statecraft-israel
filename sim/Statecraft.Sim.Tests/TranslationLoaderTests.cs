@@ -195,6 +195,27 @@ public class TranslationLoaderTests
     }
 
     [Fact]
+    public void AStaleTranslationSaysHowToUnblock()
+    {
+        // Owner, 1 November 2026, on review C2: "Refuse + say how to fix (Recommended)". A writer who changes an event or a
+        // record can unblock without a translator: delete the stale entry and it shows in English.
+        var e = RealEvent(x => x.Options.Count >= 2);
+        var ids = e.Options.Select(o => o.Id).ToArray();
+        const string events = "or delete its block from translations/ro/events.yaml and the event shows in English";
+        foreach (var stale in new[] { RoEvent("no_such_event", "a"), RoEvent(e.Id, ids.Skip(1).ToArray()), RoEvent(e.Id, ids.Append("no_such_option").ToArray()) })
+            Assert.Contains(events, Refused(new Dictionary<string, string> { ["ro/ui.yaml"] = Ro, ["ro/events.yaml"] = stale }).Message);
+
+        var key = Translations.Fields("people.yaml", YamlRoot("people.yaml")).First().Key;
+        var renamed = new ContentKey(key.File, key.Path, "born").ToString();
+        Assert.Contains("or delete it from translations/ro/content.yaml and the field shows in English",
+            Refused(new Dictionary<string, string> { ["ro/ui.yaml"] = Ro, ["ro/content.yaml"] = $"\"{renamed}\":\n  text: \"x\"\n" }).Message);
+
+        // Not for Hebrew: a he/ entry deleted is a missing one, since he/ must equal the inline Hebrew.
+        Assert.DoesNotContain("shows in English", Refused(new Dictionary<string, string>
+            { ["he/ui.yaml"] = "ui.lang: \"he\"\n", ["he/events.yaml"] = "no_such_event:\n  title: \"א\"\n  text: \"ב\"\n  options:\n    a: \"ג\"\n" }).Message);
+    }
+
+    [Fact]
     public void AnEventARulesetLeavesOutCanStillBeTranslated()
     {
         // A gdd-0.3 fixture that leaves its one event out (gdd03-events.yaml): the event is still real content.
