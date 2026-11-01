@@ -115,7 +115,7 @@ public class RemainingCauseKeysTests
                 sites++;
             }
         }
-        Assert.Equal(104, sites);
+        Assert.Equal(105, sites);   // 105 since #2199: PayOrBorrow's Paid line
     }
 
     [Fact]

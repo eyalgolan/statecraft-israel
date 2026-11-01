@@ -17,6 +17,27 @@ public class HudTests
     static UiText Text => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
     static SimBridge NewBridge() => new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), Text);
 
+    /// <summary>#2199: the Money meter's causes are the sim's Money lines (EconomySystem.MovesMoney): a city's job income
+    /// is one, though its Target is the city; a borrowing line (Target debt) is not, as it moves the Treasury and the Debt
+    /// alike. The largest first, at most MaxCauses (#1037). After the real opening turn, job income is among them.</summary>
+    [Test]
+    public void MoneyCausesIncludeJobIncomeAndLeaveOutBorrowing()
+    {
+        var why = new List<Cause>
+        {
+            new Cause("economy", "treasury", -0.4, "Money IL -0.4m (military upkeep)", key: CauseKeys.MilitaryUpkeep),
+            new Cause("city", "tel_aviv", 0.53, "Tel Aviv: jobs paid IL +0.5m", key: CauseKeys.WagesPaid),
+            new Cause("economy", "debt", 9, "Borrowed IL 9.0m to cover the deficit", key: CauseKeys.Borrowed, args: new[] { CauseKeys.Purpose.Deficit }),
+        };
+        var turn = new StepResult(new GameState(), why, new Rejection[0]);
+        CollectionAssert.AreEqual(new[] { "Tel Aviv: jobs paid IL +0.5m", "Money IL -0.4m (military upkeep)" },
+            HudModel.Causes(turn, "treasury", w => w.Message));
+
+        var b = NewBridge();
+        b.EndTurn();
+        CollectionAssert.Contains(HudModel.Causes(b.Session.Last, "treasury", w => w.Key), CauseKeys.WagesPaid, "the opening turn's job income");
+    }
+
     [Test]
     public void TheTopBarShowsTheOpeningOfTheGame()
     {

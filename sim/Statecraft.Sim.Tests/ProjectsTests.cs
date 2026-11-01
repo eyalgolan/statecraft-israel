@@ -107,7 +107,9 @@ public class ProjectsTests
         var none = new List<Cause>();
         Assert.Null(Projects.Start(c, exact, other, Projects.BuildYishuv, "site_a", none));
         Assert.Equal((0.0, 3.0), (exact.Treasury, exact.Debt));
-        Assert.DoesNotContain(none, x => x.System == "economy");
+        // Nothing borrowed; the cost's own Money line is the only economy line (#2199).
+        var paid = Assert.Single(none, x => x.System == "economy");
+        Assert.Equal((CauseKeys.Paid, "treasury", -1.5), (paid.Key, paid.Target, paid.Delta));
     }
 
     // R-SITE-001, R-SITE-002

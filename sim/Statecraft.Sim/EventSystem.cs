@@ -95,7 +95,7 @@ namespace Statecraft.Sim
                     // R-MONEY-003: the cost first, then what was borrowed for it, as every other payment borrows.
                     why.Add(new Cause("events", fx.Target, change, $"{PlayerText.Change(c, fx.Target, change)} ({title})",
                         key: CauseKeys.EventAmount, args: Context(title, localizedTitle)));
-                    if (delta < 0) EconomySystem.PayOrBorrow(c, s, -delta, $"for {title}", why, CauseKeys.Purpose.Event, eventId, title, titleHe ? "1" : "0");
+                    if (delta < 0) EconomySystem.PayNamedOrBorrow(c, s, -delta, $"for {title}", why, CauseKeys.Purpose.Event, eventId, title, titleHe ? "1" : "0");
                     else s.Treasury += delta;
                     continue;
                 }

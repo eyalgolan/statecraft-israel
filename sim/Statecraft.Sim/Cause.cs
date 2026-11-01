@@ -47,6 +47,9 @@ namespace Statecraft.Sim
         public const string FxFlows = "fx_flows";
         /// <summary>Delta borrowed into the debt. Args: what for (a <see cref="Purpose"/>), then that purpose's values.</summary>
         public const string Borrowed = "borrowed";
+        /// <summary>Target (treasury) money moved by Delta, a cost paid through EconomySystem.PayOrBorrow, borrowed share
+        /// included (#2199). Args: as <see cref="Borrowed"/>'s.</summary>
+        public const string Paid = "paid";
         /// <summary>Target money moved by Delta, for civilian upkeep. No args.</summary>
         public const string CivilianUpkeep = "civilian_upkeep";
         public const string FxCrisisBegan = "fx_crisis_began", FxCrisisEased = "fx_crisis_eased";
@@ -213,7 +216,8 @@ namespace Statecraft.Sim
         /// <summary>Args: none.</summary>
         public const string DepopulationSupport = "depopulation_support";
 
-        /// <summary>What a <see cref="Borrowed"/> line borrowed for (EconomySystem.PayOrBorrow's callers, and the deficit).</summary>
+        /// <summary>What a <see cref="Borrowed"/> line borrowed for (EconomySystem.PayOrBorrow's callers, and the deficit), and
+        /// what a <see cref="Paid"/> line paid for.</summary>
         public static class Purpose
         {
             public const string Deficit = "deficit", CivilianUpkeep = "civilian_upkeep", MilitaryUpkeep = "military_upkeep",
@@ -233,7 +237,7 @@ namespace Statecraft.Sim
 
         public static readonly IReadOnlyList<string> All = new[]
         {
-            MoneyFlows, FxFlows, Borrowed, CivilianUpkeep, FxCrisisBegan, FxCrisisEased, FxCrisisFood, Arrived, EffectChange,
+            MoneyFlows, FxFlows, Borrowed, Paid, CivilianUpkeep, FxCrisisBegan, FxCrisisEased, FxCrisisFood, Arrived, EffectChange,
             SituationBegan, SituationEnded, RungChanged, CallUpSet, CallUpRaised, CallUpLowered, Ceasefire,
             EventNew, EventChosen, EventDelegated, EventDelegatedPartial, EventAmount, EventStock, EventGrant, EventCity,
             EventUnlock, EventPolicy, EventSetRung, EventRejoin, MilitaryUpkeep,

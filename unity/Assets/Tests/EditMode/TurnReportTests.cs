@@ -53,7 +53,9 @@ public class TurnReportTests
     static List<string> Causes(UiTestKit ui, string meter) =>
         ui.Q<VisualElement>("turn-report-causes-" + meter).Query<Label>(className: "turn-report-cause").ToList().Select(l => l.text).ToList();
 
-    /// <summary>The main B1 occupation/deport borrowing keys use the real map names in report and meter paths too.
+    /// <summary>The main B1 occupation/deport keys use the real map names in report and meter paths too: the cost's Money
+    /// line (occupation: PayOrBorrow's Paid line; Deport: its own line, as SettlementControl writes it), and the borrowing
+    /// line's own wording. Borrowing is not a Money cause (#2199), so the meter shows the cost's line.
     /// This is only a formatter fixture: it does not enable or execute the disabled Deport command.</summary>
     [TestCase(CauseKeys.Purpose.Occupation)]
     [TestCase(CauseKeys.Purpose.Deport)]
@@ -70,8 +72,16 @@ public class TurnReportTests
         var why = new List<Cause>();
         var placeName = PlayerText.Settlement(C, city);
         var englishPurpose = purpose == CauseKeys.Purpose.Deport ? $"for the Deport of {placeName}" : $"for the occupation of {placeName}";
-        EconomySystem.PayOrBorrow(C, last.State, last.State.Treasury + 3, englishPurpose, why, purpose, city);
-        var cause = why.Single();
+        var cost = last.State.Treasury + 3;
+        if (purpose == CauseKeys.Purpose.Occupation)
+            EconomySystem.PayOrBorrow(C, last.State, cost, englishPurpose, why, purpose, city);
+        else
+        {
+            why.Add(new Cause("economy", "treasury", -cost, $"{PlayerText.Change(C, "treasury", -cost)} (Deport of {placeName})", key: CauseKeys.DeportCost, args: new[] { city }));
+            EconomySystem.PayNamedOrBorrow(C, last.State, cost, englishPurpose, why, purpose, city);
+        }
+        Assert.AreEqual(2, why.Count, "the cost's Money line, then the borrowing");
+        var cause = why[1];
         Assert.AreEqual(CauseKeys.Borrowed, cause.Key);
         // Existing TurnReportTests uses this setter for a precise report fixture; no simulation input or content is changed.
         typeof(GameSession).GetProperty(nameof(GameSession.Last))!.SetValue(k.Bridge.Session,

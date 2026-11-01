@@ -23,6 +23,13 @@ namespace Statecraft.Sim
             public TreasuryFlows(double tax, double spending, double mobilization) { Tax = tax; Spending = spending; Mobilization = mobilization; }
         }
 
+        /// <summary>#2199: whether <paramref name="w"/> is a cause of the Money (net) change, Treasury minus Debt (the top bar's
+        /// Money, R-MONEY-001), its Delta that change: a Treasury line, and a city's job income (R-CITY-002), whose Target is the
+        /// city. A borrowing line (Target debt) is not one: it moves the Treasury and the Debt by the same amount, and the cost it
+        /// borrowed for has its own Treasury line. The turn's lines it picks add up to the change (MoneyCausesTests); the turn
+        /// report and the meter tip show the largest (HudModel.Causes).</summary>
+        public static bool MovesMoney(Cause w) => w.Target == "treasury" || w.Key == CauseKeys.WagesPaid;
+
         public static TreasuryFlows Flows(Content c, GameState s, double yearFraction)
         {
             PopulationLedger.RefuseAggregate(s);
@@ -36,11 +43,22 @@ namespace Statecraft.Sim
         public static double MobilizationCost(Content c, DateTime date, double level, double yearFraction = 1.0) => c.RulesAt(date).MobilizationCostPerYear * level * yearFraction;
 
         /// <summary>Pays <paramref name="cost"/> from the Treasury, borrowing what it lacks: the shortfall goes to Debt and the
-        /// Treasury stops at 0, as for map actions and the deficit. <paramref name="purpose"/> ends the cause ("for training").
+        /// Treasury stops at 0, as for map actions and the deficit. <paramref name="purpose"/> ends the causes ("for training").
         /// The GDD orders pay through it (owner decision "Allow borrowing", 2026-10-15; R-TRAIN-001, R-SITE-001).
         /// <paramref name="purposeKey"/> (a CauseKeys.Purpose) and <paramref name="purposeArgs"/> say the same purpose for the
-        /// UI (CauseKeys.Borrowed, B1); <paramref name="purpose"/> stays the English Message.</summary>
+        /// UI (CauseKeys.Paid and CauseKeys.Borrowed, B1); <paramref name="purpose"/> stays the English Message. The whole cost
+        /// is a Money line first (CauseKeys.Paid, #2199), then any borrowing, as <see cref="PayNamedOrBorrow"/> writes it.</summary>
         public static void PayOrBorrow(Content c, GameState s, double cost, string purpose, List<Cause> why, string purposeKey, params string[] purposeArgs)
+        {
+            if (cost != 0)
+                why.Add(new Cause("economy", "treasury", -cost, $"{PlayerText.Change(c, "treasury", -cost)} ({purpose})",
+                    key: CauseKeys.Paid, args: new[] { purposeKey }.Concat(purposeArgs).ToList()));
+            PayNamedOrBorrow(c, s, cost, purpose, why, purposeKey, purposeArgs);
+        }
+
+        /// <summary><see cref="PayOrBorrow"/> for a cost its caller has already given its own Money line (civilian and military
+        /// upkeep, a Deport, an event option's cost): only the borrowing line, if any.</summary>
+        public static void PayNamedOrBorrow(Content c, GameState s, double cost, string purpose, List<Cause> why, string purposeKey, params string[] purposeArgs)
         {
             s.Treasury -= cost;
             if (s.Treasury >= 0) return;
@@ -56,7 +74,7 @@ namespace Statecraft.Sim
             var cost = Cities.AnnualUpkeep(c, s, r) * yearFraction;
             if (cost == 0) return;
             why.Add(new Cause("economy", "treasury", -cost, $"{PlayerText.Change(c, "treasury", -cost)} (civilian upkeep)", key: CauseKeys.CivilianUpkeep));
-            PayOrBorrow(c, s, cost, "for civilian upkeep", why, CauseKeys.Purpose.CivilianUpkeep);
+            PayNamedOrBorrow(c, s, cost, "for civilian upkeep", why, CauseKeys.Purpose.CivilianUpkeep);
         }
 
         public static void Apply(Content c, GameState s, double yearFraction, List<Cause> why)

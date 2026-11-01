@@ -99,9 +99,9 @@ public class CauseTextTests
         s.ActiveSituations.Add("food_crisis"); s.Indicators["food_supply"] = 0.6;
         EffectsSystem.UpdateSituations(C, s, why);
         // Civilian upkeep: the real content's places cost nothing yet, so the line is the sim's own (EconomySystem.PayCivilianUpkeep),
-        // and the borrowing comes from PayOrBorrow with that purpose.
+        // and the borrowing comes from PayNamedOrBorrow with that purpose.
         why.Add(new Cause("economy", "treasury", -2, PlayerText.Change(C, "treasury", -2) + " (civilian upkeep)", key: CauseKeys.CivilianUpkeep));
-        EconomySystem.PayOrBorrow(C, s, s.Treasury + 3, "for civilian upkeep", why, CauseKeys.Purpose.CivilianUpkeep);
+        EconomySystem.PayNamedOrBorrow(C, s, s.Treasury + 3, "for civilian upkeep", why, CauseKeys.Purpose.CivilianUpkeep);
         s.ActiveSituations.Add(EconomySystem.FxCrisis); s.FxReserves = 1e6;
         EconomySystem.Apply(C, s, 0.25, why);
         s.ActiveSituations.Remove(EconomySystem.FxCrisis); s.FxReserves = -1e6;
@@ -158,7 +158,7 @@ public class CauseTextTests
         {
             var why = new List<Cause>();
             var s = Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical);
-            EconomySystem.PayOrBorrow(C, s, s.Treasury + 3, english, why, key, args);
+            EconomySystem.PayNamedOrBorrow(C, s, s.Treasury + 3, english, why, key, args);   // the borrowing line alone
             var line = why.Single();
             Assert.AreEqual(line.Message, CauseText.Line(line, C, NoRows, en), key);
             AssertHebrew(CauseText.Line(line, C, NoRows, he), key);
@@ -166,6 +166,44 @@ public class CauseTextTests
         var title = new Cause("economy", "debt", 3, "x", key: CauseKeys.Borrowed, args: new[] { CauseKeys.Purpose.Event, ev.Id, ev.Title, "1" });
         StringAssert.Contains(ev.TitleHe, CauseText.Line(title, C, NoRows, he), "the event's Hebrew title");
         StringAssert.Contains(housing.NameHe, CauseText.Line(new Cause("economy", "debt", 3, "x", key: CauseKeys.Borrowed,
+            args: new[] { CauseKeys.Purpose.Project, housing.Id }), C, NoRows, he), "the project kind's Hebrew name");
+    }
+
+    /// <summary>#2199: PayOrBorrow's Money line (CauseKeys.Paid) for every purpose whose cost has no Money line of its own
+    /// (the English purpose as each caller words it): English is the Message, Hebrew is Hebrew, and a project kind and a
+    /// settlement are named in Hebrew. Civilian and military upkeep, a Deport and an event's cost write their own line and
+    /// borrow through PayNamedOrBorrow, and the deficit borrows in EconomySystem.Apply, so none of them has a Paid line.</summary>
+    [Test]
+    public void EveryPaidPurposeIsWordedInBothLanguages()
+    {
+        var place = C.SettlementTargets[0].Id; var placeName = C.SettlementNames[place];
+        var housing = C.ProjectKinds.First(k => k.Id == "housing");
+        var purposes = new (string Key, string English, string[] Args)[]
+        {
+            (CauseKeys.Purpose.Corridor, "to build a corridor segment", new string[0]),
+            (CauseKeys.Purpose.Arms, "for Arms", new string[0]),
+            (CauseKeys.Purpose.Training, "for training", new string[0]),
+            (CauseKeys.Purpose.Prisoners, "for our soldiers held by the enemy", new string[0]),
+            (CauseKeys.Purpose.TrainingCamp, "to build a training camp", new string[0]),
+            (CauseKeys.Purpose.Plow, "to plow fields", new string[0]),
+            (CauseKeys.Purpose.Drain, "to drain a swamp", new string[0]),
+            (CauseKeys.Purpose.Yishuv, "to build a yishuv", new string[0]),
+            (CauseKeys.Purpose.Project, "to build " + housing.Name, new[] { housing.Id }),
+            (CauseKeys.Purpose.Occupation, $"for the occupation of {placeName}", new[] { place }),
+        };
+        CollectionAssert.AreEquivalent(CauseKeys.Purpose.All.Except(new[] { CauseKeys.Purpose.Deficit, CauseKeys.Purpose.CivilianUpkeep,
+            CauseKeys.Purpose.MilitaryUpkeep, CauseKeys.Purpose.Deport, CauseKeys.Purpose.Event }), purposes.Select(p => p.Key), "every paying purpose");
+        var en = En; var he = He;
+        foreach (var (key, english, args) in purposes)
+        {
+            var why = new List<Cause>();
+            var s = Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical);
+            EconomySystem.PayOrBorrow(C, s, s.Treasury + 3, english, why, key, args);
+            var line = why.Single(w => w.Key == CauseKeys.Paid);
+            Assert.AreEqual(line.Message, CauseText.Line(line, C, NoRows, en), key);
+            AssertHebrew(CauseText.Line(line, C, NoRows, he), key);
+        }
+        StringAssert.Contains(housing.NameHe, CauseText.Line(new Cause("economy", "treasury", -3, "x", key: CauseKeys.Paid,
             args: new[] { CauseKeys.Purpose.Project, housing.Id }), C, NoRows, he), "the project kind's Hebrew name");
     }
 
@@ -445,7 +483,7 @@ public class CauseTextTests
             AssertHebrew(CauseText.Line(row, c, NoRows, he, names), row.Key);
         }
         CollectionAssert.AreEquivalent(CauseKeys.All.Except(new[] {
-            CauseKeys.MoneyFlows, CauseKeys.FxFlows, CauseKeys.Borrowed, CauseKeys.CivilianUpkeep,
+            CauseKeys.MoneyFlows, CauseKeys.FxFlows, CauseKeys.Borrowed, CauseKeys.Paid, CauseKeys.CivilianUpkeep,
             CauseKeys.FxCrisisBegan, CauseKeys.FxCrisisEased, CauseKeys.FxCrisisFood, CauseKeys.Arrived,
             CauseKeys.EffectChange, CauseKeys.SituationBegan, CauseKeys.SituationEnded, CauseKeys.RungChanged,
             CauseKeys.CallUpSet, CauseKeys.CallUpRaised, CauseKeys.CallUpLowered, CauseKeys.Ceasefire,
