@@ -54,7 +54,8 @@ public class MoveArrowTests
         rig.Info = new InfoPanelPresenter(ui.Root, rig.Bridge, Text, towns,
             selectedUnit: () => layer.Selected is string sel ? layer.Tokens.First(p => p.Token.Unit.Id == sel) : (PlacedToken?)null,
             showReachable: map.ShowReachable, showRoute: map.ShowRoute,
-            showArrow: hexes => { rig.Arrows.Add(hexes.ToList()); map.ShowMoveArrow(hexes); });
+            showArrow: hexes => { rig.Arrows.Add(hexes.ToList()); map.ShowMoveArrow(hexes); },
+            clearSelection: () => { layer.Select(null); map.ClearSelection(); });   // as GameRoot: Escape drops the unit too
         rig.Golani = layer.Tokens.Single(p => p.Token.Unit.Id == "golani");
         rig.Id = UnitCard.SimUnit(C, rig.Bridge.State, rig.Golani.Token.Unit)!.Value;
         return rig;

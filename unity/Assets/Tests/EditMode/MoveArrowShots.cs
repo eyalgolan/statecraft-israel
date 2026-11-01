@@ -49,6 +49,10 @@ public class MoveArrowShots
         File.Delete(from);
     }
 
+    /// <summary>GameRoot.LateUpdate draws the route and arrow to the hex under the batch editor's own pointer whenever that
+    /// hex changes (a new camera pose changes it): a few frames let it settle, so what a still draws next stays drawn.</summary>
+    static IEnumerator Settle() { for (int i = 0; i < 5; i++) yield return null; }
+
     IEnumerator Shots(bool hebrew)
     {
         VisualElement ui = null!; GameRoot root = null!;
@@ -71,15 +75,18 @@ public class MoveArrowShots
         foreach (var zoom in new[] { 45000f, 120000f })
         {
             CivMovementShots.Aim(golani.Item1, golani.Item2, zoom);
+            yield return Settle();
             map.ShowMoveArrow(Array.Empty<(int, int)>());
-            for (int i = 0; i < 3; i++) yield return null;
+            map.ShowRoute(Array.Empty<(int, int, int)>());
+            yield return null;
             Shot($"{lang}-{zoom / 1000:0}km-before");
             map.ShowMoveArrow(arrow);
-            for (int i = 0; i < 3; i++) yield return null;
+            yield return null;
             Shot($"{lang}-{zoom / 1000:0}km-after");
         }
         var route = Movement.Route(c, s, 0, far.Item1, far.Item2, bridge.Spent);
         CivMovementShots.Aim(golani.Item1, golani.Item2, 120000f);
+        yield return Settle();
         map.ShowRoute(route.Select(h => (h.Q, h.R, h.Turn)).ToList());
         map.ShowMoveArrow(InfoPanelPresenter.ArrowHexes(s.Units[0], route.Select(h => (h.Q, h.R))));
         root.Labels?.Refresh(true);
@@ -89,9 +96,10 @@ public class MoveArrowShots
         Shot($"{lang}-120km-goto-after");
         if (hebrew) yield break;
         // The clip: the arrow to the lit hex at the closer zoom, a frame about every 80 ms of the editor's clock.
+        CivMovementShots.Aim(golani.Item1, golani.Item2, 45000f);
+        yield return Settle();
         map.ShowRoute(Array.Empty<(int, int, int)>());
         map.ShowMoveArrow(arrow);
-        CivMovementShots.Aim(golani.Item1, golani.Item2, 45000f);
         for (int f = 0; f < 16; f++)
         {
             var until = Time.realtimeSinceStartup + 0.08f;
