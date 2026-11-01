@@ -296,3 +296,19 @@ def test_the_built_in_mode_writes_no_regions(tmp_path):
     mb.main(["--id", "central_israel", "--out", str(out)])
     board = json.loads(out.read_text())
     assert "regions" not in board and all("region" not in h for h in board["hexes"])
+
+
+def test_every_committed_board_draws_the_maps_land_and_sea():
+    """A board's hexes are the game's own q/r and HexRealMap seats a board on the real map, so each board hex is land
+    exactly where content/map/hexes.json has land: a hand-made board that was only re-centred (tel_aviv, #1796) must not
+    put a land tile on the map's sea."""
+    land = {(h["q"], h["r"]): h["land"] for h in json.loads((ROOT / "content/map/hexes.json").read_text(encoding="utf-8"))["hexes"]}
+    boards = sorted(p for p in (ROOT / "unity/Assets/Resources/HexTiles/Boards").glob("*.json") if not p.name.endswith(".overrides.json"))
+    assert boards
+    wrong = []
+    for path in boards:
+        for h in json.loads(path.read_text(encoding="utf-8"))["hexes"]:
+            k = (h["q"], h["r"])
+            if k in land and (h["terrain"] != "water") != land[k]:
+                wrong.append(f"{path.stem} {k}: {h['terrain']} {h['prototype'] or '-'}, map {'land' if land[k] else 'sea'}")
+    assert not wrong, wrong

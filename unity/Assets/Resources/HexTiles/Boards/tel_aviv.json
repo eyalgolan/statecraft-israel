@@ -1,6 +1,6 @@
 {
  "id": "tel_aviv",
- "title": "Tel Aviv prototype board (radius 3, game q/r, centred on Tel Aviv's 4.4 km hex (-3, 21), #1183)",
+ "title": "Tel Aviv prototype board (radius 3, game q/r, centred on Tel Aviv's 4.4 km hex (-3, 21), #1183; (-5, 23) is sea on the 4.4 km map, so its dunes tile went)",
  "hexes": [
   {
    "q": -3,
@@ -295,10 +295,10 @@
   {
    "q": -5,
    "r": 23,
-   "terrain": "flat",
-   "ground": "beach",
-   "prototype": "coastal_dunes",
-   "note": "Dunes south of Jaffa",
+   "terrain": "water",
+   "ground": "seabed",
+   "prototype": "",
+   "note": "",
    "unit": "",
    "facing": 0.0
   },
