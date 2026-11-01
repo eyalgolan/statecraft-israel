@@ -17,6 +17,11 @@ import zipfile
 
 IDS = {13: "generated-1948-13-egyptian-spitfire", 14: "generated-1948-14-syrian-renault-r35", 16: "generated-1948-16-egyptian-dakota-c47"}
 ART = Path("unity/Assets/Editor/Generated1948VehicleReview")
+# Placed in the game (#1932): moved with git mv to the Collection folder, its FBX renamed to the Collection's id.fbx (same bytes).
+PLACED = {"generated-1948-13-egyptian-spitfire"}
+COLLECTION = Path("unity/Assets/Art/Collection")
+home = lambda mid: COLLECTION / mid if mid in PLACED else ART / mid
+fbx_name = lambda mid: mid + (".fbx" if mid in PLACED else "-compatibility.fbx")
 SOURCES = Path("asset-sources/generated-1948/vehicles")
 sha = lambda data: hashlib.sha256(data).hexdigest()
 
@@ -60,10 +65,10 @@ def verify(repo):
         data, colour = glb(source)
         assert len(data.get("animations", [])) == item["source_animation_count"] == 0
         assert jpeg_size(colour) == item["texture_dimensions"] == [4096, 4096]
-        dest = repo / ART / item["id"]
+        dest = repo / home(item["id"])
         assert (dest / (item["id"] + "_basecolor.jpg")).read_bytes() == colour
         assert sha(colour) == item["texture_sha256"]
-        assert sha((dest / (item["id"] + "-compatibility.fbx")).read_bytes()) == item["compatibility_fbx_sha256"]
+        assert sha((dest / fbx_name(item["id"])).read_bytes()) == item["compatibility_fbx_sha256"]
         assert not list(dest.glob("*-near.*")) and not list(dest.glob("*-far.*"))
         print("SOURCE VERIFIED", item["id"], item["triangles"], "triangles, exact 4096px map, zero source clips")
     assert len(manifest["items"]) == 3
@@ -89,13 +94,19 @@ def convert(repo, batch):
         with zipfile.ZipFile(source_archive) as bundle:
             for record in selected:
                 number = record["number"]; mid = IDS[number]; item = items[number]
+                if mid in PLACED:
+                    # #2014: home(mid) is the shipped Collection folder; a re-run (another Blender) must not replace its files,
+                    # so the placed model keeps its recorded provenance entry, as VehicleReviewAssets.Import skips it too.
+                    print("SKIP", mid, "is placed in the game (#1932); its shipped Collection files are left as they are", flush=True)
+                    reports.append(next(x for x in json.loads((original / "sources.json").read_text())["items"] if x["id"] == mid))
+                    continue
                 blob = bundle.read(record["member"])
                 assert sha(blob) == record["sha256"] == item["sha256"]
                 assert blob == (batch / record["source_relative"]).read_bytes()
                 data, colour = glb(blob)
                 assert not data.get("skins") and not data.get("animations")
                 assert jpeg_size(colour) == [4096, 4096]
-                dest = repo / ART / mid; dest.mkdir(parents=True, exist_ok=True)
+                dest = repo / home(mid); dest.mkdir(parents=True, exist_ok=True)
                 (dest / (mid + "_basecolor.jpg")).write_bytes(colour)
                 bpy.ops.wm.read_factory_settings(use_empty=True)
                 bpy.ops.import_scene.gltf(filepath=str(batch / record["source_relative"]), merge_vertices=False)
@@ -119,7 +130,7 @@ def convert(repo, batch):
                 # paths prevents authoring-machine paths from entering the compatibility FBX.
                 obj.data.materials.clear()
                 bpy.ops.object.select_all(action="DESELECT"); obj.select_set(True); bpy.context.view_layer.objects.active = obj
-                fbx = dest / (mid + "-compatibility.fbx")
+                fbx = dest / fbx_name(mid)
                 bpy.ops.export_scene.fbx(filepath=str(fbx), use_selection=True, object_types={"MESH"},
                     use_mesh_modifiers=False, add_leaf_bones=False, apply_unit_scale=True,
                     apply_scale_options="FBX_SCALE_UNITS", axis_forward="-Z", axis_up="Y",
