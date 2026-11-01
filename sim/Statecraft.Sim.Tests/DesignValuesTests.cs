@@ -309,7 +309,7 @@ public partial class DesignValuesTests
         Assert.Equal((0.05, 6), (m.MilitaryUpkeepPerTurn, m.VeteranSoldierService)); // Q-GEN-1: owner-accepted initial design values (19 October 2026), not history.
         Assert.Equal((1, 5, 6), (m.ArmsPerAttack, m.CombatTable.Count, m.CombatTable[0].AttackerLoss.Count));   // #747 (D-G6, D-G3), accepted by the owner 20 Oct 2026
         Assert.Equal((1, 0.01, 10, 0.005), (m.FoodPerPrisonerUnit, m.PrisonerShortfallCohesion, m.PointsPerPrisonerUnitReturned, m.HeldSoldierCostPerTurn));   // #751 (Q-POW-2, Q-POW-4, Q-POW-5), accepted by the owner (owner, 21 October 2026, #751)
-        Assert.Equal((6, 0.005), (m.OccupationTurns, m.OccupationUpkeepPerTurn));   // #798 (Q-OCC-1 (a), Q-OCC-3 (a)): proposed, for owner override
+        Assert.Equal((3, 0.005), (m.OccupationTurns, m.OccupationUpkeepPerTurn));   // #798 (Q-OCC-1 (a), Q-OCC-3 (a)); X is 3 turns (owner, 27 Oct 2026, #1712: "3 turns, keep upkeep"; 1 Nov 2026: "3 turns (27 Oct)")
         Assert.Equal((0.15, 0.15, 0.005, 0.25), (m.DeportCohesionCost, m.DeportSupportCost, m.DeportSupportDragPerTurn, m.DeportSupportCeilingDrop));   // #800 (Q-DEP-5 (c)): proposed, for owner override
         Assert.False(m.DeportInPlay);   // R-CTRL-007: Deport stays out of play until its cards and dialog are reviewed (PR 10 lifts it)
         Assert.Equal(12, c.Cities.Count);
