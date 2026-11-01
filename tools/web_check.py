@@ -18,7 +18,8 @@ Options: --query Q (page URL query, without '?'), --expect TEXT (repeatable), --
 --persistence (play one normal turn, wait for its matching IndexedDB commit, reload and Continue, then play another
 turn and reload as soon as its matching commit arrives; both reloads must report the saved date, turn and hash), --startscreen new|recording (#908: on a fresh
 profile, the real start screen every player sees first: "new" presses New game, "recording" first presses Play the
-recording and waits for RECORDING playing; then End turn must log TURN 1, pressing "Skip this turn" on each unit End
+recording and waits for RECORDING playing; then End turn must log TURN 1, first pressing "Skip the opening" when the
+opening (#530) takes End turn's click, then "Skip this turn" on each unit End
 turn selects while units still need orders (EndTurn; --persistence ends its turns so too); any console Exception, RECORDING failed or
 BOOT FAIL fails the run; add --query lang=he for the Hebrew layout). Both runs add ?navlog and click the start screen's
 buttons where its "start buttons" line says they are (StartButtons).
@@ -499,6 +500,13 @@ ORDER_ROW = {"build-camp", "build-housing", "info-defence", "info-primary-orders
              "info-skip", "info-attack", "info-send-home", "info-reinforce"}
 ABOVE_ORDERS = {"info-title", "info-subtitle", "info-region", "info-settlements", "info-localities", "info-placement"}
 SKIP = "info-skip"
+# The opening (#530): after New game, once opening.yaml is reviewed, three stills cover the whole window, top bar included
+# (Statecraft.uss .opening-open), so End turn's click reaches the opening until the player presses "Skip the opening" (or
+# Next through it). Its Back, Next and Skip row (Game.uxml .opening-actions) is centred under prose whose height changes
+# with the panel and the language, so Skip is found where the game draws it, like the unit card's: down two columns 30 px
+# apart (a button is wider than that, the row's gaps narrower) to the row, then along it.
+OPENING, OPENING_SKIP = "opening-", "opening-skip"
+OPENING_ROW = {"opening-back", "opening-next", OPENING_SKIP}
 # Well over the units a turn has needing orders (8 on a new game, 9 on turn 2, 0.3.0 RC): a turn that never ends fails.
 MAX_SKIPS = 40
 
@@ -508,25 +516,22 @@ class EndTurn:
     of ending the turn, so press that unit's "Skip this turn" and End turn again, until the game logs the next TURN line, at
     most `max_skips` times (GameRoot.Smoke's loop, through the browser). The unit card's buttons move with its text, so
     Skip is found where the game draws it: a middle-button probe reports the element under it (?navlog NAV_DOWN) and acts
-    on nothing (a left press on the card's text can move the unit, NAV_MAP), then a left click presses Skip. A missed End
-    turn, a probe the map takes, a card with no Skip, or a turn that never ends fails at once. Returns the number of Skips."""
+    on nothing (a left press on the card's text can move the unit, NAV_MAP), then a left click presses Skip. When the
+    opening (#530) takes the first End turn click, its own Skip is pressed the same way and End turn clicked again. A
+    missed End turn, a probe the map takes, a card or an opening with no Skip, or a turn that never ends fails at once.
+    Returns the number of units Skipped."""
 
     def __init__(self, action, tail: ConsoleTail, hebrew: bool, settle=time.sleep, max_skips=MAX_SKIPS, answer=5.0,
                  turn_wait=3.0, viewport=VIEWPORT):
         self.action, self.tail, self.hebrew, self.settle = action, tail, hebrew, settle
         self.max_skips, self.answer, self.turn_wait = max_skips, answer, turn_wait
         self.point = END_TURN_HE if hebrew else END_TURN
-        self.bottom = viewport[1] - INFO_PANEL_BOTTOM
+        self.viewport, self.bottom = viewport, viewport[1] - INFO_PANEL_BOTTOM
         self.skip_at: tuple[int, int] | None = None  # where Skip was last: cards of one kind keep it there
 
     def __call__(self) -> int:
         for skips in range(self.max_skips + 1):
-            since = self.tail.mark()
-            x, y = self.point
-            print(f"click end-turn at ({x}, {y})")
-            self.action(f"click:{x},{y}")
-            if self.tail.wait(NAV_CLICK, since, self.answer, "end-turn") is None:
-                raise ValueError(f"END TURN FAIL the click at ({x}, {y}) did not press end-turn within {self.answer:g} s")
+            since = self.click_end_turn(opening=skips == 0)   # the opening shows only before a new game's first turn
             if self.tail.wait(TURN_STATE, since, self.turn_wait) is not None:
                 print(f"END TURN the turn ended after {skips} Skip(s)")
                 return skips
@@ -537,6 +542,50 @@ class EndTurn:
                 print(f"END TURN the turn ended after {skips} Skip(s)")
                 return skips
         raise ValueError(f"END TURN FAIL End turn still selected a unit needing orders after {self.max_skips} Skips")
+
+    def click_end_turn(self, opening: bool) -> int:
+        """Clicks End turn; the console mark before the click that pressed it. With `opening`, a click the opening takes is
+        answered as a player does: its Skip (skip_opening), then End turn again."""
+        x, y = self.point
+        since = self.tail.mark()
+        print(f"click end-turn at ({x}, {y})")
+        self.action(f"click:{x},{y}")
+        if self.tail.wait(NAV_CLICK, since, self.answer, "end-turn") is not None:
+            return since
+        other = self.tail.wait(NAV_CLICK, since, 0)
+        reached = f" (the click reached {other.group(1)})" if other else ""
+        if opening and other is not None and other.group(1).startswith(OPENING):
+            print(f"END TURN the click reached {other.group(1)}: the opening covers End turn, so press its Skip")
+            self.skip_opening()
+            self.settle(1)                           # the top bar shows again
+            return self.click_end_turn(opening=False)
+        raise ValueError(f"END TURN FAIL the click at ({x}, {y}) did not press end-turn within {self.answer:g} s{reached}")
+
+    def skip_opening(self) -> None:
+        """Presses the opening's Skip where the game draws it (OPENING_ROW), found with middle-button probes."""
+        cx, seen, row = self.viewport[0] // 2, [], None
+        for y in range(PROBE_INSET, self.viewport[1] - PROBE_INSET, 10):
+            for x in (cx, cx - 30):
+                target = self.press(x, y)
+                seen.append(target)
+                if target in OPENING_ROW:
+                    row = (x, y)
+                    break
+            if row is not None:
+                break
+        points = [] if row is None else [row] + [(x, row[1]) for dx in range(10, cx, 10) for x in (cx + dx, cx - dx)]
+        for x, y in points:
+            if (target := self.press(x, y)) == OPENING_SKIP:
+                since = self.tail.mark()
+                print(f"click {OPENING_SKIP} at ({x}, {y})")
+                self.action(f"click:{x},{y}")
+                if self.tail.wait(NAV_CLICK, since, self.answer, OPENING_SKIP) is None:
+                    raise ValueError(f"OPENING FAIL the click at ({x}, {y}) did not press {OPENING_SKIP} within "
+                                     f"{self.answer:g} s")
+                return
+            seen.append(target)
+        raise ValueError(f"OPENING FAIL the opening covers End turn, but no {OPENING_SKIP} was found (its row at y "
+                         f"{row[1] if row else 'none'}; pressed {', '.join(dict.fromkeys(seen))})")
 
     def skip(self, since: int) -> bool:
         """Clicks the shown unit card's Skip; False when the turn ended after all (a late TURN line), so nothing was pressed."""
