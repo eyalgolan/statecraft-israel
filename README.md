@@ -132,7 +132,7 @@ flowchart LR
 
 <iframe frameborder="0" src="https://itch.io/embed/5179460" width="552" height="167"><a href="https://eyalgolan.itch.io/statecraft-israel">Statecraft: Israel by eyalgolan</a></iframe>
 
-Play it in your browser on [itch.io](https://eyalgolan.itch.io/statecraft-israel). Each [release](https://github.com/eyalgolan/statecraft-israel/releases) (the latest is [latest](https://github.com/eyalgolan/statecraft-israel/releases/latest)) has the browser build as a zip; [docs/m3-release.md](docs/m3-release.md) says how to serve it. To build and run it locally:
+Play it in your browser on [itch.io](https://eyalgolan.itch.io/statecraft-israel). Each [release](https://github.com/eyalgolan/statecraft-israel/releases) (the latest is [here](https://github.com/eyalgolan/statecraft-israel/releases/latest)) has the browser build as a zip; [docs/m3-release.md](docs/m3-release.md) says how to serve it. To build and run it locally:
 
 1. Install the tools in [docs/dev-setup.md](docs/dev-setup.md): .NET 10, Unity 6000.3.25f1 with Web Build Support, and `uv`.
 2. Run `uv run tools/build_sim_for_unity.py`.
