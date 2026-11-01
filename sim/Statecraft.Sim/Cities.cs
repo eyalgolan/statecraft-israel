@@ -78,18 +78,37 @@ namespace Statecraft.Sim
         }
 
         /// <summary>R-CITY-002, R-CRAFT-002: each city's employed units earn income_per_job_per_year for the turn's share of a
-        /// year. Craftsmen take the jobs first, and each employed craftsman earns craftsman_income_multiple times that.</summary>
+        /// year. Craftsmen take the jobs first, and each employed craftsman earns craftsman_income_multiple times that.
+        /// R-CITY-010: a city the enemy holds earns nothing.</summary>
         public static void Produce(Content c, GameState s, MvpRules r, double yearFraction, List<Cause> why)
         {
             PopulationLedger.RefuseAggregate(s);
+            var held = Held(c, s);
             foreach (var x in s.Cities.Values)
             {
-                if (x.Employed == 0) continue;
+                if (x.Employed == 0 || held.Contains(x.Id)) continue;
                 var craftsmen = Math.Min(x.Craftsmen, x.Employed);
                 var paid = ((x.Employed - craftsmen) + craftsmen * r.CraftsmanIncomeMultiple) * r.IncomePerJobPerYear * yearFraction;
                 s.Treasury += paid;
                 why.Add(new Cause("city", x.Id, paid, $"{PlayerText.Settlement(c, x.Id)}: jobs paid {PlayerText.MoneyChange(c, "treasury", paid)}", key: CauseKeys.WagesPaid));
             }
+        }
+
+        /// <summary>R-CITY-010 (D6, owner, 1 November 2026, #1711): under gdd-0.3, the ids of the cities with an enemy military
+        /// unit on their settlement hex (a halutz has no side and holds nothing, R-UNIT-001; Movement's reading of "the
+        /// enemy", as R-END-003's). Read in steps 5 and 6: no step after step 3 moves an enemy unit, so this is the turn's end;
+        /// a formation arriving at step 9 counts from the next turn.
+        /// Empty under every other ruleset.</summary>
+        public static HashSet<string> Held(Content c, GameState s)
+        {
+            var held = new HashSet<string>(StringComparer.Ordinal);
+            if (c.Ruleset != SaveGame.Gdd03Ruleset) return held;
+            var enemy = new HashSet<(int Q, int R)>();
+            foreach (var u in s.Units.Values)
+                if (u.Side != "" && u.Side != Movement.PlayerSide) enemy.Add((u.Q, u.R));
+            foreach (var h in c.SettlementHexes)
+                if (s.Cities.ContainsKey(h.Id) && enemy.Contains((h.Q, h.R))) held.Add(h.Id);
+            return held;
         }
 
         /// <summary>R-MONEY-002: annual Money upkeep for the civilian places that exist at the start of step 7. Only completed
