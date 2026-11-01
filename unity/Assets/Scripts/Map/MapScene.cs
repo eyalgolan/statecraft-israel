@@ -272,6 +272,105 @@ namespace Statecraft.Game.Map
             go.GetComponent<MeshRenderer>().enabled = verts.Count > 0;
         }
 
+        /// <summary>The move arrow's mesh (#2134), beside <see cref="RouteName"/> under the terrain.</summary>
+        public const string MoveArrowName = "MoveArrow";
+        /// <summary>The arrow's material (Statecraft/MoveArrow), in Resources so a player keeps it and its shader.</summary>
+        public const string MoveArrowMaterialResource = "Map/MoveArrow";
+        /// <summary>The arrow's full width (its head's base) per metre of camera distance, as MoveArrow.mat gives the shader:
+        /// about 27 px at 1080 px at every zoom (CameraRig.Fov 35 degrees), the shaft about a third of that.</summary>
+        public const float MoveArrowWidthPerDistance = 0.016f;
+        /// <summary>The arrow leaves the unit's hex this share of the hex size from its centre, clear of the unit's token.</summary>
+        public const float MoveArrowStartShare = 0.35f;
+        /// <summary>Spacing (m) of the arrow's cross-sections along a hex-to-hex leg, each on the ground under it: about the
+        /// heightmap's spacing, so the arrow keeps to the relief as the camera's tilt sees it.</summary>
+        public const float MoveArrowStepM = 250f;
+        /// <summary>The hexes last passed to <see cref="ShowMoveArrow"/>: the unit's hex, then the path's.</summary>
+        public IReadOnlyList<(int q, int r)> ShownArrow { get; private set; } = Array.Empty<(int, int)>();
+        readonly List<Vector2> arrowLine = new List<Vector2>();
+        readonly List<Vector3> arrowVerts = new List<Vector3>();
+        readonly List<Vector2> arrowUv = new List<Vector2>();
+        readonly List<Vector4> arrowSide = new List<Vector4>();
+        readonly List<int> arrowTris = new List<int>();
+
+        /// <summary>Draws the move arrow (#2134) from the first hex's centre through every later hex's centre, in order, with
+        /// its head on the last: <paramref name="hexes"/> is the unit's hex and the sim's path (InfoPanelPresenter.ArrowHexes:
+        /// Movement.Path or Movement.Route, never computed here). Fewer than two hexes on the map hides it. Built once per call;
+        /// the chevrons move in the shader (Statecraft/MoveArrow), so nothing runs per frame.</summary>
+        public void ShowMoveArrow(IReadOnlyList<(int q, int r)> hexes)
+        {
+            ShownArrow = hexes?.ToList() ?? new List<(int, int)>();
+            if (Terrain == null || Hexes == null) return;
+            var found = Terrain.transform.Find(MoveArrowName);
+            var go = found != null ? found.gameObject : null;
+            if (go == null)
+            {
+                go = new GameObject(MoveArrowName);
+                go.transform.SetParent(Terrain.transform, false);
+                var mesh = Terrain.GetComponent<MapRuntimeAssets>().Own(new Mesh { name = MoveArrowName });
+                go.AddComponent<MeshFilter>().sharedMesh = mesh;
+                var renderer = go.AddComponent<MeshRenderer>();
+                renderer.sharedMaterial = Resources.Load<Material>(MoveArrowMaterialResource)
+                    ?? throw new InvalidOperationException($"Resources/{MoveArrowMaterialResource}.mat is missing");
+                renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                renderer.receiveShadows = false;
+            }
+            arrowLine.Clear(); arrowVerts.Clear(); arrowUv.Clear(); arrowSide.Clear(); arrowTris.Clear();
+            foreach (var at in ShownArrow)
+            {
+                var hex = Hexes.hexes.FirstOrDefault(h => h.q == at.q && h.r == at.r);
+                if (hex == null) continue;
+                var c = Frame.ToWorld(hex.lon, hex.lat, 0);
+                var point = new Vector2(c.x, c.z);
+                if (arrowLine.Count == 0 || (point - arrowLine[arrowLine.Count - 1]).sqrMagnitude > 1f) arrowLine.Add(point);
+            }
+            if (arrowLine.Count >= 2)
+            {
+                arrowLine[0] += (arrowLine[1] - arrowLine[0]).normalized * (MoveArrowStartShare * Hexes.hex_size_km * 1000f);
+                float total = 0f;
+                for (int i = 1; i < arrowLine.Count; i++) total += (arrowLine[i] - arrowLine[i - 1]).magnitude;
+                var data = Terrain.terrainData;
+                float along = 0f;
+                for (int i = 0; i + 1 < arrowLine.Count; i++)
+                {
+                    Vector2 a = arrowLine[i], b = arrowLine[i + 1];
+                    float len = (b - a).magnitude;
+                    int steps = Mathf.Max(1, Mathf.CeilToInt(len / MoveArrowStepM));
+                    var dir = (b - a) / len;
+                    for (int k = i == 0 ? 0 : 1; k <= steps; k++)
+                    {
+                        var p = Vector2.Lerp(a, b, (float)k / steps);
+                        var side = new Vector2(dir.y, -dir.x);
+                        // A bend (a later leg's first point): the mitre of the two legs, so the band keeps its width round it.
+                        if (k == steps && i + 2 < arrowLine.Count)
+                        {
+                            var next = (arrowLine[i + 2] - b).normalized;
+                            var mitre = (side + new Vector2(next.y, -next.x)).normalized;
+                            side = mitre / Mathf.Max(0.5f, Vector2.Dot(mitre, side));
+                        }
+                        float y = data.GetInterpolatedHeight(Mathf.Clamp01(p.x / Frame.WidthM), Mathf.Clamp01(p.y / Frame.LengthM)) + SelectionClearanceM;
+                        float s = along + len * k / steps;
+                        int v = arrowVerts.Count;
+                        for (int u = 0; u <= 1; u++)
+                        {
+                            arrowVerts.Add(new Vector3(p.x, y, p.y));
+                            arrowUv.Add(new Vector2(u, s));
+                            arrowSide.Add(new Vector4(side.x, side.y, total, 0f));
+                        }
+                        if (v > 0) { arrowTris.Add(v - 2); arrowTris.Add(v); arrowTris.Add(v - 1); arrowTris.Add(v - 1); arrowTris.Add(v); arrowTris.Add(v + 1); }
+                    }
+                    along += len;
+                }
+            }
+            var m = go.GetComponent<MeshFilter>().sharedMesh;
+            m.Clear();
+            m.SetVertices(arrowVerts); m.SetUVs(0, arrowUv); m.SetUVs(1, arrowSide); m.SetTriangles(arrowTris, 0);
+            // The vertices lie on the centre line and the shader widens the band: grow the bounds by the widest it is drawn
+            // (at the farthest zoom), so culling never drops a band whose centre line is just off screen.
+            var bounds = m.bounds; bounds.Expand(MoveArrowWidthPerDistance * CameraController.MaxDistance);
+            m.bounds = bounds;
+            go.GetComponent<MeshRenderer>().enabled = arrowVerts.Count > 0;
+        }
+
         public void Configure(Material terrain, Material marker, Material selection, Material sea, Material frame)
         {
             terrainMaterial = terrain; markerMaterial = marker; selectionMaterial = selection;
