@@ -53,6 +53,11 @@ public class DollarsTests
         var r = Orders(c, s, new ConvertDollars(2));
         Assert.Empty(r.Rejected);
         Assert.Equal(1 + money, r.State.Treasury, 12);
+        // End turn converts at the same rate: the turn's start date, not its end (the 14 August turn ends after the 15th).
+        var none = Simulation.Step(c, s, Array.Empty<Command>()).State;
+        var sold = Simulation.Step(c, s, new Command[] { new ConvertDollars(2) });
+        Assert.Empty(sold.Rejected);
+        Assert.Equal(none.Treasury - none.Debt + money, sold.State.Treasury - sold.State.Debt, 9);
     }
 
     // R-MONEY-004: the IL goes into the Treasury before the turn's economy, so the turn's own deficit borrows less
@@ -87,10 +92,18 @@ public class DollarsTests
         var over = Orders(c, s, new ConvertDollars(3), new ConvertDollars(2));
         Assert.Equal(EconomySystem.RefusedDollarsMonthly, Assert.Single(over.Rejected).Reason);
         Assert.Equal(3, over.State.DollarsConverted);
+        // A refused order uses none of the limit: 3, then 2 refused, then 1 makes 4.
+        var after = Orders(c, s, new ConvertDollars(3), new ConvertDollars(2), new ConvertDollars(1));
+        Assert.Equal(EconomySystem.RefusedDollarsMonthly, Assert.Single(after.Rejected).Reason);
+        Assert.Equal(2, ((ConvertDollars)after.Rejected[0].Command).Amount);
+        Assert.Equal(4, after.State.DollarsConverted);
         // The limit is per turn: the next turn may convert its own dollars_per_turn again.
         var next = Simulation.Step(c, s, new Command[] { new ConvertDollars(4) }).State;
         Assert.Equal(5, next.Rung);
         Assert.Empty(Orders(c, next, new ConvertDollars(4)).Rejected);
+        // A limit of 0 refuses every amount.
+        foreach (var r in c.EraRules.Values.Append(c.Rules)) r.Mvp!.DollarsPerTurn = 0;
+        Assert.Equal(EconomySystem.RefusedDollarsMonthly, Assert.Single(Orders(c, s, new ConvertDollars(1)).Rejected).Reason);
     }
 
     // R-MONEY-004: the game converts at most dollars_total; an amount that would pass it is refused whole.
@@ -180,22 +193,28 @@ options:
     }
 
     // R-MONEY-004: every refusal leaves the state as the turn with no order, Attention included, and says nothing in Why.
+    // The order is priced at 1 here (content prices it at 0), so a refusal that kept the Attention would show.
     [Theory]
-    [InlineData(0, 50, 0, 5)]    // below the minimum
-    [InlineData(1, 50, 0, 3)]    // outside the war
-    [InlineData(5, 50, 0, 5)]    // past the month's limit
-    [InlineData(3, 50, 8, 5)]    // past the total
-    [InlineData(3, 2.5, 0, 5)]   // past the reserves
-    public void ARefusalLeavesTheStateUntouched(int amount, double fx, int converted, int rung)
+    [InlineData(0, 50, 0, 5, EconomySystem.RefusedDollarsMinimum)]
+    [InlineData(1, 50, 0, 3, EconomySystem.RefusedDollarsNotAtWar)]
+    [InlineData(5, 50, 0, 5, EconomySystem.RefusedDollarsMonthly)]
+    [InlineData(3, 50, 8, 5, EconomySystem.RefusedDollarsTotal)]
+    [InlineData(3, 2.5, 0, 5, EconomySystem.RefusedDollarsReserves)]
+    public void ARefusalLeavesTheStateUntouched(int amount, double fx, int converted, int rung, string reason)
     {
         var c = Gdd();
+        foreach (var r in c.EraRules.Values.Append(c.Rules)) r.AttentionCost[EconomySystem.ConvertDollarsKind] = 1;
         var s = War(c, fx, converted);
         s.Rung = rung;
+        Assert.True(AttentionSystem.Cost(c, s, EconomySystem.ConvertDollarsKind) > 0 && s.Attention >= AttentionSystem.Cost(c, s, EconomySystem.ConvertDollarsKind));
         var refused = Simulation.Step(c, s, new Command[] { new ConvertDollars(amount) });
-        Assert.Single(refused.Rejected);
+        Assert.Equal(reason, Assert.Single(refused.Rejected).Reason);
         Assert.Equal(Simulation.Step(c, s, Array.Empty<Command>()).State.Hash(), refused.State.Hash());
         Assert.DoesNotContain(refused.Why, w => w.Key == CauseKeys.DollarsConverted);
+        // Step refills Attention at the turn's end, so only the dry run shows the refund.
         var preview = Orders(c, s, new ConvertDollars(amount));
+        Assert.Equal(reason, Assert.Single(preview.Rejected).Reason);
+        Assert.Equal(s.Attention, preview.State.Attention);
         Assert.Equal(Orders(c, s).State.Hash(), preview.State.Hash());
     }
 
