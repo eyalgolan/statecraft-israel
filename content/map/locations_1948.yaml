@@ -274,6 +274,7 @@ locations:
   sources:
   # coordinates; the JTA's 1948 name is "Sarafand" (note, section 1). SENSITIVE: see sites.yaml `tzrifin`.
   - { url: 'https://he.wikipedia.org/w/index.php?oldid=43963697', checked: 2026-11-01 }
+  - { url: 'https://www.wikidata.org/wiki/Q2909246', checked: 2026-11-01 } # coordinates (P625)
   status: draft
 
 - id: military_tel_litvinsky
@@ -295,6 +296,7 @@ locations:
   sources:
   # coordinates of today's Camp Dori (Tel HaShomer); the 1:20,000 sheet prints "Tel Litwinsky" 1.23 km to the north-west ([C], note section 2).
   - { url: 'https://he.wikipedia.org/w/index.php?oldid=43522123', checked: 2026-11-01 }
+  - { url: 'https://www.wikidata.org/wiki/Q7058317', checked: 2026-11-01 } # coordinates (P625)
   status: draft
 
 - id: military_schneller
@@ -316,6 +318,7 @@ locations:
   sources:
   # coordinates; the 1:20,000 sheet prints "Orphanage & Sch." 217 m north of the point (note, section 3).
   - { url: 'https://he.wikipedia.org/w/index.php?oldid=44079527', checked: 2026-11-01 }
+  - { url: 'https://www.wikidata.org/wiki/Q455355', checked: 2026-11-01 } # coordinates (P625)
   status: draft
 
 - id: military_camp_80
@@ -337,6 +340,7 @@ locations:
   sources:
   # coordinates of today's Bahad Dotan; no Mandate sheet read prints the camp ([GAP], note section 4).
   - { url: 'https://he.wikipedia.org/w/index.php?oldid=43463565', checked: 2026-11-01 }
+  - { url: 'https://www.wikidata.org/wiki/Q12404426', checked: 2026-11-01 } # coordinates (P625)
   status: draft
 
 - id: reception_atlit
@@ -359,6 +363,7 @@ locations:
   # coordinates of the detention camp; the 1:20,000 sheet prints "Atlit Clearance Camp" there (note, section 5).
   # The day it opened to immigrants is [GAP], so no historical_reference.
   - { url: 'https://he.wikipedia.org/w/index.php?oldid=42240627', checked: 2026-11-01 }
+  - { url: 'https://www.wikidata.org/wiki/Q2902412', checked: 2026-11-01 } # coordinates (P625)
   status: draft
 
 - id: reception_beit_lid
@@ -381,4 +386,5 @@ locations:
   # coordinates of the later Shavot Am ma'abara site; the 1958 sheet's circle is 465 m away ([C], note section 8).
   # The opening day is [GAP], so no historical_reference.
   - { url: 'https://he.wikipedia.org/w/index.php?oldid=39524540', checked: 2026-11-01 }
+  - { url: 'https://www.wikidata.org/wiki/Q12409351', checked: 2026-11-01 } # coordinates (P625); the statement has no reference
   status: draft
