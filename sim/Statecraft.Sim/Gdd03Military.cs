@@ -44,7 +44,7 @@ namespace Statecraft.Sim
 
         internal static int Terrain(Content c, string biome, string role)
         {
-            int index = role == "infantry" ? 0 : role == "armour" ? 1 : -1;
+            int index = role == "infantry" || role == Combat.ArtilleryClass ? 0 : role == "armour" ? 1 : -1;   // Q12: artillery pays infantry costs
             if (index < 0) throw Invalid(biome + ".parts.movement", "no approved movement column for role " + role);
             return Number(Part(c, biome, "movement"), biome + ".parts.movement (" + role + ")", 2, index, true);
         }

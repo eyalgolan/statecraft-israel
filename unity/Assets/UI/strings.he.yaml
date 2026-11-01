@@ -1014,11 +1014,6 @@ report.stock_line: "{0} במלאי: {1}"
 # native-review-pending
 report.stock_change: "{0} במלאי: {1} (שינוי של {2})"
 
-# #1708 artillery action status. Hebrew: native review pending (#564).
-unit.artillery_move_missing: "לא ניתן להזיז ארטילריה עדיין: נקודות התנועה שלה טרם נקבעו"
-unit.fire_ready: "ניתן לירות"
-unit.fire_spent: "הירי בוצע בתור הזה"
-
 # #2045 standing-order refusals (Orders.Check), shown on the unit card.
 # For the native reviewer (#564).
 unit.order_refused.unknown_order: "הפקודה אינה מוכרת"

@@ -821,8 +821,6 @@ namespace Statecraft.Game.UI
                 var points = shownUnit is int pu && s.Units.TryGetValue(pu, out var military) && military.Side == Movement.PlayerSide
                     && Movement.Allowance(c, military) > 0
                     ? text.Format("unit.points", Movement.PointsLeft(c, s, pu, bridge.Spent), Movement.Allowance(c, military)) : "";
-                if (shownUnit is int gunId && s.Units.TryGetValue(gunId, out var gun) && Movement.MovementDeferred(c, gun))
-                    points = text["unit.artillery_move_missing"] + "\n" + text[Movement.ActionsLeft(c, s, gunId, bridge.Spent) > 0 ? "unit.fire_ready" : "unit.fire_spent"];
                 var routeLine = shownUnit is int routeUnit ? GoToLine(routeUnit) : "";
                 var lines = new[] { card.Body, points, order, routeLine, standing, reinforceQueued ? text["unit.reinforce_queued"] : "" }.Where(x => x != "");
                 title.text = card.Title; subtitle.text = card.Subtitle; settlements.text = string.Join("\n", lines);
