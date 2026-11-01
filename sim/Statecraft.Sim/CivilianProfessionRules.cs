@@ -66,7 +66,8 @@ namespace Statecraft.Sim
             return WithTierAndXp(p, tier, xp);
         }
 
-        // R-VET-002: always read the snapshot tier, never the proposed end-of-turn replacement.
+        // R-VET-002: always read the snapshot tier, never the proposed end-of-turn replacement. A farmer's quote is the
+        // catalogue tier, a multiple of field_food_per_turn (#2112); Gdd03FieldRates.FoodPerTurn converts it to Food.
         internal static decimal OutputAtTurnStart(Content c, GameState turnStart, int id)
         {
             RequireFixture(c, turnStart);
