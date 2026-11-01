@@ -574,18 +574,22 @@ namespace Statecraft.Game.UI
         void FocusNextOnPlace()
         {
             if (disposed || !InChain || ScreenOpen()) return;
-            if (popup.resolvedStyle.visibility == Visibility.Visible && FocusReturn.CanTakeFocus(gotIt)) { FocusReturn.To(gotIt); return; }
+            if (NextCanTakeFocus()) { FocusReturn.To(gotIt); return; }
             focusNextOnPlace = true;
         }
 
-        /// <summary>Place() just restored the popup's visibility for the deferred Next hand-off (#1915), but an inline
-        /// style resolves only on the next style pass - the gate log read the focus still null after a bare Focus() in the
-        /// same call, for the same reason the hand-off had read canTake=false. The hand-off waits the style pass out: a few
-        /// ticks until the popup reads visible and Next can take the focus, then hands it over once.</summary>
+        /// <summary>Next can take the focus now (#1915). The button's own canGrabFocus, not the popup's resolved visibility:
+        /// an inline visibility set on the popup reads back at once on the popup itself, but its children inherit it only on
+        /// the next style pass, and a Focus() on a still-hidden Next releases the screen's focus to nothing.</summary>
+        bool NextCanTakeFocus() => FocusReturn.CanTakeFocus(gotIt) && gotIt.canGrabFocus;
+
+        /// <summary>Place() just restored the popup's visibility for the deferred Next hand-off (#1915), but Next inherits it
+        /// only on the next style pass. The hand-off waits that out: a few scheduler ticks until Next can take the focus,
+        /// then hands it over once.</summary>
         void FocusNextWhenPlaced(int ticksLeft = 10)
         {
             if (disposed || !InChain || ScreenOpen()) return;
-            if (popup.resolvedStyle.visibility == Visibility.Visible && FocusReturn.CanTakeFocus(gotIt)) { FocusReturn.To(gotIt); return; }
+            if (NextCanTakeFocus()) { FocusReturn.To(gotIt); return; }
             if (ticksLeft <= 0) return;
             gotIt.schedule.Execute(() => FocusNextWhenPlaced(ticksLeft - 1));
         }

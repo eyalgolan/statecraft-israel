@@ -1258,15 +1258,20 @@ public class AdvisorOpeningNoAttentionGameRootTests
         UiTestKit.Press(Ui.Q<Button>("settings-language-" + UiLanguage.Hebrew));
         Assert.IsTrue(Ui.Q("root").ClassListContains(UiLanguage.HebrewClass));
         Assert.IsTrue(game.Advisor!.InChain, "the rebuilt presenter resumes the tour");
-        for (int i = 0; i < 3; i++) yield return null;
+        // A quiet EditMode panel runs its styles, layout and scheduler only on player-loop requests (SafeAreaTests), so each
+        // wait asks for one; bare yields would leave every scheduled step unrun and both checks below vacuous.
+        for (int i = 0; i < 5; i++) { EditorApplication.QueuePlayerLoopUpdate(); yield return null; }
         Assert.IsTrue(Ui.Q("root").ClassListContains(ScreenNav.ScreenOpenClass), "Settings reopens over the resumed tour (#1036)");
         Assert.AreSame(Ui.Q<Button>("settings-language-" + UiLanguage.Hebrew), Ui.Q("root").focusController.focusedElement,
             "Next does not steal Settings' focus while the screen is open (#1915)");
 
         UiTestKit.Press(Ui.Q<Button>("nav-settings"));               // Settings closes over the resumed tour
-        for (int i = 0; i < 3; i++) yield return null;               // the scheduled Focus runs
+        var next = Ui.Q<Button>("advisor-got-it");
+        for (int i = 0; i < 10 && Ui.Q("root").focusController.focusedElement != next; i++)
+        { EditorApplication.QueuePlayerLoopUpdate(); yield return null; }   // the popup comes back and the hand-off runs
+        for (int i = 0; i < 3; i++) { EditorApplication.QueuePlayerLoopUpdate(); yield return null; }   // and it stays there
         Assert.IsFalse(Ui.Q("root").ClassListContains(ScreenNav.ScreenOpenClass));
-        Assert.AreSame(Ui.Q<Button>("advisor-got-it"), Ui.Q("root").focusController.focusedElement,
+        Assert.AreSame(next, Ui.Q("root").focusController.focusedElement,
             "once no screen is open Next has the focus: Enter goes on, and its gold focus fill shows (#1915)");
     }
 }
