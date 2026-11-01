@@ -789,7 +789,7 @@ def test_every_shipped_fonts_licence_is_a_required_notice():
     assert sorted(rb.FONT_LICENCES.values()) == found
     for name in rb.FONT_LICENCES:
         assert name in rb.REQUIRED_NOTICES
-    assert rb.FONT_LICENCES == FONT_SOURCES, "the names site/public/fonts already uses"
+    assert rb.FONT_LICENCES == FONT_SOURCES, "the font licence names the archives carry"
 
 
 def test_the_golden_rule_wants_the_exact_bare_lines_the_player_prints():

@@ -53,6 +53,23 @@ public class CollectionResidencyCoordinatorTests
         r.Replace(new[] { ("a", CollectionDetail.Far) }); r.Replace(new[] { ("b", CollectionDetail.Far) });
         r.Dispose(); r.Dispose(); retire!(); Assert.AreEqual(1, acquired);
     }
+    /// <summary>Regression guard: disposal permanently invalidates a source callback that arrives late.</summary>
+    [Test]
+    public void LateAnswerAfterDisposeIsANoOp()
+    {
+        Action<GameObject?>? lateAnswer = null; int answers = 0;
+        var r = new CollectionResidency((_, __, answer) => { lateAnswer = answer; return new Lease(); },
+            () => Array.Empty<Object>(), (_, __, ___) => answers++,
+            (_, owners, __, done) => { foreach (var owner in owners) owner.Dispose(); done(); });
+        r.Replace(new[] { ("a", CollectionDetail.Far) });
+
+        r.Dispose();
+        lateAnswer!(null);
+
+        Assert.AreEqual(0, answers, "a disposed residency ignores its source's late callback");
+        Assert.AreEqual(0, r.OwnerCount, "the late callback cannot recreate ownership");
+        Assert.AreEqual(0, r.PendingCount, "the late callback cannot restore disposed demand");
+    }
     [Test]
     public void TwoCamerasKeepAUnionUntilTheirOwnDemandExpires()
     {

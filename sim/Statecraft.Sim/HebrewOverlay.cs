@@ -48,8 +48,11 @@ namespace Statecraft.Sim
         /// typed record for them, so their keys are checked against the YAML (<see cref="Translations.Resolve"/>) only.</summary>
         public static readonly IReadOnlyList<string> UnityReads = new[]
         {
-            "map/localities_1948.yaml", "map/settlements_1948.yaml", "map/units_1948.yaml",
+            "map/localities_1948.yaml", "map/settlements_1948.yaml", "map/units_1948.yaml", "map/region_names_he.yaml",
         };
+
+        /// <summary>The content files the typed records hold Hebrew from.</summary>
+        internal static IEnumerable<string> Files => Bindings.Select(b => b.File).Distinct();
 
         /// <summary>The (type, property) pairs the overlay fills, events included.</summary>
         public static IEnumerable<(Type Type, string Property)> Covered =>

@@ -6,6 +6,7 @@ using NUnit.Framework;
 using Statecraft.Game;
 using Statecraft.Game.Map;
 using Statecraft.Game.Map.Units;
+using Statecraft.Game.Map.Collection;
 using Statecraft.Sim;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -24,6 +25,62 @@ public class UnitPlinthTests
 
     [SetUp] public void Readable() => UnitPlinth.KeepMeshesReadable = true;   // the tests read the built meshes back
     [TearDown] public void Released() => UnitPlinth.KeepMeshesReadable = false;
+
+    // Simulates a retained render entry; it does not establish why OnDisable missed unsubscription.
+    [Test]
+    public void DestroyedFlagDoesNotRunACapturedCameraCallback()
+    {
+        var flagObject = new GameObject("flag");
+        var cameraObject = new GameObject("camera");
+        try
+        {
+            var flag = flagObject.AddComponent<UnitFlagFacing>();
+            var camera = cameraObject.AddComponent<Camera>();
+            camera.transform.position = new Vector3(8f, 3f, 11f);
+            var method = typeof(UnitFlagFacing).GetMethod("Turn", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            Assert.IsNotNull(method);
+            var callback = (Action<UnityEngine.Rendering.ScriptableRenderContext, Camera>)Delegate.CreateDelegate(
+                typeof(Action<UnityEngine.Rendering.ScriptableRenderContext, Camera>), flag, method!);
+            UnityEngine.Object.DestroyImmediate(flagObject);
+            Assert.IsTrue(flag == null, "precondition: DestroyImmediate should leave the component Unity-null");
+            Assert.DoesNotThrow(() => callback(default, camera));
+        }
+        finally
+        {
+            if (flagObject != null) UnityEngine.Object.DestroyImmediate(flagObject);
+            UnityEngine.Object.DestroyImmediate(cameraObject);
+        }
+    }
+
+    // A retained render entry can outlive unsubscription; exercise the initialized branch without artwork fetches.
+    [Test]
+    public void DestroyedFigureDoesNotRunACapturedCameraCallback()
+    {
+        var holder = new GameObject("figure holder");
+        var cameraObject = new GameObject("camera");
+        try
+        {
+            var owner = holder.AddComponent<UnitFigureResidency>();
+            holder.SetActive(false);
+            owner.Initialize("proto:figure-palmach-scout-c12f-1948-v2", ProductionResidency.Approved().Units, null, draw: false);
+            var initialized = typeof(UnitFigureResidency).GetField("initialized", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            Assert.IsNotNull(initialized);
+            Assert.IsTrue((bool)initialized!.GetValue(owner), "precondition: the callback must exercise initialized residency");
+            var camera = cameraObject.AddComponent<Camera>();
+            var method = typeof(UnitFigureResidency).GetMethod("Choose", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            Assert.IsNotNull(method);
+            var callback = (Action<UnityEngine.Rendering.ScriptableRenderContext, Camera>)Delegate.CreateDelegate(
+                typeof(Action<UnityEngine.Rendering.ScriptableRenderContext, Camera>), owner, method!);
+            UnityEngine.Object.DestroyImmediate(holder);
+            Assert.IsTrue(owner == null, "precondition: destroyed residency must be Unity-null");
+            Assert.DoesNotThrow(() => callback(default, camera));
+        }
+        finally
+        {
+            if (holder != null) UnityEngine.Object.DestroyImmediate(holder);
+            UnityEngine.Object.DestroyImmediate(cameraObject);
+        }
+    }
 
     static GameState StateAt(DateTime date)
     {
@@ -123,25 +180,28 @@ public class UnitPlinthTests
     // ---- The flag matches the side --------------------------------------------------------------------------------
 
     /// <summary>Every row of the unit file names its side, and every formation the map draws is Israel's or a force with a
-    /// Collection figure (the other Arab forces' rows are data only; owner, 17 October 2026, #740; issue #665); only Israel
-    /// and the Arab Legion have a flag (built from the 1948 texts), so no flag is invented: a drawn force with none flies the neutral
-    /// pennant (Q-ART-1, owner, 15 October 2026), in neither side's colours and not white, and no other side flies anything.</summary>
+    /// Collection figure (owner, 17 October 2026, #740; issue #665); Israel, Transjordan, Egypt, Iraq, Syria and Lebanon have a
+    /// flag (built from their 1948 texts; owner, 31 October 2026: "we need to have the flags of all arab forces like we have
+    /// for the israeli ones"), so no flag is invented: a drawn force with none, the ALA's alone, flies the neutral pennant
+    /// (Q-ART-1, owner, 15 October 2026), in neither side's colours and not white, and no other side flies anything.</summary>
     [Test]
     public void TheFlagIsTheSidesAndOnlyASourcedFlagIsDrawn()
     {
         var units = UnitData.Parse(CommittedYaml);
         Assert.IsTrue(units.Where(UnitRoster.OnMap).All(u => u.Side == UnitData.Israel || UnitFigures.SideFigure(u.Side) != null),
             "every formation the map draws is Israel's or has its own figure");
-        Assert.IsTrue(UnitFlags.Has(UnitData.Israel));
-        Assert.IsFalse(UnitFlags.HasPennant(UnitData.Israel));
-        Assert.IsTrue(UnitFlags.Has(UnitFlags.Jordan), "the Arab Legion's sourced 1948 flag (owner, 22 October 2026, #756)");
-        Assert.IsFalse(UnitFlags.HasPennant(UnitFlags.Jordan));
-        foreach (var side in UnitData.Sides.Where(s => s != UnitData.Israel && s != UnitFlags.Jordan))
+        foreach (var side in Flagged)
+        {
+            Assert.IsTrue(UnitFlags.Has(side), $"{side}: its sourced 1948 flag");
+            Assert.IsFalse(UnitFlags.HasPennant(side), $"{side}: a flag, not the pennant");
+        }
+        foreach (var side in UnitData.Sides.Except(Flagged))
         {
             Assert.IsFalse(UnitFlags.Has(side), $"{side}: no sourced, licensed flag in the repo, so none");
             Assert.IsNull(UnitFlags.Build(side), side);
             Assert.AreEqual(UnitFigures.SideFigure(side) != null, UnitFlags.HasPennant(side), $"{side}: the pennant only on a drawn force");
         }
+        CollectionAssert.AreEquivalent(new[] { "ala" }, UnitData.Sides.Where(UnitFlags.HasPennant), "only the ALA flies the pennant (never its dagger emblem: #226, ruling 8)");
         var pennant = UnitFlags.BuildPennant();
         var slots = pennant.uv.Select(u => Enumerable.Range(0, UnitPalette.Count).Single(s => Mathf.Abs(u.x - UnitPalette.U(s)) < 1e-4f)).Distinct();
         CollectionAssert.AreEquivalent(new[] { UnitPalette.RifleWood, UnitPalette.HullGrey }, slots, "a wooden pole and a plain grey cloth");
@@ -267,6 +327,236 @@ public class UnitPlinthTests
         Assert.AreEqual(7, points.Count, "seven points");
         Assert.IsTrue(points.Any(a => Mathf.Abs(Mathf.DeltaAngle(a, 90f)) < 0.05f), "one point's axis parallel to the pole");
         Assert.That(Area(white, true), Is.GreaterThan(0f).And.LessThan(Mathf.PI / 576f), "a star inside its circle");
+        UnityEngine.Object.DestroyImmediate(m);
+    }
+
+    /// <summary>The sides with a sourced flag.</summary>
+    static readonly string[] Flagged = { UnitData.Israel, UnitFlags.Jordan, UnitFlags.Egypt, UnitFlags.Iraq, UnitFlags.Syria, UnitFlags.Lebanon };
+
+    /// <summary>The flag sides' keys are the data's own: each Arab flag side is a side the unit file names (<see cref="UnitData.Sides"/>
+    /// and a row of the committed units_1948.yaml) and has a figure the map draws (<see cref="UnitFigures.SideFigure"/>), so a
+    /// misspelled key fails here. And every side in the class's own sourced set has its own builder and colours: one missing
+    /// from <see cref="UnitFlags.Build"/>'s or <see cref="UnitFlags.Colours"/>'s switch throws rather than drawing Israel's flag.</summary>
+    [Test]
+    public void EveryFlagSideIsADrawnSideWithItsOwnBuilder()
+    {
+        var rows = UnitData.Parse(CommittedYaml);
+        foreach (var side in new[] { UnitFlags.Jordan, UnitFlags.Egypt, UnitFlags.Iraq, UnitFlags.Syria, UnitFlags.Lebanon })
+        {
+            CollectionAssert.Contains(UnitData.Sides, side, $"{side}: a side the unit file allows");
+            Assert.IsTrue(rows.Any(u => u.Side == side), $"{side}: a row of units_1948.yaml");
+            Assert.IsNotNull(UnitFigures.SideFigure(side), $"{side}: a figure the map draws");
+        }
+        CollectionAssert.IsNotEmpty(UnitFlags.SourcedSides);
+        CollectionAssert.AreEquivalent(UnitFlags.SourcedSides, UnitData.Sides.Where(UnitFlags.Has), "the sourced set is the data's sides with a flag");
+        var names = new HashSet<string>();
+        foreach (var side in UnitFlags.SourcedSides)
+        {
+            var m = UnitFlags.Build(side);
+            Assert.IsNotNull(m, side);
+            Assert.AreEqual(UnitFlags.MeshName(side), m!.name, $"{side}: built by its own builder");
+            Assert.AreEqual(1 + UnitFlags.Colours(side).Count, m.subMeshCount, $"{side}: its own colours");
+            names.Add(string.Join(",", UnitFlags.Colours(side)) + "/" + m.vertexCount);
+            UnityEngine.Object.DestroyImmediate(m);
+        }
+        Assert.AreEqual(UnitFlags.SourcedSides.Count, names.Count, "no two sides share one flag's colours and mesh (no fall-through)");
+        Assert.Throws<ArgumentException>(() => UnitFlags.Colours("ala"), "a side with no flag has no cloth colours");
+    }
+
+    /// <summary>Every sourced flag: the pole, then one non-empty submesh per cloth colour; <see cref="UnitFlags.FlagWidth"/>
+    /// long from the pole and topped at <see cref="UnitFlags.FlagTop"/>, its height its law's proportion of that length.</summary>
+    [Test]
+    public void EverySourcedFlagHasItsColoursAndItsLawsProportion()
+    {
+        var ratio = new Dictionary<string, float>
+        {
+            [UnitData.Israel] = 160f / 220f, [UnitFlags.Jordan] = 1f / 2f, [UnitFlags.Iraq] = 1f / 2f, [UnitFlags.Syria] = 1f / 2f,
+            [UnitFlags.Egypt] = 2f / 3f, [UnitFlags.Lebanon] = 2f / 3f,
+        };
+        CollectionAssert.AreEquivalent(Flagged, ratio.Keys);
+        foreach (var side in Flagged)
+        {
+            var m = UnitFlags.Build(side);
+            Assert.IsNotNull(m, side);
+            Assert.AreEqual(UnitFlags.MeshName(side), m!.name);
+            var colours = UnitFlags.Colours(side);
+            Assert.AreEqual(1 + colours.Count, m.subMeshCount, $"{side}: the pole, then one submesh per cloth colour");
+            Assert.AreEqual(colours.Count, colours.Distinct().Count(), $"{side}: each colour once");
+            for (int k = 0; k < m.subMeshCount; k++) Assert.IsNotEmpty(m.GetTriangles(k), $"{side}: submesh {k} drawn");
+            var cloth = Enumerable.Range(1, colours.Count).SelectMany(m.GetTriangles).Select(i => m.vertices[i]).ToList();
+            Assert.AreEqual(UnitFlags.FlagLeft, cloth.Min(p => p.x), 1e-4f, $"{side}: from the pole");
+            Assert.AreEqual(UnitFlags.FlagLeft + UnitFlags.FlagWidth, cloth.Max(p => p.x), 1e-4f, $"{side}: the same length as every flag");
+            Assert.AreEqual(UnitFlags.FlagTop, cloth.Max(p => p.y), 1e-4f, $"{side}: the same top as every flag");
+            Assert.AreEqual(ratio[side], (cloth.Max(p => p.y) - cloth.Min(p => p.y)) / UnitFlags.FlagWidth, 1e-3f, $"{side}: its law's proportion");
+            UnityEngine.Object.DestroyImmediate(m);
+        }
+    }
+
+    /// <summary>A flag's cloth in its own units (<paramref name="length"/> along +x from the pole, the bottom edge at y = 0),
+    /// and one face's area of a submesh: on the cloth's plane, or (<paramref name="layered"/>) on the front layer a hair off it.</summary>
+    static (Vector3[] v, Func<int, bool, float> area) InFlagUnits(Mesh m, float length, float hoist)
+    {
+        float k = length / UnitFlags.FlagWidth, bottom = UnitFlags.FlagTop - UnitFlags.FlagWidth * hoist / length;
+        var v = m.vertices.Select(p => new Vector3((p.x - UnitFlags.FlagLeft) * k, (p.y - bottom) * k, p.z)).ToArray();
+        float Area(int sub, bool layered)
+        {
+            var t = m.GetTriangles(sub); float a = 0f;
+            for (int i = 0; i < t.Length; i += 3)
+            {
+                if ((Mathf.Abs(v[t[i]].z) > 1e-4f) != layered || layered && v[t[i]].z < 0f) continue;
+                Vector2 p = v[t[i]], q = v[t[i + 1]], r = v[t[i + 2]];
+                a += Mathf.Abs((q.x - p.x) * (r.y - p.y) - (r.x - p.x) * (q.y - p.y)) / 2f;
+            }
+            return a / 2f;   // every plate is two-sided
+        }
+        return (v, Area);
+    }
+
+    /// <summary>The points of the star of <paramref name="n"/> points centred at <paramref name="centre"/>, as angles in
+    /// degrees, from the layered vertices of submesh <paramref name="sub"/> within <paramref name="radius"/> of it.</summary>
+    static List<float> StarPoints(Mesh m, Vector3[] v, int sub, Vector2 centre, float radius)
+    {
+        var near = m.GetTriangles(sub).Select(i => v[i]).Where(p => Mathf.Abs(p.z) > 1e-4f).Select(p => (Vector2)p - centre).Where(q => q.magnitude <= radius + 1e-3f).ToList();
+        Assert.That(near.Max(q => q.magnitude), Is.EqualTo(radius).Within(1e-3f), $"the star at {centre} reaches {radius}");
+        return near.Where(q => Mathf.Abs(q.magnitude - radius) < 1e-3f).Select(q => Mathf.Round(Mathf.Repeat(Mathf.Atan2(q.y, q.x) * Mathf.Rad2Deg, 360f) * 10f) / 10f).Distinct().ToList();
+    }
+
+    /// <summary>Egypt's flag as Law No. 47 of 1923 and its annex give it (UnitFlags' class note), in the Flaggenbuch's units
+    /// that match the annex (1008 by 672): green; the crescent's outer radius a quarter of the hoist (168), its centre on the
+    /// line of the two stars nearest the staff, 448 (two thirds of the hoist) from it, its breadth at the middle 63 (three
+    /// quarters of a star); three five-pointed stars 84 across (an eighth of the hoist) on an equilateral triangle of side 144
+    /// (a seventh of the length). The crescent's area is the outer disc's less its overlap with the inner one.</summary>
+    [Test]
+    public void EgyptsFlagFollowsTheAnnexToLaw47Of1923()
+    {
+        var m = UnitFlags.Build(UnitFlags.Egypt)!;
+        var colours = UnitFlags.Colours(UnitFlags.Egypt);
+        int green = 1 + colours.ToList().IndexOf(UnitFlags.GreenColour), white = 1 + colours.ToList().IndexOf(UnitFlags.WhiteColour);
+        Assert.That(new[] { green, white }, Is.All.GreaterThan(0), "green cloth, white crescent and stars");
+        var (v, area) = InFlagUnits(m, 1008f, 672f);
+        Assert.AreEqual(1008f * 672f, area(green, false), 1f, "the green field, 2:3");
+        // The crescent: every white vertex outside the stars lies on the outer circle or the inner one, and none outside the outer.
+        Vector2 o = new Vector2(448f, 336f), inner = new Vector2(UnitFlags.EgyptInnerCentre, 336f);
+        float side = 1008f / 7f;
+        var stars = new[] { new Vector2(448f, 336f + side / 2f), new Vector2(448f, 336f - side / 2f), new Vector2(448f + side * Mathf.Sqrt(3f) / 2f, 336f) };
+        Assert.AreEqual(side, (stars[0] - stars[1]).magnitude, 1e-3f); Assert.AreEqual(side, (stars[2] - stars[0]).magnitude, 1e-3f, "an equilateral triangle, a seventh of the length a side");
+        var crescent = m.GetTriangles(white).Select(i => v[i]).Where(p => p.z > 1e-4f).Select(p => (Vector2)p).Where(p => stars.All(c => (p - c).magnitude > 42f + 1e-2f)).ToList();
+        Assert.IsNotEmpty(crescent);
+        foreach (var p in crescent)
+            Assert.That(Mathf.Min(Mathf.Abs((p - o).magnitude - 168f), Mathf.Abs((p - inner).magnitude - UnitFlags.EgyptInnerRadius)), Is.LessThan(0.05f), $"a crescent vertex at {p} on neither circle");
+        Assert.AreEqual(448f - 672f / 4f, crescent.Min(p => p.x), 0.05f, "the crescent's back a quarter of the hoist behind its centre");
+        Assert.AreEqual(63f, UnitFlags.EgyptInnerCentre - UnitFlags.EgyptInnerRadius - 280f, 1e-3f, "its breadth at the middle 63");
+        Assert.AreEqual(63f, 0.75f * 672f / 8f, 1e-3f, "three quarters of a star's diameter");
+        Assert.IsTrue(crescent.Any(p => Mathf.Abs(p.y - 336f) < 0.01f && Mathf.Abs(p.x - 343f) < 0.05f), "the inner edge at 343 on the axis");
+        float d = UnitFlags.EgyptInnerCentre - 448f, R = 168f, r = UnitFlags.EgyptInnerRadius;
+        Assert.AreEqual(448f + (d * d + R * R - r * r) / (2f * d), crescent.Max(p => p.x), 0.05f, "the horns towards the fly, where the circles meet");
+        float lens = r * r * Mathf.Acos((d * d + r * r - R * R) / (2f * d * r)) + R * R * Mathf.Acos((d * d + R * R - r * r) / (2f * d * R))
+            - 0.5f * Mathf.Sqrt((-d + r + R) * (d + r - R) * (d - r + R) * (d + r + R));
+        Assert.AreEqual(Mathf.PI * R * R - lens, area(white, true) - 3f * StarArea(42f, 5), 0.02f * (Mathf.PI * R * R - lens), "the crescent: the outer disc less the inner (within the arcs' polygon)");
+        // The stars: five points, 84 across, centred on the triangle; one up, one down, one towards the fly (the Commons drawing).
+        float[] want = { 90f, 270f, 0f };
+        for (int i = 0; i < 3; i++)
+        {
+            var pts = StarPoints(m, v, white, stars[i], 42f);
+            Assert.AreEqual(5, pts.Count, $"star {i}: five points");
+            Assert.IsTrue(pts.Any(a => Mathf.Abs(Mathf.DeltaAngle(a, want[i])) < 0.1f), $"star {i}: a point at {want[i]} degrees");
+            Assert.Less((stars[i] - inner).magnitude + 42f, UnitFlags.EgyptInnerRadius, $"star {i}: between the horns, clear of the crescent");
+        }
+        UnityEngine.Object.DestroyImmediate(m);
+    }
+
+    /// <summary>A regular {n/2} star's area, its points on a circle of radius <paramref name="outer"/>.</summary>
+    static float StarArea(float outer, int n)
+    {
+        float inner = outer * Mathf.Cos(2f * Mathf.PI / n) / Mathf.Cos(Mathf.PI / n);
+        return n * outer * inner * Mathf.Sin(Mathf.PI / n);   // 2n triangles from the centre, each outer x inner x sin(pi / n) / 2
+    }
+
+    /// <summary>Iraq's flag as the Organic Law of 1925, Art. 4 gives it (UnitFlags' class note), in the law's units (length 2):
+    /// three equal bands, black, white and green from the top; at the staff a red trapezoid, the flag's width at the staff, the
+    /// white band's at its other base, a quarter of the length deep; two white seven-pointed stars on it, one above the other,
+    /// each in a circle a ninth of the length across at (1/4, 1/3) and (1/4, 2/3) (FOTW's construction; the law fixes none).</summary>
+    [Test]
+    public void IraqsFlagFollowsTheOrganicLawOf1925()
+    {
+        var m = UnitFlags.Build(UnitFlags.Iraq)!;
+        var colours = UnitFlags.Colours(UnitFlags.Iraq).ToList();
+        int black = 1 + colours.IndexOf(UnitFlags.BlackColour), white = 1 + colours.IndexOf(UnitFlags.WhiteColour), green = 1 + colours.IndexOf(UnitFlags.GreenColour), red = 1 + colours.IndexOf(UnitFlags.RedColour);
+        Assert.That(new[] { black, white, green, red }, Is.All.GreaterThan(0), "black, white, green and red cloth");
+        var (v, area) = InFlagUnits(m, 2f, 1f);
+        // The trapezoid (0,0), (0,1), (1/2,2/3), (1/2,1/3) cuts 1/12 off the black and the green band and 1/6 off the white.
+        Assert.AreEqual((1f + 1f / 3f) / 2f * 0.5f, area(red, false), 1e-4f, "the red trapezoid: bases 1 and 1/3, a quarter of the length deep");
+        Assert.AreEqual(2f / 3f - 1f / 12f, area(black, false), 1e-4f, "the black band, the top third");
+        Assert.AreEqual(2f / 3f - 1f / 12f, area(green, false), 1e-4f, "the green band, the bottom third");
+        Assert.AreEqual(2f / 3f - 1f / 6f, area(white, false), 1e-4f, "the white band, the middle third");
+        Assert.That(m.GetTriangles(black).Select(i => v[i].y), Is.All.GreaterThanOrEqualTo(2f / 3f - 1e-4f), "black on top");
+        Assert.That(m.GetTriangles(green).Select(i => v[i].y), Is.All.LessThanOrEqualTo(1f / 3f + 1e-4f), "green below");
+        var redX = m.GetTriangles(red).Select(i => v[i]).ToList();
+        Assert.AreEqual(0.5f, redX.Max(p => p.x), 1e-4f, "the trapezoid a quarter of the length deep");
+        CollectionAssert.AreEquivalent(new[] { 1f / 3f, 2f / 3f }, redX.Where(p => Mathf.Abs(p.x - 0.5f) < 1e-4f).Select(p => Mathf.Round(p.y * 3000f) / 3000f).Distinct(), "its lesser base the white band");
+        Assert.AreEqual(2f * StarArea(1f / 9f, 7), area(white, true), 1e-4f, "two white stars on the red");
+        foreach (float y in new[] { 1f / 3f, 2f / 3f })
+        {
+            var pts = StarPoints(m, v, white, new Vector2(0.25f, y), 1f / 9f);
+            Assert.AreEqual(7, pts.Count, "seven points");
+            Assert.IsTrue(pts.Any(a => Mathf.Abs(Mathf.DeltaAngle(a, 90f)) < 0.1f), "one point up");
+        }
+        UnityEngine.Object.DestroyImmediate(m);
+    }
+
+    /// <summary>Syria's flag as the Constitution of 1930, Art. 4 gives it (UnitFlags' class note), in the law's units (length
+    /// 2): three equal bands, green, white and black from the top; three red five-pointed stars in line on the white, a quarter
+    /// of the length apart, each 0.24 of the height across, one point up (the Commons drawing; the law fixes none).</summary>
+    [Test]
+    public void SyriasFlagFollowsTheConstitutionOf1930()
+    {
+        var m = UnitFlags.Build(UnitFlags.Syria)!;
+        var colours = UnitFlags.Colours(UnitFlags.Syria).ToList();
+        int green = 1 + colours.IndexOf(UnitFlags.GreenColour), white = 1 + colours.IndexOf(UnitFlags.WhiteColour), black = 1 + colours.IndexOf(UnitFlags.BlackColour), red = 1 + colours.IndexOf(UnitFlags.RedColour);
+        Assert.That(new[] { green, white, black, red }, Is.All.GreaterThan(0), "green, white, black and red cloth");
+        Assert.Greater(red, white, "the stars drawn over the white");
+        var (v, area) = InFlagUnits(m, 2f, 1f);
+        foreach (int band in new[] { green, white, black }) Assert.AreEqual(2f / 3f, area(band, false), 1e-4f, "three equal bands");
+        Assert.That(m.GetTriangles(green).Select(i => v[i].y), Is.All.GreaterThanOrEqualTo(2f / 3f - 1e-4f), "green on top");
+        Assert.That(m.GetTriangles(black).Select(i => v[i].y), Is.All.LessThanOrEqualTo(1f / 3f + 1e-4f), "black below");
+        Assert.AreEqual(0f, area(red, false), 1e-6f, "the stars only, a hair off the white");
+        Assert.AreEqual(3f * StarArea(0.12f, 5), area(red, true), 1e-4f, "three red stars");
+        Assert.That(m.GetTriangles(red).Select(i => v[i].y), Is.All.InRange(1f / 3f, 2f / 3f), "on the white");
+        foreach (float x in new[] { 0.5f, 1f, 1.5f })
+        {
+            var pts = StarPoints(m, v, red, new Vector2(x, 0.5f), 0.12f);
+            Assert.AreEqual(5, pts.Count, "five points");
+            Assert.IsTrue(pts.Any(a => Mathf.Abs(Mathf.DeltaAngle(a, 90f)) < 0.1f), "one point up");
+        }
+        UnityEngine.Object.DestroyImmediate(m);
+    }
+
+    /// <summary>Lebanon's flag as the Constitution's Art. 5 (1943) gives it (UnitFlags' class note), 2:3 (practice), in units
+    /// of length 3: red, white, red, the white as broad as both reds; the cedar on the white, touching both reds, a third of
+    /// the length wide, in <see cref="UnitFlags.LebanonCedarColour"/> (all green: the owner, 31 October 2026, "All green (Recommended)").</summary>
+    [Test]
+    public void LebanonsFlagFollowsArticle5Of1943()
+    {
+        var m = UnitFlags.Build(UnitFlags.Lebanon)!;
+        var colours = UnitFlags.Colours(UnitFlags.Lebanon).ToList();
+        Assert.AreEqual(UnitFlags.GreenColour, UnitFlags.LebanonCedarColour, "all green, the owner's choice of 31 October 2026");
+        int red = 1 + colours.IndexOf(UnitFlags.RedColour), white = 1 + colours.IndexOf(UnitFlags.WhiteColour), cedar = 1 + colours.IndexOf(UnitFlags.LebanonCedarColour);
+        Assert.That(new[] { red, white, cedar }, Is.All.GreaterThan(0), "red, white and the cedar");
+        Assert.Greater(cedar, white, "the cedar drawn over the white");
+        var (v, area) = InFlagUnits(m, 3f, 2f);
+        Assert.AreEqual(3f, area(white, false), 1e-4f, "the white band");
+        Assert.AreEqual(3f, area(red, false), 1e-4f, "both reds together as broad as the white");
+        Assert.That(m.GetTriangles(white).Select(i => v[i].y), Is.All.InRange(0.5f - 1e-4f, 1.5f + 1e-4f), "the white in the middle");
+        var tree = m.GetTriangles(cedar).Select(i => v[i]).ToList();
+        Assert.That(tree.Select(p => Mathf.Abs(p.z)), Is.All.GreaterThan(1e-4f), "the cedar a hair off the white");
+        Assert.AreEqual(1.5f, tree.Max(p => p.y), 1e-4f, "its top touches the upper red");
+        Assert.AreEqual(0.5f, tree.Min(p => p.y), 1e-4f, "its base touches the lower red");
+        Assert.AreEqual(1f, tree.Max(p => p.x) - tree.Min(p => p.x), 1e-4f, "a third of the length wide");
+        Assert.AreEqual(1.5f, (tree.Max(p => p.x) + tree.Min(p => p.x)) / 2f, 1e-4f, "in the middle");
+        Assert.That(area(cedar, true), Is.InRange(0.3f, 0.7f), "a tree, not a box: about half its box");
+        for (int i = 0; i + 1 < UnitFlags.CedarRows.Length; i++)
+            Assert.Greater(UnitFlags.CedarRows[i].y, UnitFlags.CedarRows[i + 1].y - 1e-6f, "rows from the top down");
+        Assert.LessOrEqual(UnitFlags.CedarRows.Length, 24, "a simple outline");
         UnityEngine.Object.DestroyImmediate(m);
     }
 

@@ -7,7 +7,6 @@ text: 'The immigrant camps, which house and feed new arrivals free of charge, ar
 # https://he.wikipedia.org/wiki/הסוכנות_היהודית).
 title_he: מעברות
 text_he: 'מחנות העולים, המספקים לעולים החדשים מגורים ומזון ללא תשלום, עולים על גדותיהם. לוי אשכול מהמחלקה להתיישבות של הסוכנות היהודית מציע מעברות סמוך ליישובים ולמקומות עבודה, שבהן התושבים יתפרנסו מעבודתם. ההחלטה בידי {prime_minister}.'
-text_he_review: agent-checked
 anchor: hard
 office: prime_minister
 # Eshkol raised the camps' crisis at the Jewish Agency executive on 27 March 1950 and proposed transit housing two weeks

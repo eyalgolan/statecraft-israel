@@ -4,17 +4,17 @@ Region review index: inclusive physical lines in `gdd03-regions-capitals-fields.
 
 | Region | Ledger lines |
 | --- | --- |
-| galilee | 167–6163 |
-| valleys | 6164–9699 |
-| haifa_sharon | 9700–16719 |
-| tel_aviv_jaffa | 16720–20215 |
-| central_plain | 20216–26472 |
-| jerusalem_hills | 26473–35029 |
-| northern_hills | 35030–40396 |
-| southern_coast | 40397–49115 |
-| negev | 49116–50727 |
-| Shared provenance, camp and loader context | 20–166 |
-| Shared gaps, retained roster, counts and source-layer notes | 50728–51109 |
+| galilee | 171–6232 |
+| valleys | 6233–9833 |
+| haifa_sharon | 9834–16918 |
+| tel_aviv_jaffa | 16919–20479 |
+| central_plain | 20480–26801 |
+| jerusalem_hills | 26802–35423 |
+| northern_hills | 35424–40855 |
+| southern_coast | 40856–49639 |
+| negev | 49640–51316 |
+| Shared provenance, camp and loader context | 20–170 |
+| Shared gaps, retained roster, counts and source-layer notes | 51317–51699 |
 
 Owner decision, 27 Oct 2026, relayed by the coordinator: **APPROVED**: all six choices approved as proposed; the nine-region draft was separately approved by name on 27 October 2026 (owner ruling, 27 October 2026). This is approval of the supplied design content by name. Historical rows still need a person's check. SOURCED means the inherited narrow assertion has cited evidence; it does not mean a person has checked this adaptation.
 
@@ -26,6 +26,7 @@ Owner decision, 27 Oct 2026, relayed by the coordinator: **APPROVED**: all six c
 | Kiryat Shmuel camp design region | "Haifa-Sharon" | haifa_sharon |
 | Haifa-Sharon extent | "Keep as proposed" | Existing associations retained |
 | Jerusalem extent | "Keep as proposed" | Existing associations retained |
+| Opening fields, housing and Industry per region (#1691) | "Approve as proposed" | Each region's opening allocation rows; see [gdd03-region-allocation.md](gdd03-region-allocation.md) |
 
 The evidence ledger is [gdd03-regions-capitals-fields.yaml](gdd03-regions-capitals-fields.yaml). It preserves all 326 member rows, shared candidate hexes, source citations, control objects, field/facility caveats and the retained roster from the approved revision. The design decisions above are separate from `capital_status`, `boundary_status`, `binding_status`, control and human-review fields. Safed, Haifa, Jerusalem, Nablus, Gaza and Beersheba retain their individual capital status; none is newly designated APPROVED.
 
@@ -33,9 +34,28 @@ The camp is `kiryat_shmuel_camp_haifa`. Only its design `region_binding` becomes
 
 ## Schema adaptation and activation
 
-The follow-up adaptation supplies `research_notes/gdd03-regions.schema-input.yaml`, mapping each region's id, capital, full member-id list, disclaimer, provenance, capital approval, binding status and opening control to the shared geography schema. All nine original `boundary_hexes` are null. The follow-up schema `member_hexes` lists are empty, an explicit absence of geometry. Candidate marker hexes are preserved only in the evidence ledger; they are not substituted for full extents.
+The follow-up adaptation supplies `research_notes/gdd03-regions.schema-input.yaml`, mapping each region's id, capital, full member-id list, disclaimer, provenance, capital approval, binding status and opening control to the shared geography schema. All nine original `boundary_hexes` remain null historical-evidence fields. Under the owner ruling of 30 October 2026, verbatim choice **“C: sub-district, then Amir adjusts”**, `tools/gdd03_region_hexes.py` now derives the design `member_hexes` from each region's `reference_subdistricts`; these are design regions, not a claim that the Mandate sub-districts were Israeli administrative regions. The lists use runtime canonical order (q, then r). Amir's later named-hex adjustments are not anticipated here.
 
-**All nine rows fail the strict loader** at `player_regions[0].member_hexes` when submitted separately: `galilee`, `valleys`, `haifa_sharon`, `tel_aviv_jaffa`, `central_plain`, `jerusalem_hills`, `northern_hills`, `southern_coast`, `negev`. A combined submission stops at the first row. Later placement/identity/overlap checks are not reached; they are not claimed to pass. Haifa-Sharon's 52 and Jerusalem's 61 named associations do not resolve their boundaries or place bindings.
+The generated partition claims 410 mapped land hexes: Galilee 25; Valleys 22; Haifa-Sharon 31; Tel Aviv-Jaffa 6; Central Plain 14; Jerusalem Hills 68; Northern Hills 36; Southern Coast 18; Negev 190. The other 460 mapped land hexes are the source layer's `outside` sub-district and remain in no player region. No hex is claimed twice. The strict loader now advances from geometry into named-place validation; unresolved place rows below are not silently reassigned.
+
+Owner ruling on farming, 30 October 2026: **“Yes, same region”**. This generator does not change the separately approved opening allocations, capitals or approvals.
+
+### Place-binding exceptions after sub-district generation
+
+The generator derives a place binding only where the evidence supplies one unambiguous sub-district or an already authored candidate hex agrees with the generated region. These exception rows remain unchanged and require human review; absence is not guessed from a nearby place.
+
+| Status | Region | Place(s) | Exception |
+| --- | --- | --- | --- |
+| NEEDS-HUMAN-CHECK | galilee | `acre`, `safed`, `rosh_pinna`, `hanita`, `kiryat_shmona`, `kiryat_shmona_field`, `hula`, `hula_field` | No usable sub-district label in the imported place evidence. |
+| NEEDS-HUMAN-CHECK | valleys | `tiberias`, `nazareth`, `degania_alef`, `ein_harod`, `nahalal`, `gesher` | No usable sub-district label in the imported place evidence. |
+| NEEDS-HUMAN-CHECK | haifa_sharon | `haifa`, `zikhron_yaakov`, `hadera`, `netanya`, `shaar_haaliyah`, `camp_80` | No usable sub-district label in the imported place evidence. |
+| NEEDS-HUMAN-CHECK | tel_aviv_jaffa | `tel_aviv`, `jaffa`, `petah_tikva`, `rosh_haayin_camp` | No usable sub-district label in the imported place evidence. |
+| NEEDS-HUMAN-CHECK | central_plain | `lod`, `ramla`, `rishon_lezion`, `rehovot`, `tzrifin` | No usable sub-district label in the imported place evidence. |
+| NEEDS-HUMAN-CHECK | jerusalem_hills | `jerusalem`, `shaar_hagai`, `east_jerusalem_old_city`, `beit_shemesh`, `beit_shemesh_field` | No usable sub-district label in the imported place evidence. |
+| NEEDS-HUMAN-CHECK | southern_coast | `gaza`, `yad_mordechai`, `negba`, `nir_am`, `iraq_suwaydan_fort`, `ad_halom_bridge`, `mefalsim`, `mefalsim_field`, `nitzanim` | No usable sub-district label in the imported place evidence. |
+| NEEDS-HUMAN-CHECK | negev | `beersheba`, `revivim`, `beit_kama`, `beit_kama_field`, `reim`, `reim_field`, `gilat`, `gilat_field`, `umm_rashrash` | No usable sub-district label in the imported place evidence. |
+| NEEDS-HUMAN-CHECK | haifa_sharon | `ijzim` | Imported strings mention both Haifa and Nazareth; the evidence ledger's sourced correction says Haifa, but the generator does not resolve the conflicting strings. |
+| NEEDS-HUMAN-CHECK | central_plain | `tzrifin` | Its authored candidate hex `{-3, 20}` falls in generated Tel Aviv-Jaffa (Jaffa Sub-District), not its retained Central Plain membership. No membership is moved. |
 
 The follow-up adaptation supplies `content/regions.yaml` with an empty `player_regions` list for the existing exact `gdd-0.3` reader; legacy/gdd-0.1 do not read it. This evidence import supplies no runtime content. Regional activation remains off. No incomplete row is loaded, no validator is weakened, and no production initializer changes.
 
@@ -45,7 +65,7 @@ The follow-up `research_notes/gdd03-regions.projections.yaml` supplies only the 
 
 The 385 control objects retain 33 SOURCED, 255 PARTIAL-EVIDENCE and 97 NEEDS-RESEARCH statuses. Every unconfirmed value stays null. Historical, shared-hex and facility control are not inferred from associations or member control. Same-day captures remain partial, including Tamra, Umm ez Zinat, Fajja and Mughar. The Old City ruling changes no extent or control row here.
 
-No approved set of opening prepared-field coordinates/workability/control/staffing bindings is supplied. Existing future field markers and symbolic regional allocations remain evidence only, not opening slots. No `gdd03-fields.yaml`, new allocation, balance key, owner/Amir number, army value or population is added. `A` remains Deferred and free civilians remain `34 - A` in the inherited ledger. Staffing belongs to #1717 and farming mechanics to their existing owners.
+No approved set of opening prepared-field coordinates/workability/control/staffing bindings is supplied. Existing future field markers remain evidence only, not opening slots. The per-region opening counts of prepared fields, housing projects (places) and Industry slots are recorded in each region's `opening_field_allocation`, `opening_housing_allocation` and `opening_industry_allocation` rows by owner ruling ("Approve as proposed", owner ruling, 27 October 2026, #1691); every row is PARTIAL-EVIDENCE, and source, method and limits are in [gdd03-region-allocation.md](gdd03-region-allocation.md). By that ruling the housing and Industry counts follow Jewish population, for this opening allocation only; no facility inventory is inferred from population. Field hexes stay empty and the farmer tier mix by region stays Deferred. No `gdd03-fields.yaml`, balance key, Amir number, army value or population is added, and nothing reaches the runtime catalogue. `A` remains Deferred and free civilians remain `34 - A` in the inherited ledger. Staffing belongs to #1717 and farming mechanics to their existing owners.
 
 Historical row review, schema/runtime acceptance, all managed and Unity gates, and legacy/gdd-0.1 byte identity remain PENDING. Test source exercises the shared strict loader and existing golden manifest; it is not evidence of a run. No human review sign-off is supplied by this document or by design approval.
 

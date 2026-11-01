@@ -9,6 +9,7 @@ hud.attention: "תשומת לב {0:0.0} מתוך {1:0.0}"
 hud.people: "{0:N0}"
 hud.level: "דרגה {0} מתוך 5"
 hud.score: "ניקוד {0:N0}"
+hud.exhausted: "הכסף והמזון אזלו: תור {0} מתוך {1}"
 hud.delta_people: "{0:+#,##0;-#,##0}"
 hud.say: "{0}: {1}"
 hud.say_up: "{0}: {1}, גידול של {2} מאז התור הקודם"
@@ -36,7 +37,8 @@ hud.nav.budget: "תקציב"
 hud.nav.budget_unsubmitted: "תקציב: השינויים עוד לא הוגשו. בלי הגשה, סיום התור לא יחיל אותם."
 hud.nav.defence: "ביטחון"
 hud.nav.why: "למה?"
-hud.nav.how_to_play: "איך משחקים"
+# The encyclopedia (spec 10), which replaces How to play. Agent-drafted. For the native reviewer (#564).
+hud.nav.encyclopedia: "אנציקלופדיה"
 # For the native reviewer (#564)
 hud.nav.objectives: "יעדים"
 hud.nav.settings: "הגדרות"
@@ -51,32 +53,83 @@ defence.title: "ביטחון"
 defence.lower: "הורדת הדרגה"
 defence.raise: "העלאת הדרגה"
 why.title: "למה זה קרה?"
-# The short How to play guide (#1041). For the native reviewer (#564).
-how_to_play.title: "איך משחקים"
-how_to_play.turn: "כל תור הוא חודש אחד. בחנו את מצב המדינה, תנו הוראות ואז לחצו על סיום התור."
-how_to_play.attention: "רוב ההוראות עולות תשומת לב, המוצגת בסרגל העליון. היא מתמלאת מחדש בתחילת כל תור, ותשומת לב שלא ניצלתם אינה עוברת לתור הבא."
-how_to_play.city: "בחרו עיר במפה כדי לראות את הדיור ואת המשרות בה. קבעו את מספר העובדים; השינוי יתבצע בסיום התור."
-how_to_play.training: "בעיר שיש בה מחנה צבאי או מחנה הכשרה אפשר לאמן אזרחים ללא עבודה כמגויסים או להכשיר אותם כחלוצים. הכפתור מראה כמה עולה האימון וכמה תורות הוא נמשך."
-how_to_play.events: "כרטיס אירוע מבקש מכם החלטה. מענה עליו עולה תשומת לב, והבחירה שלכם נכנסת לתוקף בסיום התור."
-how_to_play.top_bar: "הסרגל העליון מציג את התאריך, את תשומת הלב שלכם, את הכסף ואת המדדים העיקריים של המדינה."
-# Civ movement U4: agent-drafted Hebrew; native review: owner, 25 Oct 2026 (recommendations page, item 7).
-how_to_play.end_turn: "סיום התור מעביר לחודש הבא. כל עוד אחת היחידות שלכם ממתינה להוראות, הכפתור בוחר בה במקום זאת: יש להזיז אותה, לתת לה פקודת ביצור או החזקה, או לדלג עליה בתור הזה. כרטיס שלא עניתם עליו, או שלא נשארה לכם תשומת לב לענות עליו, עובר לשר האחראי, והוא מחליט במקומכם."
-# The Why screen named in a sentence goes in gershayim: owner, 25 Oct 2026.
-how_to_play.why: "אחרי תור, פתחו את המסך ״למה?״ כדי לראות כל שינוי ואת הסיבה לו."
-
-# GDD 0.3 help (#1688): old-mode help above stays unchanged.
-# Hebrew drafts: agent-checked; native review pending (#564).
-how_to_play.gdd03.events: "כרטיס אירוע מבקש מכם החלטה. הבחירה שלכם נכנסת לתוקף בסיום התור."
-# Hebrew drafts: agent-checked; native review pending (#564).
-how_to_play.gdd03.top_bar: "הסרגל העליון מציג את התאריך, את הכסף ואת המדדים העיקריים של המדינה."
-# Hebrew drafts: agent-checked; native review pending (#564).
-how_to_play.gdd03.end_turn: "סיום התור מעביר לחודש הבא. כל עוד אחת היחידות שלכם ממתינה להוראות, הכפתור בוחר בה במקום זאת: יש להזיז אותה, לתת לה פקודת ביצור או החזקה, או לדלג עליה בתור הזה. כרטיס שלא עניתם עליו עובר לשר האחראי, והוא מחליט במקומכם."
+# The advisors' encyclopedia (spec 10), which replaces How to play (#1041). Agent-drafted; encyclopedia.opening keeps How
+# to play's button text. For the native reviewer (#564).
+encyclopedia.title: "אנציקלופדיה"
+encyclopedia.back: "חזרה"
+encyclopedia.opening: "הצגת עצות הפתיחה שוב"
+# The encyclopedia's 25 pages (spec 10, plan Task 13). AI-drafted Hebrew; a page is he_review: pending in
+# advisor-messages.yaml and does not show in Hebrew until a native reviewer approves it (OQ-4). The nine pages that replace
+# How to play were read by Beri on #2095 (each marked below); the other 16 wait. For the native reviewer (#564).
+# advisor.page.turns: approved by Beri, a native speaker, on #2095 (1 Nov 2026): title as written, text
+# with its last sentence edited.
+advisor.page.turns.title: "תורות וסיום התור"
+advisor.page.turns.text: "כל תור הוא חודש אחד. בחנו את מצב המדינה, תנו הוראות ואז לחצו על סיום התור כדי לעבור לחודש הבא. תנועה ופקודות ליחידות (התקפה, ביצור, החזקה) מתבצעות מיד ואי אפשר לבטל אותן; שליחה הביתה וכל הוראה אחרת ממתינות לסיום התור, ועד אז אפשר לשנות אותן או להסיר אותן. כל עוד אחת היחידות שלכם ממתינה להוראות, לחיצה על סיום התור לא מסיימת אותו אלא מסמנת את היחידה: הזיזו אותה, תנו לה פקודת ביצור או החזקה, או דלגו עליה בתור הזה."
+# advisor.page.attention: approved by Beri, a native speaker, on #2095 (1 Nov 2026): title and text as written.
+advisor.page.attention.title: "תשומת לב בכל תור"
+advisor.page.attention.text: "רוב ההוראות עולות תשומת לב, המוצגת בסרגל העליון. היא מתמלאת מחדש בתחילת כל תור, ותשומת לב שלא ניצלתם אינה עוברת לתור הבא. תנועה ופקודות ליחידות אינן עולות תשומת לב, והוראה שנדחתה מחזירה לכם את מה שעלתה. כרטיס שלא נשארה לכם תשומת לב לענות עליו עובר לשר האחראי."
+# advisor.page.events: approved by Beri, a native speaker, on #2095 (1 Nov 2026): title and text as written.
+advisor.page.events.title: "כרטיסי אירוע"
+advisor.page.events.text: "כרטיס אירוע מבקש מכם החלטה ומראה מה כל אפשרות משנה. הבחירה שלכם נכנסת לתוקף בסיום התור, וההשפעות שלה לעולם אינן מגיעות מאוחר יותר. כרטיס שלא עניתם עליו עובר לשר האחראי, והוא מחליט במקומכם; שר בעל כישורים רבים יותר בוחר לרוב באפשרות המומלצת. כרטיס מגיע אליכם בדרך כלל בתור שלפני ההכרעה ההיסטורית."
+# advisor.page.objectives: approved by Beri, a native speaker, on #2095 (1 Nov 2026): title and text as written.
+advisor.page.objectives.title: "יעדים וניקוד"
+advisor.page.objectives.text: "היעדים הם מטרות המערכה: יישוב שהוקם, כביש או מסילה שהושלמו, אוכלוסייה גדלה שיש לה דיור ועבודה. השלמת יעד מעניקה נקודות ופותחת את הכרטיס שלו, והשלמה לפני המועד ההיסטורי מזכה בבונוס. המסך ״יעדים״ מציג את התאריך שלכם לצד התאריך ההיסטורי. הניקוד סופר יעדים ושבויים שהוחזרו, ולעולם לא אבדות של האויב."
+advisor.page.defeat.title: "איך המשחק נגמר"
+advisor.page.defeat.text: "המערכה נגמרת בתור האחרון שלה, או קודם לכן בהפסד. כשהחוב בתקרה ומלאי המזון ריק בסוף התור, מונה ההפסד רץ, וכשהוא מגיע לגבולו המשחק אבוד; כל אחד מהם לבדו אינו מסיים דבר. אם יחידה צבאית של האויב מחזיקה באחת הערים שלנו בסוף תור כלשהו, המשחק אבוד מיד, גם בזמן הפוגה."
+advisor.page.defeat.gdd03.text: "המערכה נגמרת בתור האחרון שלה, או קודם לכן בהפסד. כשהחוב בתקרה ומלאי המזון ריק בסוף התור, מונה ההפסד רץ, וכשהוא מגיע לגבולו המשחק אבוד; כל אחד מהם לבדו אינו מסיים דבר. אובדן עיר לבדו אינו מסיים את המשחק."
+# advisor.page.top_bar: approved by Beri, a native speaker, on #2095 (1 Nov 2026): title, text and
+# gdd03.text as written.
+advisor.page.top_bar.title: "הסרגל העליון"
+advisor.page.top_bar.text: "הסרגל העליון מציג את התאריך, את תשומת הלב שלכם, את הכסף ואת המדדים העיקריים של המדינה."
+advisor.page.top_bar.gdd03.text: "הסרגל העליון מציג את התאריך, את הכסף ואת המדדים העיקריים של המדינה."
+# advisor.page.why: approved by Beri, a native speaker, on #2095 (1 Nov 2026): title and text as written.
+advisor.page.why.title: "המסך ״למה?״"
+advisor.page.why.text: "אחרי תור, פתחו את המסך ״למה?״ כדי לראות כל שינוי ואת הסיבה לו. כסף שנלווה, קרבות שהתנהלו, אנשים שיצאו לעבודה: כל שורה מראה מה השתנה ולמה. כשמספר מפתיע אתכם, חפשו קודם שם."
+# advisor.page.cities: approved by Beri, a native speaker, on #2095 (1 Nov 2026): title as written, text
+# with its first sentence edited.
+advisor.page.cities.title: "ערים, דיור ותעסוקה"
+advisor.page.cities.text: "כשאני בוחנת עיר, אני תמיד מתחילה מהדיור. בחרו עיר במפה כדי לראות את הדיור, המשרות והאנשים בה; כל משרה מאוישת מכניסה כסף. העיר מאיישת את המשרות שלה בעצמה עד שתקבעו אתם את מספר העובדים, והשינוי שלכם יתבצע בסיום התור. אנשים שאין להם מקום בדיור עדיין גרים בעיר, אבל הצפיפות שוחקת את מצב הדיור, והלכידות החברתית יורדת בעקבותיו."
+advisor.page.immigration.title: "עלייה ופליטים"
+advisor.page.immigration.text: "העולים מגיעים לפי הנתונים ההיסטוריים, וכל עיר מקבלת חלק לפי מספר האנשים בה. הם ממתינים כפליטים, ובכל תור חלק מהם הופכים לאזרחים ללא עבודה; כמה מהם, תלוי בשר האחראי על העלייה. אין תקרה: מי שאין לו מקום בדיור של העיר נשאר בה כעודף."
+# advisor.page.training: approved by Beri, a native speaker, on #2095 (1 Nov 2026): title and text as written.
+advisor.page.training.title: "הכשרת אזרחים"
+advisor.page.training.text: "בעיר שיש בה מחנה צבאי או מחנה הכשרה אפשר לאמן אזרחים ללא עבודה כמגויסים או להכשיר אותם כחלוצים, ובעיר שיש בה תעשייה גם כבעלי מלאכה. הכפתור מראה כמה עולה האימון וכמה תורות הוא נמשך; אימון צבאי דורש גם נשק. בסוף האימון המגויסים הופכים ליחידה צבאית, החלוצים לקבוצות שמוכנות לעבודה חלוצית, ובעלי המלאכה נשארים בעיר ומרוויחים יותר כשהם עובדים."
+advisor.page.projects.title: "מיזמים עירוניים"
+advisor.page.projects.text: "מיזם עירוני בונה דיור או תעשייה במשושה סמוך לעיר. העלות משולמת כשהוא מתחיל, בהלוואה אם אין מספיק כסף, והוא אינו דורש עובדים. כשהוא מושלם הוא מוסיף דיור, משפר את מצב הדיור או מוסיף משרות, לפי סוגו, והכסף של מיזם שבוטל אובד. סוגים מסוימים ממתינים לאירוע שיפתח אותם, או דורשים משאב שיש בעיר, כמו יקב שזקוק לאדמה לגידול ענבים."
+advisor.page.pioneer_work.title: "עבודה חלוצית"
+advisor.page.pioneer_work.text: "קבוצת חלוצים לוקחת על עצמה מיזם אחד בכל פעם באתר ייעודי: הקמת יישוב, חריש שדות, ייבוש ביצה, או הקמת מחנה צבאי או מחנה הכשרה. העלות משולמת כשהעבודה מתחילה, ואם עוצרים אותה, העבודה שנעשתה והכסף אובדים. שדה חרוש מוסיף מזון בכל תור, אבל יש שדות שממתינים עד שהיישוב שלהם ייבנה או עד שהביצה שלהם תיובש. אחרי שירות מספיק, הקבוצה הופכת לחלוצים ותיקים ועובדת מהר יותר."
+advisor.page.corridors.title: "כבישים ומסילות"
+advisor.page.corridors.text: "קבוצות חלוצים בונות כביש או מסילה קטע אחר קטע, בכל סדר, וכמה קטעים במקביל. עצירת העבודה על קטע מאבדת את ההתקדמות ואת הכסף ששולם. כביש או מסילה שהושלמו אינם דורשים אחזקה ואינם מניבים דבר בעצמם, אבל יחידות נעות לאורך הקטעים הבנויים בעלות נמוכה יותר. השלמה של כביש או מסילה יכולה גם להיחשב לטובת יעד."
+advisor.page.money_debt.title: "כסף וחוב"
+advisor.page.money_debt.text: "כסף נכנס ממסים ומכל משרה מאוישת, ויוצא על הוצאות הממשלה, על אחזקת העוצבות הצבאיות שלנו, על אימון ועל בנייה. כשעלות גבוהה ממה שיש לנו, היא משולמת בכל זאת: הכסף נעצר באפס והיתרה הופכת לחוב. החוב ומטבע החוץ נמצאים תחת הכסף, ומסך התקציב מציג אותם. ברגע שהחוב מגיע לתקרה וגם המזון אזל, מונה ההפסד מתחיל לרוץ."
+advisor.page.budget.title: "חלוקת התקציב"
+advisor.page.budget.text: "התקציב מחלק את ההוצאה בין המשרדים, חלק לכל משרד, והחלקים תמיד מסתכמים בשלם. החלק של כל משרד קובע את השפעת ההוצאה שלו, שמאיצה או מאטה את עבודת השר. לחצו על הגשת התקציב והוא ייכנס לתוקף בסיום התור; שינויים שלא הגשתם לא ייכנסו לתוקף. כשהתקציב טעון אישור של בית המחוקקים, הצבעה נגדו משאירה את התקציב הקודם, אלא אם ההצבעה אינה מחייבת."
+advisor.page.cabinet.title: "השרים והממשלה"
+advisor.page.cabinet.text: "כל שר אחראי על חלק מהעבודה: בנייה, קליטת עולים, כבישים ועוד. שר בעל כישורים ומשרד עם תקציב טוב מקדמים את העבודה מהר יותר, ותפקיד פנוי מאט אותה, ולכן כדאי למנות מישהו לתפקיד פנוי במסך ״ממשלה״. היציבות של הקואליציה עדיין משפיעה על ההצבעות שלה, אבל היא אינה מפילה את הממשלה במשחק הזה."
+advisor.page.food.title: "מלאי המזון"
+advisor.page.food.text: "אני עוקבת אחרי המלאי הזה בכל חודש. המזון הוא מלאי לאומי אחד: בכל תור השדות החרושים מוסיפים את היבול שלהם, המדינה אוכלת את מה שהיא צריכה, ויבוא ממלא את המלאי מחדש, אלא אם מטבע החוץ שלנו אזל. מחסור מוריד את הלכידות החברתית, ומלאי ריק כשהחוב בתקרה מפעיל את מונה ההפסד."
+advisor.page.national_meters.title: "המדדים הלאומיים"
+advisor.page.national_meters.text: "הלכידות החברתית עולה ויורדת עם הדיור, התעסוקה, המזון, הקיצוב והביטחון. התמיכה הבינלאומית זזה בעקבות הבחירות בכרטיסי האירוע. אף אחת מהן אינה מסיימת את המשחק, אבל אירועים מסוימים מגיבים כשאחת מהן נמוכה, ודוח הסיום מציג את שתיהן. קרבות ותנועת יחידות אינם משנים אף אחת מהן."
+# advisor.page.units_movement: approved by Beri, a native speaker, on #2095 (1 Nov 2026): title and text as written.
+advisor.page.units_movement.title: "תנועת יחידות"
+advisor.page.units_movement.text: "יחידה נעה ברגע שנותנים לה את ההוראה, ואי אפשר לבטל תנועה. השטח קובע את העלות של כל משושה, ויחידה שעוד לא זזה בתור הזה תמיד יכולה להיכנס למשושה סמוך אחד. יעד רחוק יותר הופך למסלול, וסיום התור ממשיך להוביל את היחידה לאורכו. שום יחידה אינה נכנסת למים או למשושה שיש בו יחידת אויב."
+advisor.page.standing_orders.title: "פקודות קבע"
+advisor.page.standing_orders.text: "יחידה שומרת על הפקודה שלה תור אחרי תור, עד שנותנים לה פקודה אחרת. ביצור דורש תור אחד כדי להיכנס לתוקף, ומאז היחידה מתגוננת חזק יותר במשושה שלה עד שהיא זזה; החזקה שומרת על העמדה ואינה מוסיפה דבר. יחידה בלי פקודה ממתינה להוראות, וסיום התור בוחר בה עד שתיתנו לה פקודה או תדלגו עליה בתור הזה. שליחה הביתה היא הדרך היחידה הביתה: היא ממתינה לסיום התור, והיא נדחית עד שנחתם הסכם שביתת הנשק בחזית של היחידה."
+advisor.page.combat.title: "קרב והתקפות"
+advisor.page.combat.text: "התקפה מתבצעת ברגע שנותנים את הפקודה: יחידה אחת, נגד אויב במשושה סמוך, או בטווח שלה אם זו ארטילריה, והיא מנצלת את שארית התנועה של היחידה. לפני שמתחייבים, התחזית מראה את יחס הכוחות ואת מה שכל צד עלול לאבד. האבדות נופלות על היחידה החזקה ביותר, המגינים עשויים לסגת, ורק היחידות הלוחמות משתנות, אף פעם לא עיר, תושביה או הניקוד. כוח שאבד חוזר רק באמצעות תגבור, בעיר."
+advisor.page.arms.title: "מלאי הנשק"
+advisor.page.arms.text: "הנשק הוא מלאי לאומי אחד. אימון צבאי לוקח ממנו כשהוא מתחיל, וכל התקפה מוציאה ממנו. אפשר לקנות נשק בכסף במסך ״ביטחון״, והוא מגיע מיד. כשהמלאי חסר, אימון והתקפות שדורשים נשק נדחים."
+advisor.page.arms.gdd03.text: "הנשק הוא מלאי לאומי אחד. אימון צבאי לוקח ממנו כשהוא מתחיל. אפשר לקנות נשק בכסף במסך ״ביטחון״, והוא מגיע מיד. כשהמלאי חסר, אימון שדורש נשק נדחה."
+advisor.page.truces.title: "בזמן הפוגה"
+advisor.page.truces.text: "אם מקבלים הפוגה בכרטיס שלה, פקודות ההתקפה שלנו נדחות עד שההפוגה נגמרת; אם דוחים אותה, דבר אינו מחייב אותנו. תנועה וכל שאר הפקודות נשארות בתוקף. בזמן הפוגה גם האויב אינו תוקף, בלי קשר לבחירה שלכם. כל עוד ההפוגה מחייבת אותנו, המסך ״ביטחון״ מראה מתי היא נגמרת."
+advisor.page.capture.title: "כיבוש מקום"
+advisor.page.capture.text: "יחידה צבאית שעוצרת במקום שבידי האויב ושאפשר לכבוש אותו, כובשת אותו מיד; מעבר דרכו אינו כובש אותו. אז חלון הכיבוש מציג את התשובות בסדר קבוע, ולצד כל אחת מה היא משנה מיד או למה היא נדחית. ״פשיטה ונסיגה״ מוציאה את הכוחות שלנו ומחזירה את המקום לשליטת האויב; ״שחרור״ משאיר שם יחידה אחת מספר קבוע של תורות, בעלות כספית בכל תור. הבחירה שלכם; היא נכנסת לתוקף בסיום התור, ועד שהיא ניתנת, הכוחות נשארים."
+advisor.page.enemy_phase.title: "התור של האויב"
+advisor.page.enemy_phase.text: "בסיום התור כל יחידת אויב מקבלת את הפקודות שלה, לפי אותם כללים שחלים עלינו. במשחק ההיסטורי כל כוח ערבי פועל לפי תסריט משלו, לעבר היעד ההיסטורי שלו. יחידה שיצאה מהתסריט תוקפת עמדה סמוכה רק כשיש לה יתרון ברור, ואחרת היא מתבצרת. ההתקפות של האויב נערכות כשהתור מוכרע, ואף אחת מהן אינה מגיעה בזמן הפוגה."
 # The Objectives screen (#1189). For the native reviewer (#564).
 objectives.title: "יעדים"
 objectives.done: "הושלם ב־{0}; בהיסטוריה ב־{1}"
 objectives.open: "טרם הושלם; בהיסטוריה ב־{0}"
-# How to play's button that opens the advisor opening chain again (#1484). For the native reviewer (#564).
-how_to_play.guide: "הצגת עצות הפתיחה שוב"
 # The advisors (spec 3.1, 14): the names as in people.yaml (name_he) and the spec; "יועצת" for Meyerson, the speaker's own
 # gender. Agent-drafted. For the native reviewer (#564).
 advisor.ben_gurion.name: "דוד בן-גוריון"
@@ -454,6 +507,7 @@ report.unit: "כוח {0}"
 end.title: "המשחק הסתיים"
 end.outcome.mvp_ended: "המשחק הגיע לתורו האחרון."
 end.outcome.defeat_economy: "הכסף והמזון אזלו."
+end.reference_score: "השלמת כל יעד בתאריך ההיסטורי שלו מניבה ניקוד של {0:N0}."
 end.objective_done: "יעד {0}: הושלם ב־{1}; בהיסטוריה ב־{2}"
 end.objective_open: "יעד {0}: לא הושלם; בהיסטוריה ב־{1}"
 end.parameter: "{0}: {1}"
@@ -741,7 +795,7 @@ pioneer.return: "החזרת {0} לחיים אזרחיים"
 
 # Pioneer card (#1549). All new Hebrew keys below: native-review-pending (#564).
 pioneer.card.open: "פתיחת {0}"
-pioneer.card.location: "משבצת: {0}"
+pioneer.card.location: "משושה: {0}"
 pioneer.card.track: "מסלול: {0}"
 pioneer.card.idle: "ללא עבודה"
 pioneer.card.working: "בעבודה ב{0}"
@@ -1017,6 +1071,39 @@ unit.artillery_move_missing: "לא ניתן להזיז ארטילריה עדיי
 unit.fire_ready: "ניתן לירות"
 unit.fire_spent: "הירי בוצע בתור הזה"
 
+# #2045 standing-order refusals (Orders.Check), shown on the unit card.
+# For the native reviewer (#564).
+unit.order_refused.unknown_order: "הפקודה אינה מוכרת"
+unit.order_refused.no_unit: "אין יחידה כזאת"
+unit.order_refused.not_military: "רק יחידה צבאית מקבלת פקודה זו"
+unit.order_refused.not_yours: "היחידה אינה שלך"
+unit.order_refused.artillery_hold: "ארטילריה אינה מחזיקה בשטח"
+unit.order_refused.already: "היחידה כבר קיבלה פקודה זו"
+
+# #2072 Attack and Reinforce refusals (Combat.Check, Training.Reinforce), shown on the unit card and in the toast. A
+# settlement in {0}/{1} opens the line as its label or follows a prefix, so no verb agrees with its gender (HE-15).
+# Approved by Beri, a native speaker, on #2072 (31 Oct 2026), all 20 lines as written. For the native reviewer (#564).
+unit.attack_refused.no_hex: "יש לבחור משושה להתקפה"
+unit.attack_refused.truce: "הפוגה בתוקף"
+unit.attack_refused.out_of_range: "המשושה מחוץ לטווח של היחידה"
+unit.attack_refused.not_adjacent: "המשושה אינו סמוך ליחידה"
+unit.attack_refused.no_enemy: "אין יחידת אויב במשושה הזה"
+unit.attack_refused.no_points: "ליחידה לא נותרו נקודות תנועה בתור הזה"
+unit.attack_refused.arms: "להתקפה נדרשים {0} כלי נשק ובמלאי יש {1}"
+unit.reinforce_refused.no_city: "אין עיר כזאת"
+unit.reinforce_refused.not_in_city: "יחידה {0} אינה ב{1}"
+unit.reinforce_refused.no_course: "יחידה {0} אינה יכולה לקבל תגבורת"
+unit.reinforce_refused.no_losses: "ליחידה {0} אין אבדות להשלים"
+unit.reinforce_refused.room_one: "יחידה {0} יכולה לקבל עוד קבוצות: {1}"
+unit.reinforce_refused.room_many: "יחידה {0} יכולה לקבל עוד קבוצות: {1}"
+unit.reinforce_refused.no_training: "אין אימון כזה"
+unit.reinforce_refused.count: "יש לאמן לפחות קבוצה אחת"
+unit.reinforce_refused.no_camp: "{0}: אין מחנה צבאי"
+unit.reinforce_refused.no_industry: "{0}: אין מיזם תעשייה שהושלם"
+unit.reinforce_refused.no_hakhshara: "{0}: אין מחנה הכשרה"
+unit.reinforce_refused.idle: "{0}: אין די אזרחים ללא עבודה (יש {1})"
+unit.reinforce_refused.arms: "{0}: אין די כלי נשק ל{1} (נדרשים {2}, יש {3})"
+
 # #1682 remaining Cause producers. Agent-drafted Hebrew: native-review-pending (#564).
 # SENSITIVE: capture, displacement, Deport, annexation and occupation also await sensitivity review.
 why.cause.workers_assigned: "{0}: קבוצות בעבודה: {1}"
@@ -1037,7 +1124,7 @@ why.cause.site_cancelled: "{0}: החלוצים הפסיקו את הבנייה; �
 why.cause.site_completed: "{0}: מצב האתר: {1}"
 why.cause.project_started: "{0}: תחילת {1}, עלות {2}"
 why.cause.project_cancelled: "{0}: ביטול {1}; הכסף שהוצא לא יוחזר"
-why.cause.project_completed: "{0}: הושלם {1}"
+why.cause.project_completed: "{0}: סיום {1}"
 why.cause.arms_bought: "נשק שנרכש: {0}, עלות {1}"
 why.cause.food_harvest: "{0}: יחידות מזון שהניבה הקרקע החרושה: {1}"
 why.cause.food_shortage: "המזון אזל: מחסור של {0} מתוך {1} יחידות שנדרשו החודש"
@@ -1078,10 +1165,10 @@ why.cause.place_withdrawn: "{0}{1} {2}"
 why.cause.place_deported: "{0}: גירוש. התושבים נעקרו והמקום התרוקן מתושביו"
 why.cause.deport_effect: "{0}: שינוי {1} (גירוש מתושבי {2})"
 why.cause.deport_cost: "{0}: שינוי {1} (גירוש מתושבי {2})"
-why.cause.occupation_started: "{0}: המקום תחת כיבוש למשך {1} תורות, ויחידה ישראלית נשארת בו. {2}"
+why.cause.occupation_started: "{0}: המקום מוחזק למשך {1} תורות, ויחידה ישראלית נשארת בו. {2}"
 why.cause.pending_became_raid: "{0}: לא התקבלה החלטה עד סוף המשחק, ולכן הדבר נחשב לפשיטה"
-why.cause.occupation_lost_unit: "{0}: אין עוד יחידה ישראלית המחזיקה במקום, ולכן הכיבוש הסתיים כפשיטה. המקום שוב בשליטת האויב. {1}"
-why.cause.occupation_countdown: "{0}: תורות שחרור שנותרו: {1}"
+why.cause.occupation_lost_unit: "{0}: אין עוד יחידה ישראלית המחזיקה במקום, ולכן תקופת ההחזקה הסתיימה כפשיטה. המקום שוב בשליטת האויב. {1}"
+why.cause.occupation_countdown: "{0}: מוחזק, תורות שנותרו: {1}"
 why.cause.depopulation_support: "{0}: שינוי {1} (המקומות שהתרוקנו מתושביהם בעקבות גירוש)"
 why.cause.work.plow: "חריש"
 why.cause.work.drain: "ייבוש הביצה"
@@ -1116,7 +1203,7 @@ why.cause.annexed.1: "תושבי המקום נמלטו בעת כיבושו, ול
 why.cause.annexed.0: "תושבי המקום מצטרפים לאוכלוסייה"
 why.cause.withdrew.1: ": היחידות הישראליות נסוגו והמקום שוב בשליטת האויב."
 why.cause.withdrew.0: ": המקום שוב בשליטת האויב."
-why.cause.occupation_countdown_ended: "{0}: תקופת הכיבוש הסתיימה. המקום ממתין להחלטה"
+why.cause.occupation_countdown_ended: "{0}: תקופת ההחזקה הסתיימה. המקום ממתין להחלטה"
 why.cause.ending.era_ended: "הפרק הסתיים"
 why.cause.ending.mvp_ended: "המשחק הגיע לתור האחרון"
 why.cause.ending.coalition_collapse: "הקואליציה התפרקה"
@@ -1125,3 +1212,14 @@ why.cause.ending.defeat_war: "האויב מחזיק בעיר"
 
 # native-review-pending: #1661 occupied-destination confirmation
 unit.confirm_move: "שליחת {0} אל {1}"
+
+# The opening's controls (#530), Hebrew agent-drafted. For the native reviewer (#564). The historical prose stays in
+# opening.yaml, in English, until its own review.
+opening.replay: "צפייה חוזרת בפתיח"
+opening.back: "הקודם"
+opening.next: "הבא"
+opening.skip: "דילוג על הפתיח"
+opening.begin: "המשך למפה"
+opening.return: "חזרה למסך הפתיחה"
+opening.count: "שלב {0} מתוך {1}"
+opening.preview: "תצוגה מקדימה בעורך: טיוטה; בדיקת המקורות בידי אדם ממתינה."

@@ -1,14 +1,21 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
+using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.TestTools;
+using Statecraft.Game.Map;
 using Statecraft.Game.Map.Kits;
 using Statecraft.Game.Map.Collection;
+using Statecraft.Game.UI;
 
 /// <summary>C89/C91: original artwork near the camera focus, with fallback elsewhere. Reflection keeps the test-only
 /// revision compilable on the pre-change tree so the requested deferred red run can fail on behavior/API assertions.</summary>
+/// <remarks>That compatibility claim covers the original reflection-based residency tests only. The later footprint
+/// admission tests intentionally call their new internal production APIs directly and are compile-time reds pre-change.</remarks>
 public class TownModelResidencyTests
 {
     const BindingFlags Flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
@@ -22,6 +29,324 @@ public class TownModelResidencyTests
         (id, new Bounds(new Vector3(x, 0, z), new Vector3(100, 100, 100)));
     static string[] Focus(IReadOnlyList<(string id, Bounds bounds)> places, Vector3 point, string? previous = null, Func<IReadOnlyList<string>, string, bool>? allowance = null) =>
         (string[])Call(null, "FocusedTowns", places, point, previous, allowance, 1000f, 2000f, 1000f, 2)!;
+    static Dictionary<string, (Vector2 centre, float radius, string id)> FootprintLookup(
+        IEnumerable<(Vector2 centre, float radius, string id)> footprints) =>
+        footprints.ToDictionary(f => f.id, f => f, StringComparer.Ordinal);
+
+    static Bounds InstanceBounds(TownModelLayer layer, string id)
+    {
+        var corners = new List<Vector3>();
+        foreach (var instance in layer.InstancesOf(id)) instance.Corners(corners);
+        Assert.IsNotEmpty(corners, id + ": detailed-model instances");
+        var bounds = new Bounds(corners[0], Vector3.zero);
+        foreach (var corner in corners) bounds.Encapsulate(corner);
+        return bounds;
+    }
+
+    static Bounds PlaceBounds(TownModelLayer layer, string id)
+    {
+        var places = (IReadOnlyList<(string id, Bounds bounds)>)typeof(TownModelLayer).GetField("places", Flags)!.GetValue(layer)!;
+        return places.Single(place => place.id == id).bounds;
+    }
+
+    static Camera CopyCamera(Camera source, string name)
+    {
+        var camera = new GameObject(name).AddComponent<Camera>();
+        camera.CopyFrom(source);
+        camera.transform.SetPositionAndRotation(source.transform.position, source.transform.rotation);
+        return camera;
+    }
+
+    static Camera GroundCamera(Vector2 focus, float distanceM, string name)
+    {
+        var camera = new GameObject(name).AddComponent<Camera>();
+        camera.transform.position = new Vector3(focus.x, distanceM, focus.y);
+        camera.transform.rotation = Quaternion.LookRotation(Vector3.down, Vector3.forward);
+        return camera;
+    }
+
+    /// <summary>R2: the production camera centres a town on its sourced label point, also the kit-footprint centre. Some
+    /// detailed instances do not cover that point; admission must therefore use the authoritative footprint union rather
+    /// than treating the detailed-instance rectangle as the town itself.</summary>
+    [Test]
+    public void EveryDetailedTownIsAdmittedAtItsLabelAndKitFootprintCentre()
+    {
+        const float ReportedCameraDistanceM = 11_800f;
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        try
+        {
+            var map = UnityEngine.Object.FindFirstObjectByType<MapScene>(); map.Build();
+            var layer = map.GetComponentInChildren<TownModelLayer>(true);
+            layer.EdgeAllowance = null;
+            var rig = UnityEngine.Object.FindFirstObjectByType<CameraRig>();
+            var rigCamera = rig.GetComponent<Camera>();
+            var detailed = map.Settlements.Where(s => layer.CountFor(s.Id) > 0).OrderBy(s => s.Id, StringComparer.Ordinal).ToList();
+            CollectionAssert.IsSubsetOf(new[] { "jaffa", "jerusalem", "nazareth" }, detailed.Select(s => s.Id).ToArray(),
+                "the three reported towns must remain in the mapped detailed-model census");
+
+            var outsideInstances = new List<string>();
+            var notAdmitted = new List<string>();
+            var notReady = new List<string>();
+            foreach (var town in detailed)
+            {
+                var footprint = map.KitFootprints.Single(f => f.id == town.Id);
+                var label = MapLabelsPresenter.MarkerTop(map, town);
+                Assert.AreEqual(footprint.centre.x, label.x, 0.01f, town.Id + ": label and kit centre x");
+                Assert.AreEqual(footprint.centre.y, label.z, 0.01f, town.Id + ": label and kit centre z");
+
+                rig.LookAt = new Vector3(label.x, 0f, label.z); rig.Distance = ReportedCameraDistanceM;
+                rig.Yaw = 0f; rig.TopInset = 0f; rig.Apply();
+                var camera = CopyCamera(rigCamera, town.Id + " fresh residency camera");
+                try
+                {
+                    Assert.IsTrue(CollectionResidencyView.TryGroundFocus(camera, out var focus), town.Id + ": production ground focus");
+                    var instances = InstanceBounds(layer, town.Id);
+                    var instancePoint = focus; instancePoint.y = instances.center.y;
+                    float instanceDistance = Mathf.Sqrt(instances.SqrDistance(instancePoint));
+                    if (instanceDistance > 0f) outsideInstances.Add(town.Id);
+                    float kitDistance = Mathf.Max(0f, Vector2.Distance(new Vector2(focus.x, focus.z), footprint.centre) - footprint.radius);
+                    TestContext.WriteLine($"R2 {town.Id}: focus={focus}; instance_bounds={instances}; " +
+                        $"instance_distance={instanceDistance:0.###}m; " +
+                        $"kit_centre={footprint.centre}; kit_radius={footprint.radius:0.###}m; kit_distance={kitDistance:0.###}m");
+
+                    layer.PrepareCamera(camera);
+                    if (!layer.WantsTown(town.Id, camera)) notAdmitted.Add(town.Id);
+                    if (!layer.ReadyForTown(town.Id, camera)) notReady.Add(town.Id);
+                }
+                finally { UnityEngine.Object.DestroyImmediate(camera.gameObject); }
+            }
+            // QA reported Jaffa, Jerusalem and Nazareth; the measured label foci outside their instance rectangles are Acre,
+            // Jaffa and Tel Aviv (Jerusalem and Nazareth lie inside theirs, instance_distance=0). The three reported towns are
+            // still checked below with every other detailed town.
+            CollectionAssert.IsSubsetOf(new[] { "acre", "jaffa", "tel_aviv" }, outsideInstances,
+                "the regression evidence must keep covering the measured focus points outside their instance rectangles");
+            CollectionAssert.IsEmpty(notAdmitted,
+                "a camera focused on each authoritative town footprint must admit that town's detailed models");
+            CollectionAssert.IsEmpty(notReady,
+                "every admitted production town must have every required detailed-model kind");
+        }
+        finally
+        {
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            VisualToggles.Clear();
+        }
+    }
+
+    [Test]
+    public void PanningFromEveryNestedDetailedTownToItsNeighboursLabelAdmitsTheNeighbour()
+    {
+        const float ReportedCameraDistanceM = 11_800f;
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        try
+        {
+            var map = UnityEngine.Object.FindFirstObjectByType<MapScene>(); map.Build();
+            var layer = map.GetComponentInChildren<TownModelLayer>(true);
+            layer.EdgeAllowance = null;
+            // Pan targets are the game's towns (map.Settlements, from content): the focus partition is theirs. 1948 localities
+            // also have model instances (CountFor > 0) but stand in merged locality tiles, which load with every place in view
+            // and swap as one tile (owner ruling, 31 Oct 2026, "Load all in view"; see
+            // TownLandmarksTests.ProductionKitWiringNeverTreatsAMixedRendererAsOneNamedTown), so they are not pan targets.
+            var gameTowns = map.Settlements.Select(s => s.Id).ToHashSet(StringComparer.Ordinal);
+            var detailed = map.KitFootprints.Where(f => layer.CountFor(f.id) > 0 && gameTowns.Contains(f.id))
+                .OrderBy(f => f.id, StringComparer.Ordinal).ToList();
+            var nestedPairs = new List<((Vector2 centre, float radius, string id) from,
+                (Vector2 centre, float radius, string id) to)>();
+            for (int i = 0; i < detailed.Count; i++) for (int j = i + 1; j < detailed.Count; j++)
+            {
+                var first = detailed[i]; var second = detailed[j];
+                if (Vector2.Distance(first.centre, second.centre) >= Mathf.Max(first.radius, second.radius)) continue;
+                if (second.radius > first.radius) (first, second) = (second, first);
+                nestedPairs.Add((first, second));
+            }
+            Assert.IsNotEmpty(nestedPairs, "the real-map census must retain a nested detailed-town pair for this regression");
+
+            foreach (var pair in nestedPairs)
+            {
+                var camera = GroundCamera(pair.from.centre, ReportedCameraDistanceM,
+                    pair.from.id + " to " + pair.to.id + " sequential pan camera");
+                try
+                {
+                    layer.PrepareCamera(camera);
+                    Assert.IsTrue(layer.WantsTown(pair.from.id, camera), pair.from.id + ": admitted at its own label before the pan");
+                    camera.transform.position = new Vector3(pair.to.centre.x, ReportedCameraDistanceM, pair.to.centre.y);
+                    layer.PrepareCamera(camera);
+                    Assert.IsTrue(layer.WantsTown(pair.to.id, camera),
+                        pair.from.id + " -> " + pair.to.id + ": the normalized-distance owner is admitted at its label");
+                    Assert.IsFalse(layer.WantsTown(pair.from.id, camera),
+                        pair.from.id + " -> " + pair.to.id + ": the previous town cannot retain on its whole disc");
+                }
+                finally { UnityEngine.Object.DestroyImmediate(camera.gameObject); }
+            }
+        }
+        finally
+        {
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            VisualToggles.Clear();
+        }
+    }
+
+    [Test]
+    public void FocusOutsideEveryFootprintAndInstanceBoundsAdmitsNothing()
+    {
+        const float FootprintRadiusM = 500f;
+        const float TownSeparationM = 4000f;
+        const float CircleAabbCornerShare = 0.8f;
+        const float OutsideFocusXM = FootprintRadiusM * CircleAabbCornerShare;
+        const float OutsideFocusZM = FootprintRadiusM * CircleAabbCornerShare;
+        var places = new[] { Place("jaffa", 0f), Place("tel_aviv", TownSeparationM) };
+        var footprints = new[] {
+            (centre: Vector2.zero, radius: FootprintRadiusM, id: "jaffa"),
+            (centre: new Vector2(TownSeparationM, 0f), radius: FootprintRadiusM, id: "tel_aviv") };
+        var selected = TownModelLayer.FocusedTownsWithFootprints(places, FootprintLookup(footprints), footprints,
+            new Vector3(OutsideFocusXM, 0f, OutsideFocusZM), null, null, 0f, 0f, 0f, 0);
+        CollectionAssert.IsEmpty(selected);
+    }
+
+    [Test]
+    public void InstanceBoundsStillAdmitOutsideTheKitFootprint()
+    {
+        const float InstanceCentreXM = 2000f;
+        const float FootprintRadiusM = 500f;
+        var places = new[] { Place("town", InstanceCentreXM) };
+        var footprints = new[] { (centre: Vector2.zero, radius: FootprintRadiusM, id: "town") };
+        var selected = TownModelLayer.FocusedTownsWithFootprints(places, FootprintLookup(footprints), footprints,
+            new Vector3(InstanceCentreXM, 0f, 0f), null, null, 0f, 0f, 0f, 0);
+        CollectionAssert.AreEqual(new[] { "town" }, selected);
+    }
+
+    [Test]
+    public void NonDetailedFootprintOwnerExcludesADetailedNeighbour()
+    {
+        const float FootprintRadiusM = 1000f;
+        const float DetailedCentreXM = 0f;
+        const float NonDetailedCentreXM = 500f;
+        const float FocusXM = 400f;
+        var places = new[] { Place("detailed", DetailedCentreXM) };
+        var footprints = new[] {
+            (centre: new Vector2(DetailedCentreXM, 0f), radius: FootprintRadiusM, id: "detailed"),
+            (centre: new Vector2(NonDetailedCentreXM, 0f), radius: FootprintRadiusM, id: "non_detailed") };
+        var selected = TownModelLayer.FocusedTownsWithFootprints(places,
+            new Dictionary<string, (Vector2, float, string)> { ["detailed"] = footprints[0] }, footprints,
+            new Vector3(FocusXM, 0f, 0f), null, null, 0f, 0f, 0f, 0);
+        CollectionAssert.IsEmpty(selected,
+            "the detailed town cannot claim a point which the full kit partition assigns to a non-detailed settlement");
+    }
+
+    [Test]
+    public void A1948LocalityDiscDoesNotTakeGroundFromAGameSettlement()
+    {
+        const float FootprintRadiusM = 1000f;
+        const float LocalityCentreXM = 500f;
+        const float FocusXM = 400f;
+        using var fixture = new Fixture();
+        var footprints = new[] {
+            (centre: Vector2.zero, radius: FootprintRadiusM, id: "a"),
+            (centre: new Vector2(LocalityCentreXM, 0f), radius: FootprintRadiusM, id: "1948_locality") };
+        fixture.layer.ConfigureTownFootprints(footprints, new[] { "1948_locality" });
+        var camera = fixture.Camera(FocusXM); fixture.Prepare(camera);
+        Assert.IsTrue(fixture.layer.WantsTown("a", camera),
+            "camera ownership must ignore the same locality disc that game-town generation ignores");
+    }
+
+    [Test]
+    public void AnIgnored1948LocalityDiscDoesNotSuppressInstanceBoundsFallback()
+    {
+        const float FootprintRadiusM = 500f;
+        using var fixture = new Fixture();
+        var footprints = new[] {
+            (centre: new Vector2(-2000f, 0f), radius: FootprintRadiusM, id: "a"),
+            (centre: Vector2.zero, radius: FootprintRadiusM, id: "1948_locality") };
+        fixture.layer.ConfigureTownFootprints(footprints, new[] { "1948_locality" });
+        var camera = fixture.Camera(); fixture.Prepare(camera);
+        Assert.IsTrue(fixture.layer.WantsTown("a", camera),
+            "an ignored locality is not a game-settlement partition disc, so instance bounds remain the fallback");
+    }
+
+    [Test]
+    public void PreviousTownInsideItsInstanceBoundsBeatsAnotherTownsFootprint()
+    {
+        const float FootprintRadiusM = 500f;
+        const float PreviousFootprintXM = -1000f;
+        var places = new[] { Place("p", 0f), Place("q", 1000f) };
+        var footprints = new[] {
+            (centre: new Vector2(PreviousFootprintXM, 0f), radius: FootprintRadiusM, id: "p"),
+            (centre: Vector2.zero, radius: FootprintRadiusM, id: "q") };
+        var selected = TownModelLayer.FocusedTownsWithFootprints(places, FootprintLookup(footprints), footprints,
+            Vector3.zero, "p", null, 0f, 0f, 0f, 0);
+        CollectionAssert.AreEqual(new[] { "p" }, selected);
+    }
+
+    [Test]
+    public void OneCameraTraversesTheJaffaTelAvivSeamInBothDirectionsDeterministically()
+    {
+        const float ReportedCameraDistanceM = 11_800f;
+        const float SeamSampleShareOfCentreDistance = 0.02f;
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        try
+        {
+            var map = UnityEngine.Object.FindFirstObjectByType<MapScene>(); map.Build();
+            var layer = map.GetComponentInChildren<TownModelLayer>(true);
+            layer.EdgeAllowance = null;
+            Assert.Greater(layer.CountFor("jaffa"), 0, "Jaffa remains a detailed town");
+            Assert.Greater(layer.CountFor("tel_aviv"), 0, "Tel Aviv remains a detailed town");
+            var footprints = map.KitFootprints;
+            var ignoredLocalities = new HashSet<string>(map.Localities.Select(place => place.Settlement.Id), StringComparer.Ordinal);
+            float focusExitM = ProductionResidency.Approved().Towns.Exit;
+            var jaffa = footprints.Single(f => f.id == "jaffa");
+            var telAviv = footprints.Single(f => f.id == "tel_aviv");
+            var between = telAviv.centre - jaffa.centre;
+            var seam = jaffa.centre + between * (jaffa.radius / (jaffa.radius + telAviv.radius));
+            var offset = between * SeamSampleShareOfCentreDistance;
+            var jaffaSide = seam - offset;
+            var telAvivSide = seam + offset;
+            float BoundsDistance(Bounds bounds, Vector2 point)
+            {
+                var point3 = new Vector3(point.x, bounds.center.y, point.y);
+                return Mathf.Sqrt(bounds.SqrDistance(point3));
+            }
+            bool Owns((Vector2 centre, float radius, string id) footprint, Vector2 point) =>
+                SettlementKits.NormalizedFootprintDistance(point, footprint.centre, footprint.radius)
+                    <= SettlementKits.FootprintBoundary
+                && SettlementKits.OwnsFootprint(point, footprint.id, footprint.centre, footprint.radius, footprints,
+                    ignored: ignoredLocalities);
+            void AssertOwnershipMechanism((Vector2 centre, float radius, string id) owner,
+                (Vector2 centre, float radius, string id) previous, Bounds previousBounds, Vector2 point)
+            {
+                Assert.IsTrue(Owns(owner, point), owner.id + ": normalized-distance ownership admits this seam sample");
+                Assert.IsFalse(Owns(previous, point), previous.id + ": normalized-distance ownership does not retain this sample");
+                Assert.LessOrEqual(SettlementKits.NormalizedFootprintDistance(point, previous.centre, previous.radius),
+                    SettlementKits.FootprintBoundary, previous.id + ": sample remains inside the previous whole disc");
+                Assert.Greater(BoundsDistance(previousBounds, point), focusExitM,
+                    previous.id + ": previous instance-bounds exit band does not retain this sample");
+            }
+            var jaffaBounds = PlaceBounds(layer, "jaffa");
+            var telAvivBounds = PlaceBounds(layer, "tel_aviv");
+            AssertOwnershipMechanism(jaffa, telAviv, telAvivBounds, jaffaSide);
+            AssertOwnershipMechanism(telAviv, jaffa, jaffaBounds, telAvivSide);
+
+            var camera = GroundCamera(jaffaSide, ReportedCameraDistanceM, "Jaffa Tel Aviv seam camera");
+            void Move(Vector2 point)
+            {
+                camera.transform.position = new Vector3(point.x, ReportedCameraDistanceM, point.y);
+                layer.PrepareCamera(camera);
+            }
+            try
+            {
+                Move(jaffaSide);
+                Assert.IsTrue(layer.WantsTown("jaffa", camera)); Assert.IsFalse(layer.WantsTown("tel_aviv", camera));
+                Move(telAvivSide);
+                Assert.IsFalse(layer.WantsTown("jaffa", camera)); Assert.IsTrue(layer.WantsTown("tel_aviv", camera));
+                Move(jaffaSide);
+                Assert.IsFalse(layer.WantsTown("tel_aviv", camera)); Assert.IsTrue(layer.WantsTown("jaffa", camera));
+            }
+            finally { UnityEngine.Object.DestroyImmediate(camera.gameObject); }
+        }
+        finally
+        {
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            VisualToggles.Clear();
+        }
+    }
 
     [TestCase("FocusEnterM", 0f)]
     [TestCase("FocusExitM", 0f)]
@@ -47,6 +372,14 @@ public class TownModelResidencyTests
     {
         var places = new[] { Place("far", 6000), Place("edge-c", 800), Place("focus", 0), Place("edge-b", 500), Place("edge-a", 300) };
         CollectionAssert.AreEqual(new[] { "focus", "edge-a", "edge-b" }, Focus(places, Vector3.zero, allowance: (_, __) => true));
+    }
+    /// <summary>Regression guard: a malformed negative edge allowance is clamped to the primary town only.</summary>
+    [Test]
+    public void NegativeMaximumEdgesSafelyKeepsOnlyThePrimary()
+    {
+        var places = new[] { Place("focus", 0), Place("edge", 300) };
+        CollectionAssert.AreEqual(new[] { "focus" }, TownModelLayer.FocusedTowns(places, Vector3.zero, null,
+            (_, __) => true, 1000f, 2000f, 1000f, -1));
     }
     [Test]
     public void EqualDistancesUseOrdinalTownIdRegardlessOfInputOrder()
@@ -172,6 +505,7 @@ public class TownModelResidencyTests
                 typeof(TownModelLayer).GetField("cameraGraceFrames", Flags)!.SetValue(layer, 2);
             }
             Call(layer, "InitStreaming", items, new List<(Renderer kit, Renderer? close)> { (a, null), (b, null) });
+            layer.EdgeAllowance = null;
         }
         public GameObject Original => prefab;
         public Camera Camera(float x = 0, bool far = false)
@@ -190,6 +524,113 @@ public class TownModelResidencyTests
             field.SetValue(null, previous);
             UnityEngine.Object.DestroyImmediate(prefab); UnityEngine.Object.DestroyImmediate(mesh); UnityEngine.Object.DestroyImmediate(material);
         }
+    }
+
+    [Test]
+    public void ConfigureWholeTownsBeforeOrAfterFootprintsProducesTheSameAdmissionOutcomes()
+    {
+        const float FootprintRadiusM = 500f;
+        const float WholeTownXM = 12_000f;
+        const float FocusOffsetM = 200f;
+        const float FocusXM = WholeTownXM + FocusOffsetM;
+        var footprints = new[] {
+            (centre: Vector2.zero, radius: FootprintRadiusM, id: "a"),
+            (centre: new Vector2(WholeTownXM, 0f), radius: FootprintRadiusM, id: "whole") };
+        var whole = new[] { (id: "whole", bounds: new Bounds(new Vector3(WholeTownXM, 0f, 0f), Vector3.one)) };
+        using var footprintsFirst = new Fixture();
+        using var wholeTownsFirst = new Fixture();
+
+        footprintsFirst.layer.ConfigureTownFootprints(footprints);
+        footprintsFirst.layer.ConfigureWholeTowns(whole);
+
+        wholeTownsFirst.layer.ConfigureWholeTowns(whole);
+        wholeTownsFirst.layer.ConfigureTownFootprints(footprints);
+
+        var firstCamera = footprintsFirst.Camera(FocusXM);
+        var secondCamera = wholeTownsFirst.Camera(FocusXM);
+        footprintsFirst.Prepare(firstCamera); wholeTownsFirst.Prepare(secondCamera);
+        Assert.IsTrue(footprintsFirst.layer.WantsTown("whole", firstCamera));
+        Assert.IsTrue(wholeTownsFirst.layer.WantsTown("whole", secondCamera));
+        Assert.IsFalse(footprintsFirst.layer.WantsTown("a", firstCamera));
+        Assert.IsFalse(wholeTownsFirst.layer.WantsTown("a", secondCamera));
+    }
+
+    [Test]
+    public void ConfigureTownFootprintsLogsAndDropsDuplicateDetailedTownIds()
+    {
+        const float FootprintRadiusM = 500f;
+        using var fixture = new Fixture();
+        var duplicate = new[] {
+            (centre: Vector2.zero, radius: FootprintRadiusM, id: "a"),
+            (centre: Vector2.right, radius: FootprintRadiusM, id: "a") };
+        LogAssert.Expect(LogType.Error,
+            "Detailed town footprint id 'a' occurs more than once; dropping its footprint and using instance bounds.");
+        Assert.DoesNotThrow(() => fixture.layer.ConfigureTownFootprints(duplicate));
+        Assert.DoesNotThrow(() => fixture.layer.ConfigureWholeTowns(Array.Empty<(string id, Bounds bounds)>()));
+        Assert.DoesNotThrow(() => fixture.layer.ConfigureWholeTowns(Array.Empty<(string id, Bounds bounds)>()));
+        LogAssert.NoUnexpectedReceived();
+        var camera = fixture.Camera(); fixture.Prepare(camera);
+        Assert.IsTrue(fixture.layer.WantsTown("a", camera), "the dropped footprint falls back to the detailed instance bounds");
+    }
+
+    [Test]
+    public void ConfigureWholeTownsPreservesAPrimaryThatRemainsConfigured()
+    {
+        const float FootprintRadiusM = 1000f;
+        const float OtherTownXM = 800f;
+        const float OtherOwnedFocusXM = 600f;
+        using var fixture = new Fixture(otherX: OtherTownXM);
+        fixture.layer.ConfigureTownFootprints(new[] {
+            (centre: Vector2.zero, radius: FootprintRadiusM, id: "a"),
+            (centre: new Vector2(OtherTownXM, 0f), radius: FootprintRadiusM, id: "b") });
+        var camera = fixture.Camera(); fixture.Prepare(camera);
+        Assert.IsTrue(fixture.layer.WantsTown("a", camera));
+
+        camera.transform.position = new Vector3(OtherOwnedFocusXM, camera.transform.position.y, camera.transform.position.z);
+        camera.transform.LookAt(new Vector3(OtherOwnedFocusXM, 0f, 0f));
+        fixture.layer.ConfigureWholeTowns(Array.Empty<(string id, Bounds bounds)>());
+        fixture.Prepare(camera);
+        Assert.IsTrue(fixture.layer.WantsTown("a", camera),
+            "whole-town streaming must preserve valid instance-bounds hysteresis");
+        Assert.IsFalse(fixture.layer.WantsTown("b", camera));
+    }
+
+    [Test]
+    public void ConfigureTownFootprintsKeepsEveryDiscForARepeatedNonDetailedCampId()
+    {
+        const float FootprintRadiusM = 1000f;
+        const float FirstCampXM = 5000f;
+        const float SecondCampXM = 200f;
+        using var fixture = new Fixture();
+        var footprints = new[] {
+            (centre: Vector2.zero, radius: FootprintRadiusM, id: "a"),
+            (centre: new Vector2(FirstCampXM, 0f), radius: FootprintRadiusM, id: "camp:subdistrict"),
+            (centre: new Vector2(SecondCampXM, 0f), radius: FootprintRadiusM, id: "camp:subdistrict") };
+        Assert.DoesNotThrow(() => fixture.layer.ConfigureTownFootprints(footprints));
+        var camera = fixture.Camera(SecondCampXM); fixture.Prepare(camera);
+        Assert.IsFalse(fixture.layer.WantsTown("a", camera)); Assert.IsFalse(fixture.layer.WantsTown("b", camera));
+    }
+
+    [Test]
+    public void ReconfiguringFootprintsClearsThePreviousPrimarySelection()
+    {
+        const float FootprintRadiusM = 500f;
+        const float FocusXM = 1000f;
+        using var fixture = new Fixture();
+        var first = new[] {
+            (centre: new Vector2(FocusXM, 0f), radius: FootprintRadiusM, id: "a"),
+            (centre: new Vector2(8000f, 0f), radius: FootprintRadiusM, id: "b") };
+        fixture.layer.ConfigureTownFootprints(first);
+        var camera = fixture.Camera(FocusXM); fixture.Prepare(camera);
+        Assert.IsTrue(fixture.layer.WantsTown("a", camera));
+
+        var second = new[] {
+            (centre: new Vector2(-8000f, 0f), radius: FootprintRadiusM, id: "a"),
+            (centre: new Vector2(FocusXM, 0f), radius: FootprintRadiusM, id: "b") };
+        fixture.layer.ConfigureTownFootprints(second);
+        fixture.Prepare(camera);
+        Assert.IsFalse(fixture.layer.WantsTown("a", camera));
+        Assert.IsTrue(fixture.layer.WantsTown("b", camera));
     }
 
     [Test]
@@ -359,5 +800,343 @@ public class TownModelResidencyTests
             Call(f.layer, "ConfigureResidency", 1000f, 2000f, 1000f, 0, ""));
         Assert.IsInstanceOf<ArgumentException>(error!.InnerException);
         Assert.IsFalse((bool)typeof(TownModelLayer).GetProperty("SpatialPolicyConfigured", Flags)!.GetValue(f.layer)!);
+    }
+
+    /// <summary>Owner ruling, 31 Oct 2026, "Load all in view (Recommended)": below 40 km the building models of every town
+    /// AND village in the camera's view (+3 km) load, nearest first, and unload on zoom-out. The real map in the player's
+    /// streaming path: no editor model list, every original kind acquired through the ModelAcquire seam.</summary>
+    sealed class StreamedMap : IDisposable
+    {
+        readonly FieldInfo acquire;
+        readonly object? previousAcquire;
+        readonly GameObject prefab;
+        readonly Material material;
+        readonly List<Camera> cameras = new List<Camera>();
+        public readonly MapScene map;
+        public readonly TownModelLayer layer;
+        public readonly Transform kits;
+        readonly CameraRig rig;
+        public readonly List<string> RequestOrder = new List<string>();
+        readonly Dictionary<string, Action<GameObject?>> answers = new Dictionary<string, Action<GameObject?>>();
+        public int Released;
+        public StreamedMap()
+        {
+            EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+            map = UnityEngine.Object.FindFirstObjectByType<MapScene>(); map.Build();
+            layer = map.GetComponentInChildren<TownModelLayer>(true);
+            layer.EdgeAllowance = null;
+            kits = map.transform.Find(KitLayer.RootName);
+            rig = UnityEngine.Object.FindFirstObjectByType<CameraRig>();
+            prefab = GameObject.CreatePrimitive(PrimitiveType.Cube); prefab.name = "stub original";
+            // Submit draws with Graphics.RenderMeshInstanced, which needs an instancing material (as the originals' are).
+            var renderer = prefab.GetComponent<MeshRenderer>();
+            material = new Material(renderer.sharedMaterial) { enableInstancing = true }; renderer.sharedMaterial = material;
+            acquire = typeof(TownModelLayer).GetField("ModelAcquire", Flags)!;
+            previousAcquire = acquire.GetValue(null);
+            acquire.SetValue(null, new Func<string, CollectionDetail, Action<GameObject?>, IDisposable>((id, _, done) =>
+            {
+                RequestOrder.Add(id); answers[id] = done;
+                return new Release(() => Released++);
+            }));
+            // The player's path: no editor model list; each original kind streams on demand.
+            typeof(TownModelLayer).GetField("set", Flags)!.SetValue(layer, null);
+            typeof(TownModelLayer).GetField("streaming", Flags)!.SetValue(layer, true);
+        }
+        public (Vector2 centre, float radius, string id) Footprint(string id) => map.KitFootprints.Single(f => f.id == id);
+        /// <summary>The production rig's pose (50 degree pitch, 35 degree FOV, 16:9) looking at <paramref name="at"/>.</summary>
+        public Camera Camera(Vector2 at, float distanceM)
+        {
+            var camera = new GameObject("in-view residency camera").AddComponent<Camera>(); cameras.Add(camera);
+            Pose(camera, at, distanceM);
+            return camera;
+        }
+        public void Pose(Camera camera, Vector2 at, float distanceM)
+        {
+            rig.LookAt = new Vector3(at.x, 0f, at.y); rig.Distance = distanceM; rig.Yaw = 0f; rig.TopInset = 0f; rig.Apply();
+            var source = rig.GetComponent<Camera>();
+            camera.CopyFrom(source); camera.ResetProjectionMatrix();
+            camera.fieldOfView = CameraRig.Fov; camera.aspect = 16f / 9f;
+            camera.nearClipPlane = 50f; camera.farClipPlane = 1_000_000f;   // CameraRig.Init's planes
+            camera.transform.SetPositionAndRotation(source.transform.position, source.transform.rotation);
+        }
+        /// <summary>Prepares the camera, answers every request with a stub original, and prepares it again.</summary>
+        public void Settle(Camera camera)
+        {
+            layer.PrepareCamera(camera);
+            foreach (var answer in answers.Values.ToList()) answer(prefab);
+            layer.PrepareCamera(camera);
+        }
+        public void Submit(Camera camera) =>
+            typeof(TownModelLayer).GetMethod("Submit", Flags)!.Invoke(layer, new object[] { default(UnityEngine.Rendering.ScriptableRenderContext), camera });
+        /// <summary>The merged locality tile renderer (and its close mesh) that holds a place's ground point.</summary>
+        public (MeshRenderer kit, MeshRenderer close) Tile(Vector2 at)
+        {
+            string name = $"Localities {Mathf.FloorToInt(at.x / SettlementKits.TileM)},{Mathf.FloorToInt(at.y / SettlementKits.TileM)}";
+            var kit = kits.Find(name)?.GetComponent<MeshRenderer>();
+            var close = kits.Find(name + KitLayer.CloseSuffix)?.GetComponent<MeshRenderer>();
+            Assert.IsNotNull(kit, name + ": the merged locality tile"); Assert.IsNotNull(close, name + ": its close mesh");
+            return (kit!, close!);
+        }
+        public void Dispose()
+        {
+            acquire.SetValue(null, previousAcquire);
+            foreach (var camera in cameras) if (camera != null) UnityEngine.Object.DestroyImmediate(camera.gameObject);
+            UnityEngine.Object.DestroyImmediate(prefab); UnityEngine.Object.DestroyImmediate(material);
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            VisualToggles.Clear();
+        }
+    }
+
+    const float TwelveKmM = 11_775f, ThirtyKmM = 30_394f, GameplayM = 60_000f;
+
+    /// <summary>The v0.3.2 blocker (white 100x kit houses where v0.3.1 drew Tal Heuberger's building models): Imwas's merged
+    /// locality tile swaps to its building models at 12 km and at 30 km, and the models draw.</summary>
+    [Test]
+    public void ImwasVillageTileSwapsToBuildingModelsAtTwelveAndThirtyKm()
+    {
+        using var s = new StreamedMap();
+        var imwas = s.Footprint("imwas");
+        Assert.Greater(s.layer.CountFor("imwas"), 0, "Imwas has building models");
+        var (kit, close) = s.Tile(imwas.centre);
+        foreach (float d in new[] { TwelveKmM, ThirtyKmM })
+        {
+            var camera = s.Camera(imwas.centre, d);
+            string at = FormattableString.Invariant($"Imwas at {d / 1000f} km");
+            s.Settle(camera);
+            Assert.IsTrue(s.layer.ReadyForTown("imwas", camera), at + ": building models admitted and ready");
+            Assert.IsTrue(kit.forceRenderingOff, at + ": the 100x kit tile gives way");
+            Assert.IsFalse(close.forceRenderingOff, at + ": the tile's close mesh (ground, plinths) draws");
+            s.Submit(camera);
+            Assert.Greater(s.layer.LastDrawn, 0, at + ": the building models draw");
+        }
+    }
+
+    /// <summary>The Latrun front, where no game town is under the screen centre: every village there (Imwas, Yalu, Beit Nuba)
+    /// is admitted at 12 km and at 30 km.</summary>
+    [Test]
+    public void EveryLatrunVillageInViewIsAdmitted()
+    {
+        using var s = new StreamedMap();
+        var imwas = s.Footprint("imwas");
+        foreach (float d in new[] { TwelveKmM, ThirtyKmM })
+        {
+            var camera = s.Camera(imwas.centre, d);
+            s.Settle(camera);
+            foreach (var id in new[] { "imwas", "yalo", "bayt_nuba" })
+            {
+                Assert.Greater(s.layer.CountFor(id), 0, id + " has building models");
+                Assert.IsTrue(s.layer.ReadyForTown(id, camera), FormattableString.Invariant($"{id} at {d / 1000f} km: admitted and ready"));
+            }
+        }
+    }
+
+    /// <summary>A town's neighbours in view load too, not only the town under the screen centre; the focused town's kinds
+    /// are asked first (nearest first).</summary>
+    [Test]
+    public void NeighbouringTownsOfTheFocusLoadToo()
+    {
+        using var s = new StreamedMap();
+        var telAviv = s.Footprint("tel_aviv");
+        var camera = s.Camera(telAviv.centre, ThirtyKmM);
+        s.Settle(camera);
+        foreach (var id in new[] { "tel_aviv", "jaffa", "petah_tikva" })
+        {
+            Assert.Greater(s.layer.CountFor(id), 0, id + " has building models");
+            Assert.IsTrue(s.layer.ReadyForTown(id, camera), id + " at 30 km over Tel Aviv: admitted and ready");
+        }
+        var telAvivKinds = s.layer.InstancesOf("tel_aviv").Select(m => TownModels.Ids[(int)m.Model]).ToHashSet(StringComparer.Ordinal);
+        CollectionAssert.Contains(telAvivKinds, s.RequestOrder[0], "the focused town's kinds are asked first");
+        var jaffa = s.Footprint("jaffa");
+        s.Pose(camera, jaffa.centre, TwelveKmM); s.Settle(camera);
+        Assert.IsTrue(s.layer.ReadyForTown("jaffa", camera), "Jaffa at 12 km");
+        Assert.IsTrue(s.layer.ReadyForTown("tel_aviv", camera), "Tel Aviv beside Jaffa at 12 km");
+    }
+
+    /// <summary>The 1.5 GB guard: zooming out to the 60 km gameplay view releases every building-model lease and the kits
+    /// draw again.</summary>
+    [Test]
+    public void BuildingModelsUnloadAtSixtyKm()
+    {
+        using var s = new StreamedMap();
+        var imwas = s.Footprint("imwas");
+        var (kit, _) = s.Tile(imwas.centre);
+        var camera = s.Camera(imwas.centre, ThirtyKmM);
+        s.Settle(camera);
+        Assert.IsTrue(s.layer.ReadyForTown("imwas", camera), "precondition: Imwas ready at 30 km");
+        Assert.IsNotEmpty(s.RequestOrder);
+        s.Pose(camera, imwas.centre, GameplayM);
+        s.layer.PrepareCamera(camera); s.layer.RetireReleasedModels();
+        Assert.AreEqual(s.RequestOrder.Count, s.Released, "every building-model lease is released at 60 km");
+        Assert.IsFalse(s.layer.ReadyForTown("imwas", camera), "no building models at 60 km");
+        Assert.IsFalse(kit.forceRenderingOff, "the kit tile draws again at 60 km");
+    }
+
+    /// <summary>The production view admission (ConfigureProduction) on a synthetic layer: towns and merged village tiles wired
+    /// as KitLayer wires them (explicit town ids, renderer identities and tile ids), in the player's streaming path. Each
+    /// model kind is answered only when the test says so.</summary>
+    sealed class ViewFixture : IDisposable
+    {
+        readonly FieldInfo acquire;
+        readonly object? previousAcquire;
+        readonly GameObject root, prefab;
+        readonly Material material;
+        readonly List<GameObject> cameras = new List<GameObject>();
+        public readonly TownModelLayer layer;
+        public readonly List<string> RequestOrder = new List<string>();
+        public readonly Dictionary<string, Action<GameObject?>> Answers = new Dictionary<string, Action<GameObject?>>();
+        public readonly Dictionary<string, int> Requests = new Dictionary<string, int>(), Releases = new Dictionary<string, int>();
+        public readonly Dictionary<string, MeshRenderer> Kits = new Dictionary<string, MeshRenderer>(), Closes = new Dictionary<string, MeshRenderer>();
+        /// <param name="towns">Game towns: one kit renderer each, named and identified by the town id.</param>
+        /// <param name="tiles">Merged locality tiles: a kit renderer and its close mesh, carrying these villages.</param>
+        public ViewFixture(IReadOnlyList<SettlementKits.ModelInstance> items, IReadOnlyList<string> towns,
+            IReadOnlyList<(string name, string[] villages)> tiles)
+        {
+            acquire = typeof(TownModelLayer).GetField("ModelAcquire", Flags)!;
+            previousAcquire = acquire.GetValue(null);
+            acquire.SetValue(null, new Func<string, CollectionDetail, Action<GameObject?>, IDisposable>((id, _, done) =>
+            {
+                Requests.TryGetValue(id, out int n); Requests[id] = n + 1; Answers[id] = done; RequestOrder.Add(id);
+                return new Release(() => { Releases.TryGetValue(id, out int count); Releases[id] = count + 1; });
+            }));
+            root = new GameObject("view admission fixture");
+            // Submit draws with Graphics.RenderMeshInstanced, which needs an instancing material (as the originals' are).
+            prefab = GameObject.CreatePrimitive(PrimitiveType.Cube); prefab.name = "stub original";
+            var renderer = prefab.GetComponent<MeshRenderer>();
+            material = new Material(renderer.sharedMaterial) { enableInstancing = true }; renderer.sharedMaterial = material;
+            layer = root.AddComponent<TownModelLayer>();
+            var swaps = new List<(Renderer kit, Renderer? close)>();
+            var townIds = new Dictionary<Renderer, string>();
+            var tileIds = new Dictionary<Renderer, string[]>();
+            MeshRenderer Child(string name) { var r = new GameObject(name).AddComponent<MeshRenderer>(); r.transform.SetParent(root.transform); return r; }
+            foreach (string town in towns) { var kit = Child(town); Kits[town] = kit; swaps.Add((kit, null)); townIds[kit] = town; }
+            foreach (var (name, villages) in tiles)
+            {
+                var kit = Child(name); var close = Child(name + KitLayer.CloseSuffix);
+                Kits[name] = kit; Closes[name] = close; swaps.Add((kit, close)); tileIds[kit] = villages;
+            }
+            // KitLayer's order: the shipping policy, then Init. The player streams every kind (no editor model list); private-field
+            // reflection only stands in for Application.isPlaying, as StreamedMap does.
+            layer.ConfigureProduction(ProductionResidency.Approved().Towns);
+            typeof(TownModelLayer).GetField("suppressMissingLog", Flags)!.SetValue(layer, true);
+            layer.Init(items, null, swaps, towns, townIds, tileIds);
+            typeof(TownModelLayer).GetField("streaming", Flags)!.SetValue(layer, true);
+            layer.EdgeAllowance = null;
+        }
+        /// <summary>One 100 m building of <paramref name="model"/> for place <paramref name="id"/> at ground (x, z).</summary>
+        public static SettlementKits.ModelInstance Item(string id, TownModel model, float x, float z) =>
+            new SettlementKits.ModelInstance(id, model, Matrix4x4.identity, new Vector2(x, z), 0, 100, 100, 0, 100);
+        /// <summary>A close camera whose view reaches the ground (CameraRig.Init's clip planes), square, 60 degree FOV.</summary>
+        public Camera Camera(Vector3 position, Quaternion rotation)
+        {
+            var go = new GameObject("view admission camera"); cameras.Add(go); var camera = go.AddComponent<Camera>();
+            camera.fieldOfView = 60f; camera.aspect = 1f; camera.nearClipPlane = 50f; camera.farClipPlane = 1_000_000f;
+            camera.transform.SetPositionAndRotation(position, rotation);
+            return camera;
+        }
+        /// <summary>The 10 km view used below: from (0, 8 km, -6 km) at the origin, so its ground focus is the origin.</summary>
+        public Camera TenKmAtOrigin()
+        {
+            var position = new Vector3(0f, 8000f, -6000f);
+            return Camera(position, Quaternion.LookRotation(-position));
+        }
+        public void Arrive(TownModel model) => Answers[TownModels.Ids[(int)model]](prefab);
+        public void Submit(Camera camera) =>
+            typeof(TownModelLayer).GetMethod("Submit", Flags)!.Invoke(layer, new object[] { default(UnityEngine.Rendering.ScriptableRenderContext), camera });
+        public void Dispose()
+        {
+            UnityEngine.Object.DestroyImmediate(root);
+            foreach (var c in cameras) UnityEngine.Object.DestroyImmediate(c);
+            acquire.SetValue(null, previousAcquire);
+            UnityEngine.Object.DestroyImmediate(prefab); UnityEngine.Object.DestroyImmediate(material);
+        }
+    }
+
+    /// <summary>A merged village tile swaps as one (owner ruling, 31 Oct 2026, "Load all in view (Recommended)"): with two
+    /// villages of different model kinds and only one kind delivered, the tile keeps its kit, its close mesh stays off and none
+    /// of its buildings draw (else they would stand on the kit houses); once the second kind arrives, the tile swaps and
+    /// both draw.</summary>
+    [Test]
+    public void APartlyReadyVillageTileKeepsItsKitAndDrawsNoneOfItsBuildings()
+    {
+        using var f = new ViewFixture(new[] {
+            ViewFixture.Item("village_a", TownModel.B16Farmhouse, 200f, 0f),
+            ViewFixture.Item("village_b", TownModel.B17CourtyardHouse, -200f, 0f) },
+            Array.Empty<string>(), new[] { ("Localities 0,0", new[] { "village_a", "village_b" }) });
+        var kit = f.Kits["Localities 0,0"]; var close = f.Closes["Localities 0,0"];
+        var camera = f.TenKmAtOrigin();
+        f.layer.PrepareCamera(camera);
+        CollectionAssert.AreEquivalent(new[] { TownModels.Ids[(int)TownModel.B16Farmhouse], TownModels.Ids[(int)TownModel.B17CourtyardHouse] },
+            f.RequestOrder, "both villages' kinds are asked for");
+
+        f.Arrive(TownModel.B16Farmhouse); f.layer.PrepareCamera(camera);
+        Assert.IsTrue(f.layer.ReadyForTown("village_a", camera), "precondition: village_a's kind arrived and it is admitted");
+        Assert.IsFalse(f.layer.ReadyForTown("village_b", camera), "precondition: village_b's kind has not arrived");
+        Assert.IsFalse(kit.forceRenderingOff, "a partly ready tile keeps its kit houses");
+        Assert.IsTrue(close.forceRenderingOff, "a partly ready tile's close mesh stays off");
+        f.Submit(camera);
+        Assert.AreEqual(0, f.layer.LastDrawn, "no building of a partly ready tile draws, not even the ready village's");
+
+        f.Arrive(TownModel.B17CourtyardHouse); f.layer.PrepareCamera(camera);
+        Assert.IsTrue(kit.forceRenderingOff, "control: the complete tile swaps");
+        Assert.IsFalse(close.forceRenderingOff, "control: the complete tile's close mesh draws");
+        f.Submit(camera);
+        Assert.AreEqual(2, f.layer.LastDrawn, "control: both villages' buildings draw");
+    }
+
+    /// <summary>Nearest first, with no focused town: the screen centre is on open ground between three places. The requests
+    /// follow ground distance from the screen centre, which differs here from the id order, the model-enum order, the
+    /// admission (list) order and the order by distance from the camera's own position.</summary>
+    [Test]
+    public void WithNoFocusedTownTheViewLoadsNearestToTheScreenCentreFirst()
+    {
+        // Ground distance from the focus (0, 0): c_near 2.0 km, b_mid 3.5 km, a_far 5.0 km. From the camera's ground point
+        // (0, -6 km): b_mid 2.5 km, a_far 7.8 km, c_near 8.0 km.
+        using var f = new ViewFixture(new[] {
+            ViewFixture.Item("a_far", TownModel.B01WhiteCity, 5000f, 0f),
+            ViewFixture.Item("b_mid", TownModel.B16Farmhouse, 0f, -3500f),
+            ViewFixture.Item("c_near", TownModel.B32CargoShed, 0f, 2000f) },
+            new[] { "a_far", "c_near" }, new[] { ("Localities 0,-1", new[] { "b_mid" }) });
+        var camera = f.TenKmAtOrigin();
+        Assert.IsTrue(CollectionResidencyView.TryGroundFocus(camera, out var focus), "precondition: the view has a ground focus");
+        Assert.Less(new Vector2(focus.x, focus.z).magnitude, 1f, "precondition: the screen centre is the origin");
+        f.layer.PrepareCamera(camera);
+        foreach (var id in new[] { "a_far", "c_near" })
+            Assert.IsFalse(f.layer.WantsTown(id, camera), id + ": no town is focused, so the primary-first order has nothing to add");
+        CollectionAssert.AreEqual(new[] {
+            TownModels.Ids[(int)TownModel.B32CargoShed], TownModels.Ids[(int)TownModel.B16Farmhouse], TownModels.Ids[(int)TownModel.B01WhiteCity] },
+            f.RequestOrder, "c_near, then b_mid's tile, then a_far: nearest the screen centre first");
+    }
+
+    /// <summary>ViewKeepM hysteresis: a place admitted inside the 3 km margin stays admitted while it is 3 to 6 km outside the
+    /// view (a pan does not drop and reload its kind), is released beyond 6 km, and is not re-admitted at 3 to 6 km.</summary>
+    [Test]
+    public void AViewAdmittedPlaceStaysToSixKmOutsideTheViewAndNotBeyond()
+    {
+        const float HeightM = 10_000f, HalfM = 50f;   // a straight-down 10 km view; the place is a 100 m box at the origin
+        using var f = new ViewFixture(new[] { ViewFixture.Item("p", TownModel.B01WhiteCity, 0f, 0f) }, new[] { "p" },
+            Array.Empty<(string, string[])>());
+        string kind = TownModels.Ids[(int)TownModel.B01WhiteCity];
+        var camera = f.Camera(new Vector3(0f, HeightM, 0f), Quaternion.LookRotation(Vector3.down, Vector3.forward));
+        // The view's right edge on the ground (y = 0, the box's widest-reaching face) is HeightM tan(30 degrees) right of
+        // the camera; place the camera so the box's near side is gapM beyond it.
+        float halfWidthM = HeightM * Mathf.Tan(30f * Mathf.Deg2Rad);
+        void Outside(float gapM)
+        {
+            camera.transform.position = new Vector3(-HalfM - halfWidthM - gapM, HeightM, 0f);
+            f.layer.PrepareCamera(camera); f.layer.RetireReleasedModels();
+        }
+        Outside(1500f);
+        Assert.IsTrue(f.layer.AdmitsTown("p", camera), "1.5 km outside the view: inside the 3 km admission margin");
+        Assert.IsFalse(f.layer.WantsTown("p", camera), "precondition: admitted by view, not by focus");
+        Assert.AreEqual(1, f.Requests[kind]);
+        Outside(4500f);
+        Assert.IsTrue(f.layer.AdmitsTown("p", camera), "4.5 km outside: kept to 6 km");
+        Assert.IsFalse(f.Releases.ContainsKey(kind), "kept: the kind is not released");
+        Outside(7500f);
+        Assert.IsFalse(f.layer.AdmitsTown("p", camera), "7.5 km outside: beyond the 6 km keep");
+        Assert.AreEqual(1, f.Releases[kind], "dropped: the kind is released");
+        Outside(4500f);
+        Assert.IsFalse(f.layer.AdmitsTown("p", camera), "4.5 km outside, not admitted before: beyond the 3 km admission margin");
+        Assert.AreEqual(1, f.Requests[kind], "no new request outside the admission margin");
     }
 }

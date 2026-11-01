@@ -6,7 +6,7 @@ namespace Statecraft.Sim
 {
     // All entry points are internal. Only synthetic tests opt in; no command, loader or turn hookup.
     internal enum Gdd03FixtureWork { Industry, Builder, Farm, Workshop }
-    internal enum Gdd03FixtureAssignmentResult { Applied, DeferredSameSlot }
+    internal enum Gdd03FixtureAssignmentResult { Applied, NoOp }
 
     internal sealed class Gdd03FixtureSlot
     {
@@ -23,7 +23,8 @@ namespace Statecraft.Sim
         }
     }
 
-    /// <summary>Frozen typed catalogue vector. Quotes rates; never awards Money or work receipts.</summary>
+    /// <summary>Frozen typed catalogue vector. Quotes rates; never awards Money or work receipts. Since #2112 a rate is a
+    /// multiple of R-CITY-002's per-unit job income, not Money; <see cref="MoneyPerTurn"/> converts it.</summary>
     internal sealed class Gdd03IndustryRates
     {
         readonly decimal ordinary, apprentice, expert;
@@ -49,11 +50,19 @@ namespace Statecraft.Sim
             CivilianTier.Apprentice => apprentice,
             CivilianTier.Expert => expert,
             _ => throw new ArgumentException("Unknown fixture tier.", nameof(tier)) };
+        /// <summary>#2112 (owner, 1 November 2026, "Main's base x 0.3's tiers (Recommended)"): the catalogue's tier rate
+        /// is a multiple of R-CITY-002's per-unit job income, so a tier earns <see cref="For"/> times
+        /// income_per_job_per_year for the turn's share of a year. A quote only; no Money moves.</summary>
+        internal double MoneyPerTurn(CivilianTier tier, MvpRules rules, double yearFraction)
+        {
+            if (rules == null) throw new ArgumentNullException(nameof(rules));
+            return (double)For(tier) * rules.IncomePerJobPerYear * yearFraction;
+        }
     }
 
     /// <summary>R-CITY-001/002: frozen synthetic capacity overlay, never a second population ledger.
     /// Only explicit reception-complete free civilians moving among generic Work targets are supported.
-    /// Feature-owned course/teaching/service transitions and same-slot policy remain outside this fixture.
+    /// Feature-owned course/teaching/service transitions remain outside this fixture. Reassigning the same Work slot is a no-op.
     /// Single-threaded like the ledger; callers cannot reuse this overlay as a production authority.</summary>
     internal sealed class Gdd03AssignmentFixture
     {
@@ -68,6 +77,9 @@ namespace Statecraft.Sim
             this.state = state;
             rates = Gdd03IndustryRates.Read(content);
             receptionTurns = content.RequirePopulationInteger("reception.turns");
+            if (receptionTurns != state.PopulationLedger.ReceptionLimit)
+                throw new ContentException(Gdd03BalanceCatalogue.FileName, "values.reception.turns",
+                    "must match the initialized population ledger");
             slots = new SortedDictionary<string, Gdd03FixtureSlot>(StringComparer.Ordinal);
             foreach (var slot in inventory) slots.Add(slot.Id, slot); // duplicate aliases cannot add capacity
             ValidateInventory();
@@ -81,6 +93,17 @@ namespace Statecraft.Sim
             foreach (var slot in slots.Values)
                 if (state.PopulationLedger.Units.Count(p => p.Assignment.Kind == PopulationAssignmentKind.Work && p.Assignment.Target == slot.Id) > slot.Capacity)
                     throw new ArgumentException("Fixture inventory is over capacity.");
+            // Synthetic composition only: the ledger owns workers; immutable regional pools bound pooled job occupancy.
+            if (state.PlayerRegions.Count == 0) return;
+            foreach (var group in state.PopulationLedger.Units.Where(p => p.Assignment.Kind == PopulationAssignmentKind.Work)
+                .Where(p => slots[p.Assignment.Target!].Work == Gdd03FixtureWork.Industry || slots[p.Assignment.Target!].Work == Gdd03FixtureWork.Workshop)
+                .GroupBy(p => (Region: p.Location!.Region, Work: slots[p.Assignment.Target!].Work)))
+            {
+                if (!state.PlayerRegions.TryGetValue(group.Key.Region, out var pool))
+                    throw new ArgumentException("Fixture worker has no initialized regional pool.");
+                var capacity = group.Key.Work == Gdd03FixtureWork.Industry ? pool.IndustrySlots : pool.WorkshopSlots;
+                if (group.Count() > capacity) throw new ArgumentException("Fixture regional job occupancy is over capacity.");
+            }
         }
         bool Eligible(PopulationUnit p) => p.Status == PopulationStatus.FreeCivilian && p.ReceptionTicks == receptionTurns;
         internal Gdd03FixtureAssignmentResult Assign(int id, string? target)
@@ -92,10 +115,19 @@ namespace Statecraft.Sim
             if (target != null)
             {
                 if (!slots.TryGetValue(target, out var slot)) throw new ArgumentException("Unknown fixture slot.");
-                // This is a refusal/deferred result, not a chosen shipped idempotency policy.
-                if (person.Assignment.Target == target) return Gdd03FixtureAssignmentResult.DeferredSameSlot;
+                // Owner, 28 October 2026 (#1668 Q34): assigning the same job is a no-op.
+                if (person.Assignment.Target == target) return Gdd03FixtureAssignmentResult.NoOp;
                 if (ledger.Units.Count(p => p.Assignment.Kind == PopulationAssignmentKind.Work && p.Assignment.Target == target) >= slot.Capacity)
                     throw new ArgumentException("Fixture destination is full.");
+                if (state.PlayerRegions.Count > 0 && (slot.Work == Gdd03FixtureWork.Industry || slot.Work == Gdd03FixtureWork.Workshop))
+                {
+                    if (person.Location == null || !state.PlayerRegions.TryGetValue(person.Location.Region, out var pool))
+                        throw new ArgumentException("Fixture worker has no initialized regional pool.");
+                    var used = ledger.Units.Count(p => p.Id != id && p.Assignment.Kind == PopulationAssignmentKind.Work
+                        && p.Location?.Region == person.Location.Region && slots[p.Assignment.Target!].Work == slot.Work);
+                    var capacity = slot.Work == Gdd03FixtureWork.Industry ? pool.IndustrySlots : pool.WorkshopSlots;
+                    if (used >= capacity) throw new ArgumentException("Fixture regional destination is full.");
+                }
             }
             var assignment = target == null ? PopulationAssignment.Unassigned : new PopulationAssignment(PopulationAssignmentKind.Work, target);
             // Replace validates the complete candidate before publishing it. Never release first.
@@ -103,7 +135,8 @@ namespace Statecraft.Sim
             return Gdd03FixtureAssignmentResult.Applied;
         }
         /// <summary>Rate quotation for an explicitly supplied frozen fixture, not a month snapshot or payable receipt.
-        /// Label is never identity. No Money/Food/XP/state mutation, time scaling or production consumer.</summary>
+        /// Label is never identity. No Money/Food/XP/state mutation, time scaling or production consumer. The total is in
+        /// multiples of R-CITY-002's per-unit job income (#2112), not Money.</summary>
         internal decimal IndustryRate(string target)
         {
             ValidateInventory();

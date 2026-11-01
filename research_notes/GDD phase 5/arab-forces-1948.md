@@ -36,6 +36,8 @@ map tokens; this note narrows to the two dates and adds strength figures and Ara
   described here. The branch note `arab-armies-1948.md`, "Sensitivity review", lists them for the owner.
 - Dates are given as the source gives them. Where sources give different dates for the same move, both are listed.
 
+Every [V] in this note was an agent's reading on 2026-10-13, unless the tag gives a later date; a person's check is pending for all of them.
+
 ## How it was researched
 
 - **Full text read.** Edgar O'Ballance, *The Arab-Israeli War 1948* (Faber, 1956), from the Digital Library of India
@@ -680,7 +682,7 @@ US records:
   https://history.state.gov/historicaldocuments/frus1948v05p2/d270 ; document 486 (CIA report, 27 July 1948),
   https://history.state.gov/historicaldocuments/frus1948v05p2/d486
 - (Second pass, 28 Oct, after review) FRUS 1948, vol. V, part 2, the full TEI text of the volume, searched on 2026-10-28:
-  https://raw.githubusercontent.com/HistoryAtState/frus/master/volumes/frus1948v05p2.xml
+  https://raw.githubusercontent.com/HistoryAtState/frus/6170e4b32c1224002db2fe0c5d8d910597cddc2e/volumes/frus1948v05p2.xml
 - CIA, Near East/Africa Branch Intelligence Summary, vol. III, nos. 19 to 23 (weeks ending 19 May to 16 June 1948),
   Internet Archive copies of the CIA reading room, e.g. week ending 16 June:
   https://archive.org/details/cia-readingroom-document-cia-rdp78-01617a004700010007-2 ; 19 May:

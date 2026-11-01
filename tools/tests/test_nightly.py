@@ -1,11 +1,15 @@
 import dataclasses
 import json
+import signal
+import shutil
 import subprocess
 import sys
 import time
 import zipfile
+from contextlib import contextmanager
 from datetime import date, datetime
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -15,6 +19,8 @@ import nightly
 import nightly_state as ns
 from conftest import FakeRunner
 
+REAL_POPEN = subprocess.Popen
+
 SHA = "a" * 40
 OLD = "b" * 40
 NOW = datetime(2026, 10, 28, 3, 0, tzinfo=ns.TZ)
@@ -22,16 +28,35 @@ TAG = "v0.3.2"
 
 
 class FakeGH:
-    """The GitHub client as the night uses it. `release` is what release_state answers (None: no release); `fail`
-    maps a method name to an exception raised by it (a list raises one per call, then succeeds)."""
+    """The GitHub client as the night uses it. `releases` holds (tag, ID, state) rows, including same-tag replacements;
+    the last matching row is the tag lookup. `release` keeps older single-release tests readable. `fail` maps a
+    method name to an exception raised by it (a list raises one per call, then succeeds)."""
 
     def __init__(self, release=None, *, fail=None, previous_tag="v0.3.1"):
+        self.releases = []
         self.release = release
         self.fail = fail or {}
         self.previous_tag = previous_tag
         self.latest = "v0.3.1"   # deliberately different from the previous nightly asset tag
         self.calls = []
         self.baseline = None   # a zip the download hands out
+
+    @property
+    def release(self):
+        return self.releases[-1][2] if self.releases else None
+
+    @release.setter
+    def release(self, value):
+        if value is None:
+            self.releases.clear()
+        elif self.releases:
+            tag, release_id, _ = self.releases[-1]
+            self.releases[-1] = (tag, release_id, value)
+        else:
+            self.releases.append((TAG, 101, value))
+
+    def at_tag(self, tag):
+        return next((r for r in reversed(self.releases) if r[0] == tag), None)
 
     def _maybe_fail(self, name):
         err = self.fail.get(name)
@@ -42,7 +67,8 @@ class FakeGH:
 
     def release_state(self, tag):
         self.calls.append(("release_state", tag))
-        return self.release
+        row = self.at_tag(tag)
+        return row[2] if row else None
 
     def next_version(self):
         self.calls.append(("next_version",))
@@ -50,12 +76,18 @@ class FakeGH:
 
     def ensure_tag_available(self, tag):
         self.calls.append(("ensure_tag_available", tag))
-        if self.release is not None:
+        if self.at_tag(tag) is not None:
             raise ns.Refused("tag-exists", f"a {self.release} release already has the tag {tag}")
 
-    def delete_draft(self, tag):
-        self.calls.append(("delete_draft", tag))
-        self.release = None
+    def delete_draft(self, tag, release_id=...):
+        # Main calls by tag alone; model that deletion rather than failing on the signature.
+        row = self.at_tag(tag)
+        if release_id is ...:
+            release_id = row[1] if row else None
+        self.calls.append(("delete_draft", tag, release_id))
+        if release_id is None or row != (tag, release_id, "draft"):
+            raise ns.Refused("github-delete", f"{tag} has no matching owned draft ID; check by hand")
+        self.releases.remove(row)
 
     def dispatch_site(self, deadline):
         self.calls.append(("dispatch_site", deadline))
@@ -70,10 +102,14 @@ class FakeGH:
         self._maybe_fail("download")
         return self.baseline
 
-    def create_draft(self, tag, sha, notes, assets):
+    def create_draft(self, tag, sha, notes, assets, *, created=None):
         self.calls.append(("create_draft", tag, sha, notes, list(assets)))
         self._maybe_fail("create_draft")
-        self.release = "draft"
+        self.releases.append((tag, 101, "draft"))
+        if created is not None:
+            created(101)
+        self._maybe_fail("upload")
+        return 101
 
     def verify_draft(self, tag, local, dest):
         self.calls.append(("verify_draft", tag, list(local), dest))
@@ -165,6 +201,13 @@ class Env:
 
 @pytest.fixture
 def env(tmp_path, monkeypatch, no_processes):
+    original_lock = nightly.unity_postmerge.machine_lock.LOCK
+    original_gate = nightly.unity_postmerge.machine_lock.GATE
+    # Real managed-lock contexts stay on test-local files, never the machine-wide runtime gate.
+    monkeypatch.setattr(nightly.unity_postmerge.machine_lock, "LOCK", tmp_path / "machine.lock")
+    monkeypatch.setattr(nightly.unity_postmerge.machine_lock, "GATE", tmp_path / "machine.lock.gate")
+    assert nightly.unity_postmerge.machine_lock.LOCK != original_lock
+    assert nightly.unity_postmerge.machine_lock.GATE != original_gate
     monkeypatch.setattr(nightly, "notify", lambda *a, **k: env_notes.append(a))
     env_notes.clear()
     return Env(tmp_path, monkeypatch)
@@ -177,6 +220,22 @@ def gate_of(env, **kw):
     with pytest.raises(ns.Stop) as e:
         env.pre(**kw)
     return e.value
+
+
+def read_pending_with_old_state(monkeypatch):
+    # Adapt only deserialization for baseline behavior tests. Main's State and run_night still do the work;
+    # raw JSON assertions below must detect missing persistence, not unknown-key rejection.
+    load = ns.load_state
+
+    def read(path):
+        if "latest_recovery_pending" in {f.name for f in dataclasses.fields(ns.State)}:
+            return load(path)
+        raw = json.loads(path.read_text())
+        pending = raw.pop("latest_recovery_pending", None)
+        state = ns._state_from(raw)
+        state.latest_recovery_pending = SimpleNamespace(**pending) if pending is not None else None
+        return state
+    monkeypatch.setattr(nightly, "load_state", read)
 
 
 def test_a_clean_preflight_builds_the_night(env):
@@ -270,17 +329,20 @@ def test_the_clone_must_be_main_at_origin_main_and_clean(env, change):
 def test_same_day_rerun_cleans_its_draft_and_refuses_a_published_tag(env):
     gh = FakeGH("draft")
     st = ns.State(open_draft=TAG)
+    st.open_draft_id = 101
     env.pre(st, gh)
-    assert ("delete_draft", TAG) in gh.calls
+    assert ("delete_draft", TAG, 101) in gh.calls
     assert st.open_draft is None
     gh = FakeGH("published")
     with pytest.raises(ns.Refused) as e:
-        env.pre(ns.State(open_draft=TAG), gh)
-    assert e.value.gate == "tag-exists" and ("delete_draft", TAG) not in gh.calls
+        st.open_draft = TAG
+        st.open_draft_id = 101
+        env.pre(st, gh)
+    assert e.value.gate == "tag-exists" and "delete_draft" not in gh.names()
     gh = FakeGH("draft")   # a draft this job did not leave
     with pytest.raises(ns.Refused) as e:
         env.pre(ns.State(), gh)
-    assert e.value.gate == "tag-exists" and ("delete_draft", TAG) not in gh.calls
+    assert e.value.gate == "tag-exists" and "delete_draft" not in gh.names()
 
 
 def test_a_stranded_own_draft_is_cleaned_and_the_night_proceeds(env):
@@ -290,8 +352,9 @@ def test_a_stranded_own_draft_is_cleaned_and_the_night_proceeds(env):
             return ns.next_version([{"tag_name": "v0.3.1", "draft": False},
                                     {"tag_name": TAG, "draft": True}])
     gh, st = Releases("draft"), ns.State(open_draft=TAG)
+    st.open_draft_id = 101
     assert env.pre(st, gh).tag == TAG
-    assert gh.calls == [("next_version",), ("release_state", TAG), ("delete_draft", TAG),
+    assert gh.calls == [("next_version",), ("release_state", TAG), ("delete_draft", TAG, 101),
                         ("ensure_tag_available", TAG)]
     assert st.open_draft is None
 
@@ -334,8 +397,9 @@ def test_site_pending_is_retried_before_skipping(env, monkeypatch):
     served = []
     monkeypatch.setattr(nightly, "demo_serves", lambda url, version, *, deadline: served.append((url, version, deadline)))
     gh = FakeGH()
+    gh.latest = "v0.3.0-nightly.20261027"
     assert env.night(pending_state(), gh) == "SKIPPED"
-    assert gh.names() == ["dispatch_site"] and gh.calls[0][1] > time.monotonic()
+    assert gh.names() == ["latest_tag", "dispatch_site"] and gh.calls[1][1] > time.monotonic()
     assert [s[:2] for s in served] == [(env.cfg.site_demo_url, "0.3.0-nightly.20261027")]
     assert ns.load_state(env.state_path).site_pending is None   # the retry worked, so nothing is pending
     assert "SKIPPED" in env.log() and "now serves" in env.log()
@@ -348,8 +412,9 @@ def test_a_failing_site_retry_stays_pending_and_the_night_stays_skipped(env, mon
             raise ns.Refused("site", "still serves 0.3.0")
     monkeypatch.setattr(nightly, "demo_serves", demo)
     gh = FakeGH(fail={"dispatch_site": ns.Refused("site", "run failed")} if where == "dispatch" else None)
+    gh.latest = "v0.3.1"
     assert env.night(pending_state(), gh) == "SKIPPED"
-    assert ns.load_state(env.state_path).site_pending == "0.3.0-nightly.20261027"
+    assert ns.load_state(env.state_path).site_pending == "0.3.1"
     assert "SKIPPED" in env.log() and "still failed" in env.log() and env_notes == []
 
 
@@ -360,8 +425,9 @@ def test_a_non_refusal_error_in_the_site_retry_keeps_the_night_skipped_and_pendi
             raise KeyError("databaseId")
     monkeypatch.setattr(nightly, "demo_serves", demo)
     gh = FakeGH(fail={"dispatch_site": KeyError("databaseId")} if where == "dispatch" else None)
+    gh.latest = "v0.3.1"
     assert env.night(pending_state(), gh) == "SKIPPED"
-    assert ns.load_state(env.state_path).site_pending == "0.3.0-nightly.20261027"
+    assert ns.load_state(env.state_path).site_pending == "0.3.1"
     assert "KeyError" in env.log() and "still failed" in env.log()
 
 
@@ -375,10 +441,11 @@ def test_no_publish_never_retries_the_site(env, monkeypatch):
 def test_no_publish_leaves_its_own_draft_alone(env):
     gh = FakeGH("draft")
     st = ns.State(open_draft=TAG)
+    st.open_draft_id = 101
     with pytest.raises(ns.Refused) as e:
         env.pre(st, gh, no_publish=True)
     assert e.value.gate == "tag-exists"
-    assert ("delete_draft", TAG) not in gh.calls and st.open_draft == TAG
+    assert "delete_draft" not in gh.names() and st.open_draft == TAG
 
 
 def test_no_release_means_the_tag_is_free_and_any_release_refuses(env):
@@ -450,7 +517,7 @@ class EnvRunner(FakeRunner):
         super().__init__()
         self.envs = []
 
-    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None):
+    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None, stop_on_interrupt=False):
         self.envs.append((list(cmd), env, holder))
         return super().run(cmd, cwd=cwd, log=log, deadline=deadline, env=env, holder=holder)
 
@@ -484,7 +551,7 @@ class LocaleRunner(EnvRunner):
         super().__init__()
         self.by_lang = {"he_IL.UTF-8": he, "en_US.UTF-8": en}
 
-    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None):
+    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None, stop_on_interrupt=False):
         if cmd[:2] == ["dotnet", "test"]:
             self.calls.append(list(cmd))
             self.envs.append((list(cmd), env, holder))
@@ -502,6 +569,7 @@ def gates_runner(night, env, *, check=(0, OK_CHECK), rg=(0, "RELEASE GATE OK\n")
     r.add(["uv", "run", f"{clone}/tools/build_sim_for_unity.py"], 0, "")
     r.add(["bash", "scripts/check.sh", "origin/main"], *check)
     r.add(["bash", "scripts/oss/release_gate.sh"], *rg)
+    r.add(["dotnet", "build-server", "shutdown"], out="servers stopped")
     return r
 
 
@@ -512,10 +580,13 @@ def test_gates_run_in_order_with_both_locales(night, env):
         ["uv", "run", f"{night.cfg.clone}/tools/build_sim_for_unity.py"],
         ["bash", "scripts/check.sh", "origin/main"],
         ["bash", "scripts/oss/release_gate.sh"],
-        ["dotnet", "test", "sim/Statecraft.sln", "-c", "Release", "--nologo"],
-        ["dotnet", "test", "sim/Statecraft.sln", "-c", "Release", "--nologo"],
+        ["dotnet", "test", "sim/Statecraft.sln", "-c", "Release", "--nologo",
+         "-nodeReuse:false", "-p:UseSharedCompilation=false"],
+        ["dotnet", "test", "sim/Statecraft.sln", "-c", "Release", "--nologo",
+         "-nodeReuse:false", "-p:UseSharedCompilation=false"],
+        ["dotnet", "build-server", "shutdown"],
     ]
-    langs = [(e["LANG"], e["LC_ALL"]) for c, e, _ in r.envs if c[0] == "dotnet"]
+    langs = [(e["LANG"], e["LC_ALL"]) for c, e, _ in r.envs if c[:2] == ["dotnet", "test"]]
     assert langs == [("he_IL.UTF-8", "he_IL.UTF-8"), ("en_US.UTF-8", "en_US.UTF-8")]
 
 
@@ -543,7 +614,7 @@ def test_a_later_gate_does_not_run_after_a_refusal(night, env):
     r = gates_runner(night, env, check=(1, OK_CHECK))
     with pytest.raises(Refused):
         nightly.run_gates(night, r)
-    assert not any(c[0] == "dotnet" or c[:2] == ["bash", "scripts/oss/release_gate.sh"] for c in r.calls)
+    assert not any(c[:2] == ["dotnet", "test"] or c[:2] == ["bash", "scripts/oss/release_gate.sh"] for c in r.calls)
 
 
 WARM_OK = "UnityMcpGuard warm-up: gate defines in place\n"
@@ -557,7 +628,7 @@ class EditRunner(EnvRunner):
         self.night, self.xml, self.code, self.warm_code = night, xml, code, warm_code
         self.warm_log, self.restore_code = warm_log, restore_code
 
-    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None):
+    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None, stop_on_interrupt=False):
         self.envs.append((list(cmd), env, holder))
         self.calls.append(list(cmd))
         d = self.night.run_dir
@@ -729,7 +800,7 @@ class WebRunner(EnvRunner):
         self.stamped_at_build = []
         self.restores = 0
 
-    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None):
+    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None, stop_on_interrupt=False):
         self.envs.append((list(cmd), env, holder))
         self.calls.append(list(cmd))
         if cmd[0] == "git" and cmd[1:3] == ["checkout", "--"]:
@@ -890,7 +961,7 @@ class CheckRunner(EnvRunner):
         super().__init__()
         self.ok, self.answers, self.cwds = ok, answers or {}, []
 
-    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None):
+    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None, stop_on_interrupt=False):
         self.envs.append((list(cmd), env, holder))
         self.calls.append(list(cmd))
         self.cwds.append(cwd)
@@ -1132,7 +1203,7 @@ def test_a_failed_draft_check_deletes_the_draft_and_refuses(night, env, pub, ser
     with pytest.raises(ns.Refused) as e:
         publish(night, st, gh, pub, env)
     assert e.value.gate == "github-draft" and "hash differs" in e.value.detail
-    assert ("delete_draft", TAG) in gh.calls and "publish" not in gh.names() and "dispatch_site" not in gh.names()
+    assert ("delete_draft", TAG, 101) in gh.calls and "publish" not in gh.names() and "dispatch_site" not in gh.names()
     assert st.open_draft is None and st.last_published.sha == OLD and served == []
 
 
@@ -1148,17 +1219,31 @@ def test_a_release_made_after_preflight_refuses_before_create_and_is_never_delet
 
 
 def test_a_create_that_fails_after_leaving_a_draft_cleans_that_draft(night, env, pub, served):
-    class HalfMade(FakeGH):
-        def create_draft(self, tag, sha, notes, assets):
-            self.calls.append(("create_draft", tag, sha, notes, list(assets)))
-            self.release = "draft"   # gh made the release, then an asset upload failed
-            raise ns.Refused("github-draft", "upload timed out")
-    gh = HalfMade()
+    gh = FakeGH(fail={"upload": ns.Refused("github-draft", "upload timed out")})
     st = ns.State(last_published=last_published())
     with pytest.raises(ns.Refused, match="upload timed out"):
         publish(night, st, gh, pub, env)
-    assert [c for c in gh.calls if c[0] == "delete_draft"] == [("delete_draft", TAG)]
+    assert [c for c in gh.calls if c[0] == "delete_draft"] == [("delete_draft", TAG, 101)]
     assert gh.release is None and st.open_draft is None and st.last_published.sha == OLD
+
+
+def test_upload_failure_has_a_persisted_owned_id_before_cleanup(night, env, pub, served):
+    # Mutation: save ownership only after upload, leaving a surviving draft unowned on disk.
+    gh = FakeGH(fail={"upload": ns.Refused("github-draft", "upload timed out")})
+    gh.delete_draft = lambda tag, release_id=None: (_ for _ in ()).throw(ns.Refused("github-delete", "offline"))
+    st = ns.State(last_published=last_published())
+    checkpoints = []
+
+    def save():
+        ns.save_state(env.state_path, st)
+        checkpoints.append(json.loads(env.state_path.read_text()))
+    with pytest.raises(ns.Refused, match="upload timed out"):
+        publish(night, st, gh, pub, env, save=save)
+    assert checkpoints[0].get("open_draft_id") == 101
+    assert checkpoints[0]["open_draft"] == TAG
+    assert gh.releases == [(TAG, 101, "draft")]
+    assert json.loads(env.state_path.read_text())["open_draft_id"] == 101
+    assert "verify_draft" not in gh.names() and "publish" not in gh.names()
 
 
 def test_rollback_after_create_deletes_only_the_created_tag(night, env, pub, served):
@@ -1166,7 +1251,7 @@ def test_rollback_after_create_deletes_only_the_created_tag(night, env, pub, ser
     st = ns.State(open_draft="v0.3.0", last_published=last_published())
     with pytest.raises(ns.Refused):
         publish(night, st, gh, pub, env)
-    assert [c for c in gh.calls if c[0] == "delete_draft"] == [("delete_draft", TAG)]
+    assert [c for c in gh.calls if c[0] == "delete_draft"] == [("delete_draft", TAG, 101)]
     assert st.open_draft is None
 
 
@@ -1174,12 +1259,12 @@ def test_a_non_refusal_error_in_the_draft_check_still_deletes_the_draft(night, e
     gh = FakeGH(fail={"verify_draft": OSError("disk")})
     with pytest.raises(ns.Refused) as e:
         publish(night, ns.State(last_published=last_published()), gh, pub, env)
-    assert e.value.gate == "github-draft" and "OSError" in e.value.detail and ("delete_draft", TAG) in gh.calls
+    assert e.value.gate == "github-draft" and "OSError" in e.value.detail and ("delete_draft", TAG, 101) in gh.calls
 
 
 def test_a_failed_cleanup_keeps_the_original_refusal_and_the_open_draft(night, env, pub, served, capsys):
     gh = FakeGH(fail={"verify_draft": ns.Refused("github-draft", "hash differs")})
-    gh.delete_draft = lambda tag: (_ for _ in ()).throw(ns.Refused("github-delete", "offline"))
+    gh.delete_draft = lambda tag, release_id=None: (_ for _ in ()).throw(ns.Refused("github-delete", "offline"))
     st = ns.State(last_published=last_published())
     with pytest.raises(ns.Refused) as e:
         publish(night, st, gh, pub, env)
@@ -1191,7 +1276,7 @@ def test_a_failed_publish_deletes_a_draft_that_is_still_one(night, env, pub, ser
     st = ns.State(last_published=last_published())
     with pytest.raises(ns.Refused) as e:
         publish(night, st, gh, pub, env)
-    assert e.value.gate == "github-publish" and ("delete_draft", TAG) in gh.calls
+    assert e.value.gate == "github-publish" and ("delete_draft", TAG, 101) in gh.calls
     assert st.last_published.sha == OLD and served == []
 
 
@@ -1247,7 +1332,9 @@ def test_a_site_failure_after_publish_retries_once_then_refuses_and_marks_site_p
     st = ns.State(last_published=last_published())
     with pytest.raises(ns.Refused) as e:
         publish(night, st, gh, pub, env)
-    assert e.value.gate == "site" and "public" in e.value.detail and "unchanged" in e.value.detail
+    assert e.value.gate == "site" and "public" in e.value.detail
+    assert "unchanged" not in e.value.detail
+    assert "unverified" in e.value.detail and "may have changed" in e.value.detail
     assert gh.names().count("dispatch_site") == 2 and "delete_draft" not in gh.names()
     assert st.last_published.tag == TAG and st.last_published.sha == night.sha   # the release is public
     assert st.site_pending == night.version and st.open_draft is None
@@ -1298,7 +1385,7 @@ def test_a_failed_latest_lookup_refuses_before_the_public_edit(night, env, pub, 
     with pytest.raises(ns.Refused, match="offline"):
         publish(night, ns.State(), gh, pub, env)
     assert "publish" not in gh.names() and "restore_latest" not in gh.names()
-    assert ("delete_draft", TAG) in gh.calls
+    assert ("delete_draft", TAG, 101) in gh.calls
 
 
 def test_a_failed_save_after_publish_restores_latest(night, env, pub, served):
@@ -1317,9 +1404,16 @@ def test_a_disk_error_saving_state_after_publish_keeps_the_good_release_latest(n
                                                                               monkeypatch):
     monkeypatch.setattr(nightly, "notify", lambda *a: None)
     blocked = tmp_path / "state.json"
-    blocked.mkdir()   # writing the state file fails with an OSError, which production's _try_save reports and absorbs
     gh, st = FakeGH(), ns.State(last_published=last_published())
-    publish(night, st, gh, pub, env, save=lambda: nightly._try_save(blocked, st))
+    saved_ids = []
+    def save():
+        if gh.release == "published" and not blocked.is_dir():
+            saved_ids.append(json.loads(blocked.read_text())["open_draft_id"])
+            blocked.unlink()
+            blocked.mkdir()   # fail only after publication; the ownership checkpoint must have succeeded
+        return nightly._try_save(blocked, st)
+    publish(night, st, gh, pub, env, save=save)
+    assert saved_ids == [101] and blocked.is_dir()
     assert gh.latest == TAG and "restore_latest" not in gh.names() and st.last_published.tag == TAG
 
 
@@ -1366,6 +1460,7 @@ def test_state_is_saved_right_after_create_draft_and_right_after_publish(night, 
     st = ns.State(last_published=last_published())
     with pytest.raises(Crash):
         publish(night, st, FakeGH(), pub, env, save=save(1))   # killed right after create_draft
+    assert json.loads(path.read_text()).get("open_draft_id") == 101
     assert ns.load_state(path).open_draft == TAG and saves[0] == (TAG, last_published().tag)
     saves.clear()
     st = ns.State(last_published=last_published())
@@ -1520,7 +1615,7 @@ def test_an_unusable_rollback_target_refuses_before_any_push(itch_night, env, ho
     err, gh, st = refused_itch(itch_night, env)
     assert err.gate == "itch-rollback"
     assert not [c for c in gh.calls if c[0].startswith("itch.")] and "publish" not in gh.names()
-    assert ("delete_draft", TAG) in gh.calls and st.open_draft is None
+    assert ("delete_draft", TAG, 101) in gh.calls and st.open_draft is None
 
 
 @pytest.mark.parametrize("step", ["push", "wait_live", "matches"])
@@ -1544,7 +1639,7 @@ def test_a_failed_rollback_is_named_in_the_refusal_and_notified(itch_night, env)
     err, gh, st = refused_itch(itch_night, env)
     assert err.gate == "itch" and "never live" in err.detail
     assert "rollback" in err.detail and "butler push exited 1" in err.detail and "by hand" in err.detail
-    assert ("delete_draft", TAG) in gh.calls   # the draft is still cleaned up
+    assert ("delete_draft", TAG, 101) in gh.calls   # the draft is still cleaned up
     assert any("itch" in a[0].lower() and "rollback" in a[1].lower() for a in env_notes)
 
 
@@ -1554,7 +1649,7 @@ def test_a_github_publish_failure_after_itch_rolls_itch_back(itch_night, env):
     err, gh, st = refused_itch(itch_night, env)
     assert err.gate == "github-publish"
     assert ("itch.push", "itch-rollback", PREV_VERSION) in gh.calls and ("itch.wait_live", PREV_VERSION) in gh.calls
-    assert ("delete_draft", TAG) in gh.calls
+    assert ("delete_draft", TAG, 101) in gh.calls
 
 
 def test_a_failed_rollback_after_a_publish_failure_is_named_and_notified(itch_night, env):
@@ -1574,7 +1669,7 @@ def test_an_interrupt_during_publish_rolls_itch_back_and_cleans_the_draft(itch_n
     with pytest.raises(KeyboardInterrupt):
         run_itch(itch_night, env, st=st)
     assert ("itch.push", "itch-rollback", PREV_VERSION) in gh.calls and ("itch.wait_live", PREV_VERSION) in gh.calls
-    assert ("delete_draft", TAG) in gh.calls and st.open_draft is None
+    assert ("delete_draft", TAG, 101) in gh.calls and st.open_draft is None
 
 
 def test_the_itch_skip_reason_is_noted_on_the_night(night, env, pub, served):
@@ -1607,7 +1702,10 @@ def test_a_site_failure_after_publish_does_not_roll_itch_back(itch_night, env):
 def stages(night, env, tmp_path, monkeypatch):
     """Every stage replaced by a recorder, so the order and the arguments are what is tested."""
     order = []
-    gz, pages = tmp_path / "Web-gzip", tmp_path / "Web-pages"
+    source_gz, pages = tmp_path / "Web-gzip", tmp_path / "Web-pages"
+    source_gz.mkdir()
+    (source_gz / "index.html").write_text("first player")
+    gz = night.run_dir / "Web-gzip"
     zips = {False: tmp_path / "web.zip", True: tmp_path / "pages.zip"}
     prev = tmp_path / "prev.zip"
 
@@ -1619,7 +1717,7 @@ def stages(night, env, tmp_path, monkeypatch):
 
     rec("run_gates")
     rec("run_editmode")
-    rec("build_web", lambda a, k: pages if k["pages"] else gz)
+    rec("build_web", lambda a, k: pages if k["pages"] else source_gz)
     rec("assert_clean_tree")
     rec("package_zip", lambda a, k: zips[a[3]])
     rec("run_web_checks")
@@ -1628,7 +1726,7 @@ def stages(night, env, tmp_path, monkeypatch):
     rec("publish_night")
     gh = FakeGH()
     gh.baseline = prev
-    return type("S", (), dict(order=order, gz=gz, pages=pages, zips=zips, prev=prev, gh=gh,
+    return type("S", (), dict(order=order, gz=gz, source_gz=source_gz, pages=pages, zips=zips, prev=prev, gh=gh,
                               names=lambda self: [o[0] for o in order]))()
 
 
@@ -1640,8 +1738,12 @@ def test_the_stages_run_in_the_brief_order(night, env, stages, capsys):
                               "measure_boot", "publish_night"]
     builds = [o for o in stages.order if o[0] == "build_web"]
     assert [b[2]["pages"] for b in builds] == [False, True]
+    packages = [o for o in stages.order if o[0] == "package_zip"]
+    assert [p[1][2] for p in packages] == [stages.gz, stages.pages]
     checks = [o for o in stages.order if o[0] == "run_web_checks"]
     assert [c[1][2] for c in checks] == [stages.gz, stages.pages]   # web checks on BOTH builds
+    boot = next(o for o in stages.order if o[0] == "measure_boot")
+    assert boot[1][2] == stages.gz
     sizes = next(o for o in stages.order if o[0] == "check_sizes")
     assert sizes[1][2:5] == (stages.gz, stages.prev, OLD) and sizes[2]["runner"] is env.runner
     assert stages.gh.calls[-1][:3] == ("download", "v0.3.0-nightly.20261027", "*-web.zip")
@@ -1677,6 +1779,8 @@ def test_a_published_night_is_recorded_as_published(env, monkeypatch):
 def test_a_boot_slowdown_refuses_and_a_collecting_baseline_passes(night, env, stages):
     st = ns.State(last_published=last_published(), boot_baseline=[8000.0, 8100.0, 8050.0, 8100.0, 8000.0])
     nightly.run_stages(night, st, env.runner, stages.gh, None, no_publish=True, free_gb=lambda p: 100.0)   # 8200 <= limit
+    # The next simulated night has its own evidence directory in production; discard only this test's completed copy.
+    shutil.rmtree(stages.gz)
     st.boot_baseline = [1000.0, 1000.0, 1000.0, 1000.0, 1000.0]
     with pytest.raises(ns.Refused) as e:
         nightly.run_stages(night, st, env.runner, stages.gh, None, no_publish=True, free_gb=lambda p: 100.0)
@@ -1687,7 +1791,7 @@ def test_a_failed_build_still_checks_the_tree_before_the_refusal(night, env, sta
     def boom(n, r, *, pages, free_gb):
         if pages:
             raise ns.Refused("build-web", "the Unity build exited 1")
-        return stages.gz
+        return stages.source_gz
     monkeypatch.setattr(nightly, "build_web", boom)
     with pytest.raises(ns.Refused) as e:
         nightly.run_stages(night, ns.State(last_published=last_published()), env.runner, stages.gh, None,
@@ -1818,7 +1922,7 @@ class SaveRunner(FakeRunner):
         super().__init__()
         self.saved, self.loads, self.runs = saved, list(loads), []
 
-    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None):
+    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None, stop_on_interrupt=False):
         self.runs.append(list(cmd))
         code, text = self.saved if "--first-save" in cmd else self.loads.pop(0)
         Path(log).parent.mkdir(parents=True, exist_ok=True)
@@ -2111,3 +2215,630 @@ def test_a_corrupt_config_on_the_savetest_path_is_recorded_not_an_attribute_erro
     monkeypatch.setattr(nightly, "notify", lambda *a, **k: None)
     assert nightly.main(["savetest", "--tag", "v0.3.1-nightly.20261028"]) == 1
     assert "gate=config" in (job / "LOG.md").read_text()
+
+
+def test_managed_gates_hold_the_canonical_shared_lock_until_shutdown(night, env, monkeypatch):
+    import fcntl
+    r = gates_runner(night, env)
+    original = r.run
+    seen = []
+
+    def probe(cmd, **kwargs):
+        with open(nightly.unity_postmerge.machine_lock.LOCK, "a+") as other:
+            try:
+                fcntl.flock(other, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                pass
+            else:
+                fcntl.flock(other, fcntl.LOCK_UN)
+                pytest.fail("managed stage escaped the canonical shared lock")
+        with open(nightly.unity_postmerge.machine_lock.LOCK, "a+") as shared:
+            fcntl.flock(shared, fcntl.LOCK_SH | fcntl.LOCK_NB)
+            fcntl.flock(shared, fcntl.LOCK_UN)
+        with open(nightly.unity_postmerge.machine_lock.GATE, "a+") as gate:
+            fcntl.flock(gate, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            fcntl.flock(gate, fcntl.LOCK_UN)
+        seen.append(cmd[:2])
+        return original(cmd, **kwargs)
+
+    monkeypatch.setattr(r, "run", probe)
+    nightly.run_gates(night, r)
+    assert seen == [["uv", "run"], ["bash", "scripts/check.sh"],
+                    ["bash", "scripts/oss/release_gate.sh"], ["dotnet", "test"],
+                    ["dotnet", "test"], ["dotnet", "build-server"]]
+    with open(nightly.unity_postmerge.machine_lock.LOCK, "a+") as released:
+        fcntl.flock(released, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        fcntl.flock(released, fcntl.LOCK_UN)
+
+
+
+def test_managed_gates_disable_reuse_and_shut_down_before_return(night, env):
+    r = gates_runner(night, env)
+    nightly.run_gates(night, r)
+    tests = [cmd for cmd in r.calls if cmd[:2] == ["dotnet", "test"]]
+    assert len(tests) == 2
+    for cmd in tests:
+        assert "-nodeReuse:false" in cmd and "-p:UseSharedCompilation=false" in cmd
+    assert len(r.envs) == 6 and all(passed_env is not None for _, passed_env, _ in r.envs)
+    for _, passed_env, _ in r.envs:
+        assert passed_env["MSBUILDDISABLENODEREUSE"] == "1"
+        assert passed_env["DOTNET_CLI_USE_MSBUILD_SERVER"] == "0"
+        assert passed_env["UseSharedCompilation"] == "false"
+    assert r.calls[-1] == ["dotnet", "build-server", "shutdown"]
+
+
+def test_managed_gate_refusal_still_shuts_down_servers(night, env):
+    r = gates_runner(night, env, check=(1, OK_CHECK))
+    with pytest.raises(Refused) as error:
+        nightly.run_gates(night, r)
+    assert error.value.gate == "check"
+    assert r.calls[-1] == ["dotnet", "build-server", "shutdown"]
+
+
+def test_expired_managed_work_after_lock_acquisition_starts_no_command(night, env, monkeypatch):
+    from contextlib import contextmanager
+
+    @contextmanager
+    def acquired_after_deadline():
+        night.deadline = time.monotonic() - 1
+        yield
+
+    monkeypatch.setattr(nightly.unity_postmerge.machine_lock, "hold", acquired_after_deadline)
+    r = gates_runner(night, env)
+    with pytest.raises(Refused) as error:
+        nightly.run_gates(night, r)
+    assert error.value.gate == "managed-deadline"
+    assert r.calls == []
+
+
+@pytest.mark.parametrize("check_failed", [False, True])
+def test_compiler_shutdown_failure_refuses_instead_of_passing(night, env, check_failed):
+    r = gates_runner(night, env, check=(1 if check_failed else 0, OK_CHECK))
+    r.rules.insert(0, (("dotnet", "build-server", "shutdown"), 1, "shutdown failed", None))
+    with pytest.raises(Refused) as error:
+        nightly.run_gates(night, r)
+    assert error.value.gate == ("check" if check_failed else "build-server-shutdown")
+    assert r.calls.count(["dotnet", "build-server", "shutdown"]) == 1
+    assert r.calls[-1] == ["dotnet", "build-server", "shutdown"]
+    if check_failed:
+        assert "shutdown" in (night.run_dir / "build-server-shutdown.note").read_text()
+    else:
+        assert len(r.calls) == 6
+
+
+def test_sim_publisher_explicitly_disables_node_and_compiler_reuse(monkeypatch, no_processes, tmp_path):
+    import build_sim_for_unity
+    monkeypatch.setattr(build_sim_for_unity, "REPO", tmp_path)
+    output = tmp_path / "unity/Assets/Plugins/Statecraft"
+    output.mkdir(parents=True)
+    for name in ("Statecraft.Sim.dll", "YamlDotNet.dll"):
+        (output / name).write_bytes(b"fixture")
+    calls = []
+    monkeypatch.setattr(build_sim_for_unity.subprocess, "run", lambda cmd, **kw: calls.append((cmd, kw)))
+    assert build_sim_for_unity.main() == 0
+    assert len(calls) == 1
+    cmd, kwargs = calls[0]
+    assert cmd[:2] == ["dotnet", "publish"]
+    assert "-nodeReuse:false" in cmd and "-p:UseSharedCompilation=false" in cmd
+    assert kwargs["check"] is True
+    assert kwargs["cwd"] == tmp_path and cmd[cmd.index("-o") + 1] == str(output)
+
+
+@pytest.mark.parametrize("primary", [KeyboardInterrupt, SystemExit])
+@pytest.mark.parametrize("cleanup_raises", [False, True])
+def test_shutdown_never_replaces_a_primary_interrupt(night, env, monkeypatch, primary, cleanup_raises):
+    r = gates_runner(night, env)
+    original = r.run
+    interruption = primary()
+
+    def run(cmd, **kwargs):
+        if cmd[:2] == ["bash", "scripts/check.sh"]:
+            raise interruption
+        if cmd == ["dotnet", "build-server", "shutdown"]:
+            if cleanup_raises:
+                raise OSError("cleanup failed")
+            return 1
+        return original(cmd, **kwargs)
+
+    monkeypatch.setattr(r, "run", run)
+    with pytest.raises(primary) as error:
+        nightly.run_gates(night, r)
+    assert error.value is interruption
+    assert "shutdown" in (night.run_dir / "build-server-shutdown.note").read_text()
+
+
+def test_mid_sequence_deadline_stops_work_but_keeps_shutdown_budget(night, env, monkeypatch):
+    r = gates_runner(night, env)
+    r.rules[0] = (*r.rules[0][:3], lambda cmd: setattr(night, "deadline", time.monotonic() - 1))
+    original = r.run
+    cleanup_deadlines = []
+
+    def run(cmd, **kwargs):
+        if cmd == ["dotnet", "build-server", "shutdown"]:
+            cleanup_deadlines.append(kwargs["deadline"])
+        return original(cmd, **kwargs)
+
+    monkeypatch.setattr(r, "run", run)
+    with pytest.raises(Refused) as error:
+        nightly.run_gates(night, r)
+    assert error.value.gate == "managed-deadline"
+    assert r.calls == [["uv", "run", str(night.cfg.clone / "tools/build_sim_for_unity.py")],
+                       ["dotnet", "build-server", "shutdown"]]
+    assert len(cleanup_deadlines) == 1 and cleanup_deadlines[0] > time.monotonic()
+
+
+
+
+def test_shutdown_refuses_inside_a_callers_except(night, env):
+    r = gates_runner(night, env)
+    r.rules.insert(0, (("dotnet", "build-server", "shutdown"), 1, "shutdown failed", None))
+    try:
+        raise ValueError("handled by caller")
+    except ValueError:
+        with pytest.raises(Refused) as error:
+            nightly.run_gates(night, r)
+    assert error.value.gate == "build-server-shutdown"
+    assert len(r.calls) == 6
+
+
+@pytest.mark.parametrize("kind", [KeyboardInterrupt, SystemExit])
+def test_shutdown_interrupt_propagates_inside_a_callers_except(night, env, monkeypatch, kind):
+    r = gates_runner(night, env)
+    original = r.run
+    raised = kind()
+    def run(cmd, **kwargs):
+        if cmd == ["dotnet", "build-server", "shutdown"]:
+            raise raised
+        return original(cmd, **kwargs)
+    monkeypatch.setattr(r, "run", run)
+    try:
+        raise ValueError("handled by caller")
+    except ValueError:
+        with pytest.raises(kind) as error:
+            nightly.run_gates(night, r)
+    assert error.value is raised
+
+
+@pytest.mark.parametrize("kind", [KeyboardInterrupt, SystemExit])
+def test_managed_child_is_reaped_before_shared_hold_releases(night, env, tmp_path, monkeypatch, kind):
+    marker = tmp_path / "child-started"
+    instances = []
+    real_popen = REAL_POPEN
+    interruption = kind()
+    class InterruptingPopen(real_popen):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.injected = False
+            instances.append(self)
+        def wait(self, timeout=None):
+            if not self.injected:
+                self.injected = True
+                end = time.monotonic() + 10
+                while not marker.exists() and time.monotonic() < end:
+                    time.sleep(.02)
+                assert marker.exists(), "infrastructure: owned child never started"
+                raise interruption
+            return super().wait(timeout)
+    argv = [sys.executable, "-c", "import os,pathlib,time;pathlib.Path(" + repr(str(marker)) + ").write_text(str(os.getpid())+' '+str(os.getpgid(0)));time.sleep(120)"]
+    real = nightly.ProcRunner(grace=.2)
+    class R:
+        def run(self, cmd, **kwargs):
+            if cmd == ["dotnet", "build-server", "shutdown"]:
+                return 0
+            return real.run(argv, **kwargs)
+    old_hold = nightly.unity_postmerge.machine_lock.hold
+    reaped_at_release = []
+    @contextmanager
+    def checked_hold():
+        with old_hold():
+            try:
+                yield
+            finally:
+                reaped_at_release.append(bool(instances) and instances[0].poll() is not None)
+    monkeypatch.setattr(nightly.unity_postmerge.machine_lock, "hold", checked_hold)
+    monkeypatch.setattr(nightly.subprocess, "Popen", InterruptingPopen)
+    try:
+        with pytest.raises(kind) as error:
+            nightly.run_gates(night, R())
+        assert error.value is interruption
+        assert marker.exists(), "infrastructure: no positive child start proof"
+        pid, pgid = map(int, marker.read_text().split())
+        assert pid == pgid and pgid != os.getpgid(0)
+        assert reaped_at_release == [True], "managed child still running when the shared hold releases"
+        with pytest.raises(ProcessLookupError):
+            os.killpg(pgid, 0)
+    finally:
+        for proc in instances:
+            if proc.pid != os.getpgid(0):
+                try:
+                    os.killpg(proc.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+                real_popen.wait(proc, timeout=5)
+
+
+def test_interrupt_cleanup_is_opt_in_for_managed_commands(tmp_path, monkeypatch):
+    calls = []
+    interruption = KeyboardInterrupt()
+    class Child:
+        def wait(self, timeout):
+            raise interruption
+    monkeypatch.setattr(nightly.subprocess, "Popen", lambda *args, **kwargs: Child())
+    runner = nightly.ProcRunner()
+    monkeypatch.setattr(runner, "_stop_group", lambda child: calls.append(child))
+    with pytest.raises(KeyboardInterrupt) as error:
+        runner.run(["possible-lock-wait"], cwd=tmp_path, log=tmp_path / "log", deadline=time.monotonic() + 5)
+    assert error.value is interruption and calls == []
+
+
+def test_every_managed_command_opts_into_interrupt_cleanup(night, env, monkeypatch):
+    r = gates_runner(night, env)
+    original = r.run
+    flags = []
+    def run(cmd, **kwargs):
+        flags.append(kwargs.get("stop_on_interrupt", False))
+        return original(cmd, **kwargs)
+    monkeypatch.setattr(r, "run", run)
+    nightly.run_gates(night, r)
+    assert flags == [True] * 6
+
+
+def test_second_interrupt_during_grace_still_kills_and_reaps_own_group(tmp_path, monkeypatch):
+    marker = tmp_path / "term-resistant-started"
+    argv = [sys.executable, "-c", "import os,pathlib,signal,time;signal.signal(signal.SIGTERM,signal.SIG_IGN);pathlib.Path(" + repr(str(marker)) + ").write_text(str(os.getpid()));time.sleep(120)"]
+    proc = REAL_POPEN(argv, start_new_session=True)
+    original_wait = proc.wait
+    injected = False
+    def interrupted_wait(timeout=None):
+        nonlocal injected
+        if not injected:
+            injected = True
+            raise KeyboardInterrupt()
+        return original_wait(timeout=timeout)
+    try:
+        end = time.monotonic() + 10
+        while not marker.exists() and time.monotonic() < end:
+            time.sleep(.02)
+        assert marker.exists(), "infrastructure: owned TERM-resistant child did not start"
+        monkeypatch.setattr(proc, "wait", interrupted_wait)
+        with pytest.raises(KeyboardInterrupt):
+            nightly.ProcRunner(grace=.2)._stop_group(proc)
+        assert proc.poll() is not None
+        with pytest.raises(ProcessLookupError):
+            os.killpg(proc.pid, 0)
+    finally:
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        original_wait(timeout=5)
+
+
+def test_gzip_player_survives_second_build_deleting_its_bee_artifacts(night, env, monkeypatch):
+    import shutil
+    gz = night.cfg.clone / "unity/Builds/Web-gzip"
+    pages = night.cfg.clone / "unity/Builds/Web-pages"
+    (gz / "Build").mkdir(parents=True)
+    (gz / "Build/player.data.gz").write_bytes(b"first-player-exact-bytes")
+    (gz / "index.html").write_text('dataUrl: "Build/player.data.gz"')
+    (gz / "StreamingAssets/content").mkdir(parents=True)
+    (gz / "StreamingAssets/content/policy.yaml").write_bytes(b"owner-records: unchanged")
+    checks = []
+    def build(n, r, *, pages: bool, free_gb):
+        if pages:
+            assert (gz / "Build/player.data.gz").read_bytes() == b"first-player-exact-bytes"
+            shutil.rmtree(gz / "Build")  # Unity Bee retires the previous target's outputs.
+            return night.cfg.clone / "unity/Builds/Web-pages"
+        return gz
+    monkeypatch.setattr(nightly, "build_web", build)
+    monkeypatch.setattr(nightly, "assert_clean_tree", lambda n, r: checks.append("clean"))
+    saved, second = nightly._build_both(night, env.runner, lambda p: 100.0)
+    assert not (gz / "Build").exists(), "the test must actually retire the first output"
+    assert saved != gz and second == pages
+    assert (saved / "Build/player.data.gz").read_bytes() == b"first-player-exact-bytes"
+    assert (saved / "index.html").read_bytes() == (gz / "index.html").read_bytes()
+    assert (saved / "StreamingAssets/content/policy.yaml").read_bytes() == b"owner-records: unchanged"
+    assert checks == ["clean"]
+
+
+def test_gzip_snapshot_collision_refuses_without_second_build_or_overwrite(night, env, monkeypatch):
+    source = night.cfg.clone / "unity/Builds/Web-gzip"
+    source.mkdir(parents=True)
+    (source / "index.html").write_text("new artifact")
+    existing = night.run_dir / "Web-gzip"
+    existing.mkdir()
+    (existing / "index.html").write_text("prior evidence")
+    builds, checks = [], []
+    def build(n, r, *, pages, free_gb):
+        builds.append(pages)
+        return source
+    monkeypatch.setattr(nightly, "build_web", build)
+    monkeypatch.setattr(nightly, "assert_clean_tree", lambda n, r: checks.append("clean"))
+    with pytest.raises(FileExistsError):
+        nightly._build_both(night, env.runner, lambda p: 100.0)
+    assert builds == [False] and checks == ["clean"]
+    assert (existing / "index.html").read_text() == "prior evidence"
+
+
+def test_a_partial_gzip_copy_cannot_reach_any_consumer_or_publication(night, env, stages, monkeypatch):
+    def partial_copy(source, destination):
+        destination.mkdir()
+        (destination / "index.html").write_text("incomplete evidence")
+        raise OSError("simulated copy failure")
+    monkeypatch.setattr(nightly.shutil, "copytree", partial_copy)
+    with pytest.raises(OSError, match="simulated copy failure"):
+        nightly.run_stages(night, ns.State(last_published=last_published()), env.runner, stages.gh, None,
+                           no_publish=False, free_gb=lambda p: 100.0)
+    assert stages.names() == ["run_gates", "run_editmode", "build_web", "assert_clean_tree"]
+    assert (stages.gz / "index.html").read_text() == "incomplete evidence"
+
+
+@pytest.mark.parametrize("rollback", [False, True])
+@pytest.mark.parametrize("record_owned_row", [False, True])
+def test_same_tag_foreign_id_survives_cleanup_and_rollback(env, night, rollback, record_owned_row, capsys):
+    # Mutation: omit or pass the wrong saved ID to the fake's ownership check.
+    # The real-client DELETE-address test covers deleting by tag after a successful check.
+    gh = FakeGH()
+    # Two logical same-tag records also cover the issue's defensive fixture contract; no live API capability is assumed.
+    expected = ([(TAG, 101, "draft")] if record_owned_row else []) + [(TAG, 202, "draft"), ("v0.4.0", 303, "published")]
+    gh.releases = list(expected)
+    st = ns.State(open_draft=TAG)
+    st.open_draft_id = 101
+    refusal = ""
+    if rollback:
+        nightly._drop_draft(night, st, gh)
+    else:
+        try:
+            env.pre(st, gh)
+        except ns.Refused as e:
+            refusal = e.detail
+    assert gh.releases == expected
+    if rollback:
+        assert "check by hand" in capsys.readouterr().err
+    else:
+        assert "check by hand" in refusal
+    assert st.open_draft == TAG and st.open_draft_id == 101
+
+
+def test_matching_persisted_id_cleans_our_stranded_draft_on_rerun(env):
+    # Mutation: refuse every stranded draft, or lose the ID while loading saved state.
+    gh = FakeGH()
+    gh.releases = [("v0.4.0", 202, "draft"), (TAG, 101, "draft")]
+    st = ns.State(open_draft=TAG, open_draft_id=101)   # new-schema persistence contract
+    ns.save_state(env.state_path, st)
+    st = ns.load_state(env.state_path)
+    assert env.pre(st, gh).tag == TAG
+    assert gh.releases == [("v0.4.0", 202, "draft")]
+    assert st.open_draft is None and st.open_draft_id is None
+
+
+def test_legacy_open_draft_without_id_refuses_and_survives(env):
+    # Mutation: treat a missing ID as permission to delete a same-tag draft.
+    env.state_path.write_text(json.dumps({"open_draft": TAG}))
+    st = ns.load_state(env.state_path)
+    gh = FakeGH("draft")
+    refusal = ""
+    try:
+        env.pre(st, gh)
+    except ns.Refused as e:
+        refusal = e.detail
+    assert gh.releases == [(TAG, 101, "draft")]
+    assert "check by hand" in refusal
+    assert st.open_draft == TAG and getattr(st, "open_draft_id", None) is None
+
+
+def test_failed_recovery_is_persisted_then_retried_before_next_preflight(night, env, pub, served):
+    # Mutation: only report a recovery failure, or retry after preflight's no-change/site-pending path.
+    gh = FakeGH(fail={"dispatch_site": ns.Refused("site", "site unavailable"),
+                      "restore_latest": ns.Refused("github-latest", "cannot verify")})
+    st = ns.State(last_published=last_published())
+    with pytest.raises(ns.Refused, match="check by hand"):
+        publish(night, st, gh, pub, env, save=lambda: ns.save_state(env.state_path, st))
+    pending = {"failed": TAG, "previous": "v0.3.1"}
+    assert json.loads(env.state_path.read_text()).get("latest_recovery_pending") == pending
+    gh.fail.clear()
+    gh.calls.clear()
+    assert env.night(gh=gh) == "SKIPPED"
+    assert gh.names() == ["restore_latest", "latest_tag", "dispatch_site"]
+    assert gh.latest == "v0.3.1"
+    assert ns.load_state(env.state_path).latest_recovery_pending is None
+    assert "restored previous Latest v0.3.1" in env.log()
+    assert any("restored previous Latest v0.3.1" in note[1] for note in env_notes)
+    gh.calls.clear()
+    assert env.night(gh=gh) == "SKIPPED"
+    assert "restore_latest" not in gh.names()
+
+
+def test_unverified_restore_persists_even_if_latest_edit_reached_github(night, env, pub, served):
+    # Mutation: clear recovery on an edit that has not been verified.
+    gh = FakeGH(fail={"dispatch_site": ns.Refused("site", "site unavailable")})
+    st = ns.State(last_published=last_published())
+
+    def unverified(previous, failed):
+        gh.calls.append(("restore_latest", previous, failed))
+        gh.latest = previous   # the edit reached GitHub, but verification failed
+        raise ns.Refused("github-latest", "cannot verify")
+    gh.restore_latest = unverified
+    with pytest.raises(ns.Refused, match="cannot verify"):
+        publish(night, st, gh, pub, env, save=lambda: ns.save_state(env.state_path, st))
+    assert gh.latest == "v0.3.1"
+    assert json.loads(env.state_path.read_text()).get("latest_recovery_pending") == {
+        "failed": TAG, "previous": "v0.3.1"}
+
+
+@pytest.mark.parametrize("site_pending", [None, "0.3.2"])
+def test_pending_recovery_precedes_unchanged_main_and_site_retry(env, monkeypatch, site_pending):
+    # Mutation: run real preflight's skip or site deploy before retrying pending recovery.
+    read_pending_with_old_state(monkeypatch)
+    raw = dataclasses.asdict(ns.State(last_published=ns.Published(TAG, SHA, "0.3.2", {}, None),
+                                    site_pending=site_pending))
+    raw["latest_recovery_pending"] = {"failed": TAG, "previous": "v0.3.1"}
+    env.state_path.write_text(json.dumps(raw))
+    gh = FakeGH()
+    gh.latest = TAG
+
+    observations = []
+    def dispatch(deadline):
+        gh.calls.append(("dispatch_site", deadline))
+        observations.append((gh.latest, json.loads(env.state_path.read_text()).get("latest_recovery_pending")))
+    gh.dispatch_site = dispatch
+    monkeypatch.setattr(nightly, "demo_serves", lambda *a, **k: None)
+    assert env.night(gh=gh) == "SKIPPED"
+    assert gh.names() == ["restore_latest"] + (["latest_tag", "dispatch_site"] if site_pending else [])
+    assert observations == ([("v0.3.1", None)] if site_pending else [])
+    assert json.loads(env.state_path.read_text()).get("latest_recovery_pending") is None
+    gh.calls.clear()
+    assert env.night(gh=gh) == "SKIPPED"
+    assert gh.calls == []
+
+
+@pytest.mark.parametrize("current", ["v0.4.0", None, "v0.3.1"])
+def test_pending_recovery_with_moved_latest_is_cleared_and_left_alone(env, monkeypatch, current):
+    # Mutation: disregard restore_latest's acted=False result or keep retrying an obsolete recovery.
+    gh = FakeGH()
+    gh.latest = current
+    read_pending_with_old_state(monkeypatch)
+    raw = dataclasses.asdict(ns.State(last_published=ns.Published(TAG, SHA, "0.3.2", {}, None)))
+    raw["latest_recovery_pending"] = {"failed": TAG, "previous": "v0.3.1"}
+    env.state_path.write_text(json.dumps(raw))
+    assert env.night(gh=gh) == "SKIPPED"
+    assert gh.calls == [("restore_latest", "v0.3.1", TAG)]
+    assert gh.latest == current
+    assert json.loads(env.state_path.read_text())["latest_recovery_pending"] is None
+    assert "left alone" in env.log()
+    assert any("left alone" in note[1] for note in env_notes)
+    gh.calls.clear()
+    assert env.night(gh=gh) == "SKIPPED"
+    assert "restore_latest" not in gh.names()
+
+
+def test_pending_recovery_failure_stops_publication_and_keeps_record(env, monkeypatch, served):
+    # Mutation: clear pending on an unverified recovery or continue into publishing after it fails.
+    read_pending_with_old_state(monkeypatch)
+    pending = {"failed": TAG, "previous": None}
+    raw = dataclasses.asdict(ns.State(last_published=ns.Published(TAG, SHA, "0.3.2", {}, None),
+                                    site_pending="0.3.2"))
+    raw["latest_recovery_pending"] = pending
+    env.state_path.write_text(json.dumps(raw))
+    gh = FakeGH(fail={"restore_latest": OSError("offline")})
+    gh.latest = TAG
+    outcome = env.night(gh=gh)
+    assert "dispatch_site" not in gh.names() and "publish" not in gh.names()
+    assert json.loads(env.state_path.read_text())["latest_recovery_pending"] == pending
+    assert outcome == "REFUSED"
+    assert gh.calls == [("restore_latest", None, TAG)] and served == []
+    assert "check by hand" in env.log()
+    assert any("offline" in note[1] for note in env_notes)
+
+
+def test_no_publish_leaves_pending_recovery_untouched(env, monkeypatch):
+    # Mutation: let a dry run edit Latest or clear its persisted recovery.
+    read_pending_with_old_state(monkeypatch)
+    raw = dataclasses.asdict(ns.State(last_published=ns.Published(TAG, SHA, "0.3.2", {}, None)))
+    raw["latest_recovery_pending"] = {"failed": TAG, "previous": None}
+    env.state_path.write_text(json.dumps(raw))
+    before = env.state_path.read_bytes()
+    gh = FakeGH()
+    assert env.night(gh=gh, no_publish=True) == "REFUSED"
+    assert gh.calls == []
+    assert env.state_path.read_bytes() == before
+
+
+def test_publish_failure_cannot_clean_a_foreign_replacement_after_create(night, env, pub, served):
+    gh = FakeGH()
+    st = ns.State(last_published=last_published())
+    def replaced(tag, local, dest):
+        gh.releases[:] = [(TAG + "-replaced", 101, "draft"), (TAG, 202, "draft")]
+        raise ns.Refused("github-draft", "verification failed after replacement")
+    gh.verify_draft = replaced
+    with pytest.raises(ns.Refused, match="verification failed after replacement"):
+        publish(night, st, gh, pub, env, save=lambda: ns.save_state(env.state_path, st))
+    assert gh.releases == [(TAG + "-replaced", 101, "draft"), (TAG, 202, "draft")]
+    assert st.open_draft == TAG and getattr(st, "open_draft_id", None) == 101
+    assert "publish" not in gh.names() and served == []
+
+
+def test_failed_ownership_checkpoint_prevents_upload(night, env, pub, served, monkeypatch):
+    gh = FakeGH()
+    st = ns.State(last_published=last_published())
+    ns.save_state(env.state_path, st)
+    before = env.state_path.read_bytes()
+    stages_seen = []
+    original = gh._maybe_fail
+    def stage(name):
+        stages_seen.append(name)
+        return original(name)
+    gh._maybe_fail = stage
+    def cannot_save(*a, **k):
+        raise OSError("checkpoint disk failure")
+    monkeypatch.setattr(nightly, "save_state", cannot_save)
+    err = None
+    try:
+        publish(night, st, gh, pub, env, save=lambda: nightly._try_save(env.state_path, st))
+    except ns.Refused as e:
+        err = e
+    assert "upload" not in stages_seen
+    assert err is not None and err.gate == "github-draft" and "persist" in err.detail
+    assert "verify_draft" not in gh.names() and "publish" not in gh.names() and served == []
+    assert env.state_path.read_bytes() == before
+
+
+def test_failed_recovery_checkpoint_stops_site_after_best_effort_repair(env, monkeypatch, served):
+    st = ns.State(last_published=ns.Published(TAG, SHA, "0.3.2", {}, None), site_pending="0.3.2",
+                  latest_recovery_pending=ns.LatestRecovery(TAG, None))
+    ns.save_state(env.state_path, st)
+    before = env.state_path.read_bytes()
+    def cannot_save(*a, **k):
+        raise OSError("checkpoint disk failure")
+    monkeypatch.setattr(nightly, "save_state", cannot_save)
+    gh = FakeGH()
+    gh.latest = TAG
+    outcome = env.night(gh=gh)
+    assert "dispatch_site" not in gh.names() and "publish" not in gh.names()
+    assert outcome == "REFUSED" and gh.calls == [("restore_latest", None, TAG)]
+    assert gh.latest is None and env.state_path.read_bytes() == before and served == []
+    assert "could not be saved" in env.log() and "check by hand" in env.log()
+
+
+@pytest.mark.parametrize("failing_save", ["checkpoint", "result", "both"])
+def test_raising_recovery_save_still_repairs_latest_and_returns_refusal(env, failing_save):
+    gh = FakeGH()
+    gh.latest = TAG
+    st = ns.State()
+    saves = []
+    def save():
+        stage = "checkpoint" if not saves else "result"
+        saves.append(stage)
+        if failing_save in (stage, "both"):
+            raise ValueError("cannot serialize recovery state")
+    err = None
+    recovered, detail = True, ""
+    try:
+        recovered, detail = nightly._recover_latest(st, gh, TAG, "v0.3.1", save)
+    except ValueError as e:
+        err = e
+    assert gh.calls == [("restore_latest", "v0.3.1", TAG)] and gh.latest == "v0.3.1"
+    assert err is None
+    assert saves == ["checkpoint", "result"] and not recovered
+    assert "could not be saved" in detail and "check by hand" in detail
+
+@pytest.mark.parametrize("latest", ["v0.3.1", "v0.4.0"])
+def test_pending_demo_verifies_current_latest_after_rollback(env, monkeypatch, latest):
+    gh = FakeGH(); gh.latest = latest
+    served = []
+    monkeypatch.setattr(nightly, "demo_serves", lambda url, version, *, deadline: served.append(version))
+    assert env.night(ns.State(last_published=ns.Published(TAG, SHA, "0.3.2", {}, None), site_pending="0.3.2"), gh) == "SKIPPED"
+    assert served == [latest[1:]]
+    assert gh.latest == latest and gh.names() == ["latest_tag", "dispatch_site"]
+    assert ns.load_state(env.state_path).site_pending is None
+    gh.calls.clear()
+    assert env.night(gh=gh) == "SKIPPED" and gh.calls == []
+
+@pytest.mark.parametrize("missing", [True, False])
+def test_pending_demo_without_verified_latest_preserves_hold_and_never_dispatches(env, monkeypatch, missing):
+    gh = FakeGH(fail={} if missing else {"latest_tag": OSError("offline")})
+    if missing: gh.latest = None
+    monkeypatch.setattr(nightly, "demo_serves", lambda *a, **k: pytest.fail("unverified Latest must not be served"))
+    assert env.night(ns.State(last_published=ns.Published(TAG, SHA, "0.3.2", {}, None), site_pending="0.3.2"), gh) == "SKIPPED"
+    assert gh.names() == ["latest_tag"]
+    assert ns.load_state(env.state_path).site_pending == "0.3.2"

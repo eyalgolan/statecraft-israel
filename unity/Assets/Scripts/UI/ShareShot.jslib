@@ -133,7 +133,7 @@ mergeInto(LibraryManager.library, {
     };
     var go = function (e) {
       if (e.type === "keyup") {
-        if (e.type !== "keyup" || (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar")) return;
+        if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
       }
       if (!window.statecraftReleaseArm || window.statecraftReleaseArm.id !== id) return;
       disarm(); // consume only the release ticket; the native result still owns its attempt token
@@ -190,7 +190,7 @@ mergeInto(LibraryManager.library, {
     var escape = function (e) { if (e.key === "Escape") disarm(); };
     var go = function (e) {
       if (e.type === "keyup") {
-        if (e.type !== "keyup" || (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar")) return;
+        if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
       }
       if (!window.statecraftReleaseArm || window.statecraftReleaseArm.id !== id) return;
       disarm(); StatecraftCopySharePicture(text, serial);

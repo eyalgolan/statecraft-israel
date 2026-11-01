@@ -73,6 +73,74 @@ public class HebrewUiTests
 
     static VisualElement Ui => Object.FindFirstObjectByType<UIDocument>().rootVisualElement;
 
+    // #2045: every Orders.Check refusal (its Refused* constants) has a string in both files, and the Hebrew one is Hebrew,
+    // not the sim's English. A missing key throws in UiText's lookup.
+    [Test]
+    public void EveryStandingOrderRefusalHasAStringInBothLanguages()
+    {
+        var refusals = typeof(Statecraft.Sim.Orders).GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+            .Where(f => f.IsLiteral && f.Name.StartsWith("Refused")).Select(f => (string)f.GetRawConstantValue()).ToList();
+        Assert.That(refusals, Is.Not.Empty);
+        foreach (var reason in refusals)
+        {
+            Assert.AreEqual(reason, SimBridge.ReasonText(En, reason), "the English string is the sim's own");
+            var he = SimBridge.ReasonText(He, reason);
+            Assert.AreNotEqual(reason, he, "no Hebrew string for: " + reason);
+            StringAssert.IsMatch("[\u05D0-\u05EA]", he, reason);
+        }
+    }
+
+    // #2072: every Combat.Check and Training.Reinforce refusal (their Refused* constants) has a string in both files. Each
+    // format is filled with distinct values as the sim fills it (a multi-word town, a real course, different numbers) and read
+    // with content: the English is the sim's own text, the Hebrew is its line with the Hebrew town and course in their slots,
+    // its placeholders in the English's order, and no Latin letter left (owner review item 2: "7"s everywhere caught no
+    // swapped slot, no capture in the wrong order, no lazy capture splitting a town).
+    [TestCase(typeof(Statecraft.Sim.Combat))]
+    [TestCase(typeof(Statecraft.Sim.Training))]
+    public void EveryAttackAndReinforceRefusalHasAStringInBothLanguages(System.Type check)
+    {
+        var c = Statecraft.Sim.ContentLoader.Load(Paths.Content);
+        var namesHe = SettlementPlacer.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", SettlementPlacer.DefaultFileName))).ToDictionary(t => t.Id, t => t.NameHe);
+        var place = c.SettlementNames.Single(x => x.Value == "Rishon LeZion");
+        var recruit = c.UnitTypes.Single(t => t.Id == "recruit");
+        object townSlot = new object(), courseSlot = new object();
+        // Each format's values in the sim's order (Combat.Check, Training.Reinforce/Start), and the key it reads as.
+        var filled = new Dictionary<string, (string key, object[] values)>
+        {
+            [Statecraft.Sim.Combat.RefusedArms] = ("unit.attack_refused.arms", new object[] { 12, 3 }),
+            [Statecraft.Sim.Training.RefusedNotInCity] = ("unit.reinforce_refused.not_in_city", new object[] { 41, townSlot }),
+            [Statecraft.Sim.Training.RefusedNoCourse] = ("unit.reinforce_refused.no_course", new object[] { 41 }),
+            [Statecraft.Sim.Training.RefusedNoLosses] = ("unit.reinforce_refused.no_losses", new object[] { 41 }),
+            [Statecraft.Sim.Training.RefusedRoomOne] = ("unit.reinforce_refused.room_one", new object[] { 41, 1 }),
+            [Statecraft.Sim.Training.RefusedRoomMany] = ("unit.reinforce_refused.room_many", new object[] { 41, 5 }),
+            [Statecraft.Sim.Training.RefusedNoCamp] = ("unit.reinforce_refused.no_camp", new object[] { townSlot }),
+            [Statecraft.Sim.Training.RefusedNoIndustry] = ("unit.reinforce_refused.no_industry", new object[] { townSlot }),
+            [Statecraft.Sim.Training.RefusedNoHakhshara] = ("unit.reinforce_refused.no_hakhshara", new object[] { townSlot }),
+            [Statecraft.Sim.Training.RefusedIdle] = ("unit.reinforce_refused.idle", new object[] { townSlot, 6 }),
+            [Statecraft.Sim.Training.RefusedArms] = ("unit.reinforce_refused.arms", new object[] { townSlot, courseSlot, 12, 3 }),
+        };
+        object English(object v) => v == townSlot ? place.Value : v == courseSlot ? Statecraft.Sim.Training.Course(recruit) : v;
+        object Hebrew(object v) => v == townSlot ? namesHe[place.Key] : v == courseSlot ? He["why.cause.course." + Statecraft.Sim.Training.CourseId(recruit)] : v;
+        string Slots(string line) => string.Join(",", Regex.Matches(line, @"\{\d+\}").Cast<Match>().Select(m => m.Value));
+        var formats = check.GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+            .Where(f => f.IsLiteral && f.Name.StartsWith("Refused")).Select(f => (string)f.GetRawConstantValue()).ToList();
+        Assert.That(formats, Is.Not.Empty, check.Name + " has no Refused* constants");
+        foreach (var format in formats)
+        {
+            var hasValues = Slots(format) != "";
+            Assert.AreEqual(hasValues, filled.ContainsKey(format), "a format and only a format is filled here: " + format);
+            var reason = hasValues ? string.Format(System.Globalization.CultureInfo.InvariantCulture, format, filled[format].values.Select(English).ToArray()) : format;
+            Assert.AreEqual(reason, SimBridge.ReasonText(En, reason, c, namesHe), "the English string is the sim's own");
+            var he = SimBridge.ReasonText(He, reason, c, namesHe);
+            StringAssert.IsMatch("[\u05D0-\u05EA]", he, "no Hebrew string for: " + reason);
+            StringAssert.DoesNotMatch("[A-Za-z]", he, reason);
+            if (!hasValues) continue;
+            var (key, values) = filled[format];
+            Assert.AreEqual(Slots(En[key]), Slots(He[key]), key + ": the Hebrew line takes its values in the English's order");
+            Assert.AreEqual(He.Format(key, values.Select(Hebrew).ToArray()), he, "the values in their slots: " + reason);
+        }
+    }
+
     [Test]
     public void TheGameIsEnglishUnlessHebrewIsAskedFor()
     {
@@ -183,6 +251,86 @@ public class HebrewUiTests
         Assert.AreEqual(UiLanguage.Hebrew, UiLanguage.AtStart(UiLanguage.Hebrew, null, none, webgl: false));
         Assert.AreEqual(UiLanguage.Hebrew, UiLanguage.AtStart(null, null, new[] { "-lang", "he" }, webgl: false));
         Assert.AreEqual(UiLanguage.English, UiLanguage.AtStart(UiLanguage.Hebrew, null, new[] { "-lang", "en" }, webgl: false));
+    }
+
+    // --- The start screen's language choice (#2054) ------------------------------------------------------------------
+
+    GameRoot BootWithStartScreen(SettingsStore settings, string? language)
+    {
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        Object.FindFirstObjectByType<MapScene>().Build(Inputs.Map);
+        var game = Object.FindFirstObjectByType<GameRoot>();
+        game.Store = new SaveStore(saveDir);
+        game.Settings = settings;
+        game.Language = language;
+        game.Begin(Inputs, 0, startScreen: true);
+        return game;
+    }
+
+    static bool StartOpen => Ui.Q("root").ClassListContains(StartScreenPresenter.OpenClass);
+    static bool Marked(string name) => Ui.Q<Button>(name).ClassListContains(SettingsPresenter.SelectedClass);
+
+    /// <summary>The start screen offers the same two languages as Settings, each named in itself, with the one in use
+    /// marked, in both languages.</summary>
+    [Test]
+    public void TheStartScreenOffersBothLanguagesWithTheOneInUseMarked()
+    {
+        var settings = new SettingsStore(Path.Combine(saveDir, "settings"));
+        BootWithStartScreen(settings, null);                           // no file and no flag: English
+        Assert.IsTrue(StartOpen, "precondition: the start screen shows");
+        Assert.AreEqual("English", Ui.Q<Button>("start-language-en").text);
+        Assert.AreEqual("עברית", Ui.Q<Button>("start-language-he").text, "each language is named in itself");
+        Assert.IsTrue(Marked("start-language-en"), "English is marked");
+        Assert.IsFalse(Marked("start-language-he"));
+
+        BootWithStartScreen(settings, UiLanguage.Hebrew);
+        Assert.IsTrue(StartOpen);
+        Assert.AreEqual("English", Ui.Q<Button>("start-language-en").text, "not translated");
+        Assert.AreEqual("עברית", Ui.Q<Button>("start-language-he").text);
+        Assert.IsTrue(Marked("start-language-he"), "Hebrew is marked");
+        Assert.IsFalse(Marked("start-language-en"));
+    }
+
+    /// <summary>A choice on the start screen goes through Settings' own switch: the UI changes at once over the same game,
+    /// the start screen stays up (Continue still only with a save) with the focus on the choice, the choice is kept under
+    /// Settings' key, and Settings shows it. The other way round, a choice in Settings is what the next start screen
+    /// shows: the two can never disagree.</summary>
+    [Test]
+    public void TheStartScreenAndSettingsShareOneLanguageChoice()
+    {
+        var settings = new SettingsStore(Path.Combine(saveDir, "settings"));
+        var game = BootWithStartScreen(settings, null);
+        var session = game.Bridge!.Session;
+        Assert.AreEqual(DisplayStyle.None, Ui.Q<Button>("start-continue").style.display.value, "precondition: no save, no Continue");
+
+        UiTestKit.Press(Ui.Q<Button>("start-language-he"));
+        Assert.IsTrue(Ui.Q("root").ClassListContains(UiLanguage.HebrewClass), "Hebrew at once, no reload");
+        Assert.AreEqual(He.Format("hud.turn", game.Bridge!.State.Turn), Ui.Q<Label>("turn").text);
+        Assert.AreSame(session, game.Bridge.Session, "the same game goes on");
+        Assert.IsTrue(StartOpen, "the start screen stays up");
+        Assert.IsFalse(ScreenNav.IsOpen(Ui.Q("screen-settings")), "Settings does not open over it");
+        Assert.AreEqual(DisplayStyle.None, Ui.Q<Button>("start-continue").style.display.value, "still no save to continue");
+        Assert.AreEqual(He["start.new_game"], Ui.Q<Button>("start-new-game").text);
+        Assert.AreSame(Ui.Q<Button>("start-language-he"), Ui.focusController?.focusedElement, "the focus stays on the choice");
+        Assert.IsTrue(Marked("start-language-he"), "Hebrew is marked on the start screen");
+        Assert.IsFalse(Marked("start-language-en"));
+        Assert.AreEqual(UiLanguage.Hebrew, settings.Read(SettingsPresenter.LanguageKey), "kept under Settings' key");
+        Assert.IsTrue(Marked("settings-language-he"), "and Settings shows Hebrew");
+        Assert.IsFalse(Marked("settings-language-en"));
+
+        // The other way: New game (no save) closes the screen; English in Settings is what the next start screen shows.
+        UiTestKit.Press(Ui.Q<Button>("start-new-game"));
+        Assert.IsFalse(StartOpen, "precondition: on the map");
+        UiTestKit.Press(Ui.Q<Button>("nav-settings"));
+        UiTestKit.Press(Ui.Q<Button>("settings-language-en"));
+        Assert.IsFalse(Ui.Q("root").ClassListContains(UiLanguage.HebrewClass), "English at once");
+        Assert.IsFalse(StartOpen, "a switch in Settings brings no start screen back");
+        Assert.AreEqual(UiLanguage.English, settings.Read(SettingsPresenter.LanguageKey));
+        game.Language = null;                                          // a reload: only the file remains
+        game.Begin(Inputs, 0, startScreen: true);
+        Assert.IsTrue(StartOpen);
+        Assert.IsTrue(Marked("start-language-en"), "the start screen shows Settings' choice");
+        Assert.IsFalse(Marked("start-language-he"));
     }
 
     static void TheDeclarationStaysRightToLeft(string after)
@@ -304,13 +452,13 @@ public class HebrewUiTests
         ("meter-security/meter-name", "hud.caption.security"), ("meter-support/meter-name", "hud.caption.support"),
         ("meter-cohesion/meter-name", "hud.caption.cohesion"), ("meter-standing/meter-name", "hud.caption.standing"), ("meter-fx/meter-name", "hud.caption.fx"),
         ("nav-cabinet", "hud.nav.cabinet"), ("nav-budget", "hud.nav.budget"), ("nav-defence", "hud.nav.defence"),
-        ("nav-why", "hud.nav.why"), ("nav-timeline", "nav.timeline"), ("nav-how-to-play", "hud.nav.how_to_play"), ("nav-objectives", "hud.nav.objectives"),
+        ("nav-why", "hud.nav.why"), ("nav-timeline", "nav.timeline"), ("nav-encyclopedia", "hud.nav.encyclopedia"), ("nav-objectives", "hud.nav.objectives"),
         ("new-game", "hud.new_game"), ("end-turn", "hud.end_turn_needs_orders"),
         ("event-draft", "event.draft"),
         ("budget-screen-title", "budget.title"), ("budget-reset", "budget.reset"), ("budget-submit", "budget.submit"),
         ("defence-screen-title", "defence.title"), ("de-escalate", "defence.lower"), ("escalate", "defence.raise"),
         ("why-screen-title", "why.title"),
-        ("how-to-play-title", "how_to_play.title"), ("objectives-title", "objectives.title"),
+        ("encyclopedia-title", "encyclopedia.title"), ("objectives-title", "objectives.title"),
         ("nav-settings", "hud.nav.settings"), ("settings-screen-title", "settings.title"), ("settings-tiltshift-label", "settings.tiltshift"),
         ("settings-quality-label", "settings.quality"), ("settings-quality-auto", "settings.quality.auto"),
         ("settings-quality-high", "settings.quality.high"), ("settings-quality-low", "settings.quality.low"),
@@ -649,13 +797,16 @@ public class HebrewUiTests
                 root.Add(l);
             }
             // The start screen's Hebrew lines are Hebrew in both languages (the Declaration's own text), and so is Settings'
-            // button that names Hebrew in Hebrew (#1036).
-            var texts = root.Query<TextElement>().ToList().Where(e => !e.ClassListContains("start-he") && e.name != "settings-language-he").ToList();
+            // button that names Hebrew in Hebrew (#1036), and the start screen's (#2054).
+            var texts = root.Query<TextElement>().ToList().Where(e => !e.ClassListContains("start-he") && e.name != "settings-language-he" && e.name != "start-language-he").ToList();
             Assert.Greater(texts.Count, 30, "Game.uxml's labels and buttons");
             for (int i = 0; i < 3; i++) yield return null;             // resolved styles need a style pass
             foreach (var e in texts)
                 Assert.AreNotSame(hebrew, FontOf(e), $"English: '{e.name}' ({string.Join(" ", e.GetClasses())})");
             Assert.AreSame(hebrew, FontOf(root.Q<TextElement>("settings-language-he")), "English: 'עברית' has the Hebrew face");
+            Assert.AreSame(hebrew, FontOf(root.Q<TextElement>("start-language-he")), "English: the start screen's 'עברית' has the Hebrew face");
+            Assert.AreEqual("Advanced", root.Q<TextElement>("start-language-he").resolvedStyle.unityTextGenerator.ToString(),
+                "English: the start screen's 'עברית' is laid out right to left");
             root.AddToClassList(UiLanguage.HebrewClass);
             for (int i = 0; i < 3; i++) yield return null;
             foreach (var e in texts)

@@ -96,18 +96,23 @@ def ingest(message: str, picture: Path, voice: Path, lang: str = "en", out: Path
     bad = voice_problems(voice)
     if bad:
         raise ValueError("; ".join(bad))
-    out.mkdir(parents=True, exist_ok=True)
     pic, wav = out / f"{message}.mp4", out / f"{message}.{lang}.wav"
-    if ev.problems(picture):
-        with tempfile.TemporaryDirectory() as tmp:   # the delivered file is read from a copy, never in place
-            src = Path(tmp) / "src.mp4"
+    # The picture has no language tag and both languages share it, so another language may only add its voice.
+    if lang != "en" and pic.exists() and pic.read_bytes() != picture.read_bytes():
+        raise ValueError(f"{pic.name} is shared by both languages and differs from {picture}: --lang {lang} only adds {wav.name}; pass the shipped {pic.name}, not a raw take")
+    out.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory() as tmp:   # built and checked here, so a failed ingest leaves the shipped file alone
+        staged = Path(tmp) / pic.name
+        if ev.problems(picture):
+            src = Path(tmp) / "src.mp4"              # the delivered file is read from a copy, never in place
             shutil.copyfile(picture, src)
-            subprocess.run(ev.encode_command(src, pic), check=True)
-    else:
-        shutil.copyfile(picture, pic)
-    bad = ev.problems(pic)
-    if bad:
-        raise ValueError(f"{pic.name}: {'; '.join(bad)}")
+            subprocess.run(ev.encode_command(src, staged), check=True)
+        else:
+            shutil.copyfile(picture, staged)
+        bad = ev.problems(staged)
+        if bad:
+            raise ValueError(f"{pic.name}: {'; '.join(bad)}")
+        shutil.move(staged, pic)
     shutil.copyfile(voice, wav)
     for f in (pic, wav):
         meta = f.with_name(f.name + ".meta")

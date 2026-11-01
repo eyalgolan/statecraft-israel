@@ -26,7 +26,7 @@ namespace Statecraft.Game.UI
         public ToastPresenter(VisualElement root, SimBridge bridge, UiText text)
         {
             label = root.Q<Label>("toast"); this.text = text; this.bridge = bridge;
-            onTurnEnded = r => Show(r.Select(x => text.Format("toast.refused", x.Reason)));
+            onTurnEnded = r => Show(r.Select(x => text.Format("toast.refused", SimBridge.ReasonText(text, x.Reason, bridge.Content, TownNamesHe))));
             onCommitted = why => Show(why.Where(x => WhyKeys.All.Contains(x.Key))   // unit lines only: a call-up order's line (B1 key) is no toast
                 .Select(x => UnitNames.Line(x, bridge.Content, units, text, TownNamesHe)));
             onRouteStep = _ =>

@@ -1,1 +1,0 @@
-- Refs #1693: add internal, fixture-only civilian profession helpers for actual-work XP, next-turn promotion, matching-course preservation and Agreed catalogue quotes. Production integration and payments remain held; legacy/gdd-0.1 behavior and content are unchanged.

@@ -20,8 +20,7 @@ title_he: >-
 text: >-
   In the record, Israel's Prime Minister told the US representative on 1 January 1949 that Britain had threatened action under its 1936 treaty with Egypt. On 5 January, the US Acting Secretary of State linked American pressure over the incursion into Egypt to the danger of a wider conflict outside Palestine. On this branch, {prime_minister} must decide whether to keep the force west of Rafah or complete its pullback.
 text_he: >-
-  בתיעוד ההיסטורי, ראש ממשלת ישראל מסר לנציג ארצות הברית ב־1 בינואר 1949 שבריטניה איימה לפעול מכוח ההסכם שלה עם מצרים משנת 1936. ב־5 בינואר קשר ממלא מקום מזכיר המדינה האמריקני את הלחץ האמריקני בעניין החדירה למצרים לסכנה של עימות רחב יותר מחוץ לארץ ישראל. במסלול הזה, {prime_minister} צריך להחליט אם להשאיר את הכוח ממערב לרפיח או להשלים את נסיגתו.
-text_he_review: agent-checked
+  בתיעוד ההיסטורי, ראש ממשלת ישראל מסר לנציג ארצות הברית ב־1 בינואר 1949 שבריטניה איימה לפעול מכוח ההסכם שלה עם מצרים משנת 1936. ב־5 בינואר קשר ממלא מקום מזכיר המדינה האמריקני את הלחץ האמריקני בעניין החדירה למצרים לסכנה של עימות רחב יותר מחוץ לארץ ישראל. במסלול הזה, על {prime_minister} להחליט אם להשאיר את הכוח ממערב לרפיח או להשלים את נסיגתו.
 options:
   - id: keep_rafah_force
     text: "Keep the force west of Rafah"
@@ -45,4 +44,4 @@ sources:
   - { url: "https://www.idf.il/media/emxjtczk/%D7%A7%D7%95%D7%91%D7%A5-%D7%9E%D7%91%D7%A6%D7%A2-%D7%97%D7%95%D7%A8%D7%91.pdf", checked: 2026-10-24 }
 status: draft
 reviewed_by: eyalgolan
-reviewed_on: 2026-10-28
+reviewed_on: 2026-10-30

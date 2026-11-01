@@ -276,7 +276,7 @@ public class UnitsInPlayTests
 
     /// <summary>Owner, 17 October 2026 (#740): "Data only. PR 1 adds the sourced Arab rows to units_1948.yaml and filters
     /// them off the map in UnitRoster until Phase 5 PR 17's figures land ... Nothing is drawn with IDF figures, and there is
-    /// no placeholder art." Each deployed force has its own figure (Egypt's as one token: owner, 27 October 2026); Lebanon's hidden row and local forces without a row
+    /// no placeholder art." Each deployed force has its own figure (Egypt's as one token, Lebanon's as a map-only token: owner, 27 October 2026); local forces without a row
     /// stay off the map. The forces are drawn only once their own figure has arrived, with three of it and nothing else: until then the
     /// 15 May roster is exactly Israel's tokens.</summary>
     [Test]
@@ -285,7 +285,7 @@ public class UnitsInPlayTests
         var units = Units;
         var others = units.Where(u => u.Side != UnitData.Israel).ToList();
         Assert.IsNotEmpty(others.Where(u => u.Hidden == null && u.Anchors.Count > 0), "the file holds Arab rows with anchors (#740)");
-        var drawn = new[] { "arab_legion", "arab_liberation_army", "syrian_army", "iraqi_expeditionary_force", "egyptian_expeditionary_force" };
+        var drawn = new[] { "arab_legion", "arab_liberation_army", "syrian_army", "iraqi_expeditionary_force", "egyptian_expeditionary_force", "lebanese_army" };
         CollectionAssert.AreEquivalent(drawn, others.Where(UnitRoster.OnMap).Select(u => u.Id), "the forces with a Collection figure");
         var israelOnly = units.Where(u => u.Side == UnitData.Israel).ToList();
         var s = Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical);
@@ -308,7 +308,7 @@ public class UnitsInPlayTests
             var legionOnly = UnitRoster.Build(units, C.Rules, d, 5, 0.8, id => id == UnitFigures.ArabLegion);
             Assert.IsFalse(legionOnly.Any(t => t.Unit.Id == "arab_liberation_army"), $"{d:yyyy-MM-dd}: the ALA waits for its own figure");
         }
-        CollectionAssert.AreEquivalent(drawn, seen, "the five forces stand on the map on their sourced days");
+        CollectionAssert.AreEquivalent(drawn, seen, "the six forces stand on the map on their sourced days");
         var hexes = C.Hexes;
         var spots = UnitPlacer.PlaceAll(units, hexes, 5000, (lon, lat) => (lon * 1e5, lat * 1e5), (sv, x, z, c, t, ax, az) => true, (x, z) => 0.0);
         var dataOnly = others.Where(u => !drawn.Contains(u.Id)).ToList();
@@ -584,6 +584,28 @@ public class UnitsInPlayTests
         finally { if (VisualToggles.Names.Contains(UnitLayer.ToggleName)) VisualToggles.Set(UnitLayer.ToggleName, true); UnityEngine.Object.DestroyImmediate(map.gameObject); }
     }
 
+    /// <summary>#2043: selecting, re-selecting and deselecting a unit many times leaves at most one live selection-ring
+    /// mesh (each replaced ring frees its own), and tearing the layer down frees that one too.</summary>
+    [Test]
+    public void SelectingAgainAndAgainKeepsOneRingMesh()
+    {
+        static int Rings() => Resources.FindObjectsOfTypeAll<Mesh>().Count(m => m.name == "UnitSelectionRing");
+        int before = Rings();
+        var map = BuildMap();
+        try
+        {
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.Show(C, Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical));
+            string id = layer.Tokens[0].Token.Unit.Id;
+            for (int i = 0; i < 10; i++) { layer.Select(id); layer.Select(id); layer.Select(null); }
+            layer.Select(id);
+            Assert.AreEqual(id, layer.Selected);
+            Assert.AreEqual(1, Rings() - before, "one live ring mesh after 21 selections");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
+        Assert.AreEqual(0, Rings() - before, "the layer's teardown frees the live ring's mesh");
+    }
+
     /// <summary>The same on the map's real hills: every rifleman of every army anchor of the war stands on its token's draped
     /// base at its own point, and the ground under its boots rises at most a tenth of its height over its feet.</summary>
     [Test]
@@ -818,6 +840,47 @@ public class UnitsInPlayTests
             AssertStill(at90, "after a pan and a zoom");
         }
         finally { UnityEngine.Object.DestroyImmediate(other.gameObject); UnityEngine.Object.DestroyImmediate(map.gameObject); }
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void RetiredFigureMeshesRefreshKeepClearEvenAtTheSameCameraPose(bool moveCamera)
+    {
+        var map = BuildMap();
+        var originalCamera = Camera.main;
+        var originalPosition = originalCamera.transform.position;
+        var originalRotation = originalCamera.transform.rotation;
+        var replacement = new Mesh { name = "Replacement figure bounds" };
+        try
+        {
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.Show(C, Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical));
+            var tokens = map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens");
+            var token = tokens.Find("kiryati");
+            var figure = token.Find("Rifleman0");
+            Assert.IsNotNull(figure, "a real token figure holder");
+            var retired = figure.GetComponentsInChildren<MeshFilter>(true);
+            Assert.Greater(retired.Length, 0, "the layer cached a real figure mesh");
+            var cam = Camera.main;
+            layer.FaceCamera(cam);   // establish the cached pose before the residency child changes
+            UnityEngine.Object.DestroyImmediate(retired[0]);
+            replacement.bounds = new Bounds(Vector3.one * 100000f, Vector3.one * 100f);
+            var child = new GameObject("Replacement figure");
+            child.transform.SetParent(figure, false);
+            child.AddComponent<MeshFilter>().sharedMesh = replacement;
+            if (moveCamera) cam.transform.position += Vector3.right * 100f;
+            Assert.DoesNotThrow(() => layer.FaceCamera(cam), "retired meshes are no longer live bounds sources");
+            int index = layer.Tokens.ToList().FindIndex(p => p.Token.Unit.Id == "kiryati");
+            Assert.GreaterOrEqual(index, 0);
+            Assert.AreEqual(2, layer.KeepClear[index].Length);
+            Assert.IsTrue(layer.KeepClear[index][1].Contains(child.transform.TransformPoint(replacement.bounds.center)),
+                "keep-clear must include the live replacement, including when the camera did not move");
+        }
+        finally
+        {
+            if (originalCamera != null) originalCamera.transform.SetPositionAndRotation(originalPosition, originalRotation);
+            UnityEngine.Object.DestroyImmediate(map.gameObject); UnityEngine.Object.DestroyImmediate(replacement);
+        }
     }
 
     [Test]
@@ -1255,4 +1318,32 @@ public class UnitsInPlayTests
         }
         finally { foreach (var m in new[] { plain, again, prop }) UnityEngine.Object.DestroyImmediate(m); }
     }
+
+    const string NumberHe = "number_he: מספר בדיקה, number_he_sources: " + HeSource + ", number_he_review: agent-checked, ";
+
+    /// <summary>#1219 item 2, on a fixture row: number_he shows only in the Hebrew subtitle and falls back to the
+    /// English number when left out; the English card is unchanged; its source joins both footers without clearing
+    /// the draft note (#902), as the other Hebrew card texts' do (#558).</summary>
+    [Test]
+    public void TheHebrewNumberShowsOnlyInTheHebrewSubtitleAndFallsBackToTheEnglish()
+    {
+        var u = ProseUnit(unitHe: NumberHe);
+        Assert.AreEqual(("מספר בדיקה", "agent-checked"), (u.NumberHe, u.NumberHeReview));
+        var he = ProseCard(u, He);
+        StringAssert.Contains("מספר בדיקה", he.Subtitle, "the Hebrew card's subtitle carries number_he");
+        var english = ProseCard(u, Text);
+        var plain = ProseCard(ProseUnit(), Text);
+        Assert.AreEqual((plain.Title, plain.Subtitle, plain.Body, plain.Note), (english.Title, english.Subtitle, english.Body, english.Note),
+            "the English card is the same as for the row without number_he");
+        StringAssert.DoesNotContain("מספר בדיקה", english.Subtitle);
+        StringAssert.Contains("he.example.org", he.Footer, "number_he's sources are listed, as the other Hebrew texts' are");
+        StringAssert.Contains("he.example.org", english.Footer, "in both languages");
+        Assert.AreEqual(He["unit.draft_wikipedia"], he.Note, "a Hebrew text's source does not check a fact (#902)");
+        Assert.IsTrue(UnitData.IsWikipediaOnly(u));
+
+        var fallback = ProseCard(ProseUnit(), He).Subtitle;
+        Assert.AreEqual(he.Subtitle.Replace("מספר בדיקה", "1"), fallback, "no number_he: the Hebrew subtitle has the English number in its place");
+        StringAssert.DoesNotContain("מספר בדיקה", fallback);
+    }
+
 }

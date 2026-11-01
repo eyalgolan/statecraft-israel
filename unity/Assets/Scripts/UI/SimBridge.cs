@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Statecraft.Sim;
 
 namespace Statecraft.Game.UI
@@ -211,7 +212,74 @@ namespace Statecraft.Game.UI
             }
         }
 
-        string? Refuse(string reason) { if (reason == Movement.MissingArtilleryMovement) reason = text["unit.artillery_move_missing"]; Refused?.Invoke(reason); return reason; }
+        /// <summary>The sim's English refusals that have a UI string: Movement's artillery refusal and Orders.Check's (#2045).
+        /// Keyed on the English, so the same words from another check (Movement, Combat, Training, Demobilization give "That
+        /// unit is not yours", "There is no such unit" too) read in the UI's language as well.</summary>
+        static readonly Dictionary<string, string> ReasonKeys = new Dictionary<string, string>
+        {
+            [Movement.MissingArtilleryMovement] = "unit.artillery_move_missing",
+            [Orders.RefusedUnknownOrder] = "unit.order_refused.unknown_order",
+            [Orders.RefusedNoUnit] = "unit.order_refused.no_unit",
+            [Orders.RefusedNotMilitary] = "unit.order_refused.not_military",
+            [Orders.RefusedNotYours] = "unit.order_refused.not_yours",
+            [Orders.RefusedArtilleryHold] = "unit.order_refused.artillery_hold",
+            [Orders.RefusedAlready] = "unit.order_refused.already",
+            [Combat.RefusedNoHex] = "unit.attack_refused.no_hex",
+            [Combat.RefusedTruce] = "unit.attack_refused.truce",
+            [Combat.RefusedOutOfRange] = "unit.attack_refused.out_of_range",
+            [Combat.RefusedNotAdjacent] = "unit.attack_refused.not_adjacent",
+            [Combat.RefusedNoEnemy] = "unit.attack_refused.no_enemy",
+            [Combat.RefusedNoPoints] = "unit.attack_refused.no_points",
+            [Training.RefusedNoCity] = "unit.reinforce_refused.no_city",
+            [Training.RefusedNoTraining] = "unit.reinforce_refused.no_training",
+            [Training.RefusedCount] = "unit.reinforce_refused.count",
+        };
+
+        /// <summary>The sim's refusals that carry values (#2072: Combat.Check's Arms, Training.Reinforce's unit, settlement,
+        /// course and counts): each format constant, read back from its English with its values in order, and its key.</summary>
+        static readonly (Regex pattern, string key)[] ReasonFormats = new (string format, string key)[]
+        {
+            (Combat.RefusedArms, "unit.attack_refused.arms"),
+            (Training.RefusedNotInCity, "unit.reinforce_refused.not_in_city"),
+            (Training.RefusedNoCourse, "unit.reinforce_refused.no_course"),
+            (Training.RefusedNoLosses, "unit.reinforce_refused.no_losses"),
+            (Training.RefusedRoomOne, "unit.reinforce_refused.room_one"),
+            (Training.RefusedRoomMany, "unit.reinforce_refused.room_many"),
+            (Training.RefusedNoCamp, "unit.reinforce_refused.no_camp"),
+            (Training.RefusedNoIndustry, "unit.reinforce_refused.no_industry"),
+            (Training.RefusedNoHakhshara, "unit.reinforce_refused.no_hakhshara"),
+            (Training.RefusedIdle, "unit.reinforce_refused.idle"),
+            (Training.RefusedArms, "unit.reinforce_refused.arms"),
+        }.Select(x => (new Regex("^" + string.Join("(.+?)", Regex.Split(x.format, @"\{\d+\}").Select(Regex.Escape)) + "$"), x.key)).ToArray();
+
+        /// <summary>A sim refusal in the UI's language where it has a string (<see cref="ReasonKeys"/>, <see cref="ReasonFormats"/>),
+        /// else the sim's English as given. The queue's refusals, the unit card's (InfoPanelPresenter) and the end of turn's
+        /// (ToastPresenter) go through it. With <paramref name="c"/> a value that is a settlement's name reads as the UI names the
+        /// town (its Hebrew name from <paramref name="townsHe"/> in Hebrew), and a course's English as why.cause.course.*.</summary>
+        public static string ReasonText(UiText text, string reason, Content? c = null, IReadOnlyDictionary<string, string>? townsHe = null)
+        {
+            if (ReasonKeys.TryGetValue(reason, out var key)) return text[key];
+            foreach (var (pattern, format) in ReasonFormats)
+                if (pattern.Match(reason) is { Success: true } m)
+                    return text.Format(format, m.Groups.Cast<Group>().Skip(1).Select(v => (object)ReasonValue(text, v.Value, c, townsHe)).ToArray());
+            return reason;
+        }
+
+        static string ReasonValue(UiText text, string value, Content? c, IReadOnlyDictionary<string, string>? townsHe)
+        {
+            if (c == null) return value;
+            var town = c.SettlementNames.FirstOrDefault(n => n.Value == value).Key;
+            if (town != null)
+                return text["ui.lang"] == UiLanguage.Hebrew && townsHe != null && townsHe.TryGetValue(town, out var he) && !string.IsNullOrWhiteSpace(he) ? he : value;
+            var course = c.UnitTypes.FirstOrDefault(t => t.Facility != "" && Training.Course(t) == value);
+            return course != null ? text["why.cause.course." + Training.CourseId(course)] : value;
+        }
+
+        /// <summary>Each settlement's Hebrew name (name_he), by id, for <see cref="Refuse"/>'s Hebrew (#2072): GameRoot sets it, as
+        /// it sets the card's and the toast's.</summary>
+        public IReadOnlyDictionary<string, string>? TownNamesHe { get; set; }
+
+        string? Refuse(string reason) { reason = ReasonText(text, reason, Content, TownNamesHe); Refused?.Invoke(reason); return reason; }
 
         static void Notify(Action? handlers)
         {

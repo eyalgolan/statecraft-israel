@@ -70,7 +70,7 @@ namespace Statecraft.Game.Map.Routes
             var go = new GameObject(Name);
             go.transform.SetParent(parent, false);
             var t = go.AddComponent<ServiceTrain>();
-            t.line = RouteLayer.World(frame, route);
+            t.line = RouteLayer.Drawn(frame, route);   // the line the rail ribbon draws, cut at the Old City walls (#2021)
             t.assets = assets;
             t.data = data; t.origin = origin;
             t.startAt = frame.ToWorld(s.StartLon, s.StartLat, 0);

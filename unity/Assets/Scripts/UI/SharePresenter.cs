@@ -121,7 +121,7 @@ namespace Statecraft.Game.UI
             {
                 if (disposed || opening != generation) return;
                 capturing = false;
-                if (png == null) return;   // no picture (ShareShot.Capture logged why), or the UI was rebuilt meanwhile
+                if (png == null) return;   // no picture (ShareShot.Capture logged why)
                 var shown = HudModel.From(bridge, text);
                 ShareShot.Keep(png, ShareShot.FileName(bridge.State.Date));
                 canShareFiles = ShareShot.CanShareFiles();

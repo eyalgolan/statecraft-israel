@@ -304,6 +304,6 @@ public class OutcomeClipTests
         Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, reviewedContent, null, false, null, gated, BuildGateTests.ReviewedSettlementControlStrings() }), "reviewed: the clips may ship");
         var unreviewed = gated.Select(r => { r.SensitivityReviewed = false; return r; }).ToList();
         var refusal = (string?)gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, reviewedContent, null, false, null, unreviewed, BuildGateTests.ReviewedSettlementControlStrings() });
-        StringAssert.Contains("illustration clips: altalena, operation_horev, operation_yoav, ten_days", refusal ?? "");
+        StringAssert.Contains("illustration clips: altalena, degania_defence, operation_horev, operation_yoav, reparations_vote, ten_days", refusal ?? "");
     }
 }

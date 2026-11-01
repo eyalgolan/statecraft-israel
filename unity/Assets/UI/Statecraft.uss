@@ -93,6 +93,8 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 /* The year, and the GDD loop's score at the line's far end (#380): the year line has the room the date line lacks. */
 .year-row { flex-direction: row; justify-content: space-between; align-items: center; }
 #score { font-size: 17px; flex-shrink: 0; }
+/* The exhausted-turn count (R-END-002) takes a line of its own under the date, only while it is above 0. */
+#exhausted { font-size: 13px; }   /* "turn" widens the line to fit the 196 px plate only at 13 px; wrapping runs it into the frame */
 .date-row Label { font-size: 15px; margin-right: 8px; }
 .year { -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); font-size: 27px; color: var(--ink); }
 .meters { flex-direction: row; flex-grow: 1; align-items: center; }
@@ -499,8 +501,15 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .screen .row.grow > .grow { min-height: 0; flex-shrink: 1; }
 /* Settings (#40): an option's name takes the row's width and wraps; its button keeps room for "On" / "Off". */
 .settings-row { margin-top: 8px; }
-.how-to-play-body { min-height: 0; }
-.how-to-play-line { white-space: normal; margin-bottom: 12px; font-size: 18px; }
+/* The advisors' encyclopedia (spec 10): the list of pages by advisor, or one page; either scrolls, never grows out. */
+.encyclopedia-list, .encyclopedia-page { min-height: 0; }
+.encyclopedia-advisor { color: var(--gold); letter-spacing: 1px; margin-top: 10px; margin-bottom: 4px; white-space: normal; }
+.encyclopedia-entry { min-height: 44px; white-space: normal; -unity-text-align: middle-left; }
+.lang-he .encyclopedia-entry { -unity-text-align: middle-right; }
+.encyclopedia-page-title { white-space: normal; margin-bottom: 8px; }
+.encyclopedia-text { white-space: normal; font-size: 18px; }
+.encyclopedia-actions { flex-shrink: 0; margin-top: 8px; }
+.encyclopedia-actions > Button { min-height: 44px; }
 /* The Objectives screen (#1189): a row per objective, its name over its status and dates; both wrap at 390x844. */
 .objectives-rows { min-height: 0; }
 .objectives-row { margin-bottom: 14px; }
@@ -520,8 +529,8 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
    the Hebrew face in Hebrew. */
 Button.settings-choice-selected { -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); }
 /* The language choice (#1036): "עברית" is in the Hebrew face in the English UI too (EB Garamond has no Hebrew), by id so
-   that it beats the selected button's face above. */
-#settings-language-he {
+   that it beats the selected button's face above; the start screen's too (#2054). */
+#settings-language-he, #start-language-he {
     -unity-font-definition: url("project://database/Assets/UI/Fonts/FrankRuhlLibre/FrankRuhlLibre-Medium.ttf");
     -unity-text-generator: advanced;
 }
@@ -558,11 +567,13 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 /* The end screen (#812) reuses the report's backdrop and panel: its outcome in the heading face, one line per part. */
 .end-screen-outcome { white-space: normal; margin-bottom: 10px; color: var(--gold-light); -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); }
 .end-screen-line { white-space: normal; margin-bottom: 6px; }
+/* The history note under a defeat line: quieter than the line above it, still above the contrast floor (--ink-dim on --navy). */
+.end-screen-note { white-space: normal; margin-bottom: 14px; color: var(--ink-dim); }
 .turn-report-actions { justify-content: flex-end; margin-top: 8px; flex-shrink: 0; }
 .turn-report-actions > Button { margin-left: 8px; }
-/* How to play's button that opens the opening advice again: under the lines, never squeezed by them. */
-.how-to-play-guide { flex-shrink: 0; align-self: flex-start; min-height: 44px; margin-top: 8px; }
-.lang-he .how-to-play-guide { align-self: flex-end; }
+/* The encyclopedia's button that opens the opening advice again: under the list, never squeezed by it. */
+.encyclopedia-opening { flex-shrink: 0; align-self: flex-start; min-height: 44px; margin-top: 8px; }
+.lang-he .encyclopedia-opening { align-self: flex-end; }
 /* The advisors' popup (spec 7.1, AdvisorPresenter): placed in code in the free upper part of the right column (AdvisorLayout),
    400 px wide; not modal, so the layer takes no pointer. It slides 16 px in from the right while it fades in (0.25 s) and
    fades out (0.15 s): ScreenNav's opening and closing classes, with a slide instead of the screens' scale (spec 16). */
@@ -936,6 +947,12 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
    whole-pixel height: a fractional one shifts the panel's lines off whole pixels, and on a phone held upright the band
    layout (StartScreenPresenter.Fit) then rounds the panel's top back and forth, a layout that never settles. */
 .start-community { flex-direction: row; justify-content: center; align-items: center; height: 40px; margin-top: 8px; }
+/* The language choice (#2054) beside it, as quiet, with Settings' gold mark on the language in use
+   (.settings-choice-selected). In the same row, so the panel keeps its height (StartScreenTests.ItFitsEveryWindowSize). */
+.start-language { margin-left: 8px; }
+/* In Hebrew the row mirrors like the rest of the UI (the owner, 31 Oct 2026): the pair left of Report, the gap on Report's side. */
+.lang-he .start-language { margin-left: 0; margin-right: 8px; }
+.start-language-button { font-size: 18px; min-width: 96px; padding: 4px 16px; margin: 2px 4px; -unity-text-align: middle-center; }
 /* Star on GitHub (#1168): a .start-button, New game's size, beside it (the row wraps it under New game in a narrow
    window). Its star and GitHub mark are painted into the left padding (the right in Hebrew; StartScreenPresenter
    PaintStarSigns). Secondary to New game in colour: no fill and a grey edge instead of the gold one; hover and keyboard
@@ -972,7 +989,7 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .lang-he .button, .lang-he Button, .lang-he #event-options Button, .lang-he #capture-options Button { -unity-text-align: middle-right; }
 /* The buttons and cards whose text is centred stay centred (the rule above is the more specific one). */
 .lang-he .nav-button, .lang-he .seat { -unity-text-align: upper-center; }
-.lang-he .event-reopen, .lang-he .event-hide, .lang-he .event-illustration, .lang-he .start-button, .lang-he .start-listen, .lang-he .start-report { -unity-text-align: middle-center; }
+.lang-he .event-reopen, .lang-he .event-hide, .lang-he .event-illustration, .lang-he .start-button, .lang-he .start-listen, .lang-he .start-report, .lang-he .start-language-button { -unity-text-align: middle-center; }
 .lang-he .card-stat-name { -unity-text-align: middle-right; }
 .lang-he .card-stat-value { -unity-text-align: middle-left; }
 /* The Hebrew plate shows the first name's initial and the surname ("י. ידין", PersonCard.InitialAndSurname), not two
@@ -981,7 +998,8 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .lang-he .top-bar, .lang-he .year-row, .lang-he .date-row, .lang-he .meters, .lang-he .meter, .lang-he .meter-row, .lang-he .nav, .lang-he .row,
 .lang-he .event-foot, .lang-he .event-head, .lang-he .info-panel, .lang-he .info-row, .lang-he .card-stat, .lang-he .pm-offices,
 .lang-he .cabinet-house, .lang-he .party-group, .lang-he .party-chip, .lang-he .defence-row, .lang-he .leaders, .lang-he .rung,
-.lang-he .defence-budget, .lang-he #cabinet-seats .unity-scroll-view__content-container { flex-direction: row-reverse; }
+.lang-he .defence-budget, .lang-he #cabinet-seats .unity-scroll-view__content-container, .lang-he .start-recording,
+.lang-he .start-actions, .lang-he .start-community { flex-direction: row-reverse; }
 .lang-he.hud-narrow .meter-row { flex-direction: column; align-items: flex-end; }
 .lang-he .turn-box { align-items: flex-start; }
 .lang-he .top-bar { padding: 0 8px 0 14px; }
@@ -1226,3 +1244,19 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .lang-he #arms-count { flex-direction: row-reverse; }
 #arms-count .unity-base-field__input { background-color: var(--navy-deep); color: var(--ink); border-width: 1px; border-color: var(--gold-dim); }
 #arms-count:focus .unity-base-field__input { border-color: var(--gold); }
+/* #530: a still opening in the existing event-card frame. Keep its actions outside the scrolling prose, so Skip
+   remains reachable in a short window. The English historical text stays English and left-aligned in the Hebrew UI (in the
+   Hebrew face, as all text there) until its own review. */
+.opening-layer { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0; align-items: center; justify-content: center; padding: 16px; background-color: var(--navy-deep); }
+.opening-layer > .opening-card { display: flex; height: 100%; max-height: 100%; padding: 12px 24px; }
+.opening-replay { display: none; }
+.opening-preview, .opening-count { white-space: normal; flex-shrink: 0; margin: 2px 0; }
+.opening-photo { height: 240px; max-height: 32%; min-height: 80px; flex-shrink: 1; background-size: contain; background-position-x: center; background-position-y: center; background-repeat: no-repeat; }
+.opening-scroll { flex-shrink: 1; min-height: 48px; }
+.opening-text { font-size: 22px; white-space: normal; margin: 8px 0; }
+.opening-arrivals { font-size: 18px; white-space: normal; margin: 8px 0; }
+.opening-actions { flex-wrap: wrap; justify-content: center; flex-shrink: 0; }
+.opening-actions > Button { min-height: 44px; margin: 4px 6px; }
+.opening-source-en, .lang-he .opening-source-en { -unity-text-align: upper-left; white-space: normal; }
+.opening-open .top-bar, .opening-open .left-column, .opening-open .community-column, .opening-open .right-column, .opening-open .event-layer, .opening-open .info-panel, .opening-open .screen, .opening-open .map-labels, .opening-open .start-screen, .opening-open .advisor-layer { display: none; }
+.loading .opening-layer { display: none; }

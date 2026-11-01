@@ -75,6 +75,8 @@ Tags, one per fact, as in `settlements-1949-51.md`:
 CBS year plus Gvati day agreeing on the year counts as [V] for the year; the day stays [S] unless a second source
 gives the same day.
 
+Every [V] in this note was an agent's reading on 2026-10-22, unless the tag gives a later date; a person's check is pending for all of them.
+
 ### Sources not reached
 
 - **Regional council sites** (Hefer Valley, Drom HaSharon, Lev HaSharon, Gezer, Hevel Modi'in, Gederot, Hevel Yavne,
@@ -134,7 +136,9 @@ day was found for any row below, so every day stays [GAP].
   kibbutz whose members are Mapai Party followers who left Kfar Szold and Givat Haim, where Mapam settlers were in the
   majority". It does not name the new kibbutz, so that it is this one is our reading, which fits the founders
   quoted above from Hebrew Wikipedia. The event date is not resolved (the original PDF was not opened; the bulletin
-  date is 28 May 1952), so the day stays [GAP]. [V, agent read 26 Oct 2026; a person's check pending] The other three items are
+  date is 28 May 1952), so the day stays [GAP]. [V, agent read 26 Oct 2026; a person's check pending]
+  (correction, 29 Oct 2026 (after re-reading the page image): the PDF page was rendered at 200 dpi and read. The item's dateline is "TEL AVIV, May 27. (JTA)", the text says Ben Gurion "today expressed sorrow" and was "speaking at the dedication of a new kibbutz", so JTA places that speech on 27 May 1952, and the page header reads "5/28/52". The "not resolved" and "original PDF was not opened" wording above is withdrawn. The page still does not name the kibbutz, so the day for this kibbutz stays [GAP]. [V, agent read 29 Oct 2026; a person's check pending])
+  The other three items are
   not about the founding: 1953-02-25 (an obituary, died at Givat Haim), 1953-08-19 (a municipal jurisdiction dispute)
   and 1957-01-21 (a conference held there).
 
