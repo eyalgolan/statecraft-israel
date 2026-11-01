@@ -440,7 +440,8 @@ namespace Statecraft.HexTiles
                     var go = Object.Instantiate(prefab, parent);
                     var b = HexModels.Bounds(go);
                     float k = HexModels.Normaliser(b.size, p.Fit).x;
-                    go.transform.localPosition = p.Position; go.transform.localRotation = p.Matrix.rotation;
+                    // Turn the prefab's own root rotation (an import fix), never replace it (#2006).
+                    go.transform.localPosition = p.Position; go.transform.localRotation = p.Matrix.rotation * go.transform.localRotation;
                     go.transform.localScale = Vector3.one * k * p.Matrix.lossyScale.x;
                     foreach (var a in go.GetComponentsInChildren<Animator>(true)) HexStandIns.SampleIdle(a);
                     continue;

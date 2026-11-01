@@ -15,12 +15,15 @@ namespace Statecraft.Game.Map.Routes
     /// towns (their labels), the unit tokens and the other vehicles, and stands only on ground Israel held on the game date
     /// (<see cref="Control1948"/>, the map's own sourced control layer). It is sized against the steam locomotive the map
     /// runs (<see cref="ServiceTrain"/>): <see cref="LengthShare"/> of the locomotive's car. A model that does not stream
-    /// removes only its own vehicles.</summary>
+    /// removes only its own vehicles. It runs in edit mode as every other Collection consumer does, so a layer destroyed
+    /// there still retires the model leases it took (OnDisable/OnDestroy).</summary>
+    [ExecuteAlways]
     public sealed class RoadVehicles : MonoBehaviour
     {
         public const string Name = "RoadVehicles";
         internal Collection.CollectionResidencyMetrics.Category RetainedSnapshot() => Collection.CollectionResidencyMetrics.Row(
-            "retained_road", prefabs.Count, transform.childCount, prefabs.Keys, 0, 0, prefabs.Count, 0, 0, 0);
+            "retained_road", prefabs.Count, transform.childCount, prefabs.Keys, residency?.OwnerCount ?? 0,
+            residency?.PendingCount ?? 0, prefabs.Count, 0, 0, 0, prefabs.Keys.Select(id => id + "|Far"));
         internal Collection.CollectionResidencyMetrics.Category SharedSnapshot() => Collection.CollectionResidencyMetrics.Row(
             "shared_road", 0, 0, System.Array.Empty<string>(), 0, 0, 0, 0, 0, 0);
         public const string IntercityBus = "figure-vehicle-intercity-bus-1948-v2";
@@ -80,8 +83,10 @@ namespace Statecraft.Game.Map.Routes
         /// <summary>A test seam: how the layer asks for a model. Null (the default): the game's stream in Play mode, and none
         /// in the editor's edit mode (as UnitFigures), so a map built by an editor tool or another test fetches nothing.</summary>
         internal static Action<string, CollectionDetail, Action<GameObject?>>? Request;
+        internal static Func<IDisposable>? RequestOwner;
         static Action<string, CollectionDetail, Action<GameObject?>>? Stream =>
             Request ?? (Application.isPlaying ? CollectionStream.Request : (Action<string, CollectionDetail, Action<GameObject?>>?)null);
+        sealed class TestSeamLease : IDisposable { public void Dispose() { } }
 
         public readonly struct PlacedVehicle
         {
@@ -102,6 +107,8 @@ namespace Statecraft.Game.Map.Routes
         IReadOnlyDictionary<string, IReadOnlyList<bool>>? built;
         string? drawnKey;
         bool lastClose;
+        CollectionResidency? residency;
+        readonly Dictionary<string, List<GameObject>> originals = new Dictionary<string, List<GameObject>>(StringComparer.Ordinal);
 
         public readonly List<PlacedVehicle> Placed = new List<PlacedVehicle>();
         /// <summary>How many times the vehicles were laid out (a test reads it: a date change with nothing new costs nothing).</summary>
@@ -125,11 +132,52 @@ namespace Statecraft.Game.Map.Routes
         public void ShowAt(DateTime at, IReadOnlyDictionary<string, IReadOnlyList<bool>>? segmentsBuilt = null)
         {
             date = at; built = segmentsBuilt;
-            var stream = Stream;
-            if (stream != null)
-                foreach (var plan in Plans)
-                    if (InForce(plan) && asked.Add(plan.Model)) { var id = plan.Model; stream(id, CollectionDetail.Near, p => OnModel(id, p)); }
+            RefreshResidency();
             Rebuild();
+        }
+
+        IDisposable AcquireOriginal(string id, CollectionDetail detail, Action<GameObject?> answer)
+        {
+            if (Request != null) { Request(id, detail, answer); return RequestOwner?.Invoke() ?? new TestSeamLease(); }
+            if (!Application.isPlaying) return new TestSeamLease();
+            return CollectionStream.Acquire(id, detail, answer);
+        }
+        void RefreshResidency()
+        {
+            if (!isActiveAndEnabled) return;
+            residency ??= new CollectionResidency(AcquireOriginal, ClearForRetirement,
+                (id, detail, prefab) => OnModel(id, prefab),
+                (instances, owners, keys, complete) => CollectionResidencyMetrics.AfterDestroyed("retained_road",
+                    instances, owners, complete, Application.isPlaying && Request == null
+                        ? () => CollectionStream.Settled(keys) : (Func<bool>?)null, keys), true);
+            // v0.3.1 ShowAt requested CollectionDetail.Near for every in-force road-vehicle plan.
+            residency.Replace(Plans.Where(InForce).Select(plan => (plan.Model, CollectionDetail.Near)));
+        }
+        IReadOnlyList<UnityEngine.Object> ClearForRetirement(IReadOnlyCollection<(string id, CollectionDetail detail)> keys)
+        {
+            var removed = new List<UnityEngine.Object>();
+            foreach (var key in keys)
+            {
+                prefabs.Remove(key.id); asked.Remove(key.id);
+                if (!originals.TryGetValue(key.id, out var list)) continue;
+                foreach (var go in list) if (go != null)
+                {
+                    var ownedRenderers = new HashSet<Renderer>(go.GetComponentsInChildren<Renderer>(true));
+                    renderers.RemoveAll(ownedRenderers.Contains);
+                    removed.Add(go);
+                    if (Application.isPlaying)
+                    {
+                        // Unity forbids hierarchy changes while a parent is being deactivated. In that path the child can
+                        // be destroyed in place; detach only while this layer is still active, as CampTentModels does.
+                        if (gameObject.activeInHierarchy) go.transform.SetParent(null);
+                        Destroy(go);
+                    }
+                    else DestroyImmediate(go);
+                }
+                originals.Remove(key.id); Placed.RemoveAll(p => p.Model == key.id);
+            }
+            drawnKey = null;
+            return removed;
         }
 
         void OnModel(string model, GameObject? prefab)
@@ -167,6 +215,7 @@ namespace Statecraft.Game.Map.Routes
                 var old = transform.GetChild(i).gameObject;
                 if (Application.isPlaying) { old.transform.SetParent(null); Destroy(old); } else DestroyImmediate(old);
             }
+            originals.Clear();
             renderers.Clear(); Placed.Clear();
             var control = map.Control;
             if (control == null) return;   // no control layer: no claim about who held a road, so no vehicle
@@ -194,6 +243,8 @@ namespace Statecraft.Game.Map.Routes
         void Place(Plan plan, int n, GameObject prefab, Vector2 at, Vector2 along)
         {
             var go = Instantiate(prefab, transform, false); go.name = $"{plan.Model}_{n}";
+            if (!originals.TryGetValue(plan.Model, out var owned)) originals[plan.Model] = owned = new List<GameObject>();
+            owned.Add(go);
             var own = prefab.transform.localRotation;
             go.transform.localRotation = own;
             var b = Bounds(go);
@@ -261,8 +312,13 @@ namespace Statecraft.Game.Map.Routes
         }
 
         public static bool CloseAt(float distanceM, bool was) => was ? distanceM <= CloseExitM : distanceM <= CloseEnterM;
-        void OnEnable() => RenderPipelineManager.beginCameraRendering += Choose;
-        void OnDisable() => RenderPipelineManager.beginCameraRendering -= Choose;
+        void OnEnable() { RenderPipelineManager.beginCameraRendering += Choose; if (map != null) RefreshResidency(); }
+        void OnDisable()
+        {
+            RenderPipelineManager.beginCameraRendering -= Choose;
+            residency?.Replace(Array.Empty<(string, CollectionDetail)>());
+        }
+        void OnDestroy() { residency?.Dispose(); residency = null; }
         internal void Choose(ScriptableRenderContext context, Camera cam)
         {
             if (cam.cameraType == CameraType.Preview || cam.cameraType == CameraType.Reflection) return;

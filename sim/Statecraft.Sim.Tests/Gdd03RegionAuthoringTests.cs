@@ -116,6 +116,12 @@ public class Gdd03RegionAuthoringTests
         Assert.Equal(9, staged.Length);
         Assert.Equal(evidence.Select(r => Text(r, "id")), staged.Select(r => Text(r, "id")));
         Assert.Equal(326, staged.Sum(r => Strings(r, "member_locations").Length));
+        var hexCounts = new Dictionary<string, int>(StringComparer.Ordinal)
+        {
+            ["galilee"] = 25, ["valleys"] = 22, ["haifa_sharon"] = 31, ["tel_aviv_jaffa"] = 6,
+            ["central_plain"] = 14, ["jerusalem_hills"] = 68, ["northern_hills"] = 36,
+            ["southern_coast"] = 18, ["negev"] = 190,
+        };
         var approved = new[] { "valleys", "tel_aviv_jaffa", "central_plain" };
         foreach (var row in staged)
         {
@@ -128,9 +134,15 @@ public class Gdd03RegionAuthoringTests
             Assert.Equal("NEEDS-RESEARCH", Text(original, "capital_status"));
             Assert.Equal(approved.Contains(Text(row, "id")) ? "APPROVED" : "NEEDS-RESEARCH", Text(row, "capital_approval"));
             Assert.True(Unknown(Get(original, "boundary_hexes")));
-            Assert.Empty(Assert.IsType<YamlSequenceNode>(Get(row, "member_hexes")).Children);
+            var hexes = Assert.IsType<YamlSequenceNode>(Get(row, "member_hexes")).Children
+                .Select(n => Assert.IsType<YamlMappingNode>(n))
+                .Select(h => (Q: int.Parse(Text(h, "q")!, CultureInfo.InvariantCulture),
+                    R: int.Parse(Text(h, "r")!, CultureInfo.InvariantCulture))).ToArray();
+            Assert.Equal(hexCounts[Text(row, "id")!], hexes.Length);
+            Assert.Equal(hexes.OrderBy(h => h.Q).ThenBy(h => h.R), hexes);
             Assert.Equal("design value, not a historical boundary", Text(row, "design_note"));
         }
+        Assert.Equal(410, staged.Sum(r => Assert.IsType<YamlSequenceNode>(Get(r, "member_hexes")).Children.Count));
     }
 
     // #1852 review: the imported evidence keeps the owner-approved draft's membership and opening control, identity by
@@ -181,12 +193,12 @@ public class Gdd03RegionAuthoringTests
     [InlineData("northern_hills")]
     [InlineData("southern_coast")]
     [InlineData("negev")]
-    public void EveryIncompleteRegionIsRejectedByTheSharedStrictLoader(string id)
+    public void EveryUnresolvedPlaceRosterIsRejectedAfterGeneratedGeometry(string id)
     {
         var row = Rows(Parse(Staged), "player_regions").Single(r => Text(r, "id") == id);
         var error = Assert.Throws<ContentException>(() => PlayerRegionsContentTests.Load(SingleRow(row)));
         Assert.Equal("regions.yaml", error.File);
-        Assert.Equal("player_regions[0].member_hexes", error.Field);
+        Assert.StartsWith("player_regions[0].member_locations", error.Field, StringComparison.Ordinal);
     }
 
     [Fact]

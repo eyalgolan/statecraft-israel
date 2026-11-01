@@ -56,6 +56,24 @@ public class Gdd03SyntheticMonthContextTests
             new Gdd03SyntheticPendingEntry("synthetic-key", "synthetic-other-unit", -3m) }));
     }
 
+    // Synthetic boundary only: these statuses may be opening records but cannot be pre-arrival residents.
+    [Theory]
+    [InlineData(PopulationStatus.Captured)]
+    [InlineData(PopulationStatus.CivilianInTransit)]
+    public void CaptiveOrTransitOpeningPeopleCannotBePreArrivalResidents(PopulationStatus status)
+    {
+        var assignment = status == PopulationStatus.CivilianInTransit
+            ? new PopulationAssignment(PopulationAssignmentKind.Travel, "synthetic-route")
+            : PopulationAssignment.Unassigned;
+        var person = new PopulationUnit(4, status, 0, null, assignment,
+            CivilianProfession.None, CivilianTier.None, 0, "", 0, PopulationEquipment.None);
+        var control = Context(new[] { person });
+        Assert.Equal(new[] { 4 }, control.OpeningPeople.Select(p => p.Id));
+        Assert.Empty(control.PreArrivalResidentIds);
+        Assert.Empty(control.WorkEligibleIds);
+        Assert.Throws<ArgumentException>(() => Context(new[] { person }, residents: new[] { 4 }));
+    }
+
     // RED-FIRST: GDD loop-switch:17,24. Structural references do not replace owner validation.
     [Fact] public void RejectsIncompatibleStatusAndUnresolvedTeacherAndDuplicateHousing()
     {

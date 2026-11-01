@@ -68,22 +68,41 @@ namespace Statecraft.Game.UI
         /// <summary>True in the frame the screen closed (GameRoot's Escape poll, as TurnReportPresenter.ClosedThisFrame).</summary>
         public bool ClosedThisFrame => closedAt == UnityEngine.Time.frameCount;
 
-        /// <summary>The screen's lines for an ended game, in order: the outcome, the score, one per objective, Social cohesion,
-        /// International Support and the population with its CBS anchor. Every value is the report's.</summary>
+        /// <summary>The screen's lines for an ended game, in order: the outcome, its history note when it has one, the score,
+        /// the reference score, one per objective, Social cohesion, International Support, the population with its CBS anchor
+        /// and, when some went home, the prisoners returned. Every value is the report's.</summary>
         public static IReadOnlyList<(string Name, string Text)> Lines(Content c, GameState s, UiText t)
         {
             var r = EndReport.For(c, s);
-            string Date(DateTime d) => t.Format("date.day_month_year", d.Day, t["date.month_" + d.Month], d.Year);
+            // A Hebrew date goes between RLE and PDF (#2060): left bare in a line laid out left to right, the bidi rules pull
+            // its day onto the next word and its year to the line's far end. Not RLI/PDI: UI Toolkit's advanced text generator
+            // still drew the date in that order with the isolates (measured on 6000.3), the embedding keeps it whole.
+            // English dates are left as they are.
+            string Date(DateTime d)
+            {
+                var value = t.Format("date.day_month_year", d.Day, t["date.month_" + d.Month], d.Year);
+                return UiDirection.HasRightToLeft(value) ? "\u202B" + value + "\u202C" : value;
+            }
             // The GDD loop ends only as the MVP end or a defeat (R-END-002, R-END-005); the legacy codes get the generic line.
             var outcome = "end.outcome." + r.Outcome;
             var lines = new List<(string, string)>
             {
                 ("outcome", t.Has(outcome) ? t[outcome] : t["order.game_over"]),
-                ("score", t.Format("hud.score", r.Score)),
             };
+            // The sourced history note under the cause's line (Q-DEF-4 (b)); only a cause whose note is in the strings has one,
+            // and only under that cause's own line, never under the generic one.
+            var note = "end.note." + r.Outcome;
+            if (t.Has(outcome) && t.Has(note)) lines.Add(("note", t[note]));
+            lines.Add(("score", t.Format("hud.score", r.Score)));
+            // Q-SCORE-2: beside the score, what a run on the historical dates scores (the sim's number; nothing computed here).
+            if (r.ReferenceScore > 0) lines.Add(("score-reference", t.Format("end.reference_score", r.ReferenceScore)));
             foreach (var o in r.Objectives)
             {
-                var title = EventSystem.Title(c, s, c.Events.First(e => e.Id == o.Card));   // as the objective's card shows it
+                var card = c.Events.First(e => e.Id == o.Card);
+                var variant = Timeline.Variant(c, s, card);
+                // As the objective's card shows it (EventCardPresenter), in the UI's language (#2041): the Hebrew title_he
+                // where there is no variant title (a variant has no Hebrew), the English otherwise.
+                var title = ContentNames.Fill(t, c, s, s.Date, EventSystem.Title(c, s, card), variant == null || variant.Title == "" ? card.TitleHe : "");
                 lines.Add(("objective-" + o.Id, o.Completed is DateTime done
                     ? t.Format("end.objective_done", title, Date(done), Date(o.Historical))
                     : t.Format("end.objective_open", title, Date(o.Historical))));
@@ -94,6 +113,7 @@ namespace Statecraft.Game.UI
             lines.Add(("population", r.PopulationHistory is PopulationAnchor a
                 ? t.Format("end.population_history", People(r.Population), Date(a.Date), People(a.Jews))
                 : t.Format("end.population", People(r.Population))));
+            if (r.PrisonersReturned > 0) lines.Add(("prisoners", t.Format("defence.prisoners_returned", r.PrisonersReturned)));   // Q-END-3; Defence's own string
             return lines;
         }
 
@@ -103,7 +123,7 @@ namespace Statecraft.Game.UI
             foreach (var (name, line) in Lines(bridge.Content, bridge.State, text))
             {
                 var label = new Label(line) { name = "end-screen-" + name };
-                label.AddToClassList(name == "outcome" ? "end-screen-outcome" : "end-screen-line");
+                label.AddToClassList(name == "outcome" ? "end-screen-outcome" : name == "note" ? "end-screen-note" : "end-screen-line");
                 rows.Add(label);
             }
             screen.style.display = DisplayStyle.Flex;

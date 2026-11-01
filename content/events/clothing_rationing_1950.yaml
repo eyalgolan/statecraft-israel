@@ -6,7 +6,6 @@ text: 'Prices on the black market are climbing. {rationing_minister} proposes ex
 # https://he.wikipedia.org/wiki/תקופת_הצנע
 title_he: קיצוב הלבוש וההנעלה
 text_he: 'המחירים בשוק השחור עולים. הצעת {rationing_minister} היא להרחיב את הקיצוב ללבוש ולהנעלה ולהיאבק בשוק השחור.'
-text_he_review: agent-checked
 anchor: hard
 office: rationing_minister
 # Extended on 31 July 1950; retailers' strike 1-14 August. On 8 August the Knesset passed the coalition parties' motion,

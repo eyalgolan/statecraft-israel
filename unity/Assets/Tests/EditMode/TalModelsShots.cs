@@ -7,6 +7,7 @@ using System.Linq;
 using NUnit.Framework;
 using Statecraft.Game.Map;
 using Statecraft.Game.Map.Collection;
+using Statecraft.Game.Map.Units;
 using Statecraft.Game.UI;
 using Statecraft.Sim;
 using UnityEditor;
@@ -27,20 +28,20 @@ public class TalModelsShots
     string saveDir = "";
     RenderTexture? rt; PanelSettings? ps;
     GameRoot root = null!;
-    Action<string, CollectionDetail, Action<GameObject?>>? savedRural, savedPeople;
+    Action<string, CollectionDetail, Action<GameObject?>>? savedRural, savedPeople, savedUnits;
 
     [SetUp]
     public void Prepare()
     {
         saveDir = Path.Combine(Path.GetTempPath(), "statecraft-tal-shots-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(ShotDir); Directory.CreateDirectory(CivMovementShots.ShotDir);
-        savedRural = RuralLife.Request; savedPeople = CivilianPeople.Request;
+        savedRural = RuralLife.Request; savedPeople = CivilianPeople.Request; savedUnits = UnitFigures.Source;
     }
 
     [TearDown]
     public void DiscardScene()
     {
-        RuralLife.Request = savedRural!; CivilianPeople.Request = savedPeople!;
+        RuralLife.Request = savedRural!; CivilianPeople.Request = savedPeople!; UnitFigures.Source = savedUnits;
         EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         if (ps != null) Object.DestroyImmediate(ps);
         if (rt != null) { rt.Release(); Object.DestroyImmediate(rt); }
@@ -121,6 +122,173 @@ public class TalModelsShots
             Debug.Log($"SHOT bedouin {what} at {key} {at} from {distance:F0} m");
         }
     }
+
+    /// <summary>The Lebanese token's actual placed spot near Al-Malikiyya after the first turn (15 June
+    /// 1948, inside the token's 6 June to 8 July window), from the unit zoom and from the closest zoom. The unit figures are
+    /// answered with the editor's prefabs, as the player's stream would answer them. The admitted frame is a candidate-only diagnostic; a matched before requires this identical fixture and state.</summary>
+    static void ObserveSubject(MapScene map, UnitLayer units, string stage, Vector3 target)
+    {
+        var camera = Camera.main;
+        var policy = map.Residency.Units;
+        bool ground = CollectionResidencyView.TryGroundFocus(camera, out var focus);
+        var token = map.Terrain.transform.Find(UnitLayer.RootName + "/Tokens/lebanese_army");
+        Debug.Log($"MODEL-OBS {stage} frame={Time.frameCount} token={token != null} active={units.gameObject.activeInHierarchy} arrived={UnitFigures.Arrived(UnitFigures.LebaneseRegular)} version={UnitFigures.AvailabilityVersion} targetVP={camera.WorldToViewportPoint(target).ToString("R")} ground={ground}:{focus.ToString("R")} view={Statecraft.Game.Map.Kits.TownModelLayer.ViewDistance(camera)} policy={policy.EnterM}/{policy.ExitM}/{policy.ViewEnterM}/{policy.ViewExitM} mask={camera.cullingMask} clip={camera.nearClipPlane}/{camera.farClipPlane}");
+        foreach (var demand in units.GetComponentsInChildren<UnitFigureResidency>(true).Where(o => o.name.StartsWith("Original demand lebanese_army|", StringComparison.Ordinal)))
+            Debug.Log($"MODEL-OBS {stage} prefetch={demand.name} position={demand.transform.position.ToString("R")} focusDistance={Vector2.Distance(new Vector2(focus.x, focus.z), new Vector2(demand.transform.position.x, demand.transform.position.z))} snapshot={JsonUtility.ToJson(demand.ResidencySnapshot())}");
+        if (token == null) return;
+        var planes = GeometryUtility.CalculateFrustumPlanes(camera);
+        foreach (var owner in token.GetComponentsInChildren<UnitFigureResidency>(true))
+        {
+            var piece = owner.transform;
+            var model = piece.Find(UnitFigures.ModelName);
+            Debug.Log($"MODEL-OBS {stage} piece={piece.name} position={piece.position.ToString("R")} scale={piece.lossyScale.ToString("R")} dressed={UnitFigures.Dressed(piece)} model={model != null}");
+            if (model == null) continue;
+            foreach (var renderer in model.GetComponentsInChildren<Renderer>(true))
+                Debug.Log($"MODEL-OBS {stage} renderer={renderer.name} enabled={renderer.enabled} off={renderer.forceRenderingOff} active={renderer.gameObject.activeInHierarchy} layer={renderer.gameObject.layer} inMask={(camera.cullingMask & (1 << renderer.gameObject.layer)) != 0} bounds={renderer.bounds.center.ToString("R")}/{renderer.bounds.size.ToString("R")} frustum={GeometryUtility.TestPlanesAABB(planes, renderer.bounds)} visible={renderer.isVisible} materials={string.Join(",", renderer.sharedMaterials.Select(m => m == null ? "null" : m.name + ":" + m.shader.name))}");
+        }
+    }
+
+    IEnumerator Malikiyya(bool hebrew)
+    {
+        UnitFigures.Source = (id, detail, done) => done(Prefab(id, detail));
+        yield return Boot(hebrew);
+        // Keep the real rig's projection and the saved RenderTexture on the same aspect throughout these frames.
+        Camera.main.aspect = (float)CivMovementShots.Width / CivMovementShots.Height;
+        root.Bridge!.EndTurn();
+        for (int i = 0; i < 3; i++) yield return null;
+        var ui = Object.FindFirstObjectByType<UIDocument>().rootVisualElement;
+        var close = ui.Q<Button>("turn-report-close");
+        if (close != null && close.resolvedStyle.display == DisplayStyle.Flex) UiTestKit.Press(close);
+        // The new turn opens a decision card over the map; the player's Hide button puts it away, and the card shrinks away.
+        var card = ui.Q("event-card");
+        Assert.IsNotNull(card, "the event card");
+        if (card.resolvedStyle.display == DisplayStyle.Flex) UiTestKit.Press(ui.Q<Button>("event-hide"));
+        for (int i = 0; i < 120 && card.resolvedStyle.display != DisplayStyle.None; i++) yield return null;
+        Assert.AreEqual(DisplayStyle.None, card.resolvedStyle.display, "the decision card is hidden before the frame");
+        var subjects = root.Units!.Tokens.Where(t => t.Token.Unit.Id == "lebanese_army").ToArray();
+        Assert.AreEqual(1, subjects.Length, "capture precondition: exactly one actual Lebanese army token");
+        Assert.IsTrue(UnitFigures.Arrived(UnitFigures.LebaneseRegular), "capture precondition: the Lebanese original has arrived");
+        var subject = subjects[0];
+        int q = subject.Q, r = subject.R;
+        var map = Object.FindFirstObjectByType<MapScene>();
+        var target = new Vector3((float)subject.Spot.X, 0f, (float)subject.Spot.Z);
+        target.y = map.Terrain.SampleHeight(target) + map.Terrain.transform.position.y;
+        var demands = root.Units!.GetComponentsInChildren<UnitFigureResidency>(true)
+            .Where(o => o.name.StartsWith("Original demand lebanese_army|", StringComparison.Ordinal)).ToArray();
+        Assert.AreEqual(1, demands.Length, "capture precondition: one real Lebanese source-prefetch holder");
+        var prefetch = demands[0];
+        var here = root.Units!.Tokens.Where(t => t.Q == q && t.R == r).Select(t => $"{t.Token.Unit.Id} ({t.Token.ArtType})").ToList();
+        foreach (var (what, distance) in new[] { ("unit", 40000f), ("admitted", 24000f), ("close", CameraController.MinDistance) })
+        {
+            if (what == "admitted")
+            {
+                var anchor = prefetch.transform.position;
+                Assert.Less(Vector2.Distance(new Vector2(anchor.x, anchor.z), new Vector2(target.x, target.z)),
+                    2f * map.Residency.Units.EnterM, "one real focus must be able to admit both anchors");
+                var middle = new Vector3((anchor.x + target.x) * .5f, 0f, (anchor.z + target.z) * .5f);
+                Look(middle, distance);
+                // This south-facing admitted frame is checked against all original figure corners below the top bar.
+                Camera.main.GetComponent<CameraRig>().Yaw = 180f;
+                Camera.main.GetComponent<CameraRig>().Apply();
+                Assert.IsTrue(CollectionResidencyView.TryGroundFocus(Camera.main, out var measured));
+                var rig = Camera.main.GetComponent<CameraRig>();
+                // The UI inset shifts the centre ray. Pan the real rig so its ground focus, not just LookAt, is the midpoint.
+                rig.LookAt += new Vector3(middle.x - measured.x, 0f, middle.z - measured.z);
+                rig.Apply();
+            }
+            else Look(target, distance);
+            for (int i = 0; i < 5; i++) yield return null;
+            if (what == "admitted")
+            {
+                Assert.Less(Statecraft.Game.Map.Kits.TownModelLayer.ViewDistance(Camera.main), map.Residency.Units.ViewEnterM,
+                    "capture control requires a view inside the approved enter band");
+                Assert.IsTrue(CollectionResidencyView.TryGroundFocus(Camera.main, out var focus));
+                Assert.Less(Vector2.Distance(new Vector2(focus.x, focus.z), new Vector2(target.x, target.z)), map.Residency.Units.EnterM,
+                    "capture control requires the actual placed subject inside the approved enter radius");
+                Assert.Less(Vector2.Distance(new Vector2(focus.x, focus.z), new Vector2(prefetch.transform.position.x, prefetch.transform.position.z)), map.Residency.Units.EnterM,
+                    "capture control requires the source-prefetch anchor inside the approved enter radius");
+                var camera = Camera.main;
+                var frame = new RenderTexture(CivMovementShots.Width, CivMovementShots.Height, 24, RenderTextureFormat.ARGB32);
+                var previous = camera.targetTexture;
+                bool Ready() => prefetch != null && prefetch.ResidencySnapshot().ownedLeases > 0
+                    && UnitFigures.Arrived(UnitFigures.LebaneseRegular)
+                    && map.Terrain.transform.Find(UnitLayer.RootName + "/Tokens/lebanese_army") != null;
+                int renders = 0;
+                try
+                {
+                    // Use the real render callbacks to re-admit the original after the deliberately out-of-band frame.
+                    for (; renders < 30; renders++)
+                    {
+                        camera.targetTexture = frame; camera.Render(); camera.targetTexture = previous;
+                        yield return null;
+                        if (Ready()) break;
+                    }
+                    ObserveSubject(map, root.Units, "admitted primed", target);
+                    Assert.IsTrue(Ready(), $"source, lease and token must be ready after at most 30 real renders ({renders + 1})");
+                    camera.targetTexture = frame; camera.Render(); camera.targetTexture = previous;
+                    yield return null;
+                    Assert.IsTrue(Ready(), "admitted readiness must survive another real render");
+                }
+                finally { camera.targetTexture = previous; frame.Release(); Object.DestroyImmediate(frame); }
+                var viewport = camera.WorldToViewportPoint(target);
+                Assert.IsTrue(viewport.z > 0f && viewport.x > 0f && viewport.x < 1f && viewport.y > 0f
+                    && viewport.y < 1f - Mathf.Clamp(camera.GetComponent<CameraRig>().TopInset, 0f, CameraRig.MaxTopInset),
+                    "the admitted subject is inside the map viewport below the top bar");
+                Assert.AreEqual((float)CivMovementShots.Width / CivMovementShots.Height, camera.aspect, 0.0001f,
+                    "viewport checks and saved capture must use the same aspect ratio");
+                var live = map.Terrain.transform.Find(UnitLayer.RootName + "/Tokens/lebanese_army");
+                Assert.IsNotNull(live, "the admitted token remains live before whole-model projection");
+                var owners = live.GetComponentsInChildren<UnitFigureResidency>(true);
+                Assert.GreaterOrEqual(owners.Length, 3, "three distinct original figure owners must be framed");
+                foreach (var owner in owners)
+                {
+                    Assert.Greater(owner.ResidencySnapshot().ownedLeases, 0, "each visible figure owns its admitted original lease");
+                    var model = owner.transform.Find(UnitFigures.ModelName);
+                    Assert.IsNotNull(model, "each original is dressed");
+                    Assert.Greater(model.childCount, 0);
+                    StringAssert.StartsWith(UnitFigures.LebaneseRegular, model.GetChild(0).name, "the actual Lebanese original");
+                    Assert.IsTrue(model.GetComponentsInChildren<Renderer>(true)
+                        .Any(r => r.enabled && !r.forceRenderingOff && r.gameObject.activeInHierarchy),
+                        "each distinct figure has a live visible original renderer");
+                }
+                var visible = owners.Select(o => o.transform.Find(UnitFigures.ModelName))
+                    .SelectMany(m => m.GetComponentsInChildren<Renderer>(true))
+                    .Where(r => r.enabled && !r.forceRenderingOff && r.gameObject.activeInHierarchy).ToArray();
+                foreach (var renderer in visible)
+                {
+                    var box = renderer.bounds;
+                    for (int corner = 0; corner < 8; corner++)
+                    {
+                        var point = camera.WorldToViewportPoint(new Vector3((corner & 1) == 0 ? box.min.x : box.max.x,
+                            (corner & 2) == 0 ? box.min.y : box.max.y, (corner & 4) == 0 ? box.min.z : box.max.z));
+                        Assert.IsTrue(point.z > 0f && point.x > 0f && point.x < 1f && point.y > 0f
+                            && point.y < 1f - Mathf.Clamp(camera.GetComponent<CameraRig>().TopInset, 0f, CameraRig.MaxTopInset),
+                            $"whole original figure {renderer.name} corner {corner} must be visible below the top bar: {point}");
+                    }
+                }
+                Debug.Log($"MODEL-OBS admitted readiness renders={renders + 2} viewport={viewport.ToString("R")}");
+                Assert.IsTrue(UnitFigures.Arrived(UnitFigures.LebaneseRegular), "the admitted source is ready before the frame");
+                Assert.Greater(prefetch.ResidencySnapshot().ownedLeases, 0, "the source-prefetch holder owns its admitted lease");
+                Assert.IsNotNull(map.Terrain.transform.Find(UnitLayer.RootName + "/Tokens/lebanese_army"),
+                    "the admitted token exists before the frame");
+            }
+            ObserveSubject(map, root.Units, what + " before", target);
+            CivMovementShots.Shot(rt!, Path.Combine("..", "tal-models-shots", $"malikiyya-{what}-{(hebrew ? "he" : "en")}"));
+            ObserveSubject(map, root.Units, what + " after", target);
+            if (what == "admitted")
+            {
+                var live = map.Terrain.transform.Find(UnitLayer.RootName + "/Tokens/lebanese_army");
+                Assert.IsNotNull(live, "admitted model capture must retain its actual Lebanese token after render");
+                var models = live!.GetComponentsInChildren<UnitFigureResidency>(true)
+                    .Where(o => o.transform.Find(UnitFigures.ModelName) != null).ToArray();
+                Assert.GreaterOrEqual(models.Length, 3, "admitted model capture must retain all three original figures after render");
+            }
+            Debug.Log($"SHOT malikiyya {what} on {root.Bridge.State.Date:yyyy-MM-dd} hex {q},{r} from {distance:F0} m, target {target.ToString("R")} camera {Camera.main.transform.position.ToString("R")} rotation {Camera.main.transform.rotation.ToString("R")}, event card display {card.resolvedStyle.display}: tokens [{string.Join(", ", here)}]");
+        }
+    }
+
+    [UnityTest] public IEnumerator MalikiyyaEnglish() { yield return Malikiyya(false); }
+    [UnityTest] public IEnumerator MalikiyyaHebrew() { yield return Malikiyya(true); }
 
     [UnityTest] public IEnumerator BedouinBeforeEnglish() { yield return Bedouin(false, false); }
     [UnityTest] public IEnumerator BedouinAfterEnglish() { yield return Bedouin(false, true); }

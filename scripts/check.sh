@@ -48,6 +48,9 @@ run "sim build, warnings as errors" dotnet build sim/Statecraft.sln -c Release -
 unity_version="$(sed -n 's/^m_EditorVersion: //p' unity/ProjectSettings/ProjectVersion.txt)"
 [ -n "$unity_version" ] || { echo "FAILED: unity compile: no m_EditorVersion in unity/ProjectSettings/ProjectVersion.txt"; exit 1; }
 unity_contents="${CHECK_UNITY_CONTENTS:-/Applications/Unity/Hub/Editor/$unity_version/Unity.app/Contents}"
+# The Linux (and Windows) editor has no Unity.app/Contents; its Editor/Data holds the same Managed and NetStandard folders.
+linux_data="$HOME/Unity/Hub/Editor/$unity_version/Editor/Data"
+if [ -z "${CHECK_UNITY_CONTENTS:-}" ] && [ ! -d "$unity_contents" ] && [ -d "$linux_data" ]; then unity_contents="$linux_data"; fi
 if [ ! -d "$unity_contents" ]; then
   echo "== unity compile: SKIPPED, no Unity $unity_version editor at $unity_contents"
 elif [ ! -d unity/Library ]; then

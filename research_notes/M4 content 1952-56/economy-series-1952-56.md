@@ -11,6 +11,8 @@ Researched 2026-10-22. All URLs were opened on that date. Follow-up pass 2026-10
 - **[GAP]** not found.
 - Nothing is estimated here. A figure "computed here" is plain arithmetic on the cited table and is marked as such.
 
+Every [V] in this note was an agent's reading on 2026-10-22, unless the tag gives a later date; a person's check is pending for all of them.
+
 **Sources opened**
 - **Patinkin** = Don Patinkin, *The Israel Economy: The First Decade*, Maurice Falk Institute for Economic Research in Israel, Jerusalem, August 1967 (third impression; first issued in the Fourth Report 1957 and 1958 of the Falk Project for Economic Research in Israel, November 1959; title and imprint pages, PDF pp. 7-8). Publisher URL: https://en.falk.huji.ac.il/sites/default/files/falk/files/firstdecade.pdf . That URL returned a maintenance page on 2026-10-22, so the Wayback copy was used: http://web.archive.org/web/20260106164207/https://en.falk.huji.ac.il/sites/default/files/falk/files/firstdecade.pdf . Pages below are the printed page numbers (printed page = PDF page minus 4).
 - **BoI 1955** = Bank of Israel, *Annual Report 1955* (Jerusalem, May 1956), chapter files: II https://boi.org.il/boi_files/BankIsraelAnnualReport/Annual%20Report%201955/part%20one/pe_2.pdf , V https://boi.org.il/boi_files/BankIsraelAnnualReport/Annual%20Report%201955/part%20one/pe_5.pdf , VII https://boi.org.il/boi_files/BankIsraelAnnualReport/Annual%20Report%201955/part%20one/pe_7.pdf , XVII https://boi.org.il/boi_files/BankIsraelAnnualReport/Annual%20Report%201955/part%20two/pe_17.pdf .

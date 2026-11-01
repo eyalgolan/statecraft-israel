@@ -33,7 +33,9 @@ moments.md`, the "Full plan"; plan: `docs/superpowers/plans/2026-10-13-decision-
   until the owner sets `sensitivity_reviewed: true` (`Build.ShareableRefusal`). That applies to `ten_days` (J09) and
   `operation_yoav` (W04a), and to the `operation_horev` outcome clip (A05). The owner reviewed all three on 14 October
   2026 (relayed by the coordinator), so a shareable build may carry them. It also applies to the `altalena` loop and
-  outcome (A27) and the `operation_horev` loop (A05), which the owner reviewed on 20 October 2026 (#1102, below).
+  outcome (A27) and the `operation_horev` loop (A05), which the owner reviewed on 20 October 2026 (#1102, below), and to
+  the `degania_defence` (D15) and `reparations_vote` (A10) loops, which ship on the owner's decision of 31 October 2026
+  (below).
 - **Rights:** owner ruling D-V (`docs/oss/DECISIONS.md`, merged in #449), "no need to check, just use them". Every clip has an
   `ASSETS.yaml` row with `ai_generated: true`, the generator and the date, and those rows feed `docs/ai-disclosure.md`.
 
@@ -82,6 +84,13 @@ event has an outcome clip, plays that clip once, in the middle of the screen, be
   K04b, the 6 s demo 3 v8 take (Veo 3.1 Fast, 17 October), is the card's loop (the whole shot) and its `continue` outcome
   (frames 11-94, the encoder's steadiest 3.5 s). It shows the same arrival as the `law_of_return` loop (K04a), the
   moment before the card's photograph of immigrants coming down a gangway.
+- **degania_defence and reparations_vote (owner decision of 31 October 2026 on #1565 and #1564):** "Ship both clips",
+  chosen over reviewing the clips first. Each card's loop is the whole demo 2 shot: D15 (Veo 3.1 from a Dreamina still,
+  12 October) for `degania_defence`, a small tank halted and smoking inside a kibbutz gate with defenders in a trench
+  seen from behind, and A10 (Seedance 2.0 Fast, 12 October) for `reparations_vote`, a crowd with umbrellas held back by a
+  police line on a wet street at night. Both events are sensitive (`war-casualties`, `holocaust`), so both rows are
+  `sensitive: true` and `sensitivity_reviewed: true` on that decision. A10's night and rain are the shot's and not
+  sourced (#1564); D15 keeps a faint outline of its Dreamina still's "AI" badge, top left. Neither has an outcome clip.
 - **Not added: A02 on `burma_road_complete` (24 October 2026).** The owner's ruling was "Add, check headlights first":
   the shot's trucks drive with their headlights on at dusk, so it could go in only with a period source for lit
   convoys, or as a window with no lights showing. No source was found for lights on the Burma Road track; the sources

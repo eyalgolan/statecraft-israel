@@ -145,7 +145,9 @@ def bake(source: dict, hexes: dict, water: np.ndarray, meta: dict) -> tuple[list
                                 [overlays[o] for o in p["overlays"] if o in overlays]) for p in drawn)
             seen.setdefault(key, []).append(s["id"])
         if len(seen) > 1:
-            parts = "; ".join(f"{', '.join(ids)}: {''.join(c or '-' for c in k)}" for k, ids in sorted(seen.items()))
+            # A settlement outside every snapshot and overlay codes as None; sorting must not compare it with a code.
+            order = sorted(seen.items(), key=lambda kv: tuple(c or "-" for c in kv[0]))
+            parts = "; ".join(f"{', '.join(ids)}: {''.join(c or '-' for c in k)}" for k, ids in order)
             raise SystemExit(f"settlements in hex {qr} disagree about its control ({parts})")
     cells = {}
     applied = set()

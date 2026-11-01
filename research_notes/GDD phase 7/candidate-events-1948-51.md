@@ -48,6 +48,8 @@ it is the one place in these files where an Israeli cabinet decision is on recor
 - Turns are monthly, from the 15th (issue #135, owner comment). "The 15 February 1950 turn" means the turn that starts
   on that day.
 
+Every [V] in this note was an agent's reading on 2026-10-14, unless the tag gives a later date; a person's check is pending for all of them.
+
 ## Sources used
 
 Primary and official:

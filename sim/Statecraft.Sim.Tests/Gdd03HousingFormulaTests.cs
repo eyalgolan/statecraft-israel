@@ -235,4 +235,15 @@ public class Gdd03HousingFormulaTests
         Assert.Throws<ContentException>(() => Gdd03HousingFormula.FromCatalogue(c));
         Assert.Throws<ArgumentNullException>(() => Gdd03HousingFormula.FromCatalogue(null!));
     }
+
+    // R-HOUSE-001: a valid numeric child cannot authorize an unresolved parent repair row.
+    [Fact]
+    public void ReaderRejectsDeferredRepairParentWithAnIntactNumericPart()
+    {
+        var catalogue = ContentLoader.Load(RealContentTests.ContentRoot()).Gdd03Balance
+            ?? throw new InvalidOperationException("GDD 0.3 catalogue required");
+        Gdd03HousingFormula.FromCatalogue(catalogue);
+        catalogue.Values["housing_repair"].Basis = "Deferred"; // TEST-ONLY SYNTHETIC parent gate flip
+        Assert.Throws<ContentException>(() => Gdd03HousingFormula.FromCatalogue(catalogue));
+    }
 }

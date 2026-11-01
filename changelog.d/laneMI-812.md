@@ -1,0 +1,1 @@
+- The end screen shows what completing every objective on its historical date scores, beside the score; the sim computes it (Refs #812).
