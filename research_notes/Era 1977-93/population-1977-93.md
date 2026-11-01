@@ -526,11 +526,13 @@ November 1988, 78.4 percent in January 1990). This pass adds the size of the pac
 | 10 Mar 1991 (Sunday, computed here) | Sharon resigned as chairman of the Cabinet committee on immigration and absorption; the Cabinet had refused his demand to admit 10,000 foreign construction workers and accepted Shamir's compromise of 5,000, one local worker for each foreigner | JTA 1991-03-11, at https://www.jta.org/archive/sharon-quits-as-absorption-czar-as-public-eye-turns-to-immigrants | [V, agent read 1 Nov; a person's check pending], press |
 | 12 Mar 1991 (Tuesday, computed here; effective 1 April) | The "absorption basket" "raised by 3,000 shekels, or approximately $1,350 at the new exchange rate ... to its previous level of 17,000 shekels ($7,750), still considerably less than the original 21,000 shekels ($9,600) for an immigrant family of three"; cost to the Treasury estimated at "$137 million" | JTA 1991-03-13, at https://www.jta.org/archive/israel-partially-restores-cuts-in-subsidies-to-new-immigrants | [V, agent read 1 Nov; a person's check pending], press |
 
-- [C] The size of the package, two measures in two currencies: JTA of 6 March calls it about $11,000 cut to $7,000;
-  JTA of 13 March gives 21,000 shekels ($9,600) cut to 17,000 shekels ($7,750), restored by 3,000 shekels to 17,000.
-  The dollar figures are not the same conversions (the 13 March item speaks of "the new exchange rate"), so the two
-  items do not disagree on the cut, only on the dollar value. Preferred for a record: the shekel figures, with the
-  item's own dollar value beside them.
+- [C] The size of the package, two measures in two currencies: JTA of 6 March calls it about $11,000 cut to $7,000.
+  JTA of 13 March says the basket was "raised by 3,000 shekels" back "to its previous level of 17,000 shekels
+  ($7,750), still considerably less than the original 21,000 shekels ($9,600)". So the basket stood at 14,000 shekels
+  before 12 March (derived: 17,000 - 3,000), 17,000 shekels was its level before the latest cut, and 21,000 shekels the
+  original. The dollar figures are not the same conversions (the 13 March item speaks of "the new exchange rate"), and
+  the 6 March $7,000 is not shown here to match the 14,000 or the 17,000 level, so the two items are not reconciled.
+  Preferred for a record: the shekel figures, with the item's own dollar value beside them.
 - [GAP] The grant schedule in the Absorption Ministry's or the Jewish Agency's own regulations, and the cabinet
   decision that set the 21,000 shekels. Not found in any source read; no ministry text was reached.
 
@@ -552,7 +554,8 @@ pages and PDF pages are in the Sources table. Values read from the page images.
 | 1991 | not in this edition | 42,640 | 42,650 | not in this edition | 83,350 | 83,700 |
 | 1992 | not in this edition | not in this edition | 70,270 | not in this edition | not in this edition | 43,420 |
 
-- The 1990 row of the 1991 edition carries the footnote mark "5" and the footnote reads "See note 7 to Table 16.1 and
+- The 1990 row of the 1991 edition carries the footnote mark "5" in the completed block and "5*" in the begun
+  block (1988 and 1989 carry "§" in both), and the footnote reads "See note 7 to Table 16.1 and
   details in Table 16.4"; note 7 itself was not opened. Our reading, not a source statement: it flags the 1990 figure as
   provisional. The 1992 edition marks 1989 and 1990 with "§" and 1991 with "*"; the 1993 edition marks 1990 and 1991
   with "§" and 1992 with "*". The footnote that explains these signs was not found on the table pages. [GAP]
@@ -599,8 +602,9 @@ caravans and cabins", "Placement completed", "DWELLINGS - TOTAL":
 | 2 Aug 1990 (Cabinet "Thursday", computed here) | "authorized to import 9,000 prefabricated and 5,000 mobile homes. In addition, 6,000 permits will be issued in the private sector to import housing"; "The entire program will cost an estimated $500 million" against Sharon's $3 billion plan | JTA 1990-08-03, at https://www.jta.org/archive/government-oks-sharons-request-to-import-prefabricated-homes | [V, agent read 1 Nov; a person's check pending], press |
 | 2 Aug 1990 item | Rents: "much of the imported housing is planned for young couples, who have been forced out of their homes by soaring rents." "landlords have raised rents three and four times in keeping with the higher amounts Soviet immigrants can pay" | same item | [V, agent read 1 Nov; a person's check pending], press (the report's claim about landlords, not a measured rent index) |
 
-- [C] The number of prefabricated units: 40,000 "purchased by his ministry" (JTA 27 June, Sharon at the Coordinating
-  Committee, with 3,000 on order) against 9,000 prefabricated and 5,000 mobile homes authorised by the Cabinet on 2
+- [C] The number of prefabricated units: Sharon said his ministry "will purchase 40,000 prefabricated houses in Israel and
+  abroad, 3,000 of which are already on order" (JTA 27 June, at the Coordinating Committee) against 9,000
+  prefabricated and 5,000 mobile homes authorised by the Cabinet on 2
   August, with 6,000 more import permits for the private sector (JTA 3 August). The first is the minister's plan, the
   second the decision; they are not two counts of one thing. The later ordered numbers (15,000 prefabricated units at 14
   sites and 5,000 mobile homes, Sharon's speech of 25 October 1990) are in `era-look-1977-93.md` and are not re-read here.
