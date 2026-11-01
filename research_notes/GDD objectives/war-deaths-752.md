@@ -62,7 +62,7 @@ Quotes are verbatim. The "counts" column says what the source says it counts; wh
 
 ## Recommended figure
 
-**6,373 Israeli dead, 30 November 1947 (or "pre-state days") to 20 July 1949** is the most defensible single figure: it is the MFA's own number (row 1, read this session) and is repeated by the IDF journal (row 2, first pass only), and by the Jewish Virtual Library (row 6) and Sandler (row 8) as secondary sources. For card text, "more than 6,000" is supported word for word by the Knesset sheet (row 4, read this session via an archive copy) and is true under every row that gives a total except Morris's 5,700 to 5,800 (row 9) and the unread row 11 lead (5,677); 6,074 (row 7) is still more than 6,000. The wording rests on the official 6,373.
+**6,373 Israeli dead, from pre-state days (29 or 30 November 1947) to 20 July 1949** is the most defensible single figure: it is the MFA's own number (row 1, read this session) and is repeated by the IDF journal (row 2, first pass only), and by the Jewish Virtual Library (row 6) and Sandler (row 8) as secondary sources. For card text, "more than 6,000" is supported word for word by the Knesset sheet (row 4, read this session via an archive copy) and is true under every row that gives a total except Morris's 5,700 to 5,800 (row 9) and the unread row 11 lead (5,677); 6,074 (row 7) is still more than 6,000. The wording rests on the official 6,373.
 
 There is **no single defensible soldier/civilian split**: soldiers are "more than 4,000" or 4,795 depending on the source, civilians run from 931 to about 2,400 depending on the definition, and no source gives all of them on one rule. The card's sentence should keep to "more than 4,000 soldiers" (true under rows 3, 4 and 5) and give no civilian number.
 
