@@ -23,7 +23,8 @@ namespace Statecraft.Sim
         }
     }
 
-    /// <summary>Frozen typed catalogue vector. Quotes rates; never awards Money or work receipts.</summary>
+    /// <summary>Frozen typed catalogue vector. Quotes rates; never awards Money or work receipts. Since #2112 a rate is a
+    /// multiple of R-CITY-002's per-unit job income, not Money; <see cref="MoneyPerTurn"/> converts it.</summary>
     internal sealed class Gdd03IndustryRates
     {
         readonly decimal ordinary, apprentice, expert;
@@ -134,7 +135,8 @@ namespace Statecraft.Sim
             return Gdd03FixtureAssignmentResult.Applied;
         }
         /// <summary>Rate quotation for an explicitly supplied frozen fixture, not a month snapshot or payable receipt.
-        /// Label is never identity. No Money/Food/XP/state mutation, time scaling or production consumer.</summary>
+        /// Label is never identity. No Money/Food/XP/state mutation, time scaling or production consumer. The total is in
+        /// multiples of R-CITY-002's per-unit job income (#2112), not Money.</summary>
         internal decimal IndustryRate(string target)
         {
             ValidateInventory();

@@ -49,6 +49,7 @@ namespace Statecraft.Sim
             return values;
         }
 
+        // The catalogue tier, a multiple of field_food_per_turn (#2112); equal to Food only while that base is 1.
         internal int FoodFor(CivilianTier tier) => tier switch {
             CivilianTier.Novice => noviceFood,
             CivilianTier.Trained => trainedFood,

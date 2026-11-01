@@ -47,4 +47,22 @@ public sealed class Gdd03PerUnitRatesTests
         Assert.Equal(trained, rates.FoodPerTurn(CivilianTier.Trained, r));
         Assert.Equal(veteran, rates.FoodPerTurn(CivilianTier.Veteran, r));
     }
+
+    // #2112 review: the conversions fail closed, with no default base and no silent overflow.
+    [Fact] public void ConversionsFailClosed()
+    {
+        var c = ContentLoader.Load(RealContentTests.ContentRoot());
+        var r = c.RulesAt(c.Rules.Start).Mvp!;
+        var industry = Gdd03IndustryRates.Read(c.Gdd03Balance);
+        Assert.Throws<ArgumentNullException>(() => industry.MoneyPerTurn(CivilianTier.Expert, null!, 1.0 / 12));
+        Assert.Throws<ArgumentException>(() => industry.MoneyPerTurn((CivilianTier)99, r, 1.0 / 12));
+        var fields = Gdd03FieldRates.FromCatalogue(c.Gdd03Balance!);
+        Assert.Throws<ArgumentNullException>(() => fields.FoodPerTurn(CivilianTier.Trained, null!));
+        Assert.Throws<ArgumentException>(() => fields.FoodPerTurn(CivilianTier.Apprentice, r));
+        r.FieldFoodPerTurn = int.MaxValue; // test-only base
+        Assert.Throws<OverflowException>(() => fields.FoodPerTurn(CivilianTier.Veteran, r));
+        r.FieldFoodPerTurn = null; // test-only: the GDD loader requires it
+        var ex = Assert.Throws<ContentException>(() => fields.FoodPerTurn(CivilianTier.Trained, r));
+        Assert.Equal("mvp.field_food_per_turn", ex.Field);
+    }
 }
