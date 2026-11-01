@@ -1403,7 +1403,7 @@ rules:
     note: "Screenshots of the game, not AI images; the AI-made parts they show are the start screen's painting and Tal Heuberger's 3D models (Tripo Studio, their rows above). CC BY-SA 4.0 as for the Steam kit's screenshots (coordinator ruling, 2026-10-15): the screenshots show the CC BY-SA 4.0 bakes of D13 (landuse.png, BiomeColours.bytes, RouteRibbons.bytes)."
   - glob: "docs/images/build-gameplay.*"
     licence: CC-BY-4.0
-    source: "In-engine capture: about 20 seconds of real play recorded from the game's own WebGL build (main at f57bd39, 2026-11-01) in headless Chrome for Testing at 1920x1080 with the DevTools screencast, after New game and the opening's Skip button, as one take with one hard cut (five of the eight units End turn selects are left out); the animated WebP (1024x576, 12 fps) for the README, the MP4 (H.264, 24 fps) for the store-page draft. Map derived from Copernicus DEM; the event-card photographs CC BY 4.0 with their credit lines in the picture (Meitar Collection / National Library of Israel; NOTICE)"
+    source: "In-engine capture: about 20 seconds of real play recorded from the game's own WebGL build (main at 32e7d9c, 2026-11-01) in headless Chrome for Testing at 1920x1080 with the DevTools screencast, after New game and the opening's Skip button, as one take with one hard cut (five of the eight units End turn selects are left out); the animated WebP (1024x576, 12 fps) for the README, the MP4 (H.264, 24 fps) for the store-page draft. Map derived from Copernicus DEM; the event-card photographs CC BY 4.0 with their credit lines in the picture (Meitar Collection / National Library of Israel; NOTICE)"
     status: verified
   - glob: "docs/steam/kit/*_capsule_*.png"
     licence: CC-BY-SA-4.0
