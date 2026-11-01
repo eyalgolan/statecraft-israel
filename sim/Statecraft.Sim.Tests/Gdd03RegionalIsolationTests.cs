@@ -102,8 +102,8 @@ public class Gdd03RegionalIsolationTests
     }
 
     // R-SITE-003 ("No city, housing, job, population or Social cohesion changes"), R-POP-001. GDD 0.3
-    // (docs/gdd/cities.md:72 at 605277dfa) excludes "automatically granting a city economy on founding completion". Pinned to the exact gdd-0.3 game path: regional fixtures refuse turns
-    // (R-POP-002), so completion inside an initialized region waits for the campaign initialization.
+    // (docs/gdd/cities.md:72 at 605277dfa) excludes "automatically granting a city economy on founding completion". Pinned to the exact gdd-0.3 game path:
+    // regional fixtures refuse turns (R-POP-002), so completion inside an initialized region waits for the campaign initialization.
     [Fact]
     public void R_SITE_003_CompletingAYishuvSiteCreatesNoCityRegionPersonOrResource()
     {
@@ -130,6 +130,7 @@ public class Gdd03RegionalIsolationTests
         Assert.Equal(idle.Population, built.Population); Assert.Equal(idle.TotalPopulation, built.TotalPopulation);
         Assert.Equal(idle.Units.Count, built.Units.Count); Assert.Equal(idle.NextId, built.NextId);
         Assert.Equal((idle.Treasury, idle.Food, idle.Arms), (built.Treasury, built.Food, built.Arms));
+        Assert.Equal(idle.Indicators, built.Indicators); // Social cohesion is the "morale" indicator
         Assert.Empty(built.PlayerRegions); Assert.False(built.PopulationLedger.IsInitialized);
     }
 

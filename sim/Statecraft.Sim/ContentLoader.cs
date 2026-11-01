@@ -1638,7 +1638,7 @@ namespace Statecraft.Sim
             }
         }
 
-        static readonly string[] MapLocationKinds = { "city", "kibbutz", "fort", "pass", "bridge", "reception_camp" };
+        static readonly string[] MapLocationKinds = { "city", "kibbutz", "fort", "pass", "bridge", "reception_camp", "outpost" };
         static readonly string[] MapLocationPriorities = { "must_have", "optional" };
         static readonly string[] StartingControls = { "israeli", "arab_forces", "contested" };
 
@@ -1664,6 +1664,15 @@ namespace Statecraft.Sim
                     throw new ContentException(lf, at + ".kind", $"unknown kind '{x.Kind}' ({string.Join(", ", MapLocationKinds)})");
                 if (!MapLocationPriorities.Contains(x.Priority))
                     throw new ContentException(lf, at + ".priority", $"unknown priority '{x.Priority}' ({string.Join(", ", MapLocationPriorities)})");
+                // #1007, owner 21 October 2026: an outpost is optional map metadata with no implied gameplay role.
+                if (x.Kind == "outpost")
+                {
+                    if (x.Priority != "optional") throw new ContentException(lf, at + ".priority", "an outpost must be optional");
+                    if (x.ManagedCity) throw new ContentException(lf, at + ".managed_city", "an outpost has no managed city");
+                    if (x.DesignatedSite) throw new ContentException(lf, at + ".designated_site", "an outpost is not a founding site");
+                    if (x.SettlementControlTarget) throw new ContentException(lf, at + ".settlement_control_target", "an outpost is not a capture target");
+                    if (x.StartingControl != "") throw new ContentException(lf, at + ".starting_control", "an outpost has no starting control");
+                }
                 Finite(lf, at + ".lon", x.Lon);
                 Finite(lf, at + ".lat", x.Lat);
                 if (x.Lon < -180 || x.Lon > 180) throw new ContentException(lf, at + ".lon", "must be from -180 to 180");
