@@ -209,6 +209,26 @@ Hebrew Wikipedia pages below were read at the `oldid` given, checked 2026-10-23.
   2026-10-24, no date filter; the page reported 622 results, a fuzzy count); I read the headlines
   of the first results page only (10 items), and none names Kefar Uriyya; the other pages were not
   read, so this is not a negative for the archive.
+  (1 Nov) Upper bound for the rename, from JTA's 1929 bulletins (agent read 2026-11-01; a person's
+  check pending). Query run 2026-11-01 (JTA site, no key needed):
+  `https://www.jta.org/wp-json/wp/v2/archive?search=Kfar+Uria&after=1920-01-01T00:00:00&before=1949-12-31T23:59:59&per_page=20`
+  returned `x-wp-total: 21` (a fuzzy search). I read the 20 headlines of page 1 (1949 back to 1926)
+  and opened only the 1929 items below; the 1926 and 1927 hits were not opened. `Kfar+Uriah` (9 hits,
+  all listed) and `Kfar+Uriya` (2 hits, all listed) return the same two 1929 items; `Kfar+Uriyah`
+  (33 hits) I read for page 1 only (1949 back to 1942, no 1929 item). I opened the original bulletin
+  PDFs on pdfs.jta.org and read the pages as images.
+  - Jewish Daily Bulletin, Wednesday 28 August 1929, p. 3, item "Gruesome atrocities committed by
+    fanatical Moslem Arabs on Jewish victims", dateline "Jerusalem, Aug. 27"; its continuation on
+    p. 8 prints: "The following places were attacked and defended by the self-defense corps: Kfar
+    Uriah, Emek Arazim, Artuf, ..." (PDF http://pdfs.jta.org/1929/1929-08-28_1452.pdf). [S, JTA]
+  - Jewish Daily Bulletin, Friday 6 September 1929, p. 4, the Palestine Jewry indictment of the Mufti,
+    point 12: "the burning of Artuf, Hulda and Kfar Uria" (PDF
+    http://pdfs.jta.org/1929/1929-09-06_1459.pdf). [S, JTA]
+  - **Our reading:** the name "Kefar Uriyya" (JTA spelling "Kfar Uriah" in the 28 August item; the
+    6 September item quotes the indictment's text, "Kfar Uria") was in use by the 27 August 1929 wire
+    report, so the rename from "Qiryat Moshe" came no later than the 1929 riots.
+    JTA gives no earlier use, no lower bound and no reason; the he.wiki sentence on the Vilnai
+    explanation has no year, so the year of the rename stays [GAP].
   Coordinates of the old site: he.wiki `כפר אוריה` oldid 44104326 prints 31.79330014, 34.94659163 [S,
   Wikipedia]; Wikidata Q659949 prints 31.7936, 34.948397 [S, Wikidata]; the CBS string in part 1
   gives 31.79261, 34.94732 (computed here). The he.wiki and CBS pairs differ by 0.00069 degrees of
@@ -437,6 +457,8 @@ rows with later years for `בית הערבה` (code 3645, 1980, Jordan-Jericho s
 - [GAP] **Rename years** for Kefar Uriyya (from Qiryat Moshe) and Neve Ya'akov (from the Hebrew
   Village): (24 Oct) searched again and not found as a dated source; for Neve Ya'akov the window
   June 1921 to the 1925 ascent is our reading of he.wiki, for Kefar Uriyya there is none (part 2).
+  (1 Nov) Kefar Uriyya now has an upper bound: JTA bulletins already print the name for the moshav attacked
+  (28 August 1929) and burned (6 September 1929, quoting the indictment) (part 2); no lower bound found.
 - [GAP] **Gvati row for Jerusalem.** (24 Oct) Searched again and not found. Read: a copy of the text
   of https://benyehuda.org/read/14684 fetched on 2026-10-24 by another lane of this project (about
   21,000 non-empty lines); a search for lines that begin with "ירושלים" found six: five are running
