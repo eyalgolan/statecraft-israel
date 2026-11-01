@@ -14,9 +14,9 @@ namespace Statecraft.Game.Map
 {
     /// <summary>The 1949 armistice lines as their true polylines (#237; option 3 of docs/visual-v1.md, "Region borders"):
     /// every feature of content/map/armistice_lines_1949.geojson drawn as a thin dark line draped on the ground, over the
-    /// hex-snapped bands (<see cref="Armistice1949"/>), which stay as they are. A map mode, off unless asked for
-    /// ("armisticelines" in the WebGL page URL, -armisticelines on desktop and in the editor): with the flag the map builds
-    /// it, without it nothing is built. A release build draws only the features the owner has signed off
+    /// hex-snapped bands (<see cref="Armistice1949"/>), which stay as they are. On unless turned off (owner, 1
+    /// November 2026: "On by default (Recommended)"; #196): "noarmisticelines" in the WebGL page URL, -noarmisticelines on
+    /// desktop and in the editor, builds nothing, and the "armisticelines" visual toggle hides a built overlay. A release build draws only the features the owner has signed off
     /// (<see cref="ForBuild"/>) and ships only those (<see cref="ReleaseText"/>). Zoomed out past the gameplay zoom the lines
     /// widen with the distance (<see cref="WidthScale"/>). Each feature shows from its own shown_from date, as the bands do. Features traced
     /// from the low-resolution scan (source_quality: low_res_scan, the Jordan lines) are drawn dashed and a step lighter, so
@@ -27,7 +27,7 @@ namespace Statecraft.Game.Map
     public static class ArmisticeLines
     {
         public const string FileName = "armistice_lines_1949.geojson", RootName = "ArmisticeLines", ToggleName = "armisticelines",
-            Flag = "armisticelines";
+            OffFlag = "noarmisticelines";
         /// <summary>The line's width on the ground: about 4 px at the gameplay zoom (52 m a pixel), a third of a road's, so
         /// it reads as a drawn line, not as a band or a route.</summary>
         public const float WidthM = 200f;
@@ -55,15 +55,17 @@ namespace Statecraft.Game.Map
             public List<List<(double lon, double lat)>> Parts = new List<List<(double lon, double lat)>>();
         }
 
-        /// <summary>Whether this run draws the overlay (MapScene.Build asks). A seam: a test turns the mode on to build the map
-        /// with it.</summary>
+        /// <summary>Whether this run draws the overlay (MapScene.Build asks). A seam: a test sets it to build the map with or
+        /// without it.</summary>
         internal static Func<bool> Wanted = Requested;
 
         public static bool Requested() =>
             Requested(Application.absoluteURL, Environment.GetCommandLineArgs(), Application.platform == RuntimePlatform.WebGLPlayer);
 
+        /// <summary>True unless the run turns the overlay off (<see cref="OffFlag"/>, as "notiltshift" turns tilt-shift off).
+        /// The earlier opt-in flag ("armisticelines") is no longer read, so an old link still shows the lines.</summary>
         public static bool Requested(string? url, string[] args, bool webgl) =>
-            webgl ? UrlFlags.Has(url, Flag) : args.Contains("-" + Flag);
+            !(webgl ? UrlFlags.Has(url, OffFlag) : args.Contains("-" + OffFlag));
 
         /// <summary>Parses the GeoJSON (JSON is YAML, so the YAML reader the content already uses reads it). Every malformed
         /// input throws InvalidDataException naming the file and the feature.</summary>
