@@ -332,6 +332,57 @@ CBS's, so his split cannot be carried into the five CBS rows. That split is [GAP
 - This counts legal registrations only, so it is lower than CBS. It is not comparable period by period with 4a
   (different start and end, no illegal immigration). Reported for the calibration note, not as a competing value.
 
+### 4f. The same table by year, 1920 to November 1945 (1 November addition for #84)
+
+[V, agent read 1 November 2026; a person's check pending] Survey Vol. I, chapter VII, Table 1, page 185 (PDF page 190 of
+the file in the Sources table; no text layer, so the page was OCR'd and then read off the page image). Persons registered
+as immigrants, including travellers who later registered, so legal registrations only. Columns after Jews are as printed
+(1920-22 one combined non-Jewish figure; Christians and Moslems separately 1923-34; Arabs and Others from 1935); the column "Non-Jewish (derived)" below is Total - Jews.
+
+| Year | Total | Jews | Non-Jewish (derived) |
+|---|---|---|---|
+| 1920 (Sept-Dec) | 5,716 | 5,514 | 202 |
+| 1921 | 9,339 | 9,149 | 190 |
+| 1922 | 8,128 | 7,844 | 284 |
+| 1923 | 7,991 | 7,421 | 570 |
+| 1924 | 13,553 | 12,856 | 697 |
+| 1925 | 34,641 | 33,801 | 840 |
+| 1926 | 13,910 | 13,081 | 829 |
+| 1927 | 3,595 | 2,713 | 882 |
+| 1928 | 3,086 | 2,178 | 908 |
+| 1929 | 6,566 | 5,249 | 1,317 |
+| 1930 | 6,433 | 4,944 | 1,489 |
+| 1931 | 5,533 | 4,075 | 1,458 |
+| 1932 | 11,289 | 9,553 | 1,736 |
+| 1933 | 31,977 | 30,327 | 1,650 |
+| 1934 | 44,143 | 42,359 | 1,784 |
+| 1935 | 64,147 | 61,854 | 2,293 |
+| 1936 | 31,671 | 29,727 | 1,944 |
+| 1937 | 12,475 | 10,536 | 1,939 |
+| 1938 | 15,263 | 12,868 | 2,395 |
+| 1939 | 18,433 | 16,405 | 2,028 |
+| 1940 | 5,611 | 4,547 | 1,064 |
+| 1941 | 4,270 | 3,647 | 623 |
+| 1942 | 3,052 | 2,194 | 858 |
+| 1943 | 9,867 | 8,507 | 1,360 |
+| 1944 | 16,476 | 14,464 | 2,012 |
+| 1945 (Jan-Nov) | 13,984 | 12,032 | 1,952 |
+| **Total (printed)** | **401,149** | **367,845** | 33,304 (printed; equals 401,149 - 367,845) |
+
+- Checks (derived): the 26 Jewish figures sum to 367,845 and the 26 totals to 401,149, equal to the printed totals; in
+  every row Total equals Jews plus the printed non-Jewish columns, which is how the digits the print makes ambiguous
+  (3 against 8) were settled.
+- Against the CBS periods in 4a (derived sums of the Jewish column here against the CBS total, which also differs in
+  coverage; the periods are not the same span, so the gaps are expected, and the near-match of 11 in 1932-38 is not
+  evidence that the two series are the same): 1920-23 = 29,928 (CBS 1919-23: 35,183); 1924-31 = 78,897 (CBS 81,613); 1932-38 = 197,224 (CBS 197,235,
+  a difference of 11); 1939-Nov 1945 = 61,796 (CBS 1939-45: 81,808; the gap of 20,012 is only partly explained by the missing December 1945
+  and by illegal immigration, which CBS spreads unknown over all periods).
+- What the CBS figures add and this table cannot show: 1919 and the months before September 1920, December 1945 on, and
+  the illegal immigrants and staying tourists (about 30,500 in note 3 of 4a). The table is therefore a lower bound by year,
+  not an alternative to the CBS period totals.
+- Peaks and troughs for the content work: 1925 (33,801), 1933-36 (30,327 / 42,359 / 61,854 / 29,727), and 1927-31
+  (2,178 to 5,249 a year), 1941-42 (3,647 and 2,194).
+
 ---
 
 ## 5. Emigration
@@ -421,6 +472,8 @@ Not a model, only the arithmetic the sources allow:
 - Origin split of the 1882 and 1918 start populations (the 1918 split is in the 1916-18 census, 1b; the 1882 split is [GAP]).
 - A single sourced First Aliyah figure (only ranges; Bachi's implied 25,000 is an inference).
 - Arrivals 1915-1918 (CBS shows no figure).
+- A by-year series for 1919, for 1946-48 and for illegal immigration (the Survey's annual table, 4f, runs September 1920 to
+  November 1945 and counts legal registrations only).
 - How the 30,551 immigrants with no period divide over the CBS periods.
 - Emigration before 1920, and a complete gross (not net) series after it (partial figures in 5b).
 - Total population at the end of 1918: now [C] with two values (2b); no primary count.
