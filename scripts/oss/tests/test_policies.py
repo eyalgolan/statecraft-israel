@@ -225,6 +225,20 @@ def test_gitignore_covers_editor_licence_and_local_files():
         assert rule in lines, rule
 
 
+
+def test_gitignore_covers_build_scratch_but_not_project_settings():
+    # #2181 committed scripts/unity_compile/obj/ (dotnet restore/build output beside the .csproj files) and unity/.vsconfig
+    # (written by com.unity.ide.visualstudio on open). PackageManagerSettings.asset is tracked project config (the
+    # OpenUPM scoped registry Unity-MCP needs) and must stay visible to git.
+    import subprocess
+    def ignored(path):
+        return subprocess.run(["git", "-C", str(ROOT), "check-ignore", "-q", "--no-index", path]).returncode == 0
+    for path in ("scripts/unity_compile/obj/project.assets.json", "scripts/unity_compile/obj/Debug/Game.assets.cache",
+                 "scripts/unity_compile/bin/Debug/Game.dll", "unity/.vsconfig"):
+        assert ignored(path), path
+    assert not ignored("unity/ProjectSettings/PackageManagerSettings.asset")
+
+
 # Batch 2 fix round 1.
 def test_trademark_says_the_logo_check_is_pending_and_d_h_covers_every_promo_image():
     tm = " ".join(read("TRADEMARK.md").split())
