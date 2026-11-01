@@ -52,12 +52,12 @@ The game design of record is now [docs/GDD.md](docs/GDD.md) (v0.2, 17 October 20
   <img src="docs/images/build-m3-map.jpg" alt="Current build, 15 May 1948: the One Army event card with an archival photograph over the map of the coast, with the top bar, the left icon column and the minimap" width="820">
 </p>
 <p align="center">
-  <img src="docs/images/build-m3-start.jpg" alt="Current build: the start screen, two lines of the Declaration of Independence in Hebrew and English and the New game button, over an AI-generated painting of the 14 May 1948 ceremony" width="405">
+  <img src="docs/images/build-m3-start.jpg" alt="Current build: the start screen, two lines of the Declaration of Independence in Hebrew and English, the New game button and the English and Hebrew language choice, over an AI-generated painting of the 14 May 1948 ceremony" width="405">
   <img src="docs/images/build-m3-city.jpg" alt="Current build: a closer look at Tel Aviv, Jaffa, Lydda, Petah Tikva and Rishon LeZion, with groves, railways, roads and the front lines, and Tel Aviv's city panel with its housing, jobs and training" width="405">
   <br>
   <img src="docs/images/build-m3-cabinet.jpg" alt="Current build: the Cabinet screen with the Provisional State Council as a half circle of seats and the ministers' portrait cards" width="405">
   <img src="docs/images/build-m3-why.jpg" alt="Current build: the Why panel after the first turn, listing each change and its cause" width="405">
-  <br><em>Real screenshots, main at 1dca7e0, 2026-10-27. The start screen's painting is AI-generated.</em>
+  <br><em>Real screenshots, main at a256c49, 2026-10-31. The start screen's painting is AI-generated.</em>
 </p>
 
 ## Is this any good?

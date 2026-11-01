@@ -28,7 +28,7 @@ https://github.com/user-attachments/assets/56571db8-446b-444b-8db9-fce57dac53a7
 
 <img src="docs/images/build-m3-map.jpg" width="820" alt="הגרסה הנוכחית: כרטיס האירוע &quot;צבא אחד&quot; עם צילום ארכיון, מעל מפת החוף, עם הסרגל העליון והמפה הקטנה.">
 <br>
-<img src="docs/images/build-m3-start.jpg" width="405" alt="הגרסה הנוכחית: מסך הפתיחה עם שתי שורות ממגילת העצמאות, על רקע ציור שנוצר בבינה מלאכותית.">
+<img src="docs/images/build-m3-start.jpg" width="405" alt="הגרסה הנוכחית: מסך הפתיחה עם שתי שורות ממגילת העצמאות ובחירת השפה, על רקע ציור שנוצר בבינה מלאכותית.">
 <img src="docs/images/build-m3-city.jpg" width="405" alt="הגרסה הנוכחית: מבט קרוב על תל אביב, יפו, לוד, פתח תקווה וראשון לציון, ולוח העיר של תל אביב עם הדיור, התעסוקה והאימון.">
 <br>
 <img src="docs/images/build-m3-cabinet.jpg" width="405" alt="הגרסה הנוכחית: מסך הקבינט.">
@@ -38,7 +38,7 @@ https://github.com/user-attachments/assets/56571db8-446b-444b-8db9-fce57dac53a7
 
 <div dir="rtl">
 
-<p align="center"><em>צילומי מסך אמיתיים, main בקומיט <span dir="ltr">1dca7e0</span>, 2026-10-27. הציור במסך הפתיחה נוצר בבינה מלאכותית.</em></p>
+<p align="center"><em>צילומי מסך אמיתיים, main בקומיט <span dir="ltr">a256c49</span>, 2026-10-31. הציור במסך הפתיחה נוצר בבינה מלאכותית.</em></p>
 
 </div>
 
