@@ -94,6 +94,12 @@ def convert(repo, batch):
         with zipfile.ZipFile(source_archive) as bundle:
             for record in selected:
                 number = record["number"]; mid = IDS[number]; item = items[number]
+                if mid in PLACED:
+                    # #2014: home(mid) is the shipped Collection folder; a re-run (another Blender) must not replace its files,
+                    # so the placed model keeps its recorded provenance entry, as VehicleReviewAssets.Import skips it too.
+                    print("SKIP", mid, "is placed in the game (#1932); its shipped Collection files are left as they are", flush=True)
+                    reports.append(next(x for x in json.loads((original / "sources.json").read_text())["items"] if x["id"] == mid))
+                    continue
                 blob = bundle.read(record["member"])
                 assert sha(blob) == record["sha256"] == item["sha256"]
                 assert blob == (batch / record["source_relative"]).read_bytes()

@@ -122,6 +122,8 @@ public class VehicleReviewTests
         var importer = (ModelImporter)AssetImporter.GetAtPath(file);
         Assert.AreEqual(ModelImporterMeshCompression.Off, importer.meshCompression);
         Assert.IsTrue(importer.importAnimation); Assert.AreEqual(ModelImporterAnimationCompression.Off, importer.animationCompression);
+        // #2014: the placed Spitfire imports rig-free (no Animator on the shipped prefab); the review-only two keep Generic.
+        Assert.AreEqual(VehicleReviewCatalog.Placed(id) ? ModelImporterAnimationType.None : ModelImporterAnimationType.Generic, importer.animationType, id);
         Assert.AreEqual(0, importer.defaultClipAnimations.Length, "The three original GLBs contain no animation clips");
         Assert.AreEqual(0, AssetDatabase.LoadAllAssetsAtPath(file).OfType<AnimationClip>().Count());
         Assert.AreEqual(triangles, AssetDatabase.LoadAllAssetsAtPath(file).OfType<Mesh>().Sum(m => (int)m.GetIndexCount(0) / 3));

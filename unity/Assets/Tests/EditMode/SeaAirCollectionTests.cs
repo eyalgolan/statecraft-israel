@@ -135,6 +135,11 @@ public class SeaAirCollectionTests
         // wheel at the other (vertex slices of the FBX along its fuselage, 31 October 2026).
         var go = layer.transform.Find(key)!;
         Assert.Greater(Vector3.Dot(go.TransformDirection(Vector3.down), Vector3.right), 0.9f, "the nose points east, toward the board");
+        // The same from the geometry alone (#2014 review): the wings sit forward of the middle and the tailplane, a quarter
+        // of their span, at the tail, so the wingtip vertex lies east of the aircraft's centre.
+        var mesh = go.GetComponentInChildren<MeshFilter>();
+        var tip = mesh.sharedMesh.vertices.Select(mesh.transform.TransformPoint).OrderBy(v => Mathf.Abs(v.z - b.center.z)).Last();
+        Assert.Greater(tip.x, b.center.x + 0.1f * b.size.x, "the wingtips sit east of the centre: the nose points east (geometry)");
         float floor = Statecraft.Game.Map.Units.UnitShowcase.LoopFloor(map, new Vector3(at.x, 0f, at.z), span);
         Assert.AreEqual(floor + 4200f, at.y, 1f, "4,200 m above the highest ground under it, the unit tokens' aircraft altitude (#2014)");
         Assert.AreEqual(Statecraft.Game.Map.Units.UnitShowcase.AltitudeM, at.y - floor, 1f, "UnitShowcase.AltitudeM, no number duplicated");
