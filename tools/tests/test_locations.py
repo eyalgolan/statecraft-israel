@@ -18,15 +18,25 @@ def test_sourced_coordinates_bind_to_the_authored_hexes():
         assert hg.settlement_hex(location["lon"], location["lat"], HEXES) == (location["q"], location["r"]), location["id"]
 
 
-def test_every_location_id_and_separate_adjacent_positions():
-    """Every row of locations_1948.yaml: the #1008 roster, plus nirim (#2113), which is on the map but not on the
-    docs/locations.md priority roster."""
-    by_id = {location["id"]: location for location in LOCATIONS}
+def test_umm_rashrash_is_optional_outpost_metadata():
+    location = next(location for location in LOCATIONS if location["id"] == "umm_rashrash")
+    assert location["kind"] == "outpost"
+    assert location["priority"] == "optional"
+    assert location["marker"] is True
+    assert all(location[role] is False for role in ("managed_city", "designated_site", "settlement_control_target"))
+    assert "population" not in location
+    assert "starting_control" not in location
+    assert hg.settlement_hex(location["lon"], location["lat"], HEXES) == (location["q"], location["r"])
+
+
+def test_issue_1008_roster_and_separate_adjacent_positions():
+    by_id = {location["id"]: location for location in LOCATIONS if location["priority"] == "must_have"}
     assert set(by_id) == {
         "negba", "hulda", "nir_am", "latrun_fort", "iraq_suwaydan_fort", "shaar_hagai",
-        "ad_halom_bridge", "shaar_haaliyah", "jerusalem", "east_jerusalem_old_city", "nirim",
+        "ad_halom_bridge", "shaar_haaliyah", "jerusalem", "east_jerusalem_old_city",
     }
     assert by_id["iraq_suwaydan_fort"]["id"] != "negba"
     assert by_id["ad_halom_bridge"]["id"] != "isdud"
     assert by_id["jerusalem"]["managed_city"] is True
     assert by_id["east_jerusalem_old_city"]["managed_city"] is False
+    assert {l["id"] for l in LOCATIONS if l["priority"] == "optional"} == {"umm_rashrash", "nirim"}

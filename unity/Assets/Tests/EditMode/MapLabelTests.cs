@@ -205,16 +205,25 @@ public class MapLabelTests
 
     static System.Collections.Generic.List<Statecraft.Sim.MapLocation> Locations() => Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content).MapLocations;
 
-    /// <summary>Issue #1008: every GDD v0.2 map location in content/map/locations_1948.yaml is named on the map, in English and
-    /// in Hebrew. The one that reuses a game settlement's id (jerusalem) renames that settlement's pill, so Jerusalem reads
-    /// "West Jerusalem" with no second pill; each other location has exactly one pill of its own, which ignores the pointer.</summary>
+    /// <summary>Issues #1008, #1007 and #2113: the ten required GDD v0.2 map locations, the optional outpost and optional Nirim
+    /// are named in English and in Hebrew. The one that reuses a game settlement's id (jerusalem) renames that settlement's
+    /// pill, so Jerusalem reads "West Jerusalem" with no second pill; each other location has exactly one pill of its own,
+    /// which ignores the pointer.</summary>
     [Test]
     public void EveryMapLocationIsNamedOnceInEnglishAndHebrew()
     {
         var locations = Locations();
         var settlementIds = map.Settlements.Select(s => s.Id).ToHashSet();
         var own = locations.Where(l => !settlementIds.Contains(l.Id)).ToList();
-        Assert.AreEqual(11, locations.Count, "the #1008 roster and nirim (#2113)");
+        CollectionAssert.AreEquivalent(new[] { "negba", "hulda", "nir_am", "latrun_fort", "iraq_suwaydan_fort",
+            "shaar_hagai", "ad_halom_bridge", "shaar_haaliyah", "jerusalem", "east_jerusalem_old_city" },
+            locations.Where(l => l.Priority == "must_have").Select(l => l.Id).ToArray(), "the ten required #1008 locations stay intact");
+        Assert.AreEqual(12, locations.Count, "the ten required locations, the optional #1007 outpost and optional nirim (#2113)");
+        CollectionAssert.AreEqual(new[] { "umm_rashrash", "nirim" }, locations.Where(l => l.Priority == "optional").Select(l => l.Id).ToArray(), "the optional rows, in file order");
+        var outpost = locations.Single(l => l.Id == "umm_rashrash");
+        Assert.AreEqual("outpost", outpost.Kind);
+        Assert.IsFalse(outpost.ManagedCity || outpost.DesignatedSite || outpost.SettlementControlTarget, "an optional map record grants no gameplay role");
+        Assert.IsFalse(map.Settlements.Any(s => s.Id == outpost.Id), "the outpost has no population-managed settlement");
         Assert.AreEqual(new[] { "jerusalem" }, locations.Where(l => settlementIds.Contains(l.Id)).Select(l => l.Id).ToArray());
         foreach (var hebrew in new[] { false, true })
         {
@@ -232,6 +241,11 @@ public class MapLabelTests
                 Assert.IsTrue(l.ClassListContains(MapLabelsPresenter.LabelClass) && l.ClassListContains(MapLabelsPresenter.LocationClass), l.text);
                 Assert.AreEqual(PickingMode.Ignore, l.pickingMode, l.text + " must not catch map clicks");
             }
+            var outpostPill = labels.LocationLabels.Single(l => l.name == "label-umm_rashrash");
+            Assert.AreEqual(hebrew ? outpost.NameHe : outpost.Name, outpostPill.text, "the optional outpost has its own translated pill");
+            var outpostSlot = container.Q<VisualElement>("slot-umm_rashrash");
+            Assert.IsNull(outpostSlot.Q<Label>(className: MapLabelsPresenter.TierClass), "no invented 1948 population tier");
+            Assert.IsFalse(outpostPill.ClassListContains(MapLabelsPresenter.WithTierClass));
             Assert.AreEqual(1, container.Query<VisualElement>("slot-jerusalem").ToList().Count, "Jerusalem keeps one pill");
             Assert.AreEqual(hebrew ? "מערב ירושלים" : "West Jerusalem", labels.Labels[map.Settlements.ToList().FindIndex(s => s.Id == "jerusalem")].text);
             Assert.AreEqual(map.Settlements.Count + own.Count + map.Localities.Count + 1, container.childCount, "settlements, locations, localities and the tooltip");

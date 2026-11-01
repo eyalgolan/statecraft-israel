@@ -108,7 +108,7 @@ namespace Statecraft.Game.UI
         static readonly (string name, string key)[] Texts =
         {
             ("nav-cabinet", "hud.nav.cabinet"), ("nav-budget", "hud.nav.budget"), ("nav-defence", "hud.nav.defence"),
-            ("nav-why", "hud.nav.why"), ("nav-timeline", "nav.timeline"), ("nav-how-to-play", "hud.nav.how_to_play"),
+            ("nav-why", "hud.nav.why"), ("nav-timeline", "nav.timeline"), ("nav-encyclopedia", "hud.nav.encyclopedia"),
             ("nav-objectives", "hud.nav.objectives"), ("nav-settings", "hud.nav.settings"),
             ("new-game", "hud.new_game"), ("end-turn", "hud.end_turn"),
         };
