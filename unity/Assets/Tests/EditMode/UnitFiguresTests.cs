@@ -307,7 +307,10 @@ public class UnitFiguresTests
             Assert.IsTrue(figures.All(f => !UnitFigures.Dressed(f) && f.GetComponent<MeshRenderer>().enabled), "the code-built figures until the models arrive");
             Assert.IsTrue(vehicles.All(v => v.childCount == 0 && v.GetComponentsInChildren<Renderer>().Length == 0), "no vehicle is drawn before it arrives");
             var before = figures.ToDictionary(f => f, f => (f.position, f.rotation));
-            foreach (var (id, _, done) in asked.ToList()) done(Prefab(id));
+            // An Arab force's token waits for its side figure (the Syrian bridgehead, from 8 July 1948; #1270), so that model's
+            // arrival changes the roster and rebuilds every piece: the side figures come last, after the in-place checks.
+            var sideFigures = asked.Where(a => UnitFigures.BySide.Values.Contains(a.id)).ToList();
+            foreach (var (id, _, done) in asked.Except(sideFigures).ToList()) done(Prefab(id));
             float man = UnitBadge.FigureHeightM;
             foreach (var f in figures)
             {
@@ -340,6 +343,7 @@ public class UnitFiguresTests
             }
             Assert.IsTrue(map.Terrain.transform.Find(UnitLayer.RootName).TryGetComponent<UnitFigureDetail>(out _),
                 "the close-zoom switch stands on the unit layer's root, and goes with it");
+            foreach (var (id, _, done) in sideFigures) done(Prefab(id));
             // A roster change rebuilds the tokens: the new pieces are dressed at once, with no new request.
             int n = asked.Count;
             Assert.IsTrue(layer.Show(C, StateAt(July12, 0.3)), "the call-up changes the roster");
