@@ -67,7 +67,7 @@ namespace Statecraft.HexTiles
                 var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Stem(id) + ".prefab");
                 var filter = prefab != null ? prefab.GetComponentInChildren<MeshFilter>() : null;
                 var material = prefab != null ? prefab.GetComponentInChildren<MeshRenderer>().sharedMaterial : null;
-                if (filter == null || filter.sharedMesh == null || material == null || material.mainTexture == null)
+                if (prefab == null || filter == null || filter.sharedMesh == null || material == null || material.mainTexture == null)
                     throw new InvalidOperationException("missing source house " + id);
                 var source = filter.sharedMesh;
                 var light = Simplify(source, UvToleranceTexels / material.mainTexture.width, EdgeTolerance, MaxError);
@@ -118,7 +118,7 @@ namespace Statecraft.HexTiles
             int n = p.Length;
 
             // Corners (index triangles) and their submesh.
-            var tris = new List<int[]>(); var sub = new List<int>();
+            List<int[]> tris = new List<int[]>(); var sub = new List<int>();
             for (int s = 0; s < source.subMeshCount; s++)
             {
                 var t = source.GetTriangles(s);

@@ -27,6 +27,19 @@ The coordinator's catalogue citation is **owner ruling, 25 Oct 2026, on #1668**.
 
 Numeric parameters the owner did not set are not made Agreed by these rulings. The catalogue contains no new debt, economic-defeat or timing numbers. Other GDD 0.3 systems and the eventual switch-over have their own issues.
 
+## Later owner rulings (#2115)
+
+| Ruling | Catalogue keys | Treatment |
+| --- | --- | --- |
+| 30 October 2026, "Keep the set values (Recommended)" | `craft.course_cost`, `craft.course_turns`, `military.training_money`, `military.active_money` | Agreed `0.5`, `3`, `0.5`, `0.05`; Amir's `5`, `6`, `0`, `1` are declined proposals. |
+| 1 November 2026, D2, "Approve all six (Recommended)" | `start.population`, `start.money`, `start.food`, `start.spare_arms`, `start.farmers`, `start.food_production`, `start.food_consumption` | Values kept for Open mode (milestone M4); Default, since the Historical MVP starts from the census cities. |
+| 1 November 2026, 27M-16, "0.35, your 15 Oct value (Recommended)" | `start.housing_condition` | Agreed `0.35`, a unitless fraction for every city (`R-HOUSE-001`). |
+| 1 November 2026, O7, "10 per unit, main (Recommended)" | `prisoner.return_points` | Agreed `10` per returned population unit (`R-POW-004`). |
+| 1 November 2026, post-MVP, "Approve all 79 (Recommended)" | `transit.cost`, `reception.queue_cohesion_loss` | Values kept; Default and not operative in the MVP. |
+| 30 October 2026, Upkeep conflict, option A (declined) | `housing.max_deterioration` | Value kept as post-MVP design; Default. |
+
+Other post-MVP rows (for example `reception.turns`, `reception.capacity`, `reception.basic_credit`, `military.refugee_multiplier`) stay Agreed for now: inactive fixtures read several of them as Agreed (`Content.RequirePopulationInteger`, `Gdd03ReceptionFixture`). `combat.enemy_attack_ratio` (O4) and the per-unit rates at 1,000 people a unit (`industry.income`, `farmer.output`, `military.camp_capacity`) are changed in their own issues (#2114, #2112).
+
 ## #1706 slices 0/1: inactive combat catalogue foundation
 
 Coordinator decision, 26 Oct 2026 (Q5): synthetic catalogue validation only; the foundation remains inactive in the actual game. The catalogue defines one draw (Agreed), four ratio ranges, complete, non-overlapping inclusive 0..99 outcome bands, role factors and artillery support range (Default). Required missing, malformed or Deferred entries are refused without an old-table fallback.

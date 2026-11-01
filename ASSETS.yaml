@@ -1439,20 +1439,20 @@ rules:
     ai_generated: true
     note: "The contributor reports the drawing was AI-assisted (PR #169); flagged for the AI-content disclosure by controller ruling."
   # --- Generated vehicle review candidates (22 October 2026) ---
-  - glob: "unity/Assets/Editor/Generated1948VehicleReview/generated-1948-13-egyptian-spitfire/*.fbx"
+  - glob: "unity/Assets/Art/Collection/generated-1948-13-egyptian-spitfire/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tripo Studio textured GLB delivered 22 October 2026, preserved byte-for-byte in asset-sources/generated-1948/vehicles/ original archives. sources.json and per-model provenance.json identify the archive/member SHA-256 and provider model ID. The Unity FBX is a documented full-geometry compatibility conversion, not a provider FBX. The 4096px colour map is extracted byte-for-byte; no LOD, decimation or texture re-encoding."
     status: verified
-    note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). Editor-only review art; no sourced deployment, player dependency, Resources catalog or streamed bundle. Paint, markings and exact subtype remain candidate art; historical art/sensitivity sign-off follows matched screenshots (#756)."
-  - glob: "unity/Assets/Editor/Generated1948VehicleReview/generated-1948-13-egyptian-spitfire/*_basecolor.jpg"
+    note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). Signed off by the owner on 27 October 2026 (#756, \"Sign off all 19\"); moved with git mv to the Collection folder, the FBX renamed to the Collection's id.fbx (same bytes), and streamed in a bundle of its own (collection-generated-1948-13-egyptian-spitfire) to be shown only in flight near the western board edge (30 km in) toward el-Arish (owner ruling of 30 October 2026, #1932: \"(c) In flight / board edge only\"). Paint, markings and exact subtype remain candidate art."
+  - glob: "unity/Assets/Art/Collection/generated-1948-13-egyptian-spitfire/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tripo Studio textured GLB delivered 22 October 2026, preserved byte-for-byte in asset-sources/generated-1948/vehicles/ original archives. sources.json and per-model provenance.json identify the archive/member SHA-256 and provider model ID. The Unity FBX is a documented full-geometry compatibility conversion, not a provider FBX. The 4096px colour map is extracted byte-for-byte; no LOD, decimation or texture re-encoding."
     status: verified
-    note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). Editor-only review art; no sourced deployment, player dependency, Resources catalog or streamed bundle. Paint, markings and exact subtype remain candidate art; historical art/sensitivity sign-off follows matched screenshots (#756)."
+    note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). Signed off by the owner on 27 October 2026 (#756, \"Sign off all 19\"); moved with git mv to the Collection folder, the FBX renamed to the Collection's id.fbx (same bytes), and streamed in a bundle of its own (collection-generated-1948-13-egyptian-spitfire) to be shown only in flight near the western board edge (30 km in) toward el-Arish (owner ruling of 30 October 2026, #1932: \"(c) In flight / board edge only\"). Paint, markings and exact subtype remain candidate art."
   - glob: "unity/Assets/Editor/Generated1948VehicleReview/generated-1948-14-syrian-renault-r35/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
@@ -1574,7 +1574,7 @@ rules:
     note: "Drives the map's unit tokens and, since #743, the sim reads the rows' hexes for the starting forces (StartingForces), so a new game's state carries them, and the file is part of the content hash (UnitsInPlayTests.TheUnitFileEntersTheContentHash). Rows marked wikipedia_only are drafts until checked against a published history (Lorch, The Edge of the Sword) or the IDF and Defense Establishment Archives. Owner, 17 Oct 2026 (#879, issuecomment-6233249635): 'Accept as draft for now'; ships labelled draft (the #570 rule, 'verify later'), with a scan check before 1.0."
   - glob: "content/map/locations_1948.yaml"
     licence: CC-BY-SA-4.0
-    source: "The GDD v0.2 must-have map locations (#1008, docs/locations.md): coordinates from each place's Wikidata item (CC0, property P625), names, identities and Hebrew names from English and Hebrew Wikipedia (CC BY-SA 4.0), Jerusalem's 15 May 1948 control from the Knesset's 'Liberation of Jerusalem' page and en.wiki Operation Pitchfork, Sha'ar HaAliyah's opening from R. D. Seidelman's BGU thesis abstract (facts only, no text copied beyond short quotes in comments); hexes from tools/hexgrid.py; per-row sources and check dates in the file"
+    source: "The GDD v0.2 must-have map locations (#1008, docs/locations.md) and the optional Umm Rashrash outpost (#1007): coordinates from each place's Wikidata item (CC0, property P625), names, identities and Hebrew names from English and Hebrew Wikipedia (CC BY-SA 4.0), Jerusalem's 15 May 1948 control from the Knesset's 'Liberation of Jerusalem' page and en.wiki Operation Pitchfork, Sha'ar HaAliyah's opening from R. D. Seidelman's BGU thesis abstract (facts only, no text copied beyond short quotes in comments); hexes from tools/hexgrid.py; per-row sources and check dates in the file"
     status: verified
     note: "Every row is status draft until a person checks each fact (CONTENT_POLICY section 2, rule 6); the Hebrew names are agent-checked (#564). The East Jerusalem / Old City starting control is sensitive and waits for the owner's review."
   - glob: "content/map/overrides.yaml"

@@ -18,6 +18,8 @@ namespace Statecraft.Game.UI
         public Func<Action>? KeepSelection;
         public Func<Rect?>? MapTarget;
         public Action? CloseScreens;
+        /// <summary>Opens an encyclopedia page by its id (a teaching message's Tell me more, plan Task 13).</summary>
+        public Action<string>? OpenPage;
     }
 
     /// <summary>The advisors' popup (spec 4.2, 7.1): one message at a time, in the right column's free upper part or a sheet
@@ -72,12 +74,10 @@ namespace Statecraft.Game.UI
         readonly VisualElement hudRoot, layer, popup, portrait;
         readonly Label name, role, words, count, quote, quoteSource;
         readonly Button showMe, more, notNow, gotIt, close;
-        readonly Button? reopen;
-        readonly Action onReopen;
         GameSession? openingGame;
         readonly SimBridge bridge; readonly UiText text; readonly AdvisorSession session; readonly PortraitCatalog? portraits;
         readonly AdvisorHooks hooks; readonly bool hebrew;
-        readonly Action onChanged, onCover, onShowMe, onGotIt, onNotNow, onClose, onAttention, onLevel;
+        readonly Action onChanged, onCover, onShowMe, onGotIt, onNotNow, onClose, onAttention, onLevel, onMore;
         readonly IReadOnlyList<AdvisorCatalog.Message> chain;
         readonly Action<IReadOnlyList<Rejection>> onTurn;
         readonly EventCallback<GeometryChangedEvent> onLaidOut;
@@ -99,6 +99,8 @@ namespace Statecraft.Game.UI
         int escapedAt = -1;
         /// <summary>The message a layer covered, to show again or drop when the layer closes (spec 4.2).</summary>
         AdvisorCatalog.Message? covered;
+        /// <summary>The Budget screen's last word on its edit (BudgetUnsubmitted): true while an edit is not submitted.</summary>
+        bool budgetUnsubmitted;
 
         public AdvisorPresenter(VisualElement root, SimBridge bridge, UiText text, AdvisorSession session,
             PortraitCatalog? portraits = null, AdvisorHooks? hooks = null)
@@ -152,14 +154,8 @@ namespace Statecraft.Game.UI
             floored = new (VisualElement, float)[] { (name, NamePx), (role, RolePx), (words, TextPx), (showMe, ButtonPx), (more, ButtonPx), (notNow, ButtonPx), (gotIt, ButtonPx), (close, ButtonPx), (count, CountPx), (mediaLabel, 15f), (mediaCredit, 15f), (overlayCaption, TextPx), (overlayLabel, 15f), (overlayCredit, 15f), (watch, 15f), (overlayClose, ButtonPx), (quote, QuotePx), (quoteSource, QuoteSourcePx) };
             onShowMe = ShowMe; onGotIt = GotIt; onNotNow = NotNow;
             onClose = () => { if (session.Chain.Step >= 0) CloseChain(); else GotIt(); };
-            reopen = root.Q<Button>("how-to-play-guide");
-            onReopen = OpenChain;                                       // which closes How to play
-            if (reopen != null)
-            {
-                reopen.text = text["how_to_play.guide"]; reopen.clicked += onReopen;
-                Display(reopen, chain.Any(m => m.ApprovedIn(hebrew)));  // no button that opens nothing (pending Hebrew)
-            }
-            showMe.clicked += onShowMe; gotIt.clicked += onGotIt; close.clicked += onClose; notNow.clicked += onNotNow;
+            onMore = () => { if (Shown?.Actions.FirstOrDefault(a => a.Encyclopedia != "") is AdvisorCatalog.Act a) this.hooks.OpenPage?.Invoke(a.Encyclopedia); };
+            showMe.clicked += onShowMe; gotIt.clicked += onGotIt; close.clicked += onClose; notNow.clicked += onNotNow; more.clicked += onMore;
             onAttention = () => Notice(AdvisorSignals.AttentionRefused);
             bridge.RefusedForAttention += onAttention;
             onChanged = Evaluate; onTurn = _ => Notice(AdvisorSignals.TurnEnded); onCover = CoverChanged; onLaidOut = PlaceWhenLaidOut;
@@ -241,6 +237,7 @@ namespace Statecraft.Game.UI
         /// fires budget_unsubmitted; Submit takes it back.</summary>
         public void BudgetUnsubmitted(bool on)
         {
+            budgetUnsubmitted = on;
             if (on) { Notice(AdvisorSignals.BudgetUnsubmitted); return; }
             if (disposed) return;
             session.Fired.Remove(AdvisorSignals.BudgetUnsubmitted);
@@ -265,7 +262,12 @@ namespace Statecraft.Game.UI
             if (session.AutoShow)
             {
                 var ctx = Context();
-                session.Queue.Offer(AdvisorSignals.Holding(ctx, session), w => AdvisorSignals.When(ctx, w), Turn);
+                var holding = AdvisorSignals.Holding(ctx, session);
+                session.Queue.Offer(holding, w => AdvisorSignals.When(ctx, w), Turn);
+                // Owner, 1 Nov: budget_unsubmitted fires only when the edit changes, so for pruning its cause is read from
+                // the Budget screen's state; a put-off budget warning lasts while the edit is unsubmitted (Submit withdraws it).
+                if (budgetUnsubmitted) holding.Add(AdvisorSignals.BudgetUnsubmitted);
+                session.Queue.Prune(holding, w => AdvisorSignals.When(ctx, w), Turn, bridge.State.Date, Shown);
             }
             Render();
         }
@@ -301,7 +303,9 @@ namespace Statecraft.Game.UI
             portrait.style.backgroundImage = picture == null ? new StyleBackground(StyleKeyword.Null) : new StyleBackground(picture);
             popup.EnableInClassList(CriticalClass, m.Critical);
             Display(showMe, m.Actions.Any(a => a.ShowMe != "" || a.OpenScreen != "" || a.OpenCard));
-            Display(more, false);                                       // Task 13: a page to open
+            // Tell me more (plan Task 13): a teaching message's page, only where that page shows (OQ-4: not pending Hebrew).
+            Display(more, m.Teaching && hooks.OpenPage != null
+                && m.Actions.Any(a => a.Encyclopedia != "" && session.Catalog.FindPage(a.Encyclopedia)?.ApprovedIn(hebrew) == true));
             Display(notNow, !m.Teaching && !m.Critical);
             var (number, total) = session.Queue.Position(Turn, hebrew);
             count.text = total > 1 ? text.Format("advisor.count", number, total) : "";
@@ -383,7 +387,9 @@ namespace Statecraft.Game.UI
             {
                 covered = null;
                 var ctx = Context();
-                if (!(AdvisorSignals.Holding(ctx, session).Contains(m.Signal) && AdvisorSignals.When(ctx, m.When)))
+                var holding = AdvisorSignals.Holding(ctx, session);
+                if (budgetUnsubmitted) holding.Add(AdvisorSignals.BudgetUnsubmitted);   // as in Evaluate's Prune
+                if (!(holding.Contains(m.Signal) && AdvisorSignals.When(ctx, m.When)))
                     session.Queue.Drop(m, Turn, bridge.State.Date);
             }
             Render();
@@ -827,8 +833,7 @@ namespace Statecraft.Game.UI
             bridge.Changed -= onChanged; bridge.TurnEnded -= onTurn;
             session.Settings.LevelChanged -= onLevel;
             if (layer.userData == (object)onCover) layer.userData = null;
-            if (reopen != null) reopen.clicked -= onReopen;
-            showMe.clicked -= onShowMe; gotIt.clicked -= onGotIt; close.clicked -= onClose; notNow.clicked -= onNotNow;
+            showMe.clicked -= onShowMe; gotIt.clicked -= onGotIt; close.clicked -= onClose; notNow.clicked -= onNotNow; more.clicked -= onMore;
             hudRoot.RemoveFromClassList(OpenClass);
         }
     }

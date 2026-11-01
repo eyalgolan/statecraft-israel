@@ -90,6 +90,57 @@ public class HebrewUiTests
         }
     }
 
+    // #2072: every Combat.Check and Training.Reinforce refusal (their Refused* constants) has a string in both files. Each
+    // format is filled with distinct values as the sim fills it (a multi-word town, a real course, different numbers) and read
+    // with content: the English is the sim's own text, the Hebrew is its line with the Hebrew town and course in their slots,
+    // its placeholders in the English's order, and no Latin letter left (owner review item 2: "7"s everywhere caught no
+    // swapped slot, no capture in the wrong order, no lazy capture splitting a town).
+    [TestCase(typeof(Statecraft.Sim.Combat))]
+    [TestCase(typeof(Statecraft.Sim.Training))]
+    public void EveryAttackAndReinforceRefusalHasAStringInBothLanguages(System.Type check)
+    {
+        var c = Statecraft.Sim.ContentLoader.Load(Paths.Content);
+        var namesHe = SettlementPlacer.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", SettlementPlacer.DefaultFileName))).ToDictionary(t => t.Id, t => t.NameHe);
+        var place = c.SettlementNames.Single(x => x.Value == "Rishon LeZion");
+        var recruit = c.UnitTypes.Single(t => t.Id == "recruit");
+        object townSlot = new object(), courseSlot = new object();
+        // Each format's values in the sim's order (Combat.Check, Training.Reinforce/Start), and the key it reads as.
+        var filled = new Dictionary<string, (string key, object[] values)>
+        {
+            [Statecraft.Sim.Combat.RefusedArms] = ("unit.attack_refused.arms", new object[] { 12, 3 }),
+            [Statecraft.Sim.Training.RefusedNotInCity] = ("unit.reinforce_refused.not_in_city", new object[] { 41, townSlot }),
+            [Statecraft.Sim.Training.RefusedNoCourse] = ("unit.reinforce_refused.no_course", new object[] { 41 }),
+            [Statecraft.Sim.Training.RefusedNoLosses] = ("unit.reinforce_refused.no_losses", new object[] { 41 }),
+            [Statecraft.Sim.Training.RefusedRoomOne] = ("unit.reinforce_refused.room_one", new object[] { 41, 1 }),
+            [Statecraft.Sim.Training.RefusedRoomMany] = ("unit.reinforce_refused.room_many", new object[] { 41, 5 }),
+            [Statecraft.Sim.Training.RefusedNoCamp] = ("unit.reinforce_refused.no_camp", new object[] { townSlot }),
+            [Statecraft.Sim.Training.RefusedNoIndustry] = ("unit.reinforce_refused.no_industry", new object[] { townSlot }),
+            [Statecraft.Sim.Training.RefusedNoHakhshara] = ("unit.reinforce_refused.no_hakhshara", new object[] { townSlot }),
+            [Statecraft.Sim.Training.RefusedIdle] = ("unit.reinforce_refused.idle", new object[] { townSlot, 6 }),
+            [Statecraft.Sim.Training.RefusedArms] = ("unit.reinforce_refused.arms", new object[] { townSlot, courseSlot, 12, 3 }),
+        };
+        object English(object v) => v == townSlot ? place.Value : v == courseSlot ? Statecraft.Sim.Training.Course(recruit) : v;
+        object Hebrew(object v) => v == townSlot ? namesHe[place.Key] : v == courseSlot ? He["why.cause.course." + Statecraft.Sim.Training.CourseId(recruit)] : v;
+        string Slots(string line) => string.Join(",", Regex.Matches(line, @"\{\d+\}").Cast<Match>().Select(m => m.Value));
+        var formats = check.GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+            .Where(f => f.IsLiteral && f.Name.StartsWith("Refused")).Select(f => (string)f.GetRawConstantValue()).ToList();
+        Assert.That(formats, Is.Not.Empty, check.Name + " has no Refused* constants");
+        foreach (var format in formats)
+        {
+            var hasValues = Slots(format) != "";
+            Assert.AreEqual(hasValues, filled.ContainsKey(format), "a format and only a format is filled here: " + format);
+            var reason = hasValues ? string.Format(System.Globalization.CultureInfo.InvariantCulture, format, filled[format].values.Select(English).ToArray()) : format;
+            Assert.AreEqual(reason, SimBridge.ReasonText(En, reason, c, namesHe), "the English string is the sim's own");
+            var he = SimBridge.ReasonText(He, reason, c, namesHe);
+            StringAssert.IsMatch("[\u05D0-\u05EA]", he, "no Hebrew string for: " + reason);
+            StringAssert.DoesNotMatch("[A-Za-z]", he, reason);
+            if (!hasValues) continue;
+            var (key, values) = filled[format];
+            Assert.AreEqual(Slots(En[key]), Slots(He[key]), key + ": the Hebrew line takes its values in the English's order");
+            Assert.AreEqual(He.Format(key, values.Select(Hebrew).ToArray()), he, "the values in their slots: " + reason);
+        }
+    }
+
     [Test]
     public void TheGameIsEnglishUnlessHebrewIsAskedFor()
     {
@@ -437,13 +488,13 @@ public class HebrewUiTests
         ("meter-security/meter-name", "hud.caption.security"), ("meter-support/meter-name", "hud.caption.support"),
         ("meter-cohesion/meter-name", "hud.caption.cohesion"), ("meter-standing/meter-name", "hud.caption.standing"), ("meter-fx/meter-name", "hud.caption.fx"),
         ("nav-cabinet", "hud.nav.cabinet"), ("nav-budget", "hud.nav.budget"), ("nav-defence", "hud.nav.defence"),
-        ("nav-why", "hud.nav.why"), ("nav-timeline", "nav.timeline"), ("nav-how-to-play", "hud.nav.how_to_play"), ("nav-objectives", "hud.nav.objectives"),
+        ("nav-why", "hud.nav.why"), ("nav-timeline", "nav.timeline"), ("nav-encyclopedia", "hud.nav.encyclopedia"), ("nav-objectives", "hud.nav.objectives"),
         ("new-game", "hud.new_game"), ("end-turn", "hud.end_turn_needs_orders"),
         ("event-draft", "event.draft"),
         ("budget-screen-title", "budget.title"), ("budget-reset", "budget.reset"), ("budget-submit", "budget.submit"),
         ("defence-screen-title", "defence.title"), ("de-escalate", "defence.lower"), ("escalate", "defence.raise"),
         ("why-screen-title", "why.title"),
-        ("how-to-play-title", "how_to_play.title"), ("objectives-title", "objectives.title"),
+        ("encyclopedia-title", "encyclopedia.title"), ("objectives-title", "objectives.title"),
         ("nav-settings", "hud.nav.settings"), ("settings-screen-title", "settings.title"), ("settings-tiltshift-label", "settings.tiltshift"),
         ("settings-quality-label", "settings.quality"), ("settings-quality-auto", "settings.quality.auto"),
         ("settings-quality-high", "settings.quality.high"), ("settings-quality-low", "settings.quality.low"),

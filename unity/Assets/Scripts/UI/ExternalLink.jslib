@@ -7,18 +7,17 @@
 // new canvas press, Escape, blur, resize or a hidden tab, and when Unity cancels its ticket (focus out, Dispose).
 mergeInto(LibraryManager.library, {
   StatecraftCancelExternalLink: function (ticket) {
-    if (typeof window !== "undefined" && window.statecraftOpenOnRelease && window.statecraftOpenOnRelease.id === ticket) window.statecraftOpenOnRelease.cancel();
+    if (typeof window !== "undefined" && window.statecraftReleaseArm && window.statecraftReleaseArm.id === ticket) window.statecraftReleaseArm.cancel();
   },
-  StatecraftOpenOnRelease__deps: ["$StatecraftCopySharePicture"],
+  StatecraftOpenOnRelease__deps: ["$StatecraftCopySharePicture", "$StatecraftBeginReleaseArm"],
   StatecraftOpenOnRelease: function (urlPtr, left, top, right, bottom, keyboard, copyPostPtr) {
     if (typeof window === "undefined") return 0;
     var url = UTF8ToString(urlPtr);
     var copyPost = copyPostPtr ? UTF8ToString(copyPostPtr) : "";
     var copySerial = 0;
-    if (window.statecraftOpenOnRelease) window.statecraftOpenOnRelease.cancel();
+    var id = StatecraftBeginReleaseArm();
     var canvas = document.querySelector("#unity-canvas");
     if (!canvas) return 0;
-    var id = window.statecraftExternalLinkSerial = (window.statecraftExternalLinkSerial || 0) + 1;
     if (copyPost) {
       copySerial = window.statecraftShareCopySerial = (window.statecraftShareCopySerial || 0) + 1;
       window.statecraftShareCopied = 0;
@@ -34,10 +33,11 @@ mergeInto(LibraryManager.library, {
       document.removeEventListener("visibilitychange", disarm);
       window.removeEventListener("blur", disarm);
       window.removeEventListener("resize", disarm);
-      if (window.statecraftOpenOnRelease && window.statecraftOpenOnRelease.id === id) window.statecraftOpenOnRelease = null;
+      if (window.statecraftReleaseArm && window.statecraftReleaseArm.id === id) window.statecraftReleaseArm = null;
     };
     var escape = function (e) { if (e.key === "Escape") disarm(); };
     var release = function (e) {
+      if (!window.statecraftReleaseArm || window.statecraftReleaseArm.id !== id) return;
       var valid = false;
       if (keyboard) {
         if (e.type !== "keyup" || (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar")) return;
@@ -59,7 +59,7 @@ mergeInto(LibraryManager.library, {
         window.open(url, "_blank", "noopener");
       }
     };
-    window.statecraftOpenOnRelease = { cancel: disarm, id: id };
+    window.statecraftReleaseArm = { cancel: disarm, id: id };
     canvas.addEventListener("pointerup", release);
     canvas.addEventListener("pointerdown", disarm);
     canvas.addEventListener("pointercancel", disarm);
