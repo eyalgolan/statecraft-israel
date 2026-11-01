@@ -774,6 +774,54 @@ def publish_night(night: Night, state: State, gh: GitHub, itch, zips: tuple[Path
         raise
 
 
+# --- the Steam stage (plan 2026-11-01-steamworks-integration Task 7, #2155; owner answer Q7 "Also nightlies") ------
+
+STEAM_BUILD_MINUTES = 240   # three Unity players and the macOS golden check
+STEAM_STAGE_MINUTES = 60    # zips, the draft release upload and the workflow dispatch
+
+
+def steam_ids_missing(clone: Path) -> str | None:
+    """Why the Steam stage cannot run yet, or None: steam/steam.json must name the app and every depot."""
+    path = clone / "steam/steam.json"
+    try:
+        config = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as e:
+        return f"cannot read {path}: {type(e).__name__}"
+    depots = config.get("depots") or {}
+    missing = [name for name, value in [("app_id", config.get("app_id")),
+                                        *((f"depots.{p}", depots.get(p)) for p in ("windows", "mac", "linux"))]
+               if value is None]
+    return f"steam/steam.json has no {', '.join(missing)} yet" if missing else None
+
+
+def run_steam(night: Night, runner: Runner) -> None:
+    """After the web nightly is published: build the Steam players, stage them in a draft release and dispatch the
+    upload to the `nightly` branch. It never refuses, unpublishes or rolls back the web nightly: any failure only adds
+    steam=failed to the night's line (the logs are in the run folder) and notifies."""
+    if (why := steam_ids_missing(night.cfg.clone)) is not None:
+        print(f"steam: skipped ({why})")
+        return
+    out = night.run_dir / "steam-release"
+    try:
+        # tonight's tag was made on GitHub by the publish; release_build.py checks it points at HEAD and never fetches
+        _git(runner, night.cfg.clone, "fetch", "--no-tags", "origin", f"refs/tags/{night.tag}:refs/tags/{night.tag}")
+        code, _ = _step(night, runner, "steam-build",
+                        ["uv", "run", "tools/release_build.py", "--platform", "all", "--steam", "--tag", night.tag,
+                         "--nightly-version", night.version, "--out", str(out)], STEAM_BUILD_MINUTES)
+        if code != 0:
+            raise Refused("steam", "release_build.py timed out" if code == 124 else f"release_build.py exited {code}")
+        code, _ = _step(night, runner, "steam-stage",
+                        ["uv", "run", "tools/steam_upload.py", "stage", "--out", str(out), "--tag", night.tag],
+                        STEAM_STAGE_MINUTES)
+        if code != 0:
+            raise Refused("steam", "steam_upload.py timed out" if code == 124 else f"steam_upload.py exited {code}")
+    except Exception as e:
+        detail = _detail(e)
+        print(f"steam: failed: {detail}", file=sys.stderr)
+        night.notes.append("steam=failed")
+        notify("Nightly Steam stage failed", f"{night.tag} is published; Steam: {detail}; logs in {night.run_dir}"[:200])
+
+
 # --- the night --------------------------------------------------------------------------------------------------
 
 def _build_both(night: Night, runner: Runner, free_gb: Callable[[Path], float]) -> tuple[Path, Path]:
@@ -800,8 +848,9 @@ def _build_both(night: Night, runner: Runner, free_gb: Callable[[Path], float]) 
 
 def run_stages(night: Night, state: State, runner: Runner, gh: GitHub, itch, *, no_publish: bool,
                free_gb: Callable[[Path], float] = lambda p: shutil.disk_usage(p).free / 1e9,
-               save: Callable[[], bool | None] = lambda: None) -> bool:
-    """Every gate, then (unless no_publish) the publish. True when published, False when stopped before any store."""
+               save: Callable[[], bool | None] = lambda: None, no_steam: bool = False) -> bool:
+    """Every gate, then (unless no_publish) the publish, then (unless no_steam) the Steam stage. True when published,
+    False when stopped before any store."""
     run_gates(night, runner)
     run_editmode(night, runner)
     gz, pages = _build_both(night, runner, free_gb)
@@ -821,6 +870,10 @@ def run_stages(night: Night, state: State, runner: Runner, gh: GitHub, itch, *, 
         print(f"NO-PUBLISH: all gates passed for {night.tag}")
         return False
     publish_night(night, state, gh, itch, zips, sizes, boot, previous=previous, save=save, runner=runner)
+    if no_steam:
+        print("steam: skipped (--no-steam)")
+    else:
+        run_steam(night, runner)
     return True
 
 
@@ -836,7 +889,8 @@ def _try_save(state_path: Path, state: State) -> bool:
 
 def run_night(cfg: Config, state_path: Path, job: Path, runner: Runner, gh: GitHub | None, itch, *, now: datetime,
               manual: bool, no_publish: bool, client_error: Refused | None = None,
-              free_gb: Callable[[Path], float] = lambda p: shutil.disk_usage(p).free / 1e9) -> str:
+              free_gb: Callable[[Path], float] = lambda p: shutil.disk_usage(p).free / 1e9,
+              no_steam: bool = False) -> str:
     outcome, gate, detail = "REFUSED", "internal", ""
     state: State | None = None
     night: Night | None = None
@@ -863,7 +917,7 @@ def run_night(cfg: Config, state_path: Path, job: Path, runner: Runner, gh: GitH
             night = preflight(cfg, state, runner, gh, job=job, now=now, manual=manual, free_gb=free_gb,
                               no_publish=no_publish)
             published = run_stages(night, state, runner, gh, itch, no_publish=no_publish, free_gb=free_gb,
-                                   save=lambda: _try_save(state_path, state))
+                                   save=lambda: _try_save(state_path, state), no_steam=no_steam)
             outcome, gate = ("PUBLISHED" if published else "NO-PUBLISH"), "-"
         except Stop as e:
             outcome, gate, detail = e.outcome, e.gate, e.detail
@@ -1121,6 +1175,7 @@ def main(argv: list[str] | None = None) -> int:
     run = sub.add_parser("run")
     run.add_argument("--manual", action="store_true")
     run.add_argument("--no-publish", action="store_true")
+    run.add_argument("--no-steam", action="store_true", help="skip the Steam stage after the web publish")
     test = sub.add_parser("savetest", help="the two-upload itch.io save test: pushes twice to the separate test page, never the public one")
     test.add_argument("--tag", required=True, help="a published nightly release tag")
     args = parser.parse_args(argv)
@@ -1148,7 +1203,7 @@ def main(argv: list[str] | None = None) -> int:
             gh = itch = None
             client_error = e
         outcome = run_night(cfg, job / "state.json", job, ProcRunner(), gh, itch, now=now, manual=args.manual,
-                            no_publish=args.no_publish, client_error=client_error)
+                            no_publish=args.no_publish, client_error=client_error, no_steam=args.no_steam)
     print(outcome)
     return 1 if outcome == "REFUSED" else 0
 
