@@ -107,8 +107,9 @@ separate call, made where a language is adopted.
 - **Players:** before every player build `ContentSync` copies `translations/` to `StreamingAssets/translations`, and
   `ContentManifest` lists the files in `manifest.json` and packs their texts into `bundle.json` beside the content's, so
   the web boot makes no extra request. `ContentManifest.Verify` checks the lists, the packed texts and the copy (byte for
-  byte) against the source, and `ContentSync` then loads the copy as a player would, so a broken translation fails the
-  build rather than the player's boot.
+  byte) against the source, and `ContentSync` then loads the copy as a player would and the source as the editor does
+  (`ContentManifest.CheckLoads`), so a broken translation fails the build rather than the player's boot. `Copy` marks the
+  translations folder it makes (`.contentmanifest-copy`) and refuses to replace one it did not make.
 - **The folder:** a language folder holds only `ui.yaml`, `events.yaml` and `content.yaml`. Any other file or folder there,
   or a folder that is not a language code, is refused rather than skipped. Files at the top (this folder's `README.md`)
   are not languages, and hidden names (`.DS_Store`) are ignored.

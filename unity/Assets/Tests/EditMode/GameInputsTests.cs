@@ -367,12 +367,14 @@ public class GameInputsTests
             File.AppendAllText(Path.Combine(copy, "ro", "ui.yaml"), "# changed after the copy\n");
             Assert.AreEqual("translations/ro/ui.yaml: the copy differs from the source", Refusal());
 
+            // notes.txt can never be a source file (TranslationLoader.Collect refuses it), so the count holds whatever
+            // languages and files translations/ has (review C6).
             ContentManifest.Copy(Paths.Content, target);
-            File.WriteAllText(Path.Combine(copy, "ro", "content.yaml"), "");
+            File.WriteAllText(Path.Combine(copy, "ro", "notes.txt"), "");
             StringAssert.Contains($"holds {files.Count + 1} files, not the {files.Count} translation files", Refusal());
 
             ContentManifest.Copy(Paths.Content, target);
-            Assert.IsFalse(File.Exists(Path.Combine(copy, "ro", "content.yaml")), "a copy replaces the translations folder");
+            Assert.IsFalse(File.Exists(Path.Combine(copy, "ro", "notes.txt")), "a copy replaces the translations folder");
             File.WriteAllText(Path.Combine(target, ContentManifest.FileName), ContentManifest.Write(ContentManifest.Collect(Paths.Content)));
             StringAssert.Contains("does not list the translation files", Refusal());
 
@@ -382,6 +384,74 @@ public class GameInputsTests
             StringAssert.Contains("does not pack the translation files", Refusal());
         }
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
+    /// <summary>Review C3: Copy replaces the translations folder beside its target only when Copy made it, so a target named
+    /// content never takes a folder of someone's own translations with it.</summary>
+    [Test]
+    public void TheCopyReplacesOnlyATranslationsFolderItMade()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "statecraft-translations-" + System.Guid.NewGuid().ToString("N"));
+        var target = Path.Combine(root, "content");
+        var mine = Path.Combine(root, "translations", "ro", "ui.yaml");
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(mine)!);
+            File.WriteAllText(mine, "mine");
+            var e = Assert.Throws<InvalidDataException>(() => ContentManifest.Copy(Paths.Content, target));
+            StringAssert.Contains("not a copy ContentManifest.Copy made", e.Message);
+            Assert.AreEqual("mine", File.ReadAllText(mine));
+
+            Directory.Delete(Path.Combine(root, "translations"), true);
+            ContentManifest.Copy(Paths.Content, target);
+            File.WriteAllText(Path.Combine(root, "translations", "ro", "notes.txt"), "");
+            ContentManifest.Copy(Paths.Content, target);   // its own copy: replaced
+            ContentManifest.Verify(Paths.Content, target);
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
+    /// <summary>Review C1: the copy leaves out the tool inputs (map/localities_1948.yaml), so the build check also loads the
+    /// source, where a translation key into such a file can be checked.</summary>
+    [Test]
+    public void TheBuildCheckCatchesAKeyIntoAFileThePlayerDoesNotShip()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "statecraft-translations-" + System.Guid.NewGuid().ToString("N"));
+        var source = Path.Combine(root, "repo", "content");
+        var target = Path.Combine(root, "player", "content");
+        try
+        {
+            foreach (var f in Directory.GetFiles(Paths.Content, "*", SearchOption.AllDirectories))
+            {
+                var to = Path.Combine(source, Path.GetRelativePath(Paths.Content, f));
+                Directory.CreateDirectory(Path.GetDirectoryName(to)!);
+                File.Copy(f, to);
+            }
+            Assert.AreEqual(TranslationLoader.Collect(Paths.Translations).Select(f => f.Split('/')[0]).Distinct().Count(),
+                ContentManifest.CheckLoads(Paths.Content, CopyOf(Paths.Content, Path.Combine(root, "real", "content"))));
+
+            const string locality = "map/localities_1948.yaml";
+            CollectionAssert.Contains(ContentManifest.ToolInputs, locality);
+            var yaml = new YamlDotNet.RepresentationModel.YamlStream();
+            yaml.Load(new StringReader(File.ReadAllText(Path.Combine(Paths.Content, locality))));
+            var key = Translations.Fields(locality, yaml.Documents[0].RootNode).First().Key;
+            var bad = new ContentKey(key.File, key.Path, "no_such_field").ToString();
+            Directory.CreateDirectory(Path.Combine(root, "repo", "translations", "ro"));
+            File.WriteAllText(Path.Combine(root, "repo", "translations", "ro", "ui.yaml"), "ui.lang: \"ro\"\n");
+            File.WriteAllText(Path.Combine(root, "repo", "translations", "ro", "content.yaml"), $"\"{bad}\":\n  text: \"x\"\n");
+            CopyOf(source, target);
+            Assert.AreEqual(1, ContentLoader.Load(target).Translations.Count, "the copy alone cannot see the key is wrong");
+            var e = Assert.Throws<ContentException>(() => ContentManifest.CheckLoads(source, target));
+            Assert.AreEqual(("translations/ro/content.yaml", bad), (e.File, e.Field));
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
+    static string CopyOf(string contentDir, string target)
+    {
+        ContentManifest.Copy(contentDir, target);
+        ContentManifest.Verify(contentDir, target);
+        return target;
     }
 
     [Test]

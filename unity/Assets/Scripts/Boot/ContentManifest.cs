@@ -19,6 +19,9 @@ namespace Statecraft.Game.Boot
     public static class ContentManifest
     {
         public const string FileName = "manifest.json";
+        /// <summary>The empty file <see cref="Copy"/> leaves at the top of the translations folder it makes. Hidden and at the
+        /// top, so the loader passes over it (TranslationLoader.Collect), and Unity does not import it.</summary>
+        public const string CopyMarker = ".contentmanifest-copy";
         /// <summary>Every listed file's text in one file: {"files": [...], "texts": [...]}, the same order (#1054).</summary>
         public const string BundleFileName = "bundle.json";
         /// <summary>The map's hex table, always in the manifest. The map files players read are this and every map/*.yaml
@@ -174,7 +177,7 @@ namespace Statecraft.Game.Boot
             if (copy == null) return;   // a target not named content: the bundle alone carries them
             var found = Directory.Exists(copy)
                 ? Directory.GetFiles(copy, "*", SearchOption.AllDirectories).Select(p => Path.GetRelativePath(copy, p).Replace('\\', '/'))
-                    .OrderBy(p => p, StringComparer.Ordinal).ToList()
+                    .Where(p => p != CopyMarker).OrderBy(p => p, StringComparer.Ordinal).ToList()
                 : new List<string>();
             if (!translations.SequenceEqual(found))
                 throw new InvalidDataException($"{copy} holds {found.Count} files, not the {translations.Count} translation files");
@@ -183,19 +186,37 @@ namespace Statecraft.Game.Boot
                     throw new InvalidDataException($"translations/{f}: the copy differs from the source");
         }
 
+        /// <summary>Loads the copy in <paramref name="targetDir"/> as a player loads it, and the source in
+        /// <paramref name="contentDir"/> as the editor does, each with the translations beside it, so a broken translation
+        /// that was never committed (so no CI job saw it) fails the build, not a player's boot. Both loads are needed: the
+        /// copy leaves out the <see cref="ToolInputs"/> (map/localities_1948.yaml), so a key into one is checked only
+        /// against the source. Returns the number of languages; throws ContentException.</summary>
+        public static int CheckLoads(string contentDir, string targetDir)
+        {
+            var languages = ContentLoader.Load(targetDir).Translations.Count;
+            ContentLoader.Load(contentDir);
+            return languages;
+        }
+
         /// <summary>Replaces <paramref name="targetDir"/> with a copy of the collected files plus manifest.json and bundle.json;
         /// for a <paramref name="release"/> build, the files as <see cref="Shipped"/> gives them. When the target is named
         /// content (StreamingAssets/content), the translations folder beside it is replaced with a copy of the translations
-        /// beside <paramref name="contentDir"/>; the bundle packs them either way.</summary>
+        /// beside <paramref name="contentDir"/>; the bundle packs them either way. Copy marks the translations folder it makes
+        /// with <see cref="CopyMarker"/> and replaces only a folder so marked: it throws InvalidDataException, before deleting
+        /// anything, rather than delete a translations folder it did not make.</summary>
         public static List<string> Copy(string contentDir, string targetDir, bool release = false)
         {
             var files = Collect(contentDir);
             var translations = CollectTranslations(contentDir);
-            if (Directory.Exists(targetDir)) Directory.Delete(targetDir, true);
             var copy = TranslationLoader.Beside(targetDir);
+            if (copy != null && Directory.Exists(copy) && !File.Exists(Path.Combine(copy, CopyMarker)))
+                throw new InvalidDataException($"{copy}: not a copy ContentManifest.Copy made (no {CopyMarker}), so it is left alone; move or delete it");
+            if (Directory.Exists(targetDir)) Directory.Delete(targetDir, true);
             if (copy != null)
             {
                 if (Directory.Exists(copy)) Directory.Delete(copy, true);
+                Directory.CreateDirectory(copy);
+                File.WriteAllText(Path.Combine(copy, CopyMarker), "");
                 foreach (var f in translations)
                 {
                     var to = Path.Combine(copy, f);

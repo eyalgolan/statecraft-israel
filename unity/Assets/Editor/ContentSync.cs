@@ -37,9 +37,7 @@ namespace Statecraft.Game.EditorTools
             {
                 files = ContentManifest.Copy(Paths.Content, Target, release);
                 ContentManifest.Verify(Paths.Content, Target, release);
-                // The copy loads as a player loads it, translations included: a broken translation that was never
-                // committed (so no CI job saw it) fails here, not at the player's boot.
-                translations = ContentLoader.Load(Target).Translations.Count;
+                translations = ContentManifest.CheckLoads(Paths.Content, Target);
             }
             catch (Exception e) when (e is InvalidDataException || e is ContentException)
             {
