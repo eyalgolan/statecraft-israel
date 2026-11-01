@@ -7,6 +7,7 @@ CONCEPT = "docs/images/hero-concept-1936.jpg"
 CLIP = "docs/images/build-gameplay.webp"
 GRID = ["docs/images/build-m3-map.jpg", "docs/images/build-m3-start.jpg", "docs/images/build-m3-city.jpg",
         "docs/images/build-m3-cabinet.jpg", "docs/images/build-m3-why.jpg"]
+HE_GRID = GRID[:1] + ["docs/images/build-he-map.jpg"] + GRID[1:]  # README.he.md adds the Hebrew map after the map
 
 
 def read(rel: str) -> str:
@@ -127,7 +128,7 @@ def test_hebrew_readme_is_rtl_and_names_english_as_authoritative():
     assert he.lstrip().splitlines()[0].startswith("[English](README.md)")
     assert he.count('<div dir="rtl">') >= 2
     assert he.count("<div") == he.count("</div>")
-    assert "הנוסח האנגלי" in he and images(he)[:6] == [CLIP] + GRID and CONCEPT in images(he)
+    assert "הנוסח האנגלי" in he and images(he)[:7] == [CLIP] + HE_GRID and CONCEPT in images(he)
 
 
 def test_images_are_web_sized_and_the_original_stays():
@@ -191,7 +192,7 @@ def test_hebrew_readme_polish_and_alt_text():
     for bad in ("מורשה ב־CC", "מצוטטת עם מקור", "מאסיבי", "שערי סקירה", "בזמן אמת בזמן"):
         assert bad not in he, bad
     alts = re.findall(r'alt="([^"]+)"', he)
-    assert len(alts) == 2 + len(GRID) and all(re.search(r"[א-ת]", a) for a in alts)
+    assert len(alts) == 2 + len(HE_GRID) and all(re.search(r"[א-ת]", a) for a in alts)
 
 
 def test_first_open_in_unity_is_in_all_three_files():

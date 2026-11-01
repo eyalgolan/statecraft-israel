@@ -223,7 +223,8 @@ public class OccupyTests
     }
 
     // The mvp-occupy-cost golden (#798) pins the real content's run: the scenario must really occupy Nazareth, and the run
-    // must end the turn its timer does, or the golden would pin a no-op.
+    // must reach the end of its timer (15 September 1948 at 3 turns; Nazareth then waits for EndOccupation to 15 December),
+    // or the golden would pin a no-op.
     [Fact]
     public void TheOccupyCostScenarioOccupiesNazarethToTheTimersEnd()
     {

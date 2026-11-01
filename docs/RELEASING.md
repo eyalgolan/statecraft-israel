@@ -73,7 +73,7 @@ macOS IL2CPP parity check is not an MVP release gate.
    ```
 
    Publishing a release starts the Pages deploy (`.github/workflows/site.yml`, on `main`; `gh workflow run site.yml`
-   starts one on demand). It unpacks the newest published release's `statecraft-israel-vX.Y.Z-web-pages.zip` at
+   starts one on demand). It unpacks the Latest release's `statecraft-israel-vX.Y.Z-web-pages.zip` at
    `/demo/` (https://eyalgolan.github.io/statecraft-israel/demo/) and the root page redirects there. It fails, and
    Pages keeps the last deploy, when that release has no such zip, the zip has no `index.html`, or its
    `event-photos.json` is not `shareable`. The demo is never in git (no file in the repository may pass 10 MB).
@@ -174,6 +174,8 @@ macOS IL2CPP parity check is not an MVP release gate.
    It must print five lines for each archive.
 
 ## Nightly builds
+
+`site.yml` selects GitHub Latest for `/demo/`, matching the release chosen by nightly recovery. Only when the Latest lookup returns HTTP 404 does it fall back to the newest published prerelease, and with neither it deploys nothing. Other lookup failures stop deployment. A post-publication site failure leaves the served demo unverified; it must not be reported as unchanged without readback.
 
 Every night at 03:00 (Israel time) the newest `main` is built and, only if every gate passes, becomes the public web
 game: a normal GitHub release marked **Latest**, tagged `vX.Y.Z`, which GitHub Pages' `/demo/` serves, and, once itch

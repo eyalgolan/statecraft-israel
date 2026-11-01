@@ -397,3 +397,162 @@ formfeeds are not counted as additional lines. No rendered page or scanned facsi
 procedural order or precise time is inferred from converted paragraph placement. Originals, converted text
 and access receipts are retained privately. This addition changes no content or signed field and supplies no
 human fact-check, legal decision, native-language review, sensitivity approval or authorization of implementation.
+
+## Press reading of approval votes and resignation dates (second reading, 1 November 2026)
+
+Status: research only, **1 November 2026**; AI agent checks, not human fact-checking or approval. Refs
+[#145](https://github.com/eyalgolan/statecraft-israel/issues/145), not completion of #145. This section adds to the
+23 October text above and changes none of it: the earlier wording and tags stay as written, and each entry
+below says which earlier row it follows. It changes no content, simulation, tests, goldens or signed review fields.
+
+Why a different source: the Knesset site, including the OData service and `fs.knesset.gov.il`, answered every
+request from this machine on 31 October and 1 November 2026 with a redirect to `knesset.gov.il/maintenance-page-geo`,
+so no official transcription or register row could be reopened. The entries below use **contemporaneous JTA daily
+bulletins** instead. They report what a news agency printed the day after, not the Knesset's own record, and they
+do not replace the official proceedings. They supply approval votes and resignation dates the 23 October pass left
+open, and the original instruments (resignation letters, cabinet minutes) are still unread.
+
+Reading rules used here. **[V, agent read 2026-11-01; a person's check pending]** below means the bulletin item was opened on
+that day and says what is quoted. A JTA web page carries the bulletin date. The event date comes from the dateline
+printed on the item in the original bulletin page (linked in the sources table, read as an image, with
+`pdftoppm` and `tesseract` used only to find the item). The dateline is normally one day before the bulletin date.
+Where an item prints no dateline the weekday it names is resolved with the calendar and marked as such. A weekday
+resolved this way is arithmetic, not a printed date.
+
+### C8 and C10: the Knesset vote on the January 1979 reshuffle, and Amit's resignation
+
+**[V, agent read 2026-11-01; a person's check pending]** The bulletin dated 17 January 1979, dateline **Jerusalem, 16 January**, says Begin filled the vacancies with Likud
+members already in the cabinet, "a move approved by the Knesset yesterday by a 49-40 vote. There were nine abstentions,
+all members of the NRP" [J2]. With that dateline "yesterday" is **15 January 1979**, the date in the heading of the Begin
+archive speech [T4]. This supplies the vote the 23 October note listed as missing. The vote is a press report of the
+Knesset result, not the Knesset transcription.
+
+**[V, agent read 2026-11-01; a person's check pending]** The bulletin dated 16 January says "The Cabinet yesterday approved several long expected
+ministerial changes": Patt as Minister of Industry, Commerce and Tourism, a portfolio "vacant for three months since the
+former minister, Yigael Hurwitz, resigned in protest against the Camp David agreements"; Levy as Minister of Construction
+and Housing; Modai as Minister of Communications "replacing Meir Amit who resigned last September"; and Transportation
+to Landau, "who has been serving as Minister-Without-Portfolio". It adds that the three National Religious Party
+ministers voted against [J1]. The item's printed dateline is **Jerusalem, 15 January**, so the cabinet's "yesterday" is **14 January 1979**
+(a Sunday by the calendar); the Knesset vote followed on 15 January [J2].
+
+**[V, agent read 2026-11-01; a person's check pending]** For Amit, the bulletin dated 14 September 1978, dateline **Jerusalem, 13 September**, reports that Amit, Minister of
+Transportation and Communications, "resigned from the government today", that he told Begin by telephone at Camp David,
+and that his letter was "submitted to the Cabinet secretary, Arye Naor today" [J3]. The bulletin does not give the
+date the resignation took effect. The register's Begin interim rows for Communications and Transport start on 15 September 1978
+[T1]; no link between the two is inferred.
+
+**[GAP]** Hurvitz's resignation date for Industry and Trade (C10) is still not sourced. JTA wp-json searches on 1 November 2026 for `Hurwitz`
+with `after=1978-09-25&before=1978-10-31` returned 3 records and with `after=1978-10-01&before=1978-11-05` returned 2; the
+first lines of each were read and none gave the date he resigned. The older competing end-date account is unchanged
+[C; baseline sources not rechecked].
+
+### C9: Justice, August 1980: resignation, cabinet and Knesset approval
+
+**[V, agent read 2026-11-01; a person's check pending]** Four bulletins give the sequence.
+(1) Bulletin of 1 August 1980, dateline **Jerusalem, 31 July**: "Justice Minister Shmuel Tamir resigned from the Cabinet, it was
+announced today. After tendering his resignation to Premier Menachem Begin ..." [J4].
+(2) Bulletin of 6 August, dateline **5 August**: Tamir "officially resigned from the post Sunday" [J5]. Sunday is **3 August 1980** by the
+calendar.
+(3) Bulletin of 11 August, dateline **10 August**: "The Cabinet today approved the appointment of Minister-Without-Portfolio Moshe Nissim ...
+as Justice Minister"; his appointment "will be brought before the Knesset for approval later this week" [J6].
+(4) Bulletin of 14 August, dateline **Jerusalem, 13 August**: "The Knesset, after a heated four-and-a-half hour debate today, approved the
+appointment of Moshe Nissim as Justice Minister by a vote of 56-39"; Agriculture Minister Sharon "was the only minister to vote
+against Nissim's appointment at the Cabinet session Sunday" [J7].
+
+The Knesset date and the cabinet date (10 August) agree with the Begin archive speech heading of 13 August and
+Begin's reported cabinet proposal on 10 August [T2]. This supplies the approval vote the 23 October note listed as unread.
+**[C]** On the resignation, the first bulletin dates the announcement to **31 July** and says he had by then tendered his resignation, while Begin's speech, as read
+on 23 October, places the announcement of intention and the delivery of the resignation on **3 August** [T2]. The second bulletin
+(J5) dates the official resignation to Sunday 3 August. Both values stay attributed; neither is replaced and no reconciliation is invented.
+The register end of 5 August [T1] is the date 48 hours after 3 August, which is how Begin's speech describes the effect [T2]; the
+bulletins do not state the effective date. Tamir's letter was not opened.
+
+### C7: Communications, January 1981: cabinet approval only
+
+**[V, agent read 2026-11-01; a person's check pending]** The bulletin dated 5 January 1981 says "The Cabinet Sunday unanimously approved the appointment of a new
+Minister of Communications, Knesset member Yoram Aridor", who "succeeds Yitzhak Modai ... who asked to be relieved of that post"
+[J15]. The item prints no dateline; Sunday is **4 January 1981** by the calendar, the day Begin names in his speech [T3].
+This corroborates the cabinet step. The Knesset approval vote is still **[GAP]**: JTA searches on 1 November 2026 for `Aridor` with
+`after=1981-01-04&before=1981-01-10` returned 1 record (this item), and for `Communications` with
+`after=1981-01-05&before=1981-01-09` returned 16 records, whose first lines were read and none reported a vote. Begin's interim
+Communications term (28 December 1980 to 5 January 1981) and Modai's resignation instrument are not covered; a `Modai` search for
+`after=1980-12-25&before=1981-01-12` returned 2 records, neither reporting the resignation date.
+
+### C12: Labour, Welfare and Absorption, May 1982: resignation and cabinet approval
+
+**[V, agent read 2026-11-01; a person's check pending]** The bulletin of 3 May 1982, dateline **Jerusalem, 2 May**, says Abu-Hatzeira's resignation, "which he
+submitted in writing last Friday to Premier Menachem Begin, formally took effect today"; Begin reported it to the cabinet and
+"the ministers approved the appointment of Aharon Uzan". It adds "The appointment must still have the approval of the Knesset,
+which is expected to do so this week" [J8]. Friday is **30 April 1982** by the calendar. The 2 May effect agrees with the register end [U1], and the
+30 April submission agrees with the date in Begin's speech [U4]. This supplies the cabinet approval and a dateline for the
+effect that the 23 October note left unread.
+
+**[GAP]** A separate Knesset vote on Uzan is still not sourced. A bulletin of 5 May, dateline **4 May**, reports the Knesset "voted 58-54 today to approve
+'in all its parts' the statement by Premier Menachem Begin at the opening of its summer session yesterday" [J9]. The item says "The other elements of
+Begin's statement approved today were non-controversial. One was an announcement that Aharon Uzan, the No. 2 man of the Tami faction,
+will take over as Minister of Labor, Welfare and Absorption" [J9]. So the 4 May vote covered the statement that announced Uzan, but it is a vote on the
+whole statement, not a recorded separate vote on his appointment, and the Knesset record was not opened. Begin's interim
+instruments for the two portfolios remain unread.
+
+### C13: Sharon: the cabinet decision and the Knesset vote, February 1983
+
+**[V, agent read 2026-11-01; a person's check pending]** The bulletin of 14 February 1983, dateline **Jerusalem, 13 February**, reports "the Cabinet's decision today to transfer
+the portfolio to Premier Menachem Begin", with Sharon "to stay on as a minister", and that he would cease to be Defense Minister
+the next day if the Knesset approved [J10]. The bulletin of 15 February carries a late item with no printed dateline: "The Knesset Monday night
+voted 61-56 to approve the Cabinet's decision to make Ariel Sharon Minister-Without-Portfolio. Dror Zeigerman (Likud-Liberal)
+abstained" [J11]. Monday is **14 February 1983** by the calendar, which is the register date and the speech date [U1, U5].
+The cabinet day, 13 February, is a Sunday by the calendar. This supplies the cabinet date and the Knesset vote count that the 23 October note left as an
+unestablished decision timing. The older 1982 attribution is unchanged [C; baseline source not rechecked], and the formal cabinet minute was
+not opened.
+
+### Section 1: Begin's announcement of resignation, August 1983
+
+**[V, agent read 2026-11-01; a person's check pending]** The bulletin of 29 August 1983, dateline **Jerusalem, 28 August**, says "Premier Menachem Begin announced today that he intends to resign.
+He made the announcement at the end of a relatively brief Cabinet session", quoting him: "I came to the Cabinet session this morning to
+tell you about my intention to resign" [J12]. This is a contemporaneous press source for the **28 August 1983** announcement that the 23 October note
+carried as a gap (**[GAP]** there). It is a news report of a cabinet statement; no cabinet minute was opened. It does not change the 15 September
+formal resignation or the register end date of 10 October 1983.
+
+### Section 1: Peres's resignation before the 1986 rotation
+
+**[V, agent read 2026-11-01; a person's check pending]** The bulletin of 15 October 1986, dateline **Jerusalem, 14 October**, says "Peres submitted his resignation as Premier to President
+Chaim Herzog on Friday. It became effective under law 48 hours later, on Sunday" [J13]. By the calendar Friday is **10 October 1986** and Sunday **12 October**; the
+bulletin prints neither number. This is a contemporaneous source for the day the original note carried as a gap ([GAP] there: "en.wiki and most accounts:
+10 October 1986"). The bulletin of 21 October, dateline **20 October**, reports Shamir's cabinet "won Knesset approval Monday by a vote of 82-17 with three
+abstentions" [J14], the same 82 for, 17 against, 3 abstentions recorded in `offices-1977-93.md` (22nd-government rotation passage). The resignation letter was not opened.
+
+### Rows still open after this reading
+
+| Row | What the press reading did not supply |
+|---|---|
+| C7 | Knesset vote on Aridor as Communications Minister; Begin's interim term and Modai's resignation instrument. |
+| C8 and C10 | Date of Hurvitz's resignation; Amit's effective date and any instrument; interim instrument for Begin's Transport and Communications terms. |
+| C9 | Tamir's letter; the 31 July versus 3 August difference stays; the interim instrument for Begin's Justice term. |
+| C12 | A separate Knesset vote on Uzan (the 4 May vote covered Begin's whole statement); instruments for Begin's interim terms. |
+| C13 | Formal cabinet minute and the older 1982 attribution. |
+| C14 (not claimed; searched) | JTA searches on 1 November 2026 for `Modai` (`after=1982-09-28&before=1982-10-24`: 1 record), `Yitzhak+Berman` (`after=1982-09-20&before=1982-10-25`: 5 records) and `Energy+Minister` (`after=1982-10-14&before=1982-10-22`: 9 records) did not surface an item on the resignation or the appointment; titles and first lines were read. The row stays open. |
+
+### Press sources actually read (second reading)
+
+All entries: `checked: 2026-11-01`, AI agent reading only, human verification pending. Each web page lists the bulletin
+date. Page images were fetched from `pdfs.jta.org` with ordinary GETs and read as images; the OCR text was used only
+to locate the item. Query pattern for repeating a search:
+`https://www.jta.org/wp-json/wp/v2/archive?search=<word>&after=<date>T00:00:00&before=<date>T00:00:00`.
+
+| Key | Item and locator | Bulletin page | Printed dateline read |
+|---|---|---|---|
+| J1 | JTA, [Cabinet approves ministerial changes](https://www.jta.org/archive/cabinet-approves-ministerial-changes), bulletin 16 Jan 1979 | [1979-01-16_011](http://pdfs.jta.org/1979/1979-01-16_011.pdf), page 1 | Jerusalem, Jan. 15 |
+| J2 | JTA, [Efforts to assuage NRP over ministerial reshuffle](https://www.jta.org/archive/efforts-to-assuage-nrp-over-ministerial-reshuffle), bulletin 17 Jan 1979 | [1979-01-17_012](http://pdfs.jta.org/1979/1979-01-17_012.pdf), page 1 | Jerusalem, Jan. 16 |
+| J3 | JTA, [Amit resigns from government](https://www.jta.org/archive/amit-resigns-from-government), bulletin 14 Sep 1978 | [1978-09-14_179](http://pdfs.jta.org/1978/1978-09-14_179.pdf), page 2 | Jerusalem, Sept. 13 |
+| J4 | JTA, [Justice Minister resigns from Cabinet](https://www.jta.org/archive/justice-minister-resigns-from-cabinet), bulletin 1 Aug 1980 | [1980-08-01_147](http://pdfs.jta.org/1980/1980-08-01_147.pdf), page 3 | Jerusalem, July 31 |
+| J5 | JTA, [Ministerial posts reshuffle sought](https://www.jta.org/archive/ministerial-posts-reshuffle-sought), bulletin 6 Aug 1980 | [1980-08-06_150](http://pdfs.jta.org/1980/1980-08-06_150.pdf), page 3 | Jerusalem, Aug. 5 |
+| J6 | JTA, [Nissim gets Justice Minister post](https://www.jta.org/archive/nissim-gets-justice-minister-post), bulletin 11 Aug 1980 | [1980-08-11_153](http://pdfs.jta.org/1980/1980-08-11_153.pdf), page 4 | Jerusalem, Aug. 10 |
+| J7 | JTA, [Knesset approves Nissim as Justice Minister by 56-39 vote](https://www.jta.org/archive/knesset-approves-nissim-as-justice-minister-by-56-39-vote), bulletin 14 Aug 1980 | [1980-08-14_156](http://pdfs.jta.org/1980/1980-08-14_156.pdf), page 1 | Jerusalem, Aug. 13 |
+| J8 | JTA, [Abu-Hatzeira resigns Cabinet post](https://www.jta.org/archive/abu-hatzeira-resigns-cabinet-post), bulletin 3 May 1982 | [1982-05-03_084](http://pdfs.jta.org/1982/1982-05-03_084.pdf), page 4 | Jerusalem, May 2 |
+| J9 | JTA, [Knesset votes 58-54 to approve Begin's statements](https://www.jta.org/archive/knesset-votes-58-54-to-approve-begins-statements-on-future-of-jewish-settlements-and-el-al), bulletin 5 May 1982 | [1982-05-05_086](http://pdfs.jta.org/1982/1982-05-05_086.pdf), page 3 | Jerusalem, May 4 |
+| J10 | JTA, [Knesset to act on decision by the Cabinet to transfer Defense portfolio to Begin](https://www.jta.org/archive/knesset-to-action-decision-by-the-cabinet-to-transfer-defense-portfolio-to-begin), bulletin 14 Feb 1983 | [1983-02-14_031](http://pdfs.jta.org/1983/1983-02-14_031.pdf), page 2 | Jerusalem, Feb. 13 |
+| J11 | JTA, [The Knesset Monday night voted 61-56](https://www.jta.org/archive/the-knesset-monday-night-voted-61-56-to-approve), bulletin 15 Feb 1983 | [1983-02-15_032](http://pdfs.jta.org/1983/1983-02-15_032.pdf), page 3 | None printed (late bulletin) |
+| J12 | JTA, [A nation is stunned: Begin announces he intends to resign](https://www.jta.org/archive/a-nation-is-stunned-begin-announces-he-intends-to-resign-efforts-under-way-to-convince-him-to-rema), bulletin 29 Aug 1983 | [1983-08-29_164](http://pdfs.jta.org/1983/1983-08-29_164.pdf), page 1 | Jerusalem, Aug. 28 |
+| J13 | JTA, [Rotation is hanging fire](https://www.jta.org/archive/rotation-is-hanging-fire), bulletin 15 Oct 1986 | [1986-10-15_196](http://pdfs.jta.org/1986/1986-10-15_196.pdf), page 2 | Jerusalem, Oct. 14 |
+| J14 | JTA, [Rotation is completed: Knesset approves Shamir's Cabinet](https://www.jta.org/archive/rotation-is-completed-knesset-approves-shamirs-cabinet-new-premier-stresses-national-unity), bulletin 21 Oct 1986 | [1986-10-21_200](http://pdfs.jta.org/1986/1986-10-21_200.pdf), page 1 | Jerusalem, Oct. 20 |
+| J15 | JTA, [The Cabinet Sunday unanimously approved the appointment](https://www.jta.org/archive/the-cabinet-sunday-unanimously-approved-the-appointment), bulletin 5 Jan 1981 | [1981-01-05_002](http://pdfs.jta.org/1981/1981-01-05_002.pdf), page 4 | None printed on the item |
