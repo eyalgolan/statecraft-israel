@@ -1638,7 +1638,7 @@ namespace Statecraft.Sim
             }
         }
 
-        static readonly string[] MapLocationKinds = { "city", "kibbutz", "fort", "pass", "bridge", "reception_camp", "outpost" };
+        static readonly string[] MapLocationKinds = { "city", "kibbutz", "fort", "pass", "bridge", "reception_camp", "outpost", "military_camp" };   // military_camp: #1719
         static readonly string[] MapLocationPriorities = { "must_have", "optional" };
         static readonly string[] StartingControls = { "israeli", "arab_forces", "contested" };
 

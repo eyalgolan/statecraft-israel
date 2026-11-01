@@ -39,4 +39,9 @@ def test_issue_1008_roster_and_separate_adjacent_positions():
     assert by_id["ad_halom_bridge"]["id"] != "isdud"
     assert by_id["jerusalem"]["managed_city"] is True
     assert by_id["east_jerusalem_old_city"]["managed_city"] is False
-    assert {l["id"] for l in LOCATIONS if l["priority"] == "optional"} == {"umm_rashrash"}
+    assert {l["id"] for l in LOCATIONS if l["priority"] == "optional"} == {
+        "umm_rashrash",
+        # #1719: the named camps with a sourced camp point (research_notes/Map/camps-1948-51.md).
+        "military_tzrifin", "military_tel_litvinsky", "military_schneller", "military_camp_80",
+        "reception_atlit", "reception_beit_lid",
+    }

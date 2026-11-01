@@ -248,3 +248,137 @@ locations:
   - { url: 'https://www.wikidata.org/wiki/Q25487984', checked: 2026-10-31 } # coordinates (P625): the modern heritage site; the statement has no reference
   - { url: 'https://en.wikipedia.org/wiki/Operation_Uvda', checked: 2026-10-31 } # English name "Umm Rashrash"
   status: draft
+
+# #1719: the named military and reception camps as map records only (owner, 1 November 2026: "No reception-bed layer
+# (Recommended)"). Coordinates are the Hebrew Wikipedia points recorded [S] in research_notes/Map/camps-1948-51.md: modern
+# points, not surveyed 1948-51 positions; the note keeps the period map readings that differ ([C]). Priority is optional:
+# the owner declined Amir's proposal to make every listed facility must-have (docs/locations.md, "Facility roster"). The
+# bindings to a site, facility or region wait on #1687 and #1691. Rosh HaAyin and Pardes Hanna have only a town point in
+# the note, so they have no record yet. Every source was read by an AI agent only; a person's check is pending.
+- id: military_tzrifin
+  name: Tzrifin
+  name_he: צריפין
+  name_he_review: agent-checked
+  name_he_sources:
+  - { url: 'https://he.wikipedia.org/w/index.php?oldid=43963697', checked: 2026-11-01 }
+  kind: military_camp
+  lon: 34.83953611
+  lat: 31.95868056
+  q: -3
+  r: 20
+  priority: optional # DESIGN VALUE: no owner ruling makes a camp a must-have location (see above).
+  marker: true # DESIGN VALUE: this record is a map marker.
+  managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
+  designated_site: false # DESIGN VALUE: the build site stays sites.yaml `tzrifin`; binding it waits on #1687.
+  settlement_control_target: false # DESIGN VALUE: map inclusion does not add a capture target.
+  sources:
+  # coordinates; the JTA's 1948 name is "Sarafand" (note, section 1). SENSITIVE: see sites.yaml `tzrifin`.
+  - { url: 'https://he.wikipedia.org/w/index.php?oldid=43963697', checked: 2026-11-01 }
+  status: draft
+
+- id: military_tel_litvinsky
+  name: Tel Litvinsky
+  name_he: מחנה תל־ליטוינסקי
+  name_he_review: agent-checked
+  name_he_sources:
+  - { url: 'https://he.wikipedia.org/w/index.php?oldid=43522123', checked: 2026-11-01 } # the camp's 1947 name, in the article text
+  kind: military_camp
+  lon: 34.85731944
+  lat: 32.04335
+  q: -2
+  r: 19
+  priority: optional # DESIGN VALUE: no owner ruling makes a camp a must-have location (see above).
+  marker: true # DESIGN VALUE: this record is a map marker.
+  managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
+  designated_site: false # DESIGN VALUE: not a founding or build site.
+  settlement_control_target: false # DESIGN VALUE: map inclusion does not add a capture target.
+  sources:
+  # coordinates of today's Camp Dori (Tel HaShomer); the 1:20,000 sheet prints "Tel Litwinsky" 1.23 km to the north-west ([C], note section 2).
+  - { url: 'https://he.wikipedia.org/w/index.php?oldid=43522123', checked: 2026-11-01 }
+  status: draft
+
+- id: military_schneller
+  name: Schneller camp
+  name_he: מחנה שנלר
+  name_he_review: agent-checked
+  name_he_sources:
+  - { url: 'https://he.wikipedia.org/w/index.php?oldid=44079527', checked: 2026-11-01 }
+  kind: military_camp
+  lon: 35.21265833
+  lat: 31.79075
+  q: 0
+  r: 23
+  priority: optional # DESIGN VALUE: no owner ruling makes a camp a must-have location (see above).
+  marker: true # DESIGN VALUE: this record is a map marker, separate from Jerusalem in the same hex.
+  managed_city: false # DESIGN VALUE: cities.yaml keeps one Jerusalem economy.
+  designated_site: false # DESIGN VALUE: not a founding or build site.
+  settlement_control_target: false # DESIGN VALUE: map inclusion does not add a capture target.
+  sources:
+  # coordinates; the 1:20,000 sheet prints "Orphanage & Sch." 217 m north of the point (note, section 3).
+  - { url: 'https://he.wikipedia.org/w/index.php?oldid=44079527', checked: 2026-11-01 }
+  status: draft
+
+- id: military_camp_80
+  name: Camp 80
+  name_he: מחנה 80
+  name_he_review: agent-checked
+  name_he_sources:
+  - { url: 'https://he.wikipedia.org/w/index.php?oldid=43463565', checked: 2026-11-01 }
+  kind: military_camp
+  lon: 34.986627
+  lat: 32.462798
+  q: 2
+  r: 13
+  priority: optional # DESIGN VALUE: no owner ruling makes a camp a must-have location (see above).
+  marker: true # DESIGN VALUE: this record is a map marker.
+  managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
+  designated_site: false # DESIGN VALUE: the build site stays sites.yaml `camp_80`; binding it waits on #1687.
+  settlement_control_target: false # DESIGN VALUE: map inclusion does not add a capture target.
+  sources:
+  # coordinates of today's Bahad Dotan; no Mandate sheet read prints the camp ([GAP], note section 4).
+  - { url: 'https://he.wikipedia.org/w/index.php?oldid=43463565', checked: 2026-11-01 }
+  status: draft
+
+- id: reception_atlit
+  name: Atlit camp
+  name_he: מחנה עתלית
+  name_he_review: agent-checked
+  name_he_sources:
+  - { url: 'https://he.wikipedia.org/w/index.php?oldid=42240627', checked: 2026-11-01 }
+  kind: reception_camp
+  lon: 34.949141
+  lat: 32.712543
+  q: 4
+  r: 9
+  priority: optional # DESIGN VALUE: reception camps are map records only in the MVP (owner, 1 November 2026).
+  marker: true # DESIGN VALUE: this record is a map marker.
+  managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
+  designated_site: false # DESIGN VALUE: this reception camp is not a yishuv founding site.
+  settlement_control_target: false # DESIGN VALUE: map inclusion does not add a capture target.
+  sources:
+  # coordinates of the detention camp; the 1:20,000 sheet prints "Atlit Clearance Camp" there (note, section 5).
+  # The day it opened to immigrants is [GAP], so no historical_reference.
+  - { url: 'https://he.wikipedia.org/w/index.php?oldid=42240627', checked: 2026-11-01 }
+  status: draft
+
+- id: reception_beit_lid
+  name: Beit Lid camp
+  name_he: מחנה בית ליד
+  name_he_review: agent-checked
+  name_he_sources:
+  - { url: 'https://he.wikipedia.org/w/index.php?oldid=39524540', checked: 2026-11-01 }
+  kind: reception_camp
+  lon: 34.910788
+  lat: 32.315699
+  q: 0
+  r: 15
+  priority: optional # DESIGN VALUE: reception camps are map records only in the MVP (owner, 1 November 2026).
+  marker: true # DESIGN VALUE: this record is a map marker.
+  managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
+  designated_site: false # DESIGN VALUE: this reception camp is not a yishuv founding site.
+  settlement_control_target: false # DESIGN VALUE: map inclusion does not add a capture target.
+  sources:
+  # coordinates of the later Shavot Am ma'abara site; the 1958 sheet's circle is 465 m away ([C], note section 8).
+  # The opening day is [GAP], so no historical_reference.
+  - { url: 'https://he.wikipedia.org/w/index.php?oldid=39524540', checked: 2026-11-01 }
+  status: draft

@@ -60,6 +60,38 @@ public class MapContentTests
         Assert.DoesNotContain(c.SettlementHexes, x => x.Id == location.Id);
     }
 
+    // #1719 (owner, 1 November 2026: "No reception-bed layer (Recommended)"): the named camps are map records only. A
+    // record adds no city, site, capture target, people or starting control; Rosh HaAyin and Pardes Hanna have no
+    // sourced camp point yet (research_notes/Map/camps-1948-51.md), so they have no record.
+    [Theory]
+    [InlineData("military_tzrifin", "military_camp")]
+    [InlineData("military_tel_litvinsky", "military_camp")]
+    [InlineData("military_schneller", "military_camp")]
+    [InlineData("military_camp_80", "military_camp")]
+    [InlineData("reception_atlit", "reception_camp")]
+    [InlineData("reception_beit_lid", "reception_camp")]
+    public void ANamedCampIsAnOptionalMapRecordOnly(string id, string kind)
+    {
+        var c = ContentLoader.Load(RealContentTests.ContentRoot());
+        var location = Assert.Single(c.MapLocations, x => x.Id == id);
+
+        Assert.Equal(kind, location.Kind);
+        Assert.Equal("optional", location.Priority);
+        Assert.True(c.HexAt(location.Q, location.R)!.Land);
+        Assert.True(location.Marker);
+        Assert.False(location.ManagedCity);
+        Assert.False(location.DesignatedSite);
+        Assert.False(location.SettlementControlTarget);
+        Assert.Empty(location.StartingControl);
+        Assert.Null(location.ControlChange);
+        Assert.Empty(location.HistoricalReference);
+        Assert.Equal("draft", location.Status);
+        Assert.DoesNotContain(c.Cities, x => x.Id == location.Id);
+        Assert.DoesNotContain(c.Sites, x => x.Id == location.Id);
+        Assert.DoesNotContain(c.SettlementTargets, x => x.Id == location.Id);
+        Assert.DoesNotContain(c.SettlementHexes, x => x.Id == location.Id);
+    }
+
     [Theory]
     [InlineData("kind: city", "kind: citty", "locations[town_a].kind", "unknown kind")]
     [InlineData("priority: must_have", "priority: urgent", "locations[town_a].priority", "unknown priority")]
@@ -202,7 +234,7 @@ public class MapContentTests
         Assert.Equal(1102, c.Hexes.Count);
         Assert.Equal(870, c.Hexes.Count(h => h.Land));
         Assert.Equal(25, c.SettlementHexes.Count);
-        Assert.Equal(11, c.MapLocations.Count);
+        Assert.Equal(17, c.MapLocations.Count);   // #1719: six named camps
         Assert.Equal(10, c.MapLocations.Count(x => x.Priority == "must_have"));
         Assert.Contains(c.SettlementHexes, s => s.Id == "tiberias");
         Assert.Contains(c.MapLocations, x => x.Id == "jerusalem" && x.Name == "West Jerusalem" && x.StartingControl == "israeli");
