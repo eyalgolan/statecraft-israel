@@ -112,6 +112,13 @@ Cross-reference, not re-read: model-basis-1957-77.md 3.3 has the JTA item dateli
   force before 5 June." [V, agent read 2026-11-01; a person's check pending] U1, annex V (the first aide-memoire),
   printed p. 81, under "Law": "Civil courts have resumed their work in Nablus on 3 July. They are adjucating under
   Jordanian law." (spelling as printed) [V, agent read 2026-11-01; a person's check pending]
+- **What the UN Special Committee found in 1970.** U2, printed p. 60 (PDF page 60), para 142, under "Interference with
+  the judicial system, including legal aid": "The Special Committee has examined the proclamations and orders
+  promulgated by the occupation authorities in the occupied territories and finds that the Israeli authorities have
+  seriously hampered the functioning of the court system by transferring the Court of Appeal in Jerusalem to Ramallah.
+  This transfer provoked a reaction on the part of the judiciary that brought activities of the Court of Appeal to a
+  standstill." (the text layer misprints "Ramallah" as "Ramsllah"; the page image reads "Ramallah") [V, agent read
+  2026-11-01; a person's check pending] This is the Committee's finding, not Israel's statement.
 - **Reading.** The Israeli statements in U1 agree with W5 that the law in force before the war was kept; they date the
   courts' reopening in Nablus to "3 July" (no year printed; 1967 is derived from the report's date, October 1967). Neither U1 nor any source read gives the proclamation itself.
 - **Open.** [GAP] The text and number of the first proclamations of June 1967. U2 says the UN Special Committee "has
@@ -121,18 +128,25 @@ Cross-reference, not re-read: model-basis-1957-77.md 3.3 has the JTA item dateli
 ### M3. Coordinating policy in the territories (July 1967 to August 1968)
 
 - W6: Gazit "was appointed by Defense Minister Moshe Dayan to be in charge of a committee tasked with running the
-  political, security, and later economic affairs in the newly captured territories" in "the summer of 1967"; "This group
-  would later be renamed 'The Unit for the Coordination of Operations in the Territories'." [S]
+  political, security, and later economic affairs in the newly captured territories" in "the summer of 1967". Its next sentence, copied as printed: This group
+  would later be renamed "The Unit for the Coordination of Operations in the Territories". [S]
 - W7 gives the steps (my summary of the history section): a committee of directors-general to coordinate policy in the
-  territories was set up in July 1967, headed for some months by a reserve colonel; from 10 September 1967 to September
-  1968 another colonel was coordinator of civil affairs; in August 1967 Gazit was named chair of the political-security
-  coordination committee in the territories, and at the end of 1968 he took over the directors-general committee too
-  and became the Coordinator of Government Activities in the Territories. Two sentences quoted: "ובדצמבר 1967 מונה לראש מחלקת ממשל צבאי וביטחון מרחבי במטכ"ל." (and in
+  territories was set up in July 1967, with a reserve colonel (Col. Yehuda Nitzan) appointed its coordinator ("מרכז"; the word means coordinator here, not head) for some months; from 10 September 1967 to September
+  1968 another colonel (Col. Dan Hiram) was coordinator of civil affairs; in August 1967 Gazit was named chair of the political-security
+  coordination committee in the territories, and towards the end of 1968 (after Hiram's retirement) he was also appointed
+  coordinator ("מרכז") of the directors-general committee and became the Coordinator of Government Activities in the Territories. Two sentences quoted: "ובדצמבר 1967 מונה לראש מחלקת ממשל צבאי וביטחון מרחבי במטכ"ל." (and in
   December 1967 he was named head of the General Staff's department of military government and regional security);
-  "באוגוסט 1968 אוחדה יחידת מרכז ועדת המנכ"לים עם יחידת התיאום בראשות גזית." (in August 1968 the unit of the directors-general committee's head was merged with the coordination
+  "באוגוסט 1968 אוחדה יחידת מרכז ועדת המנכ"לים עם יחידת התיאום בראשות גזית." (in August 1968 the unit of the directors-general committee's coordinator was merged with the coordination
   unit headed by Gazit). [S]
-- **[C]** On when Gazit took the whole coordination: "the end of 1968" (W7) against the merger "in August 1968" (W7's
-  own next sentence). Both kept; W6 gives no month.
+- **[C]** On when Gazit's role began, W7 itself gives two months: the prose says he was named chair of the political-
+  security coordination committee "באוגוסט 1967" (August 1967), while the same revision's table of coordinators gives
+  Gazit "ספטמבר 1967 - 1974" (September 1967 to 1974) and Hiram "ספטמבר 1967 - ספטמבר 1968". Both kept; W6 says only
+  "the summer of 1967".
+- **Two steps, not a conflict.** W7 gives two separate steps in 1968: the merger of the two units in August 1968, and
+  Gazit becoming coordinator of the directors-general committee "עם פרישת חירם לקראת סוף שנת 1968" (with Hiram's
+  retirement towards the end of 1968). The table puts Hiram's term ending in September 1968. These can be consistent;
+  W7 does not say whether the two steps are one event, so the order is recorded as the source gives it and not
+  resolved. W6 gives no month.
 - **Open.** [GAP] A primary record (the Government or Defence Ministry decision) for any of these steps.
 
 ---
@@ -248,7 +262,7 @@ Cross-reference only: golan-localities-1967-77.md has the founding dates, the fi
   gave overwhelming approval yesterday to a series of proposals by Defense Minister Moshe Dayan that will open the way to
   private land purchases by Jews in the administered territories, increase Jewish settlement in the territories and
   reduce the Arab labor force presently working in Israel." "The various facets of the plan originated with Dayan and were drafted into
-  document form by Minister-Without-Portfolio Israel Galili" (archive page text; the OCR of the scan is garbled there). "The document was approved a week ago by the
+  document form by Minister-Without-Portfolio Israel Galili" (archive page text; our OCR garbled it, the sentence is legible on the rendered p. 2, where a stray line crosses part of it). "The document was approved a week ago by the
   Party's Executive"; "Approval was by 78 votes. There were several abstentions but no hands were raised against it." [S]
 - W9: "התוכנית הובאה לאישור מזכירות מפלגת העבודה ב־3 בספטמבר 1973 כחלק ממצע הבחירות שלה." (the plan was brought for the approval of the Labor Party secretariat on 3 September 1973 as part
   of its election platform); "בעד התוכנית הצביעו 79 מחברי המזכירות, רבים נעדרו, בהם ח״כ לובה אליאב שהביע התנגדות למסמך." (79 members of the secretariat voted for the plan; many were absent,
@@ -276,7 +290,7 @@ Cross-reference only: golan-localities-1967-77.md has the founding dates, the fi
   peacefully." "The incident occurred on the seventh anniversary of the 1967 Six-Day War". [S] W10: "ניסיון ההתנחלות הראשון של "גרעין אלון מורה" נעשה בט"ו בסיוון תשל"ד (5 ביוני 1974), יחד עם הרב צבי יהודה הכהן קוק בחווארה (ארבעה קילומטרים מדרום לשכם) שם הכריזו על הקמת 'אלון מורה'." (the
   first settling attempt of the Elon Moreh group was made on 15 Sivan 5734 (5 June 1974), with Rabbi Zvi Yehuda Kook,
   at Hawara, four kilometres south of Nablus, where they declared the founding of "Elon Moreh"). [S] The day agrees.
-- **July.** W10: "כחודש לאחר מכן, ב-25 ביולי, עלו פעילי גוש אמונים וחברי-כנסת (בהם שרון ואהוד אולמרט, לימים שניהם יכהנו כראשי ממשלת ישראל), לתחנת הרכבת הנטושה סבסטיה." (about a month later, on 25 July, Gush Emunim activists and Knesset members went up to the
+- **July.** W10: "כחודש לאחר מכן, ב-25 ביולי, עלו פעילי גוש אמונים וחברי-כנסת (בהם שרון ואהוד אולמרט, לימים שניהם יכהנו כראשי ממשלת ישראל), לתחנת הרכבת הנטושה סבסטיה." (about a month later, on 25 July, Gush Emunim activists and Knesset members (among them Sharon and Ehud Olmert, both later prime ministers of Israel) went up to the
   abandoned Sebastia railway station). [S] J6, dateline TEL AVIV, July 28 (so 28 July 1974, a Sunday, derived): "The 150
   settlers who sought to establish a settlement at Sebastia near Nablus on the West Bank averted a showdown with the
   government tonight by deciding to leave their encampment a few minutes before a government deadline." Peres had told
@@ -301,7 +315,8 @@ Cross-reference only: golan-localities-1967-77.md has the founding dates, the fi
   [C] on the month (a JTA item of 6 January 1976 says the compromise was reached "in November"); this note did not
   reopen the JTA items.
 - Kadum: cross-reference only (events-1970-77.md B14; west-bank-localities-1967-77.md Qedumim row: the move to the Kadum
-  camp on 8 December 1975 [S]; the Cabinet statement of 9 to 10 May 1976 [S]).
+  camp on 8 December 1975 [S]; the Cabinet statement of 9 to 10 May 1976 is in events-1970-77.md B14 only: the
+  11 May 1976 bulletin, "decision of May 9").
 
 ### S9. Ofra (1975)
 
