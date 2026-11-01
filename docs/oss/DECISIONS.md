@@ -94,3 +94,20 @@ The owner's answers to the questions in section 9 of `docs/superpowers/specs/202
 - **Then decided (owner, 23 Oct 2026, "Freeze for MVP (Recommended)"; [#1512](https://github.com/eyalgolan/statecraft-israel/issues/1512#issuecomment-6372356819)):** the eight `hexes.json` biomes are the complete MVP terrain catalogue, with no terrain conversions.
 - **Then decided (owner, 23 Oct 2026, "Yes, complete (Recommended)"; [#1513](https://github.com/eyalgolan/statecraft-israel/issues/1513#issuecomment-6372357178)):** R-MIN-001 to R-MIN-003 and `Cabinet.Appoint` are the complete MVP minister mechanic (D-H3 closed).
 - **Then decided (owner, 24 Oct 2026, in the coordinator session, "1520: do this: 1. When the player annexes a town whose residents stayed (Acre, Nazareth), how many people, homes and jobs join the game? - a. The same rule as the 12 starting cities: a sourced resident count you approve. (Recommended) 2.b 3.a"; [#799](https://github.com/eyalgolan/statecraft-israel/issues/799#issuecomment-6374876433)):** for #799's plan (#1520): (1a) a stayed town that is annexed becomes one city by the starting-city rule, from a sourced count the owner approves; (2b) residents of a fled town are recorded as fled at capture; (3a) an annexed town stays Israeli for good, with no upkeep. OWNER QUESTION 4 (Deport of a fled town): **then decided (owner, 24 Oct 2026, "Hide it, button explains (Recommended)"; [#799](https://github.com/eyalgolan/statecraft-israel/issues/799#issuecomment-6375591758)):** (a), Deport stays listed and is refused with its reason. Implementation is #799.
+
+## Steam (Steamworks integration)
+
+The owner's answers to Q1-Q10 of `docs/superpowers/specs/2026-11-01-steamworks-integration-design.md` (section 6),
+asked in [#2150](https://github.com/eyalgolan/statecraft-israel/issues/2150) and answered on 1 November 2026, relayed by the
+coordinator. Each quote is the option label the owner chose; the options themselves are in #2150.
+
+- [x] Q1 When Steam code starts. Decided (owner, 2026-11-01): "Inert repo work now (Recommended)".
+- [x] Q2 How the repository handles Valve's SDK. Decided (owner, 2026-11-01): "Never commit; UPM wrapper (Recommended)".
+- [x] Q3 One desktop build or a Steam flavour. Decided (owner, 2026-11-01): "Separate --steam build (Recommended)".
+- [x] Q4 Which OSes on the first Steam release. Decided (owner, 2026-11-01): "Win + Mac + Linux (Recommended)".
+- [x] Q5 Achievements. Decided (owner, 2026-11-01): "Five (Recommended)".
+- [x] Q6 Steam Cloud. Decided (owner, 2026-11-01): "Auto-Cloud autosave (Recommended)".
+- [x] Q7 Which builds go to Steam. Decided (owner, 2026-11-01): "Also nightlies".
+- [x] Q8 Who uploads, from where. Decided (owner, 2026-11-01): "GitHub Actions".
+- [x] Q9 Non-commercial licences on Steam. Decided (owner, 2026-11-01): "Treat free as non-commercial".
+- [x] Q10 Steam Deck and controllers. Decided (owner, 2026-11-01): "No claim + one smoke test (Recommended)".
