@@ -351,19 +351,19 @@ public class Gdd03EventRulesTests
     static readonly string[] SourceBytes =
     {
         "absorb_immigrants:7c926e12a0e54c4602177832f2db0c02393fd57981aea0f4b4eac916902d8f6a", // re-pinned for #1065 (reviewer comment matches the text)
-        "altalena:d2c85de2ba034928441a67e490862b265f693d005e000553622bd80fbcb7ede8", // re-pinned for #1065 (Beri's native Hebrew read)
+        "altalena:7b11813ca83ff1745263ee0bb8e7931d44641a87d7b126cde8433b225a9f479a", // re-pinned for #1065 (owner's native read; flag removed in 8fbcb2aff)
         "armistice_egypt:d361db22977057e24e0cb515afbfee37439cbdce38e465960b4978d082f5704f", // re-pinned for #1065 (Beri's native Hebrew read)
         "armistice_jordan:484bedf4869f6b01aec1a2d400c577183654a6d36930da065a77ddf203cf4450", // re-pinned for #1065 (Beri's native Hebrew read)
         "armistice_lebanon:81141de094d4d536c6c0e22b93a0d3704a3f1d999b3813a51c2d08f2ae8ecf11", // re-pinned for #1065 (Beri's native Hebrew read)
         "armistice_syria:2b83f89ff2effe21e01d511a7ea1e0a41f937ee96e39a16977ab6f7e8999257e", // re-pinned for #1065 (Beri's native Hebrew read)
         "austerity_1949:7b4534f4982116745eef2ab2f959ad52faf6efa8efb7f0f5bda3844bac590cc4", // re-pinned for #1065 (Beri's native Hebrew read)
         "bernadotte_assassination:ea0f988df86957b3e56bf6cd0322f5d33adc927d969509e94ec67aa53e7ed0c5", // re-pinned for #1065 (Beri's native Hebrew read)
-        "burma_road_complete:f48054bb7720b93b582cae4e168f13595a4360ee62e91e12815df08de384e6e3",
+        "burma_road_complete:892409fa6ea058024cc8ea9ec82f2577f55d9a23e0de07106321a0f561b4d21a", // re-pinned for #1065 (owner's native read; flag removed in 8fbcb2aff)
         "clothing_rationing_1950:ce2d24a8a98ad86a1670e62094d18fca9da71b5cd11f437cd5314a09f4a1d562", // re-pinned for #1065 (Beri's native Hebrew read)
         "degania_defence:f915a42f050777ddffd7e7e26090b51c6cf922dade41a98fe7174b1c50a62c6e", // re-pinned for #2020 (owner-approved Hebrew wording, 30 October 2026), then for #1065 (Beri's native Hebrew read)
         "education_registration_1951:1d5cb0e4062dc61b787a7e1b375b3c85c9a1663bd4c3c73f3c9c6f9ee5ac4da3", // re-pinned for #1065 (Beri's native Hebrew read)
         "elections_1949:962bd8064e8b98d4919be9b4ff4fab68cb9bd3d15213ea43917caa4432f42116", // re-pinned for #1065 (Beri's native Hebrew read)
-        "first_new_yishuv:9edf9e0da02c2feefe11eb52aa056ee64af60a41ac3fa2c283ff976f33d0e0c8",
+        "first_new_yishuv:086b7b8ae0ffc7975268373e80b7f60cee1321f57c7c858884e527784b0aa7c7", // re-pinned for #1065 (owner's native read; flag removed in 8fbcb2aff)
         "first_truce:fb78d2e82393d5cfb19e56938965c7838c73426f5a23d053d612bc74f8010062", // re-pinned for #1065 (Beri's native Hebrew read)
         "forex_crisis_1951:53fee056940af610e16f7793d66d38f6470027a63d0c5968c0cc748eb1dc2af0", // re-pinned for #1065 (Beri's native Hebrew read)
         "frumkin_commission:c7bfb21991dc41bfcbaaf4778c47c5226913a8289ba208474c87128768ba622c", // re-pinned for #1065 (Beri's native Hebrew read)
@@ -382,7 +382,7 @@ public class Gdd03EventRulesTests
         "operation_horev:6e018d54d46b46676d5ab56bc2fcedbeffab23a00334f75b415aec1713507f51", // re-pinned for #1065 (Beri's native Hebrew read)
         "operation_yoav:3d2e9a9a4416a4277e4c17da1e442895bda562c238e6f459c45b6ab89a9133fe", // re-pinned for #1065 (Beri's native Hebrew read)
         "rafah_force_pressure:ffbb88f4e2169065fa07b111e6e67cea519c58e3cd684c0a2c092e830ff7d590", // re-pinned for #1065 (owner's native read; flag removed in 05b5777d9)
-        "railway_complete:2108338a93d663ec9cb06bcb474c1f1211cfff480f9ef0acaec9c758a4854a7c", // re-pinned for #1676 (person's fact-check of #1410, status draft -> fact-checked)
+        "railway_complete:9f21dd8129ea29f5bfe71999d4802fab0bcdc24dcd14c25b3f8b2cd9774ce15a", // re-pinned for #1065 (owner's native read; flag removed in 8fbcb2aff)
         "reparations_claim:5412e71f4f5a90a92bd86622eb1a169feee45f0ba2fe82c5ab40bd8f3d43cafd", // re-pinned for #1065 (Beri's native Hebrew read)
         "reparations_vote:a79521d61ec59aa72a581b6598ecfade18e8d1e52dc25cef083078b0665a13b3",
         "rhodes_talks:c5c9cdf906f75e2672e5eedaeadab7f224df96f666a3097813903b81ec06f4f6", // re-pinned for #1065 (Beri's native Hebrew read)
