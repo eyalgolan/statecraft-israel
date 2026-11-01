@@ -242,15 +242,16 @@ locations:
   lat: 31.2376769
   q: -14
   r: 31
-  # NOT YET RULED: the owner's 1 November 2026 ruling on #2113 ("Nirim, add it to the map (Recommended)") adds Nirim to
-  # the map but does not place it on the docs/locations.md roster. optional, the lower of the two priorities the schema
-  # allows, stands until the owner rules.
-  priority: optional
+  priority: optional # DESIGN VALUE: owner ruling on #2136, 1 November 2026, "Optional (Recommended)".
   marker: true # DESIGN VALUE: this record is a map marker.
   managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
   designated_site: false # DESIGN VALUE: this existing kibbutz is not a founding site.
   settlement_control_target: false # DESIGN VALUE: map inclusion does not add a capture target.
-  # No starting_control, as for nir_am: the opening control layer (control_1948_49.geojson) leaves this hex uncoloured.
+  # starting_control (owner ruling on #2136, 1 November 2026, "Israeli at the start (Recommended)"): Nirim repelled the
+  # Egyptian attack of 15 May 1948 and held to the end of the war (Palmach Heritage itemId=6201; Gvati; JTA 17-18 May
+  # 1948, all in sources below). control_1948_49.geojson pins its hex blue for 15 May - 10 June 1948 on the same sources.
+  starting_control: israeli
+  control_date: 1948-05-15
   sources:
   - { url: 'https://www.cbs.gov.il/he/publications/doclib/2019/ishuvim/bycode2024.xlsx', checked: 2026-11-01 } # coordinates: Nir Yitzhak (code 402)
   # Gvati, 100 Years of Settlement, vol. 2: the Egyptians attacked "קיבוץ נירים בדנגור (כיום יושב במקום קיבוץ ניר־יצחק)"
