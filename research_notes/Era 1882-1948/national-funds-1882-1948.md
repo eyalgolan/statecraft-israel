@@ -9,6 +9,10 @@ Keren Hayesod budgets (1924/25 to 1931/32 and 1945/46 to 1947/48) and for a year
 Every new passage is marked "(24 Oct)". Every source marked "(24 Oct)" in the Sources table was opened by an agent
 (Claude Code) on 24 October 2026, and none has been checked by a person yet.
 
+Follow-up of 1 November 2026, for the research part the owner opened on #83 that day (yearly income and spending):
+section 8 adds yearly figures from the JTA bulletins for 1936 to 1946 and the searches that found nothing. Every passage
+marked "(1 Nov)" was read by an agent (Claude Code) on 1 November 2026; a person's check is pending for all of them.
+
 ## Purpose
 
 Fix sourced values for §5.3 and §9 of [the Yishuv design](../../docs/superpowers/specs/2026-10-10-era-yishuv-design.md):
@@ -69,6 +73,8 @@ Every [V] in this note was an agent's reading on 2026-10-22, unless the tag give
 | Slutsky | Yehuda Slutsky, *Sefer Toldot HaHaganah*, Vol. III, *MiMaavak LeMilhama* (1973). Lending-only scan; [FTS] snippets only | https://archive.org/details/defensehistorybo0000yehu ; index volume https://archive.org/details/bookdefensehisto0003yehu |
 | en.wiki Haganah | English Wikipedia, "Haganah", revision 1381414127 (22 October 2026), the paragraph citing Perlmutter | https://en.wikipedia.org/w/index.php?title=Haganah&oldid=1381414127 |
 | en.wiki Palestine pound | English Wikipedia, "Palestine pound", revision 1379420491 (9 October 2026), section on the 1927 introduction | https://en.wikipedia.org/w/index.php?title=Palestine_pound&oldid=1379420491 |
+| JTA (1 Nov) | Jewish Telegraphic Agency archive: the items named in section 8 by date and slug, with its original daily bulletin PDF read by OCR where section 8 names the bulletin file or a dateline; items marked "dateline not read" were read as archive text only. Contemporaneous press, not the documents it reports | https://www.jta.org/archive/ + the slug; http://pdfs.jta.org/ + the bulletin file named in section 8 |
+| AR 1935 to AR 1937 (1 Nov) | the Mandate reports for 1935, 1936 and 1937 (Colonial No. 112/1936, 129/1937, 146/1938), text layer searched (section 8e) | https://archive.org/details/report-admin-palestine-1935 (and `-1936`, `-1937`) |
 | he.wiki Kofer | Hebrew Wikipedia, "כופר היישוב", revision 43640790 (23 July 2026) | https://he.wikipedia.org/w/index.php?oldid=43640790 |
 
 Not reachable from this environment, so cited nowhere as read: the *Palestine Gazette* (the National Library's
@@ -107,7 +113,7 @@ Collected" for selected years. These are three different measures; they are not 
 | Apr 1932 - Mar 1933 | Keren Hayesod income | £ 140,252 [S] (as JTA reported) (24 Oct) | JTA 21 Aug 1933 |
 | 5705 (1944/45) | Keren Hayesod income from contributions | £2,340,000, my reading (see 1c) | Kaplan p. 113-114 |
 | 1944-45 | Keren Hayesod annual expenditure | £P 3,874,000 [V] | Survey II p. 912 |
-| 1945/46, 1946/47, 1947/48 | any Jewish Agency or Keren Hayesod budget in pounds | [GAP] (24 Oct) Searched again and not found; what was read, and the dollar and all-bodies figures that exist, are in 1f | |
+| 1945/46, 1946/47, 1947/48 | any Jewish Agency or Keren Hayesod budget in pounds | [GAP] (24 Oct) Searched again and not found; what was read, and the dollar and all-bodies figures that exist, are in 1f. (1 Nov) Still not found in pounds; the Agency's budgets of 1944 to 1947 in dollars are in 8c | |
 
 Table rows checked:
 
@@ -362,7 +368,7 @@ rows above. AR 1925 was searched and has no total. It has two partial figures: �
 | Budget committee of the XXII Congress, December 1946 | "$62,000,000 budget for the coming year", "more than double the $24,000,000 of the current year" [S] (as JTA reported) | JTA 24 Dec 1946 (`zionist-congress-formulates-political-policy-insists-on-jewish-commonwealth`) |
 | United Palestine Appeal and its agencies, January to July 1947 | spent $ 39,835,765 [S] (as JTA reported); Jewish Agency immigration and refugee relief $ 11,315,317; agricultural development $ 5,646,782 | JTA 28 Aug 1947 (`palestine-appeal-agencies-spent-nearly-40000000-in-seven-months`) |
 | Jewish Agency "security and military organizations" | $ 3,808,697 in 1946 and $ 6,075,000 in 1947 [S], no source given | Black Paper PDF p. 6 |
-| Jewish Agency budget in pounds, 1945/46, 1946/47, 1947/48 | [GAP] | |
+| Jewish Agency budget in pounds, 1945/46, 1946/47, 1947/48 | [GAP] (1 Nov: searched again, not found in pounds; dollar figures in 8c) | |
 
 - (24 Oct) UNSCOP 17th meeting (HTML, no page numbers): "The total expenditure of the main Jewish bodies for the
   period 1917 to October 1945 was £45 million. From October 1945 to October 1946 the same bodies spent in Palestine an
@@ -448,6 +454,7 @@ content work needs a value that this note does not have: [GAP].
   29,892,961), so this note uses only the single-fund columns.
 - A yearly JNF series for 1918 to 1948 was not found in an open source: [GAP] for the years not listed. (24 Oct)
   Narrowed: six income figures from Ussishkin's reports to the Congresses are in 2c; the series is still open.
+  (1 Nov) Narrowed again: JNF income for 5699, 1940 and 1941 in pounds, and partial years to 1947 in dollars, are in 8a.
 
 ### 2c. JNF income from the Congress reports (24 Oct)
 
@@ -491,7 +498,7 @@ names.
 | Emergency tax (מס חירום), direct tax | imposed in 1940 [S] | he.wiki Kofer |
 | Mobilisation appeal (מגבית ההתגייסות) | imposed in 1942 [S] | he.wiki Kofer |
 | Abolished | with the establishment of the state [S] | he.wiki Kofer |
-| Income in any year after 5700 | [GAP] | |
+| Income in any year after 5700 | [GAP] (1 Nov: £ 44,000 for 5701, my reading of the year, [S], and $ 250,000 for August and September 1938 [S], in 8d; later years still open) | |
 
 - AR 1938 p. 33 adds that the collections "were actively opposed by the Revisionists, on the grounds that members of
   their organization had not been allowed to co-operate in the measures taken for the defence of Jewish settlements".
@@ -513,7 +520,7 @@ names.
 | 1946 | [C] **"less than £400,000"** (Perlmutter 1969) [FTS] / £400,000 (en.wiki Haganah, "Research by Amos Perlmutter") [S] | |
 | October 1947 | £3.3 million [FTS] | Perlmutter 1969 |
 | A year not given | "Haganah's total budget of £230,000", of which the Palmach got £23,000 [FTS] | Perlmutter 1969 |
-| Any other year | [GAP] | |
+| Any other year | [GAP] (1 Nov: searched again in JTA, not found; 8e) | |
 
 - Perlmutter 1969, as the search index shows it: "In 1946 the budget of the Haganah was less than £400,000. The total
   membership of Haganah was around 45,000 or just 7% of the population of the Yishuv." The page was not seen. Prefer
@@ -631,3 +638,209 @@ Population per head for any of these is in the population note
 Leads not used, for whoever continues: Slutsky Vol. III, pages 1272-1274 (the Haganah budget table); Perlmutter
 1969, section "Mobilization of Men and Resources"; Gross and Metzer (1978); the *Palestine Gazette* Nos. 193, 196, 205
 and 206 (1927-1928); the Jewish Agency's reports to the Zionist Congresses of 1946 and after.
+
+## 8. Yearly income and spending from the JTA bulletins, 1936 to 1947 (1 Nov)
+
+Added on 1 November 2026 for the research part of #83 (yearly income and spending of the national funds). Every item
+in the tables below was opened by an agent (Claude Code) on 1 November 2026 in the JTA archive, and none has been
+checked by a person yet. JTA is contemporaneous press, so every value is [S] (as JTA reported), the way 1a and 1e tag
+it. Where a row or bullet names a bulletin file or a dateline, the original daily bulletin PDF (the "See Original Daily
+Bulletin" link, `http://pdfs.jta.org/<year>/<file>.pdf`) was read by OCR, and the event date comes from that dateline;
+items marked "dateline not read" were read as archive text only. The search results in 8e were read as titles unless
+8e says an item was opened. Where a figure turns on a 3 or a 5 the
+bulletin's page image was looked at, because the OCR of these typewritten bulletins reads 3 as 5 (it read "£625,000"
+and "&5,500,000" where the page image of the 28 November 1940 bulletin shows £623,000 and £3,500,000). No dollar figure
+is turned into pounds here.
+
+### 8a. Jewish National Fund income by year
+
+| Period | Measure | Amount | Source |
+|---|---|---|---|
+| fiscal year ended September 1936 | JNF income raised in Palestine only | $ 193,000 [S] | JTA 29 Oct 1936, dateline Jerusalem, 28 Oct |
+| year ended 30 September 1939 (5699) | JNF net income, after the overseas offices' expenses; "the highest in its history" | £ 560,000 [S] (United States £ 361,000, "64 per cent") | JTA 1 Dec 1939, "Jerusalem (JTA-By Mail)", no day |
+| "the past year", announced 10 Dec 1940 | "the record J.N.F. world income" | £ 608,000 [S] (United States 59 per cent, Palestine 6 per cent) | JTA 11 Dec 1940, dateline Jerusalem, 10 Dec |
+| "the past year", announced 28 Dec 1941 | JNF income, "a new yearly high" | £ 620,000 [S] ("approximately $2,500,000") | JTA 29 Dec 1941, dateline London, 28 Dec |
+| "the first quarter of this fiscal year, beginning last October" (October to December 1941, derived) | JNF income | $ 784,000 [S] | JTA 20 Feb 1942 (dateline not read) |
+| eleven months to 31 Aug 1942 | income received by the JNF's world head office | "More than two-and-a-quarter million dollars" [S] | JTA 25 Sep 1942 (dateline not read) |
+| nine months to June 1943 | JNF income, "record-breaking" | "more than $3,000,000" [S] | JTA 25 Jul 1943 (dateline not read) |
+| October 1943 to August 1944 ("the last ten months" as printed) | JNF income | "more than $5,600,000" [S], 61 per cent above the same months a year earlier | JTA 24 Aug 1944 (dateline not read) |
+| Oct 1946 - Jan 1947 (as printed: "the fiscal quarter from Oct. 1946-Jan. 1947") | JNF income from all sources | "more than $5,300,000" [S], 60 per cent above the same quarter a year earlier | JTA 26 Feb 1947 (dateline not read) |
+
+- (1 Nov) JTA 1 Dec 1939 (slug `record-j-n-f-income-a%c2%a4560000-reported-for-past-year`; bulletin
+  `1939/1939-12-01_098.pdf`, page image read): "The Jewish National Fund had a net income of £560,000 for the year ended
+  September 30, 1939, the highest in its history ... The sum allows for deduction of expenditure by overseas offices."
+  361,000 / 560,000 = 64.5 per cent (derived), which fits the printed "64 per cent". The same item gives 51,892 dunums
+  bought "during the recently-ended Jewish year 5699" and "Total National Fund holdings at the end of the year were
+  471,000 dunums". Cross-check with 2a (derived, not a finding): AR 1938's 420,000 dunums at the end of 1938 plus the
+  51,892 bought in 5699 is 471,892; Survey I Table 4 prints 463,500 for 1939. The three dates differ, so none is
+  preferred.
+- (1 Nov) JTA 11 Dec 1940 (`u-s-provided-59-of-j-n-f-income-in-1940`; bulletin `1940/1940-12-11_004.pdf`): "The share of
+  the United States in the record J.N.F. world income of £608,000 amounted to 59 per cent." The twelve months are not
+  named. Leasehold income rose "from an average £10,000 annually to £12,000 in the past year".
+- (1 Nov) JTA 29 Dec 1941 (`jnf-received-2500000-during-1941-for-land-purchases-in-palestine`; bulletin
+  `1941/1941-12-29_314.pdf`): "The income received by the Jewish National Fund in Palestine during the past year reached
+  a new yearly high of L620,000, approximately $2,500,000" (as the archive text prints it), announced by the London JNF
+  office. My reading: the calendar year 1941, because the same item speaks of "The 1941 purchases"; the item does not
+  say. It gives the JNF's holdings after those purchases as 561,429 dunums, against 532,900 for 1941 in Survey I Table
+  4 (2a); the dates within the year are not given, so neither is preferred.
+- (1 Nov) The dollar items of 1942 to 1947 are partial years and are kept as printed. JTA 20 Feb 1942
+  (`zionist-budget-of-2344000-is-announced-jnf-income-is-increasing`): "the income of the JNF for the first quarter of
+  this fiscal year, beginning last October, was $784,000". JTA 25 Sep 1942
+  (`u-s-jews-gave-55-of-total-jnf-income-palestine-conference-told`), JTA 25 Jul 1943
+  (`u-s-jews-contribute-sixty-percent-of-record-j-n-f-collections`), JTA 24 Aug 1944
+  (`american-jews-contributed-sixty-percent-of-entire-income-of-jewish-national-fund`; "The income of the JNF from
+  October 1943 till August 1944 amounted to more than $5,600,000") and JTA 26 Feb 1947
+  (`j-n-f-income-for-last-quarter-exceeds-5000-000-60-percent-higher-than-last-year`). Their bulletin datelines were not
+  read. The 1943 and 1944 items also give holdings of 652,293 and 704,859 dunums (2a has 758,200 for 1944).
+- (1 Nov) Section 2c gives JNF income from Ussishkin's Congress reports up to 1935; these rows carry it on from 1936.
+  The yearly series is still not complete: 1935/36 (whole world), 1936/37, 1937/38 and every fiscal year after 1941 in
+  pounds were not found.
+
+### 8b. Keren Hayesod income and the Jewish Agency's spending, 1936 to 1940
+
+| Period | Measure | Amount | Source |
+|---|---|---|---|
+| fiscal year ended 1 Oct 1936 | Jewish Agency spending on its settlement activities | $ 2,500,000 [S]; items: agricultural colonization $ 1,148,920, immigration and training $ 290,000, housing and public works $ 255,000, national institutions and security $ 211,000, education and culture $ 140,000, trade and industry $ 105,000, and $ 175,000 more by the Foundation Fund for German Jews | JTA 6 Jan 1937 (dateline not read) |
+| the Hebrew year ended September 1938 (5698) | Keren Hayesod "net proceeds received in Palestine from the Diaspora" | "nearly £500,000 ($2,500,000)" [S] | JTA 26 Oct 1938, dateline Jerusalem, 25 Oct |
+| 1938 | Keren Hayesod net income | £ 477,386 [S] | JTA 8 Mar 1940, dateline Jerusalem, 7 Mar |
+| 1939 | Keren Hayesod net income | £ 627,300 [S] | JTA 8 Mar 1940, dateline Jerusalem, 7 Mar |
+| "last year", announced 27 Nov 1940 | Keren Hayesod net collections | "more than £623,000" [S] (United States 62 1/2 per cent) | JTA 28 Nov 1940, dateline Jerusalem, 27 Nov |
+| the same year | Jewish Agency: received from Keren Hayesod / spent / deficit | £ 500,000 / "approximately £2,000,000" / £ 200,000 [S] | JTA 28 Nov 1940 |
+| "the next year", as of 27 Nov 1940 | Jewish Agency minimum budget | "approximately £3,500,000" [S] | JTA 28 Nov 1940 |
+
+- (1 Nov) JTA 8 Mar 1940 (`foundation-fund-reports-income-increase-in-1939`; bulletin `1940/1940-03-08_178.pdf`,
+  page image read): "The Palestine Foundation Fund announced today that its net income in 1939 was £627,300 as compared
+  to £477,386 in the previous year." The rise is 149,914, or 31.4 per cent (derived). These are calendar years as
+  printed (my reading: calendar years, from "in 1939"); 1b's Kaplan figures (1,315,000 for 1937/38 and 1,758,000 for
+  1938/39) are Jewish years and, by 1b's reading, cover two funds, so nothing is subtracted from them.
+- (1 Nov) JTA 26 Oct 1938 (`palestine-jews-gave-5-000-000-to-funds`; bulletin `1938/1938-10-26_171.pdf`): Leib Jaffe,
+  director of the Palestine Foundation Fund, "stated that the Foundation Fund's net proceeds received in Palestine from
+  the Diaspora in the Hebrew year just past totalled nearly £500,000 ($2,500,000)" (the archive text prints "Â£"). The
+  same item: "Palestine Jewry has contributed £1,000,000 ($5,000,000) since the outbreak of disorders in the spring of
+  1936 to subscription campaigns for support of Jewish national funds and institutions". The 5698 figure and the
+  calendar-year 477,386 for 1938 cover different twelve months and, my reading, different receipts, so both are kept.
+- (1 Nov) JTA 28 Nov 1940 (`keren-hayesod-collected-l623000-in-past-year`; bulletin `1940/1940-11-28_193.pdf`, page
+  image read): "The Palestine Foundation Fund (Keren Hayesod) collected more than £623,000 net last year", Director Leib
+  Jaffe at a press conference; then "Eliezer Kaplan, treasurer of the Jewish Agency, reported that while the Agency had
+  received only £500,000 from the Keren Hayesod, it had spent approximately £2,000,000, concluding the year with a
+  £200,000 deficit", and "The Agency's minimum budget for the next year is approximately £3,500,000". The year is not
+  named; my reading is the Jewish year 5700 (October 1939 to September 1940), which the item does not say. The item
+  does not say where the other £1,500,000 of spending came from (2,000,000 - 500,000, derived).
+- (1 Nov) JTA 6 Jan 1937 (`jewish-agency-spent-2500000-for-palestine-in-year`): "The Jewish Agency for Palestine
+  expended $2,500,000 for its settlement activities in the fiscal year ending Oct. 1, 1936", from a report of the
+  Palestine Foundation Fund. The seven dollar items listed sum to $ 2,324,920 (derived); the article does not list the
+  rest. It also names $ 425,000 from the Council for German Jewry, outside the Agency's own collections.
+
+### 8c. The Jewish Agency's budget, 1944 to 1947, in dollars only
+
+These narrow the [GAP] for a budget in pounds in 1a and 1f; they do not close it, because every figure is printed in
+dollars and no rate is given.
+
+| Year | Measure | Amount | Source |
+|---|---|---|---|
+| "the coming fiscal period", reported 17 Feb 1944 | Jewish Agency budget | $ 8,400,000 [S] ($ 4,400,000 for normal activities, $ 4,000,000 for post-war reconstruction) | JTA 18 Feb 1944, dateline 17 Feb (the place is not legible in the OCR) |
+| "this year", as of April 1944 | Jewish Agency budget | $ 9,315,000 [S], "more than $750,000 a month"; spent in January and February 1944 $ 1,914,932 | JTA 13 Apr 1944 (dateline not read) |
+| "the current year", as of 25 Feb 1945 | Jewish Agency requirement | $ 16,000,000 [S] (of it a $ 2,700,000 loan from Lloyds Bank) | JTA 25 Feb 1945, dateline London, 25 Feb |
+| fiscal year ended September 1945 | Jewish Agency spending | "more than $16,000,000" [S] | JTA 2 Jun 1946 (the item was not found in the bulletin OCR; dateline not read) |
+| year ended 30 Sep 1945 | spending of the Jewish Agency, Keren Hayesod and JNF together | $ 31,104,146 [S] | JTA 14 Dec 1945 (dateline not read) |
+| "next year", submitted 17 Dec 1946 | budget Kaplan submitted to the XXII Congress finance commission | $ 60,000,000 [S]; [C] with the $ 62,000,000 of JTA 24 Dec 1946 in 1f; the items do not say whether they are the same budget | JTA 19 Dec 1946, dateline Basle, 18 Dec ("last night") |
+
+- (1 Nov) JTA 18 Feb 1944 (`jewish-agency-sets-aside-half-of-budget-for-post-war-reconstruction-needs`), Kaplan at the
+  Zionist Actions Committee: "The total budget amounts to $8,400,000 of which $4,400,000 will go for normal activities."
+  (4,400,000 + 4,000,000 = 8,400,000, derived.) JTA 13 Apr 1944
+  (`jewish-agency-and-j-n-f-spend-3000000-in-two-months-obtain-1200000-loan`) gives a different figure for what is likely
+  the same year: "the Jewish Agency budget calls for $9,315,000 this year". [C]: 8,400,000 against 9,315,000; the
+  items do not say whether they mean the same budget, and neither is preferred.
+- (1 Nov) JTA 25 Feb 1945 (`jewish-agency-needs-16000000-in-current-year-expects-two-thirds-from-u-s-jews`): "The
+  Jewish Agency for Palestine will require $16,000,000 during the current year", Kaplan at a press conference. JTA 2 Jun
+  1946 (`jewish-agency-spent-16000000-during-1945-mostly-on-immigration-and-colonization`): "The expenditures of the
+  Jewish Agency for the fiscal year ending September 1945 totalled more than $16,000,000", from Kaplan's report to the
+  Inner Zionist Actions Committee. Kaplan's own 1946 figures in 1c (Keren Hayesod income £2,340,000 in 5705) are in
+  pounds, and no rate is used here to compare them.
+- (1 Nov) JTA 14 Dec 1945 (`jewish-agency-keren-hayesod-and-j-n-f-spent-31000000-in-1945-report-reveals`): the three
+  bodies' "expenditures ... totalled $31,104,146 in the year ending Sept. 30, 1945", announced by the United Palestine
+  Appeal's chairman. It is a third measure beside UNSCOP's all-bodies figures in 1f.
+- (1 Nov) JTA 19 Dec 1946 (`large-scale-economic-program-to-absorb-200000-immigrants-outlined-to-congress`; bulletin
+  `1946/1946-12-19_289.pdf`): Kaplan "submitted a budget of $60,000,000 for next year" to the Congress finance
+  commission "last night", that is 17 December 1946 by the dateline of 18 December. 1f's JTA 24 Dec 1946 has "$62,000,000
+  budget for the coming year" from the budget committee; both are kept.
+
+### 8d. Kofer HaYishuv, the emergency taxes and the Yishuv's internal levies
+
+The date of Kofer HaYishuv's founding and the contemporary wording are in
+`research_notes/Era 1882-1948/model-policies-1882-1948.md`, section 4 (and its section 13, item 4); they are not
+repeated. The Vaad Leumi's budget votes of 1940 and 1943 are in `research_notes/Era 1882-1948/assemblies-1920-48.md`,
+section 6; the rows below add only the amounts.
+
+| Year | Measure | Amount | Source |
+|---|---|---|---|
+| August and September 1938 | Kofer HaYishuv, "Zionist defense fund": raised and spent | $ 250,000 [S]; budget for "the remainder of the year" a further $ 400,000 | JTA 26 Oct 1938, dateline Jerusalem, 25 Oct |
+| the Jewish year to September 1941 (5701, my reading) | Kofer HaYishuv yield, "the voluntary defense tax" | £ 44,000 [S], "all of which has been spent to strengthen Palestine's defense" | JTA 24 Sep 1941 (Vaad Leumi's yearly review) |
+| "the coming year" from September 1940 | Vaad Leumi budget, income / expenditure as printed | £ 480,000 / £ 170,000 [S] | JTA 26 Sep 1940, dateline Jerusalem, 25 Sep (page image read) |
+| the same | of the income: regular taxes / emergency taxes / Government grants / Jewish Agency | £ 40,000 / £ 120,000 / £ 130,000 / £ 54,000 [S] | the same |
+| "the coming year" from November 1942 | a "Jewish national tax" the Keren Hayesod was to raise in Palestine | "approximately $400,000" [S] | JTA 22 Nov 1942, dateline Tel Aviv, 20 Nov |
+
+- (1 Nov) JTA 26 Oct 1938 (bulletin `1938/1938-10-26_171.pdf`, page 4): "Mayor Israel Rokach of Tel Aviv announced that
+  the Kofer Hayishub, Zionist defense fund, had raised and spent $250,000 during August and September. The budget for
+  the remainder of the year calls for expenditure of an additional $400,000 to equip and maintain volunteers, improve
+  defenses and build roads." The bulletin prints dollars, and no pound figure is given. My reading: these are the fund's
+  first months after the Vaad Leumi's decision of 1938 (its date, 24 July or 24 June, is a [C] in
+  `model-policies-1882-1948.md` section 4); the item says only "during August and September". The [FTS]
+  152,000 £P for 5699 in section 3 is a different period and is not compared with them.
+- (1 Nov) JTA 24 Sep 1941 (`palestine-jewish-population-reaches-half-million-mark`; bulletin
+  `1941/1941-09-24_237.pdf`): "The Kofer Hayishub, the voluntary defense tax, provided £44,000 this year" (the archive
+  text prints "Â£44,000"), from the Vaad Leumi's review of the year at the Jewish New Year. The OCR of the dateline reads
+  "JERUSALEM, Sept. 28", which is after the bulletin date of 24 September; my reading is 23 September, not confirmed. "This
+  year" is the year ending at the New Year of September 1941 (my reading). With the [FTS] 152,000 for 5699 and 57,000
+  for 5700 in section 3, this is the first yield after 5700 found, so section 3's "Income in any year after 5700" is
+  narrowed to the years after 5701.
+- (1 Nov) JTA 26 Sep 1940 (`palestine-jewish-council-reaffirms-support-of-britain-adopts-large-budget`; bulletin
+  `1940/1940-09-26_145.pdf`, page image read): the Assembly "today adopted a budget for the coming year
+  providing for £480,000 income and £170,000 expenditures for Jewish security, health, educational, social service and
+  other activities. The anticipated income includes £40,000 in regular taxes, £120,000 in emergency taxes, £130,000 in
+  Government grants, and £54,000 from the Jewish Agency for Palestine. Expenditures include £180,000 for education,
+  £175,000 for social welfare, £23,000 for passive defense." `assemblies-1920-48.md` section 6 set these amounts aside
+  because its text copy was garbled ("1480,000", "1170,000"); the page image prints them clearly with the pound sign.
+  The four income items sum to 344,000 of the 480,000 (derived). The three expenditure items alone sum to 378,000
+  (derived), more than the printed 170,000; the page does not explain it, and the 170,000 is kept as printed. The last
+  digit of the passive defence figure is hard to read on the image (23,000 or 25,000). The £120,000 "in emergency taxes"
+  is a budgeted figure for the year the emergency tax was imposed (1940 in section 3, he.wiki), not a yield.
+- (1 Nov) JTA 22 Nov 1942 (`palestine-jews-asked-to-contribute-400000-as-jewish-national-tax`; bulletin
+  `1942/1942-11-22_269.pdf`): "Palestine Jews will have to pay a 'Jewish national tax' of approximately $400,000 during
+  the coming year in accordance with a resolution adopted today at the ninth Keren Hayesod conference"; "The Keren
+  Hayesod will raise this amount in Palestine to finance the various activities of the Yishuv's institutions". The
+  bulletin prints dollars. The item does not name the mobilisation appeal of 1942 (section 3), and the two are not
+  equated here.
+- (1 Nov) The 1943/44 Vaad Leumi budget ($ 680,000 approved, $ 7,400,000 asked, [C]) is in `assemblies-1920-48.md`
+  section 6 and is not repeated.
+
+### 8e. Searched on 1 November and not found
+
+JTA archive search (`https://www.jta.org/wp-json/wp/v2/archive?search=<query>&after=<date>&before=<date>`), run 1
+November 2026; counts are the X-WP-Total the server returned, and titles were read from the newest down:
+
+- `Kofer`, 1 June 1939 to 1 June 1948: 10 items, all titles read; three opened (14 November 1940, Rokach resigns as
+  president of the Kofer Hayishub; 23 May 1940, a fund-raising drive with the Kofer presidium; 24 September 1941, used
+  above); only the last has an amount. `Kofer Hayishuv`, 1 January 1935 to 1 June 1948: 11 items, all titles read; one
+  more opened (26 October 1938, used above). The 2 March 1939 item is the lead already recorded in
+  `model-policies-1882-1948.md` section 13, item 4. `Hayishub`, 1 June 1938 to 1 June 1948: 82 items, the first 24 titles read, none about a Kofer yield.
+- `emergency tax`, 1 June 1938 to 1 June 1948: 59 items, the first 24 titles read; `Yishuv tax`: 19 items, all titles
+  read, two used above (22 November 1942; the 31 March 1943 item is in `assemblies-1920-48.md`). No yield of the
+  emergency tax or of the mobilisation appeal was found.
+- `Haganah budget`, 1 January 1939 to 1 June 1948: 42 items, the first 17 titles read; the 12 August 1947 item on the
+  Haganah (`the-haganah-jewish-defense-organization-today`) was opened and gives no budget. No Haganah budget for
+  another year was found, so section 4's [GAP] stays.
+- `Kaplan budget`, by year from 1 June 1945 to 1 June 1948: 3, 7 and 5 items, all titles read; only the 19 December
+  1946 item has an Agency budget, in dollars (8c). No Jewish Agency budget in pounds for 1945/46 to 1947/48 was found.
+- `National Fund income`, 15 September to 31 January in each of 1942/43 to 1947/48: 3, 2, 1, 2, 3 and 3 items, all
+  titles read; only the 24 January 1947 title (`jewish-national-fund-raised-nearly-4000000-in-first-quarter-of-hebrew-year`) is a JNF income item, and it was
+  not opened.
+- The Mandate reports for 1935, 1936 and 1937 (`https://archive.org/details/report-admin-palestine-1935`, `-1936`,
+  `-1937`, text layer searched for Keren Hayesod, Keren Kayemeth, Jewish National Fund, Zionist funds, Kofer and
+  Redemption Fund): AR 1935, on the page before the text layer's page marker 202 (page 201, my reading), repeats that "The total
+  receipts of the various Zionist funds in 1934 approximated £P.740,000" [V, agent read 1 November 2026; a person's
+  check pending] (text layer; 1a has 739,300 from AR 1934); AR 1936 has no such passage; the AR 1937 file (which also holds the 1938 report) has
+  no total of Zionist-fund receipts. AR 1937, chapter "Jewish National Home", paragraph 4 (on the page the text layer numbers 50), has a land figure for 2a: in 1937 "13,507 dunums were purchased by the Jewish
+  National Fund, which increased the land in its ownership up to 385,000 dunums or about 30 per cent. of the total area
+  in Jewish ownership" [V, agent read 1 November 2026; a person's check pending] (text layer; the page image was not
+  looked at). No yearly fund total for 1935 to 1937 was found there.
