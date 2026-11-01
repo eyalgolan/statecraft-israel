@@ -593,7 +593,10 @@ def test_hex_with_a_codeless_settlement_fails_closed_naming_hex_and_ids(monkeypa
     with pytest.raises(SystemExit) as exc:
         cb.bake(source, HEXES, None, None)
     text = str(exc.value)
-    assert text.startswith("settlements in hex (-16, 35) disagree about its control ("), text
+    # The hex from the grid, not a literal, so a re-grid (#1796, 4.4 km) cannot stale it; both points must share it.
+    qr = cb.hexgrid.settlement_hex(lon_a, lat_a, HEXES)
+    assert cb.hexgrid.settlement_hex(lon_b, lat_a, HEXES) == qr
+    assert text.startswith(f"settlements in hex ({qr[0]}, {qr[1]}) disagree about its control ("), text
     assert "test-in" in text and "test-out" in text, text
 
 
