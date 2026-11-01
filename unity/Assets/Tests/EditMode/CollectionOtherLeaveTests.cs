@@ -98,6 +98,35 @@ public class CollectionOtherLeaveTests
             "a late answer after teardown creates no instance");
         Assert.AreEqual(acquired, released);
     }
+    /// <summary>#2099, as #2046 for the camp tents: an edit-mode render callback never acquires or instantiates the special
+    /// buildings mid-render. A change of residency (here the first camera after the layer was disabled and enabled again) only
+    /// marks the layer, and LateUpdate applies it, as in play mode; a direct Choose (no render) still applies it at once.</summary>
+    [Test] public void AnEditModeRenderCallbackDefersTheSpecialBuildingsToLateUpdate()
+    {
+        Assert.IsFalse(Application.isPlaying, "the edit-mode render path");
+        var layer = (SpecialBuildingModels)MapLayer(true);
+        var go = new GameObject("TEST ONLY camera"); var camera = go.AddComponent<Camera>();
+        go.transform.position = new Vector3(0, 10000, 0); go.transform.rotation = Quaternion.Euler(90, 0, 0);
+        try
+        {
+            Assert.Greater(layer.transform.childCount, 0, "precondition: the map-wide originals stand");
+            layer.enabled = false; layer.enabled = true;
+            Assert.AreEqual(0, layer.transform.childCount, "precondition: disabling the layer retires its originals");
+            int before = acquired;
+            layer.ChooseCore(camera, inRender: true);
+            Assert.AreEqual(before, acquired, "nothing is acquired inside the render callback");
+            Assert.AreEqual(0, layer.transform.childCount, "and nothing is instantiated there");
+            typeof(SpecialBuildingModels).GetMethod("LateUpdate", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(layer, null);
+            Assert.Greater(acquired, before, "LateUpdate acquires the originals");
+            Assert.Greater(layer.transform.childCount, 0, "and places them");
+
+            layer.enabled = false; layer.enabled = true; before = acquired;
+            layer.Choose(default, camera);
+            Assert.Greater(acquired, before, "a direct call (no render) acquires at once");
+            Assert.Greater(layer.transform.childCount, 0, "and places them at once");
+        }
+        finally { Object.DestroyImmediate(go); }
+    }
     GameObject Piece(string name)
     {
         var piece = GameObject.CreatePrimitive(PrimitiveType.Cube); piece.name = name;

@@ -524,6 +524,42 @@ public class TownLandmarksTests
         CollectionAssert.Contains(t.Missing, "tel_aviv");
     }
 
+    /// <summary>#2099, as #2046 for the camp tents: an edit-mode render callback never acquires, instantiates or destroys the
+    /// whole-town landmarks mid-render. A change (here the Towns.Enabled kill switch) waits for LateUpdate, as in play mode; a
+    /// direct Choose (no render) still applies it at once.</summary>
+    [Test]
+    public void AnEditModeRenderCallbackDefersTheWholeTownsToLateUpdate()
+    {
+        Assert.IsFalse(Application.isPlaying, "the edit-mode render path");
+        var map = OpenMap();
+        // Made after OpenScene(Single), which destroys every object of the scene it replaces.
+        var prefab = GameObject.CreatePrimitive(PrimitiveType.Cube); prefab.name = "fake original town";
+        var camera = new GameObject("deferred whole-town camera").AddComponent<Camera>();
+        try
+        {
+            TownLandmarks.Request = (id, detail, done) => { asked.Add((id, detail, done)); done(prefab); };
+            var t = TownLandmarks.ShowAt(map, new DateTime(1949, 1, 1), Array.Empty<Placement>(), ContentLoader.Load(Statecraft.Game.Paths.Content))!;
+            Assert.Greater(t.Placed.Count, 0, "precondition: the whole towns stand");
+            var first = t.transform.GetChild(0).gameObject;
+            camera.transform.SetPositionAndRotation(new Vector3(0f, 60000f, 0f), Quaternion.Euler(90f, 0f, 0f));
+            var enabled = typeof(ProductionResidency.TownPolicy).GetField("Enabled", ResidencyFlags)!;
+
+            enabled.SetValue(map.Residency.Towns, false);
+            t.ChooseCore(camera, inRender: true);
+            Assert.IsTrue(first != null, "nothing is destroyed inside the render callback");
+            Assert.Greater(t.Placed.Count, 0, "the whole towns still stand");
+            ResidencyCall(t, typeof(TownLandmarks), "LateUpdate");
+            Assert.IsTrue(first == null, "LateUpdate retires the whole towns");
+            Assert.AreEqual(0, t.Placed.Count, "and none stands");
+
+            enabled.SetValue(map.Residency.Towns, true); int before = asked.Count;
+            t.Choose(default, camera);
+            Assert.Greater(asked.Count, before, "a direct call (no render) requests at once");
+            Assert.Greater(t.Placed.Count, 0, "and places them at once");
+        }
+        finally { Object.DestroyImmediate(camera.gameObject); Object.DestroyImmediate(prefab); }
+    }
+
     const System.Reflection.BindingFlags ResidencyFlags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic;
     static object? ResidencyCall(object? owner, Type type, string method, params object?[] args)
     {

@@ -1139,4 +1139,37 @@ public class TownModelResidencyTests
         Assert.IsFalse(f.layer.AdmitsTown("p", camera), "4.5 km outside, not admitted before: beyond the 3 km admission margin");
         Assert.AreEqual(1, f.Requests[kind], "no new request outside the admission margin");
     }
+
+    /// <summary>#2099, as #2046 for the camp tents: an edit-mode render callback (Submit) never acquires or retires building
+    /// models mid-render. A change of demand only marks the layer, and LateUpdate reconciles it, as in play mode; a direct
+    /// PrepareCamera (no render) still reconciles at once.</summary>
+    [Test]
+    public void AnEditModeRenderCallbackDefersTheTownModelsToLateUpdate()
+    {
+        Assert.IsFalse(Application.isPlaying, "the edit-mode render path");
+        const float HeightM = 10_000f, HalfM = 50f;   // a straight-down 10 km view; the place is a 100 m box at the origin
+        using var f = new ViewFixture(new[] { ViewFixture.Item("p", TownModel.B01WhiteCity, 0f, 0f) }, new[] { "p" },
+            Array.Empty<(string, string[])>());
+        string kind = TownModels.Ids[(int)TownModel.B01WhiteCity];
+        var lateUpdate = typeof(TownModelLayer).GetMethod("LateUpdate", Flags)!;
+        var camera = f.Camera(new Vector3(0f, HeightM, 0f), Quaternion.LookRotation(Vector3.down, Vector3.forward));
+
+        f.layer.PrepareCameraCore(camera, inRender: true);
+        Assert.IsTrue(f.layer.AdmitsTown("p", camera), "the close camera admits the place");
+        Assert.IsFalse(f.Requests.ContainsKey(kind), "but nothing is acquired inside the render callback");
+        lateUpdate.Invoke(f.layer, null);
+        Assert.AreEqual(1, f.Requests[kind], "LateUpdate acquires the kind");
+
+        // 7.5 km beyond the view's right edge: past the 6 km keep (AViewAdmittedPlaceStaysToSixKmOutsideTheViewAndNotBeyond).
+        camera.transform.position = new Vector3(-HalfM - HeightM * Mathf.Tan(30f * Mathf.Deg2Rad) - 7500f, HeightM, 0f);
+        f.layer.PrepareCameraCore(camera, inRender: true); f.layer.RetireReleasedModels();
+        Assert.IsFalse(f.layer.AdmitsTown("p", camera), "the camera no longer admits the place");
+        Assert.IsFalse(f.Releases.ContainsKey(kind), "but nothing is released inside the render callback");
+        lateUpdate.Invoke(f.layer, null); f.layer.RetireReleasedModels();
+        Assert.AreEqual(1, f.Releases[kind], "LateUpdate releases the kind");
+
+        camera.transform.position = new Vector3(0f, HeightM, 0f);
+        f.layer.PrepareCamera(camera);
+        Assert.AreEqual(2, f.Requests[kind], "a direct call (no render) acquires at once");
+    }
 }

@@ -258,7 +258,7 @@ namespace Statecraft.Game.Map.Collection
             if (map != null) Statecraft.Game.Map.Units.UnitShowcase.HideTrees(map, Name, Array.Empty<(Vector2, float)>());
         }
         bool residencyDirty;
-        void ObserveResidency(Camera camera)
+        void ObserveResidency(Camera camera, bool inRender)
         {
             var before = residencyView!.Keys;
             residencyView.Observe(camera, Anchors(), Time.frameCount);
@@ -372,16 +372,21 @@ namespace Statecraft.Game.Map.Collection
         /// TownModelLayer.CloseExitM.</summary>
         public static bool CloseAt(float distance, bool? was) =>
             was == true ? distance <= Statecraft.Game.Map.Kits.TownModelLayer.CloseExitM : distance <= Statecraft.Game.Map.Kits.TownModelLayer.CloseEnterM;
-        void OnEnable() => RenderPipelineManager.beginCameraRendering += Choose;
+        void OnEnable() => RenderPipelineManager.beginCameraRendering += OnBeginCameraRendering;
         void OnDisable()
         {
-            RenderPipelineManager.beginCameraRendering -= Choose;
+            RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
             if (residencyView != null) { residencyDirty = false; residencyView.Clear(); residency?.Replace(Array.Empty<(string, CollectionDetail)>()); }
         }
-        internal void Choose(ScriptableRenderContext context, Camera cam)
+        /// <summary>The render callback. A change of residency never instantiates or destroys models while a camera renders, in
+        /// edit mode either (a Scene or Game view camera): it waits for LateUpdate, as in play mode.</summary>
+        void OnBeginCameraRendering(ScriptableRenderContext context, Camera cam) => ChooseCore(cam, inRender: true);
+        /// <summary>A direct call (tests and editor tools, outside any render) applies a change of residency at once in edit mode.</summary>
+        internal void Choose(ScriptableRenderContext context, Camera cam) => ChooseCore(cam, inRender: false);
+        internal void ChooseCore(Camera cam, bool inRender)
         {
             if (cam.cameraType == CameraType.Preview || cam.cameraType == CameraType.Reflection) return;
-            if (residencyView != null) ObserveResidency(cam);
+            if (residencyView != null) ObserveResidency(cam, inRender);
             int id = cam.GetInstanceID(); bool close = CloseAt(TownLandmarks.ViewDistance(cam), closeFor.TryGetValue(id, out var was) ? was : (bool?)null);
             closeFor[id] = close; LastClose = close; foreach (var r in renderers) if (r != null) r.forceRenderingOff = !close;
         }

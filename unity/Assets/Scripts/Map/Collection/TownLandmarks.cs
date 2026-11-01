@@ -563,13 +563,13 @@ namespace Statecraft.Game.Map.Collection
 
         void OnEnable()
         {
-            RenderPipelineManager.beginCameraRendering += Choose;
+            RenderPipelineManager.beginCameraRendering += OnBeginCameraRendering;
             RenderPipelineManager.endCameraRendering += EndCamera;
             if (wants.Count > 0) { focusPolicy = null; Show(wants, date); }
         }
         void OnDisable()
         {
-            RenderPipelineManager.beginCameraRendering -= Choose;
+            RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
             RenderPipelineManager.endCameraRendering -= EndCamera;
             StopAllCoroutines(); retirementScheduled = false;
             RestoreRenderers(); ReleaseOwned();
@@ -646,8 +646,13 @@ namespace Statecraft.Game.Map.Collection
             RefreshWanted();
         }
 
-        /// <summary>Show each map-wide whole-town original unless this camera has that town's detailed buildings ready.</summary>
-        internal void Choose(ScriptableRenderContext context, Camera cam)
+        /// <summary>The render callback. Nothing is acquired, instantiated or destroyed while a camera renders, in edit mode
+        /// either (a Scene or Game view camera): the change waits for LateUpdate, as in play mode.</summary>
+        void OnBeginCameraRendering(ScriptableRenderContext context, Camera cam) => ChooseCore(cam, inRender: true);
+        /// <summary>Show each map-wide whole-town original unless this camera has that town's detailed buildings ready. A direct
+        /// call (tests and editor tools, outside any render) applies a change at once in edit mode.</summary>
+        internal void Choose(ScriptableRenderContext context, Camera cam) => ChooseCore(cam, inRender: false);
+        internal void ChooseCore(Camera cam, bool inRender)
         {
             if (cam.cameraType == CameraType.Preview || cam.cameraType == CameraType.Reflection) return;
             RestoreRenderers();
