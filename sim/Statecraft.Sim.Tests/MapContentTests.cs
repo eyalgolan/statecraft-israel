@@ -63,6 +63,7 @@ public class MapContentTests
     [Theory]
     [InlineData("kind: city", "kind: citty", "locations[town_a].kind", "unknown kind")]
     [InlineData("priority: must_have", "priority: urgent", "locations[town_a].priority", "unknown priority")]
+    [InlineData("kind: city", "kind: outpost", "locations[town_a].priority", "an outpost must be optional")]
     [InlineData("    name_he: עיר א\n", "", "locations[town_a].name_he", "required")]
     [InlineData("    name_he_sources: [{ url: 'https://example.org/town-a-he', checked: 2026-10-18 }]\n", "", "locations[town_a].name_he_sources", "needs a source")]
     [InlineData("    name_he: עיר א\n", "    name_he: עיר א\n    name_he_review: checked\n", "locations[town_a].name_he_review", "not agent-checked")]
