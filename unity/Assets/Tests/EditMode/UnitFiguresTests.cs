@@ -39,11 +39,47 @@ public class UnitFiguresTests
         "figure-c04-sabra-pioneer-v3", "figure-c05-pioneer-veteran-v2", "figure-c06-young-recruit-v2", "figure-c07-veteran-fighter-v2",
         "figure-c12f-palmach-scout-v2", "figure-c08-arab-legion-v2",
         "figure-syrian-infantry-1948-v1", "figure-c09-irregular-v2", "figure-iraqi-infantry-1948-v1", "figure-egyptian-infantry-1948-v1",
-        "figure-ala-infantry-1948-v1",
+        "figure-ala-infantry-1948-v1", "figure-lebanese-regular-1948-v1",
         "figure-vehicle-napoleonchik-65mm-1948-v2", "figure-vehicle-willys-jeep-1948-v2",
         "figure-vehicle-sandwich-convoy-1948-v2",
         "figure-soldier-1948-v1",
     };
+
+    [Test]
+    public void SwapAndResidencyClearRefreshBoundsAtTheSameCameraPose()
+    {
+        var map = BuildMap();
+        var prefab = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        prefab.transform.position = Vector3.down * 1000000f;
+        prefab.transform.localScale = new Vector3(50f, 1f, 1f);
+        try
+        {
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.Show(C, StateAt(May20, 0.8));
+            var figure = Tokens(map).Find("kiryati").Find("Rifleman0");
+            Assert.IsNull(figure.Find(UnitFigures.ModelName), "no original before the actual Swap");
+            var owner = figure.GetComponent<UnitFigureResidency>();
+            Assert.IsNotNull(owner, "actual per-consumer residency owns the model child");
+            int index = layer.Tokens.ToList().FindIndex(p => p.Token.Unit.Id == "kiryati");
+            Assert.GreaterOrEqual(index, 0);
+            Assert.AreEqual(2, layer.KeepClear[index].Length);
+            var camera = Camera.main;
+            layer.FaceCamera(camera);
+            var before = layer.KeepClear[index][1];
+            UnitFigures.Swap(figure, UnitFigures.PioneerVeteran, prefab);
+            var model = figure.Find(UnitFigures.ModelName).GetComponentInChildren<MeshRenderer>();
+            Assert.IsNotNull(model, "actual Swap instantiates the replacement");
+            var tip = model.bounds.center + Vector3.right * model.bounds.extents.x * 0.9f;
+            Assert.IsFalse(before.Contains(tip), "replacement extends past the old keep-clear box");
+            layer.FaceCamera(camera);
+            Assert.IsTrue(layer.KeepClear[index][1].Contains(tip), "same-pose Swap refreshes bounds without a dead cached filter");
+            owner.enabled = false;   // actual OnDisable -> Refresh(false) -> Clear
+            Assert.IsNull(figure.Find(UnitFigures.ModelName), "actual residency Clear retires the model");
+            layer.FaceCamera(camera);
+            Assert.IsFalse(layer.KeepClear[index][1].Contains(tip), "same-pose retirement removes the old bounds");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(map.gameObject); UnityEngine.Object.DestroyImmediate(prefab); }
+    }
 
     [SetUp] public void Fresh() { UnitFigures.Source = null; UnitFigures.Forget(); }
     [TearDown] public void Restore() { UnitFigures.Source = null; UnitFigures.Forget(); }
@@ -170,7 +206,8 @@ public class UnitFiguresTests
         CollectionAssert.AreEqual(Enumerable.Repeat(UnitFigures.ArabLegion, 3), Trio("arab_legion"));
         CollectionAssert.AreEqual(new[] { UnitFigures.Irregular, UnitFigures.Irregular, UnitFigures.AlaInfantry }, Trio("arab_liberation_army"),
             "two C09 and Tal Heuberger's ALA infantry third (owner, 27 October 2026: \"Third figure (Recommended)\")");
-        Assert.IsNull(UnitFigures.SideFigure("lebanon"), "Lebanese art remains review-only and its row stays hidden");
+        CollectionAssert.AreEqual(Enumerable.Repeat(UnitFigures.LebaneseRegular, 3), Trio("lebanese_army"),
+            "Tal Heuberger's Lebanese regular, three of it (owner, 27 October 2026: \"Map-only token (Recommended)\")");
         // The vehicles from their sourced days.
         CollectionAssert.IsEmpty(UnitFigures.VehiclesAt(units["harel"], new DateTime(1948, 5, 31)));
         CollectionAssert.AreEqual(new[] { UnitFigures.WillysJeep }, UnitFigures.VehiclesAt(units["harel"], new DateTime(1948, 6, 1)), "the Burma Road jeeps");
@@ -456,7 +493,8 @@ public class UnitFiguresTests
 
     /// <summary>The Arab forces are drawn only once their own figure has arrived, three of it on
     /// a base under the neutral pennant, never an IDF figure, and on ground no Israeli force held on the window's first day
-    /// (#226, ruling 9). A figure that never comes (null: a missing or damaged bundle) draws nothing, and warns nothing more.</summary>
+    /// (#226, ruling 9). A figure that fails (null: a missing or damaged bundle) draws its force with the plain built-in
+    /// figure and warns once (owner, 31 October 2026: "Yes, fallback in v0.3.2").</summary>
     [Test]
     public void TheArabForcesAreDrawnOnlyWithTheirOwnFiguresOnceTheyArrive()
     {
@@ -473,10 +511,15 @@ public class UnitFiguresTests
             Assert.IsFalse(asked.ContainsKey(UnitFigures.SyrianInfantry), "no inactive global prefetch pin");
             Assert.IsFalse(asked.ContainsKey(UnitFigures.IraqiInfantry), "no inactive global prefetch pin");
             Assert.IsFalse(layer.Tokens.Any(t => t.Token.Unit.Side != UnitData.Israel), "no Arab force before its figure arrives");
-            asked[UnitFigures.Irregular](null);   // the ALA's figure never comes
-            Assert.IsFalse(layer.Tokens.Any(t => t.Token.Unit.Side != UnitData.Israel), "a figure that never comes draws nothing");
+            LogAssert.Expect(LogType.Warning, new Regex("^UNITS figures: ala's figure " + UnitFigures.Irregular + " did not load"));
+            asked[UnitFigures.Irregular](null);   // the ALA's figure fails
+            layer.Show(C, StateAt(May20, 0.8));
+            CollectionAssert.AreEqual(new[] { "arab_liberation_army" }, layer.Tokens.Where(t => t.Token.Unit.Side != UnitData.Israel).Select(t => t.Token.Unit.Id),
+                "a failed figure draws its force with the built-in fallback");
+            foreach (var f in Tokens(map).Find("arab_liberation_army").Cast<Transform>().Where(c => c.name.StartsWith("Figure")))
+                Assert.IsTrue(f.TryGetComponent<MeshRenderer>(out var mr) && mr.enabled && !UnitFigures.Dressed(f), $"ALA {f.name}: the built-in figure");
             asked[UnitFigures.ArabLegion](Prefab(UnitFigures.ArabLegion));
-            var legion = layer.Tokens.Where(t => t.Token.Unit.Side != UnitData.Israel).ToList();
+            var legion = layer.Tokens.Where(t => t.Token.Unit.Side == UnitFlags.Jordan).ToList();
             CollectionAssert.AreEqual(new[] { "arab_legion" }, legion.Select(t => t.Token.Unit.Id), "the Legion, drawn when its figure arrives");
             var go = Tokens(map).Find("arab_legion");
             Assert.AreEqual(0, go.Cast<Transform>().Count(c => c.name.StartsWith("Rifleman")), "no IDF figure");
@@ -578,7 +621,8 @@ public class UnitFiguresTests
     }
 
     /// <summary>Fail open: with the people and vehicles bundles missing, or damaged, the real stream answers null with one
-    /// warning per bundle; every Israeli figure keeps its code-built mesh, drawn, no vehicle is drawn, and no Arab force.</summary>
+    /// warning per bundle; every Israeli figure keeps its code-built mesh, drawn, no vehicle is drawn, and each Arab force
+    /// stands with the plain built-in figure, its side's failure logged once (owner, 31 October 2026: "Yes, fallback in v0.3.2").</summary>
     [Test]
     public void TheCodeBuiltFiguresStayWhenTheBundleIsMissingOrDamaged()
     {
@@ -596,14 +640,14 @@ public class UnitFiguresTests
                 var stream = new CollectionStream(new CollectionStream.BundleSource(folder));
                 var requested = new List<string>();
                 UnitFigures.Source = (id, d, done) => { requested.Add(id); stream.Enqueue(id, d, done); };
+                var warnings = new List<string>();
+                void Capture(string message, string _, LogType type) { if (type == LogType.Warning) warnings.Add(message); }
+                Application.logMessageReceived += Capture;
                 var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
                 layer.Show(C, StateAt(May20, 0.8));
                 layer.Show(C, StateAt(July12, 0.8));
                 // A generated figure's bundle waits while a people's request is queued (#1763, CollectionCatalog.After), even when
                 // its own request was queued first; otherwise the stream serves requests in order.
-                var expectedBundles = ServedOrder(requested).Select(CollectionCatalog.BundleOf).Distinct();
-                foreach (var b in expectedBundles)
-                    LogAssert.Expect(LogType.Warning, new Regex("^Collection: bundle " + b + " did not load \\(" + (damaged ? "not an AssetBundle" : "no file")));
                 Step(stream.Run(), 80);
                 var figures = Pieces(map, "Rifleman");
                 Assert.Greater(figures.Count, 10, "the riflemen of 12 July 1948 (not a vacuous pass)");
@@ -614,7 +658,31 @@ public class UnitFiguresTests
                 }
                 Assert.IsTrue(Pieces(map, "Vehicle").All(v => v.GetComponentsInChildren<Renderer>().Length == 0), "no vehicle is drawn");
                 layer.Show(C, StateAt(May20, 0.8));
-                Assert.IsFalse(layer.Tokens.Any(t => t.Token.Unit.Side != UnitData.Israel), "no Arab force, and no placeholder");
+                Step(stream.Run(), 80);   // the forces of 20 May ask again; their failed bundles answer null at once
+                // Every bundle served so far, the fallback tokens' third figures' included (the ALA infantry's bundle).
+                var expectedBundles = ServedOrder(requested).Select(CollectionCatalog.BundleOf).Distinct().ToList();
+                layer.Show(C, StateAt(May20, 0.8));
+                Application.logMessageReceived -= Capture;
+                var arab = layer.Tokens.Where(t => t.Token.Unit.Side != UnitData.Israel).ToList();
+                Assert.IsNotEmpty(arab, "each Arab force of 20 May is drawn with the built-in fallback");
+                foreach (var t in arab)
+                {
+                    var pieces = Tokens(map).Find(t.Token.Unit.Id).Cast<Transform>().Where(c => c.name.StartsWith("Figure")).ToList();
+                    Assert.AreEqual(t.Token.Figures, pieces.Count, $"{t.Token.Unit.Id}: its figure count");
+                    foreach (var f in pieces)
+                        Assert.IsTrue(f.TryGetComponent<MeshRenderer>(out var mr) && mr.enabled && !UnitFigures.Dressed(f), $"{t.Token.Unit.Id} {f.name}: the built-in figure");
+                }
+                // The stream's warnings (one per bundle, in serving order) and the sides' (one per failed side) interleave;
+                // LogAssert matches in order, so each is expected by one pattern and checked exactly here.
+                foreach (var b in expectedBundles)
+                    Assert.AreEqual(1, warnings.Count(w => Regex.IsMatch(w, "^Collection: bundle " + b + " did not load \\(" + (damaged ? "not an AssetBundle" : "no file"))), $"{b}: one stream warning");
+                var sideWarnings = warnings.Where(w => w.StartsWith("UNITS figures: ", StringComparison.Ordinal)).ToList();
+                var warnedSides = sideWarnings.Select(w => w.Substring("UNITS figures: ".Length).Split('\'')[0]).ToList();
+                CollectionAssert.AllItemsAreUnique(warnedSides, "one warning per failed side");
+                CollectionAssert.IsSubsetOf(arab.Select(t => t.Token.Unit.Side).Distinct(), warnedSides, "every drawn fallback side was logged");
+                Assert.AreEqual(expectedBundles.Count + sideWarnings.Count, warnings.Count, "no other warning:\n" + string.Join("\n", warnings));
+                foreach (var _ in warnings)
+                    LogAssert.Expect(LogType.Warning, new Regex("^(Collection: bundle \\S+ did not load|UNITS figures: \\w+'s figure \\S+ did not load)"));
                 LogAssert.NoUnexpectedReceived();
             }
             finally { UnityEngine.Object.DestroyImmediate(map.gameObject); Directory.Delete(folder, true); }

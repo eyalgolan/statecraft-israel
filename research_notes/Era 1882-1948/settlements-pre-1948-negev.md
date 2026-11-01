@@ -71,6 +71,8 @@ other addition is [S, Wikipedia], [C] or [GAP].
 - **computed here** is arithmetic or a conversion done for this note, not a printed figure.
 - **our reading** marks an interpretation, and is not attributed to the source.
 
+Every [V] in this note was an agent's reading on 2026-10-23, unless the tag gives a later date; a person's check is pending for all of them.
+
 Every page cited was opened and read, including each Wikipedia revision at the `oldid` given.
 
 ## What counts as the Negev here
@@ -122,6 +124,22 @@ Revivim articles both say "משלושת המצפים".
   differ is open. Day [GAP].
   The table prints the same point (31.204928, 34.455571) for its Gvulot and Gvim rows, so it is not
   used for either.
+- (third pass, 29 Oct) **Printed map reading of the move.** Survey of Palestine 1:100,000 sheet 14 Rafah, as
+  reprinted by the Israeli Survey Department (footer read on the image: "Reprinted with minor road
+  revision S. of P. Feb. 1947" and, in Hebrew, "הודפס ע"י מחלקת המדידות ישראל, כסלו תשי"ט נובמבר 1958 (ד/פ 350)", and in purple Hebrew "עדכון כבישים ויישובים אוקטובר 1955", roads and settlements updated October 1955), image fetched 2026-10-29 from the Palestine Open Maps sheet list
+  (https://palopenmaps.org/api/sheets, `100k-58-14-Rafah.jpg`). It prints the Latin name "Gevulot" with a
+  four-square symbol and, in Hebrew in brackets beside it, "(הרוס)" (our gloss: ruined), and, about 1.9 km
+  away, a Hebrew-lettered settlement circle named "גבולות" beside the Latin "Karm es Selatin". [V, agent read 2026-10-29; a person's check pending]
+  Measured on the page with the sheet's own 1 km grid squares (about 237 px per km at the file's resolution):
+  the circle lies about 1.64 km east and 0.96 km south of the "Gevulot (הרוס)" symbol, so about 1.9 km on a
+  bearing of about 120 degrees (computed here, symbol centres read by eye, good to about 0.1 km; the sheet
+  grid is not converted to WGS84). **[C] with both Wikipedia readings:** he.wiki (`גבולות` oldid 43752363 and
+  `בתי הביטחון בנגב הצפוני` oldid 42567087, both text checked in those revisions on 29 October 2026) puts the new site north or
+  north-east of the mitzpe, en.wiki (`Gvulot` oldid 1375588946, text checked in that revision) 1.5 km south of "the base". The printed sheet puts the 1958 Gvulot
+  south-east of the ruin it labels Gevulot, which fits neither direction exactly and is nearer en.wiki's
+  "south". Whether the printed "Gevulot (הרוס)" is the 1943 mitzpe or the kibbutz's 1946 to 1949 site is not
+  stated on the sheet, so the question of which direction the first pass's "the base" points is still open.
+  No day for the move [GAP].
 - Departure base for Urim and Nirim in October 1946. [S, Wikipedia]
 
 ### Revivim
@@ -204,6 +222,23 @@ of Negev settlement. Be'erot Yitzhak has its own section below.
   names "the Dorot-Ruhama area" once, in a sentence on supply convoys under attack, with nothing on
   an abandonment. The PDFs were not read.
   [GAP]
+- (third pass, 29 Oct) **Third abandonment, dated by inference: 24 August 1938 (the bulletin does not call it the third).** The first-pass search used the spelling
+  "Ruhama"; the archive prints "Ruchama". JTA bulletin of Thursday 25 August 1938, p. 1, opened as a page
+  image (http://pdfs.jta.org/1938/1938-08-25_123.pdf), dateline "JERUSALEM, Aug. 24 (JTA)", in the dispatch
+  that opens with the wounding of the Acting District Commissioner in Jenin: "ABANDONMENT OF THE
+  SOUTHERNMOST JEWISH COLONY OF RUCHAMA, EAST OF GAZA, WAS REPORTED HERE TODAY FOLLOWING WITHDRAWAL OF A
+  POLICE POST WHICH HAD BEEN SUBJECTED TO REPEATED ARAB ATTACKS", and "THIS MORNING, THE LAST JEWISH
+  RESIDENT OF THE COLONY, A GROVES FOREMAN, WAS EVACUATED." [V, agent read 2026-10-29; a person's check pending] So the last Jewish
+  resident left on the morning of **24 August 1938** (dateline), which fixes the third abandonment inside
+  the 1936 to 1939 disturbances; the bulletin does not call it the third. A second item of the same search, JTA of 9 September 1938 (text read, not the print; spelled "Ruchema"): the colony "has been completely burned down by Arab terrorists" after the last settler was evacuated. The spelling "Ruchema" was not in the search terms used for the other windows below. The same search method found
+  nothing for the other two: JTA archive search "Ruchama" 15 August 1929 to 30 June 1930 returned 1 item
+  with no mention of Ruchama or Ruhama, and 1 January 1917 to 31 December 1920 returned 0 items (REST API
+  `https://www.jta.org/wp-json/wp/v2/archive?search=Ruchama&after=1929-08-15T00:00:00&before=1930-06-30T00:00:00` (1 item) and `https://www.jta.org/wp-json/wp/v2/archive?search=Ruchama&after=1917-01-01T00:00:00&before=1920-12-31T00:00:00` (0 items), both HTTP 200 on re-run 2026-10-29 with the
+  User-Agent `statecraft-israel-research/1.0 (+https://github.com/eyalgolan/statecraft-israel)`; the text of each returned item was searched for the two spellings). The 1929 and
+  First World War abandonments stay [GAP]. Two other items in the 1936 to 1939 window name the colony
+  without an abandonment: 18 February 1937 ("Several cows were killed in an attack by Arab bandits on the
+  colony of Ruchama", dateline HAIFA, Feb. 17, page image read; `[V, agent read 2026-10-29; a person's check pending]`) and, in the same search, 22 June 1936 (not
+  opened as print; the sentence may refer to the Jerusalem quarter of that name, so it is not used).
 - **[C] on the founding of the present kibbutz.** The article gives both: "ב-1 בדצמבר 1943 עלו חברי
   השומר הצעיר, חידשו את הבאר והחלו להקים גדר ואת מבני הקיבוץ, טקס העלייה הרשמית לקרקע התבצע במרץ
   1944 ומהווה את ראשיתו של היישוב הנוכחי". [S, Wikipedia] So 1 December 1943 is the arrival and March 1944 the
@@ -501,6 +536,15 @@ explicitly it is recorded below; otherwise the original position is [GAP].
   evacuation stays [GAP]; it is after that. The same line names a police station at the
   settlement of Imara, which is where the first pass has Urim's third site (section 3); the
   bulletin does not name Urim.
+- (third pass, 29 Oct) **Still named on 7 December 1948.** JTA bulletin of Wednesday 8 December 1948, p. 2,
+  opened as a page image (http://pdfs.jta.org/1948/1948-12-08_281.pdf), dateline "TEL AVIV, Dec. 7. (JTA)",
+  in a paragraph of that Tel Aviv roundup ("Egyptian troops last night withdrew from Tel el Fara"): the sappers "mined the
+  Jewish-held road from Mivtachim to Nirim to Imara and cut several water pipes in the area." [V, agent read 2026-10-29; a person's check pending]
+  That names Mivtachim as a Jewish-held end of a road on the night of 6 to 7 December 1948 (computed here
+  from the dateline and "last night"); it does not say the kibbutz was still manned, so the evacuation
+  day stays [GAP], not shown before 7 December 1948 by this item. JTA archive search "Mivtachim", 8 December
+  1948 to 31 December 1949, returned 1 item (this one); "Mivtahim", 23 November 1948 to 30 June 1949,
+  returned 2 (23 November and 8 December 1948), both read in text (REST API, run 2026-10-29).
 - (25 Oct) **[C] on the founding month.** en.wiki `Mivtahim`, oldid **1375608140**, infobox: "7
   January 1947 (kibbutz)"; he.wiki `מבטחים (מושב)`, the Haganah heritage page and the he.wiki
   security-house table give 7 February 1947. [S, Wikipedia] for the January reading. The en.wiki body cites "Place Names in Israel" (Jerusalem, 1962, p. 105)
@@ -540,6 +584,11 @@ Beit Eshel. [V, checked]
   search (https://www.jta.org/?s=Ramat+Hanegev+kibbutz and https://www.jta.org/?s=Ramat+Hanegev) for "Ramat Hanegev kibbutz" (27 results by relevance; only page 1 of 10 read) had 7 archive items dated 1955-02-21 to 1993-11-25. The
   search for "Ramat Hanegev" gave 1 item dated 2006-06-09 when run 2026-10-25; re-run 2026-10-26 it gives 275 results and page 1 has no archive item (dates 2010-08-02 to 2026-10-25), so the 2006 result was not reproduced (the ranking has changed). All items seen are after
   March 1949 and none was opened. [GAP]
+- (third pass, 29 Oct) Searched again and not found: no item returned by these searches. JTA archive REST
+  API (`https://www.jta.org/wp-json/wp/v2/archive?search=<query>&after=<date>&before=<date>`, run
+  2026-10-29): "Ramat", 1 March to 30 April 1949, 7 items (all on one page); "Ramath Hanegev", 1 January to
+  31 December 1949, 8 items; the text of every item was searched for "Ramat Hanegev", "Ramat Negev" and
+  "Ramath Hanegev", with no match. The coordinate and the March 1949 day stay [GAP].
 
 ### Halutza
 Not in the CBS file under this name and no Gvati appendix row. [V, checked] It moved east in 1949
@@ -669,6 +718,17 @@ separately here.
   spaces>`, totals read 2026-10-26. For 1943, "Beth Eshel" was also sorted Oldest (`&sort_by=oldest`, 2026-10-26): pages 1-3
   run from 27 April 1926 to 28 September 1948, and the only 1943 item is "Rabbi Hirsch Manichewitz, 52, Dies Suddenly in
   New York" (11 October 1943), whose text has no "Eshel" or "Negev"; no item about Beit Eshel is dated 1943. Ramat HaNegev's coordinate and its March 1949 day: above.
+- (third pass, 29 Oct) **What the third pass added.** Ruhama's third abandonment, by inference: 24 August 1938 (JTA, dateline
+  read). Mivtahim: named as a Jewish-held road end on 6 to 7 December 1948 (JTA), evacuation day [GAP].
+  Gvulot: the printed 1958 reprint of Rafah sheet 14 shows the present site about 1.9 km south-east of
+  "Gevulot (הרוס)". Still [GAP] after searches this day, with no item returned by them: the day of the
+  moves of Be'eri, Nevatim and Sa'ad (JTA "Beeri" 22 October 1948 to 31 December 1949, 16 items, none about the
+  kibbutz; "Nevatim" 23 October 1948 to 30 June 1950, 1 item, the one of 22 October 1948; "Saad" 2 July 1947
+  to 30 June 1950, 4886 items by relevance, the first 150 scanned, two attack reports of June 1950 and no move);
+  Beit Eshel's founding day ("Negev" 1 August to 30 September 1943, 1 item, no match; "Beth Eshel" 1 June to
+  31 December 1943, 1 item, no match) and its leaving day; Alumim at Hazla ("Alumim" 1 February 1947 to 31
+  December 1948, 11 items, the two already recorded); Jammama's abandonment ("Jammama" 1 May 1948 to 31
+  December 1949, 0 items). Totals are those the API reported (`X-WP-Total`); relevance order, no sort tried.
 - Coordinates were taken from CBS, from Amudanan, and from coordinates written into the articles
   themselves. None was measured off a map, and no hex was computed here, since
   `tools/settlement_hexes.py` stays with #61.

@@ -40,16 +40,17 @@ public class RegionNamesVisualTests
             var t=UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(he?UiPaths.StringsHebrew:UiPaths.Strings).text);
             var regions=new MapRegions(sub,arm,names:after?names:null);
             var session=GameSession.New(content,GoldenRun.Seed,Mode.Historical); session.State.Date=scenario.date;
-            var rt=new RenderTexture(size.w,size.h,0); rt.Create();
-            var ps=Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel)); ps.targetTexture=rt;
-            var go=new GameObject("RegionNamesVisualTest"); go.SetActive(false);
-            var doc=go.AddComponent<UIDocument>();doc.panelSettings=ps;doc.visualTreeAsset=AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml);go.SetActive(true);
-            var root=doc.rootVisualElement;root.Q("root").RemoveFromClassList("loading");
-            if(he)root.Q("root").AddToClassList(UiLanguage.HebrewClass);
-            var bridge=new SimBridge(session,t); var hud=new HudPresenter(root,bridge,t);
-            var info=new InfoPanelPresenter(root,bridge,t,places,regions:regions);
+            RenderTexture? rt=null; PanelSettings? ps=null; GameObject? go=null; HudPresenter? hud=null; InfoPanelPresenter? info=null;
             try
             {
+                rt=new RenderTexture(size.w,size.h,0); rt.Create();
+                ps=Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel)); ps.targetTexture=rt;
+                go=new GameObject("RegionNamesVisualTest"); go.SetActive(false);
+                var doc=go.AddComponent<UIDocument>();doc.panelSettings=ps;doc.visualTreeAsset=AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml);go.SetActive(true);
+                var root=doc.rootVisualElement;root.Q("root").RemoveFromClassList("loading");
+                if(he)root.Q("root").AddToClassList(UiLanguage.HebrewClass);
+                var bridge=new SimBridge(session,t); hud=new HudPresenter(root,bridge,t);
+                info=new InfoPanelPresenter(root,bridge,t,places,regions:regions);
                 root.Q<Label>("map-layer").text=regions.Label(scenario.date,t.Format,he);
                 root.Q("map-layer").style.display=DisplayStyle.Flex;
                 info.Show(scenario.q,scenario.r);
@@ -70,7 +71,13 @@ public class RegionNamesVisualTests
                     finally{RenderTexture.active=previous;Object.DestroyImmediate(shot);}
                 }
             }
-            finally{info.Dispose();hud.Dispose();Object.DestroyImmediate(go);Object.DestroyImmediate(ps);rt.Release();Object.DestroyImmediate(rt);}
+            finally
+            {
+                info?.Dispose();hud?.Dispose();
+                if(go!=null)Object.DestroyImmediate(go);
+                if(ps!=null)Object.DestroyImmediate(ps);
+                if(rt!=null){rt.Release();Object.DestroyImmediate(rt);}
+            }
         }
     }
 }

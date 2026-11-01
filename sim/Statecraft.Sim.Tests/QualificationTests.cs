@@ -377,4 +377,25 @@ public class QualificationTests
             : queue.Append(new AssignWorkers("town_a", "job", jobs)).ToArray();
         Assert.Empty(Step(c, s, Orders(max)).Rejected);
     }
+
+    // Production rows must carry the literal localization contract, not only an English fallback message.
+    [Fact]
+    public void QualificationOrdersEmitTheirLocalizationKeysAndArguments()
+    {
+        var c = Town();
+        var s = WithCity(c, new City("town_a", 12, 8, 6, 0, 0, craftsmen: 3, jobsDefault: false,
+            qualified: new Qualified(3, 2, new[] { 1 })), new Unit(7, "halutz", 1, 0, 2));
+        s.Attention = 100;
+        var returned = Step(c, s, new ReturnCraftsmen("town_a", 2), new UnitOrder(7, Qualification.ReturnOrder));
+        Assert.Empty(returned.Rejected);
+        Assert.Equal(new[] { "2" }, Assert.Single(returned.Why, x => x.Key == "craftsmen_returned").Args);
+        Assert.Equal(new[] { "town_a" }, Assert.Single(returned.Why, x => x.Key == "pioneer_returned").Args);
+        var reassigned = Step(c, s, new ReassignCraftsmen("town_a", 1), new ReassignPioneers("town_a", "veteran_halutz", 1));
+        Assert.Empty(reassigned.Rejected);
+        Assert.Equal(new[] { "1" }, Assert.Single(reassigned.Why, x => x.Key == "craftsmen_reassigned").Args);
+        Assert.Equal(new[] { "1", "veteran" }, Assert.Single(reassigned.Why, x => x.Key == "pioneers_reassigned").Args);
+        var halutz = Step(c, s, new ReassignPioneers("town_a", "halutz", 1));
+        Assert.Empty(halutz.Rejected);
+        Assert.Equal(new[] { "1", "halutz" }, Assert.Single(halutz.Why, x => x.Key == "pioneers_reassigned").Args);
+    }
 }

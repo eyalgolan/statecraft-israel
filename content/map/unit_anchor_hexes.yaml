@@ -28,4 +28,5 @@ anchors:
   - { id: syrian_army, anchor: 1, q: 13, r: 5 }
   - { id: iraqi_expeditionary_force, anchor: 0, q: 9, r: 11 }
   - { id: iraqi_expeditionary_force, anchor: 1, q: 6, r: 13 }
+  - { id: lebanese_army, anchor: 0, q: 12, r: 4 }
   - { id: arab_liberation_army, anchor: 0, q: 12, r: 4 }

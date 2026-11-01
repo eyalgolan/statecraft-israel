@@ -49,14 +49,15 @@ def test_provenance_stays_ai_generated_on_every_row():
         assert assets["unity/Assets/StreamingAssets/video/" + r["file"]]["ai_generated"] is True, r["file"]
 
 
-def test_the_owner_reviewed_exactly_the_six_sensitive_clips():
+def test_the_owner_reviewed_exactly_the_eight_sensitive_clips():
     """Owner ruling of 14 October 2026: the three sensitive clips (operation_yoav, ten_days, the operation_horev outcome)
     are reviewed. Owner ruling of 20 October 2026 (#1102, "looks good" after watching the shots): the altalena loop and
-    outcome (A27) and the operation_horev loop (A05). No other row changes."""
+    outcome (A27) and the operation_horev loop (A05). Owner decision of 31 October 2026 (#1564, #1565, "Ship both clips"):
+    the degania_defence loop (D15) and the reparations_vote loop (A10). No other row changes."""
     rows = ev.load_rows()
     assert sorted(r["file"] for r in rows if r["sensitive"]) == [
-        "altalena-outcome.mp4", "altalena.mp4", "operation_horev-outcome.mp4", "operation_horev.mp4", "operation_yoav.mp4",
-        "ten_days.mp4"]
+        "altalena-outcome.mp4", "altalena.mp4", "degania_defence.mp4", "operation_horev-outcome.mp4", "operation_horev.mp4",
+        "operation_yoav.mp4", "reparations_vote.mp4", "ten_days.mp4"]
     assert all(r["sensitivity_reviewed"] is r["sensitive"] for r in rows)
 
 
@@ -163,6 +164,7 @@ CAPTION_FREE = {
     "altalena.mp4": ("37d2e740653c056c3eb5e682911ee9bb591c0eb94519fbda894ed232c50a2909", -7.1, 0.83),
     "austerity_1949-outcome.mp4": ("a67fe90992ccedb57f1d217d881635f9906068076033aa2da2419b485d6b2b67", -3.1, 0.92),
     "austerity_1949.mp4": ("a478e52f6348d99b748ab240c56770051fe8ca0eee2d53b3922e66cf7b0f0a9e", -3.6, 0.90),
+    "degania_defence.mp4": ("dc6063d6ecb5bc27c67d578e8eac48e4e8212b59e68658efdb070e0f58843ffd", -1.7, 0.92),
     "first_new_yishuv-outcome.mp4": ("2cb387974086e75ea7bb671799c4243e2ec17b2e2da41ec3f0e9cbd09f1399a7", -1.1, 0.65),
     "first_new_yishuv.mp4": ("b9dcf95f9f85e7519ed5848d0a95f988e86e072a0a57cb2c60a64aa33598dd2b", -0.5, 0.39),
     "first_truce.mp4": ("eb98b8d679a97a4e74b26e3fd40398c3fc656a2990768a4a07fe86c45fef2356", -3.5, 1.18),
@@ -179,6 +181,7 @@ CAPTION_FREE = {
     "operation_horev-outcome.mp4": ("34bf30e2144af91402eb1f2ff608dd7fdc337431ce59e739eeebb94cadfbcd31", -22.6, 0.30),
     "operation_horev.mp4": ("9bb6c15d62fba4b0612148e305d21623eccc35d580ad36689c39ae558c20fbc5", -20.2, 0.30),
     "operation_yoav.mp4": ("023706cf59ede4e3937bc6e3713b19fce6255dde863236633c05ea1b6bb7d507", 25.3, 1.03),
+    "reparations_vote.mp4": ("66b635d4dd31bb3006b5ac631655d44868e10b3283184140b7e0cf4098be2f8c", 1.1, 0.14),
     "ten_days.mp4": ("c1a121199fefafaa0ae4af5ef53e1b5e60a005c65e89ffbf61273d725fa1dfff", 10.0, 0.43),
 }
 

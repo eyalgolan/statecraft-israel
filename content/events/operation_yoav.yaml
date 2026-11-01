@@ -7,7 +7,6 @@ text: 'An Israeli supply convoy was fired on as it passed the Egyptian positions
 # https://he.wikipedia.org/wiki/הר_חברון; https://he.wikipedia.org/wiki/בקעת_יריחו).
 title_he: מבצע יואב
 text_he: 'שיירת אספקה ישראלית נורתה כשעברה ליד העמדות המצריות ב־15 באוקטובר, והמתקפה שהממשלה אישרה ב־6 באוקטובר מתנהלת בפיקוד יגאל אלון. ההחלטה עד היכן תתקדם בידי {defense_minister}.'
-text_he_review: agent-checked
 anchor: hard
 tags: [security, war-casualties]
 office: defense_minister

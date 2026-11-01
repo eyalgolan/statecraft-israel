@@ -7,7 +7,6 @@ text: 'The first truce has ended and the fighting has resumed, with Egypt attack
 # https://he.wikipedia.org/wiki/מבצע_דני; https://he.wikipedia.org/wiki/יגאל_אלון).
 title_he: קרבות עשרת הימים
 text_he: 'ההפוגה הראשונה הסתיימה והלחימה התחדשה, כשמצרים תוקפת בדרום. במרכז, מבצע דני בפיקוד יגאל אלון כבש את שדה התעופה בלוד וממשיך לפעול לאבטחת הדרך לירושלים. ההחלטה לאן יופנה המאמץ העיקרי בהמשך הלחימה בידי {defense_minister}.'
-text_he_review: agent-checked
 anchor: hard
 tags: [security, war-casualties]
 office: defense_minister

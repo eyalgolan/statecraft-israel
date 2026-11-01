@@ -14,7 +14,8 @@ def main() -> int:
     output = REPO / "unity/Assets/Plugins/Statecraft"
     try:
         subprocess.run(["dotnet", "publish", str(REPO / "sim/Statecraft.Sim"),
-                        "-c", "Release", "-o", str(output)], cwd=REPO, check=True)
+                        "-c", "Release", "-o", str(output),
+                        "-nodeReuse:false", "-p:UseSharedCompilation=false"], cwd=REPO, check=True)
     except FileNotFoundError:
         print("Cannot find dotnet. Install the .NET SDK and add it to PATH (see docs/dev-setup.md).",
               file=sys.stderr)

@@ -273,7 +273,7 @@ places:
 - id: salama_jaffa
   name: Salama
   name_basis: vs1945
-  name_he: סלמה (יפו)
+  name_he: סלמה
   name_ar: سَلَمة
   lon: 34.805
   lat: 32.0491
@@ -502,7 +502,7 @@ places:
 - id: al_tira_haifa
   name: Tira
   name_basis: vs1945
-  name_he: א-טירה (חיפה)
+  name_he: א-טירה
   name_ar: الطيرة، حيفا
   lon: 34.9752
   lat: 32.7618
@@ -606,7 +606,7 @@ places:
 - id: hamama
   name: Hamama
   name_basis: vs1945
-  name_he: חממה (יישוב היסטורי)
+  name_he: חממה
   name_ar: حمامة
   lon: 34.59
   lat: 31.6912
@@ -1960,7 +1960,7 @@ places:
 - id: al_jura
   name: Jura
   name_basis: vs1945
-  name_he: אל-ג'ורה (נפת עזה)
+  name_he: אל-ג'ורה
   name_ar: الجُورة، عسقلان
   lon: 34.5542
   lat: 31.665
@@ -1982,7 +1982,7 @@ places:
 - id: barbara_gaza
   name: Barbara
   name_basis: vs1945
-  name_he: ברברה (נפת עזה)
+  name_he: ברברה
   name_ar: بربرة
   lon: 34.5794
   lat: 31.6239
@@ -3230,7 +3230,7 @@ places:
 - id: al_maghar
   name: Mughar
   name_basis: vs1945
-  name_he: מע'אר (השפלה)
+  name_he: מע'אר
   name_ar: المغار
   lon: 34.7822
   lat: 31.8385
@@ -4238,7 +4238,7 @@ places:
 - id: imwas
   name: Imwas
   name_basis: vs1945
-  name_he: ‏עִמְוַאס‎
+  name_he: עמואס
   name_ar: ‏عِمواس‎
   lon: 34.9927
   lat: 31.842
@@ -4914,7 +4914,7 @@ places:
 - id: al_tira
   name: Tira
   name_basis: vs1945
-  name_he: טירה (רמלה)
+  name_he: טירה
   name_ar: الطيرة
   lon: 34.9431
   lat: 32.0172
@@ -5751,7 +5751,7 @@ places:
 - id: jaba
   name: Jaba'
   name_basis: vs1945
-  name_he: ג'בע (כרמל)
+  name_he: ג'בע
   name_ar: جَبَع( حيفا)
   lon: 34.962
   lat: 32.6513
@@ -6096,7 +6096,7 @@ places:
 - id: al_manshiyya_acre
   name: Manshiya
   name_basis: vs1945
-  name_he: מנשייה (עכו)
+  name_he: מנשייה
   name_ar: المنشية
   lon: 35.0905
   lat: 32.9351

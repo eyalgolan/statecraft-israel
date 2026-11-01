@@ -92,6 +92,31 @@ public class RegionNamesTests
         Assert.Throws<InvalidDataException>(() => new MapRegions(Subdistricts1948.Parse(m.RegionsYaml), Armistice1949.Parse(m.ArmisticeYaml),
             names: MapRegionNames.Parse(("names:\n" + row).Replace("subdistrict.acre.name", "subdistrict.typo.name"))));
     }
+    [Test]
+    public void StaleEnglishCompanionShowsTheLiveEnglishInstead()
+    {
+        // Fixture pairs its Hebrew with the English "Test"; the live English is "Acre Sub-District".
+        var m = Inputs; var sub = Subdistricts1948.Parse(m.RegionsYaml);
+        var regions = new MapRegions(sub, Armistice1949.Parse(m.ArmisticeYaml), names: MapRegionNames.Parse(Fixture));
+        CollectionAssert.AreEqual(new[] { "subdistrict.acre.name" }, regions.Names.Stale);
+        var acre = sub.Regions.Single(r => r.Key == "acre");
+        Assert.IsTrue(string.Equals(acre.Name, regions.Names.Pick("subdistrict.acre.name", acre.Name, true), StringComparison.Ordinal));
+    }
+    [Test]
+    public void ShippedCatalogueMatchesTheLiveEnglish() => CollectionAssert.IsEmpty(Regions(Inputs).Names.Stale);
+    [Test]
+    public void NoArmisticeBootTakesTheShippedCatalogue()
+    {
+        // GameRoot passes no armistice data when its YAML is blank; the catalogue's armistice rows are then never shown.
+        var m = Inputs; var sub = Subdistricts1948.Parse(m.RegionsYaml);
+        var regions = new MapRegions(sub, null, names: MapRegionNames.Parse(m.RegionNamesYaml));
+        CollectionAssert.IsEmpty(regions.Names.Stale);
+        var acre = sub.Regions.Single(r => r.Key == "acre");
+        Assert.IsTrue(string.Equals("נפת עכו", regions.Names.Pick("subdistrict.acre.name", acre.Name, true), StringComparison.Ordinal));
+        var row = Fixture.Substring("names:\n".Length).Replace("name: Test", "name: \"" + acre.Name + "\"");
+        foreach (var typo in new[] { "subdistrict.typo.name", "other.acre.name" })
+            Assert.Throws<InvalidDataException>(() => new MapRegions(sub, null, names: MapRegionNames.Parse(("names:\n" + row).Replace("subdistrict.acre.name", typo))), typo);
+    }
 
     static readonly string[] Gaps = {
         "zone.syria_dmz_north.name", "zone.syria_dmz_south.name",
@@ -167,13 +192,16 @@ public class RegionNamesTests
     {
         var m = Regions(Inputs); var he = Text(true); var date = new DateTime(1950,3,1);
         // Wiring fixture uses unique synthetic Hebrew strings, independent of the historical content.
-        var keys = new List<string> {"subdistrict.label", "armistice.label"};
-        foreach (var f in m.Armistice!.Fronts) keys.Add("front."+f.Key+".name");
+        var fields = new Dictionary<string,string> {{"subdistrict.label",m.Subdistricts.Label},{"armistice.label",m.Armistice!.Label}};
+        foreach (var f in m.Armistice.Fronts) fields.Add("front."+f.Key+".name",f.Name);
         foreach (var (kind,items) in new[] {("zone",m.Armistice.Zones),("line",m.Armistice.Lines)})
-            foreach(var i in items) foreach(var field in new[]{"name","agreement","label_note"}) keys.Add(kind+"."+i.Key+"."+field);
-        var replacements = keys.Select((k,i)=>(k,v:"בדיקה "+i.ToString(CultureInfo.InvariantCulture))).ToDictionary(x=>x.k,x=>x.v);
+            foreach(var i in items)
+            {
+                fields.Add(kind+"."+i.Key+".name",i.Name); fields.Add(kind+"."+i.Key+".agreement",i.Agreement); fields.Add(kind+"."+i.Key+".label_note",i.LabelNote);
+            }
+        var replacements = fields.Keys.Select((k,i)=>(k,v:"בדיקה "+i.ToString(CultureInfo.InvariantCulture))).ToDictionary(x=>x.k,x=>x.v);
         var catalog = "names:\n" + string.Concat(replacements.Select(x=>Fixture.Substring("names:\n".Length)
-            .Replace("subdistrict.acre.name",x.Key).Replace("name_he: בדיקה", "name_he: "+x.Value)+"    name_he_review: native-review-pending\n"));
+            .Replace("subdistrict.acre.name",x.Key).Replace("name: Test","name: \""+fields[x.Key].Replace("\\","\\\\").Replace("\"","\\\"")+"\"").Replace("name_he: בדיקה", "name_he: "+x.Value)+"    name_he_review: native-review-pending\n"));
         var synthetic = new MapRegions(m.Subdistricts,m.Armistice,names:MapRegionNames.Parse(catalog));
         string Date(DateTime d)=>"\u2067"+Control1948.DateText(d,k=>he[k])+"\u2069";
         foreach(var zone in synthetic.ZonesOn(date)) foreach(var h in synthetic.Armistice!.HexesOf(zone))

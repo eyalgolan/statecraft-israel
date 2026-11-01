@@ -53,9 +53,11 @@ macOS IL2CPP parity check is not an MVP release gate.
    The English-only `--persistence` pass waits for each save's matching IndexedDB commit and checks that both reloads
    restore its date, turn and state hash.
 
-   For the website's playable demo, build a second web variant with Unity's Decompression Fallback - GitHub Pages
-   cannot set response headers, so the loader must decompress the files itself (the site's Play page explains) -
-   check it and package it the same way:
+   For the playable demo on GitHub Pages (`/demo/`), build a second web variant with Unity's Decompression
+   Fallback - GitHub Pages cannot set response headers, so the loader must decompress the files itself
+   ([Unity manual: deploying a Web application](https://docs.unity3d.com/6000.0/Documentation/Manual/webgl-deploying.html)).
+   For the same reason it stays single-threaded (`webGLThreadsSupport: 0`; threads need the COOP and COEP headers),
+   and only a `-shareable` build may be published. Check it and package it the same way:
 
    ```bash
    "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression gzip -decompressionFallback -shareable -out Builds/Web-pages -logFile "$PWD/unity-build-web-pages.log"
@@ -70,11 +72,11 @@ macOS IL2CPP parity check is not an MVP release gate.
    bash scripts/oss/package_web.sh unity/Builds/Web-pages unity/Builds/statecraft-israel-vX.Y.Z-web-pages.zip
    ```
 
-   When the latest release carries this `statecraft-israel-vX.Y.Z-web-pages.zip`, the site's deploy
-   (`.github/workflows/site.yml`) unpacks it at `/demo/`, so the demo is live at the site's `/demo/` after the next
-   deploy (`gh workflow run site.yml` starts one on demand). Until then the site deploys without it, and the Play
-   page keeps saying there is no hosted build. Updating the Play page (and the README's Play section) to link to
-   `/demo/` is a follow-up step when the first such release ships, not part of this release flow.
+   Publishing a release starts the Pages deploy (`.github/workflows/site.yml`, on `main`; `gh workflow run site.yml`
+   starts one on demand). It unpacks the newest published release's `statecraft-israel-vX.Y.Z-web-pages.zip` at
+   `/demo/` (https://eyalgolan.github.io/statecraft-israel/demo/) and the root page redirects there. It fails, and
+   Pages keeps the last deploy, when that release has no such zip, the zip has no `index.html`, or its
+   `event-photos.json` is not `shareable`. The demo is never in git (no file in the repository may pass 10 MB).
 
    `package_web.sh` copies the licence and attribution files into the build folder, then runs
    `tools/package_release.py`, M3's sensitivity gate, which zips the folder and prints `PACKAGED …` or
@@ -174,7 +176,7 @@ macOS IL2CPP parity check is not an MVP release gate.
 ## Nightly builds
 
 Every night at 03:00 (Israel time) the newest `main` is built and, only if every gate passes, becomes the public web
-game: a normal GitHub release marked **Latest**, tagged `vX.Y.Z`, which the website's `/demo/` serves, and, once itch
+game: a normal GitHub release marked **Latest**, tagged `vX.Y.Z`, which GitHub Pages' `/demo/` serves, and, once itch
 pushes are enabled, the itch.io page. X.Y.Z is one patch above the numerically highest published release tag matching
 `^v[0-9]+\.[0-9]+\.[0-9]+$`; drafts, `-nightly` tags and other names do not choose the version. With v0.3.1 and
 v0.3.1-nightly.20261028 published, the next nightly is v0.3.2. The job is
@@ -189,7 +191,9 @@ The gates, in order. The first one that fails ends the night as REFUSED, and not
 1. Preflight: `origin/main` differs from the last published nightly (otherwise the night is SKIPPED), at least 40 GB
    free, no `EXCLUSIVE-WINDOW` file, the Unity licence, editor and slot script present, and no release already holding
    tonight's tag, and no local or remote git tag of that name. First delete a stranded draft only when its tag
-   matches this job's saved `open_draft`, then check availability. Foreign drafts and published releases refuse.
+   matches this job's saved `open_draft` and its release ID matches `open_draft_id`, then check availability.
+   Foreign drafts and published releases refuse. Old state with an `open_draft` but no ID still loads; a same-tag
+   draft refuses with "check by hand" and is never deleted without an ID match.
    With `--no-publish`, leave the draft and state alone and refuse the collision.
 2. `build-sim`, then `scripts/check.sh origin/main` (`check`) and `scripts/oss/release_gate.sh` (`release-gate`), the
    same bar as a release.
@@ -219,22 +223,35 @@ nightly; without the line, an increase beyond 2% refuses the night. The new size
 last nightly (the tag points at the commit the night started from, even if `main` moves during the build), the assets
 checked against the local zips, the itch push when enabled (checked by build id and a fetch of the live files, and
 rolled back to the previous build if publication or its verification fails), the release made public with `--latest` and checked for
-`isPrerelease: false` and Latest, then `site.yml` started and the demo checked for the new version. Creation also uses
-`--latest`, without `--prerelease`. Right before create, the tag is checked again (no release, no local or remote git
-tag), so a release made during the build is refused and not touched; only then is ownership recorded and saved. A
-create that fails after leaving a draft (an asset upload failing) has that draft cleaned; rollback deletes only that
-run's unpublished draft, and only while GitHub shows it as a draft. Ownership is by tag: a draft someone else creates
-with the same tag in the second between that check and create would be treated as this run's. Owning a draft by its
-release ID, and retrying a failed Latest restore on the next run, are tracked in #1917. A saved stranded draft is cleaned before the next
-attempt; it never reaches `/demo/`, because `site.yml` skips drafts.
+`isPrerelease: false` and Latest, then `site.yml` started and the demo checked for the new version. Creation uses
+`gh api` through the same job runner, with `draft: true`, `prerelease: false` and `make_latest: "true"`.
+Right before create, the tag is checked again (no release, no local or remote git tag), so a release made during the
+build is refused and not touched. The create response's numeric release ID is saved as `open_draft_id` alongside
+`open_draft` before `gh release upload` starts. A failed upload can therefore clean its own draft. Cleanup and
+rollback first check that the tag still resolves to that ID and is still a draft, then delete through
+`gh api repos/<repo>/releases/<id> --method DELETE`, preserving git tags. A different or unknown ID refuses with
+"check by hand"; a replacement with the same tag is never the deletion target. If creation fails without returning
+a usable ID, ownership is not guessed and any stranded draft requires a check by hand. A saved draft with a matching
+ID is cleaned before the next attempt; it never reaches `/demo/`, because `site.yml` skips drafts. These ID ownership
+and persisted recovery guarantees complete the two hardening steps deferred from #1916 to #1917.
 Before publishing, read the current Latest separately from the previous nightly asset baseline and record it in
 `latest-before-publish.txt`. On any later failure, including publication verification or both site attempts, and only
 while the failed release is still Latest, restore that previous tag with `gh release edit <previous> --latest` and
 verify it; a Latest someone else set in the meantime is left alone and reported. The REFUSED line and
 `latest-rollback.log` name the previous Latest and the recovery result. With no previous Latest, explicitly report
-that fact and remove the failed release's Latest mark; report any failed recovery for manual repair. Published
+that fact and remove the failed release's Latest mark. Before attempting recovery, save
+`latest_recovery_pending: {"failed": "<tag>", "previous": "<previous Latest>"}` in `state.json`; `previous` is null
+when there was no Latest. A failed or unverified recovery keeps this record and reports "check by hand". At the
+start of the next publishing run, before preflight, the no-change skip or a pending site deploy, retry through the
+same guarded `restore_latest`. Only while the failed tag is still Latest may it edit Latest. A different Latest,
+including no Latest, is left alone and the record is cleared; a verified recovery also clears it. A failed retry
+keeps the record and refuses the run before anything publishes. Each outcome is logged and notified, including
+success and leaving Latest alone. `--no-publish` leaves pending recovery and state untouched and refuses until a
+publishing run can handle it. Old state files without the pending field load with no recovery pending. Published
 releases and tags are preserved. A site-only failure retains the new itch build and the public release, records
 the site deploy as pending, and restores the previous Latest after the second attempt.
+If the ownership checkpoint cannot be saved, refuse before upload and attempt only guarded cleanup of the known draft ID. If recovery state cannot be saved, still attempt the guarded Latest repair, then refuse before site dispatch or publication and report "check by hand". An unwritable state file cannot promise a durable retry record; preserve the saved file and report the unsaved-state error.
+
 Numeric tag components accept leading zeros: `v0.03.1` ties with `v0.3.1` and yields the normalized next tag `v0.3.2`.
 The no-change skip compares `state.json`'s last published SHA with `origin/main`, regardless of its saved tag name.
 
@@ -250,7 +267,10 @@ A night that starts after 03:30 is MISSED unless it was started by hand with `--
 
 **itch.io.** Pushes stay off until the owner runs `uv run tools/nightly.py savetest --tag <a published nightly>` once
 and it prints `PASS` (the two-upload save test of `docs/m3-release.md`, "Upload to itch.io"); the nightly then logs
-that itch was skipped.
+that itch was skipped. The save test pushes only to a separate test page, named in the job's `config.json` as
+`savetest_itch_target` (`user/project:channel`) and `savetest_itch_page_url`, and refuses to run without them or if
+they name the public page: each upload hides the game while itch unpacks it, which took up to an hour on 28 October
+2026.
 
 ## Refreshing the README screenshots
 

@@ -53,6 +53,13 @@ public class RuralLifeTests
         var pending = asked.ToList();
         asked.Clear();
         foreach (var (id, detail, done) in pending) done(found ? Prefab(id, detail) : null);
+        // A successful Far answer creates the real scenes whose Near demand is then admitted.
+        while (asked.Count > 0)
+        {
+            pending = asked.ToList();
+            asked.Clear();
+            foreach (var (id, detail, done) in pending) done(found ? Prefab(id, detail) : null);
+        }
     }
 
     [Test]
@@ -62,6 +69,9 @@ public class RuralLifeTests
         var layer = CollectionGeometryFixture.Rural(map)!;
         CollectionAssert.AreEquivalent(RuralLife.Models, layer.Wanted.Select(w => w.Model).Distinct());
         Assert.AreEqual(layer.Wanted.Count, layer.Wanted.Select(w => (w.Key, w.Model)).Distinct().Count(), "each anchor once per model");
+        // Far makes a scene real; only those real scenes create the v0.3.1 Near demand.
+        foreach (var request in asked.Where(a => a.detail == CollectionDetail.Far).ToArray())
+            request.done(Prefab(request.id, request.detail));
         foreach (var id in RuralLife.Models)
         {
             Assert.Greater(layer.Wanted.Count(w => w.Model == id), RuralLife.MaxAnchorsPerModel, id + " has spare anchors");
@@ -71,13 +81,13 @@ public class RuralLifeTests
         AnswerAll();
         foreach (var id in RuralLife.Models)
             Assert.AreEqual(RuralLife.MaxAnchorsPerModel, layer.Scenes.Count(w => w.Model == id), id + " sparse placement count");
-        Assert.AreEqual(RuralLife.Models.Length * RuralLife.MaxAnchorsPerModel, layer.Scenes.Count, "18 sparse rural scenes");
+        Assert.AreEqual(RuralLife.Models.Length * RuralLife.MaxAnchorsPerModel, layer.Scenes.Count, "21 sparse rural scenes");
         CollectionAssert.IsEmpty(layer.Missing);
         var types = map.Settlements.Concat(map.Localities.Select(p => p.Settlement))
             .GroupBy(s => s.Id).ToDictionary(g => g.Key, g => g.First().Type);
         foreach (var want in layer.Scenes)
         {
-            if (want.Model == RuralLife.Camel) StringAssert.StartsWith("camp:", want.Key, want.Model + " uses a Bedouin-area camp");
+            if (want.Model == RuralLife.Camel || want.Model == RuralLife.BedouinTent) StringAssert.StartsWith("camp:", want.Key, want.Model + " uses a Bedouin-area camp");
             else if (want.Model == RuralLife.Tractor) Assert.AreEqual("kibbutz", types[want.Key], want.Key);
             else if (want.Model == RuralLife.Wagon || want.Model == RuralLife.Horse)
                 Assert.IsTrue(types[want.Key] == "moshav" ||
@@ -86,6 +96,31 @@ public class RuralLifeTests
         }
         Assert.AreEqual(layer.Scenes.Sum(w => RuralLife.MembersOf(w.Model)) * 2, layer.Placed.Count, "one far and one near instance of every scene's models");
         Assert.AreEqual(RuralLife.MaxAnchorsPerModel * RuralLife.FlockSize * 2, layer.Placed.Count(p => p.Model == RuralLife.Sheep), "the sheep stand in flocks");
+    }
+
+    /// <summary>A request is not a scene: no spot, capacity, tree hole or Near request exists until a detail is drawable,
+    /// and a null Far answer remains visible in the layer's missing-model report.</summary>
+    [Test]
+    public void UnansweredOrFailedFarModelsReserveNoRuralSceneOrTreeHole()
+    {
+        var map = OpenMap();
+        var vegetation = map.GetComponentInChildren<Statecraft.Game.Map.Kits.VegetationLayer>(true);
+        int hiddenBefore = vegetation.Hidden;
+        var layer = CollectionGeometryFixture.Rural(map)!;
+
+        CollectionAssert.IsEmpty(layer.Scenes, "unanswered requests own no rural anchors");
+        Assert.AreEqual(hiddenBefore, vegetation.Hidden, "unanswered requests cut no tree holes");
+        Assert.IsTrue(asked.All(a => a.detail == CollectionDetail.Far), "Near demand comes only from placed scenes");
+
+        var failed = asked.First();
+        LogAssert.Expect(LogType.Warning, $"RURAL: {failed.id} far did not stream; that rural detail stays off the map.");
+        failed.done(null);
+
+        Assert.IsFalse(layer.Scenes.Any(w => w.Model == failed.id), "a failed Far model still owns no anchor");
+        Assert.AreEqual(hiddenBefore, vegetation.Hidden, "a failed Far model cuts no tree hole");
+        CollectionAssert.Contains(layer.Missing, failed.id, "a failed Far model is reported missing");
+        Assert.IsFalse(asked.Any(a => a.id == failed.id && a.detail == CollectionDetail.Near),
+            "a failed Far model creates no phantom Near demand");
     }
 
     [Test]
@@ -224,6 +259,8 @@ public class RuralLifeTests
         {
             [RuralLife.Tractor] = (0.25f, 0.5f), [RuralLife.Wagon] = (0.3f, 0.85f), [RuralLife.Horse] = (0.2f, 0.4f),
             [RuralLife.Sheep] = (0.1f, 0.2f), [RuralLife.Donkey] = (0.13f, 0.3f), [RuralLife.Camel] = (0.25f, 0.5f),
+            // The Bedouin tent: the camp kit's 7 to 12 m goat-hair tent at the camel's world scale (10 m against its 3 m).
+            [RuralLife.BedouinTent] = (0.8f, 1.7f),
         };
         var bad = new List<string>();
         var sizes = new Dictionary<(string, string, CollectionDetail), float>();

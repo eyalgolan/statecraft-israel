@@ -40,10 +40,12 @@ namespace Statecraft.Sim
     {
         // Synthetic fixture eligibility: completed reception, free civilian, unassigned.
         // not proof of a job/field/project/course slot or permission to change an existing assignment.
-        internal static bool CanStartCivilianActivity(Content content, PopulationUnit person)
+        internal static bool CanStartCivilianActivity(Content content, PopulationLedger ledger, PopulationUnit person)
         {
-            var turns = content.RequirePopulationInteger("reception.turns");
+            var turns = MatchingReceptionTurns(content, ledger);
             if (person == null) throw new ArgumentNullException(nameof(person));
+            if (!ReferenceEquals(ledger.Get(person.Id), person))
+                throw new ArgumentException("Eligibility requires the current record from the supplied ledger.", nameof(person));
             return person.ReceptionTicks == turns && person.Status == PopulationStatus.FreeCivilian
                 && person.Assignment.Kind == PopulationAssignmentKind.Unassigned;
         }
@@ -62,7 +64,7 @@ namespace Statecraft.Sim
                 throw new InvalidOperationException("Reception requires an initialized exact-gdd-0.3 synthetic fixture.");
             // M content/gdd03-balance.yaml:214-221: Agreed capacity 3 and duration 6; no fallback or duplicate constants.
             var capacity = content.RequirePopulationInteger("reception.capacity");
-            var turns = content.RequirePopulationInteger("reception.turns");
+            var turns = MatchingReceptionTurns(content, opening.PopulationLedger);
             opening.PopulationLedger.Reconcile();
             var camps = new SortedDictionary<string, SyntheticReceptionCamp>(StringComparer.Ordinal);
             foreach (var camp in syntheticCamps)
@@ -85,7 +87,7 @@ namespace Statecraft.Sim
                     || !Colocated(p, camp) || ++occupied[camp.Target] > capacity)
                     throw new ArgumentException("Invalid retained ordinary-bed reservation; interruption policy is excluded.");
             }
-            var eligible = people.Where(p => CanStartCivilianActivity(content, p)).Select(p => p.Id).ToArray();
+            var eligible = people.Where(p => CanStartCivilianActivity(content, opening.PopulationLedger, p)).Select(p => p.Id).ToArray();
             var candidate = opening.Clone();
             var ledger = candidate.PopulationLedger;
             foreach (var p in people.Where(p => p.Assignment.Kind == PopulationAssignmentKind.Reception))
@@ -112,6 +114,17 @@ namespace Statecraft.Sim
             }
             ledger.Reconcile();
             return new SyntheticReceptionTurn(candidate, eligible);
+        }
+
+        static int MatchingReceptionTurns(Content content, PopulationLedger ledger)
+        {
+            if (content == null) throw new ArgumentNullException(nameof(content));
+            if (ledger == null) throw new ArgumentNullException(nameof(ledger));
+            var turns = content.RequirePopulationInteger("reception.turns");
+            if (turns != ledger.ReceptionLimit)
+                throw new ContentException(Gdd03BalanceCatalogue.FileName, "values.reception.turns",
+                    "must match the initialized population ledger");
+            return turns;
         }
 
         static bool Colocated(PopulationUnit person, SyntheticReceptionCamp camp) =>

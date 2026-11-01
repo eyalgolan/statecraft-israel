@@ -6,7 +6,6 @@ text: 'In breach of the truce, the Arab Liberation Army attacked the Sheikh Abd 
 # follow he.wiki "מבצע חירם" ("משלטי שייח' עבד"): https://he.wikipedia.org/wiki/מבצע_חירם
 title_he: מבצע חירם
 text_he: 'בהפרת ההפוגה תקף צבא ההצלה את משלט שייח׳ עבד שמעל קיבוץ מנרה ב־22 באוקטובר. בין 29 ל־31 באוקטובר הדפו כוחותיו של משה כרמל את צבא ההצלה מן הגליל העליון במבצע חירם, והפסקת אש נכנסה לתוקף ב־31 באוקטובר. ההחלטה אם הכוחות יעצרו עם הפסקת האש או יתקדמו הלאה לתוך לבנון בידי {defense_minister}.'
-text_he_review: agent-checked
 anchor: soft
 tags: [security, war-casualties]
 office: defense_minister

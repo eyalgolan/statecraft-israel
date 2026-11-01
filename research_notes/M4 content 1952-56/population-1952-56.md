@@ -15,6 +15,8 @@ calibration test, which stay paused (#102, maintainer comment of 22 October 2026
 - An interpretation is marked **our reading** and is not attributed to CBS.
 - No quotes are invented. The short quotes below are copied from the cited page.
 
+Every [V] in this note was an agent's reading on 2026-10-23, unless the tag gives a later date; a person's check is pending for all of them.
+
 **Access notes**
 - `economy-series-1952-56.md` records that no volume of the CBS Statistical Abstract for these
   years was found online. Two volumes carrying the 1952 to 1956 series were reached for this note:

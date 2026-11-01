@@ -6,6 +6,7 @@ using NUnit.Framework;
 using Statecraft.Game;
 using Statecraft.Game.Map;
 using Statecraft.Game.Map.Units;
+using Statecraft.Game.Map.Collection;
 using Statecraft.Sim;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -24,6 +25,62 @@ public class UnitPlinthTests
 
     [SetUp] public void Readable() => UnitPlinth.KeepMeshesReadable = true;   // the tests read the built meshes back
     [TearDown] public void Released() => UnitPlinth.KeepMeshesReadable = false;
+
+    // Simulates a retained render entry; it does not establish why OnDisable missed unsubscription.
+    [Test]
+    public void DestroyedFlagDoesNotRunACapturedCameraCallback()
+    {
+        var flagObject = new GameObject("flag");
+        var cameraObject = new GameObject("camera");
+        try
+        {
+            var flag = flagObject.AddComponent<UnitFlagFacing>();
+            var camera = cameraObject.AddComponent<Camera>();
+            camera.transform.position = new Vector3(8f, 3f, 11f);
+            var method = typeof(UnitFlagFacing).GetMethod("Turn", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            Assert.IsNotNull(method);
+            var callback = (Action<UnityEngine.Rendering.ScriptableRenderContext, Camera>)Delegate.CreateDelegate(
+                typeof(Action<UnityEngine.Rendering.ScriptableRenderContext, Camera>), flag, method!);
+            UnityEngine.Object.DestroyImmediate(flagObject);
+            Assert.IsTrue(flag == null, "precondition: DestroyImmediate should leave the component Unity-null");
+            Assert.DoesNotThrow(() => callback(default, camera));
+        }
+        finally
+        {
+            if (flagObject != null) UnityEngine.Object.DestroyImmediate(flagObject);
+            UnityEngine.Object.DestroyImmediate(cameraObject);
+        }
+    }
+
+    // A retained render entry can outlive unsubscription; exercise the initialized branch without artwork fetches.
+    [Test]
+    public void DestroyedFigureDoesNotRunACapturedCameraCallback()
+    {
+        var holder = new GameObject("figure holder");
+        var cameraObject = new GameObject("camera");
+        try
+        {
+            var owner = holder.AddComponent<UnitFigureResidency>();
+            holder.SetActive(false);
+            owner.Initialize("proto:figure-palmach-scout-c12f-1948-v2", ProductionResidency.Approved().Units, null, draw: false);
+            var initialized = typeof(UnitFigureResidency).GetField("initialized", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            Assert.IsNotNull(initialized);
+            Assert.IsTrue((bool)initialized!.GetValue(owner), "precondition: the callback must exercise initialized residency");
+            var camera = cameraObject.AddComponent<Camera>();
+            var method = typeof(UnitFigureResidency).GetMethod("Choose", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            Assert.IsNotNull(method);
+            var callback = (Action<UnityEngine.Rendering.ScriptableRenderContext, Camera>)Delegate.CreateDelegate(
+                typeof(Action<UnityEngine.Rendering.ScriptableRenderContext, Camera>), owner, method!);
+            UnityEngine.Object.DestroyImmediate(holder);
+            Assert.IsTrue(owner == null, "precondition: destroyed residency must be Unity-null");
+            Assert.DoesNotThrow(() => callback(default, camera));
+        }
+        finally
+        {
+            if (holder != null) UnityEngine.Object.DestroyImmediate(holder);
+            UnityEngine.Object.DestroyImmediate(cameraObject);
+        }
+    }
 
     static GameState StateAt(DateTime date)
     {

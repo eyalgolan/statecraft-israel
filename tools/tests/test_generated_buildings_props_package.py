@@ -16,5 +16,9 @@ def test_original_building_archive_matches_every_admission_receipt():
         data = path.read_bytes()
         assert len(data) == row['source_glb_bytes']
         assert hashlib.sha256(data).hexdigest() == row['source_glb_sha256']
-        provenance = ROOT / 'unity/Assets/Editor/Generated1948Review' / row['id'] / 'provenance.json'
+        # A model placed in the game lives in the 1948 Collection's folder (owner, 27 October 2026, "Sign off all 19").
+        review = ROOT / 'unity/Assets/Editor/Generated1948Review' / row['id'] / 'provenance.json'
+        placed = ROOT / 'unity/Assets/Art/Collection' / row['id'] / 'provenance.json'
+        assert review.exists() != placed.exists(), row['id']
+        provenance = review if review.exists() else placed
         assert json.loads(provenance.read_text())['source_archive_path'] == row['source_archive_path']

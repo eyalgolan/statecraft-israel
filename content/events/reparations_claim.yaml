@@ -6,7 +6,6 @@ text: '{foreign_minister} proposes a note to the four occupying powers claiming 
 # (https://he.wikipedia.org/wiki/הסכם_השילומים). Dollar amounts in words, as the English writes them.
 title_he: תביעה מגרמניה
 text_he: 'הצעת {foreign_minister} היא לשלוח איגרת לארבע המעצמות הכובשות ובה תביעה מגרמניה על סך 1.5 מיליארד דולר: עלות קליטתם של 500,000 ניצולי השואה, לפי 3,000 דולר לאדם.'
-text_he_review: agent-checked
 anchor: hard
 tags: [holocaust]
 office: foreign_minister

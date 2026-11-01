@@ -6,7 +6,6 @@ text: 'The Irgun and Lehi still keep their own armed units. {defense_minister} p
 # (אצ"ל, לח"י, צה"ל): https://archives.mod.gov.il/Exhib/BenGurion/tzahal/Pages/default.aspx
 title_he: צבא אחד
 text_he: 'אצ"ל ולח"י עדיין מחזיקים יחידות חמושות משלהם. הצעת {defense_minister} היא פקודה המקימה את צבא הגנה לישראל ואוסרת על קיומו של כוח מזוין כלשהו מלבד צה"ל.'
-text_he_review: agent-checked
 anchor: hard
 tags: [security]
 office: defense_minister

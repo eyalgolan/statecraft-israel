@@ -32,6 +32,40 @@ public class Gdd03ReceptionFixtureTests
             new PopulationInventoryRow("synthetic-start", i, p)));
     }
 
+    // R-POP-002: the hashed ledger duration and the caller catalogue must agree.
+    [Theory] [InlineData(4)] [InlineData(8)]
+    public void DifferentAgreedDurationRefusesBeforeProgressOrEligibility(int turns)
+    {
+        var state = State(Person(3, "synthetic-a"));
+        var before = state.Hash();
+        var content = Catalogue();
+        content.Gdd03Balance!.Values["reception.turns"].Values = new() { turns };
+        Assert.Throws<ContentException>(() => Gdd03ReceptionFixture.ResolveWholeTurn(
+            content, state, new[] { Camp() }));
+        Assert.Equal(before, state.Hash());
+        var completed = State(Person(4, status: PopulationStatus.FreeCivilian));
+        Assert.Throws<ContentException>(() => Gdd03ReceptionFixture.CanStartCivilianActivity(
+            content, completed.PopulationLedger, completed.PopulationLedger.Get(0)));
+        Assert.False(Gdd03ReceptionFixture.CanStartCivilianActivity(
+            Catalogue(), completed.PopulationLedger, completed.PopulationLedger.Get(0)));
+    }
+
+    // R-POP-002: eligibility reads the current record of this ledger only.
+    [Theory] [InlineData(false)] [InlineData(true)]
+    public void ForeignOrStalePersonCannotBorrowAnotherLedgerEligibility(bool stale)
+    {
+        var state = State(Person(6, status: PopulationStatus.FreeCivilian));
+        var person = state.PopulationLedger.Get(0);
+        if (stale)
+            state.PopulationLedger.ChangeAssignment(0, new(PopulationAssignmentKind.Work, "synthetic-work"));
+        else
+            state = State(Person());
+        var before = state.Hash();
+        Assert.Throws<ArgumentException>(() => Gdd03ReceptionFixture.CanStartCivilianActivity(
+            Catalogue(), state.PopulationLedger, person));
+        Assert.Equal(before, state.Hash());
+    }
+
     [Fact] public void SixthWholeBedTurnCompletesSamePersonWithoutCompletionTurnWork()
     {
         var refugee = Person(bed: "synthetic-a");
@@ -123,16 +157,22 @@ public class Gdd03ReceptionFixtureTests
 
     [Fact] public void PredicateRequiresCompletedFreeUnassignedCivilianForEveryFutureWorkConsumer()
     {
+        static bool Eligible(PopulationUnit template)
+        {
+            var state = State(template);
+            return Gdd03ReceptionFixture.CanStartCivilianActivity(
+                Catalogue(), state.PopulationLedger, state.PopulationLedger.Get(0));
+        }
         foreach (var ticks in new[] { 0, 5 })
         {
-            Assert.False(Gdd03ReceptionFixture.CanStartCivilianActivity(Catalogue(), Person(ticks)));
-            Assert.False(Gdd03ReceptionFixture.CanStartCivilianActivity(Catalogue(), Person(ticks, status: PopulationStatus.FreeCivilian)));
+            Assert.False(Eligible(Person(ticks)));
+            Assert.False(Eligible(Person(ticks, status: PopulationStatus.FreeCivilian)));
         }
-        Assert.True(Gdd03ReceptionFixture.CanStartCivilianActivity(Catalogue(), Person(6, status: PopulationStatus.FreeCivilian)));
-        Assert.False(Gdd03ReceptionFixture.CanStartCivilianActivity(Catalogue(), Person(6)));
+        Assert.True(Eligible(Person(6, status: PopulationStatus.FreeCivilian)));
+        Assert.False(Eligible(Person(6)));
         var s = State(Person(6, status: PopulationStatus.FreeCivilian));
         s.PopulationLedger.ChangeAssignment(0, new(PopulationAssignmentKind.Work, "synthetic-work"));
-        Assert.False(Gdd03ReceptionFixture.CanStartCivilianActivity(Catalogue(), s.PopulationLedger.Get(0)));
+        Assert.False(Gdd03ReceptionFixture.CanStartCivilianActivity(Catalogue(), s.PopulationLedger, s.PopulationLedger.Get(0)));
         // This tests the proposed shared predicate; job/farm/build/course entry points are deliberately unwired.
     }
 

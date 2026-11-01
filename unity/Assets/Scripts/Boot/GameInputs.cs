@@ -42,6 +42,9 @@ namespace Statecraft.Game.Boot
         /// <summary>content/map/control_hexes_1948_49.yaml: who held which areas, 1948-49, by period (display only; "" when
         /// absent: the older drawing, sub-districts with the armistice zones over them).</summary>
         public string ControlYaml = "";
+        /// <summary>content/map/armistice_lines_1949.geojson: the true armistice lines, drawn as polylines in the
+        /// "armisticelines" map mode (ArmisticeLines, #237; display only; "" when absent: no overlay).</summary>
+        public string ArmisticeLinesGeojson = "";
         /// <summary>heightmap.r16z as read: packed (HeightmapCodec); HeightmapLoader decodes it when the map is built.</summary>
         public byte[] HeightmapR16z = new byte[0];
     }
@@ -75,6 +78,7 @@ namespace Statecraft.Game.Boot
             ArmisticeTsv = ReadIfExists(Path.Combine(contentDir, "map", Armistice1949.RuntimeFileName)),
             ControlTsv = ReadIfExists(Path.Combine(contentDir, "map", Control1948.RuntimeFileName)),
             ControlYaml = ReadIfExists(Path.Combine(contentDir, "map", Control1948.FileName)),
+            ArmisticeLinesGeojson = ReadIfExists(Path.Combine(contentDir, "map", ArmisticeLines.FileName)),
         };
 
         /// <summary>A map-only, cosmetic input: "" when the file is missing (the map then skips that layer with a warning).</summary>
@@ -117,6 +121,7 @@ namespace Statecraft.Game.Boot
                     ArmisticeTsv = texts.TryGetValue("map/" + Armistice1949.RuntimeFileName, out var armisticeTsv) ? armisticeTsv : "",
                     ControlTsv = texts.TryGetValue("map/" + Control1948.RuntimeFileName, out var controlTsv) ? controlTsv : "",
                     ControlYaml = texts.TryGetValue("map/" + Control1948.FileName, out var control) ? control : "",
+                    ArmisticeLinesGeojson = texts.TryGetValue("map/" + ArmisticeLines.FileName, out var lines) ? lines : "",
                 },
             };
         }

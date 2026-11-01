@@ -48,6 +48,7 @@ namespace Statecraft.Sim
         sealed class MapLocationsFile { public List<MapLocation> Locations { get; set; } = new List<MapLocation>(); }
         sealed class SettlementTargetsFile { public List<SettlementTarget> Targets { get; set; } = new List<SettlementTarget>(); }
         sealed class CitiesFile { public List<CityStart> Cities { get; set; } = new List<CityStart>(); }
+        sealed class PlayerRegionsFile { public List<PlayerRegionDefinition> PlayerRegions { get; set; } = null!; }
         sealed class UnitTypesFile { public List<UnitType> Types { get; set; } = new List<UnitType>(); }
         sealed class SitesFile { public List<Site> Sites { get; set; } = new List<Site>(); }
         sealed class ProjectsFile { public List<ProjectKind> Projects { get; set; } = new List<ProjectKind>(); }
@@ -244,6 +245,7 @@ namespace Statecraft.Sim
                     if (v == null) throw new ContentException(file, key, "must be a map");
                     foreach (DictionaryEntry kv in (IDictionary)v)
                     {
+                        if (kv.Value == null) throw new ContentException(file, key + "." + kv.Key, "empty entry");
                         if (kv.Key is string sk) Encodable(file, key + "." + sk, sk);
                         if (kv.Value is string sv) Encodable(file, key + "." + kv.Key, sv);
                     }
@@ -393,6 +395,12 @@ namespace Statecraft.Sim
             // R-POP-001: validate the identity-specific scale without altering old content reads/hash inputs.
             if (c.UsesPopulationLedger) _ = c.PopulationPeoplePerUnit;
             ApplyMapOverrides(readFile, c, settlementIds);   // after the map's own checks, before the GDD records that read it
+            // R-CITY-006: no read or hash input in either old identity. Absence leaves the capability inactive.
+            if (c.Ruleset == SaveGame.Gdd03Ruleset)
+            {
+                var regions = ReadOptional<PlayerRegionsFile>(readFile, PlayerRegionCatalogue.FileName);
+                if (regions != null) c.PlayerRegions = PlayerRegionCatalogue.Validate(c, regions.PlayerRegions);
+            }
             if (c.IsGdd)
             {
                 // GDD v0.1 city data (Phase 1 PR 3), read once eras.yaml is known to be valid. Only the GDD loop reads it, so

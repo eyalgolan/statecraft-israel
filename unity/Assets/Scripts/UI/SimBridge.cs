@@ -211,7 +211,25 @@ namespace Statecraft.Game.UI
             }
         }
 
-        string? Refuse(string reason) { if (reason == Movement.MissingArtilleryMovement) reason = text["unit.artillery_move_missing"]; Refused?.Invoke(reason); return reason; }
+        /// <summary>The sim's English refusals that have a UI string: Movement's artillery refusal and Orders.Check's (#2045).
+        /// Keyed on the English, so the same words from another check (Movement, Combat, Training, Demobilization give "That
+        /// unit is not yours", "There is no such unit" too) read in the UI's language as well.</summary>
+        static readonly Dictionary<string, string> ReasonKeys = new Dictionary<string, string>
+        {
+            [Movement.MissingArtilleryMovement] = "unit.artillery_move_missing",
+            [Orders.RefusedUnknownOrder] = "unit.order_refused.unknown_order",
+            [Orders.RefusedNoUnit] = "unit.order_refused.no_unit",
+            [Orders.RefusedNotMilitary] = "unit.order_refused.not_military",
+            [Orders.RefusedNotYours] = "unit.order_refused.not_yours",
+            [Orders.RefusedArtilleryHold] = "unit.order_refused.artillery_hold",
+            [Orders.RefusedAlready] = "unit.order_refused.already",
+        };
+
+        /// <summary>A sim refusal in the UI's language where it has a string (<see cref="ReasonKeys"/>), else the sim's English as
+        /// given. The queue's refusals, the unit card's (InfoPanelPresenter) and the end of turn's (ToastPresenter) go through it.</summary>
+        public static string ReasonText(UiText text, string reason) => ReasonKeys.TryGetValue(reason, out var key) ? text[key] : reason;
+
+        string? Refuse(string reason) { reason = ReasonText(text, reason); Refused?.Invoke(reason); return reason; }
 
         static void Notify(Action? handlers)
         {

@@ -156,7 +156,7 @@ public class Gdd03HousingFormulaTests
         Assert.Equal(0m, r.SurchargeMoney);
         Assert.Equal(0m, Formula().Evaluate(Input(due: 4m, paid: 4m)).UnpaidConditionLoss);
         Assert.Equal(0.075m, Formula().Evaluate(Input(due: 4m, paid: 1m)).UnpaidConditionLoss);
-        Assert.Equal(0m, Formula().Evaluate(Input(beforeArrival: 0, population: 0,
+        Assert.Equal(0m, Formula().Evaluate(Input(beforeArrival: 0, cohesion: 0, population: 0,
             condition: 0m)).CohesionLossPoints);
     }
 
@@ -169,6 +169,16 @@ public class Gdd03HousingFormulaTests
         Assert.Equal(0m, f.ApplyConditionEffect(0.04m, -0.10m));
         Assert.Equal(0.90m, f.ApplyConditionEffect(f.RepairCondition(0.95m), -0.10m));
         Assert.Equal(0.14m, f.RepairCondition(0.04m));
+    }
+
+    [Theory]
+    [InlineData(40, 20)]
+    [InlineData(1, 0)]
+    public void RegionalCohesionResidentsCannotExceedOwnPopulation(int residents, int population)
+    {
+        // R-HOUSE-002: a region's ordinary residents are part of total own population.
+        Assert.Throws<ArgumentOutOfRangeException>(() => Formula().Evaluate(
+            Input(cohesion: residents, population: population, condition: 0m, due: 0m, paid: 0m)));
     }
 
     [Fact] public void InvalidExplicitInputsAreRejectedWithoutState()
@@ -224,5 +234,16 @@ public class Gdd03HousingFormulaTests
         c.Ruleset = SaveGame.GddRuleset;
         Assert.Throws<ContentException>(() => Gdd03HousingFormula.FromCatalogue(c));
         Assert.Throws<ArgumentNullException>(() => Gdd03HousingFormula.FromCatalogue(null!));
+    }
+
+    // R-HOUSE-001: a valid numeric child cannot authorize an unresolved parent repair row.
+    [Fact]
+    public void ReaderRejectsDeferredRepairParentWithAnIntactNumericPart()
+    {
+        var catalogue = ContentLoader.Load(RealContentTests.ContentRoot()).Gdd03Balance
+            ?? throw new InvalidOperationException("GDD 0.3 catalogue required");
+        Gdd03HousingFormula.FromCatalogue(catalogue);
+        catalogue.Values["housing_repair"].Basis = "Deferred"; // TEST-ONLY SYNTHETIC parent gate flip
+        Assert.Throws<ContentException>(() => Gdd03HousingFormula.FromCatalogue(catalogue));
     }
 }

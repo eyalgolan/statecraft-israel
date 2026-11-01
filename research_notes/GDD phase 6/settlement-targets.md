@@ -31,6 +31,8 @@ Conventions:
   repo's `content/map/settlement_population_1945.yaml`, where every row is `owner-verify` and is read from Wikipedia's
   transcription, not the scan. They were re-read against that page on 18 October 2026 and match. Each is marked [W].
 
+Every [V] in this note was an agent's reading on 2026-10-18, unless the tag gives a later date; a person's check is pending for all of them.
+
 ## Common sources
 
 1. Benny Morris, *The Birth of the Palestinian Refugee Problem Revisited*, Cambridge University Press, 2004:

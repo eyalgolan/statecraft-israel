@@ -1,1 +1,0 @@
-- Add a typed military balance catalogue contract and a synthetic equipment-conservation specification for GDD 0.3.
