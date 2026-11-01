@@ -19,8 +19,10 @@ public class Gdd03MilitaryCatalogueTests
         Assert.Equal(1, terms.IssueArms); Assert.Equal(0, terms.RepeatIssueArms);
         Assert.Equal(0m, terms.DraftMoney); Assert.Equal(0, terms.DraftWait);
         Assert.Equal(0m, terms.DemobiliseMoney); Assert.Equal(0, terms.DemobiliseWait);
-        Assert.Equal(1, terms.DemobiliseReturnArms); Assert.Equal(0m, terms.TrainingMoney);
-        Assert.Equal(1m, terms.ActiveMoney);
+        // Basic training 0.5 Money and the active army 0.05 Money a unit a turn: owner ruling, 30 October 2026,
+        // "Keep the set values (Recommended)" (#2115), not Amir's 0 / 1.
+        Assert.Equal(1, terms.DemobiliseReturnArms); Assert.Equal(0.5m, terms.TrainingMoney);
+        Assert.Equal(0.05m, terms.ActiveMoney);
         c.Values["military.issue_arms"].Values[0] = 99; // synthetic mutation after read
         Assert.Equal(1, terms.IssueArms);
         Assert.Equal("Deferred", c.Values["start.army"].Basis);

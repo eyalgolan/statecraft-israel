@@ -48,28 +48,28 @@
     "note": "Population and starting state: people nominally represented by a population unit; Agreed. Source: #1668 balance.md at 605277df."
     "values": [10000]
   "start.population":
-    "basis": "Agreed"
-    "note": "Population and starting state: total player population units, all statuses included; Accepted through later start-state correction. Source: #1668 balance.md at 605277df."
+    "basis": "Default"
+    "note": "Population and starting state: total player population units, all statuses included. Owner, 1 November 2026, D2 (\"Approve all six (Recommended)\"): the Historical MVP starts from the census cities at 1,000 people a unit, Money 20 and Arms 12, and does not use this row. Amir's proposal, sized for 10,000 people a unit, kept for Open mode (milestone M4); not Agreed for the Historical game. Source: #1668 balance.md at 605277df."
     "values": [65]
   "start.money":
-    "basis": "Agreed"
-    "note": "Population and starting state: Money / Food / unequipped Arms; Agreed. Source: #1668 balance.md at 605277df."
+    "basis": "Default"
+    "note": "Population and starting state: Money. Owner, 1 November 2026, D2 (\"Approve all six (Recommended)\"): the Historical MVP starts from the census cities at 1,000 people a unit, Money 20 and Arms 12, and does not use this row. Amir's proposal, sized for 10,000 people a unit, kept for Open mode (milestone M4); not Agreed for the Historical game. Source: #1668 balance.md at 605277df."
     "values": [25]
   "start.food":
-    "basis": "Agreed"
-    "note": "Population and starting state: Money / Food / unequipped Arms; Agreed. Source: #1668 balance.md at 605277df."
+    "basis": "Default"
+    "note": "Population and starting state: Food. Owner, 1 November 2026, D2 (\"Approve all six (Recommended)\"): the Historical MVP starts from the census cities at 1,000 people a unit, Money 20 and Arms 12, and does not use this row. Amir's proposal, sized for 10,000 people a unit, kept for Open mode (milestone M4); not Agreed for the Historical game. Source: #1668 balance.md at 605277df."
     "values": [10]
   "start.spare_arms":
-    "basis": "Agreed"
-    "note": "Population and starting state: Money / Food / unequipped Arms; Agreed. Source: #1668 balance.md at 605277df."
+    "basis": "Default"
+    "note": "Population and starting state: unequipped Arms. Owner, 1 November 2026, D2 (\"Approve all six (Recommended)\"): the Historical MVP starts from the census cities at 1,000 people a unit, Money 20 and Arms 12, and does not use this row. Amir's proposal, sized for 10,000 people a unit, kept for Open mode (milestone M4); not Agreed for the Historical game. Source: #1668 balance.md at 605277df."
     "values": [3]
   "start.army":
     "basis": "Deferred"
     "note": "Population and starting state: military population units; explicitly deferred; Deferred, not a chosen number. Source: #1668 balance.md at 605277df."
     "expression": "A"
   "start.farmers":
-    "basis": "Agreed"
-    "note": "Population and starting state: novice / trained / veteran units; Agreed. Source: #1668 balance.md at 605277df."
+    "basis": "Default"
+    "note": "Population and starting state: novice / trained / veteran units. Owner, 1 November 2026, D2 (\"Approve all six (Recommended)\"): the Historical MVP starts from the census cities at 1,000 people a unit, Money 20 and Arms 12, and does not use this row. Amir's proposal, sized for 10,000 people a unit, kept for Open mode (milestone M4); not Agreed for the Historical game. Historical cities split their census farmers 1:2:1 instead (owner, 1 November 2026, \"Amir's 1:2:1 ratio per city (Recommended)\"). Source: #1668 balance.md at 605277df."
     "values": [5, 10, 5]
   "start.prepared_fields":
     "basis": "Agreed"
@@ -120,16 +120,16 @@
     "note": "Population and starting state: ordinary resident places, pooled by region; Derived. Source: #1668 balance.md at 605277df."
     "values": [72]
   "start.housing_condition":
-    "basis": "Default"
-    "note": "Population and starting state: condition percentage points in each starting region; Default. Source: #1668 balance.md at 605277df."
-    "values": [70]
-  "start.food_production":
     "basis": "Agreed"
-    "note": "Population and starting state: Food per turn, initially breaking even; Derived from agreed farmer mix and population. Source: #1668 balance.md at 605277df."
+    "note": "Population and starting state: unitless housing condition fraction, one start for every city. Owner, 1 November 2026, 27M-16: \"0.35, your 15 Oct value (Recommended)\"; main's mvp.housing_start_condition (R-HOUSE-001). Replaces the Default 70 percentage points per region. Source: #1668 balance.md at 605277df."
+    "values": [0.35]
+  "start.food_production":
+    "basis": "Default"
+    "note": "Population and starting state: Food per turn, initially breaking even; derived from the Open-mode farmers and population. Owner, 1 November 2026, D2 (\"Approve all six (Recommended)\"): the Historical MVP starts from the census cities at 1,000 people a unit, Money 20 and Arms 12, and does not use this row. Amir's proposal, sized for 10,000 people a unit, kept for Open mode (milestone M4); not Agreed for the Historical game. Source: #1668 balance.md at 605277df."
     "values": [65]
   "start.food_consumption":
-    "basis": "Agreed"
-    "note": "Population and starting state: Food per turn, initially breaking even; Derived from agreed farmer mix and population. Source: #1668 balance.md at 605277df."
+    "basis": "Default"
+    "note": "Population and starting state: Food per turn, initially breaking even; derived from the Open-mode farmers and population. Owner, 1 November 2026, D2 (\"Approve all six (Recommended)\"): the Historical MVP starts from the census cities at 1,000 people a unit, Money 20 and Arms 12, and does not use this row. Amir's proposal, sized for 10,000 people a unit, kept for Open mode (milestone M4); not Agreed for the Historical game. Source: #1668 balance.md at 605277df."
     "values": [65]
   "population.food_per_turn":
     "basis": "Agreed"
@@ -169,12 +169,12 @@
     "values": [0.75, 1, 1.5]
   "craft.course_cost":
     "basis": "Agreed"
-    "note": "Work, professions and training: Money / turns; initial Industry apprenticeship course; Agreed. Source: #1668 balance.md at 605277df."
-    "values": [5]
+    "note": "Work, professions and training: Money; initial Industry apprenticeship course. Owner ruling, 30 October 2026 (#2013 balance rows): \"Keep the set values (Recommended)\". 0.5 Money, as R-CRAFT-001's course; Amir's 5 is a declined proposal. Source: #1668 balance.md at 605277df."
+    "values": [0.5]
   "craft.course_turns":
     "basis": "Agreed"
-    "note": "Work, professions and training: Money / turns; initial Industry apprenticeship course; Agreed. Source: #1668 balance.md at 605277df."
-    "values": [6]
+    "note": "Work, professions and training: turns; initial Industry apprenticeship course. Owner ruling, 30 October 2026 (#2013 balance rows): \"Keep the set values (Recommended)\". 3 turns, as R-CRAFT-001's course; Amir's 6 is a declined proposal. Source: #1668 balance.md at 605277df."
+    "values": [3]
   "craft.course_income":
     "basis": "Agreed"
     "note": "Work, professions and training: Money per staffed course turn; Agreed. Source: #1668 balance.md at 605277df."
@@ -252,12 +252,12 @@
     "note": "Reception, housing and shortages: condition pp per turn with all housing upkeep unpaid; Agreed. Source: #1668 balance.md at 605277df."
     "values": [10]
   "transit.cost":
-    "basis": "Agreed"
-    "note": "Reception, housing and shortages: Money per civilian population unit ending turn in transit; Agreed. Source: #1668 balance.md at 605277df."
+    "basis": "Default"
+    "note": "Reception, housing and shortages: Money per civilian population unit ending turn in transit. This row is post-MVP, not operative in the MVP: there is no transit and no port queue (owner, 1 November 2026, \"Approve all 79 (Recommended)\" and \"30 Oct wins for the MVP (Recommended)\"). Amir's proposal, kept for later design; not Agreed for the MVP. Source: #1668 balance.md at 605277df."
     "values": [0.50]
   "reception.queue_cohesion_loss":
-    "basis": "Agreed"
-    "note": "Reception, housing and shortages: national displayed point per turn with any port reception queue; Agreed amount; cadence and non-stacking Default. Source: #1668 balance.md at 605277df."
+    "basis": "Default"
+    "note": "Reception, housing and shortages: national displayed point per turn with any port reception queue; cadence and non-stacking Default. This row is post-MVP, not operative in the MVP: there is no transit and no port queue (owner, 1 November 2026, \"Approve all 79 (Recommended)\" and \"30 Oct wins for the MVP (Recommended)\"). Amir's proposal, kept for later design; not Agreed for the MVP. Source: #1668 balance.md at 605277df."
     "values": [1]
     "parts":
       "cadence_turns":
@@ -346,12 +346,12 @@
     "values": [0]
   "military.training_money":
     "basis": "Agreed"
-    "note": "Military and control: Money per basic course; Agreed. Source: #1668 balance.md at 605277df."
-    "values": [0]
+    "note": "Military and control: Money per basic course. Owner ruling, 30 October 2026 (#2013 balance rows): \"Keep the set values (Recommended)\". 0.5 Money; Amir's 0 is a declined proposal. Source: #1668 balance.md at 605277df."
+    "values": [0.5]
   "military.active_money":
     "basis": "Agreed"
-    "note": "Military and control: Money per active army unit per turn, excluding basic trainees; Agreed. Source: #1668 balance.md at 605277df."
-    "values": [1]
+    "note": "Military and control: Money per active army unit per turn, excluding basic trainees. Owner ruling, 30 October 2026 (#2013 balance rows): \"Keep the set values (Recommended)\". 0.05 Money; Amir's 1 is a declined proposal. Source: #1668 balance.md at 605277df."
+    "values": [0.05]
   "military.strength":
     "basis": "Agreed"
     "note": "Military and control: strength units: untrained / trained / veteran; Agreed. Source: #1668 balance.md at 605277df."
@@ -441,9 +441,9 @@
     "note": "Military and control: Food per held enemy combatant cohort per turn / points per returned cohort; Default; return-only scoring retained. Source: #1668 balance.md at 605277df."
     "values": [1]
   "prisoner.return_points":
-    "basis": "Default"
-    "note": "Military and control: Food per held enemy combatant cohort per turn / points per returned cohort; Default; return-only scoring retained. Source: #1668 balance.md at 605277df."
-    "values": [5]
+    "basis": "Agreed"
+    "note": "Military and control: points per returned enemy population unit; return-only scoring retained. Owner, 1 November 2026, O7: \"10 per unit, main (Recommended)\"; main's R-POW-004 value, not Amir's 5 a cohort. Source: #1668 balance.md at 605277df."
+    "values": [10]
   "combat.draw_count":
     "basis": "Agreed"
     "note": "Movement and engagement defaults: RNG draw per engagement, integer band `0..99`; Retained single draw; band Default. Source: #1668 balance.md at 605277df."
