@@ -11,7 +11,6 @@ text: 'Regular passenger service between Haifa and Tel Aviv North began on 20 Se
 # content/map/localities_1948.yaml. The en dash in חיפה–תל אביב follows content/corridors.yaml.
 title_he: שירות הרכבת חיפה–תל אביב חודש
 text_he: 'שירות סדיר של נוסעים בין חיפה לתל אביב צפון החל ב־20 בספטמבר 1949. הרכבות עברו דרך בנימינה, חדרה מזרח וראש העין, בקישור החדש מקו פתח תקווה אל תל אביב צפון.'
-text_he_review: agent-checked
 anchor: soft
 objective: railway
 from: 1948-05-15

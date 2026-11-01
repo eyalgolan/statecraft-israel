@@ -11,7 +11,6 @@ text: 'The Road of Valour opened on 7 December 1948 as the permanent road that r
 # name_he for the corridor. The card is sensitive (the convoys' dead).
 title_he: נפתח כביש הגבורה
 text_he: 'כביש הגבורה נפתח ב־7 בדצמבר 1948, ככביש הקבע שהחליף את דרך בורמה לירושלים. בטקס הפתיחה הונצחו גם הנופלים בשיירות.'
-text_he_review: agent-checked
 anchor: soft
 objective: burma_road
 from: 1948-05-15
