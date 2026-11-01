@@ -504,6 +504,26 @@ leaves the focus on the last stop instead of dropping it; and a drawn scope stil
 first control, asserted on `minimap-overview` so the fallback cannot satisfy the test). No UI
 string was added, so nothing goes to #564.
 
+## The WebGL companion is opt-in, 1 November 2026
+
+The first step proposed under H5 is the read-only WebGL companion (#1119, PR #1920): an HTML panel beside the canvas
+(`WebGLTemplates/Statecraft/index.html`, `WebCompanion.jslib`) that mirrors the open event, its choices, the game's focus,
+the status line and the End Turn report, with the status line as its one live region.
+
+The owner's ruling, 1 November 2026, on whether every WebGL player gets the panel: "Opt-in for now (Recommended)". It
+holds until the VoiceOver test on a real screen reader and the phone layout are done. So the companion is off by default
+and turns on in one of two ways:
+
+- the Settings row "Screen reader companion" (`settings.companion`), which shows only in the WebGL player; it applies at
+  once, is kept with the other settings, and once pressed it wins over the address for the rest of that page's visit;
+- `?companion=1` in the page address, a whole query parameter with the whole value `1` (`?companion=0`, `?companion`
+  and `?companion=10` do not turn it on).
+
+`WebCompanion.On` holds the rule. `WebCompanionTests` pins it, the Settings row and the real root (off at start, on and
+off from Settings, kept for a later game). The page keeps the panel's empty skeleton from load either way, so its live
+region exists before a first announcement. With the companion off, nothing fills it: it stays out of sight, but its
+empty landmark is still in the accessibility tree (open point for the VoiceOver test).
+
 ## Screenshots
 
 In `.superpowers/a11y-2026-10-14/` (1568x752 unless noted), with the driver and the contrast, colour-vision and

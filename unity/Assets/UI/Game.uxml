@@ -484,6 +484,11 @@
                     <ui:Button name="settings-uiscale-150" text="150%" class="settings-switch" />
                 </ui:VisualElement>
             </ui:VisualElement>
+            <!-- The WebGL companion (#1119, WebCompanion): opt-in, off by default; the row shows only where a page can show it. -->
+            <ui:VisualElement class="row settings-row">
+                <ui:Label name="settings-companion-label" text="Screen reader companion" class="settings-name" />
+                <ui:Button name="settings-companion" class="settings-switch" />
+            </ui:VisualElement>
             <!-- Community (#1168): "Star on GitHub" opens the repository in a new tab (ExternalLink); "Report a bug or idea"
                  opens the report panel (#1169, FeedbackPresenter); "Share" opens the share panel with a picture of the game
                  (#1170, SharePresenter). -->

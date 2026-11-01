@@ -242,6 +242,7 @@ public sealed class WebCompanionTests
             var game = Object.FindFirstObjectByType<GameRoot>();
             game.Store = new Statecraft.Game.SaveStore(dir);
             game.Settings = new Statecraft.Game.SettingsStore(dir);
+            game.Settings.Write(SettingsPresenter.CompanionKey, "on");   // opt-in (owner, 1 November 2026)
             var sent = new List<string>(); game.CompanionSend = sent.Add;
             game.Language = UiLanguage.English;
             game.Begin(inputs, 0);
@@ -269,6 +270,106 @@ public sealed class WebCompanionTests
             count = sent.Count; current.Refresh(); Assert.AreEqual(count, sent.Count);
             game.enabled = false; Assert.AreEqual("null", sent[sent.Count - 1]);
             Assert.IsNull(game.Companion);
+        }
+        finally
+        {
+            UnityEditor.SceneManagement.EditorSceneManager.NewScene(UnityEditor.SceneManagement.NewSceneSetup.EmptyScene, UnityEditor.SceneManagement.NewSceneMode.Single);
+            Statecraft.Game.Map.VisualToggles.Clear();
+            if (System.IO.Directory.Exists(dir)) System.IO.Directory.Delete(dir, true);
+        }
+    }
+
+    // The owner's ruling of 1 November 2026, "Opt-in for now (Recommended)": off unless the Settings switch, a stored "on" or
+    // "?companion=1" asks for it; a switch pressed in this session wins over both.
+    [TestCase(null, null, null, false)]
+    [TestCase(null, null, "", false)]
+    [TestCase(null, null, "https://example.org/statecraft/index.html", false)]
+    [TestCase(null, "off", "https://example.org/statecraft/index.html?lang=he", false)]
+    [TestCase(null, null, "https://example.org/statecraft/index.html?companion=1", true)]
+    [TestCase(null, null, "https://example.org/statecraft/index.html?lang=he&companion=1#x", true)]
+    [TestCase(null, "off", "https://example.org/statecraft/index.html?companion=1", true)]
+    [TestCase(null, null, "https://example.org/statecraft/index.html?companion=0", false)]
+    [TestCase(null, null, "https://example.org/statecraft/index.html?companion", false)]
+    [TestCase(null, null, "https://example.org/statecraft/index.html?companion=10", false)]
+    [TestCase(null, null, "https://example.org/statecraft/index.html?xcompanion=1", false)]
+    [TestCase(null, null, "https://example.org/companion=1/index.html", false)]
+    [TestCase(null, "on", "", true)]
+    [TestCase(null, "yes", "", false)]
+    [TestCase(false, "on", "https://example.org/statecraft/index.html?companion=1", false)]
+    [TestCase(true, "off", "", true)]
+    public void TheCompanionIsOptIn(bool? picked, string? stored, string? url, bool expected) =>
+        Assert.AreEqual(expected, WebCompanion.On(picked, stored, url));
+
+    [Test]
+    public void TheSettingsRowShowsOnlyWhereAPageCanShowTheCompanionAndSaysWhatIsSet([Values(false, true)] bool hebrew)
+    {
+        var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(hebrew ? UiPaths.StringsHebrew : UiPaths.Strings).text,
+            hebrew ? "strings.he.yaml" : "strings.en.yaml");
+        var dir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "statecraft-companion-" + System.Guid.NewGuid().ToString("N"));
+        try
+        {
+            using (var ui = new UiTestKit())
+            using (new SettingsPresenter(ui.Root, text, new Statecraft.Game.SettingsStore(dir)))
+            {
+                Assert.AreEqual(text["settings.companion"], ui.Q<Label>("settings-companion-label").text);
+                Assert.AreEqual(DisplayStyle.None, ui.Q<Button>("settings-companion").parent.style.display.value, "no page: no row");
+            }
+            bool on = false; var asked = new List<bool>();
+            using (var ui = new UiTestKit())
+            using (new SettingsPresenter(ui.Root, text, new Statecraft.Game.SettingsStore(dir), companion: (() => on, v => { asked.Add(v); on = v; })))
+            {
+                var button = ui.Q<Button>("settings-companion");
+                Assert.AreNotEqual(DisplayStyle.None, button.parent.style.display.value);
+                Assert.AreEqual(text["settings.off"], button.text, "off by default");
+                UiTestKit.Press(button);
+                CollectionAssert.AreEqual(new[] { true }, asked, "turned on at once");
+                Assert.AreEqual(text["settings.on"], button.text);
+                Assert.AreEqual("on", new Statecraft.Game.SettingsStore(dir).Read(SettingsPresenter.CompanionKey), "and kept");
+                UiTestKit.Press(button);
+                CollectionAssert.AreEqual(new[] { true, false }, asked);
+                Assert.AreEqual(text["settings.off"], button.text);
+                Assert.AreEqual("off", new Statecraft.Game.SettingsStore(dir).Read(SettingsPresenter.CompanionKey));
+            }
+        }
+        finally { if (System.IO.Directory.Exists(dir)) System.IO.Directory.Delete(dir, true); }
+    }
+
+    [Test]
+    public void TheRealRootStartsWithoutTheCompanionAndItsSettingTurnsItOnAndOffForThisAndLaterGames()
+    {
+        var dir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "statecraft-companion-" + System.Guid.NewGuid().ToString("N"));
+        var inputs = Statecraft.Game.Boot.GameInputs.FromDisk(Statecraft.Game.Paths.Content, Statecraft.Game.Paths.StreamingMap);
+        try
+        {
+            UnityEditor.SceneManagement.EditorSceneManager.OpenScene("Assets/Map.unity", UnityEditor.SceneManagement.OpenSceneMode.Single);
+            Object.FindFirstObjectByType<Statecraft.Game.Map.MapScene>().Build(inputs.Map);
+            var game = Object.FindFirstObjectByType<GameRoot>();
+            game.Store = new Statecraft.Game.SaveStore(dir);
+            game.Settings = new Statecraft.Game.SettingsStore(dir);
+            var sent = new List<string>(); game.CompanionSend = sent.Add;
+            game.Language = UiLanguage.English;
+            game.Begin(inputs, 0);
+            Assert.IsNull(game.Companion, "off by default, with a page that could show it");
+            var ui = Object.FindFirstObjectByType<UIDocument>().rootVisualElement;
+            UiTestKit.Press(ui.Q<Button>("nav-settings"));
+            var button = ui.Q<Button>("settings-companion");
+            Assert.AreNotEqual(DisplayStyle.None, button.parent.style.display.value, "the row shows where a page can show the companion");
+            UiTestKit.Press(button);
+            Assert.IsNotNull(game.Companion, "the switch turns it on at once");
+            game.Companion!.Refresh();
+            Assert.AreEqual("en", JsonUtility.FromJson<WebCompanion.Snapshot>(sent[sent.Count - 1]).lang);
+            game.Begin(inputs, 0);
+            Assert.IsNotNull(game.Companion, "a later game keeps it on");
+            UiTestKit.Press(ui.Q<Button>("nav-settings"));
+            UiTestKit.Press(ui.Q<Button>("settings-companion"));
+            Assert.IsNull(game.Companion, "the switch turns it off at once");
+            Assert.AreEqual("null", sent[sent.Count - 1], "and clears the page");
+            Assert.AreEqual("off", game.Settings.Read(SettingsPresenter.CompanionKey));
+            var count = sent.Count;
+            game.Begin(inputs, 0);
+            Assert.IsNull(game.Companion, "a later game keeps it off");
+            game.enabled = false;
+            Assert.AreEqual(count, sent.Count, "nothing was published while it was off");
         }
         finally
         {

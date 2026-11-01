@@ -151,6 +151,8 @@ settings.title: "הגדרות"
 settings.tiltshift: "טשטוש בחלק העליון ובחלק התחתון של המפה"
 settings.on: "מופעל"
 settings.off: "כבוי"
+# The WebGL companion switch (#1119); the Hebrew awaits native review.
+settings.companion: "מלווה לקוראי מסך"
 # The graphics quality choice (#40). Adjectives in the feminine, agreeing with "איכות". Approved by Beri, a native
 # speaker, on #40 (17 Oct 2026). For the native reviewer (#564).
 settings.quality: "איכות גרפית"

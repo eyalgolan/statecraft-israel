@@ -2,12 +2,14 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace Statecraft.Game.UI
 {
-    /// <summary>One-way WebGL mirror of the presenter's words. It never receives game commands or changes focus.
+    /// <summary>One-way WebGL mirror of the presenter's words. It never receives game commands or changes focus. Opt-in
+    /// (<see cref="On"/>): the Settings switch or "?companion=1" turns it on.
     /// It publishes in the frame after a sim change, an End Turn, a refused order, a click, a submit or a focus move, once
     /// the presenters have rendered; periodic sampling also catches toast writes and controls rebuilt without any of those.
     /// Nothing is published before the first frame. Owned by GameRoot: a restart/language switch disposes it and clears the
@@ -33,6 +35,16 @@ namespace Statecraft.Game.UI
             public string[] report = Array.Empty<string>();
             public Choice[] choices = Array.Empty<Choice>();
         }
+
+        // "?companion=1": a whole query parameter with a whole value (UrlFlags' rule), so "?companion=10" and "?xcompanion=1"
+        // are not it.
+        static readonly Regex Asked = new Regex(@"[?&]companion=1(?=&|#|$)", RegexOptions.CultureInvariant);
+
+        /// <summary>Whether the mirror runs: off unless asked for. The owner's ruling of 1 November 2026, "Opt-in for now
+        /// (Recommended)", until the VoiceOver test and the phone layout are done. <paramref name="picked"/> is the Settings
+        /// switch pressed in this page's session, which wins; else the stored choice (<see cref="SettingsPresenter.CompanionKey"/>
+        /// "on") or "?companion=1" in the page address turns it on.</summary>
+        public static bool On(bool? picked, string? stored, string? url) => picked ?? (stored == "on" || Asked.IsMatch(url ?? ""));
 
         readonly VisualElement root;
         readonly UiText text;

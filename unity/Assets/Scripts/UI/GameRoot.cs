@@ -58,7 +58,11 @@ namespace Statecraft.Game.UI
         /// <summary>Tests: the decision card of the last Begin.</summary>
         internal EventCardPresenter? Card => card;
         WebCompanion? companion;
-        // Outbound test transport only; the shipping bridge remains one-way.
+        // The Settings switch for the companion, once pressed in this page's session: it wins over the stored choice and the
+        // address for every later Begin (a language switch or New Game), so "Off" holds under "?companion=1" too.
+        bool? companionPicked;
+        // Outbound test transport only; the shipping bridge remains one-way. Like the WebGL page, it is a page the companion
+        // can be turned on for; it does not turn it on.
         internal Action<string>? CompanionSend { get; set; }
         internal WebCompanion? Companion => companion;
         CaptureDialogPresenter? capture;
@@ -320,7 +324,24 @@ namespace Statecraft.Game.UI
             // own settings must not leak into a test. Each Begin (New Game too) reads the file again.
             // The language switch (#1036) builds every screen again in the new language over this game (SwitchLanguage).
             Action<string> switchLanguage = language => SwitchLanguage(inputs, language);   // the start screen's too (#2054)
-            Own(new SettingsPresenter(root, text, SettingsFile(), switchLanguage, panel: document.panelSettings, audio: audio, advisors: AdvisorSession.Settings));
+            // The WebGL companion (#1119) is opt-in (WebCompanion.On): Settings turns it on and off at once, where a page shows it.
+            Action<bool>? setCompanion = null;
+            (Func<bool> on, Action<bool> set)? companionSwitch = null;
+            if (Application.platform == RuntimePlatform.WebGLPlayer || CompanionSend != null)
+            {
+                Action<bool> set = on =>
+                {
+                    if (on == (companion != null)) return;
+                    if (on) { companion = Own(new WebCompanion(root, text, bridge, () => card?.Shown != null, CompanionSend)); return; }
+                    var off = companion!; companion = null;
+                    owned.Remove(off);
+                    off.Dispose();   // clears the page
+                };
+                setCompanion = set;
+                companionSwitch = (() => companion != null, on => { companionPicked = on; set(on); });
+            }
+            Own(new SettingsPresenter(root, text, SettingsFile(), switchLanguage, panel: document.panelSettings, audio: audio, advisors: AdvisorSession.Settings,
+                companion: companionSwitch));
             // "Report a bug or idea" (#1169), from Settings and the start screen: the version line names the content GameBoot logged.
             feedback = Own(new FeedbackPresenter(root, text, ReportLinks.Version(Application.version, inputs.Content.Hash)));
             var feedbackPanel = feedback;
@@ -666,8 +687,8 @@ namespace Statecraft.Game.UI
             }
             if (hebrew) Own(new UiDirection(root, bridge));
             root.Q("root")?.RemoveFromClassList("loading");                // ready: the bar, panels and screens may show (P2-1)
-            if (Application.platform == RuntimePlatform.WebGLPlayer || CompanionSend != null)
-                companion = Own(new WebCompanion(root, text, bridge, () => card?.Shown != null, CompanionSend));
+            if (setCompanion != null && WebCompanion.On(companionPicked, SettingsFile()?.Read(SettingsPresenter.CompanionKey), Application.absoluteURL))
+                setCompanion(true);
             DiagLog.BootPhase("screens ready");
 
             if (notes.Count > 0) toast.Show(notes);

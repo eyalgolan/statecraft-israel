@@ -317,5 +317,8 @@ def test_csharp_import_js_export_and_production_hook_agree():
     assert re.search(r'StatecraftCompanion:\s*function\s*\(json\)', plugin)
     assert 'companion = Own(new WebCompanion(root, text, bridge, () => card?.Shown != null, CompanionSend));' in root
     assert 'Application.platform == RuntimePlatform.WebGLPlayer || CompanionSend != null' in root
+    # Opt-in (owner, 1 November 2026: "Opt-in for now (Recommended)"): the page or test transport only makes it possible;
+    # the Settings switch, a stored "on" or "?companion=1" turns it on.
+    assert 'WebCompanion.On(companionPicked, SettingsFile()?.Read(SettingsPresenter.CompanionKey), Application.absoluteURL)' in root
     assert 'companion = null;' in root
     assert all(word not in plugin for word in ['innerHTML', '.focus(', 'addEventListener', 'SendMessage'])
