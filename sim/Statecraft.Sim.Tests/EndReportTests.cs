@@ -50,6 +50,60 @@ public class EndReportTests
         Assert.Equal(s.Indicators["intl_standing"], r.InternationalSupport);
     }
 
+    // Q-SCORE-2, R-OBJ-006: the score of a run that completes every objective on its historical date, read from content.
+    [Fact]
+    public void TheReferenceScoreIsWhatCompletingEveryObjectiveOnItsHistoricalDateScores()
+    {
+        var s = Ended();
+        Assert.Equal(200, EndReport.For(Real, s).ReferenceScore);   // 100 each: the three infrastructure parts count once, plus absorption
+
+        // The same number by playing it: every objective recorded on its reference date, no timing bonus on time.
+        var perfect = Simulation.NewGame(Real, GoldenRun.Seed, Mode.Historical);
+        foreach (var o in Real.Objectives)
+            Assert.True(Objectives.Record(Real, perfect, Real.RulesAt(perfect.Date).Mvp!, o.Id, o.ReferenceDate, new List<Cause>()));
+        perfect.GameOver = GameOverCodes.MvpEnded;
+        Assert.Equal(perfect.Score, EndReport.For(Real, perfect).ReferenceScore);
+    }
+
+    // Q-SCORE-2 across an era override: each paying objective takes objective_points from the rules of the turn that ends on its own
+    // reference date, as scoring would. The real content split at 1950 with a later era whose rules pay 1: absorption (20 December
+    // 1949) pays in the founding era's 100, the infrastructure group with its latest part (yishuvim, 15 December 1950) in the later
+    // era. The game ends in the later era. The split is set on the loaded content: the real rules.yaml dates a line past 1950, which
+    // the loader would refuse in a founding era that short, and only RulesAt matters here.
+    [Fact]
+    public void TheReferenceScoreReadsEachObjectivesOwnEra()
+    {
+        var c = ContentLoader.Load(RealContentTests.ContentRoot());
+        var cut = new DateTime(1950, 1, 1);
+        c.Eras.Add(new Era { Id = "later", Name = "A Later Chapter", From = cut, To = c.Eras[0].To, Systems = c.Eras[0].Systems });
+        c.Eras[0].To = cut;
+        c.EraRules["later"] = new Rules { Mvp = new MvpRules { ObjectivePoints = 1, ObjectiveBonusPerMonth = 0, ObjectiveBonusCap = 0 } };
+        Assert.Equal(1, c.RulesAt(c.End.AddDays(-1)).Mvp!.ObjectivePoints);   // the game ends after the override
+
+        // A perfect run: every objective on its reference date, in date order, scored with the rules of the turn that ends there.
+        var s = Simulation.NewGame(c, GoldenRun.Seed, Mode.Historical);
+        foreach (var o in c.Objectives.OrderBy(o => o.ReferenceDate))
+            Assert.True(Objectives.Record(c, s, c.RulesAt(o.ReferenceDate.AddDays(-1)).Mvp!, o.Id, o.ReferenceDate, new List<Cause>()));
+        s.Date = c.End;
+        s.GameOver = GameOverCodes.MvpEnded;
+        Assert.Equal(101, s.Score);
+        Assert.Equal(s.Score, EndReport.For(c, s).ReferenceScore);
+    }
+
+    // A group id and a standalone objective id are separate namespaces: a part_of equal to a standalone objective's id still pays both.
+    [Fact]
+    public void AGroupIdEqualToAStandaloneObjectiveIdStillCountsBoth()
+    {
+        var c = ContentLoader.Load(RealContentTests.ContentRoot());
+        foreach (var o in c.Objectives.Where(o => o.PartOf != "")) o.PartOf = "absorb_immigrants";
+        var s = Simulation.NewGame(c, GoldenRun.Seed, Mode.Historical);
+        foreach (var o in c.Objectives)
+            Assert.True(Objectives.Record(c, s, c.RulesAt(s.Date).Mvp!, o.Id, o.ReferenceDate, new List<Cause>()));
+        s.GameOver = GameOverCodes.MvpEnded;
+        Assert.Equal(200, s.Score);
+        Assert.Equal(s.Score, EndReport.For(c, s).ReferenceScore);
+    }
+
     /// <summary>The fixture above has no prisoner points; here a real exchange (Prisoners.Return, the producer) scores some and the
     /// report carries that part.</summary>
     // R-END-005

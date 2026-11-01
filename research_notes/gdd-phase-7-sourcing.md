@@ -21,6 +21,8 @@ owner decides every question; where this note recommends, it says so.
   Wikipedia was read through the MediaWiki API and used only as a pointer; where a fact rests on it, the tag says so.
 - Turns are monthly, from the 15th. "The 15 February 1950 turn" means the turn that starts on that day.
 
+Every [V] in this note was an agent's reading on 2026-10-15, unless the tag gives a later date; a person's check is pending for all of them.
+
 ## Sources used
 
 Primary and official:

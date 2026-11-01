@@ -107,6 +107,26 @@ public class LocalityNameTests
         Assert.AreEqual("", InfoPanelPresenter.LocalitiesText(He, new Localities.Place[0]));
     }
 
+    /// <summary>#2022: in Hebrew the map tooltip drops a today name that is the pill's own Hebrew name - Umm el Fahm's
+    /// pill already reads אום אל-פחם, so a "היום: אום אל-פחם" tooltip repeated it (48 rows). The rule lives in
+    /// Localities.TodayName, which the tooltip and the info panel share; the panel's Hebrew line is unchanged (it already
+    /// dropped the repeat), and English tooltips keep the today name. Red-first: TodayName returned the Hebrew today name
+    /// for these rows, and the tooltip showed it.</summary>
+    [Test]
+    public void TheHebrewTooltipDropsATodayNameThatIsThePillsOwnName()
+    {
+        var by = map.Localities.ToDictionary(p => p.Settlement.Id);
+        var fahm = by["umm_al_fahm"];
+        Assert.AreEqual(fahm.NameHe, fahm.TodayHe, "precondition: one Hebrew word for 1948 and today");
+        Assert.AreEqual("Umm al-Fahm", Localities.TodayName(fahm, false), "English unchanged");
+        Assert.IsNull(Localities.TodayName(fahm, true), "the Hebrew today name is the pill's own name");
+        Assert.AreEqual("Today: Umm al-Fahm", MapLabelsPresenter.TipOf(fahm, n => "Today: " + n, "Mixed locality"), "the English tooltip keeps it");
+        Assert.IsNull(MapLabelsPresenter.TipOf(fahm, n => "Today: " + n, "Mixed locality", hebrew: true), "no Hebrew tooltip repeats the pill");
+        foreach (var p in map.Localities)
+            Assert.IsTrue(Localities.TodayName(p, true) == null || Localities.TodayName(p, true) != p.NameHe,
+                p.Settlement.Id + ": no Hebrew today name repeats the 1948 name");
+    }
+
     /// <summary>#899: under Hebrew each 1948 locality is named by its name_he (Beisan is ביסאן), and by the English name where the
     /// row has none (since #1344 every row has one, so a copy of Ghazawiya's row without it stands in). Where the Hebrew
     /// 1948 name and the Hebrew today name are one word (Umm el Fahm and Umm al-Fahm are both אום אל-פחם: 48 rows that would otherwise show a today name), the "today" part would repeat the name, so it is left out. English is unchanged.</summary>

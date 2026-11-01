@@ -1,1 +1,0 @@
-- The end report carries the score's parts (objective points, timing bonuses, prisoner points) beside the total, read from the final state; no screen shows them yet (Refs #812).

@@ -1,1 +1,0 @@
-- Refresh unit figure keep-clear bounds after model streaming or retirement, including when the camera stays still, and avoid reading retired mesh components.

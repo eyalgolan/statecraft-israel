@@ -33,13 +33,12 @@ namespace Statecraft.Game.UI
         public static readonly (string level, float volume)[] SoundLevels = { ("off", 0f), ("low", 0.35f), ("high", 1f) };
         readonly SettingsStore? store; readonly UiText text; readonly VisualElement root, screen; readonly Button tiltShift;
         readonly (Button button, GraphicsQuality.Choice choice, Action pick)[] quality;
-        readonly (Button button, string language, Action pick)[] languages;
+        readonly LanguageButtons languages;
         readonly (Button button, string level, Action pick)[] sound;
         readonly AdvisorSettings? advisors;
         readonly (Button button, string level, Action pick)[] helpLevels;
         readonly GameAudio? audio;
         string soundLevel;
-        readonly Action<string>? switchLanguage;
         readonly PanelSettings? panel; readonly Vector2Int reference; int uiScale = UiScales[0], chosen = UiScales[0];
         readonly (Button button, int percent, Action pick)[] scales;
         readonly Action unbindStar;
@@ -52,7 +51,7 @@ namespace Statecraft.Game.UI
         /// <param name="audio">The sound effects the volume applies to; null keeps only the choice.</param>
         public SettingsPresenter(VisualElement root, UiText text, SettingsStore? store, Action<string>? switchLanguage = null, PanelSettings? panel = null, GameAudio? audio = null, AdvisorSettings? advisors = null)
         {
-            this.store = store; this.text = text; this.switchLanguage = switchLanguage; this.root = root; this.audio = audio; this.advisors = advisors;
+            this.store = store; this.text = text; this.root = root; this.audio = audio; this.advisors = advisors;
             screen = root.Q<VisualElement>("screen-settings");
             screen.Q<Label>("settings-screen-title").text = text["settings.title"];
             screen.Q<Label>("settings-tiltshift-label").text = text["settings.tiltshift"];
@@ -75,17 +74,9 @@ namespace Statecraft.Game.UI
             var start = GraphicsQuality.AtStart(store?.Read(QualityKey), Application.absoluteURL, Environment.GetCommandLineArgs(),
                 Application.platform == RuntimePlatform.WebGLPlayer);
             if (start != GraphicsQuality.Current) GraphicsQuality.Apply(start);
-            // The UI's language (#1036): each button names its language in that language, so a player who cannot read the
-            // UI's one still finds their own; the one in use is marked. UiLanguage.AtStart reads the stored choice.
+            // The UI's language (#1036): the same buttons as the start screen's (LanguageButtons), the one in use marked.
             screen.Q<Label>("settings-language-label").text = text["settings.language"];
-            languages = Array.ConvertAll(new[] { (UiLanguage.English, "English"), (UiLanguage.Hebrew, "עברית") }, l =>
-            {
-                var b = screen.Q<Button>("settings-language-" + l.Item1);
-                b.text = l.Item2;
-                Action pick = () => PickLanguage(l.Item1);
-                b.clicked += pick;
-                return (b, l.Item1, pick);
-            });
+            languages = new LanguageButtons(screen, "settings-language-", text["ui.lang"], store, switchLanguage);
             // Sound effects (#39): three volume steps, the one that is set marked, applied to GameAudio at once and kept.
             screen.Q<Label>("settings-sound-label").text = text["settings.sound"];
             var storedSound = store?.Read(SoundKey);
@@ -145,7 +136,7 @@ namespace Statecraft.Game.UI
         {
             tiltShift.clicked -= Flip;
             foreach (var (b, _, pick) in quality) b.clicked -= pick;
-            foreach (var (b, _, pick) in languages) b.clicked -= pick;
+            languages.Dispose();
             foreach (var (b, _, pick) in sound) b.clicked -= pick;
             foreach (var (b, _, pick) in scales) b.clicked -= pick;
             foreach (var (b, _, pick) in helpLevels) b.clicked -= pick;
@@ -195,18 +186,6 @@ namespace Statecraft.Game.UI
             if (audio != null) audio.Volume = Array.Find(SoundLevels, l => l.level == soundLevel).volume;
         }
 
-        /// <summary>Keeps the choice first: the switch disposes this presenter with the rest of the UI.</summary>
-        void PickLanguage(string language)
-        {
-            if (language == text["ui.lang"]) return;
-            try { store?.Write(LanguageKey, language); }
-            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
-            {
-                Debug.LogWarning($"Settings: could not keep the language choice ({e.Message}); it holds until the page is closed");
-            }
-            switchLanguage?.Invoke(language);
-        }
-
         void PickScale(int percent)
         {
             chosen = percent;
@@ -251,7 +230,7 @@ namespace Statecraft.Game.UI
         {
             tiltShift.text = text[TiltShift.Enabled ? "settings.on" : "settings.off"];
             foreach (var (b, c, _) in quality) b.EnableInClassList(SelectedClass, c == GraphicsQuality.Current);
-            foreach (var (b, l, _) in languages) b.EnableInClassList(SelectedClass, l == text["ui.lang"]);
+            languages.Mark();
             foreach (var (b, l, _) in sound) b.EnableInClassList(SelectedClass, l == soundLevel);
             foreach (var (b, level, _) in helpLevels) b.EnableInClassList(SelectedClass, level == advisors?.Level);
             foreach (var (b, p, _) in scales)

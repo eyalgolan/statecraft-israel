@@ -71,6 +71,8 @@ other addition is [S, Wikipedia], [C] or [GAP].
 - **computed here** is arithmetic or a conversion done for this note, not a printed figure.
 - **our reading** marks an interpretation, and is not attributed to the source.
 
+Every [V] in this note was an agent's reading on 2026-10-23, unless the tag gives a later date; a person's check is pending for all of them.
+
 Every page cited was opened and read, including each Wikipedia revision at the `oldid` given.
 
 ## What counts as the Negev here

@@ -186,14 +186,44 @@ namespace Statecraft.Game.Map.Collection
             if (Request != DefaultRequest) { Request(id, detail, done); return new TestSeamLease(); }
             return CollectionStream.Acquire(id, detail, done);
         }
-        void RefreshResidency()
+        IEnumerable<(string id, CollectionDetail detail)> ResidencyDemand()
+        {
+            // v0.3.1 requested Far and Near for every wanted model. The 30 October ruling keeps that Far set map-wide,
+            // but gates Near to the successfully placed v0.3.1 pairings (Scenes), never unplaced/failed/capped wants.
+            var far = wants.Select(w => (w.Model, CollectionDetail.Far));
+            var keys = residencyView?.Keys;
+            var near = Scenes.Where(w => keys == null || keys.Contains(w.Key + "|" + w.Model))
+                .Select(w => (w.Model, CollectionDetail.Near));
+            return far.Concat(near);
+        }
+        void RefreshResidency() => RefreshResidencyCore(true);
+        void RefreshResidencyCore(bool redraw)
         {
             if (!isActiveAndEnabled) return;
             residency ??= new CollectionResidency(AcquireOriginal, ClearForRetirement, OnModel,
                 (instances, owners, keys, complete) => CollectionResidencyMetrics.AfterDestroyed("rural", instances, owners, complete,
-                    Application.isPlaying && ownedAcquire == null && Request == DefaultRequest ? () => CollectionStream.Settled(keys) : (Func<bool>?)null, keys));
-            residency.Replace(Admitted().SelectMany(w => desiredDetails.Select(d => (w.Model, d))));
-            Rebuild();
+                    Application.isPlaying && ownedAcquire == null && Request == DefaultRequest ? () => CollectionStream.Settled(keys) : (Func<bool>?)null, keys), true);
+            residency.Replace(ResidencyDemand());
+            if (redraw)
+            {
+                Rebuild();
+                // Rebuild is what proves a pairing survived MaxAnchorsPerModel and Spot; admit Near only afterwards.
+                residency.Replace(ResidencyDemand());
+            }
+        }
+        IReadOnlyList<UnityEngine.Object> ClearForRetirement(IReadOnlyCollection<(string id, CollectionDetail detail)> keys)
+        {
+            var removed = new List<UnityEngine.Object>();
+            foreach (var key in keys)
+            {
+                prefabs.Remove((key.id, key.detail)); asked.Remove((key.id, key.detail));
+                if (!originals.TryGetValue((key.id, key.detail), out var list)) continue;
+                foreach (var go in list) if (go != null) { removed.Add(go); DestroyNow(go); }
+                originals.Remove((key.id, key.detail));
+                Placed.RemoveAll(p => p.Model == key.id && p.Detail == key.detail);
+            }
+            renderers.RemoveAll(p => p.Renderer == null); animators.RemoveAll(p => p.Animator == null);
+            return removed;
         }
         IReadOnlyList<UnityEngine.Object> ClearForRetirement()
         {
@@ -207,7 +237,7 @@ namespace Statecraft.Game.Map.Collection
         }
         void LateUpdate()
         {
-            if (residencyView != null && residencyView.Prune(Time.frameCount)) RefreshResidency();
+            if (residencyView != null && residencyView.Prune(Time.frameCount)) { RefreshResidencyCore(false); SyncNearVisuals(); }
         }
         IEnumerable<Want> Admitted()
         {
@@ -217,6 +247,7 @@ namespace Statecraft.Game.Map.Collection
         void ClearVisuals()
         {
             for (int i = transform.childCount - 1; i >= 0; i--) DestroyNow(transform.GetChild(i).gameObject);
+            originals.Clear();
             renderers.Clear(); animators.Clear(); Placed.Clear(); Scenes.Clear(); Missing.Clear();
             if (map != null) Units.UnitShowcase.HideTrees(map, Name, Array.Empty<(Vector2 centre, float radius)>());
         }
@@ -225,8 +256,10 @@ namespace Statecraft.Game.Map.Collection
         readonly Dictionary<(string Model, CollectionDetail Detail), GameObject?> prefabs = new Dictionary<(string, CollectionDetail), GameObject?>();
         readonly HashSet<(string Model, CollectionDetail Detail)> asked = new HashSet<(string, CollectionDetail)>();
         readonly Dictionary<int, bool> closeFor = new Dictionary<int, bool>();
-        readonly List<(Renderer Renderer, CollectionDetail Detail)> renderers = new List<(Renderer, CollectionDetail)>();
+        readonly List<(Renderer Renderer, CollectionDetail Detail, string Instance)> renderers = new List<(Renderer, CollectionDetail, string)>();
         readonly List<(Animator Animator, CollectionDetail Detail)> animators = new List<(Animator, CollectionDetail)>();
+        readonly Dictionary<(string Model, CollectionDetail Detail), List<GameObject>> originals =
+            new Dictionary<(string, CollectionDetail), List<GameObject>>();
         List<Want> wants = new List<Want>();
 
         public readonly List<(string Key, string Model, CollectionDetail Detail, Vector3 At, string Name, int Member)> Placed =
@@ -284,7 +317,44 @@ namespace Statecraft.Game.Map.Collection
             if (this == null) return;
             prefabs[(model, detail)] = prefab;
             if (prefab == null) Debug.LogWarning($"RURAL: {model} {detail.ToString().ToLowerInvariant()} did not stream; that rural detail stays off the map.");
-            Rebuild();
+            if (detail == CollectionDetail.Near) SyncNearVisuals();
+            else { Rebuild(); residency?.Replace(ResidencyDemand()); }
+        }
+
+        void SyncNearVisuals()
+        {
+            var admitted = residencyView?.Keys;
+            var far = Placed.Where(p => p.Detail == CollectionDetail.Far).ToArray();
+            foreach (var placed in far)
+            {
+                string instanceKey = placed.Key + ":" + placed.Model + (placed.Member == 0 ? "" : "#" + placed.Member);
+                string nearName = instanceKey + ":near";
+                var near = transform.Find(nearName);
+                bool wantsNear = admitted == null || admitted.Contains(placed.Key + "|" + placed.Model);
+                if (!wantsNear && near != null)
+                {
+                    if (originals.TryGetValue((placed.Model, CollectionDetail.Near), out var owned)) owned.Remove(near.gameObject);
+                    DestroyNow(near.gameObject);
+                    Placed.RemoveAll(p => p.Detail == CollectionDetail.Near && p.Name == nearName);
+                }
+                else if (wantsNear && near == null
+                    && prefabs.TryGetValue((placed.Model, CollectionDetail.Near), out var prefab) && prefab != null)
+                {
+                    var farTransform = transform.Find(placed.Name);
+                    if (farTransform == null) continue;
+                    var go = Instantiate(prefab, transform, false); go.name = nearName;
+                    go.transform.SetPositionAndRotation(farTransform.position, farTransform.rotation);
+                    go.transform.localScale = farTransform.localScale;
+                    if (!originals.TryGetValue((placed.Model, CollectionDetail.Near), out var owned))
+                        originals[(placed.Model, CollectionDetail.Near)] = owned = new List<GameObject>();
+                    owned.Add(go);
+                    foreach (var renderer in go.GetComponentsInChildren<Renderer>(true))
+                    { renderer.shadowCastingMode = ShadowCastingMode.On; renderer.forceRenderingOff = !LastClose; renderers.Add((renderer, CollectionDetail.Near, instanceKey)); }
+                    foreach (var animator in go.GetComponentsInChildren<Animator>(true))
+                    { animator.enabled = LastClose; animators.Add((animator, CollectionDetail.Near)); }
+                    Placed.Add((placed.Key, placed.Model, CollectionDetail.Near, placed.At, nearName, placed.Member));
+                }
+            }
         }
 
         void Rebuild()
@@ -308,29 +378,39 @@ namespace Statecraft.Game.Map.Collection
             }
             var used = new Dictionary<string, int>(StringComparer.Ordinal);
             var holes = new List<(Vector2 centre, float radius)>();
-            foreach (var want in Admitted())
+            var nearKeys = residencyView?.Keys;
+            foreach (var want in wants)
             {
-                bool answered = prefabs.ContainsKey((want.Model, CollectionDetail.Far)) && prefabs.ContainsKey((want.Model, CollectionDetail.Near));
-                if (!answered) continue;
-                bool any = prefabs[(want.Model, CollectionDetail.Far)] != null || prefabs[(want.Model, CollectionDetail.Near)] != null;
+                bool hasFar = prefabs.TryGetValue((want.Model, CollectionDetail.Far), out var farPrefab) && farPrefab != null;
+                bool hasNear = prefabs.TryGetValue((want.Model, CollectionDetail.Near), out var nearPrefab) && nearPrefab != null;
+                // A streamed representation is what makes this a real scene. Until then it owns no anchor, clearance,
+                // tree hole or Near demand; a failed Far answer therefore cannot leave an empty permanent clearing.
+                if (!hasFar && !hasNear) continue;
                 used.TryGetValue(want.Model, out int n);
-                if (!any || n >= MaxAnchorsPerModel) continue;
+                if (n >= MaxAnchorsPerModel) continue;
                 var at = Spot(want, Free);
                 if (at == null) continue;
                 used[want.Model] = n + 1;
                 Scenes.Add(want);
                 taken.Add((at.Value, ClearanceRadiusM));
                 holes.Add((at.Value, SceneRadiusM(want.Model)));
+                bool nearAvailable = (nearKeys == null || nearKeys.Contains(want.Key + "|" + want.Model))
+                    && prefabs.TryGetValue((want.Model, CollectionDetail.Near), out var admittedNear) && admittedNear != null;
                 for (int member = 0; member < MembersOf(want.Model); member++)
                 {
                     var flat = MemberAt(want, at.Value, member);
                     var pos = new Vector3(flat.x, ground.Y(flat.x, flat.y), flat.y);
                     foreach (var detail in new[] { CollectionDetail.Far, CollectionDetail.Near })
                     {
-                        var prefab = prefabs[(want.Model, detail)];
+                        if (detail == CollectionDetail.Near && nearKeys != null && !nearKeys.Contains(want.Key + "|" + want.Model)) continue;
+                        if (!prefabs.TryGetValue((want.Model, detail), out var prefab)) continue;
                         if (prefab == null) continue;
                         var go = Instantiate(prefab, transform, false);
-                        string instanceName = want.Key + ":" + want.Model + (member == 0 ? "" : "#" + member) + ":" + detail.ToString().ToLowerInvariant();
+                        if (!originals.TryGetValue((want.Model, detail), out var owned))
+                            originals[(want.Model, detail)] = owned = new List<GameObject>();
+                        owned.Add(go);
+                        string instanceKey = want.Key + ":" + want.Model + (member == 0 ? "" : "#" + member);
+                        string instanceName = instanceKey + ":" + detail.ToString().ToLowerInvariant();
                         go.name = instanceName;
                         if (detail == CollectionDetail.Far) OriginalModelPose.Sample(go);
                         // Sized at the world scale by its long side seen from above, measured before the map's yaw.
@@ -345,8 +425,8 @@ namespace Statecraft.Game.Map.Collection
                         foreach (var renderer in go.GetComponentsInChildren<Renderer>(true))
                         {
                             renderer.shadowCastingMode = ShadowCastingMode.On;
-                            renderer.forceRenderingOff = detail == CollectionDetail.Near ? !LastClose : LastClose;
-                            renderers.Add((renderer, detail));
+                            renderer.forceRenderingOff = detail == CollectionDetail.Near ? !LastClose : LastClose && nearAvailable;
+                            renderers.Add((renderer, detail, instanceKey));
                         }
                         foreach (var animator in go.GetComponentsInChildren<Animator>(true))
                         {
@@ -358,9 +438,9 @@ namespace Statecraft.Game.Map.Collection
                 }
             }
             Units.UnitShowcase.HideTrees(map, Name, holes);
-            foreach (var model in Admitted().Select(w => w.Model).Distinct())
-                if (prefabs.ContainsKey((model, CollectionDetail.Far)) && prefabs.ContainsKey((model, CollectionDetail.Near))
-                    && (!used.TryGetValue(model, out int got) || got < MaxAnchorsPerModel)) Missing.Add(model);
+            foreach (var model in wants.Select(w => w.Model).Distinct())
+                if (prefabs.TryGetValue((model, CollectionDetail.Far), out var far)
+                    && (far == null || !used.TryGetValue(model, out int got) || got < MaxAnchorsPerModel)) Missing.Add(model);
             Debug.Log($"RURAL: {Scenes.Count} rural scenes placed ({Placed.Count} models); {Missing.Count} models short of {MaxAnchorsPerModel} scenes");
         }
 
@@ -376,7 +456,7 @@ namespace Statecraft.Game.Map.Collection
         void DestroyNow(GameObject go)
         {
             destroyedOriginals.Add(go); destroyedOriginals.RemoveAll(o => o == null);
-            if (Application.isPlaying) { go.transform.SetParent(null); Destroy(go); }
+            if (Application.isPlaying) { if (gameObject.activeInHierarchy) go.transform.SetParent(null); Destroy(go); }
             else DestroyImmediate(go);
         }
 
@@ -397,13 +477,15 @@ namespace Statecraft.Game.Map.Collection
                 var previousDemand = residencyView.Keys;
                 residencyView.Observe(camera, wants.Select(w => (w.Key + "|" + w.Model,
                     new Vector3(w.Anchor.x, 0, w.Anchor.y), w.AnchorRadius)), Time.frameCount);
-                if (!previousDemand.SetEquals(residencyView.Keys)) RefreshResidency();
+                if (!previousDemand.SetEquals(residencyView.Keys)) { RefreshResidencyCore(false); SyncNearVisuals(); }
             }
             int id = camera.GetInstanceID();
             bool close = CloseAt(TownLandmarks.ViewDistance(camera), closeFor.TryGetValue(id, out var was) ? was : (bool?)null);
             closeFor[id] = close; LastClose = close;
-            foreach (var (renderer, detail) in renderers)
-                if (renderer != null) renderer.forceRenderingOff = detail == CollectionDetail.Near ? !close : close;
+            var nearInstances = new HashSet<string>(renderers.Where(p => p.Renderer != null && p.Detail == CollectionDetail.Near)
+                .Select(p => p.Instance), StringComparer.Ordinal);
+            foreach (var (renderer, detail, instance) in renderers)
+                if (renderer != null) renderer.forceRenderingOff = detail == CollectionDetail.Near ? !close : close && nearInstances.Contains(instance);
             foreach (var (animator, detail) in animators)
                 if (animator != null) animator.enabled = detail == CollectionDetail.Near && close;
         }

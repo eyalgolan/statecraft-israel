@@ -307,45 +307,45 @@ public class Gdd03EventRulesTests
     }
     static readonly string[] SourceBytes =
     {
-        "absorb_immigrants:56880a2e2a96ed94f9131f71e3be55d8f2b27a8cab7aceda83e7cb6b3dd886de",
-        "altalena:7c70e207bcc8b354e5c137e7c7b15d3db1de10f85303e197495615360de397ca",
-        "armistice_egypt:b85f731749e0636502a8d4a10118fbdd9c21f56a6009d6ccc0857fd5591943bc",
-        "armistice_jordan:d6284502a8b49e7463deabd81ee760181451b732bf12db46ead2e838219e4cd4",
-        "armistice_lebanon:e87a66c9df444b0c039b23d2533956d500ca1c277b3ce4236b534b121c24e87e",
-        "armistice_syria:c8424d98187b549a6e7d5d392d9e064bcf6ff0c62d4da3118c940e12ea6300b0",
-        "austerity_1949:f5b0d85ce7fc8772c55f6d235dc8441372083a35e6f51282e63f49b2e17397af",
-        "bernadotte_assassination:9263942438c459aad95b51c2569d1aa89cb2255f7278655e244121044e5755c4",
+        "absorb_immigrants:7c926e12a0e54c4602177832f2db0c02393fd57981aea0f4b4eac916902d8f6a", // re-pinned for #1065 (reviewer comment matches the text)
+        "altalena:d2c85de2ba034928441a67e490862b265f693d005e000553622bd80fbcb7ede8", // re-pinned for #1065 (Beri's native Hebrew read)
+        "armistice_egypt:d361db22977057e24e0cb515afbfee37439cbdce38e465960b4978d082f5704f", // re-pinned for #1065 (Beri's native Hebrew read)
+        "armistice_jordan:484bedf4869f6b01aec1a2d400c577183654a6d36930da065a77ddf203cf4450", // re-pinned for #1065 (Beri's native Hebrew read)
+        "armistice_lebanon:81141de094d4d536c6c0e22b93a0d3704a3f1d999b3813a51c2d08f2ae8ecf11", // re-pinned for #1065 (Beri's native Hebrew read)
+        "armistice_syria:2b83f89ff2effe21e01d511a7ea1e0a41f937ee96e39a16977ab6f7e8999257e", // re-pinned for #1065 (Beri's native Hebrew read)
+        "austerity_1949:7b4534f4982116745eef2ab2f959ad52faf6efa8efb7f0f5bda3844bac590cc4", // re-pinned for #1065 (Beri's native Hebrew read)
+        "bernadotte_assassination:ea0f988df86957b3e56bf6cd0322f5d33adc927d969509e94ec67aa53e7ed0c5", // re-pinned for #1065 (Beri's native Hebrew read)
         "burma_road_complete:f48054bb7720b93b582cae4e168f13595a4360ee62e91e12815df08de384e6e3",
-        "clothing_rationing_1950:2e33baac62ea7d12e36b9a5fd5237a128139671b8729c4841c967afdfa6dba60",
-        "degania_defence:47233f988033e4a7499e1e3df52a542fe252d2a32a5f1ac8d358887f676d4e23",
-        "education_registration_1951:cce6e7f6ca42058ed265da888258cce7fc40407710bba98e028ad7801a351e11",
-        "elections_1949:959ae7714c1a53a3df6766e6d191bc3490f3fa5b5d2972dd1b965a855106c110",
+        "clothing_rationing_1950:ce2d24a8a98ad86a1670e62094d18fca9da71b5cd11f437cd5314a09f4a1d562", // re-pinned for #1065 (Beri's native Hebrew read)
+        "degania_defence:f915a42f050777ddffd7e7e26090b51c6cf922dade41a98fe7174b1c50a62c6e", // re-pinned for #2020 (owner-approved Hebrew wording, 30 October 2026), then for #1065 (Beri's native Hebrew read)
+        "education_registration_1951:1d5cb0e4062dc61b787a7e1b375b3c85c9a1663bd4c3c73f3c9c6f9ee5ac4da3", // re-pinned for #1065 (Beri's native Hebrew read)
+        "elections_1949:962bd8064e8b98d4919be9b4ff4fab68cb9bd3d15213ea43917caa4432f42116", // re-pinned for #1065 (Beri's native Hebrew read)
         "first_new_yishuv:9edf9e0da02c2feefe11eb52aa056ee64af60a41ac3fa2c283ff976f33d0e0c8",
-        "first_truce:251eaf274e28427c667a1ea46a4d0f3e9f5eefbc4bff8fe1141fc6d8bdf6b378",
-        "forex_crisis_1951:212a675012c6cfb915b960de96d7a2e2eac9622c9652afd7a6ffd4ee2e1ed304",
-        "frumkin_commission:e88bc10c1ae0739c3191fa03a3958f98c7136bd3a1de9e93aaf129ddb8fff55c",
-        "hula_drainage:0b400fda5ce85e202cf2bf7c2557a2ff612f406f33f2f59b24e943636aaf372e",
-        "idf_founding:6777150c6f2cdb064cacd181761f8bb80fa25205c9fc25e523a842a825adae58",
-        "iraqi_exodus:62c43ba683f4981951829a72c0cae97b1ac8f11663472cccf73b46cefc1c60f5",
-        "israel_bonds:b8f95f2ab683a4b88ca36b8a375d168a4bf5921ccb864e5504c45d66821bea08",
-        "jerusalem_ceasefire:79d875217efb2d614538db27b405d9469d46fb61b5288651766611e5559a4643",
-        "jerusalem_demilitarisation_guard:c653ccecb5ad2a545c7d29ecb9af9688617264504a9118bcb2b691e3867aa646",
-        "jerusalem_military_government:322585aeedf0c69b9f81722edebaebbdc0d27ebb4e7b67d275e898607d2cd211",
-        "latrun_proposal:f7612a99e1e6f378e6b9a91f36bb4c31e16de465e8bccb2785fea70bfe4e6932",
-        "law_of_return:d9453c9d4645bfe7b8bd715bbc4aae6d2f5156b72c717317bd6990184b8e61e4",
-        "maabarot_policy:de29ffa17fbc70aa7283b833e546a219b449c8b3e0d712e3d158ed18169d592b",
-        "ministry_supply_crisis:000d54fdc5198b105f101bfa7816a152e2c7682f01a97da67e97988e5ef141db",
-        "operation_hiram:77657ee082201710acf8d1ab25979ddb5571261452e3a8c9ccc5d33e783177b7",
-        "operation_horev:72fb22533fc52e5507502fdce6e84c59cbb0649118b00a1701e5e9b522437678",
-        "operation_yoav:418ea425c461986c0ad2bcf9d493941adc9e22082877506c867b6aab4cf75250",
-        "rafah_force_pressure:353f3cd16452c30d6d2aebf3d45629d8c93cb314e969f99495476116ee3dc9a4",
+        "first_truce:fb78d2e82393d5cfb19e56938965c7838c73426f5a23d053d612bc74f8010062", // re-pinned for #1065 (Beri's native Hebrew read)
+        "forex_crisis_1951:53fee056940af610e16f7793d66d38f6470027a63d0c5968c0cc748eb1dc2af0", // re-pinned for #1065 (Beri's native Hebrew read)
+        "frumkin_commission:c7bfb21991dc41bfcbaaf4778c47c5226913a8289ba208474c87128768ba622c", // re-pinned for #1065 (Beri's native Hebrew read)
+        "hula_drainage:b7ec7159b5cb6ecc009e1ff7e12a7f2426ee1c4b992b8c91c4675c8df3cc1bf5", // re-pinned for #1065 (Beri's native Hebrew read)
+        "idf_founding:caad7affcf0309a41c56956c10dd15936ec319ac996ddff6f2cd85efbcebc51e", // re-pinned for #1065 (Beri's native Hebrew read)
+        "iraqi_exodus:461dbb8a0685b7dceb6242d8e819635a27bb10033463e66d1a2e3ac68c9b8521", // re-pinned for #1065 (Beri's native Hebrew read)
+        "israel_bonds:9bb4e8f38b8c9dc41b339645457efe1ce8d74580c53556faf4c81df50f67a992", // re-pinned for #1065 (Beri's native Hebrew read)
+        "jerusalem_ceasefire:b850682a7736dcf2870550322f32a2d5c30963a05529dc9162dd68c9234648d6", // re-pinned for #1065 (Beri's native Hebrew read)
+        "jerusalem_demilitarisation_guard:93cec80c25ad328a0382c3178de10e133ea9a506ec78b3e038b7e25b7f6e2d62", // re-pinned for #2020 (owner-approved Hebrew wording, owner re-review bc139d5eb)
+        "jerusalem_military_government:526dbc88eabe4691e3ee1f3ed2c5fdeb640f11ae0a7a632c63066175b9c18176", // re-pinned for #1065 (Beri's native Hebrew read)
+        "latrun_proposal:169933e28b8fc3085c5e74176a731d83f1e1955ed0ffac9a706029f738353bf5", // re-pinned for #1065 (Beri's native Hebrew read)
+        "law_of_return:d04bb849bbb6fa089afc6e1123f8335aa1b03f49bc025f9d1c6746c48d27b398", // re-pinned for #1065 (Beri's native Hebrew read)
+        "maabarot_policy:12e53e14fe3b045f7c18b75ac7af68acf079c17968baf6c82df2435675eb0884", // re-pinned for #1065 (Beri's native Hebrew read)
+        "ministry_supply_crisis:2de253de7bafb65f0168bdc151dc0b47fec94843ad6f13bf3ac092d7015b55f9", // re-pinned for #1065 (Beri's native Hebrew read)
+        "operation_hiram:c8db23f9a331b0cf517e4762fe8f71dc286548ada77115b9500a93bce6ba740e", // re-pinned for #1065 (Beri's native Hebrew read)
+        "operation_horev:6e018d54d46b46676d5ab56bc2fcedbeffab23a00334f75b415aec1713507f51", // re-pinned for #1065 (Beri's native Hebrew read)
+        "operation_yoav:3d2e9a9a4416a4277e4c17da1e442895bda562c238e6f459c45b6ab89a9133fe", // re-pinned for #1065 (Beri's native Hebrew read)
+        "rafah_force_pressure:658b99340f0cf7dbf042e64d131509b87cec48f4374b16a1337fd0f831dbd28d", // re-pinned for #2020 (owner-approved Hebrew wording, owner re-review bc139d5eb)
         "railway_complete:2108338a93d663ec9cb06bcb474c1f1211cfff480f9ef0acaec9c758a4854a7c", // re-pinned for #1676 (person's fact-check of #1410, status draft -> fact-checked)
-        "reparations_claim:b9982aae12edd0f6e2d9f8e4e3273d865d2e9106480fae5824728524edfa4139",
+        "reparations_claim:5412e71f4f5a90a92bd86622eb1a169feee45f0ba2fe82c5ab40bd8f3d43cafd", // re-pinned for #1065 (Beri's native Hebrew read)
         "reparations_vote:a79521d61ec59aa72a581b6598ecfade18e8d1e52dc25cef083078b0665a13b3",
-        "rhodes_talks:9ff18db85e108157ab4ff3753fbf42f9933bedb5f021310979d05fae1b731d1c",
-        "second_truce:56c2259ad9af32b4d6d43d22044908611e6b43f2836211350beb125e864b1611",
-        "sinai_withdrawal:29854edb31218257e99417f86f23a6dde91c07a9e66230fa1a1b4a0248b15ac5",
-        "ten_days:805500e569a78c2debd27df872614a153730bdba2360ff94b2edb74ea76c56cb",
+        "rhodes_talks:c5c9cdf906f75e2672e5eedaeadab7f224df96f666a3097813903b81ec06f4f6", // re-pinned for #1065 (Beri's native Hebrew read)
+        "second_truce:22eeb171849bac248d58cec944c03bac6aee56c96a192aabf0aba2b7e02b19f6", // re-pinned for #1065 (Beri's native Hebrew read)
+        "sinai_withdrawal:4abcd39e509c3d404523f7a5609bdb8e1e5180c19524367790ba7adf0af9e06b", // re-pinned for #1065 (Beri's native Hebrew read)
+        "ten_days:7fece9c0eb4f56ece79a7247e430fb679d3d4d826165e598fd0bd982099a412a", // re-pinned for #1065 (Beri's native Hebrew read)
     };
     [Fact]
     public void AllThirtyNineSourceRecordsIncludingReviewsAndHebrewAreUnchanged()

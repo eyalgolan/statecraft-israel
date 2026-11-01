@@ -923,4 +923,19 @@ public class InfoPanelLayoutTests
         },text:text,hebrew:hebrew,unit:()=>f.token);
     }
 
+    // #2045: the gun's card says why it is offered no Hold (Orders.Check: artillery never holds ground) in the UI's language,
+    // not in the sim's English.
+    [UnityTest]
+    public IEnumerator Gdd03GunCardRefusesHoldInTheUiLanguage([Values(false,true)] bool hebrew)
+    {
+        var f=MilitaryFixture(Combat.ArtilleryClass);var g=f.session;
+        var text=UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(hebrew?UiPaths.StringsHebrew:UiPaths.Strings).text);
+        Assert.AreEqual(Orders.RefusedArtilleryHold,Orders.Check(g.Content,g.State,f.id,Orders.Hold));
+        yield return Rendered(1512,982,g,(root,info)=>info.ShowUnit(),root=> {
+            var reason=root.Q<Label>("info-reason").text;
+            StringAssert.Contains(text["unit.order_refused.artillery_hold"],reason);
+            if (hebrew) StringAssert.DoesNotContain(Orders.RefusedArtilleryHold,reason);
+        },text:text,hebrew:hebrew,unit:()=>f.token);
+    }
+
 }

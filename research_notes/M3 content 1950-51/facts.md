@@ -10,6 +10,8 @@ Researched 2026-10-10. All URLs were checked on that date unless noted.
 - Ids in `backticks` follow the existing `content/*.yaml` ids. New ids are proposals only.
 - No quotes are invented. The few short quotes below are copied from the cited page.
 
+Every [V] in this note was an agent's reading on 2026-10-10, unless the tag gives a later date; a person's check is pending for all of them.
+
 **Access notes**
 - knesset.gov.il (both the history pages and main.knesset.gov.il) sits behind a bot wall and returned an empty JS shell. Knesset-sourced facts below are therefore taken through Wikipedia (en and he), IDI and JVL, which cite the Knesset site.
 - CBS PDFs could only be read by fetching them and then extracting the raw text streams locally. The CBS numbers below come from those extracts.
