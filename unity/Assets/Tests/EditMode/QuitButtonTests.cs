@@ -47,6 +47,19 @@ public class QuitButtonTests
         Assert.AreEqual(0, quits);
     }
 
+    /// <summary>Settings hides Quit's whole row in the browser, so no empty row is left at the bottom of the screen.</summary>
+    [Test]
+    public void In_the_browser_settings_hides_the_whole_row()
+    {
+        using var ui = new UiTestKit();
+        var b = ui.Q<Button>("settings-quit");
+        QuitButton.Bind(b, RuntimePlatform.WebGLPlayer, () => { }, ui.Q<VisualElement>("settings-quit-row"))();
+        Assert.AreSame(ui.Q<VisualElement>("settings-quit-row"), b.parent, "the row is the button's own");
+        Assert.AreEqual(DisplayStyle.None, ui.Q<VisualElement>("settings-quit-row").style.display.value);
+        QuitButton.Bind(b, RuntimePlatform.LinuxPlayer, () => { }, ui.Q<VisualElement>("settings-quit-row"))();
+        Assert.AreEqual(DisplayStyle.Flex, ui.Q<VisualElement>("settings-quit-row").style.display.value);
+    }
+
     [TestCase("start-quit")]
     [TestCase("settings-quit")]
     public void On_desktop_it_shows_and_a_press_quits_once(string name)
@@ -55,7 +68,6 @@ public class QuitButtonTests
         int quits = 0;
         var unbind = QuitButton.Bind(ui.Q<Button>(name), RuntimePlatform.WindowsPlayer, () => quits++);
         Assert.AreEqual(DisplayStyle.Flex, ui.Q<Button>(name).style.display.value);
-        Assert.IsTrue(ui.Q<Button>(name).focusable, "it joins the Tab order");
         ui.Press(name);
         Assert.AreEqual(1, quits);
         unbind();
@@ -80,7 +92,6 @@ public class QuitButtonTests
             using (new SettingsPresenter(ui.Root, text, null))
             {
                 Assert.AreEqual(text["ui.quit"], ui.Q<Button>("settings-quit").text);
-                Assert.AreEqual(DisplayStyle.Flex, ui.Q<Button>("settings-quit").style.display.value);
             }
         }
     }
@@ -99,7 +110,6 @@ public class QuitButtonTests
             using (new StartScreenPresenter(ui.Root, newGame, false, text: text))
             {
                 Assert.AreEqual(text["ui.quit"], ui.Q<Button>("start-quit").text);
-                Assert.AreEqual(DisplayStyle.Flex, ui.Q<Button>("start-quit").style.display.value);
             }
         }
     }

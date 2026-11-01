@@ -130,7 +130,7 @@ namespace Statecraft.Game.UI
             unbindStar = ExternalLink.Bind(star, ExternalLink.Repository);
             var quit = screen.Q<Button>("settings-quit");   // #2153: desktop players only
             quit.text = text["ui.quit"];
-            unbindQuit = QuitButton.Bind(quit, Application.platform, () => Application.Quit());
+            unbindQuit = QuitButton.Bind(quit, Application.platform, () => Application.Quit(), screen.Q("settings-quit-row"));
             ScreenNav.OnOpened(screen, Show);   // a dev toggle may have changed it while the screen was shut
             Show();
         }

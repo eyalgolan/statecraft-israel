@@ -18,15 +18,16 @@ namespace Statecraft.Game.UI
             _ => false,
         };
 
-        /// <summary>Shows <paramref name="b"/> only where <see cref="Shown"/>, and calls <paramref name="quit"/> when it is
-        /// pressed. The presenters pass Application.Quit. Returns the unbinding, for the presenter's Dispose (a language
-        /// switch builds the screens again over the same buttons).</summary>
-        public static Action Bind(Button b, RuntimePlatform p, Action quit)
+        /// <summary>Shows <paramref name="b"/> (or <paramref name="row"/>, the row it alone fills) only where
+        /// <see cref="Shown"/>, and calls <paramref name="quit"/> when it is pressed. The presenters pass Application.Quit.
+        /// Returns the unbinding, for the presenter's Dispose (a language switch builds the screens again over the same
+        /// buttons).</summary>
+        public static Action Bind(Button b, RuntimePlatform p, Action quit, VisualElement? row = null)
         {
             if (b == null) throw new ArgumentNullException(nameof(b));
             if (quit == null) throw new ArgumentNullException(nameof(quit));
             bool shown = Shown(p);
-            b.style.display = shown ? DisplayStyle.Flex : DisplayStyle.None;
+            (row ?? b).style.display = shown ? DisplayStyle.Flex : DisplayStyle.None;
             if (!shown) return () => { };
             b.clicked += quit;
             return () => b.clicked -= quit;

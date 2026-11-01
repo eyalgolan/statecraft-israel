@@ -378,9 +378,10 @@ public class StartScreenTests
         cont.Focus();
         Assert.AreSame(cont, rig.Ui.Root.focusController?.focusedElement, "Continue has the focus");
         // Tab walks the screen's buttons only: Continue, New Game, the recording's button, Star on GitHub (#1168), Report a
-        // bug or idea (#1169) and the two languages (#2054), English then Hebrew.
+        // bug or idea (#1169), the two languages (#2054), English then Hebrew, and Quit (#2153; the editor is a desktop
+        // platform, so it shows).
         var seen = new List<string>();
-        for (int i = 0; i < 6; i++)
+        for (int i = 0; i < 7; i++)
         {
             var at = (VisualElement)rig.Ui.Root.focusController!.focusedElement;
             using (var e = NavigationMoveEvent.GetPooled(NavigationMoveEvent.Direction.Next)) { e.target = at; at.SendEvent(e); }
@@ -389,9 +390,10 @@ public class StartScreenTests
         }
         Assert.AreEqual("start-new-game", seen[0], "Tab moves from Continue to New Game: " + string.Join(", ", seen));
         Assert.IsTrue(seen.All(n => n == "start-continue" || n == "start-new-game" || n == "start-listen" || n == "start-star" || n == "start-report"
-            || n == "start-language-en" || n == "start-language-he"), "Tab stays on the screen's buttons: " + string.Join(", ", seen));
+            || n == "start-language-en" || n == "start-language-he" || n == "start-quit"), "Tab stays on the screen's buttons: " + string.Join(", ", seen));
         var en = seen.IndexOf("start-language-en");
         Assert.IsTrue(en >= 0 && en + 1 < seen.Count && seen[en + 1] == "start-language-he", "Tab reaches English, then Hebrew: " + string.Join(", ", seen));
+        Assert.IsTrue(en + 2 < seen.Count && seen[en + 2] == "start-quit", "Tab reaches Quit after Hebrew: " + string.Join(", ", seen));
         CollectionAssert.Contains(seen, "start-listen", "Tab reaches the recording's button: " + string.Join(", ", seen));
         rig.Ui.Press("start-continue");
         yield return null; yield return null;
@@ -614,6 +616,10 @@ public class StartScreenTests
                 Assert.AreNotEqual(newGameStyle.borderTopColor, starStyle.borderTopColor, $"{at}: the Star button's edge is not New game's gold");
                 Assert.IsTrue(Inside(R("start-report"), R("start-community")), $"{at}: the Report button {R("start-report")} is in its row");   // #1169
                 Assert.IsFalse(R("start-report").Overlaps(star), at);
+                // #2153: Quit (shown: the editor is a desktop platform) in the same row, inside the panel, over nothing.
+                Assert.IsTrue(Inside(R("start-quit"), R("start-community")) && Inside(R("start-quit"), panel), $"{at}: Quit {R("start-quit")} is in its row, inside the panel");
+                foreach (var other in new[] { "start-report", "start-language-en", "start-language-he" })
+                    Assert.IsFalse(R("start-quit").Overlaps(R(other)), $"{at}: Quit {R("start-quit")} overlaps {other} {R(other)}");
             }
             finally
             {

@@ -495,8 +495,8 @@
                     <ui:Button name="settings-share" text="Share" class="settings-switch" />
                 </ui:VisualElement>
             </ui:VisualElement>
-            <!-- Quit (#2153, QuitButton): desktop players only, hidden in the browser; its own row, last. -->
-            <ui:VisualElement class="row settings-row">
+            <!-- Quit (#2153, QuitButton): desktop players only; its own row, last, hidden whole in the browser. -->
+            <ui:VisualElement name="settings-quit-row" class="row settings-row">
                 <ui:Button name="settings-quit" text="Quit" class="settings-switch" />
             </ui:VisualElement>
             <Statecraft.Game.UI.UiFrame />
