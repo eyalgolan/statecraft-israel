@@ -334,6 +334,8 @@ why.line.on_its_way: "{0} is on its way to {1}"
 why.line.stopped_no_route: "{0} stopped: no route reaches {1}"
 why.line.stopped_full: "{0} stopped: {1} is full"
 why.line.arrived: "{0} arrived at {1}"
+# An operation card's order ended with its operation (R-ENEMY-005; the owner's answer 1 on #2087).
+why.line.card_order_ended: "{0} stopped: the operation's order to {1} has ended"
 # B1: the economy, population, effect and security Why lines (CauseKeys, CauseText). English is the sim's own Message,
 # word for word: a test compares them, so change the sim and this together. {0} a name below, {1} the change in its unit;
 # money and percentages arrive formatted by PlayerText. Lines without a key stay the sim's English (not yet localized).
@@ -924,6 +926,8 @@ unit.order_refused.not_military: "Only a military unit takes that order"
 unit.order_refused.not_yours: "That unit is not yours"
 unit.order_refused.artillery_hold: "Artillery does not hold ground"
 unit.order_refused.already: "That unit already has that order"
+# An operation card's refused go-to (R-ENEMY-005; the owner's answer 1 on #2087).
+unit.order_refused.card_order: "The unit could not take the operation's order"
 
 # #1682 remaining Cause producers. English report wording preserved.
 why.cause.workers_assigned: "{0}: {1} groups in work"

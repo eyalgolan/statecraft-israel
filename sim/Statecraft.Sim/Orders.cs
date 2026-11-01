@@ -25,6 +25,9 @@ namespace Statecraft.Sim
         public const string RefusedNotYours = "That unit is not yours";
         public const string RefusedArtilleryHold = "Artillery does not hold ground";
         public const string RefusedAlready = "That unit already has that order";
+        /// <summary>R-ENEMY-005 (the owner's answer 1 on #2087): an operation card's go-to that Movement.GiveGoTo refused. The
+        /// turn's Rejected list carries it with the order, as it carries the player's refused orders (EventSystem).</summary>
+        public const string RefusedCardOrder = "The unit could not take the operation's order";
 
         /// <summary>The player's side (units_1948.yaml's id). Only the player's military units take orders.</summary>
         const string PlayerSide = "israel";

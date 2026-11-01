@@ -144,6 +144,9 @@ namespace Statecraft.Sim
                     throw new ContentException(e.File, at + ".unit", $"unknown unit row '{x.Unit}' ({StartingForces.FileName})");
                 if (!c.UnitAnchorHexes.Any(k => k.Key.Row == x.Unit && k.Value == (x.Q, x.R)))
                     throw new ContentException(e.File, at, FormattableString.Invariant($"hex q={x.Q} r={x.R} is not an anchor of '{x.Unit}' in {StartingForces.HexesFileName}"));
+                // The order ends with its anchor's window (the owner's answer 1 on #2087), so the anchor needs an end.
+                if (EventSystem.OrderEnds(c, x) == null)
+                    throw new ContentException(e.File, at, FormattableString.Invariant($"the anchor of '{x.Unit}' on hex q={x.Q} r={x.R} has no 'to' date in {StartingForces.FileName}"));
             }
         }
 

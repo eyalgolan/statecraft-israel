@@ -24,7 +24,7 @@ public class CaptureTests
 
     /// <summary>A target row. Stayed by default, so every Raid, Occupy and Deport test keeps its behaviour (#799 plan, Task 1);
     /// the annexation values are fixture values (people 60, employed_share 0.5), not history.</summary>
-    static string Target(string id, int q, int r, bool fled = false) => FormattableString.Invariant(
+    internal static string Target(string id, int q, int r, bool fled = false) => FormattableString.Invariant(
         $"  - {{ id: {id}, q: {q}, r: {r}, operation: fixture_operation, sources: [{{ url: \"https://example.org/{id}\", checked: 2026-10-18 }}], ")
         + (fled ? "residents: fled, " : "residents: stayed, ")
         + FormattableString.Invariant($"residents_sources: [{{ url: \"https://example.org/{id}/residents\", checked: 2026-10-18 }}], ")

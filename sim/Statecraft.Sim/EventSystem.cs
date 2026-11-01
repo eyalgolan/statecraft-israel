@@ -61,20 +61,31 @@ namespace Statecraft.Sim
         /// once the window has ended (load-time coverage guarantees a holder there).</summary>
         public static DateTime FillDate(GameEvent e, DateTime date) => e.To.HasValue && date >= e.To.Value ? e.To.Value.AddDays(-1) : date;
 
+        /// <summary>R-ENEMY-005 (the owner's answer 1 on #2087, "Orders expire with the operation"): the day a card's order to a
+        /// row's anchor hex ends, the `to` of that anchor's window in map/units_1948.yaml (the latest, should two anchors share
+        /// the hex), or null when it has none. The anchor's dates, not the card's: a card's from/to is when the decision is open
+        /// (Horev's closes on 23 December 1948; the operation ran to 7 January 1949), while the anchor's are the sourced span of
+        /// the position the operation sends the unit to: Carmeli facing the bridgehead to 19 July 1948, the end of Brosh, and
+        /// Golani at the Julis camp to 24 February 1949, the Egypt armistice.</summary>
+        internal static DateTime? OrderEnds(Content c, UnitOrderEffect x) =>
+            c.UnitAnchorHexes.Where(k => k.Key.Row == x.Unit && k.Value == (x.Q, x.R) && c.UnitAnchorEnds.ContainsKey(k.Key))
+                .Select(k => (DateTime?)c.UnitAnchorEnds[k.Key]).Max();
+
         /// <summary>Returns null on success, or the reason the choice was rejected. <paramref name="spent"/> is the movement
-        /// points the turn's orders have spent so far, which an option's unit orders share (R-ENEMY-005).</summary>
-        public static string? Choose(Content c, GameState s, string eventId, string optionId, List<Cause> why, Dictionary<int, int>? spent = null)
+        /// points the turn's orders have spent so far, which an option's unit orders share (R-ENEMY-005).
+        /// A refused unit order goes into <paramref name="rejected"/>, as the player's refused orders do.</summary>
+        public static string? Choose(Content c, GameState s, string eventId, string optionId, List<Cause> why, Dictionary<int, int>? spent = null, List<Rejection>? rejected = null)
         {
             PopulationLedger.RefuseAggregate(s);
             if (!s.PendingEvents.Contains(eventId)) return "That event is not waiting for a decision";
             var option = Get(c, eventId).Options.FirstOrDefault(o => o.Id == optionId);
             if (option == null) return "That event has no such option";
-            Resolve(c, s, eventId, option, "chosen", why, spent: spent);
+            Resolve(c, s, eventId, option, "chosen", why, spent: spent, rejected: rejected);
             return null;
         }
 
         /// <param name="share">The share of each numeric effect that applies: 1, except for a disloyal minister's delegation (R-EVT-003).</param>
-        static void Resolve(Content c, GameState s, string eventId, EventOption o, string how, List<Cause> why, double share = 1.0, bool delegated = false, Person? minister = null, Dictionary<int, int>? spent = null)
+        static void Resolve(Content c, GameState s, string eventId, EventOption o, string how, List<Cause> why, double share = 1.0, bool delegated = false, Person? minister = null, Dictionary<int, int>? spent = null, List<Rejection>? rejected = null)
         {
             s.PendingEvents.Remove(eventId);
             s.ChosenOptions[eventId] = o.Id;
@@ -160,14 +171,17 @@ namespace Statecraft.Sim
             foreach (var kind in o.UnlockProjects)
                 if (s.UnlockedProjects.Add(kind)) why.Add(new Cause("events", kind, 1, $"{Unlocked(c, kind)} ({title})", key: CauseKeys.EventUnlock, args: Context(title, localizedTitle)));
             // R-ENEMY-005 (Q-ENEMY-5): the option's go-to orders, through the player's own go-to and its checks, in list order.
-            // A refused order changes nothing, as the player's does; a row with no unit on the board orders nobody. gdd-0.1
-            // only: under gdd-0.3 the operation cards stay effect-free for units (owner, 31 October 2026, #749).
+            // A refused order changes nothing, as the player's does, and is reported as the player's are (Rejected); a row with
+            // no unit on the board orders nobody. gdd-0.1 only: under gdd-0.3 the operation cards stay effect-free for units
+            // (owner, 31 October 2026, #749). The owner's answer 1 on #2087: the order ends with the operation (OrderEnds), and
+            // its march goes round every enemy-held place but the one it was sent to (Movement.Search).
             if (c.Ruleset != SaveGame.Gdd03Ruleset)
                 foreach (var x in o.UnitOrders)
                 {
                     int id = c.StartingForces.FindIndex(f => f.Row == x.Unit);   // the unit with id i is the i-th force (R-UNIT-006)
-                    if (id >= 0 && s.Units.TryGetValue(id, out var u) && u.Side == c.StartingForces[id].Side && u.Type == c.StartingForces[id].Type)
-                        Movement.GiveGoTo(c, s, id, x.Q, x.R, spent ?? new Dictionary<int, int>(), why);
+                    if (id >= 0 && s.Units.TryGetValue(id, out var u) && u.Side == c.StartingForces[id].Side && u.Type == c.StartingForces[id].Type
+                        && Movement.GiveGoTo(c, s, id, x.Q, x.R, spent ?? new Dictionary<int, int>(), why, OrderEnds(c, x)) != null)
+                        rejected?.Add(new Rejection(new UnitOrder(id, Movement.GoTo, x.Q, x.R), Orders.RefusedCardOrder));
                 }
             foreach (var kv in o.SetPolicy.Where(k => s.Policies.ContainsKey(k.Key)).OrderBy(k => k.Key, StringComparer.Ordinal))
             {
@@ -317,7 +331,7 @@ namespace Statecraft.Sim
         /// In the GDD loop a drawn option of a minister whose loyalty is below the floor applies only disloyal_effect_share of
         /// each numeric effect (R-EVT-003; #107, owner, 18 October 2026). Why: loyalty decides how hard a minister works for a
         /// decision he was left to make, competence which decision he makes; anchors and objective cards stay whole.</summary>
-        public static void Delegate(Content c, GameState s, List<Cause> why, Dictionary<int, int>? spent = null)
+        public static void Delegate(Content c, GameState s, List<Cause> why, Dictionary<int, int>? spent = null, List<Rejection>? rejected = null)
         {
             PopulationLedger.RefuseAggregate(s);
             var rng = new Rng(s.RngState);
@@ -328,7 +342,7 @@ namespace Statecraft.Sim
                 var minister = DelegatedTo(c, s, e);
                 if (e.Objective != "" || e.Prisoners != "")   // R-POW-004: an exchange card, like an objective's, has one option and draws nothing
                 {
-                    Resolve(c, s, id, e.Options[0], $"delegated to {minister?.Name ?? "the cabinet"}", why, delegated: true, minister: minister, spent: spent);
+                    Resolve(c, s, id, e.Options[0], $"delegated to {minister?.Name ?? "the cabinet"}", why, delegated: true, minister: minister, spent: spent, rejected: rejected);
                     continue;
                 }
                 var competence = (minister?.Competence ?? 5) / 10.0;
@@ -339,7 +353,7 @@ namespace Statecraft.Sim
                 var share = anchored == null && mvp != null && minister != null && minister.Loyalty < mvp.DelegationLoyaltyFloor
                     ? mvp.DisloyalEffectShare!.Value : 1.0;
                 var how = $"delegated to {minister?.Name ?? "the cabinet"}" + (share < 1 ? ", carried out half-heartedly" : "");
-                Resolve(c, s, id, option, how, why, share, delegated: true, minister: minister, spent: spent);
+                Resolve(c, s, id, option, how, why, share, delegated: true, minister: minister, spent: spent, rejected: rejected);
             }
             s.RngState = rng.State;
         }

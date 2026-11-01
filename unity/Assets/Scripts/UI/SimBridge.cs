@@ -223,6 +223,7 @@ namespace Statecraft.Game.UI
             [Orders.RefusedNotYours] = "unit.order_refused.not_yours",
             [Orders.RefusedArtilleryHold] = "unit.order_refused.artillery_hold",
             [Orders.RefusedAlready] = "unit.order_refused.already",
+            [Orders.RefusedCardOrder] = "unit.order_refused.card_order",   // R-ENEMY-005: an operation card's refused go-to
         };
 
         /// <summary>A sim refusal in the UI's language where it has a string (<see cref="ReasonKeys"/>), else the sim's English as

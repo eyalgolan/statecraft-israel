@@ -29,9 +29,12 @@ options:
     set_rung: 5
     effects:
       - { target: security, delta: 0.02 }
-    # Unit orders (R-ENEMY-005; owner, 31 October 2026, #749: sourced anchors only): Golani to the Julis camp, from
-    # December 1948, map/units_1948.yaml line 135 (golani's anchor "Julis camp"); research_notes/M4 war mode/war-1948.md
-    # section 3, the Horev row (line 149). The hex is the anchor's own (map/unit_anchor_hexes.yaml).
+    # Unit orders (R-ENEMY-005; owner, 31 October 2026, #749: sourced anchors only): Golani to the Julis camp. The
+    # war-1948 Horev row (research_notes/M4 war mode/war-1948.md section 3, line 149) is the source for Golani taking part;
+    # it does not name Julis. Julis comes from the units file's anchor (map/units_1948.yaml line 135, golani's anchor
+    # "Julis camp", from December 1948; he.wiki, the end_note at line 129: in December 1948 the brigade moved to the Julis
+    # camp). The hex is the anchor's own (map/unit_anchor_hexes.yaml). The order ends with that anchor's window, on
+    # 24 February 1949 (the owner's answer 1 on #2087).
     unit_orders:
       - { unit: golani, q: -7, r: 24 }
   - id: hold

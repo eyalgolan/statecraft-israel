@@ -359,6 +359,9 @@ why.line.on_its_way: "{0} בדרך למשושה {1}"
 why.line.stopped_no_route: "{0}: עצירה, כי אין מסלול שמגיע למשושה {1}"
 why.line.stopped_full: "{0}: עצירה, כי משושה {1} מלא"
 why.line.arrived: "{0}: הגעה למשושה {1}"
+# An operation card's order ended with its operation (R-ENEMY-005; the owner's answer 1 on #2087). Agent-drafted Hebrew;
+# native review pending (#564).
+why.line.card_order_ended: "{0}: עצירה, כי פקודת המבצע לנוע למשושה {1} הסתיימה"
 # B1: the economy, population, effect and security Why lines (CauseKeys, CauseText). A change reads "{0}: שינוי {1}", as
 # event.effect.amount does, so the pattern has Hebrew and UiText marks the amount (#543). Counts as "Label: N" (HE-04);
 # no verb agrees with a placeholder (HE-15). Native review: owner, 25 Oct 2026 (recommendations page), for every
@@ -1027,6 +1030,9 @@ unit.order_refused.not_military: "רק יחידה צבאית מקבלת פקוד
 unit.order_refused.not_yours: "היחידה אינה שלך"
 unit.order_refused.artillery_hold: "ארטילריה אינה מחזיקה בשטח"
 unit.order_refused.already: "היחידה כבר קיבלה פקודה זו"
+# An operation card's refused go-to (R-ENEMY-005; the owner's answer 1 on #2087). Agent-drafted Hebrew; native review
+# pending (#564).
+unit.order_refused.card_order: "לא ניתן היה לבצע את פקודת המבצע ליחידה"
 
 # #1682 remaining Cause producers. Agent-drafted Hebrew: native-review-pending (#564).
 # SENSITIVE: capture, displacement, Deport, annexation and occupation also await sensitivity review.

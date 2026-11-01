@@ -95,14 +95,15 @@ namespace Statecraft.Sim
         /// <summary>R-MOVE-002, R-MOVE-008: the cheapest path to (q, r) with no points limit, each hex with the turn it is
         /// reached on (turn 1 spends the points left after <paramref name="spent"/>, later turns all of them; a step that costs
         /// more than the full points takes a whole turn, R-MOVE-001). Empty for an unknown or enemy unit, one that cannot
-        /// move, its own hex, or a hex no path reaches.</summary>
-        public static IReadOnlyList<(int Q, int R, int Turn)> Route(Content c, GameState s, int unitId, int q, int r, IReadOnlyDictionary<int, int> spent)
+        /// move, its own hex, or a hex no path reaches. With <paramref name="card"/> the route is an operation card's (R-ENEMY-005)
+        /// and goes round every enemy-held locality but (q, r) (<see cref="Search"/>).</summary>
+        public static IReadOnlyList<(int Q, int R, int Turn)> Route(Content c, GameState s, int unitId, int q, int r, IReadOnlyDictionary<int, int> spent, bool card = false)
         {
             var result = new List<(int Q, int R, int Turn)>();
             if (!s.Units.TryGetValue(unitId, out var u) || IsEnemy(u) || (u.Q, u.R) == (q, r)) return result;
             var full = Points(c, u);
             if (full == 0) return result;
-            var (dist, prev) = Search(c, s, u, int.MaxValue);
+            var (dist, prev) = Search(c, s, u, int.MaxValue, card: card ? (q, r) : ((int, int)?)null);
             if (!dist.ContainsKey((q, r))) return result;
             var hexes = new List<(int Q, int R)>();
             for (var h = (q, r); h != (u.Q, u.R); h = prev[h]) hexes.Add(h);
@@ -130,13 +131,16 @@ namespace Statecraft.Sim
         static void Stop(GameState s, Unit u, string key, string line, string hex, List<Cause> why)
         {
             s.Units[u.Id] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity, u.Full);
+            s.CardOrders.Remove(u.Id);   // a stopped go-to is no operation card's order any more (R-ENEMY-005)
             why.Add(UnitLines.Line(key, line, new[] { u }, hex));
         }
 
         /// <summary>R-MOVE-008: gives the player's unit the go-to order and moves it at once as far as its points left reach.
         /// Refused, the state untouched, for no hex, an unknown or enemy unit, one that cannot move or is there, water or off
-        /// the board, an enemy unit's hex, a closed locality (R-MOVE-005) or a hex no route reaches.</summary>
-        internal static string? GiveGoTo(Content c, GameState s, int unitId, int? q, int? r, Dictionary<int, int> spent, List<Cause> why)
+        /// the board, an enemy unit's hex, a closed locality (R-MOVE-005) or a hex no route reaches. With <paramref name="cardUntil"/>
+        /// the order is an operation card's (R-ENEMY-005): its route goes round every enemy-held locality but the hex, and it
+        /// ends on that day (<see cref="ContinueRoutes"/>). The player's own go-to replaces a card's.</summary>
+        internal static string? GiveGoTo(Content c, GameState s, int unitId, int? q, int? r, Dictionary<int, int> spent, List<Cause> why, DateTime? cardUntil = null)
         {
             if (q == null || r == null) return "A route names a hex";
             if (!s.Units.TryGetValue(unitId, out var u)) return "There is no such unit";
@@ -147,35 +151,44 @@ namespace Statecraft.Sim
             if (!(c.HexAt(q.Value, r.Value) is MapHex hex) || !hex.Land) return "Units cannot enter water or leave the map";
             if (s.Units.Values.Any(x => x.Q == q && x.R == r && IsEnemy(x))) return "An enemy unit holds that hex";
             if (Closed(c, s, false).Contains((q.Value, r.Value))) return "Units may not enter an enemy-held locality before its capture is possible";
-            if (Route(c, s, unitId, q.Value, r.Value, spent).Count == 0) return "No route reaches that hex";
+            if (Route(c, s, unitId, q.Value, r.Value, spent, cardUntil != null).Count == 0) return "No route reaches that hex";
             var target = HexText(q.Value, r.Value);
             var given = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, GoTo, target, u.HomeCity, u.Full);
             s.Units[unitId] = given;
+            if (cardUntil is DateTime until) s.CardOrders[unitId] = until; else s.CardOrders.Remove(unitId);
             why.Add(UnitLines.Line(WhyKeys.OnItsWay, $"Unit {unitId} is on its way to hex {target}", new[] { given }, target));
             if (u.Order == "fortify")
                 why.Add(UnitLines.Line(WhyKeys.FortifyLost, $"Unit {unitId} left hex {u.OrderTarget} and is no longer fortified", new[] { u }, u.OrderTarget));
-            Advance(c, s, given, q.Value, r.Value, spent, why);
+            Advance(c, s, given, q.Value, r.Value, spent, why, cardUntil != null);
             return null;
         }
 
         /// <summary>R-MOVE-009, the route step: at the start of the player's turn, in ascending id, each unit with a go-to moves
-        /// on (<see cref="Advance"/>). An enemy unit next to it does not stop it (Q-MOVE-4: no zone of control).</summary>
+        /// on (<see cref="Advance"/>). An enemy unit next to it does not stop it (Q-MOVE-4: no zone of control). An operation
+        /// card's go-to (R-ENEMY-005) whose day has come stops instead, where the unit stands: the order ends with the operation.</summary>
         internal static void ContinueRoutes(Content c, GameState s, Dictionary<int, int> spent, List<Cause> why)
         {
+            // A card's order the player replaced (fortify, hold, attack, send home) or whose unit is gone is no card's order.
+            foreach (var id in s.CardOrders.Keys.ToList())
+                if (!s.Units.TryGetValue(id, out var x) || x.Order != GoTo) s.CardOrders.Remove(id);
             foreach (var id in s.Units.Keys.OrderBy(x => x).ToList())
             {
                 if (!s.Units.TryGetValue(id, out var u) || u.Order != GoTo) continue;
                 var (q, r) = Target(u);
-                Advance(c, s, u, q, r, spent, why);
+                var card = s.CardOrders.TryGetValue(id, out var until);
+                if (card && s.Date >= until)
+                    Stop(s, u, WhyKeys.CardOrderEnded, $"Unit {id} stopped: the operation's order to hex {HexText(q, r)} has ended", HexText(q, r), why);
+                else Advance(c, s, u, q, r, spent, why, card);
             }
         }
 
         /// <summary>R-MOVE-008, R-MOVE-009: moves the unit along a fresh route to (q, r) as far as this turn's points reach,
         /// stopping short of a full hex; stops it (order cleared) when no route reaches the hex or the hex is full on arrival,
-        /// and clears the order on arrival. With no hex of this turn free, it waits, keeping the order.</summary>
-        static void Advance(Content c, GameState s, Unit u, int q, int r, Dictionary<int, int> spent, List<Cause> why)
+        /// and clears the order on arrival. With no hex of this turn free, it waits, keeping the order. A <paramref name="card"/>
+        /// order's route and moves go round every enemy-held locality but (q, r) (R-ENEMY-005).</summary>
+        static void Advance(Content c, GameState s, Unit u, int q, int r, Dictionary<int, int> spent, List<Cause> why, bool card = false)
         {
-            var route = Route(c, s, u.Id, q, r, spent);
+            var route = Route(c, s, u.Id, q, r, spent, card);
             if (route.Count == 0) { Stop(s, u, WhyKeys.StoppedNoRoute, $"Unit {u.Id} stopped: no route reaches hex {HexText(q, r)}", HexText(q, r), why); return; }
             var today = route.TakeWhile(h => h.Turn == 1).ToList();
             for (int i = today.Count - 1; i >= 0; i--)
@@ -186,7 +199,7 @@ namespace Statecraft.Sim
                     if ((h.Q, h.R) == (q, r)) { Stop(s, u, WhyKeys.StoppedFull, $"Unit {u.Id} stopped: hex {HexText(q, r)} is full", HexText(q, r), why); return; }
                     continue;
                 }
-                if (Move(c, s, u.Id, h.Q, h.R, spent, why) is string refused) { Stop(s, u, WhyKeys.StoppedNoRoute, $"Unit {u.Id} stopped: {refused}", HexText(q, r), why); return; }
+                if (Move(c, s, u.Id, h.Q, h.R, spent, why, card: card ? (q, r) : ((int, int)?)null) is string refused) { Stop(s, u, WhyKeys.StoppedNoRoute, $"Unit {u.Id} stopped: {refused}", HexText(q, r), why); return; }
                 if ((h.Q, h.R) == (q, r)) Stop(s, s.Units[u.Id], WhyKeys.Arrived, $"Unit {u.Id} arrived at hex {HexText(q, r)}", HexText(q, r), why);
                 return;
             }
@@ -212,8 +225,9 @@ namespace Statecraft.Sim
         /// turn (R-MOVE-001). Refused, state untouched, for an unknown or enemy unit, one that cannot move or is already there,
         /// water or a hex off the map, an enemy unit's hex (entering it is an attack, Q-MOVE-3), an enemy-held locality that
         /// is not a target (R-MOVE-005), a hex full of the unit's side (R-MOVE-003), or a hex out of reach this turn. With <paramref name="enemy"/>
-        /// the enemy AI orders its own unit through the same checks, the sides swapped (R-ENEMY-001).</summary>
-        internal static string? Move(Content c, GameState s, int unitId, int q, int r, Dictionary<int, int> spent, List<Cause> why, bool enemy = false)
+        /// the enemy AI orders its own unit through the same checks, the sides swapped (R-ENEMY-001). With <paramref name="card"/>
+        /// the move is a step of an operation card's go-to to that hex, and its cost is that of the way round (<see cref="Search"/>).</summary>
+        internal static string? Move(Content c, GameState s, int unitId, int q, int r, Dictionary<int, int> spent, List<Cause> why, bool enemy = false, (int Q, int R)? card = null)
         {
             if (!s.Units.TryGetValue(unitId, out var u)) return "There is no such unit";
             if (IsEnemy(u) != enemy) return "That unit is not yours";
@@ -226,7 +240,7 @@ namespace Statecraft.Sim
             if (Closed(c, s, enemy).Contains((q, r))) return "Units may not enter an enemy-held locality before its capture is possible";
             if (Full(c, s, u, q, r) is string full) return full;
             spent.TryGetValue(unitId, out var used);
-            var (dist, _) = Search(c, s, u, points - used, fresh: used == 0);
+            var (dist, _) = Search(c, s, u, points - used, fresh: used == 0, card: card);
             if (!dist.TryGetValue((q, r), out var cost)) return "That hex is out of reach this turn";
             // Moving clears fortify at once (Q-HOLD-1, "lost on move"; the standing orders' "fortify", or "fortifying" the turn it
             // is given, with the hex it names), so a unit that goes out and comes back the same turn is not fortified; hold moves with
@@ -318,12 +332,16 @@ namespace Statecraft.Sim
         /// control, Q-MOVE-4). Hexes leave the frontier in (cost, q, r) order and neighbours are tried in the fixed
         /// <see cref="Neighbours"/> order, so a hex reached at the same cost twice keeps the first, and the path is the same
         /// every run. With <paramref name="fresh"/>, one neighbouring hex whose cost exceeds the budget costs the whole budget
-        /// (R-MOVE-001, OQ-3). Stacking limits only where a move ends, so it is not checked here.</summary>
+        /// (R-MOVE-001, OQ-3). Stacking limits only where a move ends, so it is not checked here. With <paramref name="card"/>, an
+        /// operation card's go-to to that hex (R-ENEMY-005; the owner's answer 1 on #2087, 31 October 2026), every enemy-held
+        /// locality (<see cref="NoEntry"/>) but that hex is closed too, open target or not: the march never ends on, and so
+        /// never captures, a place it was not sent to.</summary>
         static (Dictionary<(int Q, int R), int> Dist, Dictionary<(int Q, int R), (int Q, int R)> Prev) Search(
-            Content c, GameState s, Unit u, int budget, bool fresh = false)
+            Content c, GameState s, Unit u, int budget, bool fresh = false, (int Q, int R)? card = null)
         {
             var costs = c.RulesAt(s.Date).Mvp!.MoveCost;   // the loader requires a cost for every land biome in the GDD loop
             var blocked = Closed(c, s, IsEnemy(u));
+            if (card is (int, int) sent) blocked.UnionWith(NoEntry(c, s).Where(h => h != sent));
             var built = BuiltSegments(c, s);
             foreach (var x in s.Units.Values) if (IsEnemy(x) != IsEnemy(u)) blocked.Add((x.Q, x.R));
             var dist = new Dictionary<(int Q, int R), int> { [(u.Q, u.R)] = 0 };

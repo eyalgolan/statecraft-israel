@@ -49,7 +49,7 @@ namespace Statecraft.Sim
 
             var spent = new Dictionary<int, int>();
             RunOrders(c, s, commands, spent, new Dictionary<int, (int Q, int R)>(), why, rejected);
-            EventSystem.Delegate(c, s, why, spent);   // a delegated card's unit orders share the turn's movement (R-ENEMY-005)
+            EventSystem.Delegate(c, s, why, spent, rejected);   // a delegated card's unit orders share the turn's movement (R-ENEMY-005)
 
             var len = SecuritySystem.TurnLengthFor(c, s.Date, s.Rung);
             // The next era's start, or the game's end (the last era's end, or mvp.end in the GDD loop, R-LOOP-004), is a
@@ -154,10 +154,10 @@ namespace Statecraft.Sim
                 if (c.UsesAttention)
                 {
                     var before = s.Attention;
-                    error = AttentionSystem.TrySpend(c, s, cmd.Kind, priceRung) ?? Execute(c, s, cmd, spent, attacked, why);
+                    error = AttentionSystem.TrySpend(c, s, cmd.Kind, priceRung) ?? Execute(c, s, cmd, spent, attacked, why, rejected);
                     if (error != null) s.Attention = before;
                 }
-                else error = Execute(c, s, cmd, spent, attacked, why);
+                else error = Execute(c, s, cmd, spent, attacked, why, rejected);
                 if (error != null) rejected.Add(new Rejection(cmd, error));
                 if (c.IsGdd) SettlementControl.CaptureHeld(c, s, why);   // R-CTRL-004: only where an order ends
             }
@@ -167,7 +167,7 @@ namespace Statecraft.Sim
         /// reported as a politics cause), or the reason it failed validation. A command that fails validation leaves
         /// the state as it found it (attention is refunded by the caller).</summary>
         static string? Execute(Content c, GameState s, Command cmd, Dictionary<int, int> spent,
-                               Dictionary<int, (int Q, int R)> attacked, List<Cause> why)
+                               Dictionary<int, (int Q, int R)> attacked, List<Cause> why, List<Rejection> rejected)
         {
             switch (cmd)
             {
@@ -209,7 +209,7 @@ namespace Statecraft.Sim
                     return null;
                 }
                 case ChooseEventOption e:
-                    return EventSystem.Choose(c, s, e.EventId, e.OptionId, why, spent);
+                    return EventSystem.Choose(c, s, e.EventId, e.OptionId, why, spent, rejected);   // a refused unit order is rejected on its own (R-ENEMY-005)
                 case SetMobilization m:
                     return SecuritySystem.SetMobilization(c, s, m.Level, why);
                 case Appoint a:

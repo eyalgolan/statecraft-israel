@@ -54,6 +54,11 @@ namespace Statecraft.Sim
             var rows = Rows(readFile, FileName, "units");
             var hexes = Hexes(readFile, rows);
             c.UnitAnchorHexes = hexes;   // R-ENEMY-005: the operation cards' orders name these
+            foreach (var row in rows)    // and end with their windows; EventRules refuses an order to an anchor with no end
+                if (row != null && row.TryGetValue("anchors", out var ao) && ao is List<object> windows)
+                    for (int k = 0; k < windows.Count; k++)
+                        if (windows[k] is Dictionary<object, object> a && DateTime.TryParseExact(Text(a, "to"), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var to))
+                            c.UnitAnchorEnds[(Text(row, "id"), k)] = to;
             var start = c.Rules.Start.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
             var ppu = c.RulesAt(c.Rules.Start).Mvp!.PeoplePerUnit;   // the start day's rules, as Cities.Init reads them
             var list = new List<StartingForce>();

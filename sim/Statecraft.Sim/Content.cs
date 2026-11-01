@@ -1387,6 +1387,9 @@ namespace Statecraft.Sim
         /// <summary>Every anchor's hex of map/unit_anchor_hexes.yaml by (row id, anchor index), the only hexes an operation
         /// card may order a row's unit to (R-ENEMY-005). Empty in the legacy loop.</summary>
         public Dictionary<(string Row, int Anchor), (int Q, int R)> UnitAnchorHexes = new Dictionary<(string Row, int Anchor), (int Q, int R)>();
+        /// <summary>The end of each anchor's window (its `to` in map/units_1948.yaml) by (row id, anchor index): a card's order to
+        /// the anchor's hex ends on that day (R-ENEMY-005; the owner's answer 1 on #2087). Empty in the legacy loop.</summary>
+        public Dictionary<(string Row, int Anchor), DateTime> UnitAnchorEnds = new Dictionary<(string Row, int Anchor), DateTime>();
         /// <summary>The GDD designated sites (sites.yaml), in file order. Empty in the legacy loop.</summary>
         public List<Site> Sites = new List<Site>();
         /// <summary>The GDD city project kinds (projects.yaml), in file order. Empty in the legacy loop.</summary>

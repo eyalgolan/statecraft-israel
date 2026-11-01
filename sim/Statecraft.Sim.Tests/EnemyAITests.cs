@@ -390,9 +390,9 @@ public class EnemyAITests
             foreach (var u in s.Units.Values.Where(IsEnemy))
                 if ((u.Q, u.R) != start[u.Id]) Assert.DoesNotContain((u.Q, u.R), players);
         }
-        // No enemy capture. The one capture is the player's: Horev's delegated go-to (R-ENEMY-005) takes Golani through
-        // Nazareth, an open enemy-held target (R-MOVE-005, #1304), on the 15 December 1948 turn.
-        Assert.Equal(new[] { ("nazareth", Movement.PlayerSide) }, s.Settlements.Select(x => (x.Key, x.Value.Owner)));
+        // No capture at all: Horev's delegated go-to (R-ENEMY-005) takes Golani round Nazareth, an enemy-held place it was not
+        // sent to (the owner's answer 1 on #2087).
+        Assert.Empty(s.Settlements);
     }
 
     // R-ENEMY-001: what the enemy does is named on its cause (Cause.EnemyOrder), for the turn report (#1293): a scripted
@@ -482,10 +482,11 @@ public class EnemyAITests
         // Left to the cabinet at End turn, the card gives the same order.
         var left = Simulation.Step(c, s, Array.Empty<Command>()).State.Units[0];
         Assert.Equal((Movement.GoTo, "4,0"), (left.Order, left.OrderTarget));
-        // An enemy unit holds the anchor: the player's go-to is refused, and the card's order changes nothing.
+        // An enemy unit holds the anchor: the player's go-to is refused, and the card's order changes nothing (and is reported,
+        // ARefusedCardOrderIsReportedLikeThePlayersOwn).
         s.Units.Add(9, Enemy(9, 4, 0, 1));
         var held = Simulation.Preview(c, s, new Command[] { new ChooseEventOption("probe", "ok") });
-        Assert.Empty(held.Rejected);
+        Assert.Equal(Orders.RefusedCardOrder, Assert.Single(held.Rejected).Reason);
         Assert.Equal(("", 0, 0), (held.State.Units[0].Order, held.State.Units[0].Q, held.State.Units[0].R));
         Assert.Equal("An enemy unit holds that hex", Assert.Single(Simulation.Preview(c, s, new Command[] { new UnitOrder(0, Movement.GoTo, 4, 0) }).Rejected).Reason);
     }
@@ -502,5 +503,104 @@ public class EnemyAITests
             ("ten_days", "central_front", true, "yiftach", -3, 21),     // Lydda, yiftach anchors[0]
             ("ten_days", "central_front", true, "carmeli", 13, 5),      // facing the Syrian bridgehead, carmeli anchors[1]
         }, orders.OrderBy(x => x.Item1, StringComparer.Ordinal));
+    }
+
+    // R-ENEMY-005, the owner's answer 1 on #2087 ("Orders expire with the operation", 31 October 2026): a fixture game of one
+    // operation card. One brigade row starting on (0, 0); the card orders it to its second anchor's hex (q, r), whose
+    // window ends on `to`. With `held`, town_a (1, 0) is an enemy-held locality and an open target (R-MOVE-005, #1304).
+    // Fixture values, not history.
+    static Content CardGame(int q, int r, string to, string board, bool held = false)
+    {
+        var rows = "units:\n- id: brig\n  service: army\n  side: israel\n  status: draft\n"
+            + "  strength: { value: 30, as_of: '1948-05-15' }\n  anchors:\n"
+            + "  - { place: Here, lon: 34.29, lat: 33.35, from: '1948-05-15', to: '1949-01-01' }\n"
+            + "  - { place: There, lon: 34.30, lat: 33.35, from: '1948-05-15', to: '" + to + "' }\n";
+        var hexes = FormattableString.Invariant($"anchors:\n  - {{ id: brig, anchor: 0, q: 0, r: 0 }}\n  - {{ id: brig, anchor: 1, q: {q}, r: {r} }}\n");
+        var card = "id: probe\ntitle: Fixture\ntext: Fixture.\nfrom: 1948-05-15\noptions:\n"
+            + FormattableString.Invariant($"  - id: ok\n    text: Accept\n    historical: true\n    unit_orders: [{{ unit: brig, q: {q}, r: {r} }}]\n");
+        var files = Fixture.Gdd(new Dictionary<string, string>
+        {
+            ["unit_types.yaml"] = Types, ["map/hexes.json"] = board, ["corridors.yaml"] = "corridors: []\n",
+            ["map/units_1948.yaml"] = rows, ["map/unit_anchor_hexes.yaml"] = hexes,
+        });
+        if (held)
+        {
+            files["rules.yaml"] = files["rules.yaml"].Replace("enemy_held_localities: []", "enemy_held_localities: [town_a]");
+            files["settlement_targets.yaml"] = "targets:\n" + CaptureTests.Target("town_a", 1, 0);
+            files["map/settlements_1948.yaml"] = Fixture.Files["map/settlements_1948.yaml"].Replace("type: town", "type: arab_town");
+        }
+        return ContentLoader.Load(Fixture.Write(files, new() { ["probe.yaml"] = card }));
+    }
+
+    // (a) The order ends when its anchor's window ends (the anchor's `to`, sourced in units_1948.yaml), so the unit stops
+    // where it is: no late arrival. With a later end the same march arrives on the next turn.
+    [Fact]
+    public void ACardOrderEndsWhenItsAnchorsWindowEnds()
+    {
+        var c = CardGame(5, 0, "1948-05-20", MovementTests.Board());
+        var first = Simulation.Step(c, Simulation.NewGame(c, 1, Mode.Historical), new Command[] { new ChooseEventOption("probe", "ok") });
+        Assert.Equal((3, 0, Movement.GoTo), (first.State.Units[0].Q, first.State.Units[0].R, first.State.Units[0].Order));
+        Assert.Equal(new DateTime(1948, 5, 22), first.State.Date);   // weekly turns: the window has ended
+        var next = Simulation.Step(c, first.State, Array.Empty<Command>());
+        Assert.Equal((3, 0, ""), (next.State.Units[0].Q, next.State.Units[0].R, next.State.Units[0].Order));
+        Assert.Contains(next.Why, x => x.Key == WhyKeys.CardOrderEnded && x.Args.SequenceEqual(new[] { "5,0" }));
+
+        var open = CardGame(5, 0, "1948-06-01", MovementTests.Board());
+        var later = Simulation.Step(open, Simulation.NewGame(open, 1, Mode.Historical), new Command[] { new ChooseEventOption("probe", "ok") });
+        later = Simulation.Step(open, later.State, Array.Empty<Command>());
+        Assert.Equal((5, 0, ""), (later.State.Units[0].Q, later.State.Units[0].R, later.State.Units[0].Order));
+        // An order to an anchor with no end could outlast its operation: the loader refuses it.
+        var endless = Assert.Throws<ContentException>(() => CardGame(5, 0, "", MovementTests.Board()));
+        Assert.Equal(("events/probe.yaml", "events[probe].options[ok].unit_orders[0]"), (endless.File, endless.Field));
+        Assert.Contains("no 'to' date", endless.Message);
+    }
+
+    // (b) The card's march never ends on an enemy-held place it was not sent to: it goes round town_a, where the player's
+    // own go-to on the same route ends its first turn and captures it (unchanged). (2, 0) is desert, so the cheapest way
+    // runs through town_a and the way round costs one more.
+    [Fact]
+    public void ACardOrderGoesRoundAnEnemyHeldPlaceItWasNotSentTo()
+    {
+        var c = CardGame(2, 0, "1949-01-01", MovementTests.Board((2, 0, "desert")), held: true);
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var mine = Simulation.Preview(c, s, new Command[] { new UnitOrder(0, Movement.GoTo, 2, 0) });
+        Assert.Equal((1, 0), (mine.State.Units[0].Q, mine.State.Units[0].R));
+        Assert.Equal(new[] { "town_a" }, mine.State.Settlements.Keys);
+
+        var card = Simulation.Step(c, s, new Command[] { new ChooseEventOption("probe", "ok") });
+        Assert.NotEqual((1, 0), (card.State.Units[0].Q, card.State.Units[0].R));
+        Assert.Empty(card.State.Settlements);
+        var arrived = Simulation.Step(c, card.State, Array.Empty<Command>());
+        Assert.Equal((2, 0, ""), (arrived.State.Units[0].Q, arrived.State.Units[0].R, arrived.State.Units[0].Order));
+        Assert.Empty(arrived.State.Settlements);
+    }
+
+    // (c) A refused card order is told to the player the way a refused order of the player's is: a rejection with a reason
+    // the UI has in English and Hebrew (SimBridge.ReasonKeys). Here an enemy unit holds the anchor, chosen and delegated.
+    [Fact]
+    public void ARefusedCardOrderIsReportedLikeThePlayersOwn()
+    {
+        var c = CardGame(4, 0, "1949-01-01", MovementTests.Board());
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        s.Units.Add(9, Enemy(9, 4, 0, 1));
+        foreach (var commands in new[] { new Command[] { new ChooseEventOption("probe", "ok") }, Array.Empty<Command>() })
+        {
+            var r = Simulation.Step(c, s, commands);
+            var refused = Assert.Single(r.Rejected);
+            Assert.Equal(Orders.RefusedCardOrder, refused.Reason);
+            var order = Assert.IsType<UnitOrder>(refused.Command);
+            Assert.Equal((0, Movement.GoTo, (int?)4, (int?)0), (order.Unit, order.Order, order.Q, order.R));
+            Assert.Equal((0, 0, ""), (r.State.Units[0].Q, r.State.Units[0].R, r.State.Units[0].Order));
+        }
+    }
+
+    // Review of #2087, optional 1: a delegated card's order shares the movement points a Move spent in the same turn, as a
+    // chosen card's does (OperationCardOrdersAreValidated). Unshared, the unit would arrive on (4, 0).
+    [Fact]
+    public void ADelegatedCardOrderSharesTheTurnsMovementPoints()
+    {
+        var c = CardGame(4, 0, "1949-01-01", MovementTests.Board());
+        var r = Simulation.Step(c, Simulation.NewGame(c, 1, Mode.Historical), new Command[] { new Move(0, 1, 0) });
+        Assert.Equal((3, 0, Movement.GoTo), (r.State.Units[0].Q, r.State.Units[0].R, r.State.Units[0].Order));
     }
 }

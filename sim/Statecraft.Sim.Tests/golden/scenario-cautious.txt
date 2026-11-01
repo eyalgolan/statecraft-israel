@@ -109,8 +109,8 @@ city{
   tiberias=6,2,6,2,1,c0.35 [3FD6666666666666]
   zikhron_yaakov=2,1,2,1,0,c0.35 [3FD6666666666666]
 units[
-  0:veteran_soldier@0,17|side=israel|strength=4|order=go_to|target=-7,24
-  1:veteran_soldier@13,5|side=israel|strength=2
+  0:veteran_soldier@3,14|side=israel|strength=4
+  1:veteran_soldier@8,8|side=israel|strength=2
   2:veteran_soldier@0,15|side=israel|strength=4
   3:veteran_soldier@-3,19|side=israel|strength=3
   4:veteran_soldier@-5,23|side=israel|strength=3
@@ -123,7 +123,5 @@ units[
   12:arab_liberation_army@12,4|side=ala|strength=4|order=fortify|target=12,4
   13:veteran_soldier@-4,23|side=israel|strength=2
 next=14
-ctrl{
-  nazareth=owner=israel,state=awaiting_choice,since=1949-01-15
 food=2427,809,0
 arms=12

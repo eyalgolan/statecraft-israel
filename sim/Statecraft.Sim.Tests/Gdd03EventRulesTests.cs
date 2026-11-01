@@ -336,7 +336,7 @@ public class Gdd03EventRulesTests
         "maabarot_policy:de29ffa17fbc70aa7283b833e546a219b449c8b3e0d712e3d158ed18169d592b",
         "ministry_supply_crisis:000d54fdc5198b105f101bfa7816a152e2c7682f01a97da67e97988e5ef141db",
         "operation_hiram:9ae584856ced7d5e19df5ed76ab8ddaba4fa360f5399da67ccaced3208519ec3", // re-pinned for #749 part 2 (R-ENEMY-005 unit orders; owner ruling, 31 October 2026; review status unchanged)
-        "operation_horev:c8af1bd03a3dc6ce1f4c60e5874b731911d12559f3b7d523f193de7b2ac46bb1", // re-pinned for #749 part 2 (R-ENEMY-005 unit orders; owner ruling, 31 October 2026; review status unchanged)
+        "operation_horev:e278c3fa5505b93b71be1971ea4cd60edf87cb7e5c14f93e9ba99e5975e102c1", // re-pinned for #749 part 2 (R-ENEMY-005 unit orders; owner ruling, 31 October 2026; comment per the review of #2087; review status unchanged)
         "operation_yoav:72cf6baf45ca30a6629a6d152e37d6e995edd348e6a9c4bbfd1b50ee08f226ab", // re-pinned for #749 part 2 (R-ENEMY-005 unit orders; owner ruling, 31 October 2026; review status unchanged)
         "rafah_force_pressure:658b99340f0cf7dbf042e64d131509b87cec48f4374b16a1337fd0f831dbd28d", // re-pinned for #2020 (owner-approved Hebrew wording, owner re-review bc139d5eb)
         "railway_complete:2108338a93d663ec9cb06bcb474c1f1211cfff480f9ef0acaec9c758a4854a7c", // re-pinned for #1676 (person's fact-check of #1410, status draft -> fact-checked)
@@ -362,6 +362,22 @@ public class Gdd03EventRulesTests
         Assert.Null(EventSystem.Choose(c, s, "operation_horev", "launch", new List<Cause>()));
         var after = s.Units[0];
         Assert.Equal(modern ? (before.Order, before.OrderTarget) : (Movement.GoTo, "-7,24"), (after.Order, after.OrderTarget));
+    }
+    // Review of #2087, optional 2: under gdd-0.3 the loader still checks the cards' orders (owner, 31 October 2026, #749), so
+    // a Horev order to a hex that is not one of golani's anchors is refused there too.
+    [Fact]
+    public void Gdd03StillRefusesACardOrderToAHexNoAnchorHas()
+    {
+        var root = RealContentTests.ContentRoot();
+        var e = Assert.Throws<ContentException>(() => ContentLoader.Load(rel =>
+        {
+            var path = Path.Combine(root, rel);
+            var text = File.Exists(path) ? File.ReadAllText(path) : null;
+            if (rel == "eras.yaml") return text!.Replace("loop: gdd", "loop: gdd, ruleset: gdd-0.3");
+            return rel == "events/operation_horev.yaml" ? text!.Replace("{ unit: golani, q: -7, r: 24 }", "{ unit: golani, q: -7, r: 23 }") : text;
+        }, Directory.GetFiles(Path.Combine(root, "events"), "*.yaml").Select(p => "events/" + Path.GetFileName(p))));
+        Assert.Equal(("events/operation_horev.yaml", "events[operation_horev].options[launch].unit_orders[0]"), (e.File, e.Field));
+        Assert.Contains("not an anchor", e.Message);
     }
     [Fact]
     public void AllThirtyNineSourceRecordsIncludingReviewsAndHebrewAreUnchanged()

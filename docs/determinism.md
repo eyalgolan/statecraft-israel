@@ -61,9 +61,9 @@ final `GameState.Hash()` is pinned:
 
 | Run | Ends | Hash |
 |---|---|---|
-| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `3bd6bb0fa18b66c8532ece882d7dc1c53c12f2befa1774d09f3e9b2c6b134ccf` |
-| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `2052aeca78d1815797c244946cf232e1f87e223d8f37b906d63cc4225f754cfd` |
-| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `2052aeca78d1815797c244946cf232e1f87e223d8f37b906d63cc4225f754cfd` |
+| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `01d5dea9e01661a18080efa03989710e4965a728a1b0380b232a8dfd39d382cd` |
+| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `ece2105d8e2fd4c08c4c0e46cb5b5af1da3d740b84d9a599eccb85440311d78a` |
+| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `ece2105d8e2fd4c08c4c0e46cb5b5af1da3d740b84d9a599eccb85440311d78a` |
 
 `hash1952` stops at the first turn on or after 1 January 1952, which is the game's last turn, so it is the same run as
 `mvp-end` (`DeterminismTests.TheWholeGameToItsEndIsFixed`). Both names are kept (spec 2026-10-12 section 3 step 6): a
@@ -72,7 +72,7 @@ player check enumerate the manifest, so it and every scenario are checked withou
 
 A further value is pinned for the browser smoke run (`?smoke=5`: the golden seed, five turns played through the UI's own
 buttons, answering each event with its first option while the turn's Attention pays for it, the rest left to their
-ministers): `SMOKE OK 5 turns 1948-10-15 9c666a1da0cef5e8bb78c033872829ce6ec3ee180405cc73323595996d2b3bf0`.
+ministers): `SMOKE OK 5 turns 1948-10-15 6da1203fcf299ca7bbfd9ed92391229323052d4e8f9e0d9c5899f77be4781291`.
 It depends on the UI path as well as the sim (which option is first, the turn grid), so re-record it when either changes.
 Check every WebGL build with every manifest entry (plus the UI-path smoke line) with:
 
@@ -83,7 +83,7 @@ while read -r name hash; do
   golden_expect+=(--expect "GOLDEN OK $name $hash")
 done < sim/Statecraft.Sim.Tests/golden/manifest.txt
 uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5" "${golden_expect[@]}" \
-  --expect "SMOKE OK 5 turns 1948-10-15 9c666a1da0cef5e8bb78c033872829ce6ec3ee180405cc73323595996d2b3bf0"
+  --expect "SMOKE OK 5 turns 1948-10-15 6da1203fcf299ca7bbfd9ed92391229323052d4e8f9e0d9c5899f77be4781291"
 ```
 
 `smoke-orders` (GDD Phase 5 PR 15, #754) is the same kind of browser run for the unit orders (`?smoke-orders`, desktop
@@ -450,13 +450,13 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | #1575 + #1568 combined: the `reparations_vote` card (#1564) on top of `degania_defence` (#1565) and #939 Task 12 (#1545) | hash1952 | `385ba3b5` | re-pinned on the merged tree: the reference player answers `reparations_vote` `negotiate` on 15 December 1951 (morale -0.02, stability -0.0015 through it), as on #1575's own branch; `degania_defence`'s changes stay (was `5bfeb265`) |
 | #1575 + #1568 combined: as above | mvp-end | `385ba3b5` | same run as hash1952 (was `5bfeb265`) |
 | #1575 + #1568 combined: as above | scenario-mvp-defeat | `b7d3848d` | the card fires in the scenario's run too and, left unanswered, resolves to `negotiate` (morale -0.02; was `d5bc68f9`). No other golden moves: hash1950, smoke5, smoke-orders and the other five scenarios end before 15 December 1951 |
-| #749 part 2: the operation cards' unit orders (R-ENEMY-005; owner, 31 Oct 2026: "GDD 0.1 only", "Sourced anchors only") | hash1950 | `3bd6bb0f` | the reference player answers `ten_days` `central_front` on 15 July 1948, so Carmeli (unit 1) goes to its Brosh anchor and arrives on 15 October 1948; it answers `operation_horev` `launch` on 15 December 1948, so Golani (unit 0) goes to the Julis camp, passing Nazareth (captured; the reference player resolves it on 15 January 1949, returning it to enemy control), arrives on 15 June 1949, is attacked there by the Egyptian unit and retreats to -6,24 with strength 3 of 4 (was `8578966e`) |
-| #749 part 2: as above | hash1952 | `2052aeca` | same orders as hash1950; Golani stays at -6,24 (was `385ba3b5`) |
-| #749 part 2: as above | mvp-end | `2052aeca` | same run as hash1952 (was `385ba3b5`) |
-| #749 part 2: as above | smoke5 | `9c666a1d` | the smoke run's first option of `ten_days` sends Carmeli toward its Brosh anchor; no snapshot is kept for this run (was `7bdf646a`) |
-| #749 part 2: as above | scenario-reckless | `4ce6ddcc` | Horev's delegated order takes Golani through Nazareth, which awaits the capture choice from 15 January 1949; Golani is on its way at 0,17 when the run ends (was `a2ca9626`) |
-| #749 part 2: as above | scenario-cautious | `b3d9974f` | as reckless, and `ten_days` sends Carmeli to its Brosh anchor (was `c06d89f0`) |
-| #749 part 2: as above | scenario-mvp-absorb-first | `e61b04bc` | both orders; Nazareth awaits the capture choice, and Golani at Julis is attacked by the Egyptian unit, ending at strength 1 of 4 with the Egyptians at 9 (was `9c98ae51`) |
-| #749 part 2: as above | scenario-mvp-defeat | `4ba713af` | both orders and the fighting at Julis as in absorb-first; the extra engagements draw from the RNG, so the delegated `frumkin_commission` and `iraqi_exodus` resolve to `dismiss` and `airlift`, with Housing, International Support and Social cohesion following; the defeat is unchanged (was `b7d3848d`) |
-| #749 part 2: as above | scenario-mvp-occupy-cost | `61322280` | Carmeli goes to its Brosh anchor; Nazareth's capture and Occupy are unchanged (was `9fcc7bae`) |
-| #749 part 2: as above | scenario-mvp-annex-nazareth | `8a0ca38d` | both orders: Golani leaves Nazareth for Julis and is on its way at 5,12 when the run ends; the annexation is unchanged (was `8fe6d129`) |
+| #749 part 2: the operation cards' unit orders (R-ENEMY-005; owner, 31 Oct 2026: "GDD 0.1 only", "Sourced anchors only"; owner's answer 1 on #2087: "Orders expire with the operation") | hash1950 | `01d5dea9` | the reference player answers `ten_days` `central_front` on 15 July 1948: Carmeli (unit 1) sets out from Haifa toward its Brosh anchor and reaches 8,8, in the Lower Galilee, that turn; its order ends with the anchor's window (19 July), so on 15 August it stops there. It answers `operation_horev` `launch` on 15 December 1948: Golani (unit 0) sets out from Yavne'el toward the Julis camp, goes round Nazareth (no capture), and on 15 March 1949, after its order ended with the Egypt armistice (24 February), stops at 3,14, between Zikhron Ya'akov and Hadera, short of Julis. No fighting and no capture; the final state differs from main's only in where the two brigades stand (was `8578966e`) |
+| #749 part 2: as above | hash1952 | `ece2105d` | same orders as hash1950; Golani stays at 3,14 and Carmeli at 8,8 to the end (was `385ba3b5`) |
+| #749 part 2: as above | mvp-end | `ece2105d` | same run as hash1952 (was `385ba3b5`) |
+| #749 part 2: as above | smoke5 | `6da1203f` | the smoke run's first option of `ten_days` sends Carmeli toward its Brosh anchor; it stops at 8,8 on 15 August 1948. No snapshot is kept for this run (was `7bdf646a`) |
+| #749 part 2: as above | scenario-reckless | `a6328f59` | Horev's delegated order takes Golani round Nazareth; it stops at 3,14 on 15 March 1949 (was `a2ca9626`) |
+| #749 part 2: as above | scenario-cautious | `725c9465` | as reckless, and the delegated `ten_days` sends Carmeli to 8,8, where it stops on 15 August 1948 (was `c06d89f0`) |
+| #749 part 2: as above | scenario-mvp-absorb-first | `e9b657e7` | both orders, as in cautious; no capture and no fighting (was `9c98ae51`) |
+| #749 part 2: as above | scenario-mvp-defeat | `6dc76d20` | both orders, as in cautious; no fighting, so no extra RNG draws, and the delegated cards and the defeat are as on main (was `b7d3848d`) |
+| #749 part 2: as above | scenario-mvp-occupy-cost | `2110fe92` | Carmeli stops at 8,8 as in cautious; Golani holds Nazareth for the scenario and the run ends on 15 December 1948, before Horev's order; Nazareth's capture and Occupy are unchanged (was `9fcc7bae`) |
+| #749 part 2: as above | scenario-mvp-annex-nazareth | `12110c4b` | both orders: Golani leaves the annexed Nazareth for Julis and is on its way at 5,12 when the run ends on 15 January 1949, its order standing to 24 February; the annexation is unchanged (was `8fe6d129`) |

@@ -299,7 +299,9 @@ An event with a sensitive tag may carry no grant, no positive `city_effects` del
 - `unit_orders: [{ unit: golani, q: -7, r: 24 }]` gives the unit of a `map/units_1948.yaml` row a go-to order toward
   hex (`q`, `r`) when the option is chosen or delegated (R-ENEMY-005). The hex must be one of that row's own anchor
   hexes in `map/unit_anchor_hexes.yaml`, so a card never sends a unit where no source puts it; cite the anchor's line in
-  a comment. The order goes through the player's own go-to: one the player could not give changes nothing.
+  a comment. The order goes through the player's own go-to: one the player could not give changes nothing, and the
+  player is told so. The order ends on the anchor's `to` date (the loader refuses an anchor with none), and its march
+  goes round every enemy-held place but its hex.
 - It applies under gdd-0.1 only. Under gdd-0.3 the loader still checks it and the unit gets no order; the legacy loop
   ignores it.
 
