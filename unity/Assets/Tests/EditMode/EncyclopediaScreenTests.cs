@@ -20,7 +20,7 @@ public class EncyclopediaScreenTests
     static readonly Content C = ContentLoader.Load(Paths.Content);
     static UiText En => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
     static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
-    // Approval is simulated ONLY in the test's in-memory copy. Shipped Hebrew stays pending.
+    // Approval of the 16 pages still pending is simulated ONLY in the test's in-memory copy; the shipped catalogue keeps them pending.
     static AdvisorCatalog Approved() => AdvisorCatalog.Parse(File.ReadAllText(AdvisorCatalog.Path).Replace("he_review: pending", "he_review: approved"));
 
     [Test]
@@ -148,9 +148,25 @@ public class EncyclopediaScreenTests
         using var pedia = new EncyclopediaPresenter(ui.Root, hebrew ? He : En, Approved(), nav, null, ruleset);
         pedia.Open("turns");
         var line = ui.Q<Label>("encyclopedia-page-text").text;
-        foreach (var phrase in hebrew ? new[] { "ממתינה להוראות", "בוחר בה במקום זאת", "ביצור", "לדלג", "(התקפה, ביצור, החזקה) מתבצעות מיד", "שליחה הביתה" }
+        foreach (var phrase in hebrew ? new[] { "ממתינה להוראות", "מסמנת את היחידה", "ביצור", "דלגו", "(התקפה, ביצור, החזקה) מתבצעות מיד", "שליחה הביתה" }
                      : new[] { "needs orders", "selects it instead", "fortify", "skip it", "unit orders (attack, fortify, hold) happen at once", "Send home" })
             StringAssert.Contains(phrase, line);
+    }
+
+    /// <summary>The Hebrew merge gate of #2095 (owner review, 1 Nov 2026): on the SHIPPED catalogue (AdvisorCatalog.Load(), not
+    /// Approved()), the Hebrew encyclopedia lists the nine pages that replace How to play, which Beri read as a native
+    /// speaker, so the merge never leaves a Hebrew player an empty encyclopedia.</summary>
+    [Test]
+    public void TheShippedHebrewEncyclopediaListsTheNineGatePages()
+    {
+        var gate = new[] { "turns", "attention", "cities", "training", "units_movement", "events", "objectives", "top_bar", "why" };
+        using var ui = new UiTestKit();
+        using var nav = new ScreenNav(ui.Root);
+        using var pedia = new EncyclopediaPresenter(ui.Root, He, AdvisorCatalog.Load(), nav, null);
+        ui.Press("nav-encyclopedia");
+        var entries = ui.Q<ScrollView>("encyclopedia-list").contentContainer.Children().Select(c => c.name).ToList();
+        var missing = gate.Where(p => !entries.Contains("encyclopedia-page-" + p)).ToList();
+        Assert.IsEmpty(missing, "gate pages missing from the shipped Hebrew list: " + string.Join(", ", missing));
     }
 
     /// <summary>Under gdd-0.3 a lost city alone does not end the game (R-END-003, #1668): the defeat page says so.</summary>
@@ -242,7 +258,7 @@ public class EncyclopediaScreenTests
         "\nadvisor.page.p.bg.title: \"Title BG.\"\nadvisor.page.p.bg.text: \"Text BG.\"\nadvisor.page.p.dayan.title: \"Title D.\"\nadvisor.page.p.dayan.text: \"Text D.\"\n");
 
     /// <summary>The whole HUD as the game lays it out, the encyclopedia open on its list, with an advisor so Show me shows.
-    /// The Hebrew is the test's approved copy (the shipped pages wait for their native review).</summary>
+    /// The Hebrew is the test's approved copy (16 shipped pages still wait for their native review).</summary>
     static IEnumerator Rendered(int width, int height, bool hebrew, System.Func<VisualElement, EncyclopediaPresenter, IEnumerable> check,
         string ruleset = SaveGame.GddRuleset)
     {

@@ -50,20 +50,21 @@ messages:
   - { id: dayan.arms_out, advisor: dayan, signal: arms_low, level: warnings, he_review: approved, repeat: every, cooldown_turns: 3, actions: [{ open_screen: defence }], media: { picture: dayan.arms_out.mp4, narration: { en: dayan.arms_out.en.wav }, cues: { en: [0.00, 4.59] }, label: advisor.media_label, credit: advisor.credit.dayan } }
 
 # The encyclopedia's pages (spec 10, plan Task 13): one per mechanic, grouped by advisor as spec 3.1 splits them, with the
-# Show me target each names. Their text is advisor.page.<id>.title and .text (and .gdd03.text where gdd-0.3 differs). All
-# Hebrew is pending its native review (OQ-4), so no page shows in Hebrew yet. The opening steps' Tell me more opens the
-# page of what each step points at (plan Task 13).
+# Show me target each names. Their text is advisor.page.<id>.title and .text (and .gdd03.text where gdd-0.3 differs). A page
+# shows in Hebrew only once its native review approves it (OQ-4): the nine that replace How to play were read by Beri on
+# #2095 (1 Nov 2026); the other 16 are pending. The opening steps' Tell me more opens the page of what each step points
+# at (plan Task 13).
 pages:
-  - { id: turns, advisor: ben_gurion, he_review: pending }
-  - { id: attention, advisor: ben_gurion, show_me: attention, he_review: pending }
-  - { id: events, advisor: ben_gurion, show_me: decision_waiting, he_review: pending }
-  - { id: objectives, advisor: ben_gurion, show_me: nav_objectives, he_review: pending }
+  - { id: turns, advisor: ben_gurion, he_review: approved }
+  - { id: attention, advisor: ben_gurion, show_me: attention, he_review: approved }
+  - { id: events, advisor: ben_gurion, show_me: decision_waiting, he_review: approved }
+  - { id: objectives, advisor: ben_gurion, show_me: nav_objectives, he_review: approved }
   - { id: defeat, advisor: ben_gurion, he_review: pending }
-  - { id: top_bar, advisor: ben_gurion, show_me: attention, he_review: pending }
-  - { id: why, advisor: ben_gurion, show_me: nav_why, he_review: pending }
-  - { id: cities, advisor: meyerson, show_me: city_housing, he_review: pending }
+  - { id: top_bar, advisor: ben_gurion, show_me: attention, he_review: approved }
+  - { id: why, advisor: ben_gurion, show_me: nav_why, he_review: approved }
+  - { id: cities, advisor: meyerson, show_me: city_housing, he_review: approved }
   - { id: immigration, advisor: meyerson, show_me: city_housing, he_review: pending }
-  - { id: training, advisor: meyerson, show_me: city_training, he_review: pending }
+  - { id: training, advisor: meyerson, show_me: city_training, he_review: approved }
   - { id: projects, advisor: meyerson, he_review: pending }
   - { id: pioneer_work, advisor: meyerson, he_review: pending }
   - { id: corridors, advisor: meyerson, he_review: pending }
@@ -72,7 +73,7 @@ pages:
   - { id: cabinet, advisor: meyerson, show_me: nav_cabinet, he_review: pending }
   - { id: food, advisor: meyerson, he_review: pending }
   - { id: national_meters, advisor: meyerson, he_review: pending }
-  - { id: units_movement, advisor: dayan, show_me: unit_move, he_review: pending }
+  - { id: units_movement, advisor: dayan, show_me: unit_move, he_review: approved }
   - { id: standing_orders, advisor: dayan, he_review: pending }
   - { id: combat, advisor: dayan, show_me: nav_defence, he_review: pending }
   - { id: arms, advisor: dayan, show_me: nav_defence, he_review: pending }

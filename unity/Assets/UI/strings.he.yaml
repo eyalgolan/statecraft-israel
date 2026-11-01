@@ -58,28 +58,40 @@ why.title: "למה זה קרה?"
 encyclopedia.title: "אנציקלופדיה"
 encyclopedia.back: "חזרה"
 encyclopedia.opening: "הצגת עצות הפתיחה שוב"
-# The encyclopedia's 25 pages (spec 10, plan Task 13). AI-drafted Hebrew; every page is he_review: pending in
-# advisor-messages.yaml and does not show in Hebrew until a native reviewer approves it (OQ-4). For the native reviewer (#564).
+# The encyclopedia's 25 pages (spec 10, plan Task 13). AI-drafted Hebrew; a page is he_review: pending in
+# advisor-messages.yaml and does not show in Hebrew until a native reviewer approves it (OQ-4). The nine pages that replace
+# How to play were read by Beri on #2095 (each marked below); the other 16 wait. For the native reviewer (#564).
+# advisor.page.turns: approved by Beri, a native speaker, on #2095 (1 Nov 2026): title as written, text
+# with its last sentence edited.
 advisor.page.turns.title: "תורות וסיום התור"
-advisor.page.turns.text: "כל תור הוא חודש אחד. בחנו את מצב המדינה, תנו הוראות ואז לחצו על סיום התור כדי לעבור לחודש הבא. תנועה ופקודות ליחידות (התקפה, ביצור, החזקה) מתבצעות מיד ואי אפשר לבטל אותן; שליחה הביתה וכל הוראה אחרת ממתינות לסיום התור, ועד אז אפשר לשנות אותן או להסיר אותן. כל עוד אחת היחידות שלכם ממתינה להוראות, הכפתור בוחר בה במקום זאת: יש להזיז אותה, לתת לה פקודת ביצור או החזקה, או לדלג עליה בתור הזה."
+advisor.page.turns.text: "כל תור הוא חודש אחד. בחנו את מצב המדינה, תנו הוראות ואז לחצו על סיום התור כדי לעבור לחודש הבא. תנועה ופקודות ליחידות (התקפה, ביצור, החזקה) מתבצעות מיד ואי אפשר לבטל אותן; שליחה הביתה וכל הוראה אחרת ממתינות לסיום התור, ועד אז אפשר לשנות אותן או להסיר אותן. כל עוד אחת היחידות שלכם ממתינה להוראות, לחיצה על סיום התור לא מסיימת אותו אלא מסמנת את היחידה: הזיזו אותה, תנו לה פקודת ביצור או החזקה, או דלגו עליה בתור הזה."
+# advisor.page.attention: approved by Beri, a native speaker, on #2095 (1 Nov 2026): title and text as written.
 advisor.page.attention.title: "תשומת לב בכל תור"
 advisor.page.attention.text: "רוב ההוראות עולות תשומת לב, המוצגת בסרגל העליון. היא מתמלאת מחדש בתחילת כל תור, ותשומת לב שלא ניצלתם אינה עוברת לתור הבא. תנועה ופקודות ליחידות אינן עולות תשומת לב, והוראה שנדחתה מחזירה לכם את מה שעלתה. כרטיס שלא נשארה לכם תשומת לב לענות עליו עובר לשר האחראי."
+# advisor.page.events: approved by Beri, a native speaker, on #2095 (1 Nov 2026): title and text as written.
 advisor.page.events.title: "כרטיסי אירוע"
 advisor.page.events.text: "כרטיס אירוע מבקש מכם החלטה ומראה מה כל אפשרות משנה. הבחירה שלכם נכנסת לתוקף בסיום התור, וההשפעות שלה לעולם אינן מגיעות מאוחר יותר. כרטיס שלא עניתם עליו עובר לשר האחראי, והוא מחליט במקומכם; שר בעל כישורים רבים יותר בוחר לרוב באפשרות המומלצת. כרטיס מגיע אליכם בדרך כלל בתור שלפני ההכרעה ההיסטורית."
+# advisor.page.objectives: approved by Beri, a native speaker, on #2095 (1 Nov 2026): title and text as written.
 advisor.page.objectives.title: "יעדים וניקוד"
 advisor.page.objectives.text: "היעדים הם מטרות המערכה: יישוב שהוקם, כביש או מסילה שהושלמו, אוכלוסייה גדלה שיש לה דיור ועבודה. השלמת יעד מעניקה נקודות ופותחת את הכרטיס שלו, והשלמה לפני המועד ההיסטורי מזכה בבונוס. המסך ״יעדים״ מציג את התאריך שלכם לצד התאריך ההיסטורי. הניקוד סופר יעדים ושבויים שהוחזרו, ולעולם לא אבדות של האויב."
 advisor.page.defeat.title: "איך המשחק נגמר"
 advisor.page.defeat.text: "המערכה נגמרת בתור האחרון שלה, או קודם לכן בהפסד. כשהחוב בתקרה ומלאי המזון ריק בסוף התור, מונה ההפסד רץ, וכשהוא מגיע לגבולו המשחק אבוד; כל אחד מהם לבדו אינו מסיים דבר. אם יחידה צבאית של האויב מחזיקה באחת הערים שלנו בסוף תור כלשהו, המשחק אבוד מיד, גם בזמן הפוגה."
 advisor.page.defeat.gdd03.text: "המערכה נגמרת בתור האחרון שלה, או קודם לכן בהפסד. כשהחוב בתקרה ומלאי המזון ריק בסוף התור, מונה ההפסד רץ, וכשהוא מגיע לגבולו המשחק אבוד; כל אחד מהם לבדו אינו מסיים דבר. אובדן עיר לבדו אינו מסיים את המשחק."
+# advisor.page.top_bar: approved by Beri, a native speaker, on #2095 (1 Nov 2026): title, text and
+# gdd03.text as written.
 advisor.page.top_bar.title: "הסרגל העליון"
 advisor.page.top_bar.text: "הסרגל העליון מציג את התאריך, את תשומת הלב שלכם, את הכסף ואת המדדים העיקריים של המדינה."
 advisor.page.top_bar.gdd03.text: "הסרגל העליון מציג את התאריך, את הכסף ואת המדדים העיקריים של המדינה."
+# advisor.page.why: approved by Beri, a native speaker, on #2095 (1 Nov 2026): title and text as written.
 advisor.page.why.title: "המסך ״למה?״"
 advisor.page.why.text: "אחרי תור, פתחו את המסך ״למה?״ כדי לראות כל שינוי ואת הסיבה לו. כסף שנלווה, קרבות שהתנהלו, אנשים שיצאו לעבודה: כל שורה מראה מה השתנה ולמה. כשמספר מפתיע אתכם, חפשו קודם שם."
+# advisor.page.cities: approved by Beri, a native speaker, on #2095 (1 Nov 2026): title as written, text
+# with its first sentence edited.
 advisor.page.cities.title: "ערים, דיור ותעסוקה"
-advisor.page.cities.text: "אני תמיד מתחילה מהדיור. בחרו עיר במפה כדי לראות את הדיור, המשרות והאנשים בה; כל משרה מאוישת מכניסה כסף. העיר מאיישת את המשרות שלה בעצמה עד שתקבעו אתם את מספר העובדים, והשינוי שלכם יתבצע בסיום התור. אנשים שאין להם מקום בדיור עדיין גרים בעיר, אבל הצפיפות שוחקת את מצב הדיור, והלכידות החברתית יורדת בעקבותיו."
+advisor.page.cities.text: "כשאני בוחנת עיר, אני תמיד מתחילה מהדיור. בחרו עיר במפה כדי לראות את הדיור, המשרות והאנשים בה; כל משרה מאוישת מכניסה כסף. העיר מאיישת את המשרות שלה בעצמה עד שתקבעו אתם את מספר העובדים, והשינוי שלכם יתבצע בסיום התור. אנשים שאין להם מקום בדיור עדיין גרים בעיר, אבל הצפיפות שוחקת את מצב הדיור, והלכידות החברתית יורדת בעקבותיו."
 advisor.page.immigration.title: "עלייה ופליטים"
 advisor.page.immigration.text: "העולים מגיעים לפי הנתונים ההיסטוריים, וכל עיר מקבלת חלק לפי מספר האנשים בה. הם ממתינים כפליטים, ובכל תור חלק מהם הופכים לאזרחים ללא עבודה; כמה מהם, תלוי בשר האחראי על העלייה. אין תקרה: מי שאין לו מקום בדיור של העיר נשאר בה כעודף."
+# advisor.page.training: approved by Beri, a native speaker, on #2095 (1 Nov 2026): title and text as written.
 advisor.page.training.title: "הכשרת אזרחים"
 advisor.page.training.text: "בעיר שיש בה מחנה צבאי או מחנה הכשרה אפשר לאמן אזרחים ללא עבודה כמגויסים או להכשיר אותם כחלוצים, ובעיר שיש בה תעשייה גם כבעלי מלאכה. הכפתור מראה כמה עולה האימון וכמה תורות הוא נמשך; אימון צבאי דורש גם נשק. בסוף האימון המגויסים הופכים ליחידה צבאית, החלוצים לקבוצות שמוכנות לעבודה חלוצית, ובעלי המלאכה נשארים בעיר ומרוויחים יותר כשהם עובדים."
 advisor.page.projects.title: "מיזמים עירוניים"
@@ -98,6 +110,7 @@ advisor.page.food.title: "מלאי המזון"
 advisor.page.food.text: "אני עוקבת אחרי המלאי הזה בכל חודש. המזון הוא מלאי לאומי אחד: בכל תור השדות החרושים מוסיפים את היבול שלהם, המדינה אוכלת את מה שהיא צריכה, ויבוא ממלא את המלאי מחדש, אלא אם מטבע החוץ שלנו אזל. מחסור מוריד את הלכידות החברתית, ומלאי ריק כשהחוב בתקרה מפעיל את מונה ההפסד."
 advisor.page.national_meters.title: "המדדים הלאומיים"
 advisor.page.national_meters.text: "הלכידות החברתית עולה ויורדת עם הדיור, התעסוקה, המזון, הקיצוב והביטחון. התמיכה הבינלאומית זזה בעקבות הבחירות בכרטיסי האירוע. אף אחת מהן אינה מסיימת את המשחק, אבל אירועים מסוימים מגיבים כשאחת מהן נמוכה, ודוח הסיום מציג את שתיהן. קרבות ותנועת יחידות אינם משנים אף אחת מהן."
+# advisor.page.units_movement: approved by Beri, a native speaker, on #2095 (1 Nov 2026): title and text as written.
 advisor.page.units_movement.title: "תנועת יחידות"
 advisor.page.units_movement.text: "יחידה נעה ברגע שנותנים לה את ההוראה, ואי אפשר לבטל תנועה. השטח קובע את העלות של כל משושה, ויחידה שעוד לא זזה בתור הזה תמיד יכולה להיכנס למשושה סמוך אחד. יעד רחוק יותר הופך למסלול, וסיום התור ממשיך להוביל את היחידה לאורכו. שום יחידה אינה נכנסת למים או למשושה שיש בו יחידת אויב."
 advisor.page.standing_orders.title: "פקודות קבע"
