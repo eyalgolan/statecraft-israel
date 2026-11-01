@@ -25,8 +25,8 @@ public class EventRetimingTests
     /// (a card raised at the new game comes on 15 May 1948), or null.</summary>
     static DateTime? CardDate(string id) => Run.FirstOrDefault(s => s.FiredEvents.Contains(id))?.Date;
 
-    /// <summary>#567's historical monthly run, now including objective 3's three cards (#791): all 37 ordinary events
-    /// except the four conditional cards below fire. Consequence cards belong only to alternate roads.</summary>
+    /// <summary>#567's historical monthly run, now including objective 3's three cards (#791): all 39 ordinary events
+    /// except the six conditional cards below fire. Consequence cards belong only to alternate roads.</summary>
     [Fact]
     public void EveryEventFiresInTheHistoricalMonthlyRun()
     {
@@ -36,10 +36,11 @@ public class EventRetimingTests
         // R-SWAMP-002: hula_drainage fires only while the player's works at the Hula are in progress, and the reference
         // player drains no swamp, so the run never shows it. absorb_immigrants (#1039) is raised only when its objective
         // completes (R-OBJ-004), and the reference player never completes it in this run. The corridor parts also
-        // remain unfinished (R-OBJ-005), so neither of their completion cards is expected.
+        // remain unfinished (R-OBJ-005), so neither of their completion cards is expected. Deport's cards (R-EVT-007)
+        // follow only a Deport, which the reference player never orders (R-CTRL-009).
         var missing = record.Select(e => e.Id).Where(id => CardDate(id) == null).ToList();
-        Assert.True(missing.SequenceEqual(new[] { "absorb_immigrants", "burma_road_complete", "hula_drainage", "railway_complete" }), "never fired: " + string.Join(", ", missing));
-        Assert.Equal(37, record.Count);
+        Assert.True(missing.SequenceEqual(new[] { "absorb_immigrants", "burma_road_complete", "deport_acre", "deport_nazareth", "hula_drainage", "railway_complete" }), "never fired: " + string.Join(", ", missing));
+        Assert.Equal(39, record.Count);
     }
 
     /// <summary>The card date of every event, from #567's tables (the "Proposed" column in the war period, "Monthly" after

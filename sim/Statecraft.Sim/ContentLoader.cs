@@ -373,6 +373,9 @@ namespace Statecraft.Sim
             //                              fires only while that site is being worked; the legacy loop ignores it
             //   prisoners                  a front (Prisoners.Fronts) whose prisoners the card returns: it fires only while
             //                              that front holds some either way, and has exactly one option (R-POW-004)
+            //   deported                   a settlement target whose Deport the card follows: it fires only once the
+            //                              player's Deport has depopulated that place, carries the displacement tag and
+            //                              has exactly one option (R-EVT-007)
             foreach (var rel in eventFiles.OrderBy(p => p, StringComparer.Ordinal))
             {
                 var e = Read<GameEvent>(readFile, rel);
@@ -1427,6 +1430,7 @@ namespace Statecraft.Sim
             ValidateObjectiveConditions(c);
             ValidateEventSites(c);
             ValidateEventPrisoners(c);
+            ValidateEventDeported(c);
             ValidateProjects(c);
             ValidateCorridors(c);
         }
@@ -1440,6 +1444,24 @@ namespace Statecraft.Sim
                     throw new ContentException(e.File, $"events[{e.Id}].prisoners", $"unknown front '{e.Prisoners}' (one of {string.Join(", ", Prisoners.Fronts)})");
                 if (e.Options.Count != 1)
                     throw new ContentException(e.File, $"events[{e.Id}].options", "an exchange card has exactly one option");
+            }
+        }
+
+        /// <summary>A Deport follow-up card (R-EVT-007; GDD Phase 6 PR 9, #801): a settlement target whose residents stayed,
+        /// since Deport is refused where they fled (R-CTRL-018) and the card could never fire; the displacement tag, so the
+        /// release gate holds it until the owner's review (R-GATE-001); and one option, which Delegate resolves without a draw.</summary>
+        static void ValidateEventDeported(Content c)
+        {
+            foreach (var e in c.Events.Where(e => e.Deported != ""))
+            {
+                var target = c.SettlementTargets.FirstOrDefault(t => t.Id == e.Deported)
+                    ?? throw new ContentException(e.File, $"events[{e.Id}].deported", $"unknown settlement target '{e.Deported}' (settlement_targets.yaml)");
+                if (target.Residents == Fled)
+                    throw new ContentException(e.File, $"events[{e.Id}].deported", $"the residents of '{e.Deported}' fled when it was captured, so it is never deported (R-CTRL-018)");
+                if (!e.Tags.Contains("displacement", StringComparer.OrdinalIgnoreCase))
+                    throw new ContentException(e.File, $"events[{e.Id}].tags", "a Deport card carries the displacement tag (R-GATE-001)");
+                if (e.Options.Count != 1)
+                    throw new ContentException(e.File, $"events[{e.Id}].options", "a Deport card has exactly one option");
             }
         }
 

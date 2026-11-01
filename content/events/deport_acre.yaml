@@ -1,0 +1,40 @@
+# yaml-language-server: $schema=../schema/event.schema.json
+# Deport's follow-up card for Acre (GDD Phase 6 PR 9, #801). DRAFT: a person's source check and the owner's sensitivity
+# review of every line, in English and Hebrew, come before this card leaves `draft` (CONTENT_POLICY section 2; the owner,
+# 1 November 2026: "Write the cards first (Recommended)"). Q-CARD-1 (c) (owner, 18 October 2026, #783): the in-game
+# consequence with one sourced line of history. Q-CARD-3 (a): no image, and Deport never gets a video. Q-SENS-1b (a): the
+# housing left behind is not named. R-EFX-007: no option raises anything; this card has no effect at all, since Deport's
+# costs are R-CTRL-018's, applied by the sim. R-GATE-001: the release gate refuses a shareable build while it is not
+# sensitivity-reviewed.
+# The first three sentences restate play, not history (R-CTRL-018 and R-CTRL-020; the costs follow capture.about.deport,
+# the capture dialog's line), so they need no source. A Deport in play may differ in place, date and manner from 1948, so
+# the history sentence says what the record says, not that the player's Deport happened.
+# The history sentence: he.wiki "המצור על עכו (1948)", revision 42972755, section "תוצאות": "בימים הראשונים לאחר הכיבוש,
+# נמשכה יציאת התושבים ללבנון ולגליל המרכזי, אולם לא הוצאו פקודות גירוש ולא הופעל לחץ על התושבים לעזוב." The date, from
+# the section before: "ב־18 במאי לפנות בוקר חתמו חברי מועצת העיר על כתב כניעה, הורו על הפסקת הלחימה ופתחו את שערי העיר
+# העתיקה." (the sentence has no year; 1948 is the article's title). Both checked by an agent in
+# research_notes/GDD phase 6/displacement-cards-check-801.md (rows A1, A2, M3) and re-read for this card on 1 November 2026.
+# For the person who checks: the residents sentence's one footnote is Morris, The Birth of the Palestinian Refugee Problem
+# (Hebrew edition), p. 153 (row A8); the owner ruled "Morris isn't enough" on #793 for the fled default, and whether a he.wiki
+# line footnoted to Morris may stand here is the owner's question 2 in displacement-cards.md. No official Israeli account
+# of Ben-Ami naming Acre was found (rows A6, K1).
+id: deport_acre
+title: Acre depopulated
+text: 'Acre''s residents have been displaced, and the town is depopulated. Social cohesion and International support have fallen, and International support keeps falling for the rest of the game. Nothing can be built there, and no new road or railway can be laid through it. Historically, in the first days after Acre surrendered on 18 May 1948, residents continued to leave for Lebanon and central Galilee, but no expulsion orders were issued and no pressure was put on them to leave.'
+# For the native reviewer (#564): "נעקרו" and "התרוקנה מתושביה" follow the Deport strings already in strings.he.yaml
+# (why.cause.place_deported, capture.about.deport); the history sentence keeps he.wiki's wording.
+title_he: עכו התרוקנה מתושביה
+text_he: 'תושבי עכו נעקרו ממקומם, והעיר התרוקנה מתושביה. הלכידות החברתית והתמיכה הבינלאומית ירדו, והתמיכה הבינלאומית תמשיך לרדת עד סוף המשחק. אי אפשר לבנות בה דבר, ואי אפשר לסלול דרכה כביש או מסילת ברזל חדשים. מבחינה היסטורית, בימים הראשונים לאחר שעכו נכנעה ב־18 במאי 1948 נמשכה יציאת התושבים ללבנון ולגליל המרכזי, אולם לא הוצאו פקודות גירוש ולא הופעל לחץ על התושבים לעזוב.'
+text_he_review: agent-checked
+anchor: soft
+tags: [displacement]
+deported: acre
+# The game's start: the card waits only for the player's Deport of Acre (R-EVT-007), which can come on any turn.
+from: 1948-05-15
+options:
+  - id: continue
+    text: Continue
+    text_he: להמשיך
+sources:
+  - { url: "https://he.wikipedia.org/w/index.php?oldid=42972755", checked: 2026-11-01 }
+status: draft

@@ -35,6 +35,9 @@ namespace Statecraft.Sim
                 // R-POW-004: a front's exchange card waits for prisoners held either way. Only the GDD loop takes any, so the
                 // legacy loop never fires one.
                 .Where(e => e.Prisoners == "" || Prisoners.Held(s, e.Prisoners))
+                // R-EVT-007: a Deport follow-up card waits for the player's Deport of its place. Only the GDD loop records
+                // settlements, so the legacy loop never fires one.
+                .Where(e => e.Deported == "" || (s.Settlements.TryGetValue(e.Deported, out var place) && place.Depopulated))
                 // A late fire can come after a dated indicator's window has ended (chapters design 3.2): a condition on it is not met.
                 .Where(e => e.Conditions.All(k => s.Indicators.TryGetValue(k.Indicator, out var v)
                                                && (!k.Min.HasValue || v >= k.Min.Value) && (!k.Max.HasValue || v <= k.Max.Value)))
@@ -315,7 +318,7 @@ namespace Statecraft.Sim
             {
                 var e = Get(c, id);
                 var minister = DelegatedTo(c, s, e);
-                if (e.Objective != "" || e.Prisoners != "")   // R-POW-004: an exchange card, like an objective's, has one option and draws nothing
+                if (e.Objective != "" || e.Prisoners != "" || e.Deported != "")   // R-POW-004, R-EVT-007: an exchange card or a Deport card, like an objective's, has one option and draws nothing
                 {
                     Resolve(c, s, id, e.Options[0], $"delegated to {minister?.Name ?? "the cabinet"}", why, delegated: true, minister: minister);
                     continue;
