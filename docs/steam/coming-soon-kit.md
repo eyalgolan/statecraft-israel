@@ -344,14 +344,16 @@ October 2026). The same page says some content is not allowed for sale in German
 (RELEASING.md; Valve's survey page). Re-check if the GDD's settlement-control rules ship: the Deport outcome then
 needs its own line (store-page-draft.md section 6).
 
-### Draft answers with evidence (1 November 2026): DRAFT FOR OWNER APPROVAL
+### Answers with evidence (approved by the owner, 1 November 2026)
 
-**Draft for owner approval** (owner, 1 Nov 2026, "Draft for my approval (Recommended)"). An agent wrote these from the
-repository at `main` `709e7ddc`; nothing here has been entered in Steamworks, and the owner answers the survey. Where
+**Approved by the owner on 1 November 2026** ("Approve as drafted"; for "Frequent Violence or Gore", "Tick it
+(Recommended)"; both relayed by the coordinator). An agent drafted these from the repository at `main` `709e7ddc`;
+nothing here has been entered in Steamworks, and the owner enters the survey. The open items at the end of this
+subsection are not settled by that approval. Where
 this subsection and the table above differ, this one is newer: the table was written at `c0a38256`, before the game ran
 the GDD loop with combat, captures and prisoners (`content/eras.yaml:15`, `systems: { loop: gdd }`). Every citation is
 `file:line` at `709e7ddc`; re-check each against the first Steam build before submitting. Where an answer was unclear,
-the draft takes the more cautious disclosure and says why.
+the draft took the more cautious disclosure and says why.
 
 What the build contains that the table above does not mention:
 
@@ -381,10 +383,10 @@ What the build contains that the table above does not mention:
   `burma_road_complete.yaml:24` (all in `content/events/`). One carries `terror` (`bernadotte_assassination.yaml:11`) and
   two `holocaust` (`reparations_claim.yaml:10`, `reparations_vote.yaml:13`). The table above counted five, one and one.
 
-| Topic | Draft answer | Evidence (`file:line` at `709e7ddc`) | Why, and what is unsure |
+| Topic | Answer | Evidence (`file:line` at `709e7ddc`) | Why, and what is unsure |
 | --- | --- | --- | --- |
 | Violence | **Yes: war violence, historical and non-graphic.** The player orders attacks between military units on a hex map; losses are numbers of people; war, an assassination and deaths are described in text. No injury, death or body is shown. | Combat and its text, above; `bernadotte_assassination.yaml:4` ("Lehi gunmen assassinated the UN mediator"); `burma_road_complete.yaml:7` ("those killed in the convoy"); photo alt texts with no injury or body (`unity/Assets/UI/EventImages/event-images.yaml:55`, `69`, `124`, `152`, `180`, `396`); clips: a burning ship at a distance and a tank "halted and smoking" (`docs/event-videos.md:68-69`, `87-90`). | If a question asks whether the violence is against humans or realistic, answer yes for both: the soldiers are people and the war is real, even though the depiction is abstract. |
-| "Frequent Violence or Gore" (Mature Content) | **Cautious draft: tick it**, with the description below. | Combat is a regular player action through the war turns (above); the seven `war-casualties` events. | **Unsure.** There is no gore at all, so "No" is defensible. The draft ticks it because combat is a core loop, not an occasional scene; ticking only hides the game from players who filter that out. The owner may untick it. |
+| "Frequent Violence or Gore" (Mature Content) | **Tick it**, with the description below (owner, 1 Nov 2026, "Tick it (Recommended)"). | Combat is a regular player action through the war turns (above); the seven `war-casualties` events. | There is no gore at all; it is ticked because combat is a core loop, not an occasional scene. Ticking hides the game only from players who filter that out. |
 | Blood and gore | **None.** | No blood or body in any photograph alt text (`event-images.yaml`) or clip description (`docs/event-videos.md:62-93`); combat shows smoke and a glow only (`HexUnderAttack.cs:13`). | The alt texts and descriptions are text; the owner should look at the 29 photographs and the clips once before submitting **[confirm]**. |
 | Sexual content, nudity | **None.** | `grep -i -w -E 'sex\|sexual\|nude\|naked\|rape'` over `content/events/`, `unity/Assets/UI/strings.en.yaml` and `event-images.yaml` finds nothing. | |
 | Drugs, alcohol, tobacco | **Alcohol reference: yes (cautious). Drugs: none. Tobacco: unsure.** A city can build "a winery" as an industry; no drinking is shown. | `content/projects.yaml:25` (`id: winery`); `content/cities.yaml:80-82` (Rishon LeZion's vineyards). No drug word in `content/`. | The winery is an economic building, but some boards count any alcohol reference. Tobacco: nobody has checked the 29 archival photographs for a cigarette **[confirm]**. |
@@ -400,8 +402,8 @@ What the build contains that the table above does not mention:
 | Data collection | **Point to the privacy statement:** `docs/steam/privacy.md` (PR #2165). The game collects nothing of its own; Unity's engine analytics and diagnostics settings are on and named there (owner, 1 Nov 2026, "Name them"). | `unity/ProjectSettings/ProjectSettings.asset:96` (`submitAnalytics: 1`); `unity/ProjectSettings/UnityConnectSettings.asset:15` (`m_EngineDiagnosticsEnabled: 1`); `unity/Packages/manifest.json:31` (`com.unity.modules.unityanalytics`). | Do not answer "collects no data" without the Unity caveat; say what the privacy page says and no more. |
 | Generative AI | Unchanged from the table above: Pre-Generated yes (section 4), Live-Generated no. | Section 4 of this file. | |
 
-**Draft mature-content description** (for the owner to edit; it extends store-page-draft.md section 6 with the combat,
-captures and Deport facts above):
+**Mature-content description** (approved with the survey on 1 November 2026; it extends store-page-draft.md section 6
+with the combat and capture facts above, and leaves Deport to the open item below):
 
 > Statecraft: Israel depicts real events of 1948-1951 from the perspective of Israel's government, including war,
 > terror attacks, refugees and displacement, and references to the Holocaust. The player commands military units in
@@ -411,8 +413,16 @@ captures and Deport facts above):
 > historical figures appear in their public roles; their in-game ratings are game balance, not judgements of the
 > people.
 
-While Deport ships in the build, even switched off, add the sentence store-page-draft.md section 6 proposes for it, or
-remove the option and its strings from the build first; that choice is the owner's.
+**Open items** (not settled by the approval; settle each before submitting):
+
+- **Deport: OPEN, owner decision pending.** While Deport ships in the build, even switched off, either the description
+  gets the sentence store-page-draft.md section 6 proposes for it, or the option and its strings leave the build first.
+  The owner has not chosen, and the agents do not choose.
+- **The photographs and clips:** nobody has yet looked at the 29 archival photographs and the clips for blood, a
+  cigarette or other tobacco, or a Nazi symbol; the answers above rest on their alt texts and descriptions.
+- **Living people:** `content/people.yaml` has not been checked person by person.
+- **Unit figures:** which 3D soldier figures appear in play (above).
+- **The Steam build:** re-check every citation against the first Steam build.
 
 ## 6. Tags, languages and platforms
 
