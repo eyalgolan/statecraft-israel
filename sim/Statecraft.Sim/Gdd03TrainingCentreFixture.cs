@@ -160,12 +160,15 @@ namespace Statecraft.Sim
                 || (teacherOpening.Assignment.Kind != PopulationAssignmentKind.Unassigned
                     && teacherOpening.Assignment.Kind != PopulationAssignmentKind.Teaching))
                 throw Deferred(Q43);
-            // A bed freed after the month's opening (for example by a cancel) is not reused that month: Q43(b), Q41.
-            if (month.OpeningPeople.Count(p => (p.Assignment.Kind == PopulationAssignmentKind.Reception
+            // A bed freed after the month's opening (for example by a cancel) is not reused that month: Q43(b), Q41. So this
+            // month's new courses in the camp fit only in the beds free at its opening.
+            int openingBeds = month.OpeningPeople.Count(p => (p.Assignment.Kind == PopulationAssignmentKind.Reception
                     && string.Equals(p.Assignment.Target, centre.ParentCamp, StringComparison.Ordinal))
                 || (p.Assignment.Kind == PopulationAssignmentKind.Course
-                    && string.Equals(p.Assignment.Target, centre.Id, StringComparison.Ordinal))) >= bedsPerCamp)
-                throw Deferred(Q43);
+                    && string.Equals(p.Assignment.Target, centre.Id, StringComparison.Ordinal)));
+            int startedThisMonth = months.Count(m => m.Value.enrolment == month.MonthOrdinal
+                && string.Equals(CentreOf(ledger.Get(m.Key)).ParentCamp, centre.ParentCamp, StringComparison.Ordinal));
+            if (openingBeds + startedThisMonth >= bedsPerCamp) throw Deferred(Q43);
 
             var course = new PopulationAssignment(PopulationAssignmentKind.Course, centre.Id, 0, teacher.Id);
             var pupil = trainee.WithPlacement(PopulationStatus.Trainee, trainee.Location, course, trainee.Captor, trainee.Home);
