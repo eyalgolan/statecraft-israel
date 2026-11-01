@@ -586,7 +586,8 @@ namespace Statecraft.Game.UI
             var parts = u.OrderTarget.Split(',');
             if (parts.Length != 2 || !int.TryParse(parts[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out var q)
                 || !int.TryParse(parts[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out var r)) return "";
-            var route = Movement.Route(bridge.Content, now.State, unit, q, r, now.Spent);
+            // An operation card's go-to marches round enemy-held places it was not sent to (R-ENEMY-005): count that route.
+            var route = Movement.Route(bridge.Content, now.State, unit, q, r, now.Spent, card: now.State.CardOrders.ContainsKey(unit));
             return route.Count == 0 ? "" : text.Format("unit.go_to_given", System.Math.Max(0, route[route.Count - 1].Turn - 1));
         }
 

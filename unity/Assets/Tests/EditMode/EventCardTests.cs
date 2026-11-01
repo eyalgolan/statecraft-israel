@@ -226,6 +226,8 @@ public class EventCardTests
         while (!g.State.PendingEvents.Contains("elections_1949")) g.Step(new Command[0]);
         // On monthly turns elections_1949 comes on 15 January 1949 with sinai_withdrawal and rhodes_talks; this test is about the one-option card.
         g.State.PendingEvents.RemoveAll(id => id != "elections_1949");
+        // Golani is on Operation Horev's go-to then (R-ENEMY-005), so the bridge shows the turn's preview, a copy: trim it too.
+        g.Now.State.PendingEvents.RemoveAll(id => id != "elections_1949");
         var bridge = new SimBridge(g, Text);
         var card = new EventCardPresenter(ui.Root, bridge, Text, null);
         Assert.AreEqual("elections_1949", card.Shown!.Id);

@@ -703,6 +703,46 @@ public class UnitOrdersTests
         finally { Object.DestroyImmediate(map.gameObject); }
     }
 
+    /// <summary>R-ENEMY-005 on screen (the owner's ruling on #2087, 1 November 2026): the card of a unit on an operation
+    /// card's go-to counts the turns of the card's march, which goes round an enemy-held place it was not sent to, not those
+    /// of the player's own route through it. Golani stands south-west of Nazareth (7,10), sent by a card to 8,9 beyond it.</summary>
+    [Test]
+    public void ACardOrderedUnitsCardCountsTheWayRound()
+    {
+        var map = BuildMap();
+        using var ui = new UiTestKit();
+        try
+        {
+            var session = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+            var id = UnitCard.SimUnit(C, session.State, Units.Single(e => e.Id == "golani"))!.Value;
+            var u = session.State.Units[id];
+            session.State.Units[id] = new Unit(u.Id, u.Type, 4, 12, u.Service, u.Side, u.Strength, Movement.GoTo, "8,9", u.HomeCity, u.Full);
+            session.State.CardOrders[id] = new System.DateTime(1949, 2, 24);
+            var bridge = new SimBridge(session, Text);
+            // Any committed order re-runs the turn's preview, in which the march takes this turn's step (RunOrders).
+            var other = UnitCard.SimUnit(C, session.State, Units.Single(e => e.Id == "carmeli"))!.Value;
+            Assert.IsNull(bridge.Queue(new UnitOrder(other, Orders.Hold)));
+            var now = bridge.Session.Now;
+            var plain = Movement.Route(C, now.State, id, 8, 9, now.Spent);
+            var card = Movement.Route(C, now.State, id, 8, 9, now.Spent, card: true);
+            Assert.IsTrue(now.State.CardOrders.ContainsKey(id), "the card's order still stands");
+            Assert.IsTrue(plain.Any(h => (h.Q, h.R) == (7, 10)) && !card.Any(h => (h.Q, h.R) == (7, 10)), "the player's route crosses Nazareth, the card's goes round");
+            Assert.AreNotEqual(plain[plain.Count - 1].Turn, card[card.Count - 1].Turn, "the way round costs a turn, so the card shows which route it counts");
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.Show(bridge.Content, bridge.State);
+            var info = new InfoPanelPresenter(ui.Root, bridge, Text, new Dictionary<string, string>(),
+                selectedUnit: () => layer.Selected is string sel ? layer.Tokens.First(p => p.Token.Unit.Id == sel) : (PlacedToken?)null,
+                showReachable: map.ShowReachable, showRoute: map.ShowRoute);
+            var golani = layer.Tokens.Single(p => p.Token.Unit.Id == "golani");
+            GameRoot.OnHexClicked(map, layer, info, golani.Q, golani.R);
+            var shown = ui.Q<Label>("info-settlements").text;
+            StringAssert.Contains(Text.Format("unit.go_to_given", card[card.Count - 1].Turn - 1), shown);
+            StringAssert.DoesNotContain(Text.Format("unit.go_to_given", plain[plain.Count - 1].Turn - 1), shown);
+            info.Dispose();
+        }
+        finally { Object.DestroyImmediate(map.gameObject); }
+    }
+
     /// <summary>Spec 8.1: on touch, the first tap on an unlit reachable route previews it and the second gives the go-to.</summary>
     [Test]
     public void AGoToNeedsASecondTapOnTouch()
