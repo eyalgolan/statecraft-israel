@@ -139,6 +139,43 @@ public sealed class WebCompanionTests
         Assert.AreEqual(1, sent.Count, "the unchanged snapshot goes out once the page takes it");
     }
 
+    static int Handlers(Statecraft.Game.UI.SimBridge bridge, string name) =>
+        (typeof(Statecraft.Game.UI.SimBridge).GetField(name, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+            .GetValue(bridge) as System.Delegate)?.GetInvocationList().Length ?? 0;
+
+    /// <summary>Disposal itself unsubscribes and stops the schedule: the disposed flag alone would hide a leak of every old
+    /// mirror (and the tree and GameRoot it holds) on each language switch, since the bridge outlives it.</summary>
+    [Test]
+    public void DisposeRemovesEveryBridgeAndRootHandlerAndStopsTheSchedule()
+    {
+        var bridge = NewBridge(Locale(false));
+        var events = new[] { "Changed", "TurnEnded", "Refused" };
+        var before = System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Select(events, n => Handlers(bridge, n)));
+        var root = new VisualElement();
+        Assert.IsFalse(root.HasTrickleDownHandlers(), "precondition: a bare tree has no handlers");
+        var mirror = new WebCompanion(root, Text, bridge, () => false, _ => { });
+        foreach (var (name, i) in System.Linq.Enumerable.Select(events, (n, i) => (n, i)))
+            Assert.AreEqual(before[i] + 1, Handlers(bridge, name), $"precondition: the mirror listens to {name}");
+        Assert.IsTrue(root.HasTrickleDownHandlers(), "precondition: the mirror listens on the root");
+        var poll = (IVisualElementScheduledItem)typeof(WebCompanion).GetField("poll", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.GetValue(mirror);
+        Assert.IsTrue(poll.isActive, "precondition: the fallback poll runs");
+        mirror.Dispose();
+        CollectionAssert.AreEqual(before, System.Linq.Enumerable.Select(events, n => Handlers(bridge, n)), "every bridge handler is removed");
+        Assert.IsFalse(root.HasTrickleDownHandlers(), "every root handler is removed");
+        Assert.IsFalse(poll.isActive, "the fallback poll is stopped");
+    }
+
+    [Test]
+    public void ATransportThatThrowsOnDisposalDoesNotStopTheTeardown()
+    {
+        var bridge = NewBridge(Locale(false));
+        var before = Handlers(bridge, "Changed");
+        var mirror = new WebCompanion(new VisualElement(), Text, bridge, () => false, json => { if (json == "null") throw new System.InvalidOperationException("page"); });
+        LogAssert.Expect(LogType.Exception, new System.Text.RegularExpressions.Regex("page"));
+        Assert.DoesNotThrow(mirror.Dispose, "GameRoot disposes the presenters owned before the mirror in the same loop");
+        Assert.AreEqual(before, Handlers(bridge, "Changed"));
+    }
+
     static UiText Locale(bool he) => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(he ? UiPaths.StringsHebrew : UiPaths.Strings).text, he ? "strings.he.yaml" : "strings.en.yaml");
 
     [TestCase(false, "Map")]
@@ -153,7 +190,7 @@ public sealed class WebCompanionTests
         using var mirror = new WebCompanion(ui.Root, Locale(he), null, () => false, _ => { });
         Assert.AreEqual(expected, mirror.Capture(stop).focus);
         using (var e = NavigationSubmitEvent.GetPooled()) { e.target = stop; stop.SendEvent(e); }
-        Assert.AreEqual(1, inputs, "the mirror registers no input handlers");
+        Assert.AreEqual(1, inputs, "the mirror's submit handler leaves the map stop's own submit alone");
         Assert.IsTrue(stop.focusable);
     }
 

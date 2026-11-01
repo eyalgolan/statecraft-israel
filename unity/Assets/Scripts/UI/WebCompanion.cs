@@ -168,7 +168,10 @@ namespace Statecraft.Game.UI
             root.UnregisterCallback(onClick, TrickleDown.TrickleDown);
             root.UnregisterCallback(onSubmit, TrickleDown.TrickleDown);
             root.UnregisterCallback(onFocus, TrickleDown.TrickleDown);
-            send("null");
+            // Last, and never thrown on: GameRoot disposes its owned presenters in one loop, and a page or test transport
+            // that throws here must not leave the rest of them undisposed.
+            try { send("null"); }
+            catch (Exception e) { Debug.LogException(e); }
         }
 
 #if UNITY_WEBGL && !UNITY_EDITOR

@@ -137,8 +137,12 @@ call();
 assert.equal(writes, count, 'unchanged snapshots must not re-announce');
 payload.focus = 'Second'; payload.status = '';
 outbound = JSON.stringify(payload); call();
-assert.deepEqual(elements['companion-body'].children, paragraphs);
-assert.deepEqual(elements['companion-choices'].children, choices);
+// The same nodes, not equal copies: a rebuilt list would move a screen reader's virtual cursor.
+assert.equal(elements['companion-body'].children.length, paragraphs.length);
+paragraphs.forEach((p, i) => assert.strictEqual(elements['companion-body'].children[i], p, 'body paragraphs are not rebuilt'));
+assert.equal(elements['companion-choices'].children.length, choices.length);
+choices.forEach((c, i) => assert.strictEqual(elements['companion-choices'].children[i], c, 'choices are not rebuilt'));
+assert.equal(writes, count + 2, 'a focus and status change writes those two lines only');
 assert.equal(elements['companion-status'].textContent, '');
 outbound = 'null'; call();
 assert(!classes.has('has-companion'));
