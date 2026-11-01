@@ -122,6 +122,9 @@ The proposed immigration mix and ship schedule are non-operative [S1]. Retained 
 | `money.debt_ceiling` | `250` | IL millions of debt at which Money is exhausted | Retained `debt_ceiling` value [S10]; only the threshold of the economic defeat, not a credit cap: no order is refused or part-funded at it (owner, 1 November 2026, Q22) [S12] |
 | starting Debt | `0` | IL millions | Owner, 1 November 2026, Q23 [S12]: main has no start key, and Money is IL 1m a unit (`money.il_millions`) |
 | `defeat_turns` | `3` | turn ends in a row with Money and Food exhausted | Retained `R-END-002` value [S10]; owner, 1 November 2026, Q25 [S12] |
+| `mvp.dollars_per_turn` | `4` | US$ millions of foreign currency the player may convert into Money in a turn of the war (rung 4 or 5) | Owner, 2 November 2026, #813: "Spend the dollars (Recommended)" (`R-MONEY-004`) |
+| `mvp.dollars_total` | `100` | US$ millions the player may convert in the whole game | Owner, 2 November 2026, #813; the Export-Import Bank's 1949 credit (FRUS 1949 vol. VI, d407) |
+| `mvp.il_per_dollar` | `0.333` to 18 September 1949, `0.357` from 19 September 1949 | IL millions per US$ million converted | Sourced (`R-MONEY-004`): IMF, Annual Report 1950, Appendix I, pp. 88-89; Federal Reserve Bulletin, November 1949, p. 1336; Michaely, *Israel's Foreign Exchange Rate System* (1971), p. 10 and Table 2-1; Patinkin, *The Israel Economy: The First Decade*, Table 43, p. 121 (gathered on [#813](https://github.com/eyalgolan/statecraft-israel/issues/813#issuecomment-6565039439)) |
 
 ### Military and control
 

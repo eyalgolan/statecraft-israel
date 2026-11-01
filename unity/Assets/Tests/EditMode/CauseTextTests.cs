@@ -333,7 +333,7 @@ public class CauseTextTests
     // including large counts, money rounding and Hebrew names. Actual producer metadata is gated in managed tests.
     static Content RemainingFixture() => new Content
     {
-        Money = new List<MoneyAccount> { new MoneyAccount { Id = "treasury", Name = "Money", Prefix = "IL " }, new MoneyAccount { Id = "debt", Name = "Debt", Prefix = "IL " } },
+        Money = new List<MoneyAccount> { new MoneyAccount { Id = "treasury", Name = "Money", Prefix = "IL " }, new MoneyAccount { Id = "debt", Name = "Debt", Prefix = "IL " }, new MoneyAccount { Id = "fx_reserves", Name = "Foreign currency", Prefix = "$" } },
         SettlementNames = new Dictionary<string, string> { ["town"] = "Town" },
         Sites = new List<Site> { new Site { Id = "site", Name = "Site", NameHe = "אתר" } },
         Corridors = new List<CorridorDef> { new CorridorDef { Id = "road", Name = "Road", NameHe = "דרך" } },
@@ -367,6 +367,7 @@ public class CauseTextTests
             new Cause("draft", "town", -1, "Town: Housing was cancelled; the Money spent is not returned", key: CauseKeys.ProjectCancelled, args: new[] { "housing" }),
             new Cause("draft", "town", 1, "Town: Housing was finished", key: CauseKeys.ProjectCompleted, args: new[] { "housing" }),
             new Cause("draft", "arms", 2000000000, "Bought 2000000000 Arms, cost IL 1.3m", key: CauseKeys.ArmsBought, args: new[] { "1.25" }),
+            new Cause("draft", "treasury", 1.44, "Converted $4.0m of foreign currency into Money: IL +1.4m", key: CauseKeys.DollarsConverted, args: new[] { "4" }),
             new Cause("draft", "food", 2000000000, "Site: the plowed land yielded 2000000000 units of Food", key: CauseKeys.FoodHarvest, args: new[] { "site" }),
             new Cause("draft", "food", -2000000000, "Food ran out: 2000000000 of 2000000001 units of the month's need went unmet", key: CauseKeys.FoodShortage, args: new[] { "2000000001" }),
             new Cause("draft", "food", -1, "No Food imported (foreign currency crisis): the stock fell to 2000000000 units", key: CauseKeys.FoodWithoutImports, args: new[] { "2000000000" }),

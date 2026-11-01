@@ -122,6 +122,9 @@ namespace Statecraft.Sim
         public int ExhaustedTurns;
         /// <summary>The national Arms stock (R-ARMS-001; D-G6): one Arms is the equipment package for one 1,000-person recruit group. Never below 0.</summary>
         public int Arms;
+        /// <summary>The foreign currency converted into Money so far, in US$ millions (R-MONEY-004, #813): never more than
+        /// mvp.dollars_total.</summary>
+        public int DollarsConverted;
         /// <summary>The enemy prisoners held, in population units, by the side of the unit that surrendered (R-POW-001; impact
         /// plan section 4.3). Only a surrender in combat adds to it; only a front's exchange card takes from it (R-POW-004).</summary>
         public SortedDictionary<string, int> PrisonersHeld = new SortedDictionary<string, int>(StringComparer.Ordinal);
@@ -276,6 +279,7 @@ namespace Statecraft.Sim
             }
             if (ExhaustedTurns != 0) { Sep(); Nl(); sb.Append("exhausted=").Append(ExhaustedTurns.ToString(CultureInfo.InvariantCulture)); }
             if (Arms != 0) { Sep(); Nl(); sb.Append("arms=").Append(Arms.ToString(CultureInfo.InvariantCulture)); }
+            if (DollarsConverted != 0) { Sep(); Nl(); sb.Append("dollars=").Append(DollarsConverted.ToString(CultureInfo.InvariantCulture)); }   // R-MONEY-004: only once converted
             // Prisoners (R-POW-001 to R-POW-005): written only once a surrender has happened, so a run with none hashes as before.
             IEnumerable<string> Counts(SortedDictionary<string, int> m) => m.Select(kv => kv.Key + "=" + kv.Value.ToString(CultureInfo.InvariantCulture));
             if (PrisonersHeld.Count > 0) Section("pow", '{', '}', Counts(PrisonersHeld));

@@ -141,6 +141,7 @@ namespace Statecraft.Sim
             if (c.IsGdd) Movement.ContinueRoutes(c, s, spent, why);   // R-MOVE-009: the route step, before the turn's orders
             if (c.IsGdd) SettlementControl.CaptureHeld(c, s, why);
             var priceRung = s.Rung;   // every command this turn is priced at the rung the turn started at
+            var dollarsAtStart = s.DollarsConverted;   // R-MONEY-004: the turn's limit counts every conversion order in it
             foreach (var cmd in commands)
             {
                 if (!AttentionSystem.IsCommandKind(cmd.Kind)) { rejected.Add(new Rejection(cmd, "That order is not known")); continue; }
@@ -153,10 +154,10 @@ namespace Statecraft.Sim
                 if (c.UsesAttention)
                 {
                     var before = s.Attention;
-                    error = AttentionSystem.TrySpend(c, s, cmd.Kind, priceRung) ?? Execute(c, s, cmd, spent, attacked, why);
+                    error = AttentionSystem.TrySpend(c, s, cmd.Kind, priceRung) ?? Execute(c, s, cmd, spent, attacked, why, dollarsAtStart);
                     if (error != null) s.Attention = before;
                 }
-                else error = Execute(c, s, cmd, spent, attacked, why);
+                else error = Execute(c, s, cmd, spent, attacked, why, dollarsAtStart);
                 if (error != null) rejected.Add(new Rejection(cmd, error));
                 if (c.IsGdd) SettlementControl.CaptureHeld(c, s, why);   // R-CTRL-004: only where an order ends
             }
@@ -166,7 +167,7 @@ namespace Statecraft.Sim
         /// reported as a politics cause), or the reason it failed validation. A command that fails validation leaves
         /// the state as it found it (attention is refunded by the caller).</summary>
         static string? Execute(Content c, GameState s, Command cmd, Dictionary<int, int> spent,
-                               Dictionary<int, (int Q, int R)> attacked, List<Cause> why)
+                               Dictionary<int, (int Q, int R)> attacked, List<Cause> why, int dollarsAtStart)
         {
             switch (cmd)
             {
@@ -249,6 +250,8 @@ namespace Statecraft.Sim
                     return Movement.Move(c, s, m.Unit, m.Q, m.R, spent, why);
                 case BuyArms a:
                     return Pools.BuyArms(c, s, a.Count, why);
+                case ConvertDollars d:
+                    return EconomySystem.ConvertDollars(c, s, d.Amount, s.DollarsConverted - dollarsAtStart, why);
                 case ResolveCapture x:
                     return SettlementControl.Resolve(c, s, x.Settlement, x.Outcome, why);
                 case EndOccupation x:

@@ -26,6 +26,7 @@ attention_cost:
   cancel_project: 0.5                    # DESIGN VALUE: owner-set balance, not a historical figure (D-A6, D-C5, Q-PROJ-5: cancel_training's cost)
   move: 0                                # DESIGN VALUE: owner-set balance, not a historical figure (D-A6: unit orders are free)
   buy_arms: 1                            # DESIGN VALUE: owner-set balance, not a historical figure (D-A6, D-G6, #781: one order, whatever the quantity)
+  convert_dollars: 0                     # DESIGN VALUE: owner-set balance, not a historical figure (D-A6, D-C3, #813: the war months' cards already take all of Attention in 5 of 11 turns, so the lever is free, as proposed on #813)
   resolve_capture: 0                     # DESIGN VALUE: owner-set balance, not a historical figure (D-A6: unit orders are free; Q-TECH-3: one key, so Raid, Occupy and Deport cost the same; proposed on #797)
   end_occupation: 0                      # DESIGN VALUE: owner-set balance, not a historical figure (D-A6: unit orders are free; R-CTRL-014: one key for Annex and Withdraw, as resolve_capture; proposed on #799)
 # Turn length on each security rung, rungs 1 to 5 (R-TURN-001). The GDD MVP plays monthly turns on every rung (D-B1), so
@@ -110,6 +111,23 @@ mvp:
   arms_start: 12                         # DESIGN VALUE: owner-set balance, not a historical figure (D-G6, #781: Arms on 15 May 1948)
   arms_price: 1                          # DESIGN VALUE: owner-set balance, not a historical figure (D-G6, #781: IL millions per Arms)
   arms_per_recruit_group: 1              # DESIGN VALUE: owner-set balance, not a historical figure (D-G6, Q-UNIT-3: Arms per recruit group trained)
+  # R-MONEY-004, "Spend the dollars" (#813; owner, 2 November 2026: "Spend the dollars (Recommended)",
+  # https://github.com/eyalgolan/statecraft-israel/issues/813#issuecomment-6564883926): during the war the player may
+  # convert up to $4m a turn of foreign currency into Money, $100m in all; the reserves run out sooner, and the sourced
+  # 1951 currency crisis (fx_start, capital_inflow_per_year below) and its Food-import cut come closer. $100m is the
+  # Export-Import Bank's 1949 credit (FRUS 1949 vol. VI, editorial note d407,
+  # https://history.state.gov/historicaldocuments/frus1949v06/d407).
+  dollars_per_turn: 4                    # DESIGN VALUE: owner-set balance, not a historical figure (D-C3, #813: US$ millions a turn)
+  dollars_total: 100                     # DESIGN VALUE: owner-set balance, not a historical figure (D-C3, #813: US$ millions in all)
+  # The rate, IL millions per US$ million, each from its day on (sourced on #813, comment 6565039439). To 18 September
+  # 1949 the effective dollar rate was IL 0.333 per $ ($3.00): the official sterling parity gave IL 0.248 per $, but most
+  # dollar transactions ran at 0.333. The devaluation of 19 September 1949 set IL 0.357 per $ ($2.80), in force to 14
+  # February 1952. Sources: IMF Annual Report 1950, Appendix I, pp. 88-89; Federal Reserve Bulletin, November 1949, p. 1336;
+  # Michaely, Israel's Foreign Exchange Rate System (1971), p. 10 and Table 2-1; Patinkin, The Israel Economy: The First
+  # Decade, Table 43, p. 121. The economy comment below rounds the second rate to 0.36; the lever uses 0.357.
+  il_per_dollar:
+    - { from: 1948-05-15, rate: 0.333, status: sourced }
+    - { from: 1949-09-19, rate: 0.357, status: sourced }
   # Agent-proposed values accepted by the owner on 19 October 2026 (Q-GEN-1, Q-UNIT-2, Q-UNIT-3):
   # https://github.com/eyalgolan/statecraft-israel/pull/1130#issuecomment-6269103829
   # Upkeep is per formation, not strength:

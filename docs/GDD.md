@@ -375,6 +375,12 @@ Later on 1 November 2026 the owner answered the questions the approved answers l
 | Operation-card orders | "military openrations must have unit orders"; Latrun: "Harel at Sha'ar HaGai (Recommended)"; Dani: "Kiryati to Ramle (Recommended)" | Every military-operation card gives unit orders, each from a sourced, dated anchor (owner, 31 October 2026, #749): `ten_days`, `operation_yoav`, `operation_hiram`, `operation_horev` and the attack option of `latrun_proposal`. Latrun orders Harel from its Sha'ar HaGai anchor to Latrun; Dani orders Kiryati to Ramle ([#2087](https://github.com/eyalgolan/statecraft-israel/pull/2087#issuecomment-6555753104), [Latrun and Dani](https://github.com/eyalgolan/statecraft-israel/pull/2087#issuecomment-6555857468)). |
 | Movement preview | "I am talking about an arrow showing which tiles the unit is going to move to. this needs to be for israeli units only" | Choosing where an Israeli unit moves shows an animated arrow over the tiles it will move through. Enemy units get no arrow ([#2134](https://github.com/eyalgolan/statecraft-israel/issues/2134)). |
 
+#### Later rulings, 2 November 2026
+
+| Question | Owner's answer (2 November 2026) | Rule |
+|-|-|-|
+| A lever for the war-time debt (#813) | "Spend the dollars (Recommended)" | During the war (rungs 4 and 5) the player may convert up to $4m a month of foreign currency into Money, $100m in total; the reserves run out sooner, so the sourced 1951 currency crisis and its Food-import cut come closer (`R-MONEY-004`; [ruling](https://github.com/eyalgolan/statecraft-israel/issues/813#issuecomment-6564883926), [options](https://github.com/eyalgolan/statecraft-israel/issues/813#issuecomment-6564855158)). This overrides D-C3 ("Keep them internal, under Money, at least through cutover ... and hide them if they confuse") only for the one foreign-currency readout this order needs, on the Defence screen where it is made. |
+
 ## Deferred decisions
 
 These are recorded once here. Feature files link here instead of maintaining competing open-question lists.
