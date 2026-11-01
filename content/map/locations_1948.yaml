@@ -225,3 +225,26 @@ locations:
   # the Knesset's "Liberation of Jerusalem" records that the Jewish Quarter fell to the Jordanians on that date.
   - { url: 'https://m.knesset.gov.il/En/About/Documents/JerEnPDF1.pdf', checked: 2026-10-18 }
   status: draft
+
+# Owner, 21 October 2026 (#1007, issuecomment-6318061578): a new outpost kind, allowed as an optional row; no 1948 population.
+# The coordinates mark today's heritage site in Eilat, a reference point, not a survey of the 1949 police post.
+- id: umm_rashrash
+  name: Umm Rashrash
+  name_he: אום רשרש
+  name_he_review: agent-checked
+  name_he_sources:
+  - { url: 'https://he.wikipedia.org/wiki/אום_רשרש', checked: 2026-10-31 }
+  kind: outpost
+  lon: 34.9533611
+  lat: 29.5491667
+  q: -20
+  r: 56
+  priority: optional # DESIGN VALUE: owner-approved optional map location, 21 October 2026.
+  marker: true # DESIGN VALUE: map metadata only; the objective-1 bonus waits on #752.
+  managed_city: false # DESIGN VALUE: no 1948 population, so no city panel.
+  designated_site: false # DESIGN VALUE: not a founding site.
+  settlement_control_target: false # DESIGN VALUE: map inclusion does not add a capture target.
+  sources:
+  - { url: 'https://www.wikidata.org/wiki/Q25487984', checked: 2026-10-31 } # coordinates (P625): the modern heritage site; the statement has no reference
+  - { url: 'https://en.wikipedia.org/wiki/Operation_Uvda', checked: 2026-10-31 } # English name "Umm Rashrash"
+  status: draft

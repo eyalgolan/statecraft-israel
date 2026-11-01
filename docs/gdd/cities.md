@@ -43,7 +43,7 @@ Farm work, Industry, building, teaching, courses and active service cannot run s
 
 ### Housing and condition
 
-**Amir's proposal, declined by the owner on 30 October 2026 (Regional pooling and Upkeep conflicts, option A) [S1]:** the regional-capacity model, regional resident formula and proportional housing upkeep are non-operative. For housing-only shortfall effects, the owner's 30 October 2026 conflict review did not rule; borrowing under `R-MONEY-003` (`docs/rules/mvp.md:399`) stays operative (owner, 1 November 2026, D1) [S21]. Every city starts at the one housing condition 0.35 (`R-HOUSE-001`; owner, 1 November 2026, 27M-16: "0.35, your 15 Oct value (Recommended)") [S21] (unitless). The retained per-city housing, refugee-conversion and exhausted-resource defeat rules control.
+**Amir's proposal, declined by the owner on 30 October 2026 (Regional pooling and Upkeep conflicts, option A) [S1]:** the regional-capacity model, regional resident formula and proportional housing upkeep are non-operative. For housing-only shortfall effects, the owner's 30 October 2026 conflict review did not rule; borrowing under `R-MONEY-003` (`docs/rules/mvp.md:399`) stays operative (owner, 1 November 2026, D1) [S21]. Every city starts at the one housing condition 0.35 (`R-HOUSE-001`; owner, 1 November 2026, 27M-16: "0.35, your 15 Oct value (Recommended)") [S21] (unitless). A housing repair costs 0.5 Money and 1 work and raises the condition by 10 percentage points, a labelled design value (owner, 1 November 2026, "Fixed price 0.5 Money + 1 work") [S21]. The retained per-city housing, refugee-conversion and exhausted-resource defeat rules control.
 
 ### City projects and builders
 
