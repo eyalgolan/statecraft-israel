@@ -165,7 +165,8 @@ public class UnitBadgeScreenCapTests
 
             cam.fieldOfView = fov * 0.5f;
             layer.FaceCamera(cam);
-            Assert.Greater(badge.lossyScale.x, perspective + 1f, "a narrower field of view at the same pose re-sizes the plate");
+            float expected = perspective * Mathf.Tan(fov * 0.25f * Mathf.Deg2Rad) / Mathf.Tan(fov * 0.5f * Mathf.Deg2Rad);
+            Assert.AreEqual(expected, badge.lossyScale.x, 1e-2f, "a narrower field of view at the same pose shrinks the capped plate");
 
             cam.fieldOfView = fov;
             layer.FaceCamera(cam);
