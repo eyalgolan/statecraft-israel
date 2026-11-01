@@ -656,7 +656,7 @@ is turned into pounds here.
 
 | Period | Measure | Amount | Source |
 |---|---|---|---|
-| fiscal year ended September 1936 | JNF income raised in Palestine only | $ 193,000 [S] | JTA 29 Oct 1936, dateline Jerusalem, 28 Oct |
+| fiscal year ended September 1936 | JNF "Palestine income", to be used in purchase of land; "raised in Palestine only" is my reading (it could also mean income for Palestine) | $ 193,000 [S] | JTA 29 Oct 1936, dateline Jerusalem, 28 Oct (slug `j-n-fs-palestine-income-193000`) |
 | year ended 30 September 1939 (5699) | JNF net income, after the overseas offices' expenses; "the highest in its history" | £ 560,000 [S] (United States £ 361,000, "64 per cent") | JTA 1 Dec 1939, "Jerusalem (JTA-By Mail)", no day |
 | "the past year", announced 10 Dec 1940 | "the record J.N.F. world income" | £ 608,000 [S] (United States 59 per cent, Palestine 6 per cent) | JTA 11 Dec 1940, dateline Jerusalem, 10 Dec |
 | "the past year", announced 28 Dec 1941 | JNF income, "a new yearly high" | £ 620,000 [S] ("approximately $2,500,000") | JTA 29 Dec 1941, dateline London, 28 Dec |
@@ -664,6 +664,7 @@ is turned into pounds here.
 | eleven months to 31 Aug 1942 | income received by the JNF's world head office | "More than two-and-a-quarter million dollars" [S] | JTA 25 Sep 1942 (dateline not read) |
 | nine months to June 1943 | JNF income, "record-breaking" | "more than $3,000,000" [S] | JTA 25 Jul 1943 (dateline not read) |
 | October 1943 to August 1944 ("the last ten months" as printed) | JNF income | "more than $5,600,000" [S], 61 per cent above the same months a year earlier | JTA 24 Aug 1944 (dateline not read) |
+| "the first three months of the Hebrew year" (months not printed; announced 24 Jan 1947) | JNF income, "totalled nearly $4,000,000"; "The goal for the year is $40,000,000"; United States 78 percent [C] with the next row | "nearly $4,000,000" [S] | JTA 24 Jan 1947, "announced here today" (slug `jewish-national-fund-raised-nearly-4000000-in-first-quarter-of-hebrew-year`) |
 | Oct 1946 - Jan 1947 (as printed: "the fiscal quarter from Oct. 1946-Jan. 1947") | JNF income from all sources | "more than $5,300,000" [S], 60 per cent above the same quarter a year earlier | JTA 26 Feb 1947 (dateline not read) |
 
 - (1 Nov) JTA 1 Dec 1939 (slug `record-j-n-f-income-a%c2%a4560000-reported-for-past-year`; bulletin
@@ -693,6 +694,7 @@ is turned into pounds here.
   (`j-n-f-income-for-last-quarter-exceeds-5000-000-60-percent-higher-than-last-year`). Their bulletin datelines were not
   read. The 1943 and 1944 items also give holdings of 652,293 and 704,859 dunums (2a has 758,200 for 1944).
 - (1 Nov) Section 2c gives JNF income from Ussishkin's Congress reports up to 1935; these rows carry it on from 1936.
+  The 1935/36 row's "raised in Palestine only" is my reading of "Palestine income" (it could also mean income for Palestine).
   The yearly series is still not complete: 1935/36 (whole world), 1936/37, 1937/38 and every fiscal year after 1941 in
   pounds were not found.
 
@@ -824,7 +826,7 @@ November 2026; counts are the X-WP-Total the server returned, and titles were re
   above); only the last has an amount. `Kofer Hayishuv`, 1 January 1935 to 1 June 1948: 11 items, all titles read; one
   more opened (26 October 1938, used above). The 2 March 1939 item is the lead already recorded in
   `model-policies-1882-1948.md` section 13, item 4. `Hayishub`, 1 June 1938 to 1 June 1948: 82 items, the first 24 titles read, none about a Kofer yield.
-- `emergency tax`, 1 June 1938 to 1 June 1948: 59 items, the first 24 titles read; `Yishuv tax`: 19 items, all titles
+- `emergency tax`, 1 June 1938 to 1 June 1948: 59 items, the first 24 titles read; `Yishuv tax`: 19 items (same search window, 1 June 1938 to 1 June 1948; first hit 28 June 1939, last 16 May 1948), all titles
   read, two used above (22 November 1942; the 31 March 1943 item is in `assemblies-1920-48.md`). No yield of the
   emergency tax or of the mobilisation appeal was found.
 - `Haganah budget`, 1 January 1939 to 1 June 1948: 42 items, the first 17 titles read; the 12 August 1947 item on the
@@ -834,7 +836,10 @@ November 2026; counts are the X-WP-Total the server returned, and titles were re
   1946 item has an Agency budget, in dollars (8c). No Jewish Agency budget in pounds for 1945/46 to 1947/48 was found.
 - `National Fund income`, 15 September to 31 January in each of 1942/43 to 1947/48: 3, 2, 1, 2, 3 and 3 items, all
   titles read; only the 24 January 1947 title (`jewish-national-fund-raised-nearly-4000000-in-first-quarter-of-hebrew-year`) is a JNF income item, and it was
-  not opened.
+  opened on 1 November and is the new 24 January 1947 row in 8a ("nearly $4,000,000" for the first three months of the Hebrew year, "The goal for the year is $40,000,000").
+- (1 Nov) The 24 January 1947 "nearly $4,000,000" (first three months of the Hebrew year, months not printed) and the 26 February 1947
+  "more than $5,300,000" (October 1946 to January 1947) overlap in time but are printed over different windows, so they are
+  tagged [C]; both stand as printed, and the Hebrew year's start date is not in the first item.
 - The Mandate reports for 1935, 1936 and 1937 (`https://archive.org/details/report-admin-palestine-1935`, `-1936`,
   `-1937`, text layer searched for Keren Hayesod, Keren Kayemeth, Jewish National Fund, Zionist funds, Kofer and
   Redemption Fund): AR 1935, on the page before the text layer's page marker 202 (page 201, my reading), repeats that "The total
