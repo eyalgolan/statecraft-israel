@@ -41,7 +41,7 @@ The proposed non-housing-first payment and regional housing-proration rule is pa
 
 The proposed regional housing-upkeep formula and its settlement ordering are part of that declined proposal and are non-operative.
 
-Money and Food exhaustion remain defeat triggers under [the retained end rules](ministers-events-end.md#rules). For Amir's proposal to limit unpaid Money to housing effects, the owner's 30 October 2026 conflict review did not rule on this [S1]; borrowing under `R-MONEY-003` (`docs/rules/mvp.md:399`) stays operative for every category (owner, 1 November 2026, D1, Q21 and Q24) [S12]. `debt_ceiling` is only the economic-defeat threshold, not a credit cap (Q22), and Debt starts at 0 (Q23) [S12]. (unitless)
+Money and Food exhaustion remain defeat triggers under [the retained end rules](ministers-events-end.md#rules). For Amir's proposal to limit unpaid Money to housing effects, the owner's 30 October 2026 conflict review did not rule on this [S1]; borrowing under `R-MONEY-003` (`docs/rules/mvp.md:399`) stays operative for every category (owner, 1 November 2026, D1, Q21 and Q24) [S12]. `debt_ceiling` is only the economic-defeat threshold, not a credit cap (Q22), except that an Arms purchase whose borrowing would take Debt past it is refused (owner, 2 November 2026, #2198: "Refuse buys over ceiling (Recommended)", https://github.com/eyalgolan/statecraft-israel/issues/2198#issuecomment-6564721486), and Debt starts at 0 (Q23) [S12]. (unitless)
 
 ### Food
 

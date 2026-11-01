@@ -289,6 +289,82 @@ public class PoolsTests
         Assert.Equal(s.Hash(), after.Hash());
     }
 
+    // #2198, owner 2 Nov 2026 "Refuse buys over ceiling (Recommended)": a purchase whose borrowing would take the debt past
+    // mvp.debt_ceiling is refused, the state untouched. The debt after is PayOrBorrow's: the debt plus what the Treasury
+    // lacks (the fixture's ceiling is 10, its price 0.25 an Arms).
+    [Fact]
+    public void APurchaseThatWouldBorrowPastTheDebtCeilingIsRefused()
+    {
+        var c = Gdd();
+        Assert.Equal(10.0, c.Rules.Mvp!.DebtCeiling);
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        s.Treasury = 0.5;
+        s.Debt = 8;
+        var after = s.Clone();
+        var why = new List<Cause>();
+        // 11 Arms cost 2.75: 0.5 from the Treasury, 2.25 borrowed, debt 10.25 > 10.
+        Assert.Equal("Buying that many Arms would take the debt past its ceiling", Pools.BuyArms(c, after, 11, why));
+        Assert.Equal((0.5, 8.0, 20), (after.Treasury, after.Debt, after.Arms));
+        Assert.Equal(s.Hash(), after.Hash());
+        Assert.Empty(why);
+    }
+
+    // #2198: debt landing exactly on the ceiling is allowed (the ceiling is not passed); one unit more is refused.
+    [Fact]
+    public void APurchaseThatBorrowsExactlyToTheCeilingIsAllowed()
+    {
+        var c = Gdd();
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        s.Treasury = 0.5;
+        s.Debt = 8;
+        var more = s.Clone();
+        // 10 Arms cost 2.5: 0.5 from the Treasury, 2.0 borrowed, debt exactly 10.
+        Assert.Null(Pools.BuyArms(c, s, 10, new List<Cause>()));
+        Assert.Equal((0.0, 10.0, 30), (s.Treasury, s.Debt, s.Arms));
+        Assert.NotNull(Pools.BuyArms(c, more, 11, new List<Cause>()));
+        Assert.Equal((0.5, 8.0, 20), (more.Treasury, more.Debt, more.Arms));
+    }
+
+    // #2198: a purchase the Treasury pays in full borrows nothing, so the ceiling never refuses it, even with the debt
+    // already past the ceiling.
+    [Fact]
+    public void APurchasePaidFromTheTreasuryIgnoresTheCeiling()
+    {
+        var c = Gdd();
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        s.Treasury = 3;
+        s.Debt = 12;
+        Assert.Null(Pools.BuyArms(c, s, 12, new List<Cause>()));
+        Assert.Equal((0.0, 12.0, 32), (s.Treasury, s.Debt, s.Arms));
+    }
+
+    // #2198 changes only Arms: every other cost still borrows past the ceiling (R-MONEY-003; Q22 stands for them).
+    [Fact]
+    public void OtherBorrowingStillPassesTheCeiling()
+    {
+        var c = Gdd();
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        s.Treasury = 0;
+        s.Debt = 10;
+        var why = new List<Cause>();
+        EconomySystem.PayOrBorrow(c, s, 5, "for training", why, CauseKeys.Purpose.Arms);
+        Assert.Equal((0.0, 15.0), (s.Treasury, s.Debt));
+        var t = Simulation.Step(c, s, Array.Empty<Command>()).State;
+        Assert.True(t.Debt > s.Debt, $"the turn's own borrowing still adds to a debt past the ceiling ({s.Debt} -> {t.Debt})");
+    }
+
+    // #2198, the reported case: on the real content, 999 Arms on the first turn (IL 979m borrowed, debt IL 985m against the
+    // IL 250m ceiling) is refused, and the turn is the turn with no order (the Attention refunded too).
+    [Fact]
+    public void TheReportedFirstTurnPurchaseOf999ArmsIsRefused()
+    {
+        var s = Simulation.NewGame(Real, GoldenRun.Seed, Mode.Historical);
+        var r = Simulation.Step(Real, s, new Command[] { new BuyArms(999) });
+        Assert.Equal("Buying that many Arms would take the debt past its ceiling", Assert.Single(r.Rejected).Reason);
+        Assert.Equal(Step(Real, s).Hash(), r.State.Hash());
+        Assert.Equal(s.Arms, r.State.Arms);
+    }
+
     // R-ARMS-001 to R-ARMS-003: missing or negative values are load errors, never a default.
     [Theory]
     [InlineData("  arms_start: 20\n", "  arms_start: -1\n", "mvp.arms_start", ">= 0")]
