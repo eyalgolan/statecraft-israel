@@ -108,12 +108,11 @@ namespace Statecraft.Sim
             CheckObjectives(c);
         }
 
+        // #1718 D1/Q1/Q2 (owner, 1 November 2026): the passive budget, the monthly Food refill and the foreign-currency
+        // ledger stay, so their targets load as under gdd-0.1; of the economy's command targets only Attention retires.
         static bool RetiredGdd03Target(string target) =>
-            target == "food_supply" || target == "housing" || target == "fx_reserves" ||
+            target == "food_supply" || target == "housing" ||
             target == "attention" || target.StartsWith("attention_", StringComparison.Ordinal) ||
-            target == "budget" || target.StartsWith("budget_", StringComparison.Ordinal) ||
-            target == "passive_budget" || target.StartsWith("passive_budget_", StringComparison.Ordinal) ||
-            target == "food_refill" || target == "automatic_food_refill" ||
             target == "defeat" || target == "city_loss_defeat" || target == "any_city_loss";
 
         /// <summary>The options' structured effects (D-H2): R-EFX-006 refuses a target that does not exist at load, so Resolve
