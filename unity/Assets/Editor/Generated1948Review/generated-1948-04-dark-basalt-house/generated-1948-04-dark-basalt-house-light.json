@@ -1,0 +1,11 @@
+{
+    "tool": "HexHouseLevels",
+    "source": "Assets/Editor/Generated1948Review/generated-1948-04-dark-basalt-house/generated-1948-04-dark-basalt-house.fbx",
+    "source_sha256": "e2bc341f784d9ba436c183f3d081c1c65d8cb054c00fcd719e724531fd15f3f6",
+    "source_triangles": 5624,
+    "triangles": 3448,
+    "uv_tolerance_texels": 1.0,
+    "edge_tolerance": 0.0020000000949949028,
+    "max_error": 0.004999999888241291,
+    "provenance": "Derived from Tal Heuberger's original (the source FBX above) by HexHouseLevels. Same licence, CC BY-NC-ND 4.0, credit Tal Heuberger, with Tal's permission for these lighter derived meshes (30 October 2026, recorded by the owner in PR #1994)."
+}

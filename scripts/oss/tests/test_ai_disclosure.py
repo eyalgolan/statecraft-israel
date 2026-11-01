@@ -59,7 +59,7 @@ def test_incomplete_flagged_rule_fails():
 
 @pytest.mark.parametrize('flag', ['no', 'yes', 'off', 'y'])
 def test_a_yaml_1_1_bool_word_fails_closed(tmp_path, flag):
-    # The site reads the manifests as YAML 1.2, where `no` is the text "no", not False (review of #606). Read the same
+    # The manifests are read as YAML 1.2, where `no` is the text "no", not False (review of #606). Read the same
     # way here, such a flag is not a boolean and is refused, instead of a YAML 1.1 False silently dropping the row.
     (tmp_path / 'ASSETS.yaml').write_text(f'rules:\n  - {{glob: a.png, ai_generated: {flag}, source: s}}\n', encoding='utf-8')
     (tmp_path / 'ASSETS.portraits.yaml').write_text('rules: []\n', encoding='utf-8')

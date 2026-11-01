@@ -43,6 +43,7 @@ namespace Statecraft.Game.UI
 
         static ScrollView? Target(VisualElement root, string? screen, bool cardOpen)
         {
+            if ((root.Q("root") ?? root).ClassListContains(OpeningPresenter.OpenClass)) return root.Q<ScrollView>("opening-scroll");
             if ((root.Q("root") ?? root).ClassListContains(StartScreenPresenter.OpenClass)) return null;
             if (screen == null) return cardOpen ? root.Q<ScrollView>("event-scroll") : null;
             var open = root.Q<VisualElement>("screen-" + screen);

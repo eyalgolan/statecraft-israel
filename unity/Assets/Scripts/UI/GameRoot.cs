@@ -53,6 +53,7 @@ namespace Statecraft.Game.UI
         MapLabelsPresenter? labels;
         ScreenNav? nav;
         StartScreenPresenter? start;
+        OpeningPresenter? opening;
         EventCardPresenter? card;
         /// <summary>Tests: the decision card of the last Begin.</summary>
         internal EventCardPresenter? Card => card;
@@ -101,6 +102,9 @@ namespace Statecraft.Game.UI
         /// a temporary folder.</summary>
         internal SettingsStore? Settings { get; set; }
         SettingsStore? SettingsFile() => Settings ?? (Application.isPlaying ? SettingsStore.ForPlatform() : null);
+        /// <summary>The opening (#530) outside Play mode: off by default, so EditMode tests that press New Game meet the advisors
+        /// as a player's first game does; the opening's own tests set it.</summary>
+        internal bool OpeningInEditMode { get; set; }
 
         public void Configure(GameBoot boot, UIDocument document, TextAsset strings, TextAsset stringsHe, PortraitCatalog portraits,
             MapScene map, PlacementLayer placements, MapPointer pointer, CameraController cameraController)
@@ -222,6 +226,10 @@ namespace Statecraft.Game.UI
                 (map, nameof(map)), (placements, nameof(placements)), (pointer, nameof(pointer)), (cameraController, nameof(cameraController)) })
                 if (value == null) throw new InvalidOperationException($"GameRoot: {field} is not assigned (run MapCapture.MakeScene)");
             if (map.Terrain == null) throw new InvalidOperationException("GameRoot: the map is not built (GameBoot builds it before Ready)");
+            // The opening (#530) plays in Play mode and players, never in a smoke run or an automated one; in EditMode only
+            // where a test asks for it with the start screen (OpeningInEditMode).
+            bool enableOpening = smoke == 0 && !StartScreenPresenter.Skipped()
+                && (Application.isPlaying || startScreen && OpeningInEditMode);
             Shutdown();
             smokeRun = smoke > 0;
 
@@ -334,14 +342,16 @@ namespace Statecraft.Game.UI
             // From their runtime forms when they match the YAML (issue #321: boot time), the sub-districts as the map read them.
             var regions = new MapRegions(map.SubdistrictsFor(inputs.Map.RegionsTsv, inputs.Map.RegionsYaml, Debug.LogWarning),
                 string.IsNullOrWhiteSpace(inputs.Map.ArmisticeYaml) ? null : Armistice1949.ReadRuntimeOrYaml(inputs.Map.ArmisticeTsv, inputs.Map.ArmisticeYaml, Debug.LogWarning),
-                map.Control);   // the map's read, with the map editor's control overrides (#1009); the road vehicles use it too (#725)
+                map.Control, MapRegionNames.Parse(inputs.Map.RegionNamesYaml));   // the map's read, with the map editor's control overrides (#1009); the road vehicles use it too (#725)
+            if (regions.Names.Stale.Count > 0)
+                Debug.LogWarning($"{MapRegionNames.FileName}: English changed since the Hebrew was supplied, showing English for: {string.Join(", ", regions.Names.Stale)}");
             Regions = regions;
             var layerLabel = root.Q<Label>("map-layer");
             Action onDate = () =>
             {
                 regions.Apply(bridge.State.Date);
                 layerLabel.text = regions.ControlLabel(bridge.State.Date, k => text[k])
-                    ?? regions.Label(bridge.State.Date, text.Format);
+                    ?? regions.Label(bridge.State.Date, text.Format, text["ui.lang"] == UiLanguage.Hebrew);
                 ShowLayerLabel();
             };
             // The caption names the borders while they are drawn: by date, and not while the minimap's button hides them.
@@ -411,7 +421,7 @@ namespace Statecraft.Game.UI
             endClosed = false;
 
             // An outcome clip holds the pointer while it shows and in the frame it closes (the skipping click selects no hex).
-            Func<Vector2, bool> overUi = p => outcomes?.HoldsThePointer == true || UiPointer.IsOverUi(root.panel, p, Screen.height);
+            Func<Vector2, bool> overUi = p => opening?.HoldsThePointer == true || outcomes?.HoldsThePointer == true || UiPointer.IsOverUi(root.panel, p, Screen.height);
             var terrain = map.Terrain;
             var size = terrain.terrainData.size;
             var oldBounds = cameraController.Bounds;
@@ -514,6 +524,33 @@ namespace Statecraft.Game.UI
             drawn = null; drawnSites = null;
             RenderPlacementsIfChanged();
             SyncMinimap();
+            // The opening (#530): three sourced stills after New Game and before the first turn, skippable, and replayable
+            // from the start screen. It reads no sim state. A player build shows it only once its text and photographs are
+            // reviewed (OpeningContent.MayPresent); the Editor shows the draft with a visible preview label, for QA.
+            var replayOpening = root.Q<Button>("start-opening-replay");
+            replayOpening.style.display = DisplayStyle.None;
+            if (enableOpening && OpeningContent.Load() is OpeningContent openingSource)
+            {
+                var openingData = openingSource.Read();
+#if UNITY_EDITOR
+                const bool editorPreview = true;
+#else
+                const bool editorPreview = false;
+#endif
+                if (OpeningContent.MayPresent(openingData, editorPreview))
+                {
+                    // A new game's opening hands over to the advisors' opening chain when it closes; a replay returns to
+                    // the start screen. Closing the scene disposes it after the camera is gone, hence the null check.
+                    opening = Own(new OpeningPresenter(root, openingSource, openingData, text,
+                        shown => { if (cameraController != null) cameraController.enabled = !shown && start?.IsOpen != true; },
+                        replay => { if (!replay) advisor?.NewGame(); }));
+                    replayOpening.text = text["opening.replay"];
+                    replayOpening.style.display = DisplayStyle.Flex;
+                    Action replayClick = () => { if (start?.IsOpen == true) opening?.Show(replay: true); };
+                    replayOpening.clicked += replayClick;
+                    owned.Add(new Undo(() => replayOpening.clicked -= replayClick));
+                }
+            }
             // The start screen goes up in the same frame the loading state ends, so the HUD never flashes before it. While it
             // shows, the camera keys are off (keyboard pan would otherwise move the hidden map; plan amendment A4).
             if (showsStart)                                                // newGame is made above whenever smoke == 0
@@ -523,7 +560,7 @@ namespace Statecraft.Game.UI
                 start = Own(new StartScreenPresenter(root, newGame!, resumed, shown =>
                 {
                     if (cam != null) cam.enabled = !shown;
-                    if (!shown) { if (start?.Resumed == false) advisor?.NewGame(); else advisor?.Resume(); }
+                    if (!shown) { if (start?.Resumed != false) advisor?.Resume(); else if (opening == null) advisor?.NewGame(); }
                 }, recording, text, SettingsFile(), switchLanguage));
                 start.Show();
             }
@@ -604,7 +641,21 @@ namespace Statecraft.Game.UI
             budget.UnsubmittedChanged += advisor.BudgetUnsubmitted;
             if (video != null)
                 advisor.Media = new AdvisorMedia(text, new ClipPicture(video), new StillPicture(), DeclarationRecording.WebFetch, new DeclarationRecording.SourceOutput());
-            if (newGame != null) newGame.Started += advisor.NewGame;
+            // A new game, from the start screen or the top bar's New game, plays the opening first when there is one.
+            if (newGame != null)
+            {
+                // The start screen's no-save New Game has no Started; its closing already starts the advisors when there
+                // is no opening, so that route only plays the opening.
+                Action freshGame = () => { if (opening != null) opening.Show(replay: false); else advisor?.NewGame(); };
+                Action freshOpened = () => opening?.Show(replay: false);
+                newGame.Started += freshGame;
+                if (start != null) start.FreshGameOpened += freshOpened;
+                owned.Add(new Undo(() =>
+                {
+                    newGame.Started -= freshGame;
+                    if (start != null) start.FreshGameOpened -= freshOpened;
+                }));
+            }
             if (hebrew) Own(new UiDirection(root, bridge));
             root.Q("root")?.RemoveFromClassList("loading");                // ready: the bar, panels and screens may show (P2-1)
             DiagLog.BootPhase("screens ready");
@@ -820,7 +871,7 @@ namespace Statecraft.Game.UI
             for (int i = owned.Count - 1; i >= 0; i--) owned[i].Dispose();
             owned.Clear();
             if (hoveredCity != null) { hoveredCity = null; HandCursor(false); }   // the next Begin's pills start unlit
-            minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; card = null; outcomes = null; report = null; end = null; advisor = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
+            minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; opening = null; card = null; outcomes = null; report = null; end = null; advisor = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
             // A ?profile run cut short (a stopped coroutine never reaches its restore line) must not leave the terrain at the
             // profile's pixel error (Task 24 review M1). Nothing else changes it, so restoring is always right.
             if (map != null && map.Terrain != null) map.Terrain.heightmapPixelError = MapBuilder.TerrainPixelError;
@@ -838,6 +889,8 @@ namespace Statecraft.Game.UI
             // Dated routes (the Burma Road from June 1948); in the GDD loop the corridors by their built segments (#792).
             Statecraft.Game.Map.Routes.RouteLayer.ShowAt(map, Bridge.State.Date,
                 Bridge.Content.IsGdd ? Statecraft.Game.Map.Routes.RouteLayer.BuiltSegments(Bridge.Content, Bridge.State) : null);
+            // The true armistice lines (#237, the "armisticelines" map mode), each from its own date; nothing without the mode.
+            ArmisticeLines.ShowAt(map, Bridge.State.Date);
             // Tal Heuberger's whole-town models on their towns far off (#663, "Whole model far, buildings near"), streamed after the first frame; the ma'abara from its date.
             // The camps and housing built as city projects bring theirs too, as the placement layer draws them (#1275).
             Statecraft.Game.Map.Collection.TownLandmarks.ShowAt(map, Bridge.State.Date,
@@ -922,6 +975,9 @@ namespace Statecraft.Game.UI
                 yield break;
             }
             if (!Press(root.Q<Button>("start-new-game"), s => log(s.Replace("SMOKE FAIL", "FIRST CARD FAIL")))) yield break;
+            // A reviewed opening is part of the normal media path: the instrument uses its actual Skip control.
+            if (hud.ClassListContains(OpeningPresenter.OpenClass)
+                && !Press(root.Q<Button>("opening-skip"), s => log(s.Replace("SMOKE FAIL", "FIRST CARD FAIL")))) yield break;
             while (now() - began <= FirstCardBudgetSeconds)
             {
                 var option = root.Q<VisualElement>("event-options")?.Q<Button>();
@@ -965,9 +1021,11 @@ namespace Statecraft.Game.UI
             // takes the Cancel event when it has the focus), and so on the open capture dialog (CaptureDialogPresenter.Escape),
             // which shows only while the card does not.
             // The report panel (#1169) and the share panel (#1170) are over everything: their Escape goes no further.
+            // Nor does the opening's (#530), over all but those two, in the frame it closes too.
             // Nor does the advisors' popup's, with the focus inside it (AdvisorPresenter.Escape, also in the frame its Cancel closed it).
             if (UnityEngine.InputSystem.Keyboard.current?.escapeKey.wasPressedThisFrame == true
-                && feedback?.Escape() != true && share?.Escape() != true && advisor?.Escape() != true)
+                && feedback?.Escape() != true && share?.Escape() != true && advisor?.Escape() != true
+                && opening?.ClosedThisFrame != true && opening?.Escape() != true)
             {
                 bool done = outcomes?.SkipAll() == true || outcomes?.ClosedThisFrame == true;
                 if (!done) done = advisor?.CloseOverlay() == true || advisor?.OverlayClosedThisFrame == true;
