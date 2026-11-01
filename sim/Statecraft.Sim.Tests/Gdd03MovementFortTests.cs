@@ -154,6 +154,7 @@ public class Gdd03MovementFortTests
     public void ArtilleryMovesTwoPointsOnInfantryTerrainCostsAndFiringSpendsThem()
     {
         var c = Load(biome: "mountains"); c.Gdd03Balance!.Values["mountains"].Parts["movement"].Values[0] = 1;
+        c.Gdd03Balance!.Values["military.move_infantry"].Values[0] = 3; // pins that artillery reads its type's 2, not the infantry scalar
         var s = With(c, Of("gun"), Of("enemy", 2, 5, side: "egypt"));
         Assert.Equal(2, Movement.Allowance(c, s.Units[1]));
         Assert.Contains(1, Movement.NeedsOrders(c, s, new Dictionary<int, int>()));
@@ -165,6 +166,7 @@ public class Gdd03MovementFortTests
         Assert.Equal(1, Movement.PointsLeft(c, s, 1, spent));
         Assert.Null(Combat.Strike(c, s, 1, 5, 1, spent, new Dictionary<int, (int Q, int R)>(), why)); // range 2, shared budget
         Assert.Equal(0, Movement.PointsLeft(c, s, 1, spent));
+        Assert.Equal("That unit has no movement points left this turn", Combat.Check(c, s, 1, 5, 1, spent: spent));
         Assert.Empty(Movement.Reachable(c, s, 1, spent));
         var go = With(c, Of("gun", q: 0)); var goSpent = new Dictionary<int, int>();
         Assert.Equal(new[] { 1, 1, 2, 2 }, Movement.Route(c, go, 1, 4, 1, goSpent).Select(h => h.Turn));
