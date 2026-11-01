@@ -7,11 +7,12 @@ public class Gdd03CraftArithmeticTests
     static Gdd03BalanceCatalogue Catalogue() => ContentLoader.Load(RealContentTests.ContentRoot()).Gdd03Balance!;
     static Gdd03CraftArithmetic Arithmetic() => Gdd03CraftArithmetic.Read(Catalogue());
 
-    // R-CRAFT-001/002: expected values independently transcribed from gdd03-balance.yaml:138-185,190-193.
+    // R-CRAFT-001/002: expected values independently transcribed from gdd03-balance.yaml:138-185,190-193. The course is
+    // 0.5 Money and 3 turns (owner ruling, 30 October 2026: "Keep the set values (Recommended)"; #2115), not Amir's 5 / 6.
     [Theory]
     [InlineData("he-IL")]
     [InlineData("en-US")]
-    public void CatalogueAndSixCourseTicksUseOnlyCourseIncome(string culture)
+    public void CatalogueAndThreeCourseTicksUseOnlyCourseIncome(string culture)
     {
         var old = CultureInfo.CurrentCulture; var oldUi = CultureInfo.CurrentUICulture;
         try
@@ -19,23 +20,23 @@ public class Gdd03CraftArithmeticTests
             CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(culture);
             CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(culture);
             var a = Arithmetic();
-            Assert.Equal(5m, a.CourseCost); Assert.Equal(6, a.CourseTurns);
+            Assert.Equal(0.5m, a.CourseCost); Assert.Equal(3, a.CourseTurns);
             Assert.Equal(1m, a.CourseIncome); Assert.Equal(36, a.ExpertWorkTurns);
             var progress = 0; decimal income = 0;
-            for (var turn = 1; turn <= 6; turn++)
+            for (var turn = 1; turn <= 3; turn++)
             {
                 var r = a.CourseTick(17, progress, 4, eligibleTurn: true);
                 Assert.Equal(17, r.UnitId); Assert.Equal(4, r.WorkXp);
-                Assert.Equal(turn, r.ProgressTicks); Assert.Equal(turn == 6, r.Completes);
+                Assert.Equal(turn, r.ProgressTicks); Assert.Equal(turn == 3, r.Completes);
                 Assert.Equal(1m, r.CourseIncome); Assert.Equal(0m, r.IndustryIncome);
                 progress = r.ProgressTicks; income += r.CourseIncome;
             }
-            Assert.Equal(6m, income);
-            var idle = a.CourseTick(17, 5, 4, eligibleTurn: false);
-            Assert.Equal(5, idle.ProgressTicks); Assert.False(idle.Completes);
+            Assert.Equal(3m, income);
+            var idle = a.CourseTick(17, 2, 4, eligibleTurn: false);
+            Assert.Equal(2, idle.ProgressTicks); Assert.False(idle.Completes);
             Assert.Equal(0m, idle.CourseIncome); Assert.Equal(0m, idle.IndustryIncome);
             // Complete-course input is invalid: caller must decide follow-on policy elsewhere.
-            Assert.Throws<ArgumentOutOfRangeException>(() => a.CourseTick(17, 6, 4, true));
+            Assert.Throws<ArgumentOutOfRangeException>(() => a.CourseTick(17, 3, 4, true));
         }
         finally { CultureInfo.CurrentCulture = old; CultureInfo.CurrentUICulture = oldUi; }
     }

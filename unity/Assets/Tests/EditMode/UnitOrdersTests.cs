@@ -395,7 +395,7 @@ public class UnitOrdersTests
     public void ReinforceQueuesTheMissingStrengthFromTheCityTheUnitStandsIn()
     {
         var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
-        foreach (var (t, label) in new[] { (Text, "Reinforce +"), (he, "תגבור +") })
+        foreach (var (t, label, arms) in new[] { (Text, "Reinforce +", "not enough Arms"), (he, "תגבור +", "אין די כלי נשק") })
         {
             using var ui = new UiTestKit();
             var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
@@ -414,7 +414,7 @@ public class UnitOrdersTests
             g.State.Arms = 0;
             info.ShowUnit();
             Assert.AreEqual(DisplayStyle.None, button.style.display.value, "no Arms, no Reinforce");
-            StringAssert.Contains("not enough Arms", ui.Q<Label>("info-reason").text, "the sim's reason shows");
+            StringAssert.Contains(arms, ui.Q<Label>("info-reason").text, "the sim's reason shows, in the UI's language (#2072)");
 
             g.State.Arms = 100;
             info.ShowUnit();
@@ -428,6 +428,34 @@ public class UnitOrdersTests
             Assert.AreEqual(DisplayStyle.None, button.style.display.value, "one order a unit");
             info.Dispose();
         }
+    }
+
+    /// <summary>#2072, owner review item 1: a Reinforce the sim refuses for Arms ("Tel Aviv: not enough Arms for basic training
+    /// (need ..)") reaches the player through SimBridge, in Hebrew whole: the town and the course in Hebrew too, no Latin
+    /// letter. The bridge queues it (a Reinforce waits for End turn) and End turn raises the sim's refusal, which the toast
+    /// reads. SimBridge.Refuse never sees it: a queue-time refusal (Orders, Combat, Movement) carries no town or course.</summary>
+    [Test]
+    public void AReinforceRefusedThroughTheBridgeReadsInHebrewWhole()
+    {
+        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var namesHe = SettlementPlacer.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", SettlementPlacer.DefaultFileName))).ToDictionary(t => t.Id, t => t.NameHe);
+        using var ui = new UiTestKit();
+        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        var bridge = new SimBridge(g, he) { TownNamesHe = namesHe };
+        using var toast = new ToastPresenter(ui.Root, bridge, he) { TownNamesHe = namesHe };
+        var token = UnitRoster.FromState(Units, C, g.State, _ => true, (row, a, q, r) => a).Single(x => x.Unit.Id == "golani");
+        var id = UnitCard.SimUnit(C, g.State, token.Unit)!.Value;
+        var u = g.State.Units[id];
+        var city = C.SettlementHexes.Single(h => h.Id == "tel_aviv");
+        g.State.Units[id] = new Unit(u.Id, u.Type, city.Q, city.R, u.Service, u.Side, u.Strength - 2, u.Order, u.OrderTarget, u.HomeCity, u.Strength);
+        g.State.Arms = 0;
+        Assert.IsNull(bridge.Queue(new Reinforce(id, "tel_aviv", 2)), "the bridge queues it");
+        var rejected = bridge.EndTurn().Rejected.Single(x => x.Command is Reinforce).Reason;
+        StringAssert.StartsWith("Tel Aviv: not enough Arms for basic training", rejected, "the sim's English, with a town and a course");
+        var line = ui.Q<Label>("toast").text;
+        StringAssert.Contains(namesHe["tel_aviv"], line, "the town in Hebrew");
+        StringAssert.Contains(he["why.cause.course.basic"], line, "the course in Hebrew");
+        StringAssert.DoesNotMatch("[A-Za-z]", line, "no English left in the refusal");
     }
 
     /// <summary>Codex's review of #1527, finding 3, on the card: once Send home is queued for a unit, the card offers it no

@@ -110,6 +110,7 @@ public class AdvisorCatalogTests
     [TestCase("{ id: x, advisor: dayan, signal: new_game, level: new, actions: [{ open_card: true }, { open_card: true }, { open_card: true }] }", "at most two actions")]
     [TestCase("{ id: x, advisor: dayan, signal: new_game, level: new, quote: q9 }", "not on the verified list")]
     [TestCase("{ id: x, advisor: dayan, signal: new_game, level: new, he_review: maybe }", "he_review must be")]
+    [TestCase("{ id: x, advisor: dayan, signal: new_game, level: warnings, actions: [{ encyclopedia: moon }] }", "encyclopedia actions are for teaching messages")]
     public void EachBrokenRowIsNamed(string row, string expected)
     {
         var problems = ProblemsOf("messages:\n  - " + row + "\n", "advisor.x.text", "advisor.Bad Id.text");

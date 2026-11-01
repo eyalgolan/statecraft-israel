@@ -6,8 +6,8 @@ public class Gdd03TrainingCentreFixtureTests
     static readonly Lazy<Gdd03BalanceCatalogue> Real = new(() => ContentLoader.Load(RealContentTests.ContentRoot()).Gdd03Balance!);
     const string CentreA = "fixture-centre-a", CampA = "fixture-camp-a", CentreB = "fixture-centre-b", CampB = "fixture-camp-b";
     const string CentreSouth = "fixture-centre-south", CampSouth = "fixture-camp-south", Field = "fixture-field";
-    const string Service = "fixture-service";
-    static readonly string[] Facilities = { CampA, CampB, CampSouth, CentreA, CentreB, CentreSouth, Field };
+    const string Service = "fixture-service", Workshop = "fixture-workshop";
+    static readonly string[] Facilities = { CampA, CampB, CampSouth, CentreA, CentreB, CentreSouth, Field, Workshop };
 
     static Content Catalogue(string? key = null, Gdd03DesignValue? replacement = null, string ruleset = SaveGame.Gdd03Ruleset)
     {
@@ -29,6 +29,7 @@ public class Gdd03TrainingCentreFixtureTests
                 new PopulationTarget(CentreB, PopulationAssignmentKind.Course, "north", 3),
                 new PopulationTarget(CentreSouth, PopulationAssignmentKind.Course, "south", 3),
                 new PopulationTarget(Field, PopulationAssignmentKind.Work, "north"),
+                new PopulationTarget(Workshop, PopulationAssignmentKind.Work, "north"),
                 new PopulationTarget(Service, PopulationAssignmentKind.ActiveService, "north") },
         Array.Empty<string>(), Array.Empty<string>());
 
@@ -294,25 +295,64 @@ public class Gdd03TrainingCentreFixtureTests
         Unchanged(idle, () => new Gdd03TrainingCentreFixture(c, idle, Centres()), typeof(NotSupportedException), "Deferred: #1668 Q42");
     }
 
-    // R-TRAIN-008: #1668 Q43 stays open: the enrolment month is not counted, and a participant who held another
-    // assignment at the month's opening cannot start that month.
+    // R-TRAIN-008: #1668 Q43 stays open: the enrolment month is not counted, and a participant released from a course
+    // by a cancel cannot start again that month.
     [Fact] public void CourseTurnBoundariesStayDeferred()
     {
-        var c = Catalogue(); var s = State(c, Person(CivilianProfession.Farmer, CivilianTier.Novice, "tools-6",
-            assignment: new PopulationAssignment(PopulationAssignmentKind.Work, Field)));
+        var c = Catalogue(); var s = State(c);
         var f = new Gdd03TrainingCentreFixture(c, s, Centres());
         var enrolment = Month(s, 0);
         f.Start(1, 0, CentreA, enrolment);
         Unchanged(s, () => f.Advance(1, enrolment), typeof(NotSupportedException), "Deferred: #1668 Q43");
 
         var opening = Month(s, 1);
-        s.PopulationLedger.ChangeAssignment(6, PopulationAssignment.Unassigned);
-        Unchanged(s, () => f.Start(6, 4, CentreB, opening), typeof(NotSupportedException), "Deferred: #1668 Q43");
-
         f.Cancel(1);
         Unchanged(s, () => f.Start(1, 0, CentreA, opening), typeof(NotSupportedException), "Deferred: #1668 Q43");
         // A teacher released by that cancel cannot teach at another centre in the same month.
         Unchanged(s, () => f.Start(5, 0, CentreB, opening), typeof(NotSupportedException), "Deferred: #1668 Q43");
+    }
+
+    // #1716 month snapshot, R-CITY-001/002 (owner-relayed Q34, 28 Oct 2026: a job change takes effect at once and the
+    // same job again is a no-op). The month's work and course snapshot is taken after this turn's orders.
+    [Fact] public void AJobChangeThisTurnIsInThisMonthsSnapshotAndTheSameJobAgainChangesNothing()
+    {
+        var c = Catalogue(); var s = State(c, Person(CivilianProfession.None, CivilianTier.None, null,
+            assignment: new PopulationAssignment(PopulationAssignmentKind.Work, Field)));
+        var work = new Gdd03AssignmentFixture(c, s, new[] {
+            new Gdd03FixtureSlot(Field, Gdd03FixtureWork.Farm, 1, "fixture"),
+            new Gdd03FixtureSlot(Workshop, Gdd03FixtureWork.Workshop, 1, "fixture") });
+        Assert.Equal(Field, Month(s, 0).OpeningPeople.Single(p => p.Id == 6).Assignment.Target);
+
+        Assert.Equal(Gdd03FixtureAssignmentResult.Applied, work.Assign(6, Workshop));
+        var month = Month(s, 1);
+        Assert.Equal(Workshop, month.OpeningPeople.Single(p => p.Id == 6).Assignment.Target);
+        Assert.Contains(6, month.WorkEligibleIds);
+
+        var hash = s.Hash(); var described = s.Describe();
+        Assert.Equal(Gdd03FixtureAssignmentResult.NoOp, work.Assign(6, Workshop));
+        Assert.Equal(hash, s.Hash()); Assert.Equal(described, s.Describe());
+        var again = Month(s, 1);
+        Assert.Equal(month.OpeningPeople, again.OpeningPeople); Assert.Equal(month.WorkEligibleIds, again.WorkEligibleIds);
+    }
+
+    // #1716 month snapshot, R-TRAIN-005, R-TRAIN-008 (owner-relayed Q43(a), 28 Oct 2026: a course occupies people from
+    // the turn it starts). A novice who worked at the month's opening is released from work (an immediate job change) and
+    // starts a course this turn; this month's snapshot has them on the course and off work.
+    [Fact] public void ACourseStartedThisTurnTakesTheTraineeOffWorkInThisMonthsSnapshot()
+    {
+        var c = Catalogue(); var s = State(c, Person(CivilianProfession.Farmer, CivilianTier.Novice, "tools-6",
+            assignment: new PopulationAssignment(PopulationAssignmentKind.Work, Field)));
+        var f = new Gdd03TrainingCentreFixture(c, s, Centres());
+        var work = new Gdd03AssignmentFixture(c, s, new[] { new Gdd03FixtureSlot(Field, Gdd03FixtureWork.Farm, 1, "fixture") });
+        var opening = Month(s, 0);
+        Assert.Contains(6, opening.WorkEligibleIds);
+
+        Assert.Equal(Gdd03FixtureAssignmentResult.Applied, work.Assign(6, null));
+        f.Start(6, 4, CentreB, opening);
+        var month = Month(s, 0);
+        Assert.DoesNotContain(6, month.WorkEligibleIds);
+        Assert.Contains(6, month.CourseEligibleIds);
+        Assert.Equal(PopulationAssignmentKind.Course, month.OpeningPeople.Single(p => p.Id == 6).Assignment.Kind);
     }
 
     // R-TRAIN-008: #1668 Q43(b): a teacher who worked at the month's opening and was released afterwards cannot start

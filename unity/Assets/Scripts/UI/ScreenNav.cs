@@ -5,13 +5,13 @@ using UnityEngine.UIElements;
 
 namespace Statecraft.Game.UI
 {
-    /// <summary>The side-menu buttons open the Cabinet, Budget, Defence, Why, Timeline, How to play, Objectives and Settings screens, one at a time; pressing the open
+    /// <summary>The side-menu buttons open the Cabinet, Budget, Defence, Why, Timeline, Encyclopedia, Objectives and Settings screens, one at a time; pressing the open
     /// screen's button again closes it. Every press toggles, synchronously, with no debounce: two presses in one frame (a
     /// double click, or a click plus Enter) open and close again, so the result depends only on the number of presses
     /// (HudTests.TwoPressesInOneFrameToggleTwice; playtest 1, item 11).</summary>
     public sealed class ScreenNav : System.IDisposable
     {
-        public static readonly string[] Screens = { "cabinet", "budget", "defence", "why", "timeline", "how-to-play", "objectives", "settings" };
+        public static readonly string[] Screens = { "cabinet", "budget", "defence", "why", "timeline", "encyclopedia", "objectives", "settings" };
         // Transient map confirmations expire even for a narrow screen that leaves the info panel visible.
         internal static event System.Action<VisualElement>? InfoIntentCovered;
 

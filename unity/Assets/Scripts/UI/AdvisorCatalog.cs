@@ -171,6 +171,7 @@ namespace Statecraft.Game.UI
                 else if (m.Repeat != Once && m.Repeat != Every) p.Add($"{at}: repeat must be once or every");
                 if (m.Actions.Count > 2) p.Add($"{at}: at most two actions");
                 foreach (var a in m.Actions) CheckAct(p, at, a, known);
+                if (!m.Teaching && m.Actions.Any(a => a.Encyclopedia != "")) p.Add($"{at}: encyclopedia actions are for teaching messages (spec 7.1)");
                 if (m.Quote != "" && !known.Quotes.Contains(m.Quote)) p.Add($"{at}: quote '{m.Quote}' is not on the verified list (spec 3.3)");
                 if (m.Quote != "")
                 {
