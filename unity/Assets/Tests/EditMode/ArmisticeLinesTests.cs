@@ -132,16 +132,22 @@ public class ArmisticeLinesTests
         finally { Object.DestroyImmediate(root); }
     }
 
-    /// <summary>Display only: off unless asked for (the map builds no overlay without the flag), nothing in the sim reads the
-    /// file (the content hash), and drawing it leaves the hex-snapped layer and its baked data as they were.</summary>
+    /// <summary>Display only, and on unless turned off (owner, 1 November 2026: "On by default (Recommended)"): the map
+    /// builds the overlay with no flag, "noarmisticelines" turns it off (the old "armisticelines" links still show it),
+    /// nothing in the sim reads the file (the content hash), and drawing it leaves the hex-snapped layer and its baked data
+    /// as they were.</summary>
     [Test]
-    public void TheOverlayIsDisplayOnlyAndOffUnlessAsked()
+    public void TheOverlayIsDisplayOnlyAndOnUnlessTurnedOff()
     {
-        Assert.IsNull(Map.Terrain.transform.Find(ArmisticeLines.RootName), "no overlay without the flag");
-        Assert.IsFalse(ArmisticeLines.Requested("https://x/index.html", new string[0], true));
-        Assert.IsTrue(ArmisticeLines.Requested("https://x/index.html?armisticelines", new string[0], true));
+        Assert.IsNotNull(Map.Terrain.transform.Find(ArmisticeLines.RootName), "the overlay with no flag");
+        Assert.IsTrue(ArmisticeLines.Requested("https://x/index.html", new string[0], true));
+        Assert.IsTrue(ArmisticeLines.Requested(null, new[] { "game" }, false));
+        Assert.IsTrue(ArmisticeLines.Requested("https://x/index.html?armisticelines", new string[0], true), "an old link still shows it");
         Assert.IsTrue(ArmisticeLines.Requested(null, new[] { "game", "-armisticelines" }, false));
-        Assert.IsFalse(ArmisticeLines.Requested(null, new[] { "game" }, false));
+        Assert.IsFalse(ArmisticeLines.Requested("https://x/index.html?noarmisticelines", new string[0], true), "turned off");
+        Assert.IsFalse(ArmisticeLines.Requested("https://x/index.html?lang=he&noarmisticelines#x", new string[0], true));
+        Assert.IsFalse(ArmisticeLines.Requested(null, new[] { "game", "-noarmisticelines" }, false));
+        Assert.IsTrue(ArmisticeLines.Requested("https://x/index.html?noarmisticelinesx", new string[0], true), "a whole flag only");
 
         // The hex bands are drawn from the RegionHexes texture (MapBorders); drawing the overlay leaves every texel as it was
         // (a layer is drawn first, so the texels are not all empty).
@@ -267,6 +273,32 @@ public class ArmisticeLinesTests
             Assert.AreEqual(16, root.GetComponentsInChildren<ArmisticeLine>(true).Length, "the editor draws every feature");
         }
         finally { ArmisticeLines.Wanted = was; map = null; }
+    }
+
+    /// <summary>Owner, 1 November 2026: "On by default (Recommended)", with only the signed-off lines for players. A
+    /// release player's map, built with no flag from the file as a release build ships it (ContentManifest's release copy),
+    /// draws the 11 signed-off features and none of the five drafts.</summary>
+    [Test]
+    public void APlayersMapDrawsTheSignedOffLinesByDefaultAndNoDraft()
+    {
+        var all = ArmisticeLines.Parse(GeoText);
+        var signedOff = all.Where(f => f.Reviewed).Select(f => f.Id).ToList();
+        var drafts = all.Where(f => !f.Reviewed).Select(f => f.Id).ToList();
+        Assert.AreEqual(11, signedOff.Count); Assert.AreEqual(5, drafts.Count);
+        var target = Path.Combine(Path.GetTempPath(), "statecraft-armlines-player-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            ContentManifest.Copy(Paths.Content, target, release: true);
+            var inputs = GameInputs.MapFromDisk(Paths.Content, Paths.StreamingMap);
+            inputs.ArmisticeLinesGeojson = File.ReadAllText(Path.Combine(target, "map", ArmisticeLines.FileName));
+            var built = RouteTests.BuildMap(inputs);
+            var root = built.Terrain.transform.Find(ArmisticeLines.RootName);
+            Assert.IsNotNull(root, "the overlay is on with no flag");
+            var ids = root.GetComponentsInChildren<ArmisticeLine>(true).Select(l => l.Id).ToList();
+            CollectionAssert.AreEquivalent(signedOff, ids, "the signed-off features, each once");
+            foreach (var id in drafts) CollectionAssert.DoesNotContain(ids, id, $"{id} stays out of a player's map");
+        }
+        finally { map = null; if (Directory.Exists(target)) Directory.Delete(target, true); }
     }
 
     [Test]
