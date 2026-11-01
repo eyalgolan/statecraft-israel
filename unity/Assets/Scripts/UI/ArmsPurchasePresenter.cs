@@ -29,7 +29,8 @@ namespace Statecraft.Game.UI
             {
                 var reason = bridge.Queue(new BuyArms(count.value));
                 Render();
-                panel.Q<Label>("arms-refusal").text = reason ?? "";
+                // Only Queue's own refusal replaces Render's line: an accepted order keeps its warning (the debt ceiling, #2198).
+                if (reason != null) panel.Q<Label>("arms-refusal").text = reason;
             };
             presses = new PressSource(panel);
             onWithdraw = () =>
