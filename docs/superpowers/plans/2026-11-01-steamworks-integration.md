@@ -96,7 +96,7 @@ Run (machine lock, `CONTRIBUTING.md:61-63`, plus `-testFilter PlatformServicesTe
 
 ```bash
 git add unity/Assets/Scripts/Platform unity/Assets/Tests/EditMode/PlatformServicesTests.cs* changelog.d/
-git commit -m "Platform: a store-neutral services seam, a no-op by default (Refs #<epic>)"
+git commit -m "Platform: a store-neutral services seam, a no-op by default (Refs #2149)"
 ```
 
 ### Task 2: Achievement rules and reporter (Q5)
@@ -141,7 +141,7 @@ The reporter test builds its `SimBridge` the way `EndScreenTests` does (`unity/A
 
 - [ ] **Step 4: Run them to see them pass**, then the full EditMode suite. Expected: all pass; the golden tests unchanged.
 
-- [ ] **Step 5: Commit** `Platform: five achievements read from the game state (Refs #<epic>)`.
+- [ ] **Step 5: Commit** `Platform: five achievements read from the game state (Refs #2149)`.
 
 ### Task 3: Steam's language seeds the first start
 
@@ -171,7 +171,7 @@ public void Steam_language_names_map_to_ui_languages(string? steam, string? ui) 
 - [ ] **Step 2: Run them to see them fail.** Expected: `PlatformLanguage` not found.
 - [ ] **Step 3: Implement.** Keep the existing four-argument behaviour identical when `platform` is null.
 - [ ] **Step 4: Run them to see them pass**, plus every existing test whose name contains `Language`.
-- [ ] **Step 5: Commit** `UI: a store's language seeds the first start; a stored choice still wins (Refs #<epic>)`.
+- [ ] **Step 5: Commit** `UI: a store's language seeds the first start; a stored choice still wins (Refs #2149)`.
 
 ### Task 4: Desktop Quit
 
@@ -187,7 +187,7 @@ public void Steam_language_names_map_to_ui_languages(string? steam, string? ui) 
 - [ ] **Step 2: Run them to see them fail.**
 - [ ] **Step 3: Implement**, following the Settings button styling already in `Game.uxml:437-446`. Keyboard: the buttons join the existing Tab order; no new shortcut.
 - [ ] **Step 4: Run them to see them pass**, then the full EditMode suite (layout tests in RTL included).
-- [ ] **Step 5: Commit** `UI: a Quit button on desktop players, hidden in the browser (Refs #<epic>)`.
+- [ ] **Step 5: Commit** `UI: a Quit button on desktop players, hidden in the browser (Refs #2149)`.
 
 ### Task 5: Steamworks.NET, pinned (Q2)
 
@@ -219,7 +219,7 @@ Replace `<key Unity writes>` with the key the settings page actually writes (rea
 - [ ] **Step 2: Run them to see them fail:** `uv run --with pytest==9.1.1 pytest scripts/oss/tests/test_steam_package.py -q`. Expected: 3 failed, 1 passed (the no-binary test passes already).
 - [ ] **Step 3: Add the dependency, open the project once in Unity under the machine lock so it resolves the package and writes the lock, toggle the setting, add the ignore line and notices.**
 - [ ] **Step 4: Verify:** the tests pass; `git status --short unity/ProjectSettings/ProjectSettings.asset` is empty after a second editor open; `git ls-files | grep -i steam_api` prints nothing; the full EditMode suite passes; a WebGL build (`Build.Web`) is the same size within 1% (the package excludes WebGL).
-- [ ] **Step 5: Commit** `Unity: Steamworks.NET 2025.165.0, pinned by tag and commit (Refs #<epic>)`.
+- [ ] **Step 5: Commit** `Unity: Steamworks.NET 2025.165.0, pinned by tag and commit (Refs #2149)`.
 
 ### Task 6: The Steam assembly and `-steam` builds (Q3)
 
@@ -253,7 +253,7 @@ public void The_start_rule_never_blocks_the_game(bool restart, bool init, SteamS
 - [ ] **Step 2: Run them to see them fail.**
 - [ ] **Step 3: Implement.** `SteamBootstrap` is a `[RuntimeInitializeOnLoadMethod(BeforeSceneLoad)]` that, outside the editor, calls `SteamStartRule.Decide(SteamAppId.Value, () => SteamAPI.RestartAppIfNecessary(new AppId_t(SteamAppId.Value)), SteamAPI.Init)`; on `Quit` it calls `Application.Quit()`; on `RunWithSteam` it sets `PlatformServices.Current` and creates one hidden `DontDestroyOnLoad` object that calls `SteamAPI.RunCallbacks()` in `Update` and `SteamAPI.Shutdown()` in `OnApplicationQuit`. In the editor it never initialises Steam. The golden check path (`unity/Assets/Scripts/Boot/GameBoot.cs:54`, `:65`) must behave identically with and without `STEAM`.
 - [ ] **Step 4: Verify:** the tests pass; `scripts/unity_compile/compile.sh "<Unity.app>/Contents"` compiles `Steam.csproj` cleanly; `uv run tools/release_build.py --platform mac --dev --steam` (maintainer, under the machine lock) builds, its player starts and logs `RunWithoutSteam` (app ID `0`) and passes `-golden`; afterwards `git status --short unity/ProjectSettings` is empty.
-- [ ] **Step 5: Commit** `Steam: an optional assembly started only in -steam builds (Refs #<epic>)`.
+- [ ] **Step 5: Commit** `Steam: an optional assembly started only in -steam builds (Refs #2149)`.
 
 ### Task 7: `release_build.py --steam` and clean non-Steam archives
 
@@ -272,7 +272,7 @@ public void The_start_rule_never_blocks_the_game(bool restart, bool init, SteamS
 - [ ] **Step 2: Run them to see them fail:** `uv run --with pytest==9.1.1 pytest tools/tests/test_release_build.py -q -k "steam or valve"`. Expected: 4 failed.
 - [ ] **Step 3: Implement.**
 - [ ] **Step 4: Run the whole file, then `scripts/check.sh origin/main`.** Expected: all pass; the existing archive tests unchanged.
-- [ ] **Step 5: Commit** `Release: Steam content folders; GitHub archives never carry Valve files (Refs #<epic>)`.
+- [ ] **Step 5: Commit** `Release: Steam content folders; GitHub archives never carry Valve files (Refs #2149)`.
 
 ### Task 8: VDF templates and the owner's upload tool (Q7, Q8)
 
@@ -291,7 +291,7 @@ public void The_start_rule_never_blocks_the_game(bool restart, bool init, SteamS
 - [ ] **Step 2: Run them to see them fail:** `uv run --with pytest==9.1.1 pytest tools/tests/test_steam_upload.py -q`.
 - [ ] **Step 3: Implement.**
 - [ ] **Step 4: Run them, then `scripts/check.sh origin/main`.** Expected: pass. `scripts/oss/check_repo.py` accepts the new `steam/` folder (add a `LICENSING.md` code-row path if it asks).
-- [ ] **Step 5: Commit** `Steam: VDF templates and an upload tool only the owner can run (Refs #<epic>)`.
+- [ ] **Step 5: Commit** `Steam: VDF templates and an upload tool only the owner can run (Refs #2149)`.
 
 ### Task 9: Docs: the owner's runbook, the checklist, privacy
 
@@ -302,7 +302,7 @@ public void The_start_rule_never_blocks_the_game(bool restart, bool init, SteamS
 
 - [ ] **Step 1: Write the three new files and the edits.** Cite file and line for every claim about the code; mark each Steam fact with the date read.
 - [ ] **Step 2: Verify:** `scripts/check.sh origin/main` passes; every link resolves; `grep -n -i -E 'password|secret' docs/steam/*.md` shows only instructions that the owner types them into steamcmd.
-- [ ] **Step 3: Commit** `Docs: the Steam runbook, the client checklist and the privacy statement (Refs #<epic>)`.
+- [ ] **Step 3: Commit** `Docs: the Steam runbook, the client checklist and the privacy statement (Refs #2149)`.
 
 ### Task 10: The first Steam beta build (after the MVP and #905; owner plus maintainer)
 
@@ -332,12 +332,12 @@ In order; each is its own line in the owner-only issue.
 
 | Issue | Tasks |
 | --- | --- |
-| Epic: "Steam: release the game on Steam (Steamworks integration)" | all; links #54, #905, #45, #424 |
-| Owner-only: account, fee, app, builder account, App Admin, store | Owner-only actions 2-10 |
-| Owner decisions Q1-Q10 | Owner-only action 1 |
-| Platform seam, achievements, language | Tasks 1-3 |
-| Desktop Quit button | Task 4 |
-| Steamworks.NET and the Steam assembly | Tasks 5-6 |
-| Steam content folders and the upload tool | Tasks 7-8 |
-| Steam docs: runbook, checklist, privacy | Task 9 |
-| First Steam beta build and the client checklist | Task 10 |
+| #2149 Epic: "Steam: release the game on Steam (Steamworks integration)" | all; links #54, #905, #45, #424 |
+| #2151 Owner-only: account, fee, app, builder account, App Admin, store | Owner-only actions 2-10 |
+| #2150 Owner decisions Q1-Q10 | Owner-only action 1 |
+| #2152 Platform seam, achievements, language | Tasks 1-3 |
+| #2153 Desktop Quit button | Task 4 |
+| #2154 Steamworks.NET and the Steam assembly | Tasks 5-6 |
+| #2155 Steam content folders and the upload tool | Tasks 7-8 |
+| #2156 Steam docs: runbook, checklist, privacy | Task 9 |
+| #2157 First Steam beta build and the client checklist | Task 10 |

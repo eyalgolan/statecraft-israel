@@ -8,7 +8,7 @@
 - **Builds on:** `docs/superpowers/specs/2026-10-14-desktop-builds-and-release-pipeline.md` (the desktop plan, #482) and
   the owner's answers in `docs/oss/DECISIONS.md:43-60`. This document only covers what is new or changed since then; it
   does not repeat that spec's research. Read against `origin/main` at `7e6957a59` (1 November 2026).
-- **Plan:** `docs/superpowers/plans/2026-11-01-steamworks-integration.md`. **Tracking:** the Steam epic issue (linked from
+- **Plan:** `docs/superpowers/plans/2026-11-01-steamworks-integration.md`. **Tracking:** epic #2149 (linked from
   the plan's PR); roadmap tracker #54.
 - Unity was not run for this document. Steam facts not re-read today are marked **re-check** and carry the date they were
   last read.
