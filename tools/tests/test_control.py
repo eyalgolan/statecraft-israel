@@ -494,17 +494,19 @@ def test_a_settlement_hex_takes_the_code_at_its_own_point():
     settlement placed in it, and a shore town such as Tiberias is placed on a substitute hex whose own hex is lake, so
     its centre says nothing about the town. Before this rule Tiberias and Safed read "Held by Arab forces" at the start
     and Hanita, held throughout, read Arab then ALA until July. The deliberate overrides still win: the contested
-    places, the pins and the Jerusalem area are excluded here and covered by their own tests."""
+    places, the pins, the overlay exemptions (Safed) and the Jerusalem area are excluded here and covered by their own
+    tests."""
     snaps, overlays, periods = cb.load(SOURCE)
     drawn = [p for p in periods if p["snapshot"]]
     pinned = {hg.settlement_hex(p["lon"], p["lat"], HEXES) for p in META["pinned_towns"]}
     greyed = {hg.settlement_hex(p["lon"], p["lat"], HEXES) for p in META.get("contested_places", [])}
+    exempt = {hg.settlement_hex(s["lon"], s["lat"], HEXES) for s in SETTLEMENTS["settlements"] if s["id"] in cb.OVERLAY_EXEMPT}
     checked = 0
     for s in SETTLEMENTS["settlements"]:
         qr = hg.settlement_hex(s["lon"], s["lat"], HEXES)
         # Jerusalem only: a longitude band on its own also skips Nazareth, Nahalal and Hanita, and Hanita is one of
         # the three places this rule is for (review of #1765).
-        if qr in pinned or qr in greyed or (abs(s["lon"] - 35.2256) < 0.1 and abs(s["lat"] - 31.7789) < 0.1):
+        if qr in pinned or qr in greyed or qr in exempt or (abs(s["lon"] - 35.2256) < 0.1 and abs(s["lat"] - 31.7789) < 0.1):
             continue
         for i, p in enumerate(drawn):
             ovs = [overlays[o] for o in p["overlays"] if o in overlays]
@@ -569,3 +571,41 @@ def test_the_three_places_of_1659_are_held_by_israel_from_the_start():
     codes = CODES[hg.settlement_hex(safed["lon"], safed["lat"], HEXES)]
     assert "A" not in codes and "V" not in codes, codes
     assert codes[PERIODS.index("truce1")] == "I", codes
+
+
+def test_safed_is_israeli_from_the_start():
+    """Owner ruling of 1 November 2026 on #1659, "Israeli from 15 May": Safed was taken on 10-11 May 1948, before the game's
+    start, so its hex is Israeli in every period, the opening included, although its point lies in the CIA's 18 May
+    tenuously-held loop (contested_opening_hula)."""
+    safed = next(x for x in SETTLEMENTS["settlements"] if x["id"] == "safed")
+    codes = CODES[hg.settlement_hex(safed["lon"], safed["lat"], HEXES)]
+    assert set(codes) == {"I"}, codes
+
+
+def test_the_hula_loop_still_greys_its_other_hexes_in_the_opening_period():
+    """#1659 (1 November 2026): only Safed leaves the Hula loop; every other hex the overlay greys stays grey. The set is
+    what the bake changes when the overlay is dropped from the opening period, so it follows the GeoJSON and the grid."""
+    elev, meta = bb.load_elevation()
+    water = bb.water_mask(elev, meta)
+    src = json.loads(json.dumps(SOURCE))
+    opening = next(p for p in src["statecraft"]["periods"] if p["id"] == "opening")
+    opening["overlays"].remove("contested_opening_hula")
+    _, without = cb.bake(src, HEXES, water, meta)
+    loop = {qr for qr, c in CODES.items() if c[OPEN] != without[qr][OPEN]}
+    assert len(loop) >= 5, sorted(loop)
+    assert {CODES[qr][OPEN] for qr in loop} == {"c"}, sorted((qr, CODES[qr]) for qr in loop)
+    safed = next(x for x in SETTLEMENTS["settlements"] if x["id"] == "safed")
+    hula = next(f for f in SOURCE["features"] if f["properties"]["id"] == "contested_opening_hula")
+    assert bb.contains(bb.rings(hula["geometry"]), safed["lon"], safed["lat"]), "the exemption must still be needed"
+    assert hg.settlement_hex(safed["lon"], safed["lat"], HEXES) not in loop
+
+
+def test_an_overlay_exemption_that_exempts_nothing_fails_the_bake(monkeypatch):
+    """Fail closed: an exemption naming a settlement or an overlay that does not exist, or a settlement outside that
+    overlay, must stop the bake (cb.build) rather than silently grey the place again (a renamed id, or a moved point)."""
+    cb.check_exemptions(SOURCE)
+    first = next(iter(cb.OVERLAY_EXEMPT.values()))
+    for sid, ov in (("no_such_settlement", first["overlay"]), ("safed", "no_such_overlay"), ("haifa", first["overlay"])):
+        monkeypatch.setattr(cb, "OVERLAY_EXEMPT", {sid: dict(first, overlay=ov)})
+        with pytest.raises(SystemExit, match=f"{sid} from {ov}"):
+            cb.check_exemptions(SOURCE)

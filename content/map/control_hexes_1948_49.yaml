@@ -45,7 +45,7 @@ hexes:   # [q, r, codes: one per period], ordered by r then q
   - [8, 6, "AVcIIIIIIIIIIIII"]
   - [9, 6, "AVVVVVVcIIIIIIII"]
   - [10, 6, "AVVVVVVcIIIIIIII"]
-  - [11, 6, "cIIIIIIIIIIIIIII"]
+  - [11, 6, "IIIIIIIIIIIIIIII"]
   - [12, 6, "cIIIIIIIIIIIIIII"]
   - [7, 7, "AVcIIIIIIIIIIIII"]
   - [8, 7, "AVcIIIIIIIIIIIII"]
