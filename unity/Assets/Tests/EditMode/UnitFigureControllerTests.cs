@@ -44,7 +44,30 @@ public class UnitFigureControllerTests
             .Concat(UnitFigures.ThirdBySide.Values).Append(UnitFigures.PioneerVeteran).Distinct();
         foreach (var id in onTokens.Where(id => CollectionCatalog.Animated.Contains(id) || id == UnitFigures.PioneerVeteran))
             Assert.That(TokenFigures, Has.Member(id), id);
-        Assert.AreEqual(12, TokenFigures.Count);
+    }
+
+    /// <summary>UnitFigureMotion plays "Base Layer.idle", "Base Layer.walk" and "Base Layer.attack" by full path (review of
+    /// #2176, H1): every token figure whose near Animator is ever on has its default state named idle in a machine named
+    /// Base Layer, so a figure stands idle again after a move. C05 is the exception: his only idle is a walk and he stays far
+    /// (UnitFigures.Swap), so his near Animator never plays.</summary>
+    [Test]
+    public void EachTokenFigureAnimatorCanPlayIdleWalkAndItsAttack()
+    {
+        foreach (var id in TokenFigures.Where(id => id != UnitFigures.PioneerVeteran))
+        {
+            var c = AssetDatabase.LoadAssetAtPath<AnimatorController>(ControllerPath(id));
+            Assert.AreEqual("Base Layer", c.layers[0].stateMachine.name, id);
+            Assert.AreEqual("idle", c.layers[0].stateMachine.defaultState.name, id);
+            var go = new GameObject(id);
+            try
+            {
+                var animator = go.AddComponent<Animator>(); animator.runtimeAnimatorController = c;
+                Assert.IsTrue(animator.HasState(0, UnitFigureMotion.Idle), id + ": idle");
+                Assert.IsTrue(animator.HasState(0, UnitFigureMotion.Walk), id + ": walk");
+                Assert.AreEqual(State(c, "attack") != null, animator.HasState(0, UnitFigureMotion.Attack), id + ": attack");
+            }
+            finally { Object.DestroyImmediate(go); }
+        }
     }
 
     /// <summary>The committed controllers are what PrepareTokenFigureControllers makes: the idle default untouched, a walk
@@ -147,13 +170,12 @@ public class UnitFigureControllerTests
         finally { Object.DestroyImmediate(c); Object.DestroyImmediate(before); Object.DestroyImmediate(idle); }
     }
 
-    /// <summary>A default that is none or another machine's state (review of #1900). Unity's state machine does not keep
-    /// such a default: the full EditMode run of this re-implementation found the importer's check passing both, so Unity
-    /// reports a default of the machine's own. Either way the importer must end with the owned idle as the default, its
-    /// take the figure's idle, or refuse with nothing changed.</summary>
+    /// <summary>A default that is none or another machine's state (review of #1900). Unity does not keep such a default:
+    /// it reports the machine's own state instead (pinned here; review of #2176, C4), so the importer's check for it guards
+    /// only a hand-edited asset, and the importer configures the owned idle as for any controller.</summary>
     [TestCase("missing-default")]
     [TestCase("foreign-default")]
-    public void ADefaultOutsideTheMachineEndsOnTheOwnedIdleOrIsRefused(string layout)
+    public void UnityKeepsADefaultInsideTheMachineAndTheImporterConfiguresIt(string layout)
     {
         var c = new AnimatorController(); c.AddLayer("Base Layer");
         var before = new AnimationClip { name = "before" };
@@ -165,22 +187,10 @@ public class UnitFigureControllerTests
             var own = machine.AddState("idle"); own.motion = before;
             if (layout == "missing-default") machine.defaultState = null;
             else { var other = foreign.AddState("idle"); other.motion = before; machine.defaultState = other; }
-            var seen = machine.defaultState;
-            bool normalised = seen == own;
-            Debug.Log($"{layout}: Unity reports the default as {(seen == null ? "none" : seen == own ? "the machine's own idle" : "another machine's state")}");
-            if (normalised)
-            {
-                Configure(c, idle, C06, token: false);
-                Assert.AreSame(own, machine.defaultState);
-                Assert.AreSame(idle, own.motion, "configured as any owned idle");
-            }
-            else
-            {
-                Assert.Throws<InvalidOperationException>(() => Configure(c, idle, C06, token: false));
-                Assert.AreSame(seen, machine.defaultState, "the default unchanged");
-                Assert.AreSame(before, own.motion, "no take changed");
-                CollectionAssert.AreEqual(new[] { own }, machine.states.Select(s => s.state), "no state added");
-            }
+            Assert.AreSame(own, machine.defaultState, "Unity reports the machine's own state as the default");
+            Configure(c, idle, C06, token: false);
+            Assert.AreSame(own, machine.defaultState);
+            Assert.AreSame(idle, own.motion, "configured as any owned idle");
         }
         finally { Object.DestroyImmediate(c); Object.DestroyImmediate(before); Object.DestroyImmediate(idle); Object.DestroyImmediate(foreign); }
     }

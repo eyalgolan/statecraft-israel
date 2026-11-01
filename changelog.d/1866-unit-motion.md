@@ -5,4 +5,5 @@
   figures walk up close, where their detailed models are drawn; the Syrian, Iraqi, Egyptian, Lebanese and ALA infantry
   walk at every zoom. A click and the map's names find the token where it is drawn during the slide. Designed by Tal
   Heuberger (#1900, #1866), using Tal Heuberger's own walk takes; the models and animations are unchanged. The figures
-  with a fire take (C06, C07, C08, C09 and C12F) also gain an attack state for combat (#1867).
+  with a fire take (C06, C07, C08, C09 and C12F) also gain an attack state, which the combat presentation of #1867
+  plays (a separate change).
