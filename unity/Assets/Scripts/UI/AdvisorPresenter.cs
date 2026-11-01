@@ -363,7 +363,9 @@ namespace Statecraft.Game.UI
             {
                 covered = null;
                 var ctx = Context();
-                if (!(AdvisorSignals.Holding(ctx, session).Contains(m.Signal) && AdvisorSignals.When(ctx, m.When)))
+                var holding = AdvisorSignals.Holding(ctx, session);
+                if (budgetUnsubmitted) holding.Add(AdvisorSignals.BudgetUnsubmitted);   // as in Evaluate's Prune
+                if (!(holding.Contains(m.Signal) && AdvisorSignals.When(ctx, m.When)))
                     session.Queue.Drop(m, Turn, bridge.State.Date);
             }
             Render();
