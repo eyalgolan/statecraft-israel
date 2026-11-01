@@ -140,7 +140,7 @@ Cross-reference, not re-read: model-basis-1957-77.md 3.3 has the JTA item dateli
   unit headed by Gazit). [S]
 - **[C]** On when Gazit's role began, W7 itself gives two months: the prose says he was named chair of the political-
   security coordination committee "באוגוסט 1967" (August 1967), while the same revision's table of coordinators gives
-  Gazit "ספטמבר 1967 - 1974" (September 1967 to 1974) and Hiram "ספטמבר 1967 - ספטמבר 1968". Both kept; W6 says only
+  Gazit "ספטמבר 1967 – 1974" (September 1967 to 1974) and Hiram "ספטמבר 1967 – ספטמבר 1968". Both kept; W6 says only
   "the summer of 1967".
 - **Two steps, not a conflict.** W7 gives two separate steps in 1968: the merger of the two units in August 1968, and
   Gazit becoming coordinator of the directors-general committee "עם פרישת חירם לקראת סוף שנת 1968" (with Hiram's
@@ -316,7 +316,7 @@ Cross-reference only: golan-localities-1967-77.md has the founding dates, the fi
   reopen the JTA items.
 - Kadum: cross-reference only (events-1970-77.md B14; west-bank-localities-1967-77.md Qedumim row: the move to the Kadum
   camp on 8 December 1975 [S]; the Cabinet statement of 9 to 10 May 1976 is in events-1970-77.md B14 only: the
-  11 May 1976 bulletin, "decision of May 9").
+  11 May 1976 bulletin (dateline 10 May) and the 9 June 1976 bulletin's "decision of May 9").
 
 ### S9. Ofra (1975)
 
