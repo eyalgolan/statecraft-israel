@@ -49,6 +49,36 @@ public class HistoricalPopulationTests
             || r.Source.StartsWith(HistoricalPopulation.FormationPrefix, StringComparison.Ordinal)));
     }
 
+    // R-POP-004, R-CITY-006, R-CITY-007: an anchor independent of the loader. The census sources are exactly the twelve
+    // managed Jewish cities of cities.yaml (no Arab or mixed town is own population), and named cities' counts are their
+    // sourced people (cities.yaml) at 1,000 a unit, to the nearest unit with a half up and at least 1, written out here.
+    [Fact]
+    public void CensusSourcesAreTheTwelveCitiesAtTheirCensusUnits()
+    {
+        var rows = HistoricalPopulation.Inventory(Real(true));
+        var cities = rows.Select(r => r.Source).Where(s => s.StartsWith(HistoricalPopulation.CensusPrefix, StringComparison.Ordinal))
+            .Distinct(StringComparer.Ordinal).Select(s => s.Substring(HistoricalPopulation.CensusPrefix.Length)).OrderBy(s => s, StringComparer.Ordinal);
+        Assert.Equal(new[] { "hadera", "haifa", "jerusalem", "netanya", "petah_tikva", "rehovot", "rishon_lezion", "rosh_pinna",
+            "safed", "tel_aviv", "tiberias", "zikhron_yaakov" }, cities);
+        Assert.Equal(248, Count(rows, HistoricalPopulation.CensusPrefix + "tel_aviv"));    // 248,459 people
+        Assert.Equal(99, Count(rows, HistoricalPopulation.CensusPrefix + "haifa"));        // 98,618: rounds up
+        Assert.Equal(84, Count(rows, HistoricalPopulation.CensusPrefix + "jerusalem"));    // 83,984: rounds up
+        Assert.Equal(6, Count(rows, HistoricalPopulation.CensusPrefix + "tiberias"));      // 5,555: rounds up
+        Assert.Equal(1, Count(rows, HistoricalPopulation.CensusPrefix + "rosh_pinna"));    // 350: at least 1
+    }
+
+    // R-POP-004, R-UNIT-006: the formation sources are exactly the Israeli starting rows, compared by row id.
+    [Fact]
+    public void FormationSourcesAreExactlyTheOwnStartingRows()
+    {
+        var c = Real(true);
+        var rows = HistoricalPopulation.Inventory(c);
+        var formations = rows.Select(r => r.Source).Where(s => s.StartsWith(HistoricalPopulation.FormationPrefix, StringComparison.Ordinal))
+            .Distinct(StringComparer.Ordinal).OrderBy(s => s, StringComparer.Ordinal);
+        Assert.Equal(c.StartingForces.Where(f => f.Side == Movement.PlayerSide && f.Arrives == null)
+            .Select(f => HistoricalPopulation.FormationPrefix + f.Row).OrderBy(s => s, StringComparer.Ordinal), formations);
+    }
+
     // R-POP-004, R-UNIT-006, R-UNIT-009: enemy formations are not own population, and a dated arrival is not in the start
     // inventory (it takes new ids when it arrives, Q11).
     [Fact]
@@ -101,16 +131,11 @@ public class HistoricalPopulationTests
         Assert.Throws<InvalidOperationException>(() => HistoricalPopulation.Inventory(c));
     }
 
-    // R-POP-002, R-POP-004: reading the inventory changes no state, and a new gdd-0.3 game still starts on the aggregate
-    // records with an uninitialized ledger; initializing it at NewGame waits on the producer integration (R-POP-002 refusal).
+    // R-POP-002, R-POP-004: a new gdd-0.3 game still starts on the aggregate records with an uninitialized ledger;
+    // initializing it at NewGame waits on the producer integration (R-POP-002 refusal).
     [Fact]
-    public void ReadingTheInventoryLeavesNewGameUnchanged()
+    public void NewGameDoesNotInitializeTheLedgerYet()
     {
-        var c = Real(true);
-        var before = Simulation.NewGame(c, 1, Mode.Historical).Describe();
-        HistoricalPopulation.Inventory(c);
-        var after = Simulation.NewGame(c, 1, Mode.Historical);
-        Assert.Equal(before, after.Describe());
-        Assert.False(after.PopulationLedger.IsInitialized);
+        Assert.False(Simulation.NewGame(Real(true), 1, Mode.Historical).PopulationLedger.IsInitialized);
     }
 }

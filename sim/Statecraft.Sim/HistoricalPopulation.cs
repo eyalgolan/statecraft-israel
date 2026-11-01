@@ -6,7 +6,7 @@ namespace Statecraft.Sim
 {
     /// <summary>One population unit of the Historical start inventory (R-POP-004): its source key, its ordinal within that
     /// source and its starting status. The ledger's id order is source key, then ordinal (R-POP-001).</summary>
-    public sealed class HistoricalPopulationRow
+    internal sealed class HistoricalPopulationRow
     {
         /// <summary><see cref="HistoricalPopulation.CensusPrefix"/> plus a city id, or <see cref="HistoricalPopulation.FormationPrefix"/>
         /// plus a map/units_1948.yaml row id.</summary>
