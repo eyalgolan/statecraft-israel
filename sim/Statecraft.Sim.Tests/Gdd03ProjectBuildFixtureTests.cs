@@ -51,31 +51,38 @@ public class Gdd03ProjectBuildFixtureTests
     public void ACompletedImprovementChargesItsUpkeepEachTurnEvenVacant()
     {
         var f = new Gdd03ProjectBuildFixture(Catalogue(), 20m);
-        var id = f.Start("industry"); // 10 Money, 3 work, 0.25 upkeep
+        var id = f.Start("industry"); // 10 Money, 3 work; the catalogue's 0.25 upkeep is post-MVP
         Assert.Equal(10m, f.Money);
         f.EndTurn(On(id, Gdd03BuilderTier.Expert)); // 3 work: complete on turn 1
         Assert.Equal(1, f.Projects[0].CompletedTurn);
-        Assert.Equal(9.75m, f.Money); // owed from the completion turn
+        Assert.Equal(10m, f.Money); // charged the MVP rate, IL 0m (R-MONEY-002), from the completion turn
         f.EndTurn(Nobody);
         f.EndTurn(Nobody);
-        Assert.Equal(9.25m, f.Money); // and every turn after, with no one working there
+        Assert.Equal(10m, f.Money); // and every turn after, with no one working there
+        Assert.Equal(0m, f.Debt);
         Assert.Equal(3m, f.Projects[0].WorkDone);
     }
 
     [Fact]
-    public void StartNeedsTheFullCostAndBuildersAreCappedAtTheSlots()
+    public void AShortStartBorrowsAndBuildersAreCappedAtTheSlots()
     {
         var f = new Gdd03ProjectBuildFixture(Catalogue(), 14m);
-        Assert.Throws<System.InvalidOperationException>(() => f.Start("permanent_housing"));
-        Assert.Equal(14m, f.Money);
-        Assert.Empty(f.Projects);
-        var id = f.Start("industry");
+        f.Start("permanent_housing"); // 15 Money: the 1 short is borrowed (D1, R-MONEY-003)
+        Assert.Equal(0m, f.Money);
+        Assert.Equal(1m, f.Debt);
+        var id = f.Start("industry"); // 10 Money, all borrowed
+        Assert.Equal(0m, f.Money);
+        Assert.Equal(11m, f.Debt);
+        Assert.Equal(2, f.Projects.Count);
         var four = On(id, Gdd03BuilderTier.OrdinaryOrNovice, Gdd03BuilderTier.OrdinaryOrNovice,
             Gdd03BuilderTier.OrdinaryOrNovice, Gdd03BuilderTier.OrdinaryOrNovice);
         Assert.Throws<System.InvalidOperationException>(() => f.EndTurn(four));
-        Assert.Equal(0m, f.Projects[0].WorkDone);
+        Assert.Equal(0m, f.Projects[1].WorkDone);
+        Assert.Throws<System.InvalidOperationException>(() => f.EndTurn(On(id, (Gdd03BuilderTier)7))); // no such tier
+        Assert.Equal(0m, f.Projects[1].WorkDone);
+        Assert.Equal(0, f.Turn);
         f.EndTurn(On(id, Gdd03BuilderTier.Apprentice)); // 1.5 of 3
-        Assert.Equal(1.5m, f.Projects[0].WorkDone);
-        Assert.Null(f.Projects[0].CompletedTurn);
+        Assert.Equal(1.5m, f.Projects[1].WorkDone);
+        Assert.Null(f.Projects[1].CompletedTurn);
     }
 }
