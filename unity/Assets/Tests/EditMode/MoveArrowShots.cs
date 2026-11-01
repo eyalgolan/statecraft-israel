@@ -29,6 +29,7 @@ public class MoveArrowShots
     {
         saveDir = Path.Combine(Path.GetTempPath(), "statecraft-move-arrow-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(ShotDir);
+        Directory.CreateDirectory(CivMovementShots.ShotDir);   // CivMovementShots.Shot writes there first
     }
 
     [TearDown]

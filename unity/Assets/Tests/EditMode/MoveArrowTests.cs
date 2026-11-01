@@ -49,7 +49,9 @@ public class MoveArrowTests
         rig.Layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
         rig.Layer.Show(rig.Bridge.Content, rig.Bridge.State);
         var layer = rig.Layer;
-        rig.Info = new InfoPanelPresenter(ui.Root, rig.Bridge, Text, new Dictionary<string, string>(),
+        // The settlements' names, as UnitOrdersTests gives them: a hex the tests click may be a city's, whose card names it.
+        var towns = SettlementPlacer.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", SettlementPlacer.DefaultFileName))).ToDictionary(t => t.Id, t => t.Name);
+        rig.Info = new InfoPanelPresenter(ui.Root, rig.Bridge, Text, towns,
             selectedUnit: () => layer.Selected is string sel ? layer.Tokens.First(p => p.Token.Unit.Id == sel) : (PlacedToken?)null,
             showReachable: map.ShowReachable, showRoute: map.ShowRoute,
             showArrow: hexes => { rig.Arrows.Add(hexes.ToList()); map.ShowMoveArrow(hexes); });
@@ -117,27 +119,39 @@ public class MoveArrowTests
     [Test]
     public void AnEnemyUnitGetsNoArrow()
     {
-        var map = BuildMap();
         using var ui = new UiTestKit();
-        try
-        {
-            var rig = Open(map, ui);
-            var enemy = rig.Layer.Tokens.First(p => p.Token.Unit.Side != UnitData.Israel && UnitCard.SimUnit(C, rig.Bridge.State, p.Token.Unit) != null);
-            var enemyId = UnitCard.SimUnit(C, rig.Bridge.State, enemy.Token.Unit)!.Value;
-            GameRoot.OnHexClicked(map, rig.Layer, rig.Info, enemy.Q, enemy.R);
-            Assert.AreEqual(enemy.Token.Unit.Id, rig.Layer.Selected, "precondition: the enemy unit is selected");
-            var e = rig.Bridge.State.Units[enemyId];
-            foreach (var h in C.Hexes.Where(h => h.Land && System.Math.Abs(h.Q - e.Q) <= 2 && System.Math.Abs(h.R - e.R) <= 2))
-                rig.Info.ShowRouteTo(h.Q, h.R);
-            Assert.IsTrue(rig.Arrows.All(a => a.Count == 0), "no hover over the enemy's neighbourhood draws an arrow");
-            Assert.IsEmpty(map.ShownArrow);
+        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        var bridge = new SimBridge(g, Text);
+        // Every row's token, as TheCardOffersMoveOnlyWhereTheSimHasAHex (UnitOrdersTests) picks its enemy force.
+        var tokens = UnitRoster.FromState(Units, C, g.State, _ => true, (row, a, q, r) => a);
+        PlacedToken? shown = null;
+        var arrows = new List<IReadOnlyList<(int q, int r)>>();
+        var info = new InfoPanelPresenter(ui.Root, bridge, Text, new Dictionary<string, string>(), selectedUnit: () => shown,
+            showArrow: hexes => arrows.Add(hexes.ToList()));
+        var golani = tokens.Single(t => t.Unit.Id == "golani");
+        var golaniId = UnitCard.SimUnit(C, g.State, golani.Unit)!.Value;
+        shown = new PlacedToken(golani, new AnchorSpot(0, 0, 0, 0, false));
+        info.ShowUnit();
+        var lit = Movement.Reachable(C, g.State, golaniId).Keys.First();
+        info.ShowRouteTo(lit.Q, lit.R);
+        Assert.IsNotEmpty(arrows.Last(), "precondition: Golani's hover draws the arrow");
 
-            var golaniPath = new[] { (rig.Start.q + 1, rig.Start.r) };
-            Assert.IsEmpty(InfoPanelPresenter.ArrowHexes(e, golaniPath), "the arrow's own rule: never an enemy unit's");
-            CollectionAssert.AreEqual(new[] { rig.Start, golaniPath[0] }, InfoPanelPresenter.ArrowHexes(rig.Bridge.State.Units[rig.Id], golaniPath));
-            rig.Info.Dispose();
-        }
-        finally { Object.DestroyImmediate(map.gameObject); }
+        var enemy = tokens.First(t => t.Unit.Side != UnitData.Israel && UnitCard.SimUnit(C, g.State, t.Unit) != null);
+        var e = g.State.Units[UnitCard.SimUnit(C, g.State, enemy.Unit)!.Value];
+        shown = new PlacedToken(enemy, new AnchorSpot(0, 0, 0, 0, false));
+        info.ShowUnit();
+        Assert.IsFalse(info.MovePicking, "precondition: an enemy unit's card opens no Move pick");
+        var from = arrows.Count;
+        foreach (var h in C.Hexes.Where(h => h.Land && System.Math.Abs(h.Q - e.Q) <= 3 && System.Math.Abs(h.R - e.R) <= 3))
+            info.ShowRouteTo(h.Q, h.R);
+        Assert.IsTrue(arrows.Count > from, "precondition: the hovers were asked");
+        Assert.IsTrue(arrows.Skip(from).All(a => a.Count == 0), "no hover near the enemy unit draws an arrow");
+
+        var path = new[] { (e.Q + 1, e.R) };
+        Assert.IsEmpty(InfoPanelPresenter.ArrowHexes(e, path), "the arrow's own rule: never an enemy unit's, even with a path");
+        var own = g.State.Units[golaniId];
+        CollectionAssert.AreEqual(new[] { (own.Q, own.R), (own.Q + 1, own.R) }, InfoPanelPresenter.ArrowHexes(own, new[] { (own.Q + 1, own.R) }));
+        info.Dispose();
     }
 
     /// <summary>(c) The arrow clears when the move is made, when the pick is cancelled (Escape), when the mouse leaves the map,
