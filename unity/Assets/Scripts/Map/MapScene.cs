@@ -93,7 +93,7 @@ namespace Statecraft.Game.Map
         /// only by lightness (deltaE76 18.2 ungraded, under GradeTests' 20). Ivory differs in chroma too, like the promo's
         /// white rings and lines.</summary>
         public static readonly Color SelectionColour = new Color(1f, 0.95f, 0.80f);
-        /// <summary>Width of the outline band, as a fraction of the hex circumradius (about 600 m on a 5 km hex).</summary>
+        /// <summary>Width of the outline band, as a fraction of the hex circumradius (about 530 m on a 4.4 km hex).</summary>
         public const float SelectionWidth = 0.12f;
         /// <summary>Height of the band above the highest ground under it. 30 m since visual v1 Task 8 (it was the line mesh's
         /// 120 m plus 20 m, to cover the lines; at the 6 km hero zoom that floated); the material's depth offset keeps it
@@ -538,7 +538,7 @@ namespace Statecraft.Game.Map
             if (ShowcaseClearing ?? Units.UnitShowcase.Requested()) clearings.Add(Units.UnitShowcase.Clearing(this));
             if (unitData.Count > 0)
             {
-                var spots = unitGround.Place(unitData, (lon, lat) => { var w = Frame.ToWorld(lon, lat, 0); return new Vector2(w.x, w.z); }, null);
+                var spots = unitGround.Place(unitData, (lon, lat) => { var w = Frame.ToWorld(lon, lat, 0); return new Vector2(w.x, w.z); }, null, control: Control);
                 UnitSpots = spots;
                 foreach (var kv in spots.OrderBy(k => k.Value.X).ThenBy(k => k.Value.Z))
                 {

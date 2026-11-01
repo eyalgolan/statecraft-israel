@@ -24,13 +24,13 @@ public class MapActionUiTests
     [Test]
     public void HexPickerAgreesWithTheToolsSettlementRule()
     {
-        // tools/settlement_hexes.py moves a settlement off a water hex to its nearest land neighbour (Tiberias); every
-        // other settlement must land on exactly the hex the C# port computes.
+        // tools/settlement_hexes.py moves a settlement off a water hex to its nearest land neighbour (Tiberias; Haifa on the
+        // 4.4 km grid, #1183); every other settlement must land on exactly the hex the C# port computes.
         foreach (var t in Towns)
         {
             var picked = HexPicker.FromLonLat(t.Lon, t.Lat, Hexes.bounds, Hexes.hex_size_km);
             var owner = C.SettlementHexes.Single(s => s.Id == t.Id);
-            if (t.Id == "tiberias") { Assert.AreNotEqual((owner.Q, owner.R), picked); continue; }
+            if (!Hexes.hexes.Single(h => (h.q, h.r) == picked).land) { Assert.AreNotEqual((owner.Q, owner.R), picked, t.Id); continue; }
             Assert.AreEqual((owner.Q, owner.R), picked, t.Id);
         }
     }

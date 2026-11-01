@@ -28,7 +28,7 @@ types:
 # A side, a class and movement points (Phase 5 PR 5, R-MOVE-001); strength comes from the unit's sourced row or its cohort
 # (Q-UNIT-4). All Israeli military formations pay rules.yaml mvp.military_upkeep_per_turn; enemy types come in PR 4.
 # Movement points were proposed in PR #1073 (#744; Q-MOVE-1, owner, 15 October 2026: "Take all recommendations") and
-# accepted by the owner as design values on 19 October 2026 (https://github.com/eyalgolan/statecraft-israel/pull/1073#issuecomment-6259021508). At about 8.7 km between hex centres, 3 plain hexes is about 26 km a monthly turn, an operational pace; the
+# accepted by the owner as design values on 19 October 2026 (https://github.com/eyalgolan/statecraft-israel/pull/1073#issuecomment-6259021508). At about 7.6 km between hex centres (4.4 km hexes since #1183; 8.7 km when these were set), 3 plain hexes is about 23 km a monthly turn, an operational pace; the
 # armoured car carries more (Q-ARTY-2) and the guns fewer.
   - id: veteran_soldier
     kind: unit
@@ -44,7 +44,7 @@ types:
     # #748 (https://github.com/eyalgolan/statecraft-israel/issues/748#issuecomment-6315145696) and accepted by the owner
     # as design values on 21 October 2026 (https://github.com/eyalgolan/statecraft-israel/issues/748#issuecomment-6317339304).
     # Range 2 is the smallest that differs from an infantry attack: the guns stand one hex behind the unit that attacks.
-    # At about 8.7 km a hex it is a game value, not a gun's reach. A firing costs twice an infantry attack's Arms.
+    # At about 7.6 km a hex it is a game value, not a gun's reach. A firing costs twice an infantry attack's Arms.
     range: 2                             # DESIGN VALUE: owner-set balance, not a historical figure (D-G5, Q-ARTY-1: hexes to the hex it supports an attack on)
     arms_per_fire: 2                     # DESIGN VALUE: owner-set balance, not a historical figure (D-G6, Q-ARTY-1: Arms each firing spends)
     combat_percent: 200                  # DESIGN VALUE: owner-set balance, not a historical figure (D-G5, Q-ARTY-1: percent of its strength in combat)

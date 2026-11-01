@@ -110,19 +110,19 @@ public class ControlTests
     {
         var nazareth = HexOf(35.3033, 32.7019);
         var inputs = GameInputs.MapFromDisk(Paths.Content, Paths.StreamingMap);
-        var target = JsonUtility.FromJson<HexFile>(inputs.HexesJson).hexes.Single(h => h.q == 7 && h.r == 7);
+        var target = JsonUtility.FromJson<HexFile>(inputs.HexesJson).hexes.Single(h => h.q == 8 && h.r == 8);
         Assert.IsTrue(target.land);
         var biome = target.biome == "desert" ? "hills" : "desert";
-        inputs.OverridesYaml = $"terrain:\n  - {{ hex: {{ q: 7, r: 7 }}, value: {biome} }}\n"
+        inputs.OverridesYaml = $"terrain:\n  - {{ hex: {{ q: 8, r: 8 }}, value: {biome} }}\n"
             + $"control:\n  - {{ hex: {{ q: {nazareth.q}, r: {nazareth.r} }}, period: truce1, value: I }}\n"
-            + "locations:\n  - { id: acre, hex: { q: 7, r: 7 } }\n";
+            + "locations:\n  - { id: acre, hex: { q: 8, r: 8 } }\n";
         EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
         var map = Object.FindFirstObjectByType<MapScene>();
         map.Build(inputs);
         Assert.AreEqual(Control1948.Side.Israel, map.Control!.At(nazareth.q, nazareth.r, Truce1).side, "the overridden period");
         Assert.AreEqual(Control1948.Side.Arab, map.Control.At(nazareth.q, nazareth.r, Start).side, "the period before, as the history has it");
         Assert.AreEqual(Control1948.Side.Contested, map.Control.At(nazareth.q, nazareth.r, TenDays).side, "the period after, as the history has it");
-        Assert.AreEqual(biome, map.Hexes.hexes.Single(h => h.q == 7 && h.r == 7).biome);
+        Assert.AreEqual(biome, map.Hexes.hexes.Single(h => h.q == 8 && h.r == 8).biome);
         var acre = map.Settlements.Single(x => x.Id == "acre");
         Assert.AreEqual((target.lon, target.lat), (acre.Lon, acre.Lat), "the marker stands on the new hex");
         Assert.AreEqual((target.lon, target.lat), map.LocationPoint("acre", 0, 0));
@@ -133,14 +133,14 @@ public class ControlTests
     public void AControlOverrideOfAPeriodTheFileDoesNotHaveFailsNamingTheOverrideField()
     {
         var c = Control1948.Parse(ControlText);
-        var o = MapOverrides.Parse("terrain: []\ncontrol:\n  - { hex: { q: 7, r: 6 }, period: later, value: I }\nlocations: []\n");
+        var o = MapOverrides.Parse("terrain: []\ncontrol:\n  - { hex: { q: 8, r: 7 }, period: later, value: I }\nlocations: []\n");
         var e = Assert.Throws<ContentException>(() => c.ApplyOverrides(o));
         Assert.AreEqual(MapOverrides.FileName, e!.File);
         Assert.AreEqual("control[0].period", e.Field);
     }
 
     // Settlement hexes (content/map/settlement_hexes.yaml, tools/settlement_hexes.py)
-    static readonly (int q, int r) AcreHex = (7, 6), JerusalemHex = (0, 23), GazaHex = (-11, 27), YadMordechaiHex = (-9, 26);
+    static readonly (int q, int r) AcreHex = (8, 7), JerusalemHex = (0, 26), GazaHex = (-12, 31), YadMordechaiHex = (-10, 29);
 
     /// <summary>#674 (b): from the game's start the 9 July lines, adjusted: the coast blue, Samaria orange-red, the Acre coast
     /// grey (contested), Jerusalem no-man's land, the south without colour but its settlements blue; nothing before 15 May.</summary>

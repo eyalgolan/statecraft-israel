@@ -18,7 +18,7 @@ using UnityEngine.UIElements;
 /// disabled with its reason in the UI's language; nothing is pre-selected; a choice queues ResolveCapture or EndOccupation
 /// through SimBridge; the places go in one ordinal pass (owner, 24 October 2026, "By settlement order"); Escape hides it
 /// without choosing; it plays no sound and shows no video; a decision card goes first. The
-/// target rows here are test fixtures on the real content (Lydda and Ramle, which share a hex), with a made-up operation
+/// target rows here are test fixtures on the real content (Lydda and Ramle, a hex each on the 4.4 km grid), with a made-up operation
 /// line (the content requires one; the dialog does not show it): the real target list ships empty until its research and
 /// review are done.</summary>
 public class CaptureDialogTests
@@ -32,14 +32,21 @@ public class CaptureDialogTests
     {
         var dir = Paths.Content;
         var events = Directory.GetFiles(Path.Combine(dir, "events"), "*.yaml").Select(f => "events/" + Path.GetFileName(f)).ToList();
-        // Each target at its own hex in the map (ContentLoader.ValidateSettlementTargets checks it): Lydda and Ramle share
-        // (-3, 21), Jaffa is (-3, 19); read from the owning file so a re-grid (#1796) cannot stale the fixture.
+        // Each target at its target hex (ContentLoader.ValidateSettlementTargets checks it): Lydda's and Ramle's from Hex below
+        // (Ramle's is a neighbour of its settlement hex, #1796), any other place's read from its own hex in the map, so a
+        // re-grid cannot stale the fixture.
         var hexes = File.ReadAllText(Path.Combine(dir, "map", "settlement_hexes.yaml"));
         string Row(string id)
         {
-            var m = System.Text.RegularExpressions.Regex.Match(hexes, @"\{ id: " + id + @", q: (-?\d+), r: (-?\d+) \}");
-            Assert.IsTrue(m.Success, id + " has a hex in map/settlement_hexes.yaml");
-            return $"  - {{ id: {id}, q: {m.Groups[1].Value}, r: {m.Groups[2].Value}, operation: \"{Operation}\", sources: [{{ url: \"https://example.org/{id}\", checked: 2026-10-21 }}], residents: stayed, residents_sources: [{{ url: \"https://example.org/{id}/residents\", checked: 2026-10-21 }}], annexation: {{ people: {{ value: 60, status: sourced, date: 1948-11-08, sources: [{{ url: \"https://example.org/{id}/people\", checked: 2026-10-21 }}] }}, employed_share: {{ value: 0.5, status: design }} }}, status: draft }}\n";   // stayed, so the dialog's lines are the ones it tests (#799)
+            int q, r;
+            if (Hex.TryGetValue(id, out var h)) (q, r) = h;
+            else
+            {
+                var m = System.Text.RegularExpressions.Regex.Match(hexes, @"\{ id: " + id + @", q: (-?\d+), r: (-?\d+) \}");
+                Assert.IsTrue(m.Success, id + " has a hex in map/settlement_hexes.yaml");
+                (q, r) = (int.Parse(m.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture), int.Parse(m.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture));
+            }
+            return $"  - {{ id: {id}, q: {q}, r: {r}, operation: \"{Operation}\", sources: [{{ url: \"https://example.org/{id}\", checked: 2026-10-21 }}], residents: stayed, residents_sources: [{{ url: \"https://example.org/{id}/residents\", checked: 2026-10-21 }}], annexation: {{ people: {{ value: 60, status: sourced, date: 1948-11-08, sources: [{{ url: \"https://example.org/{id}/people\", checked: 2026-10-21 }}] }}, employed_share: {{ value: 0.5, status: design }} }}, status: draft }}\n";   // stayed, so the dialog's lines are the ones it tests (#799)
         }
         return ContentLoader.Load(rel =>
         {
@@ -61,6 +68,10 @@ public class CaptureDialogTests
         }, events);
     }
 
+    /// <summary>Lydda's and Ramle's target hexes (content/settlement_targets.yaml; one hex each on the 4.4 km grid, #1183).
+    /// Ramle's is (-3, 24), next to its settlement hex, which it shares with Rehovot (owner on #1796).</summary>
+    static readonly System.Collections.Generic.Dictionary<string, (int q, int r)> Hex = new() { ["lod"] = (-3, 23), ["ramla"] = (-3, 24) };
+
     static readonly Content C = Targets();
     static UiText En => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
     static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
@@ -75,13 +86,13 @@ public class CaptureDialogTests
     }
 
     /// <summary>A new game with no event pending and each of <paramref name="places"/> awaiting the end of its occupation
-    /// (R-CTRL-012), <paramref name="fled"/> its record's flag; with <paramref name="garrison"/>, an Israeli soldier on Lydda
-    /// and Ramle's hex, the unit Annex and Withdraw need (R-CTRL-014).</summary>
+    /// (R-CTRL-012), <paramref name="fled"/> its record's flag; with <paramref name="garrison"/>, an Israeli soldier on each
+    /// place's hex, the unit Annex and Withdraw need (R-CTRL-014).</summary>
     static GameSession Ending(Content c, bool garrison, bool fled, params string[] places)
     {
         var g = Awaiting(c);
         foreach (var id in places) g.State.Settlements[id] = new SettlementControl(Movement.PlayerSide, SettlementControl.AwaitingEnd, g.State.Date, fled: fled);
-        if (garrison) { var u = g.State.NextId++; g.State.Units.Add(u, new Unit(u, "veteran_soldier", -3, 21, side: Movement.PlayerSide, strength: 3)); }
+        if (garrison) foreach (var id in places) { var u = g.State.NextId++; g.State.Units.Add(u, new Unit(u, "veteran_soldier", Hex[id].q, Hex[id].r, side: Movement.PlayerSide, strength: 3)); }
         return g;
     }
 

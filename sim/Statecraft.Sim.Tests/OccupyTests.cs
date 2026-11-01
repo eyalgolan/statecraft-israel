@@ -231,9 +231,9 @@ public class OccupyTests
         var real = ContentLoader.Load(RealContentTests.ContentRoot());
         var sc = Scenario.Parse(System.IO.File.ReadAllText(System.IO.Path.Combine(ScenarioTests.Dir(), "mvp-occupy-cost.yaml")));
         var s = sc.Play(real);
-        Assert.Equal(new DateTime(1948, 12, 15), s.Date);
+        Assert.Equal(new DateTime(1949, 1, 15), s.Date);
         var ctrl = s.Settlements["nazareth"];
-        Assert.Equal((Movement.PlayerSide, SettlementControl.AwaitingEnd, 0, new DateTime(1948, 6, 15)), (ctrl.Owner, ctrl.State, ctrl.Turns, ctrl.Since));
+        Assert.Equal((Movement.PlayerSide, SettlementControl.AwaitingEnd, 0, new DateTime(1948, 7, 15)), (ctrl.Owner, ctrl.State, ctrl.Turns, ctrl.Since));
     }
 
     [Theory]

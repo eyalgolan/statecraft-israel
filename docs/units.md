@@ -326,7 +326,7 @@ own root rotation kept (the FBX axis turn, -90 degrees about X), so the camera's
   victory". That is wrong: the first victories were on 3 June 1948, by Modi Alon in an S-199. The file records this.
 
 **Placement** (`UnitPlacer.PlaceAll`). Every anchor is placed once, from the data alone, so a token never moves because
-another unit appears. Its spot is at most one hex step from the sourced place (about 8.7 km between hex centres on 5 km
+another unit appears. Its spot is at most one hex step from the sourced place (about 7.6 km between hex centres on 4.4 km
 hexes). It is the nearest such spot to the place, or to the anchor's sourced `toward` point when it has one (see below).
 In the GDD loop a simulated starting force can persist after its source anchor's window ends. A map-only army whose
 cached spot overlaps that starting spot gets a fixed display override, computed once from the same data before date or
@@ -335,7 +335,7 @@ spots. Overrides cannot stand in a town: the map's original spots and kit cleari
 spots are reserved against later moved-token placement. Source anchors, their dates, sim units and legacy placement do not
 change. If no safe override exists, the token remains drawn at its original spot with an overlap warning.
 
-The candidates are tried in three rounds:
+The candidates are tried in four rounds:
 1. The centres of the anchor's own hex and its six neighbours, with the token at full size.
 2. If none is clear, those centres plus six points inside each hex, with the token **compact**: half the ring and half
    the trio's spread, to fit beside a town. Yiftach at Lydda and the squadron at Herzliya stand compact.
@@ -345,6 +345,12 @@ The candidates are tried in three rounds:
    stands in a building. The clearing may cut only into the anchor's own town, never a neighbour's. Kiryati (Tel Aviv),
    Carmeli (Haifa) and Etzioni (West Jerusalem) stand this way. Haifa and Tel Aviv each have a budget of one such
    clearing, and their census floors are measured with it (#588, owner, 18 October 2026; `TownCensusTests`).
+4. If none of those is clear, the anchor's point and rings round it every 500 m out to the one-hex limit, about 500 m
+   apart on each ring, with the token compact and off the towns as in round 2. On 4.4 km hexes (#1183) the points of
+   rounds 1-3 lie 1.1 to 2.9 km apart and can all miss the clear ground between villages: Majdal, the Egyptian rear base,
+   found none among them (every one touched a village's disc or a route's corridor), while clear ground lies 3.5 km
+   south-west of its point, west of Ni'ilya. The round runs last, so an anchor placed in rounds 1-3 keeps its spot (a
+   round-4 spot holds its hex like any other; measured on the game map, no other anchor and no camp moved).
 
 A spot is clear when:
 - the ring's disc stays off every settlement footprint (the kits' discs, times 1.1);
@@ -364,12 +370,15 @@ next to the anchor on that side. The token stands at the clear spot nearest that
 - The 7th Brigade is anchored at Hulda, its headquarters for the Latrun attacks (Battles of Latrun), not at Latrun.
   The Arab Legion held Latrun and the Yalu–Beit Nuba ridge. The ground between was contested until the Beit Jiz and
   Beit Susin area was cleared on 28 May, and Sar'a was taken only on 13–14 July.
-- Harel stands by Saris on the corridor road, hex (-2,23), taken on 16–17 April 1948. It no longer stands by Sar'a and
+- Harel stands by Saris on the corridor road, hex (-2,26), taken on 16–17 April 1948. It no longer stands by Sar'a and
   Artuf.
 
 The test pins Etzioni's distance from the West Jerusalem point, Harel's hex, and the 7th within 2.6 km of Hulda; both
-the 7th and Harel stay more than 3 km from Sar'a. Once dated front data lands, the placer should also reject ground the other side held. `EveryAnchorStandsWithinOneHexClearOfTheTownsAndTheRoutes`
-checks every anchor and logs each spot and its distance.
+the 7th and Harel stay more than 3 km from Sar'a. With the control layer (`control_hexes_1948_49.yaml`) the placer
+also keeps an Arab force's spot off the hexes Israel held on the anchor's first day (#226, ruling 9). On 4.4 km hexes
+(#1183) Isdud's nearest clear centre was the Israeli-held hex east of it. Israeli tokens keep the `toward` rule above,
+and a unit the sim moves is placed without the control layer.
+`EveryAnchorStandsWithinOneHexClearOfTheTownsAndTheRoutes` checks every anchor and logs each spot and its distance.
 
 **Look.**
 - **Models:** the slice's models and the authored-prefab hook.

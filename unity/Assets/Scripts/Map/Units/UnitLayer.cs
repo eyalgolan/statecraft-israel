@@ -207,7 +207,7 @@ namespace Statecraft.Game.Map.Units
                 layer.spots = mapSpots;
                 foreach (var skip in UnitPlacer.SkipMessages(units, mapSpots)) Debug.LogWarning(skip);
             }
-            else layer.spots = layer.ground.Place(units, XZ(map), Debug.LogWarning);
+            else layer.spots = layer.ground.Place(units, XZ(map), Debug.LogWarning, control: map.Control);
             layer.assets = root.AddComponent<MapRuntimeAssets>();
             var palette = layer.assets.Own(UnitPalette.MakeTexture(readable: false));
             layer.paint = layer.assets.Own(new Material(template) { name = "UnitMiniature (palette)" });

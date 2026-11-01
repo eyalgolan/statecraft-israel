@@ -194,15 +194,16 @@ public class MapActionTests
     }
 
     [Fact]
-    public void JaffaAndTelAvivShareAHexAndBuildingThereWorks()
+    public void RamlaAndRehovotShareAHexAndBuildingThereWorks()
     {
+        // At 4.4 km (#1183) Ramla and Rehovot are the only two settlements that share a hex; Tel Aviv and Jaffa no longer do.
         var c = RealContentTests.Legacy();
-        var jaffa = c.SettlementHexes.Single(x => x.Id == "jaffa");
-        var tlv = c.SettlementHexes.Single(x => x.Id == "tel_aviv");
-        Assert.Equal((-3, 19), (tlv.Q, tlv.R));
-        Assert.Equal((tlv.Q, tlv.R), (jaffa.Q, jaffa.R));
+        var ramla = c.SettlementHexes.Single(x => x.Id == "ramla");
+        var rehovot = c.SettlementHexes.Single(x => x.Id == "rehovot");
+        Assert.Equal((-4, 24), (rehovot.Q, rehovot.R));
+        Assert.Equal((rehovot.Q, rehovot.R), (ramla.Q, ramla.R));
         var s = GoldenRun.Play(c, new DateTime(1950, 9, 1));
-        Assert.Null(MapActions.Check(c, s, "housing", tlv.Q, tlv.R));
+        Assert.Null(MapActions.Check(c, s, "housing", rehovot.Q, rehovot.R));
     }
 
     [Fact]

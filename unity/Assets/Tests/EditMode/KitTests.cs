@@ -692,9 +692,10 @@ public class KitTests
         var g = PlacementLayer.CampGround(map);
         var first = SettlementKits.Maabarot(camps, g, out var placed);
         var second = SettlementKits.Maabarot(camps, PlacementLayer.CampGround(map));
-        Assert.IsNull(first[1].mesh, "b: no ground left in Revivim's hex"); Assert.IsNull(second[1].mesh);
+        // #1183: 4.4 km hexes, values scale with HexM: camp b finds free ground of its own by Revivim (measured), so it is checked as a.
+        Assert.IsNotNull(first[1].mesh, "b: found ground by Revivim");
         Assert.IsNull(first[2].mesh, "c: no ground in Tel Aviv's hex"); Assert.IsNull(second[2].mesh);
-        for (int i = 0; i < 1; i++)
+        for (int i = 0; i < 2; i++)
         {
             Assert.IsNotNull(first[i].mesh, camps[i].id + ": found free ground");
             Assert.AreEqual((first[i].tents, first[i].huts), (second[i].tents, second[i].huts), camps[i].id);
@@ -943,6 +944,8 @@ public class KitTests
             + $"no date: {undated.tents} tents, {undated.huts} huts, {(undated.at - at).magnitude:F0} m");
         foreach (var k in new[] { built, undated }) if (k.mesh != null) Object.DestroyImmediate(k.mesh);
         Assert.Greater(built.tents, 0, "tents"); Assert.Greater(built.huts, 0, "and huts");
+        // #1183: on 4.4 km hexes Carmeli's Brosh token stands on (14, 7) (owner, 26 October 2026), next to Rosh Pinna's hex, and a 1948 token still takes
+        // the undated camp's ground: 10 tents and huts, 450 m off the centre, against the dated camp's 11 (measured the same alone and in the full run).
         Assert.Less(undated.tents + undated.huts, built.tents + built.huts, "with no date the 1948 token still takes the camp's ground");
     }
 
@@ -954,9 +957,11 @@ public class KitTests
         var map = OpenMap();
         var c = Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content);
         var g = PlacementLayer.CampGround(map);
-        var camp = new List<(string id, Vector2 at, System.DateTime from)> { ("transit_camp_rosh_pinna", HexCentre(map, c, "rosh_pinna"), new System.DateTime(1950, 8, 26)) };
+        // #1183: Tiberias's camp, not Rosh Pinna's: in Rosh Pinna's 4.4 km hex the token leaves the camp no other ground (0 structures, the camp is its
+        // box; measured the same alone and in the full EditMode run), so nothing would be checked below. Tiberias's camp moves 3.6 km and keeps 9.
+        var camp = new List<(string id, Vector2 at, System.DateTime from)> { ("transit_camp_tiberias", HexCentre(map, c, "tiberias"), new System.DateTime(1950, 8, 26)) };
         var built = SettlementKits.Maabarot(camp, g)[0];
-        Assert.IsNotNull(built.mesh, "Rosh Pinna's camp of 1950 is a kit"); Object.DestroyImmediate(built.mesh);
+        Assert.IsNotNull(built.mesh, "Tiberias's camp of 1950 is a kit"); Object.DestroyImmediate(built.mesh);
         float lot = 4f * KitScale.Houses;   // a plot's lot (SettlementKits.MaabaraPlotR)
         var token = built.at + new Vector2(lot, 0f);   // on the camp's own ground
         g.DatedTokens.Add((token, 300f, new System.DateTime(1949, 1, 1)));

@@ -309,15 +309,16 @@ def mandate_hexes(path=None):
     return {(int(m.group(1)), int(m.group(2))) for m in rows if int(m.group(3)) not in outside}
 
 
-def clip_area(cells, mode, fringe, sea_ring):
+def clip_area(cells, mode, fringe, sea_ring, core=frozenset()):
     """The hexes a clipped board keeps and those it draws as environment. mode 'mandate': the land inside the Mandate
     sub-districts plays; land outside within `fringe` steps of it stays as environment (landscape with no tiles or hex
     lines, so the edge reads as land going on, not a cliff); water stays within `sea_ring` steps of playing land; the
-    rest is dropped. Returns (kept keys, environment keys)."""
+    rest is dropped. `core`: the hexes of the game's settlements, which play even where the hex falls outside the
+    sub-districts (Hanita on the 4.4 km grid, #1183: owner, 26 October 2026). Returns (kept keys, environment keys)."""
     if mode == 'none': return set(cells), set()
     if mode != 'mandate':
         raise ValueError(f"clip '{mode}' is not built: 'mandate' or 'none' (the 1949 armistice option waits on a design call)")
-    inside = mandate_hexes() & {k for k, h in cells.items() if h['land']}
+    inside = (mandate_hexes() | set(core)) & {k for k, h in cells.items() if h['land']}
     def near(k, ring, of): return any(hex_distance(k, o) <= ring for o in of)
     # Only hexes within reach of the playing land need the distance test.
     reach = max(fringe, sea_ring)
@@ -392,7 +393,9 @@ def build_board(a):
     if clip != 'none':
         # The play area: the board keeps only the clipped land, its fringe and its sea (clip_area).
         fringe = int(recipes.defaults.get('clip', {}).get('fringe', 1)) if recipes else 1
-        kept, fringe_env = clip_area(cells, clip, fringe, a.sea_ring)
+        core = {min(((h['lon'] - s['lon']) ** 2 + (h['lat'] - s['lat']) ** 2, k) for k, h in cells.items())[1] for s in game
+                if (a.lat[0] <= s['lat'] <= a.lat[1] and a.lon[0] <= s['lon'] <= a.lon[1]) or s['id'] in moved}
+        kept, fringe_env = clip_area(cells, clip, fringe, a.sea_ring, core)
         cells = {k: h for k, h in cells.items() if k in kept}
         box_env = env_of
         env_of = lambda k: k in fringe_env or box_env(k)

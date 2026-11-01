@@ -193,11 +193,13 @@ public class InfoPanelLayoutTests
         var start = GameSession.New(C, GoldenRun.Seed, Mode.Historical).State;
         var lone = C.Hexes.Where(x => x.Land && Projects.CitiesFor(C, start, x.Q, x.R).Count == 1).OrderBy(x => x.Q).ThenBy(x => x.R).First();
         var hula = C.Sites.Single(s => s.Id == "hula");   // #1124: the swamp and its waiting field, the tallest site hex
+        // #1183: at 4.4 km Petah Tikva's hex is a city hex that also offers the Yarkon rail link's segment (GddHexPanel).
+        var rail = C.SettlementHexes.Single(s => s.Id == "petah_tikva");
         var problems = new List<string>();
         foreach (var hebrew in new[] { false, true })
             foreach (var (w, h) in Windows)
                 foreach (var (what, q, r) in new[] { ("city", city.Q, city.R), ("site", site.Q, site.R), ("projects", lone.Q, lone.R), ("city with the policy", city.Q, city.R),
-                    ("field", site.Q, site.R), ("hula", hula.Q, hula.R) })
+                    ("field", site.Q, site.R), ("hula", hula.Q, hula.R), ("petah tikva with its rail part", rail.Q, rail.R) })
                 {
                     var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
                     var s = g.State;

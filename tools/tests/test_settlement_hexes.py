@@ -33,7 +33,8 @@ def test_tiberias_is_moved_off_the_lake():
 
 def test_two_known_settlements_are_pinned_literally():
     rows = {r["id"]: (r["q"], r["r"]) for r in yaml12.load((MAP / "settlement_hexes.yaml").read_text())["settlements"]}
-    assert rows["jerusalem"] == (0, 23)
-    # jaffa and tel_aviv share this hex legitimately: Jaffa is the old port town beside Tel Aviv, inside one 5 km hex.
-    assert rows["tel_aviv"] == (-3, 19)
-    assert rows["jaffa"] == rows["tel_aviv"]
+    assert rows["jerusalem"] == (0, 26)
+    assert rows["tel_aviv"] == (-3, 21)
+    # At 4.4 km (#1183) Jaffa has its own hex beside Tel Aviv's; Ramla and Rehovot are the one pair that share a hex.
+    assert rows["jaffa"] == (-4, 22)
+    assert rows["ramla"] == rows["rehovot"] == (-4, 24)

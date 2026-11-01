@@ -4,7 +4,7 @@
 > the table below.** Nothing here is built until the owner approves the plan and the size (#1183 step 2); then step 3 is one
 > bake PR, plus one rules PR if a design value is re-tuned ("The PRs, in order" below).
 
-**Status (20 October 2026):** proposed. The owner's go-ahead (#1183, 20 October 2026): "Go ahead with step 1: a docs-only
+**Status (26 October 2026):** decided and baked. The owner picked 4.4 km on 21 October 2026 ([#1183](https://github.com/eyalgolan/statecraft-israel/issues/1183#issuecomment-6318061062)); the bake PR (#1183 step 3) re-baked every file below. Before that, 20 October 2026: proposed. The owner's go-ahead (#1183, 20 October 2026): "Go ahead with step 1: a docs-only
 plan PR on `docs/denser-hexes-plan-1183`, with no code and no bake. 4.0 and 4.4 km are the right pair ... Please measure
 Tel Aviv to Jerusalem along the actual hex path, not the straight line, and put the WebGL load time next to the current
 gate. The owner picks the size from your table."

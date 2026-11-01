@@ -198,15 +198,15 @@ options:
         Assert.Contains("hula_drainage", r.State.FiredEvents);
     }
 
-    // The real content: the Hula is the one swamp site, in the swamp hex of the water research (14, 3), with one field site in
+    // The real content: the Hula is the one swamp site, in the swamp hex of the water research ((14, 3) on the 5 km grid; (16, 3) at 4.4 km, from that hex's centre, #1183), with one field site in
     // its hex; hula_drainage waits for its works; the design values are Q-SWAMP-1's (12 turns, IL 4m).
     [Fact]
     public void TheRealSwampIsThePlannedOne()
     {
         var c = ContentLoader.Load(RealContentTests.ContentRoot());
         var swamp = Assert.Single(c.Sites, x => x.Kinds.Contains(Projects.SwampKind));
-        Assert.Equal(("hula", 14, 3), (swamp.Id, swamp.Q, swamp.R));
-        var field = Assert.Single(c.Sites, x => x.Kinds.Contains(Projects.FieldKind) && (x.Q, x.R) == (14, 3));
+        Assert.Equal(("hula", 16, 3), (swamp.Id, swamp.Q, swamp.R));
+        var field = Assert.Single(c.Sites, x => x.Kinds.Contains(Projects.FieldKind) && (x.Q, x.R) == (16, 3));
         Assert.Equal("hula_field", field.Id);
         Assert.Equal("hula", c.Events.Single(e => e.Id == "hula_drainage").Site);
         var m = c.Rules.Mvp!;

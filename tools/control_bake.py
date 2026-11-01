@@ -10,8 +10,9 @@ content/map/settlements_1948.yaml and the heightmap; writes content/map/control_
 
 The GeoJSON keeps the true polygons; the game shows them snapped to hex edges, as the promo does (owner ruling
 2026-10-11). For each period of the GeoJSON's `periods` (a snapshot and the overlays in force), every land hex of
-Mandatory Palestine (the sub-district layer's land: its regions but 'outside') takes one code at its probe: the hex's
-centre, or the settlement's own point where a mapped settlement sits in it (rule 0 below)
+Mandatory Palestine (the sub-district layer's land: its regions but 'outside'), and a mapped settlement's hex whose centre
+is off that land (Hanita's at 4.4 km), takes one code at its probe: the hex's centre, or the settlement's own point where
+a mapped settlement sits in it (rule 0 below)
 (deterministic: float64 arithmetic in a fixed order, features in file order; the even-odd ray cast of tools/borders_bake.py):
   0 a hex holding a mapped settlement (content/map/settlements_1948.yaml) is probed at the settlement's own point, not
     at the hex's centre, which can fall the other side of the traced line, and which says nothing about a shore town
@@ -34,7 +35,9 @@ centre, or the settlement's own point where a mapped settlement sits in it (rule
     settlements) contested (c) for every period inside its window, unless the hex has no colour (-) or is no-man's land (m);
   6 a pinned town (the GeoJSON's pinned_towns: a town the sources place on one side that the traced lines, within their
     accuracy, put on the other) gives its hex (placed as the game places settlements) the sourced holder for every period
-    inside the pin's window, unless the hex is grey;
+    inside the pin's window, unless the hex is grey. A non-Israeli pin whose hex holds a player's locality goes on the
+    free land neighbour nearest its own point, free meaning no settlement and no other pin (owner on #1796, 27 October
+    2026, "Move the pin": the Syrian bridgehead token's rule in tools/unit_anchor_hexes.py; Mishmar HaYarden at 4.4 km);
 Each hex row is [q, r, "codes"]: one character per period, in the periods' order. The sim never reads the output (display
 only: the content hash and the goldens do not move). Status draft, owner-verify (the GeoJSON's).
 """
@@ -48,6 +51,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import borders_bake as bb  # noqa: E402
 import hexgrid  # noqa: E402
+import unit_anchor_hexes as ua  # noqa: E402
 from geo import KM_PER_DEG_LAT, KM_PER_DEG_LON_EQ  # noqa: E402
 import yaml12  # noqa: E402
 
@@ -118,9 +122,37 @@ def inside(period: dict, window: dict) -> bool:
     return period["from"] >= window["from"] and (window["until"] is None or (period["until"] is not None and period["until"] <= window["until"]))
 
 
+# Hexes shared by settlements whose points disagree, settled by name (owner on #1796, 26 October 2026, "Contested + move
+# target"): in every period where their points' codes differ the hex is contested ("c"), otherwise their common code. Any
+# other disagreeing pair still fails closed. At 4.4 km (#1183) Ramla's and Rehovot's points both fall in (-4, 24).
+CONTESTED_SHARED_HEXES = [frozenset({"ramla", "rehovot"})]
+
+
+def pin_hexes(source: dict, hexes: dict) -> list:
+    """[(hex, pin)]: each pin on the hex holding its point, placed as the game places settlements, except a non-Israeli pin
+    on a player's locality, which takes the free land neighbour nearest its point (rule 6; owner on #1796, 27 October 2026).
+    At 4.4 km (#1183) the Mishmar HaYarden pin fell in Rosh Pinna's hex (14, 6) and painted a player city Syrian. Land here
+    is this layer's (Mandatory Palestine), so the pin colours the hex it lands on: the bridgehead token's (15, 6) is
+    outside it, and the pin goes on (15, 5). Unit anchors do not count against a hex: a pin is a colour, not a token."""
+    pins = [(hexgrid.settlement_hex(p["lon"], p["lat"], hexes), p) for p in source["statecraft"].get("pinned_towns", [])]
+    player, land = ua.player_locality_hexes(), set(mandate_hexes())
+    taken = set(ua.settlement_hexes()) | {qr for qr, _ in pins}
+    out = []
+    for (q, r), p in pins:
+        if p["holder"] != "israel" and (q, r) in player:
+            free = [c for dq, dr in hexgrid.NEIGHBOURS if (c := (q + dq, r + dr)) in land and c not in taken]
+            if not free:   # fail closed rather than paint a player's locality the other side's colour
+                raise SystemExit(f"pin {p['place']}: no free land hex next to ({q}, {r})")
+            pt = hexgrid.lonlat_to_km(p["lon"], p["lat"], hexes["bounds"])
+            q, r = min(free, key=lambda c: math.dist(hexgrid.hex_center_km(*c, hexes["hex_size_km"]), pt))
+            taken.add((q, r))
+        out.append(((q, r), p))
+    return out
+
+
 def bake(source: dict, hexes: dict, water: np.ndarray, meta: dict) -> tuple[list, dict]:
     snaps, overlays, periods = load(source)
-    pins = [(hexgrid.settlement_hex(p["lon"], p["lat"], hexes), p) for p in source["statecraft"].get("pinned_towns", [])]
+    pins = pin_hexes(source, hexes)
     greys = [(hexgrid.settlement_hex(p["lon"], p["lat"], hexes), p) for p in source["statecraft"].get("contested_places", [])]
     land = mandate_hexes()
     # A mapped settlement's hex takes the code at the settlement's own point, not at the hex's centre (#1659; owner's
@@ -136,6 +168,7 @@ def bake(source: dict, hexes: dict, water: np.ndarray, meta: dict) -> tuple[list
     drawn = [p for p in periods if p["snapshot"]]
     # Two settlements in one hex must not have one of them silently win: the hex has a single colour, so their points
     # have to agree about it. Fail closed instead of picking (review of #1659).
+    shared: dict = {}   # qr -> one code per drawn period, for a CONTESTED_SHARED_HEXES hex
     for qr, ss in sorted(towns.items()):
         if len(ss) < 2:
             continue
@@ -144,6 +177,10 @@ def bake(source: dict, hexes: dict, water: np.ndarray, meta: dict) -> tuple[list
             key = tuple(code_at(s["lon"], s["lat"], snaps[p["snapshot"]],
                                 [overlays[o] for o in p["overlays"] if o in overlays]) for p in drawn)
             seen.setdefault(key, []).append(s["id"])
+        if len(seen) > 1 and frozenset(s["id"] for s in ss) in CONTESTED_SHARED_HEXES:
+            keys = list(seen)
+            shared[qr] = [k[0] if len(set(k)) == 1 else "c" for k in zip(*keys)]
+            continue
         if len(seen) > 1:
             # A settlement outside every snapshot and overlay codes as None; sorting must not compare it with a code.
             order = sorted(seen.items(), key=lambda kv: tuple(c or "-" for c in kv[0]))
@@ -153,7 +190,9 @@ def bake(source: dict, hexes: dict, water: np.ndarray, meta: dict) -> tuple[list
     applied = set()
     for h in hexes["hexes"]:
         qr = (h["q"], h["r"])
-        if qr not in land:
+        # A mapped settlement's hex gets a row even when its centre is off the land (owner on #1796, 27 October 2026,
+        # "Give it a row": Hanita's (10, 4) at 4.4 km, centre beyond the Lebanese frontier), coded at its own point.
+        if qr not in land and qr not in towns:
             continue
         lon, lat = h["lon"], h["lat"]
         probe = (lon, lat)
@@ -168,6 +207,8 @@ def bake(source: dict, hexes: dict, water: np.ndarray, meta: dict) -> tuple[list
         for p in drawn:
             ovs = [overlays[o] for o in p["overlays"] if o in overlays]
             c = code_at(*probe, snaps[p["snapshot"]], ovs)
+            if qr in shared:   # the named shared hex: contested where its settlements' points disagree
+                c = shared[qr][len(codes)]
             if c is None:   # a frontier hex whose centre the outline leaves out (Metulla): the most common code over its area
                 got = [g for g in (code_at(x, y, snaps[p["snapshot"]], ovs) for x, y in samples(lon, lat, km_lon, size)) if g]
                 c = max(sorted(set(got)), key=got.count) if got else "-"

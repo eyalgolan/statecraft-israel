@@ -121,10 +121,10 @@ public class ArmisticeTests
         Assert.AreEqual(BorderStyle.Secondary, egypt.StyleOf(MapRegions.ZoneIdBase + auja.Id));
         Assert.AreEqual(m.Subdistricts.Layer.Count, egypt.Count, "the same hexes, regions overlaid");
         Assert.AreSame(egypt, m.LayerOn(Lebanon), "Lebanon adds no zone: its line is the frontier already drawn");
-        var central = a.Zones.Single(z => z.Key == "syria_dmz_central");
-        var c = a.HexesOf(central).First();
-        Assert.AreNotEqual(MapRegions.ZoneIdBase + central.Id, m.LayerOn(Syria.AddDays(-1))!.RegionOf(c.q, c.r));
-        Assert.AreEqual(MapRegions.ZoneIdBase + central.Id, m.LayerOn(Syria)!.RegionOf(c.q, c.r), "the Syrian DMZ from 20 Jul 1949");
+        var zone = a.Zones.Single(z => z.Key == "syria_dmz_south");   // the Syrian zone with a hex on the 4.4 km grid (#1183)
+        var c = a.HexesOf(zone).First();
+        Assert.AreNotEqual(MapRegions.ZoneIdBase + zone.Id, m.LayerOn(Syria.AddDays(-1))!.RegionOf(c.q, c.r));
+        Assert.AreEqual(MapRegions.ZoneIdBase + zone.Id, m.LayerOn(Syria)!.RegionOf(c.q, c.r), "the Syrian DMZ from 20 Jul 1949");
         Assert.AreSame(m.LayerOn(Syria), m.LayerOn(new DateTime(1952, 12, 31)), "composed once per set of zones");
         var (on, none) = m.FrontsOn(new DateTime(1952, 1, 1));
         CollectionAssert.AreEqual(new[] { "egypt", "lebanon", "jordan", "syria" }, on.Select(f => f.Key).ToArray());

@@ -860,11 +860,24 @@ public class CityPanelTests
         int a = -1;
         var bridge = Bridge(En, s => a = AddHalutz(s));
         using var panel = Panel(ui, bridge, En);
-        var (q, r) = SegmentHex("tlv_haifa_rail", 1, 1);
-        Assert.AreEqual((q, r), SegmentHex("tlv_netanya_road", 2), "precondition: the rail link and the Netanya road share the hex");
+        // #1183 (owner, 26 October 2026): on 4.4 km hexes the Yarkon link's one segment runs from Petah Tikva's hex to Tel
+        // Aviv's, so its first city hex, Petah Tikva's, offers it; on Tel Aviv's hex, whose column is full, it does not, nor
+        // does the Netanya road's first segment, which starts there but has a hex of its own.
+        var (q, r) = SegmentHex("tlv_haifa_rail", 1, 0);
+        Assert.IsTrue(C.SettlementHexes.Any(x => (x.Q, x.R) == (q, r) && x.Id == "petah_tikva"), "precondition: the rail link starts on Petah Tikva's hex");
+        Assert.AreEqual(CityHex, SegmentHex("tlv_haifa_rail", 1, 1), "precondition: the rail link ends on Tel Aviv's hex");
+        Assert.AreEqual(CityHex, SegmentHex("tlv_netanya_road", 1), "precondition: the rail link and the Netanya road share Tel Aviv's hex");
+        panel.Show(CityHex.q, CityHex.r);
+        Assert.IsNull(SegmentBox(ui, "tlv_haifa_rail", 1), "not on Tel Aviv's full column");
+        Assert.IsNull(SegmentBox(ui, "tlv_netanya_road", 1), "a segment with a hex outside a city shows there, not here");
+        // A hex in several segments shows every one of them: the Netanya road's (-2, 20) lies in its segments 1 to 3.
+        var shared = SegmentHex("tlv_netanya_road", 2);
+        Assert.AreEqual(shared, SegmentHex("tlv_netanya_road", 1, 1), "precondition: segment 1 ends on segment 2's hex");
+        Assert.AreEqual(shared, SegmentHex("tlv_netanya_road", 3), "precondition: segment 3 starts on segment 2's hex");
+        panel.Show(shared.q, shared.r);
+        for (int n = 1; n <= 3; n++) Assert.IsNotNull(SegmentBox(ui, "tlv_netanya_road", n), $"the Netanya road's segment {n}");
         panel.Show(q, r);
-        Assert.IsNotNull(SegmentBox(ui, "tlv_netanya_road", 1));
-        Assert.IsNotNull(SegmentBox(ui, "tlv_netanya_road", 2));
+        Assert.IsNotNull(ui.Root.Q("city-part-petah_tikva"), "the city's own part");
         var rail = SegmentBox(ui, "tlv_haifa_rail", 1);
         var terms = Projects.Terms(C.RulesAt(bridge.State.Date).Mvp!, Corridors.BuildRail);
         Assert.AreEqual(En.Format("corridor.build_rail", En.Format("site.group", 1), PlayerText.Money(C, "treasury", terms.Cost),
@@ -932,7 +945,13 @@ public class CityPanelTests
         using var panel = Panel(ui, bridge, En);
         panel.Show(CityHex.q, CityHex.r);
         Assert.IsTrue(C.Corridors.Any(d => d.Segments.Any(x => x.Hexes.Any(h => (h[0], h[1]) == CityHex))), "precondition: a corridor starts on Tel Aviv's hex");
-        Assert.IsNull(ui.Root.Query<VisualElement>().Where(x => x.name != null && x.name.StartsWith("corridor-part-")).First(), "no corridor part on a city's hex");
+        // #1183 (owner, 26 October 2026): a segment whose every hex is a city's (the Yarkon rail link at 4.4 km) is offered on
+        // its first hex; every other segment stays off a city's hex.
+        bool AllCities(SegmentDef x) => x.Hexes.All(h => C.SettlementHexes.Any(t => (t.Q, t.R) == (h[0], h[1]) && bridge.State.Cities.ContainsKey(t.Id)));
+        var parts = ui.Root.Query<VisualElement>().Where(x => x.name != null && x.name.StartsWith("corridor-part-")).ToList().Select(x => x.name).ToList();
+        Assert.IsTrue(AllCities(C.Corridors.Single(d => d.Id == "tlv_haifa_rail").Segments[0]),
+            "precondition: the Yarkon link's one segment is all city hexes");
+        CollectionAssert.IsEmpty(parts, "Tel Aviv's hex carries no corridor part; the Yarkon link shows on its first hex, Petah Tikva's");
         foreach (var d in C.Corridors)
             for (int n = 1; n <= d.Segments.Count; n++)
             {
@@ -1154,8 +1173,21 @@ public class CityPanelTests
     [TestCase(false)] [TestCase(true)]
     public void EverySettlementBlockNamesItsOwnCity(bool hebrew)
     {
-        var text = hebrew ? He : En; var bridge = Bridge(text);
-        var pair = C.SettlementHexes.Where(h => bridge.State.Cities.ContainsKey(h.Id)).GroupBy(h => (h.Q, h.R)).First(g => g.Count() > 1);
+        var text = hebrew ? He : En;
+        // No two cities share a hex on the 4.4 km grid (#1183), so the real content with Petah Tikva on Tel Aviv's hex.
+        var dir = Paths.Content;
+        var events = Directory.GetFiles(Path.Combine(dir, "events"), "*.yaml").Select(f => "events/" + Path.GetFileName(f)).ToList();
+        var shared = ContentLoader.Load(rel =>
+        {
+            var path = Path.Combine(dir, rel);
+            if (!File.Exists(path)) return null;
+            var t = File.ReadAllText(path);
+            if (rel != ContentLoader.SettlementHexesFileName) return t;
+            Assert.IsTrue(t.Contains("{ id: petah_tikva, q: -2, r: 21 }"), "settlement_hexes.yaml has Petah Tikva on (-2, 21)");
+            return t.Replace("{ id: petah_tikva, q: -2, r: 21 }", $"{{ id: petah_tikva, q: {CityHex.q}, r: {CityHex.r} }}");
+        }, events);
+        var bridge = new SimBridge(GameSession.New(shared, GoldenRun.Seed, Mode.Historical), text);
+        var pair = shared.SettlementHexes.Where(h => bridge.State.Cities.ContainsKey(h.Id)).GroupBy(h => (h.Q, h.R)).First(g => g.Count() > 1);
         var host = new VisualElement(); var projects = new VisualElement();
         GddHexPanel.Render(host, projects, bridge, text, pair.Key.Q, pair.Key.R, id => "name:" + id);
         foreach (var h in pair)
@@ -1165,7 +1197,7 @@ public class CityPanelTests
             Assert.AreEqual("name:" + h.Id, part!.Q<Label>("city-name").text);
             Assert.IsNotNull(part!.Q<Button>("city-workers-less"), "the name belongs to its own jobs stepper");
         }
-        var single = C.SettlementHexes.Where(h => bridge.State.Cities.ContainsKey(h.Id)).GroupBy(h => (h.Q, h.R)).First(g => g.Count() == 1);
+        var single = shared.SettlementHexes.Where(h => bridge.State.Cities.ContainsKey(h.Id)).GroupBy(h => (h.Q, h.R)).First(g => g.Count() == 1);
         GddHexPanel.Render(host, projects, bridge, text, single.Key.Q, single.Key.R, id => "name:" + id);
         Assert.IsNull(host.Q<Label>("city-name"), "one city's block is not named again under the panel's title");
     }

@@ -11,38 +11,38 @@ steps:
       - { kind: train, city: tel_aviv, track: halutz, count: 158 }
   - on: 1948-06-15
     commands:
-      - { kind: start_project, project: housing, city: haifa, q: 5, r: 8 }
-      - { kind: start_project, project: housing, city: haifa, q: 4, r: 9 }
+      - { kind: start_project, project: housing, city: haifa, q: 6, r: 9 }
+      - { kind: start_project, project: housing, city: haifa, q: 5, r: 10 }
   - on: 1948-07-15
     commands:
-      - { kind: start_project, project: housing, city: haifa, q: 5, r: 9 }
-      - { kind: start_project, project: industry, city: haifa, q: 6, r: 8 }
+      - { kind: start_project, project: housing, city: haifa, q: 6, r: 10 }
+      - { kind: start_project, project: industry, city: haifa, q: 7, r: 9 }
   - on: 1948-08-15
     commands:
-      - { kind: start_project, project: housing, city: jerusalem, q: 0, r: 22 }
-      - { kind: start_project, project: housing, city: jerusalem, q: 1, r: 22 }
+      - { kind: start_project, project: housing, city: jerusalem, q: 0, r: 25 }
+      - { kind: start_project, project: housing, city: jerusalem, q: 1, r: 25 }
   - on: 1948-09-15
     commands:
-      - { kind: start_project, project: housing, city: jerusalem, q: -1, r: 23 }
+      - { kind: start_project, project: housing, city: jerusalem, q: -1, r: 26 }
   - on: 1948-10-15
     commands:
-      - { kind: start_project, project: housing, city: jerusalem, q: 1, r: 23 }
-      - { kind: start_project, project: industry, city: jerusalem, q: -1, r: 24 }
+      - { kind: start_project, project: housing, city: jerusalem, q: 1, r: 26 }
+      - { kind: start_project, project: industry, city: jerusalem, q: -1, r: 27 }
   - on: 1948-11-15
     commands:
-      - { kind: start_project, project: housing, city: petah_tikva, q: -2, r: 18 }
-      - { kind: start_project, project: housing, city: petah_tikva, q: -1, r: 18 }
+      - { kind: start_project, project: housing, city: petah_tikva, q: -2, r: 20 }
+      - { kind: start_project, project: housing, city: petah_tikva, q: -1, r: 20 }
   - on: 1948-12-15
     commands:
-      - { kind: start_project, project: housing, city: rehovot, q: -4, r: 20 }
-      - { kind: start_project, project: housing, city: hadera, q: 2, r: 12 }
+      - { kind: start_project, project: housing, city: rehovot, q: -3, r: 24 }
+      - { kind: start_project, project: housing, city: hadera, q: 2, r: 14 }
   - on: 1949-01-15
     commands:
-      - { kind: start_project, project: housing, city: netanya, q: 0, r: 15 }
-      - { kind: start_project, project: housing, city: jerusalem, q: 0, r: 23 }
+      - { kind: start_project, project: housing, city: netanya, q: 0, r: 17 }
+      - { kind: start_project, project: housing, city: jerusalem, q: 0, r: 26 }
   - on: 1949-02-15
     commands:
-      - { kind: start_project, project: housing, city: rishon_lezion, q: -4, r: 21 }
+      - { kind: start_project, project: housing, city: rishon_lezion, q: -4, r: 23 }
   - on: 1949-09-15
     commands:
       - { kind: train, city: tel_aviv, track: halutz, count: 83 }

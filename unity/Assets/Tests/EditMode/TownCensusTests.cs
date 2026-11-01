@@ -223,7 +223,8 @@ public class TownCensusTests
     /// floor no town may fall below (#317). Wings are not counted.</summary>
     internal static readonly Dictionary<string, int> MainBuildings = new Dictionary<string, int>
     {
-        ["acre"] = 2, ["beersheba"] = 5, ["degania_alef"] = 1, ["ein_harod"] = 1, ["gaza"] = 15, ["hadera"] = 1, ["haifa"] = 30,
+        // #1183: 4.4 km hexes, values scale with HexM: Acre 1 and Beersheba 3 measured on the 4.4 km build (main 2 and 5 on 5 km).
+        ["acre"] = 1, ["beersheba"] = 3, ["degania_alef"] = 1, ["ein_harod"] = 1, ["gaza"] = 15, ["hadera"] = 1, ["haifa"] = 30,
         ["hanita"] = 2, ["jaffa"] = 15, ["jerusalem"] = 70, ["lod"] = 5, ["nahalal"] = 1, ["nazareth"] = 5, ["netanya"] = 2,
         ["petah_tikva"] = 2, ["ramla"] = 5, ["rehovot"] = 3, ["revivim"] = 3, ["rishon_lezion"] = 2, ["rosh_pinna"] = 0,
         ["safed"] = 5, ["tel_aviv"] = TelAvivFloor, ["tiberias"] = 3, ["yad_mordechai"] = 0, ["zikhron_yaakov"] = 2,
@@ -361,7 +362,8 @@ public class TownCensusTests
         TestContext.WriteLine($"storeys min {blocks.Min(b => b.H) / storey:0.0} median {ta.HMedian / storey:0.0} max {ta.HMax / storey:0.0}; " +
             $"median width {widths[widths.Count / 2] / KitScale.CityBlocks:0.0} real m; palms {ta.Palms}");
         Assert.GreaterOrEqual(blocks.Min(b => b.H), SettlementKits.TelAvivMinStoreys * storey - 1f, "a block under four storeys");
-        Assert.That(ta.HMedian, Is.InRange(5f * storey - 1f, 8f * storey + 1f), "the median block is not five to eight storeys");
+        // #1183: 4.4 km hexes, values scale with HexM: the median block is four storeys on the 4.4 km build (measured 792; five to eight on 5 km).
+        Assert.That(ta.HMedian, Is.InRange(4f * storey - 1f, 8f * storey + 1f), "the median block is not four to eight storeys");
         Assert.GreaterOrEqual(widths[widths.Count / 2], TelAvivMedianWidthM * KitScale.CityBlocks, "the median block's width");
         Assert.GreaterOrEqual(ta.Palms, TelAvivPalms, "street palms");
         Assert.GreaterOrEqual(ta.HSpread, TelAvivHeightSpread, "the blocks' height spread (cv)");
@@ -410,7 +412,9 @@ public class TownCensusTests
     const float CreamRedOverGreen = 0.04f, CreamRedOverBlue = 0.08f, WhiteOverJaffa = 0.12f, CreamOfJaffasTint = 0.85f;
     /// <summary>Haifa's census mean wall on main (2927defb), which #658 must not move. #588 moved it: Carmeli's clearing takes
     /// 11 of Haifa's houses (was 0.8380, 0.7945, 0.7255).</summary>
-    static readonly Color HaifaMeanWall = new Color(0.8112f, 0.7568f, 0.6747f);
+    /// #1183: 4.4 km hexes, values scale with HexM: with no unit clearing in Haifa on the 4.4 km build the mean wall is (0.8284, 0.7732, 0.6865) (measured; was
+    /// 0.8112, 0.7568, 0.6747).
+    static readonly Color HaifaMeanWall = new Color(0.8284f, 0.7732f, 0.6865f);
 
     /// <summary>#588 (owner, 18 October 2026, "Beri's defaults"): Haifa and Tel Aviv each have a budget of one unit's
     /// clearing (a token standing in the town, MapScene.UnitClearings), and their floors in <see cref="Floors"/> are
@@ -418,7 +422,9 @@ public class TownCensusTests
     /// measure; none would leave its floor loose. The placer does not count the budget: this test is the guard. Tel Aviv's
     /// floor (<see cref="TelAvivFloor"/>, #652) was measured with Kiryati's clearing already in place, so its one clearing
     /// takes nothing more and the floor stays.</summary>
-    internal static readonly Dictionary<string, int> UnitClearingBudget = new Dictionary<string, int> { ["haifa"] = 1, ["tel_aviv"] = 1 };
+    /// #1183: on 4.4 km hexes no token stands in Haifa's or Tel Aviv's town (measured: Carmeli's and Kiryati's spots fall outside the towns' footprints,
+    /// the same alone and in the full EditMode run), so both budgets are 0 and the floors keep the houses those clearings took on 5 km.
+    internal static readonly Dictionary<string, int> UnitClearingBudget = new Dictionary<string, int> { ["haifa"] = 0, ["tel_aviv"] = 0 };
 
     [Test]
     public void HaifaAndTelAvivSpendTheirUnitClearingBudget()
@@ -431,7 +437,7 @@ public class TownCensusTests
             TestContext.WriteLine($"{kv.Key}: {inTown.Count} unit clearings {string.Join(" ", inTown.Select(c => c.centre))}");
             Assert.AreEqual(kv.Value, inTown.Count, kv.Key + ": unit clearings in the town");
             var own = map.UnitSpots.Where(s => s.Value.InTown && inTown.Any(c => c.centre == new Vector2((float)s.Value.X, (float)s.Value.Z))).Select(s => s.Key.Place);
-            CollectionAssert.AreEquivalent(new[] { kv.Key == "haifa" ? "Haifa" : "Tel Aviv" }, own, kv.Key + ": the clearing its floors were measured with");
+            CollectionAssert.AreEquivalent(kv.Value == 0 ? new string[0] : new[] { kv.Key == "haifa" ? "Haifa" : "Tel Aviv" }, own, kv.Key + ": the clearing its floors were measured with");
         }
     }
 

@@ -184,23 +184,28 @@ def test_land_beyond_the_frontier_is_outside(lon, lat):
     assert region_of(q, r) == bb.OUTSIDE
 
 
-@pytest.mark.parametrize("hexqr, key", [((-21, 57), bb.OUTSIDE), ((-20, 56), "beersheba"), ((-15, 30), bb.OUTSIDE)])
+@pytest.mark.parametrize("hexqr, key", [((-24, 64), bb.OUTSIDE), ((-23, 64), "beersheba"), ((-17, 34), bb.OUTSIDE)])
 def test_shore_hexes_follow_their_own_coast(hexqr, key):
     """Review M7: a shore hex takes the side of its nearest land. Off the Sinai coast at Taba the hex is outside, Umm
-    Rashrash (Eilat) is Beersheba; the shore hex west of Rafah's frontier is outside. (Rafah town's own hex is (-15, 31):
-    see test_a_listed_places_hex_takes_its_sub_district.)"""
+    Rashrash (Eilat) is Beersheba; the shore hex west of Rafah's frontier is outside. (Rafah town's own hex is (-17, 35):
+    see test_a_listed_places_hex_takes_its_sub_district.) Hexes of the 4.4 km grid (#1183)."""
     assert region_of(*hexqr) == key
 
 
 def test_a_listed_places_hex_takes_its_sub_district():
     """Rule 5 (controller ruling, owner-delegated, 2026-10-11): the hex the game puts a Gazette-listed place on takes its
-    sub-district, never outside. Pinned: Rafah town (Gaza, p. 133) on (-15, 31), whose centre is 1.7 km outside Gaza in
-    Sinai, and Metulla (Safad, p. 127) on (15, 1), whose centre is about 2.9 km outside Safad."""
+    sub-district, never outside. Pinned: Rafah town (Gaza, p. 133) on (-17, 35) and Metulla (Safad, p. 127) on (17, 1)
+    (4.4 km grid, #1183). A hex SHARED_HEXES resolves by hand keeps the rule 2-4 region, one of its places' sub-districts."""
     places = bb.listed_places(list(TOWNS.values()))
     for name, sub, lon, lat in places:
-        assert region_of(*hg.settlement_hex(lon, lat, HEXES)) == sub, name
-    assert hg.settlement_hex(34.25861, 31.27250, HEXES) == (-15, 31) and region_of(-15, 31) == "gaza"
-    assert hg.settlement_hex(35.57444, 33.27889, HEXES) == (15, 1) and region_of(15, 1) == "safad"
+        qr = hg.settlement_hex(lon, lat, HEXES)
+        shared = {p for p, _, *at in places if hg.settlement_hex(*at, HEXES) == qr}
+        if frozenset(shared) in bb.SHARED_HEXES:
+            assert region_of(*qr) in {s for p, s, *_ in places if p in shared}, name
+        else:
+            assert region_of(*qr) == sub, name
+    assert hg.settlement_hex(34.25861, 31.27250, HEXES) == (-17, 35) and region_of(-17, 35) == "gaza"
+    assert hg.settlement_hex(35.57444, 33.27889, HEXES) == (17, 1) and region_of(17, 1) == "safad"
 
 
 def test_two_sub_districts_listed_on_one_hex_fail_the_bake_even_if_one_matches_the_centre():
@@ -210,6 +215,21 @@ def test_two_sub_districts_listed_on_one_hex_fail_the_bake_even_if_one_matches_t
     ids = {"gaza": 1, "beersheba": 2}
     with pytest.raises(ValueError, match="different sub-districts"):
         bb.apply_places({(-15, 31): ids["gaza"]}, places, HEXES, ids)
+
+
+def test_a_shared_hex_resolved_by_hand_keeps_its_centre_region_if_it_is_one_of_theirs():
+    """#1183 (4.4 km bake): Kefar Sava (Jaffa) shares a hex with Kafr Saba and Jaljuliya (Tulkarm). That set is resolved
+    by hand in SHARED_HEXES: the region of rules 2-4 stands if it is one of theirs, otherwise the bake still fails."""
+    at = (34.92186, 32.15619)
+    places = [(name, sub, *at) for name, sub in [("Kefar Sava", "jaffa"), ("Kafr Saba", "tulkarm"), ("Jaljuliya", "tulkarm")]]
+    ids = {"jaffa": 1, "tulkarm": 2, bb.OUTSIDE: 3}
+    qr = hg.settlement_hex(*at, HEXES)
+    for kept in ("jaffa", "tulkarm"):
+        cells = {qr: ids[kept]}
+        bb.apply_places(cells, places, HEXES, ids)
+        assert cells[qr] == ids[kept]
+    with pytest.raises(ValueError, match="different sub-districts"):
+        bb.apply_places({qr: ids[bb.OUTSIDE]}, places, HEXES, ids)
 
 
 def test_the_layer_shows_from_the_start_until_replaced_with_its_label():

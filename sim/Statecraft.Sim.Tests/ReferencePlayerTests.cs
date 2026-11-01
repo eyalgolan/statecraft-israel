@@ -28,7 +28,7 @@ public class ReferencePlayerTests
     internal static GameState AtFive(GameState s)
     {
         var u = s.Units[0];
-        Assert.Equal(("veteran_soldier", 10, 9, 4), (u.Type, u.Q, u.R, u.Strength));
+        Assert.Equal(("veteran_soldier", 11, 11, 4), (u.Type, u.Q, u.R, u.Strength));
         s.Units[0] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, 5, u.Order, u.OrderTarget);
         return s;
     }
@@ -45,10 +45,10 @@ public class ReferencePlayerTests
         Assert.Equal(history.Select(x => x.Kind), orders.Take(history.Count).Select(x => x.Kind));
         Assert.Equal(history.Count + 2, orders.Count);
         Assert.DoesNotContain(orders, x => x is AssignWorkers);
-        // The attack policy (#747): unit 0 (strength 5 here, on 10,9) meets the Syrian unit next to it (3, on the valley's
-        // 10,10) at 166 percent, past the policy's 150.
+        // The attack policy (#747): unit 0 (strength 5 here, on 11,11) meets the Iraqi unit next to it (3, on 11,12) at
+        // 166 percent, past the policy's 150. At 4.4 km the Syrian start anchor is two hexes away (#1183).
         var attack = Assert.IsType<UnitOrder>(orders[history.Count]);
-        Assert.Equal((0, Combat.Attack, (int?)10, (int?)10), (attack.Unit, attack.Order, attack.Q, attack.R));
+        Assert.Equal((0, Combat.Attack, (int?)11, (int?)12), (attack.Unit, attack.Order, attack.Q, attack.R));
         var train = Assert.IsType<Train>(orders.Last());
         Assert.Equal(("tel_aviv", "halutz", 1), (train.City, train.Track, train.Count));   // 152 civilians without work
         var r = Simulation.Step(Mvp, s, orders);

@@ -134,7 +134,7 @@ public class RegionsRuntimeTests
         var m = Inputs().Map;
         foreach (var (yamlOld, yamlNew, tsvOld, tsvNew, why) in new[]
         {
-            ("  - [12, 0, 17]\n", "  - [012, 0, 17]\n", "\t870\t12 0 17;", "\t870\t012 0 17;", "a hex's q, 012 (octal 10 on the YAML path)"),
+            ("  - [13, 0, 17]\n", "  - [013, 0, 17]\n", "\t1118\t13 0 17;", "\t1118\t013 0 17;", "a hex's q, 013 (octal 11 on the YAML path)"),
             ("{ id: 17, key: outside,", "{ id: 021, key: outside,", "id=s:17\tkey=s:outside", "id=s:021\tkey=s:outside", "a region id, 021 (octal 17)"),
         })
         {

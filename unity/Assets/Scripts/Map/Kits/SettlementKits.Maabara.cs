@@ -88,7 +88,7 @@ namespace Statecraft.Game.Map.Kits
             // As the Bedouin camps' tents (Encampments): off the routes and the units' clearings, the unit tokens (those present
             // on or after the camp's own date, T67), the hex grid's edge marks and steep ground. Each tent, hut, the communal
             // hut and the water tower's spot stands in the camp's own hex, not only its centre (review #557): the rows reach
-            // about 1.6 km from the centre at the house scale, the communal hut about 3 km, against the hex's 4.33 km inradius.
+            // about 1.6 km from the centre at the house scale, the communal hut about 3 km, against the hex's 3.81 km inradius.
             // The whole disc of radius r, not only its centre (review #557, c9): r is at least the half-width of what stands
             // there, so nothing overhangs the hex's edge (HexGrid.EdgeDistance: the drawn grid's own distance field).
             var hex = ground.Hex(hexCentre.x, hexCentre.y);

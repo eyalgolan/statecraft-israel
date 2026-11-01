@@ -4,8 +4,8 @@ using System.Globalization;
 /// <summary>R-CITY-006, R-POP-003: explicit fixture state only; capacities are arbitrary test quantities.</summary>
 public class PlayerRegionsTests
 {
-    const string A = "tel_aviv_jaffa", B = "central_plain";
-    static Content Content() => PlayerRegionsContentTests.Load("player_regions:\n" + PlayerRegionsContentTests.TelAviv + PlayerRegionsContentTests.Central);
+    const string A = "ramla_rehovot", B = "central_plain";
+    static Content Content() => PlayerRegionsContentTests.Load("player_regions:\n" + PlayerRegionsContentTests.RamlaRehovot + PlayerRegionsContentTests.Central);
     static PlayerRegionPool Pool(string id, int housing = 7, decimal condition = .4m,
         IEnumerable<PlayerRegionFacility>? facilities = null) => new PlayerRegionPool(id, housing, condition, 3, 2,
             facilities ?? Array.Empty<PlayerRegionFacility>());
@@ -14,8 +14,8 @@ public class PlayerRegionsTests
         CivilianProfession.None, CivilianTier.None, 0, "", 0, PopulationEquipment.None);
     static IEnumerable<PopulationInventoryRow> People(bool reverse = false)
     {
-        var rows = new[] { new PopulationInventoryRow("fixture", 0, Person(A, -3, 19)),
-            new PopulationInventoryRow("fixture", 1, Person(B, -4, 21)) };
+        var rows = new[] { new PopulationInventoryRow("fixture", 0, Person(A, -4, 24)),
+            new PopulationInventoryRow("fixture", 1, Person(B, -4, 23)) };
         return reverse ? rows.Reverse() : rows;
     }
     static PopulationTarget[] Targets() => new[] { new PopulationTarget("fixture-a-job", PopulationAssignmentKind.Work, A),
@@ -35,17 +35,17 @@ public class PlayerRegionsTests
         Assert.Equal(new[] { B, A }, two.PlayerRegions.Keys);
         Assert.Equal(1, PlayerRegions.PresentPopulation(two, A)); Assert.Equal(1, PlayerRegions.PresentPopulation(two, B));
         Assert.Equal(2, two.PopulationLedger.Units.Count); two.PopulationLedger.Reconcile();
-        Assert.Throws<ArgumentException>(() => PlayerRegions.PresentPopulation(two, "jaffa"));
+        Assert.Throws<ArgumentException>(() => PlayerRegions.PresentPopulation(two, "rehovot"));
     }
 
     [Fact]
     public void IndustryWorkshopAndDedicatedHousingStaySeparateAndContributeOnce()
     {
         var facilities = new List<PlayerRegionFacility> {
-            new("fixture-industry", "tel_aviv", PlayerRegionFacilityKind.Industry, 5),
-            new("fixture-workshop", "jaffa", PlayerRegionFacilityKind.Workshop, 11),
-            new("fixture-reception", "tel_aviv", PlayerRegionFacilityKind.Reception, 13),
-            new("fixture-training", "jaffa", PlayerRegionFacilityKind.Training, 17) };
+            new("fixture-industry", "ramla", PlayerRegionFacilityKind.Industry, 5),
+            new("fixture-workshop", "rehovot", PlayerRegionFacilityKind.Workshop, 11),
+            new("fixture-reception", "ramla", PlayerRegionFacilityKind.Reception, 13),
+            new("fixture-training", "rehovot", PlayerRegionFacilityKind.Training, 17) };
         var c = Content(); var a = Pool(A, facilities: facilities);
         facilities.Clear();
         var s = State(c, new[] { a, Pool(B) });
@@ -109,7 +109,7 @@ public class PlayerRegionsTests
     public void FacilityIdentityLocationAndExplicitStartCoverageAreRequired()
     {
         var c = Content();
-        var f = new PlayerRegionFacility("fixture-facility", "tel_aviv", PlayerRegionFacilityKind.Industry, 1);
+        var f = new PlayerRegionFacility("fixture-facility", "ramla", PlayerRegionFacilityKind.Industry, 1);
         Assert.Throws<ArgumentException>(() => Pool(A, facilities: new[] { f, f }));
         // Same id in two pools, each at a valid location of its own pool: only national facility uniqueness can refuse it.
         var twin = new PlayerRegionFacility("fixture-facility", "rishon_lezion", PlayerRegionFacilityKind.Industry, 1);
@@ -119,7 +119,7 @@ public class PlayerRegionsTests
         Assert.Throws<ArgumentException>(() => State(c, new[] { Pool(A), Pool(B), Pool(B) }));
         var outside = new PlayerRegionFacility("fixture-facility", "tiberias", PlayerRegionFacilityKind.Industry, 1);
         Assert.Throws<ArgumentException>(() => State(c, new[] { Pool(A, facilities: new[] { outside }), Pool(B) }));
-        Assert.Throws<ArgumentException>(() => new PlayerRegionFacility("fixture-facility", "tel_aviv", PlayerRegionFacilityKind.Industry, -1));
+        Assert.Throws<ArgumentException>(() => new PlayerRegionFacility("fixture-facility", "ramla", PlayerRegionFacilityKind.Industry, -1));
         Assert.Throws<OverflowException>(() => new PlayerRegionPool(A, 1, 1m, int.MaxValue, 0, new[] { f }));
     }
 

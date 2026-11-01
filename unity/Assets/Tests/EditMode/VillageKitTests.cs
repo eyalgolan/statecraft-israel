@@ -90,8 +90,13 @@ public class VillageKitTests
         Assert.GreaterOrEqual(median, VillageFloor, "the median Arab village draws a dense pack of houses");
         Assert.GreaterOrEqual(hillMedian, VillageFloor, "the median hill village draws a dense pack of houses");
         // Measured 17.5% (houses only, 2026-10-15); the floor sits about 15% under it, as the towns' cover floors do.
-        Assert.GreaterOrEqual(coreMedian, 0.15f, "a hill village's core is built up with houses");
-        Assert.LessOrEqual(openFew, open / 20, "nearly every village outside the game towns keeps at least six houses");
+        // #1183: a visual change on 4.4 km hexes (for Tal, PR #1796): measured 6.9%, so the floor is 0.059 by the same rule. The Arab villages draw 2,143
+        // houses against 2,624 on 5 km (hill median 10 against 12): their footprints (FootprintRadiusM) and the grid's edge marks their houses keep off
+        // (KitGround.OnGridMark) both follow HexM; which of the two thins the cores more was not isolated.
+        Assert.GreaterOrEqual(coreMedian, 0.059f, "a hill village's core is built up with houses");
+        // #1183: a visual change on 4.4 km hexes (for Tal, PR #1796): 23 villages outside the game towns keep under six houses (measured; 11, a twentieth,
+        // on 5 km; 41 against 32 with the villages inside towns), from the same 18% fewer village houses as the core above.
+        Assert.LessOrEqual(openFew, 23, "nearly every village outside the game towns keeps at least six houses");
         CollectionAssert.IsEmpty(bad.Take(20), $"{bad.Count} villages with an oversized house");
     }
 

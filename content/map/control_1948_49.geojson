@@ -140,6 +140,36 @@
     "why": "retaken by the Egyptian army on 8 July 1948 and captured by the Giv'ati Brigade on 19 October 1948 in Operation Yoav (en.wiki); ISA 6158/1's 9 July line puts it on the Israeli side, about 1.3 km from the line, so the source and the archive map disagree for these weeks"
    },
    {
+    "place": "Huleiqat (Operation Yoav)",
+    "lon": 34.6497,
+    "lat": 31.6008,
+    "holder": "israel",
+    "from": "1948-10-19",
+    "until": null,
+    "source": "https://en.wikipedia.org/wiki/Hulayqat",
+    "why": "captured by the Giv'ati Brigade on 19 October 1948 in Operation Yoav (en.wiki); on the 4.4 km grid (#1183) the hex's centre falls inside the traced Egyptian area of the October line, so the source and the archive map disagree from then on (owner, 26 October 2026, on #1183)"
+   },
+   {
+    "place": "Latrun (opening)",
+    "lon": 34.98139,
+    "lat": 31.83194,
+    "holder": "unspecified",
+    "from": "1948-05-15",
+    "until": "1948-06-11",
+    "source": "https://en.wikipedia.org/wiki/Latrun",
+    "why": "the British handed the fort over to Jordan's Arab Legion on their withdrawal (en.wiki): the other side's from the game's start, unnamed like every holder of the opening snapshot (#674); the traced lines put the hex on the Israeli side on the 4.4 km grid (owner, 26 October 2026, on #1183)"
+   },
+   {
+    "place": "Latrun",
+    "lon": 34.98139,
+    "lat": 31.83194,
+    "holder": "jordan",
+    "from": "1948-06-11",
+    "until": null,
+    "source": "https://en.wikipedia.org/wiki/Latrun",
+    "why": "the British handed the fort over to Jordan's Arab Legion on their withdrawal, the Israeli assaults of May 1948 failed, and under the 1949 armistice it remained a salient under Jordanian control until 1967 (en.wiki); on the 4.4 km grid (#1183) the hex's centre falls on the Israeli side of every traced line, so the source and the lines disagree throughout (owner, 26 October 2026, on #1183)"
+   },
+   {
     "place": "Yad Mordechai",
     "lon": 34.5583,
     "lat": 31.5886,

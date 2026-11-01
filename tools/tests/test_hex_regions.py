@@ -46,15 +46,15 @@ def test_the_whole_country_is_deterministic(country):
 
 def test_default_country_balances_villages_and_regional_landscape(country):
     hexes = {(h["q"], h["r"]): h for h in country["hexes"]}
-    assert sum(h["prototype"] == "arab_village" for h in hexes.values()) == 61
-    assert sum(bool(h["note"]) for h in hexes.values()) == 90
+    assert sum(h["prototype"] == "arab_village" for h in hexes.values()) == 67   # 4.4 km hexes since #1183
+    assert sum(bool(h["note"]) for h in hexes.values()) == 97   # Hanita kept out of the fringe (owner, 26 October 2026, #1183)
     variants = {h["prototype"] for h in hexes.values() if re.fullmatch(
         r"(wheat_fields|citrus_orchard|olive_terraces|mixed_farm|forest)_(north|centre|south)_[ab]", h["prototype"])}
-    assert len(variants) == 16
+    assert len(variants) == 22   # 16 on the 5 km grid
     # At 2,000, hills and the Carmel ridge return while these village hexes remain.
-    assert hexes[(11, 5)]["prototype"] == "upper_galilee_hills"
-    assert hexes[(4, 11)]["prototype"] == "carmel_ridge"
-    assert hexes[(9, 7)]["prototype"] == hexes[(4, 10)]["prototype"] == "arab_village"
+    assert hexes[(12, 6)]["prototype"] == "upper_galilee_hills"
+    assert hexes[(4, 13)]["prototype"] == "carmel_ridge"
+    assert hexes[(10, 8)]["prototype"] == hexes[(4, 12)]["prototype"] == "arab_village"   # Sakhnin, Ijzim
     core = {s["id"] for s in mb.settlements(str(ROOT / "content/map/settlements_1948.yaml"))}
     assert core <= {h["note"] for h in hexes.values()}
 
@@ -108,8 +108,10 @@ def test_environment_carries_no_tiles(country):
 
 def test_the_play_area_is_the_mandate_clipped_to_land(country):
     """defaults.clip mandate: every playing land hex is inside a Mandate sub-district; the land outside is a one-hex
-    environment fringe round it, and the rest of the game map (Lebanon, the Golan, Transjordan, Sinai) is dropped."""
-    inside = mb.mandate_hexes()
+    environment fringe round it, and the rest of the game map (Lebanon, the Golan, Transjordan, Sinai) is dropped. A core
+    settlement's hex plays even outside the sub-districts (Hanita on the 4.4 km grid; owner, 26 October 2026, #1183)."""
+    core = {s["id"] for s in mb.settlements(str(ROOT / "content/map/settlements_1948.yaml"))}
+    inside = mb.mandate_hexes() | {(h["q"], h["r"]) for h in country["hexes"] if h["note"] in core}
     land = [h for h in country["hexes"] if h["terrain"] != "water"]
     play = {(h["q"], h["r"]) for h in land if not h["env"]}
     assert play and play <= inside
@@ -294,3 +296,19 @@ def test_the_built_in_mode_writes_no_regions(tmp_path):
     mb.main(["--id", "central_israel", "--out", str(out)])
     board = json.loads(out.read_text())
     assert "regions" not in board and all("region" not in h for h in board["hexes"])
+
+
+def test_every_committed_board_draws_the_maps_land_and_sea():
+    """A board's hexes are the game's own q/r and HexRealMap seats a board on the real map, so each board hex is land
+    exactly where content/map/hexes.json has land: a hand-made board that was only re-centred (tel_aviv, #1796) must not
+    put a land tile on the map's sea."""
+    land = {(h["q"], h["r"]): h["land"] for h in json.loads((ROOT / "content/map/hexes.json").read_text(encoding="utf-8"))["hexes"]}
+    boards = sorted(p for p in (ROOT / "unity/Assets/Resources/HexTiles/Boards").glob("*.json") if not p.name.endswith(".overrides.json"))
+    assert boards
+    wrong = []
+    for path in boards:
+        for h in json.loads(path.read_text(encoding="utf-8"))["hexes"]:
+            k = (h["q"], h["r"])
+            if k in land and (h["terrain"] != "water") != land[k]:
+                wrong.append(f"{path.stem} {k}: {h['terrain']} {h['prototype'] or '-'}, map {'land' if land[k] else 'sea'}")
+    assert not wrong, wrong

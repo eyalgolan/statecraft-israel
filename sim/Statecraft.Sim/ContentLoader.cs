@@ -1771,9 +1771,14 @@ namespace Statecraft.Sim
             }
         }
 
+        /// <summary>Targets whose capture hex is a neighbour of their settlement's hex, not that hex (owner on #1796, 26 October
+        /// 2026, "Contested + move target"): at 4.4 km (#1183) Ramla shares (-4, 24) with Rehovot, so a unit on Rehovot's hex
+        /// would capture Ramla. Its target is the neighbour nearest Ramla's point, cited in settlement_targets.yaml.</summary>
+        static readonly HashSet<string> TargetOnANeighbour = new HashSet<string>(StringComparer.Ordinal) { "ramla" };
+
         /// <summary>R-CTRL-001 (Q-TGT-1 (a)): every target is an arab_town row of settlements_1948.yaml on a land hex that is
-        /// its own hex in settlement_hexes.yaml (capture reads the target's hex, movement the settlement's), with a sourced
-        /// operation and a review status.</summary>
+        /// its own hex in settlement_hexes.yaml (capture reads the target's hex, movement the settlement's), or for a
+        /// <see cref="TargetOnANeighbour"/> row a neighbour of it, with a sourced operation and a review status.</summary>
         static void ValidateSettlementTargets(Content c, IEnumerable<string> arabTownIds)
         {
             Unique(SettlementTargetsFileName, "targets", c.SettlementTargets.Select(x => x.Id));
@@ -1786,7 +1791,12 @@ namespace Statecraft.Sim
                 var hex = c.HexAt(x.Q, x.R);
                 if (hex == null || !hex.Land)
                     throw new ContentException(SettlementTargetsFileName, at + ".q", FormattableString.Invariant($"hex q={x.Q} r={x.R} is not a land hex in {HexesFile}"));
-                if (c.SettlementHexes.Any(h => h.Id == x.Id && (h.Q != x.Q || h.R != x.R)))
+                if (TargetOnANeighbour.Contains(x.Id))
+                {
+                    if (!c.SettlementHexes.Any(h => h.Id == x.Id && Movement.Neighbours.Any(d => h.Q + d.Q == x.Q && h.R + d.R == x.R)))
+                        throw new ContentException(SettlementTargetsFileName, at + ".q", FormattableString.Invariant($"hex q={x.Q} r={x.R} is not next to {x.Id}'s hex in {SettlementHexesFileName}"));
+                }
+                else if (c.SettlementHexes.Any(h => h.Id == x.Id && (h.Q != x.Q || h.R != x.R)))
                     throw new ContentException(SettlementTargetsFileName, at + ".q", FormattableString.Invariant($"hex q={x.Q} r={x.R} is not {x.Id}'s hex in {SettlementHexesFileName}"));
                 if (string.IsNullOrWhiteSpace(x.Operation)) throw new ContentException(SettlementTargetsFileName, at + ".operation", "required");
                 if (x.Sources.Count == 0) throw new ContentException(SettlementTargetsFileName, at + ".sources", "needs at least one source");

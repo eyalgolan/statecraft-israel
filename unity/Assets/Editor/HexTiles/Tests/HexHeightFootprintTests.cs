@@ -31,7 +31,8 @@ public class HexHeightFootprintTests
     {
         Assert.That(HexModels.Prefab(MissingModel), Is.Null);
         var ctx = new HexTileContext(2, -1, new FlatSurface());
-        Assert.That(ctx.PlaceByHeight(MissingModel, ctx.Centre + new Vector3(3100f, 0f, 0f), yaw, 1000f,
+        // #1183: 4.4 km hexes, values scale with HexM (x 0.88: the 5 km fixture's 3,100 m and 1,000 m).
+        Assert.That(ctx.PlaceByHeight(MissingModel, ctx.Centre + new Vector3(2728f, 0f, 0f), yaw, 880f,
             kind, footprintShare: footprintShare), Is.True);
         Assert.That(ctx.Placements.Count, Is.EqualTo(1));
         AssertVerticesInside(ctx);
@@ -75,8 +76,9 @@ public class HexHeightFootprintTests
     public void BroadleafCanopyStillFitsCloseToTheInset()
     {
         var ctx = new HexTileContext(0, 0, new FlatSurface());
-        // The rendered canopy reaches x = 3,968.4, just inside the inset at x = 3,980.127.
-        Assert.That(ctx.PlaceByHeight(MissingModel, new Vector3(3450f, 0f, 0f), 0f, 1000f,
+        // #1183: 4.4 km hexes, values scale with HexM (x 0.88: the 5 km fixture's 3,450 m and 1,000 m). The rendered canopy
+        // reaches x = 3,492.2, just inside the inset at x = 3,502.5.
+        Assert.That(ctx.PlaceByHeight(MissingModel, new Vector3(3036f, 0f, 0f), 0f, 880f,
             StandIn.Tree, footprintShare: 0.45f), Is.True);
         Assert.That(ctx.Placements.Count, Is.EqualTo(1));
         AssertVerticesInside(ctx);
