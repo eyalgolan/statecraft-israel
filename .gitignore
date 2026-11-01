@@ -59,6 +59,8 @@ unity-*.log
 captures/
 unity/Assets/StreamingAssets/content/
 unity/Assets/StreamingAssets/content.meta
+unity/Assets/StreamingAssets/translations/
+unity/Assets/StreamingAssets/translations.meta
 unity/Assets/StreamingAssets/golden/
 unity/Assets/StreamingAssets/golden.meta
 unity/Assets/StreamingAssets/collection/
