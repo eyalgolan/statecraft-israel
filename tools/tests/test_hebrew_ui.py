@@ -171,7 +171,7 @@ def test_the_hebrew_plural_of_a_turn_is_torot_never_torim():
     תורות, and no Hebrew string may say תורים."""
     he = strings('strings.he.yaml')
     assert [key for key, value in he.items() if 'תורים' in value] == []
-    for key in ('how_to_play.training', 'capture.about.occupy', 'unit.go_to_given', 'city.turns',
+    for key in ('advisor.page.training.text', 'capture.about.occupy', 'unit.go_to_given', 'city.turns',
                 'defence.turn_quarter', 'defence.turn_month', 'defence.turn_week',
                 'advisor.opening.move.text', 'advisor.opening.move.cue.2', 'advisor.ben_gurion.defeat_economy.text'):
         assert 'תורות' in he[key], key

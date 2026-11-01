@@ -137,9 +137,9 @@ namespace Statecraft.Game.Map.Units
         List<Bounds[]> keepClear = new List<Bounds[]>();
         GameObject? ring;
         bool still;
-        /// <summary>The camera pose <see cref="FaceCamera"/> last turned the badges and flags to; a call from the same pose
+        /// <summary>The camera pose and projection (vertical scale, orthographic) <see cref="FaceCamera"/> last turned the badges and flags to; a call from the same pose and projection
         /// changes nothing and returns at once (GameRoot calls it every frame). Cleared when the tokens are rebuilt.</summary>
-        (Vector3 eye, Quaternion rotation)? facedFor;
+        (Vector3 eye, Quaternion rotation, float m11, bool orthographic)? facedFor;
         /// <summary>Each token's move and attack (#1866, #1867), in the order of <see cref="badges"/>; null where the layer
         /// does not animate (an edit-mode build, such as the promo captures, whose tokens stand still at their places).</summary>
         readonly List<UnitTokenMotion?> motions = new List<UnitTokenMotion?>();
@@ -278,9 +278,10 @@ namespace Statecraft.Game.Map.Units
                 facedFor = null;
             }
             var eye = cam.transform.position; var rotation = cam.transform.rotation;
-            if (facedFor is { } last && last.eye == eye && last.rotation == rotation) return;   // nothing moved since the last turn
-            facedFor = (eye, rotation);
-            Vector3 forward = cam.transform.forward, up = cam.transform.up; float m11 = cam.projectionMatrix[1, 1];
+            float m11 = cam.projectionMatrix[1, 1]; bool orthographic = cam.orthographic;
+            if (facedFor is { } last && last.eye == eye && last.rotation == rotation && last.m11 == m11 && last.orthographic == orthographic) return;   // nothing moved since the last turn
+            facedFor = (eye, rotation, m11, orthographic);
+            Vector3 forward = cam.transform.forward, up = cam.transform.up;
             var away = cam.transform.forward; away.y = 0f;
             away = away.sqrMagnitude > 1e-6f ? away.normalized : Vector3.forward;
             var right = cam.transform.right; right.y = 0f;
@@ -326,7 +327,7 @@ namespace Statecraft.Game.Map.Units
                 // Owner, 31 October 2026 ("Shrink up close"): a near camera draws the plate no taller than a 30 km view does.
                 // It shrinks about its lower edge (the plate faces the camera, so its edges run along the camera's up), which
                 // stays where the full plate's is, clear of the flag and the figures; that move keeps the plate's depth.
-                float size = UnitBadge.SizeFor(Vector3.Dot(at - eye, forward), m11, cam.orthographic);
+                float size = UnitBadge.SizeFor(Vector3.Dot(at - eye, forward), m11, orthographic);
                 at -= up * (0.5f * (UnitBadge.SizeM - size));
                 b.SetPositionAndRotation(at, rotation);
                 b.localScale = Vector3.one * size;

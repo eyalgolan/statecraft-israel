@@ -10,7 +10,7 @@ Each language has a folder named by its code (`ro`, `fr`, `pt-BR`), with up to t
 | File | Holds | Keyed by |
 |---|---|---|
 | `events.yaml` | each event's `title`, `text` and `options` (by option id), and `review` | the event id in `content/events/` |
-| `ui.yaml` | the UI strings, except the advisors (`advisor.*`) and How to play (`how_to_play.*`), which stay English or Hebrew only for now (owner, 24 October 2026, #1604) | the key in `unity/Assets/UI/strings.en.yaml` |
+| `ui.yaml` | the UI strings, except the advisors (`advisor.*`) and their encyclopedia (`encyclopedia.*`, which replaced How to play), which stay English or Hebrew only for now (owner, 24 October 2026, #1604) | the key in `unity/Assets/UI/strings.en.yaml` |
 | `content.yaml` | every content field that has a Hebrew form (`name_he`, `title_he_f`, `sector_he` ...), as `text` and `review` | `<file under content/>#<record path>.<field>`, for example `people.yaml#people.ben_gurion.name` |
 
 The rules are the Hebrew ones ([docs/WRITING_EVENTS.md](../docs/WRITING_EVENTS.md)): an event is all or none, placeholders
