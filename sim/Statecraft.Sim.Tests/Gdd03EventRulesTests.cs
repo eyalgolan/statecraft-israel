@@ -372,7 +372,7 @@ public class Gdd03EventRulesTests
         "iraqi_exodus:461dbb8a0685b7dceb6242d8e819635a27bb10033463e66d1a2e3ac68c9b8521", // re-pinned for #1065 (Beri's native Hebrew read)
         "israel_bonds:9bb4e8f38b8c9dc41b339645457efe1ce8d74580c53556faf4c81df50f67a992", // re-pinned for #1065 (Beri's native Hebrew read)
         "jerusalem_ceasefire:b850682a7736dcf2870550322f32a2d5c30963a05529dc9162dd68c9234648d6", // re-pinned for #1065 (Beri's native Hebrew read)
-        "jerusalem_demilitarisation_guard:93cec80c25ad328a0382c3178de10e133ea9a506ec78b3e038b7e25b7f6e2d62", // re-pinned for #2020 (owner-approved Hebrew wording, owner re-review bc139d5eb)
+        "jerusalem_demilitarisation_guard:f1614ec236826762f1ebdab53151eb7df379b25d6a060c69fb4cca794e819f28", // re-pinned for #1065 (owner's native read; flag removed in 05b5777d9)
         "jerusalem_military_government:526dbc88eabe4691e3ee1f3ed2c5fdeb640f11ae0a7a632c63066175b9c18176", // re-pinned for #1065 (Beri's native Hebrew read)
         "latrun_proposal:169933e28b8fc3085c5e74176a731d83f1e1955ed0ffac9a706029f738353bf5", // re-pinned for #1065 (Beri's native Hebrew read)
         "law_of_return:d04bb849bbb6fa089afc6e1123f8335aa1b03f49bc025f9d1c6746c48d27b398", // re-pinned for #1065 (Beri's native Hebrew read)
@@ -381,7 +381,7 @@ public class Gdd03EventRulesTests
         "operation_hiram:c8db23f9a331b0cf517e4762fe8f71dc286548ada77115b9500a93bce6ba740e", // re-pinned for #1065 (Beri's native Hebrew read)
         "operation_horev:6e018d54d46b46676d5ab56bc2fcedbeffab23a00334f75b415aec1713507f51", // re-pinned for #1065 (Beri's native Hebrew read)
         "operation_yoav:3d2e9a9a4416a4277e4c17da1e442895bda562c238e6f459c45b6ab89a9133fe", // re-pinned for #1065 (Beri's native Hebrew read)
-        "rafah_force_pressure:658b99340f0cf7dbf042e64d131509b87cec48f4374b16a1337fd0f831dbd28d", // re-pinned for #2020 (owner-approved Hebrew wording, owner re-review bc139d5eb)
+        "rafah_force_pressure:ffbb88f4e2169065fa07b111e6e67cea519c58e3cd684c0a2c092e830ff7d590", // re-pinned for #1065 (owner's native read; flag removed in 05b5777d9)
         "railway_complete:2108338a93d663ec9cb06bcb474c1f1211cfff480f9ef0acaec9c758a4854a7c", // re-pinned for #1676 (person's fact-check of #1410, status draft -> fact-checked)
         "reparations_claim:5412e71f4f5a90a92bd86622eb1a169feee45f0ba2fe82c5ab40bd8f3d43cafd", // re-pinned for #1065 (Beri's native Hebrew read)
         "reparations_vote:a79521d61ec59aa72a581b6598ecfade18e8d1e52dc25cef083078b0665a13b3",
