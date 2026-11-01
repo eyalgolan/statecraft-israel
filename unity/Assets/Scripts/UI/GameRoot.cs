@@ -71,6 +71,7 @@ namespace Statecraft.Game.UI
         /// <summary>Set by SwitchLanguage for its Begin (#2054): whether the start screen it rebuilds offered Continue.</summary>
         bool keptResumed = true;
         AdvisorPresenter? advisor;
+        EncyclopediaPresenter? encyclopedia;
         /// <summary>Tests supply an in-memory approval copy for Hebrew layout; the shipped review fields are unchanged.</summary>
         internal AdvisorCatalog? AdvisorCatalogForTests { get; set; }
         /// <summary>Tests: the advisors' popup of the last Begin, and their session (kept across a language switch).</summary>
@@ -301,7 +302,6 @@ namespace Statecraft.Game.UI
             var budget = Own(new BudgetPresenter(root, bridge, text));
             var why = Own(new WhyPresenter(root, bridge, text));
             Own(new TimelinePresenter(root, bridge, text));
-            Own(new HowToPlayPresenter(root, text, bridge.Content.Ruleset));
             Own(new ObjectivesPresenter(root, bridge, text));
             // The advisors (spec 4.2): their session survives a rebuild over the same game (a language switch keeps the
             // queue, the history and the opening chain's place) and is new for any other Begin. They show by themselves only
@@ -565,7 +565,7 @@ namespace Statecraft.Game.UI
                 start.Show();
             }
             // It shows by itself only where the start screen does (never in the automated runs, nor under ?firstcard, which
-            // times the first card) and a settings file remembers that it has; How to play opens it again anywhere. Steps 2
+            // times the first card) and a settings file remembers that it has; the encyclopedia opens it again anywhere. Steps 2
             // and 3 show its city as a click there would, without selecting a unit on the city's hex; step 4 shows a unit
             // that can move, its ring and its card, as a click on it would (OnHexClicked), and centres the camera on its hex.
             Action showCity = () =>
@@ -619,6 +619,7 @@ namespace Statecraft.Game.UI
                 new AdvisorHooks
                 {
                     Card = card, OpenScreen = s => nav?.Open(s), CloseScreens = () => nav?.Close(), ShowCity = showCity, ShowUnit = showUnit, KeepSelection = keepSelection,
+                    OpenPage = p => encyclopedia?.Open(p),
                     MapTarget = () =>
                     {
                         (int q, int r)? selected = info.Selected;
@@ -639,6 +640,9 @@ namespace Statecraft.Game.UI
                     },
                 }));
             budget.UnsubmittedChanged += advisor.BudgetUnsubmitted;
+            // The advisors' encyclopedia (spec 10), which replaces How to play: after the advisor, whose Show me and opening
+            // chain its buttons call; an advisor's Tell me more opens its pages (OpenPage above).
+            encyclopedia = Own(new EncyclopediaPresenter(root, text, AdvisorSession.Catalog, nav!, advisor, bridge.Content.Ruleset));
             if (video != null)
                 advisor.Media = new AdvisorMedia(text, new ClipPicture(video), new StillPicture(), DeclarationRecording.WebFetch, new DeclarationRecording.SourceOutput());
             // A new game, from the start screen or the top bar's New game, plays the opening first when there is one.
@@ -865,7 +869,7 @@ namespace Statecraft.Game.UI
             for (int i = owned.Count - 1; i >= 0; i--) owned[i].Dispose();
             owned.Clear();
             if (hoveredCity != null) { hoveredCity = null; HandCursor(false); }   // the next Begin's pills start unlit
-            minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; opening = null; card = null; outcomes = null; report = null; end = null; advisor = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
+            minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; opening = null; card = null; outcomes = null; report = null; end = null; advisor = null; encyclopedia = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
             // A ?profile run cut short (a stopped coroutine never reaches its restore line) must not leave the terrain at the
             // profile's pixel error (Task 24 review M1). Nothing else changes it, so restoring is always right.
             if (map != null && map.Terrain != null) map.Terrain.heightmapPixelError = MapBuilder.TerrainPixelError;

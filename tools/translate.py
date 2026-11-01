@@ -46,8 +46,9 @@ TRANSLATIONS = ROOT / "translations"
 HE_KEY = re.compile(r"(.+)_he(_f)?$")       # name_he, title_he_f, sector_he ...: a content field's Hebrew form
 LANG = re.compile(r"[a-z]{2,3}(-[A-Za-z0-9]{2,8})*")
 RTL = {"ar", "ckb", "dv", "fa", "he", "ps", "ur", "yi"}
-# Kept in English and Hebrew only, for now: the advisors and How to play (owner, 24 October 2026, on #1604).
-HE_EN_ONLY = ("ui:advisor.", "ui:how_to_play.")
+# Kept in English and Hebrew only, for now: the advisors and How to play (owner, 24 October 2026, on #1604), which the
+# advisors' encyclopedia replaces (#1519).
+HE_EN_ONLY = ("ui:advisor.", "ui:encyclopedia.")
 TOKEN = re.compile(r"\{[^{}]+\}")
 OFFICE = re.compile(r"\{[a-z0-9_]+\}")     # an event's {office_id} placeholder (Offices.Placeholder in the sim)
 HEBREW = re.compile("[\u05d0-\u05ea]")

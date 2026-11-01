@@ -67,6 +67,34 @@ public class AdvisorPopupTests
 
     static bool Displayed(Button b) => b.style.display.value != DisplayStyle.None;
 
+    /// <summary>Spec 7.1, plan Task 13: a teaching message with an encyclopedia action shows Tell me more, which opens that
+    /// page through the OpenPage hook; a message without one, or with no hook, has no Tell me more.</summary>
+    [Test]
+    public void TellMeMoreOpensTheMessagesPage()
+    {
+        var opened = new List<string>();
+        var catalog = Fixture.Replace("level: new, actions: [{ open_screen: budget }]", "level: new, actions: [{ open_screen: budget }, { encyclopedia: p }]") +
+            "pages:\n  - { id: p, advisor: meyerson }\n";
+        using (var rig = new Rig(catalog: catalog, hooks: new AdvisorHooks { OpenPage = opened.Add }))
+        {
+            rig.Advisor.NewGame();
+            Assert.AreEqual("t.teach", rig.Advisor.Shown?.Id);
+            Assert.IsTrue(Displayed(rig.Ui.Q<Button>("advisor-more")), "the page to open");
+            rig.Ui.Press("advisor-more");
+            CollectionAssert.AreEqual(new[] { "p" }, opened);
+        }
+        using (var rig = new Rig(catalog: catalog))
+        {
+            rig.Advisor.NewGame();
+            Assert.IsFalse(Displayed(rig.Ui.Q<Button>("advisor-more")), "no hook, no Tell me more");
+        }
+        using (var plain = new Rig())
+        {
+            plain.Advisor.NewGame();
+            Assert.IsFalse(Displayed(plain.Ui.Q<Button>("advisor-more")), "no encyclopedia action, no Tell me more");
+        }
+    }
+
     /// <summary>Spec 3.2: a real quote shows only from the verified list, styled as a quote with its source under it; the
     /// advisor's own line stays plain game dialogue.</summary>
     [Test]
@@ -104,7 +132,7 @@ public class AdvisorPopupTests
         Assert.AreEqual(text["advisor.show_me"], rig.Ui.Q<Button>("advisor-show-me").text);
         Assert.IsTrue(Displayed(rig.Ui.Q<Button>("advisor-show-me")), "it has an action");
         Assert.IsFalse(Displayed(rig.Ui.Q<Button>("advisor-not-now")), "teaching: Tell me more, not Not now");
-        Assert.IsFalse(Displayed(rig.Ui.Q<Button>("advisor-more")), "no page to open yet (S3)");
+        Assert.IsFalse(Displayed(rig.Ui.Q<Button>("advisor-more")), "no encyclopedia action, no page to open");
         Assert.IsFalse(rig.Ui.Q<VisualElement>("advisor-popup").ClassListContains(AdvisorPresenter.CriticalClass));
     }
 
