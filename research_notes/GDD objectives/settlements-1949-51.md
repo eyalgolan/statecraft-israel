@@ -14,6 +14,8 @@ date and group, location and hex, fit with Task 5.0's criteria, and factual flag
 - Every page was fetched on 14 October 2026 with `curl` and the User-Agent
   `statecraft-israel-research/1.0 (+https://github.com/eyalgolan/statecraft-israel)`. No request carried a personal
   identifier. A web search tool was used only to find pages; each page cited was then fetched and read directly.
+  One later addition was read differently: the Beit Guvrin conservation survey (section 28, read 1 November 2026) came
+  from a Wayback copy and was read from its rendered page images; its entry says so.
 - **The candidate pool** is Haim Gvati's founding-date list (below, "Gvati"): 218 of its rows carry a 1949, 1950 or
   1951 date. Each was matched by name to the Central Bureau of Statistics localities file, and its hex and flags were
   computed (method below). The 30 rows chosen here spread over the regions and types, and were preferred where a
@@ -727,11 +729,21 @@ sources read, not a gazetteer check.
     arrival of one group; that remains a guess and is not recorded as a finding.
   - The kibbutz site also says the group was sent "about eight months after the capture of the area" (our translation; the capture is
     dated there 19 Tishrei 5709; our reading, Hebcal converts that to 22 October 1948, while Hebrew Wikipedia's article gives 27 October 1948) as part of a Kibbutz HaMeuhad operation to settle 11 places.
+- **Conservation survey (read 1 November 2026). [S]** "סקר תיעוד מקדים לשימור מבנים ואתרים לקיבוץ בית גוברין", May
+  2016, an appendix to plan 632-0200980 (https://apps.land.gov.il/IturTabotData/nispachim/jerus/1052288/12.pdf; the
+  live link returned an error page, so the Wayback copy of 2025-04-13 was read, printed pp. 9, 10 and 89, from the
+  rendered page images). Page 9: "הקיבוץ עלה על הקרקע בערב חג השבועות, ה' בסיוון תש"ט, 2 ביוני 1949", and the ceremony
+  was on Thursday 5 Sivan 5709 "בשעה 10.00 בבוקר" (2 June 1949). It names the founding group as Yetzivim and Bnei
+  Horin, with about 10 members there "זמן-מה לפני העלייה על הקרקע". Page 10: "כמה שבועות לאחר העלייה על הקרקע הצטרפה
+  לקיבוץ יציבים הכשרת "שלהבת"". Page 9 also quotes Al HaMishmar's reporter Shabtai Kaplan on the ceremony, with no
+  issue date or page. Probably not independent of the kibbutz site: its wording follows the site's (the hour, the invited
+  guests, Shalhevet joining weeks later) and its bibliography (p. 89) lists the kibbutz website and talks with
+  veteran members, with no citation for the date paragraph. So it adds no second source for 2 June, and it does not
+  explain the Palmach database's 23 May; the tag above stays [C]. It dates the capture to "י"ט בתשרי תש"ט (23
+  באוקטובר 1948)", a third Gregorian day beside the 22 and 27 October above. Agent read 2026-11-01; a person's check
+  pending.
 - **Not read.** No contemporary newspaper: nli.org.il returns HTTP 403 from here and no Wayback copy of a JPress page
-  was found. Hebrew Wikipedia's kibbutz article gives no day and cites no newspaper. The Israel Land Authority's 2016
-  conservation survey of Beit Guvrin
-  (https://apps.land.gov.il/IturTabotData/nispachim/jerus/1052288/12.pdf) is said by a search summary to describe the
-  ceremony; the PDF was fetched through Wayback but not read (no PDF text tool here), so it is not counted. Yad
+  was found. Hebrew Wikipedia's kibbutz article gives no day and cites no newspaper. Yad
   Ben-Zvi: no page for the kibbutz found. Gap: the Davar, Al HaMishmar or HaTzofe report of 2 or 3 June 1949, and
   whoever wrote the Palmach database's 23 May date.
 - **Founders. [V]** Three Palmach hachsharot, "Yetzivim", "Shalhevet" and "Bnei Horin" (Palmach database, both
