@@ -198,6 +198,7 @@ Open: when is a settlement captured, what constitutes enemy control, and can an 
 The player responds to events by selecting an outcome that produces a bonus, a penalty, or both. Effects can target money, arms, food, Social cohesion and International Support. Effects on units, cities or project availability are a proposal. Completed MVP objectives also trigger the historical event cards described at the beginning of this document.
 
 Each event needs a trigger, readable context, available options and their consequences. Open: event frequency, mandatory versus optional events, delayed effects, and how much the player can see before choosing.
+
 **Then decided (owner, 17 Oct 2026, "Take all recommendations"; [#784](https://github.com/eyalgolan/statecraft-israel/issues/784#issuecomment-6232838937)):** events use windows and hard anchors, with at most three soft events per turn; an unanswered event is delegated; the MVP has no delayed effects; and each card shows every effect of every option (R-EVT-001 to R-EVT-005, `docs/rules/mvp.md`).
 
 Historical dates, unit identities, named places and claims in event text require sources. Game balance values and hypothetical alternatives must be identified as design assumptions.
@@ -227,6 +228,7 @@ The MVP years, monthly turns and three objectives are fixed above. These remain 
 - when the war-survival objective is complete, which immigrants must have housing and employment, and which new yishuvim are required.
 
 Each objective needs a specific historical event and reference date for the completion card. For ongoing processes such as immigrant absorption, choose a defined milestone with a sourced date. Bonus amounts, the timing formula, defeat conditions and whether all objectives are required to finish the MVP remain open.
+
 **Then decided (owner, 14 Oct 2026, D-B2 and D-B6, [#456](https://github.com/eyalgolan/statecraft-israel/pull/456)):** each completed objective is worth 100 points; finishing one early adds 5 points per calendar month, capped at 60. These are tunable design values. **Then decided (owner, 15 Oct 2026, D-B5, [#375](https://github.com/eyalgolan/statecraft-israel/issues/375#issuecomment-6180592337); Q-DEF-1 and Q-DEF-2, [#784](https://github.com/eyalgolan/statecraft-israel/issues/784#issuecomment-6232838937) and [#784](https://github.com/eyalgolan/statecraft-israel/issues/784#issuecomment-6245632381)):** finishing the MVP does not require every objective; the game is lost when Money and Food are both exhausted at three consecutive turn ends or on a war loss, and coalition collapse is off. Money is exhausted at the debt ceiling and Food at zero. A war loss occurs when an enemy unit holds a player's city hex at turn end, truces included (Q-WAR-5, [#375](https://github.com/eyalgolan/statecraft-israel/issues/375#issuecomment-6180592337)).
 
 Minister selection is a planned TBD mechanic with player-chosen ministers. The role of coalition, Attention, diplomacy and national policy systems in this core loop remains open.
