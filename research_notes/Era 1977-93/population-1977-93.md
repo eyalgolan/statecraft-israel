@@ -554,7 +554,7 @@ pages and PDF pages are in the Sources table. Values read from the page images.
 | 1991 | not in this edition | 42,640 | 42,650 | not in this edition | 83,350 | 83,700 |
 | 1992 | not in this edition | not in this edition | 70,270 | not in this edition | not in this edition | 43,420 |
 
-- The 1990 row of the 1991 edition carries the footnote mark "5" in the completed block and "5*" in the begun
+- The 1990 row of the 1991 edition carries the footnote mark "5*" in both the completed and the begun
   block (1988 and 1989 carry "§" in both), and the footnote reads "See note 7 to Table 16.1 and
   details in Table 16.4"; note 7 itself was not opened. Our reading, not a source statement: it flags the 1990 figure as
   provisional. The 1992 edition marks 1989 and 1990 with "§" and 1991 with "*"; the 1993 edition marks 1990 and 1991
