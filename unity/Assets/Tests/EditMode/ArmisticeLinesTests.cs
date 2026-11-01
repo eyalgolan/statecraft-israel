@@ -8,6 +8,7 @@ using NUnit.Framework;
 using Statecraft.Game;
 using Statecraft.Game.Boot;
 using Statecraft.Game.Map;
+using Statecraft.Game.UI;
 using Statecraft.Sim;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -106,11 +107,48 @@ public class ArmisticeLinesTests
         float covered = dashes.Sum(d => (d[d.Count - 1] - d[0]).magnitude);
         Assert.AreEqual(10000f * ArmisticeLines.DashOn, covered, ArmisticeLines.DashM * ArmisticeLines.DashOn);
         Assert.IsTrue(dashes.All(d => (d[d.Count - 1] - d[0]).magnitude <= ArmisticeLines.DashM * ArmisticeLines.DashOn + 1f));
-        // A dash runs on round a bend: on an L with an 800 m first leg the first dash keeps the corner and its full length.
-        var bent = ArmisticeLines.Dashes(new List<Vector2> { Vector2.zero, new Vector2(800f, 0f), new Vector2(800f, 2000f) });
-        CollectionAssert.Contains(bent[0], new Vector2(800f, 0f), "the dash over the corner keeps the corner");
+        // A dash runs on round a bend: on an L whose first leg is 100 m shorter than a dash, the first dash keeps the corner
+        // and its full length.
+        float leg = ArmisticeLines.DashM * ArmisticeLines.DashOn - 100f;
+        var bent = ArmisticeLines.Dashes(new List<Vector2> { Vector2.zero, new Vector2(leg, 0f), new Vector2(leg, 2000f) });
+        CollectionAssert.Contains(bent[0], new Vector2(leg, 0f), "the dash over the corner keeps the corner");
         float first = 0f; for (int i = 1; i < bent[0].Count; i++) first += (bent[0][i] - bent[0][i - 1]).magnitude;
         Assert.AreEqual(ArmisticeLines.DashM * ArmisticeLines.DashOn, first, 1f, "a full dash, measured along the bend");
+    }
+
+    /// <summary>Owner, 1 November 2026 (#2195): "Restyle Jordan lines (Recommended)". The low-accuracy lines are drawn
+    /// dotted: each mark no longer than the line is wide, the gaps at least as long, and a mark a quarter or less of the
+    /// bands' grey dash for no-man's land and the demilitarized zones (MapBorders.NeutralDashM, NeutralDashOn), so the
+    /// legend's "No-man's land or demilitarized zone: grey, dashed" stays true of the dashes alone.</summary>
+    [Test]
+    public void TheLowAccuracyLinesAreDottedApartFromTheNeutralDash()
+    {
+        float mark = ArmisticeLines.DashM * ArmisticeLines.DashOn, gap = ArmisticeLines.DashM - mark;
+        Assert.LessOrEqual(mark, ArmisticeLines.LowAccuracyWidthM, "a dot: no longer than the line is wide");
+        Assert.GreaterOrEqual(gap, mark, "the gaps are at least as long as the dots");
+        Assert.LessOrEqual(mark, MapBorders.NeutralDashM * MapBorders.NeutralDashOn / 4f, "a quarter of the neutral dash or less");
+    }
+
+    /// <summary>Owner, 1 November 2026 (#2195): "Tie to Borders button (Recommended)". The minimap's Borders button hides
+    /// the true lines with the bands, and pressing it again shows them.</summary>
+    [Test]
+    public void TheMinimapBordersButtonHidesTheLinesAndShowsThemAgain()
+    {
+        var root = Overlay(After);
+        try
+        {
+            using var ui = new UiTestKit();
+            using var mini = new MinimapPresenter(ui.Root, Map.Hexes);
+            var lines = root.transform.Find("Lines").gameObject;
+            Assert.IsTrue(lines.activeSelf, "precondition: the lines are shown");
+            ui.Press("minimap-borders");
+            Assert.IsFalse(mini.BordersShown);
+            Assert.IsFalse(lines.activeSelf, "Borders off hides the true lines");
+            ui.Press("minimap-borders");
+            Assert.IsTrue(mini.BordersShown);
+            Assert.IsTrue(lines.activeSelf, "Borders on shows them again");
+        }
+        finally { Object.DestroyImmediate(root); }
     }
 
     [Test]
