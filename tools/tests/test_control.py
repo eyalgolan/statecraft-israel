@@ -379,9 +379,10 @@ OPENING_FEATURES = {"opening:israel", "opening:arab:unspecified", "cia_hula"} | 
 CUT_GREY = {"ramle": {(-6, 25)}, "acre": {(8, 7)}}   # Yibna's and Acre's hexes on the 4.4 km grid (#1183)
 # The Jewish settlements of the Gaza sub-district and of the Beersheba sub-district north of the 60-km northing whose 1948
 # site the repository already holds, sourced (settlements_1948.yaml; the closure check's anchors): Q3 "settlement hexes blue".
+# Nirim at Dangur: owner ruling on #2136, 1 November 2026, "Israeli at the start (Recommended)".
 SOUTH_SETTLEMENTS = {"Yad Mordechai": (34.5583, 31.5886), "Negba": (34.683, 31.6608), "Nir Am": (34.5808, 31.5194),
                      "Dorot": (34.6453, 31.5064), "Shoval": (34.7428, 31.4128), "Mishmar HaNegev": (34.7186, 31.3642),
-                     "Hatzerim": (34.7142, 31.2403), "Nevatim": (34.8828, 31.2236)}
+                     "Hatzerim": (34.7142, 31.2403), "Nevatim": (34.8828, 31.2236), "Nirim": (34.3576, 31.2377)}
 
 
 def sub(lon, lat):

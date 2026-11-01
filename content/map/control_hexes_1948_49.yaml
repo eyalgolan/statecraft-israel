@@ -338,7 +338,7 @@ hexes:   # [q, r, codes: one per period], ordered by r then q
   - [-4, 35, "AMMMMMMMMMMIIIII"]
   - [-3, 35, "AMMMMMMMMMMIIIII"]
   - [-17, 36, "-EEEEEEEEIIIIIII"]
-  - [-16, 36, "-IIIIIIIIIIIIIII"]
+  - [-16, 36, "IIIIIIIIIIIIIIII"]
   - [-15, 36, "-IIIIIIIIIIIIIII"]
   - [-14, 36, "-IIIIIIIIIIIIIII"]
   - [-13, 36, "-IIIIIIIIIIIIIII"]

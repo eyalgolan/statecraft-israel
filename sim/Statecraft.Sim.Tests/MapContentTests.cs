@@ -202,7 +202,14 @@ public class MapContentTests
         Assert.Equal(1419, c.Hexes.Count);
         Assert.Equal(1118, c.Hexes.Count(h => h.Land));
         Assert.Equal(25, c.SettlementHexes.Count);
-        Assert.Equal(11, c.MapLocations.Count);
+        Assert.Equal(12, c.MapLocations.Count);   // ten must_have rows, umm_rashrash (#1007) and nirim (#2113)
+        var nirim = Assert.Single(c.MapLocations, x => x.Id == "nirim");   // #2113: the 1948 site at Dangur
+        Assert.Equal((-16, 36, "israeli", new System.DateTime(1948, 5, 15), "optional"), (nirim.Q, nirim.R, nirim.StartingControl, nirim.ControlDate, nirim.Priority));
+        // The CBS 2024 point of Nir Yitzhak, which stands on the 1948 site (#2111's note), and the row's names and roles.
+        Assert.Equal(31.23768, nirim.Lat, 4);
+        Assert.Equal(34.35765, nirim.Lon, 4);
+        Assert.Equal(("Nirim", "נירים", "agent-checked", "kibbutz"), (nirim.Name, nirim.NameHe, nirim.NameHeReview, nirim.Kind));
+        Assert.Equal((true, false, false, false), (nirim.Marker, nirim.ManagedCity, nirim.DesignatedSite, nirim.SettlementControlTarget));
         Assert.Equal(10, c.MapLocations.Count(x => x.Priority == "must_have"));
         Assert.Contains(c.SettlementHexes, s => s.Id == "tiberias");
         Assert.Contains(c.MapLocations, x => x.Id == "jerusalem" && x.Name == "West Jerusalem" && x.StartingControl == "israeli");
