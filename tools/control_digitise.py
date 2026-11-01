@@ -401,7 +401,7 @@ OPENING_CONTESTED = [
 OPENING_SOUTH = ("gaza", "beersheba")
 # Q3 "settlement hexes blue": the Jewish settlements of the Gaza sub-district and of the Beersheba sub-district north of the
 # 60-km northing whose 1948 site the repository already holds, sourced (settlements_1948.yaml; the ANCHORS above, each at its
-# 1946 or earlier site; Nirim at its 1948 site at Dangur, owner ruling on #2113, 1 November 2026, "Israeli at the start").
+# 1946 or earlier site; Nirim at its 1948 site at Dangur, owner ruling on #2136, 1 November 2026, "Israeli at the start").
 # Others (Nitzanim, Kfar Darom, Be'erot Yitzhak and more) are not pinned: their sites moved after 1948 and no 1948 site is
 # sourced here yet (listed in known_staleness).
 OPENING_SETTLEMENTS = [("Yad Mordechai", 34.5583, 31.5886, WIKI + "Battle_of_Yad_Mordechai", "held until it fell on 24 May 1948 (en.wiki): known staleness"),

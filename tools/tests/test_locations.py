@@ -18,7 +18,9 @@ def test_sourced_coordinates_bind_to_the_authored_hexes():
         assert hg.settlement_hex(location["lon"], location["lat"], HEXES) == (location["q"], location["r"]), location["id"]
 
 
-def test_issue_1008_roster_and_separate_adjacent_positions():
+def test_every_location_id_and_separate_adjacent_positions():
+    """Every row of locations_1948.yaml: the #1008 roster, plus nirim (#2113), which is on the map but not on the
+    docs/locations.md priority roster."""
     by_id = {location["id"]: location for location in LOCATIONS}
     assert set(by_id) == {
         "negba", "hulda", "nir_am", "latrun_fort", "iraq_suwaydan_fort", "shaar_hagai",

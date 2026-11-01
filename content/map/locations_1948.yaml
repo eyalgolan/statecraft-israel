@@ -258,6 +258,7 @@ locations:
   # together with Kfar Darom ("ב־15.5"); after the war "קיבוץ ניר־יצחק עלה לדנגור במקום קיבוץ נירים".
   - { url: 'https://benyehuda.org/read/14684', checked: 2026-11-01 }
   - { url: 'https://palmach.org.il/history/database/?itemId=6201', checked: 2026-11-01 } # "ב-15 למאי 1948 הדפה נירים התקפה של הצבא המצרי."
+  - { url: 'https://www.palmach.org.il/en/history/database/?itemId=8475', checked: 2026-11-01 } # the English spelling: "Kibbutz Nirim was founded on the Dangur lands"
   - { url: 'https://www.jta.org/archive/u-s-attitude-on-arab-invasion-of-israel-will-be-revealed-at-security-council-today', checked: 2026-11-01 } # JTA, 17 May 1948: "the Negev settlement of Nirim"
   - { url: 'https://www.jta.org/archive/control-center-of-jerusalem-tel-aviv-hospital-bombed-casualties-heavy', checked: 2026-11-01 } # JTA, 18 May 1948: "a two-day battle at the Nirim settlement"
   status: draft
