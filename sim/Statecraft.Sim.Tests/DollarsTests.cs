@@ -131,6 +131,45 @@ public class DollarsTests
         else Assert.Equal(EconomySystem.RefusedDollarsNotAtWar, Assert.Single(r.Rejected).Reason);
     }
 
+    const string RungEvent = @"
+id: rung
+title: A choice
+text: '{finance_minister} asks for a decision.'
+office: finance_minister
+anchor: hard
+from: 1948-05-15
+options:
+  - id: history
+    text: The way it went
+    historical: true
+    set_rung: RUNG
+";
+
+    // R-MONEY-004: the war is the rung the turn started at. An earlier order of the same turn that moves the rung (an
+    // event's set_rung) changes neither way whether the conversion is allowed, so End turn agrees with the Defence screen,
+    // which checks the turn's start.
+    [Theory]
+    [InlineData(5, 3, true)] [InlineData(4, 2, true)] [InlineData(3, 5, false)]
+    public void TheWarIsTheRungTheTurnStartedAt(int start, int set, bool allowed)
+    {
+        var c = ContentLoader.Load(Fixture.Write(Fixture.Gdd(new Dictionary<string, string> { ["events/rung.yaml"] = RungEvent.Replace("RUNG", set.ToString(System.Globalization.CultureInfo.InvariantCulture)) })));
+        var s = War(c);
+        s.Rung = start;
+        Assert.Contains("rung", s.PendingEvents);
+        var orders = new Command[] { new ChooseEventOption("rung", "history"), new ConvertDollars(1) };
+        var preview = Orders(c, s, orders);
+        Check(preview.State, preview.Rejected);
+        var step = Simulation.Step(c, s, orders);
+        Check(step.State, step.Rejected);
+        void Check(GameState state, IEnumerable<Rejection> rejected)
+        {
+            Assert.Equal(set, state.Rung);
+            if (allowed) { Assert.Empty(rejected); Assert.Equal(1, state.DollarsConverted); }
+            else { Assert.Equal(EconomySystem.RefusedDollarsNotAtWar, Assert.Single(rejected).Reason); Assert.Equal(0, state.DollarsConverted); }
+        }
+        Assert.Equal(allowed ? null : EconomySystem.RefusedDollarsNotAtWar, EconomySystem.DollarsRefusal(c, s, 1));   // the screen's check
+    }
+
     // R-MONEY-004: at least $1m.
     [Theory]
     [InlineData(0)] [InlineData(-3)]

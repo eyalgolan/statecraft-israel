@@ -61,11 +61,12 @@ namespace Statecraft.Sim
         /// <summary>R-MONEY-004 (#813; owner, 2 November 2026: "Spend the dollars (Recommended)"): during the war (rung 4 or 5)
         /// <paramref name="amount"/> US$ millions of foreign currency leave the reserves and amount times the mvp.il_per_dollar rate in
         /// force on the turn's date, in IL millions, joins the Treasury, so the turn's deficit borrows that much less (R-MONEY-003). Refused, state untouched,
-        /// below $1m, outside the war, past mvp.dollars_per_turn with <paramref name="thisTurn"/> (this turn's earlier
-        /// conversions), past mvp.dollars_total, or below 0 reserves. Step has already refused it in the legacy loop.</summary>
-        public static string? ConvertDollars(Content c, GameState s, int amount, int thisTurn, List<Cause> why)
+        /// below $1m, outside the war (<paramref name="startRung"/>, the rung the turn started at, below 4), past
+        /// mvp.dollars_per_turn with <paramref name="thisTurn"/> (this turn's earlier conversions), past mvp.dollars_total, or
+        /// below 0 reserves. Step has already refused it in the legacy loop.</summary>
+        public static string? ConvertDollars(Content c, GameState s, int amount, int thisTurn, int startRung, List<Cause> why)
         {
-            var refused = DollarsRefusal(c, s, amount, thisTurn);
+            var refused = DollarsRefusal(c, s, amount, thisTurn, startRung);
             if (refused != null) return refused;
             var money = amount * c.RulesAt(s.Date).Mvp!.IlPerDollarOn(s.Date);
             s.FxReserves -= amount;
@@ -78,13 +79,15 @@ namespace Statecraft.Sim
         }
 
         /// <summary>R-MONEY-004's refusal of <paramref name="amount"/> in <paramref name="s"/>, after <paramref name="thisTurn"/>
-        /// dollars converted earlier in the same turn, or null when it would be carried out. ConvertDollars refuses on it, and
-        /// the Defence screen says it before End turn.</summary>
-        public static string? DollarsRefusal(Content c, GameState s, int amount, int thisTurn = 0)
+        /// dollars converted earlier in the same turn, or null when it would be carried out. The war is
+        /// <paramref name="startRung"/>, the rung the turn started at (an event's set_rung earlier in the turn does not change
+        /// it), else the state's rung, which is the turn's start before End turn. ConvertDollars refuses on it, and the Defence
+        /// screen says it before End turn.</summary>
+        public static string? DollarsRefusal(Content c, GameState s, int amount, int thisTurn = 0, int? startRung = null)
         {
             var r = c.RulesAt(s.Date).Mvp!;   // the loader requires the three values in the GDD loop
             if (amount < 1) return RefusedDollarsMinimum;
-            if (s.Rung < WarRung) return RefusedDollarsNotAtWar;
+            if ((startRung ?? s.Rung) < WarRung) return RefusedDollarsNotAtWar;
             if ((long)thisTurn + amount > r.DollarsPerTurn!.Value) return RefusedDollarsMonthly;
             if ((long)s.DollarsConverted + amount > r.DollarsTotal!.Value) return RefusedDollarsTotal;
             if (s.FxReserves - amount < 0) return RefusedDollarsReserves;
