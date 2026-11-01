@@ -505,7 +505,7 @@ public class InfoPanelLayoutTests
         foreach (var (text, line, words) in new[]
         {
             (Text, "Tiberias is shown here because its own hex is water.", "its own hex is water"),
-            (he, "טבריה מוצגת כאן, כי המשושה שלה מכוסה במים.", "מכוסה במים"),
+            (he, "טבריה מוצגת כאן, כי המשבצת שלה מכוסה במים.", "מכוסה במים"),
         })
         {
             using var ui = new UiTestKit();
