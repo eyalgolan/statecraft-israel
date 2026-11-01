@@ -11,6 +11,8 @@ namespace Statecraft.Game.UI
     public sealed class OpeningPresenter : IDisposable
     {
         public const string OpenClass = "opening-open";
+        /// <summary>Left to right and left-aligned in either UI (Statecraft.uss): what is shown in English.</summary>
+        public const string SourceEnglishClass = "opening-source-en";
         readonly VisualElement root, layer, photo;
         readonly Label title, body, arrivals, closing, credit, count, preview;
         readonly Button next, back, skip;
@@ -19,6 +21,7 @@ namespace Statecraft.Game.UI
         readonly OpeningContent.Document data;
         readonly UiText text;
         readonly Action<bool> shownChanged, finished;
+        readonly bool hebrew;
         readonly Action onNext, onBack, onSkip;
         readonly EventCallback<NavigationCancelEvent> onCancel;
         readonly EventCallback<NavigationMoveEvent> onMove;
@@ -34,6 +37,7 @@ namespace Statecraft.Game.UI
             Action<bool> shownChanged, Action<bool> finished)
         {
             this.root = root.Q("root") ?? root; this.catalog = catalog; this.data = data; this.text = text;
+            hebrew = text["ui.lang"] == UiLanguage.Hebrew;
             this.shownChanged = shownChanged; this.finished = finished;
             layer = root.Q("opening-layer"); photo = layer.Q("opening-photo");
             title = layer.Q<Label>("opening-title"); body = layer.Q<Label>("opening-text");
@@ -43,8 +47,9 @@ namespace Statecraft.Game.UI
             next = layer.Q<Button>("opening-next"); back = layer.Q<Button>("opening-back"); skip = layer.Q<Button>("opening-skip");
             back.text = text["opening.back"]; skip.text = text["opening.skip"];
             preview.text = text["opening.preview"]; preview.style.display = data.Reviewed ? DisplayStyle.None : DisplayStyle.Flex;
-            // The historical prose, title, arrivals and credit remain the original English, including in the Hebrew UI.
-            foreach (var label in new[] { title, body, arrivals, closing, credit }) label.languageDirection = LanguageDirection.LTR;
+            // The photo credit is the English credit line in both UIs. The title, text, arrivals and closing follow the UI's
+            // language where opening.yaml has their Hebrew (owner, 1 Nov 2026, "Translate to Hebrew (Recommended)"; Render).
+            credit.languageDirection = LanguageDirection.LTR;
             onNext = Next; onBack = Back; onSkip = () => Close(finish: true);
             next.clicked += onNext; back.clicked += onBack; skip.clicked += onSkip;
             onCancel = e => { if (Escape()) e.StopPropagation(); };
@@ -77,19 +82,29 @@ namespace Statecraft.Game.UI
         {
             bool last = Index == data.Panels.Count - 1;
             var panel = data.Panels[Index];
-            title.text = panel.Title;
-            body.text = panel.Text;
+            bool he = hebrew && panel.HasHebrew, heClosing = hebrew && data.Closing.HasHebrew;
+            Say(title, he ? panel.TitleHe! : panel.Title, he);
+            Say(body, he ? panel.TextHe! : panel.Text, he);
             photo.style.backgroundImage = new StyleBackground(catalog.photos[Index]);
             photo.tooltip = panel.Image.Alt;
             credit.text = panel.Image.Credit;
-            arrivals.text = string.Join(" · ", panel.Arrivals.Select(a =>
-                a.Country + ": " + a.Count.ToString("N0", CultureInfo.InvariantCulture)));
-            closing.text = last ? data.Closing.Text : "";
+            Say(arrivals, string.Join(" · ", panel.Arrivals.Select(a =>
+                (he ? a.CountryHe : a.Country) + ": " + a.Count.ToString("N0", CultureInfo.InvariantCulture))), he);
+            Say(closing, last ? (heClosing ? data.Closing.TextHe! : data.Closing.Text) : "", heClosing);
             closing.style.display = last ? DisplayStyle.Flex : DisplayStyle.None;
             count.text = text.Format("opening.count", Index + 1, data.Panels.Count);
             back.SetEnabled(Index > 0);
             next.text = last ? text[replay ? "opening.return" : "opening.begin"] : text["opening.next"];
             scroll.scrollOffset = Vector2.zero;
+        }
+
+        /// <summary>A prose label's words, with their direction and style: Hebrew right to left and set from the right like
+        /// the rest of the Hebrew UI; English left to right and left-aligned (SourceEnglishClass) in either UI.</summary>
+        static void Say(Label label, string words, bool hebrew)
+        {
+            label.text = words;
+            label.languageDirection = hebrew ? LanguageDirection.RTL : LanguageDirection.LTR;
+            label.EnableInClassList(SourceEnglishClass, !hebrew);
         }
 
         void Next()

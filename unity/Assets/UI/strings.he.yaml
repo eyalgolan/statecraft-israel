@@ -1137,8 +1137,8 @@ why.cause.ending.defeat_war: "האויב מחזיק בעיר"
 # native-review-pending: #1661 occupied-destination confirmation
 unit.confirm_move: "שליחת {0} אל {1}"
 
-# The opening's controls (#530), Hebrew agent-drafted. For the native reviewer (#564). The historical prose stays in
-# opening.yaml, in English, until its own review.
+# The opening's controls (#530), Hebrew agent-drafted. For the native reviewer (#564). The historical prose is in
+# opening.yaml, in English and in Hebrew (title_he, text_he, country_he), with its own he_review there.
 opening.replay: "צפייה חוזרת בפתיח"
 opening.back: "הקודם"
 opening.next: "הבא"

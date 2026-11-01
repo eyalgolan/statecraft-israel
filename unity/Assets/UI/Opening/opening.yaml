@@ -16,11 +16,28 @@
 # be content events, so the three rows live here instead. Originals fetched from each row's `original` URL; SHA-1 and
 # size match the Commons API. Licence, artist and credit line read from each Commons file page (licence template
 # {{Cc-by-4.0}} and the Meitar credit-line template) via the Commons API on 2026-10-19 by Claude, not by a person.
+#
+# Hebrew (owner, 1 Nov 2026, "Translate to Hebrew (Recommended)"): each panel's title_he and text_he, each arrival's
+# country_he and the closing's text_he are an agent draft from the English beside them, with the same facts and sources
+# and nothing added. They come together or not at all, with he_review: pending until a native speaker who did not write
+# them has read them (then approved); a shareable build needs every panel and the closing approved. The photo credits
+# stay English (a credit line, as the event cards' credits).
+# For the native reviewer (#564): names as the game already writes them: עיראק and מבצע עזרא ונחמיה
+# (content/events/iraqi_exodus.yaml, he.wiki), תימן (content/events/frumkin_commission.yaml), לוד
+# (content/events/ten_days.yaml), אירופה (strings.he why.region.europe), הלמ״ס (strings.he end.population_history),
+# ארץ ישראל (content), dates as date.day_month_year ("24 בספטמבר 1950"). New here: עקורים (he.wiki "מחנות העקורים"),
+# קפריסין (he.wiki "מחנות המעצר בקפריסין"), מבצע על כנפי נשרים with מרבד הקסמים (he.wiki "מבצע על כנפי נשרים", which
+# "מבצע מרבד הקסמים" redirects to), הג׳וינט (he.wiki "ג'וינט", with the typographic geresh of HE-06), ארצות ערב,
+# מרוקו, לוב, תוניסיה. The maqaf before a numeral follows HE-07 ("כ־210,000"); "המשחק מתחיל" for "You start" keeps the
+# address gender-neutral (HE-03); no parentheses or quotation marks, and no Latin letters (HE-09).
 status: sensitivity-reviewed
 panels:
   - id: europe
     title: Europe
     text: "After the Holocaust, at the start of 1947, about 210,000 Jews were living as displaced persons, most of them in the American zone of Germany. Britain deported Jews who came to the Land of Israel against its immigration limits to detention camps on Cyprus; from August 1946 to February 1949, about 53,000 passed through them. Once the state was founded, about two-thirds of the displaced persons went to Israel."
+    title_he: "אירופה"
+    text_he: "אחרי השואה, בתחילת 1947, חיו כ־210,000 יהודים כעקורים, רובם באזור הכיבוש האמריקני בגרמניה. בריטניה גירשה למחנות מעצר בקפריסין יהודים שהגיעו לארץ ישראל בניגוד להגבלות העלייה שקבעה; מאוגוסט 1946 עד פברואר 1949 עברו במחנות כ־53,000 איש. לאחר קום המדינה עלו לישראל כשני שלישים מהעקורים."
+    he_review: pending
     # No arrivals figure: CBS counts by country of birth and has no displaced-persons or Cyprus category, so a Europe
     # number would not mean "survivors" (#784 draft, Q-OPEN-5).
     arrivals: []
@@ -49,10 +66,13 @@ panels:
   - id: arab_countries
     title: The Arab countries
     text: "In 1948 more than 135,000 Jews lived in Iraq. In March 1950 Iraq allowed them to leave only if they gave up their citizenship, and in March 1951 it froze the assets of those who had. The airlift, Operation Ezra and Nehemiah, began in May 1950, and by January 1952 some 120,000 Iraqi Jews had come to Israel. From Morocco, Libya, Egypt, Tunisia and other Arab lands, tens of thousands more came in the same years."
+    title_he: "ארצות ערב"
+    text_he: "ב־1948 חיו בעיראק יותר מ־135,000 יהודים. במרץ 1950 התירה להם עיראק לצאת רק אם יוותרו על אזרחותם, ובמרץ 1951 הקפיאה את נכסיהם של מי שוויתרו עליה. הרכבת האווירית, מבצע עזרא ונחמיה, החלה במאי 1950, ועד ינואר 1952 עלו לישראל כ־120,000 מיהודי עיראק. ממרוקו, מלוב, ממצרים, מתוניסיה ומארצות ערב אחרות הגיעו באותן שנים עוד עשרות אלפים."
+    he_review: pending
     # CBS Publication 1365, Table 5, column "15 V 1948 - 1951", by country of birth.
     arrivals:
-      - { country: Iraq, count: 123371 }
-      - { country: Morocco, count: 28263 }
+      - { country: Iraq, country_he: "עיראק", count: 123371 }
+      - { country: Morocco, country_he: "מרוקו", count: 28263 }
     sources:
       - url: "https://israeled.org/airlift-iraqi-jews-begins/"
         supports: "Center for Israel Education: 'In 1948, Iraq had more than 135,000 Jews'; 19 May 1950, 'The first two flights of Operation Ezra and Nehemiah ... leave Baghdad'; 'the first of some 120,000 Jews who make aliyah by January 1952 after the Iraqi government makes a temporary change in the law to allow Jews to emigrate, as long as they renounce their Iraqi citizenship'"
@@ -81,9 +101,12 @@ panels:
   - id: yemen
     title: Yemen
     text: "In 1949 the ruler of Yemen let its Jews leave. Operation On Wings of Eagles, known as Magic Carpet, flew them from British-ruled Aden to Israel, with the American Jewish Joint Distribution Committee. When the last two planes landed at Lydda on 24 September 1950, about 49,000 Yemenite Jews had been flown to Israel (the operation's own count, from its start in December 1948). The CBS table counts 48,315 people born in Yemen or Aden who arrived from 15 May 1948 through 1951."
+    title_he: "תימן"
+    text_he: "ב־1949 התיר שליט תימן ליהודי ארצו לצאת. מבצע על כנפי נשרים, המוכר בשם מרבד הקסמים, הטיס אותם לישראל מעדן שבשלטון בריטניה, בשיתוף ארגון הג׳וינט האמריקני. כששני המטוסים האחרונים נחתו בלוד ב־24 בספטמבר 1950, כבר הוטסו לישראל כ־49,000 מיהודי תימן, לפי ספירת המבצע עצמו מאז תחילתו בדצמבר 1948. טבלת הלמ״ס מונה 48,315 ילידי תימן או עדן שהגיעו מ־15 במאי 1948 ועד סוף 1951."
+    he_review: pending
     # CBS counts Aden with Yemen (Table 5, note 7).
     arrivals:
-      - { country: "Yemen, including the former Aden", count: 48315 }
+      - { country: "Yemen, including the former Aden", country_he: "תימן, כולל עדן לשעבר", count: 48315 }
     sources:
       - url: "https://en.wikipedia.org/w/index.php?title=Operation_Magic_Carpet_(Yemen)&oldid=1374658937"
         supports: "'Operation Magic Carpet is the widely known nickname for Operation On Wings of Eagles ... conducted by Israel between 16 December 1948 and 24 September 1950 to take in approximately 49,000 Yemenite Jews'; 'In 1949, Ahmad reversed the long-standing ban on emigration and allowed the Jews of Yemen to leave'; flights 'from Aden Colony'; 'the Joint Distribution Committee took over the task of moving them out of Aden by air'; 'The operation ended on 24 September 1950, when the last two aircraft reached Lydda Airport'"
@@ -111,6 +134,8 @@ panels:
       note: "Commons title 'הטיסה חזרה מעדן, תימן במהלך מבצע \"מרבד הקסמים\"' (the flight back from Aden, Yemen, during Operation Magic Carpet), 12-28 May 1950; Commons identifies the plane as Douglas C-54 NC67548. No identifiable faces. The square original is cropped to 16:9 (sky and foreground trimmed, the car at the right edge cut). Its Commons credit line adds 'Israel State Archives' (template 'Meitar Collection/credit line2'), so the credit here does too; it is not a GPO photograph: Commons gives Benno Rothenberg / Meitar Collection / NLI, CC BY 4.0 with VRTS permission confirmed, and no GPO category (checked 2026-10-31). Alternate: Aden_(997008137190505171.jpg (stairs to the plane)."
 closing:
   text: "Between 15 May 1948 and the end of 1951, 687,624 immigrants arrived. You start on 15 May 1948."
+  text_he: "בין 15 במאי 1948 לסוף 1951 הגיעו 687,624 עולים. המשחק מתחיל ב־15 במאי 1948."
+  he_review: pending
   sources:
     - url: "https://www.cbs.gov.il/he/publications/DocLib/2009/1365/pdf/e_print.pdf"
       supports: "Table 5, GRAND TOTAL, column 15 V 1948 - 1951: 687,624 (the same total as the four rows of content/aliyah.yaml)"

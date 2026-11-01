@@ -21,6 +21,7 @@ public class OpeningPresenterTests
         data.Status = "sensitivity-reviewed";
         foreach (var source in data.Panels.SelectMany(p => p.Sources).Concat(data.Closing.Sources)) source.Checked = "2026-10-22";
         foreach (var panel in data.Panels) { panel.Image.Sensitive = true; panel.Image.SensitivityReviewed = true; }
+        foreach (var paragraph in data.Panels.Cast<OpeningContent.Paragraph>().Append(data.Closing)) paragraph.HeReview = OpeningContent.HeApproved;
         return data;   // memory only: a fixture is never a human sign-off on the shipped file
     }
 
@@ -86,21 +87,22 @@ public class OpeningPresenterTests
         Assert.IsFalse(ui.Q<Button>("opening-back").enabledSelf);
         Assert.AreEqual(Text(lang)["opening.skip"], ui.Q<Button>("opening-skip").text);
         Assert.AreEqual(Text(lang)["opening.preview"], ui.Q<Label>("opening-preview").text);
+        bool he = lang == "he";   // the Hebrew UI shows the Hebrew prose (owner, 1 Nov 2026); OpeningHebrewTests has the detail
         for (int i = 0; i < 3; i++)
         {
             Assert.AreEqual(i, opening.Index);
-            Assert.AreEqual(data.Panels[i].Text, ui.Q<Label>("opening-text").text);
+            Assert.AreEqual(he ? data.Panels[i].TextHe : data.Panels[i].Text, ui.Q<Label>("opening-text").text);
             Assert.AreEqual(data.Panels[i].Image.Credit, ui.Q<Label>("opening-credit").text);
-            Assert.AreEqual(LanguageDirection.LTR, ui.Q<Label>("opening-text").languageDirection,
-                "the approved-source English fallback is not labelled Hebrew");
+            Assert.AreEqual(he ? LanguageDirection.RTL : LanguageDirection.LTR, ui.Q<Label>("opening-text").languageDirection,
+                "the prose takes its own language's direction");
             Assert.AreEqual(Text(lang).Format("opening.count", i + 1, 3), ui.Q<Label>("opening-count").text,
                 "the approved opening has exactly three panels, not a fourth closing screen");
-            Assert.AreEqual(i == 2 ? data.Closing.Text : "", ui.Q<Label>("opening-closing").text);
+            Assert.AreEqual(i == 2 ? (he ? data.Closing.TextHe : data.Closing.Text) : "", ui.Q<Label>("opening-closing").text);
             if (i < 2) UiTestKit.Press(ui.Q<Button>("opening-next"));
         }
         Assert.IsTrue(opening.IsOpen, "the third panel retains its image, arrivals and closing line together");
         Assert.AreEqual(2, opening.Index);
-        Assert.AreEqual(data.Closing.Text, ui.Q<Label>("opening-closing").text);
+        Assert.AreEqual(he ? data.Closing.TextHe : data.Closing.Text, ui.Q<Label>("opening-closing").text);
         UiTestKit.Press(ui.Q<Button>("opening-back"));
         Assert.AreEqual(1, opening.Index);
         Assert.AreEqual(data.Panels[1].Image.Credit, ui.Q<Label>("opening-credit").text);

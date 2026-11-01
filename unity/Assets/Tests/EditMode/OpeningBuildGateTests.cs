@@ -59,6 +59,7 @@ public class OpeningBuildGateTests
             var image = (YamlMappingNode)Get(panel, "image");
             Set(image, "sensitive", "true"); Set(image, "sensitivity_reviewed", "true");
         }
+        foreach (var paragraph in Panels(doc).Append((YamlMappingNode)Get(doc, "closing"))) Set(paragraph, "he_review", "approved");
         change?.Invoke(doc);
         using var writer = new StringWriter(); yaml.Save(writer, false);
         var text = new TextAsset(writer.ToString()); owned.Add(text); copy.source = text;
@@ -69,16 +70,30 @@ public class OpeningBuildGateTests
 
     [TestCase("draft status")]
     [TestCase("unchecked source")]
+    [TestCase("hebrew pending")]
+    [TestCase("closing hebrew pending")]
+    [TestCase("no hebrew")]
     public void GatedTextRefusesTheShareableBuild(string gap)
     {
         var gate = Require("OpeningShareableRefusal");
         var draft = Fixture(doc =>
         {
             if (gap == "draft status") Set(doc, "status", "draft");
+            else if (gap == "hebrew pending") Set(Panels(doc)[1], "he_review", "pending");
+            else if (gap == "closing hebrew pending") Set((YamlMappingNode)Get(doc, "closing"), "he_review", "pending");
+            else if (gap == "no hebrew")
+            {
+                foreach (var key in new[] { "title_he", "text_he", "he_review" }) Panels(doc)[2].Children.Remove(new YamlScalarNode(key));
+                foreach (YamlMappingNode arrival in ((YamlSequenceNode)Get(Panels(doc)[2], "arrivals")).Children)
+                    arrival.Children.Remove(new YamlScalarNode("country_he"));
+            }
             else Sources((YamlMappingNode)Get(doc, "closing"))[0].Children.Remove(new YamlScalarNode("checked"));
         });
+        if (gap.Contains("hebrew")) Assert.IsTrue(draft.Read().TextReviewed, "precondition: the English rule passes, so only the Hebrew is gated");
         Assert.IsTrue(draft.Read().PhotosReviewed, "precondition: reviewed photographs, so only the text is gated");
-        Assert.IsNotNull(gate.Invoke(null, new object?[] { draft }), gap + ": gated text must not reach a shareable build");
+        var refusal = (string?)gate.Invoke(null, new object?[] { draft });
+        Assert.IsNotNull(refusal, gap + ": gated text must not reach a shareable build");
+        if (gap.Contains("hebrew")) StringAssert.Contains("Hebrew", refusal, "the refusal names what waits");
     }
 
     [Test]
