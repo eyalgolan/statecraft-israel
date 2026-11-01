@@ -67,7 +67,7 @@ namespace Statecraft.HexTiles
                 var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Stem(id) + ".prefab");
                 var filter = prefab != null ? prefab.GetComponentInChildren<MeshFilter>() : null;
                 var material = prefab != null ? prefab.GetComponentInChildren<MeshRenderer>().sharedMaterial : null;
-                if (filter == null || filter.sharedMesh == null || material == null || material.mainTexture == null)
+                if (prefab == null || filter == null || filter.sharedMesh == null || material == null || material.mainTexture == null)
                     throw new InvalidOperationException("missing source house " + id);
                 var source = filter.sharedMesh;
                 var light = Simplify(source, UvToleranceTexels / material.mainTexture.width, EdgeTolerance, MaxError);
