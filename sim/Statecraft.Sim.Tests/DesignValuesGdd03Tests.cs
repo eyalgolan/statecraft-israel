@@ -177,6 +177,39 @@ public partial class DesignValuesTests
         Assert.Equal("Agreed",Row(v,"military.combat_arms")["basis"]);
         Assert.Contains("owner ruling, 25 Oct 2026, on #1668",(string)Row(v,"military.combat_arms")["note"]);
     }
+    // R-LOOP-005, #2115: rows the owner ruled on after the #1668 transcription carry the ruling's value and basis, and
+    // their note names the ruling and its date. Open-mode and post-MVP rows are not Agreed: the Historical MVP does not
+    // use them (D2, owner, 1 November 2026: "Approve all six (Recommended)"; post-MVP: "Approve all 79 (Recommended)").
+    [Theory]
+    [InlineData("start.money", "Default", "25", D2, Nov1)]
+    [InlineData("start.food", "Default", "10", D2, Nov1)]
+    [InlineData("start.farmers", "Default", "5 10 5", D2, Nov1)]
+    [InlineData("start.population", "Default", "65", D2, Nov1)]
+    [InlineData("start.spare_arms", "Default", "3", D2, Nov1)]
+    [InlineData("start.food_production", "Default", "65", D2, Nov1)]
+    [InlineData("start.food_consumption", "Default", "65", D2, Nov1)]
+    [InlineData("start.housing_condition", "Agreed", "0.35", "\"0.35, your 15 Oct value (Recommended)\"", Nov1)]
+    [InlineData("craft.course_cost", "Agreed", "0.5", Keep, Oct30)]
+    [InlineData("craft.course_turns", "Agreed", "3", Keep, Oct30)]
+    [InlineData("military.training_money", "Agreed", "0.5", Keep, Oct30)]
+    [InlineData("military.active_money", "Agreed", "0.05", Keep, Oct30)]
+    [InlineData("prisoner.return_points", "Agreed", "10", "\"10 per unit, main (Recommended)\"", Nov1)]
+    [InlineData("transit.cost", "Default", "0.50", PostMvp, Nov1)]
+    [InlineData("reception.queue_cohesion_loss", "Default", "1", PostMvp, Nov1)]
+    [InlineData("housing.max_deterioration", "Default", "10", "declined by the owner", Oct30)]
+    public void Gdd03RowsFollowTheOwnersLaterRulings(string key, string basis, string values, string ruling, string date)
+    {
+        var row=ContentLoader.Load(RealContentTests.ContentRoot()).Gdd03Balance!.Values[key];
+        Assert.Equal(basis,row.Basis);
+        Assert.Equal(values.Split(' ').Select(x=>decimal.Parse(x,CultureInfo.InvariantCulture)),row.Values);
+        Assert.Contains(ruling,row.Note);
+        Assert.Contains(date,row.Note);
+        Assert.Contains("Source: #1668 balance.md at 605277df.",row.Note);
+        if(basis=="Default") Assert.Contains(key.StartsWith("start.") ? "Open mode" : "not operative in the MVP",row.Note);
+        foreach(var part in row.Parts.Values) Assert.DoesNotContain("Agreed",part.Note);
+    }
+    const string D2="\"Approve all six (Recommended)\"", Keep="\"Keep the set values (Recommended)\"",
+        PostMvp="\"Approve all 79 (Recommended)\"", Oct30="30 October 2026", Nov1="1 November 2026";
     [Theory]
     [InlineData("0")][InlineData("1")][InlineData("34")][InlineData("-1")][InlineData("1.5")]
     public void Gdd03LoaderRefusesEveryNumericArmyGuessWhileDeferred(string number)
