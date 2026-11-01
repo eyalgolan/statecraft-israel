@@ -22,7 +22,7 @@ old.
 3. Create the app as **a free product**. Steamworks then shows the app ID and lets you add depots.
 4. Create three depots, one per OS (section 3), and note the four numbers.
 5. Put the numbers in `steam/steam.json` (app ID and the three depot IDs; they are public numbers), in a pull request or by
-   giving them to the coordinator. Until then every Steam step refuses by name: `tools/steam_upload.py` (`refuse`, line 71)
+   giving them to the coordinator. Until then every Steam step refuses by name: `tools/steam_upload.py` (`refuse`, line 73)
    names each `null` ID, and the nightly skips its Steam stage (`tools/nightly.py:783-797`, `steam_ids_missing`). The
    game's own copy of the app ID, `unity/Assets/Steam/SteamAppId.cs` (#2154), is committed with the same number in the
    same pull request; a test pins the two equal (`tools/tests/test_steam_upload.py`,
@@ -45,8 +45,8 @@ two environment secrets that only you create.
    process upload without a password. Valve: the build machine's `config/config.vdf` "is saved and preserved between runs"
    and later logins need no password (upload page, read 1 Nov 2026).
 3. **The `steam` environment.** In the repository's Settings > Environments, create `steam` and set its deployment
-   branches to `main` only. The workflow's job uses it (`.github/workflows/steam-upload.yml:70`), so a run from any other
-   branch never receives the secrets; the job also runs only for your own dispatch on `main` (line 69).
+   branches to `main` only. The workflow's job uses it (`.github/workflows/steam-upload.yml:80`), so a run from any other
+   branch never receives the secrets; the job also runs only for your own dispatch on `main` (line 79; any other dispatch fails in the `refused` job, line 183).
    Do not add a required reviewer to the `steam` environment: uploads need no extra click (owner, 1 Nov 2026, "No extra
    click (Recommended)", `docs/oss/DECISIONS.md`, "Steam"), so each nightly uploads without waiting.
 4. **The two secrets.** Add them to the `steam` environment from a terminal, so neither is shown on screen:
@@ -61,9 +61,9 @@ two environment secrets that only you create.
    cached login turns out not to work on GitHub's machines at all, the fallback in spec 4.3.1 item 3 (the Steam Guard
    mobile-authenticator secret as a third secret) is a new decision for you, not something an agent sets up.
 
-What the job does with them, in order (`.github/workflows/steam-upload.yml:77-163`): checks the inputs; downloads the draft
-release `steam-<tag>` and checks every zip's SHA-256 against `steam-record.json` (`tools/steam_upload.py:205-225`,
-`verify`); checks that the record's commit is on `main`; renders the SteamPipe scripts (`render`, line 99); fetches
+What the job does with them, in order (`.github/workflows/steam-upload.yml:87-181`): checks the inputs; downloads the draft
+release `steam-<tag>`, checks that its `steam-record.json` is the one `stage` dispatched (its SHA-256 is the
+`record_sha256` input) and every zip's SHA-256 against it (`tools/steam_upload.py:222-247`, `verify`); checks that the record's commit is on `main`; renders the SteamPipe scripts (`render`, line 101); fetches
 steamcmd from Valve; restores the login cache; runs `steamcmd +@NoPromptForPassword 1 +login "$STEAM_BUILDER_USERNAME"
 +run_app_build <script> +quit`; always deletes the cache; and, on success, deletes the draft. Only the two login steps see
 the secrets. On the first real run a maintainer confirms three facts the workflow's header lists: the steamcmd download
@@ -82,7 +82,7 @@ Set these in Steamworks App Admin, then publish the App Admin changes.
 - **Branches.** Create `beta` and `nightly`, each with a password. Release tags go to `beta`, every published nightly to
   `nightly` (owner answer Q7, "Also nightlies"). The upload sets a build live on those two only; `default` is never set
   by a script (Valve: "the 'default' branch can not be set live automatically", upload page, read 1 Nov 2026), and
-  `tools/steam_upload.py` refuses it (`render`, line 99, `NEVER` at line 51). You set `default` live by hand (section 6).
+  `tools/steam_upload.py` refuses it (`render`, line 101, `NEVER` at line 53). You set `default` live by hand (section 6).
 - **Launch options**, one per OS, the player names `tools/release_build.py` builds (`PLATFORMS`, line 124):
   - Windows: `Statecraft.exe`
   - macOS: `Statecraft.app` (Valve prefers the app bundle: "the app bundle format should be preferred", upload page, read
