@@ -119,6 +119,8 @@ Military camps are separately selectable, highlighted and enlarged; visual offse
 | Khan Yunis | Town / southern coastal route | Add population and another road node between Gaza and Rafah. |
 | Rafah | Town / Egypt–Palestine frontier | Add the southern coastal connection to Egypt and more detail for Egyptian reinforcement routes. |
 
+Nirim, at its 1948 site at Dangur (today Nir Yitzhak), is on the map by the owner's ruling of 1 November 2026 on [#2113](https://github.com/eyalgolan/statecraft-israel/issues/2113#issuecomment-6554685727), "Nirim, add it to the map (Recommended)". The ruling does not place it on this roster, so its row in `content/map/locations_1948.yaml` carries `optional` until the owner does.
+
 ## Location records and historical state
 
 - Give every location a stable identity, a kind, a period-appropriate display name, its map position and hex binding, its MVP priority, and the sources and review state for historical fields. Track whether it is a marker, a managed city, a designated site or a settlement-control target separately from its map priority. Reuse the existing [settlement roster](../content/map/settlements_1948.yaml) and [localities](../content/map/localities_1948.yaml) identities where available; aliases in the tables do not create duplicate places.

@@ -22,7 +22,7 @@ def test_issue_1008_roster_and_separate_adjacent_positions():
     by_id = {location["id"]: location for location in LOCATIONS}
     assert set(by_id) == {
         "negba", "hulda", "nir_am", "latrun_fort", "iraq_suwaydan_fort", "shaar_hagai",
-        "ad_halom_bridge", "shaar_haaliyah", "jerusalem", "east_jerusalem_old_city",
+        "ad_halom_bridge", "shaar_haaliyah", "jerusalem", "east_jerusalem_old_city", "nirim",
     }
     assert by_id["iraq_suwaydan_fort"]["id"] != "negba"
     assert by_id["ad_halom_bridge"]["id"] != "isdud"

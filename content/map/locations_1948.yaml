@@ -225,3 +225,38 @@ locations:
   # the Knesset's "Liberation of Jerusalem" records that the Jewish Quarter fell to the Jordanians on that date.
   - { url: 'https://m.knesset.gov.il/En/About/Documents/JerEnPDF1.pdf', checked: 2026-10-18 }
   status: draft
+
+- id: nirim
+  name: Nirim
+  name_he: נירים
+  name_he_review: agent-checked
+  name_he_sources:
+  - { url: 'https://benyehuda.org/read/14684', checked: 2026-11-01 } # Gvati: "קיבוץ נירים בדנגור"
+  - { url: 'https://palmach.org.il/history/database/?itemId=6201', checked: 2026-11-01 } # "הדפה נירים התקפה של הצבא המצרי"
+  kind: kibbutz
+  # The 1948 site at Dangur, where kibbutz Nir Yitzhak stands today; Nirim moved after the war (the CBS file gives both
+  # kibbutzim 1949). The point is the CBS point of Nir Yitzhak (ITM 138783 572100, converted from EPSG:2039 to EPSG:4326
+  # with pyproj), not present-day Nirim's. Research: research_notes/Map/d5-southern-coast-negev-housing-1948.md (#2111),
+  # section 5.
+  lon: 34.3576484
+  lat: 31.2376769
+  q: -14
+  r: 31
+  # NOT YET RULED: the owner's 1 November 2026 ruling on #2113 ("Nirim, add it to the map (Recommended)") adds Nirim to
+  # the map but does not place it on the docs/locations.md roster. optional, the lower of the two priorities the schema
+  # allows, stands until the owner rules.
+  priority: optional
+  marker: true # DESIGN VALUE: this record is a map marker.
+  managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
+  designated_site: false # DESIGN VALUE: this existing kibbutz is not a founding site.
+  settlement_control_target: false # DESIGN VALUE: map inclusion does not add a capture target.
+  # No starting_control, as for nir_am: the opening control layer (control_1948_49.geojson) leaves this hex uncoloured.
+  sources:
+  - { url: 'https://www.cbs.gov.il/he/publications/doclib/2019/ishuvim/bycode2024.xlsx', checked: 2026-11-01 } # coordinates: Nir Yitzhak (code 402)
+  # Gvati, 100 Years of Settlement, vol. 2: the Egyptians attacked "קיבוץ נירים בדנגור (כיום יושב במקום קיבוץ ניר־יצחק)"
+  # together with Kfar Darom ("ב־15.5"); after the war "קיבוץ ניר־יצחק עלה לדנגור במקום קיבוץ נירים".
+  - { url: 'https://benyehuda.org/read/14684', checked: 2026-11-01 }
+  - { url: 'https://palmach.org.il/history/database/?itemId=6201', checked: 2026-11-01 } # "ב-15 למאי 1948 הדפה נירים התקפה של הצבא המצרי."
+  - { url: 'https://www.jta.org/archive/u-s-attitude-on-arab-invasion-of-israel-will-be-revealed-at-security-council-today', checked: 2026-11-01 } # JTA, 17 May 1948: "the Negev settlement of Nirim"
+  - { url: 'https://www.jta.org/archive/control-center-of-jerusalem-tel-aviv-hospital-bombed-casualties-heavy', checked: 2026-11-01 } # JTA, 18 May 1948: "a two-day battle at the Nirim settlement"
+  status: draft

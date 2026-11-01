@@ -158,7 +158,9 @@ public class MapContentTests
         Assert.Equal(1102, c.Hexes.Count);
         Assert.Equal(870, c.Hexes.Count(h => h.Land));
         Assert.Equal(25, c.SettlementHexes.Count);
-        Assert.Equal(10, c.MapLocations.Count);
+        Assert.Equal(11, c.MapLocations.Count);
+        var nirim = Assert.Single(c.MapLocations, x => x.Id == "nirim");   // #2113: the 1948 site at Dangur
+        Assert.Equal((-14, 31, ""), (nirim.Q, nirim.R, nirim.StartingControl));
         Assert.Contains(c.SettlementHexes, s => s.Id == "tiberias");
         Assert.Contains(c.MapLocations, x => x.Id == "jerusalem" && x.Name == "West Jerusalem" && x.StartingControl == "israeli");
         var eastJerusalem = Assert.Single(c.MapLocations, x => x.Id == "east_jerusalem_old_city");
