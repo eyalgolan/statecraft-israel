@@ -630,7 +630,7 @@ public class ShareShotTests
         var calls = attempt.Calls.Count;
         attempt.Press("go"); attempt.Press("instagram"); attempt.Press("copy");
         attempt.Presenter.Open(); attempt.Presenter.Close(); attempt.Presenter.Dispose();
-        Assert.AreEqual(calls, attempt.Calls.Count, "disposed controls and repeated disposal are inert");
+        Assert.AreEqual(calls, attempt.Calls.Count, "disposal unbinds the controls, and Open, Close and a second Dispose are inert");
     }
 
     [Test]
@@ -657,8 +657,11 @@ public class ShareShotTests
         }
     }
 
+    /// <summary>The C# half only: focus-out hands JS the ticket this control stored, not the current one. That JS cancels
+    /// nothing but a still-armed matching ticket (StatecraftShareCancelArm) is outside what this fake can check; it is in
+    /// the manual record (docs/share-1653-manual-checks.md, step 5).</summary>
     [Test]
-    public void LifecycleInvalidatesBeforeKeepAndActionsAndFocusCancelsOnlyItsTicket(
+    public void LifecycleInvalidatesBeforeKeepAndActionsAndFocusOutPassesItsOwnTicket(
         [Values("go", "instagram", "copy")] string control)
     {
         using var attempt = new ShareAttemptUi();
@@ -671,7 +674,7 @@ public class ShareShotTests
         var count = attempt.Calls.Count;
         var button = attempt.Ui.Q<Button>("share-" + control);
         button.Focus(); button.Blur();
-        CollectionAssert.AreEqual(new[] { owner }, attempt.Cancelled);
+        CollectionAssert.AreEqual(new[] { owner }, attempt.Cancelled, "focus-out passes the stored ticket, not the newer one");
         Assert.AreEqual(count, attempt.Calls.Count, "focus-out must not invalidate a released native promise");
         attempt.Presenter.Close();
         Assert.AreEqual("invalidate", attempt.Calls.Last());
