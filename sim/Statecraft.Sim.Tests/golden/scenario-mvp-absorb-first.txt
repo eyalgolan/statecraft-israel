@@ -126,7 +126,7 @@ units[
   7:veteran_soldier@-9,27|side=israel|strength=1
   8:egyptian_army@-8,25|side=egypt|strength=10|order=fortify|target=-8,25
   9:arab_legion@-2,22|side=jordan|strength=4|order=fortify|target=-2,22
-  10:syrian_army@13,6|side=syria|strength=3|order=fortify|target=13,6
+  10:syrian_army@13,5|side=syria|strength=3|order=fortify|target=13,5
   11:iraqi_army@6,13|side=iraq|strength=3|order=fortify|target=6,13
   12:arab_liberation_army@12,4|side=ala|strength=4|order=fortify|target=12,4
   13:veteran_soldier@-4,23|side=israel|strength=2

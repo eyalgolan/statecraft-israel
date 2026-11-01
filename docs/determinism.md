@@ -61,9 +61,9 @@ final `GameState.Hash()` is pinned:
 
 | Run | Ends | Hash |
 |---|---|---|
-| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `8578966e171c213fbc314ab87c8292817ff9a94790e372b4e4792c00e1708f61` |
-| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `385ba3b58a15d15f88bb27c9cc0620a7e7af011e51037f00fea70177644b3e83` |
-| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `385ba3b58a15d15f88bb27c9cc0620a7e7af011e51037f00fea70177644b3e83` |
+| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `665667e5823087c683ada229287bc36e5639ed08337db7323a1c61b54fd3a540` |
+| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `4d582bee4c2d6c7ed6a97f09d0cd368d24ba387593eacc26be745b8045de6643` |
+| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `4d582bee4c2d6c7ed6a97f09d0cd368d24ba387593eacc26be745b8045de6643` |
 
 `hash1952` stops at the first turn on or after 1 January 1952, which is the game's last turn, so it is the same run as
 `mvp-end` (`DeterminismTests.TheWholeGameToItsEndIsFixed`). Both names are kept (spec 2026-10-12 section 3 step 6): a
@@ -72,7 +72,7 @@ player check enumerate the manifest, so it and every scenario are checked withou
 
 A further value is pinned for the browser smoke run (`?smoke=5`: the golden seed, five turns played through the UI's own
 buttons, answering each event with its first option while the turn's Attention pays for it, the rest left to their
-ministers): `SMOKE OK 5 turns 1948-10-15 7bdf646a3c36cf480d4972098dd1c3ebb568d309796c8a639d18bb54f671f995`.
+ministers): `SMOKE OK 5 turns 1948-10-15 2843e7caf7670ab0d3012d6f3dcc96447174afe2d889a5753026c19754065f7c`.
 It depends on the UI path as well as the sim (which option is first, the turn grid), so re-record it when either changes.
 Check every WebGL build with every manifest entry (plus the UI-path smoke line) with:
 
@@ -83,7 +83,7 @@ while read -r name hash; do
   golden_expect+=(--expect "GOLDEN OK $name $hash")
 done < sim/Statecraft.Sim.Tests/golden/manifest.txt
 uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5" "${golden_expect[@]}" \
-  --expect "SMOKE OK 5 turns 1948-10-15 7bdf646a3c36cf480d4972098dd1c3ebb568d309796c8a639d18bb54f671f995"
+  --expect "SMOKE OK 5 turns 1948-10-15 2843e7caf7670ab0d3012d6f3dcc96447174afe2d889a5753026c19754065f7c"
 ```
 
 `smoke-orders` (GDD Phase 5 PR 15, #754) is the same kind of browser run for the unit orders (`?smoke-orders`, desktop
@@ -450,3 +450,13 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | #1575 + #1568 combined: the `reparations_vote` card (#1564) on top of `degania_defence` (#1565) and #939 Task 12 (#1545) | hash1952 | `385ba3b5` | re-pinned on the merged tree: the reference player answers `reparations_vote` `negotiate` on 15 December 1951 (morale -0.02, stability -0.0015 through it), as on #1575's own branch; `degania_defence`'s changes stay (was `5bfeb265`) |
 | #1575 + #1568 combined: as above | mvp-end | `385ba3b5` | same run as hash1952 (was `5bfeb265`) |
 | #1575 + #1568 combined: as above | scenario-mvp-defeat | `b7d3848d` | the card fires in the scenario's run too and, left unanswered, resolves to `negotiate` (morale -0.02; was `d5bc68f9`). No other golden moves: hash1950, smoke5, smoke-orders and the other five scenarios end before 15 December 1951 |
+| #1270 (S1, the Syrian script past the first truce) | hash1950 | `665667e5` | the Syrian unit's script runs past 8 July 1948 to the bridgehead's anchor S1 (to 20 July 1949), so on the 15 July 1948 turn it steps from 13,6 onto the bridgehead's hex 13,5 and holds it fortified; it is the only change in every snapshot (was `8578966e`) |
+| #1270 (S1, the Syrian script past the first truce): as above | hash1952 | `4d582bee` | as above (was `385ba3b5`) |
+| #1270 (S1, the Syrian script past the first truce): as above | smoke5 | `2843e7ca` | as above (the smoke run's five turns reach 15 October 1948) (was `7bdf646a`) |
+| #1270 (S1, the Syrian script past the first truce): as above | scenario-reckless | `61353b68` | as above (was `a2ca9626`) |
+| #1270 (S1, the Syrian script past the first truce): as above | scenario-cautious | `4d8fdbf8` | as above (was `c06d89f0`) |
+| #1270 (S1, the Syrian script past the first truce): as above | scenario-mvp-absorb-first | `8f1816a4` | as above (was `9c98ae51`) |
+| #1270 (S1, the Syrian script past the first truce): as above | mvp-end | `4d582bee` | as above (was `385ba3b5`) |
+| #1270 (S1, the Syrian script past the first truce): as above | scenario-mvp-defeat | `7905de73` | as above (was `b7d3848d`) |
+| #1270 (S1, the Syrian script past the first truce): as above | scenario-mvp-occupy-cost | `e81735af` | as above (was `9fcc7bae`) |
+| #1270 (S1, the Syrian script past the first truce): as above | scenario-mvp-annex-nazareth | `cc225746` | as above (was `8fe6d129`). No other golden moves: smoke-orders does not reach 15 July 1948 |

@@ -174,22 +174,25 @@ public class EnemyAITests
         Assert.Equal(rng, real.RngState);
     }
 
-    // R-ENEMY-002: the script never invents a position. Each scripted target is its row's 11 June 1948 anchor that cites at
-    // least two sources that are not Wikipedia or Wikidata, on that anchor's hex (unit_anchor_hexes.yaml); the ALA has none.
+    // R-ENEMY-002: the script never invents a position. Each scripted target is an anchor of its row from 11 June 1948 that
+    // cites at least two sources that are not Wikipedia or Wikidata, on that anchor's hex (unit_anchor_hexes.yaml), in the
+    // file's order; the ALA has none. #1270's first slice: the Syrian bridgehead from 8 July 1948 to the Syrian armistice (S1).
     [Fact]
     public void TheScriptNeverInventsAPosition()
     {
-        var scripted = Real.StartingForces.Where(f => f.Script != null)
-            .Select(f => (f.Row, f.Script!.Value.Q, f.Script!.Value.R, f.ScriptUntil)).OrderBy(x => x.Row, StringComparer.Ordinal).ToList();
-        var until = new DateTime(1948, 7, 8);   // the four anchors' window end: the first truce's (units_1948.yaml)
+        var scripted = Real.StartingForces.SelectMany(f => f.Script.Select(x => (f.Row, x.Q, x.R, x.Until)))
+            .OrderBy(x => x.Row, StringComparer.Ordinal).ToList();
+        var until = new DateTime(1948, 7, 8);   // the 11 June anchors' window end: the first truce's (units_1948.yaml)
         Assert.Equal(new[]
         {
             ("arab_legion", -2, 22, until),                     // Latrun
             ("egyptian_expeditionary_force", -7, 24, until),    // Isdud, the forward base (the row's first 11 June anchor)
+            ("egyptian_expeditionary_force", -8, 25, until),    // Majdal, the rear base: listed second, so never the target
             ("iraqi_expeditionary_force", 6, 13, until),        // Jenin
             ("syrian_army", 13, 5, until),                      // the bridgehead at Mishmar HaYarden
+            ("syrian_army", 13, 5, new DateTime(1949, 7, 20)),  // the same bridgehead to the Syrian armistice (#1270, S1)
         }, scripted);
-        Assert.All(Real.StartingForces.Where(f => f.Side == Movement.PlayerSide), f => Assert.Null(f.Script));
+        Assert.All(Real.StartingForces.Where(f => f.Side == Movement.PlayerSide), f => Assert.Empty(f.Script));
     }
 
     // R-ENEMY-002: an 11 June anchor on one non-Wikipedia source (with Wikipedia beside it) is not scripted; two are.
@@ -211,20 +214,62 @@ public class EnemyAITests
             ["map/unit_anchor_hexes.yaml"] = "anchors:\n  - { id: force, anchor: 0, q: 5, r: 0 }\n  - { id: force, anchor: 1, q: 3, r: 2 }\n",
         })));
         var f = Assert.Single(c.StartingForces);
-        Assert.Equal(scripted ? (3, 2) : ((int, int)?)null, f.Script);
+        Assert.Equal(scripted ? new[] { (3, 2, new DateTime(1948, 7, 8)) } : Array.Empty<(int, int, DateTime)>(), f.Script);
+    }
+
+    // R-ENEMY-002 past the first truce (#1270; owner, 31 October 2026, ruling a: "First listed (as today)"): the script is
+    // every anchor from 11 June 1948 on two non-wiki sources, in the file's order, and on each turn the unit marches on the
+    // first of them whose window has not ended. Fixture: a later anchor on one source is skipped; of two that overlap from
+    // 8 July, the first listed is the target until it ends on 1 November, then the second until 24 February 1949; after
+    // that the unit follows the goals (here it fortifies). Hexes and dates are fixture values (town_a, a player's
+    // locality, is on 1,0).
+    [Fact]
+    public void TheScriptMarchesOnTheFirstListedAnchorWhoseWindowHasNotEnded()
+    {
+        const string Two = "[{ url: 'https://example.org/a', checked: '2026-10-13' }, { url: 'https://example.org/b', checked: '2026-10-13' }]";
+        const string One = "[{ url: 'https://example.org/a', checked: '2026-10-13' }, { url: 'https://en.wikipedia.org/wiki/X', checked: '2026-10-13' }]";
+        var row = "- id: force\n  service: army\n  side: egypt\n  status: draft\n  strength: { value: 30, as_of: '1948-05-15' }\n  anchors:\n"
+            + "  - { place: Start, lon: 34.29, lat: 33.35, from: '1948-05-15', to: '1948-06-11' }\n"
+            + "  - { place: June, lon: 34.29, lat: 33.35, from: '1948-06-11', to: '1948-07-08', sources: " + Two + " }\n"
+            + "  - { place: OneSource, lon: 34.29, lat: 33.35, from: '1948-07-08', to: '1949-02-24', sources: " + One + " }\n"
+            + "  - { place: Autumn, lon: 34.29, lat: 33.35, from: '1948-07-08', to: '1948-11-01', sources: " + Two + " }\n"
+            + "  - { place: Armistice, lon: 34.29, lat: 33.35, from: '1948-07-08', to: '1949-02-24', sources: " + Two + " }\n";
+        var c = ContentLoader.Load(Fixture.Write(Fixture.Gdd(new Dictionary<string, string>
+        {
+            ["unit_types.yaml"] = Types,
+            ["map/hexes.json"] = MovementTests.Board(),
+            ["corridors.yaml"] = "corridors: []\n",
+            ["map/units_1948.yaml"] = "units:\n" + row,
+            ["map/unit_anchor_hexes.yaml"] = "anchors:\n  - { id: force, anchor: 0, q: 5, r: 0 }\n  - { id: force, anchor: 1, q: 3, r: 2 }\n"
+                + "  - { id: force, anchor: 2, q: 5, r: 2 }\n  - { id: force, anchor: 3, q: 4, r: 1 }\n  - { id: force, anchor: 4, q: 2, r: 1 }\n",
+        })));
+        var f = Assert.Single(c.StartingForces);
+        Assert.Equal(new[] { (3, 2, new DateTime(1948, 7, 8)), (4, 1, new DateTime(1948, 11, 1)), (2, 1, new DateTime(1949, 2, 24)) }, f.Script);
+
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        Assert.Equal((5, 0), (s.Units[0].Q, s.Units[0].R));
+        s.Date = new DateTime(1948, 7, 15);
+        EnemyAI.Order(c, s, new List<Cause>());
+        Assert.Equal((4, 1), (s.Units[0].Q, s.Units[0].R));   // the first listed of the two, not the one-source anchor
+        s.Date = new DateTime(1948, 11, 15);
+        EnemyAI.Order(c, s, new List<Cause>());
+        Assert.Equal((2, 1), (s.Units[0].Q, s.Units[0].R));   // the first has ended: the second
+        s.Date = new DateTime(1949, 3, 15);
+        EnemyAI.Order(c, s, new List<Cause>());
+        Assert.Equal((2, 1, Orders.Fortifying), (s.Units[0].Q, s.Units[0].R, s.Units[0].Order));   // every window has ended
     }
 
     // R-ENEMY-002: in the real game each scripted unit marches on its 11 June hex along its cheapest path (round the player's
     // units and localities), as far as its movement points reach, on the turns that start before the anchor's window ends
-    // (15 May and 15 June). With 3 points a turn each ends on its hex or next to it. From the turn of 15 July the AI moves
-    // no unit.
+    // (15 May and 15 June). With 3 points a turn each ends on its hex or next to it. On the turn of 15 July only the Syrian
+    // unit has a script left (#1270, S1, to 20 July 1949): it steps onto the bridgehead's hex, and no other unit moves.
     [Fact]
     public void AScriptedUnitMarchesToItsJuneAnchorThenFollowsTheGoals()
     {
         var c = Real;
         var s = Simulation.NewGame(c, 1, Mode.Historical);
-        var targets = c.StartingForces.Select((f, i) => (f, i)).Where(x => x.f.Script != null)
-            .ToDictionary(x => x.i, x => x.f.Script!.Value);
+        var targets = c.StartingForces.Select((f, i) => (f, i)).Where(x => x.f.Script.Count > 0)
+            .ToDictionary(x => x.i, x => (x.f.Script[0].Q, x.f.Script[0].R));
         Assert.Equal(4, targets.Count);
         var first = Simulation.Step(c, s, Array.Empty<Command>());
         foreach (var id in targets.Keys)
@@ -234,10 +279,13 @@ public class EnemyAITests
             Assert.True(Distance(june.Units[id].Q, june.Units[id].R, hex.Q, hex.R) <= 1, $"unit {id} is not at or next to its 11 June hex");
         Assert.Equal(new DateTime(1948, 7, 15), june.Date);
         var why = new List<Cause>();
-        var positions = june.Units.Values.Select(u => (u.Id, u.Q, u.R)).ToList();
+        int syria = c.StartingForces.FindIndex(f => f.Row == "syrian_army");
+        var positions = june.Units.Values.Where(u => u.Id != syria).Select(u => (u.Id, u.Q, u.R)).ToList();
         EnemyAI.Order(c, june, why);
-        Assert.Equal(positions, june.Units.Values.Select(u => (u.Id, u.Q, u.R)).ToList());
-        Assert.DoesNotContain(why, x => x.Message.Contains("moved to hex", StringComparison.Ordinal));
+        Assert.Equal(positions, june.Units.Values.Where(u => u.Id != syria).Select(u => (u.Id, u.Q, u.R)).ToList());
+        Assert.Equal(targets[syria], (june.Units[syria].Q, june.Units[syria].R));
+        Assert.Equal(new[] { $"Unit {syria} moved to hex" }, why.Where(x => x.Message.Contains("moved to hex", StringComparison.Ordinal))
+            .Select(x => x.Message.Substring(0, x.Message.IndexOf("hex", StringComparison.Ordinal) + 3)));
     }
 
     // R-ENEMY-002: the script is Historical mode's only; another mode's units follow the goals from the first turn.
@@ -258,7 +306,7 @@ public class EnemyAITests
         var c = Real;
         var s = Simulation.NewGame(c, 1, Mode.Historical);
         var legion = c.StartingForces.FindIndex(f => f.Row == "arab_legion");
-        var latrun = c.StartingForces[legion].Script!.Value;
+        var latrun = (c.StartingForces[legion].Script[0].Q, c.StartingForces[legion].Script[0].R);
         var id = s.NextId++;
         s.Units.Add(id, new Unit(id, StartingForces.IsraeliBrigadeType, latrun.Q, latrun.R, side: "israel", strength: 1));
         var before = (s.Units[legion].Q, s.Units[legion].R);
@@ -408,7 +456,7 @@ public class EnemyAITests
             new Command[] { new Move(1, 1, 0), new UnitOrder(1, Orders.Hold) });
         Assert.Equal(new[] { "", "", Orders.Fortify }, r.Why.Where(x => x.System == "map").Select(x => x.EnemyOrder).ToArray());
         var first = Simulation.Step(Real, Simulation.NewGame(Real, 1, Mode.Historical), Array.Empty<Command>());
-        var scripted = Real.StartingForces.Select((f, i) => (f, i)).Where(x => x.f.Script != null).Select(x => x.i.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        var scripted = Real.StartingForces.Select((f, i) => (f, i)).Where(x => x.f.Script.Count > 0).Select(x => x.i.ToString(System.Globalization.CultureInfo.InvariantCulture));
         Assert.Equal(scripted, first.Why.Where(x => x.EnemyOrder == Movement.Kind).Select(x => x.Target));
     }
 

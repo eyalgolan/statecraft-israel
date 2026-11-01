@@ -8,7 +8,7 @@ fail on a failure line or a timeout. Uses Chrome for Testing from the Playwright
 --enable-logging=stderr --v=1 as INFO:CONSOLE... "text", source: ...
 
 Usage (from the repo root):
-  uv run tools/web_check.py unity/Builds/Web-disabled --query "golden" --expect "GOLDEN OK hash1950 8578966e171c213fbc314ab87c8292817ff9a94790e372b4e4792c00e1708f61" --expect "GOLDEN OK hash1952 385ba3b58a15d15f88bb27c9cc0620a7e7af011e51037f00fea70177644b3e83"
+  uv run tools/web_check.py unity/Builds/Web-disabled --query "golden" --expect "GOLDEN OK hash1950 665667e5823087c683ada229287bc36e5639ed08337db7323a1c61b54fd3a540" --expect "GOLDEN OK hash1952 4d582bee4c2d6c7ed6a97f09d0cd368d24ba387593eacc26be745b8045de6643"
   uv run tools/web_check.py unity/Builds/Web-disabled --query "smoke-orders" --expect "SMOKE ORDERS OK 1948-06-15 bf0b41cce7efc8ad9f1f518b0f2c26736b5c9a25d477afc075a7f69dfbcad42b"
   (the smoke-orders golden: one Move given through the unit card, docs/determinism.md)
 Options: --query Q (page URL query, without '?'), --expect TEXT (repeatable), --fail REGEX (default: GOLDEN FAIL|SMOKE FAIL|BOOT FAIL),
