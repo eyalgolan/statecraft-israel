@@ -376,9 +376,12 @@ namespace Statecraft.Game.UI
             if (Statecraft.Game.Map.Units.UnitLayer.HiddenInCaptures(Application.absoluteURL, Environment.GetCommandLineArgs(),
                     Application.platform == RuntimePlatform.WebGLPlayer))
                 VisualToggles.Set(Statecraft.Game.Map.Units.UnitLayer.ToggleName, false);
+            GameSession? shownSession = null;
             Action showUnits = () =>
             {
-                unitLayer.Show(bridge.Content, bridge.State);
+                // New Game replaces the session, and its sim ids are the old game's: its tokens are drawn where they stand.
+                unitLayer.Show(bridge.Content, bridge.State, slide: ReferenceEquals(shownSession, bridge.Session));
+                shownSession = bridge.Session;
                 unitLayer.Dim(unitLayer.Tokens.Where(t => t.Token.Unit.Side == Statecraft.Game.Map.Units.UnitData.Israel)
                     .Where(t => UnitCard.SimUnit(bridge.Content, bridge.State, t.Token) is int id
                         && Movement.ActionsLeft(bridge.Content, bridge.State, id, bridge.Spent) == 0)

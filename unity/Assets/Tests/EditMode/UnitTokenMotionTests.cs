@@ -105,6 +105,23 @@ public class UnitTokenMotionTests
         Assert.AreEqual(Vector3.zero, token.transform.position);
     }
 
+    /// <summary>Every rebuild calls Begin on every token, most with no move (review of #2176, H5): a token that does not
+    /// move and was not moving leaves its figures as they are.</summary>
+    [Test]
+    public void ANoMoveBeginLeavesAnIdleTokensFiguresAlone()
+    {
+        var a = Figure();
+        UnitFigureMotion.Play(a, UnitFigureMotion.Walk);
+        Assert.IsTrue(In(a, UnitFigureMotion.Walk), "fixture: the figure plays something else than idle");
+        var motion = token.AddComponent<UnitTokenMotion>();
+        motion.enabled = false;
+        int changes = 0; motion.Changed = () => changes++;
+        motion.Begin(Vector3.zero);
+        Assert.IsTrue(In(a, UnitFigureMotion.Walk), "no pose was forced on it");
+        Assert.AreEqual(0, changes);
+        Assert.IsFalse(motion.enabled);
+    }
+
     [Test]
     public void DisablingMidSlidePutsTheTokenAtItsPlace()
     {
@@ -147,6 +164,37 @@ public class UnitTokenMotionTests
         motion.Tick(0.1f);
         Assert.IsFalse(motion.Attacking); Assert.IsFalse(motion.enabled);
         Assert.IsTrue(In(a, UnitFigureMotion.Idle));
+    }
+
+    /// <summary>A rebuild for another unit's order hands a playing attack to the unit's new token (review of #2177, 3): it
+    /// goes on from where it was, for what is left of the take, not from the start and not cut short.</summary>
+    [Test]
+    public void AContinuedAttackPlaysOnFromWhereItWas()
+    {
+        var a = Figure();
+        var motion = token.AddComponent<UnitTokenMotion>();
+        motion.enabled = false;
+        Assert.IsTrue(motion.PlayAttack());
+        motion.Tick(0.05f);
+        Assert.AreEqual(0.05f, motion.AttackPlayed, 1e-4f);
+        var next = new GameObject("rebuilt token");
+        try
+        {
+            var figure = new GameObject("figure"); figure.transform.SetParent(next.transform, false);
+            var b = figure.AddComponent<Animator>(); b.runtimeAnimatorController = controller; b.Rebind(); b.Update(0f);
+            var successor = next.AddComponent<UnitTokenMotion>();
+            successor.enabled = false;
+            successor.ContinueAttack(motion.AttackPlayed);
+            Assert.IsTrue(successor.Attacking); Assert.IsTrue(successor.enabled);
+            b.Update(0f);
+            Assert.AreEqual(UnitFigureMotion.Attack, b.GetCurrentAnimatorStateInfo(0).fullPathHash);
+            Assert.AreEqual(0.25f, b.GetCurrentAnimatorStateInfo(0).normalizedTime, 0.02f, "from 0.05 s into the 0.2 s take");
+            successor.Tick(0.14f);
+            Assert.IsTrue(successor.Attacking, "0.15 s of the take is left");
+            successor.Tick(0.02f);
+            Assert.IsFalse(successor.Attacking);
+        }
+        finally { Object.DestroyImmediate(next); }
     }
 
     [Test]

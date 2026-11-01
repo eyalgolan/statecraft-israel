@@ -30,6 +30,7 @@ namespace Statecraft.Game.Map.Units
         float elapsed = Duration, attackLeft;
         bool firing;   // a figure plays the attack (else it waits for one, up to AttackWaitS)
         bool fired;    // an attack just ended: its figures go back to walking or standing
+        float attackLength, resumeAt;   // the playing take's length; where a continued attack picks up
         int posed;     // the walk or idle the figures were last asked for
         readonly List<Animator> animators = new List<Animator>();
 
@@ -40,7 +41,7 @@ namespace Statecraft.Game.Map.Units
         /// <summary>Starts a slide from <paramref name="offset"/> (the old place less the new) to the unit's place.</summary>
         public void Begin(Vector3 offset)
         {
-            if (offset.sqrMagnitude < MinMoveM * MinMoveM) { Snap(); return; }
+            if (offset.sqrMagnitude < MinMoveM * MinMoveM) { if (Moving || Attacking) Snap(); return; }
             from = offset; elapsed = 0f;
             transform.position = from;
             enabled = true;
@@ -54,9 +55,23 @@ namespace Statecraft.Game.Map.Units
         public bool PlayAttack()
         {
             if (!gameObject.activeInHierarchy) return false;
-            attackLeft = AttackWaitS; firing = false;
+            attackLeft = AttackWaitS; firing = false; resumeAt = 0f;
             enabled = true;
             return Fire();
+        }
+
+        /// <summary>How far into its fire take the token's attack is (seconds), or 0 when none plays: a rebuild hands it to
+        /// the unit's new token (<see cref="ContinueAttack"/>).</summary>
+        internal float AttackPlayed => firing ? Mathf.Max(0f, attackLength - attackLeft) : 0f;
+
+        /// <summary>Goes on with an attack the unit's previous token had played <paramref name="played"/> seconds of, from
+        /// there (a rebuild for another unit's order must not cut a take short).</summary>
+        internal void ContinueAttack(float played)
+        {
+            if (played <= 0f || !gameObject.activeInHierarchy) return;
+            resumeAt = played; attackLeft = AttackWaitS; firing = false;
+            enabled = true;
+            Fire();
         }
 
         /// <summary>Starts the fire take on every live figure that has one; the attack then lasts as long as the longest.</summary>
@@ -67,11 +82,15 @@ namespace Statecraft.Game.Map.Units
             foreach (var animator in animators)
             {
                 if (!UnitFigureMotion.Play(animator, UnitFigureMotion.Attack, restart: true)) continue;   // even mid-attack
+                float length = 0f;
                 foreach (var clip in animator.runtimeAnimatorController.animationClips)
-                    if (CollectionFireTake(clip.name)) longest = Mathf.Max(longest, clip.length);
+                    if (CollectionFireTake(clip.name)) length = Mathf.Max(length, clip.length);
+                if (resumeAt > 0f && length > 0f) animator.Play(UnitFigureMotion.Attack, 0, Mathf.Clamp01(resumeAt / length));
+                longest = Mathf.Max(longest, length);
             }
             if (longest <= 0f) return false;
-            attackLeft = longest; firing = true;
+            if (longest <= resumeAt) { attackLeft = 0f; resumeAt = 0f; return false; }   // the take had finished
+            attackLength = longest; attackLeft = longest - resumeAt; resumeAt = 0f; firing = true;
             return true;
         }
 
@@ -81,7 +100,7 @@ namespace Statecraft.Game.Map.Units
 
         /// <summary>Puts every live figure of the token in the state its move and attack call for now: a figure that
         /// arrives or turns near mid-move walks at once, and one that can play a waiting attack plays it. UnitFigures and
-        /// UnitFigureDetail call it; no allocation.</summary>
+        /// UnitFigureDetail call it. It allocates only when it starts a waiting attack (reading the controller's clips).</summary>
         public void RefreshPose() => Pose();
 
         void Pose()
@@ -114,7 +133,7 @@ namespace Statecraft.Game.Map.Units
             if (Attacking)
             {
                 attackLeft = Mathf.Max(0f, attackLeft - seconds);
-                if (!Attacking) { fired = firing; firing = false; }
+                if (!Attacking) { fired = firing; firing = false; resumeAt = 0f; }
             }
             if (wasMoving != Moving || wasFiring != firing) Pose();
             if (!Moving && !Attacking) enabled = false;   // an idle token costs nothing per frame
@@ -131,7 +150,7 @@ namespace Statecraft.Game.Map.Units
         {
             bool moved = transform.position != Vector3.zero;
             fired = firing;
-            elapsed = Duration; attackLeft = 0f; firing = false; from = Vector3.zero;
+            elapsed = Duration; attackLeft = 0f; firing = false; resumeAt = 0f; from = Vector3.zero;
             transform.position = Vector3.zero;
             Pose();
             if (moved) Changed?.Invoke();

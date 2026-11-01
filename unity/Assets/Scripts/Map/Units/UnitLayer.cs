@@ -348,8 +348,10 @@ namespace Statecraft.Game.Map.Units
         }
 
         /// <summary>Draws the units for <paramref name="state"/> (read only). Rebuilds the tokens only when the roster
-        /// changed; returns true when it did. A selected unit that is no longer drawn is deselected.</summary>
-        public bool Show(Content content, GameState state)
+        /// changed; returns true when it did. A selected unit that is no longer drawn is deselected. A moved unit's token
+        /// slides from where it was drawn (<see cref="AnimateMoves"/>) unless <paramref name="slide"/> is false: another game
+        /// (New Game) reuses the sim ids, so its tokens are drawn where they stand.</summary>
+        public bool Show(Content content, GameState state, bool slide = true)
         {
             shownContent = content; shownState = state;
             PrepareMapOnlySpots(content);
@@ -365,7 +367,7 @@ namespace Statecraft.Game.Map.Units
             roster = now;
             PlaceMoved(now);
             placed = UnitPlacer.Place(now, drawSpots ?? DisplaySpots);
-            Rebuild();
+            Rebuild(slide);
             ScheduleSatisfiedPrefetchRetirement();
             if (Selected != null && !placed.Any(p => p.Token.Unit.Id == Selected)) Select(null); else Select(Selected);
             seenAvailability = UnitFigures.AvailabilityVersion;
@@ -616,15 +618,18 @@ namespace Statecraft.Game.Map.Units
             _ => throw new ArgumentException($"unknown headgear '{headgear}'", nameof(headgear)),
         };
 
-        void Rebuild()
+        void Rebuild(bool slide)
         {
             // Where each unit's token is drawn now (its place plus any slide under way), before the old tokens go: a unit
             // drawn somewhere else after the rebuild slides from there (#1866). Keyed by the sim unit, else by the row.
             var drawnAt = new Dictionary<(int sim, string row), Vector3>();
-            for (int i = 0; i < motions.Count && i < trios.Count; i++)
+            var firing = new Dictionary<(int sim, string row), float>();   // and how far into its fire take each attack is
+            for (int i = 0; slide && i < motions.Count && i < trios.Count; i++)
             {
                 var m = motions[i];
-                if (m != null) drawnAt[Key(m.SimId, m.name)] = trios[i].centre + m.transform.position;
+                if (m == null) continue;
+                drawnAt[Key(m.SimId, m.name)] = trios[i].centre + m.transform.position;
+                if (m.AttackPlayed > 0f) firing[Key(m.SimId, m.name)] = m.AttackPlayed;
             }
             var outgoing = new List<GameObject>();
             for (int i = tokensRoot.childCount - 1; i >= 0; i--)
@@ -639,13 +644,14 @@ namespace Statecraft.Game.Map.Units
             // The outgoing holders are destroyed only after the new tokens have acquired their models, as the player's
             // deferred Destroy already does: an edit-mode rebuild must not drop a model's last owner in between and ask the
             // source again for a request still in flight (or release an arrived model) only to re-acquire it.
-            try { BuildTokens(drawnAt); }
+            try { BuildTokens(drawnAt, firing); }
             finally { foreach (var old in outgoing) if (Application.isPlaying) Destroy(old); else DestroyImmediate(old); }
         }
 
         static (int sim, string row) Key(int simId, string row) => simId >= 0 ? (simId, "") : (-1, row);
 
-        void BuildTokens(IReadOnlyDictionary<(int sim, string row), Vector3> drawnAt)
+        void BuildTokens(IReadOnlyDictionary<(int sim, string row), Vector3> drawnAt,
+            IReadOnlyDictionary<(int sim, string row), float> firing)
         {
             FreeTokenMeshes();
             motions.Clear();
@@ -772,6 +778,7 @@ namespace Statecraft.Game.Map.Units
                 // With the units hidden the token cannot be seen, and it would slide only once they are shown again.
                 if (tokensRoot.gameObject.activeInHierarchy && drawnAt.TryGetValue(Key(motion.SimId, token.name), out var was))
                     motion.Begin(was - trios[i].centre);
+                if (firing.TryGetValue(Key(motion.SimId, token.name), out var played)) motion.ContinueAttack(played);
             }
         }
 

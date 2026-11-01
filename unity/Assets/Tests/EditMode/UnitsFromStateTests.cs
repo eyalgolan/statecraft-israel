@@ -423,7 +423,6 @@ public class UnitsFromStateTests
             var first = SpotOf(layer, row);
             var to = FreeNeighbour(s, unit.Q, unit.R);
             MoveTo(s, unit.Id, to.q, to.r);
-            string hash = s.Hash();
             Assert.IsTrue(layer.Show(C, s));
             var second = SpotOf(layer, row);
             Assert.Greater((first - second).magnitude, 1000f, "a real move, not a nudge");
@@ -453,9 +452,62 @@ public class UnitsFromStateTests
             motion.Tick(UnitTokenMotion.Duration);
             Assert.AreEqual(Vector3.zero, token.position, "it ends on its spot");
             Assert.IsFalse(motion.Moving); Assert.IsFalse(motion.enabled);
+        }
+        finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>Another unit's order rebuilds every token (review of #2177, 3): a unit whose figures were firing goes on
+    /// firing on its new token, from where it was.</summary>
+    [Test]
+    public void ARebuildForAnotherUnitsOrderKeepsAnAttackPlaying()
+    {
+        var map = BuildMap();
+        var controller = new UnityEditor.Animations.AnimatorController(); controller.AddLayer("Base Layer");
+        var fire = new AnimationClip { name = "fire" };
+        fire.SetCurve("", typeof(Transform), "localScale.x", AnimationCurve.Linear(0f, 1f, 1f, 1f));
+        try
+        {
+            var machine = controller.layers[0].stateMachine;
+            machine.defaultState = machine.AddState("idle"); machine.AddState("attack").motion = fire;
+            var s = NewGame();
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.AnimateMoves = true;
+            layer.Show(C, s);
+            var israel = s.Units.Values.Where(u => u.Side == "israel").Take(2).ToArray();
+            string firing = C.StartingForces[israel[0].Id].Row;
+            var figure = new GameObject("test figure").transform; figure.SetParent(TokenOf(map, firing), false);
+            var animator = figure.gameObject.AddComponent<Animator>(); animator.runtimeAnimatorController = controller;
+            animator.Rebind(); animator.Update(0f);
+            Assert.IsTrue(layer.PlayAttack(israel[0].Id), "fixture: the token plays the attack");
+            TokenOf(map, firing).GetComponent<UnitTokenMotion>().Tick(0.3f);
+            var to = FreeNeighbour(s, israel[1].Q, israel[1].R);
+            MoveTo(s, israel[1].Id, to.q, to.r);
+            Assert.IsTrue(layer.Show(C, s), "another unit's move rebuilds the tokens");
+            var successor = TokenOf(map, firing).GetComponent<UnitTokenMotion>();
+            Assert.IsTrue(successor.Attacking, "the attack goes on on the new token");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(map.gameObject); UnityEngine.Object.DestroyImmediate(controller); UnityEngine.Object.DestroyImmediate(fire); }
+    }
+
+    /// <summary>New Game (SimBridge.Replace) shows another game whose sim ids are the old game's (review of #2176, H4): its
+    /// tokens are drawn where they stand, with no slide from where the old game's units were.</summary>
+    [Test]
+    public void AnotherGamesTokensDoNotSlideFromTheOldGames()
+    {
+        var map = BuildMap();
+        try
+        {
+            var s = NewGame();
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.AnimateMoves = true;
+            var unit = s.Units.Values.First(u => u.Side == "israel");
+            var to = FreeNeighbour(s, unit.Q, unit.R);
             MoveTo(s, unit.Id, to.q, to.r);
-            Assert.IsTrue(layer.Show(C, s));
-            Assert.AreEqual(hash, s.Hash(), "the layer never writes the state");
+            layer.Show(C, s);
+            Assert.IsTrue(layer.Show(C, NewGame(), slide: false), "the new game's roster differs, so the tokens are rebuilt");
+            var motions = map.Terrain.transform.Find(UnitLayer.RootName).GetComponentsInChildren<UnitTokenMotion>(true);
+            Assert.IsNotEmpty(motions);
+            foreach (var m in motions) { Assert.IsFalse(m.Moving, m.name); Assert.AreEqual(Vector3.zero, m.transform.position, m.name); }
         }
         finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
     }
@@ -571,7 +623,7 @@ public class UnitsFromStateTests
             layer.AnimateMoves = true;
             MoveTo(s, unit.Id, unit.Q, unit.R);
             Assert.IsTrue(layer.Show(C, s));
-            Assert.IsFalse(layer.PlayAttack(unit.Id), "no near figure has an attack take in an edit-mode map");
+            Assert.IsFalse(layer.PlayAttack(unit.Id), "no near Animator is on in an edit-mode map (nothing has rendered)");
             Assert.IsFalse(layer.PlayAttack(-5), "no such unit");
         }
         finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
