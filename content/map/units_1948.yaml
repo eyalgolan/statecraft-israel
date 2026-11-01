@@ -74,9 +74,10 @@
 #   (https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6338280840): they are fact-checked too.
 # hidden: a unit the sources name but do not place; the map does not draw it (owner ruling, 2026-10-11).
 # status: draft = sourced and checked against the cited text, not yet by a historian. to_verify = as draft, with a
-#   secondary-source strength that a primary source must replace, or a primary-source strength no person has checked
-#   yet (above; #1240). fact-checked = a person has checked the row against its sources; every row a new game starts
-#   a unit from must be, before a shareable build (the release gate; Q-START-3). A comment above it links the check.
+#   secondary-source strength that a primary source must replace, or a primary-source strength or an anchor no person
+#   has checked yet (above; #1240, #1270). fact-checked = a person has checked the row against its sources; every row a
+#   new game starts a unit from must be, before a shareable build (the release gate; Q-START-3). A comment above it
+#   links the check.
 # reviewed_by and reviewed_on (both or neither, beside status): a person's sign-off, their GitHub handle and the day; only
 # that person writes them (owner, 15 October 2026, #375; docs/HISTORIAN_REVIEW.md).
 units:
@@ -1187,9 +1188,12 @@ units:
   sector_he_sources: [{url: 'https://he.wikipedia.org/wiki/%D7%94%D7%A6%D7%91%D7%90_%D7%94%D7%A1%D7%95%D7%A8%D7%99', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%94%D7%9B%D7%A0%D7%A8%D7%AA', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%A6%D7%9E%D7%97_%28%D7%9E%D7%A8%D7%9B%D7%96_%D7%90%D7%96%D7%95%D7%A8%D7%99%29', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%92%D7%A9%D7%A8_%D7%91%D7%A0%D7%95%D7%AA_%D7%99%D7%A2%D7%A7%D7%91', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%9E%D7%A9%D7%9E%D7%A8_%D7%94%D7%99%D7%A8%D7%93%D7%9F', checked: '2026-10-22'}]
   wikipedia_only: false
   # The owner person-checked this row on 21 October 2026 (#1240): https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250
-  status: fact-checked
+  # Its anchor from 8 July 1948 (#1270, S1) came later and is not covered by that check, so the row is to_verify until a
+  # person checks it (#1270, status of 22 October 2026: the new anchors as to_verify, through the release gate's person check).
+  status: to_verify
   to_verify:
   - "The 15 May strength rests on two full-text search snippets that give the same figures, Glubb (1957) and Rogan and Shlaim (2007, chapter not identified), and the second reproduces Glubb's figures and total (review of #860), so the figure rests on Glubb alone, merged as data only (owner, 17 October 2026, on #860). Check both printed pages (the note, section 9)."
+  - "The anchor from 8 July 1948 to the Syrian armistice (#1270, S1) is agent-read only (research_notes/GDD phase 5/enemy-script-anchors-check-1270.md): a person checks Dupuy pp. 83, 84 and 104, O'Ballance pp. 150, 153-154 and 205 and the armistice text, then the row is fact-checked again."
   strength:
     value: 3000
     as_of: '1948-05-15'
@@ -1234,6 +1238,27 @@ units:
     # CIA Intelligence Summary, week ending 16 June 1948.
     - {url: 'https://archive.org/details/cia-readingroom-document-cia-rdp78-01617a004700010007-2', checked: '2026-10-13'}
     - {url: 'https://en.wikipedia.org/wiki/1948_Arab%E2%80%93Israeli_War', checked: '2026-10-17'}
+    - {url: 'https://en.wikipedia.org/wiki/Mishmar_HaYarden_(moshava)', checked: '2026-10-17'}
+  # #1270, anchor S1 (research_notes/GDD phase 5/enemy-script-after-first-truce-1270.md; agent-read in
+  # enemy-script-anchors-check-1270.md, a person's check pending): the bridgehead held from the Ten Days to the armistice.
+  - place: The bridgehead at Mishmar HaYarden
+    place_he: "ראש הגשר במשמר הירדן"
+    place_he_review: agent-checked
+    place_he_sources: [{url: 'https://he.wikipedia.org/wiki/%D7%9E%D7%A9%D7%9E%D7%A8_%D7%94%D7%99%D7%A8%D7%93%D7%9F', checked: '2026-10-22'}]
+    lon: 35.59972
+    lat: 33.00278
+    from: '1948-07-08'
+    to: '1949-07-20'
+    end_basis: front_armistice
+    front: syria
+    note: "Dupuy p. 84: after Operation Brosh (from 9 July) the Syrians regained all their earlier possessions west of the river and a stalemate settled around the bridgehead. O'Ballance pp. 153-154: on 18 July they were still firmly in possession of it. Dupuy p. 104: at the end of Operation Hiram (31 October) they continued to hold their position in Mishmar Hayarden itself. O'Ballance p. 205: on 20 July 1949 the armistice was concluded and all Syrian troops were withdrawn from Israeli territory. The coordinates are Mishmar HaYarden's."
+    sources:
+    # Dupuy pp. 83, 84 and 104.
+    - {url: 'https://web.stanford.edu/group/tomzgroup/pmwiki/uploads/1793-1978-Dupuy-a-CLH.pdf', checked: '2026-11-01'}
+    # O'Ballance pp. 150, 153-154 and 205 (the item's OCR text).
+    - {url: 'https://archive.org/details/in.ernet.dli.2015.51540', checked: '2026-11-01'}
+    # The Israeli-Syrian General Armistice Agreement, signed "the twentieth of July nineteen forty-nine".
+    - {url: 'https://avalon.law.yale.edu/20th_century/arm04.asp', checked: '2026-11-01'}
     - {url: 'https://en.wikipedia.org/wiki/Mishmar_HaYarden_(moshava)', checked: '2026-10-17'}
   sources:
   # Dupuy p. 47: the 1st Infantry Brigade (two infantry battalions, an armoured car battalion and a tank company); p. 49: the 2nd Infantry Brigade near the Bnot Yaakov bridge.

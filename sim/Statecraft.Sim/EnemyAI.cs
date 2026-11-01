@@ -6,14 +6,15 @@ namespace Statecraft.Sim
 {
     /// <summary>The enemy AI, resolver step 1 (GDD Phase 5 PR 10, part 1; docs/rules/mvp.md R-ENEMY-001 to R-ENEMY-004). Every
     /// non-player military unit gets its orders from the state alone, through the player's own validation (Movement.Move,
-    /// Combat.Give, Orders.Give with the sides swapped). Q-ENEMY-1: a starting unit marches on its row's sourced 11 June 1948
-    /// position; after that, or when the move cannot be made, it follows the simple goals of Q-ENEMY-2: attack an adjacent player
+    /// Combat.Give, Orders.Give with the sides swapped). Q-ENEMY-1: a starting unit marches on its row's sourced positions
+    /// from 11 June 1948 (#1270); after them, or when the move cannot be made, it follows the simple goals of Q-ENEMY-2: attack an adjacent player
     /// unit at mvp.enemy_attack_ratio_percent or better, else hold its hex fortified. No RNG (Q-ENEMY-2), no reinforcements
     /// (Q-ENEMY-3), no supply (Q-ENEMY-4).</summary>
     public static class EnemyAI
     {
-        /// <summary>The script's dated position (Q-ENEMY-1; research_notes/GDD phase 5/arab-forces-1948.md section 10): an
-        /// anchor of map/units_1948.yaml from this day. The other scripted date, 15 May 1948, is the start (R-UNIT-006).</summary>
+        /// <summary>The script's first dated position (Q-ENEMY-1; research_notes/GDD phase 5/arab-forces-1948.md section 10): the
+        /// script is the anchors of map/units_1948.yaml from this day on (#1270). The 15 May 1948 position is the start
+        /// (R-UNIT-006).</summary>
         public const string ScriptDate = "1948-06-11";
 
         /// <summary>R-ENEMY-006: the truce windows, half-open [from, until), in which no enemy unit attacks (owner, 21 October
@@ -66,14 +67,17 @@ namespace Statecraft.Sim
         }
 
         /// <summary>R-ENEMY-002: the hex unit <paramref name="u"/> marches on this turn, or null. Only a starting force has a
-        /// script (the unit with id i of a new game is c.StartingForces[i], R-UNIT-006), and only in Historical mode, on a turn
-        /// that starts before its anchor's window ends.</summary>
+        /// script (the unit with id i of a new game is c.StartingForces[i], R-UNIT-006), and only in Historical mode. The
+        /// target is the first scripted anchor, in the file's order, whose window has not ended when the turn starts
+        /// (owner, 31 October 2026, #1270 ruling a: "First listed (as today)").</summary>
         static (int Q, int R)? Script(Content c, GameState s, Unit u)
         {
             if (s.Mode != Mode.Historical || u.Id >= c.StartingForces.Count) return null;
             var f = c.StartingForces[u.Id];
-            if (f.Side != u.Side || f.Type != u.Type || f.Script == null || s.Date >= f.ScriptUntil) return null;
-            return f.Script;
+            if (f.Side != u.Side || f.Type != u.Type) return null;
+            foreach (var (q, r, until) in f.Script)
+                if (s.Date < until) return (q, r);
+            return null;
         }
 
         /// <summary>R-ENEMY-003: attack the first neighbour, in the fixed order (R-MOVE-002), with a player military unit whose

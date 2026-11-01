@@ -205,9 +205,10 @@ LATER_OPEN_ITEM = {'etzioni': False, 'brigade_7': True}
 
 # The twelve starting rows the owner person-checked on 21 October 2026 (#1240,
 # https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250), and the two later ones (#1241,
-# https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6338280840). A row added later is not covered.
+# https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6338280840). A row added later is not covered, nor
+# is an anchor added later: the Syrian row's anchor from 8 July 1948 (#1270, S1) makes it to_verify until a person checks it.
 PERSON_CHECKED = {'alexandroni', 'arab_legion', 'arab_liberation_army', 'brigade_7', 'carmeli', 'egyptian_expeditionary_force',
-                  'etzioni', 'givati', 'golani', 'harel', 'iraqi_expeditionary_force', 'kiryati', 'negev', 'syrian_army'}
+                  'etzioni', 'givati', 'golani', 'harel', 'iraqi_expeditionary_force', 'kiryati', 'negev'}
 
 
 def test_only_the_person_checked_rows_are_fact_checked():

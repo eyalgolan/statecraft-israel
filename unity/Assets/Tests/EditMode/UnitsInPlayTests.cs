@@ -23,10 +23,10 @@ public class UnitsInPlayTests
     static UiText Text => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
     static readonly DateTime LastArmistice = new DateTime(1949, 7, 20);
     /// <summary>The starting rows the owner person-checked on 21 October 2026 (#1240), and Etzioni and the 7th after them
-    /// (#1241, https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6338280840); a row added later is not covered.</summary>
+    /// (#1241, https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6338280840); a row added later is not covered, nor
+    /// is an anchor added later: the Syrian row's anchor from 8 July 1948 (#1270, S1) makes it to_verify until a person checks it.</summary>
     static readonly HashSet<string> PersonChecked = new HashSet<string> { "alexandroni", "arab_legion", "arab_liberation_army", "brigade_7",
-        "carmeli", "egyptian_expeditionary_force", "etzioni", "givati", "golani", "harel", "iraqi_expeditionary_force", "kiryati", "negev",
-        "syrian_army" };
+        "carmeli", "egyptian_expeditionary_force", "etzioni", "givati", "golani", "harel", "iraqi_expeditionary_force", "kiryati", "negev" };
 
     static IEnumerable<string> Ids(IEnumerable<UnitToken> tokens) => tokens.Select(t => t.Unit.Id);
 
@@ -117,8 +117,9 @@ public class UnitsInPlayTests
         foreach (var u in units)
         {
             // Owner, 20 October 2026, #743: an IDF brigade's secondary-source strength "carries `status: to_verify`"; the
-            // starting rows the owner person-checked (#1240, #1241) are fact-checked.
-            Assert.AreEqual(PersonChecked.Contains(u.Id) ? "fact-checked" : u.Side == UnitData.Israel && u.Strength != null ? "to_verify" : "draft", u.Status, u.Id);
+            // starting rows the owner person-checked (#1240, #1241) are fact-checked; the Syrian row is to_verify until a person
+            // checks its anchor from 8 July 1948 (#1270, S1).
+            Assert.AreEqual(PersonChecked.Contains(u.Id) ? "fact-checked" : u.Id == "syrian_army" || u.Side == UnitData.Israel && u.Strength != null ? "to_verify" : "draft", u.Status, u.Id);
             Assert.AreEqual(UnitData.IsWikipediaOnly(u), u.WikipediaOnly, $"{u.Id}: wikipedia_only must say whether every source is Wikipedia or Wikidata");
             foreach (var s in u.AllSources())
                 Assert.LessOrEqual(UnitData.Day(s.Checked), DateTime.Today, $"{u.Id}: {s.Url} checked in the future");
