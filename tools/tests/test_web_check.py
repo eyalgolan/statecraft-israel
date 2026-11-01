@@ -231,6 +231,12 @@ LAID_OUT = ("NAV f=88 t=9625 start buttons start-continue=0.3750,0.9278 start-ne
 AT = {"start-continue": (720, 1002), "start-new-game": (860, 1002), "start-star": (1060, 1002), "start-listen": (812, 940)}
 
 
+# The map's tokens as UnitLayer logs them under ?navlog (#2056): the turn, the Israeli and the enemy totals, then each enemy
+# side's count.
+def units_line(turn, israel, enemy):
+    return f"NAV f=412 t=20311 units drawn turn={turn} israel={israel} enemy={enemy}" + (f" egypt={enemy}" if enemy else "")
+
+
 def _buttons(text=LAID_OUT, wait=0.0):
     buttons = wc.StartButtons((1920, 1080), wait=wait, sleep=lambda s: None)
     buttons.feed(text)
@@ -288,12 +294,22 @@ class FakeGame:
     """Answers a driver's clicks as ?navlog's game does, through a real ConsoleTail: End turn (either layout's) selects a
     unit while `units` still need orders, else ends the turn: a TURN line in the console EndTurn reads (a driver's own
     TURN lines are fed by the test). The unit card is EN_CARD, its rows mirrored in Hebrew: a probe names the element under
-    it (a "map" one is taken by the map), and a click on Skip skips a unit."""
+    it (a "map" one is taken by the map), and a click on Skip skips a unit. The map's tokens (#2056) are `drawn`, fed as
+    UnitLayer logs them: `tokens[turn]` (Israeli, enemy) for the new game's turn 0 at once, and for each later turn just
+    before its TURN line (SimBridge raises Changed before TurnEnded); a turn missing from `tokens` logs no line."""
 
-    def __init__(self, units=0, card=None, hebrew=False, answers=True, opening=None):
+    def __init__(self, units=0, card=None, hebrew=False, answers=True, opening=None, tokens=None):
         self.tail, self.units, self.answers = wc.ConsoleTail(), units, answers
         self.card, self.hebrew, self.actions, self.turn = card or EN_CARD, hebrew, [], 1
         self.opening = opening   # #530: the opening's layout while it covers the window (top bar included), until Skip
+        self.tokens = {0: (10, 2), 1: (10, 3)} if tokens is None else tokens
+        self.drawn = wc.UnitsOnMap(wait=0.05)
+        self.draw(0)
+
+    def draw(self, turn):
+        if turn in self.tokens:
+            israel, enemy = self.tokens[turn]
+            self.drawn.feed(units_line(turn, israel, enemy))
 
     def nav(self, what):
         self.tail.feed(f"NAV f=1 t=1 {what}")
@@ -322,6 +338,7 @@ class FakeGame:
         elif kind == "click" and (x, y) in (wc.END_TURN, wc.END_TURN_HE):
             self.nav("ui click count=1 target=end-turn")
             if self.units == 0:
+                self.draw(self.turn)
                 self.tail.feed(f"TURN {self.turn} 1948-06-15 hash bb")
             self.turn += self.units == 0
         elif kind == "probe":
@@ -361,9 +378,9 @@ def _quiet():
 
 
 def _quiet_start():
-    """An English New game StartScreenCheck's game, recording, hebrew, buttons and console."""
+    """An English New game StartScreenCheck's game, recording, hebrew, buttons, console and tokens."""
     game = FakeGame()
-    return game, False, False, _buttons(), game.tail
+    return game, False, False, _buttons(), game.tail, game.drawn
 
 
 def _end_turn(game, **kw):
@@ -445,7 +462,8 @@ def test_end_turn_fails_when_the_opening_is_still_there_after_skip():
 
 def test_start_screen_check_skips_the_opening_after_new_game():
     game = FakeGame(opening=EN_OPENING)
-    check = wc.StartScreenCheck(game, recording=False, hebrew=False, buttons=_buttons(), tail=game.tail, settle=lambda s: None)
+    check = wc.StartScreenCheck(game, recording=False, hebrew=False, buttons=_buttons(), tail=game.tail, units=game.drawn,
+                                settle=lambda s: None)
     check.feed("GAME OK 1948-05-15 turn 0 hash aa")
     clicks = [a for a in game.actions if a.startswith("click:")]
     assert clicks[:2] == _clicks(AT["start-new-game"], wc.END_TURN) and clicks[-1] == _clicks(wc.END_TURN)[0]
@@ -574,7 +592,8 @@ def _clicks(*points):
 def test_start_screen_check_presses_new_game_then_end_turn_and_needs_turn_1(capsys):
     game = FakeGame()
     actions = game.actions
-    check = wc.StartScreenCheck(game, recording=False, hebrew=False, buttons=_buttons(), tail=game.tail, settle=lambda s: None)
+    check = wc.StartScreenCheck(game, recording=False, hebrew=False, buttons=_buttons(), tail=game.tail, units=game.drawn,
+                                settle=lambda s: None)
     check.feed("GAME OK 1948-05-15 turn 0 hash aa")
     assert actions == _clicks(AT["start-new-game"], wc.END_TURN)
     assert not check.done
@@ -585,7 +604,8 @@ def test_start_screen_check_presses_new_game_then_end_turn_and_needs_turn_1(caps
 
 
 def test_start_screen_check_fails_at_once_when_the_game_never_says_where_new_game_is():
-    check = wc.StartScreenCheck(lambda a: None, False, False, buttons=_buttons(""), tail=wc.ConsoleTail(), settle=lambda s: None)
+    check = wc.StartScreenCheck(lambda a: None, False, False, buttons=_buttons(""), tail=wc.ConsoleTail(),
+                                units=wc.UnitsOnMap(), settle=lambda s: None)
     with pytest.raises(ValueError, match="START SCREEN FAIL no centre for start-new-game"):
         check.feed("GAME OK 1948-05-15 turn 0 hash aa")
 
@@ -593,7 +613,8 @@ def test_start_screen_check_fails_at_once_when_the_game_never_says_where_new_gam
 def test_start_screen_check_plays_the_recording_first_and_waits_for_it_hebrew_layout():
     game = FakeGame()
     actions, buttons = game.actions, _buttons()
-    check = wc.StartScreenCheck(game, recording=True, hebrew=True, buttons=buttons, tail=game.tail, settle=lambda s: None)
+    check = wc.StartScreenCheck(game, recording=True, hebrew=True, buttons=buttons, tail=game.tail, units=game.drawn,
+                                settle=lambda s: None)
     check.feed("GAME OK 1948-05-15 turn 0 hash aa")
     assert actions == _clicks(AT["start-listen"])
     check.feed("TURN 1 1948-06-15 hash bb")            # no New game before the recording plays
@@ -615,6 +636,89 @@ def test_start_screen_check_fails_on_a_saved_game_or_a_wrong_turn():
     assert not check.done
 
 
+def _start(game):
+    return wc.StartScreenCheck(game, recording=False, hebrew=False, buttons=_buttons(), tail=game.tail, units=game.drawn,
+                               settle=lambda s: None)
+
+
+def test_start_screen_check_needs_israeli_and_enemy_tokens_on_turns_1_and_2(capsys):
+    """#2056 (owner, 1 November 2026): the player's turn 1 is the new game (sim turn 0, GDD: "the units of turn 1 of a new
+    historical game"), turn 2 the state after the first End turn (TURN 1)."""
+    check = _start(FakeGame())
+    check.feed("GAME OK 1948-05-15 turn 0 hash aa")
+    check.feed("TURN 1 1948-06-15 hash bb")
+    assert check.done
+    out = capsys.readouterr().out
+    assert "UNITS OK turn 1 (New game): israel=10 enemy=2" in out and "UNITS OK turn 2 (after End turn): israel=10 enemy=3" in out
+
+
+def test_the_31_october_build_with_no_enemy_tokens_fails_before_end_turn():
+    """v0.3.1-nightly.20261028: the enemy tokens waited for a side figure that was never requested, so UnitLayer drew
+    Israel's tokens alone."""
+    game = FakeGame(tokens={0: (10, 0), 1: (10, 0)})
+    with pytest.raises(ValueError, match=r"UNITS FAIL turn 1 \(New game\): no enemy unit tokens drawn within .*enemy=0"):
+        _start(game).feed("GAME OK 1948-05-15 turn 0 hash aa")
+    assert game.actions == _clicks(AT["start-new-game"]), "End turn is not pressed"
+
+
+def test_enemy_tokens_gone_on_turn_2_fail():
+    game = FakeGame(tokens={0: (10, 2), 1: (10, 0)})
+    check = _start(game)
+    check.feed("GAME OK 1948-05-15 turn 0 hash aa")
+    with pytest.raises(ValueError, match=r"UNITS FAIL turn 2 \(after End turn\): no enemy unit tokens"):
+        check.feed("TURN 1 1948-06-15 hash bb")
+    assert not check.done
+
+
+def test_no_israeli_tokens_fail():
+    with pytest.raises(ValueError, match="UNITS FAIL turn 1 .*no Israeli unit tokens"):
+        _start(FakeGame(tokens={0: (0, 2)})).feed("GAME OK 1948-05-15 turn 0 hash aa")
+
+
+def test_no_units_line_at_all_fails_and_never_passes():
+    """Fail closed: a build that logs no units line (one from before #2056, or a page without ?navlog) fails."""
+    game = FakeGame(tokens={})
+    with pytest.raises(ValueError, match="UNITS FAIL turn 1 .*no 'units drawn' line .*navlog"):
+        _start(game).feed("GAME OK 1948-05-15 turn 0 hash aa")
+
+
+def test_turn_2_needs_a_line_for_turn_1_not_the_new_games():
+    """The new game's line says nothing of turn 2: a game that logs no line once the turn ends fails."""
+    check = _start(FakeGame(tokens={0: (10, 2)}))
+    check.feed("GAME OK 1948-05-15 turn 0 hash aa")
+    with pytest.raises(ValueError, match="UNITS FAIL turn 2 .*no 'units drawn' line for turn 1 .*the last was .*turn=0"):
+        check.feed("TURN 1 1948-06-15 hash bb")
+
+
+def test_units_on_map_waits_for_a_token_that_arrives_later_and_keeps_the_latest_line():
+    """An enemy token is drawn once its figure streams in (#665): the check waits for it, and reads the latest line."""
+    drawn = wc.UnitsOnMap(wait=5)
+    drawn.feed(units_line(0, 10, 0))
+    threading.Timer(0.05, drawn.feed, [units_line(0, 10, 2)]).start()
+    assert drawn.require(0, "turn 1") == (10, 2)
+    drawn.feed(units_line(0, 10, 0))
+    drawn.wait = 0
+    with pytest.raises(ValueError, match="no enemy unit tokens"):
+        drawn.require(0, "turn 1")
+
+
+@pytest.mark.parametrize("text", ["NAV f=1 t=1 units drawn turn=0 israel=10", "units drawn turn=0 israel=10 enemy=2",
+                                  "NAV f=1 t=1 units drawn turn=x israel=10 enemy=2", "NAV f=1 t=1 ui click count=1 target=units"])
+def test_a_line_not_in_the_units_format_is_no_signal(text):
+    drawn = wc.UnitsOnMap(wait=0)
+    drawn.feed(text)
+    with pytest.raises(ValueError, match="no 'units drawn' line"):
+        drawn.require(0, "turn 1")
+
+
+@pytest.mark.parametrize("mode", ["new", "recording"])
+def test_every_start_screen_run_checks_the_tokens(mode):
+    """run_plan gives the nightly's four start screen passes (both modes, both languages) the units check."""
+    lines = BOOTED_AND_TURNED[:1] + ["RECORDING playing audio/declaration.wav (9.29 s, at 0.20 s)"] * (mode == "recording")
+    with pytest.raises(ValueError, match=r"UNITS FAIL turn 1 \(New game\): no enemy unit tokens"):
+        _run(("--startscreen", mode), lines, game=FakeGame(tokens={0: (10, 0)}))
+
+
 def test_query_value():
     assert wc.query_value("lang=he&smoke", "lang") == "he"
     assert wc.query_value("smoke", "lang") is None
@@ -624,7 +728,8 @@ def test_query_value():
 def test_start_screen_check_english_recording_uses_the_english_layout():
     game = FakeGame()
     actions = game.actions
-    check = wc.StartScreenCheck(game, recording=True, hebrew=False, buttons=_buttons(), tail=game.tail, settle=lambda s: None)
+    check = wc.StartScreenCheck(game, recording=True, hebrew=False, buttons=_buttons(), tail=game.tail, units=game.drawn,
+                                settle=lambda s: None)
     check.feed("GAME OK 1948-05-15 turn 0 hash aa")
     check.feed("RECORDING playing audio/declaration.wav (9.29 s, at 0.20 s)")
     assert actions == _clicks(AT["start-listen"], AT["start-new-game"], wc.END_TURN)
@@ -634,9 +739,9 @@ def _args(*argv):
     return wc.parser().parse_args(["build", *argv])
 
 
-def _plan(*argv):
-    game = FakeGame()
-    driver, fail, plan = wc.run_plan(_args(*argv), game, _buttons(), game.tail)
+def _plan(*argv, game=None):
+    game = game or FakeGame()
+    driver, fail, plan = wc.run_plan(_args(*argv), game, _buttons(), game.tail, game.drawn)
     if driver is not None:
         driver.settle = driver.end_turn.settle = lambda seconds: None
     return driver, fail, plan
@@ -668,9 +773,9 @@ def test_persistence_and_start_screen_are_separate_runs():
         _plan("--persistence", "--startscreen", "new")
 
 
-def _run(plan_args, lines, late=()):
+def _run(plan_args, lines, late=(), game=None):
     """Feeds `lines` to watch through run_plan's driver; `late` arrive at the first sleep, after them."""
-    driver, fail, plan = _plan(*plan_args)
+    driver, fail, plan = _plan(*plan_args, game=game)
     inbox = queue.Queue()
     for text in lines:
         inbox.put(line(text))
