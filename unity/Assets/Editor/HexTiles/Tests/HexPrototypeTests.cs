@@ -73,7 +73,7 @@ public class HexPrototypeTests
     [Serializable] sealed class OriginalManifest { public OriginalFile[] files = Array.Empty<OriginalFile>(); }
     [Serializable] sealed class OriginalFile { public string path = ""; public string source = ""; }
 
-    static HashSet<string> OriginalMeshPaths()
+    internal static HashSet<string> OriginalMeshPaths()
     {
         // Override is local test instrumentation for the required empty-manifest RED, never a game/build setting.
         string file = Environment.GetEnvironmentVariable("STATECRAFT_CAPS_MANIFEST")
@@ -85,14 +85,14 @@ public class HexPrototypeTests
             .Select(f => f.path.Substring("unity/".Length)).ToHashSet(StringComparer.Ordinal);
     }
 
-    static Mesh[] Meshes(GameObject? prefab) => prefab == null ? Array.Empty<Mesh>()
+    internal static Mesh[] Meshes(GameObject? prefab) => prefab == null ? Array.Empty<Mesh>()
         : prefab.GetComponentsInChildren<MeshFilter>(true).Select(f => f.sharedMesh)
             .Concat(prefab.GetComponentsInChildren<SkinnedMeshRenderer>(true).Select(f => f.sharedMesh)).ToArray();
 
     static bool AllOriginals(Mesh[] meshes, HashSet<string> originals) => meshes.Length > 0
         && meshes.All(m => m != null && originals.Contains(AssetDatabase.GetAssetPath(m)));
 
-    static int CountTowardsCap(Mesh[] meshes, int triangles, HashSet<string> originals) =>
+    internal static int CountTowardsCap(Mesh[] meshes, int triangles, HashSet<string> originals) =>
         AllOriginals(meshes, originals) ? 0 : triangles;
 
     static void AssertBudget(string id, int triangles, int limit) =>

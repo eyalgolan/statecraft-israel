@@ -74,8 +74,8 @@ METHOD = "Statecraft.Game.EditorTools.Build."
 # scripts/oss/package_web.sh copies into the web zip and checks (test_the_notice_list_is_the_web_packagers keeps them
 # one list). Archive name -> source in the repository; LICENSES/ is copied whole, as the web packager does.
 REQUIRED_NOTICES = pgc.REQUIRED_NOTICES   # one list with the CI player check, which checks every archive has them
-# Each font's own OFL text (its copyright line differs), under the names site/public/fonts uses. Every OFL.txt under
-# unity/Assets/UI/Fonts must be here (test_every_shipped_fonts_licence_is_a_required_notice).
+# Each font's own OFL text (its copyright line differs), as OFL-EBGaramond.txt and OFL-FrankRuhlLibre.txt. Every OFL.txt
+# under unity/Assets/UI/Fonts must be here (test_every_shipped_fonts_licence_is_a_required_notice).
 FONT_LICENCES = {"OFL-EBGaramond.txt": "unity/Assets/UI/Fonts/OFL.txt",
                  "OFL-FrankRuhlLibre.txt": "unity/Assets/UI/Fonts/FrankRuhlLibre/OFL.txt"}
 NOTICE_TOPS = pgc.NOTICE_TOPS

@@ -1,1 +1,0 @@
-- Generate the nine inactive GDD 0.3 design-region hex lists deterministically from their approved Mandate sub-district coverage, while retaining unresolved place bindings for human review.

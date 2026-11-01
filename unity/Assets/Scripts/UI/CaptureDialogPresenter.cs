@@ -154,7 +154,7 @@ namespace Statecraft.Game.UI
                 options.Add(line);
             }
             none.style.display = Listed.All(o => o.Refused != null) ? DisplayStyle.Flex : DisplayStyle.None;
-            count.text = waiting.Count > 1 ? text.Format("event.more", waiting.Count - 1) : "";
+            count.text = waiting.Count > 1 ? text.Format(waiting.Count == 2 ? "event.more_one" : "event.more", waiting.Count - 1) : "";
             if (shown && focusedFor != id) FocusCard(id, force: false);
         }
 

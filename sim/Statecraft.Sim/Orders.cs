@@ -17,6 +17,15 @@ namespace Statecraft.Sim
         /// (resolver step 2) runs before that step, so it never sees a fortify given the same turn.</summary>
         public const string Fortifying = "fortifying";
 
+        /// <summary><see cref="Check"/>'s refusals (#2045): the UI maps each to its own string (SimBridge.ReasonText). The
+        /// English is the reason a turn's Rejected list and a save carry, so it does not change.</summary>
+        public const string RefusedUnknownOrder = "That order is not known";
+        public const string RefusedNoUnit = "There is no such unit";
+        public const string RefusedNotMilitary = "Only a military unit takes that order";
+        public const string RefusedNotYours = "That unit is not yours";
+        public const string RefusedArtilleryHold = "Artillery does not hold ground";
+        public const string RefusedAlready = "That unit already has that order";
+
         /// <summary>The player's side (units_1948.yaml's id). Only the player's military units take orders.</summary>
         const string PlayerSide = "israel";
 
@@ -34,13 +43,13 @@ namespace Statecraft.Sim
         /// does not give it.</summary>
         public static string? Check(Content c, GameState s, int unitId, string order, bool enemy = false)
         {
-            if (order != Fortify && order != Hold) return "That order is not known";
-            if (!s.Units.TryGetValue(unitId, out var u)) return "There is no such unit";
-            if (u.Side == "") return "Only a military unit takes that order";
-            if ((u.Side != PlayerSide) != enemy) return "That unit is not yours";
-            if (order == Hold && c.UnitTypes.FirstOrDefault(t => t.Id == u.Type)?.Class == Combat.ArtilleryClass) return "Artillery does not hold ground";
+            if (order != Fortify && order != Hold) return RefusedUnknownOrder;
+            if (!s.Units.TryGetValue(unitId, out var u)) return RefusedNoUnit;
+            if (u.Side == "") return RefusedNotMilitary;
+            if ((u.Side != PlayerSide) != enemy) return RefusedNotYours;
+            if (order == Hold && c.UnitTypes.FirstOrDefault(t => t.Id == u.Type)?.Class == Combat.ArtilleryClass) return RefusedArtilleryHold;
             var already = order == Hold ? u.Order == Hold : (u.Order == Fortify || u.Order == Fortifying) && u.OrderTarget == Hex(u);
-            return already ? "That unit already has that order" : null;
+            return already ? RefusedAlready : null;
         }
 
         /// <summary>R-ORDER-001: gives the unit its standing order, replacing any other. Fortify names the unit's hex and starts

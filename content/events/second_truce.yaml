@@ -7,7 +7,6 @@ text: 'The Security Council has found a threat to the peace under Article 39 of 
 # (https://he.wikipedia.org/wiki/מגילת_האומות_המאוחדות).
 title_he: ההפוגה השנייה
 text_he: 'מועצת הביטחון קבעה שקיים איום על השלום לפי סעיף 39 למגילת האו״ם, והורתה על הפסקת אש בתוך שלושה ימים ועל הפסקת אש מיידית בירושלים. ההחלטה אם ישראל תציית בידי {prime_minister}.'
-text_he_review: agent-checked
 anchor: hard
 office: prime_minister
 # Security Council Resolution 54, 15 July 1948 (S/902), 7-1 with 3 abstentions (the resolution as published by the UN).

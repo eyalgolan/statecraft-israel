@@ -7,7 +7,6 @@ text: 'The Security Council has called for a four-week cease-fire, supervised by
 # "פרק VII" are for the native reader to confirm.
 title_he: ההפוגה הראשונה
 text_he: 'מועצת הביטחון קראה להפסקת אש בת ארבעה שבועות, בפיקוח מתווך האו"ם, הרוזן פולקה ברנדוט. אסור לשום צד להכניס לוחמים או חומרי מלחמה לארץ ישראל או למדינות ערב, והמועצה הזהירה מפעולה לפי פרק VII אם התנאים יופרו. על {prime_minister} להחליט אם ישראל תקבל את ההפוגה.'
-text_he_review: agent-checked
 anchor: hard
 office: prime_minister
 # Security Council Resolution 50, 29 May 1948 (the resolution's text). Israel's acceptance went to the UN on 10 June

@@ -493,7 +493,8 @@ public class UnitFiguresTests
 
     /// <summary>The Arab forces are drawn only once their own figure has arrived, three of it on
     /// a base under the neutral pennant, never an IDF figure, and on ground no Israeli force held on the window's first day
-    /// (#226, ruling 9). A figure that never comes (null: a missing or damaged bundle) draws nothing, and warns nothing more.</summary>
+    /// (#226, ruling 9). A figure that fails (null: a missing or damaged bundle) draws its force with the plain built-in
+    /// figure and warns once (owner, 31 October 2026: "Yes, fallback in v0.3.2").</summary>
     [Test]
     public void TheArabForcesAreDrawnOnlyWithTheirOwnFiguresOnceTheyArrive()
     {
@@ -510,10 +511,15 @@ public class UnitFiguresTests
             Assert.IsFalse(asked.ContainsKey(UnitFigures.SyrianInfantry), "no inactive global prefetch pin");
             Assert.IsFalse(asked.ContainsKey(UnitFigures.IraqiInfantry), "no inactive global prefetch pin");
             Assert.IsFalse(layer.Tokens.Any(t => t.Token.Unit.Side != UnitData.Israel), "no Arab force before its figure arrives");
-            asked[UnitFigures.Irregular](null);   // the ALA's figure never comes
-            Assert.IsFalse(layer.Tokens.Any(t => t.Token.Unit.Side != UnitData.Israel), "a figure that never comes draws nothing");
+            LogAssert.Expect(LogType.Warning, new Regex("^UNITS figures: ala's figure " + UnitFigures.Irregular + " did not load"));
+            asked[UnitFigures.Irregular](null);   // the ALA's figure fails
+            layer.Show(C, StateAt(May20, 0.8));
+            CollectionAssert.AreEqual(new[] { "arab_liberation_army" }, layer.Tokens.Where(t => t.Token.Unit.Side != UnitData.Israel).Select(t => t.Token.Unit.Id),
+                "a failed figure draws its force with the built-in fallback");
+            foreach (var f in Tokens(map).Find("arab_liberation_army").Cast<Transform>().Where(c => c.name.StartsWith("Figure")))
+                Assert.IsTrue(f.TryGetComponent<MeshRenderer>(out var mr) && mr.enabled && !UnitFigures.Dressed(f), $"ALA {f.name}: the built-in figure");
             asked[UnitFigures.ArabLegion](Prefab(UnitFigures.ArabLegion));
-            var legion = layer.Tokens.Where(t => t.Token.Unit.Side != UnitData.Israel).ToList();
+            var legion = layer.Tokens.Where(t => t.Token.Unit.Side == UnitFlags.Jordan).ToList();
             CollectionAssert.AreEqual(new[] { "arab_legion" }, legion.Select(t => t.Token.Unit.Id), "the Legion, drawn when its figure arrives");
             var go = Tokens(map).Find("arab_legion");
             Assert.AreEqual(0, go.Cast<Transform>().Count(c => c.name.StartsWith("Rifleman")), "no IDF figure");
@@ -615,7 +621,8 @@ public class UnitFiguresTests
     }
 
     /// <summary>Fail open: with the people and vehicles bundles missing, or damaged, the real stream answers null with one
-    /// warning per bundle; every Israeli figure keeps its code-built mesh, drawn, no vehicle is drawn, and no Arab force.</summary>
+    /// warning per bundle; every Israeli figure keeps its code-built mesh, drawn, no vehicle is drawn, and each Arab force
+    /// stands with the plain built-in figure, its side's failure logged once (owner, 31 October 2026: "Yes, fallback in v0.3.2").</summary>
     [Test]
     public void TheCodeBuiltFiguresStayWhenTheBundleIsMissingOrDamaged()
     {
@@ -633,14 +640,14 @@ public class UnitFiguresTests
                 var stream = new CollectionStream(new CollectionStream.BundleSource(folder));
                 var requested = new List<string>();
                 UnitFigures.Source = (id, d, done) => { requested.Add(id); stream.Enqueue(id, d, done); };
+                var warnings = new List<string>();
+                void Capture(string message, string _, LogType type) { if (type == LogType.Warning) warnings.Add(message); }
+                Application.logMessageReceived += Capture;
                 var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
                 layer.Show(C, StateAt(May20, 0.8));
                 layer.Show(C, StateAt(July12, 0.8));
                 // A generated figure's bundle waits while a people's request is queued (#1763, CollectionCatalog.After), even when
                 // its own request was queued first; otherwise the stream serves requests in order.
-                var expectedBundles = ServedOrder(requested).Select(CollectionCatalog.BundleOf).Distinct();
-                foreach (var b in expectedBundles)
-                    LogAssert.Expect(LogType.Warning, new Regex("^Collection: bundle " + b + " did not load \\(" + (damaged ? "not an AssetBundle" : "no file")));
                 Step(stream.Run(), 80);
                 var figures = Pieces(map, "Rifleman");
                 Assert.Greater(figures.Count, 10, "the riflemen of 12 July 1948 (not a vacuous pass)");
@@ -651,7 +658,31 @@ public class UnitFiguresTests
                 }
                 Assert.IsTrue(Pieces(map, "Vehicle").All(v => v.GetComponentsInChildren<Renderer>().Length == 0), "no vehicle is drawn");
                 layer.Show(C, StateAt(May20, 0.8));
-                Assert.IsFalse(layer.Tokens.Any(t => t.Token.Unit.Side != UnitData.Israel), "no Arab force, and no placeholder");
+                Step(stream.Run(), 80);   // the forces of 20 May ask again; their failed bundles answer null at once
+                // Every bundle served so far, the fallback tokens' third figures' included (the ALA infantry's bundle).
+                var expectedBundles = ServedOrder(requested).Select(CollectionCatalog.BundleOf).Distinct().ToList();
+                layer.Show(C, StateAt(May20, 0.8));
+                Application.logMessageReceived -= Capture;
+                var arab = layer.Tokens.Where(t => t.Token.Unit.Side != UnitData.Israel).ToList();
+                Assert.IsNotEmpty(arab, "each Arab force of 20 May is drawn with the built-in fallback");
+                foreach (var t in arab)
+                {
+                    var pieces = Tokens(map).Find(t.Token.Unit.Id).Cast<Transform>().Where(c => c.name.StartsWith("Figure")).ToList();
+                    Assert.AreEqual(t.Token.Figures, pieces.Count, $"{t.Token.Unit.Id}: its figure count");
+                    foreach (var f in pieces)
+                        Assert.IsTrue(f.TryGetComponent<MeshRenderer>(out var mr) && mr.enabled && !UnitFigures.Dressed(f), $"{t.Token.Unit.Id} {f.name}: the built-in figure");
+                }
+                // The stream's warnings (one per bundle, in serving order) and the sides' (one per failed side) interleave;
+                // LogAssert matches in order, so each is expected by one pattern and checked exactly here.
+                foreach (var b in expectedBundles)
+                    Assert.AreEqual(1, warnings.Count(w => Regex.IsMatch(w, "^Collection: bundle " + b + " did not load \\(" + (damaged ? "not an AssetBundle" : "no file"))), $"{b}: one stream warning");
+                var sideWarnings = warnings.Where(w => w.StartsWith("UNITS figures: ", StringComparison.Ordinal)).ToList();
+                var warnedSides = sideWarnings.Select(w => w.Substring("UNITS figures: ".Length).Split('\'')[0]).ToList();
+                CollectionAssert.AllItemsAreUnique(warnedSides, "one warning per failed side");
+                CollectionAssert.IsSubsetOf(arab.Select(t => t.Token.Unit.Side).Distinct(), warnedSides, "every drawn fallback side was logged");
+                Assert.AreEqual(expectedBundles.Count + sideWarnings.Count, warnings.Count, "no other warning:\n" + string.Join("\n", warnings));
+                foreach (var _ in warnings)
+                    LogAssert.Expect(LogType.Warning, new Regex("^(Collection: bundle \\S+ did not load|UNITS figures: \\w+'s figure \\S+ did not load)"));
                 LogAssert.NoUnexpectedReceived();
             }
             finally { UnityEngine.Object.DestroyImmediate(map.gameObject); Directory.Delete(folder, true); }

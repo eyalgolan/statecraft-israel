@@ -290,14 +290,18 @@ class FakeGame:
     TURN lines are fed by the test). The unit card is EN_CARD, its rows mirrored in Hebrew: a probe names the element under
     it (a "map" one is taken by the map), and a click on Skip skips a unit."""
 
-    def __init__(self, units=0, card=None, hebrew=False, answers=True):
+    def __init__(self, units=0, card=None, hebrew=False, answers=True, opening=None):
         self.tail, self.units, self.answers = wc.ConsoleTail(), units, answers
         self.card, self.hebrew, self.actions, self.turn = card or EN_CARD, hebrew, [], 1
+        self.opening = opening   # #530: the opening's layout while it covers the window (top bar included), until Skip
 
     def nav(self, what):
         self.tail.feed(f"NAV f=1 t=1 {what}")
 
     def at(self, x, y):
+        if self.opening is not None:
+            return next((name for (x0, x1, y0, y1), name in self.opening if x0 <= x <= x1 and y0 <= y <= y1),
+                        "opening-card" if 440 <= x <= 1480 else "opening-layer")
         if self.hebrew:
             x = wc.INFO_PANEL_LEFT + wc.INFO_PANEL_RIGHT - x
         inside = wc.INFO_PANEL_LEFT <= x <= wc.INFO_PANEL_RIGHT and y >= 1080 - wc.INFO_PANEL_BOTTOM - wc.INFO_PANEL_MAX_HEIGHT
@@ -310,7 +314,12 @@ class FakeGame:
         if not self.answers or not at:
             return
         x, y = (int(v) for v in at.split(","))
-        if kind == "click" and (x, y) in (wc.END_TURN, wc.END_TURN_HE):
+        if kind == "click" and self.opening is not None:        # the opening takes every click while it shows
+            target = self.at(x, y)
+            self.nav(f"ui click count=1 target={target}")
+            if target == "opening-skip":
+                self.opening = None
+        elif kind == "click" and (x, y) in (wc.END_TURN, wc.END_TURN_HE):
             self.nav("ui click count=1 target=end-turn")
             if self.units == 0:
                 self.tail.feed(f"TURN {self.turn} 1948-06-15 hash bb")
@@ -333,6 +342,15 @@ EN_CARD = [((84, 536, 1010, 1064), "info-reason"), ((96, 200, 976, 1002), "info-
 # Skip second in its line: found along the line, not at its start.
 SECOND_CARD = [((84, 536, 1010, 1064), "info-reason"), ((96, 180, 976, 1002), "info-move"), ((186, 300, 976, 1002), "info-skip"),
                ((84, 536, 960, 1009), "VisualElement")]
+# The opening's first panel (#530) at 1920x1080, as middle-button probes of the 0.3.3 nightly build found it: its Back, Next
+# and Skip row is centred under the prose. English: Skip starts at the centre. Hebrew: the row is mirrored and the centre
+# falls in a gap between buttons (the unnamed row, VisualElement). FAR: Skip is off both scan columns, found along the row.
+EN_OPENING = [((811, 873, 552, 598), "opening-back"), ((885, 947, 552, 598), "opening-next"),
+              ((960, 1108, 552, 598), "opening-skip"), ((805, 1114, 548, 602), "VisualElement")]
+HE_OPENING = [((800, 948, 582, 628), "opening-skip"), ((966, 1028, 582, 628), "opening-next"),
+              ((1040, 1102, 582, 628), "opening-back"), ((794, 1108, 578, 632), "VisualElement")]
+FAR_OPENING = [((900, 1000, 560, 600), "opening-next"), ((1100, 1200, 560, 600), "opening-skip")]
+NO_SKIP_OPENING = [((900, 1000, 560, 600), "opening-next")]
 NO_SKIP_CARD = [((84, 536, 1010, 1064), "info-reason"), ((96, 180, 976, 1002), "info-move"), ((84, 536, 960, 1009), "VisualElement")]
 
 
@@ -391,6 +409,49 @@ def test_end_turn_fails_on_a_card_without_skip():
 def test_end_turn_fails_when_its_click_misses_end_turn():
     with pytest.raises(ValueError, match="END TURN FAIL the click at \\(1840, 45\\) did not press end-turn"):
         _end_turn(FakeGame(answers=False))()
+
+
+@pytest.mark.parametrize("hebrew,layout", [(False, EN_OPENING), (True, HE_OPENING), (False, FAR_OPENING)])
+def test_end_turn_skips_the_opening_that_covers_it_as_a_player_does(hebrew, layout, capsys):
+    """#530: after New game the opening covers the top bar, so the first End turn click reaches the opening. EndTurn presses
+    the opening's own Skip, found with middle-button probes, then End turn again."""
+    game = FakeGame(hebrew=hebrew, opening=layout)
+    end_turn = wc.END_TURN_HE if hebrew else wc.END_TURN
+    assert _end_turn(game)() == 0 and game.opening is None
+    clicks = [a for a in game.actions if a.startswith("click:")]
+    assert clicks[0] == clicks[2] == _clicks(end_turn)[0] and len(clicks) == 3, "End turn, Skip, End turn"
+    x, y = (int(v) for v in clicks[1].split(":")[1].split(","))
+    assert next(name for (x0, x1, y0, y1), name in layout if x0 <= x <= x1 and y0 <= y <= y1) == "opening-skip"
+    assert game.tail.wait(wc.TURN_STATE, 0, 0) is not None
+    out = capsys.readouterr().out
+    assert "the click reached opening-layer" in out and f"click opening-skip at ({x}, {y})" in out
+
+
+def test_end_turn_fails_on_an_opening_without_skip():
+    with pytest.raises(ValueError, match="OPENING FAIL the opening covers End turn, but no opening-skip"):
+        _end_turn(FakeGame(opening=NO_SKIP_OPENING))()
+
+
+def test_end_turn_fails_when_the_opening_is_still_there_after_skip():
+    game = FakeGame(opening=EN_OPENING)
+
+    def stuck(action):           # Skip is pressed, but the opening stays over End turn
+        layout = game.opening
+        game(action)
+        game.opening = layout
+    with pytest.raises(ValueError, match="END TURN FAIL the click at \\(1840, 45\\) did not press end-turn .*reached opening-layer"):
+        wc.EndTurn(stuck, game.tail, False, settle=lambda s: None, answer=0.05, turn_wait=0.05)()
+
+
+def test_start_screen_check_skips_the_opening_after_new_game():
+    game = FakeGame(opening=EN_OPENING)
+    check = wc.StartScreenCheck(game, recording=False, hebrew=False, buttons=_buttons(), tail=game.tail, settle=lambda s: None)
+    check.feed("GAME OK 1948-05-15 turn 0 hash aa")
+    clicks = [a for a in game.actions if a.startswith("click:")]
+    assert clicks[:2] == _clicks(AT["start-new-game"], wc.END_TURN) and clicks[-1] == _clicks(wc.END_TURN)[0]
+    assert game.opening is None
+    check.feed("TURN 1 1948-06-15 hash bb")
+    assert check.done
 
 
 def test_a_click_that_does_not_press_skip_fails():

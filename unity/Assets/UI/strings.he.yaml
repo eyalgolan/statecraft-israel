@@ -9,6 +9,7 @@ hud.attention: "תשומת לב {0:0.0} מתוך {1:0.0}"
 hud.people: "{0:N0}"
 hud.level: "דרגה {0} מתוך 5"
 hud.score: "ניקוד {0:N0}"
+hud.exhausted: "הכסף והמזון אזלו: תור {0} מתוך {1}"
 hud.delta_people: "{0:+#,##0;-#,##0}"
 hud.say: "{0}: {1}"
 hud.say_up: "{0}: {1}, גידול של {2} מאז התור הקודם"
@@ -454,6 +455,7 @@ report.unit: "כוח {0}"
 end.title: "המשחק הסתיים"
 end.outcome.mvp_ended: "המשחק הגיע לתורו האחרון."
 end.outcome.defeat_economy: "הכסף והמזון אזלו."
+end.reference_score: "השלמת כל יעד בתאריך ההיסטורי שלו מניבה ניקוד של {0:N0}."
 end.objective_done: "יעד {0}: הושלם ב־{1}; בהיסטוריה ב־{2}"
 end.objective_open: "יעד {0}: לא הושלם; בהיסטוריה ב־{1}"
 end.parameter: "{0}: {1}"
@@ -1017,6 +1019,15 @@ unit.artillery_move_missing: "לא ניתן להזיז ארטילריה עדיי
 unit.fire_ready: "ניתן לירות"
 unit.fire_spent: "הירי בוצע בתור הזה"
 
+# #2045 standing-order refusals (Orders.Check), shown on the unit card.
+# For the native reviewer (#564).
+unit.order_refused.unknown_order: "הפקודה אינה מוכרת"
+unit.order_refused.no_unit: "אין יחידה כזאת"
+unit.order_refused.not_military: "רק יחידה צבאית מקבלת פקודה זו"
+unit.order_refused.not_yours: "היחידה אינה שלך"
+unit.order_refused.artillery_hold: "ארטילריה אינה מחזיקה בשטח"
+unit.order_refused.already: "היחידה כבר קיבלה פקודה זו"
+
 # #1682 remaining Cause producers. Agent-drafted Hebrew: native-review-pending (#564).
 # SENSITIVE: capture, displacement, Deport, annexation and occupation also await sensitivity review.
 why.cause.workers_assigned: "{0}: קבוצות בעבודה: {1}"
@@ -1125,3 +1136,14 @@ why.cause.ending.defeat_war: "האויב מחזיק בעיר"
 
 # native-review-pending: #1661 occupied-destination confirmation
 unit.confirm_move: "שליחת {0} אל {1}"
+
+# The opening's controls (#530), Hebrew agent-drafted. For the native reviewer (#564). The historical prose stays in
+# opening.yaml, in English, until its own review.
+opening.replay: "צפייה חוזרת בפתיח"
+opening.back: "הקודם"
+opening.next: "הבא"
+opening.skip: "דילוג על הפתיח"
+opening.begin: "המשך למפה"
+opening.return: "חזרה למסך הפתיחה"
+opening.count: "שלב {0} מתוך {1}"
+opening.preview: "תצוגה מקדימה בעורך: טיוטה; בדיקת המקורות בידי אדם ממתינה."

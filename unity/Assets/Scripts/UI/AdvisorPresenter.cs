@@ -173,10 +173,11 @@ namespace Statecraft.Game.UI
             }
         }
 
-        /// <summary>A modal layer is open (spec 4.2): the start screen, the open decision card, the capture dialog, the turn
-        /// report, an outcome clip, the end screen; and, on the two-row HUD, any side screen (it takes the full width).</summary>
+        /// <summary>A modal layer is open (spec 4.2): the start screen, the opening (#530), the open decision card, the capture
+        /// dialog, the turn report, an outcome clip, the end screen; and, on the two-row HUD, any side screen (it takes the full width).</summary>
         public static bool Covered(VisualElement hudRoot) =>
-            hudRoot.ClassListContains(StartScreenPresenter.OpenClass) || hudRoot.ClassListContains(EventCardPresenter.OpenClass)
+            hudRoot.ClassListContains(StartScreenPresenter.OpenClass) || hudRoot.ClassListContains(OpeningPresenter.OpenClass)
+            || hudRoot.ClassListContains(EventCardPresenter.OpenClass)
             || hudRoot.ClassListContains(CaptureDialogPresenter.OpenClass) || hudRoot.ClassListContains(TurnReportPresenter.OpenClass)
             || hudRoot.ClassListContains(OutcomePresenter.OpenClass) || hudRoot.ClassListContains(EndScreenPresenter.OpenClass)
             || (hudRoot.ClassListContains(HudPresenter.TwoRowClass) && hudRoot.ClassListContains(ScreenNav.ScreenOpenClass));
@@ -569,7 +570,8 @@ namespace Statecraft.Game.UI
             Render();
         }
 
-        bool HardMediaCover() => hudRoot.ClassListContains(StartScreenPresenter.OpenClass) || hudRoot.ClassListContains(EventCardPresenter.OpenClass)
+        bool HardMediaCover() => hudRoot.ClassListContains(StartScreenPresenter.OpenClass) || hudRoot.ClassListContains(OpeningPresenter.OpenClass)
+            || hudRoot.ClassListContains(EventCardPresenter.OpenClass)
             || hudRoot.ClassListContains(CaptureDialogPresenter.OpenClass) || hudRoot.ClassListContains(TurnReportPresenter.OpenClass)
             || hudRoot.ClassListContains(OutcomePresenter.OpenClass) || hudRoot.ClassListContains(EndScreenPresenter.OpenClass)
             || hudRoot.ClassListContains(FeedbackPresenter.OpenClass) || hudRoot.ClassListContains(SharePresenter.OpenClass);

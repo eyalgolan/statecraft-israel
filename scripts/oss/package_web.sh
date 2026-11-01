@@ -16,7 +16,7 @@ case "$zip_path" in /*) ;; *) zip_path="$PWD/$zip_path" ;; esac
 mkdir -p "$build/LICENSES"
 cp "$root/LICENSE" "$root/NOTICE" "$root/THIRD-PARTY-NOTICES.md" "$build/"
 cp "$root/LICENSES/"*.txt "$build/LICENSES/"
-# Each font's own OFL text travels with it (its copyright line differs), under the names site/public/fonts uses.
+# Each font's own OFL text travels with it (its copyright line differs), as OFL-EBGaramond.txt and OFL-FrankRuhlLibre.txt.
 cp "$root/unity/Assets/UI/Fonts/OFL.txt" "$build/OFL-EBGaramond.txt"
 cp "$root/unity/Assets/UI/Fonts/FrankRuhlLibre/OFL.txt" "$build/OFL-FrankRuhlLibre.txt"
 
