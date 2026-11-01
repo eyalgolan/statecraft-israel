@@ -7,7 +7,6 @@ text: 'After talks that began on 28 November, Dayan and Abdullah el-Tell signed 
 # https://he.wikipedia.org/wiki/ארמון_הנציב; https://he.wikipedia.org/wiki/האומות_המאוחדות).
 title_he: הפסקת אש בירושלים
 text_he: 'לאחר שיחות שהחלו ב־28 בנובמבר, חתמו דיין ועבדאללה א־תל על הפסקת אש מלאה באזור ירושלים בארמון הנציב ב־30 בנובמבר, בנוכחות משקיפי האו״ם. ההחלטה אם ישראל תקיים אותה בידי {prime_minister}.'
-text_he_review: agent-checked
 anchor: hard
 tags: [security]
 office: prime_minister

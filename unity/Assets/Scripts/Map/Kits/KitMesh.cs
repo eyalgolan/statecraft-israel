@@ -303,12 +303,16 @@ namespace Statecraft.Game.Map.Kits
             var cols = new Color32[(rings + 1) * (segments + 1)];
             for (int j = 0; j <= rings; j++)
             {
-                float phi = Mathf.PI * j / rings - Mathf.PI * 0.5f;
+                float phi = Mathf.PI * j / rings - Mathf.PI * 0.5f, k0 = 0f;
                 for (int i = 0; i <= segments; i++)
                 {
                     float th = 2f * Mathf.PI * (i % segments) / segments;
                     var n = new Vector3(Mathf.Cos(phi) * Mathf.Cos(th), Mathf.Sin(phi), Mathf.Cos(phi) * Mathf.Sin(th));
-                    float k = 1f + (j == 0 || j == rings ? 0f : rnd.Range(-lumps, lumps));
+                    // The last column repeats the first one's angle, so it reuses the first one's lump; otherwise the crown has a
+                    // slit (#2025). The draw still happens, so every other vertex keeps its seeded shape.
+                    float lump = j == 0 || j == rings ? 0f : rnd.Range(-lumps, lumps);
+                    if (i == 0) k0 = lump;
+                    float k = 1f + (i == segments ? k0 : lump);
                     var p = Vector3.Scale(n, radius) * k;
                     if (p.y < -radius.y * flatBottom) p.y = -radius.y * flatBottom;   // a flatter underside, as clipped trees have
                     var c = speck > 0f && rnd.Chance(speck) ? speckColour : colour;

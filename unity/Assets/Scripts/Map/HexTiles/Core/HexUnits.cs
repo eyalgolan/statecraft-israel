@@ -88,7 +88,10 @@ namespace Statecraft.HexTiles
     /// clips are exported in place, so position is the code's and every move ends exactly on a hex centre.</summary>
     public sealed class HexUnitMotion
     {
-        sealed class Live { public HexUnitMember M = null!; public GameObject Go = null!, Rig = null!; public AnimationClip? Move, Idle; public float Scale; public GameObject? Prefab; }
+        sealed class Live { public HexUnitMember M = null!; public GameObject Go = null!, Rig = null!; public AnimationClip? Move, Idle; public float Scale; public GameObject? Prefab;
+            /// <summary>The model's root rotation as instantiated (a Collection vehicle's import fix, -90 degrees about X);
+            /// Pose turns it about the vertical instead of replacing it, or the model lies on its side (#2006).</summary>
+            public Quaternion Authored = Quaternion.identity; }
 
         readonly List<Live> live = new List<Live>();
         readonly List<Vector3> path;
@@ -157,7 +160,7 @@ namespace Statecraft.HexTiles
                 l.Go.SetActive(false);
                 if (Application.isPlaying) Object.Destroy(l.Go); else Object.DestroyImmediate(l.Go);
             }
-            l.Prefab = prefab; l.Go = go; l.Rig = animator != null ? animator.gameObject : go; l.Scale = scale;
+            l.Prefab = prefab; l.Go = go; l.Authored = go.transform.localRotation; l.Rig = animator != null ? animator.gameObject : go; l.Scale = scale;
             l.Move = clips.FirstOrDefault(c => c.name.IndexOf("walk", StringComparison.OrdinalIgnoreCase) >= 0)
                 ?? clips.FirstOrDefault(c => c.name.IndexOf("idle", StringComparison.OrdinalIgnoreCase) < 0);
             l.Idle = clips.FirstOrDefault(c => c.name.IndexOf("idle", StringComparison.OrdinalIgnoreCase) >= 0);
@@ -196,7 +199,7 @@ namespace Statecraft.HexTiles
                 var p = centre + turn * new Vector3(l.M.Offset.x * size, 0f, l.M.Offset.y * size);
                 p.y = surface.Height(p);
                 // Board space: the units' parent sits in the board root (or at the origin for a board on its own).
-                l.Go.transform.localPosition = p; l.Go.transform.localRotation = Quaternion.Euler(0f, heading + ModelYaw + l.M.YawOffset, 0f);
+                l.Go.transform.localPosition = p; l.Go.transform.localRotation = Quaternion.Euler(0f, heading + ModelYaw + l.M.YawOffset, 0f) * l.Authored;
                 var clip = moving ? l.Move ?? l.Idle : l.Idle ?? l.Move;
                 if (clip == null) continue;
                 float cycle = l.M.CycleShare * size;

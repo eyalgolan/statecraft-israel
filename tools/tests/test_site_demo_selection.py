@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 
 WORKFLOW = Path(__file__).resolve().parents[2] / ".github/workflows/site.yml"
-STEP = "- name: Add the playable demo"
+STEP = "- name: Unpack the Latest release's Pages build at /demo/"
 
 def step_script() -> str:
     lines = WORKFLOW.read_text(encoding="utf-8").splitlines()
@@ -35,7 +35,7 @@ if a[:2] == ["release", "list"]:
     result = subprocess.run(["jq", "-r", a[a.index("--jq") + 1]], input=json.dumps(rows), text=True)
     sys.exit(result.returncode)
 if a[:2] == ["release", "view"]:
-    print(""); sys.exit(0)                 # no pages zip: the step stops after naming the tag
+    print(""); sys.exit(0)                 # no pages zip: the step stops (exit 1) after naming the tag
 sys.exit(99)
 '''
 
@@ -55,20 +55,22 @@ HIST = {"tagName": "v0.1.0-pre", "isPrerelease": True}
 
 def test_demo_follows_restored_latest_not_newest_published(tmp_path):
     p, log = run(tmp_path, "v0.3.1", [FAILED, GOOD, HIST])
-    assert p.returncode == 0 and "release view v0.3.1" in log and "v0.3.2" not in log
+    assert "release view v0.3.1" in log and "v0.3.2" not in log
+    assert p.returncode == 1 and "No *-web-pages.zip in the Latest release (v0.3.1)" in p.stdout
 
 def test_no_latest_falls_back_to_newest_prerelease_only(tmp_path):
     p, log = run(tmp_path, "404", [FAILED, HIST, {"tagName": "v0.0.1-pre", "isPrerelease": True}])
-    assert p.returncode == 0 and "release view v0.1.0-pre" in log and "release view v0.3.2" not in log
+    assert "release view v0.1.0-pre" in log and "release view v0.3.2" not in log
+    assert p.returncode == 1 and "newest prerelease (no Latest) release (v0.1.0-pre)" in p.stdout
 
 @pytest.mark.parametrize("latest", ["403", "500"])
 def test_a_non_404_lookup_error_fails_instead_of_deploying(tmp_path, latest):
     p, log = run(tmp_path, latest, [FAILED, GOOD])
-    assert p.returncode != 0 and "deploying without the demo" not in p.stdout and "release view" not in log
+    assert p.returncode != 0 and "not a 404" in p.stdout and "release view" not in log
 
-def test_no_latest_and_no_prerelease_deploys_without_demo(tmp_path):
-    p, _ = run(tmp_path, "404", [FAILED])
-    assert p.returncode == 0 and "deploying without the demo" in p.stdout
+def test_no_latest_and_no_prerelease_deploys_nothing(tmp_path):
+    p, log = run(tmp_path, "404", [FAILED])
+    assert p.returncode == 1 and "nothing to deploy" in p.stdout and "release view" not in log
 
 @pytest.mark.parametrize("latest", ["", "null"])
 def test_a_latest_response_without_a_tag_refuses(tmp_path, latest):

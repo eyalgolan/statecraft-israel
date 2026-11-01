@@ -25,6 +25,8 @@ fate, depopulation date or post-May-1948 status is given here.
   a symbol is placed to within a few hundred metres; a game hex is about 65 km² (5 km circumradius).
 - Every request was made with the User-Agent `statecraft-israel-research/1.0 (+https://github.com/eyalgolan/statecraft-israel)`.
 
+Every [V] in this note was an agent's reading on 2026-10-14, unless the tag gives a later date; a person's check is pending for all of them.
+
 ## Summary
 
 1. **VS-scan was reached.** Every figure in the 52 rows was read against the printed page. All 52 `population` values

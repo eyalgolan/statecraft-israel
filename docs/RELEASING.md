@@ -53,9 +53,11 @@ macOS IL2CPP parity check is not an MVP release gate.
    The English-only `--persistence` pass waits for each save's matching IndexedDB commit and checks that both reloads
    restore its date, turn and state hash.
 
-   For the website's playable demo, build a second web variant with Unity's Decompression Fallback - GitHub Pages
-   cannot set response headers, so the loader must decompress the files itself (the site's Play page explains) -
-   check it and package it the same way:
+   For the playable demo on GitHub Pages (`/demo/`), build a second web variant with Unity's Decompression
+   Fallback - GitHub Pages cannot set response headers, so the loader must decompress the files itself
+   ([Unity manual: deploying a Web application](https://docs.unity3d.com/6000.0/Documentation/Manual/webgl-deploying.html)).
+   For the same reason it stays single-threaded (`webGLThreadsSupport: 0`; threads need the COOP and COEP headers),
+   and only a `-shareable` build may be published. Check it and package it the same way:
 
    ```bash
    "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression gzip -decompressionFallback -shareable -out Builds/Web-pages -logFile "$PWD/unity-build-web-pages.log"
@@ -70,11 +72,11 @@ macOS IL2CPP parity check is not an MVP release gate.
    bash scripts/oss/package_web.sh unity/Builds/Web-pages unity/Builds/statecraft-israel-vX.Y.Z-web-pages.zip
    ```
 
-   When the latest release carries this `statecraft-israel-vX.Y.Z-web-pages.zip`, the site's deploy
-   (`.github/workflows/site.yml`) unpacks it at `/demo/`, so the demo is live at the site's `/demo/` after the next
-   deploy (`gh workflow run site.yml` starts one on demand). Until then the site deploys without it, and the Play
-   page keeps saying there is no hosted build. Updating the Play page (and the README's Play section) to link to
-   `/demo/` is a follow-up step when the first such release ships, not part of this release flow.
+   Publishing a release starts the Pages deploy (`.github/workflows/site.yml`, on `main`; `gh workflow run site.yml`
+   starts one on demand). It unpacks the Latest release's `statecraft-israel-vX.Y.Z-web-pages.zip` at
+   `/demo/` (https://eyalgolan.github.io/statecraft-israel/demo/) and the root page redirects there. It fails, and
+   Pages keeps the last deploy, when that release has no such zip, the zip has no `index.html`, or its
+   `event-photos.json` is not `shareable`. The demo is never in git (no file in the repository may pass 10 MB).
 
    `package_web.sh` copies the licence and attribution files into the build folder, then runs
    `tools/package_release.py`, M3's sensitivity gate, which zips the folder and prints `PACKAGED …` or
@@ -173,10 +175,10 @@ macOS IL2CPP parity check is not an MVP release gate.
 
 ## Nightly builds
 
-The site selects GitHub Latest for `/demo/`, matching the release chosen by nightly recovery. Only when the Latest lookup returns HTTP 404 does it fall back to the newest published prerelease. Other lookup failures stop deployment. A post-publication site failure leaves the served demo unverified; it must not be reported as unchanged without readback.
+`site.yml` selects GitHub Latest for `/demo/`, matching the release chosen by nightly recovery. Only when the Latest lookup returns HTTP 404 does it fall back to the newest published prerelease, and with neither it deploys nothing. Other lookup failures stop deployment. A post-publication site failure leaves the served demo unverified; it must not be reported as unchanged without readback.
 
 Every night at 03:00 (Israel time) the newest `main` is built and, only if every gate passes, becomes the public web
-game: a normal GitHub release marked **Latest**, tagged `vX.Y.Z`, which the website's `/demo/` serves, and, once itch
+game: a normal GitHub release marked **Latest**, tagged `vX.Y.Z`, which GitHub Pages' `/demo/` serves, and, once itch
 pushes are enabled, the itch.io page. X.Y.Z is one patch above the numerically highest published release tag matching
 `^v[0-9]+\.[0-9]+\.[0-9]+$`; drafts, `-nightly` tags and other names do not choose the version. With v0.3.1 and
 v0.3.1-nightly.20261028 published, the next nightly is v0.3.2. The job is

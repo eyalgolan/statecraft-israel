@@ -23,6 +23,8 @@ not touched here.
   scripted request and the fetch tool on 2026-10-16, so the Pinpoint copy is the route used.
 - Nothing was logged into or submitted. No scan is committed. The repository takes facts (names and dates) only.
 
+Every [V] in this note was an agent's reading on 2026-10-16, unless the tag gives a later date; a person's check is pending for all of them.
+
 ## 1. Summary
 
 1. **The Hebrew names now have a primary source: the Hebrew edition of the Palestine Gazette.** Its schedule of

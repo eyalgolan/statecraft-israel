@@ -4,7 +4,7 @@ Researched 2026-10-15. Draft for issue #639: the sources first, before any video
 
 ## Purpose
 
-The trailer shows seven attributed quotation cards from five speakers. The only record of them in the repository is the caption files `site/public/media/promo-trailer.en.vtt` and `site/public/media/promo-trailer.he.vtt`. This note records, for each card: the text as shown, whether it is verbatim, an excerpt or a different rendering, the full original sentence, the speaker and role, the date and occasion, the original language, who translated it, the source URL, and a status. It uses the rows of the quote source sheet proposed in #639.
+The trailer shows seven attributed quotation cards from five speakers. The only record of them in the repository is the caption files `site/public/media/promo-trailer.en.vtt` and `site/public/media/promo-trailer.he.vtt`. Those files were removed with the website on 31 Oct 2026; read them with `git show ddc77b826:site/public/media/promo-trailer.en.vtt` (and `.he.vtt`). This note records, for each card: the text as shown, whether it is verbatim, an excerpt or a different rendering, the full original sentence, the speaker and role, the date and occasion, the original language, who translated it, the source URL, and a status. It uses the rows of the quote source sheet proposed in #639.
 
 ## Conventions
 
@@ -12,6 +12,8 @@ The trailer shows seven attributed quotation cards from five speakers. The only 
 - Status is one of: confirmed, wording differs from source, source not found.
 - Dates are written 15 May 1948 style. No quote is invented. The short passages in quotation marks are copied from the cited page, and where a source sentence contains a dash, the quotation stops before it and the rest is described in words.
 - Both caption files were read from `upstream/main` (commit `835760f5`). The Hebrew file repeats each English quotation after the words "on the screen, in English" and does not translate the quotations.
+
+Every [V] in this note was an agent's reading on 2026-10-15, unless the tag gives a later date; a person's check is pending for all of them.
 
 ## 1. What the trailer shows
 

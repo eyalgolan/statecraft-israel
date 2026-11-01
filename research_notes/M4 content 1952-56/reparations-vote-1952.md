@@ -12,6 +12,8 @@ Researched 2026-10-11. All URLs were checked on that date. Draft for issue #5: o
 - **JTA dates.** A JTA bulletin is dated the day after the dispatches it carries; each item has its own dateline, which the web text of jta.org drops. Event dates here use the dateline on the scan where it was read.
 - No quotes are invented. Nothing below is quoted from a speaker.
 
+Every [V] in this note was an agent's reading on 2026-10-11, unless the tag gives a later date; a person's check is pending for all of them.
+
 **Source caveat.** These Sharett Archive pages were opened in full: the Knesset protocols of sittings 38 and 39 (7 and 8 Jan 1952), the Foreign Ministry press release of 10 Sep 1952 and the Rosen-Sharett correspondence of 1-2 Sep 1952. The Hebrew pages are reproduced in *Polmos HaShilumim* (*The Reparations Controversy*, ed. Yaakov Sharett), which prints the Divrei HaKnesset text with editorial notes. Sitting 40 (9 Jan) was not opened, so the vote and its breakdown still come from a contemporaneous JTA bulletin and need the record of sitting 40 to reach "verified" under a strict reading. The JSTOR and De Gruyter copies of the same volume were not reachable.
 
 ---

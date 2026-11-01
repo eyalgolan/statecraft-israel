@@ -162,7 +162,7 @@ The art and map issues under #18 remain a parallel track, not a substitute for t
 ## Open design calls outside the phase checklist
 
 - [x] **Done: `docs/GDD.md`, "Terrain type".** The eight `hexes.json` biomes are the complete MVP terrain catalogue, with no terrain conversions; projects change project or site state. New types, overlays and conversions are deferred beyond the MVP.
-- [x] **Done: `docs/GDD.md`, "MVP completion rules" (owner, 18 Oct 2026, "60-90 minutes"; [#813](https://github.com/eyalgolan/statecraft-israel/issues/813#issuecomment-6249771314)).** The session's target play time, 60 to 90 minutes, is recorded in the GDD and the Phase 7 plan (#1254; #1242 closed); #813 tunes to it.
+- [x] **Done: `docs/GDD.md`, "MVP completion rules" (owner, 18 Oct 2026, "60-90 minutes"; [#813](https://github.com/eyalgolan/statecraft-israel/issues/813#issuecomment-6249771314)).** The session's target play time, 60 to 90 minutes, is recorded in the GDD and the Phase 7 plan (#1254; #1242 closed); #813 tunes to it. **Then changed (owner, 30 Oct 2026, "120 (data wins)"; [#1687](https://github.com/eyalgolan/statecraft-israel/issues/1687#issuecomment-6511461164)):** the target is 120 minutes, matching `gdd03-balance.yaml`.
 
 ## GDD v0.2 additions outside the phase plans
 

@@ -1,1 +1,0 @@
-- Add a synthetic immigration manifest model and content validation contract for GDD 0.3 fixtures.

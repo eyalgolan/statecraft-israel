@@ -25,6 +25,7 @@ namespace Statecraft.Game.Map.Kits
 
         public int Count => all.Count;
         public (Vector2 centre, float radius, string id) this[int i] => all[i];
+        internal IReadOnlyList<(Vector2 centre, float radius, string id)> Items => all;
 
         /// <summary>The farthest from a disc's edge a query may look (beyond this <see cref="Near"/> may miss the disc).</summary>
         public float Reach(float radius) => radius * reachScale + reachPad;

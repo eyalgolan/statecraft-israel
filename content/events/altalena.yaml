@@ -6,7 +6,7 @@ text: 'The Altalena, a ship carrying arms for the Irgun, is due off the coast wi
 # person. Names as he.wiki "פרשת אלטלנה" writes them (אלטלנה, אצ"ל, צה"ל, בגין; its "חמישית מהנשק" for the fifth).
 # "ההחלטה בידי" keeps the sentence the same for a minister of either gender.
 title_he: אלטלנה
-text_he: 'אלטלנה, אונייה המובילה נשק לאצ"ל, צפויה להגיע לחוף בתוך ימים. בגין מבקש שחמישית מהנשק תועבר לגדוד האצ"ל בירושלים והשאר לגדודי האצ"ל בתוך צה"ל. ההחלטה בידי {defense_minister}.'
+text_he: 'אלטלנה, אונייה המובילה נשק לאצ"ל, צפויה להגיע לחוף בתוך מספר ימים. בגין מבקש שחמישית מהנשק תועבר לגדוד האצ"ל בירושלים והשאר לגדודי האצ"ל בתוך צה"ל. ההחלטה בידי {defense_minister}.'
 text_he_review: agent-checked
 anchor: hard
 tags: [security, war-casualties]
