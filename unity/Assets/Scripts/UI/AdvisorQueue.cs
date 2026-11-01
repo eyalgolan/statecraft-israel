@@ -49,6 +49,18 @@ namespace Statecraft.Game.UI
             }
         }
 
+        /// <summary>Each turn, a waiting or put-off warning whose signal or condition no longer holds goes to the history as
+        /// missed, not seen, so its signal can bring it back (owner, #2024). Critical messages are never pruned, and teaching
+        /// ones are not warnings.</summary>
+        public void Prune(IReadOnlyCollection<string> holding, Func<IReadOnlyDictionary<string, double>, bool> when, int turn, DateTime date)
+        {
+            foreach (var w in waiting.Where(w => !w.M.Critical && !w.M.Teaching && !(holding.Contains(w.M.Signal) && when(w.M.When))).ToList())
+            {
+                waiting.Remove(w);
+                history.Add(new Entry(w.M.Id, turn, date, Outcome.Missed));
+            }
+        }
+
         bool Eligible(AdvisorCatalog.Message m, int turn) =>
             Array.IndexOf(AdvisorCatalog.Levels, m.Level) >= settings.LevelRank
             && (m.Repeat == AdvisorCatalog.Once ? !settings.Seen(m.Id) : !(lastShown.TryGetValue(m.Id, out var t) && turn < t + m.CooldownTurns))
@@ -101,7 +113,7 @@ namespace Statecraft.Game.UI
         /// not shown again now, and not marked seen, so its signal can bring it back later.</summary>
         public void Drop(AdvisorCatalog.Message m, int turn, DateTime date)
         {
-            waiting.RemoveAll(w => w.M == m);
+            if (waiting.RemoveAll(w => w.M == m) == 0) return; // Prune already sent it to the history
             history.Add(new Entry(m.Id, turn, date, Outcome.Missed));
         }
 

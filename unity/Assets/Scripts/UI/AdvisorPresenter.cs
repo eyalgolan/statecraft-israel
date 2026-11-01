@@ -243,7 +243,9 @@ namespace Statecraft.Game.UI
             if (session.AutoShow)
             {
                 var ctx = Context();
-                session.Queue.Offer(AdvisorSignals.Holding(ctx, session), w => AdvisorSignals.When(ctx, w), Turn);
+                var holding = AdvisorSignals.Holding(ctx, session);
+                session.Queue.Offer(holding, w => AdvisorSignals.When(ctx, w), Turn);
+                session.Queue.Prune(holding, w => AdvisorSignals.When(ctx, w), Turn, bridge.State.Date);
             }
             Render();
         }
