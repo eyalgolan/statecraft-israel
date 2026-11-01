@@ -824,6 +824,12 @@ def run_steam(night: Night, runner: Runner) -> None:
         print(f"steam: failed: {detail}", file=sys.stderr)
         night.notes.append("steam=failed")
         notify("Nightly Steam stage failed", f"{night.tag} is published; Steam: {detail}; logs in {night.run_dir}"[:200])
+    finally:
+        # Nothing prunes the run folders, and three players and their zips a night would eat the free space the next
+        # web nightly's disk gate needs (review of #2155). The draft holds the zips; the record and the logs stay.
+        shutil.rmtree(out / "steam", ignore_errors=True)
+        for z in out.glob("steam-*.zip"):
+            z.unlink(missing_ok=True)
 
 
 # --- the night --------------------------------------------------------------------------------------------------

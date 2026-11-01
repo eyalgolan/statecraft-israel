@@ -16,6 +16,12 @@ name: Steam upload
 # and only through env:. The cached login file is always deleted at the end. Nothing here prints a secret; GitHub masks
 # them in the log as well. Every input is checked before use, and every action is pinned to a commit SHA.
 #
+# The draft can be edited by anyone with push access after `stage` made it, so the job trusts steam-record.json only
+# when its SHA-256 equals the `record_sha256` input, which `stage` computed on the owner's Mac and put in the dispatch;
+# the record then pins every zip's SHA-256 (review of #2155). steamcmd itself is trusted as Valve serves it over TLS: its
+# bootstrap tarball's SHA-256 is printed for the record, not compared, because Valve republishes it and steamcmd updates
+# itself from Valve on its first run anyway.
+#
 # What it never does: build or run the game, publish a release, set the `default` branch live (Valve does not allow
 # it from a build script; the owner does it in App Admin), or upload a draft whose files differ from its record or
 # whose commit is not on main.
@@ -49,6 +55,10 @@ on:
         options:
           - beta
           - nightly
+      record_sha256:
+        description: "SHA-256 of the draft's steam-record.json, from tools/steam_upload.py stage"
+        required: true
+        type: string
 
 permissions: {}
 
@@ -78,9 +88,11 @@ jobs:
         env:
           TAG: ${{ inputs.tag }}
           BRANCH: ${{ inputs.branch }}
+          RECORD_SHA256: ${{ inputs.record_sha256 }}
         run: |
           if [[ ! $TAG =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then echo "::error::not a vX.Y.Z tag"; exit 1; fi
           if [[ ! $BRANCH =~ ^(beta|nightly)$ ]]; then echo "::error::the branch is beta or nightly"; exit 1; fi
+          if [[ ! $RECORD_SHA256 =~ ^[0-9a-f]{64}$ ]]; then echo "::error::record_sha256 is not a SHA-256"; exit 1; fi
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: main
@@ -96,11 +108,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ inputs.tag }}
           BRANCH: ${{ inputs.branch }}
+          RECORD_SHA256: ${{ inputs.record_sha256 }}
         run: |
           gh release view "steam-$TAG" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft | grep -qx true \
             || { echo "::error::steam-$TAG is not a draft release"; exit 1; }
           gh release download "steam-$TAG" --repo "$GITHUB_REPOSITORY" --dir "$RUNNER_TEMP/draft"
-          commit=$(uv run --no-project tools/steam_upload.py verify --dir "$RUNNER_TEMP/draft" --tag "$TAG" --branch "$BRANCH")
+          commit=$(uv run --no-project tools/steam_upload.py verify --dir "$RUNNER_TEMP/draft" --tag "$TAG" --branch "$BRANCH" --record-sha256 "$RECORD_SHA256")
           echo "commit=$commit" >> "$GITHUB_OUTPUT"
       - name: The record's commit is on main
         env:
@@ -132,9 +145,14 @@ jobs:
           STEAM_CONFIG_VDF: ${{ secrets.STEAM_CONFIG_VDF }}
         run: |
           umask 077
-          mkdir -p "$HOME/Steam/config"
+          # Where the tarball's steamcmd keeps config/ is confirmed on the first run; both candidates get the cache and
+          # the cleanup step removes both.
+          for dir in "$HOME/Steam/config" "$RUNNER_TEMP/steamcmd/config"; do
+            mkdir -p "$dir"
+          done
           printf '%s' "$STEAM_CONFIG_VDF" | base64 -d > "$HOME/Steam/config/config.vdf"
-          chmod 600 "$HOME/Steam/config/config.vdf"
+          cp "$HOME/Steam/config/config.vdf" "$RUNNER_TEMP/steamcmd/config/config.vdf"
+          chmod 600 "$HOME/Steam/config/config.vdf" "$RUNNER_TEMP/steamcmd/config/config.vdf"
       - name: Upload with steamcmd (owner's builder account)
         env:
           STEAM_BUILDER_USERNAME: ${{ secrets.STEAM_BUILDER_USERNAME }}
@@ -148,7 +166,7 @@ jobs:
       - name: Delete the cached login and steamcmd
         if: always()
         run: |
-          rm -f "$HOME/Steam/config/config.vdf"
+          rm -f "$HOME/Steam/config/config.vdf" "$RUNNER_TEMP/steamcmd/config/config.vdf"
           rm -rf "$HOME/Steam" "$HOME/.steam" "$RUNNER_TEMP/steamcmd" "$RUNNER_TEMP/steam"
       - name: Delete the draft after a successful upload
         if: success()
@@ -161,3 +179,17 @@ jobs:
           else
             echo "::warning::steam-$TAG is no longer a draft; left alone"
           fi
+
+  refused:
+    # A dispatch the owner-on-main guard turns away fails here, visibly, instead of showing a green skipped job. It has
+    # no environment, no permissions and no secret.
+    name: Steam upload (refused)
+    if: "!(github.ref == 'refs/heads/main' && github.triggering_actor == github.repository_owner)"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Refuse
+        run: |
+          echo "::error::the Steam upload runs only for the repository owner's own dispatch on main"
+          exit 1

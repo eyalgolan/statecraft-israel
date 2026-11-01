@@ -2967,7 +2967,8 @@ def test_the_steam_build_runs_like_the_nightlys_other_unity_steps(night, env):
     nightly.run_steam(night, env.runner)
     build = next(e for e in env.runner.envs if e[0][:3] == ["uv", "run", "tools/release_build.py"])
     assert build[1]["UNITY_MCP_SERVER_PATH"] == str(night.job / "no-mcp-server")
-    assert all(stop for cmd, stop in env.runner.stops if cmd[:2] == ["uv", "run"])
+    runs = [stop for cmd, stop in env.runner.stops if cmd[:2] == ["uv", "run"]]
+    assert runs == [True, True], runs   # release_build.py and steam_upload.py, each stopped on an interrupt
     assert not night.notes
     env.marker.write_text("x")
     nightly.run_steam(night, env.runner)
@@ -2975,11 +2976,28 @@ def test_the_steam_build_runs_like_the_nightlys_other_unity_steps(night, env):
     assert len([e for e in env.runner.envs if e[0][:3] == ["uv", "run", "tools/release_build.py"]]) == 1
 
 
-@pytest.mark.parametrize("text", ['{"app_id": 1, "depots": [1, 2, 3], "branches": []}', '[1]', "not json"])
-def test_a_malformed_steam_json_is_a_steam_failure_not_a_refused_night(night, env, text):
+@pytest.mark.parametrize("text, notes", [('{"app_id": 1, "depots": [1, 2, 3], "branches": []}', ["steam=failed"]),
+                                         ('[1]', ["steam=failed"]), ("not json", [])])
+def test_a_malformed_steam_json_is_a_steam_failure_not_a_refused_night(night, env, text, notes):
     # Review I3 (#2155): the web nightly is public by now, so even a broken steam.json only marks Steam.
     (env.cfg.clone / "steam").mkdir(exist_ok=True)
     (env.cfg.clone / "steam/steam.json").write_text(text)
     nightly.run_steam(night, env.runner)   # never raises
-    assert night.notes in ([], ["steam=failed"])
+    assert night.notes == notes   # unreadable JSON is "not configured yet" (skipped); a wrong shape is a failure
     assert not [c for c in env.runner.calls if c[:2] == ["uv", "run"]]
+
+
+def test_the_steam_content_is_removed_after_the_stage(night, env):
+    # Review (k2 H6): nothing prunes the run folders, and three players plus their zips each night would fill the disk
+    # the next web nightly's free-space gate reads. The record and the logs stay.
+    out = night.run_dir / "steam-release"
+    def built(cmd):
+        (out / "steam/linux").mkdir(parents=True)
+        (out / "steam/linux/Statecraft.x86_64").write_bytes(b"x" * 10)
+        (out / "steam-v0.3.2-linux.zip").write_bytes(b"z")
+        (out / "build-record.json").write_text("{}")
+    steam_ready(env)
+    env.runner.rules.insert(0, (("uv", "run", "tools/release_build.py"), 0, "", built))
+    nightly.run_steam(night, env.runner)
+    assert not (out / "steam").exists() and not list(out.glob("*.zip"))
+    assert (out / "build-record.json").is_file()

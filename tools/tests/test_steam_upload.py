@@ -11,6 +11,7 @@ from pathlib import Path
 
 import pytest
 
+import release_build as rb
 import steam_upload as su
 
 REPO = Path(__file__).resolve().parents[2]
@@ -39,19 +40,38 @@ def record(**over):
     return r
 
 
+PLAYERS = {"windows": {"Statecraft.exe": 0o644, "Statecraft_Data/data.unity3d": 0o644,
+                       "Statecraft_Data/Plugins/x86_64/steam_api64.dll": 0o644},
+           "linux": {"Statecraft.x86_64": 0o755, "Statecraft_Data/data.unity3d": 0o644,
+                     "Statecraft_Data/Plugins/libsteam_api.so": 0o644},
+           "mac": {"Statecraft.app/Contents/MacOS/Statecraft Israel": 0o755, "Statecraft.app/Contents/Info.plist": 0o644,
+                   "Statecraft.app/Contents/PlugIns/steam_api.bundle/Contents/MacOS/libsteam_api.dylib": 0o644}}
+
+
+def file_list_hashes(out, rec):
+    for a in rec["artifacts"]:
+        if (out / "steam" / a["platform"]).is_dir():
+            text, _, _ = rb.tree_manifest(out / "steam" / a["platform"], mac=a["platform"] == "mac")
+            a["file_list_sha256"] = hashlib.sha256(text.encode()).hexdigest()
+    (out / "build-record.json").write_text(json.dumps(rec))
+
+
 def release_folder(tmp_path, **over):
+    """A folder as release_build.py --steam leaves it: each player with Valve's library and the notices, plus what
+    Unity leaves beside a player that never ships (a *_DoNotShip folder, the photo manifest); the record carries each
+    folder's file-list hash exactly as release_build computes it."""
     out = tmp_path / "release"
-    for p, files in {"windows": {"Statecraft.exe": 0o644, "Statecraft_Data/data.unity3d": 0o644},
-                     "linux": {"Statecraft.x86_64": 0o755, "Statecraft_Data/data.unity3d": 0o644},
-                     "mac": {"Statecraft.app/Contents/MacOS/Statecraft Israel": 0o755,
-                             "Statecraft.app/Contents/Info.plist": 0o644}}.items():
+    for p, files in PLAYERS.items():
         for rel, mode in files.items():
             f = out / "steam" / p / rel
             f.parent.mkdir(parents=True, exist_ok=True)
             f.write_bytes(f"{p} {rel}".encode())
             f.chmod(mode)
         (out / "steam" / p / "LICENSE").write_text("licence\n")
-    (out / "build-record.json").write_text(json.dumps(record(**over)))
+        (out / "steam" / p / rb.PHOTOS).write_text("{}\n")
+        (out / "steam" / p / "Statecraft_BurstDebugInformation_DoNotShip").mkdir()
+        (out / "steam" / p / "Statecraft_BurstDebugInformation_DoNotShip/x.pdb").write_text("debug")
+    file_list_hashes(out, record(**over))
     return out
 
 
@@ -196,8 +216,9 @@ def test_stage_dispatches_with_the_records_branch(tmp_path):
     for channel in ("beta", "nightly"):
         gh = FakeGh()
         stage(tmp_path / channel, gh, channel=channel)
+        digest = hashlib.sha256((tmp_path / channel / "release/steam-record.json").read_bytes()).hexdigest()
         assert gh.calls[-1] == ["workflow", "run", "steam-upload.yml", "--ref", "main", "-f", "tag=v0.3.2",
-                                "-f", f"branch={channel}"]
+                                "-f", f"branch={channel}", "-f", f"record_sha256={digest}"]
 
 
 @pytest.mark.parametrize("over, tag", [({"dev": True}, "v0.3.2"), ({"channel": "default"}, "v0.3.2"),
@@ -234,6 +255,7 @@ def test_stage_keeps_symlinks_as_links(tmp_path):
     (fw / "Versions/A").mkdir(parents=True)
     (fw / "Versions/A/X").write_bytes(b"lib")
     (fw / "Versions/Current").symlink_to("A")
+    file_list_hashes(out, json.loads((out / "build-record.json").read_text()))   # the build saw the framework too
     su.stage(out, "v0.3.2", FakeGh(), config_path=config_file(tmp_path))
     with zipfile.ZipFile(out / "steam-v0.3.2-mac.zip") as z:
         info = z.getinfo("Statecraft.app/Contents/Frameworks/X.framework/Versions/Current")
@@ -251,16 +273,21 @@ def downloaded(tmp_path):
     return d
 
 
+def record_digest(d):
+    return hashlib.sha256((d / "steam-record.json").read_bytes()).hexdigest()
+
+
 def test_verify_checks_hashes_tag_and_branch(tmp_path, capsys):
     d = downloaded(tmp_path)
-    assert su.verify(d, "v0.3.2", "nightly") == SHA
+    digest = record_digest(d)
+    assert su.verify(d, "v0.3.2", "nightly", digest) == SHA
     with pytest.raises(SystemExit, match="branch"):
-        su.verify(d, "v0.3.2", "beta")
+        su.verify(d, "v0.3.2", "beta", digest)
     with pytest.raises(SystemExit, match="tag"):
-        su.verify(d, "v0.3.3", "nightly")
+        su.verify(d, "v0.3.3", "nightly", digest)
     (d / "steam-v0.3.2-linux.zip").write_bytes(b"replaced")
     with pytest.raises(SystemExit, match="sha256"):
-        su.verify(d, "v0.3.2", "nightly")
+        su.verify(d, "v0.3.2", "nightly", digest)
 
 
 # --- no credential, ever -----------------------------------------------------------------------------------------------
@@ -282,3 +309,45 @@ def test_steamcmd_is_never_run_here(tmp_path):
     stage(tmp_path, FakeGh())
     source = (REPO / "tools/steam_upload.py").read_text()
     assert not re.search(r"""["']steamcmd""", source), "steam_upload.py never names steamcmd as a command"
+
+
+def test_verify_refuses_a_record_whose_hash_is_not_the_dispatched_one(tmp_path):
+    # Review (a review agent, k2 C1): the draft is mutable, so a swapped zip with a matching rewritten record must fail
+    # against the record hash the owner's machine put in the dispatch.
+    d = downloaded(tmp_path)
+    digest = record_digest(d)
+    (d / "steam-v0.3.2-linux.zip").write_bytes(b"trojan")
+    rec = json.loads((d / "steam-record.json").read_text())
+    rec["assets"]["steam-v0.3.2-linux.zip"] = {"sha256": hashlib.sha256(b"trojan").hexdigest(), "size": 6}
+    (d / "steam-record.json").write_text(json.dumps(rec))
+    with pytest.raises(SystemExit, match="record_sha256"):
+        su.verify(d, "v0.3.2", "nightly", digest)
+    with pytest.raises(SystemExit, match="record_sha256"):
+        su.verify(d, "v0.3.2", "nightly", "not-a-hash")
+
+
+def test_stage_ships_only_what_the_file_list_names(tmp_path):
+    # Review (k2 C3): Unity's *_DoNotShip folders and the photo manifest never reach Steam, as with the GitHub archives.
+    out = stage(tmp_path, FakeGh())
+    for p in su.PLATFORMS:
+        with zipfile.ZipFile(out / f"steam-v0.3.2-{p}.zip") as z:
+            names = z.namelist()
+        assert not [n for n in names if "_DoNotShip" in n or n == rb.PHOTOS], names
+        assert "LICENSE" in names
+
+
+@pytest.mark.parametrize("change", ["appid", "edited", "added"])
+def test_stage_refuses_a_folder_changed_after_the_build(tmp_path, change):
+    # Review (k2 C3): stage re-checks the folder it zips against the build's own record before any gh call.
+    out = release_folder(tmp_path)
+    linux = out / "steam/linux"
+    if change == "appid":
+        (linux / "steam_appid.txt").write_text("480")
+    elif change == "edited":
+        (linux / "Statecraft.x86_64").write_bytes(b"other")
+    else:
+        (linux / "Player.log").write_text("ran here")
+    gh = FakeGh()
+    with pytest.raises(SystemExit):
+        su.stage(out, "v0.3.2", gh, config_path=config_file(tmp_path))
+    assert gh.calls == []

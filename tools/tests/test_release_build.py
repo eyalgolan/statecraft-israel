@@ -937,8 +937,12 @@ class StampFake(Fake):
 
 
 def stamped(repo, version="0.1.5", extra=""):
+    """The nightly's own stamp (tools/nightly.py), so the accepted shape is the one the nightly really writes."""
+    from nightly import stamp_bundle_version
     head = (repo / SETTINGS).read_text()
-    (repo / SETTINGS).write_text(head.replace("bundleVersion: 0.1.0", f"bundleVersion: {version}") + extra)
+    stamp_bundle_version(repo / SETTINGS, version)
+    if extra:
+        (repo / SETTINGS).write_text((repo / SETTINGS).read_text() + extra)
     return head
 
 

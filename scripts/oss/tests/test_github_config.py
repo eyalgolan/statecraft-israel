@@ -225,7 +225,7 @@ def test_steam_upload_runs_only_on_dispatch():
 def test_steam_upload_uses_the_steam_environment_and_minimal_permissions():
     wf = steam()
     assert wf["permissions"] == {}
-    assert set(wf["jobs"]) == {"upload"}
+    assert set(wf["jobs"]) == {"upload", "refused"}
     job = wf["jobs"]["upload"]
     assert job["environment"] == "steam" and job["permissions"] == {"contents": "write"}
     assert job["runs-on"] == "ubuntu-24.04" and job["timeout-minutes"] <= 120
@@ -240,7 +240,7 @@ def test_steam_upload_uses_the_steam_environment_and_minimal_permissions():
 
 def test_steam_upload_branch_input_is_beta_or_nightly():
     inputs = triggers(steam())["workflow_dispatch"]["inputs"]
-    assert set(inputs) == {"tag", "branch"}
+    assert set(inputs) == {"tag", "branch", "record_sha256"}
     assert inputs["branch"]["type"] == "choice" and inputs["branch"]["options"] == ["beta", "nightly"]
     assert inputs["tag"]["required"] is True and inputs["branch"]["required"] is True
     first = steam()["jobs"]["upload"]["steps"][0]
@@ -288,3 +288,33 @@ def test_steam_upload_runs_only_for_the_owner_on_main():
     guard = steam()["jobs"]["upload"]["if"]
     assert "github.ref == 'refs/heads/main'" in guard
     assert "github.triggering_actor == github.repository_owner" in guard and "&&" in guard
+
+
+def test_steam_upload_record_hash_comes_from_the_dispatch():
+    # Review (a review agent, k2 C1): the draft can be edited after stage; the dispatch input cannot.
+    inputs = triggers(steam())["workflow_dispatch"]["inputs"]
+    assert inputs["record_sha256"]["required"] is True
+    first = steam()["jobs"]["upload"]["steps"][0]
+    assert "^[0-9a-f]{64}$" in first["run"] and first["env"]["RECORD_SHA256"] == "${{ inputs.record_sha256 }}"
+    verify = next(s for s in steam()["jobs"]["upload"]["steps"] if "steam_upload.py verify" in s.get("run", ""))
+    assert '--record-sha256 "$RECORD_SHA256"' in verify["run"]
+
+
+def test_a_refused_steam_upload_fails_loudly():
+    # Review (k2 C4): a run the guard refuses must fail, not show a green skipped job.
+    jobs = steam()["jobs"]
+    refused = jobs["refused"]
+    assert refused["if"] == "!(" + jobs["upload"]["if"] + ")"
+    assert "environment" not in refused and refused["permissions"] == {}
+    assert any("exit 1" in s.get("run", "") for s in refused["steps"])
+    assert "secrets." not in yaml.safe_dump(refused)
+
+
+def test_the_login_cache_is_written_where_either_steamcmd_layout_reads_it():
+    # Review (k2 H1): where the tarball's steamcmd keeps config/ is unconfirmed; both candidates get it and both go.
+    job = steam()["jobs"]["upload"]
+    restore = next(s for s in job["steps"] if s.get("name") == "Restore the builder login (owner's secret)")
+    for path in ('"$HOME/Steam/config/config.vdf"', '"$RUNNER_TEMP/steamcmd/config/config.vdf"'):
+        assert path in restore["run"]
+    cleanup = next(s for s in job["steps"] if s.get("if") == "always()")
+    assert '"$HOME/Steam"' in cleanup["run"] and '"$RUNNER_TEMP/steamcmd"' in cleanup["run"]

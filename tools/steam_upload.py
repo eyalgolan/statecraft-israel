@@ -10,11 +10,11 @@ Actions").
 Usage:
   uv run tools/steam_upload.py stage --out <release folder> --tag vX.Y.Z      (the owner's Mac, or the nightly)
   uv run tools/steam_upload.py render --root <content> --tag vX.Y.Z --commit <sha> --branch beta|nightly   (CI)
-  uv run tools/steam_upload.py verify --dir <downloaded draft> --tag vX.Y.Z --branch beta|nightly           (CI)
+  uv run tools/steam_upload.py verify --dir <draft> --tag vX.Y.Z --branch beta|nightly --record-sha256 <sha>  (CI)
 
 - stage reads the folder tools/release_build.py --steam wrote (build-record.json and steam/<platform>/), refuses a
-  record that is not a clean, non-dev Steam build of that tag for `beta` or `nightly`, and steam/steam.json while any
-  ID is null. It zips each platform folder to steam-<tag>-<platform>.zip (keeping the executable bits and symlinks:
+  record that is not a clean, non-dev Steam build of that tag for `beta` or `nightly`, steam/steam.json while any
+  ID is null, and a folder that no longer matches the file list the build recorded. It zips the files of that list to steam-<tag>-<platform>.zip (keeping the executable bits and symlinks:
   steamcmd uploads from a Linux machine), writes steam-record.json (tag, commit, branch, each zip's SHA-256 and size),
   attaches them to a DRAFT release steam-<tag> (never published; an existing release of that name is replaced only if
   it is a draft) and runs `gh workflow run steam-upload.yml --ref main -f tag=<tag> -f branch=<branch>`.
@@ -41,6 +41,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from string import Template
 from typing import Callable
+
+import release_build as rb   # tools/: the build's own folder checks and file list, so stage ships what was built
 
 REPO = Path(__file__).resolve().parents[1]
 CONFIG = REPO / "steam/steam.json"
@@ -130,11 +132,11 @@ def sha256(path: Path) -> str:
     return h.hexdigest()
 
 
-def zip_folder(folder: Path, dest: Path) -> None:
-    """A zip of folder's contents with each entry's Unix mode (the executable bits) and symlinks kept as links, so
-    `unzip` on the Linux upload machine restores the players as they were built."""
+def zip_folder(folder: Path, dest: Path, paths: list[Path] | None = None) -> None:
+    """A zip of folder's contents (or of `paths`, all under folder) with each entry's Unix mode (the executable bits)
+    and symlinks kept as links, so `unzip` on the Linux upload machine restores the players as they were built."""
     with zipfile.ZipFile(dest, "w", zipfile.ZIP_DEFLATED) as z:
-        for path in sorted(folder.rglob("*")):
+        for path in sorted(folder.rglob("*") if paths is None else paths):
             rel = path.relative_to(folder).as_posix()
             mode = os.lstat(path).st_mode
             if path.is_symlink():
@@ -172,10 +174,23 @@ def stage(out: Path, tag: str, gh: Callable[[list[str]], Result] = gh_cli, confi
         raise SystemExit(f"REFUSED: a Steam upload needs all three platform folders (steam/{{{','.join(PLATFORMS)}}}); "
                          f"the record has {sorted(folders)}")
     branch = record["channel"]
+    # The folders must still be what the build checked and listed: no steam_appid.txt dropped in for a local test, no
+    # log a run left behind (review of #2155). Only the files the build's list names are zipped, so Unity's
+    # *_DoNotShip folders and the photo manifest never ship, as with the GitHub archives.
+    listed = {a["platform"]: a.get("file_list_sha256") for a in record["artifacts"]}
+    shipped = {}
+    for platform in PLATFORMS:
+        folder, mac = out / "steam" / platform, platform == "mac"
+        if problem := rb.steam_folder_problem(folder, platform):
+            raise SystemExit(f"REFUSED: {problem}")
+        text, _, _ = rb.tree_manifest(folder, mac=mac)
+        if hashlib.sha256(text.encode()).hexdigest() != listed[platform]:
+            raise SystemExit(f"REFUSED: {folder} no longer matches the file list the build recorded; rebuild it")
+        shipped[platform] = rb.shipped(folder, mac=mac)
     assets = {}
     for platform in PLATFORMS:
         dest = out / f"steam-{tag}-{platform}.zip"
-        zip_folder(out / "steam" / platform, dest)
+        zip_folder(out / "steam" / platform, dest, shipped[platform])
         assets[dest.name] = {"sha256": sha256(dest), "size": dest.stat().st_size}
     steam_record = out / "steam-record.json"
     steam_record.write_text(json.dumps({"tag": tag, "commit": commit, "branch": branch, "assets": assets}, indent=2)
@@ -195,16 +210,22 @@ def stage(out: Path, tag: str, gh: Callable[[list[str]], Result] = gh_cli, confi
     if (r := gh(["release", "create", name, "--draft", "--target", commit, "--title", name, "--notes", notes,
                  *files])).returncode != 0:
         raise SystemExit(f"FAILED: gh release create {name}: {r.stderr.strip()}")
-    if (r := gh(["workflow", "run", WORKFLOW, "--ref", "main", "-f", f"tag={tag}", "-f", f"branch={branch}"])
-            ).returncode != 0:
+    # The record's hash travels in the dispatch, which nobody can edit afterwards; the draft itself stays editable by
+    # anyone with push access, so the job trusts the record only if it hashes to this (review of #2155).
+    if (r := gh(["workflow", "run", WORKFLOW, "--ref", "main", "-f", f"tag={tag}", "-f", f"branch={branch}",
+                 "-f", f"record_sha256={sha256(steam_record)}"])).returncode != 0:
         raise SystemExit(f"FAILED: gh workflow run {WORKFLOW}: {r.stderr.strip()} (the draft {name} is ready; "
                          "dispatch it again by hand)")
     print(f"STAGED {name} (draft) and started {WORKFLOW} for {tag} on {branch}")
 
 
-def verify(folder: Path, tag: str, branch: str) -> str:
-    """The upload job's check of the downloaded draft: the record names this tag and branch, a full commit, and every
-    zip with its exact SHA-256 and size. Returns the commit."""
+def verify(folder: Path, tag: str, branch: str, record_sha256: str) -> str:
+    """The upload job's check of the downloaded draft: the record is the one the owner's machine dispatched (its
+    SHA-256 is the dispatch input), it names this tag and branch and a full commit, and every zip has its exact SHA-256
+    and size. Returns the commit."""
+    path = folder / "steam-record.json"
+    if not re.fullmatch(r"[0-9a-f]{64}", record_sha256) or not path.is_file() or sha256(path) != record_sha256:
+        raise SystemExit("REFUSED: steam-record.json is not the record whose record_sha256 was dispatched")
     try:
         rec = json.loads((folder / "steam-record.json").read_text(encoding="utf-8"))
     except (OSError, ValueError) as e:
@@ -240,6 +261,7 @@ def parser() -> argparse.ArgumentParser:
     v.add_argument("--dir", type=Path, required=True)
     v.add_argument("--tag", required=True)
     v.add_argument("--branch", required=True, choices=["beta", "nightly"])
+    v.add_argument("--record-sha256", required=True, help="the dispatch input: steam-record.json's SHA-256")
     return ap
 
 
@@ -255,7 +277,7 @@ def main(argv: list[str] | None = None) -> int:
             return 1
         print(paths[0])
     else:
-        print(verify(a.dir, a.tag, a.branch))
+        print(verify(a.dir, a.tag, a.branch, a.record_sha256))
     return 0
 
 
