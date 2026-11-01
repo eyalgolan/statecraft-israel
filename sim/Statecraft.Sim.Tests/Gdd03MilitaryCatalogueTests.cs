@@ -15,7 +15,9 @@ public class Gdd03MilitaryCatalogueTests
     {
         var c = Catalogue(); var terms = Gdd03MilitaryCatalogue.Read(c);
         // content/gdd03-balance.yaml:307-354; #1668 balance.md:129-137.
-        Assert.Equal(5, terms.CampCapacity); Assert.Equal(3, terms.BasicTurns);
+        // camp_capacity: #1668's 5 places at 10,000 people a unit is 50 units at 1,000 a unit (owner, 1 November 2026:
+        // "Main's base x 0.3's tiers (Recommended)"; #2112).
+        Assert.Equal(50, terms.CampCapacity); Assert.Equal(3, terms.BasicTurns);
         Assert.Equal(1, terms.IssueArms); Assert.Equal(0, terms.RepeatIssueArms);
         Assert.Equal(0m, terms.DraftMoney); Assert.Equal(0, terms.DraftWait);
         Assert.Equal(0m, terms.DemobiliseMoney); Assert.Equal(0, terms.DemobiliseWait);
@@ -191,7 +193,7 @@ public class Gdd03MilitaryCatalogueTests
     {
         var catalogue = Catalogue(); var capacity = catalogue.Values["military.camp_capacity"];
         catalogue.Values.Clear(); catalogue.Values.Add("military.camp_capacity", capacity);
-        Assert.Equal(5, Gdd03MilitaryCatalogue.ReadCampCapacity(catalogue));
+        Assert.Equal(50, Gdd03MilitaryCatalogue.ReadCampCapacity(catalogue)); // #2112: 50 units at 1,000 people a unit
         Assert.Throws<ContentException>(() => Gdd03MilitaryCatalogue.Read(catalogue));
         capacity.Values[0] = 0;
         Assert.Throws<ContentException>(() => Gdd03MilitaryCatalogue.ReadCampCapacity(catalogue));

@@ -275,5 +275,24 @@ public partial class DesignValuesTests
         var dir=Fixture.Write(new Dictionary<string,string>{{CatalogueFile,yaml}});
         var ex=Assert.Throws<ContentException>(()=>ContentLoader.Load(dir)); Assert.Equal(CatalogueFile,ex.File);
     }
+    // R-LOOP-005, #2112 (owner, 1 November 2026: "Main's base x 0.3's tiers (Recommended)"): at D2's 1,000 people a unit the
+    // tier rates are multiples of main's per-unit rate, counts sized in 10,000-people units are x10, and the absorption
+    // target is in people.
+    [Theory]
+    [InlineData("industry.income", "1 2 3", "R-CITY-002")]
+    [InlineData("farmer.output", "2 3 5", "field_food_per_turn")]
+    [InlineData("military.camp_capacity", "50", "10,000 people a unit")]
+    [InlineData("absorption.population_target", "1000000", "people, not population units")]
+    public void Gdd03PerUnitRatesFollowMainsBaseTimesTheTiers(string key, string values, string basis)
+    {
+        var row=ContentLoader.Load(RealContentTests.ContentRoot()).Gdd03Balance!.Values[key];
+        Assert.Equal("Agreed",row.Basis);
+        Assert.Equal(values.Split(' ').Select(x=>decimal.Parse(x,CultureInfo.InvariantCulture)),row.Values);
+        Assert.Contains("\"Main's base x 0.3's tiers (Recommended)\"",row.Note);
+        Assert.Contains("1 November 2026",row.Note);
+        Assert.Contains("design value",row.Note);
+        Assert.Contains(basis,row.Note);
+        Assert.Contains("Source: #1668 balance.md at 605277df.",row.Note);
+    }
 
 }
