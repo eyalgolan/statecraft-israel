@@ -239,6 +239,11 @@ public class FoodArmsHudTests
         count.value = 2;
         Assert.AreEqual(t["arms.refused_debt_ceiling"], ui.Q<Label>("arms-refusal").text);
         Assert.IsTrue(ui.Q<Button>("buy-arms").enabledSelf, "a refusal remains explainable");
+        // Pressing Buy queues the order (the sim decides at End turn) and keeps the warning on screen (review of #2203).
+        ui.Press("buy-arms");
+        Assert.AreEqual(2, ((BuyArms)b.Queued.Single()).Count);
+        Assert.AreEqual(t["arms.refused_debt_ceiling"], ui.Q<Label>("arms-refusal").text, "Buy does not clear the warning");
+        ui.Press("withdraw-arms");
         b.State.Treasury = 2 * r.ArmsPrice!.Value;
         count.value = 1; count.value = 2;
         Assert.IsEmpty(ui.Q<Label>("arms-refusal").text, "paid from the Treasury, nothing is borrowed");
