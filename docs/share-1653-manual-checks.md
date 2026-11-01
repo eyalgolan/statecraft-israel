@@ -1,6 +1,6 @@
 # Share #1653: manual checks for F1–F5 and native delivery
 
-No checks in this record have been executed. This is the manual route for jslib behavior; EditMode delegates do not execute either jslib or prove trusted activation. No JS runner or harness is added. Keep #1653 open until the owner/coordinator supplies the device evidence.
+No checks in this record have been executed. This is the manual route for jslib behavior; EditMode delegates do not execute either jslib or prove trusted activation. `tools/tests/test_share_shot_jslib.py` (#1897) runs `ShareShot.jslib` in node against a stubbed page; it checks late clipboard callbacks and a synchronous share throw, and proves no real-browser activation or delivery. Keep #1653 open until the owner/coordinator supplies the device evidence.
 
 ## Execution prerequisites and record
 
