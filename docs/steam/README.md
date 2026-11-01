@@ -116,8 +116,11 @@ Enter exactly these API names; the game unlocks them by name (plan Task 2, #2152
 `OBJ_ABSORB_IMMIGRANTS` change before launch, its description changes with them.)
 
 **Icons.** Each achievement needs an unlocked and a locked icon. Their source gets an `ASSETS.yaml` row each, like any
-asset, and they must never be adapted from Tal Heuberger's CC BY-NC-ND models (no derivatives; spec section 5). Choosing
-or approving the icons is yours.
+asset, and they must never be adapted from Tal Heuberger's CC BY-NC-ND models (no derivatives; spec section 5). You chose
+option A for all five on 1 Nov 2026 ("All A (Recommended)", `docs/oss/DECISIONS.md`, "Steam"). They are
+`docs/steam/achievements/<API name>_unlocked.png` and `<API name>_locked.png`, 256x256 PNG, drawn in the UI's colours by
+`tools/steam_achievement_icons.py`, with one `ASSETS.yaml` row each (CC BY 4.0; PR #2173). Upload each pair to its
+achievement in App Admin.
 
 ### Steam Cloud: Auto-Cloud (owner answer Q6)
 
@@ -142,8 +145,10 @@ the Editor path if that directory already exists"). Settings are not synced: qua
 ## 4. The store page and the Content Survey
 
 - The Coming Soon page from the kit: `docs/steam/coming-soon-kit.md` and `docs/steam/store-page-draft.md` (#424).
-- The Content Survey: the draft answers are in `docs/steam/coming-soon-kit.md` section 5; re-check them against the first
-  Steam build before submitting. Answering it is yours.
+- The Content Survey: the answers are in `docs/steam/coming-soon-kit.md` section 5, "Answers with evidence", approved by
+  you on 1 Nov 2026 ("Approve as drafted"; "Frequent Violence or Gore": "Tick it (Recommended)"; PR #2173). Settle its
+  open items first (Deport is still your decision), and re-check the answers against the first Steam build before
+  submitting. Answering it is yours.
 - Privacy: `docs/steam/privacy.md` is the statement for the store page's support fields; it names Unity's engine
   reporting, which stays on (owner, 1 Nov 2026, "Name them").
 

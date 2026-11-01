@@ -118,3 +118,8 @@ coordinator. Each quote is the option label the owner chose; the options themsel
   "Approve as drafted" (the five in `docs/steam/README.md`, "Achievements").
 - [x] A required reviewer on the `steam` upload environment (#2155, #2156). Decided (owner, 2026-11-01, relayed by the
   coordinator): "No extra click (Recommended)". No required reviewer; uploads run on the owner's dispatch alone.
+- [x] Steam achievement icons (#2156). Decided (owner, 2026-11-01, relayed by the coordinator): "All A (Recommended)".
+  Option A of the agent's two drafts for each of the five; the files are in `docs/steam/achievements/` (PR #2173).
+- [x] Steam Content Survey answers (#2156). Decided (owner, 2026-11-01, relayed by the coordinator): "Approve as drafted",
+  and for "Frequent Violence or Gore", "Tick it (Recommended)" (`docs/steam/coming-soon-kit.md` section 5, PR #2173).
+  Deport in the mature-content description stays open.
