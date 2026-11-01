@@ -284,8 +284,16 @@ namespace Statecraft.Game.Map
         /// <summary>Spacing (m) of the arrow's cross-sections along a hex-to-hex leg, each on the ground under it: about the
         /// heightmap's spacing, so the arrow keeps to the relief as the camera's tilt sees it.</summary>
         public const float MoveArrowStepM = 250f;
+        /// <summary>The widest half-width (m) the shader gives the arrow: at CameraController.MaxDistance, with half again for
+        /// the vertices of a tilted view that lie farther from the camera than its look-at point. The cross-sections next to
+        /// a bend stay beyond the reach of a band this wide (review of #2134, C1), and the bounds hold it (C4).</summary>
+        public const float MoveArrowWidestHalfM = 0.5f * MoveArrowWidthPerDistance * CameraController.MaxDistance * 1.5f;
         /// <summary>The hexes last passed to <see cref="ShowMoveArrow"/>: the unit's hex, then the path's.</summary>
-        public IReadOnlyList<(int q, int r)> ShownArrow { get; private set; } = Array.Empty<(int, int)>();
+        public IReadOnlyList<(int q, int r)> ShownArrow => shownArrow;
+        readonly List<(int q, int r)> shownArrow = new List<(int q, int r)>();
+        /// <summary>The map's hexes by (q, r), for the arrow; made once per hex file (a Build loads a new one).</summary>
+        Dictionary<(int, int), HexJson> arrowHexes;
+        HexFile arrowHexesOf;
         readonly List<Vector2> arrowLine = new List<Vector2>();
         readonly List<Vector3> arrowVerts = new List<Vector3>();
         readonly List<Vector2> arrowUv = new List<Vector2>();
@@ -298,8 +306,15 @@ namespace Statecraft.Game.Map
         /// the chevrons move in the shader (Statecraft/MoveArrow), so nothing runs per frame.</summary>
         public void ShowMoveArrow(IReadOnlyList<(int q, int r)> hexes)
         {
-            ShownArrow = hexes?.ToList() ?? new List<(int, int)>();
+            shownArrow.Clear();
+            if (hexes != null) shownArrow.AddRange(hexes);
             if (Terrain == null || Hexes == null) return;
+            if (arrowHexes == null || arrowHexesOf != Hexes)
+            {
+                arrowHexes = new Dictionary<(int, int), HexJson>();
+                foreach (var h in Hexes.hexes) arrowHexes[(h.q, h.r)] = h;
+                arrowHexesOf = Hexes;
+            }
             var found = Terrain.transform.Find(MoveArrowName);
             var go = found != null ? found.gameObject : null;
             if (go == null)
@@ -315,10 +330,9 @@ namespace Statecraft.Game.Map
                 renderer.receiveShadows = false;
             }
             arrowLine.Clear(); arrowVerts.Clear(); arrowUv.Clear(); arrowSide.Clear(); arrowTris.Clear();
-            foreach (var at in ShownArrow)
+            foreach (var at in shownArrow)
             {
-                var hex = Hexes.hexes.FirstOrDefault(h => h.q == at.q && h.r == at.r);
-                if (hex == null) continue;
+                if (!arrowHexes.TryGetValue((at.q, at.r), out var hex)) continue;
                 var c = Frame.ToWorld(hex.lon, hex.lat, 0);
                 var point = new Vector2(c.x, c.z);
                 if (arrowLine.Count == 0 || (point - arrowLine[arrowLine.Count - 1]).sqrMagnitude > 1f) arrowLine.Add(point);
@@ -336,8 +350,13 @@ namespace Statecraft.Game.Map
                     float len = (b - a).magnitude;
                     int steps = Mathf.Max(1, Mathf.CeilToInt(len / MoveArrowStepM));
                     var dir = (b - a) / len;
+                    // Near a bend the widest band's inner edge reaches back along the leg (the mitre's setback): no cross-section
+                    // there, or the band would fold back over itself and blend twice (review of #2134, C1).
+                    float back = i > 0 ? MoveArrowWidestHalfM * MitreSetback((a - arrowLine[i - 1]).normalized, dir) : 0f;
+                    float front = i + 2 < arrowLine.Count ? MoveArrowWidestHalfM * MitreSetback(dir, (arrowLine[i + 2] - b).normalized) : 0f;
                     for (int k = i == 0 ? 0 : 1; k <= steps; k++)
                     {
+                        if (k > 0 && k < steps && (len * k / steps <= back || len * k / steps >= len - front)) continue;
                         var p = Vector2.Lerp(a, b, (float)k / steps);
                         var side = new Vector2(dir.y, -dir.x);
                         // A bend (a later leg's first point): the mitre of the two legs, so the band keeps its width round it.
@@ -364,11 +383,20 @@ namespace Statecraft.Game.Map
             var m = go.GetComponent<MeshFilter>().sharedMesh;
             m.Clear();
             m.SetVertices(arrowVerts); m.SetUVs(0, arrowUv); m.SetUVs(1, arrowSide); m.SetTriangles(arrowTris, 0);
-            // The vertices lie on the centre line and the shader widens the band: grow the bounds by the widest it is drawn
-            // (at the farthest zoom), so culling never drops a band whose centre line is just off screen.
-            var bounds = m.bounds; bounds.Expand(MoveArrowWidthPerDistance * CameraController.MaxDistance);
+            // The vertices lie on the centre line and the shader widens the band: grow the bounds by the widest it is drawn, a
+            // mitre's twice the half-width included (Expand grows the size, so each side by half), so culling never drops a
+            // band whose centre line is just off screen (review of #2134, C4).
+            var bounds = m.bounds; bounds.Expand(4f * MoveArrowWidestHalfM);
             m.bounds = bounds;
             go.GetComponent<MeshRenderer>().enabled = arrowVerts.Count > 0;
+        }
+
+        /// <summary>How far back along a leg, per metre of half-width, a band's inner edge reaches at a bend from direction
+        /// <paramref name="into"/> to <paramref name="outOf"/> (unit vectors): tan of half the turn. Capped near a U-turn.</summary>
+        static float MitreSetback(Vector2 into, Vector2 outOf)
+        {
+            float cos = Mathf.Max(-0.9f, Vector2.Dot(into, outOf));
+            return Mathf.Sqrt((1f - cos) / (1f + cos));
         }
 
         public void Configure(Material terrain, Material marker, Material selection, Material sea, Material frame)

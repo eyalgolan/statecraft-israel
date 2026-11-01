@@ -52,6 +52,9 @@ namespace Statecraft.Game.UI
         readonly System.Action<IReadOnlyList<(int q, int r, int turn)>>? showRoute;
         /// <summary>Draws the move arrow through the hexes given (none: hides it); null keeps picking functional without it.</summary>
         readonly System.Action<IReadOnlyList<(int q, int r)>>? showArrow;
+        /// <summary>Whether the last arrow passed to showArrow had hexes: an empty arrow is passed only to clear a drawn one, so
+        /// a pointer crossing the map with no arrow drawn never touches the map's mesh (review of #2134, C3).</summary>
+        bool arrowDrawn;
         /// <summary>While the player picks a Move's or an Attack's hex: the unit, the hexes the sim gave (Movement.Reachable's,
         /// or those Combat.Check takes: the only ones a click takes), the session and turn they were read on (a turn or a
         /// load ends the pick, as the hexes change), and whether it is the attack's.</summary>
@@ -435,6 +438,13 @@ namespace Statecraft.Game.UI
                 : ArrowHexes(u, route.Select(h => (h.q, h.r)));
         }
 
+        void ShowArrow(IReadOnlyList<(int q, int r)> hexes)
+        {
+            if (hexes.Count == 0 && !arrowDrawn) return;
+            arrowDrawn = hexes.Count > 0;
+            showArrow?.Invoke(hexes);
+        }
+
         void EndPick()
         {
             DiscardMove();
@@ -444,7 +454,7 @@ namespace Statecraft.Game.UI
             clickThrough = null;
             showReachable?.Invoke(System.Array.Empty<(int q, int r)>());
             showRoute?.Invoke(System.Array.Empty<(int q, int r, int turn)>());
-            showArrow?.Invoke(System.Array.Empty<(int q, int r)>());
+            ShowArrow(System.Array.Empty<(int q, int r)>());
         }
 
         IReadOnlyList<(int q, int r, int turn)> RouteTo(
@@ -463,7 +473,7 @@ namespace Statecraft.Game.UI
             if (shownRoute == null) return;
             shownRoute = null;
             showRoute?.Invoke(System.Array.Empty<(int q, int r, int turn)>());
-            showArrow?.Invoke(System.Array.Empty<(int q, int r)>());
+            ShowArrow(System.Array.Empty<(int q, int r)>());
         }
 
         /// <summary>Shows the route to the hovered unlit hex while Move is picking, and the move arrow to the hovered lit or
@@ -474,7 +484,7 @@ namespace Statecraft.Game.UI
             shownRoute = (q, r);
             var route = pick is { } p ? RouteTo(p, q, r) : System.Array.Empty<(int, int, int)>();
             showRoute?.Invoke(route);
-            showArrow?.Invoke(pick is { } a ? ArrowTo(a, q, r, route) : System.Array.Empty<(int q, int r)>());
+            ShowArrow(pick is { } a ? ArrowTo(a, q, r, route) : System.Array.Empty<(int q, int r)>());
         }
 
         /// <summary>#1617 (player report): the lit hexes of an open Move or Attack pick show through this card (its navy is
@@ -596,7 +606,7 @@ namespace Statecraft.Game.UI
                         pick = (p.unit, p.hexes, p.session, p.turn, p.attack, (q, r));
                         shownRoute = (q, r);
                         showRoute?.Invoke(route);
-                        showArrow?.Invoke(ArrowTo(p, q, r, route));
+                        ShowArrow(ArrowTo(p, q, r, route));
                         Render();
                         return true;
                     }

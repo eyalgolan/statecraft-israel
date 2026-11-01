@@ -142,10 +142,10 @@ public class MoveArrowTests
         shown = new PlacedToken(enemy, new AnchorSpot(0, 0, 0, 0, false));
         info.ShowUnit();
         Assert.IsFalse(info.MovePicking, "precondition: an enemy unit's card opens no Move pick");
+        Assert.IsEmpty(arrows.Last(), "selecting the enemy unit cleared Golani's arrow");
         var from = arrows.Count;
         foreach (var h in C.Hexes.Where(h => h.Land && System.Math.Abs(h.Q - e.Q) <= 3 && System.Math.Abs(h.R - e.R) <= 3))
             info.ShowRouteTo(h.Q, h.R);
-        Assert.IsTrue(arrows.Count > from, "precondition: the hovers were asked");
         Assert.IsTrue(arrows.Skip(from).All(a => a.Count == 0), "no hover near the enemy unit draws an arrow");
 
         var path = new[] { (e.Q + 1, e.R) };
@@ -240,5 +240,199 @@ public class MoveArrowTests
         // (CameraRig.Fov), the distance cancelling out.
         float px = MapScene.MoveArrowWidthPerDistance / (2f * Mathf.Tan(CameraRig.Fov * Mathf.Deg2Rad / 2f)) * 1080f;
         Assert.That(px, NUnit.Framework.Is.InRange(20f, 40f), "the arrowhead's width on screen");
+    }
+
+    /// <summary>The map hexes whose centres are a step from (q, r): neighbours by distance (a step is sqrt(3) hex sizes),
+    /// so the tests need no assumption about the coordinates' axes.</summary>
+    static List<(int q, int r)> Neighbours(MapScene map, int q, int r)
+    {
+        float step = Mathf.Sqrt(3f) * map.Hexes.hex_size_km * 1000f;
+        var c = Centre(map, q, r);
+        return map.Hexes.hexes.Where(h => (h.q, h.r) != (q, r) && Mathf.Abs((Centre(map, h.q, h.r) - c).magnitude - step) < 0.05f * step)
+            .Select(h => (h.q, h.r)).ToList();
+    }
+
+    static float Turn(MapScene map, (int q, int r) a, (int q, int r) b, (int q, int r) c) =>
+        Vector2.Angle(Centre(map, b.q, b.r) - Centre(map, a.q, a.r), Centre(map, c.q, c.r) - Centre(map, b.q, b.r));
+
+    /// <summary>A path with a 60-degree bend then a 120-degree bend, from the map's own hexes.</summary>
+    static List<(int q, int r)> BendyPath(MapScene map)
+    {
+        foreach (var h in map.Hexes.hexes)
+        {
+            var b = (h.q, h.r); var around = Neighbours(map, b.q, b.r);
+            if (around.Count < 6) continue;
+            foreach (var a in around)
+                foreach (var c in around)
+                {
+                    if (Mathf.Abs(Turn(map, a, b, c) - 60f) > 1f) continue;
+                    var next = Neighbours(map, c.q, c.r).FirstOrDefault(d => Mathf.Abs(Turn(map, b, c, d) - 120f) < 1f && d != b);
+                    if (next != default) return new List<(int q, int r)> { a, b, c, next };
+                }
+        }
+        throw new AssertionException("no hex on the map has a 60 then 120 degree bend");
+    }
+
+    /// <summary>Review of #2134 (C1): the shader widens the band with the camera's distance, so at a bend the cross-sections
+    /// next to the mitre must lie beyond where the widest band's inner edge reaches, or the band folds back over itself and
+    /// blends twice. At the farthest zoom with a margin (the half-width the shader gives a vertex 1.5 times
+    /// CameraController.MaxDistance away), each side's edge moves forward from every cross-section to the next.</summary>
+    [Test]
+    public void TheBandNeverFoldsAtABend()
+    {
+        var map = BuildMap();
+        try
+        {
+            var path = BendyPath(map);
+            map.ShowMoveArrow(path);
+            var mesh = ArrowRenderer(map).GetComponent<MeshFilter>().sharedMesh;
+            var v = mesh.vertices; var side = new List<Vector4>(); mesh.GetUVs(1, side);
+            float half = 0.5f * MapScene.MoveArrowWidthPerDistance * CameraController.MaxDistance * 1.5f;
+            for (int i = 0; i + 3 < v.Length; i += 2)
+            {
+                Vector2 p0 = new Vector2(v[i].x, v[i].z), p1 = new Vector2(v[i + 2].x, v[i + 2].z);
+                Vector2 s0 = new Vector2(side[i].x, side[i].y), s1 = new Vector2(side[i + 2].x, side[i + 2].y);
+                var along = p1 - p0;
+                foreach (var sign in new[] { -1f, 1f })
+                    Assert.Greater(Vector2.Dot((p1 + sign * half * s1) - (p0 + sign * half * s0), along), 0f,
+                        $"section {i / 2} to {i / 2 + 1}, side {sign}: the band folds back");
+            }
+        }
+        finally { Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>Review of #2134 (C4): the mesh holds the centre line and the shader widens it, so the bounds must hold the
+    /// widest band (a mitre doubles the half-width at most; a vertex up to 1.5 times CameraController.MaxDistance away), or
+    /// a bend just off screen is culled while its band is on screen.</summary>
+    [Test]
+    public void TheBoundsHoldTheWidestBand()
+    {
+        var map = BuildMap();
+        try
+        {
+            map.ShowMoveArrow(BendyPath(map));
+            var mesh = ArrowRenderer(map).GetComponent<MeshFilter>().sharedMesh;
+            var v = mesh.vertices; var side = new List<Vector4>(); mesh.GetUVs(1, side);
+            float half = 0.5f * MapScene.MoveArrowWidthPerDistance * CameraController.MaxDistance * 1.5f;
+            var b = mesh.bounds;
+            for (int i = 0; i < v.Length; i++)
+                foreach (var sign in new[] { -1f, 1f })
+                {
+                    var p = v[i] + sign * half * new Vector3(side[i].x, 0f, side[i].y);
+                    Assert.IsTrue(b.Contains(new Vector3(p.x, b.center.y, p.z)), $"vertex {i}, side {sign}: {p} is outside {b}");
+                }
+        }
+        finally { Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>Review of #2134 (C3): with no pick open, moving over the map never touches the arrow (no rebuild, no upload,
+    /// no call), however many hexes the pointer crosses.</summary>
+    [Test]
+    public void HoveringWithNoPickLeavesTheArrowAlone()
+    {
+        var map = BuildMap();
+        using var ui = new UiTestKit();
+        try
+        {
+            var rig = Open(map, ui);
+            Assert.IsFalse(rig.Info.MovePicking, "precondition: nothing selected");
+            foreach (var h in C.Hexes.Where(h => h.Land).Take(40)) rig.Info.ShowRouteTo(h.Q, h.R);
+            Assert.IsEmpty(rig.Arrows, "no pick: the arrow is never asked to draw or clear");
+            rig.Info.Dispose();
+        }
+        finally { Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>Review of #2134 (C2): a new state (here another unit's order, the pick staying open) hides the hovered
+    /// arrow, read on the old state, and the next hover draws it again from the new one.</summary>
+    [Test]
+    public void ANewStateHidesTheArrowAndTheNextHoverRedrawsIt()
+    {
+        var map = BuildMap();
+        using var ui = new UiTestKit();
+        try
+        {
+            var rig = Open(map, ui);
+            GameRoot.OnHexClicked(map, rig.Layer, rig.Info, rig.Golani.Q, rig.Golani.R);
+            var lit = FarLit(rig);
+            rig.Info.ShowRouteTo(lit.q, lit.r);
+            var drawn = rig.Arrows.Last().ToList();
+            Assert.IsNotEmpty(drawn, "precondition: the arrow is drawn");
+            var (other, order) = rig.Bridge.State.Units.Values.Where(u => u.Id != rig.Id && u.Side == Movement.PlayerSide)
+                .SelectMany(u => new[] { Orders.Hold, Orders.Fortify }.Select(o => (u.Id, o)))
+                .First(x => Orders.Check(C, rig.Bridge.State, x.Id, x.o) == null);
+            Assert.IsNull(rig.Bridge.Queue(new UnitOrder(other, order)), "precondition: another unit's order is taken");
+            Assert.IsTrue(rig.Info.MovePicking, "precondition: Golani's pick is still open");
+            Assert.IsEmpty(rig.Arrows.Last(), "the state changed: the arrow read on the old one is hidden");
+            Assert.IsFalse(ArrowRenderer(map).enabled);
+            rig.Info.ShowRouteTo(lit.q, lit.r);
+            var path = Movement.Path(C, rig.Bridge.State, rig.Id, lit.q, lit.r, rig.Bridge.Spent).Select(h => (h.Q, h.R));
+            CollectionAssert.AreEqual(new[] { rig.Start }.Concat(path).ToList(), rig.Arrows.Last(), "the hover draws it from the new state");
+            rig.Info.Dispose();
+        }
+        finally { Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>Review of #2134 (C2): the arrow's width on screen, measured in a render (not reckoned from the constants):
+    /// a straight path across the screen, its shaft's thickness at the middle hex, the same at the nearest and the farthest
+    /// zoom the camera allows, and clearly visible at both. The editor renders with its own graphics API, not WebGL;
+    /// ShaderChecks.Gles3Errors covers the WebGL 2 compile.</summary>
+    [Test]
+    public void TheArrowKeepsItsScreenWidthFromNearestToFarthestZoom()
+    {
+        var map = BuildMap();
+        RenderSample.TiltShift(false);
+        try
+        {
+            // Three hexes in a line, the middle one with every neighbour on the map.
+            List<(int q, int r)>? line = null;
+            foreach (var h in map.Hexes.hexes)
+            {
+                var around = Neighbours(map, h.q, h.r);
+                if (around.Count < 6) continue;
+                var a = around[0];
+                var c = around.First(n => Mathf.Abs(Turn(map, a, (h.q, h.r), n)) < 1f);
+                line = new List<(int q, int r)> { a, (h.q, h.r), c };
+                break;
+            }
+            Assert.IsNotNull(line);
+            var mid = Centre(map, line![1].q, line[1].r);
+            var dir = (Centre(map, line[2].q, line[2].r) - Centre(map, line[0].q, line[0].r)).normalized;
+            float ground = map.Terrain.terrainData.GetInterpolatedHeight(Mathf.Clamp01(mid.x / map.Frame.WidthM), Mathf.Clamp01(mid.y / map.Frame.LengthM));
+            var look = map.Terrain.transform.TransformPoint(new Vector3(mid.x, ground + MapScene.SelectionClearanceM, mid.y));
+            var cam = Camera.main; var camRig = cam.GetComponent<CameraRig>();
+            float Thickness(float distance)
+            {
+                // Looking square across the path, so it runs left to right on screen.
+                camRig.LookAt = look; camRig.Distance = distance; camRig.TopInset = 0;
+                camRig.Yaw = Mathf.Atan2(dir.y, -dir.x) * Mathf.Rad2Deg; camRig.Apply();
+                map.ShowMoveArrow(System.Array.Empty<(int, int)>());
+                var without = RenderSample.RenderSteady(cam, 1920, 1080, 3);
+                map.ShowMoveArrow(line);
+                var at = new Vector2[1];
+                RenderSample.Render(cam, 1920, 1080, new[] { look }, at);
+                var with = RenderSample.RenderSteady(cam, 1920, 1080, 3);
+                bool Changed(int x, int y) { var a = with.At(x, y); var b = without.At(x, y); return Mathf.Max(Mathf.Abs(a.r - b.r), Mathf.Abs(a.g - b.g), Mathf.Abs(a.b - b.b)) > 0.08f; }
+                int cx = Mathf.RoundToInt(at[0].x), cy = Mathf.RoundToInt(at[0].y);
+                var runs = new List<int>();
+                for (int x = cx - 8; x <= cx + 8; x++)
+                {
+                    int y0 = Enumerable.Range(cy - 30, 61).Where(y => Changed(x, y)).DefaultIfEmpty(int.MinValue).OrderBy(y => Mathf.Abs(y - cy)).First();
+                    if (y0 == int.MinValue) { runs.Add(0); continue; }
+                    int lo = y0, hi = y0;
+                    while (Changed(x, lo - 1)) lo--;
+                    while (Changed(x, hi + 1)) hi++;
+                    runs.Add(hi - lo + 1);
+                }
+                runs.Sort();
+                TestContext.WriteLine($"{distance} m: shaft {runs[runs.Count / 2]} px (columns {string.Join(",", runs)})");
+                return runs[runs.Count / 2];
+            }
+            float near = Thickness(CameraController.MinDistance), far = Thickness(CameraController.MaxDistance);
+            Assert.GreaterOrEqual(near, 6f, "the shaft is clearly visible at the nearest zoom");
+            Assert.GreaterOrEqual(far, 6f, "the shaft is clearly visible at the farthest zoom");
+            Assert.LessOrEqual(Mathf.Abs(near - far), 2f, $"the same on screen at every zoom: {near} px near, {far} px far");
+        }
+        finally { RenderSample.TiltShift(true); Object.DestroyImmediate(map.gameObject); }
     }
 }
