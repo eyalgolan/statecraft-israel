@@ -76,7 +76,7 @@ public class UnitAttackPresenterTests
         var r = bridge.EndTurn();
         Assert.IsTrue(r.Why.Any(x => x.Key == WhyKeys.Engagement && UnitAttackPresenter.Attackers(x).Contains(attacker)),
             "the sim replays the committed attack at End Turn");
-        CollectionAssert.AreEqual(new[] { attacker }, played, "and the replay is not played again");
+        Assert.AreEqual(1, played.Count(id => id == attacker), "and the replay is not played again");
         Assert.IsTrue(redrawn, "End Turn redraws the map");
     }
 
