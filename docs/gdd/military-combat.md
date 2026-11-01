@@ -11,7 +11,7 @@ I command identifiable units between hexes, preview strength, and earn combat ex
 - For the MVP the terrain types are the eight biomes, with the per-biome movement cost below (`Q-MOVE-1`, decided 15 October 2026 [S3]). The owner froze that catalogue for the MVP on 23 October 2026, with no new types and no terrain conversions [S16]; the location/editor update does not select new terrain types, cost values or modifiers [S1][S14].
 - A unit is a formation of hundreds of fighters, never a single soldier (impact spec §2.2 [S8]; `Q-UNIT-1`, decided 15 October 2026 [S3]). A finished recruit cohort becomes one unit at its city's settlement hex. Unit types on screen are Recruit (טירון), Veteran soldier (חייל ותיק), Artillery (ארטילריה) and Armoured car (שריונית) — names approved in English and Hebrew (`Q-UI-2`, decided 15 October 2026 [S7]). A recruit promotes to veteran after a number of turns of service (labelled design value); combat does not count toward it (`Q-UNIT-2`, decided 15 October 2026 [S3]). A unit's Strength counts its population units and drives movement allowance and combat strength (`Q-UNIT-1`); where a side's historical strength is sourced, the record enters the content as one value per CONTENT_POLICY §1 (`Q-UNIT-4`, decided 15 October 2026 [S3]).
 
-*Amir's #1668 proposed replacing time-served veterancy with XP from survived engagements, excluding travel, service time and unused support orders; the owner's 30 October 2026 conflict review did not rule on this ([conflict decision](../GDD.md#30-october-2026-conflict-decisions)). The operative main rule is `R-UNIT-004` (`docs/rules/mvp.md:245`).* [S1]
+*Amir's #1668 proposed replacing time-served veterancy with XP from survived engagements, excluding travel, service time and unused support orders; the owner's 30 October 2026 conflict review did not rule on this ([conflict decision](../GDD.md#30-october-2026-conflict-decisions)). The operative main rule is `R-UNIT-004` (`docs/rules/mvp.md:245`).* [S1] *On 1 November 2026 the owner adopted it for `gdd-0.3` (Q14 to Q16): veterancy comes from combat experience there, and `gdd-0.1` keeps `R-UNIT-004`.* [S21]
 - Historical mode seeds the player's starting units from `content/map/units_1948.yaml`, each keyed to a sourced anchor (`Q-START-1`, decided 15 October 2026 [S3]). The Arab armies, the Arab Liberation Army and local Arab forces take part under their own names, with their 15 May 1948 positions seeded from the Phase five research file [S9] (`Q-START-4`, the owner's pick, 15 October 2026 [S4]; `D-G1`). Every row is fact-checked against its source before the `-shareable` tag (`Q-START-3`, decided 15 October 2026 [S3]). There are no air or naval units; where a phase needs them they are presentation-only (`Q-UNIT-5`, decided 15 October 2026 [S3]). Open mode starts with no units (`Q-START-2`, decided 15 October 2026 [S3]).
 
 **Then decided (owner, 30 Oct 2026):** Open mode's starting army is the deferred parameter `A` [S19].
@@ -36,47 +36,47 @@ Military units are the same people managed by [training](training.md), not addit
 
 **Amir's proposal [S1]:** Strength would use proposed qualification, reception and Food-shortage factors. The owner's 30 October 2026 conflict review did not rule on this; live Strength counts population units (`R-UNIT-001`, `docs/rules/mvp.md:239`), and `content/gdd03-balance.yaml` lists `military.strength` (basis Agreed, transcribed from #1668).
 
-Historical mode keeps the sourced starting-unit seed from `content/map/units_1948.yaml` (`Q-START-1`, decided 15 October 2026), binding those units without duplicating people. Parameter `A` applies only to non-Historical modes, including Open mode, and remains deferred (owner, 30 Oct 2026) [S19]. Enemy names/dated positions retain source records and per-row fact checks. No playable air/naval units are introduced; delivery ships are presentation.
+Historical mode keeps the sourced starting-unit seed from `content/map/units_1948.yaml` (`Q-START-1`, decided 15 October 2026), binding those units without duplicating people. Parameter `A` applies only to non-Historical modes, including Open mode, and remains deferred (owner, 30 Oct 2026) [S19]. The Historical army grows only by dated arrivals (`R-UNIT-009`) and replacements (`R-TRAIN-004`), with no manning modifier and no scripted draft (owner, 1 November 2026, D4) [S21]. Enemy names/dated positions retain source records and per-row fact checks. No playable air/naval units are introduced; delivery ships are presentation.
 
 ### Movement and orders
 
 Movement costs integer movement points per unit type against an integer cost per biome; lakes and the sea are impassable [S3]. A unit with all its movement points may always enter one neighbouring land hex, whatever its cost; after spending points, it needs the full cost of the next hex. Built roads lower movement cost, stacking is limited, and there is no embarkation or zone of control [S3]. Expanded terrain remains deferred [S16].
 
-Move and Attack resolve immediately and finally, with no undo ([owner rulings #1402](https://github.com/eyalgolan/statecraft-israel/issues/1402) and [#1398](https://github.com/eyalgolan/statecraft-israel/issues/1398)). The retained order list is Move, Go-to, Fortify, Hold and Attack. Fortify takes one turn, with its defence bonus open (owner). Hold can be given only on the player's own hex, grants no interception, and its effect is open (owner). Amir's conflicting planned-order restatement was declined on 30 October 2026 [S1].
+Move and Attack resolve immediately and finally, with no undo ([owner rulings #1402](https://github.com/eyalgolan/statecraft-israel/issues/1402) and [#1398](https://github.com/eyalgolan/statecraft-israel/issues/1398)). The retained order list is Move, Go-to, Fortify, Hold and Attack. Fortify takes one turn and gives a +25% defence bonus (main's 125%, `R-ORDER-002`; owner, 1 November 2026, O1) [S21]. Hold can be given only on the player's own hex, grants no interception and adds no defence bonus (`R-ORDER-003`; owner, 1 November 2026, O2) [S21]. Amir's conflicting planned-order restatement was declined on 30 October 2026 [S1].
 
 A hostile combatant hex needs combat, not peaceful entry. Locality capture is a distinct [validated control action](settlement-control.md); movement cannot bypass review/target gates. Tile control and individual locality administration remain distinct.
 
 ### Engagements and XP
 
-A player attack commits one adjacent unit and resolves immediately. Enemy attacks may combine attackers from several directions. Apply retained strength factors, then the defender's biome, permanent fort and Fortify. The adjusted ratio uses the retained combat-table boundary and exactly the retained single draw; result bands remain open (owner).
+A player attack commits one adjacent unit and resolves immediately. Enemy attacks may combine attackers from several directions. Apply retained strength factors, then the defender's biome, permanent fort and Fortify. The adjusted ratio uses the retained combat-table boundary and exactly the retained single draw; the result bands are main's `mvp.combat_table`, and losses fall one population unit at a time on the side's strongest unit (`R-COMBAT-002`, `R-COMBAT-003`; owner, 1 November 2026, O3) [S21].
 
 Under `gdd-0.3` player attacks and artillery fire neither read nor spend Arms (`R-COMBAT-004`, owner ruling, 25 October 2026) [S20]. The shot prices of 1 unit of Arms per attack and 2 per artillery firing, with a short stock refusing the attack, apply only under `gdd-0.1` (`R-COMBAT-004`, `R-COMBAT-007`).
 
 Losses affect combatant cohorts only; removed own cohorts leave population/Food demand. Do not infer historical casualties from nominal population scale. Outcomes take losses from the retained table by population units; a losing defender retreats one hex, at strength zero a unit is removed, and a defender with no retreat hex surrenders [S3]. Attackers do not automatically advance [S3]. Civilians are excluded from combat losses, including artillery fights [S4].
 
-Military veterancy follows the retained time-served rule in the Rules section above (`R-UNIT-004` (`docs/rules/mvp.md:245`)). **Amir's proposal [S19]:** survived engagements would grant combat XP and complete the proposed reception obligation; the owner's 30 October 2026 conflict review did not rule on this.
+Under `gdd-0.1` military veterancy follows the retained time-served rule in the Rules section above (`R-UNIT-004` (`docs/rules/mvp.md:245`)). **Amir's proposal [S19]:** survived engagements would grant combat XP and complete the proposed reception obligation. On 1 November 2026 the owner adopted the combat XP for `gdd-0.3` (Q14 to Q16): every unit, artillery firing alone included, earns `military.combat_xp_gain` for each engagement it survives, experience stops at veterancy (`military.combat_xp_full`), and service time is a statistic only [S21]. The reception obligation is post-MVP, because refugees still become civilians on the next housing step (owner, 1 November 2026, "Keep R-CITY-004 (Recommended)") [S21].
 
-Artillery range remains open (owner); the proposed catalogue default is non-operative and is not an owner ruling. Under `gdd-0.3` artillery fire spends no Arms (`R-COMBAT-004`); the 2 units of Arms per firing apply only under `gdd-0.1` (`R-COMBAT-007`) [S20].
+Artillery range is 2 hexes (`R-COMBAT-007`; owner, 1 November 2026, O5), and artillery has 2 movement points with the infantry terrain costs (`R-MOVE-001`; Q12) [S21]. Under `gdd-0.3` artillery fire spends no Arms (`R-COMBAT-004`); the 2 units of Arms per firing apply only under `gdd-0.1` (`R-COMBAT-007`) [S20]. (unitless)
 
-Armoured units use their own allowance/factor. Permanent forts benefit whichever army occupies them and persist when vacated.
+Armoured units use their own allowance/factor. Permanent forts benefit whichever army occupies them and persist when vacated. Every `kind: fort` record is a permanent fort, and adding one needs a sourced location row (`R-COMBAT-010`; owner, 1 November 2026, Q13) [S21].
 
 ### Enemy actions and truces
 
-The enemy attack ratio remains open (owner); the proposed catalogue default is non-operative and is not an owner ruling.
+Under `gdd-0.3` a goal-driven enemy unit attacks at a ratio of at least 1.5 (owner, 1 November 2026, O4: "1.5:1 in gdd-0.3 (Recommended)"); `gdd-0.1` keeps the 2:1 of `R-ENEMY-003` [S21] (unitless).
 
 Operation cards order only already present sourced units; exact orders remain reviewed authoring work. Event changes reset applicable sensitivity review. Armistice removes that front's forces, releases player units and leaves agreement lines display-only.
 
-Truces refuse attacks but permit movement. First refusal ends with the turn covering 8 July 1948 and second with the turn covering 15 October 1948 under the retained MFA chronology [S10]. The old security-rung timer no longer forces war. Early armistices cannot open before the turn on/after 16 November 1948 and need the quiet-turn period; hard anchors retain agreement dates [S2]. A refused offer can return after another qualifying period.
+Truces refuse attacks but permit movement. First refusal ends with the turn covering 8 July 1948 and second with the turn covering 15 October 1948 under the retained MFA chronology [S10]. The old security-rung timer no longer forces war. Early armistices cannot open before the turn on/after 16 November 1948 and need the quiet-turn period; hard anchors retain agreement dates [S2]. A refused offer can return after another qualifying period. The quiet-turn count runs per front from the scenario start, so turns before 16 November 1948 count, though no offer comes before the 15 December 1948 turn. A quiet turn has no engagement involving that front's units, whoever attacked; a mixed-front engagement breaks the count for every front in it, and a refused order does not break it. Two full quiet turns must follow a refusal (owner, 1 November 2026, Q48 and Q49) [S21].
 
-[Settlement control](settlement-control.md) owns locality capture and civilian-control boundaries. The owner kept the recorded defeat rules on 30 October 2026 [S1]: under `gdd-0.3` the economic defeat remains, and enemy units holding a player-city hex at turn end do not by themselves end the game ([rules](../rules/mvp.md#defeat)). Amir's proposal to defer every terminal defeat was declined. Battlefield actions add no direct indicator effects beyond retained rules.
+[Settlement control](settlement-control.md) owns locality capture and civilian-control boundaries. The owner kept the recorded defeat rules on 30 October 2026 [S1]: under `gdd-0.3` the economic defeat remains, and enemy units holding a player-city hex at turn end do not by themselves end the game ([rules](../rules/mvp.md#defeat)). While an enemy unit holds an Israeli city's hex, the city's jobs pay nothing and its Food production and projects pause; its people stay, and everything resumes when it is retaken (owner, 1 November 2026, D6) [S21]. Amir's proposal to defer every terminal defeat was declined. Battlefield actions add no direct indicator effects beyond retained rules.
 
 ### Prisoners
 
-Enemy prisoners remain combatants only: residents cannot be captured, traded or used as labour, and civilian or combatant deaths award no points [S4][S8]. Prisoner provision and shortfall amounts remain open (owner); the proposed catalogue default and proportional shortage allocation are non-operative and are not owner rulings.
+Enemy prisoners remain combatants only: residents cannot be captured, traded or used as labour, and civilian or combatant deaths award no points [S4][S8]. Each held enemy population unit eats 1 Food a turn, and each unit of their Food the stock cannot give costs 0.01 Social cohesion (`R-POW-002`; owner, 1 November 2026, O6) [S21]. Amir's proportional shortage allocation is post-MVP, since the MVP keeps main's Food rules (D1) [S21]. (unitless)
 
-The points per returned enemy cohort remain open (owner); the proposed catalogue default is non-operative and is not an owner ruling. The retained return-only rule controls.
+A returned enemy population unit scores 10 points, main's value (`R-POW-004`; owner, 1 November 2026, O7: "10 per unit, main (Recommended)") [S21]. The retained return-only rule controls: points are scored only when a front's exchange card returns prisoners, and prisoners taken after that front's card has resolved stay held to the end, with no points (27M-19) [S21]. (unitless)
 
-Own captured units retain their identity while unavailable, return through sourced exchanges and score nothing under the retained prisoner rules. Amir's proposed reception/XP state, upkeep exemption and reusable-equipment treatment are non-operative [S1].
+Own captured units retain their identity while unavailable, return through sourced exchanges and score nothing under the retained prisoner rules. A returned soldier keeps their id and military qualification, comes back unequipped and joins the nearest friendly city as a civilian (owner, 1 November 2026, Q10 and 27M-20) [S21]. Amir's proposed reception/XP state, upkeep exemption and reusable-equipment treatment are non-operative [S1]. (unitless)
 
 ### Preview and display
 
@@ -93,7 +93,7 @@ The sim supplies the retained effective ratio, modifiers and outcome bands befor
 - Unity — `UnitRoster`, `UnitCard`, `DefencePresenter`, strings.
 - Military movement/orders, combat table, deterministic goals, truces, captives and return-event ids.
 - Historical starting military allocation must bind the sourced `content/map/units_1948.yaml` seed; only non-Historical modes use the deferred parameter `A` (owner, 30 Oct 2026) [S19].
-- **Amir's proposal [S1]:** retire time-served veterancy. The owner's 30 October 2026 conflict review did not rule on this; `R-UNIT-004` (`docs/rules/mvp.md:245`) stays operative.
+- **Amir's proposal [S1]:** retire time-served veterancy. The owner adopted this for `gdd-0.3` on 1 November 2026 (Q14 to Q16); `R-UNIT-004` (`docs/rules/mvp.md:245`) stays for `gdd-0.1` [S21].
 - Migrate combat/conversion/movement/saves together; defaults require playtesting.
 
 ## Done when
@@ -101,7 +101,7 @@ The sim supplies the retained effective ratio, modifiers and outcome bands befor
 - `gdd_lint` passes on this file, and every rule above cites a decided #375 row, the GDD, the impact plan, or a sourced date.
 - Under `gdd-0.3` attacks and artillery fire spend no Arms, as the retained rule and Amir's proposal agree [S20].
 - Preview/resolver share the table and prescribed draw count.
-- **Amir's proposal [S1]:** survived engagements would fill XP and combat veterancy would complete proposed reception; the owner's 30 October 2026 conflict review did not rule on this, and `R-UNIT-004` (`docs/rules/mvp.md:245`) stays operative.
+- **Amir's proposal [S1]:** survived engagements would fill XP and combat veterancy would complete proposed reception. Under `gdd-0.3` survived engagements fill XP up to veterancy (owner, 1 November 2026, Q14 to Q16), `R-UNIT-004` (`docs/rules/mvp.md:245`) stays for `gdd-0.1`, and the reception part is post-MVP [S21].
 - Permanent forts benefit either occupant and persist.
 - Combat never converts residents into casualties, prisoners, workers or score; return bonuses pay once.
 - Defeat follows the retained `gdd-0.3` economic rule; losing a city or region alone does not end the game, and no generic region-loss rule is added.
@@ -139,6 +139,7 @@ Enemy supply simulation, unsourced reinforcements/orders, playable air/naval com
 - [S18] Population identity/conversion, docs/gdd/training.md.
 - [S19] Later interview/supersession authority, docs/GDD.md.
 - [S20] Combat Arms rules, `docs/rules/mvp.md` (`R-COMBAT-004` and `R-COMBAT-007`: under `gdd-0.1` attack 1 Arms and artillery 2 Arms; under `gdd-0.3` no Arms spent).
+- [S21] Owner's 1 November 2026 answers, [GDD 1 November 2026 answers](../GDD.md#1-november-2026-answers).
 
 ## Open questions
 

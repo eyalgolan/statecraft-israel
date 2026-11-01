@@ -17,7 +17,7 @@ supported places remain supported even when additional authoring is optional.
 | [Training](training.md) | Identity, retained qualifications/courses and conversion/demobilisation |
 | [Cities](cities.md) | Per-city work, housing and worker-free projects |
 | [Resources](cutover-resource-layer.md) | Retained pools, borrowing, imports and shortages |
-| [Military combat](military-combat.md) | Movement, time-served veterancy, forts, AI, truces and prisoners |
+| [Military combat](military-combat.md) | Movement, veterancy (combat experience under `gdd-0.3`, time served under `gdd-0.1`), forts, AI, truces and prisoners |
 | [Settlement control](settlement-control.md) | Individual settlement control, annexation and civilian protections |
 | [Build yishuv](build-yishuv.md) | Designated-site founding under fixed-time work rules |
 | [Corridors](corridors.md) | Segment work/completion |

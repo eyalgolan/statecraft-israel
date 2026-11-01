@@ -32,7 +32,7 @@ Railway completes after every authored buildable segment; reference is restored 
 
 The "absorb immigrants" objective completes when represented own population is above `absorption.population_target`, no refugees wait for housing, city overflow is no higher than `absorption.max_overflow`, and city employment is no lower than `absorption.min_employment`. The retained milestone reference date is **20 December 1949**, chosen in `Q-ABS-1` [S8][S12].
 
-Amir's refugee-awaiting-legal-bed absorption predicate agrees with main's `gdd-0.3` rule (`R-OBJ-004`, inactive synthetic boundary at `docs/rules/mvp.md:379`); the 30 October 2026 review lists Absorption as not a conflict [S1]. For his port/transit queue system, the review did not rule, and main has no live port queue (`open (owner)`).
+Amir's refugee-awaiting-legal-bed absorption predicate agrees with main's `gdd-0.3` rule (`R-OBJ-004`, inactive synthetic boundary at `docs/rules/mvp.md:379`); the 30 October 2026 review lists Absorption as not a conflict [S1]. For Amir's port/transit queue system, the review did not rule, and main has no live port queue; it is post-MVP (owner, 1 November 2026: "30 Oct wins for the MVP (Recommended)") [S19]. The overflow limit is national, the overflow summed over the cities divided by the housed summed, and employment counts at turn end as `R-CITY-005` counts it (owner, 1 November 2026, 27M-21 and 27M-22) [S19]. (unitless)
 
 War completes when the required armistices are accepted. Fronts are Egypt, Lebanon, Syria and Jordan including the Iraqi sector; ALA/local forces do not add a front [S13]. Reference is Syria's 20 July 1949 agreement [S13]. [Combat](military-combat.md#enemy-actions-and-truces) owns quiet-front/truce rules.
 
@@ -61,7 +61,7 @@ Retain cleared imagery only with correct licence/attribution/caption scope. Gene
 - `hash1952` and `mvp-end` are re-pinned: the reference player completes the yishuvim part when Re'im, the last required site, is built on 15 July 1951. The old standalone objective's 100 points are removed; neither corridor completes, so the shared base is not paid. `hash1950`, `smoke5` and the scenarios do not move [S9].
 - Membership matches the latest owner ruling and unverified founding references remain gated.
 - Infrastructure has part cards/bonuses and only one base award.
-- Reception housing affects absorption through the refugee-awaiting-legal-bed flag of `R-OBJ-004`, as main and Amir's proposal agree [S1]; port-bed queues were not ruled on by the 30 October 2026 conflict review and are `open (owner)`.
+- Reception housing affects absorption through the refugee-awaiting-legal-bed flag of `R-OBJ-004`, as main and Amir's proposal agree [S1]; port-bed queues were not ruled on by the 30 October 2026 conflict review and are post-MVP (owner, 1 November 2026: "30 Oct wins for the MVP (Recommended)") [S19].
 - Scoring/cards/save reload are deterministic and cannot double-pay.
 - Campaign ending remains possible with incomplete objectives.
 
@@ -90,6 +90,7 @@ Kill points, extra first-founding base awards, invented dates, date-triggered au
 - [S12] JTA reference research/selection, research_notes/GDD objectives/objective-cards.md; docs/superpowers/plans/2026-10-15-gdd-phase-3.md, historical Q-ABS-1.
 - [S13] Parties/dates, content/map/armistice_hexes_1949.yaml; research_notes/M4 war mode/war-1948.md.
 - [S14] Catalogue and later decisions, docs/gdd/balance.md; docs/GDD.md.
+- [S19] Owner's 1 November 2026 answers, [GDD 1 November 2026 answers](../GDD.md#1-november-2026-answers).
 
 ## Open questions
 
