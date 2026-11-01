@@ -91,6 +91,8 @@ namespace Statecraft.Game.UI
         int escapedAt = -1;
         /// <summary>The message a layer covered, to show again or drop when the layer closes (spec 4.2).</summary>
         AdvisorCatalog.Message? covered;
+        /// <summary>The Budget screen's last word on its edit (BudgetUnsubmitted): true while an edit is not submitted.</summary>
+        bool budgetUnsubmitted;
 
         public AdvisorPresenter(VisualElement root, SimBridge bridge, UiText text, AdvisorSession session,
             PortraitCatalog? portraits = null, AdvisorHooks? hooks = null)
@@ -219,6 +221,7 @@ namespace Statecraft.Game.UI
         /// fires budget_unsubmitted; Submit takes it back.</summary>
         public void BudgetUnsubmitted(bool on)
         {
+            budgetUnsubmitted = on;
             if (on) { Notice(AdvisorSignals.BudgetUnsubmitted); return; }
             if (disposed) return;
             session.Fired.Remove(AdvisorSignals.BudgetUnsubmitted);
@@ -243,7 +246,12 @@ namespace Statecraft.Game.UI
             if (session.AutoShow)
             {
                 var ctx = Context();
-                session.Queue.Offer(AdvisorSignals.Holding(ctx, session), w => AdvisorSignals.When(ctx, w), Turn);
+                var holding = AdvisorSignals.Holding(ctx, session);
+                session.Queue.Offer(holding, w => AdvisorSignals.When(ctx, w), Turn);
+                // Owner, 1 Nov: budget_unsubmitted fires only when the edit changes, so for pruning its cause is read from
+                // the Budget screen's state; a put-off budget warning lasts while the edit is unsubmitted (Submit withdraws it).
+                if (budgetUnsubmitted) holding.Add(AdvisorSignals.BudgetUnsubmitted);
+                session.Queue.Prune(holding, w => AdvisorSignals.When(ctx, w), Turn, bridge.State.Date, Shown);
             }
             Render();
         }
@@ -355,7 +363,9 @@ namespace Statecraft.Game.UI
             {
                 covered = null;
                 var ctx = Context();
-                if (!(AdvisorSignals.Holding(ctx, session).Contains(m.Signal) && AdvisorSignals.When(ctx, m.When)))
+                var holding = AdvisorSignals.Holding(ctx, session);
+                if (budgetUnsubmitted) holding.Add(AdvisorSignals.BudgetUnsubmitted);   // as in Evaluate's Prune
+                if (!(holding.Contains(m.Signal) && AdvisorSignals.When(ctx, m.When)))
                     session.Queue.Drop(m, Turn, bridge.State.Date);
             }
             Render();

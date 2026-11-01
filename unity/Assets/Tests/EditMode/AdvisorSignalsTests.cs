@@ -88,6 +88,49 @@ public class AdvisorSignalsTests
         CollectionAssert.DoesNotContain(Drain(rig), "meyerson.budget_unsubmitted", "nor waiting");
     }
 
+    /// <summary>Owner, 1 Nov 2026 (#2110): the budget warning's cause is the unsubmitted edit, not the turn its signal fired.
+    /// Put off with Not now, it survives the next turn while the edit is unsubmitted, and goes once it is submitted.</summary>
+    [Test]
+    public void APutOffBudgetWarningLastsWhileTheEditIsUnsubmitted()
+    {
+        const string id = "meyerson.budget_unsubmitted";
+        var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
+        using var rig = new AdvisorPopupTests.Rig(catalog: System.IO.File.ReadAllText(AdvisorCatalog.Path), text: text);
+        using var budget = new BudgetPresenter(rig.Ui.Root, rig.Bridge, text);
+        budget.UnsubmittedChanged += rig.Advisor.BudgetUnsubmitted;
+        rig.Ui.Press("budget-education_minister-up");
+        Assert.AreEqual(id, rig.Advisor.Shown?.Id);
+        rig.Ui.Press("advisor-not-now");
+        rig.EndTurn();
+        Assert.IsTrue(rig.Bridge.BudgetUnsubmitted(budget.Draft), "the edit survives End turn");
+        CollectionAssert.Contains(rig.Session.Queue.PutOffIds, id, "still unsubmitted: Not now brings it back");
+        rig.Ui.Press("budget-submit");
+        CollectionAssert.DoesNotContain(rig.Session.Queue.PutOffIds, id, "submitted: gone");
+        Assert.AreEqual(AdvisorQueue.Outcome.Missed, rig.Session.Queue.History.Last(h => h.Id == id).Outcome);
+    }
+
+    /// <summary>Owner, 1 Nov 2026 (#2110): the cover path checks the same cause. Covered by a layer, the budget warning
+    /// survives End turn while the edit is unsubmitted, and comes back when the layer closes.</summary>
+    [Test]
+    public void ACoveredBudgetWarningLastsWhileTheEditIsUnsubmitted()
+    {
+        const string id = "meyerson.budget_unsubmitted";
+        var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
+        using var rig = new AdvisorPopupTests.Rig(catalog: System.IO.File.ReadAllText(AdvisorCatalog.Path), text: text);
+        using var budget = new BudgetPresenter(rig.Ui.Root, rig.Bridge, text);
+        budget.UnsubmittedChanged += rig.Advisor.BudgetUnsubmitted;
+        rig.Ui.Press("budget-education_minister-up");
+        Assert.AreEqual(id, rig.Advisor.Shown?.Id);
+        rig.HudRoot.AddToClassList(TurnReportPresenter.OpenClass); ScreenNav.DisableCovered(rig.Ui.Root);
+        Assert.IsFalse(rig.Advisor.IsOpen, "covered");
+        rig.EndTurn();
+        Assert.IsTrue(rig.Bridge.BudgetUnsubmitted(budget.Draft), "the edit survives End turn");
+        rig.HudRoot.RemoveFromClassList(TurnReportPresenter.OpenClass); ScreenNav.DisableCovered(rig.Ui.Root);
+        Assert.AreEqual(id, rig.Advisor.Shown?.Id, "still unsubmitted: it comes back");
+        Assert.IsTrue(rig.Advisor.IsOpen);
+        Assert.IsFalse(rig.Session.Queue.History.Any(h => h.Id == id), "not sent to the history");
+    }
+
     /// <summary>Review (should 4): a new help level applies to the popup at once, both ways.</summary>
     [Test]
     public void ANewHelpLevelAppliesAtOnce()

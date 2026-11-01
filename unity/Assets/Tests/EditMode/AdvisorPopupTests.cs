@@ -128,6 +128,24 @@ public class AdvisorPopupTests
             rig.Session.Queue.History.Select(h => h.Outcome).ToArray());
     }
 
+    /// <summary>Owner, 1 Nov 2026 (#2110): a warning on screen whose cause passes mid-turn stays until the player closes it;
+    /// only waiting or put-off warnings are pruned.</summary>
+    [Test]
+    public void AShownWarningWhoseCausePassesStaysUntilClosed()
+    {
+        using var rig = new Rig(catalog: Fixture.Replace("signal: turn_ended, level: warnings", "signal: in_debt, level: warnings"));
+        rig.Bridge.State.Debt = 1;
+        rig.Advisor.Resume();                                           // Evaluate, as bridge.Changed runs it
+        Assert.AreEqual("t.warn", rig.Advisor.Shown?.Id);
+        rig.Bridge.State.Debt = 0;
+        rig.Advisor.Resume();
+        Assert.AreEqual("t.warn", rig.Advisor.Shown?.Id, "the debt is paid, but the player is reading it");
+        Assert.IsTrue(rig.Advisor.IsOpen);
+        rig.Ui.Press("advisor-got-it");
+        Assert.IsNull(rig.Advisor.Shown);
+        Assert.AreEqual(("t.warn", AdvisorQueue.Outcome.Shown), (rig.Session.Queue.History.Last().Id, rig.Session.Queue.History.Last().Outcome));
+    }
+
     static readonly string[] Layers =
     {
         StartScreenPresenter.OpenClass, EventCardPresenter.OpenClass, CaptureDialogPresenter.OpenClass,
