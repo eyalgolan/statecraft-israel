@@ -808,6 +808,51 @@ public class TownLandmarksTests
         }
     }
 
+    /// <summary>Explicit spatial values (ConfigureResidency: tests and diagnostics) keep the camera-focus admission alone
+    /// (TownModelLayer.viewAdmission is false): no merged locality tile swaps, even with villages in a view that reaches the
+    /// ground. Re-pins what ProductionKitWiringNeverTreatsAMixedRendererAsOneNamedTown covered before it moved to the
+    /// production policy. The control switches the same layer to the production policy at the same Imwas view, and Imwas's
+    /// tile then swaps.</summary>
+    [Test]
+    public void ExplicitResidencyKeepsEveryMixedTileAsFallback()
+    {
+        using (var f = new ResidencyFixture(saved))
+        {
+            Assert.AreEqual("test fixture only; not measured", f.buildings.SpatialPolicyEvidence, "precondition: the explicit values");
+            var identity = (IDictionary<Renderer, string>)typeof(TownModelLayer).GetField("swapIds", ResidencyFlags)!.GetValue(f.buildings)!;
+            var swaps = (IEnumerable<(Renderer kit, Renderer? close)>)typeof(TownModelLayer).GetField("swaps", ResidencyFlags)!.GetValue(f.buildings)!;
+            var villages = (IDictionary<Renderer, string[]>)typeof(TownModelLayer).GetField("tileIds", ResidencyFlags)!.GetValue(f.buildings)!;
+            var mixed = swaps.Where(pair => !identity.ContainsKey(pair.kit)).ToList();
+            Assert.IsNotEmpty(mixed, "Map.Build must include grouped localities/camps for this fixture");
+            Assert.IsNotEmpty(villages, "Map.Build must include merged tiles with village building models");
+            f.camera.nearClipPlane = 50f; f.camera.farClipPlane = 1_000_000f;   // CameraRig.Init's planes: the view reaches the ground
+            f.camera.aspect = 16f / 9f;
+            f.Choose(close: true);
+            foreach (var pair in mixed) Assert.IsFalse(pair.kit.forceRenderingOff, pair.kit.name + ": an explicit-policy mixed tile keeps its fallback");
+
+            var imwas = f.map.KitFootprints.Single(p => p.id == "imwas");
+            string name = $"Localities {Mathf.FloorToInt(imwas.centre.x / SettlementKits.TileM)},{Mathf.FloorToInt(imwas.centre.y / SettlementKits.TileM)}";
+            var found = f.map.transform.Find(KitLayer.RootName).Find(name)?.GetComponent<MeshRenderer>();
+            Assert.IsNotNull(found, name + ": Imwas's merged locality tile");
+            var tile = found!;
+            Assert.IsTrue(villages.TryGetValue(tile, out var imwasTile) && imwasTile.Contains("imwas"), name + " carries Imwas");
+            void LookAtImwas()
+            {
+                f.camera.transform.position = new Vector3(imwas.centre.x, 10000f, imwas.centre.y - 10000f);
+                f.camera.transform.LookAt(new Vector3(imwas.centre.x, 0f, imwas.centre.y));
+                f.towns.Choose(default, f.camera);
+            }
+            LookAtImwas();
+            Assert.IsFalse(f.buildings.ReadyForTown("imwas", f.camera), "explicit policy: Imwas in view is not admitted");
+            Assert.IsFalse(tile.forceRenderingOff, "explicit policy: Imwas's tile keeps its fallback");
+
+            f.buildings.ConfigureProduction(ProductionResidency.Approved().Towns);
+            LookAtImwas();
+            Assert.IsTrue(f.buildings.ReadyForTown("imwas", f.camera), "control: under the production policy Imwas in view is admitted");
+            Assert.IsTrue(tile.forceRenderingOff, "control: under the production policy the same view swaps Imwas's tile");
+        }
+    }
+
     /// <summary>Nazareth's whole-town model (stone-village-v1, the town's Far model) stands in for the town only above the
     /// close band. At 12 km with Nazareth in view but not under the screen centre (the minimap jump lands beside it), the
     /// town's building models are admitted and its whole-town model hides, as in v0.3.1.</summary>

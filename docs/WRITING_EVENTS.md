@@ -525,11 +525,12 @@ sign-offs remain unchanged and available to review tools. Removing an exclusion 
 with approved accounting and authored values; it does not itself approve a replacement or transfer a sign-off.
 There is no automatic review promotion, and all existing release gates still apply.
 
-R-EFX-001 rejects 0.3 writes to `food_supply`, `housing`, `fx_reserves`; `rationing`/`maabarot` policy assignments;
-and Attention, passive budgets, automatic Food refills and defeat commands even if authored as compatibility
-indicators. Reserved target spellings are `attention`/`attention_*`, `budget`/`budget_*`,
-`passive_budget`/`passive_budget_*`, `food_refill`, `automatic_food_refill`, `defeat`, `city_loss_defeat`,
-and `any_city_loss`. Other unknown targets remain errors. No new alias or conversion is provided.
+R-EFX-001 rejects 0.3 writes to `food_supply` and `housing`; `rationing`/`maabarot` policy assignments;
+and Attention and defeat commands even if authored as compatibility indicators. Reserved target spellings are
+`attention`/`attention_*`, `defeat`, `city_loss_defeat` and `any_city_loss`. Under D1 (owner, 1 November 2026)
+the passive budget, the monthly Food refill and foreign currency stay: `fx_reserves` and the `budget*`,
+`passive_budget*`, `food_refill` and `automatic_food_refill` spellings load in 0.3 as in 0.1. Other unknown
+targets remain errors. No new alias or conversion is provided.
 `grant_units`, `city_effects` and `unlock_projects` await an approved 0.3 accounting contract and are rejected.
 Explicit `food`, `arms`, `treasury` and approved indicator effects retain the existing application and no-gain
 checks (R-EFX-002/005/007). Treasury costs still borrow (R-MONEY-003): the owner's 26 October 2026 ruling
