@@ -214,7 +214,7 @@ public class MapLabelTests
         var locations = Locations();
         var settlementIds = map.Settlements.Select(s => s.Id).ToHashSet();
         var own = locations.Where(l => !settlementIds.Contains(l.Id)).ToList();
-        Assert.AreEqual(10, locations.Count, "the #1008 roster");
+        Assert.AreEqual(11, locations.Count, "the #1008 roster and nirim (#2113)");
         Assert.AreEqual(new[] { "jerusalem" }, locations.Where(l => settlementIds.Contains(l.Id)).Select(l => l.Id).ToArray());
         foreach (var hebrew in new[] { false, true })
         {
