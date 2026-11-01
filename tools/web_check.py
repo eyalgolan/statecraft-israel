@@ -20,8 +20,9 @@ turn and reload as soon as its matching commit arrives; both reloads must report
 profile, the real start screen every player sees first: "new" presses New game, "recording" first presses Play the
 recording and waits for RECORDING playing; then End turn must log TURN 1, first pressing "Skip the opening" when the
 opening (#530) takes End turn's click, then "Skip this turn" on each unit End
-turn selects while units still need orders (EndTurn; --persistence ends its turns so too); any console Exception, RECORDING failed or
-BOOT FAIL fails the run; add --query lang=he for the Hebrew layout). Both runs add ?navlog and click the start screen's
+turn selects while units still need orders (EndTurn; --persistence ends its turns so too); the map must draw Israeli and
+enemy unit tokens on turn 1 (the new game) and turn 2 (after End turn), else UNITS FAIL (#2056, UnitsOnMap); any console
+Exception, RECORDING failed or BOOT FAIL fails the run; add --query lang=he for the Hebrew layout). Both runs add ?navlog and click the start screen's
 buttons where its "start buttons" line says they are (StartButtons).
 --url URL opens that page (the itch.io game frame) instead of serving a build; --profile DIR keeps that Chrome profile
 between runs; --first-save drives --persistence only to its first durable autosave and prints PERSISTENCE saved <date> turn <n> hash <h>.
@@ -485,6 +486,56 @@ class ConsoleTail:
                 self.cond.wait(left)
 
 
+# The tokens the map draws, as Statecraft.Game.Map.Units.UnitLayer logs them under ?navlog (#2056) whenever the drawn
+# tokens change and on each new turn: the state's turn, the Israeli and the enemy (every other side) totals, then each enemy
+# side's count:
+#   NAV f=412 t=20311 units drawn turn=0 israel=10 enemy=2 egypt=1 jordan=1
+UNITS_DRAWN = re.compile(r"^NAV f=\d+ t=\d+ units drawn turn=(\d+) israel=(\d+) enemy=(\d+)(?: .*)?$")
+# Seconds the check waits for both sides' tokens: an enemy token is drawn only once its side's figure has streamed in (#665).
+UNITS_WAIT = 60.0
+
+
+class UnitsOnMap:
+    """Owner ruling on #2056 (1 November 2026): a run fails unless the map draws Israeli and enemy unit tokens on turns 1
+    and 2 (the 31 October nightly drew no enemy token: its enemy tokens waited for a figure never requested). Keeps the latest
+    UNITS_DRAWN line, fed from the stderr reader thread (like StartButtons). `require` waits up to `wait` seconds for the
+    latest line to be for the given sim turn with both totals above zero. No such line (a build from before #2056, a page
+    without ?navlog, a line in another format) fails: the check never passes without its signal."""
+
+    def __init__(self, wait: float = UNITS_WAIT):
+        self.wait, self.cond = wait, threading.Condition()
+        self.latest: tuple[int, int, int, str] | None = None   # (turn, israel, enemy, the line)
+
+    def feed(self, text: str) -> None:
+        m = UNITS_DRAWN.match(text)
+        if m:
+            with self.cond:
+                self.latest = (int(m.group(1)), int(m.group(2)), int(m.group(3)), text)
+                self.cond.notify_all()
+
+    def require(self, turn: int, what: str) -> tuple[int, int]:
+        """(Israeli, enemy) tokens drawn on sim turn `turn` (the player's `what`); a ValueError naming what is missing."""
+        deadline = time.monotonic() + self.wait
+        with self.cond:
+            while True:
+                latest = self.latest
+                if latest is not None and latest[0] == turn and latest[1] > 0 and latest[2] > 0:
+                    print(f"UNITS OK {what}: israel={latest[1]} enemy={latest[2]}")
+                    return latest[1], latest[2]
+                left = deadline - time.monotonic()
+                if left <= 0:
+                    break
+                self.cond.wait(left)
+        within = f"within {self.wait:g} s"
+        if latest is None:
+            raise ValueError(f"UNITS FAIL {what}: no 'units drawn' line {within} (the page needs ?{NAVLOG}, and a build "
+                             f"whose UnitLayer logs it, #2056)")
+        if latest[0] != turn:
+            raise ValueError(f"UNITS FAIL {what}: no 'units drawn' line for turn {turn} {within}; the last was {latest[3]}")
+        missing = " and ".join(name for name, n in (("Israeli", latest[1]), ("enemy", latest[2])) if n == 0)
+        raise ValueError(f"UNITS FAIL {what}: no {missing} unit tokens drawn {within}: {latest[3]}")
+
+
 # What ?navlog's NavEventLog says of a press and a click: the deepest UI element under the pointer, by name.
 NAV_DOWN = re.compile(r"^NAV f=\d+ t=\d+ ui pointerdown id=\d+ at \([^)]*\) target=(\S+)(?: .*)?$")   # NavEventLog adds path= and modals= after target
 NAV_CLICK = re.compile(r"^NAV f=\d+ t=\d+ ui click count=\d+ target=(\S+)$")
@@ -766,10 +817,12 @@ def query_value(query: str, key: str) -> str | None:
 class StartScreenCheck:
     """Issue #908: the start screen of a fresh profile, as a player meets it (no automation flag skips it). New game
     (after Play the recording when `recording`) and End turn (EndTurn: Skip each unit it selects) must reach the map's
-    first turn. `action` is Page.command; `buttons` says where the start screen's buttons are; `tail` is the console."""
+    first turn, with Israeli and enemy tokens drawn on the new game (the player's turn 1) and after End turn (turn 2):
+    `units` (#2056). `action` is Page.command; `buttons` says where the start screen's buttons are; `tail` is the console."""
 
-    def __init__(self, action, recording: bool, hebrew: bool, buttons: StartButtons, tail: ConsoleTail, settle=time.sleep):
-        self.action, self.recording, self.buttons, self.settle = action, recording, buttons, settle
+    def __init__(self, action, recording: bool, hebrew: bool, buttons: StartButtons, tail: ConsoleTail, units: UnitsOnMap,
+                 settle=time.sleep):
+        self.action, self.recording, self.buttons, self.settle, self.units = action, recording, buttons, settle, units
         self.end_turn = EndTurn(action, tail, hebrew, settle=settle)
         self.stage, self.done = "boot", False
 
@@ -791,12 +844,14 @@ class StartScreenCheck:
         elif self.stage == "turn" and turn:
             if int(turn.group(1)) != 1:
                 raise ValueError(f"START SCREEN FAIL End turn after New game logged turn {turn.group(1)}, not turn 1")
+            self.units.require(1, "turn 2 (after End turn)")
             print(f"START SCREEN OK New game reached the map: TURN 1 {turn.group(2)} hash {turn.group(3)}")
             self.done = True
 
     def new_game(self) -> None:
         self.click(NEW_GAME)
         self.settle(2)
+        self.units.require(0, "turn 1 (New game)")
         self.stage = "turn"
         self.end_turn()
 
@@ -880,13 +935,14 @@ def page_query(a) -> str:
     return f"{a.query}&{NAVLOG}" if a.query else NAVLOG
 
 
-def run_plan(a, command, buttons: StartButtons, tail: ConsoleTail):
+def run_plan(a, command, buttons: StartButtons, tail: ConsoleTail, units: UnitsOnMap):
     """What a run drives and fails on: (driver or None, the failure regex, watch's keyword arguments). `command` is
-    Page.command; `buttons` and `tail` are fed the console by the caller."""
+    Page.command; `buttons`, `tail` and `units` are fed the console by the caller."""
     if (a.persistence or a.first_save) and a.startscreen:
         raise ValueError("--persistence and --startscreen are separate runs")
     if a.startscreen:
-        driver = StartScreenCheck(command, a.startscreen == "recording", query_value(a.query, "lang") == "he", buttons, tail)
+        driver = StartScreenCheck(command, a.startscreen == "recording", query_value(a.query, "lang") == "he", buttons, tail,
+                                  units)
         fail, what = f"(?:{a.fail})|{START_SCREEN_FAILS}", f"the end of the --startscreen {a.startscreen} run"
     elif a.persistence or a.first_save:
         driver = PersistenceCheck(command, buttons, tail, first_save_only=a.first_save)
@@ -956,7 +1012,7 @@ def main() -> int:
     profile, own_profile = pick_profile(a)
     res = expected_res(w, h, a.dpr)
     shots = ShotCollector(a.shots, size=(round(w * a.dpr), round(h * a.dpr)))
-    buttons, tail = StartButtons((w, h)), ConsoleTail()
+    buttons, tail, units = StartButtons((w, h)), ConsoleTail(), UnitsOnMap()
 
     def on_text(text: str) -> bool:
         err = res_error(text, res)
@@ -983,6 +1039,7 @@ def main() -> int:
                     if console:
                         buttons.feed(console.group(1))     # here, not in watch: a driver waiting in settle() sees it
                         tail.feed(console.group(1))        # and one waiting for the game's answer to its click
+                        units.feed(console.group(1))       # and one waiting for the map's tokens
                     inbox.put(line)
             for line in rejoin.flush():
                 inbox.put(line)
@@ -992,7 +1049,7 @@ def main() -> int:
             page = Page(profile, url, w, h, a.dpr, a.mobile)
             page.open()
             print(f"viewport {w}x{h} at DPR {a.dpr:g}{' mobile' if a.mobile else ''} (expect res={res})")
-            driver, fail, plan = run_plan(a, page.command, buttons, tail)
+            driver, fail, plan = run_plan(a, page.command, buttons, tail, units)
 
             def handle_text(text: str) -> bool:
                 consumed = on_text(text)

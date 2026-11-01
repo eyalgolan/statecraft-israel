@@ -593,6 +593,61 @@ public class UnitFiguresTests
         finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
     }
 
+    /// <summary>#2056 (owner, 1 November 2026): tools/web_check.py fails a run without Israeli and enemy tokens on turns 1
+    /// and 2. Under ?navlog the layer logs the tokens it draws, per side, whenever they change and on each new turn; the
+    /// 31 October build (enemy tokens waiting for a figure never requested) logs enemy=0 until a figure arrives.</summary>
+    [Test]
+    public void UnderNavlogItLogsTheDrawnTokensOfEachSideWhenTheyChangeAndOnEachTurn()
+    {
+        var map = BuildMap(); var asked = new Dictionary<string, Action<GameObject>>();
+        UnitFigures.Source = (id, detail, done) => asked[id] = done;
+        var wasNav = Statecraft.Game.Boot.DiagLog.Nav;
+        var logged = new List<string>();
+        void Capture(string message, string trace, LogType type) { if (message.Contains(" units drawn ")) logged.Add(message); }
+        Application.logMessageReceived += Capture;
+        try
+        {
+            var content = ContentLoader.Load(Paths.Content); Assert.IsTrue(content.IsGdd);
+            var state = Simulation.NewGame(content, GoldenRun.Seed, Mode.Historical);
+            Statecraft.Game.Boot.DiagLog.Nav = true;
+            var layer = UnitLayer.Create(map, Units, content.Hexes, still: true); layer.Show(content, state);
+            string Expected(int turn)
+            {
+                int israel = layer.Tokens.Count(t => t.Token.Unit.Side == UnitData.Israel);
+                var sides = layer.Tokens.Where(t => t.Token.Unit.Side != UnitData.Israel).GroupBy(t => t.Token.Unit.Side)
+                    .OrderBy(g => g.Key, StringComparer.Ordinal).Select(g => $" {g.Key}={g.Count()}");
+                return $"units drawn turn={turn} israel={israel} enemy={layer.Tokens.Count - israel}{string.Concat(sides)}";
+            }
+            // The first Show can be re-entered from inside its Rebuild (seen: two identical turn=0 lines 1 ms apart); the
+            // latest line is what web_check reads.
+            Assert.IsNotEmpty(logged);
+            StringAssert.IsMatch(@"^NAV f=\d+ t=\d+ units drawn turn=0 israel=[1-9]\d* enemy=0$", logged[^1], "no figure has arrived");
+            int first = logged.Count;
+            layer.Show(content, state);
+            Assert.AreEqual(first, logged.Count, "the same tokens on the same turn log nothing");
+            var sideFigures = UnitData.Sides.Where(side => side != UnitData.Israel).Select(UnitFigures.SideFigure)
+                .Where(id => id != null && asked.ContainsKey(id)).Distinct().ToList();
+            Assert.IsNotEmpty(sideFigures, "the new game's enemy forces ask for their figures");
+            foreach (var id in sideFigures) asked[id!](Prefab(id!));
+            Assert.Greater(layer.Tokens.Count(t => t.Token.Unit.Side != UnitData.Israel), 0, "precondition: enemy tokens drawn");
+            Assert.Greater(logged.Count, 1, "the arrival rebuilt the tokens and logged them");
+            StringAssert.EndsWith(Expected(0), logged[^1]);
+            var next = state.Clone(); next.Turn = 1;
+            layer.Show(content, next);
+            StringAssert.EndsWith(Expected(1), logged[^1], "a new turn logs the tokens again, changed or not");
+            int count = logged.Count;
+            Statecraft.Game.Boot.DiagLog.Nav = false;
+            var later = next.Clone(); later.Turn = 2;
+            layer.Show(content, later);
+            Assert.AreEqual(count, logged.Count, "without ?navlog nothing is logged");
+        }
+        finally
+        {
+            Application.logMessageReceived -= Capture; Statecraft.Game.Boot.DiagLog.Nav = wasNav;
+            UnityEngine.Object.DestroyImmediate(map.gameObject);
+        }
+    }
+
     /// <summary>A model that arrives after its token was rebuilt or destroyed is dropped quietly, and the showcase trio is
     /// dressed by headgear too (C04, C06, C07).</summary>
     [Test]
