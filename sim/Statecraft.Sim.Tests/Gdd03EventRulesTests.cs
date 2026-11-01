@@ -307,7 +307,7 @@ public class Gdd03EventRulesTests
     }
     static readonly string[] SourceBytes =
     {
-        "absorb_immigrants:dbab4d5af95361ac47b8f72894780ca1779b283e99cea8e96d19c4c9e96de135", // re-pinned for #1065 (Beri's native Hebrew read)
+        "absorb_immigrants:7c926e12a0e54c4602177832f2db0c02393fd57981aea0f4b4eac916902d8f6a", // re-pinned for #1065 (reviewer comment matches the text)
         "altalena:d2c85de2ba034928441a67e490862b265f693d005e000553622bd80fbcb7ede8", // re-pinned for #1065 (Beri's native Hebrew read)
         "armistice_egypt:d361db22977057e24e0cb515afbfee37439cbdce38e465960b4978d082f5704f", // re-pinned for #1065 (Beri's native Hebrew read)
         "armistice_jordan:484bedf4869f6b01aec1a2d400c577183654a6d36930da065a77ddf203cf4450", // re-pinned for #1065 (Beri's native Hebrew read)
