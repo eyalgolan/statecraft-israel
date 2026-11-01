@@ -80,8 +80,14 @@ public class GameInputsTests
         Assert.AreEqual(disk.Map.HexesJson, fetched.Map.HexesJson);
         Assert.AreEqual(disk.Content.Events.Count, fetched.Content.Events.Count);
         Assert.AreEqual(Simulation.NewGame(disk.Content, 7, Mode.Historical).Hash(), Simulation.NewGame(fetched.Content, 7, Mode.Historical).Hash());
+        // #1618 step 2: the web boot gets the disk's translations, from the same bundle.
+        Assert.IsNotEmpty(disk.Content.Translations);
+        CollectionAssert.AreEqual(Written(disk.Content.Translations), Written(fetched.Content.Translations));
         Directory.Delete(site, true);
     }
+
+    static List<string> Written(IEnumerable<TranslationSet> sets) =>
+        sets.Select(t => { var (ui, events, content) = Translations.Write(t); return t.Lang + "\n" + ui + events + content; }).ToList();
 
     [UnityTest, Timeout(FetchTestTimeoutMs)]
     public IEnumerator AMissingBundleNamesTheFile()
@@ -324,6 +330,83 @@ public class GameInputsTests
         Assert.AreEqual(0.5f, StreamingFetch.Delay(1, "Sun, 18 Oct 2026 11:00:00 GMT", now));   // in the past
         Assert.AreEqual(1f, StreamingFetch.Delay(2, "soon", now));
         Assert.AreEqual(1f, StreamingFetch.Delay(2, "-5", now));
+    }
+
+    // ---- translations (#1618 step 2): copied beside the content, listed in the manifest, packed into the bundle ----
+
+    [Test]
+    public void TheManifestListsTheTranslationsBesideTheContent()
+    {
+        var files = ContentManifest.CollectTranslations(Paths.Content);
+        CollectionAssert.AreEqual(TranslationLoader.Collect(Paths.Translations), files);
+        CollectionAssert.Contains(files, "ro/ui.yaml");
+        CollectionAssert.IsEmpty(ContentManifest.CollectTranslations(Path.Combine(Path.GetTempPath(), "fixture-" + System.Guid.NewGuid().ToString("N"))));
+        var manifest = ContentManifest.Write(ContentManifest.Collect(Paths.Content), files);
+        CollectionAssert.AreEqual(files, ContentManifest.ParseTranslations(manifest));
+        CollectionAssert.IsEmpty(ContentManifest.ParseTranslations(ContentManifest.Write(new[] { "people.yaml" })));
+    }
+
+    [Test]
+    public void TheCopyCarriesTheTranslationsAndVerifyChecksThem()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "statecraft-translations-" + System.Guid.NewGuid().ToString("N"));
+        var target = Path.Combine(root, "content");
+        var copy = Path.Combine(root, "translations");
+        var files = ContentManifest.CollectTranslations(Paths.Content);
+        string Refusal() => Assert.Throws<InvalidDataException>(() => ContentManifest.Verify(Paths.Content, target)).Message;
+        try
+        {
+            ContentManifest.Copy(Paths.Content, target);
+            ContentManifest.Verify(Paths.Content, target);
+            foreach (var f in files)
+                CollectionAssert.AreEqual(File.ReadAllBytes(Path.Combine(Paths.Translations, f)), File.ReadAllBytes(Path.Combine(copy, f)), f);
+            var (_, _, packed, texts) = ContentManifest.ParseBundleWithTranslations(File.ReadAllText(Path.Combine(target, ContentManifest.BundleFileName)));
+            CollectionAssert.AreEqual(files, packed);
+            foreach (var f in files) Assert.AreEqual(File.ReadAllText(Path.Combine(Paths.Translations, f)), texts[f], f);
+
+            File.AppendAllText(Path.Combine(copy, "ro", "ui.yaml"), "# changed after the copy\n");
+            Assert.AreEqual("translations/ro/ui.yaml: the copy differs from the source", Refusal());
+
+            ContentManifest.Copy(Paths.Content, target);
+            File.WriteAllText(Path.Combine(copy, "ro", "content.yaml"), "");
+            StringAssert.Contains($"holds {files.Count + 1} files, not the {files.Count} translation files", Refusal());
+
+            ContentManifest.Copy(Paths.Content, target);
+            Assert.IsFalse(File.Exists(Path.Combine(copy, "ro", "content.yaml")), "a copy replaces the translations folder");
+            File.WriteAllText(Path.Combine(target, ContentManifest.FileName), ContentManifest.Write(ContentManifest.Collect(Paths.Content)));
+            StringAssert.Contains("does not list the translation files", Refusal());
+
+            ContentManifest.Copy(Paths.Content, target);
+            File.WriteAllText(Path.Combine(target, ContentManifest.BundleFileName),
+                ContentManifest.WriteBundle(Paths.Content, ContentManifest.Collect(Paths.Content), translations: new string[0]));
+            StringAssert.Contains("does not pack the translation files", Refusal());
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
+    [Test]
+    public void ABundleWithoutTranslationsStillParses()
+    {
+        var (files, _, translations, texts) = ContentManifest.ParseBundleWithTranslations("{\"files\": [\"a.yaml\"], \"texts\": [\"x\"]}");
+        CollectionAssert.AreEqual(new[] { "a.yaml" }, files);
+        CollectionAssert.IsEmpty(translations);
+        CollectionAssert.IsEmpty(texts);
+        Assert.AreEqual("bundle.json: 1 translation files but 0 texts", Assert.Throws<InvalidDataException>(() =>
+            ContentManifest.ParseBundleWithTranslations("{\"files\": [\"a.yaml\"], \"texts\": [\"x\"], \"translations\": [\"ro/ui.yaml\"]}")).Message);
+        Assert.AreEqual("bundle.json: translation ro/ui.yaml twice", Assert.Throws<InvalidDataException>(() =>
+            ContentManifest.ParseBundleWithTranslations("{\"files\": [\"a.yaml\"], \"texts\": [\"x\"], \"translations\": [\"ro/ui.yaml\", \"ro/ui.yaml\"], \"translationTexts\": [\"a\", \"b\"]}")).Message);
+    }
+
+    [Test]
+    public void TheBundlesTranslationsLoadAsTheDisksDo()
+    {
+        var files = ContentManifest.Collect(Paths.Content);
+        var (listed, texts, translations, translationTexts) = ContentManifest.ParseBundleWithTranslations(ContentManifest.WriteBundle(Paths.Content, files));
+        var packed = GameInputs.FromTexts(texts, listed, "", new byte[0], translationTexts, translations);
+        var disk = ContentLoader.Load(Paths.Content);
+        Assert.IsNotEmpty(disk.Translations);
+        CollectionAssert.AreEqual(Written(disk.Translations), Written(packed.Content.Translations));
+        Assert.AreEqual(disk.Hash, packed.Content.Hash);
     }
 
     /// <summary>#1054: the content packed into one file at build time gives back every file's text as the disk path reads
