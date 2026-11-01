@@ -34,11 +34,8 @@ public class Gdd03EventRulesTests
         indicator ? f => f["model.yaml"] = Fixture.Files["model.yaml"].Replace("indicators:", $"indicators:\n  - {{ id: {target}, name: Fixture, base: 0.5 }}") : null);
 
     [Fact] public void Gdd03RejectsAttentionEffectEvenIfIndicatorExists() => Effect("attention", true);
-    [Fact] public void Gdd03RejectsPassiveBudgetEffect() => Effect("budget", true);
-    [Fact] public void Gdd03RejectsAutomaticFoodRefillEffect() => Effect("food_refill", true);
     [Fact] public void Gdd03RejectsFoodSupplyWrite() => Effect("food_supply");
     [Fact] public void Gdd03RejectsHousingCompatibilityWrite() => Effect("housing");
-    [Fact] public void Gdd03RejectsFxEffectWithoutApprovedLedger() => Effect("fx_reserves");
     [Fact] public void Gdd03RejectsRetiredRationingPolicy() => Reject("    set_policy: { rationing: 0.5 }\n", "set_policy.rationing");
     [Fact] public void Gdd03RejectsRetiredMaabarotPolicy() => Reject("    set_policy: { maabarot: 0.5 }\n", "set_policy.maabarot");
     [Fact] public void Gdd03RejectsCityLossDefeatEffect() => Effect("city_loss_defeat", true);
@@ -49,12 +46,58 @@ public class Gdd03EventRulesTests
 
     [Theory]
     [InlineData("attention_per_turn")]
-    [InlineData("budget_finance_minister")]
-    [InlineData("passive_budget")]
-    [InlineData("automatic_food_refill")]
     [InlineData("defeat")]
     [InlineData("any_city_loss")]
     public void CompatibilityIndicatorsCannotEnableCommandTargets(string target) => Effect(target, true);
+
+    // R-EFX-001, #1718 D1/Q1/Q2 (owner, 1 November 2026, "Approve all six (Recommended)"): main's economy stays (passive
+    // budget, monthly Food refill, the foreign-currency ledger), so under gdd-0.3 only Attention retires. These targets
+    // load under gdd-0.3 exactly as under gdd-0.1: a budget or refill spelling is accepted when model.yaml defines it.
+    [Theory]
+    [InlineData("budget", true)]
+    [InlineData("budget_finance_minister", true)]
+    [InlineData("passive_budget", true)]
+    [InlineData("passive_budget_defence", true)]
+    [InlineData("food_refill", true)]
+    [InlineData("automatic_food_refill", true)]
+    [InlineData("fx_reserves", false)]
+    public void Gdd03KeepsD1BudgetRefillAndForeignCurrencyTargets(string target, bool indicator)
+    {
+        foreach (var modern in new[] { true, false })
+        {
+            var f = Files(modern);
+            if (indicator) f["model.yaml"] = Fixture.Files["model.yaml"].Replace("indicators:", $"indicators:\n  - {{ id: {target}, name: Fixture, base: 0.5 }}");
+            var c = Load(f, Card(option: $"    effects: [{{ target: {target}, delta: -0.1 }}]\n"));
+            Assert.Equal(target, c.Events.Single().Options.Single().Effects.Single().Target);
+        }
+    }
+    // R-EFX-001: keeping D1's targets adds no alias. A budget or refill spelling model.yaml does not define is still an
+    // unknown target under gdd-0.3, as under gdd-0.1.
+    [Theory]
+    [InlineData("passive_budget")]
+    [InlineData("food_refill")]
+    public void Gdd03KeptD1TargetsStillNeedARealTarget(string target)
+    {
+        foreach (var modern in new[] { true, false })
+        {
+            var ex = Assert.Throws<ContentException>(() => Load(Files(modern), Card(option: $"    effects: [{{ target: {target}, delta: -0.1 }}]\n")));
+            Assert.Equal("events[probe].options[ok].effects." + target, ex.Field);
+            Assert.EndsWith(": unknown target", ex.Message);
+        }
+    }
+    // R-EFX-001, #1718 Q2 (owner, 1 November 2026): foreign currency stays the internal ledger, so a gdd-0.3 card moves it once.
+    [Fact]
+    public void Gdd03ForeignCurrencyEffectMovesTheLedgerOnce()
+    {
+        var c = Load(Files(), Card(option: "    effects: [{ target: fx_reserves, delta: -3 }]\n").Replace("from:", "anchor: hard\nfrom:"));
+        var s = Simulation.NewGame(c, 1, Mode.Historical); s.FxReserves = 10;
+        var why = new List<Cause>();
+        Assert.Null(EventSystem.Choose(c, s, "probe", "ok", why));
+        Assert.Equal(7, s.FxReserves);
+        Assert.Contains(why, w => w.Target == "fx_reserves" && w.Delta == -3);
+        Assert.NotNull(EventSystem.Choose(c, s, "probe", "ok", why));
+        Assert.Equal(7, s.FxReserves);
+    }
 
     [Theory]
     [InlineData("food_supply")]
@@ -201,7 +244,7 @@ public class Gdd03EventRulesTests
     [InlineData("war-casualties")] [InlineData("displacement")]
     public void SensitivePositiveGainsStillFailAndNegativeCostsRemainAllowed(string tag)
     {
-        foreach (var target in new[] { "treasury", "food", "arms", "morale", "intl_standing" })
+        foreach (var target in new[] { "treasury", "fx_reserves", "food", "arms", "morale", "intl_standing" })
         {
             string Record(int delta) => Card(option: FormattableString.Invariant($"    effects: [{{ target: {target}, delta: {delta} }}]\n")) + $"tags: [{tag}]\n";
             var ex = Assert.Throws<ContentException>(() => Load(Files(), Record(1)));

@@ -970,4 +970,173 @@ public class TownModelResidencyTests
         Assert.IsFalse(s.layer.ReadyForTown("imwas", camera), "no building models at 60 km");
         Assert.IsFalse(kit.forceRenderingOff, "the kit tile draws again at 60 km");
     }
+
+    /// <summary>The production view admission (ConfigureProduction) on a synthetic layer: towns and merged village tiles wired
+    /// as KitLayer wires them (explicit town ids, renderer identities and tile ids), in the player's streaming path. Each
+    /// model kind is answered only when the test says so.</summary>
+    sealed class ViewFixture : IDisposable
+    {
+        readonly FieldInfo acquire;
+        readonly object? previousAcquire;
+        readonly GameObject root, prefab;
+        readonly Material material;
+        readonly List<GameObject> cameras = new List<GameObject>();
+        public readonly TownModelLayer layer;
+        public readonly List<string> RequestOrder = new List<string>();
+        public readonly Dictionary<string, Action<GameObject?>> Answers = new Dictionary<string, Action<GameObject?>>();
+        public readonly Dictionary<string, int> Requests = new Dictionary<string, int>(), Releases = new Dictionary<string, int>();
+        public readonly Dictionary<string, MeshRenderer> Kits = new Dictionary<string, MeshRenderer>(), Closes = new Dictionary<string, MeshRenderer>();
+        /// <param name="towns">Game towns: one kit renderer each, named and identified by the town id.</param>
+        /// <param name="tiles">Merged locality tiles: a kit renderer and its close mesh, carrying these villages.</param>
+        public ViewFixture(IReadOnlyList<SettlementKits.ModelInstance> items, IReadOnlyList<string> towns,
+            IReadOnlyList<(string name, string[] villages)> tiles)
+        {
+            acquire = typeof(TownModelLayer).GetField("ModelAcquire", Flags)!;
+            previousAcquire = acquire.GetValue(null);
+            acquire.SetValue(null, new Func<string, CollectionDetail, Action<GameObject?>, IDisposable>((id, _, done) =>
+            {
+                Requests.TryGetValue(id, out int n); Requests[id] = n + 1; Answers[id] = done; RequestOrder.Add(id);
+                return new Release(() => { Releases.TryGetValue(id, out int count); Releases[id] = count + 1; });
+            }));
+            root = new GameObject("view admission fixture");
+            // Submit draws with Graphics.RenderMeshInstanced, which needs an instancing material (as the originals' are).
+            prefab = GameObject.CreatePrimitive(PrimitiveType.Cube); prefab.name = "stub original";
+            var renderer = prefab.GetComponent<MeshRenderer>();
+            material = new Material(renderer.sharedMaterial) { enableInstancing = true }; renderer.sharedMaterial = material;
+            layer = root.AddComponent<TownModelLayer>();
+            var swaps = new List<(Renderer kit, Renderer? close)>();
+            var townIds = new Dictionary<Renderer, string>();
+            var tileIds = new Dictionary<Renderer, string[]>();
+            MeshRenderer Child(string name) { var r = new GameObject(name).AddComponent<MeshRenderer>(); r.transform.SetParent(root.transform); return r; }
+            foreach (string town in towns) { var kit = Child(town); Kits[town] = kit; swaps.Add((kit, null)); townIds[kit] = town; }
+            foreach (var (name, villages) in tiles)
+            {
+                var kit = Child(name); var close = Child(name + KitLayer.CloseSuffix);
+                Kits[name] = kit; Closes[name] = close; swaps.Add((kit, close)); tileIds[kit] = villages;
+            }
+            // KitLayer's order: the shipping policy, then Init. The player streams every kind (no editor model list); private-field
+            // reflection only stands in for Application.isPlaying, as StreamedMap does.
+            layer.ConfigureProduction(ProductionResidency.Approved().Towns);
+            typeof(TownModelLayer).GetField("suppressMissingLog", Flags)!.SetValue(layer, true);
+            layer.Init(items, null, swaps, towns, townIds, tileIds);
+            typeof(TownModelLayer).GetField("streaming", Flags)!.SetValue(layer, true);
+            layer.EdgeAllowance = null;
+        }
+        /// <summary>One 100 m building of <paramref name="model"/> for place <paramref name="id"/> at ground (x, z).</summary>
+        public static SettlementKits.ModelInstance Item(string id, TownModel model, float x, float z) =>
+            new SettlementKits.ModelInstance(id, model, Matrix4x4.identity, new Vector2(x, z), 0, 100, 100, 0, 100);
+        /// <summary>A close camera whose view reaches the ground (CameraRig.Init's clip planes), square, 60 degree FOV.</summary>
+        public Camera Camera(Vector3 position, Quaternion rotation)
+        {
+            var go = new GameObject("view admission camera"); cameras.Add(go); var camera = go.AddComponent<Camera>();
+            camera.fieldOfView = 60f; camera.aspect = 1f; camera.nearClipPlane = 50f; camera.farClipPlane = 1_000_000f;
+            camera.transform.SetPositionAndRotation(position, rotation);
+            return camera;
+        }
+        /// <summary>The 10 km view used below: from (0, 8 km, -6 km) at the origin, so its ground focus is the origin.</summary>
+        public Camera TenKmAtOrigin()
+        {
+            var position = new Vector3(0f, 8000f, -6000f);
+            return Camera(position, Quaternion.LookRotation(-position));
+        }
+        public void Arrive(TownModel model) => Answers[TownModels.Ids[(int)model]](prefab);
+        public void Submit(Camera camera) =>
+            typeof(TownModelLayer).GetMethod("Submit", Flags)!.Invoke(layer, new object[] { default(UnityEngine.Rendering.ScriptableRenderContext), camera });
+        public void Dispose()
+        {
+            UnityEngine.Object.DestroyImmediate(root);
+            foreach (var c in cameras) UnityEngine.Object.DestroyImmediate(c);
+            acquire.SetValue(null, previousAcquire);
+            UnityEngine.Object.DestroyImmediate(prefab); UnityEngine.Object.DestroyImmediate(material);
+        }
+    }
+
+    /// <summary>A merged village tile swaps as one (owner ruling, 31 Oct 2026, "Load all in view (Recommended)"): with two
+    /// villages of different model kinds and only one kind delivered, the tile keeps its kit, its close mesh stays off and none
+    /// of its buildings draw (else they would stand on the kit houses); once the second kind arrives, the tile swaps and
+    /// both draw.</summary>
+    [Test]
+    public void APartlyReadyVillageTileKeepsItsKitAndDrawsNoneOfItsBuildings()
+    {
+        using var f = new ViewFixture(new[] {
+            ViewFixture.Item("village_a", TownModel.B16Farmhouse, 200f, 0f),
+            ViewFixture.Item("village_b", TownModel.B17CourtyardHouse, -200f, 0f) },
+            Array.Empty<string>(), new[] { ("Localities 0,0", new[] { "village_a", "village_b" }) });
+        var kit = f.Kits["Localities 0,0"]; var close = f.Closes["Localities 0,0"];
+        var camera = f.TenKmAtOrigin();
+        f.layer.PrepareCamera(camera);
+        CollectionAssert.AreEquivalent(new[] { TownModels.Ids[(int)TownModel.B16Farmhouse], TownModels.Ids[(int)TownModel.B17CourtyardHouse] },
+            f.RequestOrder, "both villages' kinds are asked for");
+
+        f.Arrive(TownModel.B16Farmhouse); f.layer.PrepareCamera(camera);
+        Assert.IsTrue(f.layer.ReadyForTown("village_a", camera), "precondition: village_a's kind arrived and it is admitted");
+        Assert.IsFalse(f.layer.ReadyForTown("village_b", camera), "precondition: village_b's kind has not arrived");
+        Assert.IsFalse(kit.forceRenderingOff, "a partly ready tile keeps its kit houses");
+        Assert.IsTrue(close.forceRenderingOff, "a partly ready tile's close mesh stays off");
+        f.Submit(camera);
+        Assert.AreEqual(0, f.layer.LastDrawn, "no building of a partly ready tile draws, not even the ready village's");
+
+        f.Arrive(TownModel.B17CourtyardHouse); f.layer.PrepareCamera(camera);
+        Assert.IsTrue(kit.forceRenderingOff, "control: the complete tile swaps");
+        Assert.IsFalse(close.forceRenderingOff, "control: the complete tile's close mesh draws");
+        f.Submit(camera);
+        Assert.AreEqual(2, f.layer.LastDrawn, "control: both villages' buildings draw");
+    }
+
+    /// <summary>Nearest first, with no focused town: the screen centre is on open ground between three places. The requests
+    /// follow ground distance from the screen centre, which differs here from the id order, the model-enum order, the
+    /// admission (list) order and the order by distance from the camera's own position.</summary>
+    [Test]
+    public void WithNoFocusedTownTheViewLoadsNearestToTheScreenCentreFirst()
+    {
+        // Ground distance from the focus (0, 0): c_near 2.0 km, b_mid 3.5 km, a_far 5.0 km. From the camera's ground point
+        // (0, -6 km): b_mid 2.5 km, a_far 7.8 km, c_near 8.0 km.
+        using var f = new ViewFixture(new[] {
+            ViewFixture.Item("a_far", TownModel.B01WhiteCity, 5000f, 0f),
+            ViewFixture.Item("b_mid", TownModel.B16Farmhouse, 0f, -3500f),
+            ViewFixture.Item("c_near", TownModel.B32CargoShed, 0f, 2000f) },
+            new[] { "a_far", "c_near" }, new[] { ("Localities 0,-1", new[] { "b_mid" }) });
+        var camera = f.TenKmAtOrigin();
+        Assert.IsTrue(CollectionResidencyView.TryGroundFocus(camera, out var focus), "precondition: the view has a ground focus");
+        Assert.Less(new Vector2(focus.x, focus.z).magnitude, 1f, "precondition: the screen centre is the origin");
+        f.layer.PrepareCamera(camera);
+        foreach (var id in new[] { "a_far", "c_near" })
+            Assert.IsFalse(f.layer.WantsTown(id, camera), id + ": no town is focused, so the primary-first order has nothing to add");
+        CollectionAssert.AreEqual(new[] {
+            TownModels.Ids[(int)TownModel.B32CargoShed], TownModels.Ids[(int)TownModel.B16Farmhouse], TownModels.Ids[(int)TownModel.B01WhiteCity] },
+            f.RequestOrder, "c_near, then b_mid's tile, then a_far: nearest the screen centre first");
+    }
+
+    /// <summary>ViewKeepM hysteresis: a place admitted inside the 3 km margin stays admitted while it is 3 to 6 km outside the
+    /// view (a pan does not drop and reload its kind), is released beyond 6 km, and is not re-admitted at 3 to 6 km.</summary>
+    [Test]
+    public void AViewAdmittedPlaceStaysToSixKmOutsideTheViewAndNotBeyond()
+    {
+        const float HeightM = 10_000f, HalfM = 50f;   // a straight-down 10 km view; the place is a 100 m box at the origin
+        using var f = new ViewFixture(new[] { ViewFixture.Item("p", TownModel.B01WhiteCity, 0f, 0f) }, new[] { "p" },
+            Array.Empty<(string, string[])>());
+        string kind = TownModels.Ids[(int)TownModel.B01WhiteCity];
+        var camera = f.Camera(new Vector3(0f, HeightM, 0f), Quaternion.LookRotation(Vector3.down, Vector3.forward));
+        // The view's right edge on the ground (y = 0, the box's widest-reaching face) is HeightM tan(30 degrees) right of
+        // the camera; place the camera so the box's near side is gapM beyond it.
+        float halfWidthM = HeightM * Mathf.Tan(30f * Mathf.Deg2Rad);
+        void Outside(float gapM)
+        {
+            camera.transform.position = new Vector3(-HalfM - halfWidthM - gapM, HeightM, 0f);
+            f.layer.PrepareCamera(camera); f.layer.RetireReleasedModels();
+        }
+        Outside(1500f);
+        Assert.IsTrue(f.layer.AdmitsTown("p", camera), "1.5 km outside the view: inside the 3 km admission margin");
+        Assert.IsFalse(f.layer.WantsTown("p", camera), "precondition: admitted by view, not by focus");
+        Assert.AreEqual(1, f.Requests[kind]);
+        Outside(4500f);
+        Assert.IsTrue(f.layer.AdmitsTown("p", camera), "4.5 km outside: kept to 6 km");
+        Assert.IsFalse(f.Releases.ContainsKey(kind), "kept: the kind is not released");
+        Outside(7500f);
+        Assert.IsFalse(f.layer.AdmitsTown("p", camera), "7.5 km outside: beyond the 6 km keep");
+        Assert.AreEqual(1, f.Releases[kind], "dropped: the kind is released");
+        Outside(4500f);
+        Assert.IsFalse(f.layer.AdmitsTown("p", camera), "4.5 km outside, not admitted before: beyond the 3 km admission margin");
+        Assert.AreEqual(1, f.Requests[kind], "no new request outside the admission margin");
+    }
 }
