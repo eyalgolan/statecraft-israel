@@ -118,7 +118,7 @@ namespace Statecraft.HexTiles
             int n = p.Length;
 
             // Corners (index triangles) and their submesh.
-            var tris = new List<int[]>(); var sub = new List<int>();
+            List<int[]> tris = new List<int[]>(); var sub = new List<int>();
             for (int s = 0; s < source.subMeshCount; s++)
             {
                 var t = source.GetTriangles(s);
