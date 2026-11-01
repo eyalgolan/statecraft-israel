@@ -156,7 +156,7 @@ namespace Statecraft.Game.EditorTools
 
         /// <summary>Adds the token figures' walk and attack states to their existing controllers, from the takes already in
         /// each figure's own FBX. Reimports nothing: no model, texture, clip or prefab changes. Idempotent.
-        /// Headless: Unity -batchmode -quit -projectPath unity -executeMethod Statecraft.Game.EditorTools.CollectionImport.PrepareTokenFigureControllers</summary>
+        /// Headless: Unity -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -executeMethod Statecraft.Game.EditorTools.CollectionImport.PrepareTokenFigureControllers</summary>
         [MenuItem("Statecraft/Collection/Add token figure walk and attack states")]
         public static void PrepareTokenFigureControllers()
         {
