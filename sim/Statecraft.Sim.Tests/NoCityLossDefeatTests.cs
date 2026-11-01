@@ -160,4 +160,48 @@ public class NoCityLossDefeatTests
         var result = Simulation.Step(c, s, new Command[] { new UnitOrder(1, "hold") });
         Assert.Equal(before, result.State.Describe()); Assert.Single(result.Rejected); Assert.Empty(result.Why);
     }
+
+    static bool Paid(StepResult result, string city) => result.Why.Any(w => w.Key == CauseKeys.WagesPaid && w.Target == city);
+
+    // R-CITY-010 (D6): under gdd-0.3 a city with an enemy military unit on its hex pays no job income and its projects
+    // make no progress; the other city is unchanged. Retaken, both resume from where they stopped, with the same ids.
+    [Fact]
+    public void Gdd03HeldCityPausesItsJobsAndProjectsUntilRetaken()
+    {
+        var c = Load(); var s = Simulation.NewGame(c, 1, Mode.Historical); Occupy(s);
+        s.CityProjects.Add(10, new CityProject(10, "housing", "town_a", 1, 1, 3));
+        s.CityProjects.Add(11, new CityProject(11, "housing", "town_b", 3, 2, 3));
+        s.Objectives["already_awarded"] = s.Date;
+        var cities = s.Cities.Keys.ToArray();
+        var held = Simulation.Step(c, s, Array.Empty<Command>());
+        Assert.False(Paid(held, "town_a"));
+        Assert.True(Paid(held, "town_b"));
+        Assert.Equal(3, held.State.CityProjects[10].TurnsLeft);
+        Assert.Equal(0.0, held.State.CityProjects[10].Progress);
+        Assert.Equal(2, held.State.CityProjects[11].TurnsLeft);
+        Assert.Equal(cities, held.State.Cities.Keys);
+        Assert.True(held.State.Objectives.ContainsKey("already_awarded"));
+
+        var s2 = held.State; s2.Units.Remove(1);   // retaken: no enemy unit on the hex at the turn's end
+        var retaken = Simulation.Step(c, s2, Array.Empty<Command>());
+        Assert.True(Paid(retaken, "town_a"));
+        Assert.Equal(2, retaken.State.CityProjects[10].TurnsLeft);
+        Assert.Equal(new[] { 10, 11 }, retaken.State.CityProjects.Keys.OrderBy(x => x));
+        Assert.Equal(cities, retaken.State.Cities.Keys);
+        Assert.True(retaken.State.Objectives.ContainsKey("already_awarded"));
+    }
+
+    // R-CITY-010, R-UNIT-001: a halutz holds nothing, and gdd-0.1 keeps paying the turn its R-END-003 defeat fires.
+    [Theory]
+    [InlineData(SaveGame.Gdd03Ruleset, true)]
+    [InlineData(SaveGame.GddRuleset, false)]
+    public void OnlyAnEnemyUnitUnderGdd03PausesACity(string ruleset, bool halutz)
+    {
+        var c = Load(ruleset); var s = Simulation.NewGame(c, 1, Mode.Historical);
+        if (halutz) s.Units.Add(1, new Unit(1, "halutz", 1, 0)); else Occupy(s);
+        s.CityProjects.Add(10, new CityProject(10, "housing", "town_a", 1, 1, 3));
+        var result = Simulation.Step(c, s, Array.Empty<Command>());
+        Assert.True(Paid(result, "town_a"));
+        Assert.Equal(2, result.State.CityProjects[10].TurnsLeft);
+    }
 }
