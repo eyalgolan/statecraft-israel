@@ -134,4 +134,52 @@ public class UnitBadgeScreenCapTests
             cam.targetTexture = null; Object.DestroyImmediate(rt); Object.DestroyImmediate(map.gameObject); Object.DestroyImmediate(standIn);
         }
     }
+
+    /// <summary>FaceCamera skips a call from the pose it last turned to; the badges' size also depends on the projection
+    /// (a perspective camera caps it, an orthographic one does not), so a new projection from the same pose re-sizes them.</summary>
+    [Test]
+    public void ABadgeIsResizedWhenTheProjectionChangesAtTheSamePose()
+    {
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        var map = Object.FindFirstObjectByType<MapScene>();
+        map.Build();
+        var cam = Camera.main; var rig = cam.GetComponent<CameraRig>();
+        var standIn = GameObject.CreatePrimitive(PrimitiveType.Cube); standIn.transform.position = Vector3.one * -100000f;
+        UnitFigures.Source = (_, __, done) => done(standIn); UnitFigures.Forget();
+        float fov = cam.fieldOfView;
+        try
+        {
+            var units = UnitData.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", UnitData.DefaultFileName)));
+            var layer = UnitLayer.Create(map, units, C.Hexes, still: true);
+            layer.Show(C, Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical));
+            var tokens = map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens");
+            var badge = tokens.Find(layer.Tokens.First(t => t.Token.Unit.Id == Egypt).Token.Unit.Id).Find("Badge");
+            var spot = badge.position; spot.y = 0f;
+            rig.TopInset = 0f; rig.LookAt = spot; rig.Distance = 8000f; rig.Apply();
+            layer.FaceCamera(cam);
+            float perspective = badge.lossyScale.x;
+            Assert.Less(perspective, UnitBadge.SizeM - 1f, "a perspective camera 8 km out caps the plate");
+
+            layer.FaceCamera(cam);
+            Assert.AreEqual(perspective, badge.lossyScale.x, 1e-3f, "the same pose and projection changes nothing");
+
+            cam.fieldOfView = fov * 0.5f;
+            layer.FaceCamera(cam);
+            Assert.Greater(badge.lossyScale.x, perspective + 1f, "a narrower field of view at the same pose re-sizes the plate");
+
+            cam.fieldOfView = fov;
+            layer.FaceCamera(cam);
+            Assert.AreEqual(perspective, badge.lossyScale.x, 1e-3f, "back to the first field of view");
+
+            cam.orthographic = true;
+            layer.FaceCamera(cam);
+            Assert.AreEqual(UnitBadge.SizeM, badge.lossyScale.x, 1e-3f, "an orthographic camera at the same pose draws the full size");
+        }
+        finally
+        {
+            cam.orthographic = false; cam.fieldOfView = fov;
+            UnitFigures.Source = null; UnitFigures.Forget();
+            Object.DestroyImmediate(map.gameObject); Object.DestroyImmediate(standIn);
+        }
+    }
 }
