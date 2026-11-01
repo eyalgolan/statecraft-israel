@@ -66,8 +66,8 @@ It is an early, honest prototype.
 
 **What works now (M3, 1948–1951):**
 - Monthly turns from 15 May 1948 to 15 January 1952.
-- The start screen.
-- English and Hebrew, with a language switch in Settings. The Hebrew event cards wait for a native speaker's review.
+- The start screen, and an opening after New game: three sourced stills that you can skip, or replay from the start screen.
+- English and Hebrew: you choose the language on the start screen, and can switch it in Settings. The Hebrew event cards wait for a native speaker's review.
 - The 1948 map: towns, villages and Bedouin camps, railways and roads, and the 1949 armistice zones and lines from each agreement's date.
 - The 1948 brigades, 101 Squadron and the first navy ships as tokens at their sourced positions. A brigade's card can order it to move, attack, fortify or hold, and shows the odds before an attack. The Arab forces move and attack on their own, and the turn report lists what they did.
 - The twelve cities, with housing, jobs and training.
@@ -132,7 +132,7 @@ flowchart LR
 
 <iframe frameborder="0" src="https://itch.io/embed/5179460" width="552" height="167"><a href="https://eyalgolan.itch.io/statecraft-israel">Statecraft: Israel by eyalgolan</a></iframe>
 
-Play it in your browser on [itch.io](https://eyalgolan.itch.io/statecraft-israel). Each [release](https://github.com/eyalgolan/statecraft-israel/releases) (the latest is [v0.3.1](https://github.com/eyalgolan/statecraft-israel/releases/tag/v0.3.1)) has the browser build as a zip; [docs/m3-release.md](docs/m3-release.md) says how to serve it. To build and run it locally:
+Play it in your browser on [itch.io](https://eyalgolan.itch.io/statecraft-israel). Each [release](https://github.com/eyalgolan/statecraft-israel/releases) (see [the latest](https://github.com/eyalgolan/statecraft-israel/releases/latest)) has the browser build as a zip; [docs/m3-release.md](docs/m3-release.md) says how to serve it. To build and run it locally:
 
 1. Install the tools in [docs/dev-setup.md](docs/dev-setup.md): .NET 10, Unity 6000.3.25f1 with Web Build Support, and `uv`.
 2. Run `uv run tools/build_sim_for_unity.py`.
