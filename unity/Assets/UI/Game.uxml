@@ -495,6 +495,10 @@
                     <ui:Button name="settings-share" text="Share" class="settings-switch" />
                 </ui:VisualElement>
             </ui:VisualElement>
+            <!-- Quit (#2153, QuitButton): desktop players only, hidden in the browser; its own row, last. -->
+            <ui:VisualElement class="row settings-row">
+                <ui:Button name="settings-quit" text="Quit" class="settings-switch" />
+            </ui:VisualElement>
             <Statecraft.Game.UI.UiFrame />
         </ui:VisualElement>
         <!-- The advisors' popup (spec 7.1, AdvisorPresenter): the right column's upper part, or a sheet under the bar on an
@@ -628,6 +632,9 @@
                             <ui:Button name="start-language-en" class="start-language-button" />
                             <ui:Button name="start-language-he" class="start-language-button" />
                         </ui:VisualElement>
+                        <!-- Quit (#2153, QuitButton): desktop players only, hidden in the browser; as quiet as Report, last in
+                             the row and in the Tab order (the panel keeps its height). -->
+                        <ui:Button name="start-quit" text="Quit" class="start-report start-quit" />
                     </ui:VisualElement>
                     <ui:VisualElement name="start-caption" class="start-caption" picking-mode="Ignore">
                         <ui:Label name="start-caption-he" text="…אנו מכריזים בזאת על הקמת מדינה יהודית בארץ־ישראל, היא מדינת ישראל." class="start-he start-caption-he" language-direction="RTL" picking-mode="Ignore" />

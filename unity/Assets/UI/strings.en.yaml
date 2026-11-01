@@ -580,6 +580,8 @@ minimap.overview: "Zoom all the way out"
 minimap.labels: "Show or hide the settlement names"
 minimap.borders: "Show or hide the region borders"
 ui.lang: "en"
+# ui.quit: Quit on the start screen and in Settings, desktop players only (#2153, QuitButton).
+ui.quit: "Quit"
 info.built: "{0} built here in {1}"
 info.queued: "Ordered: {0}, at End turn"
 info.build_camp: "Place a transit camp ({0})"

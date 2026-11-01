@@ -41,7 +41,7 @@ namespace Statecraft.Game.UI
         string soundLevel;
         readonly PanelSettings? panel; readonly Vector2Int reference; int uiScale = UiScales[0], chosen = UiScales[0];
         readonly (Button button, int percent, Action pick)[] scales;
-        readonly Action unbindStar;
+        readonly Action unbindStar, unbindQuit;
 
         /// <param name="store">Where the choice is kept; null keeps nothing (the option still works until the page closes).</param>
         /// <param name="switchLanguage">Puts the UI in the language pressed (GameRoot builds the screens again); null changes
@@ -128,6 +128,9 @@ namespace Statecraft.Game.UI
             var star = screen.Q<Button>("settings-star");
             star.text = text["community.star"];
             unbindStar = ExternalLink.Bind(star, ExternalLink.Repository);
+            var quit = screen.Q<Button>("settings-quit");   // #2153: desktop players only
+            quit.text = text["ui.quit"];
+            unbindQuit = QuitButton.Bind(quit, Application.platform, () => Application.Quit());
             ScreenNav.OnOpened(screen, Show);   // a dev toggle may have changed it while the screen was shut
             Show();
         }
@@ -141,6 +144,7 @@ namespace Statecraft.Game.UI
             foreach (var (b, _, pick) in scales) b.clicked -= pick;
             foreach (var (b, _, pick) in helpLevels) b.clicked -= pick;
             unbindStar();
+            unbindQuit();
             root.UnregisterCallback<GeometryChangedEvent>(OnGeometry);
             if (panel != null) panel.referenceResolution = reference;
             if (screen.userData is Action) screen.userData = null;

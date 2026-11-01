@@ -953,6 +953,9 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 /* In Hebrew the row mirrors like the rest of the UI (the owner, 31 Oct 2026): the pair left of Report, the gap on Report's side. */
 .lang-he .start-language { margin-left: 0; margin-right: 8px; }
 .start-language-button { font-size: 18px; min-width: 96px; padding: 4px 16px; margin: 2px 4px; -unity-text-align: middle-center; }
+/* Quit (#2153), desktop players only: a .start-report after the languages, as far from them as Report is (10 + 8 + 4 px). */
+.start-quit { margin-left: 18px; }
+.lang-he .start-quit { margin-left: 10px; margin-right: 18px; }
 /* Star on GitHub (#1168): a .start-button, New game's size, beside it (the row wraps it under New game in a narrow
    window). Its star and GitHub mark are painted into the left padding (the right in Hebrew; StartScreenPresenter
    PaintStarSigns). Secondary to New game in colour: no fill and a grey edge instead of the gold one; hover and keyboard
