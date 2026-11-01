@@ -125,6 +125,84 @@ public class AchievementRulesTests
         CollectionAssert.AreEqual(new[] { "CAMPAIGN_DONE", "OBJ_RAILWAY" }, fake.Unlocks[0]);
     }
 
+    /// <summary>Review round (k2 C3): a store that stays down is retried on every change but logged once, not on every
+    /// change for the rest of the session.</summary>
+    [Test] public void A_store_that_stays_down_is_logged_once_until_it_recovers()
+    {
+        var fake = new FakePlatform();
+        bool fail = true;
+        IPlatformServices Services() => fail ? new ThrowingPlatform() : fake;
+        var bridge = new SimBridge(Finished("railway"), En);
+        LogAssert.Expect(LogType.Exception, new Regex("store offline"));
+        using (new AchievementReporter(bridge, Services))
+        {
+            bridge.Replace(Finished("railway"));
+            bridge.Replace(Finished("railway"));
+            fail = false;
+            bridge.Replace(Finished("railway"));
+        }
+        Assert.AreEqual(1, fake.Unlocks.Count);
+        CollectionAssert.AreEqual(new[] { "CAMPAIGN_DONE", "OBJ_RAILWAY" }, fake.Unlocks[0]);
+    }
+
+    /// <summary>Review round (k2 C1): reading the rules can never break the game's start or a change: a failure there is
+    /// logged like a store's, and the next change reports.</summary>
+    [Test] public void A_rule_that_throws_is_logged_and_never_escapes()
+    {
+        var fake = new FakePlatform();
+        var broken = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        broken.State.Objectives = null!;   // reading it throws
+        var bridge = new SimBridge(broken, En);
+        LogAssert.Expect(LogType.Exception, new Regex("NullReferenceException"));
+        using (new AchievementReporter(bridge, () => fake))
+            bridge.Replace(Finished("railway"));
+        Assert.AreEqual(1, fake.Unlocks.Count);
+        CollectionAssert.AreEqual(new[] { "CAMPAIGN_DONE", "OBJ_RAILWAY" }, fake.Unlocks[0]);
+    }
+
+    /// <summary>Review round (k2 C5): with the no-op store (web, itch.io, plain desktop) the rules are not even read.</summary>
+    [Test] public void With_the_no_op_store_the_rules_are_never_read()
+    {
+        var broken = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        broken.State.Objectives = null!;   // reading it would throw, and an unexpected logged exception fails the test
+        var bridge = new SimBridge(broken, En);
+        using (new AchievementReporter(bridge, () => NullPlatformServices.Instance))
+            bridge.Replace(broken);
+    }
+
+    /// <summary>Review round (k2 H2): the real End turn that reaches the last day (rules.yaml mvp.end) earns the campaign.</summary>
+    [Test] public void The_turn_that_reaches_the_last_day_earns_the_campaign()
+    {
+        var fake = new FakePlatform();
+        var session = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        session.State.Date = C.End.AddDays(-1);
+        var bridge = new SimBridge(session, En);
+        using (new AchievementReporter(bridge, () => fake))
+        {
+            Assert.AreEqual(0, fake.Unlocks.Count, "nothing before the turn");
+            bridge.EndTurn();
+            Assert.AreEqual(GameOverCodes.MvpEnded, bridge.TurnStart.GameOver, "precondition: the turn ended the game on its last day");
+        }
+        var all = fake.Unlocks.SelectMany(u => u).ToList();
+        CollectionAssert.Contains(all, AchievementRules.CampaignDone);
+        CollectionAssert.AllItemsAreUnique(all);
+    }
+
+    /// <summary>Review round (k2): a defeat reached by real End turns earns the objectives done but never the campaign.</summary>
+    [Test] public void A_defeat_at_a_turn_end_earns_the_objectives_but_never_the_campaign()
+    {
+        var fake = new FakePlatform();
+        var session = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        var s = session.State;
+        s.Objectives["railway"] = new DateTime(1948, 6, 1);
+        s.Debt = 1e12; s.Food = 0; s.FxReserves = -1e12; s.ActiveSituations.Add(EconomySystem.FxCrisis);   // as EndScreenTests.Exhausted
+        var bridge = new SimBridge(session, En);
+        using (new AchievementReporter(bridge, () => fake))
+            for (int turn = 0; turn < 3 && bridge.TurnStart.GameOver == null; turn++) bridge.EndTurn();
+        Assert.AreEqual(GameOverCodes.DefeatEconomy, bridge.TurnStart.GameOver, "precondition: three exhausted turn ends");
+        CollectionAssert.AreEquivalent(new[] { "OBJ_RAILWAY" }, fake.Unlocks.SelectMany(u => u));
+    }
+
     sealed class ThrowingPlatform : IPlatformServices
     {
         public string Name => "throwing";
@@ -139,7 +217,6 @@ public class AchievementRulesTests
         var bridge = new SimBridge(Finished("railway"), En);
         using (new AchievementReporter(bridge, () => PlatformServices.Current))
         {
-            Assert.AreEqual(0, fake.Unlocks.Count);
             PlatformServices.Current = fake;
             bridge.Replace(Finished("railway", "burma_road"));
         }

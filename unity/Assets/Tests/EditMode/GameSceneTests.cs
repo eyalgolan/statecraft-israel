@@ -675,6 +675,29 @@ public class GameSceneTests
         finally { PlatformServices.Current = null!; }
     }
 
+    /// <summary>Review round (k2): a smoke run (the golden seed, scripted turns) is not the player's game: it reports nothing.</summary>
+    [Test]
+    public void ASmokeRunReportsNoAchievements()
+    {
+        var fake = new FakePlatform();
+        PlatformServices.Current = fake;
+        try
+        {
+            EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+            Object.FindFirstObjectByType<MapScene>().Build(Inputs.Map);
+            var root = Object.FindFirstObjectByType<GameRoot>();
+            root.Store = new SaveStore(saveDir);
+            LogAssert.Expect(LogType.Warning, "SMOKE FAIL the smoke run needs play mode or a player");
+            root.Begin(Inputs, 5);
+            var finished = GameSession.New(Inputs.Content, GoldenRun.Seed, Mode.Historical);
+            finished.State.Objectives["railway"] = new DateTime(1949, 3, 15);
+            finished.State.GameOver = GameOverCodes.MvpEnded;
+            root.Bridge!.Replace(finished);
+            Assert.AreEqual(0, fake.Unlocks.Count);
+        }
+        finally { PlatformServices.Current = null!; }
+    }
+
     [Test]
     public void AppendAddsALineOrShowsItAlone()
     {

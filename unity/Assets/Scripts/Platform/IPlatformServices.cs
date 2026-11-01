@@ -10,7 +10,8 @@ namespace Statecraft.Game
     {
         /// <summary>The store's name for logs ("none" for the no-op).</summary>
         string Name { get; }
-        /// <summary>Unlocks these achievements by their API names (<see cref="AchievementRules"/>). Unlocking one twice is harmless.</summary>
+        /// <summary>Unlocks these achievements by their API names (<see cref="AchievementRules"/>). Must be idempotent: the
+        /// reporter offers an id again after GameRoot rebuilds (a load, a new game, a language switch).</summary>
         void Unlock(IReadOnlyCollection<string> achievementIds);
     }
 }
