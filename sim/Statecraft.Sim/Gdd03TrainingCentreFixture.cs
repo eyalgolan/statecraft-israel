@@ -147,15 +147,18 @@ namespace Statecraft.Sim
             if (BedsTaken(centre) >= bedsPerCamp) throw new ArgumentException("No free reception bed in the centre's parent camp.");
 
             var traineeOpening = Opening(month, trainee.Id); var teacherOpening = Opening(month, teacher.Id);
-            bool teacherOpenedHere = teacherOpening.Assignment.Kind == PopulationAssignmentKind.Teaching && teachingHere
-                && string.Equals(teacherOpening.Assignment.Target, centre.Id, StringComparison.Ordinal);
             // #1716 month snapshot (owner-relayed Q43(a) and Q34, 28 Oct 2026): a course occupies the pupil from the turn it
             // starts and a job change is immediate, so a pupil who worked at the opening and was released this turn may start,
-            // and this month's work/course snapshot shows the course. A pupil who held a course at the opening was released
-            // by a cancel: Q43(b)/(c) were answered on 1 Nov 2026 (#1668), but building the release is #1716's follow-up, so this still refuses as Deferred.
+            // and this month's work/course snapshot shows the course. #1716 Q43(b) release (owner-approved answer, 1 Nov 2026,
+            // #1668): "Cancellation: they are released at once, as civilians without a job." A pupil who held a course, or a
+            // teacher who taught, at the opening and is free now was released by a cancel this turn (only Cancel ends those
+            // exclusive assignments here), so either may start again this month. A teacher who worked at the opening and was
+            // released this turn stays Deferred.
             if ((traineeOpening.Assignment.Kind != PopulationAssignmentKind.Unassigned
-                    && traineeOpening.Assignment.Kind != PopulationAssignmentKind.Work)
-                || (teacherOpening.Assignment.Kind != PopulationAssignmentKind.Unassigned && !teacherOpenedHere))
+                    && traineeOpening.Assignment.Kind != PopulationAssignmentKind.Work
+                    && traineeOpening.Assignment.Kind != PopulationAssignmentKind.Course)
+                || (teacherOpening.Assignment.Kind != PopulationAssignmentKind.Unassigned
+                    && teacherOpening.Assignment.Kind != PopulationAssignmentKind.Teaching))
                 throw Deferred(Q43);
             // A bed freed after the month's opening (for example by a cancel) is not reused that month: Q43(b), Q41.
             if (month.OpeningPeople.Count(p => (p.Assignment.Kind == PopulationAssignmentKind.Reception
@@ -204,7 +207,8 @@ namespace Statecraft.Sim
 
         /// <summary>R-TRAIN-007: cancel keeps the id, profession, tier, tools and their payment fact and reception credit;
         /// it clears the unfinished course and releases the teacher and the bed. Nothing is refunded or granted and no one
-        /// moves. When the released people and bed can be used again is #1668 Q43(b).</summary>
+        /// moves. The released people can take another assignment at once, in this month's snapshot (#1716, #1668 Q43(b),
+        /// answered 1 Nov 2026); the freed bed still waits for the next month's opening (R-TRAIN-008).</summary>
         internal void Cancel(int traineeId)
         {
             ValidateInventory();
