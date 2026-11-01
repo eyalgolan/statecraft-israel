@@ -122,7 +122,22 @@ def test_tal_original_licensing_matches_manifest_exactly():
     for path in originals:
         assert sum(r["glob"] == path and r["licence"] == "CC-BY-NC-ND-4.0" for r in rules) == 1, path
     independent = [r for r in rules if r["licence"] == "CC-BY-NC-ND-4.0" and r["glob"] not in originals]
-    assert len(independent) == 50  # 146 originals + 50 independent grants (with the hex-tile props row and the #1901 -light meshes) = 196 total
+    # The scoped 31 October contribution adds only these exact files; retain all 50 prior grants.
+    added_grants = {
+        'asset-sources/recovered-vegetation-20261031/g25_papyrus/albedo.jpg',
+        'asset-sources/recovered-vegetation-20261031/g25_papyrus/g25_papyrus.obj',
+        'asset-sources/recovered-vegetation-20261031/g25_papyrus/normal.jpg',
+        'asset-sources/recovered-vegetation-20261031/hf_tamarisk/albedo.jpg',
+        'asset-sources/recovered-vegetation-20261031/hf_tamarisk/hf_tamarisk.obj',
+        'asset-sources/recovered-vegetation-20261031/hf_tamarisk/normal.jpg',
+    }
+    assert len(added_grants) == 6
+    added_rows = [r for r in independent if r["glob"] in added_grants]
+    assert len(added_rows) == 6
+    assert {r["glob"] for r in added_rows} == added_grants
+    assert all(r["artist"] == "Tal Heuberger" for r in added_rows)
+    assert len([r for r in independent if r["glob"] not in added_grants]) == 50
+    assert len(independent) == 56  # 146 pinned originals + 56 independent rules
     for row in selected:
         assert row["licence"] == "CC-BY-NC-ND-4.0"
         assert row["artist"] == "Tal Heuberger"
