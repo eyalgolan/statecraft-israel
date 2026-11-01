@@ -943,10 +943,10 @@ public class InfoPanelLayoutTests
     public IEnumerator HebrewCardSaysWhyAttackIsRefusedOnce()
     {
         var f=MilitaryFixture("infantry");var g=f.session;var c=g.Content;
-        g.State.Units[9000]=new Unit(9000,c.UnitTypes.First(t=>t.Side!=""&&t.Side!=Movement.PlayerSide&&t.Class=="infantry").Id,2,1,side:"egypt",strength:6);
+        g.State.Units[9000]=new Unit(9000,c.UnitTypes.First(t=>t.Side!=""&&t.Side!=Movement.PlayerSide&&t.Class=="infantry").Id,1,1,side:"egypt",strength:6);
         g.State.ChosenOptions["first_truce"]="accept";
         var he=UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text,"strings.he.yaml");
-        var why=Combat.Check(c,g.State,f.id,2,1);
+        var why=Combat.Check(c,g.State,f.id,1,1);
         Assert.AreEqual("A truce is in force",why);
         var line=SimBridge.ReasonText(he,why!);
         Assert.IsFalse(line.Any(ch=>ch<128&&char.IsLetter(ch)),$"the Hebrew reason has Latin letters: {line}");
