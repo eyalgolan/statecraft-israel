@@ -174,7 +174,7 @@ public class Gdd03EventRulesTests
         Assert.Equal("events[probe].id", ex.Field);
     }
 
-    static Content Real(bool modern, string? manifest = null)
+    internal static Content Real(bool modern, string? manifest = null)
     {
         var root = RealContentTests.ContentRoot();
         return ContentLoader.Load(rel =>
