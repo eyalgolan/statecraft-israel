@@ -137,11 +137,11 @@
     "values": [1]
   "industry.income":
     "basis": "Agreed"
-    "note": "Work, professions and training: Money per staffed turn: ordinary or novice / apprentice / expert; Agreed. Source: #1668 balance.md at 605277df."
+    "note": "Work, professions and training: unitless multiple of R-CITY-002's per-unit job income (income_per_job_per_year for the turn's share of a year), by tier: ordinary or novice / apprentice / expert. Owner, 1 November 2026: \"Main's base x 0.3's tiers (Recommended)\". #1668's 1 / 2 / 3 Money per staffed turn was sized for 10,000 people a unit; the apprentice's 2 matches R-CRAFT-002. A labelled design value; a balance playtest follows. Source: #1668 balance.md at 605277df."
     "values": [1, 2, 3]
   "farmer.output":
     "basis": "Agreed"
-    "note": "Work, professions and training: Food per staffed turn: novice / trained / veteran; Agreed. Source: #1668 balance.md at 605277df."
+    "note": "Work, professions and training: unitless multiple of main's field_food_per_turn (R-FIELD-002), by tier: novice / trained / veteran, so 2 / 3 / 5 Food a field a turn while field_food_per_turn is 1. Owner, 1 November 2026: \"Main's base x 0.3's tiers (Recommended)\". A labelled design value; a balance playtest follows. Source: #1668 balance.md at 605277df."
     "values": [2, 3, 5]
   "profession.farmer_tools":
     "basis": "Agreed"
@@ -306,8 +306,8 @@
     "values": [5, 4, 3]
   "military.camp_capacity":
     "basis": "Agreed"
-    "note": "Military and control: simultaneous trainees per camp; Agreed. Source: #1668 balance.md at 605277df."
-    "values": [5]
+    "note": "Military and control: simultaneous trainee population units per camp, the same for every camp (owner, 1 November 2026, 27M-25). #1668's 5 places at 10,000 people a unit is 50 units at D2's 1,000 people a unit. Owner, 1 November 2026: \"Main's base x 0.3's tiers (Recommended)\". A labelled design value; main's R-TRAIN-001 has no camp cap yet, and the cap itself is built in the training issue. Source: #1668 balance.md at 605277df."
+    "values": [50]
   "military.basic_turns":
     "basis": "Agreed"
     "note": "Military and control: training turns; Agreed. Source: #1668 balance.md at 605277df."
@@ -511,7 +511,7 @@
     "values": [60]
   "absorption.population_target":
     "basis": "Agreed"
-    "note": "Objectives: people represented; threshold must be exceeded; Retained approved baseline. Source: #1668 balance.md at 605277df."
+    "note": "Objectives: people, not population units (about 1,000 units at D2's 1,000 people a unit); threshold must be exceeded. Owner, 1 November 2026: \"Main's base x 0.3's tiers (Recommended)\". Retained approved baseline, a labelled design value. Source: #1668 balance.md at 605277df."
     "values": [1000000]
   "absorption.max_overflow":
     "basis": "Agreed"

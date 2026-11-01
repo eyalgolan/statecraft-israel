@@ -49,6 +49,14 @@ namespace Statecraft.Sim
             CivilianTier.Apprentice => apprentice,
             CivilianTier.Expert => expert,
             _ => throw new ArgumentException("Unknown fixture tier.", nameof(tier)) };
+        /// <summary>#2112 (owner, 1 November 2026, "Main's base x 0.3's tiers (Recommended)"): the catalogue's tier rate
+        /// is a multiple of R-CITY-002's per-unit job income, so a tier earns <see cref="For"/> times
+        /// income_per_job_per_year for the turn's share of a year. A quote only; no Money moves.</summary>
+        internal double MoneyPerTurn(CivilianTier tier, MvpRules rules, double yearFraction)
+        {
+            if (rules == null) throw new ArgumentNullException(nameof(rules));
+            return (double)For(tier) * rules.IncomePerJobPerYear * yearFraction;
+        }
     }
 
     /// <summary>R-CITY-001/002: frozen synthetic capacity overlay, never a second population ledger.
