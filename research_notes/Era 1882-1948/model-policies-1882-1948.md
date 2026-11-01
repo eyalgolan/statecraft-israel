@@ -158,6 +158,7 @@ Transfers from Arabs to non-Arabs that the High Commissioner approved, in dunums
   for the Hope-Simpson Report's land findings.
   (Second pass, 27 October 2026: the Land Transfer Ordinance of 1920 and the Hope Simpson findings as the Peel Report reports them are now read; the "1933 amendment" is a separate Ordinance. See section 13, item 2. Private-purchase flows by year stay [GAP].)
 - [GAP] JNF land in 1948 (also a gap in the national-funds note; open under #91).
+  (Third pass, 1 November 2026: the by-year series of Jewish purchases of all kinds, 1920 to 1945, and the 650,000-dunum stock before October 1920 are now read, see section 14.)
 
 ## 3. `settlement_drive`
 
@@ -619,3 +620,40 @@ holds (paragraph 36, 6,027 immigrants through Turkey; the account to 31 March 19
 | `hebrew_schools`: pupil series | narrowed (item 11) |
 
 Corrections of 27 October 2026 after review, to rows of this section as first written: (a) item 1, the 28 February 1927 row now says Ben-Gurion "reported on the situation" and that the figures came from members of the Zionist Executive; (b) item 5, the para 24(c) quotation now runs to the end of the sentence ("...for pursuits in which wages were higher"; page image of p. 287 viewed, the tail is in the text layer); (c) item 7, "A second quoted telegram" is now "Another quoted telegram" (the bulletin quotes four, read from the OCR of its page 2), and the "..." inside the Sneh telegram of 23 September 1945 is removed, since the OCR prints "serious. If there is" with nothing left out; (d) item 9, the printed text of Peel p. 289 is `"Halutz."` with a full stop (page image viewed), where this section had a comma.
+
+## 14. Third pass, 1 November 2026: Jewish land purchases by year, 1920 to 1945 (issue #86)
+
+Added on 1 November 2026 (issue #86, research part). One row group: the Mandate-era start value for Jewish-owned land
+and the by-year purchase series that the `land_purchase` rows above list as [GAP]. Source opened on 1 November 2026:
+Survey I (see Sources), chapter VIII, paragraph 52 (printed p. 243, PDF p. 248) and Table 1 (printed p. 244, PDF p. 249).
+Both page images were viewed; the figures below were read from the images and agree with the text layer.
+
+| Item | Value | Tag | Source |
+|---|---|---|---|
+| Jewish-owned land before October 1920 | "The assumption that they owned 650,000 dunums prior to October, 1920, is generally accepted"; Table 1 prints "Area owned before 1920 (estimated)" 650,000 | [V, agent read 1 November; a person's check pending] | Survey I, ch. VIII para 52, p. 243; Table 1, p. 244 |
+| Net area bought and registered by Jews, October 1920 to 31 December 1945 | 938,365 dunums | [V, agent read 1 November; a person's check pending] | Survey I, ch. VIII para 52, p. 243 |
+| The total the Survey puts on it | "about 1,588,000 dunums"; it "does not, however, include lands which are occupied by Jews, as legal tenants or otherwise, but of which the ownership is not registered" in their names; Table 1 total 1,588,365 | [V, agent read 1 November; a person's check pending] | Survey I, ch. VIII para 52, p. 243; Table 1, p. 244 |
+
+Table 1, "Areas purchased by Jews, 1920-1945", in dunums, all Jewish buyers (not only the JNF), by the year the table prints. The
+1945 figure is printed "(estimated)". [V, agent read 1 November; a person's check pending]
+
+| 1920 | 1921 | 1922 | 1923 | 1924 | 1925 | 1926 | 1927 | 1928 | 1929 | 1930 | 1931 | 1932 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1,048 | 90,785 | 39,359 | 17,493 | 44,765 | 176,124 | 38,978 | 18,995 | 21,515 | 64,517 | 19,365 | 18,585 | 18,893 |
+
+| 1933 | 1934 | 1935 | 1936 | 1937 | 1938 | 1939 | 1940 | 1941 | 1942 | 1943 | 1944 | 1945 (est.) |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 36,991 | 62,114 | 72,905 | 18,146 | 29,367 | 27,280 | 27,973 | 22,481 | 14,530 | 18,810 | 18,035 | 8,311 | 11,000 |
+
+- Check, derived: the 26 yearly figures sum to 938,365, and 650,000 + 938,365 = 1,588,365, the printed total.
+- **My reading:** the 1920 row (1,048) can only cover the last three months of 1920, because the registries opened on
+  1 October 1920 (para 40, above); the table does not say so.
+- The 1936, 1937 and 1938 figures (18,146, 29,367, 27,280) equal the AR 1938 figures for land bought by Jews from
+  non-Jews, already in `national-funds-1882-1948.md`; the two sources agree.
+- **My reading:** the 650,000 is a stock at October 1920, not at 31 October 1918, the start date of the Mandate-era
+  start file. The Survey gives no 1918 figure. Purchases between 1918 and October 1920 are not in the table (the
+  registries opened in October 1920), so no 1918 value can be derived from it.
+- The JNF's own holding at the end of 1918 (about 16,000 dunums) is in `national-funds-1882-1948.md`, section 2a; it is
+  part of the Jewish-owned land, and the Survey does not say whether the 650,000 includes it.
+- Still [GAP]: Jewish-owned land in 1882 (the Survey's chapter has no 1882 figure; none was read elsewhere), a
+  1918 stock, and the share of each year's purchases that was the JNF's.
