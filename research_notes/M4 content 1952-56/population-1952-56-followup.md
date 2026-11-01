@@ -215,13 +215,13 @@ Same conventions as above. Pages opened on 2026-11-01 are listed in the table be
 |---|---|---|
 | SA no. 7 (`shnaton1956_num7.pdf`), Table 12 "Jewish Immigrants Arriving, by Country of Birth, Sex and Age", sub-title "(Summary 1954-1955)", printed p. 39, PDF page 88 | rendered at 200 dpi and read on the image | 2026-11-01 |
 | SA no. 5, 6, 8 to 14 (same directory, no. 5 to 14) | text-layer search for "Tunisia", "Morocco" and "Tangier"; not every page read on an image | 2026-11-01 |
-| moroccanjews.org (Visiting Jewish Morocco), page "Data on Immigration to Israel from Morocco", under its Jewish Emigration from Morocco section | page text | 2026-11-01 |
-| English Wikipedia "Aliyah", oldid 1378651266, table "Immigration to Israel in the years following the May 1948 Israeli Declaration of Independence" | wikitext of that revision | 2026-11-01 |
+| moroccanjews.org (Visiting Jewish Morocco), page "Data on Immigration to Israel from Morocco", under its Jewish Emigration from Morocco section, https://moroccanjews.org/home/jewish-emigration-from-morocco/data-on-immigration-to-israel-from-morocco/ | page text | 2026-11-01 |
+| English Wikipedia "Aliyah", oldid 1378651266 (https://en.wikipedia.org/w/index.php?title=Aliyah&oldid=1378651266), table "Immigration to Israel in the years following the May 1948 Israeli Declaration of Independence" | wikitext of that revision | 2026-11-01 |
 | JTA, "55,000 Immigrants Entered Israel in 1956, Jewish Agency Reports", 2 January 1957, https://www.jta.org/archive/55000-immigrants-entered-israel-in-1956-jewish-agency-reports | article text | 2026-11-01 |
 
 ### 7.1 Printed: Morocco and Tunisia for 1954 and 1955 together
 
-SA no. 7 Table 12, "All Immigrants" row, columns as printed. [V, agent read 2026-11-01; a person's check pending]
+SA no. 7 Table 12, "All Immigrants" row, columns as printed. [V, agent read 2026-11-01; a person's check pending] Re-read on the 200 dpi page image (PDF page 88) by an agent on 2026-11-01: all nine cells and footnote 1 agree with the table below; a person's check is still pending.
 
 | Column | 1954-1955 together |
 |---|---|
