@@ -15,7 +15,6 @@ namespace Statecraft.Game.EditorTools
     /// <summary>Lossless import of three documented GLB compatibility exports, exclusively for editor review.</summary>
     public static class VehicleReviewAssets
     {
-        public const string Folder = VehicleReviewCatalog.Folder;
         public const string CatalogPath = VehicleReviewCatalog.Path;
         static readonly string[] Labels = { "Egyptian Spitfire candidate", "Syrian Renault R35 candidate", "Egyptian Dakota C-47 candidate" };
 
@@ -28,9 +27,14 @@ namespace Statecraft.Game.EditorTools
             catalog.entries = new VehicleReviewCatalog.Entry[VehicleReviewCatalog.Ids.Length];
             for (int i = 0; i < VehicleReviewCatalog.Ids.Length; i++)
             {
-                var id = VehicleReviewCatalog.Ids[i]; var dir = VehicleReviewCatalog.DirOf(id); var file = dir + "/" + id + "-compatibility.fbx";
-                // A candidate placed in the game streams like the other placed generated models: compressed, no Crunch, full size.
-                bool placed = Statecraft.Game.Map.Collection.CollectionCatalog.IsGeneratedProp(id);
+                var id = VehicleReviewCatalog.Ids[i]; var dir = VehicleReviewCatalog.DirOf(id); var file = VehicleReviewCatalog.ModelOf(id);
+                // Existing token presentation envelopes; no assertion of relative physical size.
+                var entry = new VehicleReviewCatalog.Entry { id = id, label = Labels[i],
+                    longSideM = i == 1 ? UnitFigures.VehicleLengthShare * UnitBadge.FigureHeightM * UnitShowcase.FigureScale : 11.2f * UnitShowcase.AircraftScale };
+                catalog.entries[i] = entry;
+                // A placed model (#1932: the Spitfire; #2046: the R35) ships as the game imports it (model, compressed map at quality
+                // 100, material, prefab); the review only shows its prefab and never re-imports or re-saves those files (#2014).
+                if (VehicleReviewCatalog.Placed(id)) { entry.model = AssetDatabase.LoadAssetAtPath<GameObject>(dir + "/" + id + ".prefab"); continue; }
                 var importer = AssetImporter.GetAtPath(file) as ModelImporter ?? throw new FileNotFoundException("Documented compatibility FBX missing", file);
                 importer.useFileScale = true; importer.importAnimation = true; importer.animationType = ModelImporterAnimationType.Generic;
                 importer.animationCompression = ModelImporterAnimationCompression.Off; importer.clipAnimations = Array.Empty<ModelImporterClipAnimation>();
@@ -40,12 +44,11 @@ namespace Statecraft.Game.EditorTools
                 importer.optimizeMeshPolygons = false; importer.optimizeMeshVertices = false; importer.assetBundleName = "";
                 importer.SaveAndReimport();
                 var texturePath = dir + "/" + id + "_basecolor.jpg";
-                var texture = (TextureImporter)AssetImporter.GetAtPath(texturePath); texture.mipmapEnabled = true; texture.sRGBTexture = true;
+                var texture = (TextureImporter)AssetImporter.GetAtPath(texturePath);
                 texture.GetSourceTextureWidthAndHeight(out int width, out int height);
+                texture.mipmapEnabled = true; texture.sRGBTexture = true;
                 texture.maxTextureSize = Mathf.NextPowerOfTwo(Mathf.Max(width, height));
-                texture.textureCompression = placed ? TextureImporterCompression.Compressed : TextureImporterCompression.Uncompressed; texture.crunchedCompression = false;
-                // At quality 100, as the placed generated tents' and houses' colour maps (Unity's default is 50).
-                if (placed) texture.compressionQuality = 100;
+                texture.textureCompression = TextureImporterCompression.Uncompressed; texture.crunchedCompression = false;
                 foreach (string platform in new[] { "Standalone", "WebGL", "Android", "iPhone" }) texture.ClearPlatformTextureSettings(platform);
                 texture.assetBundleName = ""; texture.SaveAndReimport();
                 var material = AssetDatabase.LoadAssetAtPath<Material>(dir + "/" + id + ".mat");
@@ -54,16 +57,12 @@ namespace Statecraft.Game.EditorTools
                 material.SetFloat("_Cull", (float)CullMode.Off); material.enableInstancing = true; EditorUtility.SetDirty(material);
                 var source = AssetDatabase.LoadAssetAtPath<GameObject>(file);
                 var instance = (GameObject)PrefabUtility.InstantiatePrefab(source);
-                GameObject prefab;
                 try
                 {
                     foreach (var renderer in instance.GetComponentsInChildren<MeshRenderer>(true)) renderer.sharedMaterial = material;
-                    prefab = PrefabUtility.SaveAsPrefabAsset(instance, dir + "/" + id + ".prefab");
+                    entry.model = PrefabUtility.SaveAsPrefabAsset(instance, dir + "/" + id + ".prefab");
                 }
                 finally { Object.DestroyImmediate(instance); }
-                // Existing token presentation envelopes; no assertion of relative physical size.
-                catalog.entries[i] = new VehicleReviewCatalog.Entry { id = id, label = Labels[i], model = prefab,
-                    longSideM = i == 1 ? UnitFigures.VehicleLengthShare * UnitBadge.FigureHeightM * UnitShowcase.FigureScale : 11.2f * UnitShowcase.AircraftScale };
                 Debug.Log("VEHICLE ORIGINAL IMPORT " + id + ": " + AssetDatabase.LoadAllAssetsAtPath(file).OfType<Mesh>().Sum(m => (int)m.GetIndexCount(0) / 3) + " triangles; original " + width + "x" + height + " map; no LOD");
             }
             catalog.Validate(); EditorUtility.SetDirty(catalog); AssetDatabase.SaveAssets();

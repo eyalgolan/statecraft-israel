@@ -81,6 +81,9 @@ namespace Statecraft.Game.Map.Collection
         /// <summary>Tal Heuberger's Bedouin civilian and enclosed striped Bedouin tent, at the Bedouin camp areas (owner, 27 October
         /// 2026, #756: "Sign off all 19").</summary>
         public const string BedouinCivilian = "figure-bedouin-civilian-1948-v1", BedouinTent = "generated-1948-06-bedouin-b-enclosed-striped-tent";
+        /// <summary>Tal Heuberger's Egyptian Spitfire, shown in flight near the western board edge (30 km in) toward el-Arish (owner, 27 October
+        /// 2026, #756: "Sign off all 19"; 30 October 2026, #1932: "(c) In flight / board edge only").</summary>
+        public const string EgyptianSpitfire = "generated-1948-13-egyptian-spitfire";
         /// <summary>Tal Heuberger's Lebanese regular, the figure of the Lebanese army's map-only token at al-Malikiyya (owner, 27
         /// October 2026: "Sign off all 19" and "Map-only token (Recommended)"; 28 October 2026: "6 Jun to 8 Jul (Recommended)").</summary>
         public const string LebaneseRegular = "figure-lebanese-regular-1948-v1";
@@ -151,6 +154,7 @@ namespace Statecraft.Game.Map.Collection
             (GeneratedProps, new[]
             {
                 "generated-1948-06-bedouin-b-enclosed-striped-tent",
+                "generated-1948-13-egyptian-spitfire",
                 "generated-1948-14-syrian-renault-r35",
                 "generated-1948-08-khaki-canvas-tent",
             }),
@@ -193,7 +197,7 @@ namespace Statecraft.Game.Map.Collection
             || id == BedouinCivilian || id == LebaneseRegular;
 
         /// <summary>The generated static props: full-quality originals with one prefab beside the FBX, like the generated figures.</summary>
-        public static bool IsGeneratedProp(string id) => id == BedouinTent || id == SyrianR35 || id == KhakiTent;
+        public static bool IsGeneratedProp(string id) => id == BedouinTent || id == EgyptianSpitfire || id == SyrianR35 || id == KhakiTent;
 
         /// <summary>The model file a catalogued id is imported from: <c>&lt;id&gt;.fbx</c> beside its prefab, except the vehicle
         /// delivery's documented <c>&lt;id&gt;-compatibility.fbx</c> (docs/vehicle-review-2026-10-22.md).</summary>
