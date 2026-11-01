@@ -214,7 +214,8 @@ Hebrew Wikipedia pages below were read at the `oldid` given, checked 2026-10-23.
   `https://www.jta.org/wp-json/wp/v2/archive?search=Kfar+Uria&after=1920-01-01T00:00:00&before=1949-12-31T23:59:59&per_page=20`
   returned `x-wp-total: 21` (a fuzzy search). I read the 20 headlines of page 1 (1949 back to 1926)
   and opened only the 1929 items below; the 1926 and 1927 hits were not opened. `Kfar+Uriah` (9 hits,
-  all listed) and `Kfar+Uriya` (2 hits, all listed) return the same two 1929 items; `Kfar+Uriyah`
+  all listed) returns the same two 1929 items; `Kfar+Uriya` (2 hits, all listed; re-run 2026-11-01,
+  `x-wp-total: 2`) returns the 6 September 1929 item and one from 1948 (24 May); `Kfar+Uriyah`
   (33 hits) I read for page 1 only (1949 back to 1942, no 1929 item). I opened the original bulletin
   PDFs on pdfs.jta.org and read the pages as images.
   - Jewish Daily Bulletin, Wednesday 28 August 1929, p. 3, item "Gruesome atrocities committed by
