@@ -720,6 +720,7 @@ public class StartScreenTests
     public IEnumerator InHebrewTheButtonRowsMirror()
     {
         var gaps = new Dictionary<(int, int), float>();
+        var quitGaps = new Dictionary<(int, int), float>();
         var recordingCompared = new HashSet<(int, int)>();
         foreach (var hebrew in new[] { false, true })
         foreach (var (w, h) in new[] { (1920, 1080), (1366, 768), (390, 844) })
@@ -786,6 +787,16 @@ public class StartScreenTests
                     var near = hebrew ? R("start-language-en").xMax : R("start-language-en").xMin;
                     gaps[(w, hebrew ? 1 : 0)] = hebrew ? report.xMin - near : near - report.xMax;
                 }
+                // Quit (#2153; review round k2): after the pair, mirrored, as far from it as Report is.
+                var quit = R("start-quit");
+                if (w == 1920) Assert.IsTrue(OneLine(quit, pair), $"{at}: Quit {quit} is beside the languages {pair}");
+                if (OneLine(quit, pair))
+                {
+                    if (hebrew) Assert.LessOrEqual(quit.xMax, pair.xMin + 0.5f, $"{at}: Quit {quit} is left of the languages {pair}");
+                    else Assert.GreaterOrEqual(quit.xMin, pair.xMax - 0.5f, $"{at}: Quit {quit} is right of the languages {pair}");
+                    var nearHe = R("start-language-he");
+                    quitGaps[(w, hebrew ? 1 : 0)] = hebrew ? nearHe.xMin - quit.xMax : quit.xMin - nearHe.xMax;
+                }
             }
             finally
             {
@@ -797,6 +808,10 @@ public class StartScreenTests
             if (gaps.TryGetValue((w, 0), out var en) && gaps.TryGetValue((w, 1), out var he))
                 Assert.AreEqual(en, he, 1f, $"{w}: the gap between Report and the languages is the same in Hebrew ({he:0.0}) as in English ({en:0.0})");
         Assert.IsTrue(gaps.ContainsKey((1920, 0)) && gaps.ContainsKey((1920, 1)), "the gap was measured at 1920x1080");
+        foreach (var key in quitGaps.Keys)
+            if (gaps.TryGetValue(key, out var reportGap))
+                Assert.AreEqual(reportGap, quitGaps[key], 1f, $"{key}: Quit is as far from the languages ({quitGaps[key]:0.0}) as Report ({reportGap:0.0})");
+        Assert.IsTrue(quitGaps.ContainsKey((1920, 0)) && quitGaps.ContainsKey((1920, 1)), "Quit's gap was measured at 1920x1080");
         Assert.IsTrue(recordingCompared.Contains((1920, 0)) && recordingCompared.Contains((1920, 1)), "the recording's row was compared at 1920x1080");
     }
 

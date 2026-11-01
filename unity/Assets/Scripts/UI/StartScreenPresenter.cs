@@ -105,7 +105,7 @@ namespace Statecraft.Game.UI
             languages = new LanguageButtons(screen, "start-language-", text?["ui.lang"] ?? UiLanguage.English, settings, switchLanguage);
             var quit = screen.Q<Button>("start-quit");   // #2153: desktop players only
             if (text != null) quit.text = text["ui.quit"];
-            unbindQuit = QuitButton.Bind(quit, Application.platform, () => Application.Quit());
+            unbindQuit = QuitButton.BindInGame(quit);
             onContinue = Continue; onNewGame = NewGame; onStarted = Started;
             continueButton.clicked += onContinue;
             newGameButton.clicked += onNewGame;
