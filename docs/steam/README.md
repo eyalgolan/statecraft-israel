@@ -47,8 +47,8 @@ two environment secrets that only you create.
 3. **The `steam` environment.** In the repository's Settings > Environments, create `steam` and set its deployment
    branches to `main` only. The workflow's job uses it (`.github/workflows/steam-upload.yml:70`), so a run from any other
    branch never receives the secrets; the job also runs only for your own dispatch on `main` (line 69).
-   Optionally, add yourself as a required reviewer of the `steam` environment, so every upload waits for your click
-   (it would also hold each nightly's upload until you approve it); that choice is yours.
+   Do not add a required reviewer to the `steam` environment: uploads need no extra click (owner, 1 Nov 2026, "No extra
+   click (Recommended)", `docs/oss/DECISIONS.md`, "Steam"), so each nightly uploads without waiting.
 4. **The two secrets.** Add them to the `steam` environment from a terminal, so neither is shown on screen:
    - `gh secret set STEAM_BUILDER_USERNAME --env steam` and type the builder account's name at its prompt.
    - `base64 < <temporary folder>/config/config.vdf | gh secret set STEAM_CONFIG_VDF --env steam`. Where steamcmd puts
@@ -101,10 +101,10 @@ Set these in Steamworks App Admin, then publish the App Admin changes.
 
 Enter exactly these API names; the game unlocks them by name (plan Task 2, #2152: `AchievementRules.ForObjective` and
 `AchievementRules.CampaignDone`). The four objectives are the four ids in `content/objectives.yaml` (lines 6, 18, 31, 45).
-**The display names and descriptions below are drafts for your approval**, written from `content/objectives.yaml`; nothing
-is entered until you approve or rewrite them.
+**The display names and descriptions below were approved by the owner on 1 Nov 2026** ("Approve as drafted",
+`docs/oss/DECISIONS.md`, "Steam"); they were written from `content/objectives.yaml`.
 
-| API name | Display name (draft) | Description (draft) | From |
+| API name | Display name | Description | From |
 | --- | --- | --- | --- |
 | `OBJ_RAILWAY` | Lay the Haifa-Tel Aviv rail link | Complete the rail corridor between Tel Aviv and Haifa. | `railway`, `content/objectives.yaml:6-17` |
 | `OBJ_BURMA_ROAD` | Build the Burma Road corridor | Complete the Burma Road corridor. | `burma_road`, `content/objectives.yaml:18-30` |
@@ -144,7 +144,8 @@ the Editor path if that directory already exists"). Settings are not synced: qua
 - The Coming Soon page from the kit: `docs/steam/coming-soon-kit.md` and `docs/steam/store-page-draft.md` (#424).
 - The Content Survey: the draft answers are in `docs/steam/coming-soon-kit.md` section 5; re-check them against the first
   Steam build before submitting. Answering it is yours.
-- Privacy: `docs/steam/privacy.md` is the statement for the store page's support fields.
+- Privacy: `docs/steam/privacy.md` is the statement for the store page's support fields; it names Unity's engine
+  reporting, which stays on (owner, 1 Nov 2026, "Name them").
 
 ## 5. Uploads
 

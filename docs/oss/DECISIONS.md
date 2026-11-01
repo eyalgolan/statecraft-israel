@@ -111,3 +111,10 @@ coordinator. Each quote is the option label the owner chose; the options themsel
 - [x] Q8 Who uploads, from where. Decided (owner, 2026-11-01): "GitHub Actions".
 - [x] Q9 Non-commercial licences on Steam. Decided (owner, 2026-11-01): "Treat free as non-commercial".
 - [x] Q10 Steam Deck and controllers. Decided (owner, 2026-11-01): "No claim + one smoke test (Recommended)".
+- [x] Steam privacy statement and Unity's engine reporting (#2156). Decided (owner, 2026-11-01, relayed by the
+  coordinator): "Name them". Unity's analytics and engine-diagnostics settings stay on, and `docs/steam/privacy.md` and
+  the store's privacy text name them and link Unity's privacy policy, claiming nothing beyond Unity's documentation.
+- [x] Steam achievement names and descriptions (#2156). Decided (owner, 2026-11-01, relayed by the coordinator):
+  "Approve as drafted" (the five in `docs/steam/README.md`, "Achievements").
+- [x] A required reviewer on the `steam` upload environment (#2155, #2156). Decided (owner, 2026-11-01, relayed by the
+  coordinator): "No extra click (Recommended)". No required reviewer; uploads run on the owner's dispatch alone.
