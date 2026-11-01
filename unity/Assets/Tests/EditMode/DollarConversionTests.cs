@@ -10,7 +10,7 @@ using UnityEngine.UIElements;
 
 /// <summary>R-MONEY-004, "Spend the dollars" (#813; owner, 2 November 2026: "Spend the dollars (Recommended)"): the Defence
 /// screen's conversion panel, beside the Arms purchase. It queues one ConvertDollars for End turn, shows the foreign-currency
-/// reserve (the one readout the ruling allows, never on the top bar) and says the sim's refusal before End turn.</summary>
+/// reserve beside the order (the top bar's meters are unchanged) and says the sim's refusal before End turn.</summary>
 public class DollarConversionTests
 {
     static UiText Text(bool he) => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(he ? UiPaths.StringsHebrew : UiPaths.Strings).text);
@@ -59,7 +59,6 @@ public class DollarConversionTests
         Assert.AreEqual(t.Format("dollars.money", PlayerText.Money(c, "treasury", 3 * m.IlPerDollarOn(b.State.Date))), ui.Q<Label>("dollars-money").text);
         CollectionAssert.AreEqual(new[] { "treasury", "immigration", "security", "support", "cohesion", "standing", "fx" }, HudModel.MeterIds,
             "the top bar's meters are unchanged");
-        Assert.IsNull(ui.Root.Q("meter-dollars"));
     }
 
     // R-MONEY-004: Convert queues one order (a second replaces it), the state is untouched until End turn, which converts.
@@ -69,7 +68,9 @@ public class DollarConversionTests
         var b = Bridge(false, he); var t = Text(he); var c = b.Content;
         using var ui = new UiTestKit();
         using var defence = new DefencePresenter(ui.Root, b, t);
-        var before = b.State.Hash(); var fx = b.State.FxReserves;
+        var before = b.State.Hash();
+        // The reserve moves every turn (capital inflow, imports), so the conversion is measured against the turn with no order.
+        var fxAfter = Simulation.Step(c, b.TurnStart, System.Array.Empty<Command>()).State.FxReserves - 3;
         var amount = ui.Q<IntegerField>("dollars-amount");
         amount.value = 2; ui.Press("convert-dollars");
         amount.value = 3; ui.Press("convert-dollars");
@@ -86,7 +87,7 @@ public class DollarConversionTests
         Assert.AreEqual(t.Format("dollars.total", PlayerText.Money(c, "fx_reserves", 3), PlayerText.Money(c, "fx_reserves", c.RulesAt(b.State.Date).Mvp!.DollarsTotal!.Value)),
             ui.Q<Label>("dollars-total").text);
         Assert.AreEqual(t.Format("dollars.reserves", PlayerText.Money(c, "fx_reserves", b.State.FxReserves)), ui.Q<Label>("dollars-reserves").text);
-        Assert.AreNotEqual(fx, b.State.FxReserves);
+        Assert.AreEqual(fxAfter, b.State.FxReserves, 1e-9);
         Assert.IsEmpty(ui.Q<Label>("dollars-queued").text);
     }
 
@@ -152,7 +153,8 @@ public class DollarConversionTests
         }
     }
 
-    // R-MONEY-004: the cause line reads the same as the sim's English, and in Hebrew in the player's language.
+    // R-MONEY-004: the cause line reads the same as the sim's English, and in Hebrew in the player's language: the dollars
+    // first, then the Money they brought, and no Latin letters outside those two figures.
     [Test]
     public void TheCauseLineIsWordedInBothLanguages()
     {
@@ -161,6 +163,11 @@ public class DollarConversionTests
         Assert.AreEqual(line.Message, CauseText.Line(line, b.Content, System.Array.Empty<Statecraft.Game.Map.Units.UnitEntry>(), En));
         var he = CauseText.Line(line, b.Content, System.Array.Empty<Statecraft.Game.Map.Units.UnitEntry>(), He);
         StringAssert.IsMatch("[א-ת]", he);
-        StringAssert.Contains(PlayerText.Money(b.Content, "fx_reserves", 4), he);
+        var dollars = PlayerText.Money(b.Content, "fx_reserves", 4);
+        var money = PlayerText.MoneyChange(b.Content, "treasury", 4 * b.Content.RulesAt(b.State.Date).Mvp!.IlPerDollarOn(b.State.Date));
+        Assert.AreEqual(money, PlayerText.MoneyChange(b.Content, "treasury", line.Delta), "the line's Delta is the IL the sim converted");
+        int at = he.IndexOf(dollars, System.StringComparison.Ordinal), il = he.IndexOf(money, System.StringComparison.Ordinal);
+        Assert.GreaterOrEqual(at, 0, he); Assert.Greater(il, at, he);
+        StringAssert.DoesNotMatch("[A-Za-z]", he.Replace(dollars, "").Replace(money, ""), he);
     }
 }
