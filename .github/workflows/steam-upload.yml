@@ -64,6 +64,9 @@ jobs:
     name: Steam upload
     runs-on: ubuntu-24.04
     timeout-minutes: 90
+    # Only the owner's own dispatch on main (tools/steam_upload.py stage, by hand or from the nightly, runs as the owner);
+    # the environment's branch policy is a repository setting this file cannot check (review of #2155).
+    if: github.ref == 'refs/heads/main' && github.triggering_actor == github.repository_owner
     environment: steam
     permissions:
       contents: write

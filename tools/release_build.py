@@ -101,6 +101,9 @@ TAG = pgc.TAG
 # Valve's redistributables. The macOS plugin is a bundle directory, so a zip lists .../steam_api.bundle/ and files in it.
 VALVE_FILES = re.compile(r"(^|/)(lib)?steam_api(64)?\.(dll|so|dylib)$|(^|/)steam_api\.bundle(/|$)|(^|/)steam_appid\.txt$")
 APPID_FILE = re.compile(r"(^|/)steam_appid\.txt$")
+# The library each platform's Steam player must carry (only -steam builds include it; #2154).
+STEAM_LIBRARY = {"windows": re.compile(r"(^|/)steam_api64\.dll$"), "linux": re.compile(r"(^|/)libsteam_api\.so$"),
+                 "mac": re.compile(r"(^|/)steam_api\.bundle(/|$)")}
 NIGHTLY_VERSION = re.compile(r"[0-9]+\.[0-9]+\.[0-9]+", re.ASCII)
 SETTINGS_ASSET = "unity/ProjectSettings/ProjectSettings.asset"
 
@@ -337,12 +340,17 @@ def refuse_valve_files(names: list[str]) -> str | None:
     return ("it carries Valve files, which only Steam builds may ship: " + ", ".join(found)) if found else None
 
 
-def steam_folder_problem(folder: Path) -> str | None:
+def steam_folder_problem(folder: Path, platform: str) -> str | None:
     """Why a Steam content folder must not be uploaded, or None: steam_appid.txt is for local runs only (with it,
-    the player never relaunches through Steam)."""
-    found = [p.relative_to(folder).as_posix() for p in sorted(folder.rglob("*"))
-             if APPID_FILE.search(p.relative_to(folder).as_posix())]
-    return f"{folder} holds {', '.join(found)}, which must never be uploaded to Steam" if found else None
+    the player never relaunches through Steam), and a player without Valve's library was not built with -steam."""
+    names = [p.relative_to(folder).as_posix() for p in sorted(folder.rglob("*"))]
+    found = [n for n in names if APPID_FILE.search(n)]
+    if found:
+        return f"{folder} holds {', '.join(found)}, which must never be uploaded to Steam"
+    if not any(STEAM_LIBRARY[platform].search(n) for n in names):
+        return (f"{folder} has no Steam library ({STEAM_LIBRARY[platform].pattern}); the player was not built with "
+                "Steam (the -steam build switch, #2154)")
+    return None
 
 
 def stamp_problem(lines: list[str], version: str) -> str | None:
@@ -611,7 +619,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"FAILED: the {p.name} build (exit {code}); see {log}", file=sys.stderr)
             return 1
         folder = target.parent
-        if a.steam and (problem := steam_folder_problem(folder)):
+        if a.steam and (problem := steam_folder_problem(folder, p.name)):
             print(f"FAILED: {problem}", file=sys.stderr)
             return 1
         add_notices(folder)

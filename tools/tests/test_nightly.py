@@ -2945,3 +2945,41 @@ def test_no_steam_reaches_the_stage_from_the_command_line(env, monkeypatch):
     monkeypatch.setattr(nightly, "run_night", lambda *a, **k: seen.update(k) or "PUBLISHED")
     assert nightly.main(["run", "--no-steam"]) == 0 and seen["no_steam"] is True
     assert nightly.main(["run"]) == 0 and seen["no_steam"] is False
+
+
+class SteamEnvRunner(EnvRunner):
+    """Also records stop_on_interrupt per command."""
+
+    def __init__(self):
+        super().__init__()
+        self.stops = []
+
+    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None, stop_on_interrupt=False):
+        self.stops.append((list(cmd), stop_on_interrupt))
+        return super().run(cmd, cwd=cwd, log=log, deadline=deadline, env=env, holder=holder)
+
+
+def test_the_steam_build_runs_like_the_nightlys_other_unity_steps(night, env):
+    # Review I2 (#2155): the MCP-free Unity env, the exclusive-window check, and children stopped on an interrupt.
+    env.runner = SteamEnvRunner()
+    env._rules()
+    steam_ready(env)
+    nightly.run_steam(night, env.runner)
+    build = next(e for e in env.runner.envs if e[0][:3] == ["uv", "run", "tools/release_build.py"])
+    assert build[1]["UNITY_MCP_SERVER_PATH"] == str(night.job / "no-mcp-server")
+    assert all(stop for cmd, stop in env.runner.stops if cmd[:2] == ["uv", "run"])
+    assert not night.notes
+    env.marker.write_text("x")
+    nightly.run_steam(night, env.runner)
+    assert night.notes == ["steam=failed"]
+    assert len([e for e in env.runner.envs if e[0][:3] == ["uv", "run", "tools/release_build.py"]]) == 1
+
+
+@pytest.mark.parametrize("text", ['{"app_id": 1, "depots": [1, 2, 3], "branches": []}', '[1]', "not json"])
+def test_a_malformed_steam_json_is_a_steam_failure_not_a_refused_night(night, env, text):
+    # Review I3 (#2155): the web nightly is public by now, so even a broken steam.json only marks Steam.
+    (env.cfg.clone / "steam").mkdir(exist_ok=True)
+    (env.cfg.clone / "steam/steam.json").write_text(text)
+    nightly.run_steam(night, env.runner)   # never raises
+    assert night.notes in ([], ["steam=failed"])
+    assert not [c for c in env.runner.calls if c[:2] == ["uv", "run"]]

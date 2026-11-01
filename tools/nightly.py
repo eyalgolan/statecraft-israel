@@ -787,7 +787,9 @@ def steam_ids_missing(clone: Path) -> str | None:
         config = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError) as e:
         return f"cannot read {path}: {type(e).__name__}"
-    depots = config.get("depots") or {}
+    if not isinstance(config, dict) or not isinstance(config.get("depots"), dict):
+        raise ValueError(f"{path} is not an object with a depots object")
+    depots = config["depots"]
     missing = [name for name, value in [("app_id", config.get("app_id")),
                                         *((f"depots.{p}", depots.get(p)) for p in ("windows", "mac", "linux"))]
                if value is None]
@@ -798,21 +800,23 @@ def run_steam(night: Night, runner: Runner) -> None:
     """After the web nightly is published: build the Steam players, stage them in a draft release and dispatch the
     upload to the `nightly` branch. It never refuses, unpublishes or rolls back the web nightly: any failure only adds
     steam=failed to the night's line (the logs are in the run folder) and notifies."""
-    if (why := steam_ids_missing(night.cfg.clone)) is not None:
-        print(f"steam: skipped ({why})")
-        return
     out = night.run_dir / "steam-release"
     try:
+        if (why := steam_ids_missing(night.cfg.clone)) is not None:
+            print(f"steam: skipped ({why})")
+            return
+        check_window(night)
         # tonight's tag was made on GitHub by the publish; release_build.py checks it points at HEAD and never fetches
         _git(runner, night.cfg.clone, "fetch", "--no-tags", "origin", f"refs/tags/{night.tag}:refs/tags/{night.tag}")
         code, _ = _step(night, runner, "steam-build",
                         ["uv", "run", "tools/release_build.py", "--platform", "all", "--steam", "--tag", night.tag,
-                         "--nightly-version", night.version, "--out", str(out)], STEAM_BUILD_MINUTES)
+                         "--nightly-version", night.version, "--out", str(out)], STEAM_BUILD_MINUTES,
+                        unity_env(night), stop_on_interrupt=True)
         if code != 0:
             raise Refused("steam", "release_build.py timed out" if code == 124 else f"release_build.py exited {code}")
         code, _ = _step(night, runner, "steam-stage",
                         ["uv", "run", "tools/steam_upload.py", "stage", "--out", str(out), "--tag", night.tag],
-                        STEAM_STAGE_MINUTES)
+                        STEAM_STAGE_MINUTES, stop_on_interrupt=True)
         if code != 0:
             raise Refused("steam", "steam_upload.py timed out" if code == 124 else f"steam_upload.py exited {code}")
     except Exception as e:

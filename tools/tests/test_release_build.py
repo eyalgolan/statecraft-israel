@@ -63,6 +63,8 @@ def write_editor_version(exe, version):
 class Fake:
     """Records every command and plays git, Unity and the player."""
 
+    steam_library = True
+
     def __init__(self, dirty="", golden_ok=True, build_ok=True, branch="main", tags=("v0.1.0",), worktrees=None,
                  build_raises=None, dirty_after="", on_origin_main=True):
         self.calls: list[list[str]] = []
@@ -105,6 +107,13 @@ class Fake:
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes(b"player " + target.name.encode())
             (target.parent / "event-photos.json").write_text("{}\n")
+            if "-steam" in cmd and self.steam_library:   # #2154's Build.cs ships Valve's plugin only in -steam builds
+                lib = {".app": "Contents/PlugIns/steam_api.bundle/Contents/MacOS/libsteam_api.dylib",
+                       ".exe": "../Statecraft_Data/Plugins/x86_64/steam_api64.dll",
+                       ".x86_64": "../Statecraft_Data/Plugins/libsteam_api.so"}[target.suffix]
+                path = (target / lib) if target.suffix == ".app" else (target.parent / lib[3:])
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(b"valve")
             log.write_text("BUILD Succeeded StandaloneOSX -> x: 1.0 MB on disk, 0 errors, 321s\n")
             if not self.build_ok:   # Unity failed, but a (partial or older) player is still there
                 log.write_text("BUILD Failed StandaloneOSX -> x: 0.0 MB on disk, 3 errors, 12s\n")
@@ -978,3 +987,14 @@ def test_nightly_version_needs_steam_and_its_own_tag(repo, editor, monkeypatch, 
     assert run_main(["--platform", "linux", *argv, "--out", str(tmp_path / "out")], repo, editor, fake,
                     monkeypatch) == 1
     assert unity_calls(fake) == []
+
+
+@pytest.mark.parametrize("platform", ["windows", "linux", "mac"])
+def test_a_steam_folder_without_valves_library_is_refused(repo, editor, monkeypatch, tmp_path, capsys, platform):
+    # Review I4 (#2155): a --steam run whose players lack Steam (an editor without #2154's -steam handling) must not
+    # produce folders that look uploadable.
+    class NoLibrary(Fake):
+        steam_library = False
+    out = tmp_path / "out"
+    assert run_main(["--platform", platform, "--steam", "--out", str(out)], repo, editor, NoLibrary(), monkeypatch) == 1
+    assert "Steam library" in capsys.readouterr().err and not (out / "build-record.json").exists()

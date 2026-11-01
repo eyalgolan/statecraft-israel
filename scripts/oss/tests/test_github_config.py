@@ -280,3 +280,11 @@ def test_steam_upload_checks_the_draft_and_the_commit_before_any_login():
     login = names.index("Restore the builder login (owner's secret)")
     assert names.index(verify["name"]) < names.index(on_main["name"]) < names.index(render["name"]) < login
     assert "refs/remotes/origin/main" in on_main["run"]
+
+
+def test_steam_upload_runs_only_for_the_owner_on_main():
+    # Review I1 (#2155): the environment's branch policy is a repository setting the workflow cannot see; the job also
+    # refuses itself any run not started by the repository owner (stage and the nightly dispatch as the owner) on main.
+    guard = steam()["jobs"]["upload"]["if"]
+    assert "github.ref == 'refs/heads/main'" in guard
+    assert "github.triggering_actor == github.repository_owner" in guard and "&&" in guard
