@@ -248,8 +248,8 @@
     "note": "Reception, housing and shortages: condition pp per turn multiplied by ordinary resident overflow share; Default rate; retained overcrowding principle. Source: #1668 balance.md at 605277df."
     "values": [5]
   "housing.max_deterioration":
-    "basis": "Agreed"
-    "note": "Reception, housing and shortages: condition pp per turn with all housing upkeep unpaid; Agreed. Source: #1668 balance.md at 605277df."
+    "basis": "Default"
+    "note": "Reception, housing and shortages: condition pp per turn with all housing upkeep unpaid. Amir's housing-only upkeep deterioration, declined by the owner on 30 October 2026 (Upkeep conflict, option A); kept as post-MVP design, not operative in the MVP and not Agreed. Source: #1668 balance.md at 605277df."
     "values": [10]
   "transit.cost":
     "basis": "Default"
@@ -263,7 +263,7 @@
       "cadence_turns":
         "basis": "Default"
         "values": [1]
-        "note": "Per-turn, non-stacking cadence Default; amount Agreed."
+        "note": "Per-turn, non-stacking cadence Default; post-MVP like its row."
   "food.shortage_cohesion_max":
     "basis": "Agreed"
     "note": "Reception, housing and shortages: national points per turn multiplied by unmet share; Agreed. Source: #1668 balance.md at 605277df."
