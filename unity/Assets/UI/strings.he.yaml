@@ -153,6 +153,8 @@ settings.title: "הגדרות"
 settings.tiltshift: "טשטוש בחלק העליון ובחלק התחתון של המפה"
 settings.on: "מופעל"
 settings.off: "כבוי"
+# The WebGL companion switch (#1119); the Hebrew awaits native review.
+settings.companion: "מלווה לקוראי מסך"
 # The graphics quality choice (#40). Adjectives in the feminine, agreeing with "איכות". Approved by Beri, a native
 # speaker, on #40 (17 Oct 2026). For the native reviewer (#564).
 settings.quality: "איכות גרפית"
@@ -435,6 +437,24 @@ why.cause.borrowed.project: "הלוואה של {0} לבניית {1}"
 why.cause.borrowed.deport: "הלוואה של {0} לגירוש ({1})"
 why.cause.borrowed.occupation: "הלוואה של {0} לעלות ההחזקה ({1})"
 why.cause.borrowed.event: "הלוואה של {0} עבור {1}"
+# #2199: the why.cause.paid.* lines below are agent-drafted Hebrew, not part of #1642's owner review above. Each reuses
+# its why.cause.borrowed.* purpose phrase, except paid.occupation, which is newly worded. Native review pending (#564).
+why.cause.paid.corridor: "{0}: שינוי {1} (לבניית קטע של כביש או מסילה)"
+why.cause.paid.arms: "{0}: שינוי {1} (לרכישת נשק)"
+why.cause.paid.training: "{0}: שינוי {1} (לאימון ולהכשרה)"
+why.cause.paid.prisoners: "{0}: שינוי {1} (עבור חיילינו המוחזקים בידי האויב)"
+why.cause.paid.training_camp: "{0}: שינוי {1} (להקמת מחנה אימונים)"
+why.cause.paid.plow: "{0}: שינוי {1} (לחריש שדות)"
+why.cause.paid.drain: "{0}: שינוי {1} (לייבוש ביצה)"
+why.cause.paid.yishuv: "{0}: שינוי {1} (להקמת יישוב)"
+why.cause.paid.project: "{0}: שינוי {1} (לבניית {2})"
+why.cause.paid.occupation: "{0}: שינוי {1} (לעלות ההחזקה של {2})"
+# A map action's cost (#2199); {2} is an info.map_action.* noun, as in why.cause.map_borrowed. Agent-drafted Hebrew;
+# native review pending (#564).
+why.cause.paid.map_action: "{0}: שינוי {1} (לבניית {2})"
+# #2212: Money's Other line in the turn report and the meter tip, the causes left out after the two largest, summed.
+# Agent-drafted Hebrew, not part of #1642's owner review; native review pending (#564).
+why.cause.money_other: "{0}: שינוי {1} (סיבות אחרות)"
 why.cause.fx_crisis_began: "יתרות מטבע החוץ אזלו"
 why.cause.fx_crisis_eased: "הקלה במשבר מטבע החוץ"
 why.cause.fx_crisis_food: "{0}: שינוי {1} (משבר מטבע חוץ: קיצוץ ביבוא המזון)"
@@ -615,6 +635,11 @@ minimap.overview: "התרחקות מרבית"
 minimap.labels: "הצגה או הסתרה של שמות היישובים"
 minimap.borders: "הצגה או הסתרה של גבולות האזורים"
 ui.lang: "he"
+# ui.quit: Quit on the start screen and in Settings, desktop players only (#2153). An action noun (HE-03). For the native reviewer (#564).
+ui.quit: "יציאה"
+# ui.quit_confirm: Settings' Quit after its first press, in the button's place; the second press quits (#2188). "יש ל..." as in
+# newgame.confirm (HE-03), with the action noun of ui.quit. For the native reviewer (#564).
+ui.quit_confirm: "יש ללחוץ שוב ליציאה"
 # #701: {1} is a month and a year ("אוגוסט 1950"). A date label with no verb, since a fixed "נבנה" is wrong for a feminine
 # name ("מעברה"); Beri approved this wording as a native speaker (17 October 2026). For the native reviewer (#564).
 info.built: "{0} – תאריך הקמה: {1}"
@@ -1217,8 +1242,8 @@ why.cause.ending.defeat_war: "האויב מחזיק בעיר"
 # native-review-pending: #1661 occupied-destination confirmation
 unit.confirm_move: "שליחת {0} אל {1}"
 
-# The opening's controls (#530), Hebrew agent-drafted. For the native reviewer (#564). The historical prose stays in
-# opening.yaml, in English, until its own review.
+# The opening's controls (#530), Hebrew agent-drafted. For the native reviewer (#564). The historical prose is in
+# opening.yaml, in English and in Hebrew (title_he, text_he, country_he), with its own he_review there.
 opening.replay: "צפייה חוזרת בפתיח"
 opening.back: "הקודם"
 opening.next: "הבא"
@@ -1227,3 +1252,33 @@ opening.begin: "המשך למפה"
 opening.return: "חזרה למסך הפתיחה"
 opening.count: "שלב {0} מתוך {1}"
 opening.preview: "תצוגה מקדימה בעורך: טיוטה; בדיקת המקורות בידי אדם ממתינה."
+
+# #813 (R-MONEY-004): the Defence screen's dollar conversion. Agent-drafted Hebrew; every line below is
+# native-review-pending (#564).
+dollars.title: "המרת דולרים"
+dollars.reserves: "מטבע חוץ: {0}"
+dollars.cost: "כשמטבע החוץ אוזל, יבוא המזון נעצר."
+dollars.total: "הומר עד כה: {0} מתוך {1}"
+dollars.amount: "דולרים להמרה, במיליונים"
+dollars.money: "כסף שההמרה תוסיף: {0}"
+dollars.convert: "המרת דולרים"
+dollars.withdraw: "ביטול ההמרה"
+dollars.queued: "דולרים להמרה: {0}, בסיום התור"
+dollars.wartime_only: "המרת דולרים אפשרית רק בזמן מלחמה."
+dollars.no_attention: "אין די תשומת לב להמרה. יש לבטל הוראה אחרת או להמתין לתור הבא."
+dollars.refused_minimum: "יש להמיר לפחות מיליון דולר"
+dollars.refused_not_at_war: "אפשר להמיר דולרים רק בזמן המלחמה"
+dollars.refused_monthly: "זה יותר מהסכום שמותר להמיר החודש"
+dollars.refused_total: "ההמרה תעבור את הסכום הכולל שמותר להמיר"
+dollars.refused_reserves: "אין די דולרים ביתרות מטבע החוץ"
+why.cause.dollars_converted: "המרת מטבע חוץ לכסף: {0}; כסף: שינוי {1}"
+
+# Read-only WebGL companion (#1119); Hebrew additions await native review.
+companion.title: "מלווה למשחק"
+companion.help: "תצוגה לקריאה בלבד. המשחק מתנהל באמצעות מקשי המקלדת של המשחק."
+companion.focus: "המיקוד במשחק"
+companion.status: "מצב"
+companion.choices: "אפשרויות"
+companion.empty: "אין החלטה ממתינה"
+companion.unavailable: "לא זמין"
+companion.map: "מפה"

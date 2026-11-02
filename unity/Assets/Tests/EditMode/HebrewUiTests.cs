@@ -513,7 +513,7 @@ public class HebrewUiTests
         ("settings-sound-label", "settings.sound"), ("settings-sound-off", "settings.sound.off"),
         ("settings-sound-low", "settings.sound.low"), ("settings-sound-high", "settings.sound.high"),
         ("settings-advisors-label", "settings.advisors"), ("settings-language-label", "settings.language"),
-        ("settings-uiscale-label", "settings.uiscale"),
+        ("settings-uiscale-label", "settings.uiscale"), ("settings-companion-label", "settings.companion"),   // #1119
         ("settings-community-label", "settings.community"), ("settings-star", "community.star"), ("start-star", "community.star"),
         ("settings-report", "feedback.open"), ("start-report", "feedback.open"), ("feedback-title", "feedback.open"),   // #1169
         ("hud-star", "community.star"), ("hud-report", "feedback.open"), ("hud-share", "share.open"),   // #1236
@@ -523,6 +523,7 @@ public class HebrewUiTests
         ("share-attach", "share.attach"), ("share-close", "report.close"),
         ("start-source", "start.source"), ("start-recording-credit", "start.recording_credit"),
         ("start-continue", "start.continue"), ("start-new-game", "start.new_game"),
+        ("start-quit", "ui.quit"), ("settings-quit", "ui.quit"),   // #2153
     };
 
     /// <summary>Static texts that stay as Game.uxml writes them in every language: the game's name, and the Declaration's

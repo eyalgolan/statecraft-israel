@@ -647,7 +647,7 @@ public class SettingsScreenTests
                     "settings-quality-label", "settings-quality-auto", "settings-quality-high", "settings-quality-low",
                     "settings-language-label", "settings-language-en", "settings-language-he",
                     "settings-uiscale-label", "settings-uiscale-100", "settings-uiscale-125", "settings-uiscale-150",
-                    "settings-community-label", "settings-star", "settings-report", "settings-share" })
+                    "settings-community-label", "settings-star", "settings-report", "settings-share", "settings-quit" })
                 {
                     var e = root.Q<TextElement>(name);
                     Assert.IsFalse(string.IsNullOrWhiteSpace(e.text), $"{at}: {name} has its text");

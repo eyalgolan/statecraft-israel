@@ -53,7 +53,9 @@ public class TurnReportTests
     static List<string> Causes(UiTestKit ui, string meter) =>
         ui.Q<VisualElement>("turn-report-causes-" + meter).Query<Label>(className: "turn-report-cause").ToList().Select(l => l.text).ToList();
 
-    /// <summary>The main B1 occupation/deport borrowing keys use the real map names in report and meter paths too.
+    /// <summary>The main B1 occupation/deport keys use the real map names in report and meter paths too: the cost's Money
+    /// line (occupation: PayOrBorrow's Paid line; Deport: its own line, as SettlementControl writes it), and the borrowing
+    /// line's own wording. Borrowing is not a Money cause (#2199), so the meter shows the cost's line.
     /// This is only a formatter fixture: it does not enable or execute the disabled Deport command.</summary>
     [TestCase(CauseKeys.Purpose.Occupation)]
     [TestCase(CauseKeys.Purpose.Deport)]
@@ -70,8 +72,16 @@ public class TurnReportTests
         var why = new List<Cause>();
         var placeName = PlayerText.Settlement(C, city);
         var englishPurpose = purpose == CauseKeys.Purpose.Deport ? $"for the Deport of {placeName}" : $"for the occupation of {placeName}";
-        EconomySystem.PayOrBorrow(C, last.State, last.State.Treasury + 3, englishPurpose, why, purpose, city);
-        var cause = why.Single();
+        var cost = last.State.Treasury + 3;
+        if (purpose == CauseKeys.Purpose.Occupation)
+            EconomySystem.PayOrBorrow(C, last.State, cost, englishPurpose, why, purpose, city);
+        else
+        {
+            why.Add(new Cause("economy", "treasury", -cost, $"{PlayerText.Change(C, "treasury", -cost)} (Deport of {placeName})", key: CauseKeys.DeportCost, args: new[] { city }));
+            EconomySystem.PayNamedOrBorrow(C, last.State, cost, englishPurpose, why, purpose, city);
+        }
+        Assert.AreEqual(2, why.Count, "the cost's Money line, then the borrowing");
+        var cause = why[1];
         Assert.AreEqual(CauseKeys.Borrowed, cause.Key);
         // Existing TurnReportTests uses this setter for a precise report fixture; no simulation input or content is changed.
         typeof(GameSession).GetProperty(nameof(GameSession.Last))!.SetValue(k.Bridge.Session,
@@ -116,12 +126,12 @@ public class TurnReportTests
             var heading = k.Ui.Q<Label>("turn-report-heading-" + id).text;
             Assert.AreEqual(En.Format("report.line", En["hud.caption." + id], k.Ui.Q<Label>(id + "-delta").text), heading, id);
             var causes = k.Ui.Root.Q("turn-report-causes-" + id);
-            var expected = HudModel.Causes(turn, id, w => CauseText.Line(w, C, System.Array.Empty<UnitEntry>(), En));
+            var expected = HudModel.Causes(turn, id, C, w => CauseText.Line(w, C, System.Array.Empty<UnitEntry>(), En));
             if (expected.Count == 0) { Assert.IsNull(causes, id + ": no cause line without a cause"); continue; }
             var lines = Causes(k.Ui, id);
             CollectionAssert.AreEqual(expected, lines, id);
-            Assert.LessOrEqual(lines.Count, HudModel.MaxCauses, id);
-            foreach (var line in lines) Assert.IsTrue(messages.Contains(line), $"{id}: '{line}' is a cause of StepResult.Why, word for word");
+            Assert.LessOrEqual(lines.Count, HudModel.MaxCauses + (id == "treasury" ? 1 : 0), id);   // Money's Other line (#2212)
+            foreach (var line in lines.Take(HudModel.MaxCauses)) Assert.IsTrue(messages.Contains(line), $"{id}: '{line}' is a cause of StepResult.Why, word for word");
         }
         // The fixed turn's own causes, the larger first and at most MaxCauses (2): Security moved by One Army and the
         // defence of Degania, the same size, in the order the cards came (R-EVT-006); the border villages' smaller effect
@@ -129,6 +139,17 @@ public class TurnReportTests
         var security = Causes(k.Ui, "security");
         CollectionAssert.AreEqual(new[] { "Security +1.5% (One Army)", "Security +1.5% (The Defence of Degania)" }, security);
         StringAssert.StartsWith("Money ", Causes(k.Ui, "treasury")[0], "Money's main cause is the economy's line");
+        // #2212: Money's two largest causes, then one Other line for the rest (EconomySystem.OtherMoney), so the lines add
+        // up to the change the heading shows.
+        var money = Causes(k.Ui, "treasury");
+        var shown = new List<Cause>();
+        HudModel.Causes(turn, "treasury", C, w => { shown.Add(w); return ""; });
+        Assert.AreEqual(HudModel.MaxCauses + 1, money.Count, "the opening turn has more Money causes than the two shown");
+        Assert.AreEqual(CauseKeys.MoneyOther, shown[shown.Count - 1].Key);
+        Assert.AreEqual(shown[shown.Count - 1].Message, money[money.Count - 1]);
+        StringAssert.EndsWith(" (other causes)", money[money.Count - 1]);
+        var s = k.Bridge.State; var prev = k.Bridge.Session.Previous!;
+        Assert.AreEqual((s.Treasury - s.Debt) - (prev.Treasury - prev.Debt), shown.Sum(w => w.Delta), 1e-9, "the lines add up to the Money (net) change");
         Assert.IsNull(k.Ui.Root.Q("turn-report-causes-support"), "no cause names Public support (an average of the indicators)");
     }
 
@@ -282,12 +303,17 @@ public class TurnReportTests
         // In a right-to-left line the change keeps its sign in front ("+2%", not "2%+"): UiText.Format marks it (#543).
         StringAssert.Contains(UiText.LeftToRightMark + k.Ui.Q<Label>("security-delta").text + UiText.LeftToRightMark, heading);
         var causes = Causes(k.Ui, "security");
-        CollectionAssert.AreEqual(HudModel.Causes(k.Bridge.Session.Last, "security", w => CauseText.Line(w, C, System.Array.Empty<UnitEntry>(), He)), causes,
+        CollectionAssert.AreEqual(HudModel.Causes(k.Bridge.Session.Last, "security", C, w => CauseText.Line(w, C, System.Array.Empty<UnitEntry>(), He)), causes,
             "the causes are the sim's, worded as on the Why screen");
         // B1: the treasury's tax-and-spending line is Hebrew (a line with no key yet, such as an event's, stays English).
         Assert.IsTrue(UiDirection.RightToLeft(Causes(k.Ui, "treasury")[0]), "the money line is in Hebrew");
+        // #2212: Money's Other line too (why.cause.money_other).
+        var money = Causes(k.Ui, "treasury");
+        Assert.AreEqual(HudModel.MaxCauses + 1, money.Count, "the two largest Money causes and the Other line");
+        Assert.IsTrue(UiDirection.RightToLeft(money[money.Count - 1]), "the Other line is in Hebrew");
+        StringAssert.Contains("(סיבות אחרות)", money[money.Count - 1]);
         // B1: one label a cause, so a Hebrew line and a line still in English each take their own direction.
-        Assert.AreEqual(HudModel.Causes(k.Bridge.Session.Last, "security", w => w.Message).Count,
+        Assert.AreEqual(HudModel.Causes(k.Bridge.Session.Last, "security", C, w => w.Message).Count,
             k.Q("turn-report-causes-security").Query<Label>(className: "turn-report-cause").ToList().Count);
     }
 

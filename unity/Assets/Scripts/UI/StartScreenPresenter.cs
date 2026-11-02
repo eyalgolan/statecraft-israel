@@ -59,6 +59,7 @@ namespace Statecraft.Game.UI
         readonly EventCallback<GeometryChangedEvent> onLaidOut;
         readonly VisualElement[] laidOut;
         readonly LanguageButtons languages;
+        readonly Action unbindQuit;
         string? loggedCentres;
 
         /// <summary>The buttons ButtonCentres reports, by name.</summary>
@@ -102,6 +103,9 @@ namespace Statecraft.Game.UI
             unbindStar = ExternalLink.Bind(starButton, ExternalLink.Repository);   // #1168
             starButton.generateVisualContent += PaintStarSigns;
             languages = new LanguageButtons(screen, "start-language-", text?["ui.lang"] ?? UiLanguage.English, settings, switchLanguage);
+            var quit = screen.Q<Button>("start-quit");   // #2153: desktop players only
+            if (text != null) quit.text = text["ui.quit"];
+            unbindQuit = QuitButton.BindInGame(quit);
             onContinue = Continue; onNewGame = NewGame; onStarted = Started;
             continueButton.clicked += onContinue;
             newGameButton.clicked += onNewGame;
@@ -278,6 +282,7 @@ namespace Statecraft.Game.UI
             newGameButton.clicked -= onNewGame;
             newGame.Started -= onStarted;
             unbindStar();
+            unbindQuit();
             starButton.generateVisualContent -= PaintStarSigns;
             languages.Dispose();
             screen.UnregisterCallback(onCancel);
