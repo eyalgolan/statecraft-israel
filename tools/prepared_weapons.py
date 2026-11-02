@@ -1,4 +1,4 @@
-"""Tal Heuberger's prepared weapon models (#2083) for the unit-token soldier figures (owner, 2 November 2026: "Yes, on the
+"""Tal Heuberger's prepared weapon models (#2083) for the Israeli unit-token soldier figures (owner, 2 November 2026: "Yes, on the
 soldier figures (Recommended)").
 
 Unity has no glTF importer in this project, so each delivered textured GLB gets a labelled lossless FBX compatibility export,

@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Statecraft.Game.Map.Units
 {
-    /// <summary>Tal Heuberger's weapons in the token soldier figures' right hands (#2083; owner, 2 November 2026: "Yes, on the
+    /// <summary>Tal Heuberger's weapons in the Israeli soldier figures' right hands (#2083; owner, 2 November 2026: "Yes, on the
     /// soldier figures (Recommended)": "Attach a period-correct weapon to the unit-token soldier figures (sourced per army and
     /// date), measured for load"). Presentation only. A figure holds a weapon only where a row below gives its army one, and
     /// only a figure with Tal's 67-bone rig (a <see cref="HandBone"/>) can hold it; every other figure stays as it is (the

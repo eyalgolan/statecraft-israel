@@ -71,7 +71,7 @@ namespace Statecraft.Game.Map.Collection
             GeneratedProps = "collection-generated-props",
             // Tal Heuberger's generated whole towns (#2085, #1288), each in a bundle of its own, "collection-" + id (a group name only).
             GeneratedTowns = "collection-generated-towns",
-            // Tal Heuberger's prepared weapons (#2083) held by the token soldier figures (UnitWeapons), and their C06 point-fire
+            // Tal Heuberger's prepared weapons (#2083) held by the Israeli soldier figures (UnitWeapons), and their C06 point-fire
             // pose source (#2084) for the attacking C06 figures (UnitFigurePointFire); each in a bundle of its own, "collection-" + id,
             // opened after the people's (group names only).
             GeneratedWeapons = "collection-generated-weapons", FigurePoses = "collection-figure-poses";

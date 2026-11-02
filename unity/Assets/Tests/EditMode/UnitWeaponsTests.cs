@@ -12,7 +12,7 @@ using UnityEngine.TestTools.Constraints;
 using Is = UnityEngine.TestTools.Constraints.Is;
 using Object = UnityEngine.Object;
 
-/// <summary>#2083 and #2084 (owner, 2 November 2026): Tal Heuberger's weapons in the token soldier figures' hands, and C06's
+/// <summary>#2083 and #2084 (owner, 2 November 2026): Tal Heuberger's weapons in the Israeli soldier figures' hands, and C06's
 /// point-fire aim while its token attacks, on the real imported models.</summary>
 public class UnitWeaponsTests
 {
