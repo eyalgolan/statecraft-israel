@@ -39,4 +39,6 @@ options:
     text_he: להמשיך
 sources:
   - { url: "https://he.wikipedia.org/w/index.php?oldid=42972755", checked: 2026-11-01 }
-status: draft
+# The owner's sensitivity sign-off (R-GATE-001; WRITING_EVENTS, "tags and the sensitive review"): "Approve both cards"
+# (owner, 2 November 2026, #2197), of this card as written, English and Hebrew. The DRAFT note at the top predates it.
+status: sensitivity-reviewed

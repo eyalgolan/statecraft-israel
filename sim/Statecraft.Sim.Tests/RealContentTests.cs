@@ -177,13 +177,13 @@ public class RealContentTests
         // Other records keep the gate.
         // burma_road_complete left them with the owner's sensitivity review of its text, 21 Oct 2026 (#791).
         // railway_complete left them after a person's read of its two newspaper pages and the booklet, 25 Oct 2026 (#1410).
-        // deport_acre and deport_nazareth (#801) wait for a person's source check and the owner's sensitivity review.
-        var draftEvents = new[] { "deport_acre", "deport_nazareth", "first_new_yishuv", "jerusalem_demilitarisation_guard", "rafah_force_pressure" };
+        // deport_acre and deport_nazareth (#801) left them with the owner's sensitivity sign-off, 2 Nov 2026 ("Approve both cards", #2197).
+        var draftEvents = new[] { "first_new_yishuv", "jerusalem_demilitarisation_guard", "rafah_force_pressure" };
         Assert.Equal(draftEvents, C.Events.Where(e => e.Status == "draft").Select(e => e.Id).OrderBy(id => id));
         // A sensitive event submitted fact-checked waits here for the owner's sensitivity review; the maintainer sets
         // sensitivity-reviewed and empties this list. reparations_vote (#1564) left it on 25 Oct 2026 ("Approve all three", #1575).
         var awaitingSensitivityReview = Array.Empty<string>();
-        Assert.Equal(awaitingSensitivityReview.Concat(DeportCards), ReleaseGate.SensitiveUnreviewed(C));   // the drafts are held too (R-GATE-001)
+        Assert.Equal(awaitingSensitivityReview, ReleaseGate.SensitiveUnreviewed(C));
         foreach (var e in C.Events)   // a sensitive event passes the owner's sensitivity review on top of fact-checking (D11)
         {
             Assert.Equal(draftEvents.Contains(e.Id) ? "draft"

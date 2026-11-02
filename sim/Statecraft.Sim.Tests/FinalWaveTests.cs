@@ -69,9 +69,8 @@ public class FinalWaveTests
         // bernadotte_assassination, operation_hiram and ten_days after #577 changed them on 2026-10-15 ("Approve all 4", #600).
         // burma_road_complete (#791): the owner reviewed its text on 21 Oct 2026. reparations_vote (#1564): the owner
         // approved its card, photograph and costs on 25 Oct 2026 ("Approve all three", #1575).
-        // deport_acre and deport_nazareth (#801) are drafts awaiting a person's source check and the owner's review, so
-        // the gate holds them (R-GATE-001); Deport stays out of play meanwhile (mvp.deport_in_play: false).
-        Assert.Equal(new[] { "deport_acre", "deport_nazareth" }, ReleaseGate.SensitiveUnreviewed(Real));
+        // deport_acre and deport_nazareth (#801): the owner signed off both cards on 2 Nov 2026 ("Approve both cards", #2197).
+        Assert.Empty(ReleaseGate.SensitiveUnreviewed(Real));
         var reviewed = Fixture.Write(events: new Dictionary<string, string>
         {
             ["a.yaml"] = "id: a\ntitle: A\ntext: x\nfrom: 1948-06-01\ntags: [terror]\noptions:\n  - id: o\n    text: O\nstatus: sensitivity-reviewed\n",
