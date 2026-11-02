@@ -318,7 +318,8 @@ namespace Statecraft.Game.Map.Collection
             Rebuild();
         }
 
-        /// <summary>Where the buildings stand: each want in order, of the models <paramref name="available"/> holds, at its
+        /// <summary>Where the buildings stand: each want in order takes its ground (streamed or not), and those whose model
+        /// <paramref name="available"/> holds are listed, at its
         /// route-facing (Degania) or seeded spot, clear of the towns, the routes, the tokens of <paramref name="date"/>, the
         /// civilians, the wildlife and each other. It reads only the map and the date, never what has streamed, so with every
         /// model available it is the plan the layer draws once everything has arrived (HexPropModels keeps clear of it, #2266).</summary>
@@ -338,7 +339,8 @@ namespace Statecraft.Game.Map.Collection
             var kits = map.transform.Find(Kits.KitLayer.RootName);
             foreach (var w in wants)
             {
-                if (!available(w.Model)) continue;
+                // Every want takes its ground whether or not its model has streamed (only the plan's output is filtered), so a
+                // later want's spot never depends on what streamed first (#2266 review; the same shape as #2281's).
                 var anchor3 = map.Frame.ToWorld(w.Lon, w.Lat, 0); var anchor = new Vector2(anchor3.x, anchor3.z);
                 float clearance = ClearanceOf(w.Model);
                 Vector2? at = null;
@@ -351,13 +353,13 @@ namespace Statecraft.Game.Map.Collection
                 }
                 if (at == null)
                 {
-                    if (w.Key == "degania_r35" && log)
+                    if (w.Key == "degania_r35" && log && available(w.Model))
                         Debug.LogWarning("BUILDINGS: route-facing spot unavailable for degania_r35; falling back to the seeded spot.");
                     at = SeededSpot(w.Key, anchor, clearance, Free, Inside(anchor, footprints));
                 }
-                if (at == null) { if (log) Debug.LogWarning($"BUILDINGS: no clear ground near {w.Key}; its {w.Model} is not drawn."); continue; }
+                if (at == null) { if (log && available(w.Model)) Debug.LogWarning($"BUILDINGS: no clear ground near {w.Key}; its {w.Model} is not drawn."); continue; }
                 taken.Add((at.Value, clearance));
-                plan.Add((w, at.Value));
+                if (available(w.Model)) plan.Add((w, at.Value));
             }
             return plan;
         }
@@ -369,12 +371,11 @@ namespace Statecraft.Game.Map.Collection
             ClearVisuals();
             var ground = PlacementLayer.CampGround(map);
             var holes = new List<(Vector2 centre, float radius)>();
-            // Every building stands at its spot in the plan with every model available: one that streams in later lands
-            // where the plan put it, which the hex props keep clear of (HexPropModels, #2266 review).
-            foreach (var (w, spot) in Plan(map, date, wants, _ => true, log: true))
+            // Plan gives every building its ground and lists the streamed ones: one that streams in later lands where the plan
+            // put it, which the hex props keep clear of (HexPropModels, #2266 review).
+            foreach (var (w, spot) in Plan(map, date, wants, m => prefabs.TryGetValue(m, out var p) && p != null, log: true))
             {
-                if (!prefabs.TryGetValue(w.Model, out var streamed) || streamed == null) continue;
-                var prefab = streamed;
+                var prefab = prefabs[w.Model]!;
                 Vector2? at = spot;
                 holes.Add((at.Value, ClearanceOf(w.Model)));
                 var go = Instantiate(prefab, transform, false); go.name = w.Key;

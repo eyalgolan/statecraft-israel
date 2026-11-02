@@ -238,6 +238,9 @@ namespace Statecraft.Game.Map.Collection
         readonly Dictionary<string, GameObject?> prefabs = new Dictionary<string, GameObject?>(StringComparer.Ordinal);
         readonly Dictionary<int, bool> closeFor = new Dictionary<int, bool>();
         readonly List<Renderer> renderers = new List<Renderer>();
+        /// <summary>The standalone props standing, by object name: a rebuild keeps one whose model and spot are unchanged.</summary>
+        Dictionary<string, (GameObject go, string model, Vector2 spot)> live = new Dictionary<string, (GameObject, string, Vector2)>(StringComparer.Ordinal);
+        List<(Vector2 centre, float radius)>? lastHoles;
         /// <summary>Every standalone prop placed: its want's key, model, ground point and object name (a hedge's clumps share
         /// their village's key).</summary>
         public readonly List<(string Key, string Model, Vector3 At, string Name)> Placed = new List<(string, string, Vector3, string)>();
@@ -250,7 +253,8 @@ namespace Statecraft.Game.Map.Collection
         /// first close camera.</summary>
         public bool Requested => requested;
         public bool LastClose { get; private set; }
-        /// <summary>The last standalone build's phases (ms): the keep-clear ground, the search and the instances (a test aid).</summary>
+        /// <summary>The last standalone build's phases (ms): the keep-clear ground, the search, the instances and the total (the
+        /// rest is the trees' pass; a test aid).</summary>
         public (long others, long search, long instances, long total) LastBuildMs { get; private set; }
 
         public static HexPropModels? ShowAt(MapScene map, DateTime date)
@@ -400,8 +404,7 @@ namespace Statecraft.Game.Map.Collection
         void Rebuild()
         {
             if (map == null || map.Terrain == null) return;
-            ClearVisuals();
-            if (!Standalone.Any(m => prefabs.TryGetValue(m, out var p) && p != null)) return;
+            if (!Standalone.Any(m => prefabs.TryGetValue(m, out var p) && p != null)) { ClearVisuals(); return; }
             var clock = System.Diagnostics.Stopwatch.StartNew();
             var ground = PlacementLayer.CampGround(map);
             var footprints = new DiscGrid(map.KitFootprints.Select(f => (f.centre, f.radius)));
@@ -439,27 +442,50 @@ namespace Statecraft.Game.Map.Collection
                 }
             }
             long searchMs = clock.ElapsedMilliseconds - othersMs;
+            // A prop whose model and spot did not change keeps its object: a date change usually moves few of them.
+            var next = new Dictionary<string, (GameObject go, string model, Vector2 spot)>(StringComparer.Ordinal);
+            renderers.Clear(); Placed.Clear();
+            int kept = 0;
             foreach (var (w, spot, name) in spots)
             {
-                var prefab = prefabs[w.Model]!;
-                float yaw = w.Model == Station ? AlongNearestRoute(w.Anchor, map.KitRouteCorridors) ?? 0f : YawOf(name);
-                var go = Instantiate(prefab, transform, false); go.name = name;
-                go.transform.localRotation = prefab.transform.localRotation;
-                var b = Bounds(go); float edge = Mathf.Max(b.size.x, b.size.z);
-                go.transform.localScale = prefab.transform.localScale * (edge > 1e-4f ? SizeOf(w.Model) / edge : 1f);
-                go.transform.localRotation = SpecialBuildingModels.Rotation(prefab.transform.localRotation, yaw);
                 var pos = new Vector3(spot.x, ground.Y(spot.x, spot.y), spot.y);
-                go.transform.position = pos; b = Bounds(go);
-                go.transform.position += new Vector3(pos.x - b.center.x, pos.y - b.min.y, pos.z - b.center.z);
-                foreach (var r in go.GetComponentsInChildren<Renderer>(true)) { r.shadowCastingMode = ShadowCastingMode.On; r.forceRenderingOff = !LastClose; renderers.Add(r); }
+                GameObject go;
+                if (live.TryGetValue(name, out var old) && old.go != null && old.model == w.Model && (old.spot - spot).sqrMagnitude < 1e-6f)
+                { go = old.go; live.Remove(name); kept++; }
+                else
+                {
+                    if (live.TryGetValue(name, out var stale)) { DestroyNow(stale.go); live.Remove(name); }
+                    var prefab = prefabs[w.Model]!;
+                    float yaw = w.Model == Station ? AlongNearestRoute(w.Anchor, map.KitRouteCorridors) ?? 0f : YawOf(name);
+                    go = Instantiate(prefab, transform, false); go.name = name;
+                    go.transform.localRotation = prefab.transform.localRotation;
+                    var b = Bounds(go); float edge = Mathf.Max(b.size.x, b.size.z);
+                    go.transform.localScale = prefab.transform.localScale * (edge > 1e-4f ? SizeOf(w.Model) / edge : 1f);
+                    go.transform.localRotation = SpecialBuildingModels.Rotation(prefab.transform.localRotation, yaw);
+                    go.transform.position = pos; b = Bounds(go);
+                    go.transform.position += new Vector3(pos.x - b.center.x, pos.y - b.min.y, pos.z - b.center.z);
+                    foreach (var r in go.GetComponentsInChildren<Renderer>(true)) r.shadowCastingMode = ShadowCastingMode.On;
+                }
+                next[name] = (go, w.Model, spot);
+                foreach (var r in go.GetComponentsInChildren<Renderer>(true)) { r.forceRenderingOff = !LastClose; renderers.Add(r); }
                 Placed.Add((w.Key, w.Model, pos, name));
             }
-            // No kit tree stands on a prop (Kits.VegetationLayer.Hide, as under the special buildings).
-            Units.UnitShowcase.HideTrees(map, Name, holes);
+            foreach (var gone in live.Values) DestroyNow(gone.go);
+            live = next;
+            long instancesMs = clock.ElapsedMilliseconds - othersMs - searchMs;
+            // No kit tree stands on a prop (Kits.VegetationLayer.Hide, as under the special buildings); unchanged holes need no pass.
+            if (lastHoles == null || !holes.SequenceEqual(lastHoles)) { Units.UnitShowcase.HideTrees(map, Name, holes); lastHoles = holes; }
             long total = clock.ElapsedMilliseconds;
-            LastBuildMs = (othersMs, searchMs, total - othersMs - searchMs, total);
+            LastBuildMs = (othersMs, searchMs, instancesMs, total);
             Debug.Log($"HEXPROPS: {Placed.Count} hex props placed for {wants.Count} wants in {total} ms (keep-clear ground {othersMs} ms, " +
-                $"search {searchMs} ms, instances {total - othersMs - searchMs} ms) ({string.Join(", ", Standalone.Select(m => $"{m.Substring(m.LastIndexOf('/') + 1)} {Placed.Count(p => p.Model == m)}"))})");
+                $"search {searchMs} ms, instances {instancesMs} ms with {kept} kept, trees {total - othersMs - searchMs - instancesMs} ms) " +
+                $"({string.Join(", ", Standalone.Select(m => $"{m.Substring(m.LastIndexOf('/') + 1)} {Placed.Count(p => p.Model == m)}"))})");
+        }
+
+        void DestroyNow(GameObject go)
+        {
+            if (go == null) return;
+            if (Application.isPlaying) { if (gameObject.activeInHierarchy) go.transform.SetParent(null); Destroy(go); } else DestroyImmediate(go);
         }
 
         /// <summary>Tal Heuberger's minarets, belfries and clock tower in place of the kit's parts (#2266). A kit renderer's parts
@@ -535,11 +561,10 @@ namespace Statecraft.Game.Map.Collection
             for (int i = transform.childCount - 1; i >= 0; i--)
             {
                 var old = transform.GetChild(i).gameObject;
-                if (old.name == LandmarksName) continue;
-                if (Application.isPlaying) { if (gameObject.activeInHierarchy) old.transform.SetParent(null); Destroy(old); } else DestroyImmediate(old);
+                if (old.name != LandmarksName) DestroyNow(old);
             }
-            renderers.Clear(); Placed.Clear();
-            if (map != null) Units.UnitShowcase.HideTrees(map, Name, Array.Empty<(Vector2, float)>());
+            live.Clear(); renderers.Clear(); Placed.Clear();
+            if (map != null && lastHoles != null) { Units.UnitShowcase.HideTrees(map, Name, Array.Empty<(Vector2, float)>()); lastHoles = null; }
         }
 
         static Bounds Bounds(GameObject go)

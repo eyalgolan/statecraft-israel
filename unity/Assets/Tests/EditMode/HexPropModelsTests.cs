@@ -546,10 +546,9 @@ namespace Statecraft.Game.Tests
             CollectionGeometryFixture.People(map, Opening, Array.Empty<Statecraft.Sim.Placement>(), Statecraft.Sim.ContentLoader.Load(Paths.Content));
             var ruralWants = RuralLife.Wants(map); var ruralOthers = RuralLife.OtherProps(map);
             var full = RuralLife.Plan(map, ruralWants, ruralOthers, _ => true).ToDictionary(x => x.want.Key + "|" + x.want.Model, x => x.spot);
-            string? withheld = RuralLife.Models.FirstOrDefault(m => RuralLife.Plan(map, ruralWants, ruralOthers, x => x != m)
-                .Any(x => !full.TryGetValue(x.want.Key + "|" + x.want.Model, out var f) || (f - x.spot).sqrMagnitude > 1f));
-            Assert.IsNotNull(withheld, "some rural model's absence moves another scene in a plan without it (the case C1 is about)");
-            TestContext.WriteLine("withheld: " + withheld);
+            // On today's map no single rural model's absence moves another scene (the constructed case below shows the flaw);
+            // the first model is withheld here.
+            string withheld = RuralLife.Models[0];
             var waiting = new List<(string id, CollectionDetail detail, Action<GameObject?> done)>();
             RuralLife.Request = SpecialBuildingModels.Request = (id, detail, done) => waiting.Add((id, detail, done));
             var rural = CollectionGeometryFixture.Rural(map)!;
@@ -585,6 +584,89 @@ namespace Statecraft.Game.Tests
             Check("a subset streamed");
             Answer(id => true);
             Check("everything streamed");
+        }
+
+        /// <summary>Review of #2266's delta, C1, constructed: two wants on one anchor, keyed so that the second stands
+        /// elsewhere in the plan with the first model than in the plan without it. Only the second model streams; it must stand
+        /// at its full-plan spot (where the hex props keep clear), not where the first one's absence would let it.</summary>
+        [Test]
+        public void AStreamedModelStandsAtItsFullPlanSpotWhenAnEarlierOneHasNotStreamed()
+        {
+            var map = OpenMap();
+            CollectionGeometryFixture.People(map, Opening, Array.Empty<Statecraft.Sim.Placement>(), Statecraft.Sim.ContentLoader.Load(Paths.Content));
+            var waiting = new List<(string id, CollectionDetail detail, Action<GameObject?> done)>();
+            RuralLife.Request = SpecialBuildingModels.Request = (id, detail, done) => waiting.Add((id, detail, done));
+            void Answer(string model)
+            {
+                for (int round = 0; round < 10; round++)
+                {
+                    var now = waiting.Where(x => x.id == model).ToList(); if (now.Count == 0) return;
+                    foreach (var x in now) { waiting.Remove(x); x.done(AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(x.id, x.detail))); }
+                }
+            }
+            // Rural: a sheep on a planned scene's anchor at its first ring, and a donkey on the same anchor keyed so that its
+            // first candidate (RuralLife.Spot: FNV-1a of model and key picks the bearing) is the sheep's spot: in the plan with
+            // the sheep it must go elsewhere, alone (the old greedy subset plan) it would stand there.
+            var others = RuralLife.OtherProps(map);
+            var real = RuralLife.Plan(map, RuralLife.Wants(map), others, _ => true);
+            List<RuralLife.Want>? pair = null; Vector2 fullSpot = default, subSpot = default;
+            foreach (var (seed, _) in real)
+            {
+                for (int k = 0; k < 64 && pair == null; k++)
+                {
+                    var a = new RuralLife.Want("c1:" + k, RuralLife.Sheep, seed.Anchor, seed.AnchorRadius);
+                    var alone = RuralLife.Plan(map, new[] { a }, others, _ => true);
+                    if (alone.Count != 1) continue;
+                    var off = alone[0].spot - seed.Anchor;
+                    if (Mathf.Abs(off.magnitude - (seed.AnchorRadius + RuralLife.ClearanceRadiusM * RuralLife.FirstRingClearances)) > 1f) continue;
+                    int bearing = ((int)Mathf.Round(Mathf.Atan2(off.y, off.x) * Mathf.Rad2Deg / (360f / RuralLife.Bearings)) % RuralLife.Bearings + RuralLife.Bearings) % RuralLife.Bearings;
+                    for (int j = 0; j < 256 && pair == null; j++)
+                    {
+                        var b = new RuralLife.Want("c1b:" + k + ":" + j, RuralLife.Donkey, seed.Anchor, seed.AnchorRadius);
+                        if (RuralLife.StableHash(b.Model + ":" + b.Key) % (uint)RuralLife.Bearings != bearing) continue;
+                        var full = RuralLife.Plan(map, new[] { a, b }, others, _ => true);
+                        var sub = RuralLife.Plan(map, new[] { b }, others, _ => true);
+                        if (full.Count == 2 && sub.Count == 1 && (full[1].spot - sub[0].spot).sqrMagnitude > 1f)
+                        { pair = new List<RuralLife.Want> { a, b }; fullSpot = full[1].spot; subSpot = sub[0].spot; }
+                    }
+                }
+                if (pair != null) break;
+            }
+            var rural = CollectionGeometryFixture.Rural(map)!;
+            typeof(RuralLife).GetMethod("Show", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+                .Invoke(rural, new object[] { pair!, others });
+            Answer(RuralLife.Donkey);
+            var donkey = rural.Placed.Where(p => p.Model == RuralLife.Donkey && p.Key == pair![1].Key).ToList();
+            Assert.IsNotEmpty(donkey, "the donkey streamed and stands");
+            Assert.Less((new Vector2(donkey[0].At.x, donkey[0].At.z) - fullSpot).magnitude, 1f,
+                $"the donkey at its full-plan spot {fullSpot}, not {subSpot} where the absent sheep's ground would put it");
+            // Special: a fort and a barracks on one point.
+            // Special: a fort at Latrun's point, and a barracks on the same point keyed so that its first candidate
+            // (SpecialBuildingModels.SeededSpot: FNV-1a of the key picks the start bearing) lies on the fort's spot's bearing
+            // and ring, within the two clearances: in the plan with the fort it must go elsewhere, alone it would stand there.
+            var latrun = SpecialBuildingModels.Placements(Opening).First();
+            var fort = new SpecialBuildingModels.Want("c1a", SpecialBuildingModels.Tegart, Opening, latrun.Lon, latrun.Lat, "test");
+            var fortAlone = SpecialBuildingModels.Plan(map, Opening, new[] { fort }, _ => true, log: false);
+            Assert.AreEqual(1, fortAlone.Count);
+            var a3 = map.Frame.ToWorld(latrun.Lon, latrun.Lat, 0); var fortOff = fortAlone[0].at - new Vector2(a3.x, a3.z);
+            int start24 = ((int)Mathf.Round(Mathf.Atan2(fortOff.y, fortOff.x) * SpecialBuildingModels.SpotAttempts / (2f * Mathf.PI))
+                % SpecialBuildingModels.SpotAttempts + SpecialBuildingModels.SpotAttempts) % SpecialBuildingModels.SpotAttempts;
+            SpecialBuildingModels.Want? second = null; Vector2 fullAt = default;
+            for (int j = 0; j < 4000 && second == null; j++)
+            {
+                var b = new SpecialBuildingModels.Want("c1b:" + j, SpecialBuildingModels.Barracks, Opening, latrun.Lon, latrun.Lat, "test");
+                if (RuralLife.StableHash(b.Key) % (uint)SpecialBuildingModels.SpotAttempts != start24) continue;
+                var full = SpecialBuildingModels.Plan(map, Opening, new[] { fort, b }, _ => true, log: false);
+                var sub = SpecialBuildingModels.Plan(map, Opening, new[] { b }, _ => true, log: false);
+                if (full.Count == 2 && sub.Count == 1 && (full[1].at - sub[0].at).sqrMagnitude > 1f) { second = b; fullAt = full[1].at; }
+            }
+            Assert.IsNotNull(second, "a barracks key whose spot moves when the fort is in the plan");
+            var special = CollectionGeometryFixture.Special(map, Opening)!;
+            special.ShowForTest(new[] { fort, second!.Value });
+            Answer(SpecialBuildingModels.Barracks);
+            var barracks = special.Placed.Single(p => p.Key == second!.Value.Key);
+            Assert.Less((new Vector2(barracks.At.x, barracks.At.z) - fullAt).magnitude, 1f,
+                "the barracks at its full-plan spot, not on the unstreamed fort's ground");
         }
 
         /// <summary>Review of #2266's delta, C2: a disabled layer hides Tal Heuberger's models under it, so the kit draws its own

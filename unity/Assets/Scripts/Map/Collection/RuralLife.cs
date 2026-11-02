@@ -359,8 +359,9 @@ namespace Statecraft.Game.Map.Collection
             }
         }
 
-        /// <summary>Where the scenes stand: each want in order, of the models <paramref name="available"/> holds, the first
-        /// MaxAnchorsPerModel of each with clear ground (Spot), clear of <paramref name="others"/> and of each other. It reads only
+        /// <summary>Where the scenes stand: each want in order, the first MaxAnchorsPerModel of each model with clear ground (Spot),
+        /// clear of <paramref name="others"/> and of each other, every one taking its ground; those whose model
+        /// <paramref name="available"/> holds are listed. It reads only
         /// the map, the wants and the other layers' ground, never what has streamed, so with every model available it is the
         /// plan the layer draws once everything has arrived (HexPropModels keeps clear of it, #2266).</summary>
         internal static List<(Want want, Vector2 spot)> Plan(MapScene map, IReadOnlyList<Want> wants, List<(Vector2 centre, float radius)> others,
@@ -384,14 +385,15 @@ namespace Statecraft.Game.Map.Collection
             var plan = new List<(Want, Vector2)>();
             foreach (var want in wants)
             {
-                if (!available(want.Model)) continue;
+                // Every want takes its ground whether or not its model has streamed (only the plan's output is filtered), so a
+                // later scene's spot never depends on what streamed first (#2266 review; the same shape as #2281's).
                 used.TryGetValue(want.Model, out int n);
                 if (n >= MaxAnchorsPerModel) continue;
                 var at = Spot(want, Free);
                 if (at == null) continue;
                 used[want.Model] = n + 1;
                 taken.Add((at.Value, ClearanceRadiusM));
-                plan.Add((want, at.Value));
+                if (available(want.Model)) plan.Add((want, at.Value));
             }
             return plan;
         }
@@ -410,9 +412,8 @@ namespace Statecraft.Game.Map.Collection
             var used = new Dictionary<string, int>(StringComparer.Ordinal);
             var holes = new List<(Vector2 centre, float radius)>();
             var nearKeys = residencyView?.Keys;
-            foreach (var (want, spot) in Plan(map, wants, others, _ => true))
+            foreach (var (want, spot) in Plan(map, wants, others, Streamed))
             {
-                if (!Streamed(want.Model)) continue;
                 used.TryGetValue(want.Model, out int n); used[want.Model] = n + 1;
                 Vector2? at = spot;
                 Scenes.Add(want);
