@@ -454,6 +454,24 @@ public class ArmsWorkshopTests
         Assert.Equal((Workshops.NoWorker, "Town A: an arms workshop has no worker without a job this month"), (line.Args.Single(), line.Message));
     }
 
+    // R-ARMS-006: the cycle runs under gdd-0.3 only. A gdd-0.1 state that somehow holds a staffed workshop one month from its
+    // Arms (gdd-0.1 can neither build nor staff one, R-ARMS-004/005) makes no Arms, pays nothing and gives no workshop cause,
+    // so the turn report's workshop row (TurnReportPresenter.WorkshopRow, #1701 A1) never shows outside gdd-0.3.
+    [Fact]
+    public void Gdd01RunsNoWorkshopCycle()
+    {
+        var c = Load(false);
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var id = s.NextId++;
+        s.CityProjects.Add(id, new CityProject(id, "industry", "town_a", 1, 1, 0, s.Date));
+        s.Workshops.Add(id, new Workshop(id, true, SyntheticWorkshopTier.Ordinary, 5m, 2));
+        var (after, turns) = Run(c, s, 3);
+        Assert.DoesNotContain(turns.SelectMany(t => t.Why), w => w.Key == CauseKeys.WorkshopArms || w.Key == CauseKeys.WorkshopPaused);
+        Assert.Empty(turns.SelectMany(Charges));
+        Assert.Equal(Run(c, Clear(s), 3).S.Arms, after.Arms);
+        Assert.Equal((5m, 2), (after.Workshops[id].PaidCost, after.Workshops[id].Progress));
+    }
+
     // R-ARMS-006, R-SAVE: a game saved in the middle of a cycle replays to the same state: no charge or Arms is repeated.
     [Fact]
     public void AReplayedGameRepeatsNoChargeOrArms()
