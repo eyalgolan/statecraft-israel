@@ -309,6 +309,8 @@ namespace Statecraft.Game.UI
                 case CauseKeys.Purpose.Deport:
                 case CauseKeys.Purpose.Occupation:
                     return text.Format(key, values.Append(ContentNames.Settlement(text, c, cause.Args[1], namesHe)).ToArray());
+                case CauseKeys.Purpose.MapAction:
+                    return text.Format(key, values.Append(text["info.map_action." + cause.Args[1]]).ToArray());
                 case CauseKeys.Purpose.Event:
                     // The title as the card shows it: title_he, unless a variant gives its own (English) title.
                     var he = cause.Args[3] == "1" ? c.Events.First(e => e.Id == cause.Args[1]).TitleHe : "";
