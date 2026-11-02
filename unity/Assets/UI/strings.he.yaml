@@ -60,7 +60,9 @@ encyclopedia.back: "חזרה"
 encyclopedia.opening: "הצגת עצות הפתיחה שוב"
 # The encyclopedia's 25 pages (spec 10, plan Task 13). AI-drafted Hebrew; a page is he_review: pending in
 # advisor-messages.yaml and does not show in Hebrew until a native reviewer approves it (OQ-4). The nine pages that replace
-# How to play were read by Beri on #2095 (each marked below); the other 16 wait. For the native reviewer (#564).
+# How to play were read by Beri on #2095 (each marked below); the owner, a native speaker, read the other 16 on
+# 1 November 2026: "all 16 pages look good". משושה became משבצת in projects, standing_orders, combat and
+# units_movement after those reads (owner, same day: "replace evey place that says משושה with משבצת throughout the game").
 # advisor.page.turns: approved by Beri, a native speaker, on #2095 (1 Nov 2026): title as written, text
 # with its last sentence edited.
 advisor.page.turns.title: "תורות וסיום התור"
@@ -95,7 +97,7 @@ advisor.page.immigration.text: "העולים מגיעים לפי הנתונים 
 advisor.page.training.title: "הכשרת אזרחים"
 advisor.page.training.text: "בעיר שיש בה מחנה צבאי או מחנה הכשרה אפשר לאמן אזרחים ללא עבודה כמגויסים או להכשיר אותם כחלוצים, ובעיר שיש בה תעשייה גם כבעלי מלאכה. הכפתור מראה כמה עולה האימון וכמה תורות הוא נמשך; אימון צבאי דורש גם נשק. בסוף האימון המגויסים הופכים ליחידה צבאית, החלוצים לקבוצות שמוכנות לעבודה חלוצית, ובעלי המלאכה נשארים בעיר ומרוויחים יותר כשהם עובדים."
 advisor.page.projects.title: "מיזמים עירוניים"
-advisor.page.projects.text: "מיזם עירוני בונה דיור או תעשייה במשושה סמוך לעיר. העלות משולמת כשהוא מתחיל, בהלוואה אם אין מספיק כסף, והוא אינו דורש עובדים. כשהוא מושלם הוא מוסיף דיור, משפר את מצב הדיור או מוסיף משרות, לפי סוגו, והכסף של מיזם שבוטל אובד. סוגים מסוימים ממתינים לאירוע שיפתח אותם, או דורשים משאב שיש בעיר, כמו יקב שזקוק לאדמה לגידול ענבים."
+advisor.page.projects.text: "מיזם עירוני בונה דיור או תעשייה במשבצת סמוכה לעיר. העלות משולמת כשהוא מתחיל, בהלוואה אם אין מספיק כסף, והוא אינו דורש עובדים. כשהוא מושלם הוא מוסיף דיור, משפר את מצב הדיור או מוסיף משרות, לפי סוגו, והכסף של מיזם שבוטל אובד. סוגים מסוימים ממתינים לאירוע שיפתח אותם, או דורשים משאב שיש בעיר, כמו יקב שזקוק לאדמה לגידול ענבים."
 advisor.page.pioneer_work.title: "עבודה חלוצית"
 advisor.page.pioneer_work.text: "קבוצת חלוצים לוקחת על עצמה מיזם אחד בכל פעם באתר ייעודי: הקמת יישוב, חריש שדות, ייבוש ביצה, או הקמת מחנה צבאי או מחנה הכשרה. העלות משולמת כשהעבודה מתחילה, ואם עוצרים אותה, העבודה שנעשתה והכסף אובדים. שדה חרוש מוסיף מזון בכל תור, אבל יש שדות שממתינים עד שהיישוב שלהם ייבנה או עד שהביצה שלהם תיובש. אחרי שירות מספיק, הקבוצה הופכת לחלוצים ותיקים ועובדת מהר יותר."
 advisor.page.corridors.title: "כבישים ומסילות"
@@ -112,11 +114,11 @@ advisor.page.national_meters.title: "המדדים הלאומיים"
 advisor.page.national_meters.text: "הלכידות החברתית עולה ויורדת עם הדיור, התעסוקה, המזון, הקיצוב והביטחון. התמיכה הבינלאומית זזה בעקבות הבחירות בכרטיסי האירוע. אף אחת מהן אינה מסיימת את המשחק, אבל אירועים מסוימים מגיבים כשאחת מהן נמוכה, ודוח הסיום מציג את שתיהן. קרבות ותנועת יחידות אינם משנים אף אחת מהן."
 # advisor.page.units_movement: approved by Beri, a native speaker, on #2095 (1 Nov 2026): title and text as written.
 advisor.page.units_movement.title: "תנועת יחידות"
-advisor.page.units_movement.text: "יחידה נעה ברגע שנותנים לה את ההוראה, ואי אפשר לבטל תנועה. השטח קובע את העלות של כל משושה, ויחידה שעוד לא זזה בתור הזה תמיד יכולה להיכנס למשושה סמוך אחד. יעד רחוק יותר הופך למסלול, וסיום התור ממשיך להוביל את היחידה לאורכו. שום יחידה אינה נכנסת למים או למשושה שיש בו יחידת אויב."
+advisor.page.units_movement.text: "יחידה נעה ברגע שנותנים לה את ההוראה, ואי אפשר לבטל תנועה. השטח קובע את העלות של כל משבצת, ויחידה שעוד לא זזה בתור הזה תמיד יכולה להיכנס למשבצת סמוכה אחת. יעד רחוק יותר הופך למסלול, וסיום התור ממשיך להוביל את היחידה לאורכו. שום יחידה אינה נכנסת למים או למשבצת שיש בה יחידת אויב."
 advisor.page.standing_orders.title: "פקודות קבע"
-advisor.page.standing_orders.text: "יחידה שומרת על הפקודה שלה תור אחרי תור, עד שנותנים לה פקודה אחרת. ביצור דורש תור אחד כדי להיכנס לתוקף, ומאז היחידה מתגוננת חזק יותר במשושה שלה עד שהיא זזה; החזקה שומרת על העמדה ואינה מוסיפה דבר. יחידה בלי פקודה ממתינה להוראות, וסיום התור בוחר בה עד שתיתנו לה פקודה או תדלגו עליה בתור הזה. שליחה הביתה היא הדרך היחידה הביתה: היא ממתינה לסיום התור, והיא נדחית עד שנחתם הסכם שביתת הנשק בחזית של היחידה."
+advisor.page.standing_orders.text: "יחידה שומרת על הפקודה שלה תור אחרי תור, עד שנותנים לה פקודה אחרת. ביצור דורש תור אחד כדי להיכנס לתוקף, ומאז היחידה מתגוננת חזק יותר במשבצת שלה עד שהיא זזה; החזקה שומרת על העמדה ואינה מוסיפה דבר. יחידה בלי פקודה ממתינה להוראות, וסיום התור בוחר בה עד שתיתנו לה פקודה או תדלגו עליה בתור הזה. שליחה הביתה היא הדרך היחידה הביתה: היא ממתינה לסיום התור, והיא נדחית עד שנחתם הסכם שביתת הנשק בחזית של היחידה."
 advisor.page.combat.title: "קרב והתקפות"
-advisor.page.combat.text: "התקפה מתבצעת ברגע שנותנים את הפקודה: יחידה אחת, נגד אויב במשושה סמוך, או בטווח שלה אם זו ארטילריה, והיא מנצלת את שארית התנועה של היחידה. לפני שמתחייבים, התחזית מראה את יחס הכוחות ואת מה שכל צד עלול לאבד. האבדות נופלות על היחידה החזקה ביותר, המגינים עשויים לסגת, ורק היחידות הלוחמות משתנות, אף פעם לא עיר, תושביה או הניקוד. כוח שאבד חוזר רק באמצעות תגבור, בעיר."
+advisor.page.combat.text: "התקפה מתבצעת ברגע שנותנים את הפקודה: יחידה אחת, נגד אויב במשבצת סמוכה, או בטווח שלה אם זו ארטילריה, והיא מנצלת את שארית התנועה של היחידה. לפני שמתחייבים, התחזית מראה את יחס הכוחות ואת מה שכל צד עלול לאבד. האבדות נופלות על היחידה החזקה ביותר, המגינים עשויים לסגת, ורק היחידות הלוחמות משתנות, אף פעם לא עיר, תושביה או הניקוד. כוח שאבד חוזר רק באמצעות תגבור, בעיר."
 advisor.page.arms.title: "מלאי הנשק"
 advisor.page.arms.text: "הנשק הוא מלאי לאומי אחד. אימון צבאי לוקח ממנו כשהוא מתחיל, וכל התקפה מוציאה ממנו. אפשר לקנות נשק בכסף במסך ״ביטחון״, והוא מגיע מיד. כשהמלאי חסר, אימון והתקפות שדורשים נשק נדחים."
 advisor.page.arms.gdd03.text: "הנשק הוא מלאי לאומי אחד. אימון צבאי לוקח ממנו כשהוא מתחיל. אפשר לקנות נשק בכסף במסך ״ביטחון״, והוא מגיע מיד. כשהמלאי חסר, אימון שדורש נשק נדחה."
@@ -390,27 +392,27 @@ why.nothing: "לא קרה דבר ראוי לציון בתור הזה."
 # attack_ended_truce: native review: owner, 25 Oct 2026 (recommendations page, items 1 and 11). HE-15: {0} is any
 # unit's name, the Arab forces' masculine, Israel's feminine and a raised unit's, so no verb or pronoun agrees with it: the
 # name opens the line as its label ("{0}: ..."), or sits in a noun phrase (Codex's review of #1527).
-why.line.unit_moved: "{0}: תנועה למשושה {1} תמורת {2} נקודות תנועה"
-why.line.unit_moved_one: "{0}: תנועה למשושה {1} תמורת נקודת תנועה אחת"
-why.line.fortify_lost: "{0}: יציאה ממשושה {1}, והביצור שם אבד"
-why.line.fortifying: "{0}: התבצרות במשושה {1}; הביצור חל מסוף התור"
-why.line.holds: "{0}: החזקה במשושה {1}"
-why.line.attack_ended_truce: "ההתקפה של {0} על משושה {1} מסתיימת: הפוגה בתוקף"
-why.line.attack_ordered: "{0}: פקודת התקפה על משושה {1}"
-why.line.attack_ended: "ההתקפה של {0} על משושה {1} מסתיימת: אין שם יחידת אויב"
-why.line.holds_fire: "{0}: ללא ירי, כי אין התקפה על משושה {1} לתמוך בה"
-why.line.attack_called_off: "ההתקפה של {0} על משושה {1} מבוטלת: נדרשים {2} כלי נשק ובמלאי יש {3}"
-why.line.engagement: "ההתקפה על משושה {2} ({0} נגד {1}, יחס כוחות {3}%): התוקפים איבדו {4:N0} איש והמגינים איבדו {5:N0} איש"
+why.line.unit_moved: "{0}: תנועה למשבצת {1} תמורת {2} נקודות תנועה"
+why.line.unit_moved_one: "{0}: תנועה למשבצת {1} תמורת נקודת תנועה אחת"
+why.line.fortify_lost: "{0}: יציאה ממשבצת {1}, והביצור שם אבד"
+why.line.fortifying: "{0}: התבצרות במשבצת {1}; הביצור חל מסוף התור"
+why.line.holds: "{0}: החזקה במשבצת {1}"
+why.line.attack_ended_truce: "ההתקפה של {0} על משבצת {1} מסתיימת: הפוגה בתוקף"
+why.line.attack_ordered: "{0}: פקודת התקפה על משבצת {1}"
+why.line.attack_ended: "ההתקפה של {0} על משבצת {1} מסתיימת: אין שם יחידת אויב"
+why.line.holds_fire: "{0}: ללא ירי, כי אין התקפה על משבצת {1} לתמוך בה"
+why.line.attack_called_off: "ההתקפה של {0} על משבצת {1} מבוטלת: נדרשים {2} כלי נשק ובמלאי יש {3}"
+why.line.engagement: "ההתקפה על משבצת {2} ({0} נגד {1}, יחס כוחות {3}%): התוקפים איבדו {4:N0} איש והמגינים איבדו {5:N0} איש"
 why.line.destroyed: "{0}: היחידה הושמדה"
-why.line.retreated: "{0}: נסיגה למשושה {1}"
-why.line.surrendered_prisoners: "{0}: כניעה עם {1:N0} איש, כי לא היה משושה לסגת אליו. הם מוחזקים כשבויים"
-why.line.surrendered_held: "{0}: כניעה עם {1:N0} איש, כי לא היה משושה לסגת אליו. הם מוחזקים בידי האויב"
+why.line.retreated: "{0}: נסיגה למשבצת {1}"
+why.line.surrendered_prisoners: "{0}: כניעה עם {1:N0} איש, כי לא הייתה משבצת לסגת אליה. הם מוחזקים כשבויים"
+why.line.surrendered_held: "{0}: כניעה עם {1:N0} איש, כי לא הייתה משבצת לסגת אליה. הם מוחזקים בידי האויב"
 why.line.sent_home: "{0}: שחרור הביתה; {1:N0} איש הם כעת אזרחים ב{2}"
-why.line.withdrew: "{0}: נסיגה מ{1} למשושה {2}"
-why.line.on_its_way: "{0} בדרך למשושה {1}"
-why.line.stopped_no_route: "{0}: עצירה, כי אין מסלול שמגיע למשושה {1}"
-why.line.stopped_full: "{0}: עצירה, כי משושה {1} מלא"
-why.line.arrived: "{0}: הגעה למשושה {1}"
+why.line.withdrew: "{0}: נסיגה מ{1} למשבצת {2}"
+why.line.on_its_way: "{0} בדרך למשבצת {1}"
+why.line.stopped_no_route: "{0}: עצירה, כי אין מסלול שמגיע למשבצת {1}"
+why.line.stopped_full: "{0}: עצירה, כי משבצת {1} מלאה"
+why.line.arrived: "{0}: הגעה למשבצת {1}"
 # B1: the economy, population, effect and security Why lines (CauseKeys, CauseText). A change reads "{0}: שינוי {1}", as
 # event.effect.amount does, so the pattern has Hebrew and UiText marks the amount (#543). Counts as "Label: N" (HE-04);
 # no verb agrees with a placeholder (HE-15). Native review: owner, 25 Oct 2026 (recommendations page), for every
@@ -472,7 +474,7 @@ why.region.africa: "אפריקה"
 why.region.europe: "אירופה"
 why.region.america_oceania: "אמריקה ואוקיאניה"
 why.region.unknown: "ארץ המוצא לא נרשמה"
-# A hex in the unit lines (HexPlaces), after the lines' "משושה": a settlement's hex is its name alone ("משושה חיפה"); any
+# A hex in the unit lines (HexPlaces), after the lines' "משבצת": a settlement's hex is its name alone ("משבצת חיפה"); any
 # other hex is said from the nearest settlement, {0} the km (to the nearest 5), {1} the compass point, {2} the settlement,
 # joined to its prefix ("לחיפה"). Native review: owner, 25 Oct 2026 (recommendations page), #1636: why.hex.away, the
 # eight why.hex.<point> words, and a one-letter prefix joined straight to a name placeholder ("ל{2}", "ב{0}", "מ{1}") in
@@ -548,7 +550,7 @@ card.selected: "מסומן"
 # Agent-drafted Hebrew; native review: owner, in chat on 27 Oct 2026 ("Approve the Hebrew"). It replaces the wording the
 # owner approved on 25 Oct 2026 ("Approve as written") and drops the mouse-button restriction. Shortened to stay within
 # two lines on a phone (InfoPanelLayoutTests), in the nominal form of the drag clause; 103 characters, down from 115.
-info.hint: "לחיצה על יחידה ואז על משושה מזיזה אותה; לחיצה על המפה, או Tab ו־Enter, בודקת משושה; גרירה מזיזה את המפה"
+info.hint: "לחיצה על יחידה ואז על משבצת מזיזה אותה; לחיצה על המפה, או Tab ו־Enter, בודקת משבצת; גרירה מזיזה את המפה"
 info.off_map: "מחוץ למפה"
 info.hex: "{0} · גובה {1:N0} מ׳"
 info.region: "{0}, {1} (נפות המנדט, 1947)"
@@ -603,7 +605,7 @@ info.locality_today: "{0} (היום: {1})"
 # info.town_in_water: a town in a lake or sea hex drawn on the land hex next to it (#204), named by its name_he. "מוצגת
 # ... שלה" is feminine, as Hebrew city names are; the drift guard (EveryTownDrawnOffItsOwnHexLiesInWater) says only
 # Tiberias gets this line today. For the native reviewer (#564).
-info.town_in_water: "{0} מוצגת כאן, כי המשושה שלה מכוסה במים."
+info.town_in_water: "{0} מוצגת כאן, כי המשבצת שלה מכוסה במים."
 map.today: "היום: {0}"
 map.mixed: "יישוב מעורב"
 # map.tier: the tooltip of the population-tier badge on a city's pill (#710): {0} its tier, {1} the number of tiers, {2} its
@@ -632,10 +634,10 @@ info.map_action_reason.action_from: "אפשר להקים {0} החל מ־{1}"
 info.map_action_reason.action_until: "אפשר היה להקים {0} עד {1}"
 info.map_action_reason.all_from: "אפשר להקים מעברות ומיזמי דיור החל מ־{0}"
 info.map_action_reason.maabarot_policy: "הקמת מעברות מחייבת את מדיניות המעברות"
-info.map_action_reason.not_land: "המשושה הזה אינו יבשה"
-info.map_action_reason.too_far_one: "המשושה הזה נמצא במרחק של יותר מ־{0} משושה מיישוב"
-info.map_action_reason.too_far_many: "המשושה הזה נמצא במרחק של יותר מ־{0} משושים מיישוב"
-info.map_action_reason.occupied: "במשושה הזה כבר יש {0}"
+info.map_action_reason.not_land: "המשבצת הזאת אינה יבשה"
+info.map_action_reason.too_far_one: "המשבצת הזאת נמצאת במרחק של יותר מ־{0} משבצת מיישוב"
+info.map_action_reason.too_far_many: "המשבצת הזאת נמצאת במרחק של יותר מ־{0} משבצות מיישוב"
+info.map_action_reason.occupied: "במשבצת הזאת כבר יש {0}"
 # Draft alignment with English for #1139; native review pending (#564).
 info.map_action_reason.turn_cap: "המגבלה היא {0} פעולות מפה בכל תור. אפשר לנסות שוב בתור הבא."
 # Cabinet candidate refusals (#901). The sim supplies content ids and ISO dates; the UI supplies the Hebrew names and
@@ -700,11 +702,11 @@ unit.name.veteran_halutz: "קבוצת חלוצים ותיקים"
 # The unit card's Move order (#754): the order's name is Q-UI-2's, approved by the owner (#375).
 unit.order.move: "תנועה"
 # Hebrew route draft for #1398; native review pending (#564).
-unit.move_pick: "בחרו משושה מואר כדי לנוע אליו עכשיו, או משושה אחר כדי לשלוח אליו את היחידה במשך כמה תורות"
+unit.move_pick: "בחרו משבצת מוארת כדי לנוע אליה עכשיו, או משבצת אחרת כדי לשלוח אליה את היחידה במשך כמה תורות"
 # Hebrew draft for #1398; native review pending (#564).
 unit.points: "נקודות תנועה: {0} מתוך {1}"
 # Hebrew route draft for #1398; native review pending (#564).
-unit.go_to_given: "בדרך למשושה שנבחר. תורות עד ההגעה: {0}"
+unit.go_to_given: "בדרך למשבצת שנבחרה. תורות עד ההגעה: {0}"
 # Fortify and Hold (#754): the names are Q-UI-2's, approved by the owner (#375).
 unit.order.fortify: "ביצור"
 unit.order.hold: "החזקה"
@@ -713,11 +715,11 @@ unit.order.skip: "דילוג על התור"
 # Approved by Beri, a native speaker, on #1269 (21 Oct 2026). For the native reviewer (#564)
 unit.fortify_queued: "ניתנה פקודת ביצור: היחידה תהיה מבוצרת מסוף התור"
 # Hebrew draft for #1398; native review pending (#564).
-unit.hold_queued: "מחזיקה במשושה שלה"
+unit.hold_queued: "מחזיקה במשבצת שלה"
 # Attack (#754): the name is Q-UI-2's, approved by the owner (#375).
 unit.order.attack: "התקפה"
 # Approved by Beri, a native speaker, on #1277 (21 Oct 2026). For the native reviewer (#564)
-unit.attack_pick: "בחרו משושה מואר להתקפה"
+unit.attack_pick: "בחרו משבצת מוארת להתקפה"
 # Approved by Beri, a native speaker, on #1277 (21 Oct 2026). For the native reviewer (#564)
 # The % is in {1}'s format, inside the left-to-right marks UiText.Format puts round the value: a bare % after them is drawn on the number's left (#754).
 unit.attack_odds: "{0}: יחס כוחות {1:0'%'}"
@@ -795,7 +797,7 @@ pioneer.return: "החזרת {0} לחיים אזרחיים"
 
 # Pioneer card (#1549). All new Hebrew keys below: native-review-pending (#564).
 pioneer.card.open: "פתיחת {0}"
-pioneer.card.location: "משושה: {0}"
+pioneer.card.location: "משבצת: {0}"
 pioneer.card.track: "מסלול: {0}"
 pioneer.card.idle: "ללא עבודה"
 pioneer.card.working: "בעבודה ב{0}"
@@ -893,7 +895,7 @@ advisor.opening.greeting.text: "למדינה צרכים דחופים ואמצע�
 advisor.opening.attention.text: "תשומת לב היא היכולת לקבל החלטות בחודש הזה. היא מתמלאת מחדש בחודש הבא, ומה שנשאר עכשיו אינו עובר הלאה."
 advisor.opening.city.text: "בעיר מוצגים הדיור, מצב הדיור, המשרות והאנשים. תעסוקה מכניסה כסף, ואילו צפיפות יתר עלולה להחליש את הלכידות החברתית."
 advisor.opening.training.text: "אימון והכשרה דורשים אזרחים ללא עבודה, כסף וזמן. הכשרת חלוצים ובעלי מלאכה תומכת בפיתוח; אימון צבאי דורש גם נשק."
-advisor.opening.move.text: "יחידה נעה מיד, והשטח קובע את העלות של כל משושה. יעד רחוק יותר יוצר מסלול שממשיך בתורות הבאות."
+advisor.opening.move.text: "יחידה נעה מיד, והשטח קובע את העלות של כל משבצת. יעד רחוק יותר יוצר מסלול שממשיך בתורות הבאות."
 advisor.opening.event.text: "כרטיס אירוע מציג החלטה ואת השפעותיה. כרטיס שלא נענה בסיום החודש עובר לשר האחראי."
 advisor.opening.objectives.text: "היעדים מגדירים את מטרות המערכה ומשווים כל תאריך השלמה לתאריך ההיסטורי שלו. השלמה מעניקה נקודות ופותחת את כרטיס האירוע של היעד."
 advisor.next: "הבא"
@@ -951,7 +953,7 @@ advisor.opening.city.cue.2: "תעסוקה מכניסה כסף, ואילו צפי
 advisor.opening.training.cue.1: "אימון והכשרה דורשים אזרחים ללא עבודה, כסף וזמן."
 advisor.opening.training.cue.2: "הכשרת חלוצים ובעלי מלאכה תומכת בפיתוח;"
 advisor.opening.training.cue.3: "אימון צבאי דורש גם נשק."
-advisor.opening.move.cue.1: "יחידה נעה מיד, והשטח קובע את העלות של כל משושה."
+advisor.opening.move.cue.1: "יחידה נעה מיד, והשטח קובע את העלות של כל משבצת."
 advisor.opening.move.cue.2: "יעד רחוק יותר יוצר מסלול שממשיך בתורות הבאות."
 advisor.opening.event.cue.1: "כרטיס אירוע מציג החלטה ואת השפעותיה."
 advisor.opening.event.cue.2: "כרטיס שלא נענה בסיום החודש עובר לשר האחראי."
@@ -1083,11 +1085,11 @@ unit.order_refused.already: "היחידה כבר קיבלה פקודה זו"
 # #2072 Attack and Reinforce refusals (Combat.Check, Training.Reinforce), shown on the unit card and in the toast. A
 # settlement in {0}/{1} opens the line as its label or follows a prefix, so no verb agrees with its gender (HE-15).
 # Approved by Beri, a native speaker, on #2072 (31 Oct 2026), all 20 lines as written. For the native reviewer (#564).
-unit.attack_refused.no_hex: "יש לבחור משושה להתקפה"
+unit.attack_refused.no_hex: "יש לבחור משבצת להתקפה"
 unit.attack_refused.truce: "הפוגה בתוקף"
-unit.attack_refused.out_of_range: "המשושה מחוץ לטווח של היחידה"
-unit.attack_refused.not_adjacent: "המשושה אינו סמוך ליחידה"
-unit.attack_refused.no_enemy: "אין יחידת אויב במשושה הזה"
+unit.attack_refused.out_of_range: "המשבצת מחוץ לטווח של היחידה"
+unit.attack_refused.not_adjacent: "המשבצת אינה סמוכה ליחידה"
+unit.attack_refused.no_enemy: "אין יחידת אויב במשבצת הזאת"
 unit.attack_refused.no_points: "ליחידה לא נותרו נקודות תנועה בתור הזה"
 unit.attack_refused.arms: "להתקפה נדרשים {0} כלי נשק ובמלאי יש {1}"
 unit.reinforce_refused.no_city: "אין עיר כזאת"

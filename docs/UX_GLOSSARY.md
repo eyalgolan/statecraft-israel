@@ -703,15 +703,16 @@ Category: game-system. Scope: ui, docs.
 |---|---|
 | Click the map, or Tab to it and press Enter, to inspect a hex; right-drag to move the map | strings.en.yaml info.hint |
 
-**Hebrew.** Preferred: open.
+**Hebrew.** Preferred: משבצת (feminine: "משבצת סמוכה", plural "משבצות").
+Avoid: משושה (replaced by the owner on 1 November 2026: "replace evey place that says משושה with משבצת throughout the game").
 
 | In use | Where |
 |---|---|
-| יש ללחוץ על המפה, או לעבור אליה ב־Tab וללחוץ Enter, כדי לבדוק משושה; גרירה בלחצן הימני מזיזה את המפה | strings.he.yaml info.hint |
+| יש ללחוץ על המפה, או לעבור אליה ב־Tab וללחוץ Enter, כדי לבדוק משבצת; גרירה בלחצן הימני מזיזה את המפה | strings.he.yaml info.hint |
 
 **Recommendation (see status).**
 - English: Keep, but write the first mention so a player who has never met a hex map understands it.
-- Hebrew: No change proposed.
+- Hebrew: משבצת, as the owner ruled on 1 November 2026.
 - Reasons: (1) The Google guide treats unexplained jargon as a risk; the word is only used on the map hint.
 
 **Decision owner.** Eyal.

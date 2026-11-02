@@ -33,7 +33,7 @@ public class WhyHexPlacesTests
     {
         Assert.AreEqual(GolaniName(En) + " moved to Haifa for 1 movement point", UnitNames.Line(Moved("5,8", 1), C, Rows, En));
         var he = UnitNames.Line(Moved("5,8", 1), C, Rows, He, NamesHe);
-        StringAssert.Contains("משושה חיפה", he);
+        StringAssert.Contains("משבצת חיפה", he);
         StringAssert.Contains("נקודת תנועה אחת", he);
         StringAssert.DoesNotContain("1 נקודות", he);
     }
@@ -43,7 +43,7 @@ public class WhyHexPlacesTests
     {
         // (6,8) is the hex east of Haifa's (5,8): 8.5 km between the centres, said to the nearest 5 km.
         Assert.AreEqual(GolaniName(En) + " moved to a hex 10 km east of Haifa for 2 movement points", UnitNames.Line(Moved("6,8", 2), C, Rows, En));
-        StringAssert.Contains("משושה 10 ק״מ ממזרח לחיפה", UnitNames.Line(Moved("6,8", 2), C, Rows, He, NamesHe));
+        StringAssert.Contains("משבצת 10 ק״מ ממזרח לחיפה", UnitNames.Line(Moved("6,8", 2), C, Rows, He, NamesHe));
         // (-3,20) is one hex from Tel Aviv, Lod and Rishon LeZion alike: the first in settlement_hexes.yaml's order wins.
         StringAssert.Contains("a hex 10 km south-east of Tel Aviv", UnitNames.Line(Moved("-3,20", 2), C, Rows, En));
     }
@@ -57,11 +57,13 @@ public class WhyHexPlacesTests
         StringAssert.Contains("אזרחים בתל אביב", UnitNames.Line(new Cause("map", "0", 0, "", key: WhyKeys.SentHome,
             units: new[] { Golani }, args: new[] { "500", "tel_aviv" }), C, Rows, He, NamesHe));
         // NamesHe has no Jaffa: its English name, after a maqaf. The hex it withdrew to is Haifa's, in Hebrew.
-        StringAssert.Contains("נסיגה מ־" + lrm + "Jaffa" + lrm + " למשושה חיפה", UnitNames.Line(new Cause("map", "0", 0, "",
-            key: WhyKeys.Withdrew, units: new[] { Golani }, args: new[] { "jaffa", "5,8" }), C, Rows, He, NamesHe));
+        // Ordinal: a culture compare ignores U+200E, so it could not see the marks around a Latin name.
+        var withdrew = UnitNames.Line(new Cause("map", "0", 0, "", key: WhyKeys.Withdrew, units: new[] { Golani },
+            args: new[] { "jaffa", "5,8" }), C, Rows, He, NamesHe);
+        Assert.IsTrue(withdrew.Contains("נסיגה מ־" + lrm + "Jaffa" + lrm + " למשבצת חיפה", System.StringComparison.Ordinal), withdrew);
         // No Hebrew names at all: Haifa in English, after a maqaf.
-        StringAssert.Contains("משושה " + lrm + "10" + lrm + " ק״מ ממזרח ל־" + lrm + "Haifa" + lrm,
-            UnitNames.Line(Moved("6,8", 2), C, Rows, He, null));
+        var moved = UnitNames.Line(Moved("6,8", 2), C, Rows, He, null);
+        Assert.IsTrue(moved.Contains("משבצת " + lrm + "10" + lrm + " ק״מ ממזרח ל־" + lrm + "Haifa" + lrm, System.StringComparison.Ordinal), moved);
     }
 
     /// <summary>Every unit line, in both languages, with a hex of negative q (the Hebrew bidi case: "-3,20" showed as
