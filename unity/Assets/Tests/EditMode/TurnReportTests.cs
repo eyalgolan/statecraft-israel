@@ -230,8 +230,9 @@ public class TurnReportTests
     /// <summary>#1701 A1 follow-up (owner, 2 November 2026: "Combine per city (Recommended)"; the option: "'Workshops in Tel
     /// Aviv (6): +6 Arms'; pauses likewise combined with a count."): a city's workshop Arms are one line with their count, and
     /// so are its ceiling pauses, in the order each first appears among the sim's causes; a city with one keeps the A1 line.
-    /// The count is the number of the sim's causes, which each give 1 Arms (R-ARMS-006). Hebrew counts as "Label: N" (HE-04),
-    /// each number between left-to-right marks as UiText.Format puts it.</summary>
+    /// The count is the number of the sim's causes, which each give 1 Arms (R-ARMS-006). Hebrew puts the count in brackets
+    /// after the city's name, as English does, and the Arms as "Label: N" (HE-04), each number between left-to-right marks
+    /// as UiText.Format puts it.</summary>
     [Test]
     public void AnotherWorkshopInTheSameCityJoinsItsLine()
     {
@@ -247,8 +248,8 @@ public class TurnReportTests
             CollectionAssert.AreEqual(hebrew
                     ? new[]
                     {
-                        "סדנאות נשק (חיפה) בהמתנה: ‎2‎, תקרת החוב",
-                        "סדנאות נשק (תל אביב): ‎3‎, תוספת נשק: ‎3‎",
+                        "סדנאות נשק (חיפה) (‎2‎) בהמתנה: תקרת החוב",
+                        "סדנאות נשק (תל אביב) (‎3‎): תוספת נשק: ‎3‎",
                         "סדנת נשק (חיפה): תוספת נשק: 1",
                     }
                     : new[] { "Workshops in Haifa (2) paused: debt ceiling", "Workshops in Tel Aviv (3): +3 Arms", "Workshop in Haifa: +1 Arms" },
