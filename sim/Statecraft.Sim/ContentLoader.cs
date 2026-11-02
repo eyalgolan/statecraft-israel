@@ -45,7 +45,9 @@ namespace Statecraft.Sim
             public List<MapHex> Hexes { get; set; } = new List<MapHex>();
         }
         sealed class SettlementHexesFile { public List<SettlementHex> Settlements { get; set; } = new List<SettlementHex>(); }
-        sealed class LocalityHexesFile { public List<SettlementHex> Localities { get; set; } = new List<SettlementHex>(); }
+        sealed class LocalityHexesFile { public List<LocalityHex> Localities { get; set; } = new List<LocalityHex>(); }
+        /// <summary>A map/locality_hexes.yaml row. q and r are nullable so a missing one is refused, never read as 0.</summary>
+        sealed class LocalityHex { public string Id { get; set; } = ""; public int? Q { get; set; } public int? R { get; set; } }
         sealed class MapLocationsFile { public List<MapLocation> Locations { get; set; } = new List<MapLocation>(); }
         sealed class SettlementTargetsFile { public List<SettlementTarget> Targets { get; set; } = new List<SettlementTarget>(); }
         sealed class CitiesFile { public List<CityStart> Cities { get; set; } = new List<CityStart>(); }
@@ -190,6 +192,25 @@ namespace Statecraft.Sim
         }
 
         internal const string ObjectivesFileName = "objectives.yaml";
+
+        /// <summary>R-CITY-006: the locality placements, with the settlement_hexes.yaml checks (unique ids, land hexes) and
+        /// q and r required. Only the exact gdd-0.3 regions path calls this.</summary>
+        static List<SettlementHex>? LocalityHexes(Content c, LocalityHexesFile? file)
+        {
+            if (file == null) return null;
+            const string f = PlayerRegionCatalogue.LocalityHexesFileName;
+            Unique(f, "localities", file.Localities.Select(l => l.Id));
+            var result = new List<SettlementHex>(file.Localities.Count);
+            foreach (var l in file.Localities)
+            {
+                if (!l.Q.HasValue || !l.R.HasValue) throw new ContentException(f, $"localities[{l.Id}]", "q and r are required integers");
+                int q = l.Q.Value, r = l.R.Value;
+                if (c.HexAt(q, r)?.Land != true)
+                    throw new ContentException(f, $"localities[{l.Id}]", FormattableString.Invariant($"hex q={q} r={r} is not a land hex in {HexesFile}"));
+                result.Add(new SettlementHex { Id = l.Id, Q = q, R = r });
+            }
+            return result;
+        }
 
         /// <summary>Like <see cref="Read{T}"/>, but a missing file is null, not an error. The file is read once.</summary>
         static T? ReadOptional<T>(Func<string, string?> readFile, string relPath) where T : class
@@ -440,7 +461,7 @@ namespace Statecraft.Sim
                 var regions = ReadOptional<PlayerRegionsFile>(readFile, PlayerRegionCatalogue.FileName);
                 if (regions != null)
                     c.PlayerRegions = PlayerRegionCatalogue.Validate(c, regions.PlayerRegions,
-                        ReadOptional<LocalityHexesFile>(readFile, PlayerRegionCatalogue.LocalityHexesFileName)?.Localities);
+                        LocalityHexes(c, ReadOptional<LocalityHexesFile>(readFile, PlayerRegionCatalogue.LocalityHexesFileName)));
             }
             EventRules.ValidateStructured(c);   // R-EFX-006: after the GDD records it names are read
             c.BuildWindows();

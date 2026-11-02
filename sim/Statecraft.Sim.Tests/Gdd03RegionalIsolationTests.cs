@@ -84,8 +84,8 @@ public class Gdd03RegionalIsolationTests
     }
 
     // R-CITY-006 ("The cities are the `city` and `town` rows of `map/settlements_1948.yaml`"), R-POP-001. Pinned to the
-    // exact gdd-0.3 game path with the authored, empty region catalogue (so the empty PlayerRegions check pins that
-    // catalogue): adding a rural marker to the location roster changes no start state, and no turn after it, and no
+    // exact gdd-0.3 game path with the authored region catalogue (nine regions since #1691; the empty PlayerRegions
+    // check pins that no new game initializes them, #1689): adding a rural marker to the location roster changes no start state, and no turn after it, and no
     // marker without managed_city is a city.
     [Fact]
     public void R_CITY_006_ARuralMarkerOnTheMapCreatesNoCityRegionOrPersonInTheGame()

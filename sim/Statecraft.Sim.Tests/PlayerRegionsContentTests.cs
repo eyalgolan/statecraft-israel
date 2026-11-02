@@ -29,7 +29,7 @@ public class PlayerRegionsContentTests
     opening_control: { status: NEEDS-RESEARCH, value: null }
 ";
     internal static Content Load(string? regions = "player_regions:\n" + RamlaRehovot, bool modern = true,
-        string? overrideText = null, Action<string>? onRead = null, bool localities = true)
+        string? overrideText = null, Action<string>? onRead = null, bool localities = true, string? localityText = null)
     {
         var root = RealContentTests.ContentRoot();
         return ContentLoader.Load(rel =>
@@ -38,6 +38,7 @@ public class PlayerRegionsContentTests
             if (rel == PlayerRegionCatalogue.FileName) return regions;
             if (rel == MapOverrides.FileName) return overrideText;
             if (!localities && rel == PlayerRegionCatalogue.LocalityHexesFileName) return null;
+            if (localityText != null && rel == PlayerRegionCatalogue.LocalityHexesFileName) return localityText;
             var path = Path.Combine(root, rel);
             var text = File.Exists(path) ? File.ReadAllText(path) : null;
             return modern && rel == "eras.yaml" ? text!.Replace("loop: gdd", "loop: gdd, ruleset: gdd-0.3") : text;
@@ -196,25 +197,50 @@ public class PlayerRegionsContentTests
         Assert.Same(r, c.PlayerRegions.AtCapital("tarshiha"));
     }
 
+    // Each case asserts the reason as well as the field: without locality and site placement, every member here
+    // would fail earlier as an "unknown place id", so a field-only assert could pass for the wrong reason.
     [Theory]
     // A locality or a site off the region's hexes is placed, and refused there.
-    [InlineData("[{ q: 10, r: 6 }, { q: 16, r: 2 }]", "[{ q: 10, r: 6 }, { q: 16, r: 3 }]", "member_locations[1]")]
-    [InlineData("[{ q: 10, r: 6 }, { q: 16, r: 2 }]", "[{ q: 10, r: 5 }, { q: 16, r: 2 }]", "member_locations[0]")]
+    [InlineData("[{ q: 10, r: 6 }, { q: 16, r: 2 }]", "[{ q: 10, r: 6 }, { q: 16, r: 3 }]", "member_locations[1]", "effective location lies outside member_hexes")]
+    [InlineData("[{ q: 10, r: 6 }, { q: 16, r: 2 }]", "[{ q: 10, r: 5 }, { q: 16, r: 2 }]", "member_locations[0]", "effective location lies outside member_hexes")]
     // An id in no placement file stays unknown.
-    [InlineData("[tarshiha, kiryat_shmona]", "[tarshiha, kiryat_shmona, nowhere_1948]", "member_locations[2]")]
+    [InlineData("[tarshiha, kiryat_shmona]", "[tarshiha, kiryat_shmona, nowhere_1948]", "member_locations[2]", "unknown place id")]
     // The label still has to be a member (Q3: a label, but the loader's requirement stays).
-    [InlineData("capital_location: tarshiha", "capital_location: hebron", "capital_location")]
-    public void LocalityAndSiteMembersKeepEveryPlacementCheck(string from, string to, string field)
+    [InlineData("capital_location: tarshiha", "capital_location: hebron", "capital_location", "must name a member location on a member hex")]
+    public void LocalityAndSiteMembersKeepEveryPlacementCheck(string from, string to, string field, string reason)
     {
         var e = Assert.Throws<ContentException>(() => Load("player_regions:\n" + LocalityAndSite.Replace(from, to)));
         Assert.Equal("regions.yaml", e.File); Assert.Equal("player_regions[0]." + field, e.Field);
+        Assert.Equal("regions.yaml: player_regions[0]." + field + ": " + reason, e.Message);
     }
 
+    // The site is listed first, so it must resolve (sites.yaml is always placed) before the locality is refused.
     [Fact]
     public void WithoutTheLocalityHexesALocalityIsUnknown()
     {
-        var e = Assert.Throws<ContentException>(() => Load("player_regions:\n" + LocalityAndSite, localities: false));
-        Assert.Equal("player_regions[0].member_locations[0]", e.Field);
+        var e = Assert.Throws<ContentException>(() => Load("player_regions:\n"
+            + LocalityAndSite.Replace("[tarshiha, kiryat_shmona]", "[kiryat_shmona, tarshiha]"), localities: false));
+        Assert.Equal("regions.yaml", e.File); Assert.Equal("player_regions[0].member_locations[1]", e.Field);
+        Assert.Equal("regions.yaml: player_regions[0].member_locations[1]: unknown place id", e.Message);
+    }
+
+    // map/locality_hexes.yaml is generated, but the sim still refuses a malformed row instead of placing it: the
+    // settlement_hexes.yaml checks (unique ids, land hexes), plus q and r required so a missing one is never a silent 0.
+    // hebron is in no region of the default fixture, so without these checks each row would load silently.
+    [Theory]
+    [InlineData("localities:\n", "localities:\n  - { id: hebron, q: -4, r: 29 }\n", "localities[hebron].id", "duplicate id")]
+    [InlineData("{ id: hebron, q: -4, r: 30 }", "{ q: -4, r: 30 }", "localities[].id", ContentLoader.IdRule)]
+    [InlineData("{ id: hebron, q: -4, r: 30 }", "{ id: hebron, r: 30 }", "localities[hebron]", "q and r are required integers")]
+    [InlineData("{ id: hebron, q: -4, r: 30 }", "{ id: hebron, q: -4 }", "localities[hebron]", "q and r are required integers")]
+    [InlineData("{ id: hebron, q: -4, r: 30 }", "{ id: hebron, q: 0, r: 0 }", "localities[hebron]", "hex q=0 r=0 is not a land hex in map/hexes.json")]
+    [InlineData("{ id: hebron, q: -4, r: 30 }", "{ id: hebron, q: 99, r: 99 }", "localities[hebron]", "hex q=99 r=99 is not a land hex in map/hexes.json")]
+    public void MalformedLocalityHexRowsAreRefused(string from, string to, string field, string reason)
+    {
+        var real = File.ReadAllText(Path.Combine(RealContentTests.ContentRoot(), PlayerRegionCatalogue.LocalityHexesFileName));
+        Assert.Contains(from, real);
+        var e = Assert.Throws<ContentException>(() => Load(localityText: real.Replace(from, to)));
+        Assert.Equal(PlayerRegionCatalogue.LocalityHexesFileName, e.File); Assert.Equal(field, e.Field);
+        Assert.Equal(PlayerRegionCatalogue.LocalityHexesFileName + ": " + field + ": " + reason, e.Message);
     }
 
     [Fact]
