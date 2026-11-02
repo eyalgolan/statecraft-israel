@@ -50,6 +50,9 @@ namespace Statecraft.Sim
         /// <summary>Target (treasury) money moved by Delta, a cost paid through EconomySystem.PayOrBorrow, borrowed share
         /// included (#2199). Args: as <see cref="Borrowed"/>'s.</summary>
         public const string Paid = "paid";
+        /// <summary>Target (treasury) money moved by Delta, the Money causes a list leaves out, summed: the UI's line, never one
+        /// of a turn's (EconomySystem.OtherMoney, #2212). No args.</summary>
+        public const string MoneyOther = "money_other";
         /// <summary>Target money moved by Delta, for civilian upkeep. No args.</summary>
         public const string CivilianUpkeep = "civilian_upkeep";
         public const string FxCrisisBegan = "fx_crisis_began", FxCrisisEased = "fx_crisis_eased";
@@ -240,7 +243,7 @@ namespace Statecraft.Sim
 
         public static readonly IReadOnlyList<string> All = new[]
         {
-            MoneyFlows, FxFlows, Borrowed, Paid, CivilianUpkeep, FxCrisisBegan, FxCrisisEased, FxCrisisFood, Arrived, EffectChange,
+            MoneyFlows, FxFlows, Borrowed, Paid, MoneyOther, CivilianUpkeep, FxCrisisBegan, FxCrisisEased, FxCrisisFood, Arrived, EffectChange,
             SituationBegan, SituationEnded, RungChanged, CallUpSet, CallUpRaised, CallUpLowered, Ceasefire,
             EventNew, EventChosen, EventDelegated, EventDelegatedPartial, EventAmount, EventStock, EventGrant, EventCity,
             EventUnlock, EventPolicy, EventSetRung, EventRejoin, MilitaryUpkeep,

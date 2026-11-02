@@ -30,6 +30,18 @@ namespace Statecraft.Sim
         /// report and the meter tip show the largest (HudModel.Causes).</summary>
         public static bool MovesMoney(Cause w) => w.Target == "treasury" || w.Key == CauseKeys.WagesPaid;
 
+        /// <summary>#2212: the one Money line for the causes a list leaves out. The turn report and the meter tip show the
+        /// largest Money causes (HudModel.Causes, at most HudModel.MaxCauses); this is the sum of the turn's other lines
+        /// <see cref="MovesMoney"/> picks (<paramref name="why"/> minus <paramref name="shown"/>, by reference), so the lines
+        /// shown add up to the Money (net) change. Null when nothing is left over or the rest shows as IL 0.0m
+        /// (PlayerText.MoneyChange's rounding). The line is the UI's, never one of the turn's (StepResult.Why).</summary>
+        public static Cause? OtherMoney(Content c, IEnumerable<Cause> why, IReadOnlyCollection<Cause> shown)
+        {
+            var rest = why.Where(w => MovesMoney(w) && !shown.Contains(w)).Sum(w => w.Delta);
+            if (PlayerText.MoneyChange(c, "treasury", rest) == PlayerText.MoneyChange(c, "treasury", 0)) return null;
+            return new Cause("economy", "treasury", rest, $"{PlayerText.Change(c, "treasury", rest)} (other causes)", key: CauseKeys.MoneyOther);
+        }
+
         public static TreasuryFlows Flows(Content c, GameState s, double yearFraction)
         {
             PopulationLedger.RefuseAggregate(s);

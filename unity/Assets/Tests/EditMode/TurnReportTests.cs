@@ -126,12 +126,12 @@ public class TurnReportTests
             var heading = k.Ui.Q<Label>("turn-report-heading-" + id).text;
             Assert.AreEqual(En.Format("report.line", En["hud.caption." + id], k.Ui.Q<Label>(id + "-delta").text), heading, id);
             var causes = k.Ui.Root.Q("turn-report-causes-" + id);
-            var expected = HudModel.Causes(turn, id, w => CauseText.Line(w, C, System.Array.Empty<UnitEntry>(), En));
+            var expected = HudModel.Causes(turn, id, C, w => CauseText.Line(w, C, System.Array.Empty<UnitEntry>(), En));
             if (expected.Count == 0) { Assert.IsNull(causes, id + ": no cause line without a cause"); continue; }
             var lines = Causes(k.Ui, id);
             CollectionAssert.AreEqual(expected, lines, id);
-            Assert.LessOrEqual(lines.Count, HudModel.MaxCauses, id);
-            foreach (var line in lines) Assert.IsTrue(messages.Contains(line), $"{id}: '{line}' is a cause of StepResult.Why, word for word");
+            Assert.LessOrEqual(lines.Count, HudModel.MaxCauses + (id == "treasury" ? 1 : 0), id);   // Money's Other line (#2212)
+            foreach (var line in lines.Take(HudModel.MaxCauses)) Assert.IsTrue(messages.Contains(line), $"{id}: '{line}' is a cause of StepResult.Why, word for word");
         }
         // The fixed turn's own causes, the larger first and at most MaxCauses (2): Security moved by One Army and the
         // defence of Degania, the same size, in the order the cards came (R-EVT-006); the border villages' smaller effect
@@ -139,6 +139,17 @@ public class TurnReportTests
         var security = Causes(k.Ui, "security");
         CollectionAssert.AreEqual(new[] { "Security +1.5% (One Army)", "Security +1.5% (The Defence of Degania)" }, security);
         StringAssert.StartsWith("Money ", Causes(k.Ui, "treasury")[0], "Money's main cause is the economy's line");
+        // #2212: Money's two largest causes, then one Other line for the rest (EconomySystem.OtherMoney), so the lines add
+        // up to the change the heading shows.
+        var money = Causes(k.Ui, "treasury");
+        var shown = new List<Cause>();
+        HudModel.Causes(turn, "treasury", C, w => { shown.Add(w); return ""; });
+        Assert.AreEqual(HudModel.MaxCauses + 1, money.Count, "the opening turn has more Money causes than the two shown");
+        Assert.AreEqual(CauseKeys.MoneyOther, shown[shown.Count - 1].Key);
+        Assert.AreEqual(shown[shown.Count - 1].Message, money[money.Count - 1]);
+        StringAssert.EndsWith(" (other causes)", money[money.Count - 1]);
+        var s = k.Bridge.State; var prev = k.Bridge.Session.Previous!;
+        Assert.AreEqual((s.Treasury - s.Debt) - (prev.Treasury - prev.Debt), shown.Sum(w => w.Delta), 1e-9, "the lines add up to the Money (net) change");
         Assert.IsNull(k.Ui.Root.Q("turn-report-causes-support"), "no cause names Public support (an average of the indicators)");
     }
 
@@ -292,12 +303,17 @@ public class TurnReportTests
         // In a right-to-left line the change keeps its sign in front ("+2%", not "2%+"): UiText.Format marks it (#543).
         StringAssert.Contains(UiText.LeftToRightMark + k.Ui.Q<Label>("security-delta").text + UiText.LeftToRightMark, heading);
         var causes = Causes(k.Ui, "security");
-        CollectionAssert.AreEqual(HudModel.Causes(k.Bridge.Session.Last, "security", w => CauseText.Line(w, C, System.Array.Empty<UnitEntry>(), He)), causes,
+        CollectionAssert.AreEqual(HudModel.Causes(k.Bridge.Session.Last, "security", C, w => CauseText.Line(w, C, System.Array.Empty<UnitEntry>(), He)), causes,
             "the causes are the sim's, worded as on the Why screen");
         // B1: the treasury's tax-and-spending line is Hebrew (a line with no key yet, such as an event's, stays English).
         Assert.IsTrue(UiDirection.RightToLeft(Causes(k.Ui, "treasury")[0]), "the money line is in Hebrew");
+        // #2212: Money's Other line too (why.cause.money_other).
+        var money = Causes(k.Ui, "treasury");
+        Assert.AreEqual(HudModel.MaxCauses + 1, money.Count, "the two largest Money causes and the Other line");
+        Assert.IsTrue(UiDirection.RightToLeft(money[money.Count - 1]), "the Other line is in Hebrew");
+        StringAssert.Contains("(סיבות אחרות)", money[money.Count - 1]);
         // B1: one label a cause, so a Hebrew line and a line still in English each take their own direction.
-        Assert.AreEqual(HudModel.Causes(k.Bridge.Session.Last, "security", w => w.Message).Count,
+        Assert.AreEqual(HudModel.Causes(k.Bridge.Session.Last, "security", C, w => w.Message).Count,
             k.Q("turn-report-causes-security").Query<Label>(className: "turn-report-cause").ToList().Count);
     }
 

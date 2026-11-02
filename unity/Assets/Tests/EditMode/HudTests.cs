@@ -31,11 +31,44 @@ public class HudTests
         };
         var turn = new StepResult(new GameState(), why, new Rejection[0]);
         CollectionAssert.AreEqual(new[] { "Tel Aviv: jobs paid IL +0.5m", "Money IL -0.4m (military upkeep)" },
-            HudModel.Causes(turn, "treasury", w => w.Message));
+            HudModel.Causes(turn, "treasury", C, w => w.Message));
 
         var b = NewBridge();
         b.EndTurn();
-        CollectionAssert.Contains(HudModel.Causes(b.Session.Last, "treasury", w => w.Key), CauseKeys.WagesPaid, "the opening turn's job income");
+        CollectionAssert.Contains(HudModel.Causes(b.Session.Last, "treasury", C, w => w.Key), CauseKeys.WagesPaid, "the opening turn's job income");
+    }
+
+    /// <summary>#2212: Money shows its two largest causes (MaxCauses) and one Other line for the rest, summed by the sim
+    /// (EconomySystem.OtherMoney), so the lines add up to the Money (net) change. No Other line with two causes or fewer,
+    /// or when the rest shows as IL 0.0m; no other meter gets one. After the real opening turn the lines add up.</summary>
+    [Test]
+    public void MoneyShowsTheTwoLargestCausesAndOneOtherLineForTheRest()
+    {
+        Cause Money(double d, string what) => new Cause("economy", "treasury", d, PlayerText.Change(C, "treasury", d) + " (" + what + ")", key: CauseKeys.MilitaryUpkeep);
+        var borrowing = new Cause("economy", "debt", 9, "Borrowed IL 9.0m to cover the deficit", key: CauseKeys.Borrowed, args: new[] { CauseKeys.Purpose.Deficit });
+        IReadOnlyList<string> Lines(string meter, params Cause[] why) =>
+            HudModel.Causes(new StepResult(new GameState(), why.Append(borrowing).ToList(), new Rejection[0]), meter, C, w => w.Message);
+
+        var a = Money(-3, "a"); var b = Money(2, "b");
+        CollectionAssert.AreEqual(new[] { "Money IL -3.0m (a)", "Money IL +2.0m (b)", "Money IL -0.3m (other causes)" },
+            Lines("treasury", Money(0.1, "d"), a, Money(-0.4, "c"), b), "three or more causes: the two largest, then the rest");
+        CollectionAssert.AreEqual(new[] { "Money IL -3.0m (a)", "Money IL +2.0m (b)" }, Lines("treasury", a, b), "two causes: no Other line");
+        CollectionAssert.AreEqual(new[] { "Money IL -3.0m (a)" }, Lines("treasury", a), "one cause: no Other line");
+        CollectionAssert.AreEqual(new[] { "Money IL -3.0m (a)", "Money IL +2.0m (b)" }, Lines("treasury", a, b, Money(0.04, "c")),
+            "the rest shows as IL 0.0m: no Other line");
+        CollectionAssert.AreEqual(new[] { "Money IL -3.0m (a)", "Money IL +2.0m (b)" }, Lines("treasury", a, b, Money(1, "c"), Money(-1, "d")),
+            "the rest cancels out: no Other line");
+        Cause Security(double d) => new Cause("events", "security", d, PlayerText.Change(C, "security", d));
+        Assert.AreEqual(HudModel.MaxCauses, Lines("security", Security(0.03), Security(0.02), Security(0.01)).Count, "only Money gets an Other line");
+
+        var bridge = NewBridge();
+        bridge.EndTurn();
+        var shown = new List<Cause>();
+        HudModel.Causes(bridge.Session.Last, "treasury", C, w => { shown.Add(w); return w.Message; });
+        Assert.AreEqual(HudModel.MaxCauses + 1, shown.Count, "the opening turn has more Money causes than MaxCauses");
+        Assert.AreEqual(CauseKeys.MoneyOther, shown[shown.Count - 1].Key);
+        var s = bridge.State; var prev = bridge.Session.Previous!;
+        Assert.AreEqual((s.Treasury - s.Debt) - (prev.Treasury - prev.Debt), shown.Sum(w => w.Delta), 1e-9, "the lines add up to the Money (net) change");
     }
 
     [Test]

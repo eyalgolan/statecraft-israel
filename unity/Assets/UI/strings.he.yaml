@@ -448,6 +448,9 @@ why.cause.paid.occupation: "{0}: שינוי {1} (לעלות ההחזקה של {2
 # A map action's cost (#2199); {2} is an info.map_action.* noun, as in why.cause.map_borrowed. Agent-drafted Hebrew;
 # native review pending (#564).
 why.cause.paid.map_action: "{0}: שינוי {1} (לבניית {2})"
+# #2212: Money's Other line in the turn report and the meter tip, the causes left out after the two largest, summed.
+# Agent-drafted Hebrew, not part of #1642's owner review; native review pending (#564).
+why.cause.money_other: "{0}: שינוי {1} (סיבות אחרות)"
 why.cause.fx_crisis_began: "יתרות מטבע החוץ אזלו"
 why.cause.fx_crisis_eased: "הקלה במשבר מטבע החוץ"
 why.cause.fx_crisis_food: "{0}: שינוי {1} (משבר מטבע חוץ: קיצוץ ביבוא המזון)"

@@ -43,8 +43,8 @@ public class CauseTextTests
         {
             foreach (var id in HudModel.MeterIds)
             {
-                var before = HudModel.Causes(turn, id, w => w.Message);
-                CollectionAssert.AreEqual(before, HudModel.Causes(turn, id, w => CauseText.Line(w, C, NoRows, en)), id);
+                var before = HudModel.Causes(turn, id, C, w => w.Message);
+                CollectionAssert.AreEqual(before, HudModel.Causes(turn, id, C, w => CauseText.Line(w, C, NoRows, en)), id);
                 rows += before.Count;
             }
             foreach (var w in turn.Why.Where(w => CauseKeys.All.Contains(w.Key)))
@@ -102,6 +102,8 @@ public class CauseTextTests
         // and the borrowing comes from PayNamedOrBorrow with that purpose.
         why.Add(new Cause("economy", "treasury", -2, PlayerText.Change(C, "treasury", -2) + " (civilian upkeep)", key: CauseKeys.CivilianUpkeep));
         EconomySystem.PayNamedOrBorrow(C, s, s.Treasury + 3, "for civilian upkeep", why, CauseKeys.Purpose.CivilianUpkeep);
+        // #2212: Money's Other line, the rest of the causes a list leaves out (here all of them: the IL -2.0m upkeep).
+        why.Add(EconomySystem.OtherMoney(C, why, new Cause[0])!);
         s.ActiveSituations.Add(EconomySystem.FxCrisis); s.FxReserves = 1e6;
         EconomySystem.Apply(C, s, 0.25, why);
         s.ActiveSituations.Remove(EconomySystem.FxCrisis); s.FxReserves = -1e6;
@@ -115,7 +117,7 @@ public class CauseTextTests
         SecuritySystem.Apply(legacy, l, 1, why);
 
         var keys = why.Where(w => CauseKeys.All.Contains(w.Key)).Select(w => w.Key).Distinct().ToList();
-        foreach (var key in new[] { CauseKeys.CallUpSet, CauseKeys.SituationEnded, CauseKeys.CivilianUpkeep, CauseKeys.Borrowed,
+        foreach (var key in new[] { CauseKeys.CallUpSet, CauseKeys.SituationEnded, CauseKeys.CivilianUpkeep, CauseKeys.Borrowed, CauseKeys.MoneyOther,
                      CauseKeys.FxCrisisEased, CauseKeys.FxCrisisBegan, CauseKeys.FxCrisisFood, CauseKeys.Ceasefire })
             CollectionAssert.Contains(keys, key, "precondition");
         var en = En; var he = He;
@@ -488,7 +490,7 @@ public class CauseTextTests
             AssertHebrew(CauseText.Line(row, c, NoRows, he, names), row.Key);
         }
         CollectionAssert.AreEquivalent(CauseKeys.All.Except(new[] {
-            CauseKeys.MoneyFlows, CauseKeys.FxFlows, CauseKeys.Borrowed, CauseKeys.Paid, CauseKeys.CivilianUpkeep,
+            CauseKeys.MoneyFlows, CauseKeys.FxFlows, CauseKeys.Borrowed, CauseKeys.Paid, CauseKeys.MoneyOther, CauseKeys.CivilianUpkeep,
             CauseKeys.FxCrisisBegan, CauseKeys.FxCrisisEased, CauseKeys.FxCrisisFood, CauseKeys.Arrived,
             CauseKeys.EffectChange, CauseKeys.SituationBegan, CauseKeys.SituationEnded, CauseKeys.RungChanged,
             CauseKeys.CallUpSet, CauseKeys.CallUpRaised, CauseKeys.CallUpLowered, CauseKeys.Ceasefire,

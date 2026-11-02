@@ -173,4 +173,79 @@ public class MoneyCausesTests
             s = r.State;
         }
     }
+
+    /// <summary>#2212: the Money causes the turn report and the meter tip show, as HudModel.Causes picks them: the largest
+    /// <paramref name="max"/> lines MovesMoney picks (not zero), the larger first, the sim's order breaking a tie.</summary>
+    static List<Cause> Largest(IReadOnlyList<Cause> why, int max) =>
+        why.Select((w, i) => (w, i)).Where(x => EconomySystem.MovesMoney(x.w) && x.w.Delta != 0)
+            .OrderByDescending(x => Math.Abs(x.w.Delta)).ThenBy(x => x.i).Take(max).Select(x => x.w).ToList();
+
+    /// <summary>The two lines shown, then the Other line when there is one (EconomySystem.OtherMoney).</summary>
+    static List<Cause> Shown(Content c, IReadOnlyList<Cause> why)
+    {
+        var shown = Largest(why, 2);
+        if (EconomySystem.OtherMoney(c, why, shown) is Cause other) shown.Add(other);
+        return shown;
+    }
+
+    // #2212: with more Money causes than the two shown, one Other line holds the rest, so the lines shown add up to the
+    // Money (net) change. The opening turn has tax and spending, military upkeep and several cities' job income.
+    [Fact]
+    public void TheTwoLargestAndOneOtherLineAddUpToTheChange()
+    {
+        var s = Start();
+        var r = Simulation.Step(Real, s, Array.Empty<Command>());
+        Assert.True(r.Why.Count(w => EconomySystem.MovesMoney(w) && w.Delta != 0) >= 3, "the opening turn has 3 or more Money causes");
+        var largest = Largest(r.Why, 2);
+        var other = EconomySystem.OtherMoney(Real, r.Why, largest);
+        Assert.NotNull(other);
+        var rest = r.Why.Where(w => EconomySystem.MovesMoney(w) && !largest.Contains(w)).Sum(w => w.Delta);
+        Assert.Equal(("economy", "treasury", CauseKeys.MoneyOther, rest), (other!.System, other.Target, other.Key, other.Delta));
+        Assert.Equal($"{PlayerText.Change(Real, "treasury", rest)} (other causes)", other.Message);
+        Assert.DoesNotContain(other, r.Why);   // the UI's line, never a line of the turn
+        var change = (r.State.Treasury - r.State.Debt) - (s.Treasury - s.Debt);
+        Assert.True(Math.Abs(largest.Sum(w => w.Delta) + other.Delta - change) <= Tolerance, "the two lines and Other add up to the change");
+    }
+
+    // #2212: no Other line when every Money cause is shown (two or fewer), or when the rest rounds to IL 0.0m as shown.
+    [Theory]
+    [InlineData(new double[0], false)]
+    [InlineData(new[] { -3.0 }, false)]
+    [InlineData(new[] { -3.0, 2.0 }, false)]
+    [InlineData(new[] { -3.0, 2.0, 0.04 }, false)]    // IL +0.0m as shown: left out
+    [InlineData(new[] { -3.0, 2.0, -0.04 }, false)]
+    [InlineData(new[] { -3.0, 2.0, 0.03, 0.01 }, false)]
+    [InlineData(new[] { -3.0, 2.0, 0.05 }, true)]     // IL +0.1m as shown
+    [InlineData(new[] { -3.0, 2.0, 0.03, 0.03 }, true)]
+    [InlineData(new[] { -3.0, 2.0, 1.0, -1.0 }, false)]  // the rest cancels out
+    public void NoOtherLineWhenNothingIsLeftOver(double[] deltas, bool expected)
+    {
+        var why = deltas.Select(d => new Cause("economy", "treasury", d, PlayerText.Change(Real, "treasury", d), key: CauseKeys.CivilianUpkeep))
+            .Append(new Cause("economy", "debt", 5, "borrowed IL 5.0m to cover the deficit", key: CauseKeys.Borrowed))   // not a Money cause
+            .ToList();
+        var largest = Largest(why, 2);
+        var other = EconomySystem.OtherMoney(Real, why, largest);
+        Assert.Equal(expected, other != null);
+        if (other != null) Assert.Equal(deltas.Sum() - largest.Sum(w => w.Delta), other.Delta, 12);
+    }
+
+    // #2212: on every turn of the reference run, the lines shown add up to the Money (net) change, but for a rest the
+    // Other line leaves out because it shows as IL 0.0m (under IL 0.05m). At most 3 lines.
+    [Fact]
+    public void EveryTurnOfTheReferenceRunShowsLinesThatAddUp()
+    {
+        var s = Start(); var others = 0;
+        for (int t = 1; t < 1000 && s.GameOver == null; t++)
+        {
+            var r = Simulation.Step(Real, s, GoldenRun.Orders(Real, s));
+            var shown = Shown(Real, r.Why);
+            Assert.True(shown.Count <= 3, $"turn {t}: {shown.Count} lines");
+            var change = (r.State.Treasury - r.State.Debt) - (s.Treasury - s.Debt);
+            var gap = Math.Abs(shown.Sum(w => w.Delta) - change);
+            Assert.True(shown.Count == 3 ? gap <= Tolerance : gap < 0.05 + Tolerance, $"turn {t}: gap {gap}");
+            if (shown.Count == 3) others++;
+            s = r.State;
+        }
+        Assert.True(others > 0, "the reference run shows an Other line");
+    }
 }

@@ -28,6 +28,7 @@ namespace Statecraft.Game.UI
                     return text.Format(key, Name(text, cause.Target), Change(c, cause.Target, cause.Delta),
                         Money(c, cause.Target, cause.Args[0]), Money(c, cause.Target, cause.Args[1]), Money(c, cause.Target, cause.Args[2]));
                 case CauseKeys.CivilianUpkeep:
+                case CauseKeys.MoneyOther:
                 case CauseKeys.MilitaryUpkeep:
                 case CauseKeys.FxCrisisFood:
                     return text.Format(key, Name(text, cause.Target), Change(c, cause.Target, cause.Delta));
