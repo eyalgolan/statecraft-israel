@@ -166,7 +166,9 @@ namespace Statecraft.Game.Tests
                     TestContext.WriteLine($"{p.Key}: its widened village box reaches {reach:0} m from its sourced point");
                     Assert.Less(off, reach, p.Key + " stands near its sourced point (on the edge of its widened village box)");
                 }
-                else Assert.Less(off, inside + 4f * r, p.Key + " stands near its sourced point (beyond the town's footprint)");
+                // Abraham's Well's first ring is not clear (its point is inside Beersheba, ringed by the town's kit and roads): it
+                // stands on a widened ring (SpecialBuildingModels.WidenRings), pinned by AbrahamsWellStandsByItsPointAtBeershebaAtEveryDate.
+                else if (p.Key != "beersheba_abrahams_well") Assert.Less(off, inside + 4f * r, p.Key + " stands near its sourced point (beyond the town's footprint)");
                 Assert.IsTrue(TownLandmarks.Clear(flat, r, footprints), p.Key + " clear of the towns");
                 Assert.IsFalse(ground.OnRoute(flat, r), p.Key + " clear of the routes");
                 Assert.IsFalse(ground.OnToken(flat, r, After), p.Key + " clear of the unit tokens");
@@ -367,7 +369,10 @@ namespace Statecraft.Game.Tests
                 float off = (new Vector2(p.At.x, p.At.z) - anchor).magnitude, r = SpecialBuildingModels.ClearanceOf(p.Model);
                 float inside = SpecialBuildingModels.Inside(anchor, map.KitFootprints.Select(f => (f.centre, f.radius)));
                 TestContext.WriteLine($"well on {date:d MMM yyyy}: {off:0} m from its point, {inside:0} m inside Beersheba's footprint");
-                Assert.Less(off, inside + 4f * r, "by its point, beyond the town's footprint");
+                // The farthest the widened rings reach (SpecialBuildingModels.SeededSpot, WidenRings).
+                float reach = inside + (1.5f + (SpecialBuildingModels.SpotAttempts - 1) / 8 + SpecialBuildingModels.WidenRings * SpecialBuildingModels.WidenShare) * r;
+                Assert.Less(off, reach, "by its point, beyond the town's footprint, on the nearest clear ring");
+                Assert.Less(off, 3000f, "within 3 km of Abraham's Well");
             }
         }
 

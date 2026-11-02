@@ -164,7 +164,9 @@ ruled (al-Malikiyya on 15 May is the ALA's, #226 ruling 2).
   sensitive and does not describe), the Legion's Jerusalem battalions, the Egyptian eastern force, the ALA on
   11 June (al-Malikiyya's holder is contested; the Lebanese row stands there from 6 June by the owner's ruling of 28
   October 2026), and the Saudi, Sudanese and Yemeni contingents (not
-  units of their own, Q-START-4). The side `local_arab_forces` is known to the loader for them.
+  units of their own, Q-START-4). The side `local_arab_forces` is known to the loader for them; its token figure is
+  Tal Heuberger's local irregular (owner, 2 November 2026: "Use it instead of C09"), and its row waits for a sourced
+  15 May strength (owner, 1 November 2026, #1243: "No row until sourced").
 - The Python tests check the same rules in CI (`tools/tests/test_units_1948.py`: `test_every_side_is_known`,
   `test_strength_has_one_value_and_a_source`, `test_no_anchor_rests_on_one_source_where_the_note_says_contested`,
   `test_the_arab_rows_name_no_sensitive_place`).
@@ -613,8 +615,10 @@ figures tall standing at the base's back edge. `UnitPlinth` and `UnitFlags` draw
     0.36). Lebanon's cedar is traced from Wikimedia Commons' public-domain `File:Flag_of_Lebanon.svg` and drawn all
     green, the owner's choice where the sources on its 1948 colour conflict (31 October 2026, "All green
     (Recommended)"; `UnitFlags.LebanonCedarColour`). Pinned by
-    `EverySourcedFlagHasItsColoursAndItsLawsProportion` and one test per flag; the local forces have no figure, so no
-    token and no flag (`TheFlagIsTheSidesAndOnlyASourcedFlagIsDrawn`).
+    `EverySourcedFlagHasItsColoursAndItsLawsProportion` and one test per flag; the local forces have Tal Heuberger's
+    irregular as their figure (owner, 2 November 2026: "Use it instead of C09") and no sourced flag, so a local-forces
+    token would fly the neutral pennant; no local-forces row exists yet, so none is drawn
+    (`TheFlagIsTheSidesAndOnlyASourcedFlagIsDrawn`).
 - **The showcase trio** (`?units`, `-units`) stands at the land hex nearest its old spot whose base keeps off the
   railways and roads, and the kits keep a clearing there in such a run, as they do for a unit in a town
   (`MapScene.ShowcaseClearing`, `UnitShowcase.Clearing`), so no kit building or route crosses its base

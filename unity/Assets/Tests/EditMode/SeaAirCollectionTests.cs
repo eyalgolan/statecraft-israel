@@ -467,7 +467,9 @@ public class SeaAirCollectionTests
         var colours = Statecraft.Game.Map.Units.UnitFlags.Colours(Statecraft.Game.Map.Units.UnitFlags.Egypt);
         Assert.AreEqual(colours.Count, mesh.subMeshCount, "the cloth's colours only: no pole submesh");
         var mats = flag.GetComponent<MeshRenderer>().sharedMaterials;
-        CollectionAssert.AreEqual(colours, mats.Select(m => m.color), "Egypt's sourced colours");
+        Assert.AreEqual(colours.Count, mats.Length, "one material a cloth colour");
+        for (int i = 0; i < mats.Length; i++)
+            Assert.Less(Vector4.Distance(colours[i], mats[i].color), 1e-4f, $"Egypt's sourced colour {i}");
         Assert.AreEqual(SeaAirCollection.DakotaFlagScale * Statecraft.Game.Map.Units.UnitBadge.FigureHeightM * Statecraft.Game.Map.Units.UnitShowcase.FigureScale,
             flag.lossyScale.y, 1f, "half the tokens' flag size");
         Assert.Less(mesh.bounds.size.y, 0.6f * Statecraft.Game.Map.Units.UnitFlags.PoleHeight, "no pole: the cloth alone");

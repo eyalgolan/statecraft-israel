@@ -40,6 +40,7 @@ namespace Statecraft.Game.Map.Collection
             // Sourced: Abraham's Well's diameter, 3.75 m (he.wiki "באר אברהם", revision 44049275, agent-read 2026-11-02, a
             // person's check pending). The other three props are DESIGN VALUES, typical of the kind: a 4 m sandbag post, a 3 m
             // crate stack, an 8 m run of low wall.
+            Well => 3.75f, Sandbags => 4f, Crates => 3f, Wall => 8f,
             _ => throw new ArgumentException($"'{model}' is not one of #707's models", nameof(model)),
         };
 
@@ -51,6 +52,13 @@ namespace Statecraft.Game.Map.Collection
 
         // Design value: the bounded deterministic search around each sourced point.
         public const int SpotAttempts = 24;
+
+        /// <summary>DESIGN VALUES: when no spot of <see cref="SeededSpot"/>'s ring is clear, the ring moves out by
+        /// <see cref="WidenShare"/> clearances (the width one ring covers, 1.5 to 3.5 clearances out) up to
+        /// <see cref="WidenRings"/> times, so a model whose sourced point is ringed by routes and kits (Abraham's Well, in
+        /// Beersheba) still stands at the nearest clear ground. A model whose first ring has a clear spot is unchanged.</summary>
+        public const float WidenShare = 2f;
+        public const int WidenRings = 20;
 
         /// <summary>How a model's spot is found from its sourced point: the seeded ring search round it (<see cref="SeededSpot"/>),
         /// on the beach of a SeaCraft coast (<see cref="ShoreSpot"/>), or beside a route, along it (<see cref="RoadSpot"/>).</summary>
@@ -117,6 +125,33 @@ namespace Statecraft.Game.Map.Collection
             new Want("degania_r35", SyrianR35, new DateTime(1948, 5, 20), 35.5747, 32.7081,
                 "content/events/degania_defence.yaml (https://www.jewishvirtuallibrary.org/the-battle-for-degania-may-1948); " +
                 "https://en.wikipedia.org/wiki/Renault_R35 (checked 2026-10-28); content/map/settlements_1948.yaml: degania_alef"),
+            // Tal Heuberger's four props (owner, 2 November 2026: "Place all four now (Recommended)"). Every source below was read by
+            // an AI agent on 2 November 2026 ("agent-read"); a person's check against it is pending (CONTENT_POLICY section 2,
+            // rule 6). The excerpts and what each person-check needs are in research_notes/Map/tal-unused-models-placed.md.
+            // The well: Abraham's Well at Beersheba, at its he.wiki and en.wiki point, at every date: "בשנת 1948, עם כיבוש באר
+            // שבע במסגרת מבצע יואב, הושארה באר אברהם כשטח ציבורי ארכאולוגי" (he.wiki, uncited sentence).
+            new Want("beersheba_abrahams_well", Well, new DateTime(1948, 5, 15), null, 34.79307778, 31.237225,
+                "he.wiki באר אברהם, https://he.wikipedia.org/w/index.php?oldid=44049275 (agent-read 2026-11-02); " +
+                "en.wiki Abraham's Well, https://en.wikipedia.org/w/index.php?oldid=1374743581 (agent-read 2026-11-02); person check pending",
+                Siting.Seeded, ""),
+            // The sandbags: "אש שנורתה מתוך עמדת שקי החול שלמרגלות מטה הפלמ"ח אילצה את הסירה לחזור" (he.wiki אלטלנה, footnote
+            // Nakdimon 2016), the night of 21-22 June 1948, on the Tel Aviv shore; only on the Altalena's turn.
+            new Want("tel_aviv_altalena_sandbags", Sandbags, SandbagsFrom, SandbagsTo, 34.7732528, 32.0964833,
+                "he.wiki אלטלנה, https://he.wikipedia.org/w/index.php?oldid=44137735 (footnote nakdimon2016; agent-read 2026-11-02; " +
+                "Nakdimon not opened); content/events/altalena.yaml; person check pending", Siting.Shore, "tel_aviv"),
+            // The crates: "Het transportschip Bulgaria met emigranten in de haven van Haifa ... met op de kade kisten en kratten",
+            // "Datum : 1948" (Nationaal Archief 255-1124, its Commons copy); year only, so the 1948 turns.
+            new Want("haifa_quay_crates", Crates, Year1948From, Year1948To, 35.00448, 32.820118,
+                "Commons, https://commons.wikimedia.org/w/index.php?oldid=970193372 (Nationaal Archief 255-1124, " +
+                "https://www.nationaalarchief.nl/onderzoeken/fotocollectie/aed57008-d0b4-102d-bcf8-003048976d84; agent-read 2026-11-02); " +
+                "person check pending", Siting.Shore, "haifa"),
+            // The wall: "met op de voorgrond een stenen muurtje langs een weg; het dorp op de top is vermoedelijk Abu Ghosh", series
+            // "Israël 1948-1949: onderweg naar Jeruzalem" (Nationaal Archief 255-0876, its Commons copy); year only, the 1948 turns.
+            new Want("abu_ghosh_road_wall", Wall, Year1948From, Year1948To, AbuGhoshLon, AbuGhoshLat,
+                "Commons, https://commons.wikimedia.org/w/index.php?oldid=1225901219 (Nationaal Archief 255-0876, " +
+                "https://www.nationaalarchief.nl/onderzoeken/fotocollectie/aed4b5dc-d0b4-102d-bcf8-003048976d84; agent-read 2026-11-02); " +
+                "point: en.wiki Abu Ghosh, https://en.wikipedia.org/w/index.php?oldid=1381085214 (agent-read 2026-11-02); person check pending",
+                Siting.Road, WallRoute),
         };
 
         public static IReadOnlyList<Want> Placements(DateTime date) => All.Where(x => x.Covers(date)).ToList();
@@ -479,7 +514,10 @@ namespace Statecraft.Game.Map.Collection
                 {
                     if (w.Key == "degania_r35")
                         Debug.LogWarning("BUILDINGS: route-facing spot unavailable for degania_r35; falling back to the seeded spot.");
-                    at = SeededSpot(w.Key, anchor, clearance, Free, Inside(anchor, footprints));
+                    float from = Inside(anchor, footprints);
+                    at = SeededSpot(w.Key, anchor, clearance, Free, from);
+                    for (int ring = 1; at == null && ring <= WidenRings; ring++)
+                        at = SeededSpot(w.Key, anchor, clearance, Free, from + ring * WidenShare * clearance);
                 }
                 if (at == null) { Debug.LogWarning($"BUILDINGS: no clear ground near {w.Key}; its {w.Model} is not drawn."); continue; }
                 taken.Add((at.Value, clearance));

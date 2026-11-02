@@ -155,7 +155,7 @@ namespace Statecraft.Game.EditorTools
             UnitFigures.SabraPioneer, UnitFigures.PioneerVeteran, UnitFigures.YoungRecruit, UnitFigures.VeteranFighter,
             UnitFigures.PalmachScout, UnitFigures.ArabLegion, UnitFigures.Irregular,
             UnitFigures.SyrianInfantry, UnitFigures.IraqiInfantry, UnitFigures.EgyptianInfantry, UnitFigures.AlaInfantry,
-            UnitFigures.LebaneseRegular,
+            UnitFigures.LebaneseRegular, UnitFigures.LocalIrregular,
         };
 
         /// <summary>Adds the token figures' walk and attack states to their existing controllers, from the takes already in

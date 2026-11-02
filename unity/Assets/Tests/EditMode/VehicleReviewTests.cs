@@ -106,7 +106,7 @@ public class VehicleReviewTests
         var shipped = VehicleReviewCatalog.Ids.Where(VehicleReviewCatalog.Placed)
             .SelectMany(id => new[] { VehicleReviewCatalog.ModelOf(id) + ".meta" }.Concat(new[] { ".mat", ".prefab" }.Select(ext => VehicleReviewCatalog.DirOf(id) + "/" + id + ext)))
             .Select(AssetFile).ToArray();
-        Assert.AreEqual(6, shipped.Length, "the Spitfire (#1932) and the R35 (#2046) are placed");
+        Assert.AreEqual(9, shipped.Length, "the Spitfire (#1932), the R35 (#2046) and the Dakota (2 November 2026) are placed");
         string[] changed;
         try
         {

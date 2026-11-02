@@ -81,7 +81,7 @@ namespace Statecraft.Game.Map.Collection
         const float FootM = 0.3048f;
         public static float RealLengthM(string model) => model switch
         {
-            Altalena => 328f * FootM, C54 => 35.81f, Steamer => 80f, FishingBoat => 10f, Spitfire => 11.23f,
+            Altalena => 328f * FootM, C54 => 35.81f, Steamer => 80f, FishingBoat => 10f, Spitfire => 11.23f, Dakota => DakotaSpanM,
             _ => throw new ArgumentException($"'{model}' is not one of #669's models", nameof(model)),
         };
 
@@ -125,6 +125,7 @@ namespace Statecraft.Game.Map.Collection
                 wants.Add(new Want("tel-aviv-altalena", Altalena, "tel_aviv"));
             if (date >= C54From && date <= C54To) wants.Add(new Want("lod-c54", C54, "lod"));
             if (date >= SpitfireFrom && date <= SpitfireTo) wants.Add(new Want("el-arish-spitfire", Spitfire, "el_arish"));
+            if (date >= DakotaFrom && date <= DakotaTo) wants.Add(new Want(DakotaKey, Dakota, "tel_aviv"));
             return wants;
         }
 

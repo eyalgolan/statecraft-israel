@@ -23,12 +23,18 @@ GENERATED_FIGURES = [
     "figure-ala-infantry-1948-v1",
     "figure-bedouin-civilian-1948-v1",
     "figure-lebanese-regular-1948-v1",
+    "figure-local-arab-irregular-1948-v1",
 ]
 GENERATED_PROPS = [
     "generated-1948-06-bedouin-b-enclosed-striped-tent",
     "generated-1948-13-egyptian-spitfire",
     "generated-1948-14-syrian-renault-r35",
     "generated-1948-08-khaki-canvas-tent",
+    "generated-1948-16-egyptian-dakota-c47",
+    "generated-1948-09-stone-village-well",
+    "generated-1948-10-low-sandbag-position",
+    "generated-1948-11-supply-crate-stack",
+    "generated-1948-12-low-stone-wall-module",
 ]
 
 
