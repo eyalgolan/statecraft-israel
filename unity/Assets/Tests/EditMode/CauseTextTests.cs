@@ -152,7 +152,9 @@ public class CauseTextTests
             (CauseKeys.Purpose.Occupation, $"for the occupation of {placeName}", new[] { place }),
             (CauseKeys.Purpose.Event, $"for {ev.Title}", new[] { ev.Id, ev.Title, "1" }),
         };
-        CollectionAssert.AreEquivalent(CauseKeys.Purpose.All.Where(p => p != CauseKeys.Purpose.Deficit), purposes.Select(p => p.Key), "every purpose");
+        // A map action borrows with its own key (CauseKeys.MapBorrowed): its purpose names only its Paid line (#2199).
+        CollectionAssert.AreEquivalent(CauseKeys.Purpose.All.Where(p => p != CauseKeys.Purpose.Deficit && p != CauseKeys.Purpose.MapAction),
+            purposes.Select(p => p.Key), "every purpose");
         var en = En; var he = He;
         foreach (var (key, english, args) in purposes)
         {
@@ -190,6 +192,7 @@ public class CauseTextTests
             (CauseKeys.Purpose.Yishuv, "to build a yishuv", new string[0]),
             (CauseKeys.Purpose.Project, "to build " + housing.Name, new[] { housing.Id }),
             (CauseKeys.Purpose.Occupation, $"for the occupation of {placeName}", new[] { place }),
+            (CauseKeys.Purpose.MapAction, "to build " + PlayerText.MapAction(C, MapActions.Housing), new[] { MapActions.Housing }),   // as MapActions.Apply
         };
         CollectionAssert.AreEquivalent(CauseKeys.Purpose.All.Except(new[] { CauseKeys.Purpose.Deficit, CauseKeys.Purpose.CivilianUpkeep,
             CauseKeys.Purpose.MilitaryUpkeep, CauseKeys.Purpose.Deport, CauseKeys.Purpose.Event }), purposes.Select(p => p.Key), "every paying purpose");
@@ -205,6 +208,8 @@ public class CauseTextTests
         }
         StringAssert.Contains(housing.NameHe, CauseText.Line(new Cause("economy", "treasury", -3, "x", key: CauseKeys.Paid,
             args: new[] { CauseKeys.Purpose.Project, housing.Id }), C, NoRows, he), "the project kind's Hebrew name");
+        StringAssert.Contains(he["info.map_action." + MapActions.Housing], CauseText.Line(new Cause("economy", "treasury", -3, "x", key: CauseKeys.Paid,
+            args: new[] { CauseKeys.Purpose.MapAction, MapActions.Housing }), C, NoRows, he), "the map action's Hebrew name");
     }
 
     /// <summary>A line with no key yet keeps the sim's English; a unit line is still UnitNames' (#1399).</summary>

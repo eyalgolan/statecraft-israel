@@ -225,13 +225,16 @@ namespace Statecraft.Sim
                 Plow = "plow", Drain = "drain", Yishuv = "yishuv", Deport = "deport", Occupation = "occupation";
             /// <summary>Args: the project kind's id.</summary>
             public const string Project = "project";
+            /// <summary>A map action's cost (MapActions.Apply), a Paid line only: its borrowing is CauseKeys.MapBorrowed.
+            /// Args: the map action's id.</summary>
+            public const string MapAction = "map_action";
             /// <summary>Args: the event's id, its English title as shown, and "1" when its title_he names it (no variant title).</summary>
             public const string Event = "event";
 
             public static readonly IReadOnlyList<string> All = new[]
             {
                 Deficit, CivilianUpkeep, MilitaryUpkeep, Corridor, Arms, Training, Prisoners, TrainingCamp, Plow, Drain, Yishuv,
-                Deport, Occupation, Project, Event,
+                Deport, Occupation, Project, MapAction, Event,
             };
         }
 

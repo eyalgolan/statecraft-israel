@@ -73,6 +73,54 @@ public class MoneyCausesTests
         AssertAddsUp(s, r, "Train(tel_aviv, halutz, 2)");
     }
 
+    /// <summary>The real content never builds a map action: the GDD loop, which runs in every era, refuses them all
+    /// (R-PROJ-004, MapActions.Check's gdd_loop reason). MapActions.Apply still runs in the legacy loop (D-E1), so these use
+    /// the legacy fixture on a day its map actions are open, as EraSystemsTests does, and its housing hex.</summary>
+    static readonly Content Legacy = ContentLoader.Load(Fixture.Write());
+
+    static GameState MapActionDay()
+    {
+        var s = Simulation.NewGame(Legacy, 42, Mode.Historical);
+        s.Date = new DateTime(1948, 6, 1);   // the fixture's map_actions_from
+        return s;
+    }
+
+    static readonly MapAction Housing = new MapAction(MapActions.Housing, 2, 0);
+
+    // R-MONEY-001: a map action's cost is paid from the Treasury, so it is a Money line, before the build line.
+    [Fact]
+    public void AMapActionPaidInCashAddsUp()
+    {
+        Assert.Equal("Map actions are not part of this game: start a city project instead", MapActions.Check(Real, Start(), MapActions.Housing, 2, 0));
+        var s = MapActionDay();
+        s.Treasury = 100;   // more than the cost, so nothing is borrowed for it
+        AssertAddsUp(s, Simulation.Step(Legacy, s, Array.Empty<Command>()), "the same turn with no orders");
+        var r = Simulation.Step(Legacy, s, new Command[] { Housing });
+        Assert.Empty(r.Rejected);
+        Assert.Contains(r.Why, w => w.Key == CauseKeys.MapBuilt);
+        Assert.DoesNotContain(r.Why, w => w.Key == CauseKeys.MapBorrowed);
+        AssertAddsUp(s, r, "MapAction(housing) in cash");
+        var cost = Legacy.RulesAt(s.Date).MapActions[MapActions.Housing].Cost;
+        var paid = Assert.Single(r.Why, w => w.Key == CauseKeys.Paid);
+        Assert.Equal(("treasury", -cost, CauseKeys.Purpose.MapAction, MapActions.Housing), (paid.Target, paid.Delta, paid.Args[0], paid.Args[1]));
+    }
+
+    // R-MONEY-003: a map action with the Treasury short: its cost is one Money line, and the borrowing (MapBorrowed) is not.
+    [Fact]
+    public void AMapActionWithTheTreasuryShortAddsUp()
+    {
+        var s = MapActionDay();
+        s.Treasury = 0;
+        var r = Simulation.Step(Legacy, s, new Command[] { Housing });
+        Assert.Empty(r.Rejected);
+        AssertAddsUp(s, r, "MapAction(housing) borrowed");
+        var borrowed = Assert.Single(r.Why, w => w.Key == CauseKeys.MapBorrowed);
+        Assert.False(EconomySystem.MovesMoney(borrowed));
+        var paid = Assert.Single(r.Why, w => w.Key == CauseKeys.Paid);
+        var why = r.Why.ToList();
+        Assert.True(why.IndexOf(paid) < why.IndexOf(borrowed), "the Money line comes before its borrowing, as PayOrBorrow orders them");
+    }
+
     // R-MONEY-003: every turn of the reference player's game, with its orders, events, upkeep and borrowing.
     [Fact]
     public void EveryTurnOfTheReferenceRunAddsUp()

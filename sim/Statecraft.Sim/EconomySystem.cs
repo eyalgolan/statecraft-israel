@@ -50,11 +50,15 @@ namespace Statecraft.Sim
         /// is a Money line first (CauseKeys.Paid, #2199), then any borrowing, as <see cref="PayNamedOrBorrow"/> writes it.</summary>
         public static void PayOrBorrow(Content c, GameState s, double cost, string purpose, List<Cause> why, string purposeKey, params string[] purposeArgs)
         {
-            if (cost != 0)
-                why.Add(new Cause("economy", "treasury", -cost, $"{PlayerText.Change(c, "treasury", -cost)} ({purpose})",
-                    key: CauseKeys.Paid, args: new[] { purposeKey }.Concat(purposeArgs).ToList()));
+            if (cost != 0) why.Add(Paid(c, cost, purpose, purposeKey, purposeArgs));
             PayNamedOrBorrow(c, s, cost, purpose, why, purposeKey, purposeArgs);
         }
+
+        /// <summary>The Money line (CauseKeys.Paid) for <paramref name="cost"/> paid from the Treasury, as PayOrBorrow writes
+        /// it. MapActions.Apply, which borrows for itself (CauseKeys.MapBorrowed), writes it too (#2199).</summary>
+        public static Cause Paid(Content c, double cost, string purpose, string purposeKey, params string[] purposeArgs) =>
+            new Cause("economy", "treasury", -cost, $"{PlayerText.Change(c, "treasury", -cost)} ({purpose})",
+                key: CauseKeys.Paid, args: new[] { purposeKey }.Concat(purposeArgs).ToList());
 
         /// <summary><see cref="PayOrBorrow"/> for a cost its caller has already given its own Money line (civilian and military
         /// upkeep, a Deport, an event option's cost): only the borrowing line, if any.</summary>
