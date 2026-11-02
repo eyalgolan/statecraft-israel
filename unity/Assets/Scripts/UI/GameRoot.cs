@@ -122,6 +122,13 @@ namespace Statecraft.Game.UI
         /// <summary>The opening (#530) outside Play mode: off by default, so EditMode tests that press New Game meet the advisors
         /// as a player's first game does; the opening's own tests set it.</summary>
         internal bool OpeningInEditMode { get; set; }
+        /// <summary>The start menu's music (#39) outside Play mode: off by default, so EditMode tests stay silent and fetch
+        /// nothing; its wiring test sets it.</summary>
+        internal bool MenuMusicInEditMode { get; set; }
+        /// <summary>The start menu's music, kept for the page across Begins (a language switch); null until a start screen
+        /// shows in a player. Disposed with the component (OnDisable).</summary>
+        internal MenuMusic? Music => music;
+        MenuMusic? music;
 
         public void Configure(GameBoot boot, UIDocument document, TextAsset strings, TextAsset stringsHe, PortraitCatalog portraits,
             MapScene map, PlacementLayer placements, MapPointer pointer, CameraController cameraController)
@@ -189,6 +196,7 @@ namespace Statecraft.Game.UI
         {
             if (boot != null) { boot.Ready -= Begin; boot.Failed -= OnBootFailed; }
             Shutdown();
+            music?.Dispose(); music = null;   // the page's music goes with the component, not with a rebuild (Begin)
         }
 
         // "smoke" as a whole query parameter: bare ("?smoke", "&smoke=") or with a number; it ends at '&', '#' or the end, so
@@ -350,9 +358,13 @@ namespace Statecraft.Game.UI
                 setCompanion = set;
                 companionSwitch = (() => companion != null, on => { companionPicked = on; set(on); });
             }
-            // The start menu's music (#39): only where the start screen shows, and only in a player (never in EditMode, where a
-            // test may show the start screen); made before Settings, whose Music row sets its volume.
-            var music = showsStart && Application.isPlaying ? Own(new MenuMusic(root, Application.platform == RuntimePlatform.WebGLPlayer)) : null;
+            // The start menu's music (#39): made where the start screen first shows, in a player only (in EditMode only where a
+            // test asks: MenuMusicInEditMode), and kept for the page: the rebuild a language switch makes goes on with the same
+            // theme, which turns back up from the old screen's closing instead of being cut and fetched again. Made before
+            // Settings, whose Music row sets its volume. Its duck is the new screen's recording, or none.
+            if (music == null && showsStart && (Application.isPlaying || MenuMusicInEditMode))
+                music = new MenuMusic(root, Application.platform == RuntimePlatform.WebGLPlayer);
+            if (music != null) music.Duck = null;
             Own(new SettingsPresenter(root, text, SettingsFile(), switchLanguage, panel: document.panelSettings, audio: audio, advisors: AdvisorSession.Settings,
                 companion: companionSwitch, music: music));
             // "Report a bug or idea" (#1169), from Settings and the start screen: the version line names the content GameBoot logged.

@@ -5,8 +5,11 @@ using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using Statecraft.Game;
+using Statecraft.Game.Boot;
+using Statecraft.Game.Map;
 using Statecraft.Game.UI;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.TestTools;
 using UnityEngine.TestTools.Constraints;
@@ -14,14 +17,17 @@ using UnityEngine.UIElements;
 using Is = UnityEngine.TestTools.Constraints.Is;
 
 /// <summary>The start menu's music (#39, MenuMusic): Afik's main theme (PR #2240) from StreamingAssets/audio/music/, looped
-/// while the start screen shows and faded out over a second when a game starts. On the web it waits for the first click or
-/// key (browsers block audio until then). No file is silence: no fetch on the desktop, one line in the log, no warning,
-/// no error. The Settings screen's Music row sets its volume and keeps the choice. The fetch and the audio output are
-/// fakes, so no network, audio device or music file is needed.</summary>
+/// while the start screen shows and faded out over a second of real time when a game starts. On the web it waits for the
+/// page's first activation (a click, a tap's release, a key other than Escape). No file is silence for the page: no fetch on
+/// the desktop, one line in the log, no warning, no error. The Settings screen's Music row sets its volume and keeps the
+/// choice. The fetch, the audio output and the clock are fakes, so no network, audio device or music file is needed.</summary>
 public class MenuMusicTests
 {
     static UiText En => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
     static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+    static GameInputs? inputs;
+    static GameInputs Inputs => inputs ??= GameInputs.FromDisk(Paths.Content, Paths.StreamingMap);
+    const float V = MenuMusic.DefaultVolume;   // MenuMusic's own volume until Settings sets one
 
     /// <summary>A fetch the test answers by hand.</summary>
     sealed class FakeFetch
@@ -58,9 +64,12 @@ public class MenuMusicTests
         public readonly FakeOutput Out = new FakeOutput();
         public readonly MenuMusic Music;
         public bool Ducked;
+        /// <summary>The fake clock, in milliseconds.</summary>
+        public double Clock;
         public Rig(bool web, string? url = null)
         {
-            Music = new MenuMusic(Ui.Root, web, url ?? "https://example.invalid/StreamingAssets/" + MenuMusic.File, Fetch.Start, Out);
+            Music = new MenuMusic(Ui.Root, web, url ?? "https://example.invalid/StreamingAssets/" + MenuMusic.File, Fetch.Start, Out,
+                () => Clock / 1000.0);
             Music.Duck = () => Ducked;
         }
         public AudioClip Answer()
@@ -69,19 +78,30 @@ public class MenuMusicTests
             Fetch.Pending!(clip, null);
             return clip;
         }
-        /// <summary>Lets <paramref name="ms"/> of the watch's ticks pass.</summary>
-        public void Pass(int ms) { for (int t = 0; t < ms; t += MenuMusic.WatchMs) Music.Tick(); }
-        /// <summary>A click or a key on a start screen button: the music listens on the root, before any button can stop it.</summary>
+        /// <summary>Lets <paramref name="ms"/> of real time pass in ticks of <paramref name="frameMs"/> (the last one shorter).</summary>
+        public void Pass(int ms, int frameMs = MenuMusic.WatchMs)
+        {
+            for (int left = ms; left > 0; left -= frameMs) { Clock += Math.Min(frameMs, left); Music.Tick(); }
+        }
+        Button At => Ui.Q<Button>("start-new-game");
+        /// <summary>A mouse press on a start screen button: an activation.</summary>
         public void Click()
         {
-            var at = Ui.Q<Button>("start-new-game");
-            using var down = PointerDownEvent.GetPooled();
-            down.target = at; at.SendEvent(down);
+            using var down = PointerDownEvent.GetPooled(new Event { type = EventType.MouseDown, button = 0, mousePosition = Vector2.zero });
+            down.target = At; At.SendEvent(down);
         }
-        public void Key()
+        /// <summary>A finger's press (no activation on iOS) or its release (an activation).</summary>
+        public void Tap(bool release)
         {
-            var at = Ui.Q<Button>("start-new-game");
-            using var k = KeyDownEvent.GetPooled('a', KeyCode.A, EventModifiers.None);
+            var touch = new Touch { fingerId = 0, phase = release ? TouchPhase.Ended : TouchPhase.Began, position = Vector2.zero };
+            if (release) { using var up = PointerUpEvent.GetPooled(touch); up.target = At; At.SendEvent(up); }
+            else { using var down = PointerDownEvent.GetPooled(touch); down.target = At; At.SendEvent(down); }
+        }
+        /// <summary>A key on the focused button, or with nothing focused (aimed at the panel's root).</summary>
+        public void Key(KeyCode key = KeyCode.A, char character = 'a', bool unfocused = false)
+        {
+            VisualElement at = unfocused ? Ui.Root.panel.visualTree : At;
+            using var k = KeyDownEvent.GetPooled(character, key, EventModifiers.None);
             k.target = at; at.SendEvent(k);
         }
         public void Dispose() { Music.Dispose(); Ui.Dispose(); }
@@ -93,18 +113,21 @@ public class MenuMusicTests
     public void SetUp()
     {
         dir = Path.Combine(Path.GetTempPath(), "sc-music-" + Guid.NewGuid().ToString("N"));
-        MenuMusic.GestureSeen = false;   // a new page: no click yet
+        MenuMusic.GestureSeen = false;   // a new page: no activation yet,
+        MenuMusic.ThemeAbsent = false;   // and no failed fetch
     }
 
     [TearDown]
     public void TearDown()
     {
         MenuMusic.GestureSeen = false;
+        MenuMusic.ThemeAbsent = false;
         if (Directory.Exists(dir)) Directory.Delete(dir, true);
     }
 
     /// <summary>The player's file: an OGG in StreamingAssets/audio/music/ (owner, 2 Nov 2026), the name Afik's PR #2240 uses.
-    /// When a theme is committed there, the player names it: a renamed file fails here, not silently in the game.</summary>
+    /// Once a theme is committed there, a file and a name that differ fail here (before then the folder check has nothing
+    /// to compare).</summary>
     [Test]
     public void ThePlayerPicksTheThemeInStreamingAssetsMusic()
     {
@@ -156,7 +179,26 @@ public class MenuMusicTests
         Assert.IsEmpty(rig.Out.Played);
     }
 
-    /// <summary>On the web nothing is fetched or played before the first click or key; after it, the theme loads and loops.</summary>
+    /// <summary>The absence is the page's, not one instance's: a later MenuMusic (a rebuild) neither fetches again nor logs
+    /// again (second review of #2297, C4).</summary>
+    [Test]
+    public void TheAbsenceHoldsForThePage()
+    {
+        using (var first = new Rig(web: true))
+        {
+            first.Music.Show(true); first.Click();
+            LogAssert.Expect(LogType.Log, "MUSIC no theme at " + MenuMusic.File + ": the start menu is silent (HTTP/1.1 404 Not Found)");
+            first.Fetch.Pending!(null, "HTTP/1.1 404 Not Found");
+        }
+        using var second = new Rig(web: true);
+        second.Music.Show(true); second.Click(); second.Pass(1000);
+        LogAssert.NoUnexpectedReceived();
+        Assert.IsEmpty(second.Fetch.Urls, "no second fetch for the page");
+        Assert.AreEqual(MenuMusic.Phase.Absent, second.Music.State);
+    }
+
+    /// <summary>On the web nothing is fetched or played before the page's first activation; after it, the theme loads and
+    /// loops.</summary>
     [Test]
     public void OnTheWebItWaitsForTheFirstClickOrKey([Values(false, true)] bool byKey)
     {
@@ -170,8 +212,34 @@ public class MenuMusicTests
         rig.Pass(MenuMusic.WatchMs);
         CollectionAssert.AreEqual(new[] { clip }, rig.Out.Played);
         Assert.AreEqual(MenuMusic.Phase.Playing, rig.Music.State);
-        Assert.AreEqual(1f, rig.Out.Volume, 1e-6f, "MenuMusic's own volume with no Settings row applied (the row's default is Low)");
+        Assert.AreEqual(V, rig.Out.Volume, 1e-6f, "MenuMusic's own volume, with no Settings row applied, is the row's Low");
         UnityEngine.Object.DestroyImmediate(clip);
+    }
+
+    /// <summary>Only a real activation counts (second review of #2297, H2): a finger's press is none on iOS (its release
+    /// is), and Escape is never one.</summary>
+    [Test]
+    public void OnlyARealActivationCounts()
+    {
+        using var rig = new Rig(web: true);
+        rig.Music.Show(true);
+        rig.Tap(release: false);
+        rig.Key(KeyCode.Escape, '\0');
+        rig.Key(KeyCode.None, '\u001b');
+        Assert.IsEmpty(rig.Fetch.Urls, "a touch press and Escape are no activation");
+        rig.Tap(release: true);
+        Assert.AreEqual(1, rig.Fetch.Urls.Count, "a touch's release is");
+    }
+
+    /// <summary>A key with nothing focused goes to the panel's own root, above the document's: it still counts (second
+    /// review of #2297, H1).</summary>
+    [Test]
+    public void AKeyWithNothingFocusedCounts()
+    {
+        using var rig = new Rig(web: true);
+        rig.Music.Show(true);
+        rig.Key(unfocused: true);
+        Assert.AreEqual(1, rig.Fetch.Urls.Count);
     }
 
     /// <summary>On the desktop there is no gesture rule: it loads when the start screen shows. A clip still decoding plays
@@ -229,7 +297,7 @@ public class MenuMusicTests
         rig.Music.Show(false);
         Assert.AreEqual(MenuMusic.Phase.Fading, rig.Music.State);
         rig.Pass(MenuMusic.FadeMs / 2);
-        Assert.AreEqual(0.5f, rig.Out.Volume, 0.06f, "half way");
+        Assert.AreEqual(V * 0.5f, rig.Out.Volume, 0.01f, "half way");
         Assert.AreEqual(0, rig.Out.Stops);
         rig.Pass(MenuMusic.FadeMs / 2);
         Assert.AreEqual(1, rig.Out.Stops, "stopped after the fade");
@@ -238,6 +306,46 @@ public class MenuMusicTests
         rig.Click(); rig.Pass(2000);
         Assert.AreEqual(1, rig.Fetch.Urls.Count, "no new fetch in the game");
         Assert.AreEqual(1, rig.Out.Played.Count, "no play in the game");
+    }
+
+    /// <summary>The fade (and the dip) run on real time: at 60, 10 or 4 frames a second the fade is half way after half a
+    /// second and over after one, and a one-second hitch ends it at once (second review of #2297, C2).</summary>
+    [Test]
+    public void TheFadeTakesASecondOfRealTimeAtAnyFrameRate([Values(16, 100, 250, 1000)] int frameMs)
+    {
+        using var rig = new Rig(web: true);
+        rig.Music.Show(true); rig.Click();
+        rig.Answer();
+        rig.Music.Show(false);
+        if (frameMs < MenuMusic.FadeMs)
+        {
+            rig.Pass(MenuMusic.FadeMs / 2, frameMs);
+            Assert.AreEqual(V * 0.5f, rig.Out.Volume, 0.01f, "half way after half a second");
+            Assert.AreEqual(0, rig.Out.Stops);
+            rig.Pass(MenuMusic.FadeMs / 2, frameMs);
+        }
+        else rig.Pass(MenuMusic.FadeMs, frameMs);
+        Assert.AreEqual(1, rig.Out.Stops, "over after a second");
+        Assert.AreEqual(MenuMusic.Phase.Idle, rig.Music.State);
+    }
+
+    /// <summary>The start screen shown again before the fade ends (C1): the theme turns back up from where it was, never
+    /// stops, and is not fetched again.</summary>
+    [Test]
+    public void ShownAgainDuringTheFadeItComesBackUp()
+    {
+        using var rig = new Rig(web: true);
+        rig.Music.Show(true); rig.Click();
+        rig.Answer();
+        rig.Music.Show(false);
+        rig.Pass(MenuMusic.FadeMs / 2);
+        rig.Music.Show(true);
+        Assert.AreEqual(MenuMusic.Phase.Playing, rig.Music.State, "back to playing at once");
+        rig.Pass(MenuMusic.FadeMs);
+        Assert.AreEqual(V, rig.Out.Volume, 1e-6f, "back up");
+        Assert.AreEqual(0, rig.Out.Stops, "never stopped");
+        Assert.AreEqual(1, rig.Fetch.Urls.Count, "fetched once");
+        Assert.AreEqual(1, rig.Out.Played.Count, "played once: no restart from the top");
     }
 
     /// <summary>A game that starts while the theme is still loading cancels the fetch; the late answer plays nothing.</summary>
@@ -268,11 +376,11 @@ public class MenuMusicTests
         rig.Pass(MenuMusic.WatchMs);
         rig.Ducked = true;
         rig.Pass(MenuMusic.FadeMs);
-        Assert.AreEqual(MenuMusic.DipLevel, rig.Out.Volume, 1e-6f, "low under the recording, not silent");
+        Assert.AreEqual(V * MenuMusic.DipLevel, rig.Out.Volume, 1e-6f, "low under the recording, not silent");
         Assert.AreEqual(MenuMusic.Phase.Playing, rig.Music.State, "paused in volume only: it goes on looping");
         rig.Ducked = false;
         rig.Pass(MenuMusic.FadeMs);
-        Assert.AreEqual(1f, rig.Out.Volume, 1e-6f, "back after it");
+        Assert.AreEqual(V, rig.Out.Volume, 1e-6f, "back after it");
         UnityEngine.Object.DestroyImmediate(clip);
     }
 
@@ -294,7 +402,7 @@ public class MenuMusicTests
         UnityEngine.Object.DestroyImmediate(clip);
     }
 
-    /// <summary>The watch that runs while it plays allocates nothing per tick.</summary>
+    /// <summary>The watch allocates nothing per tick: playing, dipping and fading.</summary>
     [Test]
     public void ATickAllocatesNothing()
     {
@@ -302,39 +410,55 @@ public class MenuMusicTests
         rig.Music.Show(true); rig.Click();
         var clip = rig.Answer();
         rig.Pass(MenuMusic.WatchMs);
-        Assert.That(() => { for (int i = 0; i < 50; i++) rig.Music.Tick(); }, Is.Not.AllocatingGCMemory());
+        Assert.That(() => { for (int i = 0; i < 50; i++) { rig.Clock += MenuMusic.WatchMs; rig.Music.Tick(); } }, Is.Not.AllocatingGCMemory());
         rig.Ducked = true;
-        Assert.That(() => { for (int i = 0; i < 50; i++) rig.Music.Tick(); }, Is.Not.AllocatingGCMemory());
+        Assert.That(() => { for (int i = 0; i < 50; i++) { rig.Clock += MenuMusic.WatchMs; rig.Music.Tick(); } }, Is.Not.AllocatingGCMemory());
+        rig.Music.Show(false);
+        Assert.That(() => { for (int i = 0; i < 10; i++) { rig.Clock += MenuMusic.WatchMs; rig.Music.Tick(); } }, Is.Not.AllocatingGCMemory());
         UnityEngine.Object.DestroyImmediate(clip);
     }
 
-    /// <summary>The Settings screen's Music row: Off, Low and High, applied to the music at once,
-    /// kept in the SettingsStore across a reload, in English and in Hebrew (whose words await the native reviewer, #564).</summary>
+    /// <summary>MenuMusic's own default is the Music row's Low (second review of #2297, C5): a wiring that never applies
+    /// Settings cannot play it loud.</summary>
     [Test]
-    public void TheMusicRowSetsTheVolumeAtOnceAndSurvivesAReload([Values(false, true)] bool hebrew)
+    public void ItsOwnDefaultIsTheRowsLow()
     {
-        var text = hebrew ? He : En;
-        using (var rig = new Rig(web: true))
-        using (new SettingsPresenter(rig.Ui.Root, text, new SettingsStore(dir), music: rig.Music))
+        using var rig = new Rig(web: true);
+        Assert.AreEqual(0.35f, rig.Music.Volume, 1e-6f);
+        Assert.AreEqual(Array.Find(SettingsPresenter.SoundLevels, l => l.level == SettingsPresenter.MusicDefault).volume, MenuMusic.DefaultVolume);
+    }
+
+    /// <summary>GameRoot's wiring (C5): one MenuMusic for the page, made where the start screen shows, at Settings' Low, with
+    /// the recording as its duck and the screen's Show; a language switch keeps the same instance (no cut, no new fetch,
+    /// C4), and starting a game hands it Show(false).</summary>
+    [Test]
+    public void GameRootWiresOneMusicForThePage()
+    {
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        try
         {
-            var ui = rig.Ui;
-            Assert.AreEqual(text["settings.music"], ui.Q<Label>("settings-music-label").text);
-            foreach (var level in new[] { "off", "low", "high" })
-                Assert.AreEqual(text["settings.music." + level], ui.Q<Button>("settings-music-" + level).text);
-            UiTestKit.Press(ui.Q<Button>("settings-music-off"));
-            Assert.AreEqual(0f, rig.Music.Volume, "off at once");
-            Assert.IsTrue(ui.Q<Button>("settings-music-off").ClassListContains(SettingsPresenter.SelectedClass));
-            Assert.IsFalse(ui.Q<Button>("settings-music-low").ClassListContains(SettingsPresenter.SelectedClass));
-            UiTestKit.Press(ui.Q<Button>("settings-music-high"));
-            Assert.AreEqual(1f, rig.Music.Volume, 1e-6f);
-            Assert.AreEqual("high", new SettingsStore(dir).Read(SettingsPresenter.MusicKey));
+            UnityEngine.Object.FindFirstObjectByType<MapScene>().Build(Inputs.Map);
+            var game = UnityEngine.Object.FindFirstObjectByType<GameRoot>();
+            game.Store = new SaveStore(Path.Combine(dir, "saves"));
+            game.Settings = new SettingsStore(Path.Combine(dir, "settings"));
+            game.MenuMusicInEditMode = true;
+            MenuMusic.ThemeAbsent = true;   // the wiring, not the file: nothing is fetched here
+            game.Begin(Inputs, 0, startScreen: true);
+            var ui = UnityEngine.Object.FindFirstObjectByType<UIDocument>().rootVisualElement;
+            var music = game.Music;
+            Assert.IsNotNull(music, "made where the start screen shows");
+            Assert.IsTrue(music!.Wanted, "the start screen's Show reached it");
+            Assert.AreEqual(0.35f, music.Volume, 1e-6f, "Settings applied the Music row's Low");
+            Assert.IsNotNull(music.Duck, "the recording is its duck");
+            Assert.IsFalse(music.Duck!(), "nothing is playing yet");
+            UiTestKit.Press(ui.Q<Button>("start-language-he"));   // the rebuild a language switch makes
+            Assert.AreSame(music, game.Music, "the same music goes on");
+            Assert.IsTrue(music.Wanted, "the rebuilt start screen wants it");
+            Assert.IsNotNull(music.Duck, "the new screen's recording is its duck");
+            UiTestKit.Press(ui.Q<Button>("start-new-game"));
+            Assert.IsFalse(music.Wanted, "a game started: the screen closed");
         }
-        using (var rig = new Rig(web: true))
-        using (new SettingsPresenter(rig.Ui.Root, text, new SettingsStore(dir), music: rig.Music))
-        {
-            Assert.AreEqual(1f, rig.Music.Volume, 1e-6f, "the stored choice is applied at the next start");
-            Assert.IsTrue(rig.Ui.Q<Button>("settings-music-high").ClassListContains(SettingsPresenter.SelectedClass));
-        }
+        finally { EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); }
     }
 
     /// <summary>The owner's ruling on #2297 (2 Nov 2026): "Low by default (Recommended)", "35% volume: the theme sits under

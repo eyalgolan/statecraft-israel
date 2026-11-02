@@ -7,27 +7,34 @@ namespace Statecraft.Game.UI
 {
     /// <summary>The start menu's music (#39): the main theme by Afik (afikomposer, PR #2240; CC BY-NC-ND 4.0, owner 2 Nov 2026),
     /// an OGG in StreamingAssets/audio/music/ (docs/audio.md). It loops while the start screen shows and fades out over
-    /// FadeMs when a game starts; it never plays in the game. The file is fetched only when it is about to play, with
-    /// UnityWebRequestMultimedia (DeclarationRecording's fetch), and the browser decodes it on the web. Browsers block audio
-    /// until the page's first click or key, so on the web nothing is fetched before one (GestureSeen; the desktop has no such
-    /// rule). The Settings screen's Music row sets Volume (SettingsPresenter); at 0 it is not even fetched. It drops to DipLevel
-    /// while Ben-Gurion's recording plays on the same screen (Duck). No theme (main before #2240, or a 404 on the web) is
-    /// silence: no fetch on the desktop, one plain log line, no warning and no error. Presentation only: the sim and the
-    /// golden hashes never see it. GameRoot builds it only in a player that shows the start screen, never in the automated
-    /// runs (StartScreenPresenter.Skipped) or in EditMode.</summary>
+    /// FadeMs of real time when a game starts; it never plays in the game. The whole file is downloaded when it is about to
+    /// play (UnityWebRequestMultimedia, DeclarationRecording's fetch; not streamed) and decoded (by the browser on the web);
+    /// the clip is released when the fade ends. Browsers block audio until the page's first activation (a click, a tap or a
+    /// key other than Escape), so on the web nothing is fetched before one (GestureSeen; the desktop has no such rule). The
+    /// Settings screen's Music row sets Volume (SettingsPresenter; MenuMusic's own default is the row's Low, so a missed
+    /// wiring can't play loud); at 0 it is not even fetched. It drops to DipLevel while Ben-Gurion's recording plays on the
+    /// same screen (Duck). No theme (main before #2240, a 404 or any failed fetch) is silence for the rest of the page
+    /// (Absent): one fetch at most, one plain log line, no warning and no error. GameRoot keeps one for the page, across the
+    /// rebuild a language switch makes, and builds it only in a player that shows the start screen, never in the automated
+    /// runs (StartScreenPresenter.Skipped) or in EditMode. Presentation only: the sim and the golden hashes never see it.</summary>
     public sealed class MenuMusic : IDisposable
     {
-        /// <summary>The theme's path under StreamingAssets. A renamed file is renamed here too (MenuMusicTests checks the
+        /// <summary>The theme's path under StreamingAssets. A renamed file is renamed here too (MenuMusicTests checks a
         /// committed file against it).</summary>
         public const string File = "audio/music/Main_1.3.ogg";
 
-        /// <summary>The fade when a game starts (and the dip under the recording), and the watch's step while it plays.</summary>
+        /// <summary>The fade when a game starts (and the dip under the recording), in real time, and the watch's period while
+        /// it loads or plays.</summary>
         public const int FadeMs = 1000, WatchMs = 50;
 
         /// <summary>The theme's level under Ben-Gurion's recording, as a share of the Music volume. The owner's ruling on #2297
         /// (2 Nov 2026), "Dip under the recording (Recommended)": "The theme drops low while the recording plays, then comes
         /// back". Low, not silence.</summary>
         public const float DipLevel = 0.2f;
+
+        /// <summary>The volume until Settings sets one: the Music row's default, Low (owner, #2297, 2 Nov 2026: "Low by default
+        /// (Recommended)"; SettingsPresenter.SoundLevels' "low").</summary>
+        public const float DefaultVolume = 0.35f;
 
         /// <summary>Where the theme plays. The game's is a looping AudioSource on its own GameObject (SourceOutput).</summary>
         public interface IOutput : IDisposable
@@ -44,19 +51,31 @@ namespace Statecraft.Game.UI
         /// decoding); Playing; Fading (the game has started); Absent (no theme: silent for the rest of the page).</summary>
         public enum Phase { Idle, Loading, Playing, Fading, Absent }
 
-        /// <summary>True once the page has had a click or a key: the browser's rule is per page, so it holds across the
-        /// rebuild a language switch makes.</summary>
+        /// <summary>True once the page has had an activation (a click, a tap or a key other than Escape): the browser's rule is
+        /// per page, so it holds for every instance.</summary>
         public static bool GestureSeen { get; internal set; }
 
-        readonly VisualElement root; readonly bool web; readonly string url;
-        readonly DeclarationRecording.Fetch fetch; readonly IOutput output;
-        readonly EventCallback<PointerDownEvent> onPointer; readonly EventCallback<KeyDownEvent> onKey;
+        /// <summary>True once a fetch failed or the file is missing: no theme for the rest of the page, whatever instance asks
+        /// again (no second fetch, no second log line). A failed fetch for any reason counts: a reload tries again.</summary>
+        public static bool ThemeAbsent { get; internal set; }
+
+        static readonly TrickleDown[] Phases = { TrickleDown.TrickleDown, TrickleDown.NoTrickleDown };
+
+        readonly VisualElement root, listener; readonly bool web; readonly string url;
+        readonly DeclarationRecording.Fetch fetch; readonly IOutput output; readonly Func<double> now;
+        readonly EventCallback<PointerDownEvent> onPointerDown; readonly EventCallback<PointerUpEvent> onPointerUp;
+        readonly EventCallback<KeyDownEvent> onKey;
         readonly IVisualElementScheduledItem timer;
         DeclarationRecording.IRequest? request; AudioClip? clip;
-        bool wanted; int generation, fadeLeftMs;
-        float volume = 1f, dip = 1f;
+        bool wanted, playing, fadingOut; int generation; double lastTick;
+        float volume = DefaultVolume, dip = 1f, fade = 1f;
 
-        public Phase State { get; private set; }
+        /// <summary>Absent for the page once ThemeAbsent is set; otherwise the instance's own phase.</summary>
+        public Phase State => ThemeAbsent ? Phase.Absent : clip == null ? (request != null ? Phase.Loading : Phase.Idle)
+            : !playing ? Phase.Loading : fadingOut ? Phase.Fading : Phase.Playing;
+
+        /// <summary>Whether the start screen wants it (Show).</summary>
+        internal bool Wanted => wanted;
 
         /// <summary>True while the theme must drop to DipLevel (GameRoot: while Ben-Gurion's recording plays).</summary>
         public Func<bool>? Duck { get; set; }
@@ -69,20 +88,32 @@ namespace Statecraft.Game.UI
             set { volume = Mathf.Clamp01(value); Apply(); TryStart(); }
         }
 
-        /// <param name="web">The browser's rule: nothing before the page's first click or key.</param>
+        /// <param name="web">The browser's rule: nothing before the page's first activation.</param>
         /// <param name="url">Test seam; null is Url().</param>
         /// <param name="fetch">Test seam; null fetches with UnityWebRequestMultimedia as Ogg Vorbis.</param>
         /// <param name="output">Test seam; null plays through an AudioSource.</param>
-        public MenuMusic(VisualElement root, bool web, string? url = null, DeclarationRecording.Fetch? fetch = null, IOutput? output = null)
+        /// <param name="now">Test seam: the clock, in seconds; null is Time.realtimeSinceStartupAsDouble.</param>
+        public MenuMusic(VisualElement root, bool web, string? url = null, DeclarationRecording.Fetch? fetch = null, IOutput? output = null,
+            Func<double>? now = null)
         {
             this.root = root; this.web = web;
             this.url = url ?? Url();
             this.fetch = fetch ?? DeclarationRecording.WebFetchOgg;
             this.output = output ?? new SourceOutput();
-            onPointer = _ => Gesture();
-            onKey = _ => Gesture();
-            root.RegisterCallback(onPointer, TrickleDown.TrickleDown);
-            root.RegisterCallback(onKey, TrickleDown.TrickleDown);
+            this.now = now ?? (() => Time.realtimeSinceStartupAsDouble);
+            // On the panel's own root: a key with nothing focused goes there, never through the document's root below it.
+            listener = root.panel?.visualTree ?? root;
+            onPointerDown = e => { if (e.pointerType == PointerType.mouse) Gesture(); };   // a mouse press activates; a touch's
+            onPointerUp = e => { if (e.pointerType != PointerType.mouse) Gesture(); };     // press does not (iOS), its release does
+            onKey = e => { if (e.keyCode != KeyCode.Escape && e.character != '\u001b') Gesture(); };   // Escape never activates
+            // Both phases: trickle-down sees an event before any element can stop it; bubble-up sees one aimed at the panel's
+            // root itself. Gesture is idempotent, so an event seen twice counts once.
+            foreach (var phase in Phases)
+            {
+                listener.RegisterCallback(onPointerDown, phase);
+                listener.RegisterCallback(onPointerUp, phase);
+                listener.RegisterCallback(onKey, phase);
+            }
             timer = root.schedule.Execute(Tick).Every(WatchMs);
             timer.Pause();
         }
@@ -94,13 +125,19 @@ namespace Statecraft.Game.UI
             return u.Contains("://") ? Boot.GameInputs.WithBuildId(u, Application.buildGUID) : "file://" + u;
         }
 
-        /// <summary>The start screen shows (true: play, once allowed) or closes (false: a game starts, so fade out).</summary>
+        /// <summary>The start screen shows (true: play, once allowed; a fade under way turns back up) or closes (false: a game
+        /// starts, so fade out; a load under way is cancelled).</summary>
         public void Show(bool shown)
         {
             wanted = shown;
-            if (shown) { TryStart(); return; }
-            if (State == Phase.Playing) { State = Phase.Fading; fadeLeftMs = FadeMs; }
-            else if (State == Phase.Loading) Stop();
+            if (shown)
+            {
+                if (playing) fadingOut = false;   // shown again before the fade ended: it comes back up from where it is
+                TryStart();
+                return;
+            }
+            if (playing) fadingOut = true;
+            else if (clip != null || request != null) Stop();
         }
 
         void Gesture()
@@ -112,24 +149,22 @@ namespace Statecraft.Game.UI
 
         void TryStart()
         {
-            if (!wanted || State != Phase.Idle || volume <= 0f || (web && !GestureSeen)) return;
+            if (!wanted || ThemeAbsent || clip != null || request != null || volume <= 0f || (web && !GestureSeen)) return;
             if (url.StartsWith("file://", StringComparison.Ordinal) && !System.IO.File.Exists(url.Substring("file://".Length)))
             {
                 Absent(null);
                 return;
             }
-            State = Phase.Loading;
-            timer.Resume();
             var mine = ++generation;
             var r = fetch(url, (c, error) =>
             {
-                if (mine != generation || State != Phase.Loading) { Release(c); return; }   // stopped meanwhile
+                if (mine != generation) { Release(c); return; }   // stopped meanwhile
                 request = null;
                 if (c == null) { Absent(error); return; }
                 clip = c;
-                Tick();
+                Begin();
             });
-            if (mine == generation && State == Phase.Loading && clip == null) request = r;   // still on its way
+            if (mine == generation && clip == null && !ThemeAbsent) { request = r; timer.Resume(); }   // still on its way
         }
 
         /// <summary>No theme: silent for the rest of the page, with one line in the log (never a warning: main ships no
@@ -137,42 +172,43 @@ namespace Statecraft.Game.UI
         void Absent(string? why)
         {
             Stop();
-            State = Phase.Absent;
+            ThemeAbsent = true;
             Debug.Log("MUSIC no theme at " + File + ": the start menu is silent" + (why == null ? "" : " (" + why + ")"));
         }
 
-        /// <summary>Every WatchMs while loading or playing: the play once decoded, the dip under the recording and the fade
-        /// when a game starts. Allocates nothing.</summary>
+        /// <summary>Plays the clip once it is decoded; until then the watch asks again.</summary>
+        void Begin()
+        {
+            var ready = output.Ready(clip!);
+            if (ready == null) { Absent("the clip did not decode"); return; }
+            if (ready == false) { timer.Resume(); return; }
+            playing = true; fadingOut = false; fade = 1f;
+            dip = Duck?.Invoke() == true ? DipLevel : 1f;   // the recording may have started since the fetch did (N1)
+            lastTick = now();
+            Apply();
+            output.Play(clip!);
+            timer.Resume();
+        }
+
+        /// <summary>Every WatchMs while loading or playing: the play once decoded, and the dip and the fade, by the real time
+        /// since the last tick (a slow or hitching frame rate does not stretch them). Allocates nothing.</summary>
         internal void Tick()
         {
-            if (State == Phase.Loading)
-            {
-                if (clip == null) return;
-                var ready = output.Ready(clip);
-                if (ready == null) { Absent("the clip did not decode"); return; }
-                if (ready == false) return;
-                State = Phase.Playing;
-                dip = Duck?.Invoke() == true ? DipLevel : 1f;   // the recording may have started since the fetch did (N1)
-                Apply();
-                output.Play(clip);
-                return;
-            }
-            if (State != Phase.Playing && State != Phase.Fading) return;
-            float step = (float)WatchMs / FadeMs;
+            if (clip == null) return;
+            if (!playing) { Begin(); return; }
+            var t = now();
+            float step = (float)((t - lastTick) * 1000.0 / FadeMs);
+            lastTick = t;
             dip = Duck?.Invoke() == true ? Mathf.Max(DipLevel, dip - step) : Mathf.Min(1f, dip + step);
-            if (State == Phase.Fading)
-            {
-                fadeLeftMs -= WatchMs;
-                if (fadeLeftMs <= 0) { Stop(); return; }
-            }
+            fade = fadingOut ? Mathf.Max(0f, fade - step) : Mathf.Min(1f, fade + step);
+            if (fadingOut && fade <= 1e-4f) { Stop(); return; }   // float steps: 20 x 0.05 may leave a hair above 0
+            // (Shown again before this point, the fade had already turned back up: Show(true) clears fadingOut.)
             Apply();
         }
 
         void Apply()
         {
-            if (State != Phase.Loading && State != Phase.Playing && State != Phase.Fading) return;
-            float fade = State == Phase.Fading ? (float)fadeLeftMs / FadeMs : 1f;
-            output.Volume = volume * dip * fade;
+            if (playing) output.Volume = volume * dip * fade;
         }
 
         /// <summary>Stops it, cancels a fetch and releases the clip. Safe to call at any time.</summary>
@@ -183,7 +219,7 @@ namespace Statecraft.Game.UI
             timer.Pause();
             output.Stop();
             Release(clip); clip = null;
-            State = Phase.Idle;
+            playing = false; fadingOut = false;
         }
 
         static void Release(AudioClip? c)
@@ -196,15 +232,19 @@ namespace Statecraft.Game.UI
         {
             wanted = false;
             Stop();
-            root.UnregisterCallback(onPointer, TrickleDown.TrickleDown);
-            root.UnregisterCallback(onKey, TrickleDown.TrickleDown);
+            foreach (var phase in Phases)
+            {
+                listener.UnregisterCallback(onPointerDown, phase);
+                listener.UnregisterCallback(onPointerUp, phase);
+                listener.UnregisterCallback(onKey, phase);
+            }
             output.Dispose();
         }
 
         /// <summary>A looping AudioSource on its own GameObject, made at the first Play.</summary>
         sealed class SourceOutput : IOutput
         {
-            GameObject? go; AudioSource? source; float volume = 1f;
+            GameObject? go; AudioSource? source; float volume = DefaultVolume;
 
             public bool? Ready(AudioClip clip) => DeclarationRecording.SourceOutput.ReadyState(clip);
 
