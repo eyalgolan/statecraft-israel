@@ -1,8 +1,9 @@
 // Outbound only, and optional: nothing here may throw back into the Unity call that published a snapshot. A malformed
 // snapshot, a missing element or a failing page script leaves the last good panel, and a failed bootstrap is tried again
-// on the next snapshot. The stock page carries the panel from load, so its one live region (the status line) exists
-// before the first announcement; a cached older page gets the same elements from the bootstrap below, which travels with
-// the hashed player. An existing custom callback is respected. Pages without the stock canvas keep their own layout.
+// on the next snapshot. The stock page carries the panel from load, hidden (the companion is opt-in: off is out of the
+// accessibility tree); a cached older page gets the same elements from the bootstrap below, which travels with the
+// hashed player. A snapshot shows the panel and writes its first status in a later task, so the one live region (the
+// status line) is in the tree before its first announcement. An existing custom callback is respected. Pages without the stock canvas keep their own layout.
 mergeInto(LibraryManager.library, {
   StatecraftCompanion: function (json) {
     try {
@@ -36,7 +37,7 @@ mergeInto(LibraryManager.library, {
         }
         // Tag, id, parent id, attributes: the same elements, in the same order, as the stock page's skeleton (index.html).
         var specs = [
-          ["aside", "companion", null, { "aria-labelledby": "companion-heading", "tabindex": "-1", "dir": "auto" }],
+          ["aside", "companion", null, { "aria-labelledby": "companion-heading", "tabindex": "-1", "dir": "auto", "hidden": "" }],
           ["h2", "companion-heading", "companion", { "dir": "auto" }],
           ["p", "companion-help", "companion", { "dir": "auto" }],
           ["section", "companion-event", "companion", { "dir": "auto" }],
@@ -89,6 +90,16 @@ mergeInto(LibraryManager.library, {
         var cleared = ["heading", "help", "title", "body", "choice-heading", "choices", "focus-heading", "focus",
           "status-heading", "status", "report-title", "report-rows"];
         var previous = null;
+        var pending = null; // the timer of a status write waiting for a later task
+        // Clears the status line now and writes it in a later task: a clear and a write in one task leave the text the
+        // same, which a screen reader may not announce.
+        var announceLater = function (status, value) {
+          status.textContent = "";
+          pending = setTimeout(function () {
+            pending = null;
+            try { status.textContent = value; } catch (e) { /* the game must keep running */ }
+          }, 150);
+        };
         window.statecraftCompanion = function (json) {
           var snapshot;
           try { snapshot = JSON.parse(json); } catch (e) { return; }
@@ -109,12 +120,17 @@ mergeInto(LibraryManager.library, {
             });
           };
           document.body.classList.toggle("has-companion", snapshot !== null);
+          // A status write still waiting is dropped: this snapshot says what the line holds now.
+          if (pending !== null) { clearTimeout(pending); pending = null; }
           if (snapshot === null) {
             cleared.forEach(function (part) { node[part].textContent = ""; });
             node.report.hidden = true;
+            panel.hidden = true; // off is off: no empty landmark or headings in the accessibility tree
             previous = null;
             return;
           }
+          var appearing = panel.hidden;
+          panel.hidden = false;
           if (panel.lang !== snapshot.lang) panel.lang = snapshot.lang;
           // Containers need the UI direction; leaf paragraphs/choices still resolve mixed-script text independently.
           var direction = snapshot.lang === "he" ? "rtl" : "ltr";
@@ -127,11 +143,10 @@ mergeInto(LibraryManager.library, {
           words("focus", snapshot.focus);
           words("status-heading", snapshot.statusHeading);
           // The one live region: written when its text changes, and written again when the same result comes on a new turn.
-          if (node.status.textContent !== snapshot.status) node.status.textContent = snapshot.status;
-          else if (previous && previous.turn !== snapshot.turn && snapshot.status !== "") {
-            node.status.textContent = "";
-            node.status.textContent = snapshot.status;
-          }
+          // Its first text after the panel appears, and a repeat, go in a later task (announceLater).
+          if (appearing && snapshot.status !== "") announceLater(node.status, snapshot.status);
+          else if (node.status.textContent !== snapshot.status) node.status.textContent = snapshot.status;
+          else if (previous && previous.turn !== snapshot.turn && snapshot.status !== "") announceLater(node.status, snapshot.status);
           if (!previous || JSON.stringify(previous.body) !== JSON.stringify(snapshot.body)) lines("body", "p", snapshot.body);
           node["choice-group"].hidden = snapshot.choices.length === 0;
           if (!previous || previous.unavailable !== snapshot.unavailable || JSON.stringify(previous.choices) !== JSON.stringify(snapshot.choices))

@@ -520,9 +520,11 @@ and turns on in one of two ways:
   and `?companion=10` do not turn it on).
 
 `WebCompanion.On` holds the rule. `WebCompanionTests` pins it, the Settings row and the real root (off at start, on and
-off from Settings, kept for a later game). The page keeps the panel's empty skeleton from load either way, so its live
-region exists before a first announcement. With the companion off, nothing fills it: it stays out of sight, but its
-empty landmark is still in the accessibility tree (open point for the VoiceOver test).
+off from Settings, kept for a later game). The page carries the panel's skeleton from load, `hidden`, so with the
+companion off there is no empty landmark or heading in the accessibility tree. The first snapshot shows the panel and
+writes its status line in a later task, so the live region is in the tree before its first announcement; a repeated
+status on a new turn is also cleared and written again in a later task. Whether VoiceOver announces both is part of the
+pending VoiceOver test.
 
 ## Screenshots
 

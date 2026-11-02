@@ -46,6 +46,12 @@ let outbound;
 function UTF8ToString(pointer) { assert.equal(pointer, 42); return outbound; }
 const live = () => Object.values(elements).filter(e => e.attributes['aria-live'] || e.attributes.role === 'status');
 const call = () => assert.doesNotThrow(() => LibraryManager.library.StatecraftCompanion(42), 'the bridge must never throw into Unity');
+// Fake timers: a deferred status write runs only when a test flushes, so a test sees the task it lands in.
+const timers = [];
+function setTimeout(run, ms) { timers.push(run); return timers.length; }
+function clearTimeout(id) { if (id >= 1) timers[id - 1] = null; }
+const pendingTimers = () => timers.filter(Boolean).length;
+const flush = () => { for (let i = 0; i < timers.length; i++) { const run = timers[i]; timers[i] = null; if (run) run(); } };
 '''
 
 
@@ -93,7 +99,7 @@ def skeleton():
 def bootstrapped(extra=''):
     """The plugin bootstrapped on a cached stock page (no skeleton) with the standard payload."""
     return DRIVER + PLUGIN.read_text() + '\nconst payload = ' + json.dumps(payload()) + ';\n' + r'''
-outbound = JSON.stringify(payload); call();
+outbound = JSON.stringify(payload); call(); flush();
 assert.equal(elements['companion-title'].textContent, payload.title);
 ''' + extra
 
@@ -113,6 +119,9 @@ outbound = JSON.stringify(payload);
 const focused = document.activeElement;
 call();
 assert.equal(document.activeElement, focused, 'a push never moves focus');
+assert.equal(elements['companion'].hidden, false, 'a snapshot shows the panel');
+assert.equal(elements['companion-status'].textContent, '', 'the first status waits for a later task, so the region is in the tree first');
+flush();
 assert.equal(elements['companion'].attributes['aria-labelledby'], 'companion-heading');
 // Condition 4: only the status/result line is live; the card and the focus line are read on demand.
 assert.deepEqual(live().map(e => e.id), ['companion-status']);
@@ -146,6 +155,7 @@ assert.equal(writes, count + 2, 'a focus and status change writes those two line
 assert.equal(elements['companion-status'].textContent, '');
 outbound = 'null'; call();
 assert(!classes.has('has-companion'));
+assert.equal(elements['companion'].hidden, true, 'off is off: the cleared panel leaves the accessibility tree');
 assert.equal(elements['companion-title'].textContent, '');
 assert.equal(elements['companion-choices'].children.length, 0);
 payload.title = ''; payload.body = []; payload.choices = [];
@@ -163,7 +173,8 @@ def test_the_status_region_is_in_the_stock_page_from_load_and_the_bridge_reuses_
     assert found, 'the stock page must carry the companion skeleton'
     status = [f for f in found if f[3].get('role') == 'status' or 'aria-live' in f[3]]
     assert [f[1] for f in status] == ['companion-status'], 'exactly one live region, the status line'
-    assert not any('hidden' in f[3] for f in found), 'a hidden ancestor would keep the live region out of the accessibility tree'
+    assert [f[1] for f in found if 'hidden' in f[3]] == ['companion'], \
+        'off is off (opt-in, owner 1 November 2026): the panel is hidden, with no empty landmark or headings, until the game fills it'
     assert 'body:not(.has-companion) #companion' in stale.page(), 'the empty panel is out of sight until the game fills it'
     made = json.loads(run(bootstrapped(r'''
 console.log(JSON.stringify(Object.values(elements).filter(e => e.id.startsWith('companion') && e.tag !== 'style')
@@ -182,7 +193,11 @@ const shape = () => Object.values(elements).filter(e => e.tag !== 'style').map(e
 const spec = shape();
 const bodyChildren = document.body.children.length;
 ''' + PLUGIN.read_text() + '\nconst payload = ' + json.dumps(payload()) + ';\n' + r'''
+assert.equal(elements['companion'].hidden, true, 'precondition: the page-load panel is hidden');
 outbound = JSON.stringify(payload); call();
+assert.equal(elements['companion'].hidden, false);
+assert.equal(status.textContent, '', 'shown first, its status written in a later task');
+flush();
 assert.strictEqual(elements['companion-status'], status, 'the page-load region is reused, not replaced');
 assert.equal(document.body.children.length, bodyChildren, 'no second panel');
 assert.deepEqual(shape(), spec, 'the page-load elements are used as they are');
@@ -275,8 +290,21 @@ let sets = status.sets;
 outbound = JSON.stringify(payload); call();
 assert.equal(status.sets, sets, 'same text, same turn: no write');
 payload.turn = 2; outbound = JSON.stringify(payload); call();
+// Clear and write in one task leave the region's text unchanged, which a screen reader may not announce.
+assert.equal(status.textContent, '', 'cleared now');
+assert.equal(pendingTimers(), 1, 'and written again in a later task');
+flush();
 assert(status.sets > sets, 'same text on a new turn is announced again');
 assert.equal(status.textContent, 'Not done: reason');
+payload.turn = 3; outbound = JSON.stringify(payload); call();
+payload.status = 'Newer'; outbound = JSON.stringify(payload); call();
+assert.equal(status.textContent, 'Newer', 'a new status is written at once');
+flush();
+assert.equal(status.textContent, 'Newer', 'a dropped deferred write never brings back an older status');
+payload.turn = 4; outbound = JSON.stringify(payload); call();
+outbound = 'null'; call(); flush();
+assert.equal(status.textContent, '', 'a deferred write never fills a cleared panel');
+payload.status = 'Not done: reason'; outbound = JSON.stringify(payload); call(); flush();
 sets = status.sets;
 payload.focus = 'Moved'; outbound = JSON.stringify(payload); call();
 assert.equal(status.sets, sets, 'a focus move alone does not touch the status line');
@@ -320,5 +348,5 @@ def test_csharp_import_js_export_and_production_hook_agree():
     # Opt-in (owner, 1 November 2026: "Opt-in for now (Recommended)"): the page or test transport only makes it possible;
     # the Settings switch, a stored "on" or "?companion=1" turns it on.
     assert 'WebCompanion.On(companionPicked, SettingsFile()?.Read(SettingsPresenter.CompanionKey), Application.absoluteURL)' in root
-    assert 'companion = null;' in root
+    assert 'companion = null; minimap = null;' in root, "Shutdown's reset (the toggle's own 'companion = null;' is not it)"
     assert all(word not in plugin for word in ['innerHTML', '.focus(', 'addEventListener', 'SendMessage'])
