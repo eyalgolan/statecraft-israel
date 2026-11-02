@@ -340,7 +340,9 @@ public class CauseTextTests
     public void ActualResidentRowsRenderAfterSettlementRecordsAreRemoved(bool fled)
     {
         // Existing CaptureDialog fixture pattern: real rules/map, synthetic capture eligibility and resident facts.
+        // Deport's cards (#801, a `deported:` key) name targets this fixture's list leaves out (R-EVT-007), so they stay out too.
         var events = System.IO.Directory.GetFiles(System.IO.Path.Combine(Paths.Content, "events"), "*.yaml")
+            .Where(f => !System.Text.RegularExpressions.Regex.IsMatch(System.IO.File.ReadAllText(f), @"(?m)^deported:"))
             .Select(f => "events/" + System.IO.Path.GetFileName(f));
         var c = ContentLoader.Load(rel => {
             var path = System.IO.Path.Combine(Paths.Content, rel);
@@ -541,6 +543,30 @@ public class CauseTextTests
             Assert.AreEqual(row.Message, CauseText.Line(row, c, NoRows, en));
             AssertHebrew(CauseText.Line(row, c, NoRows, he), row.Key);
         }
+    }
+
+    /// <summary>#1701: the Why screen (WhyPresenter.Show) words every arms workshop cause from why.cause.&lt;key&gt; with the city
+    /// named, in both languages; a workshop key outside CauseText's remaining set fell to UnitNames.Line and threw on a
+    /// missing why.line.&lt;key&gt; (the coordinator's Unity run at 7cbd257b6).</summary>
+    [Test]
+    public void EveryWorkshopCauseIsWordedFromItsWhyCauseKeyOnTheWhyScreen()
+    {
+        var c = RemainingFixture(); var en = En; var he = He;
+        var names = new Dictionary<string, string> { ["town"] = "עיר" };
+        var rows = new (Cause cause, string key, string[] extra)[]
+        {
+            (new Cause("city", "town", 2, "Town: arms workshops staffed: 2", key: CauseKeys.WorkshopWorkers, args: new[] { "2" }), "why.cause.workshop_workers", new[] { "2" }),
+            (new Cause("city", "town", 1, "Town: an arms workshop made 1 Arms", key: CauseKeys.WorkshopArms), "why.cause.workshop_arms", new string[0]),
+            (new Cause("city", "town", 0, "Town: an arms workshop has no worker without a job this month", key: CauseKeys.WorkshopPaused, args: new[] { Workshops.NoWorker }), "why.cause.workshop_paused.no_worker", new string[0]),
+            (new Cause("city", "town", 0, "Town: an arms workshop's next cycle waits: paying for it would take the debt past its ceiling", key: CauseKeys.WorkshopPaused, args: new[] { Workshops.DebtCeiling }), "why.cause.workshop_paused.debt_ceiling", new string[0]),
+        };
+        foreach (var (cause, key, extra) in rows)
+            foreach (var (text, town) in new[] { (en, "Town"), (he, "עיר") })
+            {
+                string line = "";
+                Assert.DoesNotThrow(() => line = CauseText.Line(cause, c, NoRows, text, names), key);
+                Assert.AreEqual(text.Format(key, new object[] { town }.Concat(extra).ToArray()), line, key);
+            }
     }
 
     [Test]
