@@ -354,6 +354,14 @@ public class SeaAirCollectionTests
     [Test]
     public void TheSpitfirePropellerTurnsAtItsNoseAboutTheFlightAxisAndHoldsStillInShots()
     {
+        bool readable = Statecraft.Game.Map.Units.UnitPlinth.KeepMeshesReadable;
+        Statecraft.Game.Map.Units.UnitPlinth.KeepMeshesReadable = true;   // the disc's vertices are read below
+        try { PropellerTurnsAtItsNose(); }
+        finally { Statecraft.Game.Map.Units.UnitPlinth.KeepMeshesReadable = readable; }
+    }
+
+    void PropellerTurnsAtItsNose()
+    {
         var map = OpenMap();
         var (_, plane, loop, centre) = DrawnSpitfire(map);
         var airframe = plane.GetComponentInChildren<MeshFilter>();
@@ -382,8 +390,16 @@ public class SeaAirCollectionTests
             float t = i * 0.011f + (i % 4) * 10f;   // every spin angle, on the passes and in the turns
             loop.Place(t);
             var all = WorldBounds(plane.gameObject); var own = airframe.GetComponent<Renderer>().bounds;
-            Assert.Less((all.min - own.min).magnitude + (all.max - own.max).magnitude, 0.5f, $"the disc stays inside the airframe's box at {t:0.000} s");
+            Assert.Less((all.min - own.min).magnitude + (all.max - own.max).magnitude, 0.5f, $"the disc's box stays inside the airframe's at {t:0.000} s");
+            // The geometry too, not only the renderer's box (review of #2260): every disc vertex inside the airframe's box.
+            var grown = own; grown.Expand(1f);
+            foreach (var v in prop.GetComponent<MeshFilter>().sharedMesh.vertices)
+                Assert.IsTrue(grown.Contains(prop.TransformPoint(v)), $"the disc's vertex {v} inside the airframe's box at {t:0.000} s");
         }
+        // Long into a session the angle stays exact (review of #2260: the product with the clock lost whole degrees):
+        // 36000.25 s is 150,001 turns and a twenty-fourth, 15 degrees.
+        loop.Place(36000.25f);
+        Assert.Less(Quaternion.Angle(prop.localRotation, Quaternion.AngleAxis(-15f, Vector3.up)), 0.1f, "15 degrees round after ten hours");
 
         Assert.IsTrue(loop.Still, "edit mode holds the loop's start");
         var clock = SpitfireLoop.Clock;
@@ -419,6 +435,7 @@ public class SeaAirCollectionTests
         bool readable = Statecraft.Game.Map.Units.UnitPlinth.KeepMeshesReadable;
         Statecraft.Game.Map.Units.UnitPlinth.KeepMeshesReadable = true;
         var sun = new GameObject("TEST ONLY sun").AddComponent<Light>();
+        var sunWas = RenderSettings.sun;
         try
         {
             sun.type = LightType.Directional; MapLighting.Apply(sun);
@@ -454,9 +471,18 @@ public class SeaAirCollectionTests
                 Assert.That(shadow.lossyScale.x / span, Is.InRange(0.4f, 0.6f), "half as wide, about (narrower in a bank)");
                 float reach = Mathf.Max(shadow.lossyScale.x, shadow.lossyScale.z);
                 Assert.IsTrue(ground.Inside(s.x - reach, s.z - reach) && ground.Inside(s.x + reach, s.z + reach), $"on the board at {t:0.0} s ({s})");
+                Assert.GreaterOrEqual(s.y, ground.SeaLevelY + SpitfireLoop.ShadowLiftM - 0.01f, $"never under the sea's surface at {t:0.0} s");
             }
+            // The scene's own sun casts it (the opt-in hex map's dusk and night presets turn the sun, HexTimeOfDay): a
+            // higher sun from the south-west puts it north-east of the aircraft, nearer.
+            sun.transform.rotation = Quaternion.Euler(48f, 215f - 180f, 0f);
+            loop.Place(0f);
+            var high = centre + new Vector3(SeaAirCollection.LoopOffset(0f).x, 0f, SeaAirCollection.LoopOffset(0f).y);
+            var landed = shadow.position; float under0 = Height(landed);
+            var cast0 = high + sun.transform.forward * ((high.y - under0) / -sun.transform.forward.y);
+            Assert.Less(new Vector2(landed.x - cast0.x, landed.z - cast0.z).magnitude, 0.03f * (high.y - under0), "on the scene sun's ray, not a fixed one");
         }
-        finally { Statecraft.Game.Map.Units.UnitPlinth.KeepMeshesReadable = readable; Object.DestroyImmediate(sun.gameObject); }
+        finally { Statecraft.Game.Map.Units.UnitPlinth.KeepMeshesReadable = readable; RenderSettings.sun = sunWas; Object.DestroyImmediate(sun.gameObject); }
     }
 
     /// <summary>The owner's report: "it doesnt look fliying". The aircraft rolls into its turns by the path's curvature: no bank
@@ -487,14 +513,24 @@ public class SeaAirCollectionTests
         }
 
         var map = OpenMap();
+        bool readable = Statecraft.Game.Map.Units.UnitPlinth.KeepMeshesReadable;
+        Statecraft.Game.Map.Units.UnitPlinth.KeepMeshesReadable = true;   // explicit, though only the model's own mesh is read
+        try { RollsIntoTheTurns(map, period); }
+        finally { Statecraft.Game.Map.Units.UnitPlinth.KeepMeshesReadable = readable; }
+    }
+
+    void RollsIntoTheTurns(MapScene map, float period)
+    {
         var (_, plane, loop, centre) = DrawnSpitfire(map);
         var mesh = plane.GetComponentInChildren<MeshFilter>(); var v = mesh.sharedMesh.vertices;
         float tipX = v.Max(p => Mathf.Abs(p.x));
         Vector3 Tip(float side) { var tip = v.Where(p => p.x * side > 0.96f * tipX).ToList(); return tip.Aggregate(Vector3.zero, (a, p) => a + p) / tip.Count; }
         Vector3 left = Tip(-1f), right = Tip(1f);
         var c = new Vector2(centre.x, centre.z);
-        foreach (var t in new[] { 0f, 0.1f * period, 0.25f * period, 0.4f * period, 0.5f * period, 0.75f * period, 0.9f * period })
+        // Densely over two periods, across the wrap at the period's end: the inner wing is never the higher one.
+        for (int i = 0; i <= 400; i++)
         {
+            float t = i * 2f * period / 400f;
             loop.Place(t);
             Vector3 a = mesh.transform.TransformPoint(left), b = mesh.transform.TransformPoint(right);
             bool aInner = Vector2.Distance(new Vector2(a.x, a.z), c) < Vector2.Distance(new Vector2(b.x, b.z), c);
@@ -565,6 +601,78 @@ public class SeaAirCollectionTests
         loop.Place(1f);
         int i = 0;
         Assert.That(() => { for (int k = 0; k < 100; k++) loop.Place(++i * 0.137f); }, UnityEngine.TestTools.Constraints.ConstraintExtensions.AllocatingGCMemory(Is.Not));
+        // Update in play (not held), through the clock seam, and the flags turning to a camera (review of #2260).
+        typeof(SpitfireLoop).GetField("still", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.SetValue(loop, false);
+        var update = typeof(SpitfireLoop).GetMethod("Update", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        var clock = SpitfireLoop.Clock; float now = 3f;
+        try
+        {
+            SpitfireLoop.Clock = () => now;
+            var tick = (Action)Delegate.CreateDelegate(typeof(Action), loop, update);   // a plain call, as the player loop's
+            tick();
+            Assert.That(() => { for (int k = 0; k < 100; k++) { now += 0.016f; tick(); } }, UnityEngine.TestTools.Constraints.ConstraintExtensions.AllocatingGCMemory(Is.Not));
+        }
+        finally { SpitfireLoop.Clock = clock; }
+        var eye = new Vector3(30000f, 40000f, 150000f);
+        Statecraft.Game.Map.Units.UnitFlagFacing.FaceAll(eye);
+        Assert.That(() => { for (int k = 0; k < 100; k++) { eye.x += 10f; Statecraft.Game.Map.Units.UnitFlagFacing.FaceAll(eye); } }, UnityEngine.TestTools.Constraints.ConstraintExtensions.AllocatingGCMemory(Is.Not));
+    }
+
+    /// <summary>Review of #2260: drawing, dropping and drawing the Spitfire again (its dates end and come back, the layer
+    /// redraws) makes no new propeller, shadow or flag meshes or materials past the first: the layer makes them once. When
+    /// its dates end under residency, the aircraft and its shadow-and-flag object both go, and the labels keep clear of
+    /// exactly the craft left.</summary>
+    [Test]
+    public void DrawingAndDroppingTheSpitfireAgainLeaksNoMeshesOrMaterials()
+    {
+        var map = OpenMap();
+        int Meshes() => Resources.FindObjectsOfTypeAll<Mesh>().Count(m => m.name == "SpitfirePropellerBlur" || m.name == "SpitfireShadow"
+            || m.name == Statecraft.Game.Map.Units.UnitFlags.MeshName(Statecraft.Game.Map.Units.UnitFlags.Egypt));
+        int Materials() => Resources.FindObjectsOfTypeAll<Material>().Count(m => m.name.StartsWith("UnitFlag (egypt", StringComparison.Ordinal)
+            || m.name == Statecraft.HexTiles.HexMaterials.AttackBorder);
+        SeaAirCollection Show(DateTime date) { var l = CollectionGeometryFixture.Craft(map, date, Array.Empty<Placement>(), C)!; AnswerAll(); return l; }
+        var layer = Show(new DateTime(1948, 6, 15));
+        Assert.IsNotNull(layer.transform.Find("el-arish-spitfire"));
+        int meshes = Meshes(), materials = Materials();
+        Assert.GreaterOrEqual(meshes, 3, "the blur, the shadow and the flag");
+        for (int i = 0; i < 3; i++)
+        {
+            layer = Show(new DateTime(1949, 8, 15));
+            Assert.IsNull(layer.transform.Find("el-arish-spitfire"), "no Spitfire on 15 August 1949");
+            Assert.IsNull(layer.transform.Find("el-arish-spitfire" + SeaAirCollection.SpitfireMarksSuffix), "and no shadow or flag");
+            Assert.AreEqual(layer.Placed.Count, layer.KeepClear.Count, "the labels keep clear of the craft left, and nothing else");
+            layer = Show(new DateTime(1948, 6, 15));
+            Assert.IsNotNull(layer.transform.Find("el-arish-spitfire" + SeaAirCollection.SpitfireMarksSuffix));
+            Assert.AreEqual(meshes, Meshes(), $"no new meshes after {i + 1} redraws");
+            Assert.AreEqual(materials, Materials(), $"no new materials after {i + 1} redraws");
+        }
+    }
+
+    /// <summary>Review of #2260: under residency, when the Spitfire's dates end its model's lease is released with both its
+    /// objects gone (the aircraft and its shadow-and-flag object), and their keep-clear entries with them.</summary>
+    [Test]
+    public void WhenItsWindowEndsTheSpitfireAndItsMarksAndTheirKeepClearGoTogether()
+    {
+        var map = OpenMap();
+        var go = new GameObject(SeaAirCollection.Name); go.transform.SetParent(map.Terrain.transform, false);
+        var layer = go.AddComponent<SeaAirCollection>();
+        typeof(SeaAirCollection).GetField("map", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.SetValue(layer, map);
+        var released = new List<(string id, bool plane, bool marks)>();
+        layer.ConfigureResidency(new CollectionResidencyPolicy(1000000, 1000001, 1000000, 1000001, int.MaxValue, "TEST ONLY"),
+            (id, detail, done) => { SeaAirCollection.Request(id, detail, done); return new ReleaseProbe(() => released.Add((id,
+                layer.transform.Find("el-arish-spitfire") != null, layer.transform.Find("el-arish-spitfire" + SeaAirCollection.SpitfireMarksSuffix) != null))); });
+        var keepOf = (System.Collections.IDictionary)typeof(SeaAirCollection).GetField("keepOf", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(layer)!;
+        SeaAirCollection.ShowAt(map, new DateTime(1948, 12, 15), Array.Empty<Placement>(), C);
+        AnswerAll();
+        Assert.IsNotNull(layer.transform.Find("el-arish-spitfire" + SeaAirCollection.SpitfireMarksSuffix), "the shadow and flag drawn");
+        Assert.AreEqual(layer.Placed.Count, keepOf.Count, "one keep-clear entry a drawn craft (none for the shadow and flag)");
+        SeaAirCollection.ShowAt(map, new DateTime(1949, 1, 15), Array.Empty<Placement>(), C);
+        var spitfire = released.Single(r => r.id == SeaAirCollection.Spitfire);
+        Assert.IsFalse(spitfire.plane || spitfire.marks, "the aircraft and its shadow and flag are gone before the lease is released");
+        Assert.IsNull(layer.transform.Find("el-arish-spitfire" + SeaAirCollection.SpitfireMarksSuffix));
+        Assert.AreEqual(layer.Placed.Count, keepOf.Count, "and their keep-clear entries");
+        Assert.AreEqual(layer.Placed.Count, layer.KeepClear.Count);
+        foreach (System.Collections.DictionaryEntry e in keepOf) Assert.IsTrue((GameObject)e.Key != null, "no entry for a destroyed object");
     }
 
     /// <summary>Nothing is drawn until the stream answers, and only the far mesh, once per model. Then every craft is drawn,
@@ -730,8 +838,10 @@ public class SeaAirCollectionTests
                 var boxes = layers.Where(l => l != null).SelectMany(l => l!.GetComponentsInChildren<Renderer>(true).Select(r => (l!.GetType().Name, r.bounds))).ToList();
                 others = Math.Max(others, boxes.Count);
                 var craft = CollectionGeometryFixture.Craft(map, date, none, C)!; AnswerAll();
-                // The drawn craft (the Spitfire's shadow and flag sit beside it in the layer, and a shadow may fall on a model).
-                foreach (var t in craft.Placed.Select(p => craft.transform.Find(p.Key)))
+                // The drawn craft and the Spitfire's flag (its shadow sits beside it too, but a shadow may fall on a model).
+                var flagNow = craft.transform.Find("el-arish-spitfire" + SeaAirCollection.SpitfireMarksSuffix)?.Find(SeaAirCollection.SpitfireFlagName);
+                Assert.AreEqual(date.Year == 1948, flagNow != null, $"the Spitfire's flag on {date:d MMM yyyy}");
+                foreach (var t in craft.Placed.Select(p => craft.transform.Find(p.Key)).Concat(flagNow != null ? new[] { flagNow } : Array.Empty<Transform>()))
                 {
                     var b = WorldBounds(t.gameObject); checkedCraft++;
                     foreach (var (owner, o) in boxes)
@@ -740,7 +850,7 @@ public class SeaAirCollectionTests
                 }
             }
             Assert.Greater(others, 0, "the other layers drew");
-            Assert.AreEqual(9, checkedCraft, "every craft checked, five on the first turn (the Spitfire too), four on the second");
+            Assert.AreEqual(10, checkedCraft, "every craft checked, five on the first turn (the Spitfire too) and its flag, four on the second");
         }
         finally
         {

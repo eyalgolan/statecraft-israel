@@ -452,6 +452,9 @@ public class TalModelsShots
                     loop.Place(seconds);   // again after the frames: nothing else moves it in edit mode, but the shot must be exact
                     CivMovementShots.Shot(rt!, Path.Combine("..", "spitfire-flight-shots", $"spitfire-{zoom}-{pose}-{(hebrew ? "he" : "en")}"));
                     Debug.Log($"SHOT spitfire-flight {zoom} {pose}: {distance:F0} m, plane at {at}, viewport {Camera.main.WorldToViewportPoint(at)}");
+                    var vp = Camera.main.WorldToViewportPoint(at);
+                    Assert.That(vp.x, Is.InRange(0.1f, 0.9f), $"the plane in frame across, {zoom} {pose}");
+                    Assert.That(vp.y, Is.InRange(0.1f, 0.9f), $"the plane in frame up and down, {zoom} {pose}");
                 }
         }
         finally { SeaAirCollection.Request = savedCraft; }
