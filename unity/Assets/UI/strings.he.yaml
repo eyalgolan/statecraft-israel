@@ -75,7 +75,7 @@ why.title: "למה זה קרה?"
 encyclopedia.title: "אנציקלופדיה"
 encyclopedia.back: "חזרה"
 encyclopedia.opening: "הצגת עצות הפתיחה שוב"
-# The encyclopedia's 25 pages (spec 10, plan Task 13). AI-drafted Hebrew; a page is he_review: pending in
+# The encyclopedia's 27 pages (spec 10, plan Task 13). AI-drafted Hebrew; a page is he_review: pending in
 # advisor-messages.yaml and does not show in Hebrew until a native reviewer approves it (OQ-4). The nine pages that replace
 # How to play were read by Beri on #2095 (each marked below); the owner, a native speaker, read the other 16 on
 # 1 November 2026: "all 16 pages look good". משושה became משבצת in projects, standing_orders, combat and
@@ -129,6 +129,15 @@ advisor.page.food.title: "מלאי המזון"
 advisor.page.food.text: "אני עוקבת אחרי המלאי הזה בכל חודש. המזון הוא מלאי לאומי אחד: בכל תור השדות החרושים מוסיפים את היבול שלהם, המדינה אוכלת את מה שהיא צריכה, ויבוא ממלא את המלאי מחדש, אלא אם מטבע החוץ שלנו אזל. מחסור מוריד את הלכידות החברתית, ומלאי ריק כשהחוב בתקרה מפעיל את מונה ההפסד."
 advisor.page.national_meters.title: "המדדים הלאומיים"
 advisor.page.national_meters.text: "הלכידות החברתית עולה ויורדת עם הדיור, התעסוקה, המזון, הקיצוב והביטחון. התמיכה הבינלאומית זזה בעקבות הבחירות בכרטיסי האירוע. אף אחת מהן אינה מסיימת את המשחק, אבל אירועים מסוימים מגיבים כשאחת מהן נמוכה, ודוח הסיום מציג את שתיהן. קרבות ותנועת יחידות אינם משנים אף אחת מהן."
+# security and public_support (#2223): agent-drafted Hebrew, he_review: pending (#564).
+# native-review-pending
+advisor.page.security.title: "ביטחון"
+# native-review-pending
+advisor.page.security.text: "יישובי הספר מוסיפים לביטחון במשך כמה תורות, ויותר מכך כששר החקלאות מוכשר ומשרדו מתוקצב היטב. הבחירות בכרטיסי האירוע יכולות להעלות אותו או להוריד אותו. הביטחון מחזק את הלכידות החברתית, ושתיים מארבע קבוצות הבוחרים שוקלות אותו, ולכן הוא משפיע גם על התמיכה הציבורית. הדרגה שליד שמו היא רמת הביטחון, מ־1, איום שגרתי, ועד 5, מלחמה כוללת: כרטיסי האירוע קובעים אותה, ורמה גבוהה יותר מגייסת יותר מילואים. קרבות ותנועות אינם משנים את המדד עצמו."
+# native-review-pending
+advisor.page.public_support.title: "תמיכה ציבורית"
+# native-review-pending
+advisor.page.public_support.text: "התמיכה הציבורית היא ממוצע התמיכה של ארבע קבוצות בוחרים, וכל קבוצה שוקלת שניים מבין הלכידות החברתית, הביטחון, הדיור והמזון: הלכידות החברתית נחשבת אצל שלוש מהקבוצות, הביטחון והדיור אצל שתיים כל אחד, והמזון אצל אחת. שום דבר אינו משנה אותה ישירות: היא נעה בעקבות ארבעת המדדים האלה. יציבות הקואליציה נעה לעברה בכל תור, וכשהיציבות נמוכה, הצבעה על התקציב עלולה להיות נגד הממשלה גם כשיש לקואליציה רוב. אף אחת מהן אינה מסיימת את המשחק."
 # advisor.page.units_movement: approved by Beri, a native speaker, on #2095 (1 Nov 2026): title and text as written.
 advisor.page.units_movement.title: "תנועת יחידות"
 advisor.page.units_movement.text: "יחידה נעה ברגע שנותנים לה את ההוראה, ואי אפשר לבטל תנועה. השטח קובע את העלות של כל משבצת, ויחידה שעוד לא זזה בתור הזה תמיד יכולה להיכנס למשבצת סמוכה אחת. יעד רחוק יותר הופך למסלול, וסיום התור ממשיך להוביל את היחידה לאורכו. שום יחידה אינה נכנסת למים או למשבצת שיש בה יחידת אויב."
