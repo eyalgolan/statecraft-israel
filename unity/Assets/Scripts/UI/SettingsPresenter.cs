@@ -25,10 +25,14 @@ namespace Statecraft.Game.UI
         /// as the fallback. A scale above 100% is verified on the window shapes (width / height, narrowest to widest) where
         /// the layout suites pass with the panel at that scale: UiLayoutTests, InfoPanelLayoutTests, TopBarScoreLayoutTests,
         /// HebrewUiTests, LeftColumnTests, PromoScreensTests and TopBarTests, whose windows run from 360x800 to 2560x1080.
-        /// None is yet: at 125% and 150% those suites fail on every window shape (PR #1011, 18 Oct 2026), so the game offers
-        /// 100% only. To offer a scale, run the suites at it and enter the narrowest and widest shapes where they all pass.
+        /// Since #1853 those suites pass at 125% and at 150% on every window they cover (#40, 2 Nov 2026), so both scales are
+        /// verified from the narrowest shape any of them runs, 360x800, to the widest, 2560x1080. A layout change that breaks a suite at a scale narrows or removes its entry.
         /// Tests enter shapes here to drive the rule and put the table back.</summary>
-        public static readonly Dictionary<int, (float narrowest, float widest)> VerifiedShapes = new Dictionary<int, (float, float)>();
+        public static readonly Dictionary<int, (float narrowest, float widest)> VerifiedShapes = new Dictionary<int, (float, float)>
+        {
+            [125] = (360f / 800f, 2560f / 1080f),
+            [150] = (360f / 800f, 2560f / 1080f),
+        };
         /// <summary>The sound effects' volume steps (#39): the stored word and GameAudio's volume. With no stored choice, "high".</summary>
         public static readonly (string level, float volume)[] SoundLevels = { ("off", 0f), ("low", 0.35f), ("high", 1f) };
         readonly SettingsStore? store; readonly UiText text; readonly VisualElement root, screen; readonly Button tiltShift;

@@ -36,7 +36,6 @@ public class HebrewUiTests
     {
         EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         if (Directory.Exists(saveDir)) Directory.Delete(saveDir, true);
-        SettingsPresenter.VerifiedShapes.Remove(150);                  // the language switch's stand-in (the game ships none)
     }
 
     // --- The flag ---------------------------------------------------------------------------------------------------
@@ -183,7 +182,6 @@ public class HebrewUiTests
         game.Store = new SaveStore(saveDir);
         var settings = new SettingsStore(Path.Combine(saveDir, "settings"));
         game.Settings = settings;
-        SettingsScreenTests.VerifyOnEveryShape(150);                   // the game verifies no scale above 100% yet (#1011)
         game.Begin(Inputs, 0);                                         // no file and no flag: English
         Assert.IsFalse(Ui.Q("root").ClassListContains(UiLanguage.HebrewClass));
         Assert.IsTrue(Ui.Q<Button>("settings-language-en").ClassListContains(SettingsPresenter.SelectedClass), "English is marked");
@@ -746,11 +744,12 @@ public class HebrewUiTests
     /// screen at 1920x1080, and the screen scrolled sideways).</summary>
     [UnityTest]
     public IEnumerator NoBudgetRowIsWiderThanItsScreen(
-        [Values(UiLanguage.Hebrew, UiLanguage.English)] string language, [Values(1920, 390)] int width)
+        [Values(UiLanguage.Hebrew, UiLanguage.English)] string language, [Values(1920, 390)] int width, [Values(100, 125, 150)] int uiScale)   // #40: at the Settings scale choices
     {
         var restore = OnTexture(width, width == 1920 ? 1080 : 844);
         try
         {
+            if (uiScale != 100) Object.FindFirstObjectByType<UIDocument>().panelSettings.referenceResolution = new Vector2Int(Mathf.RoundToInt(1920f * 100f / uiScale), Mathf.RoundToInt(1080f * 100f / uiScale));   // #40: the panel as the Settings scale choice sets it
             var game = Object.FindFirstObjectByType<GameRoot>();
             game.Store = new SaveStore(saveDir);
             game.Language = language;
@@ -764,14 +763,14 @@ public class HebrewUiTests
             Assert.Greater(rows.Count, 3);
             foreach (var row in rows)
             {
-                Assert.LessOrEqual(row.layout.width, room + 0.5f, $"{language} {width}: '{row[0].name}' is wider than the screen");
+                Assert.LessOrEqual(row.layout.width, room + 0.5f, $"{language} {width} {uiScale}%: '{row[0].name}' is wider than the screen");
                 foreach (var part in row.Children())
                 {
-                    Assert.LessOrEqual(part.layout.xMax, row.layout.width + 0.5f, $"{language} {width}: '{part.name}' runs past its row's end");
-                    Assert.GreaterOrEqual(part.layout.xMin, -0.5f, $"{language} {width}: '{part.name}' runs past its row's start");
+                    Assert.LessOrEqual(part.layout.xMax, row.layout.width + 0.5f, $"{language} {width} {uiScale}%: '{part.name}' runs past its row's end");
+                    Assert.GreaterOrEqual(part.layout.xMin, -0.5f, $"{language} {width} {uiScale}%: '{part.name}' runs past its row's start");
                 }
             }
-            Assert.LessOrEqual(list.contentContainer.layout.width, room + 0.5f, $"{language} {width}: the rows scroll sideways");
+            Assert.LessOrEqual(list.contentContainer.layout.width, room + 0.5f, $"{language} {width} {uiScale}%: the rows scroll sideways");
             // The control: without the wrapping class the long Hebrew row is wider than the screen at 1920 (so this test can fail).
             // Its own text no longer is since its date turned Hebrew (#701, "10 במרץ 1949" is shorter than "10 March 1949"),
             // so the control triples the longest office name: the class, not one string's width, is what is checked.
