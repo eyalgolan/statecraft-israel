@@ -9,7 +9,6 @@ that this module cannot parse or does not expect is a Refused, never a pass. Std
 from __future__ import annotations
 
 import hashlib
-import html
 import http.client
 import json
 import re
@@ -54,14 +53,14 @@ def release_notes(*, version: str, sha: str, since: str, subjects: list[str], sh
     return "\n".join(lines)
 
 
-FRAME_URL = re.compile(r"https://html-classic\.itch\.zone/html/[0-9-]+/[^\"'&<>\s]*index\.html")
+ITCH_FRAME_HOST = "https://html-classic.itch.zone"
 
 
-def itch_frame_url(page_html: str) -> str | None:
-    """The game-frame URL the public itch page embeds (None when it embeds none), without its ?v= cache query. The
-    page holds it HTML-escaped in a data attribute; its path segment is the upload and build ids joined by "-"."""
-    m = FRAME_URL.search(html.unescape(page_html))
-    return m.group(0) if m else None
+def itch_build_frame_url(upload_id: int, build_id: int) -> str:
+    """The game-frame URL of one itch HTML upload's build, as the itch page embeds it (without its ?v= cache query):
+    /html/<upload id>-<build id>/index.html on itch's frame host. The captured page and `butler status` of the same
+    live build (tests/data/itch_page.html, butler_status_live.txt) agree on it, so no page has to be read (#2056)."""
+    return f"{ITCH_FRAME_HOST}/html/{int(upload_id)}-{int(build_id)}/index.html"
 
 
 def unzip_to(zip_path: Path, dest: Path) -> Path:
@@ -122,9 +121,24 @@ class Itch:
         m = re.search(r"#(\d+)", row[2])
         return m.group(1) if m else None
 
-    def live_build_id(self) -> int | None:
-        """The id of the channel's live build now (None when there is none), from `butler status`."""
-        return self._live_id()
+    @staticmethod
+    def upload_id(status_text: str, channel: str = "html5") -> str | None:
+        """The id of the channel's upload (butler prints "#<id>" in the UPLOAD cell), only while its build is live
+        under the same rule as live_version; anything but exactly one "#<digits>" is None."""
+        row = Itch._row(status_text, channel)
+        if row is None or not row[2].startswith(LIVE_MARK):
+            return None
+        m = re.fullmatch(r"#(\d+)", row[1])
+        return m.group(1) if m else None
+
+    def live_frame_ids(self, version: str) -> tuple[int, int] | None:
+        """(upload id, build id) of the channel's live build from one `butler status`, only while that build is
+        `version` (the VERSION cell, butler's UserVersion of a completed build); None otherwise."""
+        text = self._run(["status", self.project], Path.cwd())
+        if self.live_version(text, self.channel) != version:
+            return None
+        upload, build = self.upload_id(text, self.channel), self.build_id(text, self.channel)
+        return (int(upload), int(build)) if upload and build else None
 
     def _run(self, args: list[str], cwd: Path, timeout: float = 300) -> str:
         try:
