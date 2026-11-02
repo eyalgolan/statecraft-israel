@@ -10,6 +10,7 @@ on 24 October was opened that day and is marked "(opened 24 Oct)" in the Sources
 listed, two are closed (1c-bis, and the Ethiopia yearly arrivals series inside 2b), one is closed for the natural-increase half and open for the migration half
 (5b), and two stay [GAP] with what was read this time (the start of Operation Moses in 2b, yearly emigration in 3a).
 Where this pass added a derived series, the arithmetic is shown. An agent opened these sources; a person's check of them is still pending.
+Added 1 November 2026, after the owner's "Research part open" comment on #160 (issue #160): section 2c, the US refugee change of 1 October 1989, the size and cut of the direct-absorption package, and housing starts, completions and caravan placements 1985-92 from the CBS Statistical Abstracts of 1991-93. Sources are in the Sources table (keys CBS SA 1991 to 1993 and JTA 1989-10-03 to JTA 1991-03-13).
 
 ## Purpose
 
@@ -83,11 +84,24 @@ Every [V] in this note was an agent's reading on 2026-10-23, unless the tag give
 | CIA Reading Room | "In Ethiopians' Exodus, Moses Was American" (a reprint of a Los Angeles Times piece of 30 March 1985; record CIA-RDP90-00965R000605190003-1) (tried, not readable: the site returned a maintenance page on 24 Oct) | https://www.cia.gov/readingroom/node/1868581 |
 | JVL Operation Moses | Jewish Virtual Library, "Operation Moses" (tried, not readable: the text loads by script and the page returned no body on 24 Oct) | https://www.jewishvirtuallibrary.org/operation-moses |
 | ISA catalogue | Israel State Archives, "The immigration of the Jews of Ethiopia to Israel, 1948-1985" (tried, not readable: HTTP 403 on 24 Oct) | https://catalog.archives.gov.il/site/en/publication/the-immigration-of-the-jews-of-ethiopia-to-israel-1948-1985/ |
+| CBS SA 1991 | Central Bureau of Statistics, *Statistical Abstract of Israel 1991* (No. 42), Table 16.2 "Dwellings, by size, and rooms", printed page 451 (PDF p. 487) (opened 1 Nov) | https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1991_num42.pdf |
+| CBS SA 1992 | *Statistical Abstract of Israel 1992* (No. 43), Table 16.2, printed page 468 (PDF p. 489); Table 16.3 "Dwellings, area and capital formation in caravans and cabins", printed page 469 (PDF p. 490); Table 16.5, printed page 473 (PDF p. 494) (opened 1 Nov) | https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1992_num43.pdf |
+| CBS SA 1993 | *Statistical Abstract of Israel 1993* (No. 44), Table 16.2, printed page 486 (PDF p. 509); Table 16.3, printed page 487 (PDF p. 510) (opened 1 Nov) | https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1993_num44.pdf |
+| JTA 1989-10-03 | JTA, 3 October 1989, "As New Refugee Policy Takes Effect, Dutch Embassy Stops Issuing Visas" (opened 1 Nov) | https://www.jta.org/archive/as-new-refugee-policy-takes-effect-dutch-embassy-stops-issuing-visas |
+| JTA 1989-10-06 | JTA, 6 October 1989, "Hias Seeking to Help Thousands Lining Up at Embassy in Moscow" (opened 1 Nov) | https://www.jta.org/archive/hias-seeking-to-help-thousands-lining-up-at-embassy-in-moscow |
+| JTA 1989-10-13 | JTA, 13 October 1989, "U.S. Communities Asked to Absorb Much Larger Numbers of Soviet Jews" (opened 1 Nov) | https://www.jta.org/archive/u-s-communities-asked-to-absorb-much-larger-numbers-of-soviet-jews |
+| JTA 1989-11-07 | JTA, 7 November 1989, "U.S. Takes Step Toward Shutting Down 'Vienna-Rome Pipeline' for Refugees" (opened 1 Nov) | https://www.jta.org/archive/u-s-takes-step-toward-shutting-down-vienna-rome-pipeline-for-refugees |
+| JTA 1990-06-27 | JTA, 27 June 1990, "Israel and Jewish Agency Adopt Plan to Absorb 450,000 Olim over 3 Years" (opened 1 Nov) | https://www.jta.org/archive/israel-and-jewish-agency-adopt-plan-to-absorb-450000-olim-over-3-years |
+| JTA 1990-08-01 | JTA, 1 August 1990, "News Analysis: Clash Between Sharon and Moda'i on Soviet Olim a Battle of Wills" (opened 1 Nov) | https://www.jta.org/archive/news-analysis-clash-between-sharon-and-modai-on-soviet-olim-a-battle-of-wills |
+| JTA 1990-08-03 | JTA, 3 August 1990, "Government Ok's Sharon's Request to Import Prefabricated Homes" (opened 1 Nov) | https://www.jta.org/archive/government-oks-sharons-request-to-import-prefabricated-homes |
+| JTA 1991-03-06 | JTA, 6 March 1991, "Knesset Protests Absorption Cuts, Fearing Effect on Soviet Aliyah" (opened 1 Nov) | https://www.jta.org/archive/knesset-protests-absorption-cuts-fearing-effect-on-soviet-aliyah |
+| JTA 1991-03-11 | JTA, 11 March 1991, "Sharon Quits As 'absorption Czar' As Public Eye Turns to Immigrants" (opened 1 Nov) | https://www.jta.org/archive/sharon-quits-as-absorption-czar-as-public-eye-turns-to-immigrants |
+| JTA 1991-03-13 | JTA, 13 March 1991, "Israel Partially Restores Cuts in Subsidies to New Immigrants" (opened 1 Nov) | https://www.jta.org/archive/israel-partially-restores-cuts-in-subsidies-to-new-immigrants |
 
 Also opened, not usable for this era: *Statistical Abstract of Israel 2010*, Table 4.10, "Departures and returns of
 Israelis staying abroad continuously for one year or more" (st04_10.pdf in the same folder as T4.2); it covers 2005-2008
-only. Not read: the Statistical Abstracts of the 1980s and 1990s (no scan was found on the CBS site; searched again on
-24 October, see 3a), CBS's own emigration studies, the sources Wikipedia cites for the Ethiopian operations (Kaplan and Salamon, the *New York Times*
+only. Not read: the Statistical Abstracts of the 1980s and 1990s outside their construction tables (the 1991, 1992 and 1993
+volumes were found on 1 November in the folder `shnaton_saruk` and read only for 2c; no scan was found on 24 October, see 3a), CBS's own emigration studies, the sources Wikipedia cites for the Ethiopian operations (Kaplan and Salamon, the *New York Times*
 and *Boston Globe* reports), and the IDF and Foreign Ministry pages on the operations. Nothing below is checked against
 them.
 
@@ -470,6 +484,144 @@ Last country of residence, persons:
 - Check, derived: the 14,325 fit inside CBS's 1991 `africa` total of 20,251 (1a), and so do the 14,087 and the
   JVL country-year figure for Ethiopia, 20,014.
 
+### 2c. Direct absorption, the US refugee change of 1 October 1989 and the housing pressure of 1990-92 (added 1 November 2026, issue #160)
+
+Researched 1 November 2026 for issue #160 (the research part the owner opened on 1 November). The yearly Soviet arrivals
+and Operations Moses, Joshua and Solomon are in 1a, 2a and 2b above and are not repeated. Every source below was opened
+on 1 November; a person's check of them is pending. JTA items were read as text on the JTA archive page (the wp-json
+record of the item); the original bulletin pages were not opened, so a datelined day is given only where the item's own
+text names it, and a weekday read against the item's date is marked "computed here".
+
+**The US refugee change (the design's "US refugee change" event)**
+
+| Claim | Source and where | Printed text | Tag |
+|---|---|---|---|
+| From 1 October 1989 Soviet Jews seeking US refugee status had to apply at the US Embassy in Moscow, not in Rome | JTA 1989-10-03, 4 paragraphs from the top | "The move is largely due to a U.S. policy change that, beginning Oct. 1, has required Soviet Jews and others seeking to enter the United States as refugees to apply at the U.S. Embassy in Moscow." | [V, agent read 1 Nov; a person's check pending], press |
+| The Dutch Embassy (which represents Israel in Moscow) stopped issuing Israeli visas to those bound for the US on Sunday 1 October 1989 (computed here: the item is dated Tuesday 3 October) | JTA 1989-10-03 | "But that practice ended Sunday, at least for the 90 percent who plan to go to the United States instead of Israel." Before: "issuing Israeli visas at the rate of 6,000 to 9,000 a month this year" | [V, agent read 1 Nov; a person's check pending], press |
+| Before the change the US had treated Soviet Jews as refugees automatically; in the year before it had become selective | JTA 1989-10-03 | "Prior to last fall, the U.S. government automatically allowed all Soviet Jews to enter the United States as refugees." "About 19 percent of the applicants have been rejected." | [V, agent read 1 Nov; a person's check pending], press |
+| Queues in Moscow in the first week | JTA 1989-10-06 | "On Monday [2 October, computed here], the first day the U.S. Embassy in Moscow was open to hand out applications under the new process, the entire supply of more than 30,000 forms was given out." "On Wednesday, another 55,000 applications were handed out by mid-afternoon" | [V, agent read 1 Nov; a person's check pending], press |
+| The US quota for Soviet refugees in fiscal 1990 | JTA 1989-10-06; 1989-11-07 | "50,000 slots the United States said it would hold open for Soviet refugees during the 1990 fiscal year, which began Sunday"; "The Bush administration's quota for Soviet refugees this fiscal year, which began Oct. 1, is 50,000." | [V, agent read 1 Nov; a person's check pending], press |
+| The Rome processing window narrowed: only those holding Israeli entry visas by 5 November were processed in Rome | JTA 1989-11-07 | "the United States would no longer process refugee applications in Rome for Soviet Jews and others who did not obtain their Israeli entry visas by Nov. 5." Of Soviet Jews in the Rome and Vienna pipeline: "23,000 ... as of early November"; "10,400 Soviets, 8,000 of whom are Jewish, entered the pipeline in October" | [V, agent read 1 Nov; a person's check pending], press |
+| What it meant for Israel: before the change "85 to 90 percent" of those leaving on Israeli visas "drop out" in Vienna | JTA 1989-11-07 | "Holders of Israeli entry visas then travel to Vienna, where 85 to 90 percent 'drop out' of their 'intention' to immigrate to Israel." | [V, agent read 1 Nov; a person's check pending], press |
+| The change also moved US Jewish philanthropy: federations were asked to resettle three times the monthly rate in the last quarter of 1989 | JTA 1989-10-13 | "On average, the participating federations will be asked to absorb three times as many Jews per month in the next three months as they had for each of the first nine months of the year." The item adds: "U.S. authorities no longer grant refugee status to those who leave the Soviet Union on Israeli visas." | [V, agent read 1 Nov; a person's check pending], press |
+
+- Our reading, not a source statement: the change closed the route by which most Soviet Jews who left on Israeli visas
+  went on to the US (Tolts, 2a, gives the US row at 56 thousand "departures from the Soviet Union" for 1989 and 6.5 for
+  1990, note b, against 12.9 and 185.2 to Israel).
+- [GAP] The US rule's own text (the State Department notice or the Federal Register) was not opened; every line above is a
+  press account of it. The same JTA item of 7 November says the 5 November deadline was announced "last week" in Moscow;
+  the day is not given. The effective day, 1 October 1989, is stated by JTA as "beginning Oct. 1" and "which began
+  Sunday" (1 October 1989 was a Sunday, computed here).
+
+**Direct absorption: what the Israeli state paid, 1990-91**
+
+Start and early share of direct absorption are in `model-basis-1977-93.md` 2.3 (the Jewish Agency's agreement of
+November 1988, 78.4 percent in January 1990). This pass adds the size of the package and its cut.
+
+| Date of item | What it says | Source | Tag |
+|---|---|---|---|
+| 27 Jun 1990 (plan approved "Tuesday", 26 June, computed here) | "$500 million will be set aside for initial absorption grants. Until now, the Jewish Agency has paid half of these grants, but its share may be reduced" | JTA 1990-06-27 | [V, agent read 1 Nov; a person's check pending], press |
+| 6 Mar 1991 | "The handout of about $11,000 in cash and services to a newly arrived immigrant family of three has been reduced to $7,000." The Jewish Agency "has converted its one-third share of the package to a loan". The right to buy household appliances duty free was withdrawn; instead "a flat grant of $2,500" | JTA 1991-03-06, at https://www.jta.org/archive/knesset-protests-absorption-cuts-fearing-effect-on-soviet-aliyah | [V, agent read 1 Nov; a person's check pending], press |
+| 6 Mar 1991 | "newcomers to Israel are entitled to a $38,000 state mortgage" while "a two-bedroom apartment ... averages $65,000"; Absorption Minister Peretz: "nearly 1,000 olim have left already" | same item | [V, agent read 1 Nov; a person's check pending], press |
+| 10 Mar 1991 (Sunday, computed here) | Sharon resigned as chairman of the Cabinet committee on immigration and absorption; the Cabinet had refused his demand to admit 10,000 foreign construction workers and accepted Shamir's compromise of 5,000, one local worker for each foreigner | JTA 1991-03-11, at https://www.jta.org/archive/sharon-quits-as-absorption-czar-as-public-eye-turns-to-immigrants | [V, agent read 1 Nov; a person's check pending], press |
+| 12 Mar 1991 (Tuesday, computed here; effective 1 April) | The "absorption basket" "raised by 3,000 shekels, or approximately $1,350 at the new exchange rate ... to its previous level of 17,000 shekels ($7,750), still considerably less than the original 21,000 shekels ($9,600) for an immigrant family of three"; cost to the Treasury estimated at "$137 million" | JTA 1991-03-13, at https://www.jta.org/archive/israel-partially-restores-cuts-in-subsidies-to-new-immigrants | [V, agent read 1 Nov; a person's check pending], press |
+
+- [C] The size of the package, two measures in two currencies: JTA of 6 March calls it about $11,000 cut to $7,000.
+  JTA of 13 March says the basket was "raised by 3,000 shekels" back "to its previous level of 17,000 shekels
+  ($7,750), still considerably less than the original 21,000 shekels ($9,600)". So the basket stood at 14,000 shekels
+  before 12 March (derived: 17,000 - 3,000), 17,000 shekels was its level before the latest cut, and 21,000 shekels the
+  original. The dollar figures are not the same conversions (the 13 March item speaks of "the new exchange rate"), and
+  the 6 March $7,000 is not shown here to match the 14,000 or the 17,000 level, so the two items are not reconciled.
+  Preferred for a record: the shekel figures, with the item's own dollar value beside them.
+- [GAP] The grant schedule in the Absorption Ministry's or the Jewish Agency's own regulations, and the cabinet
+  decision that set the 21,000 shekels. Not found in any source read; no ministry text was reached.
+
+**Housing: what was built, 1985-92 (CBS)**
+
+[V, agent read 1 Nov; a person's check pending] CBS, *Statistical Abstract of Israel* (numbers 42, 43 and 44, of 1991, 1992
+and 1993), Table 16.2 "Dwellings, by size, and rooms": the last column (dwellings, all sizes) for "New series, Building
+completed" and "Building begun". The three editions print different values for the last years; each is shown. Printed
+pages and PDF pages are in the Sources table. Values read from the page images.
+
+| Year | Completed, SA 1991 (No. 42) | Completed, SA 1992 (No. 43) | Completed, SA 1993 (No. 44) | Begun, SA 1991 | Begun, SA 1992 | Begun, SA 1993 |
+|---|---|---|---|---|---|---|
+| 1985 | 24,790 | 24,790 | 24,790 | 20,880 | 20,880 | 20,880 |
+| 1986 | 21,710 | 21,710 | 21,710 | 18,810 | 18,810 | 18,810 |
+| 1987 | 19,950 | 19,950 | 19,950 | 21,710 | 21,710 | 21,710 |
+| 1988 | 19,640 | 19,640 | 19,640 | 21,950 | 21,950 | 21,950 |
+| 1989 | 22,320 | 22,320 | 22,320 | 19,850 | 19,850 | 19,850 |
+| 1990 | 19,930 (marked as preliminary by note 5) | 19,960 | 19,960 | 43,880 (same) | 42,410 | 42,380 |
+| 1991 | not in this edition | 42,640 | 42,650 | not in this edition | 83,350 | 83,700 |
+| 1992 | not in this edition | not in this edition | 70,270 | not in this edition | not in this edition | 43,420 |
+
+- The 1990 row of the 1991 edition carries the footnote mark "5*" in both the completed and the begun
+  block (1988 and 1989 carry "§" in both), and the footnote reads "See note 7 to Table 16.1 and
+  details in Table 16.4"; note 7 itself was not opened. Our reading, not a source statement: it flags the 1990 figure as
+  provisional. The 1992 edition marks 1989 and 1990 with "§" and 1991 with "*"; the 1993 edition marks 1990 and 1991
+  with "§" and 1992 with "*". The footnote that explains these signs was not found on the table pages. [GAP]
+- Derived (arithmetic from the table above): starts in 1991 (83,350 in the 1992 edition) are 4.2 times the starts of
+  1989 (19,850), and 1990's 42,410 is 2.1 times 1989. Completions in 1992 (70,270, 1993 edition) are 3.5 times those of
+  1990 (19,960). Completions of 1985-1989 ran at 19,640 to 24,790 a year.
+- [C] 1991 and 1990 differ between editions (completions 42,640 against 42,650, starts 83,350 against 83,700 for 1991;
+  starts 43,880, 42,410 and 42,380 for 1990). The differences are below one percent except the 1990 starts of the
+  1991 edition (about 3.5 percent above the 1993 edition). Preferred for a record: the latest edition (1993) for every
+  year it covers, with the earlier values beside it, since CBS revises.
+
+*Under construction at the end of the year and who started it.* [V, agent read 1 Nov; a person's check pending] SA 1992
+(No. 43), Table 16.5, printed page 473, "Dwellings": total under active construction at the end of year 54,910 in 1990
+(marked §) and 95,200 in 1991; of these "Public building - total" 22,510 and 60,300, and "Private building - total"
+32,400 and 34,900. Derived: the public sector's share of the dwellings under construction was 41.0 percent at the end of
+1990 (22,510 / 54,910) and 63.3 percent at the end of 1991 (60,300 / 95,200).
+
+*Caravans and cabins.* [V, agent read 1 Nov; a person's check pending] Table 16.3 "Dwellings, area and capital formation in
+caravans and cabins", "Placement completed", "DWELLINGS - TOTAL":
+
+| Year | Cabins | Caravans | Total | Edition and page |
+|---|---|---|---|---|
+| 1990 | none | 560 | 560 | SA 1992 printed p. 469 (SA 1993, p. 487, the same 560) |
+| 1991 | 12,940 | 5,160 | 18,100 | SA 1992 printed p. 469, the column headed "*1991" |
+| 1991 | 12,790 | 5,130 | 17,920 | SA 1993 printed p. 487, the column headed "§1991" |
+| 1992 | 6,220 | 110 | 6,330 | SA 1993 printed p. 487, the column headed "*1992" |
+
+- Derived (1993 edition for 1991 and 1992, 560 for 1990): 560 + 17,920 + 6,330 = 24,810 placed in 1990-92. In the 1992
+  edition's 1991 split the Southern District had 5,330 and the Northern 3,820; "Judea, Samaria and Gaza Area" had 3,735
+  of the 18,100 in the 1992 edition and 3,645 of the 17,920 in the 1993 edition.
+- [C] 1991: 18,100 (SA 1992) against 17,920 (SA 1993), a difference of 180, in the same table. Preferred: 17,920, the later print.
+- Context, not a [C]: the design's section 2.5 cites Wikipedia for about 430 caravan sites with 27,000 caravans within two
+  years (not re-opened here). That counts sites and caravans over two years; CBS counts dwellings placed (cabins
+  and caravans) by calendar year, so the two are different measures and no value is chosen between them. CBS's
+  Table 16.3 says its capital formation "Also incl. expenditure on development of plots for placement of caravans and
+  cabins", and gives NIS 880.0 million at current prices for 1991 (SA 1992) against 95.6 for 1990.
+
+**The 1990 housing programme, as reported**
+
+| Date of item | What it says | Source | Tag |
+|---|---|---|---|
+| 26 Jun 1990 plan (item of 27 Jun) | "450,000 Soviet immigrants over the next three years" at "150,000 ... each year"; "construction of 45,000 apartments each year, in addition to 6,000 already under construction, and the renovation of 4,000 public housing apartments"; Sharon: "starting in December, Israel will need 7,000 apartments each month"; his ministry "will purchase 40,000 prefabricated houses in Israel and abroad, 3,000 of which are already on order"; $400 million of direct outlay and $1 billion in guarantees to buy unsold apartments from private builders | JTA 1990-06-27, at https://www.jta.org/archive/israel-and-jewish-agency-adopt-plan-to-absorb-450000-olim-over-3-years | [V, agent read 1 Nov; a person's check pending], press |
+| 1 Aug 1990 | Sharon's "crash program with a $13.5 billion price tag", housing "for 1 million immigrants expected over the next five years"; "the purchase of 50,000 mobile homes and 40,000 prefabricated homes over the next two years, at an estimated cost of $3 billion"; "45,000 apartments this year and about 60,000 more every year for the next four years"; the finance minister Moda'i: "jobs take precedence over housing" and a $3 billion addition "could cause an 8.5 percent budget deficit" | JTA 1990-08-01, at https://www.jta.org/archive/news-analysis-clash-between-sharon-and-modai-on-soviet-olim-a-battle-of-wills | [V, agent read 1 Nov; a person's check pending], press |
+| 2 Aug 1990 (Cabinet "Thursday", computed here) | "authorized to import 9,000 prefabricated and 5,000 mobile homes. In addition, 6,000 permits will be issued in the private sector to import housing"; "The entire program will cost an estimated $500 million" against Sharon's $3 billion plan | JTA 1990-08-03, at https://www.jta.org/archive/government-oks-sharons-request-to-import-prefabricated-homes | [V, agent read 1 Nov; a person's check pending], press |
+| 2 Aug 1990 item | Rents: "much of the imported housing is planned for young couples, who have been forced out of their homes by soaring rents." "landlords have raised rents three and four times in keeping with the higher amounts Soviet immigrants can pay" | same item | [V, agent read 1 Nov; a person's check pending], press (the report's claim about landlords, not a measured rent index) |
+
+- [C] The number of prefabricated units: Sharon said his ministry "will purchase 40,000 prefabricated houses in Israel and
+  abroad, 3,000 of which are already on order" (JTA 27 June, at the Coordinating Committee) against 9,000
+  prefabricated and 5,000 mobile homes authorised by the Cabinet on 2
+  August, with 6,000 more import permits for the private sector (JTA 3 August). The first is the minister's plan, the
+  second the decision; they are not two counts of one thing. The later ordered numbers (15,000 prefabricated units at 14
+  sites and 5,000 mobile homes, Sharon's speech of 25 October 1990) are in `era-look-1977-93.md` and are not re-read here.
+- [GAP] A CBS or Housing Ministry yearly rent or dwelling-price series for 1989-92: the Statistical Abstracts of 1991 to
+  1993 were opened only for Tables 16.2, 16.3 and 16.5. Table 16.13 of SA 1992, "Supply of new dwellings, sold and unsold, in
+  private building in 24 large towns", was seen and not used. No rent index was found in any source read.
+- [GAP] The Cabinet resolution texts for the 26 June plan and the 2 August decision, and the Housing Ministry's own
+  import and placement records.
+
+**Sources opened for 2c and the day**
+
+All opened 1 November 2026. CBS: *Statistical Abstract of Israel 1991* (No. 42), *1992* (No. 43) and *1993* (No. 44), the
+full-volume PDFs on the CBS site; only the construction chapter tables named above were read. JTA: ten items, those of
+1989-10-03, 1989-10-06, 1989-10-13, 1989-11-07, 1990-06-27, 1990-08-01, 1990-08-03, 1991-03-06, 1991-03-11 and 1991-03-13. Tried: the JTA wp-json archive search
+`https://www.jta.org/wp-json/wp/v2/archive?search=direct+absorption&after=1989-06-01T00:00:00&before=1992-12-31T00:00:00&per_page=40`
+(412 items) and `search=absorption+basket` over the same window (35 items); only the titles were scanned and the items named above were read in full.
+
 ---
 
 ## 3. Emigration
@@ -728,5 +880,8 @@ Still open:
   birth-table placement of Asian-republic Soviet immigrants before 1995.
 - A government or archive record of the first flight of Operation Moses (18, 20 or 21 November 1984, 2b), and primary
   counts for Moses, Joshua and Solomon; this pass added contemporaneous press only.
+- (2c, 1 Nov) The text of the US rule of 1 October 1989; the Cabinet resolutions of 26 June and 2 August 1990; the
+  Absorption Ministry's grant schedule; a yearly rent or dwelling-price series 1989-92; the footnote that explains the
+  "§" and "*" signs in CBS Table 16.2 and 16.3.
 - The 1983 census day and its count against the running estimate.
   (third pass, 30 Oct: the day is found, 4 June 1983, see 4b; the count is still open.)

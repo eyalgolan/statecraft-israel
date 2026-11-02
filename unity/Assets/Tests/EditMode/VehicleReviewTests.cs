@@ -21,7 +21,8 @@ public class VehicleReviewTests
     {
         foreach (var id in VehicleReviewCatalog.Ids)
         {
-            Assert.IsNull(CollectionCatalog.BundleOf(id));
+            // #1932: the Spitfire streams in a bundle of its own; the other two stay review-only.
+            Assert.AreEqual(VehicleReviewCatalog.Placed(id) ? "collection-" + id : null, CollectionCatalog.BundleOf(id), id);
             Assert.IsFalse(UnitFigures.BySide.Values.Contains(id));
             Assert.IsFalse(UnitFigures.ByVehicle.Values.Contains(id));
         }
@@ -71,29 +72,58 @@ public class VehicleReviewTests
         foreach (var entry in catalog.entries)
         {
             string path = AssetDatabase.GetAssetPath(entry.model);
-            Assert.IsTrue(path.StartsWith(VehicleReviewCatalog.Folder + "/" + entry.id + "/", StringComparison.Ordinal));
+            Assert.IsTrue(path.StartsWith(VehicleReviewCatalog.DirOf(entry.id) + "/", StringComparison.Ordinal));
             var dependencies = AssetDatabase.GetDependencies(path, true);
-            Assert.IsTrue(dependencies.Any(p => p.EndsWith("-compatibility.fbx", StringComparison.Ordinal)));
+            CollectionAssert.Contains(dependencies, VehicleReviewCatalog.ModelOf(entry.id));
             Assert.IsTrue(dependencies.Any(p => p.EndsWith("_basecolor.jpg", StringComparison.Ordinal)));
             foreach (string dependency in dependencies.Where(IsVehicle))
             {
-                Assert.IsTrue(dependency.Contains("/Editor/"), dependency);
+                Assert.IsTrue(dependency.Contains(VehicleReviewCatalog.Placed(entry.id) ? "/Art/Collection/" : "/Editor/"), dependency);
                 Assert.IsEmpty(AssetImporter.GetAtPath(dependency).assetBundleName, dependency);
             }
         }
     }
     static string AssetFile(string path) => System.IO.Path.GetFullPath(System.IO.Path.Combine(Application.dataPath, "..", path));
 
+    /// <summary>#2014: the review menu only shows a placed model (the Spitfire); it must not re-import, re-texture or re-save
+    /// the model, material and prefab the game ships. Every file Import writes is put back afterwards, so a run leaves the
+    /// tree as it found it.</summary>
+    [Test]
+    public void ImportLeavesThePlacedModelsShippedFilesUntouched()
+    {
+        var before = new[] { VehicleReviewCatalog.Folder }.Concat(VehicleReviewCatalog.Ids.Where(VehicleReviewCatalog.Placed).Select(VehicleReviewCatalog.DirOf))
+            .SelectMany(d => System.IO.Directory.GetFiles(AssetFile(d), "*", System.IO.SearchOption.AllDirectories))
+            .ToDictionary(f => f, System.IO.File.ReadAllBytes);
+        var shipped = VehicleReviewCatalog.Ids.Where(VehicleReviewCatalog.Placed)
+            .SelectMany(id => new[] { ".fbx.meta", ".mat", ".prefab" }.Select(ext => AssetFile(VehicleReviewCatalog.DirOf(id) + "/" + id + ext))).ToArray();
+        Assert.IsNotEmpty(shipped, "the Spitfire is placed (#1932)");
+        string[] changed;
+        try
+        {
+            // Editor code lives in Assembly-CSharp-Editor, which a test assembly cannot reference (as in PortraitImportTests).
+            Type.GetType("Statecraft.Game.EditorTools.VehicleReviewAssets, Assembly-CSharp-Editor")!.GetMethod("Import")!.Invoke(null, null);
+            changed = shipped.Where(f => !System.IO.File.ReadAllBytes(f).SequenceEqual(before[f])).ToArray();
+        }
+        finally
+        {
+            foreach (var file in before.Keys.Where(f => !System.IO.File.ReadAllBytes(f).SequenceEqual(before[f]))) System.IO.File.WriteAllBytes(file, before[file]);
+            AssetDatabase.Refresh();
+        }
+        CollectionAssert.IsEmpty(changed, "Import rewrote the shipped files of a placed model");
+    }
+
     [TestCase(0, 7177)]
     [TestCase(1, 6329)]
     [TestCase(2, 6854)]
     public void SourceGeometryAndOriginalColourMapImportWithoutReduction(int index, int triangles)
     {
-        string id = VehicleReviewCatalog.Ids[index], folder = VehicleReviewCatalog.Folder + "/" + id;
-        string file = folder + "/" + id + "-compatibility.fbx", map = folder + "/" + id + "_basecolor.jpg";
+        string id = VehicleReviewCatalog.Ids[index], folder = VehicleReviewCatalog.DirOf(id);
+        string file = VehicleReviewCatalog.ModelOf(id), map = folder + "/" + id + "_basecolor.jpg";
         var importer = (ModelImporter)AssetImporter.GetAtPath(file);
         Assert.AreEqual(ModelImporterMeshCompression.Off, importer.meshCompression);
         Assert.IsTrue(importer.importAnimation); Assert.AreEqual(ModelImporterAnimationCompression.Off, importer.animationCompression);
+        // #2014: the placed Spitfire imports rig-free (no Animator on the shipped prefab); the review-only two keep Generic.
+        Assert.AreEqual(VehicleReviewCatalog.Placed(id) ? ModelImporterAnimationType.None : ModelImporterAnimationType.Generic, importer.animationType, id);
         Assert.AreEqual(0, importer.defaultClipAnimations.Length, "The three original GLBs contain no animation clips");
         Assert.AreEqual(0, AssetDatabase.LoadAllAssetsAtPath(file).OfType<AnimationClip>().Count());
         Assert.AreEqual(triangles, AssetDatabase.LoadAllAssetsAtPath(file).OfType<Mesh>().Sum(m => (int)m.GetIndexCount(0) / 3));
@@ -101,7 +131,9 @@ public class VehicleReviewTests
         texture.GetSourceTextureWidthAndHeight(out int width, out int height);
         Assert.AreEqual(4096, width); Assert.AreEqual(4096, height);
         Assert.GreaterOrEqual(texture.maxTextureSize, Mathf.Max(width, height));
-        Assert.AreEqual(TextureImporterCompression.Uncompressed, texture.textureCompression); Assert.IsFalse(texture.crunchedCompression);
+        // The placed Spitfire's map streams compressed, as the placed tent's (#1893); its source bytes are unchanged (hash below).
+        Assert.AreEqual(VehicleReviewCatalog.Placed(id) ? TextureImporterCompression.Compressed : TextureImporterCompression.Uncompressed, texture.textureCompression);
+        Assert.IsFalse(texture.crunchedCompression);
         foreach (string platform in new[] { "Standalone", "WebGL", "Android", "iPhone" })
             Assert.IsFalse(texture.GetPlatformTextureSettings(platform).overridden, platform);
         var image = AssetDatabase.LoadAssetAtPath<Texture2D>(map); Assert.AreEqual(width, image.width); Assert.AreEqual(height, image.height);
