@@ -262,6 +262,8 @@ namespace Statecraft.Game.Map.Kits
         public int LastDrawn { get; private set; }
         public long LastTriangles { get; private set; }
         public int LastDraws { get; private set; }
+        /// <summary>For the last camera: the instances it submitted with shadow casting on (a test and profiling aid).</summary>
+        public int LastShadowCasters { get; private set; }
 
         /// <summary>Explicit town ids and renderer identities distinguish individual towns from mixed locality tiles
         /// (<paramref name="rendererTileIds"/>: each tile renderer's villages). A complete editor model set is optional in a
@@ -779,7 +781,10 @@ namespace Statecraft.Game.Map.Kits
             PrepareCameraCore(cam, inRender: true);
             bool close = choices.TryGetValue(cam.GetInstanceID(), out var choice) && choice.close;
             LastClose = close;
-            int drawn = 0, draws = 0; long tris = 0;
+            int drawn = 0, draws = 0, casters = 0; long tris = 0;
+            // Owner ruling on #2267, 2 November 2026, "Shadows off far, then measure (Recommended)": beyond the close switch the
+            // cities drawn at every zoom cast no shadows; below it every building casts.
+            var shadows = close ? ShadowCastingMode.On : ShadowCastingMode.Off;
             // Far off too: ReadyForTown admits the cities drawn at every zoom there (AtZoom), and nothing else.
             if (Draw)
             {
@@ -795,15 +800,16 @@ namespace Statecraft.Game.Map.Kits
                     var mesh = set != null ? set.Mesh(t.model) : models[t.model].mesh!; // always the original mesh
                     var rp = new RenderParams(set != null ? set.Material(t.model) : models[t.model].material!)
                     {
-                        worldBounds = t.bounds, camera = cam, shadowCastingMode = ShadowCastingMode.On, receiveShadows = true,
+                        worldBounds = t.bounds, camera = cam, shadowCastingMode = shadows, receiveShadows = true,
                         layer = gameObject.layer,
                     };
                     Graphics.RenderMeshInstanced(rp, mesh, 0, t.m);
                     draws++; drawn += t.m.Length; tris += (long)t.m.Length * mesh.GetIndexCount(0) / 3;
+                    if (shadows != ShadowCastingMode.Off) casters += t.m.Length;
                 }
             }
             LastClose = close && drawn > 0;
-            LastDrawn = drawn; LastTriangles = tris; LastDraws = draws;
+            LastDrawn = drawn; LastTriangles = tris; LastDraws = draws; LastShadowCasters = casters;
         }
     }
 }

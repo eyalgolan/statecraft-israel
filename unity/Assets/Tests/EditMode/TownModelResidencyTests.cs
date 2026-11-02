@@ -992,6 +992,28 @@ public class TownModelResidencyTests
         }
     }
 
+    /// <summary>Owner ruling on #2267, 2 November 2026: "Shadows off far, then measure (Recommended)" ("Turn off these
+    /// buildings' shadows beyond 40 km now"). Beyond the close switch the four cities' buildings draw without casting shadows
+    /// (250 km and 90 km); below it every building casts as before (30 km and the closest zoom).</summary>
+    [Test]
+    public void TheFourCitiesBuildingsCastNoShadowsFarOff()
+    {
+        using var s = new StreamedMap();
+        foreach (var id in TownLandmarksTests.BigCities)
+        {
+            var at = s.Footprint(id).centre;
+            foreach (var (d, cast) in new[] { (CameraController.MaxDistance, false), (90_000f, false), (ThirtyKmM, true), (CameraController.MinDistance, true) })
+            {
+                var camera = s.Camera(at, d);
+                string where = FormattableString.Invariant($"{id} at {d / 1000f} km");
+                s.Settle(camera);
+                s.Submit(camera);
+                Assert.Greater(s.layer.LastDrawn, 0, where + ": the building models draw");
+                Assert.AreEqual(cast ? s.layer.LastDrawn : 0, s.layer.LastShadowCasters, where + (cast ? ": every building casts" : ": no building casts"));
+            }
+        }
+    }
+
     /// <summary>The 1.5 GB guard: zooming out to the 60 km gameplay view releases every building-model lease and the kits
     /// draw again.</summary>
     [Test]
