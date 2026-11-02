@@ -45,6 +45,16 @@ HOME_PATH = re.compile(
 CONFLICT_MARKER = re.compile(r"^(<{7}|\|{7}|>{7}) ")
 
 MAX_FILE_BYTES = 10 * 1024 * 1024
+# Owner ruling, 2 Nov 2026, verbatim: "Keep in the repo". It covers Tal's four high-detail originals over 10 MiB
+# (refs #2080, #2083, #2085; byte counts and SHA-256 in docs/art/recovered-asset-audit-2007.md). Path -> exact byte
+# count: only that file at that size passes the size check, and any other file over MAX_FILE_BYTES still fails. All four
+# are over the 50 MiB at which GitHub warns on push and under the 100 MiB at which it refuses one.
+OVERSIZE_ALLOWED: dict[str, int] = {
+    "asset-sources/prepared-towns-20261031/netanya/statecraft-netanya-original-76df2d06.glb": 60_575_748,
+    "asset-sources/prepared-towns-20261031/safed/statecraft-safed-original-6707144a.glb": 59_382_140,
+    "asset-sources/prepared-towns-20261031/tiberias/statecraft-tiberias-original-d6c8293a.glb": 59_533_508,
+    "asset-sources/prepared-weapons-20261031/k98k/statecraft-k98k-original-64e8aded.glb": 63_014_240,
+}
 
 REQUIRED_FILES: tuple[str, ...] = (
     "LICENSE", "LICENSES/MIT.txt", "LICENSES/CC-BY-4.0.txt", "LICENSES/CC-BY-NC-ND-4.0.txt",
