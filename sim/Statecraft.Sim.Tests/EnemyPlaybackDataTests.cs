@@ -163,23 +163,36 @@ public class EnemyPlaybackDataTests
     /// <summary>R-COMBAT-002, R-COMBAT-003: a first turn in which an enemy unit's step-2 attack on an Israeli unit placed beside
     /// it ends with that unit's line of <paramref name="key"/> (retreated or destroyed). Found by running the sim over the enemy
     /// units, their neighbours (R-MOVE-002), a few strengths and the RNG state (the AI's choice to attack draws nothing,
-    /// Q-ENEMY-2, so a turn with no enemy attack ends that strength's search).</summary>
+    /// Q-ENEMY-2, so a turn with no enemy attack ends that strength's search). A unit on its march (R-ENEMY-002) attacks only
+    /// when the march is blocked, so a second Israeli unit holds its 11 June hex: on the 4.4 km grid (#1183) the one enemy
+    /// unit without a script reaches 2:1 (enemy_attack_ratio_percent) only on a unit of strength 1, which cannot retreat.</summary>
     static (StepResult r, int id, (int Q, int R) placed) EnemyAttackThatEndsIn(string key)
     {
         var s = Start();
         foreach (var e in s.Units.Values.Where(IsEnemy).ToList())
+        {
+            var held = HoldingItsMarch(s, e);
             foreach (var (dq, dr) in Movement.Neighbours)
                 foreach (var strength in new[] { 1, 2, 3, 4, 6, 8 })
                     for (ulong rng = 1; rng <= 64; rng++)
                     {
-                        var (t, id) = WithIsraeli(s, e.Q + dq, e.R + dr, strength);
+                        var (t, id) = WithIsraeli(held, e.Q + dq, e.R + dr, strength);
                         t.RngState = rng;
                         var r = Simulation.Step(C, t, Array.Empty<Command>());
                         if (!r.Why.Any(w => w.EnemyOrder == Combat.Attack)) break;
                         if (r.Why.Any(w => w.Key == key && w.Units[0].Id == id)) return (r, id, (e.Q + dq, e.R + dr));
                     }
+        }
         throw new Xunit.Sdk.XunitException($"no first-turn enemy attack ends in {key} for an Israeli unit (fixture precondition)");
     }
+
+    /// <summary>A copy of <paramref name="s"/> with an Israeli unit of strength 1 on enemy unit <paramref name="e"/>'s script
+    /// hex when it has one and the hex is empty: no path enters it, so Movement.Toward finds none and the unit takes the
+    /// goals (R-ENEMY-002, R-ENEMY-003).</summary>
+    static GameState HoldingItsMarch(GameState s, Unit e) =>
+        e.Id < C.StartingForces.Count && C.StartingForces[e.Id].Script is (int q, int r) && !s.Units.Values.Any(u => (u.Q, u.R) == (q, r))
+            ? WithIsraeli(s, q, r, strength: 1).s
+            : s;
 
     // R-COMBAT-003: our unit pushed back by the enemy's step-2 attack is named on the hex it was attacked on (the
     // engagement's), and Args[0] is where it went.

@@ -28,13 +28,13 @@ public class Gdd03AssignmentFixtureTests
     [Theory] [InlineData(false)] [InlineData(true)]
     public void RegionalPoolRefusesAThirdWorkerWithoutReleasingTheirAssignment(bool workshop)
     {
-        const string region = "tel_aviv_jaffa";
+        const string region = "ramla_rehovot";
         var c = PlayerRegionsContentTests.Load();
         c.Gdd03Balance!.Values["industry.income"] = new Gdd03DesignValue {
             Basis = "Agreed", Note = "synthetic regional fixture rates", Values = new() { 1m, 2m, 3m } };
         var work = workshop ? Gdd03FixtureWork.Workshop : Gdd03FixtureWork.Industry;
         var slots = Enumerable.Range(0, 3).Select(i => new Gdd03FixtureSlot("synthetic-regional-" + i, work, 1, "job")).ToArray();
-        var place = new PopulationLocation(region, -3, 19);
+        var place = new PopulationLocation(region, -4, 24);
         var people = Enumerable.Range(0, 3).Select(i => new PopulationInventoryRow("synthetic", i,
             new PopulationUnit(0, PopulationStatus.FreeCivilian, c.RequirePopulationInteger("reception.turns"), place,
                 PopulationAssignment.Unassigned, CivilianProfession.None, CivilianTier.None, 0, "", 0, PopulationEquipment.None)));
@@ -219,10 +219,10 @@ public class Gdd03AssignmentFixtureTests
         Assert.Throws<ArgumentException>(() => new Gdd03AssignmentFixture(c, s, Slots)); Assert.Equal(before, s.Describe());
     }
     // R-CITY-001: actual-region pool occupancy over existing ledger locations and slot kinds. Synthetic quantities.
-    const string RegionA = "tel_aviv_jaffa", RegionB = "central_plain";
+    const string RegionA = "ramla_rehovot", RegionB = "central_plain";
     static Content RegionalContent()
     {
-        var c = PlayerRegionsContentTests.Load("player_regions:\n" + PlayerRegionsContentTests.TelAviv + PlayerRegionsContentTests.Central);
+        var c = PlayerRegionsContentTests.Load("player_regions:\n" + PlayerRegionsContentTests.RamlaRehovot + PlayerRegionsContentTests.Central);
         c.Gdd03Balance!.Values["industry.income"] = new Gdd03DesignValue {
             Basis = "Agreed", Note = "synthetic", Values = new() { 1m, 2m, 3m } };
         return c;
@@ -230,7 +230,7 @@ public class Gdd03AssignmentFixtureTests
     static (GameState, Gdd03AssignmentFixture) Regional(int industry, int workshop, Gdd03FixtureSlot[] slots, int people)
     {
         var c = RegionalContent(); var ticks = c.RequirePopulationInteger("reception.turns");
-        var at = new PopulationLocation(RegionA, -3, 19);
+        var at = new PopulationLocation(RegionA, -4, 24);
         var rows = Enumerable.Range(0, people).Select(i => new PopulationInventoryRow("synthetic", i,
             new PopulationUnit(0, PopulationStatus.FreeCivilian, ticks, at, PopulationAssignment.Unassigned,
                 CivilianProfession.None, CivilianTier.None, 0, "", 0, PopulationEquipment.None)));
@@ -294,12 +294,12 @@ public class Gdd03AssignmentFixtureTests
         var kind = workshop ? Gdd03FixtureWork.Workshop : Gdd03FixtureWork.Industry;
         var facilityKind = workshop ? PlayerRegionFacilityKind.Workshop : PlayerRegionFacilityKind.Industry;
         var slots = Enumerable.Range(0, 4).Select(i => S("synthetic-regional-boundary-" + i, kind)).ToArray();
-        var locations = new[] { new PopulationLocation(RegionA, -3, 19), new PopulationLocation(RegionB, -4, 21) };
+        var locations = new[] { new PopulationLocation(RegionA, -4, 24), new PopulationLocation(RegionB, -4, 23) };
         var rows = Enumerable.Range(0, 4).Select(i => new PopulationInventoryRow("synthetic", i,
             new PopulationUnit(0, PopulationStatus.FreeCivilian, content.RequirePopulationInteger("reception.turns"), locations[i / 2],
                 PopulationAssignment.Unassigned, CivilianProfession.None, CivilianTier.None, 0, "", 0, PopulationEquipment.None)));
         var state = PlayerRegions.CreateFixture(content, new[] {
-            new PlayerRegionPool(RegionA, 2, 0m, 0, 0, new[] { new PlayerRegionFacility("synthetic-a-facility", "tel_aviv", facilityKind, 1) }),
+            new PlayerRegionPool(RegionA, 2, 0m, 0, 0, new[] { new PlayerRegionFacility("synthetic-a-facility", "ramla", facilityKind, 1) }),
             new PlayerRegionPool(RegionB, 2, 0m, 0, 0, new[] { new PlayerRegionFacility("synthetic-b-facility", "rishon_lezion", facilityKind, 1) }) },
             rows, slots.Select((slot, i) => new PopulationTarget(slot.Id, PopulationAssignmentKind.Work, i < 2 ? RegionA : RegionB)),
             Array.Empty<string>(), Array.Empty<string>());

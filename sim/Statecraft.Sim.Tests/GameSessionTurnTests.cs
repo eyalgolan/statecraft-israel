@@ -45,7 +45,9 @@ public class GameSessionTurnTests
         var enemy = session.State.Units[9];
         Assert.NotEqual(Movement.PlayerSide, enemy.Side);
         Assert.Null(session.Commit(new UnitOrder(5, Combat.Attack, enemy.Q, enemy.R)));   // unit 5 stands next to unit 9
-        Assert.Null(session.Commit(new Move(6, enemy.Q - 2, enemy.R)));                   // and unit 6 steps up beside it
+        // Unit 6 takes the hex unit 9 marches on (R-ENEMY-002), so no path leads there and it attacks instead (R-ENEMY-003).
+        var march = C.StartingForces[9].Script!.Value;
+        Assert.Null(session.Commit(new Move(6, march.Q, march.R)));
         var open = session.Now.Why.ToList();
         Assert.Contains(open, x => x.Key == WhyKeys.Engagement);
         var ended = session.EndTurn(new Command[] { new BuyArms(1) });

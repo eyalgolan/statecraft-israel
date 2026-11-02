@@ -11,8 +11,8 @@ locations:
   kind: kibbutz
   lon: 34.6830556
   lat: 31.6608333
-  q: -7
-  r: 25
+  q: -8
+  r: 28
   priority: must_have # DESIGN VALUE: owner-approved GDD v0.2 map priority, 17 October 2026.
   marker: true # DESIGN VALUE: this record is a map marker.
   managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
@@ -32,7 +32,7 @@ locations:
   lon: 34.8833333
   lat: 31.8322222
   q: -4
-  r: 23
+  r: 25
   priority: must_have # DESIGN VALUE: owner-approved GDD v0.2 map priority, 17 October 2026.
   marker: true # DESIGN VALUE: this record is a map marker.
   managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
@@ -51,8 +51,8 @@ locations:
   kind: kibbutz
   lon: 34.5808333
   lat: 31.5194444
-  q: -9
-  r: 27
+  q: -11
+  r: 31
   priority: must_have # DESIGN VALUE: owner-approved GDD v0.2 map priority, 17 October 2026.
   marker: true # DESIGN VALUE: this record is a map marker.
   managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
@@ -71,8 +71,8 @@ locations:
   kind: fort
   lon: 34.98036
   lat: 31.8381
-  q: -2
-  r: 22
+  q: -3
+  r: 25
   priority: must_have # DESIGN VALUE: owner-approved GDD v0.2 map priority, 17 October 2026.
   marker: true # DESIGN VALUE: this record is a map marker, not issue #707's 3D model.
   managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
@@ -91,8 +91,8 @@ locations:
   kind: fort
   lon: 34.6818194
   lat: 31.6480118
-  q: -7
-  r: 25
+  q: -8
+  r: 28
   priority: must_have # DESIGN VALUE: owner-approved GDD v0.2 map priority, 17 October 2026.
   marker: true # DESIGN VALUE: this record is a map marker.
   managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
@@ -112,8 +112,8 @@ locations:
   kind: pass
   lon: 35.024865
   lat: 31.814508
-  q: -2
-  r: 23
+  q: -3
+  r: 26
   priority: must_have # DESIGN VALUE: owner-approved GDD v0.2 map priority, 17 October 2026.
   marker: true # DESIGN VALUE: this record is a map marker.
   managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
@@ -133,8 +133,8 @@ locations:
   kind: bridge
   lon: 34.6694067
   lat: 31.7820937
-  q: -6
-  r: 23
+  q: -7
+  r: 26
   priority: must_have # DESIGN VALUE: owner-approved GDD v0.2 map priority, 17 October 2026.
   marker: true # DESIGN VALUE: this record is a map marker, separate from nearby Isdud.
   managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
@@ -154,8 +154,8 @@ locations:
   kind: reception_camp
   lon: 34.95745
   lat: 32.8160806
-  q: 5
-  r: 8
+  q: 6
+  r: 9
   priority: must_have # DESIGN VALUE: owner-approved GDD v0.2 map priority, 17 October 2026.
   marker: true # DESIGN VALUE: this record is a map marker.
   managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
@@ -179,7 +179,7 @@ locations:
   lon: 35.2194444
   lat: 31.7819444
   q: 0
-  r: 23
+  r: 26
   priority: must_have # DESIGN VALUE: owner-approved GDD v0.2 map priority, 17 October 2026.
   marker: true # DESIGN VALUE: this record is a map marker.
   managed_city: true # DESIGN VALUE: reuse the existing Jerusalem city economy.
@@ -206,7 +206,7 @@ locations:
   lon: 35.2341667
   lat: 31.7766667
   q: 0
-  r: 23
+  r: 26
   priority: must_have # DESIGN VALUE: owner-approved GDD v0.2 map priority, 17 October 2026.
   marker: true # DESIGN VALUE: this is a second map marker, not a second city economy.
   managed_city: false # DESIGN VALUE: cities.yaml keeps one Jerusalem economy.
@@ -237,8 +237,8 @@ locations:
   kind: outpost
   lon: 34.9533611
   lat: 29.5491667
-  q: -20
-  r: 56
+  q: -23
+  r: 64
   priority: optional # DESIGN VALUE: owner-approved optional map location, 21 October 2026.
   marker: true # DESIGN VALUE: map metadata only; the objective-1 bonus waits on #752.
   managed_city: false # DESIGN VALUE: no 1948 population, so no city panel.
@@ -263,8 +263,8 @@ locations:
   # section 5.
   lon: 34.3576484
   lat: 31.2376769
-  q: -14
-  r: 31
+  q: -16
+  r: 36
   priority: optional # DESIGN VALUE: owner ruling on #2136, 1 November 2026, "Optional (Recommended)".
   marker: true # DESIGN VALUE: this record is a map marker.
   managed_city: false # DESIGN VALUE: map inclusion creates no city panel.

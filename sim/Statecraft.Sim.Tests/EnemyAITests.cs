@@ -184,10 +184,10 @@ public class EnemyAITests
         var until = new DateTime(1948, 7, 8);   // the four anchors' window end: the first truce's (units_1948.yaml)
         Assert.Equal(new[]
         {
-            ("arab_legion", -2, 22, until),                     // Latrun
-            ("egyptian_expeditionary_force", -7, 24, until),    // Isdud, the forward base (the row's first 11 June anchor)
-            ("iraqi_expeditionary_force", 6, 13, until),        // Jenin
-            ("syrian_army", 13, 5, until),                      // the bridgehead at Mishmar HaYarden
+            ("arab_legion", -3, 25, until),                     // Latrun
+            ("egyptian_expeditionary_force", -8, 27, until),    // Isdud, the forward base (the row's first 11 June anchor)
+            ("iraqi_expeditionary_force", 6, 15, until),        // Jenin
+            ("syrian_army", 15, 6, until),                      // the bridgehead at Mishmar HaYarden, next to Rosh Pinna's hex (owner, #1183)
         }, scripted);
         Assert.All(Real.StartingForces.Where(f => f.Side == Movement.PlayerSide), f => Assert.Null(f.Script));
     }
@@ -280,7 +280,7 @@ public class EnemyAITests
         Assert.Equal(new DateTime(1948, 7, 15), s.Date);
         var legion = Real.StartingForces.FindIndex(f => f.Row == "arab_legion");
         var harel = Real.StartingForces.FindIndex(f => f.Row == "harel");
-        Assert.Equal((-2, 22), (s.Units[legion].Q, s.Units[legion].R));   // the Legion on Latrun
+        Assert.Equal((-3, 25), (s.Units[legion].Q, s.Units[legion].R));   // the Legion on Latrun
         Assert.Equal(1, Distance(s.Units[legion].Q, s.Units[legion].R, s.Units[harel].Q, s.Units[harel].R));
         var strength = s.Units[harel].Strength;
         var step = Simulation.Step(Real, s, GoldenRun.Orders(Real, s));
@@ -307,15 +307,15 @@ public class EnemyAITests
         var negev = s.Units[negevId];
         Assert.Equal(1, negev.Strength);
         s.Units[negevId] = new Unit(negev.Id, negev.Type, negev.Q, negev.R, negev.Service, negev.Side, 2, negev.Order, negev.OrderTarget);
-        var first = Simulation.Step(Real, s, new Command[] { new Move(givati, -7, 24), new Move(negevId, -10, 27) });
-        Assert.Contains(first.Why, x => x.Message == $"Unit {egypt} will attack hex -10,27");
+        var first = Simulation.Step(Real, s, new Command[] { new Move(givati, -8, 27), new Move(negevId, -11, 30) });
+        Assert.Contains(first.Why, x => x.Message == $"Unit {egypt} will attack hex -11,30");
         s = first.State;
         Assert.Equal(new DateTime(1948, 6, 15), s.Date);
         Assert.True(s.Units.ContainsKey(negevId), "the Negev fell on the 15 May turn");
-        Assert.Equal((Combat.Attack, "-10,27"), (s.Units[egypt].Order, s.Units[egypt].OrderTarget));   // the attack stands
+        Assert.Equal((Combat.Attack, "-11,30"), (s.Units[egypt].Order, s.Units[egypt].OrderTarget));   // the attack stands
         var strength = s.Units[negevId].Strength;
-        var step = Simulation.Step(Real, s, new Command[] { new Move(givati, -5, 23) });
-        Assert.Equal((-9, 27), (step.State.Units[egypt].Q, step.State.Units[egypt].R));   // Egypt moved on its script
+        var step = Simulation.Step(Real, s, new Command[] { new Move(givati, -6, 26) });
+        Assert.Equal((-9, 29), (step.State.Units[egypt].Q, step.State.Units[egypt].R));   // Egypt moved on its script
         Assert.True(step.State.Units.ContainsKey(negevId), "the Negev was destroyed");
         Assert.Equal(strength, step.State.Units[negevId].Strength);
     }

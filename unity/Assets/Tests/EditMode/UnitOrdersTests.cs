@@ -634,12 +634,12 @@ public class UnitOrdersTests
         PlacedToken? shown = new PlacedToken(golani, new AnchorSpot(0, 0, 0, 0, false));
         var info = new InfoPanelPresenter(ui.Root, bridge, Text, new Dictionary<string, string>(), selectedUnit: () => shown);
         using var toast = new ToastPresenter(ui.Root, bridge, Text) { Units = Units };
-        var syrian = bridge.State.Units.Values.First(u => u.Side == "syria" && MapActions.Distance(u.Q, u.R, bridge.State.Units[0].Q, bridge.State.Units[0].R) == 1);
+        var iraqi = bridge.State.Units.Values.First(u => u.Side == "iraq" && MapActions.Distance(u.Q, u.R, bridge.State.Units[0].Q, bridge.State.Units[0].R) == 1);
         var arms = bridge.State.Arms;
-        Assert.IsNull(bridge.Queue(new UnitOrder(0, Combat.Attack, syrian.Q, syrian.R)));
+        Assert.IsNull(bridge.Queue(new UnitOrder(0, Combat.Attack, iraqi.Q, iraqi.R)));
         Assert.AreEqual(arms - 1, bridge.State.Arms, "paid at once (arms_per_attack 1)");
         var line = ui.Q<Label>("toast").text;
-        StringAssert.StartsWith("The attack on Degania Alef (", line);   // the place, not the hex's coordinates
+        StringAssert.StartsWith("The attack on a hex 10 km south-west of Degania Alef (", line);   // the place, not the hex's coordinates
         StringAssert.DoesNotContain("unit 0", line);
         StringAssert.Contains(golani.Unit.Name, line);
         info.ShowUnit();
