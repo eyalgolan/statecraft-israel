@@ -246,6 +246,7 @@ namespace Statecraft.Game.UI
             [Training.RefusedCount] = "unit.reinforce_refused.count",
             [Pools.RefusedDebtCeiling] = "arms.refused_debt_ceiling",
             [Orders.RefusedCardOrder] = "unit.order_refused.card_order",   // R-ENEMY-005: an operation card's refused go-to
+            [Orders.RefusedLastGarrison] = "unit.order_refused.last_garrison",   // R-CTRL-013: a card's go-to held back
         };
 
         /// <summary>The sim's refusals that carry values (#2072: Combat.Check's Arms, Training.Reinforce's unit, settlement,

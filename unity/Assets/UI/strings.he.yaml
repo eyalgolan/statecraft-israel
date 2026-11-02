@@ -1109,6 +1109,9 @@ unit.order_refused.already: "היחידה כבר קיבלה פקודה זו"
 # An operation card's refused go-to (R-ENEMY-005; the owner's answer 1 on #2087). Agent-drafted Hebrew; native review
 # pending (#564).
 unit.order_refused.card_order: "לא ניתן היה לבצע את פקודת המבצע ליחידה"
+# An operation card's go-to held back from the last Israeli unit on an occupied place (R-ENEMY-005, R-CTRL-013; #2087).
+# Agent-drafted Hebrew; native review pending (#564).
+unit.order_refused.last_garrison: "היחידה נשארת במקום: היא היחידה הישראלית האחרונה המחזיקה בו"
 
 # #2072 Attack and Reinforce refusals (Combat.Check, Training.Reinforce), shown on the unit card and in the toast. A
 # settlement in {0}/{1} opens the line as its label or follows a prefix, so no verb agrees with its gender (HE-15).

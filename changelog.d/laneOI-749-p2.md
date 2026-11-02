@@ -8,3 +8,7 @@
   (Carmeli on 19 July 1948, Golani on 24 February 1949, the Egypt armistice). Its march goes round enemy-held places it
   was not sent to, so Golani no longer takes Nazareth on the way. A refused order shows a short message, in English
   and Hebrew.
+- An operation's order never takes the last Israeli unit off an occupied place: launching Operation Horev while Golani
+  alone holds an occupied Nazareth leaves Golani there, and the occupation goes on. A second Israeli unit there lets the
+  order go ahead, and the player's own orders are never held back. The held order shows a short message, in English
+  and Hebrew.
