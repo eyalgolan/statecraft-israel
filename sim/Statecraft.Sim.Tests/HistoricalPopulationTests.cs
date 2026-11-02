@@ -114,23 +114,16 @@ public class HistoricalPopulationTests
     public void HistoricalLedgerFixtureCountsAtTheRulesScale()
     {
         var c = Real(true);
-        Assert.Equal(10000, c.PopulationPeoplePerUnit);   // the catalogue row is unchanged (Open mode's, D2)
+        // Precondition, not the claim: the two scales differ (D2), so the total below tells them apart.
+        Assert.Equal((1000, 10000), (c.RulesAt(c.Rules.Start).Mvp!.PeoplePerUnit, c.PopulationPeoplePerUnit));
         var inventory = HistoricalPopulation.Inventory(c);
         Assert.NotEmpty(inventory);
-        var civilian = PopulationLedgerTests.Person();
-        var civilianTemplate = new PopulationUnit(0, PopulationStatus.FreeCivilian, 0, civilian.Location, PopulationAssignment.Unassigned,
-            civilian.Profession, civilian.Tier, 0, "basic", 0, PopulationEquipment.None);
-        var soldierTemplate = new PopulationUnit(0, PopulationStatus.ActiveSoldier, 0, civilian.Location,
-            new PopulationAssignment(PopulationAssignmentKind.ActiveService, "service"), civilian.Profession, civilian.Tier, 0, "basic", 0,
-            PopulationEquipment.None);
-        var s = PopulationLedger.CreateFixture(c, PopulationLedgerTests.Bindings(), inventory.Select(r => new PopulationInventoryRow(
-            r.Source, r.Ordinal, r.Status == PopulationStatus.ActiveSoldier ? soldierTemplate : civilianTemplate)), mode: Mode.Historical);
+        var s = PopulationLedger.CreateFixture(c, PopulationLedgerTests.Bindings(), LedgerRows(inventory), mode: Mode.Historical);
         Assert.Equal(Mode.Historical, s.Mode);
         Assert.Equal(inventory.Count, s.PopulationLedger.Units.Count);
-        Assert.Equal(1000, c.RulesAt(c.Rules.Start).Mvp!.PeoplePerUnit);
         Assert.Equal((double)inventory.Count * 1000, s.PopulationLedger.TotalPeople);
-        Assert.Equal(s.PopulationLedger.TotalPeople, s.TotalPopulation);
-        Assert.Equal(10000, c.PopulationPeoplePerUnit);   // and still unchanged after the fixture
+        // R-POP-003: Clone keeps the fixture's scale rather than re-reading the catalogue.
+        Assert.Equal((double)inventory.Count * 1000, s.Clone().PopulationLedger.TotalPeople);
     }
 
     // R-POP-001 with D2: the catalogue's 10,000 is Open mode's, so an Open fixture and a synthetic one (no mode) keep it.
@@ -143,6 +136,68 @@ public class HistoricalPopulationTests
         Assert.Equal(Mode.Open, open.Mode);
         Assert.Equal(10000d, open.PopulationLedger.TotalPeople);
         Assert.Equal(10000d, PopulationLedger.CreateFixture(c, PopulationLedgerTests.Bindings(), new[] { row }).PopulationLedger.TotalPeople);
+    }
+
+    // R-POP-003 with D2: the canonical writer emits the scale. A synthetic fixture's GameState.Mode is the enum default,
+    // Historical, so the same rows with and without mode Historical differ only in their scale, and their hashes differ.
+    [Fact]
+    public void CanonicalStateTellsTheTwoScalesApart()
+    {
+        var c = Real(true);
+        var row = new PopulationInventoryRow("synthetic", 0, PopulationLedgerTests.Person());
+        var historical = PopulationLedger.CreateFixture(c, PopulationLedgerTests.Bindings(), new[] { row }, mode: Mode.Historical);
+        var synthetic = PopulationLedger.CreateFixture(c, PopulationLedgerTests.Bindings(), new[] { row });
+        Assert.Equal((Mode.Historical, Mode.Historical), (historical.Mode, synthetic.Mode));
+        Assert.Equal((1000d, 10000d), (historical.PopulationLedger.TotalPeople, synthetic.PopulationLedger.TotalPeople));
+        Assert.NotEqual(historical.Hash(), synthetic.Hash());
+        Assert.Equal(historical.Hash(), historical.Clone().Hash());
+    }
+
+    // R-POP-004 with D2: census and units_1948 rows are the Historical start's, so a fixture of them needs mode Historical;
+    // without it they would silently count at Open mode's 10,000.
+    [Theory]
+    [InlineData(null)]
+    [InlineData(Mode.Open)]
+    public void HistoricalRowsRefuseAnyOtherScale(Mode? mode)
+    {
+        var c = Real(true);
+        var inventory = HistoricalPopulation.Inventory(c);
+        foreach (var prefix in new[] { HistoricalPopulation.CensusPrefix, HistoricalPopulation.FormationPrefix })
+        {
+            var rows = LedgerRows(inventory.Where(r => r.Source.StartsWith(prefix, StringComparison.Ordinal)).Take(1).ToList());
+            Assert.Single(rows);
+            var e = Assert.Throws<ArgumentException>(() => PopulationLedger.CreateFixture(c, PopulationLedgerTests.Bindings(), rows, mode: mode));
+            Assert.Equal("Census and units_1948 rows are the Historical start's; their fixture needs mode Historical (R-POP-004).", e.Message);
+        }
+    }
+
+    // R-POP-001's no-fallback rule on the Historical scale: a missing, zero or negative rules.yaml people_per_unit for the
+    // start day is refused, never replaced by the catalogue's value.
+    [Theory]
+    [InlineData(null)]
+    [InlineData(0)]
+    [InlineData(-1000)]
+    public void HistoricalScaleHasNoFallback(int? peoplePerUnit)
+    {
+        var c = Real(true);
+        var rules = c.RulesAt(c.Rules.Start);
+        if (peoplePerUnit is int ppu) rules.Mvp!.PeoplePerUnit = ppu; else rules.Mvp = null;
+        var row = new PopulationInventoryRow("synthetic", 0, PopulationLedgerTests.Person());
+        var e = Assert.Throws<InvalidOperationException>(() => PopulationLedger.CreateFixture(c, PopulationLedgerTests.Bindings(), new[] { row }, mode: Mode.Historical));
+        Assert.Equal("The Historical scale needs a positive mvp.people_per_unit in rules.yaml for the start day; no fallback.", e.Message);
+    }
+
+    // The real inventory as ledger rows: a free civilian per census unit and an active soldier per formation unit.
+    static IEnumerable<PopulationInventoryRow> LedgerRows(IEnumerable<HistoricalPopulationRow> inventory)
+    {
+        var civilian = PopulationLedgerTests.Person();
+        var civilianTemplate = new PopulationUnit(0, PopulationStatus.FreeCivilian, 0, civilian.Location, PopulationAssignment.Unassigned,
+            civilian.Profession, civilian.Tier, 0, "basic", 0, PopulationEquipment.None);
+        var soldierTemplate = new PopulationUnit(0, PopulationStatus.ActiveSoldier, 0, civilian.Location,
+            new PopulationAssignment(PopulationAssignmentKind.ActiveService, "service"), civilian.Profession, civilian.Tier, 0, "basic", 0,
+            PopulationEquipment.None);
+        return inventory.Select(r => new PopulationInventoryRow(
+            r.Source, r.Ordinal, r.Status == PopulationStatus.ActiveSoldier ? soldierTemplate : civilianTemplate)).ToList();
     }
 
     // R-POP-001, R-POP-004: inventory order is source key by ordinal string comparison, then a contiguous within-source

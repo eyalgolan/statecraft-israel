@@ -252,7 +252,8 @@ namespace Statecraft.Sim
         /// <summary>No production caller or content file opts into initialization. Does not invoke old population producers.
         /// The scale: a synthetic fixture (no <paramref name="mode"/>) and an Open one read the gdd-0.3 catalogue's
         /// population.people_per_unit (10,000, Open mode's); a Historical one reads rules.yaml's people_per_unit for the
-        /// start day (1,000), as StartingForces and Cities do (R-POP-004; owner, 1 November 2026, D2).</summary>
+        /// start day (1,000), as StartingForces and Cities do (R-POP-004; owner, 1 November 2026, D2). Census and units_1948
+        /// rows are the Historical start's, so they need mode Historical; the scale has no fallback (R-POP-001).</summary>
         internal static GameState CreateFixture(Content c, PopulationBindings bindings, IEnumerable<PopulationInventoryRow> rows, int nextPopulationId = 0, Mode? mode = null)
         {
             if (!c.UsesPopulationLedger) throw new InvalidOperationException("Population fixtures require gdd-0.3 identity.");
@@ -260,13 +261,15 @@ namespace Statecraft.Sim
             var s = new GameState(c); var l = s.PopulationLedger;
             if (mode is Mode m) s.Mode = m;
             l.bindings = bindings ?? throw new ArgumentNullException(nameof(bindings));
-            l.peoplePerUnit = mode == Mode.Historical
-                ? (c.RulesAt(c.Rules.Start).Mvp ?? throw new InvalidOperationException("The Historical scale needs mvp rules.")).PeoplePerUnit
-                : c.PopulationPeoplePerUnit;
+            var ordered = rows.OrderBy(x => x.Source, StringComparer.Ordinal).ThenBy(x => x.Ordinal).ToList();
+            if (mode != Mode.Historical && ordered.Any(x => x.Source.StartsWith(HistoricalPopulation.CensusPrefix, StringComparison.Ordinal)
+                || x.Source.StartsWith(HistoricalPopulation.FormationPrefix, StringComparison.Ordinal)))
+                throw new ArgumentException("Census and units_1948 rows are the Historical start's; their fixture needs mode Historical (R-POP-004).");
+            l.peoplePerUnit = mode == Mode.Historical ? HistoricalPeoplePerUnit(c) : c.PopulationPeoplePerUnit;
             l.receptionLimit = c.RequirePopulationInteger("reception.turns");
             l.NextPopulationId = nextPopulationId;
             // Build all records before validating references: teachers may occur after their pupils in authored order.
-            foreach (var row in rows.OrderBy(x => x.Source, StringComparer.Ordinal).ThenBy(x => x.Ordinal))
+            foreach (var row in ordered)
             {
                 var next = checked(l.NextPopulationId + 1);
                 l.sources.Add(PopulationText.Fields(row.Source, row.Ordinal), l.NextPopulationId);
@@ -275,6 +278,9 @@ namespace Statecraft.Sim
             l.Validate(l.units); l.IsInitialized = true;
             return s;
         }
+        // R-POP-001's no-fallback rule, as for the catalogue value: a missing or nonpositive value is refused, never replaced.
+        static int HistoricalPeoplePerUnit(Content c) => c.RulesAt(c.Rules.Start).Mvp?.PeoplePerUnit is int ppu && ppu > 0 ? ppu
+            : throw new InvalidOperationException("The Historical scale needs a positive mvp.people_per_unit in rules.yaml for the start day; no fallback.");
         internal IEnumerable<string> Canonical()
         {
             yield return PopulationText.Fields("initialized", IsInitialized, "next", NextPopulationId,
