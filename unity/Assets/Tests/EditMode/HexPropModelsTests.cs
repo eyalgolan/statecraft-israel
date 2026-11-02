@@ -172,11 +172,17 @@ namespace Statecraft.Game.Tests
             Assert.IsTrue(layer.Requested, "the kit has landmark parts to replace at this zoom");
             CollectionAssert.AreEquivalent(HexPropModels.Models, asked.Select(a => a.id), "one request per prop");
             AnswerAll();
+            Assert.Greater(layer.Replaced.Count, 0, "the landmark models stand from the first camera");
+            Assert.AreEqual(0, layer.Placed.Count, "the standalone props wait for the first close camera (#2266 review: none draws further out)");
             layer.Choose(default, At(60000f));
-            Assert.Greater(layer.Placed.Count, 0);
+            Assert.AreEqual(0, layer.Placed.Count);
+            HexPropModels.ShowAt(map, Opening.AddDays(1));
+            Assert.AreEqual(0, layer.Placed.Count, "a date change before any close camera builds nothing either");
+            layer.Choose(default, At(Statecraft.Game.Map.Kits.TownModelLayer.CloseEnterM));
+            Assert.Greater(layer.Placed.Count, 0, "built at the first close camera");
+            layer.Choose(default, At(60000f));
             Assert.IsTrue(layer.Placed.All(p => layer.transform.Find(p.Name).GetComponentsInChildren<Renderer>(true).All(r => r.forceRenderingOff)),
                 "no standalone prop draws beyond the close zoom");
-            layer.Choose(default, At(Statecraft.Game.Map.Kits.TownModelLayer.CloseEnterM));
             CollectionAssert.IsEmpty(asked, "asked once");
         }
 
@@ -211,6 +217,8 @@ namespace Statecraft.Game.Tests
             }
             var holder = layer.transform.Find(HexPropModels.LandmarksName);
             var ground = PlacementLayer.CampGround(map);
+            foreach (var kit in parts.Select(p => p.Kit).Distinct())
+                Assert.AreEqual(1, kits.Cast<Transform>().Count(t => t.name == kit), kit + ": one kit renderer by that name (they are found by name)");
             int n = 0;
             foreach (var group in parts.GroupBy(p => p.Kit))
             {
@@ -222,7 +230,8 @@ namespace Statecraft.Game.Tests
                     Assert.AreEqual(part.Far.max.y, b.max.y, 0.02f * part.Far.size.y + 0.5f, part.Owner + ": as tall as the kit's part");
                     Assert.AreEqual(part.Far.center.x, b.center.x, 0.5f, part.Owner + ": where the part stood");
                     Assert.AreEqual(part.Far.center.z, b.center.z, 0.5f);
-                    Assert.AreEqual(ground.Y(part.Far.center.x, part.Far.center.z), b.min.y, 0.5f, part.Owner + ": on the ground");
+                    // On the part's own base: the roof for a village minaret or a belfry, the ground for a part with foundations.
+                    Assert.AreEqual(Mathf.Max(part.Far.min.y, ground.Y(part.Far.center.x, part.Far.center.z)), b.min.y, 0.5f, part.Owner + " " + part.Kind + ": on the part's base");
                     Assert.Less(Vector3.Angle(go.up, Vector3.up), 0.01f, part.Owner + ": upright");
                     i++; n++;
                 }
@@ -498,7 +507,11 @@ namespace Statecraft.Game.Tests
             AnswerAll();
             Assert.AreEqual(0, rural.Placed.Count + special.Placed.Count, "the props stood before the rural scenes and the buildings streamed");
             var propsFirst = layer.Placed.Select(p => (p.Name, p.At)).ToList();
-            var keptClearBefore = HexPropModels.Others(map, Opening);
+            // Others is the layer's keep-clear ground (static before #2266's review fixes, per layer after): by reflection, so
+            // this test runs red against either.
+            var keptClearBefore = (List<(Vector2 centre, float radius)>)typeof(HexPropModels).GetMethod("Others",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Instance)!
+                .Invoke(layer, new object[] { map, Opening })!;
             for (int round = 0; round < 10 && waiting.Count > 0; round++)
             {
                 var now = waiting.ToList(); waiting.Clear();
@@ -543,7 +556,7 @@ namespace Statecraft.Game.Tests
                 .Select(p => (new Vector2(p.At.x, p.At.z), SpecialBuildingModels.ClearanceOf(p.Model))).ToList();
             Assert.Greater(b21.Count, 0, "workshops stand by the props' places");
             Assert.Greater(layer.Placed.Count, 0);
-            var kept = HexPropModels.Others(map, Opening, SpecialBuildingModels.ArmsWorkshops(c, projects));
+            var kept = layer.Others(map, Opening);
             foreach (var (at, _) in b21)
                 Assert.IsTrue(kept.Any(d => (d.centre - at).magnitude < 1f), $"the workshop at {at} is in the props' planned keep-clear ground");
             foreach (var p in layer.Placed)
@@ -551,7 +564,198 @@ namespace Statecraft.Game.Tests
                     p.Name + ": no prop stands on a workshop");
         }
 
+        /// <summary>Review of #2281 with #2266: the hex props and the workshops' b21 read ONE rural plan (RuralLife.PlanOf, the
+        /// rural layer's plan for what it was last shown), so the props keep clear of the very b21 that is drawn. The civilian
+        /// figures change after the rural layer was shown (builders at a site), so a plan from the map's current ground would
+        /// differ from the shown one; both layers still use the shown one, computed once.</summary>
+        [Test]
+        public void PropsAndWorkshopsReadOneRuralPlan()
+        {
+            var map = OpenMap();
+            var c = Statecraft.Sim.ContentLoader.Load(Paths.Content);
+            foreach (var era in c.Eras) { era.Systems.Ruleset = Statecraft.Sim.SaveGame.Gdd03Ruleset; era.Systems.Loop = Statecraft.Sim.EraSystems.Gdd; }
+            CollectionGeometryFixture.People(map, Opening, Array.Empty<Statecraft.Sim.Placement>(), c);
+            var rural = CollectionGeometryFixture.Rural(map)!;
+            var shown = RuralLife.PlanOf(map);
+            Assert.AreSame(shown, RuralLife.PlanOf(map), "the plan is computed once for what was shown");
+            Assert.Greater(shown.Count, 0);
+            // Workshops on the hexes nearest the planned farm scenes.
+            var land = c.Hexes.Where(h => h.Land).Select(h => (h, at: map.Frame.ToWorld(h.Lon, h.Lat, 0))).ToList();
+            var hexes = shown.Select(f => land.OrderBy(x => (new Vector2(x.at.x, x.at.z) - f.spot).sqrMagnitude).First().h).Distinct().ToList();
+            var projects = hexes.Select((h, i) => new Statecraft.Sim.CityProject(400 + i, Statecraft.Sim.Workshops.ArmsWorkshop, "rehovot", h.Q, h.R, 0, Opening)).ToList();
+            // The figures change after the rural layer was shown: builders at a site being built.
+            var site = new Statecraft.Sim.CityProject(399, "housing", "rehovot", hexes[0].Q, hexes[0].R, 3);
+            CollectionGeometryFixture.People(map, Opening, Array.Empty<Statecraft.Sim.Placement>(), c, null, new[] { site });
+            var fresh = RuralLife.Plan(map, RuralLife.Wants(map), RuralLife.OtherProps(map), _ => true);
+            TestContext.WriteLine($"the plan from the map's current ground {(fresh.SequenceEqual(shown) ? "equals" : "differs from")} the shown one");
+            var special = CollectionGeometryFixture.Special(map, Opening, c, projects)!;
+            var layer = HexPropModels.ShowAt(map, Opening, c, projects)!;
+            layer.Choose(default, At(Statecraft.Game.Map.Kits.TownModelLayer.CloseEnterM));
+            AnswerAll();
+            Assert.AreSame(shown, RuralLife.PlanOf(map), "no layer replaced the shown plan");
+            var drawn = special.Placed.Where(p => p.Model == SpecialBuildingModels.Workshop).ToList();
+            Assert.Greater(drawn.Count, 0);
+            var wants = SpecialBuildingModels.Placements(Opening).Concat(SpecialBuildingModels.ArmsWorkshops(c, projects)).ToList();
+            var planned = SpecialBuildingModels.Plan(map, Opening, wants, _ => true, log: false, shown).ToDictionary(x => x.want.Key, x => x.at);
+            var kept = layer.Others(map, Opening);
+            foreach (var p in drawn)
+            {
+                var at = new Vector2(p.At.x, p.At.z);
+                Assert.Less((planned[p.Key] - at).magnitude, 1e-3f, p.Key + " drawn where the shown rural plan puts it");
+                Assert.IsTrue(kept.Any(d => (d.centre - at).magnitude < 1f), p.Key + ": the props keep clear of the b21 that is drawn");
+            }
+        }
+
         sealed class Lease : IDisposable { public void Dispose() { } }
+
+        /// <summary>Review of #2266's delta, C1, on today's map: with one model withheld and the rest streamed in later, every
+        /// rural scene and special building stands at its spot in the plan with every model available, and none lands on a hex
+        /// prop. On today's map no single model's absence moves another scene or building, so this test cannot fail on its own
+        /// for C1 (it passes on the old code too): it guards the real map's ordering and overlap. C1 itself is covered by the
+        /// constructed case, AStreamedModelStandsAtItsFullPlanSpotWhenAnEarlierOneHasNotStreamed (the farm scenes; #2281 fixes
+        /// SpecialBuildingModels.Plan the same way).</summary>
+        [Test]
+        public void ScenesAndBuildingsStandAtTheirFullPlanSpotsWhateverHasStreamed()
+        {
+            var map = OpenMap();
+            CollectionGeometryFixture.People(map, Opening, Array.Empty<Statecraft.Sim.Placement>(), Statecraft.Sim.ContentLoader.Load(Paths.Content));
+            var ruralWants = RuralLife.Wants(map); var ruralOthers = RuralLife.OtherProps(map);
+            var full = RuralLife.Plan(map, ruralWants, ruralOthers, _ => true).ToDictionary(x => x.want.Key + "|" + x.want.Model, x => x.spot);
+            // On today's map no single rural model's absence moves another scene (the constructed case shows the flaw); the
+            // first model is withheld here.
+            string withheld = RuralLife.Models[0];
+            var waiting = new List<(string id, CollectionDetail detail, Action<GameObject?> done)>();
+            RuralLife.Request = SpecialBuildingModels.Request = (id, detail, done) => waiting.Add((id, detail, done));
+            var rural = CollectionGeometryFixture.Rural(map)!;
+            var special = CollectionGeometryFixture.Special(map, Opening)!;
+            var layer = HexPropModels.ShowAt(map, Opening)!;
+            layer.Choose(default, At(Statecraft.Game.Map.Kits.TownModelLayer.CloseEnterM));
+            AnswerAll();
+            var props = layer.Placed.Select(p => (new Vector2(p.At.x, p.At.z), HexPropModels.ClearanceOf(p.Model))).ToList();
+            void Answer(Func<string, bool> which)
+            {
+                for (int round = 0; round < 10; round++)
+                {
+                    var now = waiting.Where(x => which(x.id)).ToList(); if (now.Count == 0) return;
+                    foreach (var x in now) { waiting.Remove(x); x.done(AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(x.id, x.detail))); }
+                }
+            }
+            void Check(string stage)
+            {
+                foreach (var p in rural.Placed.Where(x => x.Member == 0))
+                {
+                    Assert.IsTrue(full.TryGetValue(p.Key + "|" + p.Model, out var f), stage + ": " + p.Key + " " + p.Model + " is in the full plan");
+                    Assert.Less((f - new Vector2(p.At.x, p.At.z)).magnitude, 1f, stage + ": " + p.Key + " " + p.Model + " at its full-plan spot");
+                }
+                var plan = SpecialBuildingModels.Plan(map, Opening, SpecialBuildingModels.Placements(Opening), _ => true, log: false).ToDictionary(x => x.want.Key, x => x.at);
+                foreach (var p in special.Placed) Assert.Less((plan[p.Key] - new Vector2(p.At.x, p.At.z)).magnitude, 1f, stage + ": " + p.Key + " at its full-plan spot");
+                var theirs = rural.Placed.Select(p => (new Vector2(p.At.x, p.At.z), RuralLife.SceneRadiusM(p.Model)))
+                    .Concat(special.Placed.Select(p => (new Vector2(p.At.x, p.At.z), SpecialBuildingModels.ClearanceOf(p.Model)))).ToList();
+                foreach (var (c, r) in props) Assert.IsTrue(Statecraft.Game.Map.Collection.TownLandmarks.Clear(c, r, theirs), stage + ": a prop at " + c + " is landed on");
+            }
+            // Everything but the withheld model (and, for the buildings, the barracks) streams; then the rest, in reverse order.
+            Answer(id => id != withheld && id != SpecialBuildingModels.Barracks);
+            Assert.Greater(rural.Placed.Count, 0);
+            Check("a subset streamed");
+            Answer(id => true);
+            Check("everything streamed");
+        }
+
+        /// <summary>Review of #2266's delta, C1 (the farm scenes; #2281 fixes SpecialBuildingModels.Plan the same way), constructed:
+        /// two wants on one anchor, keyed so that the second stands
+        /// elsewhere in the plan with the first model than in the plan without it. Only the second model streams; it must stand
+        /// at its full-plan spot (where the hex props keep clear), not where the first one's absence would let it.</summary>
+        [Test]
+        public void AStreamedModelStandsAtItsFullPlanSpotWhenAnEarlierOneHasNotStreamed()
+        {
+            var map = OpenMap();
+            CollectionGeometryFixture.People(map, Opening, Array.Empty<Statecraft.Sim.Placement>(), Statecraft.Sim.ContentLoader.Load(Paths.Content));
+            var waiting = new List<(string id, CollectionDetail detail, Action<GameObject?> done)>();
+            RuralLife.Request = SpecialBuildingModels.Request = (id, detail, done) => waiting.Add((id, detail, done));
+            void Answer(string model)
+            {
+                for (int round = 0; round < 10; round++)
+                {
+                    var now = waiting.Where(x => x.id == model).ToList(); if (now.Count == 0) return;
+                    foreach (var x in now) { waiting.Remove(x); x.done(AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(x.id, x.detail))); }
+                }
+            }
+            // Rural: a sheep on a planned scene's anchor at its first ring, and a donkey on the same anchor keyed so that its
+            // first candidate (RuralLife.Spot: FNV-1a of model and key picks the bearing) is the sheep's spot: in the plan with
+            // the sheep it must go elsewhere, alone (the old greedy subset plan) it would stand there.
+            var others = RuralLife.OtherProps(map);
+            var real = RuralLife.Plan(map, RuralLife.Wants(map), others, _ => true);
+            List<RuralLife.Want>? pair = null; Vector2 fullSpot = default, subSpot = default;
+            foreach (var (seed, _) in real)
+            {
+                for (int k = 0; k < 64 && pair == null; k++)
+                {
+                    var a = new RuralLife.Want("c1:" + k, RuralLife.Sheep, seed.Anchor, seed.AnchorRadius);
+                    var alone = RuralLife.Plan(map, new[] { a }, others, _ => true);
+                    if (alone.Count != 1) continue;
+                    var off = alone[0].spot - seed.Anchor;
+                    if (Mathf.Abs(off.magnitude - (seed.AnchorRadius + RuralLife.ClearanceRadiusM * RuralLife.FirstRingClearances)) > 1f) continue;
+                    int bearing = ((int)Mathf.Round(Mathf.Atan2(off.y, off.x) * Mathf.Rad2Deg / (360f / RuralLife.Bearings)) % RuralLife.Bearings + RuralLife.Bearings) % RuralLife.Bearings;
+                    for (int j = 0; j < 256 && pair == null; j++)
+                    {
+                        var b = new RuralLife.Want("c1b:" + k + ":" + j, RuralLife.Donkey, seed.Anchor, seed.AnchorRadius);
+                        if (RuralLife.StableHash(b.Model + ":" + b.Key) % (uint)RuralLife.Bearings != bearing) continue;
+                        var full = RuralLife.Plan(map, new[] { a, b }, others, _ => true);
+                        var sub = RuralLife.Plan(map, new[] { b }, others, _ => true);
+                        if (full.Count == 2 && sub.Count == 1 && (full[1].spot - sub[0].spot).sqrMagnitude > 1f)
+                        { pair = new List<RuralLife.Want> { a, b }; fullSpot = full[1].spot; subSpot = sub[0].spot; }
+                    }
+                }
+                if (pair != null) break;
+            }
+            var rural = CollectionGeometryFixture.Rural(map)!;
+            typeof(RuralLife).GetMethod("Show", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+                .Invoke(rural, new object[] { pair!, others });
+            Answer(RuralLife.Donkey);
+            var donkey = rural.Placed.Where(p => p.Model == RuralLife.Donkey && p.Key == pair![1].Key).ToList();
+            Assert.IsNotEmpty(donkey, "the donkey streamed and stands");
+            Assert.Less((new Vector2(donkey[0].At.x, donkey[0].At.z) - fullSpot).magnitude, 1f,
+                $"the donkey at its full-plan spot {fullSpot}, not {subSpot} where the absent sheep's ground would put it");
+        }
+
+        /// <summary>Review of #2266's delta, C2: a disabled layer hides Tal Heuberger's models under it, so the kit draws its own
+        /// parts again; enabled again, the models stand in for them. Never an empty spot.</summary>
+        [Test]
+        public void ADisabledLayerGivesTheKitItsPartsBack()
+        {
+            var map = OpenMap();
+            var layer = Show(map, Opening);
+            var kits = Kits(map);
+            var kitNames = map.KitStats.LandmarkParts.Select(p => p.Kit).Distinct().ToList();
+            Assert.IsTrue(kitNames.All(k => !Statecraft.Game.Map.Kits.KitLayer.PartsShown(kits.Find(k).GetComponent<Renderer>())));
+            layer.gameObject.SetActive(false);
+            Assert.IsTrue(kitNames.All(k => Statecraft.Game.Map.Kits.KitLayer.PartsShown(kits.Find(k).GetComponent<Renderer>())), "the kit's own parts while the models are off");
+            layer.gameObject.SetActive(true);
+            Assert.IsTrue(kitNames.All(k => !Statecraft.Game.Map.Kits.KitLayer.PartsShown(kits.Find(k).GetComponent<Renderer>())), "the models stand in again");
+        }
+
+        /// <summary>Review of #2266's delta, C3: an answer that never comes holds back only what needs it. With the belfry and
+        /// the garrigue never answered, every kit mesh without a belfry has Tal Heuberger's models and the other standalone
+        /// props stand; the kit meshes with a belfry keep their own parts.</summary>
+        [Test]
+        public void AnAnswerThatNeverComesHoldsBackOnlyWhatNeedsIt()
+        {
+            var map = OpenMap();
+            var layer = HexPropModels.ShowAt(map, Opening)!;
+            layer.Choose(default, At(Statecraft.Game.Map.Kits.TownModelLayer.CloseEnterM));
+            var pending = asked.ToList(); asked.Clear();
+            foreach (var (id, done) in pending)
+                if (id != HexPropModels.Belfry && id != HexPropModels.Garrigue) done(AssetDatabase.LoadAssetAtPath<GameObject>(HexProps.PrefabPath(id)));
+            var parts = map.KitStats.LandmarkParts;
+            var withBelfry = new HashSet<string>(parts.Where(p => p.Kind == "belfry").Select(p => p.Kit));
+            var kits = Kits(map);
+            foreach (var kit in parts.Select(p => p.Kit).Distinct())
+                Assert.AreEqual(withBelfry.Contains(kit), Statecraft.Game.Map.Kits.KitLayer.PartsShown(kits.Find(kit).GetComponent<Renderer>()),
+                    kit + (withBelfry.Contains(kit) ? ": keeps its own parts (its belfry never came)" : ": Tal's models stand"));
+            Assert.Greater(layer.Placed.Count(p => p.Model == HexPropModels.Station), 0, "the stations stand");
+            Assert.Greater(layer.Placed.Count(p => p.Model == HexPropModels.PricklyPear), 0, "the hedges stand");
+            Assert.AreEqual(0, layer.Placed.Count(p => p.Model == HexPropModels.Garrigue));
+        }
 
         /// <summary>Review of #2266 with #2271: no standalone prop stands under a whole-town model (TownLandmarks), whose square
         /// reaches its core's radius times the square root of two from the core, past the kit footprint's edge for a core off

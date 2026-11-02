@@ -549,6 +549,57 @@ public class TalModelsShots
     [UnityTest] public IEnumerator SpitfireBeforeEnglish() { yield return Spitfire(false, false); }
     [UnityTest] public IEnumerator SpitfireAfterEnglish() { yield return Spitfire(false, true); }
 
+    /// <summary>The owner's report of 2 November 2026 ("the gyptian plane's propelor isn't moving and it doesnt look fliying,
+    /// also it doesnt show its an egyptian unit"): the Spitfire on the opening turn from the player's camera (CameraRig.Pitch,
+    /// yaw 0), at the camera's opening distance and at 30 km, the look-at on the ground along the view ray through the plane
+    /// so the plane is mid-frame. Poses come from SpitfireLoop.Place, as play draws them: 0 s (the pass in from el-Arish,
+    /// straight), 10 s (the turn at the loop's east end, where the camera sees the propeller's disc face on), and each 0.02 s
+    /// later (the propeller's turn between two frames). The same
+    /// test on the base branch gives the "before" stills, on the PR branch the "after" ones (spitfire-flight-shots).</summary>
+    IEnumerator SpitfireFlight(bool hebrew)
+    {
+        var savedCraft = SeaAirCollection.Request;
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(CivMovementShots.ShotDir, "..", "spitfire-flight-shots"));
+            yield return Boot(hebrew);
+            var map = Object.FindFirstObjectByType<MapScene>();
+            var state = root.Bridge!.State; var content = root.Bridge.Content;
+            SeaAirCollection.Request = Answer(Array.Empty<string>());
+            Drop(map, SeaAirCollection.Name);
+            var layer = CollectionGeometryFixture.Craft(map, state.Date, state.Placements, content)!;
+            var plane = layer.transform.Find("el-arish-spitfire");
+            var loop = plane.GetComponent<SpitfireLoop>();
+            var rig = Camera.main.GetComponent<CameraRig>(); var cc = rig.GetComponent<CameraController>();
+            float opening = rig.Distance;
+            Debug.Log($"SHOT spitfire-flight on {state.Date:yyyy-MM-dd}: opening distance {opening:F0} m, loop centre {layer.Placed.Single(p => p.Model == SeaAirCollection.Spitfire).At}");
+            var down = Quaternion.Euler(CameraRig.Pitch, 0f, 0f) * Vector3.forward;
+            foreach (var (zoom, distance) in new[] { ("opening", opening), ("close", 30000f) })
+                foreach (var (pose, seconds) in new[] { ("pass", 0f), ("pass-later", 0.02f), ("turn", 10f), ("turn-later", 10.02f) })
+                {
+                    if (zoom == "opening" && pose.EndsWith("-later")) continue;   // the propeller is a few pixels at the opening zoom
+                    loop.Place(seconds);
+                    var at = plane.GetComponentsInChildren<Renderer>(true).Select(r => r.bounds).Aggregate((a, b) => { a.Encapsulate(b); return a; }).center;
+                    // The ground point on the view ray through the plane: the player's look-at that puts it mid-frame.
+                    var ground = at + down * ((map.Terrain.SampleHeight(at) + map.Terrain.transform.position.y - at.y) / down.y);
+                    Look(new Vector3(ground.x, 0f, ground.z), distance);
+                    CameraController.Step(rig, default, 0f, cc.Bounds, cc.Ground, cc.GroundTop, true);
+                    UnitFlagFacing.FaceAll(Camera.main.transform.position);
+                    for (int i = 0; i < 5; i++) yield return null;
+                    loop.Place(seconds);   // again after the frames: nothing else moves it in edit mode, but the shot must be exact
+                    CivMovementShots.Shot(rt!, Path.Combine("..", "spitfire-flight-shots", $"spitfire-{zoom}-{pose}-{(hebrew ? "he" : "en")}"));
+                    Debug.Log($"SHOT spitfire-flight {zoom} {pose}: {distance:F0} m, plane at {at}, viewport {Camera.main.WorldToViewportPoint(at)}");
+                    var vp = Camera.main.WorldToViewportPoint(at);
+                    Assert.That(vp.x, Is.InRange(0.1f, 0.9f), $"the plane in frame across, {zoom} {pose}");
+                    Assert.That(vp.y, Is.InRange(0.1f, 0.9f), $"the plane in frame up and down, {zoom} {pose}");
+                }
+        }
+        finally { SeaAirCollection.Request = savedCraft; }
+    }
+
+    [UnityTest] public IEnumerator SpitfireFlightEnglish() { yield return SpitfireFlight(false); }
+    [UnityTest] public IEnumerator SpitfireFlightHebrew() { yield return SpitfireFlight(true); }
+
     [UnityTest] public IEnumerator MalikiyyaEnglish() { yield return Malikiyya(false); }
     [UnityTest] public IEnumerator MalikiyyaHebrew() { yield return Malikiyya(true); }
 
@@ -560,7 +611,7 @@ public class TalModelsShots
     /// <summary>Tal Heuberger's hex-tile props on the main map (owner, 27 October 2026, "2+3"; 2 November 2026: his models replace
     /// the kit's minarets, belfries and clock tower, a hedge row per village, a light hill scatter). Frames: Binyamina's station,
     /// the first Bedouin camp's tent, the first village's hedge row, the first hill hex's garrigue, the first village minaret and
-    /// Jaffa's clock tower, each from the closest zoom, from the gameplay zoom (60 km, where the kit's far parts draw) for the
+    /// Jaffa's clock tower, a village mosque's minaret and St Peter's belfry, each from the closest zoom, from the gameplay zoom (60 km, where the kit's far parts draw) for the
     /// landmarks, and from the opening zoom (250 km). The town models are answered, so up close the close meshes draw.
     /// "Before" is main's map: the layer withheld (the kit's own parts come back) and its tree holes given back. The frames
     /// come from the map with the props, so they are the same before and after.</summary>
@@ -578,6 +629,10 @@ public class TalModelsShots
         var parts = map.KitStats.LandmarkParts;
         var minaret = parts.First(p => p.Kind == "minaret" && p.Close != null);
         var clock = parts.Single(p => p.Kind == "clock_tower");
+        // #2266 review C7: a village mosque's roof-mounted minaret and St Peter's belfry, up close.
+        var villages = new HashSet<string>(map.Localities.Select(p => p.Settlement).Where(s => s.Type == "village").Select(s => s.Id));
+        var village = parts.First(p => p.Kind == "minaret" && p.Close != null && villages.Contains(p.Owner));
+        var belfry = parts.Single(p => p.Kind == "belfry" && p.Owner == "jaffa");
         Vector3 Up(Bounds b) => new Vector3(b.center.x, 0f, b.center.z);
         var close = CameraController.MinDistance; const float Gameplay = 60000f; var opening = CameraController.MaxDistance;
         var frames = new List<(string what, string key, Vector3 at, float[] zooms)>
@@ -588,6 +643,8 @@ public class TalModelsShots
             ("scatter", layer.Placed.First(p => p.Model == HexPropModels.Garrigue).Key, layer.Placed.First(p => p.Model == HexPropModels.Garrigue).At, new[] { close, opening }),
             ("minaret", minaret.Owner, Up(minaret.Near), new[] { close, Gameplay, opening }),
             ("clocktower", clock.Owner, Up(clock.Near), new[] { close, Gameplay, opening }),
+            ("villagemosque", village.Owner, Up(village.Near), new[] { close }),
+            ("belfry", belfry.Owner, Up(belfry.Near), new[] { close }),
         };
         Debug.Log($"SHOT hexprops {(after ? "after" : "before")}: {layer.Placed.Count} placed, {layer.Replaced.Count} landmark models: " +
                   string.Join(", ", HexPropModels.Standalone.Select(m => $"{m} {layer.Placed.Count(p => p.Model == m)}")));

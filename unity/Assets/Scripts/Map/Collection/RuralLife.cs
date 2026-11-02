@@ -268,6 +268,8 @@ namespace Statecraft.Game.Map.Collection
         public readonly List<Want> Scenes = new List<Want>();
         public readonly List<string> Missing = new List<string>();
         public IReadOnlyList<Want> Wanted => wants;
+        /// <summary>The other layers' ground this layer keeps clear of (its Plan's input), as last shown.</summary>
+        internal List<(Vector2 centre, float radius)> OthersShown => others;
         public bool LastClose { get; private set; }
 
         /// <summary>The ground the other Collection layers hold (centre, radius m): the civilian figures CivilianPeople wants
@@ -299,11 +301,25 @@ namespace Statecraft.Game.Map.Collection
         }
 
         List<(Vector2 centre, float radius)> others = new List<(Vector2, float)>();
+        List<(Want want, Vector2 spot)>? fullPlan;
+
+        /// <summary>#1701 slice F with #2266: the scenes' full plan (every model available) for what this layer was last shown,
+        /// computed once per change of its wants or the ground it keeps clear of. The other layers that keep clear of the scenes
+        /// read this one plan (<see cref="PlanOf"/>), so the hex props and the workshops' b21 agree on where they stand.</summary>
+        internal IReadOnlyList<(Want want, Vector2 spot)> FullPlan => fullPlan ??= Plan(map!, wants, others, _ => true);
+
+        /// <summary>The scenes' full plan as the shown layer holds it (<see cref="FullPlan"/>), or from the map's own wants and
+        /// the other layers' ground when no rural layer is shown.</summary>
+        internal static IReadOnlyList<(Want want, Vector2 spot)> PlanOf(MapScene map)
+        {
+            var layer = map.Terrain != null ? map.Terrain.transform.Find(Name)?.GetComponent<RuralLife>() : null;
+            return layer != null && layer.map != null ? layer.FullPlan : Plan(map, Wants(map), OtherProps(map), _ => true);
+        }
 
         void Show(List<Want> next, List<(Vector2 centre, float radius)> nextOthers)
         {
             if (next.SequenceEqual(wants) && nextOthers.SequenceEqual(others)) return;
-            wants = next; others = nextOthers;
+            wants = next; others = nextOthers; fullPlan = null;
             OriginalModelRequests.WhenVisible(this, () =>
             {
                 desiredDetails.Add(CollectionDetail.Far); desiredDetails.Add(CollectionDetail.Near);
@@ -357,8 +373,9 @@ namespace Statecraft.Game.Map.Collection
             }
         }
 
-        /// <summary>Where the scenes stand: each want in order, of the models <paramref name="available"/> holds, the first
-        /// MaxAnchorsPerModel of each with clear ground (Spot), clear of <paramref name="others"/> and of each other. It reads only
+        /// <summary>Where the scenes stand: each want in order, the first MaxAnchorsPerModel of each model with clear ground (Spot),
+        /// clear of <paramref name="others"/> and of each other, every one taking its ground; those whose model
+        /// <paramref name="available"/> holds are listed. It reads only
         /// the map, the wants and the other layers' ground, never what has streamed, so with every model available it is the
         /// plan the layer draws once everything has arrived (HexPropModels keeps clear of it, #2266).</summary>
         internal static List<(Want want, Vector2 spot)> Plan(MapScene map, IReadOnlyList<Want> wants, List<(Vector2 centre, float radius)> others,
@@ -382,14 +399,15 @@ namespace Statecraft.Game.Map.Collection
             var plan = new List<(Want, Vector2)>();
             foreach (var want in wants)
             {
-                if (!available(want.Model)) continue;
+                // Every want takes its ground whether or not its model has streamed (only the plan's output is filtered), so a
+                // later scene's spot never depends on what streamed first (#2266 review; the same shape as #2281's).
                 used.TryGetValue(want.Model, out int n);
                 if (n >= MaxAnchorsPerModel) continue;
                 var at = Spot(want, Free);
                 if (at == null) continue;
                 used[want.Model] = n + 1;
                 taken.Add((at.Value, ClearanceRadiusM));
-                plan.Add((want, at.Value));
+                if (available(want.Model)) plan.Add((want, at.Value));
             }
             return plan;
         }
@@ -400,8 +418,9 @@ namespace Statecraft.Game.Map.Collection
             if (map == null || map.Terrain == null) return;
             ClearVisuals();
             var ground = PlacementLayer.CampGround(map);
-            // A streamed representation is what makes this a real scene. Until then it owns no anchor, clearance,
-            // tree hole or Near demand; a failed Far answer therefore cannot leave an empty permanent clearing.
+            // A streamed representation is what makes this a real scene. Until then it draws nothing, owns no tree hole and
+            // asks for no Near; but every scene stands at its spot in the plan with every model available, so a scene that
+            // streams in later lands where the plan put it, which the hex props keep clear of (HexPropModels, #2266 review).
             bool Streamed(string model) => (prefabs.TryGetValue((model, CollectionDetail.Far), out var f) && f != null)
                 || (prefabs.TryGetValue((model, CollectionDetail.Near), out var nr) && nr != null);
             var used = new Dictionary<string, int>(StringComparer.Ordinal);

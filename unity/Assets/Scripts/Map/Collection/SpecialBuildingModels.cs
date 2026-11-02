@@ -373,11 +373,11 @@ namespace Statecraft.Game.Map.Collection
             if (people != null) foreach (var p in people.Wanted) taken.Add((new Vector2(p.At.x, p.At.z), CivilianPeople.FigureClearanceM));
             foreach (var a in WildlifeLayer.Wants(map)) taken.Add((a.At, 0.5f * WildlifeLayer.SizeM));
             // A workshop (#1701 slice F) also keeps off the farm scenes (#667): where they WILL stand (RuralLife's plan with every
-            // model available, as HexPropModels.Others reads it), never what has streamed so far, so its spot is the same
-            // whichever layer streams first.
+            // model available, RuralLife.PlanOf, the one HexPropModels.Others reads too), never what has streamed so far, so its
+            // spot is the same whichever layer streams first and the props keep clear of the b21 that is drawn.
             var farms = new List<(Vector2 centre, float radius)>();
             if (wants.Any(w => w.Model == Workshop))
-                foreach (var (want, spot) in ruralPlan ?? RuralLife.Plan(map, RuralLife.Wants(map), RuralLife.OtherProps(map), _ => true))
+                foreach (var (want, spot) in ruralPlan ?? RuralLife.PlanOf(map))
                     farms.Add((spot, RuralLife.SceneRadiusM(want.Model)));
             bool Free(Vector2 p, float r) => TownLandmarks.Clear(p, r, taken) && TownLandmarks.Clear(p, r, footprints)
                 && ground.Inside(p.x - r, p.y - r) && ground.Inside(p.x + r, p.y + r)

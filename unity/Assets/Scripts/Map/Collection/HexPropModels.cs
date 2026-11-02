@@ -81,10 +81,18 @@ namespace Statecraft.Game.Map.Collection
         public const float HedgeSpacingSizes = 1.25f;
         public static Vector2[] HedgeMembers(Want w, Vector2 spot)
         {
-            var radial = spot - w.Anchor; var along = radial.sqrMagnitude > 1e-6f ? new Vector2(-radial.y, radial.x).normalized : Vector2.right;
-            int n = HedgeClumps(w.Key); var members = new Vector2[n];
-            for (int i = 0; i < n; i++) members[i] = spot + along * ((i - 0.5f * (n - 1)) * HedgeSpacingSizes * SizeOf(PricklyPear));
+            var members = new Vector2[HedgeClumps(w.Key)];
+            HedgeMembers(w, spot, members);
             return members;
+        }
+
+        /// <summary>As HedgeMembers, into <paramref name="into"/> (at least five long); returns how many.</summary>
+        public static int HedgeMembers(Want w, Vector2 spot, Vector2[] into)
+        {
+            var radial = spot - w.Anchor; var along = radial.sqrMagnitude > 1e-6f ? new Vector2(-radial.y, radial.x).normalized : Vector2.right;
+            int n = HedgeClumps(w.Key);
+            for (int i = 0; i < n; i++) into[i] = spot + along * ((i - 0.5f * (n - 1)) * HedgeSpacingSizes * SizeOf(PricklyPear));
+            return n;
         }
 
         /// <summary>Design values (owner, 2 November 2026: "A light scatter on open hill ground under 40 km"): one garrigue and
@@ -164,6 +172,14 @@ namespace Statecraft.Game.Map.Collection
         /// camps and the villages by key.</summary>
         public static List<Want> Wants(MapScene map, DateTime date)
         {
+            var result = StationWants(map, date);
+            result.AddRange(FixedWants(map));
+            return result;
+        }
+
+        /// <summary>The stations drawn on <paramref name="date"/>, in the listed order.</summary>
+        static List<Want> StationWants(MapScene map, DateTime date)
+        {
             var result = new List<Want>();
             foreach (var s in Stations)
             {
@@ -171,6 +187,13 @@ namespace Statecraft.Game.Map.Collection
                 var w = map.Frame.ToWorld(s.Lon, s.Lat, 0);
                 result.Add(new Want("station:" + s.Name, Station, new Vector2(w.x, w.z), 0f));
             }
+            return result;
+        }
+
+        /// <summary>The wants that do not change with the date: the camps, the villages by key and the hill scatter.</summary>
+        static List<Want> FixedWants(MapScene map)
+        {
+            var result = new List<Want>();
             // Every camp: a sub-district's camps share their area's footprint id, so each is keyed by its id and its place
             // among them, in claim order (the kits' seeded scatter).
             var seen = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -203,12 +226,23 @@ namespace Statecraft.Game.Map.Collection
         internal static Action<string, Action<GameObject?>> Request = (id, done) =>
             CollectionStream.Request(HexProps.Catalog, id, CollectionDetail.Near, done);
 
-        MapScene? map; DateTime date; bool shown, requested; int pending;
+        MapScene? map; DateTime date; bool shown, requested;
+        /// <summary>The b21 of each built arms workshop (#1701 slice F), kept clear of with the sourced buildings.</summary>
         IReadOnlyList<SpecialBuildingModels.Want> workshops = Array.Empty<SpecialBuildingModels.Want>();
+        /// <summary>Whether a camera has come in to the close zoom: the standalone props are built only from then on (none of
+        /// them draws further out, #2266 review).</summary>
+        bool everClose;
+        /// <summary>The standalone props need a build (an arrival or a date change) once a camera is close; in a render, it
+        /// waits for LateUpdate (nothing is instantiated while a camera renders).</summary>
+        bool standaloneDirty, standaloneQueued;
         List<Want> wants = new List<Want>();
+        List<Want>? fixedWants;
         readonly Dictionary<string, GameObject?> prefabs = new Dictionary<string, GameObject?>(StringComparer.Ordinal);
         readonly Dictionary<int, bool> closeFor = new Dictionary<int, bool>();
         readonly List<Renderer> renderers = new List<Renderer>();
+        /// <summary>The standalone props standing, by object name: a rebuild keeps one whose model and spot are unchanged.</summary>
+        Dictionary<string, (GameObject go, string model, Vector2 spot)> live = new Dictionary<string, (GameObject, string, Vector2)>(StringComparer.Ordinal);
+        List<(Vector2 centre, float radius)>? lastHoles;
         /// <summary>Every standalone prop placed: its want's key, model, ground point and object name (a hedge's clumps share
         /// their village's key).</summary>
         public readonly List<(string Key, string Model, Vector3 At, string Name)> Placed = new List<(string, string, Vector3, string)>();
@@ -221,6 +255,9 @@ namespace Statecraft.Game.Map.Collection
         /// first close camera.</summary>
         public bool Requested => requested;
         public bool LastClose { get; private set; }
+        /// <summary>The last standalone build's phases (ms): the keep-clear ground, the search, the instances and the total (the
+        /// rest is the trees' pass; a test aid).</summary>
+        public (long others, long search, long instances, long total) LastBuildMs { get; private set; }
 
         public static HexPropModels? ShowAt(MapScene map, DateTime date) => ShowAt(map, date, Array.Empty<SpecialBuildingModels.Want>());
 
@@ -241,48 +278,111 @@ namespace Statecraft.Game.Map.Collection
             // GameRoot calls this on every refresh: rebuild only when the date changes (the dated stations and tokens follow it)
             // or the built arms workshops do.
             if (layer.shown && layer.date == date && SpecialBuildingModels.Same(layer.workshops, workshops)) return layer;
-            layer.shown = true; layer.date = date; layer.workshops = workshops; layer.wants = Wants(map, date); layer.Rebuild();
+            layer.fixedWants ??= FixedWants(map);
+            layer.shown = true; layer.date = date; layer.workshops = workshops;
+            layer.wants = StationWants(map, date); layer.wants.AddRange(layer.fixedWants);
+            layer.standaloneDirty = true; layer.BuildStandaloneIfDue(inRender: false);
             return layer;
         }
 
         void Ask()
         {
             if (requested) return;
-            requested = true; pending = Models.Length;
+            requested = true;
+            Boot.DiagLog.BootPhase("hex props asked");
             foreach (var id in Models)
             {
                 string model = id;
+                // Each answer builds what it can at once: one answer that never comes holds back nothing else (#2266 review).
                 Request(model, p =>
                 {
-                    if (this == null) return;
+                    if (this == null || prefabs.ContainsKey(model)) return;   // a duplicate answer changes nothing
                     prefabs[model] = p;
                     if (p == null) Debug.LogWarning($"HEXPROPS: {model} did not stream; it stays off the map.");
-                    // One build once every prop has answered (the bundle carries them all), not one per answer.
-                    if (--pending == 0) { RebuildLandmarks(); Rebuild(); }
+                    if (ByPart.Values.Contains(model)) RebuildLandmarks();
+                    else { standaloneDirty = true; BuildStandaloneIfDue(inRender: false); }
                 });
             }
         }
 
+        /// <summary>Builds the standalone props when they are due: something changed and a camera has come in close.</summary>
+        void BuildStandaloneIfDue(bool inRender)
+        {
+            if (!standaloneDirty || !everClose) return;
+            if (inRender)
+            {
+                standaloneQueued = true;
+#if UNITY_EDITOR
+                if (!Application.isPlaying) UnityEditor.EditorApplication.QueuePlayerLoopUpdate();
+#endif
+                return;
+            }
+            standaloneDirty = standaloneQueued = false;
+            Rebuild();
+        }
+
+        void LateUpdate() { if (standaloneQueued) BuildStandaloneIfDue(inRender: false); }
+
+        // ---- The keep-clear ground (#2266 review: planned, cached, indexed) ----
+
+        IReadOnlyList<(string Key, Vector2 Core, float Reach)>? seatsPlan; object? seatsPlanWants;
+
         /// <summary>The ground the other Collection layers hold or will hold, so no prop stands on them: the civilian figures
         /// and the wildlife (as RuralLife.OtherProps), and the rural scenes', special buildings' and whole-town models' PLANNED
-        /// spots (their plans with every model available), never what has streamed so far: the props stand in the same places whatever the camera
-        /// has visited, and a scene or building that streams in later never lands on one (#2266 review).</summary>
-        internal static List<(Vector2 centre, float radius)> Others(MapScene map, DateTime date,
-            IReadOnlyList<SpecialBuildingModels.Want>? workshops = null)
+        /// spots (their plans with every model available, which is also where each of them draws its streamed models), never
+        /// what has streamed so far: the props stand in the same places whatever the camera has visited, and a scene or
+        /// building that streams in later never lands on one (#2266 review). The rural plan is the one RuralLife keeps for
+        /// what it was last shown (RuralLife.PlanOf), the same one SpecialBuildingModels places the workshops' b21 against, so
+        /// the props keep clear of the b21 that is drawn (#1701 slice F); the special buildings include the state's workshops.</summary>
+        internal List<(Vector2 centre, float radius)> Others(MapScene map, DateTime date)
         {
-            var discs = RuralLife.OtherProps(map);
-            var rural = RuralLife.Plan(map, RuralLife.Wants(map), RuralLife.OtherProps(map), _ => true);
-            foreach (var (want, spot) in rural)
-                discs.Add((spot, RuralLife.SceneRadiusM(want.Model)));
-            // With the b21 of each built arms workshop (#1701 slice F), after the sourced buildings as the layer orders them.
-            var buildings = workshops == null || workshops.Count == 0 ? SpecialBuildingModels.Placements(date)
+            var discs = new List<(Vector2 centre, float radius)>(RuralLife.OtherProps(map));
+            var rural = RuralLife.PlanOf(map);
+            foreach (var (want, spot) in rural) discs.Add((spot, RuralLife.SceneRadiusM(want.Model)));
+            // With the b21 of each built arms workshop (#1701 slice F), after the sourced buildings as their layer orders them.
+            var buildings = workshops.Count == 0 ? SpecialBuildingModels.Placements(date)
                 : SpecialBuildingModels.Placements(date).Concat(workshops).ToList();
             foreach (var (w, at) in SpecialBuildingModels.Plan(map, date, buildings, _ => true, log: false, rural))
                 discs.Add((at, SpecialBuildingModels.ClearanceOf(w.Model)));
             // The whole-town models (TownLandmarks, shown first by GameRoot) where they will stand, by the same plan.
             var towns = map.Terrain.transform.Find(TownLandmarks.Name)?.GetComponent<TownLandmarks>();
-            if (towns != null) foreach (var seat in towns.PlannedSeats()) discs.Add((seat.Core, seat.Reach));
+            if (towns != null)
+            {
+                if (seatsPlan == null || !ReferenceEquals(seatsPlanWants, towns.Wanted)) { seatsPlan = towns.PlannedSeats(); seatsPlanWants = towns.Wanted; }
+                foreach (var seat in seatsPlan) discs.Add((seat.Core, seat.Reach));
+            }
             return discs;
+        }
+
+        /// <summary>Discs in a uniform grid: the same answer as TownLandmarks.Clear over all of them, checking only the cells a
+        /// query's disc reaches (#2266 review: the linear scans made a build O(n²)).</summary>
+        internal sealed class DiscGrid
+        {
+            const float Cell = 2000f;
+            readonly Dictionary<(int, int), List<(Vector2 c, float r)>> cells = new Dictionary<(int, int), List<(Vector2, float)>>();
+            float largest;
+            public DiscGrid(IEnumerable<(Vector2 centre, float radius)> discs) { foreach (var (c, r) in discs) Add(c, r); }
+            public void Add(Vector2 c, float r)
+            {
+                largest = Mathf.Max(largest, r);
+                for (int x = Mathf.FloorToInt((c.x - r) / Cell); x <= Mathf.FloorToInt((c.x + r) / Cell); x++)
+                    for (int z = Mathf.FloorToInt((c.y - r) / Cell); z <= Mathf.FloorToInt((c.y + r) / Cell); z++)
+                    {
+                        if (!cells.TryGetValue((x, z), out var list)) cells[(x, z)] = list = new List<(Vector2, float)>();
+                        list.Add((c, r));
+                    }
+            }
+            /// <summary>Whether the disc at <paramref name="p"/> of <paramref name="r"/> overlaps none of the discs.</summary>
+            public bool Clear(Vector2 p, float r)
+            {
+                // A stored disc that overlaps the query is in every cell it covers, including the cell of their nearest
+                // point, which is within the query's own box: so the query's box of cells finds it.
+                for (int x = Mathf.FloorToInt((p.x - r) / Cell); x <= Mathf.FloorToInt((p.x + r) / Cell); x++)
+                    for (int z = Mathf.FloorToInt((p.y - r) / Cell); z <= Mathf.FloorToInt((p.y + r) / Cell); z++)
+                        if (cells.TryGetValue((x, z), out var list))
+                            foreach (var (c, cr) in list) { float d = cr + r; if ((p - c).sqrMagnitude < d * d) return false; }
+                return true;
+            }
         }
 
         /// <summary>The heading (degrees about up) of the mapped route segment nearest <paramref name="p"/> (for a station, its
@@ -307,70 +407,110 @@ namespace Statecraft.Game.Map.Collection
         void Rebuild()
         {
             if (map == null || map.Terrain == null) return;
-            ClearVisuals();
-            if (prefabs.Count == 0 || pending > 0) return;
+            if (!Standalone.Any(m => prefabs.TryGetValue(m, out var p) && p != null)) { ClearVisuals(); return; }
             var clock = System.Diagnostics.Stopwatch.StartNew();
             var ground = PlacementLayer.CampGround(map);
-            var footprints = map.KitFootprints.Select(f => (f.centre, f.radius)).ToList();
-            var taken = Others(map, date, workshops);
-            bool Free(Vector2 p, float r) => TownLandmarks.Clear(p, r, taken) && TownLandmarks.Clear(p, r, footprints)
+            var footprints = new DiscGrid(map.KitFootprints.Select(f => (f.centre, f.radius)));
+            var taken = new DiscGrid(Others(map, date));
+            long othersMs = clock.ElapsedMilliseconds;
+            bool Free(Vector2 p, float r) => taken.Clear(p, r) && footprints.Clear(p, r)
                 && ground.Inside(p.x - r, p.y - r) && ground.Inside(p.x + r, p.y + r)
                 && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, date);
             var holes = new List<(Vector2 centre, float radius)>();
+            var row = new Vector2[5];
+            var spots = new List<(Want w, Vector2 spot, string name)>();
             foreach (var w in wants)
             {
                 if (!prefabs.TryGetValue(w.Model, out var prefab) || prefab == null) continue;
                 float clearance = ClearanceOf(w.Model);
                 bool hedge = w.Model == PricklyPear;
-                Func<Vector2, float, bool> free = hedge ? (p, r) => HedgeMembers(w, p).All(m => Free(m, r)) : (Func<Vector2, float, bool>)Free;
-                var at = NearestSpot(w.Key, w.Anchor, clearance, free, w.Start, ReachOf(w.Model, ground.HexSizeM));
+                bool RowFree(Vector2 p, float r)
+                {
+                    int n = HedgeMembers(w, p, row);
+                    for (int i = 0; i < n; i++) if (!Free(row[i], r)) return false;
+                    return true;
+                }
+                var at = NearestSpot(w.Key, w.Anchor, clearance, hedge ? RowFree : (Func<Vector2, float, bool>)Free, w.Start, ReachOf(w.Model, ground.HexSizeM));
                 if (at == null)
                 {
                     if (w.Model != Garrigue && w.Model != Scrub) Debug.LogWarning($"HEXPROPS: no clear ground near {w.Key}; its {w.Model} is not drawn.");
                     continue;
                 }
-                var spots = hedge ? HedgeMembers(w, at.Value) : new[] { at.Value };
-                for (int i = 0; i < spots.Length; i++) Place(w, spots[i], hedge ? w.Key + "#" + i : w.Key, prefab);
+                int count = hedge ? HedgeMembers(w, at.Value, row) : 1;
+                for (int i = 0; i < count; i++)
+                {
+                    var spot = hedge ? row[i] : at.Value;
+                    taken.Add(spot, clearance); holes.Add((spot, clearance));
+                    spots.Add((w, spot, hedge ? w.Key + "#" + i : w.Key));
+                }
             }
-            void Place(Want w, Vector2 spot, string name, GameObject prefab)
+            long searchMs = clock.ElapsedMilliseconds - othersMs;
+            // A prop whose model and spot did not change keeps its object: a date change usually moves few of them.
+            var next = new Dictionary<string, (GameObject go, string model, Vector2 spot)>(StringComparer.Ordinal);
+            renderers.Clear(); Placed.Clear();
+            int kept = 0;
+            foreach (var (w, spot, name) in spots)
             {
-                float clearance = ClearanceOf(w.Model);
-                taken.Add((spot, clearance)); holes.Add((spot, clearance));
-                var at = (Vector2?)spot;
-                float yaw = w.Model == Station ? AlongNearestRoute(w.Anchor, map.KitRouteCorridors) ?? 0f : YawOf(name);
-                var go = Instantiate(prefab, transform, false); go.name = name;
-                go.transform.localRotation = prefab.transform.localRotation;
-                var b = Bounds(go); float edge = Mathf.Max(b.size.x, b.size.z);
-                go.transform.localScale = prefab.transform.localScale * (edge > 1e-4f ? SizeOf(w.Model) / edge : 1f);
-                go.transform.localRotation = SpecialBuildingModels.Rotation(prefab.transform.localRotation, yaw);
-                var pos = new Vector3(at.Value.x, ground.Y(at.Value.x, at.Value.y), at.Value.y);
-                go.transform.position = pos; b = Bounds(go);
-                go.transform.position += new Vector3(pos.x - b.center.x, pos.y - b.min.y, pos.z - b.center.z);
-                foreach (var r in go.GetComponentsInChildren<Renderer>(true)) { r.shadowCastingMode = ShadowCastingMode.On; r.forceRenderingOff = !LastClose; renderers.Add(r); }
+                var pos = new Vector3(spot.x, ground.Y(spot.x, spot.y), spot.y);
+                GameObject go;
+                if (live.TryGetValue(name, out var old) && old.go != null && old.model == w.Model && (old.spot - spot).sqrMagnitude < 1e-6f)
+                { go = old.go; live.Remove(name); kept++; }
+                else
+                {
+                    if (live.TryGetValue(name, out var stale)) { DestroyNow(stale.go); live.Remove(name); }
+                    var prefab = prefabs[w.Model]!;
+                    float yaw = w.Model == Station ? AlongNearestRoute(w.Anchor, map.KitRouteCorridors) ?? 0f : YawOf(name);
+                    go = Instantiate(prefab, transform, false); go.name = name;
+                    go.transform.localRotation = prefab.transform.localRotation;
+                    var b = Bounds(go); float edge = Mathf.Max(b.size.x, b.size.z);
+                    go.transform.localScale = prefab.transform.localScale * (edge > 1e-4f ? SizeOf(w.Model) / edge : 1f);
+                    go.transform.localRotation = SpecialBuildingModels.Rotation(prefab.transform.localRotation, yaw);
+                    go.transform.position = pos; b = Bounds(go);
+                    go.transform.position += new Vector3(pos.x - b.center.x, pos.y - b.min.y, pos.z - b.center.z);
+                    foreach (var r in go.GetComponentsInChildren<Renderer>(true)) r.shadowCastingMode = ShadowCastingMode.On;
+                }
+                next[name] = (go, w.Model, spot);
+                foreach (var r in go.GetComponentsInChildren<Renderer>(true)) { r.forceRenderingOff = !LastClose; renderers.Add(r); }
                 Placed.Add((w.Key, w.Model, pos, name));
             }
-            // No kit tree stands on a prop (Kits.VegetationLayer.Hide, as under the special buildings).
-            Units.UnitShowcase.HideTrees(map, Name, holes);
-            Debug.Log($"HEXPROPS: {Placed.Count} hex props placed for {wants.Count} wants in {clock.ElapsedMilliseconds} ms " +
+            foreach (var gone in live.Values) DestroyNow(gone.go);
+            live = next;
+            long instancesMs = clock.ElapsedMilliseconds - othersMs - searchMs;
+            // No kit tree stands on a prop (Kits.VegetationLayer.Hide, as under the special buildings); unchanged holes need no pass.
+            if (lastHoles == null || !holes.SequenceEqual(lastHoles)) { Units.UnitShowcase.HideTrees(map, Name, holes); lastHoles = holes; }
+            long total = clock.ElapsedMilliseconds;
+            LastBuildMs = (othersMs, searchMs, instancesMs, total);
+            Debug.Log($"HEXPROPS: {Placed.Count} hex props placed for {wants.Count} wants in {total} ms (keep-clear ground {othersMs} ms, " +
+                $"search {searchMs} ms, instances {instancesMs} ms with {kept} kept, trees {total - othersMs - searchMs - instancesMs} ms) " +
                 $"({string.Join(", ", Standalone.Select(m => $"{m.Substring(m.LastIndexOf('/') + 1)} {Placed.Count(p => p.Model == m)}"))})");
+        }
+
+        void DestroyNow(GameObject go)
+        {
+            if (go == null) return;
+            if (Application.isPlaying) { if (gameObject.activeInHierarchy) go.transform.SetParent(null); Destroy(go); } else DestroyImmediate(go);
         }
 
         /// <summary>Tal Heuberger's minarets, belfries and clock tower in place of the kit's parts (#2266). A kit renderer's parts
         /// are replaced together, and only when every kind among them streamed; then its fallback parts (far and close) are
-        /// hidden. Each model stands where its part stands, as tall as the part, turned as the kit turns it, and draws exactly
-        /// when the part's kit or close renderer does (TownModelLayer.Follow). Built once: the kit does not change with the date.
-        /// The kit renderers then stop drawing their own parts (KitLayer.ShowParts).</summary>
+        /// hidden. It runs on each landmark answer and builds the kit meshes that answer completes, so an answer that never
+        /// comes holds back only the kit meshes that need it.
+        /// Each model stands on its part's own base (its box's bottom, or the ground where the part reaches below it), as tall
+        /// as the part, turned as the kit turns it, and draws exactly when the part's kit or close renderer does
+        /// (TownModelLayer.Follow). The kit renderers then stop drawing their own parts (KitLayer.ShowParts).</summary>
         void RebuildLandmarks()
         {
             if (map == null || map.Terrain == null || map.KitStats == null) return;
             var kits = map.transform.Find(Kits.KitLayer.RootName);
             var towns = kits != null ? kits.GetComponentInChildren<Kits.TownModelLayer>(true) : null;
-            ClearLandmarks();
             if (kits == null || towns == null || map.KitStats.LandmarkParts.Count == 0) return;
-            var holder = new GameObject(LandmarksName).transform; holder.SetParent(transform, false);
+            var holder = transform.Find(LandmarksName);
+            if (holder == null) { holder = new GameObject(LandmarksName).transform; holder.SetParent(transform, false); }
             var ground = PlacementLayer.CampGround(map);
+            // Only the kit meshes this answer completes: those already replaced stay as they are.
             foreach (var group in map.KitStats.LandmarkParts.GroupBy(p => p.Kit))
             {
+                if (Hidden.Contains(group.Key)) continue;
                 if (!group.All(p => ByPart.TryGetValue(p.Kind, out var id) && prefabs.TryGetValue(id, out var pf) && pf != null)) continue;
                 var kit = kits.Find(group.Key)?.GetComponent<Renderer>();
                 if (kit == null) continue;
@@ -383,9 +523,10 @@ namespace Statecraft.Game.Map.Collection
                     if (close != null) Stand(part, prefab, part.Near, close, true, n);
                     n++;
                 }
-                ShowKitParts(kits, group.Key, false);
                 Hidden.Add(group.Key);
             }
+            if (isActiveAndEnabled) foreach (var name in Hidden) ShowKitParts(kits, name, false);
+            Boot.DiagLog.BootPhase("hex landmarks built");
             Debug.Log($"HEXPROPS: {Replaced.Count} landmark models stand in for the kit's parts of {Hidden.Count} kit meshes " +
                 $"({string.Join(", ", ByPart.Keys.Select(k => $"{k} {Replaced.Count(r => r.Kind == k && !r.Close)}"))})");
 
@@ -393,7 +534,8 @@ namespace Statecraft.Game.Map.Collection
             {
                 var go = Instantiate(prefab, holder, false); go.name = $"{part.Owner}:{part.Kind}:{n}:{(close ? "close" : "far")}";
                 go.transform.localRotation = SpecialBuildingModels.Rotation(prefab.transform.localRotation, part.Yaw);
-                float baseY = ground.Y(box.center.x, box.center.z), height = box.max.y - baseY;
+                // A roof-mounted part (a village minaret, a belfry) starts on the roof; a part with foundations starts on the ground.
+                float baseY = Mathf.Max(box.min.y, ground.Y(box.center.x, box.center.z)), height = box.max.y - baseY;
                 var b = Bounds(go);
                 go.transform.localScale = prefab.transform.localScale * (b.size.y > 1e-4f && height > 0f ? height / b.size.y : 1f);
                 var pos = new Vector3(box.center.x, baseY, box.center.z);
@@ -404,13 +546,11 @@ namespace Statecraft.Game.Map.Collection
             }
         }
 
-        void ClearLandmarks()
+        /// <summary>Whether the kit draws its own parts where Tal Heuberger's models stand (<see cref="Hidden"/>).</summary>
+        void ShowAllKitParts(bool on)
         {
-            var old = transform.Find(LandmarksName);
-            if (old != null) { if (Application.isPlaying) { old.SetParent(null); Destroy(old.gameObject); } else DestroyImmediate(old.gameObject); }
             var kits = map != null ? map.transform.Find(Kits.KitLayer.RootName) : null;
-            if (kits != null) foreach (var name in Hidden) ShowKitParts(kits, name, true);
-            Hidden.Clear(); Replaced.Clear();
+            if (kits != null) foreach (var name in Hidden) ShowKitParts(kits, name, on);
         }
 
         static void ShowKitParts(Transform kits, string kit, bool on)
@@ -424,11 +564,10 @@ namespace Statecraft.Game.Map.Collection
             for (int i = transform.childCount - 1; i >= 0; i--)
             {
                 var old = transform.GetChild(i).gameObject;
-                if (old.name == LandmarksName) continue;
-                if (Application.isPlaying) { if (gameObject.activeInHierarchy) old.transform.SetParent(null); Destroy(old); } else DestroyImmediate(old);
+                if (old.name != LandmarksName) DestroyNow(old);
             }
-            renderers.Clear(); Placed.Clear();
-            if (map != null) Units.UnitShowcase.HideTrees(map, Name, Array.Empty<(Vector2, float)>());
+            live.Clear(); renderers.Clear(); Placed.Clear();
+            if (map != null && lastHoles != null) { Units.UnitShowcase.HideTrees(map, Name, Array.Empty<(Vector2, float)>()); lastHoles = null; }
         }
 
         static Bounds Bounds(GameObject go)
@@ -437,27 +576,30 @@ namespace Statecraft.Game.Map.Collection
             var b = rs[0].bounds; foreach (var r in rs) b.Encapsulate(r.bounds); return b;
         }
 
-        void OnEnable() => RenderPipelineManager.beginCameraRendering += Choose;
-        /// <summary>A removed layer gives the kit back its own parts, so no spot is ever left empty.</summary>
-        void OnDestroy()
-        {
-            var kits = map != null ? map.transform.Find(Kits.KitLayer.RootName) : null;
-            if (kits == null) return;
-            foreach (var name in Hidden) ShowKitParts(kits, name, true);
-        }
-        void OnDisable() => RenderPipelineManager.beginCameraRendering -= Choose;
+        /// <summary>Never an empty spot: while the layer (and so Tal Heuberger's models under it) is disabled or gone, the kit
+        /// draws its own parts again; enabled, the models stand in for them (#2266 review).</summary>
+        void OnEnable() { RenderPipelineManager.beginCameraRendering += OnBeginCameraRendering; ShowAllKitParts(false); }
+        void OnDisable() { RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering; ShowAllKitParts(true); }
+        void OnDestroy() => ShowAllKitParts(true);
+
+        void OnBeginCameraRendering(ScriptableRenderContext context, Camera cam) => ChooseCore(cam, inRender: true);
+        /// <summary>A direct call (tests and editor tools, outside any render) builds what is due at once.</summary>
+        internal void Choose(ScriptableRenderContext context, Camera cam) => ChooseCore(cam, inRender: false);
 
         /// <summary>#700's close-zoom switch with its hysteresis (<see cref="SpecialBuildingModels.CloseAt"/>) for the standalone
         /// props, and the request (Ask). The landmark models follow their kit renderers instead.</summary>
-        internal void Choose(ScriptableRenderContext context, Camera cam)
+        void ChooseCore(Camera cam, bool inRender)
         {
             if (cam.cameraType == CameraType.Preview || cam.cameraType == CameraType.Reflection) return;
             int id = cam.GetInstanceID();
             bool close = SpecialBuildingModels.CloseAt(TownLandmarks.ViewDistance(cam), closeFor.TryGetValue(id, out var was) ? was : (bool?)null);
             closeFor[id] = close; LastClose = close;
-            // The kit's minarets, belfries and clock tower draw at every zoom, so with any to replace the first camera to render
-            // (after the first frame) asks; otherwise only the close zoom shows a prop.
+            // The kit's minarets, belfries and clock tower draw at every zoom (owner, 2 November 2026: "tal's high quality models
+            // replace the built ones everytwhere"), so with any to replace the first camera to render (after the first frame)
+            // asks; the standalone props are built only once a camera comes in close, where they draw.
             if (map != null && (close || map.KitStats?.LandmarkParts.Count > 0)) Ask();
+            if (close && !everClose) { everClose = true; standaloneDirty = true; }
+            if (close) BuildStandaloneIfDue(inRender);
             foreach (var r in renderers) if (r != null) r.forceRenderingOff = !close;
         }
     }
