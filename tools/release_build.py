@@ -7,7 +7,7 @@ plan in PR #482, spec
 docs/superpowers/specs/2026-10-14-desktop-builds-and-release-pipeline.md, sections 6.4 and 6.5).
 
 Usage: uv run tools/release_build.py [--platform mac|linux|windows|all] [--out DIR] [--tag vX.Y.Z] [--dev] [--dry-run]
-                                    [--unity PATH]
+                                    [--unity PATH] [--steam [--nightly-version X.Y.Z]]
 
 - Refuses, before anything is built (spec 6.4 step 1):
   - a dirty working tree (tracked changes or untracked files);
@@ -45,6 +45,20 @@ a worktree or cleaning unity/Builds cannot take a release with it, and outside g
 by accident. Build records live in the owner's
 separate records repository (decision O12): this script never commits, pushes or uploads anything; it prints where the
 record is, and the owner copies it.
+
+Steam (plan docs/superpowers/plans/2026-11-01-steamworks-integration.md Task 7, #2155; spec
+docs/superpowers/specs/2026-11-01-steamworks-integration-design.md):
+- --steam passes -steam to every Unity build (only those players carry Valve's library) and writes
+  <out>/steam/<platform>/ (the player folder plus the notices, no archive): the ContentBuilder content that
+  tools/steam_upload.py stage zips for the CI upload. The record says "steam": true, "channel": "beta" (or "nightly")
+  and "dev"; tools/steam_upload.py refuses a dev record. A Steam folder holding steam_appid.txt is refused.
+- --nightly-version X.Y.Z (with --steam only) is the nightly's Steam stage (tools/nightly.py): the tag must be vX.Y.Z,
+  the tree may differ from HEAD only by the nightly's bundleVersion stamp to X.Y.Z (tools/nightly.py
+  stamp_bundle_version), every build is stamped again before it starts (the settings are restored after each one),
+  and the record says "channel": "nightly".
+- A GitHub/itch archive (no --steam) is refused when it lists any Valve file (VALVE_FILES), the macOS steam_api.bundle
+  directory included. This is a backstop: the -steam build switch already leaves the plugins out of other players, so
+  nothing is deleted after a build and a macOS signature is never broken.
 
 Exit 0 when every build succeeded and every check that ran passed; 1 on a refusal, a failed build or a failed golden
 (the record is still written for a failed golden); 2 when the editor or a module is missing.
@@ -84,6 +98,14 @@ PHOTOS = "event-photos.json"   # Build.PhotoManifestName: written beside every p
 # cannot drift (issue #546). {tag} carries the v. The CI check names the Mac "macos".
 ARCHIVES = {"mac": pgc.ASSETS["macos"], "linux": pgc.ASSETS["linux"], "windows": pgc.ASSETS["windows"]}
 TAG = pgc.TAG
+# Valve's redistributables. The macOS plugin is a bundle directory, so a zip lists .../steam_api.bundle/ and files in it.
+VALVE_FILES = re.compile(r"(^|/)(lib)?steam_api(64)?\.(dll|so|dylib)$|(^|/)steam_api\.bundle(/|$)|(^|/)steam_appid\.txt$")
+APPID_FILE = re.compile(r"(^|/)steam_appid\.txt$")
+# The library each platform's Steam player must carry (only -steam builds include it; #2154).
+STEAM_LIBRARY = {"windows": re.compile(r"(^|/)steam_api64\.dll$"), "linux": re.compile(r"(^|/)libsteam_api\.so$"),
+                 "mac": re.compile(r"(^|/)steam_api\.bundle(/|$)")}
+NIGHTLY_VERSION = re.compile(r"[0-9]+\.[0-9]+\.[0-9]+", re.ASCII)
+SETTINGS_ASSET = "unity/ProjectSettings/ProjectSettings.asset"
 
 
 @dataclass(frozen=True)
@@ -136,6 +158,9 @@ def parse(argv: list[str]) -> argparse.Namespace:
                                                 "v<bundleVersion>)")
     ap.add_argument("--unity", type=Path, default=None, help="the Unity executable (default: the Hub path of the "
                                                              "version in ProjectVersion.txt)")
+    ap.add_argument("--steam", action="store_true", help="Steam players (-steam) in <out>/steam/<platform>/, no archive")
+    ap.add_argument("--nightly-version", default=None, metavar="X.Y.Z",
+                    help="with --steam: the nightly's Steam build, stamped with this bundleVersion")
     return ap.parse_args(argv)
 
 
@@ -237,12 +262,14 @@ def locked(cmd: list, wait_unity: bool) -> list[str]:
     return [*head, "--timeout", str(LOCK_TIMEOUT), "--", *[str(c) for c in cmd]]
 
 
-def build_command(unity: Path, p: Platform, target: Path, log: Path, shareable: bool) -> list[str]:
+def build_command(unity: Path, p: Platform, target: Path, log: Path, shareable: bool, steam: bool = False) -> list[str]:
     cmd = [str(unity), "-batchmode", "-CI", "false", "-GITHUB_ACTIONS", "false", "-TF_BUILD", "false", "-quit",
            "-projectPath", str(REPO / "unity"), "-buildTarget", p.build_target, "-executeMethod", METHOD + p.method,
            "-out", str(target), "-logFile", str(log)]
     if shareable:
         cmd.append("-shareable")
+    if steam:
+        cmd.append("-steam")
     return locked(cmd, wait_unity=True)
 
 
@@ -299,12 +326,52 @@ def add_notices(folder: Path) -> None:
         (folder / name).write_bytes(src.read_bytes())
 
 
-def archive_names(archive: Path) -> list[str]:
+def archive_names(archive: Path, dirs: bool = False) -> list[str]:
     if archive.name.endswith(".tar.gz"):
         with tarfile.open(archive) as t:
-            return [m.name for m in t.getmembers() if not m.isdir()]
+            return [m.name + ("/" if m.isdir() else "") for m in t.getmembers() if dirs or not m.isdir()]
     with zipfile.ZipFile(archive) as z:
-        return [n for n in z.namelist() if not n.endswith("/")]
+        return [n for n in z.namelist() if dirs or not n.endswith("/")]
+
+
+def refuse_valve_files(names: list[str]) -> str | None:
+    """Why a non-Steam archive with this listing (directories included) must not ship, or None."""
+    found = [n for n in names if VALVE_FILES.search(n)]
+    return ("it carries Valve files, which only Steam builds may ship: " + ", ".join(found)) if found else None
+
+
+def steam_folder_problem(folder: Path, platform: str) -> str | None:
+    """Why a Steam content folder must not be uploaded, or None: steam_appid.txt is for local runs only (with it,
+    the player never relaunches through Steam), and a player without Valve's library was not built with -steam."""
+    names = [p.relative_to(folder).as_posix() for p in sorted(folder.rglob("*"))]
+    found = [n for n in names if APPID_FILE.search(n)]
+    if found:
+        return f"{folder} holds {', '.join(found)}, which must never be uploaded to Steam"
+    if not any(STEAM_LIBRARY[platform].search(n) for n in names):
+        return (f"{folder} has no Steam library ({STEAM_LIBRARY[platform].pattern}); the player was not built with "
+                "Steam (the -steam build switch, #2154)")
+    return None
+
+
+def stamp_problem(lines: list[str], version: str) -> str | None:
+    """None when the tree differs from HEAD only by the nightly's bundleVersion stamp to `version` (or not at all)."""
+    if not lines:
+        return None
+    if lines != [f" M {SETTINGS_ASSET}"]:
+        return "the tree has changes besides the nightly's bundleVersion stamp:\n" + "\n".join("  " + l for l in lines)
+    head = git("show", f"HEAD:{SETTINGS_ASSET}")
+    if head.returncode != 0:
+        return f"cannot read {SETTINGS_ASSET} at HEAD"
+    expected, n = re.subn(r"^(  bundleVersion: )\S+$", lambda m: m.group(1) + version, head.stdout, flags=re.M)
+    if n != 1 or (REPO / SETTINGS_ASSET).read_text() != expected:
+        return f"{SETTINGS_ASSET} differs from HEAD by more than the bundleVersion stamp to {version}"
+    return None
+
+
+def stamp(version: str) -> None:
+    """The nightly's own stamp (tools/nightly.py), so the Steam players carry tonight's version; never committed."""
+    from nightly import stamp_bundle_version   # tools/: one stamp rule with the nightly's web builds
+    stamp_bundle_version(REPO / SETTINGS_ASSET, version)
 
 
 def missing_notices(archive: Path) -> list[str]:
@@ -394,13 +461,15 @@ def markdown(r: dict) -> str:
            f"- Date (UTC): {r['date_utc']}",
            f"- Unity: {r['unity']['version']} ({r['unity']['revision']})",
            f"- Version: bundleVersion {r['version']['bundle_version']}, SimInfo.Version {r['version']['sim_version']}",
+           (f"- Steam content folders for the `{r['channel']}` branch (no archives)"
+            + (f", nightly {r['nightly_version']}" if r["nightly_version"] else "") if r["steam"] else "- GitHub archives"),
            f"- Shareable build: {r['shareable']}" + ("" if r["shareable"] else " (a --dev build: not for sharing)"),
            f"- Signing: {r['signing']}", "",
            "| Platform | Backend | Architecture | Archive | Archive bytes | Archive SHA-256 | Player files | Player bytes "
            "| File list SHA-256 | Golden |",
            "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
     for a in r["artifacts"]:
-        ar = a["archive"]
+        ar = a["archive"] or {"name": a["steam_folder"] + "/", "bytes": "-", "sha256": "-"}   # a Steam folder
         out.append(f"| {a['platform']} | {a['backend']} | {a['architecture'] or '-'} | `{ar['name']}` | {ar['bytes']} | "
                    f"`{ar['sha256']}` | {a['files']} | {a['bytes']} | `{a['file_list_sha256']}` | {a['golden']['status']} |")
     out.append("")
@@ -423,6 +492,16 @@ def markdown(r: dict) -> str:
 def main(argv: list[str] | None = None) -> int:
     a = parse(sys.argv[1:] if argv is None else argv)
     names = selected(a)
+    nightly = a.nightly_version
+    if nightly is not None:
+        if not a.steam or a.dev:
+            print("REFUSED: --nightly-version is the nightly's Steam build: it needs --steam and takes no --dev.",
+                  file=sys.stderr)
+            return 1
+        if not NIGHTLY_VERSION.fullmatch(nightly) or a.tag != f"v{nightly}":
+            print(f"REFUSED: --nightly-version takes X.Y.Z and --tag v<that version> (got {nightly!r} and {a.tag!r}).",
+                  file=sys.stderr)
+            return 1
     version, revision = unity_version()
     unity = a.unity or Path(f"/Applications/Unity/Hub/Editor/{version}/Unity.app/Contents/MacOS/Unity")
     if not unity.is_file():
@@ -441,7 +520,10 @@ def main(argv: list[str] | None = None) -> int:
         print(modules_message(missing, version), file=sys.stderr)
         return 2
     dirty = dirty_lines()
-    if dirty:
+    if nightly is not None and (problem := stamp_problem(dirty, nightly)):
+        print(f"REFUSED: {problem}", file=sys.stderr)
+        return 1
+    if dirty and nightly is None:
         print("REFUSED: the working tree is not clean. A build record names a commit, so build only a committed tree.\n"
               + "\n".join("  " + l for l in dirty)
               + "\nAfter a Unity run, `git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset` "
@@ -456,6 +538,8 @@ def main(argv: list[str] | None = None) -> int:
     branch = git("rev-parse", "--abbrev-ref", "HEAD").stdout.strip()
     describe = git("describe", "--tags", "--always", "--dirty").stdout.strip()
     vers = versions()
+    if nightly is not None:
+        vers["bundle_version"] = nightly   # every build is stamped with it below
     started = utc_now()
     release = not a.dev
     if release:
@@ -497,14 +581,18 @@ def main(argv: list[str] | None = None) -> int:
         print(f"REFUSED: {out} exists and is not empty; a release folder starts empty.", file=sys.stderr)
         return 1
     shareable = release
-    plan = [(PLATFORMS[n], out / "players" / n / PLATFORMS[n].output, out / "logs" / f"unity-build-{n}.log") for n in names]
+    players = out / ("steam" if a.steam else "players")
+    plan = [(PLATFORMS[n], players / n / PLATFORMS[n].output, out / "logs" / f"unity-build-{n}.log") for n in names]
     sim = [sys.executable, str(REPO / "tools/build_sim_for_unity.py")]
     if a.dry_run:
         print("DRY RUN: nothing is built or written.\n" + " ".join(sim))
         for p, target, log in plan:
-            print(" ".join(f'"{c}"' if " " in c else c for c in build_command(unity, p, target, log, shareable)))
+            if nightly is not None:
+                print(f"stamp bundleVersion {nightly}")
+            print(" ".join(f'"{c}"' if " " in c else c
+                           for c in build_command(unity, p, target, log, shareable, a.steam)))
             print("git checkout -- unity/ProjectSettings unity/Assets/Settings")
-            print(f"archive: {out / archive_name(tag, p.name)}")
+            print(f"steam folder: {target.parent}" if a.steam else f"archive: {out / archive_name(tag, p.name)}")
             if p.runs_here:
                 print(" ".join(golden_command(target / "Contents/MacOS/<CFBundleExecutable>", out / "logs/golden-mac.log")))
         print(f"record: {out / 'build-record.json'}")
@@ -520,7 +608,9 @@ def main(argv: list[str] | None = None) -> int:
         print(f"release_build: building {p.name} ({p.backend}) -> {target}", flush=True)
         t0 = time.monotonic()
         try:
-            code = run(build_command(unity, p, target, log, shareable), cwd=REPO).returncode
+            if nightly is not None:
+                stamp(nightly)   # restored by the checkout below, so each build stamps again
+            code = run(build_command(unity, p, target, log, shareable, a.steam), cwd=REPO).returncode
         finally:
             run(["git", "checkout", "--", "unity/ProjectSettings", "unity/Assets/Settings"], cwd=REPO)
         wall = round(time.monotonic() - t0)
@@ -528,7 +618,10 @@ def main(argv: list[str] | None = None) -> int:
         if code != 0 or not target.exists():
             print(f"FAILED: the {p.name} build (exit {code}); see {log}", file=sys.stderr)
             return 1
-        folder = out / "players" / p.name
+        folder = target.parent
+        if a.steam and (problem := steam_folder_problem(folder, p.name)):
+            print(f"FAILED: {problem}", file=sys.stderr)
+            return 1
         add_notices(folder)
         text, files, size = tree_manifest(folder, mac=p.name == "mac")
         listing = out / f"files-{p.name}.sha256"
@@ -541,11 +634,16 @@ def main(argv: list[str] | None = None) -> int:
         if problem := player_problem(p, folder):
             print(f"FAILED: {problem}", file=sys.stderr)
             return 1
-        archive = out / archive_name(tag, p.name)
-        make_archive(p, folder, target, archive)
-        if lacking := missing_notices(archive):
-            print(f"FAILED: {archive.name} lacks the notices {', '.join(lacking)}", file=sys.stderr)
-            return 1
+        archive = None
+        if not a.steam:
+            archive = out / archive_name(tag, p.name)
+            make_archive(p, folder, target, archive)
+            if lacking := missing_notices(archive):
+                print(f"FAILED: {archive.name} lacks the notices {', '.join(lacking)}", file=sys.stderr)
+                return 1
+            if problem := refuse_valve_files(archive_names(archive, dirs=True)):
+                print(f"FAILED: {archive.name}: {problem}", file=sys.stderr)
+                return 1
         arch = None
         if p.name == "mac":
             arch = run(["lipo", "-archs", str(mac_executable(target))], capture=True).stdout.strip() or None
@@ -561,8 +659,10 @@ def main(argv: list[str] | None = None) -> int:
         artifacts.append({"platform": p.name, "build_target": p.build_target, "backend": p.backend,
                           "architecture": arch, "build_method": METHOD + p.method,
                           "path": str(target.relative_to(out)), "files": files, "bytes": size,
-                          "archive": {"name": archive.name, "bytes": archive.stat().st_size,
-                                      "sha256": file_sha256(archive)},
+                          "archive": None if archive is None else {"name": archive.name,
+                                                                    "bytes": archive.stat().st_size,
+                                                                    "sha256": file_sha256(archive)},
+                          "steam_folder": folder.relative_to(out).as_posix() if a.steam else None,
                           "file_list_sha256": file_sha256(listing), "file_list": listing.name,
                           "photo_manifest": photos,
                           "unity_build_seconds": unity_seconds(log_text), "wall_seconds_with_lock_wait": wall,
@@ -571,17 +671,23 @@ def main(argv: list[str] | None = None) -> int:
     dirty_after = [l.strip() for l in dirty_lines()]
     record = {"schema": 1, "tool": "tools/release_build.py", "commit": commit,
               "describe": describe, "branch": branch, "release": release,
-              "tree_clean": True,   # checked before the builds: a dirty tree is refused
+              # checked before the builds: a dirty tree is refused (a nightly may carry only its own bundleVersion stamp)
+              "tree_clean": True,
               "tree_clean_after_builds": not dirty_after, "dirty_after_builds": dirty_after,
               "date_utc": started.strftime("%Y-%m-%dT%H:%M:%SZ"), "unity": {"version": version, "revision": revision},
               "version": vers, "tag": tag, "shareable": shareable, "signing": "none", "golden_expected": expected,
-              "artifacts": artifacts, "steam_build_id": None}
+              "artifacts": artifacts, "steam_build_id": None,
+              "steam": a.steam, "channel": ("nightly" if nightly else "beta") if a.steam else None, "dev": a.dev,
+              "nightly_version": nightly}
     (out / "build-record.json").write_text(json.dumps(record, indent=2) + "\n")
     (out / "build-record.md").write_text(markdown(record))
     print(f"RECORD {out / 'build-record.json'}\nRECORD {out / 'build-record.md'}")
     for a_ in artifacts:
-        print(f"{a_['archive']['name']}: sha256 {a_['archive']['sha256']}, {a_['archive']['bytes']} bytes, "
-              f"golden {a_['golden']['status']}")
+        if a_["archive"] is None:
+            print(f"{a_['steam_folder']}: {a_['files']} files, golden {a_['golden']['status']}")
+        else:
+            print(f"{a_['archive']['name']}: sha256 {a_['archive']['sha256']}, {a_['archive']['bytes']} bytes, "
+                  f"golden {a_['golden']['status']}")
     print("Nothing was pushed or uploaded. Copy the record files to the build records repository.")
     return 0 if all_ok else 1
 

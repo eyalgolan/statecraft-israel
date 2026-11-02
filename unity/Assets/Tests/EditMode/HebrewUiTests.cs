@@ -421,7 +421,43 @@ public class HebrewUiTests
         finally { restore(); }
     }
 
-    static void Directed(IList<TextElement> texts, string after)
+    /// <summary>#1915: a city panel built in a game started in Hebrew reads in the right order from the first frame: its
+    /// right-column lines and its project buttons are built where they stand (GddHexPanel's Line and Button set the words
+    /// once the element is on the panel), so UiDirection's change callback gives each its own direction. Uses the #1688
+    /// tour fixture's city - the one in the issue's capture - whose projects show. Red-first: the lines and buttons were
+    /// built with their words before they joined the panel, no text change reached UiDirection, and no trigger walks the
+    /// tree before the player reads the panel.</summary>
+    [UnityTest]
+    public IEnumerator TheCityPanelReadsRightToLeftWhenTheGameStartsInHebrew()
+    {
+        var restore = OnTexture(1920, 1080);
+        try
+        {
+            var inputs = new GameInputs { Content = AdvisorTour1688Fixture.Content(),
+                Map = GameInputs.MapFromDisk(Paths.Content, Paths.StreamingMap), Goldens = new GoldenData() };
+            var game = Object.FindFirstObjectByType<GameRoot>();
+            game.Store = new SaveStore(saveDir);
+            game.Language = UiLanguage.Hebrew;
+            game.Begin(inputs, 0);
+            for (int i = 0; i < 2; i++) yield return null;
+
+            var city = AdvisorTargets.CityHex(game.Bridge!.Content, game.Bridge.State)!.Value;
+            game.Info!.Show(city.q, city.r);   // built by the tour or a map click: no UI submit, click or turn follows
+            for (int i = 0; i < 2; i++) yield return null;
+
+            var texts = Ui.Q<VisualElement>(GddHexPanel.HostName).Query<TextElement>().ToList()
+                .Where(t => !string.IsNullOrEmpty(t.text)).ToList();
+            Assert.IsNotEmpty(texts, "the city panel's right column has lines");
+            Assert.IsTrue(texts.Any(t => UiDirection.HasRightToLeft(t.text)), "the column mixes Hebrew with numbers");
+            Directed(texts, "the city panel's lines in a game started in Hebrew");
+            var buttons = Ui.Q<VisualElement>(GddHexPanel.ProjectsHostName).Query<Button>().ToList();
+            Assert.IsTrue(buttons.Any(b => b.name.StartsWith("city-project-", StringComparison.Ordinal) && b.name != GddHexPanel.ToggleName), "the city in the #1915 capture shows its project buttons");
+            Directed(buttons, "the city panel's project buttons in a game started in Hebrew");
+        }
+        finally { restore(); }
+    }
+
+    static void Directed(IReadOnlyList<TextElement> texts, string after)
     {
         Assert.IsNotEmpty(texts, after);
         foreach (var t in texts)

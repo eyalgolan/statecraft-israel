@@ -1473,7 +1473,7 @@ def test_state_is_saved_right_after_create_draft_and_right_after_publish(night, 
 def test_a_failing_checkpoint_save_does_not_stop_the_night(env, monkeypatch, capsys):
     monkeypatch.setattr(nightly, "save_state", lambda p, st: (_ for _ in ()).throw(OSError("full")))
     seen = {}
-    def stages(night, state, runner, gh, itch, *, no_publish, free_gb, save):
+    def stages(night, state, runner, gh, itch, *, no_publish, free_gb, save, no_steam=False):
         save()
         seen["ok"] = True
         return True
@@ -1483,7 +1483,7 @@ def test_a_failing_checkpoint_save_does_not_stop_the_night(env, monkeypatch, cap
 
 def test_a_failed_checkpoint_save_notifies_so_it_is_never_silent(env, monkeypatch):
     monkeypatch.setattr(nightly, "save_state", lambda p, st: (_ for _ in ()).throw(OSError("full")))
-    monkeypatch.setattr(nightly, "run_stages", lambda night, state, runner, gh, itch, *, no_publish, free_gb, save:
+    monkeypatch.setattr(nightly, "run_stages", lambda night, state, runner, gh, itch, *, no_publish, free_gb, save, no_steam=False:
                         save() or True)
     assert env.night() == "PUBLISHED"
     assert any("not saved" in a[0].lower() and "full" in a[1] for a in env_notes)
@@ -1678,7 +1678,7 @@ def test_the_itch_skip_reason_is_noted_on_the_night(night, env, pub, served):
 
 
 def test_the_night_notes_reach_the_log_line(env, monkeypatch):
-    def stages(night, state, runner, gh, itch, *, no_publish, free_gb, save):
+    def stages(night, state, runner, gh, itch, *, no_publish, free_gb, save, no_steam=False):
         night.notes.append("itch: skipped (save test not passed)")
         return True
     monkeypatch.setattr(nightly, "run_stages", stages)
@@ -2842,3 +2842,162 @@ def test_pending_demo_without_verified_latest_preserves_hold_and_never_dispatche
     assert env.night(ns.State(last_published=ns.Published(TAG, SHA, "0.3.2", {}, None), site_pending="0.3.2"), gh) == "SKIPPED"
     assert gh.names() == ["latest_tag"]
     assert ns.load_state(env.state_path).site_pending == "0.3.2"
+
+
+# --- the Steam stage (plan 2026-11-01-steamworks-integration Task 7, #2155) --------------------------------------------
+
+STEAM_IDS = {"app_id": 1000, "depots": {"windows": 1001, "mac": 1002, "linux": 1003}, "branches": ["beta", "nightly"]}
+
+
+def steam_ready(env, ids=STEAM_IDS, *, build=0, stage=0):
+    """steam/steam.json in the clone, and runner answers for the tag fetch and the two Steam commands."""
+    (env.cfg.clone / "steam").mkdir(exist_ok=True)
+    (env.cfg.clone / "steam/steam.json").write_text(json.dumps(ids))
+    clone = str(env.cfg.clone)
+    env.runner.add(["git", "-C", clone, "fetch", "--no-tags", "origin"], out="")
+    env.runner.add(["uv", "run", "tools/release_build.py"], code=build)
+    env.runner.add(["uv", "run", "tools/steam_upload.py"], code=stage)
+
+
+def steam_calls(env):
+    return [c for c in env.runner.calls if c[:3] in (["uv", "run", "tools/release_build.py"],
+                                                     ["uv", "run", "tools/steam_upload.py"])
+            or c[:4] == ["git", "-C", str(env.cfg.clone), "fetch"]]
+
+
+def staged(night, env, stages, st, **kw):
+    """One run_stages call; a repeat in the same test first drops the previous call's copy of the first player."""
+    shutil.rmtree(stages.gz, ignore_errors=True)
+    return nightly.run_stages(night, st, env.runner, stages.gh, None, free_gb=lambda p: 100.0, **kw)
+
+
+def published_marker(env, monkeypatch):
+    monkeypatch.setattr(nightly, "publish_night", lambda *a, **k: env.runner.calls.append(["PUBLISHED"]))
+
+
+def test_the_steam_stage_runs_only_after_publish(night, env, stages, monkeypatch):
+    steam_ready(env)
+    published_marker(env, monkeypatch)
+    st = ns.State(last_published=last_published())
+    assert staged(night, env, stages, st, no_publish=False)
+    calls = env.runner.calls
+    first = next(i for i, c in enumerate(calls) if c in steam_calls(env))
+    assert calls.index(["PUBLISHED"]) < first
+    out = night.run_dir / "steam-release"
+    assert ["git", "-C", str(env.cfg.clone), "fetch", "--no-tags", "origin", f"refs/tags/{TAG}:refs/tags/{TAG}"] in calls
+    assert ["uv", "run", "tools/release_build.py", "--platform", "all", "--steam", "--tag", TAG,
+            "--nightly-version", night.version, "--out", str(out)] in calls
+    assert ["uv", "run", "tools/steam_upload.py", "stage", "--out", str(out), "--tag", TAG] in calls
+    assert not night.notes
+
+
+def test_no_steam_stage_without_a_publish(night, env, stages, monkeypatch):
+    steam_ready(env)
+    st = ns.State(last_published=last_published())
+    staged(night, env, stages, st, no_publish=True)
+    assert steam_calls(env) == []
+    monkeypatch.setattr(nightly, "publish_night",
+                        lambda *a, **k: (_ for _ in ()).throw(ns.Refused("github-publish", "no")))
+    with pytest.raises(ns.Refused):
+        staged(night, env, stages, st, no_publish=False)
+    assert steam_calls(env) == []
+
+
+@pytest.mark.parametrize("failure", ["build", "stage", "fetch", "raises"])
+def test_a_steam_failure_leaves_the_web_nightly_published(env, stages, monkeypatch, failure):
+    if failure == "fetch":
+        clone = str(env.cfg.clone)
+        env.runner.add(["git", "-C", clone, "fetch", "--no-tags", "origin"], code=128)
+    if failure == "raises":
+        env.runner.add(["uv", "run", "tools/release_build.py"],
+                       effect=lambda cmd: (_ for _ in ()).throw(OSError("uv is missing")))
+    steam_ready(env, build=1 if failure == "build" else 0, stage=1 if failure == "stage" else 0)
+    published_marker(env, monkeypatch)
+    ns.save_state(env.state_path, ns.State(last_published=last_published()))
+    outcome = nightly.run_night(env.cfg, env.state_path, env.job, env.runner, stages.gh, None, now=NOW, manual=False,
+                                no_publish=False, free_gb=lambda p: 100.0)
+    assert outcome == "PUBLISHED"
+    line = env.log().strip().splitlines()[-1]
+    assert "PUBLISHED" in line and line.endswith("steam=failed")
+    assert not {"delete_draft", "restore_latest"} & set(stages.gh.names()), "the web nightly is never rolled back"
+    assert any("Steam" in note[0] for note in env_notes)
+
+
+def test_the_steam_stage_is_skipped_while_ids_are_null(night, env, stages, monkeypatch, capsys):
+    published_marker(env, monkeypatch)
+    st = ns.State(last_published=last_published())
+    for ids in ({**STEAM_IDS, "app_id": None}, {**STEAM_IDS, "depots": {**STEAM_IDS["depots"], "mac": None}}):
+        steam_ready(env, ids)
+        assert staged(night, env, stages, st, no_publish=False)
+        assert steam_calls(env) == [] and not night.notes
+    assert "steam: skipped" in capsys.readouterr().out
+    # --no-steam skips it even with every ID known.
+    steam_ready(env)
+    assert staged(night, env, stages, st, no_publish=False, no_steam=True)
+    assert steam_calls(env) == []
+
+
+def test_no_steam_reaches_the_stage_from_the_command_line(env, monkeypatch):
+    seen = {}
+    monkeypatch.setattr(nightly, "load_config", lambda path: env.cfg)
+    monkeypatch.setattr(nightly, "_clients", lambda cfg: (FakeGH(), None))
+    monkeypatch.setattr(nightly, "JOB", env.job)
+    monkeypatch.setattr(nightly, "run_night", lambda *a, **k: seen.update(k) or "PUBLISHED")
+    assert nightly.main(["run", "--no-steam"]) == 0 and seen["no_steam"] is True
+    assert nightly.main(["run"]) == 0 and seen["no_steam"] is False
+
+
+class SteamEnvRunner(EnvRunner):
+    """Also records stop_on_interrupt per command."""
+
+    def __init__(self):
+        super().__init__()
+        self.stops = []
+
+    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None, stop_on_interrupt=False):
+        self.stops.append((list(cmd), stop_on_interrupt))
+        return super().run(cmd, cwd=cwd, log=log, deadline=deadline, env=env, holder=holder)
+
+
+def test_the_steam_build_runs_like_the_nightlys_other_unity_steps(night, env):
+    # Review I2 (#2155): the MCP-free Unity env, the exclusive-window check, and children stopped on an interrupt.
+    env.runner = SteamEnvRunner()
+    env._rules()
+    steam_ready(env)
+    nightly.run_steam(night, env.runner)
+    build = next(e for e in env.runner.envs if e[0][:3] == ["uv", "run", "tools/release_build.py"])
+    assert build[1]["UNITY_MCP_SERVER_PATH"] == str(night.job / "no-mcp-server")
+    runs = [stop for cmd, stop in env.runner.stops if cmd[:2] == ["uv", "run"]]
+    assert runs == [True, True], runs   # release_build.py and steam_upload.py, each stopped on an interrupt
+    assert not night.notes
+    env.marker.write_text("x")
+    nightly.run_steam(night, env.runner)
+    assert night.notes == ["steam=failed"]
+    assert len([e for e in env.runner.envs if e[0][:3] == ["uv", "run", "tools/release_build.py"]]) == 1
+
+
+@pytest.mark.parametrize("text, notes", [('{"app_id": 1, "depots": [1, 2, 3], "branches": []}', ["steam=failed"]),
+                                         ('[1]', ["steam=failed"]), ("not json", [])])
+def test_a_malformed_steam_json_is_a_steam_failure_not_a_refused_night(night, env, text, notes):
+    # Review I3 (#2155): the web nightly is public by now, so even a broken steam.json only marks Steam.
+    (env.cfg.clone / "steam").mkdir(exist_ok=True)
+    (env.cfg.clone / "steam/steam.json").write_text(text)
+    nightly.run_steam(night, env.runner)   # never raises
+    assert night.notes == notes   # unreadable JSON is "not configured yet" (skipped); a wrong shape is a failure
+    assert not [c for c in env.runner.calls if c[:2] == ["uv", "run"]]
+
+
+def test_the_steam_content_is_removed_after_the_stage(night, env):
+    # Review (k2 H6): nothing prunes the run folders, and three players plus their zips each night would fill the disk
+    # the next web nightly's free-space gate reads. The record and the logs stay.
+    out = night.run_dir / "steam-release"
+    def built(cmd):
+        (out / "steam/linux").mkdir(parents=True)
+        (out / "steam/linux/Statecraft.x86_64").write_bytes(b"x" * 10)
+        (out / "steam-v0.3.2-linux.zip").write_bytes(b"z")
+        (out / "build-record.json").write_text("{}")
+    steam_ready(env)
+    env.runner.rules.insert(0, (("uv", "run", "tools/release_build.py"), 0, "", built))
+    nightly.run_steam(night, env.runner)
+    assert not (out / "steam").exists() and not list(out.glob("*.zip"))
+    assert (out / "build-record.json").is_file()

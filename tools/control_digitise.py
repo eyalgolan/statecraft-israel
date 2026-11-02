@@ -269,7 +269,10 @@ PINNED = [
 # The closure check's anchors: (place, lon, lat, side, from, until, source). Windows from 15 May 1948 (#674): the places
 # whose holder the source gives from before the game's start to past 11 June 1948 (no change of hands in between). Coordinates: settlements_1948.yaml and
 # localities_1948.tsv; the Wikipedia API (prop=coordinates) for Negba, Nir Am, Dorot, Shoval, Mishmar HaNegev, Hatzerim,
-# Nevatim (each at its 1946 or earlier site), Huleiqat-area places are left out (within 2 km of the lines).
+# Nevatim (each at its 1946 or earlier site), Huleiqat-area places are left out (within 2 km of the lines). Nirim: its 1948
+# site at Dangur, the CBS 2024 localities file's point for Nir Yitzhak, which stands there today (Gvati; #2113, #2111).
+NIRIM_GVATI = "https://benyehuda.org/read/14684"
+NIRIM_PALMACH = "https://palmach.org.il/history/database/?itemId=6201"
 ANCHORS = [
     ("Tel Aviv", 34.78, 32.08, "israel", "1948-05-15", None, WIKI + "Tel_Aviv"),
     ("Haifa", 34.9992, 32.8192, "israel", "1948-05-15", None, WIKI + "Battle_of_Haifa_(1948)"),
@@ -288,6 +291,7 @@ ANCHORS = [
     ("Mishmar HaNegev", 34.7186, 31.3642, "israel", "1948-06-11", None, WIKI + "Mishmar_HaNegev"),
     ("Hatzerim", 34.7142, 31.2403, "israel", "1948-06-11", None, WIKI + "Hatzerim"),
     ("Nevatim", 34.8828, 31.2236, "israel", "1948-06-11", None, WIKI + "Nevatim"),
+    ("Nirim", 34.3576, 31.2377, "israel", "1948-06-11", None, NIRIM_GVATI),
     ("Ein Harod", 35.3908, 32.5603, "israel", "1948-05-15", None, WIKI + "Ein_Harod"),
     ("Nahalal", 35.1967, 32.69, "israel", "1948-05-15", None, WIKI + "Nahalal"),
     ("Degania Alef", 35.5747, 32.7081, "israel", "1948-05-15", None, WIKI + "Battles_of_the_Kinarot_Valley"),
@@ -397,8 +401,9 @@ OPENING_CONTESTED = [
 OPENING_SOUTH = ("gaza", "beersheba")
 # Q3 "settlement hexes blue": the Jewish settlements of the Gaza sub-district and of the Beersheba sub-district north of the
 # 60-km northing whose 1948 site the repository already holds, sourced (settlements_1948.yaml; the ANCHORS above, each at its
-# 1946 or earlier site). Others (Nitzanim, Kfar Darom, Nirim, Be'erot Yitzhak and more) are not pinned: their sites moved
-# after 1948 and no 1948 site is sourced here yet (listed in known_staleness).
+# 1946 or earlier site; Nirim at its 1948 site at Dangur, owner ruling on #2136, 1 November 2026, "Israeli at the start").
+# Others (Nitzanim, Kfar Darom, Be'erot Yitzhak and more) are not pinned: their sites moved after 1948 and no 1948 site is
+# sourced here yet (listed in known_staleness).
 OPENING_SETTLEMENTS = [("Yad Mordechai", 34.5583, 31.5886, WIKI + "Battle_of_Yad_Mordechai", "held until it fell on 24 May 1948 (en.wiki): known staleness"),
                        ("Negba", 34.683, 31.6608, WIKI + "Negba", "held throughout (attacked on 2 June 1948)"),
                        ("Nir Am", 34.5808, 31.5194, WIKI + "Nir_Am", "held throughout"),
@@ -406,7 +411,10 @@ OPENING_SETTLEMENTS = [("Yad Mordechai", 34.5583, 31.5886, WIKI + "Battle_of_Yad
                        ("Shoval", 34.7428, 31.4128, WIKI + "Shoval", "held throughout"),
                        ("Mishmar HaNegev", 34.7186, 31.3642, WIKI + "Mishmar_HaNegev", "held throughout"),
                        ("Hatzerim", 34.7142, 31.2403, WIKI + "Hatzerim", "held throughout"),
-                       ("Nevatim", 34.8828, 31.2236, WIKI + "Nevatim", "held throughout")]
+                       ("Nevatim", 34.8828, 31.2236, WIKI + "Nevatim", "held throughout"),
+                       ("Nirim", 34.3576, 31.2377, NIRIM_PALMACH, "at Dangur (today Nir Yitzhak); repelled the Egyptian "
+                        "attack of 15 May 1948 and held to the end of the war (Palmach Heritage itemId=6201; Gvati, "
+                        + NIRIM_GVATI + "; JTA 17-18 May 1948)")]
 for _n, _x, _y, _src, _held in OPENING_SETTLEMENTS:
     PINNED.append((_n, _x, _y, "israel", "1948-05-15", "1948-06-11", _src,
                    "a Jewish settlement in the uncoloured south (owner ruling Q3, #674: no colour, settlement hexes blue); " + _held))
@@ -1149,8 +1157,8 @@ def build(isa_pdf: Path, cia_pdf: Path, log=print) -> dict:
                             "army (29 May), Nitzanim fallen (7 June), Mishmar HaYarden taken by the Syrian army (10 June); and the "
                             "British evacuation enclave at Haifa (to 30 June 1948) is not drawn (owner ruling Q5: an info-panel note)",
                             "the south in 15 May - 10 June 1948: only the Jewish settlements whose 1948 site the repository holds are "
-                            "pinned blue (Yad Mordechai, Negba, Nir Am, Dorot, Shoval, Mishmar HaNegev, Hatzerim, Nevatim); Nitzanim, "
-                            "Kfar Darom, Nirim, Be'erot Yitzhak and others are not, their sites having moved after 1948 with no 1948 "
+                            "pinned blue (Yad Mordechai, Negba, Nir Am, Dorot, Shoval, Mishmar HaNegev, Hatzerim, Nevatim, Nirim); "
+                            "Nitzanim, Kfar Darom, Be'erot Yitzhak and others are not, their sites having moved after 1948 with no 1948 "
                             "site sourced here; Revivim, south of the 60-km northing, stays without colour as in every 1948 period",
                             "Huleiqat: ISA 6158/1's lines put it on the Israeli side from 9 July 1948, but en.wiki has Egypt retake it on 8 July and Israel capture it on 19 October 1948 (Operation Yoav); its hex is pinned to Egypt for 8 July - 19 October (pinned_towns). A known limit of the periods: the pin covers whole periods inside its window, so the Yoav period (15-29 October) shows the hex Israeli from 15 October, four days before its capture"],
         "contested_places": [{"place": n, "lon": x, "lat": y, "from": "1948-05-15", "until": "1948-06-11", "sources": src, "why": w}
