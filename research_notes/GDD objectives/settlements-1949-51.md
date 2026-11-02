@@ -49,6 +49,8 @@ Tags, one per fact, as in `designated-site-1.md`:
 - **[S] single source**: one source, or several that plainly copy one another.
 - **[C] conflicting**: sources disagree. The conflict and the sources on each side are stated.
 
+Every [V] in this note was an agent's reading on 2026-10-14, unless the tag gives a later date; a person's check is pending for all of them.
+
 ### How the flags are recorded
 
 Recorded factually, for the owner's sensitivity review (`docs/CONTENT_POLICY.md`; Task 5.0, criterion 4). No

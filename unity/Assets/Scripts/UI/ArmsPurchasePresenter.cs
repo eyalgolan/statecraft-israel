@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Linq;
 using Statecraft.Sim;
 using UnityEngine.UIElements;
 
@@ -29,7 +30,8 @@ namespace Statecraft.Game.UI
             {
                 var reason = bridge.Queue(new BuyArms(count.value));
                 Render();
-                panel.Q<Label>("arms-refusal").text = reason ?? "";
+                // Only Queue's own refusal replaces Render's line: an accepted order keeps its warning (the debt ceiling, #2198).
+                if (reason != null) panel.Q<Label>("arms-refusal").text = reason;
             };
             presses = new PressSource(panel);
             onWithdraw = () =>
@@ -69,7 +71,11 @@ namespace Statecraft.Game.UI
             withdraw.SetEnabled(s.GameOver == null && queued != null);
             panel.Q<Label>("arms-refusal").text = s.GameOver != null ? text["order.game_over"]
                 : count.value < 1 ? text["arms.minimum"]
-                : !bridge.CanPay(order) ? text["arms.no_attention"] : "";
+                : !bridge.CanPay(order) ? text["arms.no_attention"]
+                // #2198, #2206: End turn refuses this amount for the ceiling (Pools.BuyArms) with the turn's orders as they stand:
+                // the committed then queued ones, from the turn's start, as End turn runs them.
+                : Pools.BorrowsPastDebtCeiling(c, bridge.TurnStart, bridge.Session.Committed.Concat(bridge.Queued).ToList(), count.value)
+                    ? text["arms.refused_debt_ceiling"] : "";
         }
 
         public void Dispose()

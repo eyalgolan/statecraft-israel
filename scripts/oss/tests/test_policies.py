@@ -123,6 +123,16 @@ def test_pr_template_has_evidence_and_no_cla_item():
     assert "CLA" not in text and "contributors/" not in text
 
 
+def test_pr_template_has_no_closing_keyword_with_an_issue_number():
+    """A PR body that keeps the template's comment must not close anything: GitHub reads a closing keyword followed by
+    an issue number even inside an HTML comment. The old example "Fixes #123" closed #123 when #2003 merged (30 Oct 2026),
+    so the template states the rule in plain words with no issue number."""
+    import re
+    text = read(".github/pull_request_template.md")
+    closing = re.compile(r"\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\b:?\s*(?:[\w.-]+/[\w.-]+)?#\d+", re.IGNORECASE)
+    assert not closing.findall(text), closing.findall(text)
+
+
 def test_contribution_terms_match_the_code_licence():
     """Owner, 22 Oct 2026: code comes in under MIT to the maintainer and goes out under PolyForm Noncommercial 1.0.0, so
     the licence-line waiver covers docs only. The template line still starts "I contribute" (the merge tooling looks
@@ -140,7 +150,8 @@ def test_pr_template_asks_for_ai_disclosure_issue_link_and_goldens():
     # Issue #264: the checklist pointed at a disclosure "above" that nothing asked for.
     text = read(".github/pull_request_template.md")
     assert "## AI assistance" in text and "disclosed under \"AI assistance\"" in text
-    assert "Fixes #" in text and "Refs #" in text and "only if this PR completes the issue" in text
+    # The issue link is asked for in plain words, with no "#<number>" a kept comment could close (see the next test).
+    assert '"Fixes" plus the issue number only if this PR completes it' in text and '"Refs" plus the number' in text
     assert "`Hash1950`" in text and "`Hash1952`" in text and "docs/determinism.md" in text
     assert "## [Unreleased]" in text
 
@@ -223,6 +234,20 @@ def test_gitignore_covers_editor_licence_and_local_files():
     for rule in (".env.*", "*.alf", "Unity_v*.alf", ".claude/settings.local.json", ".pytest_cache/", ".vs/",
                  ".idea/", "unity/obj/", "unity/MemoryCaptures/"):
         assert rule in lines, rule
+
+
+
+def test_gitignore_covers_build_scratch_but_not_project_settings():
+    # #2181 committed scripts/unity_compile/obj/ (dotnet restore/build output beside the .csproj files) and unity/.vsconfig
+    # (written by com.unity.ide.visualstudio on open). PackageManagerSettings.asset is tracked project config (the
+    # OpenUPM scoped registry Unity-MCP needs) and must stay visible to git.
+    import subprocess
+    def ignored(path):
+        return subprocess.run(["git", "-C", str(ROOT), "check-ignore", "-q", "--no-index", path]).returncode == 0
+    for path in ("scripts/unity_compile/obj/project.assets.json", "scripts/unity_compile/obj/Debug/Game.assets.cache",
+                 "scripts/unity_compile/bin/Debug/Game.dll", "unity/.vsconfig"):
+        assert ignored(path), path
+    assert not ignored("unity/ProjectSettings/PackageManagerSettings.asset")
 
 
 # Batch 2 fix round 1.

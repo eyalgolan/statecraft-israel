@@ -14,7 +14,7 @@ file order; libm only where stated below):
   2 a land hex whose centre lies inside a sub-district polygon takes that sub-district (the first in file order if a
     centre sat exactly on a shared edge);
   3 a land hex whose centre lies in water (a shore hex: the DEM at its centre is sea, 0 m, or below the Dead Sea's 1948
-    level) takes the region of the nearest land to its centre (the nearest DEM land pixel within one hex size, 5 km): the
+    level) takes the region of the nearest land to its centre (the nearest DEM land pixel within one hex size, 4.4 km): the
     sub-district containing that point, or within 0.5 km of it (the lines are simplified at about 120 m), else outside.
     So a shore hex follows its own coast: the coast is not a boundary, and a hex off the Sinai coast at Taba stays
     outside even though the Beersheba Sub-District is near;
@@ -23,7 +23,8 @@ file order; libm only where stated below):
   5 override (controller ruling, owner-delegated, 2026-10-11): the hex that holds a Gazette-listed place (GAZETTE_PLACES,
     GAZETTE_SETTLEMENTS; placed as the game places settlements, hexgrid.settlement_hex) always takes that place's
     sub-district, never outside, so a frontier town the snap would clip (Rafah, Metulla) stays in its sub-district. When
-    two listed places share a hex, the region of rule 2-4 stands if it is one of theirs; otherwise the bake fails.
+    listed places of two sub-districts share a hex, the bake fails, unless that set of places is resolved by hand in
+    SHARED_HEXES: then the region of rule 2-4 stands if it is one of theirs, and the bake still fails if it is not.
 The sim never reads the output (display only: the content hash and the goldens do not move). Determinism: float64
 arithmetic in a fixed order; libm (cos for the km-per-degree scale, hypot for distances) only in the shore rule, whose
 result is an integer id and whose ties would need two regions at the same distance to the last bit; the committed output
@@ -253,10 +254,19 @@ def place_hexes(places: list, hexes: dict) -> dict:
     return claims
 
 
+# Rule 5's shared hexes resolved by hand: the region of rules 2-4 stands if it is one of theirs. Keyed by the places, not
+# by q/r, so a re-bake at another hex size cannot carry the ruling to a hex it was not made for.
+# #1183 (4.4 km bake): Kefar Sava (Jaffa) shares one hex with Kafr Saba and Jaljuliya (Tulkarm); its centre is in Jaffa.
+SHARED_HEXES = {frozenset({"Kefar Sava", "Kafr Saba", "Jaljuliya"})}
+
+
 def apply_places(cells: dict, places: list, hexes: dict, ids: dict) -> None:
     """Rule 5, in place: a listed place's hex takes its sub-district."""
     for qr, subs in sorted(place_hexes(places, hexes).items()):
         if len(subs) > 1:
+            names = frozenset(n for ns in subs.values() for n in ns)
+            if names in SHARED_HEXES and cells.get(qr) in {ids[s] for s in subs}:
+                continue
             raise ValueError(f"hex {qr}: listed places of different sub-districts {subs}")
         cells[qr] = ids[next(iter(subs))]
 

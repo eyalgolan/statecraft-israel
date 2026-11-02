@@ -53,7 +53,7 @@ public class SeaAirCollectionTests
     static Bounds WorldBounds(GameObject go) =>
         go.GetComponentsInChildren<Renderer>(true).Select(x => x.bounds).Aggregate((a, x) => { a.Encapsulate(x); return a; });
 
-    static readonly string[] Models = { SeaAirCollection.Altalena, SeaAirCollection.FishingBoat, SeaAirCollection.Steamer, SeaAirCollection.C54 };
+    static readonly string[] Models = { SeaAirCollection.Altalena, SeaAirCollection.FishingBoat, SeaAirCollection.Steamer, SeaAirCollection.C54, SeaAirCollection.Spitfire };
 
     /// <summary>The owner (#663): every model is used. All four of this lane's are in the streamed vehicle bundle and each is
     /// wanted on some turn of the game, on the game's own monthly turn dates.</summary>
@@ -78,8 +78,8 @@ public class SeaAirCollectionTests
         var card = C.Events.Single(e => e.Id == SeaAirCollection.AltalenaEvent);
         Assert.AreEqual(new DateTime(1948, 6, 15), card.From); Assert.AreEqual(new DateTime(1948, 6, 23), card.To);
         string[] Keys(DateTime d) => SeaAirCollection.Wants(d, C).Select(w => w.Key).ToArray();
-        CollectionAssert.AreEqual(new[] { "haifa-steamer", "jaffa-fishing", "acre-fishing" }, Keys(new DateTime(1948, 5, 15)));
-        CollectionAssert.AreEqual(new[] { "haifa-steamer", "jaffa-fishing", "acre-fishing", "tel-aviv-altalena" }, Keys(new DateTime(1948, 6, 15)));
+        CollectionAssert.AreEqual(new[] { "haifa-steamer", "jaffa-fishing", "acre-fishing", "el-arish-spitfire" }, Keys(new DateTime(1948, 5, 15)));
+        CollectionAssert.AreEqual(new[] { "haifa-steamer", "jaffa-fishing", "acre-fishing", "tel-aviv-altalena", "el-arish-spitfire" }, Keys(new DateTime(1948, 6, 15)));
         Assert.AreEqual("tel_aviv", SeaAirCollection.Wants(new DateTime(1948, 6, 15), C).Single(w => w.Model == SeaAirCollection.Altalena).Place);
         CollectionAssert.DoesNotContain(Keys(new DateTime(1948, 6, 14)), "tel-aviv-altalena");
         CollectionAssert.DoesNotContain(Keys(new DateTime(1948, 6, 23)), "tel-aviv-altalena");
@@ -88,6 +88,248 @@ public class SeaAirCollectionTests
         CollectionAssert.Contains(Keys(new DateTime(1949, 7, 1)), "lod-c54");
         CollectionAssert.Contains(Keys(new DateTime(1950, 9, 24)), "lod-c54");
         CollectionAssert.DoesNotContain(Keys(new DateTime(1950, 9, 25)), "lod-c54");
+    }
+
+    /// <summary>#1932 (c): the Egyptian Spitfire from 15 May 1948 to the al-Arish Operational Diary's last Spitfire sortie,
+    /// 2 January 1949 (rows R2, R4 and A3 of #1894's research note, an AI draft not yet checked by a person): the turns of
+    /// 15 May to 15 December 1948, at el-Arish's place, which is off the board.</summary>
+    [Test]
+    public void TheSpitfireIsWantedOnlyOnItsSourcedDates()
+    {
+        bool Wanted(DateTime d) => SeaAirCollection.Wants(d, C).Any(w => w.Key == "el-arish-spitfire" && w.Model == SeaAirCollection.Spitfire && w.Place == "el_arish");
+        Assert.IsFalse(Wanted(new DateTime(1948, 5, 14)));
+        Assert.IsTrue(Wanted(new DateTime(1948, 5, 15)));
+        Assert.IsTrue(Wanted(new DateTime(1948, 12, 15)));
+        Assert.IsTrue(Wanted(new DateTime(1949, 1, 2)));
+        Assert.IsFalse(Wanted(new DateTime(1949, 1, 3)));
+        Assert.IsFalse(Wanted(new DateTime(1949, 1, 15)));
+    }
+
+    /// <summary>#1932 (c), "In flight / board edge only": el-Arish lies west of the board (so there is no hex or airfield to
+    /// stand on), and the Spitfire is drawn near the board's western edge at el-Arish's latitude, 30 km in from the edge (owner,
+    /// #2014: "Move it inward", so the player's camera at 40 and 150 km frames the whole aircraft), the whole aircraft over
+    /// the board, nose east (wingspan north-south at its map size), 4,200 m above the highest ground under it, the unit
+    /// tokens' aircraft altitude (UnitShowcase.AltitudeM, #2014): never on the ground. Only the far mesh is asked, once, and
+    /// nothing draws before the stream answers.</summary>
+    [Test]
+    public void TheSpitfireFliesOverTheWesternBoardEdgeTowardElArishAndNeverStandsOnTheBoard()
+    {
+        var map = OpenMap();
+        var elArish = map.Frame.ToWorld(SeaAirCollection.ElArishLon, SeaAirCollection.ElArishLat, 0);
+        Assert.Less(elArish.x, 0f, "el-Arish is off the board, west of its edge");
+        var layer = CollectionGeometryFixture.Craft(map, new DateTime(1948, 6, 15), Array.Empty<Placement>(), C)!;
+        CollectionAssert.IsEmpty(layer.Placed, "nothing before the stream answers");
+        Assert.AreEqual(1, asked.Count(a => a.id == SeaAirCollection.Spitfire && a.detail == CollectionDetail.Far), "the far mesh, once");
+        AnswerAll();
+        var (key, model, at) = layer.Placed.Single(p => p.Model == SeaAirCollection.Spitfire);
+        float span = SeaAirCollection.SizeOf(SeaAirCollection.Spitfire);
+        Assert.AreEqual(11.23f * Statecraft.Game.Map.Units.UnitShowcase.AircraftScale, span, 0.5f, "its 11.23 m wingspan at the unit tokens' aircraft scale");
+        Assert.AreEqual(span, SeaAirCollection.RealLengthM(SeaAirCollection.Spitfire) * 420f, 0.5f, "the owner's 420x (#2014)");
+        var b = WorldBounds(layer.transform.Find(key)!.gameObject);
+        Assert.GreaterOrEqual(b.min.x, 0f, "the whole aircraft is over the board");
+        Assert.AreEqual(30000f, at.x, 1f, "30 km in from the board's western edge (#2014)");
+        Assert.AreEqual(elArish.z, at.z, 1f, "at el-Arish's latitude");
+        Assert.AreEqual(span, b.size.z, 1f, "wingspan north-south at its size: the nose points east");
+        Assert.Greater(b.size.z, b.size.x, "the fuselage lies east-west");
+        // The model's nose is its mesh's -y: the propeller disc and the wings sit at that end, the tailplane and the tail
+        // wheel at the other (vertex slices of the FBX along its fuselage, 31 October 2026).
+        var go = layer.transform.Find(key)!;
+        Assert.Greater(Vector3.Dot(go.TransformDirection(Vector3.down), Vector3.right), 0.9f, "the nose points east, toward the board");
+        // The same from the geometry alone (#2014 review): the wings sit forward of the middle and the tailplane, a quarter
+        // of their span, at the tail, so the wingtip vertex lies east of the aircraft's centre.
+        var mesh = go.GetComponentInChildren<MeshFilter>();
+        var tip = mesh.sharedMesh.vertices.Select(mesh.transform.TransformPoint).OrderBy(v => Mathf.Abs(v.z - b.center.z)).Last();
+        Assert.Greater(tip.x, b.center.x + 0.1f * b.size.x, "the wingtips sit east of the centre: the nose points east (geometry)");
+        // Its loop (owner, 2 November 2026, "Fly a slow loop") is centred here; edit mode holds the loop's start, due south of
+        // the centre, heading east.
+        Assert.AreEqual(at.x, b.center.x, 1f, "at the loop's start, east-west on the centre");
+        Assert.AreEqual(at.z - SeaAirCollection.SpitfireLoopHalfWidthM, b.center.z, 1f, "at the loop's start, south of the centre");
+        float floor = Statecraft.Game.Map.Units.UnitShowcase.LoopFloor(map, new Vector3(at.x, 0f, at.z), SeaAirCollection.SpitfireLoopHalfLengthM + span);
+        Assert.AreEqual(floor + 4200f, at.y, 1f, "4,200 m above the highest ground under its loop, the unit tokens' aircraft altitude (#2014)");
+        Assert.AreEqual(Statecraft.Game.Map.Units.UnitShowcase.AltitudeM, at.y - floor, 1f, "UnitShowcase.AltitudeM, no number duplicated");
+        Assert.Greater(b.min.y, floor, "in flight, never on the ground");
+        Assert.AreEqual(1, layer.KeepClear.Count(k => k[0].Contains(b.min) && k[0].Contains(b.max)), "the labels keep clear of it");
+    }
+
+    /// <summary>#2014 merge with v0.3.2's residency: Rebuild registers the Spitfire in its model's originals before Fly's
+    /// early continue, so when its window ends (the 15 January 1949 turn) the object is destroyed before its model's lease
+    /// is released. With the continue first, the lease would be released while the Spitfire is still on the map.</summary>
+    [Test]
+    public void TheSpitfireIsGoneBeforeItsLeaseIsReleasedWhenItsWindowEnds()
+    {
+        var map = OpenMap();
+        var go = new GameObject(SeaAirCollection.Name); go.transform.SetParent(map.Terrain.transform, false);
+        var layer = go.AddComponent<SeaAirCollection>();
+        // Private map field: the same construction reference ShowAt sets, before the first demand (as CollectionGeometryFixture).
+        typeof(SeaAirCollection).GetField("map", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.SetValue(layer, map);
+        var released = new List<(string id, bool spitfireDrawn)>();
+        layer.ConfigureResidency(new CollectionResidencyPolicy(1000000, 1000001, 1000000, 1000001, int.MaxValue, "TEST ONLY"),
+            (id, detail, done) => { SeaAirCollection.Request(id, detail, done); return new ReleaseProbe(() => released.Add((id, layer.transform.Find("el-arish-spitfire") != null))); });
+
+        SeaAirCollection.ShowAt(map, new DateTime(1948, 12, 15), Array.Empty<Placement>(), C);
+        AnswerAll();
+        Assert.IsNotNull(layer.transform.Find("el-arish-spitfire"), "the Spitfire is drawn on 15 December 1948");
+        Assert.AreEqual(layer.Placed.Count, layer.KeepClear.Count, "labels keep clear of every drawn craft");
+
+        SeaAirCollection.ShowAt(map, new DateTime(1949, 1, 15), Array.Empty<Placement>(), C);
+        Assert.AreEqual(1, released.Count(r => r.id == SeaAirCollection.Spitfire), "the Spitfire's lease is released once its window ends");
+        Assert.IsFalse(released.Single(r => r.id == SeaAirCollection.Spitfire).spitfireDrawn, "the Spitfire object is gone before its lease is released");
+        Assert.IsNull(layer.transform.Find("el-arish-spitfire"));
+        Assert.IsFalse(layer.Placed.Any(p => p.Model == SeaAirCollection.Spitfire));
+        Assert.AreEqual(layer.Placed.Count, layer.KeepClear.Count, "labels keep clear of every drawn craft, and of nothing else");
+    }
+
+    sealed class ReleaseProbe : IDisposable
+    {
+        Action? done; public ReleaseProbe(Action done) { this.done = done; }
+        public void Dispose() { var call = done; done = null; call?.Invoke(); }
+    }
+
+    /// <summary>The Spitfire's farthest point from its centre, seen from above, at any heading: half the diagonal of a square
+    /// as wide as its wingspan (its fuselage is shorter than its wingspan).</summary>
+    static float SpitfireReach => 0.5f * Mathf.Sqrt(2f) * SeaAirCollection.SizeOf(SeaAirCollection.Spitfire);
+
+    /// <summary>The owner, 2 November 2026 (v0.3.3: "the egyptian plane in v0.3.3 is not moving"), ruling "Fly a slow loop":
+    /// a slow repeating pass in from el-Arish over the western edge and back. The loop's period is tens of seconds and its
+    /// size a few km (DESIGN VALUES). Half a period on, the aircraft is on the other side of the loop. At every point it stays
+    /// inside the loop's box about EdgeSpot, and the whole aircraft stays over the board, clear of every unit token
+    /// (the dated rings and the town clearings) and far from Lod, the board's one drawn airfield.</summary>
+    [Test]
+    public void TheSpitfireLoopsInsideItsPathAndTheBoardClearOfTheTokens()
+    {
+        var map = OpenMap();
+        var centre = SeaAirCollection.EdgeSpot(map.Frame);
+        var ground = PlacementLayer.CampGround(map);
+        float period = SeaAirCollection.SpitfireLoopSeconds, a = SeaAirCollection.SpitfireLoopHalfLengthM, b = SeaAirCollection.SpitfireLoopHalfWidthM;
+        Assert.That(period, Is.InRange(20f, 90f), "a period of tens of seconds");
+        Assert.That(a, Is.InRange(2000f, 10000f), "a few km east-west");
+        Assert.That(b, Is.InRange(1000f, a), "narrower north-south: a long loop, in from the west and back");
+        var lod = map.Frame.ToWorld(SeaAirCollection.LodLon, SeaAirCollection.LodLat, 0);
+        for (int i = 0; i < 120; i++)
+        {
+            float t = i * period / 120f;
+            var at = SeaAirCollection.LoopOffset(t); var opposite = SeaAirCollection.LoopOffset(t + 0.5f * period);
+            Assert.Greater((at - opposite).magnitude, 2f * b - 1f, $"at {t:0.0} s and half a period on, the other side of the loop");
+            Assert.LessOrEqual(Mathf.Abs(at.x), a + 0.5f, $"within the loop east-west at {t:0.0} s");
+            Assert.LessOrEqual(Mathf.Abs(at.y), b + 0.5f, $"within the loop north-south at {t:0.0} s");
+            var p = centre + at;
+            Assert.IsTrue(ground.Inside(p.x - SpitfireReach, p.y - SpitfireReach) && ground.Inside(p.x + SpitfireReach, p.y + SpitfireReach),
+                $"the whole aircraft over the board at {t:0.0} s ({p})");
+            Assert.IsFalse(ground.OnToken(p, SpitfireReach, SeaAirCollection.SpitfireFrom), $"over no unit token's ring at {t:0.0} s ({p})");
+            foreach (var (c, r) in map.UnitClearings)
+                Assert.Greater((p - c).magnitude, r + SpitfireReach, $"over no town's unit clearing at {t:0.0} s ({p})");
+            Assert.Greater((p - new Vector2(lod.x, lod.z)).magnitude, 20000f, "far from Lod's airfield");
+        }
+        // The pass starts flying in from el-Arish: due south of the centre, heading east.
+        Assert.AreEqual(0f, SeaAirCollection.LoopOffset(0f).x, 1f);
+        Assert.AreEqual(-b, SeaAirCollection.LoopOffset(0f).y, 1f);
+        Assert.Greater(SeaAirCollection.LoopHeading(0f).x, 0.999f, "heading east at the start");
+    }
+
+    /// <summary>The loop is closed: a period on, the aircraft is back at the same place with the same heading, at any time
+    /// (also long into a session, where the clock is large).</summary>
+    [Test]
+    public void TheSpitfireLoopIsClosed()
+    {
+        float period = SeaAirCollection.SpitfireLoopSeconds;
+        foreach (var t in new[] { 0f, 3.7f, 12.5f, 0.5f * period, period - 0.01f, 1234.5f, 7200.25f })
+        {
+            Assert.Less((SeaAirCollection.LoopOffset(t) - SeaAirCollection.LoopOffset(t + period)).magnitude, 1f, $"the same place a period after {t} s");
+            Assert.Less((SeaAirCollection.LoopHeading(t) - SeaAirCollection.LoopHeading(t + period)).magnitude, 1e-3f, $"the same heading a period after {t} s");
+        }
+    }
+
+    /// <summary>The drawn aircraft flies the loop nose first: at every sampled time its centre is on the path about its
+    /// recorded loop centre, level at that one altitude, its nose (the mesh's -y, as the in-flight test reads it) along the
+    /// path's tangent, inside the box the labels keep clear of, and a period later at the same place. The heading is the
+    /// path's tangent (a short chord's direction).</summary>
+    [Test]
+    public void TheSpitfireFacesAlongItsPath()
+    {
+        float period = SeaAirCollection.SpitfireLoopSeconds;
+        for (int i = 0; i < 120; i++)
+        {
+            float t = i * period / 120f;
+            var heading = SeaAirCollection.LoopHeading(t);
+            Assert.AreEqual(1f, heading.magnitude, 1e-4f, "a unit heading");
+            var chord = SeaAirCollection.LoopOffset(t + 0.01f) - SeaAirCollection.LoopOffset(t - 0.01f);
+            Assert.Greater(Vector2.Dot(heading, chord.normalized), 0.999f, $"the heading is the path's tangent at {t:0.0} s");
+        }
+
+        var map = OpenMap();
+        var layer = CollectionGeometryFixture.Craft(map, new DateTime(1948, 6, 15), Array.Empty<Placement>(), C)!; AnswerAll();
+        var plane = layer.transform.Find("el-arish-spitfire")!;
+        var loop = plane.GetComponent<SpitfireLoop>();
+        Assert.IsNotNull(loop, "the drawn Spitfire carries its loop");
+        Assert.IsTrue(loop.Still, "edit mode holds the loop's start, so editor renders repeat");
+        var centre = layer.Placed.Single(p => p.Model == SeaAirCollection.Spitfire).At;
+        var keep = layer.KeepClear.Single(k => k[0].Contains(centre))[0];
+        for (int i = 0; i < 48; i++)
+        {
+            float t = i * period / 48f;
+            loop.Place(t);
+            var b = WorldBounds(plane.gameObject); var at = SeaAirCollection.LoopOffset(t);
+            Assert.AreEqual(centre.x + at.x, b.center.x, 1f, $"on the path east-west at {t:0.0} s");
+            Assert.AreEqual(centre.z + at.y, b.center.z, 1f, $"on the path north-south at {t:0.0} s");
+            Assert.AreEqual(centre.y, b.center.y, 1f, $"level, at the loop's one altitude, at {t:0.0} s");
+            var nose = plane.TransformDirection(Vector3.down);
+            Assert.AreEqual(0f, nose.y, 1e-3f, "level flight");
+            Assert.Greater(Vector2.Dot(new Vector2(nose.x, nose.z).normalized, SeaAirCollection.LoopHeading(t)), 0.999f, $"nose along the path at {t:0.0} s");
+            Assert.IsTrue(keep.Contains(b.min) && keep.Contains(b.max), $"inside the box the labels keep clear of at {t:0.0} s");
+            var here = b.center;
+            loop.Place(t + period);
+            Assert.Less((WorldBounds(plane.gameObject).center - here).magnitude, 1f, $"back at the same place a period after {t:0.0} s");
+        }
+    }
+
+    /// <summary>Review k2 C1: in play the aircraft is drawn where the clock puts it from its first frame, not at the loop's
+    /// start until its first Update (a component added mid-frame gets no Update that frame, so the frame it is built in would
+    /// draw it up to 6 km from where it flies). Screenshots and edit mode still hold the loop's start. An EditMode test has
+    /// no frame clock, so it drives SpitfireLoop.Clock.</summary>
+    [Test]
+    public void TheSpitfireIsDrawnWhereTheClockPutsItFromItsFirstFrame()
+    {
+        var clock = SpitfireLoop.Clock;
+        var flying = new GameObject("flying"); var held = new GameObject("held");
+        try
+        {
+            const float now = 12.5f;
+            SpitfireLoop.Clock = () => now;
+            var centre = new Vector3(30000f, 4200f, 1000f);
+            flying.AddComponent<SpitfireLoop>().Configure(centre, Quaternion.identity, Vector3.zero, still: false);
+            held.AddComponent<SpitfireLoop>().Configure(centre, Quaternion.identity, Vector3.zero, still: true);
+            var there = SeaAirCollection.LoopOffset(now); var start = SeaAirCollection.LoopOffset(0f);
+            Assert.Greater((there - start).magnitude, 1000f, "the test's time is far round the loop from its start");
+            Assert.Less((flying.transform.position - (centre + new Vector3(there.x, 0f, there.y))).magnitude, 1f,
+                "in play, where the clock puts it, before any Update");
+            Assert.Less((held.transform.position - (centre + new Vector3(start.x, 0f, start.y))).magnitude, 1f,
+                "held (edit mode, screenshots): at the loop's start whatever the clock");
+        }
+        finally
+        {
+            SpitfireLoop.Clock = clock;
+            Object.DestroyImmediate(flying); Object.DestroyImmediate(held);
+        }
+    }
+
+    /// <summary>The loop respects the Spitfire's dates (#1932: 15 May 1948 to 2 January 1949): outside them no aircraft and
+    /// no loop is drawn; inside them exactly one looping aircraft.</summary>
+    [Test]
+    public void OutsideItsDatesThereIsNoSpitfireAndInsideThemOneLoopingOne()
+    {
+        var map = OpenMap();
+        foreach (var (date, flying) in new[]
+        {
+            (new DateTime(1948, 5, 14), false), (new DateTime(1948, 5, 15), true), (new DateTime(1949, 1, 2), true),
+            (new DateTime(1949, 1, 3), false), (new DateTime(1949, 8, 15), false),
+        })
+        {
+            var layer = CollectionGeometryFixture.Craft(map, date, Array.Empty<Placement>(), C)!; AnswerAll();
+            Assert.AreEqual(flying ? 1 : 0, layer.Placed.Count(p => p.Model == SeaAirCollection.Spitfire), $"the Spitfire on {date:d MMM yyyy}");
+            Assert.AreEqual(flying ? 1 : 0, Object.FindObjectsByType<SpitfireLoop>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length,
+                $"the loops on {date:d MMM yyyy}");
+            Assert.AreEqual(flying, layer.transform.Find("el-arish-spitfire") != null, $"the aircraft on {date:d MMM yyyy}");
+        }
     }
 
     /// <summary>Nothing is drawn until the stream answers, and only the far mesh, once per model. Then every craft is drawn,
@@ -115,7 +357,7 @@ public class SeaAirCollectionTests
             Assert.AreEqual(asked.Count, asked.Select(a => a.id).Distinct().Count(), "each model once");
             AnswerAll();
             CollectionAssert.IsEmpty(layer.Missing, "every craft found a spot on " + date.ToString("d MMM yyyy"));
-            Assert.AreEqual(4, layer.Placed.Count);
+            Assert.AreEqual(date.Year == 1948 ? 5 : 4, layer.Placed.Count, "three boats, then the Altalena and the Spitfire on 15 June 1948, the C-54 on 15 August 1949");
             var spots = layer.Placed.Select(p => p.At).ToArray();
             CollectionGeometryFixture.Craft(map, date.AddMonths(1), Array.Empty<Placement>(), C); AnswerAll();
             CollectionGeometryFixture.Craft(map, date, Array.Empty<Placement>(), C); AnswerAll();
@@ -123,6 +365,7 @@ public class SeaAirCollectionTests
             var boats = layer.Placed.Where(p => p.Model != SeaAirCollection.C54).ToList();
             foreach (var (key, model, at) in layer.Placed)
             {
+                if (model == SeaAirCollection.Spitfire) continue;   // in flight: its own test
                 var child = layer.transform.Find(key)!; var prefab = Far(model);
                 var turned = new[] { 0f, 90f }.Min(y => Quaternion.Angle(layer.transform.rotation * Quaternion.Euler(0f, y, 0f) * prefab.transform.localRotation, child.rotation));
                 Assert.Less(turned, 0.01f, key + " keeps its prefab's rotation (upright) under a yaw of 0 or 90");
@@ -186,7 +429,7 @@ public class SeaAirCollectionTests
     /// Tal Heuberger's locomotive and tender at RouteTrain.Scale x ServiceTrain.ModelSize / ServiceTrain.Cars), the band about its
     /// real size at the one world scale (SettlementKits.ModelScale, 24x: an 8.5 m house is one car): the Altalena, a 100 m
     /// LST, about 11.8 cars; the 80 m steamer about 9.4; the 10 m fishing boat about 1.2; the C-54's 35.8 m wingspan about
-    /// 4.2. No ship dwarfs its town: each is shorter than its port's kit footprint is across and than a whole-town model
+    /// 4.2; the Spitfire, at the unit tokens' aircraft scale (420x, #2014), its 11.2 m wingspan about 23. No ship dwarfs its town: each is shorter than its port's kit footprint is across and than a whole-town model
     /// (TownLandmarks.SizeM).</summary>
     [Test]
     public void EveryCraftIsAtTheTrainScaleAndNoShipDwarfsItsTown()
@@ -199,7 +442,7 @@ public class SeaAirCollectionTests
         var bands = new Dictionary<string, (float lo, float hi)>
         {
             [SeaAirCollection.Altalena] = (11f, 12.5f), [SeaAirCollection.Steamer] = (8f, 11f),
-            [SeaAirCollection.FishingBoat] = (0.9f, 1.5f), [SeaAirCollection.C54] = (3.9f, 4.5f),
+            [SeaAirCollection.FishingBoat] = (0.9f, 1.5f), [SeaAirCollection.C54] = (3.9f, 4.5f), [SeaAirCollection.Spitfire] = (22f, 24f),
         };
         var seen = new HashSet<string>();
         var bad = new List<string>();
@@ -215,7 +458,7 @@ public class SeaAirCollectionTests
                 TestContext.WriteLine($"{key}: {side:0} m long, {cars:0.00} locomotive cars, {b.size.y:0} m tall");
                 var (lo, hi) = bands[model];
                 if (cars < lo || cars > hi) bad.Add($"{key}: {side:0} m, {cars:0.00} locomotive cars (band {lo}-{hi})");
-                if (model == SeaAirCollection.C54) continue;
+                if (model == SeaAirCollection.C54 || model == SeaAirCollection.Spitfire) continue;
                 var place = SeaAirCollection.Wants(date, C).Single(w => w.Key == key).Place;
                 var town = map.KitFootprints.FirstOrDefault(f => f.id == place);
                 Assert.IsNotNull(town.id, place + " has a kit footprint");
@@ -261,7 +504,7 @@ public class SeaAirCollectionTests
                 }
             }
             Assert.Greater(others, 0, "the other layers drew");
-            Assert.AreEqual(8, checkedCraft, "every craft checked, four on each turn");
+            Assert.AreEqual(9, checkedCraft, "every craft checked, five on the first turn (the Spitfire too), four on the second");
         }
         finally
         {

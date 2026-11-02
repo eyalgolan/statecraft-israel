@@ -107,6 +107,8 @@ namespace Statecraft.Sim
             s.MapActionsThisTurn++;
             s.Placements.RemoveAll(p => p.Q == q && p.R == r);
             s.Placements.Add(new Placement(action, q, r, s.Date));
+            // #2199: the cost is a Money line, then any borrowing, in PayOrBorrow's order; the borrowing keeps its own key.
+            if (rule.Cost != 0) why.Add(EconomySystem.Paid(c, rule.Cost, $"to build {PlayerText.MapAction(c, action)}", CauseKeys.Purpose.MapAction, action));
             s.Treasury -= rule.Cost;
             if (s.Treasury < 0)
             {

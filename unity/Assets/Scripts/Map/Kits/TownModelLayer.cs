@@ -41,7 +41,7 @@ namespace Statecraft.Game.Map.Kits
         /// <summary>The view-admission units: each detailed town alone, each village tile's villages together.</summary>
         readonly List<(string[] ids, Bounds bounds)> viewPlaces = new List<(string[], Bounds)>();
         readonly Plane[] frustum = new Plane[6];
-        readonly List<(int place, float distance)> viewScratch = new List<(int, float)>();
+        readonly List<(int place, float distance, string id)> viewScratch = new List<(int, float, string)>();
         readonly List<string> viewNext = new List<string>();
         readonly Dictionary<string[], bool> villagesReady = new Dictionary<string[], bool>();
         /// <summary>Set by <see cref="ConfigureProduction"/>. Explicit spatial values (<see cref="ConfigureResidency"/>: tests and
@@ -87,6 +87,13 @@ namespace Statecraft.Game.Map.Kits
         {
             public static readonly EdgeDistanceComparer Instance = new EdgeDistanceComparer();
             public int Compare((string id, float distance) a, (string id, float distance) b)
+            { int c = a.distance.CompareTo(b.distance); return c != 0 ? c : string.CompareOrdinal(a.id, b.id); }
+        }
+        /// <summary>Nearest first, then by the place's first id: a shared instance, so a pan allocates no sort delegate.</summary>
+        sealed class ViewDistanceComparer : IComparer<(int place, float distance, string id)>
+        {
+            public static readonly ViewDistanceComparer Instance = new ViewDistanceComparer();
+            public int Compare((int place, float distance, string id) a, (int place, float distance, string id) b)
             { int c = a.distance.CompareTo(b.distance); return c != 0 ? c : string.CompareOrdinal(a.id, b.id); }
         }
         internal static System.Func<string, Collection.CollectionDetail, System.Action<GameObject?>, System.IDisposable> ModelAcquire = Collection.CollectionStream.Acquire;
@@ -405,7 +412,9 @@ namespace Statecraft.Game.Map.Kits
         }
         bool suppressMissingLog;
 
-        internal void PrepareCamera(Camera cam)
+        /// <summary>A direct call (tests and editor tools, outside any render) applies a change of demand at once in edit mode.</summary>
+        internal void PrepareCamera(Camera cam) => PrepareCameraCore(cam, inRender: false);
+        internal void PrepareCameraCore(Camera cam, bool inRender)
         {
             RestoreRenderers();
             bool changed = PruneCameras();
@@ -447,7 +456,18 @@ namespace Statecraft.Game.Map.Kits
                 choice.towns.Clear(); foreach (var id in next) choice.towns.Add(id); changed = true;
             }
             changed |= AdmitInView(choice, cam);
-            if (changed) { if (Application.isPlaying) reconcileDirty = true; else ReconcileModels(); }
+            if (changed)
+            {
+                if (Application.isPlaying || inRender)
+                {
+                    reconcileDirty = true;
+#if UNITY_EDITOR
+                    // Edit mode runs LateUpdate only when something asks for a player-loop update.
+                    if (!Application.isPlaying) UnityEditor.EditorApplication.QueuePlayerLoopUpdate();
+#endif
+                }
+                else ReconcileModels();
+            }
             villagesReady.Clear();
             foreach (var (kit, close) in swaps)
             {
@@ -480,15 +500,11 @@ namespace Statecraft.Game.Map.Kits
                 var (ids, bounds) = viewPlaces[i];
                 float margin = choice.viewed.Contains(ids[0]) ? ViewKeepM : ViewMarginM;
                 var wide = bounds; wide.Expand(new Vector3(2f * margin, 0f, 2f * margin));
-                if (GeometryUtility.TestPlanesAABB(frustum, wide)) viewScratch.Add((i, GroundDistance(bounds, from)));
+                if (GeometryUtility.TestPlanesAABB(frustum, wide)) viewScratch.Add((i, GroundDistance(bounds, from), ids[0]));
             }
-            viewScratch.Sort((a, b) =>
-            {
-                int c = a.distance.CompareTo(b.distance);
-                return c != 0 ? c : string.CompareOrdinal(viewPlaces[a.place].ids[0], viewPlaces[b.place].ids[0]);
-            });
+            viewScratch.Sort(ViewDistanceComparer.Instance);
             viewNext.Clear();
-            foreach (var (i, _) in viewScratch) viewNext.AddRange(viewPlaces[i].ids);
+            foreach (var (i, _, _) in viewScratch) viewNext.AddRange(viewPlaces[i].ids);
             bool changed = !choice.viewed.SetEquals(viewNext);
             choice.inView.Clear(); choice.inView.AddRange(viewNext);   // the order alone loads nothing new
             if (changed) { choice.viewed.Clear(); choice.viewed.UnionWith(viewNext); }
@@ -746,10 +762,12 @@ namespace Statecraft.Game.Map.Kits
         }
         void EndCamera(ScriptableRenderContext _, Camera camera) => RestoreRenderers();
 
+        /// <summary>The render callback. A change of demand never acquires or retires models while a camera renders, in edit
+        /// mode either (a Scene or Game view camera): it waits for LateUpdate, as in play mode.</summary>
         void Submit(ScriptableRenderContext context, Camera cam)
         {
             if (cam.cameraType == CameraType.Preview || cam.cameraType == CameraType.Reflection) return;
-            PrepareCamera(cam);
+            PrepareCameraCore(cam, inRender: true);
             bool close = choices.TryGetValue(cam.GetInstanceID(), out var choice) && choice.close;
             LastClose = close;
             int drawn = 0, draws = 0; long tris = 0;

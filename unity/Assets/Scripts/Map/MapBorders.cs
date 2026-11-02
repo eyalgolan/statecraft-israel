@@ -212,6 +212,10 @@ namespace Statecraft.Game.Map
         static bool hasLayer, toggleOn = true;
         static bool noEarlyOut;
 
+        /// <summary>The "borders" switch as last set (on at every build), drawn or not: a new minimap starts from it (#2227).
+        /// A torn-down map does not reset it, so read it only while the switch is registered.</summary>
+        internal static bool ToggleOn => toggleOn;
+
         /// <summary>Test seam (_ScBorders.z): true draws every pixel the long way, with no early-out, so a test can prove the
         /// early-out exact (the two renders must match pixel for pixel).</summary>
         internal static bool NoEarlyOut { get => noEarlyOut; set { noEarlyOut = value; Push(); } }

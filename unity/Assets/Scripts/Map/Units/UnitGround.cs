@@ -108,11 +108,13 @@ namespace Statecraft.Game.Map.Units
             return (p - (a + t * ab)).magnitude;
         }
 
-        /// <summary>Every anchor's spot (UnitPlacer.PlaceAll) on this ground.</summary>
+        /// <summary>Every anchor's spot (UnitPlacer.PlaceAll) on this ground. With <paramref name="control"/>, an Arab force's
+        /// anchor keeps off the hexes Israel held on its first day (#226, ruling 9).</summary>
         public Dictionary<UnitAnchor, AnchorSpot> Place(IReadOnlyList<UnitEntry> units, Func<double, double, Vector2> toXZ, Action<string>? skipped,
-            IEnumerable<(int q, int r)>? taken = null) =>
+            IEnumerable<(int q, int r)>? taken = null, Control1948? control = null) =>
             UnitPlacer.PlaceAll(units, hexes, HexSizeM, (lon, lat) => { var v = toXZ(lon, lat); return (v.x, v.y); },
                 (service, x, z, compact, inTown, ax, az) => Clear(service, new Vector2((float)x, (float)z), compact, inTown, new Vector2((float)ax, (float)az)),
-                (x, z) => TownOverlap(new Vector2((float)x, (float)z), compact: true), skipped, taken);
+                (x, z) => TownOverlap(new Vector2((float)x, (float)z), compact: true), skipped, taken,
+                control == null ? null : (u, a, h) => u.Side != UnitData.Israel && control.At(h.Q, h.R, UnitData.Day(a.From)).side == Control1948.Side.Israel);
     }
 }

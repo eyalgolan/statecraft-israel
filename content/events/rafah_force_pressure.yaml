@@ -3,7 +3,8 @@
 # Approved draft: https://github.com/eyalgolan/statecraft-israel/issues/939#issuecomment-6369861430
 # Owner acceptance: https://github.com/eyalgolan/statecraft-israel/issues/939#issuecomment-6372987388
 # Historical source passages re-opened by an AI agent on 24 October 2026, not human fact-checking.
-# Signed off by the owner on 28 October 2026 (reviewed_by below). Native Hebrew approval is not asserted.
+# Signed off by the owner on 28 October 2026 (reviewed_by below). The owner read the Hebrew next to the English and
+# approved it as written (1 Nov 2026: "approved all", per #2145).
 id: rafah_force_pressure
 kind: consequence
 anchor: soft
@@ -21,7 +22,6 @@ text: >-
   In the record, Israel's Prime Minister told the US representative on 1 January 1949 that Britain had threatened action under its 1936 treaty with Egypt. On 5 January, the US Acting Secretary of State linked American pressure over the incursion into Egypt to the danger of a wider conflict outside Palestine. On this branch, {prime_minister} must decide whether to keep the force west of Rafah or complete its pullback.
 text_he: >-
   בתיעוד ההיסטורי, ראש ממשלת ישראל מסר לנציג ארצות הברית ב־1 בינואר 1949 שבריטניה איימה לפעול מכוח ההסכם שלה עם מצרים משנת 1936. ב־5 בינואר קשר ממלא מקום מזכיר המדינה האמריקני את הלחץ האמריקני בעניין החדירה למצרים לסכנה של עימות רחב יותר מחוץ לארץ ישראל. במסלול הזה, על {prime_minister} להחליט אם להשאיר את הכוח ממערב לרפיח או להשלים את נסיגתו.
-text_he_review: agent-checked
 options:
   - id: keep_rafah_force
     text: "Keep the force west of Rafah"

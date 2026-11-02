@@ -80,7 +80,7 @@
   "known_staleness": [
    "the October 1948 line is shown until the Egypt agreement (24 February 1949), since no source gives a later line: Isdud (taken 28 October), Majdal (4-5 November) and Yad Mordechai stay on the other side until then; the caption names the source line's date",
    "15 May - 10 June 1948 is one period on the 9 July lines (owner ruling Q4, #674): changes inside it are not shown by day: Atarot (17 May) and Neve Yaakov (18 May) evacuated, the Kinarot valley fighting (18-22 May), Kalia and Beit HaArava abandoned (20 May), Yad Mordechai fallen (24 May; its hex stays blue), RAF Ramat David handed over (26 May), the Jewish Quarter surrendered (28 May), Isdud taken by the Egyptian army (29 May), Nitzanim fallen (7 June), Mishmar HaYarden taken by the Syrian army (10 June); and the British evacuation enclave at Haifa (to 30 June 1948) is not drawn (owner ruling Q5: an info-panel note)",
-   "the south in 15 May - 10 June 1948: only the Jewish settlements whose 1948 site the repository holds are pinned blue (Yad Mordechai, Negba, Nir Am, Dorot, Shoval, Mishmar HaNegev, Hatzerim, Nevatim); Nitzanim, Kfar Darom, Nirim, Be'erot Yitzhak and others are not, their sites having moved after 1948 with no 1948 site sourced here; Revivim, south of the 60-km northing, stays without colour as in every 1948 period",
+   "the south in 15 May - 10 June 1948: only the Jewish settlements whose 1948 site the repository holds are pinned blue (Yad Mordechai, Negba, Nir Am, Dorot, Shoval, Mishmar HaNegev, Hatzerim, Nevatim, Nirim); Nitzanim, Kfar Darom, Be'erot Yitzhak and others are not, their sites having moved after 1948 with no 1948 site sourced here; Revivim, south of the 60-km northing, stays without colour as in every 1948 period",
    "Huleiqat: ISA 6158/1's lines put it on the Israeli side from 9 July 1948, but en.wiki has Egypt retake it on 8 July and Israel capture it on 19 October 1948 (Operation Yoav); its hex is pinned to Egypt for 8 July - 19 October (pinned_towns). A known limit of the periods: the pin covers whole periods inside its window, so the Yoav period (15-29 October) shows the hex Israeli from 15 October, four days before its capture"
   ],
   "contested_places": [
@@ -138,6 +138,36 @@
     "until": "1948-10-19",
     "source": "https://en.wikipedia.org/wiki/Hulayqat",
     "why": "retaken by the Egyptian army on 8 July 1948 and captured by the Giv'ati Brigade on 19 October 1948 in Operation Yoav (en.wiki); ISA 6158/1's 9 July line puts it on the Israeli side, about 1.3 km from the line, so the source and the archive map disagree for these weeks"
+   },
+   {
+    "place": "Huleiqat (Operation Yoav)",
+    "lon": 34.6497,
+    "lat": 31.6008,
+    "holder": "israel",
+    "from": "1948-10-19",
+    "until": null,
+    "source": "https://en.wikipedia.org/wiki/Hulayqat",
+    "why": "captured by the Giv'ati Brigade on 19 October 1948 in Operation Yoav (en.wiki); on the 4.4 km grid (#1183) the hex's centre falls inside the traced Egyptian area of the October line, so the source and the archive map disagree from then on (owner, 26 October 2026, on #1183)"
+   },
+   {
+    "place": "Latrun (opening)",
+    "lon": 34.98139,
+    "lat": 31.83194,
+    "holder": "unspecified",
+    "from": "1948-05-15",
+    "until": "1948-06-11",
+    "source": "https://en.wikipedia.org/wiki/Latrun",
+    "why": "the British handed the fort over to Jordan's Arab Legion on their withdrawal (en.wiki): the other side's from the game's start, unnamed like every holder of the opening snapshot (#674); the traced lines put the hex on the Israeli side on the 4.4 km grid (owner, 26 October 2026, on #1183)"
+   },
+   {
+    "place": "Latrun",
+    "lon": 34.98139,
+    "lat": 31.83194,
+    "holder": "jordan",
+    "from": "1948-06-11",
+    "until": null,
+    "source": "https://en.wikipedia.org/wiki/Latrun",
+    "why": "the British handed the fort over to Jordan's Arab Legion on their withdrawal, the Israeli assaults of May 1948 failed, and under the 1949 armistice it remained a salient under Jordanian control until 1967 (en.wiki); on the 4.4 km grid (#1183) the hex's centre falls on the Israeli side of every traced line, so the source and the lines disagree throughout (owner, 26 October 2026, on #1183)"
    },
    {
     "place": "Yad Mordechai",
@@ -218,6 +248,16 @@
     "until": "1948-06-11",
     "source": "https://en.wikipedia.org/wiki/Nevatim",
     "why": "a Jewish settlement in the uncoloured south (owner ruling Q3, #674: no colour, settlement hexes blue); held throughout"
+   },
+   {
+    "place": "Nirim",
+    "lon": 34.3576,
+    "lat": 31.2377,
+    "holder": "israel",
+    "from": "1948-05-15",
+    "until": "1948-06-11",
+    "source": "https://palmach.org.il/history/database/?itemId=6201",
+    "why": "a Jewish settlement in the uncoloured south (owner ruling Q3, #674: no colour, settlement hexes blue); at Dangur (today Nir Yitzhak); repelled the Egyptian attack of 15 May 1948 and held to the end of the war (Palmach Heritage itemId=6201; Gvati, https://benyehuda.org/read/14684; JTA 17-18 May 1948)"
    }
   ],
   "georeference": {
@@ -1361,6 +1401,13 @@
      "ok": true
     },
     {
+     "place": "Nirim",
+     "want": "israel",
+     "got": "israel",
+     "line_km": 3.0,
+     "ok": true
+    },
+    {
      "place": "Ein Harod",
      "want": "israel",
      "got": "israel",
@@ -1710,6 +1757,13 @@
      "want": "israel",
      "got": "israel",
      "line_km": 1.6,
+     "ok": true
+    },
+    {
+     "place": "Nirim",
+     "want": "israel",
+     "got": "israel",
+     "line_km": 3.0,
      "ok": true
     },
     {
@@ -2065,6 +2119,13 @@
      "ok": true
     },
     {
+     "place": "Nirim",
+     "want": "israel",
+     "got": "israel",
+     "line_km": 3.0,
+     "ok": true
+    },
+    {
      "place": "Ein Harod",
      "want": "israel",
      "got": "israel",
@@ -2414,6 +2475,13 @@
      "want": "israel",
      "got": "israel",
      "line_km": 4.1,
+     "ok": true
+    },
+    {
+     "place": "Nirim",
+     "want": "israel",
+     "got": "israel",
+     "line_km": 3.0,
      "ok": true
     },
     {
@@ -2946,6 +3014,13 @@
      "ok": true
     },
     {
+     "place": "Nirim",
+     "want": "israel",
+     "got": "israel",
+     "line_km": 7.5,
+     "ok": true
+    },
+    {
      "place": "Ein Harod",
      "want": "israel",
      "got": "israel",
@@ -3260,6 +3335,13 @@
      "want": "israel",
      "got": "israel",
      "line_km": 14.1,
+     "ok": true
+    },
+    {
+     "place": "Nirim",
+     "want": "israel",
+     "got": "israel",
+     "line_km": 7.5,
      "ok": true
     },
     {
@@ -3580,6 +3662,13 @@
      "ok": true
     },
     {
+     "place": "Nirim",
+     "want": "israel",
+     "got": "israel",
+     "line_km": 7.5,
+     "ok": true
+    },
+    {
      "place": "Ein Harod",
      "want": "israel",
      "got": "israel",
@@ -3897,6 +3986,13 @@
      "ok": true
     },
     {
+     "place": "Nirim",
+     "want": "israel",
+     "got": "israel",
+     "line_km": 7.5,
+     "ok": true
+    },
+    {
      "place": "Ein Harod",
      "want": "israel",
      "got": "israel",
@@ -4207,6 +4303,13 @@
      "ok": true
     },
     {
+     "place": "Nirim",
+     "want": "israel",
+     "got": "israel",
+     "line_km": 7.5,
+     "ok": true
+    },
+    {
      "place": "Ein Harod",
      "want": "israel",
      "got": "israel",
@@ -4514,6 +4617,13 @@
      "want": "israel",
      "got": "israel",
      "line_km": 14.1,
+     "ok": true
+    },
+    {
+     "place": "Nirim",
+     "want": "israel",
+     "got": "israel",
+     "line_km": 7.5,
      "ok": true
     },
     {

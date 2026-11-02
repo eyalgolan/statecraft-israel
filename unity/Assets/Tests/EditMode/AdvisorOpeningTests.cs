@@ -34,7 +34,7 @@ public class AdvisorOpeningTests
         public readonly AdvisorSession Session;
         public readonly AdvisorPresenter Advisor;
         readonly HudPresenter hud;
-        public Rig(UiText text, SettingsStore? store, bool approved = false, AdvisorSession? session = null)
+        public Rig(UiText text, SettingsStore? store, bool approved = false, AdvisorSession? session = null, bool tellMeMore = false)
         {
             Ui.Root.Q("root").RemoveFromClassList("loading");
             Ui.Root.Q("root").EnableInClassList(UiLanguage.HebrewClass, text["ui.lang"] == UiLanguage.Hebrew);
@@ -42,9 +42,12 @@ public class AdvisorOpeningTests
             hud = new HudPresenter(Ui.Root, Bridge, text); Nav = new ScreenNav(Ui.Root);
             Card = new EventCardPresenter(Ui.Root, Bridge, text, null);
             Session = session ?? new AdvisorSession(approved ? Approved() : Pending(), new AdvisorSettings(store), true);
-            Advisor = new AdvisorPresenter(Ui.Root, Bridge, text, Session, hooks: new AdvisorHooks { Card = Card, CloseScreens = () => Nav.Close() });
+            Advisor = new AdvisorPresenter(Ui.Root, Bridge, text, Session, hooks: new AdvisorHooks { Card = Card, CloseScreens = () => Nav.Close(),
+                OpenPage = tellMeMore ? p => Encyclopedia?.Open(p) : null });   // as GameRoot wires Tell me more
+            Encyclopedia = new EncyclopediaPresenter(Ui.Root, text, Session.Catalog, Nav, Advisor);
         }
-        public void Dispose() { Advisor.Dispose(); Card.Dispose(); Nav.Dispose(); hud.Dispose(); Ui.Dispose(); }
+        public readonly EncyclopediaPresenter Encyclopedia;
+        public void Dispose() { Encyclopedia.Dispose(); Advisor.Dispose(); Card.Dispose(); Nav.Dispose(); hud.Dispose(); Ui.Dispose(); }
     }
 
     [Test]
@@ -54,6 +57,26 @@ public class AdvisorOpeningTests
         Assert.AreEqual(5, AdvisorPresenter.EventStep);
     }
 
+    /// <summary>Tell me more on an opening step (#2095 review): the encyclopedia opens on the step's page over the chain, and
+    /// when it closes the chain is still on that step, showing it (RenderChain hides the popup only while a screen covers it).</summary>
+    [Test]
+    public void TellMeMoreOnAnOpeningStepKeepsTheChainOnItsStep()
+    {
+        using var rig = new Rig(En, Store(), tellMeMore: true); rig.Advisor.NewGame();
+        rig.Advisor.NextStep(); rig.Advisor.NextStep();
+        Assert.AreEqual(2, rig.Session.Chain.Step); Assert.AreEqual("opening.city", rig.Advisor.Shown?.Id);
+        Assert.AreEqual(DisplayStyle.Flex, rig.Ui.Q<Button>("advisor-more").style.display.value, "the step offers Tell me more");
+        rig.Ui.Press("advisor-more");
+        Assert.AreEqual("encyclopedia", rig.Nav.Current); Assert.AreEqual("cities", rig.Encyclopedia.ShowingPage);
+        Assert.AreEqual(2, rig.Session.Chain.Step, "reading the page does not move the chain");
+        rig.Ui.Press("nav-encyclopedia");
+        Assert.IsNull(rig.Nav.Current);
+        Assert.IsTrue(rig.Advisor.InChain, "the chain is still open");
+        Assert.AreEqual(2, rig.Session.Chain.Step, "on the same step");
+        Assert.AreEqual("opening.city", rig.Advisor.Shown?.Id);
+        Assert.IsTrue(rig.Advisor.IsOpen, "and the step shows again");
+    }
+
     [Test]
     public void ThePendingChainDoesNotOpenInHebrewAndIsNotMarkedSeen()
     {
@@ -61,19 +84,19 @@ public class AdvisorOpeningTests
         Assert.IsFalse(rig.Advisor.InChain); Assert.IsFalse(rig.Session.Settings.OpeningSeen);
     }
 
-    /// <summary>While every opening line is pending in Hebrew, How to play has no button that would open nothing, and asking
-    /// for the chain leaves the screen the player is on open.</summary>
+    /// <summary>While every opening line is pending in Hebrew, the encyclopedia has no button that would open nothing, and
+    /// asking for the chain leaves the screen the player is on open.</summary>
     [Test]
     public void ThePendingChainHasNoReopenButtonInHebrew()
     {
         using (var en = new Rig(En, Store()))
-            Assert.AreEqual(DisplayStyle.Flex, en.Ui.Q<Button>("how-to-play-guide").style.display.value, "English: the button shows");
+            Assert.AreEqual(DisplayStyle.Flex, en.Ui.Q<Button>("encyclopedia-opening").style.display.value, "English: the button shows");
         using var rig = new Rig(He, Store());
-        Assert.AreEqual(DisplayStyle.None, rig.Ui.Q<Button>("how-to-play-guide").style.display.value, "Hebrew, all pending: no button");
-        rig.Ui.Press("nav-how-to-play");
+        Assert.AreEqual(DisplayStyle.None, rig.Ui.Q<Button>("encyclopedia-opening").style.display.value, "Hebrew, all pending: no button");
+        rig.Ui.Press("nav-encyclopedia");
         rig.Advisor.OpenChain();
         Assert.IsFalse(rig.Advisor.InChain);
-        Assert.AreEqual("how-to-play", rig.Nav.Current, "How to play stays open");
+        Assert.AreEqual("encyclopedia", rig.Nav.Current, "the encyclopedia stays open");
     }
 
     [Test]
@@ -127,11 +150,11 @@ public class AdvisorOpeningTests
     }
 
     [Test]
-    public void HowToPlaysButtonOpensTheChainAgain()
+    public void TheEncyclopediasButtonOpensTheChainAgain()
     {
-        using var rig = new Rig(En, Store()); rig.Ui.Press("nav-how-to-play"); rig.Ui.Press("how-to-play-guide");
+        using var rig = new Rig(En, Store()); rig.Ui.Press("nav-encyclopedia"); rig.Ui.Press("encyclopedia-opening");
         Assert.IsTrue(rig.Advisor.InChain); Assert.AreEqual(0, rig.Advisor.ChainStep); Assert.IsNull(rig.Nav.Current);
-        Assert.AreEqual("Show the opening advice again", rig.Ui.Q<Button>("how-to-play-guide").text);
+        Assert.AreEqual("Show the opening advice again", rig.Ui.Q<Button>("encyclopedia-opening").text);
     }
 
     [Test]

@@ -3,23 +3,24 @@ using Statecraft.Sim;
 /// <summary>R-CITY-006: approved named-place projections, not a production boundary roster.</summary>
 public class PlayerRegionsContentTests
 {
-    // Geography from the approved #1691 research: Tel Aviv and Jaffa share (-3,19),
-    // Rishon LeZion is (-4,21). Approval of capitals does not establish opening control.
-    internal const string TelAviv = @"
-  - id: tel_aviv_jaffa
-    capital_location: tel_aviv
-    member_hexes: [{ q: -3, r: 19 }]
-    member_locations: [tel_aviv, jaffa]
+    // Geography from the approved #1691 research on the 4.4 km grid (#1183): Ramla and Rehovot share (-4,24),
+    // Rishon LeZion is (-4,23). The shared-hex row is a test region; its capital is not an owner choice.
+    // Approval of capitals does not establish opening control.
+    internal const string RamlaRehovot = @"
+  - id: ramla_rehovot
+    capital_location: ramla
+    member_hexes: [{ q: -4, r: 24 }]
+    member_locations: [ramla, rehovot]
     design_note: 'Named-place projection for testing; not a historical boundary'
-    sources: ['content/map/settlement_hexes.yaml:5-6', 'owner 27 October 2026: approved capital Tel Aviv']
-    capital_approval: APPROVED
+    sources: ['content/map/settlement_hexes.yaml:13,20', 'test fixture: no owner capital choice']
+    capital_approval: NEEDS-RESEARCH
     binding_status: NEEDS-RESEARCH
     opening_control: { status: NEEDS-RESEARCH, value: null }
 ";
     internal const string Central = @"
   - id: central_plain
     capital_location: rishon_lezion
-    member_hexes: [{ q: -4, r: 21 }]
+    member_hexes: [{ q: -4, r: 23 }]
     member_locations: [rishon_lezion]
     design_note: 'Named-place projection for testing; not a historical boundary'
     sources: ['content/map/settlement_hexes.yaml:17', 'owner 27 October 2026: approved capital Rishon LeZion']
@@ -27,7 +28,7 @@ public class PlayerRegionsContentTests
     binding_status: NEEDS-RESEARCH
     opening_control: { status: NEEDS-RESEARCH, value: null }
 ";
-    internal static Content Load(string? regions = "player_regions:\n" + TelAviv, bool modern = true,
+    internal static Content Load(string? regions = "player_regions:\n" + RamlaRehovot, bool modern = true,
         string? overrideText = null, Action<string>? onRead = null)
     {
         var root = RealContentTests.ContentRoot();
@@ -46,39 +47,39 @@ public class PlayerRegionsContentTests
     public void SharedHexRetainsTwoPlaceIdentitiesAndOneCapital()
     {
         var c = Load(); var r = Assert.Single(c.PlayerRegions.Regions).Value;
-        Assert.Equal("tel_aviv_jaffa", r.Id); Assert.Equal("APPROVED", r.CapitalApproval);
+        Assert.Equal("ramla_rehovot", r.Id); Assert.Equal("NEEDS-RESEARCH", r.CapitalApproval);
         Assert.Equal("NEEDS-RESEARCH", r.BindingStatus); Assert.Null(r.OpeningController);
-        Assert.Equal(new[] { "jaffa", "tel_aviv" }, r.MemberLocations);
+        Assert.Equal(new[] { "ramla", "rehovot" }, r.MemberLocations);
         Assert.Single(r.MemberHexes);
-        Assert.Same(r, c.PlayerRegions.AtLocation("jaffa"));
-        Assert.Same(r, c.PlayerRegions.AtCapital("tel_aviv"));
-        Assert.Null(c.PlayerRegions.AtCapital("jaffa"));
-        Assert.Same(r, c.PlayerRegions.AtHex(-3, 19));
+        Assert.Same(r, c.PlayerRegions.AtLocation("rehovot"));
+        Assert.Same(r, c.PlayerRegions.AtCapital("ramla"));
+        Assert.Null(c.PlayerRegions.AtCapital("rehovot"));
+        Assert.Same(r, c.PlayerRegions.AtHex(-4, 24));
         Assert.Null(c.PlayerRegions.AtLocation("tiberias"));
         Assert.NotEmpty(c.Regions); // Immigrant origins retain their own catalogue.
     }
 
     [Theory]
-    [InlineData("id: tel_aviv_jaffa", "id: ''", "id")]
-    [InlineData("capital_location: tel_aviv", "capital_location: tiberias", "capital_location")]
-    [InlineData("capital_location: tel_aviv", "capital_location: ''", "capital_location")]
-    [InlineData("[tel_aviv, jaffa]", "[]", "member_locations")]
-    [InlineData("[tel_aviv, jaffa]", "[tel_aviv, tel_aviv]", "member_locations[1]")]
-    [InlineData("[tel_aviv, jaffa]", "[tel_aviv, missing]", "member_locations[1]")]
-    [InlineData("[{ q: -3, r: 19 }]", "[]", "member_hexes")]
-    [InlineData("[{ q: -3, r: 19 }]", "[{ q: -3 }]", "member_hexes[0]")]
-    [InlineData("[{ q: -3, r: 19 }]", "[{ q: -3, r: 19 }, { q: -3, r: 19 }]", "member_hexes[1]")]
-    [InlineData("[{ q: -3, r: 19 }]", "[{ q: -4, r: 21 }]", "member_locations[0]")]
+    [InlineData("id: ramla_rehovot", "id: ''", "id")]
+    [InlineData("capital_location: ramla", "capital_location: tiberias", "capital_location")]
+    [InlineData("capital_location: ramla", "capital_location: ''", "capital_location")]
+    [InlineData("[ramla, rehovot]", "[]", "member_locations")]
+    [InlineData("[ramla, rehovot]", "[ramla, ramla]", "member_locations[1]")]
+    [InlineData("[ramla, rehovot]", "[ramla, missing]", "member_locations[1]")]
+    [InlineData("[{ q: -4, r: 24 }]", "[]", "member_hexes")]
+    [InlineData("[{ q: -4, r: 24 }]", "[{ q: -4 }]", "member_hexes[0]")]
+    [InlineData("[{ q: -4, r: 24 }]", "[{ q: -4, r: 24 }, { q: -4, r: 24 }]", "member_hexes[1]")]
+    [InlineData("[{ q: -4, r: 24 }]", "[{ q: -4, r: 23 }]", "member_locations[0]")]
     [InlineData("value: null", "value: inferred", "opening_control.value")]
     [InlineData("NEEDS-RESEARCH, value: null", "PARTIAL-EVIDENCE, value: inferred", "opening_control.value")]
     [InlineData("NEEDS-RESEARCH, value: null", "SOURCED, value: null", "opening_control.value")]
     [InlineData("NEEDS-RESEARCH, value: null", "SOURCED, value: [inferred]", "opening_control.value")]
-    [InlineData("capital_approval: APPROVED", "capital_approval: inferred", "capital_approval")]
+    [InlineData("capital_approval: NEEDS-RESEARCH", "capital_approval: inferred", "capital_approval")]
     [InlineData("binding_status: NEEDS-RESEARCH", "binding_status: inferred", "binding_status")]
-    [InlineData("    sources: ['content/map/settlement_hexes.yaml:5-6', 'owner 27 October 2026: approved capital Tel Aviv']", "    sources: []", "sources")]
+    [InlineData("    sources: ['content/map/settlement_hexes.yaml:13,20', 'test fixture: no owner capital choice']", "    sources: []", "sources")]
     public void InvalidRowIsRejectedBeforeContentIsExposed(string from, string to, string field)
     {
-        var e = Assert.Throws<ContentException>(() => Load("player_regions:\n" + TelAviv.Replace(from, to)));
+        var e = Assert.Throws<ContentException>(() => Load("player_regions:\n" + RamlaRehovot.Replace(from, to)));
         Assert.Equal("regions.yaml", e.File); Assert.Equal("player_regions[0]." + field, e.Field);
     }
 
@@ -95,11 +96,11 @@ public class PlayerRegionsContentTests
     [Fact]
     public void DuplicateRegionAndOverlappingGeographyAreRefused()
     {
-        var duplicate = Assert.Throws<ContentException>(() => Load("player_regions:\n" + TelAviv + TelAviv));
+        var duplicate = Assert.Throws<ContentException>(() => Load("player_regions:\n" + RamlaRehovot + RamlaRehovot));
         Assert.Equal("player_regions[1].id", duplicate.Field);
-        var overlap = Assert.Throws<ContentException>(() => Load("player_regions:\n" + TelAviv + TelAviv.Replace("id: tel_aviv_jaffa", "id: central_plain")));
+        var overlap = Assert.Throws<ContentException>(() => Load("player_regions:\n" + RamlaRehovot + RamlaRehovot.Replace("id: ramla_rehovot", "id: central_plain")));
         Assert.Equal("player_regions[1].member_hexes[0]", overlap.Field);
-        var duplicatePlace = Assert.Throws<ContentException>(() => Load("player_regions:\n" + TelAviv + Central.Replace("[rishon_lezion]", "[rishon_lezion, tel_aviv]")));
+        var duplicatePlace = Assert.Throws<ContentException>(() => Load("player_regions:\n" + RamlaRehovot + Central.Replace("[rishon_lezion]", "[rishon_lezion, ramla]")));
         Assert.Equal("player_regions[1].member_locations[1]", duplicatePlace.Field);
     }
 
@@ -110,7 +111,7 @@ public class PlayerRegionsContentTests
         foreach (var pair in new[] { (sea.Q, sea.R), (int.MaxValue, int.MaxValue) })
         {
             var replacement = FormattableString.Invariant($"{{ q: {pair.Item1}, r: {pair.Item2} }}");
-            var e = Assert.Throws<ContentException>(() => Load("player_regions:\n" + TelAviv.Replace("{ q: -3, r: 19 }", replacement)));
+            var e = Assert.Throws<ContentException>(() => Load("player_regions:\n" + RamlaRehovot.Replace("{ q: -4, r: 24 }", replacement)));
             Assert.Equal("regions.yaml", e.File); Assert.Equal("player_regions[0].member_hexes[0]", e.Field);
         }
     }
@@ -118,18 +119,18 @@ public class PlayerRegionsContentTests
     [Fact]
     public void FinalPlacementAndAmbiguousDualIdentityAreChecked()
     {
-        var e = Assert.Throws<ContentException>(() => Load(overrideText: "terrain: []\ncontrol: []\nlocations: [{ id: tel_aviv, hex: { q: -4, r: 21 } }]\n"));
+        var e = Assert.Throws<ContentException>(() => Load(overrideText: "terrain: []\ncontrol: []\nlocations: [{ id: ramla, hex: { q: -4, r: 23 } }]\n"));
         Assert.Equal("regions.yaml", e.File); Assert.Equal("player_regions[0].member_locations[0]", e.Field);
         var c = Load(null);
-        c.MapLocations.Add(new MapLocation { Id = "tel_aviv", Q = -4, R = 21 });
+        c.MapLocations.Add(new MapLocation { Id = "ramla", Q = -4, R = 23 });
         e = Assert.Throws<ContentException>(() => PlayerRegionCatalogue.Validate(c, new[] { Definition() }));
         Assert.Equal("player_regions[0].member_locations[0]", e.Field);
     }
 
     internal static PlayerRegionDefinition Definition() => new PlayerRegionDefinition {
-        Id = "tel_aviv_jaffa", CapitalLocation = "tel_aviv", MemberHexes = new() { new() { Q = -3, R = 19 } },
-        MemberLocations = new() { "tel_aviv", "jaffa" }, DesignNote = "Named-place projection for testing",
-        Sources = new() { "content/map/settlement_hexes.yaml:5-6" }, CapitalApproval = "APPROVED", BindingStatus = "NEEDS-RESEARCH",
+        Id = "ramla_rehovot", CapitalLocation = "ramla", MemberHexes = new() { new() { Q = -4, R = 24 } },
+        MemberLocations = new() { "ramla", "rehovot" }, DesignNote = "Named-place projection for testing",
+        Sources = new() { "content/map/settlement_hexes.yaml:13,20" }, CapitalApproval = "NEEDS-RESEARCH", BindingStatus = "NEEDS-RESEARCH",
         OpeningControl = new() { Status = "NEEDS-RESEARCH", Value = null }
     };
 
@@ -137,10 +138,10 @@ public class PlayerRegionsContentTests
     public void ValidatedGeographyDoesNotAliasMutableInput()
     {
         var row = Definition(); var catalogue = PlayerRegionCatalogue.Validate(Load(null), new[] { row });
-        row.MemberHexes[0].Q = -4; row.MemberLocations.Clear(); row.Sources.Clear();
-        Assert.Equal(-3, catalogue.Regions["tel_aviv_jaffa"].MemberHexes[0].Q);
-        Assert.Equal(2, catalogue.Regions["tel_aviv_jaffa"].MemberLocations.Count);
-        Assert.Single(catalogue.Regions["tel_aviv_jaffa"].Sources);
+        row.MemberHexes[0].Q = -3; row.MemberLocations.Clear(); row.Sources.Clear();
+        Assert.Equal(-4, catalogue.Regions["ramla_rehovot"].MemberHexes[0].Q);
+        Assert.Equal(2, catalogue.Regions["ramla_rehovot"].MemberLocations.Count);
+        Assert.Single(catalogue.Regions["ramla_rehovot"].Sources);
     }
 
     [Fact]
@@ -149,7 +150,7 @@ public class PlayerRegionsContentTests
         const string valleys = @"
   - id: valleys
     capital_location: tiberias
-    member_hexes: [{ q: 10, r: 8 }]
+    member_hexes: [{ q: 11, r: 10 }]
     member_locations: [tiberias]
     design_note: 'Named-place projection for testing; not a historical boundary'
     sources: ['content/map/settlement_hexes.yaml:9', 'owner 27 October 2026: approved capital Tiberias']
@@ -157,15 +158,15 @@ public class PlayerRegionsContentTests
     binding_status: NEEDS-RESEARCH
     opening_control: { status: NEEDS-RESEARCH, value: null }
 ";
-        var c = Load("player_regions:\n" + TelAviv + Central + valleys);
+        var c = Load("player_regions:\n" + RamlaRehovot + Central + valleys);
         Assert.Equal("tiberias", c.PlayerRegions.Regions["valleys"].CapitalLocation);
         Assert.Equal("APPROVED", c.PlayerRegions.Regions["valleys"].CapitalApproval);
         Assert.Equal("rishon_lezion", c.PlayerRegions.Regions["central_plain"].CapitalLocation);
         Assert.Equal("APPROVED", c.PlayerRegions.Regions["central_plain"].CapitalApproval);
         Assert.All(c.PlayerRegions.Regions.Values, r => Assert.Null(r.OpeningController));
-        var partial = Load("player_regions:\n" + TelAviv.Replace("NEEDS-RESEARCH, value: null", "PARTIAL-EVIDENCE, value: null"));
-        Assert.Equal("PARTIAL-EVIDENCE", partial.PlayerRegions.Regions["tel_aviv_jaffa"].ControlStatus);
-        Assert.Null(partial.PlayerRegions.Regions["tel_aviv_jaffa"].OpeningController);
+        var partial = Load("player_regions:\n" + RamlaRehovot.Replace("NEEDS-RESEARCH, value: null", "PARTIAL-EVIDENCE, value: null"));
+        Assert.Equal("PARTIAL-EVIDENCE", partial.PlayerRegions.Regions["ramla_rehovot"].ControlStatus);
+        Assert.Null(partial.PlayerRegions.Regions["ramla_rehovot"].OpeningController);
     }
 
     [Fact]
@@ -175,7 +176,7 @@ public class PlayerRegionsContentTests
         var old = Load(modern: false, onRead: reads.Add);
         Assert.DoesNotContain("regions.yaml", reads); Assert.Empty(old.PlayerRegions.Regions);
         Assert.Equal(old.Hash, Load("malformed: [", modern: false).Hash);
-        Assert.NotEqual(Load().Hash, Load("player_regions:\n" + TelAviv + "\n# consumed provenance\n").Hash);
+        Assert.NotEqual(Load().Hash, Load("player_regions:\n" + RamlaRehovot + "\n# consumed provenance\n").Hash);
         Assert.Empty(Load(null).PlayerRegions.Regions);
         // Legacy also has no read, even when an unrelated file is present and malformed.
         var files = new Dictionary<string, string>(Fixture.Files) { ["regions.yaml"] = "malformed: [" };

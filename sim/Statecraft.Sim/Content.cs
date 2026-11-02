@@ -590,6 +590,19 @@ namespace Statecraft.Sim
         /// <summary>The Arms one recruit group takes when its training starts (R-ARMS-003; D-G6, Q-UNIT-3, #781). Required in the
         /// GDD loop, &gt;= 0.</summary>
         public int? ArmsPerRecruitGroup { get; set; }
+        /// <summary>The most foreign currency, in US$ millions, the player may convert into Money in one turn (R-MONEY-004; #813).
+        /// Required in the GDD loop, &gt;= 0.</summary>
+        public int? DollarsPerTurn { get; set; }
+        /// <summary>The most foreign currency, in US$ millions, the player may convert in the whole game (R-MONEY-004; #813).
+        /// Required in the GDD loop, &gt;= 0.</summary>
+        public int? DollarsTotal { get; set; }
+        /// <summary>IL millions of Money one US$ million of foreign currency converts into, by date (R-MONEY-004; #813): each
+        /// rate from its day on, the first on or before the game's start, the days in increasing order. Required in the GDD
+        /// loop, each rate finite and &gt;= 0. Read through <see cref="IlPerDollarOn"/>.</summary>
+        public List<DollarRate> IlPerDollar { get; set; } = new List<DollarRate>();
+
+        /// <summary>The rate of <see cref="IlPerDollar"/> in force on <paramref name="date"/>: the last one from on or before it.</summary>
+        public double IlPerDollarOn(DateTime date) => IlPerDollar.Last(x => x.From <= date).Rate;
         /// <summary>IL millions per Israeli military formation per turn, not per strength point (R-UNIT-010; Q-UNIT-3).</summary>
         public double? MilitaryUpkeepPerTurn { get; set; }
         /// <summary>Turns served as a recruit before promotion to veteran_soldier (R-UNIT-004; Q-UNIT-2).</summary>
@@ -886,6 +899,15 @@ namespace Statecraft.Sim
         public int? TrainingArms { get; set; }
     }
 
+    /// <summary>One dated exchange rate of mvp.il_per_dollar (R-MONEY-004): IL millions per US$ million from this day (inclusive).
+    /// <see cref="Status"/> is "sourced": the rates are history, not design values (DesignValuesTests skips them).</summary>
+    public sealed class DollarRate
+    {
+        public DateTime From { get; set; }
+        public double Rate { get; set; }
+        public string Status { get; set; } = "";
+    }
+
     /// <summary>One stretch of a budget line's ownership (rules.yaml budget_owners): from this day (inclusive) the office owns the line.</summary>
     public sealed class BudgetOwnerTerm
     {
@@ -1115,6 +1137,10 @@ namespace Statecraft.Sim
         /// while that front holds prisoners or the player's soldiers, has exactly one option and resolves without a draw.
         /// Empty for every other event.</summary>
         public string Prisoners { get; set; } = "";
+        /// <summary>The settlement target (settlement_targets.yaml) whose Deport this follow-up card follows (R-EVT-007; GDD
+        /// Phase 6 PR 9, #801): it fires only once the player's Deport has depopulated that place, has exactly one option,
+        /// resolves without a draw and carries the <c>displacement</c> tag. Empty for every other event.</summary>
+        public string Deported { get; set; } = "";
         /// <summary>The place among the same turn's cards of the same `from` (R-EVT-006): a lower order comes first, before
         /// the id decides. Default 0; degania_defence has 1, so One Army opens the game (owner, 24 October 2026, #1568).</summary>
         public int Order { get; set; }
@@ -1341,6 +1367,9 @@ namespace Statecraft.Sim
         public List<MoneyAccount> Money = new List<MoneyAccount>();
         public List<PopulationAnchor> PopulationAnchors = new List<PopulationAnchor>();
         public List<GameEvent> Events = new List<GameEvent>();
+        /// <summary>Every language in translations/ (#1618 step 2, docs/translations.md "Loading"), by code, each checked
+        /// against this content. Display text, so outside <see cref="Hash"/>; nothing shows it yet.</summary>
+        public List<TranslationSet> Translations = new List<TranslationSet>();
         List<MapHex> _hexes = new List<MapHex>();
         Dictionary<(int, int), MapHex> _hexIndex = new Dictionary<(int, int), MapHex>();
 

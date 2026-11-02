@@ -101,6 +101,20 @@ public class KeyScrollTests
         }
     }
 
+    /// <summary>An open encyclopedia page hides the list, so the keys scroll the page's body (#2095 review).</summary>
+    [UnityTest]
+    public IEnumerator ThePageKeysScrollAnOpenEncyclopediaPage()
+    {
+        using var r = new Rig();
+        var nav = r.Own(new ScreenNav(r.Root));
+        var pedia = r.Own(new EncyclopediaPresenter(r.Root, Text, AdvisorCatalog.Load(), nav, null));
+        pedia.Open("cities");
+        var body = r.Root.Q<ScrollView>("encyclopedia-page-body");
+        Shorten(body, 40f);
+        yield return Frames(4);
+        PagesThrough(r.Root, body, "encyclopedia", false, "encyclopedia page");
+    }
+
     [UnityTest]
     public IEnumerator FocusInTheCandidateListScrollsThatListNotTheCards()
     {

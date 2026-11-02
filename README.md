@@ -40,13 +40,13 @@ You sit in the prime minister's chair from the founding of the state. Each turn 
 
 A deterministic C# simulation runs underneath. The same choices always give the same result, and a saved game is the seed plus the list of commands. Unity draws a real terrain map of the country built from elevation and climate data.
 
-The game design of record is now [docs/GDD.md](docs/GDD.md) (v0.3, 30 October 2026): monthly turns in which you build and defend Israel from 1948 to 1951 with units, cities and construction, and choose your ministers. The list above is the game you can play today. The monthly turns, Attention, the cities, training, the pioneers' building and the unit orders, attacks included, are in. Settlement control is only partly in: your units can capture a target town, and a dialog then offers Raid and withdraw or Occupy; when an occupation ends, you choose Annex or Withdraw. The [build plan](docs/superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md) brings the rest in phases.
+The game design of record is now [docs/GDD.md](docs/GDD.md) (v0.3, 30 October 2026, with the owner's answers of 1 November 2026): monthly turns in which you build and defend Israel from 1948 to 1951 with units, cities and construction, and choose your ministers. The list above is the game you can play today. The monthly turns, Attention, the cities, training, the pioneers' building and the unit orders, attacks included, are in. Settlement control is only partly in: your units can capture a target town, and a dialog then offers Raid and withdraw or Occupy; when an occupation ends, you choose Annex or Withdraw. The [build plan](docs/superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md) brings the rest in phases.
 
 ## What it looks like today
 
 <p align="center">
   <img src="docs/images/build-gameplay.webp" alt="Real gameplay, 15 May to 15 June 1948: a zoom and pan across Tel Aviv, Jaffa and the coastal plain, a click on Tel Aviv that opens its city panel, the One Army and Defence of Degania decisions, End turn selecting each unit that needs orders for a Skip (the Golani and Carmeli Brigades, then after a cut the Negev Brigade), and the date moving to 15 June, with the turn report and the First Truce card" width="820">
-  <br><em>Real gameplay, main at f57bd39, 2026-11-01. One hard cut leaves out five of the eight units End turn selects.</em>
+  <br><em>Real gameplay, main at 32e7d9c, 2026-11-01. One hard cut leaves out five of the eight units End turn selects.</em>
 </p>
 <p align="center">
   <img src="docs/images/build-m3-map.jpg" alt="Current build, 15 May 1948: the One Army event card with an archival photograph over the map of the coast, with the top bar, the left icon column and the minimap" width="820">
@@ -67,7 +67,7 @@ It is an early, honest prototype.
 **What works now (M3, 1948–1951):**
 - Monthly turns from 15 May 1948 to 15 January 1952.
 - The start screen, and an opening after New game: three sourced stills that you can skip, or replay from the start screen.
-- English and Hebrew: you choose the language on the start screen, and can switch it in Settings. The Hebrew event cards wait for a native speaker's review.
+- English and Hebrew: you choose the language on the start screen, and can switch it in Settings. Most of the advisors' encyclopedia pages in Hebrew still wait for a native speaker's review.
 - The 1948 map: towns, villages and Bedouin camps, railways and roads, and the 1949 armistice zones and lines from each agreement's date.
 - The 1948 brigades, 101 Squadron and the first navy ships as tokens at their sourced positions. A brigade's card can order it to move, attack, fortify or hold, and shows the odds before an attack. The Arab forces move and attack on their own, and the turn report lists what they did.
 - The twelve cities, with housing, jobs and training.
@@ -76,7 +76,7 @@ It is an early, honest prototype.
 - The Budget screen.
 - The Defence screen, which shows the escalation ladder and the reserve call-up as the events set them.
 - Sourced historical events from the 1948 war through the 1951 foreign-currency crisis, most with an archival photograph.
-- The "Why?" panel, a turn report after End turn, a short How to play screen, and the advisors David Ben-Gurion, Golda Meyerson and Moshe Dayan, who walk you through the first turn.
+- The "Why?" panel, a turn report after End turn, and the advisors David Ben-Gurion, Golda Meyerson and Moshe Dayan, who walk you through the first turn and explain each mechanic in their encyclopedia.
 - A Timeline screen that sets your course beside the historical record.
 - An end screen with the outcome, the score and the date you met each objective beside the historical date.
 - Share: a screenshot of your game for X, Facebook, Instagram, WhatsApp, Telegram or LinkedIn.

@@ -42,7 +42,7 @@ namespace Statecraft.HexTiles
     /// pieces). S = HexM is the hex circumradius; a hex is sqrt(3) S across flat to flat. Start values, tuned from captures.</summary>
     public static class HexScale
     {
-        public const float HexM = 5000f;
+        public const float HexM = 4400f;   // the game hex size, content/map/hexes.json hex_size_km (4.4 km since #1183)
         /// <summary>Keep pieces this share of S inside the hexagon, so tile edges read.</summary>
         public const float InsetShare = 0.07f;
         /// <summary>Every placed piece is drawn this much larger than its prototype asks (Tal, 19 Oct: "the models a bit

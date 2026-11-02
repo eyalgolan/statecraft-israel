@@ -23,11 +23,4 @@ public class ReleaseGateTests
 
         Assert.Equal(new[] { "displacement" }, ReleaseGate.SensitiveUnreviewed(ContentLoader.Load(files)));
     }
-
-    [Fact]
-    public void TheRealContentHasNoDisplacementEventYet()
-    {
-        var content = ContentLoader.Load(RealContentTests.ContentRoot());
-        Assert.DoesNotContain(content.Events, e => e.Tags.Contains("displacement", System.StringComparer.OrdinalIgnoreCase));
-    }
 }

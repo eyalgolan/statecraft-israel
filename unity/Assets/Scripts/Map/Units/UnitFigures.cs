@@ -393,6 +393,9 @@ namespace Statecraft.Game.Map.Units
             }
             if (code != null) code.enabled = false;
             if (CollectionCatalog.Animated.Contains(id) && !CollectionCatalog.IsFullQualityGeneratedInfantry(id)) UnitFigureDetail.Of(piece).Add(holder, id);   // C05 has no idle: he stays far
+            // A model that arrives mid-move walks with its token at once (#1866).
+            var motion = piece.GetComponentInParent<UnitTokenMotion>();
+            if (motion != null && (motion.Moving || motion.Attacking)) motion.RefreshPose();
             GeometryChanged();
         }
 

@@ -41,7 +41,8 @@ namespace Statecraft.Game.UI
         /// <summary>The top bar's meters, in its order (Game.uxml's "meters"), by the ids their elements are named after.</summary>
         public static readonly string[] MeterIds = { "treasury", "immigration", "security", "support", "cohesion", "standing", "fx" };
 
-        /// <summary>How many causes a meter's explanation names (#1037): the turn report and the bar's tip.</summary>
+        /// <summary>How many causes a meter's explanation names (#1037): the turn report and the bar's tip. Money adds one
+        /// Other line after them for the rest (#2212).</summary>
         public const int MaxCauses = 2;
 
         /// <summary>The meter named <paramref name="id"/> (one of <see cref="MeterIds"/>).</summary>
@@ -56,16 +57,19 @@ namespace Statecraft.Game.UI
         /// (StepResult.Why) for the quantity the meter shows, each worded by <paramref name="line"/> (CauseText.Line: the
         /// player's language, B1), the largest change first (each meter's causes share its unit),
         /// the sim's order breaking a tie, at most <see cref="MaxCauses"/>. Nothing is computed or reworded here: a cause is
-        /// matched by its target, as <see cref="From"/> reads the state (Money: the Treasury and the debt; Immigration: the
+        /// matched by its target, as <see cref="From"/> reads the state (Money: the sim's EconomySystem.MovesMoney, the lines
+        /// that add up to the change in Treasury minus Debt, job income included and borrowing not, #2199; Immigration: the
         /// population system's arrivals; Social cohesion: morale; International support: intl_standing; Foreign currency:
         /// fx_reserves; Security: security). Public support is an average the sim computes from the indicators
-        /// (EffectsSystem.Approval) and no cause names it, so it has none.</summary>
-        public static IReadOnlyList<string> Causes(StepResult? turn, string meter, Func<Cause, string> line)
+        /// (EffectsSystem.Approval) and no cause names it, so it has none. Money adds one line after them for the causes
+        /// left out, summed by the sim (EconomySystem.OtherMoney, #2212), so its lines add up to the change; none when
+        /// nothing is left over or the rest shows as IL 0.0m. <paramref name="c"/> is the game's content (its currency).</summary>
+        public static IReadOnlyList<string> Causes(StepResult? turn, string meter, Content c, Func<Cause, string> line)
         {
             if (turn == null) return Array.Empty<string>();
             Func<Cause, bool> match = meter switch
             {
-                "treasury" => w => w.Target == "treasury" || w.Target == "debt",
+                "treasury" => w => EconomySystem.MovesMoney(w),
                 "immigration" => w => w.System == "population",
                 "security" => w => w.Target == "security",
                 "cohesion" => w => w.Target == "morale",
@@ -73,8 +77,10 @@ namespace Statecraft.Game.UI
                 "fx" => w => w.Target == "fx_reserves",
                 _ => w => false,
             };
-            return turn.Why.Select((w, i) => (w, i)).Where(x => match(x.w) && x.w.Delta != 0)
-                .OrderByDescending(x => Math.Abs(x.w.Delta)).ThenBy(x => x.i).Take(MaxCauses).Select(x => line(x.w)).ToList();
+            var shown = turn.Why.Select((w, i) => (w, i)).Where(x => match(x.w) && x.w.Delta != 0)
+                .OrderByDescending(x => Math.Abs(x.w.Delta)).ThenBy(x => x.i).Take(MaxCauses).Select(x => x.w).ToList();
+            if (meter == "treasury" && EconomySystem.OtherMoney(c, turn.Why, shown) is Cause other) shown.Add(other);
+            return shown.Select(line).ToList();
         }
 
         public static HudModel From(SimBridge b, UiText t)

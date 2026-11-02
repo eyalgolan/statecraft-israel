@@ -13,10 +13,23 @@ namespace Statecraft.Sim
         public string Type { get; }
         public string Side { get; }
         public string HomeCity { get; }
+        /// <summary>#2202: the hex the unit stood on when the sim wrote the line, read from the <see cref="Unit"/> passed in. So
+        /// the map can replay a move from the line alone, not from a state that the player's instant attack may already have
+        /// changed. Output only: neither hashed nor saved. Per key:
+        /// unit_moved (the player's, the enemy's and the route step's moves): the hex before the move; Args[0] is the hex after.
+        /// retreated: the hex before the retreat. Only defenders retreat (attackers stay, Q-COMBAT-3), so it is the
+        /// engagement's hex; Args[0] is where it went. withdrew: the captured place's hex it left; Args[1] is where it went.
+        /// engagement: each unit's own hex, so the attackers' differ from the engagement's hex (Args[0]) and the defenders' match it.
+        /// destroyed, surrendered_*: the hex it stood on when it left the state (an attacker's own hex, or the engagement's).
+        /// arrived: the hex it reached, as the line is written after the move. fortify_lost: before the move when a move or
+        /// an attack writes it, but the hex it has already moved to when the resolver's order step writes it (Args[0] is the
+        /// hex it left). Every other key names a unit that does not move on that line, so it is the unit's hex.</summary>
+        public int Q { get; }
+        public int R { get; }
 
         public UnitRef(Unit u)
         {
-            Id = u.Id; Type = u.Type; Side = u.Side; HomeCity = u.HomeCity;
+            Id = u.Id; Type = u.Type; Side = u.Side; HomeCity = u.HomeCity; Q = u.Q; R = u.R;
         }
     }
 

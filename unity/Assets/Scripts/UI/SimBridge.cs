@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Statecraft.Sim;
 
 namespace Statecraft.Game.UI
@@ -46,6 +47,10 @@ namespace Statecraft.Game.UI
         public event Action<IReadOnlyList<Rejection>>? TurnEnded;
         /// <summary>Raised after a move or unit order is committed, with the Why lines it added (an attack's result).</summary>
         public event Action<IReadOnlyList<Cause>>? Committed;
+        /// <summary>The engagements the player has just seen resolve, raised after <see cref="Changed"/> has redrawn the map
+        /// (UnitAttackPresenter plays them, #1867): an attack order's at once, and at End Turn only the turn's new ones, not
+        /// the open turn's attack orders, which the turn runs again first. Never on a load or a refused turn.</summary>
+        public event Action<IReadOnlyList<Cause>>? CombatResolved;
         /// <summary>Raised when Queue refuses an order, with the player-facing reason.</summary>
         public event Action<string>? Refused;
         /// <summary>A validated order was refused specifically for Attention; presentation-only advice signal.</summary>
@@ -200,36 +205,95 @@ namespace Statecraft.Game.UI
                     return Unknown("city_project", p.ProjectKind, Content.ProjectKinds.Select(x => x.Id)) ?? Unknown("city", p.City, Content.Cities.Select(x => x.Id));
                 case CancelProject x:
                     return Unknown("city_project", x.Project.ToString(System.Globalization.CultureInfo.InvariantCulture), State.CityProjects.Keys.Select(k => k.ToString(System.Globalization.CultureInfo.InvariantCulture)));
-                // Buying Arms (#781): no ids; the sim refuses a count below one itself.
+                // Buying Arms (#781): no ids; the sim refuses a count below one, and borrowing past the debt ceiling (#2198), itself.
                 case BuyArms _: return null;
                 // Answering a capture (#797): the sim refuses a place not awaiting the choice, or an outcome not built yet, with
                 // its own reason and never throws on the id. The capture dialog is PR 10.
                 case ResolveCapture _: return null;
                 // Answering the end of an occupation (#799): the sim refuses a place not awaiting the end with its own reason.
                 case EndOccupation _: return null;
+                // Converting dollars (#813, R-MONEY-004): no ids; the sim refuses the amount itself (EconomySystem.DollarsRefusal).
+                case ConvertDollars _: return null;
                 default: return text["order.invalid"];
             }
         }
 
-        /// <summary>The sim's English refusals that have a UI string: Movement's artillery refusal and Orders.Check's (#2045).
+        /// <summary>The sim's English refusals that have a UI string: Orders.Check's (#2045) and the Arms purchase refused at the debt ceiling (#2198).
         /// Keyed on the English, so the same words from another check (Movement, Combat, Training, Demobilization give "That
         /// unit is not yours", "There is no such unit" too) read in the UI's language as well.</summary>
         static readonly Dictionary<string, string> ReasonKeys = new Dictionary<string, string>
         {
-            [Movement.MissingArtilleryMovement] = "unit.artillery_move_missing",
+            // #813 (R-MONEY-004): the dollar conversion's refusals.
+            [EconomySystem.RefusedDollarsMinimum] = "dollars.refused_minimum",
+            [EconomySystem.RefusedDollarsNotAtWar] = "dollars.refused_not_at_war",
+            [EconomySystem.RefusedDollarsMonthly] = "dollars.refused_monthly",
+            [EconomySystem.RefusedDollarsTotal] = "dollars.refused_total",
+            [EconomySystem.RefusedDollarsReserves] = "dollars.refused_reserves",
             [Orders.RefusedUnknownOrder] = "unit.order_refused.unknown_order",
             [Orders.RefusedNoUnit] = "unit.order_refused.no_unit",
             [Orders.RefusedNotMilitary] = "unit.order_refused.not_military",
             [Orders.RefusedNotYours] = "unit.order_refused.not_yours",
             [Orders.RefusedArtilleryHold] = "unit.order_refused.artillery_hold",
             [Orders.RefusedAlready] = "unit.order_refused.already",
+            [Combat.RefusedNoHex] = "unit.attack_refused.no_hex",
+            [Combat.RefusedTruce] = "unit.attack_refused.truce",
+            [Combat.RefusedOutOfRange] = "unit.attack_refused.out_of_range",
+            [Combat.RefusedNotAdjacent] = "unit.attack_refused.not_adjacent",
+            [Combat.RefusedNoEnemy] = "unit.attack_refused.no_enemy",
+            [Combat.RefusedNoPoints] = "unit.attack_refused.no_points",
+            [Training.RefusedNoCity] = "unit.reinforce_refused.no_city",
+            [Training.RefusedNoTraining] = "unit.reinforce_refused.no_training",
+            [Training.RefusedCount] = "unit.reinforce_refused.count",
+            [Pools.RefusedDebtCeiling] = "arms.refused_debt_ceiling",
         };
 
-        /// <summary>A sim refusal in the UI's language where it has a string (<see cref="ReasonKeys"/>), else the sim's English as
-        /// given. The queue's refusals, the unit card's (InfoPanelPresenter) and the end of turn's (ToastPresenter) go through it.</summary>
-        public static string ReasonText(UiText text, string reason) => ReasonKeys.TryGetValue(reason, out var key) ? text[key] : reason;
+        /// <summary>The sim's refusals that carry values (#2072: Combat.Check's Arms, Training.Reinforce's unit, settlement,
+        /// course and counts): each format constant, read back from its English with its values in order, and its key.</summary>
+        static readonly (Regex pattern, string key)[] ReasonFormats = new (string format, string key)[]
+        {
+            (Combat.RefusedArms, "unit.attack_refused.arms"),
+            (Training.RefusedNotInCity, "unit.reinforce_refused.not_in_city"),
+            (Training.RefusedNoCourse, "unit.reinforce_refused.no_course"),
+            (Training.RefusedNoLosses, "unit.reinforce_refused.no_losses"),
+            (Training.RefusedRoomOne, "unit.reinforce_refused.room_one"),
+            (Training.RefusedRoomMany, "unit.reinforce_refused.room_many"),
+            (Training.RefusedNoCamp, "unit.reinforce_refused.no_camp"),
+            (Training.RefusedNoIndustry, "unit.reinforce_refused.no_industry"),
+            (Training.RefusedNoHakhshara, "unit.reinforce_refused.no_hakhshara"),
+            (Training.RefusedIdle, "unit.reinforce_refused.idle"),
+            (Training.RefusedArms, "unit.reinforce_refused.arms"),
+        }.Select(x => (new Regex("^" + string.Join("(.+?)", Regex.Split(x.format, @"\{\d+\}").Select(Regex.Escape)) + "$"), x.key)).ToArray();
 
-        string? Refuse(string reason) { reason = ReasonText(text, reason); Refused?.Invoke(reason); return reason; }
+        /// <summary>A sim refusal in the UI's language where it has a string (<see cref="ReasonKeys"/>, <see cref="ReasonFormats"/>),
+        /// else the sim's English as given. The queue's refusals, the unit card's (InfoPanelPresenter) and the end of turn's
+        /// (ToastPresenter) go through it. With <paramref name="c"/> a value that is a settlement's name reads as the UI names the
+        /// town (its Hebrew name from <paramref name="townsHe"/> in Hebrew), and a course's English as why.cause.course.*.</summary>
+        public static string ReasonText(UiText text, string reason, Content? c = null, IReadOnlyDictionary<string, string>? townsHe = null)
+        {
+            if (ReasonKeys.TryGetValue(reason, out var key)) return text[key];
+            foreach (var (pattern, format) in ReasonFormats)
+                if (pattern.Match(reason) is { Success: true } m)
+                    return text.Format(format, m.Groups.Cast<Group>().Skip(1).Select(v => (object)ReasonValue(text, v.Value, c, townsHe)).ToArray());
+            return reason;
+        }
+
+        static string ReasonValue(UiText text, string value, Content? c, IReadOnlyDictionary<string, string>? townsHe)
+        {
+            if (c == null) return value;
+            var town = c.SettlementNames.FirstOrDefault(n => n.Value == value).Key;
+            if (town != null)
+                return text["ui.lang"] == UiLanguage.Hebrew && townsHe != null && townsHe.TryGetValue(town, out var he) && !string.IsNullOrWhiteSpace(he) ? he : value;
+            var course = c.UnitTypes.FirstOrDefault(t => t.Facility != "" && Training.Course(t) == value);
+            return course != null ? text["why.cause.course." + Training.CourseId(course)] : value;
+        }
+
+        /// <summary>Each settlement's Hebrew name (name_he), by id, for <see cref="Refuse"/>'s Hebrew (#2072): GameRoot sets it, as
+        /// it sets the card's and the toast's.</summary>
+        public IReadOnlyDictionary<string, string>? TownNamesHe { get; set; }
+
+        string? Refuse(string reason) { reason = ReasonText(text, reason, Content, TownNamesHe); Refused?.Invoke(reason); return reason; }
+
+        static IReadOnlyList<Cause> Engagements(IEnumerable<Cause> why) => why.Where(x => x.Key == WhyKeys.Engagement).ToList();
 
         static void Notify(Action? handlers)
         {
@@ -263,7 +327,9 @@ namespace Statecraft.Game.UI
                 var refused = Session.Commit(c);
                 if (refused != null) return Refuse(refused);
                 Notify(Changed);
-                Notify(Committed, Session.Now.Why.Skip(before).ToList());
+                var added = Session.Now.Why.Skip(before).ToList();
+                Notify(Committed, added);
+                Notify(CombatResolved, Engagements(added));
                 return null;
             }
             if (c is AllocateBudget ab) c = new AllocateBudget(new Dictionary<string, double>(ab.Shares));   // a snapshot: later edits to the caller's dictionary must not change the order
@@ -293,6 +359,9 @@ namespace Statecraft.Game.UI
         public StepResult EndTurn()
         {
             StepResult r;
+            // The turn runs the open turn's orders first, as the open turn did (Simulation.Step and Preview share RunOrders),
+            // so its first causes are the open turn's, already played when each order was given (#1867).
+            int replayed = Session.Now.Why.Count;
             var batch = Session.Committed.Concat(deferred).ToList();
             var date = TurnStart.Date;
             try { r = step(Session, deferred.ToList()); }   // a snapshot: the queue is cleared below
@@ -312,6 +381,7 @@ namespace Statecraft.Game.UI
             LastBatch = batch; LastBatchDate = date;
             deferred.Clear(); skipped.Clear();
             Notify(Changed);
+            Notify(CombatResolved, Engagements(r.Why.Skip(replayed)));
             Notify(TurnEnded, r.Rejected);
             return r;
         }

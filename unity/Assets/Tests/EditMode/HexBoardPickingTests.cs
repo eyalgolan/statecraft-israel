@@ -54,9 +54,9 @@ public class HexBoardPickingTests
         ShadowFit.Restore(); VisualToggles.Clear(); Statecraft.Game.Map.Kits.KitScale.Reset();
     }
 
-    [TestCase(1, 13, "flat")]
-    [TestCase(4, 13, "hills")]
-    [TestCase(3, 17, "mountain")]
+    [TestCase(1, 15, "flat")]   // hexes of the 4.4 km grid (#1183)
+    [TestCase(4, 15, "hills")]
+    [TestCase(4, 19, "mountain")]
     public void ObliqueClicksAgreeWithTheDisplayedGround(int q, int r, string terrain)
     {
         var definition = HexBoard.Load(HexTilesLook.Board);
@@ -105,8 +105,8 @@ public class HexBoardPickingTests
         Debug.Log($"HEX_PICK_RESULT {terrain} checked={checkedClicks} mismatches={failures.Count}");
         Assert.IsEmpty(failures, string.Join("\n", failures));
     }
-    [TestCase(0, 13)] // a sea hex cut out of the board
-    [TestCase(-8, 32)] // real map outside the central board
+    [TestCase(0, 14)] // a sea hex cut out of the board
+    [TestCase(-9, 36)] // real map outside the central board
     public void BoardHolesAndOutsideGroundStillPickTheRealMap(int q, int r)
     {
         var point = new Vector3(0, 0, map.Frame.LengthM) + HexGeometry.Centre(q, r, HexScale.HexM);
@@ -124,7 +124,7 @@ public class HexBoardPickingTests
     [Test]
     public void NearerPropCollidersDoNotChangeTheClickedHex()
     {
-        var point = new Vector3(0, 0, map.Frame.LengthM) + HexGeometry.Centre(1, 13, HexScale.HexM);
+        var point = new Vector3(0, 0, map.Frame.LengthM) + HexGeometry.Centre(1, 15, HexScale.HexM);
         point.y = board.transform.position.y + board.SampleHeight(point);
         rig.LookAt = point; rig.Distance = 20000f; rig.Yaw = 90f; rig.TopInset = 0f; rig.Apply();
         var screen = cam.WorldToScreenPoint(point);
@@ -149,7 +149,7 @@ public class HexBoardPickingTests
     [Test]
     public void RemovingAndReplacingTheBoardDoesNotKeepAStalePickSurface()
     {
-        var point = new Vector3(0, 0, map.Frame.LengthM) + HexGeometry.Centre(1, 13, HexScale.HexM);
+        var point = new Vector3(0, 0, map.Frame.LengthM) + HexGeometry.Centre(1, 15, HexScale.HexM);
         try
         {
             HexTilesLook.Apply(map, false);

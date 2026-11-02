@@ -81,7 +81,14 @@ public class UnitsInPlayTests
             Assert.AreEqual(f.Side, row.Side, f.Row);
             var anchor = row.Anchors.First(a => string.CompareOrdinal(a.From, start) <= 0 && string.CompareOrdinal(start, a.To) < 0);
             Assert.AreEqual(anchor.Place, f.Anchor, f.Row);
-            Assert.AreEqual(HexPicker.FromLonLat(anchor.Lon, anchor.Lat, hexes.bounds, hexes.hex_size_km), (f.Q, f.R), f.Row);
+            var picked = HexPicker.FromLonLat(anchor.Lon, anchor.Lat, hexes.bounds, hexes.hex_size_km);
+            // tools/unit_anchor_hexes.py moves two kinds of anchor to a land neighbour (#1183): one in a water hex (Haifa's
+            // point on the 4.4 km grid, hexgrid.settlement_hex) and an enemy's on a settlement's hex (the Syrian Army's start
+            // on Degania Alef's, the owner's nearest-free-neighbour rule).
+            if ((f.Q, f.R) != picked)
+                Assert.IsTrue((!hexes.hexes.Single(h => (h.q, h.r) == picked).land || (f.Side != "israel" && C.SettlementHexes.Any(x => (x.Q, x.R) == picked)))
+                    && MapActions.Distance(f.Q, f.R, picked.q, picked.r) == 1 && hexes.hexes.Single(h => (h.q, h.r) == (f.Q, f.R)).land,
+                    $"{f.Row}: {(f.Q, f.R)} is a land neighbour of the anchor's water or settlement hex {picked}");
         }
     }
 
@@ -494,7 +501,7 @@ public class UnitsInPlayTests
             Assert.Less(Km("brigade_7", "Hulda", 34.88333, 31.83222), 2.6f, "the 7th stands by Hulda");
             Assert.Greater(Km("brigade_7", "Hulda", 34.985, 31.77528), 3f, "and well away from Sar'a");
             Assert.Greater(Km("harel", "Sha'ar HaGai", 34.985, 31.77528), 3f, "Harel well away from Sar'a too");
-            Assert.AreEqual((-2, 23), Spot("harel", "Sha'ar HaGai"));
+            Assert.AreEqual((-2, 26), Spot("harel", "Sha'ar HaGai"));
             foreach (var (u, a) in anchors.Where(x => x.a.PlaceHex != null))
                 Assert.AreEqual((a.PlaceHex[0], a.PlaceHex[1]), (layer.Spots[a].Q, layer.Spots[a].R), $"{u.Id} {a.Place}: in its place_hex");
             var etzioni = layer.Spots[anchors.Single(x => x.u.Id == "etzioni").a];
@@ -1318,4 +1325,32 @@ public class UnitsInPlayTests
         }
         finally { foreach (var m in new[] { plain, again, prop }) UnityEngine.Object.DestroyImmediate(m); }
     }
+
+    const string NumberHe = "number_he: מספר בדיקה, number_he_sources: " + HeSource + ", number_he_review: agent-checked, ";
+
+    /// <summary>#1219 item 2, on a fixture row: number_he shows only in the Hebrew subtitle and falls back to the
+    /// English number when left out; the English card is unchanged; its source joins both footers without clearing
+    /// the draft note (#902), as the other Hebrew card texts' do (#558).</summary>
+    [Test]
+    public void TheHebrewNumberShowsOnlyInTheHebrewSubtitleAndFallsBackToTheEnglish()
+    {
+        var u = ProseUnit(unitHe: NumberHe);
+        Assert.AreEqual(("מספר בדיקה", "agent-checked"), (u.NumberHe, u.NumberHeReview));
+        var he = ProseCard(u, He);
+        StringAssert.Contains("מספר בדיקה", he.Subtitle, "the Hebrew card's subtitle carries number_he");
+        var english = ProseCard(u, Text);
+        var plain = ProseCard(ProseUnit(), Text);
+        Assert.AreEqual((plain.Title, plain.Subtitle, plain.Body, plain.Note), (english.Title, english.Subtitle, english.Body, english.Note),
+            "the English card is the same as for the row without number_he");
+        StringAssert.DoesNotContain("מספר בדיקה", english.Subtitle);
+        StringAssert.Contains("he.example.org", he.Footer, "number_he's sources are listed, as the other Hebrew texts' are");
+        StringAssert.Contains("he.example.org", english.Footer, "in both languages");
+        Assert.AreEqual(He["unit.draft_wikipedia"], he.Note, "a Hebrew text's source does not check a fact (#902)");
+        Assert.IsTrue(UnitData.IsWikipediaOnly(u));
+
+        var fallback = ProseCard(ProseUnit(), He).Subtitle;
+        Assert.AreEqual(he.Subtitle.Replace("מספר בדיקה", "1"), fallback, "no number_he: the Hebrew subtitle has the English number in its place");
+        StringAssert.DoesNotContain("מספר בדיקה", fallback);
+    }
+
 }
