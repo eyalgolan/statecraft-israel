@@ -181,14 +181,18 @@ namespace Statecraft.Sim
             // A refused order changes nothing, as the player's does, and is reported as the player's are (Rejected); a row with
             // no unit on the board orders nobody. gdd-0.1 only: under gdd-0.3 the operation cards stay effect-free for units
             // (owner, 31 October 2026, #749). The owner's answer 1 on #2087: the order ends with the operation (OrderEnds), and
-            // its march goes round every enemy-held place but the one it was sent to (Movement.Search).
+            // its march goes round every enemy-held place but the one it was sent to (Movement.Search). The owner's ruling of
+            // 2 November 2026 on #2087 ("Keep a garrison in Nazareth (Recommended)"): the order never takes the last Israeli unit
+            // off an occupied place (R-CTRL-013), so it is not given to that unit, and the refusal says why.
             if (c.Ruleset != SaveGame.Gdd03Ruleset)
                 foreach (var x in o.UnitOrders)
                 {
                     int id = c.StartingForces.FindIndex(f => f.Row == x.Unit);   // the unit with id i is the i-th force (R-UNIT-006)
-                    if (id >= 0 && s.Units.TryGetValue(id, out var u) && u.Side == c.StartingForces[id].Side && u.Type == c.StartingForces[id].Type
-                        && Movement.GiveGoTo(c, s, id, x.Q, x.R, spent ?? new Dictionary<int, int>(), why, OrderEnds(c, x)) != null)
-                        rejected?.Add(new Rejection(new UnitOrder(id, Movement.GoTo, x.Q, x.R), Orders.RefusedCardOrder));
+                    if (id < 0 || !s.Units.TryGetValue(id, out var u) || u.Side != c.StartingForces[id].Side || u.Type != c.StartingForces[id].Type) continue;
+                    var refused = SettlementControl.LastGarrison(c, s, u) ? Orders.RefusedLastGarrison
+                        : Movement.GiveGoTo(c, s, id, x.Q, x.R, spent ?? new Dictionary<int, int>(), why, OrderEnds(c, x)) != null ? Orders.RefusedCardOrder
+                        : null;
+                    if (refused != null) rejected?.Add(new Rejection(new UnitOrder(id, Movement.GoTo, x.Q, x.R), refused));
                 }
             foreach (var kv in o.SetPolicy.Where(k => s.Policies.ContainsKey(k.Key)).OrderBy(k => k.Key, StringComparer.Ordinal))
             {

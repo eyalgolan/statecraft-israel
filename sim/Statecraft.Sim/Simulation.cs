@@ -140,7 +140,7 @@ namespace Statecraft.Sim
         static void RunOrders(Content c, GameState s, IReadOnlyList<Command> commands, Dictionary<int, int> spent,
                               Dictionary<int, (int Q, int R)> attacked, List<Cause> why, List<Rejection> rejected)
         {
-            if (c.IsGdd) Movement.ContinueRoutes(c, s, spent, why);   // R-MOVE-009: the route step, before the turn's orders
+            if (c.IsGdd) Movement.ContinueRoutes(c, s, spent, why, rejected);   // R-MOVE-009: the route step, before the turn's orders
             if (c.IsGdd) SettlementControl.CaptureHeld(c, s, why);
             var priceRung = s.Rung;   // every command this turn is priced at the rung the turn started at (R-MONEY-004's war is that rung too)
             var dollarsAtStart = s.DollarsConverted;   // R-MONEY-004: the turn's limit counts every conversion order in it

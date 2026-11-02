@@ -698,6 +698,91 @@ public class EnemyAITests
         Assert.Equal((3, 0, Movement.GoTo), (r.State.Units[0].Q, r.State.Units[0].R, r.State.Units[0].Order));
     }
 
+    // R-ENEMY-005, R-CTRL-013 (owner, 2 November 2026, #2087: "Keep a garrison in Nazareth (Recommended)"; the option: "A
+    // delegated order never pulls the last unit out of an occupied town; Golani's order is skipped (or another unit goes) and
+    // the card says so"). mvp-occupy-cost's state on 15 December 1948: Golani (unit 0) alone on Nazareth, which awaits the end
+    // of its occupation, and Operation Horev pending. The turn delegates Horev's historical option (a hard anchor in
+    // Historical mode, no draw), whose order sends Golani to the Julis camp (-8, 28).
+    // Red without the rule: GiveGoTo gives Golani the go-to and Advance moves it off Nazareth at once, so the turn lists no
+    // refusal for unit 0 (Assert.Single fails), Golani is no longer on Nazareth's hex, and step 10 finds no unit there and
+    // ends the occupation as a Raid (R-CTRL-013), so Nazareth's record is gone (the last assert fails with a missing key).
+    [Fact]
+    public void HorevsOrderNeverTakesTheLastUnitOffNazareth()
+    {
+        var s = AloneInNazareth("1948-12-15");
+        Assert.Contains("operation_horev", s.PendingEvents);
+        var r = Simulation.Step(Real, s, Array.Empty<Command>());
+        var refused = Assert.Single(r.Rejected, j => j.Command is UnitOrder { Unit: 0 });
+        Assert.Equal(Orders.RefusedLastGarrison, refused.Reason);
+        var order = Assert.IsType<UnitOrder>(refused.Command);
+        Assert.Equal((Movement.GoTo, (int?)-8, (int?)28), (order.Order, order.Q, order.R));
+        var golani = r.State.Units[0];
+        Assert.Equal((Nazareth.Q, Nazareth.R), (golani.Q, golani.R));
+        Assert.NotEqual(Movement.GoTo, golani.Order);
+        Assert.False(r.State.CardOrders.ContainsKey(0));
+        Assert.Equal(SettlementControl.AwaitingEnd, r.State.Settlements["nazareth"].State);
+    }
+
+    // The same turn with a second Israeli unit on Nazareth: Golani is not the last, so Horev's order goes ahead ("or another
+    // unit goes" is not built: the card orders the unit it names) and the second unit keeps the occupation. Green with or
+    // without the rule; it is red for a rule that is too wide, one that held back any unit on an occupied place.
+    [Fact]
+    public void HorevsOrderGoesAheadWhenAnotherUnitHoldsNazareth()
+    {
+        var s = AloneInNazareth("1948-12-15");
+        var g = s.Units[0];
+        var second = s.NextId++;
+        s.Units.Add(second, new Unit(second, g.Type, g.Q, g.R, g.Service, g.Side, g.Strength, "", "", g.HomeCity, g.Full));
+        var r = Simulation.Step(Real, s, Array.Empty<Command>());
+        Assert.DoesNotContain(r.Rejected, j => j.Command is UnitOrder { Unit: 0 });
+        Assert.Equal((Movement.GoTo, "-8,28"), (r.State.Units[0].Order, r.State.Units[0].OrderTarget));
+        Assert.NotEqual((Nazareth.Q, Nazareth.R), (r.State.Units[0].Q, r.State.Units[0].R));
+        Assert.Equal((Nazareth.Q, Nazareth.R), (r.State.Units[second].Q, r.State.Units[second].R));
+        Assert.Equal(SettlementControl.AwaitingEnd, r.State.Settlements["nazareth"].State);
+    }
+
+    // "Never": the check holds on every turn of the march, not only when the card gives the order. A card's go-to still
+    // standing for Golani alone on Nazareth (as when the order waited a turn and the other unit then left) is taken away at the
+    // route step, listed with the same reason, and Golani stays. The 15 November 1948 turn is used, before Horev, so Horev's
+    // own order is not in the turn; Hiram's orders name Carmeli and the 7th Brigade, not Golani.
+    // Red without the rule: ContinueRoutes advances the card's go-to, Golani leaves Nazareth, no refusal names unit 0, and step
+    // 10 ends the occupation. The player's own go-to (no CardOrders entry) is never held back: Golani leaves.
+    [Fact]
+    public void AStandingCardOrderStopsRatherThanEmptyNazareth()
+    {
+        var s = AloneInNazareth("1948-11-15");
+        Assert.DoesNotContain("operation_horev", s.PendingEvents);
+        var g = s.Units[0];
+        s.Units[0] = new Unit(g.Id, g.Type, g.Q, g.R, g.Service, g.Side, g.Strength, Movement.GoTo, "-8,28", g.HomeCity, g.Full, g.CombatXp);
+        var mine = Simulation.Step(Real, s, Array.Empty<Command>());   // the player's go-to, before the card's entry is added
+        Assert.DoesNotContain(mine.Rejected, j => j.Command is UnitOrder { Unit: 0 });
+        Assert.NotEqual((Nazareth.Q, Nazareth.R), (mine.State.Units[0].Q, mine.State.Units[0].R));
+
+        s.CardOrders[0] = new DateTime(1949, 2, 24);   // Golani's Julis anchor's window (R-ENEMY-005)
+        var r = Simulation.Step(Real, s, Array.Empty<Command>());
+        Assert.Equal(Orders.RefusedLastGarrison, Assert.Single(r.Rejected, j => j.Command is UnitOrder { Unit: 0 }).Reason);
+        Assert.Equal((Nazareth.Q, Nazareth.R, ""), (r.State.Units[0].Q, r.State.Units[0].R, r.State.Units[0].Order));
+        Assert.False(r.State.CardOrders.ContainsKey(0));
+        Assert.Equal(SettlementControl.AwaitingEnd, r.State.Settlements["nazareth"].State);
+    }
+
+    static SettlementTarget Nazareth => Real.SettlementTargets.Single(t => t.Id == "nazareth");
+
+    /// <summary>mvp-occupy-cost played to <paramref name="until"/> (its own steps, the run's end replaced): Golani (unit 0,
+    /// the first starting force) alone on Nazareth, which awaits the end of its occupation. The card orders apply under
+    /// gdd-0.1 only (EventSystem.Resolve), which the real content is.</summary>
+    static GameState AloneInNazareth(string until)
+    {
+        Assert.NotEqual(SaveGame.Gdd03Ruleset, Real.Ruleset);
+        Assert.Equal("golani", Real.StartingForces[0].Row);
+        var text = System.IO.File.ReadAllText(System.IO.Path.Combine(ScenarioTests.Dir(), "mvp-occupy-cost.yaml"));
+        var s = Scenario.Parse(System.Text.RegularExpressions.Regex.Replace(text, "(?m)^until: .*$", "until: " + until)).Play(Real);
+        Assert.Equal(DateTime.Parse(until, System.Globalization.CultureInfo.InvariantCulture), s.Date);
+        Assert.Equal(new[] { 0 }, s.Units.Values.Where(u => (u.Q, u.R) == (Nazareth.Q, Nazareth.R) && u.Side == Movement.PlayerSide).Select(u => u.Id));
+        Assert.Equal(SettlementControl.AwaitingEnd, s.Settlements["nazareth"].State);
+        return s;
+    }
+
     // R-ENEMY-003, #2114 (O4, owner ruling 1 Nov 2026): under exact gdd-0.3 the threshold is the catalogue's
     // combat.enemy_attack_ratio, 1.5:1 (150%); gdd-0.1 keeps mvp.enemy_attack_ratio_percent (the fixture's 200).
     static Content Gdd03() => ContentLoader.Load(Fixture.Write(Gdd03Files()));

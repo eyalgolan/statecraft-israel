@@ -123,9 +123,15 @@ namespace Statecraft.Sim
 
         static void Stop(GameState s, Unit u, string key, string line, string hex, List<Cause> why)
         {
+            Clear(s, u);
+            why.Add(UnitLines.Line(key, line, new[] { u }, hex));
+        }
+
+        /// <summary>Takes the unit's go-to away where it stands.</summary>
+        static void Clear(GameState s, Unit u)
+        {
             s.Units[u.Id] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity, u.Full, u.CombatXp);
             s.CardOrders.Remove(u.Id);   // a stopped go-to is no operation card's order any more (R-ENEMY-005)
-            why.Add(UnitLines.Line(key, line, new[] { u }, hex));
         }
 
         /// <summary>R-MOVE-008: gives the player's unit the go-to order and moves it at once as far as its points left reach.
@@ -157,8 +163,12 @@ namespace Statecraft.Sim
 
         /// <summary>R-MOVE-009, the route step: at the start of the player's turn, in ascending id, each unit with a go-to moves
         /// on (<see cref="Advance"/>). An enemy unit next to it does not stop it (Q-MOVE-4: no zone of control). An operation
-        /// card's go-to (R-ENEMY-005) whose day has come stops instead, where the unit stands: the order ends with the operation.</summary>
-        internal static void ContinueRoutes(Content c, GameState s, Dictionary<int, int> spent, List<Cause> why)
+        /// card's go-to (R-ENEMY-005) whose day has come stops instead, where the unit stands: the order ends with the operation.
+        /// A card's go-to whose unit is now the last Israeli unit on an occupied place (SettlementControl.LastGarrison; owner,
+        /// 2 November 2026, #2087: "Keep a garrison in Nazareth (Recommended)") is taken away too, the unit stays, and
+        /// <paramref name="rejected"/> lists it with <see cref="Orders.RefusedLastGarrison"/>, as the card's order would be at
+        /// the start. The player's own go-to is never held back.</summary>
+        internal static void ContinueRoutes(Content c, GameState s, Dictionary<int, int> spent, List<Cause> why, List<Rejection>? rejected = null)
         {
             // A card's order the player replaced (fortify, hold, attack, send home) or whose unit is gone is no card's order.
             foreach (var id in s.CardOrders.Keys.ToList())
@@ -170,6 +180,11 @@ namespace Statecraft.Sim
                 var card = s.CardOrders.TryGetValue(id, out var until);
                 if (card && s.Date >= until)
                     Stop(s, u, WhyKeys.CardOrderEnded, $"Unit {id} stopped: the operation's order to hex {HexText(q, r)} has ended", HexText(q, r), why);
+                else if (card && SettlementControl.LastGarrison(c, s, u))
+                {
+                    Clear(s, u);
+                    rejected?.Add(new Rejection(new UnitOrder(id, GoTo, q, r), Orders.RefusedLastGarrison));
+                }
                 else Advance(c, s, u, q, r, spent, why, card);
             }
         }
