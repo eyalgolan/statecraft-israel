@@ -218,13 +218,11 @@ namespace Statecraft.Game.UI
             }
         }
 
-        /// <summary>The sim's English refusals that have a UI string: Movement's artillery refusal, Orders.Check's (#2045) and
-        /// the Arms purchase refused at the debt ceiling (#2198).
+        /// <summary>The sim's English refusals that have a UI string: Orders.Check's (#2045) and the Arms purchase refused at the debt ceiling (#2198).
         /// Keyed on the English, so the same words from another check (Movement, Combat, Training, Demobilization give "That
         /// unit is not yours", "There is no such unit" too) read in the UI's language as well.</summary>
         static readonly Dictionary<string, string> ReasonKeys = new Dictionary<string, string>
         {
-            [Movement.MissingArtilleryMovement] = "unit.artillery_move_missing",
             // #813 (R-MONEY-004): the dollar conversion's refusals.
             [EconomySystem.RefusedDollarsMinimum] = "dollars.refused_minimum",
             [EconomySystem.RefusedDollarsNotAtWar] = "dollars.refused_not_at_war",
