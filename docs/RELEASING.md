@@ -48,7 +48,10 @@ macOS IL2CPP parity check is not an MVP release gate.
 
    The four `--startscreen` passes (owner decision on #967, 17 October 2026) open the start screen every player sees
    first, which the golden and smoke run skips: New game, and Play the recording then New game, in English and in
-   Hebrew. Each must print `PASS`. A console exception, `RECORDING failed` or `BOOT FAIL` fails it (#908).
+   Hebrew. Each must print `PASS`. A console exception, `RECORDING failed` or `BOOT FAIL` fails it (#908). So does a map
+   without Israeli and enemy unit tokens on turn 1 (the new game) or turn 2 (after End turn): `UNITS FAIL`, read from the
+   `units drawn` line the unit layer logs under `?navlog`; a build that logs no such line fails too (owner ruling on #2056,
+   1 November 2026).
 
    The English-only `--persistence` pass waits for each save's matching IndexedDB commit and checks that both reloads
    restore its date, turn and state hash.
