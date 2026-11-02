@@ -27,9 +27,9 @@ namespace Statecraft.Game.UI
         };
 
         /// <summary>Shows <paramref name="b"/> (or <paramref name="row"/>, the row it alone fills) only where
-        /// <see cref="Shown"/>, and calls <paramref name="quit"/> when it is pressed. The presenters bind through
-        /// <see cref="BindInGame"/>. Returns the unbinding, for the presenter's Dispose (a language switch builds the
-        /// screens again over the same buttons).</summary>
+        /// <see cref="Shown"/>, and calls <paramref name="quit"/> when it is pressed. The start screen binds through
+        /// <see cref="BindInGame"/>; Settings binds its own press, which asks first (#2188). Returns the unbinding, for
+        /// the presenter's Dispose (a language switch builds the screens again over the same buttons).</summary>
         public static Action Bind(Button b, RuntimePlatform p, Action quit, VisualElement? row = null)
         {
             if (b == null) throw new ArgumentNullException(nameof(b));
