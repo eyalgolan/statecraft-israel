@@ -64,10 +64,13 @@ namespace Statecraft.Game.UI
         // Outbound test transport only; the shipping bridge remains one-way. Like the WebGL page, it is a page the companion
         // can be turned on for; it does not turn it on.
         internal Action<string>? CompanionSend { get; set; }
+        /// <summary>Tests: the page address the companion reads ("?companion=1"); null reads the real one
+        /// (Application.absoluteURL, which the Editor leaves empty).</summary>
+        internal string? CompanionAddress { get; set; }
         internal WebCompanion? Companion => companion;
         bool CompanionPage => Application.platform == RuntimePlatform.WebGLPlayer || CompanionSend != null;
         /// <summary>Whether a Begin runs the companion: where a page can show it and WebCompanion.On says so.</summary>
-        bool CompanionWanted() => CompanionPage && WebCompanion.On(companionPicked, SettingsFile()?.Read(SettingsPresenter.CompanionKey), Application.absoluteURL);
+        bool CompanionWanted() => CompanionPage && WebCompanion.On(companionPicked, SettingsFile()?.Read(SettingsPresenter.CompanionKey), CompanionAddress ?? Application.absoluteURL);
         CaptureDialogPresenter? capture;
         /// <summary>Tests: the capture dialog of the last Begin.</summary>
         internal CaptureDialogPresenter? Capture => capture;

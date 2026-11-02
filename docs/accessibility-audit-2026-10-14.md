@@ -517,10 +517,11 @@ and turns on in one of two ways:
 - the Settings row "Screen reader companion" (`settings.companion`), which shows only in the WebGL player; it applies at
   once, is kept with the other settings, and once pressed it wins over the address for the rest of that page's visit;
 - `?companion=1` in the page address, a whole query parameter with the whole value `1` (`?companion=0`, `?companion`
-  and `?companion=10` do not turn it on).
+  and `?companion=10` do not turn it on). The owner's ruling, 2 November 2026: "Link wins, that visit (Recommended)".
+  The address turns the companion on for that visit even over a stored "off", and the saved choice is not changed.
 
 `WebCompanion.On` holds the rule. `WebCompanionTests` pins it, the Settings row and the real root (off at start, on and
-off from Settings, kept for a later game). The page carries the panel's skeleton from load, `hidden`, so with the
+off from Settings, kept for a later game; the address over a stored "off" for that visit only). The page carries the panel's skeleton from load, `hidden`, so with the
 companion off there is no empty landmark or heading in the accessibility tree. The first snapshot shows the panel and
 writes its status line in a later task, so the live region is in the tree before its first announcement; a repeated
 status on a new turn is also cleared and written again in a later task. Whether VoiceOver announces both is part of the

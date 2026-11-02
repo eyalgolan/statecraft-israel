@@ -389,6 +389,49 @@ public sealed class WebCompanionTests
         }
     }
 
+    // The owner's ruling of 2 November 2026, "Link wins, that visit (Recommended)": "?companion=1" turns the companion on
+    // for that visit over a stored "off", and the saved Settings choice is kept for later visits.
+    [Test]
+    public void TheLinkTurnsTheCompanionOnForThatVisitAndKeepsTheSavedOff()
+    {
+        var dir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "statecraft-companion-" + System.Guid.NewGuid().ToString("N"));
+        var inputs = Statecraft.Game.Boot.GameInputs.FromDisk(Statecraft.Game.Paths.Content, Statecraft.Game.Paths.StreamingMap);
+        try
+        {
+            UnityEditor.SceneManagement.EditorSceneManager.OpenScene("Assets/Map.unity", UnityEditor.SceneManagement.OpenSceneMode.Single);
+            Object.FindFirstObjectByType<Statecraft.Game.Map.MapScene>().Build(inputs.Map);
+            var game = Object.FindFirstObjectByType<GameRoot>();
+            game.Store = new Statecraft.Game.SaveStore(dir);
+            game.Settings = new Statecraft.Game.SettingsStore(dir);
+            game.Settings.Write(SettingsPresenter.CompanionKey, "off");
+            var saved = System.IO.File.ReadAllText(game.Settings.FilePath);
+            var sent = new List<string>(); game.CompanionSend = sent.Add;
+            game.Language = UiLanguage.English;
+            game.CompanionAddress = "https://example.org/statecraft/index.html?companion=1";
+            game.Begin(inputs, 0);
+            Assert.IsNotNull(game.Companion, "the link wins over a stored \"off\" for this visit");
+            game.Companion!.Refresh();
+            Assert.IsNotEmpty(sent, "and it publishes");
+            game.Begin(inputs, 0);
+            Assert.IsNotNull(game.Companion, "a New Game in the same visit keeps it on");
+            Assert.AreEqual(saved, System.IO.File.ReadAllText(game.Settings.FilePath), "the link writes nothing to the saved settings");
+            Assert.AreEqual("off", game.Settings.Read(SettingsPresenter.CompanionKey));
+            // A later visit without the link: the saved "off" holds again.
+            game.CompanionAddress = "https://example.org/statecraft/index.html";
+            game.Begin(inputs, 0);
+            Assert.IsNull(game.Companion, "a later visit without the link keeps the saved \"off\"");
+            Assert.AreEqual("null", sent[sent.Count - 1], "and the page's panel is cleared");
+            Assert.AreEqual(saved, System.IO.File.ReadAllText(game.Settings.FilePath));
+            game.enabled = false;
+        }
+        finally
+        {
+            UnityEditor.SceneManagement.EditorSceneManager.NewScene(UnityEditor.SceneManagement.NewSceneSetup.EmptyScene, UnityEditor.SceneManagement.NewSceneMode.Single);
+            Statecraft.Game.Map.VisualToggles.Clear();
+            if (System.IO.Directory.Exists(dir)) System.IO.Directory.Delete(dir, true);
+        }
+    }
+
     static readonly Statecraft.Sim.Content GameContent = Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content);
 
     static Statecraft.Game.UI.SimBridge NewBridge(UiText text) =>

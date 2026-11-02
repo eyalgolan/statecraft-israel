@@ -43,7 +43,8 @@ namespace Statecraft.Game.UI
         /// <summary>Whether the mirror runs: off unless asked for. The owner's ruling of 1 November 2026, "Opt-in for now
         /// (Recommended)", until the VoiceOver test and the phone layout are done. <paramref name="picked"/> is the Settings
         /// switch pressed in this page's session, which wins; else the stored choice (<see cref="SettingsPresenter.CompanionKey"/>
-        /// "on") or "?companion=1" in the page address turns it on.</summary>
+        /// "on") or "?companion=1" in the page address turns it on. The address wins over a stored "off" for that visit and
+        /// writes nothing: the owner's ruling of 2 November 2026, "Link wins, that visit (Recommended)".</summary>
         public static bool On(bool? picked, string? stored, string? url) => picked ?? (stored == "on" || Asked.IsMatch(url ?? ""));
 
         readonly VisualElement root;
