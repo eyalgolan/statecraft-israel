@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using Statecraft.Game;
+using Statecraft.Game.Boot;
 using Statecraft.Game.Map;
 using Statecraft.Game.Map.Routes;
 using Statecraft.Sim;
@@ -74,12 +75,12 @@ public class RouteTests
         for (int i = 1; i + 1 < along.Count; i++) Assert.AreEqual(120f * i, along[i], 1e-3f);
     }
 
-    internal static MapScene BuildMap()
+    internal static MapScene BuildMap(MapInputs inputs = null)
     {
         EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
         var map = new GameObject("MapScene").AddComponent<MapScene>();
         map.Configure(Load("Terrain"), Load("SettlementMarker"), Load("HexSelection"), Load("Sea"), Load("MapFrame"));
-        map.Build();
+        if (inputs == null) map.Build(); else map.Build(inputs);
         return map;
     }
 

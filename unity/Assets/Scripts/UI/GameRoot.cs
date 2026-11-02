@@ -893,7 +893,7 @@ namespace Statecraft.Game.UI
             // Dated routes (the Burma Road from June 1948); in the GDD loop the corridors by their built segments (#792).
             Statecraft.Game.Map.Routes.RouteLayer.ShowAt(map, Bridge.State.Date,
                 Bridge.Content.IsGdd ? Statecraft.Game.Map.Routes.RouteLayer.BuiltSegments(Bridge.Content, Bridge.State) : null);
-            // The true armistice lines (#237, the "armisticelines" map mode), each from its own date; nothing without the mode.
+            // The true armistice lines (#237; on unless "noarmisticelines" turns them off, #196), each from its own date.
             ArmisticeLines.ShowAt(map, Bridge.State.Date);
             // Tal Heuberger's whole-town models on their towns far off (#663, "Whole model far, buildings near"), streamed after the first frame; the ma'abara from its date.
             // The camps and housing built as city projects bring theirs too, as the placement layer draws them (#1275).
