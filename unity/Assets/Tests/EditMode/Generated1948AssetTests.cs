@@ -104,8 +104,9 @@ public class Generated1948AssetTests
     /// on the CPU. The checks reject a wrong material and a map without mipmaps.</summary>
     [Test] public void PlacedGeneratedPropsKeepTheirSourceMeshMaterialAndMap()
     {
-        var props = CollectionCatalog.Ids.Where(CollectionCatalog.IsGeneratedProp).ToList();
-        CollectionAssert.IsSubsetOf(new[] { CollectionCatalog.BedouinTent, CollectionCatalog.SyrianR35 }, props);
+        // #2085's generated whole towns are placed the same way (TownLandmarks), so the same checks hold for them.
+        var props = CollectionCatalog.Ids.Where(id => CollectionCatalog.IsGeneratedProp(id) || CollectionCatalog.IsGeneratedTown(id)).ToList();
+        CollectionAssert.IsSubsetOf(new[] { CollectionCatalog.BedouinTent, CollectionCatalog.SyrianR35, CollectionCatalog.TiberiasTown }, props);
         foreach (string id in props)
         {
             string dir = $"{CollectionCatalog.Folder}/{id}", fbx = CollectionCatalog.SourceModelPath(id), map = $"{dir}/{id}_basecolor.jpg";
@@ -144,6 +145,31 @@ public class Generated1948AssetTests
             CollectionAssert.AreEqual(new[] { "no mipmaps" }, MapProblems(probe.sRGBTexture, probe.mipmapEnabled, probe.isReadable, imported.mipmapCount));
         }
         finally { AssetDatabase.DeleteAsset(root); }
+    }
+
+    /// <summary>#2085's generated whole towns: each colour map keeps its source size on every platform but is capped at 2048 px
+    /// on WebGL only, by an overridden WebGL block (#2259's proposal for the web bundles), with an automatic format and no
+    /// crunch. Tal Heuberger's four base-colour JPGs are 2048 x 2048 (read from #2085's blobs), so the cap keeps every source
+    /// pixel and only stops a later, larger map from growing the web bundle.</summary>
+    [Test] public void GeneratedTownColourMapsAreCappedAt2048OnWebGLOnly()
+    {
+        var towns = CollectionCatalog.Ids.Where(CollectionCatalog.IsGeneratedTown).ToList();
+        CollectionAssert.AreEqual(new[] { CollectionCatalog.TiberiasTown, CollectionCatalog.SafedTown, CollectionCatalog.NetanyaTown }, towns);
+        foreach (string id in towns)
+        {
+            string map = $"{CollectionCatalog.Folder}/{id}/{id}_basecolor.jpg";
+            var ti = (TextureImporter)AssetImporter.GetAtPath(map);
+            Assert.IsNotNull(ti, map);
+            ti.GetSourceTextureWidthAndHeight(out int width, out int height);
+            Assert.AreEqual((2048, 2048), (width, height), map + ": #2085's source size");
+            var web = ti.GetPlatformTextureSettings("WebGL");
+            Assert.IsTrue(web.overridden, map + ": a WebGL override");
+            Assert.AreEqual(2048, web.maxTextureSize, map);
+            Assert.Less((int)web.format, 0, map + ": an automatic WebGL format, not a pinned one");
+            Assert.IsFalse(web.crunchedCompression, map);
+            Assert.IsFalse(ti.GetPlatformTextureSettings("Standalone").overridden, map + ": WebGL only");
+            Assert.GreaterOrEqual(ti.maxTextureSize, Math.Max(width, height), map + ": the default keeps the source size");
+        }
     }
 
     /// <summary>The five houses placed in the town kits (owner, 27 October 2026, #756) stream after the first frame like the other

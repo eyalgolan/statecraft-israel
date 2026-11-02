@@ -68,7 +68,14 @@ namespace Statecraft.Game.Map.Collection
             // download). This is a group name only, like People; no bundle carries it.
             GeneratedFigures = "collection-generated-figures",
             // Generated static props signed off the same day, each in a bundle of its own, "collection-" + id (a group name only).
-            GeneratedProps = "collection-generated-props";
+            GeneratedProps = "collection-generated-props",
+            // Tal Heuberger's generated whole towns (#2085, #1288), each in a bundle of its own, "collection-" + id (a group name only).
+            GeneratedTowns = "collection-generated-towns";
+
+        /// <summary>Tal Heuberger's whole-town models of Tiberias, Safed and Netanya (#2085; #1288 asks for one each), Far landmarks on
+        /// their towns (TownLandmarks.ById). Their sources are asset-sources/prepared-towns-20261031/ (#2085); the Unity FBX is a
+        /// documented compatibility conversion of the textured GLB, as for the generated props.</summary>
+        public const string TiberiasTown = "tiberias-town-v1", SafedTown = "safed-town-v1", NetanyaTown = "netanya-town-v1";
 
         /// <summary>The Egyptian infantry, Tal Heuberger's figure for the Egyptian Expeditionary Force (owner, 27 October 2026,
         /// "Sign off all 19" and, for Egypt, "One token").</summary>
@@ -158,6 +165,12 @@ namespace Statecraft.Game.Map.Collection
                 "generated-1948-14-syrian-renault-r35",
                 "generated-1948-08-khaki-canvas-tent",
             }),
+            (GeneratedTowns, new[]
+            {
+                "tiberias-town-v1",
+                "safed-town-v1",
+                "netanya-town-v1",
+            }),
         };
 
         /// <summary>A bundle that is opened only after another has settled (opened or failed) when both are asked for: the Arab
@@ -199,13 +212,17 @@ namespace Statecraft.Game.Map.Collection
         /// <summary>The generated static props: full-quality originals with one prefab beside the FBX, like the generated figures.</summary>
         public static bool IsGeneratedProp(string id) => id == BedouinTent || id == EgyptianSpitfire || id == SyrianR35 || id == KhakiTent;
 
+        /// <summary>The generated whole towns (#2085): static full-quality originals with one prefab beside the FBX, like the
+        /// generated props, drawn far off by TownLandmarks.</summary>
+        public static bool IsGeneratedTown(string id) => id == TiberiasTown || id == SafedTown || id == NetanyaTown;
+
         /// <summary>The model file a catalogued id is imported from: <c>&lt;id&gt;.fbx</c> beside its prefab, except the vehicle
         /// delivery's documented <c>&lt;id&gt;-compatibility.fbx</c> (docs/vehicle-review-2026-10-22.md).</summary>
         public static string SourceModelPath(string id) =>
             $"{(IsBuilding(id) ? BuildingsFolder : Folder)}/{id}/{id}{(id == SyrianR35 ? "-compatibility" : "")}.fbx";
 
-        /// <summary>Every generated model (figure or prop): imported by its own lossless importer, not the original Collection's.</summary>
-        public static bool IsGenerated(string id) => IsFullQualityGeneratedInfantry(id) || IsGeneratedProp(id);
+        /// <summary>Every generated model (figure, prop or whole town): imported by its own lossless importer, not the original Collection's.</summary>
+        public static bool IsGenerated(string id) => IsFullQualityGeneratedInfantry(id) || IsGeneratedProp(id) || IsGeneratedTown(id);
 
         // Categories describe placement; every model streams in a bundle of its own, except #1763's two figures, which share theirs.
         public static IEnumerable<string> Ids => Groups.SelectMany(b => b.Ids).Concat(Kits.TownModels.Ids);
