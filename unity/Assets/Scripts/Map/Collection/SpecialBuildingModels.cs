@@ -70,12 +70,14 @@ namespace Statecraft.Game.Map.Collection
             /// <summary>The first day it is no longer drawn, or null: drawn from <see cref="From"/> on.</summary>
             public readonly DateTime? To;
             public readonly Siting Site;
+            /// <summary>Red-first stubs: the row's own scale over the world scale, and whether it may stand at a town's edge.</summary>
+            public readonly float Scale; public readonly bool TownEdge;
             /// <summary>The SeaCraft coast's place (<see cref="Siting.Shore"/>) or the route's id (<see cref="Siting.Road"/>).</summary>
             public readonly string Along;
             public Want(string key, string model, DateTime from, double lon, double lat, string source)
                 : this(key, model, from, null, lon, lat, source, Siting.Seeded, "") { }
             public Want(string key, string model, DateTime from, DateTime? to, double lon, double lat, string source, Siting site, string along)
-            { Key = key; Model = model; From = from; To = to; Lon = lon; Lat = lat; Source = source; Site = site; Along = along; }
+            { Key = key; Model = model; From = from; To = to; Lon = lon; Lat = lat; Source = source; Site = site; Along = along; Scale = 1f; TownEdge = false; }
             public bool Covers(DateTime date) => date >= From && (To == null || date < To.Value);
         }
 

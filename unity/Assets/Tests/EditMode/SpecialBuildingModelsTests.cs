@@ -169,7 +169,10 @@ namespace Statecraft.Game.Tests
                 // Abraham's Well's first ring is not clear (its point is inside Beersheba, ringed by the town's kit and roads): it
                 // stands on a widened ring (SpecialBuildingModels.WidenRings), pinned by AbrahamsWellStandsByItsPointAtBeershebaAtEveryDate.
                 else if (p.Key != "beersheba_abrahams_well") Assert.Less(off, inside + 4f * r, p.Key + " stands near its sourced point (beyond the town's footprint)");
-                Assert.IsTrue(TownLandmarks.Clear(flat, r, footprints), p.Key + " clear of the towns");
+                // The four props stand at a town's edge right by their points (owner on #2274: "Bigger, closer"), inside a footprint
+                // if need be: AssertClearAndUpright checks them against the towns' buildings instead.
+                if (!SpecialBuildingModels.EveryPlacement.Single(x => x.Key == p.Key).TownEdge)
+                    Assert.IsTrue(TownLandmarks.Clear(flat, r, footprints), p.Key + " clear of the towns");
                 Assert.IsFalse(ground.OnRoute(flat, r), p.Key + " clear of the routes");
                 Assert.IsFalse(ground.OnToken(flat, r, After), p.Key + " clear of the unit tokens");
                 Assert.IsTrue(TownLandmarks.Clear(flat, r, spots), p.Key + " clear of the others");
@@ -250,6 +253,33 @@ namespace Statecraft.Game.Tests
             Assert.AreEqual(3.75f, SpecialBuildingModels.RealLengthM(SpecialBuildingModels.Well), 1e-6f, "Abraham's Well's diameter (he.wiki)");
         }
 
+        /// <summary>The owner, 2 November 2026, on #2274: "Bigger, closer (Recommended)" ("Draw these four at about 3x so they read at
+        /// close zoom"). The scale is each prop's own, in its data row (Want.Scale): three times the one world scale for the four
+        /// props, which stand at a town's edge (Want.TownEdge); every other row keeps the world scale and the town clearance.</summary>
+        [Test]
+        public void TalsPropsAreDrawnAtThreeTimesTheWorldScaleFromTheirRows()
+        {
+            var props = new[] { "beersheba_abrahams_well", "tel_aviv_altalena_sandbags", "haifa_quay_crates", "abu_ghosh_road_wall" };
+            foreach (var w in SpecialBuildingModels.EveryPlacement)
+            {
+                bool prop = props.Contains(w.Key);
+                Assert.AreEqual(prop ? 3f : 1f, w.Scale, w.Key + "'s scale");
+                Assert.AreEqual(prop, w.TownEdge, w.Key + " stands at a town's edge");
+                Assert.AreEqual(SpecialBuildingModels.RealLengthM(w.Model) * SpecialBuildingModels.WorldScale * w.Scale, SpecialBuildingModels.SizeOf(w.Model), 0.01f, w.Key);
+            }
+            Assert.AreEqual(3.75f * 24f * 3f, SpecialBuildingModels.SizeOf(SpecialBuildingModels.Well), 0.01f, "the well, 270 m across");
+            var map = OpenMap();
+            var layer = CollectionGeometryFixture.Special(map, new DateTime(1948, 6, 15))!; AnswerAll();
+            foreach (var key in props)
+            {
+                var p = layer.Placed.Single(x => x.Key == key);
+                var b = layer.transform.Find(key)!.GetComponentsInChildren<Renderer>(true).Select(x => x.bounds).Aggregate((x, y) => { x.Encapsulate(y); return x; });
+                float drawn = Mathf.Max(b.size.x, b.size.z), size = SpecialBuildingModels.SizeOf(p.Model);
+                TestContext.WriteLine($"{key}: drawn {drawn:0} m, size {size:0} m");
+                Assert.That(drawn, Is.InRange(0.7f * size, 1.5f * size), key + " drawn at its scaled size (a turned box spans up to its diagonal)");
+            }
+        }
+
         /// <summary>A placed prop: clear of the towns' footprints, the routes, the unit tokens present that day and the water,
         /// on the ground, upright (its only turn on top of the prefab's FBX axis conversion is about the vertical).</summary>
         void AssertClearAndUpright(MapScene map, SpecialBuildingModels layer, string key, DateTime date)
@@ -257,7 +287,19 @@ namespace Statecraft.Game.Tests
             var p = layer.Placed.Single(x => x.Key == key);
             var flat = new Vector2(p.At.x, p.At.z); float r = SpecialBuildingModels.ClearanceOf(p.Model);
             var ground = PlacementLayer.CampGround(map);
-            Assert.IsTrue(TownLandmarks.Clear(flat, r, map.KitFootprints.Select(f => (f.centre, f.radius)).ToList()), key + " clear of the towns");
+            // The owner, 2 November 2026, on #2274: "Bigger, closer (Recommended)" ("let them stand at the town's edge right by the
+            // sourced spot"): the four props may stand inside a town's kit footprint, but clear of its building models, of the
+            // unit tokens standing in towns and of every settlement's and locality's name point.
+            var towns = map.GetComponentInChildren<Statecraft.Game.Map.Kits.TownModelLayer>(true);
+            Assert.IsNotNull(towns, "the town building models");
+            var buildings = map.KitFootprints.SelectMany(f => towns.InstancesOf(f.id)).Select(i => (i.C, 0.5f * new Vector2(i.W, i.D).magnitude)).ToList();
+            Assert.IsTrue(TownLandmarks.Clear(flat, r, buildings), key + " clear of the towns' buildings");
+            Assert.IsTrue(TownLandmarks.Clear(flat, r, map.UnitClearings.ToList()), key + " clear of the tokens in the towns");
+            foreach (var s in map.Settlements.Concat(map.Localities.Select(l => l.Settlement)))
+            {
+                var n = map.Frame.ToWorld(s.Lon, s.Lat, 0);
+                Assert.Greater((new Vector2(n.x, n.z) - flat).magnitude, r, $"{key} clear of {s.Id}'s name point");
+            }
             Assert.IsFalse(ground.OnRoute(flat, r), key + " clear of the routes");
             Assert.IsFalse(ground.OnToken(flat, r, date), key + " clear of the unit tokens");
             Assert.IsFalse(ground.Water(flat.x, flat.y), key + " on land");
@@ -310,7 +352,7 @@ namespace Statecraft.Game.Tests
             var w = map.Frame.ToWorld(row.lon, row.lat, 0);
             float off = (flat - new Vector2(w.x, w.z)).magnitude;
             TestContext.WriteLine($"{key}: {off:0} m from {coast}'s coast point");
-            Assert.Less(off, 8000f, $"{key} by {coast}'s coast point");
+            Assert.Less(off, 1500f, $"{key} right by {coast}'s coast point (owner on #2274: \"Bigger, closer\")");
             var ground = PlacementLayer.CampGround(map);
             float r = SpecialBuildingModels.ClearanceOf(p.Model);
             var sea = flat + row.seaward * (r + SpecialBuildingModels.ShoreInsetM + 10f);
@@ -331,7 +373,7 @@ namespace Statecraft.Game.Tests
             var a3 = map.Frame.ToWorld(SpecialBuildingModels.AbuGhoshLon, SpecialBuildingModels.AbuGhoshLat, 0);
             float off = (flat - new Vector2(a3.x, a3.z)).magnitude;
             TestContext.WriteLine($"abu_ghosh_road_wall: {off:0} m from Abu Ghosh's point");
-            Assert.Less(off, 3000f, "near Abu Ghosh");
+            Assert.Less(off, 1500f, "right by Abu Ghosh's point");
             var (line, half) = RouteLayer.Corridors(map.Frame, map.RouteList.Where(r => r.Id == "jaffa_jerusalem_road")).Single();
             float best = float.MaxValue; Vector2 dir = Vector2.zero;
             for (int i = 0; i + 1 < line.Count; i++)
@@ -339,14 +381,15 @@ namespace Statecraft.Game.Tests
                 float d = Statecraft.Game.Map.Kits.KitGround.SegmentDistance(flat, line[i], line[i + 1]);
                 if (d < best) { best = d; dir = (line[i + 1] - line[i]).normalized; }
             }
-            float r = SpecialBuildingModels.ClearanceOf(p.Model);
-            Assert.That(best, Is.InRange(half + r, half + r + 5f), "beside the road: just off its corridor");
             var go = layer.transform.Find("abu_ghosh_road_wall")!;
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(p.Model, CollectionDetail.Near));
             var probe = UnityEngine.Object.Instantiate(prefab);
             try
             {
                 var pb = probe.GetComponentsInChildren<Renderer>(true).Select(x => x.bounds).Aggregate((x, y) => { x.Encapsulate(y); return x; });
+                // The wall's own half depth at its drawn size: it stands just off the road's corridor, its long side along it.
+                float depthHalf = 0.5f * Mathf.Min(pb.size.x, pb.size.z) * go.localScale.x / prefab.transform.localScale.x;
+                Assert.That(best, Is.InRange(half + depthHalf, half + depthHalf + 5f), "beside the road: just off its corridor");
                 var longLocal = pb.size.x >= pb.size.z ? Vector3.right : Vector3.forward;
                 var longWorld = go.localRotation * Quaternion.Inverse(prefab.transform.localRotation) * longLocal;
                 Assert.Greater(Mathf.Abs(Vector2.Dot(new Vector2(longWorld.x, longWorld.z).normalized, dir)), 0.999f, "its long side along the road");
@@ -371,8 +414,8 @@ namespace Statecraft.Game.Tests
                 TestContext.WriteLine($"well on {date:d MMM yyyy}: {off:0} m from its point, {inside:0} m inside Beersheba's footprint");
                 // The farthest the widened rings reach (SpecialBuildingModels.SeededSpot, WidenRings).
                 float reach = inside + (1.5f + (SpecialBuildingModels.SpotAttempts - 1) / 8 + SpecialBuildingModels.WidenRings * SpecialBuildingModels.WidenShare) * r;
-                Assert.Less(off, reach, "by its point, beyond the town's footprint, on the nearest clear ring");
-                Assert.Less(off, 3000f, "within 3 km of Abraham's Well");
+                Assert.Less(off, reach, "by its point, on the nearest clear ring");
+                Assert.Less(off, 1500f, "right by Abraham's Well (owner on #2274: \"Bigger, closer\")");
             }
         }
 
@@ -447,8 +490,9 @@ namespace Statecraft.Game.Tests
                 [SpecialBuildingModels.Shikun] = (3f, 4f),
                 // The R35, 4.02 m at the same world scale: about 96 m, under half a locomotive car.
                 [SpecialBuildingModels.SyrianR35] = (0.42f, 0.52f),
-                // Abraham's Well, 3.75 m across (he.wiki): about 90 m, under half a locomotive car.
-                [SpecialBuildingModels.Well] = (0.4f, 0.5f),
+                // Abraham's Well, 3.75 m across (he.wiki), drawn at three times the world scale (owner on #2274: "Bigger, closer"):
+                // about 270 m, a locomotive car and a third.
+                [SpecialBuildingModels.Well] = (1.2f, 1.5f),
             };
             Assert.AreEqual(7, layer.Placed.Count);
             foreach (var p in layer.Placed)
