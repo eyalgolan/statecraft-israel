@@ -237,7 +237,7 @@ public class PlayerTextTests
     [InlineData("14 immigrants arrived from asia", "asia")]
     [InlineData("Morale +4.1% (homes_lift_morale)", "homes_lift_morale")]
     [InlineData("Food supply +5.0% (austerity_1949)", "austerity_1949")]
-    [InlineData("transit_camp at (3, 4): cost IL 1.5m", "transit_camp")]
+    [InlineData("transit_camp at (3, 4): cost IL\u00A01.5m", "transit_camp")]
     [InlineData("rationing set to 0.50 (Austerity)", "rationing")]
     public void TheGuardCatchesOneWordIds(string message, string id) =>
         Assert.Contains(Leaks(Real, new[] { message }), l => l.StartsWith($"'{id}'", StringComparison.Ordinal));
@@ -269,7 +269,7 @@ public class PlayerTextTests
 
     [Theory]
     [InlineData("chosen: Impose rationing")]
-    [InlineData("Built a housing project: cost IL 1.5m, Housing +3.0%, Morale +1.0%")]
+    [InlineData("Built a housing project: cost IL\u00A01.5m, Housing +3.0%, Morale +1.0%")]
     [InlineData("Social cohesion -10.9% (Rationing wears on cohesion, Homes lift cohesion, Safety lifts cohesion)")]
     [InlineData("reserve call-up raised to 80%, the minimum for security level 5")]
     public void TheGuardLeavesPlainEnglishAlone(string message) => Assert.Empty(Leaks(Real, new[] { message }));
@@ -285,14 +285,14 @@ public class PlayerTextTests
         foreach (var w in AllCauses(Real))
         {
             // Every number in the line must carry the unit (fix round 2, N3): strip the unit tokens; no digit may remain.
-            if (money.Contains(w.Target) && Regex.IsMatch(Regex.Replace(w.Message, @"(IL |\$)[+-]?\d+\.\dm", ""), @"\d"))
+            if (money.Contains(w.Target) && Regex.IsMatch(Regex.Replace(w.Message, @"(IL\u00A0|\$)[+-]?\d+\.\dm", ""), @"\d"))
                 bad.Add("money without a unit: " + w.Message);
             if (w.System == "map")   // "Built a housing project: cost IL 6.0m, Housing +3.0%, ...": every number with its unit
             {
                 // A hex "(q, r)" or "hex q,r", a corridor's "segment N" (R-COR-001, Q-SENS-1) and a unit's "unit N" are names, not
                 // amounts; movement points and people are units (the enemy's step 1 lines, R-ENEMY-001, reach the reference run).
                 var named = Regex.Replace(w.Message, @"\(-?\d+, -?\d+\)|segment \d+|hex -?\d+,-?\d+|[Uu]nits? \d+(, \d+)*|\d[\d,]* (movement points|people)", "");
-                if (Regex.IsMatch(Regex.Replace(named, @"(IL |\$)[+-]?\d+\.\dm|[+-]?\d+(\.\d)?%", ""), @"\d"))
+                if (Regex.IsMatch(Regex.Replace(named, @"(IL\u00A0|\$)[+-]?\d+\.\dm|[+-]?\d+(\.\d)?%", ""), @"\d"))
                     bad.Add("map line number without a unit: " + w.Message);
             }
             else if (indicators.Contains(w.Target) && Regex.IsMatch(Regex.Replace(w.Message, @"[+-]?\d+(\.\d)?%", ""), @"\d"))
@@ -306,17 +306,27 @@ public class PlayerTextTests
     [Fact]
     public void PlayerTextFormatsMoneyAndTheIndicatorScale()
     {
-        Assert.Equal("IL 18.6m", PlayerText.Money(Real, "treasury", 18.6));
+        Assert.Equal("IL\u00A018.6m", PlayerText.Money(Real, "treasury", 18.6));
         Assert.Equal("$41.5m", PlayerText.Money(Real, "fx_reserves", 41.5));
-        Assert.Equal("IL +1.2m", PlayerText.MoneyChange(Real, "treasury", 1.23));
+        Assert.Equal("IL\u00A0+1.2m", PlayerText.MoneyChange(Real, "treasury", 1.23));
         Assert.Equal("$-0.4m", PlayerText.MoneyChange(Real, "fx_reserves", -0.4));
         Assert.Equal("$0.0m", PlayerText.MoneyChange(Real, "fx_reserves", -0.004));
         Assert.Equal(30.0, PlayerText.Scale(0.3), 9);
         Assert.Equal("55%", PlayerText.Percent(0.55));
         Assert.Equal("+4.1%", PlayerText.PercentChange(0.041));
-        Assert.Equal("Money IL -2.0m", PlayerText.Change(Real, "treasury", -2));   // R-MONEY-001
+        Assert.Equal("Money IL\u00A0-2.0m", PlayerText.Change(Real, "treasury", -2));   // R-MONEY-001
         Assert.Equal("Social cohesion +5.0%", PlayerText.Change(Real, "morale", 0.05));
         Assert.Equal("Foreign currency", PlayerText.Target(Real, "fx_reserves"));
+    }
+
+    [Fact]
+    public void MoneyNeverCarriesAPlainSpace()
+    {
+        // #2293: the currency prefix ends in a no-break space, so a money value never wraps between "IL" and the amount.
+        Assert.DoesNotContain(" ", PlayerText.Money(Real, "treasury", 18.6));
+        Assert.DoesNotContain(" ", PlayerText.MoneyChange(Real, "treasury", -1.23));
+        Assert.Equal('\u00A0', PlayerText.MoneyParts(Real, "treasury", 18.6).Prefix[2]);
+        Assert.Equal('\u00A0', PlayerText.MoneyParts(Real, "debt", 1).Prefix[2]);
     }
 
     /// <summary>Review M3: no silent fallback to the id.</summary>
@@ -330,10 +340,10 @@ public class PlayerTextTests
 
     /// <summary>Review M3: the money names and currency prefixes come from content and are validated at load.</summary>
     [Theory]
-    [InlineData("  - { id: treasury, name: Treasury, prefix: 'IL ' }\n", "  - { id: treasury, prefix: 'IL ' }\n", "money[treasury].name")]
+    [InlineData("  - { id: treasury, name: Treasury, prefix: 'IL\u00A0' }\n", "  - { id: treasury, prefix: 'IL\u00A0' }\n", "money[treasury].name")]
     [InlineData("  - { id: fx_reserves, name: Foreign currency, prefix: '$' }\n", "  - { id: fx_reserves, name: Foreign currency }\n", "money[fx_reserves].prefix")]
-    [InlineData("  - { id: debt, name: Debt, prefix: 'IL ' }\n", "", "money")]
-    [InlineData("  - { id: debt, name: Debt, prefix: 'IL ' }\n", "  - { id: debt, name: Debt, prefix: 'IL ' }\n  - { id: gold, name: Gold, prefix: 'g' }\n", "money[gold].id")]
+    [InlineData("  - { id: debt, name: Debt, prefix: 'IL\u00A0' }\n", "", "money")]
+    [InlineData("  - { id: debt, name: Debt, prefix: 'IL\u00A0' }\n", "  - { id: debt, name: Debt, prefix: 'IL\u00A0' }\n  - { id: gold, name: Gold, prefix: 'g' }\n", "money[gold].id")]
     public void MoneyNamesAreRequired(string from, string to, string field)
     {
         var ex = ValidationTests.Bad("model.yaml", from, to);
@@ -384,17 +394,17 @@ public class PlayerTextTests
         Assert.Equal("-4.0%", PlayerText.PercentChange(-0.04));
         Assert.Equal("+5%", PlayerText.PercentChange(0.05, 0));
         Assert.Equal("0%", PlayerText.PercentChange(-0.004, 0));
-        Assert.Equal("IL -3.0m", PlayerText.Money(Real, "treasury", -3));
-        Assert.Equal("IL 0.0m", PlayerText.Money(Real, "treasury", -0.04));
+        Assert.Equal("IL\u00A0-3.0m", PlayerText.Money(Real, "treasury", -3));
+        Assert.Equal("IL\u00A00.0m", PlayerText.Money(Real, "treasury", -0.04));
         // #398 review N2: the parts Money is built from, for the top bar's words ("IL 18.6 million").
-        Assert.Equal(("-", "IL ", "3.0"), PlayerText.MoneyParts(Real, "treasury", -3));
-        Assert.Equal(("", "IL ", "0.0"), PlayerText.MoneyParts(Real, "treasury", -0.04));
+        Assert.Equal(("-", "IL\u00A0", "3.0"), PlayerText.MoneyParts(Real, "treasury", -3));
+        Assert.Equal(("", "IL\u00A0", "0.0"), PlayerText.MoneyParts(Real, "treasury", -0.04));
         Assert.Equal(("", "$", "41.5"), PlayerText.MoneyParts(Real, "fx_reserves", 41.46));
         Assert.Equal("$41.5m", PlayerText.Money(Real, "fx_reserves", 41.5));
-        Assert.Equal("IL +1.2m", PlayerText.MoneyChange(Real, "treasury", 1.23));
+        Assert.Equal("IL\u00A0+1.2m", PlayerText.MoneyChange(Real, "treasury", 1.23));
         Assert.Equal("$-0.4m", PlayerText.MoneyChange(Real, "fx_reserves", -0.4));
         Assert.Equal("$0.0m", PlayerText.MoneyChange(Real, "fx_reserves", -0.04));
-        Assert.Equal("IL 0.0m", PlayerText.MoneyChange(Real, "treasury", 0.04));
+        Assert.Equal("IL\u00A00.0m", PlayerText.MoneyChange(Real, "treasury", 0.04));
     }
 
     [Theory]
@@ -413,9 +423,9 @@ public class PlayerTextTests
     // ---- Fix round 2 (N7): money entries that are blank, bare or collide ----
 
     [Theory]
-    [InlineData("model.yaml", "  - { id: treasury, name: Treasury, prefix: 'IL ' }\n", "  - { id: treasury, name: Treasury, prefix: }\n", "money[treasury].prefix")]
-    [InlineData("model.yaml", "  - { id: treasury, name: Treasury, prefix: 'IL ' }\n", "  - { id: treasury, name: Treasury, prefix: '   ' }\n", "money[treasury].prefix")]
-    [InlineData("model.yaml", "  - { id: debt, name: Debt, prefix: 'IL ' }\n", "  - { id: debt, name: Debt, prefix: 'IL ' }\n  -\n", "money[2]")]
+    [InlineData("model.yaml", "  - { id: treasury, name: Treasury, prefix: 'IL\u00A0' }\n", "  - { id: treasury, name: Treasury, prefix: }\n", "money[treasury].prefix")]
+    [InlineData("model.yaml", "  - { id: treasury, name: Treasury, prefix: 'IL\u00A0' }\n", "  - { id: treasury, name: Treasury, prefix: '   ' }\n", "money[treasury].prefix")]
+    [InlineData("model.yaml", "  - { id: debt, name: Debt, prefix: 'IL\u00A0' }\n", "  - { id: debt, name: Debt, prefix: 'IL\u00A0' }\n  -\n", "money[2]")]
     [InlineData("model.yaml", "  - id: morale\n", "  - id: treasury\n", "indicators[treasury].id")]
     [InlineData("model.yaml", "  - id: maabarot\n", "  - id: debt\n", "policies[debt].id")]
     public void MoneyEntriesAreCheckedLikeEveryOtherName(string file, string from, string to, string field)

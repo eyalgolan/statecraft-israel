@@ -111,7 +111,7 @@ public class FieldsTests
         Assert.Empty(r.Rejected);
         Assert.Equal(("site_a_field", (int?)id, 1), (r.State.Sites["site_a_field"].Site, r.State.Sites["site_a_field"].Unit, r.State.Sites["site_a_field"].TurnsLeft));
         Assert.Equal(Step(c, s).State.Treasury - 0.5, r.State.Treasury, 9);
-        Assert.Contains(r.Why, x => x.System == "map" && x.Message == "Site A fields: a group of halutzim began plowing, cost IL 0.5m");
+        Assert.Contains(r.Why, x => x.System == "map" && x.Message == "Site A fields: a group of halutzim began plowing, cost IL\u00A00.5m");
 
         var done = Step(c, r.State);
         Assert.Equal(done.State.Date, done.State.Sites["site_a_field"].BuiltOn);   // the end of the order's turn + 1

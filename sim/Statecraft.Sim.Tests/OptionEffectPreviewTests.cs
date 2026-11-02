@@ -76,7 +76,7 @@ public class OptionEffectPreviewTests
                 rows.Select(x => (x.Cause.System, x.Cause.Target, x.Cause.Delta, x.Cause.Message)));
             Assert.Equal(new[] { "halutz", "treasury", "food", "arms", "halutz", "halutz", "veteran_halutz", "town_a.housing_capacity", "town_a.job_slots", "town_b.condition", "maabarot", "rationing", "rung", "rejoin" },
                 rows.Select(x => x.Cause.Target));
-            Assert.Equal(new[] { "+4.1%", "IL -1.3m", "+3", "-100", "2", "1", "3", "+3", "-100", "+5.1%", "20%", "75%", "4", "" },
+            Assert.Equal(new[] { "+4.1%", "IL\u00A0-1.3m", "+3", "-100", "2", "1", "3", "+3", "-100", "+5.1%", "20%", "75%", "4", "" },
                 rows.Select(x => x.Amount));
             Assert.Equal(new[] { "halutz", "treasury", "food", "arms", "town_a", "town_b", "town_a", "town_a", "town_a", "town_b", "maabarot", "rationing", "", "preview_record" },
                 rows.Select(x => x.ContextId));
