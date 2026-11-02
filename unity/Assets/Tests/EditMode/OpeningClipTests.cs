@@ -56,6 +56,8 @@ public class OpeningClipTests
         Assert.AreEqual("K04a", panels[0].Clip?.Shot);
         Assert.AreEqual("iraqi_exodus.mp4", panels[1].Clip?.File, "the Arab countries reuse the iraqi_exodus card's loop (A07)");
         Assert.AreEqual("A07", panels[1].Clip?.Shot);
+        Assert.AreEqual("Operation Ezra and Nehemiah brought some 120,000 Iraqi Jews to Israel.", panels[1].Caption?.Text,
+            "owner, 2 Nov 2026: \"Change to 'brought' (Recommended)\"");
         Assert.AreEqual("opening_yemen.mp4", panels[2].Clip?.File, "Yemen has the ruling's one new shot, made for the opening");
         Assert.AreEqual("O3", panels[2].Clip?.Shot);
         var data = Asset.Read();

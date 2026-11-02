@@ -92,9 +92,10 @@ panels:
     # The line shown under the clip while it plays (OpeningPresenter). Owner, 2 Nov 2026: "Version 1, fixed
     # (Recommended)", which is also the owner's native read of the Hebrew (he_review: approved).
     # From this panel's text: "The airlift, Operation Ezra and Nehemiah, began in May 1950, and by January 1952 some
-    # 120,000 Iraqi Jews had come to Israel."
+    # 120,000 Iraqi Jews had come to Israel." The English then changed to "brought ... to Israel", which matches the
+    # Hebrew העלה (owner, 2 Nov 2026: "Change to 'brought' (Recommended)"); the Hebrew and its review are unchanged.
     caption:
-      text: "Operation Ezra and Nehemiah airlifted some 120,000 Iraqi Jews."
+      text: "Operation Ezra and Nehemiah brought some 120,000 Iraqi Jews to Israel."
       text_he: "מבצע עזרא ונחמיה העלה כ־120,000 מיהודי עיראק."
       he_review: approved
     image:

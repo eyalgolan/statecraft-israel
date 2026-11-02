@@ -127,11 +127,11 @@ loop, and Yemen has one new shot made for it. All three follow the same rules as
   foreground, a US star-and-bar on the fuselage and an emblem on the fin. The Magic Carpet aircraft were civilian
   charters, and the shot's avoid list bans painted emblems. Owner, 2 Nov 2026: "Fix it in editing (Recommended)". The
   camera and the aircraft do not move, so each defect is covered for all 96 frames: the tripod and the fin emblem by a
-  feathered copy of clean texture beside them in the same frame, the insignia by one still patch inpainted from a mid
-  frame. Never a blur. The cleaned 1080p master was then encoded with `tools/encode_event_videos.py`'s pinned settings
-  (`filter_graph()` and `FFMPEG_VIDEO`; `problems()` clean). Like the promo generation scripts, the cleanup scripts are
-  not in the repository: the regions, the patch sources and both SHA-256s are in the row. The owner reviewed the cleaned
-  clip on 2 November 2026: "Approve it".
+  feathered copy of clean texture beside them in the same frame, the insignia by one still patch inpainted from the raw
+  clip's frame at t=2 s (`ffmpeg -ss 2 -i <raw> -frames:v 1`). Never a blur. The cleaned 1080p master was then encoded
+  with `tools/encode_event_videos.py`'s pinned settings (`filter_graph()` and `FFMPEG_VIDEO`; `problems()` clean). Like
+  the promo generation scripts, the cleanup scripts are not in the repository: the regions, the patch sources and both
+  SHA-256s are in the row. The owner reviewed the cleaned clip on 2 November 2026: "Approve it".
 - **The checks.** `OpeningContent.Parse` refuses a malformed row. `tools/tests/test_opening_sources.py` checks each
   clip's file, its `ASSETS.yaml` row and its `docs/ai-disclosure.md` line, and that a reused card clip keeps the card
   row's shot and alt text. Every opening panel is sensitive, so its clip is `sensitive: true`, and a `-shareable` build
