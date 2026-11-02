@@ -309,6 +309,10 @@ What ships, as of `c0a38256` (the facts the answers rest on):
   `event-images.yaml`).
 - No sex or nudity, no drugs shown, no gambling, no strong language, no purchases, no user-generated content, no online
   features.
+- The Steam build (#2149; re-check every line of this section against the first Steam build before answering): the
+  same game, free, with no in-game purchases (O2, `docs/oss/DECISIONS.md:49-50`). It adds only Steam's
+  own features: five achievements and Steam Cloud for the autosave (`docs/steam/README.md`). The game still has no chat,
+  no multiplayer and no user-generated content.
 
 | Topic | Draft answer | Flag |
 | --- | --- | --- |
@@ -322,7 +326,7 @@ What ships, as of `c0a38256` (the facts the answers rest on):
 | Drugs, alcohol, tobacco | None shown. | **[confirm]** against the archival photographs (a cigarette in a 1948 photograph would be "tobacco reference" on some boards). |
 | Language | None (no profanity). | |
 | Gambling, purchases | None. Free, no in-game purchases. | |
-| User interaction / online | None. Single-player, offline. | |
+| User interaction / online | None. Single-player, offline; on Steam, only Steam's achievements and Steam Cloud. | Re-check against the Steam build. |
 | Fear / horror | None. | |
 | General Mature Content | **Tick** it and give the description from store-page-draft.md section 6. | **OWNER: sensitive.** The checkbox puts the game behind some users' content preferences; given war, terror and the Holocaust as subjects, not ticking it would understate the content. |
 | Generative AI | Pre-Generated: yes (section 4). Live-Generated: no. | |
