@@ -363,7 +363,8 @@ Published at: (owner fills in)
   file. It pushes to the test page twice, never to the public page, and refuses to run without that key or if it
   names the public project. It loads each upload's game frame from the upload and build ids of `butler status`
   (`https://html-classic.itch.zone/html/<upload>-<build>/index.html`), never from the test page, so that page can
-  stay Restricted (#2056). Only the owner starts it.
+  stay Restricted (#2056). The owner or an agent may start it, since it pushes only to the Restricted test page
+  (owner, 2 Nov 2026, "2 (a)").
 - **Test plan (after the first two uploads):**
   1. Use one browser profile throughout, without clearing site data or using private mode. Record browser/version, OS,
      project page URL and the actual game-frame URL/origin (not only the outer itch.io page). Upload A as above. Play two
@@ -392,9 +393,9 @@ may show "This save is from an earlier version of the game, so events may unfold
 Record that warning and both builds' git commits. Matching date/turn in this case is not evidence of exact state preservation, and it does not
 replace the unchanged-content persistence control above. A changed state hash may be a replay effect rather than a storage failure.
 
-Result: not run on itch.io (owner step).
+Result: not run on itch.io yet.
 
-| Evidence | Owner-run result |
+| Evidence | Result |
 | --- | --- |
 | Browser/version | pending |
 | OS | pending |

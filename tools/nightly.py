@@ -1039,7 +1039,8 @@ def savetest(cfg: Config, config_path: Path, job: Path, runner: Runner, gh: GitH
     (the same content, a new upload URL on the same frame origin); B must load that date, turn and state hash twice.
     "PASS" turns the itch push on (enable_itch); "INCONCLUSIVE" (the test could not be run or proves nothing) and
     "FAIL" leave it off. It pushes twice to the separate test page in savetest_itch_target, never to the public page:
-    each upload hides the game while itch unpacks it (up to an hour on 28 October 2026). Only the owner starts it."""
+    each upload hides the game while itch unpacks it (up to an hour on 28 October 2026). The owner or an
+    agent may start it (owner, 2 Nov 2026, "2 (a)"): it pushes only to the Restricted test page."""
     stamp = datetime.now(TZ).strftime("%Y%m%d-%H%M%S")
     work = Path(job) / "savetest" / stamp
     evidence: dict = {"tag": tag, "target": cfg.savetest_itch_target}
