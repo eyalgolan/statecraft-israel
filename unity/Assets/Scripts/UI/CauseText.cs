@@ -32,7 +32,9 @@ namespace Statecraft.Game.UI
                 case CauseKeys.FxCrisisFood:
                     return text.Format(key, Name(text, cause.Target), Change(c, cause.Target, cause.Delta));
                 case CauseKeys.Borrowed:
-                    return Borrowed(cause, c, text, namesHe);
+                    return Purposed(cause, c, text, namesHe, "why.cause.borrowed.", PlayerText.Money(c, cause.Target, cause.Delta));
+                case CauseKeys.Paid:
+                    return Purposed(cause, c, text, namesHe, "why.cause.paid.", Name(text, cause.Target), Change(c, cause.Target, cause.Delta));
                 case CauseKeys.FxCrisisBegan:
                 case CauseKeys.FxCrisisEased:
                 case CauseKeys.Ceasefire:
@@ -294,25 +296,27 @@ namespace Statecraft.Game.UI
             return PlayerText.Capitalised(text.Format(key, values));
         }
 
-        /// <summary>A borrowing line, by its purpose (CauseKeys.Purpose): why.cause.borrowed.&lt;purpose&gt;, with what the
+        /// <summary>A borrowing or paying line, by its purpose (CauseKeys.Purpose): <paramref name="prefix"/> + the purpose
+        /// (why.cause.borrowed.&lt;purpose&gt;, why.cause.paid.&lt;purpose&gt;), with <paramref name="values"/> and then what the
         /// purpose names in the UI's language (a project kind, a settlement, an event's title).</summary>
-        static string Borrowed(Cause cause, Content c, UiText text, IReadOnlyDictionary<string, string>? namesHe)
+        static string Purposed(Cause cause, Content c, UiText text, IReadOnlyDictionary<string, string>? namesHe, string prefix, params object[] values)
         {
-            var key = "why.cause.borrowed." + cause.Args[0];
-            var amount = PlayerText.Money(c, cause.Target, cause.Delta);
+            var key = prefix + cause.Args[0];
             switch (cause.Args[0])
             {
                 case CauseKeys.Purpose.Project:
-                    return text.Format(key, amount, ContentNames.Of(text, c.ProjectKinds.First(k => k.Id == cause.Args[1])));
+                    return text.Format(key, values.Append(ContentNames.Of(text, c.ProjectKinds.First(k => k.Id == cause.Args[1]))).ToArray());
                 case CauseKeys.Purpose.Deport:
                 case CauseKeys.Purpose.Occupation:
-                    return text.Format(key, amount, ContentNames.Settlement(text, c, cause.Args[1], namesHe));
+                    return text.Format(key, values.Append(ContentNames.Settlement(text, c, cause.Args[1], namesHe)).ToArray());
+                case CauseKeys.Purpose.MapAction:
+                    return text.Format(key, values.Append(text["info.map_action." + cause.Args[1]]).ToArray());
                 case CauseKeys.Purpose.Event:
                     // The title as the card shows it: title_he, unless a variant gives its own (English) title.
                     var he = cause.Args[3] == "1" ? c.Events.First(e => e.Id == cause.Args[1]).TitleHe : "";
-                    return text.Format(key, amount, he != "" && text["ui.lang"] == UiLanguage.Hebrew ? he : cause.Args[2]);
+                    return text.Format(key, values.Append(he != "" && text["ui.lang"] == UiLanguage.Hebrew ? he : cause.Args[2]).ToArray());
                 default:
-                    return text.Format(key, amount);
+                    return text.Format(key, values);
             }
         }
 

@@ -56,7 +56,8 @@ namespace Statecraft.Game.UI
         /// (StepResult.Why) for the quantity the meter shows, each worded by <paramref name="line"/> (CauseText.Line: the
         /// player's language, B1), the largest change first (each meter's causes share its unit),
         /// the sim's order breaking a tie, at most <see cref="MaxCauses"/>. Nothing is computed or reworded here: a cause is
-        /// matched by its target, as <see cref="From"/> reads the state (Money: the Treasury and the debt; Immigration: the
+        /// matched by its target, as <see cref="From"/> reads the state (Money: the sim's EconomySystem.MovesMoney, the lines
+        /// that add up to the change in Treasury minus Debt, job income included and borrowing not, #2199; Immigration: the
         /// population system's arrivals; Social cohesion: morale; International support: intl_standing; Foreign currency:
         /// fx_reserves; Security: security). Public support is an average the sim computes from the indicators
         /// (EffectsSystem.Approval) and no cause names it, so it has none.</summary>
@@ -65,7 +66,7 @@ namespace Statecraft.Game.UI
             if (turn == null) return Array.Empty<string>();
             Func<Cause, bool> match = meter switch
             {
-                "treasury" => w => w.Target == "treasury" || w.Target == "debt",
+                "treasury" => w => EconomySystem.MovesMoney(w),
                 "immigration" => w => w.System == "population",
                 "security" => w => w.Target == "security",
                 "cohesion" => w => w.Target == "morale",
