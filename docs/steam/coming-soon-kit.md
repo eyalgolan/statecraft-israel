@@ -407,21 +407,27 @@ What the build contains that the table above does not mention:
 | Generative AI | Unchanged from the table above: Pre-Generated yes (section 4), Live-Generated no. | Section 4 of this file. | |
 
 **Mature-content description** (approved with the survey on 1 November 2026; it extends store-page-draft.md section 6
-with the combat and capture facts above, and leaves Deport to the open item below):
+with the combat and capture facts above). The Deport sentence, the second to last, was added on 2 November 2026 on the
+owner's ruling for #2165, "Mention it (Recommended)", and awaits the owner's read of its wording:
 
 > Statecraft: Israel depicts real events of 1948-1951 from the perspective of Israel's government, including war,
 > terror attacks, refugees and displacement, and references to the Holocaust. The player commands military units in
 > abstract turn-based combat, takes prisoners of war and decides the fate of captured towns, some of whose residents
 > fled. These are shown through sourced text, archival photographs and a symbolic map, not graphic violence. Some
-> decision cards can also show a short, silent, AI-generated illustration, labelled as such in the game. Real
-> historical figures appear in their public roles; their in-game ratings are game balance, not judgements of the
+> decision cards can also show a short, silent, AI-generated illustration, labelled as such in the game. The game's
+> files also contain an option to deport a captured town's residents; it is switched off and cannot be chosen in play.
+> Real historical figures appear in their public roles; their in-game ratings are game balance, not judgements of the
 > people.
+
+The Deport sentence states what ships today: the option and its strings are in the build, `mvp.deport_in_play: false`
+(`content/rules.yaml:256`) refuses it, and the dialog does not show it (above). It stays true if the open #2197 lands,
+because #2197 adds two Deport cards (Acre and Nazareth) and keeps `mvp.deport_in_play` off. Rewrite the sentence before
+any build that turns Deport on (Phase 6 PR 10).
 
 **Open items** (not settled by the approval; settle each before submitting):
 
-- **Deport: OPEN, owner decision pending.** While Deport ships in the build, even switched off, either the description
-  gets the sentence store-page-draft.md section 6 proposes for it, or the option and its strings leave the build first.
-  The owner has not chosen, and the agents do not choose.
+- **Deport: settled 2 November 2026.** The owner chose to mention it ("Mention it (Recommended)"); the description
+  above now has a Deport sentence. Still open: the owner's read of that sentence's wording.
 - **The photographs and clips:** nobody has yet looked at the 29 archival photographs and the clips for blood, a
   cigarette or other tobacco, or a Nazi symbol; the answers above rest on their alt texts and descriptions.
 - **Living people:** `content/people.yaml` has not been checked person by person.
