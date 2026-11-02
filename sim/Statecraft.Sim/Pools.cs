@@ -68,14 +68,18 @@ namespace Statecraft.Sim
             return left < 0 && s.Debt - left > r.DebtCeiling!.Value;   // the loader requires both in the GDD loop
         }
 
-        /// <summary>#2206: the check above as End turn makes it with <paramref name="queued"/>, the turn's queued orders: on a
-        /// copy of <paramref name="s"/> after the queued dollar conversions (Simulation.Preview), which run before every Arms
-        /// purchase (R-ARMS-002, R-MONEY-004; Simulation.ConversionsBeforeArms). A conversion End turn refuses counts for
-        /// nothing; no other queued order is judged. The Defence screen's warning.</summary>
-        public static bool BorrowsPastDebtCeiling(Content c, GameState s, IEnumerable<Command> queued, int count)
+        /// <summary>#2206: whether End turn would refuse <paramref name="count"/> Arms for the ceiling (BuyArms, the check above)
+        /// if it ran <paramref name="orders"/>, the turn's orders, from <paramref name="turnStart"/>, after Buy queued them: the
+        /// purchase takes a queued purchase's slot, else goes last (SimBridge.Queue). The orders run on a copy through
+        /// Simulation.Preview, End turn's own order phase (RunOrders: conversions before the purchase, Attention, refusals),
+        /// so everything queued before the purchase counts as End turn counts it. The Defence screen's warning.</summary>
+        public static bool BorrowsPastDebtCeiling(Content c, GameState turnStart, IReadOnlyList<Command> orders, int count)
         {
-            var conversions = queued.OfType<ConvertDollars>().ToList<Command>();
-            return BorrowsPastDebtCeiling(c, conversions.Count == 0 ? s : Simulation.Preview(c, s, conversions).State, count);
+            var buy = new BuyArms(count);
+            var batch = orders.ToList();
+            var slot = batch.FindIndex(x => x is BuyArms);
+            if (slot >= 0) batch[slot] = buy; else batch.Add(buy);
+            return Simulation.Preview(c, turnStart, batch).Rejected.Any(r => ReferenceEquals(r.Command, buy) && r.Reason == RefusedDebtCeiling);
         }
 
         /// <summary>The nation's need for one turn: its head count in population units, rounded half away from zero.</summary>

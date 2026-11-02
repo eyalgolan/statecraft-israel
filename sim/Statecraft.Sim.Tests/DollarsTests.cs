@@ -352,7 +352,7 @@ options:
     // #2206: for each queue on the Defence screen, the warning says "refused" for exactly the amounts End turn refuses for the
     // ceiling. Each row gives the queue and the batch End turn runs after Buy queues n Arms: the purchase takes a queued
     // purchase's slot, else goes last (SimBridge.Queue). The first refused amount is 271 - (IL 0.5m a halutz group, IL 2m
-    // for industry, paid before the purchase) + 1 for the $4m (IL 1.332m), rounded down; Attention 4 pays for every row.
+    // for industry, paid before the purchase) + 1 for the $4m (IL 1.332m), rounded down.
     [Fact]
     public void TheCeilingWarningAgreesWithEndTurnOnEveryQueue()
     {
@@ -372,7 +372,10 @@ options:
             (new[] { Four(), One() }, n => new[] { Four(), One(), new BuyArms(n) }, 271),
             (new[] { Ten(), Four() }, n => new[] { Ten(), Four(), new BuyArms(n) }, 267),
             (new[] { Industry(), Four() }, n => new[] { Industry(), Four(), new BuyArms(n) }, 270),
-            (new[] { Option(), One(), Four() }, n => new[] { Option(), One(), Four(), new BuyArms(n) }, 271),
+            (new[] { Option(), Four() }, n => new[] { Option(), Four(), new BuyArms(n) }, 272),
+            // the option and the training use up the turn's Attention: End turn refuses the purchase for that, never for the
+            // ceiling, so no amount warns here (the screen's Attention line says why)
+            (new[] { Option(), One(), Four() }, n => new[] { Option(), One(), Four(), new BuyArms(n) }, int.MaxValue),
             // the queued purchase runs before the training, which then counts for nothing; the conversion still runs first
             (new[] { new BuyArms(1), One(), Four() }, n => new[] { new BuyArms(n), One(), Four() }, 272),
             (new[] { One(), new BuyArms(1), Four() }, n => new[] { One(), new BuyArms(n), Four() }, 271),

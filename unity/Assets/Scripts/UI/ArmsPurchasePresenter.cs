@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Linq;
 using Statecraft.Sim;
 using UnityEngine.UIElements;
 
@@ -71,9 +72,10 @@ namespace Statecraft.Game.UI
             panel.Q<Label>("arms-refusal").text = s.GameOver != null ? text["order.game_over"]
                 : count.value < 1 ? text["arms.minimum"]
                 : !bridge.CanPay(order) ? text["arms.no_attention"]
-                // #2198: the sim refuses this amount at End turn if the state stays as it is now (Pools.BuyArms), after the
-                // dollar conversions queued this turn, which End turn runs first (#2206).
-                : Pools.BorrowsPastDebtCeiling(c, s, bridge.Queued, count.value) ? text["arms.refused_debt_ceiling"] : "";
+                // #2198, #2206: End turn refuses this amount for the ceiling (Pools.BuyArms) with the turn's orders as they stand:
+                // the committed then queued ones, from the turn's start, as End turn runs them.
+                : Pools.BorrowsPastDebtCeiling(c, bridge.TurnStart, bridge.Session.Committed.Concat(bridge.Queued).ToList(), count.value)
+                    ? text["arms.refused_debt_ceiling"] : "";
         }
 
         public void Dispose()
