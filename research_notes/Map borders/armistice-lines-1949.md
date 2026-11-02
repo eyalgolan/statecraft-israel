@@ -88,14 +88,29 @@ has a blank page there (checked): the map plates are not in it.
   1948 cease-fire as adopted by Art. V.1(b); the map is map 2 of the Jordan agreement.
 - **Mount Scopus enclave:** the Agreement for the Demilitarization of the Mount Scopus Area, **7 July 1948** (UN-supervised;
   Hadassah Hospital, the Hebrew University, Augusta Victoria and Issawiya; its own map, not yet found), reportedly modified by
-  an annex of 30 November 1948 (secondary sources only: **to verify** against the 30 November 1948 cease-fire texts). An Israeli-held enclave inside the Jordanian lines until 1967. Text:
+  an annex of 30 November 1948 (secondary sources only: **to verify** against the 30 November 1948 cease-fire texts; the annex is not yet found, see Dated rows, below). An Israeli-held enclave inside the Jordanian lines until 1967. Text:
   https://jewishvirtuallibrary.org/agreement-for-the-demilitarization-of-the-mount-scopus-area (to replace with the UN
-  copy).
+  copy; see Dated rows, below).
 - **Latrun no-man's-land:** the area between the two lines of map 1 around Latrun (held by neither party); its outline is
   the two lines, so it comes from map 1, not from a later drawing.
 - **Syrian DMZs:** three zones between the line and the international boundary (Art. V.5), on the annexed 1:50,000 map.
 - **El Auja DMZ:** Art. VIII.2 points (above); later violations are history, not geometry.
 - **Gaza-Rafah zones A, B, C:** modus vivendi of 22 February 1950 (S/1471), local and later than the agreement.
+
+## Dated rows: Mount Scopus and the Lebanon withdrawal (read 2026-11-01, issue #63)
+
+Every reading in this section is an agent's; each row carries its own read date, and a person's check is pending throughout.
+
+| Claim | Source and where | Tag |
+|---|---|---|
+| The Mount Scopus agreement is dated 7 July 1948. Art. 1: the area "as delineated on the attached map" goes under UN protection "until hostilities cease or a new agreement is entered upon", and includes Hadassah Hospital, the Hebrew University, Augusta Victoria and the Arab village of Issawiya. Art. 3: military personnel of both sides withdraw "this day". Signed by Lash (Arab commander), Shaltiel (Jewish commander, for the Provisional Government), Nieuwenhuys (Truce Commission) and Brunsson (Mediator's Jerusalem Group). | UN Security Council S/4030 (17 Jun 1958), UNTSO report on the firing incident of 26 May 1958, Part II paras 75, 76 and 80 (UN ODS copy, `documents.un.org/api/symbol/access?s=S/4030&l=en&t=pdf`, read 2026-11-01): the paras name the "7 July 1948 Mount Scopus Agreement", its paragraph 4 and the 7 July 1948 map. Articles 1 and 3 as worded: Jewish Virtual Library transcription, "Source: Israel Ministry of Foreign Affairs" (https://jewishvirtuallibrary.org/agreement-for-the-demilitarization-of-the-mount-scopus-area, read 2026-11-01). | 7 July date and the map references in S/4030 [V, agent read 2026-11-01; a person's check pending]; article wording, "attached map" text, signatories and the four-site list [S] (JVL transcription, agent read 2026-11-01; a person's check pending) |
+| Two maps, two zones. Israel holds the valid map is "SCOPUS - UN", dated 8 July 1948 and initialled F.M.B. (Begley, UN Secretariat, who helped draft but did not sign). Jordan holds it is the more carefully drawn truce-lines map initialled by the Arab commander and Begley, tied to the 21 July 1948 agreement "between Arab and Jewish Military Commanders" (truce from 17 July 1948). The Israeli commander did not initial it. The 8 July map covers a larger area, so some sectors are inside the zone for Israel and in Jordanian territory for Jordan. | S/4030 para 80 (printed page 39; the report itself also calls Israel's map "the 7 July 1948 map"), read 2026-11-01. | [V, agent read 2026-11-01; a person's check pending]; the UN report states both positions, so both are kept side by side ([C] applies to that only) |
+| In 1958, as S/4030 reports it: "A fence surrounded - and still surrounds - the Jewish buildings"; the buildings are "guarded and inhabited by the Jewish police and civilians referred to in paragraph 4" of the 7 July 1948 Agreement; the Chief of Staff's representative "has continued up to now to request Arabs not to work closer than approximately fifty metres from the fence". The report does not say the UN arrangement was still operating: it says UN authority "was for several years sufficiently recognized" (past tense, the report's own judgement) and that efforts to ease the tension "have so far met with no success" (para 73). | S/4030 paras 73-75 (printed pages 35-36), re-read 2026-11-02 on the text layer. | [V, agent read 2026-11-02; a person's check pending] for 1958 only |
+| The enclave stayed Israeli-held until 1967. | JVL page ("until 1967 it remained an Israeli enclave surrounded by Jordanian-held territory"), read 2026-11-01. Not in S/4030. | [S] (agent read 2026-11-01; a person's check pending) |
+| Lebanon: signed 23 Mar 1949 (Avalon title); Art. VIII.1: "shall come into force immediately upon being signed". Art. V.3: withdrawal to the line, reduction to defensive strength and mine removal "shall be completed within ten days of the signing". The latest date by that count is 2 Apr 1949. | Avalon Project, "Lebanese-Israeli General Armistice Agreement, March 23, 1949", Art. V.3 and VIII.1 (https://avalon.law.yale.edu/20th_century/arm02.asp, read 2026-11-01); Art. V.3 wording already read in UNTS vol. 42 No. 655 on 2026-10-11 (above); VIII.1 not read there. Same V.3 wording, agrees: `research_notes/GDD phase 5/enemy-script-anchors-check-1270.md` Q-B5 (agent read 2026-10-26). | V.3 text [S] here (agent read 2026-11-01; a person's check pending), [V] via UNTS 2026-10-11; [C] to Q-B5 (same wording, agrees); VIII.1 [S] (agent read 2026-11-01; a person's check pending); 2 Apr 1949 is derived (23 Mar + 10 days), not a printed date |
+| Jordan agreement Art. VIII.2 lists "resumption of the normal functioning of the cultural and humanitarian institutions on Mount Scopus and free access thereto" among the Special Committee's tasks. | Avalon Project, Jordanian-Israeli agreement, Art. VIII.2 (https://avalon.law.yale.edu/20th_century/arm03.asp, read 2026-11-01). | [S] (agent read 2026-11-01; a person's check pending) |
+
+Still open: **[GAP]** the claimed 30 Nov 1948 annex modifying the Mount Scopus agreement is not mentioned in S/4030, nor on the JVL page; no primary text of it found. **[GAP]** the 7 July 1948 map itself ("SCOPUS - UN", 8 Jul 1948) and a primary source for the 1967 end of the enclave as such. Partial UN lead, pointer to another note: `research_notes/Era 1957-77/lines-1967-74.md` quotes S/8146 (Secretary-General's Personal Representative, 12 Sep 1967): the order of 28 June 1967 put "Mount Scopus and vicinity" under Israeli law from 28 June 1967 (law applying, not the end of the enclave) (agent read 2026-10-25; a person's check pending). **[GAP]** the UN-document original of the 7 July text (JVL's copy is a transcription).
 
 ## What #61-style dating needs (`lines.yaml`, chapters design §10)
 
@@ -103,7 +118,7 @@ Every feature carries `from`, optional `until`, sources with check dates, and `s
 `sensitivity-reviewed`). Dates the texts already fix:
 
 - Egypt line: from **24 Feb 1949**; the El Auja DMZ from the same date; the 1950 zones from **22 Feb 1950**.
-- Lebanon: from **23 Mar 1949** (withdrawal to the line and reduction to defensive strength "within ten days of the signing", Art. V.3, read in UNTS vol. 42 No. 655 on 2026-10-11: a separate dated note).
+- Lebanon: from **23 Mar 1949** (withdrawal to the line and reduction to defensive strength "within ten days of the signing", Art. V.3, read in UNTS vol. 42 No. 655 on 2026-10-11: a separate dated note, see Dated rows, above).
 - Jordan: from **3 Apr 1949** for sectors (a), (b), (d); the **Iraqi sector "A"** comes into force in stages (Art. VI.3):
   west of the Baqa-Jaljulia road and east of Kafr Qasim within five weeks (by **8 May 1949**), Wadi Ara north of the
   Baqa-Zubeiba line within seven weeks (by **22 May 1949**), the rest within fifteen weeks (by **17 July 1949**); until
