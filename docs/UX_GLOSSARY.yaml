@@ -772,14 +772,15 @@ concepts:
     - form: "Click the map, or Tab to it and press Enter, to inspect a hex; right-drag to move the map"
       where: strings.en.yaml info.hint
   he:
-    preferred: null
-    avoid: []
+    preferred: 'משבצת (feminine: "משבצת סמוכה", plural "משבצות")'
+    avoid:
+    - 'משושה (replaced by the owner on 1 November 2026: "replace evey place that says משושה with משבצת throughout the game")'
     in_use:
-    - form: "יש ללחוץ על המפה, או לעבור אליה ב־Tab וללחוץ Enter, כדי לבדוק משושה; גרירה בלחצן הימני מזיזה את המפה"
+    - form: "יש ללחוץ על המפה, או לעבור אליה ב־Tab וללחוץ Enter, כדי לבדוק משבצת; גרירה בלחצן הימני מזיזה את המפה"
       where: strings.he.yaml info.hint
   recommendation:
     en: Keep, but write the first mention so a player who has never met a hex map understands it.
-    he: No change proposed.
+    he: משבצת, as the owner ruled on 1 November 2026.
     reasons:
     - The Google guide treats unexplained jargon as a risk; the word is only used on the map hint.
   decision_owner: Eyal

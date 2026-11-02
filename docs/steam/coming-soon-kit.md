@@ -408,7 +408,8 @@ What the build contains that the table above does not mention:
 
 **Mature-content description** (approved with the survey on 1 November 2026; it extends store-page-draft.md section 6
 with the combat and capture facts above). The Deport sentence, the second to last, was added on 2 November 2026 on the
-owner's ruling for #2165, "Mention it (Recommended)", and awaits the owner's read of its wording:
+owner's ruling for #2165, "Mention it (Recommended)"; the owner approved its wording on 2 November 2026
+("Approve as written"):
 
 > Statecraft: Israel depicts real events of 1948-1951 from the perspective of Israel's government, including war,
 > terror attacks, refugees and displacement, and references to the Holocaust. The player commands military units in
@@ -427,7 +428,7 @@ any build that turns Deport on (Phase 6 PR 10).
 **Open items** (not settled by the approval; settle each before submitting):
 
 - **Deport: settled 2 November 2026.** The owner chose to mention it ("Mention it (Recommended)"); the description
-  above now has a Deport sentence. Still open: the owner's read of that sentence's wording.
+  above now has a Deport sentence. Its wording was approved by the owner on 2 November 2026: "Approve as written".
 - **The photographs and clips:** nobody has yet looked at the 29 archival photographs and the clips for blood, a
   cigarette or other tobacco, or a Nazi symbol; the answers above rest on their alt texts and descriptions.
 - **Living people:** `content/people.yaml` has not been checked person by person.
