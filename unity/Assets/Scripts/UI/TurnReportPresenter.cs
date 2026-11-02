@@ -151,18 +151,30 @@ namespace Statecraft.Game.UI
                 .OrderByDescending(x => Math.Abs(x.w.Delta)).ThenBy(x => x.i)
                 .Take(HudModel.MaxCauses).Select(x => line(x.w)).ToList();
 
-        /// <summary>#1701 A1 (owner, 2 November 2026: "Yes, in the panel (Recommended)"): each arms workshop that made Arms and
-        /// each one whose next cycle waits at the debt ceiling this turn, as the sim's causes say (CauseKeys.WorkshopArms;
-        /// CauseKeys.WorkshopPaused with Workshops.DebtCeiling; R-ARMS-006), in the sim's order, the city in the player's
-        /// language. A no-worker pause stays on the Why screen. Nothing is counted here: one line a cause.</summary>
+        /// <summary>#1701 A1 (owner, 2 November 2026: "Yes, in the panel (Recommended)"): the arms workshops that made Arms and
+        /// those whose next cycle waits at the debt ceiling this turn, as the sim's causes say (CauseKeys.WorkshopArms;
+        /// CauseKeys.WorkshopPaused with Workshops.DebtCeiling; R-ARMS-006), the city in the player's language. Each city's
+        /// Arms are one line and its ceiling pauses another, with their count (owner, 2 November 2026: "Combine per city
+        /// (Recommended)", the option "'Workshops in Tel Aviv (6): +6 Arms'; pauses likewise combined with a count."), in the
+        /// order each first appears among the sim's causes; a city with one keeps A1's own line ("Workshop in Tel Aviv: +1
+        /// Arms"). The count is the number of those causes, each 1 Arms; nothing else is computed. A no-worker pause stays on
+        /// the Why screen. There is no ruleset check here: the sim gives these causes under gdd-0.3 only
+        /// (ArmsWorkshopTests.Gdd01RunsNoWorkshopCycle), and the report shows what the sim says.</summary>
         static IReadOnlyList<string> WorkshopLines(SimBridge bridge, UiText text, IReadOnlyDictionary<string, string>? townNamesHe)
         {
             var turn = bridge.Session.Last;
             if (turn == null) return Array.Empty<string>();
             return turn.Why
                 .Where(w => w.Key == CauseKeys.WorkshopArms || (w.Key == CauseKeys.WorkshopPaused && w.Args.FirstOrDefault() == Workshops.DebtCeiling))
-                .Select(w => text.Format(w.Key == CauseKeys.WorkshopArms ? "report.workshop_arms" : "report.workshop_paused_debt",
-                    ContentNames.Settlement(text, bridge.Content, w.Target, townNamesHe))).ToList();
+                .GroupBy(w => (w.Key, City: w.Target))   // groups come in the order of their first cause
+                .Select(g =>
+                {
+                    var made = g.Key.Key == CauseKeys.WorkshopArms;
+                    var city = ContentNames.Settlement(text, bridge.Content, g.Key.City, townNamesHe);
+                    var n = g.Count();
+                    return n == 1 ? text.Format(made ? "report.workshop_arms" : "report.workshop_paused_debt", city)
+                        : text.Format(made ? "report.workshop_arms_n" : "report.workshop_paused_debt_n", city, n);
+                }).ToList();
         }
 
         /// <summary>#1293: every order the enemy AI gave in the last turn, and every attack its units made, a standing one too
