@@ -204,9 +204,9 @@ public class TurnReportTests
             using var k = new Kit(text, (g, cmds) =>
             {
                 var r = g.EndTurn(cmds);
-                var with = new StepResult(r.State, r.Why.Concat(added).ToList(), r.Rejected);
-                typeof(GameSession).GetProperty(nameof(GameSession.Last))!.SetValue(g, with);
-                return with;
+                var result = new StepResult(r.State, r.Why.Concat(added).ToList(), r.Rejected);
+                typeof(GameSession).GetProperty(nameof(GameSession.Last))!.SetValue(g, result);
+                return result;
             });
             k.Report.TownNamesHe = namesHe;
             k.Bridge.EndTurn();
