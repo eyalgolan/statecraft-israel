@@ -20,8 +20,6 @@ office: defense_minister
 # 15 October, and the turn it opens covers Allon's request.
 from: 1948-10-15
 to: 1948-10-23
-# No unit orders on either option (R-ENEMY-005; owner, 31 October 2026, #749: sourced anchors only): no source in the repo
-# places a unit at a dated position inside this window, so none is given until one is found.
 options:
   - id: stop_at_ceasefire
     text: Stop at the cease-fire and stay out of the Hebron hills
@@ -31,6 +29,14 @@ options:
     set_rung: 5
     effects:
       - { target: security, delta: 0.025 }
+    # Unit orders (R-ENEMY-005; owner, 1 November 2026, #2087: "military operations must have unit orders", sourced places
+    # only). Negev to Beersheba, 21 October 1948 to the Egypt armistice, map/units_1948.yaml line 915 (negev's order target
+    # "Beersheba"); Givati to Huleiqat, 20 October to 1 November 1948, line 457 (givati's order target "Huleiqat"); both on the
+    # IDF account of Yoav (Jewish Virtual Library, a source of this card); war-1948.md section 3, the Yoav row (line 143).
+    # The hexes are the targets' own (map/unit_anchor_hexes.yaml).
+    unit_orders:
+      - { unit: negev, q: -9, r: 31 }
+      - { unit: givati, q: -8, r: 26 }
   - id: push_to_hebron
     text: Let Allon push on into the Hebron hills and the Jericho valley
     text_he: לאפשר לאלון להתקדם לתוך הר חברון ובקעת יריחו
@@ -40,6 +46,7 @@ options:
     effects:
       - { target: security, delta: 0.03 }
       - { target: intl_standing, delta: -0.08 }
+    # No unit orders: no source places a unit for this alternative (R-ENEMY-005, #749), until one is found.
 sources:
   # Kept for Allon's request to push into the Hebron hills and the Jericho valley and Ben-Gurion's refusal, mainly for
   # fear of British involvement, and for the 14 October start; the IDF History Department study below has the

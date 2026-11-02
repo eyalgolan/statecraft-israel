@@ -21,3 +21,11 @@ def test_two_known_anchors_are_pinned_literally():
     rows = {(r["id"], r["anchor"]): (r["q"], r["r"]) for r in yaml12.load((MAP / "unit_anchor_hexes.yaml").read_text())["anchors"]}
     assert rows[("carmeli", 0)] == (5, 8)   # Haifa (#743, owner, 20 October 2026)
     assert rows[("kiryati", 0)] == (-3, 19)   # Tel Aviv, the hex settlement_hexes.yaml gives tel_aviv
+
+
+def test_order_targets_get_their_own_rows():
+    # R-ENEMY-005 (owner, 2 November 2026, #2087, option 1): an order target is not an anchor, so it has no anchor row.
+    hexes = yaml12.load((MAP / "unit_anchor_hexes.yaml").read_text())
+    targets = {(r["id"], r["target"]): (r["q"], r["r"]) for r in hexes["order_targets"]}
+    assert targets[("kiryati", 0)] == (-3, 21)   # Ramle, the ten_days card's order
+    assert not any(r["id"] == "kiryati" and r["anchor"] == 1 for r in hexes["anchors"])

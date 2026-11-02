@@ -124,7 +124,9 @@ namespace Statecraft.Sim
             return (int)v;
         }
 
-        /// <summary>Plays the scenario and returns the final state. Fails with the date, the order and the sim's reason when a command is rejected.</summary>
+        /// <summary>Plays the scenario and returns the final state. Fails with the date, the order and the sim's reason when a command is rejected.
+        /// An operation card's refused unit order (R-ENEMY-005, <see cref="Orders.RefusedCardOrder"/>) is not one of the scenario's
+        /// commands: the 7th Brigade's Hiram order is refused in every run while the ALA holds al-Malikiyya (#2087).</summary>
         public GameState Play(Content c)
         {
             var s = Simulation.NewGame(c, Seed ?? GoldenRun.Seed, Mode.Historical);
@@ -134,9 +136,9 @@ namespace Statecraft.Sim
                 var now = new List<Command>();
                 while (pending.Count > 0 && pending[0].OnDate <= s.Date) { now.AddRange(pending[0].Built); pending.RemoveAt(0); }
                 var r = Simulation.Step(c, s, now);
-                if (r.Rejected.Count > 0)
+                if (r.Rejected.Any(j => j.Reason != Orders.RefusedCardOrder))
                 {
-                    var x = r.Rejected[0];
+                    var x = r.Rejected.First(j => j.Reason != Orders.RefusedCardOrder);
                     throw new InvalidOperationException($"scenario '{Name}': on {s.Date:yyyy-MM-dd} the sim rejected {x.Command.Kind} ({Describe(x.Command)}): {x.Reason}");
                 }
                 s = r.State;

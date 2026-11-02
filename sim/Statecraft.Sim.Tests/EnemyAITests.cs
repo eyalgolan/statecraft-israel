@@ -390,9 +390,11 @@ public class EnemyAITests
             foreach (var u in s.Units.Values.Where(IsEnemy))
                 if ((u.Q, u.R) != start[u.Id]) Assert.DoesNotContain((u.Q, u.R), players);
         }
-        // No capture at all: Horev's delegated go-to (R-ENEMY-005) takes Golani round Nazareth, an enemy-held place it was not
-        // sent to (the owner's answer 1 on #2087).
-        Assert.Empty(s.Settlements);
+        // No capture but the card orders' own targets: Horev's delegated go-to (R-ENEMY-005) takes Golani round Nazareth, an
+        // enemy-held place it was not sent to (the owner's answer 1 on #2087), while the delegated Dani and Yoav orders send
+        // Kiryati to Ramle's hex (Lod and Ramla) and the Negev Brigade to Beersheba, which a card's march may take.
+        Assert.Equal(new[] { "beersheba", "lod", "ramla" }, s.Settlements.Keys.OrderBy(k => k, StringComparer.Ordinal));
+        Assert.All(s.Settlements.Values, x => Assert.Equal("israel", x.Owner));
     }
 
     // R-ENEMY-001: what the enemy does is named on its cause (Cause.EnemyOrder), for the turn report (#1293): a scripted
@@ -491,18 +493,60 @@ public class EnemyAITests
         Assert.Equal("An enemy unit holds that hex", Assert.Single(Simulation.Preview(c, s, new Command[] { new UnitOrder(0, Movement.GoTo, 4, 0) }).Rejected).Reason);
     }
 
-    // R-ENEMY-005 (owner, 31 October 2026, #749: "Sourced anchors only"): only the three sourced anchors receive orders, each
-    // from its card's historical option. Yoav, Hiram and every alternative option give none until sources are found.
+    // R-ENEMY-005 (owner, 31 October 2026, #749: "Sourced anchors only"; 1 November 2026, #2087: "military operations must
+    // have unit orders", "Kiryati to Ramle", Harel toward Latrun; 2 November 2026, option 1: the new ones are order targets,
+    // not anchors): only these sourced places receive orders. Every other alternative option gives none until sources are found.
     [Fact]
-    public void OnlyTheThreeSourcedAnchorsReceiveCardOrders()
+    public void OnlyTheSourcedAnchorsReceiveCardOrders()
     {
         var orders = Real.Events.SelectMany(e => e.Options.SelectMany(o => o.UnitOrders.Select(x => (e.Id, o.Id, o.Historical, x.Unit, x.Q, x.R))));
         Assert.Equal(new[]
         {
-            ("operation_horev", "launch", true, "golani", -7, 24),      // Julis camp, units_1948.yaml golani anchors[1]
-            ("ten_days", "central_front", true, "yiftach", -3, 21),     // Lydda, yiftach anchors[0]
-            ("ten_days", "central_front", true, "carmeli", 13, 5),      // facing the Syrian bridgehead, carmeli anchors[1]
+            ("latrun_proposal", "press_offensive", false, "harel", -2, 22),        // Latrun police fort, harel order_targets[0]
+            ("operation_hiram", "stop_at_ceasefire", true, "carmeli", 14, 2),      // Manara, carmeli order_targets[0]
+            ("operation_hiram", "stop_at_ceasefire", true, "brigade_7", 12, 4),    // al-Malikiyya, brigade_7 order_targets[0]
+            ("operation_horev", "launch", true, "golani", -7, 24),                 // Julis camp, golani anchors[1]
+            ("operation_yoav", "stop_at_ceasefire", true, "negev", -9, 31),        // Beersheba, negev order_targets[0]
+            ("operation_yoav", "stop_at_ceasefire", true, "givati", -8, 26),       // Huleiqat, givati order_targets[0]
+            ("ten_days", "central_front", true, "kiryati", -3, 21),                // Ramle, kiryati order_targets[0]
+            ("ten_days", "central_front", true, "carmeli", 13, 5),                 // facing the Syrian bridgehead, carmeli anchors[1]
         }, orders.OrderBy(x => x.Item1, StringComparer.Ordinal));
+    }
+
+    // R-ENEMY-005, the owner's rulings of 1 November 2026 on #2087: each operation card's option orders the named unit, on the
+    // board, to the named hex, until its order target's `to`. The reference game (GoldenRun) is played to the card's turn; an enemy
+    // unit standing on the hex is taken off first (the ALA on al-Malikiyya), as that refusal is pinned by
+    // WarEvents1948Tests.NoTurnBeforeTheArmisticeRefusesAnOrder and ARefusedCardOrderIsReportedLikeThePlayersOwn.
+    [Theory]
+    [InlineData("ten_days", "central_front", "1948-07-15", "kiryati", -3, 21, "1948-07-20")]
+    [InlineData("operation_yoav", "stop_at_ceasefire", "1948-10-15", "negev", -9, 31, "1949-02-24")]
+    [InlineData("operation_yoav", "stop_at_ceasefire", "1948-10-15", "givati", -8, 26, "1948-11-01")]
+    [InlineData("operation_hiram", "stop_at_ceasefire", "1948-11-15", "carmeli", 14, 2, "1949-03-23")]
+    [InlineData("operation_hiram", "stop_at_ceasefire", "1948-11-15", "brigade_7", 12, 4, "1949-03-23")]
+    [InlineData("latrun_proposal", "press_offensive", "1948-09-15", "harel", -2, 22, "1948-12-22")]
+    public void AnOperationCardOrdersItsUnitToItsHex(string card, string option, string turn, string row, int q, int r, string until)
+    {
+        static DateTime Day(string d) => DateTime.Parse(d, System.Globalization.CultureInfo.InvariantCulture);
+        var s = GoldenRun.Play(Real, Day(turn));
+        Assert.Equal(Day(turn), s.Date);
+        int id = Real.StartingForces.FindIndex(f => f.Row == row);
+        Assert.True(s.Units.ContainsKey(id), row);
+        foreach (var held in s.Units.Values.Where(u => u.Side != Movement.PlayerSide && (u.Q, u.R) == (q, r)).Select(u => u.Id).ToList())
+            s.Units.Remove(held);
+        if (!s.PendingEvents.Contains(card)) s.PendingEvents.Add(card);
+        var rejected = new List<Rejection>();
+        var why = new List<Cause>();
+        Assert.Null(EventSystem.Choose(Real, s, card, option, why, rejected: rejected));
+        Assert.DoesNotContain(rejected, x => x.Command is UnitOrder o && o.Unit == id);   // Hiram's other order may be refused
+        var hex = FormattableString.Invariant($"{q},{r}");
+        Assert.Contains(why, x => x.Key == WhyKeys.OnItsWay && x.Args.Contains(hex));
+        // The go-to moves the unit at once as far as its points reach (R-MOVE-008): either it is there, or the order stands.
+        var u = s.Units[id];
+        if ((u.Q, u.R) != (q, r))
+        {
+            Assert.Equal((Movement.GoTo, hex), (u.Order, u.OrderTarget));
+            Assert.Equal(Day(until), s.CardOrders[id]);
+        }
     }
 
     // R-ENEMY-005, the owner's answer 1 on #2087 ("Orders expire with the operation", 31 October 2026): a fixture game of one
@@ -553,6 +597,52 @@ public class EnemyAITests
         var endless = Assert.Throws<ContentException>(() => CardGame(5, 0, "", MovementTests.Board()));
         Assert.Equal(("events/probe.yaml", "events[probe].options[ok].unit_orders[0]"), (endless.File, endless.Field));
         Assert.Contains("no 'to' date", endless.Message);
+    }
+
+    // R-ENEMY-005, the owner's option 1 on #2087 (2 November 2026): a card may order a row's unit to one of its `order_targets`,
+    // sourced and dated as an anchor but never drawn and never a start; the order ends on the target's `to`. The loader
+    // refuses a target with no sources or no from/to date. Fixture values: one brigade row on (0, 0), a target on (4, 0).
+    static Content OrderTargetGame(string target)
+    {
+        var rows = "units:\n- id: brig\n  service: army\n  side: israel\n  status: draft\n"
+            + "  strength: { value: 30, as_of: '1948-05-15' }\n  anchors:\n"
+            + "  - { place: Here, lon: 34.29, lat: 33.35, from: '1948-05-15', to: '1949-01-01' }\n"
+            + "  order_targets:\n  - { place: There, lon: 34.30, lat: 33.35" + target + " }\n";
+        const string Hexes = "anchors:\n  - { id: brig, anchor: 0, q: 0, r: 0 }\norder_targets:\n  - { id: brig, target: 0, q: 4, r: 0 }\n";
+        const string Card = "id: probe\ntitle: Fixture\ntext: Fixture.\nfrom: 1948-05-15\noptions:\n"
+            + "  - id: ok\n    text: Accept\n    historical: true\n    unit_orders: [{ unit: brig, q: 4, r: 0 }]\n";
+        var files = Fixture.Gdd(new Dictionary<string, string>
+        {
+            ["unit_types.yaml"] = Types, ["map/hexes.json"] = MovementTests.Board(), ["corridors.yaml"] = "corridors: []\n",
+            ["map/units_1948.yaml"] = rows, ["map/unit_anchor_hexes.yaml"] = Hexes,
+        });
+        return ContentLoader.Load(Fixture.Write(files, new() { ["probe.yaml"] = Card }));
+    }
+
+    [Fact]
+    public void ACardOrdersAUnitToASourcedDatedOrderTarget()
+    {
+        const string Sources = ", sources: [{ url: 'https://example.org/a', checked: '2026-11-02' }]";
+        var c = OrderTargetGame(", from: '1948-05-15', to: '1948-05-20'" + Sources);
+        var start = Assert.Single(c.StartingForces);
+        Assert.Equal((0, 0), (start.Q, start.R));   // a target starts no unit
+        var first = Simulation.Step(c, Simulation.NewGame(c, 1, Mode.Historical), new Command[] { new ChooseEventOption("probe", "ok") });
+        Assert.Empty(first.Rejected);
+        Assert.Equal((3, 0, Movement.GoTo), (first.State.Units[0].Q, first.State.Units[0].R, first.State.Units[0].Order));
+        var next = Simulation.Step(c, first.State, Array.Empty<Command>());   // the target's `to` has passed: the order ends
+        Assert.Contains(next.Why, x => x.Key == WhyKeys.CardOrderEnded && x.Args.SequenceEqual(new[] { "4,0" }));
+
+        foreach (var (target, field) in new[]
+        {
+            (", from: '1948-05-15', to: '1948-05-20'", "units[brig].order_targets[0].sources"),
+            (", from: '1948-05-15', to: '1948-05-20', sources: []", "units[brig].order_targets[0].sources"),
+            (", to: '1948-05-20'" + Sources, "units[brig].order_targets[0].from"),
+            (", from: '1948-05-15'" + Sources, "units[brig].order_targets[0].to"),
+        })
+        {
+            var e = Assert.Throws<ContentException>(() => OrderTargetGame(target));
+            Assert.Equal(("map/units_1948.yaml", field), (e.File, e.Field));
+        }
     }
 
     // (b) The card's march never ends on an enemy-held place it was not sent to: it goes round town_a, where the player's

@@ -1,4 +1,4 @@
-1952-01-15;11400714819323200433;Historical;44;
+1952-01-15;8709371129873692656;Historical;44;
 ind{
   food_supply=0.8555395682661614 [3FEB60948444634F]
   housing=0.08527449992708651 [3FB5D48CB45E9D83]
@@ -140,14 +140,14 @@ city{
   zikhron_yaakov=2,1,4,1,0,c0 [0000000000000000]
 units[
   0:veteran_soldier@3,14|side=israel|strength=4
-  1:veteran_soldier@8,8|side=israel|strength=2
+  1:veteran_soldier@14,2|side=israel|strength=1|full=2
   2:veteran_soldier@0,15|side=israel|strength=4
-  3:veteran_soldier@-3,19|side=israel|strength=3
-  4:veteran_soldier@-5,23|side=israel|strength=3
+  3:veteran_soldier@-2,21|side=israel|strength=3
+  4:veteran_soldier@-7,26|side=israel|strength=1|full=3
   5:veteran_soldier@0,23|side=israel|strength=3
-  7:veteran_soldier@-9,27|side=israel|strength=1
-  8:egyptian_army@-8,25|side=egypt|strength=10|order=fortify|target=-8,25
-  9:arab_legion@-2,22|side=jordan|strength=4|order=fortify|target=-2,22
+  7:veteran_soldier@-8,31|side=israel|strength=1
+  8:egyptian_army@-8,25|side=egypt|strength=9|order=fortify|target=-8,25
+  9:arab_legion@-2,22|side=jordan|strength=5|order=fortify|target=-2,22
   10:syrian_army@13,6|side=syria|strength=3|order=fortify|target=13,6
   11:iraqi_army@6,13|side=iraq|strength=3|order=fortify|target=6,13
   12:arab_liberation_army@12,4|side=ala|strength=4|order=fortify|target=12,4
@@ -171,5 +171,9 @@ cproj[
 next=21
 obj{
   yishuvim=1951-09-15
+ctrl{
+  beersheba=since=1949-01-15,fled=1
+  lod=since=1948-08-15,fled=1
+  ramla=since=1948-08-15,fled=1
 food=2733,1390,0
 arms=12

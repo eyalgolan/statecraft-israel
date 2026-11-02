@@ -66,10 +66,13 @@ namespace Statecraft.Sim
         /// the hex), or null when it has none. The anchor's dates, not the card's: a card's from/to is when the decision is open
         /// (Horev's closes on 23 December 1948; the operation ran to 7 January 1949), while the anchor's are the sourced span of
         /// the position the operation sends the unit to: Carmeli facing the bridgehead to 19 July 1948, the end of Brosh, and
-        /// Golani at the Julis camp to 24 February 1949, the Egypt armistice.</summary>
+        /// Golani at the Julis camp to 24 February 1949, the Egypt armistice. An order target's `to` counts as an anchor's
+        /// (owner, 2 November 2026, #2087, option 1).</summary>
         internal static DateTime? OrderEnds(Content c, UnitOrderEffect x) =>
             c.UnitAnchorHexes.Where(k => k.Key.Row == x.Unit && k.Value == (x.Q, x.R) && c.UnitAnchorEnds.ContainsKey(k.Key))
-                .Select(k => (DateTime?)c.UnitAnchorEnds[k.Key]).Max();
+                .Select(k => (DateTime?)c.UnitAnchorEnds[k.Key])
+                .Concat(c.UnitOrderTargets.Where(k => k.Key.Row == x.Unit && (k.Value.Q, k.Value.R) == (x.Q, x.R)).Select(k => (DateTime?)k.Value.To))
+                .Max();
 
         /// <summary>Returns null on success, or the reason the choice was rejected. <paramref name="spent"/> is the movement
         /// points the turn's orders have spent so far, which an option's unit orders share (R-ENEMY-005).

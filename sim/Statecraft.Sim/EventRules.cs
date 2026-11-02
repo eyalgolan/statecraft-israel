@@ -130,8 +130,8 @@ namespace Statecraft.Sim
         }
 
         /// <summary>R-ENEMY-005 (Q-ENEMY-5): an option's go-to orders name a map/units_1948.yaml row and one of that row's own
-        /// anchor hexes, so a card never sends a unit to a position no source gives it (owner, 31 October 2026, #749: sourced
-        /// anchors only). They are checked under gdd-0.3 too, where EventSystem does not apply them. The legacy loop reads the
+        /// anchor or order target hexes, so a card never sends a unit to a position no source gives it (owner, 31 October 2026,
+        /// #749: sourced anchors only; 2 November 2026, #2087: order targets, option 1). They are checked under gdd-0.3 too, where EventSystem does not apply them. The legacy loop reads the
         /// same real cards but no units file, so it has nothing to check them against and no unit to order.</summary>
         static void CheckOrders(Content c, GameEvent e, EventOption o, Func<string, string> F)
         {
@@ -142,8 +142,9 @@ namespace Statecraft.Sim
                 var at = F(FormattableString.Invariant($"options[{o.Id}].unit_orders[{i}]"));
                 if (!c.UnitAnchorHexes.Keys.Any(k => k.Row == x.Unit))
                     throw new ContentException(e.File, at + ".unit", $"unknown unit row '{x.Unit}' ({StartingForces.FileName})");
-                if (!c.UnitAnchorHexes.Any(k => k.Key.Row == x.Unit && k.Value == (x.Q, x.R)))
-                    throw new ContentException(e.File, at, FormattableString.Invariant($"hex q={x.Q} r={x.R} is not an anchor of '{x.Unit}' in {StartingForces.HexesFileName}"));
+                if (!c.UnitAnchorHexes.Any(k => k.Key.Row == x.Unit && k.Value == (x.Q, x.R))
+                    && !c.UnitOrderTargets.Any(k => k.Key.Row == x.Unit && (k.Value.Q, k.Value.R) == (x.Q, x.R)))
+                    throw new ContentException(e.File, at, FormattableString.Invariant($"hex q={x.Q} r={x.R} is not an anchor or an order target of '{x.Unit}' in {StartingForces.HexesFileName}"));
                 // The order ends with its anchor's window (the owner's answer 1 on #2087), so the anchor needs an end.
                 if (EventSystem.OrderEnds(c, x) == null)
                     throw new ContentException(e.File, at, FormattableString.Invariant($"the anchor of '{x.Unit}' on hex q={x.Q} r={x.R} has no 'to' date in {StartingForces.FileName}"));

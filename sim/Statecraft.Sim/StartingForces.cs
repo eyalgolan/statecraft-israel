@@ -52,13 +52,14 @@ namespace Statecraft.Sim
         internal static List<StartingForce> Read(Func<string, string?> readFile, Content c)
         {
             var rows = Rows(readFile, FileName, "units");
-            var hexes = Hexes(readFile, rows);
+            var hexes = Hexes(readFile, rows, "anchors", "anchor");
             c.UnitAnchorHexes = hexes;   // R-ENEMY-005: the operation cards' orders name these
             foreach (var row in rows)    // and end with their windows; EventRules refuses an order to an anchor with no end
                 if (row != null && row.TryGetValue("anchors", out var ao) && ao is List<object> windows)
                     for (int k = 0; k < windows.Count; k++)
                         if (windows[k] is Dictionary<object, object> a && DateTime.TryParseExact(Text(a, "to"), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var to))
                             c.UnitAnchorEnds[(Text(row, "id"), k)] = to;
+            OrderTargets(c, rows, Hexes(readFile, rows, "order_targets", "target"));
             var start = c.Rules.Start.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
             var ppu = c.RulesAt(c.Rules.Start).Mvp!.PeoplePerUnit;   // the start day's rules, as Cities.Init reads them
             var list = new List<StartingForce>();
@@ -172,8 +173,35 @@ namespace Statecraft.Sim
             return types[0].Id;
         }
 
-        /// <summary>A file's list under <paramref name="key"/>, read untyped (only the keys the start needs are read).</summary>
-        static List<Dictionary<object, object>> Rows(Func<string, string?> readFile, string fileName, string key)
+        /// <summary>R-ENEMY-005 (owner, 2 November 2026, #2087, option 1): each row's `order_targets`, where an operation card may
+        /// send its unit, with the hex tools/unit_anchor_hexes.py gives it and the `to` that ends the card's order. Never a
+        /// start and never drawn, but sourced and dated as an anchor: one with no sources or no from/to date is a load error.</summary>
+        static void OrderTargets(Content c, List<Dictionary<object, object>> rows, Dictionary<(string id, int anchor), (int q, int r)> hexes)
+        {
+            foreach (var row in rows)
+            {
+                if (row == null || !(row.TryGetValue("order_targets", out var to) && to is List<object> targets)) continue;
+                var id = Text(row, "id");
+                for (int k = 0; k < targets.Count; k++)
+                {
+                    var at = FormattableString.Invariant($"units[{id}].order_targets[{k}]");
+                    if (!(targets[k] is Dictionary<object, object> t)) throw new ContentException(FileName, at, "empty order target");
+                    if (!(t.TryGetValue("sources", out var so) && so is List<object> sources && sources.Count > 0))
+                        throw new ContentException(FileName, at + ".sources", "required, at least one source");
+                    if (!DateTime.TryParseExact(Text(t, "from"), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _))
+                        throw new ContentException(FileName, at + ".from", "required, a date 'YYYY-MM-DD'");
+                    if (!DateTime.TryParseExact(Text(t, "to"), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var until))
+                        throw new ContentException(FileName, at + ".to", "required, a date 'YYYY-MM-DD'");
+                    if (!hexes.TryGetValue((id, k), out var qr))
+                        throw new ContentException(HexesFileName, "order_targets", $"no hex for {at} ({FileName}); rerun tools/unit_anchor_hexes.py");
+                    c.UnitOrderTargets[(id, k)] = (qr.q, qr.r, until);
+                }
+            }
+        }
+
+        /// <summary>A file's list under <paramref name="key"/>, read untyped (only the keys the start needs are read). An
+        /// <paramref name="optional"/> key that is absent reads as an empty list.</summary>
+        static List<Dictionary<object, object>> Rows(Func<string, string?> readFile, string fileName, string key, bool optional = false)
         {
             string? text;
             try { text = readFile(fileName); }
@@ -183,29 +211,31 @@ namespace Statecraft.Sim
             Dictionary<string, List<Dictionary<object, object>>>? file;
             try { file = new DeserializerBuilder().Build().Deserialize<Dictionary<string, List<Dictionary<object, object>>>>(text); }
             catch (YamlException e) { throw new ContentException(fileName, $"line {e.Start.Line}", e.InnerException?.Message ?? e.Message); }
-            if (file == null || !file.TryGetValue(key, out var rows) || rows == null) throw new ContentException(fileName, key, "required");
-            return rows;
+            if (file != null && file.TryGetValue(key, out var rows) && rows != null) return rows;
+            if (optional && (file == null || !file.ContainsKey(key))) return new List<Dictionary<object, object>>();
+            throw new ContentException(fileName, key, "required");
         }
 
-        /// <summary>unit_anchor_hexes.yaml by (row id, anchor index). Every row must name an anchor of <paramref name="units"/>,
-        /// once: a row that does not means the file is stale (the tool was not rerun after units_1948.yaml changed).</summary>
-        static Dictionary<(string id, int anchor), (int q, int r)> Hexes(Func<string, string?> readFile, List<Dictionary<object, object>> units)
+        /// <summary>unit_anchor_hexes.yaml's <paramref name="key"/> list (anchors, or order_targets, R-ENEMY-005) by (row id,
+        /// index). Every row must name one entry of <paramref name="units"/>' list under the same key, once: a row that does
+        /// not means the file is stale (the tool was not rerun after units_1948.yaml changed).</summary>
+        static Dictionary<(string id, int anchor), (int q, int r)> Hexes(Func<string, string?> readFile, List<Dictionary<object, object>> units, string key, string index)
         {
             var anchors = new Dictionary<string, int>(StringComparer.Ordinal);
             foreach (var u in units)
-                if (u != null) anchors[Text(u, "id")] = u.TryGetValue("anchors", out var ao) && ao is List<object> list ? list.Count : 0;
+                if (u != null) anchors[Text(u, "id")] = u.TryGetValue(key, out var ao) && ao is List<object> list ? list.Count : 0;
             var hexes = new Dictionary<(string, int), (int, int)>();
-            var rows = Rows(readFile, HexesFileName, "anchors");
+            var rows = Rows(readFile, HexesFileName, key, optional: key != "anchors");
             for (int i = 0; i < rows.Count; i++)
             {
-                var row = rows[i] ?? throw new ContentException(HexesFileName, $"anchors[{i}]", "empty row");
+                var row = rows[i] ?? throw new ContentException(HexesFileName, $"{key}[{i}]", "empty row");
                 var id = Text(row, "id");
-                var at = id == "" ? $"anchors[{i}]" : $"anchors[{id}]";
-                int k = Int(row, "anchor", at), q = Int(row, "q", at), r = Int(row, "r", at);
+                var at = id == "" ? $"{key}[{i}]" : $"{key}[{id}]";
+                int k = Int(row, index, at), q = Int(row, "q", at), r = Int(row, "r", at);
                 if (!anchors.TryGetValue(id, out var n) || k < 0 || k >= n)
-                    throw new ContentException(HexesFileName, at, FormattableString.Invariant($"no anchor {k} of a row '{id}' in {FileName}; rerun tools/unit_anchor_hexes.py"));
+                    throw new ContentException(HexesFileName, at, FormattableString.Invariant($"no {index} {k} of a row '{id}' in {FileName}; rerun tools/unit_anchor_hexes.py"));
                 if (!hexes.TryAdd((id, k), (q, r)))
-                    throw new ContentException(HexesFileName, at, FormattableString.Invariant($"anchor {k} is listed twice"));
+                    throw new ContentException(HexesFileName, at, FormattableString.Invariant($"{index} {k} is listed twice"));
             }
             return hexes;
         }

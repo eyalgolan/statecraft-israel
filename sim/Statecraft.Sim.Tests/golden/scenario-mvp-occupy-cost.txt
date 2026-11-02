@@ -1,4 +1,4 @@
-1948-12-15;4354685564936847302;Historical;7;
+1948-12-15;8709371129873692656;Historical;7;
 ind{
   food_supply=0.4 [3FD999999999999A]
   housing=0.4196029067993164 [3FDADAC626809D49]
@@ -40,7 +40,7 @@ pop{
   veterans=655829.1137019362 [412403AA3A3723E3]
 sit[
 treasury=0 [0000000000000000]
-debt=17.901888251868293 [4031E6E226026BC2]
+debt=17.851888251868292 [4031DA1559359EF5]
 fx=76.85902112083348 [405336FA33B92365]
 rung=5;cf=0;
 mob=0.8 [3FE999999999999A]
@@ -95,20 +95,24 @@ city{
   zikhron_yaakov=2,1,2,1,0,c0.35 [3FD6666666666666]
 units[
   0:veteran_soldier@7,10|side=israel|strength=4
-  1:veteran_soldier@8,8|side=israel|strength=2
+  1:veteran_soldier@10,7|side=israel|strength=2|order=go_to|target=14,2
   2:veteran_soldier@0,15|side=israel|strength=4
-  3:veteran_soldier@-3,19|side=israel|strength=3
-  4:veteran_soldier@-5,23|side=israel|strength=3
+  3:veteran_soldier@-3,21|side=israel|strength=3
   5:veteran_soldier@0,23|side=israel|strength=3
-  7:veteran_soldier@-9,27|side=israel|strength=1
-  8:egyptian_army@-8,25|side=egypt|strength=10|order=fortify|target=-8,25
-  9:arab_legion@-2,22|side=jordan|strength=4|order=fortify|target=-2,22
+  7:veteran_soldier@-9,30|side=israel|strength=1|order=go_to|target=-9,31
+  8:egyptian_army@-8,25|side=egypt|strength=9
+  9:arab_legion@-2,22|side=jordan|strength=5|order=fortify|target=-2,22
   10:syrian_army@13,6|side=syria|strength=3|order=fortify|target=13,6
   11:iraqi_army@6,13|side=iraq|strength=3|order=fortify|target=6,13
   12:arab_liberation_army@12,4|side=ala|strength=4|order=fortify|target=12,4
   13:veteran_soldier@-4,23|side=israel|strength=2
+cardorders{
+  1=1949-03-23
+  7=1949-02-24
 next=14
 ctrl{
+  lod=owner=israel,state=awaiting_choice,since=1948-08-15,fled=1
   nazareth=owner=israel,state=awaiting_end,since=1948-06-15
+  ramla=owner=israel,state=awaiting_choice,since=1948-08-15,fled=1
 food=2208,736,0
 arms=12

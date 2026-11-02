@@ -331,13 +331,13 @@ public class Gdd03EventRulesTests
         "jerusalem_ceasefire:79d875217efb2d614538db27b405d9469d46fb61b5288651766611e5559a4643",
         "jerusalem_demilitarisation_guard:93cec80c25ad328a0382c3178de10e133ea9a506ec78b3e038b7e25b7f6e2d62", // re-pinned for #2020 (owner-approved Hebrew wording, owner re-review bc139d5eb)
         "jerusalem_military_government:322585aeedf0c69b9f81722edebaebbdc0d27ebb4e7b67d275e898607d2cd211",
-        "latrun_proposal:f7612a99e1e6f378e6b9a91f36bb4c31e16de465e8bccb2785fea70bfe4e6932",
+        "latrun_proposal:1fef7e1e461733f669167249b22352d9f3fb7807e1d2e33f325faefdec4e5ee1", // re-pinned for #2087 (R-ENEMY-005 unit order: Harel toward Latrun; owner rulings, 1 and 2 November 2026, order targets; card text, Hebrew and review status unchanged)
         "law_of_return:d9453c9d4645bfe7b8bd715bbc4aae6d2f5156b72c717317bd6990184b8e61e4",
         "maabarot_policy:de29ffa17fbc70aa7283b833e546a219b449c8b3e0d712e3d158ed18169d592b",
         "ministry_supply_crisis:000d54fdc5198b105f101bfa7816a152e2c7682f01a97da67e97988e5ef141db",
-        "operation_hiram:9ae584856ced7d5e19df5ed76ab8ddaba4fa360f5399da67ccaced3208519ec3", // re-pinned for #749 part 2 (R-ENEMY-005 unit orders; owner ruling, 31 October 2026; review status unchanged)
+        "operation_hiram:ace250c0241c153bbd30665b21a6dc4dc6c8ddefeb03f9cb444dd9feeee93876", // re-pinned for #2087 (R-ENEMY-005 unit orders: Carmeli to Manara, the 7th Brigade to al-Malikiyya; owner rulings, 1 and 2 November 2026, order targets; card text, Hebrew and review status unchanged)
         "operation_horev:e278c3fa5505b93b71be1971ea4cd60edf87cb7e5c14f93e9ba99e5975e102c1", // re-pinned for #749 part 2 (R-ENEMY-005 unit orders; owner ruling, 31 October 2026; comment per the review of #2087; review status unchanged)
-        "operation_yoav:72cf6baf45ca30a6629a6d152e37d6e995edd348e6a9c4bbfd1b50ee08f226ab", // re-pinned for #749 part 2 (R-ENEMY-005 unit orders; owner ruling, 31 October 2026; review status unchanged)
+        "operation_yoav:61d0576c005a7a1ef056c3029155cd4512a91a635974304d1db592cff2d09c46", // re-pinned for #2087 (R-ENEMY-005 unit orders: Negev to Beersheba, Givati to Huleiqat; owner rulings, 1 and 2 November 2026, order targets; card text, Hebrew and review status unchanged)
         "rafah_force_pressure:658b99340f0cf7dbf042e64d131509b87cec48f4374b16a1337fd0f831dbd28d", // re-pinned for #2020 (owner-approved Hebrew wording, owner re-review bc139d5eb)
         "railway_complete:2108338a93d663ec9cb06bcb474c1f1211cfff480f9ef0acaec9c758a4854a7c", // re-pinned for #1676 (person's fact-check of #1410, status draft -> fact-checked)
         "reparations_claim:b9982aae12edd0f6e2d9f8e4e3273d865d2e9106480fae5824728524edfa4139",
@@ -345,7 +345,7 @@ public class Gdd03EventRulesTests
         "rhodes_talks:9ff18db85e108157ab4ff3753fbf42f9933bedb5f021310979d05fae1b731d1c",
         "second_truce:56c2259ad9af32b4d6d43d22044908611e6b43f2836211350beb125e864b1611",
         "sinai_withdrawal:29854edb31218257e99417f86f23a6dde91c07a9e66230fa1a1b4a0248b15ac5",
-        "ten_days:c43a3f2dad418f07e1ef3e0c1dc79579b5b5a076263780e3fa42286ac29334a4", // re-pinned for #749 part 2 (R-ENEMY-005 unit orders; owner ruling, 31 October 2026; review status unchanged)
+        "ten_days:f43198ba4373dad21a19def5b1a1412eae1e3df9062181ba5fe7e6a1169a8bfe", // re-pinned for #2087 (R-ENEMY-005 unit orders: Kiryati to Ramle replaces Yiftach to Lydda; owner rulings, 1 and 2 November 2026, order target; card text, Hebrew and review status unchanged)
     };
     // R-ENEMY-005 (owner, 31 October 2026, #749: "GDD 0.1 only"): the operation cards' unit orders apply under gdd-0.1; under
     // gdd-0.3 the cards stay effect-free for units until a 0.3 accounting contract exists (R-EFX-001/005).

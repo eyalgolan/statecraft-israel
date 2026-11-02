@@ -185,6 +185,10 @@ namespace Statecraft.Game.Map.Units
         public List<UnitVehicle>? Vehicles { get; set; }
         public UnitDisbanded? Disbanded { get; set; }
         public List<UnitAnchor> Anchors { get; set; } = new List<UnitAnchor>();
+        /// <summary>Where an operation card sends the unit (R-ENEMY-005; owner, 2 November 2026, #2087, option 1). Read only so
+        /// the file parses: the map never draws them and the card never shows them (the sim and tools/unit_anchor_hexes.py
+        /// read them).</summary>
+        public List<UnitAnchor>? OrderTargets { get; set; }
         public List<UnitAircraft>? Aircraft { get; set; }
         public List<UnitSource>? Sources { get; set; }
 

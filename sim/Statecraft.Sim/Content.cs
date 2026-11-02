@@ -1035,7 +1035,7 @@ namespace Statecraft.Sim
     }
 
     /// <summary>An option's go-to order (R-ENEMY-005) for the unit of the map/units_1948.yaml row <see cref="Unit"/>, toward
-    /// hex (<see cref="Q"/>, <see cref="R"/>), which must be one of that row's anchor hexes (map/unit_anchor_hexes.yaml).</summary>
+    /// hex (<see cref="Q"/>, <see cref="R"/>), which must be one of that row's anchor or order target hexes (map/unit_anchor_hexes.yaml).</summary>
     public sealed class UnitOrderEffect
     {
         public string Unit { get; set; } = "";
@@ -1390,6 +1390,10 @@ namespace Statecraft.Sim
         /// <summary>The end of each anchor's window (its `to` in map/units_1948.yaml) by (row id, anchor index): a card's order to
         /// the anchor's hex ends on that day (R-ENEMY-005; the owner's answer 1 on #2087). Empty in the legacy loop.</summary>
         public Dictionary<(string Row, int Anchor), DateTime> UnitAnchorEnds = new Dictionary<(string Row, int Anchor), DateTime>();
+        /// <summary>Each row's order targets (map/units_1948.yaml `order_targets`; owner, 2 November 2026, #2087, option 1) by
+        /// (row id, index): the hex unit_anchor_hexes.yaml gives it and its `to`, the day a card's order to it ends. An operation
+        /// card may order the row's unit there as to an anchor (R-ENEMY-005). Empty in the legacy loop.</summary>
+        public Dictionary<(string Row, int Target), (int Q, int R, DateTime To)> UnitOrderTargets = new Dictionary<(string Row, int Target), (int Q, int R, DateTime To)>();
         /// <summary>The GDD designated sites (sites.yaml), in file order. Empty in the legacy loop.</summary>
         public List<Site> Sites = new List<Site>();
         /// <summary>The GDD city project kinds (projects.yaml), in file order. Empty in the legacy loop.</summary>

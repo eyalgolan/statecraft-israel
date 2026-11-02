@@ -47,6 +47,13 @@ options:
       - { target: security, delta: 0.025 }
       - { target: intl_standing, delta: -0.10 }
       - { target: morale, delta: -0.02 }
+    # Unit orders (R-ENEMY-005; owner, 1 November 2026, #2087: "Harel at Sha'ar HaGai", Harel ordered from its Sha'ar HaGai
+    # anchor toward Latrun). Harel to the Latrun police fort's hex, map/units_1948.yaml line 778 (harel's order target "Latrun
+    # police fort", the latrun_fort location's coordinates): the objective of Ben-Gurion's proposal of 26 September 1948,
+    # this card's source, not a position the brigade held. The order ends with the Sha'ar HaGai window, on 22 December 1948.
+    # An enemy unit on the fort's hex refuses it, as it would the player's, and the turn's refusals say so.
+    unit_orders:
+      - { unit: harel, q: -2, r: 22 }
 sources:
   - { url: "https://bengurionarchive.bgu.ac.il/en/node/6251", checked: 2026-10-10 }
   - { url: "https://in.bgu.ac.il/bgi/israelis/DocLib/Pages/2012/ליאור-לביד.pdf", checked: 2026-10-10 }
