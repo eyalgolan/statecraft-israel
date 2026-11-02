@@ -19,11 +19,12 @@ namespace Statecraft.HexTiles.Prototypes
     /// Sizes (shares of S, as asked of Place): station 0.30 wide, packing house 0.30, crates 0.07, well 0.12, eucalyptus
     /// 0.26 to 0.30 tall, citrus 0.11 to 0.13.
     ///
-    /// Triangle estimate, at the maximum counts (Higgsfield props, local only, measured): station 6,618 + packing house
+    /// Triangle estimate, at the maximum counts (Tal Heuberger's hex-props models, measured): station 6,618 + packing house
     /// 3,653 + 4 crate stacks x 1,289 = 5,156 + well 4,768 + 3 eucalyptus x 6,423 = 19,269 + 3 citrus x 1,600 = 4,800
     /// + 10 flats x 12 = 120. Total about 44,400 of 50,000.
     ///
-    /// Models are tiles:railway_halt/... (local, pending rights); without them the tile draws Box and Tree stand-ins.</summary>
+    /// Models are Tal Heuberger's tiles:railway_halt/..., from the hex-props bundle (see HexProps); until the bundle arrives
+    /// the tile draws Box and Tree stand-ins.</summary>
     [HexPrototype("railway_halt", Kind = "farm", Region = "centre")]
     public sealed class RailwayHalt : IHexPrototype
     {
