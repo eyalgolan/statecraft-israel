@@ -377,16 +377,17 @@ public class TurnReportTests
     /// <summary>At a laptop's 1280x720 and a phone's 390x844, in English and Hebrew: the report lies in the window, every
     /// line within its panel, its two buttons shown, and the keyboard focus on Close.</summary>
     [UnityTest]
-    public IEnumerator ItFitsLaptopAndPhoneInBothLanguages()
+    public IEnumerator ItFitsLaptopAndPhoneInBothLanguages([Values(100, 125, 150)] int uiScale)   // #40: at the Settings scale choices (#2219 review)
     {
         var problems = new List<string>();
         foreach (var hebrew in new[] { false, true })
-            foreach (var (w, h) in new[] { (1280, 720), (390, 844) })
+            foreach (var (w, h) in new[] { (1280, 720), (390, 844), (360, 800), (2560, 1080) })   // and the ends of the verified range (SettingsPresenter.VerifiedShapes)
             {
-                string at = $"{(hebrew ? "he" : "en")} {w}x{h}";
+                string at = $"{(hebrew ? "he" : "en")} {w}x{h} at {uiScale}%";
                 var rt = new RenderTexture(w, h, 0);
                 var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
                 ps.targetTexture = rt;
+                if (uiScale != 100) ps.referenceResolution = new Vector2Int(Mathf.RoundToInt(1920f * 100f / uiScale), Mathf.RoundToInt(1080f * 100f / uiScale));   // #40: the panel as the Settings scale choice sets it
                 var go = new GameObject("TurnReportLayout"); go.SetActive(false);
                 var doc = go.AddComponent<UIDocument>(); doc.panelSettings = ps;
                 doc.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml);

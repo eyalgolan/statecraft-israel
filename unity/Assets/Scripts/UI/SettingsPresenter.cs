@@ -24,9 +24,11 @@ namespace Statecraft.Game.UI
         /// <summary>The owner's ruling on #1011 (19 Oct 2026): Settings offers only the UI scales verified to fit, and 100% always,
         /// as the fallback. A scale above 100% is verified on the window shapes (width / height, narrowest to widest) where
         /// the layout suites pass with the panel at that scale: UiLayoutTests, InfoPanelLayoutTests, TopBarScoreLayoutTests,
-        /// HebrewUiTests, LeftColumnTests, PromoScreensTests and TopBarTests, whose windows run from 360x800 to 2560x1080.
-        /// Since #1853 those suites pass at 125% and at 150% on every window they cover (#40, 2 Nov 2026), so both scales are
-        /// verified from the narrowest shape any of them runs, 360x800, to the widest, 2560x1080. A layout change that breaks a suite at a scale narrows or removes its entry.
+        /// HebrewUiTests, LeftColumnTests, PromoScreensTests and TopBarTests, with the turn report (TurnReportTests) and the
+        /// encyclopedia (EncyclopediaScreenTests) as the owner ruled on #2219. Since #1853 they pass at 125% and at 150% (#40,
+        /// 2 Nov 2026), and the screens, the event card, the info panel, the turn report and the encyclopedia all run in
+        /// English and Hebrew at both ends of the range, 360x800 and 2560x1080 (the budget rows' own test runs 1920 and 390
+        /// wide), so both scales are verified on the shapes between them. A layout change that breaks a suite at a scale narrows or removes its entry.
         /// Tests enter shapes here to drive the rule and put the table back.</summary>
         public static readonly Dictionary<int, (float narrowest, float widest)> VerifiedShapes = new Dictionary<int, (float, float)>
         {
@@ -212,7 +214,9 @@ namespace Statecraft.Game.UI
             if (percent == UiScales[0]) return true;
             if (!VerifiedShapes.TryGetValue(percent, out var shapes)) return false;
             float shape = root.layout.width / root.layout.height;
-            return !(shape > 0) || (shape >= shapes.narrowest && shape <= shapes.widest);
+            // A tolerance on both ends (#2219 review): the root's layout is in panel units after scaling, so a window exactly
+            // at an end of the range can come out a last bit outside it.
+            return !(shape > 0) || (shape >= shapes.narrowest - 1e-4f && shape <= shapes.widest + 1e-4f);
         }
 
         void OnGeometry(GeometryChangedEvent e)

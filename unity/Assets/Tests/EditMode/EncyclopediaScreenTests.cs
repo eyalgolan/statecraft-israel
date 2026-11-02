@@ -188,12 +188,13 @@ public class EncyclopediaScreenTests
     }
 
     [UnityTest]
-    public IEnumerator TheEncyclopediaFitsLaptopAndPhoneInBothLanguages([Values(SaveGame.GddRuleset, SaveGame.Gdd03Ruleset)] string ruleset)
+    public IEnumerator TheEncyclopediaFitsLaptopAndPhoneInBothLanguages([Values(SaveGame.GddRuleset, SaveGame.Gdd03Ruleset)] string ruleset,
+        [Values(100, 125, 150)] int uiScale)   // #40: at the Settings scale choices (#2219 review)
     {
         var problems = new List<string>();
         foreach (var hebrew in new[] { false, true })
-            foreach (var size in new[] { new Vector2Int(1280, 720), new Vector2Int(390, 844) })
-                yield return Rendered(size.x, size.y, hebrew, (root, pedia) => Fits(root, problems, $"{ruleset} {(hebrew ? "he" : "en")} {size.x}x{size.y}", pedia, ruleset), ruleset);
+            foreach (var size in new[] { new Vector2Int(1280, 720), new Vector2Int(390, 844), new Vector2Int(360, 800), new Vector2Int(2560, 1080) })   // and the ends of the verified range
+                yield return Rendered(size.x, size.y, hebrew, (root, pedia) => Fits(root, problems, $"{ruleset} {(hebrew ? "he" : "en")} {size.x}x{size.y} at {uiScale}%", pedia, ruleset), ruleset, uiScale);
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
 
@@ -260,11 +261,12 @@ public class EncyclopediaScreenTests
     /// <summary>The whole HUD as the game lays it out, the encyclopedia open on its list, with an advisor so Show me shows.
     /// The Hebrew is the test's approved copy (16 shipped pages still wait for their native review).</summary>
     static IEnumerator Rendered(int width, int height, bool hebrew, System.Func<VisualElement, EncyclopediaPresenter, IEnumerable> check,
-        string ruleset = SaveGame.GddRuleset)
+        string ruleset = SaveGame.GddRuleset, int uiScale = 100)
     {
         var rt = new RenderTexture(width, height, 0);
         var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
         ps.targetTexture = rt;
+        if (uiScale != 100) ps.referenceResolution = new Vector2Int(Mathf.RoundToInt(1920f * 100f / uiScale), Mathf.RoundToInt(1080f * 100f / uiScale));   // #40: the panel as the Settings scale choice sets it
         var go = new GameObject("EncyclopediaLayoutTest");
         go.SetActive(false);
         var doc = go.AddComponent<UIDocument>();
