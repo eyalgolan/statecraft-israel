@@ -613,11 +613,32 @@ def test_the_hula_loop_still_greys_its_other_hexes_in_the_opening_period():
 
 
 def test_an_overlay_exemption_that_exempts_nothing_fails_the_bake(monkeypatch):
-    """Fail closed: an exemption naming a settlement or an overlay that does not exist, or a settlement outside that
-    overlay, must stop the bake (cb.build) rather than silently grey the place again (a renamed id, or a moved point)."""
+    """Fail closed: an exemption naming a settlement or an overlay that does not exist, an overlay in no drawn period, or a
+    settlement outside that overlay, must stop the bake (cb.build) rather than silently grey the place again (a renamed
+    id, or a moved point). Each case is told apart by its reason, so every branch of the check is exercised (review of
+    #2193: one shared message let a case pass through the wrong branch)."""
     cb.check_exemptions(SOURCE)
     first = next(iter(cb.OVERLAY_EXEMPT.values()))
-    for sid, ov in (("no_such_settlement", first["overlay"]), ("safed", "no_such_overlay"), ("haifa", first["overlay"])):
+    hula = next(f for f in SOURCE["features"] if f["properties"]["id"] == first["overlay"])
+    haifa = next(x for x in SETTLEMENTS["settlements"] if x["id"] == "haifa")
+    assert not bb.contains(bb.rings(hula["geometry"]), haifa["lon"], haifa["lat"]), "the outside case needs a point outside"
+    for sid, ov, why in (("no_such_settlement", first["overlay"], "no such settlement"),
+                         ("safed", "no_such_overlay", "no such overlay"),
+                         ("haifa", first["overlay"], "point outside the overlay")):
         monkeypatch.setattr(cb, "OVERLAY_EXEMPT", {sid: dict(first, overlay=ov)})
-        with pytest.raises(SystemExit, match=f"{sid} from {ov}"):
+        with pytest.raises(SystemExit, match=f"{sid} from {ov}: {why}"):
             cb.check_exemptions(SOURCE)
+    monkeypatch.setattr(cb, "OVERLAY_EXEMPT", {"safed": first})
+    src = json.loads(json.dumps(SOURCE))
+    for p in src["statecraft"]["periods"]:
+        p["overlays"] = [o for o in p["overlays"] if o != first["overlay"]]
+    with pytest.raises(SystemExit, match=f"safed from {first['overlay']}: the overlay is in no drawn period"):
+        cb.check_exemptions(src)
+
+
+def test_the_bake_runs_the_exemption_check_first(monkeypatch):
+    """cb.build() itself fails on a stale exemption, before any hex is baked: a check only the tests call would not stop
+    `uv run tools/control_bake.py` from writing a file that greys the place again (review of #2193)."""
+    monkeypatch.setattr(cb, "OVERLAY_EXEMPT", {"no_such_settlement": next(iter(cb.OVERLAY_EXEMPT.values()))})
+    with pytest.raises(SystemExit, match="no_such_settlement from contested_opening_hula: no such settlement"):
+        cb.build()

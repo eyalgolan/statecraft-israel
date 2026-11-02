@@ -149,9 +149,11 @@ def check_exemptions(source: dict) -> None:
     by_id = {s["id"]: s for s in yaml12.load_path(SETTLEMENTS)["settlements"]}
     for sid, ex in sorted(OVERLAY_EXEMPT.items()):
         s, ov = by_id.get(sid), overlays.get(ex["overlay"])
-        if s is None or ov is None or not any(p["snapshot"] and ex["overlay"] in p["overlays"] for p in periods) \
-                or not bb.contains(ov[1], s["lon"], s["lat"]):
-            raise SystemExit(f"overlay exemption exempts nothing: {sid} from {ex['overlay']}")
+        why = ("no such settlement" if s is None else "no such overlay" if ov is None
+               else "the overlay is in no drawn period" if not any(p["snapshot"] and ex["overlay"] in p["overlays"] for p in periods)
+               else "point outside the overlay" if not bb.contains(ov[1], s["lon"], s["lat"]) else None)
+        if why:
+            raise SystemExit(f"overlay exemption exempts nothing: {sid} from {ex['overlay']}: {why}")
 
 
 def bake(source: dict, hexes: dict, water: np.ndarray, meta: dict) -> tuple[list, dict]:
