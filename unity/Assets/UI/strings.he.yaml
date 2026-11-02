@@ -534,10 +534,11 @@ report.unit: "כוח {0}"
 report.workshops: "סדנאות נשק"
 report.workshop_arms: "סדנת נשק ({0}): תוספת נשק: 1"
 report.workshop_paused_debt: "סדנת נשק ({0}) בהמתנה: תקרת החוב"
-# A city's workshop lines combined, for two or more ("Combine per city", #1701): {0} the city's name, {1} how many, as
-# "Label: N" (HE-04). Agent-drafted Hebrew; native review pending (#564).
-report.workshop_arms_n: "סדנאות נשק ({0}): {1}, תוספת נשק: {1}"
-report.workshop_paused_debt_n: "סדנאות נשק ({0}) בהמתנה: {1}, תקרת החוב"
+# A city's workshop lines combined, for two or more ("Combine per city", #1701): {0} the city's name, {1} how many, in
+# brackets after the name as in the EN lines; the Arms count as "Label: N" (HE-04). Agent-drafted Hebrew; native review
+# pending (#564).
+report.workshop_arms_n: "סדנאות נשק ({0}) ({1}): תוספת נשק: {1}"
+report.workshop_paused_debt_n: "סדנאות נשק ({0}) ({1}) בהמתנה: תקרת החוב"
 # The end screen (#812; D-H4): the sim's end report, formatted only. For the native reviewer (#564).
 end.title: "המשחק הסתיים"
 end.outcome.mvp_ended: "המשחק הגיע לתורו האחרון."

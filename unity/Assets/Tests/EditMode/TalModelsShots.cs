@@ -199,6 +199,12 @@ public class TalModelsShots
     [UnityTest] public IEnumerator HousesNetanyaHebrew() { yield return Houses(true, "netanya"); }
     [UnityTest] public IEnumerator HousesTiberiasEnglish() { yield return Houses(false, "tiberias"); }
     [UnityTest] public IEnumerator HousesTiberiasHebrew() { yield return Houses(true, "tiberias"); }
+    // Safed and Acre: the stone-village set at a named town, so the before and after frames are the same town (the village
+    // picked by Houses(null) depends on the set).
+    [UnityTest] public IEnumerator HousesSafedEnglish() { yield return Houses(false, "safed"); }
+    [UnityTest] public IEnumerator HousesSafedHebrew() { yield return Houses(true, "safed"); }
+    [UnityTest] public IEnumerator HousesAcreEnglish() { yield return Houses(false, "acre"); }
+    [UnityTest] public IEnumerator HousesAcreHebrew() { yield return Houses(true, "acre"); }
     [UnityTest] public IEnumerator HousesVillageEnglish() { yield return Houses(false, null); }
     [UnityTest] public IEnumerator HousesVillageHebrew() { yield return Houses(true, null); }
 

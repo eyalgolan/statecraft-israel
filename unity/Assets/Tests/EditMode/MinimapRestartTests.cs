@@ -85,8 +85,11 @@ public class MinimapRestartTests
             var mini = root.Minimap ?? throw new AssertionException("precondition: the restart made a minimap");
             Assert.AreNotSame(first, mini, "precondition: Begin made a new minimap");
 
-            Assert.AreEqual(MapBorders.ToggleOn, mini.BordersShown, "the Borders button says what the borders switch does");
-            Assert.AreEqual(LabelsOn, mini.LabelsShown, "the Labels button says what the labels switch does");
+            // The buttons' dim against the switches' own state (review of #2244, C1: BordersShown is read from the switch, so
+            // comparing the two would hold whatever the button shows).
+            Assert.AreEqual(!MapBorders.ToggleOn, ui.Q<Button>("minimap-borders").ClassListContains(MinimapPresenter.OffClass), "the Borders button's dim says what the borders switch does");
+            Assert.AreEqual(!LabelsOn, ui.Q<Button>("minimap-labels").ClassListContains(MinimapPresenter.OffClass), "the Labels button's dim says what the labels switch does");
+            Assert.IsFalse(mini.BordersShown || mini.LabelsShown, "the new minimap reads both layers off");
             Assert.IsFalse(MapBorders.ToggleOn || LabelsOn, "the restart keeps the player's choice: both layers stay off");
             // Review of #2231, C2: MapRegions.Shown is false when no layer is drawn, and then both caption asserts hold
             // whatever the caption does; the start date draws one, so they pin it.
@@ -142,7 +145,15 @@ public class MinimapRestartTests
     }
 
     /// <summary>The armistice lines' switch's real state: it shows or hides the overlay's "Lines" child.</summary>
-    bool ArmisticeOn => Object.FindFirstObjectByType<MapScene>().Terrain.transform.Find(ArmisticeLines.RootName + "/Lines").gameObject.activeSelf;
+    bool ArmisticeOn
+    {
+        get
+        {
+            var lines = Object.FindFirstObjectByType<MapScene>().Terrain.transform.Find(ArmisticeLines.RootName + "/Lines");
+            Assert.IsNotNull(lines, "precondition: the map has the armistice overlay's Lines node");
+            return lines.gameObject.activeSelf;
+        }
+    }
 
     /// <summary>The global state these tests change: VisualToggles' switches and MapBorders' toggleOn (static, set through
     /// the "borders" switch). The minimap's buttons, the GameRoot and its Language belong to the scene, which TearDown
