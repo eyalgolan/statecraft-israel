@@ -8,6 +8,7 @@ using NUnit.Framework;
 using Statecraft.Game;
 using Statecraft.Game.Boot;
 using Statecraft.Game.Map;
+using Statecraft.Game.UI;
 using Statecraft.Sim;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -23,6 +24,12 @@ public class ArmisticeLinesTests
     /// <summary>The feature ids, read off the file with a pattern rather than the parser under test.</summary>
     static List<string> FileIds => Regex.Matches(GeoText, "\"properties\":\\s*\\{\\s*\"id\":\\s*\"([a-z0-9_]+)\"").Select(m => m.Groups[1].Value).ToList();
     static readonly DateTime After = new DateTime(1951, 1, 1);
+    /// <summary>The 11 features the owner signed off on 23 October 2026 (#196, #1444; docs/m3-release.md, "Map lines") and
+    /// the five flagged then, by id: a player's map draws exactly the first list.</summary>
+    static readonly string[] SignedOff = { "lebanon_adl", "syria_dmz_north", "syria_dmz_central", "syria_dmz_south", "egypt_el_auja_dmz",
+        "jordan_adl_iraqi_a_triangle", "jordan_adl_iraqi_b_wadi_ara", "jordan_adl_iraqi_c_east", "jordan_adl_iraqi_c_south",
+        "jordan_adl_bc_south", "jordan_adl_d_arava" };
+    static readonly string[] Drafts = { "egypt_adl_gaza", "egypt_mv1950_demarcation", "egypt_mv1950_zone_lines", "jordan_adl_a_latrun", "syria_adl" };
 
     static MapScene? map;
     static MapScene Map => map != null ? map : map = RouteTests.BuildMap();
@@ -106,11 +113,54 @@ public class ArmisticeLinesTests
         float covered = dashes.Sum(d => (d[d.Count - 1] - d[0]).magnitude);
         Assert.AreEqual(10000f * ArmisticeLines.DashOn, covered, ArmisticeLines.DashM * ArmisticeLines.DashOn);
         Assert.IsTrue(dashes.All(d => (d[d.Count - 1] - d[0]).magnitude <= ArmisticeLines.DashM * ArmisticeLines.DashOn + 1f));
-        // A dash runs on round a bend: on an L with an 800 m first leg the first dash keeps the corner and its full length.
-        var bent = ArmisticeLines.Dashes(new List<Vector2> { Vector2.zero, new Vector2(800f, 0f), new Vector2(800f, 2000f) });
-        CollectionAssert.Contains(bent[0], new Vector2(800f, 0f), "the dash over the corner keeps the corner");
+        // A dash runs on round a bend: on an L whose first leg is 100 m shorter than a dash, the first dash keeps the corner
+        // and its full length.
+        float leg = ArmisticeLines.DashM * ArmisticeLines.DashOn - 100f;
+        var bent = ArmisticeLines.Dashes(new List<Vector2> { Vector2.zero, new Vector2(leg, 0f), new Vector2(leg, 2000f) });
+        CollectionAssert.Contains(bent[0], new Vector2(leg, 0f), "the dash over the corner keeps the corner");
         float first = 0f; for (int i = 1; i < bent[0].Count; i++) first += (bent[0][i] - bent[0][i - 1]).magnitude;
         Assert.AreEqual(ArmisticeLines.DashM * ArmisticeLines.DashOn, first, 1f, "a full dash, measured along the bend");
+    }
+
+    /// <summary>Owner, 2 November 2026 (#2195): "Restyle Jordan lines (Recommended)". The low-accuracy lines are drawn
+    /// dotted: each mark no longer than the line is wide, the gaps at least as long, and a mark a quarter or less of the
+    /// bands' grey dash for no-man's land and the demilitarized zones (MapBorders.NeutralDashM, NeutralDashOn), so the
+    /// legend's "No-man's land or demilitarized zone: grey, dashed" stays true of the dashes alone.</summary>
+    [Test]
+    public void TheLowAccuracyLinesAreDottedApartFromTheNeutralDash()
+    {
+        float mark = ArmisticeLines.DashM * ArmisticeLines.DashOn, gap = ArmisticeLines.DashM - mark;
+        Assert.LessOrEqual(mark, ArmisticeLines.LowAccuracyWidthM, "a dot: no longer than the line is wide");
+        Assert.GreaterOrEqual(gap, mark, "the gaps are at least as long as the dots");
+        Assert.LessOrEqual(mark, MapBorders.NeutralDashM * MapBorders.NeutralDashOn / 4f, "a quarter of the neutral dash or less");
+    }
+
+    /// <summary>Owner, 2 November 2026 (#2195): "Tie to Borders button (Recommended)". The minimap's Borders button hides
+    /// the true lines with the bands, and pressing it again shows them.</summary>
+    [Test]
+    public void TheMinimapBordersButtonHidesTheLinesAndShowsThemAgain()
+    {
+        var root = Overlay(After);
+        try
+        {
+            using var ui = new UiTestKit();
+            using var mini = new MinimapPresenter(ui.Root, Map.Hexes);
+            var lines = root.transform.Find("Lines").gameObject;
+            Assert.IsTrue(lines.activeSelf, "precondition: the lines are shown");
+            ui.Press("minimap-borders");
+            Assert.IsFalse(mini.BordersShown);
+            Assert.IsFalse(lines.activeSelf, "Borders off hides the true lines");
+            ui.Press("minimap-borders");
+            Assert.IsTrue(mini.BordersShown);
+            Assert.IsTrue(lines.activeSelf, "Borders on shows them again");
+        }
+        finally
+        {
+            Object.DestroyImmediate(root);
+            // The presses also work the shared map's bands (MapBorders' switch, which keeps its state): leave them on for
+            // the next test however this one ended (review of #2195, C5).
+            if (VisualToggles.Names.Contains(MapBorders.ToggleName)) VisualToggles.Set(MapBorders.ToggleName, true);
+        }
     }
 
     [Test]
@@ -132,16 +182,22 @@ public class ArmisticeLinesTests
         finally { Object.DestroyImmediate(root); }
     }
 
-    /// <summary>Display only: off unless asked for (the map builds no overlay without the flag), nothing in the sim reads the
-    /// file (the content hash), and drawing it leaves the hex-snapped layer and its baked data as they were.</summary>
+    /// <summary>Display only, and on unless turned off (owner, 1 November 2026: "On by default (Recommended)"): the map
+    /// builds the overlay with no flag, "noarmisticelines" turns it off (the old "armisticelines" links still show it),
+    /// nothing in the sim reads the file (the content hash), and drawing it leaves the hex-snapped layer and its baked data
+    /// as they were.</summary>
     [Test]
-    public void TheOverlayIsDisplayOnlyAndOffUnlessAsked()
+    public void TheOverlayIsDisplayOnlyAndOnUnlessTurnedOff()
     {
-        Assert.IsNull(Map.Terrain.transform.Find(ArmisticeLines.RootName), "no overlay without the flag");
-        Assert.IsFalse(ArmisticeLines.Requested("https://x/index.html", new string[0], true));
-        Assert.IsTrue(ArmisticeLines.Requested("https://x/index.html?armisticelines", new string[0], true));
+        Assert.IsNotNull(Map.Terrain.transform.Find(ArmisticeLines.RootName), "the overlay with no flag");
+        Assert.IsTrue(ArmisticeLines.Requested("https://x/index.html", new string[0], true));
+        Assert.IsTrue(ArmisticeLines.Requested(null, new[] { "game" }, false));
+        Assert.IsTrue(ArmisticeLines.Requested("https://x/index.html?armisticelines", new string[0], true), "an old link still shows it");
         Assert.IsTrue(ArmisticeLines.Requested(null, new[] { "game", "-armisticelines" }, false));
-        Assert.IsFalse(ArmisticeLines.Requested(null, new[] { "game" }, false));
+        Assert.IsFalse(ArmisticeLines.Requested("https://x/index.html?noarmisticelines", new string[0], true), "turned off");
+        Assert.IsFalse(ArmisticeLines.Requested("https://x/index.html?lang=he&noarmisticelines#x", new string[0], true));
+        Assert.IsFalse(ArmisticeLines.Requested(null, new[] { "game", "-noarmisticelines" }, false));
+        Assert.IsTrue(ArmisticeLines.Requested("https://x/index.html?noarmisticelinesx", new string[0], true), "a whole flag only");
 
         // The hex bands are drawn from the RegionHexes texture (MapBorders); drawing the overlay leaves every texel as it was
         // (a layer is drawn first, so the texels are not all empty).
@@ -267,6 +323,55 @@ public class ArmisticeLinesTests
             Assert.AreEqual(16, root.GetComponentsInChildren<ArmisticeLine>(true).Length, "the editor draws every feature");
         }
         finally { ArmisticeLines.Wanted = was; map = null; }
+    }
+
+    /// <summary>The kill switch through the real map build (review of #2195, C4): with -noarmisticelines the map builds no
+    /// overlay and registers no "armisticelines" switch, and the minimap's Borders button still works the bands.</summary>
+    [Test]
+    public void WithTheOffFlagTheMapBuildsNoOverlayAndBordersStillWork()
+    {
+        var was = ArmisticeLines.Wanted;
+        ArmisticeLines.Wanted = () => ArmisticeLines.Requested(null, new[] { "game", "-" + ArmisticeLines.OffFlag }, false);
+        try
+        {
+            var built = RouteTests.BuildMap();
+            Assert.IsNull(built.Terrain.transform.Find(ArmisticeLines.RootName), "no overlay with the off flag");
+            CollectionAssert.DoesNotContain(VisualToggles.Names, ArmisticeLines.ToggleName, "no switch for the lines");
+            CollectionAssert.Contains(VisualToggles.Names, MapBorders.ToggleName, "precondition: the bands' switch");
+            using var ui = new UiTestKit();
+            using var mini = new MinimapPresenter(ui.Root, built.Hexes);
+            Assert.DoesNotThrow(() => ui.Press("minimap-borders"));
+            Assert.IsFalse(mini.BordersShown, "Borders off with no lines to hide");
+            Assert.DoesNotThrow(() => ui.Press("minimap-borders"));
+            Assert.IsTrue(mini.BordersShown);
+        }
+        finally { ArmisticeLines.Wanted = was; map = null; }
+    }
+
+    /// <summary>Owner, 1 November 2026: "On by default (Recommended)", with only the signed-off lines for players. A
+    /// release player's map, built with no flag from the file as a release build ships it (ContentManifest's release copy),
+    /// draws the 11 signed-off features and none of the five drafts.</summary>
+    [Test]
+    public void APlayersMapDrawsTheSignedOffLinesByDefaultAndNoDraft()
+    {
+        var all = ArmisticeLines.Parse(GeoText);
+        CollectionAssert.AreEquivalent(SignedOff, all.Where(f => f.Reviewed).Select(f => f.Id).ToList(), "the file's signed-off features");
+        CollectionAssert.AreEquivalent(Drafts, all.Where(f => !f.Reviewed).Select(f => f.Id).ToList(), "the file's drafts");
+        var signedOff = SignedOff; var drafts = Drafts;
+        var target = Path.Combine(Path.GetTempPath(), "statecraft-armlines-player-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            ContentManifest.Copy(Paths.Content, target, release: true);
+            var inputs = GameInputs.MapFromDisk(Paths.Content, Paths.StreamingMap);
+            inputs.ArmisticeLinesGeojson = File.ReadAllText(Path.Combine(target, "map", ArmisticeLines.FileName));
+            var built = RouteTests.BuildMap(inputs);
+            var root = built.Terrain.transform.Find(ArmisticeLines.RootName);
+            Assert.IsNotNull(root, "the overlay is on with no flag");
+            var ids = root.GetComponentsInChildren<ArmisticeLine>(true).Select(l => l.Id).ToList();
+            CollectionAssert.AreEquivalent(signedOff, ids, "the signed-off features, each once");
+            foreach (var id in drafts) CollectionAssert.DoesNotContain(ids, id, $"{id} stays out of a player's map");
+        }
+        finally { map = null; if (Directory.Exists(target)) Directory.Delete(target, true); }
     }
 
     [Test]

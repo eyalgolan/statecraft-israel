@@ -588,8 +588,8 @@ namespace Statecraft.Game.Map
             Routes.RouteLayer.Build(Terrain, Frame, routes, Routes.RouteLayer.ModeForThisRun(), RouteDate ?? Routes.RouteLayer.DefaultDate,
                 Routes.RouteRibbonFile.Source.Of(heights, inputs.HeightmapJson, inputs.RoutesYaml), this);
             DiagLog.BootPhase("routes built");
-            // The 1949 armistice lines as their true polylines (#237), only in the map mode asked for with the
-            // "armisticelines" flag; a missing or malformed file means no overlay and a warning. Display only.
+            // The 1949 armistice lines as their true polylines (#237), unless the run turns them off with the
+            // "noarmisticelines" flag; a missing or malformed file means no overlay and a warning. Display only.
             if (ArmisticeLines.Wanted() && inputs.ArmisticeLinesGeojson == "") Debug.LogWarning($"ARMISTICE LINES: {ArmisticeLines.FileName} is missing; no overlay");
             else if (ArmisticeLines.Wanted())
             {
