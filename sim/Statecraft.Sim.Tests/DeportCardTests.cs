@@ -46,8 +46,10 @@ public class DeportCardTests
             files["events/after_town_a.yaml"] = Card;
             foreach (var id in new[] { "hard_one", "hard_two", "hard_three" }) files[$"events/{id}.yaml"] = Hard(id);
         });
-        var stepped = Answer(c, DeportTests.Awaiting(c, DeportTests.Soldier(1, 1, 0)), SettlementControl.Deport).State;
-        Assert.Contains("hard_three", stepped.PendingEvents);
+        var before = DeportTests.Awaiting(c, DeportTests.Soldier(1, 1, 0));
+        Assert.DoesNotContain(before.FiredEvents, id => id.StartsWith("hard_", StringComparison.Ordinal));
+        var stepped = Answer(c, before, SettlementControl.Deport).State;
+        Assert.All(new[] { "hard_one", "hard_two", "hard_three" }, id => Assert.Contains(id, stepped.PendingEvents));
         Assert.True(stepped.Settlements["town_a"].Depopulated);
         Assert.Contains("after_town_a", stepped.PendingEvents);
     }
@@ -94,15 +96,33 @@ public class DeportCardTests
     // R-CTRL-018, so it could never fire), that lacks the displacement tag (so the release gate holds it, R-GATE-001), that
     // has more than one option, a `to` (a window that closes before a later Deport), or another card kind's key.
     [Theory]
-    [InlineData("deported: town_a", "deported: town_x", "events[after_town_a].deported")]
-    [InlineData("tags: [displacement]", "tags: [security]", "events[after_town_a].tags")]
-    [InlineData("    text: Continue\n", "    text: Continue\n  - id: other\n    text: Other\n", "events[after_town_a].options")]
-    [InlineData("from: 1948-05-15\n", "from: 1948-05-15\nto: 1949-01-01\n", "events[after_town_a].to")]
-    [InlineData("from: 1948-05-15\n", "from: 1948-05-15\nprisoners: egypt\n", "events[after_town_a].prisoners")]
-    public void TheLoaderRefusesABadCard(string from, string to, string field)
+    [InlineData("deported: town_a", "deported: town_x", "events[after_town_a].deported", "unknown settlement target")]
+    [InlineData("tags: [displacement]", "tags: [security]", "events[after_town_a].tags", "carries the displacement tag")]
+    [InlineData("    text: Continue\n", "    text: Continue\n  - id: other\n    text: Other\n", "events[after_town_a].options", "exactly one option")]
+    [InlineData("from: 1948-05-15\n", "from: 1948-05-15\nto: 1949-01-01\n", "events[after_town_a].to", "has no to")]
+    [InlineData("from: 1948-05-15\n", "from: 1948-05-15\nprisoners: egypt\n", "events[after_town_a].prisoners", "not an exchange card")]
+    [InlineData("from: 1948-05-15\n", "from: 1948-06-15\n", "events[after_town_a].from", "opens at the game's start")]
+    [InlineData("from: 1948-05-15\n", "from: 1948-05-15\nanchor: hard\n", "events[after_town_a].anchor", "is soft")]
+    [InlineData("from: 1948-05-15\n", "from: 1948-05-15\nconditions: [{ indicator: morale, max: 0.9 }]\n", "events[after_town_a].conditions", "waits for nothing but its Deport")]
+    public void TheLoaderRefusesABadCard(string from, string to, string field, string message)
     {
-        var ex = Assert.Throws<ContentException>(() => Load(Card.Replace(from, to)));
+        var card = to.Contains("anchor: hard") ? Card.Replace("    text: Continue\n", "    text: Continue\n    historical: true\n") : Card;
+        var ex = Assert.Throws<ContentException>(() => Load(card.Replace(from, to)));
         Assert.Equal(field, ex.Field);
+        Assert.Contains(message, ex.Message);
+    }
+
+    // R-EVT-007: one card per place, so one Deport cannot raise two.
+    [Fact]
+    public void TheLoaderRefusesASecondCardForThePlace()
+    {
+        var ex = Assert.Throws<ContentException>(() => DeportTests.Load(files =>
+        {
+            files["events/after_town_a.yaml"] = Card;
+            files["events/after_town_a_again.yaml"] = Card.Replace("id: after_town_a\n", "id: after_town_a_again\n");
+        }));
+        Assert.Equal("events[after_town_a_again].deported", ex.Field);
+        Assert.Contains("already has a card", ex.Message);
     }
 
     [Fact]
@@ -110,6 +130,6 @@ public class DeportCardTests
     {
         var ex = Assert.Throws<ContentException>(() => Load(fled: new[] { "town_a" }));
         Assert.Equal("events[after_town_a].deported", ex.Field);
-        Assert.Contains("fled", ex.Message);
+        Assert.Contains("fled when it was captured", ex.Message);
     }
 }

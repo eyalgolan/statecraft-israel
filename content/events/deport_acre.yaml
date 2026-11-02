@@ -22,7 +22,9 @@ id: deport_acre
 title: Acre depopulated
 text: 'Acre''s residents have been displaced, and the town is depopulated. Social cohesion and International support have fallen, and International support keeps falling for the rest of the game. Nothing can be built there, and no new road or railway can be laid through it. Historically, in the first days after Acre surrendered on 18 May 1948, residents continued to leave for Lebanon and central Galilee, but no expulsion orders were issued and no pressure was put on them to leave.'
 # For the native reviewer (#564): "נעקרו" and "התרוקנה מתושביה" follow the Deport strings already in strings.he.yaml
-# (why.cause.place_deported, capture.about.deport); the history sentence keeps he.wiki's wording.
+# (why.cause.place_deported, capture.about.deport). The history sentence is ADAPTED from he.wiki, not quoted: he.wiki's
+# "בימים הראשונים לאחר הכיבוש" (after the conquest) becomes "after Acre surrendered on 18 May 1948", with the day from
+# the section before and the year from the article title; the rest of the clause keeps he.wiki's words.
 title_he: עכו התרוקנה מתושביה
 text_he: 'תושבי עכו נעקרו ממקומם, והעיר התרוקנה מתושביה. הלכידות החברתית והתמיכה הבינלאומית ירדו, והתמיכה הבינלאומית תמשיך לרדת עד סוף המשחק. אי אפשר לבנות בה דבר, ואי אפשר לסלול דרכה כביש או מסילת ברזל חדשים. מבחינה היסטורית, בימים הראשונים לאחר שעכו נכנעה ב־18 במאי 1948 נמשכה יציאת התושבים ללבנון ולגליל המרכזי, אולם לא הוצאו פקודות גירוש ולא הופעל לחץ על התושבים לעזוב.'
 text_he_review: agent-checked

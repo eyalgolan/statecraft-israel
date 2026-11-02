@@ -31,7 +31,10 @@ id: deport_nazareth
 title: Nazareth depopulated
 text: 'Nazareth''s residents have been displaced, and the town is depopulated. Social cohesion and International support have fallen, and International support keeps falling for the rest of the game. Nothing can be built there, and no new road or railway can be laid through it. Historically, when Nazareth surrendered in July 1948, in Operation Dekel, its residents stayed where they were, despite fighting near the town.'
 # For the native reviewer (#564): "נעקרו" and "התרוקנה מתושביה" follow the Deport strings already in strings.he.yaml
-# (why.cause.place_deported, capture.about.deport); "מבצע דקל" follows he.wiki; the history sentence keeps he.wiki's wording.
+# (why.cause.place_deported, capture.about.deport); "מבצע דקל" follows he.wiki. The history sentence is ADAPTED, not
+# quoted, and departs from HW-NAZ twice: "בעת כיבושה" becomes "when Nazareth surrendered in July 1948, in Operation
+# Dekel" (the IDF account), and "בעיר ובסביבתה" (in and around the city) becomes "near the town", from he.wiki
+# "מבצע דקל" and the IDF account (below), which contradict "in the city".
 title_he: נצרת התרוקנה מתושביה
 text_he: 'תושבי נצרת נעקרו ממקומם, והעיר התרוקנה מתושביה. הלכידות החברתית והתמיכה הבינלאומית ירדו, והתמיכה הבינלאומית תמשיך לרדת עד סוף המשחק. אי אפשר לבנות בה דבר, ואי אפשר לסלול דרכה כביש או מסילת ברזל חדשים. מבחינה היסטורית, כשנצרת נכנעה ביולי 1948, במבצע דקל, נשארו תושביה במקומותיהם, למרות קרבות שניטשו בסביבת העיר.'
 text_he_review: agent-checked

@@ -1450,10 +1450,12 @@ namespace Statecraft.Sim
         /// <summary>A Deport follow-up card (R-EVT-007; GDD Phase 6 PR 9, #801): a settlement target whose residents stayed,
         /// since Deport is refused where they fled (R-CTRL-018) and the card could never fire; the displacement tag, so the
         /// release gate holds it until the owner's review (R-GATE-001); one option, which Delegate resolves without a draw; no `to`,
-        /// whose closed window would miss a later Deport; and no `prisoners`.</summary>
+        /// whose closed window would miss a later Deport; no `prisoners`; a soft anchor (it takes no soft slot either way); a window
+        /// open from the game's start; nothing else it waits for; and one card per place, so it fires on its Deport's turn, once.</summary>
         static void ValidateEventDeported(Content c)
         {
-            foreach (var e in c.Events.Where(e => e.Deported != ""))
+            var cardOf = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var e in c.Events.Where(e => e.Deported != "").OrderBy(e => e.Id, StringComparer.Ordinal))
             {
                 var target = c.SettlementTargets.FirstOrDefault(t => t.Id == e.Deported)
                     ?? throw new ContentException(e.File, $"events[{e.Id}].deported", $"unknown settlement target '{e.Deported}' (settlement_targets.yaml)");
@@ -1467,6 +1469,16 @@ namespace Statecraft.Sim
                     throw new ContentException(e.File, $"events[{e.Id}].to", "a Deport card has no to: a closed window would miss a later Deport");
                 if (e.Prisoners != "")
                     throw new ContentException(e.File, $"events[{e.Id}].prisoners", "a Deport card is not an exchange card");
+                if (e.Anchor != "soft")
+                    throw new ContentException(e.File, $"events[{e.Id}].anchor", "a Deport card is soft: it is not on the record");
+                if (e.From > c.Rules.Start)
+                    throw new ContentException(e.File, $"events[{e.Id}].from", FormattableString.Invariant($"a Deport card opens at the game's start ({c.Rules.Start:yyyy-MM-dd}), so a Deport on any turn fires it"));
+                foreach (var (key, set) in new[] { ("conditions", e.Conditions.Count > 0), ("requires", e.Requires.Count > 0), ("site", e.Site != ""),
+                             ("objective", e.Objective != ""), ("kind", e.Kind != EventKinds.Historical), ("variants", e.Variants.Count > 0) })
+                    if (set) throw new ContentException(e.File, $"events[{e.Id}].{key}", "a Deport card waits for nothing but its Deport");
+                if (cardOf.TryGetValue(e.Deported, out var first))
+                    throw new ContentException(e.File, $"events[{e.Id}].deported", $"'{e.Deported}' already has a card, '{first}': one Deport raises one card");
+                cardOf[e.Deported] = e.Id;
             }
         }
 

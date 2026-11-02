@@ -203,7 +203,8 @@ the player's Deport has depopulated that place, at the event step of that turn, 
 (R-EVT-007). It takes no soft slot, so a full turn does not delay it; a Deport on the turn that ends the game raises no
 card, since no event fires then. The loader refuses a card whose target is unknown or whose residents fled (Deport is
 refused there, so the card could never fire), one without the `displacement` tag, one with more than one option, and
-one with `to` or `prisoners`. Leave out `to`. Left unanswered, it resolves to its one option without a draw. State the in-game consequence and one sourced line of the place's history
+one with `to` or `prisoners`, one that is not `soft` or opens after the game's start, one with `conditions`,
+`requires`, `site`, `objective`, another `kind` or `variants`, and a second card for the same place. Leave out `to`. Left unanswered, it resolves to its one option without a draw. State the in-game consequence and one sourced line of the place's history
 (Q-CARD-1 (c)); a Deport in play may differ from 1948, so do not say the player's Deport is what happened.
 
 ### requires

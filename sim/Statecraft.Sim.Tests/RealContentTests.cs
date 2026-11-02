@@ -555,10 +555,12 @@ public class RealContentTests
     {
         foreach (var o in C.Events.Where(e => DeportCards.Contains(e.Id)).SelectMany(e => e.Options))
         {
-            Assert.DoesNotContain(o.Effects, fx => fx.Delta > 0);
+            Assert.Empty(o.Effects);   // no effect at all, which covers R-EFX-007's no-gain rule
             Assert.Empty(o.GrantUnits);
-            Assert.DoesNotContain(o.CityEffects, fx => fx.Delta > 0);
+            Assert.Empty(o.CityEffects);
             Assert.Empty(o.UnlockProjects);
+            Assert.Empty(o.SetPolicy);
+            Assert.Null(o.SetRung);
         }
     }
 
