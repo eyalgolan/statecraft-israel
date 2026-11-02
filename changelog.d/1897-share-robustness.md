@@ -1,1 +1,0 @@
-- Make Share more robust in the browser: a late clipboard result from an older action no longer acts after a reset, and a share sheet that fails at once now falls back to downloading the picture.

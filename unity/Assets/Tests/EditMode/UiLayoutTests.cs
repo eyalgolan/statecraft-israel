@@ -426,8 +426,11 @@ public class UiLayoutTests
             g.Step(new Command[0]);
         }
         var problems = new List<string>();
-        foreach (var (w, h) in new[] { (1920, 1080), (1280, 720), (1920, 960), (1600, 757), (1366, 657), (390, 844), (960, 600) })   // #210: and narrow windows
+        foreach (var hebrew in new[] { false, true })   // #2219 review: the scaled screens in Hebrew too
+        foreach (var (w, h) in new[] { (1920, 1080), (1280, 720), (1920, 960), (1600, 757), (1366, 657), (390, 844), (960, 600), (360, 800), (2560, 1080) })   // #210: and narrow windows; #2219: the ends of the verified range
         {
+            var at = $"{(hebrew ? "he" : "en")} {w}x{h}";
+            var t = hebrew ? He : text;
             var rt = new RenderTexture(w, h, 0);
             var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
             ps.targetTexture = rt;
@@ -439,16 +442,17 @@ public class UiLayoutTests
             doc.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml);
             go.SetActive(true);
             var root = doc.rootVisualElement;
-            var bridge = new SimBridge(g, text);
+            root.Q("root").EnableInClassList(UiLanguage.HebrewClass, hebrew);
+            var bridge = new SimBridge(g, t);
             var disposables = new List<System.IDisposable>
             {
-                new HudPresenter(root, bridge, text), new EventCardPresenter(root, bridge, text, null),
-                new CabinetPresenter(root, bridge, text, null), new BudgetPresenter(root, bridge, text),
-                new DefencePresenter(root, bridge, text), new WhyPresenter(root, bridge, text),
-                new ObjectivesPresenter(root, bridge, text),
+                new HudPresenter(root, bridge, t), new EventCardPresenter(root, bridge, t, null),
+                new CabinetPresenter(root, bridge, t, null), new BudgetPresenter(root, bridge, t),
+                new DefencePresenter(root, bridge, t), new WhyPresenter(root, bridge, t),
+                new ObjectivesPresenter(root, bridge, t),
             };
             var nav = new ScreenNav(root);
-            disposables.Add(new EncyclopediaPresenter(root, text, AdvisorCatalog.Load(), nav, null));
+            disposables.Add(new EncyclopediaPresenter(root, t, AdvisorCatalog.Load(), nav, null));
             try
             {
                 for (int i = 0; i < 20 && float.IsNaN(root.Q("minimap").worldBound.width); i++) yield return null;
@@ -457,23 +461,23 @@ public class UiLayoutTests
                 bool Inside(Rect inner, Rect outer) => inner.xMin >= outer.xMin - 0.5f && inner.xMax <= outer.xMax + 0.5f && inner.yMin >= outer.yMin - 0.5f && inner.yMax <= outer.yMax + 0.5f;
                 var bar = root.Q("top-bar");
                 var plate = root.Q(className: "date-box");   // hangs below the one-row bar, as promo 03's (HUD round 2, part 3)
-                if (!Inside(R(plate), R(root))) problems.Add($"{w}x{h}: the plate {R(plate)} leaves the window");
+                if (!Inside(R(plate), R(root))) problems.Add($"{at}: the plate {R(plate)} leaves the window");
                 foreach (var l in bar.Query<VisualElement>().ToList().Where(e => e != bar && e.resolvedStyle.display == DisplayStyle.Flex))
                 {
                     var holder = l == plate || plate.Contains(l) ? (l == plate ? bar : plate) : bar;
                     if (l == plate) continue;
-                    if (!Inside(R(l), R(holder))) problems.Add($"{w}x{h}: top bar child {l.name}/{(l as Label)?.text ?? l.GetClasses().FirstOrDefault()} {R(l)} leaves the {(holder == plate ? "plate" : "bar")} {R(holder)}");
+                    if (!Inside(R(l), R(holder))) problems.Add($"{at}: top bar child {l.name}/{(l as Label)?.text ?? l.GetClasses().FirstOrDefault()} {R(l)} leaves the {(holder == plate ? "plate" : "bar")} {R(holder)}");
                 }
                 var card = root.Q("event-card");
-                if (!Inside(R(card), R(root.Q("event-layer")))) problems.Add($"{w}x{h}: event card {R(card)} leaves the decision layer {R(root.Q("event-layer"))}");
-                if (R(card).yMin < R(bar).yMax - 0.5f) problems.Add($"{w}x{h}: event card {R(card)} starts over the top bar {R(bar)}");
+                if (!Inside(R(card), R(root.Q("event-layer")))) problems.Add($"{at}: event card {R(card)} leaves the decision layer {R(root.Q("event-layer"))}");
+                if (R(card).yMin < R(bar).yMax - 0.5f) problems.Add($"{at}: event card {R(card)} starts over the top bar {R(bar)}");
                 foreach (var s in ScreenNav.Screens)
                 {
                     nav.Open(s);
                     for (int i = 0; i < 3; i++) yield return null;
                     var screen = root.Q("screen-" + s);
                     foreach (var e in screen.Children().Concat(screen.Query<ScrollView>().ToList()).Where(e => e.resolvedStyle.display == DisplayStyle.Flex))
-                        if (!Inside(R(e), R(screen))) problems.Add($"{w}x{h}: {s} child {e.name}/{e.GetClasses().FirstOrDefault()} {R(e)} leaves the screen {R(screen)}");
+                        if (!Inside(R(e), R(screen))) problems.Add($"{at}: {s} child {e.name}/{e.GetClasses().FirstOrDefault()} {R(e)} leaves the screen {R(screen)}");
                 }
                 nav.Open(null);
             }
@@ -504,6 +508,7 @@ public class UiLayoutTests
     {
         (1920, 1080), (1280, 720), (1366, 768), (1760, 1000), (1920, 1200), (1440, 900), (1024, 768), (1280, 1024),
         (1024, 1024), (960, 1080), (800, 1000), (390, 844), (960, 600), (1531, 784), (1568, 752), (2560, 1080), (1920, 900), (1366, 657),
+        (360, 800),   // #2219: the narrowest verified shape
     };
 
     /// <summary>Decision cards (2026-10-13), after Task 24 review I2: every real event, the tallest included, fits the
@@ -514,8 +519,11 @@ public class UiLayoutTests
     public IEnumerator EveryEventCardFitsTheDecisionLayer([Values(100, 125, 150)] int uiScale)   // #40: at the Settings scale choices
     {
         var problems = new List<string>();
+        foreach (var hebrew in new[] { false, true })   // #2219 review: the scaled cards in Hebrew too
         foreach (var (w, h) in CardWindows)
         {
+            var at = $"{(hebrew ? "he" : "en")} {w}x{h}";
+            var t = hebrew ? He : Text;
             var rt = new RenderTexture(w, h, 0);
             var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
             ps.targetTexture = rt;
@@ -527,15 +535,16 @@ public class UiLayoutTests
             doc.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml);
             go.SetActive(true);
             var root = doc.rootVisualElement;
-            var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), Text);
+            root.Q("root").EnableInClassList(UiLanguage.HebrewClass, hebrew);
+            var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), t);
             // The real portraits: a minister's portrait adds the 200 px image row, so the tallest card is a portrait card.
             var portraits = AssetDatabase.LoadAssetAtPath<PortraitCatalog>("Assets/UI/Portraits/PortraitCatalog.asset");
             Assert.IsNotNull(portraits);
             // And the real event photographs: a photograph card adds the 200 px header band and its credit line.
             var photos = AssetDatabase.LoadAssetAtPath<EventImageCatalog>("Assets/Resources/EventImageCatalog.asset");
             Assert.IsNotNull(photos);
-            var hud = new HudPresenter(root, bridge, Text);   // the bar's tier (one, two or three rows) sets the layer's top
-            var card = new EventCardPresenter(root, bridge, Text, portraits, photos);
+            var hud = new HudPresenter(root, bridge, t);   // the bar's tier (one, two or three rows) sets the layer's top
+            var card = new EventCardPresenter(root, bridge, t, portraits, photos);
             float tallest = 0; string tallestId = "";
             try
             {
@@ -549,8 +558,8 @@ public class UiLayoutTests
                     if (e.Objective != "") g.State.Objectives[e.Objective] = new System.DateTime(1948, 11, 30);
                     bridge.Replace(g);
                     for (int i = 0; i < 4; i++) yield return null;   // the fourth: a photograph dropped for height settles
-                    CheckPhoto($"{w}x{h}: {e.Id}", root, card, problems);
-                    CheckCard($"{w}x{h}: {e.Id}", root, problems);
+                    CheckPhoto($"{at}: {e.Id}", root, card, problems);
+                    CheckCard($"{at}: {e.Id}", root, problems);
                     var c = root.Q("event-card").worldBound;
                     if (c.height > tallest) { tallest = c.height; tallestId = e.Id; }
                     var scroll = root.Q<ScrollView>("event-scroll");
@@ -563,13 +572,13 @@ public class UiLayoutTests
                             scroll.ScrollTo(b);
                             yield return null;
                             if (!Inside(b.worldBound, scroll.contentViewport.worldBound))
-                                problems.Add($"{w}x{h}: {e.Id}: option '{b.text}' {b.worldBound} cannot be scrolled whole into the body {scroll.contentViewport.worldBound}");
+                                problems.Add($"{at}: {e.Id}: option '{b.text}' {b.worldBound} cannot be scrolled whole into the body {scroll.contentViewport.worldBound}");
                         }
                         if (b.worldBound.yMax > c.yMax + 0.5f || b.worldBound.yMin < c.yMin - 0.5f || b.worldBound.xMax > c.xMax + 0.5f || b.worldBound.xMin < c.xMin - 0.5f)
-                            problems.Add($"{w}x{h}: {e.Id}: option '{b.text}' {b.worldBound} is cut off by the card {c}");
+                            problems.Add($"{at}: {e.Id}: option '{b.text}' {b.worldBound} is cut off by the card {c}");
                         // Playtest 2, P2-2: the option's text lies inside its button (it wraps; it is never cut at the edge).
                         if (!TextFits(b))
-                            problems.Add($"{w}x{h}: {e.Id}: option text '{b.text}' does not fit its button {b.contentRect}");
+                            problems.Add($"{at}: {e.Id}: option text '{b.text}' does not fit its button {b.contentRect}");
                     }
                     scroll.scrollOffset = Vector2.zero;
                     // Playtest 2, P2-3: in a window at least as tall (logically) as 1366x657, the body and the options fit
@@ -579,10 +588,10 @@ public class UiLayoutTests
                     // The narrow-card fallback is at 150% only; Hide and the options are still checked above at every size.
                     if (CardBodyScrollsTooMuch(uiScale, root.Q("event-card").worldBound.width, logicalHeight,
                                               scroll.contentContainer.layout.height, scroll.contentViewport.layout.height))
-                        problems.Add($"{w}x{h} (logical height {logicalHeight:0}): {e.Id}: the body scrolls ({scroll.contentContainer.layout.height:0} px of text in {scroll.contentViewport.layout.height:0} px)");
+                        problems.Add($"{at} (logical height {logicalHeight:0}): {e.Id}: the body scrolls ({scroll.contentContainer.layout.height:0} px of text in {scroll.contentViewport.layout.height:0} px)");
                 }
-                Debug.Log($"I2 {w}x{h}: tallest card {tallestId} {tallest:0} px");
-                Assert.Greater(tallest, 300f, $"{w}x{h}: the cards were laid out (a short window shrinks the tallest to fit)");
+                Debug.Log($"I2 {at}: tallest card {tallestId} {tallest:0} px");
+                Assert.Greater(tallest, 300f, $"{at}: the cards were laid out (a short window shrinks the tallest to fit)");
             }
             finally
             {

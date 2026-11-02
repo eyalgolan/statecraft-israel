@@ -200,10 +200,13 @@ namespace Statecraft.Sim
         /// <summary>The strength the formation had before its first loss, the most replacements refill it to (R-TRAIN-004), or
         /// 0 while it has lost none: combat sets it (R-COMBAT-003) and a refill to full clears it.</summary>
         public int Full { get; }
+        /// <summary>Combat experience under exact gdd-0.3 (R-UNIT-011): survived engagements, up to military.combat_xp_full.
+        /// Always 0 under every other ruleset.</summary>
+        public int CombatXp { get; }
 
-        public Unit(int id, string type, int q, int r, int service = 0, string side = "", int strength = 0, string order = "", string orderTarget = "", string homeCity = "", int full = 0)
+        public Unit(int id, string type, int q, int r, int service = 0, string side = "", int strength = 0, string order = "", string orderTarget = "", string homeCity = "", int full = 0, int combatXp = 0)
         {
-            Id = id; Type = type; Q = q; R = r; Service = service; Side = side; Strength = strength; Order = order; OrderTarget = orderTarget; HomeCity = homeCity; Full = full;
+            Id = id; Type = type; Q = q; R = r; Service = service; Side = side; Strength = strength; Order = order; OrderTarget = orderTarget; HomeCity = homeCity; Full = full; CombatXp = combatXp;
         }
 
         /// <summary>The record as the state hash writes it. Each field after the hex is written only when it is not at its
@@ -216,7 +219,8 @@ namespace Statecraft.Sim
             + (Order == "" ? "" : "|order=" + Order)
             + (OrderTarget == "" ? "" : "|target=" + OrderTarget)
             + (HomeCity == "" ? "" : "|home=" + HomeCity)
-            + (Full == 0 ? "" : "|full=" + Full.ToString(CultureInfo.InvariantCulture));
+            + (Full == 0 ? "" : "|full=" + Full.ToString(CultureInfo.InvariantCulture))
+            + (CombatXp == 0 ? "" : "|xp=" + CombatXp.ToString(CultureInfo.InvariantCulture));
     }
 
     /// <summary>A group of a city's people in training (GDD "Progression"; R-TRAIN-001): <see cref="Count"/> population units

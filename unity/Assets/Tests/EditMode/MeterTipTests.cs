@@ -55,7 +55,7 @@ public class MeterTipTests
                         for (int i = 0; i < 3; i++) yield return null;   // the tip is placed once its width is laid out
                         var causes = HudModel.Causes(bridge.Session.Last, id, bridge.Content, w => CauseText.Line(w, bridge.Content, System.Array.Empty<Statecraft.Game.Map.Units.UnitEntry>(), text));
                         if (!Shown(tip)) { problems.Add($"{at} {id}: hovering shows no tip"); continue; }
-                        if (Words(root) != meter.tooltip + "\n" + text["hud.causes"]) problems.Add($"{at} {id}: the tip's words are '{Words(root)}', not its tooltip and the causes' heading");
+                        if (Words(root) != meter.tooltip + "\n" + text["hud.tip." + id] + "\n" + text["hud.causes"]) problems.Add($"{at} {id}: the tip's words are '{Words(root)}', not its tooltip, its explanation and the causes' heading");
                         if (CausesLine(root) != string.Join("\n", causes)) problems.Add($"{at} {id}: the tip's causes are '{CausesLine(root)}', not the sim's '{string.Join(" | ", causes)}'");
                         if (UiDirection.RightToLeft(Words(root)) != hebrew) problems.Add($"{at} {id}: the words are not in the UI's language");
                         // B1: a keyed line is in the UI's language (#55: lines with no key stay English). Since #1565 Security's
@@ -70,6 +70,45 @@ public class MeterTipTests
                         if (t.yMin < m.yMax) problems.Add($"{at} {id}: the tip {t} is not under its number {m}");
                         Leave(meter);
                         if (Shown(tip)) problems.Add($"{at} {id}: the tip stays after the pointer leaves");
+                    }
+                }
+            }
+        Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
+    /// <summary>#2200: every top-bar meter's tip says what the meter is and what moves it (hud.tip.&lt;id&gt;, one key per
+    /// HudModel.MeterIds id, in English and Hebrew) after its number in words (the tooltip), and the longer tip still fits
+    /// in the window under the bar at each UI scale (100, 125 and 150%, SettingsPresenter.UiScales) and on a phone.</summary>
+    [UnityTest]
+    public IEnumerator EveryMeterTipExplainsItsMeterAndFits()
+    {
+        var problems = new List<string>();
+        foreach (var id in HudModel.MeterIds)
+            foreach (var (lang, t) in new[] { ("en", En), ("he", He) })
+                if (!t.Has("hud.tip." + id) || t["hud.tip." + id].Trim().Length == 0) problems.Add($"{lang}: no hud.tip.{id}");
+        if (problems.Count > 0) { Assert.Fail(string.Join("\n", problems)); yield break; }
+        foreach (var hebrew in new[] { false, true })
+            foreach (var (w, h, scale) in new[] { (1280, 720, 100), (1280, 720, 125), (1280, 720, 150), (390, 844, 100) })
+            {
+                string at = $"{(hebrew ? "he" : "en")} {w}x{h} {scale}%";
+                yield return Rendered(w, h, hebrew, Check, scale);
+
+                IEnumerator Check(VisualElement root, SimBridge bridge, UiText text)
+                {
+                    var tip = root.Q(MeterTip.TipName);
+                    foreach (var id in HudModel.MeterIds)
+                    {
+                        var meter = root.Q("meter-" + id);
+                        Enter(meter);
+                        for (int i = 0; i < 3; i++) yield return null;   // the tip is placed once its width is laid out
+                        if (!Shown(tip)) { problems.Add($"{at} {id}: hovering shows no tip"); Leave(meter); continue; }
+                        var expected = meter.tooltip + "\n" + text["hud.tip." + id];
+                        if (!Words(root).StartsWith(expected)) problems.Add($"{at} {id}: the tip's words are '{Words(root)}', not its number in words and then '{text["hud.tip." + id]}'");
+                        if (UiDirection.RightToLeft(Words(root)) != hebrew) problems.Add($"{at} {id}: the words are not in the UI's language");
+                        Rect r = tip.worldBound, m = meter.worldBound, win = root.worldBound;
+                        if (r.xMin < win.xMin - 0.5f || r.xMax > win.xMax + 0.5f || r.yMax > win.yMax + 0.5f) problems.Add($"{at} {id}: the tip {r} leaves the window {win}");
+                        if (r.yMin < m.yMax) problems.Add($"{at} {id}: the tip {r} is not under its number {m}");
+                        Leave(meter);
                     }
                 }
             }
@@ -138,12 +177,14 @@ public class MeterTipTests
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
 
-    /// <summary>Renders Game.uxml at w x h with the HUD after one turn, then runs <paramref name="check"/>, which may wait frames.</summary>
-    internal static IEnumerator Rendered(int w, int h, bool hebrew, System.Func<VisualElement, SimBridge, UiText, IEnumerator> check)
+    /// <summary>Renders Game.uxml at w x h with the HUD after one turn, then runs <paramref name="check"/>, which may wait frames.
+    /// A <paramref name="uiScale"/> other than 100 sets the panel as the Settings scale choice does (#40).</summary>
+    internal static IEnumerator Rendered(int w, int h, bool hebrew, System.Func<VisualElement, SimBridge, UiText, IEnumerator> check, int uiScale = 100)
     {
         var rt = new RenderTexture(w, h, 0);
         var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
         ps.targetTexture = rt;
+        if (uiScale != 100) ps.referenceResolution = new Vector2Int(Mathf.RoundToInt(ps.referenceResolution.x * 100f / uiScale), Mathf.RoundToInt(ps.referenceResolution.y * 100f / uiScale));
         var go = new GameObject("MeterTipLayout"); go.SetActive(false);
         var doc = go.AddComponent<UIDocument>(); doc.panelSettings = ps;
         doc.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml);

@@ -1266,6 +1266,7 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .opening-arrivals { font-size: 18px; white-space: normal; margin: 8px 0; }
 .opening-actions { flex-wrap: wrap; justify-content: center; flex-shrink: 0; }
 .opening-actions > Button { min-height: 44px; margin: 4px 6px; }
+.opening-caption { display: none; font-size: 17px; white-space: normal; -unity-text-align: middle-center; margin: 2px 0 6px 0; color: var(--gold-light); }
 .opening-source-en, .lang-he .opening-source-en { -unity-text-align: upper-left; white-space: normal; }
 .opening-open .top-bar, .opening-open .left-column, .opening-open .community-column, .opening-open .right-column, .opening-open .event-layer, .opening-open .info-panel, .opening-open .screen, .opening-open .map-labels, .opening-open .start-screen, .opening-open .advisor-layer { display: none; }
 .loading .opening-layer { display: none; }

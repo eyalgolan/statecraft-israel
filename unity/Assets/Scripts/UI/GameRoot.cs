@@ -334,9 +334,10 @@ namespace Statecraft.Game.UI
             // The language switch (#1036) builds every screen again in the new language over this game (SwitchLanguage).
             Action<string> switchLanguage = language => SwitchLanguage(inputs, language);   // the start screen's too (#2054)
             // The WebGL companion (#1119) is opt-in (WebCompanion.On): Settings turns it on and off at once, where a page shows it.
+            // While the build does not offer it (WebCompanion.Available, owner 2 Nov 2026), there is no switch, so no row.
             Action<bool>? setCompanion = null;
             (Func<bool> on, Action<bool> set)? companionSwitch = null;
-            if (CompanionPage)
+            if (CompanionPage && WebCompanion.Offered())
             {
                 Action<bool> set = on =>
                 {
@@ -569,6 +570,7 @@ namespace Statecraft.Game.UI
             // The opening (#530): three sourced stills after New Game and before the first turn, skippable, and replayable
             // from the start screen. It reads no sim state. A player build shows it only once its text and photographs are
             // reviewed (OpeningContent.MayPresent); the Editor shows the draft with a visible preview label, for QA.
+            // A panel with a clip plays it after its photograph (owner ruling of 2 November 2026, OpeningPresenter).
             var replayOpening = root.Q<Button>("start-opening-replay");
             replayOpening.style.display = DisplayStyle.None;
             if (enableOpening && OpeningContent.Load() is OpeningContent openingSource)
@@ -585,7 +587,8 @@ namespace Statecraft.Game.UI
                     // the start screen. Closing the scene disposes it after the camera is gone, hence the null check.
                     opening = Own(new OpeningPresenter(root, openingSource, openingData, text,
                         shown => { if (cameraController != null) cameraController.enabled = !shown && start?.IsOpen != true; },
-                        replay => { if (!replay) advisor?.NewGame(); }));
+                        replay => { if (!replay) advisor?.NewGame(); },
+                        video == null ? null : Own(new CardVideo())));   // its own player: no clip in the automated runs either
                     replayOpening.text = text["opening.replay"];
                     replayOpening.style.display = DisplayStyle.Flex;
                     Action replayClick = () => { if (start?.IsOpen == true) opening?.Show(replay: true); };
@@ -804,6 +807,13 @@ namespace Statecraft.Game.UI
             else info.Show(q, r);
             offerMove?.Invoke();
         }
+
+        /// <summary>Marks the hex under the pointer (<paramref name="under"/>; null: off the map) only where a click would give the
+        /// open Move or Attack pick's order (PickTakes), else nothing (#2201: a player could not tell which hex a click would
+        /// take). A hex the pick does not take, such as water, stays unmarked: a click there ends the pick. The camera distance
+        /// thins the band up close (MapScene.HoverCloseM).</summary>
+        internal static void MarkHover(MapScene map, InfoPanelPresenter? info, (int q, int r)? under, float cameraDistanceM = float.PositiveInfinity) =>
+            map.ShowHover(under is (int q, int r) && info != null && info.PickTakesHovered(q, r) ? under : null, cameraDistanceM);
 
         /// <summary>A right click on the map (MapPointer.HexOrdered; owner, 25 Oct 2026, "Civ: select, then click"): while the
         /// shown unit's pick takes (q, r), the order a left click there gives (PickTarget), even on another unit's hex.
@@ -1059,8 +1069,10 @@ namespace Statecraft.Game.UI
             var hover = MapLabelsPresenter.HoverPosition(UnityEngine.InputSystem.Pointer.current);
             labels.Hover(hover);
             HoverCity(hover);
-            if (hover is Vector2 at && pointer.HexAt(at) is (int q, int r)) info?.ShowRouteTo(q, r);
+            var under = hover is Vector2 at ? pointer.HexAt(at) : null;
+            if (under is (int q, int r)) info?.ShowRouteTo(q, r);
             else if (UnityEngine.InputSystem.Pointer.current is UnityEngine.InputSystem.Mouse) info?.HideRoute();
+            MarkHover(map, info, under, rig != null ? rig.Distance : float.PositiveInfinity);
             var touch = UnityEngine.InputSystem.Touchscreen.current;
             if (touch != null && touch.primaryTouch.press.wasPressedThisFrame) labels.Tap(touch.primaryTouch.position.ReadValue());
         }

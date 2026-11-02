@@ -2,9 +2,10 @@
 id: altalena
 title: The Altalena
 text: 'The Altalena, a ship carrying arms for the Irgun, is due off the coast within days. Begin asks that a fifth of the arms go to the Irgun''s battalion in Jerusalem and the rest to Irgun battalions inside the IDF. {defense_minister} must decide.'
-# For the native reviewer (#564): the Hebrew below (#1064) is an AI translation of the English, not yet read by a
-# person. Names as he.wiki "פרשת אלטלנה" writes them (אלטלנה, אצ"ל, צה"ל, בגין; its "חמישית מהנשק" for the fifth).
-# "ההחלטה בידי" keeps the sentence the same for a minister of either gender.
+# For the native reviewer (#564): the Hebrew below (#1064) is an AI translation of the English; the owner read it next
+# to the English and approved it as written on #2174 (1 Nov 2026: "Approve all 4"). Names as he.wiki "פרשת אלטלנה"
+# writes them (אלטלנה, אצ"ל, צה"ל, בגין; its "חמישית מהנשק" for the fifth). "ההחלטה בידי" keeps the sentence the same
+# for a minister of either gender.
 title_he: אלטלנה
 text_he: 'אלטלנה, אונייה המובילה נשק לאצ"ל, צפויה להגיע לחוף בתוך מספר ימים. בגין מבקש שחמישית מהנשק תועבר לגדוד האצ"ל בירושלים והשאר לגדודי האצ"ל בתוך צה"ל. ההחלטה בידי {defense_minister}.'
 anchor: hard
