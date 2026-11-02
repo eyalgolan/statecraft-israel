@@ -39,13 +39,18 @@ namespace Statecraft.Sim
         /// <summary>The prisoners returned in the exchanges (Q-END-3, R-POW-004), in people as Defence shows them
         /// (<see cref="GameState.PrisonersReturned"/> units times the people per unit); 0 when none went home.</summary>
         public int PrisonersReturned { get; }
+        /// <summary>Deport's follow-up cards (R-EVT-007) that never fired although their place was depopulated, in id order:
+        /// a Deport on the turn that ended the game raises no card, since no event fires then, so the end screen shows it
+        /// instead (owner, 2 November 2026, #2197: "Show on the end screen (Recommended)"). A card that fired was shown on its
+        /// turn and is not listed. Empty when nothing was deported.</summary>
+        public IReadOnlyList<string> DeportCards { get; }
 
         EndReport(string outcome, DateTime date, int score, ScoreParts scoreParts, int referenceScore, IReadOnlyList<EndObjective> objectives, double cohesion, double support,
-            double population, PopulationAnchor? history, int prisonersReturned)
+            double population, PopulationAnchor? history, int prisonersReturned, IReadOnlyList<string> deportCards)
         {
             Outcome = outcome; Date = date; Score = score; ScoreParts = scoreParts; ReferenceScore = referenceScore; Objectives = objectives; SocialCohesion = cohesion;
             InternationalSupport = support; Population = population; PopulationHistory = history;
-            PrisonersReturned = prisonersReturned;
+            PrisonersReturned = prisonersReturned; DeportCards = deportCards;
         }
 
         /// <summary>The report of a game that has ended; a game still on has none.</summary>
@@ -67,8 +72,11 @@ namespace Statecraft.Sim
             // Scoring reads the rules of the date the turn started from. A turn that ends on a reference date never crosses an era's
             // start (Simulation.TurnEnd cuts it there), so the day before that date is in the era the turn started in.
             var reference = paysOn.Sum(d => c.RulesAt(d.AddDays(-1)).Mvp?.ObjectivePoints ?? 0);
+            var deportCards = c.Events.Where(e => e.Deported != "" && !s.FiredEvents.Contains(e.Id)
+                    && s.Settlements.TryGetValue(e.Deported, out var place) && place.Depopulated)
+                .Select(e => e.Id).OrderBy(id => id, StringComparer.Ordinal).ToList();
             return new EndReport(s.GameOver, s.Date, s.Score, Sim.ScoreParts.For(s), reference, objectives, s.Indicators["morale"], s.Indicators["intl_standing"],
-                s.TotalPopulation, history, s.PrisonersReturned.Values.Sum() * (c.RulesAt(s.Date).Mvp?.PeoplePerUnit ?? 0));   // no prisoners without the GDD rules
+                s.TotalPopulation, history, s.PrisonersReturned.Values.Sum() * (c.RulesAt(s.Date).Mvp?.PeoplePerUnit ?? 0), deportCards);   // no prisoners without the GDD rules
         }
     }
 

@@ -201,7 +201,7 @@ tags: [displacement]
 Deport's follow-up card for a settlement target (`settlement_targets.yaml`, GDD Phase 6 PR 9, #801). It fires only once
 the player's Deport has depopulated that place, at the event step of that turn, and never after Raid or Occupy
 (R-EVT-007). It takes no soft slot, so a full turn does not delay it; a Deport on the turn that ends the game raises no
-card, since no event fires then. The loader refuses a card whose target is unknown or whose residents fled (Deport is
+card, since no event fires then, so the end screen shows that card instead (owner, 2 November 2026, #2197). The loader refuses a card whose target is unknown or whose residents fled (Deport is
 refused there, so the card could never fire), one without the `displacement` tag, one with more than one option, and
 one with `to` or `prisoners`, one that is not `soft` or opens after the game's start, one with `conditions`,
 `requires`, `site`, `objective`, another `kind` or `variants`, and a second card for the same place. Leave out `to`. Left unanswered, it resolves to its one option without a draw. State the in-game consequence and one sourced line of the place's history

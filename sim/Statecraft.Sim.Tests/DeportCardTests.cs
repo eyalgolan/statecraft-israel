@@ -66,6 +66,34 @@ public class DeportCardTests
         Assert.DoesNotContain("after_town_a", stepped.FiredEvents);
     }
 
+    // R-EVT-007 (owner, 2 November 2026, #2197: "Show on the end screen (Recommended)"): no event fires on the turn that
+    // ends the game, so a Deport on that turn raises no card; the end report lists the card instead, for the end screen.
+    [Fact]
+    public void ADeportOnTheLastTurnPutsItsCardOnTheEndReport()
+    {
+        var c = DeportTests.Load(files =>
+        {
+            files["events/after_town_a.yaml"] = Card;
+            files["rules.yaml"] = files["rules.yaml"].Replace("\nmvp:\n", "\nmvp:\n  end: 1948-05-16\n");   // the first turn is the last
+        });
+        var stepped = Answer(c, DeportTests.Awaiting(c, DeportTests.Soldier(1, 1, 0)), SettlementControl.Deport).State;
+        Assert.Equal(GameOverCodes.MvpEnded, stepped.GameOver);
+        Assert.True(stepped.Settlements["town_a"].Depopulated);
+        Assert.DoesNotContain("after_town_a", stepped.FiredEvents);
+        Assert.Equal(new[] { "after_town_a" }, EndReport.For(c, stepped).DeportCards);
+    }
+
+    // R-EVT-007: a card that fired on its Deport's turn was shown then, so the end report does not list it again.
+    [Fact]
+    public void ACardThatFiredIsNotOnTheEndReport()
+    {
+        var c = Load();
+        var s = Answer(c, DeportTests.Awaiting(c, DeportTests.Soldier(1, 1, 0)), SettlementControl.Deport).State;
+        Assert.Contains("after_town_a", s.FiredEvents);
+        s.GameOver = GameOverCodes.MvpEnded;   // read as an ended game; nothing else changes
+        Assert.Empty(EndReport.For(c, s).DeportCards);
+    }
+
     // R-EVT-007: Raid and Occupy depopulate nothing, so neither fires the card.
     [Theory]
     [InlineData(SettlementControl.Raid)]
