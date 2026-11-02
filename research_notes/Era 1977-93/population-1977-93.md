@@ -508,10 +508,33 @@ text names it, and a weekday read against the item's date is marked "computed he
 - Our reading, not a source statement: the change closed the route by which most Soviet Jews who left on Israeli visas
   went on to the US (Tolts, 2a, gives the US row at 56 thousand "departures from the Soviet Union" for 1989 and 6.5 for
   1990, note b, against 12.9 and 185.2 to Israel).
-- [GAP] The US rule's own text (the State Department notice or the Federal Register) was not opened; every line above is a
-  press account of it. The same JTA item of 7 November says the 5 November deadline was announced "last week" in Moscow;
-  the day is not given. The effective day, 1 October 1989, is stated by JTA as "beginning Oct. 1" and "which began
-  Sunday" (1 October 1989 was a Sunday, computed here).
+- [GAP] The 1 October 1989 rule's own text (the State Department or INS notice) was not found. Tried on 2 November:
+  the full-text layer of the govinfo Federal Register day volumes of 26 June, 22 August, 17 October and 25 October 1989
+  (the four days the govinfo search returned for Soviet, refugee and Moscow together), searched for "Moscow": no
+  refugee notice; the GAO testimony T-NSIAD-89-47 on gao.gov answered "Access Denied" and was not opened. Every line
+  of the table above is still a press account of the rule. The same JTA item of 7 November says the 5 November deadline
+  was announced "last week" in Moscow; the day is not given. The effective day, 1 October 1989, is stated by JTA as
+  "beginning Oct. 1" and "which began Sunday" (1 October 1989 was a Sunday, computed here).
+
+**The statute that followed the change: Public Law 101-167, section 599D (added 2 November 2026)**
+
+Not the rule itself, but the primary legal text of the US answer to it: section 599D of the Foreign Operations
+Appropriations Act, 1990, Public Law 101-167 of 21 November 1989, 103 Stat. 1195, read in the govinfo copy of the
+Statutes at Large (`https://www.govinfo.gov/content/pkg/STATUTE-103/pdf/STATUTE-103-Pg1195.pdf`, 72 pages; section 599D
+on pages 1261 to 1263, section 599E on 1263 to 1264). Read on the page images on 2 November 2026.
+
+| Claim | Where | Printed text | Tag |
+|---|---|---|---|
+| Soviet Jews and Evangelical Christians were put by statute in a category whose members may establish a well-founded fear of persecution, for refugee admission, by asserting it (the category of sec. 599D(b)(1)(A), "targets of persecution") | 103 Stat. 1262, sec. 599D(b)(1)(A) and (b)(2)(A) | "Aliens who are (or were) nationals and residents of the Soviet Union and who are Jews or Evangelical Christians shall be deemed a category of alien established under paragraph (1)(A)." | [V, agent read 2 Nov; a person's check pending], primary |
+| A person in a category could establish a well-founded fear by asserting a fear and a credible basis for concern | 103 Stat. 1261-1262, sec. 599D(a) | "by asserting such a fear and asserting a credible basis for concern about the possibility of such persecution" | [V, agent read 2 Nov; a person's check pending], primary |
+| Those in a category who were denied after 14 August 1988 and before 21 November 1989 could reapply, for reapplications made before 1 October 1990 (sec. 599D(e)(3)) | 103 Stat. 1262-1263, sec. 599D(d) and (e)(3) | "(after August 14, 1988, and before the date of the enactment of this Act) was denied refugee status shall be permitted to reapply for such status" | [V, agent read 2 Nov; a person's check pending], primary |
+| The category rules covered only applications made before 1 October 1990 | 103 Stat. 1263, sec. 599D(e)(1) | "shall only apply to applications for refugee status submitted before October 1, 1990" | [V, agent read 2 Nov; a person's check pending], primary |
+| Congress told the Comptroller General to report, by 31 December 1989 (preliminary) and 31 March 1990 (final), on implementation of sec. 599D in Italy and the Soviet Union, including the means of distributing and receiving applications in Moscow, to compare as far as possible the cost of Moscow-only processing with Moscow plus Italy, and to evaluate efforts to phase out Italy processing | 103 Stat. 1263, sec. 599D(f)(1)(E) to (G) and (f)(2) | "(E) the sufficiency of the means of distributing and receiving applications for refugee status in Moscow, (F) to the extent possible, a comparison of the cost of conducting refugee processing only in Moscow and such cost of processing in both Moscow and in Italy, and (G) an evaluation of efforts to phase out Soviet refugee processing in Italy." | [V, agent read 2 Nov; a person's check pending], primary |
+| Soviet nationals paroled into the US between 15 August 1988 and 30 September 1990 after a refugee denial could apply to adjust to permanent residence (one year's presence, admissibility and a fee also required, sec. 599E(a)) | 103 Stat. 1263-1264, sec. 599E(a), (b) | "(2) was inspected and granted parole into the United States during the period beginning on August 15, 1988, and ending on September 30, 1990, after being denied refugee status." | [V, agent read 2 Nov; a person's check pending], primary |
+
+- Our reading, not a source statement: subsection (f) shows that on 21 November 1989, seven weeks after the change, Moscow
+  processing and the Italy track were both still under review by Congress; sections 599D and 599E neither name nor repeal
+  the 1 October rule. The press lines above, not the statute, remain the source for the Moscow-only practice.
 
 **Direct absorption: what the Israeli state paid, 1990-91**
 
@@ -621,6 +644,7 @@ full-volume PDFs on the CBS site; only the construction chapter tables named abo
 1989-10-03, 1989-10-06, 1989-10-13, 1989-11-07, 1990-06-27, 1990-08-01, 1990-08-03, 1991-03-06, 1991-03-11 and 1991-03-13. Tried: the JTA wp-json archive search
 `https://www.jta.org/wp-json/wp/v2/archive?search=direct+absorption&after=1989-06-01T00:00:00&before=1992-12-31T00:00:00&per_page=40`
 (412 items) and `search=absorption+basket` over the same window (35 items); only the titles were scanned and the items named above were read in full.
+Added 2 November 2026: Public Law 101-167 (103 Stat. 1195, govinfo, pages 1261 to 1264) and the four Federal Register day volumes named in the US-rule gap above.
 
 ---
 
