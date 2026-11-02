@@ -350,8 +350,11 @@ namespace Statecraft.Game.UI
                 setCompanion = set;
                 companionSwitch = (() => companion != null, on => { companionPicked = on; set(on); });
             }
+            // The start menu's music (#39): only where the start screen shows, and only in a player (never in EditMode, where a
+            // test may show the start screen); made before Settings, whose Music row sets its volume.
+            var music = showsStart && Application.isPlaying ? Own(new MenuMusic(root, Application.platform == RuntimePlatform.WebGLPlayer)) : null;
             Own(new SettingsPresenter(root, text, SettingsFile(), switchLanguage, panel: document.panelSettings, audio: audio, advisors: AdvisorSession.Settings,
-                companion: companionSwitch));
+                companion: companionSwitch, music: music));
             // "Report a bug or idea" (#1169), from Settings and the start screen: the version line names the content GameBoot logged.
             feedback = Own(new FeedbackPresenter(root, text, ReportLinks.Version(Application.version, inputs.Content.Hash)));
             var feedbackPanel = feedback;
@@ -602,9 +605,11 @@ namespace Statecraft.Game.UI
             {
                 var cam = cameraController;
                 var recording = Own(new DeclarationRecording(root, text, toast.Show));   // never built in automated runs (Skipped)
+                if (music != null) music.Duck = () => recording.Playing;           // the theme dips under Ben-Gurion's voice
                 start = Own(new StartScreenPresenter(root, newGame!, resumed, shown =>
                 {
                     if (cam != null) cam.enabled = !shown;
+                    music?.Show(shown);                                            // loops on the menu, fades out as a game starts
                     if (!shown) { if (start?.Resumed != false) advisor?.Resume(); else if (opening == null) advisor?.NewGame(); }
                 }, recording, text, SettingsFile(), switchLanguage));
                 start.Show();

@@ -201,16 +201,19 @@ namespace Statecraft.Game.UI
         }
 
         /// <summary>The game's fetch: UnityWebRequestMultimedia from StreamingAssets, as WAV.</summary>
-        internal static IRequest WebFetch(string url, Action<AudioClip?, string?> done) => new WebRequest(url, done);
+        internal static IRequest WebFetch(string url, Action<AudioClip?, string?> done) => new WebRequest(url, done, AudioType.WAV);
+
+        /// <summary>The same fetch as Ogg Vorbis (the start menu's music, MenuMusic).</summary>
+        internal static IRequest WebFetchOgg(string url, Action<AudioClip?, string?> done) => new WebRequest(url, done, AudioType.OGGVORBIS);
 
         sealed class WebRequest : IRequest
         {
             readonly UnityWebRequest request;
             bool aborted, finished;
 
-            public WebRequest(string url, Action<AudioClip?, string?> done)
+            public WebRequest(string url, Action<AudioClip?, string?> done, AudioType type)
             {
-                request = UnityWebRequestMultimedia.GetAudioClip(url, AudioType.WAV);
+                request = UnityWebRequestMultimedia.GetAudioClip(url, type);
                 request.SendWebRequest().completed += _ => Done(done);
             }
 
@@ -242,7 +245,10 @@ namespace Statecraft.Game.UI
         {
             GameObject? go; AudioSource? source;
 
-            public bool? Ready(AudioClip clip)
+            public bool? Ready(AudioClip clip) => ReadyState(clip);
+
+            /// <summary>IOutput.Ready's rule for any AudioSource output (MenuMusic's too).</summary>
+            internal static bool? ReadyState(AudioClip clip)
             {
                 switch (clip.loadState)
                 {
