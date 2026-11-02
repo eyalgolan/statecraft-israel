@@ -382,14 +382,13 @@ public class SeaAirCollectionTests
         TestContext.WriteLine($"Dakota loop centre {fromCity:0} m from Tel Aviv's point; nearest pass {Mathf.Max(Mathf.Abs(centre.x - telAviv.x) - SeaAirCollection.SpitfireLoopHalfLengthM, 0f):0} m east-west");
         Assert.Less(fromCity, 30000f, "by Tel Aviv");
         // The owner on #2274: "Off the coast is fine (Recommended)": the whole loop is over the sea.
-        var sea = PlacementLayer.CampGround(map);
-        Assert.IsTrue(sea.Water(centre.x, centre.y), "its loop's centre is over the sea");
+        var ground = PlacementLayer.CampGround(map);
+        Assert.IsTrue(ground.Water(centre.x, centre.y), "its loop's centre is over the sea");
         for (int i = 0; i < 48; i++)
         {
             var q = centre + SeaAirCollection.DakotaLoopOffset(i * SeaAirCollection.DakotaLoopSeconds / 48f);
-            Assert.IsTrue(sea.Water(q.x, q.y), $"its path is over the sea at step {i}");
+            Assert.IsTrue(ground.Water(q.x, q.y), $"its path is over the sea at step {i}");
         }
-        var ground = PlacementLayer.CampGround(map);
         Assert.IsTrue(ground.Inside(centre.x - half.x, centre.y - half.y) && ground.Inside(centre.x + half.x, centre.y + half.y), "its whole loop over the board");
         foreach (var kv in map.UnitSpots)
         {

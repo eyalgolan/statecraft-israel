@@ -64,8 +64,13 @@ namespace Statecraft.Game.Map.Collection
         /// spot"): a spot farther out is not drawn, with a warning.</summary>
         public const float MaxPropOffsetM = 1500f;
 
-        /// <summary>Red-first stub: the cap a test may lower.</summary>
+        /// <summary>The cap in force: <see cref="MaxPropOffsetM"/>, which a test may lower (a test seam).</summary>
         internal static float MaxPropOffset = MaxPropOffsetM;
+
+        /// <summary>DESIGN VALUE read off the wall model (generated-1948-12-low-stone-wall-module.fbx): its depth over its length seen
+        /// from above, 0.1597 (vertex extents 0.9995 by 0.1597 FBX units, 2 November 2026), so its roadside spot is planned from
+        /// data, not from the streamed prefab.</summary>
+        public const float WallDepthShare = 0.1597f;
 
         /// <summary>A row's long side on the map (m): its model's real size at the world scale times the row's own scale.</summary>
         public static float SizeOf(Want w) => RealLengthM(w.Model) * WorldScale * w.Scale;
@@ -224,20 +229,6 @@ namespace Statecraft.Game.Map.Collection
             return null;
         }
 
-        /// <summary>Half the long side and half the short side (m, seen from above) of <paramref name="prefab"/> drawn
-        /// <paramref name="size"/> long at its own rotation.</summary>
-        static (float lengthHalf, float depthHalf) HalfSides(GameObject prefab, float size)
-        {
-            var probe = Instantiate(prefab);
-            try
-            {
-                probe.transform.SetPositionAndRotation(Vector3.zero, prefab.transform.localRotation);
-                var b = Bounds(probe); float edge = Mathf.Max(b.size.x, b.size.z), k = edge > 1e-3f ? size / edge : 1f;
-                return (0.5f * edge * k, 0.5f * Mathf.Min(b.size.x, b.size.z) * k);
-            }
-            finally { DestroyImmediate(probe); }
-        }
-
         /// <summary>The first clear spot beside route <paramref name="route"/>'s line (RouteLayer.Corridors) nearest
         /// <paramref name="anchor"/>, just off its corridor on either side, stepping along the line both ways; and the line's
         /// direction there (world x, z, unit length), for the model to lie along it. The model is checked along its whole
@@ -279,7 +270,7 @@ namespace Statecraft.Game.Map.Collection
         /// from <paramref name="reach"/> m back to <paramref name="reach"/> m on through <paramref name="p"/>, are all free.</summary>
         static bool AlongIsFree(Vector2 p, Vector2 dir, float reach, float half, Func<Vector2, float, bool> free)
         {
-            float step = Mathf.Max(half, 1f);
+            float step = Mathf.Max(half, 1f); reach = Mathf.Max(reach, 0f);
             for (float t = -reach; t < reach; t += step) if (!free(p + dir * t, half)) return false;
             return free(p + dir * reach, half);
         }
@@ -438,7 +429,8 @@ namespace Statecraft.Game.Map.Collection
             // ruling 29, 30 October 2026: "Far models map-wide"). The four props are the exception (owner on #2274: "Near-only
             // for these props"): each is requested only while a camera is close to it (the view's keys), and released on leave.
             var near = residencyView.Keys;
-            residency.Replace(wants.Where(w => !w.NearOnly || near.Contains(w.Key)).Select(w => (w.Model, CollectionDetail.Near)));
+            // A near-only prop with no planned spot (no clear ground, or past the cap) is not asked for: it would never be drawn.
+            residency.Replace(wants.Where(w => !w.NearOnly || near.Contains(w.Key) && planned.ContainsKey(w.Key)).Select(w => (w.Model, CollectionDetail.Near)));
             if (redraw) Rebuild();
         }
         IReadOnlyList<UnityEngine.Object> ClearForRetirement(IReadOnlyCollection<(string id, CollectionDetail detail)> keys)
@@ -529,17 +521,23 @@ namespace Statecraft.Game.Map.Collection
         void Show(IReadOnlyList<Want> wants)
         {
             this.wants = wants;
+            Plan(log: true);
             if (residencyView != null) { RefreshResidency(); return; }
             foreach (var w in wants)
                 if (asked.Add(w.Model)) { string model = w.Model; Request(model, CollectionDetail.Near, p => { if (this == null) return; prefabs[model] = p; if (p == null) { FailedOpen = true; Debug.LogWarning($"BUILDINGS: {model} did not stream; it stays off the map."); } Rebuild(); }); }
             Rebuild();
         }
 
-        void Rebuild()
+        /// <summary>Where each wanted row stands (its spot and, beside a road, the road's direction), planned from the whole wanted
+        /// list in its order, before and whatever any model has streamed (#2266's contract): each spot keeps clear of the ones
+        /// planned before it. Shapes come from the data (<see cref="SizeOf(Want)"/>, <see cref="WallDepthShare"/>), never from a
+        /// streamed prefab. A row with no spot (no clear ground, or a town-edge prop past <see cref="MaxPropOffset"/>) is left out:
+        /// it is not asked for and not drawn. <paramref name="log"/> writes the warnings, once per date (ShowAt), not on every
+        /// redraw.</summary>
+        void Plan(bool log)
         {
-            CollectionResidencyMetrics.MarkDirty();
+            planned.Clear();
             if (map == null || map.Terrain == null) return;
-            ClearVisuals();
             var ground = PlacementLayer.CampGround(map);
             var footprints = map.KitFootprints.Select(f => (f.centre, f.radius)).ToList();
             var taken = new List<(Vector2 centre, float radius)>();
@@ -569,11 +567,9 @@ namespace Statecraft.Game.Map.Collection
                     && ground.Inside(p.x - r, p.y - r) && ground.Inside(p.x + r, p.y + r)
                     && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, date);
             }
-            var holes = new List<(Vector2 centre, float radius)>();
             var kits = map.transform.Find(Kits.KitLayer.RootName);
             foreach (var w in wants)
             {
-                if (!prefabs.TryGetValue(w.Model, out var prefab) || prefab == null) continue;
                 var anchor3 = map.Frame.ToWorld(w.Lon, w.Lat, 0); var anchor = new Vector2(anchor3.x, anchor3.z);
                 float clearance = ClearanceOf(w);
                 Vector2? at = null;
@@ -589,31 +585,50 @@ namespace Statecraft.Game.Map.Collection
                 if (w.Site == Siting.Shore) at = ShoreSpot(w.Along, ground, clearance, free);
                 else if (w.Site == Siting.Road)
                 {
-                    var (lengthHalf, depthHalf) = HalfSides(prefab, SizeOf(w));
+                    float lengthHalf = 0.5f * SizeOf(w), depthHalf = WallDepthShare * lengthHalf;
                     if (RoadSpot(map, w.Along, anchor, lengthHalf, depthHalf, free) is (Vector2 roadAt, Vector2 roadDir)) { at = roadAt; along = roadDir; }
                 }
                 if (at == null && w.Site != Siting.Seeded)
                 {
-                    Debug.LogWarning($"BUILDINGS: no clear {(w.Site == Siting.Shore ? "beach" : "roadside")} spot for {w.Key}; its {w.Model} is not drawn.");
+                    if (log) Debug.LogWarning($"BUILDINGS: no clear {(w.Site == Siting.Shore ? "beach" : "roadside")} spot for {w.Key}; its {w.Model} is not drawn.");
                     continue;
                 }
                 if (at == null)
                 {
-                    if (w.Key == "degania_r35")
+                    if (w.Key == "degania_r35" && log)
                         Debug.LogWarning("BUILDINGS: route-facing spot unavailable for degania_r35; falling back to the seeded spot.");
                     float from = w.TownEdge ? 0f : Inside(anchor, footprints);
                     at = SeededSpot(w.Key, anchor, clearance, free, from);
                     for (int ring = 1; at == null && ring <= WidenRings; ring++)
                         at = SeededSpot(w.Key, anchor, clearance, free, from + ring * WidenShare * clearance);
                 }
-                if (at == null) { Debug.LogWarning($"BUILDINGS: no clear ground near {w.Key}; its {w.Model} is not drawn."); continue; }
-                if (w.TownEdge && (at.Value - anchor).magnitude > MaxPropOffsetM)
+                if (at == null) { if (log) Debug.LogWarning($"BUILDINGS: no clear ground near {w.Key}; its {w.Model} is not drawn."); continue; }
+                if (w.TownEdge && (at.Value - anchor).magnitude > MaxPropOffset)
                 {
-                    Debug.LogWarning($"BUILDINGS: the nearest clear spot for {w.Key} is {(at.Value - anchor).magnitude:0} m from its sourced point, past {MaxPropOffsetM:0} m; its {w.Model} is not drawn.");
+                    if (log) Debug.LogWarning(FormattableString.Invariant($"BUILDINGS: the nearest clear spot for {w.Key} is {(at.Value - anchor).magnitude:0} m from its sourced point, past {MaxPropOffset:0} m; its {w.Model} is not drawn."));
                     continue;
                 }
                 taken.Add((at.Value, clearance));
-                holes.Add((at.Value, clearance));
+                planned[w.Key] = (at.Value, along);
+            }
+        }
+
+        readonly Dictionary<string, (Vector2 at, Vector2? along)> planned = new Dictionary<string, (Vector2, Vector2?)>(StringComparer.Ordinal);
+
+        void Rebuild()
+        {
+            CollectionResidencyMetrics.MarkDirty();
+            if (map == null || map.Terrain == null) return;
+            ClearVisuals();
+            Plan(log: false);
+            var ground = PlacementLayer.CampGround(map);
+            var holes = new List<(Vector2 centre, float radius)>();
+            foreach (var w in wants)
+            {
+                if (!prefabs.TryGetValue(w.Model, out var prefab) || prefab == null) continue;
+                if (!planned.TryGetValue(w.Key, out var spot)) continue;
+                Vector2? at = spot.at, along = spot.along;
+                holes.Add((spot.at, ClearanceOf(w)));
                 var go = Instantiate(prefab, transform, false); go.name = w.Key;
                 if (!originals.TryGetValue(w.Model, out var owned)) originals[w.Model] = owned = new List<GameObject>();
                 owned.Add(go);
