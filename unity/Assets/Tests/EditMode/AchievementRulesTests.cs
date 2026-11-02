@@ -170,12 +170,15 @@ public class AchievementRulesTests
             bridge.Replace(broken);
     }
 
-    /// <summary>Review round (k2 H2): the real End turn that reaches the last day (rules.yaml mvp.end) earns the campaign.</summary>
+    /// <summary>Review round (k2 H2): the real End turn that reaches the last day (rules.yaml mvp.end) earns the campaign.
+    /// The game is played to its last turn as the sim's CutoverTests plays it (HistoricalAI's orders), so its state is real.</summary>
     [Test] public void The_turn_that_reaches_the_last_day_earns_the_campaign()
     {
         var fake = new FakePlatform();
         var session = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
-        session.State.Date = C.End.AddDays(-1);
+        for (int turn = 0; Simulation.TurnEnd(C, session.State) < C.End && session.State.GameOver == null && turn < 1000; turn++)
+            session.Step(HistoricalAI.Commands(C, session.State));
+        Assert.IsNull(session.State.GameOver, "precondition: the game is on, one turn before its end");
         var bridge = new SimBridge(session, En);
         using (new AchievementReporter(bridge, () => fake))
         {
