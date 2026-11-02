@@ -505,46 +505,52 @@ public class SeaAirCollectionTests
         }
     }
 
-    /// <summary>The owner's report: "it doesnt show its an egyptian unit". The map marks a unit's side by its side's flag on a
-    /// pole (UnitPlinth.Build: the sourced 1948 flag, UnitFlags, owner ruling 31 October 2026), turned to the camera
-    /// (UnitFlagFacing, owner ruling 15 October 2026). The Spitfire flies the same: Egypt's flag mesh and cloth colours, the
-    /// pole in the units' palette, at the tokens' flag size, its pole's foot on the aircraft wherever it is in its loop,
-    /// upright in a bank, and inside the box the labels keep clear of at every heading.</summary>
+    /// <summary>The owner's report: "it doesnt show its an egyptian unit". The map marks a unit's side by its side's sourced
+    /// flag (UnitPlinth.Build, UnitFlags, owner ruling 31 October 2026), turned to the camera (UnitFlagFacing, owner ruling
+    /// 15 October 2026). The Spitfire flies the same flag, cloth and colours, but as the owner ruled on #2260 (2 November
+    /// 2026, "Smaller flag, no pole": "a small Egyptian flag pennant floating just above the tail (no pole through the
+    /// plane)"): the cloth alone, smaller than the tokens' flag, floating over the aircraft's tail. In every pose of the loop
+    /// and facing every way it stays upright, behind the aircraft's middle, wholly above the aircraft's box (so it never
+    /// meets the airframe, banked or not), and inside the box the labels keep clear of.</summary>
     [Test]
     public void TheSpitfireFliesEgyptsFlagAsTheEgyptianTokensDo()
     {
         Assert.IsTrue(Statecraft.Game.Map.Units.UnitData.Sides.Contains(Statecraft.Game.Map.Units.UnitFlags.Egypt), "Egypt is a side of the units' content");
         Assert.IsTrue(Statecraft.Game.Map.Units.UnitFlags.Has(Statecraft.Game.Map.Units.UnitFlags.Egypt), "with the sourced flag its tokens fly");
         var map = OpenMap();
-        var (layer, _, loop, centre) = DrawnSpitfire(map);
+        var (layer, plane, loop, centre) = DrawnSpitfire(map);
         var flag = Marks(layer, SeaAirCollection.SpitfireFlagName);
         Assert.IsNotNull(flag, "a flag beside the aircraft");
         var mesh = flag!.GetComponent<MeshFilter>().sharedMesh;
         Assert.AreEqual(Statecraft.Game.Map.Units.UnitFlags.MeshName(Statecraft.Game.Map.Units.UnitFlags.Egypt), mesh.name, "Egypt's flag, built as the tokens' (UnitFlags.Build)");
         var mats = flag.GetComponent<MeshRenderer>().sharedMaterials;
         var cloth = Statecraft.Game.Map.Units.UnitFlags.Colours(Statecraft.Game.Map.Units.UnitFlags.Egypt);
-        Assert.AreEqual(1 + cloth.Count, mats.Length, "the pole and each of the cloth's colours");
-        Assert.AreEqual(mesh.subMeshCount, mats.Length, "one material a submesh");
+        Assert.AreEqual(cloth.Count, mesh.subMeshCount, "the cloth's colours only: no pole (owner, \"Smaller flag, no pole\")");
+        Assert.AreEqual(cloth.Count, mats.Length, "one cloth material a submesh");
         for (int i = 0; i < cloth.Count; i++)
-            Assert.Less(Vector4.Distance(cloth[i], mats[i + 1].color), 1e-4f, $"Egypt's cloth colour {i}, as UnitFlags.ClothMaterials gives the tokens");
-        var miniature = Resources.Load<Material>(Statecraft.Game.Map.Units.UnitMaterials.MiniatureResource);
-        Assert.AreEqual(miniature.shader, mats[0].shader, "the pole in the units' miniature paint");
-        Assert.IsNotNull(mats[0].GetTexture("_BaseMap"), "with the units' palette");
+            Assert.Less(Vector4.Distance(cloth[i], mats[i].color), 1e-4f, $"Egypt's cloth colour {i}, as UnitFlags.ClothMaterials gives the tokens");
         Assert.IsNotNull(flag.GetComponent<Statecraft.Game.Map.Units.UnitFlagFacing>(), "the cloth turns to the camera, as the tokens' flags do");
-        Assert.AreEqual(Statecraft.Game.Map.Units.UnitBadge.FigureHeightM * Statecraft.Game.Map.Units.UnitShowcase.FigureScale, flag.lossyScale.y, 1f, "the tokens' flag size");
+        float tokens = Statecraft.Game.Map.Units.UnitBadge.FigureHeightM * Statecraft.Game.Map.Units.UnitShowcase.FigureScale;
+        Assert.Less(flag.lossyScale.y, 0.75f * tokens, "clearly smaller than the tokens' flag");
         Assert.AreEqual(ShadowCastingMode.Off, flag.GetComponent<MeshRenderer>().shadowCastingMode, "only the aircraft's own shadow on the ground");
+        var airframe = plane.GetComponentInChildren<MeshFilter>().GetComponent<Renderer>();
         var keep = layer.KeepClear.Single(k => k[0].Contains(centre))[0];
-        for (int i = 0; i < 16; i++)
+        for (int i = 0; i < 32; i++)
         {
-            float t = i * SeaAirCollection.SpitfireLoopSeconds / 16f;
+            float t = i * SeaAirCollection.SpitfireLoopSeconds / 32f;
             loop.Place(t);
-            var at = SeaAirCollection.LoopOffset(t); var drawn = centre + new Vector3(at.x, 0f, at.y);
-            Assert.Less((flag.position - drawn).magnitude, 1f, $"the pole stands on the aircraft at {t:0.0} s");
-            foreach (var look in new[] { Vector3.forward, Vector3.back, Vector3.left, Vector3.right })
+            var at = SeaAirCollection.LoopOffset(t); var heading = SeaAirCollection.LoopHeading(t);
+            var drawn = centre + new Vector3(at.x, 0f, at.y);
+            var body = airframe.bounds;
+            Assert.Less(Vector3.Dot(flag.position - drawn, new Vector3(heading.x, 0f, heading.y)), -0.3f * SeaAirCollection.SizeOf(SeaAirCollection.Spitfire),
+                $"over the tail, behind the aircraft's middle, at {t:0.0} s");
+            foreach (var look in new[] { Vector3.forward, Vector3.back, Vector3.left, Vector3.right, new Vector3(1f, 0f, 1f).normalized })
             {
                 Statecraft.Game.Map.Units.UnitFlagFacing.Face(flag, flag.position + look * 50000f);
                 Assert.Greater(Vector3.Dot(flag.up, Vector3.up), 0.999f, $"upright at {t:0.0} s");
                 var fb = flag.GetComponent<Renderer>().bounds;
+                Assert.Greater(fb.min.y, body.max.y, $"wholly above the aircraft's box, clear of the airframe, at {t:0.0} s");
+                Assert.Less(fb.min.y - body.max.y, 0.25f * SeaAirCollection.SizeOf(SeaAirCollection.Spitfire), $"just above it, at {t:0.0} s");
                 Assert.IsTrue(keep.Contains(fb.min) && keep.Contains(fb.max), $"inside the labels' keep-clear box at {t:0.0} s");
             }
         }
