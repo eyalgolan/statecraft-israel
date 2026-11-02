@@ -758,9 +758,10 @@ namespace Statecraft.Game.UI
 
         /// <summary>Marks the hex under the pointer (<paramref name="under"/>; null: off the map) only where a click would give the
         /// open Move or Attack pick's order (PickTakes), else nothing (#2201: a player could not tell which hex a click would
-        /// take). A hex the pick does not take, such as water, stays unmarked: a click there ends the pick.</summary>
-        internal static void MarkHover(MapScene map, InfoPanelPresenter? info, (int q, int r)? under) =>
-            map.ShowHover(under is (int q, int r) && info != null && info.PickTakesHovered(q, r) ? under : null);
+        /// take). A hex the pick does not take, such as water, stays unmarked: a click there ends the pick. The camera distance
+        /// thins the band up close (MapScene.HoverCloseM).</summary>
+        internal static void MarkHover(MapScene map, InfoPanelPresenter? info, (int q, int r)? under, float cameraDistanceM = float.PositiveInfinity) =>
+            map.ShowHover(under is (int q, int r) && info != null && info.PickTakesHovered(q, r) ? under : null, cameraDistanceM);
 
         /// <summary>A right click on the map (MapPointer.HexOrdered; owner, 25 Oct 2026, "Civ: select, then click"): while the
         /// shown unit's pick takes (q, r), the order a left click there gives (PickTarget), even on another unit's hex.
@@ -1012,7 +1013,7 @@ namespace Statecraft.Game.UI
             var under = hover is Vector2 at ? pointer.HexAt(at) : null;
             if (under is (int q, int r)) info?.ShowRouteTo(q, r);
             else if (UnityEngine.InputSystem.Pointer.current is UnityEngine.InputSystem.Mouse) info?.HideRoute();
-            MarkHover(map, info, under);
+            MarkHover(map, info, under, rig != null ? rig.Distance : float.PositiveInfinity);
             var touch = UnityEngine.InputSystem.Touchscreen.current;
             if (touch != null && touch.primaryTouch.press.wasPressedThisFrame) labels.Tap(touch.primaryTouch.position.ReadValue());
         }

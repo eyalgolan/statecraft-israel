@@ -284,8 +284,14 @@ namespace Statecraft.Game.Map
             go.GetComponent<MeshRenderer>().enabled = verts.Count > 0;
         }
 
+        /// <summary>Within this camera distance the hover band thins to the lit-hex outline's <see cref="ReachableWidth"/>: the
+        /// overlay shader's CloseM (Statecraft/HexOverlay), inside which the fill fades too. At the closest zoom (6 km) one hex
+        /// fills the view and the selection's 0.12 band hid the buildings on it (owner ruling, #2213).</summary>
+        public const float HoverCloseM = 8000f;
+
         MeshRenderer hoverRenderer;
         (int q, int r)? hovered;
+        float hoverWidth;
         // Kept between calls: the pointer moves to a new hex many times a second, and fresh lists each time made steady garbage.
         readonly List<Vector3> hoverVerts = new List<Vector3>();
         readonly List<Color> hoverColours = new List<Color>();
@@ -296,13 +302,15 @@ namespace Statecraft.Game.Map
         static readonly float[] HoverShares = { 0f, 0.2f, 0.8f, 1f };
 
         /// <summary>Marks hex (q, r) with a band of the selection's width in three strips, navy edge, gold core, navy edge,
-        /// draped as <see cref="Select"/>'s; null or a hex off the map hides it. GameRoot asks every frame: the same hex again
-        /// returns at once.</summary>
-        public void ShowHover((int q, int r)? hex)
+        /// draped as <see cref="Select"/>'s, thinned to the lit-hex outline's width with the camera within <see cref="HoverCloseM"/>
+        /// (<paramref name="cameraDistanceM"/>, the camera rig's distance); null or a hex off the map hides it. GameRoot asks every
+        /// frame: the same hex at the same width again returns at once.</summary>
+        public void ShowHover((int q, int r)? hex, float cameraDistanceM = float.PositiveInfinity)
         {
             if (Terrain == null || Hexes == null) return;
-            if (hoverRenderer != null && hovered == hex) return;
-            hovered = hex;
+            float width = cameraDistanceM <= HoverCloseM ? ReachableWidth : SelectionWidth;
+            if (hoverRenderer != null && hovered == hex && hoverWidth == width) return;
+            hovered = hex; hoverWidth = width;
             var go = OverlayChild(HoverName, HoverMaterialResource);
             hoverRenderer = go.GetComponent<MeshRenderer>();
             HexJson at = null;
@@ -320,7 +328,7 @@ namespace Statecraft.Game.Map
                 for (int i = 0; i < shares.Length; i++)
                 {
                     rings[i].Clear();
-                    MapBuilder.DrapedRing(Frame, Terrain.terrainData, centre, size * (1f - SelectionWidth * shares[i]), SelectionClearanceM, rings[i]);
+                    MapBuilder.DrapedRing(Frame, Terrain.terrainData, centre, size * (1f - width * shares[i]), SelectionClearanceM, rings[i]);
                 }
                 for (int j = 0; j < n; j++)   // each index at the highest of its rings, as Select's band
                 {

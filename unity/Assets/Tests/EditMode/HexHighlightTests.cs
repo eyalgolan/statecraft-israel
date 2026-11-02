@@ -118,6 +118,51 @@ public class HexHighlightTests
         finally { Object.DestroyImmediate(map.gameObject); }
     }
 
+    /// <summary>The hover band is the lit-hex outline's 0.06 of the radius with the camera within the overlay's close distance
+    /// (the 6 km zoom shows about one hex, and the 0.12 band hid the buildings there), and the selection's 0.12 farther out.
+    /// Measured on the mesh: the inner ring's distance from the hex centre against the outer ring's, vertex by vertex.</summary>
+    [Test]
+    public void TheHoverBandThinsUpClose()
+    {
+        var map = BuildMap();
+        try
+        {
+            var land = C.Hexes.Where(h => h.Land).ToList();
+            var a = land[land.Count / 2];
+            var json = map.Hexes.hexes.Single(j => j.q == a.Q && j.r == a.R);
+            var w = map.Frame.ToWorld(json.lon, json.lat, 0);
+            var centre = new Vector2(w.x, w.z);
+            int n = MapBuilder.RingVertices;
+            float Width()
+            {
+                var v = map.Terrain.transform.Find(MapScene.HoverName).GetComponent<MeshFilter>().sharedMesh.vertices;
+                float most = 0f;
+                for (int j = 0; j < n; j++)   // vertex j is the outer ring, 5n + j the innermost (strip 2's inner ring)
+                {
+                    float outer = Vector2.Distance(new Vector2(v[j].x, v[j].z), centre);
+                    float inner = Vector2.Distance(new Vector2(v[5 * n + j].x, v[5 * n + j].z), centre);
+                    most = Mathf.Max(most, 1f - inner / outer);
+                }
+                return most;
+            }
+            map.ShowHover((a.Q, a.R), CameraController.MinDistance);
+            Assert.AreEqual(0.06f, Width(), 0.003f, "the closest zoom (6 km): the lit-hex outline's width");
+            Assert.AreEqual(MapScene.ReachableWidth, 0.06f, 1e-6f);
+            map.ShowHover((a.Q, a.R), 20000f);
+            Assert.AreEqual(0.12f, Width(), 0.003f, "farther out: the selection's width");
+            map.ShowHover((a.Q, a.R), MapScene.HoverCloseM);
+            Assert.AreEqual(0.06f, Width(), 0.003f, "thin up to the overlay's close distance");
+            map.ShowHover((a.Q, a.R), MapScene.HoverCloseM + 1f);
+            Assert.AreEqual(0.12f, Width(), 0.003f, "just past it: the selection's width");
+            Assert.AreEqual(8000f, MapScene.HoverCloseM, "Statecraft/HexOverlay's CloseM, where the fill fades");
+            map.ShowHover((a.Q, a.R), CameraController.MinDistance);
+            Assert.AreEqual(0.06f, Width(), 0.003f, "the same hex rebuilds when the camera comes close again");
+            map.ShowHover((a.Q, a.R));
+            Assert.AreEqual(0.12f, Width(), 0.003f, "no camera distance: the far width");
+        }
+        finally { Object.DestroyImmediate(map.gameObject); }
+    }
+
     /// <summary>The overlay shader compiles for WebGL 2, and its material draws in the transparent queue just under the move
     /// arrow's (Transparent+50, #2134), so an arrow is never covered by a fill or the hover band. Its pass ignores depth (ZTest
     /// Always): the fix for #2201 rests on that line, with ZTest LEqual the towns and trees stand over the fill and the hover
