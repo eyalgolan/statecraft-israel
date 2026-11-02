@@ -20,7 +20,7 @@ namespace Statecraft.Game.Map.Collection
     /// <item>a C-54 at Lod (Lydda) Airport while Operation Magic Carpet's main airlift ran, from July 1949 to its last flights
     /// into Lydda on 24 September 1950 (<see cref="C54From"/>, <see cref="C54To"/>);</item>
     /// <item>the Egyptian Spitfire flying a slow loop near the western board edge (about 30 km in) toward el-Arish and back (<see cref="SpitfireLoop"/>),
-    /// banked into its turns, its propeller turning, its shadow on the ground and Egypt's flag over it, from 15 May 1948 to 2 January 1949
+    /// banked into its turns, its propeller turning, its shadow on the ground and a small Egyptian flag over its tail, from 15 May 1948 to 2 January 1949
     /// (<see cref="SpitfireFrom"/>, <see cref="SpitfireTo"/>, #1932), never on a hex or an airfield.</item>
     /// </list>
     /// The boats lie on the open sea past the surf, where SeaCraft's own boats sail (SeaCraft.OffshoreNearM to OffshoreM out
@@ -447,7 +447,7 @@ namespace Statecraft.Game.Map.Collection
         /// <summary>The Spitfire in flight round its loop about <paramref name="at"/> (<see cref="SpitfireLoop"/>), wingspan
         /// at its map size, UnitShowcase.AltitudeM (4,200 m) above the highest ground under the loop (UnitShowcase.LoopFloor),
         /// where the unit tokens' aircraft fly (#2014), banked into its turns, with its propeller turning, its shadow on the
-        /// ground and Egypt's flag over it (owner's report, 2 November 2026: "the gyptian plane's propelor isn't moving and it
+        /// ground and a small Egyptian flag over its tail (owner's report, 2 November 2026: "the gyptian plane's propelor isn't moving and it
         /// doesnt look fliying, also it doesnt show its an egyptian unit"). It is drawn at the loop's start, nose east; the
         /// labels keep clear of the whole box it and its flag fly through.</summary>
         void Fly(GameObject go, GameObject prefab, Vector2 at)
@@ -468,20 +468,22 @@ namespace Statecraft.Game.Map.Collection
             originals[Spitfire].Add(marks);
             var loop = go.AddComponent<SpitfireLoop>();
             var flag = Flag(marks.transform);
-            loop.Attach(Propeller(go), Shadow(marks.transform), flag, map!.Terrain, 0.5f * ShadowShare * new Vector2(size, b.size.x));
+            // The aircraft's half box at level, nose east: half its length, its height and its span.
+            var half = 0.5f * new Vector3(b.size.x, b.size.y, b.size.z);
+            loop.Attach(Propeller(go), Shadow(marks.transform), flag, map!.Terrain, 0.5f * ShadowShare * new Vector2(size, b.size.x), half);
             // Edit mode and screenshots hold the loop's start, as the train does (RouteLayer.ModeFor).
             loop.Configure(centre, level, b.center - go.transform.position, !Application.isPlaying || VisualShots.Requested());
             var cam = Camera.main;
             if (flag != null && cam != null) Statecraft.Game.Map.Units.UnitFlagFacing.Face(flag, cam.transform.position);
             Placed.Add((go.name, Spitfire, centre));
-            // At any heading and bank the aircraft lies within half its box's diagonal of its centre; the flag's pole stands
-            // on that centre, its cloth turning about the pole.
+            // At any heading and bank the aircraft lies within half its box's diagonal of its centre; the flag floats over its
+            // tail, at most the steepest bank's box top over the centre (SpitfireLoop.TopOver), its cloth turning about its middle.
             float reach = 0.5f * b.size.magnitude + 1f, up = reach, round = reach;
             if (flag != null)
             {
                 var f = flag.GetComponent<MeshFilter>().sharedMesh.bounds; float k = flag.lossyScale.y;
-                up = Mathf.Max(up, f.max.y * k + 1f);
-                round = Mathf.Max(round, new Vector2(Mathf.Max(-f.min.x, f.max.x), Mathf.Max(-f.min.z, f.max.z)).magnitude * k + 1f);
+                up = Mathf.Max(up, SpitfireLoop.TopOver(half, Statecraft.Game.Map.Units.UnitShowcase.BankDegrees) + SpitfireLoop.FlagClearM + 2f * f.extents.y * k + 1f);
+                round = Mathf.Max(round, half.x + new Vector2(f.extents.x, f.extents.z).magnitude * k + 1f);
             }
             var keep = new Bounds();
             keep.SetMinMax(centre - new Vector3(SpitfireLoopHalfLengthM + round, reach, SpitfireLoopHalfWidthM + round),
@@ -523,36 +525,76 @@ namespace Statecraft.Game.Map.Collection
             return go.transform;
         }
 
+        /// <summary>DESIGN VALUE: the Spitfire's flag over the tokens' flag size (UnitBadge.FigureHeightM x UnitShowcase.FigureScale
+        /// a figure-height unit; the cloth 0.72 of it across): smaller, as the owner ruled on #2260 (2 November 2026, "Smaller
+        /// flag, no pole"), and still a readable green flag with its white crescent at the opening zoom (picked from captures
+        /// of 0.35, 0.5 and 0.65 at 90 and 30 km).</summary>
+        public const float SpitfireFlagScale = 0.5f;
+
         /// <summary>Egypt's flag, as the Egyptian tokens fly it (owner's report: "it doesnt show its an egyptian unit"): the map
-        /// marks a unit's side by its side's sourced flag on a pole (UnitPlinth.Build, UnitFlags), turned to the camera
-        /// (UnitFlagFacing), at the tokens' flag size; here its pole's foot is on the aircraft (SpitfireLoop.Place). Null, with
-        /// a warning, when the units' materials are missing: the aircraft flies on without it.</summary>
+        /// marks a unit's side by its side's sourced flag (UnitPlinth.Build, UnitFlags), turned to the camera (UnitFlagFacing).
+        /// Here, as the owner ruled on #2260 ("Smaller flag, no pole": "a small Egyptian flag pennant floating just above the
+        /// tail (no pole through the plane)"), the cloth alone, centred on its own middle so it turns in place, at
+        /// <see cref="SpitfireFlagScale"/> of the tokens' size; SpitfireLoop floats it over the tail. Null, with a warning, when
+        /// the units' materials are missing: the aircraft flies on without it.</summary>
         Transform? Flag(Transform parent)
         {
             if (flagMesh == null)
             {
-                var template = Resources.Load<Material>(Statecraft.Game.Map.Units.UnitMaterials.MiniatureResource);
                 var ring = Resources.Load<Material>(Statecraft.Game.Map.Units.UnitMaterials.RingResource);
-                if (template == null || ring == null)
+                if (ring == null)
                 {
                     Debug.LogWarning("SEA/AIR: the unit materials are missing (run UnitMaterialAssets.Create); the Spitfire flies without its flag.");
                     return null;
                 }
-                flagPaint = Own(new Material(template) { name = "UnitMiniature (palette)" });
-                flagPaint.SetTexture("_BaseMap", Own(Statecraft.Game.Map.Units.UnitPalette.MakeTexture(readable: false)));
-                flagCloth = new[] { flagPaint }.Concat(Statecraft.Game.Map.Units.UnitFlags.ClothMaterials(Statecraft.Game.Map.Units.UnitFlags.Egypt, ring, m => Own(m))).ToArray();
-                flagMesh = Statecraft.Game.Map.Units.UnitPlinth.Upload(Own(Statecraft.Game.Map.Units.UnitFlags.Build(Statecraft.Game.Map.Units.UnitFlags.Egypt)!));
+                flagCloth = Statecraft.Game.Map.Units.UnitFlags.ClothMaterials(Statecraft.Game.Map.Units.UnitFlags.Egypt, ring, m => Own(m));
+                flagMesh = Statecraft.Game.Map.Units.UnitPlinth.Upload(Own(ClothOnly(Statecraft.Game.Map.Units.UnitFlags.Build(Statecraft.Game.Map.Units.UnitFlags.Egypt)!)));
             }
-            var flag = Statecraft.Game.Map.Units.UnitShowcase.Piece(parent, SpitfireFlagName, flagMesh, flagPaint!, Vector3.zero, Quaternion.identity,
-                Statecraft.Game.Map.Units.UnitBadge.FigureHeightM * Statecraft.Game.Map.Units.UnitShowcase.FigureScale);
+            var flag = Statecraft.Game.Map.Units.UnitShowcase.Piece(parent, SpitfireFlagName, flagMesh, flagCloth![0], Vector3.zero, Quaternion.identity,
+                SpitfireFlagScale * Statecraft.Game.Map.Units.UnitBadge.FigureHeightM * Statecraft.Game.Map.Units.UnitShowcase.FigureScale);
             var r = flag.GetComponent<MeshRenderer>();
-            r.sharedMaterials = flagCloth!; r.shadowCastingMode = ShadowCastingMode.Off;
+            r.sharedMaterials = flagCloth; r.shadowCastingMode = ShadowCastingMode.Off;
             flag.AddComponent<Statecraft.Game.Map.Units.UnitFlagFacing>();
             return flag.transform;
         }
 
+        /// <summary>A flag built by UnitFlags (the pole in submesh 0, then one submesh a cloth colour) with the pole left out:
+        /// a new mesh of the cloth's submeshes and only the vertices they use (so its bounds are the cloth's), moved so the
+        /// cloth's middle is at the origin.</summary>
+        static Mesh ClothOnly(Mesh flag)
+        {
+            var verts = flag.vertices; var uv = flag.uv; var normals = flag.normals;
+            var keep = new Dictionary<int, int>();
+            var parts = new List<int[]>();
+            for (int k = 1; k < flag.subMeshCount; k++)
+            {
+                var tris = flag.GetTriangles(k);
+                for (int i = 0; i < tris.Length; i++)
+                {
+                    if (!keep.TryGetValue(tris[i], out int to)) keep[tris[i]] = to = keep.Count;
+                    tris[i] = to;
+                }
+                parts.Add(tris);
+            }
+            var at = new Vector3[keep.Count]; var uvs = new Vector2[keep.Count]; var ns = new Vector3[keep.Count];
+            foreach (var (from, to) in keep) { at[to] = verts[from]; if (uv.Length > 0) uvs[to] = uv[from]; if (normals.Length > 0) ns[to] = normals[from]; }
+            var cloth = new Bounds(at[0], Vector3.zero);
+            foreach (var v in at) cloth.Encapsulate(v);
+            for (int i = 0; i < at.Length; i++) at[i] -= cloth.center;
+            var mesh = new Mesh { name = flag.name, vertices = at };
+            if (uv.Length > 0) mesh.uv = uvs;
+            if (normals.Length > 0) mesh.normals = ns;
+            mesh.subMeshCount = parts.Count;
+            for (int k = 0; k < parts.Count; k++) mesh.SetTriangles(parts[k], k);
+            mesh.RecalculateBounds();
+            DestroyMesh(flag);
+            return mesh;
+        }
+
+        static void DestroyMesh(Mesh m) { if (Application.isPlaying) Destroy(m); else DestroyImmediate(m); }
+
         MapRuntimeAssets? assets;
-        Material? blur, flagPaint; Material[]? flagCloth; Mesh? propMesh, shadowMesh, flagMesh;
+        Material? blur; Material[]? flagCloth; Mesh? propMesh, shadowMesh, flagMesh;
 
         /// <summary>Takes <paramref name="o"/>, made once for this layer, to be destroyed with it.</summary>
         T Own<T>(T o) where T : UnityEngine.Object
