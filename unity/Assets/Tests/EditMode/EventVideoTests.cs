@@ -26,6 +26,18 @@ public class EventVideoTests
     static EventImageCatalog Photos => AssetDatabase.LoadAssetAtPath<EventImageCatalog>("Assets/Resources/EventImageCatalog.asset");
     static IReadOnlyList<EventVideoMapping.Row> Rows => EventVideoMapping.Parse(File.ReadAllText(EventVideoMapping.Path));
 
+    /// <summary>Q-CARD-3 (a) and constraint 10 of the Phase 6 plan (GDD Phase 6 PR 9, #801): no `displacement` card has a
+    /// decision clip, an End Turn clip or a photograph, and Deport never gets a video.</summary>
+    [Test]
+    public void NoDisplacementCardHasAClipOrAPhotograph()
+    {
+        var cards = C.Events.Where(e => e.Tags.Contains("displacement", StringComparer.OrdinalIgnoreCase)).Select(e => e.Id).ToList();
+        CollectionAssert.IsNotEmpty(cards, "Deport's follow-up cards are in content/ (#801)");
+        var outcomes = EventVideoMapping.ParseOutcomes(File.ReadAllText(EventVideoMapping.Path));
+        CollectionAssert.IsEmpty(Rows.Concat(outcomes).Select(r => r.Event).Intersect(cards));
+        foreach (var id in cards) Assert.IsNull(Photos.Find(id), id);
+    }
+
     [Test]
     public void TheMappingIsSoundAndEveryClipShips()
     {
