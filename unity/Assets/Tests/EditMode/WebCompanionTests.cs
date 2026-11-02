@@ -10,6 +10,16 @@ using UnityEngine.UIElements;
 
 public sealed class WebCompanionTests
 {
+    // The companion is off and unavailable in the game (WebCompanion.Available, owner 2 November 2026); these tests keep it
+    // working for its return by turning the flag on through the test seam. WebCompanionUnavailableTests pins the game as shipped.
+    System.Func<bool>? offered;
+
+    [SetUp]
+    public void OfferTheCompanion() { offered = WebCompanion.Offered; WebCompanion.Offered = () => true; }
+
+    [TearDown]
+    public void PutTheFlagBack() => WebCompanion.Offered = offered!;
+
     static UiText Text => UiText.Parse("ui.lang: en\ncompanion.title: Game companion\ncompanion.help: Read only\ncompanion.focus: Game focus\ncompanion.status: Status\ncompanion.choices: Choices\ncompanion.empty: No decision waiting\ncompanion.unavailable: Unavailable\n");
 
     static VisualElement Tree()
@@ -569,6 +579,61 @@ public sealed class WebCompanionTests
         {
             EditorApplication.QueuePlayerLoopUpdate();
             yield return null;
+        }
+    }
+}
+
+/// <summary>The game as shipped: the owner's ruling of 2 November 2026, "Remove it from the game (Recommended)": "no Settings
+/// row, and ?companion=1 does nothing" (WebCompanion.Available is false). Nothing here turns the flag on.</summary>
+public sealed class WebCompanionUnavailableTests
+{
+    [SetUp]
+    public void TheFlagIsOff() => Assert.IsFalse(WebCompanion.Offered(), "the game ships with the companion unavailable");
+
+    [TestCase(null, null, "https://example.org/statecraft/index.html?companion=1")]
+    [TestCase(null, "off", "https://example.org/statecraft/index.html?companion=1")]
+    [TestCase(null, "on", "")]
+    [TestCase(null, "on", "https://example.org/statecraft/index.html?companion=1")]
+    [TestCase(true, "on", "https://example.org/statecraft/index.html?companion=1")]
+    public void NothingTurnsItOn(bool? picked, string? stored, string? url) =>
+        Assert.IsFalse(WebCompanion.On(picked, stored, url));
+
+    [Test]
+    public void TheRealRootHasNoCompanionAndNoSettingsRowUnderTheLinkOrAStoredOn()
+    {
+        var dir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "statecraft-companion-" + System.Guid.NewGuid().ToString("N"));
+        var inputs = Statecraft.Game.Boot.GameInputs.FromDisk(Statecraft.Game.Paths.Content, Statecraft.Game.Paths.StreamingMap);
+        try
+        {
+            UnityEditor.SceneManagement.EditorSceneManager.OpenScene("Assets/Map.unity", UnityEditor.SceneManagement.OpenSceneMode.Single);
+            Object.FindFirstObjectByType<Statecraft.Game.Map.MapScene>().Build(inputs.Map);
+            var game = Object.FindFirstObjectByType<GameRoot>();
+            game.Store = new Statecraft.Game.SaveStore(dir);
+            game.Settings = new Statecraft.Game.SettingsStore(dir);
+            game.Settings.Write(SettingsPresenter.CompanionKey, "on");   // kept from a build that offered it
+            var sent = new List<string>(); game.CompanionSend = sent.Add;   // a page that could show it
+            game.CompanionAddress = "https://example.org/statecraft/index.html?companion=1";
+            game.Language = UiLanguage.English;
+            game.Begin(inputs, 0);
+            Assert.IsNull(game.Companion, "neither the link nor a stored \"on\" turns it on");
+            var ui = Object.FindFirstObjectByType<UIDocument>().rootVisualElement;
+            UiTestKit.Press(ui.Q<Button>("nav-settings"));
+            var button = ui.Q<Button>("settings-companion");
+            Assert.AreEqual(DisplayStyle.None, button.parent.style.display.value, "no Settings row");
+            Assert.AreNotEqual(DisplayStyle.None, ui.Q<Button>("settings-star").parent.style.display.value, "the rows after it still show");
+            UiTestKit.Press(button);
+            Assert.IsNull(game.Companion, "a press on the hidden switch turns nothing on");
+            Assert.AreEqual("on", game.Settings.Read(SettingsPresenter.CompanionKey), "and writes nothing");
+            game.Begin(inputs, 0);
+            Assert.IsNull(game.Companion, "a later game stays without it");
+            game.enabled = false;
+            Assert.IsEmpty(sent, "nothing reached the page");
+        }
+        finally
+        {
+            UnityEditor.SceneManagement.EditorSceneManager.NewScene(UnityEditor.SceneManagement.NewSceneSetup.EmptyScene, UnityEditor.SceneManagement.NewSceneMode.Single);
+            Statecraft.Game.Map.VisualToggles.Clear();
+            if (System.IO.Directory.Exists(dir)) System.IO.Directory.Delete(dir, true);
         }
     }
 }

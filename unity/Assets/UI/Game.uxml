@@ -501,7 +501,8 @@
                     <ui:Button name="settings-uiscale-150" text="150%" class="settings-switch" />
                 </ui:VisualElement>
             </ui:VisualElement>
-            <!-- The WebGL companion (#1119, WebCompanion): opt-in, off by default; the row shows only where a page can show it. -->
+            <!-- The WebGL companion (#1119, WebCompanion): opt-in, off by default; the row shows only where a page can show it,
+                 and not at all while WebCompanion.Available is false (owner, 2 Nov 2026). -->
             <ui:VisualElement class="row settings-row">
                 <ui:Label name="settings-companion-label" text="Screen reader companion" class="settings-name" />
                 <ui:Button name="settings-companion" class="settings-switch" />
@@ -675,6 +676,7 @@
                 <ui:Label name="opening-title" class="title opening-source-en" />
                 <ui:VisualElement name="opening-photo" class="opening-photo" />
                 <ui:Label name="opening-credit" class="event-photo-credit opening-source-en" />
+                <ui:Label name="opening-caption" class="opening-caption" />
                 <ui:ScrollView name="opening-scroll" class="opening-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden">
                     <ui:Label name="opening-text" class="opening-text opening-source-en" />
                     <ui:Label name="opening-arrivals" class="muted opening-arrivals opening-source-en" />
