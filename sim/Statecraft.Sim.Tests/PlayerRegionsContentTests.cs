@@ -278,6 +278,21 @@ public class PlayerRegionsContentTests
         Assert.Equal(PlayerRegionCatalogue.LocalityHexesFileName + ": " + field + ": " + reason, e.Message);
     }
 
+    // A locality row may not give a member a second hex: a settlement (ramla, on (-4,24)) or a site (kiryat_shmona, on
+    // (16,2)) placed again on another land hex by map/locality_hexes.yaml is refused as a member. The same hex is no conflict.
+    [Theory]
+    [InlineData(RamlaRehovot, "  - { id: ramla, q: -4, r: 23 }\n", "member_locations[0]")]
+    [InlineData(LocalityAndSite, "  - { id: kiryat_shmona, q: 10, r: 6 }\n", "member_locations[1]")]
+    [InlineData(RamlaRehovot, "  - { id: ramla, q: -4, r: 24 }\n", null)]
+    public void AMemberPlacedOnTwoHexesAcrossThePlaceFilesIsRefused(string region, string locality, string? field)
+    {
+        var real = File.ReadAllText(Path.Combine(RealContentTests.ContentRoot(), PlayerRegionCatalogue.LocalityHexesFileName));
+        Assert.EndsWith("\n", real);
+        if (field == null) { Assert.Single(Load("player_regions:\n" + region, localityText: real + locality).PlayerRegions.Regions); return; }
+        var e = Assert.Throws<ContentException>(() => Load("player_regions:\n" + region, localityText: real + locality));
+        Assert.Equal("regions.yaml: player_regions[0]." + field + ": one place id has inconsistent placements across the place files", e.Message);
+    }
+
     [Fact]
     public void OnlyExactNewIdentityConsumesAndHashesGeography()
     {
@@ -291,7 +306,14 @@ public class PlayerRegionsContentTests
         Assert.Contains(PlayerRegionCatalogue.LocalityHexesFileName, reads);
         Assert.Equal(old.Hash, Load("malformed: [", modern: false).Hash);
         Assert.NotEqual(Load().Hash, Load("player_regions:\n" + RamlaRehovot + "\n# consumed provenance\n").Hash);
-        Assert.Empty(Load(null).PlayerRegions.Regions);
+        // Under gdd-0.3 the locality hexes are a hash input: one locality off the fixture's members moved by one hex.
+        var localities = File.ReadAllText(Path.Combine(RealContentTests.ContentRoot(), PlayerRegionCatalogue.LocalityHexesFileName));
+        Assert.Contains("{ id: hebron, q: -4, r: 30 }", localities);
+        Assert.NotEqual(Load().Hash, Load(localityText: localities.Replace("{ id: hebron, q: -4, r: 30 }", "{ id: hebron, q: -5, r: 31 }")).Hash);
+        // Without regions.yaml the locality hexes are not read either.
+        reads.Clear();
+        Assert.Empty(Load(null, onRead: reads.Add).PlayerRegions.Regions);
+        Assert.Contains("regions.yaml", reads); Assert.DoesNotContain(PlayerRegionCatalogue.LocalityHexesFileName, reads);
         // Legacy also has no read, even when an unrelated file is present and malformed.
         var files = new Dictionary<string, string>(Fixture.Files) { ["regions.yaml"] = "malformed: [" };
         reads.Clear();

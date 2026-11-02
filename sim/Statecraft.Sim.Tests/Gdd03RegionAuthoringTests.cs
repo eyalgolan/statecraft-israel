@@ -159,6 +159,26 @@ public class Gdd03RegionAuthoringTests
         Assert.False(state.PopulationLedger.IsInitialized);
     }
 
+    // The roster claims of the two inputs of map/locality_hexes.yaml, checked against the effective rosters the loader
+    // places members by: a locality is "not one of the 25 game settlements" (localities_1948.yaml), and a region place is
+    // one "no other roster holds" (region_places_1948.yaml). The sim refuses a member placed on two hexes, but only once it
+    // is a member, and never a shared id on one hex, so these are pinned here. Any other shared id must share the hex.
+    [Fact]
+    public void ShippedLocalityHexIdsKeepTheRosterClaimsOfTheirInputs()
+    {
+        var map = Path.Combine(RealContentTests.ContentRoot(), "map");
+        var c = PlayerRegionsContentTests.Load(File.ReadAllText(Path.Combine(RealContentTests.ContentRoot(), "regions.yaml")));
+        var localities = Rows(Parse(File.ReadAllText(Path.Combine(map, "locality_hexes.yaml"))), "localities")
+            .ToDictionary(l => Text(l, "id")!, l => (Int(l, "q"), Int(l, "r")), StringComparer.Ordinal);
+        var regionPlaces = Rows(Parse(File.ReadAllText(Path.Combine(map, "region_places_1948.yaml"))), "places").Select(p => Text(p, "id")!).ToArray();
+        Assert.Equal(3, regionPlaces.Length);
+        Assert.All(regionPlaces, p => Assert.True(localities.ContainsKey(p), p));
+        var others = c.MapLocations.Select(l => (l.Id, Hex: (l.Q, l.R))).Concat(c.Sites.Select(s => (s.Id, Hex: (s.Q, s.R)))).ToArray();
+        Assert.DoesNotContain(c.SettlementHexes, s => localities.ContainsKey(s.Id));
+        Assert.Empty(others.Select(o => o.Id).Intersect(regionPlaces, StringComparer.Ordinal));
+        Assert.DoesNotContain(others, o => localities.TryGetValue(o.Id, out var hex) && hex != o.Hex);
+    }
+
     [Fact]
     public void SchemaAdaptationRetainsEveryNamedMemberAndEvidenceStatus()
     {
@@ -290,24 +310,46 @@ public class Gdd03RegionAuthoringTests
     }
 
     // The staged evidence rows, before the 2 November fixes: with localities and sites accepted (and the three new
-    // records placed), only the rows the ruling had to fix are still refused, each on a member place.
+    // records placed), only the rows the ruling had to fix are still refused, each on a member place. Each refusal is
+    // pinned by member and reason, and the refused member is dropped until the row loads, so every refused member is
+    // listed: without locality or site placement the 14 moved members would be refused as "unknown place id" instead.
     [Theory]
-    [InlineData("galilee", false)]          // hanita on (10,4)
-    [InlineData("valleys", true)]
-    [InlineData("haifa_sharon", false)]     // kafr_thulth, azzoun, al_mansi, kfar_saba_2
-    [InlineData("tel_aviv_jaffa", false)]   // al_safiriyya; rosh_haayin_camp
-    [InlineData("central_plain", false)]    // majdal_yaba, al_tira, al_muzayria, qula, tzrifin
-    [InlineData("jerusalem_hills", false)]  // beit_liqya
-    [InlineData("northern_hills", false)]   // zirin
-    [InlineData("southern_coast", false)]   // iraq_al_manshiyya, yasur
-    [InlineData("negev", true)]
-    public void StagedRowsLoadExceptWhereTheRulingMovedAMemberOrAHex(string id, bool loads)
+    [InlineData("galilee", "hanita", "")]   // hanita on (10,4)
+    [InlineData("valleys", "", "")]
+    [InlineData("haifa_sharon", "kafr_thulth azzoun al_mansi kfar_saba_2", "")]
+    [InlineData("tel_aviv_jaffa", "al_safiriyya", "rosh_haayin_camp")]   // the camp: deferred, no sourced position
+    [InlineData("central_plain", "majdal_yaba al_tira al_muzayria qula tzrifin", "")]
+    [InlineData("jerusalem_hills", "beit_liqya", "")]
+    [InlineData("northern_hills", "zirin", "")]
+    [InlineData("southern_coast", "iraq_al_manshiyya yasur", "")]
+    [InlineData("negev", "", "")]
+    public void StagedRowsLoadExceptWhereTheRulingMovedAMemberOrAHex(string id, string outside, string unknown)
     {
+        const string Outside = "effective location lies outside member_hexes", Unknown = "unknown place id";
         var row = Rows(Parse(Staged), "player_regions").Single(r => Text(r, "id") == id);
-        if (loads) { Assert.Single(PlayerRegionsContentTests.Load(SingleRow(row)).PlayerRegions.Regions); return; }
-        var error = Assert.Throws<ContentException>(() => PlayerRegionsContentTests.Load(SingleRow(row)));
-        Assert.Equal("regions.yaml", error.File);
-        Assert.StartsWith("player_regions[0].member_locations", error.Field, StringComparison.Ordinal);
+        var members = Assert.IsType<YamlSequenceNode>(Get(row, "member_locations")).Children;
+        var refused = new List<(string Member, string Reason)>();
+        while (true)
+        {
+            ContentException? error = null;
+            try { Assert.Single(PlayerRegionsContentTests.Load(SingleRow(row)).PlayerRegions.Regions); }
+            catch (ContentException e) { error = e; }
+            if (error == null) break;
+            Assert.Equal("regions.yaml", error.File);
+            var match = System.Text.RegularExpressions.Regex.Match(error.Field, @"^player_regions\[0\]\.member_locations\[(\d+)\]$");
+            Assert.True(match.Success, error.Message);
+            var i = int.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture);
+            var reason = error.Message.Substring(("regions.yaml: " + error.Field + ": ").Length);
+            Assert.Contains(reason, new[] { Outside, Unknown });
+            refused.Add((Assert.IsType<YamlScalarNode>(members[i]).Value!, reason));
+            members.RemoveAt(i);
+        }
+        static IEnumerable<string> Split(string s) => s.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var expected = Split(outside).Select(m => (m, Outside)).Concat(Split(unknown).Select(m => (m, Unknown)));
+        Assert.Equal(expected.OrderBy(x => x.m, StringComparer.Ordinal), refused.OrderBy(x => x.Member, StringComparer.Ordinal));
+        // The members refused as off their hexes are this row's moves in the ruling's table (and Hanita, Q2, for Galilee).
+        Assert.Equal(Moved.Where(x => x.From == id).Select(x => x.Member).Concat(id == "galilee" ? new[] { "hanita" } : Array.Empty<string>())
+            .OrderBy(x => x, StringComparer.Ordinal), Split(outside).OrderBy(x => x, StringComparer.Ordinal));
     }
 
     [Fact]
