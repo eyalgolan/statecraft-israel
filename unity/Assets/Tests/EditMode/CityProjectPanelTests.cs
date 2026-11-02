@@ -567,23 +567,35 @@ public class WorkshopPanelTests
         var (bridge, id) = Game(C03, t);
         Assert.IsFalse(bridge.State.Workshops.ContainsKey(id), "precondition: never staffed, no record");
         var next = Workshops.NextCyclePrice(C03, bridge.State, id);
-        Assert.IsNotNull(next, "precondition: the sim prices the next cycle");
+        Assert.AreEqual(5m, next, "gdd03-balance workshop.cost, ordinary (content/gdd03-balance.yaml:306)");
         using var panel = Panel(ui, bridge, t);
         var (q, r) = Hex(C03);
         panel.Show(q, r);
         var line = ui.Root.Q<Label>("city-workshop-cycle");
         Assert.IsNotNull(line, "a never-staffed workshop shows its next cycle's price");
         Assert.AreEqual(t.Format("city.workshop_next", PlayerText.Money(C03, "treasury", (double)next!.Value)), line.text);
+        // The value itself, whatever separator the currency prefix uses: "No cycle under way · next cycle: IL 5.0m" in English.
+        Assert.IsTrue(line.text.IndexOf("5.0m", StringComparison.Ordinal) >= 0, line.text);
     }
 
-    // #1722 review (F1): the panel prices nothing itself. The workshop rules (SyntheticWorkshopRules) stay in the sim, so
-    // the price the panel shows and the one the turn charges cannot differ.
+    // #1722 review (F1, item 6): the UI prices nothing itself. The workshop rules (SyntheticWorkshopRules, the gdd-0.3
+    // catalogue Gdd03Balance and its StaffedTurns) stay in the sim, so the price the panel shows and the one the turn charges
+    // cannot differ. Every UI script is scanned, comments stripped first, so moving the pricing to another file or a partial
+    // fails it and a comment naming a type does not.
     [Test]
     public void TheWorkshopPartHoldsNoWorkshopRule()
     {
-        var source = File.ReadAllText(Path.Combine(Application.dataPath, "Scripts/UI/GddHexPanel.cs"));
-        StringAssert.Contains("Workshops.NextCyclePrice", source, "not vacuous: this is the workshop panel's source");
-        Assert.AreEqual(-1, source.IndexOf("SyntheticWorkshopRules", StringComparison.Ordinal), "GddHexPanel.cs builds the workshop rules itself");
+        var files = Directory.GetFiles(Path.Combine(Application.dataPath, "Scripts/UI"), "*.cs", SearchOption.AllDirectories);
+        var panel = files.SingleOrDefault(f => Path.GetFileName(f) == "GddHexPanel.cs");
+        Assert.IsNotNull(panel, "not vacuous: the scan reads the workshop panel's source");
+        foreach (var file in files)
+        {
+            var code = System.Text.RegularExpressions.Regex.Replace(File.ReadAllText(file), @"//[^\n]*|/\*.*?\*/", "",
+                System.Text.RegularExpressions.RegexOptions.Singleline);
+            if (file == panel) StringAssert.Contains("Workshops.NextCyclePrice", code, "not vacuous: the panel's code survives the comment strip");
+            foreach (var rule in new[] { "SyntheticWorkshopRules", "Gdd03Balance", "StaffedTurns" })
+                Assert.AreEqual(-1, code.IndexOf(rule, StringComparison.Ordinal), $"{Path.GetFileName(file)} reads the workshop rules ({rule}) itself");
+        }
     }
 
     // R-CITY-001 with R-ARMS-005 (#1722 review, H2): a jobs order past the city's civilians and craftsmen less its staffed
@@ -601,6 +613,10 @@ public class WorkshopPanelTests
         // Ordinal: a culture compare ignores U+200E and may not tell U+00A0 from a plain space.
         var expected = TownsHe[City] + ": אין די אזרחים ובעלי מלאכה (יש\u00A0\u200E9\u200E)";
         Assert.IsTrue(string.Equals(expected, he, StringComparison.Ordinal), he);
+        // The no-job form reads as its own string (workshop.refused_people_no_job), not as the plain one: ReasonText's
+        // formats are anchored (^...$), so the plain format cannot match it.
+        var noJob = SimBridge.ReasonText(He, string.Format(System.Globalization.CultureInfo.InvariantCulture, Workshops.RefusedPeopleNoJob, "Haifa", 1), C03, TownsHe);
+        Assert.IsTrue(string.Equals(TownsHe[City] + ": אין די אזרחים ובעלי מלאכה ללא משרה (יש\u00A0\u200E1\u200E)", noJob, StringComparison.Ordinal), noJob);
     }
 
     // R-ARMS-005 (#1722 review, C7): two built, one person free. + orders one; with that order queued, + is off and the

@@ -317,18 +317,18 @@ public class ArmsWorkshopTests
 
     // ---- #1722 review (F1, C4): the hex panel's next-cycle price and cycle length come from the sim ----
 
-    // R-ARMS-006: the price NextCyclePrice gives before a turn is what that turn's production step charges and records, at
-    // every worker tier.
+    // R-ARMS-006: the price NextCyclePrice gives before a turn is the worker's tier price (gdd03-balance workshop.cost 5/4/3,
+    // content/gdd03-balance.yaml:306) and what that turn's production step charges and records, at every worker tier.
     [Theory]
-    [InlineData(SyntheticWorkshopTier.Ordinary)]
-    [InlineData(SyntheticWorkshopTier.Novice)]
-    [InlineData(SyntheticWorkshopTier.Apprentice)]
-    [InlineData(SyntheticWorkshopTier.Expert)]
-    public void NextCyclePriceIsWhatTheTurnCharges(SyntheticWorkshopTier tier)
+    [InlineData(SyntheticWorkshopTier.Ordinary, 5)]
+    [InlineData(SyntheticWorkshopTier.Novice, 5)]
+    [InlineData(SyntheticWorkshopTier.Apprentice, 4)]
+    [InlineData(SyntheticWorkshopTier.Expert, 3)]
+    public void NextCyclePriceIsWhatTheTurnCharges(SyntheticWorkshopTier tier, int price)
     {
         var (c, s, id) = Staffed(treasury: 100, tier: tier);
         var next = Workshops.NextCyclePrice(c, s, id);
-        Assert.NotNull(next);
+        Assert.Equal((decimal?)price, next);
         var r = Step(c, s);
         Assert.Equal(next, r.State.Workshops[id].PaidCost);
         Assert.Equal(-(double)next!.Value, Assert.Single(Charges(r)).Delta, 12);
@@ -378,7 +378,6 @@ public class ArmsWorkshopTests
     public void CycleMonthsIsTheCataloguesStaffedTurns()
     {
         Assert.Equal(3, Workshops.CycleMonths(Load(true)));
-        Assert.Equal(Rules.StaffedTurns, Workshops.CycleMonths(Load(true)));
         Assert.Null(Workshops.CycleMonths(Load(false)));
     }
 
