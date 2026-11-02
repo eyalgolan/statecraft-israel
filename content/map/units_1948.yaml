@@ -788,7 +788,7 @@ units:
     end_note: "As the Sha'ar HaGai window: Operation Horev, from 22 December 1948, in the south; no place is given for the brigade there."
     note: "Not a position the brigade held: the objective of Ben-Gurion's proposal of 26 September 1948 \"to attack and conquer Latrun\", which the cabinet rejected (his diary), the latrun_proposal card's press_offensive option. Owner, 1 November 2026, #2087: Harel, from its Sha'ar HaGai anchor, to the Latrun fort's hex. The coordinates are the latrun_fort location's (map/locations_1948.yaml). An order target: the token stays at Sha'ar HaGai."
     sources:
-    # Ben-Gurion's diary, 26 September 1948 (Ben-Gurion Archive): "my proposal to attack and conquer Latrun [...] the proposal was rejected" (agent read 2026-11-01).
+    # Ben-Gurion's diary, 26 September 1948 (Ben-Gurion Archive): "my proposal to attack and conquer Latrun [...] the proposal was rejected" (agent read 2026-11-01; a person's check pending).
     - {url: 'https://bengurionarchive.bgu.ac.il/en/node/6251', checked: '2026-11-01'}
 - id: yiftach
   name: Yiftach Brigade

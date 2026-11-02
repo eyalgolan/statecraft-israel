@@ -214,6 +214,25 @@ public class WarEvents1948Tests
         Assert.Equal(new[] { new DateTime(1948, 11, 15) }, Run.Where(t => t.Rejected.Any(IsTheMalkiyaRefusal)).Select(t => t.Start));
     }
 
+    /// <summary>A game played with no commands at all, as Unity's CityPanelTests play the site's build turns (#2087, their
+    /// EditMode failure on round 4): every unanswered card is delegated (R-EVT-003), and the one refusal is the delegated Hiram
+    /// card's order to the 7th Brigade, on the 15 November 1948 turn, the seventh. A turn with no card order refuses nothing.</summary>
+    [Fact]
+    public void AnUntouchedGameRefusesOnlyHiramsOrderToTheSeventhBrigade()
+    {
+        var s = GameSession.New(C, GoldenRun.Seed, Mode.Historical).State;
+        var refused = new List<(int Turn, DateTime Start, Rejection X)>();
+        for (int turn = 1; turn <= 12; turn++)
+        {
+            var r = Simulation.Step(C, s, new Command[0]);
+            refused.AddRange(r.Rejected.Select(x => (turn, s.Date, x)));
+            s = r.State;
+        }
+        var only = Assert.Single(refused);
+        Assert.Equal((7, new DateTime(1948, 11, 15)), (only.Turn, only.Start));
+        Assert.True(IsTheMalkiyaRefusal(only.X), only.X.Reason);
+    }
+
     /// <summary>Operation Hiram's refused card order: the 7th Brigade (unit 13, R-UNIT-009) to al-Malikiyya (12,4).</summary>
     internal static bool IsTheMalkiyaRefusal(Rejection x) =>
         x.Reason == Orders.RefusedCardOrder && x.Command is UnitOrder { Unit: 13, Q: 12, R: 4 };

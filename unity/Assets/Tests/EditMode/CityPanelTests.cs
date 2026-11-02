@@ -46,6 +46,14 @@ public class CityPanelTests
         return id;
     }
 
+    /// <summary>The one refusal an untouched real game makes on its own (R-ENEMY-005; owner, 1 November 2026, #2087): on the
+    /// 15 November 1948 turn the unanswered Operation Hiram card is delegated, and its order sending the 7th Brigade to
+    /// al-Malikiyya (12,4) is refused while the ALA holds that hex, as the player's own go-to would be. The sim pins it in
+    /// WarEvents1948Tests (NoTurnBeforeTheArmisticeRefusesAnOrder, AnUntouchedGameRefusesOnlyHiramsOrderToTheSeventhBrigade);
+    /// the site tests below play through that turn and must still see every other refusal.</summary>
+    static bool IsTheMalkiyaRefusal(Rejection x) =>
+        x.Reason == Orders.RefusedCardOrder && x.Command is UnitOrder { Q: 12, R: 4 } o && o.Unit == C.StartingForces.FindIndex(f => f.Row == "brigade_7");
+
     /// <summary>Tel Aviv with <paramref name="civilians"/> civilians, <paramref name="employed"/> of them in jobs.</summary>
     static Action<GameState> Counts(int civilians, int employed) =>
         s => s.Cities[City] = s.Cities[City].WithCounts(civilians, employed, s.Cities[City].Refugees);
@@ -383,7 +391,7 @@ public class CityPanelTests
         do
         {
             var result = Simulation.Step(C, played, elapsed == 0 ? new Command[] { new PioneerWork(a, Projects.BuildYishuv, Site) } : new Command[0]);
-            Assert.IsEmpty(result.Rejected);
+            Assert.IsEmpty(result.Rejected.Where(j => !IsTheMalkiyaRefusal(j)));
             played = result.State; elapsed++;
         } while (played.Sites[Site].BuiltOn == null && elapsed < 12);
         Assert.IsNotNull(played.Sites[Site].BuiltOn, "real resolver finishes the fixture");
@@ -708,7 +716,7 @@ public class CityPanelTests
         do
         {
             var result = Simulation.Step(C, played, new Command[0]);
-            Assert.IsEmpty(result.Rejected);
+            Assert.IsEmpty(result.Rejected.Where(j => !IsTheMalkiyaRefusal(j)));
             played = result.State; elapsed++;
         } while (played.Sites[Site].BuiltOn == null && elapsed < 12);
         Assert.IsNotNull(played.Sites[Site].BuiltOn, "real resolver finishes the fixture");
