@@ -13,10 +13,15 @@ namespace Statecraft.Sim
         public string Type { get; }
         public string Side { get; }
         public string HomeCity { get; }
+        /// <summary>#2202: the hex the unit stood on when the sim wrote the line: before the move for unit_moved, and before
+        /// the retreat for retreated (the engagement's hex). So the map can replay a move from the line alone, not from a
+        /// state that the player's instant attack may already have changed. Output only: neither hashed nor saved.</summary>
+        public int Q { get; }
+        public int R { get; }
 
         public UnitRef(Unit u)
         {
-            Id = u.Id; Type = u.Type; Side = u.Side; HomeCity = u.HomeCity;
+            Id = u.Id; Type = u.Type; Side = u.Side; HomeCity = u.HomeCity; Q = u.Q; R = u.R;
         }
     }
 
