@@ -301,8 +301,8 @@ locations:
   kind: military_camp
   lon: 34.83953611
   lat: 31.95868056
-  q: -3
-  r: 20
+  q: -4
+  r: 23
   priority: optional # DESIGN VALUE: no owner ruling makes a camp a must-have location (see above).
   marker: true # DESIGN VALUE: this record is a map marker.
   managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
@@ -323,8 +323,8 @@ locations:
   kind: military_camp
   lon: 34.85731944
   lat: 32.04335
-  q: -2
-  r: 19
+  q: -3
+  r: 22
   priority: optional # DESIGN VALUE: no owner ruling makes a camp a must-have location (see above).
   marker: true # DESIGN VALUE: this record is a map marker.
   managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
@@ -346,7 +346,7 @@ locations:
   lon: 35.21265833
   lat: 31.79075
   q: 0
-  r: 23
+  r: 26
   priority: optional # DESIGN VALUE: no owner ruling makes a camp a must-have location (see above).
   marker: true # DESIGN VALUE: this record is a map marker, separate from Jerusalem in the same hex.
   managed_city: false # DESIGN VALUE: cities.yaml keeps one Jerusalem economy.
@@ -368,7 +368,7 @@ locations:
   lon: 34.986627
   lat: 32.462798
   q: 2
-  r: 13
+  r: 15
   priority: optional # DESIGN VALUE: no owner ruling makes a camp a must-have location (see above).
   marker: true # DESIGN VALUE: this record is a map marker.
   managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
@@ -390,7 +390,7 @@ locations:
   lon: 34.949141
   lat: 32.712543
   q: 4
-  r: 9
+  r: 11
   priority: optional # DESIGN VALUE: reception camps are map records only in the MVP (owner, 1 November 2026).
   marker: true # DESIGN VALUE: this record is a map marker.
   managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
@@ -413,7 +413,7 @@ locations:
   lon: 34.910788
   lat: 32.315699
   q: 0
-  r: 15
+  r: 17
   priority: optional # DESIGN VALUE: reception camps are map records only in the MVP (owner, 1 November 2026).
   marker: true # DESIGN VALUE: this record is a map marker.
   managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
