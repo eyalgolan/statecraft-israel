@@ -436,4 +436,38 @@ public class EnemyAITests
             s = r.State;
         }
     }
+
+    // R-ENEMY-003, #2114 (O4, owner ruling 1 Nov 2026): under exact gdd-0.3 the threshold is the catalogue's
+    // combat.enemy_attack_ratio, 1.5:1 (150%); gdd-0.1 keeps mvp.enemy_attack_ratio_percent (the fixture's 200).
+    static Content Gdd03() => ContentLoader.Load(Fixture.Write(Gdd03Files()));
+
+    static Dictionary<string, string> Gdd03Files()
+    {
+        var f = Fixture.Gdd(new Dictionary<string, string>
+        {
+            ["unit_types.yaml"] = Types, ["map/hexes.json"] = MovementTests.Board(), ["corridors.yaml"] = "corridors: []\n"
+        });
+        f["rules.yaml"] = f["rules.yaml"].Replace("move_cost: { coastal_plain: 1, hills: 2, desert: 3 }",
+            "move_cost: { coastal_plain: 1, lowland: 1, valley: 1, hills: 2, mountains: 3, desert: 3 }")
+            .Replace("combat_terrain_percent: { coastal_plain: 100, hills: 150, desert: 100 }",
+            "combat_terrain_percent: { coastal_plain: 100, lowland: 100, valley: 100, hills: 150, mountains: 150, desert: 100 }");
+        f["eras.yaml"] = f["eras.yaml"].Replace("loop: gdd", "loop: gdd, ruleset: " + SaveGame.Gdd03Ruleset);
+        f[Gdd03BalanceCatalogue.FileName] = System.IO.File.ReadAllText(System.IO.Path.Combine(RealContentTests.ContentRoot(), Gdd03BalanceCatalogue.FileName));
+        return f;
+    }
+
+    [Theory]
+    [InlineData(true, 30, 150, Combat.Attack, "3,0")]       // gdd-0.3: exactly 1.5:1 attacks
+    [InlineData(true, 29, 145, Orders.Fortifying, "2,0")]   // gdd-0.3: just under 1.5:1 holds
+    [InlineData(false, 30, 150, Orders.Fortifying, "2,0")]  // gdd-0.1: 1.5:1 holds
+    [InlineData(false, 40, 200, Combat.Attack, "3,0")]      // gdd-0.1: 2:1 attacks
+    public void Gdd03AttacksAtOneAndAHalfAndGdd01KeepsTwo(bool gdd03, int strength, int ratio, string order, string target)
+    {
+        var c = gdd03 ? Gdd03() : Load();
+        Assert.Equal(gdd03 ? SaveGame.Gdd03Ruleset : SaveGame.GddRuleset, c.Ruleset);
+        var s = CombatTests.With(c, Soldier(1, 3, 0, 20), Enemy(2, 2, 0, strength));
+        Assert.Equal(ratio, Combat.Preview(c, s, 2, 3, 0)!.Value.RatioPercent);
+        EnemyAI.Order(c, s, new List<Cause>());
+        Assert.Equal((order, target), (s.Units[2].Order, s.Units[2].OrderTarget));
+    }
 }
