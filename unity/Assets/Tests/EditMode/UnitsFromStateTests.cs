@@ -485,6 +485,13 @@ public class UnitsFromStateTests
             Assert.IsTrue(layer.Show(C, s), "another unit's move rebuilds the tokens");
             var successor = TokenOf(map, firing).GetComponent<UnitTokenMotion>();
             Assert.IsTrue(successor.Attacking, "the attack goes on on the new token");
+            // Its near figure turns on a frame later (UnitFigureDetail) and plays on from 0.3 s, not from the start
+            // (review of #2176, items 3 and 4).
+            var near = new GameObject("test figure").transform; near.SetParent(TokenOf(map, firing), false);
+            var b = near.gameObject.AddComponent<Animator>(); b.runtimeAnimatorController = controller; b.Rebind(); b.Update(0f);
+            successor.RefreshPose(); b.Update(0f);
+            Assert.AreEqual(UnitFigureMotion.Attack, b.GetCurrentAnimatorStateInfo(0).fullPathHash, "the new figure fires");
+            Assert.AreEqual(0.3f, b.GetCurrentAnimatorStateInfo(0).normalizedTime, 0.02f, "from 0.3 s into the 1 s take");
         }
         finally { UnityEngine.Object.DestroyImmediate(map.gameObject); UnityEngine.Object.DestroyImmediate(controller); UnityEngine.Object.DestroyImmediate(fire); }
     }

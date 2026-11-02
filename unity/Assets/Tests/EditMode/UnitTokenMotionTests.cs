@@ -197,6 +197,41 @@ public class UnitTokenMotionTests
         finally { Object.DestroyImmediate(next); }
     }
 
+    /// <summary>Review of #2176, item 3: the usual hand-over, where the rebuilt token's near figure turns on a frame
+    /// later (UnitFigureDetail calls RefreshPose). The figure picks the take up where it was, not from its first frame,
+    /// and the attack lasts only for what is left.</summary>
+    [Test]
+    public void AContinuedAttackWhoseFigureTurnsNearLaterPlaysOnFromWhereItWas()
+    {
+        var a = Figure();
+        a.enabled = false;   // far: the near Animator is off
+        var motion = token.AddComponent<UnitTokenMotion>();
+        motion.enabled = false;
+        motion.ContinueAttack(0.05f);
+        Assert.IsTrue(motion.Attacking, "it waits for a figure that can fire");
+        a.enabled = true; motion.RefreshPose();   // the figure turns near
+        a.Update(0f);
+        Assert.AreEqual(UnitFigureMotion.Attack, a.GetCurrentAnimatorStateInfo(0).fullPathHash);
+        Assert.AreEqual(0.25f, a.GetCurrentAnimatorStateInfo(0).normalizedTime, 0.02f, "from 0.05 s into the 0.2 s take, not from its start");
+        motion.Tick(0.14f);
+        Assert.IsTrue(motion.Attacking);
+        motion.Tick(0.02f);
+        Assert.IsFalse(motion.Attacking, "0.15 s was left, not the whole take");
+    }
+
+    /// <summary>Review of #2176, item 8: an attack the new token's figures had already played to the end stands them
+    /// idle, not on the fire take's last frame.</summary>
+    [Test]
+    public void AContinuedAttackPastItsTakeLeavesTheFiguresIdle()
+    {
+        var a = Figure();
+        var motion = token.AddComponent<UnitTokenMotion>();
+        motion.enabled = false;
+        motion.ContinueAttack(0.3f);   // the take is 0.2 s
+        Assert.IsFalse(motion.Attacking, "the take had finished");
+        Assert.IsTrue(In(a, UnitFigureMotion.Idle), "the figure stands idle");
+    }
+
     [Test]
     public void AFigureWithoutAFireTakeDoesNotAttack()
     {
