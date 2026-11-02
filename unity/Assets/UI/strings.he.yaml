@@ -613,6 +613,11 @@ minimap.overview: "התרחקות מרבית"
 minimap.labels: "הצגה או הסתרה של שמות היישובים"
 minimap.borders: "הצגה או הסתרה של גבולות האזורים"
 ui.lang: "he"
+# ui.quit: Quit on the start screen and in Settings, desktop players only (#2153). An action noun (HE-03). For the native reviewer (#564).
+ui.quit: "יציאה"
+# ui.quit_confirm: Settings' Quit after its first press, in the button's place; the second press quits (#2188). "יש ל..." as in
+# newgame.confirm (HE-03), with the action noun of ui.quit. For the native reviewer (#564).
+ui.quit_confirm: "יש ללחוץ שוב ליציאה"
 # #701: {1} is a month and a year ("אוגוסט 1950"). A date label with no verb, since a fixed "נבנה" is wrong for a feminine
 # name ("מעברה"); Beri approved this wording as a native speaker (17 October 2026). For the native reviewer (#564).
 info.built: "{0} – תאריך הקמה: {1}"

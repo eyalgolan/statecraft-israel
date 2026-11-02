@@ -580,6 +580,11 @@ minimap.overview: "Zoom all the way out"
 minimap.labels: "Show or hide the settlement names"
 minimap.borders: "Show or hide the region borders"
 ui.lang: "en"
+# ui.quit: Quit on the start screen and in Settings, desktop players only (#2153, QuitButton).
+ui.quit: "Quit"
+# ui.quit_confirm: Settings' Quit after its first press, in the button's place; the second press quits (#2188, the owner's
+# "are you sure?" ruling of 2 November 2026). Same two presses as New game (newgame.confirm).
+ui.quit_confirm: "Press again to quit"
 info.built: "{0} built here in {1}"
 info.queued: "Ordered: {0}, at End turn"
 info.build_camp: "Place a transit camp ({0})"

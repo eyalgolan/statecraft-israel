@@ -41,7 +41,10 @@ namespace Statecraft.Game.UI
         string soundLevel;
         readonly PanelSettings? panel; readonly Vector2Int reference; int uiScale = UiScales[0], chosen = UiScales[0];
         readonly (Button button, int percent, Action pick)[] scales;
-        readonly Action unbindStar;
+        readonly Action unbindStar, unbindQuit;
+        readonly Button quit;
+        /// <summary>True between Quit's first press, which asks, and its second, which quits (#2188).</summary>
+        bool quitAsked;
 
         /// <param name="store">Where the choice is kept; null keeps nothing (the option still works until the page closes).</param>
         /// <param name="switchLanguage">Puts the UI in the language pressed (GameRoot builds the screens again); null changes
@@ -128,7 +131,13 @@ namespace Statecraft.Game.UI
             var star = screen.Q<Button>("settings-star");
             star.text = text["community.star"];
             unbindStar = ExternalLink.Bind(star, ExternalLink.Repository);
-            ScreenNav.OnOpened(screen, Show);   // a dev toggle may have changed it while the screen was shut
+            // Quit (#2153: desktop players only) asks first (#2188, the owner: "Ask to confirm (Recommended)"): the first
+            // press puts the question in the button's place and the second quits, the two presses New game uses
+            // (NewGamePresenter). Opening Settings again withdraws the question.
+            quit = screen.Q<Button>("settings-quit");
+            quit.text = text["ui.quit"];
+            unbindQuit = QuitButton.Bind(quit, QuitButton.Platform(), PressQuit, screen.Q("settings-quit-row"));
+            ScreenNav.OnOpened(screen, () => { WithdrawQuit(); Show(); });   // a dev toggle may have changed it while the screen was shut
             Show();
         }
 
@@ -141,10 +150,20 @@ namespace Statecraft.Game.UI
             foreach (var (b, _, pick) in scales) b.clicked -= pick;
             foreach (var (b, _, pick) in helpLevels) b.clicked -= pick;
             unbindStar();
+            unbindQuit();
             root.UnregisterCallback<GeometryChangedEvent>(OnGeometry);
             if (panel != null) panel.referenceResolution = reference;
             if (screen.userData is Action) screen.userData = null;
         }
+
+        void PressQuit()
+        {
+            if (!quitAsked) { quitAsked = true; quit.text = text["ui.quit_confirm"]; return; }
+            WithdrawQuit();
+            QuitButton.Quitter();
+        }
+
+        void WithdrawQuit() { quitAsked = false; quit.text = text["ui.quit"]; }
 
         void Flip()
         {

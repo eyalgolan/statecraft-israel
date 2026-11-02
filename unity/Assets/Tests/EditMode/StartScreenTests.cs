@@ -378,9 +378,10 @@ public class StartScreenTests
         cont.Focus();
         Assert.AreSame(cont, rig.Ui.Root.focusController?.focusedElement, "Continue has the focus");
         // Tab walks the screen's buttons only: Continue, New Game, the recording's button, Star on GitHub (#1168), Report a
-        // bug or idea (#1169) and the two languages (#2054), English then Hebrew.
+        // bug or idea (#1169), the two languages (#2054), English then Hebrew, and Quit (#2153; the editor is a desktop
+        // platform, so it shows).
         var seen = new List<string>();
-        for (int i = 0; i < 6; i++)
+        for (int i = 0; i < 7; i++)
         {
             var at = (VisualElement)rig.Ui.Root.focusController!.focusedElement;
             using (var e = NavigationMoveEvent.GetPooled(NavigationMoveEvent.Direction.Next)) { e.target = at; at.SendEvent(e); }
@@ -389,9 +390,10 @@ public class StartScreenTests
         }
         Assert.AreEqual("start-new-game", seen[0], "Tab moves from Continue to New Game: " + string.Join(", ", seen));
         Assert.IsTrue(seen.All(n => n == "start-continue" || n == "start-new-game" || n == "start-listen" || n == "start-star" || n == "start-report"
-            || n == "start-language-en" || n == "start-language-he"), "Tab stays on the screen's buttons: " + string.Join(", ", seen));
+            || n == "start-language-en" || n == "start-language-he" || n == "start-quit"), "Tab stays on the screen's buttons: " + string.Join(", ", seen));
         var en = seen.IndexOf("start-language-en");
         Assert.IsTrue(en >= 0 && en + 1 < seen.Count && seen[en + 1] == "start-language-he", "Tab reaches English, then Hebrew: " + string.Join(", ", seen));
+        Assert.IsTrue(en + 2 < seen.Count && seen[en + 2] == "start-quit", "Tab reaches Quit after Hebrew: " + string.Join(", ", seen));
         CollectionAssert.Contains(seen, "start-listen", "Tab reaches the recording's button: " + string.Join(", ", seen));
         rig.Ui.Press("start-continue");
         yield return null; yield return null;
@@ -614,6 +616,10 @@ public class StartScreenTests
                 Assert.AreNotEqual(newGameStyle.borderTopColor, starStyle.borderTopColor, $"{at}: the Star button's edge is not New game's gold");
                 Assert.IsTrue(Inside(R("start-report"), R("start-community")), $"{at}: the Report button {R("start-report")} is in its row");   // #1169
                 Assert.IsFalse(R("start-report").Overlaps(star), at);
+                // #2153: Quit (shown: the editor is a desktop platform) in the same row, inside the panel, over nothing.
+                Assert.IsTrue(Inside(R("start-quit"), R("start-community")) && Inside(R("start-quit"), panel), $"{at}: Quit {R("start-quit")} is in its row, inside the panel");
+                foreach (var other in new[] { "start-report", "start-language-en", "start-language-he" })
+                    Assert.IsFalse(R("start-quit").Overlaps(R(other)), $"{at}: Quit {R("start-quit")} overlaps {other} {R(other)}");
             }
             finally
             {
@@ -714,6 +720,7 @@ public class StartScreenTests
     public IEnumerator InHebrewTheButtonRowsMirror()
     {
         var gaps = new Dictionary<(int, int), float>();
+        var quitGaps = new Dictionary<(int, int), float>();
         var recordingCompared = new HashSet<(int, int)>();
         foreach (var hebrew in new[] { false, true })
         foreach (var (w, h) in new[] { (1920, 1080), (1366, 768), (390, 844) })
@@ -780,6 +787,16 @@ public class StartScreenTests
                     var near = hebrew ? R("start-language-en").xMax : R("start-language-en").xMin;
                     gaps[(w, hebrew ? 1 : 0)] = hebrew ? report.xMin - near : near - report.xMax;
                 }
+                // Quit (#2153; review round k2): after the pair, mirrored, as far from it as Report is.
+                var quit = R("start-quit");
+                if (w == 1920) Assert.IsTrue(OneLine(quit, pair), $"{at}: Quit {quit} is beside the languages {pair}");
+                if (OneLine(quit, pair))
+                {
+                    if (hebrew) Assert.LessOrEqual(quit.xMax, pair.xMin + 0.5f, $"{at}: Quit {quit} is left of the languages {pair}");
+                    else Assert.GreaterOrEqual(quit.xMin, pair.xMax - 0.5f, $"{at}: Quit {quit} is right of the languages {pair}");
+                    var nearHe = R("start-language-he");
+                    quitGaps[(w, hebrew ? 1 : 0)] = hebrew ? nearHe.xMin - quit.xMax : quit.xMin - nearHe.xMax;
+                }
             }
             finally
             {
@@ -791,6 +808,10 @@ public class StartScreenTests
             if (gaps.TryGetValue((w, 0), out var en) && gaps.TryGetValue((w, 1), out var he))
                 Assert.AreEqual(en, he, 1f, $"{w}: the gap between Report and the languages is the same in Hebrew ({he:0.0}) as in English ({en:0.0})");
         Assert.IsTrue(gaps.ContainsKey((1920, 0)) && gaps.ContainsKey((1920, 1)), "the gap was measured at 1920x1080");
+        foreach (var key in quitGaps.Keys)
+            if (gaps.TryGetValue(key, out var reportGap))
+                Assert.AreEqual(reportGap, quitGaps[key], 1f, $"{key}: Quit is as far from the languages ({quitGaps[key]:0.0}) as Report ({reportGap:0.0})");
+        Assert.IsTrue(quitGaps.ContainsKey((1920, 0)) && quitGaps.ContainsKey((1920, 1)), "Quit's gap was measured at 1920x1080");
         Assert.IsTrue(recordingCompared.Contains((1920, 0)) && recordingCompared.Contains((1920, 1)), "the recording's row was compared at 1920x1080");
     }
 
