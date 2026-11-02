@@ -391,13 +391,10 @@ public class UnitWeaponsTests
             return rest.MultiplyVector(UnitWeapons.SocketRotation * Vector3.right).normalized;   // Tal's GLBs are long along X
         }
         var c06 = Barrel(UnitFigures.YoungRecruit);
-        var angles = new List<string>();
-        foreach (var figure in UnitWeapons.ByFigure.Keys.Where(f => f != UnitFigures.YoungRecruit))
-        {
-            float angle = Vector3.Angle(c06, Barrel(figure));
-            angles.Add($"{figure} {angle:F1}");
-        }
-        Debug.Log("WEAPON-AXES degrees from C06: " + string.Join(", ", angles));
-        foreach (var a in angles) Assert.Less(float.Parse(a.Split(' ')[1], System.Globalization.CultureInfo.InvariantCulture), 45f, a);
+        var angles = UnitWeapons.ByFigure.Keys.Where(f => f != UnitFigures.YoungRecruit)
+            .Select(f => (figure: f, degrees: Vector3.Angle(c06, Barrel(f)))).ToList();
+        Debug.Log("WEAPON-AXES degrees from C06: " + string.Join(", ",
+            angles.Select(a => a.figure + " " + a.degrees.ToString("F1", System.Globalization.CultureInfo.InvariantCulture))));
+        foreach (var (figure, degrees) in angles) Assert.Less(degrees, 45f, figure);   // compared as floats: no culture involved
     }
 }
