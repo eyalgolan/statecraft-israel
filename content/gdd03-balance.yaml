@@ -474,8 +474,8 @@
         "values": [0, 9, 10, 69, 70, 99]
         "note": "Inclusive pairs, in order: both hold, defender retreats, defender loss; no attacker loss in this row. #1668 balance.md at 605277df."
   "combat.enemy_attack_ratio":
-    "basis": "Default"
-    "note": "Movement and engagement defaults: unitless minimum ratio for goal-driven enemy attack; Default. Source: #1668 balance.md at 605277df."
+    "basis": "Agreed"
+    "note": "Movement and engagement defaults: unitless minimum ratio for goal-driven enemy attack; Agreed. Source: #1668 balance.md at 605277df. owner ruling, 1 Nov 2026, O4 on #1668: \"1.5:1 in gdd-0.3 (Recommended)\"; gdd-0.1 keeps 2:1 (R-ENEMY-003, #2114)."
     "values": [1.50]
   "combat.retreat_hexes":
     "basis": "Agreed"
