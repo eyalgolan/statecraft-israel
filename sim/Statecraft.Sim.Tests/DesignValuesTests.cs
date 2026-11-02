@@ -190,7 +190,7 @@ public partial class DesignValuesTests
         ("rules.yaml", "mvp.arms_price"),
         ("rules.yaml", "mvp.arms_per_recruit_group"),
         // "Spend the dollars" (R-MONEY-004; #813, owner 2 November 2026: "Spend the dollars (Recommended)").
-        ("rules.yaml", "attention_cost.convert_dollars"),   // proposed on #813 (free, as the cards take all of Attention in the war), for owner override
+        ("rules.yaml", "attention_cost.convert_dollars"),   // free, as the cards take all of Attention in the war (owner 2 November 2026 on #2204: "Keep 0 (Recommended)")
         ("rules.yaml", "mvp.dollars_per_turn"),
         ("rules.yaml", "mvp.dollars_total"),
         // Prisoners (Phase 5 PR 12, #751; Q-POW-2, Q-POW-4, Q-POW-5): agent defaults, accepted by the owner as design values (owner, 21 October 2026, #751).

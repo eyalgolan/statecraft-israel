@@ -6,9 +6,9 @@ using UnityEngine.UIElements;
 namespace Statecraft.Game.UI
 {
     /// <summary>The Defence screen's dollar conversion (#813, R-MONEY-004; owner, 2 November 2026: "Spend the dollars
-    /// (Recommended)"): one replaceable ConvertDollars at End turn, as the Arms purchase. It shows the foreign-currency reserve,
-    /// the one readout of it the ruling allows beside this order, and the sim's own refusal before End turn. The reserve and
-    /// Money change only when the sim executes the order.</summary>
+    /// (Recommended)"): one replaceable ConvertDollars at End turn, as the Arms purchase. It shows the foreign-currency reserve
+    /// beside this order (the top bar's Foreign currency meter stays; owner, 2 November 2026: "Keep it"), and the sim's own
+    /// refusal before End turn. The reserve and Money change only when the sim executes the order.</summary>
     public sealed class DollarConversionPresenter : IDisposable
     {
         readonly VisualElement panel;
@@ -31,6 +31,9 @@ namespace Statecraft.Game.UI
             convert.text = text["dollars.convert"]; withdraw.text = text["dollars.withdraw"];
             onConvert = () =>
             {
+                // An amount the sim already refuses is never queued: the panel keeps showing why (Render).
+                if (bridge.Content.IsGdd && bridge.State.GameOver == null
+                    && EconomySystem.DollarsRefusal(bridge.Content, bridge.State, amount.value) != null) { Render(); return; }
                 var reason = bridge.Queue(new ConvertDollars(amount.value));
                 Render();
                 if (reason != null) panel.Q<Label>("dollars-refusal").text = reason;

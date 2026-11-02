@@ -118,6 +118,9 @@ public class DollarConversionTests
         amount.value = 4; amount.value = 3;
         Assert.AreEqual(t["dollars.refused_not_at_war"], refusal.text);
         Assert.IsTrue(ui.Q<Button>("convert-dollars").enabledSelf, "a refusal remains explainable");
+        ui.Press("convert-dollars");
+        Assert.IsEmpty(b.Queued, "an amount the sim refuses is not queued");
+        Assert.AreEqual(t["dollars.refused_not_at_war"], refusal.text, "the refusal stays shown after Convert");
         b.State.GameOver = "finished";
         amount.value = 2;
         Assert.AreEqual(t["order.game_over"], refusal.text);
