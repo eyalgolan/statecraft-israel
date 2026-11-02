@@ -88,7 +88,7 @@ public class HexHighlightTests
             Assert.IsNotNull(hover, "the hovered hex is marked");
             var renderer = hover.GetComponent<MeshRenderer>();
             Assert.IsTrue(renderer.enabled);
-            Assert.AreEqual(Resources.Load<Material>(MapScene.OverlayMaterialResource), renderer.sharedMaterial);
+            Assert.AreEqual(Resources.Load<Material>(MapScene.HoverMaterialResource), renderer.sharedMaterial);
             var mesh = hover.GetComponent<MeshFilter>().sharedMesh;
             Assert.AreEqual(3 * 2 * MapBuilder.RingVertices, mesh.vertexCount, "three strips of two rings");
             int n = MapBuilder.RingVertices;
@@ -136,33 +136,75 @@ public class HexHighlightTests
         StringAssert.IsMatch(@"(?m)^\s*Blend\s+SrcAlpha\s+OneMinusSrcAlpha\s*$", source, "alpha-blended: the fill is translucent");
     }
 
-    /// <summary>GameRoot marks the hex under the pointer only while a pick is open: none before a unit is selected, the hex
-    /// during the Move pick and the Attack pick, none once the pick ends or the pointer leaves the map.</summary>
+    /// <summary>The hover band draws over the lit hexes' fill and under the move arrow (#2184: queue Transparent+50, the default
+    /// sorting layer, order in layer 0), so the arrow's tip on the hovered hex stays on top. URP sorts transparent renderers by
+    /// sorting layer and order in layer before the queue, so the band keeps the arrow's layer and order and sits under it by
+    /// queue alone: an order of 1 would draw it after the arrow whatever the queue. Same shader as the fill (ZTest Always).</summary>
     [Test]
-    public void TheHoverIsMarkedOnlyWhileAMoveOrAttackPickIsOpen()
+    public void TheHoverBandDrawsOverTheFillAndUnderTheMoveArrow()
+    {
+        var map = BuildMap();
+        try
+        {
+            var lit = C.Hexes.Where(h => h.Land).Select(h => (h.Q, h.R)).First();
+            map.ShowReachable(new[] { lit });
+            map.ShowHover(lit);
+            var fill = map.Terrain.transform.Find(MapScene.ReachableFillName).GetComponent<MeshRenderer>();
+            var hover = map.Terrain.transform.Find(MapScene.HoverName).GetComponent<MeshRenderer>();
+            Assert.AreEqual(0, hover.sortingLayerID, "the arrow's sorting layer, the default");
+            Assert.AreEqual(0, hover.sortingOrder, "the arrow's order in layer: a higher one draws the band over the arrow");
+            Assert.AreEqual(0, fill.sortingLayerID);
+            Assert.AreEqual(0, fill.sortingOrder);
+            const int arrow = (int)UnityEngine.Rendering.RenderQueue.Transparent + 50;
+            Assert.That(hover.sharedMaterial.renderQueue, Is.GreaterThan(fill.sharedMaterial.renderQueue).And.LessThan(arrow),
+                "queued after the fill and before the arrow");
+            Assert.AreEqual(fill.sharedMaterial.shader, hover.sharedMaterial.shader, "drawn over the models as the fill is");
+        }
+        finally { Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>GameRoot marks the hex under the pointer only where a click would give the pick's order (PickTakes), during the
+    /// Move pick and the Attack pick: a lit hex, and not water or an unlit land hex the pick does not take (here the unit's own
+    /// hex), where a click ends the pick. Nothing before a unit is selected, off the map, or once the pick ends.</summary>
+    [Test]
+    public void TheHoverMarksOnlyHexesAClickWouldTake()
     {
         using var rig = new SelectThenClickMoveTests.Rig();
         var s = rig.Bridge.State;
         var id = UnitOrdersTests.EnemyInGolanisReach(s);
         rig.Layer.Show(rig.Bridge.Content, s);
-        var under = rig.Reach(id).First();
-        GameRoot.MarkHover(rig.Map, rig.Info, under);
+        var water = C.Hexes.First(h => !h.Land);
+        var sea = (water.Q, water.R);
+        var home = rig.At(id);
+        GameRoot.MarkHover(rig.Map, rig.Info, rig.Reach(id).First());
         Assert.IsFalse(Shows(rig.Map, MapScene.HoverName), "no pick: no marker");
+        void MarksOnlyWhatAClickTakes(string pick)
+        {
+            var lit = rig.Lit.Last();
+            Assert.IsNotEmpty(lit, $"precondition: the {pick} pick lights hexes");
+            Assert.IsFalse(lit.Contains(home) || rig.Info.PickTakes(home.q, home.r), $"precondition: the {pick} pick does not take the unit's own hex");
+            Assert.IsFalse(rig.Info.PickTakes(sea.Q, sea.R), $"precondition: the {pick} pick does not take water");
+            GameRoot.MarkHover(rig.Map, rig.Info, lit.First());
+            Assert.IsTrue(Shows(rig.Map, MapScene.HoverName), $"the {pick} pick marks a lit hex");
+            GameRoot.MarkHover(rig.Map, rig.Info, sea);
+            Assert.IsFalse(Shows(rig.Map, MapScene.HoverName), $"the {pick} pick: no marker on water, a click there ends the pick");
+            GameRoot.MarkHover(rig.Map, rig.Info, home);
+            Assert.IsFalse(Shows(rig.Map, MapScene.HoverName), $"the {pick} pick: no marker on an unlit land hex it does not take");
+            GameRoot.MarkHover(rig.Map, rig.Info, lit.First());
+            GameRoot.MarkHover(rig.Map, rig.Info, null);
+            Assert.IsFalse(Shows(rig.Map, MapScene.HoverName), "off the map: no marker");
+        }
         rig.Select(rig.Token("golani"));
         Assert.IsTrue(rig.Info.MovePicking, "precondition: the Move pick is open");
-        GameRoot.MarkHover(rig.Map, rig.Info, under);
-        Assert.IsTrue(Shows(rig.Map, MapScene.HoverName), "the Move pick marks the hex under the pointer");
-        GameRoot.MarkHover(rig.Map, rig.Info, null);
-        Assert.IsFalse(Shows(rig.Map, MapScene.HoverName), "off the map: no marker");
+        MarksOnlyWhatAClickTakes("Move");
         UiTestKit.Press(rig.Ui.Q<Button>("info-attack"));
         Assert.IsFalse(rig.Info.MovePicking, "precondition: the Attack pick is open");
         Assert.IsTrue(rig.Info.Picking);
-        GameRoot.MarkHover(rig.Map, rig.Info, under);
-        Assert.IsTrue(Shows(rig.Map, MapScene.HoverName), "the Attack pick marks it too");
-        var water = C.Hexes.First(h => !h.Land);
-        rig.Click(water.Q, water.R);   // a hex with no target ends the pick
+        MarksOnlyWhatAClickTakes("Attack");
+        var target = rig.Lit.Last().First();
+        rig.Click(sea.Q, sea.R);   // a hex with no target ends the pick
         Assert.IsFalse(rig.Info.Picking, "precondition: the pick ended");
-        GameRoot.MarkHover(rig.Map, rig.Info, under);
+        GameRoot.MarkHover(rig.Map, rig.Info, target);
         Assert.IsFalse(Shows(rig.Map, MapScene.HoverName), "the pick ended: no marker");
     }
 }

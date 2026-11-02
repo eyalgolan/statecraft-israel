@@ -1,10 +1,11 @@
 // The lit hexes' fill and the hover marker (#2201, MapScene.ShowReachable and ShowHover). Unlit; each vertex carries its
-// colour (the fill's translucent ivory, the hover band's gold core and navy edges), so one material draws both. Drawn over
+// colour (the fill's translucent ivory, the hover band's gold core and navy edges), so one shader draws both. Drawn over
 // the ground, the tokens and the town and tree models (ZTest Always), as the move arrow is (#2134): a lit hex in a dense
 // town or a wood was a thin outline the models stood over. Queued just under the arrow's Transparent+50, so the arrow stays
-// on top of both. No motion. A vertex with uv.x 1 (the fill) fades to CloseShare of its alpha as the camera comes within
-// CloseM of it: at the closest zoom one hex fills the screen and the full tint washed the whole view. uv.x 0 (the hover
-// band) keeps its strength at every zoom.
+// on top of both: the fill at this shader's +40, the hover band at +45 (HexHover.mat's own queue, over the fill). No motion. A
+// vertex with uv.x 1 (the fill) fades to CloseShare of its alpha as the camera comes within CloseM of it: at the closest
+// zoom one hex fills the screen and the full tint washed the whole view. uv.x 0 (the hover band) keeps its strength at
+// every zoom.
 Shader "Statecraft/HexOverlay"
 {
     SubShader
