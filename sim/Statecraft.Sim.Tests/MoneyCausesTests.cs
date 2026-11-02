@@ -248,4 +248,107 @@ public class MoneyCausesTests
         }
         Assert.True(others > 0, "the reference run shows an Other line");
     }
+
+    // #2212 review, H2: the paying purposes no other test here plays through Simulation.Step (the reference run pays for
+    // training, yishuvim, plowing, city projects and an event; APurchase... pays for Arms; the map action, civilian upkeep
+    // and Deport tests above). Each is played with the Treasury empty, so it borrows: its cost is exactly one Money line,
+    // its caller writes no Treasury line of its own beside it, and the lines add up.
+    [Theory]
+    [InlineData(CauseKeys.Purpose.Corridor)]
+    [InlineData(CauseKeys.Purpose.TrainingCamp)]
+    [InlineData(CauseKeys.Purpose.Drain)]
+    [InlineData(CauseKeys.Purpose.Prisoners)]
+    [InlineData(CauseKeys.Purpose.Occupation)]
+    public void EveryPayingPurposeAddsUpThroughStep(string purpose)
+    {
+        Content c; GameState s; Command[] orders;
+        string Site(string id, string kind) => Fixture.GddSites + Fixture.GddSites.Replace("sites:\n", "").Replace("site_a", id).Replace("Site A", id)
+            .Replace("q: 2", "q: 3").Replace("kinds: [yishuv]", $"kinds: [{kind}]").Replace("    founded: 1949-06-12\n", kind == "swamp" ? "" : "    city: town_a\n");   // only a camp site names its city
+        GameState WithHalutz(Content content, out int id)
+        {
+            var g = Simulation.NewGame(content, 1, Mode.Historical);
+            id = g.NextId++;
+            g.Units.Add(id, new Unit(id, "halutz", 1, 0));
+            return g;
+        }
+        Content Gdd(string? sites = null) => ContentLoader.Load(Fixture.Write(Fixture.Gdd(sites == null ? null : new Dictionary<string, string>
+        {
+            ["cities.yaml"] = "\ncities:\n" + Fixture.City("town_a", 12, 8, 10, 6),
+            ["sites.yaml"] = sites,
+        })));
+        switch (purpose)
+        {
+            case CauseKeys.Purpose.Corridor:
+                c = Gdd(); s = WithHalutz(c, out var a); orders = new Command[] { new PioneerWork(a, Corridors.BuildRoad, "road_a:1") }; break;
+            case CauseKeys.Purpose.TrainingCamp:
+                c = Gdd(Site("camp_a", "military_camp")); s = WithHalutz(c, out var b); orders = new Command[] { new PioneerWork(b, Projects.BuildCamp, "camp_a") }; break;
+            case CauseKeys.Purpose.Drain:
+                c = Gdd(Site("marsh", "swamp")); s = WithHalutz(c, out var d); orders = new Command[] { new PioneerWork(d, Projects.DrySwamp, "marsh") }; break;
+            case CauseKeys.Purpose.Prisoners:
+                c = Gdd(); s = Simulation.NewGame(c, 1, Mode.Historical); s.SoldiersHeld["egypt"] = 2; orders = Array.Empty<Command>(); break;
+            default:
+                c = DeportTests.Load(); s = DeportTests.Awaiting(c, DeportTests.Soldier(1, 1, 0));
+                orders = new Command[] { new ResolveCapture("town_a", SettlementControl.Occupy) }; break;
+        }
+        s.Treasury = 0;
+        var r = Simulation.Step(c, s, orders);
+        Assert.Empty(r.Rejected);
+        AssertAddsUp(s, r, purpose);
+        var paid = Assert.Single(r.Why, w => EconomySystem.MovesMoney(w) && w.Key == CauseKeys.Paid && w.Args[0] == purpose);
+        Assert.True(paid.Delta < 0, $"{purpose}: the cost is paid");
+        Assert.DoesNotContain(r.Why, w => EconomySystem.MovesMoney(w) && w.System != "economy" && w.System != "city" && w.System != "events");
+    }
+
+    // #2212 review, H1 and the suggested test 1: what the reference run pays and borrows for, so a test that "adds up on
+    // every turn" is not vacuous. Measured at the #2212 head: 44 turns, none refused; Paid for training 1, yishuv 6,
+    // project 5, plow 2; Borrowed for the deficit 41, yishuv 6, project 5, plow 2, an event 1. Every Debt line is a loan
+    // (Borrowed or MapBorrowed), which moves the Treasury and the Debt alike; a future interest or relief line fails here.
+    [Fact]
+    public void TheReferenceRunExercisesTheMoneyPaths()
+    {
+        var s = Start(); int turns = 0;
+        var paid = new HashSet<string>(); var borrowed = new HashSet<string>(); var keys = new HashSet<string>();
+        for (int t = 1; t < 1000 && s.GameOver == null; t++)
+        {
+            var r = Simulation.Step(Real, s, GoldenRun.Orders(Real, s));
+            Assert.Empty(r.Rejected);
+            foreach (var w in r.Why)
+            {
+                if (w.Key == CauseKeys.Paid) paid.Add(w.Args[0]);
+                if (w.Key == CauseKeys.Borrowed) borrowed.Add(w.Args[0]);
+                if (EconomySystem.MovesMoney(w)) keys.Add(w.Key);
+                if (w.Target == "debt") Assert.Contains(w.Key, new[] { CauseKeys.Borrowed, CauseKeys.MapBorrowed });
+            }
+            s = r.State; turns++;
+        }
+        Assert.True(turns >= 40, $"the run lasts {turns} turns");
+        Assert.Subset(paid, new HashSet<string> { CauseKeys.Purpose.Training, CauseKeys.Purpose.Yishuv, CauseKeys.Purpose.Project, CauseKeys.Purpose.Plow });
+        Assert.Subset(borrowed, new HashSet<string> { CauseKeys.Purpose.Deficit, CauseKeys.Purpose.Event, CauseKeys.Purpose.Yishuv });
+        Assert.Subset(keys, new HashSet<string> { CauseKeys.MoneyFlows, CauseKeys.WagesPaid, CauseKeys.MilitaryUpkeep, CauseKeys.Paid, CauseKeys.EventAmount });
+    }
+
+    // #2212 review, H3 and the suggested test 3: costs paid at the debt ceiling (mvp.debt_ceiling, IL 250m). PayOrBorrow
+    // has no cap: upkeep borrows past it, and the lines add up. A purchase up to the ceiling is paid; one past it is
+    // refused once #2203 lands (Pools.BuyArms, before PayOrBorrow), and then writes no Money line. Either way a Paid
+    // line exists only with its Treasury move, and the lines add up.
+    [Theory]
+    [InlineData(0)]   // no orders: military upkeep and the deficit borrow past the ceiling
+    [InlineData(1)]   // borrows IL 1.0m, to exactly the ceiling
+    [InlineData(2)]   // borrows past it
+    public void CostsPaidAtTheDebtCeilingAddUp(int arms)
+    {
+        var s = Start();
+        var ceiling = Real.RulesAt(s.Date).Mvp!.DebtCeiling!.Value;
+        Assert.Equal(1.0, Real.RulesAt(s.Date).Mvp!.ArmsPrice!.Value);
+        s.Debt = ceiling - 1; s.Treasury = 0;
+        var r = Simulation.Step(Real, s, arms == 0 ? Array.Empty<Command>() : new Command[] { new BuyArms(arms) });
+        AssertAddsUp(s, r, $"BuyArms({arms}) at the ceiling");
+        Assert.True(r.State.Debt > ceiling, "the turn's upkeep borrows past the ceiling: PayOrBorrow has no cap");
+        var bought = r.Rejected.Count == 0 && arms > 0;
+        if (arms == 1) Assert.True(bought, "a purchase to exactly the ceiling is paid");
+        var lines = r.Why.Where(w => w.Key == CauseKeys.Paid).ToList();
+        Assert.Equal(bought ? 1 : 0, lines.Count);
+        if (bought) Assert.Equal((-(double)arms, CauseKeys.Purpose.Arms), (lines[0].Delta, lines[0].Args[0]));
+        Assert.Equal(s.Arms + (bought ? arms : 0), r.State.Arms);
+    }
 }
