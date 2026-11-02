@@ -286,6 +286,36 @@ public class EndScreenTests
         }
     }
 
+    /// <summary>R-EVT-007 (owner, 2 November 2026, #2197: "Show on the end screen (Recommended)"): a Deport card that never
+    /// fired, because its Deport came on the turn that ended the game (EndReport.DeportCards), shows on the end screen after
+    /// the objectives: its title, then its text, as its card shows them, in the UI's language. A card that fired was shown on
+    /// its turn and is not shown again. Red first, reasoned (Unity runs only through the gate): before this change Lines had
+    /// no Deport rows, so the ordered names lack "end-screen-deport-deport_acre" and the Line lookups find no label.</summary>
+    [Test]
+    public void ADeportCardThatNeverFiredShowsOnTheEndScreen()
+    {
+        var card = C.Events.Single(e => e.Deported == "acre");
+        void Deported(GameState s) { Ended(s); s.Settlements["acre"] = new SettlementControl(since: s.Date, depopulated: true); }
+        using (var k = new Kit(En, Deported))
+        {
+            var s = k.Bridge.State;
+            var names = k.Ui.Q<ScrollView>("end-screen-rows").Children().Select(x => x.name).ToList();
+            var at = names.IndexOf("end-screen-deport-" + card.Id);
+            Assert.GreaterOrEqual(at, 0, "the card's row: " + string.Join(", ", names));
+            Assert.AreEqual("end-screen-objective-" + C.Objectives[C.Objectives.Count - 1].Id, names[at - 1], "after the objectives");
+            CollectionAssert.AreEqual(new[] { "end-screen-deport-" + card.Id, "end-screen-deport-" + card.Id + "-text", "end-screen-cohesion" },
+                names.Skip(at).Take(3), "the title, the text, then the parameters");
+            Assert.AreEqual(EventSystem.Title(C, s, card), k.Line("deport-" + card.Id));
+            Assert.AreEqual(EventSystem.Render(C, s, card), k.Line("deport-" + card.Id + "-text"));
+            var he = EndScreenPresenter.Lines(C, s, He);
+            Assert.AreEqual(card.TitleHe, he.Single(l => l.Name == "deport-" + card.Id).Text, "in Hebrew, the card's Hebrew");
+            Assert.AreEqual(card.TextHe, he.Single(l => l.Name == "deport-" + card.Id + "-text").Text);
+        }
+        using var fired = new Kit(En, s => { Deported(s); s.FiredEvents.Add(card.Id); });
+        CollectionAssert.DoesNotContain(fired.Ui.Q<ScrollView>("end-screen-rows").Children().Select(x => x.name), "end-screen-deport-" + card.Id,
+            "a card that fired is not shown again");
+    }
+
     [Test]
     public void HebrewShowsTheHebrewWords()
     {
