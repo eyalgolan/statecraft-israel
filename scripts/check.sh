@@ -2,7 +2,8 @@
 # One command for "does my change pass?": the same checks CI runs, in order, cheapest first. Needs dotnet and uv, not
 # Unity (Unity edit-mode tests are not run by CI either; CONTRIBUTING.md, "What CI runs").
 # Where a Unity editor and a unity/Library exist, it also compiles unity/ with dotnet (scripts/unity_compile/).
-# Stops at the first failure, prints the last lines of that step's output and exits non-zero.
+# Stops at the first failure, prints the last lines of that step's output and exits non-zero. The failing step's
+# whole log is kept in .superpowers/check-logs/ (git ignores it), and its path printed; passing runs keep nothing.
 #
 # Usage: scripts/check.sh [BASE_REF]      BASE_REF defaults to $CHECK_BASE, then origin/main.
 # The changelog step compares BASE_REF...HEAD, so it sees committed changes only (as CI does). Set
@@ -31,6 +32,11 @@ run() {
     echo "FAILED: $name"
     echo "-- last $tail_lines lines of: $*"
     tail -n "$tail_lines" "$log"
+    # Keep the whole log (the trap deletes the temp one), so a flaky failure's message is not lost.
+    local slug kept
+    slug="$(printf '%s' "$name" | sed 's/[^A-Za-z0-9._-]\{1,\}/-/g; s/^-//; s/-$//')"
+    kept="$PWD/.superpowers/check-logs/$slug-$(date -u +%Y%m%dT%H%M%SZ).log"
+    if mkdir -p "${kept%/*}" && cp "$log" "$kept"; then echo "kept the failing step's log: $kept"; fi
     exit 1
   fi
   tail -n 3 "$log"
