@@ -170,7 +170,7 @@ public class MenuMusicTests
         rig.Pass(MenuMusic.WatchMs);
         CollectionAssert.AreEqual(new[] { clip }, rig.Out.Played);
         Assert.AreEqual(MenuMusic.Phase.Playing, rig.Music.State);
-        Assert.AreEqual(1f, rig.Out.Volume, 1e-6f, "full by default");
+        Assert.AreEqual(1f, rig.Out.Volume, 1e-6f, "MenuMusic's own volume with no Settings row applied (the row's default is Low)");
         UnityEngine.Object.DestroyImmediate(clip);
     }
 
@@ -194,7 +194,7 @@ public class MenuMusicTests
         CollectionAssert.AreEqual(new[] { clip }, rig.Out.Played);
     }
 
-    /// <summary>The Music volume applies at once; at 0 the theme is never even fetched (no 12 MB download for silence),
+    /// <summary>The Music volume applies at once; at 0 the theme is never even fetched (no 5.66 MB download for silence),
     /// and turning it up later starts it.</summary>
     [Test]
     public void TheVolumeAndMuteAreRespected()
@@ -256,8 +256,9 @@ public class MenuMusicTests
         Assert.IsTrue(clip == null, "the late clip is released");
     }
 
-    /// <summary>Ben-Gurion's recording on the same screen is not played over: the theme dips to silence while it plays and
-    /// comes back after.</summary>
+    /// <summary>Ben-Gurion's recording on the same screen is not played over. The owner's ruling on #2297 (2 Nov 2026), "Dip
+    /// under the recording (Recommended)": "The theme drops low while the recording plays, then comes back". Low, not
+    /// silence: MenuMusic.DipLevel (0.2) of the Music volume while it plays, and back after it.</summary>
     [Test]
     public void ItDipsUnderTheDeclarationRecording()
     {
@@ -267,11 +268,29 @@ public class MenuMusicTests
         rig.Pass(MenuMusic.WatchMs);
         rig.Ducked = true;
         rig.Pass(MenuMusic.FadeMs);
-        Assert.AreEqual(0f, rig.Out.Volume, 1e-6f, "silent under the recording");
+        Assert.AreEqual(MenuMusic.DipLevel, rig.Out.Volume, 1e-6f, "low under the recording, not silent");
         Assert.AreEqual(MenuMusic.Phase.Playing, rig.Music.State, "paused in volume only: it goes on looping");
         rig.Ducked = false;
         rig.Pass(MenuMusic.FadeMs);
         Assert.AreEqual(1f, rig.Out.Volume, 1e-6f, "back after it");
+        UnityEngine.Object.DestroyImmediate(clip);
+    }
+
+    /// <summary>The page's first click is "Play the recording": the theme starts loading on that click, before the recording
+    /// plays, and is decoded while the recording is already playing. It must start low, not at full volume over Ben-Gurion's
+    /// voice until the next ticks catch up (review of #2297, N1).</summary>
+    [Test]
+    public void AThemeThatStartsDuringTheRecordingStartsLow()
+    {
+        using var rig = new Rig(web: true);
+        rig.Music.Volume = 0.35f;                         // the Settings default (Low)
+        rig.Music.Show(true);
+        rig.Click();                                      // the click on Listen: the fetch starts, the recording not yet
+        Assert.AreEqual(1, rig.Fetch.Urls.Count);
+        rig.Ducked = true;                                // the recording is now playing
+        var clip = rig.Answer();                          // the theme arrives and plays at once
+        CollectionAssert.AreEqual(new[] { clip }, rig.Out.Played);
+        Assert.AreEqual(0.35f * MenuMusic.DipLevel, rig.Out.Volume, 1e-6f, "low from its first sample, relative to the Music volume");
         UnityEngine.Object.DestroyImmediate(clip);
     }
 

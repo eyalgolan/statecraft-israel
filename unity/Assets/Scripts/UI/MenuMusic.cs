@@ -10,7 +10,7 @@ namespace Statecraft.Game.UI
     /// FadeMs when a game starts; it never plays in the game. The file is fetched only when it is about to play, with
     /// UnityWebRequestMultimedia (DeclarationRecording's fetch), and the browser decodes it on the web. Browsers block audio
     /// until the page's first click or key, so on the web nothing is fetched before one (GestureSeen; the desktop has no such
-    /// rule). The Settings screen's Music row sets Volume (SettingsPresenter); at 0 it is not even fetched. It dips to silence
+    /// rule). The Settings screen's Music row sets Volume (SettingsPresenter); at 0 it is not even fetched. It drops to DipLevel
     /// while Ben-Gurion's recording plays on the same screen (Duck). No theme (main before #2240, or a 404 on the web) is
     /// silence: no fetch on the desktop, one plain log line, no warning and no error. Presentation only: the sim and the
     /// golden hashes never see it. GameRoot builds it only in a player that shows the start screen, never in the automated
@@ -23,6 +23,11 @@ namespace Statecraft.Game.UI
 
         /// <summary>The fade when a game starts (and the dip under the recording), and the watch's step while it plays.</summary>
         public const int FadeMs = 1000, WatchMs = 50;
+
+        /// <summary>The theme's level under Ben-Gurion's recording, as a share of the Music volume. The owner's ruling on #2297
+        /// (2 Nov 2026), "Dip under the recording (Recommended)": "The theme drops low while the recording plays, then comes
+        /// back". Low, not silence.</summary>
+        public const float DipLevel = 0.2f;
 
         /// <summary>Where the theme plays. The game's is a looping AudioSource on its own GameObject (SourceOutput).</summary>
         public interface IOutput : IDisposable
@@ -53,7 +58,7 @@ namespace Statecraft.Game.UI
 
         public Phase State { get; private set; }
 
-        /// <summary>True while the theme must dip to silence (GameRoot: while Ben-Gurion's recording plays).</summary>
+        /// <summary>True while the theme must drop to DipLevel (GameRoot: while Ben-Gurion's recording plays).</summary>
         public Func<bool>? Duck { get; set; }
 
         /// <summary>0 (off) to 1 (the theme as mastered); SettingsPresenter sets it from the player's choice. Applies at once;
@@ -114,7 +119,6 @@ namespace Statecraft.Game.UI
                 return;
             }
             State = Phase.Loading;
-            dip = Duck?.Invoke() == true ? 0f : 1f;
             timer.Resume();
             var mine = ++generation;
             var r = fetch(url, (c, error) =>
@@ -148,13 +152,14 @@ namespace Statecraft.Game.UI
                 if (ready == null) { Absent("the clip did not decode"); return; }
                 if (ready == false) return;
                 State = Phase.Playing;
+                dip = Duck?.Invoke() == true ? DipLevel : 1f;   // the recording may have started since the fetch did (N1)
                 Apply();
                 output.Play(clip);
                 return;
             }
             if (State != Phase.Playing && State != Phase.Fading) return;
             float step = (float)WatchMs / FadeMs;
-            dip = Duck?.Invoke() == true ? Mathf.Max(0f, dip - step) : Mathf.Min(1f, dip + step);
+            dip = Duck?.Invoke() == true ? Mathf.Max(DipLevel, dip - step) : Mathf.Min(1f, dip + step);
             if (State == Phase.Fading)
             {
                 fadeLeftMs -= WatchMs;
