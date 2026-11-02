@@ -88,6 +88,9 @@ public class MinimapRestartTests
             Assert.AreEqual(MapBorders.ToggleOn, mini.BordersShown, "the Borders button says what the borders switch does");
             Assert.AreEqual(LabelsOn, mini.LabelsShown, "the Labels button says what the labels switch does");
             Assert.IsFalse(MapBorders.ToggleOn || LabelsOn, "the restart keeps the player's choice: both layers stay off");
+            // Review of #2231, C2: MapRegions.Shown is false when no layer is drawn, and then both caption asserts hold
+            // whatever the caption does; the start date draws one, so they pin it.
+            Assert.IsTrue(root.Regions!.Shown, "precondition: the start date draws a region layer");
             Assert.AreEqual(root.Regions!.Shown && MapBorders.ToggleOn, CaptionShown, "the border caption follows the borders");
 
             UiTestKit.Press(ui.Q<Button>("minimap-borders"));
@@ -96,11 +99,57 @@ public class MinimapRestartTests
             Assert.IsTrue(LabelsOn && mini.LabelsShown, "one press brings the names back");
             Assert.AreEqual(root.Regions!.Shown, CaptionShown, "and the border caption with them");
         }
-        finally
+        finally { SwitchesOn(); }
+    }
+
+    /// <summary>Review of #2231, C1: the map's switches are the truth, not the buttons' dim. A switch set behind its button's
+    /// back (VisualToggles.Set, as the dev instruments do) disagrees with the button until the next Begin, whose minimap
+    /// starts from the switches and dims its buttons to match; the armistice lines go with the Borders button (#2195).</summary>
+    [UnityTest]
+    public IEnumerator AfterARestartTheButtonsFollowTheSwitchesNotTheirOldDim()
+    {
+        yield return Boot();
+        try
         {
-            // VisualToggles and MapBorders are static: leave both switches on for the next test.
-            if (VisualToggles.Names.Contains(MapBorders.ToggleName)) VisualToggles.Set(MapBorders.ToggleName, true);
-            if (VisualToggles.Names.Contains(MinimapPresenter.LabelsToggle)) VisualToggles.Set(MinimapPresenter.LabelsToggle, true);
+            Assert.IsTrue(VisualToggles.Names.Contains(MapBorders.ToggleName) && VisualToggles.Names.Contains(MinimapPresenter.LabelsToggle)
+                && VisualToggles.Names.Contains(ArmisticeLines.ToggleName), "precondition: the map's switches, the armistice lines' too");
+            var bordersButton = ui.Q<Button>("minimap-borders"); var labelsButton = ui.Q<Button>("minimap-labels");
+            UiTestKit.Press(labelsButton);                                // the Labels button dims with its switch
+            VisualToggles.Set(MapBorders.ToggleName, false);              // the borders go off behind an undimmed button
+            VisualToggles.Set(MinimapPresenter.LabelsToggle, true);       // the names come back behind a dimmed one
+            Assert.IsFalse(MapBorders.ToggleOn || bordersButton.ClassListContains(MinimapPresenter.OffClass), "precondition: borders off, their button not dimmed");
+            Assert.IsTrue(LabelsOn && labelsButton.ClassListContains(MinimapPresenter.OffClass), "precondition: names on, their button dimmed");
+            Assert.IsTrue(ArmisticeOn, "precondition: the armistice lines are still shown");
+
+            root.Begin(MapFocusTests.Inputs, 0, keep: root.Bridge);      // a restart over the same map (as SwitchLanguage)
+            GameSceneTests.HideTheOpeningCard(ui);
+            yield return Frames(3);
+            var mini = root.Minimap ?? throw new AssertionException("precondition: the restart made a minimap");
+
+            Assert.IsFalse(mini.BordersShown, "the Borders button reads the borders switch: off");
+            Assert.IsTrue(bordersButton.ClassListContains(MinimapPresenter.OffClass), "and dims to say so");
+            Assert.IsTrue(mini.LabelsShown, "the Labels button reads the names' switch: on");
+            Assert.IsFalse(labelsButton.ClassListContains(MinimapPresenter.OffClass), "and is not dimmed");
+            Assert.IsFalse(ArmisticeOn, "the armistice lines go with the Borders button");
+            Assert.IsTrue(root.Regions!.Shown, "precondition: the start date draws a region layer");
+            Assert.IsFalse(CaptionShown, "no border caption over hidden borders");
+
+            UiTestKit.Press(bordersButton);
+            Assert.IsTrue(MapBorders.ToggleOn && mini.BordersShown && ArmisticeOn, "one press brings the borders and the lines back");
+            Assert.IsTrue(CaptionShown, "and the border caption with them");
         }
+        finally { SwitchesOn(); }
+    }
+
+    /// <summary>The armistice lines' switch's real state: it shows or hides the overlay's "Lines" child.</summary>
+    bool ArmisticeOn => Object.FindFirstObjectByType<MapScene>().Terrain.transform.Find(ArmisticeLines.RootName + "/Lines").gameObject.activeSelf;
+
+    /// <summary>The global state these tests change: VisualToggles' switches and MapBorders' toggleOn (static, set through
+    /// the "borders" switch). The minimap's buttons, the GameRoot and its Language belong to the scene, which TearDown
+    /// discards. Left on for the next test however the test ended.</summary>
+    static void SwitchesOn()
+    {
+        foreach (var name in new[] { MapBorders.ToggleName, MinimapPresenter.LabelsToggle, ArmisticeLines.ToggleName })
+            if (VisualToggles.Names.Contains(name)) VisualToggles.Set(name, true);
     }
 }

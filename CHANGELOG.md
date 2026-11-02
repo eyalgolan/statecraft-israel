@@ -20,7 +20,7 @@ checks this (see `CONTRIBUTING.md`).
   `text_he_review: agent-checked` flag. No event card is flagged any more.
 - Hebrew event cards: the owner read the Hebrew of `jerusalem_demilitarisation_guard` and `rafah_force_pressure`
   next to the English and approved both as written (#1065), so they lose their `text_he_review: agent-checked` flag.
-- Add a read-only WebGL companion beside the game for the current event, choices, game focus, status and the End Turn report. It is off by default (the owner's ruling of 1 November 2026, "Opt-in for now (Recommended)"): turn it on with Settings > Screen reader companion, or open the game with `?companion=1`. Keyboard play stays in the game; real screen-reader validation and the phone layout remain pending.
+- Add a read-only WebGL companion beside the game for the current event, choices, game focus, status and the End Turn report. It is off and unavailable for now (the owner's ruling of 2 November 2026; see the Changed entry). Keyboard play stays in the game; real screen-reader validation and the phone layout remain pending.
 - The map's hexes are 4.4 km instead of 5 km (owner, 21 October 2026, #1183): the same extent in 1,419 hexes, 1,118 of
   them land, so Tel Aviv to Jerusalem is 9 hexes on the game's path. Every bake was re-run with the repository's tools;
   sites, locations and unit anchors sit on the new grid. Tzrifin and the Syrian Army's two anchors, whose points land on
@@ -119,6 +119,9 @@ checks this (see `CONTRIBUTING.md`).
   sim's path to it (Movement.Path for a lit hex, the go-to's Movement.Route beyond), gold chevrons flowing towards an
   arrowhead on the target, the same size on screen at every zoom; never for an enemy unit, and cleared when the move is
   made or the pick ends (#2134).
+- The Defence screen's Arms debt-ceiling warning runs the turn's orders as End turn will, so the dollar conversion queued this
+  turn (which End turn runs before the purchase) and any spending queued before the purchase count: it warns exactly when End
+  turn would refuse the amount for the ceiling (R-ARMS-002, R-MONEY-004; #2206).
 - A map mode draws the 1949 armistice lines as their true polylines over the hex-snapped bands (#237; owner's ruling of
   30 October 2026): `?armisticelines` in the web page's URL, `-armisticelines` on desktop. Each line shows from its own
   date. The Jordan lines, traced from a low-resolution scan, are dashed, wider and a step lighter, so they read as low
@@ -164,6 +167,14 @@ checks this (see `CONTRIBUTING.md`).
 - The end screen shows what completing every objective on its historical date scores, beside the score; the sim computes it (Refs #812).
 - Hex tiles: an edit-mode test runs the generated houses' simplifier (`HexHouseLevels.Simplify`) on house 04 and checks
   the fresh mesh keeps the seams and the texture, so a broken simplifier fails a test before the next rebuild (#1901).
+- The opening's three panels now open on their archival photograph, then after 2 s loop a silent illustration in the
+  same frame, labelled "AI-generated illustration": the law_of_return card's immigrant ship (K04a) on Europe, the
+  iraqi_exodus card's families at Lydda (A07) on the Arab countries, and on Yemen one new shot of families walking across
+  the Aden apron to a parked, unmarked four-engined propliner, cleaned of a stray tripod and military markings. A clip
+  that fails puts the photograph back; Back, Next, Skip and Esc stop it; video stays off in the automated runs; and a
+  shareable build refuses a sensitive clip without the owner's review (owner ruling of 2 November 2026; the two card
+  clips reviewed, "Approve both", and the Yemen clip, "Approve it"). Under the clip, one caption line in English or
+  Hebrew restates the panel's own text.
 - The opening after New Game in Hebrew (#530; owner, 1 Nov 2026, "Translate to Hebrew (Recommended)"): in the Hebrew UI
   the three panels' titles, text and arrivals and the closing line are Hebrew, right to left and set from the right; the
   photo credits stay English. The Hebrew is an agent draft with `he_review: pending` in `opening.yaml` until a native
@@ -239,6 +250,9 @@ checks this (see `CONTRIBUTING.md`).
 - After a language switch, New Game or a load, the minimap's Borders and Labels buttons keep what the map shows. A
   layer the player switched off stays off with its button dimmed, and one press brings it back; before, the first press
   did nothing and the border caption showed over hidden borders.
+- The minimap's Borders and Labels buttons now start from the map's own switches after a language switch, New Game or a
+  load, and dim to match, so a button and its layer cannot disagree. The 1949 armistice lines follow the Borders button
+  then too.
 - Deactivating a transit camp retires its tent models without reparenting during the disable callback. Redrawing the inactive camp preserves streamed model meshes while releasing its own geometry and lease.
 - The KitTests trees-toggle check can fail now (#2026): with the trees off it moves the camera to the gameplay pose,
   where a layer that still drew would report the near count, instead of rendering the same overview pose again.
@@ -289,6 +303,20 @@ checks this (see `CONTRIBUTING.md`).
 - A Why line that names a unit now also records the hex the unit stood on when the line was written, before a move or a
   retreat, so the map can later replay the enemy's moves (Refs #2202). Nothing on screen changes yet, and saves and the
   golden hashes are unchanged.
+- The Israel Bonds card (`israel_bonds`) stays out of gdd-0.3, and its exclusion in `content/gdd03-events.yaml` now
+  gives the real blocker: the owner's 2 November 2026 rulings (#2224) put an equal Debt on the launch option's $52m at
+  the dollar rate in force on the event's date, and Debt is not yet an event target. Only the reason text changes, but
+  that file is part of the gdd-0.3 content hash, so this change by itself moves it (`7e09d2b3...` to `9501253b...`).
+  A gdd-0.3 save made before it still loads, with the "content changed" warning only (a 44-turn save replays to the
+  same state). gdd-0.1, which the shipped content plays, never reads the file: its content hash (`6527512f...`),
+  Hash1950, Hash1952 and mvp-end stay the same. Measured with a throwaway probe (not committed), command and full
+  output in #2251.
+- Measured for #2229's change (the three restored GDD 0.3 cards, merged before this), not for this one, with the same
+  probe: no pinned golden moves (gdd-0.1 GoldenRun 1950 `8578966e...` and 1952 `385ba3b5...`, equal to the manifest's
+  `hash1950` and `hash1952`/`mvp-end`, with and without it). Under gdd-0.3 it moves the content hash (`6d6d629b...` to
+  `7e09d2b3...`) and the end state of a 44-turn no-orders run to 15 January 1952 (`4154a8e0...` to `9c5ecf53...`). A
+  gdd-0.3 save made before #2229 loads with the "content changed" warning, plus "replay differs" when its replay ends on
+  a different state (the 44-turn save did; a 1-turn save gave only "content changed"). The save format is unchanged.
 - Under the GDD 0.3 rules three cards are back in play: Rationing Clothes and Shoes (1950), the reparations claim
   (1951) and the reparations vote (1951). Foreign currency stays the internal ledger, so their effects load as written.
   Israel Bonds and four other cards stay out (#2224).
@@ -296,6 +324,9 @@ checks this (see `CONTRIBUTING.md`).
   Dayan, cover every mechanic, including the 14 that nothing explained before, each with a Show me where it has a
   target; an advisor's "Tell me more" opens its page. In Hebrew, the nine pages that replace How to play have had their
   native read and show; the other 16 wait for theirs (Refs #1484, #1519).
+- The read-only WebGL companion (#1119) is off and unavailable for now (the owner's ruling of 2 November 2026, "Remove it
+  from the game (Recommended)"): Settings has no "Screen reader companion" row, and `?companion=1` does nothing. The code
+  stays in, switched off by one flag (`WebCompanion.Available`), so it can come back later.
 - Hebrew: the owner read the 16 encyclopedia pages still waiting for a native review and approved them (1 November
   2026), so all 25 pages now show in Hebrew. The same day the owner ruled that the map cell is משבצת, not משושה,
   everywhere in the game: 40 Hebrew strings change, with feminine agreement where the noun takes an adjective, verb

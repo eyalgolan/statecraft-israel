@@ -49,6 +49,23 @@ panels:
       - url: "https://portal.ehri-project.eu/units/us-005544-cyp_45_49"
         supports: "JDC Cyprus collection: 'the British government began deporting Jews who came to Palestine in violation of the White Paper of 1939 to the island of Cyprus. From August 1946 to February 1949, the deportees ... lived behind barbed wire in 12 detention camps. During this period, approximately 53,000 Jews passed through the camps'"
         checked: 2026-10-31
+    # After the photograph, the law_of_return card's loop (owner ruling of 2 November 2026, "B: A + one new Yemen shot
+    # (~2,424)"): the same file, alt text and shot as its event-videos.yaml row; its provenance is its ASSETS.yaml row.
+    clip:
+      file: law_of_return.mp4
+      shot: K04a
+      alt: "Illustration: an immigrant ship crowded with passengers entering Haifa bay."
+      ai_generated: true
+      sensitive: true
+      # The owner's sensitivity review of this clip in the opening: owner, 2 Nov 2026: "Approve both".
+      sensitivity_reviewed: true
+    # The line shown under the clip while it plays (OpeningPresenter). Owner, 2 Nov 2026: "Version 1, fixed
+    # (Recommended)", which is also the owner's native read of the Hebrew (he_review: approved).
+    # From this panel's text: "Once the state was founded, about two-thirds of the displaced persons went to Israel."
+    caption:
+      text: "About two-thirds of Europe's displaced persons came to Israel."
+      text_he: "כשני שלישים מעקורי אירופה עלו לישראל לאחר קום המדינה."
+      he_review: approved
     image:
       file: opening_europe.jpg
       commons: "https://commons.wikimedia.org/wiki/File:Cyprus_(997008136325305171).jpg"
@@ -84,6 +101,24 @@ panels:
       - url: "https://www.cbs.gov.il/he/publications/DocLib/2009/1365/pdf/e_print.pdf"
         supports: "Table 5 (printed pages 38-39), column 15 V 1948 - 1951: Iraq 123,371; Morocco 28,263; Libya 30,972; Egypt, Sudan 16,028; Tunisia 13,293; Algeria 3,810 (the 'tens of thousands more' line)"
         checked: 2026-10-31
+    # After the photograph, the iraqi_exodus card's loop (the same ruling and rules as Europe's clip).
+    clip:
+      file: iraqi_exodus.mp4
+      shot: A07
+      alt: "Illustration: an airliner on the apron at Lydda at dusk, families coming down the steps with suitcases."
+      ai_generated: true
+      sensitive: true
+      # The owner's sensitivity review of this clip in the opening: owner, 2 Nov 2026: "Approve both".
+      sensitivity_reviewed: true
+    # The line shown under the clip while it plays (OpeningPresenter). Owner, 2 Nov 2026: "Version 1, fixed
+    # (Recommended)", which is also the owner's native read of the Hebrew (he_review: approved).
+    # From this panel's text: "The airlift, Operation Ezra and Nehemiah, began in May 1950, and by January 1952 some
+    # 120,000 Iraqi Jews had come to Israel." The English then changed to "brought ... to Israel", which matches the
+    # Hebrew העלה (owner, 2 Nov 2026: "Change to 'brought' (Recommended)"); the Hebrew and its review are unchanged.
+    caption:
+      text: "Operation Ezra and Nehemiah brought some 120,000 Iraqi Jews to Israel."
+      text_he: "מבצע עזרא ונחמיה העלה כ־120,000 מיהודי עיראק."
+      he_review: approved
     image:
       file: opening_arab_countries.jpg
       commons: "https://commons.wikimedia.org/wiki/File:Ben_Gurion_International_Airport_(997008136550505171).jpg"
@@ -118,6 +153,24 @@ panels:
       - url: "https://www.cbs.gov.il/he/publications/DocLib/2009/1365/pdf/e_print.pdf"
         supports: "Table 5, column 15 V 1948 - 1951: Yemen (7) 48,315; note 7, 'Incl. the former Aden'"
         checked: 2026-10-31
+    # After the photograph, the ruling's one new shot (O3), made for this panel only: no decision card uses it. Its
+    # generation, the cleanup ("Fix it in editing (Recommended)") and the encode are in its ASSETS.yaml row.
+    clip:
+      file: opening_yemen.mp4
+      shot: O3
+      alt: "Illustration: a parked silver four-engined propeller airliner on a sandy apron, families with bundles walking toward its stair."
+      ai_generated: true
+      sensitive: true
+      # The owner's sensitivity review of this clip in the opening: owner, 2 Nov 2026: "Approve it".
+      sensitivity_reviewed: true
+    # The line shown under the clip while it plays (OpeningPresenter). Owner, 2 Nov 2026: "Version 1, fixed
+    # (Recommended)", which is also the owner's native read of the Hebrew (he_review: approved).
+    # From this panel's text: "Operation On Wings of Eagles ... flew them from British-ruled Aden to Israel"; "about
+    # 49,000 Yemenite Jews had been flown to Israel".
+    caption:
+      text: "Operation On Wings of Eagles flew about 49,000 Yemenite Jews."
+      text_he: "מבצע על כנפי נשרים הטיס מעדן כ־49,000 מיהודי תימן."
+      he_review: approved
     image:
       file: opening_yemen.jpg
       commons: "https://commons.wikimedia.org/wiki/File:Aden_(997008136749905171).jpg"

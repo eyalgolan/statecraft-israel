@@ -25,9 +25,11 @@ public class OpeningHebrewTests
     static string Yaml => Asset.source.text;
     static UiText Text(string lang) => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/UI/strings." + lang + ".yaml").text);
 
-    /// <summary>The shipped YAML with every Hebrew field taken out: the file as it was before the Hebrew.</summary>
+    /// <summary>The shipped YAML with every Hebrew field of the prose taken out: the file as it was before the Hebrew. Only
+    /// the panels' (4 spaces) and the closing's (2 spaces) own fields: a clip's caption (6 spaces) keeps its text_he and
+    /// he_review, which Parse requires with every clip.</summary>
     static string WithoutHebrew(string yaml) =>
-        Regex.Replace(Regex.Replace(yaml, @"(?m)^ *(title_he|text_he|he_review): .*\r?\n", ""), @", country_he: ""[^""]*""", "");
+        Regex.Replace(Regex.Replace(yaml, @"(?m)^(  |    )(title_he|text_he|he_review): .*\r?\n", ""), @", country_he: ""[^""]*""", "");
 
     static OpeningContent.Document Approved(string yaml)
     {
