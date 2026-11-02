@@ -52,6 +52,21 @@ public class GameSceneTests
 
     static VisualElement Ui => Object.FindFirstObjectByType<UIDocument>().rootVisualElement;
 
+    /// <summary>#1867 (design by Tal Heuberger, #2078): the game plays each resolved combat on its units' tokens, through one
+    /// UnitAttackPresenter that GameRoot makes over its bridge and its unit layer.</summary>
+    [Test]
+    public void TheGamePlaysResolvedCombatOnItsUnitLayer()
+    {
+        var root = Boot();
+        var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+        var resolved = (Delegate?)typeof(SimBridge).GetField(nameof(SimBridge.CombatResolved), flags)!.GetValue(root.Bridge);
+        var presenters = (resolved?.GetInvocationList() ?? Array.Empty<Delegate>()).Select(d => d.Target).OfType<UnitAttackPresenter>().ToList();
+        Assert.AreEqual(1, presenters.Count, "one presenter listens to the game's combat");
+        var play = (Func<int, bool>)typeof(UnitAttackPresenter).GetField("play", flags)!.GetValue(presenters[0])!;
+        Assert.AreSame(root.Units, play.Target, "it plays on the game's unit layer");
+        Assert.AreEqual(nameof(Statecraft.Game.Map.Units.UnitLayer.PlayAttack), play.Method.Name);
+    }
+
     [Test]
     public void MapUnityIsTheOnlyBuildSceneAndIsFullyWired()
     {
@@ -657,6 +672,49 @@ public class GameSceneTests
         StringAssert.StartsWith("Not done: ", lines[0]);
         Assert.AreEqual(Text["save.write_failed"], lines[1]);
         Assert.AreEqual(DisplayStyle.Flex, Ui.Q("toast").style.display.value);
+    }
+
+    /// <summary>#2152: the game reports earned achievements to the store set in PlatformServices.Current (a Steam build's).</summary>
+    [Test]
+    public void TheGameReportsAchievementsToTheCurrentStore()
+    {
+        var fake = new FakePlatform();
+        PlatformServices.Current = fake;
+        try
+        {
+            var root = Boot();
+            Assert.AreEqual(0, fake.Unlocks.Count, "a new game has earned nothing");
+            var finished = GameSession.New(Inputs.Content, GoldenRun.Seed, Mode.Historical);
+            finished.State.Objectives["railway"] = new DateTime(1949, 3, 15);
+            finished.State.GameOver = GameOverCodes.MvpEnded;
+            root.Bridge!.Replace(finished);
+            Assert.AreEqual(1, fake.Unlocks.Count);
+            CollectionAssert.AreEqual(new[] { "CAMPAIGN_DONE", "OBJ_RAILWAY" }, fake.Unlocks[0]);
+        }
+        finally { PlatformServices.Current = null!; }
+    }
+
+    /// <summary>Review round (k2): a smoke run (the golden seed, scripted turns) is not the player's game: it reports nothing.</summary>
+    [Test]
+    public void ASmokeRunReportsNoAchievements()
+    {
+        var fake = new FakePlatform();
+        PlatformServices.Current = fake;
+        try
+        {
+            EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+            Object.FindFirstObjectByType<MapScene>().Build(Inputs.Map);
+            var root = Object.FindFirstObjectByType<GameRoot>();
+            root.Store = new SaveStore(saveDir);
+            LogAssert.Expect(LogType.Warning, "SMOKE FAIL the smoke run needs play mode or a player");
+            root.Begin(Inputs, 5);
+            var finished = GameSession.New(Inputs.Content, GoldenRun.Seed, Mode.Historical);
+            finished.State.Objectives["railway"] = new DateTime(1949, 3, 15);
+            finished.State.GameOver = GameOverCodes.MvpEnded;
+            root.Bridge!.Replace(finished);
+            Assert.AreEqual(0, fake.Unlocks.Count);
+        }
+        finally { PlatformServices.Current = null!; }
     }
 
     [Test]

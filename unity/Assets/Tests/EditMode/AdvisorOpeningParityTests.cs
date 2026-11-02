@@ -1235,4 +1235,43 @@ public class AdvisorOpeningNoAttentionGameRootTests
             }
         }
     }
+
+    // #1915: a mid-tour language switch rebuilds the UI and resumes the tour; Next keeps the focus, so Enter goes on
+    // and its gold focus fill shows. Red-first: the rebuilt presenter resumed the chain without giving Next the focus
+    // back, and the button stayed dark for the rest of the tour.
+    [UnityTest]
+    public IEnumerator SettingsSwitchToHebrewKeepsTheTourNextFocused()
+    {
+        var inputs = new GameInputs { Content = AdvisorTour1688Fixture.Content(),
+            Map = GameInputs.MapFromDisk(Paths.Content, Paths.StreamingMap), Goldens = new GoldenData() };
+        var settings = new SettingsStore(TempDir());
+        var game = AdvisorGameTests.OpenScene(new SaveStore(TempDir()), settings);
+        game.Language = UiLanguage.English;
+        game.AdvisorCatalogForTests = AdvisorCatalog.Parse(File.ReadAllText(AdvisorCatalog.Path)
+            .Replace("he_review: pending", "he_review: approved"));
+        game.Begin(inputs, 0, startScreen: true);
+        UiTestKit.Press(Ui.Q<Button>("start-new-game"));
+        game.Advisor!.OpenChain();
+        Assert.IsTrue(game.Advisor.InChain);
+
+        UiTestKit.Press(Ui.Q<Button>("nav-settings"));
+        UiTestKit.Press(Ui.Q<Button>("settings-language-" + UiLanguage.Hebrew));
+        Assert.IsTrue(Ui.Q("root").ClassListContains(UiLanguage.HebrewClass));
+        Assert.IsTrue(game.Advisor!.InChain, "the rebuilt presenter resumes the tour");
+        // A quiet EditMode panel runs its styles, layout and scheduler only on player-loop requests (SafeAreaTests), so each
+        // wait asks for one; bare yields would leave every scheduled step unrun and both checks below vacuous.
+        for (int i = 0; i < 5; i++) { EditorApplication.QueuePlayerLoopUpdate(); yield return null; }
+        Assert.IsTrue(Ui.Q("root").ClassListContains(ScreenNav.ScreenOpenClass), "Settings reopens over the resumed tour (#1036)");
+        Assert.AreSame(Ui.Q<Button>("settings-language-" + UiLanguage.Hebrew), Ui.Q("root").focusController.focusedElement,
+            "Next does not steal Settings' focus while the screen is open (#1915)");
+
+        UiTestKit.Press(Ui.Q<Button>("nav-settings"));               // Settings closes over the resumed tour
+        var next = Ui.Q<Button>("advisor-got-it");
+        for (int i = 0; i < 10 && Ui.Q("root").focusController.focusedElement != next; i++)
+        { EditorApplication.QueuePlayerLoopUpdate(); yield return null; }   // the popup comes back and the hand-off runs
+        for (int i = 0; i < 3; i++) { EditorApplication.QueuePlayerLoopUpdate(); yield return null; }   // and it stays there
+        Assert.IsFalse(Ui.Q("root").ClassListContains(ScreenNav.ScreenOpenClass));
+        Assert.AreSame(next, Ui.Q("root").focusController.focusedElement,
+            "once no screen is open Next has the focus: Enter goes on, and its gold focus fill shows (#1915)");
+    }
 }

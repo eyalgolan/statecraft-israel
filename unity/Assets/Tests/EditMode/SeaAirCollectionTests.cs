@@ -140,11 +140,15 @@ public class SeaAirCollectionTests
         var mesh = go.GetComponentInChildren<MeshFilter>();
         var tip = mesh.sharedMesh.vertices.Select(mesh.transform.TransformPoint).OrderBy(v => Mathf.Abs(v.z - b.center.z)).Last();
         Assert.Greater(tip.x, b.center.x + 0.1f * b.size.x, "the wingtips sit east of the centre: the nose points east (geometry)");
-        float floor = Statecraft.Game.Map.Units.UnitShowcase.LoopFloor(map, new Vector3(at.x, 0f, at.z), span);
-        Assert.AreEqual(floor + 4200f, at.y, 1f, "4,200 m above the highest ground under it, the unit tokens' aircraft altitude (#2014)");
+        // Its loop (owner, 2 November 2026, "Fly a slow loop") is centred here; edit mode holds the loop's start, due south of
+        // the centre, heading east.
+        Assert.AreEqual(at.x, b.center.x, 1f, "at the loop's start, east-west on the centre");
+        Assert.AreEqual(at.z - SeaAirCollection.SpitfireLoopHalfWidthM, b.center.z, 1f, "at the loop's start, south of the centre");
+        float floor = Statecraft.Game.Map.Units.UnitShowcase.LoopFloor(map, new Vector3(at.x, 0f, at.z), SeaAirCollection.SpitfireLoopHalfLengthM + span);
+        Assert.AreEqual(floor + 4200f, at.y, 1f, "4,200 m above the highest ground under its loop, the unit tokens' aircraft altitude (#2014)");
         Assert.AreEqual(Statecraft.Game.Map.Units.UnitShowcase.AltitudeM, at.y - floor, 1f, "UnitShowcase.AltitudeM, no number duplicated");
         Assert.Greater(b.min.y, floor, "in flight, never on the ground");
-        Assert.AreEqual(1, layer.KeepClear.Count(k => (k[0].center - b.center).magnitude < 1f && (k[0].size - b.size).magnitude < 1f), "the labels keep clear of it");
+        Assert.AreEqual(1, layer.KeepClear.Count(k => k[0].Contains(b.min) && k[0].Contains(b.max)), "the labels keep clear of it");
     }
 
     /// <summary>#2014 merge with v0.3.2's residency: Rebuild registers the Spitfire in its model's originals before Fly's
@@ -179,6 +183,153 @@ public class SeaAirCollectionTests
     {
         Action? done; public ReleaseProbe(Action done) { this.done = done; }
         public void Dispose() { var call = done; done = null; call?.Invoke(); }
+    }
+
+    /// <summary>The Spitfire's farthest point from its centre, seen from above, at any heading: half the diagonal of a square
+    /// as wide as its wingspan (its fuselage is shorter than its wingspan).</summary>
+    static float SpitfireReach => 0.5f * Mathf.Sqrt(2f) * SeaAirCollection.SizeOf(SeaAirCollection.Spitfire);
+
+    /// <summary>The owner, 2 November 2026 (v0.3.3: "the egyptian plane in v0.3.3 is not moving"), ruling "Fly a slow loop":
+    /// a slow repeating pass in from el-Arish over the western edge and back. The loop's period is tens of seconds and its
+    /// size a few km (DESIGN VALUES). Half a period on, the aircraft is on the other side of the loop. At every point it stays
+    /// inside the loop's box about EdgeSpot, and the whole aircraft stays over the board, clear of every unit token
+    /// (the dated rings and the town clearings) and far from Lod, the board's one drawn airfield.</summary>
+    [Test]
+    public void TheSpitfireLoopsInsideItsPathAndTheBoardClearOfTheTokens()
+    {
+        var map = OpenMap();
+        var centre = SeaAirCollection.EdgeSpot(map.Frame);
+        var ground = PlacementLayer.CampGround(map);
+        float period = SeaAirCollection.SpitfireLoopSeconds, a = SeaAirCollection.SpitfireLoopHalfLengthM, b = SeaAirCollection.SpitfireLoopHalfWidthM;
+        Assert.That(period, Is.InRange(20f, 90f), "a period of tens of seconds");
+        Assert.That(a, Is.InRange(2000f, 10000f), "a few km east-west");
+        Assert.That(b, Is.InRange(1000f, a), "narrower north-south: a long loop, in from the west and back");
+        var lod = map.Frame.ToWorld(SeaAirCollection.LodLon, SeaAirCollection.LodLat, 0);
+        for (int i = 0; i < 120; i++)
+        {
+            float t = i * period / 120f;
+            var at = SeaAirCollection.LoopOffset(t); var opposite = SeaAirCollection.LoopOffset(t + 0.5f * period);
+            Assert.Greater((at - opposite).magnitude, 2f * b - 1f, $"at {t:0.0} s and half a period on, the other side of the loop");
+            Assert.LessOrEqual(Mathf.Abs(at.x), a + 0.5f, $"within the loop east-west at {t:0.0} s");
+            Assert.LessOrEqual(Mathf.Abs(at.y), b + 0.5f, $"within the loop north-south at {t:0.0} s");
+            var p = centre + at;
+            Assert.IsTrue(ground.Inside(p.x - SpitfireReach, p.y - SpitfireReach) && ground.Inside(p.x + SpitfireReach, p.y + SpitfireReach),
+                $"the whole aircraft over the board at {t:0.0} s ({p})");
+            Assert.IsFalse(ground.OnToken(p, SpitfireReach, SeaAirCollection.SpitfireFrom), $"over no unit token's ring at {t:0.0} s ({p})");
+            foreach (var (c, r) in map.UnitClearings)
+                Assert.Greater((p - c).magnitude, r + SpitfireReach, $"over no town's unit clearing at {t:0.0} s ({p})");
+            Assert.Greater((p - new Vector2(lod.x, lod.z)).magnitude, 20000f, "far from Lod's airfield");
+        }
+        // The pass starts flying in from el-Arish: due south of the centre, heading east.
+        Assert.AreEqual(0f, SeaAirCollection.LoopOffset(0f).x, 1f);
+        Assert.AreEqual(-b, SeaAirCollection.LoopOffset(0f).y, 1f);
+        Assert.Greater(SeaAirCollection.LoopHeading(0f).x, 0.999f, "heading east at the start");
+    }
+
+    /// <summary>The loop is closed: a period on, the aircraft is back at the same place with the same heading, at any time
+    /// (also long into a session, where the clock is large).</summary>
+    [Test]
+    public void TheSpitfireLoopIsClosed()
+    {
+        float period = SeaAirCollection.SpitfireLoopSeconds;
+        foreach (var t in new[] { 0f, 3.7f, 12.5f, 0.5f * period, period - 0.01f, 1234.5f, 7200.25f })
+        {
+            Assert.Less((SeaAirCollection.LoopOffset(t) - SeaAirCollection.LoopOffset(t + period)).magnitude, 1f, $"the same place a period after {t} s");
+            Assert.Less((SeaAirCollection.LoopHeading(t) - SeaAirCollection.LoopHeading(t + period)).magnitude, 1e-3f, $"the same heading a period after {t} s");
+        }
+    }
+
+    /// <summary>The drawn aircraft flies the loop nose first: at every sampled time its centre is on the path about its
+    /// recorded loop centre, level at that one altitude, its nose (the mesh's -y, as the in-flight test reads it) along the
+    /// path's tangent, inside the box the labels keep clear of, and a period later at the same place. The heading is the
+    /// path's tangent (a short chord's direction).</summary>
+    [Test]
+    public void TheSpitfireFacesAlongItsPath()
+    {
+        float period = SeaAirCollection.SpitfireLoopSeconds;
+        for (int i = 0; i < 120; i++)
+        {
+            float t = i * period / 120f;
+            var heading = SeaAirCollection.LoopHeading(t);
+            Assert.AreEqual(1f, heading.magnitude, 1e-4f, "a unit heading");
+            var chord = SeaAirCollection.LoopOffset(t + 0.01f) - SeaAirCollection.LoopOffset(t - 0.01f);
+            Assert.Greater(Vector2.Dot(heading, chord.normalized), 0.999f, $"the heading is the path's tangent at {t:0.0} s");
+        }
+
+        var map = OpenMap();
+        var layer = CollectionGeometryFixture.Craft(map, new DateTime(1948, 6, 15), Array.Empty<Placement>(), C)!; AnswerAll();
+        var plane = layer.transform.Find("el-arish-spitfire")!;
+        var loop = plane.GetComponent<SpitfireLoop>();
+        Assert.IsNotNull(loop, "the drawn Spitfire carries its loop");
+        Assert.IsTrue(loop.Still, "edit mode holds the loop's start, so editor renders repeat");
+        var centre = layer.Placed.Single(p => p.Model == SeaAirCollection.Spitfire).At;
+        var keep = layer.KeepClear.Single(k => k[0].Contains(centre))[0];
+        for (int i = 0; i < 48; i++)
+        {
+            float t = i * period / 48f;
+            loop.Place(t);
+            var b = WorldBounds(plane.gameObject); var at = SeaAirCollection.LoopOffset(t);
+            Assert.AreEqual(centre.x + at.x, b.center.x, 1f, $"on the path east-west at {t:0.0} s");
+            Assert.AreEqual(centre.z + at.y, b.center.z, 1f, $"on the path north-south at {t:0.0} s");
+            Assert.AreEqual(centre.y, b.center.y, 1f, $"level, at the loop's one altitude, at {t:0.0} s");
+            var nose = plane.TransformDirection(Vector3.down);
+            Assert.AreEqual(0f, nose.y, 1e-3f, "level flight");
+            Assert.Greater(Vector2.Dot(new Vector2(nose.x, nose.z).normalized, SeaAirCollection.LoopHeading(t)), 0.999f, $"nose along the path at {t:0.0} s");
+            Assert.IsTrue(keep.Contains(b.min) && keep.Contains(b.max), $"inside the box the labels keep clear of at {t:0.0} s");
+            var here = b.center;
+            loop.Place(t + period);
+            Assert.Less((WorldBounds(plane.gameObject).center - here).magnitude, 1f, $"back at the same place a period after {t:0.0} s");
+        }
+    }
+
+    /// <summary>Review k2 C1: in play the aircraft is drawn where the clock puts it from its first frame, not at the loop's
+    /// start until its first Update (a component added mid-frame gets no Update that frame, so the frame it is built in would
+    /// draw it up to 6 km from where it flies). Screenshots and edit mode still hold the loop's start. An EditMode test has
+    /// no frame clock, so it drives SpitfireLoop.Clock.</summary>
+    [Test]
+    public void TheSpitfireIsDrawnWhereTheClockPutsItFromItsFirstFrame()
+    {
+        var clock = SpitfireLoop.Clock;
+        var flying = new GameObject("flying"); var held = new GameObject("held");
+        try
+        {
+            const float now = 12.5f;
+            SpitfireLoop.Clock = () => now;
+            var centre = new Vector3(30000f, 4200f, 1000f);
+            flying.AddComponent<SpitfireLoop>().Configure(centre, Quaternion.identity, Vector3.zero, still: false);
+            held.AddComponent<SpitfireLoop>().Configure(centre, Quaternion.identity, Vector3.zero, still: true);
+            var there = SeaAirCollection.LoopOffset(now); var start = SeaAirCollection.LoopOffset(0f);
+            Assert.Greater((there - start).magnitude, 1000f, "the test's time is far round the loop from its start");
+            Assert.Less((flying.transform.position - (centre + new Vector3(there.x, 0f, there.y))).magnitude, 1f,
+                "in play, where the clock puts it, before any Update");
+            Assert.Less((held.transform.position - (centre + new Vector3(start.x, 0f, start.y))).magnitude, 1f,
+                "held (edit mode, screenshots): at the loop's start whatever the clock");
+        }
+        finally
+        {
+            SpitfireLoop.Clock = clock;
+            Object.DestroyImmediate(flying); Object.DestroyImmediate(held);
+        }
+    }
+
+    /// <summary>The loop respects the Spitfire's dates (#1932: 15 May 1948 to 2 January 1949): outside them no aircraft and
+    /// no loop is drawn; inside them exactly one looping aircraft.</summary>
+    [Test]
+    public void OutsideItsDatesThereIsNoSpitfireAndInsideThemOneLoopingOne()
+    {
+        var map = OpenMap();
+        foreach (var (date, flying) in new[]
+        {
+            (new DateTime(1948, 5, 14), false), (new DateTime(1948, 5, 15), true), (new DateTime(1949, 1, 2), true),
+            (new DateTime(1949, 1, 3), false), (new DateTime(1949, 8, 15), false),
+        })
+        {
+            var layer = CollectionGeometryFixture.Craft(map, date, Array.Empty<Placement>(), C)!; AnswerAll();
+            Assert.AreEqual(flying ? 1 : 0, layer.Placed.Count(p => p.Model == SeaAirCollection.Spitfire), $"the Spitfire on {date:d MMM yyyy}");
+            Assert.AreEqual(flying ? 1 : 0, Object.FindObjectsByType<SpitfireLoop>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length,
+                $"the loops on {date:d MMM yyyy}");
+            Assert.AreEqual(flying, layer.transform.Find("el-arish-spitfire") != null, $"the aircraft on {date:d MMM yyyy}");
+        }
     }
 
     /// <summary>Nothing is drawn until the stream answers, and only the far mesh, once per model. Then every craft is drawn,

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Statecraft.Game.Map.Units;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEditor.SceneManagement;
@@ -139,17 +140,34 @@ namespace Statecraft.Game.EditorTools
             return mat;
         }
 
-        static AnimatorController Controller(string id)
+        internal static AnimatorController Controller(string id)
         {
             string path = $"{Dir(id)}/{id}.controller";
             var clip = Clip(id, "near");
-            var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(path);
-            if (controller == null) return AnimatorController.CreateAnimatorControllerAtPathWithClip(path, clip);
-            if (controller.layers.Length != 1 || controller.layers[0].stateMachine.states.Length != 1)
-                throw new InvalidOperationException(id + ": expected an owned one-state idle controller");
-            controller.layers[0].stateMachine.defaultState.motion = clip;
-            EditorUtility.SetDirty(controller);
+            var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(path)
+                ?? AnimatorController.CreateAnimatorControllerAtPathWithClip(path, clip);
+            try { ConfigureController(controller, clip, Model(id, "original"), CollectionImport.TokenFigures.Contains(id)); }
+            catch (InvalidOperationException e) { throw new InvalidOperationException(id + ": " + e.Message, e); }
             return controller;
+        }
+
+        /// <summary>Sets the controller's default idle to <paramref name="idle"/> and, for a token figure, adds its walk and
+        /// attack states (CollectionImport.AddMotionStates). The whole graph is checked before anything changes: one layer,
+        /// no sub-machines, each state idle, walk or attack and named once, and the default one of them, the idle.</summary>
+        internal static void ConfigureController(AnimatorController controller, AnimationClip idle, string model, bool tokenFigure)
+        {
+            if (controller.layers.Length != 1) throw new InvalidOperationException("expected one layer");
+            var machine = controller.layers[0].stateMachine;
+            var states = machine.states.Select(s => s.state).ToArray();
+            var names = states.Select(s => s != null ? s.name : null).ToArray();
+            if (states.Length == 0 || machine.stateMachines.Length != 0
+                || names.Any(n => n != UnitFigureMotion.IdleState && n != UnitFigureMotion.WalkState && n != UnitFigureMotion.AttackState)
+                || names.Distinct().Count() != names.Length
+                || machine.defaultState == null || Array.IndexOf(states, machine.defaultState) < 0
+                || machine.defaultState.name != UnitFigureMotion.IdleState)
+                throw new InvalidOperationException("expected idle, walk or attack states, each once, with the idle the default");
+            if (machine.defaultState.motion != idle) { machine.defaultState.motion = idle; EditorUtility.SetDirty(controller); }
+            if (tokenFigure) CollectionImport.AddMotionStates(controller, model);
         }
 
         static void MakePrefab(string id, string level, Material mat, AnimatorController controller)

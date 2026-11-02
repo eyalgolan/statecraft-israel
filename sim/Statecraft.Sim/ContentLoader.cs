@@ -1330,6 +1330,19 @@ namespace Statecraft.Sim
                 if (!(m.ArmsPrice >= 0 && IsFinite(m.ArmsPrice.Value))) throw new ContentException(file, "mvp.arms_price", "must be a finite number >= 0");
                 if (m.ArmsPerRecruitGroup == null) throw new ContentException(file, "mvp.arms_per_recruit_group", "required when eras.yaml systems.loop is gdd");
                 if (m.ArmsPerRecruitGroup < 0) throw new ContentException(file, "mvp.arms_per_recruit_group", "must be >= 0");
+                // R-MONEY-004: required, so a missing key never makes the lever free, unlimited or worthless.
+                if (m.DollarsPerTurn == null) throw new ContentException(file, "mvp.dollars_per_turn", "required when eras.yaml systems.loop is gdd");
+                if (m.DollarsPerTurn < 0) throw new ContentException(file, "mvp.dollars_per_turn", "must be >= 0");
+                if (m.DollarsTotal == null) throw new ContentException(file, "mvp.dollars_total", "required when eras.yaml systems.loop is gdd");
+                if (m.DollarsTotal < 0) throw new ContentException(file, "mvp.dollars_total", "must be >= 0");
+                if (m.IlPerDollar.Count == 0) throw new ContentException(file, "mvp.il_per_dollar", "required when eras.yaml systems.loop is gdd (at least one dated rate)");
+                for (int i = 0; i < m.IlPerDollar.Count; i++)
+                {
+                    var x = m.IlPerDollar[i]; var at = FormattableString.Invariant($"mvp.il_per_dollar[{i}]");
+                    if (!(x.Rate >= 0 && IsFinite(x.Rate))) throw new ContentException(file, at + ".rate", "must be a finite number >= 0");
+                    if (i == 0 && x.From > r.Start) throw new ContentException(file, at + ".from", "the first rate must start on or before the start, so every turn has one");
+                    if (i > 0 && x.From <= m.IlPerDollar[i - 1].From) throw new ContentException(file, at + ".from", "must be after the previous rate's day");
+                }
                 // R-UNIT-010, R-UNIT-004: omitted values must not silently make upkeep free or promotion immediate.
                 if (m.MilitaryUpkeepPerTurn == null) throw new ContentException(file, "mvp.military_upkeep_per_turn", "required when eras.yaml systems.loop is gdd");
                 if (!(m.MilitaryUpkeepPerTurn >= 0 && IsFinite(m.MilitaryUpkeepPerTurn.Value))) throw new ContentException(file, "mvp.military_upkeep_per_turn", "must be a finite number >= 0");

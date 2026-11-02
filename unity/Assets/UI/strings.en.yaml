@@ -147,6 +147,8 @@ settings.title: "Settings"
 settings.tiltshift: "Blur at the top and bottom of the map"
 settings.on: "On"
 settings.off: "Off"
+# The WebGL companion switch (#1119); the Hebrew awaits native review.
+settings.companion: "Screen reader companion"
 settings.quality: "Quality"
 settings.quality.auto: "Automatic"
 settings.quality.high: "High"
@@ -401,6 +403,19 @@ why.cause.borrowed.project: "Borrowed {0} to build {1}"
 why.cause.borrowed.deport: "Borrowed {0} for the Deport of {1}"
 why.cause.borrowed.occupation: "Borrowed {0} for the occupation of {1}"
 why.cause.borrowed.event: "Borrowed {0} for {1}"
+why.cause.paid.corridor: "{0} {1} (to build a corridor segment)"
+why.cause.paid.arms: "{0} {1} (for Arms)"
+why.cause.paid.training: "{0} {1} (for training)"
+why.cause.paid.prisoners: "{0} {1} (for our soldiers held by the enemy)"
+why.cause.paid.training_camp: "{0} {1} (to build a training camp)"
+why.cause.paid.plow: "{0} {1} (to plow fields)"
+why.cause.paid.drain: "{0} {1} (to drain a swamp)"
+why.cause.paid.yishuv: "{0} {1} (to build a yishuv)"
+why.cause.paid.project: "{0} {1} (to build {2})"
+why.cause.paid.occupation: "{0} {1} (for the occupation of {2})"
+why.cause.paid.map_action: "{0} {1} (to build {2})"
+# #2212: Money's Other line in the turn report and the meter tip, the causes left out after the two largest, summed.
+why.cause.money_other: "{0} {1} (other causes)"
 why.cause.fx_crisis_began: "Foreign currency reserves are exhausted"
 why.cause.fx_crisis_eased: "Foreign currency crisis eased"
 why.cause.fx_crisis_food: "{0} {1} (foreign currency crisis: food imports cut)"
@@ -580,6 +595,11 @@ minimap.overview: "Zoom all the way out"
 minimap.labels: "Show or hide the settlement names"
 minimap.borders: "Show or hide the region borders"
 ui.lang: "en"
+# ui.quit: Quit on the start screen and in Settings, desktop players only (#2153, QuitButton).
+ui.quit: "Quit"
+# ui.quit_confirm: Settings' Quit after its first press, in the button's place; the second press quits (#2188, the owner's
+# "are you sure?" ruling of 2 November 2026). Same two presses as New game (newgame.confirm).
+ui.quit_confirm: "Press again to quit"
 info.built: "{0} built here in {1}"
 info.queued: "Ordered: {0}, at End turn"
 info.build_camp: "Place a transit camp ({0})"
@@ -953,15 +973,13 @@ arms.attention: "Attention cost: {0:0.0} · Left: {1:0.0}"
 arms.queued: "Arms ordered: {0:N0}, at End turn"
 arms.minimum: "Buy at least 1 Arms. Enter a larger amount."
 arms.no_attention: "Not enough Attention for this purchase. Withdraw another order or wait until next turn."
+# #2198 (owner, 2 Nov 2026: "Refuse buys over ceiling (Recommended)"): Pools.BuyArms's refusal, word for word, shown in the
+# end-of-turn toast.
+arms.refused_debt_ceiling: "Buying that many Arms would take the debt past its ceiling"
 
 # #731 stock summaries in the report and Why.
 report.stock_line: "{0}: {1}"
 report.stock_change: "{0}: {1} ({2})"
-
-# #1708 artillery action status. Hebrew: native review pending (#564).
-unit.artillery_move_missing: "Artillery cannot move yet: its movement points have not been set"
-unit.fire_ready: "Fire available"
-unit.fire_spent: "Fired this turn"
 
 # #2045 standing-order refusals (Orders.Check), shown on the unit card.
 unit.order_refused.unknown_order: "That order is not known"
@@ -1110,3 +1128,33 @@ opening.begin: "Continue to the map"
 opening.return: "Return to the start screen"
 opening.count: "Step {0} of {1}"
 opening.preview: "Editor preview: draft text; human source checks pending."
+
+# #813 (R-MONEY-004; owner, 2 November 2026: "Spend the dollars (Recommended)"): the Defence screen's dollar conversion.
+# The refusals are EconomySystem's own words, shown in the end-of-turn toast.
+dollars.title: "Convert dollars"
+dollars.reserves: "Foreign currency: {0}"
+dollars.cost: "When foreign currency runs out, Food imports stop."
+dollars.total: "Converted so far: {0} of {1}"
+dollars.amount: "Dollars to convert, in millions"
+dollars.money: "Money this would bring: {0}"
+dollars.convert: "Convert dollars"
+dollars.withdraw: "Withdraw conversion"
+dollars.queued: "Dollars to convert: {0}, at End turn"
+dollars.wartime_only: "Converting dollars is for wartime only."
+dollars.no_attention: "Not enough Attention for this conversion. Withdraw another order or wait until next turn."
+dollars.refused_minimum: "Convert at least $1m"
+dollars.refused_not_at_war: "Dollars can be converted only during the war"
+dollars.refused_monthly: "That is more dollars than may be converted this month"
+dollars.refused_total: "That would pass the total of dollars that may be converted"
+dollars.refused_reserves: "There are not enough dollars in the reserves"
+why.cause.dollars_converted: "Converted {0} of foreign currency into Money: {1}"
+
+# Read-only WebGL companion (#1119); Hebrew additions await native review.
+companion.title: "Game companion"
+companion.help: "Read-only. Play with the game's keyboard controls."
+companion.focus: "Game focus"
+companion.status: "Status"
+companion.choices: "Choices"
+companion.empty: "No decision waiting"
+companion.unavailable: "Unavailable"
+companion.map: "Map"

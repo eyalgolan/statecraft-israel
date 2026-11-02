@@ -191,10 +191,12 @@ namespace Statecraft.Game.Map.Kits
                 case Style.Kibbutz: return TownModels.ForKibbutz(b.part);
                 case Style.TelAviv: return TownModels.TelAviv;
                 case Style.WhiteBlock: return id == "haifa" ? TownModels.Haifa : TownModels.WhiteCity;
-                case Style.TownBlock: return TownModels.Netanya;
+                // Tal Heuberger's Netanya houses (01 to 03) are Netanya's only; the other town centres keep #507's two-storey house.
+                case Style.TownBlock: return id == "netanya" ? TownModels.Netanya : TownModels.TownBlock;
                 case Style.StoneBlock: return TownModels.Jerusalem;
                 case Style.OldHouse: return TownModels.ForArchetype(Archetype.OldTown, s);
-                case Style.Village: return TownModels.Stone;
+                // Tiberias's houses are its basalt house (04); every other village lattice, Jerusalem's included, is stone.
+                case Style.Village: return id == "tiberias" ? TownModels.Tiberias : TownModels.Stone;
                 case Style.Templer: return TownModels.Templer;
                 default: return TownModels.Houses(s);
             }

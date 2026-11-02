@@ -54,6 +54,16 @@ def test_ci_uses_no_secret_but_the_read_only_token():
     assert set(re.findall(r"\$\{\{\s*github\.token\s*\}\}", text)) <= {"${{ github.token }}"}
 
 
+# The one named exception to "no secrets in workflows": the Steam upload (plan 2026-11-01-steamworks-integration Task 8,
+# owner answer Q8 "GitHub Actions"). Its two secrets live in the `steam` environment, which only `main` may deploy.
+SECRET_WORKFLOWS = {"steam-upload.yml"}
+
+
+def test_the_secret_exception_names_only_steam_upload():
+    users = {wf.name for wf in (ROOT / ".github/workflows").glob("*.yml") if "secrets." in wf.read_text(encoding="utf-8")}
+    assert users <= SECRET_WORKFLOWS, users
+
+
 def test_every_action_is_pinned_to_a_full_sha():
     for wf in (ROOT / ".github/workflows").glob("*.yml"):
         for ref in re.findall(r"uses:\s*[\w.-]+/[\w./-]+@(\S+)", wf.read_text(encoding="utf-8")):
@@ -192,3 +202,119 @@ def test_the_reviewed_by_guard_runs_on_the_pr_head_with_full_history():
     assert '--base "$BASE_SHA"' in step["run"] and '--head "$HEAD_SHA"' in step["run"]
     assert step["env"]["HEAD_SHA"] == "${{ github.event.pull_request.head.sha }}"
     assert step["env"]["BASE_SHA"] == "${{ github.event.pull_request.base.sha }}"
+
+
+STEAM = ROOT / ".github/workflows/steam-upload.yml"
+STEAM_SECRETS = {"STEAM_BUILDER_USERNAME", "STEAM_CONFIG_VDF"}
+STEAM_LOGIN_STEPS = {"Restore the builder login (owner's secret)", "Upload with steamcmd (owner's builder account)"}
+
+
+def steam():
+    return yaml.safe_load(STEAM.read_text(encoding="utf-8"))
+
+
+def test_steam_upload_runs_only_on_dispatch():
+    # Plan Task 8: a pull request, a fork, a release event or a push never starts an upload; only someone with write
+    # access dispatches it (tools/steam_upload.py stage does, on the owner's Mac).
+    t = triggers(steam())
+    assert set(t) == {"workflow_dispatch"}
+    for name in ("push", "pull_request", "pull_request_target", "release", "schedule", "workflow_run"):
+        assert name not in t
+
+
+def test_steam_upload_uses_the_steam_environment_and_minimal_permissions():
+    wf = steam()
+    assert wf["permissions"] == {}
+    assert set(wf["jobs"]) == {"upload", "refused"}
+    job = wf["jobs"]["upload"]
+    assert job["environment"] == "steam" and job["permissions"] == {"contents": "write"}
+    assert job["runs-on"] == "ubuntu-24.04" and job["timeout-minutes"] <= 120
+    for s in job["steps"]:
+        if s.get("uses", "").startswith("actions/checkout@"):
+            assert s["with"]["persist-credentials"] is False and s["with"]["ref"] == "main", s
+        assert "${{" not in s.get("run", ""), s   # inputs, outputs and secrets reach the shell only through env:
+        assert "set -x" not in s.get("run", ""), s
+    for ref_line in re.findall(r"uses:\s*[\w.-]+/[\w./-]+@[0-9a-f]{40}.*", STEAM.read_text(encoding="utf-8")):
+        assert re.search(r"# v\d+\.\d+\.\d+$", ref_line), ref_line
+
+
+def test_steam_upload_branch_input_is_beta_or_nightly():
+    inputs = triggers(steam())["workflow_dispatch"]["inputs"]
+    assert set(inputs) == {"tag", "branch", "record_sha256"}
+    assert inputs["branch"]["type"] == "choice" and inputs["branch"]["options"] == ["beta", "nightly"]
+    assert inputs["tag"]["required"] is True and inputs["branch"]["required"] is True
+    first = steam()["jobs"]["upload"]["steps"][0]
+    assert "^v[0-9]+\\.[0-9]+\\.[0-9]+$" in first["run"] and "^(beta|nightly)$" in first["run"]
+
+
+def test_steam_secrets_appear_only_in_the_login_steps():
+    job = steam()["jobs"]["upload"]
+    using = {}
+    for s in job["steps"]:
+        text = yaml.safe_dump(s)
+        found = set(re.findall(r"secrets\.(\w+)", text))
+        if found:
+            using[s.get("name")] = found
+            assert all(f"${{{{ secrets.{n} }}}}" in s.get("env", {}).values() for n in found), s   # only through env:
+    assert set(using) == STEAM_LOGIN_STEPS and set().union(*using.values()) == STEAM_SECRETS
+    text = STEAM.read_text(encoding="utf-8")
+    assert "secrets: inherit" not in text and "toJSON(secrets)" not in text
+    # The login config is always deleted, the upload fails without SteamPipe's success line, and the draft goes only
+    # after a successful upload.
+    names = [s.get("name", s.get("uses")) for s in job["steps"]]
+    cleanup = next(s for s in job["steps"] if "config.vdf" in s.get("run", "") and s.get("if") == "always()")
+    assert names.index(cleanup["name"]) > names.index("Upload with steamcmd (owner's builder account)")
+    upload = next(s for s in job["steps"] if s.get("name") == "Upload with steamcmd (owner's builder account)")
+    assert "+@NoPromptForPassword 1" in upload["run"] and '+login "$STEAM_BUILDER_USERNAME"' in upload["run"]
+    assert "Successfully finished AppID" in upload["run"]
+    delete = next(s for s in job["steps"] if "gh release delete" in s.get("run", ""))
+    assert delete.get("if", "success()") == "success()" and names.index(delete["name"]) > names.index(cleanup["name"])
+
+
+def test_steam_upload_checks_the_draft_and_the_commit_before_any_login():
+    job = steam()["jobs"]["upload"]
+    names = [s.get("name", s.get("uses")) for s in job["steps"]]
+    verify = next(s for s in job["steps"] if "steam_upload.py verify" in s.get("run", ""))
+    on_main = next(s for s in job["steps"] if "merge-base --is-ancestor" in s.get("run", ""))
+    render = next(s for s in job["steps"] if "steam_upload.py render" in s.get("run", ""))
+    login = names.index("Restore the builder login (owner's secret)")
+    assert names.index(verify["name"]) < names.index(on_main["name"]) < names.index(render["name"]) < login
+    assert "refs/remotes/origin/main" in on_main["run"]
+
+
+def test_steam_upload_runs_only_for_the_owner_on_main():
+    # Review I1 (#2155): the environment's branch policy is a repository setting the workflow cannot see; the job also
+    # refuses itself any run not started by the repository owner (stage and the nightly dispatch as the owner) on main.
+    guard = steam()["jobs"]["upload"]["if"]
+    assert "github.ref == 'refs/heads/main'" in guard
+    assert "github.triggering_actor == github.repository_owner" in guard and "&&" in guard
+
+
+def test_steam_upload_record_hash_comes_from_the_dispatch():
+    # Review (a review agent, k2 C1): the draft can be edited after stage; the dispatch input cannot.
+    inputs = triggers(steam())["workflow_dispatch"]["inputs"]
+    assert inputs["record_sha256"]["required"] is True
+    first = steam()["jobs"]["upload"]["steps"][0]
+    assert "^[0-9a-f]{64}$" in first["run"] and first["env"]["RECORD_SHA256"] == "${{ inputs.record_sha256 }}"
+    verify = next(s for s in steam()["jobs"]["upload"]["steps"] if "steam_upload.py verify" in s.get("run", ""))
+    assert '--record-sha256 "$RECORD_SHA256"' in verify["run"]
+
+
+def test_a_refused_steam_upload_fails_loudly():
+    # Review (k2 C4): a run the guard refuses must fail, not show a green skipped job.
+    jobs = steam()["jobs"]
+    refused = jobs["refused"]
+    assert refused["if"] == "!(" + jobs["upload"]["if"] + ")"
+    assert "environment" not in refused and refused["permissions"] == {}
+    assert any("exit 1" in s.get("run", "") for s in refused["steps"])
+    assert "secrets." not in yaml.safe_dump(refused)
+
+
+def test_the_login_cache_is_written_where_either_steamcmd_layout_reads_it():
+    # Review (k2 H1): where the tarball's steamcmd keeps config/ is unconfirmed; both candidates get it and both go.
+    job = steam()["jobs"]["upload"]
+    restore = next(s for s in job["steps"] if s.get("name") == "Restore the builder login (owner's secret)")
+    for path in ('"$HOME/Steam/config/config.vdf"', '"$RUNNER_TEMP/steamcmd/config/config.vdf"'):
+        assert path in restore["run"]
+    cleanup = next(s for s in job["steps"] if s.get("if") == "always()")
+    assert '"$HOME/Steam"' in cleanup["run"] and '"$RUNNER_TEMP/steamcmd"' in cleanup["run"]

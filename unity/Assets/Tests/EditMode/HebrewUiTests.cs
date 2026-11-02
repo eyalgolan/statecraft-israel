@@ -90,6 +90,18 @@ public class HebrewUiTests
         }
     }
 
+    // #2198: the Arms purchase refused at the debt ceiling reaches the end-of-turn toast (ReasonText) in both languages.
+    [Test]
+    public void TheArmsDebtCeilingRefusalHasAStringInBothLanguages()
+    {
+        var reason = Statecraft.Sim.Pools.RefusedDebtCeiling;
+        Assert.AreEqual(reason, SimBridge.ReasonText(En, reason), "the English string is the sim's own");
+        var he = SimBridge.ReasonText(He, reason);
+        Assert.AreNotEqual(reason, he, "no Hebrew string for: " + reason);
+        StringAssert.IsMatch("[א-ת]", he, reason);
+        StringAssert.DoesNotMatch("[A-Za-z]", he, reason);
+    }
+
     // #2072: every Combat.Check and Training.Reinforce refusal (their Refused* constants) has a string in both files. Each
     // format is filled with distinct values as the sim fills it (a multi-word town, a real course, different numbers) and read
     // with content: the English is the sim's own text, the Hebrew is its line with the Hebrew town and course in their slots,
@@ -421,7 +433,43 @@ public class HebrewUiTests
         finally { restore(); }
     }
 
-    static void Directed(IList<TextElement> texts, string after)
+    /// <summary>#1915: a city panel built in a game started in Hebrew reads in the right order from the first frame: its
+    /// right-column lines and its project buttons are built where they stand (GddHexPanel's Line and Button set the words
+    /// once the element is on the panel), so UiDirection's change callback gives each its own direction. Uses the #1688
+    /// tour fixture's city - the one in the issue's capture - whose projects show. Red-first: the lines and buttons were
+    /// built with their words before they joined the panel, no text change reached UiDirection, and no trigger walks the
+    /// tree before the player reads the panel.</summary>
+    [UnityTest]
+    public IEnumerator TheCityPanelReadsRightToLeftWhenTheGameStartsInHebrew()
+    {
+        var restore = OnTexture(1920, 1080);
+        try
+        {
+            var inputs = new GameInputs { Content = AdvisorTour1688Fixture.Content(),
+                Map = GameInputs.MapFromDisk(Paths.Content, Paths.StreamingMap), Goldens = new GoldenData() };
+            var game = Object.FindFirstObjectByType<GameRoot>();
+            game.Store = new SaveStore(saveDir);
+            game.Language = UiLanguage.Hebrew;
+            game.Begin(inputs, 0);
+            for (int i = 0; i < 2; i++) yield return null;
+
+            var city = AdvisorTargets.CityHex(game.Bridge!.Content, game.Bridge.State)!.Value;
+            game.Info!.Show(city.q, city.r);   // built by the tour or a map click: no UI submit, click or turn follows
+            for (int i = 0; i < 2; i++) yield return null;
+
+            var texts = Ui.Q<VisualElement>(GddHexPanel.HostName).Query<TextElement>().ToList()
+                .Where(t => !string.IsNullOrEmpty(t.text)).ToList();
+            Assert.IsNotEmpty(texts, "the city panel's right column has lines");
+            Assert.IsTrue(texts.Any(t => UiDirection.HasRightToLeft(t.text)), "the column mixes Hebrew with numbers");
+            Directed(texts, "the city panel's lines in a game started in Hebrew");
+            var buttons = Ui.Q<VisualElement>(GddHexPanel.ProjectsHostName).Query<Button>().ToList();
+            Assert.IsTrue(buttons.Any(b => b.name.StartsWith("city-project-", StringComparison.Ordinal) && b.name != GddHexPanel.ToggleName), "the city in the #1915 capture shows its project buttons");
+            Directed(buttons, "the city panel's project buttons in a game started in Hebrew");
+        }
+        finally { restore(); }
+    }
+
+    static void Directed(IReadOnlyList<TextElement> texts, string after)
     {
         Assert.IsNotEmpty(texts, after);
         foreach (var t in texts)
@@ -465,7 +513,7 @@ public class HebrewUiTests
         ("settings-sound-label", "settings.sound"), ("settings-sound-off", "settings.sound.off"),
         ("settings-sound-low", "settings.sound.low"), ("settings-sound-high", "settings.sound.high"),
         ("settings-advisors-label", "settings.advisors"), ("settings-language-label", "settings.language"),
-        ("settings-uiscale-label", "settings.uiscale"),
+        ("settings-uiscale-label", "settings.uiscale"), ("settings-companion-label", "settings.companion"),   // #1119
         ("settings-community-label", "settings.community"), ("settings-star", "community.star"), ("start-star", "community.star"),
         ("settings-report", "feedback.open"), ("start-report", "feedback.open"), ("feedback-title", "feedback.open"),   // #1169
         ("hud-star", "community.star"), ("hud-report", "feedback.open"), ("hud-share", "share.open"),   // #1236
@@ -475,6 +523,7 @@ public class HebrewUiTests
         ("share-attach", "share.attach"), ("share-close", "report.close"),
         ("start-source", "start.source"), ("start-recording-credit", "start.recording_credit"),
         ("start-continue", "start.continue"), ("start-new-game", "start.new_game"),
+        ("start-quit", "ui.quit"), ("settings-quit", "ui.quit"),   // #2153
     };
 
     /// <summary>Static texts that stay as Game.uxml writes them in every language: the game's name, and the Declaration's

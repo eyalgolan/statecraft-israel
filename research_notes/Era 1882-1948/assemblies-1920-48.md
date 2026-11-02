@@ -7,6 +7,9 @@ research part only, opened by the owner's ruling of 22 October 2026 on #49). Res
 for the game, and no file in `content/` is changed. `legislatures.yaml`, `parties.yaml`, `governments.yaml` and the
 coalition test stay paused.
 
+(1 Nov 2026) Third pass for issue #82 (part 2, after the offices note in PR #2146): section 10 at the end adds JTA bulletins read on 1 November 2026 and
+a pointer in section 6. Nothing above it is reworded.
+
 ## Purpose
 
 Fix, from the best sources reachable, the facts #89 asks for: the four Assemblies of Representatives (Asefat
@@ -481,6 +484,9 @@ not read, so no tally and no complete yearly series. Dated JTA bulletins [V] sho
 - 25 September 1940 (dispatch datelined 25 September, bulletin of 26 September): the Assembly, "holding its eighth extraordinary session, today adopted a budget for the coming year"
   (JTA-400926). The bulletin's figures are garbled by the scan ("1480,000 income and 1170,000 expenditures", with "L130,000" in
   Government grants in the same text), so the amounts are not used.
+  (1 Nov 2026, third pass, issue #82) Later read clearly: the amounts of this budget, and the emergency taxes inside it, were read from the
+  bulletin's page image and are set out in `research_notes/Era 1882-1948/national-funds-1882-1948.md` section 8d (added in PR #2144, not merged
+  when this was written). They are not repeated here; the "not used" above is the second pass as written on 24 October.
 - 9 March 1942 (dispatch datelined 9 March, bulletin of 10 March): the three-day session, opened "today", "will also vote on the budget for the Vaad Leumi" (JTA-420310).
 - 26 and 30 March 1943: on 26 March (JTA-430328, bulletin of 28 March) the Assembly "was asked today to approve a $7,400,000 budget to meet the needs of Palestine's
 Jews", of which the Government would give $400,000 (JTA-430328); on 30 March (JTA-430331, bulletin of 31 March) it "today approved a budget of $680,000 to finance
@@ -645,3 +651,112 @@ beyond EJ-PL and NAOR, and its full list of sittings.
 Where to look next: Attias, *Sefer ha-Te'udot shel ha-Va'ad ha-Le'ummi* (1963) and *Knesset Israel be-Eretz Israel*
 (1944); the Mandate reports for 1920 to 1928 on UNISPAL; the Hebrew press of April 1920, December 1925, January 1931 and
 August 1944 on the National Library's site, from a browser.
+
+## 10. Third pass, 1 November 2026 (issue #82, part 2)
+
+Opened and read on 1 November 2026 (agent read 2026-11-01; a person's check pending): the JTA archive bulletins listed below, found with the archive's
+`wp-json` search (single words: "Hanivcharim", "Nivcharim", "Vaad Leumi budget", "Vaad Leumi executive"; the searches are listed in 10.5), and for each one
+the original bulletin PDF at pdfs.jta.org, whose page image was run through `tesseract` at 200 and 300 dpi to read the dateline. Where a page image
+was also looked at by eye, the entry says "page image read"; otherwise the dateline is the OCR text only. Dispatch datelines are one day or more
+before the bulletin date, as explained under the source table. Every [V] in this section reads `[V, agent read 2026-11-01; a person's check pending]`
+in full; "computed here" is a check, not a source. Sources not listed here were not opened for this section. The JTA archive starts in 1923, so
+the 1920 rows (§2) are untouched.
+
+| Key | Source | Used for |
+|---|---|---|
+| JTA-341213 | Jewish Daily Bulletin (JTA archive), "Vaad Seeks Group Unity in Palestine", 13 December 1934, https://www.jta.org/archive/vaad-seeks-group-unity-in-palestine; PDF http://pdfs.jta.org/1934/1934-12-13_3022.pdf | extraordinary session, budget estimate (10.3) |
+| JTA-350509 | Jewish Daily Bulletin, "Vaad Leumi Budget is Approved", 9 May 1935, https://www.jta.org/archive/vaad-leumi-budget-is-approved; PDF http://pdfs.jta.org/1935/1935-05-09_3140.pdf (the web page carries only the first sentence; the rest is on page 3 of the PDF) | government approval of a budget (10.3) |
+| JTA-410516 | JTA, News Brief, 16 May 1941, https://www.jta.org/archive/long-standing-opposition-against-the-vaad-leumi-jewish | revolt of the Right (10.3) |
+| JTA-410523 | JTA, "Division Among Palestine Jews Averted As Rightists Get More Representation", 23 May 1941, https://www.jta.org/archive/division-among-palestine-jews-averted-as-rightists-get-more-representation; PDF http://pdfs.jta.org/1941/1941-05-23_138.pdf | agreement of May 1941 (10.3) |
+| JTA-440731 | JTA, "Palestine Jews Go to Polls Tomorrow, Right-wing Parties Still Boycotting Elections", 31 July 1944, https://www.jta.org/archive/palestine-jews-go-to-polls-tomorrow-right-wing-parties-still-boycotting-elections; PDF http://pdfs.jta.org/1944/1944-07-31_175.pdf | election day, the vote not to postpone (10.1) |
+| JTA-440803 | JTA, "Elections Held in Palestine Despite Boycott by Some Groups; 60% of Voters Cast Ballots" (the web title prints "6%"), 3 August 1944, https://www.jta.org/archive/elections-held-in-palestine-despite-boycott-by-some-groups-6-of-voters-cast-ballots; PDF http://pdfs.jta.org/1944/1944-08-03_178.pdf | election day, turnout estimate (10.1) |
+| JTA-440804 | JTA, "Labor Party Triumphs in Palestine Elections; Gets 42 Percent of All Votes", 4 August 1944, https://www.jta.org/archive/labor-party-triumphs-in-palestine-elections-gets-42-percent-of-all-votes; PDF http://pdfs.jta.org/1944/1944-08-04_179.pdf | preliminary results (10.1) |
+| JTA-441208 | JTA, "Jewish National Assembly Rejects Partition Plans for Palestine; Wants Jewish State", 8 December 1944, https://www.jta.org/archive/jewish-national-assembly-rejects-partition-plans-for-palestine-wants-jewish-state; PDF http://pdfs.jta.org/1944/1944-12-08_289.pdf | the special session (10.2) |
+| JTA-460215 | JTA, "Jewish Agency Policies Under Fire at Meeting of National Assembly", 15 February 1946, https://www.jta.org/archive/jewish-agency-policies-under-fire-at-meeting-of-national-assembly; PDF http://pdfs.jta.org/1946/1946-02-15_039.pdf | the February 1946 meeting (10.2) |
+| JTA-470521 | JTA, "Jewish National Assembly in Palestine Discusses U.N. and Curbing of Extremists", 21 May 1947, https://www.jta.org/archive/jewish-national-assembly-in-palestine-discusses-u-n-and-curbing-of-extremists; PDF http://pdfs.jta.org/1947/1947-05-21_118.pdf | the fifth session opens (10.2) |
+| JTA-470523 | JTA, "Ben Gurion Asks Independence in Jewish Parts of Palestine, Present Mandate Elsewhere", 23 May 1947, https://www.jta.org/archive/ben-gurion-asks-independence-in-jewish-parts-of-palestine-present-mandate-elsewhere (web text only; PDF not opened) | the concluding session's resolutions (10.2) |
+| JTA-471003 | JTA, "Palestine Assembly Asks U.N. to Set Up Jewish Govt. Ben Gurion Sees Cunningham", 3 October 1947, https://www.jta.org/archive/palestine-assembly-asks-u-n-to-set-up-jewish-govt-ben-gurion-sees-cunningham; PDF http://pdfs.jta.org/1947/1947-10-03_229.pdf | the extraordinary session (10.2) |
+| JTA-471107 | JTA, "Plans for Election of Provisional Jewish Government Being Mapped by Zionist Bodies", 7 November 1947, https://www.jta.org/archive/plans-for-election-of-provisional-jewish-government-being-mapped-by-zionist-bodies; PDF http://pdfs.jta.org/1947/1947-11-07_259.pdf | who should elect a provisional government (10.2) |
+| JTA-471224 | JTA, "Mapped for Election of First Provisional Jewish Parliament in Palestine", 24 December 1947, https://www.jta.org/archive/mapped-for-election-of-first-provisional-jewish-parliament-in-palestine; PDF http://pdfs.jta.org/1947/1947-12-24_298.pdf | the plan for new Assembly elections (10.2) |
+
+### 10.1 The 1944 election day and the boycott (adds to §5 "Date", "Who boycotted" and "Voters")
+
+- JTA-440731, bulletin of Monday 31 July 1944, dispatch datelined "JERUSALEM, July 30" (dateline and first sentence read on the page image): "On the eve of the elections to the Assefath Hanivcharim ...,
+  which are scheduled for Tuesday". 1 August 1944 was a Tuesday (computed here). [V, agent read 2026-11-01; a person's check pending]
+- JTA-440803, bulletin of Thursday 3 August 1944, dispatch datelined "JERUSALEM, Aug. 2" (dateline and first sentence read on the page image): the Assembly's elections "took place yesterday", so 1 August.
+  The page's own headline says "60% of voters cast ballots"; the archive web title prints "6%", a slip of the web copy. [V, agent read 2026-11-01; a person's check pending]
+- Effect on §5 "Date": the [C] between 1 August (EJ-PL, UN-JA11) and 2 August (AJYB-46, he.wiki) stays, and both values stay. 1 August now has two dated contemporary
+  bulletins behind it (above) in addition to the Vaad Leumi's own cable; the preferred value is unchanged.
+- How the Vaad Leumi decided to hold the vote (JTA-440731, OCR of the 300 dpi page and the archive web text) [V, agent read 2026-11-01; a person's check pending]: "a special meeting of the executive committee of the Jewish
+  National Council voted not to postpone the elections", but allowed "additional slates to be filed up until tomorrow evening" (so until 31 July by the dateline). No tally of that vote is given.
+  The five right-wing groups named are "the Revisionists, the General Zionists B, the Sephardin, the Landlords Association and the Farmers Association"; they had held a rally in Tel Aviv
+  "during the week-end", repeated their demand for postponement and "decided to lay the foundations for a right-wing bloc". This is one group more than JTA-440810 lists (it omits the
+  Landlords Association) and agrees with AJYB-46's "Landowners" (§5).
+- Turnout in three dated steps [V, agent read 2026-11-01; a person's check pending]: an estimate on 2 August of "sixty percent of the 350,000 Jews in Palestine ... entitled to vote" (JTA-440803);
+  preliminary results on 3 August (bulletin of 4 August) "nearly 200,000 persons voted ... about 72 percent of the total entitled to vote" (JTA-440804, dateline "JERUSALEM, Aug. 3", OCR);
+  the final 200,881 in JTA-440810 (§5). Only the last matches a figure in the table in §5, and the three entitled-to-vote bases (350,000, about 278,000 implied by 72%, computed here, and 300,018) are not reconciled [C].
+- The same preliminary bulletin says 42 percent of the votes went to the Palestine Labor Party, which "will probably get sixty-five seats" (JTA-440804) [V, agent read 2026-11-01; a person's check pending]. The Vaad Leumi's table (§5)
+  gives Mapai and non-party members 73,667 of 202,448 votes, 36.4% of all ballots including the 2,581 "disqualified and blank", or 36.9% of the 199,867 valid votes (both computed here), so either way the bulletin's 42% has a basis that is not stated [C]; it is a preliminary figure, replaced by JTA-440810 (64 seats), and is not
+  added to the seats table.
+
+### 10.2 The fourth Assembly's sessions after the first, and how they decided (adds to §1 and §5)
+
+§1 quotes EJ-GOV's count of sessions per Assembly, which for the fourth Assembly reads "the fourth seven". The bulletins below give dated sessions; no bulletin read numbers all of them, so they are not matched to the seven.
+
+| Date | What the bulletin says | Source | How it decided |
+|---|---|---|---|
+| 12 September 1944 | first session (§5) | JTA-440913, JTA-440910 | election of the 42-member Vaad Leumi (AJYB-46, §5) |
+| 7 December 1944 (dispatch datelined 7 December; bulletin of 8 December, OCR) | "The special session ... concluded after adopting a number of resolutions" demanding a Jewish State and rejecting partition "as contrary to the historic and religious national bonds", asking that control of immigration go to the Jewish Agency, and appealing for the rescue of orphans | JTA-441208 [V, agent read 2026-11-01; a person's check pending] | resolutions adopted; no vote count given. Moshe Shertok spoke for the Agency executive |
+| 14 February 1946 (dispatch datelined 14 February; bulletin of 15 February, OCR) | Shertok reported to the Assembly on political developments; the Agency was "under fire from both the right and the left" (Hashomer Hatzair and Aliyah Hadashah on the Agency's demands, Mizrachi and Tenua Leachduth Avoda on its inaction) | JTA-460215 [V, agent read 2026-11-01; a person's check pending] | no resolution or vote in this bulletin; "most of the delegates seemed united" only on the severance of Transjordan |
+| 20 May 1947 (dispatch datelined 20 May; bulletin of 21 May, OCR) | the Assembly "today opened its fifth session, since the present body was elected in 1944"; opened by the chairman of the Jewish National Council, David Remez | JTA-470521 [V, agent read 2026-11-01; a person's check pending] | not yet: the bulletin expects "a battle" over partition |
+| 22 May 1947 (the day is from JTA-470525, §7, "elected last night" in a dispatch datelined 23 May; the 23 May bulletin's web text gives no day), the concluding session (bulletin of 23 May, web text only) | the Assembly "adopted resolutions calling for the immediate establishment of a Jewish state and an agreement with the Arabs" and condemned terrorism; on the night of 22 May it elected the new Vaad Leumi (§7, JTA-470525) | JTA-470523 [V, agent read 2026-11-01; a person's check pending] | resolutions adopted; no tally. Whether a speaker's proposal for a state in part of Palestine was put to a vote is not stated |
+| 2 October 1947 (dispatch datelined 2 October; bulletin of 3 October, OCR) | an "extraordinary session" asked the United Nations to set up a temporary Jewish government in the Jewish area and authorised "all Jewish national bodies" to "impose a regime of discipline and voluntary national mobilization" | JTA-471003 [V, agent read 2026-11-01; a person's check pending] | "a series of resolutions" after the Jewish Agency chairman's address; no tally |
+
+Elections that were planned and, in the sources read, not held. JTA-471107 (dispatch datelined 6 November 1947, OCR) [V, agent read 2026-11-01; a person's check pending]: the Jewish Agency was
+considering a Constituent Assembly made of the Actions Committee, the Agency executive and its plenum; "there has been no final decision ... as to what group will elect the new provisional government";
+the right-wing Citizens Bloc wanted it elected only by residents and demanded a meeting of the Assefath Hanivcharim "which it has been boycotting for several years", enlarged to groups not
+represented. JTA-471224 (dispatch datelined 23 December 1947, OCR) [V, agent read 2026-11-01; a person's check pending]: the chairman of the Jewish National Council said "all preparations have been made to
+hold elections soon" for the Assembly, which "will function as the first provisional Jewish Parliament", and that the Provisional Government would rest on the Assembly and the Zionist Actions
+Committee until a permanent parliament; the Jewish National Council would hand all its functions to it. No bulletin read reports such an election. §8 records the People's Council of April 1948
+as appointed (EJ-PL), not elected.
+
+Effect on the [GAP] "whether the 1944 boycotters later joined the Vaad Leumi" (§5, §9): narrowed, not closed. In November 1947 a right-wing "Citizens Bloc" was still boycotting the Assembly (JTA-471107).
+The bulletin does not say that this bloc is made of the five groups of 1944, and it speaks of the Assembly, not of the Vaad Leumi. A person's reading of the Hebrew press is the way to close it.
+
+### 10.3 The Vaad Leumi's budget and executive (adds to §6 and §7)
+
+- 12 December 1934 (JTA-341213, dispatch datelined "JERUSALEM, Dec. 12", OCR of the 300 dpi page) [V, agent read 2026-11-01; a person's check pending]: the Assembly's "extraordinary session" opened; the Vaad Leumi's president
+  said the Council was negotiating with Jewish groups outside it to affiliate; its treasurer "told the conference that the budget for the coming year was estimated at £1,130,000
+  (approximately $5,600,000)"; a Revisionist delegation attended. An estimate told to the Assembly, not a vote; the bulletin does not say that the Assembly voted it. It dates the Assembly's budget debate in 1934, a
+  year §6 had no entry for.
+- 8 May 1935 (JTA-350509, dispatch datelined "JERUSALEM, May 8", continued on page 3, OCR of the 300 dpi page) [V, agent read 2026-11-01; a person's check pending]: "The Palestine government today approved the annual budget of the Vaad Leumi, the Jewish National Council
+  of Palestine, which provides for an income of $566,000 and expenditures of approximately the same amount." This is the Government's approval that §6 reads from regulation 13(6) (the budget "shall not take effect until approved");
+  the bulletin does not cite the regulation, so the link is this note's reading. It is the only dated Government approval of a Vaad Leumi budget found.
+- The two amounts differ by a factor of about ten (5,600,000 / 566,000 = 9.9, computed here), as the 1943 pair does (§6), and the bulletins print different currencies. Whether the 1934 figure is the whole community's need
+  and the 1935 figure the Vaad Leumi's own budget, as with 1943, is not stated [C]. Neither is preferred.
+- 16 and 22 May 1941: a conference of "center and rightist groups, including local Jewish communities, the Manufacturers' Association, the Maccabi and the Zionist-Revisionists" sent the Vaad Leumi and the Agency executive an
+  ultimatum that "separate institutions would be established unless an agreement was reached by Sunday" (JTA-410516, dateline not read) [V, agent read 2026-11-01; a person's check pending]. In the bulletin of 23 May 1941 (JTA-410523, dispatch datelined "JERUSALEM, May 22", OCR)
+  [V, agent read 2026-11-01; a person's check pending] the Agency executive "ratified an agreement between the Vaad Leumi executive and the Right bloc allotting the rightists satisfactory representation"; the daily Haaretz is quoted that the only opponent
+  of the agreement was Isaac Gruenbaum, a General Zionist leader, and the bulletin adds that influential circles had asked the Government to mediate between the Vaad Leumi executive and Agudath Israel. The bulletin gives no seats and does not say which body the representation is in.
+  So this is a dated change in who was represented in the Vaad Leumi's leadership in 1941, and the party make-up of the executive after it stays [GAP] (§7).
+
+### 10.4 Rows narrowed by this pass
+
+| Row | Before | After |
+|---|---|---|
+| §5 1944 election date [C] | 1 August (EJ-PL, UN-JA11) against 2 August (AJYB-46, he.wiki) | still [C]; 1 August also in two dated bulletins (10.1) |
+| §5/§9 whether the 1944 boycotters later joined | [GAP] | [GAP], narrowed: a right-wing bloc still boycotted the Assembly in November 1947 (10.2) |
+| §6/§9 dates, amounts and tallies of the budget votes | only 1932, 1940, 1943 dated | adds a December 1934 estimate (£1,130,000) and the Government's approval of 8 May 1935 ($566,000); tallies still [GAP] (10.3) |
+| §6 the 1940 amounts | "garbled, not used" | read in PR #2144, cross-referenced, not repeated |
+| §7 executives by party | [GAP] | [GAP]; adds the May 1941 agreement on the Right's representation, without seats (10.3) |
+| §8 People's Council, "full list of sittings" | [GAP] | [GAP]; this pass read only the Assembly's sessions (10.2), not the People's Council's |
+
+### 10.5 What was searched and not found
+
+JTA wp-json archive searches on 1 November 2026, with the number of items returned: "Vaad Leumi executive" 1941-01-01 to 1948-06-01, 27; "Vaad Leumi budget" 1941-01-01 to 1948-06-01, 3; "Vaad Leumi budget" 1944-01-01 to 1948-06-01, 0;
+"Vaad Leumi taxes" and "Vaad Leumi tax" 1944-01-01 to 1948-06-01, 2 each; "Hanivcharim" 1941-01-01 to 1948-06-01, 62; "Nivcharim" same period, 59; "Vaad Leumi budget" 1933-01-01 to 1940-01-01, 18;
+"Vaad Leumi Assembly budget" 1926-01-01 to 1933-01-01, 9. Titles were scanned and the items in 10.1 to 10.3 read; no item gave a party list for any Vaad Leumi executive other than 1939 (§7), a vote tally for any budget, the 4 May 1948
+list of People's Council sittings, or the day of the 1925 Yemenite poll. Not reachable from here and so not tried: the Hebrew press (National Library of Israel, JPress) and the Central Zionist Archives, which answer 403 from this server; no
+request header was changed. Attias, *Sefer ha-Te'udot shel ha-Va'ad ha-Le'ummi*, was not found online. The cross-references to what other notes already cover: the heads of the Vaad Leumi are in `research_notes/Era 1882-1948/offices-1882-1948.md`
+(section 4.1 for the chairmen and section 4.2 for the departments; the section 9 added there by #2146, now merged, covers who held the player's office by date and points back to this note); the amounts of the 1938 to 1941 levies and the 1940 budget are in `research_notes/Era 1882-1948/national-funds-1882-1948.md` section 8d (PR #2144); the Vaad Leumi's
+Kofer HaYishuv decision is in `research_notes/Era 1882-1948/model-policies-1882-1948.md` section 4; the March 1943 Assembly session (JTA-430328, §6) is also used in `research_notes/Era 1882-1948/events-1939-45.md` for the figures on Jewish men in the forces.
