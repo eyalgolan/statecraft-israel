@@ -3,6 +3,8 @@ using NUnit.Framework;
 using Statecraft.Game.Map.Units;
 using UnityEditor.Animations;
 using UnityEngine;
+using UnityEngine.TestTools.Constraints;
+using Is = UnityEngine.TestTools.Constraints.Is;
 using Object = UnityEngine.Object;
 
 /// <summary>#1866 and #1867 (design by Tal Heuberger, #1900): a token's slide, its figures' walk and idle, and the
@@ -230,6 +232,17 @@ public class UnitTokenMotionTests
         motion.ContinueAttack(0.3f);   // the take is 0.2 s
         Assert.IsFalse(motion.Attacking, "the take had finished");
         Assert.IsTrue(In(a, UnitFigureMotion.Idle), "the figure stands idle");
+    }
+
+    /// <summary>Review of #2176, item 5 (#1900's test, in our words): switching a figure between walk and idle, as every
+    /// slide's start and end does, allocates nothing.</summary>
+    [Test]
+    public void PlayingAStateDoesNotAllocate()
+    {
+        var a = Figure();
+        for (int i = 0; i < 5; i++) { UnitFigureMotion.Play(a, UnitFigureMotion.Walk); a.Update(0f); }
+        Assert.That(() => { UnitFigureMotion.Play(a, UnitFigureMotion.Walk); UnitFigureMotion.Play(a, UnitFigureMotion.Idle); },
+            Is.Not.AllocatingGCMemory());
     }
 
     [Test]

@@ -11,7 +11,9 @@ using Statecraft.Sim;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.TestTools.Constraints;
 using UnityEngine.UIElements;
+using Is = UnityEngine.TestTools.Constraints.Is;
 
 /// <summary>GDD Phase 5 PR 14 (#753; impact plan §2.6): in the GDD loop the map's army tokens come from the sim's units
 /// (GameState.Units), one per unit on its sim hex, and a token's figures follow Q-UI-3, not the call-up. The squadron and
@@ -494,6 +496,33 @@ public class UnitsFromStateTests
             Assert.AreEqual(0.3f, b.GetCurrentAnimatorStateInfo(0).normalizedTime, 0.02f, "from 0.3 s into the 1 s take");
         }
         finally { UnityEngine.Object.DestroyImmediate(map.gameObject); UnityEngine.Object.DestroyImmediate(controller); UnityEngine.Object.DestroyImmediate(fire); }
+    }
+
+    /// <summary>Review of #2176, item 5 (#1900's test, in our words): a slide is the one time FaceCamera's whole loop runs
+    /// every frame with a still camera, and each slide frame hands the map's names the other KeepClear list. Neither
+    /// allocates (per-frame garbage stutters on WebGL).</summary>
+    [Test]
+    public void FacingASlidingTokenDoesNotAllocate()
+    {
+        var map = BuildMap();
+        var eye = new GameObject("SlideCamera");
+        try
+        {
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.AnimateMoves = true;
+            layer.Show(C, NewGame());
+            var motion = map.Terrain.transform.Find(UnitLayer.RootName).GetComponentInChildren<UnitTokenMotion>(true);
+            Assert.IsNotNull(motion, "fixture: a play build gives the tokens their motion");
+            var cam = eye.AddComponent<Camera>(); cam.farClipPlane = 1e6f;
+            motion.Begin(new Vector3(30000f, 0f, 0f));
+            for (int k = 0; k < 5; k++) { motion.Tick(0.001f); layer.FaceCamera(cam); }   // warm up: both lists grown
+            var before = layer.KeepClear;
+            Assert.That(() => { for (int k = 0; k < 50; k++) { motion.Tick(0.001f); layer.FaceCamera(cam); } }, Is.Not.AllocatingGCMemory());
+            Assert.IsTrue(motion.Moving, "the token slid throughout");
+            motion.Tick(0.001f); layer.FaceCamera(cam);
+            Assert.AreNotSame(before, layer.KeepClear, "the measured frames were slide frames that hand the names a list");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(eye); UnityEngine.Object.DestroyImmediate(map.gameObject); }
     }
 
     /// <summary>New Game (SimBridge.Replace) shows another game whose sim ids are the old game's (review of #2176, H4): its
