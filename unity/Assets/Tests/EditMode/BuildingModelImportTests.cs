@@ -144,8 +144,11 @@ public class BuildingModelImportTests
                 Assert.GreaterOrEqual(setting.maxTextureSize, Math.Max(width, height), path + " " + target + " keeps source size");
                 Assert.IsFalse(setting.crunchedCompression, path + " " + target);
             }
+            // Imported at the source size, or at the active target's cap where it overrides one (the houses on WebGL: 2048).
+            var active = imp.GetPlatformTextureSettings(EditorUserBuildSettings.activeBuildTarget == BuildTarget.WebGL ? "WebGL" : "Standalone");
+            int cap = active.overridden ? active.maxTextureSize : imp.maxTextureSize;
             var tex = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
-            Assert.AreEqual(width, tex.width, path + " source width"); Assert.AreEqual(height, tex.height, path + " source height");
+            Assert.AreEqual(Math.Min(width, cap), tex.width, path + " imported width"); Assert.AreEqual(Math.Min(height, cap), tex.height, path + " imported height");
             Assert.Greater(tex.mipmapCount, 1, path + " imported mipmaps");
         }
     }

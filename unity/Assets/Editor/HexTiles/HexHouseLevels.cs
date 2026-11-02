@@ -43,6 +43,16 @@ namespace Statecraft.HexTiles
         public const float MaxError = 0.005f;
 
         public static string Stem(string id) => Folder + id + "/" + id;
+
+        /// <summary>The width in texels of the material's colour map as delivered (its importer's source size), not as imported
+        /// for the active build target, which a platform cap shrinks (WebGL: 2048, owner 2 November 2026). The seam tolerance
+        /// is measured in source texels, so the lighter levels come out the same under every build target.</summary>
+        public static int SourceTexels(Material material)
+        {
+            var importer = (TextureImporter)AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(material.mainTexture));
+            importer.GetSourceTextureWidthAndHeight(out int width, out _);
+            return width;
+        }
         public static string LightStem(string id) => Stem(id) + "-light";
 
         [Serializable]
@@ -71,7 +81,7 @@ namespace Statecraft.HexTiles
                 if (prefab == null || filter == null || filter.sharedMesh == null || material == null || material.mainTexture == null)
                     throw new InvalidOperationException("missing source house " + id);
                 var source = filter.sharedMesh;
-                var light = Simplify(source, UvToleranceTexels / material.mainTexture.width, EdgeTolerance, MaxError);
+                var light = Simplify(source, UvToleranceTexels / SourceTexels(material), EdgeTolerance, MaxError);
                 light.name = id + "-light";
 
                 // Copied into the existing asset on a rebuild, so the prefab's reference (the asset's GUID) holds.

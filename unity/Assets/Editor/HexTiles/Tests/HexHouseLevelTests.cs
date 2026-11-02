@@ -100,15 +100,26 @@ public class HexHouseLevelTests
 
     /// <summary>The checks above test the committed -light files, so a broken HexHouseLevels.Simplify would only show at the
     /// next rebuild (owner, PR #1994, 30 October 2026). This runs it on house 04, the one the Tiberias boards draw, with
-    /// Build's settings, and holds the fresh mesh to the same seam and texture promises.</summary>
+    /// Build's settings, and holds the fresh mesh to the same seam and texture promises. The tolerance is in the colour map's
+    /// source texels (4096), not its imported ones, which the WebGL cap halves (owner, 2 November 2026): so under the WebGL
+    /// and the desktop editor targets alike the fresh mesh is the committed one, vertex for vertex.</summary>
     [Test]
     public void TheSimplifierKeepsTheSeamsAndTheTextureOfHouse04()
     {
         const string id = "generated-1948-04-dark-basalt-house";
         var source = SourceMesh(id);
-        int texels = AssetDatabase.LoadAssetAtPath<Material>(Stem(id) + ".mat").mainTexture.width;
+        int texels = HexHouseLevels.SourceTexels(AssetDatabase.LoadAssetAtPath<Material>(Stem(id) + ".mat"));
+        Assert.AreEqual(4096, texels, "the delivered colour map's width, whatever the editor's build target");
         var light = HexHouseLevels.Simplify(source, HexHouseLevels.UvToleranceTexels / texels, HexHouseLevels.EdgeTolerance, HexHouseLevels.MaxError);
-        try { KeepsTheSeamsAndTheTexture(id, source, light); }
+        try
+        {
+            KeepsTheSeamsAndTheTexture(id, source, light);
+            var committed = AssetDatabase.LoadAssetAtPath<Mesh>(Light(id) + ".asset");
+            TestContext.WriteLine($"{id} under {EditorUserBuildSettings.activeBuildTarget}: fresh {light.triangles.Length / 3} triangles, committed {committed.triangles.Length / 3}");
+            CollectionAssert.AreEqual(committed.triangles, light.triangles, id + ": the committed lighter level's triangles");
+            CollectionAssert.AreEqual(committed.vertices, light.vertices, id + ": its vertices");
+            CollectionAssert.AreEqual(committed.uv, light.uv, id + ": its UVs");
+        }
         finally { UnityEngine.Object.DestroyImmediate(light); }
     }
 
@@ -147,7 +158,7 @@ public class HexHouseLevelTests
         // of Tal's colour map) and in 3D at once: the texture border moved by at most that, summed over all the steps.
         var sourcePositions = Enumerable.Range(0, sv.Length).GroupBy(i => sv[i]).ToDictionary(g => g.Key, g => g.Count());
         var seams = SeamSegments(lv, luv, lt);
-        int texels = AssetDatabase.LoadAssetAtPath<Material>(Stem(id) + ".mat").mainTexture.width;
+        int texels = HexHouseLevels.SourceTexels(AssetDatabase.LoadAssetAtPath<Material>(Stem(id) + ".mat"));
         float uvTol = HexHouseLevels.UvToleranceTexels / texels * 1.001f;
         float size = source.bounds.size.magnitude, tol3 = HexHouseLevels.EdgeTolerance * size * 1.001f;
         int removed = 0;
