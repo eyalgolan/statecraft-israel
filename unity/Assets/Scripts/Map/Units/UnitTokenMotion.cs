@@ -33,6 +33,7 @@ namespace Statecraft.Game.Map.Units
         float attackLength, resumeAt;   // the playing take's length; where a continued attack picks up
         int posed;     // the walk or idle the figures were last asked for
         readonly List<Animator> animators = new List<Animator>();
+        readonly List<UnitFigurePointFire> aims = new List<UnitFigurePointFire>();
 
         public bool Moving => elapsed < Duration;
         /// <summary>An attack plays, or waits for a figure to play it.</summary>
@@ -76,13 +77,17 @@ namespace Statecraft.Game.Map.Units
 
         /// <summary>Starts the fire take on every live figure that has one (even mid-attack), from its start or, for a
         /// continued attack, from where it was; the attack then lasts as long as the longest take has left. A take that had
-        /// finished plays nothing, so the figures keep their walk or idle (review of #2176, item 8).</summary>
+        /// finished plays nothing, so the figures keep their walk or idle (review of #2176, item 8). A C06 figure holds Tal
+        /// Heuberger's point-fire aim instead, near or far, for its own fire take's length (#2084, UnitFigurePointFire).</summary>
         bool Fire()
         {
             float longest = 0f;
             animators.Clear(); GetComponentsInChildren(false, animators);
+            aims.Clear(); GetComponentsInChildren(false, aims);
             foreach (var animator in animators)
                 if (UnitFigureMotion.CanPlay(animator, UnitFigureMotion.Attack)) longest = Mathf.Max(longest, FireLength(animator));
+            foreach (var aim in aims)
+                if (aim.Ready) longest = Mathf.Max(longest, aim.FireLength);
             if (longest <= 0f) return false;   // no live figure has a fire take yet: keep waiting
             if (longest <= resumeAt) { attackLeft = 0f; resumeAt = 0f; return false; }   // the take had finished
             foreach (var animator in animators)
@@ -93,11 +98,12 @@ namespace Statecraft.Game.Map.Units
                 animator.Play(UnitFigureMotion.Attack, 0, resumeAt > 0f && length > 0f ? Mathf.Clamp01(resumeAt / length) : 0f);
             }
             attackLength = longest; attackLeft = longest - resumeAt; resumeAt = 0f; firing = true;
+            foreach (var aim in aims) aim.Hold();
             return true;
         }
 
         /// <summary>The longest fire take on <paramref name="animator"/>'s controller (reading its clips allocates).</summary>
-        static float FireLength(Animator animator)
+        internal static float FireLength(Animator animator)
         {
             float length = 0f;
             foreach (var clip in animator.runtimeAnimatorController.animationClips)
@@ -120,6 +126,10 @@ namespace Statecraft.Game.Map.Units
             int state = Moving ? UnitFigureMotion.Walk : UnitFigureMotion.Idle;
             bool changed = state != posed, ended = fired;
             posed = state; fired = false;
+            // A held point-fire aim lets go before the Animators are told to walk or stand (it wakes a near one), and is
+            // held again after them (it pauses them).
+            aims.Clear(); GetComponentsInChildren(false, aims);
+            if (!firing) foreach (var aim in aims) aim.Release();
             animators.Clear(); GetComponentsInChildren(false, animators);
             foreach (var animator in animators)
             {
@@ -131,6 +141,7 @@ namespace Statecraft.Game.Map.Units
                 UnitFigureMotion.Play(animator, state,
                     changed || ended && animator.isActiveAndEnabled && animator.HasState(0, UnitFigureMotion.Attack));
             }
+            if (firing) foreach (var aim in aims) aim.Hold();
         }
 
         /// <summary>Advances the move and the attack by <paramref name="seconds"/>; LateUpdate passes the frame's time.</summary>

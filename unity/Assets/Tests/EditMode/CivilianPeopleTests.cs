@@ -515,6 +515,8 @@ public sealed class CivilianPeopleTests
             .Concat(Statecraft.Game.Map.Units.UnitFigures.ByVehicle.Values)
             .Append(Statecraft.Game.Map.Units.UnitFigures.PioneerVeteran);
         placed.UnionWith(units);
+        placed.UnionWith(Statecraft.Game.Map.Units.UnitWeapons.ByFigure.Values);   // #2083: held by the token figures
+        placed.Add(Statecraft.Game.Map.Units.UnitFigurePointFire.PoseFor(Statecraft.Game.Map.Units.UnitFigures.YoungRecruit)!);   // #2084
         placed.UnionWith(Statecraft.Game.Map.Kits.TownModels.Ids); // #1273: 18 originals and five generated houses are catalogued and requested by TownModelLayer
         CollectionAssert.AreEquivalent(new[] { SpecialBuildingModels.Workshop, TownLandmarks.Jerusalem, TownLandmarks.Ramla }, CollectionCatalog.Ids.Where(id => !placed.Contains(id)).ToList(),
             "every catalogued model has a place but b21 and the first Jerusalem, each held back by an owner ruling, and Ramla's town, off until one");
