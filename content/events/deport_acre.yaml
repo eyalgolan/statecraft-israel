@@ -24,9 +24,10 @@ text: 'Acre''s residents have been displaced, and the town is depopulated. Socia
 # (why.cause.place_deported, capture.about.deport). The history sentence is ADAPTED from he.wiki, not quoted: he.wiki's
 # "בימים הראשונים לאחר הכיבוש" (after the conquest) becomes "after Acre surrendered on 18 May 1948", with the day from
 # the section before and the year from the article title; the rest of the clause keeps he.wiki's words.
+# The owner read the Hebrew next to the English and approved it as written (2 Nov 2026: "all approved", confirmed as
+# "hebrew approved", per #2197), so the card no longer carries text_he_review (#2292).
 title_he: עכו התרוקנה מתושביה
 text_he: 'תושבי עכו נעקרו ממקומם, והעיר התרוקנה מתושביה. הלכידות החברתית והתמיכה הבינלאומית ירדו, והתמיכה הבינלאומית תמשיך לרדת עד סוף המשחק. אי אפשר לבנות בה דבר, ואי אפשר לסלול דרכה כביש או מסילת ברזל חדשים. מבחינה היסטורית, בימים הראשונים לאחר שעכו נכנעה ב־18 במאי 1948 נמשכה יציאת התושבים ללבנון ולגליל המרכזי, אולם לא הוצאו פקודות גירוש ולא הופעל לחץ על התושבים לעזוב.'
-text_he_review: agent-checked
 anchor: soft
 tags: [displacement]
 deported: acre

@@ -34,9 +34,12 @@ text: 'Nazareth''s residents have been displaced, and the town is depopulated. S
 # quoted, and departs from HW-NAZ twice: "בעת כיבושה" becomes "when Nazareth surrendered in July 1948, in Operation
 # Dekel" (the IDF account), and "בעיר ובסביבתה" (in and around the city) becomes "near the town", from he.wiki
 # "מבצע דקל" and the IDF account (below), which contradict "in the city".
+# The owner read the Hebrew next to the English and approved it as written (2 Nov 2026: "all approved", confirmed as
+# "hebrew approved", per #2197), then read the changed history line, "...כשנצרת נכנעה ביולי 1948, במבצע דקל, נשארו
+# תושביה במקומותיהם, למרות קרבות שניטשו בסביבת העיר.", and approved it (2 Nov 2026: "Approve as written"), so the card
+# no longer carries text_he_review (#2292).
 title_he: נצרת התרוקנה מתושביה
 text_he: 'תושבי נצרת נעקרו ממקומם, והעיר התרוקנה מתושביה. הלכידות החברתית והתמיכה הבינלאומית ירדו, והתמיכה הבינלאומית תמשיך לרדת עד סוף המשחק. אי אפשר לבנות בה דבר, ואי אפשר לסלול דרכה כביש או מסילת ברזל חדשים. מבחינה היסטורית, כשנצרת נכנעה ביולי 1948, במבצע דקל, נשארו תושביה במקומותיהם, למרות קרבות שניטשו בסביבת העיר.'
-text_he_review: agent-checked
 anchor: soft
 tags: [displacement]
 deported: nazareth
