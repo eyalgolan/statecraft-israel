@@ -98,6 +98,49 @@ public class CollectionOtherLeaveTests
             "a late answer after teardown creates no instance");
         Assert.AreEqual(acquired, released);
     }
+    /// <summary>#2099, as #2046 for the camp tents: the edit-mode render callback (the beginCameraRendering handler itself)
+    /// never acquires or instantiates the special buildings mid-render. A change of residency (here the first camera after the
+    /// layer was disabled and enabled again) only marks the layer, and LateUpdate applies it, as in play mode; once settled, a
+    /// second camera that sees none of them and renders in turn changes nothing. A direct Choose (no render) still applies at
+    /// once.</summary>
+    [Test] public void AnEditModeRenderCallbackDefersTheSpecialBuildingsToLateUpdate()
+    {
+        Assert.IsFalse(Application.isPlaying, "the edit-mode render path");
+        var layer = (SpecialBuildingModels)MapLayer(true);
+        var go = new GameObject("TEST ONLY camera"); var camera = go.AddComponent<Camera>();
+        go.transform.position = new Vector3(0, 10000, 0); go.transform.rotation = Quaternion.Euler(90, 0, 0);
+        var far = new GameObject("TEST ONLY far camera"); var other = far.AddComponent<Camera>();
+        far.transform.position = new Vector3(0, 250000, 0); far.transform.rotation = Quaternion.Euler(90, 0, 0);   // beyond the view exit
+        const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;
+        void Render(Camera cam) => typeof(SpecialBuildingModels).GetMethod("OnBeginCameraRendering", Private)!.Invoke(layer,
+            new object[] { default(UnityEngine.Rendering.ScriptableRenderContext), cam });
+        bool Dirty() => (bool)typeof(SpecialBuildingModels).GetField("residencyDirty", Private)!.GetValue(layer)!;
+        try
+        {
+            Assert.Greater(layer.transform.childCount, 0, "precondition: the map-wide originals stand");
+            layer.enabled = false; layer.enabled = true;
+            Assert.AreEqual(0, layer.transform.childCount, "precondition: disabling the layer retires its originals");
+            int before = acquired;
+            Render(camera);
+            Assert.AreEqual(before, acquired, "nothing is acquired inside the render callback");
+            Assert.AreEqual(0, layer.transform.childCount, "and nothing is instantiated there");
+            Assert.IsTrue(Dirty(), "the render marks the change for LateUpdate");
+            typeof(SpecialBuildingModels).GetMethod("LateUpdate", Private)!.Invoke(layer, null);
+            Assert.Greater(acquired, before, "LateUpdate acquires the originals");
+            Assert.Greater(layer.transform.childCount, 0, "and places them");
+
+            int settled = acquired, children = layer.transform.childCount;
+            Render(other); Render(camera); Render(other);
+            Assert.IsFalse(Dirty(), "settled: two cameras rendering in turn mark nothing (no update request every render)");
+            Assert.AreEqual(settled, acquired); Assert.AreEqual(children, layer.transform.childCount);
+
+            layer.enabled = false; layer.enabled = true; before = acquired;
+            layer.Choose(default, camera);
+            Assert.Greater(acquired, before, "a direct call (no render) acquires at once");
+            Assert.Greater(layer.transform.childCount, 0, "and places them at once");
+        }
+        finally { Object.DestroyImmediate(go); Object.DestroyImmediate(far); }
+    }
     GameObject Piece(string name)
     {
         var piece = GameObject.CreatePrimitive(PrimitiveType.Cube); piece.name = name;
