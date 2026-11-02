@@ -74,24 +74,35 @@ namespace Statecraft.Game.Map.Units
             Fire();
         }
 
-        /// <summary>Starts the fire take on every live figure that has one; the attack then lasts as long as the longest.</summary>
+        /// <summary>Starts the fire take on every live figure that has one (even mid-attack), from its start or, for a
+        /// continued attack, from where it was; the attack then lasts as long as the longest take has left. A take that had
+        /// finished plays nothing, so the figures keep their walk or idle (review of #2176, item 8).</summary>
         bool Fire()
         {
             float longest = 0f;
             animators.Clear(); GetComponentsInChildren(false, animators);
             foreach (var animator in animators)
-            {
-                if (!UnitFigureMotion.Play(animator, UnitFigureMotion.Attack, restart: true)) continue;   // even mid-attack
-                float length = 0f;
-                foreach (var clip in animator.runtimeAnimatorController.animationClips)
-                    if (CollectionFireTake(clip.name)) length = Mathf.Max(length, clip.length);
-                if (resumeAt > 0f && length > 0f) animator.Play(UnitFigureMotion.Attack, 0, Mathf.Clamp01(resumeAt / length));
-                longest = Mathf.Max(longest, length);
-            }
-            if (longest <= 0f) return false;
+                if (UnitFigureMotion.CanPlay(animator, UnitFigureMotion.Attack)) longest = Mathf.Max(longest, FireLength(animator));
+            if (longest <= 0f) return false;   // no live figure has a fire take yet: keep waiting
             if (longest <= resumeAt) { attackLeft = 0f; resumeAt = 0f; return false; }   // the take had finished
+            foreach (var animator in animators)
+            {
+                if (!UnitFigureMotion.CanPlay(animator, UnitFigureMotion.Attack)) continue;
+                float length = FireLength(animator);
+                animator.applyRootMotion = false;   // as UnitFigureMotion.Play
+                animator.Play(UnitFigureMotion.Attack, 0, resumeAt > 0f && length > 0f ? Mathf.Clamp01(resumeAt / length) : 0f);
+            }
             attackLength = longest; attackLeft = longest - resumeAt; resumeAt = 0f; firing = true;
             return true;
+        }
+
+        /// <summary>The longest fire take on <paramref name="animator"/>'s controller (reading its clips allocates).</summary>
+        static float FireLength(Animator animator)
+        {
+            float length = 0f;
+            foreach (var clip in animator.runtimeAnimatorController.animationClips)
+                if (CollectionFireTake(clip.name)) length = Mathf.Max(length, clip.length);
+            return length;
         }
 
         /// <summary>The fire take's name as CollectionImport binds it to the attack state.</summary>
@@ -105,14 +116,17 @@ namespace Statecraft.Game.Map.Units
 
         void Pose()
         {
-            if (Attacking && !firing) Fire();   // a figure that can play the waiting attack turned near
+            bool started = Attacking && !firing && Fire();   // a figure that can play the waiting attack turned near
             int state = Moving ? UnitFigureMotion.Walk : UnitFigureMotion.Idle;
             bool changed = state != posed, ended = fired;
             posed = state; fired = false;
             animators.Clear(); GetComponentsInChildren(false, animators);
             foreach (var animator in animators)
             {
-                if (firing && UnitFigureMotion.Play(animator, UnitFigureMotion.Attack)) continue;
+                // Fire has just set a starting figure's take and time; Play would read the Animator's old state and restart
+                // the take (review of #2176, item 3).
+                if (firing && (started ? UnitFigureMotion.CanPlay(animator, UnitFigureMotion.Attack)
+                    : UnitFigureMotion.Play(animator, UnitFigureMotion.Attack))) continue;
                 // A figure leaves its walk, idle or fire this frame: play the new state even before its Animator reports the old.
                 UnitFigureMotion.Play(animator, state,
                     changed || ended && animator.isActiveAndEnabled && animator.HasState(0, UnitFigureMotion.Attack));

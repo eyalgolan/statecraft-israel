@@ -13,6 +13,11 @@ namespace Statecraft.Game.Map.Units
         public static readonly int Walk = Animator.StringToHash("Base Layer." + WalkState);
         public static readonly int Attack = Animator.StringToHash("Base Layer." + AttackState);
 
+        /// <summary>Whether <paramref name="animator"/> can play <paramref name="state"/> now: active and enabled, with a
+        /// controller that has the state.</summary>
+        public static bool CanPlay(Animator? animator, int state) =>
+            animator != null && animator.isActiveAndEnabled && animator.runtimeAnimatorController != null && animator.HasState(0, state);
+
         /// <summary>Plays <paramref name="state"/> (one of the hashes above) on <paramref name="animator"/> from its start,
         /// unless it is already playing it and <paramref name="restart"/> is false (the Animator reports a Play only after its
         /// next update, so a caller that changed the state this frame passes true). False when the Animator cannot play it:
@@ -20,9 +25,8 @@ namespace Statecraft.Game.Map.Units
         /// such state. No allocation.</summary>
         public static bool Play(Animator? animator, int state, bool restart = false)
         {
-            if (animator == null || !animator.isActiveAndEnabled || animator.runtimeAnimatorController == null) return false;
-            if (!animator.HasState(0, state)) return false;
-            animator.applyRootMotion = false;   // the token's offset moves the figure; a take's root motion must not add to it
+            if (!CanPlay(animator, state)) return false;
+            animator!.applyRootMotion = false;   // the token's offset moves the figure; a take's root motion must not add to it
             if (restart || animator.GetCurrentAnimatorStateInfo(0).fullPathHash != state) animator.Play(state, 0, 0f);
             return true;
         }
