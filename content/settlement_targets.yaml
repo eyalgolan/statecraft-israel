@@ -13,11 +13,12 @@
 # residents (R-CTRL-016, #799): fled or stayed, per the owner's per-place ruling (#793); a stayed row's annexation block holds
 # the people who join the player's population (OWNER QUESTION 1 (a) on #799). Jaffa is captured only in a what-if.
 # Capture applies only to a target also on mvp.enemy_held_localities (rules.yaml): jaffa is not, since it is Israeli-held
-# at the start, so it is captured only if an alternate-timeline card returns it to Arab control. lod and ramla share a hex.
+# at the start, so it is captured only if an alternate-timeline card returns it to Arab control. lod and ramla have a hex each (4.4 km grid, #1183); ramla's
+# is a neighbour of its settlement's hex (its row says why).
 targets:
   - id: jaffa
-    q: -3
-    r: 19
+    q: -4
+    r: 22
     operation: "Operation Hametz (encirclement)"
     sources:
       - { url: "https://m.knesset.gov.il/About/Occasion/Documents/IndependenceWar.pdf", checked: 2026-10-18 }
@@ -29,8 +30,8 @@ targets:
     # The owner sensitivity-reviewed this row (#793) and its residents fields on 24 October 2026 (#799): https://github.com/eyalgolan/statecraft-israel/issues/799#issuecomment-6382486627
     status: sensitivity-reviewed
   - id: acre
-    q: 7
-    r: 6
+    q: 8
+    r: 7
     operation: "Operation Ben-Ami"
     sources:
       - { url: "https://m.knesset.gov.il/About/Occasion/Documents/IndependenceWar.pdf", checked: 2026-10-18 }
@@ -49,8 +50,8 @@ targets:
     # The owner sensitivity-reviewed this row (#793) and its residents fields on 24 October 2026 (#799): https://github.com/eyalgolan/statecraft-israel/issues/799#issuecomment-6382486627
     status: sensitivity-reviewed
   - id: nazareth
-    q: 7
-    r: 10
+    q: 8
+    r: 11
     operation: "Operation Dekel"
     sources:
       - { url: "https://m.knesset.gov.il/About/Occasion/Documents/IndependenceWar.pdf", checked: 2026-10-18 }
@@ -70,7 +71,7 @@ targets:
     status: sensitivity-reviewed
   - id: lod
     q: -3
-    r: 21
+    r: 23
     operation: "Operation Dani"
     sources:
       - { url: "https://m.knesset.gov.il/About/Occasion/Documents/IndependenceWar.pdf", checked: 2026-10-18 }
@@ -84,8 +85,11 @@ targets:
     # The owner sensitivity-reviewed this row (#793) and its residents fields on 24 October 2026 (#799): https://github.com/eyalgolan/statecraft-israel/issues/799#issuecomment-6382486627
     status: sensitivity-reviewed
   - id: ramla
+    # (-3, 24), not Ramla's own hex (-4, 24), which it shares with Rehovot at 4.4 km (#1183): owner on #1796, 26 October 2026,
+    # "Contested + move target". The neighbour of (-4, 24) whose centre is nearest Ramla's point (34.8625, 31.9275,
+    # settlements_1948.yaml, en.wikipedia.org/wiki/Ramla): about 5.75 km (hexgrid.py km); Lod's (-3, 23) is next at 5.78 km.
     q: -3
-    r: 21
+    r: 24
     operation: "Operation Dani"
     sources:
       - { url: "https://m.knesset.gov.il/About/Occasion/Documents/IndependenceWar.pdf", checked: 2026-10-18 }
@@ -99,8 +103,8 @@ targets:
     # The owner sensitivity-reviewed this row (#793) and its residents fields on 24 October 2026 (#799): https://github.com/eyalgolan/statecraft-israel/issues/799#issuecomment-6382486627
     status: sensitivity-reviewed
   - id: beersheba
-    q: -9
-    r: 31
+    q: -10
+    r: 35
     operation: "Operation Yoav (Beersheba capture: Operation Moshe)"
     sources:
       - { url: "https://m.knesset.gov.il/About/Occasion/Documents/IndependenceWar.pdf", checked: 2026-10-18 }

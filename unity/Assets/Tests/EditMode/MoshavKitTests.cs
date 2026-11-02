@@ -68,7 +68,8 @@ public class MoshavKitTests
             TestContext.WriteLine($"{s.Id}: house at {h.C}, |cos| to the radial {dot:0.000}");
             if (dot > 0.08f) bad.Add($"house at {h.C}: its long side is {Mathf.Acos(dot) * Mathf.Rad2Deg:0} degrees off the radial, not across it");
         }
-        Assert.GreaterOrEqual(houses.Count, 3, "Nahalal's farmsteads");
+        // #1183: 4.4 km hexes, values scale with HexM: Nahalal's smaller footprint holds 2 farmsteads (3 on 5 km).
+        Assert.GreaterOrEqual(houses.Count, 2, "Nahalal's farmsteads");
         CollectionAssert.IsEmpty(bad);
     }
 }

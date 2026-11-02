@@ -81,7 +81,14 @@ public class UnitsInPlayTests
             Assert.AreEqual(f.Side, row.Side, f.Row);
             var anchor = row.Anchors.First(a => string.CompareOrdinal(a.From, start) <= 0 && string.CompareOrdinal(start, a.To) < 0);
             Assert.AreEqual(anchor.Place, f.Anchor, f.Row);
-            Assert.AreEqual(HexPicker.FromLonLat(anchor.Lon, anchor.Lat, hexes.bounds, hexes.hex_size_km), (f.Q, f.R), f.Row);
+            var picked = HexPicker.FromLonLat(anchor.Lon, anchor.Lat, hexes.bounds, hexes.hex_size_km);
+            // tools/unit_anchor_hexes.py moves two kinds of anchor to a land neighbour (#1183): one in a water hex (Haifa's
+            // point on the 4.4 km grid, hexgrid.settlement_hex) and an enemy's on a settlement's hex (the Syrian Army's start
+            // on Degania Alef's, the owner's nearest-free-neighbour rule).
+            if ((f.Q, f.R) != picked)
+                Assert.IsTrue((!hexes.hexes.Single(h => (h.q, h.r) == picked).land || (f.Side != "israel" && C.SettlementHexes.Any(x => (x.Q, x.R) == picked)))
+                    && MapActions.Distance(f.Q, f.R, picked.q, picked.r) == 1 && hexes.hexes.Single(h => (h.q, h.r) == (f.Q, f.R)).land,
+                    $"{f.Row}: {(f.Q, f.R)} is a land neighbour of the anchor's water or settlement hex {picked}");
         }
     }
 
@@ -494,7 +501,7 @@ public class UnitsInPlayTests
             Assert.Less(Km("brigade_7", "Hulda", 34.88333, 31.83222), 2.6f, "the 7th stands by Hulda");
             Assert.Greater(Km("brigade_7", "Hulda", 34.985, 31.77528), 3f, "and well away from Sar'a");
             Assert.Greater(Km("harel", "Sha'ar HaGai", 34.985, 31.77528), 3f, "Harel well away from Sar'a too");
-            Assert.AreEqual((-2, 23), Spot("harel", "Sha'ar HaGai"));
+            Assert.AreEqual((-2, 26), Spot("harel", "Sha'ar HaGai"));
             foreach (var (u, a) in anchors.Where(x => x.a.PlaceHex != null))
                 Assert.AreEqual((a.PlaceHex[0], a.PlaceHex[1]), (layer.Spots[a].Q, layer.Spots[a].R), $"{u.Id} {a.Place}: in its place_hex");
             var etzioni = layer.Spots[anchors.Single(x => x.u.Id == "etzioni").a];

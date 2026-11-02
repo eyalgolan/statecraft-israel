@@ -82,10 +82,12 @@ namespace Statecraft.Sim
         /// attack.</summary>
         static void Goals(Content c, GameState s, MvpRules mvp, Unit u, bool truce, List<Cause> why)
         {
+            // #2114 (O4): exact gdd-0.3 reads its catalogue's 1.5:1; legacy and gdd-0.1 keep mvp.enemy_attack_ratio_percent.
+            var threshold = Gdd03Military.Applies(c) ? Gdd03Military.EnemyAttackRatioPercent(c) : mvp.EnemyAttackRatioPercent!.Value;
             foreach (var (dq, dr) in truce ? Array.Empty<(int Q, int R)>() : Movement.Neighbours)   // a truce: straight to fortify
             {
                 int q = u.Q + dq, r = u.R + dr;
-                if (!(Combat.Preview(c, s, u.Id, q, r) is (int ratio, _)) || ratio < mvp.EnemyAttackRatioPercent!.Value) continue;
+                if (!(Combat.Preview(c, s, u.Id, q, r) is (int ratio, _)) || ratio < threshold) continue;
                 var target = string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0},{1}", q, r);
                 if (u.Order == Combat.Attack && u.OrderTarget == target) return;
                 if (Combat.Give(c, s, u.Id, q, r, why, enemy: true) == null) return;

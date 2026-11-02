@@ -354,7 +354,8 @@ def test_the_plot_reaches_are_the_kits_footprints():
     towns = len(tb.yaml12.load((ROOT / "content/map/settlements_1948.yaml").read_text())["settlements"])
     places = len(tb.yaml12.load((ROOT / "content/map/localities_1948.yaml").read_text())["places"])
     assert len(reaches) == towns + places, "every game settlement and every 1948 locality"
-    hex_area = 1.5 * np.sqrt(3) * 5000.0 ** 2
+    hex_m = json.loads((ROOT / "content/map/hexes.json").read_text())["hex_size_km"] * 1000   # 4.4 km since #1183
+    hex_area = 1.5 * np.sqrt(3) * hex_m ** 2
     w_m, l_m = meta["width_km"] * 1000, meta["length_km"] * 1000
     def reach_at(lon: float, lat: float) -> float:
         x, z = (lon - meta["lon0"]) / (meta["lon1"] - meta["lon0"]) * w_m, (lat - meta["lat0"]) / (meta["lat1"] - meta["lat0"]) * l_m

@@ -27,8 +27,8 @@ namespace Statecraft.Sim
 
         static bool IsEnemy(Unit u) => u.Side != "" && u.Side != PlayerSide;
 
-        /// <summary>R-MOVE-001: effective movement allowance, shared by simulation and presentation.
-        /// Artillery movement in 0.3 is blocked until its Deferred allowance and terrain column are approved.</summary>
+        /// <summary>R-MOVE-001: effective movement allowance, shared by simulation and presentation. Under 0.3 artillery keeps
+        /// its authored points (main's 2) and pays the infantry terrain costs (Q12, owner, 1 November 2026).</summary>
         public static int Allowance(Content c, Unit u)
         {
             var type = c.UnitTypes.FirstOrDefault(t => t.Id == u.Type);
@@ -36,21 +36,14 @@ namespace Statecraft.Sim
             if (!Gdd03Military.Applies(c) || type.Side == "") return type.MovementPoints;
             if (type.Class == "infantry") return Gdd03Military.Scalar(c, "military.move_infantry");
             if (type.Class == "armour") return Gdd03Military.Scalar(c, "military.move_armoured");
+            if (type.Class == Combat.ArtilleryClass) return type.MovementPoints;
             return 0; // no fallback to an older identity's number for Deferred/unknown roles
         }
 
-        public const string MissingArtilleryMovement = "Artillery cannot move: the gdd-0.3 artillery movement allowance is not specified.";
-        public static bool MovementDeferred(Content c, Unit u) => Gdd03Military.Applies(c)
-            && c.UnitTypes.FirstOrDefault(t => t.Id == u.Type)?.Class == Combat.ArtilleryClass;
         /// <summary>Existing action budget, including artillery fire; not a new movement allowance.</summary>
         public static int ActionsLeft(Content c, GameState s, int id, IReadOnlyDictionary<int, int> spent) =>
-            s.Units.TryGetValue(id, out var u) ? Math.Max(0, AttackPoints(c, u) - (spent.TryGetValue(id, out var used) ? used : 0)) : 0;
+            s.Units.TryGetValue(id, out var u) ? Math.Max(0, Points(c, u) - (spent.TryGetValue(id, out var used) ? used : 0)) : 0;
         internal static int Points(Content c, Unit u) => Allowance(c, u);
-
-        // #1708 does not adopt an artillery allowance or redesign #1706's existing fire/shot accounting.
-        internal static int AttackPoints(Content c, Unit u) => Gdd03Military.Applies(c)
-            && c.UnitTypes.FirstOrDefault(t => t.Id == u.Type)?.Class == Combat.ArtilleryClass
-            ? c.UnitTypes.First(t => t.Id == u.Type).MovementPoints : Points(c, u);
 
         /// <summary>The hexes unit <paramref name="unitId"/> can move to this turn, each with its path's cost, in (q, r) order:
         /// what Move accepts on a turn the unit has not moved yet (R-MOVE-001 to R-MOVE-005). Empty for an unknown unit, an
@@ -141,7 +134,6 @@ namespace Statecraft.Sim
             if (q == null || r == null) return "A route names a hex";
             if (!s.Units.TryGetValue(unitId, out var u)) return "There is no such unit";
             if (IsEnemy(u)) return "That unit is not yours";
-            if (MovementDeferred(c, u)) return MissingArtilleryMovement;
             if (Points(c, u) == 0) return "That unit cannot move";
             if (u.Q == q && u.R == r) return "That unit is already there";
             if (!(c.HexAt(q.Value, r.Value) is MapHex hex) || !hex.Land) return "Units cannot enter water or leave the map";
@@ -204,7 +196,7 @@ namespace Statecraft.Sim
         /// attacked this turn (nothing in <paramref name="spent"/>) and have no order (fortify, fortifying, hold and go-to are
         /// orders). End turn waits for them (spec 2026-10-23 section 7); Skip is the UI's and not in the sim.</summary>
         public static IReadOnlyList<int> NeedsOrders(Content c, GameState s, IReadOnlyDictionary<int, int> spent) =>
-            s.Units.Values.Where(u => u.Side == PlayerSide && AttackPoints(c, u) > 0 && u.Order == ""
+            s.Units.Values.Where(u => u.Side == PlayerSide && Points(c, u) > 0 && u.Order == ""
                     && !(spent.TryGetValue(u.Id, out var used) && used > 0))
                 .Select(u => u.Id).ToList();
 
@@ -217,7 +209,6 @@ namespace Statecraft.Sim
         {
             if (!s.Units.TryGetValue(unitId, out var u)) return "There is no such unit";
             if (IsEnemy(u) != enemy) return "That unit is not yours";
-            if (MovementDeferred(c, u)) return MissingArtilleryMovement;
             var points = Points(c, u);
             if (points == 0) return "That unit cannot move";
             if (u.Q == q && u.R == r) return "That unit is already there";
@@ -262,13 +253,19 @@ namespace Statecraft.Sim
             // An annexed target is Israeli for good (R-CTRL-016, OWNER QUESTION 3 (a) on #799): not enemy-held.
             var ids = c.RulesAt(s.Date).Mvp!.EnemyHeldLocalities
                 .Where(id => !(s.Settlements.TryGetValue(id, out var x) && x.State == SettlementControl.Annexed)).ToList();
-            var held = new HashSet<(int Q, int R)>(c.SettlementHexes.Where(h => ids.Contains(h.Id)).Select(h => (h.Q, h.R)));
-            return enemy ? new HashSet<(int Q, int R)>(c.SettlementHexes.Select(h => (h.Q, h.R)).Where(h => !held.Contains(h))) : held;
+            // The enemy's set is built from the player's localities, not as all hexes minus the enemy-held ones: at 4.4 km (#1183)
+            // Rehovot shares Ramla's hex (-4, 24), which must stay closed to the enemy while Ramla is enemy-held (owner review, #1796).
+            if (enemy) return new HashSet<(int Q, int R)>(c.SettlementHexes.Where(h => !ids.Contains(h.Id)).Select(h => (h.Q, h.R)));
+            // A target's hex, not its settlement's, as in Closed: for Ramla (ContentLoader.TargetOnANeighbour, #1796) that is
+            // (-3, 24), so a retreat or a Raid's withdrawal never ends where it would capture the place, while Rehovot's shared
+            // settlement hex (-4, 24) stays open (owner review, #1796).
+            return new HashSet<(int Q, int R)>(c.SettlementHexes.Where(h => ids.Contains(h.Id) && !c.SettlementTargets.Any(t => t.Id == h.Id))
+                .Select(h => (h.Q, h.R)).Concat(c.SettlementTargets.Where(t => ids.Contains(t.Id)).Select(t => (t.Q, t.R))));
         }
 
         /// <summary>R-MOVE-005 in Phase 6 (#1304): the hexes a move and its path may not enter. For the player, those of
         /// mvp.enemy_held_localities that are not curated targets (settlement_targets.yaml), so a target can be captured in play
-        /// (the owner's #793 ruling) while the rest, Gaza today, stay closed, and so does a depopulated target (R-CTRL-020);
+        /// (the owner's #793 ruling) while the rest, Gaza today, stay closed, and so does a depopulated target's hex (R-CTRL-020);
         /// for the enemy, <see cref="NoEntry"/>'s mirror unchanged. Raid's withdrawal and combat retreat still read
         /// <see cref="NoEntry"/>, so neither ends on an enemy-held place.</summary>
         static HashSet<(int Q, int R)> Closed(Content c, GameState s, bool enemy)
@@ -276,8 +273,11 @@ namespace Statecraft.Sim
             if (enemy) return NoEntry(c, s, true);
             // A depopulated target (R-CTRL-020) stays closed: Deport leaves nothing to capture there again.
             var ids = c.RulesAt(s.Date).Mvp!.EnemyHeldLocalities.Except(c.SettlementTargets.Select(t => t.Id)
-                .Where(id => !(s.Settlements.TryGetValue(id, out var x) && x.Depopulated)));
-            return new HashSet<(int Q, int R)>(c.SettlementHexes.Where(h => ids.Contains(h.Id)).Select(h => (h.Q, h.R)));
+                .Where(id => !(s.Settlements.TryGetValue(id, out var x) && x.Depopulated))).ToList();
+            // A depopulated target closes its target's hex: for Ramla (ContentLoader.TargetOnANeighbour, #1796) that is
+            // (-3, 24), not its settlement hex, which Rehovot shares.
+            return new HashSet<(int Q, int R)>(c.SettlementHexes.Where(h => ids.Contains(h.Id) && !c.SettlementTargets.Any(t => t.Id == h.Id))
+                .Select(h => (h.Q, h.R)).Concat(c.SettlementTargets.Where(t => ids.Contains(t.Id)).Select(t => (t.Q, t.R))));
         }
 
         /// <summary>R-ENEMY-002: the furthest hex the unit can reach this turn on its cheapest path to (<paramref name="q"/>,

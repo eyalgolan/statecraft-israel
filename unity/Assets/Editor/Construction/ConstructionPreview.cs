@@ -15,7 +15,7 @@ namespace Statecraft.Editor.Construction
     public sealed class ConstructionStage : IDisposable
     {
         public const string BoardId = "central_israel", PrototypeId = "moshava_village";
-        public const int BoardQ = 1, BoardR = 13;
+        public const int BoardQ = 1, BoardR = 15;   // Hadera's hex on the 4.4 km board (#1183)
         public const string BuildingModelId = "sandbox:kit_moshava_2";
         readonly PreviewRenderUtility preview = new PreviewRenderUtility();
         readonly GameObject root;
