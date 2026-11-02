@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 public class NoAttentionTests
 {
     public static IEnumerable<object[]> Kinds() => CommandGuardTests.Samples.Values.Select(c => new object[] { c.Kind });
-    static void Select(Dictionary<string,string> files, bool modern)
+    internal static void Select(Dictionary<string,string> files, bool modern)
     {
         if (modern) files["eras.yaml"] = files["eras.yaml"].Replace("loop: gdd", "loop: gdd, ruleset: gdd-0.3");
         files[Gdd03BalanceCatalogue.FileName] = File.ReadAllText(Path.Combine(RealContentTests.ContentRoot(),Gdd03BalanceCatalogue.FileName));
@@ -18,7 +18,7 @@ public class NoAttentionTests
     {
         foreach (var r in c.EraRules.Values.Append(c.Rules)) { r.AttentionCost.Clear(); r.AttentionPerTurn=double.NaN; r.RungAttentionStep=double.NaN; }
     }
-    static string WithoutLegacyAccounting(string canonical) =>
+    internal static string WithoutLegacyAccounting(string canonical) =>
         Regex.Replace(Regex.Replace(canonical, @"\npopulation-ledger\{(?:\n  [^\n]*)*", "").Replace("ruleset=gdd-0.3;", ""), @"\natt=[^\n]*", "");
     static bool Unavailable(string kind) => kind is "map_action" or "set_mobilization" or "security_order";
     static (Content c,GameState s,Command valid,Command invalid) Case(string kind,bool modern)

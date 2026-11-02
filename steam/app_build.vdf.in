@@ -1,0 +1,13 @@
+"AppBuild"
+{
+	"AppID" "${app_id}"
+	"Desc" "${desc}"
+	"ContentRoot" "${content_root}"
+	"BuildOutput" "${build_output}"
+	"SetLive" "${branch}"
+	"Preview" "0"
+	"Depots"
+	{
+${depots}
+	}
+}

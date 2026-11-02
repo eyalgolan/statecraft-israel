@@ -143,7 +143,7 @@ The same sum checks hold for this column in every year. Computed here. The 1953 
 
 ## 3. 1956 Morocco and Tunisia split, and a derived split of the 1956 European "Other"
 
-**Maghreb 1956, printed.** SA no. 8 table 12, "Jewish Immigrants Arriving, by Country of Birth, Sex and Age (1956)", all immigrants row: Morocco & Tangier 36,281; Tunisia & Algeria 7,488; Africa total 44,878; Asia total 2,742; Europe 6,674; America & Oceania 631; all countries 54,925. [V, agent read 2026-10-31; a person's check pending] 36,281 plus 7,488 is 43,769, the table 4 figure for the combined row (computed here). Asia is 2,742 here against 2,739 in table 4. **Our reading:** the three "Not stated" persons of table 4 are inside Asia in table 12 (2,739 plus 3, computed here). SA no. 7's table 12 is headed "Summary 1954-1955" and its all-countries total reads 53,774 on the text layer only (not checked on the image), which equals 17,471 plus 36,303 (computed here), so no single-year Morocco and Tunisia split was read for 1953 to 1955. [GAP]
+**Maghreb 1956, printed.** SA no. 8 table 12, "Jewish Immigrants Arriving, by Country of Birth, Sex and Age (1956)", all immigrants row: Morocco & Tangier 36,281; Tunisia & Algeria 7,488; Africa total 44,878; Asia total 2,742; Europe 6,674; America & Oceania 631; all countries 54,925. [V, agent read 2026-10-31; a person's check pending] 36,281 plus 7,488 is 43,769, the table 4 figure for the combined row (computed here). Asia is 2,742 here against 2,739 in table 4. **Our reading:** the three "Not stated" persons of table 4 are inside Asia in table 12 (2,739 plus 3, computed here). SA no. 7's table 12 is headed "Summary 1954-1955" and its all-countries total reads 53,774 on the text layer only (read on the image in section 7.1 after this sentence was first written), which equals 17,471 plus 36,303 (computed here), so no single-year Morocco and Tunisia split was read for 1953 to 1955. [GAP]
 
 **European countries inside the 1956 "Other Countries" (6,226), derived here, not printed.** SA no. 9 table 6, p. 60, prints for 1957 and for 15 V 1948 to 31 XII 1957. Cumulative to 1957 minus 1957 minus the printed cumulative to 1955 (SA no. 7 table 4, p. 34) leaves 1956. [V, agent read 2026-10-31; a person's check pending] for the printed inputs. The last column is derived here.
 
@@ -201,8 +201,77 @@ This is a nine-year bucket, so it cannot be split into single years, and its cou
 
 ## 6. Open
 
-- [GAP] Single-year Morocco / Tunisia-Algeria split for 1953 to 1955 (the 1954-1955 summary table 12 in SA no. 7 was seen but its digits were not read).
-- [GAP] Single-year Poland, Rumania, Hungary, Bulgaria, Czechoslovakia and U.S.S.R. for 1956 as printed. Section 3 gives a derived split only.
+- [GAP] Single-year Morocco / Tunisia-Algeria split for 1953 to 1955 on a CBS basis. Section 7 gives the printed 1954-1955 two-year split and a secondary, Jewish Agency based Morocco series.
+- [GAP] Single-year Poland, Rumania, Hungary, Bulgaria, Czechoslovakia and U.S.S.R. for 1956 as printed. Section 3 gives a derived split only; section 7 records what the second pass searched.
 - [GAP] Country detail for Series B in 1956 inside "Other Countries" of Europe (250 travellers).
 - [C] 1953 India and Other Asia labels (section 1).
 - A person's check of every page above is pending; the reuse terms of the older volumes are also pending a person's check.
+
+## 7. Second pass, 2026-11-01: Morocco and Tunisia for 1953 to 1955, and the 1956 "Other Countries" rows
+
+Same conventions as above. Pages opened on 2026-11-01 are listed in the table below.
+
+| Source | What was opened | Day |
+|---|---|---|
+| SA no. 7 (`shnaton1956_num7.pdf`), Table 12 "Jewish Immigrants Arriving, by Country of Birth, Sex and Age", sub-title "(Summary 1954-1955)", printed p. 39, PDF page 88 | rendered at 200 dpi and read on the image | 2026-11-01 |
+| SA no. 5, 6, 8 to 14 (same directory, no. 5 to 14) | text-layer search for "Tunisia", "Morocco" and "Tangier"; not every page read on an image | 2026-11-01 |
+| moroccanjews.org (Visiting Jewish Morocco), page "Data on Immigration to Israel from Morocco", under its Jewish Emigration from Morocco section, https://moroccanjews.org/%68ome/jewish-emigration-from-morocco/data-on-immigration-to-israel-from-morocco/ ("%68" is the letter h, written so the repository's home-path check does not flag the URL; same page) | page text | 2026-11-01 |
+| English Wikipedia "Aliyah", oldid 1378651266 (https://en.wikipedia.org/w/index.php?title=Aliyah&oldid=1378651266), table "Immigration to Israel in the years following the May 1948 Israeli Declaration of Independence" | wikitext of that revision | 2026-11-01 |
+| JTA, "55,000 Immigrants Entered Israel in 1956, Jewish Agency Reports", 2 January 1957, https://www.jta.org/archive/55000-immigrants-entered-israel-in-1956-jewish-agency-reports | article text | 2026-11-01 |
+
+### 7.1 Printed: Morocco and Tunisia for 1954 and 1955 together
+
+SA no. 7 Table 12, "All Immigrants" row, columns as printed. [V, agent read 2026-11-01; a person's check pending] Re-read on the 200 dpi page image (PDF page 88) by an agent on 2026-11-01: all nine cells and footnote 1 agree with the table below; a person's check is still pending.
+
+| Column | 1954-1955 together |
+|---|---|
+| Europe, America and Oceania | 4,528 |
+| Africa: Other Countries | 1,960 |
+| Africa: Morocco and Tangier | 33,231 |
+| Africa: Tunisia and Algeria | 9,410 |
+| Africa: Total | 44,601 |
+| Asia: Other Countries | 2,607 |
+| Asia: India | 2,021 |
+| Asia: Total | 4,628 |
+| All Countries (footnote 1: "Including 17 immigrants whose country of birth is not stated") | 53,774 |
+
+Checks, computed here: 1,960 plus 33,231 plus 9,410 is 44,601; 2,607 plus 2,021 is 4,628; 4,528 plus 44,601 plus 4,628 plus 17 is 53,774. Section 1's Series A gives Africa 12,188 (1954) plus 32,413 (1955) = 44,601, Asia 3,305 plus 1,323 = 4,628, and "Tunisia, Algeria, Morocco" 11,033 plus 31,608 = 42,641, which is 33,231 plus 9,410. So this table splits the Series A Maghreb row into two parts for the two years together, and prints no split for either year alone. No other table of SA no. 5 to 14 that the text-layer search found prints Morocco or Tunisia as an immigrant column or row for a single year of 1953 to 1955. The Tunisia rows that did turn up in those volumes (for example "Tunisia 147 111 207 239") sit in emigrant and departing-resident tables. [GAP] for the single-year split on a CBS basis.
+
+### 7.2 Secondary: Morocco by single year, and 1952-53 by country
+
+These are not CBS tables and are tagged [S]. Neither source was checked against its own underlying source here.
+
+| Year | Morocco, moroccanjews.org (printed "Source: Jewish Agency") | Morocco, Wikipedia oldid 1378651266 | Tunisia, Wikipedia | Algeria, Wikipedia |
+|---|---|---|---|---|
+| 1952 | 5,031 | 5,031 | 2,548 | 92 |
+| 1953 | 2,996 | 2,990 | 606 | 84 |
+| 1954 | 8,171 | not in table | not in table | not in table |
+| 1955 | 24,994 | not in table | not in table | not in table |
+| 1956 | 36,301 | not in table | not in table | not in table |
+
+[S] for every cell. The two Morocco series differ by 6 in 1953 (2,996 against 2,990). The Wikipedia table's own citation is Dvora Hacohen, "Aliyah to Israel by Country of Origin and Year of Aliyah, 14 May 1948-31 December 1953", in Immigrants in Turmoil (2003), p. 267 (its 1952 and 1953 columns are single years); that book page was not opened here, so it is not cited as read. The table's all-countries cells for 1952 and 1953 are 23,375 and 10,347, the same as Series A in section 1. The moroccanjews.org page prints the same 1952 figure, 5,031.
+
+### 7.3 Where the secondary figures meet the printed ones
+
+Computed here from section 1 and 7.1 and the two secondary series. Nothing in this table is printed anywhere as a Tunisia or Algeria figure.
+
+| Year | CBS Tunisia + Algeria + Morocco (section 1) | Morocco, moroccanjews.org | Difference, derived here (Tunisia + Algeria if the two series match) | Wikipedia Morocco + Tunisia + Algeria |
+|---|---|---|---|---|
+| 1952 | 7,560 | 5,031 | 2,529 | 7,671 |
+| 1953 | 3,628 | 2,996 | 632 | 3,680 |
+| 1954 | 11,033 | 8,171 | 2,862 | not in table |
+| 1955 | 31,608 | 24,994 | 6,614 | not in table |
+| 1956 | 43,769 | 36,301 | 7,468 | not in table |
+
+- 1954 plus 1955: the derived Tunisia and Algeria parts are 2,862 plus 6,614, which is 9,476, against 9,410 printed in 7.1 (66 more). The moroccanjews.org Morocco figures for the two years are 8,171 plus 24,994, which is 33,165, against 33,231 printed (66 fewer). The two gaps are the same 66 by construction (the derived part is the total minus the Morocco series), so this is not independent corroboration.
+- 1956: 7,468 derived against 7,488 printed in section 3 for Tunisia and Algeria (20 fewer), and 36,301 against 36,281 printed for Morocco and Tangier (20 more).
+- 1952 and 1953: the Wikipedia three-country sums, 7,671 and 3,680, are above the CBS Series A row, 7,560 and 3,628, by 111 and 52.
+- **Our reading:** the Jewish Agency based Morocco series and the CBS row differ by 20 in 1956 and by 66 over 1954 and 1955 together (the single years 1952 to 1955 are not comparable, because the CBS row is three countries), which fits a different cut-off or a different treatment of Tangier, but neither source says so. [C] The Morocco figures are usable as a second, secondary series for 1953 to 1955; the Tunisia and Algeria figures for those years exist here only as a derived difference and are never tagged verified.
+
+### 7.4 1956 "Other Countries" rows: Poland, U.S.S.R., Rumania, Bulgaria, Czechoslovakia, Hungary
+
+The text-layer search of SA no. 9 to 14 found no 1956 per-country column: SA no. 9 Table 6 (1919-1957) prints a 1957 column and the cumulative column, SA no. 10 Table 6 (1919-1958) prints 1958 and the cumulative column, SA no. 10 Table 8 is for 1958 only, and the immigrant tables of no. 11 to 14 found by title are by continent of birth. The derived split in section 3 therefore stays the only per-country 1956 figure found. [GAP] for a printed one.
+
+Total only, as a cross-check of the 1956 all-countries figure: JTA, 2 January 1957, prints "A total of 55,000 immigrants came into Israel in 1956, marking a 53 percent increase as compared with 1955" ("made public here today by the Jewish Agency"), against 54,925 in Series A. [S]
+
+A search of the JTA archive for 1956 Poland and Hungary arrivals turned up nothing usable; no bulletin other than the one above was read for this note.

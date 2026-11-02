@@ -1,9 +1,9 @@
 # translations/
 
 Translations into languages other than English and Hebrew, written by `tools/translate.py` ([tools/README.md](../tools/README.md)).
-The game does not read these files yet: loading them needs a change to the sim loader, the content schemas and
-`unity/Assets/Scripts/UI/UiLanguage.cs`, and a language is offered to players through the start-of-game language
-picker and the Settings menu (#1606). English and Hebrew stay where they are, in `content/` and `unity/Assets/UI/`.
+The game loads and checks these files with the content ([docs/translations.md](../docs/translations.md), "Loading"),
+but does not show them yet: a language is offered to players through the start-of-game language picker and the Settings
+menu (#1606). English and Hebrew stay where they are, in `content/` and `unity/Assets/UI/`.
 
 Each language has a folder named by its code (`ro`, `fr`, `pt-BR`), with up to three files:
 

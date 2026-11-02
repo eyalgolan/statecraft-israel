@@ -42,8 +42,8 @@ namespace Statecraft.Game.Boot
         /// <summary>content/map/control_hexes_1948_49.yaml: who held which areas, 1948-49, by period (display only; "" when
         /// absent: the older drawing, sub-districts with the armistice zones over them).</summary>
         public string ControlYaml = "";
-        /// <summary>content/map/armistice_lines_1949.geojson: the true armistice lines, drawn as polylines in the
-        /// "armisticelines" map mode (ArmisticeLines, #237; display only; "" when absent: no overlay).</summary>
+        /// <summary>content/map/armistice_lines_1949.geojson: the true armistice lines, drawn as polylines unless the run
+        /// turns them off with "noarmisticelines" (ArmisticeLines, #237, #196; display only; "" when absent: no overlay).</summary>
         public string ArmisticeLinesGeojson = "";
         /// <summary>heightmap.r16z as read: packed (HeightmapCodec); HeightmapLoader decodes it when the map is built.</summary>
         public byte[] HeightmapR16z = new byte[0];
@@ -96,11 +96,15 @@ namespace Statecraft.Game.Boot
             return new GameInputs { Content = ContentLoader.Load(contentDir), Map = MapFromDisk(contentDir, mapDir), Goldens = goldens };
         }
 
-        /// <summary>Builds the inputs from fetched texts (keys are manifest paths) and the packed heightmap's bytes.</summary>
-        public static GameInputs FromTexts(IReadOnlyDictionary<string, string> texts, IEnumerable<string> manifest, string heightmapJson, byte[] r16z)
+        /// <summary>Builds the inputs from fetched texts (keys are manifest paths) and the packed heightmap's bytes, with the
+        /// bundle's translations (#1618 step 2: <paramref name="translationTexts"/> keyed as <paramref name="translations"/>
+        /// lists them, "ro/ui.yaml"; none when omitted).</summary>
+        public static GameInputs FromTexts(IReadOnlyDictionary<string, string> texts, IEnumerable<string> manifest, string heightmapJson, byte[] r16z,
+            IReadOnlyDictionary<string, string>? translationTexts = null, IEnumerable<string>? translations = null)
         {
             var events = manifest.Where(f => f.StartsWith("events/", StringComparison.Ordinal)).ToList();
-            var content = ContentLoader.Load(rel => texts.TryGetValue(rel, out var t) ? t : null, events);
+            var content = ContentLoader.Load(rel => texts.TryGetValue(rel, out var t) ? t : null, events,
+                rel => translationTexts != null && translationTexts.TryGetValue(rel, out var t) ? t : null, translations ?? Enumerable.Empty<string>());
             return new GameInputs
             {
                 Content = content,
@@ -171,11 +175,11 @@ namespace Statecraft.Game.Boot
                 var goldenText = GoldenCheck.Requested() ? await Text(Get("golden/manifest.txt"), "golden/manifest.txt", stallSeconds) : "";
                 var scenarioNames = goldenText.Length == 0 ? new List<string>() : GoldenData.Parse(goldenText).Select(x => x.name).Where(n => n.StartsWith("scenario-", StringComparison.Ordinal)).Select(n => n.Substring("scenario-".Length)).ToList();
                 foreach (var n in scenarioNames) scenarioRequests.Add((n, Get("golden/scenarios/" + n + ".yaml")));
-                var (manifest, texts) = ContentManifest.ParseBundle(await Text(bundle, ContentManifest.BundleFileName, stallSeconds));
+                var (manifest, texts, translations, translationTexts) = ContentManifest.ParseBundleWithTranslations(await Text(bundle, ContentManifest.BundleFileName, stallSeconds));
                 var metaText = await Text(meta, "heightmap.json", stallSeconds);
                 var r16zBytes = await Bytes(r16z, HeightmapCodec.FileName, stallSeconds);
-                DiagLog.BootPhase($"downloaded {texts.Count + 2} files");
-                var inputs = FromTexts(texts, manifest, metaText, r16zBytes);
+                DiagLog.BootPhase($"downloaded {texts.Count + translationTexts.Count + 2} files");
+                var inputs = FromTexts(texts, manifest, metaText, r16zBytes, translationTexts, translations);
                 inputs.Goldens = new GoldenData { Manifest = goldenText };
                 foreach (var (name, request) in scenarioRequests) inputs.Goldens.Scenarios[name] = await Text(request, "golden/scenarios/" + name + ".yaml", stallSeconds);
                 DiagLog.BootPhase("content parsed and validated");

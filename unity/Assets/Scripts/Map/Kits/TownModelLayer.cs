@@ -412,7 +412,9 @@ namespace Statecraft.Game.Map.Kits
         }
         bool suppressMissingLog;
 
-        internal void PrepareCamera(Camera cam)
+        /// <summary>A direct call (tests and editor tools, outside any render) applies a change of demand at once in edit mode.</summary>
+        internal void PrepareCamera(Camera cam) => PrepareCameraCore(cam, inRender: false);
+        internal void PrepareCameraCore(Camera cam, bool inRender)
         {
             RestoreRenderers();
             bool changed = PruneCameras();
@@ -454,7 +456,18 @@ namespace Statecraft.Game.Map.Kits
                 choice.towns.Clear(); foreach (var id in next) choice.towns.Add(id); changed = true;
             }
             changed |= AdmitInView(choice, cam);
-            if (changed) { if (Application.isPlaying) reconcileDirty = true; else ReconcileModels(); }
+            if (changed)
+            {
+                if (Application.isPlaying || inRender)
+                {
+                    reconcileDirty = true;
+#if UNITY_EDITOR
+                    // Edit mode runs LateUpdate only when something asks for a player-loop update.
+                    if (!Application.isPlaying) UnityEditor.EditorApplication.QueuePlayerLoopUpdate();
+#endif
+                }
+                else ReconcileModels();
+            }
             villagesReady.Clear();
             foreach (var (kit, close) in swaps)
             {
@@ -749,10 +762,12 @@ namespace Statecraft.Game.Map.Kits
         }
         void EndCamera(ScriptableRenderContext _, Camera camera) => RestoreRenderers();
 
+        /// <summary>The render callback. A change of demand never acquires or retires models while a camera renders, in edit
+        /// mode either (a Scene or Game view camera): it waits for LateUpdate, as in play mode.</summary>
         void Submit(ScriptableRenderContext context, Camera cam)
         {
             if (cam.cameraType == CameraType.Preview || cam.cameraType == CameraType.Reflection) return;
-            PrepareCamera(cam);
+            PrepareCameraCore(cam, inRender: true);
             bool close = choices.TryGetValue(cam.GetInstanceID(), out var choice) && choice.close;
             LastClose = close;
             int drawn = 0, draws = 0; long tris = 0;

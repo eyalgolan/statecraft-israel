@@ -5,6 +5,7 @@ import shutil
 import subprocess
 import sys
 import time
+import urllib.parse
 import zipfile
 from contextlib import contextmanager
 from datetime import date, datetime
@@ -1473,7 +1474,7 @@ def test_state_is_saved_right_after_create_draft_and_right_after_publish(night, 
 def test_a_failing_checkpoint_save_does_not_stop_the_night(env, monkeypatch, capsys):
     monkeypatch.setattr(nightly, "save_state", lambda p, st: (_ for _ in ()).throw(OSError("full")))
     seen = {}
-    def stages(night, state, runner, gh, itch, *, no_publish, free_gb, save):
+    def stages(night, state, runner, gh, itch, *, no_publish, free_gb, save, no_steam=False):
         save()
         seen["ok"] = True
         return True
@@ -1483,7 +1484,7 @@ def test_a_failing_checkpoint_save_does_not_stop_the_night(env, monkeypatch, cap
 
 def test_a_failed_checkpoint_save_notifies_so_it_is_never_silent(env, monkeypatch):
     monkeypatch.setattr(nightly, "save_state", lambda p, st: (_ for _ in ()).throw(OSError("full")))
-    monkeypatch.setattr(nightly, "run_stages", lambda night, state, runner, gh, itch, *, no_publish, free_gb, save:
+    monkeypatch.setattr(nightly, "run_stages", lambda night, state, runner, gh, itch, *, no_publish, free_gb, save, no_steam=False:
                         save() or True)
     assert env.night() == "PUBLISHED"
     assert any("not saved" in a[0].lower() and "full" in a[1] for a in env_notes)
@@ -1515,13 +1516,14 @@ def test_a_published_night_updates_state_and_boot_baseline(night, env, pub, serv
 
 def test_itch_is_skipped_with_a_logged_reason_when_there_is_no_client(night, env, pub, served, capsys):
     publish(night, ns.State(last_published=last_published()), FakeGH(), pub, env)
-    assert "itch: skipped (save test not passed)" in capsys.readouterr().out
+    assert NO_TEST_PAGE in capsys.readouterr().out
 
 
 # --- Task 7: itch.io, behind itch_enabled ---------------------------------------------------------------------------------
 
 PREV_TAG = "v0.3.0-nightly.20261027"
 PREV_VERSION = "0.3.0-nightly.20261027"
+TEST_TARGET = "eyalgolan/statecraft-israel-savetest:html5"
 
 
 class FakeItch:
@@ -1548,6 +1550,13 @@ class FakeItch:
         self._call("matches", Path(folder).name)
 
 
+def evidence_file(tmp_path, result):
+    """A save test evidence file as savetest() writes it; `result` may also be any JSON value for a broken file."""
+    path = tmp_path / "savetest-evidence.json"
+    path.write_text(json.dumps({"result": result} if isinstance(result, str) else result))
+    return str(path)
+
+
 def zip_of(path, name):
     with zipfile.ZipFile(path, "w") as z:
         z.writestr("index.html", name)
@@ -1556,8 +1565,10 @@ def zip_of(path, name):
 
 @pytest.fixture
 def itch_night(night, env, tmp_path, served):
-    """An itch-enabled night with real zips for tonight and the previous build."""
-    night.cfg = dataclasses.replace(night.cfg, itch_enabled=True)
+    """An itch-enabled night with real zips for tonight and the previous build: a separate test page is configured
+    and the save test's PASS evidence is on record, so the push may go ahead (#2056)."""
+    night.cfg = dataclasses.replace(night.cfg, itch_enabled=True, savetest_itch_target=TEST_TARGET,
+                                    itch_evidence=evidence_file(tmp_path, "PASS"))
     clone = str(night.cfg.clone)
     env.runner.add(["git", "-C", clone, "log", "--format=%s"], out="Fix a thing\n")
     zips = (zip_of(tmp_path / "web.zip", "tonight"), zip_of(tmp_path / "pages.zip", "pages"))
@@ -1583,7 +1594,7 @@ def refused_itch(itch_night, env, itch="fake"):
 def test_itch_disabled_is_logged_and_never_calls_the_client(night, env, pub, served, capsys):
     gh = FakeGH()
     publish(night, ns.State(last_published=last_published()), gh, pub, env, itch=FakeItch(gh.calls))
-    assert "itch: skipped (save test not passed)" in capsys.readouterr().out
+    assert NO_TEST_PAGE in capsys.readouterr().out
     assert gh.names() == ["ensure_tag_available", "create_draft", "verify_draft", "latest_tag", "publish", "dispatch_site"]
 
 
@@ -1674,11 +1685,11 @@ def test_an_interrupt_during_publish_rolls_itch_back_and_cleans_the_draft(itch_n
 
 def test_the_itch_skip_reason_is_noted_on_the_night(night, env, pub, served):
     publish(night, ns.State(last_published=last_published()), FakeGH(), pub, env)
-    assert night.notes == ["itch: skipped (save test not passed)"]
+    assert night.notes == [NO_TEST_PAGE]
 
 
 def test_the_night_notes_reach_the_log_line(env, monkeypatch):
-    def stages(night, state, runner, gh, itch, *, no_publish, free_gb, save):
+    def stages(night, state, runner, gh, itch, *, no_publish, free_gb, save, no_steam=False):
         night.notes.append("itch: skipped (save test not passed)")
         return True
     monkeypatch.setattr(nightly, "run_stages", stages)
@@ -1694,6 +1705,45 @@ def test_a_site_failure_after_publish_does_not_roll_itch_back(itch_night, env):
     assert err.gate == "site"
     assert [c[0] for c in gh.calls if c[0].startswith("itch.")] == ["itch.push", "itch.wait_live", "itch.matches"]
     assert "delete_draft" not in gh.names()
+
+
+# --- #2056: itch only with a separate test page and a recorded save test PASS -------------------------------------------
+
+NO_TEST_PAGE = "itch: skipped (the job config has no savetest_itch_target, so no save test can run on a separate test page)"
+
+
+@pytest.mark.parametrize("change, reason", [
+    ({"savetest_itch_target": None}, NO_TEST_PAGE),
+    ({"savetest_itch_target": ""}, NO_TEST_PAGE),
+    ({"savetest_itch_target": "eyalgolan/statecraft-israel:savetest"}, "must not be the public itch project"),
+    ({"savetest_itch_target": "EyalGolan/Statecraft-Israel:html5"}, "must not be the public itch project"),
+    ({"itch_enabled": False}, "itch: skipped (save test not passed)"),
+    ({"itch_evidence": None}, "itch_enabled is set but no save test evidence is recorded"),
+    ({"itch_evidence": "/nonexistent/evidence.json"}, "is unreadable"),
+    ("INCONCLUSIVE", "does not record a save test PASS"),
+    (["PASS"], "does not record a save test PASS"),
+])
+def test_itch_is_skipped_with_its_reason_unless_a_test_page_and_a_pass_are_on_record(itch_night, env, tmp_path, capsys,
+                                                                                    change, reason):
+    night = itch_night[0]
+    if not isinstance(change, dict):   # a broken or non-PASS evidence file
+        change = {"itch_evidence": evidence_file(tmp_path, change)}
+    night.cfg = dataclasses.replace(night.cfg, **change)
+    gh, st = run_itch(itch_night, env)
+    assert not [c for c in gh.calls if c[0].startswith("itch.")] and "download" not in gh.names()
+    assert len(night.notes) == 1 and night.notes[0].startswith("itch: skipped (") and reason in night.notes[0]
+    assert night.notes[0] in capsys.readouterr().out
+    assert st.last_published.tag == TAG   # the GitHub release still goes out; only itch is held back
+
+
+def test_the_job_config_of_2_november_skips_itch_and_names_the_missing_keys(tmp_path):
+    config = tmp_path / "config.json"   # the live job config held only this key on 2 Nov 2026
+    config.write_text(json.dumps({"itch_page_url": "https://eyalgolan.itch.io/statecraft-israel"}))
+    assert nightly.itch_skip_reason(ns.load_config(config)) == NO_TEST_PAGE[len("itch: skipped ("):-1]
+
+
+def test_a_pass_on_record_with_a_separate_test_page_lets_the_push_go_ahead(itch_night):
+    assert nightly.itch_skip_reason(itch_night[0].cfg) is None
 
 
 # --- the stage wiring ---------------------------------------------------------------------------------------------------
@@ -1887,8 +1937,6 @@ def test_an_unusable_client_is_a_recorded_github_client_refusal_not_internal(env
 
 # --- Task 8: the two-upload itch save test ----------------------------------------------------------------------------
 
-PAGE_URL = "https://example.invalid/statecraft-israel-savetest"
-TEST_TARGET = "eyalgolan/statecraft-israel-savetest:html5"
 ITCH_HOST = "https://html-classic.itch.zone"
 SAVED = "PERSISTENCE saved 1948-05-16 turn 1 hash ab12\n"
 
@@ -1896,8 +1944,10 @@ SAVED = "PERSISTENCE saved 1948-05-16 turn 1 hash ab12\n"
 class SaveItch:
     """The itch client of the save test: each push moves the live build id on by one."""
 
-    def __init__(self, calls, *, fail=None):
+    def __init__(self, calls, *, fail=None, same=False, ids=True, live_as=None):
         self.calls, self.fail, self.pushes, self.build = calls, fail or {}, 0, 100
+        self.same, self.ids = same, ids   # `same`: butler keeps showing upload A's build; `ids`: False shows none
+        self.live_as, self.live = live_as, None   # `live_as`: the version butler shows live after wait_live
 
     def push(self, folder, version):
         self.calls.append(("itch.push", Path(folder).name, version))
@@ -1910,9 +1960,13 @@ class SaveItch:
         self.calls.append(("itch.wait_live", version))
         if "wait_live" in self.fail:
             raise self.fail["wait_live"]
+        self.live = self.live_as or version
 
-    def live_build_id(self):
-        return self.build
+    def live_frame_ids(self, version):
+        self.calls.append(("itch.live_frame_ids", version))
+        if not self.ids or version != self.live:   # as Itch.live_frame_ids: only the expected version's ids
+            return None
+        return UPLOAD_ID, 101 if self.same else self.build
 
 
 class SaveRunner(FakeRunner):
@@ -1930,9 +1984,15 @@ class SaveRunner(FakeRunner):
         return code
 
 
+GAME_HTML = '<script>createUnityInstance(canvas, {productVersion: "0.3.2"})</script>'   # the Statecraft template
+
+
 class Page:
-    def __init__(self, text):
-        self.text = text
+    def __init__(self, text, *, url=None, status=200):
+        self.text, self.url, self.status = text, url, status
+
+    def geturl(self):
+        return self.url
 
     def __enter__(self):
         return self
@@ -1944,37 +2004,55 @@ class Page:
         return self.text.encode()
 
 
-def page_for(itch, *, same=False, frame=True):
-    """A fetch answering the itch page: its frame follows the itch client's build, or never changes with `same`."""
+UPLOAD_ID = 19840947
+
+
+def frame_of(build):
+    return f"{ITCH_HOST}/html/{UPLOAD_ID}-{build}/index.html"
+
+
+def http_error(url, code, retry_after=None):
+    import email.message
+    import urllib.error
+    headers = email.message.Message()
+    if retry_after is not None:
+        headers["Retry-After"] = retry_after
+    return urllib.error.HTTPError(url, code, "error", headers, None)
+
+
+def frame_for(itch, fetched, *, missing=0, code=404, answer=None):
+    """A fetch answering only the game frame of the itch client's live build (never an itch page): its first
+    `missing` answers are HTTP `code`, as while itch still unpacks an upload; `answer(url)` replaces the game page."""
     def fetch(url, timeout=30):
-        assert url == PAGE_URL
-        build = 101 if same else itch.build
-        inner = f"{ITCH_HOST}/html/19840947-{build}/index.html?v=1" if frame else "none"
-        return Page(f'<div data-iframe="&lt;iframe src=&quot;{inner}&quot;&gt;">')
+        fetched.append(url)
+        assert url == frame_of(101 if itch.same else itch.build)
+        if len(fetched) <= missing:
+            raise http_error(url, code)
+        return answer(url) if answer else Page(GAME_HTML, url=url)
     return fetch
 
 
 class Saved:
     """A save test: a config file, a published release and the fakes."""
 
-    def __init__(self, tmp_path, monkeypatch, *, release="published", page_url=PAGE_URL, target=TEST_TARGET,
-                 public_page=None, **runner_kw):
+    def __init__(self, tmp_path, monkeypatch, *, release="published", target=TEST_TARGET, itch_kw=None, **runner_kw):
         self.job = tmp_path / "job"
         self.job.mkdir()
         self.config = self.job / "config.json"
-        config = {"savetest_itch_page_url": page_url, "savetest_itch_target": target, "itch_page_url": public_page}
+        config = {"savetest_itch_target": target, "itch_page_url": "https://eyalgolan.itch.io/statecraft-israel"}
         self.config.write_text(json.dumps({k: v for k, v in config.items() if v is not None}) + "\n")
         self.cfg = ns.load_config(self.config)
         self.cfg = dataclasses.replace(self.cfg, handoff=tmp_path / "HANDOFF.md")
         self.gh = FakeGH(release=release)
         self.gh.baseline = zip_of(tmp_path / "tonight-web.zip", "tonight")
-        self.itch = SaveItch(self.gh.calls)
+        self.itch = SaveItch(self.gh.calls, **(itch_kw or {}))
+        self.fetched = []
         self.runner = SaveRunner(**runner_kw)
         monkeypatch.setattr(nightly, "find_chrome", lambda: Path("/fake/chrome"))
 
     def run(self, fetch=None, tag=TAG, sleep=lambda s: None):
         return nightly.savetest(self.cfg, self.config, self.job, self.runner, self.gh, self.itch, tag=tag,
-                                fetch=fetch or page_for(self.itch), sleep=sleep)
+                                fetch=fetch or frame_for(self.itch, self.fetched), sleep=sleep)
 
     def evidence(self):
         return json.loads(next((self.job / "savetest").glob("*/evidence.json")).read_text())
@@ -1997,7 +2075,10 @@ def test_savetest_passes_only_with_matching_tuple_new_url_same_origin(saved):
     version = TAG[1:]
     assert [c for c in t.gh.calls if c[0].startswith("itch.")] == [
         ("itch.push", "folder", f"{version}-savetest-a"), ("itch.wait_live", f"{version}-savetest-a"),
-        ("itch.push", "folder", f"{version}-savetest-b"), ("itch.wait_live", f"{version}-savetest-b")]
+        ("itch.live_frame_ids", f"{version}-savetest-a"),
+        ("itch.push", "folder", f"{version}-savetest-b"), ("itch.wait_live", f"{version}-savetest-b"),
+        ("itch.live_frame_ids", f"{version}-savetest-b")]
+    assert t.fetched == [frame_of(101), frame_of(102)]   # #2056: only the build's own frame, never the itch page
     first, b1, b2 = t.runner.runs
     profile = first[first.index("--profile") + 1]
     assert first[first.index("--url") + 1] == f"{ITCH_HOST}/html/19840947-101/index.html" and "--first-save" in first
@@ -2007,26 +2088,95 @@ def test_savetest_passes_only_with_matching_tuple_new_url_same_origin(saved):
         assert run[run.index("--expect") + 1] == "GAME OK 1948-05-16 turn 1 hash ab12"
         assert run[:5] == ["uv", "run", str(nightly.TOOLS / "machine_lock.py"), "--shared", "--"]
     ev = t.evidence()
-    assert ev["upload_a"] == {"build_id": 101, "frame_url": f"{ITCH_HOST}/html/19840947-101/index.html"}
-    assert ev["upload_b"]["build_id"] == 102 and ev["tuple"] == {"date": "1948-05-16", "turn": 1, "hash": "ab12"}
+    assert ev["upload_a"] == {"upload_id": UPLOAD_ID, "build_id": 101, "frame_url": frame_of(101)}
+    assert ev["upload_b"] == {"upload_id": UPLOAD_ID, "build_id": 102, "frame_url": frame_of(102)} and ev["tuple"] == {"date": "1948-05-16", "turn": 1, "hash": "ab12"}
     assert ev["chrome"] == "/fake/chrome" and len(ev["zip_sha256"]) == 64 and ev["result"] == "PASS"
     assert t.enabled() and json.loads(t.config.read_text())["itch_evidence"].endswith("evidence.json")
     assert "SAVETEST PASS" in t.log() and TAG in t.log()
 
 
 def test_savetest_same_frame_url_is_inconclusive_and_keeps_itch_off(saved):
-    t = saved()
-    assert t.run(page_for(t.itch, same=True)) == "INCONCLUSIVE"
+    t = saved(itch_kw={"same": True})
+    assert t.run() == "INCONCLUSIVE"
     assert not t.enabled() and len(t.runner.runs) == 1   # B is never loaded
     assert "same frame URL" in t.evidence()["detail"] and "SAVETEST INCONCLUSIVE" in t.log()
 
 
-def test_savetest_another_frame_origin_is_inconclusive(saved, monkeypatch):
-    t = saved()   # itch_frame_url only matches the one host today; the origin check guards a change of that
-    hosts = iter(["html-classic.itch.zone", "html-classic.example.zone"])
-    monkeypatch.setattr(nightly, "itch_frame_url",
-                        lambda page: f"https://{next(hosts)}/html/1-{t.itch.build}/index.html")
-    assert t.run() == "INCONCLUSIVE" and not t.enabled() and "origin changed" in t.evidence()["detail"]
+def test_both_frames_are_on_the_one_frame_origin():
+    # IndexedDB is per origin: the frame URL is built from butler's ids on one fixed host, so A and B share it
+    a = urllib.parse.urlsplit(nightly.itch_build_frame_url(UPLOAD_ID, 101))
+    b = urllib.parse.urlsplit(nightly.itch_build_frame_url(UPLOAD_ID, 102))
+    assert (a.scheme, a.netloc) == (b.scheme, b.netloc) == ("https", "html-classic.itch.zone") and a.path != b.path
+
+
+# --- review round on #2237 ------------------------------------------------------------------------------------------
+
+def test_the_frame_ids_must_belong_to_the_version_this_run_pushed(saved):
+    t = saved(itch_kw={"live_as": "9.9.9-savetest-a"})   # another run's upload went live in between
+    assert t.run() == "INCONCLUSIVE" and t.runner.runs == [] and t.fetched == [] and not t.enabled()
+    assert f"{TAG[1:]}-savetest-a" in t.evidence()["detail"]
+
+
+@pytest.mark.parametrize("answer", [
+    lambda url: Page("<html>Sign in to itch.io</html>", url=url),                       # 200, not the game
+    lambda url: Page(GAME_HTML, url="https://itch.io/login"),                            # redirected elsewhere
+    lambda url: Page(GAME_HTML, url=url, status=203),                                    # not a plain 200
+])
+def test_only_the_game_page_itself_counts_as_a_served_frame(saved, answer):
+    t = saved()
+    sleeps = []
+    assert t.run(frame_for(t.itch, t.fetched, answer=answer), sleep=sleeps.append) == "INCONCLUSIVE"
+    assert t.runner.runs == [] and not t.enabled() and "not the game" in t.evidence()["detail"]
+    assert sum(sleeps) <= nightly.SAVETEST_FRAME_TRIES * nightly.SAVETEST_FRAME_SLEEP
+
+
+@pytest.mark.parametrize("code", [401, 410, 500])
+def test_any_other_http_answer_from_the_frame_ends_inconclusive_at_once(saved, code):
+    t = saved()
+    assert t.run(frame_for(t.itch, t.fetched, missing=10_000, code=code)) == "INCONCLUSIVE"
+    assert t.runner.runs == [] and len(t.fetched) == 1 and f"HTTP {code}" in t.evidence()["detail"]
+
+
+def test_a_b_frame_that_is_never_served_is_inconclusive_not_fail(saved):
+    t = saved()
+    def fetch(url, timeout=30):
+        if t.itch.pushes == 2:
+            raise http_error(url, 404)
+        return Page(GAME_HTML, url=url)
+    assert t.run(fetch) == "INCONCLUSIVE" and len(t.runner.runs) == 1 and not t.enabled()
+
+
+def test_a_second_save_test_pushes_nothing_while_one_runs(saved):
+    import fcntl
+    t = saved()
+    with (t.job / "savetest.lock").open("a") as held:
+        fcntl.flock(held, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        assert t.run() == "INCONCLUSIVE"
+    assert not any(c[0].startswith("itch.") or c[0] == "download" for c in t.gh.calls) and t.runner.runs == []
+    assert "another save test" in t.log() and not t.enabled()
+    assert t.run() == "PASS"   # the lock is free again once the other run ends
+
+
+@pytest.mark.parametrize("target", [" eyalgolan/statecraft-israel-savetest:html5", "eyalgolan/statecraft-israel/:html5",
+                                    "eyalgolan/statecraft-israel:", "eyalgolan/statecraft-israel-savetest:html5\n",
+                                    "eyalgolan/statecraft israel:html5"])
+def test_a_malformed_save_test_target_is_refused_before_any_push(saved, target):
+    t = saved(target=target)
+    assert t.run() == "INCONCLUSIVE" and not t.enabled() and "test page" in t.log()
+    assert not any(c[0].startswith("itch.") or c[0] == "download" for c in t.gh.calls)
+
+
+def test_the_project_of_the_public_page_url_is_refused_as_a_test_target(saved):
+    t = saved(target="eyalgolan/other-game:html5")
+    t.cfg = dataclasses.replace(t.cfg, itch_page_url="https://EyalGolan.itch.io/other-game/")
+    assert t.run() == "INCONCLUSIVE" and "must not be the public itch project" in t.log()
+    assert not any(c[0].startswith("itch.") for c in t.gh.calls)
+
+
+def test_a_save_test_pass_enables_the_nightly_push(saved):
+    t = saved()
+    assert t.run() == "PASS"
+    assert nightly.itch_skip_reason(ns.load_config(t.config)) is None
 
 
 def test_savetest_mismatch_fails_and_keeps_itch_off(saved):
@@ -2052,8 +2202,8 @@ def test_savetest_without_a_durable_first_save_is_inconclusive(saved, saved_run)
     assert [c[0] for c in t.gh.calls].count("itch.push") == 1   # B is never pushed
 
 
-@pytest.mark.parametrize("kw", [{"release": "draft"}, {"release": None}, {"page_url": ""}])
-def test_savetest_needs_a_published_nightly_and_a_page_url(saved, kw):
+@pytest.mark.parametrize("kw", [{"release": "draft"}, {"release": None}])
+def test_savetest_needs_a_published_nightly(saved, kw):
     t = saved(**kw)
     assert t.run() == "INCONCLUSIVE" and not t.enabled()
     assert not any(c[0].startswith("itch.") or c[0] == "download" for c in t.gh.calls) and t.runner.runs == []
@@ -2061,34 +2211,68 @@ def test_savetest_needs_a_published_nightly_and_a_page_url(saved, kw):
 
 
 def test_savetest_waits_while_itch_is_still_unpacking_the_upload(saved):
-    t = saved()   # 28 Oct 2026: the page showed only a load_url for about 17 minutes before it named the frame
-    framed, calls = page_for(t.itch), {"n": 0}
+    t = saved()   # 28 Oct 2026: itch took about 17 minutes to unpack the web build after butler showed it live
+    sleeps = []
+    assert t.run(frame_for(t.itch, t.fetched, missing=30), sleep=sleeps.append) == "PASS" and t.enabled()
+    assert t.fetched[:31] == [frame_of(101)] * 31 and sleeps[:30] == [nightly.SAVETEST_FRAME_SLEEP] * 30
 
-    def fetch(url, timeout=30):
-        calls["n"] += 1
-        if calls["n"] <= 30:   # 30 polls x 30 s = 15 minutes of {"status":"extracting"}
-            return Page('<div class="html_embed_widget">Embed({"load_url":"https:\\/\\/x.itch.io\\/g\\/html_url\\/1"})')
-        return framed(url, timeout)
-    assert t.run(fetch) == "PASS" and t.enabled()
+
+@pytest.mark.parametrize("code", [403, 404])
+def test_a_frame_that_never_loads_ends_inconclusive_within_the_wait_budget(saved, code):
+    t = saved()   # e.g. a frame itch would not serve signed out: nothing is played, itch stays off
+    sleeps = []
+    assert t.run(frame_for(t.itch, t.fetched, missing=10_000, code=code), sleep=sleeps.append) == "INCONCLUSIVE"
+    assert not t.enabled() and t.runner.runs == [] and [c[0] for c in t.gh.calls].count("itch.push") == 1
+    assert sum(sleeps) <= nightly.SAVETEST_FRAME_TRIES * nightly.SAVETEST_FRAME_SLEEP
+    assert f"HTTP {code}" in t.evidence()["detail"] and frame_of(101) in t.evidence()["detail"]
+
+
+def test_savetest_without_live_frame_ids_is_inconclusive(saved):
+    t = saved(itch_kw={"ids": False})
+    assert t.run() == "INCONCLUSIVE" and t.runner.runs == [] and t.fetched == [] and not t.enabled()
+    assert "upload and build ids" in t.evidence()["detail"]
+
+
+def test_savetest_needs_index_html_at_the_root_of_the_zip(saved, tmp_path):
+    t = saved()   # the frame URL names <upload>-<build>/index.html, so the page must sit at the zip's root
+    with zipfile.ZipFile(t.gh.baseline, "w") as z:
+        z.writestr("web/index.html", "nested")
+    assert t.run() == "INCONCLUSIVE" and not t.enabled()
+    assert not any(c[0].startswith("itch.") for c in t.gh.calls) and "index.html" in t.evidence()["detail"]
 
 
 @pytest.mark.parametrize("kw", [{"target": None}, {"target": "eyalgolan/statecraft-israel:html5"},
                                 {"target": "eyalgolan/statecraft-israel:savetest"},   # another channel, same page
                                 {"target": "EyalGolan/Statecraft-Israel:html5"},
                                 {"target": "eyalgolan/statecraft-israel"},   # no channel: still the public project
-                                {"page_url": None}, {"public_page": PAGE_URL},
-                                {"public_page": PAGE_URL.upper() + "/#game"},
-                                {"page_url": "http://["}])   # a malformed URL refuses instead of raising
+                                {"target": ""}])
 def test_savetest_runs_only_against_a_separate_test_page(saved, kw):
     t = saved(**kw)   # 28 Oct 2026: each upload hid the public game while itch unpacked it, for up to an hour
     assert t.run() == "INCONCLUSIVE" and not t.enabled() and "test page" in t.log()
     assert not any(c[0].startswith("itch.") or c[0] == "download" for c in t.gh.calls) and t.runner.runs == []
 
 
-def test_savetest_reads_the_test_page_and_records_it_in_the_evidence(saved):
+def test_savetest_records_its_target_and_no_page_in_the_evidence(saved):
     t = saved()
     assert t.run() == "PASS"
-    assert t.evidence()["page_url"] == PAGE_URL and t.evidence()["target"] == TEST_TARGET
+    assert t.evidence()["target"] == TEST_TARGET and "page_url" not in t.evidence()
+
+
+def test_the_savetest_page_url_key_is_gone_from_the_config():
+    # #2056 (owner, 2 Nov 2026: "Code change, page stays Restricted"): the save test never reads the test page,
+    # so the job config has no key for its URL; the old key is refused like any unknown one
+    assert "savetest_itch_page_url" not in {f.name for f in dataclasses.fields(ns.Config)}
+    assert nightly.SAVETEST_KEYS == ("savetest_itch_target",)
+
+
+def test_a_config_still_holding_the_removed_page_url_key_is_refused_with_the_fix(tmp_path):
+    config = tmp_path / "config.json"
+    config.write_text(json.dumps({"savetest_itch_target": TEST_TARGET,
+                                  "savetest_itch_page_url": "https://eyalgolan.itch.io/statecraft-israel-savetest"}))
+    with pytest.raises(ns.Refused) as e:
+        ns.load_config(config)
+    assert e.value.gate == "config"
+    assert "remove savetest_itch_page_url from config.json; #2237 replaced it" in e.value.detail
 
 
 def test_the_savetest_command_refuses_before_any_client_without_a_test_target(tmp_path, monkeypatch, capsys):
@@ -2111,24 +2295,19 @@ def test_the_savetest_command_builds_its_itch_client_on_the_test_target(tmp_path
     monkeypatch.setattr(nightly, "savetest", lambda cfg, config, job, runner, gh, itch, *, tag: "PASS")
     cfg = dataclasses.replace(ns.Config(), butler=butler, handoff=tmp_path / "HANDOFF.md",
                               itch_page_url="https://eyalgolan.itch.io/statecraft-israel",
-                              savetest_itch_target=TEST_TARGET, savetest_itch_page_url=PAGE_URL)
+                              savetest_itch_target=TEST_TARGET)
     assert nightly.run_savetest(cfg, tmp_path, TAG) == 0 and built == [TEST_TARGET]
 
 
 def too_many_requests(retry_after=None):
-    import email.message
-    import urllib.error
-    headers = email.message.Message()
-    if retry_after is not None:
-        headers["Retry-After"] = retry_after
-    return urllib.error.HTTPError(PAGE_URL, 429, "Too Many Requests", headers, None)
+    return http_error(frame_of(101), 429, retry_after)
 
 
 @pytest.mark.parametrize("retry_after,pause", [("90", 90), (None, nightly.SAVETEST_RATE_LIMIT_SLEEP), ("soon",
                                                nightly.SAVETEST_RATE_LIMIT_SLEEP), ("5", nightly.SAVETEST_FRAME_SLEEP)])
-def test_savetest_backs_off_and_keeps_waiting_when_itch_rate_limits_the_page(saved, retry_after, pause):
+def test_savetest_backs_off_and_keeps_waiting_when_itch_rate_limits_the_frame(saved, retry_after, pause):
     t = saved()   # 28 Oct 2026: itch answered 429 Too Many Requests while the test waited for upload B's frame
-    framed, calls, sleeps = page_for(t.itch), {"n": 0}, []
+    framed, calls, sleeps = frame_for(t.itch, t.fetched), {"n": 0}, []
 
     def fetch(url, timeout=30):
         calls["n"] += 1
@@ -2150,22 +2329,6 @@ def test_savetest_a_rate_limit_that_never_lifts_ends_inconclusive_within_the_wai
     assert sleeps and max(sleeps) == nightly.SAVETEST_RATE_LIMIT_MAX and "429" in t.log()
 
 
-def test_savetest_a_page_without_a_frame_is_inconclusive(saved):
-    t = saved()
-    assert t.run(page_for(t.itch, frame=False)) == "INCONCLUSIVE" and t.runner.runs == [] and not t.enabled()
-
-
-def test_savetest_waits_for_the_page_to_name_the_new_frame(saved):
-    t = saved()
-    seen = []
-    base = page_for(t.itch)
-    def fetch(url, timeout=30):   # the page lags: after upload B its first two answers still name A's frame
-        seen.append(t.itch.pushes)
-        stale = t.itch.pushes == 2 and seen.count(2) <= 2
-        return base(url) if not stale else Page('&quot;%s/html/19840947-101/index.html&quot;' % ITCH_HOST)
-    assert t.run(fetch) == "PASS" and seen.count(2) == 3
-
-
 @pytest.mark.parametrize("step", ["push", "wait_live"])
 def test_savetest_an_itch_failure_is_inconclusive_and_recorded(saved, step):
     t = saved()
@@ -2173,7 +2336,7 @@ def test_savetest_an_itch_failure_is_inconclusive_and_recorded(saved, step):
     assert t.run() == "INCONCLUSIVE" and not t.enabled() and f"itch: {step} failed" in t.log()
 
 
-def test_savetest_an_unreadable_page_is_inconclusive(saved):
+def test_savetest_an_unreachable_frame_is_inconclusive(saved):
     t = saved()
     def fetch(url, timeout=30):
         raise OSError("offline")
@@ -2842,3 +3005,162 @@ def test_pending_demo_without_verified_latest_preserves_hold_and_never_dispatche
     assert env.night(ns.State(last_published=ns.Published(TAG, SHA, "0.3.2", {}, None), site_pending="0.3.2"), gh) == "SKIPPED"
     assert gh.names() == ["latest_tag"]
     assert ns.load_state(env.state_path).site_pending == "0.3.2"
+
+
+# --- the Steam stage (plan 2026-11-01-steamworks-integration Task 7, #2155) --------------------------------------------
+
+STEAM_IDS = {"app_id": 1000, "depots": {"windows": 1001, "mac": 1002, "linux": 1003}, "branches": ["beta", "nightly"]}
+
+
+def steam_ready(env, ids=STEAM_IDS, *, build=0, stage=0):
+    """steam/steam.json in the clone, and runner answers for the tag fetch and the two Steam commands."""
+    (env.cfg.clone / "steam").mkdir(exist_ok=True)
+    (env.cfg.clone / "steam/steam.json").write_text(json.dumps(ids))
+    clone = str(env.cfg.clone)
+    env.runner.add(["git", "-C", clone, "fetch", "--no-tags", "origin"], out="")
+    env.runner.add(["uv", "run", "tools/release_build.py"], code=build)
+    env.runner.add(["uv", "run", "tools/steam_upload.py"], code=stage)
+
+
+def steam_calls(env):
+    return [c for c in env.runner.calls if c[:3] in (["uv", "run", "tools/release_build.py"],
+                                                     ["uv", "run", "tools/steam_upload.py"])
+            or c[:4] == ["git", "-C", str(env.cfg.clone), "fetch"]]
+
+
+def staged(night, env, stages, st, **kw):
+    """One run_stages call; a repeat in the same test first drops the previous call's copy of the first player."""
+    shutil.rmtree(stages.gz, ignore_errors=True)
+    return nightly.run_stages(night, st, env.runner, stages.gh, None, free_gb=lambda p: 100.0, **kw)
+
+
+def published_marker(env, monkeypatch):
+    monkeypatch.setattr(nightly, "publish_night", lambda *a, **k: env.runner.calls.append(["PUBLISHED"]))
+
+
+def test_the_steam_stage_runs_only_after_publish(night, env, stages, monkeypatch):
+    steam_ready(env)
+    published_marker(env, monkeypatch)
+    st = ns.State(last_published=last_published())
+    assert staged(night, env, stages, st, no_publish=False)
+    calls = env.runner.calls
+    first = next(i for i, c in enumerate(calls) if c in steam_calls(env))
+    assert calls.index(["PUBLISHED"]) < first
+    out = night.run_dir / "steam-release"
+    assert ["git", "-C", str(env.cfg.clone), "fetch", "--no-tags", "origin", f"refs/tags/{TAG}:refs/tags/{TAG}"] in calls
+    assert ["uv", "run", "tools/release_build.py", "--platform", "all", "--steam", "--tag", TAG,
+            "--nightly-version", night.version, "--out", str(out)] in calls
+    assert ["uv", "run", "tools/steam_upload.py", "stage", "--out", str(out), "--tag", TAG] in calls
+    assert not night.notes
+
+
+def test_no_steam_stage_without_a_publish(night, env, stages, monkeypatch):
+    steam_ready(env)
+    st = ns.State(last_published=last_published())
+    staged(night, env, stages, st, no_publish=True)
+    assert steam_calls(env) == []
+    monkeypatch.setattr(nightly, "publish_night",
+                        lambda *a, **k: (_ for _ in ()).throw(ns.Refused("github-publish", "no")))
+    with pytest.raises(ns.Refused):
+        staged(night, env, stages, st, no_publish=False)
+    assert steam_calls(env) == []
+
+
+@pytest.mark.parametrize("failure", ["build", "stage", "fetch", "raises"])
+def test_a_steam_failure_leaves_the_web_nightly_published(env, stages, monkeypatch, failure):
+    if failure == "fetch":
+        clone = str(env.cfg.clone)
+        env.runner.add(["git", "-C", clone, "fetch", "--no-tags", "origin"], code=128)
+    if failure == "raises":
+        env.runner.add(["uv", "run", "tools/release_build.py"],
+                       effect=lambda cmd: (_ for _ in ()).throw(OSError("uv is missing")))
+    steam_ready(env, build=1 if failure == "build" else 0, stage=1 if failure == "stage" else 0)
+    published_marker(env, monkeypatch)
+    ns.save_state(env.state_path, ns.State(last_published=last_published()))
+    outcome = nightly.run_night(env.cfg, env.state_path, env.job, env.runner, stages.gh, None, now=NOW, manual=False,
+                                no_publish=False, free_gb=lambda p: 100.0)
+    assert outcome == "PUBLISHED"
+    line = env.log().strip().splitlines()[-1]
+    assert "PUBLISHED" in line and line.endswith("steam=failed")
+    assert not {"delete_draft", "restore_latest"} & set(stages.gh.names()), "the web nightly is never rolled back"
+    assert any("Steam" in note[0] for note in env_notes)
+
+
+def test_the_steam_stage_is_skipped_while_ids_are_null(night, env, stages, monkeypatch, capsys):
+    published_marker(env, monkeypatch)
+    st = ns.State(last_published=last_published())
+    for ids in ({**STEAM_IDS, "app_id": None}, {**STEAM_IDS, "depots": {**STEAM_IDS["depots"], "mac": None}}):
+        steam_ready(env, ids)
+        assert staged(night, env, stages, st, no_publish=False)
+        assert steam_calls(env) == [] and not night.notes
+    assert "steam: skipped" in capsys.readouterr().out
+    # --no-steam skips it even with every ID known.
+    steam_ready(env)
+    assert staged(night, env, stages, st, no_publish=False, no_steam=True)
+    assert steam_calls(env) == []
+
+
+def test_no_steam_reaches_the_stage_from_the_command_line(env, monkeypatch):
+    seen = {}
+    monkeypatch.setattr(nightly, "load_config", lambda path: env.cfg)
+    monkeypatch.setattr(nightly, "_clients", lambda cfg: (FakeGH(), None))
+    monkeypatch.setattr(nightly, "JOB", env.job)
+    monkeypatch.setattr(nightly, "run_night", lambda *a, **k: seen.update(k) or "PUBLISHED")
+    assert nightly.main(["run", "--no-steam"]) == 0 and seen["no_steam"] is True
+    assert nightly.main(["run"]) == 0 and seen["no_steam"] is False
+
+
+class SteamEnvRunner(EnvRunner):
+    """Also records stop_on_interrupt per command."""
+
+    def __init__(self):
+        super().__init__()
+        self.stops = []
+
+    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None, stop_on_interrupt=False):
+        self.stops.append((list(cmd), stop_on_interrupt))
+        return super().run(cmd, cwd=cwd, log=log, deadline=deadline, env=env, holder=holder)
+
+
+def test_the_steam_build_runs_like_the_nightlys_other_unity_steps(night, env):
+    # Review I2 (#2155): the MCP-free Unity env, the exclusive-window check, and children stopped on an interrupt.
+    env.runner = SteamEnvRunner()
+    env._rules()
+    steam_ready(env)
+    nightly.run_steam(night, env.runner)
+    build = next(e for e in env.runner.envs if e[0][:3] == ["uv", "run", "tools/release_build.py"])
+    assert build[1]["UNITY_MCP_SERVER_PATH"] == str(night.job / "no-mcp-server")
+    runs = [stop for cmd, stop in env.runner.stops if cmd[:2] == ["uv", "run"]]
+    assert runs == [True, True], runs   # release_build.py and steam_upload.py, each stopped on an interrupt
+    assert not night.notes
+    env.marker.write_text("x")
+    nightly.run_steam(night, env.runner)
+    assert night.notes == ["steam=failed"]
+    assert len([e for e in env.runner.envs if e[0][:3] == ["uv", "run", "tools/release_build.py"]]) == 1
+
+
+@pytest.mark.parametrize("text, notes", [('{"app_id": 1, "depots": [1, 2, 3], "branches": []}', ["steam=failed"]),
+                                         ('[1]', ["steam=failed"]), ("not json", [])])
+def test_a_malformed_steam_json_is_a_steam_failure_not_a_refused_night(night, env, text, notes):
+    # Review I3 (#2155): the web nightly is public by now, so even a broken steam.json only marks Steam.
+    (env.cfg.clone / "steam").mkdir(exist_ok=True)
+    (env.cfg.clone / "steam/steam.json").write_text(text)
+    nightly.run_steam(night, env.runner)   # never raises
+    assert night.notes == notes   # unreadable JSON is "not configured yet" (skipped); a wrong shape is a failure
+    assert not [c for c in env.runner.calls if c[:2] == ["uv", "run"]]
+
+
+def test_the_steam_content_is_removed_after_the_stage(night, env):
+    # Review (k2 H6): nothing prunes the run folders, and three players plus their zips each night would fill the disk
+    # the next web nightly's free-space gate reads. The record and the logs stay.
+    out = night.run_dir / "steam-release"
+    def built(cmd):
+        (out / "steam/linux").mkdir(parents=True)
+        (out / "steam/linux/Statecraft.x86_64").write_bytes(b"x" * 10)
+        (out / "steam-v0.3.2-linux.zip").write_bytes(b"z")
+        (out / "build-record.json").write_text("{}")
+    steam_ready(env)
+    env.runner.rules.insert(0, (("uv", "run", "tools/release_build.py"), 0, "", built))
+    nightly.run_steam(night, env.runner)
+    assert not (out / "steam").exists() and not list(out.glob("*.zip"))
+    assert (out / "build-record.json").is_file()
