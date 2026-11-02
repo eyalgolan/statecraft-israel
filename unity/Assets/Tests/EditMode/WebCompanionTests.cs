@@ -260,7 +260,9 @@ public sealed class WebCompanionTests
             Assert.AreEqual("he", game.Language);
             Assert.AreSame(session, game.Bridge!.Session);
             Assert.AreSame(state, game.Bridge.State);
-            Assert.Contains("null", sent, "the old mirror is cleared before publishing its replacement");
+            // A rebuild does not clear the page: the next mirror's first snapshot replaces the panel, so it does not blink,
+            // the canvas is not resized twice and the status is not read again (key-2 review C5).
+            CollectionAssert.DoesNotContain(sent, "null", "a language switch keeps the page's panel");
             game.Companion!.Refresh();
             Assert.AreEqual("he", JsonUtility.FromJson<WebCompanion.Snapshot>(sent[sent.Count - 1]).lang);
             var count = sent.Count; old.Refresh(); Assert.AreEqual(count, sent.Count);
@@ -268,6 +270,7 @@ public sealed class WebCompanionTests
             game.Begin(inputs, 0);
             Assert.AreNotSame(current, game.Companion);
             count = sent.Count; current.Refresh(); Assert.AreEqual(count, sent.Count);
+            CollectionAssert.DoesNotContain(sent, "null", "New Game keeps the page's panel too");
             game.enabled = false; Assert.AreEqual("null", sent[sent.Count - 1]);
             Assert.IsNull(game.Companion);
         }
@@ -313,6 +316,13 @@ public sealed class WebCompanionTests
             {
                 Assert.AreEqual(text["settings.companion"], ui.Q<Label>("settings-companion-label").text);
                 Assert.AreEqual(DisplayStyle.None, ui.Q<Button>("settings-companion").parent.style.display.value, "no page: no row");
+            }
+            // GameRoot reuses one tree for every Begin: a presenter with a page shows the row an earlier one hid (key-2 H7).
+            using (var ui = new UiTestKit())
+            {
+                using (new SettingsPresenter(ui.Root, text, new Statecraft.Game.SettingsStore(dir))) { }
+                using (new SettingsPresenter(ui.Root, text, new Statecraft.Game.SettingsStore(dir), companion: (() => false, _ => { })))
+                    Assert.AreNotEqual(DisplayStyle.None, ui.Q<Button>("settings-companion").parent.style.display.value, "the same tree, now with a page: the row shows");
             }
             bool on = false; var asked = new List<bool>();
             using (var ui = new UiTestKit())
@@ -420,6 +430,7 @@ public sealed class WebCompanionTests
         Assert.IsEmpty(mirror.Capture().report);
         bridge.EndTurn();
         Assert.IsTrue(report.IsOpen, "precondition: End Turn opens the report");
+        toast.Clear();   // the status line with no toast showing
         var state = mirror.Capture();
         Assert.AreEqual(bridge.State.Turn, state.turn);
         Assert.AreEqual(text["report.title"], state.reportTitle);
@@ -429,6 +440,13 @@ public sealed class WebCompanionTests
             expected.Add(string.Join("\n", System.Linq.Enumerable.Where(System.Linq.Enumerable.Select(row.Query<Label>().ToList(), l => l.text), t => t.Length > 0)));
         Assert.Greater(expected.Count, 1, "precondition: the report has rows");
         CollectionAssert.AreEqual(expected, state.report, "the report's own words, in its order");
+        // The status line is one atomic live region, read whole on any change: a toast over the open report is the line
+        // alone, so one toast does not read the report title again with it, and again when it goes (key-2 review C1).
+        toast.Refuse("x");
+        Assert.AreEqual(text.Format("toast.refused", "x"), mirror.Capture().status, "a toast over the report is the status alone");
+        CollectionAssert.AreEqual(expected, mirror.Capture().report, "the report section keeps its rows under the toast");
+        toast.Clear();
+        Assert.AreEqual(text["report.title"], mirror.Capture().status, "the report's title again once the toast goes");
         var capture = System.Environment.GetEnvironmentVariable("WEB_COMPANION_CAPTURE_DIR");
         if (!string.IsNullOrEmpty(capture))
         {
@@ -463,6 +481,9 @@ public sealed class WebCompanionTests
             Assert.IsEmpty(sent, "nothing is published before the first frame");
             yield return Pump(() => sent.Count > 0);
             Assert.IsNotEmpty(sent, "the first frame publishes");
+            // The fallback poll stopped: what follows reaches the page through the mirror's own subscriptions (key-2 review
+            // C4; with the poll running, removing them left this test green).
+            ((IVisualElementScheduledItem)typeof(WebCompanion).GetField("poll", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.GetValue(mirror)).Pause();
             WebCompanion.Snapshot Last() => JsonUtility.FromJson<WebCompanion.Snapshot>(sent[sent.Count - 1]);
 
             var reason = bridge.Queue(new Statecraft.Sim.SetPolicy("curfew", 1));

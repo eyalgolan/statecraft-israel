@@ -12,8 +12,8 @@ namespace Statecraft.Game.UI
     /// (<see cref="On"/>): the Settings switch or "?companion=1" turns it on.
     /// It publishes in the frame after a sim change, an End Turn, a refused order, a click, a submit or a focus move, once
     /// the presenters have rendered; periodic sampling also catches toast writes and controls rebuilt without any of those.
-    /// Nothing is published before the first frame. Owned by GameRoot: a restart/language switch disposes it and clears the
-    /// page before creating the next mirror.</summary>
+    /// Nothing is published before the first frame. Owned by GameRoot: a restart/language switch disposes it without clearing
+    /// the page, and the next mirror's first snapshot replaces the panel; turning it off or disabling GameRoot clears it.</summary>
     public sealed class WebCompanion : IDisposable
     {
         [Serializable]
@@ -91,15 +91,16 @@ namespace Statecraft.Game.UI
                 turn = bridge?.State.Turn ?? 0,
             };
             var toast = root.Q<Label>("toast");
-            var status = new List<string>();
-            if (Visible(toast) && toast!.text.Length > 0) status.Add(toast.text);
-            // The End Turn result, whether or not a decision waits: the status line names the open report, and the report
-            // section carries its rows as the panel shows them.
+            if (Visible(toast) && toast!.text.Length > 0) snapshot.status = toast.text;
+            // The End Turn result, whether or not a decision waits: the report section carries its rows as the panel shows
+            // them, and the status line names the open report while no toast is showing. Never both: the line is one atomic
+            // live region, read whole on any change: a toast joined to the title would read the title when the toast came
+            // and again when it went.
             var report = root.Q(TurnReportPresenter.ElementName);
             if (Visible(report))
             {
                 snapshot.reportTitle = Words("turn-report-title");
-                if (snapshot.reportTitle.Length > 0) status.Add(snapshot.reportTitle);
+                if (snapshot.status.Length == 0) snapshot.status = snapshot.reportTitle;
                 var lines = new List<string>();
                 var intro = Words("turn-report-intro");
                 if (intro.Length > 0) lines.Add(intro);
@@ -113,7 +114,6 @@ namespace Statecraft.Game.UI
                     }
                 snapshot.report = lines.ToArray();
             }
-            snapshot.status = string.Join("\n", status);
             focused ??= root.focusController?.focusedElement as VisualElement;
             if (focused != null && root.Contains(focused) && Visible(focused))
             {
@@ -171,7 +171,11 @@ namespace Statecraft.Game.UI
             previous = json;   // only once it has gone out: a publication that threw is tried again
         }
 
-        public void Dispose()
+        public void Dispose() => Dispose(clearPage: true);
+
+        /// <param name="clearPage">False for GameRoot's rebuild (a language switch, New Game): the next mirror's first
+        /// snapshot replaces the panel, so the page neither blinks nor reads its status again.</param>
+        internal void Dispose(bool clearPage)
         {
             if (disposed) return;
             disposed = true;
@@ -182,6 +186,7 @@ namespace Statecraft.Game.UI
             root.UnregisterCallback(onFocus, TrickleDown.TrickleDown);
             // Last, and never thrown on: GameRoot disposes its owned presenters in one loop, and a page or test transport
             // that throws here must not leave the rest of them undisposed.
+            if (!clearPage) return;
             try { send("null"); }
             catch (Exception e) { Debug.LogException(e); }
         }

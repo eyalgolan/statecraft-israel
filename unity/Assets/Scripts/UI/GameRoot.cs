@@ -65,6 +65,9 @@ namespace Statecraft.Game.UI
         // can be turned on for; it does not turn it on.
         internal Action<string>? CompanionSend { get; set; }
         internal WebCompanion? Companion => companion;
+        bool CompanionPage => Application.platform == RuntimePlatform.WebGLPlayer || CompanionSend != null;
+        /// <summary>Whether a Begin runs the companion: where a page can show it and WebCompanion.On says so.</summary>
+        bool CompanionWanted() => CompanionPage && WebCompanion.On(companionPicked, SettingsFile()?.Read(SettingsPresenter.CompanionKey), Application.absoluteURL);
         CaptureDialogPresenter? capture;
         /// <summary>Tests: the capture dialog of the last Begin.</summary>
         internal CaptureDialogPresenter? Capture => capture;
@@ -239,7 +242,8 @@ namespace Statecraft.Game.UI
             // where a test asks for it with the start screen (OpeningInEditMode).
             bool enableOpening = smoke == 0 && !StartScreenPresenter.Skipped()
                 && (Application.isPlaying || startScreen && OpeningInEditMode);
-            Shutdown();
+            // A companion this Begin runs again keeps the page's panel until its replacement publishes (WebCompanion.Dispose).
+            Shutdown(keepCompanionPage: companion != null && CompanionWanted());
             smokeRun = smoke > 0;
 
             var text = Strings();
@@ -327,7 +331,7 @@ namespace Statecraft.Game.UI
             // The WebGL companion (#1119) is opt-in (WebCompanion.On): Settings turns it on and off at once, where a page shows it.
             Action<bool>? setCompanion = null;
             (Func<bool> on, Action<bool> set)? companionSwitch = null;
-            if (Application.platform == RuntimePlatform.WebGLPlayer || CompanionSend != null)
+            if (CompanionPage)
             {
                 Action<bool> set = on =>
                 {
@@ -687,8 +691,7 @@ namespace Statecraft.Game.UI
             }
             if (hebrew) Own(new UiDirection(root, bridge));
             root.Q("root")?.RemoveFromClassList("loading");                // ready: the bar, panels and screens may show (P2-1)
-            if (setCompanion != null && WebCompanion.On(companionPicked, SettingsFile()?.Read(SettingsPresenter.CompanionKey), Application.absoluteURL))
-                setCompanion(true);
+            if (setCompanion != null && CompanionWanted()) setCompanion(true);
             DiagLog.BootPhase("screens ready");
 
             if (notes.Count > 0) toast.Show(notes);
@@ -883,7 +886,9 @@ namespace Statecraft.Game.UI
             controller.SetFixedNorth(CameraHeadingPolicy.IsFixedNorth(ruleset));
 
         /// <summary>Disposes every presenter, the autosave and the camera/pointer hooks (newest first). Safe to call twice.</summary>
-        void Shutdown()
+        /// <param name="keepCompanionPage">A rebuild whose next companion replaces the page's panel: the old one goes without
+        /// clearing it, so the panel does not blink, the canvas is not resized twice and the status is not read again.</param>
+        void Shutdown(bool keepCompanionPage = false)
         {
             StopAllCoroutines();
             // The card first: disposing the start screen uncovers the decision layer, and a card still waiting for it would
@@ -893,6 +898,7 @@ namespace Statecraft.Game.UI
             // going away draw its step again and show its city or unit on a camera being destroyed.
             if (advisor != null) { owned.Remove(advisor); advisor.Dispose(); }
             if (card != null) { owned.Remove(card); card.Dispose(); }
+            if (keepCompanionPage && companion != null) { owned.Remove(companion); companion.Dispose(clearPage: false); }
             for (int i = owned.Count - 1; i >= 0; i--) owned[i].Dispose();
             owned.Clear();
             if (hoveredCity != null) { hoveredCity = null; HandCursor(false); }   // the next Begin's pills start unlit

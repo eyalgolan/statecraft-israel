@@ -132,6 +132,7 @@ namespace Statecraft.Game.UI
             screen.Q<Label>("settings-companion-label").text = text["settings.companion"];
             companionSwitch = screen.Q<Button>("settings-companion");
             if (companion == null) companionSwitch.parent.style.display = DisplayStyle.None;
+            else companionSwitch.parent.style.display = StyleKeyword.Null;   // GameRoot reuses the tree an earlier Begin hid it in
             companionSwitch.clicked += FlipCompanion;
             // Community (#1168): Star on GitHub opens the repository in a new tab.
             screen.Q<Label>("settings-community-label").text = text["settings.community"];
