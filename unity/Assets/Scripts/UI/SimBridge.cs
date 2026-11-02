@@ -212,12 +212,11 @@ namespace Statecraft.Game.UI
             }
         }
 
-        /// <summary>The sim's English refusals that have a UI string: Movement's artillery refusal and Orders.Check's (#2045).
+        /// <summary>The sim's English refusals that have a UI string: Orders.Check's (#2045).
         /// Keyed on the English, so the same words from another check (Movement, Combat, Training, Demobilization give "That
         /// unit is not yours", "There is no such unit" too) read in the UI's language as well.</summary>
         static readonly Dictionary<string, string> ReasonKeys = new Dictionary<string, string>
         {
-            [Movement.MissingArtilleryMovement] = "unit.artillery_move_missing",
             [Orders.RefusedUnknownOrder] = "unit.order_refused.unknown_order",
             [Orders.RefusedNoUnit] = "unit.order_refused.no_unit",
             [Orders.RefusedNotMilitary] = "unit.order_refused.not_military",

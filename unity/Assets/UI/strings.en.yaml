@@ -958,11 +958,6 @@ arms.no_attention: "Not enough Attention for this purchase. Withdraw another ord
 report.stock_line: "{0}: {1}"
 report.stock_change: "{0}: {1} ({2})"
 
-# #1708 artillery action status. Hebrew: native review pending (#564).
-unit.artillery_move_missing: "Artillery cannot move yet: its movement points have not been set"
-unit.fire_ready: "Fire available"
-unit.fire_spent: "Fired this turn"
-
 # #2045 standing-order refusals (Orders.Check), shown on the unit card.
 unit.order_refused.unknown_order: "That order is not known"
 unit.order_refused.no_unit: "There is no such unit"
