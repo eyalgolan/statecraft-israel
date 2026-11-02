@@ -533,6 +533,8 @@ namespace Statecraft.Game.UI
 
         /// <summary>True while the open pick is a Move's (not an Attack's).</summary>
         public bool MovePicking => pick is { attack: false };
+        /// <summary>True while a Move or an Attack pick is open (GameRoot marks the hovered hex then, #2201).</summary>
+        public bool Picking => pick != null;
 
         /// <summary>True when a pick is open and PickTarget would give an order for (q, r): a lit hex, or, for Move, an unlit
         /// hex with a go-to route. A right click (GameRoot.OnHexOrdered) gives one only then.</summary>

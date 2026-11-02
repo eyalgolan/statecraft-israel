@@ -756,6 +756,11 @@ namespace Statecraft.Game.UI
             offerMove?.Invoke();
         }
 
+        /// <summary>Marks the hex under the pointer (<paramref name="under"/>; null: off the map) while a Move or Attack pick is
+        /// open, else nothing (#2201: a player could not tell which hex a click would take).</summary>
+        internal static void MarkHover(MapScene map, InfoPanelPresenter? info, (int q, int r)? under) =>
+            map.ShowHover(info?.Picking == true ? under : null);
+
         /// <summary>A right click on the map (MapPointer.HexOrdered; owner, 25 Oct 2026, "Civ: select, then click"): while the
         /// shown unit's pick takes (q, r), the order a left click there gives (PickTarget), even on another unit's hex.
         /// Otherwise nothing: no unit shown, a hex it cannot reach, or a screen over the panel (#210).</summary>
@@ -1003,8 +1008,10 @@ namespace Statecraft.Game.UI
             var hover = MapLabelsPresenter.HoverPosition(UnityEngine.InputSystem.Pointer.current);
             labels.Hover(hover);
             HoverCity(hover);
-            if (hover is Vector2 at && pointer.HexAt(at) is (int q, int r)) info?.ShowRouteTo(q, r);
+            var under = hover is Vector2 at ? pointer.HexAt(at) : null;
+            if (under is (int q, int r)) info?.ShowRouteTo(q, r);
             else if (UnityEngine.InputSystem.Pointer.current is UnityEngine.InputSystem.Mouse) info?.HideRoute();
+            MarkHover(map, info, under);
             var touch = UnityEngine.InputSystem.Touchscreen.current;
             if (touch != null && touch.primaryTouch.press.wasPressedThisFrame) labels.Tap(touch.primaryTouch.position.ReadValue());
         }
