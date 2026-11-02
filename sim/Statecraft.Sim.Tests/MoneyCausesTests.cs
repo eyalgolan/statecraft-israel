@@ -6,7 +6,8 @@ using Statecraft.Sim;
 
 /// <summary>#2199: the causes of the Money (net) meter (Treasury minus Debt, the top bar, the turn report and the meter
 /// tip) are the turn's lines that <see cref="EconomySystem.MovesMoney"/> picks, the filter the HUD uses. Together they add
-/// up to the meter's change: job income, the cash share of a purchase and the borrowing lines included.</summary>
+/// up to the meter's change: the Treasury lines, job income, and each payment's whole cost (one line, borrowed share
+/// included). A borrowing line (Target debt) is not one: it moves the Treasury and the Debt by the same amount.</summary>
 public class MoneyCausesTests
 {
     static readonly Content Real = ContentLoader.Load(RealContentTests.ContentRoot());
@@ -14,7 +15,7 @@ public class MoneyCausesTests
     /// <summary>The tolerance in IL millions. The sim adds the same amounts to the Treasury and the Debt as the causes carry,
     /// but in a different order and association (the Treasury starts at IL 20m and takes each term in turn; a payment takes
     /// the whole cost, then moves the shortfall to Debt), so exact equality does not hold: the gap is 2.7e-15 on the opening
-    /// turn and 2.3e-13 with a purchase of 999 Arms (measured before #2203 capped borrowing), and every test here passes at 1e-12 (measured, #2199). 1e-9 leaves room above
+    /// turn and 2.3e-13 with a purchase of 999 Arms (measured before this test bought 200 for #2203's debt ceiling), and every test here passes at 1e-12 (measured, #2199). 1e-9 leaves room above
     /// that rounding and is far below the smallest amount a line shows (IL 0.1m), so a missing or doubled line always fails.</summary>
     const double Tolerance = 1e-9;
 
@@ -122,6 +123,42 @@ public class MoneyCausesTests
         var paid = Assert.Single(r.Why, w => w.Key == CauseKeys.Paid);
         var why = r.Why.ToList();
         Assert.True(why.IndexOf(paid) < why.IndexOf(borrowed), "the Money line comes before its borrowing, as PayOrBorrow orders them");
+    }
+
+    // R-MONEY-002, R-MONEY-003: civilian upkeep writes its own Money line (EconomySystem.PayCivilianUpkeep), so it borrows
+    // through PayNamedOrBorrow and is counted once, paid in cash or borrowed. Every real rate is 0
+    // (MoneyTests.TheMvpChargesNoCivilianUpkeep), so this uses the GDD fixture with a city upkeep, as MoneyTests does.
+    [Theory]
+    [InlineData(1.0, 100.0)]      // paid in cash
+    [InlineData(1000.0, 0.0)]     // more than the Treasury holds after the turn's income: borrowed
+    public void CivilianUpkeepIsOneMoneyLine(double upkeepPerYear, double treasury)
+    {
+        var files = Fixture.Gdd();
+        files["rules.yaml"] = files["rules.yaml"].Replace("city_upkeep_per_year: 0", FormattableString.Invariant($"city_upkeep_per_year: {upkeepPerYear}"));
+        var c = ContentLoader.Load(Fixture.Write(files));
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        s.Treasury = treasury;
+        var r = Simulation.Step(c, s, Array.Empty<Command>());
+        Assert.Empty(r.Rejected);
+        AssertAddsUp(s, r, $"civilian upkeep {upkeepPerYear} a year, Treasury {treasury}");
+        Assert.Single(r.Why, w => w.Key == CauseKeys.CivilianUpkeep);
+        Assert.DoesNotContain(r.Why, w => w.Key == CauseKeys.Paid);
+        Assert.Equal(treasury == 0, r.Why.Any(w => w.Key == CauseKeys.Borrowed && w.Args[0] == CauseKeys.Purpose.CivilianUpkeep));
+    }
+
+    // R-CTRL-018, R-MONEY-003: a Deport writes its own Money line (CauseKeys.DeportCost), so it is counted once. Deport is not
+    // in play in the real content (mvp.deport_in_play: false), so this uses DeportTests' fixture, whose IL 121m cost borrows.
+    [Fact]
+    public void ADeportIsOneMoneyLine()
+    {
+        var c = DeportTests.Load();
+        var s = DeportTests.Awaiting(c, DeportTests.Soldier(1, 1, 0));
+        var r = Simulation.Step(c, s, new Command[] { new ResolveCapture("town_a", SettlementControl.Deport) });
+        Assert.Empty(r.Rejected);
+        AssertAddsUp(s, r, "Deport of town_a");
+        Assert.Single(r.Why, w => w.Key == CauseKeys.DeportCost);
+        Assert.DoesNotContain(r.Why, w => w.Key == CauseKeys.Paid);
+        Assert.Contains(r.Why, w => w.Key == CauseKeys.Borrowed && w.Args[0] == CauseKeys.Purpose.Deport);
     }
 
     // R-MONEY-003: every turn of the reference player's game, with its orders, events, upkeep and borrowing.
