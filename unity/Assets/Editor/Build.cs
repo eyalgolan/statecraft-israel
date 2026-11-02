@@ -142,7 +142,8 @@ namespace Statecraft.Game.EditorTools
 
         /// <summary>The opening (#530) in a shareable build: its catalog must load, its three photographs must have the
         /// owner's sensitivity review, as event photographs do, and its text must be reviewed with every source checked
-        /// (owner, "Photos and text"), so a shareable build carries neither draft photographs nor draft text. A sensitive
+        /// (owner, "Photos and text"), so a shareable build carries neither draft photographs nor draft text. Its Hebrew
+        /// too: every panel and the closing, read by a native speaker (owner, 1 Nov 2026, "Translate to Hebrew"). A sensitive
         /// clip needs the owner's sensitivity review too, as the cards' clips do, and its caption's Hebrew a native read.</summary>
         public static string? OpeningShareableRefusal(OpeningContent? opening)
         {
@@ -156,6 +157,10 @@ namespace Statecraft.Game.EditorTools
                 if (!data.TextReviewed)
                     reasons.Add("the opening text needs the owner's review and every source checked (" + OpeningContent.SourcePath
                         + ", status: " + Statecraft.Sim.ReleaseGate.ReviewedStatus + " and checked: on each source)");
+                if (!data.HebrewReviewed)
+                    reasons.Add("the opening's Hebrew needs a native read (" + OpeningContent.SourcePath
+                        + ", title_he, text_he and country_he on each panel and text_he on the closing, each with he_review: "
+                        + OpeningContent.HeApproved + ")");
                 if (!data.ClipsReviewed)
                     reasons.Add("an opening clip needs the owner's sensitivity review (" + OpeningContent.SourcePath
                         + ", sensitivity_reviewed on its clip; see docs/event-videos.md)");
