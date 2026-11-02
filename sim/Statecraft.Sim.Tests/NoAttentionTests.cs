@@ -49,6 +49,7 @@ public class NoAttentionTests
             case "move":s.Units[99]=new Unit(99,"recruit",1,0,side:"israel",strength:1);valid=new Move(99,2,0);invalid=new Move(999,2,0);break;
             case "unit_order":s.Units[99]=new Unit(99,"recruit",1,0,side:"israel",strength:1);valid=new UnitOrder(99,"fortify");invalid=new UnitOrder(999,"fortify");break;
             case "buy_arms":valid=new BuyArms(1);invalid=new BuyArms(0);break;
+            case "convert_dollars":valid=new ConvertDollars(1);invalid=new ConvertDollars(0);break;   // R-MONEY-004
             case "resolve_capture":s.Units[99]=CaptureTests.Soldier(99,1,0);s.Settlements["town_a"]=new SettlementControl("israel",SettlementControl.AwaitingChoice,s.Date);valid=new ResolveCapture("town_a","raid");invalid=new ResolveCapture("town_a","missing");break;
             case "end_occupation":s.Units[99]=CaptureTests.Soldier(99,1,0);s.Settlements["town_a"]=new SettlementControl("israel",SettlementControl.AwaitingEnd,s.Date);valid=new EndOccupation("town_a","withdraw");invalid=new EndOccupation("town_a","missing");break;
         }
@@ -56,7 +57,7 @@ public class NoAttentionTests
     }
     [Fact] public void CoversEveryConcreteCommand()
     {
-        Assert.Equal(23,Kinds().Count());
+        Assert.Equal(24,Kinds().Count());
         Assert.Equal(CommandGuardTests.Samples.Keys.OrderBy(t=>t.Name),typeof(Command).Assembly.GetTypes().Where(t=>t.IsSubclassOf(typeof(Command))&&!t.IsAbstract).OrderBy(t=>t.Name));
     }
     [Theory] [MemberData(nameof(Kinds))]

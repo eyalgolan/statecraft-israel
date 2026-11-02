@@ -6,7 +6,10 @@ public class Gdd03EventRulesTests
 {
     const string Manifest = "gdd03-events.yaml";
     const string Empty = "ruleset: gdd-0.3\nexclusions: []\n";
-    static readonly string[] Excluded = { "austerity_1949", "clothing_rationing_1950", "forex_crisis_1951", "iraqi_exodus", "israel_bonds", "maabarot_policy", "reparations_claim", "reparations_vote" };
+    static readonly string[] Excluded = { "austerity_1949", "forex_crisis_1951", "iraqi_exodus", "israel_bonds", "maabarot_policy" };
+    // #2224 (owner, 2 November 2026, "Bring back 3, design bonds (Recommended)"): D1/Q2 keep the foreign-currency ledger,
+    // so these three cards, excluded by #1772 for want of a ledger mapping, are active again. israel_bonds stays excluded.
+    static readonly string[] Restored = { "clothing_rationing_1950", "reparations_claim", "reparations_vote" };
     static string Card(string id = "probe", string option = "") =>
         $"id: {id}\ntitle: Fixture\ntext: Fixture.\nfrom: 1948-05-15\noptions:\n  - id: ok\n    text: Accept\n    historical: true\n" + option;
     static Dictionary<string, string> Files(bool modern = true)
@@ -174,7 +177,7 @@ public class Gdd03EventRulesTests
         Assert.Equal("events[probe].id", ex.Field);
     }
 
-    static Content Real(bool modern, string? manifest = null)
+    internal static Content Real(bool modern, string? manifest = null)
     {
         var root = RealContentTests.ContentRoot();
         return ContentLoader.Load(rel =>
@@ -186,10 +189,10 @@ public class Gdd03EventRulesTests
         }, Directory.GetFiles(Path.Combine(root, "events"), "*.yaml").Select(p => "events/" + Path.GetFileName(p)));
     }
     [Fact]
-    public void RealCatalogueExcludesExactlyEightWholeCardsAndKeepsOrder()
+    public void RealCatalogueExcludesExactlyFiveWholeCardsAndKeepsOrder()
     {
         var old = Real(false); var modern = Real(true);
-        Assert.Equal(39, old.Events.Count); Assert.Equal(31, modern.Events.Count);
+        Assert.Equal(39, old.Events.Count); Assert.Equal(34, modern.Events.Count);
         Assert.Equal(Excluded, old.Events.Select(e => e.Id).Except(modern.Events.Select(e => e.Id)).OrderBy(x => x, StringComparer.Ordinal));
         Assert.Equal(old.Events.Where(e => !Excluded.Contains(e.Id)).Select(e => e.Id), modern.Events.Select(e => e.Id));
         Assert.NotEqual(old.Hash, modern.Hash);
@@ -300,7 +303,6 @@ public class Gdd03EventRulesTests
     }
 
     // Inventory from the approved plan for #1772, pinned to ef35703; includes valid sibling fields.
-    // reparations_vote (#1575) joined after the main merge, excluded for the same reason as reparations_claim.
     static readonly string[] Inventory =
     {
         "austerity_1949/impose/set_policy.rationing=1",
@@ -308,9 +310,6 @@ public class Gdd03EventRulesTests
         "austerity_1949/impose/effects.morale=-0.05",
         "austerity_1949/decline/effects.fx_reserves=-8",
         "austerity_1949/decline/effects.food_supply=-0.05",
-        "clothing_rationing_1950/extend/effects.morale=-0.05",
-        "clothing_rationing_1950/relax/effects.morale=0.03",
-        "clothing_rationing_1950/relax/effects.fx_reserves=-8",
         "forex_crisis_1951/request_aid/effects.fx_reserves=-45",
         "forex_crisis_1951/request_aid/effects.fx_reserves=15",
         "forex_crisis_1951/request_aid/effects.intl_standing=-0.01",
@@ -330,6 +329,20 @@ public class Gdd03EventRulesTests
         "maabarot_policy/maabarot/effects.treasury=2",
         "maabarot_policy/keep_camps/effects.housing=-0.03",
         "maabarot_policy/keep_camps/effects.treasury=-4",
+    };
+    [Fact]
+    public void AllTwentyFourAffectedAssignmentsRetainTheirLegacyValues()
+    {
+        Assert.Equal(Inventory.OrderBy(x => x, StringComparer.Ordinal), Rows(Real(false), Excluded).OrderBy(x => x, StringComparer.Ordinal));
+        Assert.All(Real(false).Events, e => Assert.All(e.Options, o =>
+        { Assert.Empty(o.GrantUnits); Assert.Empty(o.CityEffects); Assert.Empty(o.UnlockProjects); }));
+    }
+    // #2224: the restored cards' rows, the same legacy values the #1772 inventory pinned for them (ef35703).
+    static readonly string[] RestoredInventory =
+    {
+        "clothing_rationing_1950/extend/effects.morale=-0.05",
+        "clothing_rationing_1950/relax/effects.morale=0.03",
+        "clothing_rationing_1950/relax/effects.fx_reserves=-8",
         "reparations_claim/claim/effects.intl_standing=0",
         "reparations_claim/claim/effects.treasury=-1",
         "reparations_claim/refuse/effects.intl_standing=0",
@@ -338,15 +351,26 @@ public class Gdd03EventRulesTests
         "reparations_vote/reject/effects.fx_reserves=-4",
         "reparations_vote/referendum/effects.treasury=-1",
     };
+    static IEnumerable<string> Rows(Content c, IEnumerable<string> ids) => c.Events.Where(e => ids.Contains(e.Id)).SelectMany(e =>
+        e.Options.SelectMany(o => o.SetPolicy.Select(kv => $"{e.Id}/{o.Id}/set_policy.{kv.Key}=" + kv.Value.ToString("G", System.Globalization.CultureInfo.InvariantCulture))
+            .Concat(o.Effects.Select(fx => $"{e.Id}/{o.Id}/effects.{fx.Target}=" + fx.Delta.ToString("G", System.Globalization.CultureInfo.InvariantCulture)))));
+    // #2224: under gdd-0.3 the three restored cards load with their legacy effects and reach the player on the turns
+    // EventRetimingTests.EachEventFiresOnItsTurn pins for them in the gdd-0.1 golden run. The reference player is not
+    // defined for gdd-0.3 (ReferencePlayer.Commands), so this run gives no orders; the cards' windows still decide the turn.
     [Fact]
-    public void AllThirtyFourAffectedAssignmentsRetainTheirLegacyValues()
+    public void RestoredCardsLoadWithLegacyEffectsAndFireOnTheirTurns()
     {
-        var rows = Real(false).Events.Where(e => Excluded.Contains(e.Id)).SelectMany(e =>
-            e.Options.SelectMany(o => o.SetPolicy.Select(kv => $"{e.Id}/{o.Id}/set_policy.{kv.Key}=" + kv.Value.ToString("G", System.Globalization.CultureInfo.InvariantCulture))
-                .Concat(o.Effects.Select(fx => $"{e.Id}/{o.Id}/effects.{fx.Target}=" + fx.Delta.ToString("G", System.Globalization.CultureInfo.InvariantCulture)))));
-        Assert.Equal(Inventory.OrderBy(x => x, StringComparer.Ordinal), rows.OrderBy(x => x, StringComparer.Ordinal));
-        Assert.All(Real(false).Events, e => Assert.All(e.Options, o =>
-        { Assert.Empty(o.GrantUnits); Assert.Empty(o.CityEffects); Assert.Empty(o.UnlockProjects); }));
+        var c = Real(true);
+        Assert.Equal(RestoredInventory.OrderBy(x => x, StringComparer.Ordinal), Rows(c, Restored).OrderBy(x => x, StringComparer.Ordinal));
+        var s = Simulation.NewGame(c, GoldenRun.Seed, Mode.Historical);
+        var run = new List<GameState> { s };
+        while (s.GameOver == null && run.Count < 1000) { s = Simulation.Step(c, s, Array.Empty<Command>()).State; run.Add(s); }
+        Assert.Equal(GameOverCodes.MvpEnded, s.GameOver);
+        DateTime? CardDate(string id) => run.FirstOrDefault(x => x.FiredEvents.Contains(id))?.Date;
+        Assert.Equal(new DateTime(1950, 7, 15), CardDate("clothing_rationing_1950"));
+        Assert.Equal(new DateTime(1951, 3, 15), CardDate("reparations_claim"));
+        Assert.Equal(new DateTime(1951, 12, 15), CardDate("reparations_vote"));
+        Assert.Null(CardDate("israel_bonds"));
     }
     static readonly string[] SourceBytes =
     {

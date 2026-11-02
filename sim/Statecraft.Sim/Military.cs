@@ -31,7 +31,7 @@ namespace Statecraft.Sim
             var cost = count * r.MilitaryUpkeepPerTurn!.Value;
             if (cost == 0) return;
             why.Add(new Cause("economy", "treasury", -cost, $"{PlayerText.Change(c, "treasury", -cost)} (military upkeep)", key: CauseKeys.MilitaryUpkeep));
-            EconomySystem.PayOrBorrow(c, s, cost, "for military upkeep", why, CauseKeys.Purpose.MilitaryUpkeep);
+            EconomySystem.PayNamedOrBorrow(c, s, cost, "for military upkeep", why, CauseKeys.Purpose.MilitaryUpkeep);
         }
     }
 }
