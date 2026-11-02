@@ -323,10 +323,12 @@ public class PlayerTextTests
     public void MoneyNeverCarriesAPlainSpace()
     {
         // #2293: the currency prefix ends in a no-break space, so a money value never wraps between "IL" and the amount.
-        Assert.DoesNotContain(" ", PlayerText.Money(Real, "treasury", 18.6));
-        Assert.DoesNotContain(" ", PlayerText.MoneyChange(Real, "treasury", -1.23));
-        Assert.Equal('\u00A0', PlayerText.MoneyParts(Real, "treasury", 18.6).Prefix[2]);
-        Assert.Equal('\u00A0', PlayerText.MoneyParts(Real, "debt", 1).Prefix[2]);
+        Assert.DoesNotContain(" ", PlayerText.Money(Real, "treasury", 18.6), StringComparison.Ordinal);
+        Assert.DoesNotContain(" ", PlayerText.MoneyChange(Real, "treasury", -1.23), StringComparison.Ordinal);
+        Assert.Equal("IL\u00A0", PlayerText.MoneyParts(Real, "treasury", 18.6).Prefix);
+        Assert.Equal("IL\u00A0", PlayerText.MoneyParts(Real, "debt", 1).Prefix);
+        // City-target lines with a cost skip both branches of EveryCauseNumberCarriesItsUnit: scan every Cause for a hard-coded "IL ".
+        Assert.DoesNotContain(AllCauses(Real), w => w.Message.IndexOf("IL ", StringComparison.Ordinal) >= 0);
     }
 
     /// <summary>Review M3: no silent fallback to the id.</summary>
