@@ -186,6 +186,51 @@ public class Gdd03HousingConditionTests
         Assert.Equal(-7.665, line.Delta, 9);
     }
 
+    // R-HOUSE-005 in double, the sim's state type (docs/determinism.md: doubles are hashed as IEEE bits). The opening
+    // surcharge is each city's housed x (0.50 - 0.35) x 0.1, summed in double in ordinal city order. Its exact IEEE value
+    // is 7.665000000000002 (bits 0x401EA8F5C28F5C2B), not the double nearest 7.665 (0x401EA8F5C28F5C29), which a decimal
+    // round trip of the city's double condition gave. Computed independently with python3 floats over cities.yaml's 12
+    // cities (511 housed units).
+    [Fact]
+    public void Gdd03OpeningSurchargeIsTheExactDoubleSumOfTheCities()
+    {
+        var r = Simulation.Step(Real03, Simulation.NewGame(Real03, GoldenRun.Seed, Mode.Historical), Array.Empty<Command>());
+        var line = Assert.Single(r.Why, w => w.Key == CauseKeys.HousingSurcharge);
+        Assert.Equal(0x401EA8F5C28F5C2BL, BitConverter.DoubleToInt64Bits(-line.Delta));
+    }
+
+    // R-HOUSE-005 in a whole gdd-0.3 turn: with every city below cohesion_threshold, the cohesion loss settles once, as one
+    // housing_cohesion line on morale, however many cities contribute (#1703: "then apply cohesion once").
+    [Fact]
+    public void Gdd03WholeTurnHasExactlyOneHousingCohesionLine()
+    {
+        var s = Simulation.NewGame(Real03, GoldenRun.Seed, Mode.Historical);
+        foreach (var id in s.Cities.Keys.ToList()) s.Cities[id] = s.Cities[id].WithCondition(0.10);   // TEST-ONLY SYNTHETIC condition
+        Assert.True(s.Cities.Count > 1);
+        var r = Simulation.Step(Real03, s, Array.Empty<Command>());
+        var line = Assert.Single(r.Why, w => w.Key == CauseKeys.HousingCohesion);
+        Assert.Equal("morale", line.Target);
+        Assert.True(line.Delta < 0, line.Delta.ToString(System.Globalization.CultureInfo.InvariantCulture));
+    }
+
+    // R-HOUSE-005 on the live path, where the turn's deterioration crosses cohesion_threshold: 10 housed in no housing at
+    // 0.27 lose 5 pp to 0.22. The surcharge is priced at 0.27 (10 x 0.23 x 0.1 = 0.23 Money); the cohesion term reads
+    // the 0.22 after deterioration: 2 x (10 / 10) x (0.25 - 0.22) / 0.25 = 0.24 points, so morale falls by 0.0024. Priced
+    // from 0.27 instead, there would be no cohesion loss at all.
+    [Fact]
+    public void Gdd03DeteriorationBelowTheCohesionThresholdCostsCohesionThatTurn()
+    {
+        var s = OneCity(Real03, civilians: 10, capacity: 0, condition: 0.27);
+        s.Treasury = 100;
+        var before = s.Indicators["morale"];
+        var why = UpdateCondition(Real03, s);
+        Assert.Equal(0.22, s.Cities.Values.Single().Condition!.Value, 12);
+        Assert.Equal(-0.23, Assert.Single(why, w => w.Key == CauseKeys.HousingSurcharge).Delta, 12);
+        Assert.Equal(100 - 0.23, s.Treasury, 12);
+        Assert.Equal(-0.0024, Assert.Single(why, w => w.Key == CauseKeys.HousingCohesion).Delta, 12);
+        Assert.Equal(before - 0.0024, s.Indicators["morale"], 12);
+    }
+
     // gdd-0.1 unchanged: a whole turn has no surcharge and no cohesion line.
     [Fact]
     public void Gdd01HasNoSurchargeAndNoCohesionLine()

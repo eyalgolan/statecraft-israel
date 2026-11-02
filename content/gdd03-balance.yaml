@@ -229,7 +229,7 @@
     "values": [1]
   "housing.money_threshold":
     "basis": "Agreed"
-    "note": "Reception, housing and shortages: condition fraction / Money per resident per fraction below threshold; Agreed linear rule. Source: #1668 balance.md at 605277df."
+    "note": "Reception, housing and shortages: condition fraction below which the housing surcharge applies (R-HOUSE-005, #1703); its Money rate is housing.money_slope; Agreed linear rule. Source: #1668 balance.md at 605277df."
     "values": [0.50]
   "housing.money_slope":
     "basis": "Agreed"
