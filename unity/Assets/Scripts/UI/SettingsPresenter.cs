@@ -32,6 +32,8 @@ namespace Statecraft.Game.UI
         public static readonly Dictionary<int, (float narrowest, float widest)> VerifiedShapes = new Dictionary<int, (float, float)>();
         /// <summary>The sound effects' volume steps (#39): the stored word and GameAudio's volume. With no stored choice, "high".</summary>
         public static readonly (string level, float volume)[] SoundLevels = { ("off", 0f), ("low", 0.35f), ("high", 1f) };
+        /// <summary>The Music row's step with no stored choice (owner, #2297, 2 Nov 2026: "Low by default (Recommended)").</summary>
+        public const string MusicDefault = "low";
         readonly SettingsStore? store; readonly UiText text; readonly VisualElement root, screen; readonly Button tiltShift;
         readonly (Button button, GraphicsQuality.Choice choice, Action pick)[] quality;
         readonly LanguageButtons languages;
@@ -104,10 +106,11 @@ namespace Statecraft.Game.UI
                 return (b, l.level, pick);
             });
             // Music (#39, MenuMusic): the same three steps as the sound effects, kept apart from them. With no stored choice,
-            // "high" (the theme as mastered).
+            // "low", the owner's ruling on #2297 (2 Nov 2026): "Low by default (Recommended)", "35% volume: the theme sits
+            // under the menu".
             screen.Q<Label>("settings-music-label").text = text["settings.music"];
             var storedMusic = store?.Read(MusicKey);
-            musicLevel = Array.Exists(SoundLevels, l => l.level == storedMusic) ? storedMusic! : "high";
+            musicLevel = Array.Exists(SoundLevels, l => l.level == storedMusic) ? storedMusic! : MusicDefault;
             ApplyMusic();
             musicLevels = Array.ConvertAll(SoundLevels, l =>
             {

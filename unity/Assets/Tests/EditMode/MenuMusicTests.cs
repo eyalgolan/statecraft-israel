@@ -289,7 +289,7 @@ public class MenuMusicTests
         UnityEngine.Object.DestroyImmediate(clip);
     }
 
-    /// <summary>The Settings screen's Music row: Off, Low and High (High with no stored choice), applied to the music at once,
+    /// <summary>The Settings screen's Music row: Off, Low and High, applied to the music at once,
     /// kept in the SettingsStore across a reload, in English and in Hebrew (whose words await the native reviewer, #564).</summary>
     [Test]
     public void TheMusicRowSetsTheVolumeAtOnceAndSurvivesAReload([Values(false, true)] bool hebrew)
@@ -299,25 +299,37 @@ public class MenuMusicTests
         using (new SettingsPresenter(rig.Ui.Root, text, new SettingsStore(dir), music: rig.Music))
         {
             var ui = rig.Ui;
-            Assert.AreEqual(1f, rig.Music.Volume, "full by default, with no file");
             Assert.AreEqual(text["settings.music"], ui.Q<Label>("settings-music-label").text);
             foreach (var level in new[] { "off", "low", "high" })
                 Assert.AreEqual(text["settings.music." + level], ui.Q<Button>("settings-music-" + level).text);
-            Assert.IsTrue(ui.Q<Button>("settings-music-high").ClassListContains(SettingsPresenter.SelectedClass));
             UiTestKit.Press(ui.Q<Button>("settings-music-off"));
             Assert.AreEqual(0f, rig.Music.Volume, "off at once");
             Assert.IsTrue(ui.Q<Button>("settings-music-off").ClassListContains(SettingsPresenter.SelectedClass));
-            Assert.IsFalse(ui.Q<Button>("settings-music-high").ClassListContains(SettingsPresenter.SelectedClass));
-            UiTestKit.Press(ui.Q<Button>("settings-music-low"));
-            Assert.AreEqual(0.35f, rig.Music.Volume, 1e-6f);
-            Assert.AreEqual("low", new SettingsStore(dir).Read(SettingsPresenter.MusicKey));
+            Assert.IsFalse(ui.Q<Button>("settings-music-low").ClassListContains(SettingsPresenter.SelectedClass));
+            UiTestKit.Press(ui.Q<Button>("settings-music-high"));
+            Assert.AreEqual(1f, rig.Music.Volume, 1e-6f);
+            Assert.AreEqual("high", new SettingsStore(dir).Read(SettingsPresenter.MusicKey));
         }
         using (var rig = new Rig(web: true))
         using (new SettingsPresenter(rig.Ui.Root, text, new SettingsStore(dir), music: rig.Music))
         {
-            Assert.AreEqual(0.35f, rig.Music.Volume, 1e-6f, "the stored choice is applied at the next start");
-            Assert.IsTrue(rig.Ui.Q<Button>("settings-music-low").ClassListContains(SettingsPresenter.SelectedClass));
+            Assert.AreEqual(1f, rig.Music.Volume, 1e-6f, "the stored choice is applied at the next start");
+            Assert.IsTrue(rig.Ui.Q<Button>("settings-music-high").ClassListContains(SettingsPresenter.SelectedClass));
         }
+    }
+
+    /// <summary>The owner's ruling on #2297 (2 Nov 2026): "Low by default (Recommended)", "35% volume: the theme sits under
+    /// the menu". A fresh settings store (no file, or a file with no music line) reads Low, marked, at 0.35.</summary>
+    [Test]
+    public void AFreshSettingsStoreReadsLow([Values(false, true)] bool otherLines)
+    {
+        if (otherLines) new SettingsStore(dir).Write(SettingsPresenter.SoundKey, "high");   // a file from before the Music row
+        using var rig = new Rig(web: true);
+        using var settings = new SettingsPresenter(rig.Ui.Root, En, new SettingsStore(dir), music: rig.Music);
+        Assert.AreEqual(0.35f, rig.Music.Volume, 1e-6f, "Low by default");
+        Assert.IsTrue(rig.Ui.Q<Button>("settings-music-low").ClassListContains(SettingsPresenter.SelectedClass), "Low is marked");
+        Assert.IsFalse(rig.Ui.Q<Button>("settings-music-high").ClassListContains(SettingsPresenter.SelectedClass));
+        Assert.IsNull(new SettingsStore(dir).Read(SettingsPresenter.MusicKey), "the default is not written: only a choice is kept");
     }
 
     /// <summary>The sound effects row and the Music row are separate: one does not change the other.</summary>
@@ -327,7 +339,7 @@ public class MenuMusicTests
         using var rig = new Rig(web: true);
         using var settings = new SettingsPresenter(rig.Ui.Root, En, new SettingsStore(dir), music: rig.Music);
         UiTestKit.Press(rig.Ui.Q<Button>("settings-sound-off"));
-        Assert.AreEqual(1f, rig.Music.Volume);
+        Assert.AreEqual(0.35f, rig.Music.Volume, 1e-6f, "still the Music row's Low");
         UiTestKit.Press(rig.Ui.Q<Button>("settings-music-off"));
         Assert.AreEqual("off", new SettingsStore(dir).Read(SettingsPresenter.SoundKey));
         Assert.AreEqual("off", new SettingsStore(dir).Read(SettingsPresenter.MusicKey));
