@@ -28,6 +28,23 @@ hud.caption.standing: "תמיכה בינלאומית"
 hud.caption.fx: "מטבע חוץ"
 # hud.caption.cohesion: Social cohesion; the GDD's Hebrew, kept by the owner (Q-HUD-3, 15 October 2026, #375; #380).
 hud.caption.cohesion: "לכידות חברתית"
+# Each meter's tip (MeterTip, #2200), as hud.tip.* in strings.en.yaml. treasury, immigration, cohesion and standing are
+# sentences of the reviewed encyclopedia pages (advisor.page.money_debt, .immigration, .national_meters), split from them;
+# security, support and fx are new. Agent-drafted Hebrew, all seven: native-review-pending (#564).
+# native-review-pending
+hud.tip.treasury: "כסף נכנס ממסים ומכל משרה מאוישת, ויוצא על הוצאות הממשלה, על אחזקת העוצבות הצבאיות שלנו, על אימון ועל בנייה. כשעלות גבוהה ממה שיש לנו, היא משולמת בכל זאת: הכסף נעצר באפס והיתרה הופכת לחוב."
+# native-review-pending
+hud.tip.immigration: "העולים מגיעים לפי הנתונים ההיסטוריים, וכל עיר מקבלת חלק לפי מספר האנשים בה. הם ממתינים כפליטים, ובכל תור חלק מהם הופכים לאזרחים ללא עבודה; כמה מהם, תלוי בשר האחראי על העלייה."
+# native-review-pending
+hud.tip.security: "הביטחון זז בעקבות הבחירות בכרטיסי האירוע. יישובי הספר מוסיפים לו, ויותר מכך כששר החקלאות מוכשר ומשרדו מתוקצב היטב."
+# native-review-pending
+hud.tip.support: "התמיכה הציבורית היא ממוצע התמיכה של קבוצות הבוחרים, וכל קבוצה שוקלת שניים מבין הלכידות החברתית, הביטחון, הדיור והמזון. יציבות הקואליציה נעה לעברה בכל תור."
+# native-review-pending
+hud.tip.cohesion: "הלכידות החברתית עולה ויורדת עם הדיור, התעסוקה, המזון, הקיצוב והביטחון."
+# native-review-pending
+hud.tip.standing: "התמיכה הבינלאומית זזה בעקבות הבחירות בכרטיסי האירוע."
+# native-review-pending
+hud.tip.fx: "מטבע החוץ נכנס מיצוא, מתרומות ומהלוואות, ויוצא על יבוא שגדל עם האוכלוסייה. כרטיסי האירוע יכולים להוסיף לו או לגרוע ממנו. כשהוא אוזל, יבוא המזון נעצר עד שהוא מתאושש."
 hud.nav.cabinet: "ממשלה"
 # The Cabinet disc's tip while a seat is vacant that the player can fill (#1109). For the native reviewer (#564).
 hud.nav.cabinet_vacant: "ממשלה: יש תפקיד פנוי. אפשר למנות אליו מישהו."
