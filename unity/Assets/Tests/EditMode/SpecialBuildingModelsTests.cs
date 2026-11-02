@@ -467,6 +467,7 @@ namespace Statecraft.Game.Tests
                 Assert.IsTrue(SpecialBuildingModels.ClearOfBox(flat, r, new Vector2(part.Near.center.x, part.Near.center.z), 0f, part.Near.size.x, part.Near.size.z),
                     $"{key} stands on {part.Owner}'s {part.Kind}");
             TestContext.WriteLine($"{key}: clear of {n} drawn buildings and {m} kit landmarks near it");
+            Assert.Greater(m, 0, key + ": the kits drew landmarks near it to keep clear of");
         }
 
         /// <summary>Owner, 2 November 2026 ("Among the houses"): a workshop built on Jerusalem's or Tel Aviv's own hex, which the
@@ -516,7 +517,10 @@ namespace Statecraft.Game.Tests
             var clock = System.Diagnostics.Stopwatch.StartNew();
             const int Runs = 5;
             for (int i = 0; i < Runs; i++) SpecialBuildingModels.Plan(map, After, wants, _ => true, log: false);
-            TestContext.WriteLine($"PLAN-TIMING Jerusalem+Tel Aviv workshops: {clock.Elapsed.TotalMilliseconds / Runs:0.0} ms per plan");
+            double ms = clock.Elapsed.TotalMilliseconds / Runs;
+            TestContext.WriteLine($"PLAN-TIMING Jerusalem+Tel Aviv workshops: {ms:0.0} ms per plan");
+            // A design bound, not a budget: a plan runs on a prefab answer or a change of date or workshops, never per frame.
+            Assert.Less(ms, 50.0, "one plan with two workshops among the houses");
         }
 
         /// <summary>Review of #2281 (N3): every building takes its planned ground whether or not its model has streamed. A
@@ -529,23 +533,29 @@ namespace Statecraft.Game.Tests
             var map = OpenMap();
             var layer = CollectionGeometryFixture.Special(map, After)!;
             var fortAt = SpecialBuildingModels.Plan(map, After, SpecialBuildingModels.Placements(After), _ => true, log: false).Single(x => x.want.Key == "latrun_tegart").at;
-            // 400 m off the fort: every spot of the workshop's first ring (306 m out) is on the fort's ground (its clearance plus
-            // the workshop's, 715 m), so with that ground taken the workshop stands on a later ring; without it, on the first.
-            // The first side (east, north, west, south) where the full plan has ground for it.
+            // 400 m off the fort, on the first side (east, north, west, south) where the overlap is forced: planned with the fort
+            // taking no ground (the fort's want left out), the workshop stands on the fort's ground; planned with every model, it
+            // has ground elsewhere. So a layer that let a failed model's ground go would draw it on the fort's ground.
             float reach = SpecialBuildingModels.ClearanceOf(SpecialBuildingModels.Tegart) + SpecialBuildingModels.ClearanceOf(SpecialBuildingModels.Workshop);
+            string key41 = SpecialBuildingModels.WorkshopKey(41);
             List<SpecialBuildingModels.Want> wants = null!;
             Dictionary<string, Vector2> full = null!;
+            bool forced = false;
             foreach (var side in new[] { Vector2.right, Vector2.up, Vector2.left, Vector2.down })
             {
                 var near = fortAt + 400f * side;
-                Assert.Less(400f + 1.5f * SpecialBuildingModels.ClearanceOf(SpecialBuildingModels.Workshop), reach + 1f, "the first ring is on the fort's ground");
                 var (lon, lat) = map.Frame.ToLonLat(new Vector3(near.x, 0f, near.y));
                 wants = SpecialBuildingModels.Placements(After)
-                    .Append(new SpecialBuildingModels.Want(SpecialBuildingModels.WorkshopKey(41), SpecialBuildingModels.Workshop, Built, lon, lat, "test: by the fort's spot"))
+                    .Append(new SpecialBuildingModels.Want(key41, SpecialBuildingModels.Workshop, Built, lon, lat, "test: by the fort's spot"))
                     .ToList();
                 full = SpecialBuildingModels.Plan(map, After, wants, _ => true, log: false).ToDictionary(x => x.want.Key, x => x.at);
-                if (full.ContainsKey(SpecialBuildingModels.WorkshopKey(41))) { TestContext.WriteLine($"the workshop 400 m {side} of the fort"); break; }
+                var withoutFort = SpecialBuildingModels.Plan(map, After, wants.Where(w => w.Key != "latrun_tegart").ToList(), _ => true, log: false)
+                    .Where(x => x.want.Key == key41).Select(x => (Vector2?)x.at).FirstOrDefault();
+                if (!full.ContainsKey(key41) || withoutFort == null || (withoutFort.Value - fortAt).magnitude >= reach) continue;
+                TestContext.WriteLine($"the workshop 400 m {side} of the fort: {(withoutFort.Value - fortAt).magnitude:0} m from it if the fort took no ground, {(full[key41] - fortAt).magnitude:0} m with it");
+                forced = true; break;
             }
+            Assert.IsTrue(forced, "a side where the workshop would stand on the fort's ground if the fort took none");
             layer.ShowForTest(wants);
             Assert.IsTrue(full.ContainsKey(SpecialBuildingModels.WorkshopKey(41)), "the workshop has ground in the full plan");
             LogAssert.Expect(LogType.Warning, new Regex("^BUILDINGS: " + SpecialBuildingModels.Tegart + " did not stream"));
@@ -554,6 +564,8 @@ namespace Statecraft.Game.Tests
                 done(id == SpecialBuildingModels.Tegart ? null : AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(id, CollectionDetail.Near)));
             CollectionAssert.DoesNotContain(layer.Placed.Select(p => p.Model), SpecialBuildingModels.Tegart);
             CollectionAssert.Contains(layer.Placed.Select(p => p.Key), SpecialBuildingModels.WorkshopKey(41));
+            var drawn = layer.Placed.Single(p => p.Key == key41);
+            Assert.GreaterOrEqual((new Vector2(drawn.At.x, drawn.At.z) - fortAt).magnitude, reach, "the workshop is not drawn on the failed fort's ground");
             foreach (var p in layer.Placed)
             {
                 Assert.AreEqual(full[p.Key].x, p.At.x, 1e-3f, p.Key + " where the full plan puts it (x)");
