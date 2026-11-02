@@ -60,9 +60,15 @@ namespace Statecraft.Game.Map.Collection
         /// props over <see cref="WorldScale"/>. At the world scale alone they were about 10 px at the closest zoom.</summary>
         public const float PropScale = 3f;
 
-        /// <summary>Red-first stubs: the props' cap, and a row's own size.</summary>
+        /// <summary>The farthest (m) a town-edge prop may stand from its sourced point (owner on #2274: "right by the sourced
+        /// spot"): a spot farther out is not drawn, with a warning.</summary>
         public const float MaxPropOffsetM = 1500f;
-        public static float SizeOf(Want w) => SizeOf(w.Model);
+
+        /// <summary>A row's long side on the map (m): its model's real size at the world scale times the row's own scale.</summary>
+        public static float SizeOf(Want w) => RealLengthM(w.Model) * WorldScale * w.Scale;
+
+        /// <summary>The disc a row's model keeps clear (m): its half diagonal, as if square.</summary>
+        public static float ClearanceOf(Want w) => 0.71f * SizeOf(w);
 
         /// <summary>The disc a placed model keeps clear (m): its half diagonal, as if square.</summary>
         public static float ClearanceOf(string model) => 0.71f * SizeOf(model);
@@ -91,15 +97,18 @@ namespace Statecraft.Game.Map.Collection
             /// whether it may stand at a town's edge, inside its kit footprint, clear of the town's building models, the tokens in
             /// the towns and the name points instead (the four props; owner on #2274: "Bigger, closer").</summary>
             public readonly float Scale; public readonly bool TownEdge;
-            /// <summary>Red-first stub: whether its bundle streams only near the camera.</summary>
-            public readonly bool NearOnly => false;
+            /// <summary>Whether its bundle streams only while a camera is close to it (the residency policy's enter and exit
+            /// distances round its sourced point), instead of map-wide on its dates: the four props (owner, 2 November 2026, on
+            /// #2274: "Near-only for these props (Recommended)"). Every other special keeps its map-wide request (owner ruling 29,
+            /// 30 October 2026: "Far models map-wide (Recommended)").</summary>
+            public readonly bool NearOnly;
             /// <summary>The SeaCraft coast's place (<see cref="Siting.Shore"/>) or the route's id (<see cref="Siting.Road"/>).</summary>
             public readonly string Along;
             public Want(string key, string model, DateTime from, double lon, double lat, string source)
                 : this(key, model, from, null, lon, lat, source, Siting.Seeded, "") { }
             public Want(string key, string model, DateTime from, DateTime? to, double lon, double lat, string source, Siting site, string along,
-                float scale = 1f, bool townEdge = false)
-            { Key = key; Model = model; From = from; To = to; Lon = lon; Lat = lat; Source = source; Site = site; Along = along; Scale = scale; TownEdge = townEdge; }
+                float scale = 1f, bool townEdge = false, bool nearOnly = false)
+            { Key = key; Model = model; From = from; To = to; Lon = lon; Lat = lat; Source = source; Site = site; Along = along; Scale = scale; TownEdge = townEdge; NearOnly = nearOnly; }
             public bool Covers(DateTime date) => date >= From && (To == null || date < To.Value);
         }
 
@@ -157,25 +166,25 @@ namespace Statecraft.Game.Map.Collection
             new Want("beersheba_abrahams_well", Well, new DateTime(1948, 5, 15), null, 34.79307778, 31.237225,
                 "he.wiki באר אברהם, https://he.wikipedia.org/w/index.php?oldid=44049275 (agent-read 2026-11-02); " +
                 "en.wiki Abraham's Well, https://en.wikipedia.org/w/index.php?oldid=1374743581 (agent-read 2026-11-02); person check pending",
-                Siting.Seeded, "", PropScale, townEdge: true),
+                Siting.Seeded, "", PropScale, townEdge: true, nearOnly: true),
             // The sandbags: "אש שנורתה מתוך עמדת שקי החול שלמרגלות מטה הפלמ"ח אילצה את הסירה לחזור" (he.wiki אלטלנה, footnote
             // Nakdimon 2016), the night of 21-22 June 1948, on the Tel Aviv shore; only on the Altalena's turn.
             new Want("tel_aviv_altalena_sandbags", Sandbags, SandbagsFrom, SandbagsTo, 34.7732528, 32.0964833,
                 "he.wiki אלטלנה, https://he.wikipedia.org/w/index.php?oldid=44137735 (footnote nakdimon2016; agent-read 2026-11-02; " +
-                "Nakdimon not opened); content/events/altalena.yaml; person check pending", Siting.Shore, "tel_aviv", PropScale, townEdge: true),
+                "Nakdimon not opened); content/events/altalena.yaml; person check pending", Siting.Shore, "tel_aviv", PropScale, townEdge: true, nearOnly: true),
             // The crates: "Het transportschip Bulgaria met emigranten in de haven van Haifa ... met op de kade kisten en kratten",
             // "Datum : 1948" (Nationaal Archief 255-1124, its Commons copy); year only, so the 1948 turns.
             new Want("haifa_quay_crates", Crates, Year1948From, Year1948To, 35.00448, 32.820118,
                 "Commons, https://commons.wikimedia.org/w/index.php?oldid=970193372 (Nationaal Archief 255-1124, " +
                 "https://www.nationaalarchief.nl/onderzoeken/fotocollectie/aed57008-d0b4-102d-bcf8-003048976d84; agent-read 2026-11-02); " +
-                "person check pending", Siting.Shore, "haifa", PropScale, townEdge: true),
+                "person check pending", Siting.Shore, "haifa", PropScale, townEdge: true, nearOnly: true),
             // The wall: "met op de voorgrond een stenen muurtje langs een weg; het dorp op de top is vermoedelijk Abu Ghosh", series
             // "Israël 1948-1949: onderweg naar Jeruzalem" (Nationaal Archief 255-0876, its Commons copy); year only, the 1948 turns.
             new Want("abu_ghosh_road_wall", Wall, Year1948From, Year1948To, AbuGhoshLon, AbuGhoshLat,
                 "Commons, https://commons.wikimedia.org/w/index.php?oldid=1225901219 (Nationaal Archief 255-0876, " +
                 "https://www.nationaalarchief.nl/onderzoeken/fotocollectie/aed4b5dc-d0b4-102d-bcf8-003048976d84; agent-read 2026-11-02); " +
                 "point: en.wiki Abu Ghosh, https://en.wikipedia.org/w/index.php?oldid=1381085214 (agent-read 2026-11-02); person check pending",
-                Siting.Road, WallRoute, PropScale, townEdge: true),
+                Siting.Road, WallRoute, PropScale, townEdge: true, nearOnly: true),
         };
 
         public static IReadOnlyList<Want> Placements(DateTime date) => All.Where(x => x.Covers(date)).ToList();
@@ -212,10 +221,6 @@ namespace Statecraft.Game.Map.Collection
             return null;
         }
 
-        /// <summary>The first clear spot beside route <paramref name="route"/>'s line (RouteLayer.Corridors) nearest
-        /// <paramref name="anchor"/>, just off its corridor on either side, stepping along the line both ways; and the line's
-        /// direction there (world x, z, unit length), for the model to lie along it. Null when the route is unknown or none is
-        /// clear.</summary>
         /// <summary>Half the long side and half the short side (m, seen from above) of <paramref name="prefab"/> drawn
         /// <paramref name="size"/> long at its own rotation.</summary>
         static (float lengthHalf, float depthHalf) HalfSides(GameObject prefab, float size)
@@ -230,6 +235,10 @@ namespace Statecraft.Game.Map.Collection
             finally { DestroyImmediate(probe); }
         }
 
+        /// <summary>The first clear spot beside route <paramref name="route"/>'s line (RouteLayer.Corridors) nearest
+        /// <paramref name="anchor"/>, just off its corridor on either side, stepping along the line both ways; and the line's
+        /// direction there (world x, z, unit length), for the model to lie along it. The model is checked along its whole
+        /// length, every half depth. Null when the route is unknown or none is clear.</summary>
         internal static (Vector2 at, Vector2 along)? RoadSpot(MapScene map, string route, Vector2 anchor, float lengthHalf, float depthHalf, Func<Vector2, float, bool> free)
         {
             var corridors = Routes.RouteLayer.Corridors(map.Frame, map.RouteList.Where(r => r.Id == route));
@@ -257,10 +266,19 @@ namespace Statecraft.Game.Map.Collection
                 {
                     // Just off the corridor, its long side along the road: its middle and both ends, each a disc of its half depth.
                     var p = q + normal * s * (halfWidth + depthHalf + 1f);
-                    if (free(p, depthHalf) && free(p + dir * reach, depthHalf) && free(p - dir * reach, depthHalf)) return (p, dir);
+                    if (AlongIsFree(p, dir, reach, depthHalf, free)) return (p, dir);
                 }
             }
             return null;
+        }
+
+        /// <summary>Whether discs of radius <paramref name="half"/> every <paramref name="half"/> m along <paramref name="dir"/>,
+        /// from <paramref name="reach"/> m back to <paramref name="reach"/> m on through <paramref name="p"/>, are all free.</summary>
+        static bool AlongIsFree(Vector2 p, Vector2 dir, float reach, float half, Func<Vector2, float, bool> free)
+        {
+            float step = Mathf.Max(half, 1f);
+            for (float t = -reach; t < reach; t += step) if (!free(p + dir * t, half)) return false;
+            return free(p + dir * reach, half);
         }
 
         /// <summary>The point <paramref name="metres"/> along <paramref name="line"/> from segment <paramref name="seg"/>'s point at
@@ -399,7 +417,7 @@ namespace Statecraft.Game.Map.Collection
         IEnumerable<(string key, Vector3 at, float radius)> Anchors()
         {
             if (map == null) yield break;
-            foreach (var w in wants) yield return (w.Key, map.Frame.ToWorld(w.Lon, w.Lat, 0), ClearanceOf(w.Model));
+            foreach (var w in wants) yield return (w.Key, map.Frame.ToWorld(w.Lon, w.Lat, 0), ClearanceOf(w));
         }
         void RefreshResidency() => RefreshResidencyCore(true);
         void RefreshResidencyCore(bool redraw)
@@ -413,8 +431,11 @@ namespace Statecraft.Game.Map.Collection
                 },
                 (instances, owners, keys, complete) => CollectionResidencyMetrics.AfterDestroyed("special", instances, owners, complete,
                     Application.isPlaying && ownedAcquire == null ? () => CollectionStream.Settled(keys) : (Func<bool>?)null, keys), true);
-            // v0.3.1 Show requested every wanted special as Near immediately; only its renderers were close-camera gated.
-            residency.Replace(wants.Select(w => (w.Model, CollectionDetail.Near)));
+            // v0.3.1 Show requested every wanted special as Near immediately; only its renderers were close-camera gated (owner
+            // ruling 29, 30 October 2026: "Far models map-wide"). The four props are the exception (owner on #2274: "Near-only
+            // for these props"): each is requested only while a camera is close to it (the view's keys), and released on leave.
+            var near = residencyView.Keys;
+            residency.Replace(wants.Where(w => !w.NearOnly || near.Contains(w.Key)).Select(w => (w.Model, CollectionDetail.Near)));
             if (redraw) Rebuild();
         }
         IReadOnlyList<UnityEngine.Object> ClearForRetirement(IReadOnlyCollection<(string id, CollectionDetail detail)> keys)
@@ -551,7 +572,7 @@ namespace Statecraft.Game.Map.Collection
             {
                 if (!prefabs.TryGetValue(w.Model, out var prefab) || prefab == null) continue;
                 var anchor3 = map.Frame.ToWorld(w.Lon, w.Lat, 0); var anchor = new Vector2(anchor3.x, anchor3.z);
-                float clearance = ClearanceOf(w.Model);
+                float clearance = ClearanceOf(w);
                 Vector2? at = null;
                 if (w.Key == "degania_r35" && kits != null)
                 {
@@ -565,7 +586,7 @@ namespace Statecraft.Game.Map.Collection
                 if (w.Site == Siting.Shore) at = ShoreSpot(w.Along, ground, clearance, free);
                 else if (w.Site == Siting.Road)
                 {
-                    var (lengthHalf, depthHalf) = HalfSides(prefab, SizeOf(w.Model));
+                    var (lengthHalf, depthHalf) = HalfSides(prefab, SizeOf(w));
                     if (RoadSpot(map, w.Along, anchor, lengthHalf, depthHalf, free) is (Vector2 roadAt, Vector2 roadDir)) { at = roadAt; along = roadDir; }
                 }
                 if (at == null && w.Site != Siting.Seeded)
@@ -583,6 +604,11 @@ namespace Statecraft.Game.Map.Collection
                         at = SeededSpot(w.Key, anchor, clearance, free, from + ring * WidenShare * clearance);
                 }
                 if (at == null) { Debug.LogWarning($"BUILDINGS: no clear ground near {w.Key}; its {w.Model} is not drawn."); continue; }
+                if (w.TownEdge && (at.Value - anchor).magnitude > MaxPropOffsetM)
+                {
+                    Debug.LogWarning($"BUILDINGS: the nearest clear spot for {w.Key} is {(at.Value - anchor).magnitude:0} m from its sourced point, past {MaxPropOffsetM:0} m; its {w.Model} is not drawn.");
+                    continue;
+                }
                 taken.Add((at.Value, clearance));
                 holes.Add((at.Value, clearance));
                 var go = Instantiate(prefab, transform, false); go.name = w.Key;
@@ -597,7 +623,7 @@ namespace Statecraft.Game.Map.Collection
                     go.transform.localRotation = Rotation(prefab.transform.localRotation, yaw);
                     b = Bounds(go);
                 }
-                go.transform.localScale *= edge > 1e-3f ? SizeOf(w.Model) / edge : 1f;
+                go.transform.localScale *= edge > 1e-3f ? SizeOf(w) / edge : 1f;
                 var pos = new Vector3(at.Value.x, ground.Y(at.Value.x, at.Value.y), at.Value.y);
                 go.transform.position = pos; b = Bounds(go);
                 go.transform.position += new Vector3(pos.x - b.center.x, pos.y - b.min.y, pos.z - b.center.z);

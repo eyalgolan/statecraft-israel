@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
 using Statecraft.Game.Map;
@@ -74,13 +75,16 @@ public class CollectionOtherLeaveTests
         var layer = MapLayer(special); View(layer, 10000);
         Assert.Greater(layer.transform.childCount, 0); int before = acquired;
         // Owner ruling 29 (30 Oct 2026): "Far models map-wide (Recommended)": craft and special buildings keep their v0.3.1 map-wide originals.
-        // Leaving neither destroys nor releases them; only teardown does.
+        // Leaving neither destroys nor releases them; only teardown does. The exception is Tal Heuberger's four props (owner, 2 November
+        // 2026, on #2274: "Near-only for these props"): those wanted on this date (the well, the crates, the wall) retire on leave.
+        int nearOnly = special ? SpecialBuildingModels.Placements(new DateTime(1948, 5, 15)).Count(w => w.NearOnly) : 0;
+        if (special) Assert.AreEqual(3, nearOnly, "the well, the crates and the wall on 15 May 1948");
         int children = layer.transform.childCount; var first = layer.transform.GetChild(0);
-        View(layer, 250000); Assert.AreEqual(children, layer.transform.childCount, "leaving keeps every map-wide original");
+        View(layer, 250000); Assert.AreEqual(children - nearOnly, layer.transform.childCount, "leaving keeps every map-wide original");
         Assert.AreSame(first, layer.transform.GetChild(0), "the originals are not rebuilt");
-        Assert.AreEqual(0, released, "no lease retires on leave");
+        Assert.AreEqual(nearOnly, released, "no map-wide lease retires on leave; each near-only prop's does");
         if (!special) Assert.AreEqual(((SeaAirCollection)layer).Placed.Count, ((SeaAirCollection)layer).KeepClear.Count, "labels keep clear of every drawn hull");
-        View(layer, 10000); Assert.AreEqual(children, layer.transform.childCount); Assert.AreEqual(before, acquired, "revisit re-acquires nothing");
+        View(layer, 10000); Assert.AreEqual(children, layer.transform.childCount); Assert.AreEqual(before + nearOnly, acquired, "revisit re-acquires only the near-only props");
         Object.DestroyImmediate(layer.gameObject); Assert.AreEqual(acquired, released);
     }
     [TestCase(false)] [TestCase(true)] public void LateAnswerDoesNotRebuildDepartedCraftOrBuilding(bool special)
@@ -89,7 +93,8 @@ public class CollectionOtherLeaveTests
         foreach (var done in pending.ToArray()) done(prefab);
         // Owner ruling 29 (30 Oct 2026): "Far models map-wide (Recommended)": craft and special buildings keep their v0.3.1 map-wide originals.
         // The camera leaving departs nothing, so the late answers draw; teardown is the departure that releases them.
-        Assert.Greater(acquired, 0); Assert.AreEqual(0, released, "no lease retires on leave");
+        int nearOnly = special ? SpecialBuildingModels.Placements(new DateTime(1948, 5, 15)).Count(w => w.NearOnly) : 0;
+        Assert.Greater(acquired, 0); Assert.AreEqual(nearOnly, released, "no map-wide lease retires on leave; each near-only prop's does (#2274)");
         Assert.Greater(layer.transform.childCount, 0, "the late answers of a map-wide demand draw");
         Object.DestroyImmediate(layer.gameObject);
         int objects = Object.FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length;

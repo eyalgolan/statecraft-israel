@@ -367,7 +367,8 @@ namespace Statecraft.Game.Map.Kits
         /// <summary>The models placed for a town or locality (a test aid).</summary>
         public int CountFor(string id) => perPlace.TryGetValue(id, out var l) ? l.Count : 0;
 
-        /// <summary>The models placed for a town or locality, as placed (a test aid).</summary>
+        /// <summary>The models placed for a town or locality, as placed: a test aid, and the buildings the town-edge props keep
+        /// clear of (Collection.SpecialBuildingModels).</summary>
         public IReadOnlyList<SettlementKits.ModelInstance> InstancesOf(string id) =>
             perPlace.TryGetValue(id, out var l) ? l : (IReadOnlyList<SettlementKits.ModelInstance>)System.Array.Empty<SettlementKits.ModelInstance>();
 
