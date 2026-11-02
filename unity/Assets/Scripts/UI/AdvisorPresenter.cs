@@ -87,6 +87,14 @@ namespace Statecraft.Game.UI
         IVisualElementScheduledItem? fading;
         float flooredFor;
         bool disposed, hidden = true;
+        /// <summary>Set when a rebuild resumes a tour while a screen is open (#1915): the next uncover hands Next
+        /// the focus once, instead of every cover change (a resize, a meter's width) moving it. Cleared when it fires
+        /// and when the chain opens or closes, so a finished tour cannot hand its pending focus to the next one.</summary>
+        bool focusNextWhenUncovered;
+        /// <summary>Set when the screen over a resumed tour closes while the popup is still coming back from its hide
+        /// (#1915): Place() hands Next the focus once the popup is visible again. Cleared on Place's hand-off, on any
+        /// Hide (a screen opening again hides), and when the chain opens or closes.</summary>
+        bool focusNextOnPlace;
         /// <summary>The frame Escape closed it in (FeedbackPresenter's pattern): GameRoot's poll then knows the key is used.</summary>
         int escapedAt = -1;
         /// <summary>The message a layer covered, to show again or drop when the layer closes (spec 4.2).</summary>
@@ -166,8 +174,22 @@ namespace Statecraft.Game.UI
                 if (chain[session.Chain.Step].ApprovedIn(hebrew) && this.hooks.Card?.Shown != null && !this.hooks.Card.Collapsed)
                     this.hooks.Card.Collapse(takeFocus: false);
                 RenderChain();
+                // A rebuild (a language switch) resumes the chain with Settings still open over it (#1036 reopens the
+                // screen): Next takes the focus only once no screen is open, so Enter goes on (spec 16) and its gold
+                // focus fill shows, without stealing the screen's focus (#1915). The check waits a frame: SwitchLanguage
+                // reopens the screen only after Begin returns, so at construction no screen is open yet.
+                if (InChain)
+                    layer.schedule.Execute(() =>
+                    {
+                        if (disposed || !InChain) return;
+                        if (ScreenOpen()) focusNextWhenUncovered = true; else TakeFocusFromTheCard();
+                    });
             }
         }
+
+        /// <summary>A screen is open over the tour. On the one-row HUD a side screen does not mark the HUD covered, so
+        /// Covered(hudRoot) alone misses Settings, and Next's focus would steal the screen's own (#1915).</summary>
+        bool ScreenOpen() => Covered(hudRoot) || hudRoot.ClassListContains(ScreenNav.ScreenOpenClass);
 
         /// <summary>A modal layer is open (spec 4.2): the start screen, the opening (#530), the open decision card, the capture
         /// dialog, the turn report, an outcome clip, the end screen; and, on the two-row HUD, any side screen (it takes the full width).</summary>
@@ -328,6 +350,7 @@ namespace Statecraft.Game.UI
         void Hide()
         {
             StopWatching();
+            focusNextOnPlace = false;                   // even when already hidden: a screen opening again cancels a pending hand-off (#1915)
             if (hidden) return;
             hidden = true;
             ring.style.display = DisplayStyle.None;
@@ -353,7 +376,12 @@ namespace Statecraft.Game.UI
             if (disposed) return;
             if (Media?.Playing == true && (HardMediaCover() || CurrentScreens() != watchScreens)) StopWatching();
             if (hudRoot.ClassListContains(OverlayOpenClass)) return;
-            if (session.Chain.Step >= 0) { RenderChain(); return; }
+            if (session.Chain.Step >= 0)
+            {
+                RenderChain();
+                if (focusNextWhenUncovered && InChain && !ScreenOpen()) { focusNextWhenUncovered = false; FocusNextOnPlace(); }   // a screen closed over a resumed tour (#1915)
+                return;
+            }
             if (Covered(hudRoot)) { if (Shown != null) covered = Shown; Hide(); return; }
             if (covered is AdvisorCatalog.Message m)
             {
@@ -452,6 +480,7 @@ namespace Statecraft.Game.UI
             if (disposed) return;
             var first = NextChainStep(-1);
             if (first < 0) return;                         // no unreviewed Hebrew, even when explicitly asked
+            focusNextWhenUncovered = false; focusNextOnPlace = false;   // a reopened tour starts without a stale pending hand-off (#1915)
             hooks.CloseScreens?.Invoke();
             openingGame = bridge.Session;
             if (session.Chain.Step < 0)
@@ -481,6 +510,7 @@ namespace Statecraft.Game.UI
         {
             if (disposed || session.Chain.Step < 0) return;
             session.Chain.Step = -1; session.Chain.PutBack = null; adopted = null;
+            focusNextWhenUncovered = false; focusNextOnPlace = false;   // a tour ending cancels a pending Next hand-off (#1915)
             Shown = null; covered = null;
             ClearTarget();
             Hide();
@@ -541,6 +571,33 @@ namespace Statecraft.Game.UI
         {
             FocusReturn.To(gotIt);
             gotIt.schedule.Execute(() => { if (!disposed && InChain) gotIt.Focus(); });
+        }
+
+        /// <summary>The screen over a resumed tour just closed and Next takes the focus (#1915). While the popup is
+        /// still coming back from its hide under the screen (display and visibility not restored yet) a Focus() does
+        /// nothing - the gate log read canGrabFocus=false, display=None, visibility=Hidden - so the hand-off waits for
+        /// Place() to make the popup visible again. A popup still on screen takes the focus at once.</summary>
+        void FocusNextOnPlace()
+        {
+            if (disposed || !InChain || ScreenOpen()) return;
+            if (NextCanTakeFocus()) { FocusReturn.To(gotIt); return; }
+            focusNextOnPlace = true;
+        }
+
+        /// <summary>Next can take the focus now (#1915). The button's own canGrabFocus, not the popup's resolved visibility:
+        /// an inline visibility set on the popup reads back at once on the popup itself, but its children inherit it only on
+        /// the next style pass, and a Focus() on a still-hidden Next releases the screen's focus to nothing.</summary>
+        bool NextCanTakeFocus() => FocusReturn.CanTakeFocus(gotIt) && gotIt.canGrabFocus;
+
+        /// <summary>Place() just restored the popup's visibility for the deferred Next hand-off (#1915), but Next inherits it
+        /// only on the next style pass. The hand-off waits that out: a few scheduler ticks until Next can take the focus,
+        /// then hands it over once.</summary>
+        void FocusNextWhenPlaced(int ticksLeft = 10)
+        {
+            if (disposed || !InChain || ScreenOpen()) return;
+            if (NextCanTakeFocus()) { FocusReturn.To(gotIt); return; }
+            if (ticksLeft <= 0) return;
+            gotIt.schedule.Execute(() => FocusNextWhenPlaced(ticksLeft - 1));
         }
 
         void ShowMe()
@@ -724,6 +781,11 @@ namespace Statecraft.Game.UI
             popup.style.left = at.xMin; popup.style.top = at.yMin;
             popup.style.width = Mathf.Max(0f, at.width); popup.style.maxHeight = Mathf.Max(0f, slot.height);
             popup.style.visibility = Visibility.Visible;
+            if (focusNextOnPlace && InChain && !ScreenOpen())
+            {
+                focusNextOnPlace = false;
+                FocusNextWhenPlaced();
+            }
             return at;
         }
 

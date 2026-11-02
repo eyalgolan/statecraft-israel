@@ -46,14 +46,18 @@ namespace Statecraft.Game.EditorTools
 
         /// <summary>Issue #707: the special-buildings bundle's prefabs, one per model, beside #675's imported model in its own
         /// folder (CollectionCatalog.PrefabPath): the model with its own material on every renderer. The models' import
-        /// settings are #675's and are left as they are.</summary>
+        /// settings are #675's and are left as they are; Tal Heuberger's generated houses keep their delivered import settings
+        /// (max 4096, quality 100, no rig), so only their prefabs are built.</summary>
         public static void MakeBuildingPrefabs()
         {
             foreach (var id in CollectionCatalog.Ids.Where(CollectionCatalog.IsBuilding))
             {
                 string dir = $"{CollectionCatalog.BuildingsFolder}/{id}";
-                ImportModel($"{dir}/{id}.fbx", animated: false);
-                ImportColourMap($"{dir}/{id}_basecolor.jpg");
+                if (!CollectionCatalog.IsGeneratedHouse(id))
+                {
+                    ImportModel($"{dir}/{id}.fbx", animated: false);
+                    ImportColourMap($"{dir}/{id}_basecolor.jpg");
+                }
                 var model = AssetDatabase.LoadAssetAtPath<GameObject>($"{dir}/{id}.fbx") ?? throw new InvalidOperationException($"{id}: no model");
                 var mat = AssetDatabase.LoadAssetAtPath<Material>($"{dir}/{id}.mat") ?? throw new InvalidOperationException($"{id}: no material");
                 mat.enableInstancing = true; EditorUtility.SetDirty(mat);
@@ -68,7 +72,7 @@ namespace Statecraft.Game.EditorTools
                 finally { UnityEngine.Object.DestroyImmediate(go); }
             }
             AssetDatabase.SaveAssets();
-            Debug.Log("CollectionImport: 23 original building prefabs");
+            Debug.Log(FormattableString.Invariant($"CollectionImport: {CollectionCatalog.Ids.Count(CollectionCatalog.IsBuilding)} building prefabs"));
         }
 
         static void ImportModel(string path, bool animated)
@@ -169,12 +173,12 @@ namespace Statecraft.Game.EditorTools
         /// <summary>Where a target's bundles are built (incremental, git-ignored).</summary>
         public static string BundleCache(BuildTarget target) => Path.Combine("Library", "CollectionBundles", target.ToString());
 
-        /// <summary>The bundles: each catalog bundle carries its models' far and near prefabs; their meshes, clips,
-        /// controllers, materials and colour maps come in as dependencies.</summary>
+        /// <summary>The bundles: each catalog bundle carries its models' far and near prefabs and source model files
+        /// (CollectionCatalog.SourceModelPath); their meshes, clips, controllers, materials and colour maps come in as dependencies.</summary>
         public static AssetBundleBuild[] Builds() => CollectionCatalog.Bundles.Select(b => new AssetBundleBuild
         {
             assetBundleName = b.Bundle,
-            assetNames = b.Ids.SelectMany(id => new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near), CollectionCatalog.IsBuilding(id) ? $"{CollectionCatalog.BuildingsFolder}/{id}/{id}.fbx" : Model(id, CollectionDetail.Near) }).Distinct().ToArray(),
+            assetNames = b.Ids.SelectMany(id => new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near), CollectionCatalog.SourceModelPath(id) }).Distinct().ToArray(),
         }).ToArray();
 
         /// <summary>Writes <see cref="CollectionCatalog.ChecksFile"/> into <paramref name="folder"/> for the built

@@ -85,6 +85,7 @@ namespace Statecraft.Sim
         // Exactly ONE caller-confirmed participation receipt. Common owner must deduplicate by unit/turn
         // before invoking and apply a result at most once. Realized output is deliberately not an XP input.
         // R-CRAFT-002: tier before this tick quotes output; threshold crossing affects only TierAfter.
+        // IndustryIncome is the catalogue tier, a multiple of R-CITY-002's per-unit job income (#2112), not Money.
         internal CraftWorkTick WorkTick(int unitId, CivilianTier tier, int workXp, CraftTickActivity activity, bool actualWork)
         {
             Nonnegative(unitId, nameof(unitId)); Nonnegative(workXp, nameof(workXp));
