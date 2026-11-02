@@ -68,6 +68,16 @@ namespace Statecraft.Sim
             return left < 0 && s.Debt - left > r.DebtCeiling!.Value;   // the loader requires both in the GDD loop
         }
 
+        /// <summary>#2206: the check above as End turn makes it with <paramref name="queued"/>, the turn's queued orders: on a
+        /// copy of <paramref name="s"/> after the queued dollar conversions (Simulation.Preview), which run before every Arms
+        /// purchase (R-ARMS-002, R-MONEY-004; Simulation.ConversionsBeforeArms). A conversion End turn refuses counts for
+        /// nothing; no other queued order is judged. The Defence screen's warning.</summary>
+        public static bool BorrowsPastDebtCeiling(Content c, GameState s, IEnumerable<Command> queued, int count)
+        {
+            var conversions = queued.OfType<ConvertDollars>().ToList<Command>();
+            return BorrowsPastDebtCeiling(c, conversions.Count == 0 ? s : Simulation.Preview(c, s, conversions).State, count);
+        }
+
         /// <summary>The nation's need for one turn: its head count in population units, rounded half away from zero.</summary>
         static int Need(GameState s, MvpRules r) => (int)Math.Round(s.TotalPopulation / r.PeoplePerUnit, MidpointRounding.AwayFromZero);
 

@@ -249,6 +249,34 @@ public class FoodArmsHudTests
         Assert.IsEmpty(ui.Q<Label>("arms-refusal").text, "paid from the Treasury, nothing is borrowed");
     }
 
+    // #2206 (R-ARMS-002, R-MONEY-004): the ceiling warning counts the dollar conversion queued this turn, which End turn runs
+    // before the purchase. On the first turn (Treasury IL 20m, no debt, the IL 250m ceiling, IL 1m an Arms), 271 Arms warn
+    // alone; after Convert queues $4m they do not, 272 still do, and withdrawing the conversion warns again.
+    [TestCase(false, false)] [TestCase(false, true)]
+    [TestCase(true, false)] [TestCase(true, true)]
+    public void TheCeilingWarningCountsTheQueuedConversion(bool modern, bool he)
+    {
+        var b = Bridge(modern, he); var t = Text(he);
+        using var ui = new UiTestKit();
+        using var defence = new DefencePresenter(ui.Root, b, t);
+        var r = b.Content.RulesAt(b.State.Date).Mvp!;
+        Assert.AreEqual((20.0, 0.0, 250.0, 1.0), (b.State.Treasury, b.State.Debt, r.DebtCeiling!.Value, r.ArmsPrice!.Value));
+        var count = ui.Q<IntegerField>("arms-count");
+        var warning = ui.Q<Label>("arms-refusal");
+        count.value = 271;
+        Assert.AreEqual(t["arms.refused_debt_ceiling"], warning.text, "no conversion queued");
+        ui.Q<IntegerField>("dollars-amount").value = 4;
+        ui.Press("convert-dollars");
+        Assert.AreEqual(4, ((ConvertDollars)b.Queued.Single()).Amount);
+        Assert.IsEmpty(warning.text, "End turn converts first, so 271 Arms stay within the ceiling");
+        count.value = 272;
+        Assert.AreEqual(t["arms.refused_debt_ceiling"], warning.text, "272 Arms still pass the ceiling");
+        count.value = 271;
+        ui.Press("withdraw-dollars");
+        Assert.IsEmpty(b.Queued);
+        Assert.AreEqual(t["arms.refused_debt_ceiling"], warning.text, "the conversion withdrawn");
+    }
+
     [Test]
     public void PoolCausesIgnoreTheSupplyIndicatorAndKeepTheSimTieOrder()
     {

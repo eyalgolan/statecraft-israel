@@ -279,13 +279,16 @@ options:
     // R-MONEY-004, R-ARMS-002 (#2206; owner, 2 November 2026: "Conversion counts first (Recommended)"): a turn's dollar
     // conversions run before its Arms purchases, so the purchase borrows only what the conversion leaves it short, whatever
     // the queue order. The real content's first turn: rung 5, Treasury IL 20m, no debt, IL 1m an Arms, IL 0.333 per $.
-    // Queued before or after $4m (IL 1.332m), 271 Arms give the same turn: the same state, causes and rejections.
+    // Queued before or after $4m (IL 1.332m), 271 Arms give the same turn: the same state, causes and rejections. With the
+    // IL 250m debt ceiling (#2203), 271 Arms alone borrow IL 251m and are refused; after the conversion they borrow IL 249.668m,
+    // so a purchase queued BEFORE the conversion is accepted too.
     [Fact]
     public void AConversionCountsForAnArmsPurchaseWhateverTheQueueOrder()
     {
         var s = Simulation.NewGame(Real, GoldenRun.Seed, Mode.Historical);
         var m = Real.RulesAt(s.Date).Mvp!;
-        Assert.Equal((5, 20.0, 0.0, 1.0, 0.333), (s.Rung, s.Treasury, s.Debt, m.ArmsPrice!.Value, m.IlPerDollarOn(s.Date)));
+        Assert.Equal((5, 20.0, 0.0, 250.0, 1.0, 0.333), (s.Rung, s.Treasury, s.Debt, m.DebtCeiling!.Value, m.ArmsPrice!.Value, m.IlPerDollarOn(s.Date)));
+        Assert.Equal(Pools.RefusedDebtCeiling, Assert.Single(Simulation.Step(Real, s, new Command[] { new BuyArms(271) }).Rejected).Reason);
         var first = Simulation.Step(Real, s, new Command[] { new ConvertDollars(4), new BuyArms(271) });
         var last = Simulation.Step(Real, s, new Command[] { new BuyArms(271), new ConvertDollars(4) });
         Assert.Empty(first.Rejected);
@@ -300,6 +303,31 @@ options:
         Assert.Equal(271 - 20 - 4 * 0.333, orders.Debt, 9);
         var none = Simulation.Step(Real, s, Array.Empty<Command>()).State;
         Assert.Equal(none.Treasury - none.Debt - 271 + 4 * 0.333, last.State.Treasury - last.State.Debt, 9);
+        // One Arms more passes the ceiling in either order, refused with the same reason, and the conversion stands.
+        var over = Simulation.Step(Real, s, new Command[] { new BuyArms(272), new ConvertDollars(4) });
+        var overFirst = Simulation.Step(Real, s, new Command[] { new ConvertDollars(4), new BuyArms(272) });
+        Assert.Equal(Pools.RefusedDebtCeiling, Assert.Single(over.Rejected).Reason);
+        Assert.Equal(Pools.RefusedDebtCeiling, Assert.Single(overFirst.Rejected).Reason);
+        Assert.Equal(overFirst.State.Hash(), over.State.Hash());
+        Assert.Equal(4, over.State.DollarsConverted);
+    }
+
+    // R-ARMS-002, R-MONEY-004 (#2206): the Defence screen's ceiling warning counts the conversions queued this turn, as End
+    // turn does (Pools.BorrowsPastDebtCeiling with the queue): after $4m, 271 Arms are allowed and 272 refused. A conversion
+    // End turn refuses (past the month's $4m) counts for nothing, and the other queued orders are not judged.
+    [Fact]
+    public void TheCeilingCheckCountsTheQueuedConversionsAsEndTurnDoes()
+    {
+        var s = Simulation.NewGame(Real, GoldenRun.Seed, Mode.Historical);
+        var four = new Command[] { new BuyArms(1), new ConvertDollars(4) };
+        Assert.True(Pools.BorrowsPastDebtCeiling(Real, s, Array.Empty<Command>(), 271));
+        Assert.False(Pools.BorrowsPastDebtCeiling(Real, s, four, 271));
+        Assert.True(Pools.BorrowsPastDebtCeiling(Real, s, four, 272));
+        Assert.True(Pools.BorrowsPastDebtCeiling(Real, s, new Command[] { new ConvertDollars(5) }, 271));
+        foreach (var count in new[] { 271, 272 })
+            Assert.Equal(Pools.BorrowsPastDebtCeiling(Real, s, four, count),
+                Simulation.Step(Real, s, new Command[] { new BuyArms(count), new ConvertDollars(4) }).Rejected.Any(x => x.Reason == Pools.RefusedDebtCeiling));
+        Assert.Equal((20.0, 0), (s.Treasury, s.DollarsConverted));   // the queue is judged on a copy
     }
 
     // #2206: only the conversions queued after the turn's first Arms purchase move, to just before it, in their queue order;
