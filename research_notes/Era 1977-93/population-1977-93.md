@@ -561,6 +561,32 @@ November 1988, 78.4 percent in January 1990). This pass adds the size of the pac
 - [GAP] The grant schedule in the Absorption Ministry's or the Jewish Agency's own regulations, and the cabinet
   decision that set the 21,000 shekels. Not found in any source read; no ministry text was reached.
 
+**Absorption basket by date, 1989-91 (added 2 November 2026, issue #160)**
+
+Five more JTA items on the size and the payers of the basket. Four were read on the bulletin page image, where the
+date line (the bulletin's own date and the reporter's dateline) is printed; the 8 Jan 1990 item was read in its web text only.
+
+| Date of item | What it says | Source | Tag |
+|---|---|---|---|
+| 17 Sep 1989 (dateline "Sept. 17", reporting a news conference "over the weekend") | Absorption Minister Peretz: "each immigrant family will receive an 'absorption basket' equivalent to $11,000 for their first year in the country"; immigrants to go "directly to absorption centers" and, if needed, hotels, sanatoriums and army barracks | JTA 1989-09-18, p. 3, at https://www.jta.org/archive/absorption-ministry-is-gearing-up-for-massive-influx-of-soviet-jews (PDF: http://pdfs.jta.org/1989/1989-09-18_177.pdf) | [V, agent read 2 Nov; a person's check pending], press |
+| 8 Jan 1990 (bulletin of that day; the Cabinet met "Sunday") | The US had given the Jewish Agency, through the UJA, "an annual stipend" for absorption since 1973, then "$25 million"; Dinitz asked for more. A national "voluntary loan" was "favored by" Finance Minister Peres and "pressed" by Deputy Minister Beilin, and "resisted" by others | JTA 1990-01-08, at https://www.jta.org/archive/as-soviets-arrive-by-the-hundreds-israel-wonders-how-to-pay-for-them (text of the web page only; the page image was not opened) | [V, web text only; agent read 2 Nov; a person's check pending], press |
+| 21 Nov 1990 (dateline "Nov. 21"; effective 1 Dec) | Customs authorities: cash instead of the electrical-appliance tax exemption: "$2,500 electrical appliance grant", "$750 on arrival", the rest at the end of the first year. "In addition to the $9,000 given to each immigrant family in what is called an 'absorption basket'"; "A third of the absorption basket is paid upon arrival in Israel and the balance in monthly installments of $500" | JTA 1990-11-22, p. 3, at https://www.jta.org/archive/no-more-tax-break-for-olim (PDF: http://pdfs.jta.org/1990/1990-11-22_219.pdf) | [V, agent read 2 Nov; a person's check pending], press |
+| 19 Dec 1990 (bulletin of that day; the item's dateline names no day) | The Jewish Agency "pays the cost of transporting the immigrants and their luggage to Israel, as well as 25 percent of the absorption grant they receive during their first year"; it "now lacks $120 million" and had "a $40 million overdraft" | JTA 1990-12-19, p. 4, at https://www.jta.org/archive/jewish-agency-hit-by-cash-shortage-caused-by-high-cost-of-soviet-aliyah (PDF: http://pdfs.jta.org/1990/1990-12-19_237.pdf) | [V, agent read 2 Nov; a person's check pending], press |
+| 19 Mar 1991 (dateline "March 19", meeting "Tuesday") | The Agency's loan programme: "each immigrant would be entitled to a $1,000 loan repayable over a period of 10 years, starting in the fourth year". "Last week, Moda'i restored some of the cuts, bringing the subsidy back to its previous level of $7,600 for a family of three, $2,600 of which will now be a loan"; "still considerably below the $9,600 grant originally handed families of three"; loan "retroactive to March 1"; the Agency cited "a $113 million shortfall" for April to December 1991 | JTA 1991-03-20, p. 3, at https://www.jta.org/archive/shamir-backs-jewish-agency-program-to-give-olim-loans-instead-of-grants (PDF: http://pdfs.jta.org/1991/1991-03-20_055.pdf) | [V, agent read 2 Nov; a person's check pending], press |
+
+- [C] The size of the basket for an immigrant family (only the March 1991 items say "of three"), by item, in the press's own dollars: $11,000 (Peretz, Sep 1989);
+  $9,000 (customs item, Nov 1990, with the $2,500 appliance grant on top); $9,600 "originally" (Mar 1991; the 13 March item
+  above gives the same $9,600 as the "original 21,000 shekels"); $7,600 after the March 1991 partial restoration, with
+  $2,600 of it a loan (20 March), against "$7,750" for 17,000 shekels in the 13 March item. The items do not say
+  what each total includes (cash, services, the appliance grant), so no one figure is chosen and none is a schedule.
+- [C] The Jewish Agency's share, three values: "half" (JTA 27 Jun 1990, above), "25 percent" (19 Dec 1990) and "one-third"
+  (6 Mar 1991, above). All three are press descriptions; the dates differ, so they may be successive shares, but no
+  source read says so.
+- Timing, as stated in the 22 Nov 1990 item only: a third of the basket on arrival, the balance in monthly instalments
+  of $500. It is the only payment schedule found.
+- [GAP] still open, narrowed: the Absorption Ministry's or the Agency's own grant tables and the decision that set
+  the 21,000 shekels. The items above are press accounts of them.
+
 **Housing: what was built, 1985-92 (CBS)**
 
 [V, agent read 1 Nov; a person's check pending] CBS, *Statistical Abstract of Israel* (numbers 42, 43 and 44, of 1991, 1992
@@ -647,6 +673,7 @@ full-volume PDFs on the CBS site; only the construction chapter tables named abo
 `https://www.jta.org/wp-json/wp/v2/archive?search=direct+absorption&after=1989-06-01T00:00:00&before=1992-12-31T00:00:00&per_page=40`
 (412 items) and `search=absorption+basket` over the same window (35 items); only the titles were scanned and the items named above were read in full.
 Added 2 November 2026: Public Law 101-167 (103 Stat. 1195, govinfo, pages 1261 to 1264) and the four Federal Register day volumes named in the US-rule gap above.
+Added 2 November 2026 (second pass): five more JTA items on the basket, 1989-09-18, 1990-01-08, 1990-11-22, 1990-12-19 and 1991-03-20; searches `search=absorption+basket` (14 items 1989-06 to 1990-12, 14 items for 1991) and `search=absorption+grant` (42 and 38 items), titles scanned.
 
 ---
 
