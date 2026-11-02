@@ -11,7 +11,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-/// <summary>The hex tiles' 20 Higgsfield props (Tal Heuberger, #1155) and his papyrus and tamarisk (#2082; owner, 2 November
+/// <summary>The hex tiles' 20 Higgsfield props (Tal Heuberger, #1155) and their papyrus and tamarisk (#2082; owner, 2 November
 /// 2026: "Hula + Arava, map and boards (Recommended)") load under the owner's ruling of 23 October 2026, "Own streamed
 /// bundle": outside every Resources folder (so the default first download does not carry them), outside The 1948
 /// Collection (which stays Tal's Tripo models), and in bundles of their own that only a ?hex-tiles board (or, for the
@@ -156,11 +156,11 @@ public class HexPropsTests
     }
 
     /// <summary>#2082: the papyrus and tamarisk prefabs draw Tal Heuberger's OBJ meshes, copied byte for byte from
-    /// asset-sources/recovered-vegetation-20261031 (only the file name changes), with his albedo and normal maps, at his
+    /// asset-sources/recovered-vegetation-20261031 (only the file name changes), with their albedo and normal maps, at their
     /// scale (the import's file scale, no rescale: each stands 1 unit tall, as delivered), and the two tiles place them.</summary>
     [TestCase("tiles:hula_swamp/papyrus", "hula_swamp_papyrus", "g25_papyrus", 2260, "hula_swamp")]
     [TestCase("tiles:arava_oasis/tamarisk", "arava_oasis_tamarisk", "hf_tamarisk", 7306, "arava_oasis")]
-    public void TalsPapyrusAndTamariskAreHisMeshesAtHisScale(string id, string folder, string source, int triangles, string tile)
+    public void TalsPapyrusAndTamariskAreTalsMeshesAtTalsScale(string id, string folder, string source, int triangles, string tile)
     {
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(HexProps.PrefabPath(id));
         Assert.IsNotNull(prefab, id);

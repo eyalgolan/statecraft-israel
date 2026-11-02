@@ -5,7 +5,7 @@ using Statecraft.Game.Map.Collection;
 
 namespace Statecraft.HexTiles
 {
-    /// <summary>The hex tiles' streamed props: Tal Heuberger's 20 Higgsfield models (#1155) and his papyrus and tamarisk
+    /// <summary>The hex tiles' streamed props: Tal Heuberger's 20 Higgsfield models (#1155) and their papyrus and tamarisk
     /// (#2082; owner, 2 November 2026: "Hula + Arava, map and boards (Recommended)"), drawn by their "tiles:" ids.
     /// Owner, 23 October 2026: "Own streamed bundle". They are outside every Resources folder, so the first download does not
     /// carry them, and outside The 1948 Collection (<see cref="CollectionCatalog"/>, Tal's Tripo models only). They ship as

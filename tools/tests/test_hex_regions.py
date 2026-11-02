@@ -99,6 +99,16 @@ def test_the_recipes_name_only_known_prototypes_grounds_and_shapes():
     assert {u["unit"] for u in recipes.defaults["units"]} <= known_units()
 
 
+def test_environment_flora_names_no_tile_prop():
+    """HexEnvironment.DressHex draws flora tree-sized (0.11-0.15 HexM) on environment hexes, under no tile's triangle budget,
+    so a tile's own prop (a "tiles:" id, such as Tal Heuberger's 2,260-triangle papyrus clump, #2082) is never flora."""
+    recipes = mb.Recipes.load(str(REGIONS))
+    for region in recipes.regions + [recipes.defaults]:
+        flora = region.get("flora", {})
+        for s in flora.get("flat", []) + flora.get("hills", []):
+            assert not s["model"].startswith("tiles:"), (region.get("id"), s)
+
+
 def test_environment_carries_no_tiles(country):
     env = [h for h in country["hexes"] if h["env"]]
     assert env, "an --env-ring board has environment hexes"

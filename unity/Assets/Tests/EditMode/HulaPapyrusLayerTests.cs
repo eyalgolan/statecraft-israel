@@ -16,7 +16,8 @@ using Object = UnityEngine.Object;
 
 /// <summary>#2082 on the main map (owner, 2 November 2026: "Hula + Arava, map and boards (Recommended)"): Tal Heuberger's
 /// papyrus stands at the Hula swamp's sourced site (content/sites.yaml, site hula, hex (16, 3)), deterministic, at close
-/// zoom only, clear of kit footprints, routes and unit tokens, at Tal's scale, streamed as its own bundle on the first close
+/// zoom only, clear of kit footprints, routes and unit tokens, at 3x Tal's scale (owner, 2 November 2026: "3x bigger, like
+/// the props (Recommended)"), streamed as its own bundle on the first close
 /// view, failing open, and gone once the swamp is drained. The tamarisk has no sourced main-map place ([GAP]).</summary>
 public class HulaPapyrusLayerTests
 {
@@ -87,7 +88,7 @@ public class HulaPapyrusLayerTests
     }
 
     [Test]
-    public void StreamsOnTheFirstCloseViewAndDrawsAtCloseZoomOnlyAtTalsScale()
+    public void StreamsOnTheFirstCloseViewAndDrawsAtCloseZoomOnlyAtThreeTimesTalsScale()
     {
         var map = OpenMap();
         var layer = HulaPapyrusLayer.ShowAt(map, content, drained: false)!;
@@ -101,9 +102,14 @@ public class HulaPapyrusLayerTests
         Assert.AreEqual("hex-props-papyrus", HexProps.Catalog.BundleOf(asked[0].id));
         asked[0].done(Papyrus());
         Assert.AreEqual(layer.Wanted, layer.Placed.Count);
-        var rest = Object.Instantiate(Papyrus());
-        var restBounds = Bounds(rest);
-        Object.DestroyImmediate(rest);
+        Assert.AreEqual(3f * Statecraft.Game.Map.Kits.SettlementKits.ModelScale, HulaPapyrusLayer.ClumpM, 1e-3f,
+            "spacing and clearances are measured on the drawn (3x) clump");
+        // The drawn height, from figures outside the layer: Tal's OBJ spans y -0.5 to 0.5 (1 m at file scale 1, as
+        // delivered), times the world scale of every model, times the owner's 3 (#2278, 2 November 2026: "3x bigger, like
+        // the props (Recommended)"). The boards keep Tal's own scale (HexPropsTests.TalsPapyrusAndTamariskAreTalsMeshesAtTalsScale).
+        const float objHeightM = 1f;
+        float expectedM = 3f * objHeightM * Statecraft.Game.Map.Kits.SettlementKits.ModelScale;
+        var ground = new Statecraft.Game.Map.Kits.KitGround(map.Terrain, map.Frame, map.Hexes, map.ElevMinM);
         foreach (var p in layer.Placed)
         {
             var child = layer.transform.Find(p.Key);
@@ -111,15 +117,26 @@ public class HulaPapyrusLayerTests
             var rs = child.GetComponentsInChildren<Renderer>();
             Assert.IsTrue(rs.All(x => !x.forceRenderingOff), p.Key + " draws at close zoom");
             var b = Bounds(child.gameObject);
-            Assert.AreEqual(restBounds.size.y * Statecraft.Game.Map.Kits.SettlementKits.ModelScale, b.size.y, 0.01f * b.size.y,
-                p.Key + ": Tal's model as delivered at the world scale of every model, not rescaled");
-            Assert.AreEqual(p.At.y, b.min.y, 0.5f, p.Key + " stands on its spot's ground");
+            Assert.AreEqual(expectedM, b.size.y, 0.01f * expectedM, p.Key + ": 3x Tal's model at the world scale of every model");
+            // On the terrain itself (sampled here, not the layer's own base height): the clump's base lies within the
+            // ground's span under its centre and eight points on a circle of half the clump's drawn height.
+            float lo = ground.Y(b.center.x, b.center.z), hi = lo;
+            for (int k = 0; k < 8; k++)
+            {
+                float y = ground.Y(b.center.x + Mathf.Cos(k * Mathf.PI / 4f) * 0.5f * expectedM, b.center.z + Mathf.Sin(k * Mathf.PI / 4f) * 0.5f * expectedM);
+                lo = Mathf.Min(lo, y); hi = Mathf.Max(hi, y);
+            }
+            Assert.That(b.min.y, Is.InRange(lo - 0.5f, hi + 0.5f), p.Key + " stands on the terrain, neither floating nor buried");
         }
         layer.SetClose(false);
         Assert.IsTrue(layer.GetComponentsInChildren<Renderer>(true).All(x => x.forceRenderingOff), "nothing draws beyond close zoom");
         Assert.AreEqual(Statecraft.Game.Map.Kits.TownModelLayer.CloseEnterM, HulaPapyrusLayer.CloseEnterM);
         Assert.AreEqual(Statecraft.Game.Map.Kits.TownModelLayer.CloseExitM, HulaPapyrusLayer.CloseExitM);
         Assert.IsTrue(HulaPapyrusLayer.CloseAt(HulaPapyrusLayer.CloseEnterM - 1f, null));
+        Assert.AreEqual(Statecraft.Game.Map.Kits.TownModelLayer.CloseAt(HulaPapyrusLayer.CloseEnterM, null),
+            HulaPapyrusLayer.CloseAt(HulaPapyrusLayer.CloseEnterM, null), "the band's edges switch as the building models' do");
+        Assert.AreEqual(Statecraft.Game.Map.Kits.TownModelLayer.CloseAt(HulaPapyrusLayer.CloseExitM, true),
+            HulaPapyrusLayer.CloseAt(HulaPapyrusLayer.CloseExitM, true));
         Assert.IsFalse(HulaPapyrusLayer.CloseAt(HulaPapyrusLayer.CloseExitM + 1f, null));
         float band = 0.5f * (HulaPapyrusLayer.CloseEnterM + HulaPapyrusLayer.CloseExitM);
         Assert.IsTrue(HulaPapyrusLayer.CloseAt(band, true));

@@ -10,15 +10,19 @@ using UnityEngine.Rendering;
 namespace Statecraft.Game.Map.Collection
 {
     /// <summary>Tal Heuberger's papyrus (#2082) at the Hula swamp on the main map, at close zoom only. Owner, 2 November 2026:
-    /// "Hula + Arava, map and boards (Recommended)": papyrus at the Hula swamp, on the main map at close zoom and on the hex
-    /// boards, at Tal's scale, at sourced places, with the load measured.
+    /// "Hula + Arava, map and boards (Recommended)"; the option read: "Papyrus at the Hula swamp, tamarisk at Arava oases, on
+    /// the main map at close zoom and on the hex boards; Tal's scale, sourced places, load measured." The owner then ruled on
+    /// #2278, 2 November 2026: "3x bigger, like the props (Recommended)"; the option read: "Same treatment you chose for the
+    /// sandbags and well: about 3x so it reads at close zoom." So this layer draws 3x Tal's scale; the boards keep it.
     /// The place is the hex of content/sites.yaml's site <see cref="SiteId"/> ((16, 3)), sourced there to the 1946 Survey of
     /// Palestine 1:250,000 map (the marsh north of Lake Hula), FRUS 1951 v.V doc 288 and the JTA, with the 4.4 km re-grid note
     /// (#1183). The layer reads the hex from the content, so it moves with the site. Papyrus grew thickly in that marsh
     /// (HulaSwamp.cs's sources).
     /// Scale: Tal's model as delivered (1 unit tall in its OBJ, imported at file scale 1, so 1 m), times the one world scale
     /// of every model, <see cref="SettlementKits.ModelScale"/> (the owner on #1033: "Train scale for all ambient life", as
-    /// <see cref="WildlifeLayer"/>). The mesh is not rescaled to any plant height: no sourced papyrus height is used.
+    /// <see cref="WildlifeLayer"/>), times <see cref="DrawScale"/> so it reads at close zoom (the owner on #2278, 2 November
+    /// 2026: "3x bigger, like the props (Recommended)"). This layer only: the hex boards keep Tal's scale. No sourced papyrus
+    /// height is used.
     /// The drainage stands as the game has it (R-SWAMP-001): once the site is drained (built), no papyrus is drawn.
     /// The clumps keep off water, routes, unit tokens and every kit footprint, in <see cref="Stands"/> stands of
     /// <see cref="ClumpsPerStand"/> clumps at most, at seeded spots (a stable integer hash, never runtime RNG). The model
@@ -35,13 +39,17 @@ namespace Statecraft.Game.Map.Collection
         public const int Stands = 4, ClumpsPerStand = 10;
         /// <summary>The model's own height (m) as delivered and imported (its OBJ spans y -0.5 to 0.5).</summary>
         public const float ModelHeightM = 1f;
-        /// <summary>A clump's ground edge (m) for spacing and clearance: its height at the world scale (the model is about
-        /// 0.87 as wide as it is tall, so this holds the whole clump).</summary>
-        public const float ClumpM = ModelHeightM * SettlementKits.ModelScale;
+        /// <summary>The main map's enlargement of Tal's model. Owner, 2 November 2026, on #2278: "3x bigger, like the props
+        /// (Recommended)" ("Same treatment you chose for the sandbags and well: about 3x so it reads at close zoom").</summary>
+        public const float DrawScale = 3f;
+        /// <summary>A clump's ground edge (m) for spacing and clearance: its drawn height (the model is about 0.87 as wide as
+        /// it is tall, so this holds the whole clump).</summary>
+        public const float ClumpM = ModelHeightM * SettlementKits.ModelScale * DrawScale;
         // Design values: clumps of a stand sit within StandRadius clump edges of its centre, at least MinClumpSpacing apart;
         // stands at least MinStandSpacing apart.
         public const float StandRadiusM = 3f * ClumpM, MinClumpSpacingM = 0.75f * ClumpM, MinStandSpacingM = 4f * StandRadiusM;
-        /// <summary>The close zoom (view distance, m), the band of the close-zoom building models, as <see cref="WildlifeLayer"/>.</summary>
+        /// <summary>The close zoom (view distance, m), the band of the close-zoom building models, with its switch
+        /// (<see cref="CloseAt"/>) as <see cref="TownModelLayer.CloseAt"/>'s: in below CloseEnterM, out above CloseExitM.</summary>
         public const float CloseEnterM = TownModelLayer.CloseEnterM, CloseExitM = TownModelLayer.CloseExitM;
         public const float MaxReliefM = 0.1f * ClumpM;   // design value, as WildlifeLayer's: no clump floats or sinks
         const uint Seed = 0x20821948u;   // design value: fixed placement seed
@@ -207,7 +215,7 @@ namespace Statecraft.Game.Map.Collection
                 var go = Instantiate(prefab, transform, false);
                 go.name = w.Key;
                 go.transform.localRotation = Quaternion.Euler(0f, w.Yaw, 0f) * prefab.transform.localRotation;
-                go.transform.localScale = prefab.transform.localScale * SettlementKits.ModelScale;
+                go.transform.localScale = prefab.transform.localScale * (SettlementKits.ModelScale * DrawScale);
                 var (lo, hi) = GroundSpan(ground, w.At);
                 var pos = new Vector3(w.At.x, 0.5f * (lo + hi), w.At.y);
                 go.transform.position = pos;
@@ -232,7 +240,7 @@ namespace Statecraft.Game.Map.Collection
             return b;
         }
 
-        public static bool CloseAt(float distanceM, bool? was) => was == true ? distanceM <= CloseExitM : distanceM <= CloseEnterM;
+        public static bool CloseAt(float distanceM, bool? was) => was == true ? distanceM <= CloseExitM : distanceM < CloseEnterM;
 
         void OnEnable() => RenderPipelineManager.beginCameraRendering += Choose;
         void OnDisable() => RenderPipelineManager.beginCameraRendering -= Choose;
