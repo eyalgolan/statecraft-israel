@@ -1,0 +1,13 @@
+# C06 + K98k point-fire reference candidate
+
+Refs #2007, #1866 and #1867. This is a separate source/reference draft: one compatible FBX, a labelled97-frame review video and a contact sheet. It adds no runtime hook, controller, import metadata or default replacement. The armature and fixed rifle share the named C06_POINT_FIRE_PROVISIONAL_REVIEW_97F stack. The three imported object actions belong to that one stack; they are not three gameplay clips.
+
+Tal Heuberger’s latest direction supports this as a guide and proposed fallback only where no better clip exists. In-game use still requires the project owner’s decision. Existing C06 fire (standing,37frames) and shoot (kneeling transition,218frames) are preserved; superiority/fallback necessity is not established by an unarmed-source comparison. Do not blanket-replace other characters.
+
+Original67bone names/parents and exact weights survive the FBX roundtrip;30,284vertices remain. Maximum rest-matrix difference3.4928e-5,all97frame pose difference3.8028e-5,world rest-vertex position difference1.5737e-7. FBX axis/float conversion is not bit-identical matrix preservation. Use animation import offset0 for the recorded comparison. Read the two public reports for the exact privacy metadata changes and roundtrip evidence. All numeric/raw texture records remain unchanged by the privacy edit; originals stay local. No re-rigging or skin repair.
+
+Known limits: approximate point-fire, unresolved cheek/stock/sight alignment, uncertain hand penetration and larger elbow steps around18–20/73–74. The earlier full-cycle relative criteria were872/873; the one extra triangle pair is retained as inconclusive severity evidence, not “clean contact.” No production/art/engine acceptance is claimed. Labels intentionally say REVIEW and NOT ACCEPTED. Review captures show the native candidate before export; numeric/texture equivalence is verified separately, but no Unity runtime captures exist.
+
+Credit **Tal Heuberger**, CC BY-NC-ND 4.0, under his 31 October 2026 scoped derivative/export permission. Source names/hashes, provider terms and permission scope are in provenance.json. The native BLEND exceeds10MiB and remains local pending an owner-approved storage plan; Git LFS is ruled out. No compression/decimation or oversized blob bypass. The published FBX is10,167,581bytes,below10MiB. Historical/private authoring intermediates are excluded.
+
+Unity import/avatar/clip binding, fixed-pair transitions, actual-game before/after evidence, supported players and load/stream checks remain unrun. #1900 owns code integration; this source draft does not alter it.

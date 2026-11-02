@@ -225,7 +225,7 @@ namespace Statecraft.Sim
                     // The unit keeps its type, service and order (a veteran stays one); full again, it forgets its Full.
                     var strength = target.Strength + k.Count;
                     s.Units[target.Id] = new Unit(target.Id, target.Type, target.Q, target.R, target.Service, target.Side, strength,
-                        target.Order, target.OrderTarget, target.HomeCity, strength >= target.Full ? 0 : target.Full);
+                        target.Order, target.OrderTarget, target.HomeCity, strength >= target.Full ? 0 : target.Full, target.CombatXp);
                     why.Add(new Cause("city", k.City, k.Count, FormattableString.Invariant($"{name}: {Groups(k.Count)} finished {Course(type)} and joined unit {target.Id}"), key: CauseKeys.ReplacementsJoined, args: new[] { CauseKeys.Number(k.Count), CourseId(type), CauseKeys.Number(target.Id) }));
                 }
                 else if (type.Side != "")

@@ -29,7 +29,7 @@ public class TalModelsShots
     string saveDir = "";
     RenderTexture? rt; PanelSettings? ps;
     GameRoot root = null!;
-    Action<string, CollectionDetail, Action<GameObject?>>? savedRural, savedPeople, savedSpecial, savedUnits;
+    Action<string, CollectionDetail, Action<GameObject?>>? savedRural, savedPeople, savedSpecial, savedUnits, savedLandmark;
     Func<string, CollectionDetail, Action<GameObject?>, IDisposable>? savedTown;
 
     [SetUp]
@@ -38,14 +38,14 @@ public class TalModelsShots
         saveDir = Path.Combine(Path.GetTempPath(), "statecraft-tal-shots-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(ShotDir); Directory.CreateDirectory(CivMovementShots.ShotDir);
         savedRural = RuralLife.Request; savedPeople = CivilianPeople.Request; savedSpecial = SpecialBuildingModels.Request;
-        savedUnits = UnitFigures.Source; savedTown = TownModelLayer.ModelAcquire;
+        savedUnits = UnitFigures.Source; savedTown = TownModelLayer.ModelAcquire; savedLandmark = TownLandmarks.Request;
     }
 
     [TearDown]
     public void DiscardScene()
     {
         RuralLife.Request = savedRural!; CivilianPeople.Request = savedPeople!; SpecialBuildingModels.Request = savedSpecial!;
-        UnitFigures.Source = savedUnits; TownModelLayer.ModelAcquire = savedTown!;
+        UnitFigures.Source = savedUnits; TownModelLayer.ModelAcquire = savedTown!; TownLandmarks.Request = savedLandmark!;
         EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         if (ps != null) Object.DestroyImmediate(ps);
         if (rt != null) { rt.Release(); Object.DestroyImmediate(rt); }
@@ -194,6 +194,45 @@ public class TalModelsShots
         CivMovementShots.Shot(rt!, Path.Combine("..", "tal-models-shots", $"houses-{town}-{(hebrew ? "he" : "en")}"));
         Debug.Log($"SHOT houses {town} at {at} from {CameraController.MinDistance:F0} m: {models}");
     }
+
+    /// <summary>#2085: a town from the far zoom (50 km, inside the 40 km+ band where whole-town models stand), the camera on the
+    /// centre of the town's kit footprint, 15 May 1948. The landmarks' requests are answered with the editor's prefabs, as the
+    /// player's stream would answer them. "Before" withholds Tal's four whole towns (main's map: Tiberias, Safed and Netanya
+    /// have no row, so the code-built kit stands); "after" answers them. Ramla has an after frame only: since the owner's 2 November
+    /// ruling Ramla's row is its own town, so withholding it leaves Ramla bare, not main's stone village. Its before frames
+    /// (the stone village) were taken at cc766c04b, while Ramla still took ByType's stone village.</summary>
+    IEnumerator WholeTown(bool hebrew, string town, bool after)
+    {
+        var towns = new[] { CollectionCatalog.TiberiasTown, CollectionCatalog.SafedTown, CollectionCatalog.NetanyaTown, CollectionCatalog.RamlaTown };
+        TownLandmarks.Request = Answer(after ? Array.Empty<string>() : towns);
+        yield return Boot(hebrew);
+        var map = Object.FindFirstObjectByType<MapScene>();
+        var foot = map.KitFootprints.First(f => f.id == town);
+        var at = new Vector3(foot.centre.x, 0f, foot.centre.y);
+        at.y = map.Terrain.SampleHeight(at) + map.Terrain.transform.position.y;
+        const float distance = 50000f;
+        Look(at, distance);
+        for (int i = 0; i < 5; i++) { Camera.main.Render(); yield return null; }
+        var landmarks = Object.FindFirstObjectByType<TownLandmarks>();
+        string model = landmarks.Placed.Where(p => p.Key == town).Select(p => p.Model).FirstOrDefault() ?? "none";
+        CivMovementShots.Shot(rt!, Path.Combine("..", "tal-models-shots", $"town-{town}-{(after ? "after" : "before")}-{(hebrew ? "he" : "en")}"));
+        Debug.Log($"SHOT town {town} {(after ? "after" : "before")} at {at} from {distance:F0} m, footprint radius {foot.radius:F0} m: landmark {model}");
+    }
+
+    [UnityTest] public IEnumerator TownTiberiasBeforeEnglish() { yield return WholeTown(false, "tiberias", false); }
+    [UnityTest] public IEnumerator TownTiberiasAfterEnglish() { yield return WholeTown(false, "tiberias", true); }
+    [UnityTest] public IEnumerator TownTiberiasBeforeHebrew() { yield return WholeTown(true, "tiberias", false); }
+    [UnityTest] public IEnumerator TownTiberiasAfterHebrew() { yield return WholeTown(true, "tiberias", true); }
+    [UnityTest] public IEnumerator TownSafedBeforeEnglish() { yield return WholeTown(false, "safed", false); }
+    [UnityTest] public IEnumerator TownSafedAfterEnglish() { yield return WholeTown(false, "safed", true); }
+    [UnityTest] public IEnumerator TownSafedBeforeHebrew() { yield return WholeTown(true, "safed", false); }
+    [UnityTest] public IEnumerator TownSafedAfterHebrew() { yield return WholeTown(true, "safed", true); }
+    [UnityTest] public IEnumerator TownNetanyaBeforeEnglish() { yield return WholeTown(false, "netanya", false); }
+    [UnityTest] public IEnumerator TownNetanyaAfterEnglish() { yield return WholeTown(false, "netanya", true); }
+    [UnityTest] public IEnumerator TownNetanyaBeforeHebrew() { yield return WholeTown(true, "netanya", false); }
+    [UnityTest] public IEnumerator TownNetanyaAfterHebrew() { yield return WholeTown(true, "netanya", true); }
+    [UnityTest] public IEnumerator TownRamlaAfterEnglish() { yield return WholeTown(false, "ramla", true); }
+    [UnityTest] public IEnumerator TownRamlaAfterHebrew() { yield return WholeTown(true, "ramla", true); }
 
     [UnityTest] public IEnumerator HousesNetanyaEnglish() { yield return Houses(false, "netanya"); }
     [UnityTest] public IEnumerator HousesNetanyaHebrew() { yield return Houses(true, "netanya"); }
@@ -417,6 +456,57 @@ public class TalModelsShots
 
     [UnityTest] public IEnumerator SpitfireBeforeEnglish() { yield return Spitfire(false, false); }
     [UnityTest] public IEnumerator SpitfireAfterEnglish() { yield return Spitfire(false, true); }
+
+    /// <summary>The owner's report of 2 November 2026 ("the gyptian plane's propelor isn't moving and it doesnt look fliying,
+    /// also it doesnt show its an egyptian unit"): the Spitfire on the opening turn from the player's camera (CameraRig.Pitch,
+    /// yaw 0), at the camera's opening distance and at 30 km, the look-at on the ground along the view ray through the plane
+    /// so the plane is mid-frame. Poses come from SpitfireLoop.Place, as play draws them: 0 s (the pass in from el-Arish,
+    /// straight), 10 s (the turn at the loop's east end, where the camera sees the propeller's disc face on), and each 0.02 s
+    /// later (the propeller's turn between two frames). The same
+    /// test on the base branch gives the "before" stills, on the PR branch the "after" ones (spitfire-flight-shots).</summary>
+    IEnumerator SpitfireFlight(bool hebrew)
+    {
+        var savedCraft = SeaAirCollection.Request;
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(CivMovementShots.ShotDir, "..", "spitfire-flight-shots"));
+            yield return Boot(hebrew);
+            var map = Object.FindFirstObjectByType<MapScene>();
+            var state = root.Bridge!.State; var content = root.Bridge.Content;
+            SeaAirCollection.Request = Answer(Array.Empty<string>());
+            Drop(map, SeaAirCollection.Name);
+            var layer = CollectionGeometryFixture.Craft(map, state.Date, state.Placements, content)!;
+            var plane = layer.transform.Find("el-arish-spitfire");
+            var loop = plane.GetComponent<SpitfireLoop>();
+            var rig = Camera.main.GetComponent<CameraRig>(); var cc = rig.GetComponent<CameraController>();
+            float opening = rig.Distance;
+            Debug.Log($"SHOT spitfire-flight on {state.Date:yyyy-MM-dd}: opening distance {opening:F0} m, loop centre {layer.Placed.Single(p => p.Model == SeaAirCollection.Spitfire).At}");
+            var down = Quaternion.Euler(CameraRig.Pitch, 0f, 0f) * Vector3.forward;
+            foreach (var (zoom, distance) in new[] { ("opening", opening), ("close", 30000f) })
+                foreach (var (pose, seconds) in new[] { ("pass", 0f), ("pass-later", 0.02f), ("turn", 10f), ("turn-later", 10.02f) })
+                {
+                    if (zoom == "opening" && pose.EndsWith("-later")) continue;   // the propeller is a few pixels at the opening zoom
+                    loop.Place(seconds);
+                    var at = plane.GetComponentsInChildren<Renderer>(true).Select(r => r.bounds).Aggregate((a, b) => { a.Encapsulate(b); return a; }).center;
+                    // The ground point on the view ray through the plane: the player's look-at that puts it mid-frame.
+                    var ground = at + down * ((map.Terrain.SampleHeight(at) + map.Terrain.transform.position.y - at.y) / down.y);
+                    Look(new Vector3(ground.x, 0f, ground.z), distance);
+                    CameraController.Step(rig, default, 0f, cc.Bounds, cc.Ground, cc.GroundTop, true);
+                    UnitFlagFacing.FaceAll(Camera.main.transform.position);
+                    for (int i = 0; i < 5; i++) yield return null;
+                    loop.Place(seconds);   // again after the frames: nothing else moves it in edit mode, but the shot must be exact
+                    CivMovementShots.Shot(rt!, Path.Combine("..", "spitfire-flight-shots", $"spitfire-{zoom}-{pose}-{(hebrew ? "he" : "en")}"));
+                    Debug.Log($"SHOT spitfire-flight {zoom} {pose}: {distance:F0} m, plane at {at}, viewport {Camera.main.WorldToViewportPoint(at)}");
+                    var vp = Camera.main.WorldToViewportPoint(at);
+                    Assert.That(vp.x, Is.InRange(0.1f, 0.9f), $"the plane in frame across, {zoom} {pose}");
+                    Assert.That(vp.y, Is.InRange(0.1f, 0.9f), $"the plane in frame up and down, {zoom} {pose}");
+                }
+        }
+        finally { SeaAirCollection.Request = savedCraft; }
+    }
+
+    [UnityTest] public IEnumerator SpitfireFlightEnglish() { yield return SpitfireFlight(false); }
+    [UnityTest] public IEnumerator SpitfireFlightHebrew() { yield return SpitfireFlight(true); }
 
     [UnityTest] public IEnumerator MalikiyyaEnglish() { yield return Malikiyya(false); }
     [UnityTest] public IEnumerator MalikiyyaHebrew() { yield return Malikiyya(true); }
