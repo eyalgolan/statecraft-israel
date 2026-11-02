@@ -5,8 +5,9 @@
   sends Golani toward the Julis camp; and pressing the Latrun offensive sends Harel toward the Latrun police fort. Each
   order follows the player's own go-to rules. The other alternative options give no orders until sources are found.
 - An operation's order ends with the operation: the unit stops when the dates of its anchor or order target in `map/units_1948.yaml` end
-  (Carmeli on 19 July 1948, Golani on 24 February 1949, the Egypt armistice). Its march goes round enemy-held places it
-  was not sent to, so Golani no longer takes Nazareth on the way. A refused order shows a short message, in English
+  (Carmeli on 19 July 1948, Kiryati on 16 August 1948, Golani on 24 February 1949, the Egypt armistice). Kiryati's order
+  runs one turn past Operation Dani, so Kiryati takes Ramla in the August turn; Lod is not taken. Its march goes round
+  enemy-held places it was not sent to, so Golani no longer takes Nazareth on the way. A refused order shows a short message, in English
   and Hebrew.
 - An operation's order never takes the last Israeli unit off an occupied place: launching Operation Horev while Golani
   alone holds an occupied Nazareth leaves Golani there, and the occupation goes on. A second Israeli unit there lets the

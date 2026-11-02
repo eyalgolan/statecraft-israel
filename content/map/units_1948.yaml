@@ -379,7 +379,7 @@ units:
     since: 12 July 1948
     to: '1948-08-16'
     end_basis: source
-    end_note: "Operation Dani ended on 19 July 1948 (as Yiftach's Lydda window). The game runs this order one turn longer, to 16 August 1948, under the owner's ruling (2 November 2026, #2087): \"Longer order: takes Ramla (Recommended)\". 16 August is that ruling's date, not a sourced one: it is the earliest end that lets Kiryati reach Ramla's capture hex on the 15 August turn."
+    end_note: "Operation Dani ended on 19 July 1948 (as Yiftach's Lydda window). The game runs this order one turn longer, to 16 August 1948, under the owner's ruling (2 November 2026, #2087): \"Longer order: takes Ramla (Recommended)\". 16 August is the end set under that ruling, not a sourced date: it is the earliest end that lets Kiryati reach Ramla's capture hex on the 15 August turn."
     note: "Operation Dani (owner, 1 November 2026, #2087: \"Kiryati to Ramle\"): the IDF account (Jewish Virtual Library) has Kiryati units take Ramle on 12 July 1948, which surrendered after a brief engagement; Ben-Gurion's diary of that day has Ramle announce it would sign a surrender. A detachment of the brigade, which the brigade token stands for: he.wiki names the 42nd Battalion, on Wikipedia only. No source read gives the units' departure, so the window ends with the operation, as Yiftach's Lydda window. An order target: the token stays at Tel Aviv."
     sources:
     # IDF account of Operation Danny, republished by the Jewish Virtual Library: "On July 12, Kiryati units took Ramle, which surrendered after a brief engagement." (agent read 2026-11-01; a person's check pending; research_notes/M4 war mode/kiryati-ramle-july-1948.md).
