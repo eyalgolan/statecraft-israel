@@ -35,6 +35,25 @@ public class GameSessionTurnTests
         Assert.Throws<ArgumentException>(() => session.Commit(new UnitOrder(0, Demobilization.SendHome)));   // waits for End turn
     }
 
+    // R-TURN-004: End turn runs the committed orders first, as the open turn showed them, so the step's first causes are
+    // the open turn's own, in order. The game plays a combat once when it resolves and skips that prefix at End turn
+    // (SimBridge.CombatResolved, #1867): a cause added before the committed orders would replay or hide one.
+    [Fact]
+    public void EndTurnBeginsWithTheOpenTurnsCausesInOrder()
+    {
+        var session = Fresh();
+        var enemy = session.State.Units[9];
+        Assert.NotEqual(Movement.PlayerSide, enemy.Side);
+        Assert.Null(session.Commit(new UnitOrder(5, Combat.Attack, enemy.Q, enemy.R)));   // unit 5 stands next to unit 9
+        Assert.Null(session.Commit(new Move(6, enemy.Q - 2, enemy.R)));                   // and unit 6 steps up beside it
+        var open = session.Now.Why.ToList();
+        Assert.Contains(open, x => x.Key == WhyKeys.Engagement);
+        var ended = session.EndTurn(new Command[] { new BuyArms(1) });
+        Assert.True(ended.Why.Count > open.Count, "the turn adds causes of its own");
+        Assert.Equal(open.Select(x => (x.Key, x.Target, x.Message)), ended.Why.Take(open.Count).Select(x => (x.Key, x.Target, x.Message)));
+        Assert.Contains(ended.Why.Skip(open.Count), x => x.Key == WhyKeys.Engagement && x.EnemyOrder == Combat.Attack);
+    }
+
     // R-TURN-004: deferred orders run after the committed ones, whatever order they were given in.
     [Fact]
     public void DeferredOrdersRunAfterCommittedOnes()

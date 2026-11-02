@@ -52,6 +52,21 @@ public class GameSceneTests
 
     static VisualElement Ui => Object.FindFirstObjectByType<UIDocument>().rootVisualElement;
 
+    /// <summary>#1867 (design by Tal Heuberger, #2078): the game plays each resolved combat on its units' tokens, through one
+    /// UnitAttackPresenter that GameRoot makes over its bridge and its unit layer.</summary>
+    [Test]
+    public void TheGamePlaysResolvedCombatOnItsUnitLayer()
+    {
+        var root = Boot();
+        var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+        var resolved = (Delegate?)typeof(SimBridge).GetField(nameof(SimBridge.CombatResolved), flags)!.GetValue(root.Bridge);
+        var presenters = (resolved?.GetInvocationList() ?? Array.Empty<Delegate>()).Select(d => d.Target).OfType<UnitAttackPresenter>().ToList();
+        Assert.AreEqual(1, presenters.Count, "one presenter listens to the game's combat");
+        var play = (Func<int, bool>)typeof(UnitAttackPresenter).GetField("play", flags)!.GetValue(presenters[0])!;
+        Assert.AreSame(root.Units, play.Target, "it plays on the game's unit layer");
+        Assert.AreEqual(nameof(Statecraft.Game.Map.Units.UnitLayer.PlayAttack), play.Method.Name);
+    }
+
     [Test]
     public void MapUnityIsTheOnlyBuildSceneAndIsFullyWired()
     {
