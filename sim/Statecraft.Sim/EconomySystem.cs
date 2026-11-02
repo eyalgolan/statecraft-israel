@@ -8,6 +8,14 @@ namespace Statecraft.Sim
     {
         public const string FxCrisis = "fx_crisis";
 
+        /// <summary>The command kind that converts foreign currency into Money (R-MONEY-004).</summary>
+        public const string ConvertDollarsKind = "convert_dollars";
+        public const string RefusedDollarsMinimum = "Convert at least $1m";
+        public const string RefusedDollarsNotAtWar = "Dollars can be converted only during the war";
+        public const string RefusedDollarsMonthly = "That is more dollars than may be converted this month";
+        public const string RefusedDollarsTotal = "That would pass the total of dollars that may be converted";
+        public const string RefusedDollarsReserves = "There are not enough dollars in the reserves";
+
         public static void Init(Content c, GameState s)
         {
             s.Treasury = c.Rules.TreasuryStart;
@@ -23,6 +31,25 @@ namespace Statecraft.Sim
             public TreasuryFlows(double tax, double spending, double mobilization) { Tax = tax; Spending = spending; Mobilization = mobilization; }
         }
 
+        /// <summary>#2199: whether <paramref name="w"/> is a cause of the Money (net) change, Treasury minus Debt (the top bar's
+        /// Money, R-MONEY-001), its Delta that change: a Treasury line, and a city's job income (R-CITY-002), whose Target is the
+        /// city. A borrowing line (Target debt) is not one: it moves the Treasury and the Debt by the same amount, and the cost it
+        /// borrowed for has its own Treasury line. The turn's lines it picks add up to the change (MoneyCausesTests); the turn
+        /// report and the meter tip show the largest (HudModel.Causes).</summary>
+        public static bool MovesMoney(Cause w) => w.Target == "treasury" || w.Key == CauseKeys.WagesPaid;
+
+        /// <summary>#2212: the one Money line for the causes a list leaves out. The turn report and the meter tip show the
+        /// largest Money causes (HudModel.Causes, at most HudModel.MaxCauses); this is the sum of the turn's other lines
+        /// <see cref="MovesMoney"/> picks (<paramref name="why"/> minus <paramref name="shown"/>, by reference), so the lines
+        /// shown add up to the Money (net) change. Null when nothing is left over or the rest shows as IL 0.0m
+        /// (PlayerText.MoneyChange's rounding). The line is the UI's, never one of the turn's (StepResult.Why).</summary>
+        public static Cause? OtherMoney(Content c, IEnumerable<Cause> why, IReadOnlyCollection<Cause> shown)
+        {
+            var rest = why.Where(w => MovesMoney(w) && !shown.Contains(w)).Sum(w => w.Delta);
+            if (PlayerText.MoneyChange(c, "treasury", rest) == PlayerText.MoneyChange(c, "treasury", 0)) return null;
+            return new Cause("economy", "treasury", rest, $"{PlayerText.Change(c, "treasury", rest)} (other causes)", key: CauseKeys.MoneyOther);
+        }
+
         public static TreasuryFlows Flows(Content c, GameState s, double yearFraction)
         {
             PopulationLedger.RefuseAggregate(s);
@@ -36,11 +63,26 @@ namespace Statecraft.Sim
         public static double MobilizationCost(Content c, DateTime date, double level, double yearFraction = 1.0) => c.RulesAt(date).MobilizationCostPerYear * level * yearFraction;
 
         /// <summary>Pays <paramref name="cost"/> from the Treasury, borrowing what it lacks: the shortfall goes to Debt and the
-        /// Treasury stops at 0, as for map actions and the deficit. <paramref name="purpose"/> ends the cause ("for training").
+        /// Treasury stops at 0, as for map actions and the deficit. <paramref name="purpose"/> ends the causes ("for training").
         /// The GDD orders pay through it (owner decision "Allow borrowing", 2026-10-15; R-TRAIN-001, R-SITE-001).
         /// <paramref name="purposeKey"/> (a CauseKeys.Purpose) and <paramref name="purposeArgs"/> say the same purpose for the
-        /// UI (CauseKeys.Borrowed, B1); <paramref name="purpose"/> stays the English Message.</summary>
+        /// UI (CauseKeys.Paid and CauseKeys.Borrowed, B1); <paramref name="purpose"/> stays the English Message. The whole cost
+        /// is a Money line first (CauseKeys.Paid, #2199), then any borrowing, as <see cref="PayNamedOrBorrow"/> writes it.</summary>
         public static void PayOrBorrow(Content c, GameState s, double cost, string purpose, List<Cause> why, string purposeKey, params string[] purposeArgs)
+        {
+            if (cost != 0) why.Add(Paid(c, cost, purpose, purposeKey, purposeArgs));
+            PayNamedOrBorrow(c, s, cost, purpose, why, purposeKey, purposeArgs);
+        }
+
+        /// <summary>The Money line (CauseKeys.Paid) for <paramref name="cost"/> paid from the Treasury, as PayOrBorrow writes
+        /// it. MapActions.Apply, which borrows for itself (CauseKeys.MapBorrowed), writes it too (#2199).</summary>
+        public static Cause Paid(Content c, double cost, string purpose, string purposeKey, params string[] purposeArgs) =>
+            new Cause("economy", "treasury", -cost, $"{PlayerText.Change(c, "treasury", -cost)} ({purpose})",
+                key: CauseKeys.Paid, args: new[] { purposeKey }.Concat(purposeArgs).ToList());
+
+        /// <summary><see cref="PayOrBorrow"/> for a cost its caller has already given its own Money line (civilian and military
+        /// upkeep, a Deport, an event option's cost): only the borrowing line, if any.</summary>
+        public static void PayNamedOrBorrow(Content c, GameState s, double cost, string purpose, List<Cause> why, string purposeKey, params string[] purposeArgs)
         {
             s.Treasury -= cost;
             if (s.Treasury >= 0) return;
@@ -50,13 +92,53 @@ namespace Statecraft.Sim
             s.Treasury = 0;
         }
 
+        /// <summary>R-MONEY-004 (#813; owner, 2 November 2026: "Spend the dollars (Recommended)"): during the war (rung 4 or 5)
+        /// <paramref name="amount"/> US$ millions of foreign currency leave the reserves and amount times the mvp.il_per_dollar rate in
+        /// force on the turn's date, in IL millions, joins the Treasury, so the turn's deficit borrows that much less (R-MONEY-003). Refused, state untouched,
+        /// below $1m, outside the war (<paramref name="startRung"/>, the rung the turn started at, below 4), past
+        /// mvp.dollars_per_turn with <paramref name="thisTurn"/> (this turn's earlier conversions), past mvp.dollars_total, or
+        /// below 0 reserves. Step has already refused it in the legacy loop.</summary>
+        public static string? ConvertDollars(Content c, GameState s, int amount, int thisTurn, int startRung, List<Cause> why)
+        {
+            var refused = DollarsRefusal(c, s, amount, thisTurn, startRung);
+            if (refused != null) return refused;
+            var money = amount * c.RulesAt(s.Date).Mvp!.IlPerDollarOn(s.Date);
+            s.FxReserves -= amount;
+            s.Treasury += money;
+            s.DollarsConverted += amount;
+            why.Add(new Cause("economy", "treasury", money,
+                $"Converted {PlayerText.Money(c, "fx_reserves", amount)} of foreign currency into Money: {PlayerText.MoneyChange(c, "treasury", money)}",
+                key: CauseKeys.DollarsConverted, args: new[] { CauseKeys.Number(amount) }));
+            return null;
+        }
+
+        /// <summary>R-MONEY-004's refusal of <paramref name="amount"/> in <paramref name="s"/>, after <paramref name="thisTurn"/>
+        /// dollars converted earlier in the same turn, or null when it would be carried out. The war is
+        /// <paramref name="startRung"/>, the rung the turn started at (an event's set_rung earlier in the turn does not change
+        /// it), else the state's rung, which is the turn's start before End turn. ConvertDollars refuses on it, and the Defence
+        /// screen says it before End turn.</summary>
+        public static string? DollarsRefusal(Content c, GameState s, int amount, int thisTurn = 0, int? startRung = null)
+        {
+            var r = c.RulesAt(s.Date).Mvp!;   // the loader requires the three values in the GDD loop
+            if (amount < 1) return RefusedDollarsMinimum;
+            if ((startRung ?? s.Rung) < WarRung) return RefusedDollarsNotAtWar;
+            if ((long)thisTurn + amount > r.DollarsPerTurn!.Value) return RefusedDollarsMonthly;
+            if ((long)s.DollarsConverted + amount > r.DollarsTotal!.Value) return RefusedDollarsTotal;
+            if (s.FxReserves - amount < 0) return RefusedDollarsReserves;
+            return null;
+        }
+
+        /// <summary>The lowest rung of the war (R-MONEY-004): the rungs 4 and 5 of the #813 measurement, 15 May 1948 to 15
+        /// March 1949 in the historical run.</summary>
+        public const int WarRung = 4;
+
         /// <summary>R-MONEY-002: pays civilian-place upkeep in step 7, prorated by the turn's share of a year.</summary>
         public static void PayCivilianUpkeep(Content c, GameState s, MvpRules r, double yearFraction, List<Cause> why)
         {
             var cost = Cities.AnnualUpkeep(c, s, r) * yearFraction;
             if (cost == 0) return;
             why.Add(new Cause("economy", "treasury", -cost, $"{PlayerText.Change(c, "treasury", -cost)} (civilian upkeep)", key: CauseKeys.CivilianUpkeep));
-            PayOrBorrow(c, s, cost, "for civilian upkeep", why, CauseKeys.Purpose.CivilianUpkeep);
+            PayNamedOrBorrow(c, s, cost, "for civilian upkeep", why, CauseKeys.Purpose.CivilianUpkeep);
         }
 
         public static void Apply(Content c, GameState s, double yearFraction, List<Cause> why)

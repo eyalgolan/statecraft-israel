@@ -299,12 +299,15 @@ def test_committed_hex_biome_matches_arid_boundary(place, dry):
     lon, lat = PLACES[place]
     q, r = hg.settlement_hex(lon, lat, grid)
     biome = next(h["biome"] for h in grid["hexes"] if (h["q"], h["r"]) == (q, r))
+    if place == "mitzpe_ramon":   # #1183 (4.4 km): its hex's median is 700 m or more, and classify's mountains rule comes first
+        assert biome == "mountains", f"{place} hex ({q}, {r}) is {biome}"
+        return
     assert (biome == "desert") == dry, f"{place} hex ({q}, {r}) is {biome}"
 
 
 @pytest.mark.parametrize("place, biome", [("tel_aviv", "coastal_plain"), ("netanya", "coastal_plain"),
                                           ("gaza_city", "coastal_plain"), ("ashkelon", "coastal_plain"),
-                                          ("haifa", "coastal_plain"),
+                                          ("haifa", "hills"),   # 4.4 km (#1183): Haifa's hex is on the Carmel's slope
                                           ("tiberias", "lowland"), ("afula", "lowland")])
 def test_committed_hex_biome_is_coastal_only_near_the_sea(place, biome):
     """Issue #204: the Tiberias hex (slopes above the Sea of Galilee, 70 m, ~39 km from the Mediterranean) was labelled

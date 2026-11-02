@@ -28,7 +28,7 @@ Biome rules, first match wins (per hex, over the heightmap pixels / precipitatio
                   Jezreel and Hula valley margins)
 The distance is `coast_km`: from the hex centre to the nearest shore pixel (a sea pixel with a non-sea neighbour)
 that lies in a hex classed "sea" by rule 1. It is a pure function of the heightmap; a map with no sea gives infinity.
-Current counts (1102 hexes): coastal_plain 79, desert 332, hills 147, lake 16, lowland 30, mountains 251, sea 216, valley 31
+Current counts (1419 hexes, 4.4 km since #1183): coastal_plain 100, desert 430, hills 187, lake 22, lowland 42, mountains 319, sea 279, valley 40
 """
 import json
 import math
@@ -53,7 +53,7 @@ PRECIP_NODATA = 65535
 STATIONS_NAME = "precip_stations.json"
 SEA_EPS_M = 0.5  # Copernicus sea is exactly 0 m
 IDW_MIN_D2_KM2 = 1e-6  # a station on a cell centre gets (almost) all the weight there
-HEX_SIZE_KM = 5.0  # circumradius (centre to corner)
+HEX_SIZE_KM = 4.4  # circumradius (centre to corner)
 SQRT3 = math.sqrt(3)
 NEIGHBOURS = [(1, 0), (1, -1), (0, -1), (-1, 0), (-1, 1), (0, 1)]  # axial directions
 

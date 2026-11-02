@@ -556,3 +556,59 @@ to locate the item. Query pattern for repeating a search:
 | J13 | JTA, [Rotation is hanging fire](https://www.jta.org/archive/rotation-is-hanging-fire), bulletin 15 Oct 1986 | [1986-10-15_196](http://pdfs.jta.org/1986/1986-10-15_196.pdf), page 2 | Jerusalem, Oct. 14 |
 | J14 | JTA, [Rotation is completed: Knesset approves Shamir's Cabinet](https://www.jta.org/archive/rotation-is-completed-knesset-approves-shamirs-cabinet-new-premier-stresses-national-unity), bulletin 21 Oct 1986 | [1986-10-21_200](http://pdfs.jta.org/1986/1986-10-21_200.pdf), page 1 | Jerusalem, Oct. 20 |
 | J15 | JTA, [The Cabinet Sunday unanimously approved the appointment](https://www.jta.org/archive/the-cabinet-sunday-unanimously-approved-the-appointment), bulletin 5 Jan 1981 | [1981-01-05_002](http://pdfs.jta.org/1981/1981-01-05_002.pdf), page 4 | None printed on the item |
+
+## Third reading: C14 and Hurvitz's resignation (1 November 2026)
+
+Same method as the second reading: JTA archive pages found by the `wp-json` search, the bulletin PDFs opened from `pdfs.jta.org`,
+and the datelines read on the page images (OCR only to locate the item). The bulletin text quoted below is the archive page text; the
+printed datelines are from the images. AI agent reading only.
+
+### C14: Berman's resignation as Energy Minister, September 1982
+
+**[V, agent read 2026-11-01; a person's check pending]** The bulletin of 23 September 1982 reports, under the dateline **Jerusalem, Sept. 22**, that the Knesset "voted 48-42 today"
+against a Labor motion for a state commission on the Beirut massacre. It adds that "the decision not to investigate the circumstances of the Beirut tragedy resulted in the
+resignations to day [sic] of Energy Minister Yitzhak Berman of Likud's Liberal Party faction, and of Prof. Menachem Milson" [J16]. The bulletin's "today" is
+**Wednesday 22 September 1982** by the dateline. The register's Berman Energy row ends on **30 September 1982** [U1]. The bulletin does not state when the resignation took effect, so the
+eight days between the report and the register end are not explained here. The resignation letter was not opened.
+
+**[GAP]** Begin's interim term (30 September to 19 October, register only [U1]) and Modai's appointment on 19 October are still not sourced beyond the register. A second set of JTA searches
+on 1 November 2026 scanned the full text of 172 archive items dated 20 September to 25 October 1982 for `Berman` with the words
+`Energy`, `resign`, `Modai`, `Begin`, `cabinet`, `Knesset`, `inquiry`, `Beirut` and `Liberal`, and 138 items dated 24 September to 25 October for `energy minister`, `Minister of Energy`
+and `Infrastructure`; a further scan of 60 items dated 12 to 25 October for `Modai`. None reported the cabinet decision on Berman's successor, a Knesset vote or Modai's appointment.
+
+### C10: Hurvitz's resignation, narrowed to a window but not dated
+
+**[V, agent read 2026-11-01; a person's check pending]** Three bulletins bound the date. (1) Bulletin of 25 September 1978, dateline **Jerusalem, Sept. 24**: the Cabinet adopted the Camp David accords "by a
+vote of 11-2"; the two against were "Minister of Commerce and Industry Yigal Horwitz and Minister of Health Eliezer Shostak" [J17]. So Hurvitz was still in the Cabinet on **Sunday 24 September 1978**. (2) Bulletin of
+26 October 1978, dateline **Jerusalem, Oct. 25**: "Another La'am figure, Yigael Horowitz, resigned as Minister of Commerce and Industry last month in protest against the Camp David agreements" [J18].
+(3) Bulletin of 3 November 1978, dateline **Tel Aviv, Nov. 2**, calls "Yigal Hurwitz" a "former Minister of Trade and Industry ... who resigned from the Cabinet after the Camp David accords were signed" [J19].
+Read together, the press places the resignation after 24 September and, by the 26 October bulletin, in September. The later bulletin of 16 January 1979 [J1] describes the portfolio as "vacant for three months", which is
+a looser span and is not used to narrow the window. The exact day, the letter and the date it took effect remain **[GAP]**.
+
+A scan of 231 archive items dated 4 October to 20 November 1978 and 75 items dated 24 September to 12 October 1978 (`resignation`, `Likud`, `Laam`, `Hurvitz` and its spelling variants, `Industry`, among others)
+turned up no item that reports the resignation itself; the only items naming him next to a resignation were [J18], [J19] and a 25 September Gush Emunim item reporting a cable that called on him to resign [J20]. The older competing end-date account is unchanged [C; baseline sources not rechecked].
+
+### C7 and C12: no further vote found
+
+**[GAP]** A repeat search for the Knesset vote on Aridor (all JTA items dated 4 to 14 January 1981 naming `Aridor`: 59 items scanned, one hit, the cabinet bulletin [J15] already read) and on Uzan (items dated 3 to 14 May 1982: 48 items scanned, hits only the bulletins [J8] and [J9] already read) produced nothing new. Both rows stay as written above.
+
+### Rows after this reading
+
+| Row | Now supported | Still open |
+|---|---|---|
+| C14 | Berman's resignation reported on 22 September 1982 [V, agent read 2026-11-01; a person's check pending] [J16] | Effective date, Begin's interim instrument, the cabinet step and any vote on Modai. |
+| C10 (Hurvitz) | Still a minister on 24 September 1978; resigned by 26 October, "last month" [V, agent read 2026-11-01; a person's check pending] [J17 to J19] | The day, the letter and the effective date. |
+| C7 | No change | Knesset vote on Aridor. |
+| C12 | No change | Separate Knesset vote on Uzan. |
+
+### Press sources actually read (third reading)
+
+All entries: `checked: 2026-11-01`, AI agent reading only, human verification pending.
+
+| Key | Item and locator | Bulletin page | Printed dateline read |
+|---|---|---|---|
+| J16 | JTA, [Knesset, by vote of 48-42, rejects motion by Labor to set up a commission of inquiry into massacre](https://www.jta.org/archive/knesset-by-vote-of-48-42-rejects-motion-by-labor-to-set-up-a-commission-of-inquiry-into-massacre-o), bulletin 23 Sep 1982 | [1982-09-23_182](http://pdfs.jta.org/1982/1982-09-23_182.pdf), pages 1 and 2 | Jerusalem, Sept. 22 |
+| J17 | JTA, [Cabinet, by 11-2 vote, adopts summit accords](https://www.jta.org/archive/cabinet-by-11-2-vote-adopts-summit-accords-and-empowers-government-to-remove-and-resettle-sinai-se), bulletin 25 Sep 1978 | [1978-09-25_186](http://pdfs.jta.org/1978/1978-09-25_186.pdf), page 4 | Jerusalem, Sept. 24 |
+| J18 | JTA, [Cabinet votes 15-0, 2 abstentions to approve peace treaty "in principle"](https://www.jta.org/archive/cabinet-votes-15-0-2-abstentions-to-approve-peace-treaty-in-principle-with-certain-alterations), bulletin 26 Oct 1978 | [1978-10-26_204](http://pdfs.jta.org/1978/1978-10-26_204.pdf), page 1 | Jerusalem, Oct. 25 |
+| J19 | JTA, [New movement, Eretz Israel Loyalist Front, is launched in Israel](https://www.jta.org/archive/new-movement-eretz-israel-loyalist-front-is-launched-in-israel), bulletin 3 Nov 1978 | [1978-11-03_210](http://pdfs.jta.org/1978/1978-11-03_210.pdf), page 2 | Tel Aviv, Nov. 2 |
+| J20 | JTA, [Gush activist oppose Camp David](https://www.jta.org/archive/gush-activist-oppose-camp-david), bulletin 25 Sep 1978 | [1978-09-25_186](http://pdfs.jta.org/1978/1978-09-25_186.pdf) | Not read on the page image; archive text only |
