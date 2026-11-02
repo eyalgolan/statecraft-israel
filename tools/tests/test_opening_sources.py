@@ -134,7 +134,7 @@ def clip_inputs():
 
 def test_the_real_clips_have_their_provenance():
     doc = actual()
-    assert [p["id"] for p in doc["panels"] if p.get("clip")] == ["europe", "arab_countries"], "Yemen's shot is not generated yet"
+    assert [p["id"] for p in doc["panels"] if p.get("clip")] == ["europe", "arab_countries", "yemen"], "the ruling's two card loops and the new Yemen shot"
     assert clip_problems(doc, *clip_inputs()) == []
 
 
@@ -167,7 +167,7 @@ def test_a_reused_card_clip_keeps_its_shot_and_alt():
 
 def test_every_clip_has_its_owner_read_caption():
     """Owner, 2 Nov 2026: "Version 1, fixed (Recommended)": one caption line per panel, shown with its clip, its Hebrew
-    read by the owner (he_review: approved). Yemen's waits for its clip."""
+    read by the owner (he_review: approved)."""
     for panel in actual()["panels"]:
         caption = panel.get("caption") or {}
         assert caption.get("text") and caption.get("text_he") and caption.get("he_review") == "approved", panel["id"]

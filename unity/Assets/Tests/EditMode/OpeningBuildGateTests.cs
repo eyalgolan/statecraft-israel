@@ -114,6 +114,9 @@ public class OpeningBuildGateTests
         Assert.IsFalse(unreviewed.Read().ClipsReviewed);
         StringAssert.Contains("opening clip", (string?)gate.Invoke(null, new object?[] { unreviewed }) ?? "",
             "a sensitive clip without the owner's review must not reach a shareable build");
+        var yemen = Fixture(doc => Set((YamlMappingNode)Get(Panels(doc)[2], "clip"), "sensitivity_reviewed", "false"));
+        StringAssert.Contains("opening clip", (string?)gate.Invoke(null, new object?[] { yemen }) ?? "",
+            "the new Yemen shot (O3) is gated the same way as the reused card clips");
         var unread = Fixture(doc => Set((YamlMappingNode)Get(Panels(doc)[0], "caption"), "he_review", "pending"));
         Assert.IsFalse(unread.Read().CaptionsReviewed);
         StringAssert.Contains("caption", (string?)gate.Invoke(null, new object?[] { unread }) ?? "",

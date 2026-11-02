@@ -11,10 +11,11 @@ using UnityEngine.UIElements;
 
 /// <summary>The opening's illustration clips (owner ruling of 2 November 2026, "B: A + one new Yemen shot (~2,424)";
 /// docs/event-videos.md): a panel with a clip opens on its archival photograph, and only after the photograph's hold plays
-/// the clip in the same frame, labelled "AI-generated illustration" from the cards' own string; a panel without one shows
-/// only its photograph; a clip that fails puts the photograph back; changing or closing the panel stops the clip; with
-/// video off (CardVideo.ForcedOff: GameRoot passes no player) nothing plays. The clip rows' provenance (the file, its
-/// ASSETS.yaml row and the card row it reuses) is checked by tools/tests/test_opening_sources.py, which CI runs.</summary>
+/// the clip in the same frame, labelled "AI-generated illustration" from the cards' own string; every shipped panel has one
+/// (Yemen's is the new shot, O3), and a panel without one shows only its photograph; a clip that fails puts the
+/// photograph back; changing or closing the panel stops the clip; with video off (CardVideo.ForcedOff: GameRoot passes no
+/// player) nothing plays. The clip rows' provenance (the file, its ASSETS.yaml row and the card row it reuses) is checked
+/// by tools/tests/test_opening_sources.py, which CI runs.</summary>
 public class OpeningClipTests
 {
     static OpeningContent Asset => AssetDatabase.LoadAssetAtPath<OpeningContent>("Assets/Resources/OpeningContent.asset");
@@ -48,19 +49,20 @@ public class OpeningClipTests
     public void QuietVideoPlayer() => LogAssert.ignoreFailingMessages = true;   // the edit-mode VideoPlayer may log while it prepares
 
     [Test]
-    public void TheShippedPanelsCarryTheRuledClipsAndYemenWaitsForItsOwn()
+    public void TheShippedPanelsCarryTheRuledClips()
     {
         var panels = Asset.Read().Panels;
         Assert.AreEqual("law_of_return.mp4", panels[0].Clip?.File, "Europe reuses the law_of_return card's loop (K04a)");
         Assert.AreEqual("K04a", panels[0].Clip?.Shot);
         Assert.AreEqual("iraqi_exodus.mp4", panels[1].Clip?.File, "the Arab countries reuse the iraqi_exodus card's loop (A07)");
         Assert.AreEqual("A07", panels[1].Clip?.Shot);
-        Assert.IsNull(panels[2].Clip, "Yemen's clip is not generated yet: photograph only");
+        Assert.AreEqual("opening_yemen.mp4", panels[2].Clip?.File, "Yemen has the ruling's one new shot, made for the opening");
+        Assert.AreEqual("O3", panels[2].Clip?.Shot);
         var data = Asset.Read();
-        Assert.IsTrue(data.ClipsReviewed, "owner, 2 Nov 2026: \"Approve both\"");
-        Assert.IsTrue(panels.Take(2).All(p => p.Clip!.Sensitive && p.Clip.SensitivityReviewed), "both stay sensitive: true, now reviewed");
+        Assert.IsTrue(data.ClipsReviewed, "owner, 2 Nov 2026: \"Approve both\" (the card clips) and \"Approve it\" (Yemen)");
+        Assert.IsTrue(panels.All(p => p.Clip!.Sensitive && p.Clip.SensitivityReviewed), "all three stay sensitive: true, now reviewed");
         Assert.IsTrue(data.CaptionsReviewed, "owner, 2 Nov 2026: \"Version 1, fixed (Recommended)\"");
-        Assert.IsTrue(panels.All(p => p.Caption != null && p.Caption.HebrewApproved), "a caption for each panel, Yemen's waiting for its clip");
+        Assert.IsTrue(panels.All(p => p.Caption != null && p.Caption.HebrewApproved), "a caption for each panel");
     }
 
     [Test]
@@ -93,6 +95,7 @@ public class OpeningClipTests
     public void APanelWithoutAClipShowsOnlyThePhotograph()
     {
         using var r = new Rig();
+        r.Data.Panels[2].Clip = null;   // every shipped panel has a clip, so drop Yemen's in memory (read at Show)
         r.Opening.Show(replay: false);
         r.Ui.Press("opening-next"); r.Ui.Press("opening-next");
         Assert.AreEqual(2, r.Opening.Index, "Yemen");
@@ -101,8 +104,27 @@ public class OpeningClipTests
         Assert.IsNull(r.Video!.Current, "nothing plays");
         Assert.AreEqual(r.Data.Panels[2].Image.Credit, r.Credit.text);
         Assert.AreSame(Asset.photos[2], r.Background);
-        Assert.IsNotNull(r.Data.Panels[2].Caption, "Yemen's caption waits for its clip");
-        Assert.IsFalse(r.CaptionShown, "and is not shown without one");
+        Assert.IsNotNull(r.Data.Panels[2].Caption, "the panel still has its caption");
+        Assert.IsFalse(r.CaptionShown, "and it is not shown without a clip");
+    }
+
+    [Test]
+    public void YemenPlaysItsOwnShotWithItsCaption()
+    {
+        using var r = new Rig();
+        r.Opening.Show(replay: false);
+        r.Ui.Press("opening-next"); r.Ui.Press("opening-next");
+        Assert.AreEqual(2, r.Opening.Index, "Yemen");
+        Assert.AreSame(Asset.photos[2], r.Background, "the panel opens on its archival photograph");
+        Assert.AreEqual(r.Data.Panels[2].Image.Credit, r.Credit.text);
+        Assert.IsFalse(r.CaptionShown, "no caption with the photograph");
+        Assert.IsTrue(r.Opening.ClipWaiting, "the clip waits for the hold");
+        r.Opening.HoldElapsed();
+        Assert.AreEqual(CardVideo.Url("opening_yemen.mp4"), r.Video!.Current, "the new shot plays in the same frame");
+        Assert.AreEqual("AI-generated illustration", r.Credit.text);
+        Assert.AreEqual(r.Data.Panels[2].Clip!.Alt, r.Photo.tooltip, "the clip's alt text");
+        Assert.IsTrue(r.CaptionShown, "Yemen's caption shows with its clip");
+        Assert.AreEqual("Operation On Wings of Eagles flew about 49,000 Yemenite Jews.", r.Caption.text);
     }
 
     [Test]
@@ -186,10 +208,13 @@ public class OpeningClipTests
         Assert.AreEqual("מבצע עזרא ונחמיה העלה כ־120,000 מיהודי עיראק.", r.Caption.text);
         Assert.AreEqual(LanguageDirection.RTL, r.Caption.languageDirection);
         r.Ui.Press("opening-next");
-        Assert.IsFalse(r.CaptionShown, "Yemen has no clip, so no caption");
+        Assert.IsFalse(r.CaptionShown, "Yemen holds its photograph first, with no caption");
         Assert.AreEqual(r.Data.Panels[2].Image.Credit, r.Credit.text);
         Assert.AreEqual(LanguageDirection.LTR, r.Credit.languageDirection, "the next credit is English again");
         Assert.IsTrue(r.Credit.ClassListContains("opening-source-en"));
+        r.Opening.HoldElapsed();
+        Assert.AreEqual("מבצע על כנפי נשרים הטיס מעדן כ־49,000 מיהודי תימן.", r.Caption.text, "Yemen's owner-read Hebrew caption");
+        Assert.AreEqual(LanguageDirection.RTL, r.Caption.languageDirection);
     }
 
     [TestCase("file: law_of_return.mp4", "file: ../law_of_return.mp4", TestName = "ClipFileMustBeABareMp4Name")]

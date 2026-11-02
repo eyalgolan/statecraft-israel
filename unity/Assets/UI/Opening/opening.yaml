@@ -128,9 +128,16 @@ panels:
       - url: "https://www.cbs.gov.il/he/publications/DocLib/2009/1365/pdf/e_print.pdf"
         supports: "Table 5, column 15 V 1948 - 1951: Yemen (7) 48,315; note 7, 'Incl. the former Aden'"
         checked: 2026-10-31
-    # No clip yet: the ruling's new Yemen shot is not generated. Until then Yemen shows only its photograph. The shot
-    # arrives as one `clip:` row here, once its file is in StreamingAssets/video with its ASSETS.yaml row. Its caption is
-    # ready and unused until then.
+    # After the photograph, the ruling's one new shot (O3), made for this panel only: no decision card uses it. Its
+    # generation, the cleanup ("Fix it in editing (Recommended)") and the encode are in its ASSETS.yaml row.
+    clip:
+      file: opening_yemen.mp4
+      shot: O3
+      alt: "Illustration: a parked silver four-engined propeller airliner on a sandy apron, families with bundles walking toward its stair."
+      ai_generated: true
+      sensitive: true
+      # The owner's sensitivity review of this clip in the opening: owner, 2 Nov 2026: "Approve it".
+      sensitivity_reviewed: true
     # The line shown under the clip while it plays (OpeningPresenter). Owner, 2 Nov 2026: "Version 1, fixed
     # (Recommended)", which is also the owner's native read of the Hebrew (he_review: approved).
     # From this panel's text: "Operation On Wings of Eagles ... flew them from British-ruled Aden to Israel"; "about
