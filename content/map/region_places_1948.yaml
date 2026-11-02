@@ -1,0 +1,70 @@
+# Places that a gdd-0.3 player region names (content/regions.yaml, #1691) but no other roster holds: they are not
+# localities of 1,000 or more (localities_1948.yaml), game settlements, named map locations or designated sites. Owner,
+# 2 November 2026: "Fix all, then ship (Recommended)", whose option read "Accept site ids too; author records for the 4
+# (sourced); ...". Status: draft, needs a person to check (docs/CONTENT_POLICY.md section 2, rule 6).
+#
+# Neither the sim nor the map reads this file: tools/locality_hexes.py places each row on its hex with the map's rule
+# (hexgrid.settlement_hex) and writes content/map/locality_hexes.yaml, which the sim reads only under exact gdd-0.3. So it
+# draws nothing on the map and is outside every content hash.
+#
+# Fields: id (the region member id), name, kind, lon/lat (WGS84, a reference point copied from the source named in
+# coordinate_source, never estimated), coordinate_source, sources ({url, checked}: the revision an AI agent opened on that
+# day), notes. Tags in notes, as in research_notes/Map/caesarea-1948-1874.md: V opened and read by the agent; [S]
+# secondary (Wikipedia by revision); [C] conflicting, both values kept; [GAP] still open.
+#
+# Not authored: rosh_haayin_camp (Rosh HaAyin immigrant camp). The only coordinates found are the present town's (en
+# Wikipedia "Rosh HaAyin", revision 1381183838: 32.09556 N, 34.95667 E), not the camp's, and the camp opened only in 1950:
+# "A large British army camp erected during World War ii was converted in 1950 into a ma'barah" (Encyclopaedia Judaica on
+# encyclopedia.com, read 2 November 2026). [GAP] the camp's footprint. The region keeps it in the research evidence only
+# (#1691 PR body).
+places:
+- id: gesher
+  name: Gesher
+  kind: kibbutz
+  # The 1948 site, the old khan by the Jordan bridge, not the kibbutz rebuilt after the war: both points fall on the
+  # same hex, (11, 12).
+  lon: 35.56296
+  lat: 32.62333
+  coordinate_source: he.wikipedia "חצר גשר הישנה" (Old Gesher courtyard), revision 43461554, page coordinates
+  sources:
+  - { url: 'https://he.wikipedia.org/w/index.php?oldid=43461554', checked: 2026-11-02 }
+  - { url: 'https://en.wikipedia.org/w/index.php?oldid=1374530453', checked: 2026-11-02 }
+  notes: >-
+    Founded 1939 [S] (en Wikipedia "Gesher, Israel": "Founded in 1939 by Jewish refugees from Germany"). The original
+    site, "known as Old Gesher, was located immediately north of the old Roman bridge", "1 km east of its current
+    location"; "After the war, the kibbutz was rebuilt about 1 km to the west" [S]. The Hebrew article: attacked in the
+    War of Independence and almost entirely destroyed (translated); after the war the kibbutz moved to a higher point near Givat Gamal,
+    north-west of the courtyard [S]. The present kibbutz's point (32.62139 N, 35.55222 E, en Wikipedia) is on the same
+    hex. [GAP] a primary source for the 1948 site.
+  status: draft
+- id: mishmar_haemek
+  name: Mishmar HaEmek
+  kind: kibbutz
+  lon: 35.14167
+  lat: 32.60972
+  coordinate_source: en.wikipedia "Mishmar HaEmek", revision 1378097624, page coordinates
+  sources:
+  - { url: 'https://en.wikipedia.org/w/index.php?oldid=1378097624', checked: 2026-11-02 }
+  notes: >-
+    "The kibbutz was established in 1926 by members of the HaShomer HaTzair" [S], and the article records no move after
+    1948 (in 1948 "the women and children of the kibbutz were evacuated with the aid of the British to other settlements", a
+    temporary evacuation), so the present
+    point is taken as the 1948 site. [GAP] a primary source for the 1948 site.
+  status: draft
+- id: nitzanim
+  name: Nitzanim
+  kind: kibbutz
+  # The 1943 kibbutz stood where Nitzan is now; the present kibbutz Nitzanim (31.7175 N, 34.63556 E) is the post-war
+  # site. Both points fall on the same hex, (-8, 27).
+  lon: 34.63111
+  lat: 31.74028
+  coordinate_source: en.wikipedia "Nitzan", revision 1375063920, page coordinates (the original site's grounds)
+  sources:
+  - { url: 'https://en.wikipedia.org/w/index.php?oldid=1375063920', checked: 2026-11-02 }
+  - { url: 'https://en.wikipedia.org/w/index.php?oldid=1375064495', checked: 2026-11-02 }
+  notes: >-
+    Established 8 December 1943 [S] (en Wikipedia "Nitzanim"); captured by the Egyptian army in 1948; "Following the war,
+    the kibbutz was moved four kilometres south of the original location" [S]. [C] en Wikipedia "Nitzan" gives "3
+    kilometers" for the same move; both values kept. "The first settlement on Nitzan's current grounds was the kibbutz of
+    Nitzanim in 1943" and "The original site became a youth village" [S]. [GAP] a primary source for the 1943 site.
+  status: draft

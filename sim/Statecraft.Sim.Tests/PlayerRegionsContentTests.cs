@@ -29,7 +29,7 @@ public class PlayerRegionsContentTests
     opening_control: { status: NEEDS-RESEARCH, value: null }
 ";
     internal static Content Load(string? regions = "player_regions:\n" + RamlaRehovot, bool modern = true,
-        string? overrideText = null, Action<string>? onRead = null)
+        string? overrideText = null, Action<string>? onRead = null, bool localities = true)
     {
         var root = RealContentTests.ContentRoot();
         return ContentLoader.Load(rel =>
@@ -37,6 +37,7 @@ public class PlayerRegionsContentTests
             onRead?.Invoke(rel);
             if (rel == PlayerRegionCatalogue.FileName) return regions;
             if (rel == MapOverrides.FileName) return overrideText;
+            if (!localities && rel == PlayerRegionCatalogue.LocalityHexesFileName) return null;
             var path = Path.Combine(root, rel);
             var text = File.Exists(path) ? File.ReadAllText(path) : null;
             return modern && rel == "eras.yaml" ? text!.Replace("loop: gdd", "loop: gdd, ruleset: gdd-0.3") : text;
@@ -169,12 +170,64 @@ public class PlayerRegionsContentTests
         Assert.Null(partial.PlayerRegions.Regions["ramla_rehovot"].OpeningController);
     }
 
+    // Owner, 2 November 2026, Q1 "Accept localities", and "Fix all, then ship (Recommended)": "Accept site ids too".
+    // Tarshiha is a locality (map/localities_1948.yaml) on (10,6) by map/locality_hexes.yaml; Kiryat Shmona is a
+    // designated site (sites.yaml) on (16,2). The row is a test region; its label is not an owner choice.
+    internal const string LocalityAndSite = @"
+  - id: upper_galilee
+    capital_location: tarshiha
+    member_hexes: [{ q: 10, r: 6 }, { q: 16, r: 2 }]
+    member_locations: [tarshiha, kiryat_shmona]
+    design_note: 'Named-place projection for testing; not a historical boundary'
+    sources: ['content/map/locality_hexes.yaml', 'content/sites.yaml', 'test fixture: no owner label choice']
+    capital_approval: NEEDS-RESEARCH
+    binding_status: NEEDS-RESEARCH
+    opening_control: { status: NEEDS-RESEARCH, value: null }
+";
+
+    [Fact]
+    public void LocalityAndSiteMembersAreAcceptedOnTheirOwnHexes()
+    {
+        var c = Load("player_regions:\n" + LocalityAndSite);
+        var r = Assert.Single(c.PlayerRegions.Regions).Value;
+        Assert.Equal(new[] { "kiryat_shmona", "tarshiha" }, r.MemberLocations);
+        Assert.Same(r, c.PlayerRegions.AtLocation("tarshiha"));
+        Assert.Same(r, c.PlayerRegions.AtLocation("kiryat_shmona"));
+        Assert.Same(r, c.PlayerRegions.AtCapital("tarshiha"));
+    }
+
+    [Theory]
+    // A locality or a site off the region's hexes is placed, and refused there.
+    [InlineData("[{ q: 10, r: 6 }, { q: 16, r: 2 }]", "[{ q: 10, r: 6 }, { q: 16, r: 3 }]", "member_locations[1]")]
+    [InlineData("[{ q: 10, r: 6 }, { q: 16, r: 2 }]", "[{ q: 10, r: 5 }, { q: 16, r: 2 }]", "member_locations[0]")]
+    // An id in no placement file stays unknown.
+    [InlineData("[tarshiha, kiryat_shmona]", "[tarshiha, kiryat_shmona, nowhere_1948]", "member_locations[2]")]
+    // The label still has to be a member (Q3: a label, but the loader's requirement stays).
+    [InlineData("capital_location: tarshiha", "capital_location: hebron", "capital_location")]
+    public void LocalityAndSiteMembersKeepEveryPlacementCheck(string from, string to, string field)
+    {
+        var e = Assert.Throws<ContentException>(() => Load("player_regions:\n" + LocalityAndSite.Replace(from, to)));
+        Assert.Equal("regions.yaml", e.File); Assert.Equal("player_regions[0]." + field, e.Field);
+    }
+
+    [Fact]
+    public void WithoutTheLocalityHexesALocalityIsUnknown()
+    {
+        var e = Assert.Throws<ContentException>(() => Load("player_regions:\n" + LocalityAndSite, localities: false));
+        Assert.Equal("player_regions[0].member_locations[0]", e.Field);
+    }
+
     [Fact]
     public void OnlyExactNewIdentityConsumesAndHashesGeography()
     {
         var reads = new List<string>();
         var old = Load(modern: false, onRead: reads.Add);
         Assert.DoesNotContain("regions.yaml", reads); Assert.Empty(old.PlayerRegions.Regions);
+        Assert.DoesNotContain(PlayerRegionCatalogue.LocalityHexesFileName, reads);
+        Assert.Equal(old.Hash, Load("malformed: [", modern: false, localities: false).Hash);
+        reads.Clear();
+        Load(onRead: reads.Add);
+        Assert.Contains(PlayerRegionCatalogue.LocalityHexesFileName, reads);
         Assert.Equal(old.Hash, Load("malformed: [", modern: false).Hash);
         Assert.NotEqual(Load().Hash, Load("player_regions:\n" + RamlaRehovot + "\n# consumed provenance\n").Hash);
         Assert.Empty(Load(null).PlayerRegions.Regions);
@@ -183,6 +236,7 @@ public class PlayerRegionsContentTests
         reads.Clear();
         var legacy = ContentLoader.Load(rel => { reads.Add(rel); return files.TryGetValue(rel, out var text) ? text : null; }, Array.Empty<string>());
         Assert.DoesNotContain("regions.yaml", reads); Assert.Empty(legacy.PlayerRegions.Regions);
+        Assert.DoesNotContain(PlayerRegionCatalogue.LocalityHexesFileName, reads);
         files.Remove("regions.yaml");
         Assert.Equal(legacy.Hash, ContentLoader.Load(rel => files.TryGetValue(rel, out var text) ? text : null, Array.Empty<string>()).Hash);
     }

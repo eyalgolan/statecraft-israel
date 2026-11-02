@@ -94,15 +94,66 @@ public class Gdd03RegionAuthoringTests
         }, Directory.GetFiles(Path.Combine(root, "events"), "*.yaml").Select(p => "events/" + Path.GetFileName(p)));
     }
 
+    // #1691, owner rulings of 2 November 2026: Q1 "Accept localities"; Q3 "All nine drafts as labels"; and "Fix all, then
+    // ship (Recommended)", whose option read: "Accept site ids too; author records for the 4 (sourced); for the 14, the
+    // member's hex joins its region where it's unclaimed, and where another region holds the hex the member moves to that
+    // region. All listed for Amir to review." Default pending the owner: (10,4), Hanita's hex, joins Galilee.
+    // Each of the 14 members off its region's hexes stands on a hex another region holds, so it moves there.
+    static readonly (string Member, string From, string To)[] Moved =
+    {
+        ("kafr_thulth", "haifa_sharon", "northern_hills"), ("azzoun", "haifa_sharon", "northern_hills"),
+        ("al_mansi", "haifa_sharon", "northern_hills"), ("kfar_saba_2", "haifa_sharon", "tel_aviv_jaffa"),
+        ("al_safiriyya", "tel_aviv_jaffa", "central_plain"), ("majdal_yaba", "central_plain", "haifa_sharon"),
+        ("al_tira", "central_plain", "tel_aviv_jaffa"), ("al_muzayria", "central_plain", "tel_aviv_jaffa"),
+        ("qula", "central_plain", "tel_aviv_jaffa"), ("tzrifin", "central_plain", "tel_aviv_jaffa"),
+        ("beit_liqya", "jerusalem_hills", "central_plain"), ("zirin", "northern_hills", "valleys"),
+        ("iraq_al_manshiyya", "southern_coast", "jerusalem_hills"), ("yasur", "southern_coast", "central_plain"),
+    };
+
     [Fact]
-    public void AuthoredRuntimeFileLoadsUnderExactIdentityWithActivationOff()
+    public void ShippedRegionsLoadUnderExactIdentityWithEveryMemberOnAMemberHex()
     {
         var text = File.ReadAllText(Path.Combine(RealContentTests.ContentRoot(), "regions.yaml"));
         var reads = new List<string>();
         var c = PlayerRegionsContentTests.Load(text, onRead: reads.Add);
         Assert.Equal(SaveGame.Gdd03Ruleset, c.Ruleset);
         Assert.Contains("regions.yaml", reads);
-        Assert.Empty(c.PlayerRegions.Regions);
+        var staged = Rows(Parse(Staged), "player_regions");
+        Assert.Equal(staged.Select(r => Text(r, "id")).OrderBy(x => x, StringComparer.Ordinal), c.PlayerRegions.Regions.Keys);
+        // Every member's own hex, from the files the loader places it by: settlements, named locations, sites, localities.
+        var localities = Rows(Parse(File.ReadAllText(Path.Combine(RealContentTests.ContentRoot(), "map", "locality_hexes.yaml"))), "localities");
+        var at = new Dictionary<string, (int, int)>(StringComparer.Ordinal);
+        foreach (var s in c.SettlementHexes) at[s.Id] = (s.Q, s.R);
+        foreach (var l in c.MapLocations) at[l.Id] = (l.Q, l.R);
+        foreach (var s in c.Sites) at[s.Id] = (s.Q, s.R);
+        foreach (var l in localities) at[Text(l, "id")!] = (Int(l, "q"), Int(l, "r"));
+        foreach (var region in c.PlayerRegions.Regions.Values)
+        {
+            var row = staged.Single(r => Text(r, "id") == region.Id);
+            Assert.Equal(Text(row, "capital_location"), region.CapitalLocation);   // Q3: the nine draft labels
+            Assert.Contains(region.CapitalLocation, region.MemberLocations);
+            Assert.Same(region, c.PlayerRegions.AtCapital(region.CapitalLocation));
+            foreach (var m in region.MemberLocations)
+            {
+                Assert.True(at.ContainsKey(m), m);
+                Assert.Contains(at[m], region.MemberHexes);
+                Assert.Same(region, c.PlayerRegions.AtLocation(m));
+            }
+        }
+        // 326 approved members, less rosh_haayin_camp (deferred: no sourced position), each in exactly one region.
+        Assert.Equal(325, c.PlayerRegions.Regions.Values.Sum(r => r.MemberLocations.Count));
+        Assert.Null(c.PlayerRegions.AtLocation("rosh_haayin_camp"));
+        foreach (var (member, from, to) in Moved)
+        {
+            Assert.Contains(member, Strings(staged.Single(r => Text(r, "id") == from), "member_locations"));
+            Assert.Equal(to, c.PlayerRegions.AtLocation(member)!.Id);
+        }
+        Assert.DoesNotContain(staged.SelectMany(r => Assert.IsType<YamlSequenceNode>(Get(r, "member_hexes")).Children.Cast<YamlMappingNode>()),
+            h => Int(h, "q") == 10 && Int(h, "r") == 4);   // in no region after the 4.4 km regrid
+        Assert.Equal("galilee", c.PlayerRegions.AtHex(10, 4)!.Id);   // Q2 default: Hanita's own hex
+        Assert.Equal("galilee", c.PlayerRegions.AtLocation("hanita")!.Id);
+        Assert.Equal(524, c.PlayerRegions.Regions.Values.Sum(r => r.MemberHexes.Count));   // the staged 523 and (10,4)
+        // Activation stays off: nothing initializes regions in a new game yet (#1689).
         var state = Simulation.NewGame(c, 1, Mode.Historical);
         Assert.Empty(state.PlayerRegions);
         Assert.False(state.PopulationLedger.IsInitialized);
@@ -183,19 +234,22 @@ public class Gdd03RegionAuthoringTests
             others.Select(x => ((string?)x.Path, Value(x.Control, "status"), Value(x.Control, "value"), Value(x.Control, "date"))));
     }
 
+    // The staged evidence rows, before the 2 November fixes: with localities and sites accepted (and the three new
+    // records placed), only the rows the ruling had to fix are still refused, each on a member place.
     [Theory]
-    [InlineData("galilee")]
-    [InlineData("valleys")]
-    [InlineData("haifa_sharon")]
-    [InlineData("tel_aviv_jaffa")]
-    [InlineData("central_plain")]
-    [InlineData("jerusalem_hills")]
-    [InlineData("northern_hills")]
-    [InlineData("southern_coast")]
-    [InlineData("negev")]
-    public void EveryUnresolvedPlaceRosterIsRejectedAfterGeneratedGeometry(string id)
+    [InlineData("galilee", false)]          // hanita on (10,4)
+    [InlineData("valleys", true)]
+    [InlineData("haifa_sharon", false)]     // kafr_thulth, azzoun, al_mansi, kfar_saba_2
+    [InlineData("tel_aviv_jaffa", false)]   // al_safiriyya; rosh_haayin_camp
+    [InlineData("central_plain", false)]    // majdal_yaba, al_tira, al_muzayria, qula, tzrifin
+    [InlineData("jerusalem_hills", false)]  // beit_liqya
+    [InlineData("northern_hills", false)]   // zirin
+    [InlineData("southern_coast", false)]   // iraq_al_manshiyya, yasur
+    [InlineData("negev", true)]
+    public void StagedRowsLoadExceptWhereTheRulingMovedAMemberOrAHex(string id, bool loads)
     {
         var row = Rows(Parse(Staged), "player_regions").Single(r => Text(r, "id") == id);
+        if (loads) { Assert.Single(PlayerRegionsContentTests.Load(SingleRow(row)).PlayerRegions.Regions); return; }
         var error = Assert.Throws<ContentException>(() => PlayerRegionsContentTests.Load(SingleRow(row)));
         Assert.Equal("regions.yaml", error.File);
         Assert.StartsWith("player_regions[0].member_locations", error.Field, StringComparison.Ordinal);
@@ -358,6 +412,7 @@ public class Gdd03RegionAuthoringTests
         var authored = File.ReadAllText(Path.Combine(RealContentTests.ContentRoot(), "regions.yaml"));
         var old = LoadShipped(authored, reads.Add);
         Assert.DoesNotContain("regions.yaml", reads);
+        Assert.DoesNotContain("map/locality_hexes.yaml", reads);
         var absent = LoadShipped(null);
         var incomplete = LoadShipped(Staged);
         Assert.Equal(absent.Hash, old.Hash);

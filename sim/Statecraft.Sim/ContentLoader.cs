@@ -45,6 +45,7 @@ namespace Statecraft.Sim
             public List<MapHex> Hexes { get; set; } = new List<MapHex>();
         }
         sealed class SettlementHexesFile { public List<SettlementHex> Settlements { get; set; } = new List<SettlementHex>(); }
+        sealed class LocalityHexesFile { public List<SettlementHex> Localities { get; set; } = new List<SettlementHex>(); }
         sealed class MapLocationsFile { public List<MapLocation> Locations { get; set; } = new List<MapLocation>(); }
         sealed class SettlementTargetsFile { public List<SettlementTarget> Targets { get; set; } = new List<SettlementTarget>(); }
         sealed class CitiesFile { public List<CityStart> Cities { get; set; } = new List<CityStart>(); }
@@ -418,12 +419,6 @@ namespace Statecraft.Sim
             // R-POP-001: validate the identity-specific scale without altering old content reads/hash inputs.
             if (c.UsesPopulationLedger) _ = c.PopulationPeoplePerUnit;
             ApplyMapOverrides(readFile, c, settlementIds);   // after the map's own checks, before the GDD records that read it
-            // R-CITY-006: no read or hash input in either old identity. Absence leaves the capability inactive.
-            if (c.Ruleset == SaveGame.Gdd03Ruleset)
-            {
-                var regions = ReadOptional<PlayerRegionsFile>(readFile, PlayerRegionCatalogue.FileName);
-                if (regions != null) c.PlayerRegions = PlayerRegionCatalogue.Validate(c, regions.PlayerRegions);
-            }
             if (c.IsGdd)
             {
                 // GDD v0.1 city data (Phase 1 PR 3), read once eras.yaml is known to be valid. Only the GDD loop reads it, so
@@ -437,6 +432,15 @@ namespace Statecraft.Sim
                 Gdd03Military.Validate(c); // after effective map overrides and role validation, only exact gdd-0.3
                 // The sourced starting forces (Phase 5 PR 4, R-UNIT-006), once the types and people_per_unit are known valid.
                 c.StartingForces = StartingForces.Read(readFile, c);
+            }
+            // R-CITY-006: no read or hash input in either old identity. Absence leaves the capability inactive. After the
+            // sites (a site id may be a member) and the effective map overrides; the locality hexes are read only with regions.
+            if (c.Ruleset == SaveGame.Gdd03Ruleset)
+            {
+                var regions = ReadOptional<PlayerRegionsFile>(readFile, PlayerRegionCatalogue.FileName);
+                if (regions != null)
+                    c.PlayerRegions = PlayerRegionCatalogue.Validate(c, regions.PlayerRegions,
+                        ReadOptional<LocalityHexesFile>(readFile, PlayerRegionCatalogue.LocalityHexesFileName)?.Localities);
             }
             EventRules.ValidateStructured(c);   // R-EFX-006: after the GDD records it names are read
             c.BuildWindows();

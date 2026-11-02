@@ -65,10 +65,18 @@ namespace Statecraft.Sim
         }
     }
 
-    /// <summary>R-CITY-006. One validator and one immutable exact-identity geography index for all consumers.</summary>
+    /// <summary>R-CITY-006. One validator and one immutable exact-identity geography index for all consumers.
+    /// A member place is a settlement, a named map location, a designated site (sites.yaml) or a locality placed by
+    /// <see cref="LocalityHexesFileName"/> (owner, 2 November 2026: Q1 "Accept localities"; "Fix all, then ship
+    /// (Recommended)": "Accept site ids too"). capital_location is the region's label place (Q3 "All nine drafts as
+    /// labels"), required to be a member; it is NOT the regional-capital model the owner declined on 30 October 2026
+    /// (docs/GDD.md, "Regional-capital model"), and nothing gives it capital mechanics.</summary>
     public sealed class PlayerRegionCatalogue
     {
         public const string FileName = "regions.yaml";
+        /// <summary>Each locality's hex, written by tools/locality_hexes.py with the map's projection and rounding, so the
+        /// sim needs no trigonometry (docs/determinism.md). Read only under exact gdd-0.3, with regions.yaml.</summary>
+        public const string LocalityHexesFileName = "map/locality_hexes.yaml";
         readonly SortedDictionary<string, PlayerRegionGeography> regions = new SortedDictionary<string, PlayerRegionGeography>(StringComparer.Ordinal);
         readonly Dictionary<string, string> places = new Dictionary<string, string>(StringComparer.Ordinal);
         readonly Dictionary<string, string> capitals = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -80,7 +88,8 @@ namespace Statecraft.Sim
         public PlayerRegionGeography? AtCapital(string id) => capitals.TryGetValue(id, out var r) ? regions[r] : null;
         public PlayerRegionGeography? AtHex(int q, int r) => hexes.TryGetValue((q, r), out var id) ? regions[id] : null;
 
-        internal static PlayerRegionCatalogue Validate(Content c, IEnumerable<PlayerRegionDefinition> rows)
+        internal static PlayerRegionCatalogue Validate(Content c, IEnumerable<PlayerRegionDefinition> rows,
+            IEnumerable<SettlementHex>? localities = null)
         {
             var result = new PlayerRegionCatalogue();
             var placements = new Dictionary<string, (int, int)>(StringComparer.Ordinal);
@@ -92,6 +101,8 @@ namespace Statecraft.Sim
             }
             foreach (var p in c.SettlementHexes) Place(p.Id, p.Q, p.R);
             foreach (var p in c.MapLocations) Place(p.Id, p.Q, p.R);
+            foreach (var p in c.Sites) Place(p.Id, p.Q, p.R);
+            foreach (var p in localities ?? Enumerable.Empty<SettlementHex>()) Place(p.Id, p.Q, p.R);
             int index = 0;
             foreach (var row in rows)
             {
@@ -130,7 +141,7 @@ namespace Statecraft.Sim
                 {
                     var id = row.MemberLocations[i]; var field = FormattableString.Invariant($"member_locations[{i}]");
                     if (string.IsNullOrWhiteSpace(id) || !placements.TryGetValue(id, out var hex)) { Fail(field, "unknown place id"); continue; }
-                    if (conflicts.Contains(id)) Fail(field, "settlement and named location have inconsistent effective placements");
+                    if (conflicts.Contains(id)) Fail(field, "one place id has inconsistent placements across the place files");
                     if (!ownPlaces.Add(id)) Fail(field, "duplicate member location");
                     if (result.places.ContainsKey(id)) Fail(field, "location already belongs to another region");
                     if (!ownHexes.Contains(hex)) Fail(field, "effective location lies outside member_hexes");

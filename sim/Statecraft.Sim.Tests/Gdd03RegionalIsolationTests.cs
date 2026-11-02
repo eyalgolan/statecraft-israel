@@ -3,8 +3,9 @@ using Statecraft.Sim;
 /// <summary>#1690 acceptance checks (owner, 1 November 2026): map markers and completed sites create no extra economy or
 /// people, and fixture values never become production defaults (R-CITY-006, R-CITY-008, R-POP-001, R-SITE-003).
 /// Authored campaign initialization is not on main yet, so each check is pinned to what exists today: the explicit
-/// regional fixture (PlayerRegions.CreateFixture) or the exact gdd-0.3 identity's game path with its authored, empty
-/// region catalogue. Neither stands in for the later production cutover.</summary>
+/// regional fixture (PlayerRegions.CreateFixture) or the exact gdd-0.3 identity's game path with its authored region
+/// catalogue (nine regions since #1691), which no new game initializes yet. Neither stands in for the later production
+/// cutover.</summary>
 public class Gdd03RegionalIsolationTests
 {
     const string A = "ramla_rehovot";
@@ -148,7 +149,10 @@ public class Gdd03RegionalIsolationTests
 
         var after = Load();
         Assert.Equal(before.Hash, after.Hash);
-        Assert.Empty(after.PlayerRegions.Regions); Assert.Empty(PlayerRegionCatalogue.Empty.Regions);
+        // The authored catalogue (nine regions since #1691) is unchanged by the fixture and holds none of its regions.
+        Assert.Equal(before.PlayerRegions.Regions.Keys, after.PlayerRegions.Regions.Keys);
+        Assert.Equal(9, after.PlayerRegions.Regions.Count); Assert.DoesNotContain(A, after.PlayerRegions.Regions.Keys);
+        Assert.Empty(PlayerRegionCatalogue.Empty.Regions);
         Assert.Equal(before.PopulationPeoplePerUnit, after.PopulationPeoplePerUnit);
         var production = Simulation.NewGame(after, 1, Mode.Historical);
         Assert.Equal(game, production.Describe());
