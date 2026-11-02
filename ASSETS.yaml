@@ -1403,7 +1403,7 @@ rules:
     note: "Screenshots of the game, not AI images; the AI-made parts they show are the start screen's painting and Tal Heuberger's 3D models (Tripo Studio, their rows above). CC BY-SA 4.0 as for the Steam kit's screenshots (coordinator ruling, 2026-10-15): the screenshots show the CC BY-SA 4.0 bakes of D13 (landuse.png, BiomeColours.bytes, RouteRibbons.bytes)."
   - glob: "docs/images/build-gameplay.*"
     licence: CC-BY-4.0
-    source: "In-engine capture: about 20 seconds of real play recorded from the game's own WebGL build (main at f57bd39, 2026-11-01) in headless Chrome for Testing at 1920x1080 with the DevTools screencast, after New game and the opening's Skip button, as one take with one hard cut (five of the eight units End turn selects are left out); the animated WebP (1024x576, 12 fps) for the README, the MP4 (H.264, 24 fps) for the store-page draft. Map derived from Copernicus DEM; the event-card photographs CC BY 4.0 with their credit lines in the picture (Meitar Collection / National Library of Israel; NOTICE)"
+    source: "In-engine capture: about 21 seconds of real play recorded from the game's own WebGL build (main at 32e7d9c, 2026-11-01) in headless Chrome for Testing at 1920x1080 with the DevTools screencast, after New game and the opening's Skip button, as one take with one hard cut (five of the eight units End turn selects are left out); the animated WebP (1024x576, 12 fps) for the README, the MP4 (H.264, 24 fps) for the store-page draft. Map derived from Copernicus DEM; the event-card photographs CC BY 4.0 with their credit lines in the picture (Meitar Collection / National Library of Israel; NOTICE)"
     status: verified
   - glob: "docs/steam/kit/*_capsule_*.png"
     licence: CC-BY-SA-4.0
@@ -1439,20 +1439,20 @@ rules:
     ai_generated: true
     note: "The contributor reports the drawing was AI-assisted (PR #169); flagged for the AI-content disclosure by controller ruling."
   # --- Generated vehicle review candidates (22 October 2026) ---
-  - glob: "unity/Assets/Editor/Generated1948VehicleReview/generated-1948-13-egyptian-spitfire/*.fbx"
+  - glob: "unity/Assets/Art/Collection/generated-1948-13-egyptian-spitfire/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tripo Studio textured GLB delivered 22 October 2026, preserved byte-for-byte in asset-sources/generated-1948/vehicles/ original archives. sources.json and per-model provenance.json identify the archive/member SHA-256 and provider model ID. The Unity FBX is a documented full-geometry compatibility conversion, not a provider FBX. The 4096px colour map is extracted byte-for-byte; no LOD, decimation or texture re-encoding."
     status: verified
-    note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). Editor-only review art; no sourced deployment, player dependency, Resources catalog or streamed bundle. Paint, markings and exact subtype remain candidate art; historical art/sensitivity sign-off follows matched screenshots (#756)."
-  - glob: "unity/Assets/Editor/Generated1948VehicleReview/generated-1948-13-egyptian-spitfire/*_basecolor.jpg"
+    note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). Signed off by the owner on 27 October 2026 (#756, \"Sign off all 19\"); moved with git mv to the Collection folder, the FBX renamed to the Collection's id.fbx (same bytes), and streamed in a bundle of its own (collection-generated-1948-13-egyptian-spitfire) to be shown only in flight near the western board edge (30 km in) toward el-Arish (owner ruling of 30 October 2026, #1932: \"(c) In flight / board edge only\"). Paint, markings and exact subtype remain candidate art."
+  - glob: "unity/Assets/Art/Collection/generated-1948-13-egyptian-spitfire/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tripo Studio textured GLB delivered 22 October 2026, preserved byte-for-byte in asset-sources/generated-1948/vehicles/ original archives. sources.json and per-model provenance.json identify the archive/member SHA-256 and provider model ID. The Unity FBX is a documented full-geometry compatibility conversion, not a provider FBX. The 4096px colour map is extracted byte-for-byte; no LOD, decimation or texture re-encoding."
     status: verified
-    note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). Editor-only review art; no sourced deployment, player dependency, Resources catalog or streamed bundle. Paint, markings and exact subtype remain candidate art; historical art/sensitivity sign-off follows matched screenshots (#756)."
+    note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). Signed off by the owner on 27 October 2026 (#756, \"Sign off all 19\"); moved with git mv to the Collection folder, the FBX renamed to the Collection's id.fbx (same bytes), and streamed in a bundle of its own (collection-generated-1948-13-egyptian-spitfire) to be shown only in flight near the western board edge (30 km in) toward el-Arish (owner ruling of 30 October 2026, #1932: \"(c) In flight / board edge only\"). Paint, markings and exact subtype remain candidate art."
   - glob: "unity/Assets/Editor/Generated1948VehicleReview/generated-1948-14-syrian-renault-r35/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true

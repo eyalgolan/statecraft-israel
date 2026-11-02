@@ -1318,4 +1318,32 @@ public class UnitsInPlayTests
         }
         finally { foreach (var m in new[] { plain, again, prop }) UnityEngine.Object.DestroyImmediate(m); }
     }
+
+    const string NumberHe = "number_he: מספר בדיקה, number_he_sources: " + HeSource + ", number_he_review: agent-checked, ";
+
+    /// <summary>#1219 item 2, on a fixture row: number_he shows only in the Hebrew subtitle and falls back to the
+    /// English number when left out; the English card is unchanged; its source joins both footers without clearing
+    /// the draft note (#902), as the other Hebrew card texts' do (#558).</summary>
+    [Test]
+    public void TheHebrewNumberShowsOnlyInTheHebrewSubtitleAndFallsBackToTheEnglish()
+    {
+        var u = ProseUnit(unitHe: NumberHe);
+        Assert.AreEqual(("מספר בדיקה", "agent-checked"), (u.NumberHe, u.NumberHeReview));
+        var he = ProseCard(u, He);
+        StringAssert.Contains("מספר בדיקה", he.Subtitle, "the Hebrew card's subtitle carries number_he");
+        var english = ProseCard(u, Text);
+        var plain = ProseCard(ProseUnit(), Text);
+        Assert.AreEqual((plain.Title, plain.Subtitle, plain.Body, plain.Note), (english.Title, english.Subtitle, english.Body, english.Note),
+            "the English card is the same as for the row without number_he");
+        StringAssert.DoesNotContain("מספר בדיקה", english.Subtitle);
+        StringAssert.Contains("he.example.org", he.Footer, "number_he's sources are listed, as the other Hebrew texts' are");
+        StringAssert.Contains("he.example.org", english.Footer, "in both languages");
+        Assert.AreEqual(He["unit.draft_wikipedia"], he.Note, "a Hebrew text's source does not check a fact (#902)");
+        Assert.IsTrue(UnitData.IsWikipediaOnly(u));
+
+        var fallback = ProseCard(ProseUnit(), He).Subtitle;
+        Assert.AreEqual(he.Subtitle.Replace("מספר בדיקה", "1"), fallback, "no number_he: the Hebrew subtitle has the English number in its place");
+        StringAssert.DoesNotContain("מספר בדיקה", fallback);
+    }
+
 }

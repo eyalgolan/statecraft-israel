@@ -37,6 +37,12 @@ namespace Statecraft.Game.UI
         /// <summary>Copies the kept picture on the player's release, or the post text if the browser refuses the picture.</summary>
         public static Action<string> Copy = DefaultCopy;
         public static Func<CopyResult> Copied = DefaultCopied;
+        /// <summary>Cancel the current release arm and invalidate pending native-share results on lifecycle/new action.</summary>
+        public static Action Invalidate = DefaultInvalidate;
+        /// <summary>The current shared release ticket, captured immediately after arming a main control.</summary>
+        public static Func<int> ArmTicket = DefaultArmTicket;
+        /// <summary>Cancel only this still-armed ticket; focus-out after release must preserve the pending native result.</summary>
+        public static Action<int> CancelArm = DefaultCancelArm;
 
         /// <summary>The post, in the UI's language, with the in-game date and turn, the itch URL and the repository's.</summary>
         public static string Text(UiText text, string date, int turn) => text.Format("share.post", date, turn, Itch, Repo);
@@ -122,6 +128,12 @@ namespace Statecraft.Game.UI
         }
 
 #if UNITY_WEBGL && !UNITY_EDITOR
+        [System.Runtime.InteropServices.DllImport("__Internal")] static extern void StatecraftShareInvalidate();
+        [System.Runtime.InteropServices.DllImport("__Internal")] static extern int StatecraftShareArmTicket();
+        [System.Runtime.InteropServices.DllImport("__Internal")] static extern void StatecraftShareCancelArm(int ticket);
+        public static void DefaultInvalidate() => StatecraftShareInvalidate();
+        public static int DefaultArmTicket() => StatecraftShareArmTicket();
+        public static void DefaultCancelArm(int ticket) => StatecraftShareCancelArm(ticket);
         [System.Runtime.InteropServices.DllImport("__Internal")] static extern void StatecraftShareKeep(byte[] png, int length, string name);
         [System.Runtime.InteropServices.DllImport("__Internal")] static extern int StatecraftShareCanShareFiles();
         [System.Runtime.InteropServices.DllImport("__Internal")] static extern void StatecraftShareOnRelease(string text);
@@ -135,6 +147,9 @@ namespace Statecraft.Game.UI
         public static void DefaultCopy(string text) => StatecraftShareCopyOnRelease(text);
         public static CopyResult DefaultCopied() => (CopyResult)StatecraftShareCopied();
 #else
+        public static void DefaultInvalidate() { }
+        public static int DefaultArmTicket() => 0;
+        public static void DefaultCancelArm(int ticket) { }
         static byte[]? kept; static string keptName = "";
         public static void DefaultKeep(byte[] png, string name) { kept = png; keptName = name; }
         /// <summary>The editor and desktop builds have no share sheet: the fallback, as in Firefox.</summary>

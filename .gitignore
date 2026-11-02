@@ -59,6 +59,8 @@ unity-*.log
 captures/
 unity/Assets/StreamingAssets/content/
 unity/Assets/StreamingAssets/content.meta
+unity/Assets/StreamingAssets/translations/
+unity/Assets/StreamingAssets/translations.meta
 unity/Assets/StreamingAssets/golden/
 unity/Assets/StreamingAssets/golden.meta
 unity/Assets/StreamingAssets/collection/
@@ -85,6 +87,11 @@ Unity_v*.alf
 .idea/
 unity/obj/
 unity/MemoryCaptures/
+# dotnet restore/build output beside scripts/unity_compile's .csproj files, and Visual Studio's workload hint that
+# com.unity.ide.visualstudio writes on open (#2181 committed both by accident).
+scripts/unity_compile/obj/
+scripts/unity_compile/bin/
+unity/.vsconfig
 
 # Existing local hex art used by opt-in previews; source/licence review stays with its asset batch.
 unity/Assets/Art/Settlements/Prototype/HexSandboxModels/
