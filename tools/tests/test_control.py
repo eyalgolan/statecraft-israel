@@ -603,13 +603,34 @@ def test_the_hula_loop_still_greys_its_other_hexes_in_the_opening_period():
     opening["overlays"].remove("contested_opening_hula")
     _, without = cb.bake(src, HEXES, water, meta)
     loop = {qr for qr, c in CODES.items() if c[OPEN] != without[qr][OPEN]}
-    assert len(loop) >= 5, sorted(loop)
+    # Measured on today's grid (#2193): a hex leaving the loop, by a GeoJSON edit or another exemption, breaks the
+    # ruling's "stays for its other hexes" and must fail here, not pass a lower bound. #1796's regrid re-measures it.
+    assert sorted(loop) == [(12, 5), (13, 4), (13, 5), (14, 2), (14, 3), (15, 1), (15, 2)], sorted(loop)
     assert {CODES[qr][OPEN] for qr in loop} == {"c"}, sorted((qr, CODES[qr]) for qr in loop)
     hula = next(f for f in SOURCE["features"] if f["properties"]["id"] == "contested_opening_hula")
     for sid in ("safed", "rosh_pinna"):
         s = next(x for x in SETTLEMENTS["settlements"] if x["id"] == sid)
         assert bb.contains(bb.rings(hula["geometry"]), s["lon"], s["lat"]), f"{sid}: the exemption must still be needed"
         assert hg.settlement_hex(s["lon"], s["lat"], HEXES) not in loop, sid
+
+
+def test_the_exemptions_move_exactly_their_own_hexes_and_only_the_opening(monkeypatch):
+    """Rule 7 is load-bearing and narrow: baked without OVERLAY_EXEMPT, the layer differs from the committed one only at
+    the exempt settlements' hexes, only in the opening period, and only from grey to Israeli. An exemption that changes
+    nothing (its hex pinned, a contested place or in the Jerusalem area) or one that reaches another hex fails here. The
+    exempt ids are the owner's two rulings of 1 November 2026 on #1659 (review of #2193)."""
+    assert set(cb.OVERLAY_EXEMPT) == {"safed", "rosh_pinna"}
+    by_id = {s["id"]: s for s in SETTLEMENTS["settlements"]}
+    exempt = {hg.settlement_hex(by_id[sid]["lon"], by_id[sid]["lat"], HEXES) for sid in cb.OVERLAY_EXEMPT}
+    assert len(exempt) == len(cb.OVERLAY_EXEMPT), exempt
+    elev, meta = bb.load_elevation()
+    monkeypatch.setattr(cb, "OVERLAY_EXEMPT", {})
+    _, without = cb.bake(SOURCE, HEXES, bb.water_mask(elev, meta), meta)
+    moved = {qr: (without[qr], c) for qr, c in CODES.items() if without[qr] != c}
+    assert set(moved) == exempt, sorted(moved.items())
+    for qr, (was, now) in moved.items():
+        assert was[OPEN] == "c" and now[OPEN] == "I", (qr, was, now)
+        assert was[:OPEN] + was[OPEN + 1:] == now[:OPEN] + now[OPEN + 1:], (qr, was, now)
 
 
 def test_an_overlay_exemption_that_exempts_nothing_fails_the_bake(monkeypatch):
