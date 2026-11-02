@@ -82,6 +82,22 @@ public class Gdd03CombatXpTests
         Assert.Equal(1, now.State.Units[2].CombatXp);
     }
 
+    // R-UNIT-011, R-COMBAT-002 (review of #2275, B1): the enemy's standing attack, fought in the resolver's step 2
+    // (Combat.Resolve), gives XP as the player's attack does: the enemy attacker and our defender both survive (6 against 6:
+    // both lose 1) and each gain 1. Pins that the award is made for every engagement, not only the player's Strike.
+    [Fact]
+    public void EnemyAttackInStepTwoGivesBothSidesOne()
+    {
+        var c = Load();
+        var s = With(c, Ours(1, 2, 1, 6), Theirs(2, 3, 1, 6));
+        var why = new List<Cause>();
+        Assert.Null(Combat.Give(c, s, 2, 2, 1, why, enemy: true));
+        Combat.Resolve(c, s, why);
+        Assert.Contains(why, w => w.Key == WhyKeys.Engagement);
+        Assert.Equal((5, 1), (s.Units[1].Strength, s.Units[1].CombatXp));
+        Assert.Equal((5, 1), (s.Units[2].Strength, s.Units[2].CombatXp));
+    }
+
     // R-UNIT-011, Q15: experience stops at combat_xp_full, for the guns and the enemy as for anyone. A veteran_soldier is a
     // veteran already (OQ1) and gains none.
     [Fact]
