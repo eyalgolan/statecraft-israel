@@ -205,9 +205,10 @@ public class MapLabelTests
 
     static System.Collections.Generic.List<Statecraft.Sim.MapLocation> Locations() => Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content).MapLocations;
 
-    /// <summary>Issues #1008 and #1007: the ten required GDD v0.2 map locations and the optional outpost are named in English and
-    /// in Hebrew. The one that reuses a game settlement's id (jerusalem) renames that settlement's pill, so Jerusalem reads
-    /// "West Jerusalem" with no second pill; each other location has exactly one pill of its own, which ignores the pointer.</summary>
+    /// <summary>Issues #1008, #1007 and #2113: the ten required GDD v0.2 map locations, the optional outpost and optional Nirim
+    /// are named in English and in Hebrew. The one that reuses a game settlement's id (jerusalem) renames that settlement's
+    /// pill, so Jerusalem reads "West Jerusalem" with no second pill; each other location has exactly one pill of its own,
+    /// which ignores the pointer.</summary>
     [Test]
     public void EveryMapLocationIsNamedOnceInEnglishAndHebrew()
     {
@@ -217,8 +218,8 @@ public class MapLabelTests
         CollectionAssert.AreEquivalent(new[] { "negba", "hulda", "nir_am", "latrun_fort", "iraq_suwaydan_fort",
             "shaar_hagai", "ad_halom_bridge", "shaar_haaliyah", "jerusalem", "east_jerusalem_old_city" },
             locations.Where(l => l.Priority == "must_have").Select(l => l.Id).ToArray(), "the ten required #1008 locations stay intact");
-        Assert.AreEqual(11, locations.Count, "the ten required locations and one optional #1007 outpost");
-        CollectionAssert.AreEqual(new[] { "umm_rashrash" }, locations.Where(l => l.Priority == "optional").Select(l => l.Id).ToArray());
+        Assert.AreEqual(12, locations.Count, "the ten required locations, the optional #1007 outpost and optional nirim (#2113)");
+        CollectionAssert.AreEqual(new[] { "umm_rashrash", "nirim" }, locations.Where(l => l.Priority == "optional").Select(l => l.Id).ToArray(), "the optional rows, in file order");
         var outpost = locations.Single(l => l.Id == "umm_rashrash");
         Assert.AreEqual("outpost", outpost.Kind);
         Assert.IsFalse(outpost.ManagedCity || outpost.DesignatedSite || outpost.SettlementControlTarget, "an optional map record grants no gameplay role");
