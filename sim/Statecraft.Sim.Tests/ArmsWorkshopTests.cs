@@ -221,7 +221,8 @@ public class ArmsWorkshopTests
         Assert.Equal(reason, Assert.Single(Step(c, s, order).Rejected).Reason);
     }
 
-    // R-ARMS-005: an order Check accepts is accepted; unstaffing (a lower count) is always accepted.
+    // R-ARMS-005: an order Check accepts is accepted: staffing one, unstaffing it again (a lower count is always accepted),
+    // and, with two built and one staffed, staffing both.
     [Fact]
     public void CheckAcceptsWhatTheTurnAccepts()
     {
@@ -229,8 +230,38 @@ public class ArmsWorkshopTests
         Assert.Null(Workshops.Check(c, s, "town_a", 1, Array.Empty<Command>()));
         var staffed = Step(c, s, Staff(1));
         Assert.Empty(staffed.Rejected);
+        Assert.Equal(1, Workshops.Staffed(staffed.State, "town_a"));
         Assert.Null(Workshops.Check(c, staffed.State, "town_a", 0, Array.Empty<Command>()));
-        Assert.Equal(1, Workshops.Built(c, s, "town_a"));
+        var off = Step(c, staffed.State, Staff(0));
+        Assert.Empty(off.Rejected);
+        Assert.Equal(0, Workshops.Staffed(off.State, "town_a"));
+        var two = staffed.State.Clone();
+        SecondWorkshop(two);
+        Assert.Null(Workshops.Check(c, two, "town_a", 2, Array.Empty<Command>()));
+        var both = Step(c, two, Staff(2));
+        Assert.Empty(both.Rejected);
+        Assert.Equal(2, Workshops.Staffed(both.State, "town_a"));
+    }
+
+    /// <summary>A second built arms workshop for town_a, on (2, 0); its id, above the first's.</summary>
+    static int SecondWorkshop(GameState s)
+    {
+        var id = s.NextId++;
+        s.CityProjects.Add(id, new CityProject(id, Workshops.ArmsWorkshop, "town_a", 2, 0, 0, s.Date));
+        return id;
+    }
+
+    // R-ARMS-005 (#1722 review, H1): Check does not count the pending workshop order itself, only the job, Train and
+    // reassignment orders beside it, so with two built, two free and one staffing order queued, two is still offered.
+    [Fact]
+    public void CheckIgnoresThePendingWorkshopOrderItself()
+    {
+        var (c, s, first) = Built(civilians: 10, employed: 8, jobs: 10, jobsDefault: false);
+        var second = SecondWorkshop(s);
+        Assert.Null(Workshops.Check(c, s, "town_a", 2, new Command[] { Staff(1) }));
+        var r = Step(c, s, Staff(2));
+        Assert.Empty(r.Rejected);
+        Assert.True(r.State.Workshops[first].Staffed && r.State.Workshops[second].Staffed);
     }
 
     // R-ARMS-005 with R-CITY-001 (#1722 slice E): with this turn's queue, Check counts a pending "job" order's jobs (which turn
@@ -271,6 +302,84 @@ public class ArmsWorkshopTests
         Assert.Equal("Town A has 0 arms workshops", F(Workshops.RefusedBuilt, "Town A", 0));
         Assert.Equal("Town A has 0 civilians and craftsmen", F(Workshops.RefusedPeople, "Town A", 0));
         Assert.Equal("Town A has 0 civilians and craftsmen without a job", F(Workshops.RefusedPeopleNoJob, "Town A", 0));
+    }
+
+    // R-CITY-001 with R-ARMS-005 (#1722 review, H2): a jobs order past the city's civilians and craftsmen less its staffed
+    // workshops is refused with the workshop order's own format, so the UI words both the same way (workshop.refused_people).
+    [Fact]
+    public void TheJobsOrdersPeopleRefusalIsTheWorkshopFormat()
+    {
+        var (c, s, _) = Built(civilians: 10, employed: 6, jobs: 10, jobsDefault: false);
+        var staffed = Step(c, s, Staff(1)).State;
+        var reason = Assert.Single(Step(c, staffed, new AssignWorkers("town_a", "job", 10)).Rejected).Reason;
+        Assert.Equal(string.Format(System.Globalization.CultureInfo.InvariantCulture, Workshops.RefusedPeople, "Town A", 9), reason);
+    }
+
+    // ---- #1722 review (F1, C4): the hex panel's next-cycle price and cycle length come from the sim ----
+
+    // R-ARMS-006: the price NextCyclePrice gives before a turn is what that turn's production step charges and records, at
+    // every worker tier.
+    [Theory]
+    [InlineData(SyntheticWorkshopTier.Ordinary)]
+    [InlineData(SyntheticWorkshopTier.Novice)]
+    [InlineData(SyntheticWorkshopTier.Apprentice)]
+    [InlineData(SyntheticWorkshopTier.Expert)]
+    public void NextCyclePriceIsWhatTheTurnCharges(SyntheticWorkshopTier tier)
+    {
+        var (c, s, id) = Staffed(treasury: 100, tier: tier);
+        var next = Workshops.NextCyclePrice(c, s, id);
+        Assert.NotNull(next);
+        var r = Step(c, s);
+        Assert.Equal(next, r.State.Workshops[id].PaidCost);
+        Assert.Equal(-(double)next!.Value, Assert.Single(Charges(r)).Delta, 12);
+        Assert.DoesNotContain(r.Why, w => w.Key == CauseKeys.Borrowed);
+    }
+
+    // R-ARMS-005, R-ARMS-006 (#1701 OQ6: every aggregate worker is priced as ordinary): a built workshop never staffed has no
+    // record; its next cycle is priced at the tier staffing it would give, which is what its first cycle then charges.
+    [Fact]
+    public void NextCyclePriceOfANeverStaffedWorkshopIsTheOrdinaryTier()
+    {
+        var (c, s, id) = Built(jobsDefault: false);
+        s.Treasury = 100;
+        Assert.False(s.Workshops.ContainsKey(id));
+        var next = Workshops.NextCyclePrice(c, s, id);
+        Assert.Equal(5m, next);   // gdd03-balance workshop.cost, ordinary
+        Assert.Equal(Rules.Price(SyntheticWorkshopTier.Ordinary), next);
+        var r = Step(c, s, Staff(1));
+        Assert.Equal(SyntheticWorkshopTier.Ordinary, r.State.Workshops[id].WorkerTier);
+        Assert.Equal(next, r.State.Workshops[id].PaidCost);
+        Assert.Equal(-(double)next!.Value, Assert.Single(Charges(r)).Delta, 12);
+    }
+
+    // NextCyclePrice is null, and changes nothing, where there is no next cycle to price: a cycle under way, a workshop still
+    // being built, a project with no worker slot, an unknown id, and under gdd-0.1.
+    [Theory]
+    [InlineData("paid")]
+    [InlineData("building")]
+    [InlineData("industry")]
+    [InlineData("unknown")]
+    [InlineData("gdd-0.1")]
+    public void NextCyclePriceIsNullWhileACycleIsUnderwayOrOffWorkshop(string why)
+    {
+        var (c, s, id) = why == "paid" ? Staffed(paid: 5m, progress: 1) : Built();
+        if (why == "building") s.CityProjects[id] = new CityProject(id, Workshops.ArmsWorkshop, "town_a", 1, 1, 2);
+        if (why == "industry") s.CityProjects[id] = new CityProject(id, "industry", "town_a", 1, 1, 0, s.Date);
+        if (why == "unknown") id = s.NextId + 100;
+        if (why == "gdd-0.1") c = Load(false);
+        var before = s.Hash();
+        Assert.Null(Workshops.NextCyclePrice(c, s, id));
+        Assert.Equal(before, s.Hash());
+    }
+
+    // R-ARMS-006: a cycle's staffed months are the catalogue's workshop.staffed_turns (3) under gdd-0.3, and there is none
+    // under gdd-0.1.
+    [Fact]
+    public void CycleMonthsIsTheCataloguesStaffedTurns()
+    {
+        Assert.Equal(3, Workshops.CycleMonths(Load(true)));
+        Assert.Equal(Rules.StaffedTurns, Workshops.CycleMonths(Load(true)));
+        Assert.Null(Workshops.CycleMonths(Load(false)));
     }
 
     // R-ARMS-005, R-LOOP-002: the workshops are hashed as wshop[...] only when there is one, so a gdd-0.1 state hashes as before.

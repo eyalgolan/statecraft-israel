@@ -262,7 +262,8 @@ namespace Statecraft.Game.UI
             (Training.RefusedNoHakhshara, "unit.reinforce_refused.no_hakhshara"),
             (Training.RefusedIdle, "unit.reinforce_refused.idle"),
             (Training.RefusedArms, "unit.reinforce_refused.arms"),
-            // R-ARMS-005 (#1722): a workshop staffing order's refusals, the panel's and the end of turn's.
+            // R-ARMS-005 (#1722): a workshop staffing order's refusals, the panel's and the end of turn's. RefusedPeople is
+            // also the jobs order's refusal past its civilians and craftsmen less the staffed workshops (Cities.Assign).
             (Workshops.RefusedBuiltOne, "workshop.refused_built_one"),
             (Workshops.RefusedBuilt, "workshop.refused_built"),
             (Workshops.RefusedPeople, "workshop.refused_people"),

@@ -82,7 +82,7 @@ namespace Statecraft.Sim
             if (count > MaxWorkers(s, x))
                 return count > x.JobSlots
                     ? FormattableString.Invariant($"{PlayerText.Settlement(c, city)} has {x.JobSlots} jobs")
-                    : FormattableString.Invariant($"{PlayerText.Settlement(c, city)} has {x.Civilians + x.Craftsmen - Workshops.Staffed(s, city)} civilians and craftsmen");
+                    : string.Format(System.Globalization.CultureInfo.InvariantCulture, Workshops.RefusedPeople, PlayerText.Settlement(c, city), x.Civilians + x.Craftsmen - Workshops.Staffed(s, city));
             s.Cities[city] = x.WithCounts(x.Civilians, count, x.Refugees).WithJobsDefault(false);
             why.Add(new Cause("city", city, count - x.Employed, FormattableString.Invariant($"{PlayerText.Settlement(c, city)}: {count} groups in work"), key: CauseKeys.WorkersAssigned, args: new[] { CauseKeys.Number(count) }));
             return null;
