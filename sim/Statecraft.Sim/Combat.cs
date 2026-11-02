@@ -111,10 +111,7 @@ namespace Statecraft.Sim
             if (enemy && u.Order == Attack && u.OrderTarget == target) return Orders.RefusedAlready;
             if (!InReach(c, u, q.Value, r.Value)) return Guns(c, u) ? RefusedOutOfRange : RefusedNotAdjacent;
             if (Defenders(s, u, q.Value, r.Value).Count == 0) return RefusedNoEnemy;
-            if (!enemy && spent != null && (Gdd03Military.Applies(c) && Guns(c, u)
-                ? Movement.AttackPoints(c, u) <= (spent.TryGetValue(unitId, out var used) ? used : 0)
-                : Movement.PointsLeft(c, s, unitId, spent) == 0))
-                return RefusedNoPoints;
+            if (!enemy && spent != null && Movement.PointsLeft(c, s, unitId, spent) == 0) return RefusedNoPoints;
             if (enemy || !SpendsArms(c)) return null; // before Need, so gdd-0.3 never reads a price
             var mvp = c.RulesAt(s.Date).Mvp!;
             var need = Need(c, mvp, u);
@@ -150,7 +147,7 @@ namespace Statecraft.Sim
             if (u.Order == Orders.Fortify)
                 why.Add(UnitLines.Line(WhyKeys.FortifyLost,
                     $"Unit {unitId} left hex {u.OrderTarget} and is no longer fortified", new[] { u }, u.OrderTarget));
-            spent[unitId] = Movement.AttackPoints(c, attacker);
+            spent[unitId] = Movement.Points(c, attacker);
             attacked[unitId] = (q!.Value, r!.Value);
             Engage(c, s, mvp, new List<Unit> { attacker }, Defenders(s, attacker, q.Value, r.Value), q.Value, r.Value, why);
             return null;

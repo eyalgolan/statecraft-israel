@@ -92,12 +92,13 @@ public class UnitAttackPresenterTests
         bool redrawn = false;
         bridge.Changed += () => redrawn = true;
         using var presenter = new UnitAttackPresenter(bridge, id => { Assert.IsTrue(redrawn, "after Changed"); played.Add(id); return true; });
-        // Found by running the sim (1948 seed, Historical, first turn): unit 5 attacks enemy unit 9, unit 6 steps next
-        // to unit 9, and at End Turn unit 9 attacks.
+        // Found by running the sim (1948 seed, Historical, first turn): unit 5 attacks enemy unit 9, unit 6 takes the hex
+        // unit 9 marches on (R-ENEMY-002), so no path leads there, and at End Turn unit 9 attacks instead (R-ENEMY-003).
         var nine = session.Now.State.Units[9];
         Assert.AreNotEqual(Movement.PlayerSide, nine.Side, "fixture: unit 9 is an enemy");
         Assert.IsNull(bridge.Queue(new UnitOrder(5, Combat.Attack, nine.Q, nine.R)), "fixture: unit 5 can attack unit 9");
-        Assert.IsNull(bridge.Queue(new Move(6, nine.Q - 2, nine.R)), "fixture: unit 6 can step next to unit 9");
+        var march = C.StartingForces[9].Script.Value;
+        Assert.IsNull(bridge.Queue(new Move(6, march.Q, march.R)), "fixture: unit 6 can take unit 9's march hex");
         CollectionAssert.AreEqual(new[] { 5 }, played, "the attack order played at once");
         int openTurn = session.Now.Why.Count;
         redrawn = false;

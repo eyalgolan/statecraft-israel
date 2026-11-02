@@ -85,11 +85,14 @@ public class HexVariantTests
     /// there rather than pinned twice.</summary>
     static readonly Dictionary<string, string> Before = new Dictionary<string, string>
     {
-        ["wheat_fields"] = "6/23/8dc0de48cc6e25f0 11/21/0ec106c62c81994e 8/23/0b8b66bfd537c34d",
-        ["grazing_land"] = "22/0/1389752806d94528 22/0/312ddbb3232f3c2b 22/0/fece2adb178546f6",
-        ["citrus_orchard"] = "27/6/3fc025f769e42c67 27/6/1ec6cc42eb7d765f 27/6/c992d3cc18de5d6c",
-        ["olive_terraces"] = "29/171/d46f8a175d59dccf 31/171/0f0b67936ea68a16 35/171/48024bc52f4d25e9",
-        ["pine_forest"] = "53/18/3856750dc7f51f71 49/18/6b8d058df492107b 47/18/8811cda5be0a88f3",
+        // #1183: 4.4 km hexes, values scale with HexM: wheat_fields re-recorded on the 4.4 km build (same piece counts).
+        // The other four are the owner's macOS reference values from the #1796 gate (650049fc merged with main): the Mac is
+        // the reference renderer for Unity tests, and this Linux box builds these four differently on main too (platform floats).
+        ["wheat_fields"] = "6/23/4f58499d0ba97405 11/21/16b9d119633cacb1 8/23/027e8c11ef672ab7",
+        ["grazing_land"] = "22/0/c552715157eff4eb 22/0/6435504967a26520 22/0/5c4e5408808b1357",
+        ["citrus_orchard"] = "27/6/7395970659e34854 27/6/85c8c43095a720e3 27/6/7b3ad461fb79d065",
+        ["olive_terraces"] = "29/171/f9ac8c9a2a7a4d75 31/171/1ebbe55b00334d7b 35/171/606b1f7d397fbc36",
+        ["pine_forest"] = "53/18/bfa95aceafec3572 49/18/bceb425266d54732 47/18/b8be266dd4004335",
     };
 
     [TestCase("wheat_fields"), TestCase("grazing_land"), TestCase("citrus_orchard"), TestCase("olive_terraces"), TestCase("pine_forest")]

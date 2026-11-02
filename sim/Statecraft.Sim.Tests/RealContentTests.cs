@@ -102,6 +102,63 @@ public class RealContentTests
             targets.Where(enemyHeld.Contains).OrderBy(x => x, StringComparer.Ordinal));
     }
 
+    // Owner on #1796 (26 October 2026, "Contested + move target"): at 4.4 km (#1183) Ramla and Rehovot share hex (-4, 24), so
+    // Ramla's capture target is the neighbour nearest Ramla's point, (-3, 24). A unit standing on Rehovot's hex alone does not
+    // capture Ramla; one on (-3, 24) does.
+    [Fact]
+    public void AUnitAloneOnRehovotsHexDoesNotCaptureRamla()
+    {
+        Assert.Equal((-4, 24), C.SettlementHexes.Where(h => h.Id == "ramla" || h.Id == "rehovot").Select(h => (h.Q, h.R)).Distinct().Single());
+        GameState Held(int q, int r)
+        {
+            var s = Simulation.NewGame(C, 42, Mode.Historical);
+            s.Units.Clear();
+            s.Units.Add(1, new Unit(1, "recruit", q, r, side: Movement.PlayerSide, strength: 2));
+            SettlementControl.Capture(C, s, s.Date.AddDays(7), new List<Cause>());
+            return s;
+        }
+        Assert.False(Held(-4, 24).Settlements.ContainsKey("ramla"));
+        Assert.Equal(Movement.PlayerSide, Held(-3, 24).Settlements["ramla"].Owner);
+    }
+
+    // R-CTRL-020 with Ramla's moved target (#1796): a depopulated Ramla closes its capture hex (-3, 24), not Rehovot's (-4, 24).
+    [Fact]
+    public void ADepopulatedRamlaClosesItsTargetHexNotRehovots()
+    {
+        const string closed = "Units may not enter an enemy-held locality before its capture is possible";
+        var s = Simulation.NewGame(C, 42, Mode.Historical);
+        s.Units.Clear();
+        s.Units.Add(1, new Unit(1, "recruit", -4, 25, side: Movement.PlayerSide, strength: 2));   // next to both hexes
+        s.Settlements["ramla"] = new SettlementControl(depopulated: true);
+        string? Move(int q, int r) => Movement.Move(C, s, 1, q, r, new Dictionary<int, int>(), new List<Cause>());
+        Assert.Equal(closed, Move(-3, 24));
+        Assert.NotEqual(closed, Move(-4, 24));
+    }
+
+    // R-ENEMY-001 at 4.4 km (owner review of #1796, 27 October): Rehovot shares Ramla's hex (-4, 24), and Ramla being enemy-held
+    // must not open Rehovot's hex to an enemy move.
+    [Fact]
+    public void NoEnemyMoveEndsOnRehovotsHexItSharesWithRamla()
+    {
+        var s = Simulation.NewGame(C, 42, Mode.Historical);
+        var e = s.Units.Values.First(u => u.Side != Movement.PlayerSide);
+        s.Units.Clear();
+        s.Units.Add(1, new Unit(1, e.Type, -4, 25, side: e.Side, strength: 2));   // next to (-4, 24)
+        Assert.Contains((-4, 24), Movement.NoEntry(C, s, true));
+        Assert.Equal("Units may not enter an enemy-held locality before its capture is possible",
+            Movement.Move(C, s, 1, -4, 24, new Dictionary<int, int>(), new List<Cause>(), enemy: true));
+    }
+
+    // R-MOVE-005 for the player at 4.4 km (owner review of #1796, 31 October): an enemy-held Ramla closes its target hex (-3, 24)
+    // to a retreat or a Raid's withdrawal, not Rehovot's (-4, 24), which it shares with Ramla.
+    [Fact]
+    public void AnEnemyHeldRamlaClosesItsTargetHexNotRehovotsToThePlayer()
+    {
+        var s = Simulation.NewGame(C, 42, Mode.Historical);
+        Assert.Contains((-3, 24), Movement.NoEntry(C, s));
+        Assert.DoesNotContain((-4, 24), Movement.NoEntry(C, s));
+    }
+
     [Fact]
     public void MaimonBirthUsesHebrewBiographyDateAndSource()
     {
@@ -177,6 +234,7 @@ public class RealContentTests
         // Other records keep the gate.
         // burma_road_complete left them with the owner's sensitivity review of its text, 21 Oct 2026 (#791).
         // railway_complete left them after a person's read of its two newspaper pages and the booklet, 25 Oct 2026 (#1410).
+        // deport_acre and deport_nazareth (#801) left them with the owner's sensitivity sign-off, 2 Nov 2026 ("Approve both cards", #2197).
         var draftEvents = new[] { "first_new_yishuv", "jerusalem_demilitarisation_guard", "rafah_force_pressure" };
         Assert.Equal(draftEvents, C.Events.Where(e => e.Status == "draft").Select(e => e.Id).OrderBy(id => id));
         // A sensitive event submitted fact-checked waits here for the owner's sensitivity review; the maintainer sets
@@ -529,5 +587,57 @@ public class RealContentTests
         Assert.False(string.IsNullOrEmpty(card.TitleHe), "absorb_immigrants.title_he");
         Assert.False(string.IsNullOrEmpty(card.TextHe), "absorb_immigrants.text_he");
         Assert.All(card.Options, o => Assert.False(string.IsNullOrEmpty(o.TextHe), $"absorb_immigrants.options[{o.Id}].text_he"));
+    }
+
+    /// <summary>Deport's follow-up cards (GDD Phase 6 PR 9, #801). Deport is refused where the residents fled (R-CTRL-018), so
+    /// only the targets whose residents stayed can be deported, and each has exactly one card.</summary>
+    static readonly string[] DeportCards = { "deport_acre", "deport_nazareth" };
+
+    // R-GATE-001: every displacement card in content/ is held by the release gate until the owner sets sensitivity-reviewed.
+    // Replaces ReleaseGateTests.TheRealContentHasNoDisplacementEventYet, PR 2's guard.
+    [Fact]
+    public void EveryDisplacementCardIsGatedUntilReviewed()
+    {
+        var displacement = C.Events.Where(e => e.Tags.Contains("displacement", StringComparer.OrdinalIgnoreCase)).Select(e => e.Id).OrderBy(id => id, StringComparer.Ordinal);
+        Assert.Equal(DeportCards, displacement);
+        foreach (var e in C.Events.Where(e => DeportCards.Contains(e.Id)))
+            Assert.Equal(e.Status != ReleaseGate.ReviewedStatus, ReleaseGate.SensitiveUnreviewed(C).Contains(e.Id));
+    }
+
+    // R-EFX-007, R-EFX-005: no option of a displacement card raises Money, Food, Arms, Social cohesion, International Support
+    // or any other target, and none grants units, gains a city effect or unlocks a project. The cards carry no effect at all:
+    // Deport's costs are R-CTRL-018's, applied by the sim.
+    [Fact]
+    public void NoDisplacementOptionRaisesAnything()
+    {
+        foreach (var o in C.Events.Where(e => DeportCards.Contains(e.Id)).SelectMany(e => e.Options))
+        {
+            Assert.Empty(o.Effects);   // no effect at all, which covers R-EFX-007's no-gain rule
+            Assert.Empty(o.GrantUnits);
+            Assert.Empty(o.CityEffects);
+            Assert.Empty(o.UnlockProjects);
+            Assert.Empty(o.SetPolicy);
+            Assert.Null(o.SetRung);
+        }
+    }
+
+    // R-EVT-007: each target whose residents stayed has one card, which fires once that place is depopulated and not before;
+    // the other card stays unfired.
+    [Fact]
+    public void EachStayedTargetHasOneCardThatFiresOnItsDeport()
+    {
+        var stayed = C.SettlementTargets.Where(t => t.Residents == "stayed").Select(t => t.Id).OrderBy(id => id, StringComparer.Ordinal).ToArray();
+        Assert.Equal(new[] { "acre", "nazareth" }, stayed);
+        Assert.Equal(stayed, C.Events.Where(e => e.Deported != "").Select(e => e.Deported).OrderBy(id => id, StringComparer.Ordinal));
+        foreach (var place in stayed)
+        {
+            var card = C.Events.Single(e => e.Deported == place).Id;
+            var s = Simulation.NewGame(C, 42, Mode.Historical);
+            Assert.DoesNotContain(card, s.FiredEvents);
+            s.Settlements[place] = new SettlementControl(since: s.Date, depopulated: true);
+            EventSystem.Trigger(C, s, new List<Cause>());
+            Assert.Contains(card, s.PendingEvents);
+            Assert.DoesNotContain(C.Events.Single(e => e.Deported != "" && e.Deported != place).Id, s.FiredEvents);
+        }
     }
 }

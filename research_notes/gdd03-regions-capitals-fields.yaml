@@ -246,8 +246,8 @@ regions:
       lon: 35.0817
       lat: 32.9278
     hex:
-      q: 7
-      r: 6
+      q: 8
+      r: 7
       status: SOURCED
       sources:
       - file: content/map/settlement_hexes.yaml
@@ -371,7 +371,7 @@ regions:
       lon: 35.4983
       lat: 32.9658
     hex:
-      q: 11
+      q: 13
       r: 6
       status: SOURCED
       sources:
@@ -470,7 +470,7 @@ regions:
       lon: 35.5422
       lat: 32.97
     hex:
-      q: 12
+      q: 14
       r: 6
       status: SOURCED
       sources:
@@ -566,7 +566,7 @@ regions:
       lon: 35.1736
       lat: 33.0875
     hex:
-      q: 9
+      q: 10
       r: 4
       status: SOURCED
       sources:
@@ -5017,7 +5017,7 @@ regions:
       lat: null
       status: NEEDS-RESEARCH
     hex:
-      q: 14
+      q: 16
       r: 2
       status: DRAFT-OWNER-VERIFY
       sources:
@@ -5186,7 +5186,7 @@ regions:
       lon:
       lat:
     hex:
-      q: 14
+      q: 16
       r: 2
       status: DRAFT-OWNER-VERIFY
       sources:
@@ -5262,7 +5262,7 @@ regions:
       lon:
       lat:
     hex:
-      q: 14
+      q: 16
       r: 3
       status: DRAFT-OWNER-VERIFY
       sources:
@@ -5378,7 +5378,7 @@ regions:
       lon:
       lat:
     hex:
-      q: 14
+      q: 16
       r: 3
       status: DRAFT-OWNER-VERIFY
       sources:
@@ -6310,8 +6310,8 @@ regions:
       lon: 35.5333
       lat: 32.7944
     hex:
-      q: 10
-      r: 8
+      q: 11
+      r: 10
       status: SOURCED
       sources:
       - file: content/map/settlement_hexes.yaml
@@ -6409,8 +6409,8 @@ regions:
       lon: 35.3033
       lat: 32.7019
     hex:
-      q: 7
-      r: 10
+      q: 8
+      r: 11
       status: SOURCED
       sources:
       - file: content/map/settlement_hexes.yaml
@@ -6530,8 +6530,8 @@ regions:
       lon: 35.5747
       lat: 32.7081
     hex:
-      q: 10
-      r: 10
+      q: 12
+      r: 11
       status: SOURCED
       sources:
       - file: content/map/settlement_hexes.yaml
@@ -6621,8 +6621,8 @@ regions:
       lon: 35.3908
       lat: 32.5603
     hex:
-      q: 7
-      r: 12
+      q: 8
+      r: 13
       status: SOURCED
       sources:
       - file: content/map/settlement_hexes.yaml
@@ -6702,8 +6702,8 @@ regions:
       lon: 35.1967
       lat: 32.69
     hex:
-      q: 6
-      r: 10
+      q: 7
+      r: 11
       status: SOURCED
       sources:
       - file: content/map/settlement_hexes.yaml
@@ -9910,8 +9910,8 @@ regions:
       lon: 34.9992
       lat: 32.8192
     hex:
-      q: 5
-      r: 8
+      q: 6
+      r: 9
       status: SOURCED
       sources:
       - file: content/map/settlement_hexes.yaml
@@ -10010,7 +10010,7 @@ regions:
       lat: 32.5708
     hex:
       q: 3
-      r: 11
+      r: 13
       status: SOURCED
       sources:
       - file: content/map/settlement_hexes.yaml
@@ -10091,7 +10091,7 @@ regions:
       lat: 32.45
     hex:
       q: 1
-      r: 13
+      r: 15
       status: SOURCED
       sources:
       - file: content/map/settlement_hexes.yaml
@@ -10182,7 +10182,7 @@ regions:
       lat: 32.3286
     hex:
       q: 0
-      r: 15
+      r: 17
       status: SOURCED
       sources:
       - file: content/map/settlement_hexes.yaml
@@ -15893,8 +15893,8 @@ regions:
       lon: 34.95745
       lat: 32.8160806
     hex:
-      q: 5
-      r: 8
+      q: 6
+      r: 9
       status: DRAFT-OWNER-VERIFY
       sources:
       - file: content/map/locations_1948.yaml
@@ -16027,7 +16027,7 @@ regions:
       status: NEEDS-RESEARCH
     hex:
       q: 2
-      r: 13
+      r: 15
       status: DRAFT-OWNER-VERIFY
       sources:
       - file: content/sites.yaml
@@ -16995,7 +16995,7 @@ regions:
       lat: 32.08
     hex:
       q: -3
-      r: 19
+      r: 21
       status: SOURCED
       sources:
       - file: content/map/settlement_hexes.yaml
@@ -17082,8 +17082,8 @@ regions:
       lon: 34.7531
       lat: 32.0522
     hex:
-      q: -3
-      r: 19
+      q: -4
+      r: 22
       status: SOURCED
       sources:
       - file: content/map/settlement_hexes.yaml
@@ -17180,7 +17180,7 @@ regions:
       lat: 32.0889
     hex:
       q: -2
-      r: 19
+      r: 21
       status: SOURCED
       sources:
       - file: content/map/settlement_hexes.yaml
@@ -20556,7 +20556,7 @@ regions:
       lat: 31.9519
     hex:
       q: -3
-      r: 21
+      r: 23
       status: SOURCED
       sources:
       - file: content/map/settlement_hexes.yaml
@@ -20715,8 +20715,8 @@ regions:
       lon: 34.8625
       lat: 31.9275
     hex:
-      q: -3
-      r: 21
+      q: -4
+      r: 24
       status: SOURCED
       sources:
       - file: content/map/settlement_hexes.yaml
@@ -20881,7 +20881,7 @@ regions:
       lat: 31.95
     hex:
       q: -4
-      r: 21
+      r: 23
       status: SOURCED
       sources:
       - file: content/map/settlement_hexes.yaml
@@ -21008,7 +21008,7 @@ regions:
       lat: 31.8969
     hex:
       q: -4
-      r: 21
+      r: 24
       status: SOURCED
       sources:
       - file: content/map/settlement_hexes.yaml
@@ -25635,7 +25635,7 @@ regions:
       status: NEEDS-RESEARCH
     hex:
       q: -3
-      r: 20
+      r: 22
       status: DRAFT-OWNER-VERIFY
       sources:
       - file: content/sites.yaml
@@ -25802,7 +25802,7 @@ regions:
       lat: 31.8322222
     hex:
       q: -4
-      r: 23
+      r: 25
       status: DRAFT-OWNER-VERIFY
       sources:
       - file: content/map/locations_1948.yaml
@@ -25923,8 +25923,8 @@ regions:
       lon: 34.98036
       lat: 31.8381
     hex:
-      q: -2
-      r: 22
+      q: -3
+      r: 25
       status: DRAFT-OWNER-VERIFY
       sources:
       - file: content/map/locations_1948.yaml
@@ -26880,7 +26880,7 @@ regions:
       lat: 31.7789
     hex:
       q: 0
-      r: 23
+      r: 26
       status: SOURCED
       sources:
       - file: content/map/settlement_hexes.yaml
@@ -34384,8 +34384,8 @@ regions:
       lon: 35.024865
       lat: 31.814508
     hex:
-      q: -2
-      r: 23
+      q: -3
+      r: 26
       status: DRAFT-OWNER-VERIFY
       sources:
       - file: content/map/locations_1948.yaml
@@ -34519,7 +34519,7 @@ regions:
       lat: 31.7766667
     hex:
       q: 0
-      r: 23
+      r: 26
       status: DRAFT-OWNER-VERIFY
       sources:
       - file: content/map/locations_1948.yaml
@@ -34699,8 +34699,8 @@ regions:
       lat: null
       status: NEEDS-RESEARCH
     hex:
-      q: -3
-      r: 24
+      q: -4
+      r: 27
       status: DRAFT-OWNER-VERIFY
       sources:
       - file: content/sites.yaml
@@ -34845,8 +34845,8 @@ regions:
       lon:
       lat:
     hex:
-      q: -3
-      r: 24
+      q: -4
+      r: 27
       status: DRAFT-OWNER-VERIFY
       sources:
       - file: content/sites.yaml
@@ -40930,8 +40930,8 @@ regions:
       lon: 34.4597
       lat: 31.5075
     hex:
-      q: -11
-      r: 27
+      q: -12
+      r: 31
       status: SOURCED
       sources:
       - file: content/map/settlement_hexes.yaml
@@ -41142,8 +41142,8 @@ regions:
       lon: 34.5583
       lat: 31.5886
     hex:
-      q: -9
-      r: 26
+      q: -10
+      r: 29
       status: SOURCED
       sources:
       - file: content/map/settlement_hexes.yaml
@@ -47571,8 +47571,8 @@ regions:
       lon: 34.6830556
       lat: 31.6608333
     hex:
-      q: -7
-      r: 25
+      q: -8
+      r: 28
       status: DRAFT-OWNER-VERIFY
       sources:
       - file: content/map/locations_1948.yaml
@@ -47777,8 +47777,8 @@ regions:
       lon: 34.5808333
       lat: 31.5194444
     hex:
-      q: -9
-      r: 27
+      q: -11
+      r: 31
       status: DRAFT-OWNER-VERIFY
       sources:
       - file: content/map/locations_1948.yaml
@@ -47983,8 +47983,8 @@ regions:
       lon: 34.6818194
       lat: 31.6480118
     hex:
-      q: -7
-      r: 25
+      q: -8
+      r: 28
       status: DRAFT-OWNER-VERIFY
       sources:
       - file: content/map/locations_1948.yaml
@@ -48220,8 +48220,8 @@ regions:
       lon: 34.6694067
       lat: 31.7820937
     hex:
-      q: -6
-      r: 23
+      q: -7
+      r: 26
       status: DRAFT-OWNER-VERIFY
       sources:
       - file: content/map/locations_1948.yaml
@@ -48351,8 +48351,8 @@ regions:
       lat: null
       status: NEEDS-RESEARCH
     hex:
-      q: -10
-      r: 27
+      q: -11
+      r: 31
       status: SOURCED
       sources:
       - file: content/sites.yaml
@@ -48465,8 +48465,8 @@ regions:
       lon:
       lat:
     hex:
-      q: -10
-      r: 27
+      q: -11
+      r: 31
       status: DRAFT-OWNER-VERIFY
       sources:
       - file: content/sites.yaml
@@ -49714,8 +49714,8 @@ regions:
       lon: 34.7867
       lat: 31.2522
     hex:
-      q: -9
-      r: 31
+      q: -10
+      r: 35
       status: SOURCED
       sources:
       - file: content/map/settlement_hexes.yaml
@@ -49842,8 +49842,8 @@ regions:
       lon: 34.7211
       lat: 31.0436
     hex:
-      q: -11
-      r: 34
+      q: -13
+      r: 39
       status: SOURCED
       sources:
       - file: content/map/settlement_hexes.yaml
@@ -49955,8 +49955,8 @@ regions:
       lat: null
       status: NEEDS-RESEARCH
     hex:
-      q: -8
-      r: 28
+      q: -9
+      r: 32
       status: DRAFT-OWNER-VERIFY
       sources:
       - file: content/sites.yaml
@@ -50104,8 +50104,8 @@ regions:
       lon:
       lat:
     hex:
-      q: -8
-      r: 28
+      q: -9
+      r: 32
       status: DRAFT-OWNER-VERIFY
       sources:
       - file: content/sites.yaml
@@ -50193,8 +50193,8 @@ regions:
       lat: null
       status: NEEDS-RESEARCH
     hex:
-      q: -12
-      r: 29
+      q: -13
+      r: 33
       status: DRAFT-OWNER-VERIFY
       sources:
       - file: content/sites.yaml
@@ -50328,8 +50328,8 @@ regions:
       lon:
       lat:
     hex:
-      q: -12
-      r: 29
+      q: -13
+      r: 33
       status: DRAFT-OWNER-VERIFY
       sources:
       - file: content/sites.yaml
@@ -50417,8 +50417,8 @@ regions:
       lat: null
       status: NEEDS-RESEARCH
     hex:
-      q: -10
-      r: 30
+      q: -11
+      r: 34
       status: DRAFT-OWNER-VERIFY
       sources:
       - file: content/sites.yaml
@@ -50525,8 +50525,8 @@ regions:
       lon:
       lat:
     hex:
-      q: -10
-      r: 30
+      q: -11
+      r: 34
       status: DRAFT-OWNER-VERIFY
       sources:
       - file: content/sites.yaml

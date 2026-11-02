@@ -38,7 +38,7 @@ These are the decisions made while building M3 where the spec or plan was silent
 
 ## Content and history
 
-- **Pro-Israeli framing, real names, nothing contested shown.** Lydda and Ramle appear as military events only. This follows the owner's earlier "no contested narratives shown" decision. Cost if wrong: one text edit.
+- **Pro-Israeli framing, real names, nothing contested shown.** Lydda and Ramle appear as military events only. This follows the owner's earlier "no contested narratives shown" decision. Cost if wrong: one text edit. Reconciled with D-F1 by Q-CARD-2 (a) (owner, 18 October 2026, [#783](https://github.com/eyalgolan/statecraft-israel/issues/783#issuecomment-6254310676)): `ten_days` stays a military card, and only Deport's follow-up cards, tagged `displacement`, state displacement (GDD Phase 6 PR 9, #801). Lydda and Ramle have no such card, because their residents are recorded as fled at capture and Deport is refused there (R-CTRL-018).
 - **Conflicting dates follow the majority or primary source.** The other date goes in a comment. Examples: the first truce ends 9 July (UN), Operation Horev is 22 December, and the RAF clash is 7 January. Weizmann's term starts 17 February 1949, although the MFA says 16. His second term starts 19 November 1951 (the election date), with a comment on the 25 November swearing-in. Maimon runs to 1951-10-08, following the Knesset position records over he.wiki's undated resignation (corrected 2026-10-14, #457).
 - **No invented alternatives.** Where no advocate is sourced, the alternative option is labelled a game assumption in a comment.
 - **The 1948 war period has sourced events (15 events after review).**

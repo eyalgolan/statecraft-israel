@@ -338,16 +338,18 @@ public class CauseTextTests
     public void ActualResidentRowsRenderAfterSettlementRecordsAreRemoved(bool fled)
     {
         // Existing CaptureDialog fixture pattern: real rules/map, synthetic capture eligibility and resident facts.
+        // Deport's cards (#801, a `deported:` key) name targets this fixture's list leaves out (R-EVT-007), so they stay out too.
         var events = System.IO.Directory.GetFiles(System.IO.Path.Combine(Paths.Content, "events"), "*.yaml")
+            .Where(f => !System.Text.RegularExpressions.Regex.IsMatch(System.IO.File.ReadAllText(f), @"(?m)^deported:"))
             .Select(f => "events/" + System.IO.Path.GetFileName(f));
         var c = ContentLoader.Load(rel => {
             var path = System.IO.Path.Combine(Paths.Content, rel);
             if (!System.IO.File.Exists(path)) return null;
-            if (rel == "settlement_targets.yaml") return "targets:\n  - { id: lod, q: -3, r: 21, operation: Fixture, sources: [{ url: \"https://example.org/fixture\", checked: 2026-10-21 }], residents: stayed, residents_sources: [{ url: \"https://example.org/fixture\", checked: 2026-10-21 }], annexation: { people: { value: 60, status: sourced, date: 1948-11-08, sources: [{ url: \"https://example.org/fixture\", checked: 2026-10-21 }] }, employed_share: { value: 0.5, status: design } }, status: draft }\n";
+            if (rel == "settlement_targets.yaml") return "targets:\n  - { id: lod, q: -3, r: 23, operation: Fixture, sources: [{ url: \"https://example.org/fixture\", checked: 2026-10-21 }], residents: stayed, residents_sources: [{ url: \"https://example.org/fixture\", checked: 2026-10-21 }], annexation: { people: { value: 60, status: sourced, date: 1948-11-08, sources: [{ url: \"https://example.org/fixture\", checked: 2026-10-21 }] }, employed_share: { value: 0.5, status: design } }, status: draft }\n";
             return System.IO.File.ReadAllText(path);
         }, events);
         var s = Simulation.NewGame(c, GoldenRun.Seed, Mode.Historical);
-        s.Units.Clear(); s.Units.Add(100, new Unit(100, "veteran_soldier", -3, 21, side: Movement.PlayerSide, strength: 3));
+        s.Units.Clear(); s.Units.Add(100, new Unit(100, "veteran_soldier", -3, 23, side: Movement.PlayerSide, strength: 3));
         s.Settlements["lod"] = new SettlementControl(Movement.PlayerSide, SettlementControl.AwaitingChoice, s.Date, fled: fled);
         // Preview shares RunOrders with Step and invokes the real producers, without unrelated monthly effects.
         var occupied = Simulation.Preview(c, s, new Command[] { new ResolveCapture("lod", SettlementControl.Occupy) });

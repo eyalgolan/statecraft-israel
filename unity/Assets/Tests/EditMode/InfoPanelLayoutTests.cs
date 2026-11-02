@@ -193,11 +193,13 @@ public class InfoPanelLayoutTests
         var start = GameSession.New(C, GoldenRun.Seed, Mode.Historical).State;
         var lone = C.Hexes.Where(x => x.Land && Projects.CitiesFor(C, start, x.Q, x.R).Count == 1).OrderBy(x => x.Q).ThenBy(x => x.R).First();
         var hula = C.Sites.Single(s => s.Id == "hula");   // #1124: the swamp and its waiting field, the tallest site hex
+        // #1183: at 4.4 km Petah Tikva's hex is a city hex that also offers the Yarkon rail link's segment (GddHexPanel).
+        var rail = C.SettlementHexes.Single(s => s.Id == "petah_tikva");
         var problems = new List<string>();
         foreach (var hebrew in new[] { false, true })
             foreach (var (w, h) in Windows)
                 foreach (var (what, q, r) in new[] { ("city", city.Q, city.R), ("site", site.Q, site.R), ("projects", lone.Q, lone.R), ("city with the policy", city.Q, city.R),
-                    ("field", site.Q, site.R), ("hula", hula.Q, hula.R) })
+                    ("field", site.Q, site.R), ("hula", hula.Q, hula.R), ("petah tikva with its rail part", rail.Q, rail.R) })
                 {
                     var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
                     var s = g.State;
@@ -889,7 +891,8 @@ public class InfoPanelLayoutTests
         },text:text,hebrew:hebrew,unit:()=>f.token,settled:root=>UiTestKit.Press(root.Q<Button>("info-attack")));
     }
 
-    // R-MOVE-010/#1749: a gun retains its action prompt/fire, but move explicitly refuses without a guessed allowance.
+    // R-MOVE-001/R-MOVE-010/R-COMBAT-001/#1749: Q12 (owner, 1 November 2026) gives the gun main's 2 points. It needs orders,
+    // moves, and its shot spends the points it has left, as any attack does.
     [UnityTest]
     public IEnumerator Gdd03GunPromptsBeforeFireAndStopsAfterShot([Values(false,true)] bool hebrew)
     {
@@ -897,29 +900,29 @@ public class InfoPanelLayoutTests
         g.State.Units[9000]=new Unit(9000,c.UnitTypes.First(t=>t.Side!=""&&t.Side!=Movement.PlayerSide&&t.Class=="infantry").Id,2,1,side:"egypt",strength:6);
         var text=UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(hebrew?UiPaths.StringsHebrew:UiPaths.Strings).text);
         var bridge=new SimBridge(g,text);CollectionAssert.Contains(bridge.NeedsOrders,f.id);
-        Assert.Greater(Movement.ActionsLeft(c,bridge.State,f.id,bridge.Spent),0);
-        Assert.AreEqual(text["unit.artillery_move_missing"],bridge.Queue(new Move(f.id,1,1)));
+        Assert.AreEqual(2,Movement.Allowance(c,bridge.State.Units[f.id]));
+        Assert.IsNull(bridge.Queue(new Move(f.id,1,1)));
+        Assert.AreEqual((1, 1), (bridge.State.Units[f.id].Q, bridge.State.Units[f.id].R), "the committed Move put the gun on (1,1)");
         var odds = Combat.Preview(c, bridge.State, f.id, 2, 1)!.Value.RatioPercent;
         InfoPanelPresenter? shown = null;
-        // The card's own Fire control: shown and pressed, its pick shows the sim's odds while the movement refusal stays on
-        // the card, and the lit target fires through the same pick a map click uses.
+        // The card's own Fire control: shown and pressed with the point the Move left, its pick shows the sim's odds, and the
+        // lit target fires through the same pick a map click uses.
         yield return Rendered(1512,982,g,(root,info)=>{ info.ShowUnit(); shown = info; },root=> {
             var card = root.Q<Label>("info-settlements").text;
-            Assert.IsTrue(Shown(root.Q<Button>("info-attack")), "the gun's attack control stays visible while movement is blocked");
-            Assert.IsFalse(Shown(root.Q<Button>("info-move")), "no Move is offered for the gun");
-            StringAssert.Contains(text["unit.fire_ready"], card);
-            StringAssert.Contains(text["unit.artillery_move_missing"], card);
+            Assert.IsTrue(Shown(root.Q<Button>("info-attack")), "the gun's attack control is offered");
+            Assert.IsTrue(Shown(root.Q<Button>("info-move")), "the gun's Move is offered with a point left");
+            StringAssert.Contains(text.Format("unit.points", 1, 2), card);
             StringAssert.Contains(text.Format("unit.attack_odds", "2,1", odds), card);
             Assert.IsTrue(shown!.PickTarget(2, 1), "the lit enemy hex takes the shot");
         },text:text,hebrew:hebrew,unit:()=>f.token,settled:root=>UiTestKit.Press(root.Q<Button>("info-attack")));
         var after = new SimBridge(g, text);
         CollectionAssert.DoesNotContain(after.NeedsOrders,f.id);
-        Assert.AreEqual(0,Movement.ActionsLeft(c,after.State,f.id,after.Spent));Assert.AreEqual(0,after.State.Arms);
+        Assert.AreEqual(0,Movement.PointsLeft(c,after.State,f.id,after.Spent));Assert.AreEqual(0,after.State.Arms);
         yield return Rendered(1512,982,g,(root,info)=>info.ShowUnit(),root=> {
             var card = root.Q<Label>("info-settlements").text;
-            StringAssert.Contains(text["unit.fire_spent"], card);
-            StringAssert.Contains(text["unit.artillery_move_missing"], card);
+            StringAssert.Contains(text.Format("unit.points", 0, 2), card);
             Assert.IsFalse(Shown(root.Q<Button>("info-attack")), "no second shot is offered");
+            Assert.IsFalse(Shown(root.Q<Button>("info-move")), "the shot spent the gun's points");
         },text:text,hebrew:hebrew,unit:()=>f.token);
     }
 

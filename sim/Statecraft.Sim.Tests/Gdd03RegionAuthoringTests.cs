@@ -118,9 +118,9 @@ public class Gdd03RegionAuthoringTests
         Assert.Equal(326, staged.Sum(r => Strings(r, "member_locations").Length));
         var hexCounts = new Dictionary<string, int>(StringComparer.Ordinal)
         {
-            ["galilee"] = 25, ["valleys"] = 22, ["haifa_sharon"] = 31, ["tel_aviv_jaffa"] = 6,
-            ["central_plain"] = 14, ["jerusalem_hills"] = 68, ["northern_hills"] = 36,
-            ["southern_coast"] = 18, ["negev"] = 190,
+            ["galilee"] = 29, ["valleys"] = 28, ["haifa_sharon"] = 39, ["tel_aviv_jaffa"] = 7,
+            ["central_plain"] = 17, ["jerusalem_hills"] = 91, ["northern_hills"] = 47,
+            ["southern_coast"] = 22, ["negev"] = 243,
         };
         var approved = new[] { "valleys", "tel_aviv_jaffa", "central_plain" };
         foreach (var row in staged)
@@ -142,7 +142,7 @@ public class Gdd03RegionAuthoringTests
             Assert.Equal(hexes.OrderBy(h => h.Q).ThenBy(h => h.R), hexes);
             Assert.Equal("design value, not a historical boundary", Text(row, "design_note"));
         }
-        Assert.Equal(410, staged.Sum(r => Assert.IsType<YamlSequenceNode>(Get(r, "member_hexes")).Children.Count));
+        Assert.Equal(523, staged.Sum(r => Assert.IsType<YamlSequenceNode>(Get(r, "member_hexes")).Children.Count));
     }
 
     // #1852 review: the imported evidence keeps the owner-approved draft's membership and opening control, identity by

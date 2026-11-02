@@ -267,7 +267,7 @@ public class WarEvents1948Tests
     }
 
     /// <summary>EventRules.SensitiveTags (internal to the sim): the loader refuses a money reward on these.</summary>
-    static readonly HashSet<string> Sensitive = new HashSet<string> { "holocaust", "terror", "massacre", "war-casualties" };
+    static readonly HashSet<string> Sensitive = new HashSet<string> { "holocaust", "terror", "massacre", "war-casualties", "displacement" };
 
     /// <summary>Events with fighting or terror carry the sensitive tags EventRules already enforces (no money reward).</summary>
     [Fact]

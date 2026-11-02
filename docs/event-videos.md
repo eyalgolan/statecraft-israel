@@ -102,12 +102,49 @@ event has an outcome clip, plays that clip once, in the middle of the screen, be
   a truce whose terms bar bringing in men and materiel) and law_of_return / enact (K04b, not in the plan's list and with
   no recorded ruling). A replacement needs the owner's word before anything new is generated.
 
+## In the opening
+
+Owner ruling of 2 November 2026: "B: A + one new Yemen shot (~2,424)". Two of the opening's panels (#530) reuse a card's
+loop, and Yemen has one new shot made for it. All three follow the same rules as the cards:
+
+- **The photograph comes first.** The panel opens on its archival photograph and credit. After
+  `OpeningPresenter.PhotoHoldMs` (2 s) the clip loops, silent, in the photograph's frame. CardVideo keeps the photograph
+  until the clip's first frame.
+- **The hold.** Owner, 2 Nov 2026: "2 s automatic (Recommended)".
+- **The label.** While the clip plays, the cards' `event.ai_label` string replaces the credit, in Hebrew in the Hebrew
+  UI. The clip's alt text becomes the tooltip.
+- **The caption.** One line under the picture, shown only with the clip, as the outcome clips' caption sits under
+  theirs. Each panel's `caption:` (`text`, `text_he`, `he_review`) restates a sentence of the panel's approved text.
+  Owner, 2 Nov 2026: "Version 1, fixed (Recommended)", which is also the owner's native read of the Hebrew.
+- **Stopping and failing.** Back, Next, Skip and Esc stop the clip. A clip that fails or times out puts the photograph
+  back for the rest of the session. Video is off in the automated runs, as on the cards.
+- **The clips.** Europe uses law_of_return (K04a), and the Arab countries use iraqi_exodus (A07). Yemen uses
+  `opening_yemen.mp4` (O3), the ruling's new shot: a parked, unmarked C-54/DC-4-type propliner on the Aden apron, with
+  families walking to its stair, as in the panel's photograph. No card uses it, so it has no `event-videos.yaml` row and
+  `tools/encode_event_videos.py` does not make it; its `ASSETS.yaml` row records the whole recipe.
+- **How O3 was made.** Veo 3.1 Lite (ElevenLabs), text-to-video, 1080p, 4 s, sound off, 2 November 2026. Take 1 showed a
+  high-wing turboprop; owner, 2 Nov 2026: "regenerate with the currect plane". Take 2 had a camera tripod in the
+  foreground, a US star-and-bar on the fuselage and an emblem on the fin. The Magic Carpet aircraft were civilian
+  charters, and the shot's avoid list bans painted emblems. Owner, 2 Nov 2026: "Fix it in editing (Recommended)". The
+  camera and the aircraft do not move, so each defect is covered for all 96 frames: the tripod and the fin emblem by a
+  feathered copy of clean texture beside them in the same frame, the insignia by one still patch inpainted from the raw
+  clip's frame at t=2 s (`ffmpeg -ss 2 -i <raw> -frames:v 1`). Never a blur. The cleaned 1080p master was then encoded
+  with `tools/encode_event_videos.py`'s pinned settings (`filter_graph()` and `FFMPEG_VIDEO`; `problems()` clean). Like
+  the promo generation scripts, the cleanup scripts are not in the repository: the regions, the patch sources and both
+  SHA-256s are in the row. The owner reviewed the cleaned clip on 2 November 2026: "Approve it".
+- **The checks.** `OpeningContent.Parse` refuses a malformed row. `tools/tests/test_opening_sources.py` checks each
+  clip's file, its `ASSETS.yaml` row and its `docs/ai-disclosure.md` line, and that a reused card clip keeps the card
+  row's shot and alt text. Every opening panel is sensitive, so its clip is `sensitive: true`, and a `-shareable` build
+  refuses it until the owner sets `sensitivity_reviewed: true` (`Build.OpeningShareableRefusal`). The owner reviewed the
+  two card clips in the opening on 2 November 2026 ("Approve both") and the Yemen clip the same day ("Approve it"). A
+  clip needs its caption, and a shareable build refuses a caption whose Hebrew is not `he_review: approved`.
+
 ## Where things are
 
 | What | Where |
 |---|---|
 | The mapping: event (and, for an outcome, option and window), file, promo shot and its SHA-256, generator, date, alt text, sensitivity flags | `unity/Assets/Resources/EventVideos/event-videos.yaml` |
-| The clips (960x540 H.264, about 0.4 to 1.5 MB each) | `unity/Assets/StreamingAssets/video/<event>.mp4`, and `<event>-outcome.mp4` for the outcome clips |
+| The clips (960x540 H.264, about 0.4 to 1.5 MB each) | `unity/Assets/StreamingAssets/video/<event>.mp4`, and `<event>-outcome.mp4` for the outcome clips, and `opening_yemen.mp4` for the opening's Yemen panel |
 | The encode, pinned (no burned-in caption) | `tools/encode_event_videos.py` |
 | The player: a lazy VideoPlayer playing a URL into a 960x540 RenderTexture; one for the card's loop and one for the outcome clips | `CardVideo` |
 | The outcome clips at End turn | `OutcomePresenter` |

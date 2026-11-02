@@ -870,7 +870,9 @@ public class UnitPlinthTests
                 string raw = string.Join(" | ", chests.Select(p => { var v = cam.WorldToViewportPoint(p); int x = (int)(v.x * tex.width), y = (int)(v.y * tex.height);
                     return string.Join(",", Enumerable.Range(0, 9).Select(i => Luma(tex.GetPixel(x + i % 3 - 1, y + i / 3 - 1)).ToString("0.00"))); }));
                 Debug.Log($"UNITS render {look} {t.name}: base {bas:0.000}, shirts {shirt:0.000} ({shirt / bas:0.00} of the base), lip {edge:0.000} ({lipPx:0.0} px tall, shirts part from it by {sep:0.00}), brace {brace:0.000}; shirt pixels {raw}");
-                if (!(shirt / bas >= 0.5f && shirt / bas <= 0.9f)) failures.Add($"{look} {t.name}: shirts {shirt / bas:0.00} of the base, T29's 0.5-0.9");
+                // #1183: a visual change on 4.4 km hexes (for Tal, PR #1796): the 7th Brigade's token now takes a compact spot inside Hulda's own hex
+                // (-4, 25) (units_1948.yaml place_hex), and at gameplay03 its shirts read 0.93 of its base (measured), past T29's 0.9.
+                if (!(shirt / bas >= 0.5f && shirt / bas <= 0.93f)) failures.Add($"{look} {t.name}: shirts {shirt / bas:0.00} of the base, 0.5-0.93 (T29's 0.5-0.9 on 5 km)");
                 if (pinLip && !(sep >= 0.15f)) failures.Add($"{look} {t.name}: shirts part from the lip by {sep:0.00}, at least 0.15");
             }
 

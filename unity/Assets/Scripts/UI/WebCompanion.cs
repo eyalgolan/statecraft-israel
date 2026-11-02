@@ -9,7 +9,8 @@ using UnityEngine.UIElements;
 namespace Statecraft.Game.UI
 {
     /// <summary>One-way WebGL mirror of the presenter's words. It never receives game commands or changes focus. Opt-in
-    /// (<see cref="On"/>): the Settings switch or "?companion=1" turns it on.
+    /// (<see cref="On"/>): the Settings switch or "?companion=1" turns it on, and only while <see cref="Available"/>, which is
+    /// false for now (owner, 2 November 2026).
     /// It publishes in the frame after a sim change, an End Turn, a refused order, a click, a submit or a focus move, once
     /// the presenters have rendered; periodic sampling also catches toast writes and controls rebuilt without any of those.
     /// Nothing is published before the first frame. Owned by GameRoot: a restart/language switch disposes it without clearing
@@ -36,6 +37,16 @@ namespace Statecraft.Game.UI
             public Choice[] choices = Array.Empty<Choice>();
         }
 
+        /// <summary>Whether this build offers the companion at all. The owner's ruling of 2 November 2026, "Remove it from the
+        /// game (Recommended)": "A small PR before tonight's nightly hides it entirely: no Settings row, and ?companion=1 does
+        /// nothing. The code stays in, switched off by one flag, so it can come back later." While false, nothing turns it on
+        /// (<see cref="On"/>), GameRoot gives Settings no switch, so its row stays hidden, and nothing reaches the page.</summary>
+        public const bool Available = false;
+
+        /// <summary><see cref="Available"/>, read where it applies. A seam: a test sets it to exercise the companion with the
+        /// flag on, and puts it back.</summary>
+        internal static Func<bool> Offered = () => Available;
+
         // "?companion=1": a whole query parameter with a whole value (UrlFlags' rule), so "?companion=10" and "?xcompanion=1"
         // are not it.
         static readonly Regex Asked = new Regex(@"[?&]companion=1(?=&|#|$)", RegexOptions.CultureInvariant);
@@ -44,8 +55,9 @@ namespace Statecraft.Game.UI
         /// (Recommended)", until the VoiceOver test and the phone layout are done. <paramref name="picked"/> is the Settings
         /// switch pressed in this page's session, which wins; else the stored choice (<see cref="SettingsPresenter.CompanionKey"/>
         /// "on") or "?companion=1" in the page address turns it on. The address wins over a stored "off" for that visit and
-        /// writes nothing: the owner's ruling of 2 November 2026, "Link wins, that visit (Recommended)".</summary>
-        public static bool On(bool? picked, string? stored, string? url) => picked ?? (stored == "on" || Asked.IsMatch(url ?? ""));
+        /// writes nothing: the owner's ruling of 2 November 2026, "Link wins, that visit (Recommended)". None of them counts
+        /// while the build does not offer it (<see cref="Available"/>).</summary>
+        public static bool On(bool? picked, string? stored, string? url) => Offered() && (picked ?? (stored == "on" || Asked.IsMatch(url ?? "")));
 
         readonly VisualElement root;
         readonly UiText text;
