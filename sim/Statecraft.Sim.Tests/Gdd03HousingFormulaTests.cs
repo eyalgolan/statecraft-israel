@@ -236,6 +236,41 @@ public class Gdd03HousingFormulaTests
         Assert.Throws<ArgumentNullException>(() => Gdd03HousingFormula.FromCatalogue(null!));
     }
 
+    // R-HOUSE-005 (#1703): the live step EvaluateTurn (double, the state type) is the decimal Evaluate with every resident
+    // count equal and no upkeep (27M-17). Pins the two forms together over the shipped catalogue and each synthetic scalar
+    // override above, every count, capacity and condition these tests use, and conditions 0.00 to 0.60 in 0.01 steps.
+    [Fact] public void LiveDoubleStepAgreesWithTheDecimalFormula()
+    {
+        var formulas = new[]
+        {
+            Formula(),
+            FormulaWithSyntheticScalar("housing.money_threshold", 0.70m),
+            FormulaWithSyntheticScalar("housing.money_slope", 2.5m),
+            FormulaWithSyntheticScalar("housing.cohesion_threshold", 0.50m),
+            FormulaWithSyntheticScalar("housing.max_cohesion_loss", 3m),
+            FormulaWithSyntheticScalar("housing.overflow_deterioration", 12.5m),
+        };
+        var conditions = new List<decimal> { 0m, 0.01m, 0.125m, 0.235m, 0.26m, 0.40m, 0.499m, 0.50m, 0.60m, 0.95m, 1m };
+        for (int i = 0; i <= 60; i++) conditions.Add(i / 100m);
+        var checkedCases = 0;
+        foreach (var f in formulas)
+        foreach (var population in new[] { 0, 10, 20, 511, 600 })
+        foreach (var residents in new[] { 0, 1, 5, 10, 20, 248, 511 })
+        foreach (var capacity in new[] { 0, 5, 8, 10, 15, 248 })
+        foreach (var condition in conditions)
+        {
+            if (residents > population) continue;
+            var d = f.Evaluate(new Gdd03HousingInput(residents, residents, residents, population, capacity, condition, 0m, 0m));
+            var live = f.EvaluateTurn(residents, population, capacity, (double)condition);
+            var at = $"R={residents} P={population} cap={capacity} c={condition}";
+            Assert.True(Math.Abs((double)d.SurchargeMoney - live.Surcharge) <= 1e-9, "surcharge " + at);
+            Assert.True(Math.Abs((double)d.ConditionAfter - live.ConditionAfter) <= 1e-9, "condition " + at);
+            Assert.True(Math.Abs((double)d.CohesionLossPoints - live.Cohesion) <= 1e-9, "cohesion " + at);
+            checkedCases++;
+        }
+        Assert.True(checkedCases > 10000, checkedCases.ToString(CultureInfo.InvariantCulture));
+    }
+
     // R-HOUSE-001: a valid numeric child cannot authorize an unresolved parent repair row.
     [Fact]
     public void ReaderRejectsDeferredRepairParentWithAnIntactNumericPart()
