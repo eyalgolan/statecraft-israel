@@ -147,8 +147,8 @@ the Editor path if that directory already exists"). Settings are not synced: qua
 - The Coming Soon page from the kit: `docs/steam/coming-soon-kit.md` and `docs/steam/store-page-draft.md` (#424).
 - The Content Survey: the answers are in `docs/steam/coming-soon-kit.md` section 5, "Answers with evidence", approved by
   you on 1 Nov 2026 ("Approve as drafted"; "Frequent Violence or Gore": "Tick it (Recommended)"; PR #2173). Settle its
-  open items first (Deport is still your decision), and re-check the answers against the first Steam build before
-  submitting. Answering it is yours.
+  open items first (the mature-content description now mentions Deport, on your 2 Nov ruling; read that sentence), and
+  re-check the answers against the first Steam build before submitting. Answering it is yours.
 - Privacy: `docs/steam/privacy.md` is the statement for the store page's support fields; it names Unity's engine
   reporting, which stays on (owner, 1 Nov 2026, "Name them").
 
