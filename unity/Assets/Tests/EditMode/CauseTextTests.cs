@@ -153,6 +153,7 @@ public class CauseTextTests
             (CauseKeys.Purpose.Deport, $"for the Deport of {placeName}", new[] { place }),
             (CauseKeys.Purpose.Occupation, $"for the occupation of {placeName}", new[] { place }),
             (CauseKeys.Purpose.Event, $"for {ev.Title}", new[] { ev.Id, ev.Title, "1" }),
+            (CauseKeys.Purpose.Workshop, "for an arms workshop cycle", new string[0]),   // R-ARMS-006
         };
         // A map action borrows with its own key (CauseKeys.MapBorrowed): its purpose names only its Paid line (#2199).
         CollectionAssert.AreEquivalent(CauseKeys.Purpose.All.Where(p => p != CauseKeys.Purpose.Deficit && p != CauseKeys.Purpose.MapAction),
@@ -195,6 +196,7 @@ public class CauseTextTests
             (CauseKeys.Purpose.Project, "to build " + housing.Name, new[] { housing.Id }),
             (CauseKeys.Purpose.Occupation, $"for the occupation of {placeName}", new[] { place }),
             (CauseKeys.Purpose.MapAction, "to build " + PlayerText.MapAction(C, MapActions.Housing), new[] { MapActions.Housing }),   // as MapActions.Apply
+            (CauseKeys.Purpose.Workshop, "for an arms workshop cycle", new string[0]),   // R-ARMS-006
         };
         CollectionAssert.AreEquivalent(CauseKeys.Purpose.All.Except(new[] { CauseKeys.Purpose.Deficit, CauseKeys.Purpose.CivilianUpkeep,
             CauseKeys.Purpose.MilitaryUpkeep, CauseKeys.Purpose.Deport, CauseKeys.Purpose.Event }), purposes.Select(p => p.Key), "every paying purpose");
@@ -412,6 +414,9 @@ public class CauseTextTests
             new Cause("draft", "town", -1, "Town: Housing was cancelled; the Money spent is not returned", key: CauseKeys.ProjectCancelled, args: new[] { "housing" }),
             new Cause("draft", "town", 1, "Town: Housing was finished", key: CauseKeys.ProjectCompleted, args: new[] { "housing" }),
             new Cause("draft", "arms", 2000000000, "Bought 2000000000 Arms, cost IL 1.3m", key: CauseKeys.ArmsBought, args: new[] { "1.25" }),
+            new Cause("draft", "town", 2, "Town: arms workshops staffed: 2", key: CauseKeys.WorkshopWorkers, args: new[] { "2" }),
+            new Cause("draft", "town", 1, "Town: an arms workshop made 1 Arms", key: CauseKeys.WorkshopArms),
+            new Cause("draft", "town", 0, "Town: an arms workshop has no worker without a job this month", key: CauseKeys.WorkshopPaused, args: new[] { Workshops.NoWorker }),
             new Cause("draft", "treasury", 1.44, "Converted $4.0m of foreign currency into Money: IL +1.4m", key: CauseKeys.DollarsConverted, args: new[] { "4" }),
             new Cause("draft", "food", 2000000000, "Site: the plowed land yielded 2000000000 units of Food", key: CauseKeys.FoodHarvest, args: new[] { "site" }),
             new Cause("draft", "food", -2000000000, "Food ran out: 2000000000 of 2000000001 units of the month's need went unmet", key: CauseKeys.FoodShortage, args: new[] { "2000000001" }),
@@ -520,6 +525,7 @@ public class CauseTextTests
             new Cause("draft", "town", -1, "Town: 1 group began armoured car training, cost IL 1.3m", key: CauseKeys.TrainingStarted, args: new[] { "1", "armour", "", "1.25" }),
             new Cause("draft", "site", 1, "Site: a group of halutzim began draining the swamp, cost IL 1.3m", key: CauseKeys.LandWorkStarted, args: new[] { "drain", "1.25" }),
             new Cause("draft", "site", 1, "Site: a group of halutzim began building a training camp, cost IL 1.3m", key: CauseKeys.SiteStarted, args: new[] { "camp", "1.25" }),
+            new Cause("draft", "town", 0, "Town: an arms workshop's next cycle waits: paying for it would take the debt past its ceiling", key: CauseKeys.WorkshopPaused, args: new[] { Workshops.DebtCeiling }),   // #1701 OQ4
         };
         // A renderer receives no live state: both resident variants must survive the settlement record's removal.
         foreach (var row in rows)

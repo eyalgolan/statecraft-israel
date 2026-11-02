@@ -1,0 +1,434 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using Statecraft.Sim;
+
+/// <summary>#1701 (GDD 0.3 arms workshops), on the aggregate cities: the gdd-0.3 `arms_workshop` project kind (R-ARMS-004).
+/// The fixture's town_a is on (1, 0), with (1, 1) and (2, 0) land next to it; its workshop row has the real row's numbers
+/// (owner, 2 November 2026, OQ2: "IL 15m, 3 turns (Recommended)").</summary>
+public class ArmsWorkshopTests
+{
+    internal const string Row = "  - { id: arms_workshop, name: an arms workshop, cost: 15, turns: 3, capacity: 0, condition: 0, job_slots: 0, worker_slots: 1, rulesets: [gdd-0.3] }\n";
+
+    /// <summary>The GDD fixture with <paramref name="projects"/> as projects.yaml, under gdd-0.3 (with the real balance
+    /// catalogue, which that ruleset requires) or gdd-0.1.</summary>
+    internal static Dictionary<string, string> Files(bool gdd03, string projects = Fixture.GddProjects + Row)
+    {
+        var f = Fixture.Gdd(new Dictionary<string, string>
+        {
+            ["projects.yaml"] = projects,
+            // An enemy type, so a test can hold town_a (R-CITY-010).
+            ["unit_types.yaml"] = Fixture.GddUnitTypes + "  - { id: enemy, kind: unit, side: egypt, class: infantry, movement_points: 3 }\n",
+        });
+        if (!gdd03) return f;
+        f["eras.yaml"] = f["eras.yaml"].Replace("loop: gdd", "loop: gdd, ruleset: " + SaveGame.Gdd03Ruleset);
+        f[Gdd03BalanceCatalogue.FileName] = File.ReadAllText(Path.Combine(RealContentTests.ContentRoot(), Gdd03BalanceCatalogue.FileName));
+        return f;
+    }
+
+    internal static Content Load(bool gdd03, string projects = Fixture.GddProjects + Row) => ContentLoader.Load(Fixture.Write(Files(gdd03, projects)));
+
+    static StepResult Step(Content c, GameState s, params Command[] commands) => Simulation.Step(c, s, commands);
+
+    // R-ARMS-004: the row is read under gdd-0.3 only; gdd-0.1 keeps exactly its kinds, in their order, so its Build list,
+    // its StartProject and its hash do not change.
+    [Fact]
+    public void TheWorkshopIsAKindUnderGdd03Only()
+    {
+        Assert.Equal(new[] { "housing", "transit_camp", "industry" }, Load(false).ProjectKinds.Select(k => k.Id));
+        var c = Load(true);
+        Assert.Equal(new[] { "housing", "transit_camp", "industry", "arms_workshop" }, c.ProjectKinds.Select(k => k.Id));
+        var k = c.ProjectKinds.Single(x => x.Id == "arms_workshop");
+        Assert.Equal((15.0, 3, 0, 0.0, 0, 1), (k.Cost, k.Turns, k.Capacity, k.Condition, k.JobSlots, k.WorkerSlots));
+        Assert.Equal(new[] { SaveGame.Gdd03Ruleset }, k.Rulesets);
+        Assert.Equal(0, c.ProjectKinds.Single(x => x.Id == "industry").WorkerSlots);
+    }
+
+    // R-ARMS-004 (OQ2, owner 2 November 2026: "IL 15m, 3 turns (Recommended)"; OQ8: the Hebrew name awaits a native read):
+    // the real game (gdd-0.1) has its four kinds, and the real row loads under gdd-0.3 with the ruled numbers.
+    [Fact]
+    public void TheRealRowIsTheRuledWorkshop()
+    {
+        var real = ContentLoader.Load(RealContentTests.ContentRoot());
+        Assert.Equal(new[] { "housing", "transit_camp", "industry", "winery" }, real.ProjectKinds.Select(k => k.Id));
+        var line = File.ReadAllLines(Path.Combine(RealContentTests.ContentRoot(), "projects.yaml")).Single(l => l.Contains("id: arms_workshop"));
+        var k = Load(true, Fixture.GddProjects + line + "\n").ProjectKinds.Single(x => x.Id == "arms_workshop");
+        Assert.Equal((15.0, 3, 0, 0.0, 0, 1), (k.Cost, k.Turns, k.Capacity, k.Condition, k.JobSlots, k.WorkerSlots));
+        Assert.Equal(("סדנת נשק", HebrewReview.AgentChecked), (k.NameHe, k.NameHeReview));
+    }
+
+    // R-ARMS-004: under gdd-0.1 the kind does not exist, so StartProject refuses it as unknown and nothing changes.
+    [Fact]
+    public void Gdd01RefusesTheWorkshopAsAnUnknownKind()
+    {
+        var c = Load(false);
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var r = Step(c, s, new StartProject("arms_workshop", "town_a", 1, 1));
+        Assert.Equal("There is no such city project", Assert.Single(r.Rejected).Reason);
+        Assert.Equal(Step(c, s).State.Hash(), r.State.Hash());
+    }
+
+    // R-ARMS-004 with R-PROJ-001 and R-PROJ-003: under gdd-0.3 the workshop is built like any project: paid in full at the
+    // start (borrowing the shortfall), built after its 3 turns, and it adds no housing, condition or job slots.
+    [Fact]
+    public void Gdd03BuildsTheWorkshopLikeAnyProject()
+    {
+        var c = Load(true);
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        s.Treasury = 10; s.Debt = 0;
+        var one = Step(c, s, new StartProject("arms_workshop", "town_a", 1, 1));
+        Assert.Empty(one.Rejected);
+        Assert.Equal(-15, one.Why.Single(w => w.Key == CauseKeys.Paid && w.Args[0] == CauseKeys.Purpose.Project).Delta, 9);
+        Assert.Equal(5, one.Why.Single(w => w.Key == CauseKeys.Borrowed && w.Args[0] == CauseKeys.Purpose.Project).Delta, 9);   // IL 15m against IL 10m
+        var p = one.State.CityProjects.Values.Single();
+        Assert.Equal(("arms_workshop", 2, (DateTime?)null), (p.Kind, p.TurnsLeft, p.BuiltOn));
+        var built = Step(c, Step(c, one.State).State).State;
+        Assert.NotNull(built.CityProjects[p.Id].BuiltOn);
+        var before = s.Cities["town_a"]; var after = built.Cities["town_a"];
+        Assert.Equal((before.HousingCapacity, before.JobSlots, before.Condition), (after.HousingCapacity, after.JobSlots, after.Condition));
+    }
+
+    // R-ARMS-004: the loader refuses a row that could not be a gdd-0.3 workshop slot, naming the field.
+    [Theory]
+    [InlineData("rulesets: [gdd-0.3]", "rulesets: [gdd-0.9]", false, "projects[arms_workshop].rulesets")]
+    [InlineData("worker_slots: 1", "worker_slots: 2", true, "projects[arms_workshop].worker_slots")]
+    [InlineData("worker_slots: 1", "worker_slots: -1", true, "projects[arms_workshop].worker_slots")]
+    [InlineData("job_slots: 0, worker_slots", "job_slots: 1, worker_slots", true, "projects[arms_workshop].job_slots")]
+    [InlineData("capacity: 0, condition: 0, job_slots: 0, worker", "capacity: 2, condition: 0, job_slots: 0, worker", true, "projects[arms_workshop].capacity")]
+    [InlineData("condition: 0, job_slots: 0, worker", "condition: 0.1, job_slots: 0, worker", true, "projects[arms_workshop].condition")]
+    [InlineData("rulesets: [gdd-0.3]", "rulesets: [gdd-0.1, gdd-0.3]", true, "projects[arms_workshop].rulesets")]
+    [InlineData(", rulesets: [gdd-0.3]", "", false, "projects[arms_workshop].rulesets")]
+    [InlineData("worker_slots: 1", "worker_slots: 0", true, "projects[arms_workshop].worker_slots")]   // the catalogue's 1
+    public void ABadWorkshopRowIsRefused(string from, string to, bool gdd03, string where)
+    {
+        Assert.Contains(from, Row);
+        var e = Assert.Throws<ContentException>(() => Load(gdd03, Fixture.GddProjects + Row.Replace(from, to)));
+        Assert.Contains(where, e.Message);
+    }
+
+    // ---- R-ARMS-005: the workshop's worker (slice B) ----
+
+    /// <summary>A gdd-0.3 game whose town_a has <paramref name="jobs"/> job slots, <paramref name="civilians"/> civilians,
+    /// <paramref name="employed"/> of them in jobs, and a built arms workshop on (1, 1): its id is the second value.</summary>
+    internal static (Content C, GameState S, int Id) Built(int civilians = 10, int employed = 6, int jobs = 8, bool jobsDefault = true)
+    {
+        var c = Load(true);
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var x = s.Cities["town_a"];
+        s.Cities["town_a"] = new City(x.Id, x.HousingCapacity, jobs, civilians, employed, 0, 0, x.Condition, jobsDefault: jobsDefault);
+        var id = s.NextId++;
+        s.CityProjects.Add(id, new CityProject(id, Workshops.ArmsWorkshop, "town_a", 1, 1, 0, s.Date));
+        return (c, s, id);
+    }
+
+    internal static AssignWorkers Staff(int count, string city = "town_a") => new AssignWorkers(city, Workshops.Role, count);
+
+    // R-ARMS-005 (27M-13, "Any free civilian. The cost tier follows the worker"; #1701 OQ6, owner 2 November 2026: "Accept
+    // all four (Recommended)": every aggregate worker is priced as ordinary): AssignWorkers(city, "workshop", n) staffs the
+    // city's first n built workshops with people without a job. The order changes no Money, profession or job.
+    [Fact]
+    public void StaffingTakesOnePersonWithoutAJob()
+    {
+        var (c, s, id) = Built(jobsDefault: false);
+        var r = Step(c, s, Staff(1));
+        Assert.Empty(r.Rejected);
+        var w = r.State.Workshops[id];
+        Assert.Equal((true, SyntheticWorkshopTier.Ordinary), (w.Staffed, w.WorkerTier));
+        var line = Assert.Single(r.Why, x => x.Key == CauseKeys.WorkshopWorkers);
+        Assert.Equal(("town_a", "1", "Town A: arms workshops staffed: 1"), (line.Target, string.Join("|", line.Args), line.Message));
+        var x = r.State.Cities["town_a"]; var before = Step(c, s).State.Cities["town_a"];
+        Assert.Equal((before.Civilians, before.Craftsmen, before.Employed, before.Qualified), (x.Civilians, x.Craftsmen, x.Employed, x.Qualified));
+    }
+
+    // R-ARMS-005 with R-CITY-001 and R-CITY-009: the worker holds no job, so the city's most workers is one fewer and the job
+    // default fills one job fewer; R-CITY-002: the worker earns no job income.
+    [Fact]
+    public void TheWorkerHoldsNoJobAndEarnsNoWage()
+    {
+        var (c, s, _) = Built(civilians: 10, employed: 6, jobs: 12);
+        var staffed = Step(c, s, Staff(1));
+        Assert.Equal(9, Cities.MaxWorkers(staffed.State, staffed.State.Cities["town_a"]));
+        Assert.Equal(9, staffed.State.Cities["town_a"].Employed);   // the job default (step 8) fills 9 of the 10
+        Assert.Equal(10, Step(c, s).State.Cities["town_a"].Employed);
+        double Wages(StepResult r) => r.Why.Single(w => w.Key == CauseKeys.WagesPaid && w.Target == "town_a").Delta;
+        var next = Step(c, staffed.State);
+        var nine = staffed.State.Clone(); nine.Workshops.Clear();
+        nine.Cities["town_a"] = new City("town_a", nine.Cities["town_a"].HousingCapacity, 9, 10, 9, 0, 0, nine.Cities["town_a"].Condition);
+        Assert.Equal(Wages(Step(c, nine)), Wages(next), 12);   // the wages of 9 jobs, as a city with 9 jobs and one idle
+        var refused = Step(c, staffed.State, new AssignWorkers("town_a", "job", 10));
+        Assert.Equal("Town A has 9 civilians and craftsmen", Assert.Single(refused.Rejected).Reason);
+    }
+
+    public static IEnumerable<object[]> StaffRefusals() => new List<object[]>
+    {
+        new object[] { "gdd-0.1", "There is no such role" },
+        new object[] { "unknown city", "There is no such city" },
+        new object[] { "negative", "The number of workers cannot be negative" },
+        new object[] { "more than built", "Town A has 1 arms workshop" },
+        new object[] { "still building", "Town A has 0 arms workshops" },
+        new object[] { "nobody without a job", "Town A has 0 civilians and craftsmen without a job" },
+    };
+
+    // R-ARMS-005: each refusal leaves the state as if the order had not been given.
+    [Theory]
+    [MemberData(nameof(StaffRefusals))]
+    public void StaffingRefusalsChangeNothing(string why, string reason)
+    {
+        var (c, s, id) = Built(civilians: 10, employed: why == "nobody without a job" ? 10 : 6, jobs: 10);
+        if (why == "gdd-0.1") { c = Load(false); s = Simulation.NewGame(c, 1, Mode.Historical); }
+        if (why == "still building") s.CityProjects[id] = new CityProject(id, Workshops.ArmsWorkshop, "town_a", 1, 1, 2);
+        var order = why switch
+        {
+            "unknown city" => Staff(1, "atlantis"),
+            "negative" => Staff(-1),
+            "more than built" => Staff(2),
+            _ => Staff(1),
+        };
+        var r = Step(c, s, order);
+        Assert.Equal(reason, Assert.Single(r.Rejected).Reason);
+        Assert.Equal(Step(c, s).State.Hash(), r.State.Hash());
+    }
+
+    // R-ARMS-005: lowering the count unstaffs the last workshops; the record stays, so a paid cycle is kept (R-ARMS-007).
+    [Fact]
+    public void UnstaffingKeepsTheRecord()
+    {
+        var (c, s, id) = Built(jobsDefault: false);
+        var off = Step(c, Step(c, s, Staff(1)).State, Staff(0));
+        Assert.Empty(off.Rejected);
+        Assert.False(off.State.Workshops[id].Staffed);
+        Assert.Equal(new[] { "0" }, off.Why.Single(x => x.Key == CauseKeys.WorkshopWorkers).Args);
+    }
+
+    // R-ARMS-005, R-LOOP-002: the workshops are hashed as wshop[...] only when there is one, so a gdd-0.1 state hashes as before.
+    [Fact]
+    public void TheWorkshopsAreHashedOnlyWhenPresent()
+    {
+        var (c, s, id) = Built(jobsDefault: false);
+        Assert.DoesNotContain("wshop", s.Describe());
+        var staffed = Step(c, s, Staff(1)).State;
+        Assert.Contains("wshop", staffed.Describe());
+        var other = staffed.Clone(); other.Workshops[id] = other.Workshops[id].WithStaffed(false);
+        Assert.NotEqual(staffed.Hash(), other.Hash());
+    }
+
+    // ---- R-ARMS-006: the monthly cycle at the production step (slice C) ----
+
+    static readonly SyntheticWorkshopRules Rules = SyntheticWorkshopRules.FromCatalogue(Load(true).Gdd03Balance!);
+
+    static IEnumerable<Cause> Charges(StepResult r) => r.Why.Where(w => w.Key == CauseKeys.Paid && w.Args[0] == CauseKeys.Purpose.Workshop);
+
+    /// <summary>A gdd-0.3 game with town_a's workshop already staffed at <paramref name="tier"/>, no jobs (so no wages reach
+    /// the Treasury before step 6), and the given Treasury and Debt.</summary>
+    static (Content C, GameState S, int Id) Staffed(double treasury = 100, double debt = 0, SyntheticWorkshopTier tier = SyntheticWorkshopTier.Ordinary,
+        decimal? paid = null, int progress = 0)
+    {
+        var (c, s, id) = Built(civilians: 10, employed: 0, jobs: 0);
+        s.Workshops.Add(id, new Workshop(id, true, tier, paid, progress));
+        s.Treasury = treasury; s.Debt = debt;
+        return (c, s, id);
+    }
+
+    static (GameState S, List<StepResult> Turns) Run(Content c, GameState s, int turns, Func<int, Command[]>? orders = null)
+    {
+        var all = new List<StepResult>();
+        for (int t = 0; t < turns; t++) { var r = Step(c, s, orders?.Invoke(t) ?? Array.Empty<Command>()); all.Add(r); s = r.State; }
+        return (s, all);
+    }
+
+    // R-ARMS-006 (27M-11, owner-approved 1 November 2026: "At the monthly production step."): the order pays nothing; the
+    // cycle is reserved and paid at step 6, after the city's wages, at the worker's price (IL 5m for an ordinary worker).
+    [Fact]
+    public void TheCycleIsReservedAtTheProductionStepNotOnTheOrder()
+    {
+        var (c, s, id) = Built(jobsDefault: false);
+        s.Treasury = 100;
+        var preview = Simulation.Preview(c, s, new Command[] { Staff(1) });
+        Assert.Equal(s.Treasury, preview.State.Treasury);
+        Assert.Null(preview.State.Workshops[id].PaidCost);
+        var r = Step(c, s, Staff(1));
+        var charge = Assert.Single(Charges(r));
+        Assert.Equal(-5.0, charge.Delta, 12);
+        var why = r.Why.ToList();
+        var at = why.IndexOf(charge);
+        Assert.True(why.FindIndex(w => w.Key == CauseKeys.WagesPaid) < at);
+        Assert.True(why.FindIndex(w => w.Key == CauseKeys.WorkshopWorkers) < at);
+        Assert.Equal((5m, 1), (r.State.Workshops[id].PaidCost, r.State.Workshops[id].Progress));   // OQ3: the month it is paid counts
+    }
+
+    // R-ARMS-006 (27M-12: "Automatic each month while the workshop is staffed, paid like any GDD cost."; OQ3, owner 2
+    // November 2026: "Accept all four (Recommended)": the month a cycle is paid is its first staffed month):
+    // workshop.staffed_turns (3) staffed months make 1 Arms, and the next cycle starts by itself the month after.
+    [Fact]
+    public void AStaffedWorkshopMakesOneArmsEveryThreeStaffedTurnsAndRepeats()
+    {
+        var (c, s, id) = Staffed();
+        var (idle, _) = Run(c, Clear(s), 6);
+        var (after, turns) = Run(c, s, 6);
+        Assert.Equal(3, Rules.StaffedTurns);
+        Assert.Equal(new[] { 0, 0, 1, 1, 1, 2 }, turns.Select(t => t.State.Arms - Run(c, Clear(s), turns.IndexOf(t) + 1).S.Arms));
+        Assert.Equal(new[] { 1, 0, 0, 1, 0, 0 }, turns.Select(t => Charges(t).Count()));
+        Assert.Equal(2, turns.Sum(t => t.Why.Count(w => w.Key == CauseKeys.WorkshopArms)));
+        var made = turns[2].Why.Single(w => w.Key == CauseKeys.WorkshopArms);
+        Assert.Equal(("town_a", 1.0, "Town A: an arms workshop made 1 Arms"), (made.Target, made.Delta, made.Message));
+        Assert.Equal(idle.Arms + 2, after.Arms);
+        Assert.Equal((null, 0), (after.Workshops[id].PaidCost, after.Workshops[id].Progress));
+    }
+
+    static GameState Clear(GameState s) { var x = s.Clone(); x.Workshops.Clear(); return x; }
+
+    // R-ARMS-006 (27M-13: "The cost tier follows the worker (novice or ordinary / apprentice / expert)."; gdd03-balance
+    // workshop.cost 5/4/3, which docs/GDD.md:370 keeps as "Money per Arms"; OQ1, owner 2 November 2026: "Keep as ruled").
+    [Theory]
+    [InlineData(SyntheticWorkshopTier.Ordinary, 5)]
+    [InlineData(SyntheticWorkshopTier.Novice, 5)]
+    [InlineData(SyntheticWorkshopTier.Apprentice, 4)]
+    [InlineData(SyntheticWorkshopTier.Expert, 3)]
+    public void TheCyclePaysTheWorkersTierPrice(SyntheticWorkshopTier tier, int price)
+    {
+        Assert.Equal(price, Rules.Price(tier));
+        var (c, s, id) = Staffed(tier: tier);
+        var r = Step(c, s);
+        Assert.Equal(-price, Assert.Single(Charges(r)).Delta, 12);
+        Assert.Equal((decimal?)price, r.State.Workshops[id].PaidCost);
+    }
+
+    // R-ARMS-006 with R-MONEY-003 (27M-12: "paid like any GDD cost"): a Treasury short of the price borrows the rest.
+    [Fact]
+    public void AShortTreasuryBorrowsTheRest()
+    {
+        var (c, s, _) = Staffed(treasury: 2, debt: 0);
+        var r = Step(c, s);
+        Assert.Equal(-5.0, Assert.Single(Charges(r)).Delta, 12);
+        Assert.Equal(3.0, r.Why.Single(w => w.Key == CauseKeys.Borrowed && w.Args[0] == CauseKeys.Purpose.Workshop).Delta, 12);
+    }
+
+    // R-ARMS-006 (#1701 OQ4, owner 2 November 2026: "Refuse past the ceiling (Recommended)"): a cycle whose borrowing would
+    // take the debt past mvp.debt_ceiling (the fixture's 10) is not paid that month: the workshop pauses, the turn report
+    // says why, and nothing is borrowed. Exactly at the ceiling is allowed, and a Treasury that pays in full is never refused.
+    [Theory]
+    [InlineData(0, 8, false)]    // 8 + 5 = 13 > 10
+    [InlineData(0, 5, true)]     // 5 + 5 = 10, at the ceiling
+    [InlineData(5, 50, true)]    // paid in full: nothing borrowed
+    [InlineData(4, 9.5, false)]  // 9.5 + 1 = 10.5 > 10
+    public void PastTheDebtCeilingTheCycleWaits(double treasury, double debt, bool paid)
+    {
+        var (c, s, id) = Staffed(treasury, debt);
+        var r = Step(c, s);
+        Assert.Equal(paid ? 1 : 0, Charges(r).Count());
+        Assert.Equal(paid ? 1 : 0, r.State.Workshops[id].Progress);
+        var waits = r.Why.Where(w => w.Key == CauseKeys.WorkshopPaused).ToList();
+        if (paid) { Assert.Empty(waits); return; }
+        var line = Assert.Single(waits);
+        Assert.Equal((Workshops.DebtCeiling, "Town A: an arms workshop's next cycle waits: paying for it would take the debt past its ceiling"),
+            (line.Args.Single(), line.Message));
+        Assert.Null(r.State.Workshops[id].PaidCost);
+        Assert.DoesNotContain(r.Why, w => w.Key == CauseKeys.Borrowed && w.Args[0] == CauseKeys.Purpose.Workshop);
+    }
+
+    // R-ARMS-006 (27M-13): a cycle keeps the price it was paid at when the worker changes; only the next cycle is priced at
+    // the new worker's tier, and nothing is refunded or charged twice.
+    [Fact]
+    public void AWorkerChangeKeepsThePaidCycleAndPricesTheNext()
+    {
+        var (c, s, id) = Staffed(tier: SyntheticWorkshopTier.Ordinary, paid: 3m, progress: 1);   // paid at the expert's IL 3m
+        var (after, turns) = Run(c, s, 3);
+        Assert.Equal(new[] { 0, 0, 1 }, turns.Select(t => Charges(t).Count()));
+        Assert.Equal(1, turns[1].Why.Count(w => w.Key == CauseKeys.WorkshopArms));
+        Assert.Equal(-5.0, Charges(turns[2]).Single().Delta, 12);   // the next cycle: the ordinary worker's IL 5m
+        Assert.Equal((5m, 1), (after.Workshops[id].PaidCost, after.Workshops[id].Progress));
+    }
+
+    // R-ARMS-006, R-ARMS-007: an unstaffed workshop is paused, not cancelled: it keeps its paid cost and progress, is not
+    // charged again, and resumes where it stopped.
+    [Fact]
+    public void AnUnstaffedWorkshopPausesAndResumes()
+    {
+        var (c, s, id) = Built(civilians: 10, employed: 0, jobs: 0);
+        s.Treasury = 100;
+        var (after, turns) = Run(c, s, 5, t => t == 0 ? new Command[] { Staff(1) } : t == 1 ? new Command[] { Staff(0) } : t == 3 ? new Command[] { Staff(1) } : Array.Empty<Command>());
+        Assert.Equal(new[] { 1, 0, 0, 0, 0 }, turns.Select(t => Charges(t).Count()));
+        Assert.Equal(new[] { 1, 1, 1, 2, 0 }, turns.Select(t => t.State.Workshops[id].Progress));
+        Assert.Equal(1, turns[4].Why.Count(w => w.Key == CauseKeys.WorkshopArms));
+        Assert.Null(after.Workshops[id].PaidCost);
+    }
+
+    // R-ARMS-006 with R-CITY-010 (D6: a held city "pauses"): a workshop in a city the enemy holds is not charged and makes no
+    // progress, and resumes once the city is retaken.
+    [Fact]
+    public void AHeldCityPausesItsWorkshop()
+    {
+        var (c, s, id) = Staffed(paid: 5m, progress: 1);
+        s.Units.Add(s.NextId, new Unit(s.NextId++, "enemy", 1, 0, side: "egypt", strength: 3));
+        var held = Step(c, s);
+        Assert.Equal((5m, 1), (held.State.Workshops[id].PaidCost, held.State.Workshops[id].Progress));
+        Assert.Empty(Charges(held));
+        var free = held.State.Clone(); free.Units.Clear();
+        Assert.Equal(2, Step(c, free).State.Workshops[id].Progress);
+    }
+
+    // R-ARMS-006: the workshop's worker is one of the city's people without a job; when an order has taken them all (a Train
+    // order counts only the idle civilians), the workshop pauses that month and says why.
+    [Fact]
+    public void AWorkshopWithNoOneFreeWaits()
+    {
+        var (c, s, id) = Staffed(paid: 5m, progress: 1);
+        var x = s.Cities["town_a"];
+        s.Cities["town_a"] = new City(x.Id, x.HousingCapacity, 10, 10, 10, 0, 0, x.Condition, jobsDefault: false);
+        var r = Step(c, s);
+        Assert.Equal((5m, 1), (r.State.Workshops[id].PaidCost, r.State.Workshops[id].Progress));
+        var line = Assert.Single(r.Why, w => w.Key == CauseKeys.WorkshopPaused);
+        Assert.Equal((Workshops.NoWorker, "Town A: an arms workshop has no worker without a job this month"), (line.Args.Single(), line.Message));
+    }
+
+    // R-ARMS-006, R-SAVE: a game saved in the middle of a cycle replays to the same state: no charge or Arms is repeated.
+    [Fact]
+    public void AReplayedGameRepeatsNoChargeOrArms()
+    {
+        var c = Load(true);
+        var orders = new Dictionary<int, Command[]>
+        {
+            [0] = new Command[] { new StartProject(Workshops.ArmsWorkshop, "town_a", 1, 1) },
+            [3] = new Command[] { Staff(1) },
+        };
+        var whole = GameSession.New(c, 7, Mode.Historical);
+        for (int t = 0; t < 8; t++) whole.Step(orders.TryGetValue(t, out var o) ? o : Array.Empty<Command>());
+        var half = GameSession.New(c, 7, Mode.Historical);
+        for (int t = 0; t < 5; t++) half.Step(orders.TryGetValue(t, out var o) ? o : Array.Empty<Command>());
+        var loaded = GameSession.Load(c, half.Save.Write(), out _);
+        Assert.Equal(half.State.Hash(), loaded.State.Hash());
+        for (int t = 5; t < 8; t++) loaded.Step(Array.Empty<Command>());
+        Assert.Equal(whole.State.Hash(), loaded.State.Hash());
+        Assert.Contains(":on,Ordinary/5,2", half.State.Describe());   // saved two turns into its first cycle
+        Assert.Contains(":on,Ordinary/5,2", whole.State.Describe());   // two turns into the second: the first made its Arms
+    }
+
+    // ---- R-ARMS-007: 27M-14 and Q55 (slice D) ----
+
+    // R-ARMS-007 (Q55, owner-approved 1 November 2026: "No. Only the stated apprentice-to-expert progression counts"):
+    // months of workshop work change no profession, craftsman count or qualification.
+    [Fact]
+    public void WorkshopWorkChangesNoQualification()
+    {
+        var (c, s, _) = Staffed();
+        var (worked, turns) = Run(c, s, 6);
+        var (idle, _) = Run(c, Clear(s), 6);
+        Assert.Equal(2, turns.Sum(t => t.Why.Count(w => w.Key == CauseKeys.WorkshopArms)));
+        var a = worked.Cities["town_a"]; var b = idle.Cities["town_a"];
+        Assert.Equal((b.Civilians, b.Craftsmen, b.Employed, b.Qualified), (a.Civilians, a.Craftsmen, a.Employed, a.Qualified));
+    }
+
+    // R-ARMS-007 (27M-14: "Cycle progress is lost and the Money paid is not refunded."; #1701 OQ5, owner 2 November 2026:
+    // "Accept all four (Recommended)": the MVP has no destructive cancellation, destruction or transfer of a workshop):
+    // a built workshop cannot be cancelled, so its paid cycle is never refunded or lost by an order.
+    [Fact]
+    public void ABuiltWorkshopCannotBeCancelledSoItsCycleStays()
+    {
+        var (c, s, id) = Staffed(paid: 5m, progress: 2);
+        var r = Step(c, s, new CancelProject(id));
+        Assert.Equal("An arms workshop is already built", Assert.Single(r.Rejected).Reason);
+        Assert.Contains(r.Why, w => w.Key == CauseKeys.WorkshopArms);   // the cycle finished as usual
+        Assert.DoesNotContain(r.Why, w => w.Key == CauseKeys.Paid && w.Delta > 0);
+    }
+}

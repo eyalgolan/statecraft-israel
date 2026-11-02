@@ -152,6 +152,12 @@ namespace Statecraft.Game.UI
                     return text.Format(key, Settlement(cause.Target), ContentNames.Of(text, c.ProjectKinds.First(x => x.Id == A(0))));
                 case CauseKeys.ArmsBought:
                     return text.Format(key, cause.Delta, Money(c, "treasury", A(0)));
+                case CauseKeys.WorkshopWorkers:   // R-ARMS-005 (#1701)
+                    return text.Format(key, Settlement(cause.Target), A(0));
+                case CauseKeys.WorkshopArms:      // R-ARMS-006
+                    return text.Format(key, Settlement(cause.Target));
+                case CauseKeys.WorkshopPaused:    // R-ARMS-006: why.cause.workshop_paused.<Workshops.NoWorker or .DebtCeiling>
+                    return text.Format(key + "." + A(0), Settlement(cause.Target));
                 case CauseKeys.DollarsConverted:
                     return text.Format(key, Money(c, "fx_reserves", A(0)), PlayerText.MoneyChange(c, "treasury", cause.Delta));
                 case CauseKeys.FoodHarvest:
