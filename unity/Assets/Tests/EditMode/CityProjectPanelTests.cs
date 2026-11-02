@@ -459,7 +459,9 @@ public class WorkshopPanelTests
             StringAssert.Contains(TownsHe[City], line);
             // A no-break space joins "יש" to the count (between its left-to-right marks), so the panel never wraps "(יש" and
             // "0)" onto two lines.
-            StringAssert.EndsWith("(יש\u00A0\u200E0\u200E)", line);
+            // Ordinal on purpose: StringAssert compares by culture, which ignores U+200E (2359a680e) and may not tell U+00A0
+            // from a plain space.
+            Assert.IsTrue(line.EndsWith("(יש\u00A0\u200E0\u200E)", StringComparison.Ordinal), line);
         }
         else Assert.AreEqual("Haifa has 0 civilians and craftsmen without a job", line);
     }
@@ -470,8 +472,9 @@ public class WorkshopPanelTests
     {
         foreach (var key in new[] { "workshop.refused_people", "workshop.refused_people_no_job" })
         {
-            StringAssert.EndsWith("(יש\u00A0{1})", He[key], key);
-            StringAssert.DoesNotContain("יש {1}", He[key], key);
+            // Ordinal, as above: a culture compare may not tell U+00A0 from a plain space.
+            Assert.IsTrue(He[key].EndsWith("(יש\u00A0{1})", StringComparison.Ordinal), key + ": " + He[key]);
+            Assert.AreEqual(-1, He[key].IndexOf("יש {1}", StringComparison.Ordinal), key + ": " + He[key]);
         }
     }
 
