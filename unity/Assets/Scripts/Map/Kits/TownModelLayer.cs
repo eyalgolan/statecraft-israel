@@ -127,6 +127,7 @@ namespace Statecraft.Game.Map.Kits
         readonly Dictionary<TownModel, Model> models = new Dictionary<TownModel, Model>();
         readonly Dictionary<string, TownModel[]> required = new Dictionary<string, TownModel[]>(System.StringComparer.Ordinal);
         readonly List<int> deadCameras = new List<int>();
+        readonly HashSet<TownModel> warnedKinds = new HashSet<TownModel>();
         readonly List<System.IDisposable> retiring = new List<System.IDisposable>();
         readonly List<(Renderer renderer, bool off)> previousRenderers = new List<(Renderer, bool)>();
         bool reconcileDirty;
@@ -438,16 +439,8 @@ namespace Statecraft.Game.Map.Kits
                 if (Collection.CollectionResidencyView.TryGroundFocus(cam, out var focus))
                 {
                     next = choice.hadFocus && focus == choice.focus && EdgeAllowance == null ? choice.selected : FocusedTownsWithFootprints(
-                        places, admissionFootprintsById, townFootprints, focus, choice.primary, EdgeAllowance == null ? null : (local, edge) =>
-                    {
-                        var admitted = new List<string>();
-                        foreach (var c in OrderedChoices()) if (c.primary != null && !admitted.Contains(c.primary)) admitted.Add(c.primary);
-                        foreach (string id in local) if (!admitted.Contains(id)) admitted.Add(id);
-                        // Include other retained edges so the allowance sees existing residency as well as all primaries.
-                        foreach (var c in OrderedChoices()) if (c != choice)
-                            foreach (string id in c.selected) if (!admitted.Contains(id)) admitted.Add(id);
-                        return EdgeAllowance!(admitted, edge);
-                    }, admittedEnterM, admittedExitM, admittedEdgeM, admittedEdges);
+                        places, admissionFootprintsById, townFootprints, focus, choice.primary, AllowanceFor(choice),
+                        admittedEnterM, admittedExitM, admittedEdgeM, admittedEdges);
                     choice.focus = focus; choice.hadFocus = true;
                 }
                 else choice.hadFocus = false;
@@ -481,6 +474,20 @@ namespace Statecraft.Game.Map.Kits
                 Remember(kit, ready); Remember(close, !ready);
             }
         }
+
+        /// <summary>The edge allowance for <paramref name="owner"/>'s focus selection, or null without one. A method of its own,
+        /// so PrepareCameraCore holds no closure: a closure there was allocated on every call, far off too, where the four
+        /// cities now draw.</summary>
+        System.Func<IReadOnlyList<string>, string, bool>? AllowanceFor(Choice owner) => EdgeAllowance == null ? null : (local, edge) =>
+        {
+            var admitted = new List<string>();
+            foreach (var c in OrderedChoices()) if (c.primary != null && !admitted.Contains(c.primary)) admitted.Add(c.primary);
+            foreach (string id in local) if (!admitted.Contains(id)) admitted.Add(id);
+            // Include other retained edges so the allowance sees existing residency as well as all primaries.
+            foreach (var c in OrderedChoices()) if (c != owner)
+                foreach (string id in c.selected) if (!admitted.Contains(id)) admitted.Add(id);
+            return EdgeAllowance!(admitted, edge);
+        };
 
         /// <summary>Owner ruling, 31 Oct 2026, "Load all in view (Recommended)": under the production policy a close camera
         /// admits every town and village tile in its view (<see cref="ViewMarginM"/>, kept to <see cref="ViewKeepM"/>), nearest
@@ -715,7 +722,13 @@ namespace Statecraft.Game.Map.Kits
                     model.answered = true; Collection.CollectionResidencyMetrics.MarkDirty();
                     var filter = prefab == null ? null : prefab.GetComponentInChildren<MeshFilter>(true);
                     var renderer = prefab == null ? null : prefab.GetComponentInChildren<MeshRenderer>(true);
-                    if (filter == null || renderer == null || filter.sharedMesh == null || renderer.sharedMaterial == null) return;
+                    if (filter == null || renderer == null || filter.sharedMesh == null || renderer.sharedMaterial == null)
+                    {
+                        // Once per kind for this layer: its places keep their code-built kits (Tel Aviv, Jerusalem, Haifa and
+                        // Jaffa at every zoom: they have no whole-town model to fall back to).
+                        if (warnedKinds.Add(id)) Debug.LogWarning($"TOWN MODELS: {TownModels.Ids[(int)id]} did not stream; the places built from it keep their kits.");
+                        return;
+                    }
                     model.mesh = filter.sharedMesh; model.material = renderer.sharedMaterial; Collection.CollectionResidencyMetrics.MarkDirty();
                 });
                 if (isActiveAndEnabled && generation == lifetimeGeneration && models.TryGetValue(id, out var live) && live == model) model.lease = lease;
@@ -788,7 +801,8 @@ namespace Statecraft.Game.Map.Kits
             // Far off too: ReadyForTown admits the cities drawn at every zoom there (AtZoom), and nothing else.
             if (Draw)
             {
-                var planes = GeometryUtility.CalculateFrustumPlanes(cam);
+                // Into the scratch array (no Plane[6] per camera per frame: this runs far off too, the common view).
+                GeometryUtility.CalculateFrustumPlanes(cam.projectionMatrix * cam.worldToCameraMatrix, frustum);
                 foreach (var t in tiles)
                 {
                     if (!ReadyForTown(t.town, cam)) continue;
@@ -796,7 +810,7 @@ namespace Statecraft.Game.Map.Kits
                     if (villageTiles.TryGetValue(t.town, out var villages) && !VillagesReady(villages, cam)) continue;
                     // The shadow pass sees casters outside the view too: cull on a widened box (as the trees).
                     var wide = t.bounds; wide.Expand(new Vector3(3000f, 0f, 3000f));
-                    if (!GeometryUtility.TestPlanesAABB(planes, wide)) continue;
+                    if (!GeometryUtility.TestPlanesAABB(frustum, wide)) continue;
                     var mesh = set != null ? set.Mesh(t.model) : models[t.model].mesh!; // always the original mesh
                     var rp = new RenderParams(set != null ? set.Material(t.model) : models[t.model].material!)
                     {

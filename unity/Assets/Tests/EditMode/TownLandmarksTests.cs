@@ -193,7 +193,7 @@ public class TownLandmarksTests
         var footprint = new Dictionary<string, (Vector2 centre, float radius)>();
         foreach (var (centre, radius, id) in map.KitFootprints) if (!footprint.ContainsKey(id)) footprint[id] = (centre, radius);
         var mapped = Mapped(map);
-        Assert.Greater(mapped.Count, 15, "the four cities have no whole-town model since the owner's ruling of 2 November 2026");
+        Assert.AreEqual(18, mapped.Count, "22 before the owner's ruling of 2 November 2026, less the four cities");
         foreach (var s in mapped)
         {
             var child = t.transform.Find(s.Id);

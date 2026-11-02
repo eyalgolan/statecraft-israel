@@ -509,9 +509,11 @@ public class TownModelTests
         int bigInstances = big.Sum(id => layer.CountFor(id));
         void Check(PromoPose pose, bool close)
         {
-            // Up close every detailed town; far off only the four cities, where this fixture's camera admits them (it has no
-            // view admission beyond the focus distance: TheFourCitiesDrawTheirBuildingModelsAtEveryZoom checks production's).
-            bool Ready(string town) => layer.CountFor(town) > 0 && (close || (big.Contains(town) && layer.ReadyForTown(town, cam)));
+            // Up close every detailed town; far off only the four cities, and in this fixture only within its focus admission
+            // (OriginalModelDistance.EnterM, 120 km: gameplay03 at 60 km, not diorama02 at 250 km). This fixture has no view
+            // admission; TheFourCitiesDrawTheirBuildingModelsAtEveryZoom checks production's at 250 km.
+            bool farFocus = pose.Distance < Statecraft.Game.Map.Collection.OriginalModelDistance.EnterM;
+            bool Ready(string town) => layer.CountFor(town) > 0 && (close || (big.Contains(town) && farFocus));
             foreach (var s in map.Settlements)
                 if (!close && !big.Contains(s.Id)) Assert.IsFalse(layer.ReadyForTown(s.Id, cam), pose.Name + ": " + s.Id + " has no building model far off");
             Assert.AreEqual(close, layer.LastClose, pose.Name);
@@ -531,8 +533,11 @@ public class TownModelTests
             results.Add($"{pose.Name}: close={close} {layer.LastDrawn} models, {layer.LastTriangles} triangles, {layer.LastDraws} draws");
             if (!close)
             {
-                // Far off, only the four cities' buildings, never more than all of theirs.
+                // Far off, only the four cities' buildings, never more than all of theirs: some at gameplay03 (Tel Aviv and
+                // Jaffa in view), none at diorama02 (outside this fixture's focus admission).
                 Assert.LessOrEqual(layer.LastDrawn, bigInstances, pose.Name + ": no other town's building model");
+                if (farFocus) Assert.Greater(layer.LastDrawn, 0, pose.Name + ": the four cities' buildings in view");
+                else Assert.AreEqual(0, layer.LastDrawn, pose.Name + ": nothing outside the fixture's focus admission");
                 return;
             }
             Assert.Greater(layer.LastDrawn, 100, pose.Name + ": models drawn");
