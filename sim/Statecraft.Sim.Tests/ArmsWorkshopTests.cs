@@ -168,6 +168,7 @@ public class ArmsWorkshopTests
         new object[] { "more than built", "Town A has 1 arms workshop" },
         new object[] { "still building", "Town A has 0 arms workshops" },
         new object[] { "nobody without a job", "Town A has 0 civilians and craftsmen without a job" },
+        new object[] { "nobody at all", "Town A has 0 civilians and craftsmen" },
     };
 
     // R-ARMS-005: each refusal leaves the state as if the order had not been given.
@@ -175,7 +176,9 @@ public class ArmsWorkshopTests
     [MemberData(nameof(StaffRefusals))]
     public void StaffingRefusalsChangeNothing(string why, string reason)
     {
-        var (c, s, id) = Built(civilians: 10, employed: why == "nobody without a job" ? 10 : 6, jobs: 10);
+        // "nobody without a job": the player set the jobs (R-CITY-009's default is off), so no job is given up for it.
+        var (c, s, id) = Built(civilians: why == "nobody at all" ? 0 : 10, employed: why == "nobody without a job" ? 10 : why == "nobody at all" ? 0 : 6, jobs: 10,
+            jobsDefault: why != "nobody without a job");
         if (why == "gdd-0.1") { c = Load(false); s = Simulation.NewGame(c, 1, Mode.Historical); }
         if (why == "still building") s.CityProjects[id] = new CityProject(id, Workshops.ArmsWorkshop, "town_a", 1, 1, 2);
         var order = why switch
@@ -430,5 +433,88 @@ public class ArmsWorkshopTests
         Assert.Equal("An arms workshop is already built", Assert.Single(r.Rejected).Reason);
         Assert.Contains(r.Why, w => w.Key == CauseKeys.WorkshopArms);   // the cycle finished as usual
         Assert.DoesNotContain(r.Why, w => w.Key == CauseKeys.Paid && w.Delta > 0);
+    }
+
+    // ---- Review fixes (2 November 2026) ----
+
+    // R-ARMS-004 (#1701 OQ2, owner 2 November 2026: "IL 15m, 3 turns (Recommended)"): the real row's cost and turns are
+    // the gdd-0.3 balance catalogue's arms_workshop.parts.cost and .work, so a catalogue change cannot drift from it silently.
+    [Fact]
+    public void TheRealRowMatchesTheCataloguesCostAndWork()
+    {
+        var line = File.ReadAllLines(Path.Combine(RealContentTests.ContentRoot(), "projects.yaml")).Single(l => l.Contains("id: arms_workshop"));
+        var c = Load(true, Fixture.GddProjects + line + "\n");
+        var k = c.ProjectKinds.Single(x => x.Id == Workshops.ArmsWorkshop);
+        var row = Gdd03ProjectCatalogue.Read(c).Projects.Single(p => p.Key == Workshops.ArmsWorkshop);
+        Assert.Equal((15m, 3m), (row.Cost.Amount, row.Work.Amount));
+        Assert.Equal((row.Cost.Amount, row.Work.Amount), ((decimal)k.Cost, (decimal)k.Turns));
+    }
+
+    // R-ARMS-006: two staffed workshops in one city with one person without a job: the lower project id works, the other
+    // waits with no_worker, whatever order the records were added in.
+    [Fact]
+    public void TwoWorkshopsAndOneFreePersonStaffTheLowerIdOnly()
+    {
+        var (c, s, first) = Built(civilians: 10, employed: 9, jobs: 9, jobsDefault: false);
+        var second = s.NextId++;
+        s.CityProjects.Add(second, new CityProject(second, Workshops.ArmsWorkshop, "town_a", 2, 0, 0, s.Date));
+        s.Workshops.Add(second, new Workshop(second, true, SyntheticWorkshopTier.Ordinary));
+        s.Workshops.Add(first, new Workshop(first, true, SyntheticWorkshopTier.Ordinary));
+        s.Treasury = 100;
+        var r = Step(c, s);
+        Assert.Single(Charges(r));
+        Assert.Equal((5m, 1), (r.State.Workshops[first].PaidCost, r.State.Workshops[first].Progress));
+        Assert.Equal(((decimal?)null, 0), (r.State.Workshops[second].PaidCost, r.State.Workshops[second].Progress));
+        Assert.Equal(Workshops.NoWorker, Assert.Single(r.Why, w => w.Key == CauseKeys.WorkshopPaused).Args.Single());
+    }
+
+    // R-TRAIN-001, R-QUAL-005 with R-ARMS-005: a staffed workshop's worker holds no job but is not idle, so neither Train
+    // nor a pioneer reassignment (which takes civilians out of the city) can take them.
+    [Fact]
+    public void TrainCannotTakeAStaffedWorkshopsWorker()
+    {
+        var (c, s, id) = Built(civilians: 3, employed: 2, jobs: 2, jobsDefault: false);
+        var x = s.Cities["town_a"];
+        s.Cities["town_a"] = x.WithQualified(new Qualified(0, 0, new[] { 0 }));
+        s.Workshops.Add(id, new Workshop(id, true, SyntheticWorkshopTier.Ordinary));
+        Assert.Equal(0, Training.Available(s, "town_a", Array.Empty<Command>()));
+        foreach (var order in new Command[] { new Train("town_a", "halutz", 1), new ReassignPioneers("town_a", "halutz", 1) })
+        {
+            var r = Step(c, s, order);
+            Assert.Equal("Town A has 0 civilians without work", Assert.Single(r.Rejected).Reason);
+            Assert.DoesNotContain(r.Why, w => w.Key == CauseKeys.WorkshopPaused);
+        }
+    }
+
+    // R-TRAIN-001: Training.Available reads only a "job" AssignWorkers as a jobs order; a pending "workshop" order takes
+    // its newly staffed workers off the idle civilians instead, so a Train up to the limit stays accepted in either order.
+    [Fact]
+    public void APendingStaffingOrderIsNotAJobsOrder()
+    {
+        var (c, s, _) = Built(civilians: 10, employed: 4, jobs: 10, jobsDefault: false);
+        var pending = new Command[] { Staff(1) };
+        Assert.Equal(5, Training.Available(s, "town_a", pending));
+        foreach (var order in new[] { new Command[] { Staff(1), new Train("town_a", "halutz", 5) }, new Command[] { new Train("town_a", "halutz", 5), Staff(1) } })
+            Assert.Empty(Step(c, s, order).Rejected);
+        Assert.Equal(6, Training.Available(s, "town_a", new Command[] { new AssignWorkers("town_a", "job", 4) }));
+    }
+
+    // R-ARMS-005 with R-CITY-009: while the city's job default is on, staffing takes its worker from the default's jobs and
+    // leaves the default on, so a city whose people are all in work can staff a workshop; the default then fills one job fewer.
+    [Fact]
+    public void StaffingTakesItsWorkerFromTheJobDefault()
+    {
+        var (c, s, id) = Built(civilians: 10, employed: 10, jobs: 10);
+        s.Treasury = 100;
+        var r = Step(c, s, Staff(1));
+        Assert.Empty(r.Rejected);
+        Assert.True(r.State.Workshops[id].Staffed);
+        var x = r.State.Cities["town_a"];
+        Assert.Equal((9, true), (x.Employed, x.JobsDefault));
+        var jobs = Assert.Single(r.Why, w => w.Key == CauseKeys.WorkersAssigned && w.Target == "town_a");
+        Assert.Equal((-1.0, "Town A: 9 groups in work"), (jobs.Delta, jobs.Message));
+        Assert.Single(Charges(r));   // the workshop works this month
+        Assert.DoesNotContain(r.Why, w => w.Key == CauseKeys.WorkshopPaused);
+        Assert.Equal(9, Step(c, r.State).State.Cities["town_a"].Employed);
     }
 }

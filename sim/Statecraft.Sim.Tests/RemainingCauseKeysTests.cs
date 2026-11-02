@@ -115,7 +115,7 @@ public class RemainingCauseKeysTests
                 sites++;
             }
         }
-        Assert.Equal(111, sites);   // 111 with the arms workshops' four (R-ARMS-005, R-ARMS-006; #1701); 107 with R-MONEY-004's DollarsConverted (#813); 106 since #2212: EconomySystem.OtherMoney's line (105 since #2199: PayOrBorrow's Paid line)
+        Assert.Equal(112, sites);   // 112 with the arms workshops' five (R-ARMS-005 with its job-default line, R-ARMS-006; #1701); 107 with R-MONEY-004's DollarsConverted (#813); 106 since #2212: EconomySystem.OtherMoney's line (105 since #2199: PayOrBorrow's Paid line)
     }
 
     [Fact]

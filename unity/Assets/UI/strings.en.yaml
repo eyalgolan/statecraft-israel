@@ -481,6 +481,11 @@ report.enemy_move: "{0} moved to a new position"
 report.enemy_attack: "{0} launched an attack on one of your units"
 report.enemy_fortify: "{0} fortified its position"
 report.unit: "Force {0}"
+# The arms workshops' lines (#1701 A1; owner, 2 November 2026: "Yes, in the panel (Recommended)", whose option gave both
+# lines' wording): {0} the city's name. A no-worker pause is on the Why screen only.
+report.workshops: "Arms workshops"
+report.workshop_arms: "Workshop in {0}: +1 Arms"
+report.workshop_paused_debt: "Workshop in {0} paused: debt ceiling"
 # The end screen (#812; D-H4): the sim's end report (EndReport.For, #810), formatted only. {0} the card's title, {1} the
 # player's date, {2} the historical date; the population's {1} is the date of its CBS anchor and {2} the anchor's count.
 end.title: "The game has ended"

@@ -180,6 +180,57 @@ public class TurnReportTests
         }
     }
 
+    /// <summary>#1701 A1 (owner, 2 November 2026: "Yes, in the panel (Recommended)"; the option: "The turn-report panel shows
+    /// 'Workshop in &lt;city&gt;: +1 Arms' and 'Workshop in &lt;city&gt; paused: debt ceiling'."): the sim's workshop causes
+    /// (R-ARMS-006) get their own row after the stocks, in the sim's order, the city named in the player's language. A
+    /// no-worker pause is not one of the two ruled lines and stays on the Why screen; a turn with none of them has no row.
+    /// The real content is gdd-0.1, which has no workshop, so the causes are added to the opening turn's own.</summary>
+    [Test]
+    public void TheWorkshopsArmsAndCeilingPauseAreReportedInBothLanguages()
+    {
+        var namesHe = Statecraft.Game.Map.SettlementPlacer.Parse(
+            File.ReadAllText(Path.Combine(Paths.Content, "map", "settlements_1948.yaml"))).ToDictionary(s => s.Id, s => s.NameHe);
+        var added = new[]
+        {
+            new Cause("city", "tel_aviv", 1, "Tel Aviv: an arms workshop made 1 Arms", key: CauseKeys.WorkshopArms),
+            new Cause("city", "haifa", 0, "Haifa: an arms workshop has no worker without a job this month", key: CauseKeys.WorkshopPaused, args: new[] { Workshops.NoWorker }),
+            new Cause("city", "haifa", 0, "Haifa: an arms workshop's next cycle waits", key: CauseKeys.WorkshopPaused, args: new[] { Workshops.DebtCeiling }),
+        };
+        foreach (var hebrew in new[] { false, true })
+        {
+            var text = hebrew ? He : En;
+            // The turn runs as usual; its result gets the three causes through Session.Last's private setter (as
+            // AnAttackThatNamesNoAttackersGivesNoLine does) before the report reads it.
+            using var k = new Kit(text, (g, cmds) =>
+            {
+                var r = g.EndTurn(cmds);
+                var with = new StepResult(r.State, r.Why.Concat(added).ToList(), r.Rejected);
+                typeof(GameSession).GetProperty(nameof(GameSession.Last))!.SetValue(g, with);
+                return with;
+            });
+            k.Report.TownNamesHe = namesHe;
+            k.Bridge.EndTurn();
+            string Town(string id) => hebrew ? namesHe[id] : PlayerText.Settlement(C, id);
+            Assert.AreEqual(text["report.workshops"], k.Ui.Q<Label>("turn-report-heading-" + TurnReportPresenter.WorkshopRow).text);
+            CollectionAssert.AreEqual(new[]
+            {
+                text.Format("report.workshop_arms", Town("tel_aviv")),
+                text.Format("report.workshop_paused_debt", Town("haifa")),
+            }, Causes(k.Ui, TurnReportPresenter.WorkshopRow));
+            if (hebrew)
+            {
+                Assert.IsTrue(Causes(k.Ui, TurnReportPresenter.WorkshopRow).All(UiDirection.RightToLeft), "both lines are in Hebrew");
+                StringAssert.Contains(namesHe["tel_aviv"], Causes(k.Ui, TurnReportPresenter.WorkshopRow)[0]);
+            }
+            else
+                CollectionAssert.AreEqual(new[] { "Workshop in Tel Aviv: +1 Arms", "Workshop in Haifa paused: debt ceiling" },
+                    Causes(k.Ui, TurnReportPresenter.WorkshopRow), "the owner's ruled wording");
+        }
+        using var plain = new Kit(En);
+        plain.Bridge.EndTurn();
+        Assert.IsNull(plain.Ui.Root.Q("turn-report-" + TurnReportPresenter.WorkshopRow), "no workshop cause: no row");
+    }
+
     /// <summary>#1297: a standing enemy attack (R-ENEMY-003) is reported on every turn it engages, not only on the turn it is
     /// ordered. The opening turn is set up as a later one: the Arab Liberation Army already attacks Golani's hex, which it keeps
     /// (no order is given this turn) and which engages in step 2 (R-COMBAT-002).</summary>

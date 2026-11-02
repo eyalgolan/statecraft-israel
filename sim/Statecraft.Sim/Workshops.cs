@@ -43,8 +43,17 @@ namespace Statecraft.Sim
                 return FormattableString.Invariant($"{name} has {built.Count} {(built.Count == 1 ? "arms workshop" : "arms workshops")}");
             var x = s.Cities[city];
             var staffed = Staffed(s, city);
-            var free = x.Civilians + x.Craftsmen - x.Employed - staffed;
-            if (count - staffed > free) return FormattableString.Invariant($"{name} has {Math.Max(0, free)} civilians and craftsmen without a job");
+            // R-CITY-009: while the city's job default is on, a newly staffed workshop may take its worker from the default's
+            // jobs (the default then fills one job fewer, R-CITY-001); a number the player set is not lowered.
+            var free = x.Civilians + x.Craftsmen - (x.JobsDefault ? 0 : x.Employed) - staffed;
+            if (count - staffed > free)
+                return FormattableString.Invariant($"{name} has {Math.Max(0, free)} civilians and craftsmen{(x.JobsDefault ? "" : " without a job")}");
+            var employed = Math.Min(x.Employed, x.Civilians + x.Craftsmen - count);
+            if (employed != x.Employed)
+            {
+                s.Cities[city] = x.WithCounts(x.Civilians, employed, x.Refugees);
+                why.Add(new Cause("city", city, employed - x.Employed, FormattableString.Invariant($"{name}: {employed} groups in work"), key: CauseKeys.WorkersAssigned, args: new[] { CauseKeys.Number(employed) }));
+            }
             for (int i = 0; i < built.Count; i++)
             {
                 var on = i < count;

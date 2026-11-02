@@ -529,6 +529,11 @@ report.enemy_move: "{0} עבר לעמדה חדשה"
 report.enemy_attack: "{0} פתח בהתקפה על אחת היחידות שלכם"
 report.enemy_fortify: "{0} התבצר בעמדתו"
 report.unit: "כוח {0}"
+# The arms workshops' lines (#1701 A1), {0} the city's name, in brackets so no prefix joins a name that may fall back to
+# English (HE-07); the Arms count as "Label: N" (HE-04). Agent-drafted Hebrew; native review pending (#564).
+report.workshops: "סדנאות נשק"
+report.workshop_arms: "סדנת נשק ({0}): תוספת נשק: 1"
+report.workshop_paused_debt: "סדנת נשק ({0}) בהמתנה: תקרת החוב"
 # The end screen (#812; D-H4): the sim's end report, formatted only. For the native reviewer (#564).
 end.title: "המשחק הסתיים"
 end.outcome.mvp_ended: "המשחק הגיע לתורו האחרון."
