@@ -543,6 +543,30 @@ public class CauseTextTests
         }
     }
 
+    /// <summary>#1701: the Why screen (WhyPresenter.Show) words every arms workshop cause from why.cause.&lt;key&gt; with the city
+    /// named, in both languages; a workshop key outside CauseText's remaining set fell to UnitNames.Line and threw on a
+    /// missing why.line.&lt;key&gt; (the coordinator's Unity run at 7cbd257b6).</summary>
+    [Test]
+    public void EveryWorkshopCauseIsWordedFromItsWhyCauseKeyOnTheWhyScreen()
+    {
+        var c = RemainingFixture(); var en = En; var he = He;
+        var names = new Dictionary<string, string> { ["town"] = "עיר" };
+        var rows = new (Cause cause, string key, string[] extra)[]
+        {
+            (new Cause("city", "town", 2, "Town: arms workshops staffed: 2", key: CauseKeys.WorkshopWorkers, args: new[] { "2" }), "why.cause.workshop_workers", new[] { "2" }),
+            (new Cause("city", "town", 1, "Town: an arms workshop made 1 Arms", key: CauseKeys.WorkshopArms), "why.cause.workshop_arms", new string[0]),
+            (new Cause("city", "town", 0, "Town: an arms workshop has no worker without a job this month", key: CauseKeys.WorkshopPaused, args: new[] { Workshops.NoWorker }), "why.cause.workshop_paused.no_worker", new string[0]),
+            (new Cause("city", "town", 0, "Town: an arms workshop's next cycle waits: paying for it would take the debt past its ceiling", key: CauseKeys.WorkshopPaused, args: new[] { Workshops.DebtCeiling }), "why.cause.workshop_paused.debt_ceiling", new string[0]),
+        };
+        foreach (var (cause, key, extra) in rows)
+            foreach (var (text, town) in new[] { (en, "Town"), (he, "עיר") })
+            {
+                string line = "";
+                Assert.DoesNotThrow(() => line = CauseText.Line(cause, c, NoRows, text, names), key);
+                Assert.AreEqual(text.Format(key, new object[] { town }.Concat(extra).ToArray()), line, key);
+            }
+    }
+
     [Test]
     public void RemainingRowsPreserveTheWholeEnglishReportInBothLoops()
     {
