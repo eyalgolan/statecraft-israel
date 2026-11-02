@@ -164,6 +164,28 @@ namespace Statecraft.Game.Map.Collection
         /// the session has run.</summary>
         static float LoopAngle(float seconds) => 2f * Mathf.PI * Mathf.Repeat(seconds, SpitfireLoopSeconds) / SpitfireLoopSeconds;
 
+        /// <summary>The loop's curvature (1/m) <paramref name="seconds"/> into it: for x = a sin t, z = -b cos t,
+        /// ab / (a² cos² t + b² sin² t)^(3/2). Least on the passes (b / a², at 0 and half a period) and most at the turns at
+        /// the ends (a / b², a quarter and three quarters of a period in).</summary>
+        public static float LoopCurvature(float seconds)
+        {
+            float t = LoopAngle(seconds), a = SpitfireLoopHalfLengthM, b = SpitfireLoopHalfWidthM;
+            float c = Mathf.Cos(t), s = Mathf.Sin(t);
+            return a * b / Mathf.Pow(a * a * c * c + b * b * s * s, 1.5f);
+        }
+
+        /// <summary>The bank (degrees, into the turn) for a path's <paramref name="curvature"/> (1/m): none on a straight.
+        /// STUB (red stage).</summary>
+        public static float BankFor(float curvature) => 0f;
+
+        /// <summary>The Spitfire's bank <paramref name="seconds"/> into its loop (degrees, its inner wing down):
+        /// <see cref="BankFor"/> the loop's curvature there.</summary>
+        public static float LoopBankDegrees(float seconds) => BankFor(LoopCurvature(seconds));
+
+        /// <summary>The Spitfire's parts beside its airframe: the propeller disc (a child of its mesh), and the object, next
+        /// to the aircraft in this layer, that holds its shadow and its flag.</summary>
+        public const string SpitfirePropellerName = "Propeller", SpitfireMarksSuffix = "-marks", SpitfireShadowName = "Shadow", SpitfireFlagName = "Flag";
+
         /// <summary>A boat's spot: out from its coast's shore point (SeaCraft.Coasts) between SeaCraft.OffshoreNearM and
         /// OffshoreM, at a seeded spread along the shore, the first whose hull passes SeaCraft.Clear against the harbour works
         /// and every boat already placed. Null when none is.</summary>

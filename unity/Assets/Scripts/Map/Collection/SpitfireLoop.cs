@@ -15,6 +15,11 @@ namespace Statecraft.Game.Map.Collection
     {
         Vector3 centre, offset; Quaternion level; bool still;
 
+        /// <summary>STUB (red stage).</summary>
+        public const float PropDegreesPerSecond = 1500f, ShadowLiftM = 30f;
+        public static readonly Vector3 SunRay = Quaternion.Euler(MapLighting.SunElevation, MapLighting.SunAzimuth - 180f, 0f) * Vector3.forward;
+        internal void Attach(Transform? prop, Transform? shadow, Transform? flag, Terrain? ground, Vector2 shadowHalf) { }
+
         /// <summary>The animation clock, Time.time. Test seam (internal; the tests see it through InternalsVisibleTo): an
         /// EditMode test has no frame clock.</summary>
         internal static Func<float> Clock = () => Time.time;
