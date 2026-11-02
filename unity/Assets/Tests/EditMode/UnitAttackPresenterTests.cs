@@ -113,6 +113,22 @@ public class UnitAttackPresenterTests
         CollectionAssert.Contains(played.Skip(1), 9);
     }
 
+    /// <summary>A mid-turn save loads with its attack order already committed (R-SAVE-003), so the bridge never queued it
+    /// (ported from Tal Heuberger's #2078): End Turn runs it again first, and it is not played; it played when it was given.</summary>
+    [Test]
+    public void ALoadedOpenTurnsAttackIsNotPlayedAtEndTurn()
+    {
+        var session = NewSession();
+        Assert.IsNull(session.Commit(AttackNextTo(session, out int attacker)));
+        var bridge = new SimBridge(session, Text);
+        var played = new List<int>();
+        using var presenter = new UnitAttackPresenter(bridge, id => { played.Add(id); return true; });
+        var r = bridge.EndTurn();
+        Assert.IsTrue(r.Why.Any(x => x.Key == WhyKeys.Engagement && UnitAttackPresenter.Attackers(x).Contains(attacker)),
+            "the sim replays the restored attack at End Turn");
+        CollectionAssert.DoesNotContain(played, attacker);
+    }
+
     [Test]
     public void ALoadPlaysNoHistoryAndAMissingTokenIsNotRetried()
     {
