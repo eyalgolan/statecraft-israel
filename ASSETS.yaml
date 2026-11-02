@@ -6,13 +6,14 @@
 # Globs use fnmatch: '*' also matches '/'. Portrait rows live in ASSETS.portraits.yaml (scripts/oss/commons_licences.py).
 # ai_generated: true marks AI output (the future Steam/itch.io disclosure is generated from it).
 rules:
-  # #1273 full originals. Exact-file rows precede historical derivative globs.
-  - glob: "unity/Assets/StreamingAssets/Audio/Music/Main_1.3.ogg"
+  # #39 music by Afik Faerman.
+  - glob: "unity/Assets/StreamingAssets/audio/music/Main_1.3.ogg"
     licence: CC-BY-NC-ND-4.0
     artist: "Afik Faerman"
     ai_generated: false
     status: verified
-    source: "Original orchestral arrangement and VST-based recording building on the public-domain melody of "Hatikvah," created for Statecraft:Israel. WAV master SHA-256: 6DA021BF1302DF2D668FD8C14CD927317C85F12307C1384F6C8E56748F3F88DC. OGG Vorbis exported directly from Steinberg Cubase, quality 1.00 (maximum), interleaved stereo. Proposed loop points: 00:10 to 04:03."
+    source: "Original orchestral arrangement and VST-based recording building on the public-domain melody of 'Hatikvah', created for Statecraft: Israel. WAV master SHA-256: 6DA021BF1302DF2D668FD8C14CD927317C85F12307C1384F6C8E56748F3F88DC. Exported from Steinberg Cubase as OGG Vorbis, quality 1.00 (maximum), interleaved stereo (12,132,688 bytes, about 388 kbit/s); re-encoded by the maintainers with libvorbis 1.3.7 (oggenc -q 7, about 181 kbit/s, same 44.1 kHz stereo and length, no other processing) to fit the repository's 10 MiB per-file limit, a format change only. Proposed loop points: 00:10 to 04:03."
+  # #1273 full originals. Exact-file rows precede historical derivative globs.
   - glob: "unity/Assets/Art/Collection/figure-arab-villager-v1/figure-arab-villager-v1.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
