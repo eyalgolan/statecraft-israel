@@ -512,4 +512,177 @@ public class ShareShotTests
         }
     }
 
+    // #1653: C# lifetime/bridge regressions only. No DOM, native sheet or promise is exercised here.
+    sealed class ShareAttemptUi : IDisposable
+    {
+        public readonly UiTestKit Ui = new UiTestKit();
+        public readonly List<Action> Checks = new List<Action>();
+        public readonly List<IVisualElementScheduledItem> Polls = new List<IVisualElementScheduledItem>();
+        public readonly List<int> Cancelled = new List<int>();
+        public readonly List<string> Calls = new List<string>();
+        public readonly SharePresenter Presenter;
+        public bool Failed;
+        public int Reads, Ticket;
+        readonly Action<byte[], string> keep = ShareShot.Keep;
+        readonly Func<bool> can = ShareShot.CanShareFiles, failed = ShareShot.Failed;
+        readonly Action<string> share = ShareShot.Share, copy = ShareShot.Copy, open = ExternalLink.Opener;
+        readonly Action invalidate = ShareShot.Invalidate;
+        readonly Func<int> armTicket = ShareShot.ArmTicket;
+        readonly Action<int> cancelArm = ShareShot.CancelArm;
+        readonly Func<ShareShot.CopyResult> copied = ShareShot.Copied;
+
+        public ShareAttemptUi()
+        {
+            SharePresenter? presenter = null;
+            try
+            {
+                ShareShot.Invalidate = () => Calls.Add("invalidate");
+                ShareShot.ArmTicket = () => Ticket;
+                ShareShot.CancelArm = Cancelled.Add;
+                ShareShot.Keep = (_, __) => Calls.Add("keep");
+                ShareShot.CanShareFiles = () => true;
+                ShareShot.Share = _ => { Calls.Add("share"); Ticket++; Failed = false; };
+                ShareShot.Copy = _ => { Calls.Add("copy"); Ticket++; };
+                ShareShot.Copied = () => ShareShot.CopyResult.Pending;
+                ShareShot.Failed = () => { Reads++; return Failed; };
+                ExternalLink.Opener = _ => Calls.Add("open");
+                var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), En);
+                presenter = new SharePresenter(Ui.Root, bridge, En, done => done(new byte[] { 1 }), check =>
+                {
+                    Checks.Add(check);
+                    var poll = Ui.Q<Button>("share-go").schedule.Execute(check);
+                    Polls.Add(poll);
+                    return poll;
+                });
+                Presenter = presenter;
+                Presenter.Open();
+            }
+            catch
+            {
+                Cleanup(presenter);
+                throw;
+            }
+        }
+
+        public void Press(string name) => UiTestKit.Press(Ui.Q<Button>("share-" + name));
+        public DisplayStyle Note(string name) => Ui.Q<VisualElement>(name).style.display.value;
+        public void Dispose() => Cleanup(Presenter);
+        void Cleanup(SharePresenter? presenter)
+        {
+            try
+            {
+                if (presenter != null) presenter.Dispose();
+            }
+            finally
+            {
+                try { Ui.Dispose(); }
+                finally
+                {
+                    ShareShot.Keep = keep; ShareShot.CanShareFiles = can; ShareShot.Failed = failed;
+                    ShareShot.Share = share; ShareShot.Copy = copy; ShareShot.Copied = copied; ExternalLink.Opener = open;
+                    ShareShot.Invalidate = invalidate; ShareShot.ArmTicket = armTicket; ShareShot.CancelArm = cancelArm;
+                }
+            }
+        }
+    }
+
+    [UnityEngine.TestTools.UnityTest]
+    public System.Collections.IEnumerator MainShareStillObservesFailureAfterThreeSeconds()
+    {
+        using var attempt = new ShareAttemptUi();
+        attempt.Press("go");
+        var until = Time.realtimeSinceStartup + 3.6f;
+        while (Time.realtimeSinceStartup < until) { EditorApplication.QueuePlayerLoopUpdate(); yield return null; }
+        Assert.AreEqual(DisplayStyle.None, attempt.Note("share-fallback"), "false Failed stays silent");
+        Assert.IsTrue(attempt.Polls.Single().isActive, "success/cancel cannot be distinguished by Failed alone");
+        attempt.Failed = true;
+        until = Time.realtimeSinceStartup + 2f;
+        while (attempt.Note("share-fallback") != DisplayStyle.Flex && Time.realtimeSinceStartup < until)
+        { EditorApplication.QueuePlayerLoopUpdate(); yield return null; }
+        Assert.AreEqual(DisplayStyle.Flex, attempt.Note("share-fallback"));
+        Assert.IsFalse(attempt.Polls.Single().isActive, "failure stops the owned poll");
+        var reads = attempt.Reads;
+        attempt.Checks.Single()();
+        Assert.AreEqual(reads, attempt.Reads, "even a queued callback after failure is inert");
+    }
+
+    [Test]
+    public void OldShareObserverCannotSurviveCloseReopenOrDispose()
+    {
+        using var attempt = new ShareAttemptUi();
+        attempt.Press("go");
+        var old = attempt.Checks.Single();
+        attempt.Presenter.Close();
+        Assert.IsFalse(attempt.Polls.Single().isActive);
+        attempt.Presenter.Open(); // deliberately no new Send
+        attempt.Failed = true;
+        var reads = attempt.Reads;
+        old();
+        Assert.AreEqual(reads, attempt.Reads);
+        Assert.AreEqual(DisplayStyle.None, attempt.Note("share-fallback"));
+        attempt.Press("instagram");
+        var current = attempt.Checks.Last();
+        attempt.Presenter.Dispose();
+        reads = attempt.Reads;
+        current(); old();
+        Assert.AreEqual(reads, attempt.Reads, "disposed callbacks must not even read the bridge");
+        Assert.IsTrue(attempt.Polls.All(p => !p.isActive));
+        var calls = attempt.Calls.Count;
+        attempt.Press("go"); attempt.Press("instagram"); attempt.Press("copy");
+        attempt.Presenter.Open(); attempt.Presenter.Close(); attempt.Presenter.Dispose();
+        Assert.AreEqual(calls, attempt.Calls.Count, "disposal unbinds the controls, and Open, Close and a second Dispose are inert");
+    }
+
+    [Test]
+    public void EveryNewActionInvalidatesTheOldObserver(
+        [Values("go", "instagram")] string first,
+        [Values("go", "instagram", "copy", "x", "facebook", "whatsapp", "telegram", "linkedin")] string next)
+    {
+        using var attempt = new ShareAttemptUi();
+        attempt.Press(first);
+        var old = attempt.Checks.Single();
+        attempt.Press(next);
+        Assert.IsFalse(attempt.Polls.First().isActive);
+        attempt.Failed = true;
+        var reads = attempt.Reads;
+        old(); // model a callback already queued before Pause
+        Assert.AreEqual(reads, attempt.Reads, "generation must reject it before querying Failed");
+        Assert.AreEqual(DisplayStyle.None, attempt.Note("share-fallback"));
+        Assert.AreEqual(DisplayStyle.None, attempt.Note("share-instagram-note"));
+        if (next == "go" || next == "instagram")
+        {
+            attempt.Checks.Last()();
+            Assert.AreEqual(DisplayStyle.Flex, attempt.Note(next == "go" ? "share-fallback" : "share-instagram-note"));
+            Assert.AreEqual(DisplayStyle.None, attempt.Note(next == "go" ? "share-instagram-note" : "share-fallback"));
+        }
+    }
+
+    /// <summary>The C# half only: focus-out hands JS the ticket this control stored, not the current one. That JS cancels
+    /// nothing but a still-armed matching ticket (StatecraftShareCancelArm) is outside what this fake can check; it is in
+    /// the manual record (docs/share-1653-manual-checks.md, step 5).</summary>
+    [Test]
+    public void LifecycleInvalidatesBeforeKeepAndActionsAndFocusOutPassesItsOwnTicket(
+        [Values("go", "instagram", "copy")] string control)
+    {
+        using var attempt = new ShareAttemptUi();
+        CollectionAssert.AreEqual(new[] { "invalidate", "keep" }, attempt.Calls);
+        attempt.Calls.Clear();
+        attempt.Press(control);
+        CollectionAssert.AreEqual(new[] { "invalidate", control == "copy" ? "copy" : "share" }, attempt.Calls);
+        var owner = attempt.Ticket;
+        attempt.Ticket++; // a newer browser ticket can now belong to a site
+        var count = attempt.Calls.Count;
+        var button = attempt.Ui.Q<Button>("share-" + control);
+        button.Focus(); button.Blur();
+        CollectionAssert.AreEqual(new[] { owner }, attempt.Cancelled, "focus-out passes the stored ticket, not the newer one");
+        Assert.AreEqual(count, attempt.Calls.Count, "focus-out must not invalidate a released native promise");
+        attempt.Presenter.Close();
+        Assert.AreEqual("invalidate", attempt.Calls.Last());
+        attempt.Calls.Clear();
+        attempt.Presenter.Open();
+        CollectionAssert.AreEqual(new[] { "invalidate", "keep" }, attempt.Calls);
+        attempt.Presenter.Dispose();
+        Assert.AreEqual("invalidate", attempt.Calls.Last());
+    }
+
 }

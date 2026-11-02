@@ -135,6 +135,10 @@ namespace Statecraft.Game.Map.Units
         public const float BadgeBackShare = 0.6f, BadgeAsideM = 400f, BadgeOverFlagM = 150f;
         readonly List<(Vector2 centre, float radius)> treeHoles = new List<(Vector2, float)>();
         List<Bounds[]> keepClear = new List<Bounds[]>();
+        /// <summary>A slide moves the boxes in place, but the labels re-place only for a new list: FaceCamera then hands
+        /// out this second list with the same boxes, the two taking turns (no allocation per frame). A new pair per rebuild.</summary>
+        List<Bounds[]> keepClearSpare = new List<Bounds[]>();
+        bool slid;   // a token's slide moved since FaceCamera last turned the boxes
         GameObject? ring;
         bool still;
         /// <summary>The camera pose and projection (vertical scale, orthographic) <see cref="FaceCamera"/> last turned the badges and flags to; a call from the same pose and projection
@@ -345,6 +349,12 @@ namespace Statecraft.Game.Map.Units
                     boxes[1] = s;
                 }
             }
+            if (!slid) return;
+            // Review of #2176: with a still camera the names kept clear of where the token started, not where it stands.
+            slid = false;
+            (keepClear, keepClearSpare) = (keepClearSpare, keepClear);
+            keepClear.Clear();
+            for (int i = 0; i < keepClearSpare.Count; i++) keepClear.Add(keepClearSpare[i]);
         }
 
         /// <summary>Draws the units for <paramref name="state"/> (read only). Rebuilds the tokens only when the roster
@@ -659,6 +669,7 @@ namespace Statecraft.Game.Map.Units
             trios.Clear(); turnedFor = null;   // the new figures stand as at yaw 0
             treeHoles.Clear();
             keepClear = new List<Bounds[]>();   // a new list, so the labels see the change
+            keepClearSpare = new List<Bounds[]>(); slid = false;   // and a spare no label pass has seen
             float hex = map.Hexes.hex_size_km * 1000f;
             foreach (var p in placed)
             {
@@ -773,7 +784,7 @@ namespace Statecraft.Game.Map.Units
                 var motion = token.gameObject.AddComponent<UnitTokenMotion>();
                 motion.enabled = false;   // runs only while it moves or attacks
                 motion.SimId = placed[i].Token.StateUnit?.Id ?? -1;
-                motion.Changed = () => facedFor = null;   // FaceCamera sets the badge and the boxes where the token is drawn
+                motion.Changed = () => { facedFor = null; slid = true; };   // FaceCamera sets the badge and the boxes where the token is drawn
                 motions.Add(motion);
                 // With the units hidden the token cannot be seen, and it would slide only once they are shown again.
                 if (tokensRoot.gameObject.activeInHierarchy && drawnAt.TryGetValue(Key(motion.SimId, token.name), out var was))
