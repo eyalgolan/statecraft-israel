@@ -62,6 +62,8 @@ namespace Statecraft.Game.UI
         internal CaptureDialogPresenter? Capture => capture;
         /// <summary>Tests: the settlement name pills of the last Begin.</summary>
         internal MapLabelsPresenter? Labels => labels;
+        /// <summary>Tests: the minimap of the last Begin.</summary>
+        internal MinimapPresenter? Minimap => minimap;
         string? hoveredCity;   // the city HoverCity lit (#1063)
         OutcomePresenter? outcomes;
         TurnReportPresenter? report;
@@ -498,6 +500,7 @@ namespace Statecraft.Game.UI
                 cameraController.Settle(); SyncMinimap(); labels?.Refresh();
             };
             mini.BordersChanged += ShowLayerLabel;
+            ShowLayerLabel();   // #2227: the caption was set before this minimap was made; a restart keeps borders the player hid
             Action onChanged = RenderPlacementsIfChanged;
             bridge.Changed += onChanged;
             // One console line per turn, so a browser run (reload, Continue) can be checked against the hash.

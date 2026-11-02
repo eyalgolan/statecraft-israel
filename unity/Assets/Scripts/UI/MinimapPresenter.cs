@@ -55,6 +55,10 @@ namespace Statecraft.Game.UI
             frame.RegisterCallback<GeometryChangedEvent>(OnBoxGeometry);
             overview = box.Q<Button>("minimap-overview"); labels = box.Q<Button>("minimap-labels"); borders = box.Q<Button>("minimap-borders");
             overview.clicked += OnOverview; labels.clicked += OnLabels; borders.clicked += OnBorders;
+            // #2227: GameRoot.Begin (New Game, a load, the language switch) makes a new presenter over the same document and
+            // the same map, whose switches keep what the last press set; a button dims only together with its switch
+            // (Switch), so the dim says what the map shows and the new presenter starts from it, keeping the player's choice.
+            LabelsShown = !labels.ClassListContains(OffClass); BordersShown = !borders.ClassListContains(OffClass);
             if (text != null)
             {
                 overview.tooltip = text["minimap.overview"]; labels.tooltip = text["minimap.labels"]; borders.tooltip = text["minimap.borders"];
