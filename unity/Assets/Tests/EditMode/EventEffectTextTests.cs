@@ -114,7 +114,7 @@ public class EventEffectTextTests
         var mark = UiText.LeftToRightMark.ToString();
         StringAssert.Contains(mark + "-100" + mark, EventEffectText.Format(rows[3], Text(true)));
         StringAssert.Contains(mark + "+5.1%" + mark, EventEffectText.Format(rows[10], Text(true)));
-        StringAssert.Contains(mark + "IL\u00A0-1.3m" + mark, EventEffectText.Format(rows[1], Text(true), "אוצר"));
+        Assert.That(EventEffectText.Format(rows[1], Text(true), "אוצר").IndexOf(mark + "IL\u00A0-1.3m" + mark, StringComparison.Ordinal) >= 0);
     }
 
     // A project unlock (R-EFX-008) is one of the helper's entries too, so it has a template; the Hebrew kind name comes

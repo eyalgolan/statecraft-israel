@@ -143,7 +143,7 @@ public class HudTests
         Assert.Greater(bridge.State.Debt, 0.0);
         var m = HudModel.From(bridge, Text);
         Assert.AreEqual(PlayerText.Money(C, "treasury", -bridge.State.Debt), m.Treasury.Value);
-        StringAssert.Contains("IL\u00A0-", m.Treasury.Value);
+        Assert.That(m.Treasury.Value.IndexOf("IL\u00A0-", System.StringComparison.Ordinal) >= 0);
     }
 
     /// <summary>#681 (owner, 16 October 2026: "keep one top-bar figure and label it as net (cash minus debt)"): the Money
@@ -163,7 +163,7 @@ public class HudTests
         Assert.AreEqual(caption, meter.Q<Label>(className: "meter-name").text);
         StringAssert.StartsWith(caption + ":", meter.tooltip);
         Assert.AreEqual(PlayerText.Money(C, "treasury", bridge.State.Treasury - bridge.State.Debt), ui.Q<Label>("treasury-value").text);
-        StringAssert.Contains("IL\u00A0-", ui.Q<Label>("treasury-value").text);
+        Assert.That(ui.Q<Label>("treasury-value").text.IndexOf("IL\u00A0-", System.StringComparison.Ordinal) >= 0);
     }
 
     // ---- The score (#380): only in the GDD loop, from GameState.Score ----

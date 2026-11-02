@@ -8,9 +8,6 @@ checks this (see `CONTRIBUTING.md`).
 
 ## [Unreleased]
 
-### Fixed
-- Money values no longer wrap between the currency and the amount in either language: the IL prefix carries a no-break space (Refs #2293).
-
 ## [0.3.4] - 2026-11-03
 
 ### Added
