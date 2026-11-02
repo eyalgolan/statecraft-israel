@@ -131,9 +131,12 @@ class Itch:
         m = re.fullmatch(r"#(\d+)", row[1])
         return m.group(1) if m else None
 
-    def live_frame_ids(self) -> tuple[int, int] | None:
-        """(upload id, build id) of the channel's live build from one `butler status`, or None when it shows none."""
+    def live_frame_ids(self, version: str) -> tuple[int, int] | None:
+        """(upload id, build id) of the channel's live build from one `butler status`, only while that build is
+        `version` (the VERSION cell, butler's UserVersion of a completed build); None otherwise."""
         text = self._run(["status", self.project], Path.cwd())
+        if self.live_version(text, self.channel) != version:
+            return None
         upload, build = self.upload_id(text, self.channel), self.build_id(text, self.channel)
         return (int(upload), int(build)) if upload and build else None
 

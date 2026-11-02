@@ -795,15 +795,21 @@ def test_the_frame_url_from_butler_status_is_the_one_the_captured_page_embeds():
 
 def test_live_frame_ids_reads_one_status_of_the_project(runner):
     runner.on([str(BUTLER), "status", ITCH_PROJECT], live_text())
-    assert gp.Itch(runner, BUTLER, ITCH_TARGET).live_frame_ids() == (19840947, 2217587)
+    assert gp.Itch(runner, BUTLER, ITCH_TARGET).live_frame_ids("0.3.1") == (19840947, 2217587)
     assert runner.calls == [[str(BUTLER), "status", ITCH_PROJECT]]
+
+
+def test_live_frame_ids_needs_the_expected_version_live(runner):
+    # butler's status.go: the VERSION cell is the build's UserVersion once the build is completed (live)
+    runner.on([str(BUTLER), "status", ITCH_PROJECT], live_text())
+    assert gp.Itch(runner, BUTLER, ITCH_TARGET).live_frame_ids("0.3.2-savetest-a") is None
 
 
 @pytest.mark.parametrize("text", [status_with(build="#101 (processing)"), status_with(channel="webgl"),
                                   status_with().replace("#19840947", "", 1)])
 def test_live_frame_ids_is_none_without_a_live_build_and_its_upload(runner, text):
     runner.on([str(BUTLER), "status", ITCH_PROJECT], text)
-    assert gp.Itch(runner, BUTLER, ITCH_TARGET).live_frame_ids() is None
+    assert gp.Itch(runner, BUTLER, ITCH_TARGET).live_frame_ids("0.3.1") is None
 
 
 @pytest.mark.parametrize("release_id", [None, 202, True, "101"])

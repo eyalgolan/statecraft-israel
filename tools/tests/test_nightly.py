@@ -1944,9 +1944,10 @@ SAVED = "PERSISTENCE saved 1948-05-16 turn 1 hash ab12\n"
 class SaveItch:
     """The itch client of the save test: each push moves the live build id on by one."""
 
-    def __init__(self, calls, *, fail=None, same=False, ids=True):
+    def __init__(self, calls, *, fail=None, same=False, ids=True, live_as=None):
         self.calls, self.fail, self.pushes, self.build = calls, fail or {}, 0, 100
         self.same, self.ids = same, ids   # `same`: butler keeps showing upload A's build; `ids`: False shows none
+        self.live_as, self.live = live_as, None   # `live_as`: the version butler shows live after wait_live
 
     def push(self, folder, version):
         self.calls.append(("itch.push", Path(folder).name, version))
@@ -1959,10 +1960,11 @@ class SaveItch:
         self.calls.append(("itch.wait_live", version))
         if "wait_live" in self.fail:
             raise self.fail["wait_live"]
+        self.live = self.live_as or version
 
-    def live_frame_ids(self):
-        self.calls.append(("itch.live_frame_ids",))
-        if not self.ids:
+    def live_frame_ids(self, version):
+        self.calls.append(("itch.live_frame_ids", version))
+        if not self.ids or version != self.live:   # as Itch.live_frame_ids: only the expected version's ids
             return None
         return UPLOAD_ID, 101 if self.same else self.build
 
@@ -1982,9 +1984,15 @@ class SaveRunner(FakeRunner):
         return code
 
 
+GAME_HTML = '<script>createUnityInstance(canvas, {productVersion: "0.3.2"})</script>'   # the Statecraft template
+
+
 class Page:
-    def __init__(self, text):
-        self.text = text
+    def __init__(self, text, *, url=None, status=200):
+        self.text, self.url, self.status = text, url, status
+
+    def geturl(self):
+        return self.url
 
     def __enter__(self):
         return self
@@ -2012,15 +2020,15 @@ def http_error(url, code, retry_after=None):
     return urllib.error.HTTPError(url, code, "error", headers, None)
 
 
-def frame_for(itch, fetched, *, missing=0, code=404):
+def frame_for(itch, fetched, *, missing=0, code=404, answer=None):
     """A fetch answering only the game frame of the itch client's live build (never an itch page): its first
-    `missing` answers are HTTP `code`, as while itch still unpacks an upload."""
+    `missing` answers are HTTP `code`, as while itch still unpacks an upload; `answer(url)` replaces the game page."""
     def fetch(url, timeout=30):
         fetched.append(url)
         assert url == frame_of(101 if itch.same else itch.build)
         if len(fetched) <= missing:
             raise http_error(url, code)
-        return Page("<html>game</html>")
+        return answer(url) if answer else Page(GAME_HTML, url=url)
     return fetch
 
 
@@ -2067,9 +2075,9 @@ def test_savetest_passes_only_with_matching_tuple_new_url_same_origin(saved):
     version = TAG[1:]
     assert [c for c in t.gh.calls if c[0].startswith("itch.")] == [
         ("itch.push", "folder", f"{version}-savetest-a"), ("itch.wait_live", f"{version}-savetest-a"),
-        ("itch.live_frame_ids",),
+        ("itch.live_frame_ids", f"{version}-savetest-a"),
         ("itch.push", "folder", f"{version}-savetest-b"), ("itch.wait_live", f"{version}-savetest-b"),
-        ("itch.live_frame_ids",)]
+        ("itch.live_frame_ids", f"{version}-savetest-b")]
     assert t.fetched == [frame_of(101), frame_of(102)]   # #2056: only the build's own frame, never the itch page
     first, b1, b2 = t.runner.runs
     profile = first[first.index("--profile") + 1]
@@ -2096,8 +2104,79 @@ def test_savetest_same_frame_url_is_inconclusive_and_keeps_itch_off(saved):
 
 def test_both_frames_are_on_the_one_frame_origin():
     # IndexedDB is per origin: the frame URL is built from butler's ids on one fixed host, so A and B share it
-    a, b = urllib.parse.urlsplit(frame_of(101)), urllib.parse.urlsplit(frame_of(102))
+    a = urllib.parse.urlsplit(nightly.itch_build_frame_url(UPLOAD_ID, 101))
+    b = urllib.parse.urlsplit(nightly.itch_build_frame_url(UPLOAD_ID, 102))
     assert (a.scheme, a.netloc) == (b.scheme, b.netloc) == ("https", "html-classic.itch.zone") and a.path != b.path
+
+
+# --- review round on #2237 ------------------------------------------------------------------------------------------
+
+def test_the_frame_ids_must_belong_to_the_version_this_run_pushed(saved):
+    t = saved(itch_kw={"live_as": "9.9.9-savetest-a"})   # another run's upload went live in between
+    assert t.run() == "INCONCLUSIVE" and t.runner.runs == [] and t.fetched == [] and not t.enabled()
+    assert f"{TAG[1:]}-savetest-a" in t.evidence()["detail"]
+
+
+@pytest.mark.parametrize("answer", [
+    lambda url: Page("<html>Sign in to itch.io</html>", url=url),                       # 200, not the game
+    lambda url: Page(GAME_HTML, url="https://itch.io/login"),                            # redirected elsewhere
+    lambda url: Page(GAME_HTML, url=url, status=203),                                    # not a plain 200
+])
+def test_only_the_game_page_itself_counts_as_a_served_frame(saved, answer):
+    t = saved()
+    sleeps = []
+    assert t.run(frame_for(t.itch, t.fetched, answer=answer), sleep=sleeps.append) == "INCONCLUSIVE"
+    assert t.runner.runs == [] and not t.enabled() and "not the game" in t.evidence()["detail"]
+    assert sum(sleeps) <= nightly.SAVETEST_FRAME_TRIES * nightly.SAVETEST_FRAME_SLEEP
+
+
+@pytest.mark.parametrize("code", [401, 410, 500])
+def test_any_other_http_answer_from_the_frame_ends_inconclusive_at_once(saved, code):
+    t = saved()
+    assert t.run(frame_for(t.itch, t.fetched, missing=10_000, code=code)) == "INCONCLUSIVE"
+    assert t.runner.runs == [] and len(t.fetched) == 1 and f"HTTP {code}" in t.evidence()["detail"]
+
+
+def test_a_b_frame_that_is_never_served_is_inconclusive_not_fail(saved):
+    t = saved()
+    def fetch(url, timeout=30):
+        if t.itch.pushes == 2:
+            raise http_error(url, 404)
+        return Page(GAME_HTML, url=url)
+    assert t.run(fetch) == "INCONCLUSIVE" and len(t.runner.runs) == 1 and not t.enabled()
+
+
+def test_a_second_save_test_pushes_nothing_while_one_runs(saved):
+    import fcntl
+    t = saved()
+    with (t.job / "savetest.lock").open("a") as held:
+        fcntl.flock(held, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        assert t.run() == "INCONCLUSIVE"
+    assert not any(c[0].startswith("itch.") or c[0] == "download" for c in t.gh.calls) and t.runner.runs == []
+    assert "another save test" in t.log() and not t.enabled()
+    assert t.run() == "PASS"   # the lock is free again once the other run ends
+
+
+@pytest.mark.parametrize("target", [" eyalgolan/statecraft-israel-savetest:html5", "eyalgolan/statecraft-israel/:html5",
+                                    "eyalgolan/statecraft-israel:", "eyalgolan/statecraft-israel-savetest:html5\n",
+                                    "eyalgolan/statecraft israel:html5"])
+def test_a_malformed_save_test_target_is_refused_before_any_push(saved, target):
+    t = saved(target=target)
+    assert t.run() == "INCONCLUSIVE" and not t.enabled() and "test page" in t.log()
+    assert not any(c[0].startswith("itch.") or c[0] == "download" for c in t.gh.calls)
+
+
+def test_the_project_of_the_public_page_url_is_refused_as_a_test_target(saved):
+    t = saved(target="eyalgolan/other-game:html5")
+    t.cfg = dataclasses.replace(t.cfg, itch_page_url="https://EyalGolan.itch.io/other-game/")
+    assert t.run() == "INCONCLUSIVE" and "must not be the public itch project" in t.log()
+    assert not any(c[0].startswith("itch.") for c in t.gh.calls)
+
+
+def test_a_save_test_pass_enables_the_nightly_push(saved):
+    t = saved()
+    assert t.run() == "PASS"
+    assert nightly.itch_skip_reason(ns.load_config(t.config)) is None
 
 
 def test_savetest_mismatch_fails_and_keeps_itch_off(saved):
@@ -2184,6 +2263,16 @@ def test_the_savetest_page_url_key_is_gone_from_the_config():
     # so the job config has no key for its URL; the old key is refused like any unknown one
     assert "savetest_itch_page_url" not in {f.name for f in dataclasses.fields(ns.Config)}
     assert nightly.SAVETEST_KEYS == ("savetest_itch_target",)
+
+
+def test_a_config_still_holding_the_removed_page_url_key_is_refused_with_the_fix(tmp_path):
+    config = tmp_path / "config.json"
+    config.write_text(json.dumps({"savetest_itch_target": TEST_TARGET,
+                                  "savetest_itch_page_url": "https://eyalgolan.itch.io/statecraft-israel-savetest"}))
+    with pytest.raises(ns.Refused) as e:
+        ns.load_config(config)
+    assert e.value.gate == "config"
+    assert "remove savetest_itch_page_url from config.json; #2237 replaced it" in e.value.detail
 
 
 def test_the_savetest_command_refuses_before_any_client_without_a_test_target(tmp_path, monkeypatch, capsys):
