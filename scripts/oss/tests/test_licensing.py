@@ -155,8 +155,11 @@ def test_tal_original_licensing_matches_manifest_exactly():
     import hashlib
     for r in added_rows:  # each row records its file's SHA-256
         assert hashlib.sha256((ROOT / r["glob"]).read_bytes()).hexdigest() in r["source"], r["glob"]
-    assert len([r for r in independent if r["glob"] not in added]) == 50  # the hex-tile props row and the #1901 -light meshes among them
-    assert len(independent) == 82  # 146 originals + 82 independent grants = 228 total
+    # Afik Faerman's main theme (#39, #2240; owner, 2 November 2026: CC BY-NC-ND 4.0, credited to Afik): one exact-file row.
+    music = [r for r in independent if r["glob"] == "unity/Assets/StreamingAssets/audio/music/Main_1.3.ogg"]
+    assert len(music) == 1 and music[0]["artist"] == "Afik Faerman" and music[0]["ai_generated"] is False
+    assert len([r for r in independent if r["glob"] not in added and r not in music]) == 50  # the hex-tile props row and the #1901 -light meshes among them
+    assert len(independent) == 83  # 146 originals + 83 independent grants = 229 total
     for row in selected:
         assert row["licence"] == "CC-BY-NC-ND-4.0"
         assert row["artist"] == "Tal Heuberger"
