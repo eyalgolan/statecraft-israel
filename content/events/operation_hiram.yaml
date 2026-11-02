@@ -6,7 +6,6 @@ text: 'In breach of the truce, the Arab Liberation Army attacked the Sheikh Abd 
 # follow he.wiki "מבצע חירם" ("משלטי שייח' עבד"): https://he.wikipedia.org/wiki/מבצע_חירם
 title_he: מבצע חירם
 text_he: 'בהפרת ההפוגה תקף צבא ההצלה את משלט שייח׳ עבד שמעל קיבוץ מנרה ב־22 באוקטובר. בין 29 ל־31 באוקטובר הדפו כוחותיו של משה כרמל את צבא ההצלה מן הגליל העליון במבצע חירם, והפסקת אש נכנסה לתוקף ב־31 באוקטובר. ההחלטה אם הכוחות יעצרו עם הפסקת האש או יתקדמו הלאה לתוך לבנון בידי {defense_minister}.'
-text_he_review: agent-checked
 anchor: soft
 tags: [security, war-casualties]
 office: defense_minister
@@ -36,14 +35,14 @@ options:
     effects:
       - { target: security, delta: 0.02 }
     # Unit orders (R-ENEMY-005; owner, 1 November 2026, #2087: "military operations must have unit orders", sourced places
-    # only). Carmeli to Manara, 29 October 1948 to the Lebanon armistice, map/units_1948.yaml line 239 (carmeli's order target
+    # only). Carmeli to Manara, 29 October 1948 to the Lebanon armistice, map/units_1948.yaml line 242 (carmeli's order target
     # "Manara"; he.wiki Operation Hiram and the Haganah Heritage lexicon); the 7th Brigade to al-Malikiyya, 31 October 1948
-    # to the Lebanon armistice, line 614 (brigade_7's order target; Dupuy p. 104); war-1948.md section 3, the Hiram row (line 145).
+    # to the Lebanon armistice, line 628 (brigade_7's order target; Dupuy p. 104); war-1948.md section 3, the Hiram row (line 145).
     # The hexes are the targets' own (map/unit_anchor_hexes.yaml). An enemy unit on al-Malikiyya's hex refuses the 7th
     # Brigade's order, as it would the player's, and the turn's refusals say so.
     unit_orders:
-      - { unit: carmeli, q: 14, r: 2 }
-      - { unit: brigade_7, q: 12, r: 4 }
+      - { unit: carmeli, q: 15, r: 3 }
+      - { unit: brigade_7, q: 14, r: 4 }
   - id: advance_into_lebanon
     text: Advance further into Lebanon
     text_he: להתקדם הלאה לתוך לבנון

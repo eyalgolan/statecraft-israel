@@ -7,7 +7,6 @@ text: 'Food and foreign currency cannot keep pace with the immigrants arriving e
 # "הצעת ... היא" keeps the sentence the same for a minister of either gender, as in altalena.yaml.
 title_he: צנע
 text_he: 'אספקת המזון ומטבע החוץ אינן מדביקות את קצב העולים המגיעים מדי שבוע. הצעת {rationing_minister}, בראש משרד האספקה והקיצוב החדש, היא קיצוב מחמיר.'
-text_he_review: agent-checked
 anchor: hard
 office: rationing_minister
 # The rationing plan was presented to the Knesset on 26 April 1949, already decided by the cabinet: Dov Yosef told the

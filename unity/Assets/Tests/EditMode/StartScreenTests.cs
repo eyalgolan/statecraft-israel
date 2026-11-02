@@ -378,9 +378,10 @@ public class StartScreenTests
         cont.Focus();
         Assert.AreSame(cont, rig.Ui.Root.focusController?.focusedElement, "Continue has the focus");
         // Tab walks the screen's buttons only: Continue, New Game, the recording's button, Star on GitHub (#1168), Report a
-        // bug or idea (#1169) and the two languages (#2054), English then Hebrew.
+        // bug or idea (#1169), the two languages (#2054), English then Hebrew, and Quit (#2153; the editor is a desktop
+        // platform, so it shows).
         var seen = new List<string>();
-        for (int i = 0; i < 6; i++)
+        for (int i = 0; i < 7; i++)
         {
             var at = (VisualElement)rig.Ui.Root.focusController!.focusedElement;
             using (var e = NavigationMoveEvent.GetPooled(NavigationMoveEvent.Direction.Next)) { e.target = at; at.SendEvent(e); }
@@ -389,9 +390,10 @@ public class StartScreenTests
         }
         Assert.AreEqual("start-new-game", seen[0], "Tab moves from Continue to New Game: " + string.Join(", ", seen));
         Assert.IsTrue(seen.All(n => n == "start-continue" || n == "start-new-game" || n == "start-listen" || n == "start-star" || n == "start-report"
-            || n == "start-language-en" || n == "start-language-he"), "Tab stays on the screen's buttons: " + string.Join(", ", seen));
+            || n == "start-language-en" || n == "start-language-he" || n == "start-quit"), "Tab stays on the screen's buttons: " + string.Join(", ", seen));
         var en = seen.IndexOf("start-language-en");
         Assert.IsTrue(en >= 0 && en + 1 < seen.Count && seen[en + 1] == "start-language-he", "Tab reaches English, then Hebrew: " + string.Join(", ", seen));
+        Assert.IsTrue(en + 2 < seen.Count && seen[en + 2] == "start-quit", "Tab reaches Quit after Hebrew: " + string.Join(", ", seen));
         CollectionAssert.Contains(seen, "start-listen", "Tab reaches the recording's button: " + string.Join(", ", seen));
         rig.Ui.Press("start-continue");
         yield return null; yield return null;
@@ -614,6 +616,10 @@ public class StartScreenTests
                 Assert.AreNotEqual(newGameStyle.borderTopColor, starStyle.borderTopColor, $"{at}: the Star button's edge is not New game's gold");
                 Assert.IsTrue(Inside(R("start-report"), R("start-community")), $"{at}: the Report button {R("start-report")} is in its row");   // #1169
                 Assert.IsFalse(R("start-report").Overlaps(star), at);
+                // #2153: Quit (shown: the editor is a desktop platform) in the same row, inside the panel, over nothing.
+                Assert.IsTrue(Inside(R("start-quit"), R("start-community")) && Inside(R("start-quit"), panel), $"{at}: Quit {R("start-quit")} is in its row, inside the panel");
+                foreach (var other in new[] { "start-report", "start-language-en", "start-language-he" })
+                    Assert.IsFalse(R("start-quit").Overlaps(R(other)), $"{at}: Quit {R("start-quit")} overlaps {other} {R(other)}");
             }
             finally
             {
@@ -708,11 +714,14 @@ public class StartScreenTests
     /// <summary>The Hebrew screen mirrors like the rest of the Hebrew UI (UI-12; the owner, 31 Oct 2026): New game right of
     /// Star on GitHub, Report right of the language pair and the recording's button right of its credit, the other way
     /// round in English, with the same gap between Report and the pair, and the panel settles. Compared only where the
-    /// two share a line (a phone held upright wraps Star under New game); at 1920x1080 they must.</summary>
+    /// two share a line (a phone held upright wraps Star under New game); at 1920x1080 they must. The recording's row shows
+    /// as in the game, where DeclarationRecording shows it.</summary>
     [UnityTest]
     public IEnumerator InHebrewTheButtonRowsMirror()
     {
         var gaps = new Dictionary<(int, int), float>();
+        var quitGaps = new Dictionary<(int, int), float>();
+        var recordingCompared = new HashSet<(int, int)>();
         foreach (var hebrew in new[] { false, true })
         foreach (var (w, h) in new[] { (1920, 1080), (1366, 768), (390, 844) })
         {
@@ -730,7 +739,9 @@ public class StartScreenTests
             var bridge = new SimBridge(GameStart.Begin(C, store, () => 4UL, new List<string>(), Text, out var resumed), Text);
             var toast = new ToastPresenter(root, bridge, Text);
             var newGame = new NewGamePresenter(root, bridge, store, toast, Text, () => 5UL);
-            var start = new StartScreenPresenter(root, newGame, resumed);
+            // As GameRoot: the recording's player shows its row (a fetch that never answers; nothing is pressed here).
+            var recording = new DeclarationRecording(root, Text, toast.Show, (url, done) => new NoAnswer());
+            var start = new StartScreenPresenter(root, newGame, resumed, null, recording);
             try
             {
                 root.Q("root").RemoveFromClassList("loading");
@@ -755,12 +766,15 @@ public class StartScreenTests
                     else Assert.LessOrEqual(newGameR.xMax, star.xMin + 0.5f, $"{at}: New game {newGameR} is left of Star on GitHub {star}");
                 }
 
-                // The recording's button and its credit, when the row shows.
-                if (root.Q("start-recording").resolvedStyle.display == DisplayStyle.Flex && OneLine(R("start-listen"), R("start-recording-credit")))
+                // The recording's button and its credit.
+                Assert.AreEqual(DisplayStyle.Flex, root.Q("start-recording").resolvedStyle.display, $"{at}: the recording's row shows");
+                var (listen, credit) = (R("start-listen"), R("start-recording-credit"));
+                if (w == 1920) Assert.IsTrue(OneLine(listen, credit), $"{at}: the recording's credit {credit} is beside its button {listen}");
+                if (OneLine(listen, credit))
                 {
-                    var (listen, credit) = (R("start-listen"), R("start-recording-credit"));
                     if (hebrew) Assert.GreaterOrEqual(listen.xMin, credit.xMax - 0.5f, $"{at}: the recording's button {listen} is right of its credit {credit}");
                     else Assert.LessOrEqual(listen.xMax, credit.xMin + 0.5f, $"{at}: the recording's button {listen} is left of its credit {credit}");
+                    recordingCompared.Add((w, hebrew ? 1 : 0));
                 }
 
                 var (report, pair) = (R("start-report"), R("start-language"));
@@ -773,10 +787,20 @@ public class StartScreenTests
                     var near = hebrew ? R("start-language-en").xMax : R("start-language-en").xMin;
                     gaps[(w, hebrew ? 1 : 0)] = hebrew ? report.xMin - near : near - report.xMax;
                 }
+                // Quit (#2153; review round k2): after the pair, mirrored, as far from it as Report is.
+                var quit = R("start-quit");
+                if (w == 1920) Assert.IsTrue(OneLine(quit, pair), $"{at}: Quit {quit} is beside the languages {pair}");
+                if (OneLine(quit, pair))
+                {
+                    if (hebrew) Assert.LessOrEqual(quit.xMax, pair.xMin + 0.5f, $"{at}: Quit {quit} is left of the languages {pair}");
+                    else Assert.GreaterOrEqual(quit.xMin, pair.xMax - 0.5f, $"{at}: Quit {quit} is right of the languages {pair}");
+                    var nearHe = R("start-language-he");
+                    quitGaps[(w, hebrew ? 1 : 0)] = hebrew ? nearHe.xMin - quit.xMax : quit.xMin - nearHe.xMax;
+                }
             }
             finally
             {
-                start.Dispose(); newGame.Dispose(); toast.Dispose();
+                start.Dispose(); recording.Dispose(); newGame.Dispose(); toast.Dispose();
                 Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt);
             }
         }
@@ -784,6 +808,65 @@ public class StartScreenTests
             if (gaps.TryGetValue((w, 0), out var en) && gaps.TryGetValue((w, 1), out var he))
                 Assert.AreEqual(en, he, 1f, $"{w}: the gap between Report and the languages is the same in Hebrew ({he:0.0}) as in English ({en:0.0})");
         Assert.IsTrue(gaps.ContainsKey((1920, 0)) && gaps.ContainsKey((1920, 1)), "the gap was measured at 1920x1080");
+        foreach (var key in quitGaps.Keys)
+            if (gaps.TryGetValue(key, out var reportGap))
+                Assert.AreEqual(reportGap, quitGaps[key], 1f, $"{key}: Quit is as far from the languages ({quitGaps[key]:0.0}) as Report ({reportGap:0.0})");
+        Assert.IsTrue(quitGaps.ContainsKey((1920, 0)) && quitGaps.ContainsKey((1920, 1)), "Quit's gap was measured at 1920x1080");
+        Assert.IsTrue(recordingCompared.Contains((1920, 0)) && recordingCompared.Contains((1920, 1)), "the recording's row was compared at 1920x1080");
+    }
+
+    /// <summary>The first layout of a phone held upright (390x844), with the recording's row shown as GameRoot shows it
+    /// (DeclarationRecording; its fetch never answers and nothing is pressed), in English and in Hebrew: the band layout
+    /// (StartScreenPresenter.Fit) settles in that first layout, without Unity's "Layout update is struggling ... recursive
+    /// layout" error (an unexpected error log fails the test; the capture below fails it too if logs are ever ignored), and
+    /// the screen ends in the band layout with the row in the panel.</summary>
+    [UnityTest]
+    public IEnumerator WithTheRecordingShownAPhoneLayoutSettlesWithoutRecursion([Values(false, true)] bool hebrew)
+    {
+        var struggling = new List<string>();
+        void Capture(string message, string trace, LogType type) { if (message.Contains("Layout update is struggling")) struggling.Add(message); }
+        var text = hebrew ? UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml") : Text;
+        var rt = new RenderTexture(390, 844, 0);
+        var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
+        ps.targetTexture = rt;
+        var go = new GameObject("StartRecordingPhone");
+        go.SetActive(false);
+        var doc = go.AddComponent<UIDocument>();
+        doc.panelSettings = ps;
+        doc.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml);
+        go.SetActive(true);
+        var root = doc.rootVisualElement;
+        var store = WithSave(TempStore(), 1);
+        var bridge = new SimBridge(GameStart.Begin(C, store, () => 4UL, new List<string>(), text, out var resumed), text);
+        var toast = new ToastPresenter(root, bridge, text);
+        var newGame = new NewGamePresenter(root, bridge, store, toast, text, () => 5UL);
+        var recording = new DeclarationRecording(root, text, toast.Show, (url, done) => new NoAnswer());   // as GameRoot
+        var start = new StartScreenPresenter(root, newGame, resumed, null, recording, text);
+        var at = hebrew ? "Hebrew 390x844" : "English 390x844";
+        Application.logMessageReceived += Capture;
+        try
+        {
+            root.Q("root").RemoveFromClassList("loading");
+            root.Q("root").EnableInClassList(UiLanguage.HebrewClass, hebrew);   // as GameRoot
+            start.Show();
+            for (int i = 0; i < 20 && (float.IsNaN(root.Q("start-panel").worldBound.width) || root.Q("start-panel").worldBound.width <= 0); i++) yield return null;
+            for (int i = 0; i < 4; i++) yield return null;
+            Assert.IsEmpty(struggling, $"{at}: the first layout recursed: {string.Join(" | ", struggling)}");
+            Assert.AreEqual(DisplayStyle.Flex, root.Q("start-recording").resolvedStyle.display, $"{at}: the recording's row shows");
+            Assert.IsTrue(root.Q("start-screen").ClassListContains(StartScreenPresenter.BandClass), $"{at}: a phone held upright stacks the painting over the panel");
+            var panel = root.Q("start-panel").worldBound;
+            var row = root.Q("start-recording").worldBound;
+            Assert.IsTrue(row.yMin >= panel.yMin - 0.5f && row.yMax <= panel.yMax + 0.5f, $"{at}: the row {row} is in the panel {panel}");
+            for (int i = 0; i < 10; i++) yield return null;
+            Assert.AreEqual(panel, root.Q("start-panel").worldBound, $"{at}: the panel settles");
+            Assert.IsEmpty(struggling, $"{at}: a later layout recursed: {string.Join(" | ", struggling)}");
+        }
+        finally
+        {
+            Application.logMessageReceived -= Capture;
+            start.Dispose(); recording.Dispose(); newGame.Dispose(); toast.Dispose();
+            Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt);
+        }
     }
 
     /// <summary>tools/web_check.py clicks the screen's buttons where ?navlog says they are (--startscreen, --persistence):

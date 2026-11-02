@@ -7,7 +7,6 @@ text: 'Count Bernadotte''s proposals would put Jerusalem under UN authority, and
 # https://he.wikipedia.org/wiki/דב_יוסף).
 title_he: ירושלים
 text_he: 'הצעותיו של הרוזן ברנדוט יעבירו את ירושלים לסמכות האו״ם, והוא הציע לפרז את העיר. החלופה היא להחיל ממשל צבאי ישראלי על החלק בירושלים שבידי צה״ל, ולמנות את דב יוסף למושל הצבאי. ההחלטה בידי {prime_minister}.'
-text_he_review: agent-checked
 anchor: hard
 tags: [security]
 office: prime_minister

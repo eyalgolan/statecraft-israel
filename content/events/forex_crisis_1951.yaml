@@ -7,7 +7,6 @@ text: 'Drought has forced larger wheat imports, immigration in the first half of
 # "הצעת ... היא" keeps the sentence the same for a minister of either gender, as in altalena.yaml.
 title_he: מטבע החוץ אוזל
 text_he: 'הבצורת אילצה להגדיל את יבוא החיטה, העלייה במחצית הראשונה של השנה חרגה בהרבה מן התוכנית, ואשראי קצר מועד בסך כ־45 מיליון דולר עומד לפירעון עד דצמבר. הצעת {finance_minister} היא לבקש מארצות הברית סיוע מיידי בסך כ־15 מיליון דולר.'
-text_he_review: agent-checked
 anchor: soft
 office: finance_minister
 # US Ambassador Davis's report of 19 October 1951 (FRUS 1951 v.V doc 513).

@@ -6,7 +6,6 @@ text: 'By 6 January Egypt and Israel had both accepted a cease-fire followed by 
 # (https://he.wikipedia.org/wiki/הסכמי_שביתת_הנשק_בתום_מלחמת_העצמאות).
 title_he: השיחות ברודוס
 text_he: 'עד 6 בינואר קיבלו מצרים וישראל הפסקת אש שלאחריה שיחות ישירות בראשות האו״ם, והפסקת האש נכנסה לתוקף ב־7 בינואר. השיחות עומדות להיפתח ברודוס. ההחלטה אם ישראל תשלח משלחת בידי {foreign_minister}.'
-text_he_review: agent-checked
 anchor: hard
 tags: [security]
 office: foreign_minister

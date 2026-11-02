@@ -11,7 +11,6 @@ text: 'Six designated yishuvim were founded in 1949 and 1950: Beit Kama, Mefalsi
 # content/sites.yaml's name_he for each site.
 title_he: שישה יישובים חדשים
 text_he: 'שישה יישובים שנקבעו מראש הוקמו ב־1949 וב־1950: בית קמה, מפלסים, קריית שמונה, רעים, גילת ובית שמש. היישוב האחרון שנדרש להקמה היה בית שמש, בדצמבר 1950.'
-text_he_review: agent-checked
 anchor: soft
 objective: yishuvim
 # The window is the founding era; the card fires only once the objective is completed (R-OBJ-003), whatever the date.

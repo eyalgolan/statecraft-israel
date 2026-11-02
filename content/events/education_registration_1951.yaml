@@ -6,7 +6,6 @@ text: 'The coalition is split over schooling for immigrant children in the trans
 # המנוהל בידי תנועת העבודה" translates the English and is not a proper name; check it against the Knesset minutes below.
 title_he: בתי הספר במעברות
 text_he: 'הקואליציה מפולגת בסוגיית חינוך ילדי העולים במעברות: המפלגות הדתיות מתנגדות לזרם דתי המנוהל בידי תנועת העבודה. תוכנית רישום מטעם {education_minister} מובאת לכנסת.'
-text_he_review: agent-checked
 anchor: hard
 office: education_minister
 # The event opens on its first cited plenum record, 12 February 1951 (owner ruling, 18 October 2026, #457 item 9);

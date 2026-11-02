@@ -209,6 +209,27 @@ Hebrew Wikipedia pages below were read at the `oldid` given, checked 2026-10-23.
   2026-10-24, no date filter; the page reported 622 results, a fuzzy count); I read the headlines
   of the first results page only (10 items), and none names Kefar Uriyya; the other pages were not
   read, so this is not a negative for the archive.
+  (1 Nov) Upper bound for the rename, from JTA's 1929 bulletins (agent read 2026-11-01; a person's
+  check pending). Query run 2026-11-01 (JTA site, no key needed):
+  `https://www.jta.org/wp-json/wp/v2/archive?search=Kfar+Uria&after=1920-01-01T00:00:00&before=1949-12-31T23:59:59&per_page=20`
+  returned `x-wp-total: 21` (a fuzzy search). I read the 20 headlines of page 1 (1949 back to 1926)
+  and opened only the 1929 items below; the 1926 and 1927 hits were not opened. `Kfar+Uriah` (9 hits,
+  all listed) returns the same two 1929 items; `Kfar+Uriya` (2 hits, all listed; re-run 2026-11-01,
+  `x-wp-total: 2`) returns the 6 September 1929 item and one from 1948 (24 May); `Kfar+Uriyah`
+  (33 hits) I read for page 1 only (1949 back to 1942, no 1929 item). I opened the original bulletin
+  PDFs on pdfs.jta.org and read the pages as images.
+  - Jewish Daily Bulletin, Wednesday 28 August 1929, p. 3, item "Gruesome atrocities committed by
+    fanatical Moslem Arabs on Jewish victims", dateline "Jerusalem, Aug. 27"; its continuation on
+    p. 8 prints: "The following places were attacked and defended by the self-defense corps: Kfar
+    Uriah, Emek Arazim, Artuf, ..." (PDF http://pdfs.jta.org/1929/1929-08-28_1452.pdf). [S, JTA]
+  - Jewish Daily Bulletin, Friday 6 September 1929, p. 4, the Palestine Jewry indictment of the Mufti,
+    point 12: "the burning of Artuf, Hulda and Kfar Uria" (PDF
+    http://pdfs.jta.org/1929/1929-09-06_1459.pdf). [S, JTA]
+  - **Our reading:** the name "Kefar Uriyya" (JTA spelling "Kfar Uriah" in the 28 August item; the
+    6 September item quotes the indictment's text, "Kfar Uria") was in use by the 27 August 1929 wire
+    report, so the rename from "Qiryat Moshe" came no later than the 1929 riots.
+    JTA gives no earlier use, no lower bound and no reason; the he.wiki sentence on the Vilnai
+    explanation has no year, so the year of the rename stays [GAP].
   Coordinates of the old site: he.wiki `כפר אוריה` oldid 44104326 prints 31.79330014, 34.94659163 [S,
   Wikipedia]; Wikidata Q659949 prints 31.7936, 34.948397 [S, Wikidata]; the CBS string in part 1
   gives 31.79261, 34.94732 (computed here). The he.wiki and CBS pairs differ by 0.00069 degrees of
@@ -292,6 +313,32 @@ rows with later years for `בית הערבה` (code 3645, 1980, Jordan-Jericho s
   Doar HaYom of 27 April 1925 for the name; that item was not opened here (nli.org.il returns 403
   from this machine). So the colony took its second name between June 1921 and the ascent to the
   land in 1925, **our reading** of the article, not a dated source. [S, Wikipedia]
+  (2 Nov) A different window from JTA (agent read 2026-11-02; a person's check pending). It moves the
+  lower bound from June 1921 to the January 1924 archive item below. Its upper bound, 1 November
+  1929, is looser than he.wiki's 1925, which is itself only our reading of an unopened Doar HaYom
+  item, so "1924 to 1929" is not tighter than the earlier window. Queries run
+  2026-11-02 on `https://www.jta.org/wp-json/wp/v2/archive?search=<term>&per_page=100&after=1923-01-01T00:00:00&before=1929-12-31T23:59:59`:
+  `Kfar+Ivre` (`x-wp-total: 53`, fuzzy) and `Kefar+Ivri` (2 hits, both listed below); `Nevi+Yaakov` (1 hit),
+  `Neve+Yaacov` (3), `Nevee+Yaakov` (2): the only item that prints the colony's second name is the
+  1929 one below. Other spellings were not exhausted.
+  - JTA Daily Bulletin, 22 November 1923, p. 4, "Mizrachi Re-elect Officers", dateline "Pittsburgh,
+    Nov. 22 (J.T.A.)": "A loan of $25,000 for the building of houses in the colony at Kfar Ivri near
+    Jerusalem was voted." (PDF http://pdfs.jta.org/1923/1923-11-22_224.pdf, read as a page image.) [S, JTA]
+  - JTA archive page `https://www.jta.org/archive/mizrachi-founds-new-jewish-colony-in-palestine`, dated
+    1 January 1924: "The corner-stone of a new Jewish colony in Palestine was laid today by the Mizrachi
+    Zionist Organization. The new colony will be named Kfar Ivre (Hebrew Village)". The page links no PDF,
+    and none was found: pdfs.jta.org has files for 31 December 1923 (`_247`), 2 January (`_248`) and 3 January
+    1924 (`_249`) and none for 1 January (numbers 200 to 400 tried). OCR of those three found no such
+    item (OCR is not a proof of absence), so the dateline and the event day are **not read**. [S, JTA]
+  - JTA Daily Bulletin, 3 November 1929, p. 1, "Sporadic attacks on Jews; no arrests", dateline
+    "Jerusalem, Nov. 1": "Shots were fired on a group of Jews proceeding to Jerusalem from Neve Yaakov, a
+    colony seven kilometers north of Jerusalem." (PDF http://pdfs.jta.org/1929/1929-11-03_1505.pdf; the
+    archive page's text misprints it "Nevee Yaakov".) [S, JTA]
+  - **Our reading:** JTA calls the place "Kfar Ivri" in November 1923 and, in the future tense
+    ("will be named Kfar Ivre"), in the January 1924 archive page, and "Neve Yaakov" by 1 November 1929, so
+    JTA's usage is consistent with a rename after the 1923 to 1924 cornerstone phase and no later
+    than 1929. That fits he.wiki's 1925 (Doar HaYom, not opened) but does not date it; the year
+    stays [GAP].
   Coordinate (24 Oct): he.wiki oldid 44067999 prints 31.834269, 35.232499 [S, Wikipedia]; Wikidata
   Q30527673 ("מושבה יהודית ... וחרבה במלחמת העצמאות") prints the same pair [S, Wikidata]. The 1970
   neighbourhood's items (Wikidata Q2918013, 31.841111, 35.2425) are a different place, about 1 km
@@ -437,6 +484,11 @@ rows with later years for `בית הערבה` (code 3645, 1980, Jordan-Jericho s
 - [GAP] **Rename years** for Kefar Uriyya (from Qiryat Moshe) and Neve Ya'akov (from the Hebrew
   Village): (24 Oct) searched again and not found as a dated source; for Neve Ya'akov the window
   June 1921 to the 1925 ascent is our reading of he.wiki, for Kefar Uriyya there is none (part 2).
+  (2 Nov) Neve Ya'akov: JTA bulletins give after the January 1924 archive item (event day not read)
+  and no later than 1 November 1929 (part 3, Neve Ya'akov); this moves the lower bound but its upper
+  bound is looser than he.wiki's 1925 reading; the year is still [GAP].
+  (1 Nov) Kefar Uriyya now has an upper bound: JTA bulletins already print the name for the moshav attacked
+  (28 August 1929) and burned (6 September 1929, quoting the indictment) (part 2); no lower bound found.
 - [GAP] **Gvati row for Jerusalem.** (24 Oct) Searched again and not found. Read: a copy of the text
   of https://benyehuda.org/read/14684 fetched on 2026-10-24 by another lane of this project (about
   21,000 non-empty lines); a search for lines that begin with "ירושלים" found six: five are running

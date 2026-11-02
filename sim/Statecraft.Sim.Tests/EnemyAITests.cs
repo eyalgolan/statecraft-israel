@@ -184,10 +184,10 @@ public class EnemyAITests
         var until = new DateTime(1948, 7, 8);   // the four anchors' window end: the first truce's (units_1948.yaml)
         Assert.Equal(new[]
         {
-            ("arab_legion", -2, 22, until),                     // Latrun
-            ("egyptian_expeditionary_force", -7, 24, until),    // Isdud, the forward base (the row's first 11 June anchor)
-            ("iraqi_expeditionary_force", 6, 13, until),        // Jenin
-            ("syrian_army", 13, 5, until),                      // the bridgehead at Mishmar HaYarden
+            ("arab_legion", -3, 25, until),                     // Latrun
+            ("egyptian_expeditionary_force", -8, 27, until),    // Isdud, the forward base (the row's first 11 June anchor)
+            ("iraqi_expeditionary_force", 6, 15, until),        // Jenin
+            ("syrian_army", 15, 6, until),                      // the bridgehead at Mishmar HaYarden, next to Rosh Pinna's hex (owner, #1183)
         }, scripted);
         Assert.All(Real.StartingForces.Where(f => f.Side == Movement.PlayerSide), f => Assert.Null(f.Script));
     }
@@ -280,7 +280,7 @@ public class EnemyAITests
         Assert.Equal(new DateTime(1948, 7, 15), s.Date);
         var legion = Real.StartingForces.FindIndex(f => f.Row == "arab_legion");
         var harel = Real.StartingForces.FindIndex(f => f.Row == "harel");
-        Assert.Equal((-2, 22), (s.Units[legion].Q, s.Units[legion].R));   // the Legion on Latrun
+        Assert.Equal((-3, 25), (s.Units[legion].Q, s.Units[legion].R));   // the Legion on Latrun
         Assert.Equal(1, Distance(s.Units[legion].Q, s.Units[legion].R, s.Units[harel].Q, s.Units[harel].R));
         var strength = s.Units[harel].Strength;
         var step = Simulation.Step(Real, s, GoldenRun.Orders(Real, s));
@@ -307,15 +307,15 @@ public class EnemyAITests
         var negev = s.Units[negevId];
         Assert.Equal(1, negev.Strength);
         s.Units[negevId] = new Unit(negev.Id, negev.Type, negev.Q, negev.R, negev.Service, negev.Side, 2, negev.Order, negev.OrderTarget);
-        var first = Simulation.Step(Real, s, new Command[] { new Move(givati, -7, 24), new Move(negevId, -10, 27) });
-        Assert.Contains(first.Why, x => x.Message == $"Unit {egypt} will attack hex -10,27");
+        var first = Simulation.Step(Real, s, new Command[] { new Move(givati, -8, 27), new Move(negevId, -11, 30) });
+        Assert.Contains(first.Why, x => x.Message == $"Unit {egypt} will attack hex -11,30");
         s = first.State;
         Assert.Equal(new DateTime(1948, 6, 15), s.Date);
         Assert.True(s.Units.ContainsKey(negevId), "the Negev fell on the 15 May turn");
-        Assert.Equal((Combat.Attack, "-10,27"), (s.Units[egypt].Order, s.Units[egypt].OrderTarget));   // the attack stands
+        Assert.Equal((Combat.Attack, "-11,30"), (s.Units[egypt].Order, s.Units[egypt].OrderTarget));   // the attack stands
         var strength = s.Units[negevId].Strength;
-        var step = Simulation.Step(Real, s, new Command[] { new Move(givati, -5, 23) });
-        Assert.Equal((-9, 27), (step.State.Units[egypt].Q, step.State.Units[egypt].R));   // Egypt moved on its script
+        var step = Simulation.Step(Real, s, new Command[] { new Move(givati, -6, 26) });
+        Assert.Equal((-9, 29), (step.State.Units[egypt].Q, step.State.Units[egypt].R));   // Egypt moved on its script
         Assert.True(step.State.Units.ContainsKey(negevId), "the Negev was destroyed");
         Assert.Equal(strength, step.State.Units[negevId].Strength);
     }
@@ -391,9 +391,11 @@ public class EnemyAITests
                 if ((u.Q, u.R) != start[u.Id]) Assert.DoesNotContain((u.Q, u.R), players);
         }
         // No capture but the card orders' own targets: Horev's delegated go-to (R-ENEMY-005) takes Golani round Nazareth, an
-        // enemy-held place it was not sent to (the owner's answer 1 on #2087), while the delegated Dani and Yoav orders send
-        // Kiryati to Ramle's hex (Lod and Ramla) and the Negev Brigade to Beersheba, which a card's march may take.
-        Assert.Equal(new[] { "beersheba", "lod", "ramla" }, s.Settlements.Keys.OrderBy(k => k, StringComparer.Ordinal));
+        // enemy-held place it was not sent to (the owner's answer 1 on #2087), while the delegated Yoav order sends the Negev
+        // Brigade to Beersheba, which a card's march may take. The Dani order's Ramle hex is (-4, 24) on the 4.4 km grid
+        // (tools/unit_anchor_hexes.py), the hex Ramla shares with Rehovot, which captures neither (Ramla's capture target is
+        // (-3, 24), #1796), so Kiryati takes nothing.
+        Assert.Equal(new[] { "beersheba" }, s.Settlements.Keys.OrderBy(k => k, StringComparer.Ordinal));
         Assert.All(s.Settlements.Values, x => Assert.Equal("israel", x.Owner));
     }
 
@@ -502,14 +504,14 @@ public class EnemyAITests
         var orders = Real.Events.SelectMany(e => e.Options.SelectMany(o => o.UnitOrders.Select(x => (e.Id, o.Id, o.Historical, x.Unit, x.Q, x.R))));
         Assert.Equal(new[]
         {
-            ("latrun_proposal", "press_offensive", false, "harel", -2, 22),        // Latrun police fort, harel order_targets[0]
-            ("operation_hiram", "stop_at_ceasefire", true, "carmeli", 14, 2),      // Manara, carmeli order_targets[0]
-            ("operation_hiram", "stop_at_ceasefire", true, "brigade_7", 12, 4),    // al-Malikiyya, brigade_7 order_targets[0]
-            ("operation_horev", "launch", true, "golani", -7, 24),                 // Julis camp, golani anchors[1]
-            ("operation_yoav", "stop_at_ceasefire", true, "negev", -9, 31),        // Beersheba, negev order_targets[0]
-            ("operation_yoav", "stop_at_ceasefire", true, "givati", -8, 26),       // Huleiqat, givati order_targets[0]
-            ("ten_days", "central_front", true, "kiryati", -3, 21),                // Ramle, kiryati order_targets[0]
-            ("ten_days", "central_front", true, "carmeli", 13, 5),                 // facing the Syrian bridgehead, carmeli anchors[1]
+            ("latrun_proposal", "press_offensive", false, "harel", -3, 25),        // Latrun police fort, harel order_targets[0]
+            ("operation_hiram", "stop_at_ceasefire", true, "carmeli", 15, 3),      // Manara, carmeli order_targets[0]
+            ("operation_hiram", "stop_at_ceasefire", true, "brigade_7", 14, 4),    // al-Malikiyya, brigade_7 order_targets[0]
+            ("operation_horev", "launch", true, "golani", -8, 28),                 // Julis camp, golani anchors[1]
+            ("operation_yoav", "stop_at_ceasefire", true, "negev", -10, 35),       // Beersheba, negev order_targets[0]
+            ("operation_yoav", "stop_at_ceasefire", true, "givati", -9, 29),       // Huleiqat, givati order_targets[0]
+            ("ten_days", "central_front", true, "kiryati", -4, 24),                // Ramle, kiryati order_targets[0]
+            ("ten_days", "central_front", true, "carmeli", 14, 6),                 // facing the Syrian bridgehead, carmeli anchors[1]
         }, orders.OrderBy(x => x.Item1, StringComparer.Ordinal));
     }
 
@@ -518,12 +520,12 @@ public class EnemyAITests
     // unit standing on the hex is taken off first (the ALA on al-Malikiyya), as that refusal is pinned by
     // WarEvents1948Tests.NoTurnBeforeTheArmisticeRefusesAnOrder and ARefusedCardOrderIsReportedLikeThePlayersOwn.
     [Theory]
-    [InlineData("ten_days", "central_front", "1948-07-15", "kiryati", -3, 21, "1948-07-20")]
-    [InlineData("operation_yoav", "stop_at_ceasefire", "1948-10-15", "negev", -9, 31, "1949-02-24")]
-    [InlineData("operation_yoav", "stop_at_ceasefire", "1948-10-15", "givati", -8, 26, "1948-11-01")]
-    [InlineData("operation_hiram", "stop_at_ceasefire", "1948-11-15", "carmeli", 14, 2, "1949-03-23")]
-    [InlineData("operation_hiram", "stop_at_ceasefire", "1948-11-15", "brigade_7", 12, 4, "1949-03-23")]
-    [InlineData("latrun_proposal", "press_offensive", "1948-09-15", "harel", -2, 22, "1948-12-22")]
+    [InlineData("ten_days", "central_front", "1948-07-15", "kiryati", -4, 24, "1948-07-20")]
+    [InlineData("operation_yoav", "stop_at_ceasefire", "1948-10-15", "negev", -10, 35, "1949-02-24")]
+    [InlineData("operation_yoav", "stop_at_ceasefire", "1948-10-15", "givati", -9, 29, "1948-11-01")]
+    [InlineData("operation_hiram", "stop_at_ceasefire", "1948-11-15", "carmeli", 15, 3, "1949-03-23")]
+    [InlineData("operation_hiram", "stop_at_ceasefire", "1948-11-15", "brigade_7", 14, 4, "1949-03-23")]
+    [InlineData("latrun_proposal", "press_offensive", "1948-09-15", "harel", -3, 25, "1948-12-22")]
     public void AnOperationCardOrdersItsUnitToItsHex(string card, string option, string turn, string row, int q, int r, string until)
     {
         static DateTime Day(string d) => DateTime.Parse(d, System.Globalization.CultureInfo.InvariantCulture);
@@ -692,5 +694,39 @@ public class EnemyAITests
         var c = CardGame(4, 0, "1949-01-01", MovementTests.Board());
         var r = Simulation.Step(c, Simulation.NewGame(c, 1, Mode.Historical), new Command[] { new Move(0, 1, 0) });
         Assert.Equal((3, 0, Movement.GoTo), (r.State.Units[0].Q, r.State.Units[0].R, r.State.Units[0].Order));
+    }
+
+    // R-ENEMY-003, #2114 (O4, owner ruling 1 Nov 2026): under exact gdd-0.3 the threshold is the catalogue's
+    // combat.enemy_attack_ratio, 1.5:1 (150%); gdd-0.1 keeps mvp.enemy_attack_ratio_percent (the fixture's 200).
+    static Content Gdd03() => ContentLoader.Load(Fixture.Write(Gdd03Files()));
+
+    static Dictionary<string, string> Gdd03Files()
+    {
+        var f = Fixture.Gdd(new Dictionary<string, string>
+        {
+            ["unit_types.yaml"] = Types, ["map/hexes.json"] = MovementTests.Board(), ["corridors.yaml"] = "corridors: []\n"
+        });
+        f["rules.yaml"] = f["rules.yaml"].Replace("move_cost: { coastal_plain: 1, hills: 2, desert: 3 }",
+            "move_cost: { coastal_plain: 1, lowland: 1, valley: 1, hills: 2, mountains: 3, desert: 3 }")
+            .Replace("combat_terrain_percent: { coastal_plain: 100, hills: 150, desert: 100 }",
+            "combat_terrain_percent: { coastal_plain: 100, lowland: 100, valley: 100, hills: 150, mountains: 150, desert: 100 }");
+        f["eras.yaml"] = f["eras.yaml"].Replace("loop: gdd", "loop: gdd, ruleset: " + SaveGame.Gdd03Ruleset);
+        f[Gdd03BalanceCatalogue.FileName] = System.IO.File.ReadAllText(System.IO.Path.Combine(RealContentTests.ContentRoot(), Gdd03BalanceCatalogue.FileName));
+        return f;
+    }
+
+    [Theory]
+    [InlineData(true, 30, 150, Combat.Attack, "3,0")]       // gdd-0.3: exactly 1.5:1 attacks
+    [InlineData(true, 29, 145, Orders.Fortifying, "2,0")]   // gdd-0.3: just under 1.5:1 holds
+    [InlineData(false, 30, 150, Orders.Fortifying, "2,0")]  // gdd-0.1: 1.5:1 holds
+    [InlineData(false, 40, 200, Combat.Attack, "3,0")]      // gdd-0.1: 2:1 attacks
+    public void Gdd03AttacksAtOneAndAHalfAndGdd01KeepsTwo(bool gdd03, int strength, int ratio, string order, string target)
+    {
+        var c = gdd03 ? Gdd03() : Load();
+        Assert.Equal(gdd03 ? SaveGame.Gdd03Ruleset : SaveGame.GddRuleset, c.Ruleset);
+        var s = CombatTests.With(c, Soldier(1, 3, 0, 20), Enemy(2, 2, 0, strength));
+        Assert.Equal(ratio, Combat.Preview(c, s, 2, 3, 0)!.Value.RatioPercent);
+        EnemyAI.Order(c, s, new List<Cause>());
+        Assert.Equal((order, target), (s.Units[2].Order, s.Units[2].OrderTarget));
     }
 }

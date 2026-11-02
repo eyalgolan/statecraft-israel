@@ -8,7 +8,6 @@ text: 'On 18 May the Syrian army takes Samakh (Tzemah), at the south end of the 
 # לעמק הירדן". Neither page uses בקעת הירדן or תותחי הרים (review on #1568).
 title_he: ההגנה על דגניה
 text_he: 'ב-18 במאי הצבא הסורי כובש את צמח, בקצה הדרומי של הכנרת, והדרך צפונה עוברת בדגניה. למחרת בערב משלחת מהדגניות פונה אל {prime_minister} בתל אביב ומבקשת תגבורות, אבל אין כוחות פנויים. {prime_minister} והמטה הכללי נחלקים לאן לשלוח את סוללת תותחי השדה הישנים של היישוב, בקליבר 65 מ״מ: לירושלים או לעמק הירדן. על {defense_minister} להכריע לאן ילכו התותחים.'
-text_he_review: agent-checked
 anchor: hard
 tags: [security, war-casualties]
 office: defense_minister

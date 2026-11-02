@@ -136,11 +136,11 @@ public class CivMovementShots
         yield return Frames(5);
         Shot(rt!, $"1-card-{lang}");
 
-        // 2. Golani attacks the Syrian unit beside it (as UnitOrdersTests.AnAttackShowsItsResultAtOnce).
-        var syrian = bridge.State.Units.Values.First(x => x.Side == "syria" && MapActions.Distance(x.Q, x.R, golani.q, golani.r) == 1);
+        // 2. Golani attacks the Iraqi unit beside it (4.4 km grid, #1183) (as UnitOrdersTests.AnAttackShowsItsResultAtOnce).
+        var iraqi = bridge.State.Units.Values.First(x => x.Side == "iraq" && MapActions.Distance(x.Q, x.R, golani.q, golani.r) == 1);
         UiTestKit.Press(ui.Q<Button>("info-attack"));
         yield return Frames(2);
-        GameRoot.OnHexClicked(map, units, info, syrian.Q, syrian.R);
+        GameRoot.OnHexClicked(map, units, info, iraqi.Q, iraqi.R);
         yield return Frames(2);
         Aim(golani.q, golani.r, 40000f);   // the same camera as the card's still (the branch's cycle moves it on)
         yield return Frames(3);

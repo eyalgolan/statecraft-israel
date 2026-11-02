@@ -326,7 +326,7 @@ own root rotation kept (the FBX axis turn, -90 degrees about X), so the camera's
   victory". That is wrong: the first victories were on 3 June 1948, by Modi Alon in an S-199. The file records this.
 
 **Placement** (`UnitPlacer.PlaceAll`). Every anchor is placed once, from the data alone, so a token never moves because
-another unit appears. Its spot is at most one hex step from the sourced place (about 8.7 km between hex centres on 5 km
+another unit appears. Its spot is at most one hex step from the sourced place (about 7.6 km between hex centres on 4.4 km
 hexes). It is the nearest such spot to the place, or to the anchor's sourced `toward` point when it has one (see below).
 In the GDD loop a simulated starting force can persist after its source anchor's window ends. A map-only army whose
 cached spot overlaps that starting spot gets a fixed display override, computed once from the same data before date or
@@ -335,7 +335,7 @@ spots. Overrides cannot stand in a town: the map's original spots and kit cleari
 spots are reserved against later moved-token placement. Source anchors, their dates, sim units and legacy placement do not
 change. If no safe override exists, the token remains drawn at its original spot with an overlap warning.
 
-The candidates are tried in three rounds:
+The candidates are tried in four rounds:
 1. The centres of the anchor's own hex and its six neighbours, with the token at full size.
 2. If none is clear, those centres plus six points inside each hex, with the token **compact**: half the ring and half
    the trio's spread, to fit beside a town. Yiftach at Lydda and the squadron at Herzliya stand compact.
@@ -345,6 +345,12 @@ The candidates are tried in three rounds:
    stands in a building. The clearing may cut only into the anchor's own town, never a neighbour's. Kiryati (Tel Aviv),
    Carmeli (Haifa) and Etzioni (West Jerusalem) stand this way. Haifa and Tel Aviv each have a budget of one such
    clearing, and their census floors are measured with it (#588, owner, 18 October 2026; `TownCensusTests`).
+4. If none of those is clear, the anchor's point and rings round it every 500 m out to the one-hex limit, about 500 m
+   apart on each ring, with the token compact and off the towns as in round 2. On 4.4 km hexes (#1183) the points of
+   rounds 1-3 lie 1.1 to 2.9 km apart and can all miss the clear ground between villages: Majdal, the Egyptian rear base,
+   found none among them (every one touched a village's disc or a route's corridor), while clear ground lies 3.5 km
+   south-west of its point, west of Ni'ilya. The round runs last, so an anchor placed in rounds 1-3 keeps its spot (a
+   round-4 spot holds its hex like any other; measured on the game map, no other anchor and no camp moved).
 
 A spot is clear when:
 - the ring's disc stays off every settlement footprint (the kits' discs, times 1.1);
@@ -364,12 +370,15 @@ next to the anchor on that side. The token stands at the clear spot nearest that
 - The 7th Brigade is anchored at Hulda, its headquarters for the Latrun attacks (Battles of Latrun), not at Latrun.
   The Arab Legion held Latrun and the Yalu–Beit Nuba ridge. The ground between was contested until the Beit Jiz and
   Beit Susin area was cleared on 28 May, and Sar'a was taken only on 13–14 July.
-- Harel stands by Saris on the corridor road, hex (-2,23), taken on 16–17 April 1948. It no longer stands by Sar'a and
+- Harel stands by Saris on the corridor road, hex (-2,26), taken on 16–17 April 1948. It no longer stands by Sar'a and
   Artuf.
 
 The test pins Etzioni's distance from the West Jerusalem point, Harel's hex, and the 7th within 2.6 km of Hulda; both
-the 7th and Harel stay more than 3 km from Sar'a. Once dated front data lands, the placer should also reject ground the other side held. `EveryAnchorStandsWithinOneHexClearOfTheTownsAndTheRoutes`
-checks every anchor and logs each spot and its distance.
+the 7th and Harel stay more than 3 km from Sar'a. With the control layer (`control_hexes_1948_49.yaml`) the placer
+also keeps an Arab force's spot off the hexes Israel held on the anchor's first day (#226, ruling 9). On 4.4 km hexes
+(#1183) Isdud's nearest clear centre was the Israeli-held hex east of it. Israeli tokens keep the `toward` rule above,
+and a unit the sim moves is placed without the control layer.
+`EveryAnchorStandsWithinOneHexClearOfTheTownsAndTheRoutes` checks every anchor and logs each spot and its distance.
 
 **Look.**
 - **Models:** the slice's models and the authored-prefab hook.
@@ -388,6 +397,9 @@ checks every anchor and logs each spot and its distance.
   camera before the names are placed, and each token's keep-clear boxes follow (`UnitLayer.KeepClear`). A fixed box round
   every place the camera's yaw could take the badge, about 3.7 km across, pushed Tel Aviv's name off its kit at gameplay03
   (`MapLabelTests.PillsKeepClearOfTheUnitTokens`; test `TheKeepClearBoxesFollowTheBadgeAndTheFlagAsTheCameraTurns`).
+  Up close the badge is capped on the screen (owner, 31 October 2026: "Shrink up close (Recommended)"): from about 30 km
+  out it keeps its 1.4 km width, and a nearer camera draws it no taller than `UnitBadge.MaxScreenShare` of the screen's
+  height, shrinking about its lower edge, which stays clear of the flag (test `UnitBadgeScreenCapTests`).
 - **Ring:** the white ring appears only on selection.
 - **Base and flag (demo2 T29, refs #197).** An army token's figures stand shoulder to shoulder on one round earth base
   ringed by a bright white rim (`UnitPlinth`), and the side's flag flies on a pole at the base's back edge (`UnitFlags`).
@@ -566,9 +578,10 @@ figures tall standing at the base's back edge. `UnitPlinth` and `UnitFlags` draw
   before measuring ours. The figures read darker than their base, as T29's (0.5–0.9 of its luma), at those looks and at
   gameplay03 (`TheFiguresReadDarkerThanTheirBaseAsT29`, #645: the shirts at 0.9 of #559's paint, read beside the chest
   brace, which #559's sample point hit).
-- **Flag:** by the unit's `side` in `units_1948.yaml`. Israel's is the only sourced flag; the two Arab forces the map
-  draws fly the neutral pennant (Q-ART-1, owner, 15 October 2026: "a neutral pennant now, replaced by a sourced emblem
-  when one is found"): a plain grey triangle, in no side's colours and not white (`UnitFlags.BuildPennant`). The cloth is 0.52 of a figure's height tall and 0.72 wide, on a pole 1.5 tall at 0.9 of the base's
+- **Flag:** by the unit's `side` in `units_1948.yaml`. Israel, Transjordan, Egypt, Iraq, Syria and Lebanon fly their
+  sourced 1948 flags (below); the Arab Liberation Army, the one force the map draws with no sourced flag, flies the
+  neutral pennant (Q-ART-1, owner, 15 October 2026: "a neutral pennant now, replaced by a sourced emblem when one is
+  found"; never its dagger emblem, #226 ruling 8): a plain grey triangle, in no side's colours and not white (`UnitFlags.BuildPennant`). Every flag's cloth is 0.72 of a figure's height wide, its height its own law's proportion (Israel's 0.52, the others below; the pennant 0.36 at the pole), on a pole 1.5 tall at 0.9 of the base's
   radius, behind the trio and east of the badge (`TheFlagIsAboutHalfAFigureTallOnTheBasesEdge`). The cloth is drawn
   unlit (white, and a blue standing for the proclamation's "dark sky-blue"), so it reads white under the map's light and
   grade as T29's. Owner ruling (2026-10-15): the flag turns about its pole to face the camera (`UnitFlagFacing`), so it
@@ -590,8 +603,18 @@ figures tall standing at the base's back edge. `UnitPlinth` and `UnitFlags` draw
     https://en.wikipedia.org/wiki/Flag_of_Israel (checked 2026-10-14), which fits the gazette's own drawing. The same
     design hung at the declaration on 14 May 1948 (https://en.wikipedia.org/wiki/Israeli_Declaration_of_Independence,
     checked 2026-10-14), so it flies from the game's first day. Pinned by `TheIsraeliFlagFollowsTheSpecification`.
-  - Egypt, Jordan, Syria, Iraq, Lebanon: no sourced flag yet, so a token of theirs flies none
-    (`TheFlagIsTheSidesAndOnlyASourcedFlagIsDrawn`).
+  - Transjordan (#756): the Organic Law of 16 April 1928, Art. 3. Egypt: Law No. 47 of 1923 and its construction
+    annex. Iraq: the Organic Law of 1925, Art. 4. Syria: the Constitution of 1930, Art. 4. Lebanon: the Constitution's
+    Art. 5 as amended on 7 December 1943 (owner, 31 October 2026: "we need to have the flags of all arab forces like we
+    have for the israeli ones"). Each flies its national flag (no source was found for a field war flag of any of them).
+    The citations, what each law leaves open and the drawing each open point follows are in `UnitFlags`' class note; the
+    research is `.superpowers/coordination/arab-flags-1948-research.md`. Every flag is 0.72 of a figure long with the
+    same top; its height is its law's proportion (2:3 for Egypt and Lebanon, 0.48; 1:2 for Transjordan, Iraq and Syria,
+    0.36). Lebanon's cedar is traced from Wikimedia Commons' public-domain `File:Flag_of_Lebanon.svg` and drawn all
+    green, the owner's choice where the sources on its 1948 colour conflict (31 October 2026, "All green
+    (Recommended)"; `UnitFlags.LebanonCedarColour`). Pinned by
+    `EverySourcedFlagHasItsColoursAndItsLawsProportion` and one test per flag; the local forces have no figure, so no
+    token and no flag (`TheFlagIsTheSidesAndOnlyASourcedFlagIsDrawn`).
 - **The showcase trio** (`?units`, `-units`) stands at the land hex nearest its old spot whose base keeps off the
   railways and roads, and the kits keep a clearing there in such a run, as they do for a unit in a town
   (`MapScene.ShowcaseClearing`, `UnitShowcase.Clearing`), so no kit building or route crosses its base

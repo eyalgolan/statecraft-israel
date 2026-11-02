@@ -63,7 +63,7 @@ Offline data tools (uv inline-script Python). Run from the repo root.
   the events' `title_he` / `text_he` / options' `text_he` (#1064) and `strings.he.yaml` (#12), only the changed lines;
   Hebrew content names keep their sources and are edited by hand. Any other language goes to
   `translations/<lang>/{events,ui,content}.yaml`, which the game does not read yet, and leaves out the advisors
-  (`advisor.*`) and How to play (`how_to_play.*`), which stay English or Hebrew only for now (owner, #1604). Every language keeps the Hebrew
+  (`advisor.*`) and their encyclopedia (`encyclopedia.*`, which replaced How to play), which stay English or Hebrew only for now (owner, #1604). Every language keeps the Hebrew
   rules (all or none per event, placeholders as in the English, one line, no direction marks; `agent-checked` until a
   native speaker has read it, #564), and nothing is written while any edited string is refused. It never commits or
   touches `status` / `reviewed_by`; a saved Hebrew edit is a `content/` or `unity/` change, so it needs a changelog
@@ -220,9 +220,17 @@ and what is public are in `docs/RELEASING.md`, "Nightly builds". It runs on the 
   `launchd.log` and `no-mcp-server`. A corrupt `config.json` or `state.json` refuses the night; it never counts as a
   first night.
 - itch.io pushes stay off (`itch_enabled` is false) until the save test passes: set `itch_page_url` in `config.json`
-  to the itch page, then, from the clone and after the first PUBLISHED night,
-  `uv run tools/nightly.py savetest --tag <that nightly's tag>`. It pushes to the public itch page twice and, on a
-  pass, turns `itch_enabled` on in `config.json`. `INCONCLUSIVE` and `FAIL` leave itch off.
+  to the itch page, and `savetest_itch_target` (`user/project:channel`) to a separate test project, then, from the
+  clone and after the first PUBLISHED night,
+  `uv run tools/nightly.py savetest --tag <that nightly's tag>`. It pushes to the test page twice, never to the public
+  page, and refuses to run without that key or if it names the public project. It never reads the test page (which
+  can stay Restricted): it loads each upload's game frame from the upload and build ids `butler status` shows while
+  that upload's version is live. The owner or an agent may start it (owner, 2 Nov 2026, "2 (a)"); `savetest.lock` in
+  the job folder keeps two runs from overlapping. A `config.json` that still holds the old `savetest_itch_page_url` key
+  refuses the night with a message to remove it (#2237 replaced it). On a
+  pass, it turns `itch_enabled` on in `config.json`. `INCONCLUSIVE` and `FAIL` leave itch off. A night pushes to itch
+  only while `savetest_itch_target` names a separate project and `itch_evidence` records that PASS; otherwise its log line says
+  `itch: skipped (<reason>)`, naming the missing key or the problem (#2056).
 - The boot-time baseline is the median headless boot of the first 5 PUBLISHED nights; later nights must stay within
   the spread of those 5. To measure it again (a new machine, a new Chrome), delete `boot_baseline` from `state.json`;
   the next 5 published nights record it.

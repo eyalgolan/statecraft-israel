@@ -233,9 +233,9 @@ public class WarEvents1948Tests
         Assert.True(IsTheMalkiyaRefusal(only.X), only.X.Reason);
     }
 
-    /// <summary>Operation Hiram's refused card order: the 7th Brigade (unit 13, R-UNIT-009) to al-Malikiyya (12,4).</summary>
+    /// <summary>Operation Hiram's refused card order: the 7th Brigade (unit 13, R-UNIT-009) to al-Malikiyya (14,4).</summary>
     internal static bool IsTheMalkiyaRefusal(Rejection x) =>
-        x.Reason == Orders.RefusedCardOrder && x.Command is UnitOrder { Unit: 13, Q: 12, R: 4 };
+        x.Reason == Orders.RefusedCardOrder && x.Command is UnitOrder { Unit: 13, Q: 14, R: 4 };
 
     [Fact]
     public void TheHistoricalRunMovesThroughTheTruces()

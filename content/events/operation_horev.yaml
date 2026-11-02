@@ -6,7 +6,6 @@ text: '{defense_minister} proposes an offensive against the Egyptian army in the
 # (https://he.wikipedia.org/wiki/מבצע_חורב).
 title_he: מבצע חורב
 text_he: 'הצעת {defense_minister} היא לפתוח במתקפה נגד הצבא המצרי בדרום, בפיקוד יגאל אלון ובהשתתפות חמש חטיבות.'
-text_he_review: agent-checked
 anchor: hard
 tags: [security, war-casualties]
 office: defense_minister
@@ -36,7 +35,7 @@ options:
     # camp). The hex is the anchor's own (map/unit_anchor_hexes.yaml). The order ends with that anchor's window, on
     # 24 February 1949 (the owner's answer 1 on #2087).
     unit_orders:
-      - { unit: golani, q: -7, r: 24 }
+      - { unit: golani, q: -8, r: 28 }
   - id: hold
     # Game assumption: the notes give no alternative to launching; this one names no advocate.
     text: Hold the lines and wait for talks with Egypt

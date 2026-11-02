@@ -205,16 +205,25 @@ public class MapLabelTests
 
     static System.Collections.Generic.List<Statecraft.Sim.MapLocation> Locations() => Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content).MapLocations;
 
-    /// <summary>Issue #1008: every GDD v0.2 map location in content/map/locations_1948.yaml is named on the map, in English and
-    /// in Hebrew. The one that reuses a game settlement's id (jerusalem) renames that settlement's pill, so Jerusalem reads
-    /// "West Jerusalem" with no second pill; each other location has exactly one pill of its own, which ignores the pointer.</summary>
+    /// <summary>Issues #1008, #1007 and #2113: the ten required GDD v0.2 map locations, the optional outpost and optional Nirim
+    /// are named in English and in Hebrew. The one that reuses a game settlement's id (jerusalem) renames that settlement's
+    /// pill, so Jerusalem reads "West Jerusalem" with no second pill; each other location has exactly one pill of its own,
+    /// which ignores the pointer.</summary>
     [Test]
     public void EveryMapLocationIsNamedOnceInEnglishAndHebrew()
     {
         var locations = Locations();
         var settlementIds = map.Settlements.Select(s => s.Id).ToHashSet();
         var own = locations.Where(l => !settlementIds.Contains(l.Id)).ToList();
-        Assert.AreEqual(10, locations.Count, "the #1008 roster");
+        CollectionAssert.AreEquivalent(new[] { "negba", "hulda", "nir_am", "latrun_fort", "iraq_suwaydan_fort",
+            "shaar_hagai", "ad_halom_bridge", "shaar_haaliyah", "jerusalem", "east_jerusalem_old_city" },
+            locations.Where(l => l.Priority == "must_have").Select(l => l.Id).ToArray(), "the ten required #1008 locations stay intact");
+        Assert.AreEqual(12, locations.Count, "the ten required locations, the optional #1007 outpost and optional nirim (#2113)");
+        CollectionAssert.AreEqual(new[] { "umm_rashrash", "nirim" }, locations.Where(l => l.Priority == "optional").Select(l => l.Id).ToArray(), "the optional rows, in file order");
+        var outpost = locations.Single(l => l.Id == "umm_rashrash");
+        Assert.AreEqual("outpost", outpost.Kind);
+        Assert.IsFalse(outpost.ManagedCity || outpost.DesignatedSite || outpost.SettlementControlTarget, "an optional map record grants no gameplay role");
+        Assert.IsFalse(map.Settlements.Any(s => s.Id == outpost.Id), "the outpost has no population-managed settlement");
         Assert.AreEqual(new[] { "jerusalem" }, locations.Where(l => settlementIds.Contains(l.Id)).Select(l => l.Id).ToArray());
         foreach (var hebrew in new[] { false, true })
         {
@@ -232,6 +241,11 @@ public class MapLabelTests
                 Assert.IsTrue(l.ClassListContains(MapLabelsPresenter.LabelClass) && l.ClassListContains(MapLabelsPresenter.LocationClass), l.text);
                 Assert.AreEqual(PickingMode.Ignore, l.pickingMode, l.text + " must not catch map clicks");
             }
+            var outpostPill = labels.LocationLabels.Single(l => l.name == "label-umm_rashrash");
+            Assert.AreEqual(hebrew ? outpost.NameHe : outpost.Name, outpostPill.text, "the optional outpost has its own translated pill");
+            var outpostSlot = container.Q<VisualElement>("slot-umm_rashrash");
+            Assert.IsNull(outpostSlot.Q<Label>(className: MapLabelsPresenter.TierClass), "no invented 1948 population tier");
+            Assert.IsFalse(outpostPill.ClassListContains(MapLabelsPresenter.WithTierClass));
             Assert.AreEqual(1, container.Query<VisualElement>("slot-jerusalem").ToList().Count, "Jerusalem keeps one pill");
             Assert.AreEqual(hebrew ? "מערב ירושלים" : "West Jerusalem", labels.Labels[map.Settlements.ToList().FindIndex(s => s.Id == "jerusalem")].text);
             Assert.AreEqual(map.Settlements.Count + own.Count + map.Localities.Count + 1, container.childCount, "settlements, locations, localities and the tooltip");
@@ -242,7 +256,7 @@ public class MapLabelTests
     }
 
     /// <summary>Issue #1008: two locations in one hex stay two readable pills. Negba and the Iraq Suwaydan police fort share
-    /// hex (-7, 25), and West Jerusalem (the jerusalem settlement's pill) and East Jerusalem / Old City share (0, 23). Close up,
+    /// hex (-8, 28), and West Jerusalem (the jerusalem settlement's pill) and East Jerusalem / Old City share (0, 26). Close up,
     /// in English and in Hebrew, both pills of each pair are shown, and no two shown pills overlap.</summary>
     [UnityTest]
     public IEnumerator LocationsSharingAHexAreBothNamedAndNeverOverlap()
@@ -882,7 +896,9 @@ public class MapLabelTests
             labels.Refresh(); yield return null;
             var home = tlv.Q<Label>().worldBound;
             TestContext.WriteLine($"units off: Tel Aviv pill {home}, kit {kit}");
-            Assert.Greater(home.yMax, pill.yMax + 20f, $"the pill {home} came back down from {pill}");
+            // #1183: 4.4 km hexes, values scale with HexM: the denser grid leaves Tel Aviv's pill clear of Kiryati without a lift (0 px measured), so it only
+            // must not stand higher than it did with the units on.
+            Assert.GreaterOrEqual(home.yMax, pill.yMax, $"the pill {home} came back down from {pill}");
             Assert.That(kit.yMin - home.yMax, Is.InRange(MapLabelsPresenter.LiftPx - 1f, 30f), $"back just above its kit: pill {home}, kit {kit}");
             // And on again: it goes back above the brigade.
             VisualToggles.Set(Statecraft.Game.Map.Units.UnitLayer.ToggleName, true);
@@ -892,14 +908,111 @@ public class MapLabelTests
         finally { inset.Dispose(); labels.Dispose(); hd.Dispose(); }
     }
 
+    /// <summary>Review of #2176, item 1: a moved unit's token slides to its new spot (#1866), and with no camera move the
+    /// names keep clear of the token where it is drawn, during the slide and after it. At gameplay03 the Tel Aviv pill
+    /// stands clear of the Kiryati Brigade (PillsKeepClearOfTheUnitTokens). The brigade's token then starts a slide from
+    /// the far part of Tel Aviv's kit, right under the pill, and the labels' pass at the rebuild sees it there, so the pill
+    /// goes up past it. Near the slide's end, and once it has arrived, a plain refresh (GameRoot's every LateUpdate, the
+    /// boxes faced to the camera first) puts the pill clear of the brigade in Tel Aviv again. Before the fix the slide moved
+    /// the boxes inside the same list, the labels re-place only for a new list, and the pill stayed where the token had been
+    /// drawn at the start.</summary>
+    [UnityTest]
+    public IEnumerator PillsKeepClearOfASlidingTokenWithoutACameraMove()
+    {
+        var layer = StartUnits(animateMoves: true);
+        HdPanel hd = new HdPanel(cam);
+        var labels = new MapLabelsPresenter(hd.Root, map, cam, keepClear: () => { layer.FaceCamera(cam); return layer.KeepClear; });   // as GameRoot
+        var inset = new TopBarInset(hd.Root, rig);
+        try
+        {
+            var pose = PromoPose.Gameplay03;
+            rig.LookAt = map.Frame.ToWorld(pose.Lon, pose.Lat, 0); rig.Distance = pose.Distance; rig.Yaw = pose.Yaw; rig.Apply();
+            yield return null;
+            inset.Update();
+            // An Arab force's token is drawn only once its figure has loaded or failed (UnitLayer.Show), and each such
+            // arrival (UnitFigures.AvailabilityVersion) makes the next FaceCamera redraw every token (Rebuild), which can
+            // move the names and replaces the brigade's token. Only figures near the camera load, so wait until no
+            // arrival has come for 3 s (at most 60 s) before the names are measured.
+            var clock = System.Diagnostics.Stopwatch.StartNew();
+            int version = Statecraft.Game.Map.Units.UnitFigures.AvailabilityVersion; double quietSince = 0;
+            while (clock.Elapsed.TotalSeconds - quietSince < 3 && clock.Elapsed.TotalSeconds < 60)
+            {
+                yield return null;
+                layer.FaceCamera(cam);   // as a render would: an arrival redraws the tokens now
+                if (Statecraft.Game.Map.Units.UnitFigures.AvailabilityVersion != version)
+                { version = Statecraft.Game.Map.Units.UnitFigures.AvailabilityVersion; quietSince = clock.Elapsed.TotalSeconds; }
+            }
+            TestContext.WriteLine($"figures quiet after {quietSince:F1} s (availability version {version})");
+            layer.FaceCamera(cam);   // the redraw for them, before the names are placed
+            yield return Settle(labels);
+            var tlv = labels.Slots.Single(s => s.name == "slot-tel_aviv");
+            Assert.IsTrue(Shown(tlv), "Tel Aviv is named at gameplay03");
+            var clear = tlv.Q<Label>().worldBound;   // clear of the brigade standing in Tel Aviv
+            // Found again after every frame: a redraw replaces the token, and its new motion goes on with the slide.
+            Statecraft.Game.Map.Units.UnitTokenMotion Motion() =>
+                GameObject.Find(Statecraft.Game.Map.Units.UnitLayer.RootName).transform.Find("Tokens").Find("kiryati")
+                    .GetComponent<Statecraft.Game.Map.Units.UnitTokenMotion>();
+            Assert.IsNotNull(Motion(), "a play build moves the brigade's token");
+
+            // The slide's start (#1183): on 4.4 km hexes the brigade in Tel Aviv stands low in the kit at gameplay03, so the pill
+            // needs no lift (PillsKeepClearOfTheUnitTokens) and a token drawn far away would move nothing. So the token starts
+            // where it overlaps the kit and reaches above it, as the brigade in Tel Aviv did on 5 km hexes: its boxes (the ones
+            // the names keep clear of, UnitLayer.KeepClear) moved level on the ground until their foot stands, as the camera
+            // sees it, under the pill's centre and half their own screen height below the kit's top edge.
+            int index = layer.Tokens.Select((t, n) => (t, n)).Single(x => x.t.Token.Unit.Id == "kiryati").n;
+            var boxes = layer.KeepClear[index];
+            var world = boxes[0]; foreach (var b in boxes) world.Encapsulate(b);
+            float x0 = float.MaxValue, y0 = float.MaxValue, x1 = float.MinValue, y1 = float.MinValue;
+            for (int c = 0; c < 8; c++)
+            {
+                var p = hd.ToPanel(new Vector3((c & 1) == 0 ? world.min.x : world.max.x, (c & 2) == 0 ? world.min.y : world.max.y,
+                    (c & 4) == 0 ? world.min.z : world.max.z), out _);
+                x0 = Mathf.Min(x0, p.x); y0 = Mathf.Min(y0, p.y); x1 = Mathf.Max(x1, p.x); y1 = Mathf.Max(y1, p.y);
+            }
+            var drawn = Rect.MinMaxRect(x0, y0, x1, y1);
+            var kit = KitRectOf(hd, "tel_aviv");
+            var foot = new Vector3(world.center.x, world.min.y, world.center.z);
+            float scale = hd.Root.worldBound.width / hd.Width;
+            var ray = cam.ScreenPointToRay(new Vector3(clear.center.x / scale, hd.Height - (kit.yMin + drawn.height / 2f) / scale, 0f));
+            Assert.IsTrue(new Plane(Vector3.up, foot).Raycast(ray, out float enter), "the spot under the pill is on the ground ahead");
+            var start = ray.GetPoint(enter) - foot;
+            TestContext.WriteLine($"the brigade drawn {drawn} in Tel Aviv's kit {kit}; the slide starts {start.magnitude:F0} m away");
+            Motion().Begin(start);
+            labels.Refresh(force: true); yield return null;   // the labels' pass at the rebuild sees the slide's start
+            // and the frames after it, while the token has barely moved: a placement that shows or hides a pill changes the
+            // pills' sizes, which re-places them once more (MapLabelsPresenter.Refresh), so let that settle at the start.
+            for (int i = 0; i < 3; i++) { labels.Refresh(); yield return null; }
+            var away = tlv.Q<Label>().worldBound;
+            TestContext.WriteLine($"slide start: Tel Aviv pill {away}, clear of the brigade {clear}");
+            Assert.Less(away.yMax, clear.yMax - 1f, $"with the brigade drawn under it the pill {away} goes up from {clear}");
+
+            var motion = Motion();
+            motion.Tick(Statecraft.Game.Map.Units.UnitTokenMotion.Duration * 0.9999f);   // a ten-thousandth of the slide short of Tel Aviv
+            Assert.IsTrue(motion.Moving, "still sliding");
+            labels.Refresh(); yield return null;
+            var during = tlv.Q<Label>().worldBound;
+            TestContext.WriteLine($"near the end: Tel Aviv pill {during}");
+            Assert.AreEqual(clear.yMax, during.yMax, 1f, $"mid-slide the pill {during} keeps clear of the token as drawn, not of its start {away}");
+
+            motion = Motion();
+            motion.Tick(Statecraft.Game.Map.Units.UnitTokenMotion.Duration);
+            Assert.IsFalse(motion.Moving, "arrived");
+            labels.Refresh(); yield return null;
+            Assert.AreEqual(clear.yMax, tlv.Q<Label>().worldBound.yMax, 0.5f, "arrived, the pill keeps clear of the brigade in Tel Aviv");
+        }
+        finally { inset.Dispose(); labels.Dispose(); hd.Dispose(); }
+    }
+
     static readonly string[] Occluders = { "top-bar", "info-panel", "minimap" };
 
-    /// <summary>The units in play as a new game starts (golden seed, historical mode), as the game draws them.</summary>
-    Statecraft.Game.Map.Units.UnitLayer StartUnits()
+    /// <summary>The units in play as a new game starts (golden seed, historical mode), as the game draws them; with
+    /// <paramref name="animateMoves"/> as in play, where a moved unit's token slides (#1866).</summary>
+    Statecraft.Game.Map.Units.UnitLayer StartUnits(bool animateMoves = false)
     {
         var content = Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content);
         var units = Statecraft.Game.Map.Units.UnitData.Parse(File.ReadAllText(Path.Combine(Statecraft.Game.Paths.Content, "map", Statecraft.Game.Map.Units.UnitData.DefaultFileName)));
         var layer = Statecraft.Game.Map.Units.UnitLayer.Create(map, units, content.Hexes, still: true);
+        layer.AnimateMoves = animateMoves;
         layer.Show(content, Statecraft.Sim.Simulation.NewGame(content, Statecraft.Sim.GoldenRun.Seed, Statecraft.Sim.Mode.Historical));
         return layer;
     }
@@ -1388,7 +1501,7 @@ public class MapLabelTests
             foreach (var date in new[] { new System.DateTime(1948, 6, 15), new System.DateTime(1949, 8, 15) })
             {
                 var layer = craftLayer = Statecraft.Game.Map.Collection.SeaAirCollection.ShowAt(map, date, System.Array.Empty<Statecraft.Sim.Placement>(), c)!;
-                Assert.AreEqual(4, layer.Placed.Count, "every craft drawn on " + date.ToString("d MMM yyyy"));
+                Assert.AreEqual(date.Year == 1948 ? 5 : 4, layer.Placed.Count, "every craft drawn on " + date.ToString("d MMM yyyy"));
                 foreach (var (lon, lat) in new[] { (34.76, 32.07), (35.03, 32.86), (34.88, 32.0) })
                 {
                     Pose(lon, lat, 60000f);

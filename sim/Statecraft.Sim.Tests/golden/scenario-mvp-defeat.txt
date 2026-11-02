@@ -46,7 +46,7 @@ sit[
   fx_crisis
   housing_crisis
 treasury=0 [0000000000000000]
-debt=295.7401207128382 [40727BD788D10BB7]
+debt=297.740120712838 [40729BD788D10BB4]
 fx=-74.99043132809655 [C052BF633A14C6F2]
 rung=2;cf=0;
 mob=0.05 [3FA999999999999A]
@@ -138,22 +138,21 @@ city{
   tiberias=6,2,13,2,0,c0 [0000000000000000]
   zikhron_yaakov=2,1,4,1,0,c0 [0000000000000000]
 units[
-  0:veteran_soldier@3,14|side=israel|strength=4
-  2:veteran_soldier@0,15|side=israel|strength=4
-  3:veteran_soldier@-2,21|side=israel|strength=3
-  5:veteran_soldier@0,23|side=israel|strength=3
-  7:veteran_soldier@-8,31|side=israel|strength=1
-  8:egyptian_army@-8,25|side=egypt|strength=9|order=fortify|target=-8,25
-  9:arab_legion@-2,22|side=jordan|strength=5|order=fortify|target=-2,22
-  10:syrian_army@13,6|side=syria|strength=3|order=fortify|target=13,6
-  11:iraqi_army@6,13|side=iraq|strength=3|order=fortify|target=6,13
-  12:arab_liberation_army@12,4|side=ala|strength=4|order=fortify|target=12,4
-  13:veteran_soldier@-4,23|side=israel|strength=2
+  0:veteran_soldier@4,14|side=israel|strength=4
+  1:veteran_soldier@15,3|side=israel|strength=2
+  2:veteran_soldier@0,17|side=israel|strength=4
+  3:veteran_soldier@-4,24|side=israel|strength=3
+  4:veteran_soldier@-9,29|side=israel|strength=3
+  5:veteran_soldier@0,26|side=israel|strength=3
+  7:veteran_soldier@-9,35|side=israel|strength=1
+  8:egyptian_army@-8,27|side=egypt|strength=10|order=fortify|target=-8,27
+  9:arab_legion@-3,25|side=jordan|strength=3|order=fortify|target=-3,25
+  10:syrian_army@15,6|side=syria|strength=3|order=fortify|target=15,6
+  11:iraqi_army@6,14|side=iraq|strength=3|order=fortify|target=6,14
+  12:arab_liberation_army@14,4|side=ala|strength=4|order=fortify|target=14,4
 next=14
 ctrl{
   beersheba=since=1949-01-15,fled=1
-  lod=since=1948-08-15,fled=1
-  ramla=since=1948-08-15,fled=1
 food=0,1390,1390
 exhausted=3
 arms=132

@@ -7,7 +7,6 @@ text: 'An Israeli supply convoy was fired on as it passed the Egyptian positions
 # https://he.wikipedia.org/wiki/הר_חברון; https://he.wikipedia.org/wiki/בקעת_יריחו).
 title_he: מבצע יואב
 text_he: 'שיירת אספקה ישראלית נורתה כשעברה ליד העמדות המצריות ב־15 באוקטובר, והמתקפה שהממשלה אישרה ב־6 באוקטובר מתנהלת בפיקוד יגאל אלון. ההחלטה עד היכן תתקדם בידי {defense_minister}.'
-text_he_review: agent-checked
 anchor: hard
 tags: [security, war-casualties]
 office: defense_minister
@@ -30,13 +29,13 @@ options:
     effects:
       - { target: security, delta: 0.025 }
     # Unit orders (R-ENEMY-005; owner, 1 November 2026, #2087: "military operations must have unit orders", sourced places
-    # only). Negev to Beersheba, 21 October 1948 to the Egypt armistice, map/units_1948.yaml line 915 (negev's order target
-    # "Beersheba"); Givati to Huleiqat, 20 October to 1 November 1948, line 457 (givati's order target "Huleiqat"); both on the
+    # only). Negev to Beersheba, 21 October 1948 to the Egypt armistice, map/units_1948.yaml line 929 (negev's order target
+    # "Beersheba"); Givati to Huleiqat, 20 October to 1 November 1948, line 460 (givati's order target "Huleiqat"); both on the
     # IDF account of Yoav (Jewish Virtual Library, a source of this card); war-1948.md section 3, the Yoav row (line 143).
     # The hexes are the targets' own (map/unit_anchor_hexes.yaml).
     unit_orders:
-      - { unit: negev, q: -9, r: 31 }
-      - { unit: givati, q: -8, r: 26 }
+      - { unit: negev, q: -10, r: 35 }
+      - { unit: givati, q: -9, r: 29 }
   - id: push_to_hebron
     text: Let Allon push on into the Hebron hills and the Jericho valley
     text_he: לאפשר לאלון להתקדם לתוך הר חברון ובקעת יריחו

@@ -18,6 +18,8 @@ namespace Statecraft.Game.UI
         public Func<Action>? KeepSelection;
         public Func<Rect?>? MapTarget;
         public Action? CloseScreens;
+        /// <summary>Opens an encyclopedia page by its id (a teaching message's Tell me more, plan Task 13).</summary>
+        public Action<string>? OpenPage;
     }
 
     /// <summary>The advisors' popup (spec 4.2, 7.1): one message at a time, in the right column's free upper part or a sheet
@@ -72,12 +74,10 @@ namespace Statecraft.Game.UI
         readonly VisualElement hudRoot, layer, popup, portrait;
         readonly Label name, role, words, count, quote, quoteSource;
         readonly Button showMe, more, notNow, gotIt, close;
-        readonly Button? reopen;
-        readonly Action onReopen;
         GameSession? openingGame;
         readonly SimBridge bridge; readonly UiText text; readonly AdvisorSession session; readonly PortraitCatalog? portraits;
         readonly AdvisorHooks hooks; readonly bool hebrew;
-        readonly Action onChanged, onCover, onShowMe, onGotIt, onNotNow, onClose, onAttention, onLevel;
+        readonly Action onChanged, onCover, onShowMe, onGotIt, onNotNow, onClose, onAttention, onLevel, onMore;
         readonly IReadOnlyList<AdvisorCatalog.Message> chain;
         readonly Action<IReadOnlyList<Rejection>> onTurn;
         readonly EventCallback<GeometryChangedEvent> onLaidOut;
@@ -87,10 +87,20 @@ namespace Statecraft.Game.UI
         IVisualElementScheduledItem? fading;
         float flooredFor;
         bool disposed, hidden = true;
+        /// <summary>Set when a rebuild resumes a tour while a screen is open (#1915): the next uncover hands Next
+        /// the focus once, instead of every cover change (a resize, a meter's width) moving it. Cleared when it fires
+        /// and when the chain opens or closes, so a finished tour cannot hand its pending focus to the next one.</summary>
+        bool focusNextWhenUncovered;
+        /// <summary>Set when the screen over a resumed tour closes while the popup is still coming back from its hide
+        /// (#1915): Place() hands Next the focus once the popup is visible again. Cleared on Place's hand-off, on any
+        /// Hide (a screen opening again hides), and when the chain opens or closes.</summary>
+        bool focusNextOnPlace;
         /// <summary>The frame Escape closed it in (FeedbackPresenter's pattern): GameRoot's poll then knows the key is used.</summary>
         int escapedAt = -1;
         /// <summary>The message a layer covered, to show again or drop when the layer closes (spec 4.2).</summary>
         AdvisorCatalog.Message? covered;
+        /// <summary>The Budget screen's last word on its edit (BudgetUnsubmitted): true while an edit is not submitted.</summary>
+        bool budgetUnsubmitted;
 
         public AdvisorPresenter(VisualElement root, SimBridge bridge, UiText text, AdvisorSession session,
             PortraitCatalog? portraits = null, AdvisorHooks? hooks = null)
@@ -144,14 +154,8 @@ namespace Statecraft.Game.UI
             floored = new (VisualElement, float)[] { (name, NamePx), (role, RolePx), (words, TextPx), (showMe, ButtonPx), (more, ButtonPx), (notNow, ButtonPx), (gotIt, ButtonPx), (close, ButtonPx), (count, CountPx), (mediaLabel, 15f), (mediaCredit, 15f), (overlayCaption, TextPx), (overlayLabel, 15f), (overlayCredit, 15f), (watch, 15f), (overlayClose, ButtonPx), (quote, QuotePx), (quoteSource, QuoteSourcePx) };
             onShowMe = ShowMe; onGotIt = GotIt; onNotNow = NotNow;
             onClose = () => { if (session.Chain.Step >= 0) CloseChain(); else GotIt(); };
-            reopen = root.Q<Button>("how-to-play-guide");
-            onReopen = OpenChain;                                       // which closes How to play
-            if (reopen != null)
-            {
-                reopen.text = text["how_to_play.guide"]; reopen.clicked += onReopen;
-                Display(reopen, chain.Any(m => m.ApprovedIn(hebrew)));  // no button that opens nothing (pending Hebrew)
-            }
-            showMe.clicked += onShowMe; gotIt.clicked += onGotIt; close.clicked += onClose; notNow.clicked += onNotNow;
+            onMore = () => { if (Shown?.Actions.FirstOrDefault(a => a.Encyclopedia != "") is AdvisorCatalog.Act a) this.hooks.OpenPage?.Invoke(a.Encyclopedia); };
+            showMe.clicked += onShowMe; gotIt.clicked += onGotIt; close.clicked += onClose; notNow.clicked += onNotNow; more.clicked += onMore;
             onAttention = () => Notice(AdvisorSignals.AttentionRefused);
             bridge.RefusedForAttention += onAttention;
             onChanged = Evaluate; onTurn = _ => Notice(AdvisorSignals.TurnEnded); onCover = CoverChanged; onLaidOut = PlaceWhenLaidOut;
@@ -170,8 +174,22 @@ namespace Statecraft.Game.UI
                 if (chain[session.Chain.Step].ApprovedIn(hebrew) && this.hooks.Card?.Shown != null && !this.hooks.Card.Collapsed)
                     this.hooks.Card.Collapse(takeFocus: false);
                 RenderChain();
+                // A rebuild (a language switch) resumes the chain with Settings still open over it (#1036 reopens the
+                // screen): Next takes the focus only once no screen is open, so Enter goes on (spec 16) and its gold
+                // focus fill shows, without stealing the screen's focus (#1915). The check waits a frame: SwitchLanguage
+                // reopens the screen only after Begin returns, so at construction no screen is open yet.
+                if (InChain)
+                    layer.schedule.Execute(() =>
+                    {
+                        if (disposed || !InChain) return;
+                        if (ScreenOpen()) focusNextWhenUncovered = true; else TakeFocusFromTheCard();
+                    });
             }
         }
+
+        /// <summary>A screen is open over the tour. On the one-row HUD a side screen does not mark the HUD covered, so
+        /// Covered(hudRoot) alone misses Settings, and Next's focus would steal the screen's own (#1915).</summary>
+        bool ScreenOpen() => Covered(hudRoot) || hudRoot.ClassListContains(ScreenNav.ScreenOpenClass);
 
         /// <summary>A modal layer is open (spec 4.2): the start screen, the opening (#530), the open decision card, the capture
         /// dialog, the turn report, an outcome clip, the end screen; and, on the two-row HUD, any side screen (it takes the full width).</summary>
@@ -219,6 +237,7 @@ namespace Statecraft.Game.UI
         /// fires budget_unsubmitted; Submit takes it back.</summary>
         public void BudgetUnsubmitted(bool on)
         {
+            budgetUnsubmitted = on;
             if (on) { Notice(AdvisorSignals.BudgetUnsubmitted); return; }
             if (disposed) return;
             session.Fired.Remove(AdvisorSignals.BudgetUnsubmitted);
@@ -243,7 +262,12 @@ namespace Statecraft.Game.UI
             if (session.AutoShow)
             {
                 var ctx = Context();
-                session.Queue.Offer(AdvisorSignals.Holding(ctx, session), w => AdvisorSignals.When(ctx, w), Turn);
+                var holding = AdvisorSignals.Holding(ctx, session);
+                session.Queue.Offer(holding, w => AdvisorSignals.When(ctx, w), Turn);
+                // Owner, 1 Nov: budget_unsubmitted fires only when the edit changes, so for pruning its cause is read from
+                // the Budget screen's state; a put-off budget warning lasts while the edit is unsubmitted (Submit withdraws it).
+                if (budgetUnsubmitted) holding.Add(AdvisorSignals.BudgetUnsubmitted);
+                session.Queue.Prune(holding, w => AdvisorSignals.When(ctx, w), Turn, bridge.State.Date, Shown);
             }
             Render();
         }
@@ -279,7 +303,9 @@ namespace Statecraft.Game.UI
             portrait.style.backgroundImage = picture == null ? new StyleBackground(StyleKeyword.Null) : new StyleBackground(picture);
             popup.EnableInClassList(CriticalClass, m.Critical);
             Display(showMe, m.Actions.Any(a => a.ShowMe != "" || a.OpenScreen != "" || a.OpenCard));
-            Display(more, false);                                       // Task 13: a page to open
+            // Tell me more (plan Task 13): a teaching message's page, only where that page shows (OQ-4: not pending Hebrew).
+            Display(more, m.Teaching && hooks.OpenPage != null
+                && m.Actions.Any(a => a.Encyclopedia != "" && session.Catalog.FindPage(a.Encyclopedia)?.ApprovedIn(hebrew) == true));
             Display(notNow, !m.Teaching && !m.Critical);
             var (number, total) = session.Queue.Position(Turn, hebrew);
             count.text = total > 1 ? text.Format("advisor.count", number, total) : "";
@@ -324,6 +350,7 @@ namespace Statecraft.Game.UI
         void Hide()
         {
             StopWatching();
+            focusNextOnPlace = false;                   // even when already hidden: a screen opening again cancels a pending hand-off (#1915)
             if (hidden) return;
             hidden = true;
             ring.style.display = DisplayStyle.None;
@@ -349,13 +376,20 @@ namespace Statecraft.Game.UI
             if (disposed) return;
             if (Media?.Playing == true && (HardMediaCover() || CurrentScreens() != watchScreens)) StopWatching();
             if (hudRoot.ClassListContains(OverlayOpenClass)) return;
-            if (session.Chain.Step >= 0) { RenderChain(); return; }
+            if (session.Chain.Step >= 0)
+            {
+                RenderChain();
+                if (focusNextWhenUncovered && InChain && !ScreenOpen()) { focusNextWhenUncovered = false; FocusNextOnPlace(); }   // a screen closed over a resumed tour (#1915)
+                return;
+            }
             if (Covered(hudRoot)) { if (Shown != null) covered = Shown; Hide(); return; }
             if (covered is AdvisorCatalog.Message m)
             {
                 covered = null;
                 var ctx = Context();
-                if (!(AdvisorSignals.Holding(ctx, session).Contains(m.Signal) && AdvisorSignals.When(ctx, m.When)))
+                var holding = AdvisorSignals.Holding(ctx, session);
+                if (budgetUnsubmitted) holding.Add(AdvisorSignals.BudgetUnsubmitted);   // as in Evaluate's Prune
+                if (!(holding.Contains(m.Signal) && AdvisorSignals.When(ctx, m.When)))
                     session.Queue.Drop(m, Turn, bridge.State.Date);
             }
             Render();
@@ -446,6 +480,7 @@ namespace Statecraft.Game.UI
             if (disposed) return;
             var first = NextChainStep(-1);
             if (first < 0) return;                         // no unreviewed Hebrew, even when explicitly asked
+            focusNextWhenUncovered = false; focusNextOnPlace = false;   // a reopened tour starts without a stale pending hand-off (#1915)
             hooks.CloseScreens?.Invoke();
             openingGame = bridge.Session;
             if (session.Chain.Step < 0)
@@ -475,6 +510,7 @@ namespace Statecraft.Game.UI
         {
             if (disposed || session.Chain.Step < 0) return;
             session.Chain.Step = -1; session.Chain.PutBack = null; adopted = null;
+            focusNextWhenUncovered = false; focusNextOnPlace = false;   // a tour ending cancels a pending Next hand-off (#1915)
             Shown = null; covered = null;
             ClearTarget();
             Hide();
@@ -535,6 +571,33 @@ namespace Statecraft.Game.UI
         {
             FocusReturn.To(gotIt);
             gotIt.schedule.Execute(() => { if (!disposed && InChain) gotIt.Focus(); });
+        }
+
+        /// <summary>The screen over a resumed tour just closed and Next takes the focus (#1915). While the popup is
+        /// still coming back from its hide under the screen (display and visibility not restored yet) a Focus() does
+        /// nothing - the gate log read canGrabFocus=false, display=None, visibility=Hidden - so the hand-off waits for
+        /// Place() to make the popup visible again. A popup still on screen takes the focus at once.</summary>
+        void FocusNextOnPlace()
+        {
+            if (disposed || !InChain || ScreenOpen()) return;
+            if (NextCanTakeFocus()) { FocusReturn.To(gotIt); return; }
+            focusNextOnPlace = true;
+        }
+
+        /// <summary>Next can take the focus now (#1915). The button's own canGrabFocus, not the popup's resolved visibility:
+        /// an inline visibility set on the popup reads back at once on the popup itself, but its children inherit it only on
+        /// the next style pass, and a Focus() on a still-hidden Next releases the screen's focus to nothing.</summary>
+        bool NextCanTakeFocus() => FocusReturn.CanTakeFocus(gotIt) && gotIt.canGrabFocus;
+
+        /// <summary>Place() just restored the popup's visibility for the deferred Next hand-off (#1915), but Next inherits it
+        /// only on the next style pass. The hand-off waits that out: a few scheduler ticks until Next can take the focus,
+        /// then hands it over once.</summary>
+        void FocusNextWhenPlaced(int ticksLeft = 10)
+        {
+            if (disposed || !InChain || ScreenOpen()) return;
+            if (NextCanTakeFocus()) { FocusReturn.To(gotIt); return; }
+            if (ticksLeft <= 0) return;
+            gotIt.schedule.Execute(() => FocusNextWhenPlaced(ticksLeft - 1));
         }
 
         void ShowMe()
@@ -718,6 +781,11 @@ namespace Statecraft.Game.UI
             popup.style.left = at.xMin; popup.style.top = at.yMin;
             popup.style.width = Mathf.Max(0f, at.width); popup.style.maxHeight = Mathf.Max(0f, slot.height);
             popup.style.visibility = Visibility.Visible;
+            if (focusNextOnPlace && InChain && !ScreenOpen())
+            {
+                focusNextOnPlace = false;
+                FocusNextWhenPlaced();
+            }
             return at;
         }
 
@@ -765,8 +833,7 @@ namespace Statecraft.Game.UI
             bridge.Changed -= onChanged; bridge.TurnEnded -= onTurn;
             session.Settings.LevelChanged -= onLevel;
             if (layer.userData == (object)onCover) layer.userData = null;
-            if (reopen != null) reopen.clicked -= onReopen;
-            showMe.clicked -= onShowMe; gotIt.clicked -= onGotIt; close.clicked -= onClose; notNow.clicked -= onNotNow;
+            showMe.clicked -= onShowMe; gotIt.clicked -= onGotIt; close.clicked -= onClose; notNow.clicked -= onNotNow; more.clicked -= onMore;
             hudRoot.RemoveFromClassList(OpenClass);
         }
     }

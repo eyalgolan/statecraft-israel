@@ -266,10 +266,10 @@ public class AdvisorOpeningParityTests
             owned.Add(new HudPresenter(Ui.Root, Bridge, text));
             Nav = Own(new ScreenNav(Ui.Root));
             Card = Own(new EventCardPresenter(Ui.Root, Bridge, text, null));
-            Own(new HowToPlayPresenter(Ui.Root, text));
             var (info, advisor) = PanelAndAdvisor(Ui.Root, Bridge, text, settings, Card, () => Nav.Close());
             Info = Own(info);
             Advisor = Own(advisor);
+            Own(new EncyclopediaPresenter(Ui.Root, text, AdvisorCatalog.Load(), Nav, Advisor));
         }
 
         T Own<T>(T d) where T : IDisposable { owned.Add(d); return d; }
@@ -400,11 +400,11 @@ public class AdvisorOpeningParityTests
 
         for (int at = 0; at < Steps.Length; at++)
         {
-            rig.Ui.Press("nav-how-to-play");
-            Assert.AreEqual("how-to-play", rig.Nav.Current);
-            Assert.AreEqual(text["how_to_play.guide"], rig.Ui.Q<Button>("how-to-play-guide").text);
-            rig.Ui.Press("how-to-play-guide");
-            Assert.IsTrue(rig.Advisor.InChain, "How to play opens it again");
+            rig.Ui.Press("nav-encyclopedia");
+            Assert.AreEqual("encyclopedia", rig.Nav.Current);
+            Assert.AreEqual(text["encyclopedia.opening"], rig.Ui.Q<Button>("encyclopedia-opening").text);
+            rig.Ui.Press("encyclopedia-opening");
+            Assert.IsTrue(rig.Advisor.InChain, "the encyclopedia opens it again");
             Assert.IsNull(rig.Nav.Current, "and closes itself");
             Assert.AreEqual(0, rig.Advisor.ChainStep);
             for (int i = 0; i < at; i++) rig.Ui.Press("advisor-got-it");
@@ -717,7 +717,7 @@ public class AdvisorOpeningParityTests
         advisor.CloseChain();
         AnswerTheOpeningCards();
         Assert.IsNull(card.Shown, "precondition: no card left this turn");
-        UiTestKit.Press(Ui.Q<Button>("nav-how-to-play")); UiTestKit.Press(Ui.Q<Button>("how-to-play-guide"));
+        UiTestKit.Press(Ui.Q<Button>("nav-encyclopedia")); UiTestKit.Press(Ui.Q<Button>("encyclopedia-opening"));
         Assert.IsTrue(advisor.InChain);
         var seen = new List<string>();
         for (int shown = 1; advisor.InChain; shown++)
@@ -824,11 +824,11 @@ public class AdvisorOpeningParityTests
         var queued = bridge.Queued.Count;
 
         void Next(int times) { for (int i = 0; i < times; i++) UiTestKit.Press(Ui.Q<Button>("advisor-got-it")); }
-        void FromHowToPlay() { UiTestKit.Press(Ui.Q<Button>("nav-how-to-play")); UiTestKit.Press(Ui.Q<Button>("how-to-play-guide")); }
+        void FromTheEncyclopedia() { UiTestKit.Press(Ui.Q<Button>("nav-encyclopedia")); UiTestKit.Press(Ui.Q<Button>("encyclopedia-opening")); }
         Next(Steps.Length);                     // the advisor that opened by itself, to Done
         Assert.IsFalse(game.Advisor.InChain);
-        FromHowToPlay(); Next(2); UiTestKit.Press(Ui.Q<Button>("advisor-close"));
-        FromHowToPlay(); Next(3); yield return null; Ui.Q<Button>("advisor-got-it").Focus(); Assert.IsTrue(game.Advisor.Escape());
+        FromTheEncyclopedia(); Next(2); UiTestKit.Press(Ui.Q<Button>("advisor-close"));
+        FromTheEncyclopedia(); Next(3); yield return null; Ui.Q<Button>("advisor-got-it").Focus(); Assert.IsTrue(game.Advisor.Escape());
         Assert.IsFalse(game.Advisor.InChain);
         Assert.AreSame(session, bridge.Session, "the same game");
         Assert.AreEqual(hash, bridge.State.Hash(), "the state hash");
@@ -1100,7 +1100,7 @@ public class AdvisorOpeningEventIdentityTests
     {
         var yaml = File.ReadAllText(AdvisorCatalog.Path).Replace("he_review: pending", "he_review: approved")
             .Replace("requires: [opening.move]", "requires: [opening.detour]")
-            .Replace("pages: []", "  - { id: opening.detour, advisor: ben_gurion, signal: opening, level: new, he_review: approved, requires: [opening.move], when: { cards_waiting_at_least: 99 } }\n\npages: []");
+            .Replace("\npages:\n", "\n  - { id: opening.detour, advisor: ben_gurion, signal: opening, level: new, he_review: approved, requires: [opening.move], when: { cards_waiting_at_least: 99 } }\n\npages:\n");
         using var rig = new AdvisorTour1688Fixture.Rig(catalog: AdvisorCatalog.Parse(yaml));
         rig.Advisor.OpenChain();
         for (int i = 0; i < 4; i++) rig.Advisor.NextStep();
@@ -1234,5 +1234,44 @@ public class AdvisorOpeningNoAttentionGameRootTests
                 AssertNoAttention();
             }
         }
+    }
+
+    // #1915: a mid-tour language switch rebuilds the UI and resumes the tour; Next keeps the focus, so Enter goes on
+    // and its gold focus fill shows. Red-first: the rebuilt presenter resumed the chain without giving Next the focus
+    // back, and the button stayed dark for the rest of the tour.
+    [UnityTest]
+    public IEnumerator SettingsSwitchToHebrewKeepsTheTourNextFocused()
+    {
+        var inputs = new GameInputs { Content = AdvisorTour1688Fixture.Content(),
+            Map = GameInputs.MapFromDisk(Paths.Content, Paths.StreamingMap), Goldens = new GoldenData() };
+        var settings = new SettingsStore(TempDir());
+        var game = AdvisorGameTests.OpenScene(new SaveStore(TempDir()), settings);
+        game.Language = UiLanguage.English;
+        game.AdvisorCatalogForTests = AdvisorCatalog.Parse(File.ReadAllText(AdvisorCatalog.Path)
+            .Replace("he_review: pending", "he_review: approved"));
+        game.Begin(inputs, 0, startScreen: true);
+        UiTestKit.Press(Ui.Q<Button>("start-new-game"));
+        game.Advisor!.OpenChain();
+        Assert.IsTrue(game.Advisor.InChain);
+
+        UiTestKit.Press(Ui.Q<Button>("nav-settings"));
+        UiTestKit.Press(Ui.Q<Button>("settings-language-" + UiLanguage.Hebrew));
+        Assert.IsTrue(Ui.Q("root").ClassListContains(UiLanguage.HebrewClass));
+        Assert.IsTrue(game.Advisor!.InChain, "the rebuilt presenter resumes the tour");
+        // A quiet EditMode panel runs its styles, layout and scheduler only on player-loop requests (SafeAreaTests), so each
+        // wait asks for one; bare yields would leave every scheduled step unrun and both checks below vacuous.
+        for (int i = 0; i < 5; i++) { EditorApplication.QueuePlayerLoopUpdate(); yield return null; }
+        Assert.IsTrue(Ui.Q("root").ClassListContains(ScreenNav.ScreenOpenClass), "Settings reopens over the resumed tour (#1036)");
+        Assert.AreSame(Ui.Q<Button>("settings-language-" + UiLanguage.Hebrew), Ui.Q("root").focusController.focusedElement,
+            "Next does not steal Settings' focus while the screen is open (#1915)");
+
+        UiTestKit.Press(Ui.Q<Button>("nav-settings"));               // Settings closes over the resumed tour
+        var next = Ui.Q<Button>("advisor-got-it");
+        for (int i = 0; i < 10 && Ui.Q("root").focusController.focusedElement != next; i++)
+        { EditorApplication.QueuePlayerLoopUpdate(); yield return null; }   // the popup comes back and the hand-off runs
+        for (int i = 0; i < 3; i++) { EditorApplication.QueuePlayerLoopUpdate(); yield return null; }   // and it stays there
+        Assert.IsFalse(Ui.Q("root").ClassListContains(ScreenNav.ScreenOpenClass));
+        Assert.AreSame(next, Ui.Q("root").focusController.focusedElement,
+            "once no screen is open Next has the focus: Enter goes on, and its gold focus fill shows (#1915)");
     }
 }

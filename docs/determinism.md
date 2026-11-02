@@ -61,9 +61,9 @@ final `GameState.Hash()` is pinned:
 
 | Run | Ends | Hash |
 |---|---|---|
-| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `f4a7288ff754366444997fe057919e3cb07031ffba58c3c245b97595a07822d1` |
-| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `452562ce96c8b7e609490b99ad67aa4c90d852add93a383dd72472cfd3747f18` |
-| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `452562ce96c8b7e609490b99ad67aa4c90d852add93a383dd72472cfd3747f18` |
+| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `48abe7296b9e86f9c3f6cfe5c09c5d62a7f63736af857418b1a6e1edeb98a90c` |
+| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `43061114a9aa43f13f6c34fa5838068b04d1258cf4cce1c442870234b0fccf3d` |
+| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `43061114a9aa43f13f6c34fa5838068b04d1258cf4cce1c442870234b0fccf3d` |
 
 `hash1952` stops at the first turn on or after 1 January 1952, which is the game's last turn, so it is the same run as
 `mvp-end` (`DeterminismTests.TheWholeGameToItsEndIsFixed`). Both names are kept (spec 2026-10-12 section 3 step 6): a
@@ -72,7 +72,7 @@ player check enumerate the manifest, so it and every scenario are checked withou
 
 A further value is pinned for the browser smoke run (`?smoke=5`: the golden seed, five turns played through the UI's own
 buttons, answering each event with its first option while the turn's Attention pays for it, the rest left to their
-ministers): `SMOKE OK 5 turns 1948-10-15 54f201ca682b6bbdde678e21ef0c86d38ad6a64e510396ec688c5c80d871f3e5`.
+ministers): `SMOKE OK 5 turns 1948-10-15 a968abbcd7439d9c2340495b674f796da33f1cf2c05d929b656b4aa7f181a12d`.
 It depends on the UI path as well as the sim (which option is first, the turn grid), so re-record it when either changes.
 Check every WebGL build with every manifest entry (plus the UI-path smoke line) with:
 
@@ -83,7 +83,7 @@ while read -r name hash; do
   golden_expect+=(--expect "GOLDEN OK $name $hash")
 done < sim/Statecraft.Sim.Tests/golden/manifest.txt
 uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5" "${golden_expect[@]}" \
-  --expect "SMOKE OK 5 turns 1948-10-15 54f201ca682b6bbdde678e21ef0c86d38ad6a64e510396ec688c5c80d871f3e5"
+  --expect "SMOKE OK 5 turns 1948-10-15 a968abbcd7439d9c2340495b674f796da33f1cf2c05d929b656b4aa7f181a12d"
 ```
 
 `smoke-orders` (GDD Phase 5 PR 15, #754) is the same kind of browser run for the unit orders (`?smoke-orders`, desktop
@@ -91,14 +91,14 @@ uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5
 hex of the unit `GoldenRun.SmokeMove` names (the lowest-id unit `Movement.Reachable` has a hex for: unit 0, Golani, on
 10,9), presses the unit card's Move button, clicks the first lit hex in `Reachable`'s (q, r) order that is no enemy-held
 place (7,11; it skips Nazareth's 7,10, so the run captures nothing) and presses End Turn:
-`SMOKE ORDERS OK 1948-06-15 bf0b41cce7efc8ad9f1f518b0f2c26736b5c9a25d477afc075a7f69dfbcad42b`.
+`SMOKE ORDERS OK 1948-06-15 08d9800eda4462ef165cc7ea6285fad059c030c0f87ad563e35c9789cc352d78`.
 `GoldenRun.PlaySmokeOrders` plays the same turn with that one `Move`, so the value is in the manifest (`SliceSmokeTests.TheSmokeOrdersRunMovesOneUnitAndEndsOnTheGolden`) and the player's golden check
 prints it as `GOLDEN OK smoke-orders`. Re-record it when the sim or the order path on the card changes; the fortify, hold and
 attack slices can add their orders to it. Check a WebGL build with:
 
 ```
 uv run tools/web_check.py unity/Builds/Web-<compression> --query "smoke-orders" \
-  --expect "SMOKE ORDERS OK 1948-06-15 bf0b41cce7efc8ad9f1f518b0f2c26736b5c9a25d477afc075a7f69dfbcad42b"
+  --expect "SMOKE ORDERS OK 1948-06-15 08d9800eda4462ef165cc7ea6285fad059c030c0f87ad563e35c9789cc352d78"
 ```
 
 **When a golden moves.** The test fails with the lines that changed, grouped by section (`[ind]`, `[pol]`, `[bud]`,
@@ -450,6 +450,17 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | #1575 + #1568 combined: the `reparations_vote` card (#1564) on top of `degania_defence` (#1565) and #939 Task 12 (#1545) | hash1952 | `385ba3b5` | re-pinned on the merged tree: the reference player answers `reparations_vote` `negotiate` on 15 December 1951 (morale -0.02, stability -0.0015 through it), as on #1575's own branch; `degania_defence`'s changes stay (was `5bfeb265`) |
 | #1575 + #1568 combined: as above | mvp-end | `385ba3b5` | same run as hash1952 (was `5bfeb265`) |
 | #1575 + #1568 combined: as above | scenario-mvp-defeat | `b7d3848d` | the card fires in the scenario's run too and, left unanswered, resolves to `negotiate` (morale -0.02; was `d5bc68f9`). No other golden moves: hash1950, smoke5, smoke-orders and the other five scenarios end before 15 December 1951 |
+| #1183: the 4.4 km hex bake (owner, 21 Oct 2026; one re-pin, alone in its merge slot) | hash1950 | `74fbe989` | every unit and the reference player's Tel Aviv housing on its 4.4 km hex (`veteran_halutz`/`housing@tel_aviv,-3,19` becomes `-3,21`); debt IL 0.1m higher: the opening fights differ on the new grid (Golani's 15 May attack goes to the Iraqi unit next to it at (11, 12), the Syrian start anchor being two hexes away, `ReferencePlayerTests`). **A behaviour change, not only coordinates: the 7th Brigade (unit 13) is cut to strength 1.** Its 24 May anchor, Hulda, falls in hex (-4, 25), which now neighbours the Arab Legion's Latrun hex (-3, 25) (on 5 km Hulda's hex (-4, 23) was two hexes from the Legion's (-2, 22)). The enemy AI's Legion attacks it on 15 October 1948 (the Legion loses 1,000) and 15 November (the 7th loses 1,000 and retreats to (-4, 24), Rehovot's hex, where it stands to the end: `13:veteran_soldier@-4,24\|side=israel\|strength=1\|full=2`); on main `hash1950` has `13:veteran_soldier@-4,23\|side=israel\|strength=2`. Its retreat skips (-3, 24) because that hex is now Ramla's capture target (owner on #1796, 26 October 2026, "Contested + move target"; a retreat never ends on an enemy-held target, R-CTRL-001); before that move it retreated there and was destroyed on 15 December. It then takes (-4, 24), which Rehovot shares with Ramla's settlement: since the target move, `Movement.NoEntry` closes Ramla's target hex, not its settlement hex, for the player as `Closed` does (owner review of #1796, 31 October 2026); before that fix it went on to (-5, 25) and stood there at strength 1. No rule or value changed beyond that target (was `8578966e`) |
+| #1183: the 4.4 km hex bake (owner, 21 Oct 2026; one re-pin, alone in its merge slot) | hash1952 | `d7429694` | same run as hash1950 to the end, the 7th Brigade at strength 1 on (-4, 24) (see hash1950); debt IL 0.1m higher (was `385ba3b5`) |
+| #1183: the 4.4 km hex bake (owner, 21 Oct 2026; one re-pin, alone in its merge slot) | smoke5 | `9255f2bc` | the first-option run on the new grid's positions (was `7bdf646a`) |
+| #1183: the 4.4 km hex bake (owner, 21 Oct 2026; one re-pin, alone in its merge slot) | smoke-orders | `08d9800e` | the one move goes to the first lit hex, (8, 12), which is no place at 4.4 km (at 5 km it skipped Nazareth's, `SliceSmokeTests`) (was `bf0b41cc`) |
+| #1183: the 4.4 km hex bake (owner, 21 Oct 2026; one re-pin, alone in its merge slot) | scenario-reckless | `63cab812` | unit positions on the 4.4 km grid; debt IL 0.05m lower. The 7th Brigade is lost to the Arab Legion (attacks on 15 October, 15 November and 15 December 1948: here it holds (-4, 25) after the second, where in hash1950 it retreats to (-4, 24) and survives), and here the Legion loses 1,000 in two of them, so it ends at strength 3, not 4; the owner accepted the loss with no special case (#1796, 27 October 2026, "Accept it") (was `a2ca9626`) |
+| #1183: the 4.4 km hex bake (owner, 21 Oct 2026; one re-pin, alone in its merge slot) | scenario-cautious | `e7ad49bf` | same as reckless, the 7th Brigade lost and the Legion at strength 3 included (was `c06d89f0`) |
+| #1183: the 4.4 km hex bake (owner, 21 Oct 2026; one re-pin, alone in its merge slot) | scenario-mvp-absorb-first | `b589c9dc` | its project hexes re-keyed to the new grid (each city's new hex plus the old offset; Rehovot's (-4, 20) offset lands on Rishon LeZion's hex, so (-3, 24)); debt IL 0.5m lower; as in reckless, the 7th Brigade is gone and the Legion ends at strength 3 (the snapshots) (was `9c98ae51`) |
+| #1183: the 4.4 km hex bake (owner, 21 Oct 2026; one re-pin, alone in its merge slot) | mvp-end | `d7429694` | same run as hash1952 (was `385ba3b5`) |
+| #1183: the 4.4 km hex bake (owner, 21 Oct 2026; one re-pin, alone in its merge slot) | scenario-mvp-defeat | `9e2afc15` | unit positions on the 4.4 km grid; the run's late indicators differ (housing, morale, standing) with the different fights; as in reckless, the 7th Brigade is gone and the Legion ends at strength 3 (the snapshots) (was `b7d3848d`) |
+| #1183: the 4.4 km hex bake (owner, 21 Oct 2026; one re-pin, alone in its merge slot) | scenario-mvp-occupy-cost | `0bc59565` | Golani's unit is 5 movement points from Nazareth at 4.4 km, so the scenario moves it on 15 May to (9, 11) and onto Nazareth on 15 June, answers Occupy on 15 July and runs to 15 January 1949 (`since=1948-07-15`); as in reckless, the 7th Brigade is gone and the Legion ends at strength 3 (the snapshots) (was `9fcc7bae`) |
+| #1183: the 4.4 km hex bake (owner, 21 Oct 2026; one re-pin, alone in its merge slot) | scenario-mvp-annex-nazareth | `b6df4284` | `mvp-occupy-cost`'s steps one turn later, then `end_occupation nazareth annex` on 15 January 1949, run to 15 February 1949; as in reckless, the 7th Brigade is gone and the Legion ends at strength 3 (the snapshots) (was `8fe6d129`) |
 | #749 part 2: the operation cards' unit orders (R-ENEMY-005; owner, 31 Oct 2026: "GDD 0.1 only", "Sourced anchors only"; owner's answer 1 on #2087: "Orders expire with the operation") | hash1950 | `01d5dea9` | the reference player answers `ten_days` `central_front` on 15 July 1948: Carmeli (unit 1) sets out from Haifa toward its Brosh anchor and reaches 8,8, in the Lower Galilee, that turn; its order ends with the anchor's window (19 July), so on 15 August it stops there. It answers `operation_horev` `launch` on 15 December 1948: Golani (unit 0) sets out from Yavne'el toward the Julis camp, goes round Nazareth (no capture), and on 15 March 1949, after its order ended with the Egypt armistice (24 February), stops at 3,14, between Zikhron Ya'akov and Hadera, short of Julis. No fighting and no capture; the final state differs from main's only in where the two brigades stand (was `8578966e`) |
 | #749 part 2: as above | hash1952 | `ece2105d` | same orders as hash1950; Golani stays at 3,14 and Carmeli at 8,8 to the end (was `385ba3b5`) |
 | #749 part 2: as above | mvp-end | `ece2105d` | same run as hash1952 (was `385ba3b5`) |
@@ -470,3 +481,13 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | #2087, as above | scenario-mvp-defeat | `918b56ff` | as cautious; the extra combat draws shift the RNG, so the delegated `iraqi_exodus` card draws `airlift` instead of `pace` (morale, international standing and housing differ from that card on), and on 15 December 1951 the last turn's withdrawal takes Kiryati out of Lydda and Ramle and the Negev Brigade out of Beersheba. The run still ends in defeat (was `6dc76d20`) |
 | #2087, as above | scenario-mvp-occupy-cost | `59cae466` | the run ends on 15 December 1948: Kiryati holds Lydda and Ramle, awaiting a decision; Givati was destroyed at Huleiqat on 15 November; the Negev Brigade is one hex short of Beersheba and Carmeli on its way at 10,7, both orders standing; Nazareth's capture and Occupy are unchanged (was `2110fe92`) |
 | #2087, as above | scenario-mvp-annex-nazareth | `3f92f80e` | the run ends on 15 January 1949: Kiryati holds Lydda and Ramle and the Negev Brigade Beersheba, all awaiting a decision; Givati was destroyed at Huleiqat; Carmeli is on its way at 11,6; the annexation is unchanged (was `12110c4b`) |
+| #2087 merged with main after #1183 (the 4.4 km grid): the order targets and the cards' order hexes re-derived with `tools/unit_anchor_hexes.py` (Kiryati's Ramle (-4, 24), Carmeli's Manara (15, 3), the 7th Brigade's al-Malikiyya (14, 4), Givati's Huleiqat (-9, 29), the Negev Brigade's Beersheba (-10, 35), Harel's Latrun (-3, 25); Golani's Julis anchor (-8, 28) and Carmeli's Brosh anchor (14, 6) are main's), one re-pin on the merged tree | hash1950 | `48abe729` | only the unit positions and one capture move; the economy lines are main's. The delegated and answered card orders now run on the 4.4 km hexes: Golani's Horev order (to 24 February 1949) leaves it at 4,14; Carmeli ends at Manara (15,3); Kiryati ends on Ramle's hex (-4,24), which Ramla shares with Rehovot and which captures neither (Ramla's capture target is (-3,24), #1796), so the Dani order takes nothing; Givati holds Huleiqat (-9,29); the Negev Brigade takes Beersheba on 15 January 1949 and ends next to it at -9,35. The 7th Brigade's Hiram order to (14,4) is refused on 15 November 1948 while the ALA holds that hex, as before (was `74fbe989`) |
+| #2087 merged with main after #1183, as above | hash1952 | `43061114` | same run as hash1950; nothing moves after 1950 (was `d7429694`) |
+| #2087 merged with main after #1183, as above | mvp-end | `43061114` | same run as hash1952 (was `d7429694`) |
+| #2087 merged with main after #1183, as above | smoke5 | `a968abbc` | the smoke run's first option of `ten_days` sends Kiryati to (-4,24) and Carmeli to (14,6). No snapshot is kept for this run (was `9255f2bc`) |
+| #2087 merged with main after #1183, as above | scenario-reckless | `4f3ca893` | no `ten_days` in this run. Golani ends at 4,14 as in hash1950; Carmeli is on its way to Manara at 13,3, its order standing to 23 March 1949; Givati holds Huleiqat; the Negev Brigade takes Beersheba on 15 January 1949 and holds it, awaiting a decision (was `63cab812`) |
+| #2087 merged with main after #1183, as above | scenario-cautious | `be999e93` | as hash1950, with Beersheba awaiting a decision at the run's end (was `e7ad49bf`) |
+| #2087 merged with main after #1183, as above | scenario-mvp-absorb-first | `1e14658d` | as cautious (was `b589c9dc`) |
+| #2087 merged with main after #1183, as above | scenario-mvp-defeat | `8435fb3b` | the unit positions and Beersheba's capture as in hash1950; the defeat is unchanged (was `9e2afc15`) |
+| #2087 merged with main after #1183, as above | scenario-mvp-occupy-cost | `f3bab7ca` | the run now stops on 15 December 1948, one turn earlier: the 15 December turn delegates Operation Horev, whose order would take Golani off Nazareth and end the occupation this scenario measures. Nazareth still waits for EndOccupation since 15 July 1948; the one-turn-shorter run differs in the economy, the events and the arrivals, and on 15 December the 7th Brigade still holds (-4,25) at strength 1 under the Legion's attack (was `0bc59565`) |
+| #2087 merged with main after #1183, as above | scenario-mvp-annex-nazareth | `ca015736` | Nazareth is annexed on 15 December 1948, a turn earlier, in the turn that delegates Horev, before its order takes Golani away (a month later there would be no occupation to end); the upkeep stops a month earlier (debt IL 0.04m lower). Golani is on its way toward Julis at 4,14 and Carmeli toward Manara at 15,5 when the run ends on 15 February 1949; Beersheba is taken on 15 January 1949 and awaits a decision (was `b6df4284`) |

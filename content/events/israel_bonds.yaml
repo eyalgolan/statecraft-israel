@@ -7,7 +7,6 @@ text: 'The Knesset authorised a bond issue in February; it launches on 10 May. {
 # 1951 issue מלווה העצמאות and the bonds איגרות חוב של מדינת ישראל (https://he.wikipedia.org/wiki/הבונדס).
 title_he: מלווה העצמאות
 text_he: 'הכנסת אישרה בפברואר הנפקת איגרות חוב; היא תושק ב־10 במאי. הצעת {finance_minister} היא למכור איגרות חוב של מדינת ישראל ליהודים בחו״ל, לצד התרומות למגבית היהודית המאוחדת.'
-text_he_review: agent-checked
 anchor: hard
 office: finance_minister
 # Knesset authorisation February 1951 (second and third readings on 27 February, Knesset minutes; published 8 March, the

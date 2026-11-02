@@ -46,23 +46,41 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Unpack the latest release's Pages build at /demo/
+      - name: Unpack the Latest release's Pages build at /demo/
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           # Every failure stops the run, so Pages keeps serving the last good deploy: no release, no
           # *-web-pages.zip in it, an empty or incomplete zip, or a lookup error never deploys an empty site.
-          # `gh release view/download` without a tag resolve the latest non-prerelease, so read the newest
-          # published (non-draft) release's tag from the list and pass it to both calls.
-          tag="$(gh release list --repo "$GITHUB_REPOSITORY" --limit 1 --exclude-drafts --json tagName --jq '.[0].tagName // empty')"
-          if [ -z "$tag" ]; then
-            echo "::error::No published release: nothing to deploy."
+          # The demo follows GitHub's Latest release, the one tools/nightly.py restores after a failed night, so a
+          # failed nightly that stays published is never deployed (the newest published release can be that one).
+          # Only HTTP 404 (no Latest at all) falls back to the newest published prerelease, the historic case;
+          # nightlies are created with prerelease=false, so the fallback cannot pick a failed nightly either. Any
+          # other lookup error (auth, network, rate limit, 5xx) stops the run. The tag is passed to view and download.
+          err="$(mktemp)"
+          if tag="$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq '.tag_name' 2>"$err")"; then
+            if [ -z "$tag" ] || [ "$tag" = "null" ]; then
+              echo "::error::releases/latest returned no usable tag: nothing to deploy."
+              exit 1
+            fi
+            from="Latest"
+          elif grep -q 'HTTP 404' "$err"; then
+            tag="$(gh release list --repo "$GITHUB_REPOSITORY" --limit 100 --exclude-drafts --json tagName,isPrerelease \
+                   --jq '[.[] | select(.isPrerelease)][0].tagName // empty')"
+            from="newest prerelease (no Latest)"
+            if [ -z "$tag" ]; then
+              echo "::error::No Latest release and no published prerelease: nothing to deploy."
+              exit 1
+            fi
+          else
+            cat "$err" >&2
+            echo "::error::The Latest release lookup failed (not a 404): nothing deployed."
             exit 1
           fi
           asset="$(gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json assets --jq '[.assets[].name | select(endswith("-web-pages.zip"))] | first // empty')"
           if [ -z "$asset" ]; then
-            echo "::error::No *-web-pages.zip in the latest release ($tag): nothing to deploy."
+            echo "::error::No *-web-pages.zip in the $from release ($tag): nothing to deploy."
             exit 1
           fi
           mkdir -p "$RUNNER_TEMP/web-pages" dist/demo
@@ -70,7 +88,7 @@ jobs:
           unzip -q -o "$RUNNER_TEMP/web-pages/$asset" -d dist/demo
           test -f dist/demo/index.html
           jq -e '.shareable == true' dist/demo/event-photos.json > /dev/null
-          echo "Demo at /demo/ from $asset ($tag)"
+          echo "Demo at /demo/ from $asset ($from $tag)"
       - name: Write the root page, a redirect to /demo/
         run: |
           set -euo pipefail

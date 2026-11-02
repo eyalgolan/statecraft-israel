@@ -2,7 +2,7 @@
 
 `content/gdd03-balance.yaml` records the design data for the separate `gdd-0.3` ruleset (#1687). It does not select that ruleset or change the live legacy/gdd-0.1 simulation. Existing content sets without this file still load; an authored file is validated and included in the content hash. #1708 consumes only the existing movement/defence subset under exact identity `gdd-0.3`: `military.move_infantry`, `military.move_armoured`, `military.move_road`, `military.move_rail`, `military.stack_limit`, `military.fort_bonus`, `military.fortify_turns`, `military.fortify_bonus`, the six land biomes' `movement` and `defence_percent` parts, and the `lake`/`sea` impassability expressions. Consumed values must have the specified integral shape and Agreed/Default basis; absent, Deferred or malformed values are rejected. This does not promote Default data to Agreed or adopt the remainder of the catalogue.
 
-Artillery allowance and terrain costs remain Deferred, with no number introduced. Its movement consumer is blocked; its existing firing contract and shot accounting remain unchanged. Adding symbolic artillery catalogue entries requires a separately approved 0.3-only overlay/load design so older identities' raw content hashes remain unchanged; no shared catalogue edit is made here. Permanent forts derive from existing `kind: fort` location records after overrides (currently Latrun and Iraq Suwaydan; roster subject to Amir), without new state/save data. Legacy/gdd-0.1 use their original runtime paths and hash inputs.
+Artillery reads its type's `movement_points` (no catalogue key) and pays the infantry column of the land rows' `movement` pair, per the owner's Q12 answer. A shot spends the points left. Adding symbolic artillery catalogue entries requires a separately approved 0.3-only overlay/load design so older identities' raw content hashes remain unchanged; no shared catalogue edit is made here. Permanent forts derive from existing `kind: fort` location records after overrides (currently Latrun and Iraq Suwaydan; roster subject to Amir), without new state/save data. Legacy/gdd-0.1 use their original runtime paths and hash inputs.
 
 The pinned source is [#1668's balance.md at 605277df](https://github.com/eyalgolan/statecraft-israel/blob/605277df/docs/gdd/balance.md). Every backticked key in its Key tables has a literal catalogue key. Project keys (`maabara` through `rail_segment`) and existing biome ids also keep their names. This gives 142 keys; a test fixes that inventory independently of the loader. Tables that share one row across several keys are split into individual entries. Multi-tier values remain ordered as in the source, with the order and units in the note.
 
@@ -26,6 +26,19 @@ The coordinator's catalogue citation is **owner ruling, 25 Oct 2026, on #1668**.
 | Attention removed | None | No Attention key invented. Rule implementation tracked separately in #1688. |
 
 Numeric parameters the owner did not set are not made Agreed by these rulings. The catalogue contains no new debt, economic-defeat or timing numbers. Other GDD 0.3 systems and the eventual switch-over have their own issues.
+
+## Later owner rulings (#2115)
+
+| Ruling | Catalogue keys | Treatment |
+| --- | --- | --- |
+| 30 October 2026, "Keep the set values (Recommended)" | `craft.course_cost`, `craft.course_turns`, `military.training_money`, `military.active_money` | Agreed `0.5`, `3`, `0.5`, `0.05`; Amir's `5`, `6`, `0`, `1` are declined proposals. |
+| 1 November 2026, D2, "Approve all six (Recommended)" | `start.population`, `start.money`, `start.food`, `start.spare_arms`, `start.farmers`, `start.food_production`, `start.food_consumption` | Values kept for Open mode (milestone M4); Default, since the Historical MVP starts from the census cities. |
+| 1 November 2026, 27M-16, "0.35, your 15 Oct value (Recommended)" | `start.housing_condition` | Agreed `0.35`, a unitless fraction for every city (`R-HOUSE-001`). |
+| 1 November 2026, O7, "10 per unit, main (Recommended)" | `prisoner.return_points` | Agreed `10` per returned population unit (`R-POW-004`). |
+| 1 November 2026, post-MVP, "Approve all 79 (Recommended)" | `transit.cost`, `reception.queue_cohesion_loss` | Values kept; Default and not operative in the MVP. |
+| 30 October 2026, Upkeep conflict, option A (declined) | `housing.max_deterioration` | Value kept as post-MVP design; Default. |
+
+Other post-MVP rows (for example `reception.turns`, `reception.capacity`, `reception.basic_credit`, `military.refugee_multiplier`) stay Agreed for now: inactive fixtures read several of them as Agreed (`Content.RequirePopulationInteger`, `Gdd03ReceptionFixture`). `combat.enemy_attack_ratio` (O4) and the per-unit rates at 1,000 people a unit (`industry.income`, `farmer.output`, `military.camp_capacity`) are changed in their own issues (#2114, #2112).
 
 ## #1706 slices 0/1: inactive combat catalogue foundation
 

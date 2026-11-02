@@ -6,7 +6,10 @@ public class Gdd03EventRulesTests
 {
     const string Manifest = "gdd03-events.yaml";
     const string Empty = "ruleset: gdd-0.3\nexclusions: []\n";
-    static readonly string[] Excluded = { "austerity_1949", "clothing_rationing_1950", "forex_crisis_1951", "iraqi_exodus", "israel_bonds", "maabarot_policy", "reparations_claim", "reparations_vote" };
+    static readonly string[] Excluded = { "austerity_1949", "forex_crisis_1951", "iraqi_exodus", "israel_bonds", "maabarot_policy" };
+    // #2224 (owner, 2 November 2026, "Bring back 3, design bonds (Recommended)"): D1/Q2 keep the foreign-currency ledger,
+    // so these three cards, excluded by #1772 for want of a ledger mapping, are active again. israel_bonds stays excluded.
+    static readonly string[] Restored = { "clothing_rationing_1950", "reparations_claim", "reparations_vote" };
     static string Card(string id = "probe", string option = "") =>
         $"id: {id}\ntitle: Fixture\ntext: Fixture.\nfrom: 1948-05-15\noptions:\n  - id: ok\n    text: Accept\n    historical: true\n" + option;
     static Dictionary<string, string> Files(bool modern = true)
@@ -34,11 +37,8 @@ public class Gdd03EventRulesTests
         indicator ? f => f["model.yaml"] = Fixture.Files["model.yaml"].Replace("indicators:", $"indicators:\n  - {{ id: {target}, name: Fixture, base: 0.5 }}") : null);
 
     [Fact] public void Gdd03RejectsAttentionEffectEvenIfIndicatorExists() => Effect("attention", true);
-    [Fact] public void Gdd03RejectsPassiveBudgetEffect() => Effect("budget", true);
-    [Fact] public void Gdd03RejectsAutomaticFoodRefillEffect() => Effect("food_refill", true);
     [Fact] public void Gdd03RejectsFoodSupplyWrite() => Effect("food_supply");
     [Fact] public void Gdd03RejectsHousingCompatibilityWrite() => Effect("housing");
-    [Fact] public void Gdd03RejectsFxEffectWithoutApprovedLedger() => Effect("fx_reserves");
     [Fact] public void Gdd03RejectsRetiredRationingPolicy() => Reject("    set_policy: { rationing: 0.5 }\n", "set_policy.rationing");
     [Fact] public void Gdd03RejectsRetiredMaabarotPolicy() => Reject("    set_policy: { maabarot: 0.5 }\n", "set_policy.maabarot");
     [Fact] public void Gdd03RejectsCityLossDefeatEffect() => Effect("city_loss_defeat", true);
@@ -49,12 +49,58 @@ public class Gdd03EventRulesTests
 
     [Theory]
     [InlineData("attention_per_turn")]
-    [InlineData("budget_finance_minister")]
-    [InlineData("passive_budget")]
-    [InlineData("automatic_food_refill")]
     [InlineData("defeat")]
     [InlineData("any_city_loss")]
     public void CompatibilityIndicatorsCannotEnableCommandTargets(string target) => Effect(target, true);
+
+    // R-EFX-001, #1718 D1/Q1/Q2 (owner, 1 November 2026, "Approve all six (Recommended)"): main's economy stays (passive
+    // budget, monthly Food refill, the foreign-currency ledger), so under gdd-0.3 only Attention retires. These targets
+    // load under gdd-0.3 exactly as under gdd-0.1: a budget or refill spelling is accepted when model.yaml defines it.
+    [Theory]
+    [InlineData("budget", true)]
+    [InlineData("budget_finance_minister", true)]
+    [InlineData("passive_budget", true)]
+    [InlineData("passive_budget_defence", true)]
+    [InlineData("food_refill", true)]
+    [InlineData("automatic_food_refill", true)]
+    [InlineData("fx_reserves", false)]
+    public void Gdd03KeepsD1BudgetRefillAndForeignCurrencyTargets(string target, bool indicator)
+    {
+        foreach (var modern in new[] { true, false })
+        {
+            var f = Files(modern);
+            if (indicator) f["model.yaml"] = Fixture.Files["model.yaml"].Replace("indicators:", $"indicators:\n  - {{ id: {target}, name: Fixture, base: 0.5 }}");
+            var c = Load(f, Card(option: $"    effects: [{{ target: {target}, delta: -0.1 }}]\n"));
+            Assert.Equal(target, c.Events.Single().Options.Single().Effects.Single().Target);
+        }
+    }
+    // R-EFX-001: keeping D1's targets adds no alias. A budget or refill spelling model.yaml does not define is still an
+    // unknown target under gdd-0.3, as under gdd-0.1.
+    [Theory]
+    [InlineData("passive_budget")]
+    [InlineData("food_refill")]
+    public void Gdd03KeptD1TargetsStillNeedARealTarget(string target)
+    {
+        foreach (var modern in new[] { true, false })
+        {
+            var ex = Assert.Throws<ContentException>(() => Load(Files(modern), Card(option: $"    effects: [{{ target: {target}, delta: -0.1 }}]\n")));
+            Assert.Equal("events[probe].options[ok].effects." + target, ex.Field);
+            Assert.EndsWith(": unknown target", ex.Message);
+        }
+    }
+    // R-EFX-001, #1718 Q2 (owner, 1 November 2026): foreign currency stays the internal ledger, so a gdd-0.3 card moves it once.
+    [Fact]
+    public void Gdd03ForeignCurrencyEffectMovesTheLedgerOnce()
+    {
+        var c = Load(Files(), Card(option: "    effects: [{ target: fx_reserves, delta: -3 }]\n").Replace("from:", "anchor: hard\nfrom:"));
+        var s = Simulation.NewGame(c, 1, Mode.Historical); s.FxReserves = 10;
+        var why = new List<Cause>();
+        Assert.Null(EventSystem.Choose(c, s, "probe", "ok", why));
+        Assert.Equal(7, s.FxReserves);
+        Assert.Contains(why, w => w.Target == "fx_reserves" && w.Delta == -3);
+        Assert.NotNull(EventSystem.Choose(c, s, "probe", "ok", why));
+        Assert.Equal(7, s.FxReserves);
+    }
 
     [Theory]
     [InlineData("food_supply")]
@@ -131,7 +177,7 @@ public class Gdd03EventRulesTests
         Assert.Equal("events[probe].id", ex.Field);
     }
 
-    static Content Real(bool modern, string? manifest = null)
+    internal static Content Real(bool modern, string? manifest = null)
     {
         var root = RealContentTests.ContentRoot();
         return ContentLoader.Load(rel =>
@@ -143,10 +189,10 @@ public class Gdd03EventRulesTests
         }, Directory.GetFiles(Path.Combine(root, "events"), "*.yaml").Select(p => "events/" + Path.GetFileName(p)));
     }
     [Fact]
-    public void RealCatalogueExcludesExactlyEightWholeCardsAndKeepsOrder()
+    public void RealCatalogueExcludesExactlyFiveWholeCardsAndKeepsOrder()
     {
         var old = Real(false); var modern = Real(true);
-        Assert.Equal(39, old.Events.Count); Assert.Equal(31, modern.Events.Count);
+        Assert.Equal(39, old.Events.Count); Assert.Equal(34, modern.Events.Count);
         Assert.Equal(Excluded, old.Events.Select(e => e.Id).Except(modern.Events.Select(e => e.Id)).OrderBy(x => x, StringComparer.Ordinal));
         Assert.Equal(old.Events.Where(e => !Excluded.Contains(e.Id)).Select(e => e.Id), modern.Events.Select(e => e.Id));
         Assert.NotEqual(old.Hash, modern.Hash);
@@ -201,7 +247,7 @@ public class Gdd03EventRulesTests
     [InlineData("war-casualties")] [InlineData("displacement")]
     public void SensitivePositiveGainsStillFailAndNegativeCostsRemainAllowed(string tag)
     {
-        foreach (var target in new[] { "treasury", "food", "arms", "morale", "intl_standing" })
+        foreach (var target in new[] { "treasury", "fx_reserves", "food", "arms", "morale", "intl_standing" })
         {
             string Record(int delta) => Card(option: FormattableString.Invariant($"    effects: [{{ target: {target}, delta: {delta} }}]\n")) + $"tags: [{tag}]\n";
             var ex = Assert.Throws<ContentException>(() => Load(Files(), Record(1)));
@@ -257,7 +303,6 @@ public class Gdd03EventRulesTests
     }
 
     // Inventory from the approved plan for #1772, pinned to ef35703; includes valid sibling fields.
-    // reparations_vote (#1575) joined after the main merge, excluded for the same reason as reparations_claim.
     static readonly string[] Inventory =
     {
         "austerity_1949/impose/set_policy.rationing=1",
@@ -265,9 +310,6 @@ public class Gdd03EventRulesTests
         "austerity_1949/impose/effects.morale=-0.05",
         "austerity_1949/decline/effects.fx_reserves=-8",
         "austerity_1949/decline/effects.food_supply=-0.05",
-        "clothing_rationing_1950/extend/effects.morale=-0.05",
-        "clothing_rationing_1950/relax/effects.morale=0.03",
-        "clothing_rationing_1950/relax/effects.fx_reserves=-8",
         "forex_crisis_1951/request_aid/effects.fx_reserves=-45",
         "forex_crisis_1951/request_aid/effects.fx_reserves=15",
         "forex_crisis_1951/request_aid/effects.intl_standing=-0.01",
@@ -287,6 +329,20 @@ public class Gdd03EventRulesTests
         "maabarot_policy/maabarot/effects.treasury=2",
         "maabarot_policy/keep_camps/effects.housing=-0.03",
         "maabarot_policy/keep_camps/effects.treasury=-4",
+    };
+    [Fact]
+    public void AllTwentyFourAffectedAssignmentsRetainTheirLegacyValues()
+    {
+        Assert.Equal(Inventory.OrderBy(x => x, StringComparer.Ordinal), Rows(Real(false), Excluded).OrderBy(x => x, StringComparer.Ordinal));
+        Assert.All(Real(false).Events, e => Assert.All(e.Options, o =>
+        { Assert.Empty(o.GrantUnits); Assert.Empty(o.CityEffects); Assert.Empty(o.UnlockProjects); }));
+    }
+    // #2224: the restored cards' rows, the same legacy values the #1772 inventory pinned for them (ef35703).
+    static readonly string[] RestoredInventory =
+    {
+        "clothing_rationing_1950/extend/effects.morale=-0.05",
+        "clothing_rationing_1950/relax/effects.morale=0.03",
+        "clothing_rationing_1950/relax/effects.fx_reserves=-8",
         "reparations_claim/claim/effects.intl_standing=0",
         "reparations_claim/claim/effects.treasury=-1",
         "reparations_claim/refuse/effects.intl_standing=0",
@@ -295,57 +351,68 @@ public class Gdd03EventRulesTests
         "reparations_vote/reject/effects.fx_reserves=-4",
         "reparations_vote/referendum/effects.treasury=-1",
     };
+    static IEnumerable<string> Rows(Content c, IEnumerable<string> ids) => c.Events.Where(e => ids.Contains(e.Id)).SelectMany(e =>
+        e.Options.SelectMany(o => o.SetPolicy.Select(kv => $"{e.Id}/{o.Id}/set_policy.{kv.Key}=" + kv.Value.ToString("G", System.Globalization.CultureInfo.InvariantCulture))
+            .Concat(o.Effects.Select(fx => $"{e.Id}/{o.Id}/effects.{fx.Target}=" + fx.Delta.ToString("G", System.Globalization.CultureInfo.InvariantCulture)))));
+    // #2224: under gdd-0.3 the three restored cards load with their legacy effects and reach the player on the turns
+    // EventRetimingTests.EachEventFiresOnItsTurn pins for them in the gdd-0.1 golden run. The reference player is not
+    // defined for gdd-0.3 (ReferencePlayer.Commands), so this run gives no orders; the cards' windows still decide the turn.
     [Fact]
-    public void AllThirtyFourAffectedAssignmentsRetainTheirLegacyValues()
+    public void RestoredCardsLoadWithLegacyEffectsAndFireOnTheirTurns()
     {
-        var rows = Real(false).Events.Where(e => Excluded.Contains(e.Id)).SelectMany(e =>
-            e.Options.SelectMany(o => o.SetPolicy.Select(kv => $"{e.Id}/{o.Id}/set_policy.{kv.Key}=" + kv.Value.ToString("G", System.Globalization.CultureInfo.InvariantCulture))
-                .Concat(o.Effects.Select(fx => $"{e.Id}/{o.Id}/effects.{fx.Target}=" + fx.Delta.ToString("G", System.Globalization.CultureInfo.InvariantCulture)))));
-        Assert.Equal(Inventory.OrderBy(x => x, StringComparer.Ordinal), rows.OrderBy(x => x, StringComparer.Ordinal));
-        Assert.All(Real(false).Events, e => Assert.All(e.Options, o =>
-        { Assert.Empty(o.GrantUnits); Assert.Empty(o.CityEffects); Assert.Empty(o.UnlockProjects); }));
+        var c = Real(true);
+        Assert.Equal(RestoredInventory.OrderBy(x => x, StringComparer.Ordinal), Rows(c, Restored).OrderBy(x => x, StringComparer.Ordinal));
+        var s = Simulation.NewGame(c, GoldenRun.Seed, Mode.Historical);
+        var run = new List<GameState> { s };
+        while (s.GameOver == null && run.Count < 1000) { s = Simulation.Step(c, s, Array.Empty<Command>()).State; run.Add(s); }
+        Assert.Equal(GameOverCodes.MvpEnded, s.GameOver);
+        DateTime? CardDate(string id) => run.FirstOrDefault(x => x.FiredEvents.Contains(id))?.Date;
+        Assert.Equal(new DateTime(1950, 7, 15), CardDate("clothing_rationing_1950"));
+        Assert.Equal(new DateTime(1951, 3, 15), CardDate("reparations_claim"));
+        Assert.Equal(new DateTime(1951, 12, 15), CardDate("reparations_vote"));
+        Assert.Null(CardDate("israel_bonds"));
     }
     static readonly string[] SourceBytes =
     {
-        "absorb_immigrants:56880a2e2a96ed94f9131f71e3be55d8f2b27a8cab7aceda83e7cb6b3dd886de",
-        "altalena:7c70e207bcc8b354e5c137e7c7b15d3db1de10f85303e197495615360de397ca",
-        "armistice_egypt:b85f731749e0636502a8d4a10118fbdd9c21f56a6009d6ccc0857fd5591943bc",
-        "armistice_jordan:d6284502a8b49e7463deabd81ee760181451b732bf12db46ead2e838219e4cd4",
-        "armistice_lebanon:e87a66c9df444b0c039b23d2533956d500ca1c277b3ce4236b534b121c24e87e",
-        "armistice_syria:c8424d98187b549a6e7d5d392d9e064bcf6ff0c62d4da3118c940e12ea6300b0",
-        "austerity_1949:f5b0d85ce7fc8772c55f6d235dc8441372083a35e6f51282e63f49b2e17397af",
-        "bernadotte_assassination:9263942438c459aad95b51c2569d1aa89cb2255f7278655e244121044e5755c4",
-        "burma_road_complete:f48054bb7720b93b582cae4e168f13595a4360ee62e91e12815df08de384e6e3",
-        "clothing_rationing_1950:2e33baac62ea7d12e36b9a5fd5237a128139671b8729c4841c967afdfa6dba60",
-        "degania_defence:735b0daa3b22a23680dbae2fac18944afc92239b5bc6c31dc50fb101d81daaa3", // re-pinned for #2020 (owner-approved Hebrew wording, 30 October 2026)
-        "education_registration_1951:cce6e7f6ca42058ed265da888258cce7fc40407710bba98e028ad7801a351e11",
-        "elections_1949:959ae7714c1a53a3df6766e6d191bc3490f3fa5b5d2972dd1b965a855106c110",
-        "first_new_yishuv:9edf9e0da02c2feefe11eb52aa056ee64af60a41ac3fa2c283ff976f33d0e0c8",
-        "first_truce:251eaf274e28427c667a1ea46a4d0f3e9f5eefbc4bff8fe1141fc6d8bdf6b378",
-        "forex_crisis_1951:212a675012c6cfb915b960de96d7a2e2eac9622c9652afd7a6ffd4ee2e1ed304",
-        "frumkin_commission:e88bc10c1ae0739c3191fa03a3958f98c7136bd3a1de9e93aaf129ddb8fff55c",
-        "hula_drainage:0b400fda5ce85e202cf2bf7c2557a2ff612f406f33f2f59b24e943636aaf372e",
-        "idf_founding:6777150c6f2cdb064cacd181761f8bb80fa25205c9fc25e523a842a825adae58",
-        "iraqi_exodus:62c43ba683f4981951829a72c0cae97b1ac8f11663472cccf73b46cefc1c60f5",
-        "israel_bonds:b8f95f2ab683a4b88ca36b8a375d168a4bf5921ccb864e5504c45d66821bea08",
-        "jerusalem_ceasefire:79d875217efb2d614538db27b405d9469d46fb61b5288651766611e5559a4643",
-        "jerusalem_demilitarisation_guard:93cec80c25ad328a0382c3178de10e133ea9a506ec78b3e038b7e25b7f6e2d62", // re-pinned for #2020 (owner-approved Hebrew wording, owner re-review bc139d5eb)
-        "jerusalem_military_government:322585aeedf0c69b9f81722edebaebbdc0d27ebb4e7b67d275e898607d2cd211",
-        "latrun_proposal:1fef7e1e461733f669167249b22352d9f3fb7807e1d2e33f325faefdec4e5ee1", // re-pinned for #2087 (R-ENEMY-005 unit order: Harel toward Latrun; owner rulings, 1 and 2 November 2026, order targets; card text, Hebrew and review status unchanged)
-        "law_of_return:d9453c9d4645bfe7b8bd715bbc4aae6d2f5156b72c717317bd6990184b8e61e4",
-        "maabarot_policy:de29ffa17fbc70aa7283b833e546a219b449c8b3e0d712e3d158ed18169d592b",
-        "ministry_supply_crisis:000d54fdc5198b105f101bfa7816a152e2c7682f01a97da67e97988e5ef141db",
-        "operation_hiram:ace250c0241c153bbd30665b21a6dc4dc6c8ddefeb03f9cb444dd9feeee93876", // re-pinned for #2087 (R-ENEMY-005 unit orders: Carmeli to Manara, the 7th Brigade to al-Malikiyya; owner rulings, 1 and 2 November 2026, order targets; card text, Hebrew and review status unchanged)
-        "operation_horev:e278c3fa5505b93b71be1971ea4cd60edf87cb7e5c14f93e9ba99e5975e102c1", // re-pinned for #749 part 2 (R-ENEMY-005 unit orders; owner ruling, 31 October 2026; comment per the review of #2087; review status unchanged)
-        "operation_yoav:61d0576c005a7a1ef056c3029155cd4512a91a635974304d1db592cff2d09c46", // re-pinned for #2087 (R-ENEMY-005 unit orders: Negev to Beersheba, Givati to Huleiqat; owner rulings, 1 and 2 November 2026, order targets; card text, Hebrew and review status unchanged)
-        "rafah_force_pressure:658b99340f0cf7dbf042e64d131509b87cec48f4374b16a1337fd0f831dbd28d", // re-pinned for #2020 (owner-approved Hebrew wording, owner re-review bc139d5eb)
-        "railway_complete:2108338a93d663ec9cb06bcb474c1f1211cfff480f9ef0acaec9c758a4854a7c", // re-pinned for #1676 (person's fact-check of #1410, status draft -> fact-checked)
-        "reparations_claim:b9982aae12edd0f6e2d9f8e4e3273d865d2e9106480fae5824728524edfa4139",
+        "absorb_immigrants:7c926e12a0e54c4602177832f2db0c02393fd57981aea0f4b4eac916902d8f6a", // re-pinned for #1065 (reviewer comment matches the text)
+        "altalena:7b11813ca83ff1745263ee0bb8e7931d44641a87d7b126cde8433b225a9f479a", // re-pinned for #1065 (owner's native read; flag removed in 8fbcb2aff)
+        "armistice_egypt:d361db22977057e24e0cb515afbfee37439cbdce38e465960b4978d082f5704f", // re-pinned for #1065 (Beri's native Hebrew read)
+        "armistice_jordan:484bedf4869f6b01aec1a2d400c577183654a6d36930da065a77ddf203cf4450", // re-pinned for #1065 (Beri's native Hebrew read)
+        "armistice_lebanon:81141de094d4d536c6c0e22b93a0d3704a3f1d999b3813a51c2d08f2ae8ecf11", // re-pinned for #1065 (Beri's native Hebrew read)
+        "armistice_syria:2b83f89ff2effe21e01d511a7ea1e0a41f937ee96e39a16977ab6f7e8999257e", // re-pinned for #1065 (Beri's native Hebrew read)
+        "austerity_1949:7b4534f4982116745eef2ab2f959ad52faf6efa8efb7f0f5bda3844bac590cc4", // re-pinned for #1065 (Beri's native Hebrew read)
+        "bernadotte_assassination:ea0f988df86957b3e56bf6cd0322f5d33adc927d969509e94ec67aa53e7ed0c5", // re-pinned for #1065 (Beri's native Hebrew read)
+        "burma_road_complete:892409fa6ea058024cc8ea9ec82f2577f55d9a23e0de07106321a0f561b4d21a", // re-pinned for #1065 (owner's native read; flag removed in 8fbcb2aff)
+        "clothing_rationing_1950:ce2d24a8a98ad86a1670e62094d18fca9da71b5cd11f437cd5314a09f4a1d562", // re-pinned for #1065 (Beri's native Hebrew read)
+        "degania_defence:f915a42f050777ddffd7e7e26090b51c6cf922dade41a98fe7174b1c50a62c6e", // re-pinned for #2020 (owner-approved Hebrew wording, 30 October 2026), then for #1065 (Beri's native Hebrew read)
+        "education_registration_1951:1d5cb0e4062dc61b787a7e1b375b3c85c9a1663bd4c3c73f3c9c6f9ee5ac4da3", // re-pinned for #1065 (Beri's native Hebrew read)
+        "elections_1949:962bd8064e8b98d4919be9b4ff4fab68cb9bd3d15213ea43917caa4432f42116", // re-pinned for #1065 (Beri's native Hebrew read)
+        "first_new_yishuv:086b7b8ae0ffc7975268373e80b7f60cee1321f57c7c858884e527784b0aa7c7", // re-pinned for #1065 (owner's native read; flag removed in 8fbcb2aff)
+        "first_truce:fb78d2e82393d5cfb19e56938965c7838c73426f5a23d053d612bc74f8010062", // re-pinned for #1065 (Beri's native Hebrew read)
+        "forex_crisis_1951:53fee056940af610e16f7793d66d38f6470027a63d0c5968c0cc748eb1dc2af0", // re-pinned for #1065 (Beri's native Hebrew read)
+        "frumkin_commission:c7bfb21991dc41bfcbaaf4778c47c5226913a8289ba208474c87128768ba622c", // re-pinned for #1065 (Beri's native Hebrew read)
+        "hula_drainage:b7ec7159b5cb6ecc009e1ff7e12a7f2426ee1c4b992b8c91c4675c8df3cc1bf5", // re-pinned for #1065 (Beri's native Hebrew read)
+        "idf_founding:caad7affcf0309a41c56956c10dd15936ec319ac996ddff6f2cd85efbcebc51e", // re-pinned for #1065 (Beri's native Hebrew read)
+        "iraqi_exodus:461dbb8a0685b7dceb6242d8e819635a27bb10033463e66d1a2e3ac68c9b8521", // re-pinned for #1065 (Beri's native Hebrew read)
+        "israel_bonds:9bb4e8f38b8c9dc41b339645457efe1ce8d74580c53556faf4c81df50f67a992", // re-pinned for #1065 (Beri's native Hebrew read)
+        "jerusalem_ceasefire:b850682a7736dcf2870550322f32a2d5c30963a05529dc9162dd68c9234648d6", // re-pinned for #1065 (Beri's native Hebrew read)
+        "jerusalem_demilitarisation_guard:f1614ec236826762f1ebdab53151eb7df379b25d6a060c69fb4cca794e819f28", // re-pinned for #1065 (owner's native read; flag removed in 05b5777d9)
+        "jerusalem_military_government:526dbc88eabe4691e3ee1f3ed2c5fdeb640f11ae0a7a632c63066175b9c18176", // re-pinned for #1065 (Beri's native Hebrew read)
+        "latrun_proposal:c35f17ffa48d949b432ce9205a245048bd50bf660940206245e8f0d6f5b62916", // re-pinned for #1065 (Beri's native Hebrew read), then for #2087 (R-ENEMY-005 unit order: Harel toward Latrun; owner rulings, 1 and 2 November 2026, order targets; hex re-derived on the 4.4 km grid by tools/unit_anchor_hexes.py and its units_1948.yaml line citations updated; card text, Hebrew and review status unchanged)
+        "law_of_return:d04bb849bbb6fa089afc6e1123f8335aa1b03f49bc025f9d1c6746c48d27b398", // re-pinned for #1065 (Beri's native Hebrew read)
+        "maabarot_policy:12e53e14fe3b045f7c18b75ac7af68acf079c17968baf6c82df2435675eb0884", // re-pinned for #1065 (Beri's native Hebrew read)
+        "ministry_supply_crisis:2de253de7bafb65f0168bdc151dc0b47fec94843ad6f13bf3ac092d7015b55f9", // re-pinned for #1065 (Beri's native Hebrew read)
+        "operation_hiram:e7c661e53f93576d8a135008e0d1e623430967a36729b58b67a4af195165bccf", // re-pinned for #1065 (Beri's native Hebrew read), then for #2087 (R-ENEMY-005 unit orders: Carmeli to Manara, the 7th Brigade to al-Malikiyya; owner rulings, 1 and 2 November 2026, order targets; hexes re-derived on the 4.4 km grid by tools/unit_anchor_hexes.py and its units_1948.yaml line citations updated; card text, Hebrew and review status unchanged)
+        "operation_horev:b879162f4b140dae93f1f14491c5cc901a50c6725347a5efc87402832f6aad33", // re-pinned for #1065 (Beri's native Hebrew read), then for #2087 (R-ENEMY-005 unit orders; owner ruling, 31 October 2026; hex re-derived on the 4.4 km grid by tools/unit_anchor_hexes.py; review status unchanged)
+        "operation_yoav:c4af1976488006f26f06cddaa6a9e3379d0193f5c5c22c8e789ccff64dabfefc", // re-pinned for #1065 (Beri's native Hebrew read), then for #2087 (R-ENEMY-005 unit orders: Negev to Beersheba, Givati to Huleiqat; owner rulings, 1 and 2 November 2026, order targets; hexes re-derived on the 4.4 km grid by tools/unit_anchor_hexes.py and its units_1948.yaml line citations updated; card text, Hebrew and review status unchanged)
+        "rafah_force_pressure:ffbb88f4e2169065fa07b111e6e67cea519c58e3cd684c0a2c092e830ff7d590", // re-pinned for #1065 (owner's native read; flag removed in 05b5777d9)
+        "railway_complete:9f21dd8129ea29f5bfe71999d4802fab0bcdc24dcd14c25b3f8b2cd9774ce15a", // re-pinned for #1065 (owner's native read; flag removed in 8fbcb2aff)
+        "reparations_claim:5412e71f4f5a90a92bd86622eb1a169feee45f0ba2fe82c5ab40bd8f3d43cafd", // re-pinned for #1065 (Beri's native Hebrew read)
         "reparations_vote:a79521d61ec59aa72a581b6598ecfade18e8d1e52dc25cef083078b0665a13b3",
-        "rhodes_talks:9ff18db85e108157ab4ff3753fbf42f9933bedb5f021310979d05fae1b731d1c",
-        "second_truce:56c2259ad9af32b4d6d43d22044908611e6b43f2836211350beb125e864b1611",
-        "sinai_withdrawal:29854edb31218257e99417f86f23a6dde91c07a9e66230fa1a1b4a0248b15ac5",
-        "ten_days:f43198ba4373dad21a19def5b1a1412eae1e3df9062181ba5fe7e6a1169a8bfe", // re-pinned for #2087 (R-ENEMY-005 unit orders: Kiryati to Ramle replaces Yiftach to Lydda; owner rulings, 1 and 2 November 2026, order target; card text, Hebrew and review status unchanged)
+        "rhodes_talks:c5c9cdf906f75e2672e5eedaeadab7f224df96f666a3097813903b81ec06f4f6", // re-pinned for #1065 (Beri's native Hebrew read)
+        "second_truce:22eeb171849bac248d58cec944c03bac6aee56c96a192aabf0aba2b7e02b19f6", // re-pinned for #1065 (Beri's native Hebrew read)
+        "sinai_withdrawal:4abcd39e509c3d404523f7a5609bdb8e1e5180c19524367790ba7adf0af9e06b", // re-pinned for #1065 (Beri's native Hebrew read)
+        "ten_days:c3b8543a071469563aa197a2ba083dce7304812ed343967860f01a143b48b5ad", // re-pinned for #1065 (Beri's native Hebrew read), then for #2087 (R-ENEMY-005 unit orders: Kiryati to Ramle replaces Yiftach to Lydda; owner rulings, 1 and 2 November 2026, order target; hexes re-derived on the 4.4 km grid by tools/unit_anchor_hexes.py and its units_1948.yaml line citations updated; card text, Hebrew and review status unchanged)
     };
     // R-ENEMY-005 (owner, 31 October 2026, #749: "GDD 0.1 only"): the operation cards' unit orders apply under gdd-0.1; under
     // gdd-0.3 the cards stay effect-free for units until a 0.3 accounting contract exists (R-EFX-001/005).
@@ -361,7 +428,7 @@ public class Gdd03EventRulesTests
         s.PendingEvents.Add("operation_horev");
         Assert.Null(EventSystem.Choose(c, s, "operation_horev", "launch", new List<Cause>()));
         var after = s.Units[0];
-        Assert.Equal(modern ? (before.Order, before.OrderTarget) : (Movement.GoTo, "-7,24"), (after.Order, after.OrderTarget));
+        Assert.Equal(modern ? (before.Order, before.OrderTarget) : (Movement.GoTo, "-8,28"), (after.Order, after.OrderTarget));
     }
     // Review of #2087, optional 2: under gdd-0.3 the loader still checks the cards' orders (owner, 31 October 2026, #749), so
     // a Horev order to a hex that is not one of golani's anchors is refused there too.
@@ -374,7 +441,7 @@ public class Gdd03EventRulesTests
             var path = Path.Combine(root, rel);
             var text = File.Exists(path) ? File.ReadAllText(path) : null;
             if (rel == "eras.yaml") return text!.Replace("loop: gdd", "loop: gdd, ruleset: gdd-0.3");
-            return rel == "events/operation_horev.yaml" ? text!.Replace("{ unit: golani, q: -7, r: 24 }", "{ unit: golani, q: -7, r: 23 }") : text;
+            return rel == "events/operation_horev.yaml" ? text!.Replace("{ unit: golani, q: -8, r: 28 }", "{ unit: golani, q: -8, r: 27 }") : text;
         }, Directory.GetFiles(Path.Combine(root, "events"), "*.yaml").Select(p => "events/" + Path.GetFileName(p))));
         Assert.Equal(("events/operation_horev.yaml", "events[operation_horev].options[launch].unit_orders[0]"), (e.File, e.Field));
         Assert.Contains("not an anchor", e.Message);

@@ -221,6 +221,34 @@ public class FoodArmsHudTests
         Assert.AreEqual(t["order.game_over"], ui.Q<Label>("arms-refusal").text);
     }
 
+    // #2198: the panel says ahead of End turn when the amount would borrow past the debt ceiling, in the sim's own check;
+    // exactly at the ceiling says nothing. Buy stays available, and the sim decides when the turn runs.
+    [TestCase(false, false)] [TestCase(false, true)]
+    [TestCase(true, false)] [TestCase(true, true)]
+    public void TheAmountThatWouldBorrowPastTheDebtCeilingIsExplained(bool modern, bool he)
+    {
+        var b = Bridge(modern, he); var t = Text(he);
+        using var ui = new UiTestKit();
+        using var defence = new DefencePresenter(ui.Root, b, t);
+        var r = b.Content.RulesAt(b.State.Date).Mvp!;
+        b.State.Treasury = 0;
+        b.State.Debt = r.DebtCeiling!.Value - r.ArmsPrice!.Value;
+        var count = ui.Q<IntegerField>("arms-count");
+        count.value = 1;
+        Assert.IsEmpty(ui.Q<Label>("arms-refusal").text, "exactly at the ceiling is allowed");
+        count.value = 2;
+        Assert.AreEqual(t["arms.refused_debt_ceiling"], ui.Q<Label>("arms-refusal").text);
+        Assert.IsTrue(ui.Q<Button>("buy-arms").enabledSelf, "a refusal remains explainable");
+        // Pressing Buy queues the order (the sim decides at End turn) and keeps the warning on screen (review of #2203).
+        ui.Press("buy-arms");
+        Assert.AreEqual(2, ((BuyArms)b.Queued.Single()).Count);
+        Assert.AreEqual(t["arms.refused_debt_ceiling"], ui.Q<Label>("arms-refusal").text, "Buy does not clear the warning");
+        ui.Press("withdraw-arms");
+        b.State.Treasury = 2 * r.ArmsPrice!.Value;
+        count.value = 1; count.value = 2;
+        Assert.IsEmpty(ui.Q<Label>("arms-refusal").text, "paid from the Treasury, nothing is borrowed");
+    }
+
     [Test]
     public void PoolCausesIgnoreTheSupplyIndicatorAndKeepTheSimTieOrder()
     {
@@ -312,5 +340,49 @@ public class FoodArmsHudTests
                 rt.Release(); Object.DestroyImmediate(rt);
             }
         }
+    }
+
+    /// <summary>Replacing the session (a load) drops the queued purchase, and the live Arms panel follows the new session:
+    /// its stock, its Attention and a fresh purchase delivered from its own base.</summary>
+    [TestCase(false, false)] [TestCase(false, true)]
+    [TestCase(true, false)] [TestCase(true, true)]
+    public void ReplacingTheSessionDropsTheQueuedPurchaseAndTheLivePanelFollows(bool modern, bool he)
+    {
+        var b = Bridge(modern, he); var t = Text(he);
+        using var ui = new UiTestKit();
+        using var arms = new ArmsPurchasePresenter(ui.Root, b, t);
+        var count = ui.Q<IntegerField>("arms-count");
+        count.value = 4; ui.Press("buy-arms");
+        Assert.AreEqual(4, ((BuyArms)b.Queued.Single()).Count);
+        Assert.AreEqual(t.Format("arms.queued", 4), ui.Q<Label>("arms-queued").text);
+
+        var next = GameSession.New(b.Content, GoldenRun.Seed, Mode.Historical);
+        next.State.Arms = b.State.Arms + 7;                          // distinguishes the new session's stock
+        if (modern) next.State.Attention = double.NaN;                // as the fixture does for gdd-0.3
+        else next.State.Attention = b.State.Attention - 1.5;          // and its Attention
+        b.Replace(next);
+
+        Assert.IsEmpty(b.Queued, "Replace drops queued orders");
+        Assert.IsEmpty(ui.Q<Label>("arms-queued").text, "the live panel re-rendered through Changed");
+        Assert.IsFalse(ui.Q<Button>("withdraw-arms").enabledSelf);
+        Assert.AreEqual(t.Format("arms.stock", next.State.Arms), ui.Q<Label>("arms-stock").text);
+        if (!modern)
+        {
+            Assert.AreEqual(next.State.Attention, b.AttentionLeft!.Value, 1e-9, "the new session's Attention, with no charge left over");
+            Assert.AreEqual(t.Format("arms.attention", b.Price(new BuyArms(count.value))!.Value, b.AttentionLeft!.Value),
+                ui.Q<Label>("arms-attention").text);
+        }
+        else
+        {
+            Assert.AreEqual(DisplayStyle.None, ui.Q<Label>("arms-attention").style.display.value);
+            Assert.IsEmpty(ui.Q<Label>("arms-attention").text);
+        }
+
+        count.value = 2; ui.Press("buy-arms");
+        Assert.AreEqual(2, ((BuyArms)b.Queued.Single()).Count);
+        var start = b.State.Arms;
+        b.EndTurn();
+        Assert.AreEqual(start + 2, b.State.Arms, "delivered in the new session, from its base");
+        Assert.AreEqual(t.Format("arms.stock", start + 2), ui.Q<Label>("arms-stock").text);
     }
 }
