@@ -675,6 +675,7 @@
                 <ui:Label name="opening-title" class="title opening-source-en" />
                 <ui:VisualElement name="opening-photo" class="opening-photo" />
                 <ui:Label name="opening-credit" class="event-photo-credit opening-source-en" />
+                <ui:Label name="opening-caption" class="opening-caption" />
                 <ui:ScrollView name="opening-scroll" class="opening-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden">
                     <ui:Label name="opening-text" class="opening-text opening-source-en" />
                     <ui:Label name="opening-arrivals" class="muted opening-arrivals opening-source-en" />
