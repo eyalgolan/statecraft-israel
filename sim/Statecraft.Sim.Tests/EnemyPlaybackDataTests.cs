@@ -144,4 +144,63 @@ public class EnemyPlaybackDataTests
         var lastMove = moves.Max(x => x.i);
         Assert.All(lines.Where(x => x.w.EnemyOrder == Combat.Attack), x => Assert.True(x.i > lastMove));
     }
+
+    // R-MOVE-006: the player's own move writes its line from the unit as it stood before the move (Movement.Move, the same
+    // path as the enemy's), so the "from" hex is the old one and Args[0] the new one.
+    [Fact]
+    public void APlayerMoveLineNamesTheHexItLeft()
+    {
+        var s = Start();
+        var u = s.Units[0];
+        var to = Movement.Reachable(C, s, 0).Keys.First(h => h != (u.Q, u.R));
+        var why = Simulation.Preview(C, s, new Command[] { new Move(0, to.Q, to.R) }).Why;
+        var line = why.Single(w => w.Key == WhyKeys.UnitMoved && w.Units[0].Id == 0);
+        Assert.Equal("", line.EnemyOrder);
+        Assert.Equal((u.Q, u.R), (line.Units[0].Q, line.Units[0].R));
+        Assert.Equal(Hex(to.Q, to.R), line.Args[0]);
+    }
+
+    /// <summary>R-COMBAT-002, R-COMBAT-003: a first turn in which an enemy unit's step-2 attack on an Israeli unit placed beside
+    /// it ends with that unit's line of <paramref name="key"/> (retreated or destroyed). Found by running the sim over the enemy
+    /// units, their neighbours (R-MOVE-002), a few strengths and the RNG state (the AI's choice to attack draws nothing,
+    /// Q-ENEMY-2, so a turn with no enemy attack ends that strength's search).</summary>
+    static (StepResult r, int id, (int Q, int R) placed) EnemyAttackThatEndsIn(string key)
+    {
+        var s = Start();
+        foreach (var e in s.Units.Values.Where(IsEnemy).ToList())
+            foreach (var (dq, dr) in Movement.Neighbours)
+                foreach (var strength in new[] { 1, 2, 3, 4, 6, 8 })
+                    for (ulong rng = 1; rng <= 64; rng++)
+                    {
+                        var (t, id) = WithIsraeli(s, e.Q + dq, e.R + dr, strength);
+                        t.RngState = rng;
+                        var r = Simulation.Step(C, t, Array.Empty<Command>());
+                        if (!r.Why.Any(w => w.EnemyOrder == Combat.Attack)) break;
+                        if (r.Why.Any(w => w.Key == key && w.Units[0].Id == id)) return (r, id, (e.Q + dq, e.R + dr));
+                    }
+        throw new Xunit.Sdk.XunitException($"no first-turn enemy attack ends in {key} for an Israeli unit (fixture precondition)");
+    }
+
+    // R-COMBAT-003: our unit pushed back by the enemy's step-2 attack is named on the hex it was attacked on (the
+    // engagement's), and Args[0] is where it went.
+    [Fact]
+    public void OurRetreatFromAnEnemyAttackNamesTheHexWeLeft()
+    {
+        var (r, id, placed) = EnemyAttackThatEndsIn(WhyKeys.Retreated);
+        var retreat = r.Why.Single(w => w.Key == WhyKeys.Retreated && w.Units[0].Id == id);
+        Assert.Equal(placed, (retreat.Units[0].Q, retreat.Units[0].R));
+        Assert.NotEqual(placed, (r.State.Units[id].Q, r.State.Units[id].R));   // precondition: it really moved
+        Assert.Equal(Hex(r.State.Units[id].Q, r.State.Units[id].R), retreat.Args[0]);
+        Assert.Contains(r.Why, w => w.Key == WhyKeys.Engagement && w.EnemyOrder == Combat.Attack && w.Args[0] == Hex(placed.Q, placed.R));
+    }
+
+    // R-COMBAT-003: a destroyed unit is named on the hex it was destroyed on, though it has left the state.
+    [Fact]
+    public void ADestroyedLineNamesTheHexTheUnitDiedOn()
+    {
+        var (r, id, placed) = EnemyAttackThatEndsIn(WhyKeys.Destroyed);
+        var line = r.Why.Single(w => w.Key == WhyKeys.Destroyed && w.Units[0].Id == id);
+        Assert.False(r.State.Units.ContainsKey(id));
+        Assert.Equal(placed, (line.Units[0].Q, line.Units[0].R));
+    }
 }
