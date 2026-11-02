@@ -12,12 +12,20 @@ public class DefeatTests
 {
     static readonly Content Real = ContentLoader.Load(RealContentTests.ContentRoot());
 
-    /// <summary>The GDD fixture with a ceiling of IL 10m and N = 3 (fixture values, not the game's).</summary>
-    static Content Gdd(string defeat = "  defeat_turns: 3\n  debt_ceiling: 10\n")
+    /// <summary>The GDD fixture with a ceiling of IL 10m and N = 3 (fixture values, not the game's), under gdd-0.1, or under
+    /// gdd-0.3 with the real balance catalogue when <paramref name="modern"/> (#1702: D1 keeps the economic defeat).</summary>
+    static Content Gdd(string defeat = "  defeat_turns: 3\n  debt_ceiling: 10\n", bool modern = false)
     {
         var files = Fixture.Gdd();
         files["rules.yaml"] = files["rules.yaml"].Replace("  defeat_turns: 3\n  debt_ceiling: 10\n", "").Replace("mvp:\n", "mvp:\n" + defeat);
-        return ContentLoader.Load(Fixture.Write(files));
+        if (modern)
+        {
+            files["eras.yaml"] = files["eras.yaml"].Replace("loop: gdd", "loop: gdd, ruleset: " + SaveGame.Gdd03Ruleset);
+            files[Gdd03BalanceCatalogue.FileName] = System.IO.File.ReadAllText(System.IO.Path.Combine(RealContentTests.ContentRoot(), Gdd03BalanceCatalogue.FileName));
+        }
+        var c = ContentLoader.Load(Fixture.Write(files));
+        Assert.Equal(modern ? SaveGame.Gdd03Ruleset : SaveGame.GddRuleset, c.Ruleset);
+        return c;
     }
 
     static GameState Step(Content c, GameState s) => Simulation.Step(c, s, Array.Empty<Command>()).State;
@@ -34,11 +42,13 @@ public class DefeatTests
         s.ActiveSituations.Add(EconomySystem.FxCrisis);
     }
 
-    // R-END-002
-    [Fact]
-    public void NTurnsExhaustedEndsTheGame()
+    // R-END-002; under gdd-0.3 too (#1702, Q25, Q26)
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void NTurnsExhaustedEndsTheGame(bool modern)
     {
-        var c = Gdd();
+        var c = Gdd(modern: modern);
         var s = Simulation.NewGame(c, 1, Mode.Historical);
         Broke(s); Starving(s);
         for (int turn = 1; turn <= 2; turn++)
@@ -57,11 +67,13 @@ public class DefeatTests
         Assert.Equal(last.State.Date, after.State.Date);
     }
 
-    // R-END-002
-    [Fact]
-    public void NMinusOneDoesNotAndARecoveryResetsTheCount()
+    // R-END-002; under gdd-0.3 too (#1702, Q25, Q26)
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void NMinusOneDoesNotAndARecoveryResetsTheCount(bool modern)
     {
-        var c = Gdd();
+        var c = Gdd(modern: modern);
         var s = Simulation.NewGame(c, 1, Mode.Historical);
         Broke(s); Starving(s);
         s = Step(c, Step(c, s));

@@ -504,7 +504,15 @@ leaves the focus on the last stop instead of dropping it; and a drawn scope stil
 first control, asserted on `minimap-overview` so the fallback cannot satisfy the test). No UI
 string was added, so nothing goes to #564.
 
-## The WebGL companion is opt-in, 1 November 2026
+## The WebGL companion: off and unavailable for now, owner 2 November 2026
+
+**Status:** off and unavailable for now (owner, 2 November 2026). The owner asked to "disable the game companion" and
+chose "Remove it from the game (Recommended)": "A small PR before tonight's nightly hides it entirely: no Settings row,
+and ?companion=1 does nothing. The code stays in, switched off by one flag, so it can come back later." That flag is
+`WebCompanion.Available`, now `false`. While it is false `WebCompanion.On` is false whatever the switch, the stored
+choice or the address says, GameRoot gives Settings no switch, so the row stays hidden as it is outside WebGL, and the
+page's panel stays `hidden` because the game never publishes to it. `WebCompanionUnavailableTests` pins this. The
+rest of this section describes the companion as it works with the flag on (what `WebCompanionTests` runs, through the `WebCompanion.Offered` test seam), from the opt-in ruling of 1 November 2026.
 
 The first step proposed under H5 is the read-only WebGL companion (#1119, PR #1920): an HTML panel beside the canvas
 (`WebGLTemplates/Statecraft/index.html`, `WebCompanion.jslib`) that mirrors the open event, its choices, the game's focus,
