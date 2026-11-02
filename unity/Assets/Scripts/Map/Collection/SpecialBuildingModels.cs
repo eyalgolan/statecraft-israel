@@ -310,6 +310,7 @@ namespace Statecraft.Game.Map.Collection
 
         MapScene? map; DateTime date; bool shown;
         IReadOnlyList<Want> workshops = Array.Empty<Want>();
+        int ruralVersion;
 
         internal static bool Same(IReadOnlyList<Want> a, IReadOnlyList<Want> b)
         {
@@ -330,7 +331,9 @@ namespace Statecraft.Game.Map.Collection
         public static SpecialBuildingModels? ShowAt(MapScene map, DateTime date, Statecraft.Sim.Content content,
             IEnumerable<Statecraft.Sim.CityProject> projects) => ShowAt(map, date, ArmsWorkshops(content, projects));
 
-        static SpecialBuildingModels? ShowAt(MapScene map, DateTime date, IReadOnlyList<Want> workshops)
+        /// <summary>As <see cref="ShowAt(MapScene, DateTime)"/>, with <paramref name="workshops"/> (<see cref="ArmsWorkshops"/>,
+        /// computed once by the caller for this layer and HexPropModels).</summary>
+        internal static SpecialBuildingModels? ShowAt(MapScene map, DateTime date, IReadOnlyList<Want> workshops)
         {
             if (map == null || map.Terrain == null || map.Hexes == null) return null;
             var layer = map.Terrain.transform.Find(Name)?.GetComponent<SpecialBuildingModels>();
@@ -341,9 +344,12 @@ namespace Statecraft.Game.Map.Collection
             }
             if (layer.residencyView == null) layer.ConfigureResidency(map.Residency.Special, null);
             // GameRoot calls this on every refresh: rebuild only when the game date changes (the dated list and the dated
-            // tokens' clearance both follow it) or the built arms workshops do (one completed, or one left the state).
-            if (layer.shown && layer.date == date && Same(layer.workshops, workshops)) return layer;
-            layer.shown = true; layer.date = date; layer.workshops = workshops;
+            // tokens' clearance both follow it), the built arms workshops do (one completed, or one left the state), or, with
+            // workshops, the rural plan they keep clear of (RuralLife.VersionOf: HexPropModels rebuilds on it too, so the props
+            // keep clear of the b21 drawn).
+            int rural = workshops.Count == 0 ? 0 : RuralLife.VersionOf(map);
+            if (layer.shown && layer.date == date && Same(layer.workshops, workshops) && layer.ruralVersion == rural) return layer;
+            layer.shown = true; layer.date = date; layer.workshops = workshops; layer.ruralVersion = rural;
             layer.Show(workshops.Count == 0 ? Placements(date) : Placements(date).Concat(workshops).ToList()); return layer;
         }
 

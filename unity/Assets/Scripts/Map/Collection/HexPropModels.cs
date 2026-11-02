@@ -229,6 +229,7 @@ namespace Statecraft.Game.Map.Collection
         MapScene? map; DateTime date; bool shown, requested;
         /// <summary>The b21 of each built arms workshop (#1701 slice F), kept clear of with the sourced buildings.</summary>
         IReadOnlyList<SpecialBuildingModels.Want> workshops = Array.Empty<SpecialBuildingModels.Want>();
+        int ruralVersion;
         /// <summary>Whether a camera has come in to the close zoom: the standalone props are built only from then on (none of
         /// them draws further out, #2266 review).</summary>
         bool everClose;
@@ -266,7 +267,9 @@ namespace Statecraft.Game.Map.Collection
         public static HexPropModels? ShowAt(MapScene map, DateTime date, Statecraft.Sim.Content content, IEnumerable<Statecraft.Sim.CityProject> projects) =>
             ShowAt(map, date, SpecialBuildingModels.ArmsWorkshops(content, projects));
 
-        static HexPropModels? ShowAt(MapScene map, DateTime date, IReadOnlyList<SpecialBuildingModels.Want> workshops)
+        /// <summary>As <see cref="ShowAt(MapScene, DateTime)"/>, with <paramref name="workshops"/> (SpecialBuildingModels.ArmsWorkshops,
+        /// computed once by the caller for both layers).</summary>
+        internal static HexPropModels? ShowAt(MapScene map, DateTime date, IReadOnlyList<SpecialBuildingModels.Want> workshops)
         {
             if (map == null || map.Terrain == null || map.Hexes == null) return null;
             var layer = map.Terrain.transform.Find(Name)?.GetComponent<HexPropModels>();
@@ -275,11 +278,13 @@ namespace Statecraft.Game.Map.Collection
                 var go = new GameObject(Name); go.transform.SetParent(map.Terrain.transform, false);
                 layer = go.AddComponent<HexPropModels>(); layer.map = map;
             }
-            // GameRoot calls this on every refresh: rebuild only when the date changes (the dated stations and tokens follow it)
-            // or the built arms workshops do.
-            if (layer.shown && layer.date == date && SpecialBuildingModels.Same(layer.workshops, workshops)) return layer;
+            // GameRoot calls this on every refresh: rebuild only when the date changes (the dated stations and tokens follow it),
+            // the built arms workshops do, or the rural plan the props keep clear of does (RuralLife.VersionOf; the workshops' b21
+            // rebuild on it too, so both stand on one plan).
+            int rural = RuralLife.VersionOf(map);
+            if (layer.shown && layer.date == date && SpecialBuildingModels.Same(layer.workshops, workshops) && layer.ruralVersion == rural) return layer;
             layer.fixedWants ??= FixedWants(map);
-            layer.shown = true; layer.date = date; layer.workshops = workshops;
+            layer.shown = true; layer.date = date; layer.workshops = workshops; layer.ruralVersion = rural;
             layer.wants = StationWants(map, date); layer.wants.AddRange(layer.fixedWants);
             layer.standaloneDirty = true; layer.BuildStandaloneIfDue(inRender: false);
             return layer;
