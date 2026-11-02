@@ -1401,7 +1401,7 @@ public class MapLabelTests
             foreach (var date in new[] { new System.DateTime(1948, 6, 15), new System.DateTime(1949, 8, 15) })
             {
                 var layer = craftLayer = Statecraft.Game.Map.Collection.SeaAirCollection.ShowAt(map, date, System.Array.Empty<Statecraft.Sim.Placement>(), c)!;
-                Assert.AreEqual(4, layer.Placed.Count, "every craft drawn on " + date.ToString("d MMM yyyy"));
+                Assert.AreEqual(date.Year == 1948 ? 5 : 4, layer.Placed.Count, "every craft drawn on " + date.ToString("d MMM yyyy"));
                 foreach (var (lon, lat) in new[] { (34.76, 32.07), (35.03, 32.86), (34.88, 32.0) })
                 {
                     Pose(lon, lat, 60000f);

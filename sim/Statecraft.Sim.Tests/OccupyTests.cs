@@ -249,4 +249,49 @@ public class OccupyTests
         Assert.Equal(("rules.yaml", field), (ex.File, ex.Field));
         Assert.Contains(message, ex.Message);
     }
+
+    /// <summary>CaptureTests' fixture as it loads (gdd-0.1), or with the exact gdd-0.3 ruleset swapped in as NoAttentionTests
+    /// swaps it.</summary>
+    internal static Content Load(bool gdd03) => CaptureTests.Load(gdd03 ? f => NoAttentionTests.Select(f, true) : null, CaptureTests.AllTargets);
+
+    /// <summary>Plays <paramref name="turns"/> from <paramref name="s"/>, running <paramref name="between"/> on the state
+    /// before each turn's orders (null leaves it alone), and after each turn records <paramref name="id"/>'s record as
+    /// state/turns ("none" with no record) with soldier 1's hex, and the canonical state with the Attention pool and the
+    /// ruleset name taken out (NoAttentionTests.WithoutLegacyAccounting).</summary>
+    internal static List<(string Trace, string State)> Play(Content c, GameState s, string id, Action<int, GameState>? between, params Command[][] turns)
+    {
+        var seen = new List<(string, string)>();
+        for (int i = 0; i < turns.Length; i++)
+        {
+            between?.Invoke(i, s);
+            var result = Simulation.Step(c, s, turns[i]);
+            Assert.Empty(result.Rejected);
+            s = result.State;
+            var where = s.Units.TryGetValue(1, out var u) ? FormattableString.Invariant($"{u.Q},{u.R}") : "gone";
+            var record = s.Settlements.TryGetValue(id, out var x) ? FormattableString.Invariant($"{x.State}/{x.Turns}") : "none";
+            seen.Add((record + "@" + where, NoAttentionTests.WithoutLegacyAccounting(s.Describe())));
+        }
+        Assert.Equal(c.Ruleset == SaveGame.Gdd03Ruleset, s.Describe().Contains("ruleset=gdd-0.3", StringComparison.Ordinal));
+        return seen;
+    }
+
+    // R-CTRL-011, R-CTRL-013 under gdd-0.3 (owner, 27 October 2026, #1712: "Existing Raid/Occupy", "3 turns, keep upkeep";
+    // owner, 1 November 2026: "30 Oct wins for the MVP (Recommended)"): a move captures town_a, Occupy starts the timer, the
+    // soldier leaves on the occupation's second turn, so the town returns to enemy control and its timer is cleared, and a
+    // retake then starts a fresh timer (X - 1 = 2 after its first turn, not the 1 the old timer had left). Every turn ends
+    // the same under gdd-0.1 and gdd-0.3, the Attention pool aside.
+    [Fact]
+    public void WithdrawingOnTurnTwoAndRetakingIsTheSameUnderGdd03()
+    {
+        var turns = new[]
+        {
+            new Command[] { new Move(1, 1, 0) }, new Command[] { Occupy() }, new Command[] { new Move(1, 2, 0) },
+            new Command[] { new Move(1, 1, 0) }, new Command[] { Occupy() },
+        };
+        var expected = new[] { "awaiting_choice/0@1,0", "occupied/2@1,0", "none@2,0", "awaiting_choice/0@1,0", "occupied/2@1,0" };
+        var runs = new[] { false, true }.Select(gdd03 => { var c = Load(gdd03); return Play(c, CombatTests.With(c, Soldier(1, 2, 0)), "town_a", null, turns); }).ToList();
+        Assert.Equal(expected, runs[0].Select(x => x.Trace));
+        Assert.Equal(expected, runs[1].Select(x => x.Trace));
+        Assert.Equal(runs[0].Select(x => x.State), runs[1].Select(x => x.State));
+    }
 }

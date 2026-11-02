@@ -34,8 +34,9 @@ public class Generated1948AssetTests
             .Select(AssetDatabase.GUIDToAssetPath).Where(p => p.EndsWith(".fbx", StringComparison.Ordinal))
             // The folder also holds #1377's review-only characters (figure-*); the buildings and props are generated-1948-*.
             .Where(p => Path.GetFileName(p).StartsWith("generated-1948-", StringComparison.Ordinal))
-            // The vehicle delivery's compatibility FBXs (the placed R35) have their own receipts (VehicleReviewTests).
-            .Where(p => !p.EndsWith("-compatibility.fbx", StringComparison.Ordinal)).ToArray();
+            // The placed vehicles (#1932, the Spitfire; #2046, the R35, which keeps its -compatibility.fbx) have the vehicle
+            // receipt; VehicleReviewTests checks them.
+            .Where(p => !Statecraft.Game.VehicleReview.VehicleReviewCatalog.Ids.Any(id => Path.GetFileName(p).StartsWith(id, StringComparison.Ordinal))).ToArray();
         Assert.AreEqual(11, files.Length);
         foreach (string fbx in files)
         {
