@@ -433,9 +433,10 @@ namespace Statecraft.Game.UI
 
         static Label Line(VisualElement parent, string name, string value)
         {
-            var l = new Label(value) { name = name };
+            var l = new Label { name = name };
             l.AddToClassList("wrap"); l.AddToClassList(LineClass);
             parent.Add(l);
+            l.text = value;   // set once on the panel, so UiDirection's change callback gives it its direction (#1915)
             return l;
         }
 
@@ -449,8 +450,9 @@ namespace Statecraft.Game.UI
 
         static Button Button(VisualElement parent, string name, string label, Action onClick)
         {
-            var b = new Button(onClick) { name = name, text = label };
+            var b = new Button(onClick) { name = name };
             parent.Add(b);
+            b.text = label;   // set once on the panel, so UiDirection's change callback gives it its direction (#1915)
             return b;
         }
     }
