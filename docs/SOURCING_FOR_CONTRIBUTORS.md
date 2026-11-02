@@ -29,7 +29,7 @@ Some sources fail for the reader, not because the fact is wrong. Seen so far:
 
 What to do, in this order:
 
-1. Try another route to the same record: another sitting or page, the Hebrew or English version, the printed page numbers, an official mirror.
+1. Try another route to the same record: another sitting or page, the Hebrew or English version, the printed page numbers, an official mirror. A page that answered 403 to a direct request (for example plain `curl`) and was then read through a fetch tool counts like any other read of that page (owner, 2 November 2026: "Allow as normal reads"). Tag it as you would tag any read; the 403 alone does not add "a person's check pending".
 2. If you still cannot read the claim, do **not** fill the gap from memory or from a nearby date. Leave the value as it is (or leave the field out) and write in the PR and in any research note (`research_notes/`): what you wanted, which URLs you tried, what each returned ("geo-block page", "text stops at item 20", "403"), and what is still open.
 3. A secondary source may carry the fact. Cite it as what it is and say in the PR that the primary source was not reachable. The maintainer decides whether that is enough.
 4. If a reviewer cannot open your source either, say so, and attach what you saw (for example the page text you read, with the URL and the day).

@@ -1515,13 +1515,15 @@ def test_a_published_night_updates_state_and_boot_baseline(night, env, pub, serv
 
 def test_itch_is_skipped_with_a_logged_reason_when_there_is_no_client(night, env, pub, served, capsys):
     publish(night, ns.State(last_published=last_published()), FakeGH(), pub, env)
-    assert "itch: skipped (save test not passed)" in capsys.readouterr().out
+    assert NO_TEST_PAGE in capsys.readouterr().out
 
 
 # --- Task 7: itch.io, behind itch_enabled ---------------------------------------------------------------------------------
 
 PREV_TAG = "v0.3.0-nightly.20261027"
 PREV_VERSION = "0.3.0-nightly.20261027"
+PAGE_URL = "https://example.invalid/statecraft-israel-savetest"
+TEST_TARGET = "eyalgolan/statecraft-israel-savetest:html5"
 
 
 class FakeItch:
@@ -1548,6 +1550,13 @@ class FakeItch:
         self._call("matches", Path(folder).name)
 
 
+def evidence_file(tmp_path, result):
+    """A save test evidence file as savetest() writes it; `result` may also be any JSON value for a broken file."""
+    path = tmp_path / "savetest-evidence.json"
+    path.write_text(json.dumps({"result": result} if isinstance(result, str) else result))
+    return str(path)
+
+
 def zip_of(path, name):
     with zipfile.ZipFile(path, "w") as z:
         z.writestr("index.html", name)
@@ -1556,8 +1565,10 @@ def zip_of(path, name):
 
 @pytest.fixture
 def itch_night(night, env, tmp_path, served):
-    """An itch-enabled night with real zips for tonight and the previous build."""
-    night.cfg = dataclasses.replace(night.cfg, itch_enabled=True)
+    """An itch-enabled night with real zips for tonight and the previous build: a separate test page is configured
+    and the save test's PASS evidence is on record, so the push may go ahead (#2056)."""
+    night.cfg = dataclasses.replace(night.cfg, itch_enabled=True, savetest_itch_target=TEST_TARGET,
+                                    savetest_itch_page_url=PAGE_URL, itch_evidence=evidence_file(tmp_path, "PASS"))
     clone = str(night.cfg.clone)
     env.runner.add(["git", "-C", clone, "log", "--format=%s"], out="Fix a thing\n")
     zips = (zip_of(tmp_path / "web.zip", "tonight"), zip_of(tmp_path / "pages.zip", "pages"))
@@ -1583,7 +1594,7 @@ def refused_itch(itch_night, env, itch="fake"):
 def test_itch_disabled_is_logged_and_never_calls_the_client(night, env, pub, served, capsys):
     gh = FakeGH()
     publish(night, ns.State(last_published=last_published()), gh, pub, env, itch=FakeItch(gh.calls))
-    assert "itch: skipped (save test not passed)" in capsys.readouterr().out
+    assert NO_TEST_PAGE in capsys.readouterr().out
     assert gh.names() == ["ensure_tag_available", "create_draft", "verify_draft", "latest_tag", "publish", "dispatch_site"]
 
 
@@ -1674,7 +1685,7 @@ def test_an_interrupt_during_publish_rolls_itch_back_and_cleans_the_draft(itch_n
 
 def test_the_itch_skip_reason_is_noted_on_the_night(night, env, pub, served):
     publish(night, ns.State(last_published=last_published()), FakeGH(), pub, env)
-    assert night.notes == ["itch: skipped (save test not passed)"]
+    assert night.notes == [NO_TEST_PAGE]
 
 
 def test_the_night_notes_reach_the_log_line(env, monkeypatch):
@@ -1694,6 +1705,47 @@ def test_a_site_failure_after_publish_does_not_roll_itch_back(itch_night, env):
     assert err.gate == "site"
     assert [c[0] for c in gh.calls if c[0].startswith("itch.")] == ["itch.push", "itch.wait_live", "itch.matches"]
     assert "delete_draft" not in gh.names()
+
+
+# --- #2056: itch only with a separate test page and a recorded save test PASS -------------------------------------------
+
+NO_TEST_PAGE = ("itch: skipped (the job config has no savetest_itch_target or savetest_itch_page_url, so no save test "
+                "can run on a separate test page)")
+
+
+@pytest.mark.parametrize("change, reason", [
+    ({"savetest_itch_target": None, "savetest_itch_page_url": None}, NO_TEST_PAGE),
+    ({"savetest_itch_target": None}, "itch: skipped (the job config has no savetest_itch_target, so"),
+    ({"savetest_itch_page_url": ""}, "itch: skipped (the job config has no savetest_itch_page_url, so"),
+    ({"savetest_itch_target": "eyalgolan/statecraft-israel:savetest"}, "must not be the public itch project"),
+    ({"itch_page_url": PAGE_URL}, "must not be the public itch page"),
+    ({"itch_enabled": False}, "itch: skipped (save test not passed)"),
+    ({"itch_evidence": None}, "itch_enabled is set but no save test evidence is recorded"),
+    ({"itch_evidence": "/nonexistent/evidence.json"}, "is unreadable"),
+    ("INCONCLUSIVE", "does not record a save test PASS"),
+    (["PASS"], "does not record a save test PASS"),
+])
+def test_itch_is_skipped_with_its_reason_unless_a_test_page_and_a_pass_are_on_record(itch_night, env, tmp_path, capsys,
+                                                                                    change, reason):
+    night = itch_night[0]
+    if not isinstance(change, dict):   # a broken or non-PASS evidence file
+        change = {"itch_evidence": evidence_file(tmp_path, change)}
+    night.cfg = dataclasses.replace(night.cfg, **change)
+    gh, st = run_itch(itch_night, env)
+    assert not [c for c in gh.calls if c[0].startswith("itch.")] and "download" not in gh.names()
+    assert len(night.notes) == 1 and night.notes[0].startswith("itch: skipped (") and reason in night.notes[0]
+    assert night.notes[0] in capsys.readouterr().out
+    assert st.last_published.tag == TAG   # the GitHub release still goes out; only itch is held back
+
+
+def test_the_job_config_of_2_november_skips_itch_and_names_the_missing_keys(tmp_path):
+    config = tmp_path / "config.json"   # the live job config held only this key on 2 Nov 2026
+    config.write_text(json.dumps({"itch_page_url": "https://eyalgolan.itch.io/statecraft-israel"}))
+    assert nightly.itch_skip_reason(ns.load_config(config)) == NO_TEST_PAGE[len("itch: skipped ("):-1]
+
+
+def test_a_pass_on_record_with_a_separate_test_page_lets_the_push_go_ahead(itch_night):
+    assert nightly.itch_skip_reason(itch_night[0].cfg) is None
 
 
 # --- the stage wiring ---------------------------------------------------------------------------------------------------
@@ -1887,8 +1939,6 @@ def test_an_unusable_client_is_a_recorded_github_client_refusal_not_internal(env
 
 # --- Task 8: the two-upload itch save test ----------------------------------------------------------------------------
 
-PAGE_URL = "https://example.invalid/statecraft-israel-savetest"
-TEST_TARGET = "eyalgolan/statecraft-israel-savetest:html5"
 ITCH_HOST = "https://html-classic.itch.zone"
 SAVED = "PERSISTENCE saved 1948-05-16 turn 1 hash ab12\n"
 
