@@ -468,11 +468,11 @@ R-MIN-003: When the office does not exist on the date - ended, or not yet create
 
 The GDD's Social cohesion and International Support (D-C1, decided 15 October 2026: "0–1 indicators through the effects web. Cohesion replaces `morale` on screen. Thresholds as situations"). Their numbers are labelled design values in `model.yaml` (Reading 1).
 
-R-NAT-001: Social cohesion is the 0 to 1 `morale` indicator, shown to the player as Social cohesion; its id stays, so no event changes (Reading 2). Its sources are the existing homes, rationing and security links, the cities' employed share (R-CITY-005) and `food_supply`, so a Food shortage lowers it (`food_lifts_cohesion`; Q-NAT-2). Approval keeps its weights, which now read Social cohesion through `morale` (Q-NAT-5).
+R-NAT-001: Social cohesion is the 0 to 1 `morale` indicator, shown to the player as Social cohesion; its id stays, so no event changes (Reading 2). Its sources are the existing homes, rationing and security links, the cities' employed share (R-CITY-005) and `food_supply`, so a Food shortage lowers it (`food_lifts_cohesion`; Q-NAT-2). Approval keeps its weights, which now read Social cohesion through `morale` (Q-NAT-5). Under exact `gdd-0.3`, a new game opens at `start.cohesion / indicator.display_max` (65 / 100); this is an opening shift, not a replacement base, and the existing effect web moves it afterwards (owner Q17, 1 November 2026, [answers](https://github.com/eyalgolan/statecraft-israel/pull/1668#issuecomment-6553884547)).
 
 R-NAT-002: "Low social cohesion" (`low_cohesion`) is a situation on `morale`: on below 0.30, off above 0.45, as `food_crisis`. It has no mechanical effect of its own; events can read it through their indicator conditions (Q-NAT-3).
 
-R-NAT-003: International Support is the 0 to 1 `intl_standing` indicator, shown as International support; event effects on `intl_standing` move it (Q-NAT-4).
+R-NAT-003: International Support is the 0 to 1 `intl_standing` indicator, shown as International support; event effects on `intl_standing` move it (Q-NAT-4). Under exact `gdd-0.3`, a new game opens at `start.support / indicator.display_max` (60 / 100), carried as an opening shift while the base and subsequent effect web stay unchanged (owner Q17, 1 November 2026, [answers](https://github.com/eyalgolan/statecraft-israel/pull/1668#issuecomment-6553884547)).
 
 R-NAT-004: "Low international support" (`low_intl_support`) is a situation on `intl_standing` with the same bands and, likewise, no effect of its own (Q-NAT-3).
 
