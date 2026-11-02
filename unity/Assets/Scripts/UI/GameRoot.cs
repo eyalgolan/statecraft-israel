@@ -705,7 +705,13 @@ namespace Statecraft.Game.UI
             keptResumed = start?.Resumed ?? true;
             Begin(inputs, 0, startScreen: fromStart, keep: Bridge);
             if (!fromStart) nav?.Open("settings");
-            document.rootVisualElement.Q<Button>((fromStart ? "start-language-" : "settings-language-") + language)?.Focus();
+            // Focus the choice again a frame later: a screen shown this same tick cannot take the focus until its
+            // styles resolve, and a bare Focus() then leaves it wherever it was (#1915's tour test read end-turn).
+            if (document.rootVisualElement.Q<Button>((fromStart ? "start-language-" : "settings-language-") + language) is Button choice)
+            {
+                choice.Focus();
+                choice.schedule.Execute(() => { if (choice.panel != null) choice.Focus(); });
+            }
         }
 
         /// <summary>The 1948 localities in a hex (by the hex their point lies in, as the map picks hexes), for the info panel.</summary>

@@ -33,7 +33,9 @@ public class Generated1948AssetTests
         var files = AssetDatabase.FindAssets("t:Model", new[] { Generated1948BuildingsPropsReview.AssetFolder, Statecraft.Game.Map.Collection.CollectionCatalog.Folder })
             .Select(AssetDatabase.GUIDToAssetPath).Where(p => p.EndsWith(".fbx", StringComparison.Ordinal))
             // The folder also holds #1377's review-only characters (figure-*); the buildings and props are generated-1948-*.
-            .Where(p => Path.GetFileName(p).StartsWith("generated-1948-", StringComparison.Ordinal)).ToArray();
+            .Where(p => Path.GetFileName(p).StartsWith("generated-1948-", StringComparison.Ordinal))
+            // The placed vehicle (#1932, the Spitfire) has the vehicle receipt; VehicleReviewTests checks it.
+            .Where(p => !Statecraft.Game.VehicleReview.VehicleReviewCatalog.Ids.Any(id => Path.GetFileName(p).StartsWith(id, StringComparison.Ordinal))).ToArray();
         Assert.AreEqual(11, files.Length);
         foreach (string fbx in files)
         {

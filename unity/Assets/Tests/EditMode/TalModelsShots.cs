@@ -287,6 +287,47 @@ public class TalModelsShots
         }
     }
 
+    /// <summary>#1932 (c): the Egyptian Spitfire in flight near the western board edge (30 km in) toward el-Arish on the opening turn (15 May
+    /// 1948, the first sourced Spitfire raid), close (the closest zoom), at a gameplay zoom and in an overview of the southern
+    /// coast. "Before" withholds the Spitfire. Each shot is the player's camera (CameraRig.Pitch, yaw 0) aimed at the ground
+    /// under the plane and held on the map as CameraController.Step holds it, so it shows what a player sees (#2014).</summary>
+    IEnumerator Spitfire(bool hebrew, bool after)
+    {
+        var savedCraft = SeaAirCollection.Request;
+        try
+        {
+            yield return Boot(hebrew);
+            var map = Object.FindFirstObjectByType<MapScene>();
+            var state = root.Bridge!.State; var content = root.Bridge.Content;
+            SeaAirCollection.Request = Answer(Array.Empty<string>());
+            Drop(map, SeaAirCollection.Name);
+            var layer = CollectionGeometryFixture.Craft(map, state.Date, state.Placements, content)!;
+            var plane = layer.Placed.Single(p => p.Model == SeaAirCollection.Spitfire);
+            if (!after)
+            {
+                SeaAirCollection.Request = Answer(new[] { SeaAirCollection.Spitfire });
+                Drop(map, SeaAirCollection.Name);
+                layer = CollectionGeometryFixture.Craft(map, state.Date, state.Placements, content)!;
+            }
+            Debug.Log($"SHOT spitfire {(after ? "after" : "before")} on {state.Date:yyyy-MM-dd}: drawn {layer.Placed.Count(p => p.Model == SeaAirCollection.Spitfire)}, at {plane.At}, span {SeaAirCollection.SizeOf(SeaAirCollection.Spitfire)} m");
+            var rig = Camera.main.GetComponent<CameraRig>(); var cc = rig.GetComponent<CameraController>();
+            foreach (var (what, distance) in new[] { ("close", CameraController.MinDistance), ("gameplay", 40000f), ("overview", 150000f) })
+            {
+                var under = new Vector3(plane.At.x, 0f, plane.At.z);   // the player's look-at is on y = 0, lifted by Step
+                Look(under, distance);
+                CameraController.Step(rig, default, 0f, cc.Bounds, cc.Ground, cc.GroundTop, true);
+                for (int i = 0; i < 5; i++) yield return null;
+                CivMovementShots.Shot(rt!, Path.Combine("..", "tal-models-shots", $"spitfire-{what}-{(after ? "after" : "before")}-{(hebrew ? "he" : "en")}"));
+                var vp = Camera.main.WorldToViewportPoint(plane.At);
+                Debug.Log($"SHOT spitfire {what} from {distance:F0} m, look-at {rig.LookAt} (asked {under}), camera {Camera.main.transform.position}, plane at viewport {vp}");
+            }
+        }
+        finally { SeaAirCollection.Request = savedCraft; }
+    }
+
+    [UnityTest] public IEnumerator SpitfireBeforeEnglish() { yield return Spitfire(false, false); }
+    [UnityTest] public IEnumerator SpitfireAfterEnglish() { yield return Spitfire(false, true); }
+
     [UnityTest] public IEnumerator MalikiyyaEnglish() { yield return Malikiyya(false); }
     [UnityTest] public IEnumerator MalikiyyaHebrew() { yield return Malikiyya(true); }
 
