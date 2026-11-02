@@ -118,7 +118,7 @@ Every feature carries `from`, optional `until`, sources with check dates, and `s
 `sensitivity-reviewed`). Dates the texts already fix:
 
 - Egypt line: from **24 Feb 1949**; the El Auja DMZ from the same date; the 1950 zones from **22 Feb 1950**.
-- Lebanon: from **23 Mar 1949** (withdrawal to the line and reduction to defensive strength "within ten days of the signing", Art. V.3, read in UNTS vol. 42 No. 655 on 2026-10-11: a separate dated note, see Dated rows, below).
+- Lebanon: from **23 Mar 1949** (withdrawal to the line and reduction to defensive strength "within ten days of the signing", Art. V.3, read in UNTS vol. 42 No. 655 on 2026-10-11: a separate dated note, see Dated rows, above).
 - Jordan: from **3 Apr 1949** for sectors (a), (b), (d); the **Iraqi sector "A"** comes into force in stages (Art. VI.3):
   west of the Baqa-Jaljulia road and east of Kafr Qasim within five weeks (by **8 May 1949**), Wadi Ara north of the
   Baqa-Zubeiba line within seven weeks (by **22 May 1949**), the rest within fifteen weeks (by **17 July 1949**); until
