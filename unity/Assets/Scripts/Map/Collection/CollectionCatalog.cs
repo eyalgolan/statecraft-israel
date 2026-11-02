@@ -96,6 +96,12 @@ namespace Statecraft.Game.Map.Collection
         /// <summary>Tal Heuberger's khaki canvas tent, in place of a transit camp's khaki ridge tents up close (CampTentModels).</summary>
         public const string KhakiTent = "generated-1948-08-khaki-canvas-tent";
 
+        // Red-first stubs (the tests' names only; not catalogued, placed or streamed).
+        public const string EgyptianDakota = "generated-1948-16-egyptian-dakota-c47";
+        public const string StoneWell = "generated-1948-09-stone-village-well", Sandbags = "generated-1948-10-low-sandbag-position",
+            CrateStack = "generated-1948-11-supply-crate-stack", StoneWall = "generated-1948-12-low-stone-wall-module";
+        public const string LocalIrregular = "figure-local-arab-irregular-1948-v1";
+
         /// <summary>Every bundle, with its models in a fixed order.</summary>
         public static readonly IReadOnlyList<(string Bundle, string[] Ids)> Groups = new (string, string[])[]
         {

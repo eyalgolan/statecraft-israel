@@ -35,7 +35,8 @@ namespace Statecraft.Game.Map.Units
 
         public const string SyrianInfantry = "figure-syrian-infantry-1948-v1",
             AlaInfantry = CollectionCatalog.AlaInfantry, IraqiInfantry = "figure-iraqi-infantry-1948-v1",
-            EgyptianInfantry = CollectionCatalog.EgyptianInfantry, LebaneseRegular = CollectionCatalog.LebaneseRegular;
+            EgyptianInfantry = CollectionCatalog.EgyptianInfantry, LebaneseRegular = CollectionCatalog.LebaneseRegular,
+            LocalIrregular = CollectionCatalog.LocalIrregular;   // red-first stub: not mapped to any side yet
 
         /// <summary>An Israeli rifleman's figure by his headgear (the sourced <see cref="UnitEntry.Headgear"/>, or the uniform
         /// default), as Tal Heuberger's figures wear them and #507 paired them: the bush (slouch) hat is the sabra pioneer (C04), the

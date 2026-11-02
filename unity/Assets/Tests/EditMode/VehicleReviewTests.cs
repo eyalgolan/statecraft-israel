@@ -16,19 +16,21 @@ public class VehicleReviewTests
 {
     [SetUp] public void EmptyScene() => EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
     [TearDown] public void Cleanup() => EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-    /// <summary>The candidates still in review: every one but the placed two, the Spitfire in flight near the board edge (#1932)
-    /// and the R35, which stands at Degania Alef from 20 May 1948 (owner, 27 October 2026: "Degania landmark (Recommended)"),
-    /// each in its own streamed bundle.</summary>
+    /// <summary>The candidates still in review: none. All three are placed, each in its own streamed bundle: the Spitfire in
+    /// flight near the board edge (#1932), the R35, which stands at Degania Alef from 20 May 1948 (owner, 27 October 2026:
+    /// "Degania landmark (Recommended)"), and the Dakota, in flight off Tel Aviv from 15 May to 11 June 1948 (owner, 2 November
+    /// 2026: "Over Tel Aviv, 15 May-11 Jun (Recommended)").</summary>
     static readonly string[] InReview = VehicleReviewCatalog.Ids.Where(id => !VehicleReviewCatalog.Placed(id)).ToArray();
 
     [Test]
     public void ReviewIsEditorOnlyAndHasNoPlayerDependencyOrBundle()
     {
-        CollectionAssert.AreEqual(new[] { "generated-1948-16-egyptian-dakota-c47" }, InReview);
+        CollectionAssert.IsEmpty(InReview, "every vehicle candidate is placed");
         Assert.AreEqual("collection-" + CollectionCatalog.SyrianR35, CollectionCatalog.BundleOf(CollectionCatalog.SyrianR35), "the placed R35 streams on its own");
+        Assert.AreEqual("collection-" + CollectionCatalog.EgyptianDakota, CollectionCatalog.BundleOf(CollectionCatalog.EgyptianDakota), "the placed Dakota streams on its own");
         foreach (var id in VehicleReviewCatalog.Ids)
         {
-            // #1932 and #2046: the Spitfire and the R35 each stream in a bundle of their own; the Dakota stays review-only.
+            // #1932, #2046 and the owner's 2 November 2026 ruling: the Spitfire, the R35 and the Dakota each stream on their own.
             Assert.AreEqual(VehicleReviewCatalog.Placed(id) ? "collection-" + id : null, CollectionCatalog.BundleOf(id), id);
             Assert.IsFalse(UnitFigures.BySide.Values.Contains(id));
             Assert.IsFalse(UnitFigures.ByVehicle.Values.Contains(id));
@@ -131,7 +133,7 @@ public class VehicleReviewTests
         Assert.AreEqual(ModelImporterMeshCompression.Off, importer.meshCompression);
         Assert.IsTrue(importer.importAnimation); Assert.AreEqual(ModelImporterAnimationCompression.Off, importer.animationCompression);
         // #2014: the placed Spitfire imports rig-free (no Animator on the shipped prefab); the R35 (placed by #2046 with the
-        // delivery's import settings) and the review-only Dakota keep Generic.
+        // delivery's import settings) and the Dakota (placed the same way) keep Generic.
         Assert.AreEqual(id == CollectionCatalog.EgyptianSpitfire ? ModelImporterAnimationType.None : ModelImporterAnimationType.Generic, importer.animationType, id);
         Assert.AreEqual(0, importer.defaultClipAnimations.Length, "The three original GLBs contain no animation clips");
         Assert.AreEqual(0, AssetDatabase.LoadAllAssetsAtPath(file).OfType<AnimationClip>().Count());
@@ -142,7 +144,7 @@ public class VehicleReviewTests
         Assert.GreaterOrEqual(texture.maxTextureSize, Mathf.Max(width, height));
         // The placed Spitfire's and R35's maps stream compressed, as the placed tent's (#1893), at their full 4096 px and quality
         // 100 like the placed generated tents and houses (no Crunch); their source bytes are unchanged (hash below). The
-        // review-only Dakota stays uncompressed.
+        // Dakota, placed too, streams the same way.
         Assert.AreEqual(VehicleReviewCatalog.Placed(id) ? TextureImporterCompression.Compressed : TextureImporterCompression.Uncompressed, texture.textureCompression);
         Assert.IsFalse(texture.crunchedCompression);
         if (VehicleReviewCatalog.Placed(id))

@@ -444,6 +444,10 @@ namespace Statecraft.Game.Map
         /// (RouteLayer.UnitRoutes, #786), so the units keep their figures off them. Empty before Build.</summary>
         public IReadOnlyList<(List<Vector2> line, float halfWidth)> RouteCorridors { get; private set; } = new List<(List<Vector2>, float)>();
 
+        /// <summary>Every route of content/map/routes_1948.yaml as the last Build read them, with its id (empty before Build, or
+        /// when the file is missing or malformed): SpecialBuildingModels stands the low wall beside one road by id.</summary>
+        public IReadOnlyList<Routes.RoutePath> RouteList { get; private set; } = new List<Routes.RoutePath>();
+
         /// <summary>The corridors the kits keep off: those of the routes drawn at the game's start (RouteLayer.KitRoutes, #786).
         /// Empty before Build.</summary>
         public IReadOnlyList<(List<Vector2> line, float halfWidth)> KitRouteCorridors { get; private set; } = new List<(List<Vector2>, float)>();
@@ -637,6 +641,7 @@ namespace Statecraft.Game.Map
             // The 1948 railways and roads (issue #35), read before the kits so buildings and trees keep off them.
             // From the baked runtime form when it matches the YAML (issue #321: boot time), else from the YAML with a warning.
             var routes = Routes.RoutePaths.ReadRuntimeOrYaml(inputs.RoutesTsv, inputs.RoutesYaml, (meta.lon0, meta.lon1, meta.lat0, meta.lat1), Debug.LogWarning);
+            RouteList = routes;
             DiagLog.BootPhase("route paths read");   // issue #321: the splits of the units' phase
             // Only the routes drawn at the start keep the kits off (#786); the units keep off those drawn while they stand.
             KitRouteCorridors = Routes.RouteLayer.Corridors(Frame, Routes.RouteLayer.KitRoutes(routes));
@@ -824,6 +829,7 @@ namespace Statecraft.Game.Map
             UnitEntries = Array.Empty<Units.UnitEntry>(); unitsYamlRead = null;
             Subdistricts = null; regionsYamlRead = null;
             UnitSpots = new Dictionary<Units.UnitAnchor, Units.AnchorSpot>(); UnitHexes = Array.Empty<Statecraft.Sim.MapHex>();
+            RouteList = new List<Routes.RoutePath>();
         }
     }
 }

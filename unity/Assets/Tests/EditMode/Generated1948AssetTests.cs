@@ -105,7 +105,8 @@ public class Generated1948AssetTests
     [Test] public void PlacedGeneratedPropsKeepTheirSourceMeshMaterialAndMap()
     {
         var props = CollectionCatalog.Ids.Where(CollectionCatalog.IsGeneratedProp).ToList();
-        CollectionAssert.IsSubsetOf(new[] { CollectionCatalog.BedouinTent, CollectionCatalog.SyrianR35 }, props);
+        CollectionAssert.IsSubsetOf(new[] { CollectionCatalog.BedouinTent, CollectionCatalog.SyrianR35, CollectionCatalog.EgyptianDakota,
+            CollectionCatalog.StoneWell, CollectionCatalog.Sandbags, CollectionCatalog.CrateStack, CollectionCatalog.StoneWall }, props);
         foreach (string id in props)
         {
             string dir = $"{CollectionCatalog.Folder}/{id}", fbx = CollectionCatalog.SourceModelPath(id), map = $"{dir}/{id}_basecolor.jpg";

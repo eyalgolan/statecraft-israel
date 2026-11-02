@@ -53,7 +53,7 @@ public class SeaAirCollectionTests
     static Bounds WorldBounds(GameObject go) =>
         go.GetComponentsInChildren<Renderer>(true).Select(x => x.bounds).Aggregate((a, x) => { a.Encapsulate(x); return a; });
 
-    static readonly string[] Models = { SeaAirCollection.Altalena, SeaAirCollection.FishingBoat, SeaAirCollection.Steamer, SeaAirCollection.C54, SeaAirCollection.Spitfire };
+    static readonly string[] Models = { SeaAirCollection.Altalena, SeaAirCollection.FishingBoat, SeaAirCollection.Steamer, SeaAirCollection.C54, SeaAirCollection.Spitfire, SeaAirCollection.Dakota };
 
     /// <summary>The owner (#663): every model is used. All four of this lane's are in the streamed vehicle bundle and each is
     /// wanted on some turn of the game, on the game's own monthly turn dates.</summary>
@@ -78,7 +78,7 @@ public class SeaAirCollectionTests
         var card = C.Events.Single(e => e.Id == SeaAirCollection.AltalenaEvent);
         Assert.AreEqual(new DateTime(1948, 6, 15), card.From); Assert.AreEqual(new DateTime(1948, 6, 23), card.To);
         string[] Keys(DateTime d) => SeaAirCollection.Wants(d, C).Select(w => w.Key).ToArray();
-        CollectionAssert.AreEqual(new[] { "haifa-steamer", "jaffa-fishing", "acre-fishing", "el-arish-spitfire" }, Keys(new DateTime(1948, 5, 15)));
+        CollectionAssert.AreEqual(new[] { "haifa-steamer", "jaffa-fishing", "acre-fishing", "el-arish-spitfire", "tel-aviv-dakota" }, Keys(new DateTime(1948, 5, 15)));
         CollectionAssert.AreEqual(new[] { "haifa-steamer", "jaffa-fishing", "acre-fishing", "tel-aviv-altalena", "el-arish-spitfire" }, Keys(new DateTime(1948, 6, 15)));
         Assert.AreEqual("tel_aviv", SeaAirCollection.Wants(new DateTime(1948, 6, 15), C).Single(w => w.Model == SeaAirCollection.Altalena).Place);
         CollectionAssert.DoesNotContain(Keys(new DateTime(1948, 6, 14)), "tel-aviv-altalena");
@@ -330,6 +330,162 @@ public class SeaAirCollectionTests
                 $"the loops on {date:d MMM yyyy}");
             Assert.AreEqual(flying, layer.transform.Find("el-arish-spitfire") != null, $"the aircraft on {date:d MMM yyyy}");
         }
+    }
+
+    // ---- Tal Heuberger's Egyptian Dakota (owner, 2 November 2026: "Over Tel Aviv, 15 May-11 Jun (Recommended)") ----
+
+    /// <summary>The first bombing period, 15 May to 11 June 1948 (he.wiki rev 43856594, agent-read): on the game's monthly turns
+    /// the 15 May turn only, at Tel Aviv's place.</summary>
+    [Test]
+    public void TheDakotaIsWantedOnlyInTheFirstBombingPeriod()
+    {
+        bool Wanted(DateTime d) => SeaAirCollection.Wants(d, C).Any(w => w.Key == SeaAirCollection.DakotaKey && w.Model == SeaAirCollection.Dakota && w.Place == "tel_aviv");
+        Assert.IsFalse(Wanted(new DateTime(1948, 5, 14)));
+        Assert.IsTrue(Wanted(new DateTime(1948, 5, 15)));
+        Assert.IsTrue(Wanted(new DateTime(1948, 6, 3)), "the 3 June raid, when two Egyptian C-47s were shot down over Tel Aviv");
+        Assert.IsTrue(Wanted(new DateTime(1948, 6, 11)));
+        Assert.IsFalse(Wanted(new DateTime(1948, 6, 12)), "the first truce");
+        Assert.IsFalse(Wanted(new DateTime(1948, 6, 15)));
+        var turns = new List<DateTime>();
+        for (var d = C.Rules.Start; d < C.End; d = d.AddMonths(1)) turns.Add(d);
+        CollectionAssert.AreEqual(new[] { new DateTime(1948, 5, 15) }, turns.Where(Wanted), "the 15 May 1948 turn only");
+        Assert.AreEqual(29.11f, SeaAirCollection.RealLengthM(SeaAirCollection.Dakota), 0.01f, "95 ft 6 in, en.wiki Douglas C-47 Skytrain");
+        Assert.AreEqual(29.11f * Statecraft.Game.Map.Units.UnitShowcase.AircraftScale, SeaAirCollection.SizeOf(SeaAirCollection.Dakota), 5f,
+            "at the unit tokens' aircraft scale, as the Spitfire (#2014)");
+    }
+
+    (SeaAirCollection layer, Transform plane, DakotaLoop loop, Vector3 centre) DrawnDakota(MapScene map)
+    {
+        var layer = CollectionGeometryFixture.Craft(map, new DateTime(1948, 5, 15), Array.Empty<Placement>(), C)!;
+        Assert.AreEqual(1, asked.Count(a => a.id == SeaAirCollection.Dakota && a.detail == CollectionDetail.Far), "the far mesh, once");
+        AnswerAll();
+        var plane = layer.transform.Find(SeaAirCollection.DakotaKey)!;
+        Assert.IsNotNull(plane, "the Dakota is drawn on 15 May 1948");
+        return (layer, plane, plane.GetComponent<DakotaLoop>(), layer.Placed.Single(p => p.Model == SeaAirCollection.Dakota).At);
+    }
+
+    /// <summary>"A slow loop over Tel Aviv": the loop's centre is the nearest to Tel Aviv whose whole swept box is over the
+    /// board and clear of every unit token present in the window (rings and town clearings: Kiryati's token stands on Tel Aviv)
+    /// and of every map label's point and town footprint, so the aircraft hides no token and no name; it is just off the city.
+    /// The aircraft is drawn there at its map size, nose east, at the unit tokens' aircraft altitude, and the labels keep clear of
+    /// its whole loop.</summary>
+    [Test]
+    public void TheDakotaLoopsJustOffTelAvivInsideTheBoardClearOfTokensAndLabels()
+    {
+        var map = OpenMap();
+        var (layer, plane, loop, at) = DrawnDakota(map);
+        var tel = map.Settlements.Single(s => s.Id == "tel_aviv");
+        var t3 = map.Frame.ToWorld(tel.Lon, tel.Lat, 0); var telAviv = new Vector2(t3.x, t3.z);
+        var centre = new Vector2(at.x, at.z);
+        var half = SeaAirCollection.DakotaSweptHalf;
+        float fromCity = (centre - telAviv).magnitude;
+        TestContext.WriteLine($"Dakota loop centre {fromCity:0} m from Tel Aviv's point; nearest pass {Mathf.Max(Mathf.Abs(centre.x - telAviv.x) - SeaAirCollection.SpitfireLoopHalfLengthM, 0f):0} m east-west");
+        Assert.Less(fromCity, 30000f, "by Tel Aviv");
+        var ground = PlacementLayer.CampGround(map);
+        Assert.IsTrue(ground.Inside(centre.x - half.x, centre.y - half.y) && ground.Inside(centre.x + half.x, centre.y + half.y), "its whole loop over the board");
+        foreach (var kv in map.UnitSpots)
+        {
+            if (Statecraft.Game.Map.Units.UnitData.Day(kv.Key.From) > SeaAirCollection.DakotaTo || Statecraft.Game.Map.Units.UnitData.Day(kv.Key.To) <= SeaAirCollection.DakotaFrom) continue;
+            var c = new Vector2((float)kv.Value.X, (float)kv.Value.Z);
+            float dx = Mathf.Max(Mathf.Abs(c.x - centre.x) - half.x, 0f), dz = Mathf.Max(Mathf.Abs(c.y - centre.y) - half.y, 0f);
+            float r = kv.Value.InTown ? map.UnitClearings.Where(x => (x.centre - c).sqrMagnitude < 1f).Select(x => x.radius).DefaultIfEmpty(0f).Max()
+                : map.UnitTokens.Where(x => (x.centre - c).sqrMagnitude < 1f).Select(x => x.radius).DefaultIfEmpty(0f).Max();
+            Assert.Greater(r, 0f, $"{kv.Key.Place}'s token has its ring or clearing");
+            Assert.Greater(Mathf.Sqrt(dx * dx + dz * dz), r, $"clear of the token at {kv.Key.Place} ({kv.Key.From}-{kv.Key.To})");
+        }
+        foreach (var s in map.Settlements)
+        {
+            var p = map.Frame.ToWorld(s.Lon, s.Lat, 0);
+            Assert.IsFalse(Mathf.Abs(p.x - centre.x) <= half.x && Mathf.Abs(p.z - centre.y) <= half.y, $"{s.Id}'s name is not under its loop");
+        }
+        foreach (var (fc, fr, id) in map.KitFootprints)
+        {
+            float dx = Mathf.Max(Mathf.Abs(fc.x - centre.x) - half.x, 0f), dz = Mathf.Max(Mathf.Abs(fc.y - centre.y) - half.y, 0f);
+            Assert.Greater(dx * dx + dz * dz, fr * fr, $"clear of {id}'s kit");
+        }
+        var b = WorldBounds(plane.gameObject);
+        Assert.AreEqual(SeaAirCollection.SizeOf(SeaAirCollection.Dakota), b.size.z, 1f, "wingspan north-south at its size: the nose points east");
+        Assert.Greater(Vector3.Dot(plane.TransformDirection(Vector3.down), Vector3.right), 0.9f, "the nose (the mesh's -y) points east at the loop's start");
+        float floor = Statecraft.Game.Map.Units.UnitShowcase.LoopFloor(map, new Vector3(at.x, 0f, at.z), SeaAirCollection.SpitfireLoopHalfLengthM + SeaAirCollection.SizeOf(SeaAirCollection.Dakota));
+        Assert.AreEqual(Statecraft.Game.Map.Units.UnitShowcase.AltitudeM, at.y - floor, 1f, "the unit tokens' aircraft altitude, as the Spitfire");
+        Assert.Greater(b.min.y, floor, "in flight, never on the ground");
+        Assert.IsTrue(loop.Still, "edit mode holds the loop's start");
+        var keep = layer.KeepClear.Single(k => k[0].Contains(at))[0];
+        for (int i = 0; i < 60; i++)
+        {
+            loop.Place(i * SeaAirCollection.DakotaLoopSeconds / 60f);
+            var pb = WorldBounds(plane.gameObject);
+            Assert.IsTrue(keep.Contains(pb.min) && keep.Contains(pb.max), $"inside the box the labels keep clear of at step {i}");
+            Assert.IsTrue(Mathf.Abs(pb.center.x - centre.x) <= half.x && Mathf.Abs(pb.center.z - centre.y) <= half.y, $"inside its swept box at step {i}");
+        }
+    }
+
+    /// <summary>The loop is closed (a period on, the same place and heading, also long into a session), the aircraft flies it
+    /// nose first, level, and the per-frame step allocates nothing.</summary>
+    [Test]
+    public void TheDakotaLoopIsClosedNoseFirstAndAllocatesNothingPerFrame()
+    {
+        float period = SeaAirCollection.DakotaLoopSeconds;
+        Assert.That(period, Is.InRange(SeaAirCollection.SpitfireLoopSeconds, 120f), "a slow loop: no faster round than the Spitfire's");
+        foreach (var t in new[] { 0f, 3.7f, 12.5f, 0.5f * period, period - 0.01f, 1234.5f, 7200.25f })
+        {
+            Assert.Less((SeaAirCollection.DakotaLoopOffset(t) - SeaAirCollection.DakotaLoopOffset(t + period)).magnitude, 1f, $"the same place a period after {t} s");
+            Assert.Less((SeaAirCollection.DakotaLoopHeading(t) - SeaAirCollection.DakotaLoopHeading(t + period)).magnitude, 1e-3f, $"the same heading a period after {t} s");
+            var chord = SeaAirCollection.DakotaLoopOffset(t + 0.2f) - SeaAirCollection.DakotaLoopOffset(t - 0.2f);
+            Assert.Greater(Vector2.Dot(SeaAirCollection.DakotaLoopHeading(t), chord.normalized), 0.999f, $"the heading is the path's tangent at {t} s");
+        }
+        var map = OpenMap();
+        var (_, plane, loop, centre) = DrawnDakota(map);
+        for (int i = 0; i < 24; i++)
+        {
+            float t = i * period / 24f;
+            loop.Place(t);
+            var nose = plane.TransformDirection(Vector3.down);
+            Assert.AreEqual(0f, nose.y, 1e-3f, "level flight");
+            Assert.Greater(Vector2.Dot(new Vector2(nose.x, nose.z).normalized, SeaAirCollection.DakotaLoopHeading(t)), 0.999f, $"nose along the path at {t:0.0} s");
+            var b = WorldBounds(plane.gameObject); var at = SeaAirCollection.DakotaLoopOffset(t);
+            Assert.AreEqual(centre.x + at.x, b.center.x, 1f); Assert.AreEqual(centre.z + at.y, b.center.z, 1f); Assert.AreEqual(centre.y, b.center.y, 1f);
+        }
+        for (int i = 0; i < 10; i++) loop.Place(i);   // warm up
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        for (int i = 0; i < 1000; i++) loop.Place(i * 0.016f);
+        Assert.AreEqual(0, GC.GetAllocatedBytesForCurrentThread() - before, "no allocation per frame");
+    }
+
+    /// <summary>Egypt's flag as the owner ruled for the Spitfire on #2260 ("Smaller flag, no pole"): the cloth alone, in Egypt's
+    /// sourced colours, half the tokens' flag size, floating over the tail and clear above the aircraft at every point of its
+    /// loop, turned to the camera, and gone with the aircraft.</summary>
+    [Test]
+    public void TheDakotaFliesEgyptsFlagOverItsTailWithNoPole()
+    {
+        var map = OpenMap();
+        var (layer, plane, loop, _) = DrawnDakota(map);
+        var flag = loop.Flag;
+        Assert.IsNotNull(flag, "a flag over the aircraft");
+        Assert.IsNotNull(flag!.GetComponent<Statecraft.Game.Map.Units.UnitFlagFacing>(), "turned to the camera, as the tokens' flags");
+        var mesh = flag.GetComponent<MeshFilter>().sharedMesh;
+        var colours = Statecraft.Game.Map.Units.UnitFlags.Colours(Statecraft.Game.Map.Units.UnitFlags.Egypt);
+        Assert.AreEqual(colours.Count, mesh.subMeshCount, "the cloth's colours only: no pole submesh");
+        var mats = flag.GetComponent<MeshRenderer>().sharedMaterials;
+        CollectionAssert.AreEqual(colours, mats.Select(m => m.color), "Egypt's sourced colours");
+        Assert.AreEqual(SeaAirCollection.DakotaFlagScale * Statecraft.Game.Map.Units.UnitBadge.FigureHeightM * Statecraft.Game.Map.Units.UnitShowcase.FigureScale,
+            flag.lossyScale.y, 1f, "half the tokens' flag size");
+        Assert.Less(mesh.bounds.size.y, 0.6f * Statecraft.Game.Map.Units.UnitFlags.PoleHeight, "no pole: the cloth alone");
+        for (int i = 0; i < 24; i++)
+        {
+            float t = i * SeaAirCollection.DakotaLoopSeconds / 24f;
+            loop.Place(t);
+            var b = WorldBounds(plane.gameObject); var fb = flag.GetComponent<MeshRenderer>().bounds;
+            Assert.Greater(fb.min.y, b.max.y, $"the flag floats clear above the aircraft at {t:0.0} s");
+            var back = -new Vector3(SeaAirCollection.DakotaLoopHeading(t).x, 0f, SeaAirCollection.DakotaLoopHeading(t).y);
+            Assert.Greater(Vector3.Dot(flag.position - b.center, back), 0.3f * b.extents.x, $"over the tail, behind the centre, at {t:0.0} s");
+        }
+        Assert.AreEqual(1, layer.KeepClear.Count(k => k[0].Contains(flag.GetComponent<MeshRenderer>().bounds.center)), "the labels keep clear of the flag too");
+        CollectionGeometryFixture.Craft(map, new DateTime(1948, 6, 15), Array.Empty<Placement>(), C);
+        AnswerAll();
+        Assert.IsNull(layer.transform.Find(SeaAirCollection.DakotaKey), "no Dakota after its window");
+        Assert.IsNull(layer.transform.Find(SeaAirCollection.DakotaKey + SeaAirCollection.DakotaMarksSuffix), "its flag goes with it");
+        Assert.AreEqual(0, Object.FindObjectsByType<DakotaLoop>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length);
     }
 
     /// <summary>Nothing is drawn until the stream answers, and only the far mesh, once per model. Then every craft is drawn,

@@ -133,9 +133,10 @@ namespace Statecraft.Game.Tests
                 .Concat(WildlifeLayer.Wants(map).Select(w => (w.At, 0.5f * WildlifeLayer.SizeM))).ToList();
             var layer = CollectionGeometryFixture.Special(map, After)!;
             CollectionAssert.AreEquivalent(new[] { SpecialBuildingModels.Tegart, SpecialBuildingModels.Barracks, SpecialBuildingModels.Factory, SpecialBuildingModels.Shikun,
-                SpecialBuildingModels.SyrianR35 }, asked.Select(a => a.id), "one request per placed model");
+                SpecialBuildingModels.SyrianR35, SpecialBuildingModels.Well }, asked.Select(a => a.id), "one request per placed model");
             AnswerAll();
-            CollectionAssert.AreEquivalent(new[] { "latrun_tegart", "tzrifin_barracks", "camp_80_barracks", "netanya_factory", "ramat_hahayal_shikun", "degania_r35" }, layer.Placed.Select(p => p.Key));
+            CollectionAssert.AreEquivalent(new[] { "latrun_tegart", "tzrifin_barracks", "camp_80_barracks", "netanya_factory", "ramat_hahayal_shikun", "degania_r35",
+                "beersheba_abrahams_well" }, layer.Placed.Select(p => p.Key));
             var ground = PlacementLayer.CampGround(map);
             var footprints = map.KitFootprints.Select(f => (f.centre, f.radius)).ToList();
             var wants = SpecialBuildingModels.Placements(After).ToDictionary(w => w.Key);
@@ -201,6 +202,173 @@ namespace Statecraft.Game.Tests
             cam.transform.position = new Vector3(0f, Statecraft.Game.Map.Kits.TownModelLayer.CloseExitM + 1f, 0f);
             layer.Choose(default, cam);
             Assert.IsTrue(layer.GetComponentsInChildren<Renderer>(true).All(x => x.forceRenderingOff), "hidden beyond the close zoom's exit");
+        }
+
+        // ---- Tal Heuberger's four props (owner, 2 November 2026: "Place all four now (Recommended)") ----
+
+        static readonly Statecraft.Sim.Content C = Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content);
+
+        static IEnumerable<DateTime> Turns()
+        {
+            for (var d = C.Rules.Start; d < C.End; d = d.AddMonths(1)) yield return d;
+        }
+
+        /// <summary>Each prop on its sourced dates, at its sourced point, its source in the data row marked agent-read with a
+        /// person's check pending: the well at every date; the sandbags only on the Altalena card's turn (the card's own window,
+        /// as SeaAirCollection draws the ship); the crates and the wall on the 1948 turns (their sources give the year only).</summary>
+        [Test]
+        public void TalsPropsHaveTheirSourcedDatesPointsAndAgentReadSources()
+        {
+            var card = C.Events.Single(e => e.Id == SeaAirCollection.AltalenaEvent);
+            Assert.AreEqual(card.From, SpecialBuildingModels.SandbagsFrom, "the Altalena card's window");
+            Assert.AreEqual(card.To, SpecialBuildingModels.SandbagsTo, "the Altalena card's window");
+            DateTime[] On(string key) => Turns().Where(d => SpecialBuildingModels.Placements(d).Any(w => w.Key == key)).ToArray();
+            CollectionAssert.AreEqual(new[] { new DateTime(1948, 6, 15) }, On("tel_aviv_altalena_sandbags"), "the sandbags on the Altalena's turn only");
+            var y1948 = Turns().Where(d => d.Year == 1948).ToArray();
+            CollectionAssert.AreEqual(y1948, On("haifa_quay_crates"), "the crates on the 1948 turns");
+            CollectionAssert.AreEqual(y1948, On("abu_ghosh_road_wall"), "the wall on the 1948 turns");
+            CollectionAssert.AreEqual(Turns().ToArray(), On("beersheba_abrahams_well"), "Abraham's Well at every date");
+            var all = SpecialBuildingModels.EveryPlacement.ToDictionary(w => w.Key);
+            var well = all["beersheba_abrahams_well"];
+            Assert.AreEqual(34.79307778, well.Lon, 1e-9); Assert.AreEqual(31.237225, well.Lat, 1e-9);
+            Assert.AreEqual(SpecialBuildingModels.Siting.Shore, all["tel_aviv_altalena_sandbags"].Site);
+            Assert.AreEqual("tel_aviv", all["tel_aviv_altalena_sandbags"].Along);
+            Assert.AreEqual(SpecialBuildingModels.Siting.Shore, all["haifa_quay_crates"].Site);
+            Assert.AreEqual("haifa", all["haifa_quay_crates"].Along);
+            var wall = all["abu_ghosh_road_wall"];
+            Assert.AreEqual(SpecialBuildingModels.Siting.Road, wall.Site);
+            Assert.AreEqual("jaffa_jerusalem_road", wall.Along);
+            Assert.AreEqual(35.11083, wall.Lon, 1e-9); Assert.AreEqual(31.80472, wall.Lat, 1e-9);
+            foreach (var key in new[] { "beersheba_abrahams_well", "tel_aviv_altalena_sandbags", "haifa_quay_crates", "abu_ghosh_road_wall" })
+            {
+                StringAssert.Contains("agent-read 2026-11-02", all[key].Source, key);
+                StringAssert.Contains("person check pending", all[key].Source, key);
+                StringAssert.Contains("oldid=", all[key].Source, key + ": the revision read");
+            }
+            Assert.AreEqual(3.75f, SpecialBuildingModels.RealLengthM(SpecialBuildingModels.Well), 1e-6f, "Abraham's Well's diameter (he.wiki)");
+        }
+
+        /// <summary>A placed prop: clear of the towns' footprints, the routes, the unit tokens present that day and the water,
+        /// on the ground, upright (its only turn on top of the prefab's FBX axis conversion is about the vertical).</summary>
+        void AssertClearAndUpright(MapScene map, SpecialBuildingModels layer, string key, DateTime date)
+        {
+            var p = layer.Placed.Single(x => x.Key == key);
+            var flat = new Vector2(p.At.x, p.At.z); float r = SpecialBuildingModels.ClearanceOf(p.Model);
+            var ground = PlacementLayer.CampGround(map);
+            Assert.IsTrue(TownLandmarks.Clear(flat, r, map.KitFootprints.Select(f => (f.centre, f.radius)).ToList()), key + " clear of the towns");
+            Assert.IsFalse(ground.OnRoute(flat, r), key + " clear of the routes");
+            Assert.IsFalse(ground.OnToken(flat, r, date), key + " clear of the unit tokens");
+            Assert.IsFalse(ground.Water(flat.x, flat.y), key + " on land");
+            var go = layer.transform.Find(key)!;
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(p.Model, CollectionDetail.Near));
+            var yaw = go.localRotation * Quaternion.Inverse(prefab.transform.localRotation);
+            Assert.Greater(Vector3.Dot(yaw * Vector3.up, Vector3.up), 0.9999f, key + " upright: turned only about the vertical");
+            var b = go.GetComponentsInChildren<Renderer>(true).Select(x => x.bounds).Aggregate((x, y) => { x.Encapsulate(y); return x; });
+            Assert.AreEqual(p.At.y, b.min.y, 1f, key + " stands on the ground");
+            TestContext.WriteLine($"{key}: at ({p.At.x:0}, {p.At.z:0}), {Mathf.Max(b.size.x, b.size.z):0} m long");
+        }
+
+        /// <summary>The sandbag post on the Tel Aviv shore (he.wiki אלטלנה: the sandbag position at the foot of the Palmach
+        /// headquarters fired on the Altalena's boat, the night of 21-22 June 1948), on the Altalena's turn only: on the beach,
+        /// just inland of the water's edge, near the coast point the Altalena lies off; gone on the next turn.</summary>
+        [Test]
+        public void TheSandbagsStandOnTheTelAvivShoreOnlyOnTheAltalenasTurn()
+        {
+            var map = OpenMap();
+            var date = new DateTime(1948, 6, 15);
+            var layer = CollectionGeometryFixture.Special(map, date)!; AnswerAll();
+            AssertClearAndUpright(map, layer, "tel_aviv_altalena_sandbags", date);
+            AssertOnTheBeach(map, layer, "tel_aviv_altalena_sandbags", "tel_aviv");
+            CollectionGeometryFixture.Special(map, new DateTime(1948, 7, 15)); AnswerAll();
+            Assert.IsFalse(layer.Placed.Any(p => p.Key == "tel_aviv_altalena_sandbags"), "gone after the Altalena's turn");
+            Assert.IsNull(layer.transform.Find("tel_aviv_altalena_sandbags"));
+            CollectionGeometryFixture.Special(map, new DateTime(1948, 5, 15)); AnswerAll();
+            Assert.IsFalse(layer.Placed.Any(p => p.Key == "tel_aviv_altalena_sandbags"), "not before it");
+        }
+
+        /// <summary>The crate stack on the Haifa port quay (Nationaal Archief 255-1124: crates on the quay by the immigrant ship
+        /// Bulgaria, 1948), on the 1948 turns: on land just inland of the harbour's water, by Haifa's coast point (the
+        /// steamer's); gone in 1949.</summary>
+        [Test]
+        public void TheCratesStandOnTheHaifaQuayOnThe1948Turns()
+        {
+            var map = OpenMap();
+            var date = new DateTime(1948, 5, 15);
+            var layer = CollectionGeometryFixture.Special(map, date)!; AnswerAll();
+            AssertClearAndUpright(map, layer, "haifa_quay_crates", date);
+            AssertOnTheBeach(map, layer, "haifa_quay_crates", "haifa");
+            CollectionGeometryFixture.Special(map, new DateTime(1949, 1, 15)); AnswerAll();
+            Assert.IsFalse(layer.Placed.Any(p => p.Key == "haifa_quay_crates"), "gone after 1948");
+        }
+
+        void AssertOnTheBeach(MapScene map, SpecialBuildingModels layer, string key, string coast)
+        {
+            var p = layer.Placed.Single(x => x.Key == key); var flat = new Vector2(p.At.x, p.At.z);
+            var row = Statecraft.Game.Map.Kits.SeaCraft.Coasts.Single(c => c.place == coast);
+            var w = map.Frame.ToWorld(row.lon, row.lat, 0);
+            float off = (flat - new Vector2(w.x, w.z)).magnitude;
+            TestContext.WriteLine($"{key}: {off:0} m from {coast}'s coast point");
+            Assert.Less(off, 8000f, $"{key} by {coast}'s coast point");
+            var ground = PlacementLayer.CampGround(map);
+            float r = SpecialBuildingModels.ClearanceOf(p.Model);
+            var sea = flat + row.seaward * (r + SpecialBuildingModels.ShoreInsetM + 10f);
+            Assert.IsTrue(ground.Water(sea.x, sea.y), $"{key} on the shore: the water's edge just seaward of it");
+        }
+
+        /// <summary>The low wall beside the Jaffa-Jerusalem road near Abu Ghosh (Nationaal Archief 255-0876: a low stone wall
+        /// along the road, the village "probably Abu Ghosh", on the way to Jerusalem, 1948), on the 1948 turns: just off the road's
+        /// corridor (routes_1948.yaml), near Abu Ghosh's point, its long side along the road.</summary>
+        [Test]
+        public void TheWallStandsBesideTheJaffaJerusalemRoadNearAbuGhoshAlongIt()
+        {
+            var map = OpenMap();
+            var date = new DateTime(1948, 5, 15);
+            var layer = CollectionGeometryFixture.Special(map, date)!; AnswerAll();
+            AssertClearAndUpright(map, layer, "abu_ghosh_road_wall", date);
+            var p = layer.Placed.Single(x => x.Key == "abu_ghosh_road_wall"); var flat = new Vector2(p.At.x, p.At.z);
+            var a3 = map.Frame.ToWorld(SpecialBuildingModels.AbuGhoshLon, SpecialBuildingModels.AbuGhoshLat, 0);
+            float off = (flat - new Vector2(a3.x, a3.z)).magnitude;
+            TestContext.WriteLine($"abu_ghosh_road_wall: {off:0} m from Abu Ghosh's point");
+            Assert.Less(off, 3000f, "near Abu Ghosh");
+            var (line, half) = RouteLayer.Corridors(map.Frame, map.RouteList.Where(r => r.Id == "jaffa_jerusalem_road")).Single();
+            float best = float.MaxValue; Vector2 dir = Vector2.zero;
+            for (int i = 0; i + 1 < line.Count; i++)
+            {
+                float d = Statecraft.Game.Map.Kits.KitGround.SegmentDistance(flat, line[i], line[i + 1]);
+                if (d < best) { best = d; dir = (line[i + 1] - line[i]).normalized; }
+            }
+            float r = SpecialBuildingModels.ClearanceOf(p.Model);
+            Assert.That(best, Is.InRange(half + r, half + r + 5f), "beside the road: just off its corridor");
+            var go = layer.transform.Find("abu_ghosh_road_wall")!;
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(p.Model, CollectionDetail.Near));
+            var probe = UnityEngine.Object.Instantiate(prefab);
+            try
+            {
+                var pb = probe.GetComponentsInChildren<Renderer>(true).Select(x => x.bounds).Aggregate((x, y) => { x.Encapsulate(y); return x; });
+                var longLocal = pb.size.x >= pb.size.z ? Vector3.right : Vector3.forward;
+                var longWorld = go.localRotation * Quaternion.Inverse(prefab.transform.localRotation) * longLocal;
+                Assert.Greater(Mathf.Abs(Vector2.Dot(new Vector2(longWorld.x, longWorld.z).normalized, dir)), 0.999f, "its long side along the road");
+            }
+            finally { UnityEngine.Object.DestroyImmediate(probe); }
+        }
+
+        /// <summary>Abraham's Well at Beersheba (he.wiki באר אברהם), at every date: by its sourced point, beyond the town's
+        /// footprint as the other single buildings stand.</summary>
+        [Test]
+        public void AbrahamsWellStandsByItsPointAtBeershebaAtEveryDate()
+        {
+            var map = OpenMap();
+            foreach (var date in new[] { new DateTime(1948, 5, 15), new DateTime(1952, 4, 15) })
+            {
+                var layer = CollectionGeometryFixture.Special(map, date)!; AnswerAll();
+                AssertClearAndUpright(map, layer, "beersheba_abrahams_well", date);
+                var p = layer.Placed.Single(x => x.Key == "beersheba_abrahams_well");
+                var a3 = map.Frame.ToWorld(34.79307778, 31.237225, 0); var anchor = new Vector2(a3.x, a3.z);
+                float off = (new Vector2(p.At.x, p.At.z) - anchor).magnitude, r = SpecialBuildingModels.ClearanceOf(p.Model);
+                float inside = SpecialBuildingModels.Inside(anchor, map.KitFootprints.Select(f => (f.centre, f.radius)));
+                TestContext.WriteLine($"well on {date:d MMM yyyy}: {off:0} m from its point, {inside:0} m inside Beersheba's footprint");
+                Assert.Less(off, inside + 4f * r, "by its point, beyond the town's footprint");
+            }
         }
 
         /// <summary>The R35 stands just outside Degania Alef's drawn kit, on the side facing the nearest mapped route: its centre
@@ -274,8 +442,10 @@ namespace Statecraft.Game.Tests
                 [SpecialBuildingModels.Shikun] = (3f, 4f),
                 // The R35, 4.02 m at the same world scale: about 96 m, under half a locomotive car.
                 [SpecialBuildingModels.SyrianR35] = (0.42f, 0.52f),
+                // Abraham's Well, 3.75 m across (he.wiki): about 90 m, under half a locomotive car.
+                [SpecialBuildingModels.Well] = (0.4f, 0.5f),
             };
-            Assert.AreEqual(6, layer.Placed.Count);
+            Assert.AreEqual(7, layer.Placed.Count);
             foreach (var p in layer.Placed)
             {
                 var b = layer.transform.Find(p.Key)!.GetComponentsInChildren<Renderer>(true).Select(x => x.bounds).Aggregate((x, y) => { x.Encapsulate(y); return x; });
@@ -296,17 +466,19 @@ namespace Statecraft.Game.Tests
             var map = OpenMap();
             var layer = CollectionGeometryFixture.Special(map, new DateTime(1948, 5, 15))!;
             AnswerAll();
-            CollectionAssert.AreEqual(new[] { "latrun_tegart" }, layer.Placed.Select(p => p.Key));
+            // From the first day: the fort, Abraham's Well, and the 1948 crates and wall.
+            var opening = new[] { "latrun_tegart", "beersheba_abrahams_well", "haifa_quay_crates", "abu_ghosh_road_wall" };
+            CollectionAssert.AreEquivalent(opening, layer.Placed.Select(p => p.Key));
             var fort = layer.transform.Find("latrun_tegart")!.gameObject;
             CollectionGeometryFixture.Special(map, new DateTime(1948, 5, 15));
             Assert.IsTrue(fort != null && fort.transform.parent == layer.transform, "the same date keeps the same models");
             CollectionGeometryFixture.Special(map, After);
             AnswerAll();
-            Assert.AreEqual(6, layer.Placed.Count);
+            Assert.AreEqual(7, layer.Placed.Count);
             CollectionGeometryFixture.Special(map, new DateTime(1948, 5, 16));
             AnswerAll(); // Earlier-date retirement reacquires its still-needed original through the fake source.
-            CollectionAssert.AreEqual(new[] { "latrun_tegart" }, layer.Placed.Select(p => p.Key), "an earlier date shows only what stood then");
-            Assert.AreEqual(1, layer.transform.childCount);
+            CollectionAssert.AreEquivalent(opening, layer.Placed.Select(p => p.Key), "an earlier date shows only what stood then");
+            Assert.AreEqual(opening.Length, layer.transform.childCount);
         }
 
         [Test]

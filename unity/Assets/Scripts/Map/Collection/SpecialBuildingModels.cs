@@ -9,14 +9,20 @@ namespace Statecraft.Game.Map.Collection
 {
     /// <summary>Issue #707: Tal Heuberger's single-building models at sourced places, and the tank stopped at Degania Alef. They use the collection stream after the
     /// first frame, draw only close up (#700's switch, TownModelLayer.CloseEnterM / CloseExitM), follow the game date and
-    /// fail open. b21 remains catalogued but unplaced until an artisan-workshop location is sourced.</summary>
+    /// fail open. b21 remains catalogued but unplaced until an artisan-workshop location is sourced. Tal Heuberger's four
+    /// props stand at their sourced places and dates too (owner, 2 November 2026: "Place all four now (Recommended)"; the
+    /// option: "Wire each at its sourced place and dates, with the sources in the data rows marked agent-read"): the well at
+    /// Abraham's Well, Beersheba; the sandbags on the Tel Aviv shore on the Altalena's turn only; the crates on the Haifa port
+    /// quay and the low wall by the Jaffa-Jerusalem road near Abu Ghosh, on the 1948 turns.</summary>
     [ExecuteAlways]
     public sealed class SpecialBuildingModels : MonoBehaviour
     {
         public const string Name = "SpecialBuildingModels";
         public const string Shikun = "b11-shikun-housing-v2", Tegart = "b12-tegart-fort-v2",
             Barracks = "b18-military-barracks-v2", Workshop = "b21-artisan-workshop-v2",
-            Factory = "b22-industrial-factory-v2", SyrianR35 = CollectionCatalog.SyrianR35;
+            Factory = "b22-industrial-factory-v2", SyrianR35 = CollectionCatalog.SyrianR35,
+            Well = CollectionCatalog.StoneWell, Sandbags = CollectionCatalog.Sandbags, Crates = CollectionCatalog.CrateStack,
+            Wall = CollectionCatalog.StoneWall;
 
         /// <summary>The one world scale of Tal Heuberger's building models: <see cref="Kits.SettlementKits.ModelScale"/> (issue
         /// #1032).</summary>
@@ -31,6 +37,9 @@ namespace Statecraft.Game.Map.Collection
             // Sourced, unlike the buildings' design values: the Renault R35's length, 4.02 m (en.wiki Renault R35, infobox,
             // checked 2026-10-28; excerpt in research_notes/Map/degania-r35.md).
             SyrianR35 => 4.02f,
+            // Sourced: Abraham's Well's diameter, 3.75 m (he.wiki "באר אברהם", revision 44049275, agent-read 2026-11-02, a
+            // person's check pending). The other three props are DESIGN VALUES, typical of the kind: a 4 m sandbag post, a 3 m
+            // crate stack, an 8 m run of low wall.
             _ => throw new ArgumentException($"'{model}' is not one of #707's models", nameof(model)),
         };
 
@@ -43,12 +52,39 @@ namespace Statecraft.Game.Map.Collection
         // Design value: the bounded deterministic search around each sourced point.
         public const int SpotAttempts = 24;
 
+        /// <summary>How a model's spot is found from its sourced point: the seeded ring search round it (<see cref="SeededSpot"/>),
+        /// on the beach of a SeaCraft coast (<see cref="ShoreSpot"/>), or beside a route, along it (<see cref="RoadSpot"/>).</summary>
+        public enum Siting { Seeded, Shore, Road }
+
         public readonly struct Want
         {
             public readonly string Key, Model, Source; public readonly DateTime From; public readonly double Lon, Lat;
+            /// <summary>The first day it is no longer drawn, or null: drawn from <see cref="From"/> on.</summary>
+            public readonly DateTime? To;
+            public readonly Siting Site;
+            /// <summary>The SeaCraft coast's place (<see cref="Siting.Shore"/>) or the route's id (<see cref="Siting.Road"/>).</summary>
+            public readonly string Along;
             public Want(string key, string model, DateTime from, double lon, double lat, string source)
-            { Key = key; Model = model; From = from; Lon = lon; Lat = lat; Source = source; }
+                : this(key, model, from, null, lon, lat, source, Siting.Seeded, "") { }
+            public Want(string key, string model, DateTime from, DateTime? to, double lon, double lat, string source, Siting site, string along)
+            { Key = key; Model = model; From = from; To = to; Lon = lon; Lat = lat; Source = source; Site = site; Along = along; }
+            public bool Covers(DateTime date) => date >= From && (To == null || date < To.Value);
         }
+
+        /// <summary>The Altalena card's window (content/events/altalena.yaml, from 15 June to 23 June 1948, owner Q-CUT-7), the turn
+        /// that holds the night of 21-22 June when the sandbag post on the Tel Aviv shore fired on the ship's boat; the same window
+        /// SeaAirCollection draws the Altalena off Tel Aviv in (a test holds the two equal).</summary>
+        public static readonly DateTime SandbagsFrom = new DateTime(1948, 6, 15), SandbagsTo = new DateTime(1948, 6, 23);
+
+        /// <summary>The 1948 turns, for the two props whose sources give the year only (the crates, the wall).</summary>
+        public static readonly DateTime Year1948From = new DateTime(1948, 5, 15), Year1948To = new DateTime(1949, 1, 1);
+
+        /// <summary>The route the low wall stands beside (content/map/routes_1948.yaml).</summary>
+        public const string WallRoute = "jaffa_jerusalem_road";
+
+        /// <summary>Abu Ghosh, 31.80472 N, 35.11083 E (en.wiki "Abu Ghosh", revision 1381085214, agent-read 2026-11-02): not a
+        /// content place, so the wall's point. Its spot is on <see cref="WallRoute"/> nearest this point.</summary>
+        public const double AbuGhoshLon = 35.11083, AbuGhoshLat = 31.80472;
 
         /// <summary>Facts already sourced in the repository. Latrun's police fort (the Arab Legion's gun on the roof of "the
         /// Latrun Tegart fort, 1948", unit-art sourcing note; the Legion held Latrun from 18 May 1948, routes_1948.yaml) stands
@@ -83,7 +119,93 @@ namespace Statecraft.Game.Map.Collection
                 "https://en.wikipedia.org/wiki/Renault_R35 (checked 2026-10-28); content/map/settlements_1948.yaml: degania_alef"),
         };
 
-        public static IReadOnlyList<Want> Placements(DateTime date) => All.Where(x => date >= x.From).ToList();
+        public static IReadOnlyList<Want> Placements(DateTime date) => All.Where(x => x.Covers(date)).ToList();
+
+        /// <summary>Every placement, whatever its dates.</summary>
+        public static IReadOnlyList<Want> EveryPlacement => All;
+
+        /// <summary>DESIGN VALUES: the beach search: candidate points every <see cref="ShoreStepM"/> along the coast from the coast's
+        /// point, nearest first, each on the land <see cref="ShoreInsetM"/> plus the model's clearance in from the water's edge.</summary>
+        public const float ShoreStepM = 250f, ShoreInsetM = 60f;
+        const int ShoreSteps = 80;
+
+        /// <summary>The first clear spot on the beach of <paramref name="coast"/> (SeaCraft.Coasts): walking along the shore both
+        /// ways from the coast's point, the water's edge found seaward of each step and the spot set just inland of it. Null when
+        /// the coast is unknown or none is clear.</summary>
+        internal static Vector2? ShoreSpot(string coast, Kits.KitGround ground, float clearance, Func<Vector2, float, bool> free)
+        {
+            var row = Kits.SeaCraft.Coasts.FirstOrDefault(c => c.place == coast);
+            if (row.place == null) return null;
+            var w = ground.Frame.ToWorld(row.lon, row.lat, 0); var origin = new Vector2(w.x, w.z);
+            var along = new Vector2(-row.seaward.y, row.seaward.x);
+            for (int i = 0; i <= 2 * ShoreSteps; i++)
+            {
+                int step = (i + 1) / 2 * (i % 2 == 1 ? 1 : -1);   // 0, +1, -1, +2, -2 ...
+                var p = origin + along * (step * ShoreStepM);
+                // Inland until dry, then seaward to the water's edge.
+                for (int k = 0; k < 200 && ground.Water(p.x, p.y); k++) p -= row.seaward * 50f;
+                if (ground.Water(p.x, p.y)) continue;
+                var edge = Kits.SeaCraft.FirstWater(p, row.seaward, ground, 20000f);
+                if (!(edge is Vector2 e)) continue;
+                var spot = e - row.seaward * (clearance + ShoreInsetM);
+                if (free(spot, clearance)) return spot;
+            }
+            return null;
+        }
+
+        /// <summary>The first clear spot beside route <paramref name="route"/>'s line (RouteLayer.Corridors) nearest
+        /// <paramref name="anchor"/>, just off its corridor on either side, stepping along the line both ways; and the line's
+        /// direction there (world x, z, unit length), for the model to lie along it. Null when the route is unknown or none is
+        /// clear.</summary>
+        internal static (Vector2 at, Vector2 along)? RoadSpot(MapScene map, string route, Vector2 anchor, float clearance, Func<Vector2, float, bool> free)
+        {
+            var corridors = Routes.RouteLayer.Corridors(map.Frame, map.RouteList.Where(r => r.Id == route));
+            if (corridors.Count == 0) return null;
+            var (line, halfWidth) = corridors[0];
+            int seg = -1; float best = float.MaxValue, bestT = 0f;
+            for (int i = 0; i + 1 < line.Count; i++)
+            {
+                var a = line[i]; var ab = line[i + 1] - a;
+                float t = ab.sqrMagnitude > 0f ? Mathf.Clamp01(Vector2.Dot(anchor - a, ab) / ab.sqrMagnitude) : 0f;
+                float d = (a + ab * t - anchor).sqrMagnitude;
+                if (d < best) { best = d; seg = i; bestT = t; }
+            }
+            if (seg < 0) return null;
+            // Walk along the line from the nearest point, both ways, by the clearance.
+            float stepM = Mathf.Max(clearance, 50f);
+            for (int i = 0; i <= 2 * ShoreSteps; i++)
+            {
+                int step = (i + 1) / 2 * (i % 2 == 1 ? 1 : -1);
+                if (!(PointAlong(line, seg, bestT, step * stepM) is (Vector2 q, Vector2 dir))) continue;
+                var normal = new Vector2(-dir.y, dir.x);
+                // The side facing the sourced point first.
+                float side = Vector2.Dot(anchor - q, normal) >= 0f ? 1f : -1f;
+                foreach (var s in new[] { side, -side })
+                {
+                    var p = q + normal * s * (halfWidth + clearance + 1f);
+                    if (free(p, clearance)) return (p, dir);
+                }
+            }
+            return null;
+        }
+
+        /// <summary>The point <paramref name="metres"/> along <paramref name="line"/> from segment <paramref name="seg"/>'s point at
+        /// <paramref name="t"/> (negative: back along it), and the line's direction there; null past either end.</summary>
+        static (Vector2 at, Vector2 dir)? PointAlong(List<Vector2> line, int seg, float t, float metres)
+        {
+            var at = line[seg] + (line[seg + 1] - line[seg]) * t;
+            int i = seg; float left = Mathf.Abs(metres); bool forward = metres >= 0f;
+            while (true)
+            {
+                var to = forward ? line[i + 1] : line[i];
+                var d = to - at; float len = d.magnitude;
+                var dir = (line[i + 1] - line[i]).normalized;
+                if (len >= left) return (at + (len > 0f ? d / len : Vector2.zero) * left, dir);
+                left -= len; at = to;
+                i += forward ? 1 : -1;
+                if (i < 0 || i + 1 >= line.Count) return null;
+            }
+        }
 
         /// <summary>How far inside a town's footprint <paramref name="anchor"/> lies (m, 0 outside every footprint): a sourced
         /// point at a town's edge (Netanya's entrance) is inside the kit's symbolic footprint, so the search starts that far
@@ -345,6 +467,14 @@ namespace Statecraft.Game.Map.Collection
                     if (village is Bounds drawn && footprint.id != null)   // no kit or no footprint: the seeded spot below
                         at = RouteFacingEdgeSpot(footprint.centre, drawn, clearance, map.KitRouteCorridors, Free);
                 }
+                Vector2? along = null;
+                if (w.Site == Siting.Shore) at = ShoreSpot(w.Along, ground, clearance, Free);
+                else if (w.Site == Siting.Road && RoadSpot(map, w.Along, anchor, clearance, Free) is (Vector2 roadAt, Vector2 roadDir)) { at = roadAt; along = roadDir; }
+                if (at == null && w.Site != Siting.Seeded)
+                {
+                    Debug.LogWarning($"BUILDINGS: no clear {(w.Site == Siting.Shore ? "beach" : "roadside")} spot for {w.Key}; its {w.Model} is not drawn.");
+                    continue;
+                }
                 if (at == null)
                 {
                     if (w.Key == "degania_r35")
@@ -359,6 +489,13 @@ namespace Statecraft.Game.Map.Collection
                 owned.Add(go);
                 go.transform.localRotation = Rotation(prefab.transform.localRotation, 0f);
                 var b = Bounds(go); float edge = Mathf.Max(b.size.x, b.size.z);
+                if (along is Vector2 road)
+                {
+                    // Its long side along the road: Unity's yaw turns +x toward -z.
+                    float yaw = -Mathf.Atan2(road.y, road.x) * Mathf.Rad2Deg + (b.size.z > b.size.x ? 90f : 0f);
+                    go.transform.localRotation = Rotation(prefab.transform.localRotation, yaw);
+                    b = Bounds(go);
+                }
                 go.transform.localScale *= edge > 1e-3f ? SizeOf(w.Model) / edge : 1f;
                 var pos = new Vector3(at.Value.x, ground.Y(at.Value.x, at.Value.y), at.Value.y);
                 go.transform.position = pos; b = Bounds(go);

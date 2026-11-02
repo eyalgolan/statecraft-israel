@@ -62,15 +62,15 @@ public class CollectionImportTests
     public void TheCatalogKeeps73IndependentOriginalsAndTheGeneratedInfantryBundle()
     {
         var ids = CollectionCatalog.Ids.ToList();
-        Assert.AreEqual(88, ids.Count);
+        Assert.AreEqual(94, ids.Count);
         Assert.AreEqual(ids.Count, ids.Distinct().Count(), "an id in two bundles");
-        Assert.AreEqual(87, CollectionCatalog.Bundles.Count,
+        Assert.AreEqual(93, CollectionCatalog.Bundles.Count,
             "73 independent originals, #1763's shared generated bundle and one bundle for each later generated model");
         Assert.IsTrue(CollectionCatalog.Bundles.Where(b => b.Bundle != CollectionCatalog.ArabArmies)
             .All(b => b.Ids.Length == 1 && b.Bundle == "collection-" + b.Ids[0]));
-        CollectionAssert.AreEqual(new[] { 21, 13, 6, 10, 5, 2, 4, 4 }, CollectionCatalog.Groups.Select(g => g.Ids.Length));
+        CollectionAssert.AreEqual(new[] { 21, 13, 6, 10, 5, 2, 5, 9 }, CollectionCatalog.Groups.Select(g => g.Ids.Length));
         CollectionAssert.AreEqual(GeneratedInfantry, CollectionCatalog.Bundles.Single(b => b.Bundle == CollectionCatalog.ArabArmies).Ids);
-        Assert.AreEqual(27, CollectionCatalog.Animated.Count);
+        Assert.AreEqual(28, CollectionCatalog.Animated.Count);
         CollectionAssert.IsSubsetOf(CollectionCatalog.Animated, ids);
         CollectionAssert.DoesNotContain(CollectionCatalog.Animated, "figure-c05-pioneer-veteran-v2", "C05's only idle is a walk");
         Assert.AreEqual("collection-vehicle-altalena-lst-1948-v2wl", CollectionCatalog.BundleOf("vehicle-altalena-lst-1948-v2wl"));
@@ -353,7 +353,9 @@ public class CollectionImportTests
         var scenes = AssetDatabase.GetDependencies(EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToArray(), true);
         var resources = ResourcesClosure();
         var placed = CollectionCatalog.Ids.Where(id => CollectionCatalog.IsGenerated(id) || CollectionCatalog.IsGeneratedHouse(id)).ToList();
-        CollectionAssert.IsSubsetOf(new[] { CollectionCatalog.BedouinCivilian, CollectionCatalog.BedouinTent, CollectionCatalog.SyrianR35, CollectionCatalog.KhakiTent }, placed);
+        CollectionAssert.IsSubsetOf(new[] { CollectionCatalog.BedouinCivilian, CollectionCatalog.BedouinTent, CollectionCatalog.SyrianR35, CollectionCatalog.KhakiTent,
+            CollectionCatalog.EgyptianDakota, CollectionCatalog.StoneWell, CollectionCatalog.Sandbags, CollectionCatalog.CrateStack,
+            CollectionCatalog.StoneWall, CollectionCatalog.LocalIrregular }, placed);
         Assert.AreEqual(5, placed.Count(CollectionCatalog.IsGeneratedHouse), "the five generated houses");
         foreach (var id in placed)
         {
@@ -408,10 +410,10 @@ public class CollectionImportTests
         var builds = (AssetBundleBuild[])t!.GetMethod("Builds")!.Invoke(null, null)!;
         CollectionAssert.AreEqual(CollectionCatalog.Bundles.Select(b => b.Bundle), builds.Select(b => b.assetBundleName));
         // Each model's source file, written out here rather than read from CollectionCatalog.SourceModelPath (which Builds
-        // uses): a town building's <id>.fbx in the buildings' folder, the R35's compatibility FBX, every other model's
+        // uses): a town building's <id>.fbx in the buildings' folder, the R35's and the Dakota's compatibility FBX, every other model's
         // <id>.fbx in its own Collection folder (never a -near.fbx or -far.fbx).
         string Source(string id) => CollectionCatalog.IsBuilding(id) ? $"{CollectionCatalog.BuildingsFolder}/{id}/{id}.fbx"
-            : id == CollectionCatalog.SyrianR35 ? $"{Dir(id)}/{id}-compatibility.fbx" : Model(id);
+            : id == CollectionCatalog.SyrianR35 || id == CollectionCatalog.EgyptianDakota ? $"{Dir(id)}/{id}-compatibility.fbx" : Model(id);
         foreach (var (b, (bundle, ids)) in builds.Zip(CollectionCatalog.Bundles, (b, c) => (b, c)))
             CollectionAssert.AreEquivalent(ids.SelectMany(id => new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near), Source(id) }).Distinct(),
                 b.assetNames, bundle);
