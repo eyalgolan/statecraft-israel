@@ -130,14 +130,15 @@ public class BuildingModelImportTests
             Assert.IsFalse(imp.isReadable, path + " GPU-only");
             if (Generated(id))
             {
-                // The generated houses keep their delivered, approved import: compressed, quality 100, exactly 4096, no overrides.
+                // The generated houses keep their delivered, approved import: compressed, quality 100, exactly 4096, and no
+                // override but the web cap (TheGeneratedHousesColourMapsAreCappedAt2048OnTheWebOnly).
                 Assert.AreEqual(4096, imp.maxTextureSize, path + " max size");
                 Assert.AreEqual(100, imp.compressionQuality, path + " quality");
                 Assert.AreEqual(TextureImporterCompression.Compressed, imp.textureCompression, path + " compression");
-                foreach (var target in new[] { "Standalone", "WebGL", "Android", "iPhone" })
+                foreach (var target in new[] { "Standalone", "Android", "iPhone" })
                     Assert.IsFalse(imp.GetPlatformTextureSettings(target).overridden, path + " " + target + " override");
             }
-            foreach (var target in new[] { "Standalone", "WebGL" })
+            foreach (var target in Generated(id) ? new[] { "Standalone" } : new[] { "Standalone", "WebGL" })
             {
                 var setting = imp.GetPlatformTextureSettings(target);
                 Assert.GreaterOrEqual(setting.maxTextureSize, Math.Max(width, height), path + " " + target + " keeps source size");
@@ -146,6 +147,28 @@ public class BuildingModelImportTests
             var tex = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
             Assert.AreEqual(width, tex.width, path + " source width"); Assert.AreEqual(height, tex.height, path + " source height");
             Assert.Greater(tex.mipmapCount, 1, path + " imported mipmaps");
+        }
+    }
+
+    /// <summary>Owner, 2 November 2026: "Cap at 2048 px on web (Recommended)". Each generated house's colour map imports at
+    /// 2048 px in the WebGL build only, through a WebGL override, so its streamed bundle is smaller. The default and desktop
+    /// import keep the delivered 4096 px, and the source JPG is unchanged.</summary>
+    [Test]
+    public void TheGeneratedHousesColourMapsAreCappedAt2048OnTheWebOnly()
+    {
+        var houses = Ids.Where(Generated).ToArray();
+        Assert.AreEqual(5, houses.Length, "houses 01 to 05");
+        foreach (var id in houses)
+        {
+            var path = ColourMap(id); var imp = (TextureImporter)AssetImporter.GetAtPath(path);
+            var web = imp.GetPlatformTextureSettings("WebGL");
+            Assert.IsTrue(web.overridden, path + " WebGL override");
+            Assert.AreEqual(2048, web.maxTextureSize, path + " WebGL max size");
+            Assert.AreEqual(TextureImporterFormat.Automatic, web.format, path + " WebGL format");
+            Assert.AreEqual(TextureImporterCompression.Compressed, web.textureCompression, path + " WebGL compression");
+            Assert.IsFalse(web.crunchedCompression, path + " WebGL crunch");
+            Assert.Greater(imp.maxTextureSize, web.maxTextureSize, path + " the default keeps more than the web cap");
+            Assert.IsFalse(imp.GetPlatformTextureSettings("Standalone").overridden, path + " desktop keeps the default");
         }
     }
 

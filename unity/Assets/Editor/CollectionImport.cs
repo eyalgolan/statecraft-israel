@@ -49,7 +49,7 @@ namespace Statecraft.Game.EditorTools
         /// <summary>Issue #707: the special-buildings bundle's prefabs, one per model, beside #675's imported model in its own
         /// folder (CollectionCatalog.PrefabPath): the model with its own material on every renderer. The models' import
         /// settings are #675's and are left as they are; Tal Heuberger's generated houses keep their delivered import settings
-        /// (max 4096, quality 100, no rig), so only their prefabs are built.</summary>
+        /// (max 4096, quality 100, no rig; on WebGL a 2048 cap, owner 2 November 2026), so only their prefabs are built.</summary>
         public static void MakeBuildingPrefabs()
         {
             foreach (var id in CollectionCatalog.Ids.Where(CollectionCatalog.IsBuilding))
