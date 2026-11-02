@@ -114,6 +114,10 @@ public class OpeningBuildGateTests
         Assert.IsFalse(unreviewed.Read().ClipsReviewed);
         StringAssert.Contains("opening clip", (string?)gate.Invoke(null, new object?[] { unreviewed }) ?? "",
             "a sensitive clip without the owner's review must not reach a shareable build");
+        var unread = Fixture(doc => Set((YamlMappingNode)Get(Panels(doc)[0], "caption"), "he_review", "pending"));
+        Assert.IsFalse(unread.Read().CaptionsReviewed);
+        StringAssert.Contains("caption", (string?)gate.Invoke(null, new object?[] { unread }) ?? "",
+            "a clip's caption with unread Hebrew must not reach a shareable build");
     }
 
     [Test]

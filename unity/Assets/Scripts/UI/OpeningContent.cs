@@ -18,6 +18,8 @@ namespace Statecraft.Game.UI
         public TextAsset source = null!;
         public Texture2D[] photos = Array.Empty<Texture2D>();
         public static OpeningContent? Load() => Resources.Load<OpeningContent>(ResourcePath);
+        /// <summary>he_review: the Hebrew is a draft until a native speaker who did not write it has read it.</summary>
+        public const string HePending = "pending", HeApproved = "approved";
 
         public sealed class Source
         {
@@ -61,6 +63,15 @@ namespace Statecraft.Game.UI
             public bool Sensitive { get; set; }
             public bool SensitivityReviewed { get; set; }
         }
+        /// <summary>The one line shown under a panel's clip while it plays, in English and Hebrew (owner, 2 Nov 2026: "Version
+        /// 1, fixed (Recommended)"). Its facts are the panel's own approved text.</summary>
+        public sealed class Caption
+        {
+            public string Text { get; set; } = "";
+            public string TextHe { get; set; } = "";
+            public string HeReview { get; set; } = "";
+            public bool HebrewApproved => !string.IsNullOrWhiteSpace(TextHe) && HeReview == HeApproved;
+        }
         public class Paragraph
         {
             public string Text { get; set; } = "";
@@ -74,6 +85,7 @@ namespace Statecraft.Game.UI
             public List<Arrival> Arrivals { get; set; } = new List<Arrival>();
             public Image Image { get; set; } = new Image();
             public Clip? Clip { get; set; }
+            public Caption? Caption { get; set; }
         }
         public sealed class Document
         {
@@ -87,6 +99,8 @@ namespace Statecraft.Game.UI
             public bool Reviewed => PhotosReviewed && TextReviewed;
             /// <summary>Every sensitive clip has the owner's sensitivity review (a shareable build refuses one without it).</summary>
             public bool ClipsReviewed => Panels != null && Panels.All(p => p?.Clip == null || !p.Clip.Sensitive || p.Clip.SensitivityReviewed);
+            /// <summary>Every shown clip's caption has its Hebrew read by a native speaker.</summary>
+            public bool CaptionsReviewed => Panels != null && Panels.All(p => p?.Clip == null || p.Caption != null && p.Caption.HebrewApproved);
         }
 
         /// <summary>The approved three-panel structure; unknown or repeated YAML fields fail closed.</summary>
@@ -112,6 +126,11 @@ namespace Statecraft.Game.UI
                         throw new InvalidOperationException(SourcePath + ": photograph or credit missing for " + p.Id);
                 foreach (var p in doc.Panels.Where(p => p.Clip != null))
                     if (ClipProblem(p) is string problem) throw new InvalidOperationException(SourcePath + ": " + p.Id + "'s clip: " + problem);
+                foreach (var p in doc.Panels.Where(p => p.Caption != null))
+                    if (string.IsNullOrWhiteSpace(p.Caption!.Text) || string.IsNullOrWhiteSpace(p.Caption.TextHe)
+                        || p.Caption.HeReview != HePending && p.Caption.HeReview != HeApproved)
+                        throw new InvalidOperationException(SourcePath + ": " + p.Id + "'s caption needs text, text_he and he_review: "
+                            + HePending + " or " + HeApproved);
                 return doc;
             }
             catch (YamlDotNet.Core.YamlException e) { throw new InvalidOperationException(SourcePath + ": " + e.Message, e); }
@@ -123,6 +142,7 @@ namespace Statecraft.Game.UI
         static string? ClipProblem(Panel p)
         {
             var clip = p.Clip!;
+            if (p.Caption == null) return "a clip is shown with its panel's caption (caption: text, text_he, he_review)";
             if (!System.Text.RegularExpressions.Regex.IsMatch(clip.File ?? "", "^[a-z0-9_-]+\\.mp4$"))
                 return "file must be the bare name of an .mp4 in StreamingAssets/video (got '" + clip.File + "')";
             if (string.IsNullOrWhiteSpace(clip.Shot)) return "shot missing";

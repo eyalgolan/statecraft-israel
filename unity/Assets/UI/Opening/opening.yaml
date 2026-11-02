@@ -39,7 +39,15 @@ panels:
       alt: "Illustration: an immigrant ship crowded with passengers entering Haifa bay."
       ai_generated: true
       sensitive: true
-      sensitivity_reviewed: false
+      # The owner's sensitivity review of this clip in the opening: owner, 2 Nov 2026: "Approve both".
+      sensitivity_reviewed: true
+    # The line shown under the clip while it plays (OpeningPresenter). Owner, 2 Nov 2026: "Version 1, fixed
+    # (Recommended)", which is also the owner's native read of the Hebrew (he_review: approved).
+    # From this panel's text: "Once the state was founded, about two-thirds of the displaced persons went to Israel."
+    caption:
+      text: "About two-thirds of Europe's displaced persons came to Israel."
+      text_he: "כשני שלישים מעקורי אירופה עלו לישראל לאחר קום המדינה."
+      he_review: approved
     image:
       file: opening_europe.jpg
       commons: "https://commons.wikimedia.org/wiki/File:Cyprus_(997008136325305171).jpg"
@@ -79,7 +87,16 @@ panels:
       alt: "Illustration: an airliner on the apron at Lydda at dusk, families coming down the steps with suitcases."
       ai_generated: true
       sensitive: true
-      sensitivity_reviewed: false
+      # The owner's sensitivity review of this clip in the opening: owner, 2 Nov 2026: "Approve both".
+      sensitivity_reviewed: true
+    # The line shown under the clip while it plays (OpeningPresenter). Owner, 2 Nov 2026: "Version 1, fixed
+    # (Recommended)", which is also the owner's native read of the Hebrew (he_review: approved).
+    # From this panel's text: "The airlift, Operation Ezra and Nehemiah, began in May 1950, and by January 1952 some
+    # 120,000 Iraqi Jews had come to Israel."
+    caption:
+      text: "Operation Ezra and Nehemiah airlifted some 120,000 Iraqi Jews."
+      text_he: "מבצע עזרא ונחמיה העלה כ־120,000 מיהודי עיראק."
+      he_review: approved
     image:
       file: opening_arab_countries.jpg
       commons: "https://commons.wikimedia.org/wiki/File:Ben_Gurion_International_Airport_(997008136550505171).jpg"
@@ -112,7 +129,16 @@ panels:
         supports: "Table 5, column 15 V 1948 - 1951: Yemen (7) 48,315; note 7, 'Incl. the former Aden'"
         checked: 2026-10-31
     # No clip yet: the ruling's new Yemen shot is not generated. Until then Yemen shows only its photograph. The shot
-    # arrives as one `clip:` row here, once its file is in StreamingAssets/video with its ASSETS.yaml row.
+    # arrives as one `clip:` row here, once its file is in StreamingAssets/video with its ASSETS.yaml row. Its caption is
+    # ready and unused until then.
+    # The line shown under the clip while it plays (OpeningPresenter). Owner, 2 Nov 2026: "Version 1, fixed
+    # (Recommended)", which is also the owner's native read of the Hebrew (he_review: approved).
+    # From this panel's text: "Operation On Wings of Eagles ... flew them from British-ruled Aden to Israel"; "about
+    # 49,000 Yemenite Jews had been flown to Israel".
+    caption:
+      text: "Operation On Wings of Eagles flew about 49,000 Yemenite Jews."
+      text_he: "מבצע על כנפי נשרים הטיס מעדן כ־49,000 מיהודי תימן."
+      he_review: approved
     image:
       file: opening_yemen.jpg
       commons: "https://commons.wikimedia.org/wiki/File:Aden_(997008136749905171).jpg"

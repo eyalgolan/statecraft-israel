@@ -110,8 +110,13 @@ loop, by the same rules as the cards:
 - **The photograph comes first.** The panel opens on its archival photograph and credit. After
   `OpeningPresenter.PhotoHoldMs` (2 s) the clip loops, silent, in the photograph's frame. CardVideo keeps the photograph
   until the clip's first frame.
+- **The hold.** Owner, 2 Nov 2026: "2 s automatic (Recommended)".
 - **The label.** While the clip plays, the cards' `event.ai_label` string replaces the credit, in Hebrew in the Hebrew
   UI. The clip's alt text becomes the tooltip.
+- **The caption.** One line under the picture, shown only with the clip, as the outcome clips' caption sits under
+  theirs. Each panel's `caption:` (`text`, `text_he`, `he_review`) restates a sentence of the panel's approved text.
+  Owner, 2 Nov 2026: "Version 1, fixed (Recommended)", which is also the owner's native read of the Hebrew. Yemen's
+  caption waits for its clip.
 - **Stopping and failing.** Back, Next, Skip and Esc stop the clip. A clip that fails or times out puts the photograph
   back for the rest of the session. Video is off in the automated runs, as on the cards.
 - **The clips.** Europe uses law_of_return (K04a), and the Arab countries use iraqi_exodus (A07). Yemen shows only its
@@ -120,7 +125,9 @@ loop, by the same rules as the cards:
 - **The checks.** `OpeningContent.Parse` refuses a malformed row. `tools/tests/test_opening_sources.py` checks each clip's
   file, its `ASSETS.yaml` row and its `docs/ai-disclosure.md` line, and that a reused card clip keeps the card row's shot
   and alt text. Every opening panel is sensitive, so its clip is `sensitive: true`, and a `-shareable` build refuses it
-  until the owner sets `sensitivity_reviewed: true` (`Build.OpeningShareableRefusal`).
+  until the owner sets `sensitivity_reviewed: true` (`Build.OpeningShareableRefusal`). The owner reviewed both clips in
+  the opening on 2 November 2026: "Approve both". A clip needs its caption, and a shareable build refuses a caption
+  whose Hebrew is not `he_review: approved`.
 
 ## Where things are
 

@@ -163,3 +163,11 @@ def test_a_reused_card_clip_keeps_its_shot_and_alt():
     doc = actual()
     doc["panels"][1]["clip"]["shot"] = "A08"
     assert any("arab_countries clip: shot and alt must match" in p for p in clip_problems(doc, *clip_inputs()))
+
+
+def test_every_clip_has_its_owner_read_caption():
+    """Owner, 2 Nov 2026: "Version 1, fixed (Recommended)": one caption line per panel, shown with its clip, its Hebrew
+    read by the owner (he_review: approved). Yemen's waits for its clip."""
+    for panel in actual()["panels"]:
+        caption = panel.get("caption") or {}
+        assert caption.get("text") and caption.get("text_he") and caption.get("he_review") == "approved", panel["id"]

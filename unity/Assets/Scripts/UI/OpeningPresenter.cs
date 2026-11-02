@@ -15,11 +15,12 @@ namespace Statecraft.Game.UI
     public sealed class OpeningPresenter : IDisposable
     {
         public const string OpenClass = "opening-open";
-        /// <summary>How long a panel shows its archival photograph before its clip starts: the photograph always comes first.</summary>
+        /// <summary>How long a panel shows its archival photograph before its clip starts: the photograph always comes first
+        /// (owner, 2 Nov 2026: "2 s automatic (Recommended)").</summary>
         public const long PhotoHoldMs = 2000;
         const string SourceEnglishClass = "opening-source-en";
         readonly VisualElement root, layer, photo;
-        readonly Label title, body, arrivals, closing, credit, count, preview;
+        readonly Label title, body, arrivals, closing, credit, count, preview, caption;
         readonly Button next, back, skip;
         readonly ScrollView scroll;
         readonly OpeningContent catalog;
@@ -56,6 +57,7 @@ namespace Statecraft.Game.UI
             title = layer.Q<Label>("opening-title"); body = layer.Q<Label>("opening-text");
             arrivals = layer.Q<Label>("opening-arrivals"); closing = layer.Q<Label>("opening-closing"); credit = layer.Q<Label>("opening-credit");
             count = layer.Q<Label>("opening-count"); preview = layer.Q<Label>("opening-preview");
+            caption = layer.Q<Label>("opening-caption"); caption.style.display = DisplayStyle.None;
             scroll = layer.Q<ScrollView>("opening-scroll");
             next = layer.Q<Button>("opening-next"); back = layer.Q<Button>("opening-back"); skip = layer.Q<Button>("opening-skip");
             back.text = text["opening.back"]; skip.text = text["opening.skip"];
@@ -120,6 +122,7 @@ namespace Statecraft.Game.UI
             photo.style.backgroundImage = new StyleBackground(catalog.photos[Index]);
             photo.tooltip = panel.Image.Alt;
             SetCredit(panel.Image.Credit, english: true);
+            caption.text = ""; caption.style.display = DisplayStyle.None;
         }
 
         /// <summary>The credit line: the photograph's English credit, or the clip's label in the UI's language.</summary>
@@ -142,6 +145,15 @@ namespace Statecraft.Game.UI
             if (panel.Clip == null || failed.Contains(panel.Id)) return;
             SetCredit(text["event.ai_label"], english: false);
             photo.tooltip = panel.Clip.Alt;
+            // The panel's caption line under the clip, as the outcome clips have theirs under the picture: in Hebrew once
+            // a native speaker has read it, else in English.
+            if (panel.Caption is OpeningContent.Caption line)   // Parse requires one with every clip
+            {
+                bool he = hebrew && line.HebrewApproved;
+                caption.text = he ? line.TextHe : line.Text;
+                caption.languageDirection = he ? LanguageDirection.RTL : LanguageDirection.LTR;
+                caption.style.display = DisplayStyle.Flex;
+            }
             var id = panel.Id;
             video.Play(CardVideo.Url(panel.Clip.File), photo, _ =>
             {

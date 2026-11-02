@@ -34,6 +34,8 @@ public class OpeningClipTests
             Opening = new OpeningPresenter(Ui.Root, Asset, Data, Text(lang), _ => { }, _ => { }, Video);
         }
         public Label Credit => Ui.Q<Label>("opening-credit");
+        public Label Caption => Ui.Q<Label>("opening-caption");
+        public bool CaptionShown => Caption.style.display.value == DisplayStyle.Flex;
         public VisualElement Photo => Ui.Q<VisualElement>("opening-photo");
         public Texture2D? Background => Photo.style.backgroundImage.value.texture;
         public void Dispose() { Opening.Dispose(); Video?.Dispose(); Ui.Dispose(); }
@@ -54,6 +56,11 @@ public class OpeningClipTests
         Assert.AreEqual("iraqi_exodus.mp4", panels[1].Clip?.File, "the Arab countries reuse the iraqi_exodus card's loop (A07)");
         Assert.AreEqual("A07", panels[1].Clip?.Shot);
         Assert.IsNull(panels[2].Clip, "Yemen's clip is not generated yet: photograph only");
+        var data = Asset.Read();
+        Assert.IsTrue(data.ClipsReviewed, "owner, 2 Nov 2026: \"Approve both\"");
+        Assert.IsTrue(panels.Take(2).All(p => p.Clip!.Sensitive && p.Clip.SensitivityReviewed), "both stay sensitive: true, now reviewed");
+        Assert.IsTrue(data.CaptionsReviewed, "owner, 2 Nov 2026: \"Version 1, fixed (Recommended)\"");
+        Assert.IsTrue(panels.All(p => p.Caption != null && p.Caption.HebrewApproved), "a caption for each panel, Yemen's waiting for its clip");
     }
 
     [Test]
@@ -65,6 +72,7 @@ public class OpeningClipTests
         Assert.AreSame(Asset.photos[0], r.Background, "the panel opens on its archival photograph");
         Assert.AreEqual(panel.Image.Credit, r.Credit.text, "with its credit line");
         Assert.AreEqual(panel.Image.Alt, r.Photo.tooltip);
+        Assert.IsFalse(r.CaptionShown, "no caption with the photograph");
         Assert.IsNull(r.Video!.Current, "no clip during the photograph's hold");
         Assert.IsTrue(r.Opening.ClipWaiting, "the clip waits for the hold");
         Assert.Greater(OpeningPresenter.PhotoHoldMs, 0, "the photograph is held before the clip");
@@ -76,6 +84,9 @@ public class OpeningClipTests
         Assert.AreEqual(panel.Clip.Alt, r.Photo.tooltip, "the clip's alt text");
         Assert.AreSame(Asset.photos[0], r.Background, "the photograph stays until the clip's first frame (CardVideo)");
         Assert.IsFalse(r.Opening.ClipWaiting);
+        Assert.IsTrue(r.CaptionShown, "the panel's caption shows with the clip");
+        Assert.AreEqual("About two-thirds of Europe's displaced persons came to Israel.", r.Caption.text);
+        Assert.AreEqual(LanguageDirection.LTR, r.Caption.languageDirection);
     }
 
     [Test]
@@ -90,6 +101,8 @@ public class OpeningClipTests
         Assert.IsNull(r.Video!.Current, "nothing plays");
         Assert.AreEqual(r.Data.Panels[2].Image.Credit, r.Credit.text);
         Assert.AreSame(Asset.photos[2], r.Background);
+        Assert.IsNotNull(r.Data.Panels[2].Caption, "Yemen's caption waits for its clip");
+        Assert.IsFalse(r.CaptionShown, "and is not shown without one");
     }
 
     [Test]
@@ -117,6 +130,7 @@ public class OpeningClipTests
         Assert.AreEqual(r.Data.Panels[0].Image.Credit, r.Credit.text, "the photograph's credit is back");
         Assert.AreEqual(r.Data.Panels[0].Image.Alt, r.Photo.tooltip);
         Assert.AreSame(Asset.photos[0], r.Background, "and the photograph");
+        Assert.IsFalse(r.CaptionShown, "the caption goes with the clip");
         r.Ui.Press("opening-next"); r.Ui.Press("opening-back");
         Assert.IsFalse(r.Opening.ClipWaiting, "a failed clip is not tried again this session");
     }
@@ -130,6 +144,7 @@ public class OpeningClipTests
         Assert.IsNotNull(r.Video!.Current, "precondition: Europe's clip plays");
         r.Ui.Press("opening-next");
         Assert.IsNull(r.Video.Current, "Next stops it");
+        Assert.IsFalse(r.CaptionShown, "and hides its caption");
         Assert.AreEqual(r.Data.Panels[1].Image.Credit, r.Credit.text, "the next panel opens on its photograph and credit");
         Assert.AreSame(Asset.photos[1], r.Background);
         Assert.IsTrue(r.Opening.ClipWaiting, "and holds it before its own clip");
@@ -162,8 +177,17 @@ public class OpeningClipTests
         Assert.AreEqual("איור שנוצר בבינה מלאכותית", r.Credit.text);
         Assert.AreEqual(LanguageDirection.RTL, r.Credit.languageDirection, "the Hebrew label reads right to left");
         Assert.IsFalse(r.Credit.ClassListContains("opening-source-en"), "and is not set as English");
+        Assert.IsTrue(r.CaptionShown);
+        Assert.AreEqual("כשני שלישים מעקורי אירופה עלו לישראל לאחר קום המדינה.", r.Caption.text, "the owner-read Hebrew caption");
+        Assert.AreEqual(LanguageDirection.RTL, r.Caption.languageDirection);
         r.Ui.Press("opening-next");
-        Assert.AreEqual(r.Data.Panels[1].Image.Credit, r.Credit.text);
+        Assert.IsFalse(r.CaptionShown);
+        r.Opening.HoldElapsed();
+        Assert.AreEqual("מבצע עזרא ונחמיה העלה כ־120,000 מיהודי עיראק.", r.Caption.text);
+        Assert.AreEqual(LanguageDirection.RTL, r.Caption.languageDirection);
+        r.Ui.Press("opening-next");
+        Assert.IsFalse(r.CaptionShown, "Yemen has no clip, so no caption");
+        Assert.AreEqual(r.Data.Panels[2].Image.Credit, r.Credit.text);
         Assert.AreEqual(LanguageDirection.LTR, r.Credit.languageDirection, "the next credit is English again");
         Assert.IsTrue(r.Credit.ClassListContains("opening-source-en"));
     }
@@ -171,12 +195,15 @@ public class OpeningClipTests
     [TestCase("file: law_of_return.mp4", "file: ../law_of_return.mp4", TestName = "ClipFileMustBeABareMp4Name")]
     [TestCase("file: law_of_return.mp4", "file: law_of_return.webm", TestName = "ClipFileMustBeAnMp4")]
     [TestCase("shot: K04a", "shot: \"\"", TestName = "ClipNeedsItsShot")]
-    [TestCase("      ai_generated: true\n      sensitive: true\n      sensitivity_reviewed: false\n    image:\n      file: opening_europe.jpg",
-        "      ai_generated: false\n      sensitive: true\n      sensitivity_reviewed: false\n    image:\n      file: opening_europe.jpg",
+    [TestCase("      ai_generated: true\n      sensitive: true\n", "      ai_generated: false\n      sensitive: true\n",
         TestName = "ClipMustBeMarkedAiGenerated")]
-    [TestCase("      ai_generated: true\n      sensitive: true\n      sensitivity_reviewed: false\n    image:\n      file: opening_europe.jpg",
-        "      ai_generated: true\n      sensitive: false\n      sensitivity_reviewed: false\n    image:\n      file: opening_europe.jpg",
-        TestName = "AClipOnASensitivePanelMustBeSensitive")]
+    [TestCase("      sensitive: true\n      # The owner's sensitivity review of this clip in the opening: owner, 2 Nov 2026: \"Approve both\".\n      sensitivity_reviewed: true",
+        "      sensitive: false\n      sensitivity_reviewed: false", TestName = "AClipOnASensitivePanelMustBeSensitive")]
+    [TestCase("    caption:\n      text: \"About two-thirds of Europe's displaced persons came to Israel.\"\n      text_he: \"כשני שלישים מעקורי אירופה עלו לישראל לאחר קום המדינה.\"\n      he_review: approved\n",
+        "", TestName = "AClipNeedsItsCaption")]
+    [TestCase("      text_he: \"כשני שלישים מעקורי אירופה עלו לישראל לאחר קום המדינה.\"", "      text_he: \"\"", TestName = "ACaptionNeedsItsHebrew")]
+    [TestCase("      he_review: approved\n    image:\n      file: opening_europe.jpg", "      he_review: yes\n    image:\n      file: opening_europe.jpg",
+        TestName = "ACaptionHeReviewIsPendingOrApproved")]
     [TestCase("alt: \"Illustration: an immigrant ship", "alt: \"An immigrant ship", TestName = "ClipAltMustStartIllustration")]
     [TestCase("      shot: K04a\n", "      shot: K04a\n      colour: sepia\n", TestName = "ClipUnknownFieldFailsClosed")]
     public void AMalformedClipRowFailsTheLoad(string from, string to)
