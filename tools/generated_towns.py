@@ -32,26 +32,32 @@ TOWNS = {
 sha = lambda data: hashlib.sha256(data).hexdigest()
 
 
+def ensure(ok: bool, why: str) -> None:
+    """An explicit check, so --verify still checks under python -O (which strips assert statements)."""
+    if not ok:
+        raise ValueError(why)
+
+
 def glb(blob: bytes):
     """The glTF JSON and the embedded base-colour JPG of a one-image binary glTF."""
-    assert blob[:4] == b"glTF" and struct.unpack_from("<I", blob, 4)[0] == 2
+    ensure(blob[:4] == b"glTF" and struct.unpack_from("<I", blob, 4)[0] == 2, "not a version 2 binary glTF")
     length, kind = struct.unpack_from("<II", blob, 12)
-    assert kind == 0x4E4F534A
+    ensure(kind == 0x4E4F534A, "the glTF has no JSON chunk first")
     data = json.loads(blob[20:20 + length])
     size, kind = struct.unpack_from("<II", blob, 20 + length)
-    assert kind == 0x004E4942
+    ensure(kind == 0x004E4942, "the glTF has no binary chunk second")
     binary = blob[28 + length:28 + length + size]
-    assert len(data["images"]) == 1 and data["images"][0]["mimeType"] == "image/jpeg"
+    ensure(len(data["images"]) == 1 and data["images"][0]["mimeType"] == "image/jpeg", "the glTF does not embed exactly one JPEG")
     view = data["bufferViews"][data["images"][0]["bufferView"]]
     start = view.get("byteOffset", 0)
     return data, binary[start:start + view["byteLength"]]
 
 
 def jpeg_size(blob: bytes) -> list[int]:
-    assert blob[:2] == b"\xff\xd8"
+    ensure(blob[:2] == b"\xff\xd8", "not a JPEG")
     at = 2
     while at < len(blob):
-        assert blob[at] == 255
+        ensure(blob[at] == 255, "a malformed JPEG marker")
         marker = blob[at + 1]; at += 2
         size = struct.unpack_from(">H", blob, at)[0]
         if marker in (0xC0, 0xC1, 0xC2):
@@ -67,9 +73,9 @@ def source(repo: Path, mid: str):
     blob = path.read_bytes()
     data, embedded = glb(blob)
     colour = path.with_name(path.stem + "_basecolor.jpg").read_bytes()
-    assert colour == embedded, f"{mid}: the delivered JPG is not the image the GLB embeds"
-    assert len(data["meshes"]) == 1 and len(data["meshes"][0]["primitives"]) == 1
-    assert not data.get("animations") and not data.get("skins")
+    ensure(colour == embedded, f"{mid}: the delivered JPG is not the image the GLB embeds")
+    ensure(len(data["meshes"]) == 1 and len(data["meshes"][0]["primitives"]) == 1, f"{mid}: not one mesh with one primitive")
+    ensure(not data.get("animations") and not data.get("skins"), f"{mid}: the GLB has clips or skins")
     return blob, data, colour
 
 
@@ -78,11 +84,11 @@ def verify(repo: Path) -> None:
         blob, _, colour = source(repo, mid)
         dest = repo / COLLECTION / mid
         record = json.loads((dest / "provenance.json").read_text(encoding="utf-8"))
-        assert record["id"] == mid and record["source"] == (SOURCES / rel).as_posix()
-        assert sha(blob) == record["source_glb_sha256"], mid
-        assert (dest / f"{mid}_basecolor.jpg").read_bytes() == colour, f"{mid}: the Unity map is not Tal's JPG byte for byte"
-        assert sha(colour) == record["texture_sha256"] and jpeg_size(colour) == record["texture_dimensions"], mid
-        assert sha((dest / f"{mid}.fbx").read_bytes()) == record["compatibility_fbx_sha256"], mid
+        ensure(record["id"] == mid and record["source"] == (SOURCES / rel).as_posix(), f"{mid}: provenance.json names another model or source")
+        ensure(sha(blob) == record["source_glb_sha256"], f"{mid}: the GLB is not the one provenance.json records")
+        ensure((dest / f"{mid}_basecolor.jpg").read_bytes() == colour, f"{mid}: the Unity map is not Tal's JPG byte for byte")
+        ensure(sha(colour) == record["texture_sha256"] and jpeg_size(colour) == record["texture_dimensions"], f"{mid}: the colour map's hash or size differs from provenance.json")
+        ensure(sha((dest / f"{mid}.fbx").read_bytes()) == record["compatibility_fbx_sha256"], f"{mid}: the FBX is not the recorded compatibility export")
         print("VERIFIED", mid, record["triangles"], "triangles", record["texture_dimensions"])
     print(f"PASS: {len(TOWNS)} town GLBs and maps byte-identical to #2085; compatibility exports match provenance")
 

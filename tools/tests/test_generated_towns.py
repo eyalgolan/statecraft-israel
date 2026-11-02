@@ -1,7 +1,7 @@
-"""tools/generated_towns.py --verify: Tal Heuberger's four #2085 whole towns ship in the Unity Collection as his delivered files.
+"""tools/generated_towns.py --verify: Tal Heuberger's four #2085 whole towns ship in the Unity Collection as their delivered files.
 
 Each town's GLB under asset-sources/ matches the hash its Unity folder's provenance.json records, the Unity colour map is
-his delivered JPG byte for byte (the image the GLB embeds), and the compatibility FBX is the one the conversion recorded.
+their delivered JPG byte for byte (the image the GLB embeds), and the compatibility FBX is the one the conversion recorded.
 """
 import importlib.util
 import json
@@ -48,5 +48,5 @@ def test_verify_rejects_a_changed_colour_map(tmp_path):
     mod.verify(tmp_path)
     jpg = tmp_path / mod.COLLECTION / "safed-town-v1" / "safed-town-v1_basecolor.jpg"
     jpg.write_bytes(jpg.read_bytes() + b"\0")
-    with pytest.raises(AssertionError, match="byte for byte"):
+    with pytest.raises(ValueError, match="byte for byte"):
         mod.verify(tmp_path)

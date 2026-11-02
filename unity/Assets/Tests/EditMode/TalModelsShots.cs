@@ -46,7 +46,6 @@ public class TalModelsShots
     {
         RuralLife.Request = savedRural!; CivilianPeople.Request = savedPeople!; SpecialBuildingModels.Request = savedSpecial!;
         UnitFigures.Source = savedUnits; TownModelLayer.ModelAcquire = savedTown!; TownLandmarks.Request = savedLandmark!;
-        TownLandmarks.RamlaOwnTown = false;
         EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         if (ps != null) Object.DestroyImmediate(ps);
         if (rt != null) { rt.Release(); Object.DestroyImmediate(rt); }
@@ -199,13 +198,13 @@ public class TalModelsShots
     /// <summary>#2085: a town from the far zoom (50 km, inside the 40 km+ band where whole-town models stand), the camera on the
     /// centre of the town's kit footprint, 15 May 1948. The landmarks' requests are answered with the editor's prefabs, as the
     /// player's stream would answer them. "Before" withholds Tal's four whole towns (main's map: Tiberias, Safed and Netanya
-    /// have no row, so the code-built kit stands; Ramla takes the stone village); "after" answers them, with Ramla's own town
-    /// switched on for the frame only (it is off in the game until the owner rules).</summary>
+    /// have no row, so the code-built kit stands); "after" answers them. Ramla has an after frame only: since the owner's 2 November
+    /// ruling Ramla's row is its own town, so withholding it leaves Ramla bare, not main's stone village. Its before frames
+    /// (the stone village) were taken at cc766c04b, while Ramla still took ByType's stone village.</summary>
     IEnumerator WholeTown(bool hebrew, string town, bool after)
     {
         var towns = new[] { CollectionCatalog.TiberiasTown, CollectionCatalog.SafedTown, CollectionCatalog.NetanyaTown, CollectionCatalog.RamlaTown };
         TownLandmarks.Request = Answer(after ? Array.Empty<string>() : towns);
-        TownLandmarks.RamlaOwnTown = after && town == "ramla";
         yield return Boot(hebrew);
         var map = Object.FindFirstObjectByType<MapScene>();
         var foot = map.KitFootprints.First(f => f.id == town);
@@ -232,9 +231,7 @@ public class TalModelsShots
     [UnityTest] public IEnumerator TownNetanyaAfterEnglish() { yield return WholeTown(false, "netanya", true); }
     [UnityTest] public IEnumerator TownNetanyaBeforeHebrew() { yield return WholeTown(true, "netanya", false); }
     [UnityTest] public IEnumerator TownNetanyaAfterHebrew() { yield return WholeTown(true, "netanya", true); }
-    [UnityTest] public IEnumerator TownRamlaBeforeEnglish() { yield return WholeTown(false, "ramla", false); }
     [UnityTest] public IEnumerator TownRamlaAfterEnglish() { yield return WholeTown(false, "ramla", true); }
-    [UnityTest] public IEnumerator TownRamlaBeforeHebrew() { yield return WholeTown(true, "ramla", false); }
     [UnityTest] public IEnumerator TownRamlaAfterHebrew() { yield return WholeTown(true, "ramla", true); }
 
     [UnityTest] public IEnumerator HousesNetanyaEnglish() { yield return Houses(false, "netanya"); }
