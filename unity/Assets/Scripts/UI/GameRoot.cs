@@ -62,6 +62,8 @@ namespace Statecraft.Game.UI
         internal CaptureDialogPresenter? Capture => capture;
         /// <summary>Tests: the settlement name pills of the last Begin.</summary>
         internal MapLabelsPresenter? Labels => labels;
+        /// <summary>Tests: the minimap of the last Begin.</summary>
+        internal MinimapPresenter? Minimap => minimap;
         string? hoveredCity;   // the city HoverCity lit (#1063)
         OutcomePresenter? outcomes;
         TurnReportPresenter? report;
@@ -403,7 +405,7 @@ namespace Statecraft.Game.UI
                 showReachable: map.ShowReachable,
                 unitName: id => unitLayer.Tokens.Where(p => UnitCard.SimUnit(bridge.Content, bridge.State, p.Token) == id)
                     .Select(p => UnitCard.For(p, bridge.State, text, bridge.Content.IsGdd, bridge.Content, townNamesHe).Title).FirstOrDefault(),
-                unitDone: FocusNextUnit, showRoute: map.ShowRoute, selectPioneer: FocusPioneer, clearSelection: () => { unitLayer.Select(null); map.ClearSelection(); }));
+                unitDone: FocusNextUnit, showRoute: map.ShowRoute, showArrow: map.ShowMoveArrow, selectPioneer: FocusPioneer, clearSelection: () => { unitLayer.Select(null); map.ClearSelection(); }));
             toast.Units = unitData; toast.TownNamesHe = townNamesHe; why.TownNamesHe = townNamesHe; bridge.TownNamesHe = townNamesHe;
             report.TownNamesHe = townNamesHe; hudPresenter.TownNamesHe = townNamesHe;
             // A smoke session never touches the player's save: no autosave, and no New Game (which deletes the autosave).
@@ -419,6 +421,9 @@ namespace Statecraft.Game.UI
             // is its two presses; a smoke run has none.
             end = Own(new EndScreenPresenter(root, bridge, text, newGame == null ? null : newGame.Press, show: !endClosed));
             endClosed = false;
+            // The store's achievements (#2152): a no-op unless a Steam build set PlatformServices.Current. A smoke run (the
+            // golden seed, scripted turns) is not the player's game, so it reports nothing.
+            if (smoke == 0) Own(new AchievementReporter(bridge, () => PlatformServices.Current));
 
             // An outcome clip holds the pointer while it shows and in the frame it closes (the skipping click selects no hex).
             Func<Vector2, bool> overUi = p => opening?.HoldsThePointer == true || outcomes?.HoldsThePointer == true || UiPointer.IsOverUi(root.panel, p, Screen.height);
@@ -498,6 +503,7 @@ namespace Statecraft.Game.UI
                 cameraController.Settle(); SyncMinimap(); labels?.Refresh();
             };
             mini.BordersChanged += ShowLayerLabel;
+            ShowLayerLabel();   // #2227: the caption was set before this minimap was made; a restart keeps borders the player hid
             Action onChanged = RenderPlacementsIfChanged;
             bridge.Changed += onChanged;
             // One console line per turn, so a browser run (reload, Continue) can be checked against the hash.
@@ -893,7 +899,7 @@ namespace Statecraft.Game.UI
             // Dated routes (the Burma Road from June 1948); in the GDD loop the corridors by their built segments (#792).
             Statecraft.Game.Map.Routes.RouteLayer.ShowAt(map, Bridge.State.Date,
                 Bridge.Content.IsGdd ? Statecraft.Game.Map.Routes.RouteLayer.BuiltSegments(Bridge.Content, Bridge.State) : null);
-            // The true armistice lines (#237, the "armisticelines" map mode), each from its own date; nothing without the mode.
+            // The true armistice lines (#237; on unless "noarmisticelines" turns them off, #196), each from its own date.
             ArmisticeLines.ShowAt(map, Bridge.State.Date);
             // Tal Heuberger's whole-town models on their towns far off (#663, "Whole model far, buildings near"), streamed after the first frame; the ma'abara from its date.
             // The camps and housing built as city projects bring theirs too, as the placement layer draws them (#1275).

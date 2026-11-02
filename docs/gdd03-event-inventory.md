@@ -27,7 +27,7 @@ retire among the economy targets, `fx_reserves` stays the foreign-currency ledge
 stay readouts that an event cannot write (R-EFX-001). No shipped card targets Attention, the passive budget, the Food
 refill or a city-loss defeat. Treasury costs borrow their shortfall as under `gdd-0.1` (R-MONEY-003).
 
-**The excluded cards.** The second table probes each of the eight excluded cards: it removes that one exclusion and
+**The excluded cards.** The second table probes each of the five excluded cards: it removes that one exclusion and
 reports what the `gdd-0.3` loader then says. It is a probe only. Returning a card to `gdd-0.3` still needs the
 reviewed follow-up that `docs/WRITING_EVENTS.md` ("GDD 0.3 first-slice availability") describes; this file changes no
 exclusion.
@@ -66,9 +66,9 @@ exclusion.
 | `bernadotte_assassination` | `outlaw` | `effects[2].morale` | -0.02 | `effects[2].morale` (same) | -0.02 | no |
 | `bernadotte_assassination` | `investigate_only` | `effects[0].intl_standing` | -0.05 | `effects[0].intl_standing` (same) | -0.05 | no |
 | `bernadotte_assassination` | `investigate_only` | `effects[1].intl_standing` | -0.1 | `effects[1].intl_standing` (same) | -0.1 | no |
-| `clothing_rationing_1950` | `extend` | `effects[0].morale` | -0.05 | legacy rulesets only (card excluded) | none (not in play) | no |
-| `clothing_rationing_1950` | `relax` | `effects[0].morale` | 0.03 | legacy rulesets only (card excluded) | none (not in play) | no |
-| `clothing_rationing_1950` | `relax` | `effects[1].fx_reserves` | -8 | legacy rulesets only (card excluded) | none (not in play) | no |
+| `clothing_rationing_1950` | `extend` | `effects[0].morale` | -0.05 | `effects[0].morale` (same) | -0.05 | no |
+| `clothing_rationing_1950` | `relax` | `effects[0].morale` | 0.03 | `effects[0].morale` (same) | 0.03 | no |
+| `clothing_rationing_1950` | `relax` | `effects[1].fx_reserves` | -8 | `effects[1].fx_reserves` (same) | -8 | no |
 | `degania_defence` | `jordan_valley` | `effects[0].security` | 0.015 | `effects[0].security` (same) | 0.015 | no |
 | `degania_defence` | `jerusalem` | `effects[0].security` | 0 | `effects[0].security` (same) | 0 | no |
 | `education_registration_1951` | `press_plan` | `effects[0].morale` | -0.02 | `effects[0].morale` (same) | -0.02 | no |
@@ -136,13 +136,13 @@ exclusion.
 | `operation_yoav` | `push_to_hebron` | `set_rung` | set 5 | `set_rung` (same) | set 5 | no |
 | `operation_yoav` | `push_to_hebron` | `effects[0].security` | 0.03 | `effects[0].security` (same) | 0.03 | no |
 | `operation_yoav` | `push_to_hebron` | `effects[1].intl_standing` | -0.08 | `effects[1].intl_standing` (same) | -0.08 | no |
-| `reparations_claim` | `claim` | `effects[0].intl_standing` | 0 | legacy rulesets only (card excluded) | none (not in play) | no |
-| `reparations_claim` | `claim` | `effects[1].treasury` | -1 | legacy rulesets only (card excluded) | none (not in play) | no |
-| `reparations_claim` | `refuse` | `effects[0].intl_standing` | 0 | legacy rulesets only (card excluded) | none (not in play) | no |
-| `reparations_claim` | `refuse` | `effects[1].fx_reserves` | -4 | legacy rulesets only (card excluded) | none (not in play) | no |
-| `reparations_vote` | `negotiate` | `effects[0].morale` | -0.02 | legacy rulesets only (card excluded) | none (not in play) | no |
-| `reparations_vote` | `reject` | `effects[0].fx_reserves` | -4 | legacy rulesets only (card excluded) | none (not in play) | no |
-| `reparations_vote` | `referendum` | `effects[0].treasury` | -1 | legacy rulesets only (card excluded) | none (not in play) | no |
+| `reparations_claim` | `claim` | `effects[0].intl_standing` | 0 | `effects[0].intl_standing` (same) | 0 | no |
+| `reparations_claim` | `claim` | `effects[1].treasury` | -1 | `effects[1].treasury` (same) | -1 | no |
+| `reparations_claim` | `refuse` | `effects[0].intl_standing` | 0 | `effects[0].intl_standing` (same) | 0 | no |
+| `reparations_claim` | `refuse` | `effects[1].fx_reserves` | -4 | `effects[1].fx_reserves` (same) | -4 | no |
+| `reparations_vote` | `negotiate` | `effects[0].morale` | -0.02 | `effects[0].morale` (same) | -0.02 | no |
+| `reparations_vote` | `reject` | `effects[0].fx_reserves` | -4 | `effects[0].fx_reserves` (same) | -4 | no |
+| `reparations_vote` | `referendum` | `effects[0].treasury` | -1 | `effects[0].treasury` (same) | -1 | no |
 | `rhodes_talks` | `send_delegation` | `effects[0].intl_standing` | 0.03 | `effects[0].intl_standing` (same) | 0.03 | no |
 | `rhodes_talks` | `decline` | `effects[0].intl_standing` | -0.05 | `effects[0].intl_standing` (same) | -0.05 | no |
 | `second_truce` | `comply` | `set_rung` | set 4 | `set_rung` (same) | set 4 | no |
@@ -158,17 +158,14 @@ exclusion.
 | `ten_days` | `southern_front` | `set_rung` | set 5 | `set_rung` (same) | set 5 | no |
 | `ten_days` | `southern_front` | `effects[0].security` | 0.015 | `effects[0].security` (same) | 0.015 | no |
 
-121 rows: 39 cards under gdd-0.1, 31 under gdd-0.3.
+121 rows: 39 cards under gdd-0.1, 34 under gdd-0.3.
 
 | Excluded card | gdd-0.3 loader with only this exclusion removed |
 |---|---|
 | `austerity_1949` | refused at `events[austerity_1949].options[impose].set_policy.rationing`: retired policy write under gdd-0.3 (R-EFX-001) |
-| `clothing_rationing_1950` | loads: every field passes the gdd-0.3 checks |
 | `forex_crisis_1951` | refused at `events[forex_crisis_1951].options[cut_imports].effects.food_supply`: unsupported event target under gdd-0.3 (R-EFX-001) |
 | `iraqi_exodus` | refused at `events[iraqi_exodus].options[airlift].effects.housing`: unsupported event target under gdd-0.3 (R-EFX-001) |
 | `israel_bonds` | loads: every field passes the gdd-0.3 checks |
 | `maabarot_policy` | refused at `events[maabarot_policy].options[maabarot].set_policy.maabarot`: retired policy write under gdd-0.3 (R-EFX-001) |
-| `reparations_claim` | loads: every field passes the gdd-0.3 checks |
-| `reparations_vote` | loads: every field passes the gdd-0.3 checks |
 
 <!-- inventory:end -->

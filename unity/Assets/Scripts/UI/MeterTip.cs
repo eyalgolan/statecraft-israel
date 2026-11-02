@@ -90,7 +90,7 @@ namespace Statecraft.Game.UI
         /// words, with the causes' heading when there are causes, and the causes, one a line (none when none).</summary>
         public (string words, IReadOnlyList<string> causes) Lines(VisualElement meter)
         {
-            var causes = HudModel.Causes(bridge.Session.Last, meter.name.Substring("meter-".Length),
+            var causes = HudModel.Causes(bridge.Session.Last, meter.name.Substring("meter-".Length), bridge.Content,
                 w => CauseText.Line(w, bridge.Content, Array.Empty<Statecraft.Game.Map.Units.UnitEntry>(), text, TownNamesHe));   // no meter counts a unit line
             return causes.Count == 0 ? (meter.tooltip, causes) : (meter.tooltip + "\n" + text["hud.causes"], causes);
         }
