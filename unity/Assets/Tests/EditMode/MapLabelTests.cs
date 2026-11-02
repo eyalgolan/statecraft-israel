@@ -295,8 +295,12 @@ public class MapLabelTests
     /// <summary>#1701 slice F: Tal Heuberger's workshop model (b21) at an arms workshop built on Rehovot's own hex (gdd-0.3) and
     /// the map's names do not cover each other. With the real prefab placed and the camera at 30 km over the model (inside its
     /// close zoom), no shown settlement, locality or location pill overlaps the model's projected bounds.</summary>
-    [UnityTest]
-    public IEnumerator NoNamePillCoversAWorkshopModel()
+    [UnityTest] public IEnumerator NoNamePillCoversAWorkshopModel() { yield return NoPillCovers("rehovot"); }
+    /// <summary>The same among a town's houses (owner, 2 November 2026: "Among the houses"): Tel Aviv and Jerusalem.</summary>
+    [UnityTest] public IEnumerator NoNamePillCoversAWorkshopModelInTelAviv() { yield return NoPillCovers("tel_aviv"); }
+    [UnityTest] public IEnumerator NoNamePillCoversAWorkshopModelInJerusalem() { yield return NoPillCovers("jerusalem"); }
+
+    IEnumerator NoPillCovers(string city)
     {
         var saved = Statecraft.Game.Map.Collection.SpecialBuildingModels.Request;
         Statecraft.Game.Map.Collection.SpecialBuildingModels.Request = (id, detail, done) =>
@@ -307,12 +311,12 @@ public class MapLabelTests
         {
             var content = Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content);
             foreach (var era in content.Eras) { era.Systems.Ruleset = Statecraft.Sim.SaveGame.Gdd03Ruleset; era.Systems.Loop = Statecraft.Sim.EraSystems.Gdd; }
-            var home = content.SettlementHexes.Single(h => h.Id == "rehovot");
+            var home = content.SettlementHexes.Single(h => h.Id == city);
             var built = new System.DateTime(1949, 3, 1);
             var layer = CollectionGeometryFixture.Special(map, built, content,
-                new[] { new Statecraft.Sim.CityProject(9, Statecraft.Sim.Workshops.ArmsWorkshop, "rehovot", home.Q, home.R, 0, built) })!;
+                new[] { new Statecraft.Sim.CityProject(9, Statecraft.Sim.Workshops.ArmsWorkshop, city, home.Q, home.R, 0, built) })!;
             var model = layer.transform.Find(Statecraft.Game.Map.Collection.SpecialBuildingModels.WorkshopKey(9));
-            Assert.IsNotNull(model, "the workshop model stands at Rehovot");
+            Assert.IsNotNull(model, "the workshop model stands at " + city);
             labels = new MapLabelsPresenter(hd.Root, map, cam, locations: Locations());
             rig.LookAt = model!.position; rig.Distance = 30000f; rig.Yaw = 0; rig.TopInset = 0; rig.Apply();
             var all = labels.Labels.Concat(labels.LocalityLabels).Concat(labels.LocationLabels).ToList();
@@ -333,7 +337,7 @@ public class MapLabelTests
             }
             var rect = Rect.MinMaxRect(x0, y0, x1, y1);
             var shown = slots.Where(Shown).ToList();
-            Assert.IsNotEmpty(shown, "some names are shown at 30 km over Rehovot");
+            Assert.IsNotEmpty(shown, "some names are shown at 30 km over " + city);
             foreach (var slot in shown)
             {
                 var pill = slot.Q<Label>().worldBound;

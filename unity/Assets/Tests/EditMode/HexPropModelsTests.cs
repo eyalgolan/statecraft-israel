@@ -521,6 +521,36 @@ namespace Statecraft.Game.Tests
             CollectionAssert.AreEqual(propsFirst, after.Placed.Select(p => (p.Name, p.At)).ToList(), "the same places in either order");
         }
 
+        /// <summary>#1701 slice F with #2266: the props keep clear of the b21 planned at each built arms workshop (gdd-0.3), as of
+        /// the other special buildings' plan. Workshops stand on the hex nearest each prop's anchor, the props' own ground.</summary>
+        [Test]
+        public void PropsKeepClearOfTheBuiltArmsWorkshops()
+        {
+            var map = OpenMap();
+            var c = Statecraft.Sim.ContentLoader.Load(Paths.Content);
+            foreach (var era in c.Eras) { era.Systems.Ruleset = Statecraft.Sim.SaveGame.Gdd03Ruleset; era.Systems.Loop = Statecraft.Sim.EraSystems.Gdd; }
+            var land = c.Hexes.Where(h => h.Land).Select(h => (h, at: map.Frame.ToWorld(h.Lon, h.Lat, 0))).ToList();
+            var hexes = HexPropModels.Wants(map, Opening)
+                .Select(w => land.OrderBy(x => (new Vector2(x.at.x, x.at.z) - w.Anchor).sqrMagnitude).First().h).Distinct().ToList();
+            var projects = hexes.Select((h, i) => new Statecraft.Sim.CityProject(300 + i, Statecraft.Sim.Workshops.ArmsWorkshop, "rehovot", h.Q, h.R, 0, Opening)).ToList();
+            CollectionGeometryFixture.People(map, Opening, Array.Empty<Statecraft.Sim.Placement>(), c);
+            CollectionGeometryFixture.Rural(map);
+            var special = CollectionGeometryFixture.Special(map, Opening, c, projects)!;
+            var layer = HexPropModels.ShowAt(map, Opening, c, projects)!;
+            layer.Choose(default, At(Statecraft.Game.Map.Kits.TownModelLayer.CloseEnterM));
+            AnswerAll();
+            var b21 = special.Placed.Where(p => p.Model == SpecialBuildingModels.Workshop)
+                .Select(p => (new Vector2(p.At.x, p.At.z), SpecialBuildingModels.ClearanceOf(p.Model))).ToList();
+            Assert.Greater(b21.Count, 0, "workshops stand by the props' places");
+            Assert.Greater(layer.Placed.Count, 0);
+            var kept = HexPropModels.Others(map, Opening, SpecialBuildingModels.ArmsWorkshops(c, projects));
+            foreach (var (at, _) in b21)
+                Assert.IsTrue(kept.Any(d => (d.centre - at).magnitude < 1f), $"the workshop at {at} is in the props' planned keep-clear ground");
+            foreach (var p in layer.Placed)
+                Assert.IsTrue(Statecraft.Game.Map.Collection.TownLandmarks.Clear(new Vector2(p.At.x, p.At.z), HexPropModels.ClearanceOf(p.Model), b21),
+                    p.Name + ": no prop stands on a workshop");
+        }
+
         sealed class Lease : IDisposable { public void Dispose() { } }
 
         /// <summary>Review of #2266 with #2271: no standalone prop stands under a whole-town model (TownLandmarks), whose square

@@ -311,7 +311,7 @@ namespace Statecraft.Game.Map.Collection
         MapScene? map; DateTime date; bool shown;
         IReadOnlyList<Want> workshops = Array.Empty<Want>();
 
-        static bool Same(IReadOnlyList<Want> a, IReadOnlyList<Want> b)
+        internal static bool Same(IReadOnlyList<Want> a, IReadOnlyList<Want> b)
         {
             if (a.Count != b.Count) return false;
             for (int i = 0; i < a.Count; i++)
@@ -358,9 +358,9 @@ namespace Statecraft.Game.Map.Collection
             Rebuild();
         }
 
-        /// <summary>Where the buildings stand: each want in order, of the models <paramref name="available"/> holds, at its
-        /// route-facing (Degania) or seeded spot, clear of the towns, the routes, the tokens of <paramref name="date"/>, the
-        /// civilians, the wildlife and each other. It reads only the map and the date, never what has streamed, so with every
+        /// <summary>Where the buildings stand: each want in order at its route-facing (Degania) or seeded spot, clear of the towns,
+        /// the routes, the tokens of <paramref name="date"/>, the civilians, the wildlife and each other (a workshop also of its
+        /// hex's edge and the farm scenes' plan); the list keeps those whose model <paramref name="available"/> holds. It reads only the map and the date, never what has streamed, so with every
         /// model available it is the plan the layer draws once everything has arrived (HexPropModels keeps clear of it, #2266).</summary>
         internal static List<(Want want, Vector2 at)> Plan(MapScene map, DateTime date, IReadOnlyList<Want> wants, Func<string, bool> available, bool log)
         {
@@ -371,10 +371,13 @@ namespace Statecraft.Game.Map.Collection
             var people = map.Terrain.transform.Find(CivilianPeople.Name)?.GetComponent<CivilianPeople>();
             if (people != null) foreach (var p in people.Wanted) taken.Add((new Vector2(p.At.x, p.At.z), CivilianPeople.FigureClearanceM));
             foreach (var a in WildlifeLayer.Wants(map)) taken.Add((a.At, 0.5f * WildlifeLayer.SizeM));
-            // A workshop (#1701 slice F) also keeps off the farm scenes drawn (#667), as the C-54 does (SeaAirCollection.Taken).
+            // A workshop (#1701 slice F) also keeps off the farm scenes (#667): where they WILL stand (RuralLife's plan with every
+            // model available, as HexPropModels.Others reads it), never what has streamed so far, so its spot is the same
+            // whichever layer streams first.
             var farms = new List<(Vector2 centre, float radius)>();
-            var rural = map.Terrain.transform.Find(RuralLife.Name)?.GetComponent<RuralLife>();
-            if (rural != null) foreach (var p in rural.Placed) farms.Add((new Vector2(p.At.x, p.At.z), RuralLife.SceneRadiusM(p.Model)));
+            if (wants.Any(w => w.Model == Workshop))
+                foreach (var (want, spot) in RuralLife.Plan(map, RuralLife.Wants(map), RuralLife.OtherProps(map), _ => true))
+                    farms.Add((spot, RuralLife.SceneRadiusM(want.Model)));
             bool Free(Vector2 p, float r) => TownLandmarks.Clear(p, r, taken) && TownLandmarks.Clear(p, r, footprints)
                 && ground.Inside(p.x - r, p.y - r) && ground.Inside(p.x + r, p.y + r)
                 && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, date);
@@ -382,7 +385,8 @@ namespace Statecraft.Game.Map.Collection
             var kits = map.transform.Find(Kits.KitLayer.RootName);
             foreach (var w in wants)
             {
-                if (!available(w.Model)) continue;
+                // Every want takes its ground whether or not its model has streamed (only the plan's output is filtered), so a
+                // later want's spot, a workshop's included, never depends on what streamed first.
                 var anchor3 = map.Frame.ToWorld(w.Lon, w.Lat, 0); var anchor = new Vector2(anchor3.x, anchor3.z);
                 float clearance = ClearanceOf(w.Model);
                 Vector2? at = null;
@@ -400,18 +404,82 @@ namespace Statecraft.Game.Map.Collection
                     bool OnHex(Vector2 p, float r) => (p - anchor).magnitude + r <= HexInnerRadiusM && TownLandmarks.Clear(p, r, farms) && Free(p, r);
                     float inside = Inside(anchor, footprints);
                     at = SeededSpot(w.Key, anchor, clearance, OnHex, inside > 0f ? inside + CivilianPeople.LabelClearanceM : 0f);
+                    // A town whose footprint covers the whole hex (Jerusalem, Tel Aviv): a gap between its drawn buildings (owner,
+                    // 2 November 2026: "Among the houses").
+                    if (at == null && inside > 0f) at = TownGap(map, w.Key, anchor, clearance, (p, r) =>
+                        (p - anchor).magnitude + r <= HexInnerRadiusM && TownLandmarks.Clear(p, r, farms) && TownLandmarks.Clear(p, r, taken)
+                        && ground.Inside(p.x - r, p.y - r) && ground.Inside(p.x + r, p.y + r)
+                        && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, date));
                 }
                 else if (at == null)
                 {
-                    if (w.Key == "degania_r35" && log)
+                    if (w.Key == "degania_r35" && log && available(w.Model))
                         Debug.LogWarning("BUILDINGS: route-facing spot unavailable for degania_r35; falling back to the seeded spot.");
                     at = SeededSpot(w.Key, anchor, clearance, Free, Inside(anchor, footprints));
                 }
-                if (at == null) { if (log) Debug.LogWarning($"BUILDINGS: no clear ground near {w.Key}; its {w.Model} is not drawn."); continue; }
+                if (at == null) { if (log && available(w.Model)) Debug.LogWarning($"BUILDINGS: no clear ground near {w.Key}; its {w.Model} is not drawn."); continue; }
                 taken.Add((at.Value, clearance));
-                plan.Add((w, at.Value));
+                if (available(w.Model)) plan.Add((w, at.Value));
             }
             return plan;
+        }
+
+        /// <summary>The ground (m) a place's name pill can take, a workshop among a town's houses keeping off it: the pill stands
+        /// above the place's kit (MapLabelsPresenter: centred, or to either side), so the band from the footprint's south edge to
+        /// <see cref="TownLabelHeightM"/> past its north edge, <see cref="TownLabelHalfWidthM"/> either side of its centre.
+        /// Design values: a long locality pill is about 141 by 23 px at a 1280 px frame, some 18 m a pixel at the 30 km zoom
+        /// and 27 m at the close zoom's 45 km exit, with the lift above the kit and a margin.</summary>
+        public const float TownLabelHalfWidthM = 2000f, TownLabelHeightM = 1000f;
+
+        /// <summary>Whether a disc of <paramref name="r"/> at <paramref name="p"/> keeps clear of the name pill of the place whose
+        /// footprint is centred at <paramref name="centre"/> with <paramref name="radius"/>.</summary>
+        public static bool ClearOfName(Vector2 p, float r, Vector2 centre, float radius) =>
+            Mathf.Abs(p.x - centre.x) >= TownLabelHalfWidthM + r
+            || p.y - centre.y <= -radius - r || p.y - centre.y >= radius + TownLabelHeightM + r;
+
+        /// <summary>The drawn buildings on the hex about <paramref name="anchor"/>: each town model instance the kit planned at
+        /// map build (TownModelLayer.InstancesOf; never what has streamed) for every footprint that reaches the hex, as a disc of
+        /// its half diagonal; <paramref name="names"/>: those footprints (their names stand above them).</summary>
+        internal static List<(Vector2 centre, float radius)> TownBuildings(MapScene map, Vector2 anchor, out List<(Vector2 centre, float radius)> names)
+        {
+            var discs = new List<(Vector2 centre, float radius)>(); names = new List<(Vector2 centre, float radius)>();
+            var layer = map.GetComponentInChildren<Kits.TownModelLayer>(true);
+            foreach (var f in map.KitFootprints)
+            {
+                if ((anchor - f.centre).magnitude >= f.radius + HexInnerRadiusM) continue;
+                names.Add((f.centre, f.radius));
+                if (layer == null) continue;
+                foreach (var b in layer.InstancesOf(f.id)) discs.Add((b.C, 0.5f * Mathf.Sqrt(b.W * b.W + b.D * b.D)));
+            }
+            return discs;
+        }
+
+        /// <summary>#1701 slice F, owner 2 November 2026 ("Among the houses"): a workshop on a hex a town's footprint covers stands
+        /// in a gap between the drawn buildings on the hex (<see cref="TownBuildings"/>), clear of every name there
+        /// (<see cref="ClearOfName"/>) and <paramref name="free"/> (the hex, the routes, the tokens, the other models). A fixed search: rings
+        /// half a clearance apart outward from the hex centre, each from an FNV-1a bearing of the key. Null when no gap is
+        /// clear.</summary>
+        internal static Vector2? TownGap(MapScene map, string key, Vector2 anchor, float clearance, Func<Vector2, float, bool> free)
+        {
+            var houses = TownBuildings(map, anchor, out var names);
+            uint h = 2166136261;
+            foreach (char c in key) { h ^= c; h *= 16777619; }
+            float step = 0.5f * clearance;
+            for (float radius = 0f; radius + clearance <= HexInnerRadiusM; radius += step)
+            {
+                int n = radius == 0f ? 1 : Mathf.Max(6, Mathf.CeilToInt(2f * Mathf.PI * radius / step));
+                int start = (int)(h % (uint)n);
+                for (int i = 0; i < n; i++)
+                {
+                    float angle = 2f * Mathf.PI * ((start + i) % n) / n;
+                    var p = anchor + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
+                    bool named = false;
+                    foreach (var (c, fr) in names) if (!ClearOfName(p, clearance, c, fr)) { named = true; break; }
+                    if (named || !TownLandmarks.Clear(p, clearance, houses) || !free(p, clearance)) continue;
+                    return p;
+                }
+            }
+            return null;
         }
 
         void Rebuild()

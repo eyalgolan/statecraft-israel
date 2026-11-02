@@ -170,13 +170,16 @@ public class TalModelsShots
     }
 
     /// <summary>#1701 slice F: a gdd-0.3 game (every era's ruleset set on fresh inputs, as FixedNorthGameRootTests does) with
-    /// one arms workshop built on Rehovot's own hex (a fixture state: the project is put in the state, built on the game's date),
+    /// one arms workshop built on Rehovot's own hex, or on Tel Aviv's among its houses (owner, 2 November 2026: "Among the
+    /// houses") (a fixture state: the project is put in the state, built on the game's date),
     /// from the close zoom, framed on the workshop and the town. "Before" withholds b21 (main draws nothing there); the frame is
     /// the one the answered model gives. The load lines count the special layer's instances, drawn renderers and their
     /// triangles at the far, middle and close zooms.</summary>
-    IEnumerator ArmsWorkshop(bool hebrew, bool after)
+    IEnumerator ArmsWorkshop(bool hebrew, bool after, string city = "rehovot")
     {
         Directory.CreateDirectory(Path.Combine(CivMovementShots.ShotDir, "..", "b21-workshop-shots"));
+        // The town's houses as the player's stream answers them, so the frame shows the drawn buildings the workshop keeps clear of.
+        TownModelLayer.ModelAcquire = (model, detail, done) => { done(Prefab(model, detail)); return new NoLease(); };
         var inputs = Statecraft.Game.Boot.GameInputs.FromDisk(Statecraft.Game.Paths.Content, Statecraft.Game.Paths.StreamingMap);
         foreach (var era in inputs.Content.Eras) { era.Systems.Ruleset = SaveGame.Gdd03Ruleset; era.Systems.Loop = EraSystems.Gdd; }
         EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
@@ -199,9 +202,9 @@ public class TalModelsShots
         for (int i = 0; i < 3; i++) yield return null;
         var state = root.Bridge!.State; var content = root.Bridge.Content;
         Assert.AreEqual(SaveGame.Gdd03Ruleset, content.Ruleset);
-        var home = content.SettlementHexes.Single(h => h.Id == "rehovot");
+        var home = content.SettlementHexes.Single(h => h.Id == city);
         int id = state.NextId++;
-        state.CityProjects.Add(id, new CityProject(id, Workshops.ArmsWorkshop, "rehovot", home.Q, home.R, 0, state.Date));
+        state.CityProjects.Add(id, new CityProject(id, Workshops.ArmsWorkshop, city, home.Q, home.R, 0, state.Date));
         SpecialBuildingModels Layer(ICollection<string> withheld)
         {
             SpecialBuildingModels.Request = Answer(withheld);
@@ -211,11 +214,15 @@ public class TalModelsShots
         var layer = Layer(Array.Empty<string>());
         var workshop = layer.Placed.Single(p => p.Key == SpecialBuildingModels.WorkshopKey(id));
         if (!after) layer = Layer(new[] { SpecialBuildingModels.Workshop });
-        var town = map.KitFootprints.First(f => f.id == "rehovot");
-        var mid = new Vector3(0.5f * (workshop.At.x + town.centre.x), 0f, 0.5f * (workshop.At.z + town.centre.y));
+        var town = map.KitFootprints.First(f => f.id == city);
+        bool among = Vector2.Distance(new Vector2(workshop.At.x, workshop.At.z), town.centre) < town.radius;
+        // Among a big town's houses (Tel Aviv, Jerusalem: "Among the houses") the frame is the workshop and its neighbours;
+        // beside a town, the workshop and the whole town.
+        var mid = among ? new Vector3(workshop.At.x, 0f, workshop.At.z)
+            : new Vector3(0.5f * (workshop.At.x + town.centre.x), 0f, 0.5f * (workshop.At.z + town.centre.y));
         mid.y = map.Terrain.SampleHeight(mid) + map.Terrain.transform.position.y;
         float span = Vector2.Distance(new Vector2(workshop.At.x, workshop.At.z), town.centre) + town.radius;
-        float close = Mathf.Clamp(2.5f * span, CameraController.MinDistance, 0.9f * TownModelLayer.CloseEnterM);
+        float close = among ? 1.5f * CameraController.MinDistance : Mathf.Clamp(2.5f * span, CameraController.MinDistance, 0.9f * TownModelLayer.CloseEnterM);
         foreach (var (zoom, distance) in new[] { ("far", 150000f), ("middle", 60000f), ("close", close) })
         {
             Look(mid, distance);
@@ -233,14 +240,18 @@ public class TalModelsShots
         Look(mid, close);
         layer.Choose(default, Camera.main);
         for (int i = 0; i < 5; i++) yield return null;
-        CivMovementShots.Shot(rt!, Path.Combine("..", "b21-workshop-shots", $"rehovot-workshop-{(after ? "after" : "before")}-{(hebrew ? "he" : "en")}"));
-        Debug.Log($"SHOT b21 rehovot {(after ? "after" : "before")} {(hebrew ? "he" : "en")} on {state.Date:yyyy-MM-dd}: workshop at {workshop.At}, camera on {mid} from {close:F0} m");
+        CivMovementShots.Shot(rt!, Path.Combine("..", "b21-workshop-shots", $"{city}-workshop-{(after ? "after" : "before")}-{(hebrew ? "he" : "en")}"));
+        Debug.Log($"SHOT b21 {city} {(after ? "after" : "before")} {(hebrew ? "he" : "en")} on {state.Date:yyyy-MM-dd}: workshop at {workshop.At}, camera on {mid} from {close:F0} m");
     }
 
     [UnityTest] public IEnumerator ArmsWorkshopBeforeEnglish() { yield return ArmsWorkshop(false, false); }
     [UnityTest] public IEnumerator ArmsWorkshopAfterEnglish() { yield return ArmsWorkshop(false, true); }
     [UnityTest] public IEnumerator ArmsWorkshopBeforeHebrew() { yield return ArmsWorkshop(true, false); }
     [UnityTest] public IEnumerator ArmsWorkshopAfterHebrew() { yield return ArmsWorkshop(true, true); }
+    [UnityTest] public IEnumerator ArmsWorkshopTelAvivBeforeEnglish() { yield return ArmsWorkshop(false, false, "tel_aviv"); }
+    [UnityTest] public IEnumerator ArmsWorkshopTelAvivAfterEnglish() { yield return ArmsWorkshop(false, true, "tel_aviv"); }
+    [UnityTest] public IEnumerator ArmsWorkshopTelAvivBeforeHebrew() { yield return ArmsWorkshop(true, false, "tel_aviv"); }
+    [UnityTest] public IEnumerator ArmsWorkshopTelAvivAfterHebrew() { yield return ArmsWorkshop(true, true, "tel_aviv"); }
 
     sealed class NoLease : IDisposable { public void Dispose() { } }
 

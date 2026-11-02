@@ -378,9 +378,9 @@ namespace Statecraft.Game.Tests
             AnswerAll();
             var footprints = map.KitFootprints.Select(f => (f.centre, f.radius)).ToList();
             float r0 = SpecialBuildingModels.ClearanceOf(SpecialBuildingModels.Workshop);
-            // A town whose footprint covers its own hex (Jerusalem and Tel Aviv: footprints of several hexes, FootprintRadiusM)
-            // leaves no ground there clear of it: the first ring of the search already leaves the hex, so no b21 is drawn
-            // (logged), rather than one standing in the town's houses.
+            // A town whose footprint covers its own hex (Jerusalem and Tel Aviv today: footprints of several hexes,
+            // FootprintRadiusM) leaves no ground there clear of it: the first ring of the search already leaves the hex, so its
+            // b21 stands between the town's drawn buildings (owner, 2 November 2026: "Among the houses").
             var covered = new List<string>();
             foreach (var project in projects)
             {
@@ -389,11 +389,8 @@ namespace Statecraft.Game.Tests
                 TestContext.WriteLine($"{project.City}: hex centre {inside:0} m inside a town's footprint");
                 if (inside > 0f && inside + CivilianPeople.LabelClearanceM + 1.5f * r0 + r0 > SpecialBuildingModels.HexInnerRadiusM) covered.Add(project.City);
             }
-            CollectionAssert.AreEquivalent(new[] { "jerusalem", "tel_aviv" }, covered, "the cities whose footprint covers their own hex");
-            projects = projects.Where(p => !covered.Contains(p.City)).ToList();
             var keys = projects.Select(p => SpecialBuildingModels.WorkshopKey(p.Id)).ToList();
-            CollectionAssert.IsSubsetOf(keys, layer.Placed.Select(p => p.Key), "a b21 at every other built workshop");
-            Assert.AreEqual(keys.Count, layer.Placed.Count(p => p.Model == SpecialBuildingModels.Workshop), "none for the covered cities");
+            CollectionAssert.IsSubsetOf(keys, layer.Placed.Select(p => p.Key), "a b21 at every built workshop");
             var ground = PlacementLayer.CampGround(map);
             var others = layer.Placed.Where(p => !keys.Contains(p.Key)).Select(p => (new Vector2(p.At.x, p.At.z), SpecialBuildingModels.ClearanceOf(p.Model))).ToList();
             var spots = new List<(Vector2, float)>();
@@ -408,7 +405,9 @@ namespace Statecraft.Game.Tests
                 float off = (flat - new Vector2(centre3.x, centre3.z)).magnitude;
                 TestContext.WriteLine($"{key} ({project.City}): {off:0} m from its hex centre, clearance {r:0} m");
                 Assert.LessOrEqual(off + r, SpecialBuildingModels.HexInnerRadiusM, key + " wholly on its project's hex");
-                Assert.IsTrue(TownLandmarks.Clear(flat, r, footprints), key + " clear of the towns (and their labels)");
+                if (covered.Contains(project.City))
+                    AmongTheHouses(map, key, flat, r);
+                else Assert.IsTrue(TownLandmarks.Clear(flat, r, footprints), key + " clear of the towns (and their labels)");
                 Assert.IsFalse(ground.OnRoute(flat, r), key + " clear of the routes");
                 Assert.IsFalse(ground.OnToken(flat, r, After), key + " clear of the unit tokens");
                 Assert.IsTrue(TownLandmarks.Clear(flat, r, others), key + " clear of the sourced building models");
@@ -430,6 +429,63 @@ namespace Statecraft.Game.Tests
             var again = CollectionGeometryFixture.Special(map, After, c, cities.Select((city, i) => Workshop(c, 100 + i, city, Built)).ToList())!;
             AnswerAll();
             foreach (var key in keys) Assert.AreEqual(first[key], again.Placed.Single(p => p.Key == key).At, key + " on the same spot again");
+        }
+
+        /// <summary>Owner, 2 November 2026 ("Among the houses"): a b21 on a hex a town's footprint covers overlaps none of the town
+        /// layer's drawn buildings, whatever they are (read from the layer, not listed here). The names' pills are checked on
+        /// screen by MapLabelTests.NoNamePillCoversAWorkshopModelInTelAviv and ...InJerusalem.</summary>
+        static void AmongTheHouses(MapScene map, string key, Vector2 flat, float r)
+        {
+            var layer = map.GetComponentInChildren<Statecraft.Game.Map.Kits.TownModelLayer>(true);
+            Assert.IsNotNull(layer, "the town layer");
+            int n = 0;
+            foreach (var f in map.KitFootprints)
+            {
+                foreach (var b in layer!.InstancesOf(f.id))
+                {
+                    n++;
+                    // The building's footprint, a W x D rectangle turned by its yaw: its nearest point to the model's centre.
+                    var local = Quaternion.Euler(0f, -b.Yaw, 0f) * new Vector3(flat.x - b.C.x, 0f, flat.y - b.C.y);
+                    var near = new Vector2(Mathf.Clamp(local.x, -0.5f * b.W, 0.5f * b.W), Mathf.Clamp(local.z, -0.5f * b.D, 0.5f * b.D));
+                    Assert.GreaterOrEqual((new Vector2(local.x, local.z) - near).magnitude, r, $"{key} overlaps {f.id}'s {b.Model} at {b.C}");
+                }
+            }
+            Assert.Greater(n, 0, key + ": the town layer has drawn buildings to keep clear of");
+        }
+
+        /// <summary>Owner, 2 November 2026 ("Among the houses"): a workshop built on Jerusalem's or Tel Aviv's own hex, which the
+        /// town's footprint covers, gets its b21 in a gap between the town's drawn buildings, wholly on the hex, clear of the
+        /// routes and the tokens, upright, and on the same spot when placed again.</summary>
+        [Test]
+        public void AWorkshopInJerusalemOrTelAvivStandsAmongTheHouses()
+        {
+            var map = OpenMap();
+            var c = Rules(Statecraft.Sim.SaveGame.Gdd03Ruleset);
+            var projects = new[] { Workshop(c, 21, "jerusalem", Built), Workshop(c, 22, "tel_aviv", Built) };
+            var layer = CollectionGeometryFixture.Special(map, After, c, projects)!;
+            AnswerAll();
+            var ground = PlacementLayer.CampGround(map);
+            var first = new Dictionary<string, Vector3>();
+            foreach (var project in projects)
+            {
+                string key = SpecialBuildingModels.WorkshopKey(project.Id);
+                CollectionAssert.Contains(layer.Placed.Select(p => p.Key), key, project.City + " gets its b21");
+                var p = layer.Placed.Single(x => x.Key == key); first[key] = p.At;
+                var hex = c.HexAt(project.Q, project.R)!; var centre3 = map.Frame.ToWorld(hex.Lon, hex.Lat, 0);
+                var flat = new Vector2(p.At.x, p.At.z); float r = SpecialBuildingModels.ClearanceOf(p.Model);
+                float off = (flat - new Vector2(centre3.x, centre3.z)).magnitude;
+                TestContext.WriteLine($"{key} ({project.City}): {off:0} m from its hex centre");
+                Assert.LessOrEqual(off + r, SpecialBuildingModels.HexInnerRadiusM, key + " wholly on its hex");
+                AmongTheHouses(map, key, flat, r);
+                Assert.IsFalse(ground.OnRoute(flat, r), key + " clear of the routes");
+                Assert.IsFalse(ground.OnToken(flat, r, After), key + " clear of the unit tokens");
+                var b = layer.transform.Find(key)!.GetComponentsInChildren<Renderer>(true).Select(x => x.bounds).Aggregate((x, y) => { x.Encapsulate(y); return x; });
+                Assert.Less(b.size.y, Mathf.Max(b.size.x, b.size.z), key + " upright");
+            }
+            UnityEngine.Object.DestroyImmediate(layer.gameObject);
+            var again = CollectionGeometryFixture.Special(map, After, c, projects)!;
+            AnswerAll();
+            foreach (var kv in first) Assert.AreEqual(kv.Value, again.Placed.Single(p => p.Key == kv.Key).At, kv.Key + " on the same spot again");
         }
 
         /// <summary>The model stands from the turn the build completes (not while it is being built), stays put on GameRoot's
@@ -459,6 +515,79 @@ namespace Statecraft.Game.Tests
             CollectionGeometryFixture.Special(map, Built.AddMonths(1), Rules(Statecraft.Sim.SaveGame.GddRuleset), built);
             AnswerAll();
             CollectionAssert.DoesNotContain(layer.Placed.Select(p => p.Model), SpecialBuildingModels.Workshop, "never under gdd-0.1");
+        }
+
+        /// <summary>Review of #2281 (blocking): a workshop's spot does not depend on what streamed first. Workshop models are
+        /// wanted right at the farm scenes' planned spots (RuralLife.Plan), the most contested ground. With the farm scenes
+        /// streamed first, or with b21 streamed alone first and the other buildings and the farm scenes after it, every b21
+        /// stands on the same spot, clear of every farm scene drawn.</summary>
+        [Test]
+        public void AWorkshopsSpotIsTheSameWhateverStreamsFirst()
+        {
+            var map = OpenMap();
+            var c = Rules(Statecraft.Sim.SaveGame.Gdd03Ruleset);
+            var savedPeople = CivilianPeople.Request; var savedRural = RuralLife.Request;
+            var rural = new List<(string id, CollectionDetail detail, Action<GameObject?> done)>();
+            CivilianPeople.Request = (id, detail, done) => { };
+            RuralLife.Request = (id, detail, done) => rural.Add((id, detail, done));
+            void StreamRural()
+            {
+                for (int round = 0; round < 10 && rural.Count > 0; round++)
+                {
+                    var now = rural.ToList(); rural.Clear();
+                    foreach (var (id, detail, done) in now) done(AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(id, detail)));
+                }
+            }
+            try
+            {
+                CollectionGeometryFixture.People(map, After, Array.Empty<Statecraft.Sim.Placement>(), c);
+                var farms = RuralLife.Plan(map, RuralLife.Wants(map), RuralLife.OtherProps(map), _ => true);
+                Assert.Greater(farms.Count, 0);
+                var wants = SpecialBuildingModels.Placements(After).ToList();
+                for (int i = 0; i < farms.Count; i++)
+                {
+                    var (lon, lat) = map.Frame.ToLonLat(new Vector3(farms[i].spot.x, 0f, farms[i].spot.y));
+                    wants.Add(new SpecialBuildingModels.Want(SpecialBuildingModels.WorkshopKey(500 + i), SpecialBuildingModels.Workshop, Built, lon, lat, "test: at a farm scene"));
+                }
+                SpecialBuildingModels Layer()
+                {
+                    var l = CollectionGeometryFixture.Special(map, After)!;
+                    l.ShowForTest(wants);
+                    return l;
+                }
+
+                // The farm scenes first, then the buildings.
+                var ruralLayer = CollectionGeometryFixture.Rural(map)!;
+                StreamRural();
+                Assert.Greater(ruralLayer.Placed.Count, 0);
+                var first = Layer();
+                AnswerAll();
+                var spots = first.Placed.Where(p => p.Model == SpecialBuildingModels.Workshop).ToDictionary(p => p.Key, p => p.At);
+                Assert.Greater(spots.Count, 0, "workshops stand by the farm scenes");
+                UnityEngine.Object.DestroyImmediate(first.gameObject); UnityEngine.Object.DestroyImmediate(ruralLayer.gameObject);
+                asked.Clear();
+
+                // b21 alone first, then the other buildings, then the farm scenes.
+                ruralLayer = CollectionGeometryFixture.Rural(map)!;
+                var second = Layer();
+                var b21 = asked.Where(a => a.id == SpecialBuildingModels.Workshop).ToList();
+                Assert.AreEqual(1, b21.Count);
+                asked.RemoveAll(a => a.id == SpecialBuildingModels.Workshop);
+                b21[0].done(AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(SpecialBuildingModels.Workshop, CollectionDetail.Near)));
+                AnswerAll();
+                StreamRural();
+                Assert.Greater(ruralLayer.Placed.Count, 0);
+                var scenes = ruralLayer.Placed.Select(p => (new Vector2(p.At.x, p.At.z), RuralLife.SceneRadiusM(p.Model))).ToList();
+                var again = second.Placed.Where(p => p.Model == SpecialBuildingModels.Workshop).ToList();
+                CollectionAssert.AreEquivalent(spots.Keys, again.Select(p => p.Key), "the same workshops stand");
+                foreach (var p in again)
+                {
+                    Assert.AreEqual(spots[p.Key], p.At, p.Key + " on the same spot whatever streamed first");
+                    Assert.IsTrue(TownLandmarks.Clear(new Vector2(p.At.x, p.At.z), SpecialBuildingModels.ClearanceOf(p.Model), scenes),
+                        p.Key + " clear of the farm scenes that streamed in after it");
+                }
+            }
+            finally { CivilianPeople.Request = savedPeople; RuralLife.Request = savedRural; }
         }
 
         [Test]

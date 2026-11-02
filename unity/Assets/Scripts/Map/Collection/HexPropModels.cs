@@ -204,6 +204,7 @@ namespace Statecraft.Game.Map.Collection
             CollectionStream.Request(HexProps.Catalog, id, CollectionDetail.Near, done);
 
         MapScene? map; DateTime date; bool shown, requested; int pending;
+        IReadOnlyList<SpecialBuildingModels.Want> workshops = Array.Empty<SpecialBuildingModels.Want>();
         List<Want> wants = new List<Want>();
         readonly Dictionary<string, GameObject?> prefabs = new Dictionary<string, GameObject?>(StringComparer.Ordinal);
         readonly Dictionary<int, bool> closeFor = new Dictionary<int, bool>();
@@ -221,7 +222,14 @@ namespace Statecraft.Game.Map.Collection
         public bool Requested => requested;
         public bool LastClose { get; private set; }
 
-        public static HexPropModels? ShowAt(MapScene map, DateTime date)
+        public static HexPropModels? ShowAt(MapScene map, DateTime date) => ShowAt(map, date, Array.Empty<SpecialBuildingModels.Want>());
+
+        /// <summary>As <see cref="ShowAt(MapScene, DateTime)"/>, keeping clear of the b21 planned at each built arms workshop of the
+        /// state too (SpecialBuildingModels.ArmsWorkshops; gdd-0.3 only, #1701 slice F).</summary>
+        public static HexPropModels? ShowAt(MapScene map, DateTime date, Statecraft.Sim.Content content, IEnumerable<Statecraft.Sim.CityProject> projects) =>
+            ShowAt(map, date, SpecialBuildingModels.ArmsWorkshops(content, projects));
+
+        static HexPropModels? ShowAt(MapScene map, DateTime date, IReadOnlyList<SpecialBuildingModels.Want> workshops)
         {
             if (map == null || map.Terrain == null || map.Hexes == null) return null;
             var layer = map.Terrain.transform.Find(Name)?.GetComponent<HexPropModels>();
@@ -230,9 +238,10 @@ namespace Statecraft.Game.Map.Collection
                 var go = new GameObject(Name); go.transform.SetParent(map.Terrain.transform, false);
                 layer = go.AddComponent<HexPropModels>(); layer.map = map;
             }
-            // GameRoot calls this on every refresh: rebuild only when the date changes (the dated stations and tokens follow it).
-            if (layer.shown && layer.date == date) return layer;
-            layer.shown = true; layer.date = date; layer.wants = Wants(map, date); layer.Rebuild();
+            // GameRoot calls this on every refresh: rebuild only when the date changes (the dated stations and tokens follow it)
+            // or the built arms workshops do.
+            if (layer.shown && layer.date == date && SpecialBuildingModels.Same(layer.workshops, workshops)) return layer;
+            layer.shown = true; layer.date = date; layer.workshops = workshops; layer.wants = Wants(map, date); layer.Rebuild();
             return layer;
         }
 
@@ -258,12 +267,16 @@ namespace Statecraft.Game.Map.Collection
         /// and the wildlife (as RuralLife.OtherProps), and the rural scenes', special buildings' and whole-town models' PLANNED
         /// spots (their plans with every model available), never what has streamed so far: the props stand in the same places whatever the camera
         /// has visited, and a scene or building that streams in later never lands on one (#2266 review).</summary>
-        internal static List<(Vector2 centre, float radius)> Others(MapScene map, DateTime date)
+        internal static List<(Vector2 centre, float radius)> Others(MapScene map, DateTime date,
+            IReadOnlyList<SpecialBuildingModels.Want>? workshops = null)
         {
             var discs = RuralLife.OtherProps(map);
             foreach (var (want, spot) in RuralLife.Plan(map, RuralLife.Wants(map), RuralLife.OtherProps(map), _ => true))
                 discs.Add((spot, RuralLife.SceneRadiusM(want.Model)));
-            foreach (var (w, at) in SpecialBuildingModels.Plan(map, date, SpecialBuildingModels.Placements(date), _ => true, log: false))
+            // With the b21 of each built arms workshop (#1701 slice F), after the sourced buildings as the layer orders them.
+            var buildings = workshops == null || workshops.Count == 0 ? SpecialBuildingModels.Placements(date)
+                : SpecialBuildingModels.Placements(date).Concat(workshops).ToList();
+            foreach (var (w, at) in SpecialBuildingModels.Plan(map, date, buildings, _ => true, log: false))
                 discs.Add((at, SpecialBuildingModels.ClearanceOf(w.Model)));
             // The whole-town models (TownLandmarks, shown first by GameRoot) where they will stand, by the same plan.
             var towns = map.Terrain.transform.Find(TownLandmarks.Name)?.GetComponent<TownLandmarks>();
@@ -298,7 +311,7 @@ namespace Statecraft.Game.Map.Collection
             var clock = System.Diagnostics.Stopwatch.StartNew();
             var ground = PlacementLayer.CampGround(map);
             var footprints = map.KitFootprints.Select(f => (f.centre, f.radius)).ToList();
-            var taken = Others(map, date);
+            var taken = Others(map, date, workshops);
             bool Free(Vector2 p, float r) => TownLandmarks.Clear(p, r, taken) && TownLandmarks.Clear(p, r, footprints)
                 && ground.Inside(p.x - r, p.y - r) && ground.Inside(p.x + r, p.y + r)
                 && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, date);
