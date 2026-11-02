@@ -432,6 +432,38 @@ public class Gdd03EventRulesTests
         var after = s.Units[0];
         Assert.Equal(modern ? (before.Order, before.OrderTarget) : (Movement.GoTo, "-8,28"), (after.Order, after.OrderTarget));
     }
+    // R-ENEMY-005, R-CTRL-013 (owner, 2 November 2026, #2087: "Keep a garrison in Nazareth (Recommended)"; owner, 31 October
+    // 2026, #749: "GDD 0.1 only"): Golani alone on Nazareth in the `occupied` state, its timer still running (the EnemyAITests
+    // cases are all `awaiting_end`), and Horev launched. Under gdd-0.1 the order is held back with Orders.RefusedLastGarrison
+    // and Golani stays; under gdd-0.3 the card gives no unit order, so nothing is refused, RefusedLastGarrison never appears,
+    // and Golani is untouched.
+    // Red without the rule's `occupied` half (SettlementControl.LastGarrison reading only `awaiting_end`): under gdd-0.1 the
+    // order is given, or refused with another reason, so no RefusedLastGarrison names unit 0. Red for a check made outside
+    // the gdd-0.3 guard (EventSystem.Resolve): under gdd-0.3 a RefusedLastGarrison would appear.
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void TheLastGarrisonRuleHoldsForAnOccupiedPlaceUnderGdd01Only(bool modern)
+    {
+        var c = Real(modern);
+        Assert.Equal(modern, c.Ruleset == SaveGame.Gdd03Ruleset);
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        Assert.Equal("golani", c.StartingForces[0].Row);
+        var nazareth = c.SettlementTargets.Single(t => t.Id == "nazareth");
+        var g = s.Units[0];
+        s.Units[0] = new Unit(g.Id, g.Type, nazareth.Q, nazareth.R, g.Service, g.Side, g.Strength, "", "", g.HomeCity, g.Full, g.CombatXp);
+        Assert.Equal(new[] { 0 }, s.Units.Values.Where(u => (u.Q, u.R) == (nazareth.Q, nazareth.R) && u.Side == Movement.PlayerSide).Select(u => u.Id));
+        s.Settlements["nazareth"] = new SettlementControl(Movement.PlayerSide, SettlementControl.Occupied, s.Date, turns: 3);
+        s.PendingEvents.Add("operation_horev");
+        var rejected = new List<Rejection>();
+        Assert.Null(EventSystem.Choose(c, s, "operation_horev", "launch", new List<Cause>(), rejected: rejected));
+        Assert.Equal(modern ? Array.Empty<string>() : new[] { Orders.RefusedLastGarrison },
+            rejected.Where(j => j.Command is UnitOrder { Unit: 0 }).Select(j => j.Reason));
+        if (modern) Assert.DoesNotContain(rejected, j => j.Reason == Orders.RefusedLastGarrison);
+        Assert.Equal((nazareth.Q, nazareth.R, "", ""), (s.Units[0].Q, s.Units[0].R, s.Units[0].Order, s.Units[0].OrderTarget));
+        Assert.False(s.CardOrders.ContainsKey(0));
+        Assert.Equal(SettlementControl.Occupied, s.Settlements["nazareth"].State);
+    }
     // Review of #2087, optional 2: under gdd-0.3 the loader still checks the cards' orders (owner, 31 October 2026, #749), so
     // a Horev order to a hex that is not one of golani's anchors is refused there too.
     [Fact]

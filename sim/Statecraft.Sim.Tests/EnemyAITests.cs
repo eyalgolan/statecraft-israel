@@ -742,8 +742,10 @@ public class EnemyAITests
     }
 
     // "Never": the check holds on every turn of the march, not only when the card gives the order. A card's go-to still
-    // standing for Golani alone on Nazareth (as when the order waited a turn and the other unit then left) is taken away at the
-    // route step, listed with the same reason, and Golani stays. The 15 November 1948 turn is used, before Horev, so Horev's
+    // standing for Golani alone on Nazareth (as when the march ends a turn on Nazareth and the unit that held it is then lost,
+    // or a second unit there let the order go ahead but Golani could not move that turn and the other unit then left) is taken
+    // away at the route step, listed with the same reason, and Golani stays. The order is cleared, not paused: nothing brings
+    // it back. The 15 November 1948 turn is used, before Horev, so Horev's
     // own order is not in the turn; Hiram's orders name Carmeli and the 7th Brigade, not Golani.
     // Red without the rule: ContinueRoutes advances the card's go-to, Golani leaves Nazareth, no refusal names unit 0, and step
     // 10 ends the occupation. The player's own go-to (no CardOrders entry) is never held back: Golani leaves.
@@ -766,7 +768,37 @@ public class EnemyAITests
         Assert.Equal(SettlementControl.AwaitingEnd, r.State.Settlements["nazareth"].State);
     }
 
-    static SettlementTarget Nazareth => Real.SettlementTargets.Single(t => t.Id == "nazareth");
+    // R-ENEMY-005, R-CTRL-013, the tie-break (review of #2087, C1): two Israeli units on Nazareth, both on a card's march to
+    // the Julis camp. The route step takes the units in ascending id and checks each as it comes (Movement.ContinueRoutes,
+    // SettlementControl.LastGarrison): Golani (unit 0) is not the last, so it marches off; the second unit, a higher id, is
+    // then the last one there, so its order is taken away and it stays. The 15 December 1948 state is the one
+    // HorevsOrderGoesAheadWhenAnotherUnitHoldsNazareth uses, where a card's march takes Golani off Nazareth. Only the route
+    // step runs, so Horev's own order is not in it.
+    // Red without the rule: both march and Nazareth is left with no unit, and no refusal names the second unit. Red for a
+    // check made once for the hex before either moved (neither is the last, so both march), or for one in descending id
+    // (Golani would stay and the second unit would march).
+    [Fact]
+    public void OfTwoUnitsOnACardsMarchTheHigherIdStays()
+    {
+        var s = AloneInNazareth("1948-12-15");
+        var g = s.Units[0];
+        var second = s.NextId++;
+        Assert.True(second > 0);
+        foreach (var id in new[] { 0, second })
+        {
+            s.Units[id] = new Unit(id, g.Type, g.Q, g.R, g.Service, g.Side, g.Strength, Movement.GoTo, "-8,28", g.HomeCity, g.Full, id == 0 ? g.CombatXp : 0);
+            s.CardOrders[id] = new DateTime(1949, 2, 24);   // Golani's Julis anchor's window (R-ENEMY-005)
+        }
+        var rejected = new List<Rejection>();
+        Movement.ContinueRoutes(Real, s, new Dictionary<int, int>(), new List<Cause>(), rejected);
+        Assert.DoesNotContain(rejected, j => j.Command is UnitOrder { Unit: 0 });
+        Assert.NotEqual((Nazareth.Q, Nazareth.R), (s.Units[0].Q, s.Units[0].R));
+        Assert.Equal(Orders.RefusedLastGarrison, Assert.Single(rejected, j => j.Command is UnitOrder o && o.Unit == second).Reason);
+        Assert.Equal((Nazareth.Q, Nazareth.R, ""), (s.Units[second].Q, s.Units[second].R, s.Units[second].Order));
+        Assert.False(s.CardOrders.ContainsKey(second));
+    }
+
+    static SettlementTarget Nazareth =>Real.SettlementTargets.Single(t => t.Id == "nazareth");
 
     /// <summary>mvp-occupy-cost played to <paramref name="until"/> (its own steps, the run's end replaced): Golani (unit 0,
     /// the first starting force) alone on Nazareth, which awaits the end of its occupation. The card orders apply under
