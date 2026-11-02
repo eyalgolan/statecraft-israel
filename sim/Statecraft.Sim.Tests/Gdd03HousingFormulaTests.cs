@@ -228,7 +228,12 @@ public class Gdd03HousingFormulaTests
     {
         var c = ContentLoader.Load(RealContentTests.ContentRoot()).Gdd03Balance ?? throw new InvalidOperationException("GDD 0.3 catalogue required");
         var f = Gdd03HousingFormula.FromCatalogue(c);
-        Assert.Equal("Default", f.OverflowBasis);
+        // The shipped row is Agreed since the owner's 2 November 2026 ruling ("Yes, 5 pp under GDD 0.3 (Recommended)");
+        // the reader carries whichever basis the row has, so a Default row still reads as Default.
+        Assert.Equal("Agreed", f.OverflowBasis);
+        var labelledDefault = ContentLoader.Load(RealContentTests.ContentRoot()).Gdd03Balance!;
+        labelledDefault.Values["housing.overflow_deterioration"].Basis = "Default"; // TEST-ONLY SYNTHETIC provenance
+        Assert.Equal("Default", Gdd03HousingFormula.FromCatalogue(labelledDefault).OverflowBasis);
         c.Values["housing.overflow_deterioration"].Values[0] = 99m; // TEST-ONLY SYNTHETIC mutation
         Assert.Equal(0.025m, f.Evaluate(Input()).OverflowConditionLoss);
         c.Ruleset = SaveGame.GddRuleset;

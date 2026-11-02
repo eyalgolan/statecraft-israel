@@ -109,10 +109,9 @@ public class Gdd03HousingConditionTests
         Assert.Equal(t, s.Treasury);
     }
 
-    // R-HOUSE-005 (#1703 Q1, owner, 2 November 2026: "Yes, 5 pp under GDD 0.3 (Recommended)"; the issue's cohesion
-    // term): 2 x sum((R/P) x max(0, (0.25 - c) / 0.25)) points, from the condition after the turn's deterioration, applied
-    // once. One city with all the population at 0.125: 2 x 1 x 0.5 = 1
-    // point, so Social cohesion (morale) falls by 0.01.
+    // R-HOUSE-005 (#1703, the cohesion term; owner, 2 November 2026: "Keep the 2-point loss (Recommended)"):
+    // 2 x sum((R/P) x max(0, (0.25 - c) / 0.25)) points, from the condition after the turn's deterioration, applied once.
+    // One city with all the population at 0.125: 2 x 1 x 0.5 = 1 point, so Social cohesion (morale) falls by 0.01.
     [Fact]
     public void Gdd03CohesionLosesTwoPointsAtMostWeightedByResidents()
     {

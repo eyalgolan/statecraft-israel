@@ -244,8 +244,8 @@
     "note": "Reception, housing and shortages: national displayed points per turn at maximal weighted severity; Agreed. Source: #1668 balance.md at 605277df."
     "values": [2]
   "housing.overflow_deterioration":
-    "basis": "Default"
-    "note": "Reception, housing and shortages: condition pp per turn multiplied by ordinary resident overflow share; Default rate; retained overcrowding principle. Source: #1668 balance.md at 605277df."
+    "basis": "Agreed"
+    "note": "Reception, housing and shortages: condition pp per turn multiplied by ordinary resident overflow share; under gdd-0.3 in place of R-HOUSE-002's overflow_condition_loss 0.15 (R-HOUSE-005, #1703). Owner, 2 November 2026: \"Yes, 5 pp under GDD 0.3 (Recommended)\"; Agreed; retained overcrowding principle. Source: #1668 balance.md at 605277df."
     "values": [5]
   "housing.max_deterioration":
     "basis": "Default"
