@@ -55,6 +55,13 @@ internal static class CollectionGeometryFixture
             (id, detail, done) => { SpecialBuildingModels.Request(id, detail, done); return new Lease(); }));
         var result = SpecialBuildingModels.ShowAt(map, date); Observe(result!); return result;
     }
+    /// <summary>As GameRoot shows the layer, with <paramref name="workshops"/> already computed (or built by hand in a test).</summary>
+    internal static SpecialBuildingModels? Special(MapScene map, DateTime date, IReadOnlyList<SpecialBuildingModels.Want> workshops)
+    {
+        Layer<SpecialBuildingModels>(map, SpecialBuildingModels.Name, x => x.ConfigureResidency(Wide,
+            (id, detail, done) => { SpecialBuildingModels.Request(id, detail, done); return new Lease(); }));
+        var result = SpecialBuildingModels.ShowAt(map, date, workshops); Observe(result!); return result;
+    }
     /// <summary>As <see cref="Special(MapScene, DateTime)"/>, as GameRoot shows it: with the state's built arms workshops (#1701 slice F).</summary>
     internal static SpecialBuildingModels? Special(MapScene map, DateTime date, Content content, IEnumerable<CityProject> projects)
     {

@@ -565,7 +565,8 @@ namespace Statecraft.Game.Tests
         }
 
         /// <summary>Review of #2281's merge with #2266 (C3): the hex props and the workshops' b21 stand on ONE rural plan, also
-        /// after it changes. All three layers are shown as GameRoot shows them; then the ground the rural scenes keep clear of
+        /// after it changes. All three layers are shown as GameRoot shows them, with a b21 wanted at each farm scene; then the
+        /// ground the rural scenes keep clear of
         /// changes so that a farm scene moves and a b21 with it (both asserted as the premise), the rural layer is shown again,
         /// and GameRoot's next refresh (the same date and workshops) rebuilds both consumers: every b21 is drawn where the new
         /// plan puts it, and no prop stands on one.</summary>
@@ -581,11 +582,13 @@ namespace Statecraft.Game.Tests
             int version = RuralLife.VersionOf(map);
             Assert.Greater(before.Count, 0);
             Assert.AreSame(before, RuralLife.PlanOf(map), "the plan is computed once for what was shown");
-            // Workshops on the hexes nearest the planned farm scenes.
-            var land = c.Hexes.Where(h => h.Land).Select(h => (h, at: map.Frame.ToWorld(h.Lon, h.Lat, 0))).ToList();
-            var hexes = before.Select(f => land.OrderBy(x => (new Vector2(x.at.x, x.at.z) - f.spot).sqrMagnitude).First().h).Distinct().ToList();
-            var projects = hexes.Select((h, i) => new Statecraft.Sim.CityProject(400 + i, Statecraft.Sim.Workshops.ArmsWorkshop, "rehovot", h.Q, h.R, 0, Opening)).ToList();
-            var workshops = SpecialBuildingModels.ArmsWorkshops(c, projects);
+            // A workshop's b21 wanted right at each farm scene's planned spot (the contested ground), passed as GameRoot passes
+            // the state's workshops (ShowAt(map, date, workshops)).
+            var workshops = before.Select((f, i) =>
+            {
+                var (lon, lat) = map.Frame.ToLonLat(new Vector3(f.spot.x, 0f, f.spot.y));
+                return new SpecialBuildingModels.Want(SpecialBuildingModels.WorkshopKey(400 + i), SpecialBuildingModels.Workshop, Opening, lon, lat, "test: at a farm scene");
+            }).ToList();
             var buildings = SpecialBuildingModels.Placements(Opening).Concat(workshops).ToList();
             Dictionary<string, Vector2> B21(IReadOnlyList<(RuralLife.Want want, Vector2 spot)> plan) =>
                 SpecialBuildingModels.Plan(map, Opening, buildings, _ => true, log: false, plan)
@@ -602,7 +605,7 @@ namespace Statecraft.Game.Tests
                 nextOthers = others; after = plan; break;
             }
             Assert.IsNotNull(nextOthers, "premise: some change of the farm scenes' ground moves a b21");
-            var special = CollectionGeometryFixture.Special(map, Opening, c, projects)!;
+            var special = CollectionGeometryFixture.Special(map, Opening, workshops)!;
             var props = HexPropModels.ShowAt(map, Opening, workshops)!;
             props.Choose(default, At(Statecraft.Game.Map.Kits.TownModelLayer.CloseEnterM));
             AnswerAll();
@@ -616,7 +619,7 @@ namespace Statecraft.Game.Tests
             var now = RuralLife.PlanOf(map);
             Assert.IsFalse(now.SequenceEqual(before), "premise: the shown plan changed");
             Assert.IsTrue(now.SequenceEqual(after!), "the new plan is the one the changed ground gives");
-            CollectionGeometryFixture.Special(map, Opening, c, projects);
+            CollectionGeometryFixture.Special(map, Opening, workshops);
             HexPropModels.ShowAt(map, Opening, workshops);
             AnswerAll();
             var newB21 = B21(now);
