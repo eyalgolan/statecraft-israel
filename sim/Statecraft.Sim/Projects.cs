@@ -342,11 +342,12 @@ namespace Statecraft.Sim
         /// <summary>R-PROJ-003, step 5 of the turn (D-A6), after the pioneer work: in ascending id, each city project being built
         /// has one turn less to go. One that reaches 0 is built on <paramref name="next"/>, the turn's end date, and adds its
         /// kind's housing capacity, condition (kept from 0 to 1) and job slots to its city, once: a built project is never
-        /// advanced again.</summary>
+        /// advanced again. R-CITY-010: a project in a city the enemy holds keeps its record as it is.</summary>
         public static void AdvanceCity(Content c, GameState s, DateTime next, List<Cause> why)
         {
             var r = c.RulesAt(s.Date).Mvp!;   // the loader requires it in the GDD loop, the only loop TurnResolver runs this in
-            foreach (var p in s.CityProjects.Values.Where(x => x.BuiltOn == null).ToList())
+            var held = Cities.Held(c, s);
+            foreach (var p in s.CityProjects.Values.Where(x => x.BuiltOn == null && !held.Contains(x.City)).ToList())
             {
                 // R-MIN-001, R-MIN-002 (D-H3; Q-MIN-1, Q-MIN-2): the office of the kind's system scales the turn of
                 // progress the project gains this turn, with R-MIN-002's floor and carry as at the sites (Advance).
