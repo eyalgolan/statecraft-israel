@@ -495,23 +495,21 @@ def test_a_settlement_hex_takes_the_code_at_its_own_point():
     settlement placed in it, and a shore town such as Tiberias is placed on a substitute hex whose own hex is lake, so
     its centre says nothing about the town. Before this rule Tiberias and Safed read "Held by Arab forces" at the start
     and Hanita, held throughout, read Arab then ALA until July. The deliberate overrides still win: the contested
-    places, the pins, the overlay exemptions (Safed) and the Jerusalem area are excluded here and covered by their own
-    tests."""
+    places, the pins and the Jerusalem area are excluded here and covered by their own tests. An exempt settlement (rule 7:
+    Safed, Rosh Pinna) is probed without the overlay it is exempt from, as the bake probes it, so its hex stays checked."""
     snaps, overlays, periods = cb.load(SOURCE)
     drawn = [p for p in periods if p["snapshot"]]
     pinned = {hg.settlement_hex(p["lon"], p["lat"], HEXES) for p in META["pinned_towns"]}
     greyed = {hg.settlement_hex(p["lon"], p["lat"], HEXES) for p in META.get("contested_places", [])}
-    exempt = {hg.settlement_hex(s["lon"], s["lat"], HEXES) for s in SETTLEMENTS["settlements"] if s["id"] in cb.OVERLAY_EXEMPT}
     checked = 0
     for s in SETTLEMENTS["settlements"]:
         qr = hg.settlement_hex(s["lon"], s["lat"], HEXES)
         # Jerusalem only: a longitude band on its own also skips Nazareth, Nahalal and Hanita, and Hanita is one of
         # the three places this rule is for (review of #1765).
-        if qr in pinned or qr in greyed or qr in exempt or (abs(s["lon"] - 35.2256) < 0.1 and abs(s["lat"] - 31.7789) < 0.1):
+        if qr in pinned or qr in greyed or (abs(s["lon"] - 35.2256) < 0.1 and abs(s["lat"] - 31.7789) < 0.1):
             continue
         for i, p in enumerate(drawn):
-            ovs = [overlays[o] for o in p["overlays"] if o in overlays]
-            got = cb.code_at(s["lon"], s["lat"], snaps[p["snapshot"]], ovs)
+            got = cb.code_at(s["lon"], s["lat"], snaps[p["snapshot"]], cb.period_overlays(p, overlays, s["id"]))
             if got is None:
                 continue
             assert CODES[qr][i] == got, (s["id"], qr, p["id"])
