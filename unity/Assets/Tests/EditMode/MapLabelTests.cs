@@ -906,14 +906,65 @@ public class MapLabelTests
         finally { inset.Dispose(); labels.Dispose(); hd.Dispose(); }
     }
 
+    /// <summary>Review of #2176, item 1: a moved unit's token slides to its new spot (#1866), and with no camera move the
+    /// names keep clear of the token where it is drawn, during the slide and after it. At gameplay03 the Tel Aviv pill
+    /// stands clear of the Kiryati Brigade (PillsKeepClearOfTheUnitTokens). The brigade's token then starts a slide from
+    /// 150 km east, and the labels' pass at the rebuild sees it there, so the pill comes down. Near the slide's end, and
+    /// once it has arrived, a plain refresh (GameRoot's every LateUpdate, the boxes faced to the camera first) puts the pill
+    /// clear of the brigade again. Before the fix the slide moved the boxes inside the same list, the labels re-place only
+    /// for a new list, and the pill stayed where the token had been drawn at the start.</summary>
+    [UnityTest]
+    public IEnumerator PillsKeepClearOfASlidingTokenWithoutACameraMove()
+    {
+        var layer = StartUnits(animateMoves: true);
+        HdPanel hd = new HdPanel(cam);
+        var labels = new MapLabelsPresenter(hd.Root, map, cam, keepClear: () => { layer.FaceCamera(cam); return layer.KeepClear; });   // as GameRoot
+        var inset = new TopBarInset(hd.Root, rig);
+        try
+        {
+            var pose = PromoPose.Gameplay03;
+            rig.LookAt = map.Frame.ToWorld(pose.Lon, pose.Lat, 0); rig.Distance = pose.Distance; rig.Yaw = pose.Yaw; rig.Apply();
+            yield return null;
+            inset.Update();
+            yield return Settle(labels);
+            var tlv = labels.Slots.Single(s => s.name == "slot-tel_aviv");
+            Assert.IsTrue(Shown(tlv), "Tel Aviv is named at gameplay03");
+            var clear = tlv.Q<Label>().worldBound;   // clear of the brigade standing in Tel Aviv
+            var motion = GameObject.Find(Statecraft.Game.Map.Units.UnitLayer.RootName).transform.Find("Tokens").Find("kiryati")
+                .GetComponent<Statecraft.Game.Map.Units.UnitTokenMotion>();
+            Assert.IsNotNull(motion, "a play build moves the brigade's token");
+
+            motion.Begin(new Vector3(150000f, 0f, 0f));
+            labels.Refresh(force: true); yield return null;   // the labels' pass at the rebuild sees the slide's start
+            var away = tlv.Q<Label>().worldBound;
+            TestContext.WriteLine($"slide start: Tel Aviv pill {away}, clear of the brigade {clear}");
+            Assert.Greater(away.yMax, clear.yMax + 1f, $"with the brigade drawn 150 km east the pill {away} comes down from {clear}");
+
+            motion.Tick(Statecraft.Game.Map.Units.UnitTokenMotion.Duration * 0.9999f);   // 15 m short of Tel Aviv
+            Assert.IsTrue(motion.Moving, "still sliding");
+            labels.Refresh(); yield return null;
+            var during = tlv.Q<Label>().worldBound;
+            TestContext.WriteLine($"near the end: Tel Aviv pill {during}");
+            Assert.AreEqual(clear.yMax, during.yMax, 1f, $"mid-slide the pill {during} keeps clear of the token as drawn, not of its start {away}");
+
+            motion.Tick(Statecraft.Game.Map.Units.UnitTokenMotion.Duration);
+            Assert.IsFalse(motion.Moving, "arrived");
+            labels.Refresh(); yield return null;
+            Assert.AreEqual(clear.yMax, tlv.Q<Label>().worldBound.yMax, 0.5f, "arrived, the pill keeps clear of the brigade in Tel Aviv");
+        }
+        finally { inset.Dispose(); labels.Dispose(); hd.Dispose(); }
+    }
+
     static readonly string[] Occluders = { "top-bar", "info-panel", "minimap" };
 
-    /// <summary>The units in play as a new game starts (golden seed, historical mode), as the game draws them.</summary>
-    Statecraft.Game.Map.Units.UnitLayer StartUnits()
+    /// <summary>The units in play as a new game starts (golden seed, historical mode), as the game draws them; with
+    /// <paramref name="animateMoves"/> as in play, where a moved unit's token slides (#1866).</summary>
+    Statecraft.Game.Map.Units.UnitLayer StartUnits(bool animateMoves = false)
     {
         var content = Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content);
         var units = Statecraft.Game.Map.Units.UnitData.Parse(File.ReadAllText(Path.Combine(Statecraft.Game.Paths.Content, "map", Statecraft.Game.Map.Units.UnitData.DefaultFileName)));
         var layer = Statecraft.Game.Map.Units.UnitLayer.Create(map, units, content.Hexes, still: true);
+        layer.AnimateMoves = animateMoves;
         layer.Show(content, Statecraft.Sim.Simulation.NewGame(content, Statecraft.Sim.GoldenRun.Seed, Statecraft.Sim.Mode.Historical));
         return layer;
     }
