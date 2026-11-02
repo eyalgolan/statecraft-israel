@@ -33,6 +33,20 @@ namespace Statecraft.Sim
 
         internal static int Scalar(Content c, string key, bool positive = true) => Number(Entry(c, key), key, 1, 0, positive);
 
+        /// <summary>R-ENEMY-003, #2114: the off-script enemy attack threshold, combat.enemy_attack_ratio (a unitless ratio,
+        /// 1.50 by the owner's O4 ruling) in Combat.Preview's percent; it must be a whole percent.</summary>
+        internal static int EnemyAttackRatioPercent(Content c)
+        {
+            const string key = "combat.enemy_attack_ratio";
+            var value = Entry(c, key);
+            if (value.Values == null || value.Values.Count != 1 || value.Parts == null || value.Parts.Count != 0 || !string.IsNullOrEmpty(value.Expression))
+                throw Invalid(key, "requires one exact ratio");
+            var percent = value.Values[0] * 100;
+            if (percent != decimal.Truncate(percent) || percent < 1 || percent > int.MaxValue)
+                throw Invalid(key, "requires a positive ratio in whole percent");
+            return (int)percent;
+        }
+
         static Gdd03DesignValue Part(Content c, string biome, string part)
         {
             var row = Entry(c, biome);
@@ -135,6 +149,7 @@ namespace Statecraft.Sim
             foreach (var key in new[] { "military.move_infantry", "military.move_armoured", "military.move_road", "military.move_rail", "military.stack_limit" })
                 Scalar(c, key);
             Scalar(c, "military.fort_bonus", false);
+            EnemyAttackRatioPercent(c);
             Scalar(c, "military.fortify_bonus", false);
             if (Scalar(c, "military.fortify_turns") != 1) throw Invalid("military.fortify_turns", "only the existing one-turn settlement is implemented");
             foreach (var biome in new[] { "coastal_plain", "lowland", "valley", "hills", "mountains", "desert" })
