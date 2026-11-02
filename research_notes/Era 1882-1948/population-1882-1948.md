@@ -415,7 +415,23 @@ settle, and part of those visa-less refugees for whom the dates of arrival are k
   estimate of the Central Bureau of Statistics) and about 20,000 travellers who remained in the country without permission".
   CBS SA 2010 (4a, note 3) gives "about 11,000" and "about 19,500" for the same groups.
 - [GAP] The split of 1946, 1947 and 1 January - 14 May 1948 into legal registrations and aliyah_bet arrivals: SA 1 and
-  SA 3 print one total per year. 1919 by year (1,806 in both abstracts) was seen on the same pages but was not examined further.
+  SA 3 print one total per year. 1919 by year (1,806 in both abstracts) is in 4h.
+
+### 4h. Arrivals in 1919 (2 November addition for #84)
+
+The one year before the Survey's table (4f starts in September 1920) and the only 1919 value in any source read. Read from page images on 2 November 2026.
+
+| Source | Printed 1919 value | Tag |
+|---|---|---|
+| CBS SA 1 (1950), Table 1, p. 29, and CBS SA 3 (1952), Table 3, p. 25 | 1,806 | [V, agent read 2 November 2026; a person's check pending] |
+| McCarthy Table 2.1 "Jewish Migration into Palestine, 1919 to 1922", p. 26 (source line: Jewish Agency) | 1,806 | [S] |
+| McCarthy Table A10-14, p. 227 (source line: *Jewish Palestine*): J.A. immigration offices, Government column "Total" | 1,806 | [S] |
+| McCarthy Table A10-17 "Jewish Immigration by Jewish Communities, 1919 to 1934", p. 230 (source line: *Jewish Immigration*): Ashkenazic, J.A. total and grand total | 806 | [C] with the rows above; no preferred value here, the choice belongs to the paused content part (see the third Derived bullet below) |
+
+- Derived: the A10-14 yearly values 1,806 + 8,223 + 8,294 + 8,685 + 8,093 = 35,101, the 1919-1923 "Registered by J.A. Offices, Immigrants" cell of McCarthy Table A10-15 (p. 227); with the 82 authorized travellers of 1923 the table's total is 35,183, equal to the CBS 1919-23 period in 4a. With 806 the same sum would be 34,101.
+- Derived: McCarthy Table 2.1 adds up, 1,806 + 8,223 + 8,294 + 8,685 = 27,008, its printed total.
+- Derived: in A10-17 the printed J.A. total for 1919-1934 (176,924) equals the sum of its sixteen yearly totals only with 806 for 1919 (806 + 8,223 + 8,294 + 8,685 + 8,093 + 12,905 + 33,135 + 13,244 + 2,320 + 784 + 3,915 + 4,134 + 2,998 + 5,480 + 27,289 + 36,619 = 176,924). So Table A10-17 is internally consistent at 806 while Tables A10-14 and A10-15, the CBS abstracts and Table 2.1 are consistent at 1,806. Both McCarthy tables name a different source line. Two more checks inside A10-14 agree with 1,806: its yearly immigrant column adds up to the printed 335,066 only with 1,806 (with 806 it would be 334,066), and its printed share for 1919 is 0.5 per cent, which is 1,806 / 394,683 = 0.46 (806 would give 0.2). So the tie is between two McCarthy tables, each consistent with itself; no preferred value is named, and why they differ is [GAP].
+- What 1919 covers (months, legal only or not) is not stated in any of these tables. Only the CBS note 1 (4g) is printed, and it does not mention 1919.
 
 ---
 
@@ -508,7 +524,7 @@ Not a model, only the arithmetic the sources allow:
 - Arrivals 1915-1918 (CBS shows no figure).
 - Legal against illegal arrivals by year for 1946-48, and the same for illegal immigration generally (4g gives CBS totals per year
   only; the Survey's annual table, 4f, runs September 1920 to November 1945 and counts legal registrations only). 1919 by year is
-  printed as 1,806 in the CBS abstracts of 4g but was not examined for what it covers.
+  1,806 in the CBS abstracts and 806 in one McCarthy table (4h); what the year covers is not stated.
 - How the 30,551 immigrants with no period divide over the CBS periods.
 - Emigration before 1920, and a complete gross (not net) series after it (partial figures in 5b).
 - Total population at the end of 1918: now [C] with two values (2b); no primary count.
