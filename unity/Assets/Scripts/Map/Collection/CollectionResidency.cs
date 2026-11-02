@@ -203,6 +203,7 @@ namespace Statecraft.Game.Map.Collection
         readonly CollectionResidencyPolicy policy;
         readonly Dictionary<int, Choice> cameras = new Dictionary<int, Choice>();
         internal HashSet<string> Keys => new HashSet<string>(cameras.Values.SelectMany(c => c.Keys), StringComparer.Ordinal);
+        internal bool Observes(int cameraId) => cameras.ContainsKey(cameraId);
         internal CollectionResidencyView(CollectionResidencyPolicy policy) { this.policy = policy; }
         internal void Clear() => cameras.Clear();
         // Unproject in camera space: subtracting near/far WORLD points at hundreds of kilometres loses

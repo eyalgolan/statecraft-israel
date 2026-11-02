@@ -30,11 +30,11 @@ from typing import Callable
 
 import nightly_checks
 import unity_postmerge
-from nightly_publish import (GitHub, Itch, demo_serves, itch_frame_url, release_notes, sha256_lines, sha256_of,
+from nightly_publish import (GitHub, Itch, demo_serves, itch_build_frame_url, release_notes, sha256_lines, sha256_of,
                              unzip_to)
 from nightly_state import (JOB, TZ, Config, LatestRecovery, Missed, Published, Refused, Runner, Skipped, State, Stop,
                            enable_itch, late_start, load_config, load_state, log_line, missed_days, night_of,
-                           notify, record, run_lock, save_state, tag_for)
+                           notify, record, run_lock, save_state, savetest_lock, tag_for)
 from web_check import find_chrome
 
 HOLDER_ENV = unity_postmerge.machine_lock.HOLDER_ENV
@@ -667,7 +667,8 @@ def publish_night(night: Night, state: State, gh: GitHub, itch, zips: tuple[Path
     `save` persists the state; it runs right after the draft exists and right after the release is public, so a
     kill leaves a record of both."""
     prev_tag, prev_sha = previous
-    use_itch = night.cfg.itch_enabled
+    itch_skip = itch_skip_reason(night.cfg)
+    use_itch = itch_skip is None
     if use_itch and itch is None:   # before any store change: enabled means the push is part of this night
         raise Refused("itch", "itch is enabled but there is no itch client")
     since = prev_sha or prev_tag
@@ -739,7 +740,7 @@ def publish_night(night: Night, state: State, gh: GitHub, itch, zips: tuple[Path
         state.site_pending = night.version   # until the demo serves this version, a later night retries the deploy
         save()
         if not use_itch:
-            skip = "itch: skipped (save test not passed)"
+            skip = f"itch: skipped ({itch_skip})"
             print(skip)
             night.notes.append(skip)
         failure = "no attempt"
@@ -774,6 +775,64 @@ def publish_night(night: Night, state: State, gh: GitHub, itch, zips: tuple[Path
         raise
 
 
+# --- the Steam stage (plan 2026-11-01-steamworks-integration Task 7, #2155; owner answer Q7 "Also nightlies") ------
+
+STEAM_BUILD_MINUTES = 240   # three Unity players and the macOS golden check
+STEAM_STAGE_MINUTES = 60    # zips, the draft release upload and the workflow dispatch
+
+
+def steam_ids_missing(clone: Path) -> str | None:
+    """Why the Steam stage cannot run yet, or None: steam/steam.json must name the app and every depot."""
+    path = clone / "steam/steam.json"
+    try:
+        config = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as e:
+        return f"cannot read {path}: {type(e).__name__}"
+    if not isinstance(config, dict) or not isinstance(config.get("depots"), dict):
+        raise ValueError(f"{path} is not an object with a depots object")
+    depots = config["depots"]
+    missing = [name for name, value in [("app_id", config.get("app_id")),
+                                        *((f"depots.{p}", depots.get(p)) for p in ("windows", "mac", "linux"))]
+               if value is None]
+    return f"steam/steam.json has no {', '.join(missing)} yet" if missing else None
+
+
+def run_steam(night: Night, runner: Runner) -> None:
+    """After the web nightly is published: build the Steam players, stage them in a draft release and dispatch the
+    upload to the `nightly` branch. It never refuses, unpublishes or rolls back the web nightly: any failure only adds
+    steam=failed to the night's line (the logs are in the run folder) and notifies."""
+    out = night.run_dir / "steam-release"
+    try:
+        if (why := steam_ids_missing(night.cfg.clone)) is not None:
+            print(f"steam: skipped ({why})")
+            return
+        check_window(night)
+        # tonight's tag was made on GitHub by the publish; release_build.py checks it points at HEAD and never fetches
+        _git(runner, night.cfg.clone, "fetch", "--no-tags", "origin", f"refs/tags/{night.tag}:refs/tags/{night.tag}")
+        code, _ = _step(night, runner, "steam-build",
+                        ["uv", "run", "tools/release_build.py", "--platform", "all", "--steam", "--tag", night.tag,
+                         "--nightly-version", night.version, "--out", str(out)], STEAM_BUILD_MINUTES,
+                        unity_env(night), stop_on_interrupt=True)
+        if code != 0:
+            raise Refused("steam", "release_build.py timed out" if code == 124 else f"release_build.py exited {code}")
+        code, _ = _step(night, runner, "steam-stage",
+                        ["uv", "run", "tools/steam_upload.py", "stage", "--out", str(out), "--tag", night.tag],
+                        STEAM_STAGE_MINUTES, stop_on_interrupt=True)
+        if code != 0:
+            raise Refused("steam", "steam_upload.py timed out" if code == 124 else f"steam_upload.py exited {code}")
+    except Exception as e:
+        detail = _detail(e)
+        print(f"steam: failed: {detail}", file=sys.stderr)
+        night.notes.append("steam=failed")
+        notify("Nightly Steam stage failed", f"{night.tag} is published; Steam: {detail}; logs in {night.run_dir}"[:200])
+    finally:
+        # Nothing prunes the run folders, and three players and their zips a night would eat the free space the next
+        # web nightly's disk gate needs (review of #2155). The draft holds the zips; the record and the logs stay.
+        shutil.rmtree(out / "steam", ignore_errors=True)
+        for z in out.glob("steam-*.zip"):
+            z.unlink(missing_ok=True)
+
+
 # --- the night --------------------------------------------------------------------------------------------------
 
 def _build_both(night: Night, runner: Runner, free_gb: Callable[[Path], float]) -> tuple[Path, Path]:
@@ -800,8 +859,9 @@ def _build_both(night: Night, runner: Runner, free_gb: Callable[[Path], float]) 
 
 def run_stages(night: Night, state: State, runner: Runner, gh: GitHub, itch, *, no_publish: bool,
                free_gb: Callable[[Path], float] = lambda p: shutil.disk_usage(p).free / 1e9,
-               save: Callable[[], bool | None] = lambda: None) -> bool:
-    """Every gate, then (unless no_publish) the publish. True when published, False when stopped before any store."""
+               save: Callable[[], bool | None] = lambda: None, no_steam: bool = False) -> bool:
+    """Every gate, then (unless no_publish) the publish, then (unless no_steam) the Steam stage. True when published,
+    False when stopped before any store."""
     run_gates(night, runner)
     run_editmode(night, runner)
     gz, pages = _build_both(night, runner, free_gb)
@@ -821,6 +881,10 @@ def run_stages(night: Night, state: State, runner: Runner, gh: GitHub, itch, *, 
         print(f"NO-PUBLISH: all gates passed for {night.tag}")
         return False
     publish_night(night, state, gh, itch, zips, sizes, boot, previous=previous, save=save, runner=runner)
+    if no_steam:
+        print("steam: skipped (--no-steam)")
+    else:
+        run_steam(night, runner)
     return True
 
 
@@ -836,7 +900,8 @@ def _try_save(state_path: Path, state: State) -> bool:
 
 def run_night(cfg: Config, state_path: Path, job: Path, runner: Runner, gh: GitHub | None, itch, *, now: datetime,
               manual: bool, no_publish: bool, client_error: Refused | None = None,
-              free_gb: Callable[[Path], float] = lambda p: shutil.disk_usage(p).free / 1e9) -> str:
+              free_gb: Callable[[Path], float] = lambda p: shutil.disk_usage(p).free / 1e9,
+              no_steam: bool = False) -> str:
     outcome, gate, detail = "REFUSED", "internal", ""
     state: State | None = None
     night: Night | None = None
@@ -863,7 +928,7 @@ def run_night(cfg: Config, state_path: Path, job: Path, runner: Runner, gh: GitH
             night = preflight(cfg, state, runner, gh, job=job, now=now, manual=manual, free_gb=free_gb,
                               no_publish=no_publish)
             published = run_stages(night, state, runner, gh, itch, no_publish=no_publish, free_gb=free_gb,
-                                   save=lambda: _try_save(state_path, state))
+                                   save=lambda: _try_save(state_path, state), no_steam=no_steam)
             outcome, gate = ("PUBLISHED" if published else "NO-PUBLISH"), "-"
         except Stop as e:
             outcome, gate, detail = e.outcome, e.gate, e.detail
@@ -895,71 +960,76 @@ def run_night(cfg: Config, state_path: Path, job: Path, runner: Runner, gh: GitH
 # --- the itch.io save test --------------------------------------------------------------------------------------------
 
 PERSIST_SAVED = re.compile(r"^PERSISTENCE saved (\d{4}-\d{2}-\d{2}) turn (\d+) hash ([0-9a-f]+)$", re.M)
-# The page names a new upload's frame only after itch has unpacked it; until then it carries just a JSON load_url
-# ({"status":"extracting"}). Unpacking the web build took about 17 minutes on 28 October 2026, longer than the old
-# 10-minute wait, so the save test now waits up to 40 minutes.
-# While it waited for the second upload that day, itch answered 429 Too Many Requests; a 429 now slows the polling
-# down (Retry-After, bounded) instead of ending the test, within the same 40 minutes.
+# The frame URL comes from `butler status` (the upload and build ids), so the test page is never read and can stay
+# Restricted (#2056, owner 2 Nov 2026: "Code change, page stays Restricted"). itch serves a new upload's frame only
+# after it has unpacked it: unpacking the web build took about 17 minutes on 28 October 2026, so the save test polls
+# the frame for up to 40 minutes. While it waited for the second upload that day, itch answered 429 Too Many
+# Requests; a 429 slows the polling down (Retry-After, bounded) instead of ending the test, within the same 40 minutes.
 SAVETEST_FRAME_TRIES = 80
 SAVETEST_FRAME_SLEEP = 30
 SAVETEST_RATE_LIMIT_SLEEP = 120   # after an HTTP 429 without a usable Retry-After
 SAVETEST_RATE_LIMIT_MAX = 300   # a longer Retry-After is capped; the total wait stays within the frame budget
+SAVETEST_FRAME_WAITING = (403, 404)   # itch answers these until the frame is served; anything else ends the wait
+SAVETEST_GAME_MARKER = b"createUnityInstance("   # in the index.html of unity/Assets/WebGLTemplates/Statecraft
 SAVETEST_RUN_MINUTES = 10
 TOOLS = Path(__file__).resolve().parent
 
 
-def _page_text(fetch, url: str) -> str:
+def _rate_limit_pause(e: urllib.error.HTTPError) -> int:
+    """Seconds to wait after itch answered HTTP 429: its Retry-After, kept within bounds."""
     try:
-        with fetch(url, timeout=30) as response:
-            return response.read().decode("utf-8", "replace")
-    except (OSError, ValueError) as e:   # URLError and HTTPException subclass OSError or ValueError
-        raise Refused("savetest", f"cannot read {url}: {type(e).__name__}: {e}") from e
-
-
-def _rate_limit_pause(e: Refused) -> int | None:
-    """Seconds to wait after itch answered HTTP 429 (its Retry-After, kept within bounds), or None for any other error."""
-    cause = e.__cause__
-    if not isinstance(cause, urllib.error.HTTPError) or cause.code != 429:
-        return None
-    try:
-        asked = int((cause.headers or {}).get("Retry-After", ""))
+        asked = int((e.headers or {}).get("Retry-After", ""))
     except ValueError:
         asked = SAVETEST_RATE_LIMIT_SLEEP
     return min(max(asked, SAVETEST_FRAME_SLEEP), SAVETEST_RATE_LIMIT_MAX)
 
 
-def _frame_url(fetch, sleep, page_url: str, other: str | None = None) -> str | None:
-    """The game-frame URL the itch page embeds. With `other` it waits for a frame that is not that one; the last
-    frame seen (or None) comes back when the wait budget runs out. A 429 from itch only slows the polling down; if
-    itch still refuses when the budget runs out, that refusal is raised."""
-    found, limited = None, None
+def _wait_for_frame(fetch, sleep, url: str) -> str | None:
+    """None once the game frame at `url` is served: HTTP 200 from that very URL (no redirect) with the game's loader
+    in it. Otherwise, when the wait budget runs out, what itch last answered ("HTTP 404", or a page that is not the
+    game). A 403, a 404 or another page is "not served yet", a 429 only slows the polling down; any other failure is
+    a Refused("savetest")."""
     waited, budget = 0, SAVETEST_FRAME_TRIES * SAVETEST_FRAME_SLEEP
     while True:
         try:
-            found, limited = itch_frame_url(_page_text(fetch, page_url)), None
+            with fetch(url, timeout=30) as response:
+                body = response.read()
+                status, final = getattr(response, "status", None), response.geturl()
+            if status == 200 and final == url and SAVETEST_GAME_MARKER in body:
+                return None
+            seen = f"HTTP {status} from {final}, not the game page"
             pause = SAVETEST_FRAME_SLEEP
-        except Refused as e:
-            pause = _rate_limit_pause(e)
-            if pause is None:
-                raise
-            limited = e
-            print(f"savetest: itch answered 429, waiting {pause} s", file=sys.stderr)
-        else:
-            if found is not None and found != other:
-                return found
+        except urllib.error.HTTPError as e:
+            if e.code == 429:
+                pause = _rate_limit_pause(e)
+                print(f"savetest: itch answered 429, waiting {pause} s", file=sys.stderr)
+            elif e.code in SAVETEST_FRAME_WAITING:
+                pause = SAVETEST_FRAME_SLEEP
+            else:
+                raise Refused("savetest", f"cannot read {url}: HTTP {e.code}") from e
+            seen = f"HTTP {e.code}"
+        except (OSError, ValueError) as e:   # URLError and HTTPException subclass OSError or ValueError
+            raise Refused("savetest", f"cannot read {url}: {type(e).__name__}: {e}") from e
         if waited + pause > budget:
-            if limited is not None:
-                raise limited
-            return found
+            return seen
         sleep(pause)
         waited += pause
 
 
-def _frame_parts(url: str) -> tuple[str, str, str]:
-    """(scheme, host, upload segment): the segment of /html/<upload>-<build>/index.html names the upload."""
-    parts = urllib.parse.urlsplit(url)
-    segments = parts.path.split("/")
-    return parts.scheme, parts.netloc, segments[2] if len(segments) > 2 else ""
+def _live_frame(itch: Itch, fetch, sleep, name: str, version: str, evidence: dict) -> tuple[str | None, str]:
+    """(frame URL, "") of this run's upload `version` once itch serves its frame, or (None, why not). The URL is built
+    from the upload and build ids `butler status` shows for the test channel while `version` is live there; the ids
+    go into the evidence."""
+    ids = itch.live_frame_ids(version)
+    if ids is None:
+        return None, f"butler status shows no upload and build ids of {version} live on the test channel after {name}"
+    frame = itch_build_frame_url(*ids)
+    evidence[name.replace(" ", "_")] = {"upload_id": ids[0], "build_id": ids[1], "frame_url": frame}
+    seen = _wait_for_frame(fetch, sleep, frame)
+    if seen is not None:
+        minutes = SAVETEST_FRAME_TRIES * SAVETEST_FRAME_SLEEP // 60
+        return None, f"the game frame of {name} ({frame}) still answered {seen} after {minutes} minutes"
+    return frame, ""
 
 
 def _frame_check(runner: Runner, job_dir: Path, name: str, url: str, profile: Path, *extra: str) -> tuple[int, str]:
@@ -977,17 +1047,22 @@ def savetest(cfg: Config, config_path: Path, job: Path, runner: Runner, gh: GitH
     (the same content, a new upload URL on the same frame origin); B must load that date, turn and state hash twice.
     "PASS" turns the itch push on (enable_itch); "INCONCLUSIVE" (the test could not be run or proves nothing) and
     "FAIL" leave it off. It pushes twice to the separate test page in savetest_itch_target, never to the public page:
-    each upload hides the game while itch unpacks it (up to an hour on 28 October 2026). Only the owner starts it."""
+    each upload hides the game while itch unpacks it (up to an hour on 28 October 2026). The owner or an
+    agent may start it (owner, 2 Nov 2026, "2 (a)"): it pushes only to the Restricted test page."""
     stamp = datetime.now(TZ).strftime("%Y%m%d-%H%M%S")
     work = Path(job) / "savetest" / stamp
-    evidence: dict = {"tag": tag, "page_url": cfg.savetest_itch_page_url, "target": cfg.savetest_itch_target}
+    evidence: dict = {"tag": tag, "target": cfg.savetest_itch_target}
     result, detail = "INCONCLUSIVE", ""
-    try:
-        result, detail = _savetest(cfg, work, runner, gh, itch, tag, evidence, fetch, sleep)
-    except Stop as e:
-        detail = f"{e.gate}: {e.detail}"
-    except (OSError, SystemExit) as e:   # find_chrome exits when there is no Chrome
-        detail = f"{type(e).__name__}: {e}"
+    with savetest_lock(Path(job)) as held:
+        if not held:
+            detail = "another save test is running on this job (savetest.lock); nothing was pushed"
+        else:
+            try:
+                result, detail = _savetest(cfg, work, runner, gh, itch, tag, evidence, fetch, sleep)
+            except Stop as e:
+                detail = f"{e.gate}: {e.detail}"
+            except (OSError, SystemExit) as e:   # find_chrome exits when there is no Chrome
+                detail = f"{type(e).__name__}: {e}"
     evidence.update(result=result, detail=detail)
     if work.is_dir():
         (work / "evidence.json").write_text(json.dumps(evidence, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -1002,24 +1077,54 @@ def _itch_project(target: str) -> str:
     return target.partition(":")[0].lower()
 
 
-def _page_key(url: str) -> tuple[str, str]:
-    parts = urllib.parse.urlsplit(url.strip())
-    return parts.netloc.lower(), parts.path.rstrip("/").lower()
+SAVETEST_TARGET = re.compile(r"[a-z0-9_-]+/[a-z0-9_-]+:[a-z0-9._-]+", re.I)   # user/project:channel, nothing else
+
+
+def _page_project(url: str | None) -> str | None:
+    """`user/project` of an itch page URL https://<user>.itch.io/<project>, or None for anything else."""
+    parts = urllib.parse.urlsplit((url or "").strip())
+    user, dot, host = parts.netloc.lower().partition(".")
+    path = parts.path.strip("/").lower()
+    return f"{user}/{path}" if dot and host == "itch.io" and path and "/" not in path else None
 
 
 def _test_page_problem(cfg: Config) -> str | None:
-    """Why the save test may not push, or None: it needs its own test project, distinct from the public one."""
-    if not cfg.savetest_itch_target or not cfg.savetest_itch_page_url:
-        return "savetest_itch_target and savetest_itch_page_url must name a separate test page in the job's config"
-    if _itch_project(cfg.savetest_itch_target) == _itch_project(cfg.itch_target):
+    """Why the save test may not push, or None: it needs its own test project, distinct from the public one (the
+    project of itch_target, on any channel, and the project of the public itch_page_url)."""
+    target = cfg.savetest_itch_target
+    if not target:
+        return "savetest_itch_target must name the separate test page's project (user/project:channel) in the job's config"
+    if not SAVETEST_TARGET.fullmatch(target):
+        return f"the save test's test page target {target!r} is not user/project:channel (letters, digits, - and _)"
+    public = {_itch_project(cfg.itch_target), _page_project(cfg.itch_page_url)}
+    if _itch_project(target) in public:
         return "the save test's test page must not be the public itch project (any channel of it uploads to its page)"
+    return None
+
+
+SAVETEST_KEYS = ("savetest_itch_target",)
+
+
+def itch_skip_reason(cfg: Config) -> str | None:
+    """Why tonight's build must not be pushed to the public itch page, or None when it may (#2056). A push needs a
+    separate test page in the job's config and a recorded save test PASS on it: itch_enabled alone is not enough,
+    so a hand-set flag or a test page that is the public one never leads to a push. Every reason is logged."""
+    missing = [key for key in SAVETEST_KEYS if not getattr(cfg, key)]
+    if missing:
+        return f"the job config has no {' or '.join(missing)}, so no save test can run on a separate test page"
+    problem = _test_page_problem(cfg)
+    if problem:
+        return problem
+    if not cfg.itch_enabled:
+        return "save test not passed"
+    if not cfg.itch_evidence:
+        return "itch_enabled is set but no save test evidence is recorded (itch_evidence)"
     try:
-        test_page = _page_key(cfg.savetest_itch_page_url)
-        public_page = _page_key(cfg.itch_page_url) if cfg.itch_page_url else None
-    except ValueError as e:
-        return f"the save test's test page URL or the public page URL is not usable: {e}"
-    if test_page == public_page:
-        return "the save test's test page must not be the public itch page"
+        evidence = json.loads(Path(cfg.itch_evidence).read_text(encoding="utf-8"))
+    except (OSError, ValueError) as e:
+        return f"the save test evidence {cfg.itch_evidence} is unreadable ({type(e).__name__})"
+    if not isinstance(evidence, dict) or evidence.get("result") != "PASS":
+        return f"the save test evidence {cfg.itch_evidence} does not record a save test PASS"
     return None
 
 
@@ -1038,14 +1143,15 @@ def _savetest(cfg: Config, work: Path, runner: Runner, gh: GitHub, itch: Itch, t
     zip_path = gh.download(tag, "*-web.zip", work / "zip")
     evidence.update(zip=zip_path.name, zip_sha256=sha256_of(zip_path))
     folder = unzip_to(zip_path, work / "folder")
+    if not (folder / "index.html").is_file():
+        return "INCONCLUSIVE", f"{zip_path.name} has no index.html at its root, so the build's frame URL would not load"
     profile = work / "profile"
 
     itch.push(folder, f"{version}-savetest-a")
     itch.wait_live(f"{version}-savetest-a", time.monotonic() + ITCH_WAIT_SECONDS)
-    frame_a = _frame_url(fetch, sleep, cfg.savetest_itch_page_url)
-    evidence.update(upload_a={"build_id": itch.live_build_id(), "frame_url": frame_a})
+    frame_a, why = _live_frame(itch, fetch, sleep, "upload a", f"{version}-savetest-a", evidence)
     if frame_a is None:
-        return "INCONCLUSIVE", "the itch page names no game frame after upload A"
+        return "INCONCLUSIVE", why
     code, text = _frame_check(runner, work, "a-first-save", frame_a, profile, "--first-save")
     saved = PERSIST_SAVED.search(text)
     if code != 0 or not re.search(r"^PASS:", text, re.M) or saved is None:
@@ -1055,15 +1161,11 @@ def _savetest(cfg: Config, work: Path, runner: Runner, gh: GitHub, itch: Itch, t
 
     itch.push(folder, f"{version}-savetest-b")
     itch.wait_live(f"{version}-savetest-b", time.monotonic() + ITCH_WAIT_SECONDS)
-    frame_b = _frame_url(fetch, sleep, cfg.savetest_itch_page_url, other=frame_a)
-    evidence.update(upload_b={"build_id": itch.live_build_id(), "frame_url": frame_b})
+    frame_b, why = _live_frame(itch, fetch, sleep, "upload b", f"{version}-savetest-b", evidence)
     if frame_b is None:
-        return "INCONCLUSIVE", "the itch page names no game frame after upload B"
-    (scheme_a, host_a, seg_a), (scheme_b, host_b, seg_b) = _frame_parts(frame_a), _frame_parts(frame_b)
-    if (scheme_a, host_a) != (scheme_b, host_b):
-        return "INCONCLUSIVE", f"the frame origin changed ({scheme_a}://{host_a} to {scheme_b}://{host_b}): IndexedDB is per origin"
-    if seg_a == seg_b:
-        return "INCONCLUSIVE", f"upload B has the same frame URL as upload A ({seg_a}), so the test proves nothing"
+        return "INCONCLUSIVE", why
+    if frame_b == frame_a:   # both frames are on itch's one frame host, so IndexedDB is shared between them
+        return "INCONCLUSIVE", f"upload B has the same frame URL as upload A ({frame_a}), so the test proves nothing"
 
     expect = f"GAME OK {tuple_a['date']} turn {tuple_a['turn']} hash {tuple_a['hash']}"
     for n in (1, 2):
@@ -1121,6 +1223,7 @@ def main(argv: list[str] | None = None) -> int:
     run = sub.add_parser("run")
     run.add_argument("--manual", action="store_true")
     run.add_argument("--no-publish", action="store_true")
+    run.add_argument("--no-steam", action="store_true", help="skip the Steam stage after the web publish")
     test = sub.add_parser("savetest", help="the two-upload itch.io save test: pushes twice to the separate test page, never the public one")
     test.add_argument("--tag", required=True, help="a published nightly release tag")
     args = parser.parse_args(argv)
@@ -1148,7 +1251,7 @@ def main(argv: list[str] | None = None) -> int:
             gh = itch = None
             client_error = e
         outcome = run_night(cfg, job / "state.json", job, ProcRunner(), gh, itch, now=now, manual=args.manual,
-                            no_publish=args.no_publish, client_error=client_error)
+                            no_publish=args.no_publish, client_error=client_error, no_steam=args.no_steam)
     print(outcome)
     return 1 if outcome == "REFUSED" else 0
 
