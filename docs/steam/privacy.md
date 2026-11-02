@@ -37,9 +37,9 @@ The game's source code is public in this repository, so anyone can check these s
 - Unity's cloud analytics, crash reporting and performance reporting are off (`m_Enabled: 0`,
   `unity/ProjectSettings/UnityConnectSettings.asset:16-40`).
 - The game's own code makes no network request on the desktop: it reads its StreamingAssets with `UnityWebRequest`,
-  which on the desktop is a file path or a `file://` URI (`unity/Assets/Scripts/Boot/GameInputs.cs:147-152`). The only
+  which on the desktop is a file path or a `file://` URI (`unity/Assets/Scripts/Boot/GameInputs.cs:151-156`). The only
   other `https://` addresses in `unity/Assets/Scripts` are the pages the share and report buttons open in the browser
-  (`UI/ShareShot.cs:21-70`, `UI/ReportLinks.cs:18`, `UI/ExternalLink.cs:17`) and a check of credit links
+  (`UI/ShareShot.cs:21-76`, `UI/ReportLinks.cs:18`, `UI/ExternalLink.cs:17`) and a check of credit links
   (`UI/EventImageMapping.cs:80`).
 
 The statement makes no claim about what Unity collects beyond these documented facts.
