@@ -11,6 +11,7 @@ listed, two are closed (1c-bis, and the Ethiopia yearly arrivals series inside 2
 (5b), and two stay [GAP] with what was read this time (the start of Operation Moses in 2b, yearly emigration in 3a).
 Where this pass added a derived series, the arithmetic is shown. An agent opened these sources; a person's check of them is still pending.
 Added 1 November 2026, after the owner's "Research part open" comment on #160 (issue #160): section 2c, the US refugee change of 1 October 1989, the size and cut of the direct-absorption package, and housing starts, completions and caravan placements 1985-92 from the CBS Statistical Abstracts of 1991-93. Sources are in the Sources table (keys CBS SA 1991 to 1993 and JTA 1989-10-03 to JTA 1991-03-13).
+Added 2 November 2026: the key PL 101-167 (Public Law 101-167, sections 599D and 599E), used in section 2c.
 
 ## Purpose
 
@@ -21,7 +22,7 @@ value is given and one is named. The design also asks how CBS classifies the Asi
 
 ## Conventions
 
-- [V] read this session in a primary source: a CBS table or publication, or Tolts's paper (all listed under Sources).
+- [V] read this session in a primary source: a CBS table or publication, Tolts's paper, or a US statute (all listed under Sources).
   Tables were read from the page image as well as from the text layer; where the two differ, the page image is what
   is reported.
 - From 24 October the tag [V] is also used for what a contemporaneous newspaper or wire report (JTA bulletins of the
@@ -97,6 +98,7 @@ Every [V] in this note was an agent's reading on 2026-10-23, unless the tag give
 | JTA 1991-03-06 | JTA, 6 March 1991, "Knesset Protests Absorption Cuts, Fearing Effect on Soviet Aliyah" (opened 1 Nov) | https://www.jta.org/archive/knesset-protests-absorption-cuts-fearing-effect-on-soviet-aliyah |
 | JTA 1991-03-11 | JTA, 11 March 1991, "Sharon Quits As 'absorption Czar' As Public Eye Turns to Immigrants" (opened 1 Nov) | https://www.jta.org/archive/sharon-quits-as-absorption-czar-as-public-eye-turns-to-immigrants |
 | JTA 1991-03-13 | JTA, 13 March 1991, "Israel Partially Restores Cuts in Subsidies to New Immigrants" (opened 1 Nov) | https://www.jta.org/archive/israel-partially-restores-cuts-in-subsidies-to-new-immigrants |
+| PL 101-167 | Public Law 101-167, 21 November 1989, 103 Stat. 1195; sections 599D and 599E on pages 1261-1264 (opened 2 Nov) | https://www.govinfo.gov/content/pkg/STATUTE-103/pdf/STATUTE-103-Pg1195.pdf |
 
 Also opened, not usable for this era: *Statistical Abstract of Israel 2010*, Table 4.10, "Departures and returns of
 Israelis staying abroad continuously for one year or more" (st04_10.pdf in the same folder as T4.2); it covers 2005-2008
@@ -508,10 +510,33 @@ text names it, and a weekday read against the item's date is marked "computed he
 - Our reading, not a source statement: the change closed the route by which most Soviet Jews who left on Israeli visas
   went on to the US (Tolts, 2a, gives the US row at 56 thousand "departures from the Soviet Union" for 1989 and 6.5 for
   1990, note b, against 12.9 and 185.2 to Israel).
-- [GAP] The US rule's own text (the State Department notice or the Federal Register) was not opened; every line above is a
-  press account of it. The same JTA item of 7 November says the 5 November deadline was announced "last week" in Moscow;
-  the day is not given. The effective day, 1 October 1989, is stated by JTA as "beginning Oct. 1" and "which began
-  Sunday" (1 October 1989 was a Sunday, computed here).
+- [GAP] The 1 October 1989 rule's own text (the State Department or INS notice) was not found. Tried on 2 November:
+  the full-text layer of the govinfo Federal Register day volumes of 26 June, 22 August, 17 October and 25 October 1989
+  (the four days the govinfo search returned for Soviet, refugee and Moscow together), searched for "Moscow": no
+  refugee notice; the GAO testimony T-NSIAD-89-47 on gao.gov (`https://www.gao.gov/assets/t-nsiad-89-47.pdf`) answered "Access Denied" again on 2 November and was not opened. Every line
+  of the table above is still a press account of the rule. The same JTA item of 7 November says the 5 November deadline
+  was announced "last week" in Moscow; the day is not given. The effective day, 1 October 1989, is stated by JTA as
+  "beginning Oct. 1" and "which began Sunday" (1 October 1989 was a Sunday, computed here).
+
+**The statute that followed the change: Public Law 101-167, sections 599D and 599E (added 2 November 2026)**
+
+Not the rule itself, but the primary legal text of the US answer to it: section 599D of the Foreign Operations, Export Financing, and Related Programs
+Appropriations Act, 1990 (the short title printed on 103 Stat. 1266), Public Law 101-167 of 21 November 1989, 103 Stat. 1195, read in the govinfo copy of the
+Statutes at Large (`https://www.govinfo.gov/content/pkg/STATUTE-103/pdf/STATUTE-103-Pg1195.pdf`, 72 pages; section 599D
+on pages 1261 to 1263, section 599E on 1263 to 1264). Read on the page images on 2 November 2026.
+
+| Claim | Where | Printed text | Tag |
+|---|---|---|---|
+| Soviet Jews and Evangelical Christians were put by statute in a category whose members may establish a well-founded fear of persecution, for refugee admission, by asserting it (the category of sec. 599D(b)(1)(A), "targets of persecution") | 103 Stat. 1262, sec. 599D(b)(1)(A) and (b)(2)(A) | "Aliens who are (or were) nationals and residents of the Soviet Union and who are Jews or Evangelical Christians shall be deemed a category of alien established under paragraph (1)(A)." | [V, agent read 2 Nov; a person's check pending], primary |
+| A person in a category could establish a well-founded fear by asserting a fear and a credible basis for concern | 103 Stat. 1261-1262, sec. 599D(a) | "by asserting such a fear and asserting a credible basis for concern about the possibility of such persecution" | [V, agent read 2 Nov; a person's check pending], primary |
+| Those in a category who were denied after 14 August 1988 and before 21 November 1989 could reapply, for reapplications made before 1 October 1990 (sec. 599D(e)(3)) | 103 Stat. 1262-1263, sec. 599D(d) and (e)(3) | "(after August 14, 1988, and before the date of the enactment of this Act) was denied refugee status shall be permitted to reapply for such status" | [V, agent read 2 Nov; a person's check pending], primary |
+| The category rules covered only applications made before 1 October 1990 | 103 Stat. 1263, sec. 599D(e)(1) | "shall only apply to applications for refugee status submitted before October 1, 1990" | [V, agent read 2 Nov; a person's check pending], primary |
+| Congress told the Comptroller General to report, by 31 December 1989 (preliminary) and 31 March 1990 (final), on implementation of sec. 599D in Italy and the Soviet Union, including the means of distributing and receiving applications in Moscow, to compare as far as possible the cost of Moscow-only processing with Moscow plus Italy, and to evaluate efforts to phase out Italy processing | 103 Stat. 1263, sec. 599D(f)(1)(E) to (G) and (f)(2) | "(E) the sufficiency of the means of distributing and receiving applications for refugee status in Moscow, (F) to the extent possible, a comparison of the cost of conducting refugee processing only in Moscow and such cost of processing in both Moscow and in Italy, and (G) an evaluation of efforts to phase out Soviet refugee processing in Italy." | [V, agent read 2 Nov; a person's check pending], primary |
+| Soviet (and Indochinese: Vietnamese, Lao, Cambodian) nationals paroled into the US between 15 August 1988 and 30 September 1990 after a refugee denial could apply to adjust to permanent residence (one year's presence, admissibility with the waivers of sec. 599E(c), and a fee also required, sec. 599E(a)) | 103 Stat. 1263-1264, sec. 599E(a), (b) | "(2) was inspected and granted parole into the United States during the period beginning on August 15, 1988, and ending on September 30, 1990, after being denied refugee status." | [V, agent read 2 Nov; a person's check pending], primary |
+
+- Our reading, not a source statement: subsection (f) shows that on 21 November 1989, seven weeks after the change, Moscow
+  processing and the Italy track were both still under review by Congress; sections 599D and 599E neither name nor repeal
+  the 1 October rule. The press lines above, not the statute, remain the source for the Moscow-only practice.
 
 **Direct absorption: what the Israeli state paid, 1990-91**
 
@@ -621,6 +646,7 @@ full-volume PDFs on the CBS site; only the construction chapter tables named abo
 1989-10-03, 1989-10-06, 1989-10-13, 1989-11-07, 1990-06-27, 1990-08-01, 1990-08-03, 1991-03-06, 1991-03-11 and 1991-03-13. Tried: the JTA wp-json archive search
 `https://www.jta.org/wp-json/wp/v2/archive?search=direct+absorption&after=1989-06-01T00:00:00&before=1992-12-31T00:00:00&per_page=40`
 (412 items) and `search=absorption+basket` over the same window (35 items); only the titles were scanned and the items named above were read in full.
+Added 2 November 2026: Public Law 101-167 (103 Stat. 1195, govinfo, pages 1261 to 1264) and the four Federal Register day volumes named in the US-rule gap above.
 
 ---
 
@@ -880,7 +906,7 @@ Still open:
   birth-table placement of Asian-republic Soviet immigrants before 1995.
 - A government or archive record of the first flight of Operation Moses (18, 20 or 21 November 1984, 2b), and primary
   counts for Moses, Joshua and Solomon; this pass added contemporaneous press only.
-- (2c, 1 Nov) The text of the US rule of 1 October 1989; the Cabinet resolutions of 26 June and 2 August 1990; the
+- (2c, 1 Nov) The text of the US rule of 1 October 1989 (tried 2 Nov, see 2c); the Cabinet resolutions of 26 June and 2 August 1990; the
   Absorption Ministry's grant schedule; a yearly rent or dwelling-price series 1989-92; the footnote that explains the
   "§" and "*" signs in CBS Table 16.2 and 16.3.
 - The 1983 census day and its count against the running estimate.

@@ -148,7 +148,24 @@ namespace Statecraft.Game.Tests
                 TestContext.WriteLine($"{p.Key}: {off:0} m from its sourced point");
                 float inside = SpecialBuildingModels.Inside(new Vector2(a3.x, a3.z), footprints);
                 TestContext.WriteLine($"{p.Key}: {inside:0} m inside a town's footprint");
-                Assert.Less(off, inside + 4f * r, p.Key + " stands near its sourced point (beyond the town's footprint)");
+                // Degania's R35 (#2046) is not placed on SeededSpot's ring beyond the footprint: RouteFacingEdgeSpot walks Degania
+                // Alef's drawn village box widened by its clearance, from the side facing the nearest route, to the first spot clear
+                // of the towns' footprints, the routes and the tokens (the edge is pinned by
+                // DeganiaTankStandsJustOutsideEveryVillageKitBoundAtTheTransportSide). A point on that box's edge is no farther from
+                // the sourced point than the widened box's farthest corner, and the ring's bound does not hold for it: on 4.4 km
+                // hexes (#1183) Degania's footprint shrinks with the hex, the spot 75 degrees off the route bearing misses its
+                // clearance by about 1 m, and the R35 takes the next, 90 degrees off, 1445 m out (1396 m at 75 degrees on 5 km hexes).
+                if (p.Key == "degania_r35")
+                {
+                    var village = SpecialBuildingModels.KitBounds(map.transform.Find(Statecraft.Game.Map.Kits.KitLayer.RootName)!, "degania_alef")!.Value;
+                    float reach = 0f;
+                    foreach (var cx in new[] { village.min.x - r, village.max.x + r })
+                        foreach (var cz in new[] { village.min.z - r, village.max.z + r })
+                            reach = Mathf.Max(reach, (new Vector2(cx, cz) - new Vector2(a3.x, a3.z)).magnitude);
+                    TestContext.WriteLine($"{p.Key}: its widened village box reaches {reach:0} m from its sourced point");
+                    Assert.Less(off, reach, p.Key + " stands near its sourced point (on the edge of its widened village box)");
+                }
+                else Assert.Less(off, inside + 4f * r, p.Key + " stands near its sourced point (beyond the town's footprint)");
                 Assert.IsTrue(TownLandmarks.Clear(flat, r, footprints), p.Key + " clear of the towns");
                 Assert.IsFalse(ground.OnRoute(flat, r), p.Key + " clear of the routes");
                 Assert.IsFalse(ground.OnToken(flat, r, After), p.Key + " clear of the unit tokens");

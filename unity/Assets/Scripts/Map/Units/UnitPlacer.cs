@@ -32,8 +32,8 @@ namespace Statecraft.Game.Map.Units
     }
 
     /// <summary>Puts every anchor of the unit data on one spot, once, from the data alone (review M9: a token never moves
-    /// because another unit appears). The spot lies within one hex step of the anchor point (review I2: about 8.7 km
-    /// between hex centres on 5 km hexes) and is the nearest to it, or, when the anchor has a sourced `toward` point on
+    /// because another unit appears). The spot lies within one hex step of the anchor point (review I2: about 7.6 km
+    /// between hex centres on 4.4 km hexes) and is the nearest to it, or, when the anchor has a sourced `toward` point on
     /// the unit's own side (review MF1), the nearest to that, among the following; an anchor with a sourced `place_hex`
     /// considers only that hex:
     /// 1. the centres of the anchor's own hex and its six neighbours, drawn full size;
@@ -41,12 +41,21 @@ namespace Statecraft.Game.Map.Units
     ///    <see cref="InsideOffsets"/> of the hex circumradius), and rings round a `toward` point, drawn compact;
     /// 3. then, when the anchor's whole neighbourhood is town (Tel Aviv), the same compact points with the ring allowed
     ///    into the town: the one that reaches least deep into it (then the nearest; with a `toward` point, simply the nearest
-    ///    to it) is taken, and the kits keep a clearing for it (MapScene), so the token never stands in a building.
+    ///    to it) is taken, and the kits keep a clearing for it (MapScene), so the token never stands in a building;
+    /// 4. then, when none of those is clear, the anchor's point and rings round it every <see cref="MeshStepM"/> out to the
+    ///    one-hex limit, about <see cref="MeshStepM"/> apart on each ring, drawn compact and off the towns as in round 2: on
+    ///    4.4 km hexes (#1183) the points above lie 1.1 to 2.9 km apart and can all miss the clear ground between villages
+    ///    (Majdal, the Egyptian rear base, whose nearest clear ground lies 3.5 km south-west of its point, west of Ni'ilya). It
+    ///    runs last, so an anchor that found a spot in rounds 1-3 keeps it; a spot it finds holds its hex like any other.
+    ///    Ranked as above (by distance to a `toward` point when the anchor has one).
     /// A spot must be land (sea for a ship), on a hex no other anchor with an overlapping window holds, and clear (the
     /// caller's test: the ring off the settlement footprints except in round 3, the figures on land and off the railways
     /// and roads). An anchor with no such spot is left out and reported. The map holds no 1948 front line yet: where the
     /// nearest spot would be the other side's ground, the anchor's sourced `toward` point keeps the token on its own side
-    /// (docs/units.md). Anchors are placed in the data's order.</summary>
+    /// (docs/units.md). Where the caller passes the control layer (<paramref name="otherSide"/> of PlaceAll), an Arab force's
+    /// spot also keeps off the hexes Israel held on the anchor's first day (#226, ruling 9): on 4.4 km hexes (#1183) the
+    /// nearest clear centre to Isdud, the Egyptian forward base, was the Israeli-held hex east of it. Anchors are placed in
+    /// the data's order.</summary>
     public static class UnitPlacer
     {
         /// <summary>Hexes from the anchor's own hex (axial distance).</summary>
@@ -61,9 +70,12 @@ namespace Statecraft.Game.Map.Units
         /// <param name="townOverlap">(x, z): how deep (m) a compact token there reaches into a town (round 3's ranking).</param>
         /// <param name="taken">Hexes other tokens already hold for good (a moved unit's spot keeps off the drawn tokens'
         /// hexes, UnitLayer); null: none.</param>
+        /// <param name="otherSide">(unit, anchor, hex): true when the hex is the other side's ground for that unit on the
+        /// anchor's first day, so no spot is taken there; null: no control layer.</param>
         public static Dictionary<UnitAnchor, AnchorSpot> PlaceAll(IReadOnlyList<UnitEntry> units, IReadOnlyList<MapHex> hexes, double hexSizeM,
             Func<double, double, (double x, double z)> toXZ, Func<string, double, double, bool, bool, double, double, bool> clear,
-            Func<double, double, double> townOverlap, Action<string>? skipped = null, IEnumerable<(int q, int r)>? taken = null)
+            Func<double, double, double> townOverlap, Action<string>? skipped = null, IEnumerable<(int q, int r)>? taken = null,
+            Func<UnitEntry, UnitAnchor, MapHex, bool>? otherSide = null)
         {
             if (units == null) throw new ArgumentNullException(nameof(units));
             if (hexes == null || hexes.Count == 0) throw new ArgumentException("no hexes", nameof(hexes));
@@ -90,15 +102,18 @@ namespace Statecraft.Game.Map.Units
                     var near = new List<int>();
                     for (int i = 0; i < hexes.Count; i++) if (MapActions.Distance(hexes[i].Q, hexes[i].R, hq, hr) <= MaxShift) near.Add(i);
                     AnchorSpot? best = null;
-                    foreach (var round in new[] { 1, 2, 3 })
+                    foreach (var round in new[] { 1, 2, 3, 4 })
                     {
                         bool compact = round > 1, inTown = round == 3;
                         double bestD = double.MaxValue, bestDepth = double.MaxValue;
-                        foreach (var (i, x, z) in Candidates(near, centres, hexSizeM, compact, a.Toward != null ? target : ((double, double)?)null))
+                        var points = round == 4 ? Mesh(centres, p, maxOffset)
+                            : Candidates(near, centres, hexSizeM, compact, a.Toward != null ? target : ((double, double)?)null);
+                        foreach (var (i, x, z) in points)
                         {
                             var h = hexes[i];
                             if (h.Land == sea || MapActions.Distance(h.Q, h.R, hq, hr) > MaxShift) continue;
                             if (a.PlaceHex != null && (h.Q != a.PlaceHex[0] || h.R != a.PlaceHex[1])) continue;
+                            if (otherSide != null && otherSide(u, a, h)) continue;
                             if (held.Exists(c => c.q == h.Q && c.r == h.R && c.from < to && from < c.to)) continue;
                             if (Math.Sqrt((x - p.x) * (x - p.x) + (z - p.z) * (z - p.z)) > maxOffset) continue;
                             double d = Math.Sqrt((x - target.x) * (x - target.x) + (z - target.z) * (z - target.z));
@@ -164,6 +179,27 @@ namespace Statecraft.Game.Map.Units
                     double x = t.x + Math.Cos(Math.PI / 6.0 * k) * rad, z = t.z + Math.Sin(Math.PI / 6.0 * k) * rad;
                     yield return (Nearest(centres, (x, z)), x, z);
                 }
+        }
+
+        /// <summary>Round 4's spacing (m): between its rings, and at most between two points on a ring. Its own constant, not
+        /// <see cref="TowardStepM"/>: the `toward` rings keep twelve points a ring, this mesh keeps the spacing.</summary>
+        public const double MeshStepM = 500.0;
+
+        /// <summary>Round 4's candidate spots, each with its nearest hex: the anchor's point <paramref name="p"/>, then rings
+        /// round it every <see cref="MeshStepM"/> out to <paramref name="reach"/>, each with as many points as keep them at
+        /// most <see cref="MeshStepM"/> apart.</summary>
+        static IEnumerable<(int i, double x, double z)> Mesh((double x, double z)[] centres, (double x, double z) p, double reach)
+        {
+            yield return (Nearest(centres, p), p.x, p.z);
+            for (double rad = MeshStepM; rad <= reach; rad += MeshStepM)
+            {
+                int n = (int)Math.Ceiling(2.0 * Math.PI * rad / MeshStepM);
+                for (int k = 0; k < n; k++)
+                {
+                    double x = p.x + Math.Cos(2.0 * Math.PI * k / n) * rad, z = p.z + Math.Sin(2.0 * Math.PI * k / n) * rad;
+                    yield return (Nearest(centres, (x, z)), x, z);
+                }
+            }
         }
 
         /// <summary>The spot for a sim unit's anchor that <see cref="PlaceAll"/> found no clear spot for. Every unit the sim has
