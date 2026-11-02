@@ -63,9 +63,7 @@ namespace Statecraft.Game.Map.Units
                 var motion = fire.GetComponentInParent<UnitTokenMotion>();
                 if (motion != null && motion.Attacking) motion.RefreshPose();   // an attack under way takes the aim at once
             }
-            var ask = UnitFigures.Source;
-            if (ask != null) ask(id, CollectionDetail.Far, Answer);
-            else if (Application.isPlaying) fire.lease = CollectionStream.Acquire(id, CollectionDetail.Far, Answer);
+            fire.lease = UnitWeapons.Request(id, Answer);
         }
 
         /// <summary>How long the aim holds: the figure's own fire take (an attack lasts as long as its longest take). Read once.</summary>

@@ -42,7 +42,7 @@ public class TalWeaponsShots
     [TearDown]
     public void DiscardScene()
     {
-        UnitFigures.Source = savedUnits; UnitFigurePointFire.Forget();
+        UnitFigures.Source = savedUnits; UnitWeapons.Source = null; UnitFigurePointFire.Forget();
         EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         if (ps != null) Object.DestroyImmediate(ps);
         if (rt != null) { rt.Release(); Object.DestroyImmediate(rt); }
@@ -53,7 +53,9 @@ public class TalWeaponsShots
 
     IEnumerator Shot(bool hebrew, bool after, string what)
     {
-        UnitFigures.Source = TalModelsShots.Answer(after ? Array.Empty<string>() : New);
+        UnitFigures.Source = TalModelsShots.Answer(Array.Empty<string>());
+        var weapons = TalModelsShots.Answer(after ? Array.Empty<string>() : New);
+        UnitWeapons.Source = (id, done) => weapons(id, CollectionDetail.Far, done);
         yield return CivMovementShots.Boot(hebrew, saveDir, (t, p, u, g) => { rt = t; ps = p; root = g; });
         Camera.main.aspect = (float)CivMovementShots.Width / CivMovementShots.Height;
         var map = Object.FindFirstObjectByType<MapScene>();
@@ -100,6 +102,7 @@ public class TalWeaponsShots
     public IEnumerator MeasureLoad()
     {
         UnitFigures.Source = TalModelsShots.Answer(Array.Empty<string>());
+        UnitWeapons.Source = (id, done) => done(AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(id, CollectionDetail.Far)));
         yield return CivMovementShots.Boot(false, saveDir, (t, p, u, g) => { rt = t; ps = p; root = g; });
         var map = Object.FindFirstObjectByType<MapScene>();
         var tokens = map.Terrain.transform.Find(UnitLayer.RootName + "/Tokens");

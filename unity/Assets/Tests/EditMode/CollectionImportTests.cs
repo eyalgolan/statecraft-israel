@@ -328,7 +328,8 @@ public class CollectionImportTests
             var deps = AssetDatabase.GetDependencies(entries, true);
             var outside = deps.Where(d => !folders.Any(f => d.StartsWith(f, StringComparison.Ordinal))
                 && !d.StartsWith("Packages/com.unity.render-pipelines.", StringComparison.Ordinal)
-                && d != "Assets/Scripts/Map/Collection/OriginalModelDistance.cs" && d != "Assets/Scripts/Map/Collection/OriginalModelPose.cs").ToArray();
+                && d != "Assets/Scripts/Map/Collection/OriginalModelDistance.cs" && d != "Assets/Scripts/Map/Collection/OriginalModelPose.cs"
+                && d != "Assets/Scripts/Map/Units/UnitFigurePoseSource.cs").ToArray();   // #2084's pose source prefab
             CollectionAssert.IsEmpty(outside, bundle + " pulls in files from outside its models' folders");
         }
         // No asset carries a bundle label: the bundles are built from the catalog alone (CollectionImport.Builds).
@@ -363,8 +364,10 @@ public class CollectionImportTests
             CollectionAssert.IsEmpty(FilesOf(id, resources), id + " in a Resources asset's closure");
             string own = CollectionCatalog.BundleOf(id)!;
             string source = CollectionCatalog.SourceModelPath(id), folder = source.Substring(0, source.LastIndexOf('/') + 1);
-            // Its model, streamed prefab, material and colour map are all in its own bundle's closure.
-            foreach (var file in new[] { source, CollectionCatalog.PrefabPath(id, CollectionDetail.Near), folder + id + ".mat", folder + id + "_basecolor.jpg" })
+            // Its model, streamed prefab, material and colour map are all in its own bundle's closure; #2084's pose source has
+            // only its export (for the clip) and its prefab.
+            foreach (var file in CollectionCatalog.IsFigurePose(id) ? new[] { source, CollectionCatalog.PrefabPath(id, CollectionDetail.Near) }
+                : new[] { source, CollectionCatalog.PrefabPath(id, CollectionDetail.Near), folder + id + ".mat", folder + id + "_basecolor.jpg" })
                 CollectionAssert.Contains(closures[own], file, id + " in its own bundle");
             foreach (var other in closures.Where(c => c.Key != own))
                 CollectionAssert.IsEmpty(FilesOf(id, other.Value), id + " pulled into " + other.Key);
@@ -411,11 +414,14 @@ public class CollectionImportTests
         CollectionAssert.AreEqual(CollectionCatalog.Bundles.Select(b => b.Bundle), builds.Select(b => b.assetBundleName));
         // Each model's source file, written out here rather than read from CollectionCatalog.SourceModelPath (which Builds
         // uses): a town building's <id>.fbx in the buildings' folder, the R35's compatibility FBX, every other model's
-        // <id>.fbx in its own Collection folder (never a -near.fbx or -far.fbx).
+        // <id>.fbx in its own Collection folder (never a -near.fbx or -far.fbx). #2084's pose source builds only its prefab
+        // (the clip comes in as its dependency, never the export's mesh as an entry).
+        string[] Entries(string id) => CollectionCatalog.IsFigurePose(id) ? new[] { $"{Dir(id)}/{id}.prefab" }
+            : new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near), Source(id) };
         string Source(string id) => CollectionCatalog.IsBuilding(id) ? $"{CollectionCatalog.BuildingsFolder}/{id}/{id}.fbx"
             : id == CollectionCatalog.SyrianR35 ? $"{Dir(id)}/{id}-compatibility.fbx" : Model(id);
         foreach (var (b, (bundle, ids)) in builds.Zip(CollectionCatalog.Bundles, (b, c) => (b, c)))
-            CollectionAssert.AreEquivalent(ids.SelectMany(id => new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near), Source(id) }).Distinct(),
+            CollectionAssert.AreEquivalent(ids.SelectMany(Entries).Distinct(),
                 b.assetNames, bundle);
         // A strict bundle build fails on a name with no asset behind it, and the map above would not see it: every name is a file.
         var missing = builds.SelectMany(b => b.assetNames.Where(n => !System.IO.File.Exists(n) || string.IsNullOrEmpty(AssetDatabase.AssetPathToGUID(n))).Select(n => b.assetBundleName + ": " + n)).ToList();

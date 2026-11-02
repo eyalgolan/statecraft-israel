@@ -90,6 +90,43 @@ namespace Statecraft.Game.Map.Units
         /// Tal's two GLBs are both one unit long).</summary>
         public const float StenLengthMm = 762f, K98kLengthMm = 1110f;
 
+        /// <summary>How a weapon or the pose source is asked for outside a player: edit-mode captures and tests answer by hand
+        /// (each id once; setting it forgets the answers). With none, a player or play mode asks the game's stream, which
+        /// shares a bundle between its leases; edit mode asks nothing. Apart from UnitFigures.Source, so a figure's requests
+        /// stay exactly as they were.</summary>
+        public static Action<string, Action<GameObject?>>? Source
+        {
+            get => source;
+            set { source = value; Forget(); }
+        }
+        static Action<string, Action<GameObject?>>? source;
+        static readonly Dictionary<string, GameObject?> answered = new Dictionary<string, GameObject?>(StringComparer.Ordinal);
+        static readonly Dictionary<string, List<Action<GameObject?>>> waiting = new Dictionary<string, List<Action<GameObject?>>>(StringComparer.Ordinal);
+
+        /// <summary>Asks for weapon or pose source <paramref name="id"/>; <paramref name="done"/> gets its prefab, or null (fail
+        /// open). The returned lease (play only) holds its bundle until it is disposed.</summary>
+        internal static IDisposable? Request(string id, Action<GameObject?> done)
+        {
+            if (source == null) return Application.isPlaying ? CollectionStream.Acquire(id, CollectionDetail.Far, done) : null;
+            if (answered.TryGetValue(id, out var have)) { done(have); return null; }
+            if (waiting.TryGetValue(id, out var list)) { list.Add(done); return null; }
+            waiting[id] = new List<Action<GameObject?>> { done };
+            var ask = source;
+            ask(id, prefab =>
+            {
+                if (ask != source || !waiting.TryGetValue(id, out var callers)) return;   // the source changed meanwhile
+                waiting.Remove(id); answered[id] = prefab;
+                foreach (var caller in callers) caller(prefab);
+            });
+            return null;
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetSession() => Source = null;
+
+        /// <summary>Forgets every answer and request (a change of <see cref="Source"/>, and tests).</summary>
+        public static void Forget() { answered.Clear(); waiting.Clear(); }
+
         public static float SocketScale(string weapon) => weapon == CollectionCatalog.Sten ? K98kSocketScale * StenLengthMm / K98kLengthMm : K98kSocketScale;
 
         /// <summary>Puts <paramref name="weapon"/> in the right hand of figure model <paramref name="instance"/> (its far or near

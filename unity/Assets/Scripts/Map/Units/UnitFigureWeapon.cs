@@ -40,9 +40,7 @@ namespace Statecraft.Game.Map.Units
                 prefab = arrived;           // null: fail open, the figure stays unarmed (the stream has warned once)
                 Arm();
             }
-            var source = UnitFigures.Source;
-            if (source != null) source(weapon, CollectionDetail.Far, Answer);
-            else if (Application.isPlaying) lease = CollectionStream.Acquire(weapon, CollectionDetail.Far, Answer);
+            lease = UnitWeapons.Request(weapon, Answer);
         }
 
         /// <summary>Arms the figure's models that have arrived (each once).</summary>

@@ -22,8 +22,9 @@ public class UnitWeaponsTests
     public void Fresh()
     {
         UnitFigures.Source = null; UnitFigures.Forget(); UnitFigurePointFire.Forget();
-        // The editor's prefabs answer at once, as the captures' source does.
+        // The editor's prefabs answer at once, as the captures' sources do.
         UnitFigures.Source = (id, detail, done) => done(AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(id, detail)));
+        UnitWeapons.Source = (id, done) => done(AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(id, CollectionDetail.Far)));
     }
 
     [TearDown]
@@ -31,7 +32,7 @@ public class UnitWeaponsTests
     {
         foreach (var o in made) if (o != null) Object.DestroyImmediate(o);
         made.Clear();
-        UnitFigures.Source = null; UnitFigures.Forget(); UnitFigurePointFire.Forget();
+        UnitFigures.Source = null; UnitFigures.Forget(); UnitWeapons.Source = null; UnitFigurePointFire.Forget();
     }
 
     static GameObject Prefab(string id) => AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(id, CollectionDetail.Far))
@@ -283,7 +284,7 @@ public class UnitWeaponsTests
     [Test]
     public void WithoutItsPoseSourceC06FailsOpen()
     {
-        UnitFigures.Source = (id, detail, done) => done(id == CollectionCatalog.C06PointFire ? null : AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(id, detail)));
+        UnitWeapons.Source = (id, done) => done(id == CollectionCatalog.C06PointFire ? null : AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(id, CollectionDetail.Far)));
         var (motion, piece) = Token(UnitFigures.YoungRecruit);
         var before = Bones(Model(piece));
         Assert.IsFalse(motion.PlayAttack(), "far, with no aim and no near fire take: nothing plays, as before");
