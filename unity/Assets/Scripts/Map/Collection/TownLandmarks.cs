@@ -15,6 +15,10 @@ namespace Statecraft.Game.Map.Collection
     /// (BuildingPreview at 3ef0a7a5): White City at Tel Aviv, the stone city at Jerusalem, the port city at Haifa, the
     /// moshava town at the six moshavot, Nahalal at the moshav, the compound at every kibbutz, the stone village at every
     /// Arab town, the ma'abara at a transit camp and the shikun at a housing project.
+    /// Owner ruling of 2 November 2026, "Yes, small buildings at every zoom": Tel Aviv, Jerusalem, Haifa and Jaffa have no
+    /// whole-town model; their building models draw at every zoom instead (<see cref="Kits.TownModels.AtEveryZoom"/>). Tel
+    /// Aviv's, Jerusalem's and Haifa's whole-town models stay in the repository and the streamed catalogue, unused on the map;
+    /// the stone village still stands at the other Arab towns.
     /// Owner ruling of 18 October 2026 (recorded on #917, #663, #659 and #700): the towns are Tal Heuberger's models, "Whole model
     /// far, buildings near". Far off, a mapped town's whole-town model stands ON its town, on its core (<see cref="CoreOf"/>:
     /// where most of its building models stand, inside its kit footprint, clear of the next town and of the sea), as wide as
@@ -52,13 +56,14 @@ namespace Statecraft.Game.Map.Collection
             Moshava = "moshava-town-v1", Nahalal = "nahalal-moshav-v1", Kibbutz = "kibbutz-compound-v2", StoneVillage = "stone-village-v1",
             Maabara = "maabara-camp-v1", Shikun = "shikun-housing-v1", Jerusalem3D = "jerusalem-stone-city-v1-3denhance";
 
-        /// <summary>By settlement id first (#507's mapping). Jerusalem stands as #336's second take of the stone city
-        /// (<see cref="Jerusalem3D"/>, Tal Heuberger, #886) for the whole game: the owner, 21 October 2026, on #708
-        /// (issuecomment-6323524970), "it is Jerusalem's only far-zoom model for the whole game. The first model stays in the
-        /// repository, unused on the map. No date switch". #507's <see cref="Jerusalem"/> is therefore not placed.</summary>
+        /// <summary>By settlement id first (#507's mapping). Tel Aviv, Jerusalem and Haifa have no row: the owner, 2 November
+        /// 2026, "Yes, small buildings at every zoom" (<see cref="Kits.TownModels.AtEveryZoom"/>). That replaces #507's
+        /// White City at Tel Aviv and port city at Haifa, and the owner's ruling of 21 October 2026 on #708
+        /// (issuecomment-6323524970) that #336's second stone city (<see cref="Jerusalem3D"/>, Tal Heuberger, #886) "is
+        /// Jerusalem's only far-zoom model for the whole game". <see cref="TelAviv"/>, <see cref="Haifa"/>,
+        /// <see cref="Jerusalem3D"/> and #507's <see cref="Jerusalem"/> stay in the repository, unused on the map.</summary>
         public static readonly IReadOnlyDictionary<string, string> ById = new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            ["tel_aviv"] = TelAviv, ["jerusalem"] = Jerusalem3D, ["haifa"] = Haifa,
             ["petah_tikva"] = Moshava, ["rishon_lezion"] = Moshava, ["zikhron_yaakov"] = Moshava,
             ["rosh_pinna"] = Moshava, ["rehovot"] = Moshava, ["hadera"] = Moshava,
         };
@@ -88,9 +93,10 @@ namespace Statecraft.Game.Map.Collection
         internal static Action<string, CollectionDetail, Action<GameObject?>> Request = DefaultRequest;
         internal static Func<string, CollectionDetail, Action<GameObject?>, IDisposable> Acquire = CollectionStream.Acquire;
 
-        /// <summary>The model for settlement <paramref name="s"/>, or null for none.</summary>
-        public static string? ModelFor(Settlement s) =>
-            ById.TryGetValue(s.Id, out var m) ? m : ByType.TryGetValue(s.Type, out var t) ? t : null;
+        /// <summary>The model for settlement <paramref name="s"/>, or null for none: none for the cities drawn from their
+        /// building models at every zoom (Jaffa, an Arab town, would otherwise take <see cref="ByType"/>'s stone village).</summary>
+        public static string? ModelFor(Settlement s) => Kits.TownModels.AtEveryZoom(s.Id) ? null
+            : ById.TryGetValue(s.Id, out var m) ? m : ByType.TryGetValue(s.Type, out var t) ? t : null;
 
         /// <summary>The model for a placement of <paramref name="action"/> as at <paramref name="date"/>, or null: none for that
         /// action, before its sourced date, or no sourced date at all.</summary>

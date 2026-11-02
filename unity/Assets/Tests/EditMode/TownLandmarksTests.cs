@@ -46,6 +46,10 @@ public class TownLandmarksTests
         "kibbutz-compound-v2", "stone-village-v1", "maabara-camp-v1", "shikun-housing-v1",
     };
 
+    /// <summary>The four cities drawn from their building models at every zoom, with no whole-town model (owner, 2 November
+    /// 2026, "Yes, small buildings at every zoom").</summary>
+    internal static readonly string[] BigCities = { "tel_aviv", "jerusalem", "haifa", "jaffa" };
+
     static MapScene OpenMap()
     {
         EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
@@ -93,14 +97,18 @@ public class TownLandmarksTests
         foreach (var (id, _, done) in pending) done(Far(id));
     }
 
+    /// <summary>The four cities' whole-town models stay in the repository and the streamed catalogue, unused on the map
+    /// (owner, 2 November 2026, "Yes, small buildings at every zoom": Tel Aviv, Jerusalem, Haifa and Jaffa draw their
+    /// building models instead). The other six are placed as #507 mapped them.</summary>
     [Test]
     public void EveryTownModelIsUsedAndEachIsInTheStreamedTownsBundle()
     {
         var used = TownLandmarks.ById.Values.Concat(TownLandmarks.ByType.Values).Concat(TownLandmarks.ByAction.Values.Select(v => v.Model)).Distinct();
-        CollectionAssert.AreEquivalent(Towns, used, "all nine, as #507 mapped them, with #336's second Jerusalem for #507's (owner, 21 October 2026, #708)");
-        foreach (var id in Towns) Assert.AreEqual("collection-" + id, CollectionCatalog.BundleOf(id), id);
-        Assert.AreEqual(TownLandmarks.TelAviv, TownLandmarks.ById["tel_aviv"]);
+        var unused = new[] { TownLandmarks.TelAviv, TownLandmarks.Jerusalem3D, TownLandmarks.Haifa };
+        CollectionAssert.AreEquivalent(Towns.Except(unused), used, "#507's mapping without the four cities' whole towns (owner, 2 November 2026)");
+        foreach (var id in Towns) Assert.AreEqual("collection-" + id, CollectionCatalog.BundleOf(id), id + " stays in the streamed catalogue");
         Assert.AreEqual(TownLandmarks.Kibbutz, TownLandmarks.ByType["kibbutz"]);
+        Assert.AreEqual(TownLandmarks.StoneVillage, TownLandmarks.ByType["arab_town"], "the other Arab towns keep the stone village");
     }
 
     [Test]
@@ -118,26 +126,35 @@ public class TownLandmarksTests
         Assert.IsNull(TownLandmarks.ModelFor("no_such_action", new DateTime(1951, 1, 1)));
     }
 
-    /// <summary>The owner, 21 October 2026, on #708 (issuecomment-6323524970): #336's second Jerusalem (#886) "is Jerusalem's
-    /// only far-zoom model for the whole game. The first model stays in the repository, unused on the map. No date switch".
-    /// It streams from the towns bundle and stands on Jerusalem's core on every date; #507's first Jerusalem is never asked for.</summary>
+    /// <summary>Owner ruling, 2 November 2026: "we had tal's smaller buildings alreaedy for tel aviv, jerusalem and haifa and
+    /// jaffa - instead of the huge buildings", confirmed as "Yes, small buildings at every zoom". This replaces the 18 October
+    /// "Whole model far, buildings near" for these four, and the 21 October ruling on #708 that #336's second Jerusalem is
+    /// Jerusalem's far-zoom model. On every date none of the four has a whole-town model, none is placed, and neither
+    /// Jerusalem, nor Tel Aviv's or Haifa's whole town, is asked for. Jaffa's stone village still stands at the other Arab
+    /// towns.</summary>
     [Test]
-    public void JerusalemIsTheSecondStoneCityOnEveryDate()
+    public void TheFourCitiesHaveNoWholeTownModelOnAnyDate()
     {
-        Assert.AreEqual("collection-" + TownLandmarks.Jerusalem3D, CollectionCatalog.BundleOf(TownLandmarks.Jerusalem3D));
-        Assert.AreEqual(TownLandmarks.Jerusalem3D, TownLandmarks.ById["jerusalem"]);
-        CollectionAssert.DoesNotContain(TownLandmarks.ById.Values.Concat(TownLandmarks.ByType.Values).ToList(), TownLandmarks.Jerusalem,
-            "#507's first Jerusalem stays in the repository, unused on the map");
         var content = ContentLoader.Load(Statecraft.Game.Paths.Content);
         var map = OpenMap();
+        foreach (var id in BigCities)
+            Assert.IsNull(TownLandmarks.ModelFor(map.Settlements.Single(s => s.Id == id)), id + ": no whole-town model");
+        Assert.IsNotNull(TownLandmarks.ModelFor(map.Settlements.Single(s => s.Id == "petah_tikva")), "the other towns keep theirs");
+        var models = new List<string>();
         foreach (var date in new[] { content.Rules.Start, new DateTime(1949, 4, 15), new DateTime(1951, 12, 15) })
         {
             var t = TownLandmarks.ShowAt(map, date, Array.Empty<Placement>(), content)!;
-            CollectionAssert.DoesNotContain(asked.Select(a => a.id).ToList(), TownLandmarks.Jerusalem, "the first Jerusalem is never asked for");
+            models.AddRange(asked.Select(a => a.id));
+            foreach (var unused in new[] { TownLandmarks.TelAviv, TownLandmarks.Jerusalem, TownLandmarks.Jerusalem3D, TownLandmarks.Haifa })
+                CollectionAssert.DoesNotContain(models, unused, $"{date:d MMM yyyy}: {unused} is never asked for");
             AnswerAll();
-            Assert.AreEqual(TownLandmarks.Jerusalem3D, t.Placed.Single(p => p.Key == "jerusalem").Model, $"{date:d MMM yyyy}");
-            Assert.IsTrue(t.Seats.ContainsKey("jerusalem"), "on its core");
+            foreach (var id in BigCities)
+            {
+                Assert.IsFalse(t.Wanted.Any(w => w.Key == id), $"{date:d MMM yyyy}: {id} wants no landmark");
+                Assert.IsFalse(t.Seats.ContainsKey(id), $"{date:d MMM yyyy}: {id} has no seat");
+            }
         }
+        CollectionAssert.Contains(models, TownLandmarks.StoneVillage, "the other Arab towns keep the stone village");
     }
 
     /// <summary>The towns with a whole-town model, in the file's order.</summary>
@@ -176,7 +193,7 @@ public class TownLandmarksTests
         var footprint = new Dictionary<string, (Vector2 centre, float radius)>();
         foreach (var (centre, radius, id) in map.KitFootprints) if (!footprint.ContainsKey(id)) footprint[id] = (centre, radius);
         var mapped = Mapped(map);
-        Assert.Greater(mapped.Count, 20);
+        Assert.Greater(mapped.Count, 15, "the four cities have no whole-town model since the owner's ruling of 2 November 2026");
         foreach (var s in mapped)
         {
             var child = t.transform.Find(s.Id);
@@ -284,7 +301,7 @@ public class TownLandmarksTests
         var t = ShowAll(map);
         var root = map.transform.Find(KitLayer.RootName);
         var mapped = Mapped(map);
-        var plain = map.Settlements.First(s => TownLandmarks.ModelFor(s) == null);
+        var plain = map.Settlements.First(s => TownLandmarks.ModelFor(s) == null && !BigCities.Contains(s.Id));
         var plainKit = root.Find(plain.Id).GetComponent<MeshRenderer>();
         foreach (var (d, close) in new[] { (120000f, false), (60000f, false), (TownModelLayer.CloseEnterM - 1000f, true), (CameraController.MinDistance, true) })
         {
@@ -322,10 +339,11 @@ public class TownLandmarksTests
         var t = ShowAll(map);
         var root = map.transform.Find(KitLayer.RootName);
         Assert.IsFalse(root.GetComponentInChildren<TownModelLayer>().HasModels);
-        RenderAt(map, map.KitFootprints.First(f => f.id == "tel_aviv").centre, CameraController.MinDistance);
-        Assert.IsFalse(t.transform.Find("tel_aviv").GetComponentsInChildren<Renderer>(true).All(r => r.forceRenderingOff),
+        // Petah Tikva: Tel Aviv has no whole-town model since the owner's ruling of 2 November 2026.
+        RenderAt(map, map.KitFootprints.First(f => f.id == "petah_tikva").centre, CameraController.MinDistance);
+        Assert.IsFalse(t.transform.Find("petah_tikva").GetComponentsInChildren<Renderer>(true).All(r => r.forceRenderingOff),
             "the admitted whole town remains visible when individual buildings are unavailable");
-        Assert.IsTrue(root.Find("tel_aviv").GetComponent<MeshRenderer>().forceRenderingOff, "Tel Aviv's kit houses still never draw");
+        Assert.IsTrue(root.Find("petah_tikva").GetComponent<MeshRenderer>().forceRenderingOff, "Petah Tikva's kit houses still never draw");
     }
 
     /// <summary>Owner, 18 October 2026: the models "seem to be on their side on the map". Every Collection Far prefab's root
@@ -463,11 +481,13 @@ public class TownLandmarksTests
 
         CollectionAssert.IsEmpty(t.Missing, "every wanted landmark found a spot");
         Assert.AreEqual(t.Wanted.Count, t.Placed.Count);
-        Assert.AreEqual(1, t.Placed.Count(p => p.Key == "tel_aviv" && p.Model == TownLandmarks.TelAviv));
+        CollectionAssert.IsEmpty(t.Placed.Where(p => BigCities.Contains(p.Key)), "the four cities draw their buildings instead");
+        Assert.AreEqual(1, t.Placed.Count(p => p.Key == "petah_tikva" && p.Model == TownLandmarks.Moshava));
         Assert.AreEqual(map.Settlements.Count(s => s.Type == "kibbutz"), t.Placed.Count(p => p.Model == TownLandmarks.Kibbutz));
-        // Owner on #917 (17 October 2026): "Keep at all seven" arab_town rows.
+        // Owner on #917 (17 October 2026): "Keep at all seven" arab_town rows; since the owner's ruling of 2 November 2026
+        // ("Yes, small buildings at every zoom") Jaffa draws its buildings instead, so the other six.
         Assert.AreEqual(7, map.Settlements.Count(s => s.Type == "arab_town"));
-        Assert.AreEqual(7, t.Placed.Count(p => p.Model == TownLandmarks.StoneVillage), "the stone village at all seven");
+        Assert.AreEqual(6, t.Placed.Count(p => p.Model == TownLandmarks.StoneVillage), "the stone village at the six Arab towns but Jaffa");
     }
 
     [Test]
@@ -514,14 +534,15 @@ public class TownLandmarksTests
         var c = ContentLoader.Load(Statecraft.Game.Paths.Content);
         var t = TownLandmarks.ShowAt(map, new DateTime(1949, 1, 1), Array.Empty<Placement>(), c)!;
         AdmitGeometryTowns(map, t);
-        var tel = asked.Single(a => a.id == TownLandmarks.TelAviv);
-        LogAssert.Expect(LogType.Warning, new Regex("^LANDMARKS: the town model tel-aviv-white-city-v1 did not stream"));
-        tel.done(null);
+        // The moshava town (Tel Aviv's White City until the owner's ruling of 2 November 2026).
+        var moshava = asked.Single(a => a.id == TownLandmarks.Moshava);
+        LogAssert.Expect(LogType.Warning, new Regex("^LANDMARKS: the town model moshava-town-v1 did not stream"));
+        moshava.done(null);
         Assert.AreEqual(0, t.transform.childCount);
-        foreach (var (id, _, done) in asked.Where(a => a.id != TownLandmarks.TelAviv).ToList()) done(Far(id));
+        foreach (var (id, _, done) in asked.Where(a => a.id != TownLandmarks.Moshava).ToList()) done(Far(id));
         Assert.Greater(t.Placed.Count, 0, "the others are drawn");
-        CollectionAssert.DoesNotContain(t.Placed.Select(p => p.Key), "tel_aviv");
-        CollectionAssert.Contains(t.Missing, "tel_aviv");
+        CollectionAssert.DoesNotContain(t.Placed.Select(p => p.Key), "petah_tikva");
+        CollectionAssert.Contains(t.Missing, "petah_tikva");
     }
 
     /// <summary>#2099, as #2046 for the camp tents: the edit-mode render callback (the beginCameraRendering handler itself)

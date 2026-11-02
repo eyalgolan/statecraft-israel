@@ -952,6 +952,46 @@ public class TownModelResidencyTests
         Assert.IsTrue(s.layer.ReadyForTown("tel_aviv", camera), "Tel Aviv beside Jaffa at 12 km");
     }
 
+    /// <summary>Owner ruling, 2 November 2026: "we had tal's smaller buildings alreaedy for tel aviv, jerusalem and haifa and
+    /// jaffa - instead of the huge buildings", confirmed as "Yes, small buildings at every zoom". In the player's streaming
+    /// path and the production policy, each of the four cities in view is drawn from its building models at the widest zoom
+    /// (250 km), the opening zoom (90 km), the gameplay view (60 km), 30 km and the closest zoom: they are asked for, the
+    /// kit gives way and the models draw. Another town in view far off keeps its kit and asks for nothing.</summary>
+    [Test]
+    public void TheFourCitiesDrawTheirBuildingModelsAtEveryZoom()
+    {
+        using var s = new StreamedMap();
+        // First, a fresh camera over Petah Tikva (beside Tel Aviv and Jaffa) at the opening zoom: it keeps its kit (and its
+        // whole-town model), and only the four cities' kinds are asked for.
+        var cityKinds = TownLandmarksTests.BigCities.SelectMany(id => s.layer.InstancesOf(id)).Select(m => TownModels.Ids[(int)m.Model])
+            .ToHashSet(StringComparer.Ordinal);
+        var petah = s.Footprint("petah_tikva");
+        var far = s.Camera(petah.centre, 90_000f);
+        s.Settle(far);
+        Assert.IsFalse(s.layer.ReadyForTown("petah_tikva", far), "Petah Tikva at 90 km: no building models");
+        Assert.IsFalse(s.kits.Find("petah_tikva").GetComponent<MeshRenderer>().forceRenderingOff, "Petah Tikva's kit draws at 90 km");
+        Assert.IsTrue(s.layer.ReadyForTown("tel_aviv", far), "Tel Aviv in the same view: its building models");
+        CollectionAssert.IsNotEmpty(s.RequestOrder);
+        CollectionAssert.IsSubsetOf(s.RequestOrder.Distinct().ToList(), cityKinds.ToList(), "far off only the four cities' kinds are asked for");
+        foreach (var id in TownLandmarksTests.BigCities)
+        {
+            var at = s.Footprint(id).centre;
+            Assert.Greater(s.layer.CountFor(id), 0, id + " has building models");
+            var kit = s.kits.Find(id).GetComponent<MeshRenderer>();
+            foreach (float d in new[] { CameraController.MaxDistance, 90_000f, GameplayM, ThirtyKmM, CameraController.MinDistance })
+            {
+                var camera = s.Camera(at, d);
+                string where = FormattableString.Invariant($"{id} at {d / 1000f} km");
+                s.Settle(camera);
+                Assert.IsTrue(s.layer.ReadyForTown(id, camera), where + ": building models admitted and ready");
+                Assert.IsTrue(kit.forceRenderingOff, where + ": the kit gives way");
+                s.Submit(camera);
+                Assert.Greater(s.layer.LastDrawn, 0, where + ": the building models draw");
+                TestContext.WriteLine($"{where}: {s.layer.LastDrawn} instances in {s.layer.LastDraws} draws");
+            }
+        }
+    }
+
     /// <summary>The 1.5 GB guard: zooming out to the 60 km gameplay view releases every building-model lease and the kits
     /// draw again.</summary>
     [Test]
@@ -966,7 +1006,11 @@ public class TownModelResidencyTests
         Assert.IsNotEmpty(s.RequestOrder);
         s.Pose(camera, imwas.centre, GameplayM);
         s.layer.PrepareCamera(camera); s.layer.RetireReleasedModels();
-        Assert.AreEqual(s.RequestOrder.Count, s.Released, "every building-model lease is released at 60 km");
+        // The four cities' buildings in view stay at every zoom (owner, 2 November 2026); Jerusalem is beside Imwas.
+        var kept = TownLandmarksTests.BigCities.Where(id => s.layer.AdmitsTown(id, camera))
+            .SelectMany(id => s.layer.InstancesOf(id)).Select(m => TownModels.Ids[(int)m.Model]).ToHashSet(StringComparer.Ordinal);
+        Assert.AreEqual(s.RequestOrder.Count(id => !kept.Contains(id)), s.Released,
+            "every building-model lease is released at 60 km but the kinds of the four cities in view: " + string.Join(", ", kept));
         Assert.IsFalse(s.layer.ReadyForTown("imwas", camera), "no building models at 60 km");
         Assert.IsFalse(kit.forceRenderingOff, "the kit tile draws again at 60 km");
     }

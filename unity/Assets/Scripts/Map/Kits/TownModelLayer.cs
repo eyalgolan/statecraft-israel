@@ -6,7 +6,9 @@ using UnityEngine.Rendering;
 namespace Statecraft.Game.Map.Kits
 {
     /// <summary>Original building meshes for admitted towns and villages, instanced per model/tile. At overview zoom
-    /// TownLandmarks owns the whole-town representation; close cameras own individual buildings. Under the production policy
+    /// TownLandmarks owns the whole-town representation; close cameras own individual buildings. Tel Aviv, Jerusalem, Haifa
+    /// and Jaffa are the exception: their buildings are admitted at every zoom, by view as below (owner ruling, 2 November
+    /// 2026, "Yes, small buildings at every zoom": <see cref="TownModels.AtEveryZoom"/>). Under the production policy
     /// (owner ruling, 31 Oct 2026, "Load all in view (Recommended)") a close camera admits every town and every merged village
     /// tile in its view (+<see cref="ViewMarginM"/>), nearest first, and they unload above <see cref="CloseExitM"/>. Each camera
     /// swaps only complete towns and complete village tiles; loading and failed places retain code-built fallback. Source
@@ -111,7 +113,7 @@ namespace Statecraft.Game.Map.Kits
             public readonly List<string> inView = new List<string>();
             public readonly HashSet<string> viewed = new HashSet<string>(System.StringComparer.Ordinal);
             public Matrix4x4 viewMatrix;
-            public bool viewValid;
+            public bool viewValid, viewClose;
         }
         sealed class Model
         {
@@ -254,8 +256,8 @@ namespace Statecraft.Game.Map.Kits
             }
         }
         public int Count { get; private set; }
-        /// <summary>For the last camera: whether it drew the models (else the kits), and the instances, triangles, draws and
-        /// shadow casters it submitted (test and profiling aids).</summary>
+        /// <summary>For the last camera: whether it was below the close switch and drew the models (else the kits), and the
+        /// instances, triangles and draws it submitted, the cities drawn at every zoom included (test and profiling aids).</summary>
         public bool LastClose { get; private set; }
         public int LastDrawn { get; private set; }
         public long LastTriangles { get; private set; }
@@ -480,24 +482,26 @@ namespace Statecraft.Game.Map.Kits
 
         /// <summary>Owner ruling, 31 Oct 2026, "Load all in view (Recommended)": under the production policy a close camera
         /// admits every town and village tile in its view (<see cref="ViewMarginM"/>, kept to <see cref="ViewKeepM"/>), nearest
-        /// its ground focus first. Returns whether the admitted set changed.</summary>
+        /// its ground focus first; a far camera only the cities drawn at every zoom (<see cref="AtZoom"/>). Returns whether the
+        /// admitted set changed.</summary>
         bool AdmitInView(Choice choice, Camera cam)
         {
-            if (!viewAdmission || !SpatialPolicyConfigured || !choice.close)
+            if (!viewAdmission || !SpatialPolicyConfigured)
             {
                 choice.viewValid = false;
                 if (choice.inView.Count == 0) return false;
                 choice.inView.Clear(); choice.viewed.Clear(); return true;
             }
             var viewProjection = cam.projectionMatrix * cam.worldToCameraMatrix;
-            if (choice.viewValid && viewProjection == choice.viewMatrix) return false;
-            choice.viewMatrix = viewProjection; choice.viewValid = true;
+            if (choice.viewValid && viewProjection == choice.viewMatrix && choice.viewClose == choice.close) return false;
+            choice.viewMatrix = viewProjection; choice.viewValid = true; choice.viewClose = choice.close;
             GeometryUtility.CalculateFrustumPlanes(viewProjection, frustum);
             var from = choice.hadFocus ? choice.focus : cam.transform.position;
             viewScratch.Clear();
             for (int i = 0; i < viewPlaces.Count; i++)
             {
                 var (ids, bounds) = viewPlaces[i];
+                if (!AtZoom(choice, ids[0])) continue;   // a village tile's first village: never one of the four cities
                 float margin = choice.viewed.Contains(ids[0]) ? ViewKeepM : ViewMarginM;
                 var wide = bounds; wide.Expand(new Vector3(2f * margin, 0f, 2f * margin));
                 if (GeometryUtility.TestPlanesAABB(frustum, wide)) viewScratch.Add((i, GroundDistance(bounds, from), ids[0]));
@@ -533,11 +537,14 @@ namespace Statecraft.Game.Map.Kits
             previousRenderers.Clear();
         }
 
-        /// <summary>Whether the camera-focus selection holds this town at close zoom (the focused town and its edges).</summary>
-        internal bool WantsTown(string id, Camera cam) => choices.TryGetValue(cam.GetInstanceID(), out var c) && c.close && c.towns.Contains(id);
+        /// <summary>Whether a camera's zoom admits a place's building models: every place below the close switch, beyond it
+        /// only the cities drawn at every zoom (owner ruling, 2 November 2026, "Yes, small buildings at every zoom").</summary>
+        static bool AtZoom(Choice c, string id) => c.close || TownModels.AtEveryZoom(id);
+        /// <summary>Whether the camera-focus selection holds this town at its zoom (the focused town and its edges).</summary>
+        internal bool WantsTown(string id, Camera cam) => choices.TryGetValue(cam.GetInstanceID(), out var c) && AtZoom(c, id) && c.towns.Contains(id);
         /// <summary>Whether this camera admits the place's building models: the focus selection, or (production) its view.</summary>
         internal bool AdmitsTown(string id, Camera cam) =>
-            choices.TryGetValue(cam.GetInstanceID(), out var c) && c.close && (c.towns.Contains(id) || c.viewed.Contains(id));
+            choices.TryGetValue(cam.GetInstanceID(), out var c) && AtZoom(c, id) && (c.towns.Contains(id) || c.viewed.Contains(id));
         internal bool ReadyForTown(string id, Camera cam)
         {
             if (!Draw || !AdmitsTown(id, cam) || !required.TryGetValue(id, out var kinds) || kinds.Length == 0) return false;
@@ -671,11 +678,13 @@ namespace Statecraft.Game.Map.Kits
             {
                 if (required.TryGetValue(id, out var kinds)) foreach (var kind in kinds) if (needed.Add(kind)) ordered.Add(kind);
             }
-            // A focused town loads before any edge town, even when its model's enum value is larger.
-            foreach (var c in OrderedChoices()) if (c.close && c.primary != null) AddTown(c.primary);
-            foreach (var c in OrderedChoices()) if (c.close) foreach (string id in c.selected) if (id != c.primary) AddTown(id);
-            // Then every town and village in view, nearest first (owner ruling, 31 Oct 2026, "Load all in view").
-            foreach (var c in OrderedChoices()) if (c.close) foreach (string id in c.inView) AddTown(id);
+            // A focused town loads before any edge town, even when its model's enum value is larger; each only at a zoom that
+            // admits it (AtZoom).
+            foreach (var c in OrderedChoices()) if (c.primary != null && AtZoom(c, c.primary)) AddTown(c.primary);
+            foreach (var c in OrderedChoices()) foreach (string id in c.selected) if (id != c.primary && AtZoom(c, id)) AddTown(id);
+            // Then every town and village in view, nearest first (owner ruling, 31 Oct 2026, "Load all in view"); AdmitInView
+            // has already left out what this zoom does not admit.
+            foreach (var c in OrderedChoices()) foreach (string id in c.inView) AddTown(id);
             var obsolete = new List<TownModel>();
             foreach (var pair in models) if (!needed.Contains(pair.Key)) obsolete.Add(pair.Key);
             foreach (var id in obsolete)
@@ -771,7 +780,8 @@ namespace Statecraft.Game.Map.Kits
             bool close = choices.TryGetValue(cam.GetInstanceID(), out var choice) && choice.close;
             LastClose = close;
             int drawn = 0, draws = 0; long tris = 0;
-            if (close && Draw)
+            // Far off too: ReadyForTown admits the cities drawn at every zoom there (AtZoom), and nothing else.
+            if (Draw)
             {
                 var planes = GeometryUtility.CalculateFrustumPlanes(cam);
                 foreach (var t in tiles)

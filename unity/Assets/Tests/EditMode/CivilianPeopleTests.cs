@@ -259,7 +259,7 @@ public sealed class CivilianPeopleTests
 
         var arabTowns = map.Settlements.Where(s => s.Type == "arab_town").Select(s => s.Id).ToList();
         CollectionAssert.AreEquivalent(new[] { "jaffa", "acre", "nazareth", "lod", "ramla", "gaza", "beersheba" }, arabTowns,
-            "the seven Arab towns, each with the stone village (TownLandmarks.ByType)");
+            "the seven Arab towns");
         var villages = CivilianPeople.Served(rural, RuralLife.Sheep, RuralLife.Donkey).Select(w => w.Key).ToList();
         Assert.That(villages.Count, Is.InRange(RuralLife.MaxAnchorsPerModel, 2 * RuralLife.MaxAnchorsPerModel));
         Assert.IsTrue(villages.All(v => types[v] == "village"), "the flocks' villages");
@@ -491,11 +491,12 @@ public sealed class CivilianPeopleTests
     }
 
     /// <summary>The owner on #336: "we must make sure all of his models are in and fully used". Every model the catalog
-    /// streams is in some layer's placement table, but two, each by an owner ruling: b21, the artisan workshop, which waits
-    /// for a sourced location (owner: wait), and #507's first Jerusalem, which "stays in the repository, unused on the map"
-    /// now that #336's second Jerusalem is the city's only far-zoom model (owner, 21 October 2026, #708).</summary>
+    /// streams is in some layer's placement table, but five, each by an owner ruling: b21, the artisan workshop, which waits
+    /// for a sourced location (owner: wait); #507's first Jerusalem, which "stays in the repository, unused on the map"
+    /// (owner, 21 October 2026, #708); and the whole towns of Tel Aviv, Jerusalem (#336's second) and Haifa, whose cities
+    /// draw their building models at every zoom instead (owner, 2 November 2026, "Yes, small buildings at every zoom").</summary>
     [Test]
-    public void EveryCatalogModelIsPlacedButTheTwoTheOwnerHeldBack()
+    public void EveryCatalogModelIsPlacedButThoseTheOwnerHeldBack()
     {
         var placed = new HashSet<string>(StringComparer.Ordinal);
         placed.UnionWith(CivilianPeople.Models);
@@ -515,8 +516,11 @@ public sealed class CivilianPeopleTests
             .Append(Statecraft.Game.Map.Units.UnitFigures.PioneerVeteran);
         placed.UnionWith(units);
         placed.UnionWith(Statecraft.Game.Map.Kits.TownModels.Ids); // #1273: 18 originals and five generated houses are catalogued and requested by TownModelLayer
-        CollectionAssert.AreEquivalent(new[] { SpecialBuildingModels.Workshop, TownLandmarks.Jerusalem }, CollectionCatalog.Ids.Where(id => !placed.Contains(id)).ToList(),
-            "every catalogued model has a place but b21 and the first Jerusalem, each held back by an owner ruling");
+        // Tel Aviv's, Jerusalem's and Haifa's whole towns stay catalogued but unused: the four cities draw their buildings at
+        // every zoom (owner, 2 November 2026, "Yes, small buildings at every zoom").
+        CollectionAssert.AreEquivalent(new[] { SpecialBuildingModels.Workshop, TownLandmarks.Jerusalem, TownLandmarks.TelAviv, TownLandmarks.Jerusalem3D, TownLandmarks.Haifa },
+            CollectionCatalog.Ids.Where(id => !placed.Contains(id)).ToList(),
+            "every catalogued model has a place but b21, the first Jerusalem and the three cities' whole towns, each held back by an owner ruling");
         CollectionAssert.IsSubsetOf(placed.ToList(), CollectionCatalog.Ids.ToList(), "every placed id is a catalogued model");
     }
 

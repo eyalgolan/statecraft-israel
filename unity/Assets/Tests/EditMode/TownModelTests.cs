@@ -183,8 +183,10 @@ public class TownModelTests
     {
         var map = OpenMap();
         var built = Build(map, out var placed);
-        var mapped = map.Settlements.Where(s => Statecraft.Game.Map.Collection.TownLandmarks.ModelFor(s) != null).ToList();
-        TestContext.WriteLine($"{mapped.Count} towns with a whole-town model: {string.Join(", ", mapped.Select(s => s.Id))}");
+        // With the four cities drawn from their building models at every zoom (owner, 2 November 2026), which have no whole-town model.
+        var mapped = map.Settlements.Where(s => Statecraft.Game.Map.Collection.TownLandmarks.ModelFor(s) != null
+            || TownLandmarksTests.BigCities.Contains(s.Id)).ToList();
+        TestContext.WriteLine($"{mapped.Count} towns with a whole-town model or buildings at every zoom: {string.Join(", ", mapped.Select(s => s.Id))}");
         var ids = mapped.Select(s => s.Id).ToHashSet();
         CollectionAssert.IsSubsetOf(new[] { "tel_aviv", "jerusalem", "haifa", "rishon_lezion", "degania_alef", "nahalal", "nazareth" }, ids);
         Assert.AreEqual(new[] { "arab_town", "city", "kibbutz", "moshav", "town" }, mapped.Select(s => s.Type).Distinct().OrderBy(t => t).ToArray());
@@ -464,10 +466,11 @@ public class TownModelTests
     }
 
     /// <summary>Owner ruling on #700, "Models up close only": at gameplay03 and diorama02 every kit mesh draws (main's
-    /// towns) and no model does; at the close views (tel_aviv30, jaffa12) the models draw (well over a hundred), every kit
-    /// individual-town mesh gives way to its close mesh (mixed locality tiles keep fallback), and the models stay within
-    /// the fixture's complete original-geometry work; zooming back out restores
-    /// the kits. The "kits" toggle stops the models too.</summary>
+    /// towns) and no model does, but for Tel Aviv, Jerusalem, Haifa and Jaffa, whose building models draw at every zoom
+    /// (owner, 2 November 2026, "Yes, small buildings at every zoom"); at the close views (tel_aviv30, jaffa12) the models
+    /// draw (well over a hundred), every kit individual-town mesh gives way to its close mesh (mixed locality tiles keep
+    /// fallback), and the models stay within the fixture's complete original-geometry work; zooming back out restores
+    /// the kits. The "kits" toggle stops the models too. The log line is the draw cost at each pose.</summary>
     [UnityTest]
     public IEnumerator TheKitsDrawFarAndTheModelsUpClose()
     {
@@ -502,31 +505,44 @@ public class TownModelTests
         // rendering more than every fixture instance once is a duplicate-submission regression.
         long maxGeometryWork = layer.Instances().Sum(i => (long)originals.meshes[(int)i.model].triangles.Length / 3);
         var results = new List<string>();
+        var big = TownLandmarksTests.BigCities;
+        int bigInstances = big.Sum(id => layer.CountFor(id));
         void Check(PromoPose pose, bool close)
         {
+            // Up close every detailed town; far off only the four cities, where this fixture's camera admits them (it has no
+            // view admission beyond the focus distance: TheFourCitiesDrawTheirBuildingModelsAtEveryZoom checks production's).
+            bool Ready(string town) => layer.CountFor(town) > 0 && (close || (big.Contains(town) && layer.ReadyForTown(town, cam)));
+            foreach (var s in map.Settlements)
+                if (!close && !big.Contains(s.Id)) Assert.IsFalse(layer.ReadyForTown(s.Id, cam), pose.Name + ": " + s.Id + " has no building model far off");
             Assert.AreEqual(close, layer.LastClose, pose.Name);
             foreach (var renderer in kitRs)
             {
-                bool ready = close && identity.TryGetValue(renderer, out var town) && layer.CountFor(town) > 0;
+                bool ready = identity.TryGetValue(renderer, out var town) && Ready(town);
                 Assert.AreEqual(ready, renderer.forceRenderingOff, pose.Name + ": " + renderer.name + " fallback");
             }
             foreach (var renderer in closeRs)
             {
                 var kitName = renderer.name.Substring(0, renderer.name.Length - KitLayer.CloseSuffix.Length);
                 var kit = root.Find(kitName).GetComponent<MeshRenderer>();
-                bool ready = close && identity.TryGetValue(kit, out var town) && layer.CountFor(town) > 0;
+                bool ready = identity.TryGetValue(kit, out var town) && Ready(town);
                 Assert.AreEqual(!ready, renderer.forceRenderingOff, pose.Name + ": " + renderer.name + " close mesh");
             }
             Assert.IsTrue(kitRs.Any(r => !identity.ContainsKey(r)), "mixed locality tiles stay fallback at every zoom");
             results.Add($"{pose.Name}: close={close} {layer.LastDrawn} models, {layer.LastTriangles} triangles, {layer.LastDraws} draws");
-            if (!close) { Assert.AreEqual(0, layer.LastDrawn, pose.Name + ": no model"); return; }
+            if (!close)
+            {
+                // Far off, only the four cities' buildings, never more than all of theirs.
+                Assert.LessOrEqual(layer.LastDrawn, bigInstances, pose.Name + ": no other town's building model");
+                return;
+            }
             Assert.Greater(layer.LastDrawn, 100, pose.Name + ": models drawn");
             Assert.LessOrEqual(layer.LastTriangles, maxGeometryWork, pose.Name + ": no more than all original instances once");
         }
         foreach (var pose in PromoPose.All) { pose.Apply(rig, map.Frame); RenderSample.Render(cam, 1920, 1080); layer.PrepareCamera(cam); Check(pose, false); }
         foreach (var pose in PromoPose.CloseUps) { pose.Apply(rig, map.Frame); RenderSample.Render(cam, 1920, 1080); layer.PrepareCamera(cam); Check(pose, true); }
         PromoPose.Gameplay03.Apply(rig, map.Frame); RenderSample.Render(cam, 1920, 1080); layer.PrepareCamera(cam); Check(PromoPose.Gameplay03, false);
-        TestContext.WriteLine($"{layer.Count} models; " + string.Join("; ", results));
+        TestContext.WriteLine($"{layer.Count} models ({bigInstances} in the four cities: " +
+            string.Join(", ", big.Select(id => $"{id} {layer.CountFor(id)}")) + "); " + string.Join("; ", results));
         PromoPose.CloseUps[0].Apply(rig, map.Frame);
         VisualToggles.Set("kits", false); RenderSample.Render(cam, 320, 180);
         Assert.IsFalse(layer.Draw, "the kits toggle hides the models");
