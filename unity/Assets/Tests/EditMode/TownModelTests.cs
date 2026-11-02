@@ -54,8 +54,10 @@ public class TownModelTests
         {
             case "tel_aviv": return new HashSet<M> { M.B01WhiteCity, M.B02aCornerBlock, M.B02bNarrowBlock, M.B32CargoShed };
             case "haifa": return new HashSet<M> { M.B04aStoneBalconies, M.B04bLoadingDoors, M.B32CargoShed, M.B05aMoshavaHouse };
-            case "jerusalem": return new HashSet<M> { M.B03aArches, M.B03bExternalStair, M.B03cPlain, M.B17CourtyardHouse };
-            case "netanya": return new HashSet<M> { M.B13aTwoStorey, M.B28WaterTower };
+            case "jerusalem": return new HashSet<M> { M.B03aArches, M.B03bExternalStair, M.B03cPlain, M.B17CourtyardHouse, M.G05CourtyardHouse };
+            // Tal Heuberger's Netanya houses (01 to 03) in Netanya only, and the basalt house (04) in Tiberias only (#756).
+            case "netanya": return new HashSet<M> { M.B13aTwoStorey, M.G01NetanyaTiledHouse, M.G02NetanyaBalconyHouse, M.G03NetanyaPorchHouse, M.B28WaterTower };
+            case "tiberias": return new HashSet<M> { M.G04BasaltHouse };
         }
         switch (s.Type)
         {
@@ -65,7 +67,7 @@ public class TownModelTests
                 var h = new HashSet<M>(moshava) { M.B13aTwoStorey };
                 if (TownModels.WineMoshava(s.Id)) h.Add(M.B23Winery);
                 return h;
-            default: return new HashSet<M> { M.B17CourtyardHouse };   // the old towns and the Arab towns
+            default: return new HashSet<M> { M.B17CourtyardHouse, M.G05CourtyardHouse };   // the old towns and the Arab towns: the courtyard houses
         }
     }
 
@@ -95,12 +97,21 @@ public class TownModelTests
         }
         // The cities' own models are there (not only a fallback).
         foreach (var (id, model) in new[] { ("tel_aviv", M.B01WhiteCity), ("tel_aviv", M.B02bNarrowBlock), ("haifa", M.B04aStoneBalconies),
-                     ("haifa", M.B32CargoShed), ("jerusalem", M.B03cPlain), ("jaffa", M.B17CourtyardHouse), ("netanya", M.B13aTwoStorey) })
+                     ("haifa", M.B32CargoShed), ("jerusalem", M.B03cPlain), ("jaffa", M.B17CourtyardHouse), ("netanya", M.B13aTwoStorey),
+                     ("netanya", M.G01NetanyaTiledHouse), ("netanya", M.G02NetanyaBalconyHouse), ("netanya", M.G03NetanyaPorchHouse),
+                     ("tiberias", M.G04BasaltHouse) })
             if (!built.Models.Any(m => m.Id == id && m.Model == model)) bad.Add($"{id} has no {model}");
+        // The generated houses stand only where they were placed: 01 to 03 in Netanya, 04 in Tiberias (game settlements and
+        // 1948 localities alike).
+        foreach (var m in built.Models)
+        {
+            if ((m.Model == M.G01NetanyaTiledHouse || m.Model == M.G02NetanyaBalconyHouse || m.Model == M.G03NetanyaPorchHouse) && m.Id != "netanya") bad.Add($"{m.Id} has {m.Model}");
+            if (m.Model == M.G04BasaltHouse && m.Id != "tiberias") bad.Add($"{m.Id} has {m.Model}");
+        }
         // A 1948 Arab village is built of courtyard houses.
         var villages = map.Localities.Select(p => p.Settlement).Where(s => s.Type == "village" && !Localities.IsMixed(s.Id)).Select(s => s.Id).ToHashSet();
         var villageModels = built.Models.Where(m => villages.Contains(m.Id) && m.Model != M.B28WaterTower).Select(m => m.Model).Distinct().ToList();
-        CollectionAssert.AreEqual(new[] { M.B17CourtyardHouse }, villageModels, "the villages' houses");
+        CollectionAssert.AreEquivalent(new[] { M.B17CourtyardHouse, M.G05CourtyardHouse }, villageModels, "the villages' houses: the two courtyard houses");
         // Every farm shed of every kibbutz (#820: the game settlements' and the localities') is a b24 barn, and no kibbutz
         // house is.
         var kibbutzim = map.Settlements.Concat(map.Localities.Select(p => p.Settlement)).Where(s => s.Type == "kibbutz").Select(s => s.Id).ToHashSet();
@@ -330,7 +341,7 @@ public class TownModelTests
             probe.meshes[(int)M.B17CourtyardHouse] = null!;
             StringAssert.Contains("B17CourtyardHouse has no mesh", probe.Missing());
             var empty = ScriptableObject.CreateInstance<TownModelSet>();
-            StringAssert.Contains("want 18", empty.Missing());
+            StringAssert.Contains("want 23", empty.Missing());
             UnityEngine.Object.DestroyImmediate(empty);
         }
         finally { UnityEngine.Object.DestroyImmediate(probe); }

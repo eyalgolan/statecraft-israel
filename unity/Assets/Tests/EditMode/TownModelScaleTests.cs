@@ -126,7 +126,7 @@ public class TownModelScaleTests
     }
 
     /// <summary>"jaffa's buildings be over tel avivs buildings": Jaffa (an Arab town in May 1948) keeps its stone houses
-    /// (b17) and Tel Aviv its White City blocks, at one scale: Jaffa's tallest house stands lower than the locomotive's car is
+    /// (b17 and g05) and Tel Aviv its White City blocks, at one scale: Jaffa's tallest house stands lower than the locomotive's car is
     /// long and lower than Tel Aviv's typical block. On v0.1.1 Jaffa's 100x houses rose up to about 490 m, in front of Tel
     /// Aviv's blocks from the camera's side (it looks north), so they covered them.</summary>
     [Test]
@@ -136,7 +136,7 @@ public class TownModelScaleTests
         bool Port(SettlementKits.ModelInstance m) => m.Model == M.B32CargoShed || m.Model == M.B28WaterTower;   // a port's sheds, a water tower
         var jaffa = models.Where(m => m.Id == "jaffa" && !Port(m)).ToList(); var tel = models.Where(m => m.Id == "tel_aviv" && !Port(m)).ToList();
         Assert.Greater(jaffa.Count, 10); Assert.Greater(tel.Count, 20);
-        Assert.IsTrue(jaffa.All(m => m.Model == M.B17CourtyardHouse), "Jaffa's stone houses");
+        Assert.IsTrue(jaffa.All(m => m.Model == M.B17CourtyardHouse || m.Model == M.G05CourtyardHouse), "Jaffa's stone houses (b17 and g05)");
         Assert.IsTrue(tel.All(m => m.Model == M.B01WhiteCity || m.Model == M.B02aCornerBlock || m.Model == M.B02bNarrowBlock), "the White City");
         var th = tel.Select(m => Box(m).height).OrderBy(x => x).ToList();
         float jaffaMax = jaffa.Max(m => Box(m).height), telMedian = th[th.Count / 2];
