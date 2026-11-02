@@ -457,8 +457,22 @@ public class WorkshopPanelTests
         {
             Assert.AreNotEqual(reason, line, "the Hebrew string, not the sim's English");
             StringAssert.Contains(TownsHe[City], line);
+            // A no-break space joins "יש" to the count (between its left-to-right marks), so the panel never wraps "(יש" and
+            // "0)" onto two lines.
+            StringAssert.EndsWith("(יש\u00A0\u200E0\u200E)", line);
         }
         else Assert.AreEqual("Haifa has 0 civilians and craftsmen without a job", line);
+    }
+
+    // Both people refusals keep "יש" and the count on one line: a no-break space (U+00A0) between them, no plain space.
+    [Test]
+    public void TheHebrewPeopleRefusalsJoinTheCountWithANoBreakSpace()
+    {
+        foreach (var key in new[] { "workshop.refused_people", "workshop.refused_people_no_job" })
+        {
+            StringAssert.EndsWith("(יש\u00A0{1})", He[key], key);
+            StringAssert.DoesNotContain("יש {1}", He[key], key);
+        }
     }
 
     // R-ARMS-005: each staffing refusal has a string in both languages, and the English is the sim's own words.
