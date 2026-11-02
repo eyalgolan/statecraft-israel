@@ -325,6 +325,29 @@ public class ArmisticeLinesTests
         finally { ArmisticeLines.Wanted = was; map = null; }
     }
 
+    /// <summary>The kill switch through the real map build (review of #2195, C4): with -noarmisticelines the map builds no
+    /// overlay and registers no "armisticelines" switch, and the minimap's Borders button still works the bands.</summary>
+    [Test]
+    public void WithTheOffFlagTheMapBuildsNoOverlayAndBordersStillWork()
+    {
+        var was = ArmisticeLines.Wanted;
+        ArmisticeLines.Wanted = () => ArmisticeLines.Requested(null, new[] { "game", "-" + ArmisticeLines.OffFlag }, false);
+        try
+        {
+            var built = RouteTests.BuildMap();
+            Assert.IsNull(built.Terrain.transform.Find(ArmisticeLines.RootName), "no overlay with the off flag");
+            CollectionAssert.DoesNotContain(VisualToggles.Names, ArmisticeLines.ToggleName, "no switch for the lines");
+            CollectionAssert.Contains(VisualToggles.Names, MapBorders.ToggleName, "precondition: the bands' switch");
+            using var ui = new UiTestKit();
+            using var mini = new MinimapPresenter(ui.Root, built.Hexes);
+            Assert.DoesNotThrow(() => ui.Press("minimap-borders"));
+            Assert.IsFalse(mini.BordersShown, "Borders off with no lines to hide");
+            Assert.DoesNotThrow(() => ui.Press("minimap-borders"));
+            Assert.IsTrue(mini.BordersShown);
+        }
+        finally { ArmisticeLines.Wanted = was; map = null; }
+    }
+
     /// <summary>Owner, 1 November 2026: "On by default (Recommended)", with only the signed-off lines for players. A
     /// release player's map, built with no flag from the file as a release build ships it (ContentManifest's release copy),
     /// draws the 11 signed-off features and none of the five drafts.</summary>
