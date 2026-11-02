@@ -42,6 +42,45 @@ public class Generated1948BuildingsPropsTests
         Assert.IsFalse(review.Labels.Any(s => s.Contains("roof gaps") || s.Contains("rear opening")));
     }
 
+    /// <summary>The buildings-props review shows a placed model's shipped prefab (the five houses' streamed prefabs, the
+    /// Bedouin tent and the khaki tent in the 1948 Collection) and must never re-save it, as VehicleReviewAssets does not for a
+    /// placed vehicle (#2014). Each shipped prefab gets a marker child first: a re-save from the FBX would drop it. Every file
+    /// the run writes is put back afterwards.</summary>
+    [Test] public void PrepareLeavesThePlacedModelsShippedPrefabsUntouched()
+    {
+        var ids = (string[])System.Type.GetType("Statecraft.Game.EditorTools.Generated1948BuildingsPropsAssets, Assembly-CSharp-Editor")!
+            .GetField("Ids")!.GetValue(null)!;
+        var placed = ids.Where(id => System.Array.IndexOf(Statecraft.Game.Map.Kits.TownModels.Ids, id) >= 0
+            || Statecraft.Game.Map.Collection.CollectionCatalog.IsGeneratedProp(id)).ToArray();
+        Assert.AreEqual(7, placed.Length, "five houses, the Bedouin tent and the khaki tent are placed");
+        var shipped = placed.Select(Generated1948BuildingsPropsReview.PrefabOf).ToArray();
+        var before = new[] { Generated1948BuildingsPropsReview.AssetFolder }.Concat(ids.Select(Generated1948BuildingsPropsReview.DirOf))
+            .Concat(shipped.Select(p => System.IO.Path.GetDirectoryName(p)!)).Distinct()
+            .SelectMany(d => System.IO.Directory.GetFiles(AssetFile(d), "*", System.IO.SearchOption.AllDirectories))
+            .Distinct().ToDictionary(f => f, System.IO.File.ReadAllBytes);
+        const string Marker = "prepare-must-not-resave";
+        string[] resaved;
+        try
+        {
+            foreach (string path in shipped)
+            {
+                var contents = PrefabUtility.LoadPrefabContents(path);
+                try { new GameObject(Marker).transform.SetParent(contents.transform, false); PrefabUtility.SaveAsPrefabAsset(contents, path); }
+                finally { PrefabUtility.UnloadPrefabContents(contents); }
+            }
+            System.Type.GetType("Statecraft.Game.EditorTools.Generated1948BuildingsPropsAssets, Assembly-CSharp-Editor")!.GetMethod("Prepare")!.Invoke(null, null);
+            resaved = shipped.Where(path => AssetDatabase.LoadAssetAtPath<GameObject>(path).transform.Find(Marker) == null).ToArray();
+        }
+        finally
+        {
+            foreach (var file in before.Keys.Where(f => !System.IO.File.ReadAllBytes(f).SequenceEqual(before[f]))) System.IO.File.WriteAllBytes(file, before[file]);
+            AssetDatabase.Refresh();
+        }
+        CollectionAssert.IsEmpty(resaved, "Prepare re-saved the shipped prefab of a placed model");
+    }
+
+    static string AssetFile(string path) => System.IO.Path.GetFullPath(System.IO.Path.Combine(Application.dataPath, "..", path));
+
     [Test] public void EditorSamplesFitPlatformAndTouchFloor()
     {
         EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
