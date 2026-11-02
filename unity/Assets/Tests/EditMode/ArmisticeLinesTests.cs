@@ -154,7 +154,13 @@ public class ArmisticeLinesTests
             Assert.IsTrue(mini.BordersShown);
             Assert.IsTrue(lines.activeSelf, "Borders on shows them again");
         }
-        finally { Object.DestroyImmediate(root); }
+        finally
+        {
+            Object.DestroyImmediate(root);
+            // The presses also work the shared map's bands (MapBorders' switch, which keeps its state): leave them on for
+            // the next test however this one ended (review of #2195, C5).
+            if (VisualToggles.Names.Contains(MapBorders.ToggleName)) VisualToggles.Set(MapBorders.ToggleName, true);
+        }
     }
 
     [Test]
