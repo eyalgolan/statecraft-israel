@@ -97,7 +97,7 @@ public class Gdd03RegionAuthoringTests
     // #1691, owner rulings of 2 November 2026: Q1 "Accept localities"; Q3 "All nine drafts as labels"; and "Fix all, then
     // ship (Recommended)", whose option read: "Accept site ids too; author records for the 4 (sourced); for the 14, the
     // member's hex joins its region where it's unclaimed, and where another region holds the hex the member moves to that
-    // region. All listed for Amir to review." Default pending the owner: (10,4), Hanita's hex, joins Galilee.
+    // region. All listed for Amir to review." Q2 (owner, 2 Nov 2026, "Add (10,4) to Galilee (Recommended)"): (10,4), Hanita's hex, joins Galilee.
     // Each of the 14 members off its region's hexes stands on a hex another region holds, so it moves there.
     static readonly (string Member, string From, string To)[] Moved =
     {
@@ -150,7 +150,7 @@ public class Gdd03RegionAuthoringTests
         }
         Assert.DoesNotContain(staged.SelectMany(r => Assert.IsType<YamlSequenceNode>(Get(r, "member_hexes")).Children.Cast<YamlMappingNode>()),
             h => Int(h, "q") == 10 && Int(h, "r") == 4);   // in no region after the 4.4 km regrid
-        Assert.Equal("galilee", c.PlayerRegions.AtHex(10, 4)!.Id);   // Q2 default: Hanita's own hex
+        Assert.Equal("galilee", c.PlayerRegions.AtHex(10, 4)!.Id);   // Q2, owner 2 Nov 2026: Hanita's own hex
         Assert.Equal("galilee", c.PlayerRegions.AtLocation("hanita")!.Id);
         Assert.Equal(524, c.PlayerRegions.Regions.Values.Sum(r => r.MemberHexes.Count));   // the staged 523 and (10,4)
         // Activation stays off: nothing initializes regions in a new game yet (#1689).

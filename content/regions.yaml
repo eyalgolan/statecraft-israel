@@ -18,7 +18,8 @@
 #   hexes by the 27 October 2026 split (2/6/6/2/2/0/0/1/1), each a land hex of its region with a coastal_plain, lowland or
 #   valley biome, Israeli-held on 15 May 1948 in map/control_hexes_1948_49.yaml (tools/tests/test_region_field_hexes.py).
 #   Agent proposal, approved by the owner; a person's check pending. Data only: nothing farms them yet (#1689, #1690).
-# Default used, pending the owner (PR body): hex (10,4), Hanita's own hex after the 4.4 km regrid, joins galilee.
+# Q2 (owner, 2 November 2026: "Add (10,4) to Galilee (Recommended)"): hex (10,4), Hanita's own hex after the 4.4 km
+# regrid, joins galilee.
 # Deferred, not a member here: rosh_haayin_camp (tel_aviv_jaffa in the evidence). No sourced position for the camp was
 # found and it opened in 1950 (map/region_places_1948.yaml header); it stays in research_notes for Amir.
 # Every hex below is land and in at most one region; a land hex in no region is allowed (docs/rules/mvp.md R-CITY-006).
@@ -34,7 +35,7 @@ player_regions:
   - { q: 9, r: 6 }
   - { q: 9, r: 7 }
   - { q: 9, r: 8 }
-  - { q: 10, r: 4 }  # Q2 default: Hanita's own hex, in no region after the 4.4 km regrid
+  - { q: 10, r: 4 }  # Q2, owner 2 Nov 2026 "Add (10,4) to Galilee (Recommended)": Hanita's own hex, in no region after the 4.4 km regrid
   - { q: 10, r: 5 }
   - { q: 10, r: 6 }
   - { q: 10, r: 7 }
