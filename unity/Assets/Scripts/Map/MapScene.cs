@@ -169,7 +169,8 @@ namespace Statecraft.Game.Map
         /// <summary>Outlines every hex in <paramref name="hexes"/> (Movement.Reachable's, from InfoPanelPresenter) with a thin
         /// band in one mesh, drawn and draped as <see cref="Select"/>'s outline and with its material; nothing to light (none,
         /// or only hexes off the map) hides it. Display only: which hexes are lit is the sim's answer, never computed here.
-        /// A unit has at most 5 movement points (unit_types.yaml), so the mesh stays far under 16-bit indices.</summary>
+        /// A unit has at most 5 movement points (unit_types.yaml), so the mesh stays far under 16-bit indices. Each lit hex also
+        /// gets a translucent fill over the models (<see cref="ReachableFillName"/>, #2201).</summary>
         public void ShowReachable(IEnumerable<(int q, int r)> hexes)
         {
             if (Terrain == null || Hexes == null) return;
@@ -190,6 +191,8 @@ namespace Statecraft.Game.Map
             float size = Hexes.hex_size_km * 1000f;
             int n = MapBuilder.RingVertices;
             var verts = new List<Vector3>(); var tris = new List<int>();
+            var fill = new List<Vector3>(); var fillColours = new List<Color>(); var fillTris = new List<int>(); var inner = new List<Vector3>(n);
+            var clear = FillColour.linear; clear.a = 0f;
             var ring = new List<Vector3>(2 * n); var middle = new List<Vector3>(n);
             foreach (var at in hexes)
             {
@@ -212,12 +215,133 @@ namespace Statecraft.Game.Map
                     int a = b0 + j, b = b0 + (j + 1) % n, ai = b0 + n + j, bi = b0 + n + (j + 1) % n;
                     tris.AddRange(new[] { a, ai, b, b, ai, bi });   // the shader draws both faces (Cull Off)
                 }
+                // The fill (#2201): a strip from the band's outer ring, in the fill's colour, to a ring FillDepth further in,
+                // clear, so the tint fades towards the middle of the hex.
+                inner.Clear();
+                MapBuilder.DrapedRing(Frame, Terrain.terrainData, centre, size * (1f - FillDepth), SelectionClearanceM, inner);
+                int f0 = fill.Count;
+                for (int j = 0; j < n; j++) { fill.Add(ring[j]); fillColours.Add(FillColour.linear); }
+                for (int j = 0; j < n; j++) { fill.Add(inner[j]); fillColours.Add(clear); }
+                for (int j = 0; j < n; j++)
+                {
+                    int a = f0 + j, b = f0 + (j + 1) % n, ai = f0 + n + j, bi = f0 + n + (j + 1) % n;
+                    fillTris.AddRange(new[] { a, ai, b, b, ai, bi });
+                }
             }
             var m = go.GetComponent<MeshFilter>().sharedMesh;
             m.Clear();
             m.SetVertices(verts); m.SetTriangles(tris, 0);
             m.RecalculateBounds();
             go.GetComponent<MeshRenderer>().enabled = verts.Count > 0;
+            SetOverlayMesh(OverlayChild(ReachableFillName), fill, fillColours, fillTris, fadeClose: true);
+        }
+
+        /// <summary>The lit hexes' translucent fill (#2201), beside <see cref="ReachableName"/> under the terrain.</summary>
+        public const string ReachableFillName = "ReachableFill";
+        /// <summary>The hover marker on the hex under the pointer while a pick is open (#2201), under the terrain.</summary>
+        public const string HoverName = "HexHover";
+        /// <summary>The fill's material (Statecraft/HexOverlay: vertex colours, drawn over the models), in Resources so a player
+        /// keeps it and its shader.</summary>
+        public const string OverlayMaterialResource = "Map/HexOverlay";
+        /// <summary>The hover marker's material: the same shader, queued at Transparent+45, between the fill (+40) and the move
+        /// arrow (+50, #2184), so the band draws over the fill and under the arrow. A queue, not a sortingOrder: URP sorts by order
+        /// in layer before the queue, so an order of 1 would draw the band over the arrow's tip on the hovered hex.</summary>
+        public const string HoverMaterialResource = "Map/HexHover";
+        /// <summary>The lit hexes' fill at their edge: the selection's ivory at 40%, so a lit hex reads over a town or a wood and the
+        /// ground still shows through.</summary>
+        public static readonly Color FillColour = new Color(SelectionColour.r, SelectionColour.g, SelectionColour.b, 0.4f);
+        /// <summary>How far in from the edge the fill fades to clear, as a fraction of the hex circumradius, so the middle of a lit
+        /// hex is untinted. The shader also thins the fill as the camera comes close (the closest zoom, 6 km, shows about one
+        /// hex, and a full tint washed the whole view).</summary>
+        public const float FillDepth = 0.45f;
+        /// <summary>The hover band's core and edges: the move arrow's gold and navy ink (#2134), so the band reads on pale
+        /// towns and dry grass (the navy) and on dark woods (the gold).</summary>
+        public static readonly Color HoverColour = new Color(1f, 0.82f, 0.25f), HoverInk = new Color(0.06f, 0.08f, 0.14f, 0.9f);
+
+        /// <summary>A child of the terrain drawn with the overlay material, made on first use (a rebuild destroys it).</summary>
+        GameObject OverlayChild(string name, string material = OverlayMaterialResource)
+        {
+            var found = Terrain.transform.Find(name);
+            if (found != null) return found.gameObject;
+            var go = new GameObject(name);
+            go.transform.SetParent(Terrain.transform, false);
+            go.AddComponent<MeshFilter>().sharedMesh = Terrain.GetComponent<MapRuntimeAssets>().Own(new Mesh { name = name });
+            var renderer = go.AddComponent<MeshRenderer>();
+            renderer.sharedMaterial = Resources.Load<Material>(material);
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            return go;
+        }
+
+        /// <summary><paramref name="fadeClose"/>: uv.x 1, so Statecraft/HexOverlay fades the mesh as the camera comes close.</summary>
+        static void SetOverlayMesh(GameObject go, List<Vector3> verts, List<Color> colours, List<int> tris, bool fadeClose)
+        {
+            var m = go.GetComponent<MeshFilter>().sharedMesh;
+            m.Clear();
+            var uvs = new List<Vector2>(verts.Count);
+            for (int i = 0; i < verts.Count; i++) uvs.Add(new Vector2(fadeClose ? 1f : 0f, 0f));
+            m.SetVertices(verts); m.SetColors(colours); m.SetUVs(0, uvs); m.SetTriangles(tris, 0);
+            m.RecalculateBounds();
+            go.GetComponent<MeshRenderer>().enabled = verts.Count > 0;
+        }
+
+        MeshRenderer hoverRenderer;
+        (int q, int r)? hovered;
+        // Kept between calls: the pointer moves to a new hex many times a second, and fresh lists each time made steady garbage.
+        readonly List<Vector3> hoverVerts = new List<Vector3>();
+        readonly List<Color> hoverColours = new List<Color>();
+        readonly List<int> hoverTris = new List<int>();
+        readonly List<Vector3>[] hoverRings = { new List<Vector3>(), new List<Vector3>(), new List<Vector3>(), new List<Vector3>() };
+        // The strip edges as shares of the band: a navy edge either side, 0.2 of the band each (about 2 px at the opening zoom,
+        // not a heavy bar at 6 km), the gold between.
+        static readonly float[] HoverShares = { 0f, 0.2f, 0.8f, 1f };
+
+        /// <summary>Marks hex (q, r) with a band of the selection's width in three strips, navy edge, gold core, navy edge,
+        /// draped as <see cref="Select"/>'s; null or a hex off the map hides it. GameRoot asks every frame: the same hex again
+        /// returns at once.</summary>
+        public void ShowHover((int q, int r)? hex)
+        {
+            if (Terrain == null || Hexes == null) return;
+            if (hoverRenderer != null && hovered == hex) return;
+            hovered = hex;
+            var go = OverlayChild(HoverName, HoverMaterialResource);
+            hoverRenderer = go.GetComponent<MeshRenderer>();
+            HexJson at = null;
+            if (hex is (int q, int r)) foreach (var h in Hexes.hexes) if (h.q == q && h.r == r) { at = h; break; }
+            var verts = hoverVerts; var colours = hoverColours; var tris = hoverTris;
+            verts.Clear(); colours.Clear(); tris.Clear();
+            if (at != null)
+            {
+                var c = Frame.ToWorld(at.lon, at.lat, 0);
+                var centre = new Vector2(c.x, c.z);
+                float size = Hexes.hex_size_km * 1000f;
+                int n = MapBuilder.RingVertices;
+                var shares = HoverShares;
+                var rings = hoverRings;
+                for (int i = 0; i < shares.Length; i++)
+                {
+                    rings[i].Clear();
+                    MapBuilder.DrapedRing(Frame, Terrain.terrainData, centre, size * (1f - SelectionWidth * shares[i]), SelectionClearanceM, rings[i]);
+                }
+                for (int j = 0; j < n; j++)   // each index at the highest of its rings, as Select's band
+                {
+                    float y = float.MinValue;
+                    foreach (var ring in rings) y = Mathf.Max(y, ring[j].y);
+                    foreach (var ring in rings) ring[j] = new Vector3(ring[j].x, y, ring[j].z);
+                }
+                for (int i = 0; i < 3; i++)
+                {
+                    var colour = (i == 1 ? HoverColour : HoverInk).linear;
+                    int b0 = verts.Count;
+                    verts.AddRange(rings[i]); verts.AddRange(rings[i + 1]);
+                    for (int j = 0; j < 2 * n; j++) colours.Add(colour);
+                    for (int j = 0; j < n; j++)
+                    {
+                        int a = b0 + j, b = b0 + (j + 1) % n, ai = b0 + n + j, bi = b0 + n + (j + 1) % n;
+                        tris.Add(a); tris.Add(ai); tris.Add(b); tris.Add(b); tris.Add(ai); tris.Add(bi);   // the shader draws both faces (Cull Off)
+                    }
+                }
+            }
+            SetOverlayMesh(go, verts, colours, tris, fadeClose: false);
         }
 
         /// <summary>Shows the sim's multi-turn route as thin hex bands. Each item carries its arrival turn;

@@ -533,10 +533,28 @@ namespace Statecraft.Game.UI
 
         /// <summary>True while the open pick is a Move's (not an Attack's).</summary>
         public bool MovePicking => pick is { attack: false };
+        /// <summary>True while a Move or an Attack pick is open (GameRoot marks the hovered hex then, #2201).</summary>
+        public bool Picking => pick != null;
 
         /// <summary>True when a pick is open and PickTarget would give an order for (q, r): a lit hex, or, for Move, an unlit
         /// hex with a go-to route. A right click (GameRoot.OnHexOrdered) gives one only then.</summary>
         public bool PickTakes(int q, int r) => pick is { } p && Takes(p, q, r);
+
+        (int q, int r, HashSet<(int q, int r)> hexes, PreviewResult now, bool takes)? hoverTakes;
+
+        /// <summary>PickTakes for the hex under the pointer, which GameRoot.MarkHover asks every frame. PickTakes runs RouteTo, a
+        /// search of the whole map, so the answer is kept and worked out again only when the hex, the pick (each pick opens with
+        /// its own lit set) or the session's preview changes.</summary>
+        public bool PickTakesHovered(int q, int r)
+        {
+            if (!(pick is { } p)) return false;
+            var now = bridge.Session.Now;
+            if (hoverTakes is { } m && m.q == q && m.r == r && ReferenceEquals(m.hexes, p.hexes) && ReferenceEquals(m.now, now))
+                return m.takes;
+            var takes = Takes(p, q, r);
+            hoverTakes = (q, r, p.hexes, now, takes);
+            return takes;
+        }
 
         bool Takes((int unit, HashSet<(int q, int r)> hexes, GameSession session, int turn, bool attack, (int q, int r)? touchRoute) p,
             int q, int r) => p.hexes.Contains((q, r)) || RouteTo(p, q, r).Count > 0;   // RouteTo: PickTarget's go-to rule
