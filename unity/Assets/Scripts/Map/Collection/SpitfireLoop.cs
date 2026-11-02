@@ -1,4 +1,5 @@
 #nullable enable
+using System;
 using UnityEngine;
 
 namespace Statecraft.Game.Map.Collection
@@ -14,6 +15,10 @@ namespace Statecraft.Game.Map.Collection
     {
         Vector3 centre, offset; Quaternion level; bool still;
 
+        /// <summary>The animation clock, Time.time. Test seam (internal; the tests see it through InternalsVisibleTo): an
+        /// EditMode test has no frame clock.</summary>
+        internal static Func<float> Clock = () => Time.time;
+
         /// <summary>True when the aircraft holds the loop's start (edit mode, screenshots).</summary>
         public bool Still => still;
 
@@ -22,12 +27,13 @@ namespace Statecraft.Game.Map.Collection
         internal void Configure(Vector3 centre, Quaternion level, Vector3 offset, bool still)
         {
             this.centre = centre; this.level = level; this.offset = offset; this.still = still;
-            Place(0f);
+            // Where the clock puts it now: a component added mid-frame gets no Update that frame (review k2 C1).
+            Place(still ? 0f : Clock());
         }
 
         void Update()
         {
-            if (!still) Place(Time.time);
+            if (!still) Place(Clock());
         }
 
         /// <summary>Puts the aircraft where it is <paramref name="seconds"/> into its loop, its drawn centre on the path and

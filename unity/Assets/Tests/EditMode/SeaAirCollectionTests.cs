@@ -282,6 +282,36 @@ public class SeaAirCollectionTests
         }
     }
 
+    /// <summary>Review k2 C1: in play the aircraft is drawn where the clock puts it from its first frame, not at the loop's
+    /// start until its first Update (a component added mid-frame gets no Update that frame, so the frame it is built in would
+    /// draw it up to 6 km from where it flies). Screenshots and edit mode still hold the loop's start. An EditMode test has
+    /// no frame clock, so it drives SpitfireLoop.Clock.</summary>
+    [Test]
+    public void TheSpitfireIsDrawnWhereTheClockPutsItFromItsFirstFrame()
+    {
+        var clock = SpitfireLoop.Clock;
+        var flying = new GameObject("flying"); var held = new GameObject("held");
+        try
+        {
+            const float now = 12.5f;
+            SpitfireLoop.Clock = () => now;
+            var centre = new Vector3(30000f, 4200f, 1000f);
+            flying.AddComponent<SpitfireLoop>().Configure(centre, Quaternion.identity, Vector3.zero, still: false);
+            held.AddComponent<SpitfireLoop>().Configure(centre, Quaternion.identity, Vector3.zero, still: true);
+            var there = SeaAirCollection.LoopOffset(now); var start = SeaAirCollection.LoopOffset(0f);
+            Assert.Greater((there - start).magnitude, 1000f, "the test's time is far round the loop from its start");
+            Assert.Less((flying.transform.position - (centre + new Vector3(there.x, 0f, there.y))).magnitude, 1f,
+                "in play, where the clock puts it, before any Update");
+            Assert.Less((held.transform.position - (centre + new Vector3(start.x, 0f, start.y))).magnitude, 1f,
+                "held (edit mode, screenshots): at the loop's start whatever the clock");
+        }
+        finally
+        {
+            SpitfireLoop.Clock = clock;
+            Object.DestroyImmediate(flying); Object.DestroyImmediate(held);
+        }
+    }
+
     /// <summary>The loop respects the Spitfire's dates (#1932: 15 May 1948 to 2 January 1949): outside them no aircraft and
     /// no loop is drawn; inside them exactly one looping aircraft.</summary>
     [Test]
