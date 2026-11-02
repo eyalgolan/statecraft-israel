@@ -98,7 +98,7 @@ namespace Statecraft.Game.Map.Collection
 
         /// <summary>Tal Heuberger's Egyptian Dakota C-47, flying a slow loop off Tel Aviv on the turns of the first Egyptian bombing
         /// period, 15 May to 11 June 1948 (SeaAirCollection; owner, 2 November 2026: "Over Tel Aviv, 15 May-11 Jun
-        /// (Recommended)"). Like the R35, its source is the vehicle delivery's compatibility FBX (<see cref="SourceModelPath"/>).</summary>
+        /// (Recommended)", and on #2274, "Off the coast is fine (Recommended)"). Like the R35, its source is the vehicle delivery's compatibility FBX (<see cref="SourceModelPath"/>).</summary>
         public const string EgyptianDakota = "generated-1948-16-egyptian-dakota-c47";
 
         /// <summary>Tal Heuberger's four props placed at sourced places and dates (SpecialBuildingModels; owner, 2 November 2026:

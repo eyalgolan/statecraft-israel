@@ -1,7 +1,8 @@
 """unity/Assets/Editor/VehicleReviewSources.py --verify checks the three delivered vehicle archives against the files the
 repo ships. #2014 moved the Egyptian Spitfire (placed in the game, #1932) to the Collection folder and renamed its FBX to
 the Collection's <id>.fbx. #2046 moved the Syrian R35 there too, under its delivered -compatibility.fbx name, and the
-Dakota followed (owner, 2 November 2026: "Over Tel Aviv, 15 May-11 Jun"), also keeping its -compatibility.fbx name. This fails when verify stops following
+Dakota followed (owner, 2 November 2026: "Over Tel Aviv, 15 May-11 Jun"; on #2274: "Off the coast is fine"), also keeping
+its -compatibility.fbx name. This fails when verify stops following
 the move (it would then look for a model that is no longer there, or pass without checking the shipped one)."""
 import importlib.util
 import sys

@@ -19,7 +19,8 @@ IDS = {13: "generated-1948-13-egyptian-spitfire", 14: "generated-1948-14-syrian-
 ART = Path("unity/Assets/Editor/Generated1948VehicleReview")
 # Placed in the game, moved with git mv to the Collection folder: the Spitfire (#1932), its FBX renamed to the Collection's
 # id.fbx (same bytes), the R35 at Degania Alef (#2046; owner, 27 October 2026), which keeps its -compatibility.fbx, and the
-# Dakota off Tel Aviv (owner, 2 November 2026: "Over Tel Aviv, 15 May-11 Jun"), which keeps its -compatibility.fbx too.
+# Dakota off Tel Aviv (owner, 2 November 2026: "Over Tel Aviv, 15 May-11 Jun"; on #2274: "Off the coast is fine"), which
+# keeps its -compatibility.fbx too.
 PLACED = {"generated-1948-13-egyptian-spitfire", "generated-1948-14-syrian-renault-r35", "generated-1948-16-egyptian-dakota-c47"}
 RENAMED = {"generated-1948-13-egyptian-spitfire"}
 COLLECTION = Path("unity/Assets/Art/Collection")

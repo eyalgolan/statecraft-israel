@@ -332,7 +332,7 @@ public class SeaAirCollectionTests
         }
     }
 
-    // ---- Tal Heuberger's Egyptian Dakota (owner, 2 November 2026: "Over Tel Aviv, 15 May-11 Jun (Recommended)") ----
+    // ---- Tal Heuberger's Egyptian Dakota (owner, 2 November 2026: "Over Tel Aviv, 15 May-11 Jun (Recommended)"; on #2274, "Off the coast is fine (Recommended)") ----
 
     /// <summary>The first bombing period, 15 May to 11 June 1948 (he.wiki rev 43856594, agent-read): on the game's monthly turns
     /// the 15 May turn only, at Tel Aviv's place.</summary>

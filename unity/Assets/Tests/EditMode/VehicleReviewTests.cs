@@ -19,7 +19,7 @@ public class VehicleReviewTests
     /// <summary>The candidates still in review: none. All three are placed, each in its own streamed bundle: the Spitfire in
     /// flight near the board edge (#1932), the R35, which stands at Degania Alef from 20 May 1948 (owner, 27 October 2026:
     /// "Degania landmark (Recommended)"), and the Dakota, in flight off Tel Aviv from 15 May to 11 June 1948 (owner, 2 November
-    /// 2026: "Over Tel Aviv, 15 May-11 Jun (Recommended)").</summary>
+    /// 2026: "Over Tel Aviv, 15 May-11 Jun (Recommended)"; on #2274, "Off the coast is fine (Recommended)").</summary>
     static readonly string[] InReview = VehicleReviewCatalog.Ids.Where(id => !VehicleReviewCatalog.Placed(id)).ToArray();
 
     [Test]

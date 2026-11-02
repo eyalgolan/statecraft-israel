@@ -9,7 +9,7 @@ using UnityEngine.Rendering;
 namespace Statecraft.Game.Map.Collection
 {
     /// <summary>Tal Heuberger's Egyptian Dakota C-47 (owner, 2 November 2026, "Over Tel Aviv, 15 May-11 Jun (Recommended)": "A
-    /// slow loop over Tel Aviv on those turns, like the Spitfire's loop, with the Egyptian flag; purely visual"). It follows the
+    /// slow loop over Tel Aviv on those turns, like the Spitfire's loop, with the Egyptian flag; purely visual"; on #2274, "Off the coast is fine (Recommended)": its loop is just off the city, over the sea). It follows the
     /// Spitfire's path in this layer: the far mesh streamed after the first frame, drawn in flight at the unit tokens' aircraft
     /// scale and altitude, never on a hex or an airfield, with Egypt's flag as the owner ruled for the Spitfire on #2260
     /// ("Smaller flag, no pole": a small flag floating over the tail).</summary>
