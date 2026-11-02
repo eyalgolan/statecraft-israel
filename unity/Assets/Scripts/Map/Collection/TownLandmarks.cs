@@ -51,27 +51,23 @@ namespace Statecraft.Game.Map.Collection
         public const string TelAviv = "tel-aviv-white-city-v1", Jerusalem = "jerusalem-stone-city-v1", Haifa = "haifa-port-city-v1",
             Moshava = "moshava-town-v1", Nahalal = "nahalal-moshav-v1", Kibbutz = "kibbutz-compound-v2", StoneVillage = "stone-village-v1",
             Maabara = "maabara-camp-v1", Shikun = "shikun-housing-v1", Jerusalem3D = "jerusalem-stone-city-v1-3denhance",
-            // Tal Heuberger's generated whole towns (#2085): the three towns #1288 lists, and Ramla (off, RamlaOwnTown).
+            // Tal Heuberger's generated whole towns (#2085): the three towns #1288 lists, and Ramla.
             Tiberias = CollectionCatalog.TiberiasTown, Safed = CollectionCatalog.SafedTown, Netanya = CollectionCatalog.NetanyaTown,
             Ramla = CollectionCatalog.RamlaTown;
-
-        /// <summary>Whether Ramla stands as its own whole town (#2085, <see cref="Ramla"/>) instead of the stone village every
-        /// Arab town takes (<see cref="ByType"/>). Off: replacing stone-village-v1 at Ramla has no owner ruling yet (2 November
-        /// 2026), so the model is catalogued and streamable but Ramla keeps the stone village until this is switched on.</summary>
-        public static bool RamlaOwnTown;
 
         /// <summary>By settlement id first (#507's mapping). Jerusalem stands as #336's second take of the stone city
         /// (<see cref="Jerusalem3D"/>, Tal Heuberger, #886) for the whole game: the owner, 21 October 2026, on #708
         /// (issuecomment-6323524970), "it is Jerusalem's only far-zoom model for the whole game. The first model stays in the
         /// repository, unused on the map. No date switch". #507's <see cref="Jerusalem"/> is therefore not placed.
         /// Tiberias, Safed and Netanya stand as Tal Heuberger's own whole-town models (#2085), the three towns #1288 found with
-        /// none.</summary>
+        /// none. Ramla, an Arab town, stands as Tal's own town instead of the stone village (<see cref="ByType"/>): the owner,
+        /// 2 November 2026, "Yes, Tal's Ramla (Recommended)" ("Ramla draws Tal's town instead of the stone village").</summary>
         public static readonly IReadOnlyDictionary<string, string> ById = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["tel_aviv"] = TelAviv, ["jerusalem"] = Jerusalem3D, ["haifa"] = Haifa,
             ["petah_tikva"] = Moshava, ["rishon_lezion"] = Moshava, ["zikhron_yaakov"] = Moshava,
             ["rosh_pinna"] = Moshava, ["rehovot"] = Moshava, ["hadera"] = Moshava,
-            ["tiberias"] = Tiberias, ["safed"] = Safed, ["netanya"] = Netanya,
+            ["tiberias"] = Tiberias, ["safed"] = Safed, ["netanya"] = Netanya, ["ramla"] = Ramla,
         };
 
         /// <summary>Then by settlement type (#507's mapping).</summary>
@@ -102,8 +98,7 @@ namespace Statecraft.Game.Map.Collection
 
         /// <summary>The model for settlement <paramref name="s"/>, or null for none.</summary>
         public static string? ModelFor(Settlement s) =>
-            RamlaOwnTown && s.Id == "ramla" ? Ramla
-            : ById.TryGetValue(s.Id, out var m) ? m : ByType.TryGetValue(s.Type, out var t) ? t : null;
+            ById.TryGetValue(s.Id, out var m) ? m : ByType.TryGetValue(s.Type, out var t) ? t : null;
 
         /// <summary>The model for a placement of <paramref name="action"/> as at <paramref name="date"/>, or null: none for that
         /// action, before its sourced date, or no sourced date at all.</summary>

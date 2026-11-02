@@ -117,7 +117,6 @@ regions:
     flora:
       density: 1.1
       flat:
-        - {model: 'tiles:hula_swamp/papyrus', shape: pine, weight: 0.55}
         - {model: 'sandbox:tabor_oak_lite', shape: tree, weight: 0.45}
       hills:
         - {model: 'sandbox:tabor_oak_lite', shape: tree, weight: 0.7}

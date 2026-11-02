@@ -46,7 +46,6 @@ public class TalModelsShots
     {
         RuralLife.Request = savedRural!; CivilianPeople.Request = savedPeople!; SpecialBuildingModels.Request = savedSpecial!;
         UnitFigures.Source = savedUnits; TownModelLayer.ModelAcquire = savedTown!; TownLandmarks.Request = savedLandmark!;
-        TownLandmarks.RamlaOwnTown = false;
         EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         if (ps != null) Object.DestroyImmediate(ps);
         if (rt != null) { rt.Release(); Object.DestroyImmediate(rt); }
@@ -199,13 +198,13 @@ public class TalModelsShots
     /// <summary>#2085: a town from the far zoom (50 km, inside the 40 km+ band where whole-town models stand), the camera on the
     /// centre of the town's kit footprint, 15 May 1948. The landmarks' requests are answered with the editor's prefabs, as the
     /// player's stream would answer them. "Before" withholds Tal's four whole towns (main's map: Tiberias, Safed and Netanya
-    /// have no row, so the code-built kit stands; Ramla takes the stone village); "after" answers them, with Ramla's own town
-    /// switched on for the frame only (it is off in the game until the owner rules).</summary>
+    /// have no row, so the code-built kit stands); "after" answers them. Ramla has an after frame only: since the owner's 2 November
+    /// ruling Ramla's row is its own town, so withholding it leaves Ramla bare, not main's stone village. Its before frames
+    /// (the stone village) were taken at cc766c04b, while Ramla still took ByType's stone village.</summary>
     IEnumerator WholeTown(bool hebrew, string town, bool after)
     {
         var towns = new[] { CollectionCatalog.TiberiasTown, CollectionCatalog.SafedTown, CollectionCatalog.NetanyaTown, CollectionCatalog.RamlaTown };
         TownLandmarks.Request = Answer(after ? Array.Empty<string>() : towns);
-        TownLandmarks.RamlaOwnTown = after && town == "ramla";
         yield return Boot(hebrew);
         var map = Object.FindFirstObjectByType<MapScene>();
         var foot = map.KitFootprints.First(f => f.id == town);
@@ -232,9 +231,7 @@ public class TalModelsShots
     [UnityTest] public IEnumerator TownNetanyaAfterEnglish() { yield return WholeTown(false, "netanya", true); }
     [UnityTest] public IEnumerator TownNetanyaBeforeHebrew() { yield return WholeTown(true, "netanya", false); }
     [UnityTest] public IEnumerator TownNetanyaAfterHebrew() { yield return WholeTown(true, "netanya", true); }
-    [UnityTest] public IEnumerator TownRamlaBeforeEnglish() { yield return WholeTown(false, "ramla", false); }
     [UnityTest] public IEnumerator TownRamlaAfterEnglish() { yield return WholeTown(false, "ramla", true); }
-    [UnityTest] public IEnumerator TownRamlaBeforeHebrew() { yield return WholeTown(true, "ramla", false); }
     [UnityTest] public IEnumerator TownRamlaAfterHebrew() { yield return WholeTown(true, "ramla", true); }
 
     [UnityTest] public IEnumerator HousesNetanyaEnglish() { yield return Houses(false, "netanya"); }
@@ -450,6 +447,44 @@ public class TalModelsShots
         }
         finally { SeaAirCollection.Request = savedCraft; }
     }
+
+    /// <summary>#2082: Tal's papyrus at the Hula swamp (site hula, hex (16, 3)) on the opening turn, from the closest zoom the
+    /// player can reach, the camera on the middle of the stands. "Before" withholds the model (#2271's map: no papyrus layer
+    /// draws anything without it); "after" answers it with the editor's prefab, as the papyrus bundle would.</summary>
+    IEnumerator Hula(bool hebrew, bool after)
+    {
+        var saved = HulaPapyrusLayer.Request;
+        try
+        {
+            yield return Boot(hebrew);
+            var map = Object.FindFirstObjectByType<MapScene>();
+            var state = root.Bridge!.State; var content = root.Bridge.Content;
+            HulaPapyrusLayer.Request = (id, detail, done) =>
+                done(after ? AssetDatabase.LoadAssetAtPath<GameObject>(Statecraft.HexTiles.HexProps.PrefabPath(id)) : null);
+            Drop(map, HulaPapyrusLayer.Name);
+            var layer = HulaPapyrusLayer.ShowAt(map, content, HulaPapyrusLayer.Drained(state))!;
+            var wants = HulaPapyrusLayer.Wants(map, content);
+            Assert.IsNotEmpty(wants, "the Hula's clumps");
+            var sum = Vector2.zero; foreach (var w in wants) sum += w.At;
+            var at = new Vector3(sum.x / wants.Count, 0f, sum.y / wants.Count);
+            at.y = map.Terrain.SampleHeight(at) + map.Terrain.transform.position.y;
+            Look(at, CameraController.MinDistance);
+            // An EditMode scene does not enable the layer's render callback, so the close-zoom switch is set as that callback
+            // sets it for this camera: the view distance against the layer's own band.
+            float view = TownLandmarks.ViewDistance(Camera.main);
+            Assert.IsTrue(HulaPapyrusLayer.CloseAt(view, null), $"the closest zoom is close ({view:F0} m)");
+            layer.SetClose(true);
+            for (int i = 0; i < 5; i++) { Camera.main.Render(); yield return null; }
+            CivMovementShots.Shot(rt!, Path.Combine("..", "tal-models-shots", $"hula-{(after ? "after" : "before")}-{(hebrew ? "he" : "en")}"));
+            Debug.Log($"SHOT hula {(after ? "after" : "before")} on {state.Date:yyyy-MM-dd} at {at} from {CameraController.MinDistance:F0} m: wanted {layer.Wanted}, placed {layer.Placed.Count}, close {layer.LastClose}, clump {HulaPapyrusLayer.ClumpM:F1} m");
+        }
+        finally { HulaPapyrusLayer.Request = saved; }
+    }
+
+    [UnityTest] public IEnumerator HulaBeforeEnglish() { yield return Hula(false, false); }
+    [UnityTest] public IEnumerator HulaAfterEnglish() { yield return Hula(false, true); }
+    [UnityTest] public IEnumerator HulaBeforeHebrew() { yield return Hula(true, false); }
+    [UnityTest] public IEnumerator HulaAfterHebrew() { yield return Hula(true, true); }
 
     [UnityTest] public IEnumerator SpitfireBeforeEnglish() { yield return Spitfire(false, false); }
     [UnityTest] public IEnumerator SpitfireAfterEnglish() { yield return Spitfire(false, true); }
