@@ -388,6 +388,12 @@ On 2 November 2026 the owner ruled on Arms bought on credit, a lever on the war 
 | The war debt of about IL 5m a month | "Give the player a lever (Recommended)", then "Spend the dollars (Recommended)" | The player gets a lever on the war debt: during the war, up to $4m a month of foreign currency can be moved into Money, $100m in total, which brings the sourced 1951 currency crisis and its Food-import cut closer. One foreign-currency readout is shown, so foreign currency is no longer wholly internal (Q2) ([lever](https://github.com/eyalgolan/statecraft-israel/issues/813#issuecomment-6564721721), [options](https://github.com/eyalgolan/statecraft-israel/issues/813#issuecomment-6564855158), [dollars](https://github.com/eyalgolan/statecraft-israel/issues/813#issuecomment-6564883926)). |
 | The armistice-lines switch and legend | Switch: "Tie to Borders button (Recommended)"; legend: "Restyle Jordan lines (Recommended)" | The minimap's Borders button also hides and shows the armistice lines, with no new strings. The low-accuracy Jordan lines get a pattern apart from the legend's grey dash for no-man's land and the demilitarized zones, with no text changes ([#2195](https://github.com/eyalgolan/statecraft-israel/pull/2195#issuecomment-6565077805)). |
 
+#### Later rulings, 2 November 2026
+
+| Question | Owner's answer (2 November 2026) | Rule |
+|-|-|-|
+| A lever for the war-time debt (#813) | "Spend the dollars (Recommended)" | During the war (rungs 4 and 5) the player may convert up to $4m a month of foreign currency into Money, $100m in total; the reserves run out sooner, so the sourced 1951 currency crisis and its Food-import cut come closer (`R-MONEY-004`; [ruling](https://github.com/eyalgolan/statecraft-israel/issues/813#issuecomment-6564883926), [options](https://github.com/eyalgolan/statecraft-israel/issues/813#issuecomment-6564855158)). This overrides D-C3 ("Keep them internal, under Money, at least through cutover ... and hide them if they confuse") only for the one foreign-currency readout this order needs, on the Defence screen where it is made. |
+
 ## Deferred decisions
 
 These are recorded once here. Feature files link here instead of maintaining competing open-question lists.

@@ -32,6 +32,7 @@ public class CommandGuardTests
         [typeof(CancelProject)] = new CancelProject(1),
         [typeof(Move)] = new Move(1, 2, 0),
         [typeof(BuyArms)] = new BuyArms(0),   // refused (fewer than one unit), as GovernmentTests.ARefusedGddOrderRefundsItsAttention needs
+        [typeof(ConvertDollars)] = new ConvertDollars(0),   // refused (below $1m), like BuyArms(0); R-MONEY-004
         [typeof(ResolveCapture)] = new ResolveCapture("town_a", "raid"),   // refused (nothing awaits a decision), like BuyArms(0)
         [typeof(EndOccupation)] = new EndOccupation("town_a", "annex"),   // refused (nothing awaits the end of an occupation)
     };

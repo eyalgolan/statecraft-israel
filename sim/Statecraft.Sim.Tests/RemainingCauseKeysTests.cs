@@ -115,7 +115,7 @@ public class RemainingCauseKeysTests
                 sites++;
             }
         }
-        Assert.Equal(104, sites);
+        Assert.Equal(105, sites);   // 105 with R-MONEY-004's DollarsConverted (#813)
     }
 
     [Fact]

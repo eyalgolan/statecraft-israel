@@ -386,6 +386,23 @@
                     <ui:Label name="arms-refusal" class="wrap" />
                     <Statecraft.Game.UI.UiFrame shadow="false" />
                 </ui:VisualElement>
+                <!-- #813 (R-MONEY-004): converting foreign currency into Money during the war, with the one foreign-currency readout. -->
+                <ui:VisualElement name="defence-dollars" class="defence-panel">
+                    <ui:Label name="dollars-title" class="section-title" />
+                    <ui:Label name="dollars-reserves" class="wrap" />
+                    <ui:Label name="dollars-cost" class="muted wrap" />
+                    <ui:Label name="dollars-total" class="wrap" />
+                    <ui:IntegerField name="dollars-amount" value="1" />
+                    <ui:Label name="dollars-money" class="wrap" />
+                    <ui:Label name="dollars-attention" class="wrap" />
+                    <ui:VisualElement class="row arms-actions">
+                        <ui:Button name="convert-dollars" />
+                        <ui:Button name="withdraw-dollars" />
+                    </ui:VisualElement>
+                    <ui:Label name="dollars-queued" class="wrap" />
+                    <ui:Label name="dollars-refusal" class="wrap" />
+                    <Statecraft.Game.UI.UiFrame shadow="false" />
+                </ui:VisualElement>
                 <!-- #755: the prisoners held and returned and our soldiers held (R-POW-001, R-POW-004, R-POW-005), GDD loop only. -->
                 <ui:VisualElement name="defence-prisoners" class="defence-panel">
                     <ui:Label name="defence-title-prisoners" class="section-title" />

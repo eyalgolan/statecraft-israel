@@ -1244,6 +1244,11 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .lang-he #arms-count { flex-direction: row-reverse; }
 #arms-count .unity-base-field__input { background-color: var(--navy-deep); color: var(--ink); border-width: 1px; border-color: var(--gold-dim); }
 #arms-count:focus .unity-base-field__input { border-color: var(--gold); }
+/* #813: the dollar conversion's amount, as the Arms count. */
+#dollars-amount { min-width: 0; flex-shrink: 1; }
+.lang-he #dollars-amount { flex-direction: row-reverse; }
+#dollars-amount .unity-base-field__input { background-color: var(--navy-deep); color: var(--ink); border-width: 1px; border-color: var(--gold-dim); }
+#dollars-amount:focus .unity-base-field__input { border-color: var(--gold); }
 /* #530: a still opening in the existing event-card frame. Keep its actions outside the scrolling prose, so Skip
    remains reachable in a short window. The English historical text stays English and left-aligned in the Hebrew UI (in the
    Hebrew face, as all text there) until its own review. */

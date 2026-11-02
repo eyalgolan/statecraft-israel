@@ -490,6 +490,28 @@ public class PromoScreensTests
                 Assert.AreEqual(texts["arms-attention"], ui.Q<Label>("arms-attention").text);
                 Assert.AreEqual(C.UsesAttention ? DisplayStyle.Flex : DisplayStyle.None,
                     ui.Q<Label>("arms-attention").style.display.value);
+                // #813 (R-MONEY-004): the Dollars panel (GDD loop only): the sim's foreign-currency reserve, the dollars converted
+                // so far against mvp.dollars_total, and the Money the amount field's opening value (mvp.dollars_per_turn) brings
+                // at the il_per_dollar rate in force on the date (EconomySystem.ConvertDollars), with its Attention cost.
+                var m = C.RulesAt(s.Date).Mvp!;
+                var convert = new ConvertDollars(m.DollarsPerTurn!.Value);
+                texts["dollars-reserves"] = Text.Format("dollars.reserves", PlayerText.Money(C, "fx_reserves", s.FxReserves));
+                texts["dollars-total"] = Text.Format("dollars.total",
+                    PlayerText.Money(C, "fx_reserves", s.DollarsConverted), PlayerText.Money(C, "fx_reserves", m.DollarsTotal!.Value));
+                // The amount field opens at the month's limit (DollarConversionPresenter) unless a ConvertDollars is queued; these dates have none.
+                Assert.IsNull(bridge.QueuedLike(convert), $"{where}: precondition: no dollar conversion is queued");
+                texts["dollars-amount"] = m.DollarsPerTurn.Value.ToString();
+                texts["dollars-money"] = Text.Format("dollars.money", PlayerText.Money(C, "treasury", m.DollarsPerTurn.Value * m.IlPerDollarOn(s.Date)));
+                texts["dollars-attention"] = C.UsesAttention ? Text.Format("arms.attention", bridge.Price(convert)!.Value, bridge.AttentionLeft!.Value) : "";
+                // Require the named figures, even if a missing/blank control would evade the digit inventory.
+                Assert.AreEqual(texts["dollars-reserves"], ui.Q<Label>("dollars-reserves").text);
+                Assert.AreEqual(texts["dollars-total"], ui.Q<Label>("dollars-total").text);
+                Assert.AreEqual(m.DollarsPerTurn.Value, ui.Q<IntegerField>("dollars-amount").value);
+                Assert.AreEqual(texts["dollars-money"], ui.Q<Label>("dollars-money").text);
+                Assert.AreEqual(texts["dollars-attention"], ui.Q<Label>("dollars-attention").text);
+                Assert.AreEqual(C.UsesAttention ? DisplayStyle.Flex : DisplayStyle.None,
+                    ui.Q<Label>("dollars-attention").style.display.value);
+                Assert.AreEqual("", ui.Q<Label>("dollars-queued").text, $"{where}: nothing queued, no queued figure");
             }
             bars["mob-bar"] = (float)callUp; bars["defence-budget-bar"] = (float)s.Budget[DefencePresenter.BudgetLine];
             foreach (var name in new[] { "screen-cabinet", "screen-defence" })

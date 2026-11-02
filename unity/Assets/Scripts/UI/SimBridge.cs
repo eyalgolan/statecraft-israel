@@ -208,6 +208,8 @@ namespace Statecraft.Game.UI
                 case ResolveCapture _: return null;
                 // Answering the end of an occupation (#799): the sim refuses a place not awaiting the end with its own reason.
                 case EndOccupation _: return null;
+                // Converting dollars (#813, R-MONEY-004): no ids; the sim refuses the amount itself (EconomySystem.DollarsRefusal).
+                case ConvertDollars _: return null;
                 default: return text["order.invalid"];
             }
         }
@@ -218,6 +220,12 @@ namespace Statecraft.Game.UI
         static readonly Dictionary<string, string> ReasonKeys = new Dictionary<string, string>
         {
             [Movement.MissingArtilleryMovement] = "unit.artillery_move_missing",
+            // #813 (R-MONEY-004): the dollar conversion's refusals.
+            [EconomySystem.RefusedDollarsMinimum] = "dollars.refused_minimum",
+            [EconomySystem.RefusedDollarsNotAtWar] = "dollars.refused_not_at_war",
+            [EconomySystem.RefusedDollarsMonthly] = "dollars.refused_monthly",
+            [EconomySystem.RefusedDollarsTotal] = "dollars.refused_total",
+            [EconomySystem.RefusedDollarsReserves] = "dollars.refused_reserves",
             [Orders.RefusedUnknownOrder] = "unit.order_refused.unknown_order",
             [Orders.RefusedNoUnit] = "unit.order_refused.no_unit",
             [Orders.RefusedNotMilitary] = "unit.order_refused.not_military",

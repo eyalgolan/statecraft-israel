@@ -188,6 +188,15 @@ namespace Statecraft.Sim
         public BuyArms(int count) { Count = count; }
     }
 
+    /// <summary>Converts <see cref="Amount"/> US$ millions of foreign currency into Money during the war (EconomySystem.ConvertDollars,
+    /// R-MONEY-004; #813, owner 2 November 2026: "Spend the dollars (Recommended)"). GDD loop only.</summary>
+    public sealed class ConvertDollars : Command
+    {
+        public override string Kind => EconomySystem.ConvertDollarsKind;
+        public int Amount { get; }
+        public ConvertDollars(int amount) { Amount = amount; }
+    }
+
     /// <summary>Answers the capture of <see cref="Settlement"/> with <see cref="Outcome"/>: raid, occupy or deport
     /// (SettlementControl.Resolve, R-CTRL-007 to R-CTRL-010). One kind for every outcome, so they cost the same Attention
     /// (Q-TECH-3). GDD v0.1 loop only.</summary>
@@ -263,6 +272,7 @@ namespace Statecraft.Sim
                     case CancelProject _: break;
                     case Move _: break;
                     case BuyArms _: break;
+                    case ConvertDollars _: break;
                     case ResolveCapture r: Text(r.Settlement, "Settlement"); Text(r.Outcome, "Outcome"); break;
                     case EndOccupation e: Text(e.Settlement, "Settlement"); Text(e.Outcome, "Outcome"); break;
                     case SetMobilization _: case SecurityOrder _: break;

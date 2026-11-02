@@ -122,6 +122,9 @@ The proposed immigration mix and ship schedule are non-operative [S1]. Retained 
 | `money.debt_ceiling` | `250` | IL millions of debt at which Money is exhausted | Retained `debt_ceiling` value [S10]; only the threshold of the economic defeat, not a credit cap: no order is refused or part-funded at it (owner, 1 November 2026, Q22) [S12] |
 | starting Debt | `0` | IL millions | Owner, 1 November 2026, Q23 [S12]: main has no start key, and Money is IL 1m a unit (`money.il_millions`) |
 | `defeat_turns` | `3` | turn ends in a row with Money and Food exhausted | Retained `R-END-002` value [S10]; owner, 1 November 2026, Q25 [S12] |
+| `mvp.dollars_per_turn` | `4` | US$ millions of foreign currency converted into Money in one turn of the war | Owner, 2 November 2026 (`R-MONEY-004`) [S13] |
+| `mvp.dollars_total` | `100` | US$ millions converted in the whole game | Owner, 2 November 2026 (`R-MONEY-004`); the Export-Import Bank's 1949 credit [S13] |
+| `mvp.il_per_dollar` | `0.333`, then `0.357` from 19 September 1949 | IL millions per US$ million converted | Sourced effective dollar rates (`R-MONEY-004`) [S14] |
 
 ### Military and control
 
@@ -199,6 +202,8 @@ Historical census estimates, real camp opening dates, authored region borders, a
 - [S10] Retained numerical and rule catalogue, `content/projects.yaml`, `content/rules.yaml` and `docs/rules/mvp.md` (`R-PROJ-001`, `R-TRAIN-001` and `R-UNIT-005`).
 - [S11] Owner's 30 October 2026 rulings, [GDD conflict decisions](../GDD.md#30-october-2026-conflict-decisions).
 - [S12] Owner's 1 November 2026 answers, [GDD 1 November 2026 answers](../GDD.md#1-november-2026-answers).
+- [S13] Owner's 2 November 2026 ruling on #813, "Spend the dollars (Recommended)", [GDD later rulings, 2 November 2026](../GDD.md#later-rulings-2-november-2026); the $100m is the Export-Import Bank's 1949 credit (FRUS 1949 vol. VI, editorial note d407).
+- [S14] Israel's dollar rates, 1948-1952: IMF, Annual Report 1950, Appendix I, pp. 88-89; Federal Reserve Bulletin, November 1949, p. 1336; Michaely, *Israel's Foreign Exchange Rate System* (1971), p. 10 and Table 2-1; Patinkin, *The Israel Economy: The First Decade*, Table 43, p. 121 ([#813](https://github.com/eyalgolan/statecraft-israel/issues/813#issuecomment-6565039439), checked 2026-11-02).
 
 ## Open questions
 

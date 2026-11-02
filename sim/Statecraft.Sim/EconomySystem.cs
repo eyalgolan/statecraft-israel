@@ -8,6 +8,14 @@ namespace Statecraft.Sim
     {
         public const string FxCrisis = "fx_crisis";
 
+        /// <summary>The command kind that converts foreign currency into Money (R-MONEY-004).</summary>
+        public const string ConvertDollarsKind = "convert_dollars";
+        public const string RefusedDollarsMinimum = "Convert at least $1m";
+        public const string RefusedDollarsNotAtWar = "Dollars can be converted only during the war";
+        public const string RefusedDollarsMonthly = "That is more dollars than may be converted this month";
+        public const string RefusedDollarsTotal = "That would pass the total of dollars that may be converted";
+        public const string RefusedDollarsReserves = "There are not enough dollars in the reserves";
+
         public static void Init(Content c, GameState s)
         {
             s.Treasury = c.Rules.TreasuryStart;
@@ -49,6 +57,46 @@ namespace Statecraft.Sim
                 key: CauseKeys.Borrowed, args: new[] { purposeKey }.Concat(purposeArgs).ToList()));
             s.Treasury = 0;
         }
+
+        /// <summary>R-MONEY-004 (#813; owner, 2 November 2026: "Spend the dollars (Recommended)"): during the war (rung 4 or 5)
+        /// <paramref name="amount"/> US$ millions of foreign currency leave the reserves and amount times the mvp.il_per_dollar rate in
+        /// force on the turn's date, in IL millions, joins the Treasury, so the turn's deficit borrows that much less (R-MONEY-003). Refused, state untouched,
+        /// below $1m, outside the war (<paramref name="startRung"/>, the rung the turn started at, below 4), past
+        /// mvp.dollars_per_turn with <paramref name="thisTurn"/> (this turn's earlier conversions), past mvp.dollars_total, or
+        /// below 0 reserves. Step has already refused it in the legacy loop.</summary>
+        public static string? ConvertDollars(Content c, GameState s, int amount, int thisTurn, int startRung, List<Cause> why)
+        {
+            var refused = DollarsRefusal(c, s, amount, thisTurn, startRung);
+            if (refused != null) return refused;
+            var money = amount * c.RulesAt(s.Date).Mvp!.IlPerDollarOn(s.Date);
+            s.FxReserves -= amount;
+            s.Treasury += money;
+            s.DollarsConverted += amount;
+            why.Add(new Cause("economy", "treasury", money,
+                $"Converted {PlayerText.Money(c, "fx_reserves", amount)} of foreign currency into Money: {PlayerText.MoneyChange(c, "treasury", money)}",
+                key: CauseKeys.DollarsConverted, args: new[] { CauseKeys.Number(amount) }));
+            return null;
+        }
+
+        /// <summary>R-MONEY-004's refusal of <paramref name="amount"/> in <paramref name="s"/>, after <paramref name="thisTurn"/>
+        /// dollars converted earlier in the same turn, or null when it would be carried out. The war is
+        /// <paramref name="startRung"/>, the rung the turn started at (an event's set_rung earlier in the turn does not change
+        /// it), else the state's rung, which is the turn's start before End turn. ConvertDollars refuses on it, and the Defence
+        /// screen says it before End turn.</summary>
+        public static string? DollarsRefusal(Content c, GameState s, int amount, int thisTurn = 0, int? startRung = null)
+        {
+            var r = c.RulesAt(s.Date).Mvp!;   // the loader requires the three values in the GDD loop
+            if (amount < 1) return RefusedDollarsMinimum;
+            if ((startRung ?? s.Rung) < WarRung) return RefusedDollarsNotAtWar;
+            if ((long)thisTurn + amount > r.DollarsPerTurn!.Value) return RefusedDollarsMonthly;
+            if ((long)s.DollarsConverted + amount > r.DollarsTotal!.Value) return RefusedDollarsTotal;
+            if (s.FxReserves - amount < 0) return RefusedDollarsReserves;
+            return null;
+        }
+
+        /// <summary>The lowest rung of the war (R-MONEY-004): the rungs 4 and 5 of the #813 measurement, 15 May 1948 to 15
+        /// March 1949 in the historical run.</summary>
+        public const int WarRung = 4;
 
         /// <summary>R-MONEY-002: pays civilian-place upkeep in step 7, prorated by the turn's share of a year.</summary>
         public static void PayCivilianUpkeep(Content c, GameState s, MvpRules r, double yearFraction, List<Cause> why)
