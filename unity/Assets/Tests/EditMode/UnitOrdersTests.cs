@@ -733,7 +733,8 @@ public class UnitOrdersTests
 
     /// <summary>R-ENEMY-005 on screen (the owner's ruling on #2087, 1 November 2026): the card of a unit on an operation
     /// card's go-to counts the turns of the card's march, which goes round an enemy-held place it was not sent to, not those
-    /// of the player's own route through it. Golani stands south-west of Nazareth (7,10), sent by a card to 8,9 beyond it.</summary>
+    /// of the player's own route through it. Golani stands at 3,12, sent by a card to 10,5 beyond enemy-held Acre (8,7): on the
+    /// 4.4 km grid (#1796) no start and target within 7 hexes of Nazareth (8,11) make the way round cost a turn, so it is Acre.</summary>
     [Test]
     public void ACardOrderedUnitsCardCountsTheWayRound()
     {
@@ -744,17 +745,17 @@ public class UnitOrdersTests
             var session = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
             var id = UnitCard.SimUnit(C, session.State, Units.Single(e => e.Id == "golani"))!.Value;
             var u = session.State.Units[id];
-            session.State.Units[id] = new Unit(u.Id, u.Type, 4, 12, u.Service, u.Side, u.Strength, Movement.GoTo, "8,9", u.HomeCity, u.Full);
+            session.State.Units[id] = new Unit(u.Id, u.Type, 3, 12, u.Service, u.Side, u.Strength, Movement.GoTo, "10,5", u.HomeCity, u.Full);
             session.State.CardOrders[id] = new System.DateTime(1949, 2, 24);
             var bridge = new SimBridge(session, Text);
             // Any committed order re-runs the turn's preview, in which the march takes this turn's step (RunOrders).
             var other = UnitCard.SimUnit(C, session.State, Units.Single(e => e.Id == "carmeli"))!.Value;
             Assert.IsNull(bridge.Queue(new UnitOrder(other, Orders.Hold)));
             var now = bridge.Session.Now;
-            var plain = Movement.Route(C, now.State, id, 8, 9, now.Spent);
-            var card = Movement.Route(C, now.State, id, 8, 9, now.Spent, card: true);
+            var plain = Movement.Route(C, now.State, id, 10, 5, now.Spent);
+            var card = Movement.Route(C, now.State, id, 10, 5, now.Spent, card: true);
             Assert.IsTrue(now.State.CardOrders.ContainsKey(id), "the card's order still stands");
-            Assert.IsTrue(plain.Any(h => (h.Q, h.R) == (7, 10)) && !card.Any(h => (h.Q, h.R) == (7, 10)), "the player's route crosses Nazareth, the card's goes round");
+            Assert.IsTrue(plain.Any(h => (h.Q, h.R) == (8, 7)) && !card.Any(h => (h.Q, h.R) == (8, 7)), "the player's route crosses Acre, the card's goes round");
             Assert.AreNotEqual(plain[plain.Count - 1].Turn, card[card.Count - 1].Turn, "the way round costs a turn, so the card shows which route it counts");
             var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
             layer.Show(bridge.Content, bridge.State);
