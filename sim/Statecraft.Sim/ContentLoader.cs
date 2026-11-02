@@ -1330,6 +1330,19 @@ namespace Statecraft.Sim
                 if (!(m.ArmsPrice >= 0 && IsFinite(m.ArmsPrice.Value))) throw new ContentException(file, "mvp.arms_price", "must be a finite number >= 0");
                 if (m.ArmsPerRecruitGroup == null) throw new ContentException(file, "mvp.arms_per_recruit_group", "required when eras.yaml systems.loop is gdd");
                 if (m.ArmsPerRecruitGroup < 0) throw new ContentException(file, "mvp.arms_per_recruit_group", "must be >= 0");
+                // R-MONEY-004: required, so a missing key never makes the lever free, unlimited or worthless.
+                if (m.DollarsPerTurn == null) throw new ContentException(file, "mvp.dollars_per_turn", "required when eras.yaml systems.loop is gdd");
+                if (m.DollarsPerTurn < 0) throw new ContentException(file, "mvp.dollars_per_turn", "must be >= 0");
+                if (m.DollarsTotal == null) throw new ContentException(file, "mvp.dollars_total", "required when eras.yaml systems.loop is gdd");
+                if (m.DollarsTotal < 0) throw new ContentException(file, "mvp.dollars_total", "must be >= 0");
+                if (m.IlPerDollar.Count == 0) throw new ContentException(file, "mvp.il_per_dollar", "required when eras.yaml systems.loop is gdd (at least one dated rate)");
+                for (int i = 0; i < m.IlPerDollar.Count; i++)
+                {
+                    var x = m.IlPerDollar[i]; var at = FormattableString.Invariant($"mvp.il_per_dollar[{i}]");
+                    if (!(x.Rate >= 0 && IsFinite(x.Rate))) throw new ContentException(file, at + ".rate", "must be a finite number >= 0");
+                    if (i == 0 && x.From > r.Start) throw new ContentException(file, at + ".from", "the first rate must start on or before the start, so every turn has one");
+                    if (i > 0 && x.From <= m.IlPerDollar[i - 1].From) throw new ContentException(file, at + ".from", "must be after the previous rate's day");
+                }
                 // R-UNIT-010, R-UNIT-004: omitted values must not silently make upkeep free or promotion immediate.
                 if (m.MilitaryUpkeepPerTurn == null) throw new ContentException(file, "mvp.military_upkeep_per_turn", "required when eras.yaml systems.loop is gdd");
                 if (!(m.MilitaryUpkeepPerTurn >= 0 && IsFinite(m.MilitaryUpkeepPerTurn.Value))) throw new ContentException(file, "mvp.military_upkeep_per_turn", "must be a finite number >= 0");
@@ -1771,9 +1784,14 @@ namespace Statecraft.Sim
             }
         }
 
+        /// <summary>Targets whose capture hex is a neighbour of their settlement's hex, not that hex (owner on #1796, 26 October
+        /// 2026, "Contested + move target"): at 4.4 km (#1183) Ramla shares (-4, 24) with Rehovot, so a unit on Rehovot's hex
+        /// would capture Ramla. Its target is the neighbour nearest Ramla's point, cited in settlement_targets.yaml.</summary>
+        static readonly HashSet<string> TargetOnANeighbour = new HashSet<string>(StringComparer.Ordinal) { "ramla" };
+
         /// <summary>R-CTRL-001 (Q-TGT-1 (a)): every target is an arab_town row of settlements_1948.yaml on a land hex that is
-        /// its own hex in settlement_hexes.yaml (capture reads the target's hex, movement the settlement's), with a sourced
-        /// operation and a review status.</summary>
+        /// its own hex in settlement_hexes.yaml (capture reads the target's hex, movement the settlement's), or for a
+        /// <see cref="TargetOnANeighbour"/> row a neighbour of it, with a sourced operation and a review status.</summary>
         static void ValidateSettlementTargets(Content c, IEnumerable<string> arabTownIds)
         {
             Unique(SettlementTargetsFileName, "targets", c.SettlementTargets.Select(x => x.Id));
@@ -1786,7 +1804,12 @@ namespace Statecraft.Sim
                 var hex = c.HexAt(x.Q, x.R);
                 if (hex == null || !hex.Land)
                     throw new ContentException(SettlementTargetsFileName, at + ".q", FormattableString.Invariant($"hex q={x.Q} r={x.R} is not a land hex in {HexesFile}"));
-                if (c.SettlementHexes.Any(h => h.Id == x.Id && (h.Q != x.Q || h.R != x.R)))
+                if (TargetOnANeighbour.Contains(x.Id))
+                {
+                    if (!c.SettlementHexes.Any(h => h.Id == x.Id && Movement.Neighbours.Any(d => h.Q + d.Q == x.Q && h.R + d.R == x.R)))
+                        throw new ContentException(SettlementTargetsFileName, at + ".q", FormattableString.Invariant($"hex q={x.Q} r={x.R} is not next to {x.Id}'s hex in {SettlementHexesFileName}"));
+                }
+                else if (c.SettlementHexes.Any(h => h.Id == x.Id && (h.Q != x.Q || h.R != x.R)))
                     throw new ContentException(SettlementTargetsFileName, at + ".q", FormattableString.Invariant($"hex q={x.Q} r={x.R} is not {x.Id}'s hex in {SettlementHexesFileName}"));
                 if (string.IsNullOrWhiteSpace(x.Operation)) throw new ContentException(SettlementTargetsFileName, at + ".operation", "required");
                 if (x.Sources.Count == 0) throw new ContentException(SettlementTargetsFileName, at + ".sources", "needs at least one source");

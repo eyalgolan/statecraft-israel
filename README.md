@@ -40,7 +40,7 @@ You sit in the prime minister's chair from the founding of the state. Each turn 
 
 A deterministic C# simulation runs underneath. The same choices always give the same result, and a saved game is the seed plus the list of commands. Unity draws a real terrain map of the country built from elevation and climate data.
 
-The game design of record is now [docs/GDD.md](docs/GDD.md) (v0.3, 30 October 2026): monthly turns in which you build and defend Israel from 1948 to 1951 with units, cities and construction, and choose your ministers. The list above is the game you can play today. The monthly turns, Attention, the cities, training, the pioneers' building and the unit orders, attacks included, are in. Settlement control is only partly in: your units can capture a target town, and a dialog then offers Raid and withdraw or Occupy; when an occupation ends, you choose Annex or Withdraw. The [build plan](docs/superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md) brings the rest in phases.
+The game design of record is now [docs/GDD.md](docs/GDD.md) (v0.3, 30 October 2026, with the owner's answers of 1 November 2026): monthly turns in which you build and defend Israel from 1948 to 1951 with units, cities and construction, and choose your ministers. The list above is the game you can play today. The monthly turns, Attention, the cities, training, the pioneers' building and the unit orders, attacks included, are in. Settlement control is only partly in: your units can capture a target town, and a dialog then offers Raid and withdraw or Occupy; when an occupation ends, you choose Annex or Withdraw. The [build plan](docs/superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md) brings the rest in phases.
 
 ## What it looks like today
 
@@ -67,7 +67,7 @@ It is an early, honest prototype.
 **What works now (M3, 1948–1951):**
 - Monthly turns from 15 May 1948 to 15 January 1952.
 - The start screen, and an opening after New game: three sourced stills that you can skip, or replay from the start screen.
-- English and Hebrew: you choose the language on the start screen, and can switch it in Settings. The Hebrew event cards wait for a native speaker's review.
+- English and Hebrew: you choose the language on the start screen, and can switch it in Settings. Most of the advisors' encyclopedia pages in Hebrew still wait for a native speaker's review.
 - The 1948 map: towns, villages and Bedouin camps, railways and roads, and the 1949 armistice zones and lines from each agreement's date.
 - The 1948 brigades, 101 Squadron and the first navy ships as tokens at their sourced positions. A brigade's card can order it to move, attack, fortify or hold, and shows the odds before an attack. The Arab forces move and attack on their own, and the turn report lists what they did.
 - The twelve cities, with housing, jobs and training.

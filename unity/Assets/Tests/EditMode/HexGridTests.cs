@@ -118,10 +118,11 @@ public class HexGridTests
 
     /// <summary>Task 8 review I1, rendered at the gameplay03 pose (1920x1080): along one straight hex edge on the sea and one
     /// on land, the line is about GridWidthPx wide (median full width at half maximum, across the line, 1 to 2.5 px; no
-    /// sample under 1 px) and, on the sea, never breaks (each sample's peak at least 0.7 of the edge's strongest). Both
+    /// sample under 1 px) and, on the sea, never breaks (SeaLineLumaRatio at least 0.8). Both
     /// opacities are set to 1 for the measurement, so the line's profile is measured, not its colour; differences are in
     /// linear luma. The break check is on the sea only: its background is even, while a land line's peak also follows
-    /// the lit ground under it (0.54 along a land edge whose widths all lie in 1.4-2.0 px). Land and sea share ScGridLine.</summary>
+    /// the lit ground under it (0.54 along a land edge whose widths all lie in 1.4-2.0 px). Land and sea share ScGridLine.
+    /// The water's clock is pinned, so every run measures the same waves.</summary>
     [UnityTest]
     public IEnumerator GridLinesAreUnbrokenAndAboutTheirWidthAtGameplay03()
     {
@@ -147,6 +148,7 @@ public class HexGridTests
         }
         var edges = new[] { ("sea", Find(34.72, 32.02, h => h.biome == "sea")), ("land", Find(34.95, 32.0, h => h.land && h.biome != "lake")) };
         const int W = 1920, H = 1080, N = 25;
+        MapShaderGlobals.PinWaterTime(100f);
         try
         {
             foreach (var (what, hex) in edges)
@@ -169,7 +171,6 @@ public class HexGridTests
                 VisualToggles.Set("grid", true);
                 // Across the line: a horizontal profile is 1 / |n.x| times as wide as the line, n the line's screen normal.
                 var dir = (px[N + 1] - px[N]).normalized; float nx = Mathf.Abs(dir.y);
-                float Lin(Color s) => RenderSample.Luma(new Color(Mathf.GammaToLinearSpace(s.r), Mathf.GammaToLinearSpace(s.g), Mathf.GammaToLinearSpace(s.b)));
                 var peaks = new float[N]; var widths = new float[N];
                 for (int i = 0; i < N; i++)
                 {
@@ -190,12 +191,92 @@ public class HexGridTests
                 float median = sorted[N / 2];
                 TestContext.WriteLine($"{what} edge of ({hex.q}, {hex.r}): peak min {min:0.000} max {max:0.000} ratio {min / max:0.00}; FWHM median {median:0.00} px, range {sorted[0]:0.00}-{sorted[N - 1]:0.00} (|n.x| {nx:0.00})");
                 Assert.Greater(max, 0.02f, $"{what}: a line is drawn");
-                if (what == "sea") Assert.GreaterOrEqual(min / max, 0.7f, $"{what}: the line never breaks along the edge");
+                if (what == "sea")
+                {
+                    float ratio = SeaLineLumaRatio(on, off, px, N);
+                    TestContext.WriteLine($"{what}: line pixel luma ratio {ratio:0.000}");
+                    Assert.GreaterOrEqual(ratio, 0.8f, $"{what}: the line never breaks along the edge");
+                }
                 Assert.GreaterOrEqual(sorted[0], 1f, $"{what}: no sample along the edge is under a pixel wide");
                 Assert.That(median, Is.InRange(1f, 2.5f), $"{what}: the line is about {MapShaderGlobals.GridWidthPx} px wide");
             }
         }
-        finally { VisualToggles.Set("grid", true); }
+        finally { VisualToggles.Set("grid", true); MapShaderGlobals.PinWaterTime(null); }
+    }
+
+    static float Lin(Color s) => RenderSample.Luma(new Color(Mathf.GammaToLinearSpace(s.r), Mathf.GammaToLinearSpace(s.g), Mathf.GammaToLinearSpace(s.b)));
+
+    /// <summary>#1796 (the owner's ruling there): the sea line's break measure. At each of the first <paramref name="n"/> samples,
+    /// the line's own pixel (where the line adds the most linear luma across the edge, as in the profile above) read in
+    /// linear luma on the frame with the line; the weakest over the strongest. The line's added luma also follows the
+    /// waves under it (0.63-0.73 along the 4.4 km edge as the water's clock runs, 0.77-0.81 on main's 5 km edge), while
+    /// the line pixel's own luma held 0.84-0.88 on both; a missing stretch of line reads as water (0.085 on this edge,
+    /// 0.114 on main's).</summary>
+    static float SeaLineLumaRatio(RenderSample on, RenderSample off, Vector2[] px, int n)
+    {
+        var luma = new float[n];
+        for (int i = 0; i < n; i++)
+        {
+            int x0 = Mathf.RoundToInt(px[i].x), y0 = Mathf.RoundToInt(px[i].y), m = 0; float best = -1f;
+            for (int k = 0; k < 17; k++)
+            {
+                float d = Lin(on.At(x0 + k - 8, y0)) - Lin(off.At(x0 + k - 8, y0));
+                if (d > best) { best = d; m = k; }
+            }
+            luma[i] = Lin(on.At(x0 + m - 8, y0));
+        }
+        return luma.Min() / luma.Max();
+    }
+
+    /// <summary>#1796: the sea break check is not vacuous. The same gameplay03 sea edge, with the line hidden along five
+    /// middle samples (the frame without the grid pasted over that stretch), must fall under the 0.8 bar.</summary>
+    [UnityTest]
+    public IEnumerator ASeaLineWithAMissingStretchFailsTheBreakCheck()
+    {
+        var (map, cam, rig) = Open();
+        yield return null;
+        PromoPose.Gameplay03.Apply(rig, map.Frame);
+        rig.TopInset = 0; rig.Apply();
+        foreach (var n in new[] { "kits", "trees" }) if (VisualToggles.Names.Contains(n)) VisualToggles.Set(n, false);
+        float size = map.Hexes.hex_size_km * 1000f, inradius = Mathf.Sqrt(3f) / 2f * size;
+        var origin = map.Terrain.transform.position;
+        HexJson? hex = null; double bestD = double.MaxValue;
+        foreach (var h in map.Hexes.hexes)
+        {
+            var east = System.Array.Find(map.Hexes.hexes, e => e.q == h.q + 1 && e.r == h.r);
+            if (east == null || h.biome != "sea" || east.biome != "sea") continue;
+            double dd = (h.lon - 34.72) * (h.lon - 34.72) + (h.lat - 32.02) * (h.lat - 32.02);
+            if (dd < bestD) { bestD = dd; hex = h; }
+        }
+        Assert.IsNotNull(hex);
+        var c = HexGrid.Centre(hex!.q, hex.r, size);
+        const int W = 1920, H = 1080, N = 25;
+        var world = new Vector3[N]; var px = new Vector2[N];
+        for (int i = 0; i < N; i++)
+        {
+            world[i] = HexGrid.ToWorld(new Vector2(c.x + inradius, c.y - size / 2f + (0.1f + 0.8f * i / (N - 1)) * size), origin, map.Frame.LengthM);
+            world[i].y = map.Terrain.SampleHeight(world[i]) + origin.y;
+        }
+        MapShaderGlobals.PinWaterTime(100f);
+        try
+        {
+            Shader.SetGlobalVector(MapShaderGlobals.Grid, new Vector4(1f, 1f, MapShaderGlobals.GridWidthPx, 1f));
+            var on = RenderSample.Render(cam, W, H, world, px);
+            VisualToggles.Set("grid", false);
+            var off = RenderSample.Render(cam, W, H, world, px);
+            VisualToggles.Set("grid", true);
+            float whole = SeaLineLumaRatio(on, off, px, N);
+            for (int i = 10; i < 15; i++)
+            {
+                int x0 = Mathf.RoundToInt(px[i].x), y0 = Mathf.RoundToInt(px[i].y);
+                for (int k = -8; k <= 8; k++) on.Pixels[y0 * W + x0 + k] = off.At(x0 + k, y0);
+            }
+            float broken = SeaLineLumaRatio(on, off, px, N);
+            TestContext.WriteLine($"sea edge of ({hex.q}, {hex.r}): line pixel luma ratio {whole:0.000} whole, {broken:0.000} with samples 10-14 hidden");
+            Assert.GreaterOrEqual(whole, 0.8f, "the whole line passes");
+            Assert.Less(broken, 0.8f, "a missing stretch of line fails the break check");
+        }
+        finally { VisualToggles.Set("grid", true); MapShaderGlobals.PinWaterTime(null); }
     }
 
     [Test]

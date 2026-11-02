@@ -299,7 +299,7 @@ public class TrainingTests
         Assert.Empty(s.Cohorts);
         var halutzim = s.Units.Values.Where(u => u.Id >= Mvp.StartingForces.Count).ToList();   // after the starting forces (R-UNIT-006)
         Assert.Equal(new[] { cohort + 1, cohort + 2, cohort + 3 }, halutzim.Select(u => u.Id));
-        Assert.All(halutzim, u => Assert.Equal(("halutz", -3, 19), (u.Type, u.Q, u.R)));   // Tel Aviv's settlement hex
+        Assert.All(halutzim, u => Assert.Equal(("halutz", -3, 21), (u.Type, u.Q, u.R)));   // Tel Aviv's settlement hex
         Assert.Equal(cohort + 4, s.NextId);
         Assert.Equal(0, s.Cities["tel_aviv"].Recruits);
     }

@@ -5,8 +5,8 @@ owner approves design changes. The hex tiles are presentation only. Runtime code
 `unity/Assets/Scripts/Map/HexTiles/`; editor helpers and tests live under `unity/Assets/Editor/HexTiles/`.
 The runtime map is opt-in and off by default, so the shipped default look and simulation goldens stay unchanged.
 
-Read with `docs/hex-tiles/README.md` (the contributor contract). Scale reminder: `HexScale.HexM` = 5,000 m is the hex
-circumradius (`content/map/hexes.json` `hex_size_km: 5.0`), so a hex is about 8.7 km flat to flat. One hex is a whole
+Read with `docs/hex-tiles/README.md` (the contributor contract). Scale reminder: `HexScale.HexM` = 4,400 m is the hex
+circumradius (`content/map/hexes.json` `hex_size_km: 4.4`, since #1183), so a hex is about 7.6 km flat to flat. One hex is a whole
 landscape: the Bauhaus "White City" is one hex, and the Tel Aviv to Jerusalem road, from (-3,19) to (0,23), is 7 hexes.
 
 State of the working tree on 18 October, evening: `Core/` is being extended now, uncommitted. It has gained

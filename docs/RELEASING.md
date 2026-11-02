@@ -28,10 +28,10 @@ macOS IL2CPP parity check is not an MVP release gate.
    "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression gzip -shareable -logFile "$PWD/unity-build-web-gz.log"
    git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset
    golden_expect=(); while read -r name hash; do [[ -z "$name" || "$name" == \#* ]] || golden_expect+=(--expect "GOLDEN OK $name $hash"); done < sim/Statecraft.Sim.Tests/golden/manifest.txt
-   # one GOLDEN OK line per manifest golden (#394), e.g. "GOLDEN OK hash1950 8578966e171c213fbc314ab87c8292817ff9a94790e372b4e4792c00e1708f61"
-   # and "GOLDEN OK hash1952 385ba3b58a15d15f88bb27c9cc0620a7e7af011e51037f00fea70177644b3e83"
+   # one GOLDEN OK line per manifest golden (#394), e.g. "GOLDEN OK hash1950 74fbe989d84a987728ba983a263714dcbe05abc2768033c15c3aed212cf34b63"
+   # and "GOLDEN OK hash1952 d74296940a6a6c8346b38679d80ed25ef0b537d2e709048eb4989ad46a259a66"
    uv run tools/web_check.py unity/Builds/Web-gzip --query "golden&smoke=5" "${golden_expect[@]}" \
-     --expect "SMOKE OK 5 turns 1948-10-15 7bdf646a3c36cf480d4972098dd1c3ebb568d309796c8a639d18bb54f671f995"
+     --expect "SMOKE OK 5 turns 1948-10-15 9255f2bcda06ed50e38b9f77927998be5f3aef1f7206733dadaf2e2de29509c6"
    uv run tools/web_check.py unity/Builds/Web-gzip --startscreen new --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-gzip --startscreen recording --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-gzip --startscreen new --query lang=he --timeout 300 --stall 90
@@ -66,7 +66,7 @@ macOS IL2CPP parity check is not an MVP release gate.
    "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression gzip -decompressionFallback -shareable -out Builds/Web-pages -logFile "$PWD/unity-build-web-pages.log"
    git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset
    uv run tools/web_check.py unity/Builds/Web-pages --query "golden&smoke=5" "${golden_expect[@]}" \
-     --expect "SMOKE OK 5 turns 1948-10-15 7bdf646a3c36cf480d4972098dd1c3ebb568d309796c8a639d18bb54f671f995"
+     --expect "SMOKE OK 5 turns 1948-10-15 9255f2bcda06ed50e38b9f77927998be5f3aef1f7206733dadaf2e2de29509c6"
    uv run tools/web_check.py unity/Builds/Web-pages --startscreen new --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-pages --startscreen recording --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-pages --startscreen new --query lang=he --timeout 300 --stall 90
@@ -229,7 +229,10 @@ The gates, in order. The first one that fails ends the night as REFUSED, and not
 5. The two WebGL builds, the gzip one and the Pages one (`build-web`), with the nightly version stamped in after the
    gates; the tree must be clean afterwards, and the stamp is never committed. Then both zips (`package`).
 6. `web_check.py` on both builds (`web-check`).
-7. Download size (`sizes`): the data, wasm and framework files may grow at most 2% over the build that is live.
+7. Download size (`sizes`): compare the combined total of the data, wasm and framework files with this job's last
+   published night (`state.json`'s `last_published`), even if that release is now a draft. On a first night with no
+   saved publication, use the newest non-draft release carrying a `*-web.zip`. The total may grow at most 2%, plus
+   the size budget below.
 8. Headless boot time (`boot`): the median of three boots. The first 5 published nights set the baseline; after
    that a boot slower than the slowest baseline night plus the spread of the baseline is refused.
 
@@ -244,7 +247,8 @@ Nightly size budget: +N MB
 ```
 
 The next nightly allows the growth of the 2% plus the lines of every pull request merged since the last published
-nightly; without the line, an increase beyond 2% refuses the night. The new size is the baseline from then on.
+nightly; without the line, an increase beyond 2% refuses the night. After a night is published, its new total becomes
+this job's baseline for the next night.
 
 **Publishing** (only after every gate): a normal draft release with both zips and notes listing the commits since the
 last nightly (the tag points at the commit the night started from, even if `main` moves during the build), the assets
