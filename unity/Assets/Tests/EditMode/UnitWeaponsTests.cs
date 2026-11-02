@@ -306,4 +306,98 @@ public class UnitWeaponsTests
         Assert.IsFalse(deps.Any(d => d.EndsWith(".jpg") || d.EndsWith(".png")), "no texture: " + string.Join(", ", deps));
         Assert.IsNull(Prefab(CollectionCatalog.C06PointFire).GetComponentInChildren<Renderer>(true), "no mesh in the pose source");
     }
+
+    // ---- review of #2277: hiding mid-attack, the near model, the socket on the other figures ----
+
+    /// <summary>Brings the token's near (close-zoom) models in, as a camera below the switch does (UnitFigureDetail).</summary>
+    Transform Near(Transform piece)
+    {
+        var camera = new GameObject("Camera").AddComponent<Camera>(); made.Add(camera.gameObject);
+        camera.transform.SetPositionAndRotation(new Vector3(0f, Statecraft.Game.Map.Kits.TownModelLayer.CloseEnterM - 1f, 0f), Quaternion.Euler(90f, 0f, 0f));
+        piece.root.GetComponent<UnitFigureDetail>().Choose(default, camera);
+        var near = piece.Find(UnitFigures.ModelName).Find(UnitFigureDetail.NearName);
+        Assert.IsNotNull(near, "the near model came in");
+        return near;
+    }
+
+    /// <summary>The units' visual toggle hides the layer's root (UnitLayer) mid-attack. UnitTokenMotion drops the attack then
+    /// (in a player; it does not run in edit mode), but its Pose finds no figure under an inactive root, so the aim lets go
+    /// by itself: the token shown again stands as it did, its far and near bones back and the near model's Animator running.</summary>
+    [Test]
+    public void AHiddenTokenMidAttackLetsGoOfTheAim()
+    {
+        var (motion, piece) = Token(UnitFigures.YoungRecruit);
+        var near = Near(piece);
+        var far = Model(piece);
+        var farBefore = Bones(far); var nearBefore = Bones(near);
+        var nearAnimator = near.GetComponentInChildren<Animator>(true);
+        Assert.IsTrue(nearAnimator.enabled, "close: the near model's Animator runs");
+        Assert.IsTrue(motion.PlayAttack());
+        var aim = piece.GetComponent<UnitFigurePointFire>();
+        Assert.IsTrue(aim.Holding);
+        Assert.IsFalse(nearAnimator.enabled, "held: paused");
+        motion.gameObject.SetActive(false);   // the units toggled off mid-attack
+        motion.gameObject.SetActive(true);
+        Assert.IsFalse(aim.Holding, "and its aim let go");
+        Same(farBefore, Bones(far), "the far model's bones back");
+        Same(nearBefore, Bones(near), "the near model's bones back");
+        Assert.IsTrue(nearAnimator.enabled, "the near model's Animator runs again");
+    }
+
+    /// <summary>The near model a player sees close up is the same streamed prefab as the far one (CollectionCatalog.PrefabPath
+    /// gives one prefab for both details), so it takes the same aim: held on it, it too lies on Tal's export.</summary>
+    [Test]
+    public void TheNearModelHoldsTheAimOfTalsExportToo()
+    {
+        Assert.AreEqual(CollectionCatalog.PrefabPath(UnitFigures.YoungRecruit, CollectionDetail.Far),
+            CollectionCatalog.PrefabPath(UnitFigures.YoungRecruit, CollectionDetail.Near), "one prefab for both details");
+        string path = CollectionCatalog.SourceModelPath(CollectionCatalog.C06PointFire);
+        var export = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(path)); made.Add(export);
+        var source = Prefab(CollectionCatalog.C06PointFire).GetComponent<UnitFigurePoseSource>();
+        var (motion, piece) = Token(UnitFigures.YoungRecruit);
+        var near = Near(piece);
+        Assert.IsTrue(motion.PlayAttack());
+        source.Clip!.SampleAnimation(export, source.AimTime);
+        var hand = UnitWeapons.FindDeep(near, UnitWeapons.HandBone); var hisHand = UnitWeapons.FindDeep(export.transform, UnitWeapons.HandBone);
+        Assert.That(Vector3.Distance(near.InverseTransformPoint(hand.position), export.transform.InverseTransformPoint(hisHand.position)),
+            Is.LessThan(1e-4f), "the near model's right hand");
+        foreach (var bone in source.Bones)
+        {
+            var mine = UnitWeapons.FindDeep(near, bone); var his = UnitWeapons.FindDeep(export.transform, bone);
+            Assert.That(Vector3.Distance(near.InverseTransformPoint(mine.position), export.transform.InverseTransformPoint(his.position)),
+                Is.LessThan(1e-4f), bone);
+        }
+        var rifle = UnitWeapons.FindDeep(export.transform, "tripo_node_0fa6038f-9e8d-4708-a9e8-755be6fdcc67");
+        var held = UnitWeapons.FindDeep(near, UnitWeapons.HeldName);
+        Assert.IsNotNull(held, "the near model holds the K98k too");
+        var ours = held.GetComponentInChildren<MeshFilter>(); var tals = rifle.GetComponent<MeshFilter>();
+        var hisPoints = tals.sharedMesh.vertices.Select(v => export.transform.InverseTransformPoint(rifle.TransformPoint(v))).ToArray();
+        Assert.That(Nearest(ours.sharedMesh.vertices.Where((_, i) => i % 7 == 0).Select(v => near.InverseTransformPoint(ours.transform.TransformPoint(v))), hisPoints),
+            Is.LessThan(1e-4f), "the near model's K98k lies on Tal's");
+    }
+
+    /// <summary>The other figures take C06's socket because they share its rig (the same 67 bones): in each one's bind pose
+    /// the K98k's long axis stays within 45 degrees of where C06 holds it (across the hand would be about 90), so it hangs
+    /// along the hand. Measured on 2 November 2026: C04 34.4 degrees; the others are logged.</summary>
+    [Test]
+    public void TheOtherFiguresHoldTheRifleAlongTheHandAsC06Does()
+    {
+        Vector3 Barrel(string figure)
+        {
+            var skin = Prefab(figure).GetComponentInChildren<SkinnedMeshRenderer>(true);
+            int hand = Array.FindIndex(skin.bones, b => b.name == UnitWeapons.HandBone);
+            Matrix4x4 RootFrom(Transform t) { var m = Matrix4x4.identity; for (var at = t; at.parent != null; at = at.parent) m = Matrix4x4.TRS(at.localPosition, at.localRotation, at.localScale) * m; return m; }
+            var rest = RootFrom(skin.transform) * skin.sharedMesh.bindposes[hand].inverse;   // the hand at bind, in the model's frame
+            return rest.MultiplyVector(UnitWeapons.SocketRotation * Vector3.right).normalized;   // Tal's GLBs are long along X
+        }
+        var c06 = Barrel(UnitFigures.YoungRecruit);
+        var angles = new List<string>();
+        foreach (var figure in UnitWeapons.ByFigure.Keys.Where(f => f != UnitFigures.YoungRecruit))
+        {
+            float angle = Vector3.Angle(c06, Barrel(figure));
+            angles.Add($"{figure} {angle:F1}");
+        }
+        Debug.Log("WEAPON-AXES degrees from C06: " + string.Join(", ", angles));
+        foreach (var a in angles) Assert.Less(float.Parse(a.Split(' ')[1], System.Globalization.CultureInfo.InvariantCulture), 45f, a);
+    }
 }

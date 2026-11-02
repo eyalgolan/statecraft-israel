@@ -33,15 +33,21 @@ WEAPONS = {
 }
 
 
+def check(condition: bool, message: str) -> None:
+    """A verification failure; unlike a bare assert it also holds under python -O."""
+    if not condition:
+        raise AssertionError(message)
+
+
 def source(repo: Path, mid: str):
     """Tal's GLB bytes, its glTF JSON, and the delivered JPG beside it, checked to be the image the GLB embeds."""
     path = repo / SOURCES / WEAPONS[mid]
     blob = path.read_bytes()
     data, embedded = glb(blob)
     colour = path.with_name(path.stem + "_basecolor.jpg").read_bytes()
-    assert colour == embedded, f"{mid}: the delivered JPG is not the image the GLB embeds"
-    assert len(data["meshes"]) == 1 and len(data["meshes"][0]["primitives"]) == 1
-    assert not data.get("animations") and not data.get("skins")
+    check(colour == embedded, f"{mid}: the delivered JPG is not the image the GLB embeds")
+    check(len(data["meshes"]) == 1 and len(data["meshes"][0]["primitives"]) == 1, f"{mid}: not one mesh with one primitive")
+    check(not data.get("animations") and not data.get("skins"), f"{mid}: the GLB has clips or a skin")
     return blob, data, colour
 
 
@@ -49,14 +55,14 @@ def verify(repo: Path) -> None:
     tal = {f["path"]: f["sha256"] for f in json.loads((repo / SOURCES / "provenance.json").read_text(encoding="utf-8"))["files"]}
     for mid, rel in WEAPONS.items():
         blob, _, colour = source(repo, mid)
-        assert sha(blob) == tal[rel], f"{mid}: the GLB is not the file #2083's provenance.json records"
+        check(sha(blob) == tal[rel], f"{mid}: the GLB is not the file #2083's provenance.json records")
         dest = repo / COLLECTION / mid
         record = json.loads((dest / "provenance.json").read_text(encoding="utf-8"))
-        assert record["id"] == mid and record["source"] == (SOURCES / rel).as_posix()
-        assert sha(blob) == record["source_glb_sha256"], mid
-        assert (dest / f"{mid}_basecolor.jpg").read_bytes() == colour, f"{mid}: the Unity map is not Tal's JPG byte for byte"
-        assert sha(colour) == record["texture_sha256"] and jpeg_size(colour) == record["texture_dimensions"], mid
-        assert sha((dest / f"{mid}.fbx").read_bytes()) == record["compatibility_fbx_sha256"], mid
+        check(record["id"] == mid and record["source"] == (SOURCES / rel).as_posix(), f"{mid}: provenance names another source")
+        check(sha(blob) == record["source_glb_sha256"], f"{mid}: the GLB hash differs from provenance.json")
+        check((dest / f"{mid}_basecolor.jpg").read_bytes() == colour, f"{mid}: the Unity map is not Tal's JPG byte for byte")
+        check(sha(colour) == record["texture_sha256"] and jpeg_size(colour) == record["texture_dimensions"], f"{mid}: the map's hash or size differs")
+        check(sha((dest / f"{mid}.fbx").read_bytes()) == record["compatibility_fbx_sha256"], f"{mid}: the FBX differs from its recorded export")
         print("VERIFIED", mid, record["triangles"], "triangles", record["texture_dimensions"])
     print(f"PASS: {len(WEAPONS)} weapon GLBs and maps byte-identical to #2083; compatibility exports match provenance")
 

@@ -78,7 +78,8 @@ namespace Statecraft.Game.Map.Units
         /// <summary>Starts the fire take on every live figure that has one (even mid-attack), from its start or, for a
         /// continued attack, from where it was; the attack then lasts as long as the longest take has left. A take that had
         /// finished plays nothing, so the figures keep their walk or idle (review of #2176, item 8). A C06 figure holds Tal
-        /// Heuberger's point-fire aim instead, near or far, for its own fire take's length (#2084, UnitFigurePointFire).</summary>
+        /// Heuberger's point-fire aim instead, near or far, for the whole attack; its own fire take counts toward the attack's
+        /// length (#2084, UnitFigurePointFire).</summary>
         bool Fire()
         {
             float longest = 0f;

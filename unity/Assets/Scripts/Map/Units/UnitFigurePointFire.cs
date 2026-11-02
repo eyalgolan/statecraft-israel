@@ -9,7 +9,8 @@ namespace Statecraft.Game.Map.Units
     /// <summary>The C06 point-fire aim on an attacking token (#2084; owner, 2 November 2026: "Yes, for firing units
     /// (Recommended)": "Show the aiming pose on a unit token when it attacks"). Tal Heuberger's point-fire export is one
     /// figure, the C06 young recruit, so only a C06 figure takes it; every other figure keeps its own fire take. While its
-    /// token's attack plays (UnitTokenMotion), each model the figure shows (far and near) holds one still frame of the clip,
+    /// token's attack plays (UnitTokenMotion; as long as the longest fire take on the token), each model the figure shows (far
+    /// and near: one streamed prefab for both details) holds one still frame of the clip,
     /// <see cref="UnitFigurePoseSource.AimTime"/>, with its Animator paused; when the attack ends, every bone it moved is put
     /// back exactly and the Animator resumes. The pose is computed once per figure model and then only copied, so holding
     /// it allocates nothing; it is the same frame in edit mode, in captures and in a player. It fails open: until the
@@ -66,7 +67,8 @@ namespace Statecraft.Game.Map.Units
             fire.lease = UnitWeapons.Request(id, Answer);
         }
 
-        /// <summary>How long the aim holds: the figure's own fire take (an attack lasts as long as its longest take). Read once.</summary>
+        /// <summary>The figure's own fire take's length, its share of the attack's length: the attack, and so the aim, lasts as
+        /// long as the longest take of any figure on the token (UnitTokenMotion.Fire). Read once.</summary>
         internal float FireLength
         {
             get
@@ -177,8 +179,13 @@ namespace Statecraft.Game.Map.Units
             return p;
         }
 
-        /// <summary>Forgets the computed poses (tests).</summary>
+        /// <summary>Forgets the computed poses (tests, and each play session: a reimport may change the rig).</summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         internal static void Forget() => poses.Clear();
+
+        /// <summary>A figure hidden mid-attack lets go of the aim (review of #2277, B1): the units' toggle deactivates the layer,
+        /// and UnitTokenMotion's Pose then finds no figure under the inactive root, so it cannot release it.</summary>
+        void OnDisable() => Release();
 
         void OnDestroy() { lease?.Dispose(); lease = null; }
     }
