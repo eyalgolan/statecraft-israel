@@ -186,7 +186,8 @@ public class KeyboardTurnTests
 
     /// <summary>The done-when's turn, keys only: answer the opening turn's two cards; open Budget, raise a line with its + and submit;
     /// open the Cabinet, select a seat, appoint a candidate; close it with Escape; Tab to the map stop over Tel Aviv, Enter
-    /// to pick it, Tab to Train halutzim in its city panel and press it; Tab to End Turn and end the turn. Each order is
+    /// to pick it, Tab to Train halutzim in its city panel and press it; Tab to the map stop over Golani, Enter to select it,
+    /// pan to a lit hex, Enter to move it; Tab to End Turn and end the turn. Each order is
     /// queued, and a press that rebuilds what it is part of keeps the focus there. The opening turn's attention (4) pays for
     /// two of these orders; the test raises it, since what is checked is the keyboard's path, not the attention rule.</summary>
     [UnityTest]
@@ -248,6 +249,27 @@ public class KeyboardTurnTests
         Assert.IsTrue(Bridge.Queued.OfType<Train>().Any(t => t.Track == "halutz"), "the training order is queued");
         Assert.AreEqual("city-train-halutz", FocusedName, "the rebuilt panel gives the focus back to Train halutzim");
 
+        // A unit order (#41, owner 1 Nov 2026): the map stop over Golani, Enter selects it and opens its Move pick (Civ,
+        // owner 25 Oct 2026); the stop over a lit hex, Enter moves it there. KeyboardOrdersTests covers Attack and the
+        // confirm step onto a city or a friendly unit.
+        var layer = Object.FindFirstObjectByType<Statecraft.Game.Map.Units.UnitLayer>();
+        var golani = layer.Tokens.Single(t => t.Token.Unit.Id == "golani");
+        var unit = UnitCard.SimUnit(Bridge.Content, Bridge.State, golani.Token.Unit)!.Value;
+        yield return TabTo("map-focus");
+        LookAt(golani.Q, golani.R);
+        yield return Frames(3);
+        yield return Enter();
+        Assert.AreEqual("golani", layer.Selected, "Enter on the map stop over Golani selects it");
+        var reach = Movement.Reachable(Bridge.Content, Bridge.State, unit).Keys.ToList();
+        Assert.IsNotEmpty(reach, "precondition: Golani can move");
+        var (q, r) = reach.Last();
+        LookAt(q, r);
+        yield return Frames(3);
+        yield return Enter();
+        var move = Bridge.Session.Committed.OfType<Move>().Single();
+        Assert.AreEqual((unit, q, r), (move.Unit, move.Q, move.R), "Enter on a lit hex moves Golani");
+        Assert.AreEqual("map-focus", FocusedName, "the focus stays on the map stop");
+
         // End the turn.
         yield return TabTo("end-turn");
         var turn = Bridge.State.Turn;
@@ -281,10 +303,15 @@ public class KeyboardTurnTests
     /// <summary>Moves the camera's look-at point onto Tel Aviv's hex, on the ground, as a pan would (MapFocusTests).</summary>
     static void LookAtTelAviv()
     {
+        var tlv = MapFocusTests.Inputs.Content.SettlementHexes.Single(s => s.Id == "tel_aviv");
+        LookAt(tlv.Q, tlv.R);
+    }
+
+    /// <summary>Moves the camera's look-at point onto hex (q, r), on the ground, as a pan with the arrows would.</summary>
+    static void LookAt(int q, int r)
+    {
         var map = Object.FindFirstObjectByType<MapScene>();
-        var c = MapFocusTests.Inputs.Content;
-        var tlv = c.SettlementHexes.Single(s => s.Id == "tel_aviv");
-        var hex = c.HexAt(tlv.Q, tlv.R)!;
+        var hex = MapFocusTests.Inputs.Content.HexAt(q, r)!;
         var ground = map.Frame.ToWorld(hex.Lon, hex.Lat, 0);
         ground.y = map.Terrain.SampleHeight(ground) + map.Terrain.transform.position.y;
         var rig = Camera.main.GetComponent<CameraRig>();
