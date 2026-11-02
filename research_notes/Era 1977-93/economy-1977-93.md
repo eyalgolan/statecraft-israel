@@ -1,6 +1,6 @@
 # Economy research, 1977–1993: prices, stabilization and financing
 
-Researched 2026-10-23. **Research only; agent-checked draft, not human fact-checked.** Refs #148. Second pass **2026-10-25** (an AI agent, for Beri): the [GAP] rows named in the owner's 24 October comment on #148 were researched again; each addition carries the day the agent opened its source, and a person's check is still pending. The four first-pass cells of the status table (Bank crisis, US aid, Loan guarantees, Defence share) were re-tagged on 25 October only to add the date and the "a person's check pending" wording, in line with the note's own statement that its sources were checked on 2026-10-23 by an AI agent. This note does not choose D11, change content, implement era rules, calibrate effects or approve a price display. The [owner's research ruling](https://github.com/eyalgolan/statecraft-israel/issues/148#issuecomment-6340404323) keeps those implementation tasks paused.
+Researched 2026-10-23. **Research only; agent-checked draft, not human fact-checked.** Refs #148. Second pass **2026-10-25** (an AI agent, for Beri): the [GAP] rows named in the owner's 24 October comment on #148 were researched again; each addition carries the day the agent opened its source, and a person's check is still pending. The four first-pass cells of the status table (Bank crisis, US aid, Loan guarantees, Defence share) were re-tagged on 25 October only to add the date and the "a person's check pending" wording, in line with the note's own statement that its sources were checked on 2026-10-23 by an AI agent. This note does not choose D11, change content, implement era rules, calibrate effects or approve a price display. The [owner's research ruling](https://github.com/eyalgolan/statecraft-israel/issues/148#issuecomment-6340404323) keeps those implementation tasks paused. A fourth pass on **2026-11-01** (an AI agent, for Beri; Refs #154) adds section 9: inflation by year for 1977–1993, the facts dated for the three economic policies, and the measures of the 1 July 1985 package; a person's check is pending.
 
 **Reading key.** [V] marks a claim checked on its cited page, opened and read by an AI agent; it is not human sign-off. [S] identifies single-source material or a summary not directly opened. [C] preserves conflicting accounts with their sources. [R] identifies retrospective evidence. [GAP] marks incomplete evidence. Sources were checked on 2026-10-23 by an AI agent only. Quoted fragments reproduce the cited sources.
 
@@ -149,6 +149,8 @@ Other dates for the report seen only in search results (not opened) are not used
 
 
 [V] S3 (pp. 36–38) dates the stabilization program's launch to **1 July 1985** and describes exchange-rate stabilization, price controls, partial suspension of wage indexation, fiscal restraint and monetary restraint. Its wording on p. 36 is “stabilization program launched on July 1”. It reports about 12% average monthly inflation in the first half of 1985 and 2.7% in the final five months. That latter interval excludes July; S1 retains July's 27.5% rise. These are historical observations, not event-effect magnitudes.
+
+(1 November 2026 pass: the date of the cabinet adoption and the Knesset vote, and the package's measures as BoI's 1985 chapter I appendix records them, are in section 9.3; the cabinet decision text is still not read.)
 
 ## 4. Currency chronology
 
@@ -327,3 +329,125 @@ Third pass, all opened **2026-10-30 by an AI agent only**:
 - **S23: Jewish Telegraphic Agency**, [Israel begins to contemplate how to use American loan funds, 14 August 1992](https://www.jta.org/archive/israel-begins-to-contemplate-how-to-use-american-loan-funds), archive page read in full as text on 30 October 2026.
 - **S24: Jewish Telegraphic Agency**, [U.S. will deduct $437 million in loans because of settlements, 5 October 1993](https://www.jta.org/archive/u-s-will-deduct-437-million-in-loans-because-of-settlements), archive page read in full as text on 30 October 2026.
 - **S25: Jewish Telegraphic Agency**, [In show of support, Clinton limits deductions from loan guarantees, 21 October 1994](https://www.jta.org/archive/in-show-of-support-clinton-limits-deductions-from-loan-guarantees), archive page read in full as text on 30 October 2026.
+
+Fourth pass (#154), all opened **2026-11-01 by an AI agent only**:
+
+- **S26: CBS data API, third retrieval**, [general CPI 120010, January 1979–December 1985](https://api.cbs.gov.il/index/data/price?id=120010&format=json&download=false&startPeriod=01-1979&endPeriod=12-1985&lang=en), the S1 query run again: 84 records and paging read; December records used.
+- **S27: Bank of Israel, Annual Report 1985**, [Chapter I, The Economy: Developments and Policies](https://www.boi.org.il/media/dvspbz5g/pe_1.pdf), 18 pages; pp. 1–6 and the appendix "The Economic Stabilization Program (July 1985)", pp. 14–18, read as extracted text; pp. 5, 14, 16 and 17 also read as rendered images. Contemporary institutional account. Also, in S3, the appendix "The Provisions of the Package Deals", printed p. 50 (PDF p. 15), read as a rendered image; and in S4, Table A6 (p. 236) and the receipts and deficit pages of Tables A11b, A11c and A11d (pp. 245, 247, 249), read as rendered images.
+- **S28: Jewish Telegraphic Agency Daily News Bulletin**, original PDFs at pdfs.jta.org; datelines read from page images (a rendered crop for 1977, text recognition of 200 dpi page images for the others), item text from the archive pages: [31 October 1977, No. 203](http://pdfs.jta.org/1977/1977-10-31_203.pdf), p. 1 ([archive page](https://www.jta.org/archive/abolition-of-currency-regulations-and-other-sweeping-measures-are-introduced-to-create-a-free-econom)); [5 November 1984, No. 205](http://pdfs.jta.org/1984/1984-11-05_205.pdf), p. 2 ([archive page](https://www.jta.org/archive/cabinet-approves-wage-price-freeze-package-aimed-to-bring-down-inflation)); [2 July 1985, No. 126](http://pdfs.jta.org/1985/1985-07-02_126.pdf), p. 1 ([archive page](https://www.jta.org/archive/cabinet-adopts-economic-program-histadrut-calls-24-hour-strike)); [3 July 1985, No. 127](http://pdfs.jta.org/1985/1985-07-03_127.pdf), p. 1 ([archive page](https://www.jta.org/archive/knesset-by-70-17-vote-backs-governments-emergency-economic-plan)); [14 January 1987, No. 9](http://pdfs.jta.org/1987/1987-01-14_009.pdf), p. 3 ([archive page](https://www.jta.org/archive/cabinet-approves-neweconomic-program)); [28 January 1987, No. 18](http://pdfs.jta.org/1987/1987-01-28_018.pdf), p. 2 ([archive page](https://www.jta.org/archive/new-economic-package-accord-signed)); [28 December 1988, No. 237](http://pdfs.jta.org/1988/1988-12-28_237.pdf), p. 1 ([archive page](https://www.jta.org/archive/peres-in-surprise-move-announces-5-percent-devaluation-of-the-shekel)); [3 January 1989, No. 1](http://pdfs.jta.org/1989/1989-01-03_001.pdf), p. 1 ([archive page](https://www.jta.org/archive/8-percent-devaluation-ordered-but-rest-of-peres-plan-in-doubt)).
+- **S29: Elhanan Helpman and Leonardo Leiderman**, "Israel's Exchange Rate Band", Foerder Institute for Economic Research, Tel Aviv University, Working Paper No. 17-92, August 1992, [PDF on AgEcon Search](https://ageconsearch.umn.edu/record/275568/files/TEL-AVIV-FSWP-205.pdf); printed pp. 1, 11 and 13 (PDF pp. 3, 13, 15) read as rendered images, Table 1 (PDF p. 14) as extracted text. Retrospective research [R], not an official notice.
+
+## 9. Inflation by year, the three economic policies and the 1985 package (pass of 1 November 2026, #154)
+
+Researched **2026-11-01** by an AI agent, for Beri, for the research part the owner opened on #154 on 1 November 2026: inflation by year 1977–1993, the three economic policies, and the 1 July 1985 stabilization package (date, measures, sources). Every source below was opened and read by the agent on that day; a person's check is pending. Earlier sections are left as written; this section adds to them. It chooses no measure, policy default, threshold, `set_policy` date or effect; those stay with the owner (D10, D11) and the paused implementation.
+
+### 9.1 Inflation by year, 1977–1993: both measures for every year
+
+[V, agent read 2026-11-01; a person's check pending] Column A is S4 Table A6, "CPI, Total", headed "average rate of change, percent", printed p. 236 (PDF p. 16), read again as a rendered image for all seventeen years (section 2 had used it for 1977–1978 and 1986–1993 only). Column B is the CBS general CPI 120010 December `percentYear` (December over the previous December): 1979–1985 from a fresh retrieval of the S1 query (S26), the other years as section 2 records them from S17.
+
+| Year | A: S4 Table A6, annual-average change (%) | B: CBS December `percentYear` (%) | B from |
+|---|---:|---:|---|
+| 1977 | 34.6 | 42.5 | S17 |
+| 1978 | 50.6 | 48.1 | S17 |
+| 1979 | 78.3 | 111.4 | S26 |
+| 1980 | 131.0 | 132.9 | S26 |
+| 1981 | 116.8 | 101.5 | S26 |
+| 1982 | 120.3 | 131.5 | S1, S26 |
+| 1983 | 145.7 | 190.7 | S1, S26 |
+| 1984 | 373.8 | 444.9 | S1, S26 |
+| 1985 | 304.6 | 185.2 | S1, S26 |
+| 1986 | 48.1 | 19.7 | S17 |
+| 1987 | 19.9 | 16.1 | S17 |
+| 1988 | 16.3 | 16.4 | S17 |
+| 1989 | 20.2 | 20.7 | S17 |
+| 1990 | 17.2 | 17.6 | S17 |
+| 1991 | 19.0 | 18.0 | S17 |
+| 1992 | 11.9 | 9.4 | S17 |
+| 1993 | 10.9 | 11.2 | S17 |
+
+- The two columns answer different questions (an annual average against a December-on-December change), as section 2 explains; they are not rival estimates.
+- **[C] Table A6 against Table A7 for 1982 and 1983.** The same report prints two annual-average values for these years: Table A6 gives 120.3 (1982) and 145.7 (1983); Table A7, used in section 2, gives 120.4 and 145.6. For 1984 (373.8) and 1985 (304.6) the two tables agree. Both values are kept; the pages read do not explain the difference.
+- S26 returned 84 records (paging: 84 total items, one page, no next page). Its December 1982–1985 values match S1 as section 2 records them. December 1979 and 1980 carry `baseDesc: Average 1976`, December 1981 `Average 1980`; index levels across that label change are not linked here.
+- The era design (`docs/superpowers/specs/2026-10-10-era-1977-1993-design.md`, §2) lists an IMF series as tabulated by IndexMundi (for example 131.03 for 1980, 373.22 for 1984 and 308.79 for 1985). That page was not opened in this pass, so those values are neither confirmed nor contradicted here.
+
+### 9.2 The three economic policies: what the opened sources date
+
+The era design names three policies held by the finance minister: `deficit_spending`, `exchange_rate_regime` and `wage_price_agreement` (`docs/superpowers/specs/2026-10-10-era-1977-1993-design.md`, §4). Below are the facts the opened sources give for each.
+
+#### `deficit_spending`: the general-government deficit, 1977–1993
+
+[V, agent read 2026-11-01; a person's check pending] S4 Tables A11b, A11c and A11d, rows under "General government surplus (+)/deficit (–)", percent of GNP, printed pp. 245, 247 and 249 (PDF pp. 25, 27, 29), read as rendered images. Negative values are deficits and positive values surpluses, as printed. A11b is "According to old SNA"; A11c and A11d are "According to new SNA", so 1980 has two values.
+
+| Year | Internal | External | Total deficit | Table |
+|---|---:|---:|---:|---|
+| 1977 | -11.6 | -3.2 | -14.7 | A11b |
+| 1978 | -11.0 | -6.4 | -17.5 | A11b |
+| 1979 | -11.3 | 0.7 | -10.6 | A11b |
+| 1980 | -12.3 | -3.1 | -15.3 | A11b (old SNA) |
+| 1980 | -12.9 | -0.3 | -13.2 | A11c (new SNA) |
+| 1981 | -17.4 | -0.6 | -18.0 | A11c |
+| 1982 | -11.2 | -1.9 | -13.0 | A11c |
+| 1983 | -9.3 | 2.5 | -6.8 | A11c |
+| 1984 | -19.7 | 5.0 | -14.6 | A11c |
+| 1985 | -6.8 | 8.0 | 1.2 | A11c |
+| 1986 | -1.1 | 4.9 | 3.8 | A11c |
+| 1987 | -2.0 | 1.7 | -0.2 | A11c |
+| 1988 | -4.4 | 1.6 | -2.8 | A11c |
+| 1989 | -8.5 | 2.6 | -5.8 | A11c |
+| 1990 | -7.9 | 3.1 | -4.8 | A11d |
+| 1991 | -8.2 | 3.3 | -4.9 | A11d |
+| 1992 | -7.4 | 3.3 | -4.0 | A11d |
+| 1993 | -5.2 | 1.7 | -3.5 | A11d |
+
+This is general government on a national-accounts basis, not the central-government budget. The same tables count "Intergovernmental transfers" from the rest of the world as receipts: 13.9 (1984), 18.8 (1985) and 13.3 (1986) percent of GNP in A11c, so the 1985–1986 surpluses include those transfers. S27's Table I-1 also prints "Budget deficit" rows for 1981–1985; its extracted text is garbled and it was not transcribed. No series is selected as the policy's measure.
+
+#### `exchange_rate_regime`: the dated changes
+
+- [V, R, agent read 2026-11-01; a person's check pending] Overview. Helpman and Leiderman (S29, August 1992, printed p. 1, read as a rendered image): "a managed float from 1977 to 1982 followed by a year of a crawling peg, then again two years of a managed float. In 1985, following a major stabilization program, the exchange rate was fixed again only to be replaced by a managed float in an exchange rate band in 1989." The exact months of the 1982–1985 changes are not given there **[GAP]**.
+- [V, agent read 2026-11-01; a person's check pending] **28 October 1977.** JTA bulletin of 31 October 1977 (S28), item datelined Jerusalem, Oct. 30, read as a rendered image: Israel "was plunged into a new economic era Friday when the government announced the abolition of currency regulations"; "The first move was to establish a free-floating currency"; the pound "stood at IL 10.36 to $1 last week"; the "creeping devaluation" of the pound, "which had permitted depreciations of up to 2 percent every 30 days, has been abolished". The Friday before Sunday 30 October 1977 is 28 October 1977 (derived from the dateline, not [V]). The plan "was approved by the Cabinet at an unprecedented Friday meeting with one dissenting vote and one abstention".
+- [V, agent read 2026-11-01; a person's check pending] **1 July 1985.** S27, appendix, printed p. 16: "On July 1, 1985 the exchange rate of the sheqel in relation to the U.S. dollar was reduced by 18.8 percent. It was also decided to stabilize it at around NIS1.5 per dollar, and to allow it to fluctuate within a 2 percent band." The freeze was conditional: "if wages should rise by more than desired, the exchange rate would be adjusted upward."
+- [V, R, agent read 2026-11-01; a person's check pending] **August 1986.** S29, printed p. 11: "In August 1986 the dollar peg was replaced by a peg to a basket of currencies." The day is not given there **[GAP]**.
+- [V, agent read 2026-11-01; a person's check pending] **13 January 1987.** JTA bulletin of 14 January 1987 (S28), item datelined Jerusalem, Jan. 13: the Cabinet "early Tuesday morning approved a new economic program"; its main features include "a 10 percent devaluation of the Shekel".
+- [V, agent read 2026-11-01; a person's check pending] **27 December 1988.** JTA bulletin of 28 December 1988 (S28), item datelined Jerusalem, Dec. 27: Shimon Peres "started his tenure as finance minister with a surprise 5 percent devaluation of the shekel on Tuesday"; "It now takes 1.68 shekels to buy a U.S. dollar, compared with 1.59 shekels before Tuesday."
+- [V, agent read 2026-11-01; a person's check pending] **3 January 1989.** JTA bulletin of 3 January 1989 (S28), item datelined Jerusalem, Jan. 2: "an 8 percent devaluation of the shekel, effective Tuesday, on top of last week's 5 percent devaluation". [V, R] S29 (printed p. 11): "the government adopted an exchange rate band on January 3, 1989", with a central parity against the currency basket "fixed in nominal terms and a ±3 percent fluctuation zone".
+- [V, R, agent read 2026-11-01; a person's check pending] **The bands, 1989–1991.** S29, printed p. 13: first band 3 January to 22 June 1989, central parity 1.95 NIS per basket unit, ±3%; second band from 23 June 1989 to 28 February 1990, parity 2.07, ±3%; third band from 1 March 1990 to 10 September 1990, parity 2.19, ±5%; fourth band from 11 September 1990, "Following a 10% devaluation", parity 2.41, ±5%; fifth band from 11 March 1991 to 16 December 1991, parity 2.55, ±5%.
+- [V, R, agent read 2026-11-01; a person's check pending] **17 December 1991.** S29, printed p. 13: "Following a devaluation of the central parity of 3 percent on December 17, 1991 (i.e., the central parity became 2.629 instead of 2.552), the authorities shifted to a system that allows for the central parity to depreciate daily at the preannounced annual rate of 9 percent." S29's Table 1 note calls it the new "diagonal band" (read as extracted text only). No exchange-rate change in 1992–1993 was searched for **[GAP]**.
+
+#### `wage_price_agreement`: the package deals and wage arrangements
+
+- [V, agent read 2026-11-01; a person's check pending] **November 1984, the first package deal.** JTA bulletin of 5 November 1984 (S28), page 2, item datelined Jerusalem, Nov. 4: "The Cabinet today approved a three-month wage-price freeze agreed to by the government, labor and management last Friday". Under it "workers will forego one-third of their cost-of-living allowances in the first two months of the 90-day freeze period". Sunday 4 November 1984 is the approval; the Friday before is 2 November 1984 (both derived from the dateline, not [V]). S3's appendix, printed p. 50 (read as a rendered image): "At the beginning of November 1984, an agreement for three months" was signed "between the government, the Histadrut, and the employers' organizations"; most prices were frozen; "a third of the cost-of-living allowance due for November and December was not paid"; the exchange rate was not frozen, and devaluation continued "at a slower rate than before the package deal (7.5 percent per month on average, as against 16 percent per month before the package deal)".
+- [V, agent read 2026-11-01; a person's check pending] **5 February 1985 and April 1985, the second and third deals.** S3, p. 50: the second agreement "was to come into force on the expiry of the first, on February 5, 1985", with price rises set "at 3–5 percent per month for goods and services in general, and a maximum of 10–12 percent a month for subsidized goods"; in early April "a new agreement for a complete price freeze for two months, but no freeze of the exchange rate or of wages". S27 (printed p. 3, extracted text) says "the second and third package deals failed, and inflation again accelerated, reaching 14 percent a month in the second quarter of 1985."
+- [V, agent read 2026-11-01; a person's check pending] **July to October 1985.** S27, appendix, printed p. 17: the cost-of-living allowance arrangement "and other wage agreements were suspended, and a new COLA arrangement went into force in October", paying 80 percent of the CPI rise "when prices go up by 4 percent or more, or after a three-month period, whichever period is shorter". Real-wage erosion was moderated by "a 14 percent adjustment of July wages" paid on August 1, a lump sum in early September "equivalent to 12 percent of the July wage", and a supplement of "4 percent on December 1, 4 percent on January 1, and 3.5 percent on February 1".
+- [V, agent read 2026-11-01; a person's check pending] **27 January 1987.** JTA bulletin of 28 January 1987 (S28), page 2, item datelined Jerusalem, Jan. 27: "A new economic package agreement, to remain in effect until March 1988, was signed by the government, labor and management Tuesday." Its features include "withholding 2.7 percent of the next cost-of-living increment" and "price controls on many consumer goods to remain in force until March 1988".
+- Package agreements after March 1988 were not searched **[GAP]**.
+
+### 9.3 The 1 July 1985 package: date, votes and measures
+
+**Date and votes.**
+
+- [V, agent read 2026-11-01; a person's check pending] JTA bulletin of 2 July 1985 (S28), page 1, item datelined Jerusalem, July 1: "The Cabinet adopted an emergency economic program today". The prime minister "kept his Cabinet in session all day yesterday and into the early hours of this morning until the program was adopted by a majority but far from unanimous vote"; "Seven Likud ministers voted against". The item calls the program "essentially the work of Finance Minister Yitzhak Modai". It reports that the government would "impose its economic austerity program by invoking emergency regulations that are a hold-over from the British Mandate regime", and that the Histadrut called "a 24-hour general strike, starting tomorrow". The adoption is therefore dated 1 July 1985 (derived from the dateline, not [V]; the session ran from 30 June into the early hours of 1 July), consistent with S3's "launched on July 1" (section 3).
+- [V, agent read 2026-11-01; a person's check pending] JTA bulletin of 3 July 1985 (S28), page 1, item datelined Jerusalem, July 2: the Knesset "voted 70-17 to approve the emergency economic program adopted by a Cabinet majority yesterday. There were three abstentions." So 2 July 1985 (derived from the dateline, not [V]).
+
+**Measures**, from S27 (BoI's 1985 report, chapter I, pp. 6 and 14–18; contemporary, 1986), all [V, agent read 2026-11-01; a person's check pending]:
+
+| Area | What S27 records | Page |
+|---|---|---|
+| Budget | "a deep budget cut"; the objective "was to reduce the deficit to a level $1.5 billion lower than in 1984/85"; "it was decided to dismiss 10,000 public sector employees" | p. 6 (extracted text) |
+| Budget | "a $462.1 million smaller disbursement by government ministries and a $75 million decrease in national insurance transfer payments"; subsidies to come down to "$310 million for the year"; tax changes "to boost collections by $202 million a year"; "The cuts decided on by the government totaled $1.25 billion (at an annual rate, compared with the level of activity at the beginning of the fiscal year)" | pp. 14–15 (p. 14 also as a rendered image) |
+| Exchange rate | devaluation of 18.8 percent on 1 July; stabilized "at around NIS1.5 per dollar" within "a 2 percent band" | p. 16 (rendered image) |
+| Taxes | VAT "lowered from 17 to 15 percent"; the June fuel-tax increase "from 22 to 30 percent was rescinded"; "A one-time surtax was imposed on income other than from work" | p. 16 (rendered image) |
+| Wages | COLA and other wage agreements suspended; the payments listed under `wage_price_agreement` above | p. 17 (rendered image) |
+| Prices | "the prices of basic goods and services were raised at the beginning of July by 30–100 percent and fuel prices by 27 percent"; then "an average 17 percent increase" for other prices, "after which an absolute freeze was imposed on most domestic product prices"; footnote 10: "Initially prices were frozen for three months, but the Knesset subsequently enacted a law permitting the extension of the freeze until June 30, 1986." | p. 17 (rendered image) |
+| Monetary | credit growth to be kept "10 percent below the July rise in prices, to be followed by an absolute nominal freeze over the next three months"; "Toward the end of July it was decided to abandon the targeted 10 percent real cut" | p. 17 (rendered image) |
+| Changes after July | footnote 5: "the 3 percent real cut in public sector wages was canceled", the planned health cuts were revised, and other decisions were dropped or modified | p. 15 (extracted text) |
+| U.S. aid | the program "received important support in the form of a U.S. government commitment to provide a special $1.5 billion grant over a two-year period, in addition to its regular aid" (compare section 5) | p. 5 (rendered image) |
+
+**[C] The size of the cuts.** Three figures are kept, each from its own source: the government's claim to "reduce government expenditures by $1.1 billion" (JTA, 1 July 1985, S28); cuts that "totaled $1.25 billion" at an annual rate (S27, p. 15); and a deficit objective "$1.5 billion lower than in 1984/85" (S27, p. 6). They may measure different things (spending, total cuts including taxes, the deficit); this was not reconciled.
+
+**Still open [GAP].**
+
+- The text of the cabinet decision and of the emergency regulations. The Knesset site was not reachable from this machine: https://main.knesset.gov.il/ redirected to https://www.knesset.gov.il/maintenance-page-geo on 1 November 2026. The Knesset record of the 2 July 1985 debate was therefore not read.
+- The era design's "limits on the Bank of Israel's financing of deficits" (§2): not found in S27, nor in BoI's 1985 report chapter IX, section 3 "Funding the Government Budget", printed pp. 151–152 ([pe_9.pdf](https://www.boi.org.il/media/qpgj50x2/pe_9.pdf), extracted text, read 1 November 2026). The law that set such a limit was not reached.
+- The era design names Moda'i and Michael Bruno as the plan's authors; the JTA item above credits Modai, and Bruno's role was not checked in an opened source.
+
+**Search record (1 November 2026, by the agent).** JTA archive API, `https://www.jta.org/wp-json/wp/v2/archive?search=<term>&after=<date>T00:00:00&before=<date>T00:00:00&per_page=100`; result counts as returned: "devaluation" 1977-10-01 to 1977-11-30, 49; "liberalization" same range, 61; "pound" 1977-10-25 to 1977-11-10, 23; "devaluation" by calendar year 1986 to 1993, 100 each, which is the page cap, so those lists are incomplete; "shekel" 1986-12-15 to 1987-02-15, 19; "shekel" 1989-01-01 to 1989-02-01, 7; "shekel" 1991-12-01 to 1992-01-15, 7, none with a title on the exchange rate; "package deal" 1984-10-15 to 1985-07-15, 59; "economic" 1985-06-27 to 1985-07-12, 21. Only the items cited above were opened. The Bank of Israel's annual-report index pages returned a browser-check page (curl and WebFetch), so the 1985 chapter files were located with the built-in WebSearch tool (no Tavily key on this machine): queries "Bank of Israel Annual Report 1985 chapter pdf boi.org.il/media stabilization program" and "\"Developments under the Package Deals\" Bank of Israel annual report 1985 chapter I"; the chapter list was read from the report's contents file ([contente.pdf](https://boi.org.il/media/oiafic1k/contente.pdf)). A third query, "Bank of Israel annual report 1991 exchange rate \"diagonal\" band December 1991 pdf boi.org.il/media", led to S29; no 1991 BoI chapter file was found.
