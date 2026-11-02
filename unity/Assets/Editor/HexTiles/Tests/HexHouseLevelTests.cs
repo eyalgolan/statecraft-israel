@@ -99,42 +99,65 @@ public class HexHouseLevelTests
     }
 
     /// <summary>The checks above test the committed -light files, so a broken HexHouseLevels.Simplify would only show at the
-    /// next rebuild (owner, PR #1994, 30 October 2026). This runs it on house 04, the one the Tiberias boards draw, with
-    /// Build's settings (HexHouseLevels.UvTolerance, which Build calls), and holds the fresh mesh to the same seam and texture
-    /// promises and to the committed -light mesh, vertex for vertex. The tolerance must be one texel of the colour map as
-    /// delivered (4096 px), not as imported, which the WebGL cap halves (owner, 2 November 2026). What each editor target
-    /// proves: under WebGL the imported map is 2048 px, so a tolerance read from it fails the 1/4096 check and the committed
-    /// mesh check; under the desktop target the two widths agree, so only the source-text check below catches that mistake.</summary>
+    /// next rebuild (owner, PR #1994, 30 October 2026). This runs Build's mesh step (HexHouseLevels.LightMesh) on house 04,
+    /// the one the Tiberias boards draw, and holds the fresh mesh to the same seam and texture promises and to the committed
+    /// -light mesh, vertex for vertex.</summary>
     [Test]
     public void TheSimplifierKeepsTheSeamsAndTheTextureOfHouse04()
     {
         const string id = "generated-1948-04-dark-basalt-house";
         var source = SourceMesh(id);
-        float tolerance = HexHouseLevels.UvTolerance(AssetDatabase.LoadAssetAtPath<Material>(Stem(id) + ".mat"));
-        Assert.AreEqual(HexHouseLevels.UvToleranceTexels / 4096f, tolerance, $"one texel of the delivered 4096 px map (editor target {EditorUserBuildSettings.activeBuildTarget})");
-        var light = HexHouseLevels.Simplify(source, tolerance, HexHouseLevels.EdgeTolerance, HexHouseLevels.MaxError);
+        var light = HexHouseLevels.LightMesh(source, AssetDatabase.LoadAssetAtPath<Material>(Stem(id) + ".mat"));
         try
         {
             KeepsTheSeamsAndTheTexture(id, source, light);
-            var committed = AssetDatabase.LoadAssetAtPath<Mesh>(Light(id) + ".asset");
-            TestContext.WriteLine($"{id} under {EditorUserBuildSettings.activeBuildTarget}: fresh {light.triangles.Length / 3} triangles, committed {committed.triangles.Length / 3}");
-            CollectionAssert.AreEqual(committed.triangles, light.triangles, id + ": the committed lighter level's triangles");
-            CollectionAssert.AreEqual(committed.vertices, light.vertices, id + ": its vertices");
-            CollectionAssert.AreEqual(committed.uv, light.uv, id + ": its UVs");
+            SameAsCommitted(id, light, $"editor target {EditorUserBuildSettings.activeBuildTarget}");
         }
         finally { UnityEngine.Object.DestroyImmediate(light); }
     }
 
-    /// <summary>Build measures its seam tolerance through HexHouseLevels.UvTolerance (the delivered map's width), never
-    /// through the imported texture's size, which depends on the editor's build target. A source-text check, because Build
-    /// writes assets and is not run here, and because under the desktop target both widths are 4096.</summary>
+    /// <summary>Build's seam tolerance is one texel of the colour map as delivered, not as imported for the editor's build
+    /// target, which the WebGL cap halves (owner, 2 November 2026). Under any target: house 04's map is copied into a
+    /// temporary folder (deleted afterwards) with its import capped at 2048 on every platform, so its imported width (2048)
+    /// differs from its source width (4096), and LightMesh given a material with that copy must still make the committed
+    /// mesh. A LightMesh that read the imported width would double the tolerance and make another mesh.</summary>
     [Test]
-    public void BuildMeasuresItsToleranceInSourceTexels()
+    public void TheLighterLevelMeasuresItsToleranceInTheDeliveredTexels()
     {
-        string code = File.ReadAllText(Disk("Assets/Editor/HexTiles/HexHouseLevels.cs"));
-        StringAssert.Contains("Simplify(source, UvTolerance(material), EdgeTolerance, MaxError)", code, "Build's call");
-        foreach (var imported in new[] { "mainTexture.width", "mainTexture.height", "texelSize" })
-            StringAssert.DoesNotContain(imported, code, "HexHouseLevels reads no imported texture size");
+        const string id = "generated-1948-04-dark-basalt-house";
+        var houseMaterial = AssetDatabase.LoadAssetAtPath<Material>(Stem(id) + ".mat");
+        string root = "Assets/HexHouseTexelProbe" + Guid.NewGuid().ToString("N"), copy = root + "/basalt_basecolor.jpg";
+        Material? material = null; Mesh? light = null;
+        try
+        {
+            AssetDatabase.CreateFolder("Assets", root.Substring("Assets/".Length));
+            Assert.IsTrue(AssetDatabase.CopyAsset(AssetDatabase.GetAssetPath(houseMaterial.mainTexture), copy), "copy house 04's colour map");
+            var importer = (TextureImporter)AssetImporter.GetAtPath(copy);
+            importer.maxTextureSize = 2048;
+            foreach (var target in new[] { "Standalone", "WebGL" }) importer.ClearPlatformTextureSettings(target);
+            importer.SaveAndReimport();
+            var capped = AssetDatabase.LoadAssetAtPath<Texture2D>(copy);
+            importer.GetSourceTextureWidthAndHeight(out int sourceWidth, out _);
+            Assert.AreEqual((4096, 2048), (sourceWidth, capped.width), "the probe: delivered 4096 px, imported 2048 px");
+            material = new Material(houseMaterial) { mainTexture = capped };
+            light = HexHouseLevels.LightMesh(SourceMesh(id), material);
+            SameAsCommitted(id, light, "a material whose map imports at 2048 px");
+        }
+        finally
+        {
+            if (light != null) UnityEngine.Object.DestroyImmediate(light);
+            if (material != null) UnityEngine.Object.DestroyImmediate(material);
+            AssetDatabase.DeleteAsset(root);
+        }
+    }
+
+    static void SameAsCommitted(string id, Mesh light, string context)
+    {
+        var committed = AssetDatabase.LoadAssetAtPath<Mesh>(Light(id) + ".asset");
+        TestContext.WriteLine($"{id} ({context}): fresh {light.triangles.Length / 3} triangles, committed {committed.triangles.Length / 3}");
+        CollectionAssert.AreEqual(committed.triangles, light.triangles, $"{id} ({context}): the committed lighter level's triangles");
+        CollectionAssert.AreEqual(committed.vertices, light.vertices, $"{id} ({context}): its vertices");
+        CollectionAssert.AreEqual(committed.uv, light.uv, $"{id} ({context}): its UVs");
     }
 
     /// <summary>The lighter mesh's promises that need no prefab: fewer triangles, every vertex one of the source's, no seam

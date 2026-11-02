@@ -145,6 +145,8 @@ public class BuildingModelImportTests
                 Assert.IsFalse(setting.crunchedCompression, path + " " + target);
             }
             // Imported at the source size, or at the active target's cap where it overrides one (the houses on WebGL: 2048).
+            // Only WebGL and the desktop target are mapped here: no colour map in this folder overrides Android or iOS (asserted above
+            // for the houses).
             var active = imp.GetPlatformTextureSettings(EditorUserBuildSettings.activeBuildTarget == BuildTarget.WebGL ? "WebGL" : "Standalone");
             int cap = active.overridden ? active.maxTextureSize : imp.maxTextureSize;
             int longest = Math.Max(width, height), w = width, h = height;
@@ -172,9 +174,17 @@ public class BuildingModelImportTests
             Assert.AreEqual(TextureImporterFormat.Automatic, web.format, path + " WebGL format");
             Assert.AreEqual(TextureImporterCompression.Compressed, web.textureCompression, path + " WebGL compression");
             Assert.IsFalse(web.crunchedCompression, path + " WebGL crunch");
+            Assert.AreEqual(100, web.compressionQuality, path + " WebGL quality");
             Assert.Greater(imp.maxTextureSize, web.maxTextureSize, path + " the default keeps more than the web cap");
             Assert.IsFalse(imp.GetPlatformTextureSettings("Standalone").overridden, path + " desktop keeps the default");
         }
+        // Only the houses: no other generated model's colour map (the tents, the props, the vehicles) has a WebGL override.
+        var others = AssetDatabase.FindAssets("t:Texture2D", new[] { "Assets" }).Select(AssetDatabase.GUIDToAssetPath)
+            .Where(p => System.IO.Path.GetFileName(p).StartsWith("generated-1948-", StringComparison.Ordinal) && p.EndsWith("_basecolor.jpg", StringComparison.Ordinal)
+                && !p.StartsWith(Folder + "/", StringComparison.Ordinal)).ToArray();
+        Assert.GreaterOrEqual(others.Length, 6, "the tents, the props and the vehicles");
+        foreach (var path in others)
+            Assert.IsFalse(((TextureImporter)AssetImporter.GetAtPath(path)).GetPlatformTextureSettings("WebGL").overridden, path + " WebGL override");
     }
 
     [Test]

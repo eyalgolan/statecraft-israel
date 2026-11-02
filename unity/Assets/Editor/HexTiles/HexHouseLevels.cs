@@ -57,9 +57,11 @@ namespace Statecraft.HexTiles
             return width;
         }
 
-        /// <summary>Build's seam tolerance in UV units: <see cref="UvToleranceTexels"/> of the colour map's source texels, so
-        /// the lighter levels come out the same under every editor build target (HexHouseLevelTests).</summary>
-        public static float UvTolerance(Material material) => UvToleranceTexels / SourceTexels(material);
+        /// <summary>The lighter level Build makes of a house's mesh, writing no asset: <see cref="Simplify"/> with Build's
+        /// settings, its seam tolerance <see cref="UvToleranceTexels"/> of the material's colour map as delivered
+        /// (<see cref="SourceTexels"/>), so the result is the same under every editor build target (HexHouseLevelTests).</summary>
+        public static Mesh LightMesh(Mesh source, Material material) =>
+            Simplify(source, UvToleranceTexels / SourceTexels(material), EdgeTolerance, MaxError);
 
         [Serializable]
         sealed class Record
@@ -87,7 +89,7 @@ namespace Statecraft.HexTiles
                 if (prefab == null || filter == null || filter.sharedMesh == null || material == null || material.mainTexture == null)
                     throw new InvalidOperationException("missing source house " + id);
                 var source = filter.sharedMesh;
-                var light = Simplify(source, UvTolerance(material), EdgeTolerance, MaxError);
+                var light = LightMesh(source, material);
                 light.name = id + "-light";
 
                 // Copied into the existing asset on a rebuild, so the prefab's reference (the asset's GUID) holds.
