@@ -1056,10 +1056,10 @@ public class PromoScreensTests
                 owned.Add(new DefencePresenter(root, bridge, Text));
                 owned.Add(new BudgetPresenter(root, bridge, Text));
                 owned.Add(new WhyPresenter(root, bridge, Text));
-                owned.Add(new HowToPlayPresenter(root, Text));
                 owned.Add(new ObjectivesPresenter(root, bridge, Text));
                 var info = new InfoPanelPresenter(root, bridge, Text, C.SettlementHexes.ToDictionary(x => x.Id, x => x.Id)); owned.Add(info);
                 var nav = new ScreenNav(root); owned.Add(nav);
+                owned.Add(new EncyclopediaPresenter(root, Text, AdvisorCatalog.Load(), nav, null));
                 var toast = root.Q<Label>("toast");
                 toast.text = "Not done: Not enough attention (need 4.0, have 2.0)";
                 toast.style.display = DisplayStyle.Flex;

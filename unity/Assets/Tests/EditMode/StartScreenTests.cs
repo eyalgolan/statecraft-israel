@@ -708,11 +708,13 @@ public class StartScreenTests
     /// <summary>The Hebrew screen mirrors like the rest of the Hebrew UI (UI-12; the owner, 31 Oct 2026): New game right of
     /// Star on GitHub, Report right of the language pair and the recording's button right of its credit, the other way
     /// round in English, with the same gap between Report and the pair, and the panel settles. Compared only where the
-    /// two share a line (a phone held upright wraps Star under New game); at 1920x1080 they must.</summary>
+    /// two share a line (a phone held upright wraps Star under New game); at 1920x1080 they must. The recording's row shows
+    /// as in the game, where DeclarationRecording shows it.</summary>
     [UnityTest]
     public IEnumerator InHebrewTheButtonRowsMirror()
     {
         var gaps = new Dictionary<(int, int), float>();
+        var recordingCompared = new HashSet<(int, int)>();
         foreach (var hebrew in new[] { false, true })
         foreach (var (w, h) in new[] { (1920, 1080), (1366, 768), (390, 844) })
         {
@@ -730,7 +732,9 @@ public class StartScreenTests
             var bridge = new SimBridge(GameStart.Begin(C, store, () => 4UL, new List<string>(), Text, out var resumed), Text);
             var toast = new ToastPresenter(root, bridge, Text);
             var newGame = new NewGamePresenter(root, bridge, store, toast, Text, () => 5UL);
-            var start = new StartScreenPresenter(root, newGame, resumed);
+            // As GameRoot: the recording's player shows its row (a fetch that never answers; nothing is pressed here).
+            var recording = new DeclarationRecording(root, Text, toast.Show, (url, done) => new NoAnswer());
+            var start = new StartScreenPresenter(root, newGame, resumed, null, recording);
             try
             {
                 root.Q("root").RemoveFromClassList("loading");
@@ -755,12 +759,15 @@ public class StartScreenTests
                     else Assert.LessOrEqual(newGameR.xMax, star.xMin + 0.5f, $"{at}: New game {newGameR} is left of Star on GitHub {star}");
                 }
 
-                // The recording's button and its credit, when the row shows.
-                if (root.Q("start-recording").resolvedStyle.display == DisplayStyle.Flex && OneLine(R("start-listen"), R("start-recording-credit")))
+                // The recording's button and its credit.
+                Assert.AreEqual(DisplayStyle.Flex, root.Q("start-recording").resolvedStyle.display, $"{at}: the recording's row shows");
+                var (listen, credit) = (R("start-listen"), R("start-recording-credit"));
+                if (w == 1920) Assert.IsTrue(OneLine(listen, credit), $"{at}: the recording's credit {credit} is beside its button {listen}");
+                if (OneLine(listen, credit))
                 {
-                    var (listen, credit) = (R("start-listen"), R("start-recording-credit"));
                     if (hebrew) Assert.GreaterOrEqual(listen.xMin, credit.xMax - 0.5f, $"{at}: the recording's button {listen} is right of its credit {credit}");
                     else Assert.LessOrEqual(listen.xMax, credit.xMin + 0.5f, $"{at}: the recording's button {listen} is left of its credit {credit}");
+                    recordingCompared.Add((w, hebrew ? 1 : 0));
                 }
 
                 var (report, pair) = (R("start-report"), R("start-language"));
@@ -776,7 +783,7 @@ public class StartScreenTests
             }
             finally
             {
-                start.Dispose(); newGame.Dispose(); toast.Dispose();
+                start.Dispose(); recording.Dispose(); newGame.Dispose(); toast.Dispose();
                 Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt);
             }
         }
@@ -784,6 +791,61 @@ public class StartScreenTests
             if (gaps.TryGetValue((w, 0), out var en) && gaps.TryGetValue((w, 1), out var he))
                 Assert.AreEqual(en, he, 1f, $"{w}: the gap between Report and the languages is the same in Hebrew ({he:0.0}) as in English ({en:0.0})");
         Assert.IsTrue(gaps.ContainsKey((1920, 0)) && gaps.ContainsKey((1920, 1)), "the gap was measured at 1920x1080");
+        Assert.IsTrue(recordingCompared.Contains((1920, 0)) && recordingCompared.Contains((1920, 1)), "the recording's row was compared at 1920x1080");
+    }
+
+    /// <summary>The first layout of a phone held upright (390x844), with the recording's row shown as GameRoot shows it
+    /// (DeclarationRecording; its fetch never answers and nothing is pressed), in English and in Hebrew: the band layout
+    /// (StartScreenPresenter.Fit) settles in that first layout, without Unity's "Layout update is struggling ... recursive
+    /// layout" error (an unexpected error log fails the test; the capture below fails it too if logs are ever ignored), and
+    /// the screen ends in the band layout with the row in the panel.</summary>
+    [UnityTest]
+    public IEnumerator WithTheRecordingShownAPhoneLayoutSettlesWithoutRecursion([Values(false, true)] bool hebrew)
+    {
+        var struggling = new List<string>();
+        void Capture(string message, string trace, LogType type) { if (message.Contains("Layout update is struggling")) struggling.Add(message); }
+        var text = hebrew ? UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml") : Text;
+        var rt = new RenderTexture(390, 844, 0);
+        var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
+        ps.targetTexture = rt;
+        var go = new GameObject("StartRecordingPhone");
+        go.SetActive(false);
+        var doc = go.AddComponent<UIDocument>();
+        doc.panelSettings = ps;
+        doc.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml);
+        go.SetActive(true);
+        var root = doc.rootVisualElement;
+        var store = WithSave(TempStore(), 1);
+        var bridge = new SimBridge(GameStart.Begin(C, store, () => 4UL, new List<string>(), text, out var resumed), text);
+        var toast = new ToastPresenter(root, bridge, text);
+        var newGame = new NewGamePresenter(root, bridge, store, toast, text, () => 5UL);
+        var recording = new DeclarationRecording(root, text, toast.Show, (url, done) => new NoAnswer());   // as GameRoot
+        var start = new StartScreenPresenter(root, newGame, resumed, null, recording, text);
+        var at = hebrew ? "Hebrew 390x844" : "English 390x844";
+        Application.logMessageReceived += Capture;
+        try
+        {
+            root.Q("root").RemoveFromClassList("loading");
+            root.Q("root").EnableInClassList(UiLanguage.HebrewClass, hebrew);   // as GameRoot
+            start.Show();
+            for (int i = 0; i < 20 && (float.IsNaN(root.Q("start-panel").worldBound.width) || root.Q("start-panel").worldBound.width <= 0); i++) yield return null;
+            for (int i = 0; i < 4; i++) yield return null;
+            Assert.IsEmpty(struggling, $"{at}: the first layout recursed: {string.Join(" | ", struggling)}");
+            Assert.AreEqual(DisplayStyle.Flex, root.Q("start-recording").resolvedStyle.display, $"{at}: the recording's row shows");
+            Assert.IsTrue(root.Q("start-screen").ClassListContains(StartScreenPresenter.BandClass), $"{at}: a phone held upright stacks the painting over the panel");
+            var panel = root.Q("start-panel").worldBound;
+            var row = root.Q("start-recording").worldBound;
+            Assert.IsTrue(row.yMin >= panel.yMin - 0.5f && row.yMax <= panel.yMax + 0.5f, $"{at}: the row {row} is in the panel {panel}");
+            for (int i = 0; i < 10; i++) yield return null;
+            Assert.AreEqual(panel, root.Q("start-panel").worldBound, $"{at}: the panel settles");
+            Assert.IsEmpty(struggling, $"{at}: a later layout recursed: {string.Join(" | ", struggling)}");
+        }
+        finally
+        {
+            Application.logMessageReceived -= Capture;
+            start.Dispose(); recording.Dispose(); newGame.Dispose(); toast.Dispose();
+            Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt);
+        }
     }
 
     /// <summary>tools/web_check.py clicks the screen's buttons where ?navlog says they are (--startscreen, --persistence):

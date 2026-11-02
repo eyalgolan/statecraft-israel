@@ -227,11 +227,12 @@ mvp:
   # Occupation (R-CTRL-011, R-CTRL-012; Q-OCC-1 (a) and Q-OCC-3 (a), owner, 18 October 2026, #783 batches 3 and 4: one unit
   # stays with Money upkeep per turn, one X for every place, both "labelled design values proposed by agents for owner
   # override"). Accepted by the owner on 22 October 2026 (https://github.com/eyalgolan/statecraft-israel/pull/1324#issuecomment-6338594839).
-  # X is 6 monthly turns, half a year, the length of
-  # build_yishuv_turns and veteran_halutz_service, so an occupation begun in the war ends well inside the game. The upkeep
+  # X is 3 monthly turns: the owner ruled "3 turns, keep upkeep" on 27 October 2026 (#1712,
+  # https://github.com/eyalgolan/statecraft-israel/issues/1712#issuecomment-6461246243) and confirmed "3 turns (27 Oct)" on
+  # 1 November 2026, replacing the 6 turns accepted on 22 October. The upkeep
   # is derived as held_soldier_cost_per_turn is (#751): one month of income_per_job_per_year (0.06 / 12) for the one
   # population unit that stays. Neither is a historical figure.
-  occupation_turns: 6                    # DESIGN VALUE: owner-set balance, not a historical figure (D-F4, Q-OCC-3: X, the turns every occupation lasts)
+  occupation_turns: 3                    # DESIGN VALUE: owner-set balance, not a historical figure (D-F4, Q-OCC-3: X, the turns every occupation lasts)
   occupation_upkeep_per_turn: 0.005      # DESIGN VALUE: owner-set balance, not a historical figure (D-F4, Q-OCC-1: IL millions a turn per occupied place)
   # Deport (R-CTRL-018; owner ruling 1, "honest cost, no reward"; Q-DEP-5 (c), owner, 18 October 2026, #783 "Accept all 16
   # drafts": fixed costs to Social cohesion and International Support, a fixed International Support drag a turn and a lower

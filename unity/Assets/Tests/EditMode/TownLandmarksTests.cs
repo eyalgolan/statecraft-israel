@@ -524,6 +524,79 @@ public class TownLandmarksTests
         CollectionAssert.Contains(t.Missing, "tel_aviv");
     }
 
+    /// <summary>#2099, as #2046 for the camp tents: the edit-mode render callback (the beginCameraRendering handler itself)
+    /// never acquires, instantiates or destroys the whole-town landmarks mid-render. A change (here the Towns.Enabled kill
+    /// switch) waits for LateUpdate, as in play mode, and once applied the next render finds nothing pending (it asks for no
+    /// further player-loop update); a direct Choose (no render) still applies a change at once.</summary>
+    [Test]
+    public void AnEditModeRenderCallbackDefersTheWholeTownsToLateUpdate()
+    {
+        Assert.IsFalse(Application.isPlaying, "the edit-mode render path");
+        var map = OpenMap();
+        // Made after OpenScene(Single), which destroys every object of the scene it replaces.
+        var prefab = GameObject.CreatePrimitive(PrimitiveType.Cube); prefab.name = "fake original town";
+        var camera = new GameObject("deferred whole-town camera").AddComponent<Camera>();
+        try
+        {
+            TownLandmarks.Request = (id, detail, done) => { asked.Add((id, detail, done)); done(prefab); };
+            var t = TownLandmarks.ShowAt(map, new DateTime(1949, 1, 1), Array.Empty<Placement>(), ContentLoader.Load(Statecraft.Game.Paths.Content))!;
+            Assert.Greater(t.Placed.Count, 0, "precondition: the whole towns stand");
+            var first = t.transform.GetChild(0).gameObject;
+            camera.transform.SetPositionAndRotation(new Vector3(0f, 60000f, 0f), Quaternion.Euler(90f, 0f, 0f));
+            Render(t, camera);
+            Assert.IsFalse(t.RefreshPending, "precondition: settled, a render finds nothing pending");
+            var enabled = typeof(ProductionResidency.TownPolicy).GetField("Enabled", ResidencyFlags)!;
+
+            enabled.SetValue(map.Residency.Towns, false);
+            Render(t, camera);
+            Assert.IsTrue(first != null, "nothing is destroyed inside the render callback");
+            Assert.Greater(t.Placed.Count, 0, "the whole towns still stand");
+            Assert.IsTrue(t.RefreshPending, "the change waits for LateUpdate");
+            ResidencyCall(t, typeof(TownLandmarks), "LateUpdate");
+            Assert.IsTrue(first == null, "LateUpdate retires the whole towns");
+            Assert.AreEqual(0, t.Placed.Count, "and none stands");
+            Render(t, camera);
+            Assert.IsFalse(t.RefreshPending, "once applied, the next render finds nothing pending");
+
+            enabled.SetValue(map.Residency.Towns, true); int before = asked.Count;
+            t.Choose(default, camera);
+            Assert.Greater(asked.Count, before, "a direct call (no render) requests at once");
+            Assert.Greater(t.Placed.Count, 0, "and places them at once");
+            Render(t, camera);
+            Assert.IsFalse(t.RefreshPending, "and leaves nothing pending");
+        }
+        finally { Object.DestroyImmediate(camera.gameObject); Object.DestroyImmediate(prefab); }
+    }
+
+    /// <summary>#2099: a model that does not stream (its request answers null) is still a settled state: render, LateUpdate and
+    /// render again find nothing pending, so an edit-mode render never asks for a player-loop update on every frame.</summary>
+    [Test]
+    public void AMissingWholeTownLeavesNothingPendingAfterARender()
+    {
+        var map = OpenMap();
+        var camera = new GameObject("missing whole-town camera").AddComponent<Camera>();
+        try
+        {
+            TownLandmarks.Request = (id, detail, done) => { asked.Add((id, detail, done)); done(null); };
+            var t = TownLandmarks.ShowAt(map, new DateTime(1949, 1, 1), Array.Empty<Placement>(), ContentLoader.Load(Statecraft.Game.Paths.Content))!;
+            Assert.Greater(asked.Count, 0, "precondition: the models were asked for");
+            Assert.AreEqual(0, t.Placed.Count, "precondition: none streamed");
+            CollectionAssert.IsNotEmpty(t.Missing, "precondition: the towns are listed as not drawn");
+            camera.transform.SetPositionAndRotation(new Vector3(0f, 60000f, 0f), Quaternion.Euler(90f, 0f, 0f));
+            Render(t, camera);
+            Assert.IsFalse(t.RefreshPending, "a render finds nothing pending");
+            ResidencyCall(t, typeof(TownLandmarks), "LateUpdate");
+            int count = asked.Count;
+            Render(t, camera);
+            Assert.IsFalse(t.RefreshPending, "nor after LateUpdate");
+            Assert.AreEqual(count, asked.Count, "and nothing is asked for again");
+        }
+        finally { Object.DestroyImmediate(camera.gameObject); }
+    }
+
+    static void Render(TownLandmarks t, Camera camera) => ResidencyCall(t, typeof(TownLandmarks), "OnBeginCameraRendering",
+        default(UnityEngine.Rendering.ScriptableRenderContext), camera);
+
     const System.Reflection.BindingFlags ResidencyFlags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic;
     static object? ResidencyCall(object? owner, Type type, string method, params object?[] args)
     {
@@ -805,6 +878,51 @@ public class TownLandmarksTests
                 if (ready) swapped++;
             }
             Assert.Greater(swapped, 0, "a mixed tile in view swaps once its villages are ready");
+        }
+    }
+
+    /// <summary>Explicit spatial values (ConfigureResidency: tests and diagnostics) keep the camera-focus admission alone
+    /// (TownModelLayer.viewAdmission is false): no merged locality tile swaps, even with villages in a view that reaches the
+    /// ground. Re-pins what ProductionKitWiringNeverTreatsAMixedRendererAsOneNamedTown covered before it moved to the
+    /// production policy. The control switches the same layer to the production policy at the same Imwas view, and Imwas's
+    /// tile then swaps.</summary>
+    [Test]
+    public void ExplicitResidencyKeepsEveryMixedTileAsFallback()
+    {
+        using (var f = new ResidencyFixture(saved))
+        {
+            Assert.AreEqual("test fixture only; not measured", f.buildings.SpatialPolicyEvidence, "precondition: the explicit values");
+            var identity = (IDictionary<Renderer, string>)typeof(TownModelLayer).GetField("swapIds", ResidencyFlags)!.GetValue(f.buildings)!;
+            var swaps = (IEnumerable<(Renderer kit, Renderer? close)>)typeof(TownModelLayer).GetField("swaps", ResidencyFlags)!.GetValue(f.buildings)!;
+            var villages = (IDictionary<Renderer, string[]>)typeof(TownModelLayer).GetField("tileIds", ResidencyFlags)!.GetValue(f.buildings)!;
+            var mixed = swaps.Where(pair => !identity.ContainsKey(pair.kit)).ToList();
+            Assert.IsNotEmpty(mixed, "Map.Build must include grouped localities/camps for this fixture");
+            Assert.IsNotEmpty(villages, "Map.Build must include merged tiles with village building models");
+            f.camera.nearClipPlane = 50f; f.camera.farClipPlane = 1_000_000f;   // CameraRig.Init's planes: the view reaches the ground
+            f.camera.aspect = 16f / 9f;
+            f.Choose(close: true);
+            foreach (var pair in mixed) Assert.IsFalse(pair.kit.forceRenderingOff, pair.kit.name + ": an explicit-policy mixed tile keeps its fallback");
+
+            var imwas = f.map.KitFootprints.Single(p => p.id == "imwas");
+            string name = $"Localities {Mathf.FloorToInt(imwas.centre.x / SettlementKits.TileM)},{Mathf.FloorToInt(imwas.centre.y / SettlementKits.TileM)}";
+            var found = f.map.transform.Find(KitLayer.RootName).Find(name)?.GetComponent<MeshRenderer>();
+            Assert.IsNotNull(found, name + ": Imwas's merged locality tile");
+            var tile = found!;
+            Assert.IsTrue(villages.TryGetValue(tile, out var imwasTile) && imwasTile.Contains("imwas"), name + " carries Imwas");
+            void LookAtImwas()
+            {
+                f.camera.transform.position = new Vector3(imwas.centre.x, 10000f, imwas.centre.y - 10000f);
+                f.camera.transform.LookAt(new Vector3(imwas.centre.x, 0f, imwas.centre.y));
+                f.towns.Choose(default, f.camera);
+            }
+            LookAtImwas();
+            Assert.IsFalse(f.buildings.ReadyForTown("imwas", f.camera), "explicit policy: Imwas in view is not admitted");
+            Assert.IsFalse(tile.forceRenderingOff, "explicit policy: Imwas's tile keeps its fallback");
+
+            f.buildings.ConfigureProduction(ProductionResidency.Approved().Towns);
+            LookAtImwas();
+            Assert.IsTrue(f.buildings.ReadyForTown("imwas", f.camera), "control: under the production policy Imwas in view is admitted");
+            Assert.IsTrue(tile.forceRenderingOff, "control: under the production policy the same view swaps Imwas's tile");
         }
     }
 

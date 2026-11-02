@@ -119,6 +119,52 @@ public class AdvisorQueueTests
     }
 
     [Test]
+    public void ACappedWarningGoesToTheHistoryOnceItsSignalStopsHolding()
+    {
+        var q = new AdvisorQueue(Catalog(Row("w1", "warnings"), "{ id: w2, advisor: dayan, signal: d, level: warnings, priority: 1 }"), new AdvisorSettings(null));
+        q.Offer(new[] { "s", "d" }, Always, 1);
+        q.Done(q.Head(1, false)!, 1, Day);
+        Assert.IsNull(q.Head(1, false), "w2 waits: the warning slot is used");
+        q.Offer(Fired, Always, 2);
+        q.Prune(Fired, Always, 2, Day);
+        Assert.IsNull(q.Head(2, false), "d no longer holds, so w2 does not show");
+        Assert.AreEqual(("w2", AdvisorQueue.Outcome.Missed), (q.History.Last().Id, q.History.Last().Outcome));
+    }
+
+    [Test]
+    public void APutOffWarningGoesToTheHistoryOnceItsWhenStopsHolding()
+    {
+        var q = new AdvisorQueue(Catalog(Row("w", "warnings", 1, ", when: { debt_ratio_at_least: 0.8 }")), new AdvisorSettings(null));
+        q.Offer(Fired, Always, 1);
+        q.PutOff(q.Head(1, false)!, 1, Day);
+        q.Prune(Fired, _ => false, 2, Day);
+        Assert.IsNull(q.Head(2, false), "the debt fell under 0.8, so Not now does not bring it back");
+        Assert.IsEmpty(q.PutOffIds);
+        Assert.AreEqual(("w", AdvisorQueue.Outcome.Missed), (q.History.Last().Id, q.History.Last().Outcome));
+    }
+
+    [Test]
+    public void ACriticalMessageSurvivesADeadSignal()
+    {
+        var q = new AdvisorQueue(Catalog(Row("c", "critical")), new AdvisorSettings(null));
+        q.Offer(Fired, Always, 1);
+        q.Prune(Array.Empty<string>(), _ => false, 2, Day);
+        Assert.AreEqual("c", q.Head(2, false)!.Id, "a critical message is never pruned (owner, 31 Oct)");
+        Assert.IsEmpty(q.History);
+    }
+
+    [Test]
+    public void ACoveredWarningPrunedBeforeTheLayerClosesIsMissedOnce()
+    {
+        var q = new AdvisorQueue(Catalog(Row("w", "warnings")), new AdvisorSettings(null));
+        q.Offer(Fired, Always, 1);
+        var m = q.Head(1, false)!;
+        q.Prune(Array.Empty<string>(), Always, 1, Day);
+        q.Drop(m, 1, Day);
+        Assert.AreEqual(1, q.History.Count, "Counsel lists it once");
+    }
+
+    [Test]
     public void ResetForgetsTheGameButNotTheSeenMarks()
     {
         var settings = new AdvisorSettings(null);

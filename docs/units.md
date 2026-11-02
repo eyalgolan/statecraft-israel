@@ -569,9 +569,10 @@ figures tall standing at the base's back edge. `UnitPlinth` and `UnitFlags` draw
   before measuring ours. The figures read darker than their base, as T29's (0.5–0.9 of its luma), at those looks and at
   gameplay03 (`TheFiguresReadDarkerThanTheirBaseAsT29`, #645: the shirts at 0.9 of #559's paint, read beside the chest
   brace, which #559's sample point hit).
-- **Flag:** by the unit's `side` in `units_1948.yaml`. Israel's is the only sourced flag; the two Arab forces the map
-  draws fly the neutral pennant (Q-ART-1, owner, 15 October 2026: "a neutral pennant now, replaced by a sourced emblem
-  when one is found"): a plain grey triangle, in no side's colours and not white (`UnitFlags.BuildPennant`). The cloth is 0.52 of a figure's height tall and 0.72 wide, on a pole 1.5 tall at 0.9 of the base's
+- **Flag:** by the unit's `side` in `units_1948.yaml`. Israel, Transjordan, Egypt, Iraq, Syria and Lebanon fly their
+  sourced 1948 flags (below); the Arab Liberation Army, the one force the map draws with no sourced flag, flies the
+  neutral pennant (Q-ART-1, owner, 15 October 2026: "a neutral pennant now, replaced by a sourced emblem when one is
+  found"; never its dagger emblem, #226 ruling 8): a plain grey triangle, in no side's colours and not white (`UnitFlags.BuildPennant`). Every flag's cloth is 0.72 of a figure's height wide, its height its own law's proportion (Israel's 0.52, the others below; the pennant 0.36 at the pole), on a pole 1.5 tall at 0.9 of the base's
   radius, behind the trio and east of the badge (`TheFlagIsAboutHalfAFigureTallOnTheBasesEdge`). The cloth is drawn
   unlit (white, and a blue standing for the proclamation's "dark sky-blue"), so it reads white under the map's light and
   grade as T29's. Owner ruling (2026-10-15): the flag turns about its pole to face the camera (`UnitFlagFacing`), so it
@@ -593,8 +594,18 @@ figures tall standing at the base's back edge. `UnitPlinth` and `UnitFlags` draw
     https://en.wikipedia.org/wiki/Flag_of_Israel (checked 2026-10-14), which fits the gazette's own drawing. The same
     design hung at the declaration on 14 May 1948 (https://en.wikipedia.org/wiki/Israeli_Declaration_of_Independence,
     checked 2026-10-14), so it flies from the game's first day. Pinned by `TheIsraeliFlagFollowsTheSpecification`.
-  - Egypt, Jordan, Syria, Iraq, Lebanon: no sourced flag yet, so a token of theirs flies none
-    (`TheFlagIsTheSidesAndOnlyASourcedFlagIsDrawn`).
+  - Transjordan (#756): the Organic Law of 16 April 1928, Art. 3. Egypt: Law No. 47 of 1923 and its construction
+    annex. Iraq: the Organic Law of 1925, Art. 4. Syria: the Constitution of 1930, Art. 4. Lebanon: the Constitution's
+    Art. 5 as amended on 7 December 1943 (owner, 31 October 2026: "we need to have the flags of all arab forces like we
+    have for the israeli ones"). Each flies its national flag (no source was found for a field war flag of any of them).
+    The citations, what each law leaves open and the drawing each open point follows are in `UnitFlags`' class note; the
+    research is `.superpowers/coordination/arab-flags-1948-research.md`. Every flag is 0.72 of a figure long with the
+    same top; its height is its law's proportion (2:3 for Egypt and Lebanon, 0.48; 1:2 for Transjordan, Iraq and Syria,
+    0.36). Lebanon's cedar is traced from Wikimedia Commons' public-domain `File:Flag_of_Lebanon.svg` and drawn all
+    green, the owner's choice where the sources on its 1948 colour conflict (31 October 2026, "All green
+    (Recommended)"; `UnitFlags.LebanonCedarColour`). Pinned by
+    `EverySourcedFlagHasItsColoursAndItsLawsProportion` and one test per flag; the local forces have no figure, so no
+    token and no flag (`TheFlagIsTheSidesAndOnlyASourcedFlagIsDrawn`).
 - **The showcase trio** (`?units`, `-units`) stands at the land hex nearest its old spot whose base keeps off the
   railways and roads, and the kits keep a clearing there in such a run, as they do for a unit in a town
   (`MapScene.ShowcaseClearing`, `UnitShowcase.Clearing`), so no kit building or route crosses its base

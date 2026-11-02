@@ -34,11 +34,8 @@ public class Gdd03EventRulesTests
         indicator ? f => f["model.yaml"] = Fixture.Files["model.yaml"].Replace("indicators:", $"indicators:\n  - {{ id: {target}, name: Fixture, base: 0.5 }}") : null);
 
     [Fact] public void Gdd03RejectsAttentionEffectEvenIfIndicatorExists() => Effect("attention", true);
-    [Fact] public void Gdd03RejectsPassiveBudgetEffect() => Effect("budget", true);
-    [Fact] public void Gdd03RejectsAutomaticFoodRefillEffect() => Effect("food_refill", true);
     [Fact] public void Gdd03RejectsFoodSupplyWrite() => Effect("food_supply");
     [Fact] public void Gdd03RejectsHousingCompatibilityWrite() => Effect("housing");
-    [Fact] public void Gdd03RejectsFxEffectWithoutApprovedLedger() => Effect("fx_reserves");
     [Fact] public void Gdd03RejectsRetiredRationingPolicy() => Reject("    set_policy: { rationing: 0.5 }\n", "set_policy.rationing");
     [Fact] public void Gdd03RejectsRetiredMaabarotPolicy() => Reject("    set_policy: { maabarot: 0.5 }\n", "set_policy.maabarot");
     [Fact] public void Gdd03RejectsCityLossDefeatEffect() => Effect("city_loss_defeat", true);
@@ -49,12 +46,58 @@ public class Gdd03EventRulesTests
 
     [Theory]
     [InlineData("attention_per_turn")]
-    [InlineData("budget_finance_minister")]
-    [InlineData("passive_budget")]
-    [InlineData("automatic_food_refill")]
     [InlineData("defeat")]
     [InlineData("any_city_loss")]
     public void CompatibilityIndicatorsCannotEnableCommandTargets(string target) => Effect(target, true);
+
+    // R-EFX-001, #1718 D1/Q1/Q2 (owner, 1 November 2026, "Approve all six (Recommended)"): main's economy stays (passive
+    // budget, monthly Food refill, the foreign-currency ledger), so under gdd-0.3 only Attention retires. These targets
+    // load under gdd-0.3 exactly as under gdd-0.1: a budget or refill spelling is accepted when model.yaml defines it.
+    [Theory]
+    [InlineData("budget", true)]
+    [InlineData("budget_finance_minister", true)]
+    [InlineData("passive_budget", true)]
+    [InlineData("passive_budget_defence", true)]
+    [InlineData("food_refill", true)]
+    [InlineData("automatic_food_refill", true)]
+    [InlineData("fx_reserves", false)]
+    public void Gdd03KeepsD1BudgetRefillAndForeignCurrencyTargets(string target, bool indicator)
+    {
+        foreach (var modern in new[] { true, false })
+        {
+            var f = Files(modern);
+            if (indicator) f["model.yaml"] = Fixture.Files["model.yaml"].Replace("indicators:", $"indicators:\n  - {{ id: {target}, name: Fixture, base: 0.5 }}");
+            var c = Load(f, Card(option: $"    effects: [{{ target: {target}, delta: -0.1 }}]\n"));
+            Assert.Equal(target, c.Events.Single().Options.Single().Effects.Single().Target);
+        }
+    }
+    // R-EFX-001: keeping D1's targets adds no alias. A budget or refill spelling model.yaml does not define is still an
+    // unknown target under gdd-0.3, as under gdd-0.1.
+    [Theory]
+    [InlineData("passive_budget")]
+    [InlineData("food_refill")]
+    public void Gdd03KeptD1TargetsStillNeedARealTarget(string target)
+    {
+        foreach (var modern in new[] { true, false })
+        {
+            var ex = Assert.Throws<ContentException>(() => Load(Files(modern), Card(option: $"    effects: [{{ target: {target}, delta: -0.1 }}]\n")));
+            Assert.Equal("events[probe].options[ok].effects." + target, ex.Field);
+            Assert.EndsWith(": unknown target", ex.Message);
+        }
+    }
+    // R-EFX-001, #1718 Q2 (owner, 1 November 2026): foreign currency stays the internal ledger, so a gdd-0.3 card moves it once.
+    [Fact]
+    public void Gdd03ForeignCurrencyEffectMovesTheLedgerOnce()
+    {
+        var c = Load(Files(), Card(option: "    effects: [{ target: fx_reserves, delta: -3 }]\n").Replace("from:", "anchor: hard\nfrom:"));
+        var s = Simulation.NewGame(c, 1, Mode.Historical); s.FxReserves = 10;
+        var why = new List<Cause>();
+        Assert.Null(EventSystem.Choose(c, s, "probe", "ok", why));
+        Assert.Equal(7, s.FxReserves);
+        Assert.Contains(why, w => w.Target == "fx_reserves" && w.Delta == -3);
+        Assert.NotNull(EventSystem.Choose(c, s, "probe", "ok", why));
+        Assert.Equal(7, s.FxReserves);
+    }
 
     [Theory]
     [InlineData("food_supply")]
@@ -201,7 +244,7 @@ public class Gdd03EventRulesTests
     [InlineData("war-casualties")] [InlineData("displacement")]
     public void SensitivePositiveGainsStillFailAndNegativeCostsRemainAllowed(string tag)
     {
-        foreach (var target in new[] { "treasury", "food", "arms", "morale", "intl_standing" })
+        foreach (var target in new[] { "treasury", "fx_reserves", "food", "arms", "morale", "intl_standing" })
         {
             string Record(int delta) => Card(option: FormattableString.Invariant($"    effects: [{{ target: {target}, delta: {delta} }}]\n")) + $"tags: [{tag}]\n";
             var ex = Assert.Throws<ContentException>(() => Load(Files(), Record(1)));
@@ -307,7 +350,7 @@ public class Gdd03EventRulesTests
     }
     static readonly string[] SourceBytes =
     {
-        "absorb_immigrants:dbab4d5af95361ac47b8f72894780ca1779b283e99cea8e96d19c4c9e96de135", // re-pinned for #1065 (Beri's native Hebrew read)
+        "absorb_immigrants:7c926e12a0e54c4602177832f2db0c02393fd57981aea0f4b4eac916902d8f6a", // re-pinned for #1065 (reviewer comment matches the text)
         "altalena:d2c85de2ba034928441a67e490862b265f693d005e000553622bd80fbcb7ede8", // re-pinned for #1065 (Beri's native Hebrew read)
         "armistice_egypt:d361db22977057e24e0cb515afbfee37439cbdce38e465960b4978d082f5704f", // re-pinned for #1065 (Beri's native Hebrew read)
         "armistice_jordan:484bedf4869f6b01aec1a2d400c577183654a6d36930da065a77ddf203cf4450", // re-pinned for #1065 (Beri's native Hebrew read)
@@ -329,7 +372,7 @@ public class Gdd03EventRulesTests
         "iraqi_exodus:461dbb8a0685b7dceb6242d8e819635a27bb10033463e66d1a2e3ac68c9b8521", // re-pinned for #1065 (Beri's native Hebrew read)
         "israel_bonds:9bb4e8f38b8c9dc41b339645457efe1ce8d74580c53556faf4c81df50f67a992", // re-pinned for #1065 (Beri's native Hebrew read)
         "jerusalem_ceasefire:b850682a7736dcf2870550322f32a2d5c30963a05529dc9162dd68c9234648d6", // re-pinned for #1065 (Beri's native Hebrew read)
-        "jerusalem_demilitarisation_guard:93cec80c25ad328a0382c3178de10e133ea9a506ec78b3e038b7e25b7f6e2d62", // re-pinned for #2020 (owner-approved Hebrew wording, owner re-review bc139d5eb)
+        "jerusalem_demilitarisation_guard:f1614ec236826762f1ebdab53151eb7df379b25d6a060c69fb4cca794e819f28", // re-pinned for #1065 (owner's native read; flag removed in 05b5777d9)
         "jerusalem_military_government:526dbc88eabe4691e3ee1f3ed2c5fdeb640f11ae0a7a632c63066175b9c18176", // re-pinned for #1065 (Beri's native Hebrew read)
         "latrun_proposal:169933e28b8fc3085c5e74176a731d83f1e1955ed0ffac9a706029f738353bf5", // re-pinned for #1065 (Beri's native Hebrew read)
         "law_of_return:d04bb849bbb6fa089afc6e1123f8335aa1b03f49bc025f9d1c6746c48d27b398", // re-pinned for #1065 (Beri's native Hebrew read)
@@ -338,7 +381,7 @@ public class Gdd03EventRulesTests
         "operation_hiram:c8db23f9a331b0cf517e4762fe8f71dc286548ada77115b9500a93bce6ba740e", // re-pinned for #1065 (Beri's native Hebrew read)
         "operation_horev:6e018d54d46b46676d5ab56bc2fcedbeffab23a00334f75b415aec1713507f51", // re-pinned for #1065 (Beri's native Hebrew read)
         "operation_yoav:3d2e9a9a4416a4277e4c17da1e442895bda562c238e6f459c45b6ab89a9133fe", // re-pinned for #1065 (Beri's native Hebrew read)
-        "rafah_force_pressure:658b99340f0cf7dbf042e64d131509b87cec48f4374b16a1337fd0f831dbd28d", // re-pinned for #2020 (owner-approved Hebrew wording, owner re-review bc139d5eb)
+        "rafah_force_pressure:ffbb88f4e2169065fa07b111e6e67cea519c58e3cd684c0a2c092e830ff7d590", // re-pinned for #1065 (owner's native read; flag removed in 05b5777d9)
         "railway_complete:2108338a93d663ec9cb06bcb474c1f1211cfff480f9ef0acaec9c758a4854a7c", // re-pinned for #1676 (person's fact-check of #1410, status draft -> fact-checked)
         "reparations_claim:5412e71f4f5a90a92bd86622eb1a169feee45f0ba2fe82c5ab40bd8f3d43cafd", // re-pinned for #1065 (Beri's native Hebrew read)
         "reparations_vote:a79521d61ec59aa72a581b6598ecfade18e8d1e52dc25cef083078b0665a13b3",

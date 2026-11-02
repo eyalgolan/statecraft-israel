@@ -18,7 +18,7 @@
             <ui:Button name="nav-defence" text="Defence" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="helmet" class="nav-disc" /></ui:Button>
             <ui:Button name="nav-why" text="Why?" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="question" class="nav-disc" /></ui:Button>
             <ui:Button name="nav-timeline" text="Timeline" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="hourglass" class="nav-disc" /></ui:Button>
-            <ui:Button name="nav-how-to-play" text="How to play" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="book" class="nav-disc" /></ui:Button>
+            <ui:Button name="nav-encyclopedia" text="Encyclopedia" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="book" class="nav-disc" /></ui:Button>
             <ui:Button name="nav-objectives" text="Objectives" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="flag" class="nav-disc" /></ui:Button>
             <ui:Button name="nav-settings" text="Settings" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="gear" class="nav-disc" /></ui:Button>
         </ui:VisualElement>
@@ -408,21 +408,21 @@
             <ui:ScrollView name="timeline-list" class="grow" />
             <Statecraft.Game.UI.UiFrame />
         </ui:VisualElement>
-        <!-- A short guide to the existing loop (#1041). It is a normal side-menu screen, so ScreenNav owns opening and closing. -->
-        <ui:VisualElement name="screen-how-to-play" class="panel screen">
-            <ui:VisualElement class="screen-header"><ui:Label name="how-to-play-title" text="How to play" class="title" /></ui:VisualElement>
-            <ui:ScrollView name="how-to-play-body" class="grow how-to-play-body">
-                <ui:Label name="how-to-play-turn" class="how-to-play-line" />
-                <ui:Label name="how-to-play-attention" class="how-to-play-line" />
-                <ui:Label name="how-to-play-city" class="how-to-play-line" />
-                <ui:Label name="how-to-play-training" class="how-to-play-line" />
-                <ui:Label name="how-to-play-events" class="how-to-play-line" />
-                <ui:Label name="how-to-play-top-bar" class="how-to-play-line" />
-                <ui:Label name="how-to-play-end-turn" class="how-to-play-line" />
-                <ui:Label name="how-to-play-why" class="how-to-play-line" />
-            </ui:ScrollView>
-            <!-- Opens the advisor opening chain again (#1484, AdvisorPresenter), which closes this screen. -->
-            <ui:Button name="how-to-play-guide" class="how-to-play-guide" />
+        <!-- The advisors' encyclopedia (spec 10, EncyclopediaPresenter), which replaces How to play (#1041): one page per
+             mechanic, grouped by advisor. A normal side-menu screen, so ScreenNav owns opening and closing. -->
+        <ui:VisualElement name="screen-encyclopedia" class="panel screen">
+            <ui:VisualElement class="screen-header"><ui:Label name="encyclopedia-title" text="Encyclopedia" class="title" /></ui:VisualElement>
+            <ui:ScrollView name="encyclopedia-list" class="grow encyclopedia-list" />
+            <ui:VisualElement name="encyclopedia-page" class="grow encyclopedia-page">
+                <ui:Label name="encyclopedia-page-title" class="title encyclopedia-page-title" />
+                <ui:ScrollView name="encyclopedia-page-body" class="grow"><ui:Label name="encyclopedia-page-text" class="encyclopedia-text" /></ui:ScrollView>
+                <ui:VisualElement class="row encyclopedia-actions">
+                    <ui:Button name="encyclopedia-back" />
+                    <ui:Button name="encyclopedia-show-me" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <!-- Opens the advisors' opening chain again (spec 9), which closes this screen. -->
+            <ui:Button name="encyclopedia-opening" class="encyclopedia-opening" />
             <Statecraft.Game.UI.UiFrame />
         </ui:VisualElement>
         <!-- The objectives (#1189, ObjectivesPresenter): one row per objective, its status and both dates, no score. -->

@@ -284,7 +284,8 @@ namespace Statecraft.Game.EditorTools
 
         /// <summary>One editor render of a side's token on a date with every requested model arrived, for a before/after pair
         /// made on two checkouts: -captureSide ala -captureDate 1948-05-20 -captureOut path.jpg. Same camera as
-        /// <see cref="CaptureCampaign"/> (24 km, yaw 0, the game's pitch).</summary>
+        /// <see cref="CaptureCampaign"/> (24 km, yaw 0, the game's pitch); an optional -captureDistance (metres) looks closer,
+        /// as for a close-up of a token's flag.</summary>
         public static void CaptureToken()
         {
             string Arg(string name) { var a = Environment.GetCommandLineArgs(); int i = Array.IndexOf(a, name); return i >= 0 && i + 1 < a.Length ? a[i + 1] : throw new ArgumentException(name + " is required"); }
@@ -311,9 +312,12 @@ namespace Statecraft.Game.EditorTools
                 var row = map.UnitEntries.First(u => u.Side == side && u.Anchors.Count > 0);
                 var spot = layer.Spots[Statecraft.Game.Map.Units.UnitRoster.AnchorAt(row, state.Date)];
                 rig.LookAt = Statecraft.Game.Map.Units.UnitShowcase.Ground(map, new Vector3((float)spot.X, 0, (float)spot.Z));
-                rig.Distance = 24000f; rig.Yaw = 0; rig.TopInset = 0; rig.Apply();
+                int at = Array.IndexOf(Environment.GetCommandLineArgs(), "-captureDistance");
+                rig.Distance = at >= 0 ? float.Parse(Arg("-captureDistance"), System.Globalization.CultureInfo.InvariantCulture) : 24000f;
+                rig.Yaw = 0; rig.TopInset = 0; rig.Apply();
                 foreach (var animator in layer.GetComponentsInChildren<Animator>(true)) { animator.cullingMode = AnimatorCullingMode.AlwaysAnimate; animator.Update(0f); }
                 layer.FaceCamera(camera);
+                Statecraft.Game.Map.Units.UnitFlagFacing.FaceAll(camera.transform.position);   // as a still render must (UnitFlagFacing)
                 RenderMap(camera, output);
                 File.WriteAllText(output + ".txt", $"{side} on {date:yyyy-MM-dd}: row={row.Id}; lookAt={rig.LookAt}; distance={rig.Distance}; pitch={Statecraft.Game.Map.CameraRig.Pitch}; fov={camera.fieldOfView}; legacy roster, rung 5, mobilization 0.8; every requested model answered\n");
             }

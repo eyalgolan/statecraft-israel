@@ -3,18 +3,21 @@ using Statecraft.Cli;
 using Statecraft.Sim;
 
 // Text front end for the headless sim.
-//   dotnet run --project Statecraft.Cli -- [--content DIR] [--seed N] [--auto historical --turns N]
+//   dotnet run --project Statecraft.Cli -- [--content DIR] [--translations DIR] [--seed N] [--auto historical --turns N]
+//       --translations: the translations folder to load and check (#1618; default: the translations/ beside a folder named
+//       content). Not taken by --preview, which runs against the real content and its own translations.
 //   dotnet run --project Statecraft.Cli -- --preview [--until YYYY-MM-DD] [--set key=value]... [--show id,id] [--every N]
 //       writer preview: the historical run with some rules.yaml values changed in memory, against the real content
 //   dotnet run --project Statecraft.Cli -- --release-gate [--content DIR]   (exit 0 when shareable, 3 when not)
 //   dotnet run --project Statecraft.Cli -- --timeline-report [--content DIR]   (each road not taken and what follows it)
+//   dotnet run --project Statecraft.Cli -- --timeline-course SAVE [--content DIR]   (the course a saved game took)
 // Interactive commands: c EVENT OPTION | p POLICY LEVEL | m LEVEL | s DELTA | n (end turn) | q
 CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
 CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
 
 string? Arg(string name) { var i = Array.IndexOf(args, name); return i >= 0 && i + 1 < args.Length ? args[i + 1] : null; }
 
-foreach (var flag in new[] { "--content", "--seed", "--turns", "--auto", "--until", "--set", "--show", "--every" })
+foreach (var flag in new[] { "--content", "--translations", "--seed", "--turns", "--auto", "--until", "--set", "--show", "--every", "--timeline-course" })
 {
     var at = Array.IndexOf(args, flag);
     if (at >= 0 && (at + 1 >= args.Length || args[at + 1].StartsWith("--", StringComparison.Ordinal)))
@@ -22,6 +25,12 @@ foreach (var flag in new[] { "--content", "--seed", "--turns", "--auto", "--unti
 }
 var autoMode = Arg("--auto");
 if (autoMode != null && autoMode != "historical") { Console.Error.WriteLine($"Unknown --auto mode: '{autoMode}'"); return 1; }
+var coursePath = Arg("--timeline-course");
+// The course replays the save as it is: another mode, or a flag that would change or extend a run, is refused, not ignored.
+var otherModes = new[] { "--preview", "--release-gate", "--timeline-report", "--auto", "--set", "--show", "--until", "--every", "--seed", "--turns" }
+    .Where(m => Array.IndexOf(args, m) >= 0).ToList();
+if (coursePath != null && otherModes.Count > 0)
+{ Console.Error.WriteLine($"--timeline-course runs on its own, not with {string.Join(", ", otherModes)}"); return 1; }
 
 string FindContent()
 {
@@ -32,6 +41,7 @@ string FindContent()
 
 if (Array.IndexOf(args, "--preview") >= 0)
 {
+    if (Arg("--translations") != null) { Console.Error.WriteLine("--translations is not taken by --preview"); return 1; }
     try
     {
         var sets = new List<string>();
@@ -56,7 +66,14 @@ if (Array.IndexOf(args, "--preview") >= 0)
 }
 
 Content content;
-try { content = ContentLoader.Load(Arg("--content") ?? FindContent()); }
+try
+{
+    var contentDir = Arg("--content") ?? FindContent();
+    var translationsDir = Arg("--translations");
+    if (translationsDir != null && !Directory.Exists(translationsDir))
+    { Console.Error.WriteLine($"Content error: translations directory not found: {translationsDir}"); return 2; }
+    content = ContentLoader.Load(contentDir, translationsDir ?? TranslationLoader.Beside(contentDir));
+}
 catch (DirectoryNotFoundException) { Console.Error.WriteLine("Content error: content directory not found (use --content <path>)"); return 2; }
 catch (ContentException e) { Console.Error.WriteLine($"Content error: {e.Message}"); return 2; }
 
@@ -88,6 +105,9 @@ if (Array.IndexOf(args, "--release-gate") >= 0)
             + " (status: sensitivity-reviewed in content/settlement_targets.yaml; Q-TGT-3, #783)");
     return 3;
 }
+
+// --timeline-course SAVE (#1911, R-ALT-011): the played course, the rows the timeline screen shows (TimelineCourse).
+if (coursePath != null) return TimelineCourse.Run(content, coursePath, Console.Out, Console.Error);
 
 // --timeline-report (R-ALT-011): one line per road not taken, in window order: who proposed it (basis), the consequence
 // cards that follow it, the events whose variants name it, and the record's cards it suppresses (they require the

@@ -54,7 +54,8 @@ public class Gdd03ProjectCatalogueTests
             Assert.Equal(Gdd03ProjectCatalogue.CompletionEffect.MatchingTeacherCourseAndHousing, c.Projects[4].Effect);
             Assert.Null(c.Projects[4].Capacity);
             Assert.Equal("Default", c.Projects[3].StandaloneBasis); Assert.Equal("Default", c.Projects[4].StandaloneBasis);
-            Assert.Equal(1m, c.Projects[5].Capacity!.Amount); Assert.Equal(5m, c.Projects[6].Capacity!.Amount);
+            // The military camp shares military.camp_capacity: 50 units at 1,000 people a unit (#2112, owner, 1 November 2026).
+            Assert.Equal(1m, c.Projects[5].Capacity!.Amount); Assert.Equal(50m, c.Projects[6].Capacity!.Amount);
             Assert.Equal(new[] {
                 Gdd03ProjectCatalogue.CompletionEffect.OrdinaryHousing, Gdd03ProjectCatalogue.CompletionEffect.OrdinaryHousing,
                 Gdd03ProjectCatalogue.CompletionEffect.IndustryJob, Gdd03ProjectCatalogue.CompletionEffect.ReceptionBeds,

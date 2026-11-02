@@ -501,8 +501,15 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .screen .row.grow > .grow { min-height: 0; flex-shrink: 1; }
 /* Settings (#40): an option's name takes the row's width and wraps; its button keeps room for "On" / "Off". */
 .settings-row { margin-top: 8px; }
-.how-to-play-body { min-height: 0; }
-.how-to-play-line { white-space: normal; margin-bottom: 12px; font-size: 18px; }
+/* The advisors' encyclopedia (spec 10): the list of pages by advisor, or one page; either scrolls, never grows out. */
+.encyclopedia-list, .encyclopedia-page { min-height: 0; }
+.encyclopedia-advisor { color: var(--gold); letter-spacing: 1px; margin-top: 10px; margin-bottom: 4px; white-space: normal; }
+.encyclopedia-entry { min-height: 44px; white-space: normal; -unity-text-align: middle-left; }
+.lang-he .encyclopedia-entry { -unity-text-align: middle-right; }
+.encyclopedia-page-title { white-space: normal; margin-bottom: 8px; }
+.encyclopedia-text { white-space: normal; font-size: 18px; }
+.encyclopedia-actions { flex-shrink: 0; margin-top: 8px; }
+.encyclopedia-actions > Button { min-height: 44px; }
 /* The Objectives screen (#1189): a row per objective, its name over its status and dates; both wrap at 390x844. */
 .objectives-rows { min-height: 0; }
 .objectives-row { margin-bottom: 14px; }
@@ -564,9 +571,9 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .end-screen-note { white-space: normal; margin-bottom: 14px; color: var(--ink-dim); }
 .turn-report-actions { justify-content: flex-end; margin-top: 8px; flex-shrink: 0; }
 .turn-report-actions > Button { margin-left: 8px; }
-/* How to play's button that opens the opening advice again: under the lines, never squeezed by them. */
-.how-to-play-guide { flex-shrink: 0; align-self: flex-start; min-height: 44px; margin-top: 8px; }
-.lang-he .how-to-play-guide { align-self: flex-end; }
+/* The encyclopedia's button that opens the opening advice again: under the list, never squeezed by it. */
+.encyclopedia-opening { flex-shrink: 0; align-self: flex-start; min-height: 44px; margin-top: 8px; }
+.lang-he .encyclopedia-opening { align-self: flex-end; }
 /* The advisors' popup (spec 7.1, AdvisorPresenter): placed in code in the free upper part of the right column (AdvisorLayout),
    400 px wide; not modal, so the layer takes no pointer. It slides 16 px in from the right while it fades in (0.25 s) and
    fades out (0.15 s): ScreenNav's opening and closing classes, with a slide instead of the screens' scale (spec 16). */

@@ -23,17 +23,34 @@ namespace Statecraft.Sim
         /// <summary>The facility a craftsman trains at: a completed city project of this kind (projects.yaml; Q-CRAFT-1).</summary>
         public const string Industry = "industry";
 
-        /// <summary>The facility's name in text the player reads.</summary>
-        static string Place(string facility) => facility == "military_camp" ? "military camp" : facility == Industry ? "completed industry project" : "Hakhshara";
+        /// <summary><see cref="Reinforce"/>'s and <see cref="Start"/>'s refusals (#2072); the unit and side ones are Orders.Refused*.
+        /// The UI maps each to its own string (SimBridge.ReasonText). The English is the reason a turn's Rejected list and a save
+        /// carry, so it does not change; one with {0} is a format, its values (a unit id, a settlement's or course's name, a
+        /// number) filled in invariantly. A missing facility has one refusal per facility.</summary>
+        public const string RefusedNoCity = "There is no such city";
+        public const string RefusedNotInCity = "Unit {0} is not in {1}";
+        public const string RefusedNoCourse = "Unit {0} cannot take replacements";
+        public const string RefusedNoLosses = "Unit {0} has no losses to replace";
+        public const string RefusedRoomOne = "Unit {0} can take {1} more group";
+        public const string RefusedRoomMany = "Unit {0} can take {1} more groups";
+        public const string RefusedNoTraining = "There is no such training";
+        public const string RefusedCount = "Train at least one group";
+        public const string RefusedNoCamp = "{0} has no military camp";
+        public const string RefusedNoIndustry = "{0} has no completed industry project";
+        public const string RefusedNoHakhshara = "{0} has no Hakhshara";
+        public const string RefusedIdle = "{0} has {1} civilians without work";
+        public const string RefusedArms = "{0}: not enough Arms for {1} (need {2}, have {3})";
+
+        static string Refused(string format, params object[] values) => string.Format(System.Globalization.CultureInfo.InvariantCulture, format, values);
 
         /// <summary>The course a type trains in, in text the player reads: the facility's, or the guns' or the armoured cars' own
         /// at a military camp (R-UNIT-008).</summary>
-        static string Course(UnitType t) =>
+        public static string Course(UnitType t) =>
             t.Class == Combat.ArtilleryClass ? "artillery training" : t.Class == Armour ? "armoured car training"
             : t.Facility == "military_camp" ? "basic training" : t.Facility == Industry ? "craft training" : "pioneer training";
 
         /// <summary>The course of <see cref="Course"/> as a report Arg (#1682): the UI words it from why.cause.course.&lt;id&gt;.</summary>
-        static string CourseId(UnitType t) =>
+        public static string CourseId(UnitType t) =>
             t.Class == Combat.ArtilleryClass ? "artillery" : t.Class == Armour ? "armour"
             : t.Facility == "military_camp" ? "basic" : t.Facility == Industry ? "craft" : "pioneer";
 
@@ -94,18 +111,18 @@ namespace Statecraft.Sim
         public static string? Reinforce(Content c, GameState s, int unit, string city, int count, List<Cause> why)
         {
             PopulationLedger.RefuseAggregate(s);
-            if (!s.Units.TryGetValue(unit, out var u)) return "There is no such unit";
-            if (u.Side == "") return "Only a military unit takes that order";
-            if (u.Side != Movement.PlayerSide) return "That unit is not yours";
-            if (!s.Cities.ContainsKey(city)) return "There is no such city";
+            if (!s.Units.TryGetValue(unit, out var u)) return Orders.RefusedNoUnit;
+            if (u.Side == "") return Orders.RefusedNotMilitary;
+            if (u.Side != Movement.PlayerSide) return Orders.RefusedNotYours;
+            if (!s.Cities.ContainsKey(city)) return RefusedNoCity;
             var hex = c.SettlementHexes.First(h => h.Id == city);
-            if ((u.Q, u.R) != (hex.Q, hex.R)) return FormattableString.Invariant($"Unit {unit} is not in {PlayerText.Settlement(c, city)}");
+            if ((u.Q, u.R) != (hex.Q, hex.R)) return Refused(RefusedNotInCity, unit, PlayerText.Settlement(c, city));
             var type = c.UnitTypes.First(t => t.Id == u.Type);
             var course = c.UnitTypes.FirstOrDefault(t => t.Side == type.Side && t.Class == type.Class && t.Facility != "");
-            if (course == null) return FormattableString.Invariant($"Unit {unit} cannot take replacements");
+            if (course == null) return Refused(RefusedNoCourse, unit);
             var room = Room(s, u);
-            if (room <= 0) return FormattableString.Invariant($"Unit {unit} has no losses to replace");
-            if (count > room) return FormattableString.Invariant($"Unit {unit} can take {room} more {(room == 1 ? "group" : "groups")}");
+            if (room <= 0) return Refused(RefusedNoLosses, unit);
+            if (count > room) return Refused(room == 1 ? RefusedRoomOne : RefusedRoomMany, unit, room);
             return Start(c, s, city, course.Id, count, why, unit);
         }
 
@@ -118,19 +135,19 @@ namespace Statecraft.Sim
         static string? Start(Content c, GameState s, string city, string track, int count, List<Cause> why, int? unit)
         {
             PopulationLedger.RefuseAggregate(s);
-            if (!s.Cities.TryGetValue(city, out var x)) return "There is no such city";
+            if (!s.Cities.TryGetValue(city, out var x)) return RefusedNoCity;
             var type = c.UnitTypes.FirstOrDefault(t => t.Id == track && t.Facility != "");
-            if (type == null) return "There is no such training";
-            if (count < 1) return "Train at least one group";
+            if (type == null) return RefusedNoTraining;
+            if (count < 1) return RefusedCount;
             var name = PlayerText.Settlement(c, city);
-            if (!HasFacility(c, s, city, type.Facility)) return $"{name} has no {Place(type.Facility)}";
+            if (!HasFacility(c, s, city, type.Facility)) return Refused(type.Facility == "military_camp" ? RefusedNoCamp : type.Facility == Industry ? RefusedNoIndustry : RefusedNoHakhshara, name);
             var idle = Idle(x);
-            if (count > idle) return FormattableString.Invariant($"{name} has {idle} civilians without work");
+            if (count > idle) return Refused(RefusedIdle, name, idle);
             // R-ARMS-003 (D-G6, Q-UNIT-3): a recruit group takes arms_per_recruit_group Arms when its training starts, a gun or
             // armoured car crew its type's training_arms (R-UNIT-008, Q-ARTY-3); a short stock refuses the order. Pioneer
             // training takes none. The cohort keeps the count, and cancelling (R-TRAIN-002) returns it.
             var arms = type.Id == "recruit" ? (long)count * c.RulesAt(s.Date).Mvp!.ArmsPerRecruitGroup!.Value : (long)count * (type.TrainingArms ?? 0);
-            if (arms > s.Arms) return FormattableString.Invariant($"{name}: not enough Arms for {Course(type)} (need {arms}, have {s.Arms})");
+            if (arms > s.Arms) return Refused(RefusedArms, name, Course(type), arms, s.Arms);
             var cost = count * type.TrainingCost;
             // Owner decision "Allow borrowing" (2026-10-15, #468 question 1): a short Treasury borrows, as map actions do.
             EconomySystem.PayOrBorrow(c, s, cost, "for training", why, CauseKeys.Purpose.Training);

@@ -122,7 +122,7 @@ public class KeyboardTurnTests
     }
 
     /// <summary>The side menu, New Game, End Turn: the HUD's own controls, in the order Game.uxml gives them.</summary>
-    static readonly string[] Menu = { "nav-cabinet", "nav-budget", "nav-defence", "nav-why", "nav-timeline", "nav-how-to-play", "nav-objectives", "nav-settings", "new-game", "end-turn" };
+    static readonly string[] Menu = { "nav-cabinet", "nav-budget", "nav-defence", "nav-why", "nav-timeline", "nav-encyclopedia", "nav-objectives", "nav-settings", "new-game", "end-turn" };
 
     /// <summary>The open card takes the focus; Tab runs the card, each option in its order, Hide, then the HUD from the side
     /// menu on (the map stop, the minimap and the info panel are under the card's backdrop and out of reach), and round to
