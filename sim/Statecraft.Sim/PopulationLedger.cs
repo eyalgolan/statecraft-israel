@@ -249,14 +249,20 @@ namespace Statecraft.Sim
                     if (item != null && !issued.Add(item)) throw new ArgumentException("Issued equipment cannot have two owners.");
             }
         }
-        /// <summary>No production caller or content file opts into initialization. Does not invoke old population producers.</summary>
-        internal static GameState CreateFixture(Content c, PopulationBindings bindings, IEnumerable<PopulationInventoryRow> rows, int nextPopulationId = 0)
+        /// <summary>No production caller or content file opts into initialization. Does not invoke old population producers.
+        /// The scale: a synthetic fixture (no <paramref name="mode"/>) and an Open one read the gdd-0.3 catalogue's
+        /// population.people_per_unit (10,000, Open mode's); a Historical one reads rules.yaml's people_per_unit for the
+        /// start day (1,000), as StartingForces and Cities do (R-POP-004; owner, 1 November 2026, D2).</summary>
+        internal static GameState CreateFixture(Content c, PopulationBindings bindings, IEnumerable<PopulationInventoryRow> rows, int nextPopulationId = 0, Mode? mode = null)
         {
             if (!c.UsesPopulationLedger) throw new InvalidOperationException("Population fixtures require gdd-0.3 identity.");
             if (nextPopulationId < 0) throw new ArgumentOutOfRangeException(nameof(nextPopulationId));
             var s = new GameState(c); var l = s.PopulationLedger;
+            if (mode is Mode m) s.Mode = m;
             l.bindings = bindings ?? throw new ArgumentNullException(nameof(bindings));
-            l.peoplePerUnit = c.PopulationPeoplePerUnit;
+            l.peoplePerUnit = mode == Mode.Historical
+                ? (c.RulesAt(c.Rules.Start).Mvp ?? throw new InvalidOperationException("The Historical scale needs mvp rules.")).PeoplePerUnit
+                : c.PopulationPeoplePerUnit;
             l.receptionLimit = c.RequirePopulationInteger("reception.turns");
             l.NextPopulationId = nextPopulationId;
             // Build all records before validating references: teachers may occur after their pupils in authored order.

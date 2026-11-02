@@ -45,7 +45,7 @@
     "values": [2]
   "population.people_per_unit":
     "basis": "Agreed"
-    "note": "Population and starting state: people nominally represented by a population unit; Agreed. Source: #1668 balance.md at 605277df."
+    "note": "Population and starting state: people nominally represented by a population unit; Agreed for Open mode. Owner, 1 November 2026, D2 (\"Approve all six (Recommended)\"): the Historical MVP keeps main's census cities at 1,000 people a unit, so a Historical ledger fixture counts at rules.yaml's people_per_unit for the start day (R-POP-004); this row's 10,000 is Open mode's, when Open mode exists. Source: #1668 balance.md at 605277df."
     "values": [10000]
   "start.population":
     "basis": "Default"

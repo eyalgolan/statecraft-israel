@@ -107,6 +107,44 @@ public class HistoricalPopulationTests
         Assert.Equal(3, Count(rows, HistoricalPopulation.FormationPrefix + "kiryati"));
     }
 
+    // R-POP-001, R-POP-004 with D2 (owner, 1 November 2026, "Approve all six (Recommended)"): a ledger fixture of the
+    // Historical start counts its records at rules.yaml's people_per_unit for the start day (1,000), as StartingForces and
+    // Cities do, while the gdd-0.3 catalogue's population.people_per_unit still reads Open mode's 10,000.
+    [Fact]
+    public void HistoricalLedgerFixtureCountsAtTheRulesScale()
+    {
+        var c = Real(true);
+        Assert.Equal(10000, c.PopulationPeoplePerUnit);   // the catalogue row is unchanged (Open mode's, D2)
+        var inventory = HistoricalPopulation.Inventory(c);
+        Assert.NotEmpty(inventory);
+        var civilian = PopulationLedgerTests.Person();
+        var civilianTemplate = new PopulationUnit(0, PopulationStatus.FreeCivilian, 0, civilian.Location, PopulationAssignment.Unassigned,
+            civilian.Profession, civilian.Tier, 0, "basic", 0, PopulationEquipment.None);
+        var soldierTemplate = new PopulationUnit(0, PopulationStatus.ActiveSoldier, 0, civilian.Location,
+            new PopulationAssignment(PopulationAssignmentKind.ActiveService, "service"), civilian.Profession, civilian.Tier, 0, "basic", 0,
+            PopulationEquipment.None);
+        var s = PopulationLedger.CreateFixture(c, PopulationLedgerTests.Bindings(), inventory.Select(r => new PopulationInventoryRow(
+            r.Source, r.Ordinal, r.Status == PopulationStatus.ActiveSoldier ? soldierTemplate : civilianTemplate)), mode: Mode.Historical);
+        Assert.Equal(Mode.Historical, s.Mode);
+        Assert.Equal(inventory.Count, s.PopulationLedger.Units.Count);
+        Assert.Equal(1000, c.RulesAt(c.Rules.Start).Mvp!.PeoplePerUnit);
+        Assert.Equal((double)inventory.Count * 1000, s.PopulationLedger.TotalPeople);
+        Assert.Equal(s.PopulationLedger.TotalPeople, s.TotalPopulation);
+        Assert.Equal(10000, c.PopulationPeoplePerUnit);   // and still unchanged after the fixture
+    }
+
+    // R-POP-001 with D2: the catalogue's 10,000 is Open mode's, so an Open fixture and a synthetic one (no mode) keep it.
+    [Fact]
+    public void OpenAndSyntheticLedgerFixturesKeepTheCatalogueScale()
+    {
+        var c = Real(true);
+        var row = new PopulationInventoryRow("synthetic", 0, PopulationLedgerTests.Person());
+        var open = PopulationLedger.CreateFixture(c, PopulationLedgerTests.Bindings(), new[] { row }, mode: Mode.Open);
+        Assert.Equal(Mode.Open, open.Mode);
+        Assert.Equal(10000d, open.PopulationLedger.TotalPeople);
+        Assert.Equal(10000d, PopulationLedger.CreateFixture(c, PopulationLedgerTests.Bindings(), new[] { row }).PopulationLedger.TotalPeople);
+    }
+
     // R-POP-001, R-POP-004: inventory order is source key by ordinal string comparison, then a contiguous within-source
     // ordinal from 0, so ascending population ids follow it (Q10). Repeated reads are identical (docs/determinism.md).
     [Fact]
