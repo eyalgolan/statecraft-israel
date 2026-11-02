@@ -144,6 +144,41 @@ def test_large_file_fails(make_repo, capsys):
     assert "sizes: big.bin: over-size-limit" in capsys.readouterr().out
 
 
+def test_owner_approved_original_over_the_limit_passes(make_repo, capsys):
+    rel, size = sorted(oss_policy.OVERSIZE_ALLOWED.items(), key=lambda kv: kv[1])[0]
+    root = make_repo({rel: b"\x00" * size})
+    assert run(root, "--only", "sizes") == 0
+
+
+def test_unlisted_file_over_the_limit_still_fails_next_to_an_approved_one(make_repo, capsys):
+    rel, size = sorted(oss_policy.OVERSIZE_ALLOWED.items(), key=lambda kv: kv[1])[0]
+    other = rel.replace("-original-", "-copy-")
+    root = make_repo({rel: b"\x00" * size, other: b"\x00" * (oss_policy.MAX_FILE_BYTES + 1)})
+    assert run(root, "--only", "sizes") == 1
+    out = capsys.readouterr().out
+    assert f"sizes: {other}: over-size-limit" in out
+    assert f"sizes: {rel}:" not in out
+
+
+def test_approved_path_with_different_bytes_still_fails(make_repo, capsys):
+    rel, size = sorted(oss_policy.OVERSIZE_ALLOWED.items(), key=lambda kv: kv[1])[0]
+    root = make_repo({rel: b"\x00" * (size + 1)})
+    assert run(root, "--only", "sizes") == 1
+    assert f"sizes: {rel}: over-size-limit" in capsys.readouterr().out
+
+
+def test_oversize_allowlist_is_exactly_the_four_ruled_originals():
+    assert sorted(oss_policy.OVERSIZE_ALLOWED) == [
+        "asset-sources/prepared-towns-20261031/netanya/statecraft-netanya-original-76df2d06.glb",
+        "asset-sources/prepared-towns-20261031/safed/statecraft-safed-original-6707144a.glb",
+        "asset-sources/prepared-towns-20261031/tiberias/statecraft-tiberias-original-d6c8293a.glb",
+        "asset-sources/prepared-weapons-20261031/k98k/statecraft-k98k-original-64e8aded.glb",
+    ]
+    # Each is over our 10 MiB limit (else it needs no entry) and under the 100 MiB at which GitHub refuses a push.
+    for size in oss_policy.OVERSIZE_ALLOWED.values():
+        assert oss_policy.MAX_FILE_BYTES < size < 100 * 1024 * 1024
+
+
 def test_absolute_symlink_fails(make_repo, capsys):
     root = make_repo({"link": "->/etc/hosts", "ok": "->a.txt", "a.txt": "x\n"})
     assert run(root, "--only", "symlinks") == 1

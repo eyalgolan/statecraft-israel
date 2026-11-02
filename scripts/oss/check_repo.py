@@ -103,7 +103,8 @@ def check_home_paths(root: Path, files: list[str], release: bool) -> list[Findin
 def check_sizes(root: Path, files: list[str], release: bool) -> list[Finding]:
     return [Finding("sizes", rel, 0, "over-size-limit") for rel in files
             if (root / rel).is_file() and not (root / rel).is_symlink()
-            and (root / rel).stat().st_size > P.MAX_FILE_BYTES]
+            and (size := (root / rel).stat().st_size) > P.MAX_FILE_BYTES
+            and P.OVERSIZE_ALLOWED.get(rel) != size]
 
 
 def check_symlinks(root: Path, files: list[str], release: bool) -> list[Finding]:
