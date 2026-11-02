@@ -43,6 +43,8 @@ Every [V] in this note was an agent's reading on 2026-10-22, unless the tag give
 | Barron 1922 | J. B. Barron, *Palestine: Report and General Abstracts of the Census of 1922* (Jerusalem, 1923), page 3 and the erratum before Table I | https://archive.org/details/PalestineCensus1922 |
 | Mills 1931 | E. Mills, *Census of Palestine 1931: Population of Villages, Towns and Administrative Areas* (Jerusalem, 1932), "Summary for Palestine" (PDF p. 11) | https://archive.org/details/CensusOfPalestine1931.PopulationOfVillagesTownsAndAdministrativeAreas |
 | Survey | *A Survey of Palestine*, prepared December 1945 to January 1946 for the Anglo-American Committee of Inquiry, Vol. I: chapter VI Tables 1 and 3 (pages 141-142) and paragraphs 8-9 (page 144); chapter VII Table 1 (page 185) | https://www.bjpa.org/content/upload/bjpa/a_su/A%20SURVEY%20OF%20PALESTINE%20DEC%201945-JAN%201946%20VOL%20I.pdf |
+| CBS SA 1 | Central Bureau of Statistics, *Statistical Abstract of Israel*, No. 1 (1949-50), section C "Migration", Table 1 "Jewish immigrants (1919 - III 1950)" and Table 2 "Jewish immigrants from day of establishment of the State, by month of arrival", printed page 29 (PDF p. 52); Table 9 (15 V 1948 - III 1950, by sex) and its note 2, printed page 36 (PDF p. 59) | https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1950_num1.pdf |
+| CBS SA 3 | Central Bureau of Statistics, *Statistical Abstract of Israel*, No. 3 (1952), Table 3 "Jewish immigrants (1919 - III 1952)" with note 1, and Table 4 "by month of arrival", printed page 25 (PDF p. 54) | https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1952_num3.pdf |
 | Bachi | Roberto Bachi, *The Population of Israel* (C.I.C.R.E.D. series, World Population Year 1974; DellaPergola cites it as 1977): Table 1.1 (page 5), §4.6 (page 36), §5.2 (page 40), §8.4 and Table 8.1 (pages 79, 87), §9.2 and §9.3 (pages 117-118), Table 9.1 (page 119) | https://web.archive.org/web/2015/http://www.cicred.org/Eng/Publications/pdf/c-c26.pdf |
 | DellaPergola | Sergio DellaPergola, "Demography in Israel/Palestine: Trends, Prospects, Policy Implications", IUSSP XXIV General Population Conference, Salvador de Bahia, 2001, Table 2 (PDF p. 5) | https://iussp.org/sites/default/files/Brazil2001/s60/S64_02_dellapergola.pdf |
 | JVL period table | JVL, "Total Immigration to Israel, by Continent per Year" (the table `content/aliyah.yaml` cites) | https://jewishvirtuallibrary.org/jsource/Immigration/Immigration_by_Period_and_Continent.html |
@@ -383,6 +385,38 @@ as immigrants, including travellers who later registered, so legal registrations
 - Peaks and troughs for the content work: 1925 (33,801), 1933-36 (30,327 / 42,359 / 61,854 / 29,727), and 1927-31
   (2,178 to 5,249 a year), 1941-42 (3,647 and 2,194).
 
+### 4g. Arrivals by year, 1946 to 14 May 1948 (2 November addition for #84)
+
+[V, agent read 2 November 2026; a person's check pending] The CBS Statistical Abstracts No. 1 (Table 1, printed page 29) and No. 3 (Table 3, printed page 25), both read from the
+page image. Figures are the CBS yearly series, not the Mandate's registrations. SA 1 note 1: "Includes travellers permitted to
+settle, and part of those visa-less refugees for whom the dates of arrival are known." SA 3 note 1 to Table 3 (paraphrase, agent read 2 November 2026; a person's check pending): the table counts travellers permitted to settle (except those permitted to stay in 1950 and 1951) and the visa-less immigrants registered by the Mandatory Government, places travellers in the year in which they registered as immigrants, and for the years to 1948 leaves out undiscovered visa-less immigrants and travellers who stayed without permission (figures in the bullet quoting SA 3 note 1, below). For 1939 and 1945 the CBS series is therefore not comparable with 4f (see below); for 1932-38 it is the same numbers year by year (197,224 in both).
+
+| Year | CBS SA 1 (1950) | CBS SA 3 (1952) | Tag |
+|---|---|---|---|
+| 1945 | 13,121 | 13,121 | [V, agent read 2 November 2026; a person's check pending] |
+| 1946 | 17,760 | 17,761 | [C] differ by 1; no preferred value here: SA 1's 17,760 gives 4a's 56,467 (below), while SA 3's 17,761 fits SA 3's own printed 1919 - 14 V 1948 total of 452,158 (derivation below); the choice belongs to the paused content part |
+| 1947 | 21,542 | 21,542 | [V, agent read 2 November 2026; a person's check pending] |
+| 1948 (whole year, incl. after 15 May) | 118,993 | 118,993 | [V, agent read 2 November 2026; a person's check pending] |
+| 15 May - 31 Dec 1948, by month (Table 2 / Table 4) | 5,055 (15-31 May), 1,372, 17,266, 8,451, 10,786, 10,691, 20,376, 27,831 | same; printed total 101,828 | [V, agent read 2 November 2026; a person's check pending] |
+
+- Derived: the eight monthly figures sum to 101,828, the printed total in SA 3 Table 4. SA 1 Table 9 gives 97,512 for
+  15 V - XII 1948 with a note that 4,316 immigrants of May-August 1948 are excluded because their sex is unknown;
+  97,512 + 4,316 = 101,828, the same total.
+- Derived: 1 January to 14 May 1948 = 118,993 - 101,828 = **17,165**. No source read prints this split; it is the whole
+  year less the part after the State was declared, so it carries no [V].
+- Derived check against 4a: 17,760 + 21,542 + 17,165 = **56,467**, the CBS 1946 - 14 May 1948 total in 4a (with SA 3's
+  17,761 the sum is 56,468). For 1946 to 14 May 1948 the yearly series and the period table are the same data. They are not the same for every period. Summing the yearly figures (both abstracts print the same values for 1919-45) over 4a's periods gives 1919-23: 35,183 and 1924-31: 81,613, both equal to 4a; 1932-38: 197,224, which is 11 below 4a's 197,235; 1939-45: 81,670, which is 138 below 4a's 81,808. SA 3's 452,158 is 148 below 4b's period sum of 452,306. [Derived; the two gaps are recorded, not explained.]
+- Derived, second check of the split: SA 3 Table 3 (printed page 25) also prints a "1919 - 14 V 1948" row of 452,158. SA 3's yearly figures for 1919 to 1947 add up to 434,993 (with 17,761 for 1946), and 452,158 - 434,993 = **17,165**, the same as 118,993 - 101,828. SA 3 does not print 17,165 itself, but it prints the total that gives it, which supports both readings above.
+- Cross-reference: the first series row of `content/aliyah.yaml` (15 May to 31 December 1948) has origins 4,739 + 8,192 + 76,554 + 478 + 11,865 = 101,828, the same total as the months above. The SA 3 volume is also cited for 1950-51 in `research_notes/M3 content 1950-51/facts.md`. Neither covers the yearly series before the State.
+- Against 4f (different definitions, so the gap is expected): 1945 is 13,121 here and 12,032 in 4f (January-November,
+  registrations only); the CBS yearly figure for 1939 (27,561 in both abstracts) against 16,405 in 4f is a gap of definitions (visa-less
+  immigrants, travellers permitted to settle, registration year), not split by either source.
+- SA 3 note 1 to Table 3 [V, agent read 2 November 2026; a person's check pending]: the figures to 1948 "do not include undiscovered visa-less immigrants (11,056 according to the
+  estimate of the Central Bureau of Statistics) and about 20,000 travellers who remained in the country without permission".
+  CBS SA 2010 (4a, note 3) gives "about 11,000" and "about 19,500" for the same groups.
+- [GAP] The split of 1946, 1947 and 1 January - 14 May 1948 into legal registrations and aliyah_bet arrivals: SA 1 and
+  SA 3 print one total per year. 1919 by year (1,806 in both abstracts) was seen on the same pages but was not examined further.
+
 ---
 
 ## 5. Emigration
@@ -472,8 +506,9 @@ Not a model, only the arithmetic the sources allow:
 - Origin split of the 1882 and 1918 start populations (the 1918 split is in the 1916-18 census, 1b; the 1882 split is [GAP]).
 - A single sourced First Aliyah figure (only ranges; Bachi's implied 25,000 is an inference).
 - Arrivals 1915-1918 (CBS shows no figure).
-- A by-year series for 1919, for 1946-48 and for illegal immigration (the Survey's annual table, 4f, runs September 1920 to
-  November 1945 and counts legal registrations only).
+- Legal against illegal arrivals by year for 1946-48, and the same for illegal immigration generally (4g gives CBS totals per year
+  only; the Survey's annual table, 4f, runs September 1920 to November 1945 and counts legal registrations only). 1919 by year is
+  printed as 1,806 in the CBS abstracts of 4g but was not examined for what it covers.
 - How the 30,551 immigrants with no period divide over the CBS periods.
 - Emigration before 1920, and a complete gross (not net) series after it (partial figures in 5b).
 - Total population at the end of 1918: now [C] with two values (2b); no primary count.

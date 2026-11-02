@@ -88,8 +88,8 @@ public class SaveUiTests
         var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), Text);
         using (GameStart.Autosave(bridge, store, Text))
         {
-            var syrian = bridge.State.Units.Values.First(u => u.Side == "syria" && MapActions.Distance(u.Q, u.R, bridge.State.Units[0].Q, bridge.State.Units[0].R) == 1);
-            Assert.IsNull(bridge.Queue(new UnitOrder(0, Combat.Attack, syrian.Q, syrian.R)));
+            var iraqi = bridge.State.Units.Values.First(u => u.Side == "iraq" && MapActions.Distance(u.Q, u.R, bridge.State.Units[0].Q, bridge.State.Units[0].R) == 1);
+            Assert.IsNull(bridge.Queue(new UnitOrder(0, Combat.Attack, iraqi.Q, iraqi.R)));
             var loaded = GameSession.Load(C, store.ReadAutosave()!, out _);
             Assert.AreEqual(bridge.State.Hash(), loaded.Now.State.Hash());
         }

@@ -50,17 +50,24 @@ namespace Statecraft.Game.Map.Collection
 
         public const string TelAviv = "tel-aviv-white-city-v1", Jerusalem = "jerusalem-stone-city-v1", Haifa = "haifa-port-city-v1",
             Moshava = "moshava-town-v1", Nahalal = "nahalal-moshav-v1", Kibbutz = "kibbutz-compound-v2", StoneVillage = "stone-village-v1",
-            Maabara = "maabara-camp-v1", Shikun = "shikun-housing-v1", Jerusalem3D = "jerusalem-stone-city-v1-3denhance";
+            Maabara = "maabara-camp-v1", Shikun = "shikun-housing-v1", Jerusalem3D = "jerusalem-stone-city-v1-3denhance",
+            // Tal Heuberger's generated whole towns (#2085): the three towns #1288 lists, and Ramla.
+            Tiberias = CollectionCatalog.TiberiasTown, Safed = CollectionCatalog.SafedTown, Netanya = CollectionCatalog.NetanyaTown,
+            Ramla = CollectionCatalog.RamlaTown;
 
         /// <summary>By settlement id first (#507's mapping). Jerusalem stands as #336's second take of the stone city
         /// (<see cref="Jerusalem3D"/>, Tal Heuberger, #886) for the whole game: the owner, 21 October 2026, on #708
         /// (issuecomment-6323524970), "it is Jerusalem's only far-zoom model for the whole game. The first model stays in the
-        /// repository, unused on the map. No date switch". #507's <see cref="Jerusalem"/> is therefore not placed.</summary>
+        /// repository, unused on the map. No date switch". #507's <see cref="Jerusalem"/> is therefore not placed.
+        /// Tiberias, Safed and Netanya stand as Tal Heuberger's own whole-town models (#2085), the three towns #1288 found with
+        /// none. Ramla, an Arab town, stands as Tal's own town instead of the stone village (<see cref="ByType"/>): the owner,
+        /// 2 November 2026, "Yes, Tal's Ramla (Recommended)" ("Ramla draws Tal's town instead of the stone village").</summary>
         public static readonly IReadOnlyDictionary<string, string> ById = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["tel_aviv"] = TelAviv, ["jerusalem"] = Jerusalem3D, ["haifa"] = Haifa,
             ["petah_tikva"] = Moshava, ["rishon_lezion"] = Moshava, ["zikhron_yaakov"] = Moshava,
             ["rosh_pinna"] = Moshava, ["rehovot"] = Moshava, ["hadera"] = Moshava,
+            ["tiberias"] = Tiberias, ["safed"] = Safed, ["netanya"] = Netanya, ["ramla"] = Ramla,
         };
 
         /// <summary>Then by settlement type (#507's mapping).</summary>
@@ -79,7 +86,8 @@ namespace Statecraft.Game.Map.Collection
             };
 
         /// <summary>The turn about the vertical (degrees) that shows each model's front to a camera looking north: #507's
-        /// table (BuildingPreview.Yaw at 3ef0a7a5, tuned there from renders), 200 for a model without a row of its own.</summary>
+        /// table (BuildingPreview.Yaw at 3ef0a7a5, tuned there from renders), 200 for a model without a row of its own. #2085's
+        /// generated towns have no row yet: they take 200 until a render at their landing tunes them.</summary>
         public static float YawOf(string model) => model == TelAviv ? 200f : model == StoneVillage ? 40f : 200f;
 
         /// <summary>How the landmarks ask for a model: the game's stream. A test seam (internal; the tests see it through
@@ -103,11 +111,14 @@ namespace Statecraft.Game.Map.Collection
         public readonly struct Want : IEquatable<Want>
         {
             public readonly string Key, Model; public readonly Vector2 At; public readonly float Radius; public readonly bool OnTown;
-            public Want(string key, string model, Vector2 at, float radius, bool onTown)
-            { Key = key; Model = model; At = at; Radius = radius; OnTown = onTown; }
-            public bool Equals(Want o) => Key == o.Key && Model == o.Model && At == o.At && Radius == o.Radius && OnTown == o.OnTown;
+            /// <summary>A city whose point lies in a water hex: the centre (world x/z) of the land hex the map gives it
+            /// (settlement_hexes.yaml, hexgrid.settlement_hex), where its core is seated (<see cref="CoreOf"/>); else null.</summary>
+            public readonly Vector2? Land;
+            public Want(string key, string model, Vector2 at, float radius, bool onTown, Vector2? land = null)
+            { Key = key; Model = model; At = at; Radius = radius; OnTown = onTown; Land = land; }
+            public bool Equals(Want o) => Key == o.Key && Model == o.Model && At == o.At && Radius == o.Radius && OnTown == o.OnTown && Land == o.Land;
             public override bool Equals(object? o) => o is Want w && Equals(w);
-            public override int GetHashCode() => (Key, Model, At, Radius, OnTown).GetHashCode();
+            public override int GetHashCode() => (Key, Model, At, Radius, OnTown, Land).GetHashCode();
         }
 
         /// <summary>The landmarks the map wants as at <paramref name="date"/>: one per mapped settlement, on its kit footprint
@@ -124,7 +135,15 @@ namespace Statecraft.Game.Map.Collection
                 if (model == null) continue;
                 var w = map.Frame.ToWorld(s.Lon, s.Lat, 0);
                 var (at, r) = footprint.TryGetValue(s.Id, out var f) ? f : (new Vector2(w.x, w.z), 0.5f * SettlementPlacer.MarkerHeightM(s.Type));
-                wants.Add(new Want(s.Id, model, at, r, onTown: true));
+                // #1183: on 4.4 km hexes Haifa's point lies in a sea hex and the map gives the city its land neighbour (6, 9),
+                // where the owner put its model (26 October 2026). Only a city: Acre (an arab_town whose point is in a sea hex
+                // too) keeps its core on its own plots, which stay dry.
+                Vector2? land = null;
+                var sh = s.Type == "city" ? content.SettlementHexes.FirstOrDefault(x => x.Id == s.Id) : null;
+                var hx = sh == null || (sh.Q, sh.R) == HexPicker.FromLonLat(s.Lon, s.Lat, map.Hexes.bounds, map.Hexes.hex_size_km)
+                    ? null : content.HexAt(sh.Q, sh.R);
+                if (hx != null) { var lw = map.Frame.ToWorld(hx.Lon, hx.Lat, 0); land = new Vector2(lw.x, lw.z); }
+                wants.Add(new Want(s.Id, model, at, r, onTown: true, land));
             }
             float hexHalf = 500f * map.Hexes.hex_size_km;
             foreach (var p in placements)
@@ -178,7 +197,8 @@ namespace Statecraft.Game.Map.Collection
         /// as if it still held plots (#588, owner, 18 October 2026: "Clearing doesn't move the core"), so a token's clearing
         /// does not pull the core away from it (Carmeli's put Haifa's model in the bay).</summary>
         public static (Vector2 centre, float radius) CoreOf(Vector2 centre, float footprint, IReadOnlyList<Vector2> plots,
-            IEnumerable<(Vector2 centre, float radius)> clearings, IEnumerable<Vector2> others, Func<float, float, bool> water)
+            IEnumerable<(Vector2 centre, float radius)> clearings, IEnumerable<Vector2> others, Func<float, float, bool> water,
+            Vector2? land = null)
         {
             Vector2 c = centre; float r = footprint;
             // The clearings' ground as plots: a grid at the town's own plot spacing (the median distance from a plot to its
@@ -210,6 +230,9 @@ namespace Statecraft.Game.Map.Collection
                 var d = near.Select(p => (p - c).magnitude).OrderBy(x => x).ToList();
                 r = Mathf.Min(footprint, d[d.Count - 1]);
             }
+            // #1183 (owner, 26 October 2026, Haifa's model: "Move to land (6,9)"): a land hex given (Want.Land) seats the core
+            // on that hex's centre, as wide as its plots made it, under the same limits.
+            if (land is Vector2 l) c = l;
             foreach (var o in others) r = Mathf.Min(r, NeighbourShare * (o - c).magnitude);
             float floor = r / 3f;
             for (int i = 0; i < 12 && r > floor && WaterShare(c, r, water) > MaxWaterShare; i++) r = Mathf.Max(floor, 0.9f * r);
@@ -504,7 +527,7 @@ namespace Statecraft.Game.Map.Collection
                     var plots = layer == null ? (IReadOnlyList<Vector2>)Array.Empty<Vector2>()
                         : layer.InstancesOf(w.Key).Select(m => m.Plot).Distinct().ToList();
                     var others = wants.Where(o => o.OnTown && o.Key != w.Key).Select(o => o.At).Concat(townCentres.Where(o => o.id != w.Key).Select(o => o.c));
-                    var (core, rad) = CoreOf(w.At, w.Radius, plots, map.UnitClearings, others, ground.Water);
+                    var (core, rad) = CoreOf(w.At, w.Radius, plots, map.UnitClearings, others, ground.Water, w.Land);
                     at = core; edge = 2f * rad;
                     (normal, baseY) = SeatOn(at, rad, ground.Y, ground.Water);
                 }

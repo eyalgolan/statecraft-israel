@@ -1,0 +1,82 @@
+{
+  "source_sha256": "3002af88339079b363f102a82d6cc925d7a9a78b04a0846303151002194fb485",
+  "output_sha256": "9a7c8b59eb6dbf5138ee9fe1b8cb6296e430cda105b98cecae9c3a93bfdd3868",
+  "bytes": 10167581,
+  "changes": [
+    {
+      "node": "P",
+      "property_index": 4,
+      "field": "Original|ApplicationNativeFile",
+      "old_byte_length": 121,
+      "new_value": "C06-POINT-FIRE-MOTION-REVIEW.blend"
+    },
+    {
+      "node": "FileName",
+      "property_index": 0,
+      "field": "FileName",
+      "old_byte_length": 172,
+      "new_value": "statecraft-k98k-approved-textured-b48a435f_basecolor"
+    },
+    {
+      "node": "FileName",
+      "property_index": 0,
+      "field": "FileName",
+      "old_byte_length": 166,
+      "new_value": "tripo_rgb_a46a9e2b-b083-46c5-bc34-617792d0111d"
+    },
+    {
+      "node": "FileName",
+      "property_index": 0,
+      "field": "FileName",
+      "old_byte_length": 169,
+      "new_value": "tripo_normal_dbc9f53e-b6c7-4e8e-81f2-6598351d5b07"
+    },
+    {
+      "node": "P",
+      "property_index": 4,
+      "field": "Path",
+      "old_byte_length": 172,
+      "new_value": "statecraft-k98k-approved-textured-b48a435f_basecolor"
+    },
+    {
+      "node": "Filename",
+      "property_index": 0,
+      "field": "Filename",
+      "old_byte_length": 172,
+      "new_value": "statecraft-k98k-approved-textured-b48a435f_basecolor"
+    },
+    {
+      "node": "P",
+      "property_index": 4,
+      "field": "Path",
+      "old_byte_length": 166,
+      "new_value": "tripo_rgb_a46a9e2b-b083-46c5-bc34-617792d0111d"
+    },
+    {
+      "node": "Filename",
+      "property_index": 0,
+      "field": "Filename",
+      "old_byte_length": 166,
+      "new_value": "tripo_rgb_a46a9e2b-b083-46c5-bc34-617792d0111d"
+    },
+    {
+      "node": "P",
+      "property_index": 4,
+      "field": "Path",
+      "old_byte_length": 169,
+      "new_value": "tripo_normal_dbc9f53e-b6c7-4e8e-81f2-6598351d5b07"
+    },
+    {
+      "node": "Filename",
+      "property_index": 0,
+      "field": "Filename",
+      "old_byte_length": 169,
+      "new_value": "tripo_normal_dbc9f53e-b6c7-4e8e-81f2-6598351d5b07"
+    }
+  ],
+  "all_numeric_and_raw_records_exact": true,
+  "bone_rest_bind_weight_and_animation_fingerprints_exact": true,
+  "absolute_private_prefix_scan": "clear",
+  "roundtrip": "passed; PUBLIC-ROUNDTRIP-REPORT.json",
+  "note": "Only absolute local path prefixes in FBX metadata string fields replaced with basenames. Original untouched; embedded raw texture data byte-exact."
+}

@@ -22,10 +22,10 @@ corridors:
     name_he: דרך בורמה
     route: burma_road
     segments:
-      - { to: Beit Jiz, hexes: [[-3, 22], [-3, 23]] }
-      - { to: Beit Susin, hexes: [[-3, 23]] }
-      - { to: Beit Mahsir, hexes: [[-3, 23], [-2, 22], [-3, 23], [-2, 23]] }
-      - { to: Saris, hexes: [[-2, 23]] }
+      - { to: Beit Jiz, hexes: [[-4, 26]] }
+      - { to: Beit Susin, hexes: [[-4, 26], [-3, 26]] }
+      - { to: Beit Mahsir, hexes: [[-3, 26]] }
+      - { to: Saris, hexes: [[-3, 26], [-2, 26]] }
     sources:
       # The route's line and its completion on 14 June 1948 (routes_1948.yaml burma_road, with that file's checked date).
       # G1 (owner, 14 October 2026, #384) put the Burma Road in the MVP.
@@ -38,7 +38,7 @@ corridors:
     name_he: קישור הרכבת חיפה–תל אביב
     route: yarkon_rail_link
     segments:
-      - { to: Tel Aviv North railway station, hexes: [[-2, 19], [-2, 18]] }
+      - { to: Tel Aviv North railway station, hexes: [[-2, 21], [-3, 21]] }
     sources:
       # Israel Railways, 50 Years of Israel Railways (1998), p. 15: the two sections laid in the summer of 1949 and the
       # service from 20 September 1949 (research_notes/gdd-phase-4-sourcing.md, section 2).
@@ -51,10 +51,10 @@ corridors:
     name_he: כביש תל אביב–נתניה
     route: tlv_netanya_road
     segments:
-      - { to: Herzliya, hexes: [[-3, 19], [-2, 18]] }
-      - { to: Rishpon, hexes: [[-2, 18], [-1, 17]] }
-      - { to: Wadi Falik (Nahal Poleg), hexes: [[-1, 17], [-1, 16]] }
-      - { to: Netanya, hexes: [[-1, 16], [0, 15]] }
+      - { to: Herzliya, hexes: [[-3, 21], [-2, 20]] }
+      - { to: Rishpon, hexes: [[-2, 20]] }
+      - { to: Wadi Falik (Nahal Poleg), hexes: [[-2, 20], [-1, 19], [-1, 18]] }
+      - { to: Netanya, hexes: [[-1, 18], [0, 17]] }
     sources:
       # The Jerusalem Post, 30 July 1950, pp. 1 and 3: the opening on 28 July 1950 and the five places the road passed
       # (research_notes/gdd-phase-4-sourcing.md, section 3). The line between them is the owner's straight draft (#786).

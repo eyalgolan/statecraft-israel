@@ -52,6 +52,21 @@ public class GameSceneTests
 
     static VisualElement Ui => Object.FindFirstObjectByType<UIDocument>().rootVisualElement;
 
+    /// <summary>#1867 (design by Tal Heuberger, #2078): the game plays each resolved combat on its units' tokens, through one
+    /// UnitAttackPresenter that GameRoot makes over its bridge and its unit layer.</summary>
+    [Test]
+    public void TheGamePlaysResolvedCombatOnItsUnitLayer()
+    {
+        var root = Boot();
+        var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+        var resolved = (Delegate?)typeof(SimBridge).GetField(nameof(SimBridge.CombatResolved), flags)!.GetValue(root.Bridge);
+        var presenters = (resolved?.GetInvocationList() ?? Array.Empty<Delegate>()).Select(d => d.Target).OfType<UnitAttackPresenter>().ToList();
+        Assert.AreEqual(1, presenters.Count, "one presenter listens to the game's combat");
+        var play = (Func<int, bool>)typeof(UnitAttackPresenter).GetField("play", flags)!.GetValue(presenters[0])!;
+        Assert.AreSame(root.Units, play.Target, "it plays on the game's unit layer");
+        Assert.AreEqual(nameof(Statecraft.Game.Map.Units.UnitLayer.PlayAttack), play.Method.Name);
+    }
+
     [Test]
     public void MapUnityIsTheOnlyBuildSceneAndIsFullyWired()
     {
@@ -362,7 +377,11 @@ public class GameSceneTests
             // name pill does), so the click can only be the land's.
             int Room((int q, int r) h) => bridge.State.Units.Values.Select(u => MapActions.Distance(u.Q, u.R, h.q, h.r))
                 .Concat(c.SettlementHexes.Select(x => MapActions.Distance(x.Q, x.R, h.q, h.r))).Min();
-            var lit = Movement.Reachable(c, bridge.State, id).Keys.Select(k => (k.Q, k.R)).OrderByDescending(Room).First();
+            // Among the hexes that leave Golani points: a move that spends them all hands the selection to the next unit
+            // (FocusNextUnit), whose own pick then opens, so the pick would not end on Golani's card (4.4 km hexes).
+            var points = c.UnitTypes.Single(t => t.Id == bridge.State.Units[id].Type).MovementPoints;
+            var lit = Movement.Reachable(c, bridge.State, id).Where(k => k.Value < points).Select(k => (k.Key.Q, k.Key.R))
+                .OrderByDescending(Room).First();
             Assert.GreaterOrEqual(Room(lit), 1, "precondition: no unit or settlement on the lit hex");
 
             // Lay the card over the lit hex: the probe is the card's title, over the hex's middle.

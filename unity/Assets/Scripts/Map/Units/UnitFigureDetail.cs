@@ -171,6 +171,9 @@ namespace Statecraft.Game.Map.Units
             foreach (var r in f.FarRenderers) if (r != null) r.forceRenderingOff = near;
             foreach (var r in f.NearRenderers) if (r != null) r.forceRenderingOff = !near;
             foreach (var a in f.Animators) if (a != null) a.enabled = near;
+            // A figure that turns near mid-move or mid-attack takes up its token's walk or fire at once (#1866).
+            var motion = near && f.Holder != null ? f.Holder.GetComponentInParent<UnitTokenMotion>() : null;
+            if (motion != null && (motion.Moving || motion.Attacking)) motion.RefreshPose();
         }
     }
 }

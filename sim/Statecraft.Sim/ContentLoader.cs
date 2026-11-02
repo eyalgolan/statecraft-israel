@@ -392,6 +392,9 @@ namespace Statecraft.Sim
             //                              fires only while that site is being worked; the legacy loop ignores it
             //   prisoners                  a front (Prisoners.Fronts) whose prisoners the card returns: it fires only while
             //                              that front holds some either way, and has exactly one option (R-POW-004)
+            //   deported                   a settlement target whose Deport the card follows: it fires only once the
+            //                              player's Deport has depopulated that place, carries the displacement tag and
+            //                              has exactly one option (R-EVT-007)
             foreach (var rel in eventFiles.OrderBy(p => p, StringComparer.Ordinal))
             {
                 var e = Read<GameEvent>(readFile, rel);
@@ -1330,6 +1333,19 @@ namespace Statecraft.Sim
                 if (!(m.ArmsPrice >= 0 && IsFinite(m.ArmsPrice.Value))) throw new ContentException(file, "mvp.arms_price", "must be a finite number >= 0");
                 if (m.ArmsPerRecruitGroup == null) throw new ContentException(file, "mvp.arms_per_recruit_group", "required when eras.yaml systems.loop is gdd");
                 if (m.ArmsPerRecruitGroup < 0) throw new ContentException(file, "mvp.arms_per_recruit_group", "must be >= 0");
+                // R-MONEY-004: required, so a missing key never makes the lever free, unlimited or worthless.
+                if (m.DollarsPerTurn == null) throw new ContentException(file, "mvp.dollars_per_turn", "required when eras.yaml systems.loop is gdd");
+                if (m.DollarsPerTurn < 0) throw new ContentException(file, "mvp.dollars_per_turn", "must be >= 0");
+                if (m.DollarsTotal == null) throw new ContentException(file, "mvp.dollars_total", "required when eras.yaml systems.loop is gdd");
+                if (m.DollarsTotal < 0) throw new ContentException(file, "mvp.dollars_total", "must be >= 0");
+                if (m.IlPerDollar.Count == 0) throw new ContentException(file, "mvp.il_per_dollar", "required when eras.yaml systems.loop is gdd (at least one dated rate)");
+                for (int i = 0; i < m.IlPerDollar.Count; i++)
+                {
+                    var x = m.IlPerDollar[i]; var at = FormattableString.Invariant($"mvp.il_per_dollar[{i}]");
+                    if (!(x.Rate >= 0 && IsFinite(x.Rate))) throw new ContentException(file, at + ".rate", "must be a finite number >= 0");
+                    if (i == 0 && x.From > r.Start) throw new ContentException(file, at + ".from", "the first rate must start on or before the start, so every turn has one");
+                    if (i > 0 && x.From <= m.IlPerDollar[i - 1].From) throw new ContentException(file, at + ".from", "must be after the previous rate's day");
+                }
                 // R-UNIT-010, R-UNIT-004: omitted values must not silently make upkeep free or promotion immediate.
                 if (m.MilitaryUpkeepPerTurn == null) throw new ContentException(file, "mvp.military_upkeep_per_turn", "required when eras.yaml systems.loop is gdd");
                 if (!(m.MilitaryUpkeepPerTurn >= 0 && IsFinite(m.MilitaryUpkeepPerTurn.Value))) throw new ContentException(file, "mvp.military_upkeep_per_turn", "must be a finite number >= 0");
@@ -1457,6 +1473,7 @@ namespace Statecraft.Sim
             ValidateObjectiveConditions(c);
             ValidateEventSites(c);
             ValidateEventPrisoners(c);
+            ValidateEventDeported(c);
             ValidateProjects(c);
             ValidateCorridors(c);
         }
@@ -1470,6 +1487,41 @@ namespace Statecraft.Sim
                     throw new ContentException(e.File, $"events[{e.Id}].prisoners", $"unknown front '{e.Prisoners}' (one of {string.Join(", ", Prisoners.Fronts)})");
                 if (e.Options.Count != 1)
                     throw new ContentException(e.File, $"events[{e.Id}].options", "an exchange card has exactly one option");
+            }
+        }
+
+        /// <summary>A Deport follow-up card (R-EVT-007; GDD Phase 6 PR 9, #801): a settlement target whose residents stayed,
+        /// since Deport is refused where they fled (R-CTRL-018) and the card could never fire; the displacement tag, so the
+        /// release gate holds it until the owner's review (R-GATE-001); one option, which Delegate resolves without a draw; no `to`,
+        /// whose closed window would miss a later Deport; no `prisoners`; a soft anchor (it takes no soft slot either way); a window
+        /// open from the game's start; nothing else it waits for; and one card per place, so it fires on its Deport's turn, once.</summary>
+        static void ValidateEventDeported(Content c)
+        {
+            var cardOf = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var e in c.Events.Where(e => e.Deported != "").OrderBy(e => e.Id, StringComparer.Ordinal))
+            {
+                var target = c.SettlementTargets.FirstOrDefault(t => t.Id == e.Deported)
+                    ?? throw new ContentException(e.File, $"events[{e.Id}].deported", $"unknown settlement target '{e.Deported}' (settlement_targets.yaml)");
+                if (target.Residents == Fled)
+                    throw new ContentException(e.File, $"events[{e.Id}].deported", $"the residents of '{e.Deported}' fled when it was captured, so it is never deported (R-CTRL-018)");
+                if (!e.Tags.Contains("displacement", StringComparer.OrdinalIgnoreCase))
+                    throw new ContentException(e.File, $"events[{e.Id}].tags", "a Deport card carries the displacement tag (R-GATE-001)");
+                if (e.Options.Count != 1)
+                    throw new ContentException(e.File, $"events[{e.Id}].options", "a Deport card has exactly one option");
+                if (e.To != null)
+                    throw new ContentException(e.File, $"events[{e.Id}].to", "a Deport card has no to: a closed window would miss a later Deport");
+                if (e.Prisoners != "")
+                    throw new ContentException(e.File, $"events[{e.Id}].prisoners", "a Deport card is not an exchange card");
+                if (e.Anchor != "soft")
+                    throw new ContentException(e.File, $"events[{e.Id}].anchor", "a Deport card is soft: it is not on the record");
+                if (e.From > c.Rules.Start)
+                    throw new ContentException(e.File, $"events[{e.Id}].from", FormattableString.Invariant($"a Deport card opens at the game's start ({c.Rules.Start:yyyy-MM-dd}), so a Deport on any turn fires it"));
+                foreach (var (key, set) in new[] { ("conditions", e.Conditions.Count > 0), ("requires", e.Requires.Count > 0), ("site", e.Site != ""),
+                             ("objective", e.Objective != ""), ("kind", e.Kind != EventKinds.Historical), ("variants", e.Variants.Count > 0) })
+                    if (set) throw new ContentException(e.File, $"events[{e.Id}].{key}", "a Deport card waits for nothing but its Deport");
+                if (cardOf.TryGetValue(e.Deported, out var first))
+                    throw new ContentException(e.File, $"events[{e.Id}].deported", $"'{e.Deported}' already has a card, '{first}': one Deport raises one card");
+                cardOf[e.Deported] = e.Id;
             }
         }
 
@@ -1771,9 +1823,14 @@ namespace Statecraft.Sim
             }
         }
 
+        /// <summary>Targets whose capture hex is a neighbour of their settlement's hex, not that hex (owner on #1796, 26 October
+        /// 2026, "Contested + move target"): at 4.4 km (#1183) Ramla shares (-4, 24) with Rehovot, so a unit on Rehovot's hex
+        /// would capture Ramla. Its target is the neighbour nearest Ramla's point, cited in settlement_targets.yaml.</summary>
+        static readonly HashSet<string> TargetOnANeighbour = new HashSet<string>(StringComparer.Ordinal) { "ramla" };
+
         /// <summary>R-CTRL-001 (Q-TGT-1 (a)): every target is an arab_town row of settlements_1948.yaml on a land hex that is
-        /// its own hex in settlement_hexes.yaml (capture reads the target's hex, movement the settlement's), with a sourced
-        /// operation and a review status.</summary>
+        /// its own hex in settlement_hexes.yaml (capture reads the target's hex, movement the settlement's), or for a
+        /// <see cref="TargetOnANeighbour"/> row a neighbour of it, with a sourced operation and a review status.</summary>
         static void ValidateSettlementTargets(Content c, IEnumerable<string> arabTownIds)
         {
             Unique(SettlementTargetsFileName, "targets", c.SettlementTargets.Select(x => x.Id));
@@ -1786,7 +1843,12 @@ namespace Statecraft.Sim
                 var hex = c.HexAt(x.Q, x.R);
                 if (hex == null || !hex.Land)
                     throw new ContentException(SettlementTargetsFileName, at + ".q", FormattableString.Invariant($"hex q={x.Q} r={x.R} is not a land hex in {HexesFile}"));
-                if (c.SettlementHexes.Any(h => h.Id == x.Id && (h.Q != x.Q || h.R != x.R)))
+                if (TargetOnANeighbour.Contains(x.Id))
+                {
+                    if (!c.SettlementHexes.Any(h => h.Id == x.Id && Movement.Neighbours.Any(d => h.Q + d.Q == x.Q && h.R + d.R == x.R)))
+                        throw new ContentException(SettlementTargetsFileName, at + ".q", FormattableString.Invariant($"hex q={x.Q} r={x.R} is not next to {x.Id}'s hex in {SettlementHexesFileName}"));
+                }
+                else if (c.SettlementHexes.Any(h => h.Id == x.Id && (h.Q != x.Q || h.R != x.R)))
                     throw new ContentException(SettlementTargetsFileName, at + ".q", FormattableString.Invariant($"hex q={x.Q} r={x.R} is not {x.Id}'s hex in {SettlementHexesFileName}"));
                 if (string.IsNullOrWhiteSpace(x.Operation)) throw new ContentException(SettlementTargetsFileName, at + ".operation", "required");
                 if (x.Sources.Count == 0) throw new ContentException(SettlementTargetsFileName, at + ".sources", "needs at least one source");

@@ -265,6 +265,19 @@ PINNED = [
      "retaken by the Egyptian army on 8 July 1948 and captured by the Giv'ati Brigade on 19 October 1948 in Operation Yoav "
      "(en.wiki); ISA 6158/1's 9 July line puts it on the Israeli side, about 1.3 km from the line, so the source and the "
      "archive map disagree for these weeks"),
+    ("Huleiqat (Operation Yoav)", 34.6497, 31.6008, "israel", "1948-10-19", None, WIKI + "Hulayqat",
+     "captured by the Giv'ati Brigade on 19 October 1948 in Operation Yoav (en.wiki); on the 4.4 km grid (#1183) the hex's "
+     "centre falls inside the traced Egyptian area of the October line, so the source and the archive map disagree from "
+     "then on (owner, 26 October 2026, on #1183)"),
+    ("Latrun (opening)", 34.98139, 31.83194, "unspecified", "1948-05-15", "1948-06-11", WIKI + "Latrun",
+     "the British handed the fort over to Jordan's Arab Legion on their withdrawal (en.wiki): the other side's from the "
+     "game's start, unnamed like every holder of the opening snapshot (#674); the traced lines put the hex on the Israeli "
+     "side on the 4.4 km grid (owner, 26 October 2026, on #1183)"),
+    ("Latrun", 34.98139, 31.83194, "jordan", "1948-06-11", None, WIKI + "Latrun",
+     "the British handed the fort over to Jordan's Arab Legion on their withdrawal, the Israeli assaults of May 1948 failed, "
+     "and under the 1949 armistice it remained a salient under Jordanian control until 1967 (en.wiki); on the 4.4 km grid "
+     "(#1183) the hex's centre falls on the Israeli side of every traced line, so the source and the lines disagree "
+     "throughout (owner, 26 October 2026, on #1183)"),
 ]
 # The closure check's anchors: (place, lon, lat, side, from, until, source). Windows from 15 May 1948 (#674): the places
 # whose holder the source gives from before the game's start to past 11 June 1948 (no change of hands in between). Coordinates: settlements_1948.yaml and

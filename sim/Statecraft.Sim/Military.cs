@@ -7,20 +7,33 @@ namespace Statecraft.Sim
     public static class Military
     {
         /// <summary>R-UNIT-004: recruits already in play serve this turn. Run before training completes, so training time
-        /// never counts as service. Promotion preserves the formation and its standing order; combat adds no service.</summary>
-        public static void Serve(GameState s, MvpRules r, List<Cause> why)
+        /// never counts as service. Promotion preserves the formation and its standing order; combat adds no service. Under
+        /// exact gdd-0.3 service is a statistic only and never promotes: veterancy comes from combat experience (R-UNIT-011, Q16).</summary>
+        public static void Serve(Content c, GameState s, MvpRules r, List<Cause> why)
         {
             PopulationLedger.RefuseAggregate(s);
+            var byService = !Gdd03Military.Applies(c);
             foreach (var u in s.Units.Values.ToList())
             {
-                if (u.Type != "recruit" || u.Side != "israel") continue;
-                var service = u.Service + 1;
-                var veteran = service >= r.VeteranSoldierService!.Value;
-                s.Units[u.Id] = new Unit(u.Id, veteran ? "veteran_soldier" : u.Type, u.Q, u.R, service,
-                    u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity, u.Full);
-                if (veteran) why.Add(new Cause("city", "units", u.Strength, "Recruits became veteran soldiers", key: CauseKeys.RecruitsVeteran));
+                if (!Promotes(u)) continue;
+                var served = new Unit(u.Id, u.Type, u.Q, u.R, u.Service + 1, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity, u.Full, u.CombatXp);
+                s.Units[u.Id] = byService && served.Service >= r.VeteranSoldierService!.Value ? Promote(served, why) : served;
             }
         }
+
+        /// <summary>R-UNIT-004, R-UNIT-011: an Israeli recruit formation is the one unit that becomes a veteran_soldier.</summary>
+        internal static bool Promotes(Unit u) => u.Type == "recruit" && u.Side == "israel";
+
+        /// <summary>R-UNIT-004, R-UNIT-011: the recruit <paramref name="u"/> as a veteran_soldier, keeping id, hex, service, side,
+        /// strength, standing order, home, Full and combat experience, with the Why cause.</summary>
+        internal static Unit Promote(Unit u, List<Cause> why)
+        {
+            why.Add(new Cause("city", "units", u.Strength, "Recruits became veteran soldiers", key: CauseKeys.RecruitsVeteran));
+            return new Unit(u.Id, VeteranSoldier, u.Q, u.R, u.Service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity, u.Full, u.CombatXp);
+        }
+
+        /// <summary>The Israeli veteran infantry type the loader requires when recruits exist (R-UNIT-004).</summary>
+        internal const string VeteranSoldier = "veteran_soldier";
 
         /// <summary>R-UNIT-010: step 7 pays per Israeli military formation, including this turn's graduates. The national
         /// Treasury borrows a shortfall (R-MONEY-003); upkeep never consumes Arms (Q-UNIT-3).</summary>
@@ -31,7 +44,7 @@ namespace Statecraft.Sim
             var cost = count * r.MilitaryUpkeepPerTurn!.Value;
             if (cost == 0) return;
             why.Add(new Cause("economy", "treasury", -cost, $"{PlayerText.Change(c, "treasury", -cost)} (military upkeep)", key: CauseKeys.MilitaryUpkeep));
-            EconomySystem.PayOrBorrow(c, s, cost, "for military upkeep", why, CauseKeys.Purpose.MilitaryUpkeep);
+            EconomySystem.PayNamedOrBorrow(c, s, cost, "for military upkeep", why, CauseKeys.Purpose.MilitaryUpkeep);
         }
     }
 }

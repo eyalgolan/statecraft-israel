@@ -11,6 +11,7 @@ using Statecraft.Sim;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
@@ -140,11 +141,15 @@ public class SeaAirCollectionTests
         var mesh = go.GetComponentInChildren<MeshFilter>();
         var tip = mesh.sharedMesh.vertices.Select(mesh.transform.TransformPoint).OrderBy(v => Mathf.Abs(v.z - b.center.z)).Last();
         Assert.Greater(tip.x, b.center.x + 0.1f * b.size.x, "the wingtips sit east of the centre: the nose points east (geometry)");
-        float floor = Statecraft.Game.Map.Units.UnitShowcase.LoopFloor(map, new Vector3(at.x, 0f, at.z), span);
-        Assert.AreEqual(floor + 4200f, at.y, 1f, "4,200 m above the highest ground under it, the unit tokens' aircraft altitude (#2014)");
+        // Its loop (owner, 2 November 2026, "Fly a slow loop") is centred here; edit mode holds the loop's start, due south of
+        // the centre, heading east.
+        Assert.AreEqual(at.x, b.center.x, 1f, "at the loop's start, east-west on the centre");
+        Assert.AreEqual(at.z - SeaAirCollection.SpitfireLoopHalfWidthM, b.center.z, 1f, "at the loop's start, south of the centre");
+        float floor = Statecraft.Game.Map.Units.UnitShowcase.LoopFloor(map, new Vector3(at.x, 0f, at.z), SeaAirCollection.SpitfireLoopHalfLengthM + span);
+        Assert.AreEqual(floor + 4200f, at.y, 1f, "4,200 m above the highest ground under its loop, the unit tokens' aircraft altitude (#2014)");
         Assert.AreEqual(Statecraft.Game.Map.Units.UnitShowcase.AltitudeM, at.y - floor, 1f, "UnitShowcase.AltitudeM, no number duplicated");
         Assert.Greater(b.min.y, floor, "in flight, never on the ground");
-        Assert.AreEqual(1, layer.KeepClear.Count(k => (k[0].center - b.center).magnitude < 1f && (k[0].size - b.size).magnitude < 1f), "the labels keep clear of it");
+        Assert.AreEqual(1, layer.KeepClear.Count(k => k[0].Contains(b.min) && k[0].Contains(b.max)), "the labels keep clear of it");
     }
 
     /// <summary>#2014 merge with v0.3.2's residency: Rebuild registers the Spitfire in its model's originals before Fly's
@@ -179,6 +184,495 @@ public class SeaAirCollectionTests
     {
         Action? done; public ReleaseProbe(Action done) { this.done = done; }
         public void Dispose() { var call = done; done = null; call?.Invoke(); }
+    }
+
+    /// <summary>The Spitfire's farthest point from its centre, seen from above, at any heading: half the diagonal of a square
+    /// as wide as its wingspan (its fuselage is shorter than its wingspan).</summary>
+    static float SpitfireReach => 0.5f * Mathf.Sqrt(2f) * SeaAirCollection.SizeOf(SeaAirCollection.Spitfire);
+
+    /// <summary>The owner, 2 November 2026 (v0.3.3: "the egyptian plane in v0.3.3 is not moving"), ruling "Fly a slow loop":
+    /// a slow repeating pass in from el-Arish over the western edge and back. The loop's period is tens of seconds and its
+    /// size a few km (DESIGN VALUES). Half a period on, the aircraft is on the other side of the loop. At every point it stays
+    /// inside the loop's box about EdgeSpot, and the whole aircraft stays over the board, clear of every unit token
+    /// (the dated rings and the town clearings) and far from Lod, the board's one drawn airfield.</summary>
+    [Test]
+    public void TheSpitfireLoopsInsideItsPathAndTheBoardClearOfTheTokens()
+    {
+        var map = OpenMap();
+        var centre = SeaAirCollection.EdgeSpot(map.Frame);
+        var ground = PlacementLayer.CampGround(map);
+        float period = SeaAirCollection.SpitfireLoopSeconds, a = SeaAirCollection.SpitfireLoopHalfLengthM, b = SeaAirCollection.SpitfireLoopHalfWidthM;
+        Assert.That(period, Is.InRange(20f, 90f), "a period of tens of seconds");
+        Assert.That(a, Is.InRange(2000f, 10000f), "a few km east-west");
+        Assert.That(b, Is.InRange(1000f, a), "narrower north-south: a long loop, in from the west and back");
+        var lod = map.Frame.ToWorld(SeaAirCollection.LodLon, SeaAirCollection.LodLat, 0);
+        for (int i = 0; i < 120; i++)
+        {
+            float t = i * period / 120f;
+            var at = SeaAirCollection.LoopOffset(t); var opposite = SeaAirCollection.LoopOffset(t + 0.5f * period);
+            Assert.Greater((at - opposite).magnitude, 2f * b - 1f, $"at {t:0.0} s and half a period on, the other side of the loop");
+            Assert.LessOrEqual(Mathf.Abs(at.x), a + 0.5f, $"within the loop east-west at {t:0.0} s");
+            Assert.LessOrEqual(Mathf.Abs(at.y), b + 0.5f, $"within the loop north-south at {t:0.0} s");
+            var p = centre + at;
+            Assert.IsTrue(ground.Inside(p.x - SpitfireReach, p.y - SpitfireReach) && ground.Inside(p.x + SpitfireReach, p.y + SpitfireReach),
+                $"the whole aircraft over the board at {t:0.0} s ({p})");
+            Assert.IsFalse(ground.OnToken(p, SpitfireReach, SeaAirCollection.SpitfireFrom), $"over no unit token's ring at {t:0.0} s ({p})");
+            foreach (var (c, r) in map.UnitClearings)
+                Assert.Greater((p - c).magnitude, r + SpitfireReach, $"over no town's unit clearing at {t:0.0} s ({p})");
+            Assert.Greater((p - new Vector2(lod.x, lod.z)).magnitude, 20000f, "far from Lod's airfield");
+        }
+        // The pass starts flying in from el-Arish: due south of the centre, heading east.
+        Assert.AreEqual(0f, SeaAirCollection.LoopOffset(0f).x, 1f);
+        Assert.AreEqual(-b, SeaAirCollection.LoopOffset(0f).y, 1f);
+        Assert.Greater(SeaAirCollection.LoopHeading(0f).x, 0.999f, "heading east at the start");
+    }
+
+    /// <summary>The loop is closed: a period on, the aircraft is back at the same place with the same heading, at any time
+    /// (also long into a session, where the clock is large).</summary>
+    [Test]
+    public void TheSpitfireLoopIsClosed()
+    {
+        float period = SeaAirCollection.SpitfireLoopSeconds;
+        foreach (var t in new[] { 0f, 3.7f, 12.5f, 0.5f * period, period - 0.01f, 1234.5f, 7200.25f })
+        {
+            Assert.Less((SeaAirCollection.LoopOffset(t) - SeaAirCollection.LoopOffset(t + period)).magnitude, 1f, $"the same place a period after {t} s");
+            Assert.Less((SeaAirCollection.LoopHeading(t) - SeaAirCollection.LoopHeading(t + period)).magnitude, 1e-3f, $"the same heading a period after {t} s");
+        }
+    }
+
+    /// <summary>The drawn aircraft flies the loop nose first: at every sampled time its centre is on the path about its
+    /// recorded loop centre, level at that one altitude, its nose (the mesh's -y, as the in-flight test reads it) along the
+    /// path's tangent, inside the box the labels keep clear of, and a period later at the same place. The heading is the
+    /// path's tangent (a short chord's direction).</summary>
+    [Test]
+    public void TheSpitfireFacesAlongItsPath()
+    {
+        float period = SeaAirCollection.SpitfireLoopSeconds;
+        for (int i = 0; i < 120; i++)
+        {
+            float t = i * period / 120f;
+            var heading = SeaAirCollection.LoopHeading(t);
+            Assert.AreEqual(1f, heading.magnitude, 1e-4f, "a unit heading");
+            var chord = SeaAirCollection.LoopOffset(t + 0.01f) - SeaAirCollection.LoopOffset(t - 0.01f);
+            Assert.Greater(Vector2.Dot(heading, chord.normalized), 0.999f, $"the heading is the path's tangent at {t:0.0} s");
+        }
+
+        var map = OpenMap();
+        var layer = CollectionGeometryFixture.Craft(map, new DateTime(1948, 6, 15), Array.Empty<Placement>(), C)!; AnswerAll();
+        var plane = layer.transform.Find("el-arish-spitfire")!;
+        var loop = plane.GetComponent<SpitfireLoop>();
+        Assert.IsNotNull(loop, "the drawn Spitfire carries its loop");
+        Assert.IsTrue(loop.Still, "edit mode holds the loop's start, so editor renders repeat");
+        var centre = layer.Placed.Single(p => p.Model == SeaAirCollection.Spitfire).At;
+        var keep = layer.KeepClear.Single(k => k[0].Contains(centre))[0];
+        for (int i = 0; i < 48; i++)
+        {
+            float t = i * period / 48f;
+            loop.Place(t);
+            var b = WorldBounds(plane.gameObject); var at = SeaAirCollection.LoopOffset(t);
+            Assert.AreEqual(centre.x + at.x, b.center.x, 1f, $"on the path east-west at {t:0.0} s");
+            Assert.AreEqual(centre.z + at.y, b.center.z, 1f, $"on the path north-south at {t:0.0} s");
+            Assert.AreEqual(centre.y, b.center.y, 1f, $"level, at the loop's one altitude, at {t:0.0} s");
+            var nose = plane.TransformDirection(Vector3.down);
+            Assert.AreEqual(0f, nose.y, 1e-3f, "level flight");
+            Assert.Greater(Vector2.Dot(new Vector2(nose.x, nose.z).normalized, SeaAirCollection.LoopHeading(t)), 0.999f, $"nose along the path at {t:0.0} s");
+            Assert.IsTrue(keep.Contains(b.min) && keep.Contains(b.max), $"inside the box the labels keep clear of at {t:0.0} s");
+            var here = b.center;
+            loop.Place(t + period);
+            Assert.Less((WorldBounds(plane.gameObject).center - here).magnitude, 1f, $"back at the same place a period after {t:0.0} s");
+        }
+    }
+
+    /// <summary>Review k2 C1: in play the aircraft is drawn where the clock puts it from its first frame, not at the loop's
+    /// start until its first Update (a component added mid-frame gets no Update that frame, so the frame it is built in would
+    /// draw it up to 6 km from where it flies). Screenshots and edit mode still hold the loop's start. An EditMode test has
+    /// no frame clock, so it drives SpitfireLoop.Clock.</summary>
+    [Test]
+    public void TheSpitfireIsDrawnWhereTheClockPutsItFromItsFirstFrame()
+    {
+        var clock = SpitfireLoop.Clock;
+        var flying = new GameObject("flying"); var held = new GameObject("held");
+        try
+        {
+            const float now = 12.5f;
+            SpitfireLoop.Clock = () => now;
+            var centre = new Vector3(30000f, 4200f, 1000f);
+            flying.AddComponent<SpitfireLoop>().Configure(centre, Quaternion.identity, Vector3.zero, still: false);
+            held.AddComponent<SpitfireLoop>().Configure(centre, Quaternion.identity, Vector3.zero, still: true);
+            var there = SeaAirCollection.LoopOffset(now); var start = SeaAirCollection.LoopOffset(0f);
+            Assert.Greater((there - start).magnitude, 1000f, "the test's time is far round the loop from its start");
+            Assert.Less((flying.transform.position - (centre + new Vector3(there.x, 0f, there.y))).magnitude, 1f,
+                "in play, where the clock puts it, before any Update");
+            Assert.Less((held.transform.position - (centre + new Vector3(start.x, 0f, start.y))).magnitude, 1f,
+                "held (edit mode, screenshots): at the loop's start whatever the clock");
+        }
+        finally
+        {
+            SpitfireLoop.Clock = clock;
+            Object.DestroyImmediate(flying); Object.DestroyImmediate(held);
+        }
+    }
+
+    /// <summary>The loop respects the Spitfire's dates (#1932: 15 May 1948 to 2 January 1949): outside them no aircraft and
+    /// no loop is drawn; inside them exactly one looping aircraft.</summary>
+    [Test]
+    public void OutsideItsDatesThereIsNoSpitfireAndInsideThemOneLoopingOne()
+    {
+        var map = OpenMap();
+        foreach (var (date, flying) in new[]
+        {
+            (new DateTime(1948, 5, 14), false), (new DateTime(1948, 5, 15), true), (new DateTime(1949, 1, 2), true),
+            (new DateTime(1949, 1, 3), false), (new DateTime(1949, 8, 15), false),
+        })
+        {
+            var layer = CollectionGeometryFixture.Craft(map, date, Array.Empty<Placement>(), C)!; AnswerAll();
+            Assert.AreEqual(flying ? 1 : 0, layer.Placed.Count(p => p.Model == SeaAirCollection.Spitfire), $"the Spitfire on {date:d MMM yyyy}");
+            Assert.AreEqual(flying ? 1 : 0, Object.FindObjectsByType<SpitfireLoop>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length,
+                $"the loops on {date:d MMM yyyy}");
+            Assert.AreEqual(flying, layer.transform.Find("el-arish-spitfire") != null, $"the aircraft on {date:d MMM yyyy}");
+        }
+    }
+
+    /// <summary>The Spitfire on the 15 June 1948 turn: the layer, the aircraft, its loop, and its loop's centre in the air.</summary>
+    (SeaAirCollection layer, Transform plane, SpitfireLoop loop, Vector3 centre) DrawnSpitfire(MapScene map)
+    {
+        var layer = CollectionGeometryFixture.Craft(map, new DateTime(1948, 6, 15), Array.Empty<Placement>(), C)!; AnswerAll();
+        var plane = layer.transform.Find("el-arish-spitfire")!;
+        Assert.IsNotNull(plane, "the Spitfire is drawn on 15 June 1948");
+        return (layer, plane, plane.GetComponent<SpitfireLoop>(), layer.Placed.Single(p => p.Model == SeaAirCollection.Spitfire).At);
+    }
+
+    static Transform? Marks(SeaAirCollection layer, string part) =>
+        layer.transform.Find("el-arish-spitfire" + SeaAirCollection.SpitfireMarksSuffix)?.Find(part);
+
+    /// <summary>The owner's report, 2 November 2026: "the gyptian plane's propelor isn't moving". The model is one fused mesh,
+    /// so a translucent disc at its nose turns instead: a child of the aircraft's mesh, its hub at the spinner (the mesh's
+    /// front-most vertices), about the size of the model's own blades, turning about the flight axis by the clock, a sixth of
+    /// a turn or less between frames at 30 fps (three blurred blades never seem to turn backwards). Its box stays inside the
+    /// airframe's at every angle, so the aircraft's measured box (the labels' keep-clear, the tests above) never moves with
+    /// it. Edit mode and screenshots (-shot) hold it at the loop's start, as they hold the aircraft; in play it turns.</summary>
+    [Test]
+    public void TheSpitfirePropellerTurnsAtItsNoseAboutTheFlightAxisAndHoldsStillInShots()
+    {
+        bool readable = Statecraft.Game.Map.Units.UnitPlinth.KeepMeshesReadable;
+        Statecraft.Game.Map.Units.UnitPlinth.KeepMeshesReadable = true;   // the disc's vertices are read below
+        try { PropellerTurnsAtItsNose(); }
+        finally { Statecraft.Game.Map.Units.UnitPlinth.KeepMeshesReadable = readable; }
+    }
+
+    void PropellerTurnsAtItsNose()
+    {
+        var map = OpenMap();
+        var (_, plane, loop, centre) = DrawnSpitfire(map);
+        var airframe = plane.GetComponentInChildren<MeshFilter>();
+        var prop = airframe.transform.Find(SeaAirCollection.SpitfirePropellerName);
+        Assert.IsNotNull(prop, "a propeller disc, a child of the aircraft's mesh");
+        Assert.AreEqual(ShadowCastingMode.Off, prop.GetComponent<MeshRenderer>().shadowCastingMode, "a blur casts no shadow");
+        float span = SeaAirCollection.SizeOf(SeaAirCollection.Spitfire);
+        loop.Place(0f);
+        var nose = plane.TransformDirection(Vector3.down);   // the mesh's -y, as the in-flight test reads it
+        var verts = airframe.sharedMesh.vertices.Select(airframe.transform.TransformPoint).ToList();
+        float front = verts.Max(v => Vector3.Dot(v, nose)), back = verts.Min(v => Vector3.Dot(v, nose));
+        var spinner = verts.Where(v => Vector3.Dot(v, nose) > front - 0.01f * (front - back)).ToList();
+        var tip = spinner.Aggregate(Vector3.zero, (a, v) => a + v) / spinner.Count;
+        Assert.Less((prop.position - tip).magnitude, 0.06f * span, $"the hub at the spinner ({prop.position} against {tip})");
+        Assert.Less(front - Vector3.Dot(prop.position, nose), 0.08f * (front - back), "at the nose");
+        Assert.AreEqual(prop.lossyScale.x, prop.lossyScale.z, 0.01f * span, "a round disc");
+        Assert.That(prop.lossyScale.x / span, Is.InRange(0.09f, 0.15f), "about the model's own blades (a real Spitfire's: 3.27 m across an 11.23 m span)");
+        Assert.Greater(Mathf.Abs(Vector3.Dot(prop.TransformDirection(Vector3.up), nose)), 0.999f, "it turns about the flight axis");
+
+        loop.Place(0f); var q0 = prop.localRotation;
+        loop.Place(0.02f); var q1 = prop.localRotation;
+        Assert.AreEqual(0.02f * SpitfireLoop.PropDegreesPerSecond, Quaternion.Angle(q0, q1), 0.5f, "it turns between two frames");
+        Assert.Less(SpitfireLoop.PropDegreesPerSecond / 30f, 60f, "under half a blade's spacing a frame at 30 fps");
+        for (int i = 0; i < 24; i++)
+        {
+            float t = i * 0.011f + (i % 4) * 10f;   // every spin angle, on the passes and in the turns
+            loop.Place(t);
+            var all = WorldBounds(plane.gameObject); var own = airframe.GetComponent<Renderer>().bounds;
+            Assert.Less((all.min - own.min).magnitude + (all.max - own.max).magnitude, 0.5f, $"the disc's box stays inside the airframe's at {t:0.000} s");
+            // The geometry too, not only the renderer's box (review of #2260): every disc vertex inside the airframe's box.
+            var grown = own; grown.Expand(1f);
+            foreach (var v in prop.GetComponent<MeshFilter>().sharedMesh.vertices)
+                Assert.IsTrue(grown.Contains(prop.TransformPoint(v)), $"the disc's vertex {v} inside the airframe's box at {t:0.000} s");
+        }
+        // Long into a session the angle stays exact (review of #2260: the product with the clock lost whole degrees):
+        // 36000.25 s is 150,001 turns and a twenty-fourth, 15 degrees.
+        loop.Place(36000.25f);
+        Assert.Less(Quaternion.Angle(prop.localRotation, Quaternion.AngleAxis(-15f, Vector3.up)), 0.1f, "15 degrees round after ten hours");
+
+        Assert.IsTrue(loop.Still, "edit mode holds the loop's start");
+        var clock = SpitfireLoop.Clock;
+        var update = typeof(SpitfireLoop).GetMethod("Update", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        var flying = new GameObject("flying");
+        try
+        {
+            loop.Place(0f); var held = prop.localRotation;
+            SpitfireLoop.Clock = () => 12.34f;
+            update.Invoke(loop, null);
+            Assert.AreEqual(0f, Quaternion.Angle(held, prop.localRotation), 1e-3f, "held (edit mode, -shot): the propeller does not turn");
+            var disc = new GameObject("disc").transform; disc.SetParent(flying.transform, false);
+            var live = flying.AddComponent<SpitfireLoop>();
+            live.Attach(disc, null, null, null, Vector2.zero);
+            live.Configure(centre, Quaternion.identity, Vector3.zero, still: false);
+            var then = disc.localRotation;
+            SpitfireLoop.Clock = () => 12.36f;
+            update.Invoke(live, null);
+            Assert.AreEqual(0.02f * SpitfireLoop.PropDegreesPerSecond, Quaternion.Angle(then, disc.localRotation), 0.5f, "in play it turns with the clock");
+        }
+        finally { SpitfireLoop.Clock = clock; Object.DestroyImmediate(flying); }
+    }
+
+    /// <summary>The owner's report: "it doesnt look fliying". The aircraft flies well clear of the ground at every point of its
+    /// loop (UnitShowcase.AltitudeM over the highest ground under the loop), and a soft dark disc, as long and as wide as the
+    /// aircraft seen from above and fading to nothing at its rim, lies on the ground where the map's sun (MapLighting) casts
+    /// it: on the sun's ray through the aircraft, east-south-east of it, turned with its heading, a little over the ground
+    /// under it and inside the board.</summary>
+    [Test]
+    public void TheSpitfireFliesHighOverTheGroundAndItsSoftShadowLiesDownSunOnTheBoard()
+    {
+        var map = OpenMap();
+        bool readable = Statecraft.Game.Map.Units.UnitPlinth.KeepMeshesReadable;
+        Statecraft.Game.Map.Units.UnitPlinth.KeepMeshesReadable = true;
+        var sun = new GameObject("TEST ONLY sun").AddComponent<Light>();
+        var sunWas = RenderSettings.sun;
+        try
+        {
+            sun.type = LightType.Directional; MapLighting.Apply(sun);
+            Assert.Greater(Vector3.Dot(sun.transform.forward, SpitfireLoop.SunRay), 0.9999f, "the map's sun");
+            var (layer, plane, loop, centre) = DrawnSpitfire(map);
+            var shadow = Marks(layer, SeaAirCollection.SpitfireShadowName);
+            Assert.IsNotNull(shadow, "a ground shadow beside the aircraft");
+            var renderer = shadow!.GetComponent<MeshRenderer>();
+            Assert.AreEqual(ShadowCastingMode.Off, renderer.shadowCastingMode); Assert.IsFalse(renderer.receiveShadows);
+            var alpha = shadow.GetComponent<MeshFilter>().sharedMesh.colors32.Select(c => c.a / 255f).ToList();
+            Assert.That(alpha.Max(), Is.InRange(0.2f, 0.8f), "dark but see-through at its middle");
+            Assert.AreEqual(0f, alpha.Min(), 1e-3f, "nothing at its rim: a soft edge");
+            var ground = PlacementLayer.CampGround(map);
+            float span = SeaAirCollection.SizeOf(SeaAirCollection.Spitfire), y0 = map.Terrain.transform.position.y;
+            float Height(Vector3 p) => map.Terrain.SampleHeight(p) + y0;
+            var sunFlat = new Vector2(SpitfireLoop.SunRay.x, SpitfireLoop.SunRay.z).normalized;
+            for (int i = 0; i < 40; i++)
+            {
+                float t = i * SeaAirCollection.SpitfireLoopSeconds / 40f;
+                loop.Place(t);
+                var b = plane.GetComponentInChildren<Renderer>().bounds;
+                float under = Mathf.Max(Height(b.center), Height(b.min), Height(b.max), Height(new Vector3(b.min.x, 0f, b.max.z)), Height(new Vector3(b.max.x, 0f, b.min.z)));
+                Assert.Greater(b.min.y - under, 2000f, $"well clear of the ground at {t:0.0} s");
+                var at = SeaAirCollection.LoopOffset(t); var drawn = centre + new Vector3(at.x, 0f, at.y);
+                var s = shadow.position; float g = Height(s);
+                Assert.That(s.y - g, Is.InRange(0f, SpitfireLoop.ShadowLiftM + 400f), $"on the ground under it at {t:0.0} s");
+                var cast = drawn + SpitfireLoop.SunRay * ((drawn.y - g) / -SpitfireLoop.SunRay.y);
+                Assert.Less(new Vector2(s.x - cast.x, s.z - cast.z).magnitude, 0.03f * (drawn.y - g), $"on the sun's ray through the aircraft at {t:0.0} s");
+                Assert.Greater(Vector2.Dot(new Vector2(s.x - drawn.x, s.z - drawn.z), sunFlat), 0.9f * (drawn.y - g), "down-sun of it");
+                var heading = SeaAirCollection.LoopHeading(t);
+                Assert.Greater(Vector3.Dot(shadow.forward, new Vector3(heading.x, 0f, heading.y)), 0.999f, "turned with its heading");
+                Assert.That(shadow.lossyScale.z / span, Is.InRange(0.3f, 0.6f), "half as long as the aircraft, about");
+                Assert.That(shadow.lossyScale.x / span, Is.InRange(0.4f, 0.6f), "half as wide, about (narrower in a bank)");
+                float reach = Mathf.Max(shadow.lossyScale.x, shadow.lossyScale.z);
+                Assert.IsTrue(ground.Inside(s.x - reach, s.z - reach) && ground.Inside(s.x + reach, s.z + reach), $"on the board at {t:0.0} s ({s})");
+                Assert.GreaterOrEqual(s.y, ground.SeaLevelY + SpitfireLoop.ShadowLiftM - 0.01f, $"never under the sea's surface at {t:0.0} s");
+            }
+            // The scene's own sun casts it (the opt-in hex map's dusk and night presets turn the sun, HexTimeOfDay): a
+            // higher sun from the south-west puts it north-east of the aircraft, nearer.
+            sun.transform.rotation = Quaternion.Euler(48f, 215f - 180f, 0f);
+            loop.Place(0f);
+            var high = centre + new Vector3(SeaAirCollection.LoopOffset(0f).x, 0f, SeaAirCollection.LoopOffset(0f).y);
+            var landed = shadow.position; float under0 = Height(landed);
+            var cast0 = high + sun.transform.forward * ((high.y - under0) / -sun.transform.forward.y);
+            Assert.Less(new Vector2(landed.x - cast0.x, landed.z - cast0.z).magnitude, 0.03f * (high.y - under0), "on the scene sun's ray, not a fixed one");
+        }
+        finally { Statecraft.Game.Map.Units.UnitPlinth.KeepMeshesReadable = readable; RenderSettings.sun = sunWas; Object.DestroyImmediate(sun.gameObject); }
+    }
+
+    /// <summary>The owner's report: "it doesnt look fliying". The aircraft rolls into its turns by the path's curvature: no bank
+    /// on a straight, none on the loop's passes (its least curvature, in from el-Arish and back), the unit tokens' aircraft
+    /// bank (UnitShowcase.BankDegrees) at the turns at its ends (its most), and some all through the turns. The curvature is
+    /// the path's own (a finite difference of LoopOffset agrees). The drawn aircraft's inner wing is lower by that roll, and
+    /// its nose stays level.</summary>
+    [Test]
+    public void TheSpitfireBanksIntoItsTurnsByTheirCurvatureAndFliesLevelOnItsPasses()
+    {
+        float period = SeaAirCollection.SpitfireLoopSeconds, max = Statecraft.Game.Map.Units.UnitShowcase.BankDegrees;
+        Assert.AreEqual(0f, SeaAirCollection.BankFor(0f), "no bank on a straight");
+        Assert.AreEqual(0f, SeaAirCollection.LoopBankDegrees(0f), 1e-3f, "level on the pass in from el-Arish");
+        Assert.AreEqual(0f, SeaAirCollection.LoopBankDegrees(0.5f * period), 1e-3f, "level on the pass back");
+        Assert.AreEqual(max, SeaAirCollection.LoopBankDegrees(0.25f * period), 1e-3f, "the turn at the east end");
+        Assert.AreEqual(max, SeaAirCollection.LoopBankDegrees(0.75f * period), 1e-3f, "the turn at the west end");
+        float least = SeaAirCollection.LoopCurvature(0f);
+        for (int i = 0; i < 200; i++)
+        {
+            float t = i * period / 200f, h = 0.2f;   // a step large enough for float positions of km, small for the curve
+            Vector2 p0 = SeaAirCollection.LoopOffset(t - h), p1 = SeaAirCollection.LoopOffset(t), p2 = SeaAirCollection.LoopOffset(t + h);
+            Vector2 d1 = (p2 - p0) / (2f * h), d2 = (p2 - 2f * p1 + p0) / (h * h);
+            float numeric = Mathf.Abs(d1.x * d2.y - d1.y * d2.x) / Mathf.Pow(d1.magnitude, 3f);
+            Assert.AreEqual(numeric, SeaAirCollection.LoopCurvature(t), 0.01f * numeric, $"the path's curvature at {t:0.0} s");
+            float bank = SeaAirCollection.LoopBankDegrees(t);
+            Assert.That(bank, Is.InRange(0f, max + 1e-3f), $"a gentle bank at {t:0.0} s");
+            if (SeaAirCollection.LoopCurvature(t) > 1.05f * least) Assert.Greater(bank, 0f, $"into the turn at {t:0.0} s");
+        }
+
+        var map = OpenMap();
+        bool readable = Statecraft.Game.Map.Units.UnitPlinth.KeepMeshesReadable;
+        Statecraft.Game.Map.Units.UnitPlinth.KeepMeshesReadable = true;   // explicit, though only the model's own mesh is read
+        try { RollsIntoTheTurns(map, period); }
+        finally { Statecraft.Game.Map.Units.UnitPlinth.KeepMeshesReadable = readable; }
+    }
+
+    void RollsIntoTheTurns(MapScene map, float period)
+    {
+        var (_, plane, loop, centre) = DrawnSpitfire(map);
+        var mesh = plane.GetComponentInChildren<MeshFilter>(); var v = mesh.sharedMesh.vertices;
+        float tipX = v.Max(p => Mathf.Abs(p.x));
+        Vector3 Tip(float side) { var tip = v.Where(p => p.x * side > 0.96f * tipX).ToList(); return tip.Aggregate(Vector3.zero, (a, p) => a + p) / tip.Count; }
+        Vector3 left = Tip(-1f), right = Tip(1f);
+        var c = new Vector2(centre.x, centre.z);
+        // Densely over two periods, across the wrap at the period's end: the inner wing is never the higher one.
+        for (int i = 0; i <= 400; i++)
+        {
+            float t = i * 2f * period / 400f;
+            loop.Place(t);
+            Vector3 a = mesh.transform.TransformPoint(left), b = mesh.transform.TransformPoint(right);
+            bool aInner = Vector2.Distance(new Vector2(a.x, a.z), c) < Vector2.Distance(new Vector2(b.x, b.z), c);
+            Vector3 inner = aInner ? a : b, outer = aInner ? b : a;
+            float roll = Mathf.Asin((outer.y - inner.y) / (outer - inner).magnitude) * Mathf.Rad2Deg;
+            Assert.AreEqual(SeaAirCollection.LoopBankDegrees(t), roll, 1.5f, $"the inner wing down by the bank at {t:0.0} s");
+            Assert.AreEqual(0f, plane.TransformDirection(Vector3.down).y, 1e-3f, $"the nose level at {t:0.0} s");
+        }
+    }
+
+    /// <summary>The owner's report: "it doesnt show its an egyptian unit". The map marks a unit's side by its side's sourced
+    /// flag (UnitPlinth.Build, UnitFlags, owner ruling 31 October 2026), turned to the camera (UnitFlagFacing, owner ruling
+    /// 15 October 2026). The Spitfire flies the same flag, cloth and colours, but as the owner ruled on #2260 (2 November
+    /// 2026, "Smaller flag, no pole": "a small Egyptian flag pennant floating just above the tail (no pole through the
+    /// plane)"): the cloth alone, smaller than the tokens' flag, floating over the aircraft's tail. In every pose of the loop
+    /// and facing every way it stays upright, behind the aircraft's middle, wholly above the aircraft's box (so it never
+    /// meets the airframe, banked or not), and inside the box the labels keep clear of.</summary>
+    [Test]
+    public void TheSpitfireFliesEgyptsFlagAsTheEgyptianTokensDo()
+    {
+        Assert.IsTrue(Statecraft.Game.Map.Units.UnitData.Sides.Contains(Statecraft.Game.Map.Units.UnitFlags.Egypt), "Egypt is a side of the units' content");
+        Assert.IsTrue(Statecraft.Game.Map.Units.UnitFlags.Has(Statecraft.Game.Map.Units.UnitFlags.Egypt), "with the sourced flag its tokens fly");
+        var map = OpenMap();
+        var (layer, plane, loop, centre) = DrawnSpitfire(map);
+        var flag = Marks(layer, SeaAirCollection.SpitfireFlagName);
+        Assert.IsNotNull(flag, "a flag beside the aircraft");
+        var mesh = flag!.GetComponent<MeshFilter>().sharedMesh;
+        Assert.AreEqual(Statecraft.Game.Map.Units.UnitFlags.MeshName(Statecraft.Game.Map.Units.UnitFlags.Egypt), mesh.name, "Egypt's flag, built as the tokens' (UnitFlags.Build)");
+        var mats = flag.GetComponent<MeshRenderer>().sharedMaterials;
+        var cloth = Statecraft.Game.Map.Units.UnitFlags.Colours(Statecraft.Game.Map.Units.UnitFlags.Egypt);
+        Assert.AreEqual(cloth.Count, mesh.subMeshCount, "the cloth's colours only: no pole (owner, \"Smaller flag, no pole\")");
+        Assert.AreEqual(cloth.Count, mats.Length, "one cloth material a submesh");
+        for (int i = 0; i < cloth.Count; i++)
+            Assert.Less(Vector4.Distance(cloth[i], mats[i].color), 1e-4f, $"Egypt's cloth colour {i}, as UnitFlags.ClothMaterials gives the tokens");
+        Assert.IsNotNull(flag.GetComponent<Statecraft.Game.Map.Units.UnitFlagFacing>(), "the cloth turns to the camera, as the tokens' flags do");
+        float tokens = Statecraft.Game.Map.Units.UnitBadge.FigureHeightM * Statecraft.Game.Map.Units.UnitShowcase.FigureScale;
+        Assert.Less(flag.lossyScale.y, 0.75f * tokens, "clearly smaller than the tokens' flag");
+        Assert.AreEqual(ShadowCastingMode.Off, flag.GetComponent<MeshRenderer>().shadowCastingMode, "only the aircraft's own shadow on the ground");
+        var airframe = plane.GetComponentInChildren<MeshFilter>().GetComponent<Renderer>();
+        var keep = layer.KeepClear.Single(k => k[0].Contains(centre))[0];
+        for (int i = 0; i < 32; i++)
+        {
+            float t = i * SeaAirCollection.SpitfireLoopSeconds / 32f;
+            loop.Place(t);
+            var at = SeaAirCollection.LoopOffset(t); var heading = SeaAirCollection.LoopHeading(t);
+            var drawn = centre + new Vector3(at.x, 0f, at.y);
+            var body = airframe.bounds;
+            Assert.Less(Vector3.Dot(flag.position - drawn, new Vector3(heading.x, 0f, heading.y)), -0.3f * SeaAirCollection.SizeOf(SeaAirCollection.Spitfire),
+                $"over the tail, behind the aircraft's middle, at {t:0.0} s");
+            foreach (var look in new[] { Vector3.forward, Vector3.back, Vector3.left, Vector3.right, new Vector3(1f, 0f, 1f).normalized })
+            {
+                Statecraft.Game.Map.Units.UnitFlagFacing.Face(flag, flag.position + look * 50000f);
+                Assert.Greater(Vector3.Dot(flag.up, Vector3.up), 0.999f, $"upright at {t:0.0} s");
+                var fb = flag.GetComponent<Renderer>().bounds;
+                Assert.Greater(fb.min.y, body.max.y, $"wholly above the aircraft's box, clear of the airframe, at {t:0.0} s");
+                Assert.Less(fb.min.y - body.max.y, 0.25f * SeaAirCollection.SizeOf(SeaAirCollection.Spitfire), $"just above it, at {t:0.0} s");
+                Assert.IsTrue(keep.Contains(fb.min) && keep.Contains(fb.max), $"inside the labels' keep-clear box at {t:0.0} s");
+            }
+        }
+    }
+
+    /// <summary>The flight's per-frame work allocates nothing (the aircraft, its bank, its propeller, its shadow and its flag).</summary>
+    [Test]
+    public void TheSpitfireLoopAllocatesNothingPerFrame()
+    {
+        var map = OpenMap();
+        var (_, _, loop, _) = DrawnSpitfire(map);
+        loop.Place(1f);
+        int i = 0;
+        Assert.That(() => { for (int k = 0; k < 100; k++) loop.Place(++i * 0.137f); }, UnityEngine.TestTools.Constraints.ConstraintExtensions.AllocatingGCMemory(Is.Not));
+        // Update in play (not held), through the clock seam, and the flags turning to a camera (review of #2260).
+        typeof(SpitfireLoop).GetField("still", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.SetValue(loop, false);
+        var update = typeof(SpitfireLoop).GetMethod("Update", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        var clock = SpitfireLoop.Clock; float now = 3f;
+        try
+        {
+            SpitfireLoop.Clock = () => now;
+            var tick = (Action)Delegate.CreateDelegate(typeof(Action), loop, update);   // a plain call, as the player loop's
+            tick();
+            Assert.That(() => { for (int k = 0; k < 100; k++) { now += 0.016f; tick(); } }, UnityEngine.TestTools.Constraints.ConstraintExtensions.AllocatingGCMemory(Is.Not));
+        }
+        finally { SpitfireLoop.Clock = clock; }
+        var eye = new Vector3(30000f, 40000f, 150000f);
+        Statecraft.Game.Map.Units.UnitFlagFacing.FaceAll(eye);
+        Assert.That(() => { for (int k = 0; k < 100; k++) { eye.x += 10f; Statecraft.Game.Map.Units.UnitFlagFacing.FaceAll(eye); } }, UnityEngine.TestTools.Constraints.ConstraintExtensions.AllocatingGCMemory(Is.Not));
+    }
+
+    /// <summary>Review of #2260: drawing, dropping and drawing the Spitfire again (its dates end and come back, the layer
+    /// redraws) makes no new propeller, shadow or flag meshes or materials past the first: the layer makes them once. When
+    /// its dates end under residency, the aircraft and its shadow-and-flag object both go, and the labels keep clear of
+    /// exactly the craft left.</summary>
+    [Test]
+    public void DrawingAndDroppingTheSpitfireAgainLeaksNoMeshesOrMaterials()
+    {
+        var map = OpenMap();
+        int Meshes() => Resources.FindObjectsOfTypeAll<Mesh>().Count(m => m.name == "SpitfirePropellerBlur" || m.name == "SpitfireShadow"
+            || m.name == Statecraft.Game.Map.Units.UnitFlags.MeshName(Statecraft.Game.Map.Units.UnitFlags.Egypt));
+        int Materials() => Resources.FindObjectsOfTypeAll<Material>().Count(m => m.name.StartsWith("UnitFlag (egypt", StringComparison.Ordinal)
+            || m.name == Statecraft.HexTiles.HexMaterials.AttackBorder);
+        SeaAirCollection Show(DateTime date) { var l = CollectionGeometryFixture.Craft(map, date, Array.Empty<Placement>(), C)!; AnswerAll(); return l; }
+        var layer = Show(new DateTime(1948, 6, 15));
+        Assert.IsNotNull(layer.transform.Find("el-arish-spitfire"));
+        int meshes = Meshes(), materials = Materials();
+        Assert.GreaterOrEqual(meshes, 3, "the blur, the shadow and the flag");
+        for (int i = 0; i < 3; i++)
+        {
+            layer = Show(new DateTime(1949, 8, 15));
+            Assert.IsNull(layer.transform.Find("el-arish-spitfire"), "no Spitfire on 15 August 1949");
+            Assert.IsNull(layer.transform.Find("el-arish-spitfire" + SeaAirCollection.SpitfireMarksSuffix), "and no shadow or flag");
+            Assert.AreEqual(layer.Placed.Count, layer.KeepClear.Count, "the labels keep clear of the craft left, and nothing else");
+            layer = Show(new DateTime(1948, 6, 15));
+            Assert.IsNotNull(layer.transform.Find("el-arish-spitfire" + SeaAirCollection.SpitfireMarksSuffix));
+            Assert.AreEqual(meshes, Meshes(), $"no new meshes after {i + 1} redraws");
+            Assert.AreEqual(materials, Materials(), $"no new materials after {i + 1} redraws");
+        }
+    }
+
+    /// <summary>Review of #2260: under residency, when the Spitfire's dates end its model's lease is released with both its
+    /// objects gone (the aircraft and its shadow-and-flag object), and their keep-clear entries with them.</summary>
+    [Test]
+    public void WhenItsWindowEndsTheSpitfireAndItsMarksAndTheirKeepClearGoTogether()
+    {
+        var map = OpenMap();
+        var go = new GameObject(SeaAirCollection.Name); go.transform.SetParent(map.Terrain.transform, false);
+        var layer = go.AddComponent<SeaAirCollection>();
+        typeof(SeaAirCollection).GetField("map", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.SetValue(layer, map);
+        var released = new List<(string id, bool plane, bool marks)>();
+        layer.ConfigureResidency(new CollectionResidencyPolicy(1000000, 1000001, 1000000, 1000001, int.MaxValue, "TEST ONLY"),
+            (id, detail, done) => { SeaAirCollection.Request(id, detail, done); return new ReleaseProbe(() => released.Add((id,
+                layer.transform.Find("el-arish-spitfire") != null, layer.transform.Find("el-arish-spitfire" + SeaAirCollection.SpitfireMarksSuffix) != null))); });
+        var keepOf = (System.Collections.IDictionary)typeof(SeaAirCollection).GetField("keepOf", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(layer)!;
+        SeaAirCollection.ShowAt(map, new DateTime(1948, 12, 15), Array.Empty<Placement>(), C);
+        AnswerAll();
+        Assert.IsNotNull(layer.transform.Find("el-arish-spitfire" + SeaAirCollection.SpitfireMarksSuffix), "the shadow and flag drawn");
+        Assert.AreEqual(layer.Placed.Count, keepOf.Count, "one keep-clear entry a drawn craft (none for the shadow and flag)");
+        SeaAirCollection.ShowAt(map, new DateTime(1949, 1, 15), Array.Empty<Placement>(), C);
+        var spitfire = released.Single(r => r.id == SeaAirCollection.Spitfire);
+        Assert.IsFalse(spitfire.plane || spitfire.marks, "the aircraft and its shadow and flag are gone before the lease is released");
+        Assert.IsNull(layer.transform.Find("el-arish-spitfire" + SeaAirCollection.SpitfireMarksSuffix));
+        Assert.AreEqual(layer.Placed.Count, keepOf.Count, "and their keep-clear entries");
+        Assert.AreEqual(layer.Placed.Count, layer.KeepClear.Count);
+        foreach (System.Collections.DictionaryEntry e in keepOf) Assert.IsTrue((GameObject)e.Key != null, "no entry for a destroyed object");
     }
 
     /// <summary>Nothing is drawn until the stream answers, and only the far mesh, once per model. Then every craft is drawn,
@@ -344,7 +838,10 @@ public class SeaAirCollectionTests
                 var boxes = layers.Where(l => l != null).SelectMany(l => l!.GetComponentsInChildren<Renderer>(true).Select(r => (l!.GetType().Name, r.bounds))).ToList();
                 others = Math.Max(others, boxes.Count);
                 var craft = CollectionGeometryFixture.Craft(map, date, none, C)!; AnswerAll();
-                foreach (Transform t in craft.transform)
+                // The drawn craft and the Spitfire's flag (its shadow sits beside it too, but a shadow may fall on a model).
+                var flagNow = craft.transform.Find("el-arish-spitfire" + SeaAirCollection.SpitfireMarksSuffix)?.Find(SeaAirCollection.SpitfireFlagName);
+                Assert.AreEqual(date.Year == 1948, flagNow != null, $"the Spitfire's flag on {date:d MMM yyyy}");
+                foreach (var t in craft.Placed.Select(p => craft.transform.Find(p.Key)).Concat(flagNow != null ? new[] { flagNow } : Array.Empty<Transform>()))
                 {
                     var b = WorldBounds(t.gameObject); checkedCraft++;
                     foreach (var (owner, o) in boxes)
@@ -353,7 +850,7 @@ public class SeaAirCollectionTests
                 }
             }
             Assert.Greater(others, 0, "the other layers drew");
-            Assert.AreEqual(9, checkedCraft, "every craft checked, five on the first turn (the Spitfire too), four on the second");
+            Assert.AreEqual(10, checkedCraft, "every craft checked, five on the first turn (the Spitfire too) and its flag, four on the second");
         }
         finally
         {

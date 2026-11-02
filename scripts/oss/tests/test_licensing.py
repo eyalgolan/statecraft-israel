@@ -122,7 +122,41 @@ def test_tal_original_licensing_matches_manifest_exactly():
     for path in originals:
         assert sum(r["glob"] == path and r["licence"] == "CC-BY-NC-ND-4.0" for r in rules) == 1, path
     independent = [r for r in rules if r["licence"] == "CC-BY-NC-ND-4.0" and r["glob"] not in originals]
-    assert len(independent) == 50  # 146 originals + 50 independent grants (with the hex-tile props row and the #1901 -light meshes) = 196 total
+    # Tal Heuberger's #2082-#2085 files (owner, 2 November 2026: "Yes, #1177 covers them"): the 24 exact source files and,
+    # for the four #2085 towns in the game, each town's compatibility FBX and colour map. Every other grant stays as it was.
+    sources = {
+        "asset-sources/prepared-towns-20261031/" + p for p in (
+            "netanya/statecraft-netanya-approved-textured-4350a137.glb", "netanya/statecraft-netanya-approved-textured-4350a137_basecolor.jpg",
+            "ramla/statecraft-ramla-approved-textured-aaf2619f.glb", "ramla/statecraft-ramla-approved-textured-aaf2619f_basecolor.jpg",
+            "safed/statecraft-safed-approved-textured-1e2b8e59.glb", "safed/statecraft-safed-approved-textured-1e2b8e59_basecolor.jpg",
+            "tiberias/statecraft-tiberias-smartmesh-original-086ad55f.glb", "tiberias/statecraft-tiberias-smartmesh-textured-086ad55f.glb",
+            "tiberias/statecraft-tiberias-smartmesh-textured-086ad55f_basecolor.jpg")
+    } | {
+        "asset-sources/recovered-vegetation-20261031/" + p for p in (
+            "g25_papyrus/albedo.jpg", "g25_papyrus/g25_papyrus.obj", "g25_papyrus/normal.jpg",
+            "hf_tamarisk/albedo.jpg", "hf_tamarisk/hf_tamarisk.obj", "hf_tamarisk/normal.jpg")
+    } | {
+        "asset-sources/prepared-weapons-20261031/" + p for p in (
+            "k98k/statecraft-k98k-approved-textured-b48a435f.glb", "k98k/statecraft-k98k-approved-textured-b48a435f_basecolor.jpg",
+            "mg34/statecraft-mg34-approved-textured-3a384995.glb", "mg34/statecraft-mg34-approved-textured-3a384995_basecolor.jpg",
+            "sten/statecraft-sten-approved-textured-bc6b06c8.glb", "sten/statecraft-sten-approved-textured-bc6b06c8_basecolor.jpg")
+    } | {
+        "asset-sources/c06-point-fire-reference-20261031/" + p for p in (
+            "C06-POINT-FIRE-FULL-REVIEW.mp4", "C06-POINT-FIRE-PROVISIONAL-PUBLIC.fbx", "C06-POINT-FIRE-REVIEW-CONTACT-SHEET.png")
+    }
+    towns = {f"unity/Assets/Art/Collection/{t}-town-v1/{t}-town-v1{x}"
+             for t in ("tiberias", "safed", "netanya", "ramla") for x in (".fbx", "_basecolor.jpg")}
+    added = sources | towns
+    assert len(sources) == 24 and len(towns) == 8
+    added_rows = [r for r in independent if r["glob"] in added]
+    assert {r["glob"] for r in added_rows} == added and len(added_rows) == 32
+    assert all(r["artist"] == "Tal Heuberger" and r["ai_generated"] is True for r in added_rows)
+    assert all("#1177" in r["note"] and "2 November 2026" in r["note"] for r in added_rows)
+    import hashlib
+    for r in added_rows:  # each row records its file's SHA-256
+        assert hashlib.sha256((ROOT / r["glob"]).read_bytes()).hexdigest() in r["source"], r["glob"]
+    assert len([r for r in independent if r["glob"] not in added]) == 50  # the hex-tile props row and the #1901 -light meshes among them
+    assert len(independent) == 82  # 146 originals + 82 independent grants = 228 total
     for row in selected:
         assert row["licence"] == "CC-BY-NC-ND-4.0"
         assert row["artist"] == "Tal Heuberger"
