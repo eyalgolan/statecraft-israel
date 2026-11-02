@@ -208,6 +208,7 @@ The campaign runs from **15 May 1948 to 15 January 1952: 44 monthly turns**. The
 Each event needs a trigger, readable context, available options and their consequences. Open: event frequency, mandatory versus optional events, delayed effects, and how much the player can see before choosing.
 
 **Then decided (owner, 17 Oct 2026, "take the recommendations"; [#784](https://github.com/eyalgolan/statecraft-israel/issues/784#issuecomment-6232838937)):** events use windows and hard anchors, with at most three soft events per turn; an unanswered event is delegated; the MVP has no delayed effects; and each card shows every effect of every option (R-EVT-001 to R-EVT-005, `docs/rules/mvp.md`).
+
 The player manages the establishment of the state through population, work, settlement, infrastructure, immigration and war. The map supports direct hex-to-hex orders and the retained per-city civilian management rules. Historical events explain the period and react to the player's situation; they must follow the existing [content policy](CONTENT_POLICY.md), [writing guide](WRITING_GUIDE.md) and review gates.
 
 Historical dates, unit identities, named places and claims in event text require sources. Game balance values and hypothetical alternatives must be identified as design assumptions.
