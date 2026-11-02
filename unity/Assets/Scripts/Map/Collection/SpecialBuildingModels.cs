@@ -9,7 +9,8 @@ namespace Statecraft.Game.Map.Collection
 {
     /// <summary>Issue #707: Tal Heuberger's single-building models at sourced places, and the tank stopped at Degania Alef. They use the collection stream after the
     /// first frame, draw only close up (#700's switch, TownModelLayer.CloseEnterM / CloseExitM), follow the game date and
-    /// fail open. b21 remains catalogued but unplaced until an artisan-workshop location is sourced.</summary>
+    /// fail open. #1701 slice F (owner, 27 October 2026: "Arms workshops (Recommended)"): under gdd-0.3, b21 stands on the hex of
+    /// each built arms workshop (<see cref="ArmsWorkshops"/>).</summary>
     [ExecuteAlways]
     public sealed class SpecialBuildingModels : MonoBehaviour
     {
@@ -84,6 +85,31 @@ namespace Statecraft.Game.Map.Collection
         };
 
         public static IReadOnlyList<Want> Placements(DateTime date) => All.Where(x => date >= x.From).ToList();
+
+        /// <summary>#1701 slice F: one b21 per built arms workshop (R-ARMS-004, Workshops.ArmsWorkshop), on its city project's
+        /// hex from the day the build completed (CityProject.BuiltOn), in ascending project id. Under gdd-0.3 only; nothing for a
+        /// project still being built, nor for one no longer in the state.</summary>
+        public static IReadOnlyList<Want> ArmsWorkshops(Statecraft.Sim.Content content, IEnumerable<Statecraft.Sim.CityProject> projects)
+        {
+            var list = new List<Want>();
+            if (content.Ruleset != Statecraft.Sim.SaveGame.Gdd03Ruleset) return list;
+            foreach (var p in projects.OrderBy(x => x.Id))
+            {
+                if (p.Kind != Statecraft.Sim.Workshops.ArmsWorkshop || !(p.BuiltOn is DateTime on)) continue;
+                var hex = content.HexAt(p.Q, p.R);
+                if (hex == null) continue;
+                list.Add(new Want(WorkshopKey(p.Id), Workshop, on, hex.Lon, hex.Lat,
+                    FormattableString.Invariant($"city project {p.Id}: {p.City}'s arms workshop on hex {p.Q},{p.R}")));
+            }
+            return list;
+        }
+
+        /// <summary>The layer key (and instance name) of the b21 standing for city project <paramref name="project"/>.</summary>
+        public static string WorkshopKey(int project) => FormattableString.Invariant($"arms_workshop_{project}");
+
+        /// <summary>How far from its hex's centre a workshop's model may reach (m): the hex's inner radius (HexScale.HexM is the
+        /// circumradius), so the whole model stands on the project's own hex.</summary>
+        public const float HexInnerRadiusM = 0.8660254f * Statecraft.HexTiles.HexScale.HexM;
 
         /// <summary>How far inside a town's footprint <paramref name="anchor"/> lies (m, 0 outside every footprint): a sourced
         /// point at a town's edge (Netanya's entrance) is inside the kit's symbolic footprint, so the search starts that far
@@ -283,12 +309,28 @@ namespace Statecraft.Game.Map.Collection
         void OnDestroy() { residency?.Dispose(); residency = null; }
 
         MapScene? map; DateTime date; bool shown;
+        IReadOnlyList<Want> workshops = Array.Empty<Want>();
+
+        static bool Same(IReadOnlyList<Want> a, IReadOnlyList<Want> b)
+        {
+            if (a.Count != b.Count) return false;
+            for (int i = 0; i < a.Count; i++)
+                if (a[i].Key != b[i].Key || a[i].From != b[i].From || a[i].Lon != b[i].Lon || a[i].Lat != b[i].Lat) return false;
+            return true;
+        }
         public readonly List<(string Key, string Model, Vector3 At)> Placed = new List<(string, string, Vector3)>();
         public bool FailedOpen { get; private set; }
         public bool LastClose { get; private set; }
         readonly Dictionary<string, List<GameObject>> originals = new Dictionary<string, List<GameObject>>(StringComparer.Ordinal);
 
-        public static SpecialBuildingModels? ShowAt(MapScene map, DateTime date)
+        public static SpecialBuildingModels? ShowAt(MapScene map, DateTime date) => ShowAt(map, date, Array.Empty<Want>());
+
+        /// <summary>As <see cref="ShowAt(MapScene, DateTime)"/>, with a b21 at each built arms workshop of the state
+        /// (<see cref="ArmsWorkshops"/>; gdd-0.3 only).</summary>
+        public static SpecialBuildingModels? ShowAt(MapScene map, DateTime date, Statecraft.Sim.Content content,
+            IEnumerable<Statecraft.Sim.CityProject> projects) => ShowAt(map, date, ArmsWorkshops(content, projects));
+
+        static SpecialBuildingModels? ShowAt(MapScene map, DateTime date, IReadOnlyList<Want> workshops)
         {
             if (map == null || map.Terrain == null || map.Hexes == null) return null;
             var layer = map.Terrain.transform.Find(Name)?.GetComponent<SpecialBuildingModels>();
@@ -299,9 +341,10 @@ namespace Statecraft.Game.Map.Collection
             }
             if (layer.residencyView == null) layer.ConfigureResidency(map.Residency.Special, null);
             // GameRoot calls this on every refresh: rebuild only when the game date changes (the dated list and the dated
-            // tokens' clearance both follow it).
-            if (layer.shown && layer.date == date) return layer;
-            layer.shown = true; layer.date = date; layer.Show(Placements(date)); return layer;
+            // tokens' clearance both follow it) or the built arms workshops do (one completed, or one left the state).
+            if (layer.shown && layer.date == date && Same(layer.workshops, workshops)) return layer;
+            layer.shown = true; layer.date = date; layer.workshops = workshops;
+            layer.Show(workshops.Count == 0 ? Placements(date) : Placements(date).Concat(workshops).ToList()); return layer;
         }
 
         internal void ShowForTest(IReadOnlyList<Want> wants) => Show(wants);
@@ -327,6 +370,10 @@ namespace Statecraft.Game.Map.Collection
             var people = map.Terrain.transform.Find(CivilianPeople.Name)?.GetComponent<CivilianPeople>();
             if (people != null) foreach (var p in people.Wanted) taken.Add((new Vector2(p.At.x, p.At.z), CivilianPeople.FigureClearanceM));
             foreach (var a in WildlifeLayer.Wants(map)) taken.Add((a.At, 0.5f * WildlifeLayer.SizeM));
+            // A workshop (#1701 slice F) also keeps off the farm scenes drawn (#667), as the C-54 does (SeaAirCollection.Taken).
+            var farms = new List<(Vector2 centre, float radius)>();
+            var rural = map.Terrain.transform.Find(RuralLife.Name)?.GetComponent<RuralLife>();
+            if (rural != null) foreach (var p in rural.Placed) farms.Add((new Vector2(p.At.x, p.At.z), RuralLife.SceneRadiusM(p.Model)));
             bool Free(Vector2 p, float r) => TownLandmarks.Clear(p, r, taken) && TownLandmarks.Clear(p, r, footprints)
                 && ground.Inside(p.x - r, p.y - r) && ground.Inside(p.x + r, p.y + r)
                 && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, date);
@@ -345,7 +392,15 @@ namespace Statecraft.Game.Map.Collection
                     if (village is Bounds drawn && footprint.id != null)   // no kit or no footprint: the seeded spot below
                         at = RouteFacingEdgeSpot(footprint.centre, drawn, clearance, map.KitRouteCorridors, Free);
                 }
-                if (at == null)
+                if (at == null && w.Model == Workshop)
+                {
+                    // On the project's own hex (its centre is the anchor), clear of the farm scenes, and as far out of a town's
+                    // footprint as the civilian figures keep from its label (CivilianPeople.LabelClearanceM).
+                    bool OnHex(Vector2 p, float r) => (p - anchor).magnitude + r <= HexInnerRadiusM && TownLandmarks.Clear(p, r, farms) && Free(p, r);
+                    float inside = Inside(anchor, footprints);
+                    at = SeededSpot(w.Key, anchor, clearance, OnHex, inside > 0f ? inside + CivilianPeople.LabelClearanceM : 0f);
+                }
+                else if (at == null)
                 {
                     if (w.Key == "degania_r35")
                         Debug.LogWarning("BUILDINGS: route-facing spot unavailable for degania_r35; falling back to the seeded spot.");

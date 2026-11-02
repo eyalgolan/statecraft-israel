@@ -309,6 +309,158 @@ namespace Statecraft.Game.Tests
             Assert.AreEqual(1, layer.transform.childCount);
         }
 
+        // ---- #1701 slice F (owner, 27 October 2026: "Arms workshops (Recommended)"): b21 on each built arms workshop, gdd-0.3 only ----
+
+        /// <summary>The real content, fresh (the shared copy is never changed), with every era under <paramref name="ruleset"/>.</summary>
+        static Statecraft.Sim.Content Rules(string ruleset)
+        {
+            var c = Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content);
+            foreach (var era in c.Eras) { era.Systems.Ruleset = ruleset; era.Systems.Loop = Statecraft.Sim.EraSystems.Gdd; }
+            return c;
+        }
+
+        static readonly DateTime Built = new DateTime(1949, 3, 1);
+
+        /// <summary>City project <paramref name="id"/>: an arms workshop on <paramref name="city"/>'s own hex, built on
+        /// <paramref name="builtOn"/> or (null) still being built.</summary>
+        static Statecraft.Sim.CityProject Workshop(Statecraft.Sim.Content c, int id, string city, DateTime? builtOn)
+        {
+            var h = c.SettlementHexes.Single(x => x.Id == city);
+            return new Statecraft.Sim.CityProject(id, Statecraft.Sim.Workshops.ArmsWorkshop, city, h.Q, h.R, builtOn == null ? 2 : 0, builtOn);
+        }
+
+        [Test]
+        public void ArmsWorkshopsAreWantedUnderGdd03AtBuiltWorkshopsOnly()
+        {
+            var c = Rules(Statecraft.Sim.SaveGame.Gdd03Ruleset);
+            var netanya = c.SettlementHexes.Single(x => x.Id == "netanya");
+            var projects = new[]
+            {
+                Workshop(c, 9, "rehovot", Built), Workshop(c, 8, "hadera", null),
+                new Statecraft.Sim.CityProject(7, "housing", "netanya", netanya.Q, netanya.R, 0, Built),
+            };
+            var wants = SpecialBuildingModels.ArmsWorkshops(c, projects);
+            Assert.AreEqual(1, wants.Count, "one model per BUILT arms workshop: none for the one being built, none for housing");
+            var w = wants[0]; var hex = c.HexAt(projects[0].Q, projects[0].R)!;
+            Assert.AreEqual(("arms_workshop_9", SpecialBuildingModels.Workshop, Built), (w.Key, w.Model, w.From));
+            Assert.AreEqual((hex.Lon, hex.Lat), (w.Lon, w.Lat), "anchored on the project's own hex");
+            Assert.IsEmpty(SpecialBuildingModels.ArmsWorkshops(Rules(Statecraft.Sim.SaveGame.GddRuleset), projects), "never under gdd-0.1");
+        }
+
+        /// <summary>A built arms workshop on each city's own hex (the hardest ground: the town's footprint is there): every one
+        /// but those of the two cities whose footprint covers the whole hex gets its b21, wholly on that hex, clear of the towns' footprints (and so their labels), the routes, the unit tokens,
+        /// the civilians, the wildlife, the farm scenes and every other building model, upright, on the ground, hidden until the
+        /// close zoom, and on the same spot when placed again.</summary>
+        [Test]
+        public void OnTheMapEachBuiltWorkshopStandsOnItsHexClearAndUpright()
+        {
+            var map = OpenMap();
+            var c = Rules(Statecraft.Sim.SaveGame.Gdd03Ruleset);
+            var cities = c.Cities.Select(x => x.Id).OrderBy(x => x, StringComparer.Ordinal).ToList();
+            Assert.Greater(cities.Count, 5);
+            var projects = cities.Select((city, i) => Workshop(c, 100 + i, city, Built)).ToList();
+            var savedPeople = CivilianPeople.Request; var savedRural = RuralLife.Request;
+            CivilianPeople.Request = (id, detail, done) => { };
+            RuralLife.Request = (id, detail, done) => done(AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(id, detail)));
+            CivilianPeople people; RuralLife rural;
+            try
+            {
+                people = CollectionGeometryFixture.People(map, After, Array.Empty<Statecraft.Sim.Placement>(), c)!;
+                rural = CollectionGeometryFixture.Rural(map)!;
+            }
+            finally { CivilianPeople.Request = savedPeople; RuralLife.Request = savedRural; }
+            Assert.Greater(rural.Placed.Count, 0, "the farm scenes stand first, as GameRoot shows them");
+            var props = people.Wanted.Select(w => (new Vector2(w.At.x, w.At.z), CivilianPeople.FigureClearanceM))
+                .Concat(WildlifeLayer.Wants(map).Select(w => (w.At, 0.5f * WildlifeLayer.SizeM)))
+                .Concat(rural.Placed.Select(p => (new Vector2(p.At.x, p.At.z), RuralLife.SceneRadiusM(p.Model)))).ToList();
+            var layer = CollectionGeometryFixture.Special(map, After, c, projects)!;
+            Assert.AreEqual(1, asked.Count(a => a.id == SpecialBuildingModels.Workshop), "b21 is asked for once, whatever the number of workshops");
+            AnswerAll();
+            var footprints = map.KitFootprints.Select(f => (f.centre, f.radius)).ToList();
+            float r0 = SpecialBuildingModels.ClearanceOf(SpecialBuildingModels.Workshop);
+            // A town whose footprint covers its own hex (Jerusalem and Tel Aviv: footprints of several hexes, FootprintRadiusM)
+            // leaves no ground there clear of it: the first ring of the search already leaves the hex, so no b21 is drawn
+            // (logged), rather than one standing in the town's houses.
+            var covered = new List<string>();
+            foreach (var project in projects)
+            {
+                var hex = c.HexAt(project.Q, project.R)!; var w3 = map.Frame.ToWorld(hex.Lon, hex.Lat, 0);
+                float inside = SpecialBuildingModels.Inside(new Vector2(w3.x, w3.z), footprints);
+                TestContext.WriteLine($"{project.City}: hex centre {inside:0} m inside a town's footprint");
+                if (inside > 0f && inside + CivilianPeople.LabelClearanceM + 1.5f * r0 + r0 > SpecialBuildingModels.HexInnerRadiusM) covered.Add(project.City);
+            }
+            CollectionAssert.AreEquivalent(new[] { "jerusalem", "tel_aviv" }, covered, "the cities whose footprint covers their own hex");
+            projects = projects.Where(p => !covered.Contains(p.City)).ToList();
+            var keys = projects.Select(p => SpecialBuildingModels.WorkshopKey(p.Id)).ToList();
+            CollectionAssert.IsSubsetOf(keys, layer.Placed.Select(p => p.Key), "a b21 at every other built workshop");
+            Assert.AreEqual(keys.Count, layer.Placed.Count(p => p.Model == SpecialBuildingModels.Workshop), "none for the covered cities");
+            var ground = PlacementLayer.CampGround(map);
+            var others = layer.Placed.Where(p => !keys.Contains(p.Key)).Select(p => (new Vector2(p.At.x, p.At.z), SpecialBuildingModels.ClearanceOf(p.Model))).ToList();
+            var spots = new List<(Vector2, float)>();
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(SpecialBuildingModels.Workshop, CollectionDetail.Near));
+            foreach (var project in projects)
+            {
+                var key = SpecialBuildingModels.WorkshopKey(project.Id);
+                var p = layer.Placed.Single(x => x.Key == key);
+                Assert.AreEqual(SpecialBuildingModels.Workshop, p.Model);
+                var hex = c.HexAt(project.Q, project.R)!; var centre3 = map.Frame.ToWorld(hex.Lon, hex.Lat, 0);
+                var flat = new Vector2(p.At.x, p.At.z); float r = SpecialBuildingModels.ClearanceOf(p.Model);
+                float off = (flat - new Vector2(centre3.x, centre3.z)).magnitude;
+                TestContext.WriteLine($"{key} ({project.City}): {off:0} m from its hex centre, clearance {r:0} m");
+                Assert.LessOrEqual(off + r, SpecialBuildingModels.HexInnerRadiusM, key + " wholly on its project's hex");
+                Assert.IsTrue(TownLandmarks.Clear(flat, r, footprints), key + " clear of the towns (and their labels)");
+                Assert.IsFalse(ground.OnRoute(flat, r), key + " clear of the routes");
+                Assert.IsFalse(ground.OnToken(flat, r, After), key + " clear of the unit tokens");
+                Assert.IsTrue(TownLandmarks.Clear(flat, r, others), key + " clear of the sourced building models");
+                Assert.IsTrue(TownLandmarks.Clear(flat, r, spots), key + " clear of the other workshops");
+                Assert.IsTrue(TownLandmarks.Clear(flat, r, props), key + " clear of the civilians, the wildlife and the farm scenes");
+                spots.Add((flat, r));
+                var go = layer.transform.Find(key)!;
+                Assert.Less(Quaternion.Angle(prefab.transform.localRotation, go.localRotation), 0.01f, key + " keeps the FBX axis conversion");
+                var rs = go.GetComponentsInChildren<Renderer>(true);
+                var b = rs.Select(x => x.bounds).Aggregate((x, y) => { x.Encapsulate(y); return x; });
+                Assert.AreEqual(p.At.y, b.min.y, 1f, key + " stands on the ground");
+                Assert.Less(b.size.y, Mathf.Max(b.size.x, b.size.z), key + " upright: lower than it is long");
+                Assert.AreEqual(SpecialBuildingModels.SizeOf(SpecialBuildingModels.Workshop), Mathf.Max(b.size.x, b.size.z), 1f, key + " at the buildings' one world scale");
+                Assert.IsTrue(rs.All(x => x.forceRenderingOff), key + " hidden until the close zoom");
+            }
+            // Deterministic: a second layer from nothing puts every workshop on the same spot.
+            var first = layer.Placed.Where(p => keys.Contains(p.Key)).ToDictionary(p => p.Key, p => p.At);
+            UnityEngine.Object.DestroyImmediate(layer.gameObject);
+            var again = CollectionGeometryFixture.Special(map, After, c, cities.Select((city, i) => Workshop(c, 100 + i, city, Built)).ToList())!;
+            AnswerAll();
+            foreach (var key in keys) Assert.AreEqual(first[key], again.Placed.Single(p => p.Key == key).At, key + " on the same spot again");
+        }
+
+        /// <summary>The model stands from the turn the build completes (not while it is being built), stays put on GameRoot's
+        /// refreshes at one state, leaves with its project, and never stands under gdd-0.1.</summary>
+        [Test]
+        public void TheWorkshopStandsFromItsCompletionAndLeavesWithItsProject()
+        {
+            var map = OpenMap();
+            var c = Rules(Statecraft.Sim.SaveGame.Gdd03Ruleset);
+            string key = SpecialBuildingModels.WorkshopKey(9);
+            var layer = CollectionGeometryFixture.Special(map, Built, c, new[] { Workshop(c, 9, "rehovot", null) })!;
+            AnswerAll();
+            CollectionAssert.DoesNotContain(layer.Placed.Select(p => p.Key), key, "not while it is being built");
+            Assert.IsNull(layer.transform.Find(key));
+            // Built on this turn's date: the same date, a different state, so the layer redraws.
+            var built = new[] { Workshop(c, 9, "rehovot", Built) };
+            CollectionGeometryFixture.Special(map, Built, c, built);
+            AnswerAll();
+            CollectionAssert.Contains(layer.Placed.Select(p => p.Key), key, "from the turn the build completes");
+            var model = layer.transform.Find(key)!.gameObject;
+            CollectionGeometryFixture.Special(map, Built, c, new[] { Workshop(c, 9, "rehovot", Built) });
+            Assert.IsTrue(model != null && model.transform.parent == layer.transform, "the same state keeps the same model");
+            CollectionGeometryFixture.Special(map, Built, c, Array.Empty<Statecraft.Sim.CityProject>());
+            AnswerAll();
+            CollectionAssert.DoesNotContain(layer.Placed.Select(p => p.Key), key, "gone with its project");
+            Assert.IsNull(layer.transform.Find(key));
+            CollectionGeometryFixture.Special(map, Built.AddMonths(1), Rules(Statecraft.Sim.SaveGame.GddRuleset), built);
+            AnswerAll();
+            CollectionAssert.DoesNotContain(layer.Placed.Select(p => p.Model), SpecialBuildingModels.Workshop, "never under gdd-0.1");
+        }
+
         [Test]
         public void ABundleThatDoesNotStreamLeavesTheMapRunning()
         {

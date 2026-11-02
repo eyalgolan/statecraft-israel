@@ -292,6 +292,62 @@ public class MapLabelTests
         Assert.IsEmpty(failures, string.Join("\n", failures));
     }
 
+    /// <summary>#1701 slice F: Tal Heuberger's workshop model (b21) at an arms workshop built on Rehovot's own hex (gdd-0.3) and
+    /// the map's names do not cover each other. With the real prefab placed and the camera at 30 km over the model (inside its
+    /// close zoom), no shown settlement, locality or location pill overlaps the model's projected bounds.</summary>
+    [UnityTest]
+    public IEnumerator NoNamePillCoversAWorkshopModel()
+    {
+        var saved = Statecraft.Game.Map.Collection.SpecialBuildingModels.Request;
+        Statecraft.Game.Map.Collection.SpecialBuildingModels.Request = (id, detail, done) =>
+            done(AssetDatabase.LoadAssetAtPath<GameObject>(Statecraft.Game.Map.Collection.CollectionCatalog.PrefabPath(id, detail)));
+        var hd = new HdPanel(cam);
+        MapLabelsPresenter? labels = null;
+        try
+        {
+            var content = Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content);
+            foreach (var era in content.Eras) { era.Systems.Ruleset = Statecraft.Sim.SaveGame.Gdd03Ruleset; era.Systems.Loop = Statecraft.Sim.EraSystems.Gdd; }
+            var home = content.SettlementHexes.Single(h => h.Id == "rehovot");
+            var built = new System.DateTime(1949, 3, 1);
+            var layer = CollectionGeometryFixture.Special(map, built, content,
+                new[] { new Statecraft.Sim.CityProject(9, Statecraft.Sim.Workshops.ArmsWorkshop, "rehovot", home.Q, home.R, 0, built) })!;
+            var model = layer.transform.Find(Statecraft.Game.Map.Collection.SpecialBuildingModels.WorkshopKey(9));
+            Assert.IsNotNull(model, "the workshop model stands at Rehovot");
+            labels = new MapLabelsPresenter(hd.Root, map, cam, locations: Locations());
+            rig.LookAt = model!.position; rig.Distance = 30000f; rig.Yaw = 0; rig.TopInset = 0; rig.Apply();
+            var all = labels.Labels.Concat(labels.LocalityLabels).Concat(labels.LocationLabels).ToList();
+            for (int i = 0; i < 20 && all.Any(l => float.IsNaN(l.resolvedStyle.width) || l.resolvedStyle.width <= 0); i++) yield return null;
+            var slots = labels.Slots.Concat(labels.LocalitySlots).Concat(labels.LocationSlots).ToList();
+            labels.Refresh(force: true); yield return null;
+            labels.Refresh(force: true); yield return null;
+            float x0 = float.MaxValue, y0 = float.MaxValue, x1 = float.MinValue, y1 = float.MinValue;
+            foreach (var r in model.GetComponentsInChildren<Renderer>(true))
+            {
+                var b = r.bounds;
+                for (int c = 0; c < 8; c++)
+                {
+                    var corner = new Vector3((c & 1) == 0 ? b.min.x : b.max.x, (c & 2) == 0 ? b.min.y : b.max.y, (c & 4) == 0 ? b.min.z : b.max.z);
+                    var q = hd.ToPanel(corner, out bool front); Assert.IsTrue(front);
+                    x0 = Mathf.Min(x0, q.x); y0 = Mathf.Min(y0, q.y); x1 = Mathf.Max(x1, q.x); y1 = Mathf.Max(y1, q.y);
+                }
+            }
+            var rect = Rect.MinMaxRect(x0, y0, x1, y1);
+            var shown = slots.Where(Shown).ToList();
+            Assert.IsNotEmpty(shown, "some names are shown at 30 km over Rehovot");
+            foreach (var slot in shown)
+            {
+                var pill = slot.Q<Label>().worldBound;
+                TestContext.WriteLine($"{slot.name} pill {pill}; workshop model {rect}");
+                Assert.IsFalse(pill.Overlaps(rect), $"{slot.name}'s pill {pill} covers the workshop model {rect}");
+            }
+        }
+        finally
+        {
+            labels?.Dispose(); hd.Dispose();
+            Statecraft.Game.Map.Collection.SpecialBuildingModels.Request = saved;
+        }
+    }
+
     /// <summary>Issue #1008 beside #707: the Latrun police fort's pill and Tal Heuberger's Tegart fort model (SpecialBuildingModels,
     /// streamed close up from 15 May 1948) do not cover each other. With the real prefab placed and the camera at 30 km over
     /// Latrun (inside the model's close zoom), the pill is shown and its rectangle clears the model's projected bounds.</summary>

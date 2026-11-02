@@ -953,8 +953,9 @@ namespace Statecraft.Game.UI
                 Bridge.State.Settlements, Bridge.State.CityProjects.Values);
             // Tal Heuberger's period-generic farm and village scenery, streamed after the first frame (#667); never game units.
             Statecraft.Game.Map.Collection.RuralLife.Show(map);
-            // Tal Heuberger's Tegart fort, barracks and factory at their sourced places and dates, close up only, streamed (#707).
-            Statecraft.Game.Map.Collection.SpecialBuildingModels.ShowAt(map, Bridge.State.Date);
+            // Tal Heuberger's Tegart fort, barracks and factory at their sourced places and dates, close up only, streamed (#707);
+            // under gdd-0.3 his artisan workshop (b21) on each built arms workshop's hex (#1701 slice F).
+            Statecraft.Game.Map.Collection.SpecialBuildingModels.ShowAt(map, Bridge.State.Date, Bridge.Content, Bridge.State.CityProjects.Values);
             // Tal Heuberger's ships off Haifa, Jaffa, Acre and (on the Altalena's turn) Tel Aviv, and the C-54 at Lod, streamed after the first frame (#669).
             seaAir = Statecraft.Game.Map.Collection.SeaAirCollection.ShowAt(map, Bridge.State.Date, Bridge.State.Placements, Bridge.Content);
             RenderSitesIfChanged();
