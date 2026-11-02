@@ -400,6 +400,9 @@ namespace Statecraft.Game.Tests
             var acquired = new List<string>(); var released = new List<string>(); var twice = new List<string>();
             var cam = new GameObject("TEST camera").AddComponent<Camera>();
             SpecialBuildingModels? layer = null;
+            var warnings = new List<string>();
+            Application.LogCallback watch = (message, stack, type) => { if (type == LogType.Warning && message.StartsWith("BUILDINGS: the nearest clear spot", StringComparison.Ordinal)) warnings.Add(message); };
+            Application.logMessageReceived += watch;
             try
             {
                 var date = new DateTime(1948, 5, 15);
@@ -416,10 +419,12 @@ namespace Statecraft.Game.Tests
                     Assert.AreEqual(0, acquired.Count(id => id == w.Model), w.Key + "'s bundle is not asked for");
                 }
                 Assert.IsTrue(layer.Placed.Any(p => p.Key == "latrun_tegart"), "the uncapped specials still draw");
-                LogAssert.NoUnexpectedReceived();
+                foreach (var w in capped)
+                    Assert.AreEqual(1, warnings.Count(m => m.Contains(" for " + w.Key + " is ")), w.Key + "'s warning, once, across three views");
             }
             finally
             {
+                Application.logMessageReceived -= watch;
                 SpecialBuildingModels.MaxPropOffset = saved;
                 UnityEngine.Object.DestroyImmediate(cam.gameObject);
                 if (layer != null) UnityEngine.Object.DestroyImmediate(layer.gameObject);
