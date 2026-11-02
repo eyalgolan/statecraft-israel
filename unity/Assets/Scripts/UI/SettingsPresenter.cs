@@ -11,14 +11,14 @@ namespace Statecraft.Game.UI
 {
     /// <summary>The Settings screen (#40), opened from the left column's gear like the other screens (ScreenNav). Its options:
     /// the graphics quality (GraphicsQuality: Auto / High / Low), the sound effects volume (GameAudio, #39), the UI's language (#1036),
-    /// the UI scale (100% / 125% / 150%), the tilt-shift blur, and a Community row whose "Star on GitHub" opens the repository
+    /// the UI scale (100% / 125% / 150%), the tilt-shift blur, the WebGL companion (#1119, its row only where a page shows it) and a Community row whose "Star on GitHub" opens the repository
     /// (#1168, ExternalLink). The blur option turns it off and on: applied at once (TiltShift.Enabled, what the "tiltshift"
     /// toggle sets) and kept in the SettingsStore, so it holds after a reload. A stored "off" only ever turns the blur off, so ?notiltshift still boots without it. The
     /// button says what is set ("On" / "Off"), not only a colour: the player's choice (Enabled), not the web tier's
     /// automatic last fallback step (TiltShift.FallbackOff), which it never changes.</summary>
     public sealed class SettingsPresenter : IDisposable
     {
-        public const string TiltShiftKey = "tiltshift", QualityKey = "quality", LanguageKey = "lang", UiScaleKey = "uiscale", SoundKey = "sfx", SelectedClass = "settings-choice-selected";
+        public const string TiltShiftKey = "tiltshift", QualityKey = "quality", LanguageKey = "lang", UiScaleKey = "uiscale", SoundKey = "sfx", CompanionKey = "companion", SelectedClass = "settings-choice-selected";
         /// <summary>The owner's UI scales (#40, 18 Oct 2026), in percent; the first is the default.</summary>
         public static readonly int[] UiScales = { 100, 125, 150 };
         /// <summary>The owner's ruling on #1011 (19 Oct 2026): Settings offers only the UI scales verified to fit, and 100% always,
@@ -42,6 +42,8 @@ namespace Statecraft.Game.UI
         readonly PanelSettings? panel; readonly Vector2Int reference; int uiScale = UiScales[0], chosen = UiScales[0];
         readonly (Button button, int percent, Action pick)[] scales;
         readonly Action unbindStar;
+        readonly Button companionSwitch;
+        readonly (Func<bool> on, Action<bool> set)? companion;
 
         /// <param name="store">Where the choice is kept; null keeps nothing (the option still works until the page closes).</param>
         /// <param name="switchLanguage">Puts the UI in the language pressed (GameRoot builds the screens again); null changes
@@ -49,9 +51,12 @@ namespace Statecraft.Game.UI
         /// <param name="panel">The UI's panel, which the UI scale scales; null leaves the scale alone.</param>
         /// <param name="advisors">The live advisor settings; null hides its row.</param>
         /// <param name="audio">The sound effects the volume applies to; null keeps only the choice.</param>
-        public SettingsPresenter(VisualElement root, UiText text, SettingsStore? store, Action<string>? switchLanguage = null, PanelSettings? panel = null, GameAudio? audio = null, AdvisorSettings? advisors = null)
+        /// <param name="companion">The WebGL companion (#1119, WebCompanion): whether it runs, and what turns it on or off at
+        /// once; null (no page to show it in) hides its row.</param>
+        public SettingsPresenter(VisualElement root, UiText text, SettingsStore? store, Action<string>? switchLanguage = null, PanelSettings? panel = null, GameAudio? audio = null, AdvisorSettings? advisors = null,
+            (Func<bool> on, Action<bool> set)? companion = null)
         {
-            this.store = store; this.text = text; this.root = root; this.audio = audio; this.advisors = advisors;
+            this.store = store; this.text = text; this.root = root; this.audio = audio; this.advisors = advisors; this.companion = companion;
             screen = root.Q<VisualElement>("screen-settings");
             screen.Q<Label>("settings-screen-title").text = text["settings.title"];
             screen.Q<Label>("settings-tiltshift-label").text = text["settings.tiltshift"];
@@ -123,6 +128,12 @@ namespace Statecraft.Game.UI
             // The fit depends on the window's shape, which a resize changes: the offer and the applied scale follow the
             // root's geometry (as TopBarInset does). The file keeps the choice, so a shape that holds it again gets it back.
             root.RegisterCallback<GeometryChangedEvent>(OnGeometry);
+            // The WebGL companion (#1119): off unless the player turns it on here or the address asks for it (WebCompanion.On).
+            screen.Q<Label>("settings-companion-label").text = text["settings.companion"];
+            companionSwitch = screen.Q<Button>("settings-companion");
+            if (companion == null) companionSwitch.parent.style.display = DisplayStyle.None;
+            else companionSwitch.parent.style.display = StyleKeyword.Null;   // GameRoot reuses the tree an earlier Begin hid it in
+            companionSwitch.clicked += FlipCompanion;
             // Community (#1168): Star on GitHub opens the repository in a new tab.
             screen.Q<Label>("settings-community-label").text = text["settings.community"];
             var star = screen.Q<Button>("settings-star");
@@ -135,6 +146,7 @@ namespace Statecraft.Game.UI
         public void Dispose()
         {
             tiltShift.clicked -= Flip;
+            companionSwitch.clicked -= FlipCompanion;
             foreach (var (b, _, pick) in quality) b.clicked -= pick;
             languages.Dispose();
             foreach (var (b, _, pick) in sound) b.clicked -= pick;
@@ -144,6 +156,19 @@ namespace Statecraft.Game.UI
             root.UnregisterCallback<GeometryChangedEvent>(OnGeometry);
             if (panel != null) panel.referenceResolution = reference;
             if (screen.userData is Action) screen.userData = null;
+        }
+
+        void FlipCompanion()
+        {
+            if (companion is not { } c) return;
+            bool on = !c.on();
+            c.set(on);
+            Show();
+            try { store?.Write(CompanionKey, on ? "on" : "off"); }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                Debug.LogWarning($"Settings: could not keep the companion choice ({e.Message}); it holds until the page is closed");
+            }
         }
 
         void Flip()
@@ -229,6 +254,7 @@ namespace Statecraft.Game.UI
         void Show()
         {
             tiltShift.text = text[TiltShift.Enabled ? "settings.on" : "settings.off"];
+            companionSwitch.text = text[companion?.on() == true ? "settings.on" : "settings.off"];
             foreach (var (b, c, _) in quality) b.EnableInClassList(SelectedClass, c == GraphicsQuality.Current);
             languages.Mark();
             foreach (var (b, l, _) in sound) b.EnableInClassList(SelectedClass, l == soundLevel);

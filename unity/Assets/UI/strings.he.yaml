@@ -151,6 +151,8 @@ settings.title: "הגדרות"
 settings.tiltshift: "טשטוש בחלק העליון ובחלק התחתון של המפה"
 settings.on: "מופעל"
 settings.off: "כבוי"
+# The WebGL companion switch (#1119); the Hebrew awaits native review.
+settings.companion: "מלווה לקוראי מסך"
 # The graphics quality choice (#40). Adjectives in the feminine, agreeing with "איכות". Approved by Beri, a native
 # speaker, on #40 (17 Oct 2026). For the native reviewer (#564).
 settings.quality: "איכות גרפית"
@@ -1223,3 +1225,12 @@ opening.begin: "המשך למפה"
 opening.return: "חזרה למסך הפתיחה"
 opening.count: "שלב {0} מתוך {1}"
 opening.preview: "תצוגה מקדימה בעורך: טיוטה; בדיקת המקורות בידי אדם ממתינה."
+# Read-only WebGL companion (#1119); Hebrew additions await native review.
+companion.title: "מלווה למשחק"
+companion.help: "תצוגה לקריאה בלבד. המשחק מתנהל באמצעות מקשי המקלדת של המשחק."
+companion.focus: "המיקוד במשחק"
+companion.status: "מצב"
+companion.choices: "אפשרויות"
+companion.empty: "אין החלטה ממתינה"
+companion.unavailable: "לא זמין"
+companion.map: "מפה"
