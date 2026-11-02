@@ -132,6 +132,7 @@ namespace Statecraft.Game.UI
             // root's geometry (as TopBarInset does). The file keeps the choice, so a shape that holds it again gets it back.
             root.RegisterCallback<GeometryChangedEvent>(OnGeometry);
             // The WebGL companion (#1119): off unless the player turns it on here or the address asks for it (WebCompanion.On).
+            // Unavailable for now (WebCompanion.Available, owner 2 Nov 2026): GameRoot passes no switch, so the row stays hidden.
             screen.Q<Label>("settings-companion-label").text = text["settings.companion"];
             companionSwitch = screen.Q<Button>("settings-companion");
             if (companion == null) companionSwitch.parent.style.display = DisplayStyle.None;
