@@ -105,11 +105,15 @@ public class TownModelTests
                      ("tiberias", M.G04BasaltHouse) })
             if (!built.Models.Any(m => m.Id == id && m.Model == model)) bad.Add($"{id} has no {model}");
         // The generated houses stand only where they were placed: 01 to 03 in Netanya, 04 in Tiberias (game settlements and
-        // 1948 localities alike).
+        // 1948 localities alike). And the owner, 2 November 2026: "we need everything to be in the new generation": no game
+        // settlement or locality (the mixed ones included) draws #507's b17 courtyard house, and #507's b13a two-storey house
+        // stands only on the game towns' TownBlock plots that no newer model replaces (never in Netanya).
+        var townCentres = map.Settlements.Where(s => s.Type == "town" && s.Id != "netanya").Select(s => s.Id).ToHashSet();
         foreach (var m in built.Models)
         {
             if ((m.Model == M.G01NetanyaTiledHouse || m.Model == M.G02NetanyaBalconyHouse || m.Model == M.G03NetanyaPorchHouse) && m.Id != "netanya") bad.Add($"{m.Id} has {m.Model}");
             if (m.Model == M.G04BasaltHouse && m.Id != "tiberias") bad.Add($"{m.Id} has {m.Model}");
+            if (m.Model == M.B17CourtyardHouse || (m.Model == M.B13aTwoStorey && !townCentres.Contains(m.Id))) bad.Add($"{m.Id} has {m.Model}");
         }
         // A 1948 Arab village is built of the plastered courtyard house (05) alone.
         var villages = map.Localities.Select(p => p.Settlement).Where(s => s.Type == "village" && !Localities.IsMixed(s.Id)).Select(s => s.Id).ToHashSet();
