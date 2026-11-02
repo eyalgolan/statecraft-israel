@@ -314,11 +314,12 @@ options:
 
     // R-ARMS-002, R-MONEY-004 (#2206): the Defence screen's ceiling warning counts the conversions queued this turn, as End
     // turn does (Pools.BorrowsPastDebtCeiling with the queue): after $4m, 271 Arms are allowed and 272 refused. A conversion
-    // End turn refuses (past the month's $4m) counts for nothing, and the other queued orders are not judged.
+    // End turn refuses (past the month's $4m) counts for nothing.
     [Fact]
     public void TheCeilingCheckCountsTheQueuedConversionsAsEndTurnDoes()
     {
         var s = Simulation.NewGame(Real, GoldenRun.Seed, Mode.Historical);
+        // BuyArms(1) is the purchase already queued; the amount checked replaces it in its slot, as Buy does (SimBridge.Queue).
         var four = new Command[] { new BuyArms(1), new ConvertDollars(4) };
         Assert.True(Pools.BorrowsPastDebtCeiling(Real, s, Array.Empty<Command>(), 271));
         Assert.False(Pools.BorrowsPastDebtCeiling(Real, s, four, 271));
@@ -328,6 +329,64 @@ options:
             Assert.Equal(Pools.BorrowsPastDebtCeiling(Real, s, four, count),
                 Simulation.Step(Real, s, new Command[] { new BuyArms(count), new ConvertDollars(4) }).Rejected.Any(x => x.Reason == Pools.RefusedDebtCeiling));
         Assert.Equal((20.0, 0), (s.Treasury, s.DollarsConverted));   // the queue is judged on a copy
+    }
+
+    // R-ARMS-002 (#2206): the warning runs the whole queue as End turn will, so spending queued before the purchase counts
+    // too. On the first turn (Treasury IL 20m, no debt, the IL 250m ceiling, IL 1m an Arms, IL 0.333 per $) one halutz group
+    // (IL 0.5m, paid or borrowed at once) and $4m (IL 1.332m) leave IL 20.832m: 271 Arms borrow IL 250.168m, past the
+    // ceiling, so End turn refuses them; 270 borrow IL 249.168m and pass. Counting only the conversion said IL 249.668m.
+    [Fact]
+    public void TheCeilingCheckCountsTheSpendingQueuedBeforeThePurchase()
+    {
+        var s = Simulation.NewGame(Real, GoldenRun.Seed, Mode.Historical);
+        Assert.Equal(0.5, Real.UnitTypes.Single(t => t.Id == "halutz").TrainingCost);
+        var queued = new Command[] { new Train("tel_aviv", "halutz", 1), new ConvertDollars(4) };
+        Assert.True(Pools.BorrowsPastDebtCeiling(Real, s, queued, 271));
+        Assert.Equal(Pools.RefusedDebtCeiling, Assert.Single(Simulation.Step(Real, s, queued.Append(new BuyArms(271)).ToList()).Rejected).Reason);
+        Assert.False(Pools.BorrowsPastDebtCeiling(Real, s, queued, 270));
+        Assert.Empty(Simulation.Step(Real, s, queued.Append(new BuyArms(270)).ToList()).Rejected);
+        // The conversion alone: 271 Arms borrow IL 249.668m and pass.
+        Assert.False(Pools.BorrowsPastDebtCeiling(Real, s, new Command[] { new ConvertDollars(4) }, 271));
+    }
+
+    // #2206: for each queue on the Defence screen, the warning says "refused" for exactly the amounts End turn refuses for the
+    // ceiling. Each row gives the queue and the batch End turn runs after Buy queues n Arms: the purchase takes a queued
+    // purchase's slot, else goes last (SimBridge.Queue). The first refused amount is 271 - (IL 0.5m a halutz group, IL 2m
+    // for industry, paid before the purchase) + 1 for the $4m (IL 1.332m), rounded down; Attention 4 pays for every row.
+    [Fact]
+    public void TheCeilingWarningAgreesWithEndTurnOnEveryQueue()
+    {
+        var s = Simulation.NewGame(Real, GoldenRun.Seed, Mode.Historical);
+        var hash = s.Hash();
+        Command One() => new Train("tel_aviv", "halutz", 1);
+        Command Ten() => new Train("tel_aviv", "halutz", 10);
+        Command Four() => new ConvertDollars(4);
+        Command Industry() => new StartProject("industry", "tel_aviv", -4, 20);
+        Command Option() => new ChooseEventOption("idf_founding", "one_army");
+        var rows = new (Command[] Queued, Func<int, Command[]> EndTurn, int FirstRefused)[]
+        {
+            (new Command[0], n => new Command[] { new BuyArms(n) }, 271),
+            (new[] { Four() }, n => new[] { Four(), new BuyArms(n) }, 272),
+            (new[] { One() }, n => new[] { One(), new BuyArms(n) }, 270),
+            (new[] { One(), Four() }, n => new[] { One(), Four(), new BuyArms(n) }, 271),
+            (new[] { Four(), One() }, n => new[] { Four(), One(), new BuyArms(n) }, 271),
+            (new[] { Ten(), Four() }, n => new[] { Ten(), Four(), new BuyArms(n) }, 267),
+            (new[] { Industry(), Four() }, n => new[] { Industry(), Four(), new BuyArms(n) }, 270),
+            (new[] { Option(), One(), Four() }, n => new[] { Option(), One(), Four(), new BuyArms(n) }, 271),
+            // the queued purchase runs before the training, which then counts for nothing; the conversion still runs first
+            (new[] { new BuyArms(1), One(), Four() }, n => new[] { new BuyArms(n), One(), Four() }, 272),
+            (new[] { One(), new BuyArms(1), Four() }, n => new[] { One(), new BuyArms(n), Four() }, 271),
+        };
+        foreach (var (queued, endTurn, firstRefused) in rows)
+            for (int n = 265; n <= 274; n++)
+            {
+                var turn = Simulation.Step(Real, s, endTurn(n));
+                Assert.DoesNotContain(turn.Rejected, x => x.Command is not BuyArms);
+                var refused = turn.Rejected.Any(x => x.Command is BuyArms && x.Reason == Pools.RefusedDebtCeiling);
+                Assert.Equal(n >= firstRefused, refused);
+                Assert.Equal(refused, Pools.BorrowsPastDebtCeiling(Real, s, queued, n));
+            }
+        Assert.Equal(hash, s.Hash());   // every check runs on a copy
     }
 
     // #2206: only the conversions queued after the turn's first Arms purchase move, to just before it, in their queue order;
