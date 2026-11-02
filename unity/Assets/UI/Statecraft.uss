@@ -1245,8 +1245,9 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 #arms-count .unity-base-field__input { background-color: var(--navy-deep); color: var(--ink); border-width: 1px; border-color: var(--gold-dim); }
 #arms-count:focus .unity-base-field__input { border-color: var(--gold); }
 /* #530: a still opening in the existing event-card frame. Keep its actions outside the scrolling prose, so Skip
-   remains reachable in a short window. The English historical text stays English and left-aligned in the Hebrew UI (in the
-   Hebrew face, as all text there) until its own review. */
+   remains reachable in a short window. In the Hebrew UI the prose is opening.yaml's Hebrew, set from the right like the
+   rest of the Hebrew UI (owner, 1 Nov 2026); OpeningPresenter keeps .opening-source-en, left-aligned, only on what stays
+   English there: the photo credit, and a panel the file has no Hebrew for. */
 .opening-layer { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0; align-items: center; justify-content: center; padding: 16px; background-color: var(--navy-deep); }
 .opening-layer > .opening-card { display: flex; height: 100%; max-height: 100%; padding: 12px 24px; }
 .opening-replay { display: none; }
