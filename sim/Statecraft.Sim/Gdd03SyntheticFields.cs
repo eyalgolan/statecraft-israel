@@ -49,12 +49,24 @@ namespace Statecraft.Sim
             return values;
         }
 
+        // The catalogue tier, a multiple of field_food_per_turn (#2112); equal to Food only while that base is 1.
         internal int FoodFor(CivilianTier tier) => tier switch {
             CivilianTier.Novice => noviceFood,
             CivilianTier.Trained => trainedFood,
             CivilianTier.Veteran => veteranFood,
             _ => throw new ArgumentException("Requires a frozen farmer tier.", nameof(tier))
         };
+
+        /// <summary>#2112 (owner, 1 November 2026, "Main's base x 0.3's tiers (Recommended)"): the catalogue's farmer tier
+        /// is a multiple of main's field_food_per_turn (R-FIELD-002), so a staffed field yields <see cref="FoodFor"/> times
+        /// that base. A quote only; no Food moves.</summary>
+        internal int FoodPerTurn(CivilianTier tier, MvpRules rules)
+        {
+            if (rules == null) throw new ArgumentNullException(nameof(rules));
+            if (rules.FieldFoodPerTurn == null)
+                throw new ContentException("rules.yaml", "mvp.field_food_per_turn", "required for the gdd-0.3 farmer tiers");
+            return checked(FoodFor(tier) * rules.FieldFoodPerTurn.Value);
+        }
     }
 
     /// <summary>Explicit fixture facts, not assignment authority or inferred terrain/control.

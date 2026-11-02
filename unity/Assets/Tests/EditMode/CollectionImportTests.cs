@@ -62,13 +62,13 @@ public class CollectionImportTests
     public void TheCatalogKeeps73IndependentOriginalsAndTheGeneratedInfantryBundle()
     {
         var ids = CollectionCatalog.Ids.ToList();
-        Assert.AreEqual(80, ids.Count);
+        Assert.AreEqual(81, ids.Count);
         Assert.AreEqual(ids.Count, ids.Distinct().Count(), "an id in two bundles");
-        Assert.AreEqual(79, CollectionCatalog.Bundles.Count,
+        Assert.AreEqual(80, CollectionCatalog.Bundles.Count,
             "73 independent originals, #1763's shared generated bundle and one bundle for each later generated model");
         Assert.IsTrue(CollectionCatalog.Bundles.Where(b => b.Bundle != CollectionCatalog.ArabArmies)
             .All(b => b.Ids.Length == 1 && b.Bundle == "collection-" + b.Ids[0]));
-        CollectionAssert.AreEqual(new[] { 21, 13, 6, 10, 5, 2, 4, 1 }, CollectionCatalog.Groups.Select(g => g.Ids.Length));
+        CollectionAssert.AreEqual(new[] { 21, 13, 6, 10, 5, 2, 4, 2 }, CollectionCatalog.Groups.Select(g => g.Ids.Length));
         CollectionAssert.AreEqual(GeneratedInfantry, CollectionCatalog.Bundles.Single(b => b.Bundle == CollectionCatalog.ArabArmies).Ids);
         Assert.AreEqual(27, CollectionCatalog.Animated.Count);
         CollectionAssert.IsSubsetOf(CollectionCatalog.Animated, ids);
