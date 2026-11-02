@@ -2081,7 +2081,57 @@ rules:
     source: "Higgsfield (higgsfield.ai, Ultra plan), made 19-20 October 2026 for Tal Heuberger's hex-tile map: a concept image per prop (Nano Banana Pro, or GPT Image 2.5 Flare for the scrub, tent, garrigue, packing house, crates and boulders), then Tripo H3.1 image to 3D on Higgsfield (standard or detailed, face limit set per tile budget). The 20 props the hex tiles draw: the Arab village's minaret and prickly pear; Jaffa's clock tower, sea minaret and belfry; the coastal scrub; the Bedouin tent; the Judean garrigue; the railway halt's station, packing house, crates, well and eucalyptus; the coastal ruins' arcades, boulders and landing stage; the village mill's mill, threshing floor, terrace wall and sycamore fig. Slimmed in Blender 4.4: welded along Tripo's UV seams, kept at Tripo's own face count (320 to 7,390 triangles), the tent rebaked to 1,842 triangles and the scrub and garrigue baked onto closed hulls; colour maps resized to 512 px, no normal maps. The prompts, job ids, credits, masters and per-prop records are kept outside the repository."
     status: verified
     artist: "Tal Heuberger"
-    note: "Licence: CC BY-NC-ND 4.0, by the owner's ruling of 22 October 2026 that all of Tal Heuberger's models are under it (#1177); these props were first offered under CC0 by their author, 19 October 2026 ('Commit the 22 prop models to the repo as CC0 like the Collection. I accept that others may reuse or resell them.'), before they were ever published, and the ruling supersedes that offer. (20 of the 22 are committed; the marsh's papyrus and tamarisk stay out with their tile.) AI output: owner ruling 20 October 2026 on #1155, 'the Higgsfield/Tripo props can ship like your other models. Mark them AI-generated'. Streamed from their own bundle (hex-props), never in the first download: owner ruling 23 October 2026, 'Own streamed bundle'. Open for the owner before release: (1) Higgsfield Terms of Use (last updated 26 July 2026) s. 4.4: Higgsfield claims no ownership of Outputs and does not restrict their commercial use; s. 8 imports third-party providers' acceptable-use policies; (2) Tripo's terms give paid users all rights in Outputs (s. 5.2.2); whether Tripo H3.1 run through Higgsfield counts as a paid Tripo user's output is not confirmed in writing; (3) the account used is not the project's. Google's Gemini API terms ('Google won't claim ownership') cover the Nano Banana Pro concepts, which are not in the repository. The prefabs (unity/Assets/Art/HexTiles/<tile>/) and the materials beside the models are under the code row of LICENSING.md."
+    note: "Licence: CC BY-NC-ND 4.0, by the owner's ruling of 22 October 2026 that all of Tal Heuberger's models are under it (#1177); these props were first offered under CC0 by their author, 19 October 2026 ('Commit the 22 prop models to the repo as CC0 like the Collection. I accept that others may reuse or resell them.'), before they were ever published, and the ruling supersedes that offer. (The marsh's papyrus and the oasis tamarisk, #2082, have their own rows below.) AI output: owner ruling 20 October 2026 on #1155, 'the Higgsfield/Tripo props can ship like your other models. Mark them AI-generated'. Streamed from their own bundle (hex-props), never in the first download: owner ruling 23 October 2026, 'Own streamed bundle'. Open for the owner before release: (1) Higgsfield Terms of Use (last updated 26 July 2026) s. 4.4: Higgsfield claims no ownership of Outputs and does not restrict their commercial use; s. 8 imports third-party providers' acceptable-use policies; (2) Tripo's terms give paid users all rights in Outputs (s. 5.2.2); whether Tripo H3.1 run through Higgsfield counts as a paid Tripo user's output is not confirmed in writing; (3) the account used is not the project's. Google's Gemini API terms ('Google won't claim ownership') cover the Nano Banana Pro concepts, which are not in the repository. The prefabs (unity/Assets/Art/HexTiles/<tile>/) and the materials beside the models are under the code row of LICENSING.md."
+  # Tal Heuberger's papyrus and tamarisk (#2082) in the game: byte-identical copies of asset-sources/recovered-vegetation-20261031
+  # (only the model's file name changes), imported by HexSandboxImport.RunHiggsfield for the hex tiles and the main map's Hula.
+  - glob: "unity/Assets/Art/HexTiles/Props/hula_swamp_papyrus/hula_swamp_papyrus.obj"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tal Heuberger, Tripo H3.1 through Higgsfield, 19 October 2026, text-generated concept; byte-identical copy of asset-sources/recovered-vegetation-20261031/g25_papyrus/g25_papyrus.obj (route and task id: its provenance.json). SHA-256 8adf0838554e68bca68019a75bcea12316926a1ddc8cd88550570a09e6be0506."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Placed at the Hula swamp (the hula_swamp tile and the main map at site hula) under the owner's ruling of 2 November 2026, \"Hula + Arava, map and boards (Recommended)\" (Tal's scale, sourced places, load measured); licence under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported). Streamed, never in the first download. Provider/input restrictions remain; see the source's provenance.json."
+  - glob: "unity/Assets/Art/HexTiles/Props/hula_swamp_papyrus/albedo.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tal Heuberger, Tripo H3.1 through Higgsfield, 19 October 2026, text-generated concept; byte-identical copy of asset-sources/recovered-vegetation-20261031/g25_papyrus/albedo.jpg (route and task id: its provenance.json). SHA-256 97307421442321d3a8e1fa2fd479fa49c755a775e485fffff9f67a1004dfcfd8."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Placed at the Hula swamp (the hula_swamp tile and the main map at site hula) under the owner's ruling of 2 November 2026, \"Hula + Arava, map and boards (Recommended)\" (Tal's scale, sourced places, load measured); licence under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported). Streamed, never in the first download. Provider/input restrictions remain; see the source's provenance.json."
+  - glob: "unity/Assets/Art/HexTiles/Props/hula_swamp_papyrus/normal.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tal Heuberger, Tripo H3.1 through Higgsfield, 19 October 2026, text-generated concept; byte-identical copy of asset-sources/recovered-vegetation-20261031/g25_papyrus/normal.jpg (route and task id: its provenance.json). SHA-256 641d6f6d0ea6eee7ff3eb2cb19f7ccbadfba044b68c5a2be261e51ffe56746a3."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Placed at the Hula swamp (the hula_swamp tile and the main map at site hula) under the owner's ruling of 2 November 2026, \"Hula + Arava, map and boards (Recommended)\" (Tal's scale, sourced places, load measured); licence under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported). Streamed, never in the first download. Provider/input restrictions remain; see the source's provenance.json."
+  - glob: "unity/Assets/Art/HexTiles/Props/arava_oasis_tamarisk/arava_oasis_tamarisk.obj"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tal Heuberger, Tripo H3.1 through Higgsfield, 19 October 2026, text-generated concept; byte-identical copy of asset-sources/recovered-vegetation-20261031/hf_tamarisk/hf_tamarisk.obj (route and task id: its provenance.json). SHA-256 3a8c9979fa0db9600f3a1c97b96c6bcf6092e76fdbdc80c51351ead85aedeccf."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Placed at Arava oases (the arava_oasis tile; no sourced main-map place yet) under the owner's ruling of 2 November 2026, \"Hula + Arava, map and boards (Recommended)\" (Tal's scale, sourced places, load measured); licence under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported). Streamed, never in the first download. Provider/input restrictions remain; see the source's provenance.json."
+  - glob: "unity/Assets/Art/HexTiles/Props/arava_oasis_tamarisk/albedo.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tal Heuberger, Tripo H3.1 through Higgsfield, 19 October 2026, text-generated concept; byte-identical copy of asset-sources/recovered-vegetation-20261031/hf_tamarisk/albedo.jpg (route and task id: its provenance.json). SHA-256 077ecbef3f2ee64eb76d2e11789f41d385587af024b0903a19df9ca0558c0e72."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Placed at Arava oases (the arava_oasis tile; no sourced main-map place yet) under the owner's ruling of 2 November 2026, \"Hula + Arava, map and boards (Recommended)\" (Tal's scale, sourced places, load measured); licence under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported). Streamed, never in the first download. Provider/input restrictions remain; see the source's provenance.json."
+  - glob: "unity/Assets/Art/HexTiles/Props/arava_oasis_tamarisk/normal.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tal Heuberger, Tripo H3.1 through Higgsfield, 19 October 2026, text-generated concept; byte-identical copy of asset-sources/recovered-vegetation-20261031/hf_tamarisk/normal.jpg (route and task id: its provenance.json). SHA-256 1488db247a20ea6a18af5a4f2cda01fc25b3f85ce2a5818c026bcaa9b9c06235."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Placed at Arava oases (the arava_oasis tile; no sourced main-map place yet) under the owner's ruling of 2 November 2026, \"Hula + Arava, map and boards (Recommended)\" (Tal's scale, sourced places, load measured); licence under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported). Streamed, never in the first download. Provider/input restrictions remain; see the source's provenance.json."
   # --- Opening cutscene photographs (#530, slice A): AI-drafted candidates, owner-verify until a person checks them ---
   # The panel texts, sources and alt texts: unity/Assets/UI/Opening/opening.yaml. Licence and artist read from each
   # Commons file page via the Commons API on 2026-10-19 by Claude; no person has checked them and the owner's sensitivity

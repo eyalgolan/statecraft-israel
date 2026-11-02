@@ -947,6 +947,10 @@ namespace Statecraft.Game.UI
                 PlacementLayer.Drawn(Bridge.State.Placements, Bridge.State.CityProjects.Values), Bridge.Content);
             // Tal Heuberger's ibex and striped hyena, sparse in their sourced terrain zones and visible only at close zoom (#670).
             Statecraft.Game.Map.Collection.WildlifeLayer.Show(map);
+            // Tal Heuberger's papyrus at the Hula swamp's sourced site, close up only, streamed on the first close view, gone
+            // once the swamp is drained (#2082; owner, 2 November 2026: "Hula + Arava, map and boards").
+            Statecraft.Game.Map.Collection.HulaPapyrusLayer.ShowAt(map, Bridge.Content,
+                Statecraft.Game.Map.Collection.HulaPapyrusLayer.Drained(Bridge.State));
             // Tal Heuberger's civilian figures at towns, villages, transit camps and building sites, ambience only and streamed
             // after the first frame (#666, #708, #886): the residents follow the settlement state, the builders the projects.
             Statecraft.Game.Map.Collection.CivilianPeople.ShowAt(map, Bridge.State.Date, Bridge.State.Placements, Bridge.Content,
