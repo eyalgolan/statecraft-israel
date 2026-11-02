@@ -91,8 +91,11 @@ public class HexHighlightTests
             Assert.AreEqual(Resources.Load<Material>(MapScene.OverlayMaterialResource), renderer.sharedMaterial);
             var mesh = hover.GetComponent<MeshFilter>().sharedMesh;
             Assert.AreEqual(3 * 2 * MapBuilder.RingVertices, mesh.vertexCount, "three strips of two rings");
-            Assert.IsTrue(mesh.colors.Any(c => Near(c, MapScene.HoverColour.linear)), "a gold core");
-            Assert.IsTrue(mesh.colors.Any(c => Near(c, MapScene.HoverInk.linear)), "navy edges");
+            int n = MapBuilder.RingVertices;
+            var colours = mesh.colors;
+            for (int i = 0; i < colours.Length; i++)   // strip k is vertices 2kn..2(k+1)n-1: navy, gold, navy from the edge in
+                Assert.IsTrue(Near(colours[i], i / (2 * n) == 1 ? MapScene.HoverColour.linear : MapScene.HoverInk.linear),
+                    $"vertex {i}: navy outer strip, gold core, navy inner strip");
             var uvs = new System.Collections.Generic.List<Vector2>(); mesh.GetUVs(0, uvs);
             Assert.IsTrue(uvs.All(uv => uv.x == 0f), "the hover band keeps its strength at every zoom (uv.x 0)");
             Vector2 At(HexJson h) { var w = map.Frame.ToWorld(h.lon, h.lat, 0); return new Vector2(w.x, w.z); }
@@ -116,7 +119,9 @@ public class HexHighlightTests
     }
 
     /// <summary>The overlay shader compiles for WebGL 2, and its material draws in the transparent queue just under the move
-    /// arrow's (Transparent+50, #2134), so an arrow is never covered by a fill or the hover band.</summary>
+    /// arrow's (Transparent+50, #2134), so an arrow is never covered by a fill or the hover band. Its pass ignores depth (ZTest
+    /// Always): the fix for #2201 rests on that line, with ZTest LEqual the towns and trees stand over the fill and the hover
+    /// band again. The pass state is fixed in the source, not a material property, so the test reads the source.</summary>
     [Test]
     public void TheOverlayRunsOnWebGL2UnderTheMoveArrow()
     {
@@ -125,6 +130,10 @@ public class HexHighlightTests
         Assert.AreEqual("Statecraft/HexOverlay", mat.shader.name);
         CollectionAssert.IsEmpty(ShaderChecks.Gles3Errors(mat.shader));
         Assert.AreEqual((int)UnityEngine.Rendering.RenderQueue.Transparent + 40, mat.renderQueue);
+        var source = System.IO.File.ReadAllText(AssetDatabase.GetAssetPath(mat.shader));
+        StringAssert.IsMatch(@"(?m)^\s*ZTest\s+Always\s*$", source, "drawn over the models, not hidden behind them");
+        StringAssert.IsMatch(@"(?m)^\s*ZWrite\s+Off\s*$", source, "writes no depth");
+        StringAssert.IsMatch(@"(?m)^\s*Blend\s+SrcAlpha\s+OneMinusSrcAlpha\s*$", source, "alpha-blended: the fill is translucent");
     }
 
     /// <summary>GameRoot marks the hex under the pointer only while a pick is open: none before a unit is selected, the hex
