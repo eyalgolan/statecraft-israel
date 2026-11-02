@@ -81,7 +81,7 @@ public class OpeningHebrewTests
             "yemen" => yaml.Replace("    title_he: \"תימן\"\n", ""),                                          // no title
             "arab_countries" => yaml.Replace("country_he: \"מרוקו\", ", ""),                                   // one arrival short
             "europe" => Regex.Replace(yaml, "(?m)^    text_he: \"אחרי.*$", "    text_he: \" \""),            // a blank text
-            _ => yaml.Replace("\n  he_review: pending\n", "\n"),                                             // no review flag
+            _ => Regex.Replace(yaml, @"\n  he_review: (pending|approved)\n", "\n"),                       // no review flag
         };
         Assert.AreNotEqual(yaml, broken, "precondition: the fixture finds its line");
         var e = Assert.Throws<InvalidOperationException>(() => OpeningContent.Parse(broken));
@@ -107,7 +107,7 @@ public class OpeningHebrewTests
     [TestCase("''")]
     public void OnlyPendingOrApprovedIsAReviewFlag(string value)
     {
-        var yaml = Yaml.Replace("\r\n", "\n").Replace("\n  he_review: pending\n", "\n  he_review: " + value + "\n");
+        var yaml = Regex.Replace(Yaml.Replace("\r\n", "\n"), @"\n  he_review: (pending|approved)\n", "\n  he_review: " + value + "\n");
         Assert.Throws<InvalidOperationException>(() => OpeningContent.Parse(yaml));
     }
 
