@@ -495,7 +495,8 @@ def test_a_settlement_hex_takes_the_code_at_its_own_point():
     settlement placed in it, and a shore town such as Tiberias is placed on a substitute hex whose own hex is lake, so
     its centre says nothing about the town. Before this rule Tiberias and Safed read "Held by Arab forces" at the start
     and Hanita, held throughout, read Arab then ALA until July. The deliberate overrides still win: the contested
-    places, the pins and the Jerusalem area are excluded here and covered by their own tests."""
+    places, the pins and the Jerusalem area are excluded here and covered by their own tests. An exempt settlement (rule 7:
+    Safed, Rosh Pinna) is probed without the overlay it is exempt from, as the bake probes it, so its hex stays checked."""
     snaps, overlays, periods = cb.load(SOURCE)
     drawn = [p for p in periods if p["snapshot"]]
     pinned = {hg.settlement_hex(p["lon"], p["lat"], HEXES) for p in META["pinned_towns"]}
@@ -508,8 +509,7 @@ def test_a_settlement_hex_takes_the_code_at_its_own_point():
         if qr in pinned or qr in greyed or (abs(s["lon"] - 35.2256) < 0.1 and abs(s["lat"] - 31.7789) < 0.1):
             continue
         for i, p in enumerate(drawn):
-            ovs = [overlays[o] for o in p["overlays"] if o in overlays]
-            got = cb.code_at(s["lon"], s["lat"], snaps[p["snapshot"]], ovs)
+            got = cb.code_at(s["lon"], s["lat"], snaps[p["snapshot"]], cb.period_overlays(p, overlays, s["id"]))
             if got is None:
                 continue
             assert CODES[qr][i] == got, (s["id"], qr, p["id"])
@@ -570,3 +570,94 @@ def test_the_three_places_of_1659_are_held_by_israel_from_the_start():
     codes = CODES[hg.settlement_hex(safed["lon"], safed["lat"], HEXES)]
     assert "A" not in codes and "V" not in codes, codes
     assert codes[PERIODS.index("truce1")] == "I", codes
+
+
+def test_safed_is_israeli_from_the_start():
+    """Owner ruling of 1 November 2026 on #1659, "Israeli from 15 May": Safed was taken on 10-11 May 1948, before the game's
+    start, so its hex is Israeli in every period, the opening included, although its point lies in the CIA's 18 May
+    tenuously-held loop (contested_opening_hula)."""
+    safed = next(x for x in SETTLEMENTS["settlements"] if x["id"] == "safed")
+    codes = CODES[hg.settlement_hex(safed["lon"], safed["lat"], HEXES)]
+    assert set(codes) == {"I"}, codes
+
+
+def test_rosh_pinna_is_israeli_from_the_start():
+    """Owner ruling of 1 November 2026 on #1659, "Yes, Rosh Pinna too (Recommended)": the police building and Camp Filon
+    were in Jewish hands from 26-28 April 1948 (research_notes/Map/regions-1948-opening-control-p2a.md, gdd03-0017), so
+    Rosh Pinna's hex is Israeli in every period, the opening included, like Safed's."""
+    rosh_pinna = next(x for x in SETTLEMENTS["settlements"] if x["id"] == "rosh_pinna")
+    codes = CODES[hg.settlement_hex(rosh_pinna["lon"], rosh_pinna["lat"], HEXES)]
+    assert set(codes) == {"I"}, codes
+
+
+def test_the_hula_loop_still_greys_its_other_hexes_in_the_opening_period():
+    """#1659 (1 November 2026): only the exempt settlements (Safed, Rosh Pinna) leave the Hula loop; every other hex the
+    overlay greys stays grey. The set is
+    what the bake changes when the overlay is dropped from the opening period, so it follows the GeoJSON and the grid."""
+    elev, meta = bb.load_elevation()
+    water = bb.water_mask(elev, meta)
+    src = json.loads(json.dumps(SOURCE))
+    opening = next(p for p in src["statecraft"]["periods"] if p["id"] == "opening")
+    opening["overlays"].remove("contested_opening_hula")
+    _, without = cb.bake(src, HEXES, water, meta)
+    loop = {qr for qr, c in CODES.items() if c[OPEN] != without[qr][OPEN]}
+    # Measured on today's grid (#2193): a hex leaving the loop, by a GeoJSON edit or another exemption, breaks the
+    # ruling's "stays for its other hexes" and must fail here, not pass a lower bound. #1796's regrid re-measures it.
+    assert sorted(loop) == [(12, 5), (13, 4), (13, 5), (14, 2), (14, 3), (15, 1), (15, 2)], sorted(loop)
+    assert {CODES[qr][OPEN] for qr in loop} == {"c"}, sorted((qr, CODES[qr]) for qr in loop)
+    hula = next(f for f in SOURCE["features"] if f["properties"]["id"] == "contested_opening_hula")
+    for sid in ("safed", "rosh_pinna"):
+        s = next(x for x in SETTLEMENTS["settlements"] if x["id"] == sid)
+        assert bb.contains(bb.rings(hula["geometry"]), s["lon"], s["lat"]), f"{sid}: the exemption must still be needed"
+        assert hg.settlement_hex(s["lon"], s["lat"], HEXES) not in loop, sid
+
+
+def test_the_exemptions_move_exactly_their_own_hexes_and_only_the_opening(monkeypatch):
+    """Rule 7 is load-bearing and narrow: baked without OVERLAY_EXEMPT, the layer differs from the committed one only at
+    the exempt settlements' hexes, only in the opening period, and only from grey to Israeli. An exemption that changes
+    nothing (its hex pinned, a contested place or in the Jerusalem area) or one that reaches another hex fails here. The
+    exempt ids are the owner's two rulings of 1 November 2026 on #1659 (review of #2193)."""
+    assert set(cb.OVERLAY_EXEMPT) == {"safed", "rosh_pinna"}
+    by_id = {s["id"]: s for s in SETTLEMENTS["settlements"]}
+    exempt = {hg.settlement_hex(by_id[sid]["lon"], by_id[sid]["lat"], HEXES) for sid in cb.OVERLAY_EXEMPT}
+    assert len(exempt) == len(cb.OVERLAY_EXEMPT), exempt
+    elev, meta = bb.load_elevation()
+    monkeypatch.setattr(cb, "OVERLAY_EXEMPT", {})
+    _, without = cb.bake(SOURCE, HEXES, bb.water_mask(elev, meta), meta)
+    moved = {qr: (without[qr], c) for qr, c in CODES.items() if without[qr] != c}
+    assert set(moved) == exempt, sorted(moved.items())
+    for qr, (was, now) in moved.items():
+        assert was[OPEN] == "c" and now[OPEN] == "I", (qr, was, now)
+        assert was[:OPEN] + was[OPEN + 1:] == now[:OPEN] + now[OPEN + 1:], (qr, was, now)
+
+
+def test_an_overlay_exemption_that_exempts_nothing_fails_the_bake(monkeypatch):
+    """Fail closed: an exemption naming a settlement or an overlay that does not exist, an overlay in no drawn period, or a
+    settlement outside that overlay, must stop the bake (cb.build) rather than silently grey the place again (a renamed
+    id, or a moved point). Each case is told apart by its reason, so every branch of the check is exercised (review of
+    #2193: one shared message let a case pass through the wrong branch)."""
+    cb.check_exemptions(SOURCE)
+    first = next(iter(cb.OVERLAY_EXEMPT.values()))
+    hula = next(f for f in SOURCE["features"] if f["properties"]["id"] == first["overlay"])
+    haifa = next(x for x in SETTLEMENTS["settlements"] if x["id"] == "haifa")
+    assert not bb.contains(bb.rings(hula["geometry"]), haifa["lon"], haifa["lat"]), "the outside case needs a point outside"
+    for sid, ov, why in (("no_such_settlement", first["overlay"], "no such settlement"),
+                         ("safed", "no_such_overlay", "no such overlay"),
+                         ("haifa", first["overlay"], "point outside the overlay")):
+        monkeypatch.setattr(cb, "OVERLAY_EXEMPT", {sid: dict(first, overlay=ov)})
+        with pytest.raises(SystemExit, match=f"{sid} from {ov}: {why}"):
+            cb.check_exemptions(SOURCE)
+    monkeypatch.setattr(cb, "OVERLAY_EXEMPT", {"safed": first})
+    src = json.loads(json.dumps(SOURCE))
+    for p in src["statecraft"]["periods"]:
+        p["overlays"] = [o for o in p["overlays"] if o != first["overlay"]]
+    with pytest.raises(SystemExit, match=f"safed from {first['overlay']}: the overlay is in no drawn period"):
+        cb.check_exemptions(src)
+
+
+def test_the_bake_runs_the_exemption_check_first(monkeypatch):
+    """cb.build() itself fails on a stale exemption, before any hex is baked: a check only the tests call would not stop
+    `uv run tools/control_bake.py` from writing a file that greys the place again (review of #2193)."""
+    monkeypatch.setattr(cb, "OVERLAY_EXEMPT", {"no_such_settlement": next(iter(cb.OVERLAY_EXEMPT.values()))})
+    with pytest.raises(SystemExit, match="no_such_settlement from contested_opening_hula: no such settlement"):
+        cb.build()
