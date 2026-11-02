@@ -100,17 +100,19 @@ public class HexHouseLevelTests
 
     /// <summary>The checks above test the committed -light files, so a broken HexHouseLevels.Simplify would only show at the
     /// next rebuild (owner, PR #1994, 30 October 2026). This runs it on house 04, the one the Tiberias boards draw, with
-    /// Build's settings, and holds the fresh mesh to the same seam and texture promises. The tolerance is in the colour map's
-    /// source texels (4096), not its imported ones, which the WebGL cap halves (owner, 2 November 2026): so under the WebGL
-    /// and the desktop editor targets alike the fresh mesh is the committed one, vertex for vertex.</summary>
+    /// Build's settings (HexHouseLevels.UvTolerance, which Build calls), and holds the fresh mesh to the same seam and texture
+    /// promises and to the committed -light mesh, vertex for vertex. The tolerance must be one texel of the colour map as
+    /// delivered (4096 px), not as imported, which the WebGL cap halves (owner, 2 November 2026). What each editor target
+    /// proves: under WebGL the imported map is 2048 px, so a tolerance read from it fails the 1/4096 check and the committed
+    /// mesh check; under the desktop target the two widths agree, so only the source-text check below catches that mistake.</summary>
     [Test]
     public void TheSimplifierKeepsTheSeamsAndTheTextureOfHouse04()
     {
         const string id = "generated-1948-04-dark-basalt-house";
         var source = SourceMesh(id);
-        int texels = HexHouseLevels.SourceTexels(AssetDatabase.LoadAssetAtPath<Material>(Stem(id) + ".mat"));
-        Assert.AreEqual(4096, texels, "the delivered colour map's width, whatever the editor's build target");
-        var light = HexHouseLevels.Simplify(source, HexHouseLevels.UvToleranceTexels / texels, HexHouseLevels.EdgeTolerance, HexHouseLevels.MaxError);
+        float tolerance = HexHouseLevels.UvTolerance(AssetDatabase.LoadAssetAtPath<Material>(Stem(id) + ".mat"));
+        Assert.AreEqual(HexHouseLevels.UvToleranceTexels / 4096f, tolerance, $"one texel of the delivered 4096 px map (editor target {EditorUserBuildSettings.activeBuildTarget})");
+        var light = HexHouseLevels.Simplify(source, tolerance, HexHouseLevels.EdgeTolerance, HexHouseLevels.MaxError);
         try
         {
             KeepsTheSeamsAndTheTexture(id, source, light);
@@ -121,6 +123,18 @@ public class HexHouseLevelTests
             CollectionAssert.AreEqual(committed.uv, light.uv, id + ": its UVs");
         }
         finally { UnityEngine.Object.DestroyImmediate(light); }
+    }
+
+    /// <summary>Build measures its seam tolerance through HexHouseLevels.UvTolerance (the delivered map's width), never
+    /// through the imported texture's size, which depends on the editor's build target. A source-text check, because Build
+    /// writes assets and is not run here, and because under the desktop target both widths are 4096.</summary>
+    [Test]
+    public void BuildMeasuresItsToleranceInSourceTexels()
+    {
+        string code = File.ReadAllText(Disk("Assets/Editor/HexTiles/HexHouseLevels.cs"));
+        StringAssert.Contains("Simplify(source, UvTolerance(material), EdgeTolerance, MaxError)", code, "Build's call");
+        foreach (var imported in new[] { "mainTexture.width", "mainTexture.height", "texelSize" })
+            StringAssert.DoesNotContain(imported, code, "HexHouseLevels reads no imported texture size");
     }
 
     /// <summary>The lighter mesh's promises that need no prefab: fewer triangles, every vertex one of the source's, no seam

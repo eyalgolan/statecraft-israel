@@ -150,7 +150,8 @@ public class OriginalModelsStreamingTests
             Assert.GreaterOrEqual(texture.maxTextureSize, Math.Max(width, height), id);
             Assert.IsFalse(texture.crunchedCompression, id);
             var web = texture.GetPlatformTextureSettings("WebGL");
-            // The generated houses import at 2048 on the web (owner, 2 November 2026); BuildingModelImportTests checks that cap.
+            // The generated houses' colour maps (this importer, _basecolor only) import at 2048 on the web (owner, 2 November 2026);
+            // BuildingModelImportTests checks that cap.
             if (!CollectionCatalog.IsGeneratedHouse(id)) Assert.GreaterOrEqual(web.maxTextureSize, Math.Max(width, height), id);
             Assert.IsFalse(web.crunchedCompression, id);
         }

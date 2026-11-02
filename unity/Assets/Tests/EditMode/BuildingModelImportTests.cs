@@ -147,8 +147,10 @@ public class BuildingModelImportTests
             // Imported at the source size, or at the active target's cap where it overrides one (the houses on WebGL: 2048).
             var active = imp.GetPlatformTextureSettings(EditorUserBuildSettings.activeBuildTarget == BuildTarget.WebGL ? "WebGL" : "Standalone");
             int cap = active.overridden ? active.maxTextureSize : imp.maxTextureSize;
+            int longest = Math.Max(width, height), w = width, h = height;
+            if (longest > cap) { w = width * cap / longest; h = height * cap / longest; }   // Unity keeps the aspect ratio
             var tex = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
-            Assert.AreEqual(Math.Min(width, cap), tex.width, path + " imported width"); Assert.AreEqual(Math.Min(height, cap), tex.height, path + " imported height");
+            Assert.AreEqual(w, tex.width, path + " imported width"); Assert.AreEqual(h, tex.height, path + " imported height");
             Assert.Greater(tex.mipmapCount, 1, path + " imported mipmaps");
         }
     }
