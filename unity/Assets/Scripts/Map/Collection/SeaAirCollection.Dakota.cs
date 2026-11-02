@@ -81,7 +81,8 @@ namespace Statecraft.Game.Map.Collection
         /// 1948 localities and the map locations), so it hides no token and no name. Over the city itself it cannot be: Kiryati's
         /// token stands on Tel Aviv from 15 May 1948 (content/map/units_1948.yaml), and at 420x the aircraft is 12 km across.
         /// Rings of <see cref="DakotaSearchStepM"/> round Tel Aviv, nearest first, each from due west (the sea) turning both ways.
-        /// Null when none is clear.</summary>
+        /// On the map that is 22 km due west of Tel Aviv's point, over the sea; the owner reviewed it on #2274 (2 November 2026):
+        /// "Off the coast is fine (Recommended)". Null when none is clear.</summary>
         internal static Vector2? DakotaSpot(MapScene map, Statecraft.Sim.Content? content)
         {
             var town = map.Settlements.FirstOrDefault(s => s.Id == DakotaTown);

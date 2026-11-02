@@ -44,8 +44,21 @@ namespace Statecraft.Game.Map.Collection
             _ => throw new ArgumentException($"'{model}' is not one of #707's models", nameof(model)),
         };
 
-        /// <summary>The model's long side on the map (m), seen from above.</summary>
-        public static float SizeOf(string model) => RealLengthM(model) * WorldScale;
+        /// <summary>The model's long side on the map (m), seen from above: its real size at the world scale, times its row's own
+        /// scale (<see cref="Want.Scale"/>).</summary>
+        public static float SizeOf(string model) => RealLengthM(model) * WorldScale * ScaleOf(model);
+
+        /// <summary>The scale over <see cref="WorldScale"/> of <paramref name="model"/>'s rows (1 for a model with none).</summary>
+        public static float ScaleOf(string model)
+        {
+            foreach (var w in All) if (w.Model == model) return w.Scale;
+            return 1f;
+        }
+
+        /// <summary>The owner, 2 November 2026, on #2274: "Bigger, closer (Recommended)" ("Draw these four at about 3x so they read
+        /// at close zoom, and let them stand at the town's edge right by the sourced spot"): the scale of Tal Heuberger's four
+        /// props over <see cref="WorldScale"/>. At the world scale alone they were about 10 px at the closest zoom.</summary>
+        public const float PropScale = 3f;
 
         /// <summary>The disc a placed model keeps clear (m): its half diagonal, as if square.</summary>
         public static float ClearanceOf(string model) => 0.71f * SizeOf(model);
@@ -70,14 +83,17 @@ namespace Statecraft.Game.Map.Collection
             /// <summary>The first day it is no longer drawn, or null: drawn from <see cref="From"/> on.</summary>
             public readonly DateTime? To;
             public readonly Siting Site;
-            /// <summary>Red-first stubs: the row's own scale over the world scale, and whether it may stand at a town's edge.</summary>
+            /// <summary>The row's own scale over <see cref="WorldScale"/> (1, or <see cref="PropScale"/> for the four props), and
+            /// whether it may stand at a town's edge, inside its kit footprint, clear of the town's building models, the tokens in
+            /// the towns and the name points instead (the four props; owner on #2274: "Bigger, closer").</summary>
             public readonly float Scale; public readonly bool TownEdge;
             /// <summary>The SeaCraft coast's place (<see cref="Siting.Shore"/>) or the route's id (<see cref="Siting.Road"/>).</summary>
             public readonly string Along;
             public Want(string key, string model, DateTime from, double lon, double lat, string source)
                 : this(key, model, from, null, lon, lat, source, Siting.Seeded, "") { }
-            public Want(string key, string model, DateTime from, DateTime? to, double lon, double lat, string source, Siting site, string along)
-            { Key = key; Model = model; From = from; To = to; Lon = lon; Lat = lat; Source = source; Site = site; Along = along; Scale = 1f; TownEdge = false; }
+            public Want(string key, string model, DateTime from, DateTime? to, double lon, double lat, string source, Siting site, string along,
+                float scale = 1f, bool townEdge = false)
+            { Key = key; Model = model; From = from; To = to; Lon = lon; Lat = lat; Source = source; Site = site; Along = along; Scale = scale; TownEdge = townEdge; }
             public bool Covers(DateTime date) => date >= From && (To == null || date < To.Value);
         }
 
@@ -135,25 +151,25 @@ namespace Statecraft.Game.Map.Collection
             new Want("beersheba_abrahams_well", Well, new DateTime(1948, 5, 15), null, 34.79307778, 31.237225,
                 "he.wiki באר אברהם, https://he.wikipedia.org/w/index.php?oldid=44049275 (agent-read 2026-11-02); " +
                 "en.wiki Abraham's Well, https://en.wikipedia.org/w/index.php?oldid=1374743581 (agent-read 2026-11-02); person check pending",
-                Siting.Seeded, ""),
+                Siting.Seeded, "", PropScale, townEdge: true),
             // The sandbags: "אש שנורתה מתוך עמדת שקי החול שלמרגלות מטה הפלמ"ח אילצה את הסירה לחזור" (he.wiki אלטלנה, footnote
             // Nakdimon 2016), the night of 21-22 June 1948, on the Tel Aviv shore; only on the Altalena's turn.
             new Want("tel_aviv_altalena_sandbags", Sandbags, SandbagsFrom, SandbagsTo, 34.7732528, 32.0964833,
                 "he.wiki אלטלנה, https://he.wikipedia.org/w/index.php?oldid=44137735 (footnote nakdimon2016; agent-read 2026-11-02; " +
-                "Nakdimon not opened); content/events/altalena.yaml; person check pending", Siting.Shore, "tel_aviv"),
+                "Nakdimon not opened); content/events/altalena.yaml; person check pending", Siting.Shore, "tel_aviv", PropScale, townEdge: true),
             // The crates: "Het transportschip Bulgaria met emigranten in de haven van Haifa ... met op de kade kisten en kratten",
             // "Datum : 1948" (Nationaal Archief 255-1124, its Commons copy); year only, so the 1948 turns.
             new Want("haifa_quay_crates", Crates, Year1948From, Year1948To, 35.00448, 32.820118,
                 "Commons, https://commons.wikimedia.org/w/index.php?oldid=970193372 (Nationaal Archief 255-1124, " +
                 "https://www.nationaalarchief.nl/onderzoeken/fotocollectie/aed57008-d0b4-102d-bcf8-003048976d84; agent-read 2026-11-02); " +
-                "person check pending", Siting.Shore, "haifa"),
+                "person check pending", Siting.Shore, "haifa", PropScale, townEdge: true),
             // The wall: "met op de voorgrond een stenen muurtje langs een weg; het dorp op de top is vermoedelijk Abu Ghosh", series
             // "Israël 1948-1949: onderweg naar Jeruzalem" (Nationaal Archief 255-0876, its Commons copy); year only, the 1948 turns.
             new Want("abu_ghosh_road_wall", Wall, Year1948From, Year1948To, AbuGhoshLon, AbuGhoshLat,
                 "Commons, https://commons.wikimedia.org/w/index.php?oldid=1225901219 (Nationaal Archief 255-0876, " +
                 "https://www.nationaalarchief.nl/onderzoeken/fotocollectie/aed4b5dc-d0b4-102d-bcf8-003048976d84; agent-read 2026-11-02); " +
                 "point: en.wiki Abu Ghosh, https://en.wikipedia.org/w/index.php?oldid=1381085214 (agent-read 2026-11-02); person check pending",
-                Siting.Road, WallRoute),
+                Siting.Road, WallRoute, PropScale, townEdge: true),
         };
 
         public static IReadOnlyList<Want> Placements(DateTime date) => All.Where(x => x.Covers(date)).ToList();
@@ -194,7 +210,21 @@ namespace Statecraft.Game.Map.Collection
         /// <paramref name="anchor"/>, just off its corridor on either side, stepping along the line both ways; and the line's
         /// direction there (world x, z, unit length), for the model to lie along it. Null when the route is unknown or none is
         /// clear.</summary>
-        internal static (Vector2 at, Vector2 along)? RoadSpot(MapScene map, string route, Vector2 anchor, float clearance, Func<Vector2, float, bool> free)
+        /// <summary>Half the long side and half the short side (m, seen from above) of <paramref name="prefab"/> drawn
+        /// <paramref name="size"/> long at its own rotation.</summary>
+        static (float lengthHalf, float depthHalf) HalfSides(GameObject prefab, float size)
+        {
+            var probe = Instantiate(prefab);
+            try
+            {
+                probe.transform.SetPositionAndRotation(Vector3.zero, prefab.transform.localRotation);
+                var b = Bounds(probe); float edge = Mathf.Max(b.size.x, b.size.z), k = edge > 1e-3f ? size / edge : 1f;
+                return (0.5f * edge * k, 0.5f * Mathf.Min(b.size.x, b.size.z) * k);
+            }
+            finally { DestroyImmediate(probe); }
+        }
+
+        internal static (Vector2 at, Vector2 along)? RoadSpot(MapScene map, string route, Vector2 anchor, float lengthHalf, float depthHalf, Func<Vector2, float, bool> free)
         {
             var corridors = Routes.RouteLayer.Corridors(map.Frame, map.RouteList.Where(r => r.Id == route));
             if (corridors.Count == 0) return null;
@@ -208,8 +238,8 @@ namespace Statecraft.Game.Map.Collection
                 if (d < best) { best = d; seg = i; bestT = t; }
             }
             if (seg < 0) return null;
-            // Walk along the line from the nearest point, both ways, by the clearance.
-            float stepM = Mathf.Max(clearance, 50f);
+            // Walk along the line from the nearest point, both ways, by the model's depth.
+            float stepM = Mathf.Max(2f * depthHalf, 50f), reach = Mathf.Max(lengthHalf - depthHalf, 0f);
             for (int i = 0; i <= 2 * ShoreSteps; i++)
             {
                 int step = (i + 1) / 2 * (i % 2 == 1 ? 1 : -1);
@@ -219,8 +249,9 @@ namespace Statecraft.Game.Map.Collection
                 float side = Vector2.Dot(anchor - q, normal) >= 0f ? 1f : -1f;
                 foreach (var s in new[] { side, -side })
                 {
-                    var p = q + normal * s * (halfWidth + clearance + 1f);
-                    if (free(p, clearance)) return (p, dir);
+                    // Just off the corridor, its long side along the road: its middle and both ends, each a disc of its half depth.
+                    var p = q + normal * s * (halfWidth + depthHalf + 1f);
+                    if (free(p, depthHalf) && free(p + dir * reach, depthHalf) && free(p - dir * reach, depthHalf)) return (p, dir);
                 }
             }
             return null;
@@ -489,6 +520,25 @@ namespace Statecraft.Game.Map.Collection
             bool Free(Vector2 p, float r) => TownLandmarks.Clear(p, r, taken) && TownLandmarks.Clear(p, r, footprints)
                 && ground.Inside(p.x - r, p.y - r) && ground.Inside(p.x + r, p.y + r)
                 && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, date);
+            // The four props stand at a town's edge (owner on #2274: "Bigger, closer"): inside a footprint if need be, clear of the
+            // towns' building models, of the tokens standing in towns and of every settlement's and locality's name point instead.
+            List<(Vector2, float)>? buildings = null, clearings = null; List<Vector2>? names = null;
+            bool FreeAtEdge(Vector2 p, float r)
+            {
+                if (buildings == null)
+                {
+                    var towns = map.GetComponentInChildren<Kits.TownModelLayer>(true);
+                    buildings = towns == null ? new List<(Vector2, float)>()
+                        : map.KitFootprints.SelectMany(f => towns.InstancesOf(f.id)).Select(i => (i.C, 0.5f * new Vector2(i.W, i.D).magnitude)).ToList();
+                    clearings = map.UnitClearings.ToList();
+                    names = map.Settlements.Concat(map.Localities.Select(l => l.Settlement))
+                        .Select(s => { var n = map.Frame.ToWorld(s.Lon, s.Lat, 0); return new Vector2(n.x, n.z); }).ToList();
+                }
+                foreach (var n in names!) if ((n - p).sqrMagnitude <= r * r) return false;
+                return TownLandmarks.Clear(p, r, taken) && TownLandmarks.Clear(p, r, buildings) && TownLandmarks.Clear(p, r, clearings!)
+                    && ground.Inside(p.x - r, p.y - r) && ground.Inside(p.x + r, p.y + r)
+                    && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, date);
+            }
             var holes = new List<(Vector2 centre, float radius)>();
             var kits = map.transform.Find(Kits.KitLayer.RootName);
             foreach (var w in wants)
@@ -505,8 +555,13 @@ namespace Statecraft.Game.Map.Collection
                         at = RouteFacingEdgeSpot(footprint.centre, drawn, clearance, map.KitRouteCorridors, Free);
                 }
                 Vector2? along = null;
-                if (w.Site == Siting.Shore) at = ShoreSpot(w.Along, ground, clearance, Free);
-                else if (w.Site == Siting.Road && RoadSpot(map, w.Along, anchor, clearance, Free) is (Vector2 roadAt, Vector2 roadDir)) { at = roadAt; along = roadDir; }
+                Func<Vector2, float, bool> free = w.TownEdge ? FreeAtEdge : Free;
+                if (w.Site == Siting.Shore) at = ShoreSpot(w.Along, ground, clearance, free);
+                else if (w.Site == Siting.Road)
+                {
+                    var (lengthHalf, depthHalf) = HalfSides(prefab, SizeOf(w.Model));
+                    if (RoadSpot(map, w.Along, anchor, lengthHalf, depthHalf, free) is (Vector2 roadAt, Vector2 roadDir)) { at = roadAt; along = roadDir; }
+                }
                 if (at == null && w.Site != Siting.Seeded)
                 {
                     Debug.LogWarning($"BUILDINGS: no clear {(w.Site == Siting.Shore ? "beach" : "roadside")} spot for {w.Key}; its {w.Model} is not drawn.");
@@ -516,10 +571,10 @@ namespace Statecraft.Game.Map.Collection
                 {
                     if (w.Key == "degania_r35")
                         Debug.LogWarning("BUILDINGS: route-facing spot unavailable for degania_r35; falling back to the seeded spot.");
-                    float from = Inside(anchor, footprints);
-                    at = SeededSpot(w.Key, anchor, clearance, Free, from);
+                    float from = w.TownEdge ? 0f : Inside(anchor, footprints);
+                    at = SeededSpot(w.Key, anchor, clearance, free, from);
                     for (int ring = 1; at == null && ring <= WidenRings; ring++)
-                        at = SeededSpot(w.Key, anchor, clearance, Free, from + ring * WidenShare * clearance);
+                        at = SeededSpot(w.Key, anchor, clearance, free, from + ring * WidenShare * clearance);
                 }
                 if (at == null) { Debug.LogWarning($"BUILDINGS: no clear ground near {w.Key}; its {w.Model} is not drawn."); continue; }
                 taken.Add((at.Value, clearance));
