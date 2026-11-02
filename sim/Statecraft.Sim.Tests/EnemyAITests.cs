@@ -392,9 +392,10 @@ public class EnemyAITests
         }
         // No capture but the card orders' own targets: Horev's delegated go-to (R-ENEMY-005) takes Golani round Nazareth, an
         // enemy-held place it was not sent to (the owner's answer 1 on #2087), while the delegated Yoav order sends the Negev
-        // Brigade to Beersheba, which a card's march may take. The Dani order's Ramle hex is (-4, 24) on the 4.4 km grid
-        // (tools/unit_anchor_hexes.py), the hex Ramla shares with Rehovot, which captures neither (Ramla's capture target is
-        // (-3, 24), #1796), so Kiryati takes nothing.
+        // Brigade to Beersheba, which a card's march may take, and the Dani order sends Kiryati to Ramla's capture target
+        // (-3, 24), not the (-4, 24) Ramla shares with Rehovot at 4.4 km (owner, 2 November 2026, #2087: "Send it to Ramla's
+        // target"; tools/unit_anchor_hexes.py). From Tel Aviv the march goes round Lod's (-3, 23), which the card did not send
+        // it to, so on 15 July 1948 Kiryati stops on (-4, 24), one hex short, and the order ends on 20 July: it takes nothing.
         Assert.Equal(new[] { "beersheba" }, s.Settlements.Keys.OrderBy(k => k, StringComparer.Ordinal));
         Assert.All(s.Settlements.Values, x => Assert.Equal("israel", x.Owner));
     }
@@ -510,7 +511,7 @@ public class EnemyAITests
             ("operation_horev", "launch", true, "golani", -8, 28),                 // Julis camp, golani anchors[1]
             ("operation_yoav", "stop_at_ceasefire", true, "negev", -10, 35),       // Beersheba, negev order_targets[0]
             ("operation_yoav", "stop_at_ceasefire", true, "givati", -9, 29),       // Huleiqat, givati order_targets[0]
-            ("ten_days", "central_front", true, "kiryati", -4, 24),                // Ramle, kiryati order_targets[0]
+            ("ten_days", "central_front", true, "kiryati", -3, 24),                // Ramle, kiryati order_targets[0]
             ("ten_days", "central_front", true, "carmeli", 14, 6),                 // facing the Syrian bridgehead, carmeli anchors[1]
         }, orders.OrderBy(x => x.Item1, StringComparer.Ordinal));
     }
@@ -520,7 +521,7 @@ public class EnemyAITests
     // unit standing on the hex is taken off first (the ALA on al-Malikiyya), as that refusal is pinned by
     // WarEvents1948Tests.NoTurnBeforeTheArmisticeRefusesAnOrder and ARefusedCardOrderIsReportedLikeThePlayersOwn.
     [Theory]
-    [InlineData("ten_days", "central_front", "1948-07-15", "kiryati", -4, 24, "1948-07-20")]
+    [InlineData("ten_days", "central_front", "1948-07-15", "kiryati", -3, 24, "1948-07-20")]
     [InlineData("operation_yoav", "stop_at_ceasefire", "1948-10-15", "negev", -10, 35, "1949-02-24")]
     [InlineData("operation_yoav", "stop_at_ceasefire", "1948-10-15", "givati", -9, 29, "1948-11-01")]
     [InlineData("operation_hiram", "stop_at_ceasefire", "1948-11-15", "carmeli", 15, 3, "1949-03-23")]

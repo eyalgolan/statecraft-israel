@@ -33,7 +33,7 @@ anchors:
   - { id: arab_liberation_army, anchor: 0, q: 14, r: 4 }
 order_targets:
   - { id: carmeli, target: 0, q: 15, r: 3 }
-  - { id: kiryati, target: 0, q: -4, r: 24 }
+  - { id: kiryati, target: 0, q: -3, r: 24 }
   - { id: givati, target: 0, q: -9, r: 29 }
   - { id: brigade_7, target: 0, q: 14, r: 4 }
   - { id: harel, target: 0, q: -3, r: 25 }

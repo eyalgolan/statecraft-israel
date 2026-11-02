@@ -46,6 +46,20 @@ def player_locality_hexes() -> set[tuple[int, int]]:
     return {(s["q"], s["r"]) for s in rows if s["id"] not in held}
 
 
+# An order target sent to a settlement whose capture target is not its own hex goes to that capture target, or the order
+# could never take the place (owner, 2 November 2026, #2087: "Send it to Ramla's target (Recommended)"): at 4.4 km Ramle's
+# point lies in (-4, 24), which Ramla shares with Rehovot, and Ramla's capture target is its neighbour (-3, 24) in
+# settlement_targets.yaml (owner on #1796, 26 October 2026, "Contested + move target"). Keyed by (row id, target index).
+ORDER_TARGET_ON_CAPTURE_HEX = {("kiryati", 0): "ramla"}
+
+
+def capture_hex(settlement: str) -> tuple[int, int]:
+    """The capture target hex settlement_targets.yaml gives a settlement."""
+    rows = yaml12.load((ROOT / "content" / "settlement_targets.yaml").read_text(encoding="utf-8"))["targets"]
+    row = next(t for t in rows if t["id"] == settlement)
+    return row["q"], row["r"]
+
+
 def render(hexes: dict, units: list[dict]) -> str:
     """The file text: one flow mapping per anchor, then per order target, in units_1948.yaml order."""
     placed = [(u, k, a, hg.settlement_hex(a["lon"], a["lat"], hexes))
@@ -67,7 +81,8 @@ def render(hexes: dict, units: list[dict]) -> str:
     lines.append("order_targets:\n")
     for u in units:
         for k, a in enumerate(u.get("order_targets") or []):
-            q, r = hg.settlement_hex(a["lon"], a["lat"], hexes)
+            place = ORDER_TARGET_ON_CAPTURE_HEX.get((u["id"], k))
+            q, r = capture_hex(place) if place else hg.settlement_hex(a["lon"], a["lat"], hexes)
             lines.append(f"  - {{ id: {u['id']}, target: {k}, q: {q}, r: {r} }}\n")
     return "".join(lines)
 
