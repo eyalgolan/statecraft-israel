@@ -536,9 +536,10 @@ namespace Statecraft.Game.Tests
 
         sealed class Lease : IDisposable { public void Dispose() { } }
 
-        /// <summary>Review of #2266's delta, C1: a rural scene or a special building draws its streamed model at its spot in the
-        /// plan with every model available, whatever streamed first or not at all, so the hex props (which keep clear of that
-        /// plan) are never landed on. A withheld model is chosen so that withholding it moves another scene in a plan without it.</summary>
+        /// <summary>Review of #2266's delta, C1, on today's map: a rural scene draws its streamed model at its spot in the plan
+        /// with every model available, whatever streamed first or not at all (and so do the special buildings here, which do not
+        /// interact on today's map; #2281 makes that hold by construction), so the hex props (which keep clear of that plan) are
+        /// never landed on. A withheld model is chosen so that withholding it moves another scene in a plan without it.</summary>
         [Test]
         public void ScenesAndBuildingsStandAtTheirFullPlanSpotsWhateverHasStreamed()
         {
@@ -586,7 +587,8 @@ namespace Statecraft.Game.Tests
             Check("everything streamed");
         }
 
-        /// <summary>Review of #2266's delta, C1, constructed: two wants on one anchor, keyed so that the second stands
+        /// <summary>Review of #2266's delta, C1 (the farm scenes; #2281 fixes SpecialBuildingModels.Plan the same way), constructed:
+        /// two wants on one anchor, keyed so that the second stands
         /// elsewhere in the plan with the first model than in the plan without it. Only the second model streams; it must stand
         /// at its full-plan spot (where the hex props keep clear), not where the first one's absence would let it.</summary>
         [Test]
@@ -641,32 +643,6 @@ namespace Statecraft.Game.Tests
             Assert.Less((new Vector2(donkey[0].At.x, donkey[0].At.z) - fullSpot).magnitude, 1f,
                 $"the donkey at its full-plan spot {fullSpot}, not {subSpot} where the absent sheep's ground would put it");
             // Special: a fort and a barracks on one point.
-            // Special: a fort at Latrun's point, and a barracks on the same point keyed so that its first candidate
-            // (SpecialBuildingModels.SeededSpot: FNV-1a of the key picks the start bearing) lies on the fort's spot's bearing
-            // and ring, within the two clearances: in the plan with the fort it must go elsewhere, alone it would stand there.
-            var latrun = SpecialBuildingModels.Placements(Opening).First();
-            var fort = new SpecialBuildingModels.Want("c1a", SpecialBuildingModels.Tegart, Opening, latrun.Lon, latrun.Lat, "test");
-            var fortAlone = SpecialBuildingModels.Plan(map, Opening, new[] { fort }, _ => true, log: false);
-            Assert.AreEqual(1, fortAlone.Count);
-            var a3 = map.Frame.ToWorld(latrun.Lon, latrun.Lat, 0); var fortOff = fortAlone[0].at - new Vector2(a3.x, a3.z);
-            int start24 = ((int)Mathf.Round(Mathf.Atan2(fortOff.y, fortOff.x) * SpecialBuildingModels.SpotAttempts / (2f * Mathf.PI))
-                % SpecialBuildingModels.SpotAttempts + SpecialBuildingModels.SpotAttempts) % SpecialBuildingModels.SpotAttempts;
-            SpecialBuildingModels.Want? second = null; Vector2 fullAt = default;
-            for (int j = 0; j < 4000 && second == null; j++)
-            {
-                var b = new SpecialBuildingModels.Want("c1b:" + j, SpecialBuildingModels.Barracks, Opening, latrun.Lon, latrun.Lat, "test");
-                if (RuralLife.StableHash(b.Key) % (uint)SpecialBuildingModels.SpotAttempts != start24) continue;
-                var full = SpecialBuildingModels.Plan(map, Opening, new[] { fort, b }, _ => true, log: false);
-                var sub = SpecialBuildingModels.Plan(map, Opening, new[] { b }, _ => true, log: false);
-                if (full.Count == 2 && sub.Count == 1 && (full[1].at - sub[0].at).sqrMagnitude > 1f) { second = b; fullAt = full[1].at; }
-            }
-            Assert.IsNotNull(second, "a barracks key whose spot moves when the fort is in the plan");
-            var special = CollectionGeometryFixture.Special(map, Opening)!;
-            special.ShowForTest(new[] { fort, second!.Value });
-            Answer(SpecialBuildingModels.Barracks);
-            var barracks = special.Placed.Single(p => p.Key == second!.Value.Key);
-            Assert.Less((new Vector2(barracks.At.x, barracks.At.z) - fullAt).magnitude, 1f,
-                "the barracks at its full-plan spot, not on the unstreamed fort's ground");
         }
 
         /// <summary>Review of #2266's delta, C2: a disabled layer hides Tal Heuberger's models under it, so the kit draws its own

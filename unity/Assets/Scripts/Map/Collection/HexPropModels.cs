@@ -337,9 +337,7 @@ namespace Statecraft.Game.Map.Collection
                 ruralPlanWants = rw; ruralPlanOthers = new List<(Vector2, float)>(ro);
             }
             discs.AddRange(ruralPlan);
-            var special = map.Terrain.transform.Find(SpecialBuildingModels.Name)?.GetComponent<SpecialBuildingModels>();
-            var sw = special != null && special.Wanted.Count > 0 ? special.Wanted : SpecialBuildingModels.Placements(date);
-            foreach (var (w, at) in SpecialBuildingModels.Plan(map, date, sw, _ => true, log: false))
+            foreach (var (w, at) in SpecialBuildingModels.Plan(map, date, SpecialBuildingModels.Placements(date), _ => true, log: false))
                 discs.Add((at, SpecialBuildingModels.ClearanceOf(w.Model)));
             // The whole-town models (TownLandmarks, shown first by GameRoot) where they will stand, by the same plan.
             var towns = map.Terrain.transform.Find(TownLandmarks.Name)?.GetComponent<TownLandmarks>();
