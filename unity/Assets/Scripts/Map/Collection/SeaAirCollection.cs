@@ -418,7 +418,7 @@ namespace Statecraft.Game.Map.Collection
                 var go = Instantiate(prefab!, transform, false); go.name = w.Key;
                 if (!originals.TryGetValue(w.Model, out var owned)) originals[w.Model] = owned = new List<GameObject>();
                 owned.Add(go);
-                if (w.Model == Spitfire) { Fly(go, prefab!, at.Value); continue; }
+                if (w.Model == Spitfire) { Fly(go, prefab!, at.Value, ground); continue; }
                 // The yaw goes on top of the prefab's own rotation: every Collection Far prefab's root carries the FBX axis
                 // conversion (-90 degrees about X), and setting the yaw alone lays a model on its side (#979).
                 go.transform.localRotation = prefab!.transform.localRotation;
@@ -450,7 +450,7 @@ namespace Statecraft.Game.Map.Collection
         /// ground and a small Egyptian flag over its tail (owner's report, 2 November 2026: "the gyptian plane's propelor isn't moving and it
         /// doesnt look fliying, also it doesnt show its an egyptian unit"). It is drawn at the loop's start, nose east; the
         /// labels keep clear of the whole box it and its flag fly through.</summary>
-        void Fly(GameObject go, GameObject prefab, Vector2 at)
+        void Fly(GameObject go, GameObject prefab, Vector2 at, KitGround ground)
         {
             var level = Quaternion.Euler(0f, SpitfireNoseEastYaw, 0f) * prefab.transform.localRotation;
             go.transform.localRotation = level;
@@ -470,7 +470,7 @@ namespace Statecraft.Game.Map.Collection
             var flag = Flag(marks.transform);
             // The aircraft's half box at level, nose east: half its length, its height and its span.
             var half = 0.5f * new Vector3(b.size.x, b.size.y, b.size.z);
-            loop.Attach(Propeller(go), Shadow(marks.transform), flag, map!.Terrain, 0.5f * ShadowShare * new Vector2(size, b.size.x), half);
+            loop.Attach(Propeller(go), Shadow(marks.transform), flag, map!.Terrain, 0.5f * ShadowShare * new Vector2(size, b.size.x), half, ground.SeaLevelY);
             // Edit mode and screenshots hold the loop's start, as the train does (RouteLayer.ModeFor).
             loop.Configure(centre, level, b.center - go.transform.position, !Application.isPlaying || VisualShots.Requested());
             var cam = Camera.main;
@@ -496,7 +496,8 @@ namespace Statecraft.Game.Map.Collection
         /// mesh (<see cref="PropRadiusShare"/>, <see cref="PropBehindNoseShare"/>), turned by SpitfireLoop about the mesh's
         /// y, the flight axis. The disc's renderer bounds are the square inside its circle, so at every angle its box lies
         /// inside the airframe's (a turning square's box never leaves the circle, and the circle lies inside the mesh's box):
-        /// the aircraft's box does not change as it turns.</summary>
+        /// the aircraft's box does not change as it turns. The cost: the renderer's box is between 0.71 and 1 of the disc's reach,
+        /// so at a screen edge the disc can be culled a frame before the airframe beside it.</summary>
         Transform Propeller(GameObject go)
         {
             var airframe = go.GetComponentInChildren<MeshFilter>();
@@ -541,10 +542,12 @@ namespace Statecraft.Game.Map.Collection
         {
             if (flagMesh == null)
             {
+                if (flagMissing) return null;   // warned once for this layer
                 var ring = Resources.Load<Material>(Statecraft.Game.Map.Units.UnitMaterials.RingResource);
                 if (ring == null)
                 {
                     Debug.LogWarning("SEA/AIR: the unit materials are missing (run UnitMaterialAssets.Create); the Spitfire flies without its flag.");
+                    flagMissing = true;
                     return null;
                 }
                 flagCloth = Statecraft.Game.Map.Units.UnitFlags.ClothMaterials(Statecraft.Game.Map.Units.UnitFlags.Egypt, ring, m => Own(m));
@@ -594,6 +597,7 @@ namespace Statecraft.Game.Map.Collection
         static void DestroyMesh(Mesh m) { if (Application.isPlaying) Destroy(m); else DestroyImmediate(m); }
 
         MapRuntimeAssets? assets;
+        bool flagMissing;
         Material? blur; Material[]? flagCloth; Mesh? propMesh, shadowMesh, flagMesh;
 
         /// <summary>Takes <paramref name="o"/>, made once for this layer, to be destroyed with it.</summary>

@@ -25,11 +25,26 @@ namespace Statecraft.Game.Map.Collection
         /// disc lies over the dunes rather than in them.</summary>
         public const float ShadowLiftM = 30f;
 
-        /// <summary>The direction the map's sun shines (MapLighting.Apply: fixed in the world), pointing down.</summary>
+        /// <summary>The direction the map's sun shines (MapLighting.Apply), pointing down: the shadow's ray when the scene has
+        /// no directional sun, or one under 10 degrees.</summary>
         public static readonly Vector3 SunRay = Quaternion.Euler(MapLighting.SunElevation, MapLighting.SunAzimuth - 180f, 0f) * Vector3.forward;
 
+        /// <summary>The ray the scene's sun casts now (RenderSettings.sun: MapLighting's, or the opt-in hex map's dusk or night
+        /// light, HexTimeOfDay), so the shadow lies with the real ones; <see cref="SunRay"/> without one, or with one under
+        /// 10 degrees, whose shadow would run off the board.</summary>
+        static Vector3 SunNow()
+        {
+            var sun = RenderSettings.sun;
+            if (sun != null && sun.type == LightType.Directional)
+            {
+                var ray = sun.transform.forward;
+                if (ray.y < -0.17f) return ray;
+            }
+            return SunRay;
+        }
+
         Vector3 centre, offset; Quaternion level; bool still;
-        Transform? prop, shadow, flag; Terrain? ground; Vector2 shadowHalf; Vector3 half; float flagHalf;
+        Transform? prop, shadow, flag; Terrain? ground; Vector2 shadowHalf; Vector3 half; float flagHalf, seaY;
 
         /// <summary>DESIGN VALUE: the gap (m) between the aircraft's box top and the flag's lower edge.</summary>
         public const float FlagClearM = 150f;
@@ -51,11 +66,12 @@ namespace Statecraft.Game.Map.Collection
 
         /// <summary>The turning propeller disc (a child of the aircraft's mesh), the shadow and the flag (each in world space,
         /// beside the aircraft), the terrain the shadow lies on, the shadow's half size across and along the heading (m), and
-        /// the aircraft's half box at level (half its length, height and span, m). Before <see cref="Configure"/>, which places
-        /// them all.</summary>
-        internal void Attach(Transform? prop, Transform? shadow, Transform? flag, Terrain? ground, Vector2 shadowHalf, Vector3 airframeHalf = default)
+        /// the aircraft's half box at level (half its length, height and span, m), and the sea's surface (world y: the shadow
+        /// never lies under it). Before <see cref="Configure"/>, which places them all.</summary>
+        internal void Attach(Transform? prop, Transform? shadow, Transform? flag, Terrain? ground, Vector2 shadowHalf, Vector3 airframeHalf = default,
+            float seaY = float.NegativeInfinity)
         {
-            this.prop = prop; this.shadow = shadow; this.flag = flag; this.ground = ground; this.shadowHalf = shadowHalf; half = airframeHalf;
+            this.prop = prop; this.shadow = shadow; this.flag = flag; this.ground = ground; this.shadowHalf = shadowHalf; half = airframeHalf; this.seaY = seaY;
             flagHalf = flag != null ? flag.GetComponent<MeshFilter>().sharedMesh.bounds.extents.y : 0f;
         }
 
@@ -88,35 +104,39 @@ namespace Statecraft.Game.Map.Collection
             transform.localRotation = turn * level;
             var drawn = centre + new Vector3(at.x, 0f, at.y);
             transform.position = drawn - turn * offset;
-            if (prop != null) prop.localRotation = Quaternion.AngleAxis(-Mathf.Repeat(seconds * PropDegreesPerSecond, 360f), Vector3.up);
+            // The angle in double: a float product with the clock loses whole degrees after hours (review of #2260).
+            if (prop != null) prop.localRotation = Quaternion.AngleAxis(-(float)((double)seconds * PropDegreesPerSecond % 360.0), Vector3.up);
             // The flag over the tail, its lower edge FlagClearM over the top of the aircraft's box at this bank: clear of the
             // airframe at every bank and heading.
-            if (flag != null) flag.position = drawn - forward * half.x + Vector3.up * (TopOver(half, bank) + FlagClearM + flagHalf * flag.localScale.y);
+            if (flag != null) flag.position = drawn - forward * half.x + Vector3.up * (TopOver(half, bank) + FlagClearM + flagHalf * flag.lossyScale.y);
             if (shadow != null && ground != null) PlaceShadow(drawn, forward, bank);
         }
 
-        /// <summary>The sun's ray from <paramref name="drawn"/> to the ground, found in two steps (the ground's height where the
+        /// <summary>The scene sun's ray from <paramref name="drawn"/> to the ground (or the sea's surface), found in two steps (the ground's height where the
         /// ray lands sets how far it travels); the disc flat, turned with the heading, narrowed across by the bank, lifted over
         /// the highest ground under its middle and its four ends.</summary>
         void PlaceShadow(Vector3 drawn, Vector3 forward, float bank)
         {
-            float y0 = ground!.transform.position.y;
+            var ray = SunNow();
             var hit = drawn;
-            float floor = ground.SampleHeight(drawn) + y0;
+            float floor = Surface(drawn);
             for (int i = 0; i < 2; i++)
             {
-                hit = drawn + SunRay * ((drawn.y - floor) / -SunRay.y);
-                floor = ground.SampleHeight(hit) + y0;
+                hit = drawn + ray * ((drawn.y - floor) / -ray.y);
+                floor = Surface(hit);
             }
             var across = new Vector3(forward.z, 0f, -forward.x);
             float half = shadowHalf.x * Mathf.Cos(bank * Mathf.Deg2Rad);
             float top = floor;
-            top = Mathf.Max(top, ground.SampleHeight(hit + across * half) + y0);
-            top = Mathf.Max(top, ground.SampleHeight(hit - across * half) + y0);
-            top = Mathf.Max(top, ground.SampleHeight(hit + forward * shadowHalf.y) + y0);
-            top = Mathf.Max(top, ground.SampleHeight(hit - forward * shadowHalf.y) + y0);
+            top = Mathf.Max(top, Surface(hit + across * half));
+            top = Mathf.Max(top, Surface(hit - across * half));
+            top = Mathf.Max(top, Surface(hit + forward * shadowHalf.y));
+            top = Mathf.Max(top, Surface(hit - forward * shadowHalf.y));
             shadow!.SetPositionAndRotation(new Vector3(hit.x, top + ShadowLiftM, hit.z), Quaternion.LookRotation(forward, Vector3.up));
             shadow.localScale = new Vector3(half, 1f, shadowHalf.y);
         }
+
+        /// <summary>The ground's height under <paramref name="p"/>, or the sea's surface over the sea.</summary>
+        float Surface(Vector3 p) => Mathf.Max(ground!.SampleHeight(p) + ground.transform.position.y, seaY);
     }
 }
