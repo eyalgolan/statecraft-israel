@@ -66,7 +66,7 @@ namespace Statecraft.Game.UI
         readonly EventCallback<PointerDownEvent> onPointerDown; readonly EventCallback<PointerUpEvent> onPointerUp;
         readonly EventCallback<KeyDownEvent> onKey;
         readonly IVisualElementScheduledItem timer;
-        DeclarationRecording.IRequest? request; AudioClip? clip;
+        DeclarationRecording.IRequest? request; AudioClip? clip; VisualElement? hooked;
         bool wanted, playing, fadingOut; int generation; double lastTick;
         float volume = DefaultVolume, dip = 1f, fade = 1f;
 
@@ -103,8 +103,8 @@ namespace Statecraft.Game.UI
             this.now = now ?? (() => Time.realtimeSinceStartupAsDouble);
             // On the panel's own root: a key with nothing focused goes there, never through the document's root below it.
             listener = root.panel?.visualTree ?? root;
-            onPointerDown = e => { if (e.pointerType == PointerType.mouse) Gesture(); };   // a mouse press activates; a touch's
-            onPointerUp = e => { if (e.pointerType != PointerType.mouse) Gesture(); };     // press does not (iOS), its release does
+            onPointerDown = e => PointerDown(e);
+            onPointerUp = e => { if (e.pointerType != UnityEngine.UIElements.PointerType.mouse) Gesture(); };     // a touch's release activates
             onKey = e => { if (e.keyCode != KeyCode.Escape && e.character != '\u001b') Gesture(); };   // Escape never activates
             // Both phases: trickle-down sees an event before any element can stop it; bubble-up sees one aimed at the panel's
             // root itself. Gesture is idempotent, so an event seen twice counts once.
@@ -140,10 +140,29 @@ namespace Statecraft.Game.UI
             else if (clip != null || request != null) Stop();
         }
 
+        /// <summary>A mouse press activates. A touch or pen press does not (iOS); its release does. The element pressed (a
+        /// button) captures the pointer, and a captured release goes to it alone, never through the panel's root, so the
+        /// release is also heard on the element pressed.</summary>
+        void PointerDown(PointerDownEvent e)
+        {
+            if (e.pointerType == UnityEngine.UIElements.PointerType.mouse) { Gesture(); return; }
+            if (GestureSeen || !(e.target is VisualElement pressed) || pressed == listener) return;
+            Unhook();
+            hooked = pressed;
+            hooked.RegisterCallback(onPointerUp, TrickleDown.TrickleDown);
+        }
+
+        void Unhook()
+        {
+            hooked?.UnregisterCallback(onPointerUp, TrickleDown.TrickleDown);
+            hooked = null;
+        }
+
         void Gesture()
         {
             if (GestureSeen) return;
             GestureSeen = true;
+            Unhook();
             TryStart();
         }
 
@@ -232,6 +251,7 @@ namespace Statecraft.Game.UI
         {
             wanted = false;
             Stop();
+            Unhook();
             foreach (var phase in Phases)
             {
                 listener.UnregisterCallback(onPointerDown, phase);
