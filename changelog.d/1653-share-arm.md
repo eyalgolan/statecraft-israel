@@ -1,1 +1,0 @@
-- Keep screenshot sharing on the intended release, report delayed download fallback, and cancel superseded share actions.

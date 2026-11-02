@@ -18,7 +18,7 @@ namespace Statecraft.Game.Map.Collection
     /// Owner ruling of 2 November 2026, "Yes, small buildings at every zoom": Tel Aviv, Jerusalem, Haifa and Jaffa have no
     /// whole-town model; their building models draw at every zoom instead (<see cref="Kits.TownModels.AtEveryZoom"/>). Tel
     /// Aviv's, Jerusalem's and Haifa's whole-town models stay in the repository and the streamed catalogue, unused on the map;
-    /// the stone village still stands at the other Arab towns.
+    /// the stone village still stands at the other Arab towns but Ramla (its own town, see <see cref="ById"/>).
     /// Owner ruling of 18 October 2026 (recorded on #917, #663, #659 and #700): the towns are Tal Heuberger's models, "Whole model
     /// far, buildings near". Far off, a mapped town's whole-town model stands ON its town, on its core (<see cref="CoreOf"/>:
     /// where most of its building models stand, inside its kit footprint, clear of the next town and of the sea), as wide as
@@ -54,18 +54,25 @@ namespace Statecraft.Game.Map.Collection
 
         public const string TelAviv = "tel-aviv-white-city-v1", Jerusalem = "jerusalem-stone-city-v1", Haifa = "haifa-port-city-v1",
             Moshava = "moshava-town-v1", Nahalal = "nahalal-moshav-v1", Kibbutz = "kibbutz-compound-v2", StoneVillage = "stone-village-v1",
-            Maabara = "maabara-camp-v1", Shikun = "shikun-housing-v1", Jerusalem3D = "jerusalem-stone-city-v1-3denhance";
+            Maabara = "maabara-camp-v1", Shikun = "shikun-housing-v1", Jerusalem3D = "jerusalem-stone-city-v1-3denhance",
+            // Tal Heuberger's generated whole towns (#2085): the three towns #1288 lists, and Ramla.
+            Tiberias = CollectionCatalog.TiberiasTown, Safed = CollectionCatalog.SafedTown, Netanya = CollectionCatalog.NetanyaTown,
+            Ramla = CollectionCatalog.RamlaTown;
 
         /// <summary>By settlement id first (#507's mapping). Tel Aviv, Jerusalem and Haifa have no row: the owner, 2 November
         /// 2026, "Yes, small buildings at every zoom" (<see cref="Kits.TownModels.AtEveryZoom"/>). That replaces #507's
         /// White City at Tel Aviv and port city at Haifa, and the owner's ruling of 21 October 2026 on #708
         /// (issuecomment-6323524970) that #336's second stone city (<see cref="Jerusalem3D"/>, Tal Heuberger, #886) "is
         /// Jerusalem's only far-zoom model for the whole game". <see cref="TelAviv"/>, <see cref="Haifa"/>,
-        /// <see cref="Jerusalem3D"/> and #507's <see cref="Jerusalem"/> stay in the repository, unused on the map.</summary>
+        /// <see cref="Jerusalem3D"/> and #507's <see cref="Jerusalem"/> stay in the repository, unused on the map.
+        /// Tiberias, Safed and Netanya stand as Tal Heuberger's own whole-town models (#2085), the three towns #1288 found with
+        /// none. Ramla, an Arab town, stands as Tal's own town instead of the stone village (<see cref="ByType"/>): the owner,
+        /// 2 November 2026, "Yes, Tal's Ramla (Recommended)" ("Ramla draws Tal's town instead of the stone village").</summary>
         public static readonly IReadOnlyDictionary<string, string> ById = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["petah_tikva"] = Moshava, ["rishon_lezion"] = Moshava, ["zikhron_yaakov"] = Moshava,
             ["rosh_pinna"] = Moshava, ["rehovot"] = Moshava, ["hadera"] = Moshava,
+            ["tiberias"] = Tiberias, ["safed"] = Safed, ["netanya"] = Netanya, ["ramla"] = Ramla,
         };
 
         /// <summary>Then by settlement type (#507's mapping).</summary>
@@ -84,7 +91,8 @@ namespace Statecraft.Game.Map.Collection
             };
 
         /// <summary>The turn about the vertical (degrees) that shows each model's front to a camera looking north: #507's
-        /// table (BuildingPreview.Yaw at 3ef0a7a5, tuned there from renders), 200 for a model without a row of its own.</summary>
+        /// table (BuildingPreview.Yaw at 3ef0a7a5, tuned there from renders), 200 for a model without a row of its own. #2085's
+        /// generated towns have no row yet: they take 200 until a render at their landing tunes them.</summary>
         public static float YawOf(string model) => model == TelAviv ? 200f : model == StoneVillage ? 40f : 200f;
 
         /// <summary>How the landmarks ask for a model: the game's stream. A test seam (internal; the tests see it through

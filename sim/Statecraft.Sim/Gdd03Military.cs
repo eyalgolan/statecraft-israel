@@ -151,6 +151,7 @@ namespace Statecraft.Sim
             Scalar(c, "military.fort_bonus", false);
             EnemyAttackRatioPercent(c);
             Scalar(c, "military.fortify_bonus", false);
+            Scalar(c, "military.combat_xp_gain"); Scalar(c, "military.combat_xp_full");   // R-UNIT-011
             if (Scalar(c, "military.fortify_turns") != 1) throw Invalid("military.fortify_turns", "only the existing one-turn settlement is implemented");
             foreach (var biome in new[] { "coastal_plain", "lowland", "valley", "hills", "mountains", "desert" })
             {

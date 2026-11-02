@@ -54,7 +54,7 @@ public class TopBarScoreLayoutTests
     static bool Apart(Rect a, Rect b) => !Rect.MinMaxRect(a.xMin + 0.5f, a.yMin + 0.5f, a.xMax - 0.5f, a.yMax - 0.5f).Overlaps(b);
 
     [UnityTest]
-    public IEnumerator AWorstCaseScoreStaysInsideTheDateBox()
+    public IEnumerator AWorstCaseScoreStaysInsideTheDateBox([Values(100, 125, 150)] int uiScale)   // #40: at the Settings scale choices
     {
         var problems = new List<string>();
         foreach (var (language, text, hebrew, turns) in new[] { ("en", En, false, 0), ("en", En, false, 2), ("he", He, true, 0), ("he", He, true, 2) })
@@ -63,6 +63,7 @@ public class TopBarScoreLayoutTests
                 var rt = new RenderTexture(w, h, 0);
                 var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
                 ps.targetTexture = rt;
+                if (uiScale != 100) ps.referenceResolution = new Vector2Int(Mathf.RoundToInt(1920f * 100f / uiScale), Mathf.RoundToInt(1080f * 100f / uiScale));   // #40: the panel as the Settings scale choice sets it
                 var go = new GameObject("ScoreLayoutTest");
                 go.SetActive(false);
                 var doc = go.AddComponent<UIDocument>();

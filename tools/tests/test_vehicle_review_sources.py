@@ -4,6 +4,7 @@ the Collection's <id>.fbx. #2046 moved the Syrian R35 there too, under its deliv
 stays review-only in the Editor folder. This fails when verify stops following
 the move (it would then look for a model that is no longer there, or pass without checking the shipped one)."""
 import importlib.util
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -17,7 +18,12 @@ REVIEW = Path("unity/Assets/Editor/Generated1948VehicleReview")
 def sources():
     spec = importlib.util.spec_from_file_location("vehicle_review_sources", SCRIPT)
     mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
+    keep = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True  # the script is in unity/Assets: Unity gives any __pycache__ there a .meta
+    try:
+        spec.loader.exec_module(mod)
+    finally:
+        sys.dont_write_bytecode = keep
     return mod
 
 
@@ -38,3 +44,12 @@ def test_the_placed_spitfire_is_verified_where_the_game_ships_it():
 def test_verify_passes_on_the_shipped_files():
     # Every archive, GLB, colour map and FBX hash in sources.json against the files where they now are.
     sources().verify(ROOT)
+
+
+def test_loading_the_script_writes_no_bytecode_under_assets():
+    # The script lives in unity/Assets/Editor. A __pycache__ written there gets a .meta from the next Unity run, which leaves
+    # the tree dirty and stops a gate that needs a clean one.
+    cache = Path(importlib.util.cache_from_source(str(SCRIPT)))
+    cache.unlink(missing_ok=True)  # a valid cache from an older run is never rewritten, so the check needs it gone
+    sources()
+    assert not cache.exists(), f"loading the script wrote {cache.relative_to(ROOT)}"
