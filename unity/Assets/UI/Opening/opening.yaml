@@ -22,6 +22,7 @@
 # and nothing added. They come together or not at all, with he_review: pending until a native speaker who did not write
 # them has read them (then approved); a shareable build needs every panel and the closing approved. The photo credits
 # stay English (a credit line, as the event cards' credits).
+# Native read: the owner read the four Hebrew texts (europe, arab_countries, yemen, closing) on 2 Nov 2026: "Approve all 4".
 # For the native reviewer (#564): names as the game already writes them: עיראק and מבצע עזרא ונחמיה
 # (content/events/iraqi_exodus.yaml, he.wiki), תימן (content/events/frumkin_commission.yaml), לוד
 # (content/events/ten_days.yaml), אירופה (strings.he why.region.europe), הלמ״ס (strings.he end.population_history),
@@ -37,7 +38,7 @@ panels:
     text: "After the Holocaust, at the start of 1947, about 210,000 Jews were living as displaced persons, most of them in the American zone of Germany. Britain deported Jews who came to the Land of Israel against its immigration limits to detention camps on Cyprus; from August 1946 to February 1949, about 53,000 passed through them. Once the state was founded, about two-thirds of the displaced persons went to Israel."
     title_he: "אירופה"
     text_he: "אחרי השואה, בתחילת 1947, חיו כ־210,000 יהודים כעקורים, רובם באזור הכיבוש האמריקני בגרמניה. בריטניה גירשה למחנות מעצר בקפריסין יהודים שהגיעו לארץ ישראל בניגוד להגבלות העלייה שקבעה; מאוגוסט 1946 עד פברואר 1949 עברו במחנות כ־53,000 איש. לאחר קום המדינה עלו לישראל כשני שלישים מהעקורים."
-    he_review: pending
+    he_review: approved
     # No arrivals figure: CBS counts by country of birth and has no displaced-persons or Cyprus category, so a Europe
     # number would not mean "survivors" (#784 draft, Q-OPEN-5).
     arrivals: []
@@ -68,7 +69,7 @@ panels:
     text: "In 1948 more than 135,000 Jews lived in Iraq. In March 1950 Iraq allowed them to leave only if they gave up their citizenship, and in March 1951 it froze the assets of those who had. The airlift, Operation Ezra and Nehemiah, began in May 1950, and by January 1952 some 120,000 Iraqi Jews had come to Israel. From Morocco, Libya, Egypt, Tunisia and other Arab lands, tens of thousands more came in the same years."
     title_he: "ארצות ערב"
     text_he: "ב־1948 חיו בעיראק יותר מ־135,000 יהודים. במרץ 1950 התירה להם עיראק לצאת רק אם יוותרו על אזרחותם, ובמרץ 1951 הקפיאה את נכסיהם של מי שוויתרו עליה. הרכבת האווירית, מבצע עזרא ונחמיה, החלה במאי 1950, ועד ינואר 1952 עלו לישראל כ־120,000 מיהודי עיראק. ממרוקו, מלוב, ממצרים, מתוניסיה ומארצות ערב אחרות הגיעו באותן שנים עוד עשרות אלפים."
-    he_review: pending
+    he_review: approved
     # CBS Publication 1365, Table 5, column "15 V 1948 - 1951", by country of birth.
     arrivals:
       - { country: Iraq, country_he: "עיראק", count: 123371 }
@@ -103,7 +104,7 @@ panels:
     text: "In 1949 the ruler of Yemen let its Jews leave. Operation On Wings of Eagles, known as Magic Carpet, flew them from British-ruled Aden to Israel, with the American Jewish Joint Distribution Committee. When the last two planes landed at Lydda on 24 September 1950, about 49,000 Yemenite Jews had been flown to Israel (the operation's own count, from its start in December 1948). The CBS table counts 48,315 people born in Yemen or Aden who arrived from 15 May 1948 through 1951."
     title_he: "תימן"
     text_he: "ב־1949 התיר שליט תימן ליהודי ארצו לצאת. מבצע על כנפי נשרים, המוכר בשם מרבד הקסמים, הטיס אותם לישראל מעדן שבשלטון בריטניה, בשיתוף ארגון הג׳וינט האמריקני. כששני המטוסים האחרונים נחתו בלוד ב־24 בספטמבר 1950, כבר הוטסו לישראל כ־49,000 מיהודי תימן, לפי ספירת המבצע עצמו מאז תחילתו בדצמבר 1948. טבלת הלמ״ס מונה 48,315 ילידי תימן או עדן שהגיעו מ־15 במאי 1948 ועד סוף 1951."
-    he_review: pending
+    he_review: approved
     # CBS counts Aden with Yemen (Table 5, note 7).
     arrivals:
       - { country: "Yemen, including the former Aden", country_he: "תימן, כולל עדן לשעבר", count: 48315 }
@@ -135,7 +136,7 @@ panels:
 closing:
   text: "Between 15 May 1948 and the end of 1951, 687,624 immigrants arrived. You start on 15 May 1948."
   text_he: "בין 15 במאי 1948 לסוף 1951 הגיעו 687,624 עולים. המשחק מתחיל ב־15 במאי 1948."
-  he_review: pending
+  he_review: approved
   sources:
     - url: "https://www.cbs.gov.il/he/publications/DocLib/2009/1365/pdf/e_print.pdf"
       supports: "Table 5, GRAND TOTAL, column 15 V 1948 - 1951: 687,624 (the same total as the four rows of content/aliyah.yaml)"
