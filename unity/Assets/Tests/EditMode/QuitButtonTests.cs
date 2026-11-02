@@ -151,9 +151,61 @@ public class QuitButtonTests
         using (var ui = new UiTestKit())
         {
             new SettingsPresenter(ui.Root, En, null).Dispose();
-            using (new SettingsPresenter(ui.Root, En, null)) ui.Press("settings-quit");
+            using (new SettingsPresenter(ui.Root, En, null)) { ui.Press("settings-quit"); ui.Press("settings-quit"); }   // Settings asks first (#2188)
         }
         Assert.AreEqual(1, quits, "Settings");
+    }
+
+    // #2188, the owner (2 Nov 2026): "Ask to confirm (Recommended)". Settings' Quit asks on the first press, in the
+    // button's place, and quits on the second, as New game does (NewGamePresenter).
+
+    [Test]
+    public void Both_languages_ask_before_quitting()
+    {
+        Assert.AreEqual("Press again to quit", En["ui.quit_confirm"]);
+        Assert.AreEqual("יש ללחוץ שוב ליציאה", He["ui.quit_confirm"]);
+    }
+
+    [Test]
+    public void Settings_asks_before_it_quits()
+    {
+        int quits = 0;
+        QuitButton.Platform = () => RuntimePlatform.WindowsPlayer;
+        QuitButton.Quitter = () => quits++;
+        foreach (var text in new[] { En, He })
+        {
+            quits = 0;
+            using var ui = new UiTestKit();
+            using (new SettingsPresenter(ui.Root, text, null))
+            {
+                var b = ui.Q<Button>("settings-quit");
+                ui.Press("settings-quit");
+                Assert.AreEqual(0, quits, "the first press only asks");
+                Assert.AreEqual(text["ui.quit_confirm"], b.text, "the question is in the button's place");
+                ui.Press("settings-quit");
+                Assert.AreEqual(1, quits, "the second press quits");
+                Assert.AreEqual(text["ui.quit"], b.text, "and the button reads Quit again");
+            }
+        }
+    }
+
+    [Test]
+    public void Opening_settings_again_withdraws_the_question()
+    {
+        int quits = 0;
+        QuitButton.Platform = () => RuntimePlatform.WindowsPlayer;
+        QuitButton.Quitter = () => quits++;
+        using var ui = new UiTestKit();
+        using (new SettingsPresenter(ui.Root, En, null))
+        {
+            var b = ui.Q<Button>("settings-quit");
+            ui.Press("settings-quit");
+            Assert.AreEqual(En["ui.quit_confirm"], b.text);
+            (ui.Q<VisualElement>("screen-settings").userData as System.Action)!.Invoke();   // what ScreenNav runs when Settings opens
+            Assert.AreEqual(En["ui.quit"], b.text, "a reopened Settings shows Quit, not an old question");
+            ui.Press("settings-quit");
+            Assert.AreEqual(0, quits, "after reopening, the first press asks again");
+        }
     }
 
     [Test]
