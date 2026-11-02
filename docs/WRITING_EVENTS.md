@@ -46,6 +46,7 @@ schema too, or that test fails. Keep the comment when you copy a file.
 | `objective` | no | Makes the event the completion card of an objective in `objectives.yaml`, which must name this event as its `card`. It fires only once the objective is completed (GDD loop only), and has exactly one option. See `docs/gdd/objective-card.md`. |
 | `site` | no | A swamp site in `sites.yaml` whose works the event is about. In the GDD loop it fires only while that site is being worked (R-SWAMP-002); the legacy loop ignores it. See `docs/gdd/fields-and-swamps.md`. |
 | `prisoners` | no | Makes the event a front's prisoner-exchange card: `egypt`, `jordan` (which also returns the Iraqi prisoners), `lebanon` or `syria`. It fires only while that front holds prisoners or the player's soldiers (GDD loop only), has exactly one option, and returns them and scores when it resolves (R-POW-004). |
+| `deported` | no | Makes the event Deport's follow-up card for a settlement target whose residents stayed: it fires only once the player's Deport has depopulated that place, carries the `displacement` tag and has exactly one option (R-EVT-007). See "deported". |
 | `options` | yes | One or more options. See below. |
 | `sources` | no by the loader, yes by the rules | A list of `{ url, checked }`. See below. |
 | `status` | no (default `draft`) | The review status. See below. |
@@ -93,8 +94,8 @@ Tags are free-form, but these five are sensitive (checked without regard to case
 
 For `displacement`, the no-gain rule has no exception: no option may raise Money, Food, Arms, Social cohesion,
 International Support or score (R-EFX-007). Score is not an event-effect target yet, so the loader already refuses
-it as unknown; do not add it to an event. The rule applies when that target exists. No event in `content/` uses
-`displacement` yet.
+it as unknown; do not add it to an event. The rule applies when that target exists. The events that use `displacement`
+are Deport's follow-up cards (see "deported").
 
 The other tag used so far is `security`. It has no rule attached.
 
@@ -189,6 +190,22 @@ Every road it names must have a window that closes on or before the reconvergenc
 while the card is shown. A variant that names an event's historical option also needs every consequence card that can
 `rejoin` that event (R-ALT-009) to close by then, since a rejoin makes that option hold. Variant title and text use the same checked office placeholders as the event itself. Only a
 reconvergence event may carry `variants`.
+
+### deported
+
+```yaml
+deported: acre
+tags: [displacement]
+```
+
+Deport's follow-up card for a settlement target (`settlement_targets.yaml`, GDD Phase 6 PR 9, #801). It fires only once
+the player's Deport has depopulated that place, at the event step of that turn, and never after Raid or Occupy
+(R-EVT-007). It takes no soft slot, so a full turn does not delay it; a Deport on the turn that ends the game raises no
+card, since no event fires then. The loader refuses a card whose target is unknown or whose residents fled (Deport is
+refused there, so the card could never fire), one without the `displacement` tag, one with more than one option, and
+one with `to` or `prisoners`, one that is not `soft` or opens after the game's start, one with `conditions`,
+`requires`, `site`, `objective`, another `kind` or `variants`, and a second card for the same place. Leave out `to`. Left unanswered, it resolves to its one option without a draw. State the in-game consequence and one sourced line of the place's history
+(Q-CARD-1 (c)); a Deport in play may differ from 1948, so do not say the player's Deport is what happened.
 
 ### requires
 

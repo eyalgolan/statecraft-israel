@@ -1,0 +1,54 @@
+# yaml-language-server: $schema=../schema/event.schema.json
+# Deport's follow-up card for Nazareth (GDD Phase 6 PR 9, #801). DRAFT: a person's source check and the owner's
+# sensitivity review of every line, in English and Hebrew, come before this card leaves `draft` (CONTENT_POLICY section 2;
+# the owner, 1 November 2026: "Write the cards first (Recommended)"). Q-CARD-1 (c) (owner, 18 October 2026, #783): the
+# in-game consequence with one sourced line of history. Q-CARD-3 (a): no image, and Deport never gets a video.
+# Q-SENS-1b (a): the housing left behind is not named. R-EFX-007: no option raises anything; this card has no effect at
+# all, since Deport's costs are R-CTRL-018's, applied by the sim. R-GATE-001: the release gate refuses a shareable build
+# while it is not sensitivity-reviewed.
+# The first three sentences restate play, not history (R-CTRL-018 and R-CTRL-020; the costs follow capture.about.deport,
+# the capture dialog's line), so they need no source. A Deport in play may differ in place, date and manner from 1948, so
+# the history sentence says what the record says, not that the player's Deport happened.
+# The history sentence: he.wiki "נצרת", revision 44022843: "למרות הקרבות שניטשו בעיר ובסביבתה בעת כיבושה, נשארו תושבי
+# העיר במקומותיהם." The surrender and the operation: the IDF account, "Operation Dekel (July 9-18, 1948)" (Jewish Virtual
+# Library, "Sources: Israel Defense Forces"): "The city surrendered on the eve of 16 July."; he.wiki "מבצע דקל", revision
+# 42975037: "בשעה 22:00 נחתם הסכם הכניעה בין נציגי התושבים לנציגי צה"ל." Checked by an agent in research_notes/GDD phase 6/
+# displacement-cards-check-801.md (rows N1, N3, N5) and re-read for this card on 1 November 2026.
+# The card says "July 1948", not a day: "the eve of 16 July" can be read as the evening of 15 or of 16 July (row N1).
+# he.wiki's section puts the forces' start on the night of 15-16 July, "במשך 16 ביולי 1948" a capture nearby, then the entry
+# at 17:40 and the surrender at 22:00, which fits 16 July; a person confirms the day before it is added.
+# "Near the town", not "in and around" as HW-NAZ has it: the card's own he.wiki "מבצע דקל", revision 42975037, says the
+# forces entered without a battle, "בשעה 17:40 נכנסו כוחות צה"ל לנצרת ללא קרב ותפסו את בית המשטרה.", and the IDF account
+# puts the armoured-car fight outside it: "When the force was less than a mile away from the city of Nazareth, the
+# commander of Nazareth sent out an armored car unit to block its advance." (source-check packet for #2197, N5).
+# "Its residents stayed" is HW-NAZ's unqualified sentence; the repo's reading of Morris (English 2004 ed., pp. 418-421,
+# research_notes/GDD phase 6/settlement-targets.md) says "Most stayed", so p. 271 may say less than the card (N4).
+# For the person who checks: the residents sentence's one footnote is Morris, The Birth of the Palestinian Refugee Problem
+# (Hebrew edition), p. 271 (row N6); whether a he.wiki line footnoted to Morris may stand here is the owner's question 2 in
+# displacement-cards.md. he.wiki "מבצע דקל" also records an explicit order to let the residents stay (row N4); it is not on
+# the card, since the card names no person and one line of history is the ruling.
+id: deport_nazareth
+title: Nazareth depopulated
+text: 'Nazareth''s residents have been displaced, and the town is depopulated. Social cohesion and International support have fallen, and International support keeps falling for the rest of the game. Nothing can be built there, and no new road or railway can be laid through it. Historically, when Nazareth surrendered in July 1948, in Operation Dekel, its residents stayed where they were, despite fighting near the town.'
+# For the native reviewer (#564): "נעקרו" and "התרוקנה מתושביה" follow the Deport strings already in strings.he.yaml
+# (why.cause.place_deported, capture.about.deport); "מבצע דקל" follows he.wiki. The history sentence is ADAPTED, not
+# quoted, and departs from HW-NAZ twice: "בעת כיבושה" becomes "when Nazareth surrendered in July 1948, in Operation
+# Dekel" (the IDF account), and "בעיר ובסביבתה" (in and around the city) becomes "near the town", from he.wiki
+# "מבצע דקל" and the IDF account (below), which contradict "in the city".
+title_he: נצרת התרוקנה מתושביה
+text_he: 'תושבי נצרת נעקרו ממקומם, והעיר התרוקנה מתושביה. הלכידות החברתית והתמיכה הבינלאומית ירדו, והתמיכה הבינלאומית תמשיך לרדת עד סוף המשחק. אי אפשר לבנות בה דבר, ואי אפשר לסלול דרכה כביש או מסילת ברזל חדשים. מבחינה היסטורית, כשנצרת נכנעה ביולי 1948, במבצע דקל, נשארו תושביה במקומותיהם, למרות קרבות שניטשו בסביבת העיר.'
+text_he_review: agent-checked
+anchor: soft
+tags: [displacement]
+deported: nazareth
+# The game's start: the card waits only for the player's Deport of Nazareth (R-EVT-007), which can come on any turn.
+from: 1948-05-15
+options:
+  - id: continue
+    text: Continue
+    text_he: להמשיך
+sources:
+  - { url: "https://he.wikipedia.org/w/index.php?oldid=44022843", checked: 2026-11-01 }
+  - { url: "https://jewishvirtuallibrary.org/jsource/History/Dekel.html", checked: 2026-11-01 }
+  - { url: "https://he.wikipedia.org/w/index.php?oldid=42975037", checked: 2026-11-01 }
+status: draft

@@ -31,7 +31,10 @@ public class CaptureDialogTests
     static Content Targets(double price = 0, double endPrice = 0, params string[] extra)
     {
         var dir = Paths.Content;
-        var events = Directory.GetFiles(Path.Combine(dir, "events"), "*.yaml").Select(f => "events/" + Path.GetFileName(f)).ToList();
+        // Deport's cards (#801, a `deported:` key) name targets this fixture's list leaves out (R-EVT-007), so they stay out too.
+        var events = Directory.GetFiles(Path.Combine(dir, "events"), "*.yaml")
+            .Where(f => !System.Text.RegularExpressions.Regex.IsMatch(File.ReadAllText(f), @"(?m)^deported:"))
+            .Select(f => "events/" + Path.GetFileName(f)).ToList();
         // Each target at its own hex in the map (ContentLoader.ValidateSettlementTargets checks it): Lydda and Ramle share
         // (-3, 21), Jaffa is (-3, 19); read from the owning file so a re-grid (#1796) cannot stale the fixture.
         var hexes = File.ReadAllText(Path.Combine(dir, "map", "settlement_hexes.yaml"));

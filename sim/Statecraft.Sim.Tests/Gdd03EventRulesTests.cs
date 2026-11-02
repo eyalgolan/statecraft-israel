@@ -189,7 +189,7 @@ public class Gdd03EventRulesTests
     public void RealCatalogueExcludesExactlyEightWholeCardsAndKeepsOrder()
     {
         var old = Real(false); var modern = Real(true);
-        Assert.Equal(39, old.Events.Count); Assert.Equal(31, modern.Events.Count);
+        Assert.Equal(41, old.Events.Count); Assert.Equal(33, modern.Events.Count);   // Deport's two cards (#801) are not excluded
         Assert.Equal(Excluded, old.Events.Select(e => e.Id).Except(modern.Events.Select(e => e.Id)).OrderBy(x => x, StringComparer.Ordinal));
         Assert.Equal(old.Events.Where(e => !Excluded.Contains(e.Id)).Select(e => e.Id), modern.Events.Select(e => e.Id));
         Assert.NotEqual(old.Hash, modern.Hash);
@@ -361,6 +361,8 @@ public class Gdd03EventRulesTests
         "burma_road_complete:f48054bb7720b93b582cae4e168f13595a4360ee62e91e12815df08de384e6e3",
         "clothing_rationing_1950:ce2d24a8a98ad86a1670e62094d18fca9da71b5cd11f437cd5314a09f4a1d562", // re-pinned for #1065 (Beri's native Hebrew read)
         "degania_defence:f915a42f050777ddffd7e7e26090b51c6cf922dade41a98fe7174b1c50a62c6e", // re-pinned for #2020 (owner-approved Hebrew wording, 30 October 2026), then for #1065 (Beri's native Hebrew read)
+        "deport_acre:381f7bb578bd3c14ec2501aad49dca9c6b67e0427dac971d59dde7d11b13a1f9", // added for #801 (Deport's follow-up cards, drafts), re-pinned for #2197 review round 2 (comments say "adapted")
+        "deport_nazareth:d3c1c1d7ac633d56cd3d6e22f92948f5cb8faf073434d71a11e14ce370798948", // added for #801 (Deport's follow-up cards, drafts), re-pinned for #2197 ("near the town", source packet N5; review round 2 comments)
         "education_registration_1951:1d5cb0e4062dc61b787a7e1b375b3c85c9a1663bd4c3c73f3c9c6f9ee5ac4da3", // re-pinned for #1065 (Beri's native Hebrew read)
         "elections_1949:962bd8064e8b98d4919be9b4ff4fab68cb9bd3d15213ea43917caa4432f42116", // re-pinned for #1065 (Beri's native Hebrew read)
         "first_new_yishuv:9edf9e0da02c2feefe11eb52aa056ee64af60a41ac3fa2c283ff976f33d0e0c8",
@@ -391,7 +393,7 @@ public class Gdd03EventRulesTests
         "ten_days:7fece9c0eb4f56ece79a7247e430fb679d3d4d826165e598fd0bd982099a412a", // re-pinned for #1065 (Beri's native Hebrew read)
     };
     [Fact]
-    public void AllThirtyNineSourceRecordsIncludingReviewsAndHebrewAreUnchanged()
+    public void AllFortyOneSourceRecordsIncludingReviewsAndHebrewAreUnchanged()
     {
         var root = Path.Combine(RealContentTests.ContentRoot(), "events");
         var files = Directory.GetFiles(root, "*.yaml").OrderBy(x => x, StringComparer.Ordinal).ToArray();

@@ -290,7 +290,7 @@ war-casualties). The owner's sign-off for all seven events below is recorded in 
   consequence`) or any event with `variants` has no `reviewed_by`, naming them on a `RELEASE GATE REFUSED` line
   (`Statecraft.Sim.ReleaseGate.AlternateUnsigned`; the CLI also prints each as `unsigned alternate card: <id>`). The
   sign-off is a person's `reviewed_by`, written only by that person. The Unity `-shareable` build flag checks the sensitive events only.
-- **Pinned set:** `FinalWaveTests.TheSensitiveEventsArePinned` lists the ten ids, and
+- **Pinned set:** `FinalWaveTests.TheSensitiveEventsArePinned` lists the twelve ids, and
   `TheOwnerTableListsEverySensitiveEvent` fails if a sensitive event is missing from this table, so a new one cannot
   skip the review.
 
@@ -304,6 +304,8 @@ war-casualties). The owner's sign-off for all seven events below is recorded in 
 | `operation_horev` | security, war-casualties | military text only |
 | `bernadotte_assassination` | security, terror | the `terror` tag follows the Israeli government's own Prevention of Terrorism Ordinance |
 | `reparations_claim` | holocaust | the claim's framing (the cost of absorbing survivors: 500,000 at $3,000 each); the "refuse" option |
+| `deport_acre` | displacement | Deport's follow-up card for Acre (#801), a draft: the in-game consequence and one line of history adapted from he.wiki (the residents kept leaving after the 18 May 1948 surrender, but no expulsion orders were issued and no pressure was put on them to leave), whose footnote is Morris p. 153. The line departs from he.wiki in one place: "after the conquest" becomes "after Acre surrendered on 18 May 1948". Waits for a person's source check and the owner's review of the English and Hebrew; Deport stays out of play (`mvp.deport_in_play: false`) until then. |
+| `deport_nazareth` | displacement | Deport's follow-up card for Nazareth (#801), a draft: the in-game consequence and one line of history adapted from he.wiki and the IDF account (the residents stayed when the city surrendered in July 1948, in Operation Dekel, despite fighting near the town), whose he.wiki footnote is Morris p. 271. The line departs from he.wiki's "in and around the city" by saying "near the town", because the cited "מבצע דקל" has the IDF enter without a battle. Waits for a person's source check and the owner's review of the English and Hebrew; Deport stays out of play (`mvp.deport_in_play: false`) until then. |
 | `degania_defence` | security, war-casualties | the defence of Degania Alef and Degania Bet, 20 May 1948: military text only, no casualty figures, no gun count (the four-or-two record is unresolved, [C] in the YAML); the stopped-vehicle photograph's identification (Syrian per the NLI record, a Universal Carrier per Commons) is flagged for review (#1565) |
 | `reparations_vote` | holocaust | the Knesset vote of 9 January 1952 on direct talks with West Germany (#1564); the opposition named by party, not by leader; the riot of 7 January kept to the YAML comment; the three design costs. The owner approved the card text and options, the Benno Rothenberg photograph as a sensitive image and the three costs on 25 October 2026 ("Approve all three", [#1575](https://github.com/eyalgolan/statecraft-israel/pull/1575#issuecomment-6394241026)); it is `sensitivity-reviewed`. |
 

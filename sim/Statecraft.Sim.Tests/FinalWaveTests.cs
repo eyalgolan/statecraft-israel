@@ -16,7 +16,7 @@ public class FinalWaveTests
 
     /// <summary>The events with a sensitive tag (spec 5.5): pinned, so a new one cannot miss the owner's review table.</summary>
     static readonly string[] SensitiveEvents =
-        { "altalena", "bernadotte_assassination", "burma_road_complete", "degania_defence", "operation_hiram", "operation_horev", "operation_yoav", "reparations_claim", "reparations_vote", "ten_days" };
+        { "altalena", "bernadotte_assassination", "burma_road_complete", "degania_defence", "deport_acre", "deport_nazareth", "operation_hiram", "operation_horev", "operation_yoav", "reparations_claim", "reparations_vote", "ten_days" };
 
     /// <summary>The resources a sensitive option may not raise (EventRules.NoGainTargets, internal to the sim).</summary>
     static readonly string[] Resources = { "treasury", "fx_reserves", "food_supply", "morale", "intl_standing" };
@@ -69,7 +69,9 @@ public class FinalWaveTests
         // bernadotte_assassination, operation_hiram and ten_days after #577 changed them on 2026-10-15 ("Approve all 4", #600).
         // burma_road_complete (#791): the owner reviewed its text on 21 Oct 2026. reparations_vote (#1564): the owner
         // approved its card, photograph and costs on 25 Oct 2026 ("Approve all three", #1575).
-        Assert.Empty(ReleaseGate.SensitiveUnreviewed(Real));
+        // deport_acre and deport_nazareth (#801) are drafts awaiting a person's source check and the owner's review, so
+        // the gate holds them (R-GATE-001); Deport stays out of play meanwhile (mvp.deport_in_play: false).
+        Assert.Equal(new[] { "deport_acre", "deport_nazareth" }, ReleaseGate.SensitiveUnreviewed(Real));
         var reviewed = Fixture.Write(events: new Dictionary<string, string>
         {
             ["a.yaml"] = "id: a\ntitle: A\ntext: x\nfrom: 1948-06-01\ntags: [terror]\noptions:\n  - id: o\n    text: O\nstatus: sensitivity-reviewed\n",

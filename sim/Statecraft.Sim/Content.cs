@@ -1115,6 +1115,10 @@ namespace Statecraft.Sim
         /// while that front holds prisoners or the player's soldiers, has exactly one option and resolves without a draw.
         /// Empty for every other event.</summary>
         public string Prisoners { get; set; } = "";
+        /// <summary>The settlement target (settlement_targets.yaml) whose Deport this follow-up card follows (R-EVT-007; GDD
+        /// Phase 6 PR 9, #801): it fires only once the player's Deport has depopulated that place, has exactly one option,
+        /// resolves without a draw and carries the <c>displacement</c> tag. Empty for every other event.</summary>
+        public string Deported { get; set; } = "";
         /// <summary>The place among the same turn's cards of the same `from` (R-EVT-006): a lower order comes first, before
         /// the id decides. Default 0; degania_defence has 1, so One Army opens the game (owner, 24 October 2026, #1568).</summary>
         public int Order { get; set; }

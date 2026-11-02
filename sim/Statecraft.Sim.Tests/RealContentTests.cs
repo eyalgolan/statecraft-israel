@@ -177,12 +177,13 @@ public class RealContentTests
         // Other records keep the gate.
         // burma_road_complete left them with the owner's sensitivity review of its text, 21 Oct 2026 (#791).
         // railway_complete left them after a person's read of its two newspaper pages and the booklet, 25 Oct 2026 (#1410).
-        var draftEvents = new[] { "first_new_yishuv", "jerusalem_demilitarisation_guard", "rafah_force_pressure" };
+        // deport_acre and deport_nazareth (#801) wait for a person's source check and the owner's sensitivity review.
+        var draftEvents = new[] { "deport_acre", "deport_nazareth", "first_new_yishuv", "jerusalem_demilitarisation_guard", "rafah_force_pressure" };
         Assert.Equal(draftEvents, C.Events.Where(e => e.Status == "draft").Select(e => e.Id).OrderBy(id => id));
         // A sensitive event submitted fact-checked waits here for the owner's sensitivity review; the maintainer sets
         // sensitivity-reviewed and empties this list. reparations_vote (#1564) left it on 25 Oct 2026 ("Approve all three", #1575).
         var awaitingSensitivityReview = Array.Empty<string>();
-        Assert.Equal(awaitingSensitivityReview, ReleaseGate.SensitiveUnreviewed(C));
+        Assert.Equal(awaitingSensitivityReview.Concat(DeportCards), ReleaseGate.SensitiveUnreviewed(C));   // the drafts are held too (R-GATE-001)
         foreach (var e in C.Events)   // a sensitive event passes the owner's sensitivity review on top of fact-checking (D11)
         {
             Assert.Equal(draftEvents.Contains(e.Id) ? "draft"
@@ -529,5 +530,57 @@ public class RealContentTests
         Assert.False(string.IsNullOrEmpty(card.TitleHe), "absorb_immigrants.title_he");
         Assert.False(string.IsNullOrEmpty(card.TextHe), "absorb_immigrants.text_he");
         Assert.All(card.Options, o => Assert.False(string.IsNullOrEmpty(o.TextHe), $"absorb_immigrants.options[{o.Id}].text_he"));
+    }
+
+    /// <summary>Deport's follow-up cards (GDD Phase 6 PR 9, #801). Deport is refused where the residents fled (R-CTRL-018), so
+    /// only the targets whose residents stayed can be deported, and each has exactly one card.</summary>
+    static readonly string[] DeportCards = { "deport_acre", "deport_nazareth" };
+
+    // R-GATE-001: every displacement card in content/ is held by the release gate until the owner sets sensitivity-reviewed.
+    // Replaces ReleaseGateTests.TheRealContentHasNoDisplacementEventYet, PR 2's guard.
+    [Fact]
+    public void EveryDisplacementCardIsGatedUntilReviewed()
+    {
+        var displacement = C.Events.Where(e => e.Tags.Contains("displacement", StringComparer.OrdinalIgnoreCase)).Select(e => e.Id).OrderBy(id => id, StringComparer.Ordinal);
+        Assert.Equal(DeportCards, displacement);
+        foreach (var e in C.Events.Where(e => DeportCards.Contains(e.Id)))
+            Assert.Equal(e.Status != ReleaseGate.ReviewedStatus, ReleaseGate.SensitiveUnreviewed(C).Contains(e.Id));
+    }
+
+    // R-EFX-007, R-EFX-005: no option of a displacement card raises Money, Food, Arms, Social cohesion, International Support
+    // or any other target, and none grants units, gains a city effect or unlocks a project. The cards carry no effect at all:
+    // Deport's costs are R-CTRL-018's, applied by the sim.
+    [Fact]
+    public void NoDisplacementOptionRaisesAnything()
+    {
+        foreach (var o in C.Events.Where(e => DeportCards.Contains(e.Id)).SelectMany(e => e.Options))
+        {
+            Assert.Empty(o.Effects);   // no effect at all, which covers R-EFX-007's no-gain rule
+            Assert.Empty(o.GrantUnits);
+            Assert.Empty(o.CityEffects);
+            Assert.Empty(o.UnlockProjects);
+            Assert.Empty(o.SetPolicy);
+            Assert.Null(o.SetRung);
+        }
+    }
+
+    // R-EVT-007: each target whose residents stayed has one card, which fires once that place is depopulated and not before;
+    // the other card stays unfired.
+    [Fact]
+    public void EachStayedTargetHasOneCardThatFiresOnItsDeport()
+    {
+        var stayed = C.SettlementTargets.Where(t => t.Residents == "stayed").Select(t => t.Id).OrderBy(id => id, StringComparer.Ordinal).ToArray();
+        Assert.Equal(new[] { "acre", "nazareth" }, stayed);
+        Assert.Equal(stayed, C.Events.Where(e => e.Deported != "").Select(e => e.Deported).OrderBy(id => id, StringComparer.Ordinal));
+        foreach (var place in stayed)
+        {
+            var card = C.Events.Single(e => e.Deported == place).Id;
+            var s = Simulation.NewGame(C, 42, Mode.Historical);
+            Assert.DoesNotContain(card, s.FiredEvents);
+            s.Settlements[place] = new SettlementControl(since: s.Date, depopulated: true);
+            EventSystem.Trigger(C, s, new List<Cause>());
+            Assert.Contains(card, s.PendingEvents);
+            Assert.DoesNotContain(C.Events.Single(e => e.Deported != "" && e.Deported != place).Id, s.FiredEvents);
+        }
     }
 }
