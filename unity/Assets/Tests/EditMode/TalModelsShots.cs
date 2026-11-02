@@ -416,7 +416,8 @@ public class TalModelsShots
     /// also it doesnt show its an egyptian unit"): the Spitfire on the opening turn from the player's camera (CameraRig.Pitch,
     /// yaw 0), at the camera's opening distance and at 30 km, the look-at on the ground along the view ray through the plane
     /// so the plane is mid-frame. Poses come from SpitfireLoop.Place, as play draws them: 0 s (the pass in from el-Arish,
-    /// straight), 0.02 s later (the propeller's turn between two frames) and 10 s (the turn at the loop's east end). The same
+    /// straight), 10 s (the turn at the loop's east end, where the camera sees the propeller's disc face on), and each 0.02 s
+    /// later (the propeller's turn between two frames). The same
     /// test on the base branch gives the "before" stills, on the PR branch the "after" ones (spitfire-flight-shots).</summary>
     IEnumerator SpitfireFlight(bool hebrew)
     {
@@ -437,9 +438,9 @@ public class TalModelsShots
             Debug.Log($"SHOT spitfire-flight on {state.Date:yyyy-MM-dd}: opening distance {opening:F0} m, loop centre {layer.Placed.Single(p => p.Model == SeaAirCollection.Spitfire).At}");
             var down = Quaternion.Euler(CameraRig.Pitch, 0f, 0f) * Vector3.forward;
             foreach (var (zoom, distance) in new[] { ("opening", opening), ("close", 30000f) })
-                foreach (var (pose, seconds) in new[] { ("pass", 0f), ("pass-later", 0.02f), ("turn", 10f) })
+                foreach (var (pose, seconds) in new[] { ("pass", 0f), ("pass-later", 0.02f), ("turn", 10f), ("turn-later", 10.02f) })
                 {
-                    if (zoom == "opening" && pose == "pass-later") continue;   // the propeller is a few pixels at the opening zoom
+                    if (zoom == "opening" && pose.EndsWith("-later")) continue;   // the propeller is a few pixels at the opening zoom
                     loop.Place(seconds);
                     var at = plane.GetComponentsInChildren<Renderer>(true).Select(r => r.bounds).Aggregate((a, b) => { a.Encapsulate(b); return a; }).center;
                     // The ground point on the view ray through the plane: the player's look-at that puts it mid-frame.

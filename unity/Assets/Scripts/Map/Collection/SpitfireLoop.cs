@@ -5,20 +5,31 @@ using UnityEngine;
 namespace Statecraft.Game.Map.Collection
 {
     /// <summary>Flies Tal Heuberger's Egyptian Spitfire round its loop (SeaAirCollection.LoopOffset, owner, 2 November 2026:
-    /// "Fly a slow loop"), level, nose along the path. Presentation only: it reads the map's animation clock (Time.time, as
-    /// the steam train and the showcase flight do), sets one transform per frame and allocates nothing. It lives on the
-    /// aircraft's own object, so it stops when the layer drops the aircraft (its dates end, or the map is torn down) and
-    /// does not run while the layer is inactive. The model is one fused mesh with no separate propeller, so nothing spins.
-    /// Editor renders and screenshots (`?shot` / `-shot`) hold the loop's start, so they repeat exactly, as the train does
-    /// (RouteLayer.ModeFor).</summary>
+    /// "Fly a slow loop"), nose along the path, banked into the turns (SeaAirCollection.LoopBankDegrees), its propeller
+    /// turning, its shadow on the ground and its side's flag over it (owner's report, 2 November 2026: "the gyptian plane's
+    /// propelor isn't moving and it doesnt look fliying, also it doesnt show its an egyptian unit"). Presentation only: it
+    /// reads the map's animation clock (Time.time, as the steam train and the showcase flight do), sets a few transforms per
+    /// frame and allocates nothing. It lives on the aircraft's own object, so it stops when the layer drops the aircraft (its
+    /// dates end, or the map is torn down) and does not run while the layer is inactive.
+    /// The model is one fused mesh, so the turning propeller is a separate translucent disc at its nose (<see cref="Attach"/>,
+    /// SeaAirCollection.Fly). Editor renders and screenshots (`?shot` / `-shot`) hold the loop's start, propeller included, so
+    /// they repeat exactly, as the train does (RouteLayer.ModeFor).</summary>
     public sealed class SpitfireLoop : MonoBehaviour
     {
-        Vector3 centre, offset; Quaternion level; bool still;
+        /// <summary>DESIGN VALUE: the propeller's turn (degrees a second), as ShowcaseFlight turns the unit tokens' propellers:
+        /// about 4 turns a second, so its three blurred blades move a sixth of a turn or less between two frames at 30 fps
+        /// and never seem to turn backwards.</summary>
+        public const float PropDegreesPerSecond = 1500f;
 
-        /// <summary>STUB (red stage).</summary>
-        public const float PropDegreesPerSecond = 1500f, ShadowLiftM = 30f;
+        /// <summary>DESIGN VALUE: the shadow's lift (m) over the highest of the five ground points sampled under it, so the flat
+        /// disc lies over the dunes rather than in them.</summary>
+        public const float ShadowLiftM = 30f;
+
+        /// <summary>The direction the map's sun shines (MapLighting.Apply: fixed in the world), pointing down.</summary>
         public static readonly Vector3 SunRay = Quaternion.Euler(MapLighting.SunElevation, MapLighting.SunAzimuth - 180f, 0f) * Vector3.forward;
-        internal void Attach(Transform? prop, Transform? shadow, Transform? flag, Terrain? ground, Vector2 shadowHalf) { }
+
+        Vector3 centre, offset; Quaternion level; bool still;
+        Transform? prop, shadow, flag; Terrain? ground; Vector2 shadowHalf;
 
         /// <summary>The animation clock, Time.time. Test seam (internal; the tests see it through InternalsVisibleTo): an
         /// EditMode test has no frame clock.</summary>
@@ -26,6 +37,14 @@ namespace Statecraft.Game.Map.Collection
 
         /// <summary>True when the aircraft holds the loop's start (edit mode, screenshots).</summary>
         public bool Still => still;
+
+        /// <summary>The turning propeller disc (a child of the aircraft's mesh), the shadow and the flag (each in world space,
+        /// beside the aircraft), the terrain the shadow lies on, and the shadow's half size across and along the heading (m).
+        /// Before <see cref="Configure"/>, which places them all.</summary>
+        internal void Attach(Transform? prop, Transform? shadow, Transform? flag, Terrain? ground, Vector2 shadowHalf)
+        {
+            this.prop = prop; this.shadow = shadow; this.flag = flag; this.ground = ground; this.shadowHalf = shadowHalf;
+        }
 
         /// <summary><paramref name="centre"/>: the loop's centre in the air. <paramref name="level"/>: the model's rotation
         /// with its nose east. <paramref name="offset"/>: its drawn centre from its pivot at that rotation.</summary>
@@ -41,15 +60,48 @@ namespace Statecraft.Game.Map.Collection
             if (!still) Place(Clock());
         }
 
-        /// <summary>Puts the aircraft where it is <paramref name="seconds"/> into its loop, its drawn centre on the path and
-        /// its nose along the path's tangent.</summary>
+        /// <summary>Puts the aircraft where it is <paramref name="seconds"/> into its loop: its drawn centre on the path, its
+        /// nose along the path's tangent, rolled into the turn about that tangent; the propeller at its angle then; the flag's
+        /// pole foot at the drawn centre; the shadow where the sun's ray through the drawn centre meets the ground.</summary>
         public void Place(float seconds)
         {
             var at = SeaAirCollection.LoopOffset(seconds); var heading = SeaAirCollection.LoopHeading(seconds);
+            var forward = new Vector3(heading.x, 0f, heading.y);
             // A turn about the vertical from east (+x) to the heading; Unity's yaw turns +x toward -z.
             var yaw = Quaternion.Euler(0f, -Mathf.Atan2(heading.y, heading.x) * Mathf.Rad2Deg, 0f);
-            transform.localRotation = yaw * level;
-            transform.position = centre + new Vector3(at.x, 0f, at.y) - yaw * offset;
+            // The loop turns left (anticlockwise seen from above): a positive turn about the heading lowers the left wing.
+            float bank = SeaAirCollection.LoopBankDegrees(seconds);
+            var turn = Quaternion.AngleAxis(bank, forward) * yaw;
+            transform.localRotation = turn * level;
+            var drawn = centre + new Vector3(at.x, 0f, at.y);
+            transform.position = drawn - turn * offset;
+            if (prop != null) prop.localRotation = Quaternion.AngleAxis(-Mathf.Repeat(seconds * PropDegreesPerSecond, 360f), Vector3.up);
+            if (flag != null) flag.position = drawn;
+            if (shadow != null && ground != null) PlaceShadow(drawn, forward, bank);
+        }
+
+        /// <summary>The sun's ray from <paramref name="drawn"/> to the ground, found in two steps (the ground's height where the
+        /// ray lands sets how far it travels); the disc flat, turned with the heading, narrowed across by the bank, lifted over
+        /// the highest ground under its middle and its four ends.</summary>
+        void PlaceShadow(Vector3 drawn, Vector3 forward, float bank)
+        {
+            float y0 = ground!.transform.position.y;
+            var hit = drawn;
+            float floor = ground.SampleHeight(drawn) + y0;
+            for (int i = 0; i < 2; i++)
+            {
+                hit = drawn + SunRay * ((drawn.y - floor) / -SunRay.y);
+                floor = ground.SampleHeight(hit) + y0;
+            }
+            var across = new Vector3(forward.z, 0f, -forward.x);
+            float half = shadowHalf.x * Mathf.Cos(bank * Mathf.Deg2Rad);
+            float top = floor;
+            top = Mathf.Max(top, ground.SampleHeight(hit + across * half) + y0);
+            top = Mathf.Max(top, ground.SampleHeight(hit - across * half) + y0);
+            top = Mathf.Max(top, ground.SampleHeight(hit + forward * shadowHalf.y) + y0);
+            top = Mathf.Max(top, ground.SampleHeight(hit - forward * shadowHalf.y) + y0);
+            shadow!.SetPositionAndRotation(new Vector3(hit.x, top + ShadowLiftM, hit.z), Quaternion.LookRotation(forward, Vector3.up));
+            shadow.localScale = new Vector3(half, 1f, shadowHalf.y);
         }
     }
 }

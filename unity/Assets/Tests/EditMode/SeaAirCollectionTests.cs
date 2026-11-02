@@ -476,7 +476,7 @@ public class SeaAirCollectionTests
         float least = SeaAirCollection.LoopCurvature(0f);
         for (int i = 0; i < 200; i++)
         {
-            float t = i * period / 200f, h = 0.01f;
+            float t = i * period / 200f, h = 0.2f;   // a step large enough for float positions of km, small for the curve
             Vector2 p0 = SeaAirCollection.LoopOffset(t - h), p1 = SeaAirCollection.LoopOffset(t), p2 = SeaAirCollection.LoopOffset(t + h);
             Vector2 d1 = (p2 - p0) / (2f * h), d2 = (p2 - 2f * p1 + p0) / (h * h);
             float numeric = Mathf.Abs(d1.x * d2.y - d1.y * d2.x) / Mathf.Pow(d1.magnitude, 3f);
@@ -525,7 +525,8 @@ public class SeaAirCollectionTests
         var cloth = Statecraft.Game.Map.Units.UnitFlags.Colours(Statecraft.Game.Map.Units.UnitFlags.Egypt);
         Assert.AreEqual(1 + cloth.Count, mats.Length, "the pole and each of the cloth's colours");
         Assert.AreEqual(mesh.subMeshCount, mats.Length, "one material a submesh");
-        for (int i = 0; i < cloth.Count; i++) Assert.AreEqual(cloth[i], mats[i + 1].color, $"Egypt's cloth colour {i}, as UnitFlags.ClothMaterials gives the tokens");
+        for (int i = 0; i < cloth.Count; i++)
+            Assert.Less(Vector4.Distance(cloth[i], mats[i + 1].color), 1e-4f, $"Egypt's cloth colour {i}, as UnitFlags.ClothMaterials gives the tokens");
         var miniature = Resources.Load<Material>(Statecraft.Game.Map.Units.UnitMaterials.MiniatureResource);
         Assert.AreEqual(miniature.shader, mats[0].shader, "the pole in the units' miniature paint");
         Assert.IsNotNull(mats[0].GetTexture("_BaseMap"), "with the units' palette");
