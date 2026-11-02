@@ -224,7 +224,9 @@ and what is public are in `docs/RELEASING.md`, "Nightly builds". It runs on the 
   test page, then, from the clone and after the first PUBLISHED night,
   `uv run tools/nightly.py savetest --tag <that nightly's tag>`. It pushes to the test page twice, never to the public
   page, and refuses to run without those two keys or if they name the public page. On a pass, it turns `itch_enabled`
-  on in `config.json`. `INCONCLUSIVE` and `FAIL` leave itch off.
+  on in `config.json`. `INCONCLUSIVE` and `FAIL` leave itch off. A night pushes to itch only while the two test-page
+  keys name a separate page and `itch_evidence` records that PASS; otherwise its log line says
+  `itch: skipped (<reason>)`, naming the missing key or the problem (#2056).
 - The boot-time baseline is the median headless boot of the first 5 PUBLISHED nights; later nights must stay within
   the spread of those 5. To measure it again (a new machine, a new Chrome), delete `boot_baseline` from `state.json`;
   the next 5 published nights record it.
