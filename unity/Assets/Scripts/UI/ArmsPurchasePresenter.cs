@@ -71,8 +71,9 @@ namespace Statecraft.Game.UI
             panel.Q<Label>("arms-refusal").text = s.GameOver != null ? text["order.game_over"]
                 : count.value < 1 ? text["arms.minimum"]
                 : !bridge.CanPay(order) ? text["arms.no_attention"]
-                // #2198: the sim refuses this amount at End turn if the state stays as it is now (Pools.BuyArms).
-                : Pools.BorrowsPastDebtCeiling(c, s, count.value) ? text["arms.refused_debt_ceiling"] : "";
+                // #2198: the sim refuses this amount at End turn if the state stays as it is now (Pools.BuyArms), after the
+                // dollar conversions queued this turn, which End turn runs first (#2206).
+                : Pools.BorrowsPastDebtCeiling(c, s, bridge.Queued, count.value) ? text["arms.refused_debt_ceiling"] : "";
         }
 
         public void Dispose()
