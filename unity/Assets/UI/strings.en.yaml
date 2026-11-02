@@ -778,6 +778,21 @@ city.resource.vineyards: "vineyards"
 city.project_reason.turn_cap: "No more than {0} city projects in one turn"
 # The toggle that folds a city's own projects on a stacked bar or a short window (owner ruling on #1150).
 city.projects_toggle: "City projects ({0})"
+# #1722 slice E (#1701; R-ARMS-005 to R-ARMS-007), gdd-0.3 only: a built arms workshop's part of the info panel. The
+# stepper's {0} is the city's staffed (or ordered) workshops, {1} its built ones; the cycle's {0} its staffed months,
+# {1} workshop.staffed_turns, {2} the Money paid; city.workshop_held's {0} the city.
+city.workshops_staffed: "Arms workshops staffed: {0} of {1}"
+city.workshops_ordered: "Arms workshops staffed at End turn: {0} of {1}"
+city.workshop_staffed: "This workshop: staffed"
+city.workshop_unstaffed: "This workshop: not staffed, paused"
+city.workshop_cycle: "Cycle: {0} of {1} staffed months · paid {2}"
+city.workshop_next: "No cycle under way · next cycle: {0}"
+city.workshop_held: "Paused: the enemy holds {0}"
+# A workshop staffing order's refusals (R-ARMS-005): the sim's own English (Workshops.Refused*), {0} the city, {1} a count.
+workshop.refused_built_one: "{0} has 1 arms workshop"
+workshop.refused_built: "{0} has {1} arms workshops"
+workshop.refused_people: "{0} has {1} civilians and craftsmen"
+workshop.refused_people_no_job: "{0} has {1} civilians and craftsmen without a job"
 site.available: "A designated site for a new yishuv"
 site.group: "halutz group {0}"
 site.build: "Build a yishuv with {0}: {1}, {2}"
