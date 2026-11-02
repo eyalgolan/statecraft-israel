@@ -90,6 +90,18 @@ public class HebrewUiTests
         }
     }
 
+    // #2198: the Arms purchase refused at the debt ceiling reaches the end-of-turn toast (ReasonText) in both languages.
+    [Test]
+    public void TheArmsDebtCeilingRefusalHasAStringInBothLanguages()
+    {
+        var reason = Statecraft.Sim.Pools.RefusedDebtCeiling;
+        Assert.AreEqual(reason, SimBridge.ReasonText(En, reason), "the English string is the sim's own");
+        var he = SimBridge.ReasonText(He, reason);
+        Assert.AreNotEqual(reason, he, "no Hebrew string for: " + reason);
+        StringAssert.IsMatch("[א-ת]", he, reason);
+        StringAssert.DoesNotMatch("[A-Za-z]", he, reason);
+    }
+
     // #2072: every Combat.Check and Training.Reinforce refusal (their Refused* constants) has a string in both files. Each
     // format is filled with distinct values as the sim fills it (a multi-word town, a real course, different numbers) and read
     // with content: the English is the sim's own text, the Hebrew is its line with the Hebrew town and course in their slots,

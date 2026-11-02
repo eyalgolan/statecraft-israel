@@ -1059,6 +1059,8 @@ arms.attention: "עלות תשומת לב: {0:0.0} · נותר: {1:0.0}"
 arms.queued: "נשק שהוזמן: {0:N0}, בסיום התור"
 arms.minimum: "יש לרכוש לפחות יחידת נשק אחת. יש להזין כמות גדולה יותר."
 arms.no_attention: "אין די תשומת לב לרכישה. יש לבטל הוראה אחרת או להמתין לתור הבא."
+# #2198: agent-drafted Hebrew; native review: owner, 2 Nov 2026, "Hebrew is right (Recommended)".
+arms.refused_debt_ceiling: "רכישת כמות כזאת של נשק תעלה את החוב מעל התקרה"
 
 # #731 stock summaries in the report and Why.
 # native-review-pending
