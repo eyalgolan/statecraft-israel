@@ -334,9 +334,10 @@ namespace Statecraft.Game.UI
             // The language switch (#1036) builds every screen again in the new language over this game (SwitchLanguage).
             Action<string> switchLanguage = language => SwitchLanguage(inputs, language);   // the start screen's too (#2054)
             // The WebGL companion (#1119) is opt-in (WebCompanion.On): Settings turns it on and off at once, where a page shows it.
+            // While the build does not offer it (WebCompanion.Available, owner 2 Nov 2026), there is no switch, so no row.
             Action<bool>? setCompanion = null;
             (Func<bool> on, Action<bool> set)? companionSwitch = null;
-            if (CompanionPage)
+            if (CompanionPage && WebCompanion.Offered())
             {
                 Action<bool> set = on =>
                 {
