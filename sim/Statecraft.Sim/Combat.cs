@@ -126,7 +126,7 @@ namespace Statecraft.Sim
             var refused = Check(c, s, unitId, q, r, enemy);
             if (refused != null) return refused;
             var u = s.Units[unitId]; var target = Hex(q!.Value, r!.Value);
-            s.Units[unitId] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, Attack, target, u.HomeCity, u.Full);
+            s.Units[unitId] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, Attack, target, u.HomeCity, u.Full, u.CombatXp);
             why.Add(UnitLines.Line(WhyKeys.AttackOrdered, $"Unit {unitId} will attack hex {target}", new[] { u }, target));
             return null;
         }
@@ -142,7 +142,7 @@ namespace Statecraft.Sim
             var mvp = c.RulesAt(s.Date).Mvp!;
             var u = s.Units[unitId];
             if (SpendsArms(c)) s.Arms -= Need(c, mvp, u);
-            var attacker = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity, u.Full);
+            var attacker = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity, u.Full, u.CombatXp);
             s.Units[unitId] = attacker;
             if (u.Order == Orders.Fortify)
                 why.Add(UnitLines.Line(WhyKeys.FortifyLost,
@@ -276,15 +276,41 @@ namespace Statecraft.Sim
 
         static void End(GameState s, Unit u, string key, string line, List<Cause> why, params string[] args)
         {
-            s.Units[u.Id] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity, u.Full);
+            s.Units[u.Id] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity, u.Full, u.CombatXp);
             why.Add(UnitLines.Line(key, line, new[] { u }, args));
+        }
+
+        /// <summary>One engagement (<see cref="Fight"/>), then, under exact gdd-0.3, its survivors' combat experience
+        /// (R-UNIT-011). Every engagement, the player's instant attack and step 2's alike, runs through here.</summary>
+        static void Engage(Content c, GameState s, MvpRules mvp, List<Unit> attackers, List<Unit> defenders, int q, int r, List<Cause> why)
+        {
+            Fight(c, s, mvp, attackers, defenders, q, r, why);
+            if (Gdd03Military.Applies(c)) Experience(c, s, attackers, defenders, why);
+        }
+
+        /// <summary>R-UNIT-011 (owner, 1 November 2026, #1668 Q14 to Q16): after the engagement's one draw, its losses, retreats
+        /// and surrenders, each attacker and defender still in the state, in ascending id, gains military.combat_xp_gain combat
+        /// experience, up to military.combat_xp_full. A destroyed or surrendered unit has left the state and gains nothing; a
+        /// veteran_soldier is a veteran already and gains none. A recruit that reaches the full count becomes a veteran_soldier
+        /// (R-UNIT-004's promotion), so it fought this engagement as a recruit. Draws nothing.</summary>
+        static void Experience(Content c, GameState s, List<Unit> attackers, List<Unit> defenders, List<Cause> why)
+        {
+            var gain = Gdd03Military.Scalar(c, "military.combat_xp_gain");
+            var full = Gdd03Military.Scalar(c, "military.combat_xp_full");
+            foreach (var id in attackers.Concat(defenders).Select(x => x.Id).OrderBy(x => x))
+            {
+                if (!s.Units.TryGetValue(id, out var u) || u.Type == Statecraft.Sim.Military.VeteranSoldier) continue;
+                var xp = (int)Math.Min(full, (long)u.CombatXp + gain);
+                var gained = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity, u.Full, xp);
+                s.Units[id] = xp == full && Statecraft.Sim.Military.Promotes(u) ? Statecraft.Sim.Military.Promote(gained, why) : gained;
+            }
         }
 
         /// <summary>R-COMBAT-002, R-COMBAT-003, R-COMBAT-006: one engagement. The face is the one draw; its row's losses fall on
         /// each side one population unit at a time on its strongest unit (a tie on the lower id), a unit at 0 leaves the state,
         /// and when the row says so each defender left retreats one hex, in id order, or surrenders when it has nowhere to go.
         /// The attackers stay where they are (no advance, Q-COMBAT-3).</summary>
-        static void Engage(Content c, GameState s, MvpRules mvp, List<Unit> attackers, List<Unit> defenders, int q, int r, List<Cause> why)
+        static void Fight(Content c, GameState s, MvpRules mvp, List<Unit> attackers, List<Unit> defenders, int q, int r, List<Cause> why)
         {
             var ratio = Ratio(c, mvp, attackers, defenders, q, r);
             var row = mvp.CombatTable[Row(mvp, ratio)];
@@ -314,7 +340,7 @@ namespace Statecraft.Sim
                 if (!s.Units.TryGetValue(d.Id, out var u)) continue;
                 if (Retreat(c, s, mvp, u) is (int, int) to)
                 {
-                    s.Units[u.Id] = new Unit(u.Id, u.Type, to.Item1, to.Item2, u.Service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity, u.Full);
+                    s.Units[u.Id] = new Unit(u.Id, u.Type, to.Item1, to.Item2, u.Service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity, u.Full, u.CombatXp);
                     var hex = Hex(to.Item1, to.Item2);
                     why.Add(UnitLines.Line(WhyKeys.Retreated, $"Unit {u.Id} retreated to hex {hex}", new[] { u }, hex));
                 }
@@ -357,7 +383,7 @@ namespace Statecraft.Sim
         /// strength it had as its Full, the most replacements refill it to; no rule reads an enemy's, so it stores none.</summary>
         internal static Unit Lose(Unit u) =>
             new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength - 1, u.Order, u.OrderTarget, u.HomeCity,
-                u.Full == 0 && u.Side == Movement.PlayerSide ? u.Strength : u.Full);
+                u.Full == 0 && u.Side == Movement.PlayerSide ? u.Strength : u.Full, u.CombatXp);
 
         /// <summary>R-COMBAT-003: the first neighbour of the unit's hex, in the fixed order (R-MOVE-002), that is land, holds no
         /// unit of the other team, has room under mvp.stack_limit for the unit's side (R-MOVE-003) and, for the player's unit,

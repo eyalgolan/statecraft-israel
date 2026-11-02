@@ -205,7 +205,7 @@ public class ArtilleryTests
         Assert.Equal(arms, s.Arms);
         Assert.Equal(housed, Cities.Housed(s, s.Cities["town_a"]));
         Assert.Contains(why, w => w.Message.EndsWith("training and are " + noun, StringComparison.Ordinal));
-        for (int i = 0; i < 10; i++) Military.Serve(s, c.RulesAt(s.Date).Mvp!, why);
+        for (int i = 0; i < 10; i++) Military.Serve(c, s, c.RulesAt(s.Date).Mvp!, why);
         Assert.Equal(track, s.Units[next].Type);
     }
 

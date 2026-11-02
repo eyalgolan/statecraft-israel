@@ -87,12 +87,15 @@ namespace Statecraft.Game.UI
         public VisualElement? ShownFor => shownFor;
 
         /// <summary>The tip's lines for <paramref name="meter"/> (an element named "meter-" + a HudModel.MeterIds id): its
-        /// words, with the causes' heading when there are causes, and the causes, one a line (none when none).</summary>
+        /// words and what the meter is (hud.tip.&lt;id&gt;, #2200), with the causes' heading when there are causes, and the
+        /// causes, one a line (none when none).</summary>
         public (string words, IReadOnlyList<string> causes) Lines(VisualElement meter)
         {
-            var causes = HudModel.Causes(bridge.Session.Last, meter.name.Substring("meter-".Length), bridge.Content,
+            var id = meter.name.Substring("meter-".Length);
+            var causes = HudModel.Causes(bridge.Session.Last, id, bridge.Content,
                 w => CauseText.Line(w, bridge.Content, Array.Empty<Statecraft.Game.Map.Units.UnitEntry>(), text, TownNamesHe));   // no meter counts a unit line
-            return causes.Count == 0 ? (meter.tooltip, causes) : (meter.tooltip + "\n" + text["hud.causes"], causes);
+            var words = meter.tooltip + "\n" + text["hud.tip." + id];   // the number alone does not say what moves it (#2200)
+            return causes.Count == 0 ? (words, causes) : (words + "\n" + text["hud.causes"], causes);
         }
 
         /// <summary>Shows the tip for the hovered meter, else the tapped one, with today's words (HudPresenter.Render calls

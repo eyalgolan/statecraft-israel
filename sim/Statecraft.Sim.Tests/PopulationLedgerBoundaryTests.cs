@@ -50,7 +50,7 @@ public class PopulationLedgerBoundaryTests
                 case "training.cancel": Training.Cancel(c,s,0,why); break;
                 case "training.progress": Training.Progress(c,s,why); break;
                 case "training.reinforce": Training.Reinforce(c,s,0,"missing",1,why); break;
-                case "military.serve": Military.Serve(s,rules,why); break;
+                case "military.serve": Military.Serve(c,s,rules,why); break;
                 case "military.upkeep": Military.PayUpkeep(c,s,rules,why); break;
                 case "qualification.return": Qualification.ReturnCraftsmen(c,s,"missing",1,why); break;
                 case "qualification.craftsmen": Qualification.ReassignCraftsmen(c,s,"missing",1,why); break;

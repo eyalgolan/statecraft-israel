@@ -10,9 +10,10 @@ namespace Statecraft.Game.UI
 {
     /// <summary>The end screen (GDD Phase 7 PR 9, #812; D-H4): once the game is over it shows the sim's end report
     /// (EndReport.For, #810) and nothing else: the outcome, the score, each objective's card with the player's date beside the
-    /// historical date, the two national parameters and the population beside its CBS anchor. It formats the report only; no
-    /// number is computed here. It shows when a turn ends the game and when an ended game is loaded or rebuilt in the other
-    /// language; Close leaves the map to inspect (End Turn stays disabled and SimBridge refuses orders once the game is over),
+    /// historical date, any Deport card whose Deport came on the last turn (R-EVT-007), the two national parameters and the
+    /// population beside its CBS anchor. It formats the report only; no number is computed here. It shows when a turn ends
+    /// the game and when an ended game is loaded or rebuilt in the other language; Close leaves the map to inspect (End Turn
+    /// stays disabled and SimBridge refuses orders once the game is over),
     /// and New Game is the existing two presses (NewGamePresenter.Press), so showing the screen never deletes the save.
     /// <para>While it shows, the root has <see cref="OpenClass"/>: ScreenNav.DisableCovered covers the HUD under it as under
     /// the turn report, and the screen takes the keyboard focus when it is uncovered.</para></summary>
@@ -69,8 +70,9 @@ namespace Statecraft.Game.UI
         public bool ClosedThisFrame => closedAt == UnityEngine.Time.frameCount;
 
         /// <summary>The screen's lines for an ended game, in order: the outcome, its history note when it has one, the score,
-        /// the reference score, one per objective, Social cohesion, International Support, the population with its CBS anchor
-        /// and, when some went home, the prisoners returned. Every value is the report's.</summary>
+        /// the reference score, one per objective, each Deport card that never fired (its title, then its text), Social
+        /// cohesion, International Support, the population with its CBS anchor and, when some went home, the prisoners
+        /// returned. Every value is the report's.</summary>
         public static IReadOnlyList<(string Name, string Text)> Lines(Content c, GameState s, UiText t)
         {
             var r = EndReport.For(c, s);
@@ -106,6 +108,14 @@ namespace Statecraft.Game.UI
                 lines.Add(("objective-" + o.Id, o.Completed is DateTime done
                     ? t.Format("end.objective_done", title, Date(done), Date(o.Historical))
                     : t.Format("end.objective_open", title, Date(o.Historical))));
+            }
+            // R-EVT-007: a Deport card that never fired, its Deport on the turn that ended the game (owner, 2 November 2026,
+            // #2197: "Show on the end screen (Recommended)"), shown as its card shows it, title then text, in the UI's language.
+            foreach (var id in r.DeportCards)
+            {
+                var card = c.Events.First(e => e.Id == id);
+                lines.Add(("deport-" + id, ContentNames.Fill(t, c, s, s.Date, EventSystem.Title(c, s, card), card.TitleHe)));
+                lines.Add(("deport-" + id + "-text", ContentNames.Fill(t, c, s, s.Date, EventSystem.Render(c, s, card), card.TextHe)));
             }
             lines.Add(("cohesion", t.Format("end.parameter", t["hud.caption.cohesion"], PlayerText.Percent(r.SocialCohesion))));
             lines.Add(("standing", t.Format("end.parameter", t["hud.caption.standing"], PlayerText.Percent(r.InternationalSupport))));
