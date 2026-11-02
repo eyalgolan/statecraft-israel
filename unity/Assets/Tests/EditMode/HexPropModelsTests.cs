@@ -536,10 +536,12 @@ namespace Statecraft.Game.Tests
 
         sealed class Lease : IDisposable { public void Dispose() { } }
 
-        /// <summary>Review of #2266's delta, C1, on today's map: a rural scene draws its streamed model at its spot in the plan
-        /// with every model available, whatever streamed first or not at all (and so do the special buildings here, which do not
-        /// interact on today's map; #2281 makes that hold by construction), so the hex props (which keep clear of that plan) are
-        /// never landed on. A withheld model is chosen so that withholding it moves another scene in a plan without it.</summary>
+        /// <summary>Review of #2266's delta, C1, on today's map: with one model withheld and the rest streamed in later, every
+        /// rural scene and special building stands at its spot in the plan with every model available, and none lands on a hex
+        /// prop. On today's map no single model's absence moves another scene or building, so this test cannot fail on its own
+        /// for C1 (it passes on the old code too): it guards the real map's ordering and overlap. C1 itself is covered by the
+        /// constructed case, AStreamedModelStandsAtItsFullPlanSpotWhenAnEarlierOneHasNotStreamed (the farm scenes; #2281 fixes
+        /// SpecialBuildingModels.Plan the same way).</summary>
         [Test]
         public void ScenesAndBuildingsStandAtTheirFullPlanSpotsWhateverHasStreamed()
         {
@@ -547,8 +549,8 @@ namespace Statecraft.Game.Tests
             CollectionGeometryFixture.People(map, Opening, Array.Empty<Statecraft.Sim.Placement>(), Statecraft.Sim.ContentLoader.Load(Paths.Content));
             var ruralWants = RuralLife.Wants(map); var ruralOthers = RuralLife.OtherProps(map);
             var full = RuralLife.Plan(map, ruralWants, ruralOthers, _ => true).ToDictionary(x => x.want.Key + "|" + x.want.Model, x => x.spot);
-            // On today's map no single rural model's absence moves another scene (the constructed case below shows the flaw);
-            // the first model is withheld here.
+            // On today's map no single rural model's absence moves another scene (the constructed case shows the flaw); the
+            // first model is withheld here.
             string withheld = RuralLife.Models[0];
             var waiting = new List<(string id, CollectionDetail detail, Action<GameObject?> done)>();
             RuralLife.Request = SpecialBuildingModels.Request = (id, detail, done) => waiting.Add((id, detail, done));
@@ -642,7 +644,6 @@ namespace Statecraft.Game.Tests
             Assert.IsNotEmpty(donkey, "the donkey streamed and stands");
             Assert.Less((new Vector2(donkey[0].At.x, donkey[0].At.z) - fullSpot).magnitude, 1f,
                 $"the donkey at its full-plan spot {fullSpot}, not {subSpot} where the absent sheep's ground would put it");
-            // Special: a fort and a barracks on one point.
         }
 
         /// <summary>Review of #2266's delta, C2: a disabled layer hides Tal Heuberger's models under it, so the kit draws its own
