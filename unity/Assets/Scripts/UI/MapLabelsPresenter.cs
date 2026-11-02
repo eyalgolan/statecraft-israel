@@ -72,6 +72,9 @@ namespace Statecraft.Game.UI
     {
         public const string ContainerName = "map-labels", SlotClass = "map-label-slot", LabelClass = "map-label";
         public const string RouteTurnClass = "map-route-turn";
+        /// <summary>The "labels" switch's state: it hides the names' container (ContainerName) inline, and the container
+        /// outlives the presenter, so a new minimap starts from it (#2227).</summary>
+        public static bool SwitchedOn(VisualElement container) => container.style.display.value != DisplayStyle.None;
         public const float LiftPx = 6f, MarginPx = 4f, DeclutterDistanceM = 150000f;
         /// <summary>The 1948 localities are named only nearer than this (owner ruling 2026-10-11: names at closer zoom, so
         /// the map is not cluttered); farther out their pills are hidden and their places are nobody's neighbour.</summary>

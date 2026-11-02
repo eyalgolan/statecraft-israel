@@ -334,9 +334,10 @@ namespace Statecraft.Game.UI
             // The language switch (#1036) builds every screen again in the new language over this game (SwitchLanguage).
             Action<string> switchLanguage = language => SwitchLanguage(inputs, language);   // the start screen's too (#2054)
             // The WebGL companion (#1119) is opt-in (WebCompanion.On): Settings turns it on and off at once, where a page shows it.
+            // While the build does not offer it (WebCompanion.Available, owner 2 Nov 2026), there is no switch, so no row.
             Action<bool>? setCompanion = null;
             (Func<bool> on, Action<bool> set)? companionSwitch = null;
-            if (CompanionPage)
+            if (CompanionPage && WebCompanion.Offered())
             {
                 Action<bool> set = on =>
                 {
@@ -569,6 +570,7 @@ namespace Statecraft.Game.UI
             // The opening (#530): three sourced stills after New Game and before the first turn, skippable, and replayable
             // from the start screen. It reads no sim state. A player build shows it only once its text and photographs are
             // reviewed (OpeningContent.MayPresent); the Editor shows the draft with a visible preview label, for QA.
+            // A panel with a clip plays it after its photograph (owner ruling of 2 November 2026, OpeningPresenter).
             var replayOpening = root.Q<Button>("start-opening-replay");
             replayOpening.style.display = DisplayStyle.None;
             if (enableOpening && OpeningContent.Load() is OpeningContent openingSource)
@@ -585,7 +587,8 @@ namespace Statecraft.Game.UI
                     // the start screen. Closing the scene disposes it after the camera is gone, hence the null check.
                     opening = Own(new OpeningPresenter(root, openingSource, openingData, text,
                         shown => { if (cameraController != null) cameraController.enabled = !shown && start?.IsOpen != true; },
-                        replay => { if (!replay) advisor?.NewGame(); }));
+                        replay => { if (!replay) advisor?.NewGame(); },
+                        video == null ? null : Own(new CardVideo())));   // its own player: no clip in the automated runs either
                     replayOpening.text = text["opening.replay"];
                     replayOpening.style.display = DisplayStyle.Flex;
                     Action replayClick = () => { if (start?.IsOpen == true) opening?.Show(replay: true); };

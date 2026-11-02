@@ -174,6 +174,17 @@ window's last day. A card here would be the arc's second step, or folded into `h
      "circulated" or records the day of receipt: whether 12 July is the day it was circulated is **not found**. (27 Oct) Searched again and not found. Read: the UN API copy of S/2241 (`https://documents.un.org/api/symbol/access?s=S/2241&l=en&t=pdf`, 2 pages: the same Official Records reprint as the Digital Library scan, so not a second source; the same text, "[12 July 1951]" under the heading, no circulation line) and the text layer of S/PV.549, which gives the item only as "(S/2241)". The scan
      is the Official Records reprint (printed pp. 9-10), not the mimeographed original; resolution 95's own footnote
      cites it as "Sixth Year, Supplement for July, August and September 1951, document S/2241".
+     **(2 Nov) The mimeographed originals, French and Russian, read as page images** (`https://documents.un.org/api/symbol/access?s=S/2241&l=fr&t=pdf`
+     and `...&l=ru&t=pdf`, page 1 each; same letter, original English): the header block of the French copy reads "Distr.
+     GENERALE", "S/2241", "12 juillet 1951", "ORIGINAL : ANGLAIS", under the letter title "LETTRE EN DATE DU 11 JUILLET
+     1951"; the Russian copy reads "GENERAL", "S/2241", "12 July 1951". [V, agent read 2026-11-02; a person's check
+     pending] So the copies marked "Distr. GENERALE" / "GENERAL" carry 12 July 1951 as their date, the same day as the Digital Library
+     document date; as translations they may repeat the original's date rather than record their own issue day. That is
+     consistent with 12 July being the day the document was issued to the Council in general distribution, no more; it is a reading of a header, not a statement: no copy gives a receipt or circulation line, and the
+     President's receipt day stays **not found**. The English mimeograph was not found: the `l=en` URL serves
+     the Official Records reprint (pp. 9-10) described above. The `l=es` and `l=zh` copies are Official Records reprints too, with
+     "[12 de julio de 1951]" and "[一九五一年七月十二日]" under the heading and no "Distr." line. The API has no Arabic copy: `l=ar` is
+     redirected to `https://documents.un.org/error` and returns a 1,303-byte HTML error page, not a PDF.
   2. **The Council's meetings.** The item, "(a) Restrictions imposed by Egypt on the passage of ships through the
      Suez Canal (S/2241)", is on the agenda of the 549th meeting, **26 July 1951**; at that meeting the Council invited
      the representatives of Israel, Egypt and Iraq to take part without vote (UNSC 95 compilation, "Decision"). The
