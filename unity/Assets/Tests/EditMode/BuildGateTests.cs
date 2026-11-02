@@ -161,7 +161,7 @@ public class BuildGateTests
     public void AShareableBuildWaitsForTheSensitivityReview()
     {
         var c = Checked();
-        Assert.IsNull(Refusal(c), "every shipped sensitive event is reviewed (burma_road_complete: owner, 21 Oct 2026, #791)");
+        Assert.IsNull(Refusal(c), "every shipped sensitive event is reviewed (burma_road_complete: owner, 21 Oct 2026, #791; deport_acre and deport_nazareth: owner, 2 Nov 2026, #2197)");
         foreach (var e in c.Events) if (ReleaseGate.SensitiveEvents(c).Contains(e.Id)) e.Status = "fact-checked";   // as before the sign-off
         var refusal = Refusal(c);
         Assert.IsNotNull(refusal, "an unreviewed sensitive event blocks a shareable build");

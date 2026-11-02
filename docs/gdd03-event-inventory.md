@@ -158,7 +158,7 @@ exclusion.
 | `ten_days` | `southern_front` | `set_rung` | set 5 | `set_rung` (same) | set 5 | no |
 | `ten_days` | `southern_front` | `effects[0].security` | 0.015 | `effects[0].security` (same) | 0.015 | no |
 
-121 rows: 39 cards under gdd-0.1, 34 under gdd-0.3.
+121 rows: 41 cards under gdd-0.1, 36 under gdd-0.3.
 
 | Excluded card | gdd-0.3 loader with only this exclusion removed |
 |---|---|

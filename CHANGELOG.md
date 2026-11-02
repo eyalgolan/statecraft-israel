@@ -20,6 +20,9 @@ checks this (see `CONTRIBUTING.md`).
   `text_he_review: agent-checked` flag. No event card is flagged any more.
 - Hebrew event cards: the owner read the Hebrew of `jerusalem_demilitarisation_guard` and `rafah_force_pressure`
   next to the English and approved both as written (#1065), so they lose their `text_he_review: agent-checked` flag.
+- Hebrew event cards: six reviewer comments that still said the Hebrew was unread now cite the read that cleared it
+  (the owner's on #2174 for `altalena`, `first_new_yishuv` and `burma_road_complete`; Beri's on #2073 for
+  `absorb_immigrants`, `bernadotte_assassination` and `first_truce`). Comments only; no card text or data changes.
 - Add a read-only WebGL companion beside the game for the current event, choices, game focus, status and the End Turn report. It is off and unavailable for now (the owner's ruling of 2 November 2026; see the Changed entry). Keyboard play stays in the game; real screen-reader validation and the phone layout remain pending.
 - The map's hexes are 4.4 km instead of 5 km (owner, 21 October 2026, #1183): the same extent in 1,419 hexes, 1,118 of
   them land, so Tel Aviv to Jerusalem is 9 hexes on the game's path. Every bake was re-run with the repository's tools;
@@ -140,6 +143,14 @@ checks this (see `CONTRIBUTING.md`).
   until the owner reviews the text a `-shareable` build is refused; the photo manifest lists the three photographs for
   the packager. The new Hebrew controls await native
   review. Built on Avl's `codex/530-opening-presenter`.
+- Deport's follow-up cards (GDD Phase 6 PR 9, #801): `deport_acre` and `deport_nazareth`, tagged `displacement`,
+  each stating the in-game consequence and one sourced line of the place's history (Q-CARD-1 (c)). A new event key,
+  `deported: <target>`, fires a card on the turn the player's Deport depopulates that place, and only then, outside the
+  cap of 3 soft cards (R-EVT-007); the loader refuses one for an unknown target or one whose residents fled, one without
+  the `displacement` tag, one with more than one option, one with `to`, `prisoners` or any other key it would wait for,
+  one that is not soft or opens after the game's start, and a second card for the same place. A Deport on the game's last
+  turn, which raises no card, shows its card on the end screen instead (`EndReport.DeportCards`). The owner signed off both cards ("Approve both cards", 2 November 2026), so they are `sensitivity-reviewed` and the release gate (R-GATE-001) passes them, and Deport
+  stays out of play (`mvp.deport_in_play: false`).
 - During the war (security rungs 4 and 5) the player can convert up to $4m a month of foreign currency into Money, $100m
   in all, from the Defence screen, which shows the foreign-currency reserve beside the order (R-MONEY-004; owner ruling on
   #813, 2 November 2026: "Spend the dollars (Recommended)"). The rate is the sourced one of the day: IL 0.333 per $ to 18
@@ -203,77 +214,10 @@ checks this (see `CONTRIBUTING.md`).
   houses of the Arab towns and villages. They stream after the first frame like the other town buildings. Goldens did not
   move.
 
-### Fixed
-- Hebrew region details use sourced Gazette subdistrict/district names and the sourced armistice display fields where supplied (Refs #1219, item 4).
-  The catalogue records a source URL, fresh check date and page/section for each of 61 fields: 59 await native review and 2 have the owner's approved wording.
-  Eleven geographic captions remain explicitly NEEDS-RESEARCH with their existing English fallback. English text, borders and dates are unchanged.
-- The service train stops where the drawn railway ends, at the gap in Jerusalem's symbolic Old City wall (#2021):
-  it rode the uncut trace and ran on about 1.3 km through the wall to the station inside the square. The Lod end
-  is unchanged.
-- The capture dialog's "more decisions waiting" line uses the singular string when exactly one more decision waits, in
-  English and Hebrew (`event.more_one`, as the decision card already does), instead of always using the plural (#2023).
-- An advisor warning that waited for the next turn, or that you put off with Not now, no longer shows once its cause has
-  passed (#2024): each turn it is checked again and, if it no longer applies, it goes to the Counsel history as
-  missed. Critical warnings are never dropped this way, a warning already on screen stays until you close it, and the
-  unsubmitted-budget warning stays while the budget edit is still unsubmitted.
-- Tree crowns no longer have a vertical slit (#2025): the last column of every olive, cypress and citrus crown sits at
-  the first column's radius, so light and shadow no longer leak through the seam at close zoom. The other vertices keep
-  their seeded shape.
-- Content loader: a map entry written with no value (`map_actions: { housing: }`, an empty `budget_owners` line) now
-  fails with the loader's "empty entry" message naming the file and field, not a `NullReferenceException` (#2029).
-- The unit card's attack odds for an artillery unit no longer say "you lose" people: the guns fire from behind the line, so
-  the bands show 0 attacker losses, as the strike itself costs (#2040).
-- The end screen titles each objective the way its decision card does, in the UI's language (#2041): in Hebrew the
-  card's `title_he` shows where there is no variant title (a variant has no Hebrew), the English otherwise, instead of
-  the English title inside the Hebrew line. English is unchanged.
-- Hebrew map: nine locality labels no longer carry Hebrew Wikipedia's bracketed disambiguation ("חממה (יישוב היסטורי)"
-  is now "חממה"; likewise Salama, al-Tira (Haifa), al-Jura, Barbara, al-Maghar, al-Tira (Ramla), Jaba, al-Manshiyya
-  (Acre)), and Imwas lost its invisible direction marks and niqqud (#2042). `jish` is left for a native-speaker call.
-  A tools test now refuses a bracket or U+200E/U+200F in any `name_he`. The changed names stay in the native-speaker
-  queue (#564).
-- Selecting a unit no longer keeps one more selection-ring mesh alive for the rest of the session (#2043): replacing
-  or clearing the ring frees its mesh, and the unit layer's teardown still frees the live one.
-- The Hebrew end screen keeps each date in an objective line and the population line whole, "20 בספטמבר 1949" right
-  after "ב־" (#2060): the date now sits between direction marks (RLE/PDF), so a line laid out left to right no longer
-  pulls its day onto the next word and its year to the far end. English is unchanged.
-- In the Unity Editor, the special buildings, the town building models and the whole-town landmarks no longer load,
-  create or destroy models while a Scene or Game view camera is rendering (#2099): the change waits for the next
-  update, as it already did in play mode and as the camp tents do since #2046. Editor only; players are unaffected.
-- The turn report's Money line and the Money tip now list the cities' job income and the Money paid for Arms, training, projects,
-  pioneer work, corridors, held soldiers and occupation, so the causes behind the Money (net) change add up to it. A loan is
-  no longer listed as a Money cause: it adds as much to the debt as to the Treasury (Fixes #2199). The Why screen gains a
-  Money line for each such cost, before its borrowing line. A map action's cost gets the same line (only the legacy loop
-  builds map actions; the GDD game refuses them).
-- The turn report's Money line and the Money tip still name the two largest causes, then one "other causes" line with the
-  rest, so the lines shown add up to the Money (net) change. There is no such line when nothing is left over or the rest
-  shows as IL 0.0m (#2212).
-- After a language switch, New Game or a load, the minimap's Borders and Labels buttons keep what the map shows. A
-  layer the player switched off stays off with its button dimmed, and one press brings it back; before, the first press
-  did nothing and the border caption showed over hidden borders.
-- The minimap's Borders and Labels buttons now start from the map's own switches after a language switch, New Game or a
-  load, and dim to match, so a button and its layer cannot disagree. The 1949 armistice lines follow the Borders button
-  then too.
-- Deactivating a transit camp retires its tent models without reparenting during the disable callback. Redrawing the inactive camp preserves streamed model meshes while releasing its own geometry and lease.
-- The KitTests trees-toggle check can fail now (#2026): with the trees off it moves the camera to the gameplay pose,
-  where a layer that still drew would report the near count, instead of rendering the same overview pose again.
-- The unit card's standing-order refusals ("Artillery does not hold ground" and the five others `Orders.Check` gives)
-  now read in the UI's language: each is a public `Orders.Refused*` constant in the sim, with its English unchanged,
-  and `SimBridge.ReasonText` maps it to a `unit.order_refused.*` string for the card, the order queue and the
-  end-of-turn toast. The Hebrew lines wait for the native-speaker read (#564). Saves and goldens did not move
-  (Refs #2040).
-- The unit card's Attack and Reinforce refusals ("A truce is in force", "Jerusalem has no military camp" and the others
-  `Combat.Check` and `Training.Reinforce` give) now read in the UI's language, and each shows once: every reason is a
-  public `Combat.Refused*` / `Training.Refused*` constant in the sim (a format where it carries a number, a town or a
-  course), with its English unchanged, and `SimBridge.ReasonText` maps it to a `unit.attack_refused.*` or
-  `unit.reinforce_refused.*` string for the card, the order queue and the end-of-turn toast (on the card and in
-  the toast the town in its Hebrew name).
-  The Hebrew lines wait for the native-speaker read (#564). Saves and goldens did not move (Fixes #2072).
-- Make the playable demo follow GitHub Latest after release recovery, preserving the historical prerelease fallback when no Latest exists. Report a failed post-publication demo check as unverified rather than claiming it stayed unchanged.
-- The start screen on a phone held upright (390x844) with the recording's row shown no longer logs Unity's "Layout
-  update is struggling" error in its first layout: the band layout starts the panel's area under the painting on a
-  whole screen pixel, so the panel's height and its centred position stop chasing each other (StartScreenPresenter.Fit).
-
 ### Changed
+- Hebrew event cards: the reviewer comments on `railway_complete`, `jerusalem_demilitarisation_guard` and
+  `rafah_force_pressure`, which still said their Hebrew had no native read, now cite the owner's read that cleared it
+  (#2174 for `railway_complete`, #2145 for the other two). Comments only; no card text or data changes.
 - Under the GDD 0.3 rules, artillery moves again: 2 movement points a turn on the infantry terrain costs, and a shot
   spends the points it has left, as on the current rules (owner's answer Q12, #1708).
 - Under gdd-0.3, an Israeli city with an enemy unit on it earns no job income and its building projects stop. Both pick up
@@ -342,6 +286,11 @@ checks this (see `CONTRIBUTING.md`).
 - The Hebrew start screen mirrors like the rest of the Hebrew UI: New game sits on the right with Star on GitHub on its
   left, "Report a bug or idea" on the right of the language buttons, and the recording's button on the right of its
   credit.
+- Up close, the towns that have Tal Heuberger's newer houses now show only those (owner, 2 November 2026: "we need
+  everything to be in the new generation"; Refs #2007). Netanya's houses are houses 01 to 03, without #507's b13a
+  two-storey house. The Arab towns and villages, Safed, Acre, Jaffa and Jerusalem's village plots use the plastered
+  courtyard house (05) alone, without #507's b17 courtyard house. Tel Aviv, Haifa, Jerusalem's city blocks and the
+  moshavot keep their models, as nothing newer exists for them yet.
 - A unit's badge no longer fills the screen up close (owner, 31 October 2026: "Shrink up close (Recommended)"). From
   about 30 km out it keeps its size; a nearer camera draws it no taller than it is there (`UnitBadge.MaxScreenShare` of
   the screen's height), shrinking about its lower edge so it still clears the flag and the figures. At 12 km over Gaza
@@ -350,7 +299,81 @@ checks this (see `CONTRIBUTING.md`).
 - Panning a close view no longer allocates a sort delegate every frame while the map orders the towns and villages in
   view for loading; the order (nearest the screen centre first, then by id) is unchanged.
 
+### Fixed
+- Hebrew region details use sourced Gazette subdistrict/district names and the sourced armistice display fields where supplied (Refs #1219, item 4).
+  The catalogue records a source URL, fresh check date and page/section for each of 61 fields: 59 await native review and 2 have the owner's approved wording.
+  Eleven geographic captions remain explicitly NEEDS-RESEARCH with their existing English fallback. English text, borders and dates are unchanged.
+- Safed's and Rosh Pinna's hexes show Israeli-held from 15 May 1948, the game's start, instead of contested: Safed was taken
+  on 10-11 May and Rosh Pinna's police building and army camp on 26-28 April (owner rulings of 1 November 2026, Refs #1659).
+  The CIA's 18 May tenuously-held loop still greys the rest of the Hula area in the opening period.
+- The service train stops where the drawn railway ends, at the gap in Jerusalem's symbolic Old City wall (#2021):
+  it rode the uncut trace and ran on about 1.3 km through the wall to the station inside the square. The Lod end
+  is unchanged.
+- The capture dialog's "more decisions waiting" line uses the singular string when exactly one more decision waits, in
+  English and Hebrew (`event.more_one`, as the decision card already does), instead of always using the plural (#2023).
+- An advisor warning that waited for the next turn, or that you put off with Not now, no longer shows once its cause has
+  passed (#2024): each turn it is checked again and, if it no longer applies, it goes to the Counsel history as
+  missed. Critical warnings are never dropped this way, a warning already on screen stays until you close it, and the
+  unsubmitted-budget warning stays while the budget edit is still unsubmitted.
+- Tree crowns no longer have a vertical slit (#2025): the last column of every olive, cypress and citrus crown sits at
+  the first column's radius, so light and shadow no longer leak through the seam at close zoom. The other vertices keep
+  their seeded shape.
+- Content loader: a map entry written with no value (`map_actions: { housing: }`, an empty `budget_owners` line) now
+  fails with the loader's "empty entry" message naming the file and field, not a `NullReferenceException` (#2029).
+- The unit card's attack odds for an artillery unit no longer say "you lose" people: the guns fire from behind the line, so
+  the bands show 0 attacker losses, as the strike itself costs (#2040).
+- The end screen titles each objective the way its decision card does, in the UI's language (#2041): in Hebrew the
+  card's `title_he` shows where there is no variant title (a variant has no Hebrew), the English otherwise, instead of
+  the English title inside the Hebrew line. English is unchanged.
+- Hebrew map: nine locality labels no longer carry Hebrew Wikipedia's bracketed disambiguation ("חממה (יישוב היסטורי)"
+  is now "חממה"; likewise Salama, al-Tira (Haifa), al-Jura, Barbara, al-Maghar, al-Tira (Ramla), Jaba, al-Manshiyya
+  (Acre)), and Imwas lost its invisible direction marks and niqqud (#2042). `jish` is left for a native-speaker call.
+  A tools test now refuses a bracket or U+200E/U+200F in any `name_he`. The changed names stay in the native-speaker
+  queue (#564).
+- Selecting a unit no longer keeps one more selection-ring mesh alive for the rest of the session (#2043): replacing
+  or clearing the ring frees its mesh, and the unit layer's teardown still frees the live one.
+- The Hebrew end screen keeps each date in an objective line and the population line whole, "20 בספטמבר 1949" right
+  after "ב־" (#2060): the date now sits between direction marks (RLE/PDF), so a line laid out left to right no longer
+  pulls its day onto the next word and its year to the far end. English is unchanged.
+- In the Unity Editor, the special buildings, the town building models and the whole-town landmarks no longer load,
+  create or destroy models while a Scene or Game view camera is rendering (#2099): the change waits for the next
+  update, as it already did in play mode and as the camp tents do since #2046. Editor only; players are unaffected.
+- The turn report's Money line and the Money tip now list the cities' job income and the Money paid for Arms, training, projects,
+  pioneer work, corridors, held soldiers and occupation, so the causes behind the Money (net) change add up to it. A loan is
+  no longer listed as a Money cause: it adds as much to the debt as to the Treasury (Fixes #2199). The Why screen gains a
+  Money line for each such cost, before its borrowing line. A map action's cost gets the same line (only the legacy loop
+  builds map actions; the GDD game refuses them).
+- The turn report's Money line and the Money tip still name the two largest causes, then one "other causes" line with the
+  rest, so the lines shown add up to the Money (net) change. There is no such line when nothing is left over or the rest
+  shows as IL 0.0m (#2212).
+- After a language switch, New Game or a load, the minimap's Borders and Labels buttons keep what the map shows. A
+  layer the player switched off stays off with its button dimmed, and one press brings it back; before, the first press
+  did nothing and the border caption showed over hidden borders.
+- The minimap's Borders and Labels buttons now start from the map's own switches after a language switch, New Game or a
+  load, and dim to match, so a button and its layer cannot disagree. The 1949 armistice lines follow the Borders button
+  then too.
+- Deactivating a transit camp retires its tent models without reparenting during the disable callback. Redrawing the inactive camp preserves streamed model meshes while releasing its own geometry and lease.
+- The KitTests trees-toggle check can fail now (#2026): with the trees off it moves the camera to the gameplay pose,
+  where a layer that still drew would report the near count, instead of rendering the same overview pose again.
+- The unit card's standing-order refusals ("Artillery does not hold ground" and the five others `Orders.Check` gives)
+  now read in the UI's language: each is a public `Orders.Refused*` constant in the sim, with its English unchanged,
+  and `SimBridge.ReasonText` maps it to a `unit.order_refused.*` string for the card, the order queue and the
+  end-of-turn toast. The Hebrew lines wait for the native-speaker read (#564). Saves and goldens did not move
+  (Refs #2040).
+- The unit card's Attack and Reinforce refusals ("A truce is in force", "Jerusalem has no military camp" and the others
+  `Combat.Check` and `Training.Reinforce` give) now read in the UI's language, and each shows once: every reason is a
+  public `Combat.Refused*` / `Training.Refused*` constant in the sim (a format where it carries a number, a town or a
+  course), with its English unchanged, and `SimBridge.ReasonText` maps it to a `unit.attack_refused.*` or
+  `unit.reinforce_refused.*` string for the card, the order queue and the end-of-turn toast (on the card and in
+  the toast the town in its Hebrew name).
+  The Hebrew lines wait for the native-speaker read (#564). Saves and goldens did not move (Fixes #2072).
+- Make the playable demo follow GitHub Latest after release recovery, preserving the historical prerelease fallback when no Latest exists. Report a failed post-publication demo check as unverified rather than claiming it stayed unchanged.
+- The start screen on a phone held upright (390x844) with the recording's row shown no longer logs Unity's "Layout
+  update is struggling" error in its first layout: the band layout starts the panel's area under the painting on a
+  whole screen pixel, so the panel's height and its centred position stop chasing each other (StartScreenPresenter.Fit).
+
 ### Tests
+- Minimap restart tests check the Borders and Labels buttons' dimmed state against the map's own switches (it compared a value with itself before), and fail clearly when the armistice overlay's Lines node is missing (Refs #2244).
 - Add regression coverage for event scroll state, purchases after session replacement, and Hebrew unit-number provenance and fallback.
 
 ### Removed

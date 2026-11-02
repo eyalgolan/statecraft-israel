@@ -16,7 +16,7 @@ public class FinalWaveTests
 
     /// <summary>The events with a sensitive tag (spec 5.5): pinned, so a new one cannot miss the owner's review table.</summary>
     static readonly string[] SensitiveEvents =
-        { "altalena", "bernadotte_assassination", "burma_road_complete", "degania_defence", "operation_hiram", "operation_horev", "operation_yoav", "reparations_claim", "reparations_vote", "ten_days" };
+        { "altalena", "bernadotte_assassination", "burma_road_complete", "degania_defence", "deport_acre", "deport_nazareth", "operation_hiram", "operation_horev", "operation_yoav", "reparations_claim", "reparations_vote", "ten_days" };
 
     /// <summary>The resources a sensitive option may not raise (EventRules.NoGainTargets, internal to the sim).</summary>
     static readonly string[] Resources = { "treasury", "fx_reserves", "food_supply", "morale", "intl_standing" };
@@ -69,6 +69,7 @@ public class FinalWaveTests
         // bernadotte_assassination, operation_hiram and ten_days after #577 changed them on 2026-10-15 ("Approve all 4", #600).
         // burma_road_complete (#791): the owner reviewed its text on 21 Oct 2026. reparations_vote (#1564): the owner
         // approved its card, photograph and costs on 25 Oct 2026 ("Approve all three", #1575).
+        // deport_acre and deport_nazareth (#801): the owner signed off both cards on 2 Nov 2026 ("Approve both cards", #2197).
         Assert.Empty(ReleaseGate.SensitiveUnreviewed(Real));
         var reviewed = Fixture.Write(events: new Dictionary<string, string>
         {
