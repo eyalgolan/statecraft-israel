@@ -389,12 +389,12 @@ as immigrants, including travellers who later registered, so legal registrations
 
 [V, agent read 2 November 2026; a person's check pending] The CBS Statistical Abstracts No. 1 (Table 1, printed page 29) and No. 3 (Table 3, printed page 25), both read from the
 page image. Figures are the CBS yearly series, not the Mandate's registrations. SA 1 note 1: "Includes travellers permitted to
-settle, and part of those visa-less refugees for whom the dates of arrival are known." So they are not comparable with 4f.
+settle, and part of those visa-less refugees for whom the dates of arrival are known." SA 3 note 1 to Table 3 (paraphrase, agent read 2 November 2026; a person's check pending): the table counts travellers permitted to settle (except those permitted to stay in 1950 and 1951) and the visa-less immigrants registered by the Mandatory Government, places travellers in the year in which they registered as immigrants, and for the years to 1948 leaves out undiscovered visa-less immigrants and travellers who stayed without permission (figures in the bullet quoting SA 3 note 1, below). For 1939 and 1945 the CBS series is therefore not comparable with 4f (see below); for 1932-38 it is the same numbers year by year (197,224 in both).
 
 | Year | CBS SA 1 (1950) | CBS SA 3 (1952) | Tag |
 |---|---|---|---|
 | 1945 | 13,121 | 13,121 | [V, agent read 2 November 2026; a person's check pending] |
-| 1946 | 17,760 | 17,761 | [C] differ by 1; no preferred value (a later reprint is not evidence of a correction) |
+| 1946 | 17,760 | 17,761 | [C] differ by 1; no preferred value here: SA 1's 17,760 gives 4a's 56,467 (below), while SA 3's 17,761 fits SA 3's own printed 1919 - 14 V 1948 total of 452,158 (derivation below); the choice belongs to the paused content part |
 | 1947 | 21,542 | 21,542 | [V, agent read 2 November 2026; a person's check pending] |
 | 1948 (whole year, incl. after 15 May) | 118,993 | 118,993 | [V, agent read 2 November 2026; a person's check pending] |
 | 15 May - 31 Dec 1948, by month (Table 2 / Table 4) | 5,055 (15-31 May), 1,372, 17,266, 8,451, 10,786, 10,691, 20,376, 27,831 | same; printed total 101,828 | [V, agent read 2 November 2026; a person's check pending] |
@@ -405,7 +405,9 @@ settle, and part of those visa-less refugees for whom the dates of arrival are k
 - Derived: 1 January to 14 May 1948 = 118,993 - 101,828 = **17,165**. No source read prints this split; it is the whole
   year less the part after the State was declared, so it carries no [V].
 - Derived check against 4a: 17,760 + 21,542 + 17,165 = **56,467**, the CBS 1946 - 14 May 1948 total in 4a (with SA 3's
-  17,761 the sum is 56,468). The yearly series and the period table are the same data.
+  17,761 the sum is 56,468). For 1946 to 14 May 1948 the yearly series and the period table are the same data. They are not the same for every period. Summing the yearly figures (both abstracts print the same values for 1919-45) over 4a's periods gives 1919-23: 35,183 and 1924-31: 81,613, both equal to 4a; 1932-38: 197,224, which is 11 below 4a's 197,235; 1939-45: 81,670, which is 138 below 4a's 81,808. SA 3's 452,158 is 148 below 4b's period sum of 452,306. [Derived; the two gaps are recorded, not explained.]
+- Derived, second check of the split: SA 3 Table 3 (printed page 25) also prints a "1919 - 14 V 1948" row of 452,158. SA 3's yearly figures for 1919 to 1947 add up to 434,993 (with 17,761 for 1946), and 452,158 - 434,993 = **17,165**, the same as 118,993 - 101,828. SA 3 does not print 17,165 itself, but it prints the total that gives it, which supports both readings above.
+- Cross-reference: the first series row of `content/aliyah.yaml` (15 May to 31 December 1948) has origins 4,739 + 8,192 + 76,554 + 478 + 11,865 = 101,828, the same total as the months above. The SA 3 volume is also cited for 1950-51 in `research_notes/M3 content 1950-51/facts.md`. Neither covers the yearly series before the State.
 - Against 4f (different definitions, so the gap is expected): 1945 is 13,121 here and 12,032 in 4f (January-November,
   registrations only); the CBS yearly figure for 1939 (27,561 in both abstracts) against 16,405 in 4f is a gap of definitions (visa-less
   immigrants, travellers permitted to settle, registration year), not split by either source.
