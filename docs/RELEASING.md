@@ -267,6 +267,16 @@ The no-change skip compares `state.json`'s last published SHA with `origin/main`
 
 A night that starts after 03:30 is MISSED unless it was started by hand with `--manual`.
 
+**Steam (the `steam` stage, #2155).** Only after the web nightly is published (`publish_night` returned), the nightly
+fetches tonight's tag into its clone, runs `uv run tools/release_build.py --platform all --steam --tag <tag>
+--nightly-version <X.Y.Z> --out <run folder>/steam-release` (each Unity build stamped with tonight's version, as the web
+builds are) and then `uv run tools/steam_upload.py stage --out <run folder>/steam-release --tag <tag>`, which attaches
+the Steam content to a never-published draft release `steam-<tag>` and starts `steam-upload.yml` for the `nightly`
+branch. A failure there never refuses, unpublishes or rolls back the web nightly: the night stays `PUBLISHED`, its
+line ends with `steam=failed` (the `steam-build.log` and `steam-stage.log` are in the run folder) and a notification
+is shown. The stage is skipped while `steam/steam.json` still has a `null` ID (until the owner has created the app,
+#2151), and with `uv run tools/nightly.py run --no-steam`.
+
 **itch.io.** Pushes stay off until the owner runs `uv run tools/nightly.py savetest --tag <a published nightly>` once
 and it prints `PASS` (the two-upload save test of `docs/m3-release.md`, "Upload to itch.io"); the nightly then logs
 that itch was skipped. The save test pushes only to a separate test page, named in the job's `config.json` as
