@@ -104,7 +104,7 @@ units[
   0:veteran_soldier@4,14|side=israel|strength=4|order=go_to|target=-8,28
   1:veteran_soldier@15,5|side=israel|strength=2|order=go_to|target=15,3
   2:veteran_soldier@0,17|side=israel|strength=4
-  3:veteran_soldier@-4,24|side=israel|strength=3
+  3:veteran_soldier@-3,24|side=israel|strength=3
   4:veteran_soldier@-9,29|side=israel|strength=3
   5:veteran_soldier@0,26|side=israel|strength=3
   7:veteran_soldier@-10,35|side=israel|strength=1
@@ -120,5 +120,6 @@ next=14
 ctrl{
   beersheba=owner=israel,state=awaiting_choice,since=1949-01-15,fled=1
   nazareth=owner=israel,state=annexed,since=1948-07-15
+  ramla=owner=israel,state=awaiting_choice,since=1948-09-15,fled=1
 food=2304,768,0
 arms=12

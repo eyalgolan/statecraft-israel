@@ -61,9 +61,9 @@ final `GameState.Hash()` is pinned:
 
 | Run | Ends | Hash |
 |---|---|---|
-| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `48abe7296b9e86f9c3f6cfe5c09c5d62a7f63736af857418b1a6e1edeb98a90c` |
-| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `43061114a9aa43f13f6c34fa5838068b04d1258cf4cce1c442870234b0fccf3d` |
-| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `43061114a9aa43f13f6c34fa5838068b04d1258cf4cce1c442870234b0fccf3d` |
+| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `ac38d6c76c3e0e397365370e63cd23ed00b1b12928cecc4b6aea418440b76d2c` |
+| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `22f2c8da8222e1e87859ef9aae359aa37a04eab34880f65242c4f4d79d5b5c78` |
+| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `22f2c8da8222e1e87859ef9aae359aa37a04eab34880f65242c4f4d79d5b5c78` |
 
 `hash1952` stops at the first turn on or after 1 January 1952, which is the game's last turn, so it is the same run as
 `mvp-end` (`DeterminismTests.TheWholeGameToItsEndIsFixed`). Both names are kept (spec 2026-10-12 section 3 step 6): a
@@ -72,7 +72,7 @@ player check enumerate the manifest, so it and every scenario are checked withou
 
 A further value is pinned for the browser smoke run (`?smoke=5`: the golden seed, five turns played through the UI's own
 buttons, answering each event with its first option while the turn's Attention pays for it, the rest left to their
-ministers): `SMOKE OK 5 turns 1948-10-15 a968abbcd7439d9c2340495b674f796da33f1cf2c05d929b656b4aa7f181a12d`.
+ministers): `SMOKE OK 5 turns 1948-10-15 803f0f321fe12c056cccbf7adb52027e064ec3afd215717b9816c1122263ace7`.
 It depends on the UI path as well as the sim (which option is first, the turn grid), so re-record it when either changes.
 Check every WebGL build with every manifest entry (plus the UI-path smoke line) with:
 
@@ -83,7 +83,7 @@ while read -r name hash; do
   golden_expect+=(--expect "GOLDEN OK $name $hash")
 done < sim/Statecraft.Sim.Tests/golden/manifest.txt
 uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5" "${golden_expect[@]}" \
-  --expect "SMOKE OK 5 turns 1948-10-15 a968abbcd7439d9c2340495b674f796da33f1cf2c05d929b656b4aa7f181a12d"
+  --expect "SMOKE OK 5 turns 1948-10-15 803f0f321fe12c056cccbf7adb52027e064ec3afd215717b9816c1122263ace7"
 ```
 
 `smoke-orders` (GDD Phase 5 PR 15, #754) is the same kind of browser run for the unit orders (`?smoke-orders`, desktop
@@ -481,13 +481,22 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | #2087, as above | scenario-mvp-defeat | `918b56ff` | as cautious; the extra combat draws shift the RNG, so the delegated `iraqi_exodus` card draws `airlift` instead of `pace` (morale, international standing and housing differ from that card on), and on 15 December 1951 the last turn's withdrawal takes Kiryati out of Lydda and Ramle and the Negev Brigade out of Beersheba. The run still ends in defeat (was `6dc76d20`) |
 | #2087, as above | scenario-mvp-occupy-cost | `59cae466` | the run ends on 15 December 1948: Kiryati holds Lydda and Ramle, awaiting a decision; Givati was destroyed at Huleiqat on 15 November; the Negev Brigade is one hex short of Beersheba and Carmeli on its way at 10,7, both orders standing; Nazareth's capture and Occupy are unchanged (was `2110fe92`) |
 | #2087, as above | scenario-mvp-annex-nazareth | `3f92f80e` | the run ends on 15 January 1949: Kiryati holds Lydda and Ramle and the Negev Brigade Beersheba, all awaiting a decision; Givati was destroyed at Huleiqat; Carmeli is on its way at 11,6; the annexation is unchanged (was `12110c4b`) |
-| #2087 merged with main after #1183 (the 4.4 km grid): the order targets and the cards' order hexes re-derived with `tools/unit_anchor_hexes.py` (Kiryati's Ramle (-4, 24), Carmeli's Manara (15, 3), the 7th Brigade's al-Malikiyya (14, 4), Givati's Huleiqat (-9, 29), the Negev Brigade's Beersheba (-10, 35), Harel's Latrun (-3, 25); Golani's Julis anchor (-8, 28) and Carmeli's Brosh anchor (14, 6) are main's), one re-pin on the merged tree | hash1950 | `48abe729` | only the unit positions and one capture move; the economy lines are main's. The delegated and answered card orders now run on the 4.4 km hexes: Golani's Horev order (to 24 February 1949) leaves it at 4,14; Carmeli ends at Manara (15,3); Kiryati ends on Ramle's hex (-4,24), which Ramla shares with Rehovot and which captures neither (Ramla's capture target is (-3,24), #1796), so the Dani order takes nothing; Givati holds Huleiqat (-9,29); the Negev Brigade takes Beersheba on 15 January 1949 and ends next to it at -9,35. The 7th Brigade's Hiram order to (14,4) is refused on 15 November 1948 while the ALA holds that hex, as before (was `74fbe989`) |
+| #2087 merged with main after #1183 (the 4.4 km grid): the order targets and the cards' order hexes re-derived with `tools/unit_anchor_hexes.py` (Kiryati's Ramle, since `e5e74883d` Ramla's capture hex (-3, 24), Carmeli's Manara (15, 3), the 7th Brigade's al-Malikiyya (14, 4), Givati's Huleiqat (-9, 29), the Negev Brigade's Beersheba (-10, 35), Harel's Latrun (-3, 25); Golani's Julis anchor (-8, 28) and Carmeli's Brosh anchor (14, 6) are main's), one re-pin on the merged tree | hash1950 | `48abe729` | only the unit positions and one capture move; the economy lines are main's. The delegated and answered card orders now run on the 4.4 km hexes: Golani's Horev order (to 24 February 1949) leaves it at 4,14; Carmeli ends at Manara (15,3); Kiryati stops on (-4,24) when the Dani order ends on 20 July 1948 (the next rows run it to 16 August, and it takes Ramla); Givati holds Huleiqat (-9,29); the Negev Brigade takes Beersheba on 15 January 1949 and ends next to it at -9,35. The 7th Brigade's Hiram order to (14,4) is refused on 15 November 1948 while the ALA holds that hex, as before (was `74fbe989`) |
 | #2087 merged with main after #1183, as above | hash1952 | `43061114` | same run as hash1950; nothing moves after 1950 (was `d7429694`) |
 | #2087 merged with main after #1183, as above | mvp-end | `43061114` | same run as hash1952 (was `d7429694`) |
-| #2087 merged with main after #1183, as above | smoke5 | `a968abbc` | the smoke run's first option of `ten_days` sends Kiryati to (-4,24) and Carmeli to (14,6). No snapshot is kept for this run (was `9255f2bc`) |
+| #2087 merged with main after #1183, as above | smoke5 | `a968abbc` | the smoke run's first option of `ten_days` sends Kiryati toward Ramle and Carmeli to (14,6). No snapshot is kept for this run (was `9255f2bc`) |
 | #2087 merged with main after #1183, as above | scenario-reckless | `4f3ca893` | no `ten_days` in this run. Golani ends at 4,14 as in hash1950; Carmeli is on its way to Manara at 13,3, its order standing to 23 March 1949; Givati holds Huleiqat; the Negev Brigade takes Beersheba on 15 January 1949 and holds it, awaiting a decision (was `63cab812`) |
 | #2087 merged with main after #1183, as above | scenario-cautious | `be999e93` | as hash1950, with Beersheba awaiting a decision at the run's end (was `e7ad49bf`) |
 | #2087 merged with main after #1183, as above | scenario-mvp-absorb-first | `1e14658d` | as cautious (was `b589c9dc`) |
 | #2087 merged with main after #1183, as above | scenario-mvp-defeat | `8435fb3b` | the unit positions and Beersheba's capture as in hash1950; the defeat is unchanged (was `9e2afc15`) |
 | #2087 merged with main after #1183, as above | scenario-mvp-occupy-cost | `f3bab7ca` | the run now stops on 15 December 1948, one turn earlier: the 15 December turn delegates Operation Horev, whose order would take Golani off Nazareth and end the occupation this scenario measures. Nazareth still waits for EndOccupation since 15 July 1948; the one-turn-shorter run differs in the economy, the events and the arrivals, and on 15 December the 7th Brigade still holds (-4,25) at strength 1 under the Legion's attack (was `0bc59565`) |
 | #2087 merged with main after #1183, as above | scenario-mvp-annex-nazareth | `ca015736` | Nazareth is annexed on 15 December 1948, a turn earlier, in the turn that delegates Horev, before its order takes Golani away (a month later there would be no occupation to end); the upkeep stops a month earlier (debt IL 0.04m lower). Golani is on its way toward Julis at 4,14 and Carmeli toward Manara at 15,5 when the run ends on 15 February 1949; Beersheba is taken on 15 January 1949 and awaits a decision (was `b6df4284`) |
+| #2087, the owner's Dani ruling of 2 November 2026 ("Longer order: takes Ramla (Recommended)"): Kiryati's Ramle order target runs to 16 August 1948 instead of 20 July (`map/units_1948.yaml`), one re-pin on the tree merged with main `573b9d7ac` | hash1950 | `ac38d6c7` | the 15 July 1948 turn still leaves Kiryati on (-4,24), one hex short of Ramla's capture hex (-3,24) after going round Lod; the order now stands on 15 August, so Kiryati steps onto (-3,24) and takes Ramla that turn (`since=1948-09-15`, fled). Lod is not taken by the card. Kiryati ends at -2,24; the other units, Beersheba and the economy lines are unchanged (was `48abe729`) |
+| #2087, the longer Dani order, as above | hash1952 | `22f2c8da` | same run as hash1950: Ramla taken in the 15 August 1948 turn, Kiryati at -2,24 (was `43061114`) |
+| #2087, the longer Dani order, as above | mvp-end | `22f2c8da` | same run as hash1952 (was `43061114`) |
+| #2087, the longer Dani order, as above | smoke5 | `803f0f32` | the smoke run's first option of `ten_days` gives the longer Dani order, so its run to 15 October 1948 differs from the 15 August turn on. No snapshot is kept for this run (was `a968abbc`) |
+| #2087, the longer Dani order, as above | scenario-cautious | `0be86235` | Kiryati takes Ramla in the 15 August 1948 turn and holds it on (-3,24), Ramla awaiting a decision at the run's end (was `be999e93`) |
+| #2087, the longer Dani order, as above | scenario-mvp-absorb-first | `53c208c2` | as cautious (was `1e14658d`) |
+| #2087, the longer Dani order, as above | scenario-mvp-defeat | `6782cce4` | Ramla taken in the 15 August 1948 turn, Kiryati at -2,24, as hash1950; the defeat is unchanged (was `8435fb3b`) |
+| #2087, the longer Dani order, as above | scenario-mvp-occupy-cost | `612e9feb` | as cautious: Kiryati holds Ramla on (-3,24), awaiting a decision; the run still stops on 15 December 1948 (was `f3bab7ca`) |
+| #2087, the longer Dani order, as above | scenario-mvp-annex-nazareth | `c8195c09` | as cautious: Kiryati holds Ramla on (-3,24), awaiting a decision; Nazareth's annexation is unchanged (was `ca015736`) |

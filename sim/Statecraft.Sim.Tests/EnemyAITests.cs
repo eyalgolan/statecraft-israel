@@ -395,8 +395,9 @@ public class EnemyAITests
         // Brigade to Beersheba, which a card's march may take, and the Dani order sends Kiryati to Ramla's capture target
         // (-3, 24), not the (-4, 24) Ramla shares with Rehovot at 4.4 km (owner, 2 November 2026, #2087: "Send it to Ramla's
         // target"; tools/unit_anchor_hexes.py). From Tel Aviv the march goes round Lod's (-3, 23), which the card did not send
-        // it to, so on 15 July 1948 Kiryati stops on (-4, 24), one hex short, and the order ends on 20 July: it takes nothing.
-        Assert.Equal(new[] { "beersheba" }, s.Settlements.Keys.OrderBy(k => k, StringComparer.Ordinal));
+        // it to, so on 15 July 1948 Kiryati stops on (-4, 24), one hex short. The order runs to 16 August 1948 (owner,
+        // 2 November 2026, #2087: "Longer order: takes Ramla"), so on 15 August Kiryati takes Ramla; Lod is not taken by the card.
+        Assert.Equal(new[] { "beersheba", "ramla" }, s.Settlements.Keys.OrderBy(k => k, StringComparer.Ordinal));
         Assert.All(s.Settlements.Values, x => Assert.Equal("israel", x.Owner));
     }
 
@@ -521,7 +522,7 @@ public class EnemyAITests
     // unit standing on the hex is taken off first (the ALA on al-Malikiyya), as that refusal is pinned by
     // WarEvents1948Tests.NoTurnBeforeTheArmisticeRefusesAnOrder and ARefusedCardOrderIsReportedLikeThePlayersOwn.
     [Theory]
-    [InlineData("ten_days", "central_front", "1948-07-15", "kiryati", -3, 24, "1948-07-20")]
+    [InlineData("ten_days", "central_front", "1948-07-15", "kiryati", -3, 24, "1948-08-16")]
     [InlineData("operation_yoav", "stop_at_ceasefire", "1948-10-15", "negev", -10, 35, "1949-02-24")]
     [InlineData("operation_yoav", "stop_at_ceasefire", "1948-10-15", "givati", -9, 29, "1948-11-01")]
     [InlineData("operation_hiram", "stop_at_ceasefire", "1948-11-15", "carmeli", 15, 3, "1949-03-23")]
