@@ -282,7 +282,7 @@ namespace Statecraft.Game.Tests
 
         /// <summary>A placed prop: clear of the towns' footprints, the routes, the unit tokens present that day and the water,
         /// on the ground, upright (its only turn on top of the prefab's FBX axis conversion is about the vertical).</summary>
-        void AssertClearAndUpright(MapScene map, SpecialBuildingModels layer, string key, DateTime date)
+        void AssertClearAndUpright(MapScene map, SpecialBuildingModels layer, string key, DateTime date, bool alongRoad = false)
         {
             var p = layer.Placed.Single(x => x.Key == key);
             var flat = new Vector2(p.At.x, p.At.z); float r = SpecialBuildingModels.ClearanceOf(p.Model);
@@ -300,7 +300,8 @@ namespace Statecraft.Game.Tests
                 var n = map.Frame.ToWorld(s.Lon, s.Lat, 0);
                 Assert.Greater((new Vector2(n.x, n.z) - flat).magnitude, r, $"{key} clear of {s.Id}'s name point");
             }
-            Assert.IsFalse(ground.OnRoute(flat, r), key + " clear of the routes");
+            // A wall along a road is checked as it is placed, along its length (TheWallStandsBesideTheJaffaJerusalemRoadNearAbuGhoshAlongIt).
+            if (!alongRoad) Assert.IsFalse(ground.OnRoute(flat, r), key + " clear of the routes");
             Assert.IsFalse(ground.OnToken(flat, r, date), key + " clear of the unit tokens");
             Assert.IsFalse(ground.Water(flat.x, flat.y), key + " on land");
             var go = layer.transform.Find(key)!;
@@ -368,7 +369,7 @@ namespace Statecraft.Game.Tests
             var map = OpenMap();
             var date = new DateTime(1948, 5, 15);
             var layer = CollectionGeometryFixture.Special(map, date)!; AnswerAll();
-            AssertClearAndUpright(map, layer, "abu_ghosh_road_wall", date);
+            AssertClearAndUpright(map, layer, "abu_ghosh_road_wall", date, alongRoad: true);
             var p = layer.Placed.Single(x => x.Key == "abu_ghosh_road_wall"); var flat = new Vector2(p.At.x, p.At.z);
             var a3 = map.Frame.ToWorld(SpecialBuildingModels.AbuGhoshLon, SpecialBuildingModels.AbuGhoshLat, 0);
             float off = (flat - new Vector2(a3.x, a3.z)).magnitude;
@@ -390,6 +391,11 @@ namespace Statecraft.Game.Tests
                 // The wall's own half depth at its drawn size: it stands just off the road's corridor, its long side along it.
                 float depthHalf = 0.5f * Mathf.Min(pb.size.x, pb.size.z) * go.localScale.x / prefab.transform.localScale.x;
                 Assert.That(best, Is.InRange(half + depthHalf, half + depthHalf + 5f), "beside the road: just off its corridor");
+                // Clear of every route along its whole length: its middle and both ends, each a disc of its half depth.
+                float lengthHalf = 0.5f * Mathf.Max(pb.size.x, pb.size.z) * go.localScale.x / prefab.transform.localScale.x;
+                var ground = PlacementLayer.CampGround(map);
+                foreach (var t in new[] { -1f, 0f, 1f })
+                    Assert.IsFalse(ground.OnRoute(flat + dir * t * (lengthHalf - depthHalf), depthHalf), $"the wall clear of the routes ({t} along it)");
                 var longLocal = pb.size.x >= pb.size.z ? Vector3.right : Vector3.forward;
                 var longWorld = go.localRotation * Quaternion.Inverse(prefab.transform.localRotation) * longLocal;
                 Assert.Greater(Mathf.Abs(Vector2.Dot(new Vector2(longWorld.x, longWorld.z).normalized, dir)), 0.999f, "its long side along the road");
