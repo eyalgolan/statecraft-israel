@@ -359,9 +359,11 @@ Published at: (owner fills in)
   - IndexedDB is per origin, so saves survive re-uploads to the same project and stay separate per browser profile.
   - The local checks above passed: reload, tab close, browser restart, and a second directory on the same origin.
 - **Automated test:** `uv run tools/nightly.py savetest --tag <published nightly>` runs this plan against a separate
-  itch test page (`savetest_itch_target` and `savetest_itch_page_url` in the job's `config.json`) and records its result
-  in the job's evidence file. It pushes to the test page twice, never to the public page, and refuses to run without
-  those two keys or if they name the public page. Only the owner starts it.
+  itch test page (`savetest_itch_target` in the job's `config.json`) and records its result in the job's evidence
+  file. It pushes to the test page twice, never to the public page, and refuses to run without that key or if it
+  names the public project. It loads each upload's game frame from the upload and build ids of `butler status`
+  (`https://html-classic.itch.zone/html/<upload>-<build>/index.html`), never from the test page, so that page can
+  stay Restricted (#2056). Only the owner starts it.
 - **Test plan (after the first two uploads):**
   1. Use one browser profile throughout, without clearing site data or using private mode. Record browser/version, OS,
      project page URL and the actual game-frame URL/origin (not only the outer itch.io page). Upload A as above. Play two

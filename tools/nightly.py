@@ -20,7 +20,6 @@ import subprocess
 import sys
 import time
 import urllib.error
-import urllib.parse
 import urllib.request
 import zipfile
 from dataclasses import dataclass, field
@@ -30,7 +29,7 @@ from typing import Callable
 
 import nightly_checks
 import unity_postmerge
-from nightly_publish import (GitHub, Itch, demo_serves, itch_frame_url, release_notes, sha256_lines, sha256_of,
+from nightly_publish import (GitHub, Itch, demo_serves, itch_build_frame_url, release_notes, sha256_lines, sha256_of,
                              unzip_to)
 from nightly_state import (JOB, TZ, Config, LatestRecovery, Missed, Published, Refused, Runner, Skipped, State, Stop,
                            enable_itch, late_start, load_config, load_state, log_line, missed_days, night_of,
@@ -960,71 +959,69 @@ def run_night(cfg: Config, state_path: Path, job: Path, runner: Runner, gh: GitH
 # --- the itch.io save test --------------------------------------------------------------------------------------------
 
 PERSIST_SAVED = re.compile(r"^PERSISTENCE saved (\d{4}-\d{2}-\d{2}) turn (\d+) hash ([0-9a-f]+)$", re.M)
-# The page names a new upload's frame only after itch has unpacked it; until then it carries just a JSON load_url
-# ({"status":"extracting"}). Unpacking the web build took about 17 minutes on 28 October 2026, longer than the old
-# 10-minute wait, so the save test now waits up to 40 minutes.
-# While it waited for the second upload that day, itch answered 429 Too Many Requests; a 429 now slows the polling
-# down (Retry-After, bounded) instead of ending the test, within the same 40 minutes.
+# The frame URL comes from `butler status` (the upload and build ids), so the test page is never read and can stay
+# Restricted (#2056, owner 2 Nov 2026: "Code change, page stays Restricted"). itch serves a new upload's frame only
+# after it has unpacked it: unpacking the web build took about 17 minutes on 28 October 2026, so the save test polls
+# the frame for up to 40 minutes. While it waited for the second upload that day, itch answered 429 Too Many
+# Requests; a 429 slows the polling down (Retry-After, bounded) instead of ending the test, within the same 40 minutes.
 SAVETEST_FRAME_TRIES = 80
 SAVETEST_FRAME_SLEEP = 30
 SAVETEST_RATE_LIMIT_SLEEP = 120   # after an HTTP 429 without a usable Retry-After
 SAVETEST_RATE_LIMIT_MAX = 300   # a longer Retry-After is capped; the total wait stays within the frame budget
+SAVETEST_FRAME_WAITING = (403, 404)   # itch answers these until the frame is served; anything else ends the wait
 SAVETEST_RUN_MINUTES = 10
 TOOLS = Path(__file__).resolve().parent
 
 
-def _page_text(fetch, url: str) -> str:
+def _rate_limit_pause(e: urllib.error.HTTPError) -> int:
+    """Seconds to wait after itch answered HTTP 429: its Retry-After, kept within bounds."""
     try:
-        with fetch(url, timeout=30) as response:
-            return response.read().decode("utf-8", "replace")
-    except (OSError, ValueError) as e:   # URLError and HTTPException subclass OSError or ValueError
-        raise Refused("savetest", f"cannot read {url}: {type(e).__name__}: {e}") from e
-
-
-def _rate_limit_pause(e: Refused) -> int | None:
-    """Seconds to wait after itch answered HTTP 429 (its Retry-After, kept within bounds), or None for any other error."""
-    cause = e.__cause__
-    if not isinstance(cause, urllib.error.HTTPError) or cause.code != 429:
-        return None
-    try:
-        asked = int((cause.headers or {}).get("Retry-After", ""))
+        asked = int((e.headers or {}).get("Retry-After", ""))
     except ValueError:
         asked = SAVETEST_RATE_LIMIT_SLEEP
     return min(max(asked, SAVETEST_FRAME_SLEEP), SAVETEST_RATE_LIMIT_MAX)
 
 
-def _frame_url(fetch, sleep, page_url: str, other: str | None = None) -> str | None:
-    """The game-frame URL the itch page embeds. With `other` it waits for a frame that is not that one; the last
-    frame seen (or None) comes back when the wait budget runs out. A 429 from itch only slows the polling down; if
-    itch still refuses when the budget runs out, that refusal is raised."""
-    found, limited = None, None
+def _wait_for_frame(fetch, sleep, url: str) -> str | None:
+    """None once the game frame at `url` answers; otherwise, when the wait budget runs out, what itch last answered
+    ("HTTP 404"). A 403 or 404 is "not served yet", a 429 only slows the polling down; any other failure is a
+    Refused("savetest")."""
     waited, budget = 0, SAVETEST_FRAME_TRIES * SAVETEST_FRAME_SLEEP
     while True:
         try:
-            found, limited = itch_frame_url(_page_text(fetch, page_url)), None
-            pause = SAVETEST_FRAME_SLEEP
-        except Refused as e:
-            pause = _rate_limit_pause(e)
-            if pause is None:
-                raise
-            limited = e
-            print(f"savetest: itch answered 429, waiting {pause} s", file=sys.stderr)
-        else:
-            if found is not None and found != other:
-                return found
+            with fetch(url, timeout=30) as response:
+                response.read()
+            return None
+        except urllib.error.HTTPError as e:
+            if e.code == 429:
+                pause = _rate_limit_pause(e)
+                print(f"savetest: itch answered 429, waiting {pause} s", file=sys.stderr)
+            elif e.code in SAVETEST_FRAME_WAITING:
+                pause = SAVETEST_FRAME_SLEEP
+            else:
+                raise Refused("savetest", f"cannot read {url}: HTTP {e.code}") from e
+            seen = f"HTTP {e.code}"
+        except (OSError, ValueError) as e:   # URLError and HTTPException subclass OSError or ValueError
+            raise Refused("savetest", f"cannot read {url}: {type(e).__name__}: {e}") from e
         if waited + pause > budget:
-            if limited is not None:
-                raise limited
-            return found
+            return seen
         sleep(pause)
         waited += pause
 
 
-def _frame_parts(url: str) -> tuple[str, str, str]:
-    """(scheme, host, upload segment): the segment of /html/<upload>-<build>/index.html names the upload."""
-    parts = urllib.parse.urlsplit(url)
-    segments = parts.path.split("/")
-    return parts.scheme, parts.netloc, segments[2] if len(segments) > 2 else ""
+def _live_frame(itch: Itch, fetch, sleep, name: str, evidence: dict) -> tuple[str | None, str]:
+    """(frame URL, "") of the live build once itch serves its frame, or (None, why not). The URL is built from the
+    upload and build ids `butler status` shows for the test channel; the ids go into the evidence."""
+    ids = itch.live_frame_ids()
+    if ids is None:
+        return None, f"butler status shows no upload and build ids for the test channel after {name}"
+    frame = itch_build_frame_url(*ids)
+    evidence[name.replace(" ", "_")] = {"upload_id": ids[0], "build_id": ids[1], "frame_url": frame}
+    seen = _wait_for_frame(fetch, sleep, frame)
+    if seen is not None:
+        minutes = SAVETEST_FRAME_TRIES * SAVETEST_FRAME_SLEEP // 60
+        return None, f"the game frame of {name} ({frame}) still answered {seen} after {minutes} minutes"
+    return frame, ""
 
 
 def _frame_check(runner: Runner, job_dir: Path, name: str, url: str, profile: Path, *extra: str) -> tuple[int, str]:
@@ -1045,7 +1042,7 @@ def savetest(cfg: Config, config_path: Path, job: Path, runner: Runner, gh: GitH
     each upload hides the game while itch unpacks it (up to an hour on 28 October 2026). Only the owner starts it."""
     stamp = datetime.now(TZ).strftime("%Y%m%d-%H%M%S")
     work = Path(job) / "savetest" / stamp
-    evidence: dict = {"tag": tag, "page_url": cfg.savetest_itch_page_url, "target": cfg.savetest_itch_target}
+    evidence: dict = {"tag": tag, "target": cfg.savetest_itch_target}
     result, detail = "INCONCLUSIVE", ""
     try:
         result, detail = _savetest(cfg, work, runner, gh, itch, tag, evidence, fetch, sleep)
@@ -1067,28 +1064,16 @@ def _itch_project(target: str) -> str:
     return target.partition(":")[0].lower()
 
 
-def _page_key(url: str) -> tuple[str, str]:
-    parts = urllib.parse.urlsplit(url.strip())
-    return parts.netloc.lower(), parts.path.rstrip("/").lower()
-
-
 def _test_page_problem(cfg: Config) -> str | None:
     """Why the save test may not push, or None: it needs its own test project, distinct from the public one."""
-    if not cfg.savetest_itch_target or not cfg.savetest_itch_page_url:
-        return "savetest_itch_target and savetest_itch_page_url must name a separate test page in the job's config"
+    if not cfg.savetest_itch_target:
+        return "savetest_itch_target must name the separate test page's project (user/project:channel) in the job's config"
     if _itch_project(cfg.savetest_itch_target) == _itch_project(cfg.itch_target):
         return "the save test's test page must not be the public itch project (any channel of it uploads to its page)"
-    try:
-        test_page = _page_key(cfg.savetest_itch_page_url)
-        public_page = _page_key(cfg.itch_page_url) if cfg.itch_page_url else None
-    except ValueError as e:
-        return f"the save test's test page URL or the public page URL is not usable: {e}"
-    if test_page == public_page:
-        return "the save test's test page must not be the public itch page"
     return None
 
 
-SAVETEST_KEYS = ("savetest_itch_target", "savetest_itch_page_url")
+SAVETEST_KEYS = ("savetest_itch_target",)
 
 
 def itch_skip_reason(cfg: Config) -> str | None:
@@ -1129,14 +1114,15 @@ def _savetest(cfg: Config, work: Path, runner: Runner, gh: GitHub, itch: Itch, t
     zip_path = gh.download(tag, "*-web.zip", work / "zip")
     evidence.update(zip=zip_path.name, zip_sha256=sha256_of(zip_path))
     folder = unzip_to(zip_path, work / "folder")
+    if not (folder / "index.html").is_file():
+        return "INCONCLUSIVE", f"{zip_path.name} has no index.html at its root, so the build's frame URL would not load"
     profile = work / "profile"
 
     itch.push(folder, f"{version}-savetest-a")
     itch.wait_live(f"{version}-savetest-a", time.monotonic() + ITCH_WAIT_SECONDS)
-    frame_a = _frame_url(fetch, sleep, cfg.savetest_itch_page_url)
-    evidence.update(upload_a={"build_id": itch.live_build_id(), "frame_url": frame_a})
+    frame_a, why = _live_frame(itch, fetch, sleep, "upload a", evidence)
     if frame_a is None:
-        return "INCONCLUSIVE", "the itch page names no game frame after upload A"
+        return "INCONCLUSIVE", why
     code, text = _frame_check(runner, work, "a-first-save", frame_a, profile, "--first-save")
     saved = PERSIST_SAVED.search(text)
     if code != 0 or not re.search(r"^PASS:", text, re.M) or saved is None:
@@ -1146,15 +1132,11 @@ def _savetest(cfg: Config, work: Path, runner: Runner, gh: GitHub, itch: Itch, t
 
     itch.push(folder, f"{version}-savetest-b")
     itch.wait_live(f"{version}-savetest-b", time.monotonic() + ITCH_WAIT_SECONDS)
-    frame_b = _frame_url(fetch, sleep, cfg.savetest_itch_page_url, other=frame_a)
-    evidence.update(upload_b={"build_id": itch.live_build_id(), "frame_url": frame_b})
+    frame_b, why = _live_frame(itch, fetch, sleep, "upload b", evidence)
     if frame_b is None:
-        return "INCONCLUSIVE", "the itch page names no game frame after upload B"
-    (scheme_a, host_a, seg_a), (scheme_b, host_b, seg_b) = _frame_parts(frame_a), _frame_parts(frame_b)
-    if (scheme_a, host_a) != (scheme_b, host_b):
-        return "INCONCLUSIVE", f"the frame origin changed ({scheme_a}://{host_a} to {scheme_b}://{host_b}): IndexedDB is per origin"
-    if seg_a == seg_b:
-        return "INCONCLUSIVE", f"upload B has the same frame URL as upload A ({seg_a}), so the test proves nothing"
+        return "INCONCLUSIVE", why
+    if frame_b == frame_a:   # both frames are on itch's one frame host, so IndexedDB is shared between them
+        return "INCONCLUSIVE", f"upload B has the same frame URL as upload A ({frame_a}), so the test proves nothing"
 
     expect = f"GAME OK {tuple_a['date']} turn {tuple_a['turn']} hash {tuple_a['hash']}"
     for n in (1, 2):

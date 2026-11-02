@@ -86,7 +86,6 @@ class Config:
     itch_target: str = "eyalgolan/statecraft-israel:html5"
     itch_page_url: str | None = None
     savetest_itch_target: str | None = None   # a separate test page: the save test never pushes to the public one
-    savetest_itch_page_url: str | None = None
     itch_enabled: bool = False
     itch_evidence: str | None = None
     butler: Path = HOME / ".local/bin/butler"
