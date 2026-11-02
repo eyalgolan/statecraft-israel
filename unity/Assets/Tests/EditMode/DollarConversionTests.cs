@@ -114,17 +114,63 @@ public class DollarConversionTests
         b.State.DollarsConverted = 0; b.State.FxReserves = 2;
         amount.value = 4; amount.value = 3;
         Assert.AreEqual(t["dollars.refused_reserves"], refusal.text);
-        b.State.FxReserves = 40; b.State.Rung = 3;
-        amount.value = 4; amount.value = 3;
-        Assert.AreEqual(t["dollars.refused_not_at_war"], refusal.text);
         Assert.IsTrue(ui.Q<Button>("convert-dollars").enabledSelf, "a refusal remains explainable");
         ui.Press("convert-dollars");
         Assert.IsEmpty(b.Queued, "an amount the sim refuses is not queued");
-        Assert.AreEqual(t["dollars.refused_not_at_war"], refusal.text, "the refusal stays shown after Convert");
+        Assert.AreEqual(t["dollars.refused_reserves"], refusal.text, "the refusal stays shown after Convert");
         b.State.GameOver = "finished";
         amount.value = 2;
         Assert.AreEqual(t["order.game_over"], refusal.text);
         Assert.IsFalse(ui.Q<Button>("convert-dollars").enabledSelf);
+    }
+
+    // R-MONEY-004 (owner, 2 November 2026: "Box shows queued order (Recommended)"): with a conversion queued, a new number
+    // in the box replaces it at once, so the box, the Money line and what End turn converts agree; the reserve and the total
+    // converted keep the turn's start until End turn. An amount the sim refuses clears the queue and shows the refusal.
+    [TestCase(false)] [TestCase(true)]
+    public void TypingANewAmountReplacesTheQueuedConversion(bool he)
+    {
+        var b = Bridge(false, he); var t = Text(he); var c = b.Content; var m = c.RulesAt(b.State.Date).Mvp!;
+        using var ui = new UiTestKit();
+        using var defence = new DefencePresenter(ui.Root, b, t);
+        var reserves = ui.Q<Label>("dollars-reserves").text; var total = ui.Q<Label>("dollars-total").text;
+        var amount = ui.Q<IntegerField>("dollars-amount");
+        amount.value = 4; ui.Press("convert-dollars");
+        Assert.AreEqual(4, ((ConvertDollars)b.Queued.Single()).Amount);
+        amount.value = 2;
+        Assert.AreEqual(2, ((ConvertDollars)b.Queued.Single()).Amount, "the box replaces the queued order");
+        Assert.AreEqual(t.Format("dollars.money", PlayerText.Money(c, "treasury", 2 * m.IlPerDollarOn(b.State.Date))), ui.Q<Label>("dollars-money").text);
+        Assert.AreEqual(t.Format("dollars.queued", PlayerText.Money(c, "fx_reserves", 2)), ui.Q<Label>("dollars-queued").text);
+        Assert.AreEqual(reserves, ui.Q<Label>("dollars-reserves").text, "the reserve keeps the turn's start");
+        Assert.AreEqual(total, ui.Q<Label>("dollars-total").text, "the total converted keeps the turn's start");
+        amount.value = 5;
+        Assert.IsEmpty(b.Queued, "an amount the sim refuses clears the queue");
+        Assert.AreEqual(t["dollars.refused_monthly"], ui.Q<Label>("dollars-refusal").text);
+        Assert.IsEmpty(ui.Q<Label>("dollars-queued").text);
+    }
+
+    // R-MONEY-004 (owner, 2 November 2026: "Grey it with the reason (Recommended)"): outside the war (a rung below 4) the
+    // panel stays visible but disabled, with one line saying conversion is for wartime only; in the war it is enabled again.
+    [TestCase(false)] [TestCase(true)]
+    public void OutsideTheWarThePanelIsGreyedWithTheReason(bool he)
+    {
+        var b = Bridge(false, he); var t = Text(he);
+        using var ui = new UiTestKit();
+        using var defence = new DefencePresenter(ui.Root, b, t);
+        var panel = ui.Q<VisualElement>("defence-dollars");
+        var amount = ui.Q<IntegerField>("dollars-amount");
+        b.State.Rung = 3;
+        amount.value = 4; amount.value = 3;
+        Assert.AreEqual(DisplayStyle.Flex, panel.style.display.value, "the panel stays visible");
+        Assert.IsFalse(panel.enabledSelf, "the panel is disabled");
+        Assert.IsFalse(ui.Q<Button>("convert-dollars").enabledInHierarchy);
+        Assert.AreEqual(t["dollars.wartime_only"], ui.Q<Label>("dollars-refusal").text);
+        ui.Press("convert-dollars");
+        Assert.IsEmpty(b.Queued);
+        b.State.Rung = 4;
+        amount.value = 4;
+        Assert.IsTrue(panel.enabledSelf);
+        Assert.IsEmpty(ui.Q<Label>("dollars-refusal").text);
     }
 
     // R-MONEY-004: the legacy loop has no conversion.

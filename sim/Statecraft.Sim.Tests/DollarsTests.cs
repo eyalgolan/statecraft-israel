@@ -274,6 +274,49 @@ options:
         Assert.Equal(0.0, Real.Rules.AttentionCost["convert_dollars"]);
     }
 
+    static (string, string, double, string)[] Lines(StepResult r) => r.Why.Select(w => (w.System, w.Target, w.Delta, w.Message)).ToArray();
+
+    // R-MONEY-004, R-ARMS-002 (#2206; owner, 2 November 2026: "Conversion counts first (Recommended)"): a turn's dollar
+    // conversions run before its Arms purchases, so the purchase borrows only what the conversion leaves it short, whatever
+    // the queue order. The real content's first turn: rung 5, Treasury IL 20m, no debt, IL 1m an Arms, IL 0.333 per $.
+    // Queued before or after $4m (IL 1.332m), 271 Arms give the same turn: the same state, causes and rejections.
+    [Fact]
+    public void AConversionCountsForAnArmsPurchaseWhateverTheQueueOrder()
+    {
+        var s = Simulation.NewGame(Real, GoldenRun.Seed, Mode.Historical);
+        var m = Real.RulesAt(s.Date).Mvp!;
+        Assert.Equal((5, 20.0, 0.0, 1.0, 0.333), (s.Rung, s.Treasury, s.Debt, m.ArmsPrice!.Value, m.IlPerDollarOn(s.Date)));
+        var first = Simulation.Step(Real, s, new Command[] { new ConvertDollars(4), new BuyArms(271) });
+        var last = Simulation.Step(Real, s, new Command[] { new BuyArms(271), new ConvertDollars(4) });
+        Assert.Empty(first.Rejected);
+        Assert.Empty(last.Rejected);
+        Assert.Equal(first.State.Hash(), last.State.Hash());
+        Assert.Equal(Lines(first), Lines(last));
+        Assert.Equal(s.Arms + 271, last.State.Arms);
+        // The money adds up: the orders leave the Treasury at 0 and the debt at 271 - 20 - 4 * 0.333, and the turn ends the
+        // purchase less and the conversion more than the turn with no order.
+        var orders = Simulation.Preview(Real, s, new Command[] { new BuyArms(271), new ConvertDollars(4) }).State;
+        Assert.Equal(0.0, orders.Treasury, 9);
+        Assert.Equal(271 - 20 - 4 * 0.333, orders.Debt, 9);
+        var none = Simulation.Step(Real, s, Array.Empty<Command>()).State;
+        Assert.Equal(none.Treasury - none.Debt - 271 + 4 * 0.333, last.State.Treasury - last.State.Debt, 9);
+    }
+
+    // #2206: only the conversions queued after the turn's first Arms purchase move, to just before it, in their queue order;
+    // every other order keeps its place (here, the order of the rejections).
+    [Fact]
+    public void OnlyTheConversionsMoveAheadOfTheFirstArmsPurchase()
+    {
+        var c = Gdd();
+        var s = War(c);
+        var r = Orders(c, s, new BuyArms(0), new ConvertDollars(0), new BuyArms(-1), new ConvertDollars(5));
+        Assert.Equal(new[] { "convert_dollars 0", "convert_dollars 5", "buy_arms 0", "buy_arms -1" },
+            r.Rejected.Select(x => x.Command.Kind + " " + (x.Command is ConvertDollars d ? d.Amount : ((BuyArms)x.Command).Count)
+                .ToString(System.Globalization.CultureInfo.InvariantCulture)));
+        var none = Orders(c, s, new ConvertDollars(5), new ConvertDollars(0));
+        Assert.Equal(new[] { 5, 0 }, none.Rejected.Select(x => ((ConvertDollars)x.Command).Amount));
+    }
+
     const string Rates = "  il_per_dollar: [{ from: 1948-05-15, rate: 0.5, status: sourced }, { from: 1948-08-15, rate: 0.25, status: sourced }]\n";
 
     // R-MONEY-004: missing or out-of-range values are load errors, never a default.

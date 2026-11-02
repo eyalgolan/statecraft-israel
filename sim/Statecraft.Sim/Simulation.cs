@@ -133,8 +133,9 @@ namespace Statecraft.Sim
         /// for End turn (spec 2026-10-23 section 3.2).</summary>
         public static bool IsInstant(Command cmd) => cmd is Move || (cmd is UnitOrder o && o.Order != Demobilization.SendHome);
 
-        /// <summary>The turn's orders in order: each pays Attention first; one that fails validation is refunded and
-        /// rejected with its reason. Step, DelegatedTo and Preview share it, so every dry run sees what End Turn will.</summary>
+        /// <summary>The turn's orders in queue order, conversions before Arms purchases (ConversionsBeforeArms): each pays
+        /// Attention first; one that fails validation is refunded and rejected with its reason. Step, DelegatedTo and Preview
+        /// share it, so every dry run sees what End Turn will.</summary>
         static void RunOrders(Content c, GameState s, IReadOnlyList<Command> commands, Dictionary<int, int> spent,
                               Dictionary<int, (int Q, int R)> attacked, List<Cause> why, List<Rejection> rejected)
         {
@@ -142,7 +143,7 @@ namespace Statecraft.Sim
             if (c.IsGdd) SettlementControl.CaptureHeld(c, s, why);
             var priceRung = s.Rung;   // every command this turn is priced at the rung the turn started at (R-MONEY-004's war is that rung too)
             var dollarsAtStart = s.DollarsConverted;   // R-MONEY-004: the turn's limit counts every conversion order in it
-            foreach (var cmd in commands)
+            foreach (var cmd in ConversionsBeforeArms(commands))
             {
                 if (!AttentionSystem.IsCommandKind(cmd.Kind)) { rejected.Add(new Rejection(cmd, "That order is not known")); continue; }
                 // A GDD order has no price in the legacy rules: refuse it before charging (R-CITY-001).
@@ -161,6 +162,19 @@ namespace Statecraft.Sim
                 if (error != null) rejected.Add(new Rejection(cmd, error));
                 if (c.IsGdd) SettlementControl.CaptureHeld(c, s, why);   // R-CTRL-004: only where an order ends
             }
+        }
+
+        /// <summary>The turn's orders in the order they run (#2206; R-ARMS-002, R-MONEY-004; owner, 2 November 2026:
+        /// "Conversion counts first (Recommended)"): queue order, except that the dollar conversions queued after the turn's
+        /// first Arms purchase run just before it, in their queue order, so a conversion's Money counts for the purchase
+        /// whatever the order of the clicks. Every other order keeps its place.</summary>
+        static IEnumerable<Command> ConversionsBeforeArms(IReadOnlyList<Command> commands)
+        {
+            var buy = -1;
+            for (int i = 0; i < commands.Count && buy < 0; i++) if (commands[i] is BuyArms) buy = i;
+            if (buy < 0) return commands;
+            var rest = commands.Skip(buy);
+            return commands.Take(buy).Concat(rest.Where(x => x is ConvertDollars)).Concat(rest.Where(x => !(x is ConvertDollars)));
         }
 
         /// <summary>Returns null when the command was carried out (a lost vote counts: it consumes the RNG draw and is

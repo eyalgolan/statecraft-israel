@@ -8,7 +8,10 @@ namespace Statecraft.Game.UI
     /// <summary>The Defence screen's dollar conversion (#813, R-MONEY-004; owner, 2 November 2026: "Spend the dollars
     /// (Recommended)"): one replaceable ConvertDollars at End turn, as the Arms purchase. It shows the foreign-currency reserve
     /// beside this order (the top bar's Foreign currency meter stays; owner, 2 November 2026: "Keep it"), and the sim's own
-    /// refusal before End turn. The reserve and Money change only when the sim executes the order.</summary>
+    /// refusal before End turn. With a conversion queued, a new amount in the box replaces it at once, or withdraws it when the
+    /// sim refuses the amount ("Box shows queued order (Recommended)"); outside the war the panel stays visible but disabled,
+    /// with the reason ("Grey it with the reason (Recommended)"). The reserve and Money change only when the sim executes the
+    /// order.</summary>
     public sealed class DollarConversionPresenter : IDisposable
     {
         readonly VisualElement panel;
@@ -48,7 +51,20 @@ namespace Statecraft.Game.UI
                 // Render has just disabled Withdraw, which had the focus. Keep the keyboard in the panel: Convert, else the amount.
                 if (keyboard) FocusReturn.ToOrWithin(convert, null, panel);
             };
-            onAmount = _ => Render();
+            onAmount = _ =>
+            {
+                // The box is the queued order: a new amount replaces it at once, and one the sim refuses withdraws it, so the
+                // box, the Money line and what End turn converts always agree.
+                string? reason = null;
+                if (bridge.Content.IsGdd && bridge.State.GameOver == null
+                    && bridge.QueuedLike(new ConvertDollars(1)) is ConvertDollars queued && queued.Amount != amount.value)
+                {
+                    if (EconomySystem.DollarsRefusal(bridge.Content, bridge.State, amount.value) != null) bridge.Withdraw(queued);
+                    else if ((reason = bridge.Queue(new ConvertDollars(amount.value))) != null) bridge.Withdraw(queued);
+                }
+                Render();
+                if (reason != null) panel.Q<Label>("dollars-refusal").text = reason;
+            };
             convert.clicked += onConvert; withdraw.clicked += onWithdraw; amount.RegisterValueChangedCallback(onAmount);
             bridge.Changed += Render;
             // The amount starts at the month's limit, or at the order already queued this turn.
@@ -63,6 +79,9 @@ namespace Statecraft.Game.UI
             panel.style.display = c.IsGdd ? DisplayStyle.Flex : DisplayStyle.None;
             if (!c.IsGdd) return;
             var m = c.RulesAt(s.Date).Mvp!;
+            // Outside the war (the rung the turn started at, as the sim judges it) the panel is greyed with the reason.
+            var war = s.Rung >= EconomySystem.WarRung;
+            panel.SetEnabled(war);
             var order = new ConvertDollars(amount.value);
             var queued = bridge.QueuedLike(order) as ConvertDollars;
             panel.Q<Label>("dollars-reserves").text = text.Format("dollars.reserves", PlayerText.Money(c, "fx_reserves", s.FxReserves));
@@ -80,6 +99,7 @@ namespace Statecraft.Game.UI
             // The sim's own check (EconomySystem.DollarsRefusal) on the state as it is now: End turn refuses the same amount.
             var refused = s.GameOver != null ? null : EconomySystem.DollarsRefusal(c, s, amount.value);
             panel.Q<Label>("dollars-refusal").text = s.GameOver != null ? text["order.game_over"]
+                : !war ? text["dollars.wartime_only"]
                 : refused != null ? SimBridge.ReasonText(text, refused)
                 : !bridge.CanPay(order) ? text["dollars.no_attention"] : "";
         }
