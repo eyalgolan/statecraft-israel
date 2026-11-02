@@ -85,6 +85,9 @@ namespace Statecraft.Game.Map.Collection
 
         public static IReadOnlyList<Want> Placements(DateTime date) => All.Where(x => date >= x.From).ToList();
 
+        /// <summary>The buildings this layer wants, as last shown (its Plan's input).</summary>
+        internal IReadOnlyList<Want> Wanted => wants;
+
         /// <summary>How far inside a town's footprint <paramref name="anchor"/> lies (m, 0 outside every footprint): a sourced
         /// point at a town's edge (Netanya's entrance) is inside the kit's symbolic footprint, so the search starts that far
         /// out.</summary>
@@ -366,9 +369,12 @@ namespace Statecraft.Game.Map.Collection
             ClearVisuals();
             var ground = PlacementLayer.CampGround(map);
             var holes = new List<(Vector2 centre, float radius)>();
-            foreach (var (w, spot) in Plan(map, date, wants, m => prefabs.TryGetValue(m, out var p) && p != null, log: true))
+            // Every building stands at its spot in the plan with every model available: one that streams in later lands
+            // where the plan put it, which the hex props keep clear of (HexPropModels, #2266 review).
+            foreach (var (w, spot) in Plan(map, date, wants, _ => true, log: true))
             {
-                var prefab = prefabs[w.Model]!;
+                if (!prefabs.TryGetValue(w.Model, out var streamed) || streamed == null) continue;
+                var prefab = streamed;
                 Vector2? at = spot;
                 holes.Add((at.Value, ClearanceOf(w.Model)));
                 var go = Instantiate(prefab, transform, false); go.name = w.Key;

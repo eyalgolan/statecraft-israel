@@ -268,6 +268,8 @@ namespace Statecraft.Game.Map.Collection
         public readonly List<Want> Scenes = new List<Want>();
         public readonly List<string> Missing = new List<string>();
         public IReadOnlyList<Want> Wanted => wants;
+        /// <summary>The other layers' ground this layer keeps clear of (its Plan's input), as last shown.</summary>
+        internal List<(Vector2 centre, float radius)> OthersShown => others;
         public bool LastClose { get; private set; }
 
         /// <summary>The ground the other Collection layers hold (centre, radius m): the civilian figures CivilianPeople wants
@@ -400,15 +402,17 @@ namespace Statecraft.Game.Map.Collection
             if (map == null || map.Terrain == null) return;
             ClearVisuals();
             var ground = PlacementLayer.CampGround(map);
-            // A streamed representation is what makes this a real scene. Until then it owns no anchor, clearance,
-            // tree hole or Near demand; a failed Far answer therefore cannot leave an empty permanent clearing.
+            // A streamed representation is what makes this a real scene. Until then it draws nothing, owns no tree hole and
+            // asks for no Near; but every scene stands at its spot in the plan with every model available, so a scene that
+            // streams in later lands where the plan put it, which the hex props keep clear of (HexPropModels, #2266 review).
             bool Streamed(string model) => (prefabs.TryGetValue((model, CollectionDetail.Far), out var f) && f != null)
                 || (prefabs.TryGetValue((model, CollectionDetail.Near), out var nr) && nr != null);
             var used = new Dictionary<string, int>(StringComparer.Ordinal);
             var holes = new List<(Vector2 centre, float radius)>();
             var nearKeys = residencyView?.Keys;
-            foreach (var (want, spot) in Plan(map, wants, others, Streamed))
+            foreach (var (want, spot) in Plan(map, wants, others, _ => true))
             {
+                if (!Streamed(want.Model)) continue;
                 used.TryGetValue(want.Model, out int n); used[want.Model] = n + 1;
                 Vector2? at = spot;
                 Scenes.Add(want);

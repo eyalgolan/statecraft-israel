@@ -466,7 +466,7 @@ public class TalModelsShots
     /// <summary>Tal Heuberger's hex-tile props on the main map (owner, 27 October 2026, "2+3"; 2 November 2026: his models replace
     /// the kit's minarets, belfries and clock tower, a hedge row per village, a light hill scatter). Frames: Binyamina's station,
     /// the first Bedouin camp's tent, the first village's hedge row, the first hill hex's garrigue, the first village minaret and
-    /// Jaffa's clock tower, each from the closest zoom, from the gameplay zoom (60 km, where the kit's far parts draw) for the
+    /// Jaffa's clock tower, a village mosque's minaret and St Peter's belfry, each from the closest zoom, from the gameplay zoom (60 km, where the kit's far parts draw) for the
     /// landmarks, and from the opening zoom (250 km). The town models are answered, so up close the close meshes draw.
     /// "Before" is main's map: the layer withheld (the kit's own parts come back) and its tree holes given back. The frames
     /// come from the map with the props, so they are the same before and after.</summary>
@@ -484,6 +484,10 @@ public class TalModelsShots
         var parts = map.KitStats.LandmarkParts;
         var minaret = parts.First(p => p.Kind == "minaret" && p.Close != null);
         var clock = parts.Single(p => p.Kind == "clock_tower");
+        // #2266 review C7: a village mosque's roof-mounted minaret and St Peter's belfry, up close.
+        var villages = new HashSet<string>(map.Localities.Select(p => p.Settlement).Where(s => s.Type == "village").Select(s => s.Id));
+        var village = parts.First(p => p.Kind == "minaret" && p.Close != null && villages.Contains(p.Owner));
+        var belfry = parts.Single(p => p.Kind == "belfry" && p.Owner == "jaffa");
         Vector3 Up(Bounds b) => new Vector3(b.center.x, 0f, b.center.z);
         var close = CameraController.MinDistance; const float Gameplay = 60000f; var opening = CameraController.MaxDistance;
         var frames = new List<(string what, string key, Vector3 at, float[] zooms)>
@@ -494,6 +498,8 @@ public class TalModelsShots
             ("scatter", layer.Placed.First(p => p.Model == HexPropModels.Garrigue).Key, layer.Placed.First(p => p.Model == HexPropModels.Garrigue).At, new[] { close, opening }),
             ("minaret", minaret.Owner, Up(minaret.Near), new[] { close, Gameplay, opening }),
             ("clocktower", clock.Owner, Up(clock.Near), new[] { close, Gameplay, opening }),
+            ("villagemosque", village.Owner, Up(village.Near), new[] { close }),
+            ("belfry", belfry.Owner, Up(belfry.Near), new[] { close }),
         };
         Debug.Log($"SHOT hexprops {(after ? "after" : "before")}: {layer.Placed.Count} placed, {layer.Replaced.Count} landmark models: " +
                   string.Join(", ", HexPropModels.Standalone.Select(m => $"{m} {layer.Placed.Count(p => p.Model == m)}")));
