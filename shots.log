@@ -1,0 +1,52 @@
+SHOT ../tal-models-shots/prop-haifa_quay_crates-after-en
+SHOT prop haifa_quay_crates after on 1948-05-15 at (81689.50, 1286.73, 375397.80) from 6000 m: latrun_tegart, beersheba_abrahams_well, haifa_quay_crates, abu_ghosh_road_wall
+SHOT ../tal-models-shots/prop-haifa_quay_crates-after-he
+SHOT prop haifa_quay_crates after on 1948-05-15 at (81689.50, 1286.73, 375397.80) from 6000 m: latrun_tegart, beersheba_abrahams_well, haifa_quay_crates, abu_ghosh_road_wall
+SHOT ../tal-models-shots/prop-haifa_quay_crates-before-en
+SHOT prop haifa_quay_crates before on 1948-05-15 at (81689.50, 1286.73, 375397.80) from 6000 m: latrun_tegart, beersheba_abrahams_well, abu_ghosh_road_wall
+SHOT ../tal-models-shots/prop-haifa_quay_crates-before-he
+SHOT prop haifa_quay_crates before on 1948-05-15 at (81689.50, 1286.73, 375397.80) from 6000 m: latrun_tegart, beersheba_abrahams_well, abu_ghosh_road_wall
+SHOT dakota after on 1948-05-15: drawn 1, loop centre (33110.02, 5481.07, 290799.10), span 12225.53 m
+SHOT ../tal-models-shots/dakota-gameplay-after-en
+SHOT dakota gameplay from 40000 m, look-at (33110.02, 0.00, 290799.10), camera (33110.02, 30641.78, 265087.60), plane at viewport (0.50, 0.60, 35801.25)
+SHOT ../tal-models-shots/dakota-opening-after-en
+SHOT dakota opening from 90000 m, look-at (49398.48, 0.00, 290799.10), camera (49398.48, 68944.01, 232948.20), plane at viewport (0.27, 0.51, 85801.24)
+SHOT dakota after on 1948-05-15: drawn 1, loop centre (33110.02, 5481.07, 290799.10), span 12225.53 m
+SHOT ../tal-models-shots/dakota-gameplay-after-he
+SHOT dakota gameplay from 40000 m, look-at (33110.02, 0.00, 290799.10), camera (33110.02, 30641.78, 265087.60), plane at viewport (0.50, 0.60, 35801.25)
+SHOT ../tal-models-shots/dakota-opening-after-he
+SHOT dakota opening from 90000 m, look-at (49398.48, 0.00, 290799.10), camera (49398.48, 68944.01, 232948.20), plane at viewport (0.27, 0.51, 85801.24)
+SHOT dakota before on 1948-05-15: drawn 0, loop centre (33110.02, 5481.07, 290799.10), span 12225.53 m
+SHOT ../tal-models-shots/dakota-gameplay-before-en
+SHOT dakota gameplay from 40000 m, look-at (33110.02, 0.00, 290799.10), camera (33110.02, 30641.78, 265087.60), plane at viewport (0.50, 0.60, 35801.25)
+SHOT ../tal-models-shots/dakota-opening-before-en
+SHOT dakota opening from 90000 m, look-at (49398.48, 0.00, 290799.10), camera (49398.48, 68944.01, 232948.20), plane at viewport (0.27, 0.51, 85801.24)
+SHOT dakota before on 1948-05-15: drawn 0, loop centre (33110.02, 5481.07, 290799.10), span 12225.53 m
+SHOT ../tal-models-shots/dakota-gameplay-before-he
+SHOT dakota gameplay from 40000 m, look-at (33110.02, 0.00, 290799.10), camera (33110.02, 30641.78, 265087.60), plane at viewport (0.50, 0.60, 35801.25)
+SHOT ../tal-models-shots/dakota-opening-before-he
+SHOT dakota opening from 90000 m, look-at (49398.48, 0.00, 290799.10), camera (49398.48, 68944.01, 232948.20), plane at viewport (0.27, 0.51, 85801.24)
+SHOT ../tal-models-shots/prop-tel_aviv_altalena_sandbags-after-en
+SHOT prop tel_aviv_altalena_sandbags after on 1948-06-15 at (56072.08, 1290.15, 297621.70) from 6000 m: latrun_tegart, tzrifin_barracks, degania_r35, beersheba_abrahams_well, tel_aviv_altalena_sandbags, haifa_quay_crates, abu_ghosh_road_wall
+SHOT ../tal-models-shots/prop-tel_aviv_altalena_sandbags-after-he
+SHOT prop tel_aviv_altalena_sandbags after on 1948-06-15 at (56072.08, 1290.15, 297621.70) from 6000 m: latrun_tegart, tzrifin_barracks, degania_r35, beersheba_abrahams_well, tel_aviv_altalena_sandbags, haifa_quay_crates, abu_ghosh_road_wall
+SHOT ../tal-models-shots/prop-tel_aviv_altalena_sandbags-before-en
+SHOT prop tel_aviv_altalena_sandbags before on 1948-06-15 at (56072.08, 1290.15, 297621.70) from 6000 m: latrun_tegart, tzrifin_barracks, degania_r35, beersheba_abrahams_well, haifa_quay_crates, abu_ghosh_road_wall
+SHOT ../tal-models-shots/prop-tel_aviv_altalena_sandbags-before-he
+SHOT prop tel_aviv_altalena_sandbags before on 1948-06-15 at (56072.08, 1290.15, 297621.70) from 6000 m: latrun_tegart, tzrifin_barracks, degania_r35, beersheba_abrahams_well, haifa_quay_crates, abu_ghosh_road_wall
+SHOT ../tal-models-shots/prop-abu_ghosh_road_wall-after-en
+SHOT prop abu_ghosh_road_wall after on 1948-05-15 at (86601.39, 3321.27, 260430.80) from 6000 m: latrun_tegart, beersheba_abrahams_well, haifa_quay_crates, abu_ghosh_road_wall
+SHOT ../tal-models-shots/prop-abu_ghosh_road_wall-after-he
+SHOT prop abu_ghosh_road_wall after on 1948-05-15 at (86601.39, 3321.27, 260430.80) from 6000 m: latrun_tegart, beersheba_abrahams_well, haifa_quay_crates, abu_ghosh_road_wall
+SHOT ../tal-models-shots/prop-abu_ghosh_road_wall-before-en
+SHOT prop abu_ghosh_road_wall before on 1948-05-15 at (86601.39, 3321.27, 260430.80) from 6000 m: latrun_tegart, beersheba_abrahams_well, haifa_quay_crates
+SHOT ../tal-models-shots/prop-abu_ghosh_road_wall-before-he
+SHOT prop abu_ghosh_road_wall before on 1948-05-15 at (86601.39, 3321.27, 260430.80) from 6000 m: latrun_tegart, beersheba_abrahams_well, haifa_quay_crates
+SHOT ../tal-models-shots/prop-beersheba_abrahams_well-after-en
+SHOT prop beersheba_abrahams_well after on 1948-05-15 at (56074.88, 2056.39, 197539.00) from 6000 m: latrun_tegart, beersheba_abrahams_well, haifa_quay_crates, abu_ghosh_road_wall
+SHOT ../tal-models-shots/prop-beersheba_abrahams_well-after-he
+SHOT prop beersheba_abrahams_well after on 1948-05-15 at (56074.88, 2056.39, 197539.00) from 6000 m: latrun_tegart, beersheba_abrahams_well, haifa_quay_crates, abu_ghosh_road_wall
+SHOT ../tal-models-shots/prop-beersheba_abrahams_well-before-en
+SHOT prop beersheba_abrahams_well before on 1948-05-15 at (56074.88, 2056.39, 197539.00) from 6000 m: latrun_tegart, haifa_quay_crates, abu_ghosh_road_wall
+SHOT ../tal-models-shots/prop-beersheba_abrahams_well-before-he
+SHOT prop beersheba_abrahams_well before on 1948-05-15 at (56074.88, 2056.39, 197539.00) from 6000 m: latrun_tegart, haifa_quay_crates, abu_ghosh_road_wall
