@@ -433,6 +433,8 @@ why.cause.borrowed.project: "הלוואה של {0} לבניית {1}"
 why.cause.borrowed.deport: "הלוואה של {0} לגירוש ({1})"
 why.cause.borrowed.occupation: "הלוואה של {0} לעלות ההחזקה ({1})"
 why.cause.borrowed.event: "הלוואה של {0} עבור {1}"
+# #2199: the why.cause.paid.* lines below are agent-drafted Hebrew, not part of #1642's owner review above. Each reuses
+# its why.cause.borrowed.* purpose phrase, except paid.occupation, which is newly worded. Native review pending (#564).
 why.cause.paid.corridor: "{0}: שינוי {1} (לבניית קטע של כביש או מסילה)"
 why.cause.paid.arms: "{0}: שינוי {1} (לרכישת נשק)"
 why.cause.paid.training: "{0}: שינוי {1} (לאימון ולהכשרה)"
