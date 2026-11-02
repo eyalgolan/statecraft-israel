@@ -60,6 +60,10 @@ namespace Statecraft.Game.Map.Collection
         /// props over <see cref="WorldScale"/>. At the world scale alone they were about 10 px at the closest zoom.</summary>
         public const float PropScale = 3f;
 
+        /// <summary>Red-first stubs: the props' cap, and a row's own size.</summary>
+        public const float MaxPropOffsetM = 1500f;
+        public static float SizeOf(Want w) => SizeOf(w.Model);
+
         /// <summary>The disc a placed model keeps clear (m): its half diagonal, as if square.</summary>
         public static float ClearanceOf(string model) => 0.71f * SizeOf(model);
 
@@ -87,6 +91,8 @@ namespace Statecraft.Game.Map.Collection
             /// whether it may stand at a town's edge, inside its kit footprint, clear of the town's building models, the tokens in
             /// the towns and the name points instead (the four props; owner on #2274: "Bigger, closer").</summary>
             public readonly float Scale; public readonly bool TownEdge;
+            /// <summary>Red-first stub: whether its bundle streams only near the camera.</summary>
+            public readonly bool NearOnly => false;
             /// <summary>The SeaCraft coast's place (<see cref="Siting.Shore"/>) or the route's id (<see cref="Siting.Road"/>).</summary>
             public readonly string Along;
             public Want(string key, string model, DateTime from, double lon, double lat, string source)

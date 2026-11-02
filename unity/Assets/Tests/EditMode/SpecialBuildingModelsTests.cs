@@ -253,6 +253,79 @@ namespace Statecraft.Game.Tests
             Assert.AreEqual(3.75f, SpecialBuildingModels.RealLengthM(SpecialBuildingModels.Well), 1e-6f, "Abraham's Well's diameter (he.wiki)");
         }
 
+        static readonly string[] PropKeys = { "beersheba_abrahams_well", "tel_aviv_altalena_sandbags", "haifa_quay_crates", "abu_ghosh_road_wall" };
+
+        sealed class ProbeLease : IDisposable
+        {
+            Action? done; public ProbeLease(Action done) { this.done = done; }
+            public void Dispose() { var call = done; done = null; call?.Invoke(); }
+        }
+
+        /// <summary>The owner, 2 November 2026, on #2274: "Near-only for these props (Recommended)" ("These four small props download
+        /// only when the camera comes close to them; the Dakota stays map-wide (craft ruling)"). With the production special-building
+        /// policy (ProductionResidency.Approved().Special): at the opening view (90 km) none of the four props' bundles is asked for,
+        /// while every other special keeps its map-wide request (owner ruling 29, 30 October 2026, "Far models map-wide"); a close
+        /// view over one prop asks for that prop alone; leaving releases it and nothing else.</summary>
+        [Test]
+        public void TheFourPropsStreamOnlyNearTheCameraAndTheOtherSpecialsStayMapWide()
+        {
+            var map = OpenMap();
+            var go = new GameObject(SpecialBuildingModels.Name); go.transform.SetParent(map.Terrain.transform, false);
+            var layer = go.AddComponent<SpecialBuildingModels>();
+            typeof(SpecialBuildingModels).GetField("map", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.SetValue(layer, map);
+            var acquired = new List<string>(); var released = new List<string>();
+            layer.ConfigureResidency(ProductionResidency.Approved().Special, (id, detail, done) =>
+            {
+                acquired.Add(id); done(AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(id, CollectionDetail.Near)));
+                return new ProbeLease(() => released.Add(id));
+            });
+            var date = new DateTime(1948, 6, 15);
+            SpecialBuildingModels.ShowAt(map, date);
+            var cam = new GameObject("TEST camera").AddComponent<Camera>();
+            try
+            {
+                void View(Vector3 over, float height)
+                {
+                    cam.transform.SetPositionAndRotation(new Vector3(over.x, height, over.z), Quaternion.Euler(90f, 0f, 0f));
+                    layer.Choose(default, cam);
+                }
+                var wants = SpecialBuildingModels.Placements(date);
+                var props = wants.Where(w => PropKeys.Contains(w.Key)).ToList();
+                Assert.AreEqual(4, props.Count, "all four props are wanted on 15 June 1948");
+                Assert.IsTrue(props.All(w => w.NearOnly), "the four props are near-only");
+                Assert.IsTrue(wants.Where(w => !PropKeys.Contains(w.Key)).All(w => !w.NearOnly), "no other special is");
+                var tel = map.Frame.ToWorld(34.78, 32.08, 0);
+                View(tel, 90000f);   // the opening distance (90 km)
+                var propModels = props.Select(w => w.Model).ToArray();
+                CollectionAssert.IsEmpty(acquired.Intersect(propModels), "no prop's bundle at the opening view");
+                CollectionAssert.Contains(acquired, SpecialBuildingModels.Tegart, "the other specials stay map-wide");
+                var others = acquired.ToList();
+                var well = props.Single(w => w.Key == "beersheba_abrahams_well");
+                var at = map.Frame.ToWorld(well.Lon, well.Lat, 0);
+                View(at, 6000f);   // the closest zoom, over Abraham's Well
+                CollectionAssert.AreEqual(new[] { SpecialBuildingModels.Well }, acquired.Except(others).ToArray(), "the well alone, when the camera is close to it");
+                Assert.IsTrue(layer.Placed.Any(p => p.Key == "beersheba_abrahams_well"), "and it is drawn");
+                View(tel, 250000f);   // leave
+                CollectionAssert.AreEqual(new[] { SpecialBuildingModels.Well }, released.ToArray(), "leaving releases the well and nothing else");
+                Assert.IsFalse(layer.Placed.Any(p => p.Key == "beersheba_abrahams_well"), "and it is no longer drawn");
+                Assert.IsTrue(layer.Placed.Any(p => p.Model == SpecialBuildingModels.Tegart), "the map-wide specials stay");
+            }
+            finally { UnityEngine.Object.DestroyImmediate(cam.gameObject); UnityEngine.Object.DestroyImmediate(go); }
+        }
+
+        /// <summary>The four props' spots stay within <see cref="SpecialBuildingModels.MaxPropOffsetM"/> (1.5 km) of their sourced
+        /// points in code (owner on #2274: "right by the sourced spot"): a spot farther out is not drawn, with a warning. Every row of
+        /// a model carries the same scale, so a model's size reads the same from any of its rows.</summary>
+        [Test]
+        public void ThePropsCapAndTheRowScalesAreConsistent()
+        {
+            Assert.AreEqual(1500f, SpecialBuildingModels.MaxPropOffsetM);
+            foreach (var g in SpecialBuildingModels.EveryPlacement.GroupBy(w => w.Model))
+                Assert.AreEqual(1, g.Select(w => w.Scale).Distinct().Count(), g.Key + ": one scale for all its rows");
+            foreach (var w in SpecialBuildingModels.EveryPlacement)
+                Assert.AreEqual(SpecialBuildingModels.RealLengthM(w.Model) * SpecialBuildingModels.WorldScale * w.Scale, SpecialBuildingModels.SizeOf(w), 0.01f, w.Key + ": its row's own scale");
+        }
+
         /// <summary>The owner, 2 November 2026, on #2274: "Bigger, closer (Recommended)" ("Draw these four at about 3x so they read at
         /// close zoom"). The scale is each prop's own, in its data row (Want.Scale): three times the one world scale for the four
         /// props, which stand at a town's edge (Want.TownEdge); every other row keeps the world scale and the town clearance.</summary>
@@ -391,11 +464,16 @@ namespace Statecraft.Game.Tests
                 // The wall's own half depth at its drawn size: it stands just off the road's corridor, its long side along it.
                 float depthHalf = 0.5f * Mathf.Min(pb.size.x, pb.size.z) * go.localScale.x / prefab.transform.localScale.x;
                 Assert.That(best, Is.InRange(half + depthHalf, half + depthHalf + 5f), "beside the road: just off its corridor");
-                // Clear of every route along its whole length: its middle and both ends, each a disc of its half depth.
                 float lengthHalf = 0.5f * Mathf.Max(pb.size.x, pb.size.z) * go.localScale.x / prefab.transform.localScale.x;
                 var ground = PlacementLayer.CampGround(map);
-                foreach (var t in new[] { -1f, 0f, 1f })
-                    Assert.IsFalse(ground.OnRoute(flat + dir * t * (lengthHalf - depthHalf), depthHalf), $"the wall clear of the routes ({t} along it)");
+                // Clear of every route and the water along its whole length, sampled every half depth.
+                float reachAlong = lengthHalf - depthHalf;
+                for (float t = -reachAlong; t <= reachAlong + 0.5f; t += depthHalf)
+                {
+                    var q = flat + dir * Mathf.Min(t, reachAlong);
+                    Assert.IsFalse(ground.OnRoute(q, depthHalf), $"the wall clear of the routes {t:0} m along it");
+                    Assert.IsFalse(ground.Water(q.x, q.y), $"the wall on land {t:0} m along it");
+                }
                 var longLocal = pb.size.x >= pb.size.z ? Vector3.right : Vector3.forward;
                 var longWorld = go.localRotation * Quaternion.Inverse(prefab.transform.localRotation) * longLocal;
                 Assert.Greater(Mathf.Abs(Vector2.Dot(new Vector2(longWorld.x, longWorld.z).normalized, dir)), 0.999f, "its long side along the road");
