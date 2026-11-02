@@ -358,8 +358,10 @@ Published at: (owner fills in)
   - The template sets `autoSyncPersistentDataPath: true`, so closing the file persists it to IndexedDB.
   - IndexedDB is per origin, so saves survive re-uploads to the same project and stay separate per browser profile.
   - The local checks above passed: reload, tab close, browser restart, and a second directory on the same origin.
-- **Automated test:** `uv run tools/nightly.py savetest --tag <published nightly>` runs this plan against the public
-  itch page and records its result in the job's evidence file. It pushes to the public page twice, so only the owner starts it.
+- **Automated test:** `uv run tools/nightly.py savetest --tag <published nightly>` runs this plan against a separate
+  itch test page (`savetest_itch_target` and `savetest_itch_page_url` in the job's `config.json`) and records its result
+  in the job's evidence file. It pushes to the test page twice, never to the public page, and refuses to run without
+  those two keys or if they name the public page. Only the owner starts it.
 - **Test plan (after the first two uploads):**
   1. Use one browser profile throughout, without clearing site data or using private mode. Record browser/version, OS,
      project page URL and the actual game-frame URL/origin (not only the outer itch.io page). Upload A as above. Play two
