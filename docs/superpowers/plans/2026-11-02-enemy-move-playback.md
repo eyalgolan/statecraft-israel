@@ -10,7 +10,7 @@
 
 **Spec:** issue [#2202](https://github.com/eyalgolan/statecraft-israel/issues/2202), a player report the owner relayed on 1 November 2026. It has no comments. Built on PR #2176 (tokens slide, figures walk; refs #1866) and PR #2177 (figures fire; refs #1867), both open. #2177 is stacked on #2176. Read against `origin/main` at `a304ac65a`, #2176 at `871586d23` and #2177 at `de90957db`.
 
-**Status (2 November 2026):** this is a plan only. The owner has not answered the questions below. Phase 1 (the sim) can start now. Phases 2 and 3 start after #2176 and #2177 merge.
+**Status (2 November 2026):** the owner answered the questions below: "Q1-Q7 recommended, Q8 yes". Every question takes its recommended default, and Q8 adds the encyclopedia sentence in "Strings". Phase A (Task 1, the sim) is #2230. Phases B and C still start after #2176 and #2177 merge.
 
 ## Global Constraints
 
@@ -51,7 +51,7 @@
 
 **What the playback does not need:** #2177's replay prefix (`Session.Now.Why.Count`). The beats come from causes labelled `EnemyOrder != ""`. Only resolver steps 1 and 2 write those, and the player's orders in `RunOrders` never do. Task 1 pins this with a sim test. That makes the playback immune to #2177 finding 1.
 
-## Owner questions (Phase 0: answers needed before Phase 3)
+## Owner questions (Phase 0: answered 2 November 2026, "Q1-Q7 recommended, Q8 yes")
 
 Each question has a recommended default. The plan names where the default lands, so an answer changes one constant or one branch. AGENTS.md says to "leave to the maintainer ... anything that needs a design call". None of these is decided here.
 
@@ -107,9 +107,9 @@ end / Skip / Esc → UnitLayer.ReleaseAll(snap: skip), glide (or cut, on skip) b
 
 | PR | Tasks | Needs Unity | Waits for |
 |---|---|---|---|
-| A: `sim: name the hex a unit stood on in its Why line (refs #2202)` | 1 | no (CI) | Q7 (a) |
+| A: `sim: name the hex a unit stood on in its Why line (refs #2202)`, #2230 | 1 | no (CI) | nothing: Q7 (a) chosen |
 | B: `Map: hold and release a token, camera glide, enemy beats (refs #2202)`. Nothing visible changes yet. | 2, 3, 4 | yes | #2176 and #2177 merged |
-| C: `Map: play the enemy's moves after End turn (Fixes #2202)` | 5, 6, 7, 8 | yes | B; Q1-Q6, Q8 |
+| C: `Map: play the enemy's moves after End turn (Fixes #2202)` | 5, 6, 7, 8 | yes | B (Q1-Q6 and Q8 answered) |
 
 ---
 
