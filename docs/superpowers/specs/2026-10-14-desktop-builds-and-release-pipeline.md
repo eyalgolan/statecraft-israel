@@ -387,6 +387,9 @@ licensed and active; the choice is decision O11.
 
 ### 5.3 Minimum feature set
 
+Superseded for Steam by `docs/superpowers/specs/2026-11-01-steamworks-integration-design.md` (the owner's answers of 1
+November 2026, #2150): five achievements and Auto-Cloud at launch, uploads in GitHub Actions.
+
 | | Free release | Paid release |
 | --- | --- | --- |
 | Steamworks API in the game | None. Upload only needs the SDK's ContentBuilder | None required. Valve: everything beyond upload "is optional" |

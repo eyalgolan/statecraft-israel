@@ -420,6 +420,20 @@ public class Gdd03TrainingCentreFixtureTests
         Assert.Equal(PopulationStatus.Trainee, s.PopulationLedger.Get(1).Status);
     }
 
+    // R-TRAIN-008, #1716 Q43(b) (with #1668 Q41): only the courses already started "in that camp this month" count against
+    // a camp's beds. A course started this month in camp A takes none of camp B's, so camp B's last bed free at the
+    // opening still takes a course that month.
+    [Fact] public void ACourseStartedInAnotherCampThisMonthTakesNoneOfThisCampsBeds()
+    {
+        var c = Catalogue(); var s = State(c, Refugee(CampB), Refugee(CampB));
+        var f = new Gdd03TrainingCentreFixture(c, s, Centres());
+        var month = Month(s, 0);   // camp B: refugees 6 and 7 hold 2 of its 3 beds
+        f.Start(1, 0, CentreA, month);
+        f.Start(3, 2, CentreB, month);
+        Assert.Equal(PopulationStatus.Trainee, s.PopulationLedger.Get(3).Status);
+        Assert.Equal(CentreB, s.PopulationLedger.Get(3).Assignment.Target);
+    }
+
     // #1716 month snapshot, R-CITY-001/002 (owner-relayed Q34, 28 Oct 2026: a job change takes effect at once and the
     // same job again is a no-op). The month's work and course snapshot is taken after this turn's orders.
     [Fact] public void AJobChangeThisTurnIsInThisMonthsSnapshotAndTheSameJobAgainChangesNothing()

@@ -63,6 +63,8 @@ def write_editor_version(exe, version):
 class Fake:
     """Records every command and plays git, Unity and the player."""
 
+    steam_library = True
+
     def __init__(self, dirty="", golden_ok=True, build_ok=True, branch="main", tags=("v0.1.0",), worktrees=None,
                  build_raises=None, dirty_after="", on_origin_main=True):
         self.calls: list[list[str]] = []
@@ -105,6 +107,13 @@ class Fake:
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes(b"player " + target.name.encode())
             (target.parent / "event-photos.json").write_text("{}\n")
+            if "-steam" in cmd and self.steam_library:   # #2154's Build.cs ships Valve's plugin only in -steam builds
+                lib = {".app": "Contents/PlugIns/steam_api.bundle/Contents/MacOS/libsteam_api.dylib",
+                       ".exe": "../Statecraft_Data/Plugins/x86_64/steam_api64.dll",
+                       ".x86_64": "../Statecraft_Data/Plugins/libsteam_api.so"}[target.suffix]
+                path = (target / lib) if target.suffix == ".app" else (target.parent / lib[3:])
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(b"valve")
             log.write_text("BUILD Succeeded StandaloneOSX -> x: 1.0 MB on disk, 0 errors, 321s\n")
             if not self.build_ok:   # Unity failed, but a (partial or older) player is still there
                 log.write_text("BUILD Failed StandaloneOSX -> x: 0.0 MB on disk, 3 errors, 12s\n")
@@ -800,3 +809,196 @@ def test_the_golden_rule_wants_the_exact_bare_lines_the_player_prints():
     assert rb.golden_status(f"12:00:01 GOLDEN OK 1950 {H1950}\n12:00:02 GOLDEN OK 1952 {H1952}\n", 0, expected) == "fail"
     assert rb.golden_status(f"GOLDEN OK 1950 {H1950}a\nGOLDEN OK 1952 {H1952}\n", 0, expected) == "fail"
     assert rb.golden_lines(f"GOLDEN OK 1950 {H1950}a\n") == [f"GOLDEN OK 1950 {H1950}a"], "the record shows what was printed"
+
+
+# --- Steam (plan 2026-11-01-steamworks-integration Task 7, #2155) -------------------------------------------------------
+
+VALVE_NAMES = ["Statecraft_Data/Plugins/x86_64/steam_api64.dll", "Statecraft_Data/Plugins/steam_api.dll",
+               "Statecraft.app/Contents/PlugIns/steam_api.bundle/",
+               "Statecraft.app/Contents/PlugIns/steam_api.bundle/Contents/MacOS/libsteam_api.dylib",
+               "Statecraft_Data/Plugins/libsteam_api.so", "steam_appid.txt"]
+
+
+@pytest.mark.parametrize("name", VALVE_NAMES)
+def test_a_non_steam_archive_never_carries_valve_files(name):
+    clean = ["Statecraft.exe", "Statecraft_Data/Plugins/x86_64/lib_burst_generated.dll",
+             "Statecraft_Data/StreamingAssets/vehicle-steam-locomotive-1948-v2.bundle", "LICENSE"]
+    assert rb.refuse_valve_files(clean) is None
+    problem = rb.refuse_valve_files([*clean, name])
+    assert problem is not None and name in problem
+
+
+class ValveFake(Fake):
+    """A player build that leaves `extra` (a path relative to the player's folder) beside the player."""
+
+    def __init__(self, extra, **kw):
+        super().__init__(**kw)
+        self.extra = extra
+
+    def __call__(self, cmd, **kw):
+        result = super().__call__(cmd, **kw)
+        cmd = [str(c) for c in cmd]
+        if "-executeMethod" in cmd:
+            folder = Path(cmd[cmd.index("-out") + 1]).parent
+            (folder / self.extra).parent.mkdir(parents=True, exist_ok=True)
+            (folder / self.extra).write_text("valve")
+        return result
+
+
+def test_a_valve_file_in_a_github_archive_fails_the_build(repo, editor, monkeypatch, tmp_path, capsys):
+    out = tmp_path / "out"
+    fake = ValveFake("Statecraft_Data/Plugins/x86_64/steam_api64.dll")
+    assert run_main(["--platform", "windows", "--out", str(out)], repo, editor, fake, monkeypatch) == 1
+    assert "steam_api64.dll" in capsys.readouterr().err
+    assert not (out / "build-record.json").exists()
+
+
+def test_steam_folders_are_written_not_archived(repo, editor, monkeypatch, tmp_path, capsys):
+    out = tmp_path / "out"
+    assert run_main(["--platform", "all", "--steam", "--dry-run", "--out", str(out)], repo, editor, Fake(),
+                    monkeypatch) == 0
+    text = capsys.readouterr().out
+    builds = [line for line in text.splitlines() if "-executeMethod" in line]
+    assert len(builds) == 3 and all("-steam" in line.split() for line in builds)
+    for platform in ("windows", "mac", "linux"):
+        assert f"steam folder: {out / 'steam' / platform}" in text
+    assert "archive:" not in text
+    # A GitHub build never asks for the Steam define.
+    assert run_main(["--platform", "all", "--dry-run", "--out", str(out)], repo, editor, Fake(), monkeypatch) == 0
+    assert "-steam" not in capsys.readouterr().out
+    # The real run: one folder per platform with the player and the notices, and no archive anywhere.
+    assert run_main(["--platform", "all", "--steam", "--out", str(out)], repo, editor, Fake(), monkeypatch) == 0
+    for platform, player in (("windows", "Statecraft.exe"), ("linux", "Statecraft.x86_64"), ("mac", "Statecraft.app")):
+        folder = out / "steam" / platform
+        assert (folder / player).exists() and all((folder / n).is_file() for n in NOTICES)
+    assert not list(out.glob("*.zip")) and not list(out.glob("*.tar.gz"))
+    record = json.loads((out / "build-record.json").read_text())
+    assert record["steam"] is True and record["channel"] == "beta" and record["dev"] is False
+    for a in record["artifacts"]:
+        assert a["archive"] is None and a["steam_folder"] == f"steam/{a['platform']}"
+
+
+def test_every_steam_build_passes_the_steam_flag(repo, editor, monkeypatch, tmp_path):
+    fake = Fake()
+    assert run_main(["--platform", "all", "--steam", "--out", str(tmp_path / "out")], repo, editor, fake,
+                    monkeypatch) == 0
+    assert len(unity_calls(fake)) == 3 and all("-steam" in c for c in unity_calls(fake))
+
+
+def test_a_steam_folder_with_steam_appid_txt_is_refused(repo, editor, monkeypatch, tmp_path, capsys):
+    out = tmp_path / "out"
+    assert run_main(["--platform", "linux", "--steam", "--out", str(out)], repo, editor, ValveFake("steam_appid.txt"),
+                    monkeypatch) == 1
+    assert "steam_appid.txt" in capsys.readouterr().err
+    assert not (out / "build-record.json").exists()
+
+
+def test_a_steam_folder_may_carry_the_steam_library(repo, editor, monkeypatch, tmp_path):
+    out = tmp_path / "out"
+    fake = ValveFake("Statecraft_Data/Plugins/libsteam_api.so")
+    assert run_main(["--platform", "linux", "--steam", "--out", str(out)], repo, editor, fake, monkeypatch) == 0
+    assert (out / "steam/linux/Statecraft_Data/Plugins/libsteam_api.so").is_file()
+
+
+def test_a_dev_steam_build_is_recorded_as_dev(repo, editor, monkeypatch, tmp_path):
+    out = tmp_path / "out"
+    assert run_main(["--platform", "linux", "--steam", "--dev", "--out", str(out)], repo, editor, Fake(),
+                    monkeypatch) == 0
+    record = json.loads((out / "build-record.json").read_text())
+    assert record["steam"] is True and record["dev"] is True and record["shareable"] is False
+    # A GitHub release is not a Steam build and not dev.
+    out2 = tmp_path / "out2"
+    assert run_main(["--platform", "linux", "--out", str(out2)], repo, editor, Fake(), monkeypatch) == 0
+    plain = json.loads((out2 / "build-record.json").read_text())
+    assert plain["steam"] is False and plain["dev"] is False and plain["channel"] is None
+
+
+SETTINGS = "unity/ProjectSettings/ProjectSettings.asset"
+
+
+class StampFake(Fake):
+    """The nightly's clone: ProjectSettings.asset differs from HEAD only by tonight's bundleVersion stamp. `git show`
+    gives HEAD's text and `git checkout` restores it, as git would; each build records the bundleVersion it saw."""
+
+    def __init__(self, repo, head_text, **kw):
+        super().__init__(**kw)
+        self.repo, self.head_text, self.seen = repo, head_text, []
+
+    def __call__(self, cmd, **kw):
+        cmd = [str(c) for c in cmd]
+        if cmd[:2] == ["git", "show"]:
+            self.calls.append(cmd)
+            return rb.Result(0, self.head_text) if cmd[2] == f"HEAD:{SETTINGS}" else rb.Result(128, "")
+        if cmd[:2] == ["git", "checkout"]:
+            (self.repo / SETTINGS).write_text(self.head_text)
+        if "-executeMethod" in cmd:
+            self.seen.append(rb.versions()["bundle_version"])
+        return super().__call__(cmd, **kw)
+
+
+def stamped(repo, version="0.1.5", extra=""):
+    """The nightly's own stamp (tools/nightly.py), so the accepted shape is the one the nightly really writes."""
+    from nightly import stamp_bundle_version
+    head = (repo / SETTINGS).read_text()
+    stamp_bundle_version(repo / SETTINGS, version)
+    if extra:
+        (repo / SETTINGS).write_text((repo / SETTINGS).read_text() + extra)
+    return head
+
+
+def test_nightly_version_accepts_only_the_bundle_version_stamp(repo, editor, monkeypatch, tmp_path, capsys):
+    argv = ["--platform", "all", "--steam", "--tag", "v0.1.5", "--nightly-version", "0.1.5"]
+    head = stamped(repo)
+    fake = StampFake(repo, head, dirty=f" M {SETTINGS}\n", tags=("v0.1.5",))
+    out = tmp_path / "out"
+    assert run_main([*argv, "--out", str(out)], repo, editor, fake, monkeypatch) == 0
+    assert fake.seen == ["0.1.5"] * 3, "every Unity build carries tonight's version, not only the first"
+    record = json.loads((out / "build-record.json").read_text())
+    assert record["channel"] == "nightly" and record["tag"] == "v0.1.5" and record["nightly_version"] == "0.1.5"
+    assert record["version"]["bundle_version"] == "0.1.5" and record["tree_clean"] is True
+    # A clean tree (the nightly restores its stamp after the web builds) is accepted too.
+    (repo / SETTINGS).write_text(head)
+    fake = StampFake(repo, head, tags=("v0.1.5",))
+    assert run_main([*argv, "--out", str(tmp_path / "clean")], repo, editor, fake, monkeypatch) == 0
+    assert fake.seen == ["0.1.5"] * 3
+    capsys.readouterr()
+
+
+@pytest.mark.parametrize("case", ["other-file", "other-version", "other-line"])
+def test_nightly_version_refuses_any_other_change(repo, editor, monkeypatch, tmp_path, capsys, case):
+    argv = ["--platform", "linux", "--steam", "--tag", "v0.1.5", "--nightly-version", "0.1.5",
+            "--out", str(tmp_path / "out")]
+    dirty = f" M {SETTINGS}\n"
+    if case == "other-file":
+        head, dirty = stamped(repo), dirty + " M content/events/x.yaml\n"
+    elif case == "other-version":
+        head = stamped(repo, "0.1.6")
+    else:
+        head = stamped(repo, extra="  companyName: Someone\n")
+    fake = StampFake(repo, head, dirty=dirty, tags=("v0.1.5",))
+    assert run_main(argv, repo, editor, fake, monkeypatch) == 1
+    assert unity_calls(fake) == [] and "REFUSED" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("argv", [
+    ["--tag", "v0.1.5", "--nightly-version", "0.1.5"],                       # not a Steam build
+    ["--steam", "--dev", "--nightly-version", "0.1.5"],                      # a nightly is not a dev build
+    ["--steam", "--tag", "v0.1.6", "--nightly-version", "0.1.5"],            # the tag is the nightly's own
+    ["--steam", "--tag", "v0.1.5-x", "--nightly-version", "0.1.5-x"],        # X.Y.Z only
+])
+def test_nightly_version_needs_steam_and_its_own_tag(repo, editor, monkeypatch, tmp_path, argv):
+    fake = Fake(tags=("v0.1.5", "v0.1.6", "v0.1.5-x"))
+    assert run_main(["--platform", "linux", *argv, "--out", str(tmp_path / "out")], repo, editor, fake,
+                    monkeypatch) == 1
+    assert unity_calls(fake) == []
+
+
+@pytest.mark.parametrize("platform", ["windows", "linux", "mac"])
+def test_a_steam_folder_without_valves_library_is_refused(repo, editor, monkeypatch, tmp_path, capsys, platform):
+    # Review I4 (#2155): a --steam run whose players lack Steam (an editor without #2154's -steam handling) must not
+    # produce folders that look uploadable.
+    class NoLibrary(Fake):
+        steam_library = False
+    out = tmp_path / "out"
+    assert run_main(["--platform", platform, "--steam", "--out", str(out)], repo, editor, NoLibrary(), monkeypatch) == 1
+    assert "Steam library" in capsys.readouterr().err and not (out / "build-record.json").exists()
