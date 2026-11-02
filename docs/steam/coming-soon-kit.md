@@ -348,6 +348,86 @@ October 2026). The same page says some content is not allowed for sale in German
 (RELEASING.md; Valve's survey page). Re-check if the GDD's settlement-control rules ship: the Deport outcome then
 needs its own line (store-page-draft.md section 6).
 
+### Answers with evidence (approved by the owner, 1 November 2026)
+
+**Approved by the owner on 1 November 2026** ("Approve as drafted"; for "Frequent Violence or Gore", "Tick it
+(Recommended)"; both relayed by the coordinator). An agent drafted these from the repository at `main` `709e7ddc`;
+nothing here has been entered in Steamworks, and the owner enters the survey. The open items at the end of this
+subsection are not settled by that approval. Where
+this subsection and the table above differ, this one is newer: the table was written at `c0a38256`, before the game ran
+the GDD loop with combat, captures and prisoners (`content/eras.yaml:15`, `systems: { loop: gdd }`). Every citation is
+`file:line` at `709e7ddc`; re-check each against the first Steam build before submitting. Where an answer was unclear,
+the draft took the more cautious disclosure and says why.
+
+What the build contains that the table above does not mention:
+
+- **Combat the player orders.** A player unit can attack an adjacent enemy unit (artillery from range); losses are stated
+  in people, and units can be destroyed, retreat or surrender (`sim/Statecraft.Sim/Combat.cs:8-12`;
+  `unity/Assets/UI/strings.en.yaml:113`, the advisor's combat page; `strings.en.yaml:373-376`, "{0} was destroyed",
+  "surrendered with {1:N0} people"; `strings.en.yaml:676`, "you lose {2:N0} people, they lose {3:N0}"). Enemy units
+  attack too (`content/rules.yaml:211-215`). Combat never targets a city, its residents or the score
+  (`Combat.cs:11-12`; `strings.en.yaml:113`). An attacked hex shows grey smoke and a warm glow, "kept calm, not
+  cinematic" (`unity/Assets/Scripts/Map/HexTiles/Core/HexUnderAttack.cs:13`; `Map/UnderAttackLayer.cs:12`). Map units
+  are 3D figures of soldiers, among them Arab armies' infantry (`unity/Assets/Art/Collection/figure-ala-infantry-1948-v1/`
+  and its neighbours) **[confirm which appear in play]**.
+- **Prisoners of war.** A surrender takes prisoners, held on Food and returned by exchange cards
+  (`sim/Statecraft.Sim/Prisoners.cs:8-13`; `strings.en.yaml:325-331`, `940-941`).
+- **Capturing Arab towns.** When Israeli units hold an enemy-held town (Acre, Nazareth, Lod, Ramla, Gaza, Beersheba:
+  `content/rules.yaml:172`), the player chooses "Raid and withdraw" or "Occupy", and later "Annex"
+  (`strings.en.yaml:226-254`). Several towns' residents are recorded as having fled at capture
+  (`content/settlement_targets.yaml:25`, `80`, `95`, `109`), which the game says in play (`strings.en.yaml:254`) and
+  marks on the map as "Depopulated" (`strings.en.yaml:276`).
+- **Deport is in the build but switched off.** The option, its description ("The residents are displaced, and the place
+  is depopulated", `strings.en.yaml:229`, `232`) and its rules ship in the code (`sim/Statecraft.Sim/SettlementControl.cs:69`,
+  `120-124`), but `mvp.deport_in_play: false` (`content/rules.yaml:253-256`) refuses it, and the dialog does not show it
+  (`unity/Assets/Scripts/UI/CaptureDialogPresenter.cs:18-19`). Valve asks for content "even if it's not accessible", so
+  the draft discloses it.
+- **Sensitive events.** Seven events carry `war-casualties`: `ten_days.yaml:11`, `degania_defence.yaml:12`,
+  `altalena.yaml:12`, `operation_yoav.yaml:11`, `operation_hiram.yaml:10`, `operation_horev.yaml:10` and
+  `burma_road_complete.yaml:24` (all in `content/events/`). One carries `terror` (`bernadotte_assassination.yaml:11`) and
+  two `holocaust` (`reparations_claim.yaml:10`, `reparations_vote.yaml:13`). The table above counted five, one and one.
+
+| Topic | Answer | Evidence (`file:line` at `709e7ddc`) | Why, and what is unsure |
+| --- | --- | --- | --- |
+| Violence | **Yes: war violence, historical and non-graphic.** The player orders attacks between military units on a hex map; losses are numbers of people; war, an assassination and deaths are described in text. No injury, death or body is shown. | Combat and its text, above; `bernadotte_assassination.yaml:4` ("Lehi gunmen assassinated the UN mediator"); `burma_road_complete.yaml:7` ("those killed in the convoy"); photo alt texts with no injury or body (`unity/Assets/UI/EventImages/event-images.yaml:55`, `69`, `124`, `152`, `180`, `396`); clips: a burning ship at a distance and a tank "halted and smoking" (`docs/event-videos.md:68-69`, `87-90`). | If a question asks whether the violence is against humans or realistic, answer yes for both: the soldiers are people and the war is real, even though the depiction is abstract. |
+| "Frequent Violence or Gore" (Mature Content) | **Tick it**, with the description below (owner, 1 Nov 2026, "Tick it (Recommended)"). | Combat is a regular player action through the war turns (above); the seven `war-casualties` events. | There is no gore at all; it is ticked because combat is a core loop, not an occasional scene. Ticking hides the game only from players who filter that out. |
+| Blood and gore | **None.** | No blood or body in any photograph alt text (`event-images.yaml`) or clip description (`docs/event-videos.md:62-93`); combat shows smoke and a glow only (`HexUnderAttack.cs:13`). | The alt texts and descriptions are text; the owner should look at the 29 photographs and the clips once before submitting **[confirm]**. |
+| Sexual content, nudity | **None.** | `grep -i -w -E 'sex\|sexual\|nude\|naked\|rape'` over `content/events/`, `unity/Assets/UI/strings.en.yaml` and `event-images.yaml` finds nothing. | |
+| Drugs, alcohol, tobacco | **Alcohol reference: yes (cautious). Drugs: none. Tobacco: unsure.** A city can build "a winery" as an industry; no drinking is shown. | `content/projects.yaml:25` (`id: winery`); `content/cities.yaml:80-82` (Rishon LeZion's vineyards). No drug word in `content/`. | The winery is an economic building, but some boards count any alcohol reference. Tobacco: nobody has checked the 29 archival photographs for a cigarette **[confirm]**. |
+| Gambling | **None.** No wagering, no money, no loot boxes, no casino. | Combat draws one random number per engagement from a die-like table (`content/rules.yaml:190-210`, "per face"; `sim/Statecraft.Sim/Combat.cs:294`); this is a game mechanic, not gambling. | |
+| Strong language | **None.** | The same `grep` with common profanity finds nothing. | |
+| Real-world conflict and sensitive themes | **Yes, central.** The Arab-Israeli war of 1948 and after, from the Israeli government's perspective, which the game says; Arab armies and Palestinian actors are computer-run enemies; the player captures Arab towns, some depopulated; prisoners of war; terror (one event); the Holocaust as a reference (two events); deaths in war (seven events). Deport (displacement of a town's residents) is in the build, switched off and hidden. | `docs/CONTENT_POLICY.md:7-17` (perspective; Arab and Palestinian actors computer-run at `:13`); `Combat.cs:23-25` (the Arab sides fight as one team); the capture, Deport, prisoner and event lines above; "Arab refugees" as a party in the model (`content/model.yaml:67`). | **OWNER: sensitive.** The most likely answer to draw reviewer questions and reports. The mature-content description should name captures and depopulated towns, and Deport while it ships in the build (store-page-draft.md section 6 already proposes a Deport sentence). |
+| Holocaust and Nazi symbols | Reference only: the reparations claim and vote, as text and a photograph of a 1952 protest. No camps, no swastikas. | `reparations_claim.yaml:4`; `event-images.yaml:410`; `docs/CONTENT_POLICY.md:38` ("shown without swastikas"). | Germany: see the note above. |
+| Real people | Real historical figures in their public roles; ratings are game balance. | `docs/CONTENT_POLICY.md:39-41`; `content/people.yaml`. | Living people: CONTENT_POLICY says the maintainer does not add them; not re-checked person by person here **[confirm]**. |
+| User-generated content | **None.** No mods, no workshop, no level sharing. The map editor is a Unity editor window for developers, not in the game. | `docs/GDD.md:222` ("a Unity editor window saves `content/map/overrides.yaml`"); the game saves only its own autosave (`unity/Assets/Scripts/SaveStore.cs:15`). | |
+| User interaction, online | **None in the game.** Single-player, no chat, no multiplayer. The share buttons open a social site in the browser only when pressed. On Steam, Steam's own achievements and Steam Cloud. | `unity/Assets/Scripts/UI/ShareShot.cs:21`, `28` (the itch link and the six site buttons); `docs/steam/README.md`, "Achievements" and "Steam Cloud" (PR #2165). | The share buttons send nothing from the game; the player posts on the site. |
+| In-game purchases | **None.** Free; no purchase, no DLC, no currency. | O2 in `docs/oss/DECISIONS.md`; no purchasing package in `unity/Packages/manifest.json` (`grep -c -i -E 'purchas\|com.unity.ads'` gives 0). | |
+| Advertising | **None.** | The same `grep`: no ads package. | |
+| Data collection | **Point to the privacy statement:** `docs/steam/privacy.md` (PR #2165). The game collects nothing of its own; Unity's engine analytics and diagnostics settings are on and named there (owner, 1 Nov 2026, "Name them"). | `unity/ProjectSettings/ProjectSettings.asset:96` (`submitAnalytics: 1`); `unity/ProjectSettings/UnityConnectSettings.asset:15` (`m_EngineDiagnosticsEnabled: 1`); `unity/Packages/manifest.json:31` (`com.unity.modules.unityanalytics`). | Do not answer "collects no data" without the Unity caveat; say what the privacy page says and no more. |
+| Generative AI | Unchanged from the table above: Pre-Generated yes (section 4), Live-Generated no. | Section 4 of this file. | |
+
+**Mature-content description** (approved with the survey on 1 November 2026; it extends store-page-draft.md section 6
+with the combat and capture facts above, and leaves Deport to the open item below):
+
+> Statecraft: Israel depicts real events of 1948-1951 from the perspective of Israel's government, including war,
+> terror attacks, refugees and displacement, and references to the Holocaust. The player commands military units in
+> abstract turn-based combat, takes prisoners of war and decides the fate of captured towns, some of whose residents
+> fled. These are shown through sourced text, archival photographs and a symbolic map, not graphic violence. Some
+> decision cards can also show a short, silent, AI-generated illustration, labelled as such in the game. Real
+> historical figures appear in their public roles; their in-game ratings are game balance, not judgements of the
+> people.
+
+**Open items** (not settled by the approval; settle each before submitting):
+
+- **Deport: OPEN, owner decision pending.** While Deport ships in the build, even switched off, either the description
+  gets the sentence store-page-draft.md section 6 proposes for it, or the option and its strings leave the build first.
+  The owner has not chosen, and the agents do not choose.
+- **The photographs and clips:** nobody has yet looked at the 29 archival photographs and the clips for blood, a
+  cigarette or other tobacco, or a Nazi symbol; the answers above rest on their alt texts and descriptions.
+- **Living people:** `content/people.yaml` has not been checked person by person.
+- **Unit figures:** which 3D soldier figures appear in play (above).
+- **The Steam build:** re-check every citation against the first Steam build.
+
 ## 6. Tags, languages and platforms
 
 **Tags** (Steam lets the developer pick up to 20 from its list; pick in Steamworks **[confirm]** the names there):
