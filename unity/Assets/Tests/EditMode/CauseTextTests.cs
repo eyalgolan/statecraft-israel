@@ -299,7 +299,7 @@ public class CauseTextTests
         var lines = new[]
         {
             new Cause("economy", "treasury", -7.665, $"{PlayerText.Change(C, "treasury", -7.665)} (housing surcharge)", key: CauseKeys.HousingSurcharge),
-            new Cause("cities", "morale", -0.01, $"{PlayerText.Change(C, "morale", -0.01)} (housing condition)", key: CauseKeys.HousingCohesion),
+            new Cause("city", "morale", -0.01, $"{PlayerText.Change(C, "morale", -0.01)} (housing condition)", key: CauseKeys.HousingCohesion),
         };
         var en = En; var he = He;
         foreach (var line in lines)

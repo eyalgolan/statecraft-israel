@@ -276,7 +276,7 @@ namespace Statecraft.Sim
             {
                 var moved = EffectsSystem.Shift(c, s, CohesionIndicator, -cohesion / 100.0);
                 if (moved != 0)
-                    why.Add(new Cause("cities", CohesionIndicator, moved, $"{PlayerText.Change(c, CohesionIndicator, moved)} (housing condition)", key: CauseKeys.HousingCohesion));
+                    why.Add(new Cause("city", CohesionIndicator, moved, $"{PlayerText.Change(c, CohesionIndicator, moved)} (housing condition)", key: CauseKeys.HousingCohesion));
             }
         }
 
