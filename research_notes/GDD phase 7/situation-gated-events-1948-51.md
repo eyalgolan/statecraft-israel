@@ -181,9 +181,10 @@ window's last day. A card here would be the arc's second step, or folded into `h
      pending] So the copies marked "Distr. GENERALE" / "GENERAL" carry 12 July 1951 as their date, the same day as the Digital Library
      document date; as translations they may repeat the original's date rather than record their own issue day. That is
      consistent with 12 July being the day the document was issued to the Council in general distribution, no more; it is a reading of a header, not a statement: no copy gives a receipt or circulation line, and the
-     President's receipt day stays **not found**. The English mimeograph and the Arabic copy were not read (the Arabic
-     download was only 1.3 KB).
-
+     President's receipt day stays **not found**. The English mimeograph was not found: the `l=en` URL serves
+     the Official Records reprint (pp. 9-10) described above. The `l=es` and `l=zh` copies are Official Records reprints too, with
+     "[12 de julio de 1951]" and "[一九五一年七月十二日]" under the heading and no "Distr." line. The API has no Arabic copy: `l=ar` is
+     redirected to `https://documents.un.org/error` and returns a 1,303-byte HTML error page, not a PDF.
   2. **The Council's meetings.** The item, "(a) Restrictions imposed by Egypt on the passage of ships through the
      Suez Canal (S/2241)", is on the agenda of the 549th meeting, **26 July 1951**; at that meeting the Council invited
      the representatives of Israel, Egypt and Iraq to take part without vote (UNSC 95 compilation, "Decision"). The
