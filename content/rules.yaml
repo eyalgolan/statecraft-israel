@@ -26,7 +26,7 @@ attention_cost:
   cancel_project: 0.5                    # DESIGN VALUE: owner-set balance, not a historical figure (D-A6, D-C5, Q-PROJ-5: cancel_training's cost)
   move: 0                                # DESIGN VALUE: owner-set balance, not a historical figure (D-A6: unit orders are free)
   buy_arms: 1                            # DESIGN VALUE: owner-set balance, not a historical figure (D-A6, D-G6, #781: one order, whatever the quantity)
-  convert_dollars: 0                     # DESIGN VALUE: owner-set balance, not a historical figure (D-A6, D-C3, #813: the war months' cards already take all of Attention in 5 of 11 turns, so the lever is free; owner 2 November 2026 on #2204: "Keep 0 (Recommended)")
+  convert_dollars: 0                     # DESIGN VALUE: owner-set balance, not a historical figure (D-A6, D-C3, #813: the war months' cards already take all of Attention in 5 of 11 turns, so the lever is free; owner 2 November 2026 on #2204: "Keep 0", the recommended option)
   resolve_capture: 0                     # DESIGN VALUE: owner-set balance, not a historical figure (D-A6: unit orders are free; Q-TECH-3: one key, so Raid, Occupy and Deport cost the same; proposed on #797)
   end_occupation: 0                      # DESIGN VALUE: owner-set balance, not a historical figure (D-A6: unit orders are free; R-CTRL-014: one key for Annex and Withdraw, as resolve_capture; proposed on #799)
 # Turn length on each security rung, rungs 1 to 5 (R-TURN-001). The GDD MVP plays monthly turns on every rung (D-B1), so
