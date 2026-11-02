@@ -109,7 +109,7 @@ namespace Statecraft.Game.UI
                 if (id == "cohesion" && !m.ShowsCohesion) continue;
                 var meter = m.For(id);
                 if (meter.Delta.Length == 0) continue;
-                lines.Add(new Line(id, text.Format("report.line", text["hud.caption." + id], meter.Delta), HudModel.Causes(bridge.Session.Last, id,
+                lines.Add(new Line(id, text.Format("report.line", text["hud.caption." + id], meter.Delta), HudModel.Causes(bridge.Session.Last, id, bridge.Content,
                     w => CauseText.Line(w, bridge.Content, units ?? Array.Empty<UnitEntry>(), text, townNamesHe))));
             }
             lines.AddRange(StockLines(bridge, text, units, townNamesHe));
