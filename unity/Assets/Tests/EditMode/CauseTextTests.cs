@@ -307,6 +307,9 @@ public class CauseTextTests
             Assert.AreEqual(line.Message, CauseText.Line(line, C, NoRows, en), line.Key);
             AssertHebrew(CauseText.Line(line, C, NoRows, he), line.Key);
         }
+        // The owner's word for the surcharge, 2 Nov 2026: "היטל דיור (Recommended)".
+        var surcharge = CauseText.Line(lines[0], C, NoRows, he);
+        Assert.IsTrue(surcharge.IndexOf("היטל דיור", StringComparison.Ordinal) >= 0, surcharge);
     }
 
     static void AssertHebrew(string line, string key)

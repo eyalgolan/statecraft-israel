@@ -235,6 +235,8 @@ namespace Statecraft.Sim
                 var over = Overflow(s, x);
                 if (gdd03 != null && x.Condition is double was)
                 {
+                    // R is the city's housed people after this step's housing arrivals (27M-15; owner, 2 November 2026:
+                    // "After housing arrivals (Recommended)"), for the surcharge, the overflow and the cohesion term alike.
                     var h = gdd03.EvaluateTurn(Housed(s, x), people, x.HousingCapacity, was);
                     surcharge += h.Surcharge;
                     cohesion += h.Cohesion;
@@ -283,7 +285,9 @@ namespace Statecraft.Sim
 
         /// <summary>R-HOUSE-005 (#1703): P, all own population in units: every city's housed people and refugees, and the
         /// strength of every player unit, wherever it stands: the Israeli formations and the halutz units, which have no side
-        /// (R-UNIT-001). Summed as integers.</summary>
+        /// (R-UNIT-001). Summed as integers. The owner was asked: "Should P be the 12 cities' people plus units (the PR today),
+        /// or the national population (649,400 at start, which cuts the loss by ~20%)?" and answered, 2 November 2026: "The 12
+        /// cities' people (Recommended)"; the option read: "As built: only the cities whose housing is tracked."</summary>
         public static int OwnPopulation(GameState s)
         {
             var n = 0;

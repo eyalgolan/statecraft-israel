@@ -44,8 +44,8 @@ public class Gdd03HousingConditionTests
         return why;
     }
 
-    // R-HOUSE-002 (#1703 Q1 default: the issue's 5 pp overflow, gdd-0.3 only): housed 10 over a capacity of 8 loses
-    // 5 pp x 2/10 = 0.01 of condition under gdd-0.3; gdd-0.1 keeps overflow_condition_loss 0.15, so 0.15 x 2/10 = 0.03.
+    // R-HOUSE-002 (#1703 Q1, owner, 2 November 2026: "Yes, 5 pp under GDD 0.3 (Recommended)"): housed 10 over a
+    // capacity of 8 loses 5 pp x 2/10 = 0.01 of condition under gdd-0.3; gdd-0.1 keeps overflow_condition_loss 0.15, so 0.15 x 2/10 = 0.03.
     [Fact]
     public void Gdd03OverflowLosesFivePpTimesTheOverflowShare()
     {
@@ -109,8 +109,9 @@ public class Gdd03HousingConditionTests
         Assert.Equal(t, s.Treasury);
     }
 
-    // R-HOUSE-005 (#1703 Q1 default: the issue's cohesion term): 2 x sum((R/P) x max(0, (0.25 - c) / 0.25)) points, from the
-    // condition after the turn's deterioration, applied once. One city with all the population at 0.125: 2 x 1 x 0.5 = 1
+    // R-HOUSE-005 (#1703 Q1, owner, 2 November 2026: "Yes, 5 pp under GDD 0.3 (Recommended)"; the issue's cohesion
+    // term): 2 x sum((R/P) x max(0, (0.25 - c) / 0.25)) points, from the condition after the turn's deterioration, applied
+    // once. One city with all the population at 0.125: 2 x 1 x 0.5 = 1
     // point, so Social cohesion (morale) falls by 0.01.
     [Fact]
     public void Gdd03CohesionLosesTwoPointsAtMostWeightedByResidents()

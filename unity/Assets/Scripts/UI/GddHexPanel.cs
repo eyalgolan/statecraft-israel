@@ -91,7 +91,8 @@ namespace Statecraft.Game.UI
         static void City(VisualElement host, SimBridge bridge, UiText text, string id)
         {
             var c = bridge.Content; var s = bridge.State; var city = s.Cities[id];
-            // R-HOUSE-003: the housed are the civilians, the recruits and the groups in training (Cities.Housed), against the
+            // R-HOUSE-003: the housed are the civilians, craftsmen, recruits and groups in training, and under gdd-0.1 the
+            // city's Israeli formations too (Cities.Housed), against the
             // capacity; R-HOUSE-001: the city's housing condition, 0 to 1, through the one percent formatter, on the same line
             // so the panel is no taller (the GDD loop always has a condition; the plain form is for a city without one).
             var housed = Cities.Housed(s, city); var capacity = Groups(text, city.HousingCapacity);
@@ -108,9 +109,12 @@ namespace Statecraft.Game.UI
             var waiting = Row(host, "city-waiting-row"); waiting.AddToClassList(PairsClass);
             Line(waiting, "city-refugees", text.Format("city.refugees", Groups(text, city.Refugees)));
             Line(waiting, "city-overflow", text.Format("city.overflow", Cities.Overflow(s, city)));
-            // #1345: trained recruits are formations housed in their home city since #1130, so the line counts every Israeli
-            // formation the city houses (Cities.Soldiers, part of Cities.Housed), not City.Recruits, which nothing writes now.
-            Line(host, "city-soldiers", text.Format("city.soldiers", Groups(text, Cities.Soldiers(s, city))));
+            // #1345: under gdd-0.1 trained recruits are formations housed in their home city since #1130, so the line counts
+            // every Israeli formation the city houses (Cities.Soldiers, part of Cities.Housed), not City.Recruits, which nothing
+            // writes now. Under gdd-0.3 formations are not housed (R-HOUSE-003, 27M-18; #1703), so there is no such line: the
+            // housing line above already shows the gdd-0.3 housed count.
+            if (c.Ruleset != SaveGame.Gdd03Ruleset)
+                Line(host, "city-soldiers", text.Format("city.soldiers", Groups(text, Cities.Soldiers(s, city))));
 
             // The Assign stepper: the ordered count (or the current one), one group a press, within R-CITY-001's limits as
             // the sim gives them with this turn's Train orders; stepping back to the current count withdraws the order.
