@@ -248,3 +248,40 @@ locations:
   - { url: 'https://www.wikidata.org/wiki/Q25487984', checked: 2026-10-31 } # coordinates (P625): the modern heritage site; the statement has no reference
   - { url: 'https://en.wikipedia.org/wiki/Operation_Uvda', checked: 2026-10-31 } # English name "Umm Rashrash"
   status: draft
+
+- id: nirim
+  name: Nirim
+  name_he: נירים
+  name_he_review: agent-checked
+  name_he_sources:
+  - { url: 'https://benyehuda.org/read/14684', checked: 2026-11-01 } # Gvati: "קיבוץ נירים בדנגור"
+  - { url: 'https://palmach.org.il/history/database/?itemId=6201', checked: 2026-11-01 } # "הדפה נירים התקפה של הצבא המצרי"
+  kind: kibbutz
+  # The 1948 site at Dangur, where kibbutz Nir Yitzhak stands today; Nirim moved after the war (the CBS file gives both
+  # kibbutzim 1949). The point is the CBS point of Nir Yitzhak (ITM 138783 572100, converted from EPSG:2039 to EPSG:4326
+  # with pyproj), not present-day Nirim's. Research: research_notes/Map/d5-southern-coast-negev-housing-1948.md (#2111),
+  # section 5.
+  lon: 34.3576484
+  lat: 31.2376769
+  q: -14
+  r: 31
+  priority: optional # DESIGN VALUE: owner ruling on #2136, 1 November 2026, "Optional (Recommended)".
+  marker: true # DESIGN VALUE: this record is a map marker.
+  managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
+  designated_site: false # DESIGN VALUE: this existing kibbutz is not a founding site.
+  settlement_control_target: false # DESIGN VALUE: map inclusion does not add a capture target.
+  # starting_control (owner ruling on #2136, 1 November 2026, "Israeli at the start (Recommended)"): Nirim repelled the
+  # Egyptian attack of 15 May 1948 and held to the end of the war (Palmach Heritage itemId=6201; Gvati; JTA 17-18 May
+  # 1948, all in sources below). control_1948_49.geojson pins its hex blue for 15 May - 10 June 1948 on the same sources.
+  starting_control: israeli
+  control_date: 1948-05-15
+  sources:
+  - { url: 'https://www.cbs.gov.il/he/publications/doclib/2019/ishuvim/bycode2024.xlsx', checked: 2026-11-01 } # coordinates: Nir Yitzhak (code 402)
+  # Gvati, 100 Years of Settlement, vol. 2: the Egyptians attacked "קיבוץ נירים בדנגור (כיום יושב במקום קיבוץ ניר־יצחק)"
+  # together with Kfar Darom ("ב־15.5"); after the war "קיבוץ ניר־יצחק עלה לדנגור במקום קיבוץ נירים".
+  - { url: 'https://benyehuda.org/read/14684', checked: 2026-11-01 }
+  - { url: 'https://palmach.org.il/history/database/?itemId=6201', checked: 2026-11-01 } # "ב-15 למאי 1948 הדפה נירים התקפה של הצבא המצרי."
+  - { url: 'https://www.palmach.org.il/en/history/database/?itemId=8475', checked: 2026-11-01 } # the English spelling: "Kibbutz Nirim was founded on the Dangur lands"
+  - { url: 'https://www.jta.org/archive/u-s-attitude-on-arab-invasion-of-israel-will-be-revealed-at-security-council-today', checked: 2026-11-01 } # JTA, 17 May 1948: "the Negev settlement of Nirim"
+  - { url: 'https://www.jta.org/archive/control-center-of-jerusalem-tel-aviv-hospital-bombed-casualties-heavy', checked: 2026-11-01 } # JTA, 18 May 1948: "a two-day battle at the Nirim settlement"
+  status: draft

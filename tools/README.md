@@ -220,9 +220,11 @@ and what is public are in `docs/RELEASING.md`, "Nightly builds". It runs on the 
   `launchd.log` and `no-mcp-server`. A corrupt `config.json` or `state.json` refuses the night; it never counts as a
   first night.
 - itch.io pushes stay off (`itch_enabled` is false) until the save test passes: set `itch_page_url` in `config.json`
-  to the itch page, then, from the clone and after the first PUBLISHED night,
-  `uv run tools/nightly.py savetest --tag <that nightly's tag>`. It pushes to the public itch page twice and, on a
-  pass, turns `itch_enabled` on in `config.json`. `INCONCLUSIVE` and `FAIL` leave itch off.
+  to the itch page, and `savetest_itch_target` (`user/project:channel`) and `savetest_itch_page_url` to a separate
+  test page, then, from the clone and after the first PUBLISHED night,
+  `uv run tools/nightly.py savetest --tag <that nightly's tag>`. It pushes to the test page twice, never to the public
+  page, and refuses to run without those two keys or if they name the public page. On a pass, it turns `itch_enabled`
+  on in `config.json`. `INCONCLUSIVE` and `FAIL` leave itch off.
 - The boot-time baseline is the median headless boot of the first 5 PUBLISHED nights; later nights must stay within
   the spread of those 5. To measure it again (a new machine, a new Chrome), delete `boot_baseline` from `state.json`;
   the next 5 published nights record it.

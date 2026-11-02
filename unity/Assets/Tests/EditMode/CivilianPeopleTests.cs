@@ -501,7 +501,7 @@ public sealed class CivilianPeopleTests
         placed.UnionWith(CivilianPeople.Models);
         placed.UnionWith(RuralLife.Models);
         placed.UnionWith(new[] { WildlifeLayer.Ibex, WildlifeLayer.Hyena });
-        placed.UnionWith(new[] { SeaAirCollection.Altalena, SeaAirCollection.FishingBoat, SeaAirCollection.Steamer, SeaAirCollection.C54 });
+        placed.UnionWith(new[] { SeaAirCollection.Altalena, SeaAirCollection.FishingBoat, SeaAirCollection.Steamer, SeaAirCollection.C54, SeaAirCollection.Spitfire });
         placed.UnionWith(new[] { Statecraft.Game.Map.Routes.ServiceTrain.ModelId, Statecraft.Game.Map.Routes.RoadVehicles.CitrusTruck,
             Statecraft.Game.Map.Routes.RoadVehicles.CanvasLorry, Statecraft.Game.Map.Routes.RoadVehicles.SandwichConvoy,
             Statecraft.Game.Map.Routes.RoadVehicles.IntercityBus });

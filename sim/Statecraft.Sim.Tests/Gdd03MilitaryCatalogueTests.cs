@@ -15,12 +15,16 @@ public class Gdd03MilitaryCatalogueTests
     {
         var c = Catalogue(); var terms = Gdd03MilitaryCatalogue.Read(c);
         // content/gdd03-balance.yaml:307-354; #1668 balance.md:129-137.
-        Assert.Equal(5, terms.CampCapacity); Assert.Equal(3, terms.BasicTurns);
+        // camp_capacity: #1668's 5 places at 10,000 people a unit is 50 units at 1,000 a unit (owner, 1 November 2026:
+        // "Main's base x 0.3's tiers (Recommended)"; #2112).
+        Assert.Equal(50, terms.CampCapacity); Assert.Equal(3, terms.BasicTurns);
         Assert.Equal(1, terms.IssueArms); Assert.Equal(0, terms.RepeatIssueArms);
         Assert.Equal(0m, terms.DraftMoney); Assert.Equal(0, terms.DraftWait);
         Assert.Equal(0m, terms.DemobiliseMoney); Assert.Equal(0, terms.DemobiliseWait);
-        Assert.Equal(1, terms.DemobiliseReturnArms); Assert.Equal(0m, terms.TrainingMoney);
-        Assert.Equal(1m, terms.ActiveMoney);
+        // Basic training 0.5 Money and the active army 0.05 Money a unit a turn: owner ruling, 30 October 2026,
+        // "Keep the set values (Recommended)" (#2115), not Amir's 0 / 1.
+        Assert.Equal(1, terms.DemobiliseReturnArms); Assert.Equal(0.5m, terms.TrainingMoney);
+        Assert.Equal(0.05m, terms.ActiveMoney);
         c.Values["military.issue_arms"].Values[0] = 99; // synthetic mutation after read
         Assert.Equal(1, terms.IssueArms);
         Assert.Equal("Deferred", c.Values["start.army"].Basis);
@@ -189,7 +193,7 @@ public class Gdd03MilitaryCatalogueTests
     {
         var catalogue = Catalogue(); var capacity = catalogue.Values["military.camp_capacity"];
         catalogue.Values.Clear(); catalogue.Values.Add("military.camp_capacity", capacity);
-        Assert.Equal(5, Gdd03MilitaryCatalogue.ReadCampCapacity(catalogue));
+        Assert.Equal(50, Gdd03MilitaryCatalogue.ReadCampCapacity(catalogue)); // #2112: 50 units at 1,000 people a unit
         Assert.Throws<ContentException>(() => Gdd03MilitaryCatalogue.Read(catalogue));
         capacity.Values[0] = 0;
         Assert.Throws<ContentException>(() => Gdd03MilitaryCatalogue.ReadCampCapacity(catalogue));
