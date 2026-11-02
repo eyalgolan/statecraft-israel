@@ -1,6 +1,7 @@
 # yaml-language-server: $schema=schema/regions.schema.json
-# The nine gdd-0.3 player regions (#1691). Exact gdd-0.3 only: legacy and gdd-0.1 never read this file. Geography only:
-# no capacities, residents or opening allocation, and nothing initializes regions in a new game yet (#1689).
+# The nine gdd-0.3 player regions (#1691). Exact gdd-0.3 only: legacy and gdd-0.1 never read this file. Geography and
+# the approved opening field hexes only: no capacities, residents or other opening allocation, and nothing initializes
+# regions in a new game yet (#1689).
 # Built from research_notes/gdd03-regions.schema-input.yaml (the owner-approved 27 October 2026 draft, extents from
 # sub-districts: "C: sub-district, then Amir adjusts", 30 October 2026) with these owner rulings of 2 November 2026:
 # - Q1 "Accept localities": a member may be a locality (map/localities_1948.yaml), placed by map/locality_hexes.yaml.
@@ -11,17 +12,21 @@
 #   region's hexes stands on a hex another region holds, so each moves to that region (marked below) and no hex joins.
 # - Q3 "All nine drafts as labels": capital_location is each region's LABEL place, kept because the loader requires one.
 #   It is NOT the regional-capital model the owner declined on 30 October 2026 (docs/GDD.md, "Regional-capital model"):
-#   no capital mechanics, no pooled administration. Only valleys, tel_aviv_jaffa and central_plain are APPROVED labels.
+#   no capital mechanics, no pooled administration. All nine labels are APPROVED as labels (owner, 2 November 2026
+#   evening: "Approve all nine as labels (Recommended)"); before that only valleys, tel_aviv_jaffa and central_plain were.
+# - #1691 Q4 "Approve as drafted (Recommended)" (owner, 2 November 2026 evening): field_hexes lists the 20 opening field
+#   hexes by the 27 October 2026 split (2/6/6/2/2/0/0/1/1), each a land hex of its region with a coastal_plain, lowland or
+#   valley biome, Israeli-held on 15 May 1948 in map/control_hexes_1948_49.yaml (tools/tests/test_region_field_hexes.py).
+#   Agent proposal, approved by the owner; a person's check pending. Data only: nothing farms them yet (#1689, #1690).
 # Default used, pending the owner (PR body): hex (10,4), Hanita's own hex after the 4.4 km regrid, joins galilee.
 # Deferred, not a member here: rosh_haayin_camp (tel_aviv_jaffa in the evidence). No sourced position for the camp was
 # found and it opened in 1950 (map/region_places_1948.yaml header); it stays in research_notes for Amir.
-# Out of scope: the 20 opening field hexes (#1691 slice B, owner approval of a list first).
 # Every hex below is land and in at most one region; a land hex in no region is allowed (docs/rules/mvp.md R-CITY-006).
 player_regions:
 - id: galilee
   # Label, not a regional capital (Q3 "All nine drafts as labels"): Safed.
   capital_location: safed
-  capital_approval: NEEDS-RESEARCH
+  capital_approval: APPROVED   # as labels, owner 2 Nov 2026: "Approve all nine as labels (Recommended)"; labels only, not the regional-capital model declined 30 Oct 2026
   member_hexes:
   - { q: 8, r: 7 }
   - { q: 8, r: 8 }
@@ -53,6 +58,11 @@ player_regions:
   - { q: 16, r: 4 }
   - { q: 17, r: 1 }
   - { q: 17, r: 2 }
+  # Opening field hexes (#1691 Q4), by the 27 October 2026 split ("Approve as proposed"). Agent proposal, approved by the
+  # owner 2 Nov 2026 ("Approve as drafted (Recommended)"); a person's check pending. Data only: nothing farms them yet.
+  field_hexes:
+  - { q: 9, r: 5 }    # coastal_plain; I on 15 May (map/control_hexes_1948_49.yaml:36); on Nahariya, next to Hanita (map/localities_1948.yaml:4260; map/settlements_1948.yaml:331, founded 1938, en.wiki Hanita)
+  - { q: 14, r: 7 }   # lowland; I (map/control_hexes_1948_49.yaml:55); next to Rosh Pinna (map/settlements_1948.yaml:233, founded 1878, en.wiki Rosh Pinna)
   member_locations:
   - acre
   - safed
@@ -97,13 +107,13 @@ player_regions:
   - hula
   - hula_field
   design_note: 'design value, not a historical boundary'
-  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: galilee']
+  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: galilee', 'owner 2 Nov 2026: capital_location APPROVED as a label, "Approve all nine as labels (Recommended)"']
   binding_status: NEEDS-RESEARCH
   opening_control: { status: NEEDS-RESEARCH, value: null }
 - id: valleys
   # Label, not a regional capital (Q3 "All nine drafts as labels"): Tiberias.
   capital_location: tiberias
-  capital_approval: APPROVED
+  capital_approval: APPROVED   # as labels, owner 2 Nov 2026: "Approve all nine as labels (Recommended)"; labels only, not the regional-capital model declined 30 Oct 2026
   member_hexes:
   - { q: 7, r: 11 }
   - { q: 7, r: 12 }
@@ -133,6 +143,15 @@ player_regions:
   - { q: 12, r: 8 }
   - { q: 12, r: 11 }
   - { q: 13, r: 10 }
+  # Opening field hexes (#1691 Q4), by the 27 October 2026 split ("Approve as proposed"). Agent proposal, approved by the
+  # owner 2 Nov 2026 ("Approve as drafted (Recommended)"); a person's check pending. Data only: nothing farms them yet.
+  field_hexes:
+  - { q: 7, r: 11 }   # coastal_plain; I (map/control_hexes_1948_49.yaml:79); on Nahalal (map/settlements_1948.yaml:317)
+  - { q: 7, r: 12 }   # lowland; I (map/control_hexes_1948_49.yaml:89); next to Nahalal and Mishmar HaEmek (map/settlements_1948.yaml:317; map/region_places_1948.yaml:40)
+  - { q: 8, r: 13 }   # lowland; I (map/control_hexes_1948_49.yaml:99); on Ein Harod (map/settlements_1948.yaml:303)
+  - { q: 9, r: 13 }   # lowland; I (map/control_hexes_1948_49.yaml:100); next to Ein Harod (map/settlements_1948.yaml:303)
+  - { q: 11, r: 12 }  # valley; I (map/control_hexes_1948_49.yaml:93); on Ashdot Ya'akov and Gesher (map/localities_1948.yaml:6591; map/region_places_1948.yaml:21, he.wiki rev 43461554, en.wiki rev 1374530453)
+  - { q: 12, r: 11 }  # valley; I (map/control_hexes_1948_49.yaml:84); on Degania Alef (map/settlements_1948.yaml:289)
   member_locations:
   - tiberias
   - nazareth
@@ -161,13 +180,13 @@ player_regions:
   - gesher
   - zirin  # moved from northern_hills: its hex is this region's (2 Nov ruling)
   design_note: 'design value, not a historical boundary'
-  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: valleys', 'owner 27 Oct 2026: APPROVED "Tiberias"; all six choices approved as proposed; the nine-region draft was separately approved by name on 27 October 2026 (owner ruling, 27 October 2026)']
+  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: valleys', 'owner 27 Oct 2026: APPROVED "Tiberias"; all six choices approved as proposed; the nine-region draft was separately approved by name on 27 October 2026 (owner ruling, 27 October 2026)', 'owner 2 Nov 2026: capital_location APPROVED as a label, "Approve all nine as labels (Recommended)"']
   binding_status: NEEDS-RESEARCH
   opening_control: { status: NEEDS-RESEARCH, value: null }
 - id: haifa_sharon
   # Label, not a regional capital (Q3 "All nine drafts as labels"): Haifa.
   capital_location: haifa
-  capital_approval: NEEDS-RESEARCH
+  capital_approval: APPROVED   # as labels, owner 2 Nov 2026: "Approve all nine as labels (Recommended)"; labels only, not the regional-capital model declined 30 Oct 2026
   member_hexes:
   - { q: -1, r: 18 }
   - { q: -1, r: 19 }
@@ -208,6 +227,15 @@ player_regions:
   - { q: 7, r: 9 }
   - { q: 7, r: 10 }
   - { q: 8, r: 9 }
+  # Opening field hexes (#1691 Q4), by the 27 October 2026 split ("Approve as proposed"). Agent proposal, approved by the
+  # owner 2 Nov 2026 ("Approve as drafted (Recommended)"); a person's check pending. Data only: nothing farms them yet.
+  field_hexes:
+  - { q: 1, r: 15 }   # coastal_plain; I (map/control_hexes_1948_49.yaml:111); on Hadera, a game city (map/settlements_1948.yaml:261)
+  - { q: 2, r: 14 }   # coastal_plain; I (map/control_hexes_1948_49.yaml:102); on Binyamina (map/localities_1948.yaml:3900)
+  - { q: 2, r: 15 }   # coastal_plain; I (map/control_hexes_1948_49.yaml:112); on Pardes Hanna (map/localities_1948.yaml:471)
+  - { q: 3, r: 13 }   # coastal_plain; I (map/control_hexes_1948_49.yaml:94); on Zikhron Ya'akov (map/settlements_1948.yaml:219)
+  - { q: 6, r: 10 }   # coastal_plain; I (map/control_hexes_1948_49.yaml:69); on Yagur (map/localities_1948.yaml:5434)
+  - { q: 6, r: 12 }   # coastal_plain; I (map/control_hexes_1948_49.yaml:88); on Mishmar HaEmek (map/region_places_1948.yaml:40, en.wiki rev 1378097624)
   member_locations:
   - haifa
   - zikhron_yaakov
@@ -259,13 +287,13 @@ player_regions:
   - mishmar_haemek
   - majdal_yaba  # moved from central_plain: its hex is this region's (2 Nov ruling)
   design_note: 'design value, not a historical boundary'
-  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: haifa_sharon', 'owner 27 Oct 2026: APPROVED extent "Keep as proposed"; all six choices approved as proposed; the nine-region draft was separately approved by name on 27 October 2026 (owner ruling, 27 October 2026)']
+  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: haifa_sharon', 'owner 27 Oct 2026: APPROVED extent "Keep as proposed"; all six choices approved as proposed; the nine-region draft was separately approved by name on 27 October 2026 (owner ruling, 27 October 2026)', 'owner 2 Nov 2026: capital_location APPROVED as a label, "Approve all nine as labels (Recommended)"']
   binding_status: NEEDS-RESEARCH
   opening_control: { status: NEEDS-RESEARCH, value: null }
 - id: tel_aviv_jaffa
   # Label, not a regional capital (Q3 "All nine drafts as labels"): Tel Aviv.
   capital_location: tel_aviv
-  capital_approval: APPROVED
+  capital_approval: APPROVED   # as labels, owner 2 Nov 2026: "Approve all nine as labels (Recommended)"; labels only, not the regional-capital model declined 30 Oct 2026
   member_hexes:
   - { q: -4, r: 22 }
   - { q: -3, r: 21 }
@@ -274,6 +302,11 @@ player_regions:
   - { q: -2, r: 21 }
   - { q: -2, r: 22 }
   - { q: -1, r: 20 }
+  # Opening field hexes (#1691 Q4), by the 27 October 2026 split ("Approve as proposed"). Agent proposal, approved by the
+  # owner 2 Nov 2026 ("Approve as drafted (Recommended)"); a person's check pending. Data only: nothing farms them yet.
+  field_hexes:
+  - { q: -2, r: 21 }  # coastal_plain; I (map/control_hexes_1948_49.yaml:166); on Petah Tikva, a game city (map/settlements_1948.yaml:191, founded 1878)
+  - { q: -1, r: 20 }  # coastal_plain; I (map/control_hexes_1948_49.yaml:157); on Kfar Saba (map/localities_1948.yaml:720)
   member_locations:
   - tel_aviv
   - jaffa
@@ -306,13 +339,13 @@ player_regions:
   - qula  # moved from central_plain: its hex is this region's (2 Nov ruling)
   - tzrifin  # moved from central_plain: its hex is this region's (2 Nov ruling)
   design_note: 'design value, not a historical boundary'
-  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: tel_aviv_jaffa', 'owner 27 Oct 2026: APPROVED "Tel Aviv"; all six choices approved as proposed; the nine-region draft was separately approved by name on 27 October 2026 (owner ruling, 27 October 2026)']
+  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: tel_aviv_jaffa', 'owner 27 Oct 2026: APPROVED "Tel Aviv"; all six choices approved as proposed; the nine-region draft was separately approved by name on 27 October 2026 (owner ruling, 27 October 2026)', 'owner 2 Nov 2026: capital_location APPROVED as a label, "Approve all nine as labels (Recommended)"']
   binding_status: NEEDS-RESEARCH
   opening_control: { status: NEEDS-RESEARCH, value: null }
 - id: central_plain
   # Label, not a regional capital (Q3 "All nine drafts as labels"): Rishon LeZion.
   capital_location: rishon_lezion
-  capital_approval: APPROVED
+  capital_approval: APPROVED   # as labels, owner 2 Nov 2026: "Approve all nine as labels (Recommended)"; labels only, not the regional-capital model declined 30 Oct 2026
   member_hexes:
   - { q: -6, r: 25 }
   - { q: -6, r: 26 }
@@ -331,6 +364,11 @@ player_regions:
   - { q: -2, r: 25 }
   - { q: -1, r: 22 }
   - { q: -1, r: 23 }
+  # Opening field hexes (#1691 Q4), by the 27 October 2026 split ("Approve as proposed"). Agent proposal, approved by the
+  # owner 2 Nov 2026 ("Approve as drafted (Recommended)"); a person's check pending. Data only: nothing farms them yet.
+  field_hexes:
+  - { q: -5, r: 25 }  # coastal_plain; I (map/control_hexes_1948_49.yaml:206); on Givat Brenner (map/localities_1948.yaml:6668)
+  - { q: -4, r: 25 }  # coastal_plain; I (map/control_hexes_1948_49.yaml:207); on Hulda (map/locations_1948.yaml:25, Wikidata, checked 2026-10-18)
   member_locations:
   - lod
   - ramla
@@ -367,13 +405,13 @@ player_regions:
   - beit_liqya  # moved from jerusalem_hills: its hex is this region's (2 Nov ruling)
   - yasur  # moved from southern_coast: its hex is this region's (2 Nov ruling)
   design_note: 'design value, not a historical boundary'
-  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: central_plain', 'owner 27 Oct 2026: APPROVED "Rishon LeZion"; all six choices approved as proposed; the nine-region draft was separately approved by name on 27 October 2026 (owner ruling, 27 October 2026)']
+  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: central_plain', 'owner 27 Oct 2026: APPROVED "Rishon LeZion"; all six choices approved as proposed; the nine-region draft was separately approved by name on 27 October 2026 (owner ruling, 27 October 2026)', 'owner 2 Nov 2026: capital_location APPROVED as a label, "Approve all nine as labels (Recommended)"']
   binding_status: NEEDS-RESEARCH
   opening_control: { status: NEEDS-RESEARCH, value: null }
 - id: jerusalem_hills
   # Label, not a regional capital (Q3 "All nine drafts as labels"): Jerusalem.
   capital_location: jerusalem
-  capital_approval: NEEDS-RESEARCH
+  capital_approval: APPROVED   # as labels, owner 2 Nov 2026: "Approve all nine as labels (Recommended)"; labels only, not the regional-capital model declined 30 Oct 2026
   member_hexes:
   - { q: -8, r: 31 }
   - { q: -8, r: 32 }
@@ -466,6 +504,9 @@ player_regions:
   - { q: 4, r: 24 }
   - { q: 4, r: 25 }
   - { q: 5, r: 23 }
+  # Opening field hexes (#1691 Q4): none here, by the 27 October 2026 split ("Approve as proposed"); the list was approved
+  # by the owner 2 Nov 2026 ("Approve as drafted (Recommended)").
+  field_hexes: []
   member_locations:
   - jerusalem
   - hebron
@@ -529,13 +570,13 @@ player_regions:
   - beit_shemesh_field
   - iraq_al_manshiyya  # moved from southern_coast: its hex is this region's (2 Nov ruling)
   design_note: 'design value, not a historical boundary'
-  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: jerusalem_hills', 'owner 27 Oct 2026: APPROVED extent "Keep as proposed"; all six choices approved as proposed; the nine-region draft was separately approved by name on 27 October 2026 (owner ruling, 27 October 2026)']
+  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: jerusalem_hills', 'owner 27 Oct 2026: APPROVED extent "Keep as proposed"; all six choices approved as proposed; the nine-region draft was separately approved by name on 27 October 2026 (owner ruling, 27 October 2026)', 'owner 2 Nov 2026: capital_location APPROVED as a label, "Approve all nine as labels (Recommended)"']
   binding_status: NEEDS-RESEARCH
   opening_control: { status: NEEDS-RESEARCH, value: null }
 - id: northern_hills
   # Label, not a regional capital (Q3 "All nine drafts as labels"): Nablus.
   capital_location: nablus
-  capital_approval: NEEDS-RESEARCH
+  capital_approval: APPROVED   # as labels, owner 2 Nov 2026: "Approve all nine as labels (Recommended)"; labels only, not the regional-capital model declined 30 Oct 2026
   member_hexes:
   - { q: 0, r: 21 }
   - { q: 1, r: 20 }
@@ -584,6 +625,9 @@ player_regions:
   - { q: 8, r: 16 }
   - { q: 8, r: 17 }
   - { q: 8, r: 18 }
+  # Opening field hexes (#1691 Q4): none here, by the 27 October 2026 split ("Approve as proposed"); the list was approved
+  # by the owner 2 Nov 2026 ("Approve as drafted (Recommended)").
+  field_hexes: []
   member_locations:
   - nablus
   - tubas
@@ -624,13 +668,13 @@ player_regions:
   - azzoun  # moved from haifa_sharon: its hex is this region's (2 Nov ruling)
   - al_mansi  # moved from haifa_sharon: its hex is this region's (2 Nov ruling)
   design_note: 'design value, not a historical boundary'
-  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: northern_hills']
+  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: northern_hills', 'owner 2 Nov 2026: capital_location APPROVED as a label, "Approve all nine as labels (Recommended)"']
   binding_status: NEEDS-RESEARCH
   opening_control: { status: NEEDS-RESEARCH, value: null }
 - id: southern_coast
   # Label, not a regional capital (Q3 "All nine drafts as labels"): Gaza.
   capital_location: gaza
-  capital_approval: NEEDS-RESEARCH
+  capital_approval: APPROVED   # as labels, owner 2 Nov 2026: "Approve all nine as labels (Recommended)"; labels only, not the regional-capital model declined 30 Oct 2026
   member_hexes:
   - { q: -17, r: 35 }
   - { q: -16, r: 34 }
@@ -654,6 +698,10 @@ player_regions:
   - { q: -7, r: 27 }
   - { q: -7, r: 28 }
   - { q: -6, r: 27 }
+  # Opening field hexes (#1691 Q4), by the 27 October 2026 split ("Approve as proposed"). Agent proposal, approved by the
+  # owner 2 Nov 2026 ("Approve as drafted (Recommended)"); a person's check pending. Data only: nothing farms them yet.
+  field_hexes:
+  - { q: -11, r: 31 } # coastal_plain; I (map/control_hexes_1948_49.yaml:272); on Nir Am, the D5 housing place (map/locations_1948.yaml:45, Wikidata Q2891278; map/control_1948_49.geojson pin, en.wiki Nir_Am)
   member_locations:
   - gaza
   - yad_mordechai
@@ -692,13 +740,13 @@ player_regions:
   - mefalsim_field
   - nitzanim
   design_note: 'design value, not a historical boundary'
-  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: southern_coast']
+  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: southern_coast', 'owner 2 Nov 2026: capital_location APPROVED as a label, "Approve all nine as labels (Recommended)"']
   binding_status: NEEDS-RESEARCH
   opening_control: { status: NEEDS-RESEARCH, value: null }
 - id: negev
   # Label, not a regional capital (Q3 "All nine drafts as labels"): Beersheba.
   capital_location: beersheba
-  capital_approval: NEEDS-RESEARCH
+  capital_approval: APPROVED   # as labels, owner 2 Nov 2026: "Approve all nine as labels (Recommended)"; labels only, not the regional-capital model declined 30 Oct 2026
   member_hexes:
   - { q: -23, r: 64 }
   - { q: -22, r: 61 }
@@ -943,6 +991,10 @@ player_regions:
   - { q: -5, r: 39 }
   - { q: -4, r: 36 }
   - { q: -4, r: 37 }
+  # Opening field hexes (#1691 Q4), by the 27 October 2026 split ("Approve as proposed"). Agent proposal, approved by the
+  # owner 2 Nov 2026 ("Approve as drafted (Recommended)"); a person's check pending. Data only: nothing farms them yet.
+  field_hexes:
+  - { q: -10, r: 33 } # lowland; I (map/control_hexes_1948_49.yaml:301); on Mishmar HaNegev, founded 6 Oct 1946 (map/control_1948_49.geojson:223 pin; en.wiki rev 1375580227); hex by nearest centre, no roster record
   member_locations:
   - beersheba
   - revivim
@@ -954,6 +1006,6 @@ player_regions:
   - gilat_field
   - umm_rashrash
   design_note: 'design value, not a historical boundary'
-  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: negev']
+  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: negev', 'owner 2 Nov 2026: capital_location APPROVED as a label, "Approve all nine as labels (Recommended)"']
   binding_status: NEEDS-RESEARCH
   opening_control: { status: NEEDS-RESEARCH, value: null }

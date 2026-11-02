@@ -12,6 +12,7 @@ namespace Statecraft.Sim
         public string CapitalLocation { get; set; } = "";
         public List<PlayerRegionHex> MemberHexes { get; set; } = new List<PlayerRegionHex>();
         public List<string> MemberLocations { get; set; } = new List<string>();
+        public List<PlayerRegionHex> FieldHexes { get; set; } = new List<PlayerRegionHex>();
         public string DesignNote { get; set; } = "";
         public List<string> Sources { get; set; } = new List<string>();
         public string CapitalApproval { get; set; } = "";
@@ -40,6 +41,7 @@ namespace Statecraft.Sim
         public string CapitalLocation { get; }
         public IReadOnlyList<(int Q, int R)> MemberHexes { get; }
         public IReadOnlyList<string> MemberLocations { get; }
+        public IReadOnlyList<(int Q, int R)> FieldHexes { get; }
         public string DesignNote { get; }
         public IReadOnlyList<string> Sources { get; }
         public string CapitalApproval { get; }
@@ -52,6 +54,8 @@ namespace Statecraft.Sim
             MemberHexes = Array.AsReadOnly(row.MemberHexes.Select(h => (h.Q!.Value, h.R!.Value))
                 .OrderBy(h => h.Item1).ThenBy(h => h.Item2).ToArray());
             MemberLocations = Array.AsReadOnly(row.MemberLocations.OrderBy(x => x, StringComparer.Ordinal).ToArray());
+            FieldHexes = Array.AsReadOnly(row.FieldHexes.Select(h => (h.Q!.Value, h.R!.Value))
+                .OrderBy(h => h.Item1).ThenBy(h => h.Item2).ToArray());
             DesignNote = row.DesignNote; Sources = Array.AsReadOnly(row.Sources.OrderBy(x => x, StringComparer.Ordinal).ToArray());
             CapitalApproval = row.CapitalApproval; BindingStatus = row.BindingStatus;
             ControlStatus = row.OpeningControl.Status;
@@ -134,6 +138,20 @@ namespace Statecraft.Sim
                     if (!ownHexes.Add(key)) Fail(field, "duplicate member hex");
                     if (c.HexAt(key.Item1, key.Item2)?.Land != true) Fail(field, "must name an existing land hex");
                     if (result.hexes.ContainsKey(key)) Fail(field, "hex already belongs to another region");
+                }
+                // #1691 Q4 (owner, 2 November 2026: "Approve as drafted (Recommended)"): optional, data only; nothing reads
+                // them in play yet. A field hex is a land hex of this region's own member_hexes, so (hex ownership being
+                // exclusive) no field hex is in two regions. Control on 15 May is checked by tools/tests (the sim never
+                // reads the control layer).
+                var ownFields = new HashSet<(int, int)>();
+                for (int i = 0; i < row.FieldHexes.Count; i++)
+                {
+                    var h = row.FieldHexes[i]; var field = FormattableString.Invariant($"field_hexes[{i}]");
+                    if (!h.Q.HasValue || !h.R.HasValue) Fail(field, "q and r are required integers");
+                    var key = (h.Q!.Value, h.R!.Value);
+                    if (c.HexAt(key.Item1, key.Item2)?.Land != true) Fail(field, "must name an existing land hex");
+                    if (!ownHexes.Contains(key)) Fail(field, "must be one of the region's member_hexes");
+                    if (!ownFields.Add(key)) Fail(field, "duplicate field hex");
                 }
                 if (row.MemberLocations.Count == 0) Fail("member_locations", "must not be empty");
                 var ownPlaces = new HashSet<string>(StringComparer.Ordinal);

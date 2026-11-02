@@ -234,6 +234,61 @@ public class Gdd03RegionAuthoringTests
             others.Select(x => ((string?)x.Path, Value(x.Control, "status"), Value(x.Control, "value"), Value(x.Control, "date"))));
     }
 
+    // Owner, 2 November 2026 evening: "Approve all nine as labels (Recommended)". Every capital_location is an approved
+    // LABEL; this is still not the regional-capital model the owner declined on 30 October 2026.
+    [Fact]
+    public void AllNineShippedCapitalsAreApprovedLabels()
+    {
+        var c = PlayerRegionsContentTests.Load(File.ReadAllText(Path.Combine(RealContentTests.ContentRoot(), "regions.yaml")));
+        Assert.Equal(9, c.PlayerRegions.Regions.Count);
+        Assert.All(c.PlayerRegions.Regions.Values, r => Assert.Equal("APPROVED", r.CapitalApproval));
+        Assert.Equal(0, c.PlayerRegions.Regions.Values.Count(r => r.CapitalApproval == "NEEDS-RESEARCH"));
+    }
+
+    // #1691 Q4, owner, 2 November 2026 evening: "Approve as drafted (Recommended)". The 20 opening field hexes, by the
+    // per-region split of 27 October 2026 ("Approve as proposed"). Data only: nothing farms them yet. A person's check of
+    // each row is pending. The 15 May control check is tools/tests/test_region_field_hexes.py (the sim never reads control).
+    static readonly (string Region, int Q, int R)[] ApprovedFields =
+    {
+        ("galilee", 9, 5), ("galilee", 14, 7),
+        ("valleys", 7, 11), ("valleys", 7, 12), ("valleys", 8, 13), ("valleys", 9, 13), ("valleys", 11, 12), ("valleys", 12, 11),
+        ("haifa_sharon", 6, 10), ("haifa_sharon", 6, 12), ("haifa_sharon", 3, 13), ("haifa_sharon", 2, 14), ("haifa_sharon", 2, 15), ("haifa_sharon", 1, 15),
+        ("tel_aviv_jaffa", -1, 20), ("tel_aviv_jaffa", -2, 21),
+        ("central_plain", -5, 25), ("central_plain", -4, 25),
+        ("southern_coast", -11, 31),
+        ("negev", -10, 33),
+    };
+
+    [Fact]
+    public void ShippedFieldHexesAreTheOwnerApprovedTwentyOnWorkableLandOfTheirOwnRegion()
+    {
+        var c = PlayerRegionsContentTests.Load(File.ReadAllText(Path.Combine(RealContentTests.ContentRoot(), "regions.yaml")));
+        var split = new Dictionary<string, int>(StringComparer.Ordinal)
+        {
+            ["galilee"] = 2, ["valleys"] = 6, ["haifa_sharon"] = 6, ["tel_aviv_jaffa"] = 2, ["central_plain"] = 2,
+            ["jerusalem_hills"] = 0, ["northern_hills"] = 0, ["southern_coast"] = 1, ["negev"] = 1,
+        };
+        Assert.Equal(split.Keys.OrderBy(x => x, StringComparer.Ordinal), c.PlayerRegions.Regions.Keys);
+        foreach (var region in c.PlayerRegions.Regions.Values)
+        {
+            Assert.Equal(split[region.Id], region.FieldHexes.Count);
+            Assert.Equal(ApprovedFields.Where(f => f.Region == region.Id).Select(f => (f.Q, f.R)).OrderBy(h => h.Q).ThenBy(h => h.R),
+                region.FieldHexes);
+            foreach (var h in region.FieldHexes)
+            {
+                Assert.True(c.HexAt(h.Q, h.R)!.Land);
+                Assert.Contains(c.HexAt(h.Q, h.R)!.Biome, new[] { "coastal_plain", "lowland", "valley" });
+                Assert.Contains(h, region.MemberHexes);
+                Assert.Same(region, c.PlayerRegions.AtHex(h.Q, h.R));
+            }
+        }
+        var all = c.PlayerRegions.Regions.Values.SelectMany(r => r.FieldHexes).ToArray();
+        Assert.Equal(20, all.Length);
+        Assert.Equal(20, all.Distinct().Count());
+        // Data only: activation stays off, so nothing reads the fields in a new game yet (#1689).
+        Assert.Empty(Simulation.NewGame(c, 1, Mode.Historical).PlayerRegions);
+    }
+
     // The staged evidence rows, before the 2 November fixes: with localities and sites accepted (and the three new
     // records placed), only the rows the ruling had to fix are still refused, each on a member place.
     [Theory]

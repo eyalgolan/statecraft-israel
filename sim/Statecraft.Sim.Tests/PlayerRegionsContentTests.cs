@@ -214,6 +214,41 @@ public class PlayerRegionsContentTests
         Assert.Equal("regions.yaml: player_regions[0]." + field + ": " + reason, e.Message);
     }
 
+    // #1691 Q4 (owner, 2 November 2026: "Approve as drafted (Recommended)"): optional field_hexes, data only. A field hex
+    // is a land hex of the region's own member_hexes, listed once. (-4,24) is coastal_plain; (-4,23) is Rishon LeZion's.
+    [Fact]
+    public void FieldHexesAreOptionalAndLoadOnTheRegionsOwnHexes()
+    {
+        Assert.Empty(Assert.Single(Load().PlayerRegions.Regions).Value.FieldHexes);   // absent: none
+        var c = Load("player_regions:\n" + RamlaRehovot.Replace("    member_locations:", "    field_hexes: [{ q: -4, r: 24 }]\n    member_locations:"));
+        Assert.Equal(new[] { (-4, 24) }, Assert.Single(c.PlayerRegions.Regions).Value.FieldHexes);
+    }
+
+    [Theory]
+    [InlineData("[{ q: -4 }]", "player_regions[0].field_hexes[0]", "q and r are required integers")]
+    [InlineData("[{ r: 24 }]", "player_regions[0].field_hexes[0]", "q and r are required integers")]
+    [InlineData("[{ q: 0, r: 0 }]", "player_regions[0].field_hexes[0]", "must name an existing land hex")]
+    [InlineData("[{ q: 99, r: 99 }]", "player_regions[0].field_hexes[0]", "must name an existing land hex")]
+    [InlineData("[{ q: -4, r: 23 }]", "player_regions[0].field_hexes[0]", "must be one of the region's member_hexes")]
+    [InlineData("[{ q: -4, r: 24 }, { q: -4, r: 24 }]", "player_regions[0].field_hexes[1]", "duplicate field hex")]
+    [InlineData("null", "player_regions[ramla_rehovot].field_hexes", null)]   // CheckNulls, as for every list
+    public void MalformedFieldHexRowsAreRefused(string list, string field, string? reason)
+    {
+        var e = Assert.Throws<ContentException>(() => Load("player_regions:\n"
+            + RamlaRehovot.Replace("    member_locations:", "    field_hexes: " + list + "\n    member_locations:")));
+        Assert.Equal("regions.yaml", e.File); Assert.Equal(field, e.Field);
+        if (reason != null) Assert.Equal("regions.yaml: " + field + ": " + reason, e.Message);
+    }
+
+    // Another region's member hex is refused as a field: ownership is exclusive, so no field hex can be in two regions.
+    [Fact]
+    public void AFieldHexOfAnotherRegionIsRefused()
+    {
+        var e = Assert.Throws<ContentException>(() => Load("player_regions:\n" + RamlaRehovot
+            + Central.Replace("    member_locations:", "    field_hexes: [{ q: -4, r: 24 }]\n    member_locations:")));
+        Assert.Equal("regions.yaml: player_regions[1].field_hexes[0]: must be one of the region's member_hexes", e.Message);
+    }
+
     // The site is listed first, so it must resolve (sites.yaml is always placed) before the locality is refused.
     [Fact]
     public void WithoutTheLocalityHexesALocalityIsUnknown()
