@@ -313,6 +313,32 @@ rows with later years for `בית הערבה` (code 3645, 1980, Jordan-Jericho s
   Doar HaYom of 27 April 1925 for the name; that item was not opened here (nli.org.il returns 403
   from this machine). So the colony took its second name between June 1921 and the ascent to the
   land in 1925, **our reading** of the article, not a dated source. [S, Wikipedia]
+  (2 Nov) A different window from JTA (agent read 2026-11-02; a person's check pending). It moves the
+  lower bound from June 1921 to the January 1924 archive item below. Its upper bound, 1 November
+  1929, is looser than he.wiki's 1925, which is itself only our reading of an unopened Doar HaYom
+  item, so "1924 to 1929" is not tighter than the earlier window. Queries run
+  2026-11-02 on `https://www.jta.org/wp-json/wp/v2/archive?search=<term>&per_page=100&after=1923-01-01T00:00:00&before=1929-12-31T23:59:59`:
+  `Kfar+Ivre` (`x-wp-total: 53`, fuzzy) and `Kefar+Ivri` (2 hits, both listed below); `Nevi+Yaakov` (1 hit),
+  `Neve+Yaacov` (3), `Nevee+Yaakov` (2): the only item that prints the colony's second name is the
+  1929 one below. Other spellings were not exhausted.
+  - JTA Daily Bulletin, 22 November 1923, p. 4, "Mizrachi Re-elect Officers", dateline "Pittsburgh,
+    Nov. 22 (J.T.A.)": "A loan of $25,000 for the building of houses in the colony at Kfar Ivri near
+    Jerusalem was voted." (PDF http://pdfs.jta.org/1923/1923-11-22_224.pdf, read as a page image.) [S, JTA]
+  - JTA archive page `https://www.jta.org/archive/mizrachi-founds-new-jewish-colony-in-palestine`, dated
+    1 January 1924: "The corner-stone of a new Jewish colony in Palestine was laid today by the Mizrachi
+    Zionist Organization. The new colony will be named Kfar Ivre (Hebrew Village)". The page links no PDF,
+    and none was found: pdfs.jta.org has files for 31 December 1923 (`_247`), 2 January (`_248`) and 3 January
+    1924 (`_249`) and none for 1 January (numbers 200 to 400 tried). OCR of those three found no such
+    item (OCR is not a proof of absence), so the dateline and the event day are **not read**. [S, JTA]
+  - JTA Daily Bulletin, 3 November 1929, p. 1, "Sporadic attacks on Jews; no arrests", dateline
+    "Jerusalem, Nov. 1": "Shots were fired on a group of Jews proceeding to Jerusalem from Neve Yaakov, a
+    colony seven kilometers north of Jerusalem." (PDF http://pdfs.jta.org/1929/1929-11-03_1505.pdf; the
+    archive page's text misprints it "Nevee Yaakov".) [S, JTA]
+  - **Our reading:** JTA calls the place "Kfar Ivri" in November 1923 and, in the future tense
+    ("will be named Kfar Ivre"), in the January 1924 archive page, and "Neve Yaakov" by 1 November 1929, so
+    JTA's usage is consistent with a rename after the 1923 to 1924 cornerstone phase and no later
+    than 1929. That fits he.wiki's 1925 (Doar HaYom, not opened) but does not date it; the year
+    stays [GAP].
   Coordinate (24 Oct): he.wiki oldid 44067999 prints 31.834269, 35.232499 [S, Wikipedia]; Wikidata
   Q30527673 ("מושבה יהודית ... וחרבה במלחמת העצמאות") prints the same pair [S, Wikidata]. The 1970
   neighbourhood's items (Wikidata Q2918013, 31.841111, 35.2425) are a different place, about 1 km
@@ -458,6 +484,9 @@ rows with later years for `בית הערבה` (code 3645, 1980, Jordan-Jericho s
 - [GAP] **Rename years** for Kefar Uriyya (from Qiryat Moshe) and Neve Ya'akov (from the Hebrew
   Village): (24 Oct) searched again and not found as a dated source; for Neve Ya'akov the window
   June 1921 to the 1925 ascent is our reading of he.wiki, for Kefar Uriyya there is none (part 2).
+  (2 Nov) Neve Ya'akov: JTA bulletins give after the January 1924 archive item (event day not read)
+  and no later than 1 November 1929 (part 3, Neve Ya'akov); this moves the lower bound but its upper
+  bound is looser than he.wiki's 1925 reading; the year is still [GAP].
   (1 Nov) Kefar Uriyya now has an upper bound: JTA bulletins already print the name for the moshav attacked
   (28 August 1929) and burned (6 September 1929, quoting the indictment) (part 2); no lower bound found.
 - [GAP] **Gvati row for Jerusalem.** (24 Oct) Searched again and not found. Read: a copy of the text

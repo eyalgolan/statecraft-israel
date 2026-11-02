@@ -36,19 +36,36 @@ namespace Statecraft.Sim
             s.Arms = r.ArmsStart!.Value;   // R-ARMS-001; the loader requires it in the GDD loop
         }
 
+        /// <summary>R-ARMS-002's refusal at the debt ceiling (#2198); SimBridge.ReasonKeys gives it the UI's words.</summary>
+        public const string RefusedDebtCeiling = "Buying that many Arms would take the debt past its ceiling";
+
         /// <summary>R-ARMS-002 (D-G6): <paramref name="count"/> Arms join the stock at once, and the Treasury pays
-        /// count * arms_price, borrowing what it lacks (R-MONEY-003). Refused, state untouched, for fewer than one unit or a
-        /// stock that would pass a whole number's range. Step has already refused it in the legacy loop.</summary>
+        /// count * arms_price, borrowing what it lacks (R-MONEY-003). Refused, state untouched, for fewer than one unit, a
+        /// stock that would pass a whole number's range, or borrowing that would take the debt past mvp.debt_ceiling (#2198,
+        /// owner 2 Nov 2026: "Refuse buys over ceiling (Recommended)"; the debt after is PayOrBorrow's, the debt plus what the
+        /// Treasury lacks, and exactly at the ceiling is allowed). A purchase the Treasury pays in full borrows nothing and is
+        /// never refused at the ceiling. Step has already refused it in the legacy loop.</summary>
         public static string? BuyArms(Content c, GameState s, int count, List<Cause> why)
         {
             PopulationLedger.RefuseAggregate(s);
             if (count < 1) return "Buy at least 1 Arms";
             if ((long)s.Arms + count > int.MaxValue) return "That is more Arms than the stock can hold";
+            if (BorrowsPastDebtCeiling(c, s, count)) return RefusedDebtCeiling;
             var cost = count * c.RulesAt(s.Date).Mvp!.ArmsPrice!.Value;
             EconomySystem.PayOrBorrow(c, s, cost, "for Arms", why, CauseKeys.Purpose.Arms);
             s.Arms += count;
             why.Add(new Cause("economy", "arms", count, FormattableString.Invariant($"Bought {count} Arms, cost {PlayerText.Money(c, "treasury", cost)}"), key: CauseKeys.ArmsBought, args: new[] { CauseKeys.Number(cost) }));
             return null;
+        }
+
+        /// <summary>#2198: true when paying for <paramref name="count"/> Arms now would borrow (PayOrBorrow: the Treasury stops at 0
+        /// and the rest goes to Debt) and take the debt past mvp.debt_ceiling. Exactly at the ceiling is not past it. BuyArms
+        /// refuses on it, and the Defence screen says so before End turn.</summary>
+        public static bool BorrowsPastDebtCeiling(Content c, GameState s, int count)
+        {
+            var r = c.RulesAt(s.Date).Mvp!;
+            var left = s.Treasury - count * r.ArmsPrice!.Value;
+            return left < 0 && s.Debt - left > r.DebtCeiling!.Value;   // the loader requires both in the GDD loop
         }
 
         /// <summary>The nation's need for one turn: its head count in population units, rounded half away from zero.</summary>

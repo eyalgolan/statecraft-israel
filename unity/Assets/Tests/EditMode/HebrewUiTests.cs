@@ -90,6 +90,18 @@ public class HebrewUiTests
         }
     }
 
+    // #2198: the Arms purchase refused at the debt ceiling reaches the end-of-turn toast (ReasonText) in both languages.
+    [Test]
+    public void TheArmsDebtCeilingRefusalHasAStringInBothLanguages()
+    {
+        var reason = Statecraft.Sim.Pools.RefusedDebtCeiling;
+        Assert.AreEqual(reason, SimBridge.ReasonText(En, reason), "the English string is the sim's own");
+        var he = SimBridge.ReasonText(He, reason);
+        Assert.AreNotEqual(reason, he, "no Hebrew string for: " + reason);
+        StringAssert.IsMatch("[א-ת]", he, reason);
+        StringAssert.DoesNotMatch("[A-Za-z]", he, reason);
+    }
+
     // #2072: every Combat.Check and Training.Reinforce refusal (their Refused* constants) has a string in both files. Each
     // format is filled with distinct values as the sim fills it (a multi-word town, a real course, different numbers) and read
     // with content: the English is the sim's own text, the Hebrew is its line with the Hebrew town and course in their slots,
@@ -501,7 +513,7 @@ public class HebrewUiTests
         ("settings-sound-label", "settings.sound"), ("settings-sound-off", "settings.sound.off"),
         ("settings-sound-low", "settings.sound.low"), ("settings-sound-high", "settings.sound.high"),
         ("settings-advisors-label", "settings.advisors"), ("settings-language-label", "settings.language"),
-        ("settings-uiscale-label", "settings.uiscale"),
+        ("settings-uiscale-label", "settings.uiscale"), ("settings-companion-label", "settings.companion"),   // #1119
         ("settings-community-label", "settings.community"), ("settings-star", "community.star"), ("start-star", "community.star"),
         ("settings-report", "feedback.open"), ("start-report", "feedback.open"), ("feedback-title", "feedback.open"),   // #1169
         ("hud-star", "community.star"), ("hud-report", "feedback.open"), ("hud-share", "share.open"),   // #1236
@@ -511,6 +523,7 @@ public class HebrewUiTests
         ("share-attach", "share.attach"), ("share-close", "report.close"),
         ("start-source", "start.source"), ("start-recording-credit", "start.recording_credit"),
         ("start-continue", "start.continue"), ("start-new-game", "start.new_game"),
+        ("start-quit", "ui.quit"), ("settings-quit", "ui.quit"),   // #2153
     };
 
     /// <summary>Static texts that stay as Game.uxml writes them in every language: the game's name, and the Declaration's

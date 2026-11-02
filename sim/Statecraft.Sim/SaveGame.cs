@@ -39,7 +39,7 @@ namespace Statecraft.Sim
     ///   &lt;command&gt; ...              policy ID LEVEL | budget OFFICE=SHARE,... | event ID OPTION | mobilize LEVEL |
     ///                              security DELTA | appoint OFFICE PERSON | map ACTION Q R | work CITY ROLE N |
     ///                              train CITY TRACK N | untrain COHORT | pioneer UNIT ACTION SITE | stop UNIT |
-    ///                              project KIND CITY Q R | unproject PROJECT | arms N |
+    ///                              project KIND CITY Q R | unproject PROJECT | arms N | dollars N |
     ///                              capture SETTLEMENT OUTCOME
     ///   open                       starts the turn in progress's committed command list; it comes after every turn
     ///   end &lt;hex&gt;                 GameState.Hash() after the last turn (checks the replay)
@@ -161,6 +161,7 @@ namespace Statecraft.Sim
             CancelProject p => $"unproject {Int(p.Project)}",
             Move m => $"move {Int(m.Unit)} {Int(m.Q)} {Int(m.R)}",
             BuyArms a => $"arms {Int(a.Count)}",
+            ConvertDollars d => $"dollars {Int(d.Amount)}",
             ResolveCapture r => $"capture {Esc(r.Settlement)} {Esc(r.Outcome)}",
             EndOccupation e => $"endocc {Esc(e.Settlement)} {Esc(e.Outcome)}",
             _ => throw new ArgumentException($"Cannot save command kind '{cmd.Kind}'", nameof(cmd)),
@@ -295,6 +296,7 @@ namespace Statecraft.Sim
                 case "unproject": Arity(2); return new CancelProject(I(f[1]));
                 case "move": Arity(4); return new Move(I(f[1]), I(f[2]), I(f[3]));
                 case "arms": Arity(2); return new BuyArms(I(f[1]));
+                case "dollars": Arity(2); return new ConvertDollars(I(f[1]));
                 case "capture": Arity(3); return new ResolveCapture(Str(f[1]), Str(f[2]));
                 case "endocc": Arity(3); return new EndOccupation(Str(f[1]), Str(f[2]));
                 default: throw new SaveException(line, $"unknown command '{f[0]}'");

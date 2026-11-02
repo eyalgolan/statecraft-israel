@@ -148,16 +148,19 @@ public class CauseKeysTests
     public void CivilianUpkeepAndItsBorrowingAreKeyed()
     {
         var s = new GameState { Treasury = 0, Debt = 0 }; var why = new List<Cause>();
-        EconomySystem.PayOrBorrow(Fix, s, 3, "for civilian upkeep", why, CauseKeys.Purpose.CivilianUpkeep);
+        EconomySystem.PayNamedOrBorrow(Fix, s, 3, "for civilian upkeep", why, CauseKeys.Purpose.CivilianUpkeep);   // as PayCivilianUpkeep
         var line = Assert.Single(why);
         Assert.Equal((CauseKeys.Borrowed, "Borrowed IL 3.0m for civilian upkeep"), (line.Key, line.Message));
         Assert.Equal(new[] { CauseKeys.Purpose.CivilianUpkeep }, line.Args);
 
+        // #2199: PayOrBorrow names the whole cost as a Money line first, with the same purpose, then the borrowing.
         why.Clear();
         EconomySystem.PayOrBorrow(Fix, s, 3, "to build a housing project", why, CauseKeys.Purpose.Project, "housing");
-        line = Assert.Single(why);
-        Assert.Equal(CauseKeys.Borrowed, line.Key);
-        Assert.Equal(new[] { CauseKeys.Purpose.Project, "housing" }, line.Args);
+        Assert.Equal(2, why.Count);
+        Assert.Equal((CauseKeys.Paid, "treasury", -3.0), (why[0].Key, why[0].Target, why[0].Delta));
+        Assert.Equal(new[] { CauseKeys.Purpose.Project, "housing" }, why[0].Args);
+        Assert.Equal(CauseKeys.Borrowed, why[1].Key);
+        Assert.Equal(new[] { CauseKeys.Purpose.Project, "housing" }, why[1].Args);
     }
 
     [Fact]

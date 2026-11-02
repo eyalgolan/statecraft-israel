@@ -18,6 +18,8 @@ namespace Statecraft.Game.UI
         public TextAsset source = null!;
         public Texture2D[] photos = Array.Empty<Texture2D>();
         public static OpeningContent? Load() => Resources.Load<OpeningContent>(ResourcePath);
+        /// <summary>he_review: the Hebrew is an agent draft until a native speaker who did not write it has read it.</summary>
+        public const string HePending = "pending", HeApproved = "approved";
 
         public sealed class Source
         {
@@ -30,6 +32,7 @@ namespace Statecraft.Game.UI
         public sealed class Arrival
         {
             public string Country { get; set; } = "";
+            public string? CountryHe { get; set; }
             public int Count { get; set; }
         }
         public sealed class Image
@@ -51,15 +54,24 @@ namespace Statecraft.Game.UI
         public class Paragraph
         {
             public string Text { get; set; } = "";
+            public string? TextHe { get; set; }
+            public string? HeReview { get; set; }
             public List<Source> Sources { get; set; } = new List<Source>();
             public bool Checked => !string.IsNullOrWhiteSpace(Text) && Sources != null && Sources.Count > 0 && Sources.All(s => s != null && s.IsChecked);
+            /// <summary>Its Hebrew fields, null where absent: all of them or none (Parse).</summary>
+            public virtual IEnumerable<string?> HebrewFields => new[] { TextHe, HeReview };
+            public bool HasHebrew => HebrewFields.All(f => !string.IsNullOrWhiteSpace(f));
+            public bool HebrewApproved => HasHebrew && HeReview == HeApproved;
         }
         public sealed class Panel : Paragraph
         {
             public string Id { get; set; } = "";
             public string Title { get; set; } = "";
+            public string? TitleHe { get; set; }
             public List<Arrival> Arrivals { get; set; } = new List<Arrival>();
             public Image Image { get; set; } = new Image();
+            public override IEnumerable<string?> HebrewFields =>
+                base.HebrewFields.Append(TitleHe).Concat((Arrivals ?? new List<Arrival>()).Select(a => a?.CountryHe));
         }
         public sealed class Document
         {
@@ -70,7 +82,11 @@ namespace Statecraft.Game.UI
                 && p.Image.Sensitive && p.Image.SensitivityReviewed);
             public bool TextReviewed => Status == Statecraft.Sim.ReleaseGate.ReviewedStatus && Closing != null && Closing.Checked
                 && Panels != null && Panels.Count == 3 && Panels.All(p => p != null && p.Checked);
-            public bool Reviewed => PhotosReviewed && TextReviewed;
+            /// <summary>Every panel and the closing carry their Hebrew, read by a native speaker (owner, 1 Nov 2026, "Translate
+            /// to Hebrew (Recommended)"): the English rule's counterpart, so a player never sees an unread draft.</summary>
+            public bool HebrewReviewed => Closing != null && Closing.HebrewApproved
+                && Panels != null && Panels.Count == 3 && Panels.All(p => p != null && p.HebrewApproved);
+            public bool Reviewed => PhotosReviewed && TextReviewed && HebrewReviewed;
         }
 
         /// <summary>The approved three-panel structure; unknown or repeated YAML fields fail closed.</summary>
@@ -90,6 +106,15 @@ namespace Statecraft.Game.UI
                     if (paragraph.Sources.Count == 0 || paragraph.Sources.Any(s => s == null
                         || string.IsNullOrWhiteSpace(s.Url) || string.IsNullOrWhiteSpace(s.Supports)))
                         throw new InvalidOperationException(SourcePath + ": paragraph source or supported claim missing");
+                foreach (var (name, paragraph) in doc.Panels.Select(p => (p.Id, (Paragraph)p)).Append(("closing", doc.Closing)))
+                {
+                    if (paragraph.HebrewFields.Any(f => f != null) && !paragraph.HasHebrew)
+                        throw new InvalidOperationException(SourcePath + ": " + name + ": the Hebrew comes complete or not at all"
+                            + (name == "closing" ? " (text_he, he_review)" : " (title_he, text_he, he_review and each arrival's country_he)"));
+                    if (paragraph.HeReview != null && paragraph.HeReview != HePending && paragraph.HeReview != HeApproved)
+                        throw new InvalidOperationException(SourcePath + ": " + name + ": the Hebrew's he_review must be "
+                            + HePending + " or " + HeApproved);
+                }
                 foreach (var p in doc.Panels)
                     if (p.Image.File != "opening_" + p.Id + ".jpg" || string.IsNullOrWhiteSpace(p.Image.Credit)
                         || string.IsNullOrWhiteSpace(p.Image.Alt))
@@ -108,7 +133,9 @@ namespace Statecraft.Game.UI
             return data;
         }
 
-        /// <summary>A fixture or an AI reading cannot approve the prose. Only Editor QA may preview a labelled draft.</summary>
-        public static bool MayPresent(Document data, bool editorPreview) => data.PhotosReviewed && (data.TextReviewed || editorPreview);
+        /// <summary>A fixture or an AI reading cannot approve the prose, English or Hebrew. Only Editor QA may preview a
+        /// labelled draft.</summary>
+        public static bool MayPresent(Document data, bool editorPreview) =>
+            data.PhotosReviewed && (data.TextReviewed && data.HebrewReviewed || editorPreview);
     }
 }

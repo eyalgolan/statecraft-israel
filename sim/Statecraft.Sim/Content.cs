@@ -590,6 +590,19 @@ namespace Statecraft.Sim
         /// <summary>The Arms one recruit group takes when its training starts (R-ARMS-003; D-G6, Q-UNIT-3, #781). Required in the
         /// GDD loop, &gt;= 0.</summary>
         public int? ArmsPerRecruitGroup { get; set; }
+        /// <summary>The most foreign currency, in US$ millions, the player may convert into Money in one turn (R-MONEY-004; #813).
+        /// Required in the GDD loop, &gt;= 0.</summary>
+        public int? DollarsPerTurn { get; set; }
+        /// <summary>The most foreign currency, in US$ millions, the player may convert in the whole game (R-MONEY-004; #813).
+        /// Required in the GDD loop, &gt;= 0.</summary>
+        public int? DollarsTotal { get; set; }
+        /// <summary>IL millions of Money one US$ million of foreign currency converts into, by date (R-MONEY-004; #813): each
+        /// rate from its day on, the first on or before the game's start, the days in increasing order. Required in the GDD
+        /// loop, each rate finite and &gt;= 0. Read through <see cref="IlPerDollarOn"/>.</summary>
+        public List<DollarRate> IlPerDollar { get; set; } = new List<DollarRate>();
+
+        /// <summary>The rate of <see cref="IlPerDollar"/> in force on <paramref name="date"/>: the last one from on or before it.</summary>
+        public double IlPerDollarOn(DateTime date) => IlPerDollar.Last(x => x.From <= date).Rate;
         /// <summary>IL millions per Israeli military formation per turn, not per strength point (R-UNIT-010; Q-UNIT-3).</summary>
         public double? MilitaryUpkeepPerTurn { get; set; }
         /// <summary>Turns served as a recruit before promotion to veteran_soldier (R-UNIT-004; Q-UNIT-2).</summary>
@@ -884,6 +897,15 @@ namespace Statecraft.Sim
         /// <summary>The Arms a group of a trained military type other than the recruit takes when its training starts
         /// (R-UNIT-008; Q-ARTY-3). The recruit's is rules.yaml mvp.arms_per_recruit_group (R-ARMS-003); null on every other type.</summary>
         public int? TrainingArms { get; set; }
+    }
+
+    /// <summary>One dated exchange rate of mvp.il_per_dollar (R-MONEY-004): IL millions per US$ million from this day (inclusive).
+    /// <see cref="Status"/> is "sourced": the rates are history, not design values (DesignValuesTests skips them).</summary>
+    public sealed class DollarRate
+    {
+        public DateTime From { get; set; }
+        public double Rate { get; set; }
+        public string Status { get; set; } = "";
     }
 
     /// <summary>One stretch of a budget line's ownership (rules.yaml budget_owners): from this day (inclusive) the office owns the line.</summary>

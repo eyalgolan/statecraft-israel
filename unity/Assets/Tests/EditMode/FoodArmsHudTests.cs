@@ -221,6 +221,34 @@ public class FoodArmsHudTests
         Assert.AreEqual(t["order.game_over"], ui.Q<Label>("arms-refusal").text);
     }
 
+    // #2198: the panel says ahead of End turn when the amount would borrow past the debt ceiling, in the sim's own check;
+    // exactly at the ceiling says nothing. Buy stays available, and the sim decides when the turn runs.
+    [TestCase(false, false)] [TestCase(false, true)]
+    [TestCase(true, false)] [TestCase(true, true)]
+    public void TheAmountThatWouldBorrowPastTheDebtCeilingIsExplained(bool modern, bool he)
+    {
+        var b = Bridge(modern, he); var t = Text(he);
+        using var ui = new UiTestKit();
+        using var defence = new DefencePresenter(ui.Root, b, t);
+        var r = b.Content.RulesAt(b.State.Date).Mvp!;
+        b.State.Treasury = 0;
+        b.State.Debt = r.DebtCeiling!.Value - r.ArmsPrice!.Value;
+        var count = ui.Q<IntegerField>("arms-count");
+        count.value = 1;
+        Assert.IsEmpty(ui.Q<Label>("arms-refusal").text, "exactly at the ceiling is allowed");
+        count.value = 2;
+        Assert.AreEqual(t["arms.refused_debt_ceiling"], ui.Q<Label>("arms-refusal").text);
+        Assert.IsTrue(ui.Q<Button>("buy-arms").enabledSelf, "a refusal remains explainable");
+        // Pressing Buy queues the order (the sim decides at End turn) and keeps the warning on screen (review of #2203).
+        ui.Press("buy-arms");
+        Assert.AreEqual(2, ((BuyArms)b.Queued.Single()).Count);
+        Assert.AreEqual(t["arms.refused_debt_ceiling"], ui.Q<Label>("arms-refusal").text, "Buy does not clear the warning");
+        ui.Press("withdraw-arms");
+        b.State.Treasury = 2 * r.ArmsPrice!.Value;
+        count.value = 1; count.value = 2;
+        Assert.IsEmpty(ui.Q<Label>("arms-refusal").text, "paid from the Treasury, nothing is borrowed");
+    }
+
     [Test]
     public void PoolCausesIgnoreTheSupplyIndicatorAndKeepTheSimTieOrder()
     {

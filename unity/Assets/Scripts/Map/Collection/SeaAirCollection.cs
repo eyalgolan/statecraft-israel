@@ -19,7 +19,7 @@ namespace Statecraft.Game.Map.Collection
     /// turn stands at one place, so it stands off Tel Aviv, where it ran aground and burned;</item>
     /// <item>a C-54 at Lod (Lydda) Airport while Operation Magic Carpet's main airlift ran, from July 1949 to its last flights
     /// into Lydda on 24 September 1950 (<see cref="C54From"/>, <see cref="C54To"/>);</item>
-    /// <item>the Egyptian Spitfire in flight near the western board edge (30 km in) toward el-Arish, from 15 May 1948 to 2 January 1949
+    /// <item>the Egyptian Spitfire flying a slow loop near the western board edge (about 30 km in) toward el-Arish and back (<see cref="SpitfireLoop"/>), from 15 May 1948 to 2 January 1949
     /// (<see cref="SpitfireFrom"/>, <see cref="SpitfireTo"/>, #1932), never on a hex or an airfield.</item>
     /// </list>
     /// The boats lie on the open sea past the surf, where SeaCraft's own boats sail (SeaCraft.OffshoreNearM to OffshoreM out
@@ -132,6 +132,37 @@ namespace Statecraft.Game.Map.Collection
         /// along this latitude, so no spot here frames it there.</summary>
         public static Vector2 EdgeSpot(GeoFrame frame) =>
             new Vector2(30000f, frame.ToWorld(ElArishLon, ElArishLat, 0).z);
+
+        /// <summary>DESIGN VALUES: the Spitfire's loop (owner, 2 November 2026: "Fly a slow loop", a short repeating pass in
+        /// from el-Arish over the western edge that turns back; v0.3.3 drew it standing still). A long ellipse centred on
+        /// <see cref="EdgeSpot"/>, 5 km each way east-west and 3 km each way north-south, flown once every 40 s: in east
+        /// along its southern side, a turn north at the east end, back west along its northern side, a turn south at the
+        /// west end. About 25.5 km round, so about 640 m/s of map: with the camera's 35 degree field of view (CameraRig.Fov),
+        /// about 27 px a second at 40 km and 7 px a second at 150 km on a 1080p screen (the steam train moves about 9 px a
+        /// second at the gameplay zoom, RouteTrain.SpeedMps). The west end's centre is 25 km in, where the whole aircraft is
+        /// still in frame at 40 and 150 km (measured for #2014); the whole aircraft stays over the board (more than 20 km in).
+        /// The nearest unit anchor (content/map/units_1948.yaml: the Egyptian Expeditionary Force at Gaza, to 21 May 1948)
+        /// is 42 km from the centre, and Lod, the board's one drawn airfield, about 100 km.</summary>
+        public const float SpitfireLoopSeconds = 40f, SpitfireLoopHalfLengthM = 5000f, SpitfireLoopHalfWidthM = 3000f;
+
+        /// <summary>Where the Spitfire is, from its loop's centre (world x, z, m), <paramref name="seconds"/> into its loop:
+        /// at 0, due south of the centre, flying east (in from el-Arish); then anticlockwise seen from above.</summary>
+        public static Vector2 LoopOffset(float seconds)
+        {
+            float a = LoopAngle(seconds);
+            return new Vector2(SpitfireLoopHalfLengthM * Mathf.Sin(a), -SpitfireLoopHalfWidthM * Mathf.Cos(a));
+        }
+
+        /// <summary>The Spitfire's direction of travel there (world x, z; unit length): the loop's tangent.</summary>
+        public static Vector2 LoopHeading(float seconds)
+        {
+            float a = LoopAngle(seconds);
+            return new Vector2(SpitfireLoopHalfLengthM * Mathf.Cos(a), SpitfireLoopHalfWidthM * Mathf.Sin(a)).normalized;
+        }
+
+        /// <summary>The angle round the ellipse, from the clock taken modulo the period first, so it stays exact however long
+        /// the session has run.</summary>
+        static float LoopAngle(float seconds) => 2f * Mathf.PI * Mathf.Repeat(seconds, SpitfireLoopSeconds) / SpitfireLoopSeconds;
 
         /// <summary>A boat's spot: out from its coast's shore point (SeaCraft.Coasts) between SeaCraft.OffshoreNearM and
         /// OffshoreM, at a seeded spread along the shore, the first whose hull passes SeaCraft.Clear against the harbour works
@@ -270,7 +301,7 @@ namespace Statecraft.Game.Map.Collection
         List<WildlifeLayer.Want>? wildlife;
         DateTime date;
 
-        /// <summary>The craft drawn (key, model, spot at the water's or ground's height; the Spitfire's centre in the air): a test aid.</summary>
+        /// <summary>The craft drawn (key, model, spot at the water's or ground's height; the centre of the Spitfire's loop, in the air): a test aid.</summary>
         public readonly List<(string Key, string Model, Vector3 At)> Placed = new List<(string, string, Vector3)>();
         /// <summary>The craft wanted but not drawn: the model did not stream, or no spot was clear (a test aid).</summary>
         public readonly List<string> Missing = new List<string>();
@@ -361,21 +392,27 @@ namespace Statecraft.Game.Map.Collection
         /// east, read off its top-down capture.</summary>
         internal const float SpitfireNoseEastYaw = 90f;
 
-        /// <summary>The Spitfire in level flight over <paramref name="at"/>: nose east, wingspan at its map size,
-        /// UnitShowcase.AltitudeM (4,200 m) above the highest ground under it (UnitShowcase.LoopFloor), where the unit tokens'
-        /// aircraft fly (#2014).</summary>
+        /// <summary>The Spitfire in level flight round its loop about <paramref name="at"/> (<see cref="SpitfireLoop"/>), wingspan
+        /// at its map size, UnitShowcase.AltitudeM (4,200 m) above the highest ground under the loop (UnitShowcase.LoopFloor),
+        /// where the unit tokens' aircraft fly (#2014). It is drawn at the loop's start, nose east; the labels keep clear of
+        /// the whole box it flies through.</summary>
         void Fly(GameObject go, GameObject prefab, Vector2 at)
         {
-            go.transform.localRotation = Quaternion.Euler(0f, SpitfireNoseEastYaw, 0f) * prefab.transform.localRotation;
+            var level = Quaternion.Euler(0f, SpitfireNoseEastYaw, 0f) * prefab.transform.localRotation;
+            go.transform.localRotation = level;
             var b = Bounds(go); float span = b.size.z;
             go.transform.localScale *= span > 1e-3f ? SizeOf(Spitfire) / span : 1f;
             float size = SizeOf(Spitfire);
-            var pos = new Vector3(at.x, Statecraft.Game.Map.Units.UnitShowcase.LoopFloor(map!, new Vector3(at.x, 0f, at.y), size) + Statecraft.Game.Map.Units.UnitShowcase.AltitudeM, at.y);
-            go.transform.position = pos; b = Bounds(go);
-            go.transform.position += pos - b.center;
+            var centre = new Vector3(at.x, Statecraft.Game.Map.Units.UnitShowcase.LoopFloor(map!, new Vector3(at.x, 0f, at.y), SpitfireLoopHalfLengthM + size)
+                + Statecraft.Game.Map.Units.UnitShowcase.AltitudeM, at.y);
+            go.transform.position = centre; b = Bounds(go);
+            // Edit mode and screenshots hold the loop's start, as the train does (RouteLayer.ModeFor).
+            go.AddComponent<SpitfireLoop>().Configure(centre, level, b.center - go.transform.position, !Application.isPlaying || VisualShots.Requested());
             foreach (var r in go.GetComponentsInChildren<Renderer>(true)) r.shadowCastingMode = ShadowCastingMode.On;
-            Placed.Add((go.name, Spitfire, pos));
-            keepAll.Add(new[] { Bounds(go) });
+            Placed.Add((go.name, Spitfire, centre));
+            // Seen from above, the aircraft at any heading lies within half its box's diagonal of its centre.
+            float reach = 0.5f * new Vector2(b.size.x, b.size.z).magnitude + 1f;
+            keepAll.Add(new[] { new Bounds(centre, new Vector3(2f * (SpitfireLoopHalfLengthM + reach), b.size.y + 2f, 2f * (SpitfireLoopHalfWidthM + reach))) });
         }
 
         /// <summary>The ground the other 1948 Collection layers hold (GameRoot shows them first), for the C-54 to keep off, as
