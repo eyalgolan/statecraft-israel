@@ -259,7 +259,7 @@ public sealed class CivilianPeopleTests
 
         var arabTowns = map.Settlements.Where(s => s.Type == "arab_town").Select(s => s.Id).ToList();
         CollectionAssert.AreEquivalent(new[] { "jaffa", "acre", "nazareth", "lod", "ramla", "gaza", "beersheba" }, arabTowns,
-            "the seven Arab towns, each with the stone village (TownLandmarks.ByType)");
+            "the seven Arab towns: the stone village (TownLandmarks.ByType), Ramla its own town (ById, owner 2 November 2026)");
         var villages = CivilianPeople.Served(rural, RuralLife.Sheep, RuralLife.Donkey).Select(w => w.Key).ToList();
         Assert.That(villages.Count, Is.InRange(RuralLife.MaxAnchorsPerModel, 2 * RuralLife.MaxAnchorsPerModel));
         Assert.IsTrue(villages.All(v => types[v] == "village"), "the flocks' villages");

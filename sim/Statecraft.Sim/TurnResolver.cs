@@ -20,7 +20,7 @@ namespace Statecraft.Sim
             Combat.Resolve(c, s, why);                    // 2. combat, in ascending attacker id (R-COMBAT-002)
             SettlementControl.Capture(c, s, next, why);   // 3. capture, in ordinal settlement id (R-CTRL-004, R-CTRL-005)
             Orders.Settle(s, why);                        // 3b. after combat: fortify given this turn is set, and lost where a unit left its hex (R-ORDER-002)
-            Military.Serve(s, r, why);                    //    service by formations already in play, before graduation
+            Military.Serve(c, s, r, why);                 //    service by formations already in play, before graduation
             Training.Progress(c, s, why);                 // 4. training
             Projects.Advance(c, s, next, why);            // 5. construction
             Projects.AdvanceCity(c, s, next, why);        //    and the city projects (R-PROJ-003)

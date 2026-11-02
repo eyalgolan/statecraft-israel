@@ -123,7 +123,7 @@ namespace Statecraft.Sim
 
         static void Stop(GameState s, Unit u, string key, string line, string hex, List<Cause> why)
         {
-            s.Units[u.Id] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity, u.Full);
+            s.Units[u.Id] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity, u.Full, u.CombatXp);
             s.CardOrders.Remove(u.Id);   // a stopped go-to is no operation card's order any more (R-ENEMY-005)
             why.Add(UnitLines.Line(key, line, new[] { u }, hex));
         }
@@ -145,7 +145,7 @@ namespace Statecraft.Sim
             if (Closed(c, s, false).Contains((q.Value, r.Value))) return "Units may not enter an enemy-held locality before its capture is possible";
             if (Route(c, s, unitId, q.Value, r.Value, spent, cardUntil != null).Count == 0) return "No route reaches that hex";
             var target = HexText(q.Value, r.Value);
-            var given = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, GoTo, target, u.HomeCity, u.Full);
+            var given = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, GoTo, target, u.HomeCity, u.Full, u.CombatXp);
             s.Units[unitId] = given;
             if (cardUntil is DateTime until) s.CardOrders[unitId] = until; else s.CardOrders.Remove(unitId);
             why.Add(UnitLines.Line(WhyKeys.OnItsWay, $"Unit {unitId} is on its way to hex {target}", new[] { given }, target));
@@ -237,7 +237,7 @@ namespace Statecraft.Sim
             // is given, with the hex it names), so a unit that goes out and comes back the same turn is not fortified; hold moves with
             // the unit. The order step at the end of the turn only sees the final hex.
             var fortified = u.Order == "fortify" || u.Order == "fortifying";
-            s.Units[unitId] = new Unit(u.Id, u.Type, q, r, u.Service, u.Side, u.Strength, fortified ? "" : u.Order, fortified ? "" : u.OrderTarget, u.HomeCity, u.Full);
+            s.Units[unitId] = new Unit(u.Id, u.Type, q, r, u.Service, u.Side, u.Strength, fortified ? "" : u.Order, fortified ? "" : u.OrderTarget, u.HomeCity, u.Full, u.CombatXp);
             spent[unitId] = used + cost;
             why.Add(new Cause("map", unitId.ToString(CultureInfo.InvariantCulture), cost,
                 FormattableString.Invariant($"Unit {unitId} moved to hex {q},{r} for {cost} movement points"), enemy ? Kind : "",

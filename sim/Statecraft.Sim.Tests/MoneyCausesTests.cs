@@ -161,7 +161,7 @@ public class MoneyCausesTests
         Assert.Contains(r.Why, w => w.Key == CauseKeys.Borrowed && w.Args[0] == CauseKeys.Purpose.Deport);
     }
 
-    // R-MONEY-003: every turn of the reference player's game, with its orders, events, upkeep and borrowing.
+    // R-MONEY-003: every turn of the reference player's game (gdd-0.1), with its orders, events, upkeep and borrowing.
     [Fact]
     public void EveryTurnOfTheReferenceRunAddsUp()
     {
@@ -170,6 +170,7 @@ public class MoneyCausesTests
         {
             var r = Simulation.Step(Real, s, GoldenRun.Orders(Real, s));
             AssertAddsUp(s, r, $"turn {t} ({s.Date:yyyy-MM-dd})");
+            Gdd03MoneyLedgerTests.AssertReconciles(s, r, $"turn {t} ({s.Date:yyyy-MM-dd})");   // #1702: the Debt lines and the floor too
             s = r.State;
         }
     }

@@ -205,7 +205,9 @@ public class NoShotArmsTests
         var normalized = y.State.Clone();
         normalized.Arms = x.State.Arms;
         static string Core(string text) => Regex.Replace(Regex.Replace(text, @"\npopulation-ledger\{(?:\n  [^\n]*)*", "").Replace("ruleset=gdd-0.3;", ""), @"\natt=[^\n]*", "");
-        Assert.Equal(Core(x.State.Describe()), Core(normalized.Describe()));
+        // R-UNIT-011 (#1707): gdd-0.3 also counts the survivors' combat experience; the losses, hexes and draw stay the same.
+        Assert.Contains("|xp=1", normalized.Describe());
+        Assert.Equal(Core(x.State.Describe()), Regex.Replace(Core(normalized.Describe()), @"\|xp=\d+", ""));
         Assert.Equal(x.Why.Select(w => w.Message), y.Why.Select(w => w.Message));
     }
 

@@ -26,6 +26,18 @@ public class EventVideoTests
     static EventImageCatalog Photos => AssetDatabase.LoadAssetAtPath<EventImageCatalog>("Assets/Resources/EventImageCatalog.asset");
     static IReadOnlyList<EventVideoMapping.Row> Rows => EventVideoMapping.Parse(File.ReadAllText(EventVideoMapping.Path));
 
+    /// <summary>Q-CARD-3 (a) and constraint 10 of the Phase 6 plan (GDD Phase 6 PR 9, #801): no `displacement` card has a
+    /// decision clip, an End Turn clip or a photograph, and Deport never gets a video.</summary>
+    [Test]
+    public void NoDisplacementCardHasAClipOrAPhotograph()
+    {
+        var cards = C.Events.Where(e => e.Tags.Contains("displacement", StringComparer.OrdinalIgnoreCase)).Select(e => e.Id).ToList();
+        CollectionAssert.IsNotEmpty(cards, "Deport's follow-up cards are in content/ (#801)");
+        var outcomes = EventVideoMapping.ParseOutcomes(File.ReadAllText(EventVideoMapping.Path));
+        CollectionAssert.IsEmpty(Rows.Concat(outcomes).Select(r => r.Event).Intersect(cards));
+        foreach (var id in cards) Assert.IsNull(Photos.Find(id), id);
+    }
+
     [Test]
     public void TheMappingIsSoundAndEveryClipShips()
     {
@@ -34,10 +46,13 @@ public class EventVideoTests
         var problems = EventVideoMapping.Problems(rows, C, id => Photos.Find(id) != null, f => File.Exists(Path.Combine(EventVideoMapping.ClipFolder, f)));
         Assert.IsEmpty(problems, string.Join("\n", problems));
         Assert.IsNotEmpty(EventVideoMapping.Load(), "the game finds the mapping in Resources");
-        // Every file in the folder has a row (no stray clip ships).
+        // Every file in the folder has a row (no stray clip ships): here, or an opening panel's clip (OpeningClipTests).
         var files = Directory.GetFiles(EventVideoMapping.ClipFolder, "*.mp4").Select(Path.GetFileName).OrderBy(x => x).ToArray();
         var outcomes = EventVideoMapping.ParseOutcomes(File.ReadAllText(EventVideoMapping.Path));   // the End Turn clips (OutcomeClipTests)
-        CollectionAssert.AreEqual(rows.Concat(outcomes).Select(r => r.File).OrderBy(x => x).ToArray(), files);
+        var mapped = rows.Concat(outcomes).Select(r => r.File).ToList();
+        var openingOnly = AssetDatabase.LoadAssetAtPath<OpeningContent>("Assets/Resources/OpeningContent.asset").Read().Panels
+            .Where(p => p.Clip != null).Select(p => p.Clip!.File).Except(mapped);   // law_of_return and iraqi_exodus are card rows
+        CollectionAssert.AreEqual(mapped.Concat(openingOnly).OrderBy(x => x).ToArray(), files);
     }
 
     [Test]

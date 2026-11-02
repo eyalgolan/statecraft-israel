@@ -1,0 +1,22 @@
+{
+  "id": "ramla-town-v1",
+  "source": "asset-sources/prepared-towns-20261031/ramla/statecraft-ramla-approved-textured-aaf2619f.glb",
+  "source_glb_sha256": "b9e3dfdf0fac0c4b88e0ec294f0629540d809ee78871d1a986debb765198a75e",
+  "creator_credit": "Tal Heuberger",
+  "licence": "CC-BY-NC-ND-4.0",
+  "pull_request": 2085,
+  "texture_dimensions": [
+    2048,
+    2048
+  ],
+  "texture_sha256": "ffb841b5f912ace6cbd84f98fd173c2ef7a1b29574546d0c862021e2b122bd88",
+  "compatibility_fbx_sha256": "719464d838304e6e795e49aaa83f571ced7d9269f77436f1dc73a5424d6516c7",
+  "triangles": 4426,
+  "geometry_max_vertex_error": 1.3328003944934608e-07,
+  "uv_max_error": 0.0,
+  "triangle_connectivity": "identical",
+  "blender": "5.0.1",
+  "decimation": false,
+  "welding": false,
+  "conversion": "Standard glTF Y-up / FBX Y-up compatibility export (Tal's permission of 31 October 2026 covers export conversions); no pivot, mesh or UV rewrite; no clips in the source; map copied byte for byte from the delivered JPG"
+}
