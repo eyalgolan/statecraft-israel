@@ -99,15 +99,16 @@ public class TownLandmarksTests
         foreach (var (id, _, done) in pending) done(Far(id));
     }
 
-    /// <summary>The four cities' whole-town models stay in the repository and the streamed catalogue, unused on the map
-    /// (owner, 2 November 2026, "Yes, small buildings at every zoom": Tel Aviv, Jerusalem, Haifa and Jaffa draw their
-    /// building models instead). The other six are placed as #507 mapped them, with #2085's four generated towns.</summary>
+    /// <summary>Tel Aviv's, Jerusalem's and Haifa's whole-town models stay in the repository and the streamed catalogue, unused
+    /// on the map (owner, 2 November 2026, "Yes, small buildings at every zoom": Tel Aviv, Jerusalem, Haifa and Jaffa draw
+    /// their building models instead; Jaffa never had a whole town of its own, only the stone village). The other six are
+    /// placed as #507 mapped them, with #2085's four generated towns.</summary>
     [Test]
     public void EveryTownModelIsUsedAndEachIsInTheStreamedTownsBundle()
     {
         var used = TownLandmarks.ById.Values.Concat(TownLandmarks.ByType.Values).Concat(TownLandmarks.ByAction.Values.Select(v => v.Model)).Distinct();
         var unused = new[] { TownLandmarks.TelAviv, TownLandmarks.Jerusalem3D, TownLandmarks.Haifa };
-        CollectionAssert.AreEquivalent(Towns.Except(unused), used, "#507's mapping without the four cities' whole towns (owner, 2 November 2026), and #2085's generated towns");
+        CollectionAssert.AreEquivalent(Towns.Except(unused), used, "#507's mapping without Tel Aviv's, Jerusalem's and Haifa's whole towns (owner, 2 November 2026; Jaffa never had one), and #2085's generated towns");
         foreach (var id in Towns) Assert.AreEqual("collection-" + id, CollectionCatalog.BundleOf(id), id + " stays in the streamed catalogue");
         Assert.AreEqual(TownLandmarks.Kibbutz, TownLandmarks.ByType["kibbutz"]);
         Assert.AreEqual(TownLandmarks.StoneVillage, TownLandmarks.ByType["arab_town"], "the other Arab towns keep the stone village");
@@ -345,7 +346,8 @@ public class TownLandmarksTests
     [Test]
     public void OnlyTheCurrentCamerasReadyTownsSuppressProceduralHouses()
     {
-        // Since #2085 every game town has a whole-town model, so the test unmaps one (Netanya) for its run: it stands in for an
+        // Since #2085 every game settlement but the four cities (drawn from their building models at every zoom, owner,
+        // 2 November 2026) has a whole-town model, so the test unmaps one town (Netanya) for its run: it stands in for an
         // unrelated plain town, and its kit must keep the fallback.
         var byId = (Dictionary<string, string>)TownLandmarks.ById;
         string unmapped = "netanya", row = byId[unmapped];
@@ -356,7 +358,8 @@ public class TownLandmarksTests
             var t = ShowAll(map);
             var root = map.transform.Find(KitLayer.RootName);
             var mapped = Mapped(map);
-            var plain = map.Settlements.First(s => TownLandmarks.ModelFor(s) == null && !BigCities.Contains(s.Id));
+            var plain = map.Settlements.Single(s => s.Id == unmapped);
+            Assert.IsNull(TownLandmarks.ModelFor(plain), unmapped + " is unmapped for the run");
             var plainKit = root.Find(plain.Id).GetComponent<MeshRenderer>();
             foreach (var (d, close) in new[] { (120000f, false), (60000f, false), (TownModelLayer.CloseEnterM - 1000f, true), (CameraController.MinDistance, true) })
             {
@@ -375,6 +378,9 @@ public class TownLandmarksTests
                 var buildingLayer = root.GetComponentInChildren<TownModelLayer>();
                 bool plainReady = (bool)ResidencyCall(buildingLayer, typeof(TownModelLayer), "ReadyForTown", plain.Id, Camera.main)!;
                 Assert.AreEqual(plainReady, plainKit.forceRenderingOff, "an unrelated plain town keeps fallback");
+                // Above the close switch only the four cities' building models are admitted (TownModelLayer.AtZoom), so the
+                // plain town is never ready there and its kit must draw.
+                if (!close) Assert.IsFalse(plainReady, $"{d:F0} m: the plain town's building models are not admitted");
             }
         }
         finally { byId[unmapped] = row; }
