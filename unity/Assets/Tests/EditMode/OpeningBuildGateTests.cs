@@ -58,6 +58,7 @@ public class OpeningBuildGateTests
         {
             var image = (YamlMappingNode)Get(panel, "image");
             Set(image, "sensitive", "true"); Set(image, "sensitivity_reviewed", "true");
+            if (panel.Children.TryGetValue(new YamlScalarNode("clip"), out var clip)) Set((YamlMappingNode)clip, "sensitivity_reviewed", "true");
         }
         change?.Invoke(doc);
         using var writer = new StringWriter(); yaml.Save(writer, false);
@@ -101,6 +102,18 @@ public class OpeningBuildGateTests
         });
         if (gap == "photo reference") damaged.photos[1] = null!;
         Assert.IsNotNull(gate.Invoke(null, new object?[] { damaged }), gap + " must not become shareable");
+    }
+
+    [Test]
+    public void AnUnreviewedSensitiveClipRefuses()
+    {
+        var gate = Require("OpeningShareableRefusal");
+        Assert.IsNull(gate.Invoke(null, new object?[] { Fixture() }), "precondition: the reviewed fixture passes");
+        var unreviewed = Fixture(doc => Set((YamlMappingNode)Get(Panels(doc)[1], "clip"), "sensitivity_reviewed", "false"));
+        Assert.IsTrue(unreviewed.Read().Reviewed, "precondition: photographs and text reviewed, so only the clip is gated");
+        Assert.IsFalse(unreviewed.Read().ClipsReviewed);
+        StringAssert.Contains("opening clip", (string?)gate.Invoke(null, new object?[] { unreviewed }) ?? "",
+            "a sensitive clip without the owner's review must not reach a shareable build");
     }
 
     [Test]

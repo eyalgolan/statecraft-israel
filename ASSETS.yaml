@@ -1727,7 +1727,7 @@ rules:
     ai_generated: true
     source: "Veo 3.1 Fast (ElevenLabs), generated 2026-10-12 (promo shot K04a, promo/demo3/clips/K04a.mp4, not in the repository; sha256 5bb6e584eb57771bef155f4dcf2be847d1a8f50302b8dbffd30723806ab4a2b9); re-encoded 2026-10-14 by tools/encode_event_videos.py: 960x540, 24 fps, H.264 CRF 28, no audio, with no burned-in caption (owner ruling of 2026-10-14: no need to say they were created by AI); nothing else changed"
     status: verified
-    note: "Decision D1: AI-only output CC0 / no rights claimed. Owner ruling D-V (2026-10-13): the generator terms were not checked, by the owner's choice. Shown on the law_of_return card behind the Illustration switch, labelled 'AI-generated illustration', never in place of the archival photograph. No identifiable real person (frames checked 2026-10-14)."
+    note: "Decision D1: AI-only output CC0 / no rights claimed. Owner ruling D-V (2026-10-13): the generator terms were not checked, by the owner's choice. Shown on the law_of_return card behind the Illustration switch, labelled 'AI-generated illustration', never in place of the archival photograph. No identifiable real person (frames checked 2026-10-14). Also loops in the opening's Europe panel after its archival photograph, labelled the same way (owner ruling of 2026-11-02, 'B: A + one new Yemen shot (~2,424)'; unity/Assets/UI/Opening/opening.yaml)."
   - glob: "unity/Assets/StreamingAssets/video/hula_drainage.mp4"
     licence: CC0-1.0
     ai_generated: true
@@ -1745,7 +1745,7 @@ rules:
     ai_generated: true
     source: "Seedance 2.0 (Dreamina); the Dreamina AI badge is kept, generated 2026-10-12 (promo shot A07, promo/demo2/clips/A07.mp4, not in the repository; sha256 8b3fc06d8a7836e82896a9fd09a3b874dbfdd7f9eca9e7be63f70202630af783); re-encoded 2026-10-14 by tools/encode_event_videos.py: 960x540, 24 fps, H.264 CRF 28, no audio, with no burned-in caption (owner ruling of 2026-10-14: no need to say they were created by AI); nothing else changed"
     status: verified
-    note: "Decision D1: AI-only output CC0 / no rights claimed. Owner ruling D-V (2026-10-13): the generator terms were not checked, by the owner's choice. Shown on the iraqi_exodus card behind the Illustration switch, labelled 'AI-generated illustration', never in place of the archival photograph. No identifiable real person (frames checked 2026-10-14)."
+    note: "Decision D1: AI-only output CC0 / no rights claimed. Owner ruling D-V (2026-10-13): the generator terms were not checked, by the owner's choice. Shown on the iraqi_exodus card behind the Illustration switch, labelled 'AI-generated illustration', never in place of the archival photograph. No identifiable real person (frames checked 2026-10-14). Also loops in the opening's Arab countries panel after its archival photograph, labelled the same way (owner ruling of 2026-11-02, 'B: A + one new Yemen shot (~2,424)'; unity/Assets/UI/Opening/opening.yaml)."
   - glob: "unity/Assets/StreamingAssets/video/ten_days.mp4"
     licence: CC0-1.0
     ai_generated: true

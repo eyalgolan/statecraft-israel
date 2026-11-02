@@ -48,6 +48,19 @@ namespace Statecraft.Game.UI
             public bool SensitivityReviewed { get; set; }
             public string Note { get; set; } = "";
         }
+        /// <summary>A panel's optional illustration loop (owner ruling of 2 November 2026, "B: A + one new Yemen shot
+        /// (~2,424)"): a silent clip already in StreamingAssets/video, played in the photograph's frame after the photograph
+        /// (OpeningPresenter) and labelled "AI-generated illustration". Its provenance is its ASSETS.yaml row
+        /// (tools/tests/test_opening_sources.py).</summary>
+        public sealed class Clip
+        {
+            public string File { get; set; } = "";
+            public string Shot { get; set; } = "";
+            public string Alt { get; set; } = "";
+            public bool AiGenerated { get; set; }
+            public bool Sensitive { get; set; }
+            public bool SensitivityReviewed { get; set; }
+        }
         public class Paragraph
         {
             public string Text { get; set; } = "";
@@ -60,6 +73,7 @@ namespace Statecraft.Game.UI
             public string Title { get; set; } = "";
             public List<Arrival> Arrivals { get; set; } = new List<Arrival>();
             public Image Image { get; set; } = new Image();
+            public Clip? Clip { get; set; }
         }
         public sealed class Document
         {
@@ -71,6 +85,8 @@ namespace Statecraft.Game.UI
             public bool TextReviewed => Status == Statecraft.Sim.ReleaseGate.ReviewedStatus && Closing != null && Closing.Checked
                 && Panels != null && Panels.Count == 3 && Panels.All(p => p != null && p.Checked);
             public bool Reviewed => PhotosReviewed && TextReviewed;
+            /// <summary>Every sensitive clip has the owner's sensitivity review (a shareable build refuses one without it).</summary>
+            public bool ClipsReviewed => Panels != null && Panels.All(p => p?.Clip == null || !p.Clip.Sensitive || p.Clip.SensitivityReviewed);
         }
 
         /// <summary>The approved three-panel structure; unknown or repeated YAML fields fail closed.</summary>
@@ -94,9 +110,28 @@ namespace Statecraft.Game.UI
                     if (p.Image.File != "opening_" + p.Id + ".jpg" || string.IsNullOrWhiteSpace(p.Image.Credit)
                         || string.IsNullOrWhiteSpace(p.Image.Alt))
                         throw new InvalidOperationException(SourcePath + ": photograph or credit missing for " + p.Id);
+                foreach (var p in doc.Panels.Where(p => p.Clip != null))
+                    if (ClipProblem(p) is string problem) throw new InvalidOperationException(SourcePath + ": " + p.Id + "'s clip: " + problem);
                 return doc;
             }
             catch (YamlDotNet.Core.YamlException e) { throw new InvalidOperationException(SourcePath + ": " + e.Message, e); }
+        }
+
+        /// <summary>Why a panel's clip row is malformed, or null: a bare .mp4 name in StreamingAssets/video, its shot, an alt
+        /// text that says it is an illustration, ai_generated: true, sensitive like its photograph, and a review only of
+        /// what is sensitive (the event-videos.yaml rules).</summary>
+        static string? ClipProblem(Panel p)
+        {
+            var clip = p.Clip!;
+            if (!System.Text.RegularExpressions.Regex.IsMatch(clip.File ?? "", "^[a-z0-9_-]+\\.mp4$"))
+                return "file must be the bare name of an .mp4 in StreamingAssets/video (got '" + clip.File + "')";
+            if (string.IsNullOrWhiteSpace(clip.Shot)) return "shot missing";
+            if (clip.Alt == null || !clip.Alt.StartsWith("Illustration: ", StringComparison.Ordinal) || clip.Alt.Length < 30)
+                return "alt text must start 'Illustration: ' and say what it shows";
+            if (!clip.AiGenerated) return "ai_generated must be true";
+            if (p.Image.Sensitive && !clip.Sensitive) return "the photograph is sensitive, so its clip must be sensitive: true";
+            if (clip.SensitivityReviewed && !clip.Sensitive) return "sensitivity_reviewed without sensitive";
+            return null;
         }
 
         public Document Read()

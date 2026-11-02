@@ -142,7 +142,8 @@ namespace Statecraft.Game.EditorTools
 
         /// <summary>The opening (#530) in a shareable build: its catalog must load, its three photographs must have the
         /// owner's sensitivity review, as event photographs do, and its text must be reviewed with every source checked
-        /// (owner, "Photos and text"), so a shareable build carries neither draft photographs nor draft text.</summary>
+        /// (owner, "Photos and text"), so a shareable build carries neither draft photographs nor draft text. A sensitive
+        /// clip needs the owner's sensitivity review too, as the cards' clips do.</summary>
         public static string? OpeningShareableRefusal(OpeningContent? opening)
         {
             if (opening == null) return "the opening catalog is missing or did not load (" + OpeningCatalogPath + ")";
@@ -155,6 +156,9 @@ namespace Statecraft.Game.EditorTools
                 if (!data.TextReviewed)
                     reasons.Add("the opening text needs the owner's review and every source checked (" + OpeningContent.SourcePath
                         + ", status: " + Statecraft.Sim.ReleaseGate.ReviewedStatus + " and checked: on each source)");
+                if (!data.ClipsReviewed)
+                    reasons.Add("an opening clip needs the owner's sensitivity review (" + OpeningContent.SourcePath
+                        + ", sensitivity_reviewed on its clip; see docs/event-videos.md)");
                 return reasons.Count == 0 ? null : string.Join("; ", reasons);
             }
             catch (InvalidOperationException e) { return "the opening cannot be read: " + e.Message; }

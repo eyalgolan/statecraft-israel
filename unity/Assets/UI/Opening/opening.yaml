@@ -31,6 +31,15 @@ panels:
       - url: "https://portal.ehri-project.eu/units/us-005544-cyp_45_49"
         supports: "JDC Cyprus collection: 'the British government began deporting Jews who came to Palestine in violation of the White Paper of 1939 to the island of Cyprus. From August 1946 to February 1949, the deportees ... lived behind barbed wire in 12 detention camps. During this period, approximately 53,000 Jews passed through the camps'"
         checked: 2026-10-31
+    # After the photograph, the law_of_return card's loop (owner ruling of 2 November 2026, "B: A + one new Yemen shot
+    # (~2,424)"): the same file, alt text and shot as its event-videos.yaml row; its provenance is its ASSETS.yaml row.
+    clip:
+      file: law_of_return.mp4
+      shot: K04a
+      alt: "Illustration: an immigrant ship crowded with passengers entering Haifa bay."
+      ai_generated: true
+      sensitive: true
+      sensitivity_reviewed: false
     image:
       file: opening_europe.jpg
       commons: "https://commons.wikimedia.org/wiki/File:Cyprus_(997008136325305171).jpg"
@@ -63,6 +72,14 @@ panels:
       - url: "https://www.cbs.gov.il/he/publications/DocLib/2009/1365/pdf/e_print.pdf"
         supports: "Table 5 (printed pages 38-39), column 15 V 1948 - 1951: Iraq 123,371; Morocco 28,263; Libya 30,972; Egypt, Sudan 16,028; Tunisia 13,293; Algeria 3,810 (the 'tens of thousands more' line)"
         checked: 2026-10-31
+    # After the photograph, the iraqi_exodus card's loop (the same ruling and rules as Europe's clip).
+    clip:
+      file: iraqi_exodus.mp4
+      shot: A07
+      alt: "Illustration: an airliner on the apron at Lydda at dusk, families coming down the steps with suitcases."
+      ai_generated: true
+      sensitive: true
+      sensitivity_reviewed: false
     image:
       file: opening_arab_countries.jpg
       commons: "https://commons.wikimedia.org/wiki/File:Ben_Gurion_International_Airport_(997008136550505171).jpg"
@@ -94,6 +111,8 @@ panels:
       - url: "https://www.cbs.gov.il/he/publications/DocLib/2009/1365/pdf/e_print.pdf"
         supports: "Table 5, column 15 V 1948 - 1951: Yemen (7) 48,315; note 7, 'Incl. the former Aden'"
         checked: 2026-10-31
+    # No clip yet: the ruling's new Yemen shot is not generated. Until then Yemen shows only its photograph. The shot
+    # arrives as one `clip:` row here, once its file is in StreamingAssets/video with its ASSETS.yaml row.
     image:
       file: opening_yemen.jpg
       commons: "https://commons.wikimedia.org/wiki/File:Aden_(997008136749905171).jpg"

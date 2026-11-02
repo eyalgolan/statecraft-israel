@@ -102,6 +102,26 @@ event has an outcome clip, plays that clip once, in the middle of the screen, be
   a truce whose terms bar bringing in men and materiel) and law_of_return / enact (K04b, not in the plan's list and with
   no recorded ruling). A replacement needs the owner's word before anything new is generated.
 
+## In the opening
+
+Owner ruling of 2 November 2026: "B: A + one new Yemen shot (~2,424)". Two of the opening's panels (#530) reuse a card's
+loop, by the same rules as the cards:
+
+- **The photograph comes first.** The panel opens on its archival photograph and credit. After
+  `OpeningPresenter.PhotoHoldMs` (2 s) the clip loops, silent, in the photograph's frame. CardVideo keeps the photograph
+  until the clip's first frame.
+- **The label.** While the clip plays, the cards' `event.ai_label` string replaces the credit, in Hebrew in the Hebrew
+  UI. The clip's alt text becomes the tooltip.
+- **Stopping and failing.** Back, Next, Skip and Esc stop the clip. A clip that fails or times out puts the photograph
+  back for the rest of the session. Video is off in the automated runs, as on the cards.
+- **The clips.** Europe uses law_of_return (K04a), and the Arab countries use iraqi_exodus (A07). Yemen shows only its
+  photograph until its new shot is generated. That shot is added as one `clip:` row in
+  `unity/Assets/UI/Opening/opening.yaml`, with its file and its `ASSETS.yaml` row.
+- **The checks.** `OpeningContent.Parse` refuses a malformed row. `tools/tests/test_opening_sources.py` checks each clip's
+  file, its `ASSETS.yaml` row and its `docs/ai-disclosure.md` line, and that a reused card clip keeps the card row's shot
+  and alt text. Every opening panel is sensitive, so its clip is `sensitive: true`, and a `-shareable` build refuses it
+  until the owner sets `sensitivity_reviewed: true` (`Build.OpeningShareableRefusal`).
+
 ## Where things are
 
 | What | Where |
