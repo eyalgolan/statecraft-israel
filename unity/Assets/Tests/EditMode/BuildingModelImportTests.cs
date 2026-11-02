@@ -21,24 +21,33 @@ public class BuildingModelImportTests
         "b09a-kibbutz-communal-building-v2", "b11-shikun-housing-v2", "b12-tegart-fort-v2", "b13a-netanya-two-storey-v2",
         "b16-farmhouse-v2", "b17-stone-courtyard-house-v2", "b18-military-barracks-v2", "b21-artisan-workshop-v2",
         "b22-industrial-factory-v2", "b23-winery-v2", "b24-agricultural-barn-v2", "b28-water-tower-v2", "b32-port-cargo-shed-v2",
+        // Tal Heuberger's generated houses, placed on 27 October 2026 (#756: "Sign off all 19"); each keeps its provenance receipt.
+        "generated-1948-01-netanya-tiled-house-original", "generated-1948-02-netanya-two-storey-balcony-house",
+        "generated-1948-03-netanya-flat-roof-porch-house", "generated-1948-04-dark-basalt-house",
+        "generated-1948-05-plastered-courtyard-house-original",
     };
+    static bool Generated(string id) => Statecraft.Game.Map.Collection.CollectionCatalog.IsGeneratedHouse(id);
 
     static string Model(string id) => $"{Folder}/{id}/{id}.fbx";
     static string ColourMap(string id) => $"{Folder}/{id}/{id}_basecolor.jpg";
 
     static bool UnderResources(string path) => path.Split('/').Any(s => s.Equals("Resources", StringComparison.OrdinalIgnoreCase));
 
-    /// <summary>The 23 buildings (model, material, colour map), and beside each of #707's five the prefab its streamed
-    /// bundle carries (CollectionImport.MakeBuildingPrefabs).</summary>
+    /// <summary>The 28 buildings, #507's 23 and Tal Heuberger's five generated houses (model, material, colour map, and each
+    /// house's provenance receipt and #1901 lighter level), and beside each the streamed prefab its bundle carries
+    /// (CollectionImport.MakeBuildingPrefabs).</summary>
     [Test]
-    public void TheFolderHoldsTheTwentyThreeBuildingsAndNothingElse()
+    public void TheFolderHoldsTheTwentyEightBuildingsAndNothingElse()
     {
-        Assert.AreEqual(23, Ids.Length);
+        Assert.AreEqual(28, Ids.Length, "#507's 23 and the five generated houses");
         var streamed = Statecraft.Game.Map.Collection.CollectionCatalog.Ids
             .Where(Statecraft.Game.Map.Collection.CollectionCatalog.IsBuilding).ToArray();
-        Assert.AreEqual(23, streamed.Length);
+        Assert.AreEqual(28, streamed.Length);
         CollectionAssert.IsSubsetOf(streamed, Ids);
-        var expected = Ids.SelectMany(id => new[] { Model(id), $"{Folder}/{id}/{id}.mat", ColourMap(id) })
+        var expected = Ids.SelectMany(id => new[] { Model(id), $"{Folder}/{id}/{id}.mat", ColourMap(id) }
+                .Concat(Generated(id) ? new[] { $"{Folder}/{id}/provenance.json" } : Array.Empty<string>())
+                // #1901's lighter level of each generated house, for the hex-tile boards in the editor (HexHouseLevels); no bundle carries it.
+                .Concat(Generated(id) ? new[] { ".asset", ".prefab", ".json" }.Select(e => $"{Folder}/{id}/{id}-light{e}") : Array.Empty<string>()))
             .Concat(streamed.Select(id => Statecraft.Game.Map.Collection.CollectionCatalog.PrefabPath(id, Statecraft.Game.Map.Collection.CollectionDetail.Near)))
             .OrderBy(p => p, StringComparer.Ordinal);
         var found = AssetDatabase.FindAssets("", new[] { Folder }).Select(AssetDatabase.GUIDToAssetPath)
@@ -80,7 +89,8 @@ public class BuildingModelImportTests
             Assert.AreEqual(ModelImporterMeshCompression.Off, imp!.meshCompression, path + " mesh compression");
             Assert.IsFalse(imp.isReadable, path + " Read/Write");
             Assert.IsTrue(imp.importAnimation, path + " all original takes retained");
-            Assert.AreEqual(ModelImporterAnimationType.Generic, imp.animationType, path + " rig");
+            // #507's buildings import with a Generic rig; the generated houses keep their delivered import, with none.
+            Assert.AreEqual(Generated(id) ? ModelImporterAnimationType.None : ModelImporterAnimationType.Generic, imp.animationType, path + " rig");
             Assert.IsTrue(imp.importBlendShapes, path + " blend shapes");
             Assert.IsFalse(imp.importVisibility, path + " visibility");
             Assert.IsFalse(imp.importCameras, path + " cameras");
@@ -118,6 +128,15 @@ public class BuildingModelImportTests
             Assert.IsFalse(imp.crunchedCompression, path + " no Crunch");
             Assert.IsTrue(imp.mipmapEnabled, path + " mipmaps"); Assert.IsTrue(imp.sRGBTexture, path + " sRGB");
             Assert.IsFalse(imp.isReadable, path + " GPU-only");
+            if (Generated(id))
+            {
+                // The generated houses keep their delivered, approved import: compressed, quality 100, exactly 4096, no overrides.
+                Assert.AreEqual(4096, imp.maxTextureSize, path + " max size");
+                Assert.AreEqual(100, imp.compressionQuality, path + " quality");
+                Assert.AreEqual(TextureImporterCompression.Compressed, imp.textureCompression, path + " compression");
+                foreach (var target in new[] { "Standalone", "WebGL", "Android", "iPhone" })
+                    Assert.IsFalse(imp.GetPlatformTextureSettings(target).overridden, path + " " + target + " override");
+            }
             foreach (var target in new[] { "Standalone", "WebGL" })
             {
                 var setting = imp.GetPlatformTextureSettings(target);

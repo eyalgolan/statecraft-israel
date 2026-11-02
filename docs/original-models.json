@@ -10566,8 +10566,8 @@
     },
     {
       "path": "unity/Assets/Art/Settlements/TownModels.asset",
-      "size": 7796,
-      "shipped_sha256": "8063e189957ea8eee1af792e37fbf7b44eb0354c64272a8f7616080699748bc4",
+      "size": 9811,
+      "shipped_sha256": "b51828adcc93f3f2a383b3d806b5e1f4ea16749ee9da1fefa2c38af3182c33a9",
       "source": "generated (ours)",
       "tal_commit": null,
       "source_path": null,

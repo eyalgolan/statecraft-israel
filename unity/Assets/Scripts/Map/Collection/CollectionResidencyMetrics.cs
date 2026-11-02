@@ -128,6 +128,7 @@ namespace Statecraft.Game.Map.Collection
             foreach (var x in FindObjectsByType<RuralLife>(FindObjectsInactive.Include, FindObjectsSortMode.None)) Add(x.ResidencySnapshot());
             foreach (var x in FindObjectsByType<SeaAirCollection>(FindObjectsInactive.Include, FindObjectsSortMode.None)) Add(x.ResidencySnapshot());
             foreach (var x in FindObjectsByType<SpecialBuildingModels>(FindObjectsInactive.Include, FindObjectsSortMode.None)) Add(x.ResidencySnapshot());
+            foreach (var x in FindObjectsByType<CampTentModels>(FindObjectsInactive.Include, FindObjectsSortMode.None)) Add(x.ResidencySnapshot());
             foreach (var x in FindObjectsByType<Units.UnitFigureResidency>(FindObjectsInactive.Include, FindObjectsSortMode.None)) Add(x.ResidencySnapshot());
             Add(Units.UnitFigures.ResidencyCaches());
             foreach (var x in FindObjectsByType<Units.UnitFigureDetail>(FindObjectsInactive.Include, FindObjectsSortMode.None)) Add(x.ResidencySnapshot());

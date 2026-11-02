@@ -120,11 +120,11 @@ namespace Statecraft.HexTiles
 
         /// <summary>Hex-tile ids drawn as one of Tal Heuberger's generated town houses at its lighter level (#1901; made in
         /// the editor by HexHouseLevels from their FBX, which stays as delivered): Tiberias's basalt houses are house 04. The
-        /// houses are editor review art until they have their own streamed bundle (docs/generated-buildings-props.md), so
-        /// only the editor draws them; a player keeps the tile's stand-in.</summary>
+        /// houses' bundles carry only their full -stream prefabs (CollectionCatalog), not these lighter levels, so only the
+        /// editor draws them; a player keeps the tile's stand-in.</summary>
         public static readonly (string id, string prefab)[] HouseLevels =
         {
-            ("tiles:tiberias_town/basalt_house", "Assets/Editor/Generated1948Review/generated-1948-04-dark-basalt-house/generated-1948-04-dark-basalt-house-light.prefab"),
+            ("tiles:tiberias_town/basalt_house", "Assets/Art/Settlements/Prototype/Models/generated-1948-04-dark-basalt-house/generated-1948-04-dark-basalt-house-light.prefab"),
         };
 
         /// <summary>A house id's lighter level in the editor (AssetDatabase), or null: in a player, or not a house id.</summary>

@@ -34,6 +34,14 @@ namespace Statecraft.Game.Tests
                 SpecialBuildingModels.Shikun, "Ramat HaHayal starts after the sourced year 1950");
             Assert.AreEqual(1, SpecialBuildingModels.Placements(new DateTime(1951, 1, 1))
                 .Count(x => x.Model == SpecialBuildingModels.Shikun), "Ramat HaHayal on the owner-ruled year-level date");
+            // Degania's tank from the day of the Syrian attack, 20 May 1948 (owner, 27 October 2026: "Degania landmark").
+            CollectionAssert.DoesNotContain(SpecialBuildingModels.Placements(new DateTime(1948, 5, 19)).Select(x => x.Model), SpecialBuildingModels.SyrianR35);
+            var tank = SpecialBuildingModels.Placements(new DateTime(1948, 5, 20)).Single(x => x.Model == SpecialBuildingModels.SyrianR35);
+            Assert.AreEqual("degania_r35", tank.Key);
+            Assert.AreEqual(35.5747, tank.Lon, 1e-9, "Degania Alef's row in settlements_1948.yaml");
+            Assert.AreEqual(32.7081, tank.Lat, 1e-9);
+            StringAssert.Contains("degania_defence.yaml", tank.Source);
+            Assert.AreEqual(4.02f, SpecialBuildingModels.RealLengthM(SpecialBuildingModels.SyrianR35), 1e-6f, "the R35's length, en.wiki Renault R35 (research_notes/Map/degania-r35.md)");
         }
 
         [Test]
@@ -124,10 +132,10 @@ namespace Statecraft.Game.Tests
             var props = people.Wanted.Select(w => (new Vector2(w.At.x, w.At.z), CivilianPeople.FigureClearanceM))
                 .Concat(WildlifeLayer.Wants(map).Select(w => (w.At, 0.5f * WildlifeLayer.SizeM))).ToList();
             var layer = CollectionGeometryFixture.Special(map, After)!;
-            CollectionAssert.AreEquivalent(new[] { SpecialBuildingModels.Tegart, SpecialBuildingModels.Barracks, SpecialBuildingModels.Factory, SpecialBuildingModels.Shikun },
-                asked.Select(a => a.id), "one request per placed model");
+            CollectionAssert.AreEquivalent(new[] { SpecialBuildingModels.Tegart, SpecialBuildingModels.Barracks, SpecialBuildingModels.Factory, SpecialBuildingModels.Shikun,
+                SpecialBuildingModels.SyrianR35 }, asked.Select(a => a.id), "one request per placed model");
             AnswerAll();
-            CollectionAssert.AreEquivalent(new[] { "latrun_tegart", "tzrifin_barracks", "camp_80_barracks", "netanya_factory", "ramat_hahayal_shikun" }, layer.Placed.Select(p => p.Key));
+            CollectionAssert.AreEquivalent(new[] { "latrun_tegart", "tzrifin_barracks", "camp_80_barracks", "netanya_factory", "ramat_hahayal_shikun", "degania_r35" }, layer.Placed.Select(p => p.Key));
             var ground = PlacementLayer.CampGround(map);
             var footprints = map.KitFootprints.Select(f => (f.centre, f.radius)).ToList();
             var wants = SpecialBuildingModels.Placements(After).ToDictionary(w => w.Key);
@@ -178,6 +186,58 @@ namespace Statecraft.Game.Tests
             Assert.IsTrue(layer.GetComponentsInChildren<Renderer>(true).All(x => x.forceRenderingOff), "hidden beyond the close zoom's exit");
         }
 
+        /// <summary>The R35 stands just outside Degania Alef's drawn kit, on the side facing the nearest mapped route: its centre
+        /// is on the kit's box widened by one model-clearance on each side (one clearance out from a side, up to the square root
+        /// of two clearances off a corner). The same spot with the "kits" toggle off when it is placed: the box comes from the
+        /// kit meshes, not from their (then disabled) renderers.</summary>
+        [TestCase(true)]
+        [TestCase(false)]
+        public void DeganiaTankStandsJustOutsideEveryVillageKitBoundAtTheTransportSide(bool kitsShown)
+        {
+            var map = OpenMap();
+            // Placement runs inside the fixture; record what it logs so a seeded fallback cannot pass unnoticed.
+            var logged = new List<string>();
+            Application.LogCallback watch = (message, stack, type) => logged.Add(message);
+            Application.logMessageReceived += watch;
+            SpecialBuildingModels layer;
+            if (!kitsShown) VisualToggles.Set("kits", false);
+            try { layer = CollectionGeometryFixture.Special(map, new DateTime(1948, 5, 20))!; AnswerAll(); }
+            finally { Application.logMessageReceived -= watch; if (!kitsShown) VisualToggles.Set("kits", true); }
+            Assert.IsFalse(logged.Any(m => m.Contains("route-facing spot unavailable for degania_r35")),
+                "the R35 took its route-facing village spot, not the seeded fallback");
+            var tank = layer.Placed.Single(p => p.Key == "degania_r35");
+            var kits = map.transform.Find(Statecraft.Game.Map.Kits.KitLayer.RootName)!;
+            var bounds = kits.Cast<Transform>()
+                .Where(t => t.name == "degania_alef" || t.name == "degania_alef" + Statecraft.Game.Map.Kits.KitLayer.CloseSuffix)
+                .Select(t => t.GetComponent<Renderer>().bounds).ToArray();
+            Assert.IsNotEmpty(bounds, "Degania's far and close kit meshes define its drawn village bounds");
+            var at = tank.At; float clearance = SpecialBuildingModels.ClearanceOf(tank.Model);
+            // A box's gaps to the R35's centre on the ground plane, x and z (the tank's height is the terrain's, not the kit box's).
+            (float x, float z) Gaps(Bounds b) => (Mathf.Max(b.min.x - at.x, at.x - b.max.x, 0f), Mathf.Max(b.min.z - at.z, at.z - b.max.z, 0f));
+            foreach (var b in bounds) Assert.Greater(Mathf.Max(Gaps(b).x, Gaps(b).z), 0f, "the R35 centre lies outside " + b);
+            var village = bounds[0]; for (int i = 1; i < bounds.Length; i++) village.Encapsulate(bounds[i]);
+            const float FloatSlackM = 1e-3f;   // the spot is computed on the widened box's edge; 1 mm absorbs float rounding
+            // On the widened box's edge: its larger axis gap to the village box (x or z) is exactly one clearance.
+            var (gapX, gapZ) = Gaps(village);
+            Assert.AreEqual(clearance, Mathf.Max(gapX, gapZ), FloatSlackM, "the R35's centre is on the village box widened by its clearance");
+            Assert.That(Mathf.Sqrt(gapX * gapX + gapZ * gapZ), Is.InRange(clearance - FloatSlackM, Mathf.Sqrt(2f) * clearance + FloatSlackM),
+                "one clearance beyond a side of the village, up to the square root of two clearances beyond a corner");
+            var footprint = map.KitFootprints.Single(f => f.id == "degania_alef");
+            Vector2 nearest = Vector2.zero; float best = float.MaxValue;
+            foreach (var (line, _) in map.KitRouteCorridors)
+                for (int i = 0; i + 1 < line.Count; i++)
+                {
+                    var a = line[i]; var ab = line[i + 1] - a;
+                    float t = ab.sqrMagnitude > 0f ? Mathf.Clamp01(Vector2.Dot(footprint.centre - a, ab) / ab.sqrMagnitude) : 0f;
+                    var q = a + ab * t; float d = (q - footprint.centre).sqrMagnitude;
+                    // As the placement does: a segment through the centre gives no bearing.
+                    if (d < best && d > 1e-4f) { best = d; nearest = q; }
+                }
+            // The candidates sweep the facing half-plane, its +/-90 degree edges included.
+            Assert.GreaterOrEqual(Vector2.Dot((new Vector2(at.x, at.z) - footprint.centre).normalized, (nearest - footprint.centre).normalized), -1e-4f,
+                "the chosen village edge is on the side facing the nearest mapped transport segment");
+        }
+
         /// <summary>The owner on v0.1.1 (18 October 2026): Tal Heuberger's buildings were "way bigger then the train". The #707
         /// buildings stand at the #700 buildings' one world scale (an 8.5 m house as long as the steam train's locomotive car,
         /// about 204 m: 24x real): the fort, the factory and the shikun are 3 to 4 locomotive cars long, the barracks 2.5 to 3.25, and
@@ -195,8 +255,10 @@ namespace Statecraft.Game.Tests
             {
                 [SpecialBuildingModels.Tegart] = (3f, 4f), [SpecialBuildingModels.Factory] = (3f, 4f), [SpecialBuildingModels.Barracks] = (2.5f, 3.25f),
                 [SpecialBuildingModels.Shikun] = (3f, 4f),
+                // The R35, 4.02 m at the same world scale: about 96 m, under half a locomotive car.
+                [SpecialBuildingModels.SyrianR35] = (0.42f, 0.52f),
             };
-            Assert.AreEqual(5, layer.Placed.Count);
+            Assert.AreEqual(6, layer.Placed.Count);
             foreach (var p in layer.Placed)
             {
                 var b = layer.transform.Find(p.Key)!.GetComponentsInChildren<Renderer>(true).Select(x => x.bounds).Aggregate((x, y) => { x.Encapsulate(y); return x; });
@@ -223,7 +285,7 @@ namespace Statecraft.Game.Tests
             Assert.IsTrue(fort != null && fort.transform.parent == layer.transform, "the same date keeps the same models");
             CollectionGeometryFixture.Special(map, After);
             AnswerAll();
-            Assert.AreEqual(5, layer.Placed.Count);
+            Assert.AreEqual(6, layer.Placed.Count);
             CollectionGeometryFixture.Special(map, new DateTime(1948, 5, 16));
             AnswerAll(); // Earlier-date retirement reacquires its still-needed original through the fake source.
             CollectionAssert.AreEqual(new[] { "latrun_tegart" }, layer.Placed.Select(p => p.Key), "an earlier date shows only what stood then");

@@ -1,9 +1,9 @@
 {
     "tool": "HexHouseLevels",
-    "source": "Assets/Editor/Generated1948Review/generated-1948-01-netanya-tiled-house-original/generated-1948-01-netanya-tiled-house-original.fbx",
-    "source_sha256": "e51a8a4e0c65ea6fe7f752dbc81376622242697d2f5ea509690c7b71c6b2c355",
-    "source_triangles": 9324,
-    "triangles": 8274,
+    "source": "Assets/Art/Settlements/Prototype/Models/generated-1948-05-plastered-courtyard-house-original/generated-1948-05-plastered-courtyard-house-original.fbx",
+    "source_sha256": "7f4bad13bf36c5872864932f9cdb03bace11f3b4adabd8e7726dcccd4ee71e9a",
+    "source_triangles": 8193,
+    "triangles": 6775,
     "uv_tolerance_texels": 1.0,
     "edge_tolerance": 0.0020000000949949028,
     "max_error": 0.004999999888241291,

@@ -11,7 +11,7 @@ namespace Statecraft.HexTiles
 {
     /// <summary>A lighter level of Tal Heuberger's generated town houses for the hex-tile boards (#1901), made in the editor
     /// from their delivered FBX, which is never written. Each house gets three new files beside theirs, in
-    /// Assets/Editor/Generated1948Review/&lt;id&gt;/: &lt;id&gt;-light.asset (the mesh), &lt;id&gt;-light.prefab (their prefab with that
+    /// Assets/Art/Settlements/Prototype/Models/&lt;id&gt;/: &lt;id&gt;-light.asset (the mesh), &lt;id&gt;-light.prefab (their prefab with that
     /// mesh, their material) and &lt;id&gt;-light.json (the source FBX's hash and the settings). HexModels.HouseLevels says which
     /// hex-tile ids draw one; HexHouseLevelTests holds the promises.
     ///
@@ -26,7 +26,7 @@ namespace Statecraft.HexTiles
     /// source's own cracks), vertices where three or more charts meet, and vertices shared by two submeshes.</summary>
     public static class HexHouseLevels
     {
-        public const string Folder = "Assets/Editor/Generated1948Review/";
+        public const string Folder = "Assets/Art/Settlements/Prototype/Models/";
         public static readonly string[] Houses =
         {
             "generated-1948-01-netanya-tiled-house-original", "generated-1948-02-netanya-two-storey-balcony-house",
@@ -64,7 +64,8 @@ namespace Statecraft.HexTiles
         {
             foreach (var id in Houses)
             {
-                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Stem(id) + ".prefab");
+                // Their streamed prefab (#2046): their FBX's mesh with their material, as the review prefab was.
+                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Stem(id) + "-stream.prefab");
                 var filter = prefab != null ? prefab.GetComponentInChildren<MeshFilter>() : null;
                 var material = prefab != null ? prefab.GetComponentInChildren<MeshRenderer>().sharedMaterial : null;
                 if (prefab == null || filter == null || filter.sharedMesh == null || material == null || material.mainTexture == null)
@@ -83,6 +84,9 @@ namespace Statecraft.HexTiles
                 try
                 {
                     go.name = id + "-light";
+                    // The lighter level is hex-tile art, not a streamed original: no residency distance switch.
+                    foreach (var d in go.GetComponentsInChildren<Statecraft.Game.Map.Collection.OriginalModelDistance>(true))
+                        UnityEngine.Object.DestroyImmediate(d);
                     go.GetComponentInChildren<MeshFilter>().sharedMesh = light;
                     PrefabUtility.SaveAsPrefabAsset(go, LightStem(id) + ".prefab");
                 }

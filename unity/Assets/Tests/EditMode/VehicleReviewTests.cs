@@ -16,12 +16,19 @@ public class VehicleReviewTests
 {
     [SetUp] public void EmptyScene() => EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
     [TearDown] public void Cleanup() => EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+    /// <summary>The candidates still in review: every one but the placed two, the Spitfire in flight near the board edge (#1932)
+    /// and the R35, which stands at Degania Alef from 20 May 1948 (owner, 27 October 2026: "Degania landmark (Recommended)"),
+    /// each in its own streamed bundle.</summary>
+    static readonly string[] InReview = VehicleReviewCatalog.Ids.Where(id => !VehicleReviewCatalog.Placed(id)).ToArray();
+
     [Test]
     public void ReviewIsEditorOnlyAndHasNoPlayerDependencyOrBundle()
     {
+        CollectionAssert.AreEqual(new[] { "generated-1948-16-egyptian-dakota-c47" }, InReview);
+        Assert.AreEqual("collection-" + CollectionCatalog.SyrianR35, CollectionCatalog.BundleOf(CollectionCatalog.SyrianR35), "the placed R35 streams on its own");
         foreach (var id in VehicleReviewCatalog.Ids)
         {
-            // #1932: the Spitfire streams in a bundle of its own; the other two stay review-only.
+            // #1932 and #2046: the Spitfire and the R35 each stream in a bundle of their own; the Dakota stays review-only.
             Assert.AreEqual(VehicleReviewCatalog.Placed(id) ? "collection-" + id : null, CollectionCatalog.BundleOf(id), id);
             Assert.IsFalse(UnitFigures.BySide.Values.Contains(id));
             Assert.IsFalse(UnitFigures.ByVehicle.Values.Contains(id));
@@ -72,7 +79,7 @@ public class VehicleReviewTests
         foreach (var entry in catalog.entries)
         {
             string path = AssetDatabase.GetAssetPath(entry.model);
-            Assert.IsTrue(path.StartsWith(VehicleReviewCatalog.DirOf(entry.id) + "/", StringComparison.Ordinal));
+            Assert.IsTrue(path.StartsWith(VehicleReviewCatalog.DirOf(entry.id) + "/", StringComparison.Ordinal), path);
             var dependencies = AssetDatabase.GetDependencies(path, true);
             CollectionAssert.Contains(dependencies, VehicleReviewCatalog.ModelOf(entry.id));
             Assert.IsTrue(dependencies.Any(p => p.EndsWith("_basecolor.jpg", StringComparison.Ordinal)));
@@ -85,9 +92,9 @@ public class VehicleReviewTests
     }
     static string AssetFile(string path) => System.IO.Path.GetFullPath(System.IO.Path.Combine(Application.dataPath, "..", path));
 
-    /// <summary>#2014: the review menu only shows a placed model (the Spitfire); it must not re-import, re-texture or re-save
-    /// the model, material and prefab the game ships. Every file Import writes is put back afterwards, so a run leaves the
-    /// tree as it found it.</summary>
+    /// <summary>#2014: the review menu only shows a placed model (the Spitfire, and the R35 since #2046); it must not re-import,
+    /// re-texture or re-save the model, material and prefab the game ships. Every file Import writes is put back afterwards,
+    /// so a run leaves the tree as it found it.</summary>
     [Test]
     public void ImportLeavesThePlacedModelsShippedFilesUntouched()
     {
@@ -95,8 +102,9 @@ public class VehicleReviewTests
             .SelectMany(d => System.IO.Directory.GetFiles(AssetFile(d), "*", System.IO.SearchOption.AllDirectories))
             .ToDictionary(f => f, System.IO.File.ReadAllBytes);
         var shipped = VehicleReviewCatalog.Ids.Where(VehicleReviewCatalog.Placed)
-            .SelectMany(id => new[] { ".fbx.meta", ".mat", ".prefab" }.Select(ext => AssetFile(VehicleReviewCatalog.DirOf(id) + "/" + id + ext))).ToArray();
-        Assert.IsNotEmpty(shipped, "the Spitfire is placed (#1932)");
+            .SelectMany(id => new[] { VehicleReviewCatalog.ModelOf(id) + ".meta" }.Concat(new[] { ".mat", ".prefab" }.Select(ext => VehicleReviewCatalog.DirOf(id) + "/" + id + ext)))
+            .Select(AssetFile).ToArray();
+        Assert.AreEqual(6, shipped.Length, "the Spitfire (#1932) and the R35 (#2046) are placed");
         string[] changed;
         try
         {
@@ -122,8 +130,9 @@ public class VehicleReviewTests
         var importer = (ModelImporter)AssetImporter.GetAtPath(file);
         Assert.AreEqual(ModelImporterMeshCompression.Off, importer.meshCompression);
         Assert.IsTrue(importer.importAnimation); Assert.AreEqual(ModelImporterAnimationCompression.Off, importer.animationCompression);
-        // #2014: the placed Spitfire imports rig-free (no Animator on the shipped prefab); the review-only two keep Generic.
-        Assert.AreEqual(VehicleReviewCatalog.Placed(id) ? ModelImporterAnimationType.None : ModelImporterAnimationType.Generic, importer.animationType, id);
+        // #2014: the placed Spitfire imports rig-free (no Animator on the shipped prefab); the R35 (placed by #2046 with the
+        // delivery's import settings) and the review-only Dakota keep Generic.
+        Assert.AreEqual(id == CollectionCatalog.EgyptianSpitfire ? ModelImporterAnimationType.None : ModelImporterAnimationType.Generic, importer.animationType, id);
         Assert.AreEqual(0, importer.defaultClipAnimations.Length, "The three original GLBs contain no animation clips");
         Assert.AreEqual(0, AssetDatabase.LoadAllAssetsAtPath(file).OfType<AnimationClip>().Count());
         Assert.AreEqual(triangles, AssetDatabase.LoadAllAssetsAtPath(file).OfType<Mesh>().Sum(m => (int)m.GetIndexCount(0) / 3));
@@ -131,9 +140,16 @@ public class VehicleReviewTests
         texture.GetSourceTextureWidthAndHeight(out int width, out int height);
         Assert.AreEqual(4096, width); Assert.AreEqual(4096, height);
         Assert.GreaterOrEqual(texture.maxTextureSize, Mathf.Max(width, height));
-        // The placed Spitfire's map streams compressed, as the placed tent's (#1893); its source bytes are unchanged (hash below).
+        // The placed Spitfire's and R35's maps stream compressed, as the placed tent's (#1893), at their full 4096 px and quality
+        // 100 like the placed generated tents and houses (no Crunch); their source bytes are unchanged (hash below). The
+        // review-only Dakota stays uncompressed.
         Assert.AreEqual(VehicleReviewCatalog.Placed(id) ? TextureImporterCompression.Compressed : TextureImporterCompression.Uncompressed, texture.textureCompression);
         Assert.IsFalse(texture.crunchedCompression);
+        if (VehicleReviewCatalog.Placed(id))
+        {
+            Assert.AreEqual(4096, texture.maxTextureSize, id);
+            Assert.AreEqual(100, texture.compressionQuality, id);
+        }
         foreach (string platform in new[] { "Standalone", "WebGL", "Android", "iPhone" })
             Assert.IsFalse(texture.GetPlatformTextureSettings(platform).overridden, platform);
         var image = AssetDatabase.LoadAssetAtPath<Texture2D>(map); Assert.AreEqual(width, image.width); Assert.AreEqual(height, image.height);

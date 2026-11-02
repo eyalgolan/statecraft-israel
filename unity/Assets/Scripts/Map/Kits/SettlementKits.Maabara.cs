@@ -63,6 +63,44 @@ namespace Statecraft.Game.Map.Kits
             finally { census = null; }
         }
 
+        /// <summary>A khaki ridge tent the kit pitched (<see cref="MaabarotSplit"/>): its centre, ground height, yaw (degrees, the
+        /// ridge along its length) and size (house-scale metres).</summary>
+        public readonly struct KhakiTent
+        {
+            public readonly Vector2 C; public readonly float Y, Yaw, W, D;
+            public KhakiTent(Vector2 c, float y, float yaw, float w, float d) { C = c; Y = y; Yaw = yaw; W = w; D = d; }
+        }
+
+        // MaabarotSplit's collectors: while set, a camp's khaki ridge tents go to this mesh and list instead of the camp's mesh.
+        [System.ThreadStatic] static KitMesh? khakiMesh;
+        [System.ThreadStatic] static List<KhakiTent>? khakiTents;
+
+        /// <summary>As Maabarot with <paramref name="placed"/>, with each camp's non-white ridge tents built into a mesh of their
+        /// own and listed (owner, 27 October 2026, #756: "Sign off all 19"; Tal Heuberger's khaki canvas tent stands in for
+        /// them close up, CampTentModels). Everything else, the census and every count included, is what Maabarot builds:
+        /// the two meshes together hold exactly its vertices.</summary>
+        public static List<(Mesh? mesh, int tents, int huts, Vector2 at, Mesh? khaki, List<KhakiTent> khakiTents)> MaabarotSplit(
+            IReadOnlyList<(string id, Vector2 at, System.DateTime from)> camps, KitGround ground, out List<Placed> placed,
+            float hutShare = MaabaraHutShare)
+        {
+            census = placed = new List<Placed>();
+            try
+            {
+                var lots = new Lots();
+                var result = new List<(Mesh?, int, int, Vector2, Mesh?, List<KhakiTent>)>();
+                foreach (var (id, at, from) in camps)
+                {
+                    var km = new KitMesh();
+                    khakiMesh = new KitMesh(); khakiTents = new List<KhakiTent>();
+                    var (tents, huts, c) = Maabara(id, at, from, ground, km, lots, hutShare);
+                    result.Add((km.VertexCount > 0 ? km.ToMesh(id + "_kit") : null, tents, huts, c,
+                        khakiMesh.VertexCount > 0 ? khakiMesh.ToMesh(id + "_khaki") : null, khakiTents));
+                }
+                return result;
+            }
+            finally { census = null; khakiMesh = null; khakiTents = null; }
+        }
+
         /// <summary>As Maabarot, for camps with no date: each keeps off every unit token, dated or not.</summary>
         public static List<(Mesh? mesh, int tents, int huts, Vector2 at)> Maabarot(IReadOnlyList<(string id, Vector2 at)> camps, KitGround ground,
             float hutShare = MaabaraHutShare) => Maabarot(Undated(camps), ground, hutShare);
@@ -167,7 +205,10 @@ namespace Statecraft.Game.Map.Kits
                     else
                     {
                         float w = rnd.Range(5f, 6f) * m, d = rnd.Range(3.6f, 4.2f) * m;
-                        RidgeTent(km, p, pyaw, w, d, 1f, 1.6f, 0.3f, canvas, ground, m, ref wear, wear.Chance(0.45f));
+                        // A khaki ridge tent goes to MaabarotSplit's own mesh when it asks (the same draws, so nothing else moves).
+                        bool split = !white && khakiMesh != null;
+                        RidgeTent(split ? khakiMesh! : km, p, pyaw, w, d, 1f, 1.6f, 0.3f, canvas, ground, m, ref wear, wear.Chance(0.45f));
+                        if (split) khakiTents!.Add(new KhakiTent(p, ground.Y(p.x, p.y), pyaw, w, d));
                         float pa = pyaw * Mathf.Deg2Rad;
                         Vector2 Local(float u, float v) => p + new Vector2(u * Mathf.Cos(pa) - v * Mathf.Sin(pa), u * Mathf.Sin(pa) + v * Mathf.Cos(pa));
                         // Bundles, a crate or a jerrycan by the door (the +u end), and a washing line in front of some tents,

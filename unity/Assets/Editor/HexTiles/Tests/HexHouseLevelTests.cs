@@ -16,14 +16,14 @@ using UnityEngine;
 /// one of their own, exact; no seam or edge opened; the corners where three UV charts meet all kept; no new see-through).</summary>
 public class HexHouseLevelTests
 {
-    const string Review = "Assets/Editor/Generated1948Review/", BasaltHouse = "tiles:tiberias_town/basalt_house";
+    const string Folder = "Assets/Art/Settlements/Prototype/Models/", BasaltHouse = "tiles:tiberias_town/basalt_house";
     static readonly string[] Houses =
     {
         "generated-1948-01-netanya-tiled-house-original", "generated-1948-02-netanya-two-storey-balcony-house",
         "generated-1948-03-netanya-flat-roof-porch-house", "generated-1948-04-dark-basalt-house",
         "generated-1948-05-plastered-courtyard-house-original",
     };
-    static string Stem(string id) => Review + id + "/" + id;
+    static string Stem(string id) => Folder + id + "/" + id;
     static string Light(string id) => Stem(id) + "-light";
 
     [Serializable] sealed class Provenance { public string fbx_sha256 = "", embedded_image_sha256 = ""; }
@@ -71,7 +71,7 @@ public class HexHouseLevelTests
     [TestCaseSource(nameof(Houses))]
     public void TalsDeliveredFilesAreUntouchedAndTheRecordNamesThem(string id)
     {
-        var provenance = JsonUtility.FromJson<Provenance>(File.ReadAllText(Disk(Review + id + "/provenance.json")));
+        var provenance = JsonUtility.FromJson<Provenance>(File.ReadAllText(Disk(Folder + id + "/provenance.json")));
         string fbx = Stem(id) + ".fbx";
         Assert.AreEqual(provenance.fbx_sha256, Hash(fbx), fbx);
         Assert.AreEqual(provenance.embedded_image_sha256, Hash(Stem(id) + "_basecolor.jpg"), id + " colour map");
@@ -90,7 +90,7 @@ public class HexHouseLevelTests
         KeepsTheSeamsAndTheTexture(id, SourceMesh(id), light);
 
         // No new see-through (the hex tiles' wholeness check, HexModelMeshTests).
-        var full = HexMeshCheck.Of(AssetDatabase.LoadAssetAtPath<GameObject>(Stem(id) + ".prefab"));
+        var full = HexMeshCheck.Of(AssetDatabase.LoadAssetAtPath<GameObject>(Stem(id) + "-stream.prefab"));
         var lighter = HexMeshCheck.Of(AssetDatabase.LoadAssetAtPath<GameObject>(Light(id) + ".prefab"));
         TestContext.WriteLine($"{id}: full {full}; light {lighter}");
         Assert.That(lighter.SeeThroughShare, Is.LessThanOrEqualTo(full.SeeThroughShare + 0.0005f), id);

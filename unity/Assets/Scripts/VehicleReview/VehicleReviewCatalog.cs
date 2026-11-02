@@ -12,11 +12,13 @@ namespace Statecraft.Game.VehicleReview
         public const string Path = Folder + "/Models.asset";
         public const string ScenePath = Folder + "/VehicleReview.unity";
         public static readonly string[] Ids = { "generated-1948-13-egyptian-spitfire", "generated-1948-14-syrian-renault-r35", "generated-1948-16-egyptian-dakota-c47" };
-        /// <summary>A candidate placed in the game (#1932: the Spitfire) moved with git mv to the Collection folder, its FBX
-        /// renamed to the Collection's id.fbx (the same bytes); the review still shows it from there.</summary>
+        /// <summary>A candidate placed in the game (#1932: the Spitfire; #2046: the R35, at Degania Alef from 20 May 1948) moved with
+        /// git mv to the Collection folder; the review still shows it from there. The Spitfire's FBX was renamed to the
+        /// Collection's id.fbx (the same bytes); the R35 keeps the delivery's -compatibility.fbx (CollectionCatalog.SourceModelPath).</summary>
         public static bool Placed(string id) => Map.Collection.CollectionCatalog.IsGenerated(id);
         public static string DirOf(string id) => (Placed(id) ? Map.Collection.CollectionCatalog.Folder : Folder) + "/" + id;
-        public static string ModelOf(string id) => DirOf(id) + "/" + id + (Placed(id) ? ".fbx" : "-compatibility.fbx");
+        public static string ModelOf(string id) =>
+            Placed(id) ? Map.Collection.CollectionCatalog.SourceModelPath(id) : DirOf(id) + "/" + id + "-compatibility.fbx";
         [Serializable] public sealed class Entry
         {
             public string id = "", label = "";

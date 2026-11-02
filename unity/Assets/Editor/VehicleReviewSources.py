@@ -17,11 +17,13 @@ import zipfile
 
 IDS = {13: "generated-1948-13-egyptian-spitfire", 14: "generated-1948-14-syrian-renault-r35", 16: "generated-1948-16-egyptian-dakota-c47"}
 ART = Path("unity/Assets/Editor/Generated1948VehicleReview")
-# Placed in the game (#1932): moved with git mv to the Collection folder, its FBX renamed to the Collection's id.fbx (same bytes).
-PLACED = {"generated-1948-13-egyptian-spitfire"}
+# Placed in the game, moved with git mv to the Collection folder: the Spitfire (#1932), its FBX renamed to the Collection's
+# id.fbx (same bytes), and the R35 at Degania Alef (#2046; owner, 27 October 2026), which keeps its -compatibility.fbx.
+PLACED = {"generated-1948-13-egyptian-spitfire", "generated-1948-14-syrian-renault-r35"}
+RENAMED = {"generated-1948-13-egyptian-spitfire"}
 COLLECTION = Path("unity/Assets/Art/Collection")
 home = lambda mid: COLLECTION / mid if mid in PLACED else ART / mid
-fbx_name = lambda mid: mid + (".fbx" if mid in PLACED else "-compatibility.fbx")
+fbx_name = lambda mid: mid + (".fbx" if mid in RENAMED else "-compatibility.fbx")
 SOURCES = Path("asset-sources/generated-1948/vehicles")
 sha = lambda data: hashlib.sha256(data).hexdigest()
 
@@ -97,7 +99,7 @@ def convert(repo, batch):
                 if mid in PLACED:
                     # #2014: home(mid) is the shipped Collection folder; a re-run (another Blender) must not replace its files,
                     # so the placed model keeps its recorded provenance entry, as VehicleReviewAssets.Import skips it too.
-                    print("SKIP", mid, "is placed in the game (#1932); its shipped Collection files are left as they are", flush=True)
+                    print("SKIP", mid, "is placed in the game (#1932, #2046); its shipped Collection files are left as they are", flush=True)
                     reports.append(next(x for x in json.loads((original / "sources.json").read_text())["items"] if x["id"] == mid))
                     continue
                 blob = bundle.read(record["member"])

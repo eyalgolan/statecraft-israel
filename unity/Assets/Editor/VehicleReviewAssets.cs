@@ -32,8 +32,8 @@ namespace Statecraft.Game.EditorTools
                 var entry = new VehicleReviewCatalog.Entry { id = id, label = Labels[i],
                     longSideM = i == 1 ? UnitFigures.VehicleLengthShare * UnitBadge.FigureHeightM * UnitShowcase.FigureScale : 11.2f * UnitShowcase.AircraftScale };
                 catalog.entries[i] = entry;
-                // A placed model (#1932: the Spitfire) ships as the game imports it (model, compressed map, material, prefab);
-                // the review only shows its prefab and never re-imports or re-saves those files (#2014).
+                // A placed model (#1932: the Spitfire; #2046: the R35) ships as the game imports it (model, compressed map at quality
+                // 100, material, prefab); the review only shows its prefab and never re-imports or re-saves those files (#2014).
                 if (VehicleReviewCatalog.Placed(id)) { entry.model = AssetDatabase.LoadAssetAtPath<GameObject>(dir + "/" + id + ".prefab"); continue; }
                 var importer = AssetImporter.GetAtPath(file) as ModelImporter ?? throw new FileNotFoundException("Documented compatibility FBX missing", file);
                 importer.useFileScale = true; importer.importAnimation = true; importer.animationType = ModelImporterAnimationType.Generic;
