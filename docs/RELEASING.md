@@ -124,7 +124,29 @@ macOS IL2CPP parity check is not an MVP release gate.
    archive to check), and writes `build-record.json`, `build-record.md`, a `files-<platform>.sha256` list of each
    archive's files and the build's `event-photos-<platform>.json` to `~/statecraft-release/v<version>-<commit>-<UTC time>/`
    (or `--out`), and prints the path. It never commits, pushes or uploads: copy the record files to the build records
-   repository by hand. Signing and Steam upload are later steps, not yet scripted.
+   repository by hand. Signing (#905) is a later step, not yet scripted; the Steam upload is below.
+
+   **Steam builds (#2155, #2156; owner answers Q3, Q7 and Q8 in #2150).** After the GitHub archives above, and only once
+   `steam/steam.json` has the app and depot IDs (`docs/steam/README.md`, section 1), build the Steam players from the same
+   tagged commit into a new folder:
+
+   ```bash
+   uv run tools/release_build.py --platform all --tag vX.Y.Z --steam --out ~/statecraft-release/vX.Y.Z-steam
+   uv run tools/steam_upload.py stage --out ~/statecraft-release/vX.Y.Z-steam --tag vX.Y.Z
+   ```
+
+   `--steam` passes `-steam` to every build (only those players carry Valve's library) and writes
+   `steam/windows/`, `steam/mac/` and `steam/linux/` (the player and the notices, no archive) with a record that says
+   `"steam": true` and `"channel": "beta"`; it refuses a folder holding `steam_appid.txt`. The GitHub archives, for their
+   part, are refused if they list any Valve file. The macOS Steam player passes the same `-golden` check as above. Then
+   `stage` zips each folder (keeping the executable bits), writes `steam-record.json` with each zip's SHA-256, attaches
+   them to a draft release `steam-vX.Y.Z` that is never published, and starts `.github/workflows/steam-upload.yml` for
+   the `beta` branch. That job (dispatch only, environment `steam`, the owner's two secrets) checks the draft against its
+   record and the commit against `main`, uploads with steamcmd, sets the build live on `beta` and deletes the draft. A
+   login failure there means the owner re-provisions the secret (`docs/steam/README.md`, section 2); nobody else touches
+   it. A `--dev --steam` build is for local tests only: `stage` refuses its record. Testers then run
+   `docs/steam/test-checklist.md`, and only the owner sets a `beta` build live on `default`, in App Admin. Nightlies go to
+   the `nightly` branch by themselves ("Nightly builds", the `steam` stage).
 6. **Tag and publish (owner), in one `gh release create`.** The MVP release carries only the web zips (owner ruling,
    20 Oct 2026 (#814)). Desktop players ship after the MVP under #905. For a later release with desktop players, include
    all three desktop archives from "Desktop builds after the MVP" above, as a pre-release with "unchecked" in its notes.
@@ -266,6 +288,16 @@ The no-change skip compares `state.json`'s last published SHA with `origin/main`
 - `MISSED`: no run started on that date (the Mac was asleep or logged out); the next run adds the line.
 
 A night that starts after 03:30 is MISSED unless it was started by hand with `--manual`.
+
+**Steam (the `steam` stage, #2155).** Only after the web nightly is published (`publish_night` returned), the nightly
+fetches tonight's tag into its clone, runs `uv run tools/release_build.py --platform all --steam --tag <tag>
+--nightly-version <X.Y.Z> --out <run folder>/steam-release` (each Unity build stamped with tonight's version, as the web
+builds are) and then `uv run tools/steam_upload.py stage --out <run folder>/steam-release --tag <tag>`, which attaches
+the Steam content to a never-published draft release `steam-<tag>` and starts `steam-upload.yml` for the `nightly`
+branch. A failure there never refuses, unpublishes or rolls back the web nightly: the night stays `PUBLISHED`, its
+line ends with `steam=failed` (the `steam-build.log` and `steam-stage.log` are in the run folder) and a notification
+is shown. The stage is skipped while `steam/steam.json` still has a `null` ID (until the owner has created the app,
+#2151), and with `uv run tools/nightly.py run --no-steam`.
 
 **itch.io.** Pushes stay off until the owner runs `uv run tools/nightly.py savetest --tag <a published nightly>` once
 and it prints `PASS` (the two-upload save test of `docs/m3-release.md`, "Upload to itch.io"); the nightly then logs
