@@ -521,6 +521,41 @@ namespace Statecraft.Game.Tests
             CollectionAssert.AreEqual(propsFirst, after.Placed.Select(p => (p.Name, p.At)).ToList(), "the same places in either order");
         }
 
+        sealed class Lease : IDisposable { public void Dispose() { } }
+
+        /// <summary>Review of #2266 with #2271: no standalone prop stands under a whole-town model (TownLandmarks), whose square
+        /// reaches its core's radius times the square root of two from the core, past the kit footprint's edge for a core off
+        /// the centre. The models are answered at once here; the props plan the seats, so the order does not matter.</summary>
+        [Test]
+        public void NoPropStandsUnderAWholeTownModel()
+        {
+            var map = OpenMap();
+            var savedR = TownLandmarks.Request; var savedA = TownLandmarks.Acquire;
+            try
+            {
+                GameObject? Prefab(string id, CollectionDetail d) => AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(id, d));
+                TownLandmarks.Request = (id, d, done) => done(Prefab(id, d));
+                TownLandmarks.Acquire = (id, d, done) => { done(Prefab(id, d)); return new Lease(); };
+                var towns = TownLandmarks.ShowAt(map, Opening, Array.Empty<Statecraft.Sim.Placement>(), Statecraft.Sim.ContentLoader.Load(Paths.Content))!;
+                towns.Choose(default, At(60000f));
+                var layer = Show(map, Opening);
+                Assert.Greater(towns.Seats.Count, 10, "the whole towns stand");
+                int checkedProps = 0;
+                foreach (var kv in towns.Seats)
+                {
+                    float reach = 0.5f * kv.Value.Edge * Mathf.Sqrt(2f);
+                    foreach (var p in layer.Placed)
+                    {
+                        float d = (new Vector2(p.At.x, p.At.z) - kv.Value.Centre).magnitude;
+                        Assert.GreaterOrEqual(d + 1f, reach + HexPropModels.ClearanceOf(p.Model), p.Name + " under " + kv.Key + "'s whole-town model");
+                        checkedProps++;
+                    }
+                }
+                Assert.Greater(checkedProps, 0);
+            }
+            finally { TownLandmarks.Request = savedR; TownLandmarks.Acquire = savedA; }
+        }
+
         /// <summary>Review of #2266: the load each zoom band adds, capped (the design budget the PR measured; see its load
         /// table). Far bands: no standalone prop, and the landmark models in view under the cap. Close views: the standalone
         /// props and landmark models in view under the cap. Counted with each camera's kit swap applied.</summary>

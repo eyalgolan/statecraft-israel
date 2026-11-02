@@ -255,8 +255,8 @@ namespace Statecraft.Game.Map.Collection
         }
 
         /// <summary>The ground the other Collection layers hold or will hold, so no prop stands on them: the civilian figures
-        /// and the wildlife (as RuralLife.OtherProps), and the rural scenes' and special buildings' PLANNED spots (their Plan with
-        /// every model available), never what has streamed so far: the props stand in the same places whatever the camera
+        /// and the wildlife (as RuralLife.OtherProps), and the rural scenes', special buildings' and whole-town models' PLANNED
+        /// spots (their plans with every model available), never what has streamed so far: the props stand in the same places whatever the camera
         /// has visited, and a scene or building that streams in later never lands on one (#2266 review).</summary>
         internal static List<(Vector2 centre, float radius)> Others(MapScene map, DateTime date)
         {
@@ -265,6 +265,9 @@ namespace Statecraft.Game.Map.Collection
                 discs.Add((spot, RuralLife.SceneRadiusM(want.Model)));
             foreach (var (w, at) in SpecialBuildingModels.Plan(map, date, SpecialBuildingModels.Placements(date), _ => true, log: false))
                 discs.Add((at, SpecialBuildingModels.ClearanceOf(w.Model)));
+            // The whole-town models (TownLandmarks, shown first by GameRoot) where they will stand, by the same plan.
+            var towns = map.Terrain.transform.Find(TownLandmarks.Name)?.GetComponent<TownLandmarks>();
+            if (towns != null) foreach (var seat in towns.PlannedSeats()) discs.Add((seat.Core, seat.Reach));
             return discs;
         }
 
