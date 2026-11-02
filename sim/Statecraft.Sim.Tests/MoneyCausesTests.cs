@@ -14,7 +14,7 @@ public class MoneyCausesTests
     /// <summary>The tolerance in IL millions. The sim adds the same amounts to the Treasury and the Debt as the causes carry,
     /// but in a different order and association (the Treasury starts at IL 20m and takes each term in turn; a payment takes
     /// the whole cost, then moves the shortfall to Debt), so exact equality does not hold: the gap is 2.7e-15 on the opening
-    /// turn and 2.3e-13 with BuyArms(999), and every test here passes at 1e-12 (measured, #2199). 1e-9 leaves room above
+    /// turn and 2.3e-13 with a purchase of 999 Arms (measured before #2203 capped borrowing), and every test here passes at 1e-12 (measured, #2199). 1e-9 leaves room above
     /// that rounding and is far below the smallest amount a line shows (IL 0.1m), so a missing or doubled line always fails.</summary>
     const double Tolerance = 1e-9;
 
@@ -47,18 +47,21 @@ public class MoneyCausesTests
         }
     }
 
-    // R-ARMS-002, R-MONEY-003: Arms bought for more than the Treasury holds: part paid in cash, the rest borrowed.
+    // R-ARMS-002, R-MONEY-003: Arms bought for more than the Treasury holds: part paid in cash, the rest borrowed. 200 Arms
+    // cost IL 200m against the opening IL 20m, so IL 180m is borrowed, under the debt ceiling #2203 adds (IL 250m).
     [Fact]
     public void APurchasePaidPartlyInCashAndPartlyBorrowedAddsUp()
     {
+        const int count = 200;
         var s = Start();
-        var r = Simulation.Step(Real, s, new Command[] { new BuyArms(999) });
+        Assert.True(count * Real.RulesAt(s.Date).Mvp!.ArmsPrice!.Value > s.Treasury, "the purchase costs more than the Treasury holds");
+        var r = Simulation.Step(Real, s, new Command[] { new BuyArms(count) });
         Assert.Empty(r.Rejected);
         Assert.True(r.State.Debt > s.Debt, "the purchase borrows");
-        AssertAddsUp(s, r, "BuyArms(999)");
+        AssertAddsUp(s, r, $"BuyArms({count})");
         // The whole cost is one Money line; the borrowing lines (the purchase's and the deficit's) are not Money causes.
         var paid = Assert.Single(r.Why, w => w.Key == CauseKeys.Paid);
-        Assert.Equal(("treasury", -999 * Real.RulesAt(s.Date).Mvp!.ArmsPrice!.Value, CauseKeys.Purpose.Arms), (paid.Target, paid.Delta, paid.Args[0]));
+        Assert.Equal(("treasury", -count * Real.RulesAt(s.Date).Mvp!.ArmsPrice!.Value, CauseKeys.Purpose.Arms), (paid.Target, paid.Delta, paid.Args[0]));
         Assert.Contains(r.Why, w => w.Key == CauseKeys.Borrowed && w.Args[0] == CauseKeys.Purpose.Arms);
         Assert.DoesNotContain(r.Why.Where(EconomySystem.MovesMoney), w => w.Target == "debt");
     }
