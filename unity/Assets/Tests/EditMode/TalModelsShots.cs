@@ -170,7 +170,7 @@ public class TalModelsShots
     }
 
     /// <summary>#1701 slice F: a gdd-0.3 game (every era's ruleset set on fresh inputs, as FixedNorthGameRootTests does) with
-    /// one arms workshop built on Rehovot's own hex, or on Tel Aviv's among its houses (owner, 2 November 2026: "Among the
+    /// one arms workshop built on Rehovot's own hex, or on Tel Aviv's or Jerusalem's among its houses (owner, 2 November 2026: "Among the
     /// houses") (a fixture state: the project is put in the state, built on the game's date),
     /// from the close zoom, framed on the workshop and the town. "Before" withholds b21 (main draws nothing there); the frame is
     /// the one the answered model gives. The load lines count the special layer's instances, drawn renderers and their
@@ -252,6 +252,10 @@ public class TalModelsShots
     [UnityTest] public IEnumerator ArmsWorkshopTelAvivAfterEnglish() { yield return ArmsWorkshop(false, true, "tel_aviv"); }
     [UnityTest] public IEnumerator ArmsWorkshopTelAvivBeforeHebrew() { yield return ArmsWorkshop(true, false, "tel_aviv"); }
     [UnityTest] public IEnumerator ArmsWorkshopTelAvivAfterHebrew() { yield return ArmsWorkshop(true, true, "tel_aviv"); }
+    [UnityTest] public IEnumerator ArmsWorkshopJerusalemBeforeEnglish() { yield return ArmsWorkshop(false, false, "jerusalem"); }
+    [UnityTest] public IEnumerator ArmsWorkshopJerusalemAfterEnglish() { yield return ArmsWorkshop(false, true, "jerusalem"); }
+    [UnityTest] public IEnumerator ArmsWorkshopJerusalemBeforeHebrew() { yield return ArmsWorkshop(true, false, "jerusalem"); }
+    [UnityTest] public IEnumerator ArmsWorkshopJerusalemAfterHebrew() { yield return ArmsWorkshop(true, true, "jerusalem"); }
 
     sealed class NoLease : IDisposable { public void Dispose() { } }
 

@@ -362,7 +362,8 @@ namespace Statecraft.Game.Map.Collection
         /// the routes, the tokens of <paramref name="date"/>, the civilians, the wildlife and each other (a workshop also of its
         /// hex's edge and the farm scenes' plan); the list keeps those whose model <paramref name="available"/> holds. It reads only the map and the date, never what has streamed, so with every
         /// model available it is the plan the layer draws once everything has arrived (HexPropModels keeps clear of it, #2266).</summary>
-        internal static List<(Want want, Vector2 at)> Plan(MapScene map, DateTime date, IReadOnlyList<Want> wants, Func<string, bool> available, bool log)
+        internal static List<(Want want, Vector2 at)> Plan(MapScene map, DateTime date, IReadOnlyList<Want> wants, Func<string, bool> available, bool log,
+            IReadOnlyList<(RuralLife.Want want, Vector2 spot)>? ruralPlan = null)
         {
             var ground = PlacementLayer.CampGround(map);
             var footprints = map.KitFootprints.Select(f => (f.centre, f.radius)).ToList();
@@ -376,7 +377,7 @@ namespace Statecraft.Game.Map.Collection
             // whichever layer streams first.
             var farms = new List<(Vector2 centre, float radius)>();
             if (wants.Any(w => w.Model == Workshop))
-                foreach (var (want, spot) in RuralLife.Plan(map, RuralLife.Wants(map), RuralLife.OtherProps(map), _ => true))
+                foreach (var (want, spot) in ruralPlan ?? RuralLife.Plan(map, RuralLife.Wants(map), RuralLife.OtherProps(map), _ => true))
                     farms.Add((spot, RuralLife.SceneRadiusM(want.Model)));
             bool Free(Vector2 p, float r) => TownLandmarks.Clear(p, r, taken) && TownLandmarks.Clear(p, r, footprints)
                 && ground.Inside(p.x - r, p.y - r) && ground.Inside(p.x + r, p.y + r)
@@ -424,9 +425,11 @@ namespace Statecraft.Game.Map.Collection
             return plan;
         }
 
-        /// <summary>The ground (m) a place's name pill can take, a workshop among a town's houses keeping off it: the pill stands
-        /// above the place's kit (MapLabelsPresenter: centred, or to either side), so the band from the footprint's south edge to
-        /// <see cref="TownLabelHeightM"/> past its north edge, <see cref="TownLabelHalfWidthM"/> either side of its centre.
+        /// <summary>The ground (m) a place's name pill can take, a workshop among a town's houses keeping off it: the band from the
+        /// footprint's south edge to <see cref="TownLabelHeightM"/> past its north edge, <see cref="TownLabelHalfWidthM"/> either
+        /// side of its centre. It models MapLabelsPresenter's Above spots (centred, or starting at the kit's centre to either
+        /// side, as far as the half width reaches); a pill pushed Beside or Below its kit is not modelled, and the on-screen
+        /// checks (MapLabelTests.NoNamePillCoversAWorkshopModel*) take the zooms and framings a player sees.
         /// Design values: a long locality pill is about 141 by 23 px at a 1280 px frame, some 18 m a pixel at the 30 km zoom
         /// and 27 m at the close zoom's 45 km exit, with the lift above the kit and a margin.</summary>
         public const float TownLabelHalfWidthM = 2000f, TownLabelHeightM = 1000f;
@@ -436,6 +439,36 @@ namespace Statecraft.Game.Map.Collection
         public static bool ClearOfName(Vector2 p, float r, Vector2 centre, float radius) =>
             Mathf.Abs(p.x - centre.x) >= TownLabelHalfWidthM + r
             || p.y - centre.y <= -radius - r || p.y - centre.y >= radius + TownLabelHeightM + r;
+
+        /// <summary>Whether a disc of <paramref name="r"/> at <paramref name="p"/> keeps clear of the box centred at <paramref name="c"/>,
+        /// turned <paramref name="yawDeg"/> anticlockwise in x-z (KitMesh.Corners), <paramref name="w"/> along its turn and
+        /// <paramref name="d"/> across.</summary>
+        public static bool ClearOfBox(Vector2 p, float r, Vector2 c, float yawDeg, float w, float d)
+        {
+            float a = yawDeg * Mathf.Deg2Rad, ca = Mathf.Cos(a), sa = Mathf.Sin(a);
+            var q = p - c; float u = q.x * ca + q.y * sa, v = -q.x * sa + q.y * ca;
+            float du = Mathf.Max(0f, Mathf.Abs(u) - 0.5f * w), dv = Mathf.Max(0f, Mathf.Abs(v) - 0.5f * d);
+            return du * du + dv * dv >= r * r;
+        }
+
+        /// <summary>Review of #2281: what else the kits drew on the hex about <paramref name="anchor"/>, which no house stands on by
+        /// design: the walls, platforms, landmarks, harbour works and street palms the kits placed and each landmark's close copy
+        /// (KitLayer.Stats.Landmarks), and the replaceable landmark parts' close boxes (KitLayer.Stats.LandmarkParts, #2266). All
+        /// planned at map build.</summary>
+        internal static List<(Vector2 c, float yaw, float w, float d)> TownLandmarkBoxes(MapScene map, Vector2 anchor)
+        {
+            var boxes = new List<(Vector2 c, float yaw, float w, float d)>();
+            var stats = map.KitStats;
+            if (stats == null) return boxes;
+            foreach (var p in stats.Landmarks)
+                if ((p.C - anchor).magnitude <= HexInnerRadiusM + 0.5f * (p.W + p.D)) boxes.Add((p.C, p.Yaw, p.W, p.D));
+            foreach (var part in stats.LandmarkParts)
+            {
+                var c = new Vector2(part.Near.center.x, part.Near.center.z);
+                if ((c - anchor).magnitude <= HexInnerRadiusM + 0.5f * (part.Near.size.x + part.Near.size.z)) boxes.Add((c, 0f, part.Near.size.x, part.Near.size.z));
+            }
+            return boxes;
+        }
 
         /// <summary>The drawn buildings on the hex about <paramref name="anchor"/>: each town model instance the kit planned at
         /// map build (TownModelLayer.InstancesOf; never what has streamed) for every footprint that reaches the hex, as a disc of
@@ -455,13 +488,15 @@ namespace Statecraft.Game.Map.Collection
         }
 
         /// <summary>#1701 slice F, owner 2 November 2026 ("Among the houses"): a workshop on a hex a town's footprint covers stands
-        /// in a gap between the drawn buildings on the hex (<see cref="TownBuildings"/>), clear of every name there
+        /// in a gap between the drawn buildings on the hex (<see cref="TownBuildings"/>), off the kits' walls, platforms and
+        /// landmarks (<see cref="TownLandmarkBoxes"/>), clear of every name there
         /// (<see cref="ClearOfName"/>) and <paramref name="free"/> (the hex, the routes, the tokens, the other models). A fixed search: rings
         /// half a clearance apart outward from the hex centre, each from an FNV-1a bearing of the key. Null when no gap is
         /// clear.</summary>
         internal static Vector2? TownGap(MapScene map, string key, Vector2 anchor, float clearance, Func<Vector2, float, bool> free)
         {
             var houses = TownBuildings(map, anchor, out var names);
+            var landmarks = TownLandmarkBoxes(map, anchor);
             uint h = 2166136261;
             foreach (char c in key) { h ^= c; h *= 16777619; }
             float step = 0.5f * clearance;
@@ -475,7 +510,10 @@ namespace Statecraft.Game.Map.Collection
                     var p = anchor + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
                     bool named = false;
                     foreach (var (c, fr) in names) if (!ClearOfName(p, clearance, c, fr)) { named = true; break; }
-                    if (named || !TownLandmarks.Clear(p, clearance, houses) || !free(p, clearance)) continue;
+                    if (named || !TownLandmarks.Clear(p, clearance, houses)) continue;
+                    bool onLandmark = false;
+                    foreach (var (bc, yaw, bw, bd) in landmarks) if (!ClearOfBox(p, clearance, bc, yaw, bw, bd)) { onLandmark = true; break; }
+                    if (onLandmark || !free(p, clearance)) continue;
                     return p;
                 }
             }

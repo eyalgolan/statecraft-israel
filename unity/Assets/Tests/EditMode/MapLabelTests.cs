@@ -318,32 +318,40 @@ public class MapLabelTests
             var model = layer.transform.Find(Statecraft.Game.Map.Collection.SpecialBuildingModels.WorkshopKey(9));
             Assert.IsNotNull(model, "the workshop model stands at " + city);
             labels = new MapLabelsPresenter(hd.Root, map, cam, locations: Locations());
-            rig.LookAt = model!.position; rig.Distance = 30000f; rig.Yaw = 0; rig.TopInset = 0; rig.Apply();
             var all = labels.Labels.Concat(labels.LocalityLabels).Concat(labels.LocationLabels).ToList();
-            for (int i = 0; i < 20 && all.Any(l => float.IsNaN(l.resolvedStyle.width) || l.resolvedStyle.width <= 0); i++) yield return null;
             var slots = labels.Slots.Concat(labels.LocalitySlots).Concat(labels.LocationSlots).ToList();
-            labels.Refresh(force: true); yield return null;
-            labels.Refresh(force: true); yield return null;
-            float x0 = float.MaxValue, y0 = float.MaxValue, x1 = float.MinValue, y1 = float.MinValue;
-            foreach (var r in model.GetComponentsInChildren<Renderer>(true))
-            {
-                var b = r.bounds;
-                for (int c = 0; c < 8; c++)
+            var failures = new System.Collections.Generic.List<string>();
+            // Review of #2281 (N1): not one framing only. The camera over the model, and 2.5 km to either side of it (the model
+            // off the frame's centre), at 30 km and at 40 km (the close zoom's entry).
+            foreach (var distance in new[] { 30000f, 40000f })
+                foreach (var offset in new[] { 0f, -2500f, 2500f })
                 {
-                    var corner = new Vector3((c & 1) == 0 ? b.min.x : b.max.x, (c & 2) == 0 ? b.min.y : b.max.y, (c & 4) == 0 ? b.min.z : b.max.z);
-                    var q = hd.ToPanel(corner, out bool front); Assert.IsTrue(front);
-                    x0 = Mathf.Min(x0, q.x); y0 = Mathf.Min(y0, q.y); x1 = Mathf.Max(x1, q.x); y1 = Mathf.Max(y1, q.y);
+                    rig.LookAt = model!.position + new Vector3(offset, 0f, 0f); rig.Distance = distance; rig.Yaw = 0; rig.TopInset = 0; rig.Apply();
+                    for (int i = 0; i < 20 && all.Any(l => float.IsNaN(l.resolvedStyle.width) || l.resolvedStyle.width <= 0); i++) yield return null;
+                    labels.Refresh(force: true); yield return null;
+                    labels.Refresh(force: true); yield return null;
+                    float x0 = float.MaxValue, y0 = float.MaxValue, x1 = float.MinValue, y1 = float.MinValue;
+                    foreach (var r in model.GetComponentsInChildren<Renderer>(true))
+                    {
+                        var b = r.bounds;
+                        for (int c = 0; c < 8; c++)
+                        {
+                            var corner = new Vector3((c & 1) == 0 ? b.min.x : b.max.x, (c & 2) == 0 ? b.min.y : b.max.y, (c & 4) == 0 ? b.min.z : b.max.z);
+                            var q = hd.ToPanel(corner, out bool front); Assert.IsTrue(front);
+                            x0 = Mathf.Min(x0, q.x); y0 = Mathf.Min(y0, q.y); x1 = Mathf.Max(x1, q.x); y1 = Mathf.Max(y1, q.y);
+                        }
+                    }
+                    var rect = Rect.MinMaxRect(x0, y0, x1, y1);
+                    var shown = slots.Where(Shown).ToList();
+                    if (shown.Count == 0) failures.Add($"{distance:0} m, {offset:0} m: no name shown over {city}");
+                    foreach (var slot in shown)
+                    {
+                        var pill = slot.Q<Label>().worldBound;
+                        TestContext.WriteLine($"{distance:0} m, {offset:0} m: {slot.name} pill {pill}; workshop model {rect}");
+                        if (pill.Overlaps(rect)) failures.Add($"{distance:0} m, {offset:0} m: {slot.name}'s pill {pill} covers the workshop model {rect}");
+                    }
                 }
-            }
-            var rect = Rect.MinMaxRect(x0, y0, x1, y1);
-            var shown = slots.Where(Shown).ToList();
-            Assert.IsNotEmpty(shown, "some names are shown at 30 km over " + city);
-            foreach (var slot in shown)
-            {
-                var pill = slot.Q<Label>().worldBound;
-                TestContext.WriteLine($"{slot.name} pill {pill}; workshop model {rect}");
-                Assert.IsFalse(pill.Overlaps(rect), $"{slot.name}'s pill {pill} covers the workshop model {rect}");
-            }
+            Assert.IsEmpty(failures, string.Join("\n", failures));
         }
         finally
         {

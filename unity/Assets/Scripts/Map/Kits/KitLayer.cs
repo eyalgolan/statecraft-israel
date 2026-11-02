@@ -40,6 +40,10 @@ namespace Statecraft.Game.Map.Kits
             /// kit and close renderers that draw it as their submesh 1 (the code-built fallback), its yaw and its boxes far off and
             /// up close.</summary>
             public IReadOnlyList<LandmarkPart> LandmarkParts = System.Array.Empty<LandmarkPart>();
+            /// <summary>#1701 slice F: everything the kits placed that is not a building (walls, platforms, landmarks, harbour
+            /// works, street palms: SettlementKits.Placed, its yaw as KitMesh.Corners), then each landmark's close copy as its
+            /// world box (yaw 0), so a model placed among a town's houses (SpecialBuildingModels.TownGap) keeps off them.</summary>
+            public IReadOnlyList<SettlementKits.Placed> Landmarks = System.Array.Empty<SettlementKits.Placed>();
             public override string ToString() =>
                 $"KITS buildings={Buildings} vertices={Vertices} triangles={Triangles} trees={Trees} route_segments={CorridorSegments} build_ms={BuildMs:0} plant_ms={PlantMs:0} " +
                 $"localities={Localities} locality_buildings={LocalityBuildings} camps={Camps} tents={Tents} boats={Boats} draws={Draws} models={Models} close_vertices={CloseVertices}";
@@ -147,6 +151,10 @@ namespace Statecraft.Game.Map.Kits
             towns.ConfigureProduction(residency.Towns);
             towns.Init(built.Models, townModels, swaps, nearTowns, rendererTownIds, rendererTileIds);
             stats.LandmarkParts = parts;
+            var landmarks = new List<SettlementKits.Placed>();
+            foreach (var p in placed) if (p.Kind != "building" && p.Kind != "wing") landmarks.Add(p);
+            foreach (var p in built.CloseLandmarks) landmarks.Add(new SettlementKits.Placed(p.Id, p.Kind, p.C, 0f, p.W, p.D, p.H, p.Wall, p.Y));
+            stats.Landmarks = landmarks;
             var localityIds = new HashSet<string>(System.StringComparer.Ordinal);
             foreach (var locality in localities) localityIds.Add(locality.Id);
             towns.ConfigureTownFootprints(stats.Footprints, localityIds);

@@ -271,12 +271,13 @@ namespace Statecraft.Game.Map.Collection
             IReadOnlyList<SpecialBuildingModels.Want>? workshops = null)
         {
             var discs = RuralLife.OtherProps(map);
-            foreach (var (want, spot) in RuralLife.Plan(map, RuralLife.Wants(map), RuralLife.OtherProps(map), _ => true))
+            var rural = RuralLife.Plan(map, RuralLife.Wants(map), RuralLife.OtherProps(map), _ => true);
+            foreach (var (want, spot) in rural)
                 discs.Add((spot, RuralLife.SceneRadiusM(want.Model)));
             // With the b21 of each built arms workshop (#1701 slice F), after the sourced buildings as the layer orders them.
             var buildings = workshops == null || workshops.Count == 0 ? SpecialBuildingModels.Placements(date)
                 : SpecialBuildingModels.Placements(date).Concat(workshops).ToList();
-            foreach (var (w, at) in SpecialBuildingModels.Plan(map, date, buildings, _ => true, log: false))
+            foreach (var (w, at) in SpecialBuildingModels.Plan(map, date, buildings, _ => true, log: false, rural))
                 discs.Add((at, SpecialBuildingModels.ClearanceOf(w.Model)));
             // The whole-town models (TownLandmarks, shown first by GameRoot) where they will stand, by the same plan.
             var towns = map.Terrain.transform.Find(TownLandmarks.Name)?.GetComponent<TownLandmarks>();

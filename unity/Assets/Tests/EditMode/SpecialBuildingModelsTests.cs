@@ -389,8 +389,10 @@ namespace Statecraft.Game.Tests
                 TestContext.WriteLine($"{project.City}: hex centre {inside:0} m inside a town's footprint");
                 if (inside > 0f && inside + CivilianPeople.LabelClearanceM + 1.5f * r0 + r0 > SpecialBuildingModels.HexInnerRadiusM) covered.Add(project.City);
             }
+            CollectionAssert.AreEquivalent(new[] { "jerusalem", "tel_aviv" }, covered, "the cities whose footprint covers their own hex");
             var keys = projects.Select(p => SpecialBuildingModels.WorkshopKey(p.Id)).ToList();
             CollectionAssert.IsSubsetOf(keys, layer.Placed.Select(p => p.Key), "a b21 at every built workshop");
+            Assert.AreEqual(keys.Count, layer.Placed.Count(p => p.Model == SpecialBuildingModels.Workshop), "exactly one b21 per built workshop");
             var ground = PlacementLayer.CampGround(map);
             var others = layer.Placed.Where(p => !keys.Contains(p.Key)).Select(p => (new Vector2(p.At.x, p.At.z), SpecialBuildingModels.ClearanceOf(p.Model))).ToList();
             var spots = new List<(Vector2, float)>();
@@ -451,6 +453,20 @@ namespace Statecraft.Game.Tests
                 }
             }
             Assert.Greater(n, 0, key + ": the town layer has drawn buildings to keep clear of");
+            // Review of #2281 (B1): nor any wall, platform, landmark, harbour work or street palm the kits placed, any landmark's
+            // close copy, or any replaceable landmark part (all house-free by design, so a gap search is drawn to them).
+            var stats = map.KitStats;
+            int m = 0;
+            foreach (var l in stats.Landmarks)
+            {
+                if ((l.C - flat).magnitude > SpecialBuildingModels.HexInnerRadiusM + 0.5f * (l.W + l.D)) continue;
+                m++;
+                Assert.IsTrue(SpecialBuildingModels.ClearOfBox(flat, r, l.C, l.Yaw, l.W, l.D), $"{key} stands on {l.Id}'s {l.Kind} at {l.C}");
+            }
+            foreach (var part in stats.LandmarkParts)
+                Assert.IsTrue(SpecialBuildingModels.ClearOfBox(flat, r, new Vector2(part.Near.center.x, part.Near.center.z), 0f, part.Near.size.x, part.Near.size.z),
+                    $"{key} stands on {part.Owner}'s {part.Kind}");
+            TestContext.WriteLine($"{key}: clear of {n} drawn buildings and {m} kit landmarks near it");
         }
 
         /// <summary>Owner, 2 November 2026 ("Among the houses"): a workshop built on Jerusalem's or Tel Aviv's own hex, which the
@@ -477,6 +493,13 @@ namespace Statecraft.Game.Tests
                 TestContext.WriteLine($"{key} ({project.City}): {off:0} m from its hex centre");
                 Assert.LessOrEqual(off + r, SpecialBuildingModels.HexInnerRadiusM, key + " wholly on its hex");
                 AmongTheHouses(map, key, flat, r);
+                if (project.City == "jerusalem")
+                {
+                    var (oc, half) = Statecraft.Game.Map.Kits.SettlementKits.OldCityWalls(map.Frame);
+                    var d = flat - oc;
+                    TestContext.WriteLine($"{key}: {d.x:0} m east and {d.y:0} m north of the Old City's centre (walls' half side {half:0} m)");
+                    Assert.IsTrue(Mathf.Abs(d.x) >= half + r || Mathf.Abs(d.y) >= half + r, key + " outside the Old City's walls");
+                }
                 Assert.IsFalse(ground.OnRoute(flat, r), key + " clear of the routes");
                 Assert.IsFalse(ground.OnToken(flat, r, After), key + " clear of the unit tokens");
                 var b = layer.transform.Find(key)!.GetComponentsInChildren<Renderer>(true).Select(x => x.bounds).Aggregate((x, y) => { x.Encapsulate(y); return x; });
@@ -486,6 +509,74 @@ namespace Statecraft.Game.Tests
             var again = CollectionGeometryFixture.Special(map, After, c, projects)!;
             AnswerAll();
             foreach (var kv in first) Assert.AreEqual(kv.Value, again.Placed.Single(p => p.Key == kv.Key).At, kv.Key + " on the same spot again");
+            // The load gate's rebuild line: one full plan (the sourced buildings and both workshops among the houses), as each
+            // Rebuild computes it.
+            var wants = SpecialBuildingModels.Placements(After).Concat(SpecialBuildingModels.ArmsWorkshops(c, projects)).ToList();
+            SpecialBuildingModels.Plan(map, After, wants, _ => true, log: false);   // warm
+            var clock = System.Diagnostics.Stopwatch.StartNew();
+            const int Runs = 5;
+            for (int i = 0; i < Runs; i++) SpecialBuildingModels.Plan(map, After, wants, _ => true, log: false);
+            TestContext.WriteLine($"PLAN-TIMING Jerusalem+Tel Aviv workshops: {clock.Elapsed.TotalMilliseconds / Runs:0.0} ms per plan");
+        }
+
+        /// <summary>Review of #2281 (N3): every building takes its planned ground whether or not its model has streamed. A
+        /// workshop model is wanted 400 m from the Tegart fort's planned spot, after the fort; with the fort's bundle failing
+        /// (answered null), every building drawn stands exactly where the plan with every model puts it: the workshop does not
+        /// slide onto the fort's ground.</summary>
+        [Test]
+        public void AFailedModelKeepsItsGroundSoNoOtherBuildingMoves()
+        {
+            var map = OpenMap();
+            var layer = CollectionGeometryFixture.Special(map, After)!;
+            var fortAt = SpecialBuildingModels.Plan(map, After, SpecialBuildingModels.Placements(After), _ => true, log: false).Single(x => x.want.Key == "latrun_tegart").at;
+            // 400 m off the fort: every spot of the workshop's first ring (306 m out) is on the fort's ground (its clearance plus
+            // the workshop's, 715 m), so with that ground taken the workshop stands on a later ring; without it, on the first.
+            // The first side (east, north, west, south) where the full plan has ground for it.
+            float reach = SpecialBuildingModels.ClearanceOf(SpecialBuildingModels.Tegart) + SpecialBuildingModels.ClearanceOf(SpecialBuildingModels.Workshop);
+            List<SpecialBuildingModels.Want> wants = null!;
+            Dictionary<string, Vector2> full = null!;
+            foreach (var side in new[] { Vector2.right, Vector2.up, Vector2.left, Vector2.down })
+            {
+                var near = fortAt + 400f * side;
+                Assert.Less(400f + 1.5f * SpecialBuildingModels.ClearanceOf(SpecialBuildingModels.Workshop), reach + 1f, "the first ring is on the fort's ground");
+                var (lon, lat) = map.Frame.ToLonLat(new Vector3(near.x, 0f, near.y));
+                wants = SpecialBuildingModels.Placements(After)
+                    .Append(new SpecialBuildingModels.Want(SpecialBuildingModels.WorkshopKey(41), SpecialBuildingModels.Workshop, Built, lon, lat, "test: by the fort's spot"))
+                    .ToList();
+                full = SpecialBuildingModels.Plan(map, After, wants, _ => true, log: false).ToDictionary(x => x.want.Key, x => x.at);
+                if (full.ContainsKey(SpecialBuildingModels.WorkshopKey(41))) { TestContext.WriteLine($"the workshop 400 m {side} of the fort"); break; }
+            }
+            layer.ShowForTest(wants);
+            Assert.IsTrue(full.ContainsKey(SpecialBuildingModels.WorkshopKey(41)), "the workshop has ground in the full plan");
+            LogAssert.Expect(LogType.Warning, new Regex("^BUILDINGS: " + SpecialBuildingModels.Tegart + " did not stream"));
+            var pending = asked.ToList(); asked.Clear();
+            foreach (var (id, done) in pending)
+                done(id == SpecialBuildingModels.Tegart ? null : AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(id, CollectionDetail.Near)));
+            CollectionAssert.DoesNotContain(layer.Placed.Select(p => p.Model), SpecialBuildingModels.Tegart);
+            CollectionAssert.Contains(layer.Placed.Select(p => p.Key), SpecialBuildingModels.WorkshopKey(41));
+            foreach (var p in layer.Placed)
+            {
+                Assert.AreEqual(full[p.Key].x, p.At.x, 1e-3f, p.Key + " where the full plan puts it (x)");
+                Assert.AreEqual(full[p.Key].y, p.At.z, 1e-3f, p.Key + " where the full plan puts it (z)");
+            }
+        }
+
+        /// <summary>Review of #2281 (N1, N2): ClearOfName's band, edge by edge: from the footprint's south edge to
+        /// TownLabelHeightM past its north edge, TownLabelHalfWidthM either side, widened by the model's clearance.</summary>
+        [Test]
+        public void ClearOfNameIsTheBandAboveAPlacesKit()
+        {
+            var c = new Vector2(1000f, 2000f); float fr = 800f, r = 200f;
+            float w = SpecialBuildingModels.TownLabelHalfWidthM, h = SpecialBuildingModels.TownLabelHeightM;
+            Assert.IsFalse(SpecialBuildingModels.ClearOfName(c, r, c, fr), "on the place");
+            Assert.IsFalse(SpecialBuildingModels.ClearOfName(c + new Vector2(0f, fr + h), r, c, fr), "in the pill above it");
+            Assert.IsFalse(SpecialBuildingModels.ClearOfName(c + new Vector2(w + r - 1f, 0f), r, c, fr), "just inside the side");
+            Assert.IsTrue(SpecialBuildingModels.ClearOfName(c + new Vector2(w + r + 1f, 0f), r, c, fr), "just outside the side");
+            Assert.IsTrue(SpecialBuildingModels.ClearOfName(c + new Vector2(-w - r - 1f, 0f), r, c, fr), "just outside the other side");
+            Assert.IsFalse(SpecialBuildingModels.ClearOfName(c + new Vector2(0f, fr + h + r - 1f), r, c, fr), "just under the top");
+            Assert.IsTrue(SpecialBuildingModels.ClearOfName(c + new Vector2(0f, fr + h + r + 1f), r, c, fr), "just over the top");
+            Assert.IsFalse(SpecialBuildingModels.ClearOfName(c + new Vector2(0f, -fr - r + 1f), r, c, fr), "just over the bottom");
+            Assert.IsTrue(SpecialBuildingModels.ClearOfName(c + new Vector2(0f, -fr - r - 1f), r, c, fr), "just under the bottom");
         }
 
         /// <summary>The model stands from the turn the build completes (not while it is being built), stays put on GameRoot's
