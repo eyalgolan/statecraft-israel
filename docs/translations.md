@@ -5,8 +5,9 @@ it doesnt cause any bugs, degregations or gaps"). English stays the source of re
 `unity/Assets/UI/strings.en.yaml`. This page fixes the files, their keys and their order, so the tools, the sim and Unity
 read and write them the same way.
 
-**Status (step 1 of #1618):** the contract and its tests only. The game still reads Hebrew from the inline `*_he` fields
-and `strings.he.yaml`; nothing has moved. `Translations.InlineHebrew` (sim) reads today's inline Hebrew as these files,
+**Status (steps 1 and 2 of #1618):** the contract and its tests, and the transport that brings `translations/` to the
+sim, the CLI and every player (below, "Loading"). The game still shows Hebrew from the inline `*_he` fields and
+`strings.he.yaml`; nothing has moved. `Translations.InlineHebrew` (sim) reads today's inline Hebrew as these files,
 and the tests prove every value comes back unchanged. The tools' side (`tools/translate.py`, from #1604) joins the same
 fixture check once #1604 has merged.
 
@@ -95,9 +96,46 @@ the check: a `ui.yaml` copied from another language with its code left behind pa
 `Parse` itself does not require the key, because it is also used to read a file's shape in isolation — the check is a
 separate call, made where a language is adopted.
 
+## Loading
+
+`ContentLoader.Load` reads `translations/` with the content (#1618, step 2) and keeps each language in
+`Content.Translations`, for the language picker of #1606 and the later steps of #1618. Nothing shows them yet.
+
+- **Where:** the `translations/` beside a folder named `content` (`TranslationLoader.Beside`): the repository's in the
+  editor and the CLI, `StreamingAssets/translations` in a desktop player. A content folder with another name, such as a
+  test fixture, has none. The CLI's `--translations DIR` names another folder; `--preview` does not take it.
+- **Players:** before every player build `ContentSync` copies `translations/` to `StreamingAssets/translations`, and
+  `ContentManifest` lists the files in `manifest.json` and packs their texts into `bundle.json` beside the content's, so
+  the web boot makes no extra request. `ContentManifest.Verify` checks the lists, the packed texts and the copy (byte for
+  byte) against the source, and `ContentSync` then loads the copy as a player would and the source as the editor does
+  (`ContentManifest.CheckLoads`), so a broken translation fails the build rather than the player's boot. `Copy` marks the
+  translations folder it makes (`.contentmanifest-copy`) and refuses to replace one it did not make.
+- **The folder:** a language folder holds only `ui.yaml`, `events.yaml` and `content.yaml`. Any other file or folder there,
+  or a folder that is not a language code, is refused rather than skipped. Files at the top (this folder's `README.md`)
+  are not languages, and hidden names (`.DS_Store`) are ignored.
+- **The checks:** each language is parsed, must name itself (`CheckDeclaredLanguage`), may not translate the advisors or
+  How to play unless it is Hebrew, translates only events that exist (an event a ruleset leaves out counts) and every
+  option of each, and keys only fields that `Fields` offers. A read failure is reported with its file.
+- **A stale translation:** when an event or a record changes so that a translation no longer matches it, the load is
+  refused (owner, 1 November 2026: "Refuse + say how to fix (Recommended)"), so nothing stale ships. The error says how to
+  unblock without a translator: update the entry, or delete it from the language's file, and that text shows in English.
+  Not for `he/`, which must equal the inline Hebrew.
+- **Hebrew:** a `translations/he/` that is present must match the inline Hebrew of the events and the content exactly:
+  the same events, texts, options and review flags, and the same fields and flags, none missing and none extra.
+  `he/ui.yaml` is not compared with `strings.he.yaml` yet; that comes with the UI move (step 4).
+- **Files a player does not ship:** `map/localities_1948.yaml` is a tool input; players get its baked TSV. A key into it
+  is checked where the file can be read (the editor, the CLI and the build) and skipped in a player.
+- **The hash:** translations are display text, so they stay outside `Content.Hash`: saves, the goldens and replay hashes
+  are the same with or without them.
+
+The UI strings still come from `strings.en.yaml` and `strings.he.yaml`; which catalogue the UI shows is #1606's
+(`GameRoot.Strings()`).
+
 ## The implementations and their tests
 
 - `sim/Statecraft.Sim/Translations.cs`: keys, parsing, writing, `Resolve` and `InlineHebrew`.
+- `sim/Statecraft.Sim/TranslationLoader.cs`: finds, lists and checks `translations/` ("Loading", above);
+  `TranslationLoaderTests` covers it, and `GameInputsTests` (Unity EditMode) the copy, the bundle and the web boot.
 - `sim/Statecraft.Sim/HebrewOverlay.cs`: puts a Hebrew set on the sim's typed `*He` properties. Unity reads the Hebrew of
   `map/localities_1948.yaml`, `map/settlements_1948.yaml` and `map/units_1948.yaml` itself
   (`HebrewOverlay.UnityReads`).

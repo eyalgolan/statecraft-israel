@@ -362,8 +362,15 @@ namespace Statecraft.Game.Map.Collection
             dirty = true; RefreshWanted();
         }
 
+        /// <summary>Whether <see cref="RefreshWanted"/> has work: a redraw, a lease to retire, or a change of the admitted towns
+        /// or of the models asked for. RefreshWanted returns at once without it, and the edit-mode render callback asks for a
+        /// player-loop update only with it, so a settled layer never keeps the editor updating (#2099).</summary>
+        internal bool RefreshPending => dirty || retiring.Count != 0
+            || !admittedKeys.SetEquals(wants.Where(Allowed).Select(w => w.Key)) || !asked.SetEquals(wants.Where(Allowed).Select(w => w.Model));
+
         void RefreshWanted()
         {
+            if (!RefreshPending) return;
             var keep = new HashSet<string>(StringComparer.Ordinal);
             var keys = new HashSet<string>(StringComparer.Ordinal);
             foreach (var want in wants) if (Allowed(want)) { keep.Add(want.Model); keys.Add(want.Key); }
@@ -563,13 +570,13 @@ namespace Statecraft.Game.Map.Collection
 
         void OnEnable()
         {
-            RenderPipelineManager.beginCameraRendering += Choose;
+            RenderPipelineManager.beginCameraRendering += OnBeginCameraRendering;
             RenderPipelineManager.endCameraRendering += EndCamera;
             if (wants.Count > 0) { focusPolicy = null; Show(wants, date); }
         }
         void OnDisable()
         {
-            RenderPipelineManager.beginCameraRendering -= Choose;
+            RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
             RenderPipelineManager.endCameraRendering -= EndCamera;
             StopAllCoroutines(); retirementScheduled = false;
             RestoreRenderers(); ReleaseOwned();
@@ -646,16 +653,26 @@ namespace Statecraft.Game.Map.Collection
             RefreshWanted();
         }
 
-        /// <summary>Show each map-wide whole-town original unless this camera has that town's detailed buildings ready.</summary>
-        internal void Choose(ScriptableRenderContext context, Camera cam)
+        /// <summary>The render callback. Nothing is acquired, instantiated or destroyed while a camera renders, in edit mode
+        /// either (a Scene or Game view camera): the change waits for LateUpdate, as in play mode.</summary>
+        void OnBeginCameraRendering(ScriptableRenderContext context, Camera cam) => ChooseCore(cam, inRender: true);
+        /// <summary>Show each map-wide whole-town original unless this camera has that town's detailed buildings ready. A direct
+        /// call (tests and editor tools, outside any render) applies a change at once in edit mode.</summary>
+        internal void Choose(ScriptableRenderContext context, Camera cam) => ChooseCore(cam, inRender: false);
+        internal void ChooseCore(Camera cam, bool inRender)
         {
             if (cam.cameraType == CameraType.Preview || cam.cameraType == CameraType.Reflection) return;
             RestoreRenderers();
             var layer = Layer(); LastHidden = false;
             // Do not depend on which beginCameraRendering subscriber was enabled first.
-            layer?.PrepareCamera(cam);
-            if (!Application.isPlaying) RefreshWanted();
-            layer?.PrepareCamera(cam); // synchronous editor/fake arrivals may have made a whole seat ready
+            layer?.PrepareCameraCore(cam, inRender);
+            if (!Application.isPlaying && !inRender) RefreshWanted();
+#if UNITY_EDITOR
+            // In a render, LateUpdate refreshes instead; edit mode runs it only when something asks for a player-loop update,
+            // so ask only when RefreshWanted has work (a request every render would keep the editor updating).
+            if (inRender && !Application.isPlaying && RefreshPending) UnityEditor.EditorApplication.QueuePlayerLoopUpdate();
+#endif
+            layer?.PrepareCameraCore(cam, inRender); // synchronous editor/fake arrivals may have made a whole seat ready
             foreach (var renderer in renderers)
             {
                 if (renderer == null) continue;
