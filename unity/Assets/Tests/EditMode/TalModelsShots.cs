@@ -29,7 +29,7 @@ public class TalModelsShots
     string saveDir = "";
     RenderTexture? rt; PanelSettings? ps;
     GameRoot root = null!;
-    Action<string, CollectionDetail, Action<GameObject?>>? savedRural, savedPeople, savedSpecial, savedUnits;
+    Action<string, CollectionDetail, Action<GameObject?>>? savedRural, savedPeople, savedSpecial, savedUnits, savedLandmark;
     Func<string, CollectionDetail, Action<GameObject?>, IDisposable>? savedTown;
 
     [SetUp]
@@ -38,14 +38,14 @@ public class TalModelsShots
         saveDir = Path.Combine(Path.GetTempPath(), "statecraft-tal-shots-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(ShotDir); Directory.CreateDirectory(CivMovementShots.ShotDir);
         savedRural = RuralLife.Request; savedPeople = CivilianPeople.Request; savedSpecial = SpecialBuildingModels.Request;
-        savedUnits = UnitFigures.Source; savedTown = TownModelLayer.ModelAcquire;
+        savedUnits = UnitFigures.Source; savedTown = TownModelLayer.ModelAcquire; savedLandmark = TownLandmarks.Request;
     }
 
     [TearDown]
     public void DiscardScene()
     {
         RuralLife.Request = savedRural!; CivilianPeople.Request = savedPeople!; SpecialBuildingModels.Request = savedSpecial!;
-        UnitFigures.Source = savedUnits; TownModelLayer.ModelAcquire = savedTown!;
+        UnitFigures.Source = savedUnits; TownModelLayer.ModelAcquire = savedTown!; TownLandmarks.Request = savedLandmark!;
         EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         if (ps != null) Object.DestroyImmediate(ps);
         if (rt != null) { rt.Release(); Object.DestroyImmediate(rt); }
@@ -194,6 +194,45 @@ public class TalModelsShots
         CivMovementShots.Shot(rt!, Path.Combine("..", "tal-models-shots", $"houses-{town}-{(hebrew ? "he" : "en")}"));
         Debug.Log($"SHOT houses {town} at {at} from {CameraController.MinDistance:F0} m: {models}");
     }
+
+    /// <summary>#2085: a town from the far zoom (50 km, inside the 40 km+ band where whole-town models stand), the camera on the
+    /// centre of the town's kit footprint, 15 May 1948. The landmarks' requests are answered with the editor's prefabs, as the
+    /// player's stream would answer them. "Before" withholds Tal's four whole towns (main's map: Tiberias, Safed and Netanya
+    /// have no row, so the code-built kit stands); "after" answers them. Ramla has an after frame only: since the owner's 2 November
+    /// ruling Ramla's row is its own town, so withholding it leaves Ramla bare, not main's stone village. Its before frames
+    /// (the stone village) were taken at cc766c04b, while Ramla still took ByType's stone village.</summary>
+    IEnumerator WholeTown(bool hebrew, string town, bool after)
+    {
+        var towns = new[] { CollectionCatalog.TiberiasTown, CollectionCatalog.SafedTown, CollectionCatalog.NetanyaTown, CollectionCatalog.RamlaTown };
+        TownLandmarks.Request = Answer(after ? Array.Empty<string>() : towns);
+        yield return Boot(hebrew);
+        var map = Object.FindFirstObjectByType<MapScene>();
+        var foot = map.KitFootprints.First(f => f.id == town);
+        var at = new Vector3(foot.centre.x, 0f, foot.centre.y);
+        at.y = map.Terrain.SampleHeight(at) + map.Terrain.transform.position.y;
+        const float distance = 50000f;
+        Look(at, distance);
+        for (int i = 0; i < 5; i++) { Camera.main.Render(); yield return null; }
+        var landmarks = Object.FindFirstObjectByType<TownLandmarks>();
+        string model = landmarks.Placed.Where(p => p.Key == town).Select(p => p.Model).FirstOrDefault() ?? "none";
+        CivMovementShots.Shot(rt!, Path.Combine("..", "tal-models-shots", $"town-{town}-{(after ? "after" : "before")}-{(hebrew ? "he" : "en")}"));
+        Debug.Log($"SHOT town {town} {(after ? "after" : "before")} at {at} from {distance:F0} m, footprint radius {foot.radius:F0} m: landmark {model}");
+    }
+
+    [UnityTest] public IEnumerator TownTiberiasBeforeEnglish() { yield return WholeTown(false, "tiberias", false); }
+    [UnityTest] public IEnumerator TownTiberiasAfterEnglish() { yield return WholeTown(false, "tiberias", true); }
+    [UnityTest] public IEnumerator TownTiberiasBeforeHebrew() { yield return WholeTown(true, "tiberias", false); }
+    [UnityTest] public IEnumerator TownTiberiasAfterHebrew() { yield return WholeTown(true, "tiberias", true); }
+    [UnityTest] public IEnumerator TownSafedBeforeEnglish() { yield return WholeTown(false, "safed", false); }
+    [UnityTest] public IEnumerator TownSafedAfterEnglish() { yield return WholeTown(false, "safed", true); }
+    [UnityTest] public IEnumerator TownSafedBeforeHebrew() { yield return WholeTown(true, "safed", false); }
+    [UnityTest] public IEnumerator TownSafedAfterHebrew() { yield return WholeTown(true, "safed", true); }
+    [UnityTest] public IEnumerator TownNetanyaBeforeEnglish() { yield return WholeTown(false, "netanya", false); }
+    [UnityTest] public IEnumerator TownNetanyaAfterEnglish() { yield return WholeTown(false, "netanya", true); }
+    [UnityTest] public IEnumerator TownNetanyaBeforeHebrew() { yield return WholeTown(true, "netanya", false); }
+    [UnityTest] public IEnumerator TownNetanyaAfterHebrew() { yield return WholeTown(true, "netanya", true); }
+    [UnityTest] public IEnumerator TownRamlaAfterEnglish() { yield return WholeTown(false, "ramla", true); }
+    [UnityTest] public IEnumerator TownRamlaAfterHebrew() { yield return WholeTown(true, "ramla", true); }
 
     [UnityTest] public IEnumerator HousesNetanyaEnglish() { yield return Houses(false, "netanya"); }
     [UnityTest] public IEnumerator HousesNetanyaHebrew() { yield return Houses(true, "netanya"); }
