@@ -166,13 +166,15 @@ namespace Statecraft.Sim
 
         /// <summary>R-HOUSE-003 (Q-HOUSE-5): the people who take the city's housing: its civilians, craftsmen, recruits and groups
         /// in training (a halutz group too, until it becomes a movable unit and leaves). Refugees wait for housing and are not
-        /// in it. Israeli formations retain their home city's housing after graduation, including when they move or become
-        /// veterans. Summed as integers, so the order of the training groups and formations cannot change it.</summary>
+        /// in it. Under gdd-0.1 Israeli formations retain their home city's housing after graduation, including when they move
+        /// or become veterans. Under gdd-0.3 they do not (#1703; 27M-18, owner-approved 1 November 2026: "Housed = civilians,
+        /// craftsmen, recruits and groups in training. Refugees and pioneer units are not housed."). Summed as integers, so the
+        /// order of the training groups and formations cannot change it.</summary>
         public static int Housed(GameState s, City x)
         {
             var n = x.Civilians + x.Craftsmen + x.Recruits;
             foreach (var k in s.Cohorts.Values) if (k.City == x.Id) n += k.Count;
-            return n + Soldiers(s, x);
+            return s.Ruleset == SaveGame.Gdd03Ruleset ? n : n + Soldiers(s, x);
         }
 
         /// <summary>R-HOUSE-003, R-UNIT-004 (Q-HOUSE-5): the Israeli formations the city houses, their strength summed:
@@ -213,18 +215,76 @@ namespace Statecraft.Sim
         /// <summary>R-HOUSE-002 (D-D1, Q-HOUSE-1): after the housing step, each city with overflow loses
         /// <c>overflow_condition_loss * overflow / housed</c> of its housing condition, never below 0. A city with none keeps
         /// its condition; nothing in this rule raises it (housing projects do, Phase 3 PR 4). Each city reads only its own
-        /// counts (R-HOUSE-001: the condition is per city).</summary>
+        /// counts (R-HOUSE-001: the condition is per city). Under gdd-0.3 the condition follows <see cref="SettleGdd03"/>'s
+        /// rules instead (#1703: the surcharge, 5 pp overflow and the cohesion term).</summary>
         public static void UpdateCondition(Content c, GameState s, MvpRules r, List<Cause> why)
         {
             PopulationLedger.RefuseAggregate(s);
+            var gdd03 = c.Ruleset == SaveGame.Gdd03Ruleset ? Gdd03HousingFormula.FromCatalogue(c.Gdd03Balance!) : null;
+            var people = gdd03 == null ? 0 : OwnPopulation(s);
+            decimal surcharge = 0m, cohesion = 0m;
             foreach (var x in s.Cities.Values.ToList())
             {
                 var over = Overflow(s, x);
+                if (gdd03 != null && x.Condition is double was)
+                {
+                    var housed = Housed(s, x);
+                    var h = gdd03.Evaluate(new Gdd03HousingInput(housed, housed, housed, people, x.HousingCapacity, (decimal)was, 0m, 0m));
+                    surcharge += h.SurchargeMoney;
+                    cohesion += h.CohesionLossPoints;
+                    if (h.ConditionAfter != (decimal)was) s.Cities[x.Id] = x.WithCondition((double)h.ConditionAfter);
+                }
                 if (over == 0) continue;
-                if (x.Condition is double now)
+                if (gdd03 == null && x.Condition is double now)
                     s.Cities[x.Id] = x.WithCondition(Math.Max(0.0, now - r.OverflowConditionLoss!.Value * over / Housed(s, x)));
                 why.Add(new Cause("city", x.Id, over, FormattableString.Invariant($"{PlayerText.Settlement(c, x.Id)}: {over} groups more than its homes hold"), key: CauseKeys.HousingShortage, args: new[] { CauseKeys.Number(over) }));
             }
+            if (gdd03 != null) SettleGdd03(c, s, surcharge, cohesion, why);
+        }
+
+        /// <summary>R-HOUSE-002 and R-HOUSE-005 under gdd-0.3 (#1703), in its order: "Price the surcharge from pre-deterioration
+        /// condition, then deteriorate once, then apply cohesion once." <see cref="UpdateCondition"/> evaluates each city with a
+        /// condition by <see cref="Gdd03HousingFormula"/>, with its <see cref="Housed"/> people as R (after this step's arrivals
+        /// became civilians, 27M-15) and <see cref="OwnPopulation"/> as P:
+        /// - the surcharge, <c>R * max(0, money_threshold - c) * money_slope</c> Money from the condition before this turn's
+        ///   deterioration. money_slope is 0.1 per population unit (owner, 2 November 2026: "Scale it to unit size
+        ///   (Recommended)"; the option read: "0.1 per unit (as #2112 did for Industry), about 7.6 Money a turn at start.");
+        /// - overflow deterioration, <c>overflow_deterioration pp * max(0, R - capacity) / R</c> (5 pp), in place of gdd-0.1's
+        ///   overflow_condition_loss, never below 0;
+        /// - the cohesion loss, <c>max_cohesion_loss * sum((R / P) * max(0, (cohesion_threshold - c') / cohesion_threshold))</c>
+        ///   displayed points of Social cohesion, from the condition c' after deterioration.
+        /// There is no housing upkeep (27M-17, IL 0m), so no unpaid deterioration. The sums run in ordinal city order, in
+        /// decimal. This settles them once: the surcharge as one Money line, borrowed when the Treasury is short (R-MONEY-003),
+        /// and the cohesion loss once on `morale` through its permanent shift. The legacy `housing` to `morale` link adds nothing
+        /// under gdd-0.3 (EffectsSystem.Apply).</summary>
+        static void SettleGdd03(Content c, GameState s, decimal surcharge, decimal cohesion, List<Cause> why)
+        {
+            if (surcharge > 0m)
+            {
+                var cost = (double)surcharge;
+                why.Add(new Cause("economy", "treasury", -cost, $"{PlayerText.Change(c, "treasury", -cost)} (housing surcharge)", key: CauseKeys.HousingSurcharge));
+                EconomySystem.PayNamedOrBorrow(c, s, cost, "for the housing surcharge", why, CauseKeys.Purpose.HousingSurcharge);
+            }
+            if (cohesion > 0m)
+            {
+                var moved = EffectsSystem.Shift(c, s, CohesionIndicator, -(double)cohesion / 100.0);
+                if (moved != 0)
+                    why.Add(new Cause("cities", CohesionIndicator, moved, $"{PlayerText.Change(c, CohesionIndicator, moved)} (housing condition)", key: CauseKeys.HousingCohesion));
+            }
+        }
+
+        /// <summary>Social cohesion's indicator id (R-NAT-001), which the gdd-0.3 housing cohesion term moves (R-HOUSE-005).</summary>
+        public const string CohesionIndicator = "morale";
+
+        /// <summary>R-HOUSE-005 (#1703): P, all own population in units: every city's housed people and refugees, and the
+        /// strength of every player unit, wherever it stands: the Israeli formations and the halutz units, which have no side
+        /// (R-UNIT-001). Summed as integers.</summary>
+        public static int OwnPopulation(GameState s)
+        {
+            var n = 0;
+            foreach (var x in s.Cities.Values) n += Housed(s, x) + x.Refugees;
+            foreach (var u in s.Units.Values) if (u.Side == "" || u.Side == Movement.PlayerSide) n += u.Strength;
+            return n;
         }
 
         /// <summary>The effect source id of the cities' employed share (R-CITY-005): a GDD-only source of `morale`, Social

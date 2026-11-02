@@ -29,13 +29,13 @@ public class Gdd03HousingFormulaTests
         // R-HOUSE-001: catches moneyThreshold replaced by the shipped literal 0.50m.
         const decimal threshold = 0.70m;
         var f = FormulaWithSyntheticScalar("housing.money_threshold", threshold);
-        var expected = 10m * Math.Max(0m, threshold - 0.40m) * 1m;
+        var expected = 10m * Math.Max(0m, threshold - 0.40m) * 0.1m;   // the shipped money_slope, 0.1 since #1703 (owner, 2 November 2026)
         Assert.Equal(expected, f.Evaluate(Input(condition: 0.40m)).SurchargeMoney);
     }
 
     [Fact] public void SyntheticMoneySlopeComesFromSuppliedCatalogue()
     {
-        // R-HOUSE-001: catches moneySlope replaced by the shipped literal 1m.
+        // R-HOUSE-001: catches moneySlope replaced by the shipped literal 0.1m.
         const decimal slope = 2.5m;
         var f = FormulaWithSyntheticScalar("housing.money_slope", slope);
         var expected = 10m * Math.Max(0m, 0.50m - 0.40m) * slope;
@@ -102,7 +102,7 @@ public class Gdd03HousingFormulaTests
     {
         // R-HOUSE-001, R-HOUSE-002: price first, deteriorate once, return arithmetic only.
         var r = Formula().Evaluate(Input());
-        Assert.Equal(1m, r.SurchargeMoney);
+        Assert.Equal(0.1m, r.SurchargeMoney);   // 10 x 0.10 x money_slope 0.1 (#1703: "Scale it to unit size (Recommended)", owner, 2 November 2026; was 1)
         Assert.Equal(0.025m, r.OverflowConditionLoss);
         Assert.Equal(0.05m, r.UnpaidConditionLoss);
         Assert.Equal(0.325m, r.ConditionAfter);
@@ -111,7 +111,7 @@ public class Gdd03HousingFormulaTests
     }
 
     [Theory]
-    [InlineData("0.499", "0.01")]
+    [InlineData("0.499", "0.001")]   // 10 x 0.001 x money_slope 0.1 (#1703; was 0.01 at slope 1)
     [InlineData("0.50", "0")]
     [InlineData("0.60", "0")]
     public void SurchargeIsContinuous(string condition, string expected)
@@ -126,7 +126,7 @@ public class Gdd03HousingFormulaTests
         // R-HOUSE-002, R-HOUSE-003: does not select residents or settle timing.
         var r = Formula().Evaluate(Input(surcharge: 10, beforeArrival: 20,
             cohesion: 5, population: 20, capacity: 15m, condition: 0.125m, due: 0m, paid: 0m));
-        Assert.Equal(3.75m, r.SurchargeMoney);
+        Assert.Equal(0.375m, r.SurchargeMoney);   // 10 x 0.375 x money_slope 0.1 (#1703; was 3.75 at slope 1)
         Assert.Equal(0.0125m, r.OverflowConditionLoss);
         Assert.Equal(0.1125m, r.ConditionAfter);
         Assert.Equal(0.275m, r.CohesionLossPoints);
@@ -190,7 +190,7 @@ public class Gdd03HousingFormulaTests
             Input(paid: -1m), Input(paid: 5m), Input(due: 0m, paid: 1m) })
             Assert.Throws<ArgumentOutOfRangeException>(() => f.Evaluate(input));
         Assert.Throws<ArgumentNullException>(() => f.Evaluate(null!));
-        Assert.Equal(1m, f.Evaluate(Input()).SurchargeMoney);
+        Assert.Equal(0.1m, f.Evaluate(Input()).SurchargeMoney);   // money_slope 0.1 (#1703; was 1)
     }
 
     [Theory]

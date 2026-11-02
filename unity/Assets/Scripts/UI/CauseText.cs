@@ -30,6 +30,8 @@ namespace Statecraft.Game.UI
                 case CauseKeys.CivilianUpkeep:
                 case CauseKeys.MoneyOther:
                 case CauseKeys.MilitaryUpkeep:
+                case CauseKeys.HousingSurcharge:
+                case CauseKeys.HousingCohesion:
                 case CauseKeys.FxCrisisFood:
                     return text.Format(key, Name(text, cause.Target), Change(c, cause.Target, cause.Delta));
                 case CauseKeys.Borrowed:

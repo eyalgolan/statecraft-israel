@@ -233,8 +233,8 @@
     "values": [0.50]
   "housing.money_slope":
     "basis": "Agreed"
-    "note": "Reception, housing and shortages: condition fraction / Money per resident per fraction below threshold; Agreed linear rule. Source: #1668 balance.md at 605277df."
-    "values": [1]
+    "note": "Reception, housing and shortages: Money per housed population unit per condition fraction below money_threshold, a turn (R-HOUSE-005, #1703). Owner, 2 November 2026: \"Scale it to unit size (Recommended)\"; the option read: \"0.1 per unit (as #2112 did for Industry), about 7.6 Money a turn at start.\" #1668's 1 Money per resident was sized for 10,000 people a unit; at D2's 1,000 people a unit it is 0.1. Agreed linear rule; a labelled design value; a balance playtest follows. Source: #1668 balance.md at 605277df."
+    "values": [0.1]
   "housing.cohesion_threshold":
     "basis": "Agreed"
     "note": "Reception, housing and shortages: condition fraction below which cohesion declines; Agreed. Source: #1668 balance.md at 605277df."
