@@ -926,20 +926,41 @@ public class MapLabelTests
             rig.LookAt = map.Frame.ToWorld(pose.Lon, pose.Lat, 0); rig.Distance = pose.Distance; rig.Yaw = pose.Yaw; rig.Apply();
             yield return null;
             inset.Update();
+            // An Arab force's token is drawn only once its figure has loaded or failed (UnitLayer.Show), and each such
+            // arrival (UnitFigures.AvailabilityVersion) makes the next FaceCamera redraw every token (Rebuild), which can
+            // move the names and replaces the brigade's token. Only figures near the camera load, so wait until no
+            // arrival has come for 3 s (at most 60 s) before the names are measured.
+            var clock = System.Diagnostics.Stopwatch.StartNew();
+            int version = Statecraft.Game.Map.Units.UnitFigures.AvailabilityVersion; double quietSince = 0;
+            while (clock.Elapsed.TotalSeconds - quietSince < 3 && clock.Elapsed.TotalSeconds < 60)
+            {
+                yield return null;
+                layer.FaceCamera(cam);   // as a render would: an arrival redraws the tokens now
+                if (Statecraft.Game.Map.Units.UnitFigures.AvailabilityVersion != version)
+                { version = Statecraft.Game.Map.Units.UnitFigures.AvailabilityVersion; quietSince = clock.Elapsed.TotalSeconds; }
+            }
+            TestContext.WriteLine($"figures quiet after {quietSince:F1} s (availability version {version})");
+            layer.FaceCamera(cam);   // the redraw for them, before the names are placed
             yield return Settle(labels);
             var tlv = labels.Slots.Single(s => s.name == "slot-tel_aviv");
             Assert.IsTrue(Shown(tlv), "Tel Aviv is named at gameplay03");
             var clear = tlv.Q<Label>().worldBound;   // clear of the brigade standing in Tel Aviv
-            var motion = GameObject.Find(Statecraft.Game.Map.Units.UnitLayer.RootName).transform.Find("Tokens").Find("kiryati")
-                .GetComponent<Statecraft.Game.Map.Units.UnitTokenMotion>();
-            Assert.IsNotNull(motion, "a play build moves the brigade's token");
+            // Found again after every frame: a redraw replaces the token, and its new motion goes on with the slide.
+            Statecraft.Game.Map.Units.UnitTokenMotion Motion() =>
+                GameObject.Find(Statecraft.Game.Map.Units.UnitLayer.RootName).transform.Find("Tokens").Find("kiryati")
+                    .GetComponent<Statecraft.Game.Map.Units.UnitTokenMotion>();
+            Assert.IsNotNull(Motion(), "a play build moves the brigade's token");
 
-            motion.Begin(new Vector3(150000f, 0f, 0f));
+            Motion().Begin(new Vector3(150000f, 0f, 0f));
             labels.Refresh(force: true); yield return null;   // the labels' pass at the rebuild sees the slide's start
+            // and the frames after it, while the token has barely moved: a placement that shows or hides a pill changes the
+            // pills' sizes, which re-places them once more (MapLabelsPresenter.Refresh), so let that settle at the start.
+            for (int i = 0; i < 3; i++) { labels.Refresh(); yield return null; }
             var away = tlv.Q<Label>().worldBound;
             TestContext.WriteLine($"slide start: Tel Aviv pill {away}, clear of the brigade {clear}");
             Assert.Greater(away.yMax, clear.yMax + 1f, $"with the brigade drawn 150 km east the pill {away} comes down from {clear}");
 
+            var motion = Motion();
             motion.Tick(Statecraft.Game.Map.Units.UnitTokenMotion.Duration * 0.9999f);   // 15 m short of Tel Aviv
             Assert.IsTrue(motion.Moving, "still sliding");
             labels.Refresh(); yield return null;
@@ -947,6 +968,7 @@ public class MapLabelTests
             TestContext.WriteLine($"near the end: Tel Aviv pill {during}");
             Assert.AreEqual(clear.yMax, during.yMax, 1f, $"mid-slide the pill {during} keeps clear of the token as drawn, not of its start {away}");
 
+            motion = Motion();
             motion.Tick(Statecraft.Game.Map.Units.UnitTokenMotion.Duration);
             Assert.IsFalse(motion.Moving, "arrived");
             labels.Refresh(); yield return null;
