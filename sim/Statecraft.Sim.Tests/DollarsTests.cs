@@ -361,7 +361,11 @@ options:
         Command One() => new Train("tel_aviv", "halutz", 1);
         Command Ten() => new Train("tel_aviv", "halutz", 10);
         Command Four() => new ConvertDollars(4);
-        Command Industry() => new StartProject("industry", "tel_aviv", -4, 20);
+        // A hex the game accepts for Tel Aviv's industry, taken from the map rather than written in, so a regrid (#1796's
+        // 4.4 km grid made the old (-4, 20) sea) does not turn this row into a refused order that spends nothing.
+        var site = Real.Hexes.OrderBy(h => h.Q).ThenBy(h => h.R)
+            .First(h => Projects.CheckCityReason(Real, s, "industry", "tel_aviv", h.Q, h.R) == null);
+        Command Industry() => new StartProject("industry", "tel_aviv", site.Q, site.R);
         Command Option() => new ChooseEventOption("idf_founding", "one_army");
         var rows = new (Command[] Queued, Func<int, Command[]> EndTurn, int FirstRefused)[]
         {
