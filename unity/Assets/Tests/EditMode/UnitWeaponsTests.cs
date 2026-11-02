@@ -128,11 +128,11 @@ public class UnitWeaponsTests
         }
     }
 
-    /// <summary>The socket is Tal's own fixed pair: in his point-fire export the K98k does not move against C06's right hand
+    /// <summary>The socket is Tal's own fixed pair: in their point-fire export the K98k does not move against C06's right hand
     /// over the 97 frames, and that relation, turned into the C06 rig's frame, is the socket. Then, held by C06 in the aim,
-    /// our K98k lies on Tal's rifle and our C06 on his C06, vertex for vertex.</summary>
+    /// our K98k lies on Tal's rifle and our C06 on their C06, vertex for vertex.</summary>
     [Test]
-    public void TheK98kSocketIsTalsFixedPairAndTheAimMatchesHisExport()
+    public void TheK98kSocketIsTalsFixedPairAndTheAimMatchesTalsExport()
     {
         string path = CollectionCatalog.SourceModelPath(CollectionCatalog.C06PointFire);
         var export = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(path)); made.Add(export);
@@ -150,15 +150,15 @@ public class UnitWeaponsTests
             if (pair is Matrix4x4 p) for (int k = 0; k < 16; k++) Assert.AreEqual(p[k], s[k], 1e-3f * Mathf.Max(1f, Mathf.Abs(p[k])), $"frame {frame}: the rifle moved in the hand");
             else pair = s;
         }
-        // Expected socket: correction(hand)^-1 x Tal's pair x (our K98k's mesh frame into his).
+        // Expected socket: correction(hand)^-1 x Tal's pair x (our K98k's mesh frame into theirs).
         int hand = Array.IndexOf(source.Bones, UnitWeapons.HandBone);
         var talMesh = rifle.GetComponent<MeshFilter>().sharedMesh;
         var ours = Prefab(CollectionCatalog.K98k);
         var ourMesh = ours.GetComponentInChildren<MeshFilter>().sharedMesh;
-        // His export and ours split the same K98k's vertices differently (6,840 and 6,889), so each of ours is matched to his nearest.
-        var mine = ourMesh.vertices; var his = talMesh.vertices;
+        // Their export and ours split the same K98k's vertices differently (6,840 and 6,889), so each of ours is matched to their nearest.
+        var mine = ourMesh.vertices; var tal = talMesh.vertices;
         float k98 = talMesh.bounds.size.x / ourMesh.bounds.size.x;
-        Assert.That(Nearest(mine.Where((_, i) => i % 13 == 0).Select(v => v * k98), his), Is.LessThan(1e-4f * k98),
+        Assert.That(Nearest(mine.Where((_, i) => i % 13 == 0).Select(v => v * k98), tal), Is.LessThan(1e-4f * k98),
             "the same K98k, same axes, scale " + k98);
         var socket = source.Correction[hand].inverse * pair.Value * Matrix4x4.Scale(Vector3.one * k98);
         string want = FormattableString.Invariant($"pos=({socket.m03:R}f, {socket.m13:R}f, {socket.m23:R}f) rot=({socket.rotation.x:R}f, {socket.rotation.y:R}f, {socket.rotation.z:R}f, {socket.rotation.w:R}f) scale={socket.lossyScale.x:R}f");
@@ -174,22 +174,22 @@ public class UnitWeaponsTests
         var ourRifle = UnitWeapons.FindDeep(model, UnitWeapons.HeldName).GetComponentInChildren<MeshFilter>();
         Matrix4x4 InModel(Transform t) => model.worldToLocalMatrix * t.localToWorldMatrix;
         Matrix4x4 InExport(Transform t) => export.transform.worldToLocalMatrix * t.localToWorldMatrix;
-        var hisInExport = his.Select(v => InExport(rifle).MultiplyPoint3x4(v)).ToArray();
-        float worst = Nearest(mine.Where((_, i) => i % 7 == 0).Select(v => InModel(ourRifle.transform).MultiplyPoint3x4(v)), hisInExport);
+        var talInExport = tal.Select(v => InExport(rifle).MultiplyPoint3x4(v)).ToArray();
+        float worst = Nearest(mine.Where((_, i) => i % 7 == 0).Select(v => InModel(ourRifle.transform).MultiplyPoint3x4(v)), talInExport);
         Assert.That(worst, Is.LessThan(1e-4f), "our K98k lies on Tal's (model units: the figure is 1 tall)");
-        var skin = model.GetComponentInChildren<SkinnedMeshRenderer>(); var hisSkin = export.GetComponentInChildren<SkinnedMeshRenderer>();
+        var skin = model.GetComponentInChildren<SkinnedMeshRenderer>(); var talSkin = export.GetComponentInChildren<SkinnedMeshRenderer>();
         var a = new Mesh(); var b = new Mesh();
         try
         {
-            skin.BakeMesh(a, true); hisSkin.BakeMesh(b, true);
+            skin.BakeMesh(a, true); talSkin.BakeMesh(b, true);
             var av = a.vertices; var bv = b.vertices;
             var aMax = av.Select(v => InModel(skin.transform).MultiplyPoint3x4(v)).ToArray();
-            var bMax = bv.Select(v => InExport(hisSkin.transform).MultiplyPoint3x4(v)).ToArray();
+            var bMax = bv.Select(v => InExport(talSkin.transform).MultiplyPoint3x4(v)).ToArray();
             Bounds Box(Vector3[] vs) { var bx = new Bounds(vs[0], Vector3.zero); foreach (var v in vs) bx.Encapsulate(v); return bx; }
             var ab = Box(aMax); var bb = Box(bMax);
             Assert.That(Vector3.Distance(ab.min, bb.min) + Vector3.Distance(ab.max, bb.max), Is.LessThan(2e-3f), $"C06 in the aim {ab} against Tal's {bb}");
-            var right = UnitWeapons.FindDeep(model, UnitWeapons.HandBone).position; var hisRight = eHand.position;
-            Assert.That(Vector3.Distance(model.InverseTransformPoint(right), export.transform.InverseTransformPoint(hisRight)), Is.LessThan(1e-4f), "the right hand");
+            var right = UnitWeapons.FindDeep(model, UnitWeapons.HandBone).position; var talRight = eHand.position;
+            Assert.That(Vector3.Distance(model.InverseTransformPoint(right), export.transform.InverseTransformPoint(talRight)), Is.LessThan(1e-4f), "the right hand");
         }
         finally { Object.DestroyImmediate(a); Object.DestroyImmediate(b); }
     }
@@ -358,21 +358,21 @@ public class UnitWeaponsTests
         var near = Near(piece);
         Assert.IsTrue(motion.PlayAttack());
         source.Clip!.SampleAnimation(export, source.AimTime);
-        var hand = UnitWeapons.FindDeep(near, UnitWeapons.HandBone); var hisHand = UnitWeapons.FindDeep(export.transform, UnitWeapons.HandBone);
-        Assert.That(Vector3.Distance(near.InverseTransformPoint(hand.position), export.transform.InverseTransformPoint(hisHand.position)),
+        var hand = UnitWeapons.FindDeep(near, UnitWeapons.HandBone); var talHand = UnitWeapons.FindDeep(export.transform, UnitWeapons.HandBone);
+        Assert.That(Vector3.Distance(near.InverseTransformPoint(hand.position), export.transform.InverseTransformPoint(talHand.position)),
             Is.LessThan(1e-4f), "the near model's right hand");
         foreach (var bone in source.Bones)
         {
-            var mine = UnitWeapons.FindDeep(near, bone); var his = UnitWeapons.FindDeep(export.transform, bone);
-            Assert.That(Vector3.Distance(near.InverseTransformPoint(mine.position), export.transform.InverseTransformPoint(his.position)),
+            var mine = UnitWeapons.FindDeep(near, bone); var tal = UnitWeapons.FindDeep(export.transform, bone);
+            Assert.That(Vector3.Distance(near.InverseTransformPoint(mine.position), export.transform.InverseTransformPoint(tal.position)),
                 Is.LessThan(1e-4f), bone);
         }
         var rifle = UnitWeapons.FindDeep(export.transform, "tripo_node_0fa6038f-9e8d-4708-a9e8-755be6fdcc67");
         var held = UnitWeapons.FindDeep(near, UnitWeapons.HeldName);
         Assert.IsNotNull(held, "the near model holds the K98k too");
         var ours = held.GetComponentInChildren<MeshFilter>(); var tals = rifle.GetComponent<MeshFilter>();
-        var hisPoints = tals.sharedMesh.vertices.Select(v => export.transform.InverseTransformPoint(rifle.TransformPoint(v))).ToArray();
-        Assert.That(Nearest(ours.sharedMesh.vertices.Where((_, i) => i % 7 == 0).Select(v => near.InverseTransformPoint(ours.transform.TransformPoint(v))), hisPoints),
+        var talPoints = tals.sharedMesh.vertices.Select(v => export.transform.InverseTransformPoint(rifle.TransformPoint(v))).ToArray();
+        Assert.That(Nearest(ours.sharedMesh.vertices.Where((_, i) => i % 7 == 0).Select(v => near.InverseTransformPoint(ours.transform.TransformPoint(v))), talPoints),
             Is.LessThan(1e-4f), "the near model's K98k lies on Tal's");
     }
 

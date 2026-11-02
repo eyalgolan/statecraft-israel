@@ -1,7 +1,7 @@
-"""tools/prepared_weapons.py --verify: Tal Heuberger's #2083 K98k and Sten ship in the Unity Collection as his delivered files.
+"""tools/prepared_weapons.py --verify: Tal Heuberger's #2083 K98k and Sten ship in the Unity Collection as their delivered files.
 
 Each weapon's GLB under asset-sources/ matches the hash #2083's provenance.json and its Unity folder's provenance.json record,
-the Unity colour map is his delivered JPG byte for byte (the image the GLB embeds), and the compatibility FBX is the one the
+the Unity colour map is their delivered JPG byte for byte (the image the GLB embeds), and the compatibility FBX is the one the
 conversion recorded. The C06 point-fire export in the Unity Collection is Tal's file byte for byte.
 """
 import hashlib

@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Statecraft.Game.Map.Units
 {
     /// <summary>The C06 point-fire pose source (#2084; owner, 2 November 2026: "Yes, for firing units (Recommended)"): the root
-    /// of the prefab that streams in Tal Heuberger's point-fire clip, unchanged from his export. Its rig's bones have the
+    /// of the prefab that streams in Tal Heuberger's point-fire clip, unchanged from their export. Its rig's bones have the
     /// same names and the same rest mesh as the C06 young recruit's, but its exporter gave them other local axes, so a bone
     /// sampled from the clip is turned into the C06 rig's frame by <see cref="Correction"/>: for each bone, the export's
     /// bind pose times its mesh's world-from-local, times the C06 mesh's local-from-world and its inverse bind pose

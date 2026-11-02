@@ -104,7 +104,7 @@ namespace Statecraft.Game.EditorTools
 
         /// <summary>#2083 and #2084: Tal Heuberger's weapons and the C06 point-fire pose source for the token figures.
         /// Each weapon gets one prefab beside its compatibility FBX, made as the generated towns' are, with a material
-        /// like theirs on his delivered map (the FBX and map import settings are the .meta files beside them, the towns').
+        /// like theirs on their delivered map (the FBX and map import settings are the .meta files beside them, the towns').
         /// The point-fire export is imported losslessly (every frame, no compression), and its prefab
         /// (<see cref="MakeFigurePosePrefab"/>) holds only the clip and the rig correction, no mesh.
         /// Headless: Unity -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -executeMethod Statecraft.Game.EditorTools.CollectionImport.MakeTokenFigureExtras</summary>
@@ -141,7 +141,7 @@ namespace Statecraft.Game.EditorTools
         }
 
         /// <summary>The frame the point-fire aim holds: frame 37 of 97 (24 fps, frame 1 at 0 s), inside the still aim that Tal
-        /// Heuberger's contact sheet shows from frame 25 to frame 65, between his carrying endpoints.</summary>
+        /// Heuberger's contact sheet shows from frame 25 to frame 65, between their carrying endpoints.</summary>
         public const int PointFireAimFrame = 37;
 
         /// <summary>The C06 point-fire pose source's prefab: an empty object with <see cref="UnitFigurePoseSource"/>, holding the

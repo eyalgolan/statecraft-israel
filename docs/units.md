@@ -313,19 +313,19 @@ hand (`UnitWeaponsTests` keeps that true). The rows live in `UnitWeapons.Rows`.
 - **[GAP] #336's 1948 soldier** (Yiftach's and Negev's third figure) has no rig and no hand bone; he stays as he is.
 - **The MG34** stays a stored source: the Czech contract and the Nora brought 200 MG34s, but nothing places a machine gun
   on one token figure (an owner question).
-- **The hand:** each weapon hangs under the figure's `Right_Hand` bone. The socket is Tal's own fixed pair: in his C06
+- **The hand:** each weapon hangs under the figure's `Right_Hand` bone. The socket is Tal's own fixed pair: in their C06
   point-fire export the K98k does not move against C06's right hand over all 97 frames, and that relation, turned into the
   C06 rig's frame, is `UnitWeapons.SocketPosition`/`SocketRotation`/`K98kSocketScale` (the rifle about 1.1 m long on a
   1.78 m man). C04, C05, C07 and C12F share C06's 67-bone rig and hold it the same way: in each one's bind pose the rifle's long axis
   is within 45 degrees of C06's (measured 2 November 2026: C04 34.4, C05 10.1, C07 13.5, C12F 37.8), along the hand. The Sten takes the same socket,
   scaled by the sourced lengths (Sten Mk II 762 mm, K98k 1,110 mm); its grip is not authored by Tal, and in C12F's idle pose it lies across her thighs, partly inside them (an owner question; Tal's own notes leave the Sten's handedness to a 3D review).
 - **The C06 aim:** while its token's attack plays (`UnitTokenMotion`), a C06 figure, near or far, holds one still frame of
-  Tal's 97-frame point-fire clip (frame 37, inside the still aim of his contact sheet) for the whole attack, which lasts
+  Tal's 97-frame point-fire clip (frame 37, inside the still aim of their contact sheet) for the whole attack, which lasts
   as long as the longest fire take on the token (C06's own is 37 frames); then every bone it moved is put back and its
   Animator runs again, also when the units are hidden mid-attack. Tal's export is one figure, so only C06
   takes it; every other figure keeps its own fire take. The export's rig has the same bones and rest mesh as C06's but
   other local axes, so each sampled bone is turned into C06's frame by a correction computed from the two meshes' bind
-  poses (`UnitFigurePoseSource`); our C06 in the aim lies on Tal's export and our K98k on his rifle (`UnitWeaponsTests`).
+  poses (`UnitFigurePoseSource`); our C06 in the aim lies on Tal's export and our K98k on their rifle (`UnitWeaponsTests`).
 - **Load:** the K98k, the Sten and the pose source each stream in a bundle of their own after the people's, never in the
   first download; the pose source carries only the clip, not the export's mesh or texture.
 - **Fail open:** until a weapon or the pose source arrives, and for good if its bundle is missing, the figure stands and

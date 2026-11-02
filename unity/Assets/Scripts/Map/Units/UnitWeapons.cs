@@ -77,8 +77,8 @@ namespace Statecraft.Game.Map.Units
             return null;
         }
 
-        /// <summary>The K98k in the hand bone's frame, as Tal Heuberger fixed it to C06's right hand in his point-fire export
-        /// (constant over all 97 frames), turned into the C06 rig's frame (UnitFigurePoseSource.Correction). His other
+        /// <summary>The K98k in the hand bone's frame, as Tal Heuberger fixed it to C06's right hand in their point-fire export
+        /// (constant over all 97 frames), turned into the C06 rig's frame (UnitFigurePoseSource.Correction). Their other
         /// 67-bone figures share the rig's bone names and axes, so they hold it the same way. UnitWeaponsTests recomputes it
         /// from the two FBX files.</summary>
         public static readonly Vector3 SocketPosition = new Vector3(-0.0261189211f, 0.121834747f, 0.09528886f);
