@@ -119,7 +119,7 @@ The proposed immigration mix and ship schedule are non-operative [S1]. Retained 
 
 | Key | Value | Unit / meaning | Basis |
 | --- | --- | --- | --- |
-| `money.debt_ceiling` | `250` | IL millions of debt at which Money is exhausted | Retained `debt_ceiling` value [S10]; only the threshold of the economic defeat, not a credit cap: no order is refused or part-funded at it (owner, 1 November 2026, Q22) [S12] |
+| `money.debt_ceiling` | `250` | IL millions of debt at which Money is exhausted | Retained `debt_ceiling` value [S10]; only the threshold of the economic defeat, not a credit cap: no order is refused or part-funded at it (owner, 1 November 2026, Q22) [S12], except an Arms purchase whose borrowing would take Debt past it, which is refused (owner, 2 November 2026, #2198: "Refuse buys over ceiling (Recommended)", https://github.com/eyalgolan/statecraft-israel/issues/2198#issuecomment-6564721486) |
 | starting Debt | `0` | IL millions | Owner, 1 November 2026, Q23 [S12]: main has no start key, and Money is IL 1m a unit (`money.il_millions`) |
 | `defeat_turns` | `3` | turn ends in a row with Money and Food exhausted | Retained `R-END-002` value [S10]; owner, 1 November 2026, Q25 [S12] |
 

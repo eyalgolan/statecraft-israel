@@ -52,31 +52,33 @@ messages:
 # The encyclopedia's pages (spec 10, plan Task 13): one per mechanic, grouped by advisor as spec 3.1 splits them, with the
 # Show me target each names. Their text is advisor.page.<id>.title and .text (and .gdd03.text where gdd-0.3 differs). A page
 # shows in Hebrew only once its native review approves it (OQ-4): the nine that replace How to play were read by Beri on
-# #2095 (1 Nov 2026); the other 16 are pending. The opening steps' Tell me more opens the page of what each step points
-# at (plan Task 13).
+# #2095 (1 Nov 2026); the other 16 were read by the owner, a native speaker, on 1 November 2026: "all 16 pages look
+# good". The same day the owner ruled "replace evey place that says משושה with משבצת throughout the game", which
+# changed the Hebrew of projects, standing_orders, combat and units_movement after those reads. The opening steps'
+# Tell me more opens the page of what each step points at (plan Task 13).
 pages:
   - { id: turns, advisor: ben_gurion, he_review: approved }
   - { id: attention, advisor: ben_gurion, show_me: attention, he_review: approved }
   - { id: events, advisor: ben_gurion, show_me: decision_waiting, he_review: approved }
   - { id: objectives, advisor: ben_gurion, show_me: nav_objectives, he_review: approved }
-  - { id: defeat, advisor: ben_gurion, he_review: pending }
+  - { id: defeat, advisor: ben_gurion, he_review: approved }
   - { id: top_bar, advisor: ben_gurion, show_me: attention, he_review: approved }
   - { id: why, advisor: ben_gurion, show_me: nav_why, he_review: approved }
   - { id: cities, advisor: meyerson, show_me: city_housing, he_review: approved }
-  - { id: immigration, advisor: meyerson, show_me: city_housing, he_review: pending }
+  - { id: immigration, advisor: meyerson, show_me: city_housing, he_review: approved }
   - { id: training, advisor: meyerson, show_me: city_training, he_review: approved }
-  - { id: projects, advisor: meyerson, he_review: pending }
-  - { id: pioneer_work, advisor: meyerson, he_review: pending }
-  - { id: corridors, advisor: meyerson, he_review: pending }
-  - { id: money_debt, advisor: meyerson, show_me: nav_budget, he_review: pending }
-  - { id: budget, advisor: meyerson, show_me: nav_budget, he_review: pending }
-  - { id: cabinet, advisor: meyerson, show_me: nav_cabinet, he_review: pending }
-  - { id: food, advisor: meyerson, he_review: pending }
-  - { id: national_meters, advisor: meyerson, he_review: pending }
+  - { id: projects, advisor: meyerson, he_review: approved }
+  - { id: pioneer_work, advisor: meyerson, he_review: approved }
+  - { id: corridors, advisor: meyerson, he_review: approved }
+  - { id: money_debt, advisor: meyerson, show_me: nav_budget, he_review: approved }
+  - { id: budget, advisor: meyerson, show_me: nav_budget, he_review: approved }
+  - { id: cabinet, advisor: meyerson, show_me: nav_cabinet, he_review: approved }
+  - { id: food, advisor: meyerson, he_review: approved }
+  - { id: national_meters, advisor: meyerson, he_review: approved }
   - { id: units_movement, advisor: dayan, show_me: unit_move, he_review: approved }
-  - { id: standing_orders, advisor: dayan, he_review: pending }
-  - { id: combat, advisor: dayan, show_me: nav_defence, he_review: pending }
-  - { id: arms, advisor: dayan, show_me: nav_defence, he_review: pending }
-  - { id: truces, advisor: dayan, he_review: pending }
-  - { id: capture, advisor: dayan, he_review: pending }
-  - { id: enemy_phase, advisor: dayan, he_review: pending }
+  - { id: standing_orders, advisor: dayan, he_review: approved }
+  - { id: combat, advisor: dayan, show_me: nav_defence, he_review: approved }
+  - { id: arms, advisor: dayan, show_me: nav_defence, he_review: approved }
+  - { id: truces, advisor: dayan, he_review: approved }
+  - { id: capture, advisor: dayan, he_review: approved }
+  - { id: enemy_phase, advisor: dayan, he_review: approved }

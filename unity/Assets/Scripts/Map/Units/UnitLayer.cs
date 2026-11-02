@@ -351,7 +351,12 @@ namespace Statecraft.Game.Map.Units
             // An Arab force's token waits while its figure loads, and is drawn with the plain built-in figure if it failed.
             now = now.Where(t => t.Unit.Side == UnitData.Israel || UnitFigures.Arrived(UnitFigures.SideFigure(t.Unit.Side)!)
                 || UnitFigures.Failed(UnitFigures.SideFigure(t.Unit.Side)!)).ToList();
-            if (roster != null && roster.SequenceEqual(now)) { seenAvailability = UnitFigures.AvailabilityVersion; return false; }
+            if (roster != null && roster.SequenceEqual(now))
+            {
+                seenAvailability = UnitFigures.AvailabilityVersion;
+                LogDrawn(state.Turn, rebuilt: false);
+                return false;
+            }
             roster = now;
             PlaceMoved(now);
             placed = UnitPlacer.Place(now, drawSpots ?? DisplaySpots);
@@ -359,7 +364,27 @@ namespace Statecraft.Game.Map.Units
             ScheduleSatisfiedPrefetchRetirement();
             if (Selected != null && !placed.Any(p => p.Token.Unit.Id == Selected)) Select(null); else Select(Selected);
             seenAvailability = UnitFigures.AvailabilityVersion;
+            LogDrawn(state.Turn, rebuilt: true);
             return true;
+        }
+
+        /// <summary>The turn of the last "units drawn" line (null before the first).</summary>
+        int? loggedTurn;
+
+        /// <summary>Under ?navlog (DiagLog.Nav), the tokens drawn now, whenever they change and on each new turn: the state's
+        /// turn, the Israeli and the enemy (every other side) totals, then each enemy side's count, e.g.
+        /// "NAV f=412 t=20311 units drawn turn=0 israel=10 enemy=2 egypt=1 jordan=1". tools/web_check.py's start screen runs
+        /// fail without Israeli and enemy tokens on turns 1 and 2 (owner ruling on #2056, 1 November 2026).</summary>
+        void LogDrawn(int turn, bool rebuilt)
+        {
+            if (!Boot.DiagLog.Nav || (!rebuilt && loggedTurn == turn)) return;
+            loggedTurn = turn;
+            int israel = placed.Count(p => p.Token.Unit.Side == UnitData.Israel);
+            var sides = placed.Where(p => p.Token.Unit.Side != UnitData.Israel).GroupBy(p => p.Token.Unit.Side)
+                .OrderBy(g => g.Key, StringComparer.Ordinal)
+                .Select(g => FormattableString.Invariant($" {g.Key}={g.Count()}"));
+            Boot.DiagLog.NavLine(FormattableString.Invariant(
+                $"units drawn turn={turn} israel={israel} enemy={placed.Count - israel}{string.Concat(sides)}"));
         }
 
         float DisplayReach(AnchorSpot spot) => Mathf.Max(ground.RingRadius(spot.Compact),

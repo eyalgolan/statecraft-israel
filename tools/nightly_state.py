@@ -86,7 +86,6 @@ class Config:
     itch_target: str = "eyalgolan/statecraft-israel:html5"
     itch_page_url: str | None = None
     savetest_itch_target: str | None = None   # a separate test page: the save test never pushes to the public one
-    savetest_itch_page_url: str | None = None
     itch_enabled: bool = False
     itch_evidence: str | None = None
     butler: Path = HOME / ".local/bin/butler"
@@ -113,6 +112,13 @@ def _read_json_object(path: Path, gate: str) -> dict:
     return data
 
 
+# A key the job no longer reads still refuses the night, like any unknown key, but its refusal says how to fix it.
+REMOVED_KEYS = {
+    "savetest_itch_page_url": "remove savetest_itch_page_url from config.json; #2237 replaced it (the save test "
+                              "finds the game frame from butler status and never reads the test page)",
+}
+
+
 def load_config(path: Path) -> Config:
     if not path.exists():
         return Config()
@@ -120,6 +126,8 @@ def load_config(path: Path) -> Config:
     known = {f.name: f for f in fields(Config)}
     values: dict[str, object] = {}
     for key, value in raw.items():
+        if key in REMOVED_KEYS:
+            raise Refused("config", f"{key!r} in {path} is no longer used: {REMOVED_KEYS[key]}")
         if key not in known:
             raise Refused("config", f"unknown key {key!r} in {path}")
         default = known[key].default
@@ -335,10 +343,10 @@ def notify(title: str, message: str, run=None) -> None:
 
 
 @contextlib.contextmanager
-def _run_lock(job: Path) -> Iterator[bool]:
+def _run_lock(job: Path, name: str = "run.lock") -> Iterator[bool]:
     import fcntl   # POSIX only; imported here so the shared types load anywhere
     job.mkdir(parents=True, exist_ok=True)
-    with (job / "run.lock").open("a") as fh:
+    with (job / name).open("a") as fh:
         try:
             fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except OSError:
@@ -353,3 +361,9 @@ def _run_lock(job: Path) -> Iterator[bool]:
 def run_lock(job: Path) -> ContextManager[bool]:
     """Yields True when this process holds <job>/run.lock, False when another run already does."""
     return _run_lock(job)
+
+
+def savetest_lock(job: Path) -> ContextManager[bool]:
+    """Yields True when this process holds <job>/savetest.lock, False when another save test already does: agents
+    may start the save test too (owner, 2 Nov 2026, "2 (a)"), and two runs must not push to the test page at once."""
+    return _run_lock(job, "savetest.lock")
