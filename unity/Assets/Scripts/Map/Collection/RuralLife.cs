@@ -357,11 +357,13 @@ namespace Statecraft.Game.Map.Collection
             }
         }
 
-        void Rebuild()
+        /// <summary>Where the scenes stand: each want in order, of the models <paramref name="available"/> holds, the first
+        /// MaxAnchorsPerModel of each with clear ground (Spot), clear of <paramref name="others"/> and of each other. It reads only
+        /// the map, the wants and the other layers' ground, never what has streamed, so with every model available it is the
+        /// plan the layer draws once everything has arrived (HexPropModels keeps clear of it, #2266).</summary>
+        internal static List<(Want want, Vector2 spot)> Plan(MapScene map, IReadOnlyList<Want> wants, List<(Vector2 centre, float radius)> others,
+            Func<string, bool> available)
         {
-            CollectionResidencyMetrics.MarkDirty();
-            if (map == null || map.Terrain == null) return;
-            ClearVisuals();
             var ground = PlacementLayer.CampGround(map);
             var footprints = map.KitFootprints.Select(f => (f.centre, f.radius)).ToList();
             var taken = new List<(Vector2 centre, float radius)>();
@@ -377,22 +379,39 @@ namespace Statecraft.Game.Map.Collection
                 return !ground.OnRoute(p, radius) && !ground.OnToken(p, radius);
             }
             var used = new Dictionary<string, int>(StringComparer.Ordinal);
-            var holes = new List<(Vector2 centre, float radius)>();
-            var nearKeys = residencyView?.Keys;
+            var plan = new List<(Want, Vector2)>();
             foreach (var want in wants)
             {
-                bool hasFar = prefabs.TryGetValue((want.Model, CollectionDetail.Far), out var farPrefab) && farPrefab != null;
-                bool hasNear = prefabs.TryGetValue((want.Model, CollectionDetail.Near), out var nearPrefab) && nearPrefab != null;
-                // A streamed representation is what makes this a real scene. Until then it owns no anchor, clearance,
-                // tree hole or Near demand; a failed Far answer therefore cannot leave an empty permanent clearing.
-                if (!hasFar && !hasNear) continue;
+                if (!available(want.Model)) continue;
                 used.TryGetValue(want.Model, out int n);
                 if (n >= MaxAnchorsPerModel) continue;
                 var at = Spot(want, Free);
                 if (at == null) continue;
                 used[want.Model] = n + 1;
-                Scenes.Add(want);
                 taken.Add((at.Value, ClearanceRadiusM));
+                plan.Add((want, at.Value));
+            }
+            return plan;
+        }
+
+        void Rebuild()
+        {
+            CollectionResidencyMetrics.MarkDirty();
+            if (map == null || map.Terrain == null) return;
+            ClearVisuals();
+            var ground = PlacementLayer.CampGround(map);
+            // A streamed representation is what makes this a real scene. Until then it owns no anchor, clearance,
+            // tree hole or Near demand; a failed Far answer therefore cannot leave an empty permanent clearing.
+            bool Streamed(string model) => (prefabs.TryGetValue((model, CollectionDetail.Far), out var f) && f != null)
+                || (prefabs.TryGetValue((model, CollectionDetail.Near), out var nr) && nr != null);
+            var used = new Dictionary<string, int>(StringComparer.Ordinal);
+            var holes = new List<(Vector2 centre, float radius)>();
+            var nearKeys = residencyView?.Keys;
+            foreach (var (want, spot) in Plan(map, wants, others, Streamed))
+            {
+                used.TryGetValue(want.Model, out int n); used[want.Model] = n + 1;
+                Vector2? at = spot;
+                Scenes.Add(want);
                 holes.Add((at.Value, SceneRadiusM(want.Model)));
                 bool nearAvailable = (nearKeys == null || nearKeys.Contains(want.Key + "|" + want.Model))
                     && prefabs.TryGetValue((want.Model, CollectionDetail.Near), out var admittedNear) && admittedNear != null;

@@ -13,7 +13,8 @@ using UnityEngine.TestTools;
 
 /// <summary>The hex tiles' 20 Higgsfield props (Tal Heuberger, #1155) load under the owner's ruling of 23 October 2026,
 /// "Own streamed bundle": outside every Resources folder (so the default first download does not carry them), outside
-/// The 1948 Collection (which stays Tal's Tripo models), and in a bundle of their own that only a ?hex-tiles board asks for.</summary>
+/// The 1948 Collection (which stays Tal's Tripo models), and in a bundle of their own that only a ?hex-tiles board or the
+/// main map (HexPropModels, its first camera) asks for.</summary>
 public class HexPropsTests
 {
     const string Art = "Assets/Art/HexTiles/";

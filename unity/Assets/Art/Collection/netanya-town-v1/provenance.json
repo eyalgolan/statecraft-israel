@@ -1,0 +1,22 @@
+{
+  "id": "netanya-town-v1",
+  "source": "asset-sources/prepared-towns-20261031/netanya/statecraft-netanya-approved-textured-4350a137.glb",
+  "source_glb_sha256": "dc181a24610a0fd0717b12c07035d87f437555ccc4055a30d58c6edd6470ba55",
+  "creator_credit": "Tal Heuberger",
+  "licence": "CC-BY-NC-ND-4.0",
+  "pull_request": 2085,
+  "texture_dimensions": [
+    2048,
+    2048
+  ],
+  "texture_sha256": "234e4a852c3b9fc144deac8115fb30b77afae9d9f8e53a9180a2784522370c33",
+  "compatibility_fbx_sha256": "8953ce493db139e6bb244bd2c8aa1586c70093a05b8e68953727117c667108bc",
+  "triangles": 3428,
+  "geometry_max_vertex_error": 8.720680710894158e-08,
+  "uv_max_error": 0.0,
+  "triangle_connectivity": "identical",
+  "blender": "5.0.1",
+  "decimation": false,
+  "welding": false,
+  "conversion": "Standard glTF Y-up / FBX Y-up compatibility export (Tal's permission of 31 October 2026 covers export conversions); no pivot, mesh or UV rewrite; no clips in the source; map copied byte for byte from the delivered JPG"
+}

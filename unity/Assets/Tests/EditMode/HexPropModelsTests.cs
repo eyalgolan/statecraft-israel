@@ -1,0 +1,599 @@
+#nullable enable
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
+using NUnit.Framework;
+using Statecraft.Game.Map;
+using Statecraft.Game.Map.Collection;
+using Statecraft.HexTiles;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.TestTools;
+using YamlDotNet.RepresentationModel;
+
+namespace Statecraft.Game.Tests
+{
+    /// <summary>Tal Heuberger's hex-tile props on the main map (owner, 27 October 2026, "2+3"; 2 November 2026: "make sure all of
+    /// tal's new models are used"): only at the places the content names, clear, upright, deterministic, close up only, and
+    /// their bundle asked for only at the close zoom (the load gate, owner 15 October 2026).</summary>
+    public sealed class HexPropModelsTests
+    {
+        static readonly DateTime Opening = new DateTime(1948, 5, 15), YarkonLink = new DateTime(1949, 9, 20);
+
+        /// <summary>Every rail route's `via` waypoint in routes_1948.yaml whose name says "station", with the earliest `from` of
+        /// the routes through it (a bare year is its 1 January, as RoutePaths.Bound reads it).</summary>
+        static Dictionary<string, (double lon, double lat, DateTime from)> NamedStations()
+        {
+            var yaml = new YamlStream();
+            yaml.Load(new StringReader(File.ReadAllText(Path.Combine(Paths.Content, "map", "routes_1948.yaml"))));
+            var routes = (YamlSequenceNode)((YamlMappingNode)yaml.Documents[0].RootNode)["routes"];
+            var got = new Dictionary<string, (double, double, DateTime)>(StringComparer.Ordinal);
+            string S(YamlNode n, string key) => ((YamlScalarNode)((YamlMappingNode)n)[key]).Value!;
+            foreach (var r in routes.Children)
+            {
+                if (S(r, "kind") != "rail") continue;
+                string f = S(r, "from");
+                var from = f.Length == 4 ? new DateTime(int.Parse(f, CultureInfo.InvariantCulture), 1, 1)
+                    : DateTime.ParseExact(f, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+                // A route's `to` (none today) would end its stations' window, as RouteWindow and make_board.rail_stations read it.
+                Assert.IsFalse(((YamlMappingNode)r).Children.ContainsKey(new YamlScalarNode("to")), S(r, "id") + " has an end date: give its stations a To");
+                foreach (var w in ((YamlSequenceNode)((YamlMappingNode)r)["via"]).Children)
+                {
+                    string name = S(w, "name");
+                    if (name.IndexOf("station", StringComparison.OrdinalIgnoreCase) < 0) continue;
+                    double lon = double.Parse(S(w, "lon"), CultureInfo.InvariantCulture), lat = double.Parse(S(w, "lat"), CultureInfo.InvariantCulture);
+                    got[name] = got.TryGetValue(name, out var had) ? (lon, lat, had.Item3 < from ? had.Item3 : from) : (lon, lat, from);
+                }
+            }
+            return got;
+        }
+
+        [Test]
+        public void TheStationsAreExactlyTheRailwaysNamedStationsFromTheirRoutesFirstDay()
+        {
+            var want = NamedStations();
+            Assert.AreEqual(20, want.Count, "routes_1948.yaml names 20 stations on its railways");
+            CollectionAssert.AreEquivalent(want.Keys, HexPropModels.Stations.Select(s => s.Name), "no station is invented or left out");
+            foreach (var s in HexPropModels.Stations)
+            {
+                var (lon, lat, from) = want[s.Name];
+                Assert.AreEqual(lon, s.Lon, 1e-9, s.Name); Assert.AreEqual(lat, s.Lat, 1e-9, s.Name);
+                Assert.AreEqual(from, s.From, s.Name + ": drawn from its route's first day");
+            }
+        }
+
+        [Test]
+        public void AStationIsDrawnOnlyInsideItsRoutesWindow()
+        {
+            var s = new HexPropModels.RailStation("x", 0, 0, new DateTime(1920, 1, 1), new DateTime(1949, 9, 1));
+            Assert.IsFalse(s.DrawnOn(new DateTime(1919, 12, 31)));
+            Assert.IsTrue(s.DrawnOn(new DateTime(1948, 5, 15)));
+            Assert.IsFalse(s.DrawnOn(new DateTime(1949, 9, 1)), "to is exclusive, as RouteWindow.Covers");
+            Assert.IsTrue(HexPropModels.Stations.All(x => x.To == null), "no route through a station has an end date today");
+        }
+
+        [Test]
+        public void SizesAreTheDesignValuesAtTheOneWorldScale()
+        {
+            Assert.AreEqual(12f * Statecraft.Game.Map.Kits.SettlementKits.ModelScale, HexPropModels.SizeOf(HexPropModels.Station), 1e-3f);
+            Assert.AreEqual(RuralLife.SizeOf(RuralLife.BedouinTent), HexPropModels.SizeOf(HexPropModels.Tent), 1e-3f, "the same tent size as RuralLife's");
+            Assert.AreEqual(4f * Statecraft.Game.Map.Kits.SettlementKits.ModelScale, HexPropModels.SizeOf(HexPropModels.PricklyPear), 1e-3f);
+            foreach (var id in HexPropModels.Models) Assert.IsTrue(HexProps.Has(id), id + " is one of the bundle's props");
+        }
+
+        [Test]
+        public void TheSpotIsTheNearestClearRingWithinReachAndDeterministic()
+        {
+            var anchor = new Vector2(100f, 200f);
+            bool Free(Vector2 p, float r) => (p - anchor).magnitude > 1000f;
+            var a = HexPropModels.NearestSpot("x", anchor, 100f, Free, 0f, 4400f);
+            Assert.AreEqual(a, HexPropModels.NearestSpot("x", anchor, 100f, Free, 0f, 4400f));
+            // Rings at 150 m + 50 m steps: 1000 m is not clear, 1050 m is the first that is.
+            Assert.AreEqual(1050f, (a!.Value - anchor).magnitude, 0.01f);
+            Assert.IsNull(HexPropModels.NearestSpot("x", anchor, 100f, Free, 0f, 900f), "nothing beyond its reach");
+            Assert.IsNull(HexPropModels.NearestSpot("x", anchor, 100f, (_, __) => false, 0f, 4400f));
+            var outside = HexPropModels.NearestSpot("x", anchor, 100f, (_, __) => true, 500f, 400f);
+            Assert.AreEqual(650f, (outside!.Value - anchor).magnitude, 0.01f, "from the start radius out");
+        }
+
+        // ---- on the real map, with the real prefabs ----
+
+        Action<string, Action<GameObject?>> saved = null!;
+        Action<string, CollectionDetail, Action<GameObject?>> savedPeople = null!, savedRural = null!, savedSpecial = null!;
+        readonly List<(string id, Action<GameObject?> done)> asked = new List<(string, Action<GameObject?>)>();
+
+        [SetUp]
+        public void Seam()
+        {
+            saved = HexPropModels.Request; savedPeople = CivilianPeople.Request; savedRural = RuralLife.Request; savedSpecial = SpecialBuildingModels.Request;
+            asked.Clear();
+            HexPropModels.Request = (id, done) => asked.Add((id, done));
+            // The layers the props keep clear of: the civilians' places without their figures (as SpecialBuildingModelsTests),
+            // the rural scenes and the special buildings with the editor's prefabs, as the player's stream would answer them.
+            CivilianPeople.Request = (id, detail, done) => { };
+            RuralLife.Request = SpecialBuildingModels.Request = (id, detail, done) =>
+                done(AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(id, detail)));
+        }
+
+        [TearDown]
+        public void Restore()
+        {
+            HexPropModels.Request = saved; CivilianPeople.Request = savedPeople; RuralLife.Request = savedRural; SpecialBuildingModels.Request = savedSpecial;
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        }
+
+        static MapScene OpenMap()
+        {
+            EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+            var map = UnityEngine.Object.FindFirstObjectByType<MapScene>();
+            map.Build();
+            return map;
+        }
+
+        static Camera At(float height)
+        {
+            var cam = Camera.main!;
+            cam.transform.SetPositionAndRotation(new Vector3(0f, height, 0f), Quaternion.Euler(90f, 0f, 0f));
+            return cam;
+        }
+
+        void AnswerAll(bool found = true)
+        {
+            var pending = asked.ToList(); asked.Clear();
+            foreach (var (id, done) in pending) done(found ? AssetDatabase.LoadAssetAtPath<GameObject>(HexProps.PrefabPath(id)) : null);
+        }
+
+        /// <summary>The map as GameRoot shows it: the layers the props keep clear of first, then the props, then a close camera.</summary>
+        HexPropModels Show(MapScene map, DateTime date)
+        {
+            CollectionGeometryFixture.People(map, date, Array.Empty<Statecraft.Sim.Placement>(), Statecraft.Sim.ContentLoader.Load(Paths.Content));
+            CollectionGeometryFixture.Rural(map);
+            CollectionGeometryFixture.Special(map, date);
+            var layer = HexPropModels.ShowAt(map, date)!;
+            Assert.IsNotNull(layer);
+            layer.Choose(default, At(Statecraft.Game.Map.Kits.TownModelLayer.CloseEnterM));
+            AnswerAll();
+            return layer;
+        }
+
+        /// <summary>The load gate. The kit's minarets, belfries and clock tower draw at every zoom, so the first camera to render
+        /// asks once for the props (after the first frame); the standalone props still draw only up close.</summary>
+        [Test]
+        public void ThePropsAreAskedForOnceByTheFirstCameraAndTheStandaloneOnesDrawOnlyUpClose()
+        {
+            var map = OpenMap();
+            var layer = HexPropModels.ShowAt(map, Opening)!;
+            Assert.IsFalse(layer.Requested, "nothing is asked for before a camera renders");
+            layer.Choose(default, At(60000f));
+            Assert.IsTrue(layer.Requested, "the kit has landmark parts to replace at this zoom");
+            CollectionAssert.AreEquivalent(HexPropModels.Models, asked.Select(a => a.id), "one request per prop");
+            AnswerAll();
+            layer.Choose(default, At(60000f));
+            Assert.Greater(layer.Placed.Count, 0);
+            Assert.IsTrue(layer.Placed.All(p => layer.transform.Find(p.Name).GetComponentsInChildren<Renderer>(true).All(r => r.forceRenderingOff)),
+                "no standalone prop draws beyond the close zoom");
+            layer.Choose(default, At(Statecraft.Game.Map.Kits.TownModelLayer.CloseEnterM));
+            CollectionAssert.IsEmpty(asked, "asked once");
+        }
+
+        // ---- #2266 rulings (owner, 2 November 2026) ----
+
+        static Transform Kits(MapScene map) => map.transform.Find(Statecraft.Game.Map.Kits.KitLayer.RootName)!;
+
+        /// <summary>"tal's high quality models replace the built ones everytwhere": every minaret, belfry and clock tower the kit
+        /// builds (the mosques of the localities and towns, the churches, Jaffa's clock tower) is a replaceable part, and once the
+        /// props stream each has Tal Heuberger's model far off and up close, standing where the part stood, as tall as it, while
+        /// the kit's own part is hidden.</summary>
+        [Test]
+        public void TalsModelsReplaceEveryKitMinaretBelfryAndClockTower()
+        {
+            var map = OpenMap();
+            var parts = map.KitStats.LandmarkParts;
+            int minarets = parts.Count(p => p.Kind == "minaret"), belfries = parts.Count(p => p.Kind == "belfry");
+            TestContext.WriteLine($"parts: {minarets} minarets, {belfries} belfries, {parts.Count(p => p.Kind == "clock_tower")} clock towers, {parts.Select(p => p.Kit).Distinct().Count()} kit meshes");
+            Assert.Greater(minarets, 200, "the mosques of the 1948 localities and the Arab towns");
+            Assert.GreaterOrEqual(belfries, 1, "Jaffa's St Peter's and the Christian localities' churches");
+            Assert.AreEqual("jaffa", parts.Single(p => p.Kind == "clock_tower").Owner, "Jaffa's clock tower");
+            Assert.IsTrue(parts.Any(p => p.Kind == "belfry" && p.Owner == "jaffa"), "St Peter's belfry");
+            var layer = Show(map, Opening);
+            Assert.AreEqual(parts.Count, layer.Replaced.Count(r => !r.Close), "one far model per part");
+            Assert.AreEqual(parts.Count(p => p.Close != null), layer.Replaced.Count(r => r.Close), "one close model per part with a close mesh");
+            var kits = Kits(map);
+            foreach (var kit in parts.Select(p => p.Kit).Distinct())
+            {
+                Assert.IsFalse(Statecraft.Game.Map.Kits.KitLayer.PartsShown(kits.Find(kit).GetComponent<Renderer>()), kit + ": the kit's own parts are hidden far off");
+                var close = kits.Find(kit + Statecraft.Game.Map.Kits.KitLayer.CloseSuffix);
+                if (close != null) Assert.IsFalse(Statecraft.Game.Map.Kits.KitLayer.PartsShown(close.GetComponent<Renderer>()), kit + ": and up close");
+            }
+            var holder = layer.transform.Find(HexPropModels.LandmarksName);
+            var ground = PlacementLayer.CampGround(map);
+            int n = 0;
+            foreach (var group in parts.GroupBy(p => p.Kit))
+            {
+                int i = 0;
+                foreach (var part in group)
+                {
+                    var go = holder.Find($"{part.Owner}:{part.Kind}:{i}:far"); Assert.IsNotNull(go, part.Owner + " " + part.Kind);
+                    var b = go!.GetComponentsInChildren<Renderer>(true).Select(r => r.bounds).Aggregate((x, y) => { x.Encapsulate(y); return x; });
+                    Assert.AreEqual(part.Far.max.y, b.max.y, 0.02f * part.Far.size.y + 0.5f, part.Owner + ": as tall as the kit's part");
+                    Assert.AreEqual(part.Far.center.x, b.center.x, 0.5f, part.Owner + ": where the part stood");
+                    Assert.AreEqual(part.Far.center.z, b.center.z, 0.5f);
+                    Assert.AreEqual(ground.Y(part.Far.center.x, part.Far.center.z), b.min.y, 0.5f, part.Owner + ": on the ground");
+                    Assert.Less(Vector3.Angle(go.up, Vector3.up), 0.01f, part.Owner + ": upright");
+                    i++; n++;
+                }
+            }
+            Assert.AreEqual(parts.Count, n);
+        }
+
+        /// <summary>Each landmark model draws exactly when its kit part would: the far one with the kit mesh, the close one with
+        /// the close mesh, camera by camera (TownModelLayer's swap).</summary>
+        [Test]
+        public void TheLandmarkModelsFollowTheirKitRenderersSwap()
+        {
+            var map = OpenMap();
+            var layer = Show(map, Opening);
+            var kits = Kits(map);
+            var towns = kits.GetComponentInChildren<Statecraft.Game.Map.Kits.TownModelLayer>(true);
+            var holder = layer.transform.Find(HexPropModels.LandmarksName);
+            foreach (var height in new[] { 60000f, (float)CameraController.MinDistance })
+            {
+                var cam = At(height);
+                towns.PrepareCamera(cam);
+                try
+                {
+                    foreach (var part in map.KitStats.LandmarkParts.GroupBy(p => p.Kit).Select(g => g.First()))
+                    {
+                        var kit = kits.Find(part.Kit).GetComponent<Renderer>();
+                        foreach (var r in holder.Find($"{part.Owner}:{part.Kind}:0:far").GetComponentsInChildren<Renderer>(true))
+                            Assert.AreEqual(kit.forceRenderingOff, r.forceRenderingOff, part.Kit + " far, at " + height);
+                        if (part.Close == null) continue;
+                        var close = kits.Find(part.Close).GetComponent<Renderer>();
+                        foreach (var r in holder.Find($"{part.Owner}:{part.Kind}:0:close").GetComponentsInChildren<Renderer>(true))
+                            Assert.AreEqual(close.forceRenderingOff, r.forceRenderingOff, part.Kit + " close, at " + height);
+                    }
+                }
+                finally { towns.RestoreRenderers(); }
+            }
+        }
+
+        /// <summary>Never an empty spot: until the props answer, and for good when the bundle fails, the kit draws its own parts.</summary>
+        [Test]
+        public void TheKitKeepsItsOwnPartsUntilAndUnlessTalsModelsStream()
+        {
+            var map = OpenMap();
+            var kits = Kits(map);
+            var parts = map.KitStats.LandmarkParts;
+            Assert.Greater(parts.Count, 0);
+            var layer = HexPropModels.ShowAt(map, Opening)!;
+            layer.Choose(default, At(60000f));
+            foreach (var kit in parts.Select(p => p.Kit).Distinct())
+                Assert.IsTrue(Statecraft.Game.Map.Kits.KitLayer.PartsShown(kits.Find(kit).GetComponent<Renderer>()), kit + ": drawn while streaming");
+            foreach (var m in HexPropModels.Models) LogAssert.Expect(LogType.Warning, new Regex(Regex.Escape($"HEXPROPS: {m} did not stream")));
+            AnswerAll(found: false);
+            Assert.AreEqual(0, layer.Replaced.Count);
+            foreach (var kit in parts.Select(p => p.Kit).Distinct())
+                Assert.IsTrue(Statecraft.Game.Map.Kits.KitLayer.PartsShown(kits.Find(kit).GetComponent<Renderer>()), kit + ": drawn when the bundle fails");
+            // A layer that replaced them gives them back when it goes.
+            UnityEngine.Object.DestroyImmediate(layer.gameObject);
+            var again = Show(map, Opening);
+            Assert.Greater(again.Hidden.Count, 0);
+            UnityEngine.Object.DestroyImmediate(again.gameObject);
+            Assert.IsTrue(parts.Select(p => p.Kit).Distinct().All(k => Statecraft.Game.Map.Kits.KitLayer.PartsShown(kits.Find(k).GetComponent<Renderer>())), "the kit draws its parts again");
+        }
+
+        /// <summary>The kit draws no part twice: the replaced parts are gone from the kit and close meshes and drawn only by their
+        /// fallbacks; off the main map (SettlementKits.Build without replaceParts) the landmarks are whole, as before.</summary>
+        [Test]
+        public void ThePartsLeaveTheKitMeshesOnlyOnTheMainMap()
+        {
+            var map = OpenMap();
+            var kits = Kits(map);
+            var part = map.KitStats.LandmarkParts.First(p => p.Kind == "minaret");
+            var kitMesh = kits.Find(part.Kit).GetComponent<MeshFilter>().sharedMesh;
+            Assert.AreEqual(2, kitMesh.subMeshCount, "the parts are the kit mesh's submesh 1");
+            var sub = kitMesh.GetSubMesh(1);
+            Assert.Greater(sub.indexCount, 0);
+            Assert.IsTrue(sub.bounds.Contains(part.Far.center), "submesh 1 holds the part");
+            Assert.Less(kitMesh.GetSubMesh(0).bounds.max.y, part.Far.max.y + 1f, "submesh 0 does not reach above the part's top through it");
+            var ground = PlacementLayer.CampGround(map);
+            var plain = Statecraft.Game.Map.Kits.SettlementKits.Build(map.Settlements, new List<Settlement>(), new List<Statecraft.Game.Map.Kits.Localities.Area>(), ground, out _);
+            CollectionAssert.IsEmpty(plain.Parts, "no replaceable parts off the main map");
+        }
+
+        /// <summary>"Hedge row of several clumps": each village's hedge is 3 to 5 clumps in a row along its edge, clear of the
+        /// kit footprints, one and a quarter clumps apart.</summary>
+        [Test]
+        public void EachVillagesHedgeIsARowOfThreeToFiveClumpsAlongItsEdge()
+        {
+            var map = OpenMap();
+            var layer = Show(map, Opening);
+            var footprints = map.KitFootprints.Select(f => (f.centre, f.radius)).ToList();
+            var rows = layer.Placed.Where(p => p.Model == HexPropModels.PricklyPear).GroupBy(p => p.Key).ToList();
+            Assert.Greater(rows.Count, 200);
+            foreach (var row in rows)
+            {
+                var pts = row.Select(p => new Vector2(p.At.x, p.At.z)).ToList();
+                Assert.AreEqual(HexPropModels.HedgeClumps(row.Key), pts.Count, row.Key);
+                Assert.That(pts.Count, Is.InRange(3, 5), row.Key);
+                for (int i = 1; i < pts.Count; i++)
+                    Assert.AreEqual(HexPropModels.HedgeSpacingSizes * HexPropModels.SizeOf(HexPropModels.PricklyPear), (pts[i] - pts[i - 1]).magnitude, 1f, row.Key + ": evenly spaced");
+                var dir = (pts[pts.Count - 1] - pts[0]).normalized;
+                for (int i = 1; i < pts.Count - 1; i++) Assert.Less(Mathf.Abs(Vector3.Cross(dir, (pts[i] - pts[0]).normalized).z), 0.01f, row.Key + ": in a row");
+                foreach (var p in pts) Assert.IsTrue(Statecraft.Game.Map.Collection.TownLandmarks.Clear(p, HexPropModels.ClearanceOf(HexPropModels.PricklyPear), footprints), row.Key);
+            }
+            Assert.Greater(rows.Sum(r => r.Count()), 3 * 200);
+        }
+
+        /// <summary>"Sparse, close zoom only": one garrigue and one scrub per land hex of biome hills or mountains, near the
+        /// point FNV-1a picks in it, on clear ground, drawn only up close; none on other ground.</summary>
+        [Test]
+        public void GarrigueAndScrubAreALightScatterOnOpenHillGroundOnlyUpClose()
+        {
+            var map = OpenMap();
+            var hill = map.Hexes.hexes.Where(h => h.land && (h.biome == "hills" || h.biome == "mountains")).ToList();
+            var wants = HexPropModels.Wants(map, Opening);
+            Assert.AreEqual(hill.Count, wants.Count(w => w.Model == HexPropModels.Garrigue));
+            Assert.AreEqual(hill.Count, wants.Count(w => w.Model == HexPropModels.Scrub));
+            var hexM = map.Hexes.hex_size_km * 1000f;
+            var layer = Show(map, Opening);
+            var ground = PlacementLayer.CampGround(map);
+            var footprints = map.KitFootprints.Select(f => (f.centre, f.radius)).ToList();
+            var byKey = wants.ToDictionary(w => w.Key);
+            var scatter = layer.Placed.Where(p => p.Model == HexPropModels.Garrigue || p.Model == HexPropModels.Scrub).ToList();
+            TestContext.WriteLine($"scatter: {scatter.Count} placed of {2 * hill.Count} wanted");
+            Assert.Greater(scatter.Count, hill.Count, "most hill hexes have their two plants");
+            foreach (var p in scatter)
+            {
+                var flat = new Vector2(p.At.x, p.At.z); float r = HexPropModels.ClearanceOf(p.Model);
+                var w = byKey[p.Key];
+                var q = w.Key.Split(':')[1].Split(','); var h = hill.Single(x => x.q == int.Parse(q[0]) && x.r == int.Parse(q[1]));
+                var c = map.Frame.ToWorld(h.lon, h.lat, 0);
+                Assert.LessOrEqual((flat - new Vector2(c.x, c.z)).magnitude, HexPropModels.ScatterReachHex * hexM + HexPropModels.ReachOf(p.Model, hexM) + 1f, p.Key + ": in its hill hex");
+                Assert.IsTrue(Statecraft.Game.Map.Collection.TownLandmarks.Clear(flat, r, footprints), p.Key + " clear of the towns");
+                Assert.IsFalse(ground.OnRoute(flat, r), p.Key + " clear of the routes");
+                Assert.IsFalse(ground.OnToken(flat, r, Opening), p.Key + " clear of the tokens");
+            }
+            layer.Choose(default, At(Statecraft.Game.Map.Kits.TownModelLayer.CloseExitM + 1f));
+            Assert.IsTrue(scatter.All(p => layer.transform.Find(p.Name).GetComponentsInChildren<Renderer>(true).All(x => x.forceRenderingOff)), "close zoom only");
+        }
+
+        /// <summary>Each prop stands just outside its sourced place, clear of the towns' footprints, the routes, the unit tokens,
+        /// water, the other Collection layers and each other, upright on the prefab's own axes, on the ground, with no kit tree
+        /// on it, and hidden beyond the close zoom.</summary>
+        [Test]
+        public void OnTheMapEachPropStandsBesideItsPlaceClearUprightAndOnlyUpClose()
+        {
+            var map = OpenMap();
+            var layer = Show(map, YarkonLink);
+            var wants = layer.Wanted.ToDictionary(w => w.Key);
+            int camps = map.KitFootprints.Count(f => f.id.StartsWith("camp:", StringComparison.Ordinal));
+            int villages = map.Localities.Select(p => p.Settlement).Where(s => s.Type == "village").Select(s => s.Id).Distinct()
+                .Count(id => map.KitFootprints.Any(f => f.id == id));
+            Assert.AreEqual(20, wants.Values.Count(w => w.Model == HexPropModels.Station));
+            Assert.AreEqual(camps, wants.Values.Count(w => w.Model == HexPropModels.Tent), "one tent per Bedouin camp");
+            Assert.AreEqual(camps, wants.Values.Select(w => w.Key).Where(k => k.StartsWith("camp:", StringComparison.Ordinal)).Distinct().Count(), "each camp keyed once");
+            Assert.AreEqual(villages, wants.Values.Count(w => w.Model == HexPropModels.PricklyPear), "one hedge per Arab village");
+            Assert.Greater(camps, 0); Assert.Greater(villages, 100);
+            foreach (var m in HexPropModels.Models)
+                TestContext.WriteLine($"{m}: {layer.Placed.Count(p => p.Model == m)} placed of {wants.Values.Count(w => w.Model == m)}");
+            // A station is left out only when no clear ground lies within one hex of its point, which happens only for a station
+            // inside a city's kit footprint (Jaffa, Jerusalem's Khan and Haifa East on this map).
+            var footprintsAll = map.KitFootprints.Select(f => (f.centre, f.radius)).ToList();
+            var unplaced = wants.Values.Where(w => w.Model == HexPropModels.Station && layer.Placed.All(p => p.Key != w.Key)).ToList();
+            foreach (var w in unplaced)
+            {
+                TestContext.WriteLine($"{w.Key}: not drawn, {SpecialBuildingModels.Inside(w.Anchor, footprintsAll):0} m inside a kit footprint");
+                Assert.Greater(SpecialBuildingModels.Inside(w.Anchor, footprintsAll), 0f, w.Key + " is left out only inside a town's footprint");
+            }
+            Assert.GreaterOrEqual(20 - unplaced.Count, 17, "the stations outside the three cities all stand");
+            Assert.GreaterOrEqual(layer.Placed.Count(p => p.Model == HexPropModels.Tent), (int)(0.9f * camps), "nearly every camp has its tent");
+            Assert.GreaterOrEqual(layer.Placed.Where(p => p.Model == HexPropModels.PricklyPear).Select(p => p.Key).Distinct().Count(), (int)(0.9f * villages), "nearly every village has its hedge");
+
+            var ground = PlacementLayer.CampGround(map);
+            var footprints = map.KitFootprints.Select(f => (f.centre, f.radius)).ToList();
+            var others = RuralLife.OtherProps(map);
+            foreach (var p in map.Terrain.transform.Find(RuralLife.Name).GetComponent<RuralLife>().Placed) others.Add((new Vector2(p.At.x, p.At.z), RuralLife.SceneRadiusM(p.Model)));
+            foreach (var p in map.Terrain.transform.Find(SpecialBuildingModels.Name).GetComponent<SpecialBuildingModels>().Placed)
+                others.Add((new Vector2(p.At.x, p.At.z), SpecialBuildingModels.ClearanceOf(p.Model)));
+            var spots = new List<(Vector2, float, string)>();
+            foreach (var p in layer.Placed)
+            {
+                var w = wants[p.Key]; var flat = new Vector2(p.At.x, p.At.z); float r = HexPropModels.ClearanceOf(p.Model);
+                float off = (flat - w.Anchor).magnitude;
+                if (p.Model == HexPropModels.Station) TestContext.WriteLine($"{p.Key}: {off:0} m from its sourced point");
+                // A hedge's clumps stand in a row about its spot (EachVillagesHedgeIsARowOfThreeToFiveClumpsAlongItsEdge).
+                float row = p.Model == HexPropModels.PricklyPear ? 0.5f * 4f * HexPropModels.HedgeSpacingSizes * HexPropModels.SizeOf(p.Model) : 0f;
+                Assert.LessOrEqual(off, w.Start + HexPropModels.ReachOf(p.Model, ground.HexSizeM) + row + 1e-2f, p.Key + " stands beside its place");
+                Assert.IsTrue(Statecraft.Game.Map.Collection.TownLandmarks.Clear(flat, r, footprints), p.Key + " clear of every kit footprint");
+                Assert.IsFalse(ground.OnRoute(flat, r), p.Key + " clear of the routes");
+                Assert.IsFalse(ground.OnToken(flat, r, YarkonLink), p.Key + " clear of the unit tokens");
+                Assert.IsFalse(ground.Water(flat.x, flat.y), p.Key + " on land");
+                Assert.IsTrue(Statecraft.Game.Map.Collection.TownLandmarks.Clear(flat, r, others), p.Key + " clear of the other Collection layers");
+                Assert.IsTrue(Statecraft.Game.Map.Collection.TownLandmarks.Clear(flat, r, spots.Where(x => x.Item3 != p.Key).Select(x => (x.Item1, x.Item2)).ToList()), p.Key + " clear of the other props");
+                spots.Add((flat, r, p.Key));
+                var go = layer.transform.Find(p.Name)!;
+                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(HexProps.PrefabPath(p.Model));
+                Assert.Less(Vector3.Angle(go.up, prefab.transform.up), 0.01f, p.Key + " upright: turned only about the vertical");
+                var rs = go.GetComponentsInChildren<Renderer>(true);
+                var b = rs.Select(x => x.bounds).Aggregate((x, y) => { x.Encapsulate(y); return x; });
+                Assert.AreEqual(p.At.y, b.min.y, 1f, p.Key + " stands on the ground");
+                // Its long side seen from above, in its own axes (the box of a turned model is wider than the model).
+                float side = go.GetComponentsInChildren<MeshFilter>(true).Max(f =>
+                { var s = Vector3.Scale(f.sharedMesh.bounds.size, f.transform.lossyScale); return Mathf.Max(s.x, s.z); });
+                Assert.AreEqual(HexPropModels.SizeOf(p.Model), side, 0.02f * HexPropModels.SizeOf(p.Model), p.Key + " at its world size");
+                Assert.IsTrue(rs.All(x => !x.forceRenderingOff), p.Key + " drawn at the close zoom");
+            }
+            var veg = map.GetComponentInChildren<Statecraft.Game.Map.Kits.VegetationLayer>(true);
+            foreach (var p in layer.Placed)
+            {
+                float r = HexPropModels.ClearanceOf(p.Model);
+                int n = veg.Drawable().Count(t =>
+                {
+                    var q = t.m.GetColumn(3); float reach = r + Statecraft.Game.Map.Kits.VegetationLayer.CrownRadius(t.kind, t.m);
+                    return (new Vector2(q.x, q.z) - new Vector2(p.At.x, p.At.z)).sqrMagnitude < reach * reach;
+                });
+                Assert.AreEqual(0, n, p.Key + ": kit trees on the prop");
+            }
+            layer.Choose(default, At(Statecraft.Game.Map.Kits.TownModelLayer.CloseExitM + 1f));
+            Assert.IsTrue(layer.Placed.All(p => layer.transform.Find(p.Name).GetComponentsInChildren<Renderer>(true).All(x => x.forceRenderingOff)), "hidden beyond the close zoom's exit");
+        }
+
+        /// <summary>The same map and date place the same props at the same spots.</summary>
+        [Test]
+        public void PlacementIsDeterministic()
+        {
+            var map = OpenMap();
+            var first = Show(map, Opening).Placed.ToList();
+            UnityEngine.Object.DestroyImmediate(map.Terrain.transform.Find(HexPropModels.Name).gameObject);
+            var second = Show(map, Opening).Placed.ToList();
+            Assert.Greater(first.Count, 0);
+            CollectionAssert.AreEqual(first, second);
+        }
+
+        /// <summary>Absent where the content gives no place: the Yarkon link's two stations before its first day, a prickly pear
+        /// at any place that is not an Arab village, a tent anywhere but a Bedouin camp; and nothing at all when the bundle
+        /// fails (the map goes on).</summary>
+        [Test]
+        public void NothingStandsWhereTheContentGivesNoPlace()
+        {
+            var map = OpenMap();
+            var opening = HexPropModels.Wants(map, Opening);
+            CollectionAssert.DoesNotContain(opening.Select(w => w.Key), "station:Petah Tikva railway station (1921)");
+            CollectionAssert.DoesNotContain(opening.Select(w => w.Key), "station:Tel Aviv North railway station");
+            Assert.AreEqual(18, opening.Count(w => w.Model == HexPropModels.Station));
+            Assert.AreEqual(20, HexPropModels.Wants(map, YarkonLink).Count(w => w.Model == HexPropModels.Station));
+            var villages = new HashSet<string>(map.Localities.Select(p => p.Settlement).Where(s => s.Type == "village").Select(s => s.Id));
+            Assert.IsTrue(opening.Where(w => w.Model == HexPropModels.PricklyPear).All(w => villages.Contains(w.Key)), "prickly pears at Arab villages only");
+            foreach (var s in map.Settlements) CollectionAssert.DoesNotContain(opening.Select(w => w.Key), s.Id, s.Id + ": a game town takes no village prop");
+            Assert.IsTrue(opening.Where(w => w.Model == HexPropModels.Tent).All(w => w.Key.StartsWith("camp:", StringComparison.Ordinal)), "tents at Bedouin camps only");
+            Assert.IsTrue(opening.All(w => w.Model != HexPropModels.Station || w.Key.StartsWith("station:", StringComparison.Ordinal)));
+
+            var layer = HexPropModels.ShowAt(map, Opening)!;
+            layer.Choose(default, At(Statecraft.Game.Map.Kits.TownModelLayer.CloseEnterM));
+            foreach (var m in HexPropModels.Models) LogAssert.Expect(LogType.Warning, new Regex(Regex.Escape($"HEXPROPS: {m} did not stream")));
+            AnswerAll(found: false);
+            Assert.AreEqual(0, layer.Placed.Count, "a failed bundle leaves the props off the map");
+            Assert.AreEqual(0, layer.transform.childCount - (layer.transform.Find(HexPropModels.LandmarksName) != null ? 1 : 0));
+        }
+
+        /// <summary>Review of #2266 (blocking): the props keep clear of where the special buildings and rural scenes WILL stand
+        /// (their plans), not of what has streamed so far. With the props answered first and those layers streaming in after,
+        /// nothing overlaps, and the props stand exactly where they stand when everything streamed first.</summary>
+        [Test]
+        public void PropsStandInTheSamePlacesWhateverStreamedFirstAndNothingLandsOnThem()
+        {
+            var map = OpenMap();
+            var waiting = new List<(string id, CollectionDetail detail, Action<GameObject?> done)>();
+            RuralLife.Request = SpecialBuildingModels.Request = (id, detail, done) => waiting.Add((id, detail, done));
+            CollectionGeometryFixture.People(map, Opening, Array.Empty<Statecraft.Sim.Placement>(), Statecraft.Sim.ContentLoader.Load(Paths.Content));
+            var rural = CollectionGeometryFixture.Rural(map)!;
+            var special = CollectionGeometryFixture.Special(map, Opening)!;
+            var layer = HexPropModels.ShowAt(map, Opening)!;
+            layer.Choose(default, At(Statecraft.Game.Map.Kits.TownModelLayer.CloseEnterM));
+            AnswerAll();
+            Assert.AreEqual(0, rural.Placed.Count + special.Placed.Count, "the props stood before the rural scenes and the buildings streamed");
+            var propsFirst = layer.Placed.Select(p => (p.Name, p.At)).ToList();
+            var keptClearBefore = HexPropModels.Others(map, Opening);
+            for (int round = 0; round < 10 && waiting.Count > 0; round++)
+            {
+                var now = waiting.ToList(); waiting.Clear();
+                foreach (var (id, detail, done) in now) done(AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(id, detail)));
+            }
+            Assert.Greater(rural.Placed.Count, 0); Assert.Greater(special.Placed.Count, 0);
+            // What the props kept clear of before anything streamed already held every spot those layers then took.
+            foreach (var p in rural.Placed.Where(x => x.Member == 0).Select(x => (x.Key, x.At)).Concat(special.Placed.Select(x => (x.Key, x.At))))
+                Assert.IsTrue(keptClearBefore.Any(d => (d.centre - new Vector2(p.At.x, p.At.z)).magnitude < 1f),
+                    p.Key + ": its planned spot was kept clear before it streamed");
+            var theirs = rural.Placed.Select(p => (new Vector2(p.At.x, p.At.z), RuralLife.SceneRadiusM(p.Model)))
+                .Concat(special.Placed.Select(p => (new Vector2(p.At.x, p.At.z), SpecialBuildingModels.ClearanceOf(p.Model)))).ToList();
+            foreach (var p in layer.Placed)
+                Assert.IsTrue(Statecraft.Game.Map.Collection.TownLandmarks.Clear(new Vector2(p.At.x, p.At.z), HexPropModels.ClearanceOf(p.Model), theirs),
+                    p.Name + ": no rural scene or building streamed in on it");
+            UnityEngine.Object.DestroyImmediate(layer.gameObject);
+            var after = HexPropModels.ShowAt(map, Opening)!;
+            after.Choose(default, At(Statecraft.Game.Map.Kits.TownModelLayer.CloseEnterM));
+            AnswerAll();
+            CollectionAssert.AreEqual(propsFirst, after.Placed.Select(p => (p.Name, p.At)).ToList(), "the same places in either order");
+        }
+
+        sealed class Lease : IDisposable { public void Dispose() { } }
+
+        /// <summary>Review of #2266 with #2271: no standalone prop stands under a whole-town model (TownLandmarks), whose square
+        /// reaches its core's radius times the square root of two from the core, past the kit footprint's edge for a core off
+        /// the centre. The models are answered at once here; the props plan the seats, so the order does not matter.</summary>
+        [Test]
+        public void NoPropStandsUnderAWholeTownModel()
+        {
+            var map = OpenMap();
+            var savedR = TownLandmarks.Request; var savedA = TownLandmarks.Acquire;
+            try
+            {
+                GameObject? Prefab(string id, CollectionDetail d) => AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(id, d));
+                TownLandmarks.Request = (id, d, done) => done(Prefab(id, d));
+                TownLandmarks.Acquire = (id, d, done) => { done(Prefab(id, d)); return new Lease(); };
+                var towns = TownLandmarks.ShowAt(map, Opening, Array.Empty<Statecraft.Sim.Placement>(), Statecraft.Sim.ContentLoader.Load(Paths.Content))!;
+                towns.Choose(default, At(60000f));
+                var layer = Show(map, Opening);
+                Assert.Greater(towns.Seats.Count, 10, "the whole towns stand");
+                int checkedProps = 0;
+                foreach (var kv in towns.Seats)
+                {
+                    float reach = 0.5f * kv.Value.Edge * Mathf.Sqrt(2f);
+                    foreach (var p in layer.Placed)
+                    {
+                        float d = (new Vector2(p.At.x, p.At.z) - kv.Value.Centre).magnitude;
+                        Assert.GreaterOrEqual(d + 1f, reach + HexPropModels.ClearanceOf(p.Model), p.Name + " under " + kv.Key + "'s whole-town model");
+                        checkedProps++;
+                    }
+                }
+                Assert.Greater(checkedProps, 0);
+            }
+            finally { TownLandmarks.Request = savedR; TownLandmarks.Acquire = savedA; }
+        }
+
+        /// <summary>Review of #2266: the load each zoom band adds, capped (the design budget the PR measured; see its load
+        /// table). Far bands: no standalone prop, and the landmark models in view under the cap. Close views: the standalone
+        /// props and landmark models in view under the cap. Counted with each camera's kit swap applied.</summary>
+        [Test]
+        public void EachZoomBandStaysInsideItsPropBudget()
+        {
+            var map = OpenMap();
+            var layer = Show(map, Opening);
+            var towns = Kits(map).GetComponentInChildren<Statecraft.Game.Map.Kits.TownModelLayer>(true);
+            var rig = Camera.main!.GetComponent<CameraRig>();
+            var planes = new Plane[6];
+            int Tris(Renderer r) => r.GetComponent<MeshFilter>() is MeshFilter f && f.sharedMesh != null ? (int)(f.sharedMesh.triangles.Length / 3) : 0;
+            var views = new List<PromoPose>(PromoPose.All); views.AddRange(PromoPose.CloseUps); views.AddRange(PromoPose.TownChecks);
+            foreach (var pose in views)
+            {
+                pose.Apply(rig, map.Frame);
+                var cam = Camera.main!;
+                layer.Choose(default, cam); towns.PrepareCamera(cam);
+                try
+                {
+                    GeometryUtility.CalculateFrustumPlanes(cam, planes);
+                    bool Seen(Renderer r) => r.enabled && !r.forceRenderingOff && r.gameObject.activeInHierarchy && GeometryUtility.TestPlanesAABB(planes, r.bounds);
+                    var standalone = layer.Placed.SelectMany(p => layer.transform.Find(p.Name).GetComponentsInChildren<Renderer>(true)).Where(Seen).ToList();
+                    var holder = layer.transform.Find(HexPropModels.LandmarksName);
+                    Assert.IsNotNull(holder, "the landmark models stand");
+                    var landmarks = holder.GetComponentsInChildren<Renderer>(true).Where(Seen).ToList();
+                    bool close = pose.Distance <= Statecraft.Game.Map.Kits.TownModelLayer.CloseEnterM;
+                    TestContext.WriteLine($"BUDGET {pose.Name} ({pose.Distance:0} m): standalone {standalone.Count} / {standalone.Sum(Tris)} tris, landmarks {landmarks.Count} / {landmarks.Sum(Tris)} tris");
+                    if (!close) Assert.AreEqual(0, standalone.Count, pose.Name + ": no standalone prop beyond the close zoom");
+                    Assert.LessOrEqual(standalone.Count, MaxStandaloneInView, pose.Name);
+                    Assert.LessOrEqual(standalone.Sum(Tris), MaxStandaloneTrisInView, pose.Name);
+                    Assert.LessOrEqual(landmarks.Sum(Tris), MaxLandmarkTrisInView, pose.Name);
+                }
+                finally { towns.RestoreRenderers(); }
+            }
+        }
+
+        // The budget (design values, set from the PR's measurements with headroom; a delta that needs more must say so).
+        const int MaxStandaloneInView = 400, MaxStandaloneTrisInView = 250000, MaxLandmarkTrisInView = 900000;
+    }
+}

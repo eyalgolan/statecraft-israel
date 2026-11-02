@@ -33,6 +33,9 @@ namespace Statecraft.Game.Map.Kits
         readonly List<Tile> tiles = new List<Tile>();
         readonly Dictionary<string, List<SettlementKits.ModelInstance>> perPlace = new Dictionary<string, List<SettlementKits.ModelInstance>>();
         readonly List<(Renderer kit, Renderer? close)> swaps = new List<(Renderer, Renderer?)>();
+        /// <summary>#2266: renderers that draw exactly when their leader (a kit or close renderer of <see cref="swaps"/>) does:
+        /// the kit's replaceable landmark parts and Tal Heuberger's models standing in for them (HexPropModels).</summary>
+        readonly Dictionary<Renderer, List<Renderer>> followers = new Dictionary<Renderer, List<Renderer>>();
         readonly Dictionary<Renderer, string> swapIds = new Dictionary<Renderer, string>();
         /// <summary>Each merged locality tile renderer's villages with building models: the tile swaps as one, only when every
         /// one of them is ready (<see cref="villageTiles"/>: each village's group).</summary>
@@ -350,7 +353,22 @@ namespace Statecraft.Game.Map.Kits
             Count = instances.Count;
             foreach (var (kit, close) in this.swaps)
             { if (kit != null) kit.forceRenderingOff = false; if (close != null) close.forceRenderingOff = true; }
+            followers.Clear();
         }
+
+        /// <summary>#2266: <paramref name="follower"/> draws from now on exactly when <paramref name="leader"/> does, camera by
+        /// camera; it takes the leader's state between cameras at once.</summary>
+        internal void Follow(Renderer leader, Renderer follower)
+        {
+            if (!followers.TryGetValue(leader, out var list)) followers[leader] = list = new List<Renderer>();
+            list.RemoveAll(r => r == null);
+            if (!list.Contains(follower)) list.Add(follower);
+            bool resting = leader.forceRenderingOff;
+            foreach (var (renderer, off) in previousRenderers) if (renderer == leader) { resting = off; break; }
+            follower.forceRenderingOff = resting;
+        }
+
+        internal void Unfollow(Renderer leader, Renderer follower) { if (followers.TryGetValue(leader, out var list)) list.Remove(follower); }
 
         /// <summary>Records instantiated whole-town seats for diagnostics. Rendering decisions use WholeTownReady per
         /// camera; a seat loaded for another camera never suppresses this camera's fallback.</summary>
@@ -526,6 +544,8 @@ namespace Statecraft.Game.Map.Kits
         {
             if (renderer == null) return;
             previousRenderers.Add((renderer, renderer.forceRenderingOff)); renderer.forceRenderingOff = off;
+            if (followers.TryGetValue(renderer, out var list))
+                foreach (var f in list) if (f != null) { previousRenderers.Add((f, f.forceRenderingOff)); f.forceRenderingOff = off; }
         }
         internal void RestoreRenderers()
         {

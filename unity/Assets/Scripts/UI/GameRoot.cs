@@ -959,6 +959,9 @@ namespace Statecraft.Game.UI
             // Tal Heuberger's Tegart fort, barracks and factory at their sourced places and dates, close up only, streamed (#707);
             // under gdd-0.3 his artisan workshop (b21) on each built arms workshop's hex (#1701 slice F).
             Statecraft.Game.Map.Collection.SpecialBuildingModels.ShowAt(map, Bridge.State.Date, Bridge.Content, Bridge.State.CityProjects.Values);
+            // Tal Heuberger's hex-tile props at the railways' named stations, the Bedouin camps and the Arab villages, close up
+            // only; their bundle streams on the first close zoom (owner, 27 October 2026: "2+3"). After the layers they keep clear of.
+            Statecraft.Game.Map.Collection.HexPropModels.ShowAt(map, Bridge.State.Date);
             // Tal Heuberger's ships off Haifa, Jaffa, Acre and (on the Altalena's turn) Tel Aviv, and the C-54 at Lod, streamed after the first frame (#669).
             seaAir = Statecraft.Game.Map.Collection.SeaAirCollection.ShowAt(map, Bridge.State.Date, Bridge.State.Placements, Bridge.Content);
             RenderSitesIfChanged();
