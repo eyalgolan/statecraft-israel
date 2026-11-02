@@ -403,7 +403,7 @@ namespace Statecraft.Game.UI
                 showReachable: map.ShowReachable,
                 unitName: id => unitLayer.Tokens.Where(p => UnitCard.SimUnit(bridge.Content, bridge.State, p.Token) == id)
                     .Select(p => UnitCard.For(p, bridge.State, text, bridge.Content.IsGdd, bridge.Content, townNamesHe).Title).FirstOrDefault(),
-                unitDone: FocusNextUnit, showRoute: map.ShowRoute, selectPioneer: FocusPioneer, clearSelection: () => { unitLayer.Select(null); map.ClearSelection(); }));
+                unitDone: FocusNextUnit, showRoute: map.ShowRoute, showArrow: map.ShowMoveArrow, selectPioneer: FocusPioneer, clearSelection: () => { unitLayer.Select(null); map.ClearSelection(); }));
             toast.Units = unitData; toast.TownNamesHe = townNamesHe; why.TownNamesHe = townNamesHe; bridge.TownNamesHe = townNamesHe;
             report.TownNamesHe = townNamesHe; hudPresenter.TownNamesHe = townNamesHe;
             // A smoke session never touches the player's save: no autosave, and no New Game (which deletes the autosave).

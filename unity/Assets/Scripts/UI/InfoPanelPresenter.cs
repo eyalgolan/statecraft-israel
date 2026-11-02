@@ -50,6 +50,11 @@ namespace Statecraft.Game.UI
         readonly System.Action<IReadOnlyCollection<(int q, int r)>>? showReachable;
         /// <summary>Draws a multi-turn go-to route and its arrival-turn numbers; null keeps picking functional without it.</summary>
         readonly System.Action<IReadOnlyList<(int q, int r, int turn)>>? showRoute;
+        /// <summary>Draws the move arrow through the hexes given (none: hides it); null keeps picking functional without it.</summary>
+        readonly System.Action<IReadOnlyList<(int q, int r)>>? showArrow;
+        /// <summary>Whether the last arrow passed to showArrow had hexes: an empty arrow is passed only to clear a drawn one, so
+        /// a pointer crossing the map with no arrow drawn never touches the map's mesh (review of #2134, C3).</summary>
+        bool arrowDrawn;
         /// <summary>While the player picks a Move's or an Attack's hex: the unit, the hexes the sim gave (Movement.Reachable's,
         /// or those Combat.Check takes: the only ones a click takes), the session and turn they were read on (a turn or a
         /// load ends the pick, as the hexes change), and whether it is the attack's.</summary>
@@ -95,6 +100,8 @@ namespace Statecraft.Game.UI
         /// <param name="showReachable">Lights the hexes a Move can go to while the player picks one, and clears them with none
         /// (GameRoot: MapScene.ShowReachable; null: the pick still works, with nothing lit). The Attack pick lights its hexes
         /// with it too.</param>
+        /// <param name="showArrow">Draws the move arrow (#2134) through the unit's hex and the sim's path to the hovered hex,
+        /// and hides it with none (GameRoot: MapScene.ShowMoveArrow; null: no arrow).</param>
         /// <param name="unitName">A sim unit's name on screen, by id (GameRoot: its token's card title), for the Attack pick's
         /// targets (null: the hex's coordinates).</param>
         public InfoPanelPresenter(VisualElement root, SimBridge bridge, UiText text, IReadOnlyDictionary<string, string> settlementNames,
@@ -103,7 +110,8 @@ namespace Statecraft.Game.UI
             System.Func<string, (int q, int r)>? townHex = null, IReadOnlyDictionary<string, string>? townNamesHe = null,
             System.Action<IReadOnlyCollection<(int q, int r)>>? showReachable = null, System.Func<int, string?>? unitName = null,
             System.Action? unitDone = null,
-            System.Action<IReadOnlyList<(int q, int r, int turn)>>? showRoute = null, System.Action? clearSelection = null, System.Action<int>? selectPioneer = null)
+            System.Action<IReadOnlyList<(int q, int r, int turn)>>? showRoute = null, System.Action? clearSelection = null, System.Action<int>? selectPioneer = null,
+            System.Action<IReadOnlyList<(int q, int r)>>? showArrow = null)
         {
             panel = root.Q<VisualElement>("info-panel"); this.bridge = bridge; this.text = text;
             // #40: the panel is a ScrollView, so Game.uxml's filigree frame lands in its scrolled content, inside the padding
@@ -123,6 +131,7 @@ namespace Statecraft.Game.UI
             onPioneerReturn = ReturnPioneer;
             pioneerReturn.clicked += onPioneerReturn;
             this.clearSelection = clearSelection;
+            this.showArrow = showArrow;
             onCancel = e => { if (!e.isPropagationStopped && Escape()) e.StopPropagation(); };
             panel.RegisterCallback(onCancel);
             this.settlementNames = settlementNames; this.regions = regions; this.localitiesAt = localitiesAt; this.townHex = townHex;
@@ -405,6 +414,37 @@ namespace Statecraft.Game.UI
             if (bridge.NeedsOrders.Count > 0) unitDone?.Invoke();
         }
 
+        /// <summary>#2134: the hexes the move arrow runs through: unit <paramref name="u"/>'s hex, then <paramref name="path"/>
+        /// (the sim's Movement.Path or Movement.Route hexes, in order). None for an empty path, and none for a unit that is
+        /// not Israel's (owner, 1 Nov 2026: "this needs to be for israeli units only"), by the sim's own rule (Movement:
+        /// a side other than Israel's and the legacy loop's "" is the enemy's).</summary>
+        internal static IReadOnlyList<(int q, int r)> ArrowHexes(Unit u, IEnumerable<(int Q, int R)> path)
+        {
+            if (u.Side != "" && u.Side != Movement.PlayerSide) return System.Array.Empty<(int, int)>();
+            var hexes = new List<(int q, int r)> { (u.Q, u.R) };
+            foreach (var (q, r) in path) hexes.Add((q, r));
+            return hexes.Count > 1 ? hexes : (IReadOnlyList<(int q, int r)>)System.Array.Empty<(int, int)>();
+        }
+
+        /// <summary>The move arrow to (q, r) in pick <paramref name="p"/>: through Movement.Path's hexes for a lit hex (what
+        /// Move spends), else through the go-to's <paramref name="route"/> (RouteTo's); none in an Attack pick.</summary>
+        IReadOnlyList<(int q, int r)> ArrowTo(
+            (int unit, HashSet<(int q, int r)> hexes, GameSession session, int turn, bool attack, (int q, int r)? touchRoute) p,
+            int q, int r, IReadOnlyList<(int q, int r, int turn)> route)
+        {
+            if (p.attack || !bridge.State.Units.TryGetValue(p.unit, out var u)) return System.Array.Empty<(int, int)>();
+            return p.hexes.Contains((q, r))
+                ? ArrowHexes(u, Movement.Path(bridge.Content, bridge.State, p.unit, q, r, bridge.Spent))
+                : ArrowHexes(u, route.Select(h => (h.q, h.r)));
+        }
+
+        void ShowArrow(IReadOnlyList<(int q, int r)> hexes)
+        {
+            if (hexes.Count == 0 && !arrowDrawn) return;
+            arrowDrawn = hexes.Count > 0;
+            showArrow?.Invoke(hexes);
+        }
+
         void EndPick()
         {
             DiscardMove();
@@ -414,6 +454,7 @@ namespace Statecraft.Game.UI
             clickThrough = null;
             showReachable?.Invoke(System.Array.Empty<(int q, int r)>());
             showRoute?.Invoke(System.Array.Empty<(int q, int r, int turn)>());
+            ShowArrow(System.Array.Empty<(int q, int r)>());
         }
 
         IReadOnlyList<(int q, int r, int turn)> RouteTo(
@@ -432,15 +473,18 @@ namespace Statecraft.Game.UI
             if (shownRoute == null) return;
             shownRoute = null;
             showRoute?.Invoke(System.Array.Empty<(int q, int r, int turn)>());
+            ShowArrow(System.Array.Empty<(int q, int r)>());
         }
 
-        /// <summary>Shows the route to the hovered unlit hex while Move is picking; otherwise clears it.</summary>
+        /// <summary>Shows the route to the hovered unlit hex while Move is picking, and the move arrow to the hovered lit or
+        /// routed hex (#2134); otherwise clears them. GameRoot asks every frame: the same hex again does nothing.</summary>
         public void ShowRouteTo(int q, int r)
         {
             if (shownRoute == (q, r)) return;
             shownRoute = (q, r);
             var route = pick is { } p ? RouteTo(p, q, r) : System.Array.Empty<(int, int, int)>();
             showRoute?.Invoke(route);
+            ShowArrow(pick is { } a ? ArrowTo(a, q, r, route) : System.Array.Empty<(int q, int r)>());
         }
 
         /// <summary>#1617 (player report): the lit hexes of an open Move or Attack pick show through this card (its navy is
@@ -471,7 +515,9 @@ namespace Statecraft.Game.UI
             confirmMove.style.display = DisplayStyle.None;
         }
 
-        void OnStateChanged() { DiscardMove(); Render(); }
+        /// <summary>A new state (an order, a turn, a load): the hovered hex's route and arrow were read on the old one, so they
+        /// are hidden, and GameRoot's next hover draws them from the new one.</summary>
+        void OnStateChanged() { DiscardMove(); HideRoute(); Render(); }
 
         void OnInfoCovered(VisualElement root)
         {
@@ -560,6 +606,7 @@ namespace Statecraft.Game.UI
                         pick = (p.unit, p.hexes, p.session, p.turn, p.attack, (q, r));
                         shownRoute = (q, r);
                         showRoute?.Invoke(route);
+                        ShowArrow(ArrowTo(p, q, r, route));
                         Render();
                         return true;
                     }
