@@ -44,9 +44,18 @@ namespace Statecraft.Game.EditorTools
                 var ti = AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(texture)) as TextureImporter;
                 if (texture == null || ti == null || ti.crunchedCompression || ti.textureCompression != TextureImporterCompression.Compressed || ti.maxTextureSize < 4096)
                     throw new InvalidOperationException("Exact original full-size colour map required: " + Ids[i]);
-                var go = UnityEngine.Object.Instantiate(source);
-                foreach (var renderer in go.GetComponentsInChildren<Renderer>(true)) renderer.sharedMaterial = material;
-                var prefab = PrefabUtility.SaveAsPrefabAsset(go, stem + ".prefab"); UnityEngine.Object.DestroyImmediate(go);
+                GameObject prefab;
+                if (Array.IndexOf(Statecraft.Game.Map.Kits.TownModels.Ids, Ids[i]) >= 0 || Statecraft.Game.Map.Collection.CollectionCatalog.IsGeneratedProp(Ids[i]))
+                    // A model placed in the game (a house, or the Bedouin or khaki tent): the review shows the prefab the game
+                    // streams and never re-saves it (as VehicleReviewAssets does for a placed vehicle, #2014).
+                    prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Generated1948BuildingsPropsReview.PrefabOf(Ids[i]))
+                        ?? throw new InvalidOperationException("No shipped prefab for placed model " + Ids[i] + " (a house's comes from CollectionImport.MakeBuildingPrefabs)");
+                else
+                {
+                    var go = UnityEngine.Object.Instantiate(source);
+                    foreach (var renderer in go.GetComponentsInChildren<Renderer>(true)) renderer.sharedMaterial = material;
+                    prefab = PrefabUtility.SaveAsPrefabAsset(go, stem + ".prefab"); UnityEngine.Object.DestroyImmediate(go);
+                }
                 prefabs.GetArrayElementAtIndex(i).objectReferenceValue = prefab;
                 materials.GetArrayElementAtIndex(i).objectReferenceValue = material;
                 labels.GetArrayElementAtIndex(i).stringValue = names[i];

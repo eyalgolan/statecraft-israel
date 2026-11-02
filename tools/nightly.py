@@ -667,7 +667,8 @@ def publish_night(night: Night, state: State, gh: GitHub, itch, zips: tuple[Path
     `save` persists the state; it runs right after the draft exists and right after the release is public, so a
     kill leaves a record of both."""
     prev_tag, prev_sha = previous
-    use_itch = night.cfg.itch_enabled
+    itch_skip = itch_skip_reason(night.cfg)
+    use_itch = itch_skip is None
     if use_itch and itch is None:   # before any store change: enabled means the push is part of this night
         raise Refused("itch", "itch is enabled but there is no itch client")
     since = prev_sha or prev_tag
@@ -739,7 +740,7 @@ def publish_night(night: Night, state: State, gh: GitHub, itch, zips: tuple[Path
         state.site_pending = night.version   # until the demo serves this version, a later night retries the deploy
         save()
         if not use_itch:
-            skip = "itch: skipped (save test not passed)"
+            skip = f"itch: skipped ({itch_skip})"
             print(skip)
             night.notes.append(skip)
         failure = "no attempt"
@@ -1084,6 +1085,32 @@ def _test_page_problem(cfg: Config) -> str | None:
         return f"the save test's test page URL or the public page URL is not usable: {e}"
     if test_page == public_page:
         return "the save test's test page must not be the public itch page"
+    return None
+
+
+SAVETEST_KEYS = ("savetest_itch_target", "savetest_itch_page_url")
+
+
+def itch_skip_reason(cfg: Config) -> str | None:
+    """Why tonight's build must not be pushed to the public itch page, or None when it may (#2056). A push needs a
+    separate test page in the job's config and a recorded save test PASS on it: itch_enabled alone is not enough,
+    so a hand-set flag or a test page that is the public one never leads to a push. Every reason is logged."""
+    missing = [key for key in SAVETEST_KEYS if not getattr(cfg, key)]
+    if missing:
+        return f"the job config has no {' or '.join(missing)}, so no save test can run on a separate test page"
+    problem = _test_page_problem(cfg)
+    if problem:
+        return problem
+    if not cfg.itch_enabled:
+        return "save test not passed"
+    if not cfg.itch_evidence:
+        return "itch_enabled is set but no save test evidence is recorded (itch_evidence)"
+    try:
+        evidence = json.loads(Path(cfg.itch_evidence).read_text(encoding="utf-8"))
+    except (OSError, ValueError) as e:
+        return f"the save test evidence {cfg.itch_evidence} is unreadable ({type(e).__name__})"
+    if not isinstance(evidence, dict) or evidence.get("result") != "PASS":
+        return f"the save test evidence {cfg.itch_evidence} does not record a save test PASS"
     return None
 
 

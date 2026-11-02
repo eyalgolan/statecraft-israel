@@ -1,6 +1,6 @@
 # Generated vehicle review — original sources
 
-Refs #756. PR #1378 keeps three candidates as **editor-only review art** until a sourced gameplay placement and art/sensitivity sign-off exist. This follows the [23 October owner rulings](https://github.com/eyalgolan/statecraft-israel/pull/1378#issuecomment-6358296929) and [original review](https://github.com/eyalgolan/statecraft-israel/pull/1378#issuecomment-6357803018).
+Refs #756. PR #1378 keeps three candidates as **editor-only review art** until a sourced gameplay placement and art/sensitivity sign-off exist. Update, 27 October 2026: the owner signed off all three ("Sign off all 19") and chose the R35's placement, "Degania landmark (Recommended)": it now stands at Degania Alef from 20 May 1948 (`SpecialBuildingModels`), from `Assets/Art/Collection/generated-1948-14-syrian-renault-r35/` in its own streamed bundle, with its colour map compressed (no Crunch, full 4096 px) like the other placed generated models. The Dakota stays in review until a sourced placement exists; the Spitfire was placed later (#1932, below). This follows the [23 October owner rulings](https://github.com/eyalgolan/statecraft-israel/pull/1378#issuecomment-6358296929) and [original review](https://github.com/eyalgolan/statecraft-israel/pull/1378#issuecomment-6357803018).
 
 | Candidate | Original GLB triangles | Original colour map | Original animation clips |
 | --- | --- | --- | --- |
