@@ -10,7 +10,7 @@ namespace Statecraft.HexTiles
     /// carry them, and outside The 1948 Collection (<see cref="CollectionCatalog"/>, Tal's Tripo models only). They ship as
     /// one bundle of their own, <see cref="Bundle"/>, which the Collection's loader (<see cref="CollectionStream"/>) streams
     /// with this catalog after the first frame, and only when a hex board asks for one (so with ?hex-tiles on) or when the
-    /// main map's first close camera does (<see cref="Statecraft.Game.Map.Collection.HexPropModels"/>). Until a prop arrives
+    /// main map's first camera does (<see cref="Statecraft.Game.Map.Collection.HexPropModels"/>, after the first frame). Until a prop arrives
     /// (and for good if its bundle fails) a board's placement draws the tile's stand-in. The editor (the painter, the
     /// captures, the tests) loads the prefabs from the AssetDatabase (HexModels.Prefab).
     /// Each prefab sits at Assets/Art/HexTiles/&lt;tile&gt;/&lt;prop&gt;.prefab, beside its model in

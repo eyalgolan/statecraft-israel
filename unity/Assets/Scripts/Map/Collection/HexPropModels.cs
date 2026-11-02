@@ -17,19 +17,36 @@ namespace Statecraft.Game.Map.Collection
     ///   symbolic camp per 1,000 people as `camp:` footprints, which RuralLife's camel and tent use too); the camps' own
     ///   tents stay as they are;
     /// - the Arab village's prickly-pear hedge beside each Arab village (localities_1948.yaml, type village), as the
-    ///   arab_village hex tile draws it at the village's edge.
+    ///   arab_village hex tile draws it at the village's edge: a short row of 3 to 5 clumps along the edge (owner, 2 November
+    ///   2026: "Hedge row of several clumps (Recommended)");
+    /// - a light scatter of garrigue and scrub on open hill ground (the land hexes of biome hills or mountains in
+    ///   content/map/hexes.json), up close only (owner, 2 November 2026: "Sparse, close zoom only (Recommended)");
+    /// - and in place of the kit's own minarets, belfries and Jaffa's clock tower, Tal Heuberger's at every spot the kit builds
+    ///   one, far off and up close (owner, 2 November 2026: "tal's high quality models replace the built ones everytwhere"):
+    ///   the kit draws those parts (their meshes' submesh 1, KitLayer.LandmarkParts) until the models stand there, and keeps
+    ///   them if the bundle fails.
     /// Each stands on the nearest clear ground to its place (<see cref="NearestSpot"/>: a station within one hex of its
     /// point, a tent or a hedge just outside its camp's or village's kit footprint), clear of every kit footprint, the
     /// routes, the unit tokens, water, the other Collection layers and each other, at the buildings' one world scale, and
-    /// draws only up close (#700's switch). The props stream
-    /// from their own bundle (<see cref="HexProps"/>, 5.8 MB for WebGL), which is asked for only when a camera first comes in
-    /// to the close zoom, so the opening view fetches and draws nothing new. A prop that does not stream stays off the map.</summary>
+    /// draws only up close (#700's switch). The landmark models draw where the kit's part would, far off or up close, each
+    /// following its kit renderer's swap (TownModelLayer.Follow). The props stream from their own bundle
+    /// (<see cref="HexProps"/>, 5.8 MB for WebGL), asked for by the first camera that renders (after the first frame) when the
+    /// map has landmark parts to replace, else by the first close camera. A prop that does not stream stays off the map.</summary>
     [ExecuteAlways]
     public sealed class HexPropModels : MonoBehaviour
     {
         public const string Name = "HexPropModels";
-        public const string Station = "tiles:railway_halt/station", Tent = "tiles:desert_edge/tent", PricklyPear = "tiles:arab_village/prickly_pear";
-        public static readonly string[] Models = { Station, Tent, PricklyPear };
+        public const string Station = "tiles:railway_halt/station", Tent = "tiles:desert_edge/tent", PricklyPear = "tiles:arab_village/prickly_pear",
+            Garrigue = "tiles:judean_highlands/garrigue", Scrub = "tiles:coastal_dunes/scrub",
+            Minaret = "tiles:arab_village/minaret", Belfry = "tiles:jaffa_old_city/belfry", ClockTower = "tiles:jaffa_old_city/clock_tower";
+        /// <summary>The props this layer places on clear ground (close up only).</summary>
+        public static readonly string[] Standalone = { Station, Tent, PricklyPear, Garrigue, Scrub };
+        /// <summary>The props that replace the kit's landmark parts, by the part's kind (KitLayer.LandmarkPart.Kind).</summary>
+        public static readonly IReadOnlyDictionary<string, string> ByPart = new Dictionary<string, string>(StringComparer.Ordinal)
+        { ["minaret"] = Minaret, ["belfry"] = Belfry, ["clock_tower"] = ClockTower };
+        public static readonly string[] Models = { Station, Tent, PricklyPear, Garrigue, Scrub, Minaret, Belfry, ClockTower };
+        /// <summary>The child that holds the landmark models (a rebuild of the standalone props leaves it alone).</summary>
+        public const string LandmarksName = "Landmarks";
 
         /// <summary>The one world scale of Tal Heuberger's models (<see cref="Kits.SettlementKits.ModelScale"/>, issue #1032).</summary>
         public const float WorldScale = Kits.SettlementKits.ModelScale;
@@ -40,6 +57,8 @@ namespace Statecraft.Game.Map.Collection
         public static float RealLengthM(string model) => model switch
         {
             Station => 12f, Tent => 10f, PricklyPear => 4f,
+            // Design values: a low shrub a few metres across.
+            Garrigue => 3f, Scrub => 3f,
             _ => throw new ArgumentException($"'{model}' is not one of the main map's hex props", nameof(model)),
         };
 
@@ -55,6 +74,24 @@ namespace Statecraft.Game.Map.Collection
         // Design values: 24 bearings, the ring radius growing by half a clearance from one and a half clearances out.
         public const int SpotBearings = 24;
         public const float FirstRingClearances = 1.5f, RingStepClearances = 0.5f;
+
+        /// <summary>Design values (owner, 2 November 2026: "A short row of 3-5 clumps along each village's edge"): a village's
+        /// hedge is 3 to 5 clumps (FNV-1a of its key), one and a quarter clumps apart, along the tangent to its footprint.</summary>
+        public static int HedgeClumps(string key) => 3 + (int)(RuralLife.StableHash(key + ":hedge") % 3u);
+        public const float HedgeSpacingSizes = 1.25f;
+        public static Vector2[] HedgeMembers(Want w, Vector2 spot)
+        {
+            var radial = spot - w.Anchor; var along = radial.sqrMagnitude > 1e-6f ? new Vector2(-radial.y, radial.x).normalized : Vector2.right;
+            int n = HedgeClumps(w.Key); var members = new Vector2[n];
+            for (int i = 0; i < n; i++) members[i] = spot + along * ((i - 0.5f * (n - 1)) * HedgeSpacingSizes * SizeOf(PricklyPear));
+            return members;
+        }
+
+        /// <summary>Design values (owner, 2 November 2026: "A light scatter on open hill ground under 40 km"): one garrigue and
+        /// one scrub per land hex of biome hills or mountains, each at a point FNV-1a picks within ScatterReachHex of the hex's
+        /// size from its centre, moved to the nearest clear ground.</summary>
+        public static readonly string[] HillBiomes = { "hills", "mountains" };
+        public const float ScatterReachHex = 0.6f;
 
         /// <summary>The nearest clear point to <paramref name="anchor"/> on rings from <paramref name="start"/> plus
         /// FirstRingClearances clearances out, growing by RingStepClearances clearances up to <paramref name="start"/> plus
@@ -81,8 +118,10 @@ namespace Statecraft.Game.Map.Collection
         /// checks this list against the file.</summary>
         public readonly struct RailStation
         {
-            public readonly string Name; public readonly double Lon, Lat; public readonly DateTime From;
-            public RailStation(string name, double lon, double lat, DateTime from) { Name = name; Lon = lon; Lat = lat; From = from; }
+            public readonly string Name; public readonly double Lon, Lat; public readonly DateTime From; public readonly DateTime? To;
+            public RailStation(string name, double lon, double lat, DateTime from, DateTime? to = null) { Name = name; Lon = lon; Lat = lat; From = from; To = to; }
+            /// <summary>Whether a route through it is drawn on <paramref name="date"/> (RouteWindow: from inclusive, to exclusive).</summary>
+            public bool DrawnOn(DateTime date) => date >= From && (To == null || date < To.Value);
         }
 
         public static readonly RailStation[] Stations =
@@ -128,7 +167,7 @@ namespace Statecraft.Game.Map.Collection
             var result = new List<Want>();
             foreach (var s in Stations)
             {
-                if (date < s.From) continue;
+                if (!s.DrawnOn(date)) continue;
                 var w = map.Frame.ToWorld(s.Lon, s.Lat, 0);
                 result.Add(new Want("station:" + s.Name, Station, new Vector2(w.x, w.z), 0f));
             }
@@ -147,6 +186,16 @@ namespace Statecraft.Game.Map.Collection
             var villages = map.Localities.Select(p => p.Settlement).Where(s => s.Type == "village" && byId.ContainsKey(s.Id))
                 .Select(s => s.Id).Distinct().OrderBy(k => k, StringComparer.Ordinal);
             foreach (var id in villages) result.Add(new Want(id, PricklyPear, byId[id].centre, byId[id].radius));
+            float hexM = map.Hexes.hex_size_km * 1000f;
+            foreach (var h in map.Hexes.hexes.Where(h => h.land && HillBiomes.Contains(h.biome)).OrderBy(h => h.r).ThenBy(h => h.q))
+                foreach (var model in new[] { Garrigue, Scrub })
+                {
+                    string key = $"scatter:{h.q},{h.r}:{model.Substring(model.LastIndexOf('/') + 1)}";
+                    uint hash = RuralLife.StableHash(key);
+                    float a = (hash % 3600u) * Mathf.PI / 1800f, d = ScatterReachHex * hexM * Mathf.Sqrt((hash / 3600u % 1000u) / 1000f);
+                    var c = map.Frame.ToWorld(h.lon, h.lat, 0);
+                    result.Add(new Want(key, model, new Vector2(c.x, c.z) + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * d, 0f));
+                }
             return result;
         }
 
@@ -154,14 +203,21 @@ namespace Statecraft.Game.Map.Collection
         internal static Action<string, Action<GameObject?>> Request = (id, done) =>
             CollectionStream.Request(HexProps.Catalog, id, CollectionDetail.Near, done);
 
-        MapScene? map; DateTime date; bool shown, requested;
+        MapScene? map; DateTime date; bool shown, requested; int pending;
         List<Want> wants = new List<Want>();
         readonly Dictionary<string, GameObject?> prefabs = new Dictionary<string, GameObject?>(StringComparer.Ordinal);
         readonly Dictionary<int, bool> closeFor = new Dictionary<int, bool>();
         readonly List<Renderer> renderers = new List<Renderer>();
-        public readonly List<(string Key, string Model, Vector3 At)> Placed = new List<(string, string, Vector3)>();
+        /// <summary>Every standalone prop placed: its want's key, model, ground point and object name (a hedge's clumps share
+        /// their village's key).</summary>
+        public readonly List<(string Key, string Model, Vector3 At, string Name)> Placed = new List<(string, string, Vector3, string)>();
+        /// <summary>Every landmark model standing in for a kit part: owner, kind, far or close, object name.</summary>
+        public readonly List<(string Owner, string Kind, bool Close, string Name)> Replaced = new List<(string, string, bool, string)>();
+        /// <summary>The kit renderers (by name) whose own parts are hidden because Tal Heuberger's models stand in for them.</summary>
+        public readonly List<string> Hidden = new List<string>();
         public IReadOnlyList<Want> Wanted => wants;
-        /// <summary>Whether the props were asked for: only once a camera came in to the close zoom.</summary>
+        /// <summary>Whether the props were asked for: by the first camera to render when there are landmark parts, else by the
+        /// first close camera.</summary>
         public bool Requested => requested;
         public bool LastClose { get; private set; }
 
@@ -183,7 +239,7 @@ namespace Statecraft.Game.Map.Collection
         void Ask()
         {
             if (requested) return;
-            requested = true;
+            requested = true; pending = Models.Length;
             foreach (var id in Models)
             {
                 string model = id;
@@ -192,20 +248,23 @@ namespace Statecraft.Game.Map.Collection
                     if (this == null) return;
                     prefabs[model] = p;
                     if (p == null) Debug.LogWarning($"HEXPROPS: {model} did not stream; it stays off the map.");
-                    Rebuild();
+                    // One build once every prop has answered (the bundle carries them all), not one per answer.
+                    if (--pending == 0) { RebuildLandmarks(); Rebuild(); }
                 });
             }
         }
 
-        /// <summary>The ground the other Collection layers hold, so no prop stands on them: the civilian figures and the
-        /// wildlife (as RuralLife.OtherProps), the rural scenes and the special buildings (GameRoot shows them all first).</summary>
-        static List<(Vector2 centre, float radius)> Others(MapScene map)
+        /// <summary>The ground the other Collection layers hold or will hold, so no prop stands on them: the civilian figures
+        /// and the wildlife (as RuralLife.OtherProps), and the rural scenes' and special buildings' PLANNED spots (their Plan with
+        /// every model available), never what has streamed so far: the props stand in the same places whatever the camera
+        /// has visited, and a scene or building that streams in later never lands on one (#2266 review).</summary>
+        internal static List<(Vector2 centre, float radius)> Others(MapScene map, DateTime date)
         {
             var discs = RuralLife.OtherProps(map);
-            var rural = map.Terrain.transform.Find(RuralLife.Name)?.GetComponent<RuralLife>();
-            if (rural != null) foreach (var p in rural.Placed) discs.Add((new Vector2(p.At.x, p.At.z), RuralLife.SceneRadiusM(p.Model)));
-            var special = map.Terrain.transform.Find(SpecialBuildingModels.Name)?.GetComponent<SpecialBuildingModels>();
-            if (special != null) foreach (var p in special.Placed) discs.Add((new Vector2(p.At.x, p.At.z), SpecialBuildingModels.ClearanceOf(p.Model)));
+            foreach (var (want, spot) in RuralLife.Plan(map, RuralLife.Wants(map), RuralLife.OtherProps(map), _ => true))
+                discs.Add((spot, RuralLife.SceneRadiusM(want.Model)));
+            foreach (var (w, at) in SpecialBuildingModels.Plan(map, date, SpecialBuildingModels.Placements(date), _ => true, log: false))
+                discs.Add((at, SpecialBuildingModels.ClearanceOf(w.Model)));
             return discs;
         }
 
@@ -232,10 +291,11 @@ namespace Statecraft.Game.Map.Collection
         {
             if (map == null || map.Terrain == null) return;
             ClearVisuals();
-            if (prefabs.Count == 0) return;
+            if (prefabs.Count == 0 || pending > 0) return;
+            var clock = System.Diagnostics.Stopwatch.StartNew();
             var ground = PlacementLayer.CampGround(map);
             var footprints = map.KitFootprints.Select(f => (f.centre, f.radius)).ToList();
-            var taken = Others(map);
+            var taken = Others(map, date);
             bool Free(Vector2 p, float r) => TownLandmarks.Clear(p, r, taken) && TownLandmarks.Clear(p, r, footprints)
                 && ground.Inside(p.x - r, p.y - r) && ground.Inside(p.x + r, p.y + r)
                 && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, date);
@@ -244,11 +304,24 @@ namespace Statecraft.Game.Map.Collection
             {
                 if (!prefabs.TryGetValue(w.Model, out var prefab) || prefab == null) continue;
                 float clearance = ClearanceOf(w.Model);
-                var at = NearestSpot(w.Key, w.Anchor, clearance, Free, w.Start, ReachOf(w.Model, ground.HexSizeM));
-                if (at == null) { Debug.LogWarning($"HEXPROPS: no clear ground near {w.Key}; its {w.Model} is not drawn."); continue; }
-                taken.Add((at.Value, clearance)); holes.Add((at.Value, clearance));
-                float yaw = w.Model == Station ? AlongNearestRoute(w.Anchor, map.KitRouteCorridors) ?? 0f : YawOf(w.Key);
-                var go = Instantiate(prefab, transform, false); go.name = w.Key;
+                bool hedge = w.Model == PricklyPear;
+                Func<Vector2, float, bool> free = hedge ? (p, r) => HedgeMembers(w, p).All(m => Free(m, r)) : (Func<Vector2, float, bool>)Free;
+                var at = NearestSpot(w.Key, w.Anchor, clearance, free, w.Start, ReachOf(w.Model, ground.HexSizeM));
+                if (at == null)
+                {
+                    if (w.Model != Garrigue && w.Model != Scrub) Debug.LogWarning($"HEXPROPS: no clear ground near {w.Key}; its {w.Model} is not drawn.");
+                    continue;
+                }
+                var spots = hedge ? HedgeMembers(w, at.Value) : new[] { at.Value };
+                for (int i = 0; i < spots.Length; i++) Place(w, spots[i], hedge ? w.Key + "#" + i : w.Key, prefab);
+            }
+            void Place(Want w, Vector2 spot, string name, GameObject prefab)
+            {
+                float clearance = ClearanceOf(w.Model);
+                taken.Add((spot, clearance)); holes.Add((spot, clearance));
+                var at = (Vector2?)spot;
+                float yaw = w.Model == Station ? AlongNearestRoute(w.Anchor, map.KitRouteCorridors) ?? 0f : YawOf(name);
+                var go = Instantiate(prefab, transform, false); go.name = name;
                 go.transform.localRotation = prefab.transform.localRotation;
                 var b = Bounds(go); float edge = Mathf.Max(b.size.x, b.size.z);
                 go.transform.localScale = prefab.transform.localScale * (edge > 1e-4f ? SizeOf(w.Model) / edge : 1f);
@@ -257,11 +330,76 @@ namespace Statecraft.Game.Map.Collection
                 go.transform.position = pos; b = Bounds(go);
                 go.transform.position += new Vector3(pos.x - b.center.x, pos.y - b.min.y, pos.z - b.center.z);
                 foreach (var r in go.GetComponentsInChildren<Renderer>(true)) { r.shadowCastingMode = ShadowCastingMode.On; r.forceRenderingOff = !LastClose; renderers.Add(r); }
-                Placed.Add((w.Key, w.Model, pos));
+                Placed.Add((w.Key, w.Model, pos, name));
             }
             // No kit tree stands on a prop (Kits.VegetationLayer.Hide, as under the special buildings).
             Units.UnitShowcase.HideTrees(map, Name, holes);
-            Debug.Log($"HEXPROPS: {Placed.Count} of {wants.Count} hex props placed ({string.Join(", ", Models.Select(m => $"{m.Substring(m.LastIndexOf('/') + 1)} {Placed.Count(p => p.Model == m)}"))})");
+            Debug.Log($"HEXPROPS: {Placed.Count} hex props placed for {wants.Count} wants in {clock.ElapsedMilliseconds} ms " +
+                $"({string.Join(", ", Standalone.Select(m => $"{m.Substring(m.LastIndexOf('/') + 1)} {Placed.Count(p => p.Model == m)}"))})");
+        }
+
+        /// <summary>Tal Heuberger's minarets, belfries and clock tower in place of the kit's parts (#2266). A kit renderer's parts
+        /// are replaced together, and only when every kind among them streamed; then its fallback parts (far and close) are
+        /// hidden. Each model stands where its part stands, as tall as the part, turned as the kit turns it, and draws exactly
+        /// when the part's kit or close renderer does (TownModelLayer.Follow). Built once: the kit does not change with the date.
+        /// The kit renderers then stop drawing their own parts (KitLayer.ShowParts).</summary>
+        void RebuildLandmarks()
+        {
+            if (map == null || map.Terrain == null || map.KitStats == null) return;
+            var kits = map.transform.Find(Kits.KitLayer.RootName);
+            var towns = kits != null ? kits.GetComponentInChildren<Kits.TownModelLayer>(true) : null;
+            ClearLandmarks();
+            if (kits == null || towns == null || map.KitStats.LandmarkParts.Count == 0) return;
+            var holder = new GameObject(LandmarksName).transform; holder.SetParent(transform, false);
+            var ground = PlacementLayer.CampGround(map);
+            foreach (var group in map.KitStats.LandmarkParts.GroupBy(p => p.Kit))
+            {
+                if (!group.All(p => ByPart.TryGetValue(p.Kind, out var id) && prefabs.TryGetValue(id, out var pf) && pf != null)) continue;
+                var kit = kits.Find(group.Key)?.GetComponent<Renderer>();
+                if (kit == null) continue;
+                int n = 0;
+                foreach (var part in group)
+                {
+                    var prefab = prefabs[ByPart[part.Kind]]!;
+                    Stand(part, prefab, part.Far, kit, false, n);
+                    var close = part.Close != null ? kits.Find(part.Close)?.GetComponent<Renderer>() : null;
+                    if (close != null) Stand(part, prefab, part.Near, close, true, n);
+                    n++;
+                }
+                ShowKitParts(kits, group.Key, false);
+                Hidden.Add(group.Key);
+            }
+            Debug.Log($"HEXPROPS: {Replaced.Count} landmark models stand in for the kit's parts of {Hidden.Count} kit meshes " +
+                $"({string.Join(", ", ByPart.Keys.Select(k => $"{k} {Replaced.Count(r => r.Kind == k && !r.Close)}"))})");
+
+            void Stand(Kits.KitLayer.LandmarkPart part, GameObject prefab, Bounds box, Renderer leader, bool close, int n)
+            {
+                var go = Instantiate(prefab, holder, false); go.name = $"{part.Owner}:{part.Kind}:{n}:{(close ? "close" : "far")}";
+                go.transform.localRotation = SpecialBuildingModels.Rotation(prefab.transform.localRotation, part.Yaw);
+                float baseY = ground.Y(box.center.x, box.center.z), height = box.max.y - baseY;
+                var b = Bounds(go);
+                go.transform.localScale = prefab.transform.localScale * (b.size.y > 1e-4f && height > 0f ? height / b.size.y : 1f);
+                var pos = new Vector3(box.center.x, baseY, box.center.z);
+                go.transform.position = pos; b = Bounds(go);
+                go.transform.position += new Vector3(pos.x - b.center.x, pos.y - b.min.y, pos.z - b.center.z);
+                foreach (var r in go.GetComponentsInChildren<Renderer>(true)) { r.shadowCastingMode = ShadowCastingMode.On; towns!.Follow(leader, r); }
+                Replaced.Add((part.Owner, part.Kind, close, go.name));
+            }
+        }
+
+        void ClearLandmarks()
+        {
+            var old = transform.Find(LandmarksName);
+            if (old != null) { if (Application.isPlaying) { old.SetParent(null); Destroy(old.gameObject); } else DestroyImmediate(old.gameObject); }
+            var kits = map != null ? map.transform.Find(Kits.KitLayer.RootName) : null;
+            if (kits != null) foreach (var name in Hidden) ShowKitParts(kits, name, true);
+            Hidden.Clear(); Replaced.Clear();
+        }
+
+        static void ShowKitParts(Transform kits, string kit, bool on)
+        {
+            foreach (var name in new[] { kit, kit + Kits.KitLayer.CloseSuffix })
+                if (kits.Find(name)?.GetComponent<Renderer>() is Renderer r) Kits.KitLayer.ShowParts(r, on);
         }
 
         void ClearVisuals()
@@ -269,6 +407,7 @@ namespace Statecraft.Game.Map.Collection
             for (int i = transform.childCount - 1; i >= 0; i--)
             {
                 var old = transform.GetChild(i).gameObject;
+                if (old.name == LandmarksName) continue;
                 if (Application.isPlaying) { if (gameObject.activeInHierarchy) old.transform.SetParent(null); Destroy(old); } else DestroyImmediate(old);
             }
             renderers.Clear(); Placed.Clear();
@@ -282,17 +421,26 @@ namespace Statecraft.Game.Map.Collection
         }
 
         void OnEnable() => RenderPipelineManager.beginCameraRendering += Choose;
+        /// <summary>A removed layer gives the kit back its own parts, so no spot is ever left empty.</summary>
+        void OnDestroy()
+        {
+            var kits = map != null ? map.transform.Find(Kits.KitLayer.RootName) : null;
+            if (kits == null) return;
+            foreach (var name in Hidden) ShowKitParts(kits, name, true);
+        }
         void OnDisable() => RenderPipelineManager.beginCameraRendering -= Choose;
 
-        /// <summary>#700's close-zoom switch with its hysteresis (<see cref="SpecialBuildingModels.CloseAt"/>); the first close
-        /// camera asks for the props.</summary>
+        /// <summary>#700's close-zoom switch with its hysteresis (<see cref="SpecialBuildingModels.CloseAt"/>) for the standalone
+        /// props, and the request (Ask). The landmark models follow their kit renderers instead.</summary>
         internal void Choose(ScriptableRenderContext context, Camera cam)
         {
             if (cam.cameraType == CameraType.Preview || cam.cameraType == CameraType.Reflection) return;
             int id = cam.GetInstanceID();
             bool close = SpecialBuildingModels.CloseAt(TownLandmarks.ViewDistance(cam), closeFor.TryGetValue(id, out var was) ? was : (bool?)null);
             closeFor[id] = close; LastClose = close;
-            if (close && map != null) Ask();
+            // The kit's minarets, belfries and clock tower draw at every zoom, so with any to replace the first camera to render
+            // (after the first frame) asks; otherwise only the close zoom shows a prop.
+            if (map != null && (close || map.KitStats?.LandmarkParts.Count > 0)) Ask();
             foreach (var r in renderers) if (r != null) r.forceRenderingOff = !close;
         }
     }

@@ -120,13 +120,25 @@ namespace Statecraft.Game.Map.Kits
             return all.Towns;
         }
 
-        /// <summary>As the full Build, also listing everything placed (<see cref="Placed"/>), in placement order.</summary>
+        /// <summary>As the full Build, also listing everything placed (<see cref="Placed"/>), in placement order. With
+        /// <paramref name="replaceParts"/> (the main map, KitLayer), the landmarks' minarets, belfries and Jaffa's clock tower
+        /// leave the kit meshes for their own fallback meshes (<see cref="Result.Parts"/>), which Tal Heuberger's models
+        /// replace once they stream (#2266).</summary>
         public static Result Build(IReadOnlyList<Settlement> towns, IReadOnlyList<Settlement> localities, IReadOnlyList<Localities.Area> camps,
-            KitGround ground, out List<Placed> placed, Dictionary<string, Bounds[]>? columns = null)
+            KitGround ground, out List<Placed> placed, Dictionary<string, Bounds[]>? columns = null, bool replaceParts = false)
         {
-            census = placed = new List<Placed>();
+            census = placed = new List<Placed>(); SettlementKits.replaceParts = replaceParts;
             try { return Build(towns, localities, camps, ground, columns); }
-            finally { census = null; }
+            finally { census = null; SettlementKits.replaceParts = false; }
+        }
+
+        [System.ThreadStatic] static bool replaceParts;
+
+        /// <summary>#2266: a kit mesh's replaceable landmark parts (KitMesh.CloseCopySplit), drawn as submesh 1 of the kit mesh
+        /// and of its close mesh: each part's kind, owner, yaw and boxes far off and up close.</summary>
+        public sealed class LandmarkParts
+        {
+            public List<(string kind, string owner, float yaw, Bounds far, Bounds close)> Parts = new List<(string, string, float, Bounds, Bounds)>();
         }
 
         /// <summary>What <see cref="Build(IReadOnlyList{Settlement}, IReadOnlyList{Settlement}, IReadOnlyList{Localities.Area}, KitGround)"/>
@@ -155,6 +167,8 @@ namespace Statecraft.Game.Map.Kits
             /// (SettlementKits.AtWorldScale): its kind, its anchor, and its copy's box (width along x, depth along z, height
             /// over its ground level Y), in placement order.</summary>
             public List<Placed> CloseLandmarks = new List<Placed>();
+            /// <summary>#2266: the replaceable landmark parts of each kit mesh, by its name (only with replaceParts).</summary>
+            public Dictionary<string, LandmarkParts> Parts = new Dictionary<string, LandmarkParts>();
         }
 
         /// <summary>Side of the square tiles the localities' and camps' buildings are merged into (the trees' tile size).</summary>
@@ -173,6 +187,12 @@ namespace Statecraft.Game.Map.Kits
             foreach (var s in localities) places[s.Id] = s;
             try { return Build(towns, localities, camps, ground, columns, result); }
             finally { models = null; closeLandmarks = null; places = null; onceGiven = null; }
+        }
+
+        static void AddParts(Result result, KitMesh km, string meshName)
+        {
+            if (!km.HasParts) return;
+            result.Parts[meshName] = new LandmarkParts { Parts = new List<(string, string, float, Bounds, Bounds)>(km.Parts) };
         }
 
         static Result Build(IReadOnlyList<Settlement> towns, IReadOnlyList<Settlement> localities, IReadOnlyList<Localities.Area> camps,
@@ -282,6 +302,7 @@ namespace Statecraft.Game.Map.Kits
                 if (columns != null && km.VertexCount > 0) columns[s.Id] = km.Columns();
                 var mesh = km.ToMesh(s.Id + "_kit");
                 if (km.ToCloseMesh(s.Id + "_close") is Mesh close) result.Close[mesh.name] = close;
+                AddParts(result, km, mesh.name);
                 result.Towns.Add((s, mesh, totals[i]));
             }
             // A locality's columns, from its own vertices in its tile (read before ToMesh drops the CPU copy).
@@ -297,6 +318,7 @@ namespace Statecraft.Game.Map.Kits
             {
                 var mesh = kv.Value.ToMesh($"localities_{kv.Key.Item1}_{kv.Key.Item2}");
                 if (kv.Value.ToCloseMesh(mesh.name + "_close") is Mesh close) result.Close[mesh.name] = close;
+                AddParts(result, kv.Value, mesh.name);
                 result.Tiles.Add((TileName(kv.Key), mesh));
             }
             foreach (var id in spans.Keys)

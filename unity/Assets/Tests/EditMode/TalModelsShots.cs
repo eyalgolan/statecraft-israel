@@ -422,46 +422,58 @@ public class TalModelsShots
     [UnityTest] public IEnumerator BedouinBeforeHebrew() { yield return Bedouin(true, false); }
     [UnityTest] public IEnumerator BedouinAfterHebrew() { yield return Bedouin(true, true); }
 
-    /// <summary>Tal Heuberger's hex-tile props on the main map (owner, 27 October 2026, "2+3"): Binyamina's station, the first
-    /// Bedouin camp's tent and the first Arab village's prickly-pear hedge, each from the closest zoom the player can reach and
-    /// from the opening zoom (the camera's farthest, GameRoot's start, where the props neither stream nor draw). "Before" is
-    /// main's map: the layer withheld and the trees it hid given back. The frames come from the map with the props, so they
-    /// are the same before and after.</summary>
+    /// <summary>Tal Heuberger's hex-tile props on the main map (owner, 27 October 2026, "2+3"; 2 November 2026: his models replace
+    /// the kit's minarets, belfries and clock tower, a hedge row per village, a light hill scatter). Frames: Binyamina's station,
+    /// the first Bedouin camp's tent, the first village's hedge row, the first hill hex's garrigue, the first village minaret and
+    /// Jaffa's clock tower, each from the closest zoom, from the gameplay zoom (60 km, where the kit's far parts draw) for the
+    /// landmarks, and from the opening zoom (250 km). The town models are answered, so up close the close meshes draw.
+    /// "Before" is main's map: the layer withheld (the kit's own parts come back) and its tree holes given back. The frames
+    /// come from the map with the props, so they are the same before and after.</summary>
     IEnumerator HexPropShots(bool hebrew, bool after)
     {
         yield return Boot(hebrew);
         var map = Object.FindFirstObjectByType<MapScene>();
+        TownModelLayer.ModelAcquire = (id, detail, done) => { done(Prefab(id, detail)); return new NoLease(); };
         HexPropModels.Request = (id, done) => done(AssetDatabase.LoadAssetAtPath<GameObject>(HexProps.PrefabPath(id)));
         Drop(map, HexPropModels.Name);
         var layer = HexPropModels.ShowAt(map, root.Bridge!.State.Date)!;
         Look(layer.transform.position, CameraController.MinDistance);
         layer.Choose(default, Camera.main);
-        Assert.IsTrue(layer.Requested, "the close camera asked for the props");
-        var frames = new[]
+        Assert.IsTrue(layer.Requested, "the camera asked for the props");
+        var parts = map.KitStats.LandmarkParts;
+        var minaret = parts.First(p => p.Kind == "minaret" && p.Close != null);
+        var clock = parts.Single(p => p.Kind == "clock_tower");
+        Vector3 Up(Bounds b) => new Vector3(b.center.x, 0f, b.center.z);
+        var close = CameraController.MinDistance; const float Gameplay = 60000f; var opening = CameraController.MaxDistance;
+        var frames = new List<(string what, string key, Vector3 at, float[] zooms)>
         {
-            ("station", layer.Placed.First(p => p.Key == "station:Binyamina railway station")),
-            ("tent", layer.Placed.First(p => p.Model == HexPropModels.Tent)),
-            ("hedge", layer.Placed.First(p => p.Model == HexPropModels.PricklyPear)),
+            ("station", "station:Binyamina railway station", layer.Placed.First(p => p.Key == "station:Binyamina railway station").At, new[] { close, opening }),
+            ("tent", layer.Placed.First(p => p.Model == HexPropModels.Tent).Key, layer.Placed.First(p => p.Model == HexPropModels.Tent).At, new[] { close, opening }),
+            ("hedge", layer.Placed.First(p => p.Model == HexPropModels.PricklyPear).Key, layer.Placed.First(p => p.Model == HexPropModels.PricklyPear).At, new[] { close, opening }),
+            ("scatter", layer.Placed.First(p => p.Model == HexPropModels.Garrigue).Key, layer.Placed.First(p => p.Model == HexPropModels.Garrigue).At, new[] { close, opening }),
+            ("minaret", minaret.Owner, Up(minaret.Near), new[] { close, Gameplay, opening }),
+            ("clocktower", clock.Owner, Up(clock.Near), new[] { close, Gameplay, opening }),
         };
-        Debug.Log($"SHOT hexprops {(after ? "after" : "before")}: {layer.Placed.Count} placed: " +
-                  string.Join(", ", HexPropModels.Models.Select(m => $"{m} {layer.Placed.Count(p => p.Model == m)}")));
+        Debug.Log($"SHOT hexprops {(after ? "after" : "before")}: {layer.Placed.Count} placed, {layer.Replaced.Count} landmark models: " +
+                  string.Join(", ", HexPropModels.Standalone.Select(m => $"{m} {layer.Placed.Count(p => p.Model == m)}")));
         if (!after)
         {
             HexPropModels.Request = (id, done) => { };   // main streams no prop for the map
             Drop(map, HexPropModels.Name);
             UnitShowcase.HideTrees(map, HexPropModels.Name, Array.Empty<(Vector2, float)>());
         }
-        foreach (var (what, placed) in frames)
-            foreach (var (zoom, distance) in new[] { ("close", CameraController.MinDistance), ("opening", CameraController.MaxDistance) })
+        foreach (var (what, key, flat, zooms) in frames)
+            foreach (var distance in zooms)
             {
-                var at = placed.At;
+                string zoom = distance == close ? "close" : distance == Gameplay ? "gameplay" : "opening";
+                var at = flat;
                 at.y = map.Terrain.SampleHeight(at) + map.Terrain.transform.position.y;
                 Look(at, distance);
                 var shown = map.Terrain.transform.Find(HexPropModels.Name)?.GetComponent<HexPropModels>();
                 if (shown != null) shown.Choose(default, Camera.main);
-                for (int i = 0; i < 3; i++) { Camera.main.Render(); yield return null; }
+                for (int i = 0; i < 4; i++) { Camera.main.Render(); yield return null; }
                 CivMovementShots.Shot(rt!, Path.Combine("..", "tal-models-shots", $"hexprops-{what}-{zoom}-{(after ? "after" : "before")}-{(hebrew ? "he" : "en")}"));
-                Debug.Log($"SHOT hexprops {what} {placed.Key} at {at} from {distance:F0} m ({zoom}), layer drawn {shown != null && shown.LastClose}");
+                Debug.Log($"SHOT hexprops {what} {key} at {at} from {distance:F0} m ({zoom}), standalone drawn {shown != null && shown.LastClose}, landmark models {shown?.Replaced.Count ?? 0}");
             }
     }
 
