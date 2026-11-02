@@ -25,6 +25,7 @@ namespace Statecraft.Sim
             Projects.Advance(c, s, next, why);            // 5. construction
             Projects.AdvanceCity(c, s, next, why);        //    and the city projects (R-PROJ-003)
             Cities.Produce(c, s, r, yearFraction, why);   // 6. production
+            Workshops.Produce(c, s, why);                 //    and the arms workshops' cycles, gdd-0.3 only (R-ARMS-006)
             Pools.Harvest(c, s, r, why);                  //    and the plowed fields' Food (R-FIELD-002)
             Pools.Consume(c, s, r, why);                  // 7. consumption: the nation eats, then imports (R-FOOD-002)
             Prisoners.Upkeep(c, s, r, why);               //    then the prisoners eat, and the soldiers held are paid for (R-POW-002, R-POW-005)

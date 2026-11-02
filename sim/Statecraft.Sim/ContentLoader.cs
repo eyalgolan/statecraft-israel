@@ -431,7 +431,10 @@ namespace Statecraft.Sim
                 c.Cities = Read<CitiesFile>(readFile, "cities.yaml").Cities;
                 c.UnitTypes = Read<UnitTypesFile>(readFile, "unit_types.yaml").Types;
                 c.Sites = Read<SitesFile>(readFile, "sites.yaml").Sites;   // sourced facts (Phase 1 PR 5)
-                c.ProjectKinds = Read<ProjectsFile>(readFile, "projects.yaml").Projects;   // design values (Phase 3 PR 4)
+                // Design values (Phase 3 PR 4). R-ARMS-004: a row limited to other rulesets is not this game's kind.
+                var kinds = Read<ProjectsFile>(readFile, "projects.yaml").Projects;
+                c.ProjectKinds = kinds.Where(k => k.Rulesets.Count == 0 || k.Rulesets.Contains(c.Ruleset)).ToList();
+                c.ProjectKindsOfOtherRulesets = kinds.Except(c.ProjectKinds).ToList();
                 c.Corridors = Read<CorridorsFile>(readFile, "corridors.yaml").Corridors;   // sourced, hexes derived (Phase 4 PR 2)
                 ValidateGdd(c, settlementIds);
                 Gdd03Military.Validate(c); // after effective map overrides and role validation, only exact gdd-0.3
@@ -1544,8 +1547,9 @@ namespace Statecraft.Sim
         static void ValidateProjects(Content c)
         {
             const string pf = "projects.yaml";
-            Unique(pf, "projects", c.ProjectKinds.Select(x => x.Id));
-            foreach (var x in c.ProjectKinds)
+            var all = c.ProjectKinds.Concat(c.ProjectKindsOfOtherRulesets).ToList();   // every row, whatever the ruleset
+            Unique(pf, "projects", all.Select(x => x.Id));
+            foreach (var x in all)
             {
                 var at = $"projects[{x.Id}]";
                 if (string.IsNullOrWhiteSpace(x.Name)) throw new ContentException(pf, at + ".name", "is required");
@@ -1561,6 +1565,32 @@ namespace Statecraft.Sim
                 // R-PROJ-005: a kind whose resource no city has could never be built.
                 if (!string.IsNullOrEmpty(x.Requires) && !c.Cities.Any(k => k.Resources.Any(r => r.Id == x.Requires)))
                     throw new ContentException(pf, at + ".requires", $"no city in cities.yaml has the resource '{x.Requires}'");
+                ValidateWorkshopKind(c, x, pf, at);
+            }
+        }
+
+        /// <summary>R-ARMS-004: a kind's `rulesets` names GDD rulesets only, and `worker_slots` is 0 or 1. A kind with a worker
+        /// slot is an arms workshop: it adds no housing, condition or job slots (its worker holds no job), exists under
+        /// gdd-0.3 only, and under gdd-0.3 the arms_workshop row has the balance catalogue's worker slots.</summary>
+        static void ValidateWorkshopKind(Content c, ProjectKind x, string pf, string at)
+        {
+            foreach (var r in x.Rulesets)
+                if (r != SaveGame.GddRuleset && r != SaveGame.Gdd03Ruleset)
+                    throw new ContentException(pf, at + ".rulesets", $"unknown ruleset '{r}' ({SaveGame.GddRuleset} or {SaveGame.Gdd03Ruleset})");
+            if (x.WorkerSlots < 0 || x.WorkerSlots > 1) throw new ContentException(pf, at + ".worker_slots", "must be 0 or 1");
+            if (x.WorkerSlots > 0)
+            {
+                if (x.JobSlots != 0) throw new ContentException(pf, at + ".job_slots", "must be 0 with worker_slots: a workshop worker holds no job");
+                if (x.Capacity != 0) throw new ContentException(pf, at + ".capacity", "must be 0 with worker_slots");
+                if (x.Condition != 0) throw new ContentException(pf, at + ".condition", "must be 0 with worker_slots");
+                if (!(x.Rulesets.Count == 1 && x.Rulesets[0] == SaveGame.Gdd03Ruleset))
+                    throw new ContentException(pf, at + ".rulesets", $"a kind with worker_slots exists under {SaveGame.Gdd03Ruleset} only: rulesets: [{SaveGame.Gdd03Ruleset}]");
+            }
+            if (c.Ruleset == SaveGame.Gdd03Ruleset && x.Id == Workshops.ArmsWorkshop)
+            {
+                var slots = Gdd03ProjectCatalogue.Read(c).Projects.Single(p => p.Key == Workshops.ArmsWorkshop).Capacity!.Amount;
+                if (x.WorkerSlots != slots)
+                    throw new ContentException(pf, at + ".worker_slots", FormattableString.Invariant($"must be {slots}, the gdd-0.3 balance catalogue's arms_workshop worker slots"));
             }
         }
 

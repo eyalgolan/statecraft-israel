@@ -14,6 +14,11 @@ namespace Statecraft.Sim
         /// civilians and craftsmen (a craftsman fills an ordinary job slot, R-CRAFT-002). R-CITY-009's default fills to it.</summary>
         public static int MaxWorkers(City city) => Math.Min(city.JobSlots, city.Civilians + city.Craftsmen);
 
+        /// <summary>R-CITY-001 with R-ARMS-005: <see cref="MaxWorkers(City)"/> less the city's staffed arms workshops, whose
+        /// workers hold no job. The same number where no workshop is staffed (always, outside gdd-0.3).</summary>
+        public static int MaxWorkers(GameState s, City city) =>
+            Math.Max(0, Math.Min(city.JobSlots, city.Civilians + city.Craftsmen - Workshops.Staffed(s, city.Id)));
+
         /// <summary>R-CITY-001 with R-TRAIN-001: <see cref="MaxWorkers(City)"/> once the city's Train, Reinforce and Reassign
         /// orders in <paramref name="pending"/> (this turn's queue) have taken their civilians, so a count up to it keeps every one
         /// of them accepted, whatever order they run in. Every queued reassignment counts in full, craftsmen too (#1548): if the
@@ -21,7 +26,7 @@ namespace Statecraft.Sim
         public static int MaxWorkers(GameState s, string city, IEnumerable<Command> pending)
         {
             var x = s.Cities[city];
-            return Math.Max(0, Math.Min(x.JobSlots, x.Civilians + x.Craftsmen - Training.Ordered(city, pending)));
+            return Math.Max(0, Math.Min(x.JobSlots, x.Civilians + x.Craftsmen - Workshops.Staffed(s, city) - Training.Ordered(city, pending)));
         }
 
         /// <summary>R-CITY-007: a city's start people in units: the nearest unit (a half rounds up), and at least 1 for a city
@@ -65,13 +70,15 @@ namespace Statecraft.Sim
         {
             PopulationLedger.RefuseAggregate(s);
             if (!s.Cities.TryGetValue(city, out var x)) return "There is no such city";
+            // R-ARMS-005: under gdd-0.3 the "workshop" role staffs the city's arms workshops.
+            if (role == Workshops.Role && c.Ruleset == SaveGame.Gdd03Ruleset) return Workshops.Staff(c, s, city, count, why);
             // Craftsmen fill ordinary job slots (Q-CRAFT-2, R-CRAFT-002), so "job" stays the only role.
             if (role != "job") return "There is no such role";
             if (count < 0) return "The number of workers cannot be negative";
-            if (count > MaxWorkers(x))
+            if (count > MaxWorkers(s, x))
                 return count > x.JobSlots
                     ? FormattableString.Invariant($"{PlayerText.Settlement(c, city)} has {x.JobSlots} jobs")
-                    : FormattableString.Invariant($"{PlayerText.Settlement(c, city)} has {x.Civilians + x.Craftsmen} civilians and craftsmen");
+                    : FormattableString.Invariant($"{PlayerText.Settlement(c, city)} has {x.Civilians + x.Craftsmen - Workshops.Staffed(s, city)} civilians and craftsmen");
             s.Cities[city] = x.WithCounts(x.Civilians, count, x.Refugees).WithJobsDefault(false);
             why.Add(new Cause("city", city, count - x.Employed, FormattableString.Invariant($"{PlayerText.Settlement(c, city)}: {count} groups in work"), key: CauseKeys.WorkersAssigned, args: new[] { CauseKeys.Number(count) }));
             return null;
@@ -154,7 +161,7 @@ namespace Statecraft.Sim
                 var housed = absorbed == 0 ? x : x.WithCounts(x.Civilians + absorbed, x.Employed, x.Refugees - absorbed);
                 if (absorbed != 0)
                     why.Add(new Cause("city", x.Id, absorbed, FormattableString.Invariant($"{PlayerText.Settlement(c, x.Id)}: {absorbed} groups of immigrants housed"), key: CauseKeys.ImmigrantsHoused, args: new[] { CauseKeys.Number(absorbed) }));
-                var work = MaxWorkers(housed);
+                var work = MaxWorkers(s, housed);
                 if (housed.JobsDefault && work != housed.Employed)
                 {
                     why.Add(new Cause("city", x.Id, work - housed.Employed, FormattableString.Invariant($"{PlayerText.Settlement(c, x.Id)}: {work} groups in work"), key: CauseKeys.WorkersAssigned, args: new[] { CauseKeys.Number(work) }));

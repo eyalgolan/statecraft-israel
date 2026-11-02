@@ -1,1 +1,0 @@
-- Add a read-only WebGL companion beside the game for the current event, choices, game focus, status and the End Turn report. It is off and unavailable for now (the owner's ruling of 2 November 2026; see the Changed entry). Keyboard play stays in the game; real screen-reader validation and the phone layout remain pending.
