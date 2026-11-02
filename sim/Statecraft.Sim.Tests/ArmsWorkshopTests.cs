@@ -204,6 +204,75 @@ public class ArmsWorkshopTests
         Assert.Equal(new[] { "0" }, off.Why.Single(x => x.Key == CauseKeys.WorkshopWorkers).Args);
     }
 
+    // R-ARMS-005 (#1722 slice E): Workshops.Check, which the hex panel asks before it offers a staffing order, gives exactly
+    // the refusal the order gets at End turn, and changes nothing.
+    [Theory]
+    [MemberData(nameof(StaffRefusals))]
+    public void CheckGivesTheOrdersOwnRefusalAndChangesNothing(string why, string reason)
+    {
+        var (c, s, id) = Built(civilians: why == "nobody at all" ? 0 : 10, employed: why == "nobody without a job" ? 10 : why == "nobody at all" ? 0 : 6, jobs: 10,
+            jobsDefault: why != "nobody without a job");
+        if (why == "gdd-0.1") { c = Load(false); s = Simulation.NewGame(c, 1, Mode.Historical); }
+        if (why == "still building") s.CityProjects[id] = new CityProject(id, Workshops.ArmsWorkshop, "town_a", 1, 1, 2);
+        var order = why switch { "unknown city" => Staff(1, "atlantis"), "negative" => Staff(-1), "more than built" => Staff(2), _ => Staff(1) };
+        var before = s.Hash();
+        Assert.Equal(reason, Workshops.Check(c, s, order.City, order.Count, Array.Empty<Command>()));
+        Assert.Equal(before, s.Hash());
+        Assert.Equal(reason, Assert.Single(Step(c, s, order).Rejected).Reason);
+    }
+
+    // R-ARMS-005: an order Check accepts is accepted; unstaffing (a lower count) is always accepted.
+    [Fact]
+    public void CheckAcceptsWhatTheTurnAccepts()
+    {
+        var (c, s, _) = Built(jobsDefault: false);
+        Assert.Null(Workshops.Check(c, s, "town_a", 1, Array.Empty<Command>()));
+        var staffed = Step(c, s, Staff(1));
+        Assert.Empty(staffed.Rejected);
+        Assert.Null(Workshops.Check(c, staffed.State, "town_a", 0, Array.Empty<Command>()));
+        Assert.Equal(1, Workshops.Built(c, s, "town_a"));
+    }
+
+    // R-ARMS-005 with R-CITY-001 (#1722 slice E): with this turn's queue, Check counts a pending "job" order's jobs (which turn
+    // the job default off) and every Train or reassignment there, so an order it accepts is still accepted if the job order
+    // runs first. Here the job order takes the last free person, and the turn refuses the staffing with Check's words.
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void CheckCountsThisTurnsJobOrder(bool jobsDefault)
+    {
+        var (c, s, _) = Built(civilians: 10, employed: jobsDefault ? 10 : 9, jobs: 10, jobsDefault: jobsDefault);
+        Assert.Null(Workshops.Check(c, s, "town_a", 1, Array.Empty<Command>()));
+        var job = new AssignWorkers("town_a", "job", 10);
+        var reason = Workshops.Check(c, s, "town_a", 1, new Command[] { job, Staff(1) });
+        Assert.Equal("Town A has 0 civilians and craftsmen without a job", reason);
+        Assert.Equal(reason, Assert.Single(Step(c, s, job, Staff(1)).Rejected).Reason);
+    }
+
+    // R-ARMS-005 with R-CITY-001 (#1722 slice E): the jobs stepper's limit counts a pending staffing order's newly staffed
+    // workers, as Training.Available does, so a jobs count it allows is still accepted if the staffing runs first.
+    [Fact]
+    public void MaxWorkersCountsAPendingStaffingOrder()
+    {
+        var (c, s, _) = Built(civilians: 10, employed: 6, jobs: 10, jobsDefault: false);
+        Assert.Equal(10, Cities.MaxWorkers(s, "town_a", Array.Empty<Command>()));
+        Assert.Equal(9, Cities.MaxWorkers(s, "town_a", new Command[] { Staff(1) }));
+        Assert.Equal("Town A has 9 civilians and craftsmen", Assert.Single(Step(c, s, Staff(1), new AssignWorkers("town_a", "job", 10)).Rejected).Reason);
+        Assert.Empty(Step(c, s, Staff(1), new AssignWorkers("town_a", "job", 9)).Rejected);
+    }
+
+    // R-ARMS-005 (#1722 slice E): the refusals' English are format constants, so the UI can word them in its language
+    // (SimBridge.ReasonText), and the turn's reasons are those formats filled in.
+    [Fact]
+    public void TheRefusalsAreTheFormatConstants()
+    {
+        string F(string format, params object[] v) => string.Format(System.Globalization.CultureInfo.InvariantCulture, format, v);
+        Assert.Equal("Town A has 1 arms workshop", F(Workshops.RefusedBuiltOne, "Town A"));
+        Assert.Equal("Town A has 0 arms workshops", F(Workshops.RefusedBuilt, "Town A", 0));
+        Assert.Equal("Town A has 0 civilians and craftsmen", F(Workshops.RefusedPeople, "Town A", 0));
+        Assert.Equal("Town A has 0 civilians and craftsmen without a job", F(Workshops.RefusedPeopleNoJob, "Town A", 0));
+    }
+
     // R-ARMS-005, R-LOOP-002: the workshops are hashed as wshop[...] only when there is one, so a gdd-0.1 state hashes as before.
     [Fact]
     public void TheWorkshopsAreHashedOnlyWhenPresent()

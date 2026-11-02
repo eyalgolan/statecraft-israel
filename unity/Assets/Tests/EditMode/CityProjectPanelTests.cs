@@ -298,3 +298,230 @@ public class CityProjectPanelTests
         StringAssert.Contains("\u05d9\u05e7\u05d1", line);                 // יקב
     }
 }
+
+/// <summary>#1722 slice E (#1701; R-ARMS-005 to R-ARMS-007): a built arms workshop's staffing control in the info panel,
+/// gdd-0.3 only, on a real SimBridge with the real content run under gdd-0.3 (its projects.yaml has the arms_workshop row).
+/// The stepper is the city's AssignWorkers(city, "workshop", n); every number, limit and refusal is the sim's
+/// (Workshops.Built, Workshops.Staffed, Workshops.Check, the Workshop record, Cities.Held, the last turn's causes).</summary>
+public class WorkshopPanelTests
+{
+    static readonly Content C01 = ContentLoader.Load(Paths.Content);
+    static readonly Content C03 = Load03();
+    static readonly Dictionary<string, string> Towns =
+        SettlementPlacer.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", SettlementPlacer.DefaultFileName))).ToDictionary(t => t.Id, t => t.Name);
+    static readonly Dictionary<string, string> TownsHe =
+        SettlementPlacer.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", SettlementPlacer.DefaultFileName))).ToDictionary(t => t.Id, t => t.NameHe);
+    static UiText En => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
+    static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+    const string City = "haifa";
+
+    /// <summary>The real content under gdd-0.3, as NoAttentionPresentationTests loads it.</summary>
+    static Content Load03()
+    {
+        var dir = Paths.Content;
+        return ContentLoader.Load(rel =>
+        {
+            var path = Path.Combine(dir, rel);
+            if (!File.Exists(path)) return null;
+            var value = File.ReadAllText(path);
+            return rel == "eras.yaml" ? value.Replace("loop: gdd", "loop: gdd, ruleset: gdd-0.3") : value;
+        }, Directory.GetFiles(Path.Combine(dir, "events"), "*.yaml").Select(f => "events/" + Path.GetFileName(f)));
+    }
+
+    /// <summary>A hex only Haifa reaches (CityProjectPanelTests' Lone), by the sim's own helper.</summary>
+    static (int q, int r) Hex(Content c)
+    {
+        var s = GameSession.New(c, GoldenRun.Seed, Mode.Historical).State;
+        var hex = c.Hexes.Where(h => h.Land && Projects.CitiesFor(c, s, h.Q, h.R).SequenceEqual(new[] { City })).OrderBy(h => h.Q).ThenBy(h => h.R).First();
+        return (hex.Q, hex.R);
+    }
+
+    /// <summary>A game of <paramref name="c"/> with a project of <paramref name="kind"/> for Haifa on its hex (built unless
+    /// <paramref name="turnsLeft"/> is above 0), and Haifa with 10 civilians, <paramref name="employed"/> of them in the jobs
+    /// the player set (the job default off). The project's id is the second value.</summary>
+    static (SimBridge Bridge, int Id) Game(Content c, UiText text, string kind = Workshops.ArmsWorkshop, int employed = 6, int turnsLeft = 0,
+        Action<GameState, int>? edit = null, Func<GameSession, StepResult?>? last = null)
+    {
+        var (q, r) = Hex(c);
+        var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
+        var s = g.State;
+        var x = s.Cities[City];
+        s.Cities[City] = new City(x.Id, x.HousingCapacity, 10, 10, employed, 0, 0, x.Condition, jobsDefault: false);
+        var id = s.NextId++;
+        var p = new CityProject(id, kind, City, q, r, turnsLeft);
+        s.CityProjects.Add(id, turnsLeft == 0 ? p.Built(s.Date) : p);
+        edit?.Invoke(s, id);
+        if (last?.Invoke(g) is StepResult result) typeof(GameSession).GetProperty(nameof(GameSession.Last))!.SetValue(g, result);
+        return (new SimBridge(g, text) { TownNamesHe = TownsHe }, id);
+    }
+
+    static InfoPanelPresenter Panel(UiTestKit ui, SimBridge bridge, UiText text) => new InfoPanelPresenter(ui.Root, bridge, text, Towns, townNamesHe: TownsHe);
+
+    static AssignWorkers? Queued(SimBridge b) => b.QueuedLike(new AssignWorkers(City, Workshops.Role, 0)) as AssignWorkers;
+
+    // R-ARMS-005: the control shows on a built arms workshop under gdd-0.3, and nowhere else: not on a workshop being
+    // built, not on another built kind, and never under gdd-0.1 (whose content has no workshop kind).
+    [Test]
+    public void TheControlShowsOnABuiltArmsWorkshopUnderGdd03Only([Values] bool hebrew)
+    {
+        var t = hebrew ? He : En;
+        Assert.AreEqual(SaveGame.Gdd03Ruleset, C03.Ruleset, "precondition: the content runs under gdd-0.3");
+        Assert.IsTrue(C03.ProjectKinds.Any(k => k.Id == Workshops.ArmsWorkshop), "precondition: gdd-0.3 has the workshop kind");
+        Assert.IsFalse(C01.ProjectKinds.Any(k => k.Id == Workshops.ArmsWorkshop), "precondition: gdd-0.1 has none");
+        foreach (var (c, kind, turns, shown) in new[]
+        {
+            (C03, Workshops.ArmsWorkshop, 0, true),
+            (C03, Workshops.ArmsWorkshop, 2, false),
+            (C03, "industry", 0, false),
+            (C01, "industry", 0, false),
+        })
+        {
+            using var ui = new UiTestKit();
+            var (bridge, _) = Game(c, t, kind, turnsLeft: turns);
+            using var panel = Panel(ui, bridge, t);
+            var (q, r) = Hex(c);
+            panel.Show(q, r);
+            Assert.IsNotNull(ui.Root.Q("city-project-state"), $"{c.Ruleset} {kind} {turns}: precondition, the project's part shows");
+            Assert.AreEqual(shown, ui.Root.Q("city-workshops-row") != null, $"{c.Ruleset} {kind} {turns}");
+            Assert.AreEqual(shown, ui.Root.Q("city-workshop-state") != null, $"{c.Ruleset} {kind} {turns}");
+            if (!shown) continue;
+            Assert.AreEqual(t.Format("city.workshops_staffed", 0, 1), ui.Q<Label>("city-workshops").text, "the sim's counts: none staffed of 1 built");
+            Assert.AreEqual(t["city.workshop_unstaffed"], ui.Q<Label>("city-workshop-state").text);
+            Assert.IsFalse(ui.Q<Button>("city-workshops-less").enabledSelf, "none staffed: nothing to unstaff");
+            Assert.IsTrue(ui.Q<Button>("city-workshops-more").enabledSelf, "4 people without a job: one may staff it");
+            Assert.IsNull(ui.Root.Q("city-workshops-reason"));
+        }
+    }
+
+    // R-ARMS-005: + queues AssignWorkers(city, "workshop", n + 1) for the workshop's city, the line reads the ordered count,
+    // and - back to the current count withdraws the order (as the jobs stepper does). The sim accepts the queued order.
+    [Test]
+    public void TheStepperQueuesTheWorkshopRoleAndStepsBackToNoOrder()
+    {
+        using var ui = new UiTestKit();
+        var (bridge, id) = Game(C03, En);
+        using var panel = Panel(ui, bridge, En);
+        var (q, r) = Hex(C03);
+        panel.Show(q, r);
+        ui.Press("city-workshops-more");
+        var order = Queued(bridge);
+        Assert.IsNotNull(order, "the stepper queues an AssignWorkers order");
+        Assert.AreEqual((City, Workshops.Role, 1), (order!.City, order.Role, order.Count));
+        Assert.AreEqual(En.Format("city.workshops_ordered", 1, 1), ui.Q<Label>("city-workshops").text);
+        Assert.IsFalse(ui.Q<Button>("city-workshops-more").enabledSelf, "its one workshop is ordered staffed");
+        Assert.IsNull(ui.Root.Q("city-workshops-reason"), "every workshop is staffed: no refusal to explain");
+        ui.Press("city-workshops-less");
+        Assert.IsNull(Queued(bridge), "back at the current count: no order is left queued");
+        Assert.AreEqual(En.Format("city.workshops_staffed", 0, 1), ui.Q<Label>("city-workshops").text);
+        ui.Press("city-workshops-more");
+        Assert.IsTrue(bridge.EndTurn().State.Workshops[id].Staffed, "the sim accepts the order the panel queued");
+    }
+
+    // #1722 (2 Nov note, 1): a jobs order and a workshop order for the same city keep their own slots in the queue, so
+    // neither replaces the other; and (2) Training.Available, the Train buttons' limit, counts the pending staffing.
+    [Test]
+    public void AJobsOrderAndAStaffingOrderForOneCityAreBothQueuedAndTrainingCountsIt()
+    {
+        using var ui = new UiTestKit();
+        var (bridge, _) = Game(C03, En);
+        using var panel = Panel(ui, bridge, En);
+        var (q, r) = Hex(C03);
+        Assert.IsNull(bridge.Queue(new AssignWorkers(City, "job", 7)));
+        var before = Training.Available(bridge.State, City, bridge.Queued);
+        panel.Show(q, r);
+        ui.Press("city-workshops-more");
+        Assert.AreEqual(2, bridge.Queued.OfType<AssignWorkers>().Count(w => w.City == City), "the staffing order did not replace the jobs order");
+        Assert.AreEqual(7, ((AssignWorkers)bridge.QueuedLike(new AssignWorkers(City, "job", 0))!).Count);
+        Assert.AreEqual(1, Queued(bridge)!.Count);
+        Assert.AreEqual(before - 1, Training.Available(bridge.State, City, bridge.Queued), "the pending workshop worker is not offered for training");
+    }
+
+    // R-ARMS-005: with nobody left for it, + is off and the panel shows the sim's own refusal (Workshops.Check with this
+    // turn's queue), in the UI's language: SimBridge.ReasonText, as the end-of-turn toast words it.
+    [Test]
+    public void WithNobodyFreeTheSimsRefusalShowsInBothLanguages([Values] bool hebrew)
+    {
+        var t = hebrew ? He : En;
+        using var ui = new UiTestKit();
+        var (bridge, _) = Game(C03, t, employed: 10);
+        using var panel = Panel(ui, bridge, t);
+        var (q, r) = Hex(C03);
+        panel.Show(q, r);
+        var reason = Workshops.Check(C03, bridge.State, City, 1, bridge.Queued);
+        Assert.AreEqual(string.Format(System.Globalization.CultureInfo.InvariantCulture, Workshops.RefusedPeopleNoJob, PlayerText.Settlement(C03, City), 0), reason,
+            "precondition: the sim refuses one more");
+        Assert.IsFalse(ui.Q<Button>("city-workshops-more").enabledSelf);
+        var line = ui.Q<Label>("city-workshops-reason").text;
+        Assert.AreEqual(SimBridge.ReasonText(t, reason!, C03, TownsHe), line);
+        if (hebrew)
+        {
+            Assert.AreNotEqual(reason, line, "the Hebrew string, not the sim's English");
+            StringAssert.Contains(TownsHe[City], line);
+        }
+        else Assert.AreEqual("Haifa has 0 civilians and craftsmen without a job", line);
+    }
+
+    // R-ARMS-005: each staffing refusal has a string in both languages, and the English is the sim's own words.
+    [Test]
+    public void EveryStaffingRefusalHasAStringInBothLanguages()
+    {
+        foreach (var reason in new[]
+        {
+            string.Format(System.Globalization.CultureInfo.InvariantCulture, Workshops.RefusedBuiltOne, "Haifa"),
+            string.Format(System.Globalization.CultureInfo.InvariantCulture, Workshops.RefusedBuilt, "Haifa", 2),
+            string.Format(System.Globalization.CultureInfo.InvariantCulture, Workshops.RefusedPeople, "Haifa", 0),
+            string.Format(System.Globalization.CultureInfo.InvariantCulture, Workshops.RefusedPeopleNoJob, "Haifa", 0),
+        })
+        {
+            Assert.AreEqual(reason, SimBridge.ReasonText(En, reason, C03, TownsHe), "the English string is the sim's own");
+            var he = SimBridge.ReasonText(He, reason, C03, TownsHe);
+            Assert.AreNotEqual(reason, he, "no Hebrew string for: " + reason);
+            StringAssert.IsMatch("[א-ת]", he, reason);
+            StringAssert.Contains(TownsHe[City], he, "the town in Hebrew");
+        }
+    }
+
+    // R-ARMS-006, R-ARMS-007, R-CITY-010: a staffed workshop's cycle under way (staffed months of workshop.staffed_turns and
+    // the Money paid), the pause while the enemy holds its city, and the last turn's pauses for its city as the Why screen
+    // words them; with no cycle, the next cycle's price at its worker's tier.
+    [Test]
+    public void AStaffedWorkshopShowsItsCycleAndWhyItWaits([Values] bool hebrew)
+    {
+        var t = hebrew ? He : En;
+        var rules = SyntheticWorkshopRules.FromCatalogue(C03.Gdd03Balance!);
+        var paused = new Cause("city", City, 0, "Haifa: an arms workshop has no worker without a job this month", key: CauseKeys.WorkshopPaused, args: new[] { Workshops.NoWorker });
+        using (var ui = new UiTestKit())
+        {
+            var (bridge, _) = Game(C03, t, edit: (s, id) =>
+            {
+                s.Workshops.Add(id, new Workshop(id, true, SyntheticWorkshopTier.Ordinary, rules.Price(SyntheticWorkshopTier.Ordinary), 1));
+                var enemy = s.Units.Values.First(u => u.Side != "" && u.Side != Movement.PlayerSide);
+                var home = C03.SettlementHexes.First(h => h.Id == City);
+                var uid = s.NextId++;
+                s.Units.Add(uid, new Unit(uid, enemy.Type, home.Q, home.R, side: enemy.Side, strength: enemy.Strength));
+            }, last: g => new StepResult(g.State, new[] { paused }, Array.Empty<Rejection>()));
+            using var panel = Panel(ui, bridge, t);
+            var (q, r) = Hex(C03);
+            panel.Show(q, r);
+            Assert.AreEqual(t.Format("city.workshops_staffed", 1, 1), ui.Q<Label>("city-workshops").text);
+            Assert.AreEqual(t["city.workshop_staffed"], ui.Q<Label>("city-workshop-state").text);
+            Assert.AreEqual(t.Format("city.workshop_cycle", 1, rules.StaffedTurns, PlayerText.Money(C03, "treasury", (double)rules.Price(SyntheticWorkshopTier.Ordinary))),
+                ui.Q<Label>("city-workshop-cycle").text);
+            Assert.IsTrue(Cities.Held(C03, bridge.State).Contains(City), "precondition: the enemy holds Haifa");
+            Assert.AreEqual(t.Format("city.workshop_held", hebrew ? TownsHe[City] : Towns[City]), ui.Q<Label>("city-workshop-held").text);
+            Assert.AreEqual(CauseText.Line(paused, C03, Array.Empty<Statecraft.Game.Map.Units.UnitEntry>(), t, TownsHe), ui.Q<Label>("city-workshop-paused-0").text);
+        }
+        using (var ui = new UiTestKit())
+        {
+            var (bridge, _) = Game(C03, t, edit: (s, id) => s.Workshops.Add(id, new Workshop(id, false, SyntheticWorkshopTier.Ordinary)));
+            using var panel = Panel(ui, bridge, t);
+            var (q, r) = Hex(C03);
+            panel.Show(q, r);
+            Assert.AreEqual(t["city.workshop_unstaffed"], ui.Q<Label>("city-workshop-state").text);
+            Assert.AreEqual(t.Format("city.workshop_next", PlayerText.Money(C03, "treasury", (double)rules.Price(SyntheticWorkshopTier.Ordinary))),
+                ui.Q<Label>("city-workshop-cycle").text);
+            Assert.IsNull(ui.Root.Q("city-workshop-held"), "Haifa is not held");
+            Assert.IsNull(ui.Root.Q("city-workshop-paused-0"), "no turn has run: no pause to report");
+        }
+    }
+}
