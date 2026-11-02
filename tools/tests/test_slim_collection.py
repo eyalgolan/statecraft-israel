@@ -30,12 +30,19 @@ GENERATED_PROPS = [
     "generated-1948-14-syrian-renault-r35",
     "generated-1948-08-khaki-canvas-tent",
 ]
+# Tal Heuberger's generated whole towns (#2085, #1288), each streamed in a bundle of its own.
+GENERATED_TOWNS = [
+    "tiberias-town-v1",
+    "safed-town-v1",
+    "netanya-town-v1",
+    "ramla-town-v1",
+]
 
 
 def catalog_bundles() -> dict[str, list[str]]:
     text = CATALOG.read_text(encoding="utf-8")
     bundles = {}
-    for name, body in re.findall(r"\((People|Vehicles|Animals|Towns|ArabArmies|GeneratedFigures|GeneratedProps), new\[\]\s*\{(.*?)\}\)", text, re.S):
+    for name, body in re.findall(r"\((People|Vehicles|Animals|Towns|ArabArmies|GeneratedFigures|GeneratedProps|GeneratedTowns), new\[\]\s*\{(.*?)\}\)", text, re.S):
         bundles[name] = re.findall(r'"([a-z0-9-]+)"', body)
     return bundles
 
@@ -51,9 +58,10 @@ def test_the_original_50_slim_inputs_and_generated_infantry_partition_the_catalo
         "ArabArmies": GENERATED_PEOPLE,
         "GeneratedFigures": GENERATED_FIGURES,
         "GeneratedProps": GENERATED_PROPS,
+        "GeneratedTowns": GENERATED_TOWNS,
     }
     assert len(slim.IDS) == len(set(slim.IDS)) == 50
-    assert not set(GENERATED_PEOPLE + GENERATED_FIGURES + GENERATED_PROPS) & set(slim.IDS), "new generated sources must not enter the original FBX converter"
+    assert not set(GENERATED_PEOPLE + GENERATED_FIGURES + GENERATED_PROPS + GENERATED_TOWNS) & set(slim.IDS), "new generated sources must not enter the original FBX converter"
     assert all(not i.startswith("b") for i in slim.IDS), "the buildings are #659's"
 
 

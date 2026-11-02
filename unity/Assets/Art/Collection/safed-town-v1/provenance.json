@@ -1,0 +1,22 @@
+{
+  "id": "safed-town-v1",
+  "source": "asset-sources/prepared-towns-20261031/safed/statecraft-safed-approved-textured-1e2b8e59.glb",
+  "source_glb_sha256": "66b1894a58fd89f3786134906b9a25f8b23fe673884c11c1954b8411b1fb42b7",
+  "creator_credit": "Tal Heuberger",
+  "licence": "CC-BY-NC-ND-4.0",
+  "pull_request": 2085,
+  "texture_dimensions": [
+    2048,
+    2048
+  ],
+  "texture_sha256": "6aed6b042a24ffed5246a948d4c46307f208b81c6332a790b08ced2e8b04ac96",
+  "compatibility_fbx_sha256": "27d4edcad209c12ec87c077cb1004f063bec3fe661083b3e1411209a7ea15a12",
+  "triangles": 4485,
+  "geometry_max_vertex_error": 6.664001972467304e-08,
+  "uv_max_error": 0.0,
+  "triangle_connectivity": "identical",
+  "blender": "5.0.1",
+  "decimation": false,
+  "welding": false,
+  "conversion": "Standard glTF Y-up / FBX Y-up compatibility export (Tal's permission of 31 October 2026 covers export conversions); no pivot, mesh or UV rewrite; no clips in the source; map copied byte for byte from the delivered JPG"
+}
