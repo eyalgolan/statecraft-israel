@@ -77,6 +77,8 @@ public class CollectionOtherLeaveTests
         // Owner ruling 29 (30 Oct 2026): "Far models map-wide (Recommended)": craft and special buildings keep their v0.3.1 map-wide originals.
         // Leaving neither destroys nor releases them; only teardown does. The exception is Tal Heuberger's four props (owner, 2 November
         // 2026, on #2274: "Near-only for these props"): those wanted on this date (the well, the crates, the wall) retire on leave.
+        // This harness's policy is permissive (1,000 km); the production distances are covered by SpecialBuildingModelsTests'
+        // TheFourPropsStreamOnlyNearTheCameraAndTheOtherSpecialsStayMapWide and ThePropsResidencyHasItsEnterExitBandAndHeightGate.
         int nearOnly = special ? SpecialBuildingModels.Placements(new DateTime(1948, 5, 15)).Count(w => w.NearOnly) : 0;
         if (special) Assert.AreEqual(3, nearOnly, "the well, the crates and the wall on 15 May 1948");
         int children = layer.transform.childCount; var first = layer.transform.GetChild(0);
@@ -96,6 +98,9 @@ public class CollectionOtherLeaveTests
         int nearOnly = special ? SpecialBuildingModels.Placements(new DateTime(1948, 5, 15)).Count(w => w.NearOnly) : 0;
         Assert.Greater(acquired, 0); Assert.AreEqual(nearOnly, released, "no map-wide lease retires on leave; each near-only prop's does (#2274)");
         Assert.Greater(layer.transform.childCount, 0, "the late answers of a map-wide demand draw");
+        if (special)
+            foreach (var w in SpecialBuildingModels.Placements(new DateTime(1948, 5, 15)).Where(w => w.NearOnly))
+                Assert.IsNull(layer.transform.Find(w.Key), w.Key + ": a late answer for a departed near-only prop draws nothing (#2274)");
         Object.DestroyImmediate(layer.gameObject);
         int objects = Object.FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length;
         foreach (var done in pending.ToArray()) done(prefab);   // answers after teardown rebuild nothing and throw nothing

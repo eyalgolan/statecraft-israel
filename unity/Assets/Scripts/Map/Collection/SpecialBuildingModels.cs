@@ -64,6 +64,9 @@ namespace Statecraft.Game.Map.Collection
         /// spot"): a spot farther out is not drawn, with a warning.</summary>
         public const float MaxPropOffsetM = 1500f;
 
+        /// <summary>Red-first stub: the cap a test may lower.</summary>
+        internal static float MaxPropOffset = MaxPropOffsetM;
+
         /// <summary>A row's long side on the map (m): its model's real size at the world scale times the row's own scale.</summary>
         public static float SizeOf(Want w) => RealLengthM(w.Model) * WorldScale * w.Scale;
 

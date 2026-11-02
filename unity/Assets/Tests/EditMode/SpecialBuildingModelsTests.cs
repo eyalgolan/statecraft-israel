@@ -255,75 +255,220 @@ namespace Statecraft.Game.Tests
 
         static readonly string[] PropKeys = { "beersheba_abrahams_well", "tel_aviv_altalena_sandbags", "haifa_quay_crates", "abu_ghosh_road_wall" };
 
+        /// <summary>A lease that records each release and every second release of itself (which must never happen).</summary>
         sealed class ProbeLease : IDisposable
         {
-            Action? done; public ProbeLease(Action done) { this.done = done; }
-            public void Dispose() { var call = done; done = null; call?.Invoke(); }
+            readonly Action done; readonly List<string> twice; readonly string id; bool disposed;
+            public ProbeLease(string id, Action done, List<string> twice) { this.id = id; this.done = done; this.twice = twice; }
+            public void Dispose() { if (disposed) { twice.Add(id); return; } disposed = true; done(); }
+        }
+
+        /// <summary>A special-building layer on <paramref name="map"/> under <paramref name="policy"/>, its acquisitions and releases
+        /// counted by model, every answer the real Near prefab (or held back in <paramref name="pending"/> when given).</summary>
+        static SpecialBuildingModels CountingLayer(MapScene map, CollectionResidencyPolicy policy, List<string> acquired, List<string> released,
+            List<string> twice, List<(string id, Action<GameObject?> done)>? pending = null)
+        {
+            var go = new GameObject(SpecialBuildingModels.Name); go.transform.SetParent(map.Terrain.transform, false);
+            var layer = go.AddComponent<SpecialBuildingModels>();
+            typeof(SpecialBuildingModels).GetField("map", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.SetValue(layer, map);
+            layer.ConfigureResidency(policy, (id, detail, done) =>
+            {
+                acquired.Add(id);
+                if (pending != null) pending.Add((id, done));
+                else done(AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(id, CollectionDetail.Near)));
+                return new ProbeLease(id, () => released.Add(id), twice);
+            });
+            return layer;
+        }
+
+        /// <summary>Looks straight down from <paramref name="height"/> m over a point <paramref name="east"/> m east of
+        /// <paramref name="anchor"/> (the residency view measures on the ground plane, round the view's ground focus).</summary>
+        static void Look(SpecialBuildingModels layer, Camera cam, Vector3 anchor, float east, float height)
+        {
+            cam.transform.SetPositionAndRotation(new Vector3(anchor.x + east, height, anchor.z), Quaternion.Euler(90f, 0f, 0f));
+            layer.Choose(default, cam);
         }
 
         /// <summary>The owner, 2 November 2026, on #2274: "Near-only for these props (Recommended)" ("These four small props download
         /// only when the camera comes close to them; the Dakota stays map-wide (craft ruling)"). With the production special-building
         /// policy (ProductionResidency.Approved().Special): at the opening view (90 km) none of the four props' bundles is asked for,
         /// while every other special keeps its map-wide request (owner ruling 29, 30 October 2026, "Far models map-wide"); a close
-        /// view over one prop asks for that prop alone; leaving releases it and nothing else.</summary>
+        /// view over one prop asks for that prop alone, once; leaving releases it once and nothing else; teardown releases every
+        /// lease once. (CollectionOtherLeaveTests runs a permissive harness policy; the production distances are covered here and
+        /// in ThePropsResidencyHasItsEnterExitBandAndHeightGate.)</summary>
         [Test]
         public void TheFourPropsStreamOnlyNearTheCameraAndTheOtherSpecialsStayMapWide()
         {
             var map = OpenMap();
-            var go = new GameObject(SpecialBuildingModels.Name); go.transform.SetParent(map.Terrain.transform, false);
-            var layer = go.AddComponent<SpecialBuildingModels>();
-            typeof(SpecialBuildingModels).GetField("map", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.SetValue(layer, map);
-            var acquired = new List<string>(); var released = new List<string>();
-            layer.ConfigureResidency(ProductionResidency.Approved().Special, (id, detail, done) =>
-            {
-                acquired.Add(id); done(AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(id, CollectionDetail.Near)));
-                return new ProbeLease(() => released.Add(id));
-            });
+            var acquired = new List<string>(); var released = new List<string>(); var twice = new List<string>();
+            var layer = CountingLayer(map, ProductionResidency.Approved().Special, acquired, released, twice);
             var date = new DateTime(1948, 6, 15);
             SpecialBuildingModels.ShowAt(map, date);
             var cam = new GameObject("TEST camera").AddComponent<Camera>();
             try
             {
-                void View(Vector3 over, float height)
-                {
-                    cam.transform.SetPositionAndRotation(new Vector3(over.x, height, over.z), Quaternion.Euler(90f, 0f, 0f));
-                    layer.Choose(default, cam);
-                }
                 var wants = SpecialBuildingModels.Placements(date);
                 var props = wants.Where(w => PropKeys.Contains(w.Key)).ToList();
                 Assert.AreEqual(4, props.Count, "all four props are wanted on 15 June 1948");
                 Assert.IsTrue(props.All(w => w.NearOnly), "the four props are near-only");
                 Assert.IsTrue(wants.Where(w => !PropKeys.Contains(w.Key)).All(w => !w.NearOnly), "no other special is");
                 var tel = map.Frame.ToWorld(34.78, 32.08, 0);
-                View(tel, 90000f);   // the opening distance (90 km)
+                Look(layer, cam, tel, 0f, 90000f);   // the opening distance (90 km)
                 var propModels = props.Select(w => w.Model).ToArray();
-                CollectionAssert.IsEmpty(acquired.Intersect(propModels), "no prop's bundle at the opening view");
-                CollectionAssert.Contains(acquired, SpecialBuildingModels.Tegart, "the other specials stay map-wide");
-                var others = acquired.ToList();
+                Assert.AreEqual(0, acquired.Count(propModels.Contains), "no prop's bundle at the opening view");
+                Assert.AreEqual(1, acquired.Count(id => id == SpecialBuildingModels.Tegart), "the other specials stay map-wide, each asked once");
+                int before = acquired.Count;
                 var well = props.Single(w => w.Key == "beersheba_abrahams_well");
                 var at = map.Frame.ToWorld(well.Lon, well.Lat, 0);
-                View(at, 6000f);   // the closest zoom, over Abraham's Well
-                CollectionAssert.AreEqual(new[] { SpecialBuildingModels.Well }, acquired.Except(others).ToArray(), "the well alone, when the camera is close to it");
+                Look(layer, cam, at, 0f, 4000f);   // well inside the 6 km enter distance and the 30 km view gate
+                Assert.AreEqual(before + 1, acquired.Count, "one new request");
+                Assert.AreEqual(1, acquired.Count(id => id == SpecialBuildingModels.Well), "the well, once, when the camera is close to it");
                 Assert.IsTrue(layer.Placed.Any(p => p.Key == "beersheba_abrahams_well"), "and it is drawn");
-                View(tel, 250000f);   // leave
-                CollectionAssert.AreEqual(new[] { SpecialBuildingModels.Well }, released.ToArray(), "leaving releases the well and nothing else");
+                Look(layer, cam, tel, 0f, 250000f);   // leave
+                CollectionAssert.AreEqual(new[] { SpecialBuildingModels.Well }, released.ToArray(), "leaving releases the well, once, and nothing else");
                 Assert.IsFalse(layer.Placed.Any(p => p.Key == "beersheba_abrahams_well"), "and it is no longer drawn");
                 Assert.IsTrue(layer.Placed.Any(p => p.Model == SpecialBuildingModels.Tegart), "the map-wide specials stay");
             }
-            finally { UnityEngine.Object.DestroyImmediate(cam.gameObject); UnityEngine.Object.DestroyImmediate(go); }
+            finally { UnityEngine.Object.DestroyImmediate(cam.gameObject); UnityEngine.Object.DestroyImmediate(layer.gameObject); }
+            Assert.AreEqual(acquired.Count, released.Count, "teardown releases every lease");
+            CollectionAssert.AreEquivalent(acquired, released, "each lease released once");
+            CollectionAssert.IsEmpty(twice, "no lease released twice");
         }
 
-        /// <summary>The four props' spots stay within <see cref="SpecialBuildingModels.MaxPropOffsetM"/> (1.5 km) of their sourced
-        /// points in code (owner on #2274: "right by the sourced spot"): a spot farther out is not drawn, with a warning. Every row of
-        /// a model carries the same scale, so a model's size reads the same from any of its rows.</summary>
+        /// <summary>The production policy's band and gate round a near-only prop: enter within 6 km of its point (plus its clearance),
+        /// stay until past 8 km, so 7, 7.9 and 6.1 km neither release nor re-ask; past 8 km releases it once; re-entering asks once
+        /// more. The 30 km height gate (40 km to leave it) applies too: right over the prop but higher than 30 km asks nothing;
+        /// at 25 km it asks; at 35 km it stays; at 45 km it is released. The camera stays at 4 km, well under both bounds.</summary>
         [Test]
-        public void ThePropsCapAndTheRowScalesAreConsistent()
+        public void ThePropsResidencyHasItsEnterExitBandAndHeightGate()
         {
-            Assert.AreEqual(1500f, SpecialBuildingModels.MaxPropOffsetM);
+            var map = OpenMap();
+            var acquired = new List<string>(); var released = new List<string>(); var twice = new List<string>();
+            var layer = CountingLayer(map, ProductionResidency.Approved().Special, acquired, released, twice);
+            SpecialBuildingModels.ShowAt(map, new DateTime(1952, 4, 15));   // the well alone of the four, with the map-wide specials
+            var cam = new GameObject("TEST camera").AddComponent<Camera>();
+            try
+            {
+                var well = SpecialBuildingModels.EveryPlacement.Single(w => w.Key == "beersheba_abrahams_well");
+                var at = map.Frame.ToWorld(well.Lon, well.Lat, 0);
+                int Asked() => acquired.Count(id => id == SpecialBuildingModels.Well);
+                int Released() => released.Count(id => id == SpecialBuildingModels.Well);
+                Look(layer, cam, at, 0f, 90000f);
+                Assert.AreEqual(0, Asked(), "not at the opening view");
+                Look(layer, cam, at, 5000f, 4000f);
+                Assert.AreEqual(1, Asked(), "asked within 6 km");
+                foreach (var east in new[] { 7000f, 7900f, 6100f, 7900f })
+                {
+                    Look(layer, cam, at, east, 4000f);
+                    Assert.AreEqual(1, Asked(), $"no new ask at {east} m");
+                    Assert.AreEqual(0, Released(), $"no release at {east} m (inside 8 km)");
+                }
+                Look(layer, cam, at, 8500f, 4000f);
+                Assert.AreEqual(1, Released(), "released once past 8 km");
+                Look(layer, cam, at, 9000f, 4000f);
+                Assert.AreEqual(1, Released(), "still once");
+                Look(layer, cam, at, 7000f, 4000f);
+                Assert.AreEqual(1, Asked(), "7 km, coming back, is not inside 6 km: no ask");
+                Look(layer, cam, at, 5000f, 4000f);
+                Assert.AreEqual(2, Asked(), "re-entering asks once more");
+                Look(layer, cam, at, 0f, 250000f);
+                Assert.AreEqual(2, Released(), "and leaving releases it once more");
+                // The height gate, right over the well.
+                Look(layer, cam, at, 0f, 35000f);
+                Assert.AreEqual(2, Asked(), "higher than 30 km: no ask");
+                Look(layer, cam, at, 0f, 25000f);
+                Assert.AreEqual(3, Asked(), "under 30 km: asked");
+                Look(layer, cam, at, 0f, 35000f);
+                Assert.AreEqual(2, Released(), "35 km is inside the 40 km gate: kept");
+                Look(layer, cam, at, 0f, 45000f);
+                Assert.AreEqual(3, Released(), "past 40 km: released");
+            }
+            finally { UnityEngine.Object.DestroyImmediate(cam.gameObject); UnityEngine.Object.DestroyImmediate(layer.gameObject); }
+            CollectionAssert.AreEquivalent(acquired, released, "teardown releases every lease once");
+            CollectionAssert.IsEmpty(twice, "no lease released twice");
+        }
+
+        /// <summary>A town-edge prop whose nearest clear spot is farther than the cap from its sourced point is not drawn, its bundle
+        /// is not asked for even with the camera close (no wasted fetch), and its warning is logged once, not on every redraw. The cap
+        /// is forced down to 1 m (a test seam) so every prop on 15 May 1948 is past it.</summary>
+        [Test]
+        public void APropPastTheCapIsNotDrawnNotFetchedAndWarnsOnce()
+        {
+            var map = OpenMap();
+            var saved = SpecialBuildingModels.MaxPropOffset;
+            SpecialBuildingModels.MaxPropOffset = 1f;
+            var acquired = new List<string>(); var released = new List<string>(); var twice = new List<string>();
+            var cam = new GameObject("TEST camera").AddComponent<Camera>();
+            SpecialBuildingModels? layer = null;
+            try
+            {
+                var date = new DateTime(1948, 5, 15);
+                var capped = SpecialBuildingModels.Placements(date).Where(w => w.NearOnly).ToList();
+                Assert.AreEqual(3, capped.Count, "the well, the crates and the wall on 15 May 1948");
+                foreach (var w in capped)
+                    LogAssert.Expect(LogType.Warning, new Regex($"^BUILDINGS: the nearest clear spot for {w.Key} is \\d+ m from its sourced point, past 1 m"));
+                layer = CountingLayer(map, new CollectionResidencyPolicy(1000000, 1000001, 1000000, 1000001, 0, "TEST ONLY"), acquired, released, twice);
+                SpecialBuildingModels.ShowAt(map, date);
+                for (int i = 0; i < 3; i++) Look(layer, cam, map.Frame.ToWorld(34.8, 31.8, 0), 0f, 4000f);
+                foreach (var w in capped)
+                {
+                    Assert.IsFalse(layer.Placed.Any(p => p.Key == w.Key), w.Key + " is not drawn");
+                    Assert.AreEqual(0, acquired.Count(id => id == w.Model), w.Key + "'s bundle is not asked for");
+                }
+                Assert.IsTrue(layer.Placed.Any(p => p.Key == "latrun_tegart"), "the uncapped specials still draw");
+                LogAssert.NoUnexpectedReceived();
+            }
+            finally
+            {
+                SpecialBuildingModels.MaxPropOffset = saved;
+                UnityEngine.Object.DestroyImmediate(cam.gameObject);
+                if (layer != null) UnityEngine.Object.DestroyImmediate(layer.gameObject);
+            }
+        }
+
+        /// <summary>Residency is keyed by model, so near-only must be one value for every row of a model (else a map-wide row would keep
+        /// a near-only prop's bundle resident), as the scale is.</summary>
+        [Test]
+        public void NearOnlyAndScaleAreUniformPerModel()
+        {
             foreach (var g in SpecialBuildingModels.EveryPlacement.GroupBy(w => w.Model))
+            {
+                Assert.AreEqual(1, g.Select(w => w.NearOnly).Distinct().Count(), g.Key + ": one near-only value for all its rows");
                 Assert.AreEqual(1, g.Select(w => w.Scale).Distinct().Count(), g.Key + ": one scale for all its rows");
-            foreach (var w in SpecialBuildingModels.EveryPlacement)
-                Assert.AreEqual(SpecialBuildingModels.RealLengthM(w.Model) * SpecialBuildingModels.WorldScale * w.Scale, SpecialBuildingModels.SizeOf(w), 0.01f, w.Key + ": its row's own scale");
+            }
+        }
+
+        /// <summary>Where the specials stand does not depend on the order their bundles arrive (#2266's contract): every spot is
+        /// planned from the full wanted list before any model is drawn. Answered in catalogue order and in reverse, the same
+        /// keys stand at the same points.</summary>
+        [Test]
+        public void SpotsDoNotDependOnTheOrderTheBundlesArrive()
+        {
+            var map = OpenMap();
+            var wide = new CollectionResidencyPolicy(1000000, 1000001, 1000000, 1000001, 0, "TEST ONLY");
+            var date = new DateTime(1948, 6, 15);
+            Dictionary<string, Vector3> Place(bool reverse)
+            {
+                var acquired = new List<string>(); var released = new List<string>(); var twice = new List<string>();
+                var pending = new List<(string id, Action<GameObject?> done)>();
+                var layer = CountingLayer(map, wide, acquired, released, twice, pending);
+                var cam = new GameObject("TEST camera").AddComponent<Camera>();
+                try
+                {
+                    SpecialBuildingModels.ShowAt(map, date);
+                    Look(layer, cam, map.Frame.ToWorld(34.8, 31.8, 0), 0f, 4000f);
+                    var order = reverse ? pending.AsEnumerable().Reverse().ToList() : pending.ToList();
+                    Assert.Greater(order.Count, 4, "the specials and the props are asked for");
+                    foreach (var (id, done) in order) done(AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(id, CollectionDetail.Near)));
+                    return layer.Placed.ToDictionary(p => p.Key, p => p.At);
+                }
+                finally { UnityEngine.Object.DestroyImmediate(cam.gameObject); UnityEngine.Object.DestroyImmediate(layer.gameObject); }
+            }
+            var forward = Place(false); var backward = Place(true);
+            CollectionAssert.AreEquivalent(forward.Keys, backward.Keys, "the same specials drawn");
+            CollectionAssert.IsSubsetOf(PropKeys, forward.Keys.ToList(), "the four props among them");
+            foreach (var key in forward.Keys)
+                Assert.Less((forward[key] - backward[key]).magnitude, 0.01f, key + " stands at the same point whatever the arrival order");
         }
 
         /// <summary>The owner, 2 November 2026, on #2274: "Bigger, closer (Recommended)" ("Draw these four at about 3x so they read at
