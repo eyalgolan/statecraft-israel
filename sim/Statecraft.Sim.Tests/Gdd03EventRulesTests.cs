@@ -362,7 +362,7 @@ public class Gdd03EventRulesTests
         "clothing_rationing_1950:ce2d24a8a98ad86a1670e62094d18fca9da71b5cd11f437cd5314a09f4a1d562", // re-pinned for #1065 (Beri's native Hebrew read)
         "degania_defence:f915a42f050777ddffd7e7e26090b51c6cf922dade41a98fe7174b1c50a62c6e", // re-pinned for #2020 (owner-approved Hebrew wording, 30 October 2026), then for #1065 (Beri's native Hebrew read)
         "deport_acre:714da03af33c5de781f5ba2aa77f9de394619f69f8ce90c5b126bdfbf238c64b", // added for #801 (Deport's follow-up cards, drafts)
-        "deport_nazareth:8147e079b48741b07cfd8a400da4eac93f1a0deeb6af0f046cfafed7163020e0", // added for #801 (Deport's follow-up cards, drafts)
+        "deport_nazareth:59d434e801c347bcb637eb49cc9f38c8186b7dfa47d49183735d7f08cbde449d", // added for #801 (Deport's follow-up cards, drafts), re-pinned for #2197 ("near the town", source packet N5)
         "education_registration_1951:1d5cb0e4062dc61b787a7e1b375b3c85c9a1663bd4c3c73f3c9c6f9ee5ac4da3", // re-pinned for #1065 (Beri's native Hebrew read)
         "elections_1949:962bd8064e8b98d4919be9b4ff4fab68cb9bd3d15213ea43917caa4432f42116", // re-pinned for #1065 (Beri's native Hebrew read)
         "first_new_yishuv:9edf9e0da02c2feefe11eb52aa056ee64af60a41ac3fa2c283ff976f33d0e0c8",

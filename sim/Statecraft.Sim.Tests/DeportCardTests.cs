@@ -32,6 +32,38 @@ public class DeportCardTests
         Assert.Contains(stepped.Why, w => w.Key == CauseKeys.EventNew && w.Target == "after_town_a");
     }
 
+    /// <summary>A hard anchor whose window opens the day after the game's start, so it fires on the first turn's event step.</summary>
+    static string Hard(string id) => $"id: {id}\ntitle: {id}\ntext: A hard card.\nanchor: hard\nfrom: 1948-05-16\noptions:\n  - id: ok\n    text: OK\n    historical: true\n"
+        + "sources: [{ url: \"https://example.org/hard\", checked: 2026-11-02 }]\nstatus: fact-checked\n";
+
+    // R-EVT-007: the card takes no soft slot, so three hard anchors on the Deport turn, which leave the soft cards none
+    // (R-EVT-001), do not push it to a later turn.
+    [Fact]
+    public void TheCardFiresOnTheDeportTurnEvenWhenTheSoftSlotsAreFull()
+    {
+        var c = DeportTests.Load(files =>
+        {
+            files["events/after_town_a.yaml"] = Card;
+            foreach (var id in new[] { "hard_one", "hard_two", "hard_three" }) files[$"events/{id}.yaml"] = Hard(id);
+        });
+        var stepped = Answer(c, DeportTests.Awaiting(c, DeportTests.Soldier(1, 1, 0)), SettlementControl.Deport).State;
+        Assert.Contains("hard_three", stepped.PendingEvents);
+        Assert.True(stepped.Settlements["town_a"].Depopulated);
+        Assert.Contains("after_town_a", stepped.PendingEvents);
+    }
+
+    // R-EVT-007: the card follows its own place only; a Deport of another target leaves it unfired.
+    [Fact]
+    public void ADeportOfAnotherPlaceFiresNoCard()
+    {
+        var c = Load();
+        var s = CombatTests.With(c, DeportTests.Soldier(1, 4, 0));
+        s.Settlements["town_c"] = new SettlementControl(Movement.PlayerSide, SettlementControl.AwaitingChoice, s.Date);
+        var stepped = Simulation.Step(c, s, new Command[] { new ResolveCapture("town_c", SettlementControl.Deport) }).State;
+        Assert.True(stepped.Settlements["town_c"].Depopulated);
+        Assert.DoesNotContain("after_town_a", stepped.FiredEvents);
+    }
+
     // R-EVT-007: Raid and Occupy depopulate nothing, so neither fires the card.
     [Theory]
     [InlineData(SettlementControl.Raid)]
@@ -59,12 +91,14 @@ public class DeportCardTests
     }
 
     // R-EVT-007: the loader refuses a card whose place is not a target, whose residents fled (Deport is refused there,
-    // R-CTRL-018, so it could never fire), that lacks the displacement tag (so the release gate holds it, R-GATE-001), or
-    // that has more than one option.
+    // R-CTRL-018, so it could never fire), that lacks the displacement tag (so the release gate holds it, R-GATE-001), that
+    // has more than one option, a `to` (a window that closes before a later Deport), or another card kind's key.
     [Theory]
     [InlineData("deported: town_a", "deported: town_x", "events[after_town_a].deported")]
     [InlineData("tags: [displacement]", "tags: [security]", "events[after_town_a].tags")]
     [InlineData("    text: Continue\n", "    text: Continue\n  - id: other\n    text: Other\n", "events[after_town_a].options")]
+    [InlineData("from: 1948-05-15\n", "from: 1948-05-15\nto: 1949-01-01\n", "events[after_town_a].to")]
+    [InlineData("from: 1948-05-15\n", "from: 1948-05-15\nprisoners: egypt\n", "events[after_town_a].prisoners")]
     public void TheLoaderRefusesABadCard(string from, string to, string field)
     {
         var ex = Assert.Throws<ContentException>(() => Load(Card.Replace(from, to)));

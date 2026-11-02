@@ -1449,7 +1449,8 @@ namespace Statecraft.Sim
 
         /// <summary>A Deport follow-up card (R-EVT-007; GDD Phase 6 PR 9, #801): a settlement target whose residents stayed,
         /// since Deport is refused where they fled (R-CTRL-018) and the card could never fire; the displacement tag, so the
-        /// release gate holds it until the owner's review (R-GATE-001); and one option, which Delegate resolves without a draw.</summary>
+        /// release gate holds it until the owner's review (R-GATE-001); one option, which Delegate resolves without a draw; no `to`,
+        /// whose closed window would miss a later Deport; and no `prisoners`.</summary>
         static void ValidateEventDeported(Content c)
         {
             foreach (var e in c.Events.Where(e => e.Deported != ""))
@@ -1462,6 +1463,10 @@ namespace Statecraft.Sim
                     throw new ContentException(e.File, $"events[{e.Id}].tags", "a Deport card carries the displacement tag (R-GATE-001)");
                 if (e.Options.Count != 1)
                     throw new ContentException(e.File, $"events[{e.Id}].options", "a Deport card has exactly one option");
+                if (e.To != null)
+                    throw new ContentException(e.File, $"events[{e.Id}].to", "a Deport card has no to: a closed window would miss a later Deport");
+                if (e.Prisoners != "")
+                    throw new ContentException(e.File, $"events[{e.Id}].prisoners", "a Deport card is not an exchange card");
             }
         }
 

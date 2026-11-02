@@ -49,9 +49,10 @@ namespace Statecraft.Sim
                 .ThenBy(e => e.Objective == "" ? -1 : c.Objectives.FindIndex(o => o.Id == e.Objective)).ThenBy(e => e.Order)
                 .ThenBy(e => e.Id, StringComparer.Ordinal)
                 .ToList();
+            // R-EVT-007: a Deport card takes no soft slot, so it fires on its Deport's turn however full that turn is.
             var hardCount = eligible.Count(e => e.Anchor == "hard");
-            var chosen = new HashSet<string>(eligible.Where(e => e.Anchor == "hard")
-                .Concat(eligible.Where(e => e.Anchor != "hard").Take(Math.Max(0, MaxSoftEventsPerTurn - hardCount))).Select(e => e.Id));
+            var chosen = new HashSet<string>(eligible.Where(e => e.Anchor == "hard" || e.Deported != "")
+                .Concat(eligible.Where(e => e.Anchor != "hard" && e.Deported == "").Take(Math.Max(0, MaxSoftEventsPerTurn - hardCount))).Select(e => e.Id));
             foreach (var e in eligible.Where(e => chosen.Contains(e.Id)))
             {
                 s.FiredEvents.Add(e.Id);
