@@ -444,10 +444,11 @@ public class UiLayoutTests
             {
                 new HudPresenter(root, bridge, text), new EventCardPresenter(root, bridge, text, null),
                 new CabinetPresenter(root, bridge, text, null), new BudgetPresenter(root, bridge, text),
-                new DefencePresenter(root, bridge, text), new WhyPresenter(root, bridge, text), new HowToPlayPresenter(root, text),
+                new DefencePresenter(root, bridge, text), new WhyPresenter(root, bridge, text),
                 new ObjectivesPresenter(root, bridge, text),
             };
             var nav = new ScreenNav(root);
+            disposables.Add(new EncyclopediaPresenter(root, text, AdvisorCatalog.Load(), nav, null));
             try
             {
                 for (int i = 0; i < 20 && float.IsNaN(root.Q("minimap").worldBound.width); i++) yield return null;

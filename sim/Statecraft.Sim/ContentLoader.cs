@@ -310,19 +310,38 @@ namespace Statecraft.Sim
         /// ("people.yaml", "events/x.yaml") and returns the file's text, or null when it is missing. This is the
         /// entry point for platforms without a file system (a WebGL build reads StreamingAssets through a URL).
         /// <paramref name="eventFiles"/> are the event files, relative to the content root; they load in ordinal order.</summary>
-        public static Content Load(Func<string, string?> readFile, IEnumerable<string> eventFiles)
+        public static Content Load(Func<string, string?> readFile, IEnumerable<string> eventFiles) =>
+            Load(readFile, eventFiles, _ => null, Enumerable.Empty<string>());
+
+        /// <summary>Loads content as the overload above does, with the translations <paramref name="translationFiles"/> lists
+        /// ("ro/ui.yaml", as TranslationLoader.Collect gives them), which <paramref name="readTranslation"/> reads relative to
+        /// the translations folder (#1618 step 2). Each language is checked against the content and kept in
+        /// <see cref="Content.Translations"/>, outside the hash.</summary>
+        public static Content Load(Func<string, string?> readFile, IEnumerable<string> eventFiles,
+            Func<string, string?> readTranslation, IEnumerable<string> translationFiles)
         {
             if (readFile == null) throw new ArgumentNullException(nameof(readFile));
             if (eventFiles == null) throw new ArgumentNullException(nameof(eventFiles));
+            if (readTranslation == null) throw new ArgumentNullException(nameof(readTranslation));
+            if (translationFiles == null) throw new ArgumentNullException(nameof(translationFiles));
             var read = new List<(string rel, string text)>();
             var inner = readFile;
+            static string? NoMark(string? text) =>
+                text != null && text.Length > 0 && text[0] == '\uFEFF' ? text.Substring(1) : text;   // a byte-order mark is not content
             readFile = rel =>
             {
-                var text = inner(rel);
-                if (text != null && text.Length > 0 && text[0] == '\uFEFF') text = text.Substring(1);   // a byte-order mark is not content
+                var text = NoMark(inner(rel));
                 if (text != null) read.Add((rel, text));
                 return text;
             };
+            // The translation checks read content files outside the hash (a translation is display text, and may name a
+            // file the sim never reads), and a read failure keeps its file rather than passing for a missing file.
+            string? Unhashed(string rel)
+            {
+                try { return NoMark(inner(rel)); }
+                catch (IOException e) { throw new ContentException(rel, "(file)", e.Message); }
+                catch (UnauthorizedAccessException e) { throw new ContentException(rel, "(file)", e.Message); }
+            }
             var c = new Content();
             c.Offices = Read<OfficesFile>(readFile, "offices.yaml").Offices;
             c.Parties = Read<PartiesFile>(readFile, "parties.yaml").Parties;
@@ -383,6 +402,7 @@ namespace Statecraft.Sim
             // set without objectives has no file.
             // In the file's order, not sorted: it is the order objectives record and their cards fire in (R-OBJ-007, Q-CARD-2).
             c.Objectives = ReadOptional<ObjectivesFile>(readFile, ObjectivesFileName)?.Objectives ?? new List<Objective>();
+            var allEvents = c.Events.ToList();   // before a ruleset leaves some out: their translations still name real events
             // Leave malformed legacy era records to the original validation path (Ruleset needs Systems).
             if (c.Eras.Count > 0 && c.Eras[0].Systems != null && c.Ruleset == SaveGame.Gdd03Ruleset)
             {
@@ -418,6 +438,7 @@ namespace Statecraft.Sim
             EventRules.ValidateStructured(c);   // R-EFX-006: after the GDD records it names are read
             c.BuildWindows();
             c.Hash = HashOf(read);
+            c.Translations = TranslationLoader.Load(allEvents, Unhashed, readTranslation, translationFiles);
             return c;
         }
 
@@ -494,8 +515,13 @@ namespace Statecraft.Sim
             return string.Concat(sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes(sb.ToString())).Select(b => b.ToString("x2", System.Globalization.CultureInfo.InvariantCulture)));
         }
 
-        /// <summary>Loads content from a directory: every events/*.yaml file is an event.</summary>
-        public static Content Load(string contentRoot)
+        /// <summary>Loads content from a directory: every events/*.yaml file is an event. The translations are those beside it
+        /// (TranslationLoader.Beside: translations/ next to a folder named content), when there are any.</summary>
+        public static Content Load(string contentRoot) => Load(contentRoot, TranslationLoader.Beside(contentRoot));
+
+        /// <summary>Loads content from a directory with the translations in <paramref name="translationsRoot"/> (none when it
+        /// is null or missing).</summary>
+        public static Content Load(string contentRoot, string? translationsRoot)
         {
             var eventsDir = Path.Combine(contentRoot, "events");
             var eventFiles = Directory.Exists(eventsDir)
@@ -505,7 +531,11 @@ namespace Statecraft.Sim
             {
                 var path = Path.Combine(contentRoot, rel);
                 return File.Exists(path) ? File.ReadAllText(path) : null;
-            }, eventFiles);
+            }, eventFiles, rel =>
+            {
+                var path = Path.Combine(translationsRoot!, rel);   // only called for a file Collect found there
+                return File.Exists(path) ? File.ReadAllText(path) : null;
+            }, TranslationLoader.Collect(translationsRoot));
             // Only this overload can list the directory. The readFile overload (WebGL) cannot, so a misnamed file is caught
             // here and by RealContentTests before anything ships.
             var rulesDir = Path.Combine(contentRoot, "rules");
@@ -1300,6 +1330,19 @@ namespace Statecraft.Sim
                 if (!(m.ArmsPrice >= 0 && IsFinite(m.ArmsPrice.Value))) throw new ContentException(file, "mvp.arms_price", "must be a finite number >= 0");
                 if (m.ArmsPerRecruitGroup == null) throw new ContentException(file, "mvp.arms_per_recruit_group", "required when eras.yaml systems.loop is gdd");
                 if (m.ArmsPerRecruitGroup < 0) throw new ContentException(file, "mvp.arms_per_recruit_group", "must be >= 0");
+                // R-MONEY-004: required, so a missing key never makes the lever free, unlimited or worthless.
+                if (m.DollarsPerTurn == null) throw new ContentException(file, "mvp.dollars_per_turn", "required when eras.yaml systems.loop is gdd");
+                if (m.DollarsPerTurn < 0) throw new ContentException(file, "mvp.dollars_per_turn", "must be >= 0");
+                if (m.DollarsTotal == null) throw new ContentException(file, "mvp.dollars_total", "required when eras.yaml systems.loop is gdd");
+                if (m.DollarsTotal < 0) throw new ContentException(file, "mvp.dollars_total", "must be >= 0");
+                if (m.IlPerDollar.Count == 0) throw new ContentException(file, "mvp.il_per_dollar", "required when eras.yaml systems.loop is gdd (at least one dated rate)");
+                for (int i = 0; i < m.IlPerDollar.Count; i++)
+                {
+                    var x = m.IlPerDollar[i]; var at = FormattableString.Invariant($"mvp.il_per_dollar[{i}]");
+                    if (!(x.Rate >= 0 && IsFinite(x.Rate))) throw new ContentException(file, at + ".rate", "must be a finite number >= 0");
+                    if (i == 0 && x.From > r.Start) throw new ContentException(file, at + ".from", "the first rate must start on or before the start, so every turn has one");
+                    if (i > 0 && x.From <= m.IlPerDollar[i - 1].From) throw new ContentException(file, at + ".from", "must be after the previous rate's day");
+                }
                 // R-UNIT-010, R-UNIT-004: omitted values must not silently make upkeep free or promotion immediate.
                 if (m.MilitaryUpkeepPerTurn == null) throw new ContentException(file, "mvp.military_upkeep_per_turn", "required when eras.yaml systems.loop is gdd");
                 if (!(m.MilitaryUpkeepPerTurn >= 0 && IsFinite(m.MilitaryUpkeepPerTurn.Value))) throw new ContentException(file, "mvp.military_upkeep_per_turn", "must be a finite number >= 0");

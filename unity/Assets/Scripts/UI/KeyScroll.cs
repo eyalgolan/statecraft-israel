@@ -18,7 +18,7 @@ namespace Statecraft.Game.UI
         static readonly Dictionary<string, string> MainViews = new Dictionary<string, string>
         {
             ["cabinet"] = "cabinet-seats", ["budget"] = "budget-rows", ["defence"] = "defence-body", ["why"] = "why-rows",
-            ["how-to-play"] = "how-to-play-body", ["timeline"] = "timeline-list", ["objectives"] = "objectives-rows",
+            ["encyclopedia"] = "encyclopedia-list", ["timeline"] = "timeline-list", ["objectives"] = "objectives-rows",
         };
 
         /// <summary>A page is the view's height less about one line of text, so the line at the edge stays in sight.</summary>
@@ -49,6 +49,9 @@ namespace Statecraft.Game.UI
             var open = root.Q<VisualElement>("screen-" + screen);
             var around = (root.panel?.focusController?.focusedElement as VisualElement)?.GetFirstAncestorOfType<ScrollView>();
             if (around != null && open != null && open.Contains(around)) return around;
+            // An open encyclopedia page hides the list, so its body is the view then (#2095 review).
+            if (screen == "encyclopedia" && root.Q<ScrollView>("encyclopedia-list") is ScrollView list && list.style.display.value == DisplayStyle.None)
+                return root.Q<ScrollView>("encyclopedia-page-body");
             return MainViews.TryGetValue(screen, out var main) ? root.Q<ScrollView>(main) : null;
         }
     }

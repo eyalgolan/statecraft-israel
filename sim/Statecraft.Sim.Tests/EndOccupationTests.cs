@@ -88,11 +88,14 @@ public class EndOccupationTests
         Assert.Equal(before, s.Describe());
     }
 
-    // R-CTRL-017 (Q-ANNEX-2 (a)): a depopulated place (no state) is never answered.
-    [Fact]
-    public void ADepopulatedPlaceIsNeverAnnexed()
+    // R-CTRL-017 (Q-ANNEX-2 (a)): a depopulated place (no state) is never answered, under gdd-0.1 and gdd-0.3 alike.
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ADepopulatedPlaceIsNeverAnnexed(bool gdd03)
     {
-        var c = CaptureTests.Load(CaptureTests.AllTargets);
+        var c = OccupyTests.Load(gdd03);
+        Assert.Equal(gdd03 ? SaveGame.Gdd03Ruleset : SaveGame.GddRuleset, c.Ruleset);
         var s = CombatTests.With(c, Soldier(1, 1, 0));
         s.Settlements["town_a"] = new SettlementControl(since: s.Date, depopulated: true);
         Assert.Empty(SettlementControl.EndOptions(c, s, "town_a"));
@@ -216,5 +219,92 @@ public class EndOccupationTests
         Assert.Null(SettlementControl.End(c, s, "town_a", SettlementControl.Annex, new List<Cause>()));
         Assert.DoesNotContain((1, 0), Movement.NoEntry(c, s));
         Assert.Contains((1, 0), Movement.NoEntry(c, s, true));
+    }
+
+    // R-CTRL-014, R-CTRL-015 (R-CTRL-008's contract; owner, 27 October 2026, #1712: "Existing Raid/Occupy", with the preview
+    // equal to the result): each end option's preview is the change resolving it makes, checked on a clone the test resolves
+    // itself. end_occupation is given a cost here, so the Attention field is checked at a value other than 0. EndOptions
+    // leaves the state as it found it.
+    [Fact]
+    public void TheEndPreviewIsTheOutcome()
+    {
+        var c = CaptureTests.Load(f => f["rules.yaml"] = f["rules.yaml"].Replace("end_occupation: 0", "end_occupation: 1"), CaptureTests.AllTargets);
+        var s = AwaitingEnd(c, "town_c", false, Soldier(1, 4, 0));   // town_a is a fixture city
+        s.Attention = 5;
+        var cost = AttentionSystem.Cost(c, s, SettlementControl.EndKind);
+        Assert.True(cost > 0);
+        var before = s.Describe();
+        var options = SettlementControl.EndOptions(c, s, "town_c");
+        Assert.Equal(new[] { SettlementControl.Annex, SettlementControl.WithdrawOutcome }, options.Where(o => o.Preview != null).Select(o => o.Outcome).ToArray());
+        foreach (var o in options)
+        {
+            var after = s.Clone();
+            Assert.Null(AttentionSystem.TrySpend(c, after, SettlementControl.EndKind));
+            Assert.Null(SettlementControl.End(c, after, "town_c", o.Outcome, new List<Cause>()));
+            var p = o.Preview!;
+            Assert.Equal(after.Attention - s.Attention, p.Attention);
+            Assert.Equal(after.Treasury - s.Treasury, p.Money);
+            Assert.Equal(after.Debt - s.Debt, p.Debt);
+            Assert.Equal(after.Food - s.Food, p.Food);
+            Assert.Equal(after.Arms - s.Arms, p.Arms);
+            Assert.Equal(after.Indicators.GetValueOrDefault("morale") - s.Indicators.GetValueOrDefault("morale"), p.SocialCohesion);
+            Assert.Equal(after.Indicators.GetValueOrDefault("intl_standing") - s.Indicators.GetValueOrDefault("intl_standing"), p.InternationalSupport);
+            Assert.Equal(after.Score - s.Score, p.Score);
+            Assert.Equal(-cost, p.Attention);
+        }
+        Assert.Equal(before, s.Describe());
+    }
+
+    // R-CTRL-014, R-CTRL-016 under gdd-0.3 (owner, 27 October 2026, #1712: "3 turns, keep upkeep", "Keep joined city"; owner,
+    // 1 November 2026: "30 Oct wins for the MVP (Recommended)", so the annexation is for good): Occupy, three turns to the
+    // end of the timer, Annex of the stayed town_c, then the soldier is removed and the place stays annexed and a city.
+    // Every turn ends the same under gdd-0.1 and gdd-0.3, the Attention pool aside.
+    [Fact]
+    public void OccupyThenAnnexIsTheSameUnderGdd03()
+    {
+        var turns = new[]
+        {
+            new Command[] { new ResolveCapture("town_c", SettlementControl.Occupy) }, Array.Empty<Command>(), Array.Empty<Command>(),
+            new Command[] { new EndOccupation("town_c", SettlementControl.Annex) }, Array.Empty<Command>(),
+        };
+        var expected = new[] { "occupied/2@4,0", "occupied/1@4,0", "awaiting_end/0@4,0", "annexed/0@4,0", "annexed/0@gone" };
+        var runs = new[] { false, true }.Select(gdd03 =>
+        {
+            var c = OccupyTests.Load(gdd03);
+            var s = CombatTests.With(c, Soldier(1, 4, 0));
+            s.Settlements["town_c"] = new SettlementControl(Movement.PlayerSide, SettlementControl.AwaitingChoice, s.Date);
+            var run = OccupyTests.Play(c, s, "town_c", (i, x) => { if (i == 4) x.Units.Remove(1); }, turns);
+            return run;
+        }).ToList();
+        Assert.Equal(expected, runs[0].Select(x => x.Trace));
+        Assert.Equal(expected, runs[1].Select(x => x.Trace));
+        Assert.Equal(runs[0].Select(x => x.State), runs[1].Select(x => x.State));
+        Assert.All(runs[1].Skip(3), x => Assert.Contains("town_c=6,3,6,3,0", x.State));   // the joined city: 60 people, 6 units, 3 employed
+    }
+
+    // R-CTRL-016, R-CTRL-014 (OWNER QUESTION 1 (a) on #799; owner, 27 October 2026, #1712: "Keep joined city"): annexing a
+    // stayed town of the real content adds exactly one city, with its id, and no unit: the unit set and the next unit id
+    // are what they were (no free units, no local military). SettlementControl.End is called directly, as a Step would
+    // also bring in the turn's dated arrivals.
+    [Theory]
+    [InlineData("acre")]
+    [InlineData("nazareth")]
+    public void AnnexingAStayedRealTownAddsOneCityAndNoUnit(string id)
+    {
+        var c = ContentLoader.Load(RealContentTests.ContentRoot());
+        var t = c.SettlementTargets.Single(x => x.Id == id);
+        Assert.Equal(ContentLoader.Stayed, t.Residents);
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var u = s.Units.Values.First(x => x.Side == Movement.PlayerSide);
+        s.Units[u.Id] = new Unit(u.Id, u.Type, t.Q, t.R, u.Service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity, u.Full);
+        s.Settlements[id] = new SettlementControl(Movement.PlayerSide, SettlementControl.AwaitingEnd, s.Date);
+        static string Units(GameState x) => string.Join(";", x.Units.Values.Select(v => v.Canonical()));
+        var (units, nextId, cities) = (Units(s), s.NextId, s.Cities.Keys.ToList());
+        Assert.DoesNotContain(id, cities);
+        Assert.Null(SettlementControl.End(c, s, id, SettlementControl.Annex, new List<Cause>()));
+        Assert.Equal(units, Units(s));
+        Assert.Equal(nextId, s.NextId);
+        Assert.Equal(cities.Append(id).OrderBy(x => x, StringComparer.Ordinal), s.Cities.Keys.OrderBy(x => x, StringComparer.Ordinal));
+        Assert.Equal(SettlementControl.Annexed, s.Settlements[id].State);
     }
 }

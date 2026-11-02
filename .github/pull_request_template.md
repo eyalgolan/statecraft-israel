@@ -1,6 +1,6 @@
 ## What this changes
 
-<!-- One or two sentences. Link the issue: "Fixes #123" only if this PR completes the issue, otherwise "Refs #123". -->
+<!-- One or two sentences. Link the issue: write "Fixes" plus the issue number only if this PR completes it, otherwise "Refs" plus the number. -->
 
 ## AI assistance
 
