@@ -283,10 +283,12 @@ public class AdvisorSignalsTests
     [Test]
     public void AnOrderRefusedForAttentionRaisesItsOwnEvent()
     {
-        var b = Bridge();
-        var ev = C.Events.First(e => e.Id == b.State.PendingEvents[0]);
+        // gdd-0.1 on purpose: gdd-0.3 has no Attention (R-GOV-002, #1688), so the shipped selector cannot be used here.
+        var c = AdvisorTour1688Fixture.Content(SaveGame.GddRuleset);
+        var b = new SimBridge(GameSession.New(c, GoldenRun.Seed, Mode.Historical), En);
+        var ev = c.Events.First(e => e.Id == b.State.PendingEvents[0]);
         var order = new ChooseEventOption(ev.Id, ev.Options[0].Id);
-        Assume.That(b.Price(order), Is.GreaterThan(0), "the opening card's answer costs Attention");
+        Assert.That(b.Price(order), Is.GreaterThan(0), "the opening card's answer costs Attention");
         b.State.Attention = 0;
         int raised = 0; b.RefusedForAttention += () => raised++;
         Assert.IsNotNull(b.Queue(order));
@@ -300,10 +302,12 @@ public class AdvisorSignalsTests
     [Test]
     public void AThrowingAttentionSubscriberLeavesTheRefusalAlone()
     {
-        var b = Bridge();
-        var ev = C.Events.First(e => e.Id == b.State.PendingEvents[0]);
+        // gdd-0.1 on purpose: gdd-0.3 has no Attention (R-GOV-002, #1688), so the shipped selector cannot be used here.
+        var c = AdvisorTour1688Fixture.Content(SaveGame.GddRuleset);
+        var b = new SimBridge(GameSession.New(c, GoldenRun.Seed, Mode.Historical), En);
+        var ev = c.Events.First(e => e.Id == b.State.PendingEvents[0]);
         var order = new ChooseEventOption(ev.Id, ev.Options[0].Id);
-        Assume.That(b.Price(order), Is.GreaterThan(0), "the opening card's answer costs Attention");
+        Assert.That(b.Price(order), Is.GreaterThan(0), "the opening card's answer costs Attention");
         b.State.Attention = 0;
         string? refused = null; b.Refused += r => refused = r;
         b.RefusedForAttention += () => throw new InvalidOperationException("advisor hook failed");
