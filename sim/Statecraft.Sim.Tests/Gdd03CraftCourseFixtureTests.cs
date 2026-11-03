@@ -67,7 +67,7 @@ public class Gdd03CraftCourseFixtureTests
     const string GraduationMonth = Gdd03TrainingCentreFixture.GraduationMonthReason;
     const string CourseAtOpening = Gdd03CraftCourseFixture.CourseAtOpeningReason;
     // The whole D3 reason is pinned: it must say the case is deferred and not ruled, and quote both sides unresolved.
-    const string QualifiedDeferred = "Deferred: #1668 D3 (deferred, not ruled: a trained or veteran farmer or pioneer starting the craftsman course. The #1698 body, agent-recorded scope, says \"The course cannot replace another trained profession\"; docs/GDD.md:349 (D3) says \"a Train order can take a qualified civilian, who then loses the qualification (R-QUAL-006)\"; see R-QUAL-006. No answer is chosen here.)";
+    const string QualifiedDeferred = "Deferred: #1668 D3 (deferred, not ruled: a trained or veteran farmer or pioneer starting the craftsman course. The #1698 body, agent-recorded scope, says \"The course cannot replace another trained profession\"; docs/GDD.md:349 (D3) says \"a Train order can take a qualified civilian, who then loses the qualification (R-QUAL-006)\"; R-QUAL-006 (docs/rules/mvp.md) says \"A Train order (R-TRAIN-001) takes the city's unqualified civilians first. A qualified civilian it has to take loses its qualification, in the order craftsmen, halutz groups with the least service, veterans (owner, 24 October 2026: \"Accept all as built\", https://github.com/eyalgolan/statecraft-israel/issues/1511#issuecomment-6375597377).\" No answer is chosen here.)";
     const string CraftsmanDeferred = "Deferred: #1668 27M-5 (ruled: \"graduates may re-enrol at any time\", docs/gdd/training.md:66; not built here: no ruled text says which tier", SlotDeferred = "Deferred: #1668 Q52";
 
     static void Unchanged(GameState s, Action act, Type expected, string? messagePrefix = null)
@@ -139,8 +139,11 @@ public class Gdd03CraftCourseFixtureTests
     // yet received, an unknown course, a course outside the person's region, a person already on a course. Deferred, not
     // ruled (no answer chosen): a trained or veteran farmer or pioneer. The #1698 body (agent-recorded scope) says "The
     // course cannot replace another trained profession"; docs/GDD.md:349 (D3) says "a Train order can take a qualified
-    // civilian, who then loses the qualification (R-QUAL-006)"; see R-QUAL-006. Deferred too: any craftsman. Re-enrolment is ruled
-    // (docs/gdd/training.md:66, "graduates may re-enrol at any time"; 27M-5), but no ruled text says which tier a
+    // civilian, who then loses the qualification (R-QUAL-006)"; R-QUAL-006 says "A Train order (R-TRAIN-001) takes the city's
+    // unqualified civilians first. A qualified civilian it has to take loses its qualification, in the order craftsmen,
+    // halutz groups with the least service, veterans (owner, 24 October 2026: "Accept all as built",
+    // https://github.com/eyalgolan/statecraft-israel/issues/1511#issuecomment-6375597377)." Deferred too: any
+    // craftsman. Re-enrolment is ruled (docs/gdd/training.md:66, "graduates may re-enrol at any time"; 27M-5), but no ruled text says which tier a
     // craftsman holds during and after a new craftsman course, so that part stays Deferred with that reason.
     // R-CRAFT-003: every trained or veteran farmer or pioneer is refused with the pinned "deferred, not ruled" D3 reason and
     // the state unchanged (see the comment above IneligibleStartsAreRefusedWithoutMutation for the three sources).
