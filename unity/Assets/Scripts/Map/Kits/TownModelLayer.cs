@@ -8,9 +8,10 @@ namespace Statecraft.Game.Map.Kits
     /// <summary>Building meshes for admitted towns and villages, instanced per model/tile: Tal Heuberger's originals below the
     /// close switch (<see cref="CloseEnterM"/>, #1273) and their lighter far-off copies beyond it, out to the far band
     /// (<see cref="FarEnterM"/>; owner, 3 November 2026, #2378: "Ask Tal; allow them far off only", then "I have Tal's OK;
-    /// go ahead"). The far copies serve <see cref="Init"/>'s farTowns: the four cities and the towns with a whole-town
-    /// model, whose whole-town model gives way to them within the far band (owner, 3 November 2026, "Cities/towns only
-    /// (Recommended)"); the 1948 localities keep their kits. Tel Aviv, Jerusalem, Haifa and Jaffa are admitted at every
+    /// go ahead"). The far copies serve <see cref="Init"/>'s farTowns: the four cities and every settlement with a whole-town
+    /// model (the moshavot and towns, the kibbutzim, Nahalal and the Arab towns: Acre, Nazareth, Lod, Gaza, Beersheba), whose
+    /// whole-town model gives way to them within the far band (owner, 3 November 2026, "Cities/towns only (Recommended)");
+    /// the 271 1948 localities keep their kit blocks. Tel Aviv, Jerusalem, Haifa and Jaffa are admitted at every
     /// zoom, by view as below (owner ruling, 2 November 2026, "Yes, small buildings at every zoom":
     /// <see cref="TownModels.AtEveryZoom"/>), and draw their far copies beyond the far band too. Under the production policy
     /// (owner ruling, 31 Oct 2026, "Load all in view (Recommended)") a close camera admits every town and every merged village
@@ -28,8 +29,8 @@ namespace Statecraft.Game.Map.Kits
         /// close checks (hero06, 6 km: CameraController.MinDistance) well inside.</summary>
         public const float CloseEnterM = 40000f, CloseExitM = 45000f;
         /// <summary>The far band (m), this layer's alone (the seven other layers on the close switch keep 40/45 km): from
-        /// the close switch out to FarEnterM the four cities and the towns with a whole-town model draw the far-off copies of
-        /// their building models instead of their kits; the kits come back above FarExitM. 100 km holds the 90 km opening and
+        /// the close switch out to FarEnterM the four cities and every settlement with a whole-town model draw the far-off
+        /// copies of their building models instead of their kits; the kits come back above FarExitM. 100 km holds the 90 km opening and
         /// the 60 km gameplay view and stays under the strategic cap (Collection.OriginalModelDistance, 120 km); a 204 m house is 3.5 px
         /// there, where the kit's 100x houses read better as a mass, and the view's footprint (10,670 km2, about 170 places)
         /// bounds the cost. The band (12%) is wider than one wheel notch.</summary>
@@ -287,7 +288,7 @@ namespace Statecraft.Game.Map.Kits
         /// player: acquired originals become ready independently per town, while incomplete/missing replies keep fallback. A
         /// tile swaps only when every village in it is ready; no tile or unrelated town swaps on a partial global set.
         /// <paramref name="farTowns"/> names the places that draw the far-off copies beyond the close switch (the four cities
-        /// and the towns with a whole-town model: KitLayer passes them); null, the default of the small test fixtures, admits
+        /// and every settlement with a whole-town model: KitLayer passes them); null, the default of the small test fixtures, admits
         /// none there.</summary>
         public void Init(IReadOnlyList<SettlementKits.ModelInstance> instances, TownModelSet? models, IReadOnlyList<(Renderer kit, Renderer? close)> swaps, IReadOnlyCollection<string>? townIds = null, IReadOnlyDictionary<Renderer, string>? rendererTownIds = null,
             IReadOnlyDictionary<Renderer, string[]>? rendererTileIds = null, IReadOnlyCollection<string>? farTowns = null)

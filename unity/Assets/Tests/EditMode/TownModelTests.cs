@@ -574,12 +574,28 @@ public class TownModelTests
         var results = new List<string>();
         var big = TownLandmarksTests.BigCities;
         int bigInstances = big.Sum(id => layer.CountFor(id));
-        // The places that draw the far-off copies beyond the close switch (KitLayer): the four cities and the towns with a
-        // whole-town model (Q15 option a).
+        // The places that draw the far-off copies beyond the close switch (KitLayer): the four cities and every settlement with
+        // a whole-town model, i.e. the moshavot and towns, the kibbutzim, Nahalal and the Arab towns (Q15 option a).
         var farTier = map.Settlements.Where(s => big.Contains(s.Id) || Statecraft.Game.Map.Collection.TownLandmarks.ModelFor(s) != null)
             .Select(s => s.Id).ToHashSet();
         CollectionAssert.IsSubsetOf(big, farTier, "the four cities");
         CollectionAssert.Contains(farTier, "petah_tikva", "a moshava draws its far-off copies");
+        // The far tier pinned to the content, not to the condition above: the 25 game settlements of
+        // content/map/settlements_1948.yaml, written out by hand (the four cities; the six moshavot, Tiberias, Safed, Netanya
+        // and Ramla; the five kibbutzim and Nahalal; Acre, Nazareth, Lod, Gaza and Beersheba). KitLayer's own list is checked,
+        // so a broken condition there cannot pass by agreeing with this test's copy of it.
+        string[] expectedFarTier =
+        {
+            "acre", "beersheba", "degania_alef", "ein_harod", "gaza", "hadera", "haifa", "hanita", "jaffa", "jerusalem", "lod",
+            "nahalal", "nazareth", "netanya", "petah_tikva", "ramla", "rehovot", "revivim", "rishon_lezion", "rosh_pinna",
+            "safed", "tel_aviv", "tiberias", "yad_mordechai", "zikhron_yaakov",
+        };
+        Assert.AreEqual(25, expectedFarTier.Distinct().Count(), "the expected far tier names 25 settlements");
+        var productionFarTier = (HashSet<string>?)typeof(TownModelLayer).GetField("farTowns", fixtureFlags)!.GetValue(layer);
+        Assert.IsNotNull(productionFarTier, "KitLayer passes the far tier to the layer");
+        CollectionAssert.AreEquivalent(expectedFarTier, productionFarTier!, "KitLayer's far tier: exactly the 25 game settlements, no locality");
+        CollectionAssert.Contains(productionFarTier!, "degania_alef", "a kibbutz (a whole-town row by type) draws its far-off copies");
+        CollectionAssert.AreEquivalent(expectedFarTier, farTier, "this test's far tier matches the content");
         int farInstances = farTier.Sum(id => layer.CountFor(id));
         void Check(PromoPose pose, bool close)
         {
