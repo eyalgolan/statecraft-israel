@@ -91,6 +91,7 @@ Cancelled retained courses award no unfinished qualification. A course whose slo
 
 - The start camps of Jerusalem (Schneller) and Petah Tikva (Tel HaShomer), which the owner ruled the cities already have (#375); this PR keeps the start facilities as they are. Training capacity, recruits as units and combat (Phase 5), veterans, craftsmen (D-D4), and any display (PRs 7 and 8).
 Camp growth into permanent towns, soldier training in civilian centres and unsourced opening dates. The retained qualification rule permits switching back to qualified civilian roles without retraining.
+**Then decided (owner, 3 Nov 2026, #1719): "Tel Aviv's camp is Tel HaShomer; add Jerusalem" ([recorded on #1719](https://github.com/eyalgolan/statecraft-israel/issues/1719#issuecomment-6602125415)):** the start military camp in Tel Aviv stands for Tel HaShomer, and Jerusalem gets a start camp too. Not built yet: `content/cities.yaml` gives only Tel Aviv a start `military_camp`.
 
 ## Sources
 
