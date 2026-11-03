@@ -73,7 +73,7 @@ namespace Statecraft.Sim
             if (c.Gdd03Balance == null || c.Gdd03Balance.Ruleset != SaveGame.Gdd03Ruleset || c.Gdd03Balance.Values == null)
                 throw Invalid("combat.draw_count", "requires the separate gdd-0.3 catalogue");
             var sources = new Dictionary<string, Gdd03CombatSource>(StringComparer.Ordinal);
-            // content/gdd03-balance.yaml:447-475; GDD 605277df docs/gdd/balance.md:172,180-185.
+            // content/gdd03-balance.yaml `combat.draw_count`; GDD 605277df docs/gdd/balance.md:172,180-185.
             // The parent is Agreed (retained one draw); its thresholds, band and rows remain Default.
             Gdd03DesignValue Required(string key, string basis, string? part = null)
             {
@@ -131,7 +131,7 @@ namespace Statecraft.Sim
                 if (next != 100) throw Invalid("combat.draw_count.parts." + name, "bands must cover every draw through 99");
                 rows[row] = result.AsReadOnly();
             }
-            // content/gdd03-balance.yaml:484-495; GDD docs/gdd/balance.md:175-177 at 605277df.
+            // content/gdd03-balance.yaml `combat.armoured_factor`, `combat.artillery_range` and `combat.artillery_factor`; GDD docs/gdd/balance.md:175-177 at 605277df.
             decimal Role(string key)
             {
                 var n = List(Required(key, "Default"), key, 1)[0];

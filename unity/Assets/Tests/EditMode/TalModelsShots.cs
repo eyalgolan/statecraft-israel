@@ -169,6 +169,94 @@ public class TalModelsShots
         Debug.Log($"SHOT degania on {root.Bridge.State.Date:yyyy-MM-dd} at {point} from {CameraController.MinDistance:F0} m, event card display {card.resolvedStyle.display}: {string.Join(", ", layer.Placed.Select(p => p.Key))}");
     }
 
+    /// <summary>#1701 slice F: a gdd-0.3 game (every era's ruleset set on fresh inputs, as FixedNorthGameRootTests does) with
+    /// one arms workshop built on Rehovot's own hex, or on Tel Aviv's or Jerusalem's among its houses (owner, 2 November 2026: "Among the
+    /// houses") (a fixture state: the project is put in the state, built on the game's date),
+    /// from the close zoom, framed on the workshop and the town. "Before" withholds b21 (main draws nothing there); the frame is
+    /// the one the answered model gives. The load lines count the special layer's instances, drawn renderers and their
+    /// triangles at the far, middle and close zooms.</summary>
+    IEnumerator ArmsWorkshop(bool hebrew, bool after, string city = "rehovot")
+    {
+        Directory.CreateDirectory(Path.Combine(CivMovementShots.ShotDir, "..", "b21-workshop-shots"));
+        // The town's houses as the player's stream answers them, so the frame shows the drawn buildings the workshop keeps clear of.
+        TownModelLayer.ModelAcquire = (model, detail, done) => { done(Prefab(model, detail)); return new NoLease(); };
+        var inputs = Statecraft.Game.Boot.GameInputs.FromDisk(Statecraft.Game.Paths.Content, Statecraft.Game.Paths.StreamingMap);
+        foreach (var era in inputs.Content.Eras) { era.Systems.Ruleset = SaveGame.Gdd03Ruleset; era.Systems.Loop = EraSystems.Gdd; }
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        var doc = Object.FindFirstObjectByType<UIDocument>();
+        rt = new RenderTexture(CivMovementShots.Width, CivMovementShots.Height, 24, RenderTextureFormat.ARGB32);
+        ps = Object.Instantiate(doc.panelSettings);
+        ps.targetTexture = rt; ps.clearColor = true; ps.colorClearValue = Color.clear;
+        doc.panelSettings = ps;
+        var map = Object.FindFirstObjectByType<MapScene>();
+        map.Build(inputs.Map);
+        root = Object.FindFirstObjectByType<GameRoot>();
+        root.Store = new Statecraft.Game.SaveStore(saveDir);
+        if (hebrew) root.Language = UiLanguage.Hebrew;
+        root.Begin(inputs, 0);
+        var ui = doc.rootVisualElement;
+        for (int i = 0; i < 30 && !(ui.Q("top-bar").worldBound.height > 0); i++) yield return null;
+        for (int i = 0; i < 5; i++) yield return null;
+        GameSceneTests.HideTheOpeningCard(ui);
+        if (root.Advisor != null && root.Advisor.IsOpen) UiTestKit.Press(ui.Q<Button>("advisor-close"));
+        for (int i = 0; i < 3; i++) yield return null;
+        var state = root.Bridge!.State; var content = root.Bridge.Content;
+        Assert.AreEqual(SaveGame.Gdd03Ruleset, content.Ruleset);
+        var home = content.SettlementHexes.Single(h => h.Id == city);
+        int id = state.NextId++;
+        state.CityProjects.Add(id, new CityProject(id, Workshops.ArmsWorkshop, city, home.Q, home.R, 0, state.Date));
+        SpecialBuildingModels Layer(ICollection<string> withheld)
+        {
+            SpecialBuildingModels.Request = Answer(withheld);
+            Drop(map, SpecialBuildingModels.Name);
+            return CollectionGeometryFixture.Special(map, state.Date, content, state.CityProjects.Values)!;
+        }
+        var layer = Layer(Array.Empty<string>());
+        var workshop = layer.Placed.Single(p => p.Key == SpecialBuildingModels.WorkshopKey(id));
+        if (!after) layer = Layer(new[] { SpecialBuildingModels.Workshop });
+        var town = map.KitFootprints.First(f => f.id == city);
+        bool among = Vector2.Distance(new Vector2(workshop.At.x, workshop.At.z), town.centre) < town.radius;
+        // Among a big town's houses (Tel Aviv, Jerusalem: "Among the houses") the frame is the workshop and its neighbours;
+        // beside a town, the workshop and the whole town.
+        var mid = among ? new Vector3(workshop.At.x, 0f, workshop.At.z)
+            : new Vector3(0.5f * (workshop.At.x + town.centre.x), 0f, 0.5f * (workshop.At.z + town.centre.y));
+        mid.y = map.Terrain.SampleHeight(mid) + map.Terrain.transform.position.y;
+        float span = Vector2.Distance(new Vector2(workshop.At.x, workshop.At.z), town.centre) + town.radius;
+        float close = among ? 1.5f * CameraController.MinDistance : Mathf.Clamp(2.5f * span, CameraController.MinDistance, 0.9f * TownModelLayer.CloseEnterM);
+        foreach (var (zoom, distance) in new[] { ("far", 150000f), ("middle", 60000f), ("close", close) })
+        {
+            Look(mid, distance);
+            layer.Choose(default, Camera.main);
+            var drawn = layer.GetComponentsInChildren<Renderer>(true).Where(r => !r.forceRenderingOff).ToList();
+            long tris = 0;
+            foreach (var r in drawn)
+            {
+                Mesh? mesh = r is SkinnedMeshRenderer skinned ? skinned.sharedMesh : r.TryGetComponent<MeshFilter>(out var filter) ? filter.sharedMesh : null;
+                if (mesh != null) tris += mesh.triangles.Length / 3;
+            }
+            Debug.Log($"LOAD b21 {(after ? "after" : "before")} {zoom} ({distance:F0} m): {layer.transform.childCount} instances, " +
+                      $"{drawn.Count} renderers drawn, {tris} triangles drawn; placed: {string.Join(", ", layer.Placed.Select(p => p.Key))}");
+        }
+        Look(mid, close);
+        layer.Choose(default, Camera.main);
+        for (int i = 0; i < 5; i++) yield return null;
+        CivMovementShots.Shot(rt!, Path.Combine("..", "b21-workshop-shots", $"{city}-workshop-{(after ? "after" : "before")}-{(hebrew ? "he" : "en")}"));
+        Debug.Log($"SHOT b21 {city} {(after ? "after" : "before")} {(hebrew ? "he" : "en")} on {state.Date:yyyy-MM-dd}: workshop at {workshop.At}, camera on {mid} from {close:F0} m");
+    }
+
+    [UnityTest] public IEnumerator ArmsWorkshopBeforeEnglish() { yield return ArmsWorkshop(false, false); }
+    [UnityTest] public IEnumerator ArmsWorkshopAfterEnglish() { yield return ArmsWorkshop(false, true); }
+    [UnityTest] public IEnumerator ArmsWorkshopBeforeHebrew() { yield return ArmsWorkshop(true, false); }
+    [UnityTest] public IEnumerator ArmsWorkshopAfterHebrew() { yield return ArmsWorkshop(true, true); }
+    [UnityTest] public IEnumerator ArmsWorkshopTelAvivBeforeEnglish() { yield return ArmsWorkshop(false, false, "tel_aviv"); }
+    [UnityTest] public IEnumerator ArmsWorkshopTelAvivAfterEnglish() { yield return ArmsWorkshop(false, true, "tel_aviv"); }
+    [UnityTest] public IEnumerator ArmsWorkshopTelAvivBeforeHebrew() { yield return ArmsWorkshop(true, false, "tel_aviv"); }
+    [UnityTest] public IEnumerator ArmsWorkshopTelAvivAfterHebrew() { yield return ArmsWorkshop(true, true, "tel_aviv"); }
+    [UnityTest] public IEnumerator ArmsWorkshopJerusalemBeforeEnglish() { yield return ArmsWorkshop(false, false, "jerusalem"); }
+    [UnityTest] public IEnumerator ArmsWorkshopJerusalemAfterEnglish() { yield return ArmsWorkshop(false, true, "jerusalem"); }
+    [UnityTest] public IEnumerator ArmsWorkshopJerusalemBeforeHebrew() { yield return ArmsWorkshop(true, false, "jerusalem"); }
+    [UnityTest] public IEnumerator ArmsWorkshopJerusalemAfterHebrew() { yield return ArmsWorkshop(true, true, "jerusalem"); }
+
     sealed class NoLease : IDisposable { public void Dispose() { } }
 
     /// <summary>A town's houses from the closest zoom the player can reach, the camera on the centre of the town's placed
@@ -229,7 +317,7 @@ public class TalModelsShots
     }
 
     /// <summary>Owner ruling, 2 November 2026, "Yes, small buildings at every zoom": Tel Aviv, Jerusalem, Haifa and Jaffa from
-    /// the opening view (the game's own camera, 90 km), the widest zoom (diorama02, 250 km), and each city at 90 km and
+    /// the opening view (the game's own camera, CameraRig.StartDistance), the widest zoom (diorama02, 250 km), and each city at 90 km and
     /// 30 km, with the town layers' requests (whole towns and buildings) answered with the editor's prefabs, as the player's
     /// stream would answer them. Each frame logs its draw cost: the building models' instances, triangles and instanced
     /// draws (TownModelLayer), the whole-town models in view and their triangles (TownLandmarks), and the median render time.

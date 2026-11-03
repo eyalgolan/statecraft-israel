@@ -276,7 +276,7 @@ public class CabinetScreenTests
         var holder = Cabinet.Holder(C, bridge.State, "finance_minister")!;
         Assert.AreNotEqual("golda_meir", holder.Id);
         Assert.AreEqual(holder.Name, ui.Q<Label>("seat-finance_minister-holder").text);
-        StringAssert.DoesNotContain("(your appointee)", ui.Q<Label>("seat-finance_minister-holder").text);
+        StringAssert.DoesNotContain(Text.Format("card.appointed_name", "").Trim(), ui.Q<Label>("seat-finance_minister-holder").text);
         Assert.IsTrue(bridge.Session.Last!.Why.Any(w => w.System == "cabinet" && w.Target == "appointments"));
     }
 

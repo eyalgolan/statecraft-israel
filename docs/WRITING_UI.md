@@ -151,6 +151,7 @@ Status: gershayim adopted (maintainer, #630); other language recommendations nee
   - Settled since 14 October: the recording credit no longer keeps a name in Latin letters. It is "הקלטה: ראלף הלינגר, ארכיון המדינה" (`start.recording_credit`), spelt as the Israel State Archives' own description spells it, and the Hebrew UI test now rejects Latin letters in any static Hebrew text, names included.
   - How to test: the original explicit-language path was pinned by `HebrewIsOnlyAskedForByHand`; since #1058 Settings also offers English / עברית. Test the current switch and the `?lang=he` path (#506).
 - Address and register on buttons and instructions: the Israeli National Digital Agency's guide to government language (section 1.3.3, read by the author as rendered slides; reuse terms not found, paraphrased) says not to address users only in the masculine singular and not to use slash or dot forms. It prefers, in order: a setting that adapts the form to the user; a second person without a gender marker (words ending in ך, ת or ה, such as "שלך"); a neutral first person; then an action noun, an infinitive, or rephrasing such as "יש לשלוח". The strings already follow this apart from one masculine imperative: "הסתר" (`event.hide`). Examples using "יש ל..." include (`info.hint`, `newgame.confirm`, `why.empty`, `budget.unsaved`, `boot.failed`) and action labels use action nouns ("הקמת מעברה", "בניית דיור", "מינוי לתפקיד", "פתיחת מסך הביטחון"). Candidate: replace "הסתר" with "הסתרה" or "להסתיר". A setting that lets the player choose a form of address is the guide's first priority, but it is a design decision for the owner. The native reviewer confirms all of this.
+- Then changed (3 Nov 2026): the live Hebrew `info.hint` uses action nouns ("לחיצה ...", "גרירה ..."), not "יש ל...".
 Check: a pattern search over the strings files.
 
 ### UI-17 Plurals
@@ -184,6 +185,8 @@ Check: manual.
 | `hud.caption.support` | Public support | Sentence case since #630 | UI-02 |
 | `info.control_none` | No sourced front line here on this date | Good, says what is missing | UI-10 |
 | `info.localities` (he) | יישובים ב-1948: {0} | Hyphen where the Academy points to the maqaf | UI-16 |
+
+Then changed (3 Nov 2026): the live `info.hint` (in the table above) now reads "Click a unit, then a hex, to move it. Click the map, or Tab and Enter, to inspect a hex; drag to move the map".
 
 ## Review checklist
 

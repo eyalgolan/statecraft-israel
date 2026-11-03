@@ -194,6 +194,10 @@ public class CityBuildersTests
         var down = Step(c, up.State, Build(1));
         Assert.Empty(down.Rejected);
         Assert.Equal((true, false, false), (down.State.CityProjects[one].Builder, down.State.CityProjects[two].Builder, down.State.CityProjects[three].Builder));
+        // The Why screen says which project the fall freed a builder from (slice B); the rise freed none.
+        Assert.DoesNotContain(up.Why, w => w.Key == CauseKeys.ProjectBuilderFreed);
+        var freed = Assert.Single(down.Why, w => w.Key == CauseKeys.ProjectBuilderFreed);
+        Assert.Equal(("town_a", "industry"), (freed.Target, freed.Args.Single()));
     }
 
     // R-CITY-011: the order's refusals leave the state as it was; under gdd-0.1 the role does not exist.
@@ -230,7 +234,12 @@ public class CityBuildersTests
         var (c, s) = Game();
         var done = Add(s, "housing", 1, 1, 1, true);
         var waiting = Add(s, "industry", 2, 0, 2, false);
-        var r = Step(c, s).State;
+        var built = Step(c, s);
+        var r = built.State;
+        // The Why screen says the builder is free again (slice B): once, for the built project, not the one with no builder.
+        var freed = Assert.Single(built.Why, w => w.Key == CauseKeys.ProjectBuilderFreed);
+        Assert.Equal(("town_a", "housing"), (freed.Target, freed.Args.Single()));
+        Assert.Equal("Town A: a builder left a housing project and is free again", freed.Message);
         Assert.NotNull(r.CityProjects[done].BuiltOn);
         Assert.False(r.CityProjects[done].Builder);
         Assert.False(r.CityProjects[waiting].Builder);
@@ -241,6 +250,7 @@ public class CityBuildersTests
         var id = Add(s2, "housing", 1, 1, 2, true);
         var cancel = Step(c2, s2, new CancelProject(id));
         Assert.Empty(cancel.Rejected);
+        Assert.Equal("housing", Assert.Single(cancel.Why, w => w.Key == CauseKeys.ProjectBuilderFreed).Args.Single());
         Assert.Equal(0, Projects.Builders(cancel.State, "town_a"));
         var none = Step(c2, s2).State;
         Assert.Equal(Training.Idle(none, none.Cities["town_a"]) + 1, Training.Idle(cancel.State, cancel.State.Cities["town_a"]));
