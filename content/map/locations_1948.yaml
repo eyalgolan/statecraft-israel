@@ -11,8 +11,8 @@ locations:
   kind: kibbutz
   lon: 34.6830556
   lat: 31.6608333
-  q: -7
-  r: 25
+  q: -8
+  r: 28
   priority: must_have # DESIGN VALUE: owner-approved GDD v0.2 map priority, 17 October 2026.
   marker: true # DESIGN VALUE: this record is a map marker.
   managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
@@ -32,7 +32,7 @@ locations:
   lon: 34.8833333
   lat: 31.8322222
   q: -4
-  r: 23
+  r: 25
   priority: must_have # DESIGN VALUE: owner-approved GDD v0.2 map priority, 17 October 2026.
   marker: true # DESIGN VALUE: this record is a map marker.
   managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
@@ -51,8 +51,8 @@ locations:
   kind: kibbutz
   lon: 34.5808333
   lat: 31.5194444
-  q: -9
-  r: 27
+  q: -11
+  r: 31
   priority: must_have # DESIGN VALUE: owner-approved GDD v0.2 map priority, 17 October 2026.
   marker: true # DESIGN VALUE: this record is a map marker.
   managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
@@ -71,8 +71,8 @@ locations:
   kind: fort
   lon: 34.98036
   lat: 31.8381
-  q: -2
-  r: 22
+  q: -3
+  r: 25
   priority: must_have # DESIGN VALUE: owner-approved GDD v0.2 map priority, 17 October 2026.
   marker: true # DESIGN VALUE: this record is a map marker, not issue #707's 3D model.
   managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
@@ -91,8 +91,8 @@ locations:
   kind: fort
   lon: 34.6818194
   lat: 31.6480118
-  q: -7
-  r: 25
+  q: -8
+  r: 28
   priority: must_have # DESIGN VALUE: owner-approved GDD v0.2 map priority, 17 October 2026.
   marker: true # DESIGN VALUE: this record is a map marker.
   managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
@@ -112,8 +112,8 @@ locations:
   kind: pass
   lon: 35.024865
   lat: 31.814508
-  q: -2
-  r: 23
+  q: -3
+  r: 26
   priority: must_have # DESIGN VALUE: owner-approved GDD v0.2 map priority, 17 October 2026.
   marker: true # DESIGN VALUE: this record is a map marker.
   managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
@@ -133,8 +133,8 @@ locations:
   kind: bridge
   lon: 34.6694067
   lat: 31.7820937
-  q: -6
-  r: 23
+  q: -7
+  r: 26
   priority: must_have # DESIGN VALUE: owner-approved GDD v0.2 map priority, 17 October 2026.
   marker: true # DESIGN VALUE: this record is a map marker, separate from nearby Isdud.
   managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
@@ -154,8 +154,8 @@ locations:
   kind: reception_camp
   lon: 34.95745
   lat: 32.8160806
-  q: 5
-  r: 8
+  q: 6
+  r: 9
   priority: must_have # DESIGN VALUE: owner-approved GDD v0.2 map priority, 17 October 2026.
   marker: true # DESIGN VALUE: this record is a map marker.
   managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
@@ -179,7 +179,7 @@ locations:
   lon: 35.2194444
   lat: 31.7819444
   q: 0
-  r: 23
+  r: 26
   priority: must_have # DESIGN VALUE: owner-approved GDD v0.2 map priority, 17 October 2026.
   marker: true # DESIGN VALUE: this record is a map marker.
   managed_city: true # DESIGN VALUE: reuse the existing Jerusalem city economy.
@@ -206,7 +206,7 @@ locations:
   lon: 35.2341667
   lat: 31.7766667
   q: 0
-  r: 23
+  r: 26
   priority: must_have # DESIGN VALUE: owner-approved GDD v0.2 map priority, 17 October 2026.
   marker: true # DESIGN VALUE: this is a second map marker, not a second city economy.
   managed_city: false # DESIGN VALUE: cities.yaml keeps one Jerusalem economy.
@@ -237,8 +237,8 @@ locations:
   kind: outpost
   lon: 34.9533611
   lat: 29.5491667
-  q: -20
-  r: 56
+  q: -23
+  r: 64
   priority: optional # DESIGN VALUE: owner-approved optional map location, 21 October 2026.
   marker: true # DESIGN VALUE: map metadata only; the objective-1 bonus waits on #752.
   managed_city: false # DESIGN VALUE: no 1948 population, so no city panel.
@@ -247,4 +247,181 @@ locations:
   sources:
   - { url: 'https://www.wikidata.org/wiki/Q25487984', checked: 2026-10-31 } # coordinates (P625): the modern heritage site; the statement has no reference
   - { url: 'https://en.wikipedia.org/wiki/Operation_Uvda', checked: 2026-10-31 } # English name "Umm Rashrash"
+  status: draft
+
+- id: nirim
+  name: Nirim
+  name_he: נירים
+  name_he_review: agent-checked
+  name_he_sources:
+  - { url: 'https://benyehuda.org/read/14684', checked: 2026-11-01 } # Gvati: "קיבוץ נירים בדנגור"
+  - { url: 'https://palmach.org.il/history/database/?itemId=6201', checked: 2026-11-01 } # "הדפה נירים התקפה של הצבא המצרי"
+  kind: kibbutz
+  # The 1948 site at Dangur, where kibbutz Nir Yitzhak stands today; Nirim moved after the war (the CBS file gives both
+  # kibbutzim 1949). The point is the CBS point of Nir Yitzhak (ITM 138783 572100, converted from EPSG:2039 to EPSG:4326
+  # with pyproj), not present-day Nirim's. Research: research_notes/Map/d5-southern-coast-negev-housing-1948.md (#2111),
+  # section 5.
+  lon: 34.3576484
+  lat: 31.2376769
+  q: -16
+  r: 36
+  priority: optional # DESIGN VALUE: owner ruling on #2136, 1 November 2026, "Optional (Recommended)".
+  marker: true # DESIGN VALUE: this record is a map marker.
+  managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
+  designated_site: false # DESIGN VALUE: this existing kibbutz is not a founding site.
+  settlement_control_target: false # DESIGN VALUE: map inclusion does not add a capture target.
+  # starting_control (owner ruling on #2136, 1 November 2026, "Israeli at the start (Recommended)"): Nirim repelled the
+  # Egyptian attack of 15 May 1948 and held to the end of the war (Palmach Heritage itemId=6201; Gvati; JTA 17-18 May
+  # 1948, all in sources below). control_1948_49.geojson pins its hex blue for 15 May - 10 June 1948 on the same sources.
+  starting_control: israeli
+  control_date: 1948-05-15
+  sources:
+  - { url: 'https://www.cbs.gov.il/he/publications/doclib/2019/ishuvim/bycode2024.xlsx', checked: 2026-11-01 } # coordinates: Nir Yitzhak (code 402)
+  # Gvati, 100 Years of Settlement, vol. 2: the Egyptians attacked "קיבוץ נירים בדנגור (כיום יושב במקום קיבוץ ניר־יצחק)"
+  # together with Kfar Darom ("ב־15.5"); after the war "קיבוץ ניר־יצחק עלה לדנגור במקום קיבוץ נירים".
+  - { url: 'https://benyehuda.org/read/14684', checked: 2026-11-01 }
+  - { url: 'https://palmach.org.il/history/database/?itemId=6201', checked: 2026-11-01 } # "ב-15 למאי 1948 הדפה נירים התקפה של הצבא המצרי."
+  - { url: 'https://www.palmach.org.il/en/history/database/?itemId=8475', checked: 2026-11-01 } # the English spelling: "Kibbutz Nirim was founded on the Dangur lands"
+  - { url: 'https://www.jta.org/archive/u-s-attitude-on-arab-invasion-of-israel-will-be-revealed-at-security-council-today', checked: 2026-11-01 } # JTA, 17 May 1948: "the Negev settlement of Nirim"
+  - { url: 'https://www.jta.org/archive/control-center-of-jerusalem-tel-aviv-hospital-bombed-casualties-heavy', checked: 2026-11-01 } # JTA, 18 May 1948: "a two-day battle at the Nirim settlement"
+  status: draft
+
+# #1719: the named military and reception camps as map records only (owner, 1 November 2026: "No reception-bed layer
+# (Recommended)"). Coordinates are the Hebrew Wikipedia points recorded [S] in research_notes/Map/camps-1948-51.md: modern
+# points, not surveyed 1948-51 positions; the note keeps the period map readings that differ ([C]). Priority is optional:
+# the owner declined Amir's proposal to make every listed facility must-have (docs/locations.md, "Facility roster"). The
+# bindings to a site, facility or region wait on #1687 and #1691. Rosh HaAyin and Pardes Hanna have only a town point in
+# the note, so they have no record yet. Every source was read by an AI agent only; a person's check is pending.
+- id: military_tzrifin
+  name: Tzrifin
+  name_he: צריפין
+  name_he_review: agent-checked
+  name_he_sources:
+  - { url: 'https://he.wikipedia.org/w/index.php?oldid=43963697', checked: 2026-11-01 }
+  kind: military_camp
+  lon: 34.83953611
+  lat: 31.95868056
+  q: -4
+  r: 23
+  priority: optional # DESIGN VALUE: no owner ruling makes a camp a must-have location (see above).
+  marker: true # DESIGN VALUE: this record is a map marker.
+  managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
+  designated_site: false # DESIGN VALUE: the build site stays sites.yaml `tzrifin`; binding it waits on #1687.
+  settlement_control_target: false # DESIGN VALUE: map inclusion does not add a capture target.
+  sources:
+  # coordinates; the JTA's 1948 name is "Sarafand" (note, section 1). SENSITIVE: see sites.yaml `tzrifin`.
+  - { url: 'https://he.wikipedia.org/w/index.php?oldid=43963697', checked: 2026-11-01 }
+  - { url: 'https://www.wikidata.org/wiki/Q2909246', checked: 2026-11-01 } # coordinates (P625)
+  status: draft
+
+- id: military_tel_litvinsky
+  name: Tel Litvinsky
+  name_he: מחנה תל־ליטוינסקי
+  name_he_review: agent-checked
+  name_he_sources:
+  - { url: 'https://he.wikipedia.org/w/index.php?oldid=43522123', checked: 2026-11-01 } # the camp's 1947 name, in the article text
+  kind: military_camp
+  lon: 34.85731944
+  lat: 32.04335
+  q: -3
+  r: 22
+  priority: optional # DESIGN VALUE: no owner ruling makes a camp a must-have location (see above).
+  marker: true # DESIGN VALUE: this record is a map marker.
+  managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
+  designated_site: false # DESIGN VALUE: not a founding or build site.
+  settlement_control_target: false # DESIGN VALUE: map inclusion does not add a capture target.
+  sources:
+  # coordinates of today's Camp Dori (Tel HaShomer); the 1:20,000 sheet prints "Tel Litwinsky" 1.23 km to the north-west ([C], note section 2).
+  - { url: 'https://he.wikipedia.org/w/index.php?oldid=43522123', checked: 2026-11-01 }
+  - { url: 'https://www.wikidata.org/wiki/Q7058317', checked: 2026-11-01 } # coordinates (P625)
+  status: draft
+
+- id: military_schneller
+  name: Schneller camp
+  name_he: מחנה שנלר
+  name_he_review: agent-checked
+  name_he_sources:
+  - { url: 'https://he.wikipedia.org/w/index.php?oldid=44079527', checked: 2026-11-01 }
+  kind: military_camp
+  lon: 35.21265833
+  lat: 31.79075
+  q: 0
+  r: 26
+  priority: optional # DESIGN VALUE: no owner ruling makes a camp a must-have location (see above).
+  marker: true # DESIGN VALUE: this record is a map marker, separate from Jerusalem in the same hex.
+  managed_city: false # DESIGN VALUE: cities.yaml keeps one Jerusalem economy.
+  designated_site: false # DESIGN VALUE: not a founding or build site.
+  settlement_control_target: false # DESIGN VALUE: map inclusion does not add a capture target.
+  sources:
+  # coordinates; the 1:20,000 sheet prints "Orphanage & Sch." 217 m north of the point (note, section 3).
+  - { url: 'https://he.wikipedia.org/w/index.php?oldid=44079527', checked: 2026-11-01 }
+  - { url: 'https://www.wikidata.org/wiki/Q455355', checked: 2026-11-01 } # coordinates (P625)
+  status: draft
+
+- id: military_camp_80
+  name: Camp 80
+  name_he: מחנה 80
+  name_he_review: agent-checked
+  name_he_sources:
+  - { url: 'https://he.wikipedia.org/w/index.php?oldid=43463565', checked: 2026-11-01 }
+  kind: military_camp
+  lon: 34.986627
+  lat: 32.462798
+  q: 2
+  r: 15
+  priority: optional # DESIGN VALUE: no owner ruling makes a camp a must-have location (see above).
+  marker: true # DESIGN VALUE: this record is a map marker.
+  managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
+  designated_site: false # DESIGN VALUE: the build site stays sites.yaml `camp_80`; binding it waits on #1687.
+  settlement_control_target: false # DESIGN VALUE: map inclusion does not add a capture target.
+  sources:
+  # coordinates of today's Bahad Dotan; no Mandate sheet read prints the camp ([GAP], note section 4).
+  - { url: 'https://he.wikipedia.org/w/index.php?oldid=43463565', checked: 2026-11-01 }
+  - { url: 'https://www.wikidata.org/wiki/Q12404426', checked: 2026-11-01 } # coordinates (P625)
+  status: draft
+
+- id: reception_atlit
+  name: Atlit camp
+  name_he: מחנה עתלית
+  name_he_review: agent-checked
+  name_he_sources:
+  - { url: 'https://he.wikipedia.org/w/index.php?oldid=42240627', checked: 2026-11-01 }
+  kind: reception_camp
+  lon: 34.949141
+  lat: 32.712543
+  q: 4
+  r: 11
+  priority: optional # DESIGN VALUE: reception camps are map records only in the MVP (owner, 1 November 2026).
+  marker: true # DESIGN VALUE: this record is a map marker.
+  managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
+  designated_site: false # DESIGN VALUE: this reception camp is not a yishuv founding site.
+  settlement_control_target: false # DESIGN VALUE: map inclusion does not add a capture target.
+  sources:
+  # coordinates of the detention camp; the 1:20,000 sheet prints "Atlit Clearance Camp" there (note, section 5).
+  # The day it opened to immigrants is [GAP], so no historical_reference.
+  - { url: 'https://he.wikipedia.org/w/index.php?oldid=42240627', checked: 2026-11-01 }
+  - { url: 'https://www.wikidata.org/wiki/Q2902412', checked: 2026-11-01 } # coordinates (P625)
+  status: draft
+
+- id: reception_beit_lid
+  name: Beit Lid camp
+  name_he: מחנה בית ליד
+  name_he_review: agent-checked
+  name_he_sources:
+  - { url: 'https://he.wikipedia.org/w/index.php?oldid=39524540', checked: 2026-11-01 }
+  kind: reception_camp
+  lon: 34.910788
+  lat: 32.315699
+  q: 0
+  r: 17
+  priority: optional # DESIGN VALUE: reception camps are map records only in the MVP (owner, 1 November 2026).
+  marker: true # DESIGN VALUE: this record is a map marker.
+  managed_city: false # DESIGN VALUE: map inclusion creates no city panel.
+  designated_site: false # DESIGN VALUE: this reception camp is not a yishuv founding site.
+  settlement_control_target: false # DESIGN VALUE: map inclusion does not add a capture target.
+  sources:
+  # coordinates of the later Shavot Am ma'abara site; the 1958 sheet's circle is 465 m away ([C], note section 8).
+  # The opening day is [GAP], so no historical_reference.
+  - { url: 'https://he.wikipedia.org/w/index.php?oldid=39524540', checked: 2026-11-01 }
+  - { url: 'https://www.wikidata.org/wiki/Q12409351', checked: 2026-11-01 } # coordinates (P625); the statement has no reference
   status: draft

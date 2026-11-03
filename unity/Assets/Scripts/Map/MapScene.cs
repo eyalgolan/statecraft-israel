@@ -93,7 +93,7 @@ namespace Statecraft.Game.Map
         /// only by lightness (deltaE76 18.2 ungraded, under GradeTests' 20). Ivory differs in chroma too, like the promo's
         /// white rings and lines.</summary>
         public static readonly Color SelectionColour = new Color(1f, 0.95f, 0.80f);
-        /// <summary>Width of the outline band, as a fraction of the hex circumradius (about 600 m on a 5 km hex).</summary>
+        /// <summary>Width of the outline band, as a fraction of the hex circumradius (about 530 m on a 4.4 km hex).</summary>
         public const float SelectionWidth = 0.12f;
         /// <summary>Height of the band above the highest ground under it. 30 m since visual v1 Task 8 (it was the line mesh's
         /// 120 m plus 20 m, to cover the lines; at the 6 km hero zoom that floated); the material's depth offset keeps it
@@ -169,7 +169,8 @@ namespace Statecraft.Game.Map
         /// <summary>Outlines every hex in <paramref name="hexes"/> (Movement.Reachable's, from InfoPanelPresenter) with a thin
         /// band in one mesh, drawn and draped as <see cref="Select"/>'s outline and with its material; nothing to light (none,
         /// or only hexes off the map) hides it. Display only: which hexes are lit is the sim's answer, never computed here.
-        /// A unit has at most 5 movement points (unit_types.yaml), so the mesh stays far under 16-bit indices.</summary>
+        /// A unit has at most 5 movement points (unit_types.yaml), so the mesh stays far under 16-bit indices. Each lit hex also
+        /// gets a translucent fill over the models (<see cref="ReachableFillName"/>, #2201).</summary>
         public void ShowReachable(IEnumerable<(int q, int r)> hexes)
         {
             if (Terrain == null || Hexes == null) return;
@@ -190,6 +191,8 @@ namespace Statecraft.Game.Map
             float size = Hexes.hex_size_km * 1000f;
             int n = MapBuilder.RingVertices;
             var verts = new List<Vector3>(); var tris = new List<int>();
+            var fill = new List<Vector3>(); var fillColours = new List<Color>(); var fillTris = new List<int>(); var inner = new List<Vector3>(n);
+            var clear = FillColour.linear; clear.a = 0f;
             var ring = new List<Vector3>(2 * n); var middle = new List<Vector3>(n);
             foreach (var at in hexes)
             {
@@ -212,12 +215,141 @@ namespace Statecraft.Game.Map
                     int a = b0 + j, b = b0 + (j + 1) % n, ai = b0 + n + j, bi = b0 + n + (j + 1) % n;
                     tris.AddRange(new[] { a, ai, b, b, ai, bi });   // the shader draws both faces (Cull Off)
                 }
+                // The fill (#2201): a strip from the band's outer ring, in the fill's colour, to a ring FillDepth further in,
+                // clear, so the tint fades towards the middle of the hex.
+                inner.Clear();
+                MapBuilder.DrapedRing(Frame, Terrain.terrainData, centre, size * (1f - FillDepth), SelectionClearanceM, inner);
+                int f0 = fill.Count;
+                for (int j = 0; j < n; j++) { fill.Add(ring[j]); fillColours.Add(FillColour.linear); }
+                for (int j = 0; j < n; j++) { fill.Add(inner[j]); fillColours.Add(clear); }
+                for (int j = 0; j < n; j++)
+                {
+                    int a = f0 + j, b = f0 + (j + 1) % n, ai = f0 + n + j, bi = f0 + n + (j + 1) % n;
+                    fillTris.AddRange(new[] { a, ai, b, b, ai, bi });
+                }
             }
             var m = go.GetComponent<MeshFilter>().sharedMesh;
             m.Clear();
             m.SetVertices(verts); m.SetTriangles(tris, 0);
             m.RecalculateBounds();
             go.GetComponent<MeshRenderer>().enabled = verts.Count > 0;
+            SetOverlayMesh(OverlayChild(ReachableFillName), fill, fillColours, fillTris, fadeClose: true);
+        }
+
+        /// <summary>The lit hexes' translucent fill (#2201), beside <see cref="ReachableName"/> under the terrain.</summary>
+        public const string ReachableFillName = "ReachableFill";
+        /// <summary>The hover marker on the hex under the pointer while a pick is open (#2201), under the terrain.</summary>
+        public const string HoverName = "HexHover";
+        /// <summary>The fill's material (Statecraft/HexOverlay: vertex colours, drawn over the models), in Resources so a player
+        /// keeps it and its shader.</summary>
+        public const string OverlayMaterialResource = "Map/HexOverlay";
+        /// <summary>The hover marker's material: the same shader, queued at Transparent+45, between the fill (+40) and the move
+        /// arrow (+50, #2184), so the band draws over the fill and under the arrow. A queue, not a sortingOrder: URP sorts by order
+        /// in layer before the queue, so an order of 1 would draw the band over the arrow's tip on the hovered hex.</summary>
+        public const string HoverMaterialResource = "Map/HexHover";
+        /// <summary>The lit hexes' fill at their edge: the selection's ivory at 40%, so a lit hex reads over a town or a wood and the
+        /// ground still shows through.</summary>
+        public static readonly Color FillColour = new Color(SelectionColour.r, SelectionColour.g, SelectionColour.b, 0.4f);
+        /// <summary>How far in from the edge the fill fades to clear, as a fraction of the hex circumradius, so the middle of a lit
+        /// hex is untinted. The shader also thins the fill as the camera comes close (the closest zoom, 6 km, shows about one
+        /// hex, and a full tint washed the whole view).</summary>
+        public const float FillDepth = 0.45f;
+        /// <summary>The hover band's core and edges: the move arrow's gold and navy ink (#2134), so the band reads on pale
+        /// towns and dry grass (the navy) and on dark woods (the gold).</summary>
+        public static readonly Color HoverColour = new Color(1f, 0.82f, 0.25f), HoverInk = new Color(0.06f, 0.08f, 0.14f, 0.9f);
+
+        /// <summary>A child of the terrain drawn with the overlay material, made on first use (a rebuild destroys it).</summary>
+        GameObject OverlayChild(string name, string material = OverlayMaterialResource)
+        {
+            var found = Terrain.transform.Find(name);
+            if (found != null) return found.gameObject;
+            var go = new GameObject(name);
+            go.transform.SetParent(Terrain.transform, false);
+            go.AddComponent<MeshFilter>().sharedMesh = Terrain.GetComponent<MapRuntimeAssets>().Own(new Mesh { name = name });
+            var renderer = go.AddComponent<MeshRenderer>();
+            renderer.sharedMaterial = Resources.Load<Material>(material);
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            return go;
+        }
+
+        /// <summary><paramref name="fadeClose"/>: uv.x 1, so Statecraft/HexOverlay fades the mesh as the camera comes close.</summary>
+        static void SetOverlayMesh(GameObject go, List<Vector3> verts, List<Color> colours, List<int> tris, bool fadeClose)
+        {
+            var m = go.GetComponent<MeshFilter>().sharedMesh;
+            m.Clear();
+            var uvs = new List<Vector2>(verts.Count);
+            for (int i = 0; i < verts.Count; i++) uvs.Add(new Vector2(fadeClose ? 1f : 0f, 0f));
+            m.SetVertices(verts); m.SetColors(colours); m.SetUVs(0, uvs); m.SetTriangles(tris, 0);
+            m.RecalculateBounds();
+            go.GetComponent<MeshRenderer>().enabled = verts.Count > 0;
+        }
+
+        /// <summary>Within this camera distance the hover band thins to the lit-hex outline's <see cref="ReachableWidth"/>: the
+        /// overlay shader's CloseM (Statecraft/HexOverlay), inside which the fill fades too. At the closest zoom (6 km) one hex
+        /// fills the view and the selection's 0.12 band hid the buildings on it (owner ruling, #2213).</summary>
+        public const float HoverCloseM = 8000f;
+
+        MeshRenderer hoverRenderer;
+        (int q, int r)? hovered;
+        float hoverWidth;
+        // Kept between calls: the pointer moves to a new hex many times a second, and fresh lists each time made steady garbage.
+        readonly List<Vector3> hoverVerts = new List<Vector3>();
+        readonly List<Color> hoverColours = new List<Color>();
+        readonly List<int> hoverTris = new List<int>();
+        readonly List<Vector3>[] hoverRings = { new List<Vector3>(), new List<Vector3>(), new List<Vector3>(), new List<Vector3>() };
+        // The strip edges as shares of the band: a navy edge either side, 0.2 of the band each (about 2 px at the opening zoom,
+        // not a heavy bar at 6 km), the gold between.
+        static readonly float[] HoverShares = { 0f, 0.2f, 0.8f, 1f };
+
+        /// <summary>Marks hex (q, r) with a band of the selection's width in three strips, navy edge, gold core, navy edge,
+        /// draped as <see cref="Select"/>'s, thinned to the lit-hex outline's width with the camera within <see cref="HoverCloseM"/>
+        /// (<paramref name="cameraDistanceM"/>, the camera rig's distance); null or a hex off the map hides it. GameRoot asks every
+        /// frame: the same hex at the same width again returns at once.</summary>
+        public void ShowHover((int q, int r)? hex, float cameraDistanceM = float.PositiveInfinity)
+        {
+            if (Terrain == null || Hexes == null) return;
+            float width = cameraDistanceM <= HoverCloseM ? ReachableWidth : SelectionWidth;
+            if (hoverRenderer != null && hovered == hex && hoverWidth == width) return;
+            hovered = hex; hoverWidth = width;
+            var go = OverlayChild(HoverName, HoverMaterialResource);
+            hoverRenderer = go.GetComponent<MeshRenderer>();
+            HexJson at = null;
+            if (hex is (int q, int r)) foreach (var h in Hexes.hexes) if (h.q == q && h.r == r) { at = h; break; }
+            var verts = hoverVerts; var colours = hoverColours; var tris = hoverTris;
+            verts.Clear(); colours.Clear(); tris.Clear();
+            if (at != null)
+            {
+                var c = Frame.ToWorld(at.lon, at.lat, 0);
+                var centre = new Vector2(c.x, c.z);
+                float size = Hexes.hex_size_km * 1000f;
+                int n = MapBuilder.RingVertices;
+                var shares = HoverShares;
+                var rings = hoverRings;
+                for (int i = 0; i < shares.Length; i++)
+                {
+                    rings[i].Clear();
+                    MapBuilder.DrapedRing(Frame, Terrain.terrainData, centre, size * (1f - width * shares[i]), SelectionClearanceM, rings[i]);
+                }
+                for (int j = 0; j < n; j++)   // each index at the highest of its rings, as Select's band
+                {
+                    float y = float.MinValue;
+                    foreach (var ring in rings) y = Mathf.Max(y, ring[j].y);
+                    foreach (var ring in rings) ring[j] = new Vector3(ring[j].x, y, ring[j].z);
+                }
+                for (int i = 0; i < 3; i++)
+                {
+                    var colour = (i == 1 ? HoverColour : HoverInk).linear;
+                    int b0 = verts.Count;
+                    verts.AddRange(rings[i]); verts.AddRange(rings[i + 1]);
+                    for (int j = 0; j < 2 * n; j++) colours.Add(colour);
+                    for (int j = 0; j < n; j++)
+                    {
+                        int a = b0 + j, b = b0 + (j + 1) % n, ai = b0 + n + j, bi = b0 + n + (j + 1) % n;
+                        tris.Add(a); tris.Add(ai); tris.Add(b); tris.Add(b); tris.Add(ai); tris.Add(bi);   // the shader draws both faces (Cull Off)
+                    }
+                }
+            }
+            SetOverlayMesh(go, verts, colours, tris, fadeClose: false);
         }
 
         /// <summary>Shows the sim's multi-turn route as thin hex bands. Each item carries its arrival turn;
@@ -270,6 +402,133 @@ namespace Statecraft.Game.Map
             var m = go.GetComponent<MeshFilter>().sharedMesh;
             m.Clear(); m.SetVertices(verts); m.SetTriangles(tris, 0); m.RecalculateBounds();
             go.GetComponent<MeshRenderer>().enabled = verts.Count > 0;
+        }
+
+        /// <summary>The move arrow's mesh (#2134), beside <see cref="RouteName"/> under the terrain.</summary>
+        public const string MoveArrowName = "MoveArrow";
+        /// <summary>The arrow's material (Statecraft/MoveArrow), in Resources so a player keeps it and its shader.</summary>
+        public const string MoveArrowMaterialResource = "Map/MoveArrow";
+        /// <summary>The arrow's full width (its head's base) per metre of camera distance, as MoveArrow.mat gives the shader:
+        /// about 27 px at 1080 px at every zoom (CameraRig.Fov 35 degrees), the shaft about a third of that.</summary>
+        public const float MoveArrowWidthPerDistance = 0.016f;
+        /// <summary>The arrow leaves the unit's hex this share of the hex size from its centre, clear of the unit's token.</summary>
+        public const float MoveArrowStartShare = 0.35f;
+        /// <summary>Spacing (m) of the arrow's cross-sections along a hex-to-hex leg, each on the ground under it: about the
+        /// heightmap's spacing, so the arrow keeps to the relief as the camera's tilt sees it.</summary>
+        public const float MoveArrowStepM = 250f;
+        /// <summary>The widest half-width (m) the shader gives the arrow: at CameraController.MaxDistance, with half again for
+        /// the vertices of a tilted view that lie farther from the camera than its look-at point. The cross-sections next to
+        /// a bend stay beyond the reach of a band this wide (review of #2134, C1), and the bounds hold it (C4).</summary>
+        public const float MoveArrowWidestHalfM = 0.5f * MoveArrowWidthPerDistance * CameraController.MaxDistance * 1.5f;
+        /// <summary>The hexes last passed to <see cref="ShowMoveArrow"/>: the unit's hex, then the path's.</summary>
+        public IReadOnlyList<(int q, int r)> ShownArrow => shownArrow;
+        readonly List<(int q, int r)> shownArrow = new List<(int q, int r)>();
+        /// <summary>The map's hexes by (q, r), for the arrow; made once per hex file (a Build loads a new one).</summary>
+        Dictionary<(int, int), HexJson> arrowHexes;
+        HexFile arrowHexesOf;
+        readonly List<Vector2> arrowLine = new List<Vector2>();
+        readonly List<Vector3> arrowVerts = new List<Vector3>();
+        readonly List<Vector2> arrowUv = new List<Vector2>();
+        readonly List<Vector4> arrowSide = new List<Vector4>();
+        readonly List<int> arrowTris = new List<int>();
+
+        /// <summary>Draws the move arrow (#2134) from the first hex's centre through every later hex's centre, in order, with
+        /// its head on the last: <paramref name="hexes"/> is the unit's hex and the sim's path (InfoPanelPresenter.ArrowHexes:
+        /// Movement.Path or Movement.Route, never computed here). Fewer than two hexes on the map hides it. Built once per call;
+        /// the chevrons move in the shader (Statecraft/MoveArrow), so nothing runs per frame.</summary>
+        public void ShowMoveArrow(IReadOnlyList<(int q, int r)> hexes)
+        {
+            shownArrow.Clear();
+            if (hexes != null) shownArrow.AddRange(hexes);
+            if (Terrain == null || Hexes == null) return;
+            if (arrowHexes == null || arrowHexesOf != Hexes)
+            {
+                arrowHexes = new Dictionary<(int, int), HexJson>();
+                foreach (var h in Hexes.hexes) arrowHexes[(h.q, h.r)] = h;
+                arrowHexesOf = Hexes;
+            }
+            var found = Terrain.transform.Find(MoveArrowName);
+            var go = found != null ? found.gameObject : null;
+            if (go == null)
+            {
+                go = new GameObject(MoveArrowName);
+                go.transform.SetParent(Terrain.transform, false);
+                var mesh = Terrain.GetComponent<MapRuntimeAssets>().Own(new Mesh { name = MoveArrowName });
+                go.AddComponent<MeshFilter>().sharedMesh = mesh;
+                var renderer = go.AddComponent<MeshRenderer>();
+                renderer.sharedMaterial = Resources.Load<Material>(MoveArrowMaterialResource)
+                    ?? throw new InvalidOperationException($"Resources/{MoveArrowMaterialResource}.mat is missing");
+                renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                renderer.receiveShadows = false;
+            }
+            arrowLine.Clear(); arrowVerts.Clear(); arrowUv.Clear(); arrowSide.Clear(); arrowTris.Clear();
+            foreach (var at in shownArrow)
+            {
+                if (!arrowHexes.TryGetValue((at.q, at.r), out var hex)) continue;
+                var c = Frame.ToWorld(hex.lon, hex.lat, 0);
+                var point = new Vector2(c.x, c.z);
+                if (arrowLine.Count == 0 || (point - arrowLine[arrowLine.Count - 1]).sqrMagnitude > 1f) arrowLine.Add(point);
+            }
+            if (arrowLine.Count >= 2)
+            {
+                arrowLine[0] += (arrowLine[1] - arrowLine[0]).normalized * (MoveArrowStartShare * Hexes.hex_size_km * 1000f);
+                float total = 0f;
+                for (int i = 1; i < arrowLine.Count; i++) total += (arrowLine[i] - arrowLine[i - 1]).magnitude;
+                var data = Terrain.terrainData;
+                float along = 0f;
+                for (int i = 0; i + 1 < arrowLine.Count; i++)
+                {
+                    Vector2 a = arrowLine[i], b = arrowLine[i + 1];
+                    float len = (b - a).magnitude;
+                    int steps = Mathf.Max(1, Mathf.CeilToInt(len / MoveArrowStepM));
+                    var dir = (b - a) / len;
+                    // Near a bend the widest band's inner edge reaches back along the leg (the mitre's setback): no cross-section
+                    // there, or the band would fold back over itself and blend twice (review of #2134, C1).
+                    float back = i > 0 ? MoveArrowWidestHalfM * MitreSetback((a - arrowLine[i - 1]).normalized, dir) : 0f;
+                    float front = i + 2 < arrowLine.Count ? MoveArrowWidestHalfM * MitreSetback(dir, (arrowLine[i + 2] - b).normalized) : 0f;
+                    for (int k = i == 0 ? 0 : 1; k <= steps; k++)
+                    {
+                        if (k > 0 && k < steps && (len * k / steps <= back || len * k / steps >= len - front)) continue;
+                        var p = Vector2.Lerp(a, b, (float)k / steps);
+                        var side = new Vector2(dir.y, -dir.x);
+                        // A bend (a later leg's first point): the mitre of the two legs, so the band keeps its width round it.
+                        if (k == steps && i + 2 < arrowLine.Count)
+                        {
+                            var next = (arrowLine[i + 2] - b).normalized;
+                            var mitre = (side + new Vector2(next.y, -next.x)).normalized;
+                            side = mitre / Mathf.Max(0.5f, Vector2.Dot(mitre, side));
+                        }
+                        float y = data.GetInterpolatedHeight(Mathf.Clamp01(p.x / Frame.WidthM), Mathf.Clamp01(p.y / Frame.LengthM)) + SelectionClearanceM;
+                        float s = along + len * k / steps;
+                        int v = arrowVerts.Count;
+                        for (int u = 0; u <= 1; u++)
+                        {
+                            arrowVerts.Add(new Vector3(p.x, y, p.y));
+                            arrowUv.Add(new Vector2(u, s));
+                            arrowSide.Add(new Vector4(side.x, side.y, total, 0f));
+                        }
+                        if (v > 0) { arrowTris.Add(v - 2); arrowTris.Add(v); arrowTris.Add(v - 1); arrowTris.Add(v - 1); arrowTris.Add(v); arrowTris.Add(v + 1); }
+                    }
+                    along += len;
+                }
+            }
+            var m = go.GetComponent<MeshFilter>().sharedMesh;
+            m.Clear();
+            m.SetVertices(arrowVerts); m.SetUVs(0, arrowUv); m.SetUVs(1, arrowSide); m.SetTriangles(arrowTris, 0);
+            // The vertices lie on the centre line and the shader widens the band: grow the bounds by the widest it is drawn, a
+            // mitre's twice the half-width included (Expand grows the size, so each side by half), so culling never drops a
+            // band whose centre line is just off screen (review of #2134, C4).
+            var bounds = m.bounds; bounds.Expand(4f * MoveArrowWidestHalfM);
+            m.bounds = bounds;
+            go.GetComponent<MeshRenderer>().enabled = arrowVerts.Count > 0;
+        }
+
+        /// <summary>How far back along a leg, per metre of half-width, a band's inner edge reaches at a bend from direction
+        /// <paramref name="into"/> to <paramref name="outOf"/> (unit vectors): tan of half the turn. Capped near a U-turn.</summary>
+        static float MitreSetback(Vector2 into, Vector2 outOf)
+        {
+            float cos = Mathf.Max(-0.9f, Vector2.Dot(into, outOf));
+            return Mathf.Sqrt((1f - cos) / (1f + cos));
         }
 
         public void Configure(Material terrain, Material marker, Material selection, Material sea, Material frame)
@@ -538,7 +797,7 @@ namespace Statecraft.Game.Map
             if (ShowcaseClearing ?? Units.UnitShowcase.Requested()) clearings.Add(Units.UnitShowcase.Clearing(this));
             if (unitData.Count > 0)
             {
-                var spots = unitGround.Place(unitData, (lon, lat) => { var w = Frame.ToWorld(lon, lat, 0); return new Vector2(w.x, w.z); }, null);
+                var spots = unitGround.Place(unitData, (lon, lat) => { var w = Frame.ToWorld(lon, lat, 0); return new Vector2(w.x, w.z); }, null, control: Control);
                 UnitSpots = spots;
                 foreach (var kv in spots.OrderBy(k => k.Value.X).ThenBy(k => k.Value.Z))
                 {
@@ -588,8 +847,8 @@ namespace Statecraft.Game.Map
             Routes.RouteLayer.Build(Terrain, Frame, routes, Routes.RouteLayer.ModeForThisRun(), RouteDate ?? Routes.RouteLayer.DefaultDate,
                 Routes.RouteRibbonFile.Source.Of(heights, inputs.HeightmapJson, inputs.RoutesYaml), this);
             DiagLog.BootPhase("routes built");
-            // The 1949 armistice lines as their true polylines (#237), only in the map mode asked for with the
-            // "armisticelines" flag; a missing or malformed file means no overlay and a warning. Display only.
+            // The 1949 armistice lines as their true polylines (#237), unless the run turns them off with the
+            // "noarmisticelines" flag; a missing or malformed file means no overlay and a warning. Display only.
             if (ArmisticeLines.Wanted() && inputs.ArmisticeLinesGeojson == "") Debug.LogWarning($"ARMISTICE LINES: {ArmisticeLines.FileName} is missing; no overlay");
             else if (ArmisticeLines.Wanted())
             {

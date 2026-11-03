@@ -38,7 +38,7 @@ namespace Statecraft.Sim
             Bind("legislatures.yaml", "legislatures", "body", c => c.Legislatures, nameof(Legislature.BodyHe), nameof(Legislature.BodyHeReview)),
             Bind("governments.yaml", "governments", "name", c => c.Governments, nameof(Government.NameHe), nameof(Government.NameHeReview)),
             Bind("map/locations_1948.yaml", "locations", "name", c => c.MapLocations, nameof(MapLocation.NameHe), nameof(MapLocation.NameHeReview)),
-            Bind("projects.yaml", "projects", "name", c => c.ProjectKinds, nameof(ProjectKind.NameHe), nameof(ProjectKind.NameHeReview)),
+            Bind("projects.yaml", "projects", "name", c => c.ProjectKinds.Concat(c.ProjectKindsOfOtherRulesets), nameof(ProjectKind.NameHe), nameof(ProjectKind.NameHeReview)),
             Bind("sites.yaml", "sites", "name", c => c.Sites, nameof(Site.NameHe), null),
             Bind("corridors.yaml", "corridors", "name", c => c.Corridors, nameof(CorridorDef.NameHe), null),
             Bind("objectives.yaml", "objectives", "name", c => c.Objectives, nameof(Objective.NameHe), nameof(Objective.NameHeReview)),
@@ -50,6 +50,9 @@ namespace Statecraft.Sim
         {
             "map/localities_1948.yaml", "map/settlements_1948.yaml", "map/units_1948.yaml", "map/region_names_he.yaml",
         };
+
+        /// <summary>The content files the typed records hold Hebrew from.</summary>
+        internal static IEnumerable<string> Files => Bindings.Select(b => b.File).Distinct();
 
         /// <summary>The (type, property) pairs the overlay fills, events included.</summary>
         public static IEnumerable<(Type Type, string Property)> Covered =>

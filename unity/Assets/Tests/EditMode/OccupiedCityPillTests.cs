@@ -118,9 +118,15 @@ public class OccupiedCityPillTests
         // Pick an actual projected point on B's badge/figures, not the city pill.
         var placed = layer.Tokens.Single(t => t.Token.Unit.Id == b.Token.Unit.Id);
         var cam = Camera.main!;
+        // Search round B's own drawn spot: on 4.4 km hexes the city's ground is town, so the placer can draw B on a
+        // neighbouring hex (Tel Aviv's occupant stands on (-2, 20)), beyond the reach of a search round the city's centre.
+        // So this half proves a badge click selects B; it no longer has the badge over the city's own hex.
+        var spot = new Vector3((float)placed.Spot.X, 0f, (float)placed.Spot.Z);
+        spot.y = rig.Map.Terrain.SampleHeight(spot);
+        var near = (Vector2)cam.WorldToScreenPoint(spot);
         var badge = (Vector2?)null;
-        for (float y = at.y - 80; y <= at.y + 80 && badge == null; y += 4)
-            for (float x = at.x - 80; x <= at.x + 80; x += 4)
+        for (float y = near.y - 80; y <= near.y + 80 && badge == null; y += 4)
+            for (float x = near.x - 80; x <= near.x + 80; x += 4)
                 if (layer.TokenAtScreen(cam, new Vector2(x, y)) is { } hit && hit.Token.Unit.Id == placed.Token.Unit.Id)
                 { badge = new Vector2(x, y); break; }
         Assert.IsNotNull(badge, "precondition: the occupant has a projected badge/figure hit point");

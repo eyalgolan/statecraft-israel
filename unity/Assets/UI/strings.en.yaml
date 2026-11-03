@@ -32,6 +32,21 @@ hud.caption.standing: "International support"
 hud.caption.fx: "Foreign currency"
 # Social cohesion (the morale indicator, R-NAT-001), the GDD loop only; the owner's ruling of 15 October 2026 (#380).
 hud.caption.cohesion: "Social cohesion"
+# Each meter's tip says what the meter is and what moves it, under its number in words (MeterTip, #2200; owner's option 1:
+# one key per HudModel.MeterIds id). treasury, immigration, cohesion and standing are sentences of the encyclopedia pages
+# (advisor.page.money_debt, .immigration, .national_meters), word for word. security, support and fx have no page yet and
+# are written from the code: security from model.yaml's border_villages_secure effect (its office's competence and budget,
+# EffectsSystem.Multiplier) and event shifts; support from EffectsSystem.Approval and model.yaml's voter_groups, with
+# coalition stability moving toward it (PoliticsSystem.UpdateStability, R-GOV-001); fx from EconomySystem.Apply's flows,
+# EconomySystem.ConvertDollars (R-MONEY-004) and fx_crisis, which stops the Food import (R-FOOD-002), and event effects on
+# fx_reserves (R-EFX-001).
+hud.tip.treasury: "Money comes in from taxes and from every filled job, and goes out on government spending, the upkeep of our military formations, training and building. When a cost is more than we have, it is still paid: Money stops at zero and the rest becomes debt."
+hud.tip.immigration: "The immigrants arrive as the historical figures bring them, and each city takes a share in proportion to its people. They wait as refugees, and each turn some of them become civilians without work; how many depends on the minister in charge of immigration."
+hud.tip.security: "Security moves with the choices made on event cards. Border villages add to it, more with an able and well-funded Minister of Agriculture."
+hud.tip.support: "Public support is the average approval of the voter groups, each weighing two of Social cohesion, security, housing and Food. Coalition stability moves toward it every turn."
+hud.tip.cohesion: "Social cohesion rises and falls with housing, work, Food, rationing and security."
+hud.tip.standing: "International support moves with the choices made on event cards."
+hud.tip.fx: "Foreign currency comes in from exports, donations and loans, and goes out on imports, which grow with the population, and on dollars converted into Money on the Defence screen during the war. Event cards can add to it or take from it. Once it runs out, the Food import stops until it recovers."
 # The other static texts of Game.uxml, each set by the presenter that owns its element (#193). Each English string is
 # the UXML's own text (HebrewUiTests.EachEnglishStaticTextIsTheUxmlsOwnText), so English shows what it always showed.
 # The top bar (HudPresenter):
@@ -147,6 +162,8 @@ settings.title: "Settings"
 settings.tiltshift: "Blur at the top and bottom of the map"
 settings.on: "On"
 settings.off: "Off"
+# The WebGL companion switch (#1119); the Hebrew awaits native review.
+settings.companion: "Screen reader companion"
 settings.quality: "Quality"
 settings.quality.auto: "Automatic"
 settings.quality.high: "High"
@@ -389,6 +406,7 @@ why.cause.civilian_upkeep: "{0} {1} (civilian upkeep)"
 why.cause.borrowed.deficit: "Borrowed {0} to cover the deficit"
 why.cause.borrowed.civilian_upkeep: "Borrowed {0} for civilian upkeep"
 why.cause.borrowed.military_upkeep: "Borrowed {0} for military upkeep"
+why.cause.borrowed.housing_surcharge: "Borrowed {0} for the housing surcharge"
 why.cause.borrowed.corridor: "Borrowed {0} to build a corridor segment"
 why.cause.borrowed.arms: "Borrowed {0} for Arms"
 why.cause.borrowed.training: "Borrowed {0} for training"
@@ -401,6 +419,21 @@ why.cause.borrowed.project: "Borrowed {0} to build {1}"
 why.cause.borrowed.deport: "Borrowed {0} for the Deport of {1}"
 why.cause.borrowed.occupation: "Borrowed {0} for the occupation of {1}"
 why.cause.borrowed.event: "Borrowed {0} for {1}"
+why.cause.borrowed.workshop: "Borrowed {0} for an arms workshop cycle"
+why.cause.paid.corridor: "{0} {1} (to build a corridor segment)"
+why.cause.paid.arms: "{0} {1} (for Arms)"
+why.cause.paid.training: "{0} {1} (for training)"
+why.cause.paid.prisoners: "{0} {1} (for our soldiers held by the enemy)"
+why.cause.paid.training_camp: "{0} {1} (to build a training camp)"
+why.cause.paid.plow: "{0} {1} (to plow fields)"
+why.cause.paid.drain: "{0} {1} (to drain a swamp)"
+why.cause.paid.yishuv: "{0} {1} (to build a yishuv)"
+why.cause.paid.project: "{0} {1} (to build {2})"
+why.cause.paid.occupation: "{0} {1} (for the occupation of {2})"
+why.cause.paid.map_action: "{0} {1} (to build {2})"
+why.cause.paid.workshop: "{0} {1} (for an arms workshop cycle)"
+# #2212: Money's Other line in the turn report and the meter tip, the causes left out after the two largest, summed.
+why.cause.money_other: "{0} {1} (other causes)"
 why.cause.fx_crisis_began: "Foreign currency reserves are exhausted"
 why.cause.fx_crisis_eased: "Foreign currency crisis eased"
 why.cause.fx_crisis_food: "{0} {1} (foreign currency crisis: food imports cut)"
@@ -464,6 +497,15 @@ report.enemy_move: "{0} moved to a new position"
 report.enemy_attack: "{0} launched an attack on one of your units"
 report.enemy_fortify: "{0} fortified its position"
 report.unit: "Force {0}"
+# The arms workshops' lines (#1701 A1; owner, 2 November 2026: "Yes, in the panel (Recommended)", whose option gave both
+# lines' wording): {0} the city's name. A no-worker pause is on the Why screen only.
+report.workshops: "Arms workshops"
+report.workshop_arms: "Workshop in {0}: +1 Arms"
+report.workshop_paused_debt: "Workshop in {0} paused: debt ceiling"
+# A city's workshop lines combined, for two or more (owner, 2 November 2026: "Combine per city (Recommended)", the option
+# "'Workshops in Tel Aviv (6): +6 Arms'; pauses likewise combined with a count."): {0} the city's name, {1} how many.
+report.workshop_arms_n: "Workshops in {0} ({1}): +{1} Arms"
+report.workshop_paused_debt_n: "Workshops in {0} ({1}) paused: debt ceiling"
 # The end screen (#812; D-H4): the sim's end report (EndReport.For, #810), formatted only. {0} the card's title, {1} the
 # player's date, {2} the historical date; the population's {1} is the date of its CBS anchor and {2} the anchor's count.
 end.title: "The game has ended"
@@ -580,6 +622,11 @@ minimap.overview: "Zoom all the way out"
 minimap.labels: "Show or hide the settlement names"
 minimap.borders: "Show or hide the region borders"
 ui.lang: "en"
+# ui.quit: Quit on the start screen and in Settings, desktop players only (#2153, QuitButton).
+ui.quit: "Quit"
+# ui.quit_confirm: Settings' Quit after its first press, in the button's place; the second press quits (#2188, the owner's
+# "are you sure?" ruling of 2 November 2026). Same two presses as New game (newgame.confirm).
+ui.quit_confirm: "Press again to quit"
 info.built: "{0} built here in {1}"
 info.queued: "Ordered: {0}, at End turn"
 info.build_camp: "Place a transit camp ({0})"
@@ -751,6 +798,21 @@ city.resource.vineyards: "vineyards"
 city.project_reason.turn_cap: "No more than {0} city projects in one turn"
 # The toggle that folds a city's own projects on a stacked bar or a short window (owner ruling on #1150).
 city.projects_toggle: "City projects ({0})"
+# #1722 slice E (#1701; R-ARMS-005 to R-ARMS-007), gdd-0.3 only: a built arms workshop's part of the info panel. The
+# stepper's {0} is the city's staffed (or ordered) workshops, {1} its built ones; the cycle's {0} its staffed months,
+# {1} workshop.staffed_turns, {2} the Money paid; city.workshop_held's {0} the city.
+city.workshops_staffed: "Arms workshops staffed: {0} of {1}"
+city.workshops_ordered: "Arms workshops staffed at End turn: {0} of {1}"
+city.workshop_staffed: "This workshop: staffed"
+city.workshop_unstaffed: "This workshop: not staffed, paused"
+city.workshop_cycle: "Cycle: {0} of {1} staffed months · paid {2}"
+city.workshop_next: "No cycle under way · next cycle: {0}"
+city.workshop_held: "Paused: the enemy holds {0}"
+# A workshop staffing order's refusals (R-ARMS-005): the sim's own English (Workshops.Refused*), {0} the city, {1} a count.
+workshop.refused_built_one: "{0} has 1 arms workshop"
+workshop.refused_built: "{0} has {1} arms workshops"
+workshop.refused_people: "{0} has {1} civilians and craftsmen"
+workshop.refused_people_no_job: "{0} has {1} civilians and craftsmen without a job"
 site.available: "A designated site for a new yishuv"
 site.group: "halutz group {0}"
 site.build: "Build a yishuv with {0}: {1}, {2}"
@@ -909,6 +971,8 @@ share.site_downloaded: "Attach the downloaded picture to the post."
 
 # Event/upkeep cause templates (#1680).
 why.cause.military_upkeep: "{0} {1} (military upkeep)"
+why.cause.housing_surcharge: "{0} {1} (housing surcharge)"
+why.cause.housing_cohesion: "{0} {1} (housing condition)"
 why.cause.event_new: "New: {0}"
 why.cause.event_chosen: "Chosen: {0}"
 why.cause.event_delegated: "Delegated to {0}: {1}"
@@ -953,15 +1017,13 @@ arms.attention: "Attention cost: {0:0.0} · Left: {1:0.0}"
 arms.queued: "Arms ordered: {0:N0}, at End turn"
 arms.minimum: "Buy at least 1 Arms. Enter a larger amount."
 arms.no_attention: "Not enough Attention for this purchase. Withdraw another order or wait until next turn."
+# #2198 (owner, 2 Nov 2026: "Refuse buys over ceiling (Recommended)"): Pools.BuyArms's refusal, word for word, shown in the
+# end-of-turn toast.
+arms.refused_debt_ceiling: "Buying that many Arms would take the debt past its ceiling"
 
 # #731 stock summaries in the report and Why.
 report.stock_line: "{0}: {1}"
 report.stock_change: "{0}: {1} ({2})"
-
-# #1708 artillery action status. Hebrew: native review pending (#564).
-unit.artillery_move_missing: "Artillery cannot move yet: its movement points have not been set"
-unit.fire_ready: "Fire available"
-unit.fire_spent: "Fired this turn"
 
 # #2045 standing-order refusals (Orders.Check), shown on the unit card.
 unit.order_refused.unknown_order: "That order is not known"
@@ -1015,6 +1077,11 @@ why.cause.project_started: "{0}: {1} began, cost {2}"
 why.cause.project_cancelled: "{0}: {1} was cancelled; the Money spent is not returned"
 why.cause.project_completed: "{0}: {1} was finished"
 why.cause.arms_bought: "Bought {0} Arms, cost {1}"
+# The gdd-0.3 arms workshops (#1701; R-ARMS-005, R-ARMS-006).
+why.cause.workshop_workers: "{0}: arms workshops staffed: {1}"
+why.cause.workshop_arms: "{0}: an arms workshop made 1 Arms"
+why.cause.workshop_paused.no_worker: "{0}: an arms workshop has no worker without a job this month"
+why.cause.workshop_paused.debt_ceiling: "{0}: an arms workshop's next cycle waits: paying for it would take the debt past its ceiling"
 why.cause.food_harvest: "{0}: the plowed land yielded {1} units of Food"
 why.cause.food_shortage: "Food ran out: {0} of {1} units of the month's need went unmet"
 why.cause.food_without_imports: "No Food imported (foreign currency crisis): the stock fell to {0} units"
@@ -1110,3 +1177,33 @@ opening.begin: "Continue to the map"
 opening.return: "Return to the start screen"
 opening.count: "Step {0} of {1}"
 opening.preview: "Editor preview: draft text; human source checks pending."
+
+# #813 (R-MONEY-004; owner, 2 November 2026: "Spend the dollars (Recommended)"): the Defence screen's dollar conversion.
+# The refusals are EconomySystem's own words, shown in the end-of-turn toast.
+dollars.title: "Convert dollars"
+dollars.reserves: "Foreign currency: {0}"
+dollars.cost: "When foreign currency runs out, Food imports stop."
+dollars.total: "Converted so far: {0} of {1}"
+dollars.amount: "Dollars to convert, in millions"
+dollars.money: "Money this would bring: {0}"
+dollars.convert: "Convert dollars"
+dollars.withdraw: "Withdraw conversion"
+dollars.queued: "Dollars to convert: {0}, at End turn"
+dollars.wartime_only: "Converting dollars is for wartime only."
+dollars.no_attention: "Not enough Attention for this conversion. Withdraw another order or wait until next turn."
+dollars.refused_minimum: "Convert at least $1m"
+dollars.refused_not_at_war: "Dollars can be converted only during the war"
+dollars.refused_monthly: "That is more dollars than may be converted this month"
+dollars.refused_total: "That would pass the total of dollars that may be converted"
+dollars.refused_reserves: "There are not enough dollars in the reserves"
+why.cause.dollars_converted: "Converted {0} of foreign currency into Money: {1}"
+
+# Read-only WebGL companion (#1119); Hebrew additions await native review.
+companion.title: "Game companion"
+companion.help: "Read-only. Play with the game's keyboard controls."
+companion.focus: "Game focus"
+companion.status: "Status"
+companion.choices: "Choices"
+companion.empty: "No decision waiting"
+companion.unavailable: "Unavailable"
+companion.map: "Map"

@@ -25,6 +25,8 @@ namespace Statecraft.Game.UI
         public const string ElementName = "turn-report";
         /// <summary>The id of the row after the meters' that lists the enemy's orders this turn (#1293).</summary>
         public const string EnemyRow = "enemy";
+        /// <summary>The row after the stocks that lists the arms workshops' Arms and ceiling pauses this turn (#1701 A1).</summary>
+        public const string WorkshopRow = "workshops";
 
         /// <summary>The units_1948.yaml rows, which name the enemy's units in that row (GameRoot sets them once the map has read
         /// them); without a row a unit is named by its id (report.unit).</summary>
@@ -99,7 +101,7 @@ namespace Statecraft.Game.UI
 
         /// <summary>The report's lines for the session's last turn: each top-bar meter whose shown change is not empty, in
         /// the bar's order (the meters have different units, so no order by size is given without a rule); then national stocks; under
-        /// <see cref="EnemyRow"/>, the enemy's orders (#1293).</summary>
+        /// <see cref="WorkshopRow"/>, the arms workshops' lines (#1701); under <see cref="EnemyRow"/>, the enemy's orders (#1293).</summary>
         public static IReadOnlyList<Line> Lines(SimBridge bridge, UiText text, IReadOnlyList<UnitEntry>? units = null,
             IReadOnlyDictionary<string, string>? townNamesHe = null)
         {
@@ -109,10 +111,12 @@ namespace Statecraft.Game.UI
                 if (id == "cohesion" && !m.ShowsCohesion) continue;
                 var meter = m.For(id);
                 if (meter.Delta.Length == 0) continue;
-                lines.Add(new Line(id, text.Format("report.line", text["hud.caption." + id], meter.Delta), HudModel.Causes(bridge.Session.Last, id,
+                lines.Add(new Line(id, text.Format("report.line", text["hud.caption." + id], meter.Delta), HudModel.Causes(bridge.Session.Last, id, bridge.Content,
                     w => CauseText.Line(w, bridge.Content, units ?? Array.Empty<UnitEntry>(), text, townNamesHe))));
             }
             lines.AddRange(StockLines(bridge, text, units, townNamesHe));
+            var workshops = WorkshopLines(bridge, text, townNamesHe);
+            if (workshops.Count > 0) lines.Add(new Line(WorkshopRow, text["report.workshops"], workshops));
             var enemy = EnemyOrders(bridge, text, units);
             if (enemy.Count > 0) lines.Add(new Line(EnemyRow, text["report.enemy"], enemy));
             return lines;
@@ -146,6 +150,32 @@ namespace Statecraft.Game.UI
                 .Where(x => x.w.Target == target && x.w.Delta != 0)
                 .OrderByDescending(x => Math.Abs(x.w.Delta)).ThenBy(x => x.i)
                 .Take(HudModel.MaxCauses).Select(x => line(x.w)).ToList();
+
+        /// <summary>#1701 A1 (owner, 2 November 2026: "Yes, in the panel (Recommended)"): the arms workshops that made Arms and
+        /// those whose next cycle waits at the debt ceiling this turn, as the sim's causes say (CauseKeys.WorkshopArms;
+        /// CauseKeys.WorkshopPaused with Workshops.DebtCeiling; R-ARMS-006), the city in the player's language. Each city's
+        /// Arms are one line and its ceiling pauses another, with their count (owner, 2 November 2026: "Combine per city
+        /// (Recommended)", the option "'Workshops in Tel Aviv (6): +6 Arms'; pauses likewise combined with a count."), in the
+        /// order each first appears among the sim's causes; a city with one keeps A1's own line ("Workshop in Tel Aviv: +1
+        /// Arms"). The count is the number of those causes, each 1 Arms; nothing else is computed. A no-worker pause stays on
+        /// the Why screen. There is no ruleset check here: the sim gives these causes under gdd-0.3 only
+        /// (ArmsWorkshopTests.Gdd01RunsNoWorkshopCycle), and the report shows what the sim says.</summary>
+        static IReadOnlyList<string> WorkshopLines(SimBridge bridge, UiText text, IReadOnlyDictionary<string, string>? townNamesHe)
+        {
+            var turn = bridge.Session.Last;
+            if (turn == null) return Array.Empty<string>();
+            return turn.Why
+                .Where(w => w.Key == CauseKeys.WorkshopArms || (w.Key == CauseKeys.WorkshopPaused && w.Args.FirstOrDefault() == Workshops.DebtCeiling))
+                .GroupBy(w => (w.Key, City: w.Target))   // groups come in the order of their first cause
+                .Select(g =>
+                {
+                    var made = g.Key.Key == CauseKeys.WorkshopArms;
+                    var city = ContentNames.Settlement(text, bridge.Content, g.Key.City, townNamesHe);
+                    var n = g.Count();
+                    return n == 1 ? text.Format(made ? "report.workshop_arms" : "report.workshop_paused_debt", city)
+                        : text.Format(made ? "report.workshop_arms_n" : "report.workshop_paused_debt_n", city, n);
+                }).ToList();
+        }
 
         /// <summary>#1293: every order the enemy AI gave in the last turn, and every attack its units made, a standing one too
         /// (#1297), as the sim names it on its cause (Cause.EnemyOrder, R-ENEMY-001), in the sim's order, in the player's

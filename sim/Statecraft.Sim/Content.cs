@@ -590,6 +590,19 @@ namespace Statecraft.Sim
         /// <summary>The Arms one recruit group takes when its training starts (R-ARMS-003; D-G6, Q-UNIT-3, #781). Required in the
         /// GDD loop, &gt;= 0.</summary>
         public int? ArmsPerRecruitGroup { get; set; }
+        /// <summary>The most foreign currency, in US$ millions, the player may convert into Money in one turn (R-MONEY-004; #813).
+        /// Required in the GDD loop, &gt;= 0.</summary>
+        public int? DollarsPerTurn { get; set; }
+        /// <summary>The most foreign currency, in US$ millions, the player may convert in the whole game (R-MONEY-004; #813).
+        /// Required in the GDD loop, &gt;= 0.</summary>
+        public int? DollarsTotal { get; set; }
+        /// <summary>IL millions of Money one US$ million of foreign currency converts into, by date (R-MONEY-004; #813): each
+        /// rate from its day on, the first on or before the game's start, the days in increasing order. Required in the GDD
+        /// loop, each rate finite and &gt;= 0. Read through <see cref="IlPerDollarOn"/>.</summary>
+        public List<DollarRate> IlPerDollar { get; set; } = new List<DollarRate>();
+
+        /// <summary>The rate of <see cref="IlPerDollar"/> in force on <paramref name="date"/>: the last one from on or before it.</summary>
+        public double IlPerDollarOn(DateTime date) => IlPerDollar.Last(x => x.From <= date).Rate;
         /// <summary>IL millions per Israeli military formation per turn, not per strength point (R-UNIT-010; Q-UNIT-3).</summary>
         public double? MilitaryUpkeepPerTurn { get; set; }
         /// <summary>Turns served as a recruit before promotion to veteran_soldier (R-UNIT-004; Q-UNIT-2).</summary>
@@ -726,6 +739,13 @@ namespace Statecraft.Sim
         public string Requires { get; set; } = "";
         /// <summary>Whether StartProject refuses this kind until an event option unlocks it (R-EFX-008). Default false.</summary>
         public bool Locked { get; set; }
+        /// <summary>R-ARMS-004: the workshop worker slots the kind gives when built, 0 or 1 (an arms workshop's one worker,
+        /// gdd03-balance.yaml `arms_workshop.parts.worker_slots`). Default 0.</summary>
+        public int WorkerSlots { get; set; }
+        /// <summary>R-ARMS-004: the rulesets (eras.yaml `systems.ruleset`) whose games have the kind; empty for every GDD
+        /// ruleset. The loader leaves a kind out of the other rulesets' <see cref="Content.ProjectKinds"/>.</summary>
+        public List<string> Rulesets { get => rulesets; set => rulesets = value ?? new List<string>(); }
+        List<string> rulesets = new List<string>();
     }
 
     /// <summary>A designated site (sites.yaml; docs/GDD.md "Pioneer work": building is allowed only at designated spots, and a
@@ -884,6 +904,15 @@ namespace Statecraft.Sim
         /// <summary>The Arms a group of a trained military type other than the recruit takes when its training starts
         /// (R-UNIT-008; Q-ARTY-3). The recruit's is rules.yaml mvp.arms_per_recruit_group (R-ARMS-003); null on every other type.</summary>
         public int? TrainingArms { get; set; }
+    }
+
+    /// <summary>One dated exchange rate of mvp.il_per_dollar (R-MONEY-004): IL millions per US$ million from this day (inclusive).
+    /// <see cref="Status"/> is "sourced": the rates are history, not design values (DesignValuesTests skips them).</summary>
+    public sealed class DollarRate
+    {
+        public DateTime From { get; set; }
+        public double Rate { get; set; }
+        public string Status { get; set; } = "";
     }
 
     /// <summary>One stretch of a budget line's ownership (rules.yaml budget_owners): from this day (inclusive) the office owns the line.</summary>
@@ -1115,6 +1144,10 @@ namespace Statecraft.Sim
         /// while that front holds prisoners or the player's soldiers, has exactly one option and resolves without a draw.
         /// Empty for every other event.</summary>
         public string Prisoners { get; set; } = "";
+        /// <summary>The settlement target (settlement_targets.yaml) whose Deport this follow-up card follows (R-EVT-007; GDD
+        /// Phase 6 PR 9, #801): it fires only once the player's Deport has depopulated that place, has exactly one option,
+        /// resolves without a draw and carries the <c>displacement</c> tag. Empty for every other event.</summary>
+        public string Deported { get; set; } = "";
         /// <summary>The place among the same turn's cards of the same `from` (R-EVT-006): a lower order comes first, before
         /// the id decides. Default 0; degania_defence has 1, so One Army opens the game (owner, 24 October 2026, #1568).</summary>
         public int Order { get; set; }
@@ -1341,6 +1374,9 @@ namespace Statecraft.Sim
         public List<MoneyAccount> Money = new List<MoneyAccount>();
         public List<PopulationAnchor> PopulationAnchors = new List<PopulationAnchor>();
         public List<GameEvent> Events = new List<GameEvent>();
+        /// <summary>Every language in translations/ (#1618 step 2, docs/translations.md "Loading"), by code, each checked
+        /// against this content. Display text, so outside <see cref="Hash"/>; nothing shows it yet.</summary>
+        public List<TranslationSet> Translations = new List<TranslationSet>();
         List<MapHex> _hexes = new List<MapHex>();
         Dictionary<(int, int), MapHex> _hexIndex = new Dictionary<(int, int), MapHex>();
 
@@ -1375,8 +1411,12 @@ namespace Statecraft.Sim
         public List<StartingForce> StartingForces = new List<StartingForce>();
         /// <summary>The GDD designated sites (sites.yaml), in file order. Empty in the legacy loop.</summary>
         public List<Site> Sites = new List<Site>();
-        /// <summary>The GDD city project kinds (projects.yaml), in file order. Empty in the legacy loop.</summary>
+        /// <summary>The GDD city project kinds (projects.yaml) this game's ruleset has (R-ARMS-004: a row's `rulesets`), in file
+        /// order. Empty in the legacy loop.</summary>
         public List<ProjectKind> ProjectKinds = new List<ProjectKind>();
+        /// <summary>R-ARMS-004: the projects.yaml rows limited to other rulesets, in file order. Read and validated with the
+        /// rest, never startable or shown; kept so the Hebrew overlay (#1618) still names every row of the file.</summary>
+        public List<ProjectKind> ProjectKindsOfOtherRulesets = new List<ProjectKind>();
         /// <summary>The corridors (corridors.yaml), in file order; empty in the legacy loop.</summary>
         public List<CorridorDef> Corridors = new List<CorridorDef>();
         /// <summary>The objectives (objectives.yaml), ordered by id. Read in both loops, since their cards are events; only the

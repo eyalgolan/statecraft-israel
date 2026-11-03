@@ -44,6 +44,8 @@ public class TownLandmarksTests
     {
         "tel-aviv-white-city-v1", "jerusalem-stone-city-v1-3denhance", "haifa-port-city-v1", "moshava-town-v1", "nahalal-moshav-v1",
         "kibbutz-compound-v2", "stone-village-v1", "maabara-camp-v1", "shikun-housing-v1",
+        // Tal Heuberger's generated whole towns (#2085, #1288)
+        "tiberias-town-v1", "safed-town-v1", "netanya-town-v1", "ramla-town-v1",
     };
 
     static MapScene OpenMap()
@@ -97,7 +99,7 @@ public class TownLandmarksTests
     public void EveryTownModelIsUsedAndEachIsInTheStreamedTownsBundle()
     {
         var used = TownLandmarks.ById.Values.Concat(TownLandmarks.ByType.Values).Concat(TownLandmarks.ByAction.Values.Select(v => v.Model)).Distinct();
-        CollectionAssert.AreEquivalent(Towns, used, "all nine, as #507 mapped them, with #336's second Jerusalem for #507's (owner, 21 October 2026, #708)");
+        CollectionAssert.AreEquivalent(Towns, used, "all nine, as #507 mapped them, with #336's second Jerusalem for #507's (owner, 21 October 2026, #708), and #2085's generated towns");
         foreach (var id in Towns) Assert.AreEqual("collection-" + id, CollectionCatalog.BundleOf(id), id);
         Assert.AreEqual(TownLandmarks.TelAviv, TownLandmarks.ById["tel_aviv"]);
         Assert.AreEqual(TownLandmarks.Kibbutz, TownLandmarks.ByType["kibbutz"]);
@@ -138,6 +140,52 @@ public class TownLandmarksTests
             Assert.AreEqual(TownLandmarks.Jerusalem3D, t.Placed.Single(p => p.Key == "jerusalem").Model, $"{date:d MMM yyyy}");
             Assert.IsTrue(t.Seats.ContainsKey("jerusalem"), "on its core");
         }
+    }
+
+    /// <summary>#1288: "An EditMode test that each of the three towns resolves to its model." Each of Tiberias, Safed and Netanya
+    /// (type town, so no ByType row reaches it) resolves by id to Tal Heuberger's generated whole town (#2085), streamed in a
+    /// bundle of its own, with the default yaw until a render tunes it; on the map its model stands on the
+    /// town's own core.</summary>
+    [TestCase("tiberias", CollectionCatalog.TiberiasTown)]
+    [TestCase("safed", CollectionCatalog.SafedTown)]
+    [TestCase("netanya", CollectionCatalog.NetanyaTown)]
+    public void ATownOf1288ResolvesToItsGeneratedWholeTown(string town, string model)
+    {
+        Assert.AreEqual(model, TownLandmarks.ById[town]);
+        Assert.IsTrue(CollectionCatalog.IsGeneratedTown(model), model);
+        Assert.AreEqual("collection-" + model, CollectionCatalog.BundleOf(model));
+        Assert.AreEqual(200f, TownLandmarks.YawOf(model), "no yaw row yet: the default");
+        Assert.IsNotNull(Far(model), CollectionCatalog.PrefabPath(model, CollectionDetail.Far));
+        var map = OpenMap();
+        var s = map.Settlements.Single(x => x.Id == town);
+        Assert.AreEqual("town", s.Type);
+        Assert.AreEqual(model, TownLandmarks.ModelFor(s));
+        var t = ShowAll(map);
+        Assert.AreEqual(model, t.Placed.Single(p => p.Key == town).Model);
+        Assert.IsTrue(t.Seats.ContainsKey(town), "on its core");
+        CollectionAssert.DoesNotContain(t.Missing, town);
+    }
+
+    /// <summary>Owner, 2 November 2026: "Yes, Tal's Ramla (Recommended)" ("Ramla draws Tal's town instead of the stone village"): Ramla (an
+    /// arab_town, which ByType would give the stone village) resolves by id to Tal Heuberger's own whole town (#2085), streamed in
+    /// a bundle of its own, and it stands on Ramla's core. The other Arab towns keep the stone village.</summary>
+    [Test]
+    public void RamlaStandsAsTalsOwnTown()
+    {
+        string model = CollectionCatalog.RamlaTown;
+        Assert.AreEqual(model, TownLandmarks.ById["ramla"]);
+        Assert.IsTrue(CollectionCatalog.IsGeneratedTown(model), model);
+        Assert.AreEqual("collection-" + model, CollectionCatalog.BundleOf(model));
+        Assert.IsNotNull(Far(model), CollectionCatalog.PrefabPath(model, CollectionDetail.Far));
+        var map = OpenMap();
+        var s = map.Settlements.Single(x => x.Id == "ramla");
+        Assert.AreEqual("arab_town", s.Type);
+        Assert.AreEqual(model, TownLandmarks.ModelFor(s));
+        Assert.AreEqual(TownLandmarks.StoneVillage, TownLandmarks.ModelFor(map.Settlements.Single(x => x.Id == "lod")), "only Ramla");
+        var t = ShowAll(map);
+        Assert.AreEqual(model, t.Placed.Single(p => p.Key == "ramla").Model);
+        Assert.IsTrue(t.Seats.ContainsKey("ramla"), "on its core");
+        CollectionAssert.DoesNotContain(t.Missing, "ramla");
     }
 
     /// <summary>The towns with a whole-town model, in the file's order.</summary>
@@ -280,30 +328,39 @@ public class TownLandmarksTests
     [Test]
     public void OnlyTheCurrentCamerasReadyTownsSuppressProceduralHouses()
     {
-        var map = OpenMap();
-        var t = ShowAll(map);
-        var root = map.transform.Find(KitLayer.RootName);
-        var mapped = Mapped(map);
-        var plain = map.Settlements.First(s => TownLandmarks.ModelFor(s) == null);
-        var plainKit = root.Find(plain.Id).GetComponent<MeshRenderer>();
-        foreach (var (d, close) in new[] { (120000f, false), (60000f, false), (TownModelLayer.CloseEnterM - 1000f, true), (CameraController.MinDistance, true) })
+        // Since #2085 every game town has a whole-town model, so the test unmaps one (Netanya) for its run: it stands in for an
+        // unrelated plain town, and its kit must keep the fallback.
+        var byId = (Dictionary<string, string>)TownLandmarks.ById;
+        string unmapped = "netanya", row = byId[unmapped];
+        byId.Remove(unmapped);
+        try
         {
-            RenderAt(map, map.KitFootprints.First(f => f.id == "tel_aviv").centre, d);
-            foreach (var s in mapped)
+            var map = OpenMap();
+            var t = ShowAll(map);
+            var root = map.transform.Find(KitLayer.RootName);
+            var mapped = Mapped(map);
+            var plain = map.Settlements.First(s => TownLandmarks.ModelFor(s) == null);
+            var plainKit = root.Find(plain.Id).GetComponent<MeshRenderer>();
+            foreach (var (d, close) in new[] { (120000f, false), (60000f, false), (TownModelLayer.CloseEnterM - 1000f, true), (CameraController.MinDistance, true) })
             {
-                var layer = root.GetComponentInChildren<TownModelLayer>();
-                bool near = (bool)ResidencyCall(layer, typeof(TownModelLayer), "ReadyForTown", s.Id, Camera.main)!;
-                bool whole = (bool)ResidencyCall(layer, typeof(TownModelLayer), "WantsWholeTown", s.Id, Camera.main)! && t.Seats.ContainsKey(s.Id);
-                bool ready = near || whole;
-                Assert.AreEqual(ready, root.Find(s.Id).GetComponent<MeshRenderer>().forceRenderingOff, s.Id);
-                var closeR = root.Find(s.Id + KitLayer.CloseSuffix)?.GetComponent<MeshRenderer>();
-                Assert.IsNotNull(closeR, s.Id + " has a close mesh to swap");
-                Assert.AreEqual(!ready, closeR!.forceRenderingOff, s.Id);
+                RenderAt(map, map.KitFootprints.First(f => f.id == "tel_aviv").centre, d);
+                foreach (var s in mapped)
+                {
+                    var layer = root.GetComponentInChildren<TownModelLayer>();
+                    bool near = (bool)ResidencyCall(layer, typeof(TownModelLayer), "ReadyForTown", s.Id, Camera.main)!;
+                    bool whole = (bool)ResidencyCall(layer, typeof(TownModelLayer), "WantsWholeTown", s.Id, Camera.main)! && t.Seats.ContainsKey(s.Id);
+                    bool ready = near || whole;
+                    Assert.AreEqual(ready, root.Find(s.Id).GetComponent<MeshRenderer>().forceRenderingOff, s.Id);
+                    var closeR = root.Find(s.Id + KitLayer.CloseSuffix)?.GetComponent<MeshRenderer>();
+                    Assert.IsNotNull(closeR, s.Id + " has a close mesh to swap");
+                    Assert.AreEqual(!ready, closeR!.forceRenderingOff, s.Id);
+                }
+                var buildingLayer = root.GetComponentInChildren<TownModelLayer>();
+                bool plainReady = (bool)ResidencyCall(buildingLayer, typeof(TownModelLayer), "ReadyForTown", plain.Id, Camera.main)!;
+                Assert.AreEqual(plainReady, plainKit.forceRenderingOff, "an unrelated plain town keeps fallback");
             }
-            var buildingLayer = root.GetComponentInChildren<TownModelLayer>();
-            bool plainReady = (bool)ResidencyCall(buildingLayer, typeof(TownModelLayer), "ReadyForTown", plain.Id, Camera.main)!;
-            Assert.AreEqual(plainReady, plainKit.forceRenderingOff, "an unrelated plain town keeps fallback");
         }
+        finally { byId[unmapped] = row; }
     }
 
     /// <summary>The fail-open check: without #700's building models (no model list) nothing would draw a mapped town up
@@ -465,9 +522,11 @@ public class TownLandmarksTests
         Assert.AreEqual(t.Wanted.Count, t.Placed.Count);
         Assert.AreEqual(1, t.Placed.Count(p => p.Key == "tel_aviv" && p.Model == TownLandmarks.TelAviv));
         Assert.AreEqual(map.Settlements.Count(s => s.Type == "kibbutz"), t.Placed.Count(p => p.Model == TownLandmarks.Kibbutz));
-        // Owner on #917 (17 October 2026): "Keep at all seven" arab_town rows.
+        // Owner on #917 (17 October 2026): "Keep at all seven" arab_town rows; on 2 November 2026 Ramla took Tal's own town
+        // ("Yes, Tal's Ramla (Recommended)"), so the stone village stands at the other six.
         Assert.AreEqual(7, map.Settlements.Count(s => s.Type == "arab_town"));
-        Assert.AreEqual(7, t.Placed.Count(p => p.Model == TownLandmarks.StoneVillage), "the stone village at all seven");
+        Assert.AreEqual(6, t.Placed.Count(p => p.Model == TownLandmarks.StoneVillage), "the stone village at the six Arab towns but Ramla");
+        Assert.AreEqual(1, t.Placed.Count(p => p.Key == "ramla" && p.Model == TownLandmarks.Ramla), "Ramla stands as its own town");
     }
 
     [Test]
@@ -523,6 +582,79 @@ public class TownLandmarksTests
         CollectionAssert.DoesNotContain(t.Placed.Select(p => p.Key), "tel_aviv");
         CollectionAssert.Contains(t.Missing, "tel_aviv");
     }
+
+    /// <summary>#2099, as #2046 for the camp tents: the edit-mode render callback (the beginCameraRendering handler itself)
+    /// never acquires, instantiates or destroys the whole-town landmarks mid-render. A change (here the Towns.Enabled kill
+    /// switch) waits for LateUpdate, as in play mode, and once applied the next render finds nothing pending (it asks for no
+    /// further player-loop update); a direct Choose (no render) still applies a change at once.</summary>
+    [Test]
+    public void AnEditModeRenderCallbackDefersTheWholeTownsToLateUpdate()
+    {
+        Assert.IsFalse(Application.isPlaying, "the edit-mode render path");
+        var map = OpenMap();
+        // Made after OpenScene(Single), which destroys every object of the scene it replaces.
+        var prefab = GameObject.CreatePrimitive(PrimitiveType.Cube); prefab.name = "fake original town";
+        var camera = new GameObject("deferred whole-town camera").AddComponent<Camera>();
+        try
+        {
+            TownLandmarks.Request = (id, detail, done) => { asked.Add((id, detail, done)); done(prefab); };
+            var t = TownLandmarks.ShowAt(map, new DateTime(1949, 1, 1), Array.Empty<Placement>(), ContentLoader.Load(Statecraft.Game.Paths.Content))!;
+            Assert.Greater(t.Placed.Count, 0, "precondition: the whole towns stand");
+            var first = t.transform.GetChild(0).gameObject;
+            camera.transform.SetPositionAndRotation(new Vector3(0f, 60000f, 0f), Quaternion.Euler(90f, 0f, 0f));
+            Render(t, camera);
+            Assert.IsFalse(t.RefreshPending, "precondition: settled, a render finds nothing pending");
+            var enabled = typeof(ProductionResidency.TownPolicy).GetField("Enabled", ResidencyFlags)!;
+
+            enabled.SetValue(map.Residency.Towns, false);
+            Render(t, camera);
+            Assert.IsTrue(first != null, "nothing is destroyed inside the render callback");
+            Assert.Greater(t.Placed.Count, 0, "the whole towns still stand");
+            Assert.IsTrue(t.RefreshPending, "the change waits for LateUpdate");
+            ResidencyCall(t, typeof(TownLandmarks), "LateUpdate");
+            Assert.IsTrue(first == null, "LateUpdate retires the whole towns");
+            Assert.AreEqual(0, t.Placed.Count, "and none stands");
+            Render(t, camera);
+            Assert.IsFalse(t.RefreshPending, "once applied, the next render finds nothing pending");
+
+            enabled.SetValue(map.Residency.Towns, true); int before = asked.Count;
+            t.Choose(default, camera);
+            Assert.Greater(asked.Count, before, "a direct call (no render) requests at once");
+            Assert.Greater(t.Placed.Count, 0, "and places them at once");
+            Render(t, camera);
+            Assert.IsFalse(t.RefreshPending, "and leaves nothing pending");
+        }
+        finally { Object.DestroyImmediate(camera.gameObject); Object.DestroyImmediate(prefab); }
+    }
+
+    /// <summary>#2099: a model that does not stream (its request answers null) is still a settled state: render, LateUpdate and
+    /// render again find nothing pending, so an edit-mode render never asks for a player-loop update on every frame.</summary>
+    [Test]
+    public void AMissingWholeTownLeavesNothingPendingAfterARender()
+    {
+        var map = OpenMap();
+        var camera = new GameObject("missing whole-town camera").AddComponent<Camera>();
+        try
+        {
+            TownLandmarks.Request = (id, detail, done) => { asked.Add((id, detail, done)); done(null); };
+            var t = TownLandmarks.ShowAt(map, new DateTime(1949, 1, 1), Array.Empty<Placement>(), ContentLoader.Load(Statecraft.Game.Paths.Content))!;
+            Assert.Greater(asked.Count, 0, "precondition: the models were asked for");
+            Assert.AreEqual(0, t.Placed.Count, "precondition: none streamed");
+            CollectionAssert.IsNotEmpty(t.Missing, "precondition: the towns are listed as not drawn");
+            camera.transform.SetPositionAndRotation(new Vector3(0f, 60000f, 0f), Quaternion.Euler(90f, 0f, 0f));
+            Render(t, camera);
+            Assert.IsFalse(t.RefreshPending, "a render finds nothing pending");
+            ResidencyCall(t, typeof(TownLandmarks), "LateUpdate");
+            int count = asked.Count;
+            Render(t, camera);
+            Assert.IsFalse(t.RefreshPending, "nor after LateUpdate");
+            Assert.AreEqual(count, asked.Count, "and nothing is asked for again");
+        }
+        finally { Object.DestroyImmediate(camera.gameObject); }
+    }
+
+    static void Render(TownLandmarks t, Camera camera) => ResidencyCall(t, typeof(TownLandmarks), "OnBeginCameraRendering",
+        default(UnityEngine.Rendering.ScriptableRenderContext), camera);
 
     const System.Reflection.BindingFlags ResidencyFlags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic;
     static object? ResidencyCall(object? owner, Type type, string method, params object?[] args)
@@ -614,7 +746,9 @@ public class TownLandmarksTests
         }
         public void Arrive()
         {
-            ResidencyPump(run);
+            // The stream opens one bundle and loads one prefab a frame, one model after another: enough frames for every
+            // whole town the map wants (eleven since #2085), with the old 20 as the floor.
+            ResidencyPump(run, Math.Max(20, 2 + 2 * towns.Wanted.Select(w => w.Model).Distinct().Count()));
             var instance = towns.transform.Find(focus.Key);
             Assert.IsNotNull(instance, "capture a real instance before testing teardown");
             observedInstances.Add(instance.gameObject); observedRenderers.AddRange(instance.GetComponentsInChildren<Renderer>(true));

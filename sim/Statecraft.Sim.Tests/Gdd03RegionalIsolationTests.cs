@@ -3,13 +3,15 @@ using Statecraft.Sim;
 /// <summary>#1690 acceptance checks (owner, 1 November 2026): map markers and completed sites create no extra economy or
 /// people, and fixture values never become production defaults (R-CITY-006, R-CITY-008, R-POP-001, R-SITE-003).
 /// Authored campaign initialization is not on main yet, so each check is pinned to what exists today: the explicit
-/// regional fixture (PlayerRegions.CreateFixture) or the exact gdd-0.3 identity's game path with its authored, empty
-/// region catalogue. Neither stands in for the later production cutover.</summary>
+/// regional fixture (PlayerRegions.CreateFixture) or the exact gdd-0.3 identity's game path with its authored region
+/// catalogue (nine regions since #1691), which no new game initializes yet. Neither stands in for the later production
+/// cutover.</summary>
 public class Gdd03RegionalIsolationTests
 {
-    const string A = "tel_aviv_jaffa";
+    const string A = "ramla_rehovot";
     const string Marker = "fixture_rural_marker";
-    // A kibbutz map marker on Tel Aviv's land hex (-3,19), with the roster's own flags: no city panel, no founding site.
+    // A kibbutz map marker on Ramla's and Rehovot's land hex (-4,24) of the 4.4 km grid (#1796), with the roster's own
+    // flags: no city panel, no founding site.
     const string RuralMarker = @"
 - id: fixture_rural_marker
   name: Fixture Kibbutz
@@ -18,10 +20,10 @@ public class Gdd03RegionalIsolationTests
   name_he_sources:
   - { url: 'https://example.org/fixture', checked: 2026-11-01 }
   kind: kibbutz
-  lon: 34.78
-  lat: 32.07
-  q: -3
-  r: 19
+  lon: 34.84
+  lat: 31.92
+  q: -4
+  r: 24
   priority: optional
   marker: true
   managed_city: false
@@ -49,11 +51,11 @@ public class Gdd03RegionalIsolationTests
     }
 
     static PlayerRegionPool Pool() => new PlayerRegionPool(A, 7, .4m, 3, 2,
-        new[] { new PlayerRegionFacility("fixture-workshop", "jaffa", PlayerRegionFacilityKind.Workshop, 11) });
+        new[] { new PlayerRegionFacility("fixture-workshop", "rehovot", PlayerRegionFacilityKind.Workshop, 11) });
 
     static GameState Fixture(Content c) => PlayerRegions.CreateFixture(c, new[] { Pool() },
         new[] { new PopulationInventoryRow("fixture", 0, new PopulationUnit(0, PopulationStatus.FreeCivilian, 0,
-            new PopulationLocation(A, -3, 19), PopulationAssignment.Unassigned, CivilianProfession.None, CivilianTier.None,
+            new PopulationLocation(A, -4, 24), PopulationAssignment.Unassigned, CivilianProfession.None, CivilianTier.None,
             0, "", 0, PopulationEquipment.None)) },
         new[] { new PopulationTarget("fixture-a-job", PopulationAssignmentKind.Work, A) },
         Array.Empty<string>(), Array.Empty<string>());
@@ -68,9 +70,9 @@ public class Gdd03RegionalIsolationTests
     [Fact]
     public void R_CITY_006_ARuralMarkerInARegionAddsNoEconomyOrPersonToTheFixture()
     {
-        var region = PlayerRegionsContentTests.TelAviv;
+        var region = PlayerRegionsContentTests.RamlaRehovot;
         var plain = Fixture(Load(regions: "player_regions:\n" + region));
-        var withMarker = Load(marker: true, regions: "player_regions:\n" + region.Replace("[tel_aviv, jaffa]", "[tel_aviv, jaffa, " + Marker + "]"));
+        var withMarker = Load(marker: true, regions: "player_regions:\n" + region.Replace("[ramla, rehovot]", "[ramla, rehovot, " + Marker + "]"));
         Assert.Contains(Marker, withMarker.PlayerRegions.Regions[A].MemberLocations);
         var marked = Fixture(withMarker);
         Assert.Equal(plain.PlayerRegions.Keys, marked.PlayerRegions.Keys);
@@ -82,8 +84,8 @@ public class Gdd03RegionalIsolationTests
     }
 
     // R-CITY-006 ("The cities are the `city` and `town` rows of `map/settlements_1948.yaml`"), R-POP-001. Pinned to the
-    // exact gdd-0.3 game path with the authored, empty region catalogue (so the empty PlayerRegions check pins that
-    // catalogue): adding a rural marker to the location roster changes no start state, and no turn after it, and no
+    // exact gdd-0.3 game path with the authored region catalogue (nine regions since #1691; the empty PlayerRegions
+    // check pins that no new game initializes them, #1689): adding a rural marker to the location roster changes no start state, and no turn after it, and no
     // marker without managed_city is a city.
     [Fact]
     public void R_CITY_006_ARuralMarkerOnTheMapCreatesNoCityRegionOrPersonInTheGame()
@@ -140,14 +142,17 @@ public class Gdd03RegionalIsolationTests
     public void R_CITY_006_FixtureValuesNeverBecomeProductionDefaultsOrASecondLedger()
     {
         var before = Load(); var game = Simulation.NewGame(before, 1, Mode.Historical).Describe();
-        var fixture = Fixture(Load(regions: "player_regions:\n" + PlayerRegionsContentTests.TelAviv));
+        var fixture = Fixture(Load(regions: "player_regions:\n" + PlayerRegionsContentTests.RamlaRehovot));
         fixture.PopulationLedger.ChangeAssignment(0, new PopulationAssignment(PopulationAssignmentKind.Work, "fixture-a-job"));
         Assert.Empty(fixture.Cities); Assert.Empty(fixture.Population);
         Assert.Equal(fixture.PopulationLedger.TotalPeople, fixture.TotalPopulation);
 
         var after = Load();
         Assert.Equal(before.Hash, after.Hash);
-        Assert.Empty(after.PlayerRegions.Regions); Assert.Empty(PlayerRegionCatalogue.Empty.Regions);
+        // The authored catalogue (nine regions since #1691) is unchanged by the fixture and holds none of its regions.
+        Assert.Equal(before.PlayerRegions.Regions.Keys, after.PlayerRegions.Regions.Keys);
+        Assert.Equal(9, after.PlayerRegions.Regions.Count); Assert.DoesNotContain(A, after.PlayerRegions.Regions.Keys);
+        Assert.Empty(PlayerRegionCatalogue.Empty.Regions);
         Assert.Equal(before.PopulationPeoplePerUnit, after.PopulationPeoplePerUnit);
         var production = Simulation.NewGame(after, 1, Mode.Historical);
         Assert.Equal(game, production.Describe());

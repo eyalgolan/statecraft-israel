@@ -13,7 +13,7 @@ public class Gdd03MovementFortTests
         + "  - { id: enemy_car, kind: unit, side: egypt, class: armour, movement_points: 5 }\n"
         + "  - { id: gun, kind: unit, side: israel, class: artillery, movement_points: 2, range: 2, arms_per_fire: 2 }\n";
 
-    static Dictionary<string, string> Files(string identity = SaveGame.Gdd03Ruleset, string biome = "coastal_plain")
+    internal static Dictionary<string, string> Files(string identity = SaveGame.Gdd03Ruleset, string biome = "coastal_plain")
     {
         var f = Fixture.Gdd(new Dictionary<string, string> {
             ["unit_types.yaml"] = Types,
@@ -29,7 +29,7 @@ public class Gdd03MovementFortTests
         return f;
     }
 
-    static Content Load(string identity = SaveGame.Gdd03Ruleset, string biome = "coastal_plain") =>
+    internal static Content Load(string identity = SaveGame.Gdd03Ruleset, string biome = "coastal_plain") =>
         ContentLoader.Load(Fixture.Write(Files(identity, biome)));
 
     static Unit Of(string type, int id = 1, int q = 2, int r = 1, string side = "israel", string order = "", string target = "") =>
@@ -148,26 +148,30 @@ public class Gdd03MovementFortTests
         Assert.NotNull(Movement.Full(c, s, s.Units[1], 3, 1));
     }
 
-    // R-MOVE-001: no artillery movement number or infantry-column fallback is introduced.
+    // R-MOVE-001, R-MOVE-008, R-MOVE-010, R-COMBAT-001, R-COMBAT-007: Q12 (owner, 1 November 2026) gives artillery main's 2
+    // points on the infantry terrain column. Mountains are made infantry 1 / armour 3 here so the two columns differ.
     [Fact]
-    public void DeferredArtilleryCannotMoveButItsExistingFireContractRemains()
+    public void ArtilleryMovesTwoPointsOnInfantryTerrainCostsAndFiringSpendsThem()
     {
-        var c = Load(); var s = With(c, Of("gun"), Of("enemy", 2, 4, side: "egypt"));
-        Assert.Contains(1, Movement.NeedsOrders(c,s,new Dictionary<int,int>()));
-        Assert.Empty(Movement.Reachable(c, s, 1));
-        Assert.Equal(Movement.MissingArtilleryMovement, Movement.GiveGoTo(c, s, 1, 3, 1, new Dictionary<int, int>(), new List<Cause>()));
-        s.Arms = 0;
-        Assert.Null(Combat.Check(c, s, 1, 4, 1, spent: new Dictionary<int, int>())); // R-COMBAT-007
-        var spent = new Dictionary<int,int>(); var why = new List<Cause>();
-        var before = s.Hash();
-        Assert.Equal(Movement.MissingArtilleryMovement, Movement.Move(c,s,1,3,1,spent,why));
-        Assert.Equal(before,s.Hash()); Assert.Empty(why); Assert.Empty(spent);
-        Assert.True(Movement.ActionsLeft(c,s,1,spent) > 0);
-        Assert.Null(Combat.Strike(c,s,1,4,1,spent,new Dictionary<int,(int Q,int R)>(),why));
-        Assert.Equal(0,s.Arms); Assert.DoesNotContain(1,Movement.NeedsOrders(c,s,spent));
-        Assert.Equal(0,Movement.ActionsLeft(c,s,1,spent));
-        Assert.NotNull(Combat.Check(c,s,1,4,1,spent:spent));
-
+        var c = Load(biome: "mountains"); c.Gdd03Balance!.Values["mountains"].Parts["movement"].Values[0] = 1;
+        c.Gdd03Balance!.Values["military.move_infantry"].Values[0] = 3; // pins that artillery reads its type's 2, not the infantry scalar
+        var s = With(c, Of("gun"), Of("enemy", 2, 5, side: "egypt"));
+        Assert.Equal(2, Movement.Allowance(c, s.Units[1]));
+        Assert.Contains(1, Movement.NeedsOrders(c, s, new Dictionary<int, int>()));
+        Assert.Equal(1, Movement.Reachable(c, s, 1)[(3, 1)]);
+        Assert.Equal(2, Movement.Reachable(c, s, 1)[(4, 1)]); // armour's 3 would leave no point for the next hex
+        var spent = new Dictionary<int, int>(); var why = new List<Cause>();
+        Assert.Null(Movement.Move(c, s, 1, 3, 1, spent, why));
+        Assert.Equal((3, 1), (s.Units[1].Q, s.Units[1].R));
+        Assert.Equal(1, Movement.PointsLeft(c, s, 1, spent));
+        Assert.Null(Combat.Strike(c, s, 1, 5, 1, spent, new Dictionary<int, (int Q, int R)>(), why)); // range 2, shared budget
+        Assert.Equal(0, Movement.PointsLeft(c, s, 1, spent));
+        Assert.Equal("That unit has no movement points left this turn", Combat.Check(c, s, 1, 5, 1, spent: spent));
+        Assert.Empty(Movement.Reachable(c, s, 1, spent));
+        var go = With(c, Of("gun", q: 0)); var goSpent = new Dictionary<int, int>();
+        Assert.Equal(new[] { 1, 1, 2, 2 }, Movement.Route(c, go, 1, 4, 1, goSpent).Select(h => h.Turn));
+        Assert.Null(Movement.GiveGoTo(c, go, 1, 4, 1, goSpent, new List<Cause>()));
+        Assert.Equal(2, go.Units[1].Q);
     }
 
     // R-COMBAT-010, R-COMBAT-002, R-ORDER-002, R-ORDER-003: additive, either army, no Hold or unsettled bonus.

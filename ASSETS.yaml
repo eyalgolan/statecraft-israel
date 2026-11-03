@@ -1186,85 +1186,85 @@ rules:
     source: "Dreamina (dreamina.capcut.com), model GPT Image 2.5, 2026-10-12, 1536x864 as downloaded, with promo/final/03-gameplay-1936.png as the style reference; prompts in promo/start-screen/prompt-b.txt and -c.txt"
     status: verified
     note: "Decision D1: AI-only images CC0 / no rights claimed. Two options for the start screen; C is used. Decision D-D decided (owner, 2026-10-14, docs/oss/DECISIONS.md): approved for free, non-commercial distribution and CC0 marking; before any paid release the owner confirms commercial rights for the plan used or replaces the image."
-  # Generated buildings and props: original source review only (PR1379).
-  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-01-netanya-tiled-house-original/*.fbx"
+  # Generated buildings and props: shipped in the game (PR1379).
+  - glob: "unity/Assets/Art/Settlements/Prototype/Models/generated-1948-01-netanya-tiled-house-original/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tal Heuberger, Tripo Studio generated source, regenerated 24 October 2026 (#1379). Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
-  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-01-netanya-tiled-house-original/*_basecolor.jpg"
+    note: "Signed off by the owner on 27 October 2026 (#756) and placed in the game by #2046: Netanya's houses, beside #507's two-storey house, streamed like the other town buildings after the first frame. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
+  - glob: "unity/Assets/Art/Settlements/Prototype/Models/generated-1948-01-netanya-tiled-house-original/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tal Heuberger, Tripo Studio generated source, regenerated 24 October 2026 (#1379). Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
-  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-02-netanya-two-storey-balcony-house/*.fbx"
+    note: "Signed off by the owner on 27 October 2026 (#756) and placed in the game by #2046: Netanya's houses, beside #507's two-storey house, streamed like the other town buildings after the first frame. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
+  - glob: "unity/Assets/Art/Settlements/Prototype/Models/generated-1948-02-netanya-two-storey-balcony-house/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
-  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-02-netanya-two-storey-balcony-house/*_basecolor.jpg"
+    note: "Signed off by the owner on 27 October 2026 (#756) and placed in the game by #2046: Netanya's houses, beside #507's two-storey house, streamed like the other town buildings after the first frame. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
+  - glob: "unity/Assets/Art/Settlements/Prototype/Models/generated-1948-02-netanya-two-storey-balcony-house/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
-  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-03-netanya-flat-roof-porch-house/*.fbx"
+    note: "Signed off by the owner on 27 October 2026 (#756) and placed in the game by #2046: Netanya's houses, beside #507's two-storey house, streamed like the other town buildings after the first frame. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
+  - glob: "unity/Assets/Art/Settlements/Prototype/Models/generated-1948-03-netanya-flat-roof-porch-house/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tal Heuberger, Tripo Studio generated source, regenerated 24 October 2026 (#1379). Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
-  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-03-netanya-flat-roof-porch-house/*_basecolor.jpg"
+    note: "Signed off by the owner on 27 October 2026 (#756) and placed in the game by #2046: Netanya's houses, beside #507's two-storey house, streamed like the other town buildings after the first frame. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
+  - glob: "unity/Assets/Art/Settlements/Prototype/Models/generated-1948-03-netanya-flat-roof-porch-house/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tal Heuberger, Tripo Studio generated source, regenerated 24 October 2026 (#1379). Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
-  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-04-dark-basalt-house/*.fbx"
+    note: "Signed off by the owner on 27 October 2026 (#756) and placed in the game by #2046: Netanya's houses, beside #507's two-storey house, streamed like the other town buildings after the first frame. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
+  - glob: "unity/Assets/Art/Settlements/Prototype/Models/generated-1948-04-dark-basalt-house/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
-  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-04-dark-basalt-house/*_basecolor.jpg"
+    note: "Signed off by the owner on 27 October 2026 (#756) and placed in the game by #2046: Tiberias's houses (the old town was built of basalt blocks, en.wiki Tiberias), streamed like the other town buildings after the first frame. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
+  - glob: "unity/Assets/Art/Settlements/Prototype/Models/generated-1948-04-dark-basalt-house/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
-  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-05-plastered-courtyard-house-original/*.fbx"
+    note: "Signed off by the owner on 27 October 2026 (#756) and placed in the game by #2046: Tiberias's houses (the old town was built of basalt blocks, en.wiki Tiberias), streamed like the other town buildings after the first frame. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
+  - glob: "unity/Assets/Art/Settlements/Prototype/Models/generated-1948-05-plastered-courtyard-house-original/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tal Heuberger, Tripo Studio generated source, regenerated 24 October 2026 (#1379). Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
-  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-05-plastered-courtyard-house-original/*_basecolor.jpg"
+    note: "Signed off by the owner on 27 October 2026 (#756) and placed in the game by #2046: the stone-village houses of the Arab towns and villages, beside #507's courtyard house, streamed like the other town buildings after the first frame. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
+  - glob: "unity/Assets/Art/Settlements/Prototype/Models/generated-1948-05-plastered-courtyard-house-original/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tal Heuberger, Tripo Studio generated source, regenerated 24 October 2026 (#1379). Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
+    note: "Signed off by the owner on 27 October 2026 (#756) and placed in the game by #2046: the stone-village houses of the Arab towns and villages, beside #507's courtyard house, streamed like the other town buildings after the first frame. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
   # Lighter levels of the generated town houses (#1901, PR #1994): derived meshes, made in the editor from the FBX rows above.
-  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-0[1-5]-*/*-light.asset"
+  - glob: "unity/Assets/Art/Settlements/Prototype/Models/generated-1948-0[1-5]-*/*-light.asset"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Derived from Tal Heuberger's originals (the FBX files in the generated-1948-01 to 05 house folders, listed in the ASSETS.yaml rows for unity/Assets/Editor/Generated1948Review/generated-1948-0N-*/*.fbx) by unity/Assets/Editor/HexTiles/HexHouseLevels.cs: a quadric-error half-edge collapse that keeps a subset of their own vertices (exact positions, UVs and normals) and adds none. Each <id>-light.json beside the mesh records the source FBX path, its SHA-256, the settings and the triangle counts."
+    source: "Derived from Tal Heuberger's originals (the FBX files in the generated-1948-01 to 05 house folders, listed in the ASSETS.yaml rows for unity/Assets/Art/Settlements/Prototype/Models/generated-1948-0N-*/*.fbx) by unity/Assets/Editor/HexTiles/HexHouseLevels.cs: a quadric-error half-edge collapse that keeps a subset of their own vertices (exact positions, UVs and normals) and adds none. Each <id>-light.json beside the mesh records the source FBX path, its SHA-256, the settings and the triangle counts."
     status: verified
-    note: "Same licence as the originals, CC BY-NC-ND 4.0, credit Tal Heuberger, with Tal's permission for these lighter derived meshes (30 October 2026, recorded by the owner in PR #1994). The prefabs and JSON records beside them retain the code-row terms. Editor review only, as the rows above."
+    note: "Same licence as the originals, CC BY-NC-ND 4.0, credit Tal Heuberger, with Tal's permission for these lighter derived meshes (30 October 2026, recorded by the owner in PR #1994). The prefabs and JSON records beside them retain the code-row terms. Drawn only in the editor, on the hex-tile boards (HexModels.HouseLevels); no streamed bundle carries them."
   - glob: "unity/Assets/Art/Collection/generated-1948-06-bedouin-b-enclosed-striped-tent/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
@@ -1279,20 +1279,20 @@ rules:
     source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
     note: "In the game at the Bedouin camp areas, streamed in its own bundle after the first frame; the owner signed off all 19 generated models on 27 October 2026 (#756). 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
-  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-08-khaki-canvas-tent/*.fbx"
+  - glob: "unity/Assets/Art/Collection/generated-1948-08-khaki-canvas-tent/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
-  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-08-khaki-canvas-tent/*_basecolor.jpg"
+    note: "Signed off by the owner on 27 October 2026 (#756) and placed in the game by #2046: in place of a transit camp's khaki ridge tents up close, streamed in its own bundle after the first frame. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
+  - glob: "unity/Assets/Art/Collection/generated-1948-08-khaki-canvas-tent/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
+    note: "Signed off by the owner on 27 October 2026 (#756) and placed in the game by #2046: in place of a transit camp's khaki ridge tents up close, streamed in its own bundle after the first frame. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
   - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-09-stone-village-well/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
@@ -1403,7 +1403,7 @@ rules:
     note: "Screenshots of the game, not AI images; the AI-made parts they show are the start screen's painting and Tal Heuberger's 3D models (Tripo Studio, their rows above). CC BY-SA 4.0 as for the Steam kit's screenshots (coordinator ruling, 2026-10-15): the screenshots show the CC BY-SA 4.0 bakes of D13 (landuse.png, BiomeColours.bytes, RouteRibbons.bytes)."
   - glob: "docs/images/build-gameplay.*"
     licence: CC-BY-4.0
-    source: "In-engine capture: about 20 seconds of real play recorded from the game's own WebGL build (main at f57bd39, 2026-11-01) in headless Chrome for Testing at 1920x1080 with the DevTools screencast, after New game and the opening's Skip button, as one take with one hard cut (five of the eight units End turn selects are left out); the animated WebP (1024x576, 12 fps) for the README, the MP4 (H.264, 24 fps) for the store-page draft. Map derived from Copernicus DEM; the event-card photographs CC BY 4.0 with their credit lines in the picture (Meitar Collection / National Library of Israel; NOTICE)"
+    source: "In-engine capture: about 21 seconds of real play recorded from the game's own WebGL build (main at 32e7d9c, 2026-11-01) in headless Chrome for Testing at 1920x1080 with the DevTools screencast, after New game and the opening's Skip button, as one take with one hard cut (five of the eight units End turn selects are left out); the animated WebP (1024x576, 12 fps) for the README, the MP4 (H.264, 24 fps) for the store-page draft. Map derived from Copernicus DEM; the event-card photographs CC BY 4.0 with their credit lines in the picture (Meitar Collection / National Library of Israel; NOTICE)"
     status: verified
   - glob: "docs/steam/kit/*_capsule_*.png"
     licence: CC-BY-SA-4.0
@@ -1420,6 +1420,56 @@ rules:
     source: "The kit's eight 1920x1080 screenshots of the game's own WebGL build (main at c0a38256, captured 2026-10-14/15 with tools/web_check.py --shots and tools/headed.py's Browser), each at half size on one sheet; listed with their SHA-256 in docs/steam/coming-soon-kit.md. Map derived from Copernicus DEM (NOTICE); the Defence screen's portraits are David Ben-Gurion (public domain, NARA) and Yaakov Dori (CC0), their rows in ASSETS.portraits.yaml"
     status: verified
     note: "Not AI. No Cabinet screen, no GPO portrait, no AI painting or clip, no sensitive event card. CC BY-SA 4.0 by coordinator ruling (2026-10-15): the screenshots show the CC BY-SA 4.0 bakes of D13."
+  - glob: "docs/steam/achievements/OBJ_RAILWAY_unlocked.png"
+    licence: CC-BY-4.0
+    source: "Steam achievement icon OBJ_RAILWAY, the unlocked colour icon, 256x256: a railway track in perspective running to the horizon. Drawn with Pillow primitives by tools/steam_achievement_icons.py (#2156), in the game's UI colour tokens (unity/Assets/UI/Statecraft.uss:5-17, CC BY 4.0). Option A, chosen by the owner on 1 November 2026 ('All A (Recommended)', relayed by the coordinator)."
+    status: verified
+    note: "Not AI. No font, photograph, 3D model (none of Tal Heuberger's CC BY-NC-ND models), flag or symbol; original art, so CC BY 4.0 like the project's other original art (LICENSING.md)."
+  - glob: "docs/steam/achievements/OBJ_RAILWAY_locked.png"
+    licence: CC-BY-4.0
+    source: "Steam achievement icon OBJ_RAILWAY, the locked icon (the unlocked one in greyscale, darkened), 256x256: a railway track in perspective running to the horizon. Drawn with Pillow primitives by tools/steam_achievement_icons.py (#2156), in the game's UI colour tokens (unity/Assets/UI/Statecraft.uss:5-17, CC BY 4.0). Option A, chosen by the owner on 1 November 2026 ('All A (Recommended)', relayed by the coordinator)."
+    status: verified
+    note: "Not AI. No font, photograph, 3D model (none of Tal Heuberger's CC BY-NC-ND models), flag or symbol; original art, so CC BY 4.0 like the project's other original art (LICENSING.md)."
+  - glob: "docs/steam/achievements/OBJ_BURMA_ROAD_unlocked.png"
+    licence: CC-BY-4.0
+    source: "Steam achievement icon OBJ_BURMA_ROAD, the unlocked colour icon, 256x256: a switchback road climbing between mountains. Drawn with Pillow primitives by tools/steam_achievement_icons.py (#2156), in the game's UI colour tokens (unity/Assets/UI/Statecraft.uss:5-17, CC BY 4.0). Option A, chosen by the owner on 1 November 2026 ('All A (Recommended)', relayed by the coordinator)."
+    status: verified
+    note: "Not AI. No font, photograph, 3D model (none of Tal Heuberger's CC BY-NC-ND models), flag or symbol; original art, so CC BY 4.0 like the project's other original art (LICENSING.md)."
+  - glob: "docs/steam/achievements/OBJ_BURMA_ROAD_locked.png"
+    licence: CC-BY-4.0
+    source: "Steam achievement icon OBJ_BURMA_ROAD, the locked icon (the unlocked one in greyscale, darkened), 256x256: a switchback road climbing between mountains. Drawn with Pillow primitives by tools/steam_achievement_icons.py (#2156), in the game's UI colour tokens (unity/Assets/UI/Statecraft.uss:5-17, CC BY 4.0). Option A, chosen by the owner on 1 November 2026 ('All A (Recommended)', relayed by the coordinator)."
+    status: verified
+    note: "Not AI. No font, photograph, 3D model (none of Tal Heuberger's CC BY-NC-ND models), flag or symbol; original art, so CC BY 4.0 like the project's other original art (LICENSING.md)."
+  - glob: "docs/steam/achievements/OBJ_YISHUVIM_unlocked.png"
+    licence: CC-BY-4.0
+    source: "Steam achievement icon OBJ_YISHUVIM, the unlocked colour icon, 256x256: six simple houses in two rows of three. Drawn with Pillow primitives by tools/steam_achievement_icons.py (#2156), in the game's UI colour tokens (unity/Assets/UI/Statecraft.uss:5-17, CC BY 4.0). Option A, chosen by the owner on 1 November 2026 ('All A (Recommended)', relayed by the coordinator)."
+    status: verified
+    note: "Not AI. No font, photograph, 3D model (none of Tal Heuberger's CC BY-NC-ND models), flag or symbol; original art, so CC BY 4.0 like the project's other original art (LICENSING.md)."
+  - glob: "docs/steam/achievements/OBJ_YISHUVIM_locked.png"
+    licence: CC-BY-4.0
+    source: "Steam achievement icon OBJ_YISHUVIM, the locked icon (the unlocked one in greyscale, darkened), 256x256: six simple houses in two rows of three. Drawn with Pillow primitives by tools/steam_achievement_icons.py (#2156), in the game's UI colour tokens (unity/Assets/UI/Statecraft.uss:5-17, CC BY 4.0). Option A, chosen by the owner on 1 November 2026 ('All A (Recommended)', relayed by the coordinator)."
+    status: verified
+    note: "Not AI. No font, photograph, 3D model (none of Tal Heuberger's CC BY-NC-ND models), flag or symbol; original art, so CC BY 4.0 like the project's other original art (LICENSING.md)."
+  - glob: "docs/steam/achievements/OBJ_ABSORB_IMMIGRANTS_unlocked.png"
+    licence: CC-BY-4.0
+    source: "Steam achievement icon OBJ_ABSORB_IMMIGRANTS, the unlocked colour icon, 256x256: a plain passenger ship on waves, with no flag or marking. Drawn with Pillow primitives by tools/steam_achievement_icons.py (#2156), in the game's UI colour tokens (unity/Assets/UI/Statecraft.uss:5-17, CC BY 4.0). Option A, chosen by the owner on 1 November 2026 ('All A (Recommended)', relayed by the coordinator)."
+    status: verified
+    note: "Not AI. No font, photograph, 3D model (none of Tal Heuberger's CC BY-NC-ND models), flag or symbol; original art, so CC BY 4.0 like the project's other original art (LICENSING.md)."
+  - glob: "docs/steam/achievements/OBJ_ABSORB_IMMIGRANTS_locked.png"
+    licence: CC-BY-4.0
+    source: "Steam achievement icon OBJ_ABSORB_IMMIGRANTS, the locked icon (the unlocked one in greyscale, darkened), 256x256: a plain passenger ship on waves, with no flag or marking. Drawn with Pillow primitives by tools/steam_achievement_icons.py (#2156), in the game's UI colour tokens (unity/Assets/UI/Statecraft.uss:5-17, CC BY 4.0). Option A, chosen by the owner on 1 November 2026 ('All A (Recommended)', relayed by the coordinator)."
+    status: verified
+    note: "Not AI. No font, photograph, 3D model (none of Tal Heuberger's CC BY-NC-ND models), flag or symbol; original art, so CC BY 4.0 like the project's other original art (LICENSING.md)."
+  - glob: "docs/steam/achievements/CAMPAIGN_DONE_unlocked.png"
+    licence: CC-BY-4.0
+    source: "Steam achievement icon CAMPAIGN_DONE, the unlocked colour icon, 256x256: a calendar page with a check mark. Drawn with Pillow primitives by tools/steam_achievement_icons.py (#2156), in the game's UI colour tokens (unity/Assets/UI/Statecraft.uss:5-17, CC BY 4.0). Option A, chosen by the owner on 1 November 2026 ('All A (Recommended)', relayed by the coordinator)."
+    status: verified
+    note: "Not AI. No font, photograph, 3D model (none of Tal Heuberger's CC BY-NC-ND models), flag or symbol; original art, so CC BY 4.0 like the project's other original art (LICENSING.md)."
+  - glob: "docs/steam/achievements/CAMPAIGN_DONE_locked.png"
+    licence: CC-BY-4.0
+    source: "Steam achievement icon CAMPAIGN_DONE, the locked icon (the unlocked one in greyscale, darkened), 256x256: a calendar page with a check mark. Drawn with Pillow primitives by tools/steam_achievement_icons.py (#2156), in the game's UI colour tokens (unity/Assets/UI/Statecraft.uss:5-17, CC BY 4.0). Option A, chosen by the owner on 1 November 2026 ('All A (Recommended)', relayed by the coordinator)."
+    status: verified
+    note: "Not AI. No font, photograph, 3D model (none of Tal Heuberger's CC BY-NC-ND models), flag or symbol; original art, so CC BY 4.0 like the project's other original art (LICENSING.md)."
   - glob: "docs/GDD-v0.1.pdf"
     licence: CC-BY-4.0
     source: "The owner's game design document (Statecraft-Israel-GDD-v0.1.pages), exported to PDF on 2026-10-12; text copy in docs/GDD.md"
@@ -1439,34 +1489,34 @@ rules:
     ai_generated: true
     note: "The contributor reports the drawing was AI-assisted (PR #169); flagged for the AI-content disclosure by controller ruling."
   # --- Generated vehicle review candidates (22 October 2026) ---
-  - glob: "unity/Assets/Editor/Generated1948VehicleReview/generated-1948-13-egyptian-spitfire/*.fbx"
+  - glob: "unity/Assets/Art/Collection/generated-1948-13-egyptian-spitfire/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tripo Studio textured GLB delivered 22 October 2026, preserved byte-for-byte in asset-sources/generated-1948/vehicles/ original archives. sources.json and per-model provenance.json identify the archive/member SHA-256 and provider model ID. The Unity FBX is a documented full-geometry compatibility conversion, not a provider FBX. The 4096px colour map is extracted byte-for-byte; no LOD, decimation or texture re-encoding."
     status: verified
-    note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). Editor-only review art; no sourced deployment, player dependency, Resources catalog or streamed bundle. Paint, markings and exact subtype remain candidate art; historical art/sensitivity sign-off follows matched screenshots (#756)."
-  - glob: "unity/Assets/Editor/Generated1948VehicleReview/generated-1948-13-egyptian-spitfire/*_basecolor.jpg"
+    note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). Signed off by the owner on 27 October 2026 (#756, \"Sign off all 19\"); moved with git mv to the Collection folder, the FBX renamed to the Collection's id.fbx (same bytes), and streamed in a bundle of its own (collection-generated-1948-13-egyptian-spitfire) to be shown only in flight near the western board edge (30 km in) toward el-Arish (owner ruling of 30 October 2026, #1932: \"(c) In flight / board edge only\"). Paint, markings and exact subtype remain candidate art."
+  - glob: "unity/Assets/Art/Collection/generated-1948-13-egyptian-spitfire/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tripo Studio textured GLB delivered 22 October 2026, preserved byte-for-byte in asset-sources/generated-1948/vehicles/ original archives. sources.json and per-model provenance.json identify the archive/member SHA-256 and provider model ID. The Unity FBX is a documented full-geometry compatibility conversion, not a provider FBX. The 4096px colour map is extracted byte-for-byte; no LOD, decimation or texture re-encoding."
     status: verified
-    note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). Editor-only review art; no sourced deployment, player dependency, Resources catalog or streamed bundle. Paint, markings and exact subtype remain candidate art; historical art/sensitivity sign-off follows matched screenshots (#756)."
-  - glob: "unity/Assets/Editor/Generated1948VehicleReview/generated-1948-14-syrian-renault-r35/*.fbx"
+    note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). Signed off by the owner on 27 October 2026 (#756, \"Sign off all 19\"); moved with git mv to the Collection folder, the FBX renamed to the Collection's id.fbx (same bytes), and streamed in a bundle of its own (collection-generated-1948-13-egyptian-spitfire) to be shown only in flight near the western board edge (30 km in) toward el-Arish (owner ruling of 30 October 2026, #1932: \"(c) In flight / board edge only\"). Paint, markings and exact subtype remain candidate art."
+  - glob: "unity/Assets/Art/Collection/generated-1948-14-syrian-renault-r35/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tripo Studio textured GLB delivered 22 October 2026, preserved byte-for-byte in asset-sources/generated-1948/vehicles/ original archives. sources.json and per-model provenance.json identify the archive/member SHA-256 and provider model ID. The Unity FBX is a documented full-geometry compatibility conversion, not a provider FBX. The 4096px colour map is extracted byte-for-byte; no LOD, decimation or texture re-encoding."
+    source: "Tripo Studio textured GLB delivered 22 October 2026, preserved byte-for-byte in asset-sources/generated-1948/vehicles/ original archives. sources.json and per-model provenance.json identify the archive/member SHA-256 and provider model ID. The Unity FBX is a documented full-geometry compatibility conversion, not a provider FBX. The 4096px colour-map source bytes are extracted without re-encoding; Unity separately imports them with configured GPU compression. No LOD or decimation."
     status: verified
-    note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). Editor-only review art; no sourced deployment, player dependency, Resources catalog or streamed bundle. Paint, markings and exact subtype remain candidate art; historical art/sensitivity sign-off follows matched screenshots (#756)."
-  - glob: "unity/Assets/Editor/Generated1948VehicleReview/generated-1948-14-syrian-renault-r35/*_basecolor.jpg"
+    note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). Signed off by the owner on 27 October 2026 (#756, Degania landmark) and placed in the game by #2046: the tank stopped at Degania Alef from 20 May 1948, streamed in its own bundle after the first frame. Paint, markings and exact subtype remain candidate art; historical art/sensitivity sign-off follows matched screenshots (#756)."
+  - glob: "unity/Assets/Art/Collection/generated-1948-14-syrian-renault-r35/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tripo Studio textured GLB delivered 22 October 2026, preserved byte-for-byte in asset-sources/generated-1948/vehicles/ original archives. sources.json and per-model provenance.json identify the archive/member SHA-256 and provider model ID. The Unity FBX is a documented full-geometry compatibility conversion, not a provider FBX. The 4096px colour map is extracted byte-for-byte; no LOD, decimation or texture re-encoding."
+    source: "Tripo Studio textured GLB delivered 22 October 2026, preserved byte-for-byte in asset-sources/generated-1948/vehicles/ original archives. sources.json and per-model provenance.json identify the archive/member SHA-256 and provider model ID. The Unity FBX is a documented full-geometry compatibility conversion, not a provider FBX. The 4096px colour-map source bytes are extracted without re-encoding; Unity separately imports them with configured GPU compression. No LOD or decimation."
     status: verified
-    note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). Editor-only review art; no sourced deployment, player dependency, Resources catalog or streamed bundle. Paint, markings and exact subtype remain candidate art; historical art/sensitivity sign-off follows matched screenshots (#756)."
+    note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). Signed off by the owner on 27 October 2026 (#756, Degania landmark) and placed in the game by #2046: the tank stopped at Degania Alef from 20 May 1948, streamed in its own bundle after the first frame. Paint, markings and exact subtype remain candidate art; historical art/sensitivity sign-off follows matched screenshots (#756)."
   - glob: "unity/Assets/Editor/Generated1948VehicleReview/generated-1948-16-egyptian-dakota-c47/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
@@ -1543,6 +1593,15 @@ rules:
     licence: CC-BY-SA-4.0
     source: "Generated by tools/unit_anchor_hexes.py from units_1948.yaml and hexes.json"
     status: verified
+  - glob: "content/map/locality_hexes.yaml"
+    licence: CC-BY-SA-4.0
+    source: "Generated by tools/locality_hexes.py from localities_1948.yaml, region_places_1948.yaml and hexes.json"
+    status: verified
+  - glob: "content/map/region_places_1948.yaml"
+    licence: CC-BY-SA-4.0
+    source: "Gdd-0.3 region member places with no other record (#1691; owner, 2 November 2026, 'Fix all, then ship (Recommended)'): coordinates and facts from English and Hebrew Wikipedia by revision (CC BY-SA 4.0; facts only, short quotes in notes); per-row sources and check dates in the file"
+    status: verified
+    note: "Every row is status draft until a person checks each fact (CONTENT_POLICY section 2, rule 6). Neither the sim nor the map reads it; tools/locality_hexes.py does."
   - glob: "content/map/settlement_population_1945.yaml"
     licence: CC-BY-SA-4.0
     source: "Village Statistics, 1945 (Government of Palestine), figures read from https://en.wikipedia.org/wiki/Village_Statistics,_1945 on 2026-10-11; per-row sources in the file"
@@ -1677,7 +1736,7 @@ rules:
     ai_generated: true
     source: "Veo 3.1 Fast (ElevenLabs), generated 2026-10-12 (promo shot K04a, promo/demo3/clips/K04a.mp4, not in the repository; sha256 5bb6e584eb57771bef155f4dcf2be847d1a8f50302b8dbffd30723806ab4a2b9); re-encoded 2026-10-14 by tools/encode_event_videos.py: 960x540, 24 fps, H.264 CRF 28, no audio, with no burned-in caption (owner ruling of 2026-10-14: no need to say they were created by AI); nothing else changed"
     status: verified
-    note: "Decision D1: AI-only output CC0 / no rights claimed. Owner ruling D-V (2026-10-13): the generator terms were not checked, by the owner's choice. Shown on the law_of_return card behind the Illustration switch, labelled 'AI-generated illustration', never in place of the archival photograph. No identifiable real person (frames checked 2026-10-14)."
+    note: "Decision D1: AI-only output CC0 / no rights claimed. Owner ruling D-V (2026-10-13): the generator terms were not checked, by the owner's choice. Shown on the law_of_return card behind the Illustration switch, labelled 'AI-generated illustration', never in place of the archival photograph. No identifiable real person (frames checked 2026-10-14). Also loops in the opening's Europe panel after its archival photograph, labelled the same way (owner ruling of 2026-11-02, 'B: A + one new Yemen shot (~2,424)'; unity/Assets/UI/Opening/opening.yaml)."
   - glob: "unity/Assets/StreamingAssets/video/hula_drainage.mp4"
     licence: CC0-1.0
     ai_generated: true
@@ -1695,7 +1754,7 @@ rules:
     ai_generated: true
     source: "Seedance 2.0 (Dreamina); the Dreamina AI badge is kept, generated 2026-10-12 (promo shot A07, promo/demo2/clips/A07.mp4, not in the repository; sha256 8b3fc06d8a7836e82896a9fd09a3b874dbfdd7f9eca9e7be63f70202630af783); re-encoded 2026-10-14 by tools/encode_event_videos.py: 960x540, 24 fps, H.264 CRF 28, no audio, with no burned-in caption (owner ruling of 2026-10-14: no need to say they were created by AI); nothing else changed"
     status: verified
-    note: "Decision D1: AI-only output CC0 / no rights claimed. Owner ruling D-V (2026-10-13): the generator terms were not checked, by the owner's choice. Shown on the iraqi_exodus card behind the Illustration switch, labelled 'AI-generated illustration', never in place of the archival photograph. No identifiable real person (frames checked 2026-10-14)."
+    note: "Decision D1: AI-only output CC0 / no rights claimed. Owner ruling D-V (2026-10-13): the generator terms were not checked, by the owner's choice. Shown on the iraqi_exodus card behind the Illustration switch, labelled 'AI-generated illustration', never in place of the archival photograph. No identifiable real person (frames checked 2026-10-14). Also loops in the opening's Arab countries panel after its archival photograph, labelled the same way (owner ruling of 2026-11-02, 'B: A + one new Yemen shot (~2,424)'; unity/Assets/UI/Opening/opening.yaml)."
   - glob: "unity/Assets/StreamingAssets/video/ten_days.mp4"
     licence: CC0-1.0
     ai_generated: true
@@ -1738,6 +1797,13 @@ rules:
     source: "Seedance 2.0 Fast (Dreamina, 1080p, 5 s), image-to-video from the A10 still made in Dreamina with GPT Image 2.5 Sunburst (16:9 1K, the promo still promo/final/03-gameplay-1936.png as style reference, per promo/demo2/PROMPTS.md); the Dreamina AI badge is kept, generated 2026-10-12 (promo shot A10, demo 2, promo/demo2/clips/A10.mp4, not in the repository; sha256 909f5a0693f8ebcea570ff537d77129ffcf6fa03fcedd28356192c31051fe694); encoded 2026-10-31 by tools/encode_event_videos.py: 960x540, 24 fps, H.264 CRF 28, no audio, with no burned-in caption (owner ruling of 2026-10-14: no need to say they were created by AI); nothing else changed. Encoded file sha256 66b635d4dd31bb3006b5ac631655d44868e10b3283184140b7e0cf4098be2f8c"
     status: verified
     note: "Decision D1: AI-only output CC0 / no rights claimed. Owner ruling D-V (2026-10-13, merged in #449): the generator terms were not checked, by the owner's choice. Owner decision of 2026-10-31 on #1564: 'Ship both clips' (the existing shot ships with the card, chosen over reviewing it first). Shown on the reparations_vote card behind the Illustration switch, labelled 'AI-generated illustration', never in place of the archival photograph. SENSITIVE: the card is tagged holocaust; sensitivity_reviewed is true in event-videos.yaml on that decision, so a shareable build may carry it (Build.cs). A crowd with umbrellas held back by a police line on a wet street before a stone building at night; no violence shown. The night and the rain are the shot's, not sourced (#1564). A generic stone building, not a reconstruction of Beit Frumin. No identifiable real person: small figures, no faces in detail (frames checked 2026-10-31). Still prompt: Use the uploaded image only as the style reference: the same hand-painted tabletop-diorama miniature look, warm golden-hour light, teal sea, amber-ochre land, tilt-shift depth of field. West Jerusalem at night in January 1952 (no city walls, no domes, no Old City in view): a modest three-storey stone building with lit windows on King George Street among other plain stone buildings, a dense crowd of small dark figures with umbrellas held back behind a line of police in the rain, wet street lamps, reflections on the asphalt, sombre blue and amber light, faces not detailed. 16:9, no text, no letters, no numbers, no labels, no interface panels, no logos, no watermark, no recognisable real person. Clip prompt: Tabletop diorama miniature of the Land of Israel in the style of a Civilization strategy game, hand-painted miniature buildings, trees and figures, warm golden-hour sunlight, teal-turquoise sea and warm amber-ochre land, gentle tilt-shift depth of field, painterly, rich natural colour, stable geometry. January 1952, Jerusalem at night: a crowd of small dark figures with umbrellas stands in the rain before a modest stone building with lit windows, held back by a quiet line of police. Rain falls, umbrellas sway, the street lamps shimmer on the wet asphalt. Nobody runs, nothing is thrown. Camera: very slow, steady push toward the building. Keep every building, coastline and object exactly where it is in the start frame; nothing morphs, nothing appears or disappears. No text, no letters, no interface, no logos - add none beyond what is already in the start frame."
+  # --- Opening clips made for the opening only (owner choice of 2026-11-02; docs/event-videos.md, "In the opening") ---
+  - glob: "unity/Assets/StreamingAssets/video/opening_yemen.mp4"
+    licence: CC0-1.0
+    ai_generated: true
+    source: "Veo 3.1 Lite (ElevenLabs), text-to-video (no start frame; the archival photograph was not an input), 16:9, 1080p (1920x1080), 4 s, 24 fps, 96 frames, sound off, prompt enhancer off, generated 2026-11-02 (opening shot O3, take 2, yemen-v2-raw.mp4, not in the repository; 5036220 B, sha256 76867fc673450c4eaeebe9660da3b5a35b3d60af91c72e574c003fcac27fc166). Cleaned 2026-11-02 (owner, 2 Nov 2026: 'Fix it in editing (Recommended)') with ffmpeg 9.0.1, every region fixed for all 96 frames since the camera and the aircraft do not move: a camera tripod in the left foreground (x 0-300, y 640-1070 of the 1920x1080 frame) covered by a feathered copy of the sand beside it in the same frame (x 330-670, y 700-1080; its head by the sand at x 100-220, y 760-840); a US star-and-bar insignia on the rear fuselage (x 1228-1300, y 486-534) covered by one still 100x76 RGBA patch at (1214,472), inpainted (OpenCV Telea) from the raw clip's frame at t=2 s (ffmpeg -ss 2 -i yemen-v2-raw.mp4 -frames:v 1 raw_mid.png; that PNG's sha256 c7156d6fef2ab4ec2493b4aa41b723ee5031ed8db3a67596421099c2c794975c) and given the fine texture of the plain fuselage 74 px to its right, alpha feathered (patch star_patch.png, not in the repository; sha256 468bd4cf258bf4394de1d11aa57c8f2ea410d13126d0e893b5fde6a5f6bea2c9, reproduced byte for byte from that frame with OpenCV 5.0.0 and numpy 2.5.4); an emblem on the fin (x 1408-1442, y 324-362) covered by a feathered copy of the fin 44 px above it. Never a blur; nothing else changed. Cleaned master H.264 CRF 12 (not in the repository; sha256 160dc3c88a12a9871cb0fc51700bb184a4ca1491578d654e21adbec00d8d2e1e), then encoded with tools/encode_event_videos.py's pinned settings (its filter_graph() and FFMPEG_VIDEO: 960x540 Lanczos cover crop, 24 fps, H.264 High CRF 28, no audio, faststart; problems() clean, 96 frames), with no burned-in caption (owner ruling of 2026-10-14: no need to say they were created by AI); re-running that encode on the master gives the same bytes. Encoded file 417857 B, sha256 d7143e1de4a6d9be339552b4e76c33357f6fe330ad90b5828985301106aa70c6"
+    status: verified
+    note: "Decision D1: AI-only output CC0 / no rights claimed. Owner ruling D-V (2026-10-13, merged in #449): the generator terms were not checked, by the owner's choice. Owner choice of 2026-11-02: 'B: A + one new Yemen shot (~2,424)'. Take 1 (Veo 3.1 Fast) showed the wrong aircraft, a high-wing turboprop; owner, 2 Nov 2026: 'regenerate with the currect plane', so take 2 asks for the C-54/DC-4 type of the panel's photograph (Commons: Douglas C-54 Skymaster NC67548, Aden, May 1950). Why the cleanup: the tripod is a generation artefact; the Magic Carpet aircraft were civilian charters, so a US military star-and-bar is wrong for them, and the shot's avoid list bans painted emblems. Shown on the opening's Yemen panel after its archival photograph (Benno Rothenberg / Meitar / NLI, CC BY 4.0), labelled 'AI-generated illustration', never in place of it (unity/Assets/UI/Opening/opening.yaml; docs/event-videos.md). A generic unmarked DC-4/C-54-type propliner on a sandy apron, not a reconstruction of NC67548; no mountains, sea or buildings. No identifiable real person: the families are small and seen from behind (frames checked 2026-11-02). SENSITIVE: the owner reviewed the cleaned clip on 2026-11-02 ('Approve it'), so sensitivity_reviewed is true on its opening.yaml clip and a shareable build may carry it (Build.cs). Visual sources for every detail of the prompt: the shot's sourcing table (2 Nov 2026; Wikipedia Operation Magic Carpet (Yemen) oldid 1374658937, the Commons photo above, Jewish Virtual Library, JewishGen KehilaLinks). Prompt: Painterly, hand-painted cinematic look, soft brush texture, filmic 35 mm lens, gentle grain; a muted, warm, low-saturation palette close to an old sepia photograph, soft natural daylight under a pale sky with scattered clouds. Aden airport, 1949-1950: a parked, unmarked, silver Douglas C-54 Skymaster (DC-4) airliner of the 1940s: a long, rounded, cylindrical fuselage; LOW wings attached at the bottom of the fuselage; four round radial piston engines with three-bladed propellers, standing still; a single tall rounded vertical tail fin; tricycle landing gear with a nose wheel, so the fuselage sits level. It stands on a flat, pale, sandy apron that stretches to a low, level horizon, with a plain metal boarding stair against a passenger door at the rear left side of the fuselage. Wide shot, from far behind and slightly to the side: a quiet line of Yemenite Jewish families, small in the frame, walks slowly away from the camera across the sand toward the stair, carrying cloth bundles; they wear long, loose, plain garments and the women wear head coverings. A few other small figures wait in the shade under the wing. The people move calmly and naturally, steps and fabric moving gently. Everyone is seen from behind or far away; faces stay turned away or in shadow; no face is shown in close-up. The aircraft stays parked and does not move; the horizon and every object keep their place; nothing appears or disappears. Camera: locked-off on a tripod, completely static, no pan, no zoom, no shake. Calm, documentary mood. No text, no letters, no numbers, no logos, no watermark. Negative prompt: high wing, high-mounted wings, wings on top of the fuselage, turboprop, military cargo plane, C-130, rear cargo ramp, twin tail, jet, text, letters, numbers, logos, watermark, subtitles, registration numbers, airline name, livery lettering, painted emblem, eagle emblem, flags, signs, Star of David, map, face close-up, frontal faces, recognisable faces, people looking at camera, crowd crush, running, crying, distress, injury, sick people, stretchers, soldiers, guns, armed guards, barbed wire, fence, camp, tents, aircraft moving, taxiing, spinning propellers, propeller morphing, aircraft changing shape, extra engines, jet engines, modern aircraft, modern clothing, modern objects, plastic containers, suitcases with wheels, vehicles appearing, fuel truck, mountains, palm trees, sea, sliding feet, extra limbs, objects changing shape, sudden lighting change, colour flicker"
   # --- Decision outcome clips: played once at End Turn for the historical order (docs/event-videos.md; owner ruling D-V) ---
   - glob: "unity/Assets/StreamingAssets/video/maabarot_policy-outcome.mp4"
     licence: CC0-1.0
@@ -3034,4 +3100,269 @@ rules:
     credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
     adapted: "graded and cropped"
     note: "Owner sign-off, 25 October 2026 (#1575): the photograph is approved as a sensitive image, sensitivity review included ('Approve all three'). Police barriers before the demonstration near the Knesset over the reparations talks, January 1952 (#1564). Original 1914x1314, SHA-1 d2bab6a04eee727ab63becc62f14d3922e77f0fe; VRTS ticket 2021092910005788. Commons credit/licence read through the API and the downloaded original's SHA-1 checked on 24 October 2026. Made by tools/event_images.py, crop [0.5, 0.55, 1.0]. Sensitive: the card is tagged holocaust, so the owner signs it off."
+  # Source-only prepared town subset; exact records,not runtime registrations.
+  - glob: "asset-sources/prepared-towns-20261031/netanya/statecraft-netanya-approved-textured-4350a137.glb"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tal Heuberger, Tripo Studio from approved AI concepts; exact byte-preserved original, task/input chain, reference credits and hashes: asset-sources/prepared-towns-20261031/provenance.json. SHA-256 dc181a24610a0fd0717b12c07035d87f437555ccc4055a30d58c6edd6470ba55."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Public source/export distribution authorized 31 October 2026; own paid account confirmed. Input reference bases separately recorded; no photographs included. No exact 1948 historical, modular, hex, art or Unity/runtime acceptance asserted. No existing asset grant changed. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
+  - glob: "asset-sources/prepared-towns-20261031/netanya/statecraft-netanya-approved-textured-4350a137_basecolor.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tal Heuberger, Tripo Studio from approved AI concepts; exact byte-preserved original, task/input chain, reference credits and hashes: asset-sources/prepared-towns-20261031/provenance.json. SHA-256 234e4a852c3b9fc144deac8115fb30b77afae9d9f8e53a9180a2784522370c33."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Public source/export distribution authorized 31 October 2026; own paid account confirmed. Input reference bases separately recorded; no photographs included. No exact 1948 historical, modular, hex, art or Unity/runtime acceptance asserted. No existing asset grant changed. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
+  - glob: "asset-sources/prepared-towns-20261031/ramla/statecraft-ramla-approved-textured-aaf2619f.glb"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tal Heuberger, Tripo Studio from approved AI concepts; exact byte-preserved original, task/input chain, reference credits and hashes: asset-sources/prepared-towns-20261031/provenance.json. SHA-256 b9e3dfdf0fac0c4b88e0ec294f0629540d809ee78871d1a986debb765198a75e."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Public source/export distribution authorized 31 October 2026; own paid account confirmed. Input reference bases separately recorded; no photographs included. No exact 1948 historical, modular, hex, art or Unity/runtime acceptance asserted. No existing asset grant changed. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
+  - glob: "asset-sources/prepared-towns-20261031/ramla/statecraft-ramla-approved-textured-aaf2619f_basecolor.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tal Heuberger, Tripo Studio from approved AI concepts; exact byte-preserved original, task/input chain, reference credits and hashes: asset-sources/prepared-towns-20261031/provenance.json. SHA-256 ffb841b5f912ace6cbd84f98fd173c2ef7a1b29574546d0c862021e2b122bd88."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Public source/export distribution authorized 31 October 2026; own paid account confirmed. Input reference bases separately recorded; no photographs included. No exact 1948 historical, modular, hex, art or Unity/runtime acceptance asserted. No existing asset grant changed. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
+  - glob: "asset-sources/prepared-towns-20261031/safed/statecraft-safed-approved-textured-1e2b8e59.glb"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tal Heuberger, Tripo Studio from approved AI concepts; exact byte-preserved original, task/input chain, reference credits and hashes: asset-sources/prepared-towns-20261031/provenance.json. SHA-256 66b1894a58fd89f3786134906b9a25f8b23fe673884c11c1954b8411b1fb42b7."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Public source/export distribution authorized 31 October 2026; own paid account confirmed. Input reference bases separately recorded; no photographs included. No exact 1948 historical, modular, hex, art or Unity/runtime acceptance asserted. No existing asset grant changed. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
+  - glob: "asset-sources/prepared-towns-20261031/safed/statecraft-safed-approved-textured-1e2b8e59_basecolor.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tal Heuberger, Tripo Studio from approved AI concepts; exact byte-preserved original, task/input chain, reference credits and hashes: asset-sources/prepared-towns-20261031/provenance.json. SHA-256 6aed6b042a24ffed5246a948d4c46307f208b81c6332a790b08ced2e8b04ac96."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Public source/export distribution authorized 31 October 2026; own paid account confirmed. Input reference bases separately recorded; no photographs included. No exact 1948 historical, modular, hex, art or Unity/runtime acceptance asserted. No existing asset grant changed. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
+  - glob: "asset-sources/prepared-towns-20261031/tiberias/statecraft-tiberias-smartmesh-original-086ad55f.glb"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tal Heuberger, Tripo Studio from approved AI concepts; exact byte-preserved original, task/input chain, reference credits and hashes: asset-sources/prepared-towns-20261031/provenance.json. SHA-256 217bce3da74d8644cb3ce5e0889e0f12499b2bd57c936e02ce5dad2d4324a11d."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Public source/export distribution authorized 31 October 2026; own paid account confirmed. Input reference bases separately recorded; no photographs included. No exact 1948 historical, modular, hex, art or Unity/runtime acceptance asserted. No existing asset grant changed. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
+  - glob: "asset-sources/prepared-towns-20261031/tiberias/statecraft-tiberias-smartmesh-textured-086ad55f.glb"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tal Heuberger, Tripo Studio from approved AI concepts; exact byte-preserved original, task/input chain, reference credits and hashes: asset-sources/prepared-towns-20261031/provenance.json. SHA-256 216911f29864fb4ea44150eedf5d216f0e0f177a8270017ee33976deebecd9ea."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Public source/export distribution authorized 31 October 2026; own paid account confirmed. Input reference bases separately recorded; no photographs included. No exact 1948 historical, modular, hex, art or Unity/runtime acceptance asserted. No existing asset grant changed. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
+  - glob: "asset-sources/prepared-towns-20261031/tiberias/statecraft-tiberias-smartmesh-textured-086ad55f_basecolor.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tal Heuberger, Tripo Studio from approved AI concepts; exact byte-preserved original, task/input chain, reference credits and hashes: asset-sources/prepared-towns-20261031/provenance.json. SHA-256 e0680e3e3fbc53a0af41292571112c0e76ca0dbe2bf04bafd53c7a4c99ef0113."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Public source/export distribution authorized 31 October 2026; own paid account confirmed. Input reference bases separately recorded; no photographs included. No exact 1948 historical, modular, hex, art or Unity/runtime acceptance asserted. No existing asset grant changed. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
+
+  # Recovered source pair, Tal scoped contribution permission 31 October 2026; no runtime registration.
+  - glob: "asset-sources/recovered-vegetation-20261031/g25_papyrus/g25_papyrus.obj"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tal Heuberger recovered prepared vegetation; Tripo H3.1 through Higgsfield, 19 October 2026, text-generated concept. Exact SHA-256 and task route: asset-sources/recovered-vegetation-20261031/provenance.json. SHA-256 8adf0838554e68bca68019a75bcea12316926a1ddc8cd88550570a09e6be0506."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Author permitted public redistribution and approved export conversions 31 October 2026 and confirmed own paid generation account. This records the author statement, not independent legal review. Byte-preserved recovery; no historical/ecological, art, registration or Unity acceptance asserted. Provider/input restrictions remain; see provenance.json. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
+  - glob: "asset-sources/recovered-vegetation-20261031/g25_papyrus/albedo.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tal Heuberger recovered prepared vegetation; Tripo H3.1 through Higgsfield, 19 October 2026, text-generated concept. Exact SHA-256 and task route: asset-sources/recovered-vegetation-20261031/provenance.json. SHA-256 97307421442321d3a8e1fa2fd479fa49c755a775e485fffff9f67a1004dfcfd8."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Author permitted public redistribution and approved export conversions 31 October 2026 and confirmed own paid generation account. This records the author statement, not independent legal review. Byte-preserved recovery; no historical/ecological, art, registration or Unity acceptance asserted. Provider/input restrictions remain; see provenance.json. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
+  - glob: "asset-sources/recovered-vegetation-20261031/g25_papyrus/normal.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tal Heuberger recovered prepared vegetation; Tripo H3.1 through Higgsfield, 19 October 2026, text-generated concept. Exact SHA-256 and task route: asset-sources/recovered-vegetation-20261031/provenance.json. SHA-256 641d6f6d0ea6eee7ff3eb2cb19f7ccbadfba044b68c5a2be261e51ffe56746a3."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Author permitted public redistribution and approved export conversions 31 October 2026 and confirmed own paid generation account. This records the author statement, not independent legal review. Byte-preserved recovery; no historical/ecological, art, registration or Unity acceptance asserted. Provider/input restrictions remain; see provenance.json. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
+  - glob: "asset-sources/recovered-vegetation-20261031/hf_tamarisk/hf_tamarisk.obj"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tal Heuberger recovered prepared vegetation; Tripo H3.1 through Higgsfield, 19 October 2026, text-generated concept. Exact SHA-256 and task route: asset-sources/recovered-vegetation-20261031/provenance.json. SHA-256 3a8c9979fa0db9600f3a1c97b96c6bcf6092e76fdbdc80c51351ead85aedeccf."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Author permitted public redistribution and approved export conversions 31 October 2026 and confirmed own paid generation account. This records the author statement, not independent legal review. Byte-preserved recovery; no historical/ecological, art, registration or Unity acceptance asserted. Provider/input restrictions remain; see provenance.json. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
+  - glob: "asset-sources/recovered-vegetation-20261031/hf_tamarisk/albedo.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tal Heuberger recovered prepared vegetation; Tripo H3.1 through Higgsfield, 19 October 2026, text-generated concept. Exact SHA-256 and task route: asset-sources/recovered-vegetation-20261031/provenance.json. SHA-256 077ecbef3f2ee64eb76d2e11789f41d385587af024b0903a19df9ca0558c0e72."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Author permitted public redistribution and approved export conversions 31 October 2026 and confirmed own paid generation account. This records the author statement, not independent legal review. Byte-preserved recovery; no historical/ecological, art, registration or Unity acceptance asserted. Provider/input restrictions remain; see provenance.json. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
+  - glob: "asset-sources/recovered-vegetation-20261031/hf_tamarisk/normal.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tal Heuberger recovered prepared vegetation; Tripo H3.1 through Higgsfield, 19 October 2026, text-generated concept. Exact SHA-256 and task route: asset-sources/recovered-vegetation-20261031/provenance.json. SHA-256 1488db247a20ea6a18af5a4f2cda01fc25b3f85ce2a5818c026bcaa9b9c06235."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Author permitted public redistribution and approved export conversions 31 October 2026 and confirmed own paid generation account. This records the author statement, not independent legal review. Byte-preserved recovery; no historical/ecological, art, registration or Unity acceptance asserted. Provider/input restrictions remain; see provenance.json. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
+
+  # New exact source-only weapon records; no change to existing Collection grants.
+  - glob: "asset-sources/prepared-weapons-20261031/k98k/statecraft-k98k-approved-textured-b48a435f.glb"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tal Heuberger, Tripo Studio Smart Mesh P2.0 from text-generated concepts; exact original hash and task provenance: asset-sources/prepared-weapons-20261031/provenance.json. SHA-256 325d86cb42490ad95ed8c367e2c7511fc3bb9c676d6a797074a6ba74a01c7da5."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Public source redistribution authorized 31 October 2026; own paid generation account confirmed by author. Original bytes preserved. No Unity, fixed-pair, historical/faction or art acceptance; provider/input restrictions remain. No museum photographs were uploaded according to saved generation handoff. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
+  - glob: "asset-sources/prepared-weapons-20261031/k98k/statecraft-k98k-approved-textured-b48a435f_basecolor.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tal Heuberger, Tripo Studio Smart Mesh P2.0 from text-generated concepts; exact original hash and task provenance: asset-sources/prepared-weapons-20261031/provenance.json. SHA-256 615e7f6f28db4cec59704c2b8cc554e5e9e4736bc0692ab6a79e98de57f3b57a."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Public source redistribution authorized 31 October 2026; own paid generation account confirmed by author. Original bytes preserved. No Unity, fixed-pair, historical/faction or art acceptance; provider/input restrictions remain. No museum photographs were uploaded according to saved generation handoff. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
+  - glob: "asset-sources/prepared-weapons-20261031/mg34/statecraft-mg34-approved-textured-3a384995.glb"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tal Heuberger, Tripo Studio Smart Mesh P2.0 from text-generated concepts; exact original hash and task provenance: asset-sources/prepared-weapons-20261031/provenance.json. SHA-256 b26e3be060f2f81041616bcfebf92d9fe3087bcbd016fc5b9741cda4551da281."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Public source redistribution authorized 31 October 2026; own paid generation account confirmed by author. Original bytes preserved. No Unity, fixed-pair, historical/faction or art acceptance; provider/input restrictions remain. No museum photographs were uploaded according to saved generation handoff. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
+  - glob: "asset-sources/prepared-weapons-20261031/mg34/statecraft-mg34-approved-textured-3a384995_basecolor.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tal Heuberger, Tripo Studio Smart Mesh P2.0 from text-generated concepts; exact original hash and task provenance: asset-sources/prepared-weapons-20261031/provenance.json. SHA-256 2256b301fa6be7a2c15452e764773232b01a639625c3d47797608dcab4ab0123."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Public source redistribution authorized 31 October 2026; own paid generation account confirmed by author. Original bytes preserved. No Unity, fixed-pair, historical/faction or art acceptance; provider/input restrictions remain. No museum photographs were uploaded according to saved generation handoff. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
+  - glob: "asset-sources/prepared-weapons-20261031/sten/statecraft-sten-approved-textured-bc6b06c8.glb"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tal Heuberger, Tripo Studio Smart Mesh P2.0 from text-generated concepts; exact original hash and task provenance: asset-sources/prepared-weapons-20261031/provenance.json. SHA-256 3c0d0cc4d3c9d086a4883ea23a2940a311f6c4548233a3403c515ad636753f1e."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Public source redistribution authorized 31 October 2026; own paid generation account confirmed by author. Original bytes preserved. No Unity, fixed-pair, historical/faction or art acceptance; provider/input restrictions remain. No museum photographs were uploaded according to saved generation handoff. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
+  - glob: "asset-sources/prepared-weapons-20261031/sten/statecraft-sten-approved-textured-bc6b06c8_basecolor.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tal Heuberger, Tripo Studio Smart Mesh P2.0 from text-generated concepts; exact original hash and task provenance: asset-sources/prepared-weapons-20261031/provenance.json. SHA-256 c5ba4fbddd345bbf5da58be295b330981650f52b9e15f0d285e8fe5425b0d270."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Public source redistribution authorized 31 October 2026; own paid generation account confirmed by author. Original bytes preserved. No Unity, fixed-pair, historical/faction or art acceptance; provider/input restrictions remain. No museum photographs were uploaded according to saved generation handoff. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
+
+  # Separate C06 point-fire reference derivative; never enabled by this source-only draft.
+  - glob: "asset-sources/c06-point-fire-reference-20261031/C06-POINT-FIRE-PROVISIONAL-PUBLIC.fbx"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tal Heuberger original C06/K98k derivative; offline original-rig animation and Blender FBX compatibility conversion. Exact input/output hashes, scoped permission and metadata edits: asset-sources/c06-point-fire-reference-20261031/provenance.json. SHA-256 9a7c8b59eb6dbf5138ee9fe1b8cb6296e430cda105b98cecae9c3a93bfdd3868."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Public derivative/export distribution authorized 31 October 2026; own paid generation account confirmed. Source/reference only,not enabled. Existing fire/shoot retained;fallback need unproven;project owner decision required. Cheek/sight/contact limitations and unrun Unity/runtime gates remain. Provider/input restrictions remain. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
+  - glob: "asset-sources/c06-point-fire-reference-20261031/C06-POINT-FIRE-FULL-REVIEW.mp4"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tal Heuberger original C06/K98k derivative; offline original-rig animation and Blender FBX compatibility conversion. Exact input/output hashes, scoped permission and metadata edits: asset-sources/c06-point-fire-reference-20261031/provenance.json. SHA-256 d586018b48584d9370acf3bc8e0d7c8ed565fad56e47f9470f071a33b5f2bfd6."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Public derivative/export distribution authorized 31 October 2026; own paid generation account confirmed. Source/reference only,not enabled. Existing fire/shoot retained;fallback need unproven;project owner decision required. Cheek/sight/contact limitations and unrun Unity/runtime gates remain. Provider/input restrictions remain. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
+  - glob: "asset-sources/c06-point-fire-reference-20261031/C06-POINT-FIRE-REVIEW-CONTACT-SHEET.png"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tal Heuberger original C06/K98k derivative; offline original-rig animation and Blender FBX compatibility conversion. Exact input/output hashes, scoped permission and metadata edits: asset-sources/c06-point-fire-reference-20261031/provenance.json. SHA-256 63582547042ce40cf926afaa7e58ff35f662cb1de389ce2ab0732dad6cabe017."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Public derivative/export distribution authorized 31 October 2026; own paid generation account confirmed. Source/reference only,not enabled. Existing fire/shoot retained;fallback need unproven;project owner decision required. Cheek/sight/contact limitations and unrun Unity/runtime gates remain. Provider/input restrictions remain. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
+
+  # Tal Heuberger's #2085 whole towns in the game's Collection: lossless FBX compatibility exports and the delivered colour maps.
+  - glob: "unity/Assets/Art/Collection/tiberias-town-v1/tiberias-town-v1.fbx"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Documented full-geometry compatibility export of Tal Heuberger's textured GLB asset-sources/prepared-towns-20261031/tiberias/statecraft-tiberias-smartmesh-textured-086ad55f.glb (SHA-256 216911f29864fb4ea44150eedf5d216f0e0f177a8270017ee33976deebecd9ea) by tools/generated_towns.py (Blender 5.0.1): 5002 triangles, connectivity identical, max vertex error 1.1e-07, UV error 0.0; no decimation, welding, pivot or UV rewrite. SHA-256 f3fa2085c9ea9c4fe6d24282bfc10e5807e06c601895500b19f29a574e703010."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Tiberias whole town from #2085 (Tripo Studio, approved AI concepts; provenance in asset-sources/prepared-towns-20261031/provenance.json and this folder's provenance.json), drawn far off (40 km and out) on Tiberias by TownLandmarks.ById (#1288). Tal's 31 October 2026 permission covers approved export conversions; the same compatibility-export precedent as the placed vehicles (#1932, #2046). Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported). No exact 1948 historical acceptance asserted."
+  - glob: "unity/Assets/Art/Collection/tiberias-town-v1/tiberias-town-v1_basecolor.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Byte-for-byte copy of Tal Heuberger's delivered base-colour map asset-sources/prepared-towns-20261031/tiberias/statecraft-tiberias-smartmesh-textured-086ad55f_basecolor.jpg (the image the GLB embeds), 2048x2048. SHA-256 e0680e3e3fbc53a0af41292571112c0e76ca0dbe2bf04bafd53c7a4c99ef0113."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Tiberias whole town from #2085 (Tripo Studio, approved AI concepts; provenance in asset-sources/prepared-towns-20261031/provenance.json and this folder's provenance.json), drawn far off (40 km and out) on Tiberias by TownLandmarks.ById (#1288). Tal's 31 October 2026 permission covers approved export conversions; the same compatibility-export precedent as the placed vehicles (#1932, #2046). Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported). No exact 1948 historical acceptance asserted."
+  - glob: "unity/Assets/Art/Collection/safed-town-v1/safed-town-v1.fbx"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Documented full-geometry compatibility export of Tal Heuberger's textured GLB asset-sources/prepared-towns-20261031/safed/statecraft-safed-approved-textured-1e2b8e59.glb (SHA-256 66b1894a58fd89f3786134906b9a25f8b23fe673884c11c1954b8411b1fb42b7) by tools/generated_towns.py (Blender 5.0.1): 4485 triangles, connectivity identical, max vertex error 6.7e-08, UV error 0.0; no decimation, welding, pivot or UV rewrite. SHA-256 27d4edcad209c12ec87c077cb1004f063bec3fe661083b3e1411209a7ea15a12."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Safed whole town from #2085 (Tripo Studio, approved AI concepts; provenance in asset-sources/prepared-towns-20261031/provenance.json and this folder's provenance.json), drawn far off (40 km and out) on Safed by TownLandmarks.ById (#1288). Tal's 31 October 2026 permission covers approved export conversions; the same compatibility-export precedent as the placed vehicles (#1932, #2046). Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported). No exact 1948 historical acceptance asserted."
+  - glob: "unity/Assets/Art/Collection/safed-town-v1/safed-town-v1_basecolor.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Byte-for-byte copy of Tal Heuberger's delivered base-colour map asset-sources/prepared-towns-20261031/safed/statecraft-safed-approved-textured-1e2b8e59_basecolor.jpg (the image the GLB embeds), 2048x2048. SHA-256 6aed6b042a24ffed5246a948d4c46307f208b81c6332a790b08ced2e8b04ac96."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Safed whole town from #2085 (Tripo Studio, approved AI concepts; provenance in asset-sources/prepared-towns-20261031/provenance.json and this folder's provenance.json), drawn far off (40 km and out) on Safed by TownLandmarks.ById (#1288). Tal's 31 October 2026 permission covers approved export conversions; the same compatibility-export precedent as the placed vehicles (#1932, #2046). Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported). No exact 1948 historical acceptance asserted."
+  - glob: "unity/Assets/Art/Collection/netanya-town-v1/netanya-town-v1.fbx"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Documented full-geometry compatibility export of Tal Heuberger's textured GLB asset-sources/prepared-towns-20261031/netanya/statecraft-netanya-approved-textured-4350a137.glb (SHA-256 dc181a24610a0fd0717b12c07035d87f437555ccc4055a30d58c6edd6470ba55) by tools/generated_towns.py (Blender 5.0.1): 3428 triangles, connectivity identical, max vertex error 8.7e-08, UV error 0.0; no decimation, welding, pivot or UV rewrite. SHA-256 8953ce493db139e6bb244bd2c8aa1586c70093a05b8e68953727117c667108bc."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Netanya whole town from #2085 (Tripo Studio, approved AI concepts; provenance in asset-sources/prepared-towns-20261031/provenance.json and this folder's provenance.json), drawn far off (40 km and out) on Netanya by TownLandmarks.ById (#1288). Tal's 31 October 2026 permission covers approved export conversions; the same compatibility-export precedent as the placed vehicles (#1932, #2046). Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported). No exact 1948 historical acceptance asserted."
+  - glob: "unity/Assets/Art/Collection/netanya-town-v1/netanya-town-v1_basecolor.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Byte-for-byte copy of Tal Heuberger's delivered base-colour map asset-sources/prepared-towns-20261031/netanya/statecraft-netanya-approved-textured-4350a137_basecolor.jpg (the image the GLB embeds), 2048x2048. SHA-256 234e4a852c3b9fc144deac8115fb30b77afae9d9f8e53a9180a2784522370c33."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Netanya whole town from #2085 (Tripo Studio, approved AI concepts; provenance in asset-sources/prepared-towns-20261031/provenance.json and this folder's provenance.json), drawn far off (40 km and out) on Netanya by TownLandmarks.ById (#1288). Tal's 31 October 2026 permission covers approved export conversions; the same compatibility-export precedent as the placed vehicles (#1932, #2046). Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported). No exact 1948 historical acceptance asserted."
+  - glob: "unity/Assets/Art/Collection/ramla-town-v1/ramla-town-v1.fbx"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Documented full-geometry compatibility export of Tal Heuberger's textured GLB asset-sources/prepared-towns-20261031/ramla/statecraft-ramla-approved-textured-aaf2619f.glb (SHA-256 b9e3dfdf0fac0c4b88e0ec294f0629540d809ee78871d1a986debb765198a75e) by tools/generated_towns.py (Blender 5.0.1): 4426 triangles, connectivity identical, max vertex error 1.3e-07, UV error 0.0; no decimation, welding, pivot or UV rewrite. SHA-256 719464d838304e6e795e49aaa83f571ced7d9269f77436f1dc73a5424d6516c7."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Ramla whole town from #2085 (Tripo Studio, approved AI concepts; provenance in asset-sources/prepared-towns-20261031/provenance.json and this folder's provenance.json), drawn far off (40 km and out) on Ramla by TownLandmarks.ById in place of the stone village (owner, 2 November 2026: \"Yes, Tal's Ramla (Recommended)\"). Tal's 31 October 2026 permission covers approved export conversions; the same compatibility-export precedent as the placed vehicles (#1932, #2046). Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported). No exact 1948 historical acceptance asserted."
+  - glob: "unity/Assets/Art/Collection/ramla-town-v1/ramla-town-v1_basecolor.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Byte-for-byte copy of Tal Heuberger's delivered base-colour map asset-sources/prepared-towns-20261031/ramla/statecraft-ramla-approved-textured-aaf2619f_basecolor.jpg (the image the GLB embeds), 2048x2048. SHA-256 ffb841b5f912ace6cbd84f98fd173c2ef7a1b29574546d0c862021e2b122bd88."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Ramla whole town from #2085 (Tripo Studio, approved AI concepts; provenance in asset-sources/prepared-towns-20261031/provenance.json and this folder's provenance.json), drawn far off (40 km and out) on Ramla by TownLandmarks.ById in place of the stone village (owner, 2 November 2026: \"Yes, Tal's Ramla (Recommended)\"). Tal's 31 October 2026 permission covers approved export conversions; the same compatibility-export precedent as the placed vehicles (#1932, #2046). Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported). No exact 1948 historical acceptance asserted."
 removed: []

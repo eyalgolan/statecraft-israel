@@ -57,11 +57,27 @@ namespace Statecraft.Game.UI
         EventCardPresenter? card;
         /// <summary>Tests: the decision card of the last Begin.</summary>
         internal EventCardPresenter? Card => card;
+        WebCompanion? companion;
+        // The Settings switch for the companion, once pressed in this page's session: it wins over the stored choice and the
+        // address for every later Begin (a language switch or New Game), so "Off" holds under "?companion=1" too.
+        bool? companionPicked;
+        // Outbound test transport only; the shipping bridge remains one-way. Like the WebGL page, it is a page the companion
+        // can be turned on for; it does not turn it on.
+        internal Action<string>? CompanionSend { get; set; }
+        /// <summary>Tests: the page address the companion reads ("?companion=1"); null reads the real one
+        /// (Application.absoluteURL, which the Editor leaves empty).</summary>
+        internal string? CompanionAddress { get; set; }
+        internal WebCompanion? Companion => companion;
+        bool CompanionPage => Application.platform == RuntimePlatform.WebGLPlayer || CompanionSend != null;
+        /// <summary>Whether a Begin runs the companion: where a page can show it and WebCompanion.On says so.</summary>
+        bool CompanionWanted() => CompanionPage && WebCompanion.On(companionPicked, SettingsFile()?.Read(SettingsPresenter.CompanionKey), CompanionAddress ?? Application.absoluteURL);
         CaptureDialogPresenter? capture;
         /// <summary>Tests: the capture dialog of the last Begin.</summary>
         internal CaptureDialogPresenter? Capture => capture;
         /// <summary>Tests: the settlement name pills of the last Begin.</summary>
         internal MapLabelsPresenter? Labels => labels;
+        /// <summary>Tests: the minimap of the last Begin.</summary>
+        internal MinimapPresenter? Minimap => minimap;
         string? hoveredCity;   // the city HoverCity lit (#1063)
         OutcomePresenter? outcomes;
         TurnReportPresenter? report;
@@ -186,7 +202,10 @@ namespace Statecraft.Game.UI
         {
             if (webgl)
             {
-                var m = SmokeQuery.Match(url ?? "");
+                // Only the query counts: a flag after the '#' is the fragment (#2264; UrlFlags does the same since #2215).
+                var query = url ?? "";
+                var hash = query.IndexOf('#');
+                var m = SmokeQuery.Match(hash < 0 ? query : query.Substring(0, hash));
                 if (!m.Success) return 0;
                 var digits = m.Groups[1].Value;
                 return digits.Length == 0 ? DefaultSmokeTurns : int.TryParse(digits, NumberStyles.None, CultureInfo.InvariantCulture, out var n) ? n : 0;
@@ -231,7 +250,8 @@ namespace Statecraft.Game.UI
             // where a test asks for it with the start screen (OpeningInEditMode).
             bool enableOpening = smoke == 0 && !StartScreenPresenter.Skipped()
                 && (Application.isPlaying || startScreen && OpeningInEditMode);
-            Shutdown();
+            // A companion this Begin runs again keeps the page's panel until its replacement publishes (WebCompanion.Dispose).
+            Shutdown(keepCompanionPage: companion != null && CompanionWanted());
             smokeRun = smoke > 0;
 
             var text = Strings();
@@ -316,7 +336,25 @@ namespace Statecraft.Game.UI
             // own settings must not leak into a test. Each Begin (New Game too) reads the file again.
             // The language switch (#1036) builds every screen again in the new language over this game (SwitchLanguage).
             Action<string> switchLanguage = language => SwitchLanguage(inputs, language);   // the start screen's too (#2054)
-            Own(new SettingsPresenter(root, text, SettingsFile(), switchLanguage, panel: document.panelSettings, audio: audio, advisors: AdvisorSession.Settings));
+            // The WebGL companion (#1119) is opt-in (WebCompanion.On): Settings turns it on and off at once, where a page shows it.
+            // While the build does not offer it (WebCompanion.Available, owner 2 Nov 2026), there is no switch, so no row.
+            Action<bool>? setCompanion = null;
+            (Func<bool> on, Action<bool> set)? companionSwitch = null;
+            if (CompanionPage && WebCompanion.Offered())
+            {
+                Action<bool> set = on =>
+                {
+                    if (on == (companion != null)) return;
+                    if (on) { companion = Own(new WebCompanion(root, text, bridge, () => card?.Shown != null, CompanionSend)); return; }
+                    var off = companion!; companion = null;
+                    owned.Remove(off);
+                    off.Dispose();   // clears the page
+                };
+                setCompanion = set;
+                companionSwitch = (() => companion != null, on => { companionPicked = on; set(on); });
+            }
+            Own(new SettingsPresenter(root, text, SettingsFile(), switchLanguage, panel: document.panelSettings, audio: audio, advisors: AdvisorSession.Settings,
+                companion: companionSwitch));
             // "Report a bug or idea" (#1169), from Settings and the start screen: the version line names the content GameBoot logged.
             feedback = Own(new FeedbackPresenter(root, text, ReportLinks.Version(Application.version, inputs.Content.Hash)));
             var feedbackPanel = feedback;
@@ -376,9 +414,12 @@ namespace Statecraft.Game.UI
             if (Statecraft.Game.Map.Units.UnitLayer.HiddenInCaptures(Application.absoluteURL, Environment.GetCommandLineArgs(),
                     Application.platform == RuntimePlatform.WebGLPlayer))
                 VisualToggles.Set(Statecraft.Game.Map.Units.UnitLayer.ToggleName, false);
+            GameSession? shownSession = null;
             Action showUnits = () =>
             {
-                unitLayer.Show(bridge.Content, bridge.State);
+                // New Game replaces the session, and its sim ids are the old game's: its tokens are drawn where they stand.
+                unitLayer.Show(bridge.Content, bridge.State, slide: ReferenceEquals(shownSession, bridge.Session));
+                shownSession = bridge.Session;
                 unitLayer.Dim(unitLayer.Tokens.Where(t => t.Token.Unit.Side == Statecraft.Game.Map.Units.UnitData.Israel)
                     .Where(t => UnitCard.SimUnit(bridge.Content, bridge.State, t.Token) is int id
                         && Movement.ActionsLeft(bridge.Content, bridge.State, id, bridge.Spent) == 0)
@@ -387,6 +428,7 @@ namespace Statecraft.Game.UI
             bridge.Changed += showUnits;
             owned.Add(new Undo(() => bridge.Changed -= showUnits));
             showUnits();
+            owned.Add(new UnitAttackPresenter(bridge, unitLayer.PlayAttack));   // after showUnits: the map is redrawn first
             DiagLog.BootPhase("units layer built");
             // #1878: the turn report is up, the hexes the turn attacked show the under-attack look; closing it clears them.
             var underAttack = new Statecraft.Game.Map.UnderAttackLayer(map);
@@ -403,7 +445,7 @@ namespace Statecraft.Game.UI
                 showReachable: map.ShowReachable,
                 unitName: id => unitLayer.Tokens.Where(p => UnitCard.SimUnit(bridge.Content, bridge.State, p.Token) == id)
                     .Select(p => UnitCard.For(p, bridge.State, text, bridge.Content.IsGdd, bridge.Content, townNamesHe).Title).FirstOrDefault(),
-                unitDone: FocusNextUnit, showRoute: map.ShowRoute, selectPioneer: FocusPioneer, clearSelection: () => { unitLayer.Select(null); map.ClearSelection(); }));
+                unitDone: FocusNextUnit, showRoute: map.ShowRoute, showArrow: map.ShowMoveArrow, selectPioneer: FocusPioneer, clearSelection: () => { unitLayer.Select(null); map.ClearSelection(); }));
             toast.Units = unitData; toast.TownNamesHe = townNamesHe; why.TownNamesHe = townNamesHe; bridge.TownNamesHe = townNamesHe;
             report.TownNamesHe = townNamesHe; hudPresenter.TownNamesHe = townNamesHe;
             // A smoke session never touches the player's save: no autosave, and no New Game (which deletes the autosave).
@@ -419,6 +461,9 @@ namespace Statecraft.Game.UI
             // is its two presses; a smoke run has none.
             end = Own(new EndScreenPresenter(root, bridge, text, newGame == null ? null : newGame.Press, show: !endClosed));
             endClosed = false;
+            // The store's achievements (#2152): a no-op unless a Steam build set PlatformServices.Current. A smoke run (the
+            // golden seed, scripted turns) is not the player's game, so it reports nothing.
+            if (smoke == 0) Own(new AchievementReporter(bridge, () => PlatformServices.Current));
 
             // An outcome clip holds the pointer while it shows and in the frame it closes (the skipping click selects no hex).
             Func<Vector2, bool> overUi = p => opening?.HoldsThePointer == true || outcomes?.HoldsThePointer == true || UiPointer.IsOverUi(root.panel, p, Screen.height);
@@ -498,6 +543,7 @@ namespace Statecraft.Game.UI
                 cameraController.Settle(); SyncMinimap(); labels?.Refresh();
             };
             mini.BordersChanged += ShowLayerLabel;
+            ShowLayerLabel();   // #2227: the caption was set before this minimap was made; a restart keeps borders the player hid
             Action onChanged = RenderPlacementsIfChanged;
             bridge.Changed += onChanged;
             // One console line per turn, so a browser run (reload, Continue) can be checked against the hash.
@@ -527,6 +573,7 @@ namespace Statecraft.Game.UI
             // The opening (#530): three sourced stills after New Game and before the first turn, skippable, and replayable
             // from the start screen. It reads no sim state. A player build shows it only once its text and photographs are
             // reviewed (OpeningContent.MayPresent); the Editor shows the draft with a visible preview label, for QA.
+            // A panel with a clip plays it after its photograph (owner ruling of 2 November 2026, OpeningPresenter).
             var replayOpening = root.Q<Button>("start-opening-replay");
             replayOpening.style.display = DisplayStyle.None;
             if (enableOpening && OpeningContent.Load() is OpeningContent openingSource)
@@ -543,7 +590,8 @@ namespace Statecraft.Game.UI
                     // the start screen. Closing the scene disposes it after the camera is gone, hence the null check.
                     opening = Own(new OpeningPresenter(root, openingSource, openingData, text,
                         shown => { if (cameraController != null) cameraController.enabled = !shown && start?.IsOpen != true; },
-                        replay => { if (!replay) advisor?.NewGame(); }));
+                        replay => { if (!replay) advisor?.NewGame(); },
+                        video == null ? null : Own(new CardVideo())));   // its own player: no clip in the automated runs either
                     replayOpening.text = text["opening.replay"];
                     replayOpening.style.display = DisplayStyle.Flex;
                     Action replayClick = () => { if (start?.IsOpen == true) opening?.Show(replay: true); };
@@ -662,6 +710,7 @@ namespace Statecraft.Game.UI
             }
             if (hebrew) Own(new UiDirection(root, bridge));
             root.Q("root")?.RemoveFromClassList("loading");                // ready: the bar, panels and screens may show (P2-1)
+            if (setCompanion != null && CompanionWanted()) setCompanion(true);
             DiagLog.BootPhase("screens ready");
 
             if (notes.Count > 0) toast.Show(notes);
@@ -705,7 +754,13 @@ namespace Statecraft.Game.UI
             keptResumed = start?.Resumed ?? true;
             Begin(inputs, 0, startScreen: fromStart, keep: Bridge);
             if (!fromStart) nav?.Open("settings");
-            document.rootVisualElement.Q<Button>((fromStart ? "start-language-" : "settings-language-") + language)?.Focus();
+            // Focus the choice again a frame later: a screen shown this same tick cannot take the focus until its
+            // styles resolve, and a bare Focus() then leaves it wherever it was (#1915's tour test read end-turn).
+            if (document.rootVisualElement.Q<Button>((fromStart ? "start-language-" : "settings-language-") + language) is Button choice)
+            {
+                choice.Focus();
+                choice.schedule.Execute(() => { if (choice.panel != null) choice.Focus(); });
+            }
         }
 
         /// <summary>The 1948 localities in a hex (by the hex their point lies in, as the map picks hexes), for the info panel.</summary>
@@ -755,6 +810,13 @@ namespace Statecraft.Game.UI
             else info.Show(q, r);
             offerMove?.Invoke();
         }
+
+        /// <summary>Marks the hex under the pointer (<paramref name="under"/>; null: off the map) only where a click would give the
+        /// open Move or Attack pick's order (PickTakes), else nothing (#2201: a player could not tell which hex a click would
+        /// take). A hex the pick does not take, such as water, stays unmarked: a click there ends the pick. The camera distance
+        /// thins the band up close (MapScene.HoverCloseM).</summary>
+        internal static void MarkHover(MapScene map, InfoPanelPresenter? info, (int q, int r)? under, float cameraDistanceM = float.PositiveInfinity) =>
+            map.ShowHover(under is (int q, int r) && info != null && info.PickTakesHovered(q, r) ? under : null, cameraDistanceM);
 
         /// <summary>A right click on the map (MapPointer.HexOrdered; owner, 25 Oct 2026, "Civ: select, then click"): while the
         /// shown unit's pick takes (q, r), the order a left click there gives (PickTarget), even on another unit's hex.
@@ -856,7 +918,9 @@ namespace Statecraft.Game.UI
             controller.SetFixedNorth(CameraHeadingPolicy.IsFixedNorth(ruleset));
 
         /// <summary>Disposes every presenter, the autosave and the camera/pointer hooks (newest first). Safe to call twice.</summary>
-        void Shutdown()
+        /// <param name="keepCompanionPage">A rebuild whose next companion replaces the page's panel: the old one goes without
+        /// clearing it, so the panel does not blink, the canvas is not resized twice and the status is not read again.</param>
+        void Shutdown(bool keepCompanionPage = false)
         {
             StopAllCoroutines();
             // The card first: disposing the start screen uncovers the decision layer, and a card still waiting for it would
@@ -866,10 +930,11 @@ namespace Statecraft.Game.UI
             // going away draw its step again and show its city or unit on a camera being destroyed.
             if (advisor != null) { owned.Remove(advisor); advisor.Dispose(); }
             if (card != null) { owned.Remove(card); card.Dispose(); }
+            if (keepCompanionPage && companion != null) { owned.Remove(companion); companion.Dispose(clearPage: false); }
             for (int i = owned.Count - 1; i >= 0; i--) owned[i].Dispose();
             owned.Clear();
             if (hoveredCity != null) { hoveredCity = null; HandCursor(false); }   // the next Begin's pills start unlit
-            minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; opening = null; card = null; outcomes = null; report = null; end = null; advisor = null; encyclopedia = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
+            companion = null; minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; opening = null; card = null; outcomes = null; report = null; end = null; advisor = null; encyclopedia = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
             // A ?profile run cut short (a stopped coroutine never reaches its restore line) must not leave the terrain at the
             // profile's pixel error (Task 24 review M1). Nothing else changes it, so restoring is always right.
             if (map != null && map.Terrain != null) map.Terrain.heightmapPixelError = MapBuilder.TerrainPixelError;
@@ -887,7 +952,7 @@ namespace Statecraft.Game.UI
             // Dated routes (the Burma Road from June 1948); in the GDD loop the corridors by their built segments (#792).
             Statecraft.Game.Map.Routes.RouteLayer.ShowAt(map, Bridge.State.Date,
                 Bridge.Content.IsGdd ? Statecraft.Game.Map.Routes.RouteLayer.BuiltSegments(Bridge.Content, Bridge.State) : null);
-            // The true armistice lines (#237, the "armisticelines" map mode), each from its own date; nothing without the mode.
+            // The true armistice lines (#237; on unless "noarmisticelines" turns them off, #196), each from its own date.
             ArmisticeLines.ShowAt(map, Bridge.State.Date);
             // Tal Heuberger's whole-town models on their towns far off (#663, "Whole model far, buildings near"), streamed after the first frame; the ma'abara from its date.
             // The camps and housing built as city projects bring theirs too, as the placement layer draws them (#1275).
@@ -1003,8 +1068,10 @@ namespace Statecraft.Game.UI
             var hover = MapLabelsPresenter.HoverPosition(UnityEngine.InputSystem.Pointer.current);
             labels.Hover(hover);
             HoverCity(hover);
-            if (hover is Vector2 at && pointer.HexAt(at) is (int q, int r)) info?.ShowRouteTo(q, r);
+            var under = hover is Vector2 at ? pointer.HexAt(at) : null;
+            if (under is (int q, int r)) info?.ShowRouteTo(q, r);
             else if (UnityEngine.InputSystem.Pointer.current is UnityEngine.InputSystem.Mouse) info?.HideRoute();
+            MarkHover(map, info, under, rig != null ? rig.Distance : float.PositiveInfinity);
             var touch = UnityEngine.InputSystem.Touchscreen.current;
             if (touch != null && touch.primaryTouch.press.wasPressedThisFrame) labels.Tap(touch.primaryTouch.position.ReadValue());
         }

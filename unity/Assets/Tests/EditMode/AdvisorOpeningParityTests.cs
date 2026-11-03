@@ -1235,4 +1235,196 @@ public class AdvisorOpeningNoAttentionGameRootTests
             }
         }
     }
+
+    // #1915: a mid-tour language switch rebuilds the UI and resumes the tour; Next keeps the focus, so Enter goes on
+    // and its gold focus fill shows. Red-first: the rebuilt presenter resumed the chain without giving Next the focus
+    // back, and the button stayed dark for the rest of the tour.
+    [UnityTest]
+    public IEnumerator SettingsSwitchToHebrewKeepsTheTourNextFocused()
+    {
+        var inputs = new GameInputs { Content = AdvisorTour1688Fixture.Content(),
+            Map = GameInputs.MapFromDisk(Paths.Content, Paths.StreamingMap), Goldens = new GoldenData() };
+        var settings = new SettingsStore(TempDir());
+        var game = AdvisorGameTests.OpenScene(new SaveStore(TempDir()), settings);
+        game.Language = UiLanguage.English;
+        game.AdvisorCatalogForTests = AdvisorCatalog.Parse(File.ReadAllText(AdvisorCatalog.Path)
+            .Replace("he_review: pending", "he_review: approved"));
+        game.Begin(inputs, 0, startScreen: true);
+        UiTestKit.Press(Ui.Q<Button>("start-new-game"));
+        game.Advisor!.OpenChain();
+        Assert.IsTrue(game.Advisor.InChain);
+
+        UiTestKit.Press(Ui.Q<Button>("nav-settings"));
+        UiTestKit.Press(Ui.Q<Button>("settings-language-" + UiLanguage.Hebrew));
+        Assert.IsTrue(Ui.Q("root").ClassListContains(UiLanguage.HebrewClass));
+        Assert.IsTrue(game.Advisor!.InChain, "the rebuilt presenter resumes the tour");
+        // A quiet EditMode panel runs its styles, layout and scheduler only on player-loop requests (SafeAreaTests), so each
+        // wait asks for one; bare yields would leave every scheduled step unrun and both checks below vacuous.
+        for (int i = 0; i < 5; i++) { EditorApplication.QueuePlayerLoopUpdate(); yield return null; }
+        Assert.IsTrue(Ui.Q("root").ClassListContains(ScreenNav.ScreenOpenClass), "Settings reopens over the resumed tour (#1036)");
+        Assert.AreSame(Ui.Q<Button>("settings-language-" + UiLanguage.Hebrew), Ui.Q("root").focusController.focusedElement,
+            "Next does not steal Settings' focus while the screen is open (#1915)");
+
+        UiTestKit.Press(Ui.Q<Button>("nav-settings"));               // Settings closes over the resumed tour
+        var next = Ui.Q<Button>("advisor-got-it");
+        for (int i = 0; i < 10 && Ui.Q("root").focusController.focusedElement != next; i++)
+        { EditorApplication.QueuePlayerLoopUpdate(); yield return null; }   // the popup comes back and the hand-off runs
+        for (int i = 0; i < 3; i++) { EditorApplication.QueuePlayerLoopUpdate(); yield return null; }   // and it stays there
+        Assert.IsFalse(Ui.Q("root").ClassListContains(ScreenNav.ScreenOpenClass));
+        Assert.AreSame(next, Ui.Q("root").focusController.focusedElement,
+            "once no screen is open Next has the focus: Enter goes on, and its gold focus fill shows (#1915)");
+    }
+
+    // The rest of Agam's #1918 (Refs #1915) Next hand-off, which the test above does not reach: the pending hand-off is
+    // dropped when a screen opens again before the popup is back (Hide), when the tour ends (CloseChain) and when a tour
+    // opens (OpenChain), so it never moves the focus later or into another tour; and a rebuild with no screen open hands
+    // Next the focus at once (TakeFocusFromTheCard).
+
+    (GameRoot game, GameInputs inputs) StartTheTour()
+    {
+        var inputs = new GameInputs { Content = AdvisorTour1688Fixture.Content(),
+            Map = GameInputs.MapFromDisk(Paths.Content, Paths.StreamingMap), Goldens = new GoldenData() };
+        var game = AdvisorGameTests.OpenScene(new SaveStore(TempDir()), new SettingsStore(TempDir()));
+        game.Language = UiLanguage.English;
+        game.AdvisorCatalogForTests = AdvisorCatalog.Parse(File.ReadAllText(AdvisorCatalog.Path)
+            .Replace("he_review: pending", "he_review: approved"));
+        game.Begin(inputs, 0, startScreen: true);
+        UiTestKit.Press(Ui.Q<Button>("start-new-game"));
+        game.Advisor!.OpenChain();
+        Assert.IsTrue(game.Advisor.InChain, "the tour is open");
+        return (game, inputs);
+    }
+
+    static Button Next => Ui.Q<Button>("advisor-got-it");
+    static Focusable? Focused => Ui.Q("root").focusController.focusedElement;
+    static bool ScreenOpen => Ui.Q("root").ClassListContains(ScreenNav.ScreenOpenClass);
+
+    /// <summary>A quiet EditMode panel runs its styles, layout and scheduler only on player-loop requests, as above.</summary>
+    static IEnumerator Frames(int count)
+    {
+        for (int i = 0; i < count; i++) { EditorApplication.QueuePlayerLoopUpdate(); yield return null; }
+    }
+
+    /// <summary>Records whether Next takes the focus from now on, even for a moment.</summary>
+    static Func<bool> WatchNext()
+    {
+        bool took = false;
+        Next.RegisterCallback<FocusInEvent>(_ => took = true);
+        return () => took;
+    }
+
+    /// <summary>The first half of SettingsSwitchToHebrewKeepsTheTourNextFocused: a mid-tour switch to Hebrew rebuilds the UI,
+    /// Settings reopens over the resumed tour, and the rebuilt presenter arms the hand-off for when Settings closes.</summary>
+    static IEnumerator ResumeTheTourUnderSettings(GameRoot game)
+    {
+        UiTestKit.Press(Ui.Q<Button>("nav-settings"));
+        UiTestKit.Press(Ui.Q<Button>("settings-language-" + UiLanguage.Hebrew));
+        Assert.IsTrue(game.Advisor!.InChain, "the rebuilt presenter resumes the tour");
+        yield return Frames(5);
+        Assert.IsTrue(ScreenOpen, "Settings reopens over the resumed tour (#1036)");
+        Assert.AreSame(Ui.Q<Button>("settings-language-" + UiLanguage.Hebrew), Focused, "Settings keeps its focus while it is open");
+    }
+
+    /// <summary>Opens a tour again with the focus moved off Next at once, as a player's Tab would, and starts watching Next.</summary>
+    static Func<bool> ReopenTheTourAndTabAway(GameRoot game)
+    {
+        if (game.Card?.Shown != null && !game.Card.Collapsed) game.Card.Collapse(takeFocus: false);
+        game.Advisor!.OpenChain();
+        Assert.IsTrue(game.Advisor.InChain, "the tour is open again");
+        var endTurn = Ui.Q<Button>("end-turn");
+        endTurn.Focus();
+        Assert.AreSame(endTurn, Focused, "the player moved the focus off Next");
+        return WatchNext();
+    }
+
+    /// <summary>Settings opens over the tour and closes again: a cover change that a stale hand-off would act on.</summary>
+    static IEnumerator OpenAndCloseSettings(GameRoot game)
+    {
+        UiTestKit.Press(Ui.Q<Button>("nav-settings"));
+        Assert.IsTrue(ScreenOpen);
+        yield return Frames(5);
+        UiTestKit.Press(Ui.Q<Button>("nav-settings"));
+        Assert.IsFalse(ScreenOpen);
+        yield return Frames(15);
+        Assert.IsTrue(game.Advisor!.InChain, "the tour is back once Settings closes");
+    }
+
+    // #1918: Hide drops a hand-off still waiting for Place. Red-first with that clear reverted: the hand-off armed by the
+    // first close survives Settings opening again, and Place hands Next the focus when Settings closes the second time.
+    [UnityTest]
+    public IEnumerator SettingsOpenedAgainBeforeTheTourIsBackCancelsTheNextHandOff()
+    {
+        var (game, _) = StartTheTour();
+        yield return ResumeTheTourUnderSettings(game);
+        UiTestKit.Press(Ui.Q<Button>("nav-settings"));               // Settings closes over the resumed tour
+        Assert.IsFalse(ScreenOpen);
+        Assert.AreNotSame(Next, Focused, "the popup is not placed yet, so the hand-off waits for Place");
+        var nextTookTheFocus = WatchNext();
+        UiTestKit.Press(Ui.Q<Button>("nav-settings"));               // and opens again before the popup is placed
+        Assert.IsTrue(ScreenOpen);
+        yield return Frames(5);
+        UiTestKit.Press(Ui.Q<Button>("nav-settings"));
+        Assert.IsFalse(ScreenOpen);
+        yield return Frames(15);
+        Assert.IsTrue(game.Advisor!.InChain, "the tour is back once Settings closes");
+        Assert.IsFalse(nextTookTheFocus(), "Settings opening again cancelled the pending hand-off: Next does not take the focus later (#1915)");
+    }
+
+    // #1918: CloseChain and OpenChain both drop the pending hand-off. Red-first only with both clears reverted (OpenChain
+    // drops whatever CloseChain leaves, and every later tour starts there): the hand-off armed for the closed tour moves
+    // the focus to the next tour's Next at its first cover change, after the player has moved the focus away.
+    [UnityTest]
+    public IEnumerator ATourClosedUnderSettingsLeavesTheNextTourNoPendingHandOff()
+    {
+        var (game, _) = StartTheTour();
+        yield return ResumeTheTourUnderSettings(game);
+        game.Advisor!.CloseChain();                                   // the tour ends while Settings is still open over it
+        Assert.AreEqual(-1, game.AdvisorSession!.Chain.Step, "the tour has ended");
+        UiTestKit.Press(Ui.Q<Button>("nav-settings"));
+        Assert.IsFalse(ScreenOpen);
+        yield return Frames(3);
+        var nextTookTheFocus = ReopenTheTourAndTabAway(game);
+        yield return OpenAndCloseSettings(game);
+        Assert.IsFalse(nextTookTheFocus(), "the closed tour's pending hand-off does not move the focus in the next tour (#1915)");
+    }
+
+    // #1918: OpenChain drops a pending hand-off that no CloseChain did. A new game (the top bar's New game:
+    // NewGamePresenter.Press replaces the session, then Started calls NewGame) ends the tour without CloseChain.
+    // Red-first with OpenChain's clear reverted: the old game's hand-off moves the focus to the reopened tour's Next at
+    // its first cover change, after the player has moved the focus away.
+    [UnityTest]
+    public IEnumerator ANewGameUnderSettingsLeavesTheReopenedTourNoPendingHandOff()
+    {
+        var (game, _) = StartTheTour();
+        yield return ResumeTheTourUnderSettings(game);
+        game.Bridge!.Replace(GameSession.New(game.Bridge.Content, GoldenRun.Seed, Mode.Historical));
+        game.Advisor!.NewGame();
+        Assert.AreEqual(-1, game.AdvisorSession!.Chain.Step, "the new game drops the tour without CloseChain");
+        if (ScreenOpen) UiTestKit.Press(Ui.Q<Button>("nav-settings"));
+        Assert.IsFalse(ScreenOpen);
+        yield return Frames(3);
+        var nextTookTheFocus = ReopenTheTourAndTabAway(game);
+        yield return OpenAndCloseSettings(game);
+        Assert.IsFalse(nextTookTheFocus(), "the old game's pending hand-off does not move the focus in the reopened tour (#1915)");
+    }
+
+    // #1918: a rebuild with no screen open (Begin over the same game, as SwitchLanguage runs it, with no screen reopened
+    // after it) hands the resumed tour's Next the focus at once. Red-first with TakeFocusFromTheCard reverted from the
+    // resume's check: the focus stays where it was before the rebuild.
+    [UnityTest]
+    public IEnumerator ARebuildWithNoScreenOpenHandsTheResumedTourNextTheFocus()
+    {
+        var (game, inputs) = StartTheTour();
+        yield return Frames(3);
+        var endTurn = Ui.Q<Button>("end-turn");
+        endTurn.Focus();
+        Assert.AreSame(endTurn, Focused, "the focus is off Next before the rebuild");
+        game.Begin(inputs, 0, keep: game.Bridge);
+        Assert.IsTrue(game.Advisor!.InChain, "the rebuilt presenter resumes the tour");
+        Assert.IsFalse(ScreenOpen);
+        for (int i = 0; i < 10 && Focused != Next; i++) { EditorApplication.QueuePlayerLoopUpdate(); yield return null; }
+        yield return Frames(3);                                        // and it stays there
+        Assert.IsFalse(ScreenOpen);
+        Assert.AreSame(Next, Focused, "with no screen open the resumed tour's Next has the focus: Enter goes on (#1915)");
+    }
 }

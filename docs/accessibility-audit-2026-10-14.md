@@ -348,7 +348,8 @@ Escape closes the open screen; on the open card it is Hide; on the start screen 
 ## The keyboard-only turn, 22 October 2026
 
 The done-when's turn, played again on main `5d5bee4d` after B1a (#890), B1b (#1134) and the city panel (#381, #1122,
-#1124): unit orders are left out until #754 closes (owner, 22 October 2026).
+#1124). Unit orders were left out until #754 closed (owner, 22 October 2026); #754 closed on 22 October and the Civ
+movement slices (#1527) are on main, so the turn gives one now (2 November 2026, below).
 
 - **How tested:** `KeyboardTurnTests` (EditMode) on Map.unity at 1280x720, a new GDD game with no start screen. Keys are
   sent as the UI Toolkit events the Input System's UI provider makes of them (Tab and Shift+Tab: `NavigationMoveEvent`;
@@ -358,8 +359,10 @@ The done-when's turn, played again on main `5d5bee4d` after B1a (#890), B1b (#11
   to the screen's first control (the screens come after the HUD in the order), Tab to a line's +, Enter (focus stays,
   H2), Tab to Submit, Enter. Tab to Cabinet, Enter, Tab to a minister's seat, Enter, Tab once to the first candidate,
   Enter. Escape (focus to the Cabinet button, M1). Tab to the map stop, pan to Tel Aviv, Enter (the city panel shows),
-  Tab to Train halutzim, Enter. Tab to End Turn, Enter: the turn ends and the turn report takes the focus; Enter on its
-  Close hands it to the next card, or to End Turn when none opens.
+  Tab to Train halutzim, Enter. Tab to the map stop, pan to Golani, Enter (Golani is selected and its Move pick opens,
+  as in Civ), pan to a lit hex, Enter (Golani moves there; the focus stays on the map stop). Tab to End Turn, Enter:
+  the turn ends and the turn report takes the focus; Enter on its Close hands it to the next card, or to End Turn when
+  none opens.
 - **Attention:** the opening turn has 4 Attention; answering the card and Train halutzim cost 2 each, a budget and an
   appointment 4 each, so the five steps take more than one turn's Attention. That is the game's rule, not the keyboard's:
   the test raises the Attention to check the path. With 4, the budget and the appointment are refused with the toast
@@ -379,6 +382,11 @@ Pinned in EditMode: the card's order (the card, each option, Hide, the side menu
 Share, the card again; Shift+Tab the reverse), End Turn's (the map stop, the minimap's three buttons, Star, Report,
 Share, the side menu, New Game, End Turn; Shift+Tab to New Game) and where the focus goes after End Turn
 (`KeyboardTurnTests`). No UI string was added, so nothing goes to #564.
+
+The unit order (2 November 2026, on main `5a2b50ae7`): `AWholeTurnPlaysWithTheKeyboardAlone` now selects Golani
+through the map stop and moves it to a lit hex, both with Enter, and checks that the sim's Move is committed. Nothing
+blocked it, so no code changed. Attack and the confirm step onto a city or a friendly unit (#1808) are pinned in
+`KeyboardOrdersTests`.
 
 ## The two scroll-bar and focus-drop fixes, 23 October 2026
 
@@ -503,6 +511,37 @@ Pinned in EditMode: `FocusHiddenParentTests` (`ToOrWithin` with a closed screen 
 leaves the focus on the last stop instead of dropping it; and a drawn scope still gives up its own
 first control, asserted on `minimap-overview` so the fallback cannot satisfy the test). No UI
 string was added, so nothing goes to #564.
+
+## The WebGL companion: off and unavailable for now, owner 2 November 2026
+
+**Status:** off and unavailable for now (owner, 2 November 2026). The owner asked to "disable the game companion" and
+chose "Remove it from the game (Recommended)": "A small PR before tonight's nightly hides it entirely: no Settings row,
+and ?companion=1 does nothing. The code stays in, switched off by one flag, so it can come back later." That flag is
+`WebCompanion.Available`, now `false`. While it is false `WebCompanion.On` is false whatever the switch, the stored
+choice or the address says, GameRoot gives Settings no switch, so the row stays hidden as it is outside WebGL, and the
+page's panel stays `hidden` because the game never publishes to it. `WebCompanionUnavailableTests` pins this. The
+rest of this section describes the companion as it works with the flag on (what `WebCompanionTests` runs, through the `WebCompanion.Offered` test seam), from the opt-in ruling of 1 November 2026.
+
+The first step proposed under H5 is the read-only WebGL companion (#1119, PR #1920): an HTML panel beside the canvas
+(`WebGLTemplates/Statecraft/index.html`, `WebCompanion.jslib`) that mirrors the open event, its choices, the game's focus,
+the status line and the End Turn report, with the status line as its one live region.
+
+The owner's ruling, 1 November 2026, on whether every WebGL player gets the panel: "Opt-in for now (Recommended)". It
+holds until the VoiceOver test on a real screen reader and the phone layout are done. So the companion is off by default
+and turns on in one of two ways:
+
+- the Settings row "Screen reader companion" (`settings.companion`), which shows only in the WebGL player; it applies at
+  once, is kept with the other settings, and once pressed it wins over the address for the rest of that page's visit;
+- `?companion=1` in the page address, a whole query parameter with the whole value `1` (`?companion=0`, `?companion`
+  and `?companion=10` do not turn it on). The owner's ruling, 2 November 2026: "Link wins, that visit (Recommended)".
+  The address turns the companion on for that visit even over a stored "off", and the saved choice is not changed.
+
+`WebCompanion.On` holds the rule. `WebCompanionTests` pins it, the Settings row and the real root (off at start, on and
+off from Settings, kept for a later game; the address over a stored "off" for that visit only). The page carries the panel's skeleton from load, `hidden`, so with the
+companion off there is no empty landmark or heading in the accessibility tree. The first snapshot shows the panel and
+writes its status line in a later task, so the live region is in the tree before its first announcement; a repeated
+status on a new turn is also cleared and written again in a later task. Whether VoiceOver announces both is part of the
+pending VoiceOver test.
 
 ## Screenshots
 

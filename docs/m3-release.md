@@ -290,7 +290,7 @@ war-casualties). The owner's sign-off for all seven events below is recorded in 
   consequence`) or any event with `variants` has no `reviewed_by`, naming them on a `RELEASE GATE REFUSED` line
   (`Statecraft.Sim.ReleaseGate.AlternateUnsigned`; the CLI also prints each as `unsigned alternate card: <id>`). The
   sign-off is a person's `reviewed_by`, written only by that person. The Unity `-shareable` build flag checks the sensitive events only.
-- **Pinned set:** `FinalWaveTests.TheSensitiveEventsArePinned` lists the ten ids, and
+- **Pinned set:** `FinalWaveTests.TheSensitiveEventsArePinned` lists the twelve ids, and
   `TheOwnerTableListsEverySensitiveEvent` fails if a sensitive event is missing from this table, so a new one cannot
   skip the review.
 
@@ -304,6 +304,8 @@ war-casualties). The owner's sign-off for all seven events below is recorded in 
 | `operation_horev` | security, war-casualties | military text only |
 | `bernadotte_assassination` | security, terror | the `terror` tag follows the Israeli government's own Prevention of Terrorism Ordinance |
 | `reparations_claim` | holocaust | the claim's framing (the cost of absorbing survivors: 500,000 at $3,000 each); the "refuse" option |
+| `deport_acre` | displacement | Deport's follow-up card for Acre (#801): the in-game consequence and one line of history adapted from he.wiki (the residents kept leaving after the 18 May 1948 surrender, but no expulsion orders were issued and no pressure was put on them to leave), whose footnote is Morris p. 153. The line departs from he.wiki in one place: "after the conquest" becomes "after Acre surrendered on 18 May 1948". The owner approved the card as written, English and Hebrew, on 2 November 2026 ("Approve both cards", [#2197](https://github.com/eyalgolan/statecraft-israel/pull/2197)); it is `sensitivity-reviewed`. Deport stays out of play (`mvp.deport_in_play: false`). |
+| `deport_nazareth` | displacement | Deport's follow-up card for Nazareth (#801): the in-game consequence and one line of history adapted from he.wiki and the IDF account (the residents stayed when the city surrendered in July 1948, in Operation Dekel, despite fighting near the town), whose he.wiki footnote is Morris p. 271. The line departs from he.wiki's "in and around the city" by saying "near the town", because the cited "מבצע דקל" has the IDF enter without a battle. The owner approved the card as written, English and Hebrew, on 2 November 2026 ("Approve both cards", [#2197](https://github.com/eyalgolan/statecraft-israel/pull/2197)); it is `sensitivity-reviewed`. Deport stays out of play (`mvp.deport_in_play: false`). |
 | `degania_defence` | security, war-casualties | the defence of Degania Alef and Degania Bet, 20 May 1948: military text only, no casualty figures, no gun count (the four-or-two record is unresolved, [C] in the YAML); the stopped-vehicle photograph's identification (Syrian per the NLI record, a Universal Carrier per Commons) is flagged for review (#1565) |
 | `reparations_vote` | holocaust | the Knesset vote of 9 January 1952 on direct talks with West Germany (#1564); the opposition named by party, not by leader; the riot of 7 January kept to the YAML comment; the three design costs. The owner approved the card text and options, the Benno Rothenberg photograph as a sensitive image and the three costs on 25 October 2026 ("Approve all three", [#1575](https://github.com/eyalgolan/statecraft-israel/pull/1575#issuecomment-6394241026)); it is `sensitivity-reviewed`. |
 
@@ -358,8 +360,13 @@ Published at: (owner fills in)
   - The template sets `autoSyncPersistentDataPath: true`, so closing the file persists it to IndexedDB.
   - IndexedDB is per origin, so saves survive re-uploads to the same project and stay separate per browser profile.
   - The local checks above passed: reload, tab close, browser restart, and a second directory on the same origin.
-- **Automated test:** `uv run tools/nightly.py savetest --tag <published nightly>` runs this plan against the public
-  itch page and records its result in the job's evidence file. It pushes to the public page twice, so only the owner starts it.
+- **Automated test:** `uv run tools/nightly.py savetest --tag <published nightly>` runs this plan against a separate
+  itch test page (`savetest_itch_target` in the job's `config.json`) and records its result in the job's evidence
+  file. It pushes to the test page twice, never to the public page, and refuses to run without that key or if it
+  names the public project. It loads each upload's game frame from the upload and build ids of `butler status`
+  (`https://html-classic.itch.zone/html/<upload>-<build>/index.html`), never from the test page, so that page can
+  stay Restricted (#2056). The owner or an agent may start it, since it pushes only to the Restricted test page
+  (owner, 2 Nov 2026, "2 (a)").
 - **Test plan (after the first two uploads):**
   1. Use one browser profile throughout, without clearing site data or using private mode. Record browser/version, OS,
      project page URL and the actual game-frame URL/origin (not only the outer itch.io page). Upload A as above. Play two
@@ -388,9 +395,9 @@ may show "This save is from an earlier version of the game, so events may unfold
 Record that warning and both builds' git commits. Matching date/turn in this case is not evidence of exact state preservation, and it does not
 replace the unchanged-content persistence control above. A changed state hash may be a replay effect rather than a storage failure.
 
-Result: not run on itch.io (owner step).
+Result: not run on itch.io yet.
 
-| Evidence | Owner-run result |
+| Evidence | Result |
 | --- | --- |
 | Browser/version | pending |
 | OS | pending |

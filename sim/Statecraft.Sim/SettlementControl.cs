@@ -259,7 +259,7 @@ namespace Statecraft.Sim
                     moved.Clear();
                     return new CaptureRefusal(CaptureRefusal.NoFreeHex, $"A unit has no free hex next to {name} to withdraw to");
                 }
-                var w = new Unit(u.Id, u.Type, to.Value.Q, to.Value.R, u.Service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity, u.Full);
+                var w = new Unit(u.Id, u.Type, to.Value.Q, to.Value.R, u.Service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity, u.Full, u.CombatXp);
                 s.Units[u.Id] = w;
                 moved.Add((u, w));
             }
@@ -298,7 +298,7 @@ namespace Statecraft.Sim
             }
             // Deport never pays (owner, 22 October 2026, #1327): its Money stays at or below Occupy's and Raid's.
             why.Add(new Cause("economy", "treasury", -r.DeportMoneyCost!.Value, $"{PlayerText.Change(c, "treasury", -r.DeportMoneyCost.Value)} (Deport of {name})", key: CauseKeys.DeportCost, args: new[] { id }));
-            EconomySystem.PayOrBorrow(c, s, r.DeportMoneyCost.Value, $"for the Deport of {name}", why, CauseKeys.Purpose.Deport, id);
+            EconomySystem.PayNamedOrBorrow(c, s, r.DeportMoneyCost.Value, $"for the Deport of {name}", why, CauseKeys.Purpose.Deport, id);
             return null;
         }
 

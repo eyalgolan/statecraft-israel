@@ -1,0 +1,15 @@
+"AppBuild"
+{
+	"AppID" "1000"
+	"Desc" "v0.3.2 1b7a36cb"
+	"ContentRoot" "<root>"
+	"BuildOutput" "<root>/../steam-output"
+	"SetLive" "nightly"
+	"Preview" "0"
+	"Depots"
+	{
+		"1001" "depot_build_1001.vdf"
+		"1002" "depot_build_1002.vdf"
+		"1003" "depot_build_1003.vdf"
+	}
+}

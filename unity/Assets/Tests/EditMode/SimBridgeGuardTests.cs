@@ -40,6 +40,7 @@ public class SimBridgeGuardTests
         [typeof(CancelProject)] = new CancelProject(1),
         [typeof(Move)] = new Move(1, 2, 0),
         [typeof(BuyArms)] = new BuyArms(0),
+        [typeof(ConvertDollars)] = new ConvertDollars(0),
         [typeof(ResolveCapture)] = new ResolveCapture("town_a", "raid"),
         [typeof(EndOccupation)] = new EndOccupation("town_a", "annex"),
     };
@@ -57,8 +58,9 @@ public class SimBridgeGuardTests
     }
 
     /// <summary>The command types whose order is one per turn by design, so their key is their kind (SimBridge.Key's
-    /// default): one budget, one call-up level, one security order, one Arms purchase (its count is the whole order).</summary>
-    static readonly HashSet<Type> OnePerTurn = new HashSet<Type> { typeof(AllocateBudget), typeof(SetMobilization), typeof(SecurityOrder), typeof(BuyArms) };
+    /// default): one budget, one call-up level, one security order, one Arms purchase (its count is the whole order), one dollar conversion (R-MONEY-004: its amount is the
+    /// whole order).</summary>
+    static readonly HashSet<Type> OnePerTurn = new HashSet<Type> { typeof(AllocateBudget), typeof(SetMobilization), typeof(SecurityOrder), typeof(BuyArms), typeof(ConvertDollars) };
 
     /// <summary>Every other command type has its own branch in SimBridge.Key, so its orders are not one per turn by accident
     /// (a new type with a Validate branch and no Key branch would silently keep only the last order of the turn).</summary>
@@ -71,6 +73,18 @@ public class SimBridgeGuardTests
             if (OnePerTurn.Contains(t) || Simulation.IsInstant(Samples[t])) Assert.AreEqual(Samples[t].Kind, key, t.Name);
             else Assert.AreNotEqual(Samples[t].Kind, key, t.Name + " has no branch in SimBridge.Key: add one, or list it in OnePerTurn");
         }
+    }
+
+    /// <summary>#1722 (R-ARMS-005): AssignWorkers is keyed by city and role, so a workshop staffing order and a jobs order for
+    /// the same city keep their own slots, while a second order of one role for one city still replaces the first.</summary>
+    [Test]
+    public void AssignWorkersIsKeyedByCityAndRole()
+    {
+        var job = new AssignWorkers("tel_aviv", "job", 1);
+        Assert.AreNotEqual(SimBridge.Key(job), SimBridge.Key(new AssignWorkers("tel_aviv", Workshops.Role, 1)), "the two roles");
+        Assert.AreNotEqual(SimBridge.Key(job), SimBridge.Key(new AssignWorkers("jerusalem", "job", 1)), "two cities");
+        Assert.AreEqual(SimBridge.Key(job), SimBridge.Key(new AssignWorkers("tel_aviv", "job", 5)), "one role, one city: the later order replaces it");
+        Assert.AreEqual(SimBridge.Key(new AssignWorkers("tel_aviv", Workshops.Role, 0)), SimBridge.Key(new AssignWorkers("tel_aviv", Workshops.Role, 2)));
     }
 
     [Test]

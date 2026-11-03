@@ -53,7 +53,9 @@ public class TurnReportTests
     static List<string> Causes(UiTestKit ui, string meter) =>
         ui.Q<VisualElement>("turn-report-causes-" + meter).Query<Label>(className: "turn-report-cause").ToList().Select(l => l.text).ToList();
 
-    /// <summary>The main B1 occupation/deport borrowing keys use the real map names in report and meter paths too.
+    /// <summary>The main B1 occupation/deport keys use the real map names in report and meter paths too: the cost's Money
+    /// line (occupation: PayOrBorrow's Paid line; Deport: its own line, as SettlementControl writes it), and the borrowing
+    /// line's own wording. Borrowing is not a Money cause (#2199), so the meter shows the cost's line.
     /// This is only a formatter fixture: it does not enable or execute the disabled Deport command.</summary>
     [TestCase(CauseKeys.Purpose.Occupation)]
     [TestCase(CauseKeys.Purpose.Deport)]
@@ -70,8 +72,16 @@ public class TurnReportTests
         var why = new List<Cause>();
         var placeName = PlayerText.Settlement(C, city);
         var englishPurpose = purpose == CauseKeys.Purpose.Deport ? $"for the Deport of {placeName}" : $"for the occupation of {placeName}";
-        EconomySystem.PayOrBorrow(C, last.State, last.State.Treasury + 3, englishPurpose, why, purpose, city);
-        var cause = why.Single();
+        var cost = last.State.Treasury + 3;
+        if (purpose == CauseKeys.Purpose.Occupation)
+            EconomySystem.PayOrBorrow(C, last.State, cost, englishPurpose, why, purpose, city);
+        else
+        {
+            why.Add(new Cause("economy", "treasury", -cost, $"{PlayerText.Change(C, "treasury", -cost)} (Deport of {placeName})", key: CauseKeys.DeportCost, args: new[] { city }));
+            EconomySystem.PayNamedOrBorrow(C, last.State, cost, englishPurpose, why, purpose, city);
+        }
+        Assert.AreEqual(2, why.Count, "the cost's Money line, then the borrowing");
+        var cause = why[1];
         Assert.AreEqual(CauseKeys.Borrowed, cause.Key);
         // Existing TurnReportTests uses this setter for a precise report fixture; no simulation input or content is changed.
         typeof(GameSession).GetProperty(nameof(GameSession.Last))!.SetValue(k.Bridge.Session,
@@ -116,12 +126,12 @@ public class TurnReportTests
             var heading = k.Ui.Q<Label>("turn-report-heading-" + id).text;
             Assert.AreEqual(En.Format("report.line", En["hud.caption." + id], k.Ui.Q<Label>(id + "-delta").text), heading, id);
             var causes = k.Ui.Root.Q("turn-report-causes-" + id);
-            var expected = HudModel.Causes(turn, id, w => CauseText.Line(w, C, System.Array.Empty<UnitEntry>(), En));
+            var expected = HudModel.Causes(turn, id, C, w => CauseText.Line(w, C, System.Array.Empty<UnitEntry>(), En));
             if (expected.Count == 0) { Assert.IsNull(causes, id + ": no cause line without a cause"); continue; }
             var lines = Causes(k.Ui, id);
             CollectionAssert.AreEqual(expected, lines, id);
-            Assert.LessOrEqual(lines.Count, HudModel.MaxCauses, id);
-            foreach (var line in lines) Assert.IsTrue(messages.Contains(line), $"{id}: '{line}' is a cause of StepResult.Why, word for word");
+            Assert.LessOrEqual(lines.Count, HudModel.MaxCauses + (id == "treasury" ? 1 : 0), id);   // Money's Other line (#2212)
+            foreach (var line in lines.Take(HudModel.MaxCauses)) Assert.IsTrue(messages.Contains(line), $"{id}: '{line}' is a cause of StepResult.Why, word for word");
         }
         // The fixed turn's own causes, the larger first and at most MaxCauses (2): Security moved by One Army and the
         // defence of Degania, the same size, in the order the cards came (R-EVT-006); the border villages' smaller effect
@@ -129,6 +139,17 @@ public class TurnReportTests
         var security = Causes(k.Ui, "security");
         CollectionAssert.AreEqual(new[] { "Security +1.5% (One Army)", "Security +1.5% (The Defence of Degania)" }, security);
         StringAssert.StartsWith("Money ", Causes(k.Ui, "treasury")[0], "Money's main cause is the economy's line");
+        // #2212: Money's two largest causes, then one Other line for the rest (EconomySystem.OtherMoney), so the lines add
+        // up to the change the heading shows.
+        var money = Causes(k.Ui, "treasury");
+        var shown = new List<Cause>();
+        HudModel.Causes(turn, "treasury", C, w => { shown.Add(w); return ""; });
+        Assert.AreEqual(HudModel.MaxCauses + 1, money.Count, "the opening turn has more Money causes than the two shown");
+        Assert.AreEqual(CauseKeys.MoneyOther, shown[shown.Count - 1].Key);
+        Assert.AreEqual(shown[shown.Count - 1].Message, money[money.Count - 1]);
+        StringAssert.EndsWith(" (other causes)", money[money.Count - 1]);
+        var s = k.Bridge.State; var prev = k.Bridge.Session.Previous!;
+        Assert.AreEqual((s.Treasury - s.Debt) - (prev.Treasury - prev.Debt), shown.Sum(w => w.Delta), 1e-9, "the lines add up to the Money (net) change");
         Assert.IsNull(k.Ui.Root.Q("turn-report-causes-support"), "no cause names Public support (an average of the indicators)");
     }
 
@@ -157,6 +178,95 @@ public class TurnReportTests
             CollectionAssert.AreEqual(expected, lines);
             CollectionAssert.Contains(lines, hebrew ? "הלגיון הערבי עבר לעמדה חדשה" : "Arab Legion moved to a new position", "the Legion's march on Latrun");
         }
+    }
+
+    /// <summary>Each settlement's Hebrew name by id, from the map's own rows.</summary>
+    static Dictionary<string, string> NamesHe() => Statecraft.Game.Map.SettlementPlacer.Parse(
+        File.ReadAllText(Path.Combine(Paths.Content, "map", "settlements_1948.yaml"))).ToDictionary(s => s.Id, s => s.NameHe);
+
+    /// <summary>A kit whose opening turn runs as usual and whose result then gets <paramref name="added"/> through
+    /// Session.Last's private setter (as AnAttackThatNamesNoAttackersGivesNoLine does), before the report reads it. The real
+    /// content is gdd-0.1, which has no workshop, so the workshop causes are added; that the sim gives them under gdd-0.3 only
+    /// is ArmsWorkshopTests.Gdd01RunsNoWorkshopCycle's.</summary>
+    static Kit EndTurnWith(UiText text, IReadOnlyList<Cause> added, IReadOnlyDictionary<string, string> namesHe)
+    {
+        var k = new Kit(text, (g, cmds) =>
+        {
+            var r = g.EndTurn(cmds);
+            var result = new StepResult(r.State, r.Why.Concat(added).ToList(), r.Rejected);
+            typeof(GameSession).GetProperty(nameof(GameSession.Last))!.SetValue(g, result);
+            return result;
+        });
+        k.Report.TownNamesHe = namesHe;
+        k.Bridge.EndTurn();
+        return k;
+    }
+
+    static Cause Made(string city) => new Cause("city", city, 1, city + ": an arms workshop made 1 Arms", key: CauseKeys.WorkshopArms);
+    static Cause Paused(string city, string why) => new Cause("city", city, 0, city + ": an arms workshop waits", key: CauseKeys.WorkshopPaused, args: new[] { why });
+
+    /// <summary>#1701 A1 (owner, 2 November 2026: "Yes, in the panel (Recommended)"; the option: "The turn-report panel shows
+    /// 'Workshop in &lt;city&gt;: +1 Arms' and 'Workshop in &lt;city&gt; paused: debt ceiling'."): the sim's workshop causes
+    /// (R-ARMS-006) get their own row after the stocks, in the sim's order, the city named in the player's language. A city
+    /// with one such cause keeps the A1 wording. A no-worker pause is not one of the ruled lines and stays on the Why screen.
+    /// The expected lines are literals in both languages, not the keys formatted again.</summary>
+    [Test]
+    public void TheWorkshopsArmsAndCeilingPauseAreReportedInBothLanguages()
+    {
+        var namesHe = NamesHe();
+        var added = new[] { Made("tel_aviv"), Paused("haifa", Workshops.NoWorker), Paused("haifa", Workshops.DebtCeiling) };
+        foreach (var hebrew in new[] { false, true })
+        {
+            using var k = EndTurnWith(hebrew ? He : En, added, namesHe);
+            k.Q("turn-report-" + TurnReportPresenter.WorkshopRow);   // asserts the row's own name, which the no-row test queries
+            Assert.AreEqual(hebrew ? "סדנאות נשק" : "Arms workshops", k.Ui.Q<Label>("turn-report-heading-" + TurnReportPresenter.WorkshopRow).text);
+            CollectionAssert.AreEqual(hebrew
+                    ? new[] { "סדנת נשק (תל אביב): תוספת נשק: 1", "סדנת נשק (חיפה) בהמתנה: תקרת החוב" }
+                    : new[] { "Workshop in Tel Aviv: +1 Arms", "Workshop in Haifa paused: debt ceiling" },
+                Causes(k.Ui, TurnReportPresenter.WorkshopRow), "the owner's ruled wording");
+        }
+    }
+
+    /// <summary>#1701 A1 follow-up (owner, 2 November 2026: "Combine per city (Recommended)"; the option: "'Workshops in Tel
+    /// Aviv (6): +6 Arms'; pauses likewise combined with a count."): a city's workshop Arms are one line with their count, and
+    /// so are its ceiling pauses, in the order each first appears among the sim's causes; a city with one keeps the A1 line.
+    /// The count is the number of the sim's causes, which each give 1 Arms (R-ARMS-006). Hebrew puts the count in brackets
+    /// after the city's name, as English does, and the Arms as "Label: N" (HE-04), each number between left-to-right marks
+    /// as UiText.Format puts it.</summary>
+    [Test]
+    public void AnotherWorkshopInTheSameCityJoinsItsLine()
+    {
+        var namesHe = NamesHe();
+        var added = new[]
+        {
+            Paused("haifa", Workshops.DebtCeiling), Made("tel_aviv"), Paused("haifa", Workshops.DebtCeiling), Made("haifa"),
+            Made("tel_aviv"), Made("tel_aviv"), Paused("haifa", Workshops.NoWorker),
+        };
+        foreach (var hebrew in new[] { false, true })
+        {
+            using var k = EndTurnWith(hebrew ? He : En, added, namesHe);
+            CollectionAssert.AreEqual(hebrew
+                    ? new[]
+                    {
+                        "סדנאות נשק (חיפה) (‎2‎) בהמתנה: תקרת החוב",
+                        "סדנאות נשק (תל אביב) (‎3‎): תוספת נשק: ‎3‎",
+                        "סדנת נשק (חיפה): תוספת נשק: 1",
+                    }
+                    : new[] { "Workshops in Haifa (2) paused: debt ceiling", "Workshops in Tel Aviv (3): +3 Arms", "Workshop in Haifa: +1 Arms" },
+                Causes(k.Ui, TurnReportPresenter.WorkshopRow));
+        }
+    }
+
+    /// <summary>#1701 A1: a turn whose only workshop cause is a no-worker pause (on the Why screen only) has no workshop row,
+    /// so the filter, not the content, keeps the row out.</summary>
+    [Test]
+    public void ANoWorkerPauseAloneGivesNoWorkshopRow()
+    {
+        using var k = EndTurnWith(En, new[] { Paused("haifa", Workshops.NoWorker) }, NamesHe());
+        Assert.IsTrue(k.Bridge.Session.Last!.Why.Any(w => w.Key == CauseKeys.WorkshopPaused), "the pause is in the turn");
+        Assert.IsNotEmpty(k.Ui.Q<ScrollView>("turn-report-rows").Children().ToList(), "the report has its other rows");
+        Assert.IsNull(k.Ui.Root.Q("turn-report-" + TurnReportPresenter.WorkshopRow), "no workshop row");
+        Assert.IsNull(k.Ui.Root.Q("turn-report-heading-" + TurnReportPresenter.WorkshopRow), "no workshop heading");
     }
 
     /// <summary>#1297: a standing enemy attack (R-ENEMY-003) is reported on every turn it engages, not only on the turn it is
@@ -282,12 +392,17 @@ public class TurnReportTests
         // In a right-to-left line the change keeps its sign in front ("+2%", not "2%+"): UiText.Format marks it (#543).
         StringAssert.Contains(UiText.LeftToRightMark + k.Ui.Q<Label>("security-delta").text + UiText.LeftToRightMark, heading);
         var causes = Causes(k.Ui, "security");
-        CollectionAssert.AreEqual(HudModel.Causes(k.Bridge.Session.Last, "security", w => CauseText.Line(w, C, System.Array.Empty<UnitEntry>(), He)), causes,
+        CollectionAssert.AreEqual(HudModel.Causes(k.Bridge.Session.Last, "security", C, w => CauseText.Line(w, C, System.Array.Empty<UnitEntry>(), He)), causes,
             "the causes are the sim's, worded as on the Why screen");
         // B1: the treasury's tax-and-spending line is Hebrew (a line with no key yet, such as an event's, stays English).
         Assert.IsTrue(UiDirection.RightToLeft(Causes(k.Ui, "treasury")[0]), "the money line is in Hebrew");
+        // #2212: Money's Other line too (why.cause.money_other).
+        var money = Causes(k.Ui, "treasury");
+        Assert.AreEqual(HudModel.MaxCauses + 1, money.Count, "the two largest Money causes and the Other line");
+        Assert.IsTrue(UiDirection.RightToLeft(money[money.Count - 1]), "the Other line is in Hebrew");
+        StringAssert.Contains("(סיבות אחרות)", money[money.Count - 1]);
         // B1: one label a cause, so a Hebrew line and a line still in English each take their own direction.
-        Assert.AreEqual(HudModel.Causes(k.Bridge.Session.Last, "security", w => w.Message).Count,
+        Assert.AreEqual(HudModel.Causes(k.Bridge.Session.Last, "security", C, w => w.Message).Count,
             k.Q("turn-report-causes-security").Query<Label>(className: "turn-report-cause").ToList().Count);
     }
 
@@ -377,16 +492,17 @@ public class TurnReportTests
     /// <summary>At a laptop's 1280x720 and a phone's 390x844, in English and Hebrew: the report lies in the window, every
     /// line within its panel, its two buttons shown, and the keyboard focus on Close.</summary>
     [UnityTest]
-    public IEnumerator ItFitsLaptopAndPhoneInBothLanguages()
+    public IEnumerator ItFitsLaptopAndPhoneInBothLanguages([Values(100, 125, 150)] int uiScale)   // #40: at the Settings scale choices (#2219 review)
     {
         var problems = new List<string>();
         foreach (var hebrew in new[] { false, true })
-            foreach (var (w, h) in new[] { (1280, 720), (390, 844) })
+            foreach (var (w, h) in new[] { (1280, 720), (390, 844), (360, 800), (2560, 1080) })   // and the ends of the verified range (SettingsPresenter.VerifiedShapes)
             {
-                string at = $"{(hebrew ? "he" : "en")} {w}x{h}";
+                string at = $"{(hebrew ? "he" : "en")} {w}x{h} at {uiScale}%";
                 var rt = new RenderTexture(w, h, 0);
                 var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
                 ps.targetTexture = rt;
+                if (uiScale != 100) ps.referenceResolution = new Vector2Int(Mathf.RoundToInt(1920f * 100f / uiScale), Mathf.RoundToInt(1080f * 100f / uiScale));   // #40: the panel as the Settings scale choice sets it
                 var go = new GameObject("TurnReportLayout"); go.SetActive(false);
                 var doc = go.AddComponent<UIDocument>(); doc.panelSettings = ps;
                 doc.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml);

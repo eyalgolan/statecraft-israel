@@ -10,8 +10,8 @@ namespace Statecraft.Game.UI
     /// <summary>The UI's only door into the simulation (spec section 6). Holds the GameSession, collects this turn's
     /// orders, runs End Turn and tells the screens to refresh. R-TURN-004's instant orders are committed and shown at once;
     /// deferred orders take effect at End Turn, in the order given. Each deferred order replaces an earlier one with the same key (one choice per event, one call-up level, one budget, one appointee
-    /// per office, one policy level per policy, one build per hex, one work order per city, one training order per city and
-    /// track, one cancel per cohort, one pioneer order per unit).</summary>
+    /// per office, one policy level per policy, one build per hex, one work order per city and role (jobs, and under gdd-0.3 the arms
+    /// workshops, #1722), one training order per city and track, one cancel per cohort, one pioneer order per unit).</summary>
     public sealed class SimBridge
     {
         readonly List<Command> deferred = new List<Command>();
@@ -47,6 +47,10 @@ namespace Statecraft.Game.UI
         public event Action<IReadOnlyList<Rejection>>? TurnEnded;
         /// <summary>Raised after a move or unit order is committed, with the Why lines it added (an attack's result).</summary>
         public event Action<IReadOnlyList<Cause>>? Committed;
+        /// <summary>The engagements the player has just seen resolve, raised after <see cref="Changed"/> has redrawn the map
+        /// (UnitAttackPresenter plays them, #1867): an attack order's at once, and at End Turn only the turn's new ones, not
+        /// the open turn's attack orders, which the turn runs again first. Never on a load or a refused turn.</summary>
+        public event Action<IReadOnlyList<Cause>>? CombatResolved;
         /// <summary>Raised when Queue refuses an order, with the player-facing reason.</summary>
         public event Action<string>? Refused;
         /// <summary>A validated order was refused specifically for Attention; presentation-only advice signal.</summary>
@@ -73,7 +77,7 @@ namespace Statecraft.Game.UI
             SetPolicy p => "policy:" + p.Policy,
             Appoint a => "appoint:" + a.Office,
             MapAction m => FormattableString.Invariant($"map:{m.Q},{m.R}"),
-            AssignWorkers w => "work:" + w.City,
+            AssignWorkers w => "work:" + w.City + ":" + w.Role,   // #1722: a city's jobs and workshop orders keep their own slots
             Train t => "train:" + t.City + ":" + t.Track,
             CancelTraining x => FormattableString.Invariant($"untrain:{x.Cohort}"),
             ReturnCraftsmen r => "retcraft:" + r.City,
@@ -201,23 +205,30 @@ namespace Statecraft.Game.UI
                     return Unknown("city_project", p.ProjectKind, Content.ProjectKinds.Select(x => x.Id)) ?? Unknown("city", p.City, Content.Cities.Select(x => x.Id));
                 case CancelProject x:
                     return Unknown("city_project", x.Project.ToString(System.Globalization.CultureInfo.InvariantCulture), State.CityProjects.Keys.Select(k => k.ToString(System.Globalization.CultureInfo.InvariantCulture)));
-                // Buying Arms (#781): no ids; the sim refuses a count below one itself.
+                // Buying Arms (#781): no ids; the sim refuses a count below one, and borrowing past the debt ceiling (#2198), itself.
                 case BuyArms _: return null;
                 // Answering a capture (#797): the sim refuses a place not awaiting the choice, or an outcome not built yet, with
                 // its own reason and never throws on the id. The capture dialog is PR 10.
                 case ResolveCapture _: return null;
                 // Answering the end of an occupation (#799): the sim refuses a place not awaiting the end with its own reason.
                 case EndOccupation _: return null;
+                // Converting dollars (#813, R-MONEY-004): no ids; the sim refuses the amount itself (EconomySystem.DollarsRefusal).
+                case ConvertDollars _: return null;
                 default: return text["order.invalid"];
             }
         }
 
-        /// <summary>The sim's English refusals that have a UI string: Movement's artillery refusal and Orders.Check's (#2045).
+        /// <summary>The sim's English refusals that have a UI string: Orders.Check's (#2045) and the Arms purchase refused at the debt ceiling (#2198).
         /// Keyed on the English, so the same words from another check (Movement, Combat, Training, Demobilization give "That
         /// unit is not yours", "There is no such unit" too) read in the UI's language as well.</summary>
         static readonly Dictionary<string, string> ReasonKeys = new Dictionary<string, string>
         {
-            [Movement.MissingArtilleryMovement] = "unit.artillery_move_missing",
+            // #813 (R-MONEY-004): the dollar conversion's refusals.
+            [EconomySystem.RefusedDollarsMinimum] = "dollars.refused_minimum",
+            [EconomySystem.RefusedDollarsNotAtWar] = "dollars.refused_not_at_war",
+            [EconomySystem.RefusedDollarsMonthly] = "dollars.refused_monthly",
+            [EconomySystem.RefusedDollarsTotal] = "dollars.refused_total",
+            [EconomySystem.RefusedDollarsReserves] = "dollars.refused_reserves",
             [Orders.RefusedUnknownOrder] = "unit.order_refused.unknown_order",
             [Orders.RefusedNoUnit] = "unit.order_refused.no_unit",
             [Orders.RefusedNotMilitary] = "unit.order_refused.not_military",
@@ -233,6 +244,7 @@ namespace Statecraft.Game.UI
             [Training.RefusedNoCity] = "unit.reinforce_refused.no_city",
             [Training.RefusedNoTraining] = "unit.reinforce_refused.no_training",
             [Training.RefusedCount] = "unit.reinforce_refused.count",
+            [Pools.RefusedDebtCeiling] = "arms.refused_debt_ceiling",
         };
 
         /// <summary>The sim's refusals that carry values (#2072: Combat.Check's Arms, Training.Reinforce's unit, settlement,
@@ -250,6 +262,11 @@ namespace Statecraft.Game.UI
             (Training.RefusedNoHakhshara, "unit.reinforce_refused.no_hakhshara"),
             (Training.RefusedIdle, "unit.reinforce_refused.idle"),
             (Training.RefusedArms, "unit.reinforce_refused.arms"),
+            // R-ARMS-005 (#1722): a workshop staffing order's refusals, the panel's and the end of turn's.
+            (Workshops.RefusedBuiltOne, "workshop.refused_built_one"),
+            (Workshops.RefusedBuilt, "workshop.refused_built"),
+            (Workshops.RefusedPeople, "workshop.refused_people"),
+            (Workshops.RefusedPeopleNoJob, "workshop.refused_people_no_job"),
         }.Select(x => (new Regex("^" + string.Join("(.+?)", Regex.Split(x.format, @"\{\d+\}").Select(Regex.Escape)) + "$"), x.key)).ToArray();
 
         /// <summary>A sim refusal in the UI's language where it has a string (<see cref="ReasonKeys"/>, <see cref="ReasonFormats"/>),
@@ -280,6 +297,8 @@ namespace Statecraft.Game.UI
         public IReadOnlyDictionary<string, string>? TownNamesHe { get; set; }
 
         string? Refuse(string reason) { reason = ReasonText(text, reason, Content, TownNamesHe); Refused?.Invoke(reason); return reason; }
+
+        static IReadOnlyList<Cause> Engagements(IEnumerable<Cause> why) => why.Where(x => x.Key == WhyKeys.Engagement).ToList();
 
         static void Notify(Action? handlers)
         {
@@ -313,7 +332,9 @@ namespace Statecraft.Game.UI
                 var refused = Session.Commit(c);
                 if (refused != null) return Refuse(refused);
                 Notify(Changed);
-                Notify(Committed, Session.Now.Why.Skip(before).ToList());
+                var added = Session.Now.Why.Skip(before).ToList();
+                Notify(Committed, added);
+                Notify(CombatResolved, Engagements(added));
                 return null;
             }
             if (c is AllocateBudget ab) c = new AllocateBudget(new Dictionary<string, double>(ab.Shares));   // a snapshot: later edits to the caller's dictionary must not change the order
@@ -343,6 +364,9 @@ namespace Statecraft.Game.UI
         public StepResult EndTurn()
         {
             StepResult r;
+            // The turn runs the open turn's orders first, as the open turn did (Simulation.Step and Preview share RunOrders),
+            // so its first causes are the open turn's, already played when each order was given (#1867).
+            int replayed = Session.Now.Why.Count;
             var batch = Session.Committed.Concat(deferred).ToList();
             var date = TurnStart.Date;
             try { r = step(Session, deferred.ToList()); }   // a snapshot: the queue is cleared below
@@ -362,6 +386,7 @@ namespace Statecraft.Game.UI
             LastBatch = batch; LastBatchDate = date;
             deferred.Clear(); skipped.Clear();
             Notify(Changed);
+            Notify(CombatResolved, Engagements(r.Why.Skip(replayed)));
             Notify(TurnEnded, r.Rejected);
             return r;
         }

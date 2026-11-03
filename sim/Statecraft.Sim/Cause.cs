@@ -47,6 +47,12 @@ namespace Statecraft.Sim
         public const string FxFlows = "fx_flows";
         /// <summary>Delta borrowed into the debt. Args: what for (a <see cref="Purpose"/>), then that purpose's values.</summary>
         public const string Borrowed = "borrowed";
+        /// <summary>Target (treasury) money moved by Delta, a cost paid through EconomySystem.PayOrBorrow, borrowed share
+        /// included (#2199). Args: as <see cref="Borrowed"/>'s.</summary>
+        public const string Paid = "paid";
+        /// <summary>Target (treasury) money moved by Delta, the Money causes a list leaves out, summed: the UI's line, never one
+        /// of a turn's (EconomySystem.OtherMoney, #2212). No args.</summary>
+        public const string MoneyOther = "money_other";
         /// <summary>Target money moved by Delta, for civilian upkeep. No args.</summary>
         public const string CivilianUpkeep = "civilian_upkeep";
         public const string FxCrisisBegan = "fx_crisis_began", FxCrisisEased = "fx_crisis_eased";
@@ -81,6 +87,12 @@ namespace Statecraft.Sim
             EventSetRung = "event_set_rung", EventRejoin = "event_rejoin";
         // Grant: context then city id. City: context then city id, field. Rejoin: context then EN/HE title.
         public const string MilitaryUpkeep = "military_upkeep";
+        /// <summary>#1703, gdd-0.3 only (R-HOUSE-005): the cities' housing surcharge, a Money line (Target treasury) of minus
+        /// Delta. No args.</summary>
+        public const string HousingSurcharge = "housing_surcharge";
+        /// <summary>#1703, gdd-0.3 only (R-HOUSE-005): Social cohesion (Target morale) moved by Delta by the cities' housing
+        /// condition. No args.</summary>
+        public const string HousingCohesion = "housing_cohesion";
 
 
         // #1682: immutable values in Args; no current-state lookup is needed to word an old report.
@@ -124,6 +136,14 @@ namespace Statecraft.Sim
         public const string ProjectCompleted = "project_completed";
         /// <summary>Args: CauseKeys.Number(cost).</summary>
         public const string ArmsBought = "arms_bought";
+        /// <summary>R-ARMS-005: a city's staffed arms workshops. Args: CauseKeys.Number(count).</summary>
+        public const string WorkshopWorkers = "workshop_workers";
+        /// <summary>R-ARMS-006: an arms workshop's cycle made 1 Arms. Args: none.</summary>
+        public const string WorkshopArms = "workshop_arms";
+        /// <summary>R-ARMS-006: a staffed arms workshop did not work this month. Args: Workshops.NoWorker or Workshops.DebtCeiling.</summary>
+        public const string WorkshopPaused = "workshop_paused";
+        /// <summary>Args: CauseKeys.Number(amount), the US$ millions converted.</summary>
+        public const string DollarsConverted = "dollars_converted";
         /// <summary>Args: f.Id.</summary>
         public const string FoodHarvest = "food_harvest";
         /// <summary>Args: CauseKeys.Number(need).</summary>
@@ -213,32 +233,39 @@ namespace Statecraft.Sim
         /// <summary>Args: none.</summary>
         public const string DepopulationSupport = "depopulation_support";
 
-        /// <summary>What a <see cref="Borrowed"/> line borrowed for (EconomySystem.PayOrBorrow's callers, and the deficit).</summary>
+        /// <summary>What a <see cref="Borrowed"/> line borrowed for (EconomySystem.PayOrBorrow's callers, and the deficit), and
+        /// what a <see cref="Paid"/> line paid for.</summary>
         public static class Purpose
         {
             public const string Deficit = "deficit", CivilianUpkeep = "civilian_upkeep", MilitaryUpkeep = "military_upkeep",
                 Corridor = "corridor", Arms = "arms", Training = "training", Prisoners = "prisoners", TrainingCamp = "training_camp",
-                Plow = "plow", Drain = "drain", Yishuv = "yishuv", Deport = "deport", Occupation = "occupation";
+                Plow = "plow", Drain = "drain", Yishuv = "yishuv", Deport = "deport", Occupation = "occupation",
+                HousingSurcharge = "housing_surcharge";
             /// <summary>Args: the project kind's id.</summary>
             public const string Project = "project";
+            /// <summary>A map action's cost (MapActions.Apply), a Paid line only: its borrowing is CauseKeys.MapBorrowed.
+            /// Args: the map action's id.</summary>
+            public const string MapAction = "map_action";
             /// <summary>Args: the event's id, its English title as shown, and "1" when its title_he names it (no variant title).</summary>
             public const string Event = "event";
+            /// <summary>An arms workshop's cycle (R-ARMS-006). Args: none.</summary>
+            public const string Workshop = "workshop";
 
             public static readonly IReadOnlyList<string> All = new[]
             {
                 Deficit, CivilianUpkeep, MilitaryUpkeep, Corridor, Arms, Training, Prisoners, TrainingCamp, Plow, Drain, Yishuv,
-                Deport, Occupation, Project, Event,
+                Deport, Occupation, Project, MapAction, Event, Workshop, HousingSurcharge,
             };
         }
 
         public static readonly IReadOnlyList<string> All = new[]
         {
-            MoneyFlows, FxFlows, Borrowed, CivilianUpkeep, FxCrisisBegan, FxCrisisEased, FxCrisisFood, Arrived, EffectChange,
+            MoneyFlows, FxFlows, Borrowed, Paid, MoneyOther, CivilianUpkeep, FxCrisisBegan, FxCrisisEased, FxCrisisFood, Arrived, EffectChange,
             SituationBegan, SituationEnded, RungChanged, CallUpSet, CallUpRaised, CallUpLowered, Ceasefire,
             EventNew, EventChosen, EventDelegated, EventDelegatedPartial, EventAmount, EventStock, EventGrant, EventCity,
-            EventUnlock, EventPolicy, EventSetRung, EventRejoin, MilitaryUpkeep,
+            EventUnlock, EventPolicy, EventSetRung, EventRejoin, MilitaryUpkeep, HousingSurcharge, HousingCohesion,
             ObjectiveCompleted, PrisonersReturned, SoldiersReturned,
-            WorkersAssigned, WagesPaid, ImmigrantsHoused, HousingShortage, ImmigrantsWaiting, RecruitsVeteran, CorridorStarted, CorridorCancelled, CorridorCompleted, PioneersVeteran, MapBorrowed, MapBuilt, LandWorkStarted, SiteStarted, SiteCancelled, SiteCompleted, ProjectStarted, ProjectCancelled, ProjectCompleted, ArmsBought, FoodHarvest, FoodShortage, FoodWithoutImports, PrisonerFood, PrisonerFoodShortage, CraftsmenReturned, CraftsmenReassigned, PioneerReturned, PioneersReassigned, TrainingStarted, TrainingArms, TrainingCancelled, TrainingArmsReturned, ReplacementsStopped, ReplacementsJoined, MilitaryTrained, PioneersTrained, CraftsmenTrained, Appointed, Reshuffle, AppointmentsEnded, ApprovalStability, CoalitionCollapsed, LegislatureConvened, GovernmentTookOffice, CoalitionChanged, EraEnded, AdvisoryPolicyRejected, PolicyRejected, PolicySet, AdvisoryBudgetRejected, BudgetRejected, PlaceCaptured, EnemyRegained, PlaceAnnexed, PlaceWithdrawn, PlaceDeported, DeportEffect, DeportCost, OccupationStarted, PendingBecameRaid, OccupationLostUnit, OccupationCountdown, DepopulationSupport,
+            WorkersAssigned, WagesPaid, ImmigrantsHoused, HousingShortage, ImmigrantsWaiting, RecruitsVeteran, CorridorStarted, CorridorCancelled, CorridorCompleted, PioneersVeteran, MapBorrowed, MapBuilt, LandWorkStarted, SiteStarted, SiteCancelled, SiteCompleted, ProjectStarted, ProjectCancelled, ProjectCompleted, ArmsBought, WorkshopWorkers, WorkshopArms, WorkshopPaused, DollarsConverted, FoodHarvest, FoodShortage, FoodWithoutImports, PrisonerFood, PrisonerFoodShortage, CraftsmenReturned, CraftsmenReassigned, PioneerReturned, PioneersReassigned, TrainingStarted, TrainingArms, TrainingCancelled, TrainingArmsReturned, ReplacementsStopped, ReplacementsJoined, MilitaryTrained, PioneersTrained, CraftsmenTrained, Appointed, Reshuffle, AppointmentsEnded, ApprovalStability, CoalitionCollapsed, LegislatureConvened, GovernmentTookOffice, CoalitionChanged, EraEnded, AdvisoryPolicyRejected, PolicyRejected, PolicySet, AdvisoryBudgetRejected, BudgetRejected, PlaceCaptured, EnemyRegained, PlaceAnnexed, PlaceWithdrawn, PlaceDeported, DeportEffect, DeportCost, OccupationStarted, PendingBecameRaid, OccupationLostUnit, OccupationCountdown, DepopulationSupport,
         };
 
         /// <summary>A number as an Arg: invariant and round-trip, so the UI rounds exactly the value Message rounded.</summary>

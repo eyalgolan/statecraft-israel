@@ -55,6 +55,15 @@ namespace Statecraft.Game.UI
             frame.RegisterCallback<GeometryChangedEvent>(OnBoxGeometry);
             overview = box.Q<Button>("minimap-overview"); labels = box.Q<Button>("minimap-labels"); borders = box.Q<Button>("minimap-borders");
             overview.clicked += OnOverview; labels.clicked += OnLabels; borders.clicked += OnBorders;
+            // #2227: GameRoot.Begin (New Game, a load, the language switch) makes a new presenter over the same document and
+            // the same map, whose switches keep what was last set. Each button starts from its switch and dims to match, so
+            // the two cannot disagree (review of #2231, C1); with no map (a test), a button keeps its own dim. The names'
+            // switch is their container's display (Begin makes the MapLabelsPresenter that registers it after this one),
+            // and the armistice lines go with Borders (#2195).
+            BordersShown = VisualToggles.Names.Contains(MapBorders.ToggleName) ? MapBorders.ToggleOn : !borders.ClassListContains(OffClass);
+            LabelsShown = root.Q(MapLabelsPresenter.ContainerName) is VisualElement names ? MapLabelsPresenter.SwitchedOn(names) : !labels.ClassListContains(OffClass);
+            borders.EnableInClassList(OffClass, !BordersShown); labels.EnableInClassList(OffClass, !LabelsShown);
+            if (VisualToggles.Names.Contains(ArmisticeLines.ToggleName)) VisualToggles.Set(ArmisticeLines.ToggleName, BordersShown);
             if (text != null)
             {
                 overview.tooltip = text["minimap.overview"]; labels.tooltip = text["minimap.labels"]; borders.tooltip = text["minimap.borders"];
@@ -102,6 +111,8 @@ namespace Statecraft.Game.UI
         {
             BordersShown = !BordersShown;
             Switch(MapBorders.ToggleName, BordersShown, borders);
+            // The true armistice lines go with the borders (owner, 2 November 2026: "Tie to Borders button (Recommended)").
+            if (VisualToggles.Names.Contains(ArmisticeLines.ToggleName)) VisualToggles.Set(ArmisticeLines.ToggleName, BordersShown);
             BordersChanged?.Invoke();
         }
 

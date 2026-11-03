@@ -1,4 +1,5 @@
 import hashlib
+import html
 import io
 import inspect
 import json
@@ -769,17 +770,46 @@ def test_no_butler_command_names_the_credentials_file():
     assert not any(w in src for w in ('"login"', '"logout"'))
 
 
-# --- Task 8: the itch page's game frame -----------------------------------------------------------------------------
+# --- Task 8 / #2056: the game frame of the live build, from `butler status` ---------------------------------------------
 
-def test_the_frame_url_is_read_from_the_page():
-    page = (DATA / "itch_page.html").read_text()
-    assert "html-classic.itch.zone/html/19840947-2217587/index.html?v=" in page.replace("&quot;", "")   # as captured
-    assert gp.itch_frame_url(page) == "https://html-classic.itch.zone/html/19840947-2217587/index.html"   # no ?v= query
-    assert gp.itch_frame_url("<html>no game</html>") is None
+def test_the_live_upload_id_is_read_from_the_channel_row():
+    # butler's status.go: the UPLOAD cell is fmt.Sprintf("#%d", ch.Upload.ID), the BUILD cell "<sign> #<build id>"
+    assert gp.Itch.upload_id(live_text()) == "19840947"
+    assert gp.Itch.upload_id(live_text().replace("\u2713 ", "")) is None   # not live: no frame to load
+    assert gp.Itch.upload_id(status_with(build="\u2713 #5", channel="webgl")) is None
 
 
-def test_a_frame_of_another_host_is_not_a_game_frame():
-    assert gp.itch_frame_url('data-iframe="&lt;iframe src=&quot;https://evil.example/html/1-2/index.html&quot;') is None
+@pytest.mark.parametrize("upload", ["", "19840947", "#x", "#19840947 #2"])
+def test_an_upload_cell_that_is_not_one_id_gives_no_upload_id(upload):
+    text = status_with().replace("#19840947", upload, 1)
+    assert gp.Itch.upload_id(text) is None
+
+
+def test_the_frame_url_from_butler_status_is_the_one_the_captured_page_embeds():
+    # The two fixtures were captured from the live public page and `butler status` (#1879): upload #19840947 build
+    # #2217587 in the status table, /html/19840947-2217587/index.html in the page's iframe
+    frame = gp.itch_build_frame_url(int(gp.Itch.upload_id(live_text())), int(gp.Itch.build_id(live_text())))
+    assert frame == "https://html-classic.itch.zone/html/19840947-2217587/index.html"
+    assert f"{frame}?v=" in html.unescape((DATA / "itch_page.html").read_text())
+
+
+def test_live_frame_ids_reads_one_status_of_the_project(runner):
+    runner.on([str(BUTLER), "status", ITCH_PROJECT], live_text())
+    assert gp.Itch(runner, BUTLER, ITCH_TARGET).live_frame_ids("0.3.1") == (19840947, 2217587)
+    assert runner.calls == [[str(BUTLER), "status", ITCH_PROJECT]]
+
+
+def test_live_frame_ids_needs_the_expected_version_live(runner):
+    # butler's status.go: the VERSION cell is the build's UserVersion once the build is completed (live)
+    runner.on([str(BUTLER), "status", ITCH_PROJECT], live_text())
+    assert gp.Itch(runner, BUTLER, ITCH_TARGET).live_frame_ids("0.3.2-savetest-a") is None
+
+
+@pytest.mark.parametrize("text", [status_with(build="#101 (processing)"), status_with(channel="webgl"),
+                                  status_with().replace("#19840947", "", 1)])
+def test_live_frame_ids_is_none_without_a_live_build_and_its_upload(runner, text):
+    runner.on([str(BUTLER), "status", ITCH_PROJECT], text)
+    assert gp.Itch(runner, BUTLER, ITCH_TARGET).live_frame_ids("0.3.1") is None
 
 
 @pytest.mark.parametrize("release_id", [None, 202, True, "101"])

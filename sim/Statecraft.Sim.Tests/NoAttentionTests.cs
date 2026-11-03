@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 public class NoAttentionTests
 {
     public static IEnumerable<object[]> Kinds() => CommandGuardTests.Samples.Values.Select(c => new object[] { c.Kind });
-    static void Select(Dictionary<string,string> files, bool modern)
+    internal static void Select(Dictionary<string,string> files, bool modern)
     {
         if (modern) files["eras.yaml"] = files["eras.yaml"].Replace("loop: gdd", "loop: gdd, ruleset: gdd-0.3");
         files[Gdd03BalanceCatalogue.FileName] = File.ReadAllText(Path.Combine(RealContentTests.ContentRoot(),Gdd03BalanceCatalogue.FileName));
@@ -18,7 +18,7 @@ public class NoAttentionTests
     {
         foreach (var r in c.EraRules.Values.Append(c.Rules)) { r.AttentionCost.Clear(); r.AttentionPerTurn=double.NaN; r.RungAttentionStep=double.NaN; }
     }
-    static string WithoutLegacyAccounting(string canonical) =>
+    internal static string WithoutLegacyAccounting(string canonical) =>
         Regex.Replace(Regex.Replace(canonical, @"\npopulation-ledger\{(?:\n  [^\n]*)*", "").Replace("ruleset=gdd-0.3;", ""), @"\natt=[^\n]*", "");
     static bool Unavailable(string kind) => kind is "map_action" or "set_mobilization" or "security_order";
     static (Content c,GameState s,Command valid,Command invalid) Case(string kind,bool modern)
@@ -49,6 +49,7 @@ public class NoAttentionTests
             case "move":s.Units[99]=new Unit(99,"recruit",1,0,side:"israel",strength:1);valid=new Move(99,2,0);invalid=new Move(999,2,0);break;
             case "unit_order":s.Units[99]=new Unit(99,"recruit",1,0,side:"israel",strength:1);valid=new UnitOrder(99,"fortify");invalid=new UnitOrder(999,"fortify");break;
             case "buy_arms":valid=new BuyArms(1);invalid=new BuyArms(0);break;
+            case "convert_dollars":valid=new ConvertDollars(1);invalid=new ConvertDollars(0);break;   // R-MONEY-004
             case "resolve_capture":s.Units[99]=CaptureTests.Soldier(99,1,0);s.Settlements["town_a"]=new SettlementControl("israel",SettlementControl.AwaitingChoice,s.Date);valid=new ResolveCapture("town_a","raid");invalid=new ResolveCapture("town_a","missing");break;
             case "end_occupation":s.Units[99]=CaptureTests.Soldier(99,1,0);s.Settlements["town_a"]=new SettlementControl("israel",SettlementControl.AwaitingEnd,s.Date);valid=new EndOccupation("town_a","withdraw");invalid=new EndOccupation("town_a","missing");break;
         }
@@ -56,7 +57,7 @@ public class NoAttentionTests
     }
     [Fact] public void CoversEveryConcreteCommand()
     {
-        Assert.Equal(23,Kinds().Count());
+        Assert.Equal(24,Kinds().Count());
         Assert.Equal(CommandGuardTests.Samples.Keys.OrderBy(t=>t.Name),typeof(Command).Assembly.GetTypes().Where(t=>t.IsSubclassOf(typeof(Command))&&!t.IsAbstract).OrderBy(t=>t.Name));
     }
     [Theory] [MemberData(nameof(Kinds))]

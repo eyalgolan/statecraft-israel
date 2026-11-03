@@ -22,6 +22,9 @@ Offline data tools (uv inline-script Python). Run from the repo root.
   `hexgrid.settlement_hex` rule. The sim reads it, so it needs no projection maths.
 - `unit_anchor_hexes.py` writes `content/map/unit_anchor_hexes.yaml` (committed): the hex holding each anchor of
   `units_1948.yaml`, for the sim's starting forces (R-UNIT-006). Rerun it after changing an anchor.
+- `locality_hexes.py` writes `content/map/locality_hexes.yaml` (committed): the hex of each place in `localities_1948.yaml`
+  and `region_places_1948.yaml`, by the `hexgrid.settlement_hex` rule, so the sim can place gdd-0.3 region members that
+  are localities (R-CITY-006, #1691). Rerun it after changing either file.
 - `routes_1948.py [--fetch] [--only ID ...] [--preview DIR]` traces the railways and main roads of May 1948 (issue #35)
   on the Survey of Palestine 1:250,000 map of 1946 (public domain; Palestine Open Maps' tiles, downloaded with `--fetch`
   into `tools/.cache/pal250k-1946/`, not committed): it reads the hand-written routes, sources and waypoints in
@@ -220,9 +223,17 @@ and what is public are in `docs/RELEASING.md`, "Nightly builds". It runs on the 
   `launchd.log` and `no-mcp-server`. A corrupt `config.json` or `state.json` refuses the night; it never counts as a
   first night.
 - itch.io pushes stay off (`itch_enabled` is false) until the save test passes: set `itch_page_url` in `config.json`
-  to the itch page, then, from the clone and after the first PUBLISHED night,
-  `uv run tools/nightly.py savetest --tag <that nightly's tag>`. It pushes to the public itch page twice and, on a
-  pass, turns `itch_enabled` on in `config.json`. `INCONCLUSIVE` and `FAIL` leave itch off.
+  to the itch page, and `savetest_itch_target` (`user/project:channel`) to a separate test project, then, from the
+  clone and after the first PUBLISHED night,
+  `uv run tools/nightly.py savetest --tag <that nightly's tag>`. It pushes to the test page twice, never to the public
+  page, and refuses to run without that key or if it names the public project. It never reads the test page (which
+  can stay Restricted): it loads each upload's game frame from the upload and build ids `butler status` shows while
+  that upload's version is live. The owner or an agent may start it (owner, 2 Nov 2026, "2 (a)"); `savetest.lock` in
+  the job folder keeps two runs from overlapping. A `config.json` that still holds the old `savetest_itch_page_url` key
+  refuses the night with a message to remove it (#2237 replaced it). On a
+  pass, it turns `itch_enabled` on in `config.json`. `INCONCLUSIVE` and `FAIL` leave itch off. A night pushes to itch
+  only while `savetest_itch_target` names a separate project and `itch_evidence` records that PASS; otherwise its log line says
+  `itch: skipped (<reason>)`, naming the missing key or the problem (#2056).
 - The boot-time baseline is the median headless boot of the first 5 PUBLISHED nights; later nights must stay within
   the spread of those 5. To measure it again (a new machine, a new Chrome), delete `boot_baseline` from `state.json`;
   the next 5 published nights record it.
