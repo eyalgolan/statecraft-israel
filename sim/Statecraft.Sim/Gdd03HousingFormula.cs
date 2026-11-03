@@ -80,7 +80,7 @@ namespace Statecraft.Sim
             var unpaid = input.UpkeepDue == 0m ? 0m :
                 (unpaidPp / 100m) * ((input.UpkeepDue - input.UpkeepPaid) / input.UpkeepDue);
             var after = Clamp(input.ConditionBefore - overflow - unpaid);
-            // GDD cities.md:31,33. Contribution in displayed points, not indicator storage.
+            // GDD cities.md:31,33 at 605277df. Contribution in displayed points, not indicator storage.
             var cohesion = input.OwnPopulation == 0 ? 0m : maxCohesionLoss
                 * ((decimal)input.CohesionResidents / input.OwnPopulation)
                 * Math.Max(0m, (cohesionThreshold - after) / cohesionThreshold);

@@ -809,6 +809,8 @@ city.project_reason.no_resource: "{0} has no {1} for {2}"
 # key only (HebrewOverlay.Bindings), and a nested record has no such key. Without an entry the id stands.
 city.resource.vineyards: "vineyards"
 city.project_reason.turn_cap: "No more than {0} city projects in one turn"
+# #1700 slice B, gdd-0.3 only (R-PROJ-001; owner, 3 November 2026: "One per city, plus 2 nationally"): {0} the city.
+city.project_reason.city_cap: "{0} has started a city project this turn"
 # The toggle that folds a city's own projects on a stacked bar or a short window (owner ruling on #1150).
 city.projects_toggle: "City projects ({0})"
 # #1722 slice E (#1701; R-ARMS-005 to R-ARMS-007), gdd-0.3 only: a built arms workshop's part of the info panel. The
@@ -892,7 +894,7 @@ event.effect.condition: "housing condition"
 # quote. Each step is the advisor's recorded line, without balance values. opening.attention and opening.event use the
 # copy-fix wording ("next month", "when the month ends") the owner approved in chat on 24 October 2026, 04:14 UTC:
 # "Approve all 8".
-advisor.opening.greeting.text: "The country has urgent needs and limited means. The decisions are theirs, and the advisers will explain what each choice changes."
+advisor.opening.greeting.text: "The country has urgent needs and limited means. The decisions are yours, and the advisers will explain what each choice changes."
 advisor.opening.attention.text: "Attention is the capacity for decisions this month. It refills next month, and any amount left now does not carry over."
 advisor.opening.city.text: "A city shows its housing, housing condition, jobs, and people. Employment brings in Money, while overcrowding can weaken Social cohesion."
 advisor.opening.training.text: "Training uses civilians without work, Money, and time. Halutz and craftsman training supports development; military training also requires Arms."
@@ -944,7 +946,8 @@ advisor.credit.dayan: "Photograph: Moshe Dayan, 9 December 1953, NLI 99700813664
 
 # Caption keys: same text as the C68 recorded opening lines. The lines with an English clip (S6b, Task 26) are cut at
 # the clip's sentence and clause pauses; their start times are the media rows' cues.
-# Hebrew cues remain agent drafts and require the parent opening row’s native approval.
+# The opening cues' Hebrew is owner-reviewed (native review: owner, 3 Nov 2026, HE batch 1), with greeting.cue.2
+# following the English voice.
 advisor.opening.greeting.cue.1: "The country has urgent needs and limited means."
 advisor.opening.greeting.cue.2: "The decisions are theirs,"
 advisor.opening.greeting.cue.3: "and the advisers will explain what each choice changes."
@@ -1094,6 +1097,11 @@ why.cause.site_completed: "{0} {1}"
 why.cause.project_started: "{0}: {1} began, cost {2}"
 why.cause.project_cancelled: "{0}: {1} was cancelled; the Money spent is not returned"
 why.cause.project_completed: "{0}: {1} was finished"
+# The gdd-0.3 builders (#1700; R-CITY-011, R-PROJ-003).
+why.cause.project_builder: "{0}: a builder started on {1}"
+why.cause.project_builder_freed: "{0}: a builder left {1} and is free again"
+why.cause.project_waiting.no_builder: "{0}: {1} waits: no builder"
+why.cause.project_waiting.no_worker: "{0}: {1} waits: no person without a job is left for its builder"
 why.cause.arms_bought: "Bought {0} Arms, cost {1}"
 # The gdd-0.3 arms workshops (#1701; R-ARMS-005, R-ARMS-006).
 why.cause.workshop_workers: "{0}: arms workshops staffed: {1}"

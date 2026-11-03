@@ -77,7 +77,7 @@ public class Gdd03FoodArithmeticTests
         Assert.Equal((result.UnmetShare.Denominator - result.UnmetShare.Numerator)
             * result.NextOwnStrengthFactor.Denominator,
             result.NextOwnStrengthFactor.Numerator * result.UnmetShare.Denominator);
-        // 10 and 100 above are catalogue values: D docs/gdd/balance.md:108,17.
+        // 10 and 100 above are catalogue values: D docs/gdd/balance.md:108,17 at 605277df.
         if (own == 0) Fraction(0, 1, result.OwnConsumed);
         if (provisions == 0) Fraction(0, 1, result.ProvisionConsumed);
         Assert.Equal(result.Consumed * result.OwnConsumed.Denominator * result.ProvisionConsumed.Denominator,

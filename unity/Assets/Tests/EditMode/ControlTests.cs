@@ -293,7 +293,7 @@ public class ControlTests
         // a demilitarized zone hex: the zone's own line, not a second "Demilitarized zone"
         var dmz = m.Control!.Periods.Count > 0 ? FindHex(m, After, Control1948.Side.Dmz) : default;
         Assert.AreEqual("Demilitarized zone", InfoPanelPresenter.ControlText(m, En, dmz.q, dmz.r, After));
-        StringAssert.DoesNotContain("Demilitarized zone", InfoPanelPresenter.RegionText(m, En, dmz.q, dmz.r, After));
+        StringAssert.DoesNotContain(En["info.control_dmz"], InfoPanelPresenter.RegionText(m, En, dmz.q, dmz.r, After));
         // no-man's land from a minimal file too (the data has it only in the opening period, in the Old City's hex)
         var nml = Control1948.Parse("layer: x\nshown_from: 1948-06-11\nperiods:\n  - { id: a, from: 1948-06-11, until: null, legend: held, line_date: '1948-07-09', fronts: [] }\nhexes:\n  - [1, 2, 'm']\n");
         Assert.AreEqual((Control1948.Side.NoMansLand, (string?)null), nml.At(1, 2, Truce1));
@@ -381,7 +381,7 @@ public class ControlTests
                 doc.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml);
                 go.SetActive(true);
                 var root = doc.rootVisualElement;
-                // Mirror GameRoot.Begin (GameRoot.cs:244-247): Hebrew uses its own face and layout classes.
+                // Mirror GameRoot.Begin: Hebrew uses its own face and layout classes.
                 root.Q("root").EnableInClassList(UiLanguage.HebrewClass, lang["ui.lang"] == UiLanguage.Hebrew);
                 root.Q("root").RemoveFromClassList("loading");
                 var bridge = new SimBridge(GameSession.New(c, GoldenRun.Seed, Mode.Historical), lang);
@@ -392,7 +392,7 @@ public class ControlTests
                 // and the GDD column shown at once squeeze the text column to 0 px, and a later layout pass can stack the order
                 // row over 1300 px tall, so the panel's height depended on how many passes ran before the check.
                 var info = new InfoPanelPresenter(root, bridge, lang, new Dictionary<string, string>());
-                // GameRoot.cs:585: paragraph direction is applied after the presenters have rendered.
+                // GameRoot.Begin / UiDirection: paragraph direction is applied after the presenters have rendered.
                 var direction = lang["ui.lang"] == UiLanguage.Hebrew ? new UiDirection(root, bridge) : null;
                 try
                 {

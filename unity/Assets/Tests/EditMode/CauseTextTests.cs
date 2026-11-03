@@ -437,6 +437,9 @@ public class CauseTextTests
             new Cause("draft", "town", 1, "Town: Housing began, cost IL\u00A01.3m", key: CauseKeys.ProjectStarted, args: new[] { "housing", "1.25" }),
             new Cause("draft", "town", -1, "Town: Housing was cancelled; the Money spent is not returned", key: CauseKeys.ProjectCancelled, args: new[] { "housing" }),
             new Cause("draft", "town", 1, "Town: Housing was finished", key: CauseKeys.ProjectCompleted, args: new[] { "housing" }),
+            new Cause("draft", "town", 1, "Town: a builder started on Housing", key: CauseKeys.ProjectBuilder, args: new[] { "housing" }),   // #1700
+            new Cause("draft", "town", -1, "Town: a builder left Housing and is free again", key: CauseKeys.ProjectBuilderFreed, args: new[] { "housing" }),   // #1700 slice B
+            new Cause("draft", "town", 0, "Town: Housing waits: no builder", key: CauseKeys.ProjectWaiting, args: new[] { "housing", Projects.NoBuilder }),
             new Cause("draft", "arms", 2000000000, "Bought 2000000000 Arms, cost IL\u00A01.3m", key: CauseKeys.ArmsBought, args: new[] { "1.25" }),
             new Cause("draft", "town", 2, "Town: arms workshops staffed: 2", key: CauseKeys.WorkshopWorkers, args: new[] { "2" }),
             new Cause("draft", "town", 1, "Town: an arms workshop made 1 Arms", key: CauseKeys.WorkshopArms),
@@ -551,6 +554,7 @@ public class CauseTextTests
             new Cause("draft", "site", 1, "Site: a group of halutzim began draining the swamp, cost IL\u00A01.3m", key: CauseKeys.LandWorkStarted, args: new[] { "drain", "1.25" }),
             new Cause("draft", "site", 1, "Site: a group of halutzim began building a training camp, cost IL\u00A01.3m", key: CauseKeys.SiteStarted, args: new[] { "camp", "1.25" }),
             new Cause("draft", "town", 0, "Town: an arms workshop's next cycle waits: paying for it would take the debt past its ceiling", key: CauseKeys.WorkshopPaused, args: new[] { Workshops.DebtCeiling }),   // #1701 OQ4
+            new Cause("draft", "town", 0, "Town: Housing waits: no person without a job is left for its builder", key: CauseKeys.ProjectWaiting, args: new[] { "housing", Projects.NoWorker }),   // #1700
         };
         // A renderer receives no live state: both resident variants must survive the settlement record's removal.
         foreach (var row in rows)

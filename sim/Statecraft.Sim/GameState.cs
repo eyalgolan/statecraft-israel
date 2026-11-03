@@ -81,6 +81,11 @@ namespace Statecraft.Sim
         /// acceptance, so replacing a camp with housing cannot reopen the per-turn cap; a new date starts from zero.</summary>
         public DateTime MapActionsTurnDate;
         public int MapActionsThisTurn;
+        /// <summary>R-PROJ-001 under gdd-0.3 only (#1700 slice B): the city projects each city started in the turn of
+        /// <see cref="MapActionsTurnDate"/>, by city id (ordinal), counted on acceptance. Read only while that date is the
+        /// turn's, and cleared when a start or map action moves it on, as MapActionsThisTurn is reset. Empty under every
+        /// other ruleset, and then left out of the hash.</summary>
+        public SortedDictionary<string, int> CityStartsThisTurn = new SortedDictionary<string, int>(StringComparer.Ordinal);
         /// <summary>Why the game ended, as one of the <see cref="GameOverCodes"/>; null while it is on. Never display it: use PlayerText.GameOver.</summary>
         public string? GameOver;
         // GDD v0.1 state (spec 2026-10-12 section 2.2). Empty in the legacy loop, and then left out of the hash (R-LOOP-002).
@@ -168,6 +173,7 @@ namespace Statecraft.Sim
             c.Cohorts = new SortedList<int, Cohort>(Cohorts);
             c.Sites = new SortedDictionary<string, SiteWork>(Sites, StringComparer.Ordinal);
             c.CityProjects = new SortedList<int, CityProject>(CityProjects);
+            c.CityStartsThisTurn = new SortedDictionary<string, int>(CityStartsThisTurn, StringComparer.Ordinal);
             c.Workshops = new SortedList<int, Workshop>(Workshops);
             c.Corridors = new SortedDictionary<string, CorridorWork>(Corridors, StringComparer.Ordinal);
             c.UnlockedProjects = new SortedSet<string>(UnlockedProjects, StringComparer.Ordinal);
@@ -186,7 +192,7 @@ namespace Statecraft.Sim
         {
             using var sha = SHA256.Create();
             var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(CanonicalText(false)));
-            return string.Concat(bytes.Select(b => b.ToString("x2")));
+            return string.Concat(bytes.Select(b => b.ToString("x2", CultureInfo.InvariantCulture)));
         }
 
         /// <summary>The state in the order and form <see cref="Hash"/> hashes it, one line per section, with each number
@@ -224,12 +230,12 @@ namespace Statecraft.Sim
             }
             void Sep() { if (!readable) sb.Append(';'); }
             sb.Append(Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)).Append(';')
-              .Append(RngState).Append(';').Append(Mode).Append(';').Append(Turn).Append(';');
+              .Append(RngState.ToString(CultureInfo.InvariantCulture)).Append(';').Append(Mode).Append(';').Append(Turn.ToString(CultureInfo.InvariantCulture)).Append(';');
             Map("ind", Indicators); Map("pol", Policies); Map("eff", EffectContributions); Map("shift", IndicatorShifts);
             Map("bud", Budget); Map("pop", Population);
             List("sit", ActiveSituations);
             Num("treasury", Treasury); Num("debt", Debt); Num("fx", FxReserves);
-            Nl(); sb.Append("rung=").Append(Rung).Append(";cf=").Append(CeasefireWeeksLeft).Append(';');
+            Nl(); sb.Append("rung=").Append(Rung.ToString(CultureInfo.InvariantCulture)).Append(";cf=").Append(CeasefireWeeksLeft.ToString(CultureInfo.InvariantCulture)).Append(';');
             Num("mob", Mobilization); Num("stab", CoalitionStability); if (usesAttention) Num("att", Attention);
             List("fired", FiredEvents);
             List("pending", PendingEvents);
@@ -246,10 +252,10 @@ namespace Statecraft.Sim
             Nl(); sb.Append("map[");
             foreach (var p in Placements)
             {
-                Entry(); sb.Append(p.Action).Append('@').Append(p.Q).Append(',').Append(p.R).Append('@').Append(p.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)); Sep();
+                Entry(); sb.Append(p.Action).Append('@').Append(p.Q.ToString(CultureInfo.InvariantCulture)).Append(',').Append(p.R.ToString(CultureInfo.InvariantCulture)).Append('@').Append(p.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)); Sep();
             }
             Close(']');
-            Nl(); sb.Append("mapturn=").Append(MapActionsTurnDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)).Append(':').Append(MapActionsThisTurn).Append(';');
+            Nl(); sb.Append("mapturn=").Append(MapActionsTurnDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)).Append(':').Append(MapActionsThisTurn.ToString(CultureInfo.InvariantCulture)).Append(';');
             Nl(); sb.Append("over=").Append(GameOver ?? "");
             // GDD v0.1 sections (spec 2026-10-12 section 2.4): each written only when set, so with the legacy loop the text
             // above is the whole text, byte for byte. The over= line has no separator after it, so each section adds one.
@@ -265,6 +271,8 @@ namespace Statecraft.Sim
             if (Cohorts.Count > 0) Section("train", '[', ']', Cohorts.Values.Select(x => x.Canonical()));
             if (Sites.Count > 0) Section("site", '{', '}', Sites.Values.Select(x => x.Canonical()));
             if (CityProjects.Count > 0) Section("cproj", '[', ']', CityProjects.Values.Select(x => x.Canonical()));
+            if (CityStartsThisTurn.Count > 0)   // R-PROJ-001, gdd-0.3 only
+                Section("cstart", '{', '}', CityStartsThisTurn.Select(kv => kv.Key + "=" + kv.Value.ToString(CultureInfo.InvariantCulture)));
             if (Workshops.Count > 0) Section("wshop", '[', ']', Workshops.Values.Select(x => x.Canonical()));   // R-ARMS-005, gdd-0.3 only
             if (Corridors.Count > 0) Section("corr", '{', '}', Corridors.Values.Select(x => x.Canonical()));
             if (UnlockedProjects.Count > 0) Section("unlocked", '[', ']', UnlockedProjects);

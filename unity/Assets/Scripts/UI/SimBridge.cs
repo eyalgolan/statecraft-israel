@@ -270,6 +270,8 @@ namespace Statecraft.Game.UI
             (Workshops.RefusedBuilt, "workshop.refused_built"),
             (Workshops.RefusedPeople, "workshop.refused_people"),
             (Workshops.RefusedPeopleNoJob, "workshop.refused_people_no_job"),
+            // R-PROJ-001 under gdd-0.3 (#1700 slice B): a second city project start in one city in one turn.
+            (Projects.RefusedCityCap, "city.project_reason.city_cap"),
         }.Select(x => (new Regex("^" + string.Join("(.+?)", Regex.Split(x.format, @"\{\d+\}").Select(Regex.Escape)) + "$"), x.key)).ToArray();
 
         /// <summary>A sim refusal in the UI's language where it has a string (<see cref="ReasonKeys"/>, <see cref="ReasonFormats"/>),

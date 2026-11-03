@@ -315,11 +315,12 @@ namespace Statecraft.Game.Map.Collection
             Rebuild();
         }
 
-        void Rebuild()
+        /// <summary>Where the buildings stand: each want in order, of the models <paramref name="available"/> holds, at its
+        /// route-facing (Degania) or seeded spot, clear of the towns, the routes, the tokens of <paramref name="date"/>, the
+        /// civilians, the wildlife and each other. It reads only the map and the date, never what has streamed, so with every
+        /// model available it is the plan the layer draws once everything has arrived (HexPropModels keeps clear of it, #2266).</summary>
+        internal static List<(Want want, Vector2 at)> Plan(MapScene map, DateTime date, IReadOnlyList<Want> wants, Func<string, bool> available, bool log)
         {
-            CollectionResidencyMetrics.MarkDirty();
-            if (map == null || map.Terrain == null) return;
-            ClearVisuals();
             var ground = PlacementLayer.CampGround(map);
             var footprints = map.KitFootprints.Select(f => (f.centre, f.radius)).ToList();
             var taken = new List<(Vector2 centre, float radius)>();
@@ -330,11 +331,11 @@ namespace Statecraft.Game.Map.Collection
             bool Free(Vector2 p, float r) => TownLandmarks.Clear(p, r, taken) && TownLandmarks.Clear(p, r, footprints)
                 && ground.Inside(p.x - r, p.y - r) && ground.Inside(p.x + r, p.y + r)
                 && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, date);
-            var holes = new List<(Vector2 centre, float radius)>();
+            var plan = new List<(Want, Vector2)>();
             var kits = map.transform.Find(Kits.KitLayer.RootName);
             foreach (var w in wants)
             {
-                if (!prefabs.TryGetValue(w.Model, out var prefab) || prefab == null) continue;
+                if (!available(w.Model)) continue;
                 var anchor3 = map.Frame.ToWorld(w.Lon, w.Lat, 0); var anchor = new Vector2(anchor3.x, anchor3.z);
                 float clearance = ClearanceOf(w.Model);
                 Vector2? at = null;
@@ -347,13 +348,29 @@ namespace Statecraft.Game.Map.Collection
                 }
                 if (at == null)
                 {
-                    if (w.Key == "degania_r35")
+                    if (w.Key == "degania_r35" && log)
                         Debug.LogWarning("BUILDINGS: route-facing spot unavailable for degania_r35; falling back to the seeded spot.");
                     at = SeededSpot(w.Key, anchor, clearance, Free, Inside(anchor, footprints));
                 }
-                if (at == null) { Debug.LogWarning($"BUILDINGS: no clear ground near {w.Key}; its {w.Model} is not drawn."); continue; }
+                if (at == null) { if (log) Debug.LogWarning($"BUILDINGS: no clear ground near {w.Key}; its {w.Model} is not drawn."); continue; }
                 taken.Add((at.Value, clearance));
-                holes.Add((at.Value, clearance));
+                plan.Add((w, at.Value));
+            }
+            return plan;
+        }
+
+        void Rebuild()
+        {
+            CollectionResidencyMetrics.MarkDirty();
+            if (map == null || map.Terrain == null) return;
+            ClearVisuals();
+            var ground = PlacementLayer.CampGround(map);
+            var holes = new List<(Vector2 centre, float radius)>();
+            foreach (var (w, spot) in Plan(map, date, wants, m => prefabs.TryGetValue(m, out var p) && p != null, log: true))
+            {
+                var prefab = prefabs[w.Model]!;
+                Vector2? at = spot;
+                holes.Add((at.Value, ClearanceOf(w.Model)));
                 var go = Instantiate(prefab, transform, false); go.name = w.Key;
                 if (!originals.TryGetValue(w.Model, out var owned)) originals[w.Model] = owned = new List<GameObject>();
                 owned.Add(go);
