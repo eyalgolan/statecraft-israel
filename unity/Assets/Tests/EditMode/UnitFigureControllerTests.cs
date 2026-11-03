@@ -18,6 +18,8 @@ public class UnitFigureControllerTests
     static Type Generated => Type.GetType("Statecraft.Game.EditorTools.Generated1948Characters, Assembly-CSharp-Editor")!;
     const BindingFlags Any = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
     static IReadOnlyCollection<string> TokenFigures => (IReadOnlyCollection<string>)Import.GetField("TokenFigures", Any)!.GetValue(null);
+    static IReadOnlyDictionary<string, string> Borrowed => (IReadOnlyDictionary<string, string>)Import.GetField("BorrowedFireTakes", Any)!.GetValue(null);
+    static string FireTakePath(string id) => (string)Import.GetMethod("FireTakePath", Any)!.Invoke(null, new object[] { id });
     static void AddMotionStates(AnimatorController c, string model) => Import.GetMethod("AddMotionStates", Any)!.Invoke(null, new object[] { c, model });
     static AnimationClip WalkTake(IReadOnlyList<AnimationClip> clips) => (AnimationClip)Import.GetMethod("WalkTake", Any)!.Invoke(null, new object[] { clips });
     static void Configure(AnimatorController c, AnimationClip idle, string model, bool token)
@@ -71,7 +73,8 @@ public class UnitFigureControllerTests
     }
 
     /// <summary>The committed controllers are what PrepareTokenFigureControllers makes: the idle default untouched, a walk
-    /// state on the figure's own walk take, and an attack state on its own fire take exactly where the FBX has one.</summary>
+    /// state on the figure's own walk take, and an attack state on its own fire take where the FBX has one, else on the take
+    /// baked beside its model for a figure that borrows one (#2375, #2376; BorrowedFireTakeTests), else none (C05).</summary>
     [Test]
     public void EachTokenFigureControllerWalksAndFiresWithItsOwnTakes()
     {
@@ -87,11 +90,12 @@ public class UnitFigureControllerTests
             Assert.IsNotNull(walk, id + ": walk");
             Assert.AreSame(WalkTake(takes), walk.motion, id + ": its own walk take");
             var fire = takes.FirstOrDefault(t => UnitTokenMotion.CollectionFireTake(t.name));
-            if (fire == null) Assert.IsNull(State(c, "attack"), id + ": no fire take, no attack state");
-            else Assert.AreSame(fire, State(c, "attack")?.motion, id + ": its own fire take");
-            Assert.AreEqual(fire == null ? 2 : 3, machine.states.Length, id);
+            if (fire != null) Assert.AreSame(fire, State(c, "attack")?.motion, id + ": its own fire take");
+            else if (Borrowed.ContainsKey(id)) Assert.AreEqual(FireTakePath(id), AssetDatabase.GetAssetPath(State(c, "attack")?.motion), id + ": the fire take baked beside its model");
+            else Assert.IsNull(State(c, "attack"), id + ": no fire take, no attack state");
+            Assert.AreEqual(fire == null && !Borrowed.ContainsKey(id) ? 2 : 3, machine.states.Length, id);
             foreach (var clip in c.animationClips)
-                Assert.AreEqual(ModelPath(id), AssetDatabase.GetAssetPath(clip), id + ": every take from the figure's own FBX");
+                Assert.That(AssetDatabase.GetAssetPath(clip), Is.EqualTo(ModelPath(id)).Or.EqualTo(FireTakePath(id)), id + ": every take from the figure's own FBX or its own baked fire take");
         }
     }
 

@@ -28,5 +28,13 @@
     "walk"
   ],
   "source_archive": "asset-sources/generated-1948/figure-lebanese-regular-1948-v1/original.glb",
-  "validation": "asset-sources/generated-1948/figure-lebanese-regular-1948-v1/validation.json"
+  "validation": "asset-sources/generated-1948/figure-lebanese-regular-1948-v1/validation.json",
+  "fire_take": {
+    "file": "fire.anim",
+    "source": "figure-c09-irregular-v2 take Armature|fire (the figure this character's idle and walk were retargeted from), played on this rig through Unity's Humanoid rig and recorded on its own bones at every frame by unity/Assets/Editor/FireTakeRetarget.cs, 3 November 2026 (#2376); the FBX import is unchanged (Generic).",
+    "sha256": "06821bf1c5cbaa60a2080163ba07214ab646f0e608b842b1ee91e05f87a53e7f",
+    "licence": "CC BY-NC-ND 4.0",
+    "attribution": "Tal Heuberger",
+    "note": "adapted version; owner confirms Tal's permission, 3 Nov 2026 (#2375/#2376)"
+  }
 }

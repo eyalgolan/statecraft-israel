@@ -167,8 +167,18 @@ def test_tal_original_licensing_matches_manifest_exactly():
     # Afik Faerman's main theme (#39, #2240; owner, 2 November 2026: CC BY-NC-ND 4.0, credited to Afik): one exact-file row.
     music = [r for r in independent if r["glob"] == "unity/Assets/StreamingAssets/audio/music/Main_1.3.ogg"]
     assert len(music) == 1 and music[0]["artist"] == "Afik Faerman" and music[0]["ai_generated"] is False
-    assert len([r for r in independent if r["glob"] not in added and r not in music]) == 50  # the hex-tile props row and the #1901 -light meshes among them
-    assert len(independent) == 94  # 146 originals + 94 independent grants = 240 total
+    # The fire takes baked for the figures without one (#2375, #2376; owner, 3 November 2026: Tal Heuberger's permission for
+    # these adapted versions): one exact-file row per figure, each a derived clip of a take inside Tal's own FBX.
+    fire = {f"unity/Assets/Art/Collection/{f}/fire.anim" for f in (
+        "figure-c04-sabra-pioneer-v3", "figure-syrian-infantry-1948-v1", "figure-iraqi-infantry-1948-v1",
+        "figure-egyptian-infantry-1948-v1", "figure-ala-infantry-1948-v1", "figure-lebanese-regular-1948-v1")}
+    fire_rows = [r for r in independent if r["glob"] in fire]
+    assert {r["glob"] for r in fire_rows} == fire and len(fire_rows) == 6
+    assert all(r["artist"] == "Tal Heuberger" and r["ai_generated"] is True for r in fire_rows)
+    assert all("owner confirms Tal's permission, 3 Nov 2026 (#2375/#2376)" in r["note"] and "FireTakeRetarget" in r["note"] for r in fire_rows)
+    assert all((ROOT / r["glob"]).is_file() for r in fire_rows)
+    assert len([r for r in independent if r["glob"] not in added and r not in music and r["glob"] not in fire]) == 50  # the hex-tile props row and the #1901 -light meshes among them
+    assert len(independent) == 100  # 146 originals + 100 independent grants = 246 total
     for row in selected:
         assert row["licence"] == "CC-BY-NC-ND-4.0"
         assert row["artist"] == "Tal Heuberger"

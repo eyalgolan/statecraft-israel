@@ -60,7 +60,10 @@ public class Generated1948RigTests
         Assert.IsTrue(idle.isLooping);
         // The infantry on unit tokens also walk with their own walk take (#1866); the civilians stay idle only.
         bool token = id != "figure-bedouin-civilian-1948-v1" && id != "figure-local-arab-irregular-1948-v1";
-        CollectionAssert.AreEquivalent(token ? new[] { idle, Clip(id, "walk") } : new[] { idle }, animator.runtimeAnimatorController.animationClips);
+        // The infantry also fire with C09's take baked beside their model (#2376, BorrowedFireTakeTests).
+        var fire = token ? AssetDatabase.LoadAssetAtPath<AnimationClip>($"{Dir(id)}/fire.anim") : null;
+        if (token) Assert.IsNotNull(fire, id + " baked fire take");
+        CollectionAssert.AreEquivalent(token ? new[] { idle, Clip(id, "walk"), fire } : new[] { idle }, animator.runtimeAnimatorController.animationClips);
         Assert.AreEqual(ModelImporterMeshCompression.Off, imp.meshCompression);
         Assert.AreEqual(ModelImporterAnimationCompression.Off, imp.animationCompression);
         CollectionAssert.AreEquivalent(new[] { "idle", "walk" }, imp.clipAnimations.Select(c => c.name));

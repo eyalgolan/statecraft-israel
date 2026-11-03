@@ -28,5 +28,13 @@
     "walk"
   ],
   "source_archive": "asset-sources/generated-1948/figure-ala-infantry-1948-v1/original.glb",
-  "validation": "asset-sources/generated-1948/figure-ala-infantry-1948-v1/validation.json"
+  "validation": "asset-sources/generated-1948/figure-ala-infantry-1948-v1/validation.json",
+  "fire_take": {
+    "file": "fire.anim",
+    "source": "figure-c09-irregular-v2 take Armature|fire (the figure this character's idle and walk were retargeted from), played on this rig through Unity's Humanoid rig and recorded on its own bones at every frame by unity/Assets/Editor/FireTakeRetarget.cs, 3 November 2026 (#2376); the FBX import is unchanged (Generic).",
+    "sha256": "2e5136d175ce63d4c05234163861e849fe92ba3ebc46047b22d96b2e9f45ba70",
+    "licence": "CC BY-NC-ND 4.0",
+    "attribution": "Tal Heuberger",
+    "note": "adapted version; owner confirms Tal's permission, 3 Nov 2026 (#2375/#2376)"
+  }
 }

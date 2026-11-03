@@ -269,8 +269,27 @@ namespace Statecraft.Game.EditorTools
             UnitFigures.LebaneseRegular,
         };
 
+        /// <summary>The token figures whose own FBX has no fire take, and the figure whose fire take each plays (#2375, #2376;
+        /// owner, 3 November 2026: the project has Tal Heuberger's permission for these adapted versions). FireTakeRetarget bakes
+        /// each as <see cref="FireTakePath"/> beside the figure's model, so the figure's own bundle carries it (a clip inside another
+        /// figure's FBX would be a reference into that figure's bundle, which the stream does not load; CollectionImportTests
+        /// EachOriginalBundleKeepsItsPrefabAndOnlyItsOwnAssetsAndPlacementScripts): the take as it is where the rig is the same
+        /// (C04 shares C07's Armature), else retargeted through Unity's Humanoid rig, as Tal's own retargets of C09's walk.</summary>
+        public static readonly IReadOnlyDictionary<string, string> BorrowedFireTakes = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            [UnitFigures.SabraPioneer] = UnitFigures.VeteranFighter,
+            [UnitFigures.SyrianInfantry] = UnitFigures.Irregular, [UnitFigures.IraqiInfantry] = UnitFigures.Irregular,
+            [UnitFigures.EgyptianInfantry] = UnitFigures.Irregular, [UnitFigures.AlaInfantry] = UnitFigures.Irregular,
+            [UnitFigures.LebaneseRegular] = UnitFigures.Irregular,
+        };
+
+        /// <summary>Where a borrowing figure's baked fire take lives: a clip named fire, which UnitTokenMotion.CollectionFireTake
+        /// counts as a fire take, beside the figure's model.</summary>
+        public static string FireTakePath(string id) => $"{Dir(id)}/fire.anim";
+
         /// <summary>Adds the token figures' walk and attack states to their existing controllers, from the takes already in
-        /// each figure's own FBX. Reimports nothing: no model, texture, clip or prefab changes. Idempotent.
+        /// each figure's own FBX, or the fire take baked beside it (<see cref="BorrowedFireTakes"/>). Reimports nothing: no
+        /// model, texture, clip or prefab changes. Idempotent.
         /// Headless: Unity -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -executeMethod Statecraft.Game.EditorTools.CollectionImport.PrepareTokenFigureControllers</summary>
         [MenuItem("Statecraft/Collection/Add token figure walk and attack states")]
         public static void PrepareTokenFigureControllers()
@@ -286,13 +305,24 @@ namespace Statecraft.Game.EditorTools
         }
 
         /// <summary>Sets <paramref name="controller"/>'s walk state to the model's walk take and its attack state to its
-        /// fire take, adding each state the first time; a take the model lacks adds no state (C04 has no fire).</summary>
+        /// fire take, or to the one baked beside the model for a figure that borrows one, adding each state the first time; a
+        /// take the model lacks and borrows nowhere adds no state (C05 has no fire).</summary>
         internal static void AddMotionStates(AnimatorController controller, string model)
         {
             var clips = AssetDatabase.LoadAllAssetsAtPath(model).OfType<AnimationClip>()
                 .Where(c => !c.name.StartsWith("__preview__", StringComparison.Ordinal)).ToList();
             SetState(controller, UnitFigureMotion.WalkState, WalkTake(clips));
-            SetState(controller, UnitFigureMotion.AttackState, clips.FirstOrDefault(c => UnitTokenMotion.CollectionFireTake(c.name)));
+            SetState(controller, UnitFigureMotion.AttackState, clips.FirstOrDefault(c => UnitTokenMotion.CollectionFireTake(c.name)) ?? BorrowedFireTake(model));
+        }
+
+        /// <summary>The fire take baked beside <paramref name="model"/> for a figure in <see cref="BorrowedFireTakes"/>, or null
+        /// for any other model.</summary>
+        static AnimationClip? BorrowedFireTake(string model)
+        {
+            string id = Path.GetFileNameWithoutExtension(model);
+            if (!BorrowedFireTakes.ContainsKey(id)) return null;
+            return AssetDatabase.LoadAssetAtPath<AnimationClip>(FireTakePath(id))
+                ?? throw new InvalidOperationException(id + ": no baked fire take (run FireTakeRetarget.Bake first)");
         }
 
         /// <summary>The walk take: a take named walk first, else C05's idle_walk (his only walk), whatever the takes' order.</summary>
