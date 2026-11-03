@@ -307,6 +307,55 @@ public class KeyboardTurnTests
         Assert.AreNotEqual("city-train-halutz", FocusedName, "and leaves the rebuilt button unlit");
     }
 
+    /// <summary>#2340 M2, review of #2434 item 1: Enter on a seat nobody can be appointed to (the Prime Minister's: the player
+    /// is the PM) lists every person, each refused, and the focus stays on the seat instead of going nowhere.</summary>
+    [UnityTest]
+    public IEnumerator ASeatWithNoCandidateToAppointKeepsTheFocus()
+    {
+        yield return Boot();
+        GameSceneTests.HideTheOpeningCard(ui);
+        var navButton = ui.Q("nav-cabinet");
+        for (int i = 0; i < 10 && Focused != navButton; i++) { yield return null; navButton.Focus(); }
+        yield return Enter();
+        Assert.AreEqual("cabinet", ScreenOpen(), "precondition: Enter opens the Cabinet");
+        yield return TabTo(v => v.name == "seat-prime_minister", "the Prime Minister's seat", 120);
+        yield return Enter();
+        var listed = ui.Q("cabinet-candidates").Query<Button>().ToList();
+        Assert.IsNotEmpty(listed, "precondition: the Prime Minister's office lists every person");
+        Assert.IsFalse(listed.Any(b => b.enabledInHierarchy), "precondition: nobody can be appointed to it");
+        Assert.AreEqual("seat-prime_minister", FocusedName, "the focus stays on the seat");
+    }
+
+    /// <summary>#2340 M2, review of #2434 item 2: one Escape reaches the Cabinet twice in one frame, as ScreenNav's Cancel
+    /// (TakesEscape) and as GameRoot's Escape poll (`cabinet.Escape() || nav.Close()`, asked here as Update asks it: an
+    /// edit-mode test has no keyboard device). The first gives the focus back to the seat; the second, with the focus no
+    /// longer in the list, must not close the screen.</summary>
+    [UnityTest]
+    public IEnumerator OneEscapeFromTheCandidatesIsHandledOnceWhenBothPathsFire()
+    {
+        yield return Boot();
+        GameSceneTests.HideTheOpeningCard(ui);
+        var navButton = ui.Q("nav-cabinet");
+        for (int i = 0; i < 10 && Focused != navButton; i++) { yield return null; navButton.Focus(); }
+        yield return Enter();
+        Assert.AreEqual("cabinet", ScreenOpen(), "precondition: Enter opens the Cabinet");
+        yield return TabTo(v => v.name.StartsWith("seat-", StringComparison.Ordinal) && v.name != "seat-prime_minister", "a minister's seat", 120);
+        var seat = FocusedName;
+        yield return Enter();
+        Assert.IsTrue(ui.Q("cabinet-candidates").Contains(At), "precondition: Enter on the seat focuses a candidate");
+        Func<string, object?> field = name => typeof(GameRoot).GetField(name, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(root);
+        var cabinet = (CabinetPresenter)field("cabinet")!; var nav = (ScreenNav)field("nav")!;
+        var frame = Time.frameCount;
+        var at = At;
+        using (var e = NavigationCancelEvent.GetPooled()) { e.target = at; at.SendEvent(e); }
+        Assert.AreEqual(seat, FocusedName, "Cancel gives the focus back to the seat");
+        var used = cabinet.Escape() || nav.Close();
+        Assert.AreEqual(frame, Time.frameCount, "both in the same frame");
+        Assert.IsTrue(used, "the poll's Escape is used");
+        Assert.AreEqual("cabinet", ScreenOpen(), "and the Cabinet stays open");
+        Assert.AreEqual(seat, FocusedName, "with the focus on the seat");
+    }
+
     string? ScreenOpen() => ScreenNav.Screens.FirstOrDefault(s => ui.Q("nav-" + s).ClassListContains(ScreenNav.OpenClass));
 
     /// <summary>Moves the camera's look-at point onto Tel Aviv's hex, on the ground, as a pan would (MapFocusTests).</summary>
