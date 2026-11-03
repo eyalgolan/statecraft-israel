@@ -85,12 +85,12 @@ on 1 November; see the search log). No Cabinet minutes, no Divrei HaKnesset and 
 | S1 | The Allon Plan before the Cabinet | 26 or 27 July; 30 July 1967 | [C] W1 against W2; [GAP] a primary record |
 | S2 | Kfar Etzion: the legal advice | September 1967 | [S] W3, W4 (no date); [GAP] the memo's date and text |
 | S3 | Hebron: the suburb plan and the 250 homes | 9 and 25 March 1970 | [S] J1, J2; [GAP] the Cabinet's own decision day |
-| S4 | The Golan settlements | from 14 or 15 July 1967 | cross-reference: golan-localities-1967-77.md |
+| S4 | The Golan settlements | from 14 or 15 July 1967 [C] | cross-reference: golan-localities-1967-77.md |
 | S5 | The Galili document | 3 September 1973 | [S] J3, W9; [C] 78 or 79 votes |
 | S6 | Gush Emunim founded | February 1974 | [S] W10, W11; [C] the place; [GAP] a contemporary source |
 | S7 | The 1974 attempts near Nablus and at Sebastia | 5 June; 25 to 28 July 1974 | [S] J5, J6, W10 |
 | S8 | Sebastia 1975 and Kadum | March to December 1975 | [S] W10, consistent with events-1970-77.md B14; Kadum: cross-reference |
-| S9 | Ofra | April to June 1975 | cross-reference: west-bank-localities-1967-77.md row 10 |
+| S9 | Ofra | April to June 1975 [S] | cross-reference: west-bank-localities-1967-77.md row 10 |
 
 ---
 
@@ -192,7 +192,7 @@ This agrees with model-basis-1957-77.md 1.5, which dates the first crossing to F
 - **Jordan's side** [S]: J4, dateline JERUSALEM, Dec. 19 (so 19 December 1967): "The Jordanian Government tacitly
   admitted today that a brisk trade is going on between Jordan and the Israel-occupied West Bank by announcing that a
   comission has been set up to supervise it." (spelling as printed)
-- **[C]** U1's summer expectation (no exports to the East Bank next season) against the trade that W8, J4 and the JTA
+- U1's summer expectation (no exports to the East Bank next season) against the trade that W8, J4 and the JTA
   items in model-basis-1957-77.md 1.5 show from mid-August 1967. These are two moments, not two values for one fact; both
   are kept so the design can see the policy change.
 - **Open.** [GAP] The text of the 7 September 1967 procedure and any Government decision that opens the bridges.
