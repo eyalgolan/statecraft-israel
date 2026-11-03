@@ -60,7 +60,8 @@ namespace Statecraft.Sim
         /// refused, or null; nothing changes. With an empty <paramref name="pending"/> it is the order's own check. With this
         /// turn's queue (#1722 slice E, the hex panel) it also counts the city's pending "job" order (whose jobs then hold
         /// no workshop worker, and which turns R-CITY-009's default off) and its Train and reassignment orders
-        /// (Training.Ordered), so a count it accepts is still accepted whichever of them runs first.</summary>
+        /// (Training.Ordered) and the builder each queued gdd-0.3 StartProject there may take (R-CITY-011), so a count it
+        /// accepts is still accepted whichever of them runs first.</summary>
         public static string? Check(Content c, GameState s, string city, int count, IEnumerable<Command> pending)
         {
             if (!s.Cities.TryGetValue(city, out var x)) return "There is no such city";
@@ -75,8 +76,8 @@ namespace Statecraft.Sim
             var staffed = Staffed(s, city);
             // R-CITY-009: while the city's job default is on, a newly staffed workshop may take its worker from the default's
             // jobs (the default then fills one job fewer, R-CITY-001); a number the player set is not lowered. R-CITY-011: a
-            // builder is not free.
-            var free = x.Civilians + x.Craftsmen - Math.Max(x.JobsDefault ? 0 : x.Employed, job ?? 0) - staffed - Projects.Builders(s, city) - Training.Ordered(city, list);
+            // builder is not free, nor the one a queued start there may take.
+            var free = x.Civilians + x.Craftsmen - Math.Max(x.JobsDefault ? 0 : x.Employed, job ?? 0) - staffed - Projects.Builders(s, city) - Projects.Starting(s, city, list) - Training.Ordered(city, list);
             if (count - staffed > free) return Refused(byDefault ? RefusedPeople : RefusedPeopleNoJob, name, Math.Max(0, free));
             return null;
         }

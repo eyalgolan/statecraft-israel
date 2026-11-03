@@ -83,7 +83,7 @@ public class NoAttentionTests
         var oldBad=Simulation.Preview(oldContent,oldState,new[]{oldInvalid});
         Assert.Equal(oldBad.Rejected.Single().Reason,bad.Rejected.Single().Reason);
         // R-CITY-011 (#1700): under gdd-0.3 a start takes a free person as its builder, its one difference from gdd-0.1.
-        string Same(string modern) { if (kind != "start_project") return modern; Assert.Contains(";builder", modern); return modern.Replace(";builder", ""); }
+        string Same(string modern) { if (kind != "start_project") return modern; Assert.Single(Regex.Matches(modern, ";builder")); return modern.Replace(";builder", ""); }
         Assert.Equal(WithoutLegacyAccounting(oldGood.State.Describe()),WithoutLegacyAccounting(Same(good.State.Describe())));
         Assert.Equal(WithoutLegacyAccounting(oldBad.State.Describe()),WithoutLegacyAccounting(bad.State.Describe()));
         Assert.Equal(WithoutLegacyAccounting(Simulation.Step(oldContent,oldState,new[]{oldValid}).State.Describe()),WithoutLegacyAccounting(Same(step.State.Describe())));

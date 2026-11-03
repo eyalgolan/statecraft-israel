@@ -309,4 +309,87 @@ public class CityBuildersTests
         Assert.Equal("5:housing@town_a,1,1/2;builder", p.WithBuilder(true).Canonical());
         Assert.Equal("5:housing@town_a,1,1/done,1948-05-15", p.WithBuilder(true).Built(new DateTime(1948, 5, 15)).Canonical());
     }
+    // R-SAVE with R-CITY-011 (review MUST-1): a save is the command log, so a game with builders, saved and loaded, replays to
+    // the same state, the builders included, and goes on identically.
+    [Fact]
+    public void Gdd03BuildersSurviveASaveAndLoad()
+    {
+        // Housing and industry at 6 turns, so both are still being built when the game is saved.
+        var c = ArmsWorkshopTests.Load(true, Fixture.GddProjects.Replace("turns: 2,", "turns: 6,") + ArmsWorkshopTests.Row);
+        var orders = new Dictionary<int, Command[]>
+        {
+            [0] = new Command[] { Housing(), new StartProject("industry", "town_a", 2, 0) },
+            [1] = new Command[] { Build(1) },
+        };
+        var game = GameSession.New(c, 7, Mode.Historical);
+        for (int t = 0; t < 2; t++) game.Step(orders[t]);
+        Assert.Contains(";builder", game.State.Describe());
+        var loaded = GameSession.Load(c, game.Save.Write(), out _);
+        Assert.Equal(game.State.Hash(), loaded.State.Hash());
+        game.Step(Array.Empty<Command>());
+        loaded.Step(Array.Empty<Command>());
+        Assert.Equal(game.State.Hash(), loaded.State.Hash());
+    }
+
+    // R-TRAIN-001, R-ARMS-005, R-CITY-001 with R-CITY-011 (review SHOULD-1): the limits a panel reads with this turn's queue
+    // count the builder a queued gdd-0.3 start takes, so a count up to them is accepted whichever order runs first.
+    [Fact]
+    public void Gdd03QueuedStartCountsInThePanelLimits()
+    {
+        var (c, s) = Game(civilians: 10, employed: 9, jobs: 20);   // one free person
+        var queued = new Command[] { Housing() };
+        Assert.Equal(0, Training.Available(s, "town_a", queued));
+        var train = Step(c, s, Housing(), new Train("town_a", "halutz", 1));
+        Assert.Single(train.Rejected);   // the limit of 0 is what makes this refusal expected
+        Assert.Equal(9, Cities.MaxWorkers(s, "town_a", queued));
+        Assert.Empty(Step(c, s, Housing(), new AssignWorkers("town_a", "job", 9)).Rejected);
+        Assert.Single(Step(c, s, Housing(), new AssignWorkers("town_a", "job", 10)).Rejected);
+        var (wc, ws, _) = ArmsWorkshopTests.Built(civilians: 10, employed: 9, jobs: 9, jobsDefault: false);
+        Assert.Null(Workshops.Check(wc, ws, "town_a", 1, Array.Empty<Command>()));
+        Assert.NotNull(Workshops.Check(wc, ws, "town_a", 1, new Command[] { new StartProject("housing", "town_a", 2, 0) }));
+        // Under gdd-0.1 a start takes nobody, so nothing changes.
+        var (oc, os) = Game(civilians: 10, employed: 9, jobs: 20, gdd03: false);
+        Assert.Equal(1, Training.Available(os, "town_a", queued));
+    }
+
+    // R-PROJ-003, R-ARMS-006 (review SHOULD-3): with two builders and one person without a job, the lower id advances, the
+    // higher waits with no_worker, and the city's staffed workshop pauses at step 6.
+    [Fact]
+    public void Gdd03MoreBuildersThanPeopleWaitInAscendingId()
+    {
+        var (c, s, workshop) = ArmsWorkshopTests.Built(civilians: 10, employed: 9, jobs: 9, jobsDefault: false);
+        s.Workshops.Add(workshop, new Workshop(workshop, true, SyntheticWorkshopTier.Ordinary));
+        var low = Add(s, "housing", 2, 0, 2, true);
+        var high = Add(s, "industry", 0, 1, 2, true);
+        var r = Step(c, s);
+        Assert.Equal((1, 2), (r.State.CityProjects[low].TurnsLeft, r.State.CityProjects[high].TurnsLeft));
+        var wait = Assert.Single(r.Why, w => w.Key == CauseKeys.ProjectWaiting);
+        Assert.Equal(("industry", Projects.NoWorker), (wait.Args[0], wait.Args[1]));
+        Assert.Equal("Town A: an industry project waits: no person without a job is left for its builder", wait.Message);
+        Assert.Equal(Workshops.NoWorker, Assert.Single(r.Why, w => w.Key == CauseKeys.WorkshopPaused).Args[0]);
+        Assert.True(r.State.CityProjects[high].Builder);   // a wait keeps the builder
+    }
+
+    // R-CITY-011 (review SHOULD-3): a city with nobody starts its project without a builder, and the build order is refused.
+    [Fact]
+    public void Gdd03ACityWithNobodyTakesNoBuilder()
+    {
+        var (c, s) = Game(civilians: 0, employed: 0, jobs: 0);
+        var r = Step(c, s, Housing());
+        Assert.Empty(r.Rejected);
+        Assert.False(r.State.CityProjects.Values.Single().Builder);
+        Assert.Equal("Town A has 0 civilians and craftsmen without a job", Assert.Single(Step(c, r.State, Build(1)).Rejected).Reason);
+    }
+
+    // R-CITY-011 with R-CITY-009 (review NIT-2): a person the job default has not yet put in an open job holds no job, so a
+    // start takes them; the default then fills one job fewer.
+    [Fact]
+    public void Gdd03AutoBuilderTakesAPersonTheDefaultHadNotPlaced()
+    {
+        var (c, s) = Game(civilians: 10, employed: 8, jobs: 10, jobsDefault: true);
+        var r = Step(c, s, Housing());
+        Assert.True(r.State.CityProjects.Values.Single().Builder);
+        Assert.Equal(9, r.State.Cities["town_a"].Employed);
+        Assert.Equal(10, Step(c, s).State.Cities["town_a"].Employed);
+    }
 }

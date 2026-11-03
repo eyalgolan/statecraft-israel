@@ -93,8 +93,8 @@ namespace Statecraft.Sim
         /// <summary>R-TRAIN-001 with R-CITY-001: the groups still free to train in <paramref name="city"/> once the orders in
         /// <paramref name="pending"/> (this turn's queue) have run: <see cref="Idle"/>, less every track's Train order there
         /// and every queued reassignment (R-QUAL-004, R-QUAL-005), less a pending "job" AssignWorkers' rise in jobs, and less
-        /// a pending "workshop" AssignWorkers' rise in staffed arms workshops (R-ARMS-005), and less the city's builders
-        /// (R-CITY-011). A count up to
+        /// a pending "workshop" AssignWorkers' rise in staffed arms workshops (R-ARMS-005), and less the city's builders and
+        /// the builder each queued gdd-0.3 StartProject there may take (R-CITY-011). A count up to
         /// it keeps every one of those orders accepted, whatever order they run in. A pending CancelTraining is not counted, since it may run after the Train.</summary>
         public static int Available(GameState s, string city, IEnumerable<Command> pending)
         {
@@ -102,7 +102,7 @@ namespace Statecraft.Sim
             var list = pending as IReadOnlyCollection<Command> ?? pending.ToList();
             int Pending(string role, int now) =>
                 Math.Max(now, list.OfType<AssignWorkers>().Where(w => w.City == city && w.Role == role).Select(w => w.Count).DefaultIfEmpty(0).Max());
-            return Math.Max(0, Idle(x, Pending("job", x.Employed), Pending(Workshops.Role, Workshops.Staffed(s, city)) + Projects.Builders(s, city)) - Ordered(city, list));
+            return Math.Max(0, Idle(x, Pending("job", x.Employed), Pending(Workshops.Role, Workshops.Staffed(s, city)) + Projects.Builders(s, city) + Projects.Starting(s, city, list)) - Ordered(city, list));
         }
 
         /// <summary>R-TRAIN-001: <paramref name="count"/> of the city's civilians without work start training as

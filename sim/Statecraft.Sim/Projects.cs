@@ -258,6 +258,12 @@ namespace Statecraft.Sim
 
         /// <summary>R-CITY-011: the city's free people: its civilians and craftsmen who hold no job and are not a staffed arms
         /// workshop's worker (R-ARMS-005) or a builder.</summary>
+        /// <summary>R-CITY-011: the builders this turn's queued gdd-0.3 StartProject orders for <paramref name="city"/> may take,
+        /// one each at most (#1700 review: the panel limits count them, so a count up to a limit is accepted whichever order
+        /// runs first). 0 under every other ruleset.</summary>
+        internal static int Starting(GameState s, string city, IEnumerable<Command> pending) =>
+            s.Ruleset == SaveGame.Gdd03Ruleset ? pending.OfType<StartProject>().Count(p => p.City == city) : 0;
+
         static int Free(GameState s, City x) => x.Civilians + x.Craftsmen - x.Employed - Workshops.Staffed(s, x.Id) - Builders(s, x.Id);
 
         static string Refused(string format, params object[] values) => string.Format(System.Globalization.CultureInfo.InvariantCulture, format, values);
@@ -377,7 +383,7 @@ namespace Statecraft.Sim
             if (count < 0) return "The number of workers cannot be negative";
             var x = s.Cities[city];
             var name = PlayerText.Settlement(c, city);
-            var building = s.CityProjects.Values.Where(p => p.City == city && p.BuiltOn == null).ToList();   // ascending id
+            var building = s.CityProjects.Values.Where(p => p.City == city && p.BuiltOn == null).OrderBy(p => p.Id).ToList();
             if (count > building.Count) return building.Count == 1 ? Refused(RefusedBeingBuiltOne, name) : Refused(RefusedBeingBuilt, name, building.Count);
             var builders = Builders(s, city);
             var staffed = Workshops.Staffed(s, city);
@@ -417,7 +423,7 @@ namespace Statecraft.Sim
             var held = Cities.Held(c, s);
             var builders = c.Ruleset == SaveGame.Gdd03Ruleset;
             var working = new Dictionary<string, int>(StringComparer.Ordinal);
-            foreach (var p in s.CityProjects.Values.Where(x => x.BuiltOn == null && !held.Contains(x.City)).ToList())
+            foreach (var p in s.CityProjects.Values.Where(x => x.BuiltOn == null && !held.Contains(x.City)).OrderBy(x => x.Id).ToList())
             {
                 if (builders)
                 {
