@@ -23,9 +23,11 @@ Where the game's sounds live and what plays them (#39).
   data in `unity/Assets/Resources/Music/menu-music.yaml` (`file`, `loop_start_s`, `loop_end_s`), not in the OGG, which
   stays as delivered. Resources, not the music folder: that folder holds OGG files only, and the game reads Resources
   at start with no second download. At each seam, two `AudioSource`s hand over on the audio clock: one ends and the
-  other starts at the loop start at the same `dspTime`, so there is no gap. A missing or invalid region (no file,
-  another file's name, an end before the start or past the clip's end) loops the whole clip, with one plain
-  `MUSIC no loop region` line in the log. `MenuMusicTests.TheThemeLoopsBetweenAfiksLoopPoints` checks the region
+  other is scheduled to start at the loop start at the same `dspTime`. That is the design; nobody has listened to the
+  seam in a web build yet (#2338 stays open for it). Measured in the OGG with ffmpeg, the cut lands on a step of about
+  -45 dBFS in a quiet passage. `MenuMusicTests.TheTwoSourcesHandOverAtEachSeamOnTheAudioClock` checks the scheduling
+  calls with a fake audio clock, not the sound. A missing or invalid region (no file, another file's name, an end before
+  the start or past the clip's end) loops the whole clip, with one plain `MUSIC no loop region` line in the log. `MenuMusicTests.TheThemeLoopsBetweenAfiksLoopPoints` checks the region
   against the committed file.
 - With no file (or any failed download) the start menu is silent for the rest of the page: no error and no warning,
   one plain `MUSIC no theme` line in the log. A reload tries again.

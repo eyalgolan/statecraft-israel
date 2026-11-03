@@ -531,7 +531,7 @@ public class MenuMusicTests
     /// <summary>The schedule the output plays (LoopRegion, which SourceOutput's handover follows): the first play starts at
     /// the top (sample 0, not the loop start) and runs to the loop end; from there playback goes on at the loop start, and
     /// again at every later seam, with no sample left out or played twice. MenuMusic hands the output the region and
-    /// watches it every tick. (The AudioSources themselves are not driven here: EditMode has no audio clock.)</summary>
+    /// watches it every tick. (SourceOutput's scheduling calls: TheTwoSourcesHandOverAtEachSeamOnTheAudioClock.)</summary>
     [Test]
     public void ItPlaysFromTheTopThenLoopsTheRegion()
     {
@@ -551,6 +551,70 @@ public class MenuMusicTests
         Assert.AreEqual(new MenuMusic.LoopRegion(441, 3969, 44100), rig.Out.Loops.Single(), "the output gets the region");
         rig.Pass(MenuMusic.WatchMs * 3);
         Assert.AreEqual(3, rig.Out.Watches, "the output is watched every tick, to schedule its next seam");
+        UnityEngine.Object.DestroyImmediate(clip);
+    }
+
+    /// <summary>One of SourceOutput's two sources: it records every call, with the value, in order, in a shared log.</summary>
+    sealed class RecordingSource : MenuMusic.ISource
+    {
+        readonly string name; readonly List<string> log;
+        public RecordingSource(string name, List<string> log) { this.name = name; this.log = log; }
+        public AudioClip? Clip { set => log.Add(name + ".Clip " + (value == null ? "null" : value.name)); }
+        public float Volume { set => log.Add(name + ".Volume " + value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)); }
+        public bool Loop { set => log.Add(name + ".Loop " + value); }
+        public int TimeSamples { set => log.Add(name + ".TimeSamples " + value); }
+        public void Play() => log.Add(name + ".Play");
+        public void PlayScheduled(double at) => log.Add(name + ".PlayScheduled " + Ms(at));
+        public void SetScheduledEndTime(double at) => log.Add(name + ".SetScheduledEndTime " + Ms(at));
+        public void Stop() => log.Add(name + ".Stop");
+        /// <summary>The audio clock in whole milliseconds, so seams counted in samples compare exactly.</summary>
+        static string Ms(double s) => Math.Round(s * 1000.0).ToString(System.Globalization.CultureInfo.InvariantCulture) + " ms";
+    }
+
+    /// <summary>The game's output (SourceOutput) hands over between its two sources on the audio clock (#2338). With a
+    /// recorded pair of sources and a fake dspTime: the first source starts at sample 0 and its scheduled end is the first
+    /// seam; the second starts at the loop start at that same dspTime. After the seam the roles swap and the next seam is
+    /// one region later. A watch stalled past the next seam (a hidden tab) starts the loop again at its start, with the
+    /// following seam one region after that. This drives the scheduling calls, not Unity's audio: whether the two halves
+    /// meet without a gap or a click in a real browser is the listening check in #2338.</summary>
+    [Test]
+    public void TheTwoSourcesHandOverAtEachSeamOnTheAudioClock()
+    {
+        var log = new List<string>();
+        double dsp = 10.0;
+        var made = 0;
+        using var output = new MenuMusic.SourceOutput(() => dsp, () => new RecordingSource(made++ == 0 ? "A" : "B", log));
+        // A 10 s clip looping 1 s to 8 s: one region (7 s) is longer than Lead, as the theme's 3:53 is.
+        var clip = AudioClip.Create("theme", 441000, 1, 44100, false);
+        output.Play(clip, new MenuMusic.LoopRegion(44100, 352800, 44100));
+        // Starts at 10 s + Lead (100 ms) = 10,100 ms; the first seam is 8 s of clip later.
+        CollectionAssert.AreEqual(new[] {
+            "A.Stop", "A.Clip null", "B.Stop", "B.Clip null",
+            "B.Clip theme", "A.Clip theme", "B.Volume 0.35", "A.Volume 0.35", "A.Loop False", "A.TimeSamples 0",
+            "A.PlayScheduled 10100 ms",
+            "A.SetScheduledEndTime 18100 ms", "B.TimeSamples 44100", "B.PlayScheduled 18100 ms",
+        }, log, "the first source plays from the top; its end and the second's start at the loop start share the seam's dspTime");
+        log.Clear();
+        dsp = 18.0; output.Watch();
+        CollectionAssert.IsEmpty(log, "nothing to do before the seam");
+        dsp = 18.2; output.Watch();
+        CollectionAssert.AreEqual(new[] { "B.SetScheduledEndTime 25100 ms", "A.TimeSamples 44100", "A.PlayScheduled 25100 ms" }, log,
+            "after the seam the second plays on and the first is scheduled for the next seam, one region (7 s) later");
+        log.Clear();
+        dsp = 40.0; output.Watch();   // stalled: the seams at 25.1 s and 32.1 s passed unwatched
+        CollectionAssert.AreEqual(new[] {
+            "A.TimeSamples 44100", "A.PlayScheduled 40100 ms",
+            "A.SetScheduledEndTime 47100 ms", "B.TimeSamples 44100", "B.PlayScheduled 47100 ms",
+        }, log, "a stalled watch starts the loop again at its start (now + Lead), not once per missed seam");
+        log.Clear();
+        output.Play(clip, new MenuMusic.LoopRegion(0, 441000, 44100));
+        CollectionAssert.AreEqual(new[] {
+            "A.Stop", "A.Clip null", "B.Stop", "B.Clip null",
+            "B.Clip theme", "A.Clip theme", "B.Volume 0.35", "A.Volume 0.35", "A.Loop True", "A.TimeSamples 0", "A.Play",
+        }, log, "the whole clip (no region) loops on one source, with nothing scheduled");
+        log.Clear();
+        dsp = 60.0; output.Watch();
+        CollectionAssert.IsEmpty(log, "and the watch leaves it alone");
         UnityEngine.Object.DestroyImmediate(clip);
     }
 

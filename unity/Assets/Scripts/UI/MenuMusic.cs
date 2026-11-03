@@ -48,8 +48,8 @@ namespace Statecraft.Game.UI
         {
             /// <summary>As DeclarationRecording.IOutput.Ready: true once decoded, false while not yet, null when it failed.</summary>
             bool? Ready(AudioClip clip);
-            /// <summary>Plays the clip from sample 0 to the loop's End once, then its Start to End again and again, with no gap
-            /// (LoopRegion.SampleAt).</summary>
+            /// <summary>Plays the clip from sample 0 to the loop's End once, then its Start to End again and again
+            /// (LoopRegion.SampleAt), the next part scheduled on the same audio-clock time the last one ends.</summary>
             void Play(AudioClip clip, LoopRegion loop);
             /// <summary>Every WatchMs while it plays: time to schedule the next seam.</summary>
             void Watch();
@@ -334,44 +334,56 @@ namespace Statecraft.Game.UI
 
         /// <summary>Two AudioSources on their own GameObject, made at the first Play. The whole clip loops on one
         /// (AudioSource.loop). A loop region hands over between the two at each seam on the audio clock: the playing one's
-        /// scheduled end and the other's scheduled start (at Start) are the same dspTime, so the seam has no gap. On the web,
-        /// Unity's Audio.js turns these into AudioBufferSourceNode start(when, offset) and stop(when) (Chromium decodes every
-        /// clip to a buffer). AudioSource.loop cannot do it: it always loops the whole clip.</summary>
-        sealed class SourceOutput : IOutput
+        /// scheduled end and the other's scheduled start (at Start) are the same dspTime (the design; nobody has listened to the
+        /// seam in a web build yet, #2338). On the web, Unity's Audio.js turns these into AudioBufferSourceNode start(when,
+        /// offset) and stop(when) (Chromium decodes every clip to a buffer). AudioSource.loop cannot do it: it always loops the
+        /// whole clip.</summary>
+        internal sealed class SourceOutput : IOutput
         {
             /// <summary>The first play's lead on the audio clock, so both of the first seam's halves can be scheduled.</summary>
             const double Lead = 0.1;
-            GameObject? go; AudioSource? playing, next; float volume = DefaultVolume;
+            readonly Func<double> dsp; readonly Func<ISource> make;
+            /// <summary>The sources are AudioSources on our own GameObject: something else may destroy it (Unity's null), and
+            /// the next Play then makes both again.</summary>
+            readonly bool own;
+            GameObject? go; ISource? playing, next; float volume = DefaultVolume;
             LoopRegion loop; bool region; double startDsp, seamDsp; long seam;
+
+            /// <param name="dsp">Test seam: the audio clock, in seconds; null is AudioSettings.dspTime.</param>
+            /// <param name="make">Test seam: makes one of the two sources; null adds an AudioSource to the MenuMusic
+            /// GameObject. EditMode has no running audio clock, so a test records the scheduling calls instead.</param>
+            internal SourceOutput(Func<double>? dsp = null, Func<ISource>? make = null)
+            {
+                this.dsp = dsp ?? (() => AudioSettings.dspTime);
+                this.make = make ?? MakeSource;
+                own = make == null;
+            }
 
             public bool? Ready(AudioClip clip) => DeclarationRecording.SourceOutput.ReadyState(clip);
 
             public void Play(AudioClip clip, LoopRegion loop)
             {
-                if (go == null)
-                {
-                    go = new GameObject("MenuMusic");
-                    playing = Source(go); next = Source(go);
-                }
+                if (playing == null || (own && go == null)) { playing = make(); next = make(); }
                 Stop();
                 this.loop = loop;
                 region = loop.Start != 0 || loop.End != clip.samples;
-                playing!.clip = next!.clip = clip;
-                playing.volume = next.volume = volume;
-                playing.loop = !region;
-                playing.timeSamples = (int)loop.SampleAt(0);
+                playing!.Clip = next!.Clip = clip;
+                playing.Volume = next.Volume = volume;
+                playing.Loop = !region;
+                playing.TimeSamples = (int)loop.SampleAt(0);
                 if (!region) { playing.Play(); return; }
-                startDsp = AudioSettings.dspTime + Lead;
+                startDsp = dsp() + Lead;
                 playing.PlayScheduled(startDsp);
                 seam = 0;
                 Schedule();
             }
 
-            static AudioSource Source(GameObject go)
+            ISource MakeSource()
             {
+                if (go == null) go = new GameObject("MenuMusic");
                 var s = go.AddComponent<AudioSource>();
                 s.playOnAwake = false; s.loop = false; s.spatialBlend = 0f;
-                return s;
+                return new UnitySource(s);
             }
 
             /// <summary>Seam number `seam`: the playing source ends and the other starts where the loop goes on, at one time.</summary>
@@ -379,7 +391,7 @@ namespace Statecraft.Game.UI
             {
                 seamDsp = startDsp + (double)loop.SeamAt(seam) / loop.Frequency;
                 playing!.SetScheduledEndTime(seamDsp);
-                next!.timeSamples = (int)loop.SampleAt(loop.SeamAt(seam));
+                next!.TimeSamples = (int)loop.SampleAt(loop.SeamAt(seam));
                 next.PlayScheduled(seamDsp);
             }
 
@@ -387,7 +399,7 @@ namespace Statecraft.Game.UI
             /// region (3:53 for the theme) ahead.</summary>
             public void Watch()
             {
-                var now = AudioSettings.dspTime;
+                var now = dsp();
                 if (!region || now < seamDsp) return;
                 (playing, next) = (next, playing);
                 seam++;
@@ -398,7 +410,7 @@ namespace Statecraft.Game.UI
                     // row; instead the loop starts again at its start, as if seam 0 fell just now.
                     var at = now + Lead;
                     startDsp = at - (double)loop.End / loop.Frequency;
-                    playing!.timeSamples = loop.Start;
+                    playing!.TimeSamples = loop.Start;
                     playing.PlayScheduled(at);
                     seam = 1;
                 }
@@ -408,8 +420,8 @@ namespace Statecraft.Game.UI
             public void Stop()
             {
                 region = false;
-                if (playing != null) { playing.Stop(); playing.clip = null; }
-                if (next != null) { next.Stop(); next.clip = null; }
+                if (playing != null) { playing.Stop(); playing.Clip = null; }
+                if (next != null) { next.Stop(); next.Clip = null; }
             }
 
             public float Volume
@@ -417,8 +429,8 @@ namespace Statecraft.Game.UI
                 set
                 {
                     volume = value;
-                    if (playing != null) playing.volume = value;
-                    if (next != null) next.volume = value;
+                    if (playing != null) playing.Volume = value;
+                    if (next != null) next.Volume = value;
                 }
             }
 
@@ -427,6 +439,34 @@ namespace Statecraft.Game.UI
                 if (go != null) { if (Application.isPlaying) UnityEngine.Object.Destroy(go); else UnityEngine.Object.DestroyImmediate(go); }
                 go = null; playing = null; next = null;
             }
+        }
+
+        /// <summary>The calls SourceOutput makes on one of its two sources: an AudioSource in the game (UnitySource), a
+        /// recorder in MenuMusicTests, so the handover at each seam can be checked without an audio clock.</summary>
+        internal interface ISource
+        {
+            AudioClip? Clip { set; }
+            float Volume { set; }
+            bool Loop { set; }
+            int TimeSamples { set; }
+            void Play();
+            void PlayScheduled(double at);
+            void SetScheduledEndTime(double at);
+            void Stop();
+        }
+
+        sealed class UnitySource : ISource
+        {
+            readonly AudioSource s;
+            public UnitySource(AudioSource s) { this.s = s; }
+            public AudioClip? Clip { set => s.clip = value; }
+            public float Volume { set => s.volume = value; }
+            public bool Loop { set => s.loop = value; }
+            public int TimeSamples { set => s.timeSamples = value; }
+            public void Play() => s.Play();
+            public void PlayScheduled(double at) => s.PlayScheduled(at);
+            public void SetScheduledEndTime(double at) => s.SetScheduledEndTime(at);
+            public void Stop() => s.Stop();
         }
     }
 }
