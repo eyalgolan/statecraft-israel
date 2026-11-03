@@ -1227,6 +1227,8 @@ why.cause.project_completed: "{0}: סיום {1}"
 # native-review-pending
 why.cause.project_builder: "{0}: בונה החל לעבוד על {1}"
 # native-review-pending
+why.cause.project_builder_freed: "{0}: בונה סיים לעבוד על {1} ופנוי שוב"
+# native-review-pending
 why.cause.project_waiting.no_builder: "{0}: העבודה על {1} ממתינה: אין בונה"
 # native-review-pending
 why.cause.project_waiting.no_worker: "{0}: העבודה על {1} ממתינה: לא נותר אדם ללא משרה שיבנה"

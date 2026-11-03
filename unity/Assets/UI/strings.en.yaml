@@ -1091,6 +1091,7 @@ why.cause.project_cancelled: "{0}: {1} was cancelled; the Money spent is not ret
 why.cause.project_completed: "{0}: {1} was finished"
 # The gdd-0.3 builders (#1700; R-CITY-011, R-PROJ-003).
 why.cause.project_builder: "{0}: a builder started on {1}"
+why.cause.project_builder_freed: "{0}: a builder left {1} and is free again"
 why.cause.project_waiting.no_builder: "{0}: {1} waits: no builder"
 why.cause.project_waiting.no_worker: "{0}: {1} waits: no person without a job is left for its builder"
 why.cause.arms_bought: "Bought {0} Arms, cost {1}"

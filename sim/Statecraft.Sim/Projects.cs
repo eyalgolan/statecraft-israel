@@ -387,6 +387,7 @@ namespace Statecraft.Sim
             if (p.BuiltOn != null) return $"{PlayerText.Capitalised(k.Name)} is already built";
             s.CityProjects.Remove(project);
             why.Add(new Cause("city", p.City, -1, $"{PlayerText.Settlement(c, p.City)}: {k.Name} was cancelled; the Money spent is not returned", key: CauseKeys.ProjectCancelled, args: new[] { k.Id }));
+            if (p.Builder) BuilderFreed(c, p, k, why);
             return null;
         }
 
@@ -425,9 +426,18 @@ namespace Statecraft.Sim
                     why.Add(new Cause("city", city, 1, $"{name}: a builder started on {k.Name}", key: CauseKeys.ProjectBuilder, args: new[] { k.Id }));
                 }
             else
-                foreach (var p in building.Where(p => p.Builder).Reverse().Take(builders - count)) s.CityProjects[p.Id] = p.WithBuilder(false);
+                foreach (var p in building.Where(p => p.Builder).Reverse().Take(builders - count))
+                {
+                    s.CityProjects[p.Id] = p.WithBuilder(false);
+                    BuilderFreed(c, p, c.ProjectKinds.First(y => y.Id == p.Kind), why);
+                }
             return null;
         }
+
+        /// <summary>R-CITY-011 (#1700 slice B, slice A's NIT-1): the Why line for a builder freed from project
+        /// <paramref name="p"/> of kind <paramref name="k"/>, as it is built or cancelled or the build count falls.</summary>
+        static void BuilderFreed(Content c, CityProject p, ProjectKind k, List<Cause> why) =>
+            why.Add(new Cause("city", p.City, -1, $"{PlayerText.Settlement(c, p.City)}: a builder left {k.Name} and is free again", key: CauseKeys.ProjectBuilderFreed, args: new[] { k.Id }));
 
         /// <summary>R-PROJ-003, step 5 of the turn (D-A6), after the pioneer work: in ascending id, each city project being built
         /// has one turn less to go. One that reaches 0 is built on <paramref name="next"/>, the turn's end date, and adds its
@@ -470,6 +480,7 @@ namespace Statecraft.Sim
                 var condition = city.Condition is double now ? Math.Min(1.0, Math.Max(0.0, now + k.Condition)) : (double?)null;
                 s.Cities[p.City] = new City(city.Id, city.HousingCapacity + k.Capacity, city.JobSlots + k.JobSlots, city.Civilians, city.Employed, city.Refugees, city.Recruits, condition, city.Craftsmen, city.JobsDefault, city.Qualified);
                 why.Add(new Cause("city", p.City, 1, $"{PlayerText.Settlement(c, p.City)}: {k.Name} was finished", key: CauseKeys.ProjectCompleted, args: new[] { k.Id }));
+                if (p.Builder) BuilderFreed(c, p, k, why);
             }
         }
     }
