@@ -104,6 +104,25 @@ public class CityStartCapTests
         Assert.Equal(2, two.State.CityProjects.Count);
     }
 
+    // A start that waits for a builder (nobody free in the city, R-CITY-011) is still a start: it uses the city's slot and
+    // a national one, so a second start in that city is city_cap and a third city's is turn_cap.
+    [Fact]
+    public void Gdd03StartWaitingForABuilderStillCounts()
+    {
+        var c = Load(true);
+        var s = New(c);
+        var a = s.Cities["town_a"];
+        s.Cities["town_a"] = new City(a.Id, a.HousingCapacity, a.Civilians, a.Civilians, a.Civilians, 0, 0, a.Condition, jobsDefault: false);
+        var r = Simulation.Step(c, s, new Command[] { A1(), A2(), B(), C() });
+        var waiting = r.State.CityProjects.Values.Single(p => p.City == "town_a");
+        Assert.False(waiting.Builder);   // nobody free: no builder, the project waits
+        Assert.Equal(new[] { CityCapText, "No more than 2 city projects in one turn" }, r.Rejected.Select(x => x.Reason));
+        Assert.Equal(new[] { "town_a", "town_c" }, r.Rejected.Select(x => ((StartProject)x.Command).City));
+        Assert.Equal(1, r.State.CityStartsThisTurn["town_a"]);
+        Assert.Equal(2, r.State.MapActionsThisTurn);
+        Assert.Equal(new[] { "town_a", "town_b" }, r.State.CityProjects.Values.Select(p => p.City).OrderBy(x => x, System.StringComparer.Ordinal));
+    }
+
     // The cap limits starts, not building: in a turn where the city has used its start and city_cap refuses another, the
     // city's project already running advances exactly as in a turn where the city starts nothing.
     [Fact]

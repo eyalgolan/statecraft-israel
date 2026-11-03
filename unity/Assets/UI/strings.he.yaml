@@ -894,8 +894,8 @@ city.resource.vineyards: "כרמים"
 # turn_cap: approved by Beri, a native speaker, on #1267 (21 Oct 2026).
 city.project_reason.turn_cap: "אי אפשר להתחיל יותר מ־{0} מיזמים עירוניים בתור אחד"
 # #1700 slice B, gdd-0.3 only (R-PROJ-001), {0} the city, as the workshop refusals ("{0}: ...").
-# Agent-drafted Hebrew; native review pending (#564).
-city.project_reason.city_cap: "{0}: כבר התחיל מיזם עירוני בתור הזה"
+# Agent-drafted Hebrew; native review pending (#564). No verb agrees with {0} (HE-15).
+city.project_reason.city_cap: "{0}: כבר יש התחלת מיזם עירוני בתור הזה"
 # The toggle that folds a city's own projects on a stacked bar or a short window (owner ruling on #1150), {0} the
 # number of kinds. For the native reviewer (#564).
 city.projects_toggle: "מיזמי העיר ({0})"
@@ -1227,7 +1227,7 @@ why.cause.project_completed: "{0}: סיום {1}"
 # native-review-pending
 why.cause.project_builder: "{0}: בונה החל לעבוד על {1}"
 # native-review-pending
-why.cause.project_builder_freed: "{0}: בונה סיים לעבוד על {1} ופנוי שוב"
+why.cause.project_builder_freed: "{0}: שחרור בונה מהעבודה על {1}"
 # native-review-pending
 why.cause.project_waiting.no_builder: "{0}: העבודה על {1} ממתינה: אין בונה"
 # native-review-pending
