@@ -22,9 +22,10 @@ namespace Statecraft.Sim
     }
 
     /// <summary>R-TRAIN-005 to R-TRAIN-008: gdd-0.3 farmer/pioneer course lifecycle over the #1689 population ledger,
-    /// synthetic fixtures only. No command, save, loader, resolver, Money, Food or UI caller. Graduation is not reachable
-    /// while #1668 Q43(a) is open: no turn that would bring a course within one turn of its end is counted. Open design points
-    /// (#1668 Q42, Q43, Q44 and the 27 Oct list Q9) are refused with a "Deferred:" NotSupportedException.</summary>
+    /// synthetic fixtures only. No command, save, loader, resolver, Money, Food or UI caller. Graduation is not reachable:
+    /// #1668 Q43(a) was answered on 1 Nov 2026 (the enrolment turn counts) but is not built here, so no turn that would bring
+    /// a course within one turn of its end is counted. Design points not built here (#1668 Q42 and Q43, answered 1 Nov 2026;
+    /// Q44 and the 27 Oct list Q9) are refused with a "Deferred:" NotSupportedException.</summary>
     internal sealed class Gdd03TrainingCentreFixture
     {
         readonly GameState state;
@@ -179,8 +180,9 @@ namespace Statecraft.Sim
         }
 
         /// <summary>R-TRAIN-006: count one completed course turn for a course already held at the month's opening, once per
-        /// month ordinal. Counting the turn that would leave one turn or none to go depends on whether the enrolment turn
-        /// counts (#1668 Q43(a)), so it is refused: graduation timing is Deferred and no trained tier is granted here.</summary>
+        /// month ordinal. #1668 Q43(a) was answered on 1 Nov 2026 (the enrolment turn counts) but is not built here, so the
+        /// turn that would leave one turn or none to go is still refused: graduation timing is Deferred and no trained tier is
+        /// granted here.</summary>
         internal void Advance(int traineeId, Gdd03SyntheticMonthContext month)
         {
             ValidateInventory();
