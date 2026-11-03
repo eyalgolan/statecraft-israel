@@ -16,7 +16,7 @@ namespace Statecraft.Game.UI
         public static readonly IReadOnlyCollection<string> Events = new[] { NewGame, TurnEnded, Opening, AttentionRefused, BudgetUnsubmitted, CityShown, UnitShown };
         public static readonly IReadOnlyDictionary<string, Func<AdvisorContext, bool>> States = new Dictionary<string, Func<AdvisorContext, bool>>
         {
-            // Spec 6's critical warnings and the defeat lines (R-END-001 to R-END-003, docs/rules/mvp.md:377-381).
+            // Spec 6's critical warnings and the defeat lines (R-END-001 to R-END-003).
             ["city_at_risk"] = ctx => Threats.CitiesAtRisk(ctx.Content, ctx.State).Count > 0,
             ["exhausted"] = ctx => ctx.State.ExhaustedTurns > 0,
             ["in_debt"] = ctx => ctx.State.Debt > 0,

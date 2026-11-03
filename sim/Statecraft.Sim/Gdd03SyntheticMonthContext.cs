@@ -130,7 +130,7 @@ namespace Statecraft.Sim
         }
     }
 
-    /// <summary>Opaque synthetic housing handle, not a regional record. GDD balance.md:100
+    /// <summary>Opaque synthetic housing handle, not a regional record. GDD balance.md:100 at 605277df
     /// defines housing.condition_max = 1 (Agreed fraction). No surcharge/decay calculation.</summary>
     internal sealed class Gdd03SyntheticHousingSnapshot
     {
