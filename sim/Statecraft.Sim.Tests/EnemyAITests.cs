@@ -262,7 +262,9 @@ public class EnemyAITests
     // R-ENEMY-002: in the real game each scripted unit marches on its 11 June hex along its cheapest path (round the player's
     // units and localities), as far as its movement points reach, on the turns that start before the anchor's window ends
     // (15 May and 15 June). With 3 points a turn each ends on its hex or next to it. On the turn of 15 July only the Syrian
-    // unit has a script left (#1270, S1, to 20 July 1949): it steps onto the bridgehead's hex, and no other unit moves.
+    // unit has a script left (#1270, S1, to 20 July 1949): on the 4.4 km grid S1's point falls in Rosh Pinna's hex, a
+    // player's locality, so the anchor tool put it on a free neighbour; the unit steps from its June hex onto that one,
+    // and no other unit moves.
     [Fact]
     public void AScriptedUnitMarchesToItsJuneAnchorThenFollowsTheGoals()
     {
@@ -281,9 +283,12 @@ public class EnemyAITests
         var why = new List<Cause>();
         int syria = c.StartingForces.FindIndex(f => f.Row == "syrian_army");
         var positions = june.Units.Values.Where(u => u.Id != syria).Select(u => (u.Id, u.Q, u.R)).ToList();
+        Assert.Equal(targets[syria], (june.Units[syria].Q, june.Units[syria].R));
+        var s1 = (c.StartingForces[syria].Script[1].Q, c.StartingForces[syria].Script[1].R);
+        Assert.Equal(1, Distance(targets[syria].Q, targets[syria].R, s1.Q, s1.R));
         EnemyAI.Order(c, june, why);
         Assert.Equal(positions, june.Units.Values.Where(u => u.Id != syria).Select(u => (u.Id, u.Q, u.R)).ToList());
-        Assert.Equal(targets[syria], (june.Units[syria].Q, june.Units[syria].R));
+        Assert.Equal(s1, (june.Units[syria].Q, june.Units[syria].R));
         Assert.Equal(new[] { $"Unit {syria} moved to hex" }, why.Where(x => x.Message.Contains("moved to hex", StringComparison.Ordinal))
             .Select(x => x.Message.Substring(0, x.Message.IndexOf("hex", StringComparison.Ordinal) + 3)));
     }

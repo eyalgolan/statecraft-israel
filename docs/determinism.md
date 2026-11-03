@@ -61,9 +61,9 @@ final `GameState.Hash()` is pinned:
 
 | Run | Ends | Hash |
 |---|---|---|
-| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `74fbe989d84a987728ba983a263714dcbe05abc2768033c15c3aed212cf34b63` |
-| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `d74296940a6a6c8346b38679d80ed25ef0b537d2e709048eb4989ad46a259a66` |
-| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `d74296940a6a6c8346b38679d80ed25ef0b537d2e709048eb4989ad46a259a66` |
+| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `65ac27b5b2f63b3bdd4550a277ca6ce0acfd0a8f02913a048ed84e4745ed06ed` |
+| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `a612ba104f1f8c503de4e77610ef277c5f8f4a0371a8462bca3c41961c476efa` |
+| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `a612ba104f1f8c503de4e77610ef277c5f8f4a0371a8462bca3c41961c476efa` |
 
 `hash1952` stops at the first turn on or after 1 January 1952, which is the game's last turn, so it is the same run as
 `mvp-end` (`DeterminismTests.TheWholeGameToItsEndIsFixed`). Both names are kept (spec 2026-10-12 section 3 step 6): a
@@ -72,7 +72,7 @@ player check enumerate the manifest, so it and every scenario are checked withou
 
 A further value is pinned for the browser smoke run (`?smoke=5`: the golden seed, five turns played through the UI's own
 buttons, answering each event with its first option while the turn's Attention pays for it, the rest left to their
-ministers): `SMOKE OK 5 turns 1948-10-15 9255f2bcda06ed50e38b9f77927998be5f3aef1f7206733dadaf2e2de29509c6`.
+ministers): `SMOKE OK 5 turns 1948-10-15 e59d33e1991649d1ae5d0e3ae3d734f679819da2027b98d3b9bffd13bc3024a7`.
 It depends on the UI path as well as the sim (which option is first, the turn grid), so re-record it when either changes.
 Check every WebGL build with every manifest entry (plus the UI-path smoke line) with:
 
@@ -83,7 +83,7 @@ while read -r name hash; do
   golden_expect+=(--expect "GOLDEN OK $name $hash")
 done < sim/Statecraft.Sim.Tests/golden/manifest.txt
 uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5" "${golden_expect[@]}" \
-  --expect "SMOKE OK 5 turns 1948-10-15 9255f2bcda06ed50e38b9f77927998be5f3aef1f7206733dadaf2e2de29509c6"
+  --expect "SMOKE OK 5 turns 1948-10-15 e59d33e1991649d1ae5d0e3ae3d734f679819da2027b98d3b9bffd13bc3024a7"
 ```
 
 `smoke-orders` (GDD Phase 5 PR 15, #754) is the same kind of browser run for the unit orders (`?smoke-orders`, desktop
@@ -461,3 +461,13 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | #1183: the 4.4 km hex bake (owner, 21 Oct 2026; one re-pin, alone in its merge slot) | scenario-mvp-defeat | `9e2afc15` | unit positions on the 4.4 km grid; the run's late indicators differ (housing, morale, standing) with the different fights; as in reckless, the 7th Brigade is gone and the Legion ends at strength 3 (the snapshots) (was `b7d3848d`) |
 | #1183: the 4.4 km hex bake (owner, 21 Oct 2026; one re-pin, alone in its merge slot) | scenario-mvp-occupy-cost | `0bc59565` | Golani's unit is 5 movement points from Nazareth at 4.4 km, so the scenario moves it on 15 May to (9, 11) and onto Nazareth on 15 June, answers Occupy on 15 July and runs to 15 January 1949 (`since=1948-07-15`); as in reckless, the 7th Brigade is gone and the Legion ends at strength 3 (the snapshots) (was `9fcc7bae`) |
 | #1183: the 4.4 km hex bake (owner, 21 Oct 2026; one re-pin, alone in its merge slot) | scenario-mvp-annex-nazareth | `b6df4284` | `mvp-occupy-cost`'s steps one turn later, then `end_occupation nazareth annex` on 15 January 1949, run to 15 February 1949; as in reckless, the 7th Brigade is gone and the Legion ends at strength 3 (the snapshots) (was `8fe6d129`) |
+| #1270 (S1, the Syrian script past the first truce; owner on #2180, 3 Nov 2026, choice (a)) | hash1950 | `65ac27b5` | the Syrian unit's script runs past 8 July 1948 to the bridgehead's anchor S1 (to 20 July 1949). On the 4.4 km grid S1's point falls in Rosh Pinna's hex (14, 6), a player's locality, and (15, 6) is already Syrian anchor 1, so `tools/unit_anchor_hexes.py` puts S1 on the free neighbour (15, 5): on the 15 July 1948 turn the unit steps one hex from its June hex (15, 6) onto (15, 5) and holds it fortified; it is the only change in every snapshot (was `74fbe989`) |
+| #1270 (S1): as above | hash1952 | `a612ba10` | as above (was `d7429694`) |
+| #1270 (S1): as above | smoke5 | `e59d33e1` | as above (the smoke run's five turns reach 15 October 1948); no snapshot is kept for this run (was `9255f2bc`) |
+| #1270 (S1): as above | scenario-reckless | `c8044b2d` | as above (was `63cab812`) |
+| #1270 (S1): as above | scenario-cautious | `ddbc21fa` | as above (was `e7ad49bf`) |
+| #1270 (S1): as above | scenario-mvp-absorb-first | `dc57c600` | as above (was `b589c9dc`) |
+| #1270 (S1): as above | mvp-end | `a612ba10` | same run as hash1952 (was `d7429694`) |
+| #1270 (S1): as above | scenario-mvp-defeat | `46aa3ff9` | as above (was `9e2afc15`) |
+| #1270 (S1): as above | scenario-mvp-occupy-cost | `a7bebfa7` | as above (was `0bc59565`) |
+| #1270 (S1): as above | scenario-mvp-annex-nazareth | `43bc8895` | as above (was `b6df4284`). No other golden moves: smoke-orders does not reach 15 July 1948 |
