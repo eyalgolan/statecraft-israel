@@ -22,11 +22,27 @@ using Statecraft.Sim;
 //   does not exist, or has finished, is refused with the state unchanged."
 // - R-ARMS-003 (docs/rules/mvp.md): "The cohort keeps the Arms it took, and the state hash writes them with it; cancelling
 //   the cohort (R-TRAIN-002) returns them to the pool, up to the most the stock can hold, although the Money stays paid"
+// Completion and upkeep (#1699 third slice), quoted at 3b18babc1:
+// - docs/rules/mvp.md:251 (R-UNIT-003): "A finished recruit cohort becomes exactly one Israeli infantry formation at its city's
+//   settlement hex, with `Strength` equal to the cohort's `Count` in population units ... Its reserved Arms are neither
+//   charged again nor refunded on completion (R-ARMS-003)."
+// - docs/GDD.md:372 (Q43(b)): "they are released in the turn its last course turn counts".
+// - docs/GDD.md:374 (27M-8): "A formation pays military upkeep from the turn it graduates (27M-8)."
+// - docs/rules/mvp.md:265 (R-UNIT-010): "each Israeli military formation pays `military_upkeep_per_turn` Money, including a
+//   formation that graduated this turn. The owner-accepted initial rate is IL 0.05m per formation per turn, independent of
+//   strength and turn length"; content/gdd03-balance.yaml `military.active_money` [0.05].
+// Maintainer calls by coordinator 53 (3 November 2026), not owner rulings: formations are pre-bound, empty ActiveService
+// targets supplied by the tests; one Start order is one cohort and one formation, its strength its count; only formations
+// this fixture graduated pay; a graduating Advance after that month's PayUpkeep is refused. A graduate's qualification
+// stays "": the live recruit path gives a formation no qualification (sim/Statecraft.Sim/GddState.cs:207, Training.cs:246)
+// and the Historical start gives its soldiers "" (HistoricalPopulation.cs:78).
 public class Gdd03BasicTrainingFixtureTests
 {
     static readonly Lazy<Gdd03BalanceCatalogue> Real = new(() => ContentLoader.Load(RealContentTests.ContentRoot()).Gdd03Balance!);
     const string CampNorth = "fixture-camp-north", CampSouth = "fixture-camp-south", Field = "fixture-field", Service = "fixture-service";
     const string Infantry = "infantry", Carried = "fixture-carried-item";
+    const string FormationNorthA = "fixture-formation-north-a", FormationNorthB = "fixture-formation-north-b",
+        FormationSouth = "fixture-formation-south";
 
     static Content Catalogue(string? key = null, Gdd03DesignValue? replacement = null, string ruleset = SaveGame.Gdd03Ruleset)
     {
@@ -44,7 +60,10 @@ public class Gdd03BasicTrainingFixtureTests
         new[] { new PopulationTarget(CampNorth, PopulationAssignmentKind.Course, "north", 3),
                 new PopulationTarget(CampSouth, PopulationAssignmentKind.Course, "south", 3),
                 new PopulationTarget(Field, PopulationAssignmentKind.Work, "north"),
-                new PopulationTarget(Service, PopulationAssignmentKind.ActiveService, "north") },
+                new PopulationTarget(Service, PopulationAssignmentKind.ActiveService, "north"),
+                new PopulationTarget(FormationNorthA, PopulationAssignmentKind.ActiveService, "north"),
+                new PopulationTarget(FormationNorthB, PopulationAssignmentKind.ActiveService, "north"),
+                new PopulationTarget(FormationSouth, PopulationAssignmentKind.ActiveService, "south") },
         Array.Empty<string>(), new[] { Infantry });
 
     static PopulationUnit Person(PopulationStatus status = PopulationStatus.FreeCivilian, string region = "north",
@@ -67,8 +86,14 @@ public class Gdd03BasicTrainingFixtureTests
     }
     static Gdd03FixtureMilitaryCamp[] Camps(bool northOperating = true) => new[] {
         new Gdd03FixtureMilitaryCamp(CampNorth, "north", northOperating), new Gdd03FixtureMilitaryCamp(CampSouth, "south", true) };
-    static Gdd03BasicTrainingFixture Fixture(Content c, GameState s, int spare = 10, decimal money = 10m, bool northOperating = true)
-        => new(c, s, Camps(northOperating), spare, money);
+    static Gdd03FixtureFormation[] Formations() => new[] {
+        new Gdd03FixtureFormation(FormationNorthA, "north"), new Gdd03FixtureFormation(FormationNorthB, "north"),
+        new Gdd03FixtureFormation(FormationSouth, "south") };
+    static Gdd03BasicTrainingFixture Fixture(Content c, GameState s, int spare = 10, decimal money = 10m, bool northOperating = true,
+        Gdd03FixtureFormation[]? formations = null)
+        => new(c, s, Camps(northOperating), formations ?? Formations(), spare, money);
+    static int[] Soldiers(GameState s, string formation) => s.PopulationLedger.Units
+        .Where(p => p.Status == PopulationStatus.ActiveSoldier && p.Assignment.Target == formation).Select(p => p.Id).ToArray();
 
     static int Issued(GameState s) => s.PopulationLedger.Units.Count(p => p.Equipment.MilitaryId != null);
     static string Snapshot(GameState s, Gdd03BasicTrainingFixture f)
@@ -237,10 +262,11 @@ public class Gdd03BasicTrainingFixtureTests
     }
 
     // R-TRAIN-001 (docs/rules/mvp.md): "counting the turn it was ordered in"; content/gdd03-balance.yaml:311-314
-    // `military.basic_turns` [3]. The enrolment month is course turn 1, each month ordinal counts once, and the turn that
-    // would complete the course is Deferred (completion into a formation is not in this slice). The issued item stays on the
-    // record throughout.
-    [Fact] public void TheEnrolmentMonthCountsAndCompletionIsDeferred()
+    // `military.basic_turns` [3]. The enrolment month is course turn 1 and each month ordinal counts once. The month that
+    // counts the last course turn graduates the record (Q43(b), R-TRAIN-003, R-UNIT-003): the same id, in place, becomes an
+    // active soldier of a formation in the camp's region, keeping its issued item; nothing is charged or refunded, and no
+    // person is created.
+    [Fact] public void TheEnrolmentMonthCountsAndTheLastTurnGraduates()
     {
         var c = Catalogue(); var s = State(c); var f = Fixture(c, s); var l = s.PopulationLedger;
         f.Start(new[] { 0 }, CampNorth, 4);
@@ -251,23 +277,48 @@ public class Gdd03BasicTrainingFixtureTests
         Unchanged(s, f, () => f.Advance(0, 3), typeof(ArgumentException));
         f.Advance(0, 5);
         Assert.Equal(2, l.Get(0).Assignment.ProgressTicks);
-        Unchanged(s, f, () => f.Advance(0, 6), typeof(NotSupportedException), "Deferred:");
         Assert.Equal(PopulationStatus.Trainee, l.Get(0).Status);
-        Assert.Equal(item, l.Get(0).Equipment.MilitaryId);
+        var before = l.Get(0); int count = l.Units.Count, next = l.NextPopulationId;
+        int spare = f.SpareArms; decimal money = f.Money, debt = f.Debt;
+
+        f.Advance(0, 6);
+
+        var p = l.Get(0);
+        Assert.Equal(PopulationStatus.ActiveSoldier, p.Status);
+        Assert.Equal(PopulationAssignmentKind.ActiveService, p.Assignment.Kind);
+        Assert.Equal(FormationNorthA, p.Assignment.Target);
+        Assert.Equal(0, p.Assignment.ProgressTicks); Assert.Null(p.Assignment.TeacherId);
+        Assert.Equal(item, p.Equipment.MilitaryId); Assert.True(p.Equipment.MilitaryPaid);
+        Assert.Equal("", p.Qualification);
+        Assert.Same(before.Location, p.Location);
+        Assert.Equal(before.Equipment.ToolsId, p.Equipment.ToolsId); Assert.Equal(before.Profession, p.Profession);
+        Assert.Equal(before.Tier, p.Tier); Assert.Equal(before.WorkXp, p.WorkXp); Assert.Equal(before.CombatXp, p.CombatXp);
+        Assert.Equal(before.ReceptionTicks, p.ReceptionTicks);
+        Assert.Equal(spare, f.SpareArms); Assert.Equal(money, f.Money); Assert.Equal(debt, f.Debt);
+        Assert.Equal(count, l.Units.Count); Assert.Equal(next, l.NextPopulationId);
+        Unchanged(s, f, () => f.Advance(0, 7), typeof(ArgumentException)); // a graduate is not a trainee
         Unchanged(s, f, () => f.Advance(1, 6), typeof(ArgumentException)); // never started
         l.Reconcile();
     }
 
     // content/gdd03-balance.yaml:311-314 `military.basic_turns` [3], read from the catalogue, not a literal: with a synthetic
-    // 2 or 4, the enrolment month and every later month count until the turn that would reach that value, which is Deferred.
+    // 2 or 4, the enrolment month and every later month count, the record staying a trainee, until the month that reaches
+    // that value, which graduates it.
     [Theory, InlineData(2), InlineData(4)]
-    public void TheCompletionTurnComesFromTheCatalogue(int turns)
+    public void TheGraduationTurnComesFromTheCatalogue(int turns)
     {
         var c = Catalogue("military.basic_turns", Agreed(turns)); var s = State(c); var f = Fixture(c, s); var l = s.PopulationLedger;
         f.Start(new[] { 0 }, CampNorth, 0);
-        for (int month = 0; month < turns - 1; month++) f.Advance(0, month);
+        for (int month = 0; month < turns - 1; month++)
+        {
+            f.Advance(0, month);
+            Assert.Equal(PopulationStatus.Trainee, l.Get(0).Status);
+        }
         Assert.Equal(turns - 1, l.Get(0).Assignment.ProgressTicks);
-        Unchanged(s, f, () => f.Advance(0, turns - 1), typeof(NotSupportedException), "Deferred:");
+        f.Advance(0, turns - 1);
+        Assert.Equal(PopulationStatus.ActiveSoldier, l.Get(0).Status);
+        Assert.Equal(FormationNorthA, l.Get(0).Assignment.Target);
+        l.Reconcile();
     }
 
     // R-MONEY-003 (docs/rules/mvp.md): "A shortfall changes nothing but the Treasury and the debt, and a refused order
@@ -303,7 +354,8 @@ public class Gdd03BasicTrainingFixtureTests
                 () => f.Start(new[] { 1 }, CampNorth, 0),          // one issue, the last spare
                 () => f.Start(new[] { 2 }, CampSouth, 1),          // wrong region: refused
                 () => f.Advance(0, 0), () => f.Advance(0, 0),      // second count refused
-                () => f.Advance(0, 1), () => f.Advance(0, 2),      // completion Deferred
+                () => f.Advance(0, 1), () => f.Advance(0, 2),      // 0 graduates, keeping its item
+                () => f.Advance(0, 3),                             // a graduate: refused
                 () => f.Advance(3, 1),
             };
             int accepted = 0;
@@ -314,9 +366,12 @@ public class Gdd03BasicTrainingFixtureTests
                 Assert.Equal(units, s.PopulationLedger.Units.Count);
                 s.PopulationLedger.Reconcile();
             }
-            Assert.Equal(6, accepted);
+            Assert.Equal(7, accepted);
             Assert.Equal(0, f.SpareArms);
             Assert.Equal(1.25m, f.Debt); // 4 courses x 0.5 = 2, of which 0.75 was in hand
+            Assert.Equal(PopulationStatus.ActiveSoldier, s.PopulationLedger.Get(0).Status);
+            Assert.Equal(new[] { 0 }, Soldiers(s, FormationNorthA));
+            Assert.Equal(Gdd03BasicTrainingFixture.IssuedPrefix + "0", s.PopulationLedger.Get(0).Equipment.MilitaryId);
         }
         finally { CultureInfo.CurrentCulture = saved; }
     }
@@ -353,22 +408,27 @@ public class Gdd03BasicTrainingFixtureTests
         foreach (var identity in new[] { SaveGame.LegacyRuleset, SaveGame.GddRuleset })
         {
             var c = Catalogue(ruleset: identity); var s = new GameState(c); var before = s.Describe();
-            Assert.Throws<InvalidOperationException>(() => new Gdd03BasicTrainingFixture(c, s, Camps(), 1, 1m));
+            Assert.Throws<InvalidOperationException>(() => new Gdd03BasicTrainingFixture(c, s, Camps(), Formations(), 1, 1m));
             Assert.Equal(before, s.Describe());
         }
         var g = Catalogue();
-        Assert.Throws<InvalidOperationException>(() => new Gdd03BasicTrainingFixture(g, new GameState(g), Camps(), 1, 1m));
+        Assert.Throws<InvalidOperationException>(() => new Gdd03BasicTrainingFixture(g, new GameState(g), Camps(), Formations(), 1, 1m));
         var state = State(g);
-        foreach (var key in new[] { "military.camp_capacity", "military.basic_turns", "military.issue_arms", "military.training_money" })
+        foreach (var key in new[] { "military.camp_capacity", "military.basic_turns", "military.issue_arms", "military.training_money", "military.active_money" })
             foreach (var replacement in new[] { null, Deferred() })
-                Assert.Throws<ContentException>(() => new Gdd03BasicTrainingFixture(Catalogue(key, replacement), state, Camps(), 1, 1m));
-        Assert.Throws<ContentException>(() => new Gdd03BasicTrainingFixture(Catalogue("military.issue_arms", Agreed(2)), state, Camps(), 1, 1m));
-        Assert.Throws<ContentException>(() => new Gdd03BasicTrainingFixture(Catalogue("military.repeat_issue", Agreed(1)), state, Camps(), 1, 1m));
-        Assert.Throws<ArgumentException>(() => new Gdd03BasicTrainingFixture(g, state, Camps(), -1, 1m));
-        Assert.Throws<ArgumentException>(() => new Gdd03BasicTrainingFixture(g, state, Camps(), 1, -1m));
-        Assert.Throws<ArgumentException>(() => new Gdd03BasicTrainingFixture(g, state, Camps().Concat(Camps()), 1, 1m));
+                Assert.Throws<ContentException>(() => new Gdd03BasicTrainingFixture(Catalogue(key, replacement), state, Camps(), Formations(), 1, 1m));
+        Assert.Throws<ContentException>(() => new Gdd03BasicTrainingFixture(Catalogue("military.issue_arms", Agreed(2)), state, Camps(), Formations(), 1, 1m));
+        Assert.Throws<ContentException>(() => new Gdd03BasicTrainingFixture(Catalogue("military.repeat_issue", Agreed(1)), state, Camps(), Formations(), 1, 1m));
+        Assert.Throws<ArgumentException>(() => new Gdd03BasicTrainingFixture(g, state, Camps(), Formations(), -1, 1m));
+        Assert.Throws<ArgumentException>(() => new Gdd03BasicTrainingFixture(g, state, Camps(), Formations(), 1, -1m));
+        Assert.Throws<ArgumentException>(() => new Gdd03BasicTrainingFixture(g, state, Camps().Concat(Camps()), Formations(), 1, 1m));
         Assert.Throws<ArgumentException>(() => new Gdd03FixtureMilitaryCamp(" ", "north", true));
         Assert.Throws<ArgumentException>(() => new Gdd03FixtureMilitaryCamp(CampNorth, "", true));
+        Assert.Throws<ArgumentException>(() => new Gdd03BasicTrainingFixture(g, state, Camps(), Formations().Concat(Formations()), 1, 1m));
+        Assert.Throws<ArgumentException>(() => new Gdd03BasicTrainingFixture(g, state, Camps(),
+            new[] { new Gdd03FixtureFormation(CampNorth, "north") }, 1, 1m));
+        Assert.Throws<ArgumentException>(() => new Gdd03FixtureFormation(" ", "north"));
+        Assert.Throws<ArgumentException>(() => new Gdd03FixtureFormation(FormationNorthA, ""));
     }
 
     // docs/GDD.md:372: "Arms return to the pool"; R-ARMS-003 (docs/rules/mvp.md): "cancelling the cohort (R-TRAIN-002)
@@ -594,5 +654,221 @@ public class Gdd03BasicTrainingFixtureTests
         Assert.Equal(Carried + "-0", l.Get(0).Equipment.MilitaryId);
         Assert.Equal(5, f.SpareArms);
         l.Reconcile();
+    }
+
+    static void Graduate(Gdd03BasicTrainingFixture f, int id, int enrolment, int turns = 3)
+    {
+        for (int month = enrolment; month < enrolment + turns; month++) f.Advance(id, month);
+    }
+
+    // R-UNIT-003 (docs/rules/mvp.md:251): "A finished recruit cohort becomes exactly one Israeli infantry formation ... with
+    // `Strength` equal to the cohort's `Count` in population units"; the live path makes one unit per cohort with
+    // `strength: k.Count` (sim/Statecraft.Sim/Training.cs:244-246). 53's maintainer call: one Start order is one cohort and
+    // one formation. Two orders in the same camp and month are two cohorts, so two formations; a carried item stays on its
+    // record and the spare stock is unchanged by graduation.
+    [Fact] public void AStartOrderGraduatesAsOneFormationWithItsCountAsStrength()
+    {
+        var c = Catalogue(); var s = State(c); var f = Fixture(c, s, spare: 10); var l = s.PopulationLedger;
+        f.Start(new[] { 0, 1, 2 }, CampNorth, 0);
+        f.Start(new[] { 3 }, CampNorth, 0);
+        Assert.Equal(7, f.SpareArms);
+        foreach (var id in new[] { 0, 1, 2, 3 }) Graduate(f, id, 0);
+
+        Assert.Equal(new[] { 0, 1, 2 }, Soldiers(s, FormationNorthA));
+        Assert.Equal(new[] { 3 }, Soldiers(s, FormationNorthB));
+        Assert.Equal(Carried, l.Get(3).Equipment.MilitaryId);
+        Assert.Equal(7, f.SpareArms);
+        l.Reconcile();
+    }
+
+    // 53's maintainer call: the cohort is the Start order, so a member whose last course turn counts in a later month still
+    // joins the formation its cohort already graduated into, not a new one.
+    [Fact] public void ALateMemberJoinsItsCohortsFormation()
+    {
+        var c = Catalogue(); var s = State(c); var f = Fixture(c, s);
+        f.Start(new[] { 0, 1 }, CampNorth, 0);
+        Graduate(f, 0, 0);
+        f.Advance(1, 0); f.Advance(1, 1);
+        Assert.Equal(new[] { 0 }, Soldiers(s, FormationNorthA));
+        f.Advance(1, 4);
+        Assert.Equal(new[] { 0, 1 }, Soldiers(s, FormationNorthA));
+        Assert.Empty(Soldiers(s, FormationNorthB));
+        s.PopulationLedger.Reconcile();
+    }
+
+    // R-TRAIN-002 (docs/rules/mvp.md:169): "A cohort that does not exist, or has finished, is refused with the state unchanged."
+    // A graduate cannot be cancelled or advanced, and cannot take basic training again (#1699 Done when row 2: "a
+    // basic-training order for an already qualified soldier is refused (it cannot be used to avoid active upkeep)"): Start
+    // takes only free civilians.
+    [Fact] public void AGraduateIsRefusedCancelAdvanceAndBasicTraining()
+    {
+        var c = Catalogue(); var s = State(c); var f = Fixture(c, s);
+        f.Start(new[] { 0 }, CampNorth, 0);
+        Graduate(f, 0, 0);
+        Unchanged(s, f, () => f.Cancel(0), typeof(ArgumentException));
+        Unchanged(s, f, () => f.Advance(0, 3), typeof(ArgumentException));
+        var ex = Unchanged(s, f, () => f.Start(new[] { 0 }, CampNorth, 3), typeof(ArgumentException));
+        Assert.Contains("is not a civilian without a job", ex.Message, StringComparison.Ordinal);
+    }
+
+    // R-TRAIN-002 and docs/GDD.md:372 (cancel); R-UNIT-003 (strength is the cohort's count). A cancelled trainee is out of its
+    // course and never graduates; the rest of its cohort graduates without it. A cohort cancelled whole claims no formation,
+    // so the next cohort in that region still finds one.
+    [Fact] public void ACancelledTraineeNeverGraduates()
+    {
+        var c = Catalogue(); var s = State(c); var f = Fixture(c, s); var l = s.PopulationLedger;
+        f.Start(new[] { 0, 1 }, CampNorth, 0);
+        f.Advance(0, 0); f.Advance(0, 1); f.Advance(1, 0); f.Advance(1, 1);
+        f.Cancel(1);
+        Unchanged(s, f, () => f.Advance(1, 2), typeof(ArgumentException));
+        f.Advance(0, 2);
+        Assert.Equal(new[] { 0 }, Soldiers(s, FormationNorthA));
+        Assert.Equal(PopulationStatus.FreeCivilian, l.Get(1).Status);
+
+        f.Start(new[] { 5 }, CampSouth, 0);
+        f.Cancel(5);
+        f.Start(new[] { 5 }, CampSouth, 1);
+        Graduate(f, 5, 1);
+        Assert.Equal(new[] { 5 }, Soldiers(s, FormationSouth));
+        l.Reconcile();
+    }
+
+    // 53's maintainer call: formations are "pre-bound, empty ActiveService targets supplied by the tests". A cohort takes the
+    // first one in its camp's region that is neither claimed nor serving anyone; with none, the graduating month is refused
+    // with the state unchanged and the trainee keeps its course.
+    [Fact] public void GraduationNeedsAFreeFormationInTheCampsRegion()
+    {
+        var c = Catalogue(); var s = State(c); var l = s.PopulationLedger;
+        var f = Fixture(c, s, formations: new[] { new Gdd03FixtureFormation(Service, "north"), new Gdd03FixtureFormation(FormationSouth, "south") });
+        f.Start(new[] { 0 }, CampNorth, 0);
+        f.Advance(0, 0); f.Advance(0, 1);
+        Unchanged(s, f, () => f.Advance(0, 2), typeof(ArgumentException)); // Service already holds soldier 8
+        Assert.Equal(PopulationStatus.Trainee, l.Get(0).Status);
+        Assert.Equal(2, l.Get(0).Assignment.ProgressTicks);
+
+        var s2 = State(c); var f2 = Fixture(c, s2, formations: new[] { new Gdd03FixtureFormation(FormationNorthA, "north") });
+        f2.Start(new[] { 0 }, CampNorth, 0);
+        f2.Start(new[] { 1 }, CampNorth, 0);
+        Graduate(f2, 0, 0);
+        f2.Advance(1, 0); f2.Advance(1, 1);
+        Unchanged(s2, f2, () => f2.Advance(1, 2), typeof(ArgumentException)); // its region's only formation is taken
+        Assert.Equal(PopulationStatus.Trainee, s2.PopulationLedger.Get(1).Status);
+    }
+
+    // 27M-8 (docs/GDD.md:374): "A formation pays military upkeep from the turn it graduates"; R-UNIT-010 (docs/rules/mvp.md:265)
+    // "including a formation that graduated this turn"; `military.active_money` [0.05]. Nothing is paid before graduation; the
+    // graduation month pays, and so does every later month.
+    [Fact] public void AFormationPaysUpkeepFromItsGraduationMonth()
+    {
+        var c = Catalogue(); var s = State(c); var f = Fixture(c, s, money: 10m);
+        f.Start(new[] { 0 }, CampNorth, 4);
+        Assert.Equal(9.5m, f.Money);
+        f.Advance(0, 4); f.PayUpkeep(4);
+        f.Advance(0, 5); f.PayUpkeep(5);
+        Assert.Equal(9.5m, f.Money);
+        f.Advance(0, 6); f.PayUpkeep(6);
+        Assert.Equal(9.45m, f.Money);
+        f.PayUpkeep(7);
+        Assert.Equal(9.4m, f.Money); Assert.Equal(0m, f.Debt);
+    }
+
+    // R-UNIT-010 (docs/rules/mvp.md:265): "IL 0.05m per formation per turn, independent of strength". A formation of three and
+    // a formation of one pay 0.05 each.
+    [Fact] public void UpkeepIsPerFormationNotPerSoldier()
+    {
+        var c = Catalogue(); var s = State(c); var f = Fixture(c, s, money: 10m);
+        f.Start(new[] { 0, 1, 2 }, CampNorth, 0);
+        f.Start(new[] { 5 }, CampSouth, 0);
+        foreach (var id in new[] { 0, 1, 2, 5 }) Graduate(f, id, 0);
+        Assert.Equal(8m, f.Money);
+        f.PayUpkeep(2);
+        Assert.Equal(7.9m, f.Money);
+    }
+
+    // #1699 body: "trainees and captured units pay none"; 53's maintainer call: only formations this fixture graduated pay.
+    // Trainees pay nothing, and the active soldier 8 of a formation this fixture did not make is not charged here.
+    [Fact] public void TraineesAndOtherFormationsPayNoUpkeep()
+    {
+        var c = Catalogue(); var s = State(c); var f = Fixture(c, s, money: 10m);
+        f.Start(new[] { 0, 1 }, CampNorth, 0);
+        f.Advance(0, 0); f.Advance(1, 0);
+        f.PayUpkeep(0);
+        Assert.Equal(9m, f.Money); Assert.Equal(0m, f.Debt);
+        Assert.Equal(PopulationStatus.ActiveSoldier, s.PopulationLedger.Get(8).Status);
+    }
+
+    // R-MONEY-003 (docs/rules/mvp.md:409): the Treasury stops at 0 and the shortfall is borrowed; R-UNIT-010: "R-MONEY-003
+    // borrows a shortfall; no strength is removed or Arms consumed for upkeep".
+    [Fact] public void UpkeepBorrowsTheShortfall()
+    {
+        var c = Catalogue(); var s = State(c); var f = Fixture(c, s, spare: 4, money: 0.52m);
+        f.Start(new[] { 0 }, CampNorth, 0);
+        Graduate(f, 0, 0);
+        var ledger = s.Describe();
+        f.PayUpkeep(2);
+        Assert.Equal(0m, f.Money); Assert.Equal(0.03m, f.Debt);
+        Assert.Equal(3, f.SpareArms);
+        Assert.Equal(ledger, s.Describe());
+    }
+
+    // Each month's upkeep is paid once and never for an earlier month, like Advance's month ordinals.
+    [Fact] public void AMonthIsPaidOnceAndInOrder()
+    {
+        var c = Catalogue(); var s = State(c); var f = Fixture(c, s, money: 10m);
+        f.Start(new[] { 0 }, CampNorth, 0);
+        Graduate(f, 0, 0);
+        f.PayUpkeep(3);
+        Unchanged(s, f, () => f.PayUpkeep(3), typeof(ArgumentException));
+        Unchanged(s, f, () => f.PayUpkeep(2), typeof(ArgumentException));
+        Unchanged(s, f, () => f.PayUpkeep(-1), typeof(ArgumentException));
+        Assert.Equal(9.45m, f.Money);
+    }
+
+    // 53's maintainer call (Q5): within a month the order is Advance, then PayUpkeep, so 27M-8 always holds. In that order the
+    // graduation month pays. A graduating Advance for a month whose upkeep already ran is a caller error: it is refused with
+    // nothing changed, and the trainee graduates in a later month, which then pays.
+    [Fact] public void AGraduationAfterThatMonthsUpkeepIsRefused()
+    {
+        var c = Catalogue(); var s = State(c); var f = Fixture(c, s, money: 10m);
+        f.Start(new[] { 0 }, CampNorth, 0);
+        f.Advance(0, 0); f.Advance(0, 1); f.Advance(0, 2);
+        f.PayUpkeep(2);
+        Assert.Equal(9.45m, f.Money);
+
+        var s2 = State(c); var f2 = Fixture(c, s2, money: 10m); var l = s2.PopulationLedger;
+        f2.Start(new[] { 0, 1 }, CampNorth, 0);
+        f2.Advance(0, 0); f2.Advance(0, 1); f2.Advance(1, 0);
+        f2.PayUpkeep(2);
+        Unchanged(s2, f2, () => f2.Advance(0, 2), typeof(ArgumentException));
+        Assert.Equal(PopulationStatus.Trainee, l.Get(0).Status);
+        f2.Advance(1, 2); // not graduating (course turn 2): allowed
+        Assert.Equal(2, l.Get(1).Assignment.ProgressTicks);
+        f2.Advance(0, 3);
+        Assert.Equal(PopulationStatus.ActiveSoldier, l.Get(0).Status);
+        f2.PayUpkeep(3);
+        Assert.Equal(8.95m, f2.Money);
+    }
+
+    // `military.active_money` is read from the catalogue, not a literal (a synthetic 0 and 0.2); a cost that cannot be
+    // represented throws before anything is written (R-MONEY-003, "a refused order changes nothing").
+    [Theory, InlineData("0"), InlineData("0.2")]
+    public void UpkeepReadsTheCatalogue(string rate)
+    {
+        var value = decimal.Parse(rate, CultureInfo.InvariantCulture);
+        var c = Catalogue("military.active_money", Agreed(value)); var s = State(c); var f = Fixture(c, s, money: 10m);
+        f.Start(new[] { 0 }, CampNorth, 0);
+        Graduate(f, 0, 0);
+        f.PayUpkeep(2);
+        Assert.Equal(9.5m - value, f.Money);
+    }
+
+    [Fact] public void AnUpkeepThatOverflowsChangesNothing()
+    {
+        var c = Catalogue("military.active_money", Agreed(decimal.MaxValue)); var s = State(c); var f = Fixture(c, s, money: 10m);
+        f.Start(new[] { 0 }, CampNorth, 0);
+        f.Start(new[] { 5 }, CampSouth, 0);
+        Graduate(f, 0, 0); Graduate(f, 5, 0);
+        Unchanged(s, f, () => f.PayUpkeep(2), typeof(OverflowException));
+        Assert.Equal(9m, f.Money); Assert.Equal(0m, f.Debt);
     }
 }

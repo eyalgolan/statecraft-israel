@@ -21,6 +21,22 @@ namespace Statecraft.Sim
         }
     }
 
+    /// <summary>A synthetic formation supplied by a test: an ActiveService target already bound in the ledger fixture, and its
+    /// region. A cohort graduates into the first free one in its camp's region (#1699; 53's maintainer call, 3 November 2026:
+    /// "pre-bound, empty ActiveService targets supplied by the tests; no ledger API change").</summary>
+    internal sealed class Gdd03FixtureFormation
+    {
+        internal string Id { get; }
+        internal string Region { get; }
+        internal Gdd03FixtureFormation(string id, string region)
+        {
+            if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(region))
+                throw new ArgumentException("A formation needs its own ActiveService target id and a region.");
+            PopulationText.ValidateText(id); PopulationText.ValidateText(region);
+            Id = id; Region = region;
+        }
+    }
+
     /// <summary>#1699 first slice: a recruit's basic training starts on the #1689 population ledger and holds its issued
     /// Arms (ARMS-1, ARMS-2, 27M-7, R-TRAIN-001, R-ARMS-003), synthetic fixtures only. No command, save, loader, resolver,
     /// Food or UI caller. Like <see cref="Gdd03ProjectBuildFixture"/> it owns its spare Arms, Money and Debt, so the ledger
@@ -48,7 +64,7 @@ namespace Statecraft.Sim
         internal decimal Debt { get; private set; }
 
         internal Gdd03BasicTrainingFixture(Content content, GameState state, IEnumerable<Gdd03FixtureMilitaryCamp> camps,
-            int spareArms, decimal money)
+            IEnumerable<Gdd03FixtureFormation> formations, int spareArms, decimal money)
         {
             if (!content.UsesPopulationLedger || !state.UsesPopulationLedger || !state.PopulationLedger.IsInitialized)
                 throw new InvalidOperationException("Basic training requires an initialized gdd-0.3 synthetic fixture.");
@@ -194,5 +210,7 @@ namespace Statecraft.Sim
             SpareArms = spare;
             issued.Remove(traineeId); months.Remove(traineeId);
         }
+
+        internal void PayUpkeep(int monthOrdinal) => throw new NotImplementedException();
     }
 }
