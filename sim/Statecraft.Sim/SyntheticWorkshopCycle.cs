@@ -6,7 +6,8 @@ namespace Statecraft.Sim
     // Pricing categories only, NOT an eligibility matrix or a profession/qualification mutation.
     public enum SyntheticWorkshopTier { Ordinary, Novice, Apprentice, Expert }
 
-    /// <summary>Explicit opt-in synthetic rules snapshot; no loader registration or game-loop caller.</summary>
+    /// <summary>The workshop rules snapshot from the gdd-0.3 catalogue: staffed turns per Arms and the price per worker tier.
+    /// Workshops.Produce reads it for the live cycle (R-ARMS-006); SyntheticWorkshopCycle below stays test-only.</summary>
     public sealed class SyntheticWorkshopRules
     {
         public int StaffedTurns { get; }

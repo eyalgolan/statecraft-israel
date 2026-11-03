@@ -180,6 +180,95 @@ public class TurnReportTests
         }
     }
 
+    /// <summary>Each settlement's Hebrew name by id, from the map's own rows.</summary>
+    static Dictionary<string, string> NamesHe() => Statecraft.Game.Map.SettlementPlacer.Parse(
+        File.ReadAllText(Path.Combine(Paths.Content, "map", "settlements_1948.yaml"))).ToDictionary(s => s.Id, s => s.NameHe);
+
+    /// <summary>A kit whose opening turn runs as usual and whose result then gets <paramref name="added"/> through
+    /// Session.Last's private setter (as AnAttackThatNamesNoAttackersGivesNoLine does), before the report reads it. The real
+    /// content is gdd-0.1, which has no workshop, so the workshop causes are added; that the sim gives them under gdd-0.3 only
+    /// is ArmsWorkshopTests.Gdd01RunsNoWorkshopCycle's.</summary>
+    static Kit EndTurnWith(UiText text, IReadOnlyList<Cause> added, IReadOnlyDictionary<string, string> namesHe)
+    {
+        var k = new Kit(text, (g, cmds) =>
+        {
+            var r = g.EndTurn(cmds);
+            var result = new StepResult(r.State, r.Why.Concat(added).ToList(), r.Rejected);
+            typeof(GameSession).GetProperty(nameof(GameSession.Last))!.SetValue(g, result);
+            return result;
+        });
+        k.Report.TownNamesHe = namesHe;
+        k.Bridge.EndTurn();
+        return k;
+    }
+
+    static Cause Made(string city) => new Cause("city", city, 1, city + ": an arms workshop made 1 Arms", key: CauseKeys.WorkshopArms);
+    static Cause Paused(string city, string why) => new Cause("city", city, 0, city + ": an arms workshop waits", key: CauseKeys.WorkshopPaused, args: new[] { why });
+
+    /// <summary>#1701 A1 (owner, 2 November 2026: "Yes, in the panel (Recommended)"; the option: "The turn-report panel shows
+    /// 'Workshop in &lt;city&gt;: +1 Arms' and 'Workshop in &lt;city&gt; paused: debt ceiling'."): the sim's workshop causes
+    /// (R-ARMS-006) get their own row after the stocks, in the sim's order, the city named in the player's language. A city
+    /// with one such cause keeps the A1 wording. A no-worker pause is not one of the ruled lines and stays on the Why screen.
+    /// The expected lines are literals in both languages, not the keys formatted again.</summary>
+    [Test]
+    public void TheWorkshopsArmsAndCeilingPauseAreReportedInBothLanguages()
+    {
+        var namesHe = NamesHe();
+        var added = new[] { Made("tel_aviv"), Paused("haifa", Workshops.NoWorker), Paused("haifa", Workshops.DebtCeiling) };
+        foreach (var hebrew in new[] { false, true })
+        {
+            using var k = EndTurnWith(hebrew ? He : En, added, namesHe);
+            k.Q("turn-report-" + TurnReportPresenter.WorkshopRow);   // asserts the row's own name, which the no-row test queries
+            Assert.AreEqual(hebrew ? "סדנאות נשק" : "Arms workshops", k.Ui.Q<Label>("turn-report-heading-" + TurnReportPresenter.WorkshopRow).text);
+            CollectionAssert.AreEqual(hebrew
+                    ? new[] { "סדנת נשק (תל אביב): תוספת נשק: 1", "סדנת נשק (חיפה) בהמתנה: תקרת החוב" }
+                    : new[] { "Workshop in Tel Aviv: +1 Arms", "Workshop in Haifa paused: debt ceiling" },
+                Causes(k.Ui, TurnReportPresenter.WorkshopRow), "the owner's ruled wording");
+        }
+    }
+
+    /// <summary>#1701 A1 follow-up (owner, 2 November 2026: "Combine per city (Recommended)"; the option: "'Workshops in Tel
+    /// Aviv (6): +6 Arms'; pauses likewise combined with a count."): a city's workshop Arms are one line with their count, and
+    /// so are its ceiling pauses, in the order each first appears among the sim's causes; a city with one keeps the A1 line.
+    /// The count is the number of the sim's causes, which each give 1 Arms (R-ARMS-006). Hebrew puts the count in brackets
+    /// after the city's name, as English does, and the Arms as "Label: N" (HE-04), each number between left-to-right marks
+    /// as UiText.Format puts it.</summary>
+    [Test]
+    public void AnotherWorkshopInTheSameCityJoinsItsLine()
+    {
+        var namesHe = NamesHe();
+        var added = new[]
+        {
+            Paused("haifa", Workshops.DebtCeiling), Made("tel_aviv"), Paused("haifa", Workshops.DebtCeiling), Made("haifa"),
+            Made("tel_aviv"), Made("tel_aviv"), Paused("haifa", Workshops.NoWorker),
+        };
+        foreach (var hebrew in new[] { false, true })
+        {
+            using var k = EndTurnWith(hebrew ? He : En, added, namesHe);
+            CollectionAssert.AreEqual(hebrew
+                    ? new[]
+                    {
+                        "סדנאות נשק (חיפה) (‎2‎) בהמתנה: תקרת החוב",
+                        "סדנאות נשק (תל אביב) (‎3‎): תוספת נשק: ‎3‎",
+                        "סדנת נשק (חיפה): תוספת נשק: 1",
+                    }
+                    : new[] { "Workshops in Haifa (2) paused: debt ceiling", "Workshops in Tel Aviv (3): +3 Arms", "Workshop in Haifa: +1 Arms" },
+                Causes(k.Ui, TurnReportPresenter.WorkshopRow));
+        }
+    }
+
+    /// <summary>#1701 A1: a turn whose only workshop cause is a no-worker pause (on the Why screen only) has no workshop row,
+    /// so the filter, not the content, keeps the row out.</summary>
+    [Test]
+    public void ANoWorkerPauseAloneGivesNoWorkshopRow()
+    {
+        using var k = EndTurnWith(En, new[] { Paused("haifa", Workshops.NoWorker) }, NamesHe());
+        Assert.IsTrue(k.Bridge.Session.Last!.Why.Any(w => w.Key == CauseKeys.WorkshopPaused), "the pause is in the turn");
+        Assert.IsNotEmpty(k.Ui.Q<ScrollView>("turn-report-rows").Children().ToList(), "the report has its other rows");
+        Assert.IsNull(k.Ui.Root.Q("turn-report-" + TurnReportPresenter.WorkshopRow), "no workshop row");
+        Assert.IsNull(k.Ui.Root.Q("turn-report-heading-" + TurnReportPresenter.WorkshopRow), "no workshop heading");
+    }
+
     /// <summary>#1297: a standing enemy attack (R-ENEMY-003) is reported on every turn it engages, not only on the turn it is
     /// ordered. The opening turn is set up as a later one: the Arab Liberation Army already attacks Golani's hex, which it keeps
     /// (no order is given this turn) and which engages in step 2 (R-COMBAT-002).</summary>

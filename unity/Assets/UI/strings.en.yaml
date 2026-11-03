@@ -418,6 +418,7 @@ why.cause.borrowed.project: "Borrowed {0} to build {1}"
 why.cause.borrowed.deport: "Borrowed {0} for the Deport of {1}"
 why.cause.borrowed.occupation: "Borrowed {0} for the occupation of {1}"
 why.cause.borrowed.event: "Borrowed {0} for {1}"
+why.cause.borrowed.workshop: "Borrowed {0} for an arms workshop cycle"
 why.cause.paid.corridor: "{0} {1} (to build a corridor segment)"
 why.cause.paid.arms: "{0} {1} (for Arms)"
 why.cause.paid.training: "{0} {1} (for training)"
@@ -429,6 +430,7 @@ why.cause.paid.yishuv: "{0} {1} (to build a yishuv)"
 why.cause.paid.project: "{0} {1} (to build {2})"
 why.cause.paid.occupation: "{0} {1} (for the occupation of {2})"
 why.cause.paid.map_action: "{0} {1} (to build {2})"
+why.cause.paid.workshop: "{0} {1} (for an arms workshop cycle)"
 # #2212: Money's Other line in the turn report and the meter tip, the causes left out after the two largest, summed.
 why.cause.money_other: "{0} {1} (other causes)"
 why.cause.fx_crisis_began: "Foreign currency reserves are exhausted"
@@ -494,6 +496,15 @@ report.enemy_move: "{0} moved to a new position"
 report.enemy_attack: "{0} launched an attack on one of your units"
 report.enemy_fortify: "{0} fortified its position"
 report.unit: "Force {0}"
+# The arms workshops' lines (#1701 A1; owner, 2 November 2026: "Yes, in the panel (Recommended)", whose option gave both
+# lines' wording): {0} the city's name. A no-worker pause is on the Why screen only.
+report.workshops: "Arms workshops"
+report.workshop_arms: "Workshop in {0}: +1 Arms"
+report.workshop_paused_debt: "Workshop in {0} paused: debt ceiling"
+# A city's workshop lines combined, for two or more (owner, 2 November 2026: "Combine per city (Recommended)", the option
+# "'Workshops in Tel Aviv (6): +6 Arms'; pauses likewise combined with a count."): {0} the city's name, {1} how many.
+report.workshop_arms_n: "Workshops in {0} ({1}): +{1} Arms"
+report.workshop_paused_debt_n: "Workshops in {0} ({1}) paused: debt ceiling"
 # The end screen (#812; D-H4): the sim's end report (EndReport.For, #810), formatted only. {0} the card's title, {1} the
 # player's date, {2} the historical date; the population's {1} is the date of its CBS anchor and {2} the anchor's count.
 end.title: "The game has ended"
@@ -1048,6 +1059,11 @@ why.cause.project_started: "{0}: {1} began, cost {2}"
 why.cause.project_cancelled: "{0}: {1} was cancelled; the Money spent is not returned"
 why.cause.project_completed: "{0}: {1} was finished"
 why.cause.arms_bought: "Bought {0} Arms, cost {1}"
+# The gdd-0.3 arms workshops (#1701; R-ARMS-005, R-ARMS-006).
+why.cause.workshop_workers: "{0}: arms workshops staffed: {1}"
+why.cause.workshop_arms: "{0}: an arms workshop made 1 Arms"
+why.cause.workshop_paused.no_worker: "{0}: an arms workshop has no worker without a job this month"
+why.cause.workshop_paused.debt_ceiling: "{0}: an arms workshop's next cycle waits: paying for it would take the debt past its ceiling"
 why.cause.food_harvest: "{0}: the plowed land yielded {1} units of Food"
 why.cause.food_shortage: "Food ran out: {0} of {1} units of the month's need went unmet"
 why.cause.food_without_imports: "No Food imported (foreign currency crisis): the stock fell to {0} units"

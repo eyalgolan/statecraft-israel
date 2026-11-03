@@ -74,6 +74,15 @@ namespace Statecraft.Sim
         /// city's jobs first (R-CRAFT-002), so only the employed beyond its craftsmen are civilians in work.</summary>
         public static int Idle(City city) => city.Civilians - Math.Max(0, city.Employed - city.Craftsmen);
 
+        /// <summary>R-TRAIN-001 with R-ARMS-005: <see cref="Idle(City)"/>, less the city's staffed arms workshops' workers, who
+        /// hold no job but are not idle (each one is a craftsman without a job first, then a civilian), as
+        /// <see cref="Cities.MaxWorkers(GameState, City)"/> takes them off the jobs. The same number where no workshop is
+        /// staffed (always, outside gdd-0.3).</summary>
+        public static int Idle(GameState s, City city) => Idle(city, city.Employed, Workshops.Staffed(s, city.Id));
+
+        static int Idle(City city, int employed, int staffed) =>
+            Math.Max(0, Math.Min(city.Civilians - Math.Max(0, employed - city.Craftsmen), city.Civilians + city.Craftsmen - employed - staffed));
+
         /// <summary>The groups the Train, Reinforce, ReassignCraftsmen and ReassignPioneers orders in <paramref name="pending"/>
         /// (this turn's queue) take from <paramref name="city"/>'s idle civilians, every track together (#1548; owner, 24 October
         /// 2026: "Yes, count them").</summary>
@@ -83,15 +92,16 @@ namespace Statecraft.Sim
 
         /// <summary>R-TRAIN-001 with R-CITY-001: the groups still free to train in <paramref name="city"/> once the orders in
         /// <paramref name="pending"/> (this turn's queue) have run: <see cref="Idle"/>, less every track's Train order there
-        /// and every queued reassignment (R-QUAL-004, R-QUAL-005), and less a pending AssignWorkers' rise in jobs. A count up to
+        /// and every queued reassignment (R-QUAL-004, R-QUAL-005), less a pending "job" AssignWorkers' rise in jobs, and less
+        /// a pending "workshop" AssignWorkers' rise in staffed arms workshops (R-ARMS-005). A count up to
         /// it keeps every one of those orders accepted, whatever order they run in. A pending CancelTraining is not counted, since it may run after the Train.</summary>
         public static int Available(GameState s, string city, IEnumerable<Command> pending)
         {
             var x = s.Cities[city];
             var list = pending as IReadOnlyCollection<Command> ?? pending.ToList();
-            var employed = Math.Max(x.Employed, list.OfType<AssignWorkers>().Where(w => w.City == city).Select(w => w.Count).DefaultIfEmpty(0).Max());
-            var ordinaryEmployed = Math.Max(0, employed - x.Craftsmen);
-            return Math.Max(0, x.Civilians - ordinaryEmployed - Ordered(city, list));
+            int Pending(string role, int now) =>
+                Math.Max(now, list.OfType<AssignWorkers>().Where(w => w.City == city && w.Role == role).Select(w => w.Count).DefaultIfEmpty(0).Max());
+            return Math.Max(0, Idle(x, Pending("job", x.Employed), Pending(Workshops.Role, Workshops.Staffed(s, city))) - Ordered(city, list));
         }
 
         /// <summary>R-TRAIN-001: <paramref name="count"/> of the city's civilians without work start training as
@@ -141,7 +151,7 @@ namespace Statecraft.Sim
             if (count < 1) return RefusedCount;
             var name = PlayerText.Settlement(c, city);
             if (!HasFacility(c, s, city, type.Facility)) return Refused(type.Facility == "military_camp" ? RefusedNoCamp : type.Facility == Industry ? RefusedNoIndustry : RefusedNoHakhshara, name);
-            var idle = Idle(x);
+            var idle = Idle(s, x);
             if (count > idle) return Refused(RefusedIdle, name, idle);
             // R-ARMS-003 (D-G6, Q-UNIT-3): a recruit group takes arms_per_recruit_group Arms when its training starts, a gun or
             // armoured car crew its type's training_arms (R-UNIT-008, Q-ARTY-3); a short stock refuses the order. Pioneer

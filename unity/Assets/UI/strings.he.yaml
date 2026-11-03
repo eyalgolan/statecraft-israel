@@ -454,6 +454,8 @@ why.cause.borrowed.project: "הלוואה של {0} לבניית {1}"
 why.cause.borrowed.deport: "הלוואה של {0} לגירוש ({1})"
 why.cause.borrowed.occupation: "הלוואה של {0} לעלות ההחזקה ({1})"
 why.cause.borrowed.event: "הלוואה של {0} עבור {1}"
+# The gdd-0.3 arms workshop's cycle (#1701, R-ARMS-006). Agent-drafted Hebrew; native review pending (#564).
+why.cause.borrowed.workshop: "הלוואה של {0} למחזור עבודה בסדנת נשק"
 # #2199: the why.cause.paid.* lines below are agent-drafted Hebrew, not part of #1642's owner review above. Each reuses
 # its why.cause.borrowed.* purpose phrase, except paid.occupation, which is newly worded. Native review pending (#564).
 why.cause.paid.corridor: "{0}: שינוי {1} (לבניית קטע של כביש או מסילה)"
@@ -469,6 +471,8 @@ why.cause.paid.occupation: "{0}: שינוי {1} (לעלות ההחזקה של {2
 # A map action's cost (#2199); {2} is an info.map_action.* noun, as in why.cause.map_borrowed. Agent-drafted Hebrew;
 # native review pending (#564).
 why.cause.paid.map_action: "{0}: שינוי {1} (לבניית {2})"
+# The gdd-0.3 arms workshop's cycle (#1701, R-ARMS-006). Agent-drafted Hebrew; native review pending (#564).
+why.cause.paid.workshop: "{0}: שינוי {1} (למחזור עבודה בסדנת נשק)"
 # #2212: Money's Other line in the turn report and the meter tip, the causes left out after the two largest, summed.
 # Agent-drafted Hebrew, not part of #1642's owner review; native review pending (#564).
 why.cause.money_other: "{0}: שינוי {1} (סיבות אחרות)"
@@ -542,6 +546,16 @@ report.enemy_move: "{0} עבר לעמדה חדשה"
 report.enemy_attack: "{0} פתח בהתקפה על אחת היחידות שלכם"
 report.enemy_fortify: "{0} התבצר בעמדתו"
 report.unit: "כוח {0}"
+# The arms workshops' lines (#1701 A1), {0} the city's name, in brackets so no prefix joins a name that may fall back to
+# English (HE-07); the Arms count as "Label: N" (HE-04). Agent-drafted Hebrew; native review pending (#564).
+report.workshops: "סדנאות נשק"
+report.workshop_arms: "סדנת נשק ({0}): תוספת נשק: 1"
+report.workshop_paused_debt: "סדנת נשק ({0}) בהמתנה: תקרת החוב"
+# A city's workshop lines combined, for two or more ("Combine per city", #1701): {0} the city's name, {1} how many, in
+# brackets after the name as in the EN lines; the Arms count as "Label: N" (HE-04). Agent-drafted Hebrew; native review
+# pending (#564).
+report.workshop_arms_n: "סדנאות נשק ({0}) ({1}): תוספת נשק: {1}"
+report.workshop_paused_debt_n: "סדנאות נשק ({0}) ({1}) בהמתנה: תקרת החוב"
 # The end screen (#812; D-H4): the sim's end report, formatted only. For the native reviewer (#564).
 end.title: "המשחק הסתיים"
 end.outcome.mvp_ended: "המשחק הגיע לתורו האחרון."
@@ -1167,6 +1181,11 @@ why.cause.project_started: "{0}: תחילת {1}, עלות {2}"
 why.cause.project_cancelled: "{0}: ביטול {1}; הכסף שהוצא לא יוחזר"
 why.cause.project_completed: "{0}: סיום {1}"
 why.cause.arms_bought: "נשק שנרכש: {0}, עלות {1}"
+# The gdd-0.3 arms workshops (#1701; R-ARMS-005, R-ARMS-006). Agent-drafted Hebrew; native review pending (#564).
+why.cause.workshop_workers: "{0}: סדנאות נשק מאוישות: {1}"
+why.cause.workshop_arms: "{0}: נשק שייצרה סדנת נשק: 1"
+why.cause.workshop_paused.no_worker: "{0}: לסדנת נשק אין החודש עובד ללא משרה"
+why.cause.workshop_paused.debt_ceiling: "{0}: המחזור הבא של סדנת נשק ממתין: תשלומו היה מעלה את החוב מעבר לתקרה"
 why.cause.food_harvest: "{0}: יחידות מזון שהניבה הקרקע החרושה: {1}"
 why.cause.food_shortage: "המזון אזל: מחסור של {0} מתוך {1} יחידות שנדרשו החודש"
 why.cause.food_without_imports: "לא יובא מזון (משבר מטבע חוץ): יחידות שנותרו במלאי: {0}"

@@ -142,7 +142,7 @@ namespace Statecraft.Sim
             var name = PlayerText.Settlement(c, city);
             var have = veteran ? x.Qualified.Veterans : x.Qualified.Halutzim.Count;
             if (count > have) return FormattableString.Invariant($"{name} has {have} qualified {(veteran ? "veteran pioneers" : "halutzim")}");
-            var idle = Training.Idle(x);
+            var idle = Training.Idle(s, x);   // R-ARMS-005: a staffed workshop's worker is not idle
             if (count > idle) return FormattableString.Invariant($"{name} has {idle} civilians without work");
             var hex = c.SettlementHexes.First(h => h.Id == city);   // every settlement has one (ValidateMap)
             var q = x.Qualified;
