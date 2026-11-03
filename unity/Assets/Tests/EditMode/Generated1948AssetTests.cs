@@ -60,9 +60,11 @@ public class Generated1948AssetTests
             var texture = material.mainTexture; Assert.IsNotNull(texture, receipt.id);
             string image = AssetDatabase.GetAssetPath(texture);
             Assert.AreEqual(receipt.embedded_image_sha256, Hash(Disk(image)), receipt.id);
-            Assert.AreEqual(receipt.embedded_dimensions[0], texture.width, receipt.id);
-            Assert.AreEqual(receipt.embedded_dimensions[1], texture.height, receipt.id);
             var ti = (TextureImporter)AssetImporter.GetAtPath(image);
+            // The source image's size, not the imported texture's, which the houses' WebGL cap (2048) shrinks under that target.
+            ti.GetSourceTextureWidthAndHeight(out int width, out int height);
+            Assert.AreEqual(receipt.embedded_dimensions[0], width, receipt.id);
+            Assert.AreEqual(receipt.embedded_dimensions[1], height, receipt.id);
             Assert.IsFalse(ti.crunchedCompression, image);
             Assert.AreEqual(TextureImporterCompression.Compressed, ti.textureCompression, image);
             Assert.GreaterOrEqual(ti.maxTextureSize, Math.Max(receipt.embedded_dimensions[0], receipt.embedded_dimensions[1]));

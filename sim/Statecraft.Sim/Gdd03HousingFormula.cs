@@ -2,8 +2,9 @@ using System;
 
 namespace Statecraft.Sim
 {
-    /// <summary>Unwired arithmetic for #1703 synthetic fixtures. No state, resident selection,
-    /// initial condition, snapshot timing, Money settlement or indicator commit.</summary>
+    /// <summary>#1703's housing arithmetic. <see cref="Evaluate"/> is the decimal form for synthetic fixtures;
+    /// <see cref="EvaluateTurn"/> is the live gdd-0.3 step in double. Neither holds state, selects residents, sets the
+    /// initial condition, settles Money or commits an indicator: Cities.UpdateCondition does.</summary>
     internal sealed class Gdd03HousingFormula
     {
         readonly decimal conditionMax, moneyThreshold, moneySlope, cohesionThreshold;
@@ -84,6 +85,27 @@ namespace Statecraft.Sim
                 * ((decimal)input.CohesionResidents / input.OwnPopulation)
                 * Math.Max(0m, (cohesionThreshold - after) / cohesionThreshold);
             return new Gdd03HousingResult(surcharge, overflow, unpaid, after, cohesion);
+        }
+
+        /// <summary>R-HOUSE-005's live step for one city (#1703; Cities.UpdateCondition): Evaluate's surcharge, overflow
+        /// and cohesion terms in the same order, with no upkeep (27M-17), in double. A city's condition, the Treasury and the
+        /// indicators are doubles, hashed as IEEE bits (docs/determinism.md), so the live step stays in double rather than
+        /// round-trip state through decimal; only the catalogue's one- and two-digit scalars are cast, as Workshops casts
+        /// its catalogue price.</summary>
+        internal (double Surcharge, double ConditionAfter, double Cohesion) EvaluateTurn(int residents, int ownPopulation,
+            int capacity, double condition)
+        {
+            if (residents < 0 || capacity < 0 || residents > ownPopulation)
+                throw new ArgumentOutOfRangeException(nameof(residents), "counts must be nonnegative; residents cannot exceed own population");
+            if (condition < 0.0 || condition > (double)conditionMax)
+                throw new ArgumentOutOfRangeException(nameof(condition), "condition must be within catalogue bounds");
+            var surcharge = residents * Math.Max(0.0, (double)moneyThreshold - condition) * (double)moneySlope;
+            var overflow = residents == 0 ? 0.0 : ((double)overflowPp / 100.0) * Math.Max(0, residents - capacity) / residents;
+            var after = Math.Max(0.0, Math.Min((double)conditionMax, condition - overflow));
+            var threshold = (double)cohesionThreshold;
+            var cohesion = ownPopulation == 0 ? 0.0 : (double)maxCohesionLoss
+                * ((double)residents / ownPopulation) * Math.Max(0.0, (threshold - after) / threshold);
+            return (surcharge, after, cohesion);
         }
 
         // Explicit single project-effect arithmetic; caller owns command/payment/application-once.

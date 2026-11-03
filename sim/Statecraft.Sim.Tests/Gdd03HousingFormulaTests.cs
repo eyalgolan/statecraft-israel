@@ -29,13 +29,13 @@ public class Gdd03HousingFormulaTests
         // R-HOUSE-001: catches moneyThreshold replaced by the shipped literal 0.50m.
         const decimal threshold = 0.70m;
         var f = FormulaWithSyntheticScalar("housing.money_threshold", threshold);
-        var expected = 10m * Math.Max(0m, threshold - 0.40m) * 1m;
+        var expected = 10m * Math.Max(0m, threshold - 0.40m) * 0.1m;   // the shipped money_slope, 0.1 since #1703 (owner, 2 November 2026)
         Assert.Equal(expected, f.Evaluate(Input(condition: 0.40m)).SurchargeMoney);
     }
 
     [Fact] public void SyntheticMoneySlopeComesFromSuppliedCatalogue()
     {
-        // R-HOUSE-001: catches moneySlope replaced by the shipped literal 1m.
+        // R-HOUSE-001: catches moneySlope replaced by the shipped literal 0.1m.
         const decimal slope = 2.5m;
         var f = FormulaWithSyntheticScalar("housing.money_slope", slope);
         var expected = 10m * Math.Max(0m, 0.50m - 0.40m) * slope;
@@ -102,7 +102,7 @@ public class Gdd03HousingFormulaTests
     {
         // R-HOUSE-001, R-HOUSE-002: price first, deteriorate once, return arithmetic only.
         var r = Formula().Evaluate(Input());
-        Assert.Equal(1m, r.SurchargeMoney);
+        Assert.Equal(0.1m, r.SurchargeMoney);   // 10 x 0.10 x money_slope 0.1 (#1703: "Scale it to unit size (Recommended)", owner, 2 November 2026; was 1)
         Assert.Equal(0.025m, r.OverflowConditionLoss);
         Assert.Equal(0.05m, r.UnpaidConditionLoss);
         Assert.Equal(0.325m, r.ConditionAfter);
@@ -111,7 +111,7 @@ public class Gdd03HousingFormulaTests
     }
 
     [Theory]
-    [InlineData("0.499", "0.01")]
+    [InlineData("0.499", "0.001")]   // 10 x 0.001 x money_slope 0.1 (#1703; was 0.01 at slope 1)
     [InlineData("0.50", "0")]
     [InlineData("0.60", "0")]
     public void SurchargeIsContinuous(string condition, string expected)
@@ -126,7 +126,7 @@ public class Gdd03HousingFormulaTests
         // R-HOUSE-002, R-HOUSE-003: does not select residents or settle timing.
         var r = Formula().Evaluate(Input(surcharge: 10, beforeArrival: 20,
             cohesion: 5, population: 20, capacity: 15m, condition: 0.125m, due: 0m, paid: 0m));
-        Assert.Equal(3.75m, r.SurchargeMoney);
+        Assert.Equal(0.375m, r.SurchargeMoney);   // 10 x 0.375 x money_slope 0.1 (#1703; was 3.75 at slope 1)
         Assert.Equal(0.0125m, r.OverflowConditionLoss);
         Assert.Equal(0.1125m, r.ConditionAfter);
         Assert.Equal(0.275m, r.CohesionLossPoints);
@@ -190,7 +190,7 @@ public class Gdd03HousingFormulaTests
             Input(paid: -1m), Input(paid: 5m), Input(due: 0m, paid: 1m) })
             Assert.Throws<ArgumentOutOfRangeException>(() => f.Evaluate(input));
         Assert.Throws<ArgumentNullException>(() => f.Evaluate(null!));
-        Assert.Equal(1m, f.Evaluate(Input()).SurchargeMoney);
+        Assert.Equal(0.1m, f.Evaluate(Input()).SurchargeMoney);   // money_slope 0.1 (#1703; was 1)
     }
 
     [Theory]
@@ -228,12 +228,52 @@ public class Gdd03HousingFormulaTests
     {
         var c = ContentLoader.Load(RealContentTests.ContentRoot()).Gdd03Balance ?? throw new InvalidOperationException("GDD 0.3 catalogue required");
         var f = Gdd03HousingFormula.FromCatalogue(c);
-        Assert.Equal("Default", f.OverflowBasis);
+        // The shipped row is Agreed since the owner's 2 November 2026 ruling ("Yes, 5 pp under GDD 0.3 (Recommended)");
+        // the reader carries whichever basis the row has, so a Default row still reads as Default.
+        Assert.Equal("Agreed", f.OverflowBasis);
+        var labelledDefault = ContentLoader.Load(RealContentTests.ContentRoot()).Gdd03Balance!;
+        labelledDefault.Values["housing.overflow_deterioration"].Basis = "Default"; // TEST-ONLY SYNTHETIC provenance
+        Assert.Equal("Default", Gdd03HousingFormula.FromCatalogue(labelledDefault).OverflowBasis);
         c.Values["housing.overflow_deterioration"].Values[0] = 99m; // TEST-ONLY SYNTHETIC mutation
         Assert.Equal(0.025m, f.Evaluate(Input()).OverflowConditionLoss);
         c.Ruleset = SaveGame.GddRuleset;
         Assert.Throws<ContentException>(() => Gdd03HousingFormula.FromCatalogue(c));
         Assert.Throws<ArgumentNullException>(() => Gdd03HousingFormula.FromCatalogue(null!));
+    }
+
+    // R-HOUSE-005 (#1703): the live step EvaluateTurn (double, the state type) is the decimal Evaluate with every resident
+    // count equal and no upkeep (27M-17). Pins the two forms together over the shipped catalogue and each synthetic scalar
+    // override above, every count, capacity and condition these tests use, and conditions 0.00 to 0.60 in 0.01 steps.
+    [Fact] public void LiveDoubleStepAgreesWithTheDecimalFormula()
+    {
+        var formulas = new[]
+        {
+            Formula(),
+            FormulaWithSyntheticScalar("housing.money_threshold", 0.70m),
+            FormulaWithSyntheticScalar("housing.money_slope", 2.5m),
+            FormulaWithSyntheticScalar("housing.cohesion_threshold", 0.50m),
+            FormulaWithSyntheticScalar("housing.max_cohesion_loss", 3m),
+            FormulaWithSyntheticScalar("housing.overflow_deterioration", 12.5m),
+        };
+        var conditions = new List<decimal> { 0m, 0.01m, 0.125m, 0.235m, 0.26m, 0.40m, 0.499m, 0.50m, 0.60m, 0.95m, 1m };
+        for (int i = 0; i <= 60; i++) conditions.Add(i / 100m);
+        var checkedCases = 0;
+        foreach (var f in formulas)
+        foreach (var population in new[] { 0, 10, 20, 511, 600 })
+        foreach (var residents in new[] { 0, 1, 5, 10, 20, 248, 511 })
+        foreach (var capacity in new[] { 0, 5, 8, 10, 15, 248 })
+        foreach (var condition in conditions)
+        {
+            if (residents > population) continue;
+            var d = f.Evaluate(new Gdd03HousingInput(residents, residents, residents, population, capacity, condition, 0m, 0m));
+            var live = f.EvaluateTurn(residents, population, capacity, (double)condition);
+            var at = $"R={residents} P={population} cap={capacity} c={condition}";
+            Assert.True(Math.Abs((double)d.SurchargeMoney - live.Surcharge) <= 1e-9, "surcharge " + at);
+            Assert.True(Math.Abs((double)d.ConditionAfter - live.ConditionAfter) <= 1e-9, "condition " + at);
+            Assert.True(Math.Abs((double)d.CohesionLossPoints - live.Cohesion) <= 1e-9, "cohesion " + at);
+            checkedCases++;
+        }
+        Assert.True(checkedCases > 10000, checkedCases.ToString(CultureInfo.InvariantCulture));
     }
 
     // R-HOUSE-001: a valid numeric child cannot authorize an unresolved parent repair row.

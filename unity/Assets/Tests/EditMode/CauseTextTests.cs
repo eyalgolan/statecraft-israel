@@ -153,6 +153,8 @@ public class CauseTextTests
             (CauseKeys.Purpose.Deport, $"for the Deport of {placeName}", new[] { place }),
             (CauseKeys.Purpose.Occupation, $"for the occupation of {placeName}", new[] { place }),
             (CauseKeys.Purpose.Event, $"for {ev.Title}", new[] { ev.Id, ev.Title, "1" }),
+            (CauseKeys.Purpose.Workshop, "for an arms workshop cycle", new string[0]),   // R-ARMS-006
+            (CauseKeys.Purpose.HousingSurcharge, "for the housing surcharge", new string[0]),   // #1703, gdd-0.3 (Cities.SettleGdd03)
         };
         // A map action borrows with its own key (CauseKeys.MapBorrowed): its purpose names only its Paid line (#2199).
         CollectionAssert.AreEquivalent(CauseKeys.Purpose.All.Where(p => p != CauseKeys.Purpose.Deficit && p != CauseKeys.Purpose.MapAction),
@@ -195,9 +197,10 @@ public class CauseTextTests
             (CauseKeys.Purpose.Project, "to build " + housing.Name, new[] { housing.Id }),
             (CauseKeys.Purpose.Occupation, $"for the occupation of {placeName}", new[] { place }),
             (CauseKeys.Purpose.MapAction, "to build " + PlayerText.MapAction(C, MapActions.Housing), new[] { MapActions.Housing }),   // as MapActions.Apply
+            (CauseKeys.Purpose.Workshop, "for an arms workshop cycle", new string[0]),   // R-ARMS-006
         };
         CollectionAssert.AreEquivalent(CauseKeys.Purpose.All.Except(new[] { CauseKeys.Purpose.Deficit, CauseKeys.Purpose.CivilianUpkeep,
-            CauseKeys.Purpose.MilitaryUpkeep, CauseKeys.Purpose.Deport, CauseKeys.Purpose.Event }), purposes.Select(p => p.Key), "every paying purpose");
+            CauseKeys.Purpose.MilitaryUpkeep, CauseKeys.Purpose.Deport, CauseKeys.Purpose.Event, CauseKeys.Purpose.HousingSurcharge }), purposes.Select(p => p.Key), "every paying purpose");
         var en = En; var he = He;
         foreach (var (key, english, args) in purposes)
         {
@@ -286,6 +289,27 @@ public class CauseTextTests
             Assert.AreEqual(row.Message, CauseText.Line(row, C, NoRows, En), row.Key);
             AssertHebrew(CauseText.Line(row, C, NoRows, He), row.Key);
         }
+    }
+
+    /// <summary>#1703 (R-HOUSE-005, gdd-0.3 only): the housing surcharge's Money line and the housing condition's Social
+    /// cohesion line, worded as Cities.SettleGdd03 writes them: English is the Message, Hebrew is Hebrew.</summary>
+    [Test]
+    public void TheGdd03HousingLinesAreWordedInBothLanguages()
+    {
+        var lines = new[]
+        {
+            new Cause("economy", "treasury", -7.665, $"{PlayerText.Change(C, "treasury", -7.665)} (housing surcharge)", key: CauseKeys.HousingSurcharge),
+            new Cause("city", "morale", -0.01, $"{PlayerText.Change(C, "morale", -0.01)} (housing condition)", key: CauseKeys.HousingCohesion),
+        };
+        var en = En; var he = He;
+        foreach (var line in lines)
+        {
+            Assert.AreEqual(line.Message, CauseText.Line(line, C, NoRows, en), line.Key);
+            AssertHebrew(CauseText.Line(line, C, NoRows, he), line.Key);
+        }
+        // The owner's word for the surcharge, 2 Nov 2026: "היטל דיור (Recommended)".
+        var surcharge = CauseText.Line(lines[0], C, NoRows, he);
+        Assert.IsTrue(surcharge.IndexOf("היטל דיור", StringComparison.Ordinal) >= 0, surcharge);
     }
 
     static void AssertHebrew(string line, string key)
@@ -414,6 +438,9 @@ public class CauseTextTests
             new Cause("draft", "town", -1, "Town: Housing was cancelled; the Money spent is not returned", key: CauseKeys.ProjectCancelled, args: new[] { "housing" }),
             new Cause("draft", "town", 1, "Town: Housing was finished", key: CauseKeys.ProjectCompleted, args: new[] { "housing" }),
             new Cause("draft", "arms", 2000000000, "Bought 2000000000 Arms, cost IL 1.3m", key: CauseKeys.ArmsBought, args: new[] { "1.25" }),
+            new Cause("draft", "town", 2, "Town: arms workshops staffed: 2", key: CauseKeys.WorkshopWorkers, args: new[] { "2" }),
+            new Cause("draft", "town", 1, "Town: an arms workshop made 1 Arms", key: CauseKeys.WorkshopArms),
+            new Cause("draft", "town", 0, "Town: an arms workshop has no worker without a job this month", key: CauseKeys.WorkshopPaused, args: new[] { Workshops.NoWorker }),
             new Cause("draft", "treasury", 1.44, "Converted $4.0m of foreign currency into Money: IL +1.4m", key: CauseKeys.DollarsConverted, args: new[] { "4" }),
             new Cause("draft", "food", 2000000000, "Site: the plowed land yielded 2000000000 units of Food", key: CauseKeys.FoodHarvest, args: new[] { "site" }),
             new Cause("draft", "food", -2000000000, "Food ran out: 2000000000 of 2000000001 units of the month's need went unmet", key: CauseKeys.FoodShortage, args: new[] { "2000000001" }),
@@ -500,7 +527,8 @@ public class CauseTextTests
             CauseKeys.EventAmount, CauseKeys.EventChosen, CauseKeys.EventCity, CauseKeys.EventDelegated,
             CauseKeys.EventDelegatedPartial, CauseKeys.EventGrant, CauseKeys.EventNew, CauseKeys.EventPolicy,
             CauseKeys.EventRejoin, CauseKeys.EventSetRung, CauseKeys.EventStock, CauseKeys.EventUnlock,
-            CauseKeys.MilitaryUpkeep, CauseKeys.ObjectiveCompleted, CauseKeys.PrisonersReturned, CauseKeys.SoldiersReturned }), rows.Select(x => x.Key), "all remaining keys");
+            CauseKeys.MilitaryUpkeep, CauseKeys.HousingSurcharge, CauseKeys.HousingCohesion,
+            CauseKeys.ObjectiveCompleted, CauseKeys.PrisonersReturned, CauseKeys.SoldiersReturned }), rows.Select(x => x.Key), "all remaining keys");
         var appointed = rows.Single(x => x.Key == CauseKeys.Appointed);
         StringAssert.Contains("התפקיד שנשמר", CauseText.Line(appointed, c, NoRows, he, names), "historical title, not current title");
     }
@@ -522,6 +550,7 @@ public class CauseTextTests
             new Cause("draft", "town", -1, "Town: 1 group began armoured car training, cost IL 1.3m", key: CauseKeys.TrainingStarted, args: new[] { "1", "armour", "", "1.25" }),
             new Cause("draft", "site", 1, "Site: a group of halutzim began draining the swamp, cost IL 1.3m", key: CauseKeys.LandWorkStarted, args: new[] { "drain", "1.25" }),
             new Cause("draft", "site", 1, "Site: a group of halutzim began building a training camp, cost IL 1.3m", key: CauseKeys.SiteStarted, args: new[] { "camp", "1.25" }),
+            new Cause("draft", "town", 0, "Town: an arms workshop's next cycle waits: paying for it would take the debt past its ceiling", key: CauseKeys.WorkshopPaused, args: new[] { Workshops.DebtCeiling }),   // #1701 OQ4
         };
         // A renderer receives no live state: both resident variants must survive the settlement record's removal.
         foreach (var row in rows)
@@ -537,6 +566,30 @@ public class CauseTextTests
             Assert.AreEqual(row.Message, CauseText.Line(row, c, NoRows, en));
             AssertHebrew(CauseText.Line(row, c, NoRows, he), row.Key);
         }
+    }
+
+    /// <summary>#1701: the Why screen (WhyPresenter.Show) words every arms workshop cause from why.cause.&lt;key&gt; with the city
+    /// named, in both languages; a workshop key outside CauseText's remaining set fell to UnitNames.Line and threw on a
+    /// missing why.line.&lt;key&gt; (the coordinator's Unity run at 7cbd257b6).</summary>
+    [Test]
+    public void EveryWorkshopCauseIsWordedFromItsWhyCauseKeyOnTheWhyScreen()
+    {
+        var c = RemainingFixture(); var en = En; var he = He;
+        var names = new Dictionary<string, string> { ["town"] = "עיר" };
+        var rows = new (Cause cause, string key, string[] extra)[]
+        {
+            (new Cause("city", "town", 2, "Town: arms workshops staffed: 2", key: CauseKeys.WorkshopWorkers, args: new[] { "2" }), "why.cause.workshop_workers", new[] { "2" }),
+            (new Cause("city", "town", 1, "Town: an arms workshop made 1 Arms", key: CauseKeys.WorkshopArms), "why.cause.workshop_arms", new string[0]),
+            (new Cause("city", "town", 0, "Town: an arms workshop has no worker without a job this month", key: CauseKeys.WorkshopPaused, args: new[] { Workshops.NoWorker }), "why.cause.workshop_paused.no_worker", new string[0]),
+            (new Cause("city", "town", 0, "Town: an arms workshop's next cycle waits: paying for it would take the debt past its ceiling", key: CauseKeys.WorkshopPaused, args: new[] { Workshops.DebtCeiling }), "why.cause.workshop_paused.debt_ceiling", new string[0]),
+        };
+        foreach (var (cause, key, extra) in rows)
+            foreach (var (text, town) in new[] { (en, "Town"), (he, "עיר") })
+            {
+                string line = "";
+                Assert.DoesNotThrow(() => line = CauseText.Line(cause, c, NoRows, text, names), key);
+                Assert.AreEqual(text.Format(key, new object[] { town }.Concat(extra).ToArray()), line, key);
+            }
     }
 
     [Test]

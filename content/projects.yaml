@@ -14,6 +14,11 @@
 #   industry: the Mefalsim build's pair (build_yishuv_cost 2, build_yishuv_turns 6).
 #   winery: the plan's Q-SPEC-2 values (PR 6: industry's IL 2m and 6 turns, and 10 job slots, more than industry's 5).
 #     It needs vineyards (`requires:`, R-PROJ-005), which only Rishon LeZion has (cities.yaml; owner, 20 October 2026, #737).
+#   arms_workshop: GDD 0.3 only (`rulesets: [gdd-0.3]`; R-ARMS-004, #1701): the loader leaves it out of every other ruleset.
+#     IL 15m and 3 turns (owner, 2 November 2026, #1701 OQ2: "IL 15m, 3 turns (Recommended)"; gdd03-balance.yaml
+#     arms_workshop cost 15 and work 3). Built, it gives one workshop worker slot (`worker_slots`, the catalogue's 1) and no
+#     housing, condition or job slots. Its cycle (R-ARMS-006) reads workshop.staffed_turns and workshop.cost there; the
+#     owner's rulings 27M-11 to 27M-14 and Q55 are in docs/rules/mvp.md R-ARMS-004 to R-ARMS-007.
 # name: the phrase the player reads in a sentence ("a transit camp").
 # name_he: the Hebrew UI's noun for the kind (#1122, owner ruling 3), optional: without it the Hebrew UI shows `name`.
 #   Draft wording, not a native-language approval: name_he_review: agent-checked until a native speaker reviews it.
@@ -23,3 +28,4 @@ projects:
   - { id: transit_camp, name: a transit camp, name_he: מעברה, name_he_review: agent-checked, cost: 1.5, turns: 1, capacity: 5, condition: -0.02, job_slots: 0 }   # DESIGN VALUE: owner-set balance, not a historical figure (D-C6, D-A3, D-D3; Q-PROJ-1, Q-HOUSE-3: the low-condition type)
   - { id: industry, name: an industry project, name_he: מיזם תעשייה, name_he_review: agent-checked, cost: 2, turns: 6, capacity: 0, condition: 0, job_slots: 5 }        # DESIGN VALUE: owner-set balance, not a historical figure (D-C6, D-A3; Q-PROJ-1: job slots)
   - { id: winery, name: a winery, name_he: יקב, name_he_review: agent-checked, cost: 2, turns: 6, capacity: 0, condition: 0, job_slots: 10, requires: vineyards }   # DESIGN VALUE: owner-set balance, not a historical figure (D-D8, D-C6; Q-SPEC-2: the specialised industry)
+  - { id: arms_workshop, name: an arms workshop, name_he: סדנת נשק, name_he_review: agent-checked, cost: 15, turns: 3, capacity: 0, condition: 0, job_slots: 0, worker_slots: 1, rulesets: [gdd-0.3] }   # DESIGN VALUE: owner-set balance, not a historical figure (D-G6, D-A3; #1701 OQ2, owner 2 November 2026: IL 15m and 3 turns, the recommended option)

@@ -10,8 +10,8 @@ namespace Statecraft.HexTiles.Prototypes
     /// its banks. Desert rocks are scattered, two of them large. A Bedouin camp of three long, low, dark goat-hair tents
     /// sits on the far flank. There are no people or animals, few pieces, and the unit spot stays open.
     ///
-    /// Each tent is two or three dark Box stand-ins in a row along its heading (tiles:desert_edge/tent has no model), because
-    /// the Box stand-in is fixed at 0.65 of its width tall. A row reads long and low; boxes sit just apart, so their tops
+    /// Each tent is two or three dark Box stand-ins in a row along its heading (until Tal Heuberger's tiles:desert_edge/tent
+    /// model arrives from the hex-props bundle, see HexProps), because the Box stand-in is fixed at 0.65 of its width tall. A row reads long and low; boxes sit just apart, so their tops
     /// never overlap.
     ///
     /// Triangle budget by arithmetic (caps below, with measured per-model counts): 6 acacias x ~1,160 = 6,960. 9 rocks x

@@ -45,7 +45,7 @@
     "values": [2]
   "population.people_per_unit":
     "basis": "Agreed"
-    "note": "Population and starting state: people nominally represented by a population unit; Agreed. Source: #1668 balance.md at 605277df."
+    "note": "Population and starting state: people nominally represented by a population unit; Agreed for Open mode. Owner, 1 November 2026, D2 (\"Approve all six (Recommended)\"): the Historical MVP keeps main's census cities at 1,000 people a unit, so a Historical ledger fixture counts at rules.yaml's people_per_unit for the start day (R-POP-004); this row's 10,000 is Open mode's, when Open mode exists. Source: #1668 balance.md at 605277df."
     "values": [10000]
   "start.population":
     "basis": "Default"
@@ -229,12 +229,12 @@
     "values": [1]
   "housing.money_threshold":
     "basis": "Agreed"
-    "note": "Reception, housing and shortages: condition fraction / Money per resident per fraction below threshold; Agreed linear rule. Source: #1668 balance.md at 605277df."
+    "note": "Reception, housing and shortages: condition fraction below which the housing surcharge applies (R-HOUSE-005, #1703); its Money rate is housing.money_slope; Agreed linear rule. Source: #1668 balance.md at 605277df."
     "values": [0.50]
   "housing.money_slope":
     "basis": "Agreed"
-    "note": "Reception, housing and shortages: condition fraction / Money per resident per fraction below threshold; Agreed linear rule. Source: #1668 balance.md at 605277df."
-    "values": [1]
+    "note": "Reception, housing and shortages: Money per housed population unit per condition fraction below money_threshold, a turn (R-HOUSE-005, #1703). Owner, 2 November 2026: \"Scale it to unit size (Recommended)\"; the option read: \"0.1 per unit (as #2112 did for Industry), about 7.6 Money a turn at start.\" #1668's 1 Money per resident was sized for 10,000 people a unit; at D2's 1,000 people a unit it is 0.1. Agreed linear rule; a labelled design value; a balance playtest follows. Source: #1668 balance.md at 605277df."
+    "values": [0.1]
   "housing.cohesion_threshold":
     "basis": "Agreed"
     "note": "Reception, housing and shortages: condition fraction below which cohesion declines; Agreed. Source: #1668 balance.md at 605277df."
@@ -244,8 +244,8 @@
     "note": "Reception, housing and shortages: national displayed points per turn at maximal weighted severity; Agreed. Source: #1668 balance.md at 605277df."
     "values": [2]
   "housing.overflow_deterioration":
-    "basis": "Default"
-    "note": "Reception, housing and shortages: condition pp per turn multiplied by ordinary resident overflow share; Default rate; retained overcrowding principle. Source: #1668 balance.md at 605277df."
+    "basis": "Agreed"
+    "note": "Reception, housing and shortages: condition pp per turn multiplied by ordinary resident overflow share; under gdd-0.3 in place of R-HOUSE-002's overflow_condition_loss 0.15 (R-HOUSE-005, #1703). Owner, 2 November 2026: \"Yes, 5 pp under GDD 0.3 (Recommended)\"; Agreed; retained overcrowding principle. Source: #1668 balance.md at 605277df."
     "values": [5]
   "housing.max_deterioration":
     "basis": "Default"

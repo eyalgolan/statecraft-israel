@@ -45,6 +45,9 @@ namespace Statecraft.Sim
             public List<MapHex> Hexes { get; set; } = new List<MapHex>();
         }
         sealed class SettlementHexesFile { public List<SettlementHex> Settlements { get; set; } = new List<SettlementHex>(); }
+        sealed class LocalityHexesFile { public List<LocalityHex> Localities { get; set; } = new List<LocalityHex>(); }
+        /// <summary>A map/locality_hexes.yaml row. q and r are nullable so a missing one is refused, never read as 0.</summary>
+        sealed class LocalityHex { public string Id { get; set; } = ""; public int? Q { get; set; } public int? R { get; set; } }
         sealed class MapLocationsFile { public List<MapLocation> Locations { get; set; } = new List<MapLocation>(); }
         sealed class SettlementTargetsFile { public List<SettlementTarget> Targets { get; set; } = new List<SettlementTarget>(); }
         sealed class CitiesFile { public List<CityStart> Cities { get; set; } = new List<CityStart>(); }
@@ -189,6 +192,25 @@ namespace Statecraft.Sim
         }
 
         internal const string ObjectivesFileName = "objectives.yaml";
+
+        /// <summary>R-CITY-006: the locality placements, with the settlement_hexes.yaml checks (unique ids, land hexes) and
+        /// q and r required. Only the exact gdd-0.3 regions path calls this.</summary>
+        static List<SettlementHex>? LocalityHexes(Content c, LocalityHexesFile? file)
+        {
+            if (file == null) return null;
+            const string f = PlayerRegionCatalogue.LocalityHexesFileName;
+            Unique(f, "localities", file.Localities.Select(l => l.Id));
+            var result = new List<SettlementHex>(file.Localities.Count);
+            foreach (var l in file.Localities)
+            {
+                if (!l.Q.HasValue || !l.R.HasValue) throw new ContentException(f, $"localities[{l.Id}]", "q and r are required integers");
+                int q = l.Q.Value, r = l.R.Value;
+                if (c.HexAt(q, r)?.Land != true)
+                    throw new ContentException(f, $"localities[{l.Id}]", FormattableString.Invariant($"hex q={q} r={r} is not a land hex in {HexesFile}"));
+                result.Add(new SettlementHex { Id = l.Id, Q = q, R = r });
+            }
+            return result;
+        }
 
         /// <summary>Like <see cref="Read{T}"/>, but a missing file is null, not an error. The file is read once.</summary>
         static T? ReadOptional<T>(Func<string, string?> readFile, string relPath) where T : class
@@ -418,12 +440,6 @@ namespace Statecraft.Sim
             // R-POP-001: validate the identity-specific scale without altering old content reads/hash inputs.
             if (c.UsesPopulationLedger) _ = c.PopulationPeoplePerUnit;
             ApplyMapOverrides(readFile, c, settlementIds);   // after the map's own checks, before the GDD records that read it
-            // R-CITY-006: no read or hash input in either old identity. Absence leaves the capability inactive.
-            if (c.Ruleset == SaveGame.Gdd03Ruleset)
-            {
-                var regions = ReadOptional<PlayerRegionsFile>(readFile, PlayerRegionCatalogue.FileName);
-                if (regions != null) c.PlayerRegions = PlayerRegionCatalogue.Validate(c, regions.PlayerRegions);
-            }
             if (c.IsGdd)
             {
                 // GDD v0.1 city data (Phase 1 PR 3), read once eras.yaml is known to be valid. Only the GDD loop reads it, so
@@ -431,12 +447,24 @@ namespace Statecraft.Sim
                 c.Cities = Read<CitiesFile>(readFile, "cities.yaml").Cities;
                 c.UnitTypes = Read<UnitTypesFile>(readFile, "unit_types.yaml").Types;
                 c.Sites = Read<SitesFile>(readFile, "sites.yaml").Sites;   // sourced facts (Phase 1 PR 5)
-                c.ProjectKinds = Read<ProjectsFile>(readFile, "projects.yaml").Projects;   // design values (Phase 3 PR 4)
+                // Design values (Phase 3 PR 4). R-ARMS-004: a row limited to other rulesets is not this game's kind.
+                var kinds = Read<ProjectsFile>(readFile, "projects.yaml").Projects;
+                c.ProjectKinds = kinds.Where(k => k.Rulesets.Count == 0 || k.Rulesets.Contains(c.Ruleset)).ToList();
+                c.ProjectKindsOfOtherRulesets = kinds.Except(c.ProjectKinds).ToList();
                 c.Corridors = Read<CorridorsFile>(readFile, "corridors.yaml").Corridors;   // sourced, hexes derived (Phase 4 PR 2)
                 ValidateGdd(c, settlementIds);
                 Gdd03Military.Validate(c); // after effective map overrides and role validation, only exact gdd-0.3
                 // The sourced starting forces (Phase 5 PR 4, R-UNIT-006), once the types and people_per_unit are known valid.
                 c.StartingForces = StartingForces.Read(readFile, c);
+            }
+            // R-CITY-006: no read or hash input in either old identity. Absence leaves the capability inactive. After the
+            // sites (a site id may be a member) and the effective map overrides; the locality hexes are read only with regions.
+            if (c.Ruleset == SaveGame.Gdd03Ruleset)
+            {
+                var regions = ReadOptional<PlayerRegionsFile>(readFile, PlayerRegionCatalogue.FileName);
+                if (regions != null)
+                    c.PlayerRegions = PlayerRegionCatalogue.Validate(c, regions.PlayerRegions,
+                        LocalityHexes(c, ReadOptional<LocalityHexesFile>(readFile, PlayerRegionCatalogue.LocalityHexesFileName)));
             }
             EventRules.ValidateStructured(c);   // R-EFX-006: after the GDD records it names are read
             c.BuildWindows();
@@ -1544,8 +1572,9 @@ namespace Statecraft.Sim
         static void ValidateProjects(Content c)
         {
             const string pf = "projects.yaml";
-            Unique(pf, "projects", c.ProjectKinds.Select(x => x.Id));
-            foreach (var x in c.ProjectKinds)
+            var all = c.ProjectKinds.Concat(c.ProjectKindsOfOtherRulesets).ToList();   // every row, whatever the ruleset
+            Unique(pf, "projects", all.Select(x => x.Id));
+            foreach (var x in all)
             {
                 var at = $"projects[{x.Id}]";
                 if (string.IsNullOrWhiteSpace(x.Name)) throw new ContentException(pf, at + ".name", "is required");
@@ -1561,6 +1590,32 @@ namespace Statecraft.Sim
                 // R-PROJ-005: a kind whose resource no city has could never be built.
                 if (!string.IsNullOrEmpty(x.Requires) && !c.Cities.Any(k => k.Resources.Any(r => r.Id == x.Requires)))
                     throw new ContentException(pf, at + ".requires", $"no city in cities.yaml has the resource '{x.Requires}'");
+                ValidateWorkshopKind(c, x, pf, at);
+            }
+        }
+
+        /// <summary>R-ARMS-004: a kind's `rulesets` names GDD rulesets only, and `worker_slots` is 0 or 1. A kind with a worker
+        /// slot is an arms workshop: it adds no housing, condition or job slots (its worker holds no job), exists under
+        /// gdd-0.3 only, and under gdd-0.3 the arms_workshop row has the balance catalogue's worker slots.</summary>
+        static void ValidateWorkshopKind(Content c, ProjectKind x, string pf, string at)
+        {
+            foreach (var r in x.Rulesets)
+                if (r != SaveGame.GddRuleset && r != SaveGame.Gdd03Ruleset)
+                    throw new ContentException(pf, at + ".rulesets", $"unknown ruleset '{r}' ({SaveGame.GddRuleset} or {SaveGame.Gdd03Ruleset})");
+            if (x.WorkerSlots < 0 || x.WorkerSlots > 1) throw new ContentException(pf, at + ".worker_slots", "must be 0 or 1");
+            if (x.WorkerSlots > 0)
+            {
+                if (x.JobSlots != 0) throw new ContentException(pf, at + ".job_slots", "must be 0 with worker_slots: a workshop worker holds no job");
+                if (x.Capacity != 0) throw new ContentException(pf, at + ".capacity", "must be 0 with worker_slots");
+                if (x.Condition != 0) throw new ContentException(pf, at + ".condition", "must be 0 with worker_slots");
+                if (!(x.Rulesets.Count == 1 && x.Rulesets[0] == SaveGame.Gdd03Ruleset))
+                    throw new ContentException(pf, at + ".rulesets", $"a kind with worker_slots exists under {SaveGame.Gdd03Ruleset} only: rulesets: [{SaveGame.Gdd03Ruleset}]");
+            }
+            if (c.Ruleset == SaveGame.Gdd03Ruleset && x.Id == Workshops.ArmsWorkshop)
+            {
+                var slots = Gdd03ProjectCatalogue.Read(c).Projects.Single(p => p.Key == Workshops.ArmsWorkshop).Capacity!.Amount;
+                if (x.WorkerSlots != slots)
+                    throw new ContentException(pf, at + ".worker_slots", FormattableString.Invariant($"must be {slots}, the gdd-0.3 balance catalogue's arms_workshop worker slots"));
             }
         }
 

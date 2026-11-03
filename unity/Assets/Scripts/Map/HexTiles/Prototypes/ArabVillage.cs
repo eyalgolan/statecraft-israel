@@ -17,8 +17,9 @@ namespace Statecraft.HexTiles.Prototypes
     /// limestone x 700 = 2,800. Minaret and 6 prickly pears as stand-ins, about 320. About 45 flats x 12 = 540. Total about
     /// 50,400 of 60,000 (two house slots now go to the mosque, so a little less).
     ///
-    /// The minaret and the prickly pear have no models (tiles:arab_village/...), so they draw stand-ins: Pine, a slim spire,
-    /// for the minaret and a low Tree for the prickly pear.</summary>
+    /// The minaret and the prickly pear are Tal Heuberger's models from the hex-props bundle (tiles:arab_village/..., see
+    /// HexProps); until the bundle arrives they draw stand-ins: Pine, a slim spire, for the minaret and a low Tree for the
+    /// prickly pear.</summary>
     [HexPrototype("arab_village", Kind = "village")]
     public sealed class ArabVillage : IHexPrototype
     {
