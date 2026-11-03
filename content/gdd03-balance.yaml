@@ -670,8 +670,8 @@
     "parts":
       "cost":
         "basis": "Agreed"
-        "note": "Agreed. Source: #1668 balance.md at 605277df."
-        "expression": "2 * current regional housing upkeep"
+        "note": "Owner, 1 November 2026, `Fixed price 0.5 Money + 1 work`. Source: GDD.md; #1700 https://github.com/eyalgolan/statecraft-israel/issues/1700#issuecomment-6554004118; #1703 https://github.com/eyalgolan/statecraft-israel/issues/1703#issuecomment-6554005317."
+        "values": [0.5]
       "work":
         "basis": "Agreed"
         "note": "Agreed. Source: #1668 balance.md at 605277df."
