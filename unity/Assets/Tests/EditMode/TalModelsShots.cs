@@ -223,7 +223,7 @@ public class TalModelsShots
     [UnityTest] public IEnumerator SandbagsAfterHebrew() { yield return Prop(true, true, "tel_aviv_altalena_sandbags", true); }
 
     /// <summary>The Egyptian Dakota on the opening turn (15 May 1948, in its window, 15 May to 11 June 1948), at the opening
-    /// distance (90 km) and at a gameplay zoom (40 km): the player's camera (yaw 0) aimed at the ground under the loop's centre
+    /// distance (CameraRig.StartDistance, #2370) and at a gameplay zoom (40 km): the player's camera (yaw 0) aimed at the ground under the loop's centre
     /// and held on the map as CameraController.Step holds it. "Before" withholds the Dakota. The loop holds its start (-shot).</summary>
     IEnumerator Dakota(bool hebrew, bool after)
     {
@@ -245,7 +245,7 @@ public class TalModelsShots
             }
             Debug.Log($"SHOT dakota {(after ? "after" : "before")} on {state.Date:yyyy-MM-dd}: drawn {layer.Placed.Count(p => p.Model == SeaAirCollection.Dakota)}, loop centre {plane.At}, span {SeaAirCollection.SizeOf(SeaAirCollection.Dakota)} m");
             var rig = Camera.main.GetComponent<CameraRig>(); var cc = rig.GetComponent<CameraController>();
-            foreach (var (what, distance) in new[] { ("gameplay", 40000f), ("opening", 90000f) })
+            foreach (var (what, distance) in new[] { ("gameplay", 40000f), ("opening", CameraRig.StartDistance) })
             {
                 var under = new Vector3(plane.At.x, 0f, plane.At.z);
                 Look(under, distance);
