@@ -40,6 +40,21 @@ public class HebrewUiTests
 
     // --- The flag ---------------------------------------------------------------------------------------------------
 
+    // #2265: only the query is read; a flag in the fragment (after the first '#') is not a query parameter.
+    [Test]
+    public void ALanguageFlagAfterTheFragmentIsIgnored()
+    {
+        var none = new string[0];
+        foreach (var q in new[] { "?x=1#&lang=he", "#?lang=he" })
+            Assert.AreEqual(UiLanguage.English, UiLanguage.Requested("http://localhost:8000/index.html" + q, none, webgl: true), q);
+        // A fragment-only flag is no flag: the stored choice stands, in both directions.
+        Assert.AreEqual(UiLanguage.Hebrew, UiLanguage.AtStart(UiLanguage.Hebrew, "http://localhost:8000/index.html#&lang=en", none, webgl: true));
+        Assert.AreEqual(UiLanguage.English, UiLanguage.AtStart(null, "http://localhost:8000/index.html?x=1#?lang=he", none, webgl: true));
+        // The query still counts when a fragment follows.
+        Assert.AreEqual(UiLanguage.Hebrew, UiLanguage.Requested("http://localhost:8000/index.html?lang=he#x", none, webgl: true));
+        Assert.AreEqual(UiLanguage.English, UiLanguage.AtStart(UiLanguage.Hebrew, "http://localhost:8000/index.html?lang=en#x", none, webgl: true));
+    }
+
     [Test]
     public void HebrewIsOnlyAskedForByHand()
     {
