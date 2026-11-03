@@ -502,12 +502,15 @@ public sealed class CivilianPeopleTests
         placed.UnionWith(CivilianPeople.Models);
         placed.UnionWith(RuralLife.Models);
         placed.UnionWith(new[] { WildlifeLayer.Ibex, WildlifeLayer.Hyena });
-        placed.UnionWith(new[] { SeaAirCollection.Altalena, SeaAirCollection.FishingBoat, SeaAirCollection.Steamer, SeaAirCollection.C54, SeaAirCollection.Spitfire });
+        placed.UnionWith(new[] { SeaAirCollection.Altalena, SeaAirCollection.FishingBoat, SeaAirCollection.Steamer, SeaAirCollection.C54, SeaAirCollection.Spitfire,
+            SeaAirCollection.Dakota });
         placed.UnionWith(new[] { Statecraft.Game.Map.Routes.ServiceTrain.ModelId, Statecraft.Game.Map.Routes.RoadVehicles.CitrusTruck,
             Statecraft.Game.Map.Routes.RoadVehicles.CanvasLorry, Statecraft.Game.Map.Routes.RoadVehicles.SandwichConvoy,
             Statecraft.Game.Map.Routes.RoadVehicles.IntercityBus });
         placed.Add(CampTentModels.Model); // the camp-tent layer requests this model for placed transit camps
-        placed.UnionWith(SpecialBuildingModels.Placements(DateTime.MaxValue).Select(w => w.Model)); // every dated single-building placement, the R35 among them
+        // Every dated single-building placement, the R35 and Tal Heuberger's four props among them (owner, 2 November 2026: "make
+        // sure all of tal's new models are used"); the sandbags, crates and wall end on their sourced dates, so all of them.
+        placed.UnionWith(SpecialBuildingModels.EveryPlacement.Select(w => w.Model));
         placed.UnionWith(TownLandmarks.ById.Values.Concat(TownLandmarks.ByType.Values).Concat(TownLandmarks.ByAction.Values.Select(v => v.Model))
 );
         var units = Statecraft.Game.Map.Units.UnitFigures.ByHeadgear.Values.Concat(Statecraft.Game.Map.Units.UnitFigures.ThirdFigure.Values)

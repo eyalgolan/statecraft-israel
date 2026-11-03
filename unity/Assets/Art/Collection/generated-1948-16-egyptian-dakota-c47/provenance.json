@@ -23,5 +23,5 @@
   "decimation": false,
   "welding": false,
   "conversion": "Standard glTF Y-up / FBX Y-up compatibility export; no pivot, mesh or UV rewrite; all zero source clips retained; map extracted byte-for-byte",
-  "historical_status": "Candidate paint/markings/subtype are unverified; no historical deployment represented"
+  "historical_status": "Candidate paint/markings/subtype are unverified. Shown in flight only, a slow loop just off Tel Aviv on the 15 May 1948 turn, the one turn of the first Egyptian bombing period, 15 May to 11 June 1948 (he.wiki rev 43856594, agent-read 2 November 2026, a person's check pending; owner rulings 2 November 2026, \"Over Tel Aviv, 15 May-11 Jun\" and, on #2274, \"Off the coast is fine\"); owner sign-off 27 October 2026 (#756)"
 }

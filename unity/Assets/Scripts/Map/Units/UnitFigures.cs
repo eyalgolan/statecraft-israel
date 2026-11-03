@@ -35,7 +35,8 @@ namespace Statecraft.Game.Map.Units
 
         public const string SyrianInfantry = "figure-syrian-infantry-1948-v1",
             AlaInfantry = CollectionCatalog.AlaInfantry, IraqiInfantry = "figure-iraqi-infantry-1948-v1",
-            EgyptianInfantry = CollectionCatalog.EgyptianInfantry, LebaneseRegular = CollectionCatalog.LebaneseRegular;
+            EgyptianInfantry = CollectionCatalog.EgyptianInfantry, LebaneseRegular = CollectionCatalog.LebaneseRegular,
+            LocalIrregular = CollectionCatalog.LocalIrregular;
 
         /// <summary>An Israeli rifleman's figure by his headgear (the sourced <see cref="UnitEntry.Headgear"/>, or the uniform
         /// default), as Tal Heuberger's figures wear them and #507 paired them: the bush (slouch) hat is the sabra pioneer (C04), the
@@ -73,7 +74,12 @@ namespace Statecraft.Game.Map.Units
 
         /// <summary>An Arab force's own figure, by side. The generated 1948 infantry have separate Syrian, Egyptian, ALA and
         /// Iraqi identities; C08 stays with Jordan and C09 stays on the existing ALA tokens, with the new ALA infantry as their third figure
-        /// (<see cref="ThirdBySide"/>). No local-force row is authored here. Lebanon's army is drawn with Tal Heuberger's Lebanese
+        /// (<see cref="ThirdBySide"/>). The local forces' figure is Tal Heuberger's local Arab irregular (<see cref="LocalIrregular"/>;
+        /// owner, 2 November 2026: "Use it instead of C09"), which replaces the owner's 1 November 2026 ruling on #1243 ("Map
+        /// figure: C09 after photo check (Recommended)"; C09 was never mapped to that side in code). No local-force row is
+        /// authored here, and none may be: the 1 November 2026 ruling on #1243, "Starting strength on 15 May: No row until
+        /// sourced (Recommended)", still stands, and its "Sensitivity review: Once rows exist (Recommended)" runs on the rows
+        /// when they are written. Until then no token of that side exists, so the figure is never asked for. Lebanon's army is drawn with Tal Heuberger's Lebanese
         /// regular as a map-only token at al-Malikiyya from 6 June to 8 July 1948 (owner, 27 October 2026: "Map-only token
         /// (Recommended)"; 28 October 2026: "6 Jun to 8 Jul (Recommended)"); it has no sim unit (<see cref="UnitRoster.MapOnly"/>).
         /// Egypt is drawn as one token (owner, 27 October 2026: "One token"): in the GDD loop the one sim unit of its row,
@@ -85,6 +91,7 @@ namespace Statecraft.Game.Map.Units
         {
             ["jordan"] = ArabLegion, ["ala"] = Irregular,
             ["syria"] = SyrianInfantry, ["iraq"] = IraqiInfantry, ["egypt"] = EgyptianInfantry, ["lebanon"] = LebaneseRegular,
+            ["local_arab_forces"] = LocalIrregular,
         };
 
         /// <summary>The third figure of an Arab force's token, by side, in place of its side figure: the ALA's is Tal Heuberger's ALA

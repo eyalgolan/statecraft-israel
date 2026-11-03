@@ -266,7 +266,7 @@ namespace Statecraft.Game.EditorTools
             UnitFigures.SabraPioneer, UnitFigures.PioneerVeteran, UnitFigures.YoungRecruit, UnitFigures.VeteranFighter,
             UnitFigures.PalmachScout, UnitFigures.Soldier1948, UnitFigures.ArabLegion, UnitFigures.Irregular,
             UnitFigures.SyrianInfantry, UnitFigures.IraqiInfantry, UnitFigures.EgyptianInfantry, UnitFigures.AlaInfantry,
-            UnitFigures.LebaneseRegular,
+            UnitFigures.LebaneseRegular, UnitFigures.LocalIrregular,
         };
 
         /// <summary>The token figures whose own FBX has no fire take, and the figure whose fire take each plays (#2375; owner,

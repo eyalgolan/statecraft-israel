@@ -65,10 +65,10 @@ public class CollectionImportTests
     public void TheCatalogKeeps73IndependentOriginalsAndTheGeneratedInfantryBundle()
     {
         var ids = CollectionCatalog.Ids.ToList();
-        Assert.AreEqual(96, ids.Count);
+        Assert.AreEqual(102, ids.Count);
         Assert.AreEqual(ids.Count, ids.Distinct().Count(), "an id in two bundles");
-        Assert.AreEqual(118, CollectionCatalog.Bundles.Count,
-            "73 independent originals, the 1948 soldier's rigged copy (#2384), #1763's shared generated bundle, one bundle for each later generated model (#2083's two weapons and #2084's pose source among them) and one for each of the 23 town models' far-off copies (#2378)");
+        Assert.AreEqual(124, CollectionCatalog.Bundles.Count,
+            "73 independent originals, the 1948 soldier's rigged copy (#2384), #1763's shared generated bundle, one bundle for each later generated model (#2083's two weapons, #2084's pose source and #2274's Dakota, four props and local irregular among them) and one for each of the 23 town models' far-off copies (#2378)");
         Assert.IsTrue(CollectionCatalog.Bundles.Where(b => b.Bundle != CollectionCatalog.ArabArmies)
             .All(b => b.Ids.Length == 1 && b.Bundle == "collection-" + b.Ids[0]));
         // #2378: each town model's far-off copy streams in a bundle of its own; the copies are not among the originals.
@@ -85,9 +85,9 @@ public class CollectionImportTests
         }
         Assert.IsFalse(CollectionCatalog.IsFarCopy("b07-kibbutz-dining-hall-v2"));
         Assert.IsFalse(CollectionCatalog.IsFarCopy("b11-shikun-housing-v2-far"), "a special building has no far-off copy");
-        CollectionAssert.AreEqual(new[] { 22, 13, 6, 10, 5, 2, 4, 4, 4, 2, 1 }, CollectionCatalog.Groups.Select(g => g.Ids.Length));
+        CollectionAssert.AreEqual(new[] { 22, 13, 6, 10, 5, 2, 5, 9, 4, 2, 1 }, CollectionCatalog.Groups.Select(g => g.Ids.Length));
         CollectionAssert.AreEqual(GeneratedInfantry, CollectionCatalog.Bundles.Single(b => b.Bundle == CollectionCatalog.ArabArmies).Ids);
-        Assert.AreEqual(28, CollectionCatalog.Animated.Count);
+        Assert.AreEqual(29, CollectionCatalog.Animated.Count);
         CollectionAssert.IsSubsetOf(CollectionCatalog.Animated, ids);
         CollectionAssert.DoesNotContain(CollectionCatalog.Animated, "figure-c05-pioneer-veteran-v2", "C05's only idle is a walk");
         Assert.AreEqual("collection-vehicle-altalena-lst-1948-v2wl", CollectionCatalog.BundleOf("vehicle-altalena-lst-1948-v2wl"));
@@ -384,7 +384,9 @@ public class CollectionImportTests
         var scenes = AssetDatabase.GetDependencies(EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToArray(), true);
         var resources = ResourcesClosure();
         var placed = CollectionCatalog.Ids.Where(id => CollectionCatalog.IsGenerated(id) || CollectionCatalog.IsGeneratedHouse(id)).ToList();
-        CollectionAssert.IsSubsetOf(new[] { CollectionCatalog.BedouinCivilian, CollectionCatalog.BedouinTent, CollectionCatalog.SyrianR35, CollectionCatalog.KhakiTent }, placed);
+        CollectionAssert.IsSubsetOf(new[] { CollectionCatalog.BedouinCivilian, CollectionCatalog.BedouinTent, CollectionCatalog.SyrianR35, CollectionCatalog.KhakiTent,
+            CollectionCatalog.EgyptianDakota, CollectionCatalog.StoneWell, CollectionCatalog.Sandbags, CollectionCatalog.CrateStack,
+            CollectionCatalog.StoneWall, CollectionCatalog.LocalIrregular }, placed);
         Assert.AreEqual(5, placed.Count(CollectionCatalog.IsGeneratedHouse), "the five generated houses");
         foreach (var id in placed)
         {
@@ -441,7 +443,7 @@ public class CollectionImportTests
         var builds = (AssetBundleBuild[])t!.GetMethod("Builds")!.Invoke(null, null)!;
         CollectionAssert.AreEqual(CollectionCatalog.Bundles.Select(b => b.Bundle), builds.Select(b => b.assetBundleName));
         // Each model's source file, written out here rather than read from CollectionCatalog.SourceModelPath (which Builds
-        // uses): a town building's <id>.fbx in the buildings' folder, the R35's compatibility FBX, every other model's
+        // uses): a town building's <id>.fbx in the buildings' folder, the R35's and the Dakota's compatibility FBX, every other model's
         // <id>.fbx in its own Collection folder (never a -near.fbx or -far.fbx). #2084's pose source builds only its prefab
         // (the clip comes in as its dependency, never the export's mesh as an entry); so does a town model's far-off copy
         // (#2378: its derived mesh, baked map and material come in as dependencies, never the original's FBX).
@@ -449,7 +451,7 @@ public class CollectionImportTests
             : CollectionCatalog.IsFarCopy(id) ? new[] { $"{CollectionCatalog.BuildingsFolder}/{id.Substring(0, id.Length - CollectionCatalog.FarSuffix.Length)}/{id}.prefab" }
             : new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near), Source(id) };
         string Source(string id) => CollectionCatalog.IsBuilding(id) ? $"{CollectionCatalog.BuildingsFolder}/{id}/{id}.fbx"
-            : id == CollectionCatalog.SyrianR35 ? $"{Dir(id)}/{id}-compatibility.fbx" : Model(id);
+            : id == CollectionCatalog.SyrianR35 || id == CollectionCatalog.EgyptianDakota ? $"{Dir(id)}/{id}-compatibility.fbx" : Model(id);
         foreach (var (b, (bundle, ids)) in builds.Zip(CollectionCatalog.Bundles, (b, c) => (b, c)))
             CollectionAssert.AreEquivalent(ids.SelectMany(Entries).Distinct(),
                 b.assetNames, bundle);
