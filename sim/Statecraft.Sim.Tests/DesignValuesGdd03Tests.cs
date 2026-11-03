@@ -260,51 +260,74 @@ public partial class DesignValuesTests
         Assert.Null(ContentLoader.Load(Fixture.Write()).Gdd03Balance); // old authored content still loads
     }
     // R-LOOP-005: every numeric gdd-0.3 catalogue row is checked when the authored file loads.
-    static ContentException RefusedNumber(string oldText, string newText)
+    // Sets one row's values (or one part's), found by its YAML key, whatever its current value or note text says.
+    static string WithValues(string yaml, string key, string values, string? part=null)
+    {
+        var lines=yaml.Split('\n');
+        int Single(int from, int to, Func<string,bool> match)
+        {
+            var hits=Enumerable.Range(from,to-from).Where(i=>match(lines[i].TrimEnd('\r'))).ToList();
+            Assert.Single(hits);
+            return hits[0];
+        }
+        int BlockEnd(int start, int indent)
+        {
+            var i=start+1;
+            while (i<lines.Length && (lines[i].Trim().Length==0 || lines[i].Length-lines[i].TrimStart(' ').Length>indent)) i++;
+            return i;
+        }
+        var at=Single(0,lines.Length,l=>l=="  \""+key+"\":");
+        int from=at+1, to=BlockEnd(at,2), indent=4;
+        if (part!=null)
+        {
+            at=Single(from,to,l=>l=="      \""+part+"\":");
+            (from,to,indent)=(at+1,BlockEnd(at,6),8);
+        }
+        var prefix=new string(' ',indent)+"\"values\": [";
+        var line=Single(from,to,l=>l.StartsWith(prefix,StringComparison.Ordinal) && l.EndsWith("]",StringComparison.Ordinal));
+        lines[line]=prefix+values+"]";
+        return string.Join("\n",lines);
+    }
+    static Dictionary<string,string> Gdd03RulesetFiles(string catalogue)
+    {
+        var files=Fixture.Gdd(new Dictionary<string,string>{{CatalogueFile,catalogue}});
+        files["eras.yaml"]=files["eras.yaml"].Replace("loop: gdd", "loop: gdd, ruleset: gdd-0.3");
+        return files;
+    }
+    static ContentException RefusedNumber(string key, string values)
     {
         var yaml=File.ReadAllText(Path.Combine(RealContentTests.ContentRoot(),CatalogueFile));
-        Assert.Contains(oldText,yaml);
-        var changed=yaml.Replace(oldText,newText);
-        Assert.NotEqual(yaml,changed);
-        var files=Fixture.Gdd(new Dictionary<string,string>{{CatalogueFile,changed}});
-        files["eras.yaml"]=files["eras.yaml"].Replace("loop: gdd", "loop: gdd, ruleset: gdd-0.3");
-        var dir=Fixture.Write(files);
+        var dir=Fixture.Write(Gdd03RulesetFiles(WithValues(yaml,key,values)));
         return Assert.Throws<ContentException>(()=>ContentLoader.Load(dir));
     }
     [Fact] public void Gdd03LoaderRefusesNegativeCountsAtLoad()
     {
-        var ex=RefusedNumber("\"import.delivery_turns\":\n    \"basis\": \"Agreed\"\n    \"note\": \"Imports, immigration and Arms production: turns after purchase, by ship; Agreed. Source: #1668 balance.md at 605277df.\"\n    \"values\": [1]",
-            "\"import.delivery_turns\":\n    \"basis\": \"Agreed\"\n    \"note\": \"Imports, immigration and Arms production: turns after purchase, by ship; Agreed. Source: #1668 balance.md at 605277df.\"\n    \"values\": [-1]");
+        var ex=RefusedNumber("import.delivery_turns","-1");
         Assert.Equal(CatalogueFile,ex.File); Assert.Equal("values.import.delivery_turns",ex.Field);
         Assert.Contains("must be a whole number >= 0",ex.Message);
     }
     [Fact] public void Gdd03LoaderRefusesNegativePricesAtLoad()
     {
-        var ex=RefusedNumber("\"values\": [0.5]\n  \"craft.course_turns\"", "\"values\": [-0.5]\n  \"craft.course_turns\"");
+        var ex=RefusedNumber("craft.course_cost","-0.5");
         Assert.Equal(CatalogueFile,ex.File); Assert.Equal("values.craft.course_cost",ex.Field);
         Assert.Contains("must be >= 0",ex.Message);
     }
     [Fact] public void Gdd03LoaderRefusesFractionsOutsideZeroToOneAtLoad()
     {
-        var ex=RefusedNumber("\"values\": [0.35]\n  \"start.food_production\"", "\"values\": [1.01]\n  \"start.food_production\"");
+        var ex=RefusedNumber("start.housing_condition","1.01");
         Assert.Equal(CatalogueFile,ex.File); Assert.Equal("values.start.housing_condition",ex.Field);
         Assert.Contains("must be between 0 and 1",ex.Message);
     }
     [Fact] public void Gdd03LoaderRefusesPercentsOutsideZeroToOneHundredAtLoad()
     {
-        var ex=RefusedNumber("\"values\": [75, 10, 10, 5]", "\"values\": [101, 10, 10, 5]");
+        var ex=RefusedNumber("immigration.mix","101, 10, 10, 5");
         Assert.Equal(CatalogueFile,ex.File); Assert.Equal("values.immigration.mix",ex.Field);
         Assert.Contains("must be between 0 and 100",ex.Message);
     }
     [Fact] public void Gdd03NumericRulesAllowListedNegativeException()
     {
         var yaml=File.ReadAllText(Path.Combine(RealContentTests.ContentRoot(),CatalogueFile));
-        const string tail="\n        \"note\": \"Completion effect in #1668 balance.md at 605277df.\"\n    \"note\": \"ordinary housing `+3`";
-        const string oldText="\"values\": [10]"+tail, newText="\"values\": [-10]"+tail;
-        Assert.Contains(oldText,yaml);
-        var files=Fixture.Gdd(new Dictionary<string,string>{{CatalogueFile,yaml.Replace(oldText,newText)}});
-        files["eras.yaml"]=files["eras.yaml"].Replace("loop: gdd", "loop: gdd, ruleset: gdd-0.3");
-        var catalogue=ContentLoader.Load(Fixture.Write(files)).Gdd03Balance;
+        var catalogue=ContentLoader.Load(Fixture.Write(Gdd03RulesetFiles(WithValues(yaml,"permanent_housing","-10","condition_pp")))).Gdd03Balance;
         Assert.NotNull(catalogue);
         Assert.Equal(-10m,Assert.Single(catalogue.Values["permanent_housing"].Parts["condition_pp"].Values));
     }
