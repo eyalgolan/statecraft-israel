@@ -593,23 +593,43 @@ namespace Statecraft.Game.Map.Collection
         void Show(IReadOnlyList<Want> wants)
         {
             this.wants = wants;
-            Plan(log: true);
+            Replan(log: true);
             if (residencyView != null) { RefreshResidency(); return; }
             foreach (var w in wants)
                 if (asked.Add(w.Model)) { string model = w.Model; Request(model, CollectionDetail.Near, p => { if (this == null) return; prefabs[model] = p; if (p == null) { FailedOpen = true; Debug.LogWarning($"BUILDINGS: {model} did not stream; it stays off the map."); } Rebuild(); }); }
             Rebuild();
         }
 
-        /// <summary>Where each wanted row stands (its spot and, beside a road, the road's direction), planned from the whole wanted
-        /// list in its order, before and whatever any model has streamed (#2266's contract): each spot keeps clear of the ones
-        /// planned before it. Shapes come from the data (<see cref="SizeOf(Want)"/>, <see cref="WallDepthShare"/>), never from a
-        /// streamed prefab. A row with no spot (no clear ground, or a town-edge prop past <see cref="MaxPropOffset"/>) is left out:
-        /// it is not asked for and not drawn. <paramref name="log"/> writes the warnings, once per date (ShowAt), not on every
-        /// redraw.</summary>
-        void Plan(bool log)
+        /// <summary>Each wanted row's planned spot: <see cref="Plan"/> over the whole wanted list with every model available
+        /// (#2266's contract), whatever has streamed. The residency reads it (a near-only prop with no spot is not asked for) and
+        /// Rebuild draws from it. <paramref name="log"/> writes the warnings, once per Show (ShowAt), not on every redraw.</summary>
+        void Replan(bool log)
         {
             planned.Clear();
             if (map == null || map.Terrain == null) return;
+            foreach (var (w, at) in Plan(map, date, wants, _ => true, log)) planned[w.Key] = (at, null);
+        }
+
+        readonly Dictionary<string, (Vector2 at, Vector2? along)> planned = new Dictionary<string, (Vector2, Vector2?)>(StringComparer.Ordinal);
+
+        /// <summary>Where the buildings stand: each want in order at its route-facing (Degania), beach (<see cref="Siting.Shore"/>),
+        /// roadside (<see cref="Siting.Road"/>) or seeded spot, clear of the towns, the routes, the tokens of <paramref name="date"/>,
+        /// the civilians, the wildlife and each other (a workshop also of its hex's edge and the farm scenes' plan; one of Tal's
+        /// four props, <see cref="Want.TownEdge"/>, at a town's edge, within <see cref="MaxPropOffset"/> of its point); the list
+        /// keeps those whose model <paramref name="available"/> holds. A row with no spot (no clear ground, or past the cap) is left
+        /// out whatever <paramref name="available"/> says, so no layer keeps clear of a prop that is not drawn. It reads only the
+        /// map and the date, never what has streamed, so with every model available it is the plan the layer draws once everything
+        /// has arrived (HexPropModels keeps clear of it, #2266).</summary>
+        internal static List<(Want want, Vector2 at)> Plan(MapScene map, DateTime date, IReadOnlyList<Want> wants, Func<string, bool> available, bool log,
+            IReadOnlyList<(RuralLife.Want want, Vector2 spot)>? ruralPlan = null)
+            => PlanWithRoutes(map, date, wants, available, log, ruralPlan, out _);
+
+        /// <summary>As <see cref="Plan"/>, also giving each roadside row's road direction (world x, z, unit length) by key, for the
+        /// model to lie along the road; only rows that got a spot have one.</summary>
+        internal static List<(Want want, Vector2 at)> PlanWithRoutes(MapScene map, DateTime date, IReadOnlyList<Want> wants, Func<string, bool> available, bool log,
+            IReadOnlyList<(RuralLife.Want want, Vector2 spot)>? ruralPlan, out IReadOnlyDictionary<string, Vector2> along)
+        {
+            var roads = new Dictionary<string, Vector2>(StringComparer.Ordinal); along = roads;
             var ground = PlacementLayer.CampGround(map);
             var footprints = map.KitFootprints.Select(f => (f.centre, f.radius)).ToList();
             var taken = new List<(Vector2 centre, float radius)>();
@@ -617,9 +637,17 @@ namespace Statecraft.Game.Map.Collection
             var people = map.Terrain.transform.Find(CivilianPeople.Name)?.GetComponent<CivilianPeople>();
             if (people != null) foreach (var p in people.Wanted) taken.Add((new Vector2(p.At.x, p.At.z), CivilianPeople.FigureClearanceM));
             foreach (var a in WildlifeLayer.Wants(map)) taken.Add((a.At, 0.5f * WildlifeLayer.SizeM));
-            bool Free(Vector2 p, float r) => TownLandmarks.Clear(p, r, taken) && TownLandmarks.Clear(p, r, footprints)
+            // A workshop (#1701 slice F) also keeps off the farm scenes (#667): where they WILL stand (RuralLife's plan with every
+            // model available, RuralLife.PlanOf, the one HexPropModels.Others reads too), never what has streamed so far, so its
+            // spot is the same whichever layer streams first and the props keep clear of the b21 that is drawn.
+            var farms = new List<(Vector2 centre, float radius)>();
+            if (wants.Any(w => w.Model == Workshop))
+                foreach (var (want, spot) in ruralPlan ?? RuralLife.PlanOf(map))
+                    farms.Add((spot, RuralLife.SceneRadiusM(want.Model)));
+            bool FreeOn(Vector2 p, float r, DateTime on) => TownLandmarks.Clear(p, r, taken) && TownLandmarks.Clear(p, r, footprints)
                 && ground.Inside(p.x - r, p.y - r) && ground.Inside(p.x + r, p.y + r)
-                && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, date);
+                && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, on);
+            bool Free(Vector2 p, float r) => FreeOn(p, r, date);
             // The four props stand at a town's edge (owner on #2274: "Bigger, closer"): inside a footprint if need be, clear of the
             // towns' building models, of the tokens standing in towns and of every settlement's and locality's name point instead.
             List<(Vector2, float)>? buildings = null, clearings = null; List<Vector2>? names = null;
@@ -639,9 +667,12 @@ namespace Statecraft.Game.Map.Collection
                     && ground.Inside(p.x - r, p.y - r) && ground.Inside(p.x + r, p.y + r)
                     && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, date);
             }
+            var plan = new List<(Want, Vector2)>();
             var kits = map.transform.Find(Kits.KitLayer.RootName);
             foreach (var w in wants)
             {
+                // Every want takes its ground whether or not its model has streamed (only the plan's output is filtered), so a
+                // later want's spot, a workshop's included, never depends on what streamed first.
                 var anchor3 = map.Frame.ToWorld(w.Lon, w.Lat, 0); var anchor = new Vector2(anchor3.x, anchor3.z);
                 float clearance = ClearanceOf(w);
                 Vector2? at = null;
@@ -652,81 +683,18 @@ namespace Statecraft.Game.Map.Collection
                     if (village is Bounds drawn && footprint.id != null)   // no kit or no footprint: the seeded spot below
                         at = RouteFacingEdgeSpot(footprint.centre, drawn, clearance, map.KitRouteCorridors, Free);
                 }
-                Vector2? along = null;
+                Vector2? dir = null;
                 Func<Vector2, float, bool> free = w.TownEdge ? FreeAtEdge : Free;
                 if (w.Site == Siting.Shore) at = ShoreSpot(w.Along, ground, clearance, free);
                 else if (w.Site == Siting.Road)
                 {
                     float lengthHalf = 0.5f * SizeOf(w), depthHalf = WallDepthShare * lengthHalf;
-                    if (RoadSpot(map, w.Along, anchor, lengthHalf, depthHalf, free) is (Vector2 roadAt, Vector2 roadDir)) { at = roadAt; along = roadDir; }
+                    if (RoadSpot(map, w.Along, anchor, lengthHalf, depthHalf, free) is (Vector2 roadAt, Vector2 roadDir)) { at = roadAt; dir = roadDir; }
                 }
                 if (at == null && w.Site != Siting.Seeded)
                 {
-                    if (log) Debug.LogWarning($"BUILDINGS: no clear {(w.Site == Siting.Shore ? "beach" : "roadside")} spot for {w.Key}; its {w.Model} is not drawn.");
+                    if (log && available(w.Model)) Debug.LogWarning($"BUILDINGS: no clear {(w.Site == Siting.Shore ? "beach" : "roadside")} spot for {w.Key}; its {w.Model} is not drawn.");
                     continue;
-                }
-                if (at == null)
-                {
-                    if (w.Key == "degania_r35" && log)
-                        Debug.LogWarning("BUILDINGS: route-facing spot unavailable for degania_r35; falling back to the seeded spot.");
-                    float from = w.TownEdge ? 0f : Inside(anchor, footprints);
-                    at = SeededSpot(w.Key, anchor, clearance, free, from);
-                    for (int ring = 1; at == null && ring <= WidenRings; ring++)
-                        at = SeededSpot(w.Key, anchor, clearance, free, from + ring * WidenShare * clearance);
-                }
-                if (at == null) { if (log) Debug.LogWarning($"BUILDINGS: no clear ground near {w.Key}; its {w.Model} is not drawn."); continue; }
-                if (w.TownEdge && (at.Value - anchor).magnitude > MaxPropOffset)
-                {
-                    if (log) Debug.LogWarning(FormattableString.Invariant($"BUILDINGS: the nearest clear spot for {w.Key} is {(at.Value - anchor).magnitude:0} m from its sourced point, past {MaxPropOffset:0} m; its {w.Model} is not drawn."));
-                    continue;
-                }
-                taken.Add((at.Value, clearance));
-                planned[w.Key] = (at.Value, along);
-            }
-        }
-
-        readonly Dictionary<string, (Vector2 at, Vector2? along)> planned = new Dictionary<string, (Vector2, Vector2?)>(StringComparer.Ordinal);
-
-        /// <summary>Where the buildings stand: each want in order at its route-facing (Degania) or seeded spot, clear of the towns,
-        /// the routes, the tokens of <paramref name="date"/>, the civilians, the wildlife and each other (a workshop also of its
-        /// hex's edge and the farm scenes' plan); the list keeps those whose model <paramref name="available"/> holds. It reads only the map and the date, never what has streamed, so with every
-        /// model available it is the plan the layer draws once everything has arrived (HexPropModels keeps clear of it, #2266).</summary>
-        internal static List<(Want want, Vector2 at)> Plan(MapScene map, DateTime date, IReadOnlyList<Want> wants, Func<string, bool> available, bool log,
-            IReadOnlyList<(RuralLife.Want want, Vector2 spot)>? ruralPlan = null)
-        {
-            var ground = PlacementLayer.CampGround(map);
-            var footprints = map.KitFootprints.Select(f => (f.centre, f.radius)).ToList();
-            var taken = new List<(Vector2 centre, float radius)>();
-            // The civilian figures (#666, shown first by GameRoot) and the wildlife (#670) keep their ground too.
-            var people = map.Terrain.transform.Find(CivilianPeople.Name)?.GetComponent<CivilianPeople>();
-            if (people != null) foreach (var p in people.Wanted) taken.Add((new Vector2(p.At.x, p.At.z), CivilianPeople.FigureClearanceM));
-            foreach (var a in WildlifeLayer.Wants(map)) taken.Add((a.At, 0.5f * WildlifeLayer.SizeM));
-            // A workshop (#1701 slice F) also keeps off the farm scenes (#667): where they WILL stand (RuralLife's plan with every
-            // model available, RuralLife.PlanOf, the one HexPropModels.Others reads too), never what has streamed so far, so its
-            // spot is the same whichever layer streams first and the props keep clear of the b21 that is drawn.
-            var farms = new List<(Vector2 centre, float radius)>();
-            if (wants.Any(w => w.Model == Workshop))
-                foreach (var (want, spot) in ruralPlan ?? RuralLife.PlanOf(map))
-                    farms.Add((spot, RuralLife.SceneRadiusM(want.Model)));
-            bool FreeOn(Vector2 p, float r, DateTime on) => TownLandmarks.Clear(p, r, taken) && TownLandmarks.Clear(p, r, footprints)
-                && ground.Inside(p.x - r, p.y - r) && ground.Inside(p.x + r, p.y + r)
-                && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, on);
-            bool Free(Vector2 p, float r) => FreeOn(p, r, date);
-            var plan = new List<(Want, Vector2)>();
-            var kits = map.transform.Find(Kits.KitLayer.RootName);
-            foreach (var w in wants)
-            {
-                // Every want takes its ground whether or not its model has streamed (only the plan's output is filtered), so a
-                // later want's spot, a workshop's included, never depends on what streamed first.
-                var anchor3 = map.Frame.ToWorld(w.Lon, w.Lat, 0); var anchor = new Vector2(anchor3.x, anchor3.z);
-                float clearance = ClearanceOf(w.Model);
-                Vector2? at = null;
-                if (w.Key == "degania_r35" && kits != null)
-                {
-                    var village = KitBounds(kits, "degania_alef");
-                    var footprint = map.KitFootprints.FirstOrDefault(f => f.id == "degania_alef");
-                    if (village is Bounds drawn && footprint.id != null)   // no kit or no footprint: the seeded spot below
-                        at = RouteFacingEdgeSpot(footprint.centre, drawn, clearance, map.KitRouteCorridors, Free);
                 }
                 if (at == null && w.Model == Workshop)
                 {
@@ -752,10 +720,19 @@ namespace Statecraft.Game.Map.Collection
                 {
                     if (w.Key == "degania_r35" && log && available(w.Model))
                         Debug.LogWarning("BUILDINGS: route-facing spot unavailable for degania_r35; falling back to the seeded spot.");
-                    at = SeededSpot(w.Key, anchor, clearance, Free, Inside(anchor, footprints));
+                    float from = w.TownEdge ? 0f : Inside(anchor, footprints);
+                    at = SeededSpot(w.Key, anchor, clearance, free, from);
+                    for (int ring = 1; at == null && ring <= WidenRings; ring++)
+                        at = SeededSpot(w.Key, anchor, clearance, free, from + ring * WidenShare * clearance);
                 }
                 if (at == null) { if (log && available(w.Model)) Debug.LogWarning($"BUILDINGS: no clear ground near {w.Key}; its {w.Model} is not drawn."); continue; }
+                if (w.TownEdge && (at.Value - anchor).magnitude > MaxPropOffset)
+                {
+                    if (log && available(w.Model)) Debug.LogWarning(FormattableString.Invariant($"BUILDINGS: the nearest clear spot for {w.Key} is {(at.Value - anchor).magnitude:0} m from its sourced point, past {MaxPropOffset:0} m; its {w.Model} is not drawn."));
+                    continue;
+                }
                 taken.Add((at.Value, clearance));
+                if (dir is Vector2 road) roads[w.Key] = road;
                 if (available(w.Model)) plan.Add((w, at.Value));
             }
             return plan;
@@ -892,7 +869,7 @@ namespace Statecraft.Game.Map.Collection
             CollectionResidencyMetrics.MarkDirty();
             if (map == null || map.Terrain == null) return;
             ClearVisuals();
-            Plan(log: false);
+            Replan(log: false);
             var ground = PlacementLayer.CampGround(map);
             var holes = new List<(Vector2 centre, float radius)>();
             var boxes = new List<Bounds[]>();
