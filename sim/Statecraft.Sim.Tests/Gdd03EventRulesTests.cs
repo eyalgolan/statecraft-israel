@@ -192,7 +192,8 @@ public class Gdd03EventRulesTests
     public void RealCatalogueExcludesExactlyFiveWholeCardsAndKeepsOrder()
     {
         var old = Real(false); var modern = Real(true);
-        Assert.Equal(41, old.Events.Count); Assert.Equal(36, modern.Events.Count);   // Deport's two cards (#801) are not excluded
+        Assert.Equal(41, old.Events.Count);   // Deport's two cards (#801) are not excluded
+        Assert.Equal(old.Events.Count - Excluded.Length, modern.Events.Count);
         Assert.Equal(Excluded, old.Events.Select(e => e.Id).Except(modern.Events.Select(e => e.Id)).OrderBy(x => x, StringComparer.Ordinal));
         Assert.Equal(old.Events.Where(e => !Excluded.Contains(e.Id)).Select(e => e.Id), modern.Events.Select(e => e.Id));
         Assert.NotEqual(old.Hash, modern.Hash);

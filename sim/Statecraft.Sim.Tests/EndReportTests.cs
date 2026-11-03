@@ -10,6 +10,9 @@ public class EndReportTests
 {
     static readonly Content Real = ContentLoader.Load(RealContentTests.ContentRoot());
 
+    static int PayingObjectiveCount(Content c) =>
+        c.Objectives.Count(o => o.PartOf == "") + c.Objectives.Where(o => o.PartOf != "").Select(o => o.PartOf).Distinct(StringComparer.Ordinal).Count();
+
     /// <summary>A real GDD game on its last day, ended as the MVP ends, with the first objective completed a month early.</summary>
     static GameState Ended()
     {
@@ -55,7 +58,9 @@ public class EndReportTests
     public void TheReferenceScoreIsWhatCompletingEveryObjectiveOnItsHistoricalDateScores()
     {
         var s = Ended();
-        Assert.Equal(200, EndReport.For(Real, s).ReferenceScore);   // 100 each: the three infrastructure parts count once, plus absorption
+        Assert.True(PayingObjectiveCount(Real) < Real.Objectives.Count);   // a group's parts pay once, so counting parts would differ
+        var expected = PayingObjectiveCount(Real) * Real.RulesAt(s.Date).Mvp!.ObjectivePoints!.Value;
+        Assert.Equal(expected, EndReport.For(Real, s).ReferenceScore);
 
         // The same number by playing it: every objective recorded on its reference date, no timing bonus on time.
         var perfect = Simulation.NewGame(Real, GoldenRun.Seed, Mode.Historical);
@@ -86,7 +91,11 @@ public class EndReportTests
             Assert.True(Objectives.Record(c, s, c.RulesAt(o.ReferenceDate.AddDays(-1)).Mvp!, o.Id, o.ReferenceDate, new List<Cause>()));
         s.Date = c.End;
         s.GameOver = GameOverCodes.MvpEnded;
-        Assert.Equal(101, s.Score);
+        var paidOn = c.Objectives.Where(o => o.PartOf == "").Select(o => o.ReferenceDate)
+            .Concat(c.Objectives.Where(o => o.PartOf != "").GroupBy(o => o.PartOf, StringComparer.Ordinal).Select(g => g.Max(o => o.ReferenceDate)));
+        var points = paidOn.Select(d => c.RulesAt(d.AddDays(-1)).Mvp!.ObjectivePoints!.Value).ToList();
+        Assert.Equal(2, points.Distinct().Count());   // the paying objectives fall in both eras, so one era's points for all would differ
+        Assert.Equal(points.Sum(), s.Score);
         Assert.Equal(s.Score, EndReport.For(c, s).ReferenceScore);
     }
 
@@ -95,12 +104,13 @@ public class EndReportTests
     public void AGroupIdEqualToAStandaloneObjectiveIdStillCountsBoth()
     {
         var c = ContentLoader.Load(RealContentTests.ContentRoot());
+        Assert.Contains(c.Objectives, o => o.PartOf == "" && o.Id == "absorb_immigrants");   // the standalone id the group takes
         foreach (var o in c.Objectives.Where(o => o.PartOf != "")) o.PartOf = "absorb_immigrants";
         var s = Simulation.NewGame(c, GoldenRun.Seed, Mode.Historical);
         foreach (var o in c.Objectives)
             Assert.True(Objectives.Record(c, s, c.RulesAt(s.Date).Mvp!, o.Id, o.ReferenceDate, new List<Cause>()));
         s.GameOver = GameOverCodes.MvpEnded;
-        Assert.Equal(200, s.Score);
+        Assert.Equal(PayingObjectiveCount(c) * c.RulesAt(s.Date).Mvp!.ObjectivePoints!.Value, s.Score);
         Assert.Equal(s.Score, EndReport.For(c, s).ReferenceScore);
     }
 
@@ -183,9 +193,10 @@ public class EndReportTests
         var s = Ended();
         Assert.Equal(0, EndReport.For(Real, s).PrisonersReturned);
         s.PrisonersReturned["lebanon"] = 4; s.PrisonersReturned["egypt"] = 2;
-        // What the Defence screen shows for these six units (DefencePresenter: units times rules.yaml's 1,000 people a unit).
-        Assert.Equal(1000, Real.RulesAt(s.Date).Mvp!.PeoplePerUnit);
-        Assert.Equal(6000, EndReport.For(Real, s).PrisonersReturned);
+        // What the Defence screen shows for these six units (DefencePresenter: units times rules.yaml's people per unit).
+        var peoplePerUnit = Real.RulesAt(s.Date).Mvp!.PeoplePerUnit;
+        Assert.True(peoplePerUnit > 1);   // so units and people differ
+        Assert.Equal((4 + 2) * peoplePerUnit, EndReport.For(Real, s).PrisonersReturned);
     }
 
     [Fact]
