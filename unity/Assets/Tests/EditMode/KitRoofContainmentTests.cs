@@ -27,9 +27,10 @@ public class KitRoofContainmentTests
     const float Storey = 3.3f;
     /// <summary>The highest parapet any building draws (real m: the White City's and a town house's top, 1.0).</summary>
     const float MaxParapet = 1.0f;
-    /// <summary>Anything higher than this above its roof (real m) stands on the roof: a stair head (2.8), its tank or a roof
-    /// room (0.85 storey); a White City laundry room (2.4), a dome (at most about 2.2) and the parapets stay below it.</summary>
+    /// <summary>Anything higher than this above its roof (real m) is a stair head (2.8), its tank or a roof room
+    /// (0.85 storey); a dome (at most about 2.2) and the parapets stay below it.</summary>
     const float StandsOn = 2.5f;
+    const float LaundryHeight = 2.4f;
     static readonly float[] Shrinks = { 1f, 0.72f, 0.5f };
     static readonly float[] Yaws = { 0f, 90f, 45f };
     const int Seeds = 40;
@@ -167,6 +168,49 @@ public class KitRoofContainmentTests
         TestContext.WriteLine($"ROOF_CONTAIN stair heads or tanks outside the parapet's inner edge: {bad.Count}");
         foreach (var s in bad.Take(12)) TestContext.WriteLine("  " + s);
         Assert.IsEmpty(bad, "stair heads or tanks outside their roof's parapet");
+    }
+
+    /// <summary>Every shared laundry room on a WhiteBlock or Tel Aviv block lies inside the parapet's inner edge. The room's
+    /// top is below StandsOn, so select its 2.4 m top explicitly; the positive count keeps the sweep from passing vacuously.</summary>
+    [Test]
+    public void EveryLaundryRoomStandsInsideItsRoofsParapet()
+    {
+        var g = Ground();
+        float cm = KitScale.CityBlocks;
+        var kinds = new[]
+        {
+            new Kind { Name = "WhiteBlock laundry", W0 = 12f, W1 = 16f, D0 = 9f, D1 = 11.5f, M = cm, Storeys = new[] { 3, 6 },
+                Draw = Lattice(SettlementKits.Style.WhiteBlock, g, cm) },
+            new Kind { Name = "TelAviv laundry", W0 = 21f, W1 = 24f, D0 = 13f, D1 = 15f, M = cm, Storeys = new[] { 4, 8 },
+                Draw = Lattice(SettlementKits.Style.TelAviv, g, cm) },
+        };
+        var bad = new List<string>();
+        foreach (var k in kinds)
+        {
+            int rooms = 0; var draws = new List<int>();
+            foreach (var (spec, m, roofY, v, p, yaw, n) in Sweep(k))
+            {
+                draws.Add(n);
+                float eps = 0.01f * m, roomTop = roofY + LaundryHeight * m;
+                var laundry = v.Where(q => Mathf.Abs(q.y - roomTop) <= eps).ToList();
+                if (laundry.Count == 0) continue;
+                rooms++;
+                var rim = Rim(v, p, yaw, roofY, roofY + MaxParapet * m, eps);
+                if (rim == null) { bad.Add(spec + ": laundry room has no parapet on its roof"); continue; }
+                var outside = laundry.Select(q => Local(q, p, yaw)).Where(l => !Inside(l, rim.Value, eps)).ToList();
+                if (outside.Count > 0)
+                {
+                    var worst = outside[0];
+                    bad.Add($"{spec}: laundry room at ({worst.x / m:0.00}, {worst.y / m:0.00}) m, parapet inside u {rim.Value.u0 / m:0.00}..{rim.Value.u1 / m:0.00}, v {rim.Value.v0 / m:0.00}..{rim.Value.v1 / m:0.00}");
+                }
+            }
+            TestContext.WriteLine($"ROOF_CONTAIN {k.Name}: {draws.Count} blocks, {rooms} laundry rooms checked");
+            Log(k.Name, draws);
+            Assert.Greater(rooms, 0, k.Name + ": laundry rooms swept");
+        }
+        TestContext.WriteLine($"ROOF_CONTAIN laundry rooms outside the parapet's inner edge: {bad.Count}");
+        foreach (var s in bad.Take(12)) TestContext.WriteLine("  " + s);
+        Assert.IsEmpty(bad, "laundry rooms outside their roof's parapet");
     }
 
     /// <summary>A stone or mud-brick house's roof room (StoneHouse: the old towns', the Arab towns' and villages') never cuts

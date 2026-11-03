@@ -113,7 +113,9 @@ namespace Statecraft.Game.Map.Kits
             if (rnd.Chance(0.4f))
             {
                 float lw = w * rnd.Range(0.14f, 0.2f), ld = b.d * rnd.Range(0.22f, 0.3f);
-                var r2 = At(du + (rnd.Chance(0.5f) ? 1f : -1f) * (0.5f * w - 0.6f * lw), rnd.Range(-0.2f, 0.2f) * b.d);
+                // Keep the old 0.1 lw clearance, but measure it from the parapet's inner edge rather than the outer wall.
+                var r2 = At(du + (rnd.Chance(0.5f) ? 1f : -1f) * (0.5f * w - WhiteParapetThicknessM * m - 0.6f * lw),
+                    rnd.Range(-0.2f, 0.2f) * b.d);
                 if (!setback) km.Box(r2.x, r2.y, yaw, lw, ld, top + h - 2f, top + h, 2.4f * m, wall, terrace, Facade.Plain, m);
             }
             Record(id, "building", p, yaw, b.w, b.d, b.h, wall);
@@ -175,7 +177,7 @@ namespace Statecraft.Game.Map.Kits
         /// <summary>A flat roof's parapet: a low plastered rim round the terrace, inside the block's footprint.</summary>
         static void RoofParapet(KitMesh km, Vector2 c, float yaw, float w, float d, float roofY, Color32 wall, float m)
         {
-            float t = 0.35f * m, hgt = 1.0f * m, a = yaw * Mathf.Deg2Rad, ca = Mathf.Cos(a), sa = Mathf.Sin(a);
+            float t = WhiteParapetThicknessM * m, hgt = 1.0f * m, a = yaw * Mathf.Deg2Rad, ca = Mathf.Cos(a), sa = Mathf.Sin(a);
             for (int side = -1; side <= 1; side += 2)
             {
                 float v = side * 0.5f * (d - t), u = side * 0.5f * (w - t);
