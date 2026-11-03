@@ -336,7 +336,10 @@ public class TownLandmarksTests
                 var town = renderer.transform;
                 while (town.parent != t.transform) town = town.parent;
                 bool admitted = (bool)ResidencyCall(layer, typeof(TownModelLayer), "WantsWholeTown", town.name, Camera.main)!;
-                Assert.AreEqual(!admitted, renderer.forceRenderingOff, $"{why}: only this camera's admitted whole town draws");
+                // #2378 (Q15 option a): within the far band a town whose far-off copies are ready draws them instead.
+                bool farCopies = !close && (bool)ResidencyCall(layer, typeof(TownModelLayer), "ReadyForTown", town.name, Camera.main)!;
+                Assert.AreEqual(!admitted || farCopies, renderer.forceRenderingOff,
+                    $"{why}: only this camera's admitted whole town draws, unless its far-off copies stand in");
             }
         }
     }
@@ -378,9 +381,9 @@ public class TownLandmarksTests
                 var buildingLayer = root.GetComponentInChildren<TownModelLayer>();
                 bool plainReady = (bool)ResidencyCall(buildingLayer, typeof(TownModelLayer), "ReadyForTown", plain.Id, Camera.main)!;
                 Assert.AreEqual(plainReady, plainKit.forceRenderingOff, "an unrelated plain town keeps fallback");
-                // Above the close switch a plain town (no whole-town model) draws the far-off copies of its building models
-                // within the far band (#2378: 60 km) and nothing beyond it (120 km), where its kit must draw.
-                if (!close) Assert.AreEqual(TownModelLayer.FarAt(d, null), plainReady, $"{d:F0} m: the plain town's far-off copies");
+                // Above the close switch a plain town (no whole-town model, not one of the four cities) takes no far-off
+                // copies (#2378, Q15 option a: the cities and the towns with a whole-town model only), so its kit must draw.
+                if (!close) Assert.IsFalse(plainReady, $"{d:F0} m: the plain town's building models are not admitted");
             }
         }
         finally { byId[unmapped] = row; }
@@ -805,7 +808,8 @@ public class TownLandmarksTests
     /// below 40 km, out above 45 km). Once the town the camera is on has its original, its kit houses never draw; outside the
     /// view band (125 km on the way in, 165 km on the way out) the procedural fallback draws again. It runs under the shipping
     /// policy (ProductionResidency.Approved()), and each step also checks which original stands in: the building models
-    /// below the close band, the whole-town model above it, neither outside the view band.</summary>
+    /// below the close band, their far-off copies within the far band (#2378, owner, 3 November 2026, "Cities/towns only
+    /// (Recommended)": in below 100 km, out above 112 km), the whole-town model beyond it.</summary>
     [Test]
     public void TheFocusedMappedTownDrawsNoProceduralHousesAtAnyZoom()
     {
@@ -825,9 +829,9 @@ public class TownLandmarksTests
                 // Owner ruling 29 (30 Oct 2026): "Far models map-wide (Recommended)": whole towns stay map-wide; only near detail is camera-gated.
                 // The whole-town original therefore stands in beyond the 120/160 km view band too.
                 (125000f, true, false, "in: outside the 120 km view band, map-wide whole town"), (119000f, true, false, "in: inside the view band"),
-                (60000f, true, false, "in: the gameplay view"), (44000f, true, false, "in: above the 40 km close threshold, whole town"),
+                (60000f, true, true, "in: the gameplay view, far-off copies"), (44000f, true, true, "in: above the 40 km close threshold, far-off copies"),
                 (39000f, true, true, "in: below 40 km, building models"), (CameraController.MinDistance, true, true, "in: the closest zoom"),
-                (44000f, true, true, "out: below the 45 km close exit, still buildings"), (46000f, true, false, "out: above 45 km, whole town again"),
+                (44000f, true, true, "out: below the 45 km close exit, still buildings"), (46000f, true, true, "out: above 45 km, far-off copies"),
                 (150000f, true, false, "out: inside the 160 km view exit"), (165000f, true, false, "out: beyond 160 km, map-wide whole town"),
             };
             foreach (var (d, original, buildings, why) in steps)

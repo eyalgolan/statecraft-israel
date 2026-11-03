@@ -532,10 +532,10 @@ public class TownModelTests
     /// <summary>Owner ruling on #700, "Models up close only", and #2378 (owner, 3 November 2026, "allow them far off only"):
     /// at the close views (tel_aviv30, jaffa12) the originals draw (well over a hundred), every kit individual-town mesh
     /// gives way to its close mesh (mixed locality tiles keep fallback), and the models stay within the fixture's complete
-    /// original-geometry work. Within the far band (gameplay03 at 60 km, the 90 km opening) the places with no whole-town
-    /// model (the four cities, the localities and the towns with no TownLandmarks row) draw their far-off copies instead, at most
-    /// TownModels.FarTriangles each, so the 90 km opening stays under four million triangles where today's originals cost
-    /// about nine million (the four cities alone); the towns with a whole-town model keep their kits. At diorama02 (250 km)
+    /// original-geometry work. Within the far band (gameplay03 at 60 km, the 90 km opening) the four cities and the towns
+    /// with a whole-town model draw their far-off copies instead (owner, 3 November 2026, "Cities/towns only
+    /// (Recommended)"), at most TownModels.FarTriangles each, so the 90 km opening stays under four million triangles where
+    /// today's originals cost about nine million (the four cities alone); the 1948 localities keep their kits. At diorama02 (250 km)
     /// no model draws. Zooming back out restores the kits. The "kits" toggle stops the models too. The log line is the draw
     /// cost at each pose.</summary>
     [UnityTest]
@@ -574,10 +574,12 @@ public class TownModelTests
         var results = new List<string>();
         var big = TownLandmarksTests.BigCities;
         int bigInstances = big.Sum(id => layer.CountFor(id));
-        // The places that draw the far-off copies beyond the close switch: those with no whole-town model (KitLayer).
-        var farTier = map.Settlements.Where(s => Statecraft.Game.Map.Collection.TownLandmarks.ModelFor(s) == null).Select(s => s.Id).ToHashSet();
-        CollectionAssert.IsSubsetOf(big, farTier, "the four cities have no whole-town model");
-        CollectionAssert.DoesNotContain(farTier, "petah_tikva", "a moshava keeps its whole-town model far off");
+        // The places that draw the far-off copies beyond the close switch (KitLayer): the four cities and the towns with a
+        // whole-town model (Q15 option a).
+        var farTier = map.Settlements.Where(s => big.Contains(s.Id) || Statecraft.Game.Map.Collection.TownLandmarks.ModelFor(s) != null)
+            .Select(s => s.Id).ToHashSet();
+        CollectionAssert.IsSubsetOf(big, farTier, "the four cities");
+        CollectionAssert.Contains(farTier, "petah_tikva", "a moshava draws its far-off copies");
         int farInstances = farTier.Sum(id => layer.CountFor(id));
         void Check(PromoPose pose, bool close)
         {

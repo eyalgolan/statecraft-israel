@@ -900,8 +900,8 @@ public class TownModelResidencyTests
     const float TwelveKmM = 11_775f, ThirtyKmM = 30_394f, GameplayM = 60_000f;
 
     /// <summary>The v0.3.2 blocker (white 100x kit houses where v0.3.1 drew Tal Heuberger's building models): Imwas's merged
-    /// locality tile swaps to its building models at 12 km and at 30 km, and the models draw; at 90 km, within the far band,
-    /// it swaps to their far-off copies (#2378: a village has no whole-town model).</summary>
+    /// locality tile swaps to its building models at 12 km and at 30 km, and the models draw. At 90 km it keeps its kit tile
+    /// (#2378, owner, 3 November 2026, "Cities/towns only (Recommended)": the 1948 localities take no far-off copies).</summary>
     [Test]
     public void ImwasVillageTileSwapsToBuildingModelsAtTwelveAndThirtyKm()
     {
@@ -909,7 +909,7 @@ public class TownModelResidencyTests
         var imwas = s.Footprint("imwas");
         Assert.Greater(s.layer.CountFor("imwas"), 0, "Imwas has building models");
         var (kit, close) = s.Tile(imwas.centre);
-        foreach (float d in new[] { TwelveKmM, ThirtyKmM, 90_000f })
+        foreach (float d in new[] { TwelveKmM, ThirtyKmM })
         {
             var camera = s.Camera(imwas.centre, d);
             string at = FormattableString.Invariant($"Imwas at {d / 1000f} km");
@@ -920,6 +920,12 @@ public class TownModelResidencyTests
             s.Submit(camera);
             Assert.Greater(s.layer.LastDrawn, 0, at + ": the building models draw");
         }
+        // Within the far band a village keeps its kit tile: no far-off copy (Q15 option a).
+        var far = s.Camera(imwas.centre, 90_000f);
+        s.Settle(far);
+        Assert.IsFalse(s.layer.ReadyForTown("imwas", far), "Imwas at 90 km: no far-off copies for a village");
+        Assert.IsFalse(kit.forceRenderingOff, "Imwas at 90 km: the 100x kit tile draws");
+        Assert.IsTrue(close.forceRenderingOff, "Imwas at 90 km: the tile's close mesh gives way to the kit");
     }
 
     /// <summary>The Latrun front, where no game town is under the screen centre: every village there (Imwas, Yalu, Beit Nuba)
@@ -967,19 +973,22 @@ public class TownModelResidencyTests
     /// jaffa - instead of the huge buildings", confirmed as "Yes, small buildings at every zoom". In the player's streaming
     /// path and the production policy, each of the four cities in view is drawn from its building models at the widest zoom
     /// (250 km), the opening zoom (90 km), the gameplay view (60 km), 30 km and the closest zoom: they are asked for, the
-    /// kit gives way and the models draw (the far-off copies beyond the close switch, #2378). Another town in view far off
-    /// with a whole-town model (Petah Tikva) keeps its kit and asks for nothing.</summary>
+    /// kit gives way and the models draw (the far-off copies beyond the close switch, #2378). A town with a whole-town model
+    /// in view at 90 km (Petah Tikva) draws its far-off copies too (owner, 3 November 2026, "Cities/towns only
+    /// (Recommended)").</summary>
     [Test]
     public void TheFourCitiesDrawTheirBuildingModelsAtEveryZoom()
     {
         using var s = new StreamedMap();
-        // First, a fresh camera over Petah Tikva (beside Tel Aviv and Jaffa) at the opening zoom: it keeps its kit (and its
-        // whole-town model), and only far-off copies are asked for.
+        // First, a fresh camera over Petah Tikva (beside Tel Aviv and Jaffa) at the opening zoom: it draws its far-off copies
+        // (Q15 option a: the cities and the towns), and only far-off copies are asked for.
         var petah = s.Footprint("petah_tikva");
         var far = s.Camera(petah.centre, 90_000f);
         s.Settle(far);
-        Assert.IsFalse(s.layer.ReadyForTown("petah_tikva", far), "Petah Tikva at 90 km: no building models");
-        Assert.IsFalse(s.kits.Find("petah_tikva").GetComponent<MeshRenderer>().forceRenderingOff, "Petah Tikva's kit draws at 90 km");
+        Assert.IsTrue(s.layer.ReadyForTown("petah_tikva", far), "Petah Tikva at 90 km: its far-off copies");
+        Assert.IsTrue(s.kits.Find("petah_tikva").GetComponent<MeshRenderer>().forceRenderingOff, "Petah Tikva's kit gives way at 90 km");
+        CollectionAssert.IsSubsetOf(s.layer.InstancesOf("petah_tikva").Select(m => CollectionCatalog.FarCopy(TownModels.Ids[(int)m.Model])).Distinct().ToList(),
+            s.RequestOrder.Distinct().ToList(), "Petah Tikva's far-off copies are asked for");
         Assert.IsTrue(s.layer.ReadyForTown("tel_aviv", far), "Tel Aviv in the same view: its building models");
         CollectionAssert.IsNotEmpty(s.RequestOrder);
         // #2378: far off only far-off copies are asked for, never an original; the cities' among them.
@@ -1128,8 +1137,8 @@ public class TownModelResidencyTests
         var asked = s.RequestOrder.Skip(originals).ToList();
         CollectionAssert.IsNotEmpty(asked, "the far-off copies are asked for at 60 km");
         foreach (var id in asked) Assert.IsTrue(CollectionCatalog.IsFarCopy(id), "at 60 km only far-off copies are asked for, not " + id);
-        Assert.IsFalse(s.layer.ReadyForTown("imwas", camera), "no building models at 60 km until the far-off copies arrive");
-        Assert.IsFalse(kit.forceRenderingOff, "the kit tile draws again at 60 km until then");
+        Assert.IsFalse(s.layer.ReadyForTown("imwas", camera), "no building models for a village at 60 km");
+        Assert.IsFalse(kit.forceRenderingOff, "the kit tile draws again at 60 km");
     }
 
     /// <summary>#2378 (owner, 3 November 2026: "Ask Tal; allow them far off only"): over Tel Aviv a fresh camera at 39 km asks

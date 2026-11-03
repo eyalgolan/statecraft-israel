@@ -145,13 +145,12 @@ namespace Statecraft.Game.Map.Kits
             var towns = townGo.AddComponent<TownModelLayer>();
             if (residency == null) throw new System.ArgumentNullException(nameof(residency));
             towns.ConfigureProduction(residency.Towns);
-            // #2378: beyond the close switch the places with no whole-town model draw the far-off copies of their building
-            // models: the game settlements TownLandmarks gives none (the four cities, the towns with no row) and every 1948
-            // locality (TownLandmarks.Wants seats the game settlements only); the other settlements keep "Whole model far,
-            // buildings near" (owner, 18 October 2026).
+            // #2378: beyond the close switch the four cities and the towns with a whole-town model draw the far-off copies of
+            // their building models, in place of the whole-town model within the far band (owner, 3 November 2026,
+            // "Cities/towns only (Recommended)"); the 1948 localities keep their kits.
             var farTowns = new List<string>();
-            foreach (var s in settlements) if (Collection.TownLandmarks.ModelFor(s) == null) farTowns.Add(s.Id);
-            foreach (var s in localities) farTowns.Add(s.Id);
+            foreach (var s in settlements)
+                if (TownModels.AtEveryZoom(s.Id) || Collection.TownLandmarks.ModelFor(s) != null) farTowns.Add(s.Id);
             towns.Init(built.Models, townModels, swaps, nearTowns, rendererTownIds, rendererTileIds, farTowns);
             stats.LandmarkParts = parts;
             var localityIds = new HashSet<string>(System.StringComparer.Ordinal);
