@@ -83,6 +83,7 @@ public class ArmsWorkshopTests
         Assert.Equal(5, one.Why.Single(w => w.Key == CauseKeys.Borrowed && w.Args[0] == CauseKeys.Purpose.Project).Delta, 9);   // IL 15m against IL 10m
         var p = one.State.CityProjects.Values.Single();
         Assert.Equal(("arms_workshop", 2, (DateTime?)null), (p.Kind, p.TurnsLeft, p.BuiltOn));
+        Assert.True(p.Builder);   // R-CITY-011 (#1700): town_a has people without a job, so the start takes one as its builder
         var built = Step(c, Step(c, one.State).State).State;
         Assert.NotNull(built.CityProjects[p.Id].BuiltOn);
         var before = s.Cities["town_a"]; var after = built.Cities["town_a"];
