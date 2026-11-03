@@ -407,9 +407,11 @@ namespace Statecraft.Game.Tests
                 float off = (flat - new Vector2(centre3.x, centre3.z)).magnitude;
                 TestContext.WriteLine($"{key} ({project.City}): {off:0} m from its hex centre, clearance {r:0} m");
                 Assert.LessOrEqual(off + r, SpecialBuildingModels.HexInnerRadiusM, key + " wholly on its project's hex");
-                if (covered.Contains(project.City))
-                    AmongTheHouses(map, key, flat, r);
-                else Assert.IsTrue(TownLandmarks.Clear(flat, r, footprints), key + " clear of the towns (and their labels)");
+                // Clear of the towns; or, where the hex leaves no such ground (the covered cities, or names over the rings'
+                // ground), among the houses (TownGap), clear of every drawn building and landmark.
+                bool among = !TownLandmarks.Clear(flat, r, footprints);
+                if (covered.Contains(project.City)) Assert.IsTrue(among, key + " among the houses of a covered city");
+                if (among) { TestContext.WriteLine($"{key} ({project.City}): among the houses"); AmongTheHouses(map, key, flat, r); }
                 Assert.IsFalse(ground.OnRoute(flat, r), key + " clear of the routes");
                 Assert.IsFalse(ground.OnToken(flat, r, After), key + " clear of the unit tokens");
                 Assert.IsTrue(TownLandmarks.Clear(flat, r, others), key + " clear of the sourced building models");

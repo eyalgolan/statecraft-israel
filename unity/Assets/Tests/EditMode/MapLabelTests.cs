@@ -303,6 +303,16 @@ public class MapLabelTests
     /// b21: an open item on #2281. TownGap models the place names' bands, not a location pill at that zoom.</summary>
     [UnityTest] public IEnumerator NoNamePillCoversAWorkshopModelInJerusalem() { yield return NoPillCovers("jerusalem", 40000f); }
 
+    /// <summary>Review of #2281 on main: every city's workshop model, not only these three, clear of every name pill up to the
+    /// close zoom's entry (40 km), so keeping off the map locations' pills moved no overlap elsewhere.</summary>
+    [UnityTest]
+    public IEnumerator NoNamePillCoversAnyCitysWorkshopModel()
+    {
+        var cities = Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content).Cities.Select(c => c.Id).OrderBy(x => x, System.StringComparer.Ordinal).ToList();
+        Assert.Greater(cities.Count, 5);
+        foreach (var city in cities) yield return NoPillCovers(city, 40000f);
+    }
+
     IEnumerator NoPillCovers(string city, float farthest = 45000f)
     {
         var saved = Statecraft.Game.Map.Collection.SpecialBuildingModels.Request;

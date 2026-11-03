@@ -230,6 +230,9 @@ namespace Statecraft.Game.Map.Collection
         /// <summary>The b21 of each built arms workshop (#1701 slice F), kept clear of with the sourced buildings.</summary>
         IReadOnlyList<SpecialBuildingModels.Want> workshops = Array.Empty<SpecialBuildingModels.Want>();
         int ruralVersion;
+        /// <summary>The map locations' name pills the workshops' b21 keep off (SpecialBuildingModels.LocationNames), so the
+        /// props plan the same b21 spots.</summary>
+        IReadOnlyList<SpecialBuildingModels.PlaceName> names = Array.Empty<SpecialBuildingModels.PlaceName>();
         /// <summary>Whether a camera has come in to the close zoom: the standalone props are built only from then on (none of
         /// them draws further out, #2266 review).</summary>
         bool everClose;
@@ -265,11 +268,12 @@ namespace Statecraft.Game.Map.Collection
         /// <summary>As <see cref="ShowAt(MapScene, DateTime)"/>, keeping clear of the b21 planned at each built arms workshop of the
         /// state too (SpecialBuildingModels.ArmsWorkshops; gdd-0.3 only, #1701 slice F).</summary>
         public static HexPropModels? ShowAt(MapScene map, DateTime date, Statecraft.Sim.Content content, IEnumerable<Statecraft.Sim.CityProject> projects) =>
-            ShowAt(map, date, SpecialBuildingModels.ArmsWorkshops(content, projects));
+            ShowAt(map, date, SpecialBuildingModels.ArmsWorkshops(content, projects), SpecialBuildingModels.LocationNames(map, content.MapLocations));
 
         /// <summary>As <see cref="ShowAt(MapScene, DateTime)"/>, with <paramref name="workshops"/> (SpecialBuildingModels.ArmsWorkshops,
         /// computed once by the caller for both layers).</summary>
-        internal static HexPropModels? ShowAt(MapScene map, DateTime date, IReadOnlyList<SpecialBuildingModels.Want> workshops)
+        internal static HexPropModels? ShowAt(MapScene map, DateTime date, IReadOnlyList<SpecialBuildingModels.Want> workshops,
+            IReadOnlyList<SpecialBuildingModels.PlaceName>? names = null)
         {
             if (map == null || map.Terrain == null || map.Hexes == null) return null;
             var layer = map.Terrain.transform.Find(Name)?.GetComponent<HexPropModels>();
@@ -282,9 +286,11 @@ namespace Statecraft.Game.Map.Collection
             // the built arms workshops do, or the rural plan the props keep clear of does (RuralLife.VersionOf; the workshops' b21
             // rebuild on it too, so both stand on one plan).
             int rural = RuralLife.VersionOf(map);
-            if (layer.shown && layer.date == date && SpecialBuildingModels.Same(layer.workshops, workshops) && layer.ruralVersion == rural) return layer;
+            names ??= Array.Empty<SpecialBuildingModels.PlaceName>();
+            if (layer.shown && layer.date == date && SpecialBuildingModels.Same(layer.workshops, workshops) && layer.ruralVersion == rural
+                && SpecialBuildingModels.SameNames(layer.names, names)) return layer;
             layer.fixedWants ??= FixedWants(map);
-            layer.shown = true; layer.date = date; layer.workshops = workshops; layer.ruralVersion = rural;
+            layer.shown = true; layer.date = date; layer.workshops = workshops; layer.ruralVersion = rural; layer.names = names;
             layer.wants = StationWants(map, date); layer.wants.AddRange(layer.fixedWants);
             layer.standaloneDirty = true; layer.BuildStandaloneIfDue(inRender: false);
             return layer;
@@ -347,7 +353,7 @@ namespace Statecraft.Game.Map.Collection
             // With the b21 of each built arms workshop (#1701 slice F), after the sourced buildings as their layer orders them.
             var buildings = workshops.Count == 0 ? SpecialBuildingModels.Placements(date)
                 : SpecialBuildingModels.Placements(date).Concat(workshops).ToList();
-            foreach (var (w, at) in SpecialBuildingModels.Plan(map, date, buildings, _ => true, log: false, rural))
+            foreach (var (w, at) in SpecialBuildingModels.Plan(map, date, buildings, _ => true, log: false, rural, names))
                 discs.Add((at, SpecialBuildingModels.ClearanceOf(w.Model)));
             // The whole-town models (TownLandmarks, shown first by GameRoot) where they will stand, by the same plan.
             var towns = map.Terrain.transform.Find(TownLandmarks.Name)?.GetComponent<TownLandmarks>();
