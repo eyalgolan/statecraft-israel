@@ -72,6 +72,12 @@ It is slow and in places blind, and the map cannot be used at all.
   picks the hex at the screen centre, so pan plus that key reaches any hex; the info panel's buttons then take Tab like
   the rest. Bind zoom to keys too (`+`/`-` or PageUp/PageDown), and give the minimap a focusable control or drop it from
   the keyboard path, since pan covers it.
+- **Status:** B1 is done, after this audit. B1a, the zoom keys, is #890. B1b, the map stop (`map-focus`, after End Turn
+  in the Tab order), is #1134: Enter or Space on it picks the hex under the camera's look-at point, as a click there
+  would. The info panel's buttons then take Tab like the rest, with no code of their own (B1c). The minimap's three
+  buttons take Tab since #584, and its picture still takes no focus (B1d), as the proposed fix allows since pan covers
+  it. The whole keyboard turn, a unit order included, is pinned in #2279 (`KeyboardTurnTests`; the keyboard-only turn
+  below).
 
 ## High
 
@@ -309,8 +315,8 @@ The bars are always labelled ("Competence", "Loyalty"), so their colours carry n
 ## Focus order per screen (as tested)
 
 - **Start screen (no save):** New Game only, focused on open; Tab stays on it. Enter starts the game.
-- **Top bar:** Cabinet, Budget, Defence, Why?, New Game, End Turn, then round again (the info panel and the minimap
-  column take no focus until a hex is chosen by mouse).
+- **Top bar:** Cabinet, Budget, Defence, Why?, New Game, End Turn, then round again (the info panel's buttons show once
+  a hex is chosen, by a click or, since B1b, with Enter on the map stop after End Turn; they then take Tab).
   - Since HUD round 2 (#584, after this audit): End Turn is followed by the minimap's three buttons (whole map, settlement
     names, region borders), then round again; the minimap's picture still takes no focus (B1d). Under the open decision
     card the minimap column is disabled with the info panel, so its buttons leave the order then.
