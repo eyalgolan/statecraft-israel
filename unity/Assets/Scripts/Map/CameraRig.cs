@@ -45,12 +45,14 @@ namespace Statecraft.Game.Map
         internal static Func<bool> FallbackWanted = QualityFallback.Wanted;
 
         /// <summary>Keeps the 16:9 opening unchanged and scales Jaffa's eastward look-at offset with the real viewport width,
-        /// so Tel Aviv and Jaffa remain in frame on portrait screens too.</summary>
+        /// so Tel Aviv and Jaffa remain in frame on portrait screens too. A WebGL page opened in a background tab can boot with a
+        /// 0-size canvas, so an aspect that is not a positive finite number falls back to today's 16:9 look-at instead of
+        /// failing the map boot.</summary>
         public static Vector3 OpeningLookAt(GeoFrame frame, float aspect, Settlement telAviv, Settlement jaffa)
         {
-            if (!(aspect > 0f) || !float.IsFinite(aspect)) throw new ArgumentOutOfRangeException(nameof(aspect));
             if (telAviv == null) throw new ArgumentNullException(nameof(telAviv));
             if (jaffa == null) throw new ArgumentNullException(nameof(jaffa));
+            if (!(aspect > 0f) || !float.IsFinite(aspect)) return frame.ToWorld(StartLon, StartLat, 0f);
             var telAvivWorld = frame.ToWorld(telAviv.Lon, telAviv.Lat, 0f);
             var jaffaWorld = frame.ToWorld(jaffa.Lon, jaffa.Lat, 0f);
             var reference = frame.ToWorld(StartLon, StartLat, 0f);

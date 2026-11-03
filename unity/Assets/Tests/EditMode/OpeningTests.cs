@@ -63,6 +63,24 @@ public class OpeningTests
         finally { camera.targetTexture = null; target.Release(); Object.DestroyImmediate(target); }
     }
 
+    /// <summary>A 0-size canvas (a WebGL page booted in a background tab) gives no usable aspect: the opening falls back to
+    /// today's 16:9 look-at, the reference point itself, instead of throwing and failing the map boot.</summary>
+    [TestCase(0f)]
+    [TestCase(-1f)]
+    [TestCase(float.NaN)]
+    [TestCase(float.PositiveInfinity)]
+    [TestCase(float.NegativeInfinity)]
+    public void AnUnusableAspectFallsBackToTheSixteenByNineOpening(float aspect)
+    {
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        var map = Object.FindFirstObjectByType<MapScene>(); map.Build(Inputs.Map);
+        var telAviv = map.Settlements.Single(s => s.Id == "tel_aviv");
+        var jaffa = map.Settlements.Single(s => s.Id == "jaffa");
+        Vector3 lookAt = default;
+        Assert.DoesNotThrow(() => lookAt = CameraRig.OpeningLookAt(map.Frame, aspect, telAviv, jaffa), $"aspect {aspect}");
+        Assert.AreEqual(map.Frame.ToWorld(CameraRig.StartLon, CameraRig.StartLat, 0f), lookAt, $"aspect {aspect}");
+    }
+
     [UnityTest]
     public IEnumerator CanBeSkippedAndReplayed()
     {
