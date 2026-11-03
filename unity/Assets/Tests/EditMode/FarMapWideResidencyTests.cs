@@ -326,6 +326,8 @@ public sealed class FarMapWideResidencyTests
             // #2378, owner, 3 November 2026, "Cities/towns only (Recommended)": within the far band a town in view whose
             // far-off copies are ready draws them instead of its whole-town model; every other mapped town draws its whole town.
             Assert.IsTrue(buildings.ReadyForTown(focus.Key, camera), focus.Key + " has its far-off copies ready at 90 km");
+            Assert.IsTrue(mapped.Any(w => !towns.transform.Find(w.Key).GetComponentsInChildren<Renderer>(true).All(r => r.forceRenderingOff)),
+                "at least one mapped town still draws its whole-town model at the 90 km view");
             foreach (var want in mapped)
                 Assert.AreEqual(buildings.ReadyForTown(want.Key, camera),
                     towns.transform.Find(want.Key).GetComponentsInChildren<Renderer>(true).All(r => r.forceRenderingOff),
