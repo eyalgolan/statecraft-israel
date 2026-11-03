@@ -10,6 +10,7 @@ using Statecraft.Game.Map.Collection;
 using Statecraft.Game.Map.Kits;
 using Statecraft.Game.Map.Units;
 using Statecraft.Game.UI;
+using Statecraft.HexTiles;
 using Statecraft.Sim;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -31,6 +32,7 @@ public class TalModelsShots
     GameRoot root = null!;
     Action<string, CollectionDetail, Action<GameObject?>>? savedRural, savedPeople, savedSpecial, savedUnits, savedLandmark;
     Func<string, CollectionDetail, Action<GameObject?>, IDisposable>? savedTown, savedWhole;
+    Action<string, Action<GameObject?>>? savedHexProps;
 
     [SetUp]
     public void Prepare()
@@ -39,7 +41,7 @@ public class TalModelsShots
         Directory.CreateDirectory(ShotDir); Directory.CreateDirectory(CivMovementShots.ShotDir);
         savedRural = RuralLife.Request; savedPeople = CivilianPeople.Request; savedSpecial = SpecialBuildingModels.Request;
         savedUnits = UnitFigures.Source; savedTown = TownModelLayer.ModelAcquire; savedLandmark = TownLandmarks.Request;
-        savedWhole = TownLandmarks.Acquire;
+        savedWhole = TownLandmarks.Acquire; savedHexProps = HexPropModels.Request;
     }
 
     [TearDown]
@@ -47,7 +49,7 @@ public class TalModelsShots
     {
         RuralLife.Request = savedRural!; CivilianPeople.Request = savedPeople!; SpecialBuildingModels.Request = savedSpecial!;
         UnitFigures.Source = savedUnits; TownModelLayer.ModelAcquire = savedTown!; TownLandmarks.Request = savedLandmark!;
-        TownLandmarks.Acquire = savedWhole!;
+        TownLandmarks.Acquire = savedWhole!; HexPropModels.Request = savedHexProps!;
         EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         if (ps != null) Object.DestroyImmediate(ps);
         if (rt != null) { rt.Release(); Object.DestroyImmediate(rt); }
@@ -644,4 +646,70 @@ public class TalModelsShots
     [UnityTest] public IEnumerator BedouinAfterEnglish() { yield return Bedouin(false, true); }
     [UnityTest] public IEnumerator BedouinBeforeHebrew() { yield return Bedouin(true, false); }
     [UnityTest] public IEnumerator BedouinAfterHebrew() { yield return Bedouin(true, true); }
+
+    /// <summary>Tal Heuberger's hex-tile props on the main map (owner, 27 October 2026, "2+3"; 2 November 2026: his models replace
+    /// the kit's minarets, belfries and clock tower, a hedge row per village, a light hill scatter). Frames: Binyamina's station,
+    /// the first Bedouin camp's tent, the first village's hedge row, the first hill hex's garrigue, the first village minaret and
+    /// Jaffa's clock tower, a village mosque's minaret and St Peter's belfry, each from the closest zoom, from the gameplay zoom (60 km, where the kit's far parts draw) for the
+    /// landmarks, and from the opening zoom (250 km). The town models are answered, so up close the close meshes draw.
+    /// "Before" is main's map: the layer withheld (the kit's own parts come back) and its tree holes given back. The frames
+    /// come from the map with the props, so they are the same before and after.</summary>
+    IEnumerator HexPropShots(bool hebrew, bool after)
+    {
+        yield return Boot(hebrew);
+        var map = Object.FindFirstObjectByType<MapScene>();
+        TownModelLayer.ModelAcquire = (id, detail, done) => { done(Prefab(id, detail)); return new NoLease(); };
+        HexPropModels.Request = (id, done) => done(AssetDatabase.LoadAssetAtPath<GameObject>(HexProps.PrefabPath(id)));
+        Drop(map, HexPropModels.Name);
+        var layer = HexPropModels.ShowAt(map, root.Bridge!.State.Date)!;
+        Look(layer.transform.position, CameraController.MinDistance);
+        layer.Choose(default, Camera.main);
+        Assert.IsTrue(layer.Requested, "the camera asked for the props");
+        var parts = map.KitStats.LandmarkParts;
+        var minaret = parts.First(p => p.Kind == "minaret" && p.Close != null);
+        var clock = parts.Single(p => p.Kind == "clock_tower");
+        // #2266 review C7: a village mosque's roof-mounted minaret and St Peter's belfry, up close.
+        var villages = new HashSet<string>(map.Localities.Select(p => p.Settlement).Where(s => s.Type == "village").Select(s => s.Id));
+        var village = parts.First(p => p.Kind == "minaret" && p.Close != null && villages.Contains(p.Owner));
+        var belfry = parts.Single(p => p.Kind == "belfry" && p.Owner == "jaffa");
+        Vector3 Up(Bounds b) => new Vector3(b.center.x, 0f, b.center.z);
+        var close = CameraController.MinDistance; const float Gameplay = 60000f; var opening = CameraController.MaxDistance;
+        var frames = new List<(string what, string key, Vector3 at, float[] zooms)>
+        {
+            ("station", "station:Binyamina railway station", layer.Placed.First(p => p.Key == "station:Binyamina railway station").At, new[] { close, opening }),
+            ("tent", layer.Placed.First(p => p.Model == HexPropModels.Tent).Key, layer.Placed.First(p => p.Model == HexPropModels.Tent).At, new[] { close, opening }),
+            ("hedge", layer.Placed.First(p => p.Model == HexPropModels.PricklyPear).Key, layer.Placed.First(p => p.Model == HexPropModels.PricklyPear).At, new[] { close, opening }),
+            ("scatter", layer.Placed.First(p => p.Model == HexPropModels.Garrigue).Key, layer.Placed.First(p => p.Model == HexPropModels.Garrigue).At, new[] { close, opening }),
+            ("minaret", minaret.Owner, Up(minaret.Near), new[] { close, Gameplay, opening }),
+            ("clocktower", clock.Owner, Up(clock.Near), new[] { close, Gameplay, opening }),
+            ("villagemosque", village.Owner, Up(village.Near), new[] { close }),
+            ("belfry", belfry.Owner, Up(belfry.Near), new[] { close }),
+        };
+        Debug.Log($"SHOT hexprops {(after ? "after" : "before")}: {layer.Placed.Count} placed, {layer.Replaced.Count} landmark models: " +
+                  string.Join(", ", HexPropModels.Standalone.Select(m => $"{m} {layer.Placed.Count(p => p.Model == m)}")));
+        if (!after)
+        {
+            HexPropModels.Request = (id, done) => { };   // main streams no prop for the map
+            Drop(map, HexPropModels.Name);
+            UnitShowcase.HideTrees(map, HexPropModels.Name, Array.Empty<(Vector2, float)>());
+        }
+        foreach (var (what, key, flat, zooms) in frames)
+            foreach (var distance in zooms)
+            {
+                string zoom = distance == close ? "close" : distance == Gameplay ? "gameplay" : "opening";
+                var at = flat;
+                at.y = map.Terrain.SampleHeight(at) + map.Terrain.transform.position.y;
+                Look(at, distance);
+                var shown = map.Terrain.transform.Find(HexPropModels.Name)?.GetComponent<HexPropModels>();
+                if (shown != null) shown.Choose(default, Camera.main);
+                for (int i = 0; i < 4; i++) { Camera.main.Render(); yield return null; }
+                CivMovementShots.Shot(rt!, Path.Combine("..", "tal-models-shots", $"hexprops-{what}-{zoom}-{(after ? "after" : "before")}-{(hebrew ? "he" : "en")}"));
+                Debug.Log($"SHOT hexprops {what} {key} at {at} from {distance:F0} m ({zoom}), standalone drawn {shown != null && shown.LastClose}, landmark models {shown?.Replaced.Count ?? 0}");
+            }
+    }
+
+    [UnityTest] public IEnumerator HexPropsBeforeEnglish() { yield return HexPropShots(false, false); }
+    [UnityTest] public IEnumerator HexPropsAfterEnglish() { yield return HexPropShots(false, true); }
+    [UnityTest] public IEnumerator HexPropsBeforeHebrew() { yield return HexPropShots(true, false); }
+    [UnityTest] public IEnumerator HexPropsAfterHebrew() { yield return HexPropShots(true, true); }
 }
