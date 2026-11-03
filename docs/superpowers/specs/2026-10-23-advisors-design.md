@@ -118,7 +118,7 @@ The fictional aides of the first version, who were to narrate, are retired (owne
   more loan and the economy breaks."
 - **Neutral game facts only.** No advisor gives a view on a contested issue: the refugees' flight, Deport, the borders,
   the Arab states. On a capture, Dayan explains the three answers and their costs as the game computes them
-  (`SettlementControl.CaptureOptions`, R-CTRL-008, `docs/rules/mvp.md:47`) and recommends none; Deport is never
+  (`SettlementControl.CaptureOptions`, R-CTRL-008, `docs/rules/mvp.md`) and recommends none; Deport is never
   suggested, never praised, and never the first option (R-CTRL-008).
 - **Real quotes only from the verified list** (section 3.3), each shown as a quote with its source line under it, and only
   where the list says it may be used.
@@ -199,12 +199,12 @@ the slice adds a read-only helper (in Unity, never in the sim's hash).
 | Mechanic | Advisor | Rules | Signal on main |
 |---|---|---|---|
 | Turns, End turn | Ben-Gurion | R-TURN (`mvp.md:13-19`) | Exists: a new game (`FirstTurnGuidePresenter.NewGame`, `:128`, called from `GameRoot.cs:467`, `:514`); `TurnEnded` (`SimBridge.cs:33`) |
-| Attention | Ben-Gurion | R-GOV-002 (`mvp.md:361`) | Exists: `SimBridge.AttentionLeft` (`:88`); `Refused` for "not enough Attention" (`:35`) |
+| Attention | Ben-Gurion | R-GOV-002 (`mvp.md`) | Exists: `SimBridge.AttentionLeft` (`:88`); `Refused` for "not enough Attention" (`:35`) |
 | Events, delegation | Ben-Gurion | R-EVT (`mvp.md:407-415`) | Exists: `EventCardPresenter.Shown` (`:200`) |
 | Objectives, score | Ben-Gurion | R-OBJ, R-SCORE (`mvp.md:291-305`) | Exists: `GameState.Objectives` (`GameState.cs:83`), `Score` (`:88`) |
-| Defeat | Ben-Gurion | R-END-001 to R-END-003 (`mvp.md:341-345`) | Exists: `GameState.ExhaustedTurns` (`:100`), `Debt` (`:41`) against `debt_ceiling` (R-END-001), `Food` (`:94`). Needs: a warning before an enemy attack on one of the player's cities (R-END-003); see below the table |
+| Defeat | Ben-Gurion | R-END-001 to R-END-003 (`mvp.md`) | Exists: `GameState.ExhaustedTurns` (`:100`), `Debt` (`:41`) against `debt_ceiling` (R-END-001), `Food` (`:94`). Needs: a warning before an enemy attack on one of the player's cities (R-END-003); see below the table |
 | Cities, housing, jobs | Meyerson | R-CITY, R-HOUSE (`mvp.md:67-91`) | Needs: a "city shown" event. A click opens the info panel through `GameRoot.OnHexClicked` (`GameRoot.cs:572`), which raises nothing, and `Changed` does not fire on a look. S2 adds the event in Unity |
-| Immigration, refugees | Meyerson | R-CITY-004 (`mvp.md:75`) | Exists: `GameState.Cities` (`:66`) refugees, after `TurnEnded` |
+| Immigration, refugees | Meyerson | R-CITY-004 (`mvp.md`) | Exists: `GameState.Cities` (`:66`) refugees, after `TurnEnded` |
 | Training | Meyerson | R-TRAIN (`mvp.md:111-115`) | Exists: `GameState.Cohorts` (`:70`) |
 | City projects | Meyerson | R-PROJ (`mvp.md:97-105`) | Exists: `GameState.CityProjects` (`:74`), `UnlockedProjects` (`:79`) |
 | Pioneer work | Meyerson | R-SITE, R-FIELD, R-SWAMP, R-CAMP (`mvp.md:127-155`) | Exists: `GameState.Sites` (`:72`); a halutz unit with no project |
@@ -218,13 +218,13 @@ the slice adds a read-only helper (in Unity, never in the sim's hash).
 | Standing orders, Send home | Dayan | R-ORDER (`mvp.md:219-223`), R-UNIT-005 (`:169`) | Exists: a unit's `Order` |
 | Combat | Dayan | R-COMBAT (`mvp.md:229-249`) | Exists: the turn's Why lines (`StepResult.Why`, `Commands.cs:172`; `PreviewResult.Why`, `:184`) |
 | Arms | Dayan | R-ARMS (`mvp.md:331-335`) | Exists: `GameState.Arms` (`:102`) |
-| Truces | Dayan | R-COMBAT-009 (`mvp.md:249`) | Exists: the truce windows (`Combat.PlayerTruces`, `Combat.cs:60`) and the chosen option (`ChosenOptions`, `GameState.cs:52`) |
+| Truces | Dayan | R-COMBAT-009 (`mvp.md`) | Exists: the truce windows (`Combat.PlayerTruces`, `Combat.cs:60`) and the chosen option (`ChosenOptions`, `GameState.cs:52`) |
 | Capture | Dayan | R-CTRL (`mvp.md:35-51`) | Exists: a settlement `AwaitingChoice` (`SettlementControl.cs:14`) |
 | The enemy's phase | Dayan | R-ENEMY (`mvp.md:255-263`) | Exists: the enemy lines in the turn report (`TurnReportPresenter.cs:112-128`) |
 
 **The one new sim signal: a city under threat.** The critical warning "one of our cities is under attack" must come
 before End turn, but the enemy chooses its orders only inside End turn (resolver step 1, `TurnResolver.cs:18`). Those
-orders are a function of the state alone (R-ENEMY-001, `mvp.md:255`), so S4 adds a read-only sim helper that runs
+orders are a function of the state alone (R-ENEMY-001, `mvp.md`), so S4 adds a read-only sim helper that runs
 `EnemyAI.Order` (`EnemyAI.cs:46`) on a clone of the shown state and returns the attacks aimed at a player city's hex. It
 changes no state and draws no random number, so no golden moves; the warning is never a Unity copy of the enemy's
 logic. The advisor shows it as "likely", since the player's own orders this turn can still change the board.
