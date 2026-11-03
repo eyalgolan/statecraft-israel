@@ -41,7 +41,7 @@ namespace Statecraft.Sim
             Objectives.Complete(c, s, r, next, why);      // 11. objectives and score
             Defeat(s, r, why);                            //     then the economic defeat (D-B5, R-END-002)
             WarLoss(c, s, why);                           //     and the war loss (R-END-003)
-            Armistice.CountQuietTurns(c, s);              // 12. each front's quiet turns, gdd-0.3 only (R-WAR-005)
+            Armistice.CountQuietTurns(c, s);              // 12. each front's quiet turns, a refusal's turn not quiet, gdd-0.3 only (R-WAR-005, R-WAR-006)
         }
 
         /// <summary>R-END-001, R-END-002: counts the turn ends with Money (the debt at or above mvp.debt_ceiling) and Food (an

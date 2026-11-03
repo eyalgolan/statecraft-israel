@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Statecraft.Sim;
 
@@ -131,8 +132,9 @@ options:
         Assert.False(Armistice.MayOfferEarly(c, s, "egypt"));
     }
 
-    // R-WAR-006, Q49 (#1709 open question 4: the refusal is the hard card's hold_out): the refusal sets its front's count to
-    // 0, and two full quiet turns must follow before an offer is eligible again; other fronts keep counting.
+    // R-WAR-006, Q49 ("Does the refusal turn count toward the next quiet period? No. Two full quiet turns must follow the
+    // refusal.", owner, 1 November 2026; #1709 open question 4: the refusal is the hard card's hold_out): a refusal on turn T
+    // ends T at 0 for its front, T+1 and T+2 quiet make it eligible on T+3; other fronts keep counting.
     [Fact]
     public void HoldOutResetsTheCountAndTwoNewQuietTurnsAreNeeded()
     {
@@ -143,7 +145,10 @@ options:
         Assert.True(Armistice.MayOfferEarly(c, s, "jordan"));
         s.PendingEvents.Add("armistice_jordan");
         s = Turn(c, s, new ChooseEventOption("armistice_jordan", "hold_out"));
-        Assert.Equal((1, 6), (Armistice.QuietTurns(s, "jordan"), Armistice.QuietTurns(s, "egypt")));
+        Assert.Equal((0, 6), (Armistice.QuietTurns(s, "jordan"), Armistice.QuietTurns(s, "egypt")));
+        Assert.False(Armistice.MayOfferEarly(c, s, "jordan"));
+        s = Turn(c, s);
+        Assert.Equal(1, Armistice.QuietTurns(s, "jordan"));
         Assert.False(Armistice.MayOfferEarly(c, s, "jordan"));
         s = Turn(c, s);
         Assert.True(Armistice.MayOfferEarly(c, s, "jordan"));
@@ -166,6 +171,43 @@ options:
         Assert.Empty(ended.EngagedFronts);
     }
 
+    // R-WAR-005, R-SAVE-003, plan test 6: a save and reload between an instant attack and End turn, through a real schema-4
+    // save of the real content, rebuilds the fronts engaged in the open turn and gives the same hash, and End turn from both
+    // gives the same counts and hash (the pattern of NoShotArmsSessionTests).
+    [Fact]
+    public void ASaveAndLoadBetweenAnInstantAttackAndEndTurnGivesTheSameCountAndHash()
+    {
+        var root = RealContentTests.ContentRoot();
+        var c = ContentLoader.Load(rel =>
+        {
+            var path = Path.Combine(root, rel);
+            if (!File.Exists(path)) return null;
+            var text = File.ReadAllText(path);
+            return rel == "eras.yaml" ? text.Replace("loop: gdd", "loop: gdd, ruleset: gdd-0.3") : text;
+        }, Directory.GetFiles(Path.Combine(root, "events"), "*.yaml").Select(p => "events/" + Path.GetFileName(p)));
+
+        var game = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
+        var attack = (from u in game.Now.State.Units.Values.Where(u => u.Side == Movement.PlayerSide)
+                      from e in game.Now.State.Units.Values.Where(e => Prisoners.FrontOf.ContainsKey(e.Side))
+                      where Combat.Check(c, game.Now.State, u.Id, e.Q, e.R) == null
+                      select new UnitOrder(u.Id, Combat.Attack, e.Q, e.R)).First();
+        Assert.Null(game.Commit(attack));
+        var engaged = game.Now.State.EngagedFronts.ToArray();
+        Assert.NotEmpty(engaged);
+
+        var text = game.Save.Write();
+        Assert.StartsWith("statecraft-save 4", text);
+        var replay = GameSession.Load(c, text, out _);
+        Assert.Equal(game.Now.State.EngagedFronts.ToArray(), replay.Now.State.EngagedFronts.ToArray());
+        Assert.Equal(game.Now.State.Hash(), replay.Now.State.Hash());
+
+        var ended = game.EndTurn(Array.Empty<Command>());
+        var replayEnd = replay.EndTurn(Array.Empty<Command>());
+        Assert.Equal(Counts(ended.State), Counts(replayEnd.State));
+        Assert.All(engaged, f => Assert.Equal(0, Armistice.QuietTurns(ended.State, f)));
+        Assert.Equal(ended.State.Hash(), replayEnd.State.Hash());
+    }
+
     // R-WAR-005 to R-WAR-007 are gdd-0.3 only: under gdd-0.1 no count is kept or hashed and signing removes nothing (#752
     // owns R-WAR-007 there). The pinned goldens are the GoldenRun tests' job and stay as they are.
     [Fact]
@@ -178,13 +220,13 @@ options:
         Assert.Empty(s.QuietTurns);
         Assert.Empty(s.EngagedFronts);
         Assert.True(s.Units.ContainsKey(3));
-        Assert.DoesNotContain("quiet", s.Describe());
-        Assert.DoesNotContain("engaged", s.Describe());
+        Assert.DoesNotContain("\nquiet{", s.Describe());
+        Assert.DoesNotContain("\nengaged[", s.Describe());
     }
 
     // R-WAR-007, Q-OBJ-4: signing armistice_jordan removes the Jordanian and the Iraqi units, leaves the Egyptian, ALA and
-    // local units and the prisoners held as they were, and Send home for a unit that bordered a removed unit opens
-    // (R-UNIT-005).
+    // local units and the prisoners held as they were; Send home follows R-UNIT-005 unchanged (unit 1's nearest front-bearing
+    // enemy was on the now signed front).
     [Fact]
     public void SigningRemovesThatFrontsUnitsOnly()
     {

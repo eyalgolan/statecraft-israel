@@ -43,14 +43,21 @@ namespace Statecraft.Sim
         }
 
         /// <summary>R-WAR-006, R-WAR-007: the armistice card of a front (content/events/armistice_&lt;front&gt;.yaml) resolved.
-        /// hold_out is the refusal (Q49: its front counts again from 0, #1709 open question 4); sign removes the front's units.
+        /// hold_out is the refusal (Q49: its front counts again from 0 after the refusal's own turn, #1709 open question 4); sign removes the front's units.
         /// Gated here on the ruleset, so #752 can open the removal to gdd-0.1 by calling <see cref="RemoveFront"/>.</summary>
         internal static void Resolved(Content c, GameState s, string eventId, string optionId)
         {
             if (!Gdd03Military.Applies(c) || !eventId.StartsWith("armistice_", StringComparison.Ordinal)) return;
             var front = eventId.Substring("armistice_".Length);
             if (!Prisoners.Fronts.Contains(front)) return;
-            if (optionId == "hold_out") s.QuietTurns[front] = 0;
+            if (optionId == "hold_out")
+            {
+                // Q49 (owner, 1 November 2026): "Does the refusal turn count toward the next quiet period? No. Two full quiet
+                // turns must follow the refusal." The card is answered before its turn resolves, so the front is also marked
+                // as broken for this turn: CountQuietTurns ends the turn at 0 and T+1, T+2 quiet make it eligible on T+3.
+                s.QuietTurns[front] = 0;
+                s.EngagedFronts.Add(front);
+            }
             else if (optionId == "sign") RemoveFront(s, front);
         }
 
