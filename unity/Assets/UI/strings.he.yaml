@@ -1225,7 +1225,7 @@ why.cause.project_cancelled: "{0}: ביטול {1}; הכסף שהוצא לא יו
 why.cause.project_completed: "{0}: סיום {1}"
 # The gdd-0.3 builders (#1700; R-CITY-011, R-PROJ-003). Agent-drafted Hebrew: native-review-pending (#564).
 # native-review-pending
-why.cause.project_builder: "{0}: בונה החל לעבוד על {1}"
+why.cause.project_builder: "{0}: תחילת עבודת בונה על {1}"
 # native-review-pending
 why.cause.project_builder_freed: "{0}: שחרור בונה מהעבודה על {1}"
 # native-review-pending
