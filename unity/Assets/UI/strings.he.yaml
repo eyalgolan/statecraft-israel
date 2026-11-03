@@ -1231,7 +1231,7 @@ why.cause.project_builder_freed: "{0}: שחרור בונה מהעבודה על {
 # native-review-pending
 why.cause.project_waiting.no_builder: "{0}: העבודה על {1} ממתינה: אין בונה"
 # native-review-pending
-why.cause.project_waiting.no_worker: "{0}: העבודה על {1} ממתינה: לא נותר אדם ללא משרה שיבנה"
+why.cause.project_waiting.no_worker: "{0}: העבודה על {1} ממתינה: לא נותר אדם ללא משרה לבנייה"
 why.cause.arms_bought: "נשק שנרכש: {0}, עלות {1}"
 # The gdd-0.3 arms workshops (#1701; R-ARMS-005, R-ARMS-006). Agent-drafted Hebrew; native review pending (#564).
 why.cause.workshop_workers: "{0}: סדנאות נשק מאוישות: {1}"
