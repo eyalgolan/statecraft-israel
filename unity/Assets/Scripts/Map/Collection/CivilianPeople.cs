@@ -393,6 +393,7 @@ namespace Statecraft.Game.Map.Collection
             new Dictionary<(string, CollectionDetail), List<GameObject>>();
         readonly Dictionary<string, Transform> peopleByKey = new Dictionary<string, Transform>(StringComparer.Ordinal);
         readonly List<(Transform Person, bool Animate)> pairs = new List<(Transform, bool)>();
+        readonly List<(string key, Vector3 at, float radius)> residencyAnchors = new List<(string, Vector3, float)>();
         bool lastClose;
 
         public readonly List<PlacedFigure> Placed = new List<PlacedFigure>();
@@ -548,8 +549,12 @@ namespace Statecraft.Game.Map.Collection
             if (residencyView != null)
             {
                 var previousDemand = residencyView.Keys;
-                residencyView.Observe(camera, wanted.Select(w => (w.Key, w.At, FigureClearanceM)), Time.frameCount);
-                if (!previousDemand.SetEquals(residencyView.Keys)) { RefreshResidencyCore(false); SyncNearVisuals(); Apply(lastClose); }
+                residencyAnchors.Clear();
+                for (int i = 0; i < wanted.Count; i++) residencyAnchors.Add((wanted[i].Key, wanted[i].At, FigureClearanceM));
+                residencyView.Observe(camera, residencyAnchors, Time.frameCount);
+                bool same = previousDemand.Count == residencyView.Keys.Count;
+                foreach (string key in previousDemand) if (!residencyView.Keys.Contains(key)) { same = false; break; }
+                if (!same) { RefreshResidencyCore(false); SyncNearVisuals(); Apply(lastClose); }
             }
             int id = camera.GetInstanceID();
             bool close = CloseAt(TownLandmarks.ViewDistance(camera), closeFor.TryGetValue(id, out var previous) ? previous : (bool?)null);

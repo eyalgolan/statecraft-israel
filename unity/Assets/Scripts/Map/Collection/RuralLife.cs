@@ -75,9 +75,9 @@ namespace Statecraft.Game.Map.Collection
 
         public readonly struct Want : IEquatable<Want>
         {
-            public readonly string Key, Model; public readonly Vector2 Anchor; public readonly float AnchorRadius;
+            public readonly string Key, Model, ResidencyKey; public readonly Vector2 Anchor; public readonly float AnchorRadius;
             public Want(string key, string model, Vector2 anchor, float anchorRadius)
-            { Key = key; Model = model; Anchor = anchor; AnchorRadius = anchorRadius; }
+            { Key = key; Model = model; ResidencyKey = key + "|" + model; Anchor = anchor; AnchorRadius = anchorRadius; }
             public bool Equals(Want other) => Key == other.Key && Model == other.Model && Anchor == other.Anchor && AnchorRadius == other.AnchorRadius;
             public override bool Equals(object? obj) => obj is Want other && Equals(other);
             public override int GetHashCode() => (Key, Model, Anchor, AnchorRadius).GetHashCode();
@@ -192,7 +192,7 @@ namespace Statecraft.Game.Map.Collection
             // but gates Near to the successfully placed v0.3.1 pairings (Scenes), never unplaced/failed/capped wants.
             var far = wants.Select(w => (w.Model, CollectionDetail.Far));
             var keys = residencyView?.Keys;
-            var near = Scenes.Where(w => keys == null || keys.Contains(w.Key + "|" + w.Model))
+            var near = Scenes.Where(w => keys == null || keys.Contains(w.ResidencyKey))
                 .Select(w => (w.Model, CollectionDetail.Near));
             return far.Concat(near);
         }
@@ -242,7 +242,7 @@ namespace Statecraft.Game.Map.Collection
         IEnumerable<Want> Admitted()
         {
             var keys = residencyView?.Keys;
-            return keys == null ? wants : wants.Where(w => keys.Contains(w.Key + "|" + w.Model));
+            return keys == null ? wants : wants.Where(w => keys.Contains(w.ResidencyKey));
         }
         void ClearVisuals()
         {
@@ -258,6 +258,8 @@ namespace Statecraft.Game.Map.Collection
         readonly Dictionary<int, bool> closeFor = new Dictionary<int, bool>();
         readonly List<(Renderer Renderer, CollectionDetail Detail, string Instance)> renderers = new List<(Renderer, CollectionDetail, string)>();
         readonly List<(Animator Animator, CollectionDetail Detail)> animators = new List<(Animator, CollectionDetail)>();
+        readonly List<(string key, Vector3 at, float radius)> residencyAnchors = new List<(string, Vector3, float)>();
+        readonly HashSet<string> nearInstances = new HashSet<string>(StringComparer.Ordinal);
         readonly Dictionary<(string Model, CollectionDetail Detail), List<GameObject>> originals =
             new Dictionary<(string, CollectionDetail), List<GameObject>>();
         List<Want> wants = new List<Want>();
@@ -475,19 +477,33 @@ namespace Statecraft.Game.Map.Collection
             if (residencyView != null)
             {
                 var previousDemand = residencyView.Keys;
-                residencyView.Observe(camera, wants.Select(w => (w.Key + "|" + w.Model,
-                    new Vector3(w.Anchor.x, 0, w.Anchor.y), w.AnchorRadius)), Time.frameCount);
-                if (!previousDemand.SetEquals(residencyView.Keys)) { RefreshResidencyCore(false); SyncNearVisuals(); }
+                residencyAnchors.Clear();
+                for (int i = 0; i < wants.Count; i++)
+                {
+                    var w = wants[i];
+                    residencyAnchors.Add((w.ResidencyKey, new Vector3(w.Anchor.x, 0, w.Anchor.y), w.AnchorRadius));
+                }
+                residencyView.Observe(camera, residencyAnchors, Time.frameCount);
+                bool same = previousDemand.Count == residencyView.Keys.Count;
+                foreach (string key in previousDemand) if (!residencyView.Keys.Contains(key)) { same = false; break; }
+                if (!same) { RefreshResidencyCore(false); SyncNearVisuals(); }
             }
             int id = camera.GetInstanceID();
             bool close = CloseAt(TownLandmarks.ViewDistance(camera), closeFor.TryGetValue(id, out var was) ? was : (bool?)null);
             closeFor[id] = close; LastClose = close;
-            var nearInstances = new HashSet<string>(renderers.Where(p => p.Renderer != null && p.Detail == CollectionDetail.Near)
-                .Select(p => p.Instance), StringComparer.Ordinal);
-            foreach (var (renderer, detail, instance) in renderers)
+            nearInstances.Clear();
+            for (int i = 0; i < renderers.Count; i++)
+                if (renderers[i].Renderer != null && renderers[i].Detail == CollectionDetail.Near) nearInstances.Add(renderers[i].Instance);
+            for (int i = 0; i < renderers.Count; i++)
+            {
+                var (renderer, detail, instance) = renderers[i];
                 if (renderer != null) renderer.forceRenderingOff = detail == CollectionDetail.Near ? !close : close && nearInstances.Contains(instance);
-            foreach (var (animator, detail) in animators)
+            }
+            for (int i = 0; i < animators.Count; i++)
+            {
+                var (animator, detail) = animators[i];
                 if (animator != null) animator.enabled = detail == CollectionDetail.Near && close;
+            }
         }
     }
 }
