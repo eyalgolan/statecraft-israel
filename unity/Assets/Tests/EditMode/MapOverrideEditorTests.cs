@@ -235,7 +235,7 @@ public sealed class MapOverrideEditorTests
     {
         const string source = "version: map-editor-0.3\nruleset: gdd-0.3\ndraft: true\n"
             + "base_revision: fixture-only\nbase_digest: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n"
-            + "overlay: { terrain: [], control: [], locations: [] }\nworkable: []\nregions: []\ninfrastructure: []\n";
+            + "overlay: { terrain: [], control: [], locations: [] }\nworkable: []\nregions: []\ninfrastructure: []\noffsets: []\n";
         var document = ScriptableObject.CreateInstance<MapOverrideEditorDocument>();
         try
         {

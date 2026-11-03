@@ -257,6 +257,11 @@ namespace Statecraft.Sim
         public List<MapEditorWorkable> Workable { get; set; } = null!;
         public List<MapEditorRegion> Regions { get; set; } = null!;
         public List<MapEditorInfrastructure> Infrastructure { get; set; } = null!;
+        public List<MapEditorOffset> Offsets { get; set; } = null!;
+
+        /// <summary>The hex an offset must stay inside: content/map/hexes.json's pointy-top hex, whose `hex_size_km` (4.4,
+        /// since #1796) is the circumradius, centre to corner. A test pins this to that file.</summary>
+        public const double OffsetHexCircumradiusM = 4400;
 
         // R-MEDIT-003: no receipt or export until accepted dependency adapters and base-manifest contract exist.
         [YamlIgnore] public bool CanExport => false;
@@ -319,7 +324,8 @@ namespace Statecraft.Sim
             if (!IsToken(value.BaseRevision) || value.BaseDigest == null
                 || value.BaseDigest.Length != 64 || value.BaseDigest.Any(c => !(c >= '0' && c <= '9') && !(c >= 'a' && c <= 'f')))
                 throw Error("MAPEDIT_BASE", "base", "a single-line revision token and lowercase SHA-256 base-input digest are required");
-            if (value.Overlay == null || value.Workable == null || value.Regions == null || value.Infrastructure == null)
+            if (value.Overlay == null || value.Workable == null || value.Regions == null || value.Infrastructure == null
+                || value.Offsets == null)
                 throw Error("MAPEDIT_SHAPE", "(file)", "overlay and all edit lists are required");
             // Reuse legacy duplicate/shape checks without changing their behavior or serialization.
             try { MapOverrides.Serialize(value.Overlay); }
@@ -340,6 +346,16 @@ namespace Statecraft.Sim
             {
                 Token(row.Id, "infrastructure.id"); Token(row.Kind, "infrastructure.kind");
                 Token(row.ParentId, "infrastructure.parent_id");
+            }
+            CheckRows(value.Offsets, "offsets", x => x.Id + "/" + x.Kind);
+            foreach (var row in value.Offsets)
+            {
+                if (row.Id == null || !System.Text.RegularExpressions.Regex.IsMatch(row.Id, "^[a-z][a-z0-9_]*$"))
+                    throw Error("MAPEDIT_SHAPE", "offsets.id", "a stable location id is required");
+                if (row.Kind != "visual" && row.Kind != "label")
+                    throw Error("MAPEDIT_SHAPE", "offsets.kind", "visual or label is required");
+                if (row.EastM == null || row.NorthM == null)
+                    throw Error("MAPEDIT_SHAPE", "offsets", "whole metres east_m and north_m are required");
             }
         }
 
@@ -403,6 +419,9 @@ namespace Statecraft.Sim
                 x => "{ hex: " + Hex(x.Hex) + ", region_id: " + Quote(x.RegionId) + " }");
             Rows(text, "infrastructure", copy.Infrastructure.OrderBy(x => x.Id, StringComparer.Ordinal),
                 x => "{ id: " + Quote(x.Id) + ", hex: " + Hex(x.Hex) + ", kind: " + Quote(x.Kind) + ", parent_id: " + Quote(x.ParentId) + " }");
+            Rows(text, "offsets", copy.Offsets.OrderBy(x => x.Id, StringComparer.Ordinal).ThenBy(x => x.Kind, StringComparer.Ordinal),
+                x => "{ id: " + Quote(x.Id) + ", kind: " + Quote(x.Kind) + ", hex: " + Hex(x.Hex)
+                    + FormattableString.Invariant($", east_m: {x.EastM}, north_m: {x.NorthM} }}"));
             return text.ToString();
         }
 
@@ -428,10 +447,23 @@ namespace Statecraft.Sim
                 ? new[] { "regions", "fields", "facilities", "corridors", "anchors", "targets", "objectives", "base_manifest" }
                 : new[] { "regions", "fields", "facilities", "base_manifest" };   // post-MVP adapters and the manifest contract
             if (content != null) Dependencies(content, result);
+            // Q58/Q59: an offset that leaves its own hex only warns; the authored point is kept as written.
+            foreach (var o in Offsets.Where(o => !InsideHex(o.EastM!.Value, o.NorthM!.Value)))
+                result.Add(new MapEditorDiagnostic("MAPEDIT_OFFSET_OUTSIDE_HEX", $"offsets[{o.Id}/{o.Kind}]",
+                    FormattableString.Invariant($"{o.Kind} offset east_m={o.EastM} north_m={o.NorthM} leaves its hex q={o.Hex.Q} r={o.Hex.R}"),
+                    "Bring the offset back inside its hex; the location and its sourced point stay where they are.", blocking: false));
             foreach (var field in unavailable)
                 result.Add(new MapEditorDiagnostic("MAPEDIT_DEPENDENCY_UNAVAILABLE", field, "accepted validation adapter is not installed",
                     "Integrate the owning contract before canonical save or export."));
             return result.OrderBy(x => x.Field, StringComparer.Ordinal).ThenBy(x => x.Code, StringComparer.Ordinal).ToList().AsReadOnly();
+        }
+
+        /// <summary>Pointy-top hex centred on the origin, north along a vertex: inside when within the flat east/west sides
+        /// (the inradius) and the four slanted sides. The boundary counts as inside.</summary>
+        static bool InsideHex(double east, double north)
+        {
+            double inradius = Math.Sqrt(3) / 2 * OffsetHexCircumradiusM, x = Math.Abs(east), y = Math.Abs(north);
+            return x <= inradius && x / 2 + y * Math.Sqrt(3) / 2 <= inradius;
         }
 
         /// <summary>The bindings the sim's loader would refuse (ContentLoader ValidateCorridors, StartingForces.Read,
@@ -519,6 +551,14 @@ namespace Statecraft.Sim
         public string Kind { get; set; } = "";
         public string ParentId { get; set; } = "";
     }
+    /// <summary>A visual or label offset (Q59): the location's axial hex plus whole metres east and north of its centre.</summary>
+    public sealed class MapEditorOffset : MapEditorHexEdit
+    {
+        public string Id { get; set; } = "";
+        public string Kind { get; set; } = "";
+        public int? EastM { get; set; }
+        public int? NorthM { get; set; }
+    }
     public sealed class MapEditorDiagnostic
     {
         public string Code { get; }
@@ -526,8 +566,10 @@ namespace Statecraft.Sim
         public string Field { get; }
         public string Message { get; }
         public string Action { get; }
-        public MapEditorDiagnostic(string code, string field, string message, string action)
-        { Code = code; Field = field; Message = message; Action = action; }
+        /// <summary>False only for a warning, which does not block export (Q58: visual and label offsets only warn).</summary>
+        public bool Blocking { get; }
+        public MapEditorDiagnostic(string code, string field, string message, string action, bool blocking = true)
+        { Code = code; Field = field; Message = message; Action = action; Blocking = blocking; }
     }
 
 }
