@@ -5,6 +5,8 @@ promo/*.log
 .worktrees/
 tools/.cache/
 __pycache__/
+# Unity writes a folder meta beside a Python cache folder under Assets; it is not an asset.
+__pycache__.meta
 sim/**/bin/
 sim/**/obj/
 spikes/m0/build/

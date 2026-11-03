@@ -154,6 +154,7 @@ public class CauseTextTests
             (CauseKeys.Purpose.Occupation, $"for the occupation of {placeName}", new[] { place }),
             (CauseKeys.Purpose.Event, $"for {ev.Title}", new[] { ev.Id, ev.Title, "1" }),
             (CauseKeys.Purpose.Workshop, "for an arms workshop cycle", new string[0]),   // R-ARMS-006
+            (CauseKeys.Purpose.HousingSurcharge, "for the housing surcharge", new string[0]),   // #1703, gdd-0.3 (Cities.SettleGdd03)
         };
         // A map action borrows with its own key (CauseKeys.MapBorrowed): its purpose names only its Paid line (#2199).
         CollectionAssert.AreEquivalent(CauseKeys.Purpose.All.Where(p => p != CauseKeys.Purpose.Deficit && p != CauseKeys.Purpose.MapAction),
@@ -199,7 +200,7 @@ public class CauseTextTests
             (CauseKeys.Purpose.Workshop, "for an arms workshop cycle", new string[0]),   // R-ARMS-006
         };
         CollectionAssert.AreEquivalent(CauseKeys.Purpose.All.Except(new[] { CauseKeys.Purpose.Deficit, CauseKeys.Purpose.CivilianUpkeep,
-            CauseKeys.Purpose.MilitaryUpkeep, CauseKeys.Purpose.Deport, CauseKeys.Purpose.Event }), purposes.Select(p => p.Key), "every paying purpose");
+            CauseKeys.Purpose.MilitaryUpkeep, CauseKeys.Purpose.Deport, CauseKeys.Purpose.Event, CauseKeys.Purpose.HousingSurcharge }), purposes.Select(p => p.Key), "every paying purpose");
         var en = En; var he = He;
         foreach (var (key, english, args) in purposes)
         {
@@ -288,6 +289,27 @@ public class CauseTextTests
             Assert.AreEqual(row.Message, CauseText.Line(row, C, NoRows, En), row.Key);
             AssertHebrew(CauseText.Line(row, C, NoRows, He), row.Key);
         }
+    }
+
+    /// <summary>#1703 (R-HOUSE-005, gdd-0.3 only): the housing surcharge's Money line and the housing condition's Social
+    /// cohesion line, worded as Cities.SettleGdd03 writes them: English is the Message, Hebrew is Hebrew.</summary>
+    [Test]
+    public void TheGdd03HousingLinesAreWordedInBothLanguages()
+    {
+        var lines = new[]
+        {
+            new Cause("economy", "treasury", -7.665, $"{PlayerText.Change(C, "treasury", -7.665)} (housing surcharge)", key: CauseKeys.HousingSurcharge),
+            new Cause("city", "morale", -0.01, $"{PlayerText.Change(C, "morale", -0.01)} (housing condition)", key: CauseKeys.HousingCohesion),
+        };
+        var en = En; var he = He;
+        foreach (var line in lines)
+        {
+            Assert.AreEqual(line.Message, CauseText.Line(line, C, NoRows, en), line.Key);
+            AssertHebrew(CauseText.Line(line, C, NoRows, he), line.Key);
+        }
+        // The owner's word for the surcharge, 2 Nov 2026: "היטל דיור (Recommended)".
+        var surcharge = CauseText.Line(lines[0], C, NoRows, he);
+        Assert.IsTrue(surcharge.IndexOf("היטל דיור", StringComparison.Ordinal) >= 0, surcharge);
     }
 
     static void AssertHebrew(string line, string key)
@@ -505,7 +527,8 @@ public class CauseTextTests
             CauseKeys.EventAmount, CauseKeys.EventChosen, CauseKeys.EventCity, CauseKeys.EventDelegated,
             CauseKeys.EventDelegatedPartial, CauseKeys.EventGrant, CauseKeys.EventNew, CauseKeys.EventPolicy,
             CauseKeys.EventRejoin, CauseKeys.EventSetRung, CauseKeys.EventStock, CauseKeys.EventUnlock,
-            CauseKeys.MilitaryUpkeep, CauseKeys.ObjectiveCompleted, CauseKeys.PrisonersReturned, CauseKeys.SoldiersReturned }), rows.Select(x => x.Key), "all remaining keys");
+            CauseKeys.MilitaryUpkeep, CauseKeys.HousingSurcharge, CauseKeys.HousingCohesion,
+            CauseKeys.ObjectiveCompleted, CauseKeys.PrisonersReturned, CauseKeys.SoldiersReturned }), rows.Select(x => x.Key), "all remaining keys");
         var appointed = rows.Single(x => x.Key == CauseKeys.Appointed);
         StringAssert.Contains("התפקיד שנשמר", CauseText.Line(appointed, c, NoRows, he, names), "historical title, not current title");
     }
