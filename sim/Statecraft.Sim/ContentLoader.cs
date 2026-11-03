@@ -1591,7 +1591,34 @@ namespace Statecraft.Sim
                 if (!string.IsNullOrEmpty(x.Requires) && !c.Cities.Any(k => k.Resources.Any(r => r.Id == x.Requires)))
                     throw new ContentException(pf, at + ".requires", $"no city in cities.yaml has the resource '{x.Requires}'");
                 ValidateWorkshopKind(c, x, pf, at);
+                ValidateRepairKind(c, x, pf, at);
             }
+        }
+
+        /// <summary>R-HOUSE-006: the housing_repair row exists under gdd-0.3 only and adds no capacity or job slots, and under
+        /// gdd-0.3 it has the balance catalogue's housing_repair price and effect: its cost, its work as turns and its
+        /// condition_pp as a change of the 0 to 1 condition (owner, 1 November 2026: "Fixed price 0.5 Money + 1 work").</summary>
+        static void ValidateRepairKind(Content c, ProjectKind x, string pf, string at)
+        {
+            if (x.Id != Projects.HousingRepair) return;
+            if (!(x.Rulesets.Count == 1 && x.Rulesets[0] == SaveGame.Gdd03Ruleset))
+                throw new ContentException(pf, at + ".rulesets", $"a housing repair exists under {SaveGame.Gdd03Ruleset} only: rulesets: [{SaveGame.Gdd03Ruleset}]");
+            if (x.Capacity != 0) throw new ContentException(pf, at + ".capacity", "must be 0: a housing repair adds no capacity");
+            if (x.JobSlots != 0) throw new ContentException(pf, at + ".job_slots", "must be 0: a housing repair adds no job slots");
+            if (c.Ruleset != SaveGame.Gdd03Ruleset) return;
+            const string key = "housing_repair";
+            if (!c.Gdd03Balance!.Values.TryGetValue(key, out var row) || row?.Parts == null)
+                throw new ContentException(pf, at, $"the gdd-0.3 balance catalogue has no {key} row");
+            decimal Part(string part) => row.Parts.TryGetValue(part, out var v) && v?.Values?.Count == 1 ? v.Values[0]
+                : throw new ContentException(pf, at, $"the gdd-0.3 balance catalogue's {key} has no single {part} value");
+            void Match(string field, decimal actual, decimal expected, string part)
+            {
+                if (actual != expected)
+                    throw new ContentException(pf, at + "." + field, FormattableString.Invariant($"must be {expected}, the gdd-0.3 balance catalogue's {key} {part}"));
+            }
+            Match("cost", (decimal)x.Cost, Part("cost"), "cost");
+            Match("turns", x.Turns, Part("work"), "work");
+            Match("condition", (decimal)x.Condition, Part("condition_pp") / 100m, "condition_pp / 100");
         }
 
         /// <summary>R-ARMS-004: a kind's `rulesets` names GDD rulesets only, and `worker_slots` is 0 or 1. A kind with a worker
