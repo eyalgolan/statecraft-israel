@@ -22,6 +22,9 @@ public class OldSaveCompatibilityTests
 
         // The replay and the open turn first: with other content, drift only adds replay_differs, so checking the
         // warnings first would hide which part drifted.
+        // If this fails after a deliberate gdd-0.1 rule or design-value change (a golden re-pin, docs/determinism.md),
+        // v0.3.4 players' saves no longer replay identically: they load with replay_differs (GameSession.Load). That needs an
+        // owner decision, not a fixture update or deleting this test (as #1780's hand-pinned hash tests were).
         Assert.Equal(saved.FinalHash, loaded.State.Hash());
         var order = Assert.IsType<UnitOrder>(Assert.Single(loaded.Committed));
         Assert.Equal((3, Orders.Fortify), (order.Unit, order.Order));
