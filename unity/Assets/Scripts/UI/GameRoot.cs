@@ -516,21 +516,7 @@ namespace Statecraft.Game.UI
                 {       // of the 1948 Collection's ships and C-54 (#669), and of the arms workshops' b21 (#1701 slice F)
                     IReadOnlyList<Bounds[]>? tokens = null;
                     if (unitLayer != null) { unitLayer.FaceCamera(labelCamera); tokens = unitLayer.KeepClear; }
-                    var craft = seaAir != null ? seaAir.KeepClear : null;
-                    var workshops = special != null ? special.KeepClear : null;
-                    int lists = (tokens != null && tokens.Count > 0 ? 1 : 0) + (craft != null && craft.Count > 0 ? 1 : 0) + (workshops != null && workshops.Count > 0 ? 1 : 0);
-                    if (lists <= 1) return craft != null && craft.Count > 0 ? craft : workshops != null && workshops.Count > 0 ? workshops : tokens;
-                    // One merged list per set of lists, so the labels see a new list only when one changes (they refresh then).
-                    if (!ReferenceEquals(tokens, keptTokens) || !ReferenceEquals(craft, keptCraft) || !ReferenceEquals(workshops, keptWorkshops))
-                    {
-                        keptTokens = tokens; keptCraft = craft; keptWorkshops = workshops;
-                        var merged = new List<Bounds[]>();
-                        if (tokens != null) merged.AddRange(tokens);
-                        if (craft != null) merged.AddRange(craft);
-                        if (workshops != null) merged.AddRange(workshops);
-                        keptBoth = merged;
-                    }
-                    return keptBoth;
+                    return keepClear.Merge(tokens, seaAir != null ? seaAir.KeepClear : null, special != null ? special.KeepClearFor(labelCamera) : null);
                 },
                 // Issue #710: the static 1948 tier from cities.yaml's people, not the sim's live count (owner, 15 October 2026).
                 bridge.Content.Cities.Where(c => c.People != null).ToDictionary(c => c.Id, c => c.People!.Value),
@@ -946,7 +932,32 @@ namespace Statecraft.Game.UI
         /// differs from what was drawn (every order and every turn raises Changed; rebuilding the markers each time would be
         /// wasted work). A project finishing redraws though State.Placements did not change.</summary>
         Statecraft.Game.Map.Collection.SeaAirCollection? seaAir;   // the 1948 Collection's craft (#669), for the labels to keep clear of
-        IReadOnlyList<Bounds[]>? keptTokens, keptCraft, keptWorkshops, keptBoth;
+        readonly KeepClearLists keepClear = new KeepClearLists();
+
+        /// <summary>The names' keep-clear boxes (MapLabelsPresenter's keepClear): the unit tokens', the 1948 Collection's craft
+        /// (#669) and the arms workshops' b21 (#1701 slice F). One list when only one has boxes; else one merged list, kept
+        /// until one of them is a new list, so the labels see a new list (and refresh) exactly when one changes. The layers
+        /// publish a new list on every change, never changing one already handed out.</summary>
+        internal sealed class KeepClearLists
+        {
+            IReadOnlyList<Bounds[]>? keptTokens, keptCraft, keptWorkshops, kept;
+
+            public IReadOnlyList<Bounds[]>? Merge(IReadOnlyList<Bounds[]>? tokens, IReadOnlyList<Bounds[]>? craft, IReadOnlyList<Bounds[]>? workshops)
+            {
+                bool t = tokens != null && tokens.Count > 0, c = craft != null && craft.Count > 0, w = workshops != null && workshops.Count > 0;
+                if ((t ? 1 : 0) + (c ? 1 : 0) + (w ? 1 : 0) <= 1) return c ? craft : w ? workshops : tokens;
+                if (kept == null || !ReferenceEquals(tokens, keptTokens) || !ReferenceEquals(craft, keptCraft) || !ReferenceEquals(workshops, keptWorkshops))
+                {
+                    keptTokens = tokens; keptCraft = craft; keptWorkshops = workshops;
+                    var merged = new List<Bounds[]>();
+                    if (t) merged.AddRange(tokens!);
+                    if (c) merged.AddRange(craft!);
+                    if (w) merged.AddRange(workshops!);
+                    kept = merged;
+                }
+                return kept;
+            }
+        }
         Statecraft.Game.Map.Collection.SpecialBuildingModels? special;   // the arms workshops' b21, for the labels to keep clear of
 
         void RenderPlacementsIfChanged()

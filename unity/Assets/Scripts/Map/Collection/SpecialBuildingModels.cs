@@ -263,6 +263,7 @@ namespace Statecraft.Game.Map.Collection
                 }
                 originals.Remove(key.id);
                 Placed.RemoveAll(p => p.Model == key.id);
+                if (key.id == Workshop) workshopBoxes = new List<Bounds[]>();   // a new list: the retired b21 leave the labels too
             }
             return removed;
         }
@@ -326,6 +327,11 @@ namespace Statecraft.Game.Map.Collection
         /// close zoom), for the name pills to keep clear of. GameRoot passes them to MapLabelsPresenter's keepClear with the
         /// units' and the craft's; a new list each rebuild, so the labels refresh when it changes.</summary>
         public IReadOnlyList<Bounds[]> KeepClear => isActiveAndEnabled && LastClose ? workshopBoxes : (IReadOnlyList<Bounds[]>)Array.Empty<Bounds[]>();
+
+        /// <summary>As <see cref="KeepClear"/> for <paramref name="camera"/>: whether that camera last drew the b21 (its own
+        /// close-zoom switch), not whichever camera rendered last (review of #2281, S4).</summary>
+        public IReadOnlyList<Bounds[]> KeepClearFor(Camera camera) =>
+            isActiveAndEnabled && closeFor.TryGetValue(camera.GetInstanceID(), out var close) && close ? workshopBoxes : (IReadOnlyList<Bounds[]>)Array.Empty<Bounds[]>();
         public bool FailedOpen { get; private set; }
         public bool LastClose { get; private set; }
         readonly Dictionary<string, List<GameObject>> originals = new Dictionary<string, List<GameObject>>(StringComparer.Ordinal);
@@ -391,9 +397,10 @@ namespace Statecraft.Game.Map.Collection
             if (wants.Any(w => w.Model == Workshop))
                 foreach (var (want, spot) in ruralPlan ?? RuralLife.PlanOf(map))
                     farms.Add((spot, RuralLife.SceneRadiusM(want.Model)));
-            bool Free(Vector2 p, float r) => TownLandmarks.Clear(p, r, taken) && TownLandmarks.Clear(p, r, footprints)
+            bool FreeOn(Vector2 p, float r, DateTime on) => TownLandmarks.Clear(p, r, taken) && TownLandmarks.Clear(p, r, footprints)
                 && ground.Inside(p.x - r, p.y - r) && ground.Inside(p.x + r, p.y + r)
-                && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, date);
+                && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, on);
+            bool Free(Vector2 p, float r) => FreeOn(p, r, date);
             var plan = new List<(Want, Vector2)>();
             var kits = map.transform.Find(Kits.KitLayer.RootName);
             foreach (var w in wants)
@@ -413,18 +420,22 @@ namespace Statecraft.Game.Map.Collection
                 if (at == null && w.Model == Workshop)
                 {
                     // On the project's own hex (its centre is the anchor), clear of the farm scenes, and as far out of a town's
-                    // footprint as the civilian figures keep from its label (CivilianPeople.LabelClearanceM).
+                    // footprint as the civilian figures keep from its label (CivilianPeople.LabelClearanceM). The units' tokens and
+                    // figures are those of the map's planned unit spots (MapScene.UnitClearings and UnitTokens, built with the map
+                    // from units_1948, not the units' live places) on the day the workshop was built (w.From), so its spot does not
+                    // move as the game's date passes a token's last day (review of #2281, S2).
+                    var built = w.From;
                     bool OnHex(Vector2 p, float r) => (p - anchor).magnitude + r <= HexInnerRadiusM && TownLandmarks.Clear(p, r, farms)
-                        && ClearOfFigures(map, p, r, date) && Free(p, r);
+                        && ClearOfFigures(map, p, r, built) && FreeOn(p, r, built);
                     float inside = Inside(anchor, footprints);
                     at = SeededSpot(w.Key, anchor, clearance, OnHex, inside > 0f ? inside + CivilianPeople.LabelClearanceM : 0f);
                     // A town whose footprint covers the whole hex (Jerusalem, Tel Aviv): a gap between its drawn buildings (owner,
                     // 2 November 2026: "Among the houses").
                     if (at == null && inside > 0f) at = TownGap(map, w.Key, anchor, clearance, (p, r) =>
                         (p - anchor).magnitude + r <= HexInnerRadiusM && TownLandmarks.Clear(p, r, farms) && TownLandmarks.Clear(p, r, taken)
-                        && ClearOfFigures(map, p, r, date)
+                        && ClearOfFigures(map, p, r, built)
                         && ground.Inside(p.x - r, p.y - r) && ground.Inside(p.x + r, p.y + r)
-                        && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, date));
+                        && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, built));
                 }
                 else if (at == null)
                 {
@@ -455,26 +466,35 @@ namespace Statecraft.Game.Map.Collection
             || p.y - centre.y <= -radius - r || p.y - centre.y >= radius + TownLabelHeightM + r;
 
         /// <summary>How far north on the ground a unit's figures hide what stands behind them (m): their height,
-        /// UnitBadge.FigureHeightM times UnitShowcase.FigureScale (as UnitLayer sizes them, UnitLayer.cs:764), seen at
-        /// CameraRig.Pitch, so height times cot(Pitch). (The flag's thin pole stands higher; keeping clear of its full height and
+        /// UnitBadge.FigureHeightM times UnitShowcase.FigureScale (as UnitLayer sizes them, UnitLayer.cs:764), seen at the view's
+        /// shallowest ray, CameraRig.Pitch - Fov/2, so height times cot(Pitch - Fov/2). (The flag's thin pole stands higher; keeping clear of its full height and
         /// its cloth's reach leaves Jerusalem's hex no ground, and ArmsWorkshopVisibilityTests checks the drawn tokens, flags
         /// included.)</summary>
-        public static float FigureShadowM => Units.UnitBadge.FigureHeightM * Units.UnitShowcase.FigureScale / Mathf.Tan(CameraRig.Pitch * Mathf.Deg2Rad);
+        public static float FigureShadowM => Units.UnitBadge.FigureHeightM * Units.UnitShowcase.FigureScale
+            / Mathf.Tan((CameraRig.Pitch - 0.5f * CameraRig.Fov) * Mathf.Deg2Rad);
+        // The framing (review of #2281, S1): CameraRig turns the camera Euler(Pitch, Yaw, 0) (CameraRig.cs:72), so Pitch is the
+        // view's depression below the horizon, exact on the screen's centre row; rows above it look down at less, to
+        // Pitch - Fov/2 at the top edge, where a figure hides the most ground. The bound takes that shallowest ray: 2.49 km x
+        // cot(32.5 deg) = 3.91 km (2.09 km at the centre row's 50 deg). The yaw is 0 under gdd-0.3, the only ruleset with
+        // workshops (CameraHeadingPolicy.cs:6, fixed north), and FigureScale does not change with the zoom (UnitLayer.cs:738-768).
 
         /// <summary>Review of #2281 (the Jerusalem b21 hidden behind a garrison's figures): whether a model of clearance
         /// <paramref name="r"/> at <paramref name="p"/> stands clear of the ground a unit spot's figures hide in the map's oblique
         /// view: north of the spot (the camera looks north, CameraRig yaw 0), within the spot's disc either side, as far as
         /// <see cref="FigureShadowM"/> past it. The spots: the units' town clearings (MapScene.UnitClearings) and their rings
         /// out of town (MapScene.UnitTokens, while their dates last), the planned ground the figures stand on.</summary>
-        public static bool ClearOfFigures(MapScene map, Vector2 p, float r, DateTime date)
+        public static bool ClearOfFigures(MapScene map, Vector2 p, float r, DateTime on)
         {
-            float shadow = FigureShadowM;
-            bool Hides(Vector2 c, float radius) =>
-                Mathf.Abs(p.x - c.x) < radius + r && p.y + r > c.y - radius && p.y - r < c.y + radius + shadow;
-            foreach (var (c, radius) in map.UnitClearings) if (Hides(c, radius)) return false;
-            foreach (var (c, radius, until) in map.UnitTokens) if (until >= date && Hides(c, radius)) return false;
+            foreach (var (c, radius) in map.UnitClearings) if (Hidden(p, r, c, radius)) return false;
+            foreach (var (c, radius, until) in map.UnitTokens) if (until > on && Hidden(p, r, c, radius)) return false;   // as KitGround.OnToken
             return true;
         }
+
+        /// <summary>Whether a disc of <paramref name="r"/> at <paramref name="p"/> is on the ground the figures of a unit spot at
+        /// <paramref name="c"/> (its disc <paramref name="radius"/>) hide: within the disc either side, from its south edge to
+        /// <see cref="FigureShadowM"/> past its north edge.</summary>
+        public static bool Hidden(Vector2 p, float r, Vector2 c, float radius) =>
+            Mathf.Abs(p.x - c.x) < radius + r && p.y + r > c.y - radius && p.y - r < c.y + radius + FigureShadowM;
 
         /// <summary>Whether a disc of <paramref name="r"/> at <paramref name="p"/> keeps clear of the box centred at <paramref name="c"/>,
         /// turned <paramref name="yawDeg"/> anticlockwise in x-z (KitMesh.Corners), <paramref name="w"/> along its turn and
@@ -563,6 +583,7 @@ namespace Statecraft.Game.Map.Collection
             ClearVisuals();
             var ground = PlacementLayer.CampGround(map);
             var holes = new List<(Vector2 centre, float radius)>();
+            var boxes = new List<Bounds[]>();
             foreach (var (w, spot) in Plan(map, date, wants, m => prefabs.TryGetValue(m, out var p) && p != null, log: true))
             {
                 var prefab = prefabs[w.Model]!;
@@ -579,8 +600,10 @@ namespace Statecraft.Game.Map.Collection
                 go.transform.position += new Vector3(pos.x - b.center.x, pos.y - b.min.y, pos.z - b.center.z);
                 foreach (var r in go.GetComponentsInChildren<Renderer>(true)) { r.shadowCastingMode = ShadowCastingMode.On; r.forceRenderingOff = !LastClose; renderers.Add(r); }
                 Placed.Add((w.Key, w.Model, pos));
-                if (w.Model == Workshop) workshopBoxes.Add(new[] { Bounds(go) });
+                if (w.Model == Workshop) boxes.Add(new[] { Bounds(go) });
             }
+            // Published once, whole (review of #2281, M1): a list handed to the labels is never changed after.
+            workshopBoxes = boxes;
             // No kit tree stands on a building: the trees whose crowns reach its ground are left out at draw time, as under
             // the unit figures (Kits.VegetationLayer.Hide).
             Units.UnitShowcase.HideTrees(map, Name, holes);

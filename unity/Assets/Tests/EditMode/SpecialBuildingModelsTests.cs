@@ -591,6 +591,68 @@ namespace Statecraft.Game.Tests
             Assert.IsTrue(SpecialBuildingModels.ClearOfName(c + new Vector2(0f, -fr - r - 1f), r, c, fr), "just under the bottom");
         }
 
+        /// <summary>Review of #2281 (M1): the b21 boxes the labels keep clear of are published as a new list on every change and
+        /// a list once handed out never changes. A b21 that streams in after the labels read the boxes, and a second workshop
+        /// built later, each reach the labels as a new list; the earlier lists keep what they held.</summary>
+        [Test]
+        public void TheWorkshopBoxesReachTheLabelsAsNewListsAndNeverChangeAfter()
+        {
+            var map = OpenMap();
+            var c = Rules(Statecraft.Sim.SaveGame.Gdd03Ruleset);
+            var cam = Camera.main!;
+            cam.transform.SetPositionAndRotation(new Vector3(0f, Statecraft.Game.Map.Kits.TownModelLayer.CloseEnterM - 1000f, 0f), Quaternion.Euler(90f, 0f, 0f));
+            var one = new[] { Workshop(c, 51, "rehovot", Built) };
+            var layer = CollectionGeometryFixture.Special(map, After, c, one)!;   // b21 asked for, not answered yet
+            layer.Choose(default, cam);
+            var before = layer.KeepClearFor(cam);
+            Assert.AreEqual(0, before.Count, "nothing drawn yet");
+            AnswerAll();   // b21 streams in after the labels read the boxes
+            var first = layer.KeepClearFor(cam);
+            Assert.AreNotSame(before, first, "a new list once the b21 is drawn");
+            Assert.AreEqual(1, first.Count);
+            Assert.AreEqual(0, before.Count, "the list handed out before is unchanged");
+            CollectionGeometryFixture.Special(map, After, c, new[] { one[0], Workshop(c, 52, "hadera", Built) });   // a second workshop
+            AnswerAll();
+            layer.Choose(default, cam);
+            var second = layer.KeepClearFor(cam);
+            Assert.AreNotSame(first, second, "a new list for the second b21");
+            Assert.AreEqual(2, second.Count);
+            Assert.AreEqual(1, first.Count, "the list handed out before is unchanged");
+        }
+
+        /// <summary>Review of #2281 (S2): a workshop's spot reads only planned data (the map's unit spots, the day it was built),
+        /// never the game's later date, so it stands on the same spot at a later date (past the dated tokens' last days).</summary>
+        [Test]
+        public void AWorkshopStandsOnTheSameSpotAsTheGameDatePasses()
+        {
+            var map = OpenMap();
+            var c = Rules(Statecraft.Sim.SaveGame.Gdd03Ruleset);
+            var projects = c.Cities.Select(x => x.Id).OrderBy(x => x, StringComparer.Ordinal).Select((city, i) => Workshop(c, 600 + i, city, Built)).ToList();
+            var wants = SpecialBuildingModels.ArmsWorkshops(c, projects);
+            var tokens = map.UnitTokens.Count(t => t.until > Built && t.until <= After);
+            TestContext.WriteLine($"{tokens} dated unit tokens end between the build and the later date");
+            Assert.Greater(tokens, 0, "premise: some dated tokens end in between");
+            var atBuilt = SpecialBuildingModels.Plan(map, Built, wants, _ => true, log: false).ToDictionary(x => x.want.Key, x => x.at);
+            var later = SpecialBuildingModels.Plan(map, After, wants, _ => true, log: false).ToDictionary(x => x.want.Key, x => x.at);
+            CollectionAssert.AreEquivalent(atBuilt.Keys, later.Keys, "the same workshops stand");
+            foreach (var kv in atBuilt) Assert.AreEqual(kv.Value, later[kv.Key], kv.Key + " on the same spot at the later date");
+        }
+
+        /// <summary>Review of #2281 (N1): the ground a unit spot's figures hide (SpecialBuildingModels.Hidden), edge by edge: north
+        /// of the spot to FigureShadowM past its disc, the disc's width either side, widened by the model's clearance.</summary>
+        [Test]
+        public void TheGroundAUnitsFiguresHideIsNorthOfItsSpot()
+        {
+            var c = new Vector2(1000f, 2000f); float R = 500f, r = 200f, s = SpecialBuildingModels.FigureShadowM;
+            Assert.Greater(s, 2000f, "the figures are about 2.5 km tall, seen at 50 degrees");
+            Assert.IsTrue(SpecialBuildingModels.Hidden(c + new Vector2(0f, R + s - 1f), 0f, c, R), "just inside the shadow's far end");
+            Assert.IsFalse(SpecialBuildingModels.Hidden(c + new Vector2(0f, R + s + r + 1f), r, c, R), "just beyond it");
+            Assert.IsTrue(SpecialBuildingModels.Hidden(c + new Vector2(R + r - 1f, R), r, c, R), "just inside its east side");
+            Assert.IsFalse(SpecialBuildingModels.Hidden(c + new Vector2(R + r + 1f, R), r, c, R), "just outside its east side");
+            Assert.IsFalse(SpecialBuildingModels.Hidden(c + new Vector2(-R - r - 1f, R), r, c, R), "just outside its west side");
+            Assert.IsFalse(SpecialBuildingModels.Hidden(c + new Vector2(0f, -R - r - 1f), r, c, R), "south of the spot: in front of the figures");
+        }
+
         /// <summary>The model stands from the turn the build completes (not while it is being built), stays put on GameRoot's
         /// refreshes at one state, leaves with its project, and never stands under gdd-0.1.</summary>
         [Test]

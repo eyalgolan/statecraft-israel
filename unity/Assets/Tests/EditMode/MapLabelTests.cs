@@ -313,6 +313,10 @@ public class MapLabelTests
         foreach (var city in cities) yield return NoPillCovers(city, 40000f);
     }
 
+    /// <summary>The one pill, and the distances, the owner's ruling of 3 November 2026 accepts over the Jerusalem b21.</summary>
+    static readonly string OldCityPill = "slot-east_jerusalem_old_city";
+    static readonly float[] OldCityPillAcceptedM = { 30000f, 40000f };
+
     IEnumerator NoPillCovers(string city, float farthest = 45000f)
     {
         var saved = Statecraft.Game.Map.Collection.SpecialBuildingModels.Request;
@@ -331,7 +335,7 @@ public class MapLabelTests
             var model = layer.transform.Find(Statecraft.Game.Map.Collection.SpecialBuildingModels.WorkshopKey(9));
             Assert.IsNotNull(model, "the workshop model stands at " + city);
             // As GameRoot wires it (#1701 slice F, option 3): the names keep clear of the drawn b21 (SpecialBuildingModels.KeepClear).
-            labels = new MapLabelsPresenter(hd.Root, map, cam, keepClear: () => layer.KeepClear, locations: Locations());
+            labels = new MapLabelsPresenter(hd.Root, map, cam, keepClear: () => layer.KeepClearFor(cam), locations: Locations());
             var all = labels.Labels.Concat(labels.LocalityLabels).Concat(labels.LocationLabels).ToList();
             var slots = labels.Slots.Concat(labels.LocalitySlots).Concat(labels.LocationSlots).ToList();
             var failures = new System.Collections.Generic.List<string>();
@@ -366,6 +370,14 @@ public class MapLabelTests
                     {
                         var pill = slot.Q<Label>().worldBound;
                         TestContext.WriteLine($"{distance:0} m, {offset:0} m: {slot.name} pill {pill}; workshop model {rect}");
+                        // Owner, 3 November 2026 (~07:02), verbatim: "Accept it at 30-40 km (Recommended)": the "East Jerusalem / Old
+                        // City" city pill may sit over the Jerusalem b21 at 30 and 40 km (as at 45 km: "Accept it (Recommended)",
+                        // 2 November 2026). Exactly that pill, at exactly those distances; every other pill and distance is checked.
+                        if (city == "jerusalem" && slot.name == OldCityPill && System.Array.IndexOf(OldCityPillAcceptedM, distance) >= 0)
+                        {
+                            if (pill.Overlaps(rect)) TestContext.WriteLine($"{distance:0} m, {offset:0} m: {slot.name} over the b21, accepted by the owner's ruling");
+                            continue;
+                        }
                         if (pill.Overlaps(rect)) failures.Add($"{distance:0} m, {offset:0} m: {slot.name}'s pill {pill} covers the workshop model {rect}");
                     }
                 }

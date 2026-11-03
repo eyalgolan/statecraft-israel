@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.IO;
+using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using Statecraft.Game.Map;
@@ -65,6 +66,16 @@ public class ArmsWorkshopVisibilityTests
         return true;
     }
 
+    /// <summary>The view depth of <paramref name="b"/>'s nearest corner (review of #2281, N1: by view depth, not by the
+    /// distance to its centre, so a tall renderer whose centre lies beyond the b21 but whose front reaches over it counts).</summary>
+    static float NearestDepth(Camera cam, Bounds b)
+    {
+        float near = float.MaxValue;
+        for (int c = 0; c < 8; c++)
+            near = Mathf.Min(near, cam.WorldToScreenPoint(new Vector3((c & 1) == 0 ? b.min.x : b.max.x, (c & 2) == 0 ? b.min.y : b.max.y, (c & 4) == 0 ? b.min.z : b.max.z)).z);
+        return near;
+    }
+
     static float Covered(Rect over, Rect model)
     {
         float w = Mathf.Min(over.xMax, model.xMax) - Mathf.Max(over.xMin, model.xMin), h = Mathf.Min(over.yMax, model.yMax) - Mathf.Max(over.yMin, model.yMin);
@@ -109,13 +120,13 @@ public class ArmsWorkshopVisibilityTests
         for (int i = 0; i < 5; i++) yield return null;
         var cam = Camera.main!;
         var modelRect = ScreenRect(cam, mb);
-        float modelDepth = (mb.center - cam.transform.position).magnitude;
+        float modelDepth = cam.WorldToScreenPoint(mb.center).z;   // view depth
         float worst = 0f; string worstName = "none";
         foreach (var r in root.Units!.GetComponentsInChildren<Renderer>(false))
         {
             if (!r.enabled || r.forceRenderingOff || !r.gameObject.activeInHierarchy) continue;
-            if ((r.bounds.center - cam.transform.position).magnitude >= modelDepth) continue;   // behind the b21: it cannot hide it
             if (!InFront(cam, r.bounds)) continue;   // behind the camera (or across its plane): not drawn over the b21
+            if (NearestDepth(cam, r.bounds) >= modelDepth) continue;   // wholly beyond the b21's centre: it cannot hide it
             float covered = Covered(ScreenRect(cam, r.bounds), modelRect);
             if (covered > worst) { worst = covered; worstName = r.name + " of " + (r.transform.parent != null ? r.transform.parent.name : "") + " at " + r.bounds.center; }
         }
@@ -126,4 +137,33 @@ public class ArmsWorkshopVisibilityTests
     [UnityTest] public IEnumerator TheJerusalemWorkshopIsNotHiddenBehindAUnit() { yield return Visible("jerusalem"); }
     [UnityTest] public IEnumerator TheTelAvivWorkshopIsNotHiddenBehindAUnit() { yield return Visible("tel_aviv"); }
     [UnityTest] public IEnumerator TheRehovotWorkshopIsNotHiddenBehindAUnit() { yield return Visible("rehovot"); }
+}
+
+/// <summary>Review of #2281 (S3): GameRoot's merge of the names' keep-clear boxes (GameRoot.KeepClearLists): the units' tokens,
+/// the craft and the workshops' b21; one list alone as it is; several merged into one list kept until one of them is a new
+/// list (a growing workshop list arrives as a new list each time); back to one list.</summary>
+public class KeepClearListsTests
+{
+    static List<Bounds[]> Boxes(int n) => Enumerable.Range(0, n).Select(i => new[] { new Bounds(new Vector3(i, 0, 0), Vector3.one) }).ToList();
+
+    [Test]
+    public void TokensCraftAndWorkshopsMergeAndFollowNewLists()
+    {
+        var merge = new GameRoot.KeepClearLists();
+        var tokens = Boxes(2); var craft = Boxes(1); var none = new List<Bounds[]>();
+        Assert.AreSame(tokens, merge.Merge(tokens, null, null), "one list alone, as it is");
+        Assert.AreSame(tokens, merge.Merge(tokens, none, none), "empty lists do not count");
+        var w1 = Boxes(1);
+        var all = merge.Merge(tokens, craft, w1)!;
+        Assert.AreEqual(4, all.Count, "tokens, craft and workshops together");
+        Assert.AreSame(all, merge.Merge(tokens, craft, w1), "the same lists: the same merged list (the labels do not refresh)");
+        var w2 = Boxes(2);   // a second b21: the workshops publish a new list
+        var grown = merge.Merge(tokens, craft, w2)!;
+        Assert.AreNotSame(all, grown, "a new workshop list: a new merged list");
+        Assert.AreEqual(5, grown.Count);
+        Assert.AreSame(w2, merge.Merge(null, none, w2), "back to one list: that list");
+        var again = merge.Merge(tokens, null, w2)!;
+        Assert.AreEqual(4, again.Count, "one to several again");
+        Assert.AreSame(tokens, merge.Merge(tokens, null, none), "and back to one");
+    }
 }
