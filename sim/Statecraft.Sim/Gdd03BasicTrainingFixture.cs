@@ -170,7 +170,8 @@ namespace Statecraft.Sim
         /// are not refunded and Arms return to the pool". The same record stays in place as a free civilian without a job and
         /// its course progress ends. Only an item this fixture issued goes back to the spare Arms (R-ARMS-003 "the Arms it
         /// took"); a carried item stays on the record. Money and Debt are unchanged. A record that is not a current trainee of
-        /// this fixture is refused with nothing changed.</summary>
+        /// this fixture is refused with nothing changed. Maintainer call (not an owner ruling): the carried item stays because
+        /// R-ARMS-003 returns only "the Arms it took"; the issued-item guard below is a second one.</summary>
         internal void Cancel(int traineeId)
         {
             ValidateInventory();
@@ -180,6 +181,8 @@ namespace Statecraft.Sim
                 throw new ArgumentException("Not a trainee this fixture started.");
             var e = trainee.Equipment;
             bool refund = issued.Contains(traineeId);
+            // Maintainer call (not an owner ruling): no rule covers a trainee whose issued item is gone, and refusing neither
+            // refunds an item the record no longer holds nor loses that Arms. In the tests only a direct ledger write gets here.
             if (refund && e.MilitaryId != IssuedPrefix + traineeId.ToString(CultureInfo.InvariantCulture))
                 throw new InvalidOperationException("Trainee " + traineeId.ToString(CultureInfo.InvariantCulture) + " no longer holds the item this fixture issued.");
             int spare = refund ? checked(SpareArms + 1) : SpareArms;
