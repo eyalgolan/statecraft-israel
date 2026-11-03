@@ -20,7 +20,7 @@ public class EncyclopediaScreenTests
     static readonly Content C = ContentLoader.Load(Paths.Content);
     static UiText En => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
     static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
-    // Every shipped page is approved since 1 Nov 2026, so this copy only matters for a page added later as pending.
+    // A copy with every page approved, so the Hebrew checks also read the pages still pending (security and public_support, #2223).
     static AdvisorCatalog Approved() => AdvisorCatalog.Parse(File.ReadAllText(AdvisorCatalog.Path).Replace("he_review: pending", "he_review: approved"));
 
     [Test]
