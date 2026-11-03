@@ -1881,7 +1881,7 @@ namespace Statecraft.Sim
         /// <summary>Targets whose capture hex is a neighbour of their settlement's hex, not that hex (owner on #1796, 26 October
         /// 2026, "Contested + move target"): at 4.4 km (#1183) Ramla shares (-4, 24) with Rehovot, so a unit on Rehovot's hex
         /// would capture Ramla. Its target is the neighbour nearest Ramla's point, cited in settlement_targets.yaml.</summary>
-        static readonly HashSet<string> TargetOnANeighbour = new HashSet<string>(StringComparer.Ordinal) { "ramla" };
+        internal static readonly HashSet<string> TargetOnANeighbour = new HashSet<string>(StringComparer.Ordinal) { "ramla" };
 
         /// <summary>R-CTRL-001 (Q-TGT-1 (a)): every target is an arab_town row of settlements_1948.yaml on a land hex that is
         /// its own hex in settlement_hexes.yaml (capture reads the target's hex, movement the settlement's), or for a

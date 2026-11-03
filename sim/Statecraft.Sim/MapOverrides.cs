@@ -406,9 +406,12 @@ namespace Statecraft.Sim
             return text.ToString();
         }
 
-        /// <summary>Infrastructure diagnostics only. Caller supplies current base identity; this is not Content.Hash.
-        /// Missing domain adapters are explicit errors, even on an empty candidate. No automatic repair is performed.</summary>
-        public IReadOnlyList<MapEditorDiagnostic> Diagnostics(string currentRevision, string currentDigest)
+        /// <summary>Infrastructure diagnostics. Caller supplies current base identity; this is not Content.Hash.
+        /// Missing domain adapters are explicit errors, even on an empty candidate. With the loaded <paramref name="content"/>
+        /// the corridor, force-anchor, target and objective bindings are checked against its map plus this overlay's location
+        /// moves, and each broken one is a blocking row naming its record (Q58, #1721 slice A). No automatic repair is
+        /// performed: no corridor, anchor, target or site is moved or rerouted.</summary>
+        public IReadOnlyList<MapEditorDiagnostic> Diagnostics(string currentRevision, string currentDigest, Content? content = null)
         {
             var result = new List<MapEditorDiagnostic>();
             if (BaseRevision != currentRevision || BaseDigest != currentDigest)
@@ -418,10 +421,75 @@ namespace Statecraft.Sim
             if (Draft == true)
                 result.Add(new MapEditorDiagnostic("MAPEDIT_DRAFT", "draft", "draft input cannot be canonical content",
                     "Resolve all diagnostics before requesting canonical export."));
-            foreach (var field in new[] { "regions", "fields", "facilities", "corridors", "anchors", "targets", "objectives", "base_manifest" })
+            var unavailable = content == null
+                ? new[] { "regions", "fields", "facilities", "corridors", "anchors", "targets", "objectives", "base_manifest" }
+                : new[] { "regions", "fields", "facilities", "base_manifest" };   // post-MVP adapters and the manifest contract
+            if (content != null) Dependencies(content, result);
+            foreach (var field in unavailable)
                 result.Add(new MapEditorDiagnostic("MAPEDIT_DEPENDENCY_UNAVAILABLE", field, "accepted validation adapter is not installed",
                     "Integrate the owning contract before canonical save or export."));
             return result.OrderBy(x => x.Field, StringComparer.Ordinal).ThenBy(x => x.Code, StringComparer.Ordinal).ToList().AsReadOnly();
+        }
+
+        /// <summary>The bindings the sim's loader would refuse (ContentLoader ValidateCorridors, StartingForces.Read,
+        /// ValidateSettlementTargets, ValidateObjectiveConditions and ValidateSites' settlement rule), re-checked with this
+        /// overlay's location moves applied to the settlements. Reads <paramref name="c"/> only.</summary>
+        void Dependencies(Content c, List<MapEditorDiagnostic> result)
+        {
+            void Broken(string field, string message) => result.Add(new MapEditorDiagnostic("MAPEDIT_DEPENDENCY_BROKEN", field, message,
+                "Resolve the binding explicitly; the editor never reroutes a sourced line or moves an anchor, target or site."));
+            bool Land(int q, int r) => c.HexAt(q, r)?.Land == true;
+            var settlement = new Dictionary<string, (int Q, int R)>(StringComparer.Ordinal);
+            foreach (var h in c.SettlementHexes)
+                settlement[h.Id] = Overlay.TryLocation(h.Id, out var q, out var r) ? (q, r) : (h.Q, h.R);
+
+            foreach (var x in c.Corridors)
+            {
+                List<int>? prev = null;
+                for (int i = 0; i < x.Segments.Count; i++)
+                    foreach (var h in x.Segments[i].Hexes)
+                    {
+                        var at = FormattableString.Invariant($"segment {i + 1} (to {x.Segments[i].To}) hex q={h[0]} r={h[1]}");
+                        if (!Land(h[0], h[1])) Broken($"corridors[{x.Id}]", at + " is not a land hex of the map");
+                        else if (prev != null && MapActions.Distance(prev[0], prev[1], h[0], h[1]) > 1)
+                            Broken($"corridors[{x.Id}]", at + FormattableString.Invariant($" is not next to q={prev[0]} r={prev[1]}"));
+                        prev = h;
+                    }
+            }
+            foreach (var f in c.StartingForces)
+            {
+                if (!Land(f.Q, f.R))
+                    Broken($"anchors[{f.Row}]", FormattableString.Invariant($"anchor {f.Anchor} hex q={f.Q} r={f.R} is not a land hex of the map"));
+                if (f.Script is (int sq, int sr) && !Land(sq, sr))
+                    Broken($"anchors[{f.Row}]", FormattableString.Invariant($"scripted anchor hex q={sq} r={sr} is not a land hex of the map"));
+            }
+            foreach (var t in c.SettlementTargets)
+            {
+                var at = $"targets[{t.Id}]";
+                if (!Land(t.Q, t.R)) Broken(at, FormattableString.Invariant($"target hex q={t.Q} r={t.R} is not a land hex of the map"));
+                if (!settlement.TryGetValue(t.Id, out var s)) { Broken(at, $"settlement '{t.Id}' has no hex"); continue; }
+                var bound = ContentLoader.TargetOnANeighbour.Contains(t.Id)
+                    ? Movement.Neighbours.Any(d => s.Q + d.Q == t.Q && s.R + d.R == t.R)
+                    : s.Q == t.Q && s.R == t.R;
+                if (!bound)
+                    Broken(at, FormattableString.Invariant($"target hex q={t.Q} r={t.R} no longer matches settlement {t.Id} at q={s.Q} r={s.R}"));
+            }
+            foreach (var o in c.Objectives)
+            {
+                var w = o.CompletesWhen;
+                if (w == null) continue;
+                var at = $"objectives[{o.Id}]";
+                if (w.CorridorComplete != "" && c.Corridors.All(x => x.Id != w.CorridorComplete))
+                    Broken(at, $"unknown corridor '{w.CorridorComplete}'");
+                foreach (var id in w.SitesBuilt.Prepend(w.SiteBuilt).Where(x => x != ""))
+                {
+                    var site = c.Sites.FirstOrDefault(x => x.Id == id);
+                    if (site == null) { Broken(at, $"unknown site '{id}'"); continue; }
+                    if (!Projects.IsYishuvSite(site)) Broken(at, $"site '{id}' cannot be built as a yishuv");
+                    foreach (var kv in settlement.Where(kv => kv.Value == (site.Q, site.R)).OrderBy(kv => kv.Key, StringComparer.Ordinal))
+                        Broken(at, FormattableString.Invariant($"site '{id}' hex q={site.Q} r={site.R} now holds the settlement {kv.Key}"));
+                }
+            }
         }
     }
 
