@@ -317,7 +317,7 @@ public class TalModelsShots
     }
 
     /// <summary>Owner ruling, 2 November 2026, "Yes, small buildings at every zoom": Tel Aviv, Jerusalem, Haifa and Jaffa from
-    /// the opening view (the game's own camera, 90 km), the widest zoom (diorama02, 250 km), and each city at 90 km and
+    /// the opening view (the game's own camera, CameraRig.StartDistance), the widest zoom (diorama02, 250 km), and each city at 90 km and
     /// 30 km, with the town layers' requests (whole towns and buildings) answered with the editor's prefabs, as the player's
     /// stream would answer them. Each frame logs its draw cost: the building models' instances, triangles and instanced
     /// draws (TownModelLayer), the whole-town models in view and their triangles (TownLandmarks), and the median render time.
