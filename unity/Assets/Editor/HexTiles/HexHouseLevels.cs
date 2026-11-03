@@ -43,7 +43,25 @@ namespace Statecraft.HexTiles
         public const float MaxError = 0.005f;
 
         public static string Stem(string id) => Folder + id + "/" + id;
+
         public static string LightStem(string id) => Stem(id) + "-light";
+
+        /// <summary>The width in texels of the material's colour map as delivered (its importer's source size), not as imported
+        /// for the active build target, which a platform cap shrinks (WebGL: 2048, owner 2 November 2026).</summary>
+        public static int SourceTexels(Material material)
+        {
+            string path = material.mainTexture != null ? AssetDatabase.GetAssetPath(material.mainTexture) : "";
+            if (!(AssetImporter.GetAtPath(path) is TextureImporter importer))
+                throw new InvalidOperationException($"{material.name}: its colour map has no texture importer ('{path}')");
+            importer.GetSourceTextureWidthAndHeight(out int width, out _);
+            return width;
+        }
+
+        /// <summary>The lighter level Build makes of a house's mesh, writing no asset: <see cref="Simplify"/> with Build's
+        /// settings, its seam tolerance <see cref="UvToleranceTexels"/> of the material's colour map as delivered
+        /// (<see cref="SourceTexels"/>), so the result is the same under every editor build target (HexHouseLevelTests).</summary>
+        public static Mesh LightMesh(Mesh source, Material material) =>
+            Simplify(source, UvToleranceTexels / SourceTexels(material), EdgeTolerance, MaxError);
 
         [Serializable]
         sealed class Record
@@ -71,7 +89,7 @@ namespace Statecraft.HexTiles
                 if (prefab == null || filter == null || filter.sharedMesh == null || material == null || material.mainTexture == null)
                     throw new InvalidOperationException("missing source house " + id);
                 var source = filter.sharedMesh;
-                var light = Simplify(source, UvToleranceTexels / material.mainTexture.width, EdgeTolerance, MaxError);
+                var light = LightMesh(source, material);
                 light.name = id + "-light";
 
                 // Copied into the existing asset on a rebuild, so the prefab's reference (the asset's GUID) holds.
