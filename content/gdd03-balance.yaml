@@ -197,7 +197,7 @@
     "values": [1]
   "field.slots":
     "basis": "Agreed"
-    "note": "Work, professions and training: farmer per prepared field. Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative regional-field model), per docs/gdd/balance.md:58 at 52fe3d60a. Source: #1668 balance.md at 605277df."
+    "note": "Work, professions and training: farmer per prepared field. Owner, 3 November 2026 (#1694): \"One farmer per field (Recommended)\", each field takes one farmer and an unworked field produces nothing (R-FIELD-002 under gdd-0.3). Amir's regional pooling through a capital stays declined (30 October 2026). Source: #1668 balance.md at 605277df."
     "values": [1]
   "field.cost":
     "basis": "Agreed"

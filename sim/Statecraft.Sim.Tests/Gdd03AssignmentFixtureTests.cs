@@ -76,9 +76,26 @@ public class Gdd03AssignmentFixtureTests
         }
         var same = s.Describe();
         Assert.Equal(Gdd03FixtureAssignmentResult.NoOp, f.Assign(0, Slots[0].Id)); Assert.Equal(same, s.Describe());
-        s.PopulationLedger.Replace(s.PopulationLedger.Get(1).WithReception(0));
+        // Ineligible: a refugee is not a free civilian (reception progress is no longer the test, docs/GDD.md:386).
+        var refugee = s.PopulationLedger.Get(1);
+        s.PopulationLedger.Replace(refugee.WithPlacement(PopulationStatus.Refugee, refugee.Location, PopulationAssignment.Unassigned, refugee.Captor, refugee.Home));
         same = s.Describe(); Assert.Throws<ArgumentException>(() => f.Assign(1, Slots[2].Id)); Assert.Equal(same, s.Describe());
         Assert.Throws<ArgumentException>(() => new Gdd03AssignmentFixture(c, s, Slots.Concat(new[] { Slots[0] })));
+    }
+
+    // R-CITY-001, R-CITY-004: the MVP has no reception-bed layer (owner, 1 November 2026, "No reception-bed layer
+    // (Recommended)", docs/GDD.md:386), so a free civilian with no reception progress may take and leave a job.
+    [Fact] public void AFreeCivilianWithNoReceptionProgressIsEligible()
+    {
+        var c = Content(); var s = State(c, Person());
+        s.PopulationLedger.Replace(s.PopulationLedger.Get(0).WithReception(0));
+        var f = new Gdd03AssignmentFixture(c, s, Slots);
+        Assert.Equal(Gdd03FixtureAssignmentResult.Applied, f.Assign(0, Slots[0].Id));
+        Assert.Equal(Slots[0].Id, s.PopulationLedger.Get(0).Assignment.Target);
+        Assert.Equal(0, s.PopulationLedger.Get(0).ReceptionTicks);
+        Assert.Equal(1m, f.IndustryRate(Slots[0].Id));
+        Assert.Equal(Gdd03FixtureAssignmentResult.Applied, f.Assign(0, null));
+        Assert.Equal(PopulationAssignmentKind.Unassigned, s.PopulationLedger.Get(0).Assignment.Kind);
     }
 
     // R-CITY-001: independent seeded model checks capacity, exclusivity and conservation after every step.
