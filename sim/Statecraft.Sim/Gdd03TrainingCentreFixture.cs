@@ -64,7 +64,13 @@ namespace Statecraft.Sim
 
         static NotSupportedException Deferred(string question) => new NotSupportedException("Deferred: " + question);
         const string Q42 = "#1668 Q42 (teachers per centre and an idle centre's teacher housing).";
-        const string Q43 = "#1668 Q43 (course turn boundaries: in which month's snapshot participants stop or resume other assignments).";
+        // Q43 is decided (GDD, 1 November 2026 answers). The one Q43 case left Deferred is not built here: a person who held
+        // another assignment at the month's opening (other than a pupil released from work, or a cancelled course or teaching)
+        // starting a course that month. The ruled Q43 refusals below are plain ArgumentExceptions citing the ruling.
+        const string Q43 = "#1668 Q43 (decided, not built here: starting a course after holding another assignment at the month's opening).";
+        internal const string BedWaitsReason = "No reception bed was free at the month's opening: a bed freed this month is reused from the next month (#1668 Q43(b) with Q41, GDD 1 Nov 2026).";
+        internal const string GraduationMonthReason = "A person released by a graduation can start a course from the next month (#1668 Q43(b), GDD 1 Nov 2026).";
+        internal const string CourseAtOpeningReason = "After the enrolment month, a course turn counts only when the month's opening holds the course with the same teacher (#1668 Q43(a), GDD 1 Nov 2026).";
         const string Q44 = "#1668 Q44 and the GDD novice lock-in decision (when a free entrant becomes a novice; profession change after a cancelled course).";
         const string Q9 = "#1668 27 Oct list Q9 (return after cancellation or camp loss).";
 
@@ -158,14 +164,14 @@ namespace Statecraft.Sim
             // counts and can be assigned from the next turn's planning", so neither starts a course in that month.
             if (graduated.TryGetValue(trainee.Id, out var g) && month.MonthOrdinal <= g
                 || graduated.TryGetValue(teacher.Id, out g) && month.MonthOrdinal <= g)
-                throw new ArgumentException("A person released by a graduation can start a course from the next month.");
+                throw new ArgumentException(GraduationMonthReason);
             // #1716 month snapshot (owner-relayed Q43(a) and Q34, 28 Oct 2026): a course occupies the pupil from the turn it
             // starts and a job change is immediate, so a pupil who worked at the opening and was released this turn may start,
             // and this month's work/course snapshot shows the course. #1716 Q43(b) release (owner-approved answer, 1 Nov 2026,
             // #1668): "Cancellation: they are released at once, as civilians without a job." A pupil who held a course, or a
             // teacher who taught, at the opening and is free now was released by a cancel this turn (only Cancel ends those
             // exclusive assignments here), so either may start again this month. A teacher who worked at the opening and was
-            // released this turn stays Deferred.
+            // released this turn is not built here and stays Deferred.
             if ((traineeOpening.Assignment.Kind != PopulationAssignmentKind.Unassigned
                     && traineeOpening.Assignment.Kind != PopulationAssignmentKind.Work
                     && traineeOpening.Assignment.Kind != PopulationAssignmentKind.Course)
@@ -180,7 +186,7 @@ namespace Statecraft.Sim
                     && string.Equals(p.Assignment.Target, centre.Id, StringComparison.Ordinal)));
             int startedThisMonth = months.Count(m => m.Value.enrolment == month.MonthOrdinal
                 && string.Equals(CentreOf(ledger.Get(m.Key)).ParentCamp, centre.ParentCamp, StringComparison.Ordinal));
-            if (openingBeds + startedThisMonth >= bedsPerCamp) throw Deferred(Q43);
+            if (openingBeds + startedThisMonth >= bedsPerCamp) throw new ArgumentException(BedWaitsReason);
 
             var course = new PopulationAssignment(PopulationAssignmentKind.Course, centre.Id, 0, teacher.Id);
             var pupil = trainee.WithPlacement(PopulationStatus.Trainee, trainee.Location, course, trainee.Captor, trainee.Home);
@@ -206,7 +212,7 @@ namespace Statecraft.Sim
             if (!enrolmentMonth && (opening.Status != PopulationStatus.Trainee || opening.Assignment.Kind != PopulationAssignmentKind.Course
                 || !string.Equals(opening.Assignment.Target, centre.Id, StringComparison.Ordinal)
                 || opening.Assignment.TeacherId != trainee.Assignment.TeacherId))
-                throw Deferred(Q43);
+                throw new ArgumentException(CourseAtOpeningReason);
             if (tracked && (month.MonthOrdinal < known.enrolment || month.MonthOrdinal <= known.lastCounted))
                 throw new ArgumentException("This month ordinal was already counted or is earlier.");
             if (enrolmentMonth
