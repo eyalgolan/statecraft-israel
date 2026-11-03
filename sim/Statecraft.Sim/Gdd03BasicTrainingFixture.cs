@@ -25,8 +25,7 @@ namespace Statecraft.Sim
     /// Arms (ARMS-1, ARMS-2, 27M-7, R-TRAIN-001, R-ARMS-003), synthetic fixtures only. No command, save, loader, resolver,
     /// Food or UI caller. Like <see cref="Gdd03ProjectBuildFixture"/> it owns its spare Arms, Money and Debt, so the ledger
     /// never touches resources (R-POP-002). Completion into a formation is refused with a "Deferred:" NotSupportedException.
-    /// Cancel is not built: its Arms refund (R-TRAIN-002, R-ARMS-003 "Refund on cancel") conflicts with #1699's "Cancelling
-    /// basic training leaves the issued Arms on the unit" and waits on an owner ruling.</summary>
+    /// Cancel returns an issued item to the spare Arms (R-TRAIN-002, R-ARMS-003, docs/GDD.md:372).</summary>
     internal sealed class Gdd03BasicTrainingFixture
     {
         /// <summary>Issued item ids are this prefix plus the population id. It is disjoint from the census and units_1948
@@ -42,6 +41,8 @@ namespace Statecraft.Sim
         readonly decimal moneyPerCourse;
         // Per fixture instance only (not saved): each trainee's enrolment month and last counted month ordinal.
         readonly SortedDictionary<int, (int enrolment, int lastCounted)> months = new SortedDictionary<int, (int, int)>();
+        // Per fixture instance only (not saved): the trainees whose item this fixture issued from its spare Arms.
+        readonly SortedSet<int> issued = new SortedSet<int>();
         internal int SpareArms { get; private set; }
         internal decimal Money { get; private set; }
         internal decimal Debt { get; private set; }
@@ -141,6 +142,7 @@ namespace Statecraft.Sim
             SpareArms -= need;
             Money -= paid; Debt = debt;
             foreach (var p in recruits) months[p.Id] = (monthOrdinal, monthOrdinal - 1);
+            foreach (var p in recruits) if (p.Equipment.MilitaryId == null) issued.Add(p.Id);
         }
 
         /// <summary>R-TRAIN-001 "counting the turn it was ordered in": count one course turn a month ordinal, the enrolment
@@ -161,6 +163,33 @@ namespace Statecraft.Sim
             Commit(new[] { trainee.WithPlacement(trainee.Status, trainee.Location,
                 new PopulationAssignment(PopulationAssignmentKind.Course, camp.Id, progress), trainee.Captor, trainee.Home) });
             months[traineeId] = (known.enrolment, monthOrdinal);
+        }
+
+        /// <summary>R-TRAIN-002 under gdd-0.3: cancel one trainee's course. "`CancelTraining(cohort)` returns the cohort's
+        /// people to its city as civilians without a job and refunds none of the Money paid"; docs/GDD.md:372 "Money and tools
+        /// are not refunded and Arms return to the pool". The same record stays in place as a free civilian without a job and
+        /// its course progress ends. Only an item this fixture issued goes back to the spare Arms (R-ARMS-003 "the Arms it
+        /// took"); a carried item stays on the record. Money and Debt are unchanged. A record that is not a current trainee of
+        /// this fixture is refused with nothing changed.</summary>
+        internal void Cancel(int traineeId)
+        {
+            ValidateInventory();
+            var trainee = state.PopulationLedger.Get(traineeId); // an unknown id throws ArgumentException
+            if (trainee.Status != PopulationStatus.Trainee || trainee.Assignment.Kind != PopulationAssignmentKind.Course
+                || trainee.Assignment.Target == null || !camps.ContainsKey(trainee.Assignment.Target) || !months.ContainsKey(traineeId))
+                throw new ArgumentException("Not a trainee this fixture started.");
+            var e = trainee.Equipment;
+            bool refund = issued.Contains(traineeId);
+            if (refund && e.MilitaryId != IssuedPrefix + traineeId.ToString(CultureInfo.InvariantCulture))
+                throw new InvalidOperationException("Trainee " + traineeId.ToString(CultureInfo.InvariantCulture) + " no longer holds the item this fixture issued.");
+            int spare = refund ? checked(SpareArms + 1) : SpareArms;
+            var person = !refund ? trainee : new PopulationUnit(trainee.Id, trainee.Status, trainee.ReceptionTicks, trainee.Location,
+                trainee.Assignment, trainee.Profession, trainee.Tier, trainee.WorkXp, trainee.Qualification, trainee.CombatXp,
+                new PopulationEquipment(e.ToolsId, e.ToolsPaid, null, false), trainee.Captor, trainee.Home);
+            Commit(new[] { person.WithPlacement(PopulationStatus.FreeCivilian, trainee.Location, PopulationAssignment.Unassigned,
+                trainee.Captor, trainee.Home) });
+            SpareArms = spare;
+            issued.Remove(traineeId); months.Remove(traineeId);
         }
     }
 }
