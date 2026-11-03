@@ -2,8 +2,9 @@ using System;
 
 namespace Statecraft.Sim
 {
-    /// <summary>Unwired arithmetic for #1703 synthetic fixtures. No state, resident selection,
-    /// initial condition, snapshot timing, Money settlement or indicator commit.</summary>
+    /// <summary>#1703's housing arithmetic. <see cref="Evaluate"/> is the decimal form for synthetic fixtures;
+    /// <see cref="EvaluateTurn"/> is the live gdd-0.3 step in double. Neither holds state, selects residents, sets the
+    /// initial condition, settles Money or commits an indicator: Cities.UpdateCondition does.</summary>
     internal sealed class Gdd03HousingFormula
     {
         readonly decimal conditionMax, moneyThreshold, moneySlope, cohesionThreshold;
@@ -12,7 +13,7 @@ namespace Statecraft.Sim
 
         Gdd03HousingFormula(Gdd03BalanceCatalogue c)
         {
-            // content/gdd03-balance.yaml:226-253; GDD balance.md:100-105 at 605277df.
+            // content/gdd03-balance.yaml `housing.*`; GDD balance.md:100-105 at 605277df.
             conditionMax = Scalar(c, "housing.condition_max", true);
             moneyThreshold = Scalar(c, "housing.money_threshold", true);
             moneySlope = Scalar(c, "housing.money_slope", false);
@@ -28,7 +29,7 @@ namespace Statecraft.Sim
                 || repair.Values.Count != 0 || !string.IsNullOrEmpty(repair.Expression)
                 || !repair.Parts.TryGetValue("condition_pp", out var effect))
                 throw Invalid("housing_repair", "requires agreed repair condition part");
-            // content/gdd03-balance.yaml:683-687. No repair cost/work/availability policy here.
+            // content/gdd03-balance.yaml `housing_repair.parts.condition_pp`. No repair cost/work/availability policy here.
             repairPp = Number(effect, "housing_repair.parts.condition_pp", false);
         }
 
@@ -79,11 +80,32 @@ namespace Statecraft.Sim
             var unpaid = input.UpkeepDue == 0m ? 0m :
                 (unpaidPp / 100m) * ((input.UpkeepDue - input.UpkeepPaid) / input.UpkeepDue);
             var after = Clamp(input.ConditionBefore - overflow - unpaid);
-            // GDD cities.md:31,33. Contribution in displayed points, not indicator storage.
+            // GDD cities.md:31,33 at 605277df. Contribution in displayed points, not indicator storage.
             var cohesion = input.OwnPopulation == 0 ? 0m : maxCohesionLoss
                 * ((decimal)input.CohesionResidents / input.OwnPopulation)
                 * Math.Max(0m, (cohesionThreshold - after) / cohesionThreshold);
             return new Gdd03HousingResult(surcharge, overflow, unpaid, after, cohesion);
+        }
+
+        /// <summary>R-HOUSE-005's live step for one city (#1703; Cities.UpdateCondition): Evaluate's surcharge, overflow
+        /// and cohesion terms in the same order, with no upkeep (27M-17), in double. A city's condition, the Treasury and the
+        /// indicators are doubles, hashed as IEEE bits (docs/determinism.md), so the live step stays in double rather than
+        /// round-trip state through decimal; only the catalogue's one- and two-digit scalars are cast, as Workshops casts
+        /// its catalogue price.</summary>
+        internal (double Surcharge, double ConditionAfter, double Cohesion) EvaluateTurn(int residents, int ownPopulation,
+            int capacity, double condition)
+        {
+            if (residents < 0 || capacity < 0 || residents > ownPopulation)
+                throw new ArgumentOutOfRangeException(nameof(residents), "counts must be nonnegative; residents cannot exceed own population");
+            if (condition < 0.0 || condition > (double)conditionMax)
+                throw new ArgumentOutOfRangeException(nameof(condition), "condition must be within catalogue bounds");
+            var surcharge = residents * Math.Max(0.0, (double)moneyThreshold - condition) * (double)moneySlope;
+            var overflow = residents == 0 ? 0.0 : ((double)overflowPp / 100.0) * Math.Max(0, residents - capacity) / residents;
+            var after = Math.Max(0.0, Math.Min((double)conditionMax, condition - overflow));
+            var threshold = (double)cohesionThreshold;
+            var cohesion = ownPopulation == 0 ? 0.0 : (double)maxCohesionLoss
+                * ((double)residents / ownPopulation) * Math.Max(0.0, (threshold - after) / threshold);
+            return (surcharge, after, cohesion);
         }
 
         // Explicit single project-effect arithmetic; caller owns command/payment/application-once.

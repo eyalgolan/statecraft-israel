@@ -45,22 +45,61 @@ namespace Statecraft.Game.Map.Kits
         internal Bounds CloseCopy((int v, int i) start, Vector3 anchor, float yawDeg, float along, float across, float up)
         {
             CutEnd(start);
-            var to = Plinths;
-            int off = to.pos.Count;
+            return Copy(start, (pos.Count, tri.Count), Plinths, anchor, yawDeg, along, across, up, new Bounds(anchor, Vector3.zero));
+        }
+
+        // ---- #2266 (owner, 2 November 2026: "tal's high quality models replace the built ones everytwhere") ----------------
+        // A landmark's replaceable part (a minaret, a belfry, a clock tower) moves to a second submesh: of this mesh at the kit's
+        // scale (FarParts), and of the close mesh as the close copy (CloseParts). Its renderer draws that submesh, the code-built
+        // fallback, until the map gives it one material only, once Tal Heuberger's model stands there (HexPropModels).
+
+        readonly List<(int v0, int v1, int i0, int i1)> detached = new List<(int, int, int, int)>();
+        KitMesh? farParts, closeParts;
+        internal KitMesh FarParts => farParts ??= new KitMesh();
+        internal KitMesh CloseParts => closeParts ??= new KitMesh();
+        internal bool HasParts => farParts != null;
+        /// <summary>The replaceable parts detached from this mesh: their kind ("minaret", "belfry", "clock_tower"), owner, yaw
+        /// and boxes far off and up close, in placement order.</summary>
+        internal readonly List<(string kind, string owner, float yaw, Bounds far, Bounds close)> Parts = new List<(string, string, float, Bounds, Bounds)>();
+
+        /// <summary>As CloseCopy for a landmark from <paramref name="start"/>, whose parts from <paramref name="part"/> on are a
+        /// replaceable <paramref name="kind"/>: those leave this mesh for FarParts and their close copy goes to CloseParts, with
+        /// the same transform as the rest. Returns the whole landmark's close box, as CloseCopy's.</summary>
+        internal Bounds CloseCopySplit((int v, int i) start, (int v, int i) part, string kind, string owner, float partYaw,
+            Vector3 anchor, float yawDeg, float along, float across, float up)
+        {
+            CutEnd(start);
+            var end = (pos.Count, tri.Count);
+            var b = Copy(start, part, Plinths, anchor, yawDeg, along, across, up, new Bounds(anchor, Vector3.zero));
+            var close = Copy(part, end, CloseParts, anchor, yawDeg, along, across, up, new Bounds(anchor, Vector3.zero), fresh: true);
+            b.Encapsulate(close);
+            var far = Copy(part, end, FarParts, Vector3.zero, 0f, 1f, 1f, 1f, default, fresh: true);
+            if (end.Item1 > part.v) detached.Add((part.v, end.Item1, part.i, end.Item2));
+            Parts.Add((kind, owner, partYaw, far, close));
+            return b;
+        }
+
+        /// <summary>Appends a copy of vertices and triangles [<paramref name="from"/>, <paramref name="to"/>) to
+        /// <paramref name="into"/>, shrunk about <paramref name="anchor"/> as CloseCopy describes; returns <paramref name="b"/>
+        /// grown by the copy (with <paramref name="fresh"/>, the copy's own box).</summary>
+        Bounds Copy((int v, int i) from, (int v, int i) to, KitMesh into, Vector3 anchor, float yawDeg, float along, float across, float up,
+            Bounds b, bool fresh = false)
+        {
+            int off = into.pos.Count;
             float a = yawDeg * Mathf.Deg2Rad, ca = Mathf.Cos(a), sa = Mathf.Sin(a);
-            var b = new Bounds(anchor, Vector3.zero);
-            for (int v = start.v; v < pos.Count; v++)
+            bool first = fresh;
+            for (int v = from.v; v < to.v; v++)
             {
                 Vector3 p = pos[v] - anchor, n = nrm[v];
                 // Into the yaw's frame (u along, w across), scaled, and back; a normal by the inverse scale.
                 float u = (p.x * ca + p.z * sa) * along, w = (-p.x * sa + p.z * ca) * across;
                 float nu = (n.x * ca + n.z * sa) / along, nw = (-n.x * sa + n.z * ca) / across;
                 var q = anchor + new Vector3(u * ca - w * sa, p.y > 0f ? p.y * up : p.y, u * sa + w * ca);
-                to.pos.Add(q); b.Encapsulate(q);
-                to.nrm.Add(new Vector3(nu * ca - nw * sa, p.y > 0f ? n.y / up : n.y, nu * sa + nw * ca).normalized);
-                to.col.Add(col[v]); to.uv.Add(uv[v]);
+                into.pos.Add(q); if (first) { b = new Bounds(q, Vector3.zero); first = false; } else b.Encapsulate(q);
+                into.nrm.Add(new Vector3(nu * ca - nw * sa, p.y > 0f ? n.y / up : n.y, nu * sa + nw * ca).normalized);
+                into.col.Add(col[v]); into.uv.Add(uv[v]);
             }
-            for (int i = start.i; i < tri.Count; i++) to.tri.Add(tri[i] - start.v + off);
+            for (int i = from.i; i < to.i; i++) into.tri.Add(tri[i] - from.v + off);
             return b;
         }
         /// <summary>Buildings marked (a test aid).</summary>
@@ -96,12 +135,8 @@ namespace Statecraft.Game.Map.Kits
                 p.AddRange(plinths.pos); n.AddRange(plinths.nrm); c.AddRange(plinths.col); u.AddRange(plinths.uv);
                 foreach (var i in plinths.tri) t.Add(i + off);
             }
-            if (t.Count == 0) return null;
-            var m = new Mesh { name = name, indexFormat = p.Count > 65000 ? IndexFormat.UInt32 : IndexFormat.UInt16 };
-            m.SetVertices(p); m.SetNormals(n); m.SetColors(c); m.SetUVs(0, u); m.SetTriangles(t, 0);
-            m.RecalculateBounds();
-            m.UploadMeshData(true);
-            return m;
+            if (t.Count == 0 && (closeParts == null || closeParts.tri.Count == 0)) return null;
+            return Upload(name, p, n, c, u, t, closeParts);
         }
         public int TriangleCount => tri.Count / 3;
         /// <summary>Vertices whose normal is not unit length (a degenerate face): the shader would light them as NaN on WebGL 2.</summary>
@@ -109,10 +144,55 @@ namespace Statecraft.Game.Map.Kits
 
         public Mesh ToMesh(string name)
         {
+            if (detached.Count > 0) return Without(name, detached, farParts);
             var m = new Mesh { name = name, indexFormat = pos.Count > 65000 ? IndexFormat.UInt32 : IndexFormat.UInt16 };
             m.SetVertices(pos); m.SetNormals(nrm); m.SetColors(col); m.SetUVs(0, uv); m.SetTriangles(tri, 0);
             m.RecalculateBounds();
             m.UploadMeshData(true);   // no CPU copy: nothing reads the vertices back
+            return m;
+        }
+
+        /// <summary>This mesh without the vertex and index spans <paramref name="ranges"/> (in order), as ToMesh uploads it.</summary>
+        Mesh Without(string name, List<(int v0, int v1, int i0, int i1)> ranges, KitMesh? second)
+        {
+            var map = new int[pos.Count];
+            var p = new List<Vector3>(); var n = new List<Vector3>(); var c = new List<Color32>(); var u = new List<Vector2>(); var t = new List<int>();
+            int k = 0;
+            for (int v = 0; v < pos.Count; v++)
+            {
+                while (k < ranges.Count && v >= ranges[k].v1) k++;
+                if (k < ranges.Count && v >= ranges[k].v0) { map[v] = -1; continue; }
+                map[v] = p.Count; p.Add(pos[v]); n.Add(nrm[v]); c.Add(col[v]); u.Add(uv[v]);
+            }
+            k = 0;
+            for (int i = 0; i < tri.Count; i++)
+            {
+                while (k < ranges.Count && i >= ranges[k].i1) k++;
+                if (k < ranges.Count && i >= ranges[k].i0) continue;
+                int at = map[tri[i]];
+                if (at < 0) throw new System.InvalidOperationException("a kept triangle uses a detached part's vertex");
+                t.Add(at);
+            }
+            return Upload(name, p, n, c, u, t, second);
+        }
+
+        /// <summary>The mesh of these lists, with <paramref name="second"/>'s parts (if any) as submesh 1.</summary>
+        static Mesh Upload(string name, List<Vector3> p, List<Vector3> n, List<Color32> c, List<Vector2> u, List<int> t, KitMesh? second)
+        {
+            var t1 = new List<int>();
+            if (second != null && second.tri.Count > 0)
+            {
+                int off = p.Count;
+                p.AddRange(second.pos); n.AddRange(second.nrm); c.AddRange(second.col); u.AddRange(second.uv);
+                foreach (var i in second.tri) t1.Add(i + off);
+            }
+            var m = new Mesh { name = name, indexFormat = p.Count > 65000 ? IndexFormat.UInt32 : IndexFormat.UInt16 };
+            m.SetVertices(p); m.SetNormals(n); m.SetColors(c); m.SetUVs(0, u);
+            m.subMeshCount = t1.Count > 0 ? 2 : 1;
+            m.SetTriangles(t, 0);
+            if (t1.Count > 0) m.SetTriangles(t1, 1);
+            m.RecalculateBounds();
+            m.UploadMeshData(true);
             return m;
         }
 
@@ -182,9 +262,10 @@ namespace Statecraft.Game.Map.Kits
         /// (<paramref name="x"/>, <paramref name="z"/>), <paramref name="w"/> wide along its own x after a yaw of
         /// <paramref name="yawDeg"/>, <paramref name="d"/> deep; walls from <paramref name="bottom"/> (sunk into the slope) to
         /// <paramref name="ground"/> + <paramref name="h"/>. <paramref name="metresPerReal"/> turns world metres into real
-        /// metres for the facade uv (the symbolic scale).</summary>
+        /// metres for the facade uv (the symbolic scale). With <paramref name="parapet"/> above 0 and a flat roof, a plastered
+        /// rim stands round the roof's edge (Parapet).</summary>
         public void Box(float x, float z, float yawDeg, float w, float d, float bottom, float ground, float h, Color32 wall, Color32 roof,
-            Facade facade, float metresPerReal, bool roofed = false)
+            Facade facade, float metresPerReal, bool roofed = false, float parapet = 0f, float parapetThickness = 0f)
         {
             var c = Corners(x, z, yawDeg, w, d);
             float top = ground + h;
@@ -202,7 +283,32 @@ namespace Statecraft.Game.Map.Kits
                 var r = roof; r.a = 0;
                 Face(new Vector3(c[0].x, top, c[0].y), new Vector3(c[3].x, top, c[3].y), new Vector3(c[2].x, top, c[2].y), new Vector3(c[1].x, top, c[1].y), r,
                     Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero);
+                if (parapet > 0f && 2f * parapetThickness < Mathf.Min(w, d)) Parapet(c, Corners(x, z, yawDeg, w - 2f * parapetThickness, d - 2f * parapetThickness), top, parapet, wall);
             }
+        }
+
+        /// <summary>A flat roof's parapet: a rim <paramref name="height"/> high on the roof
+        /// at <paramref name="roofY"/>, between the footprint's corners <paramref name="outer"/> and the inner corners
+        /// <paramref name="inner"/> (both as Corners gives them). Its outer face continues the wall upwards but is Plain (no
+        /// window rows), so it reads as a light band at the roof's edge; its inner face looks onto the roof; its top is one
+        /// ring of 8 vertices. 40 vertices in all.</summary>
+        void Parapet(Vector2[] outer, Vector2[] inner, float roofY, float height, Color32 colour)
+        {
+            colour.a = (byte)Facade.Plain;
+            float y = roofY + height;
+            Vector3 P(Vector2 q, float h) => new Vector3(q.x, h, q.y);
+            for (int i = 0; i < 4; i++)
+            {
+                int j = (i + 1) % 4;
+                // Outside (as Box's walls), then inside: the same edge reversed, so it faces the roof.
+                Face(P(outer[i], roofY), P(outer[i], y), P(outer[j], y), P(outer[j], roofY), colour, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero);
+                Face(P(inner[j], roofY), P(inner[j], y), P(inner[i], y), P(inner[i], roofY), colour, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero);
+            }
+            int o = pos.Count;
+            for (int i = 0; i < 4; i++) V(P(outer[i], y), Vector3.up, colour, Vector2.zero);
+            for (int i = 0; i < 4; i++) V(P(inner[i], y), Vector3.up, colour, Vector2.zero);
+            // Clockwise seen from above, as the roof (outer i, inner i, inner i+1, outer i+1).
+            for (int i = 0; i < 4; i++) { int j = (i + 1) % 4; Quad(o + i, o + 4 + i, o + 4 + j, o + j); }
         }
 
         /// <summary>A gable roof on a w x d box whose walls end at <paramref name="eaves"/>: the ridge runs along the longer

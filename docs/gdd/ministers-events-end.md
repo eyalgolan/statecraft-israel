@@ -7,8 +7,7 @@ I read historical choices/national conditions and reach an ending explaining my 
 
 ## Rules
 
-- The MVP runs 44 turns (monthly), from 15 May 1948 to 15 January 1952: D-B1 fixes the start and the monthly grid [S2], and the owner ended the MVP on 15 January 1952, keeping the 15th grid with no adjusted turn (D-E5, decided 15 October 2026 [S2]). The GDD text still says "approximately 48 turns" [S1]; the owner settled 44 turns [S2].
-- **Correction:** The current GDD now specifies 44 turns (monthly) ([GDD, MVP scope](../GDD.md#mvp-scope-1948-to-1951)) [S1]; the sentence above preserves superseded wording from the earlier baseline.
+- The MVP runs 44 turns (monthly), from 15 May 1948 to 15 January 1952: D-B1 fixes the start and the monthly grid [S2], and the owner ended the MVP on 15 January 1952, keeping the 15th grid with no adjusted turn (D-E5, decided 15 October 2026 [S2]).
 - Objective cards and scoring belong to the first phase (#379, `objectives-and-score.md`; D-B2, D-B6 [S2]) and are not restated here. This section covers only what the final phase adds: every card complete, the end screen (D-H4, decided 17 October 2026 [S6] and built as R-END-005 and R-END-006, `docs/rules/mvp.md`), defeat (D-B5, decided 15 October 2026 [S2]), the events (D-H1 and D-H2, decided 17 October 2026 [S5]) and the ministers (D-H3, first slice decided 17 October and 18 October 2026 and built as R-MIN-001 to R-MIN-003, and declared complete for the MVP on 23 October 2026 [S7]) [S2].
 - Defeat: not all objectives are required to finish. The game is lost when Money and Food are exhausted for several turns in a row or on a war loss, and coalition collapse is off in the MVP (D-B5, decided 15 October 2026 [S2]). The defeat is built in this phase, with the counter set then (`Q-GOV-2`, decided 15 October 2026 [S4]). A war loss is enemy units holding the hex of one of the player's cities at turn end (`Q-WAR-5`, decided 15 October 2026 [S4]); "Money exhausted" is a debt at or above the debt ceiling (`Q-DEF-1`, owner, 17 October 2026, [#784](https://github.com/eyalgolan/statecraft-israel/issues/784#issuecomment-6232838937) [S5]; built as R-END-001, `docs/rules/mvp.md`).
 - The war-survival objective completes on the last armistice event, the Syria-Israel agreement of 20 July 1949 (D-B2 [S2]; [S3]). The four signings were Egypt on 24 February 1949, Lebanon on 23 March 1949, Jordan on 3 April 1949 and Syria on 20 July 1949 [S3].
@@ -27,7 +26,7 @@ Historical offices, people and event roles remain, and the complete MVP minister
 
 Social cohesion retains `morale` compatibility; support retains `intl_standing`. [Balance](balance.md#campaign-and-indicators) owns scale/hysteresis. Low situations expose state to reviewed events without secret extra penalties or defeat. Amir's proposed regional employment aggregate and replacement Food/housing penalties are non-operative [S1]. `start.cohesion` and `start.support` are opening values only, and the rationing and security links stay (owner, 1 November 2026, Q17 and Q18) [S9].
 
-**Amir's proposal [S1]:** the proposed event-accounting restatement prohibited borrowing. The owner's 30 October 2026 conflict review did not rule on this; on 1 November 2026 the owner kept borrowing under `R-MONEY-003` (`docs/rules/mvp.md:399`) for the MVP (D1) [S9]; hard/soft windows and sensitivity restrictions still apply. Events may write Money, Arms, the Food stock, Social cohesion and International Support, while housing condition and `food_supply` are readouts; the seven Attention, passive-budget and refill cards lose only their Attention effects under `gdd-0.3`; rationing and ma'abarot cards stay indicator-only; and a bond or loan card adds its Money and the same principal to Debt, with sourced figures (owner, 1 November 2026, Q1 to Q5) [S9].
+**Amir's proposal [S1]:** the proposed event-accounting restatement prohibited borrowing. The owner's 30 October 2026 conflict review did not rule on this; on 1 November 2026 the owner kept borrowing under `R-MONEY-003` (`docs/rules/mvp.md`) for the MVP (D1) [S9]; hard/soft windows and sensitivity restrictions still apply. Events may write Money, Arms, the Food stock, Social cohesion and International Support, while housing condition and `food_supply` are readouts; the seven Attention, passive-budget and refill cards lose only their Attention effects under `gdd-0.3`; rationing and ma'abarot cards stay indicator-only; and a bond or loan card adds its Money and the same principal to Debt, with sourced figures (owner, 1 November 2026, Q1 to Q5) [S9].
 
 [Objective-card](objective-card.md) owns completion/images/dates/points and [combat](military-combat.md) owns armistices/prisoner return. Do not duplicate their tables. Changed historical/sensitive content still requires human factual, licence and sensitivity review.
 
@@ -73,6 +72,8 @@ Invented minister perks, a new final defeat principle, unreviewed event rewrites
 
 ## Open questions
 
-- Bonus amounts and the timing formula's remaining parts (GDD "MVP completion rules" [S1]).
-- The GDD's "approximately 48 turns" [S1] against the decided 44 turns [S2]: a one-line GDD fix for the owner.
+- None for this section: the scoring values and the 44 turns are settled (below).
+
+- Objective scoring is 100 points per completed objective, plus 5 points per calendar month early, capped at 60; these are tunable design values (D-B2 and D-B6, owner, 14 October 2026, [#456](https://github.com/eyalgolan/statecraft-israel/pull/456)).
+- The MVP is 44 monthly turns from 15 May 1948 through 15 January 1952. This replaces the earlier approximate 48-turn estimate (D-B1, owner, 12 October 2026, and D-E5, owner, 15 October 2026 [S2]; see [GDD MVP scope](../GDD.md#mvp-scope-1948-to-1951)).
 See the single [deferred-decision register](../GDD.md#deferred-decisions). Implementation must not silently decide its open principles.

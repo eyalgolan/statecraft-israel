@@ -60,9 +60,11 @@ public class Generated1948AssetTests
             var texture = material.mainTexture; Assert.IsNotNull(texture, receipt.id);
             string image = AssetDatabase.GetAssetPath(texture);
             Assert.AreEqual(receipt.embedded_image_sha256, Hash(Disk(image)), receipt.id);
-            Assert.AreEqual(receipt.embedded_dimensions[0], texture.width, receipt.id);
-            Assert.AreEqual(receipt.embedded_dimensions[1], texture.height, receipt.id);
             var ti = (TextureImporter)AssetImporter.GetAtPath(image);
+            // The source image's size, not the imported texture's, which the houses' WebGL cap (2048) shrinks under that target.
+            ti.GetSourceTextureWidthAndHeight(out int width, out int height);
+            Assert.AreEqual(receipt.embedded_dimensions[0], width, receipt.id);
+            Assert.AreEqual(receipt.embedded_dimensions[1], height, receipt.id);
             Assert.IsFalse(ti.crunchedCompression, image);
             Assert.AreEqual(TextureImporterCompression.Compressed, ti.textureCompression, image);
             Assert.GreaterOrEqual(ti.maxTextureSize, Math.Max(receipt.embedded_dimensions[0], receipt.embedded_dimensions[1]));
@@ -104,9 +106,12 @@ public class Generated1948AssetTests
     /// on the CPU. The checks reject a wrong material and a map without mipmaps.</summary>
     [Test] public void PlacedGeneratedPropsKeepTheirSourceMeshMaterialAndMap()
     {
-        var props = CollectionCatalog.Ids.Where(CollectionCatalog.IsGeneratedProp).ToList();
+        // #2085's generated whole towns are placed the same way (TownLandmarks), so the same checks hold for them.
+        // #2083's weapons are made the same way too (held by the token figures, UnitWeapons).
+        var props = CollectionCatalog.Ids.Where(id => CollectionCatalog.IsGeneratedProp(id) || CollectionCatalog.IsGeneratedTown(id) || CollectionCatalog.IsGeneratedWeapon(id)).ToList();
         CollectionAssert.IsSubsetOf(new[] { CollectionCatalog.BedouinTent, CollectionCatalog.SyrianR35, CollectionCatalog.EgyptianDakota,
-            CollectionCatalog.StoneWell, CollectionCatalog.Sandbags, CollectionCatalog.CrateStack, CollectionCatalog.StoneWall }, props);
+            CollectionCatalog.StoneWell, CollectionCatalog.Sandbags, CollectionCatalog.CrateStack, CollectionCatalog.StoneWall,
+            CollectionCatalog.TiberiasTown, CollectionCatalog.SafedTown, CollectionCatalog.NetanyaTown, CollectionCatalog.RamlaTown }, props);
         foreach (string id in props)
         {
             string dir = $"{CollectionCatalog.Folder}/{id}", fbx = CollectionCatalog.SourceModelPath(id), map = $"{dir}/{id}_basecolor.jpg";
@@ -145,6 +150,34 @@ public class Generated1948AssetTests
             CollectionAssert.AreEqual(new[] { "no mipmaps" }, MapProblems(probe.sRGBTexture, probe.mipmapEnabled, probe.isReadable, imported.mipmapCount));
         }
         finally { AssetDatabase.DeleteAsset(root); }
+    }
+
+    /// <summary>#2085's generated whole towns ship as Tal Heuberger delivered them: the FBX holds the GLB's triangles
+    /// (tools/generated_towns.py recorded each count in the folder's provenance.json) and the colour map is imported at its
+    /// full 2048 x 2048 on every platform, uncrunched, with no platform override, so the web build keeps every source pixel.</summary>
+    [Test] public void GeneratedTownsKeepTheirDeliveredTrianglesAndFullColourMap()
+    {
+        var towns = CollectionCatalog.Ids.Where(CollectionCatalog.IsGeneratedTown).ToList();
+        CollectionAssert.AreEqual(new[] { CollectionCatalog.TiberiasTown, CollectionCatalog.SafedTown, CollectionCatalog.NetanyaTown, CollectionCatalog.RamlaTown }, towns);
+        var delivered = new Dictionary<string, int> { [CollectionCatalog.TiberiasTown] = 5002, [CollectionCatalog.SafedTown] = 4485,
+            [CollectionCatalog.NetanyaTown] = 3428, [CollectionCatalog.RamlaTown] = 4426 };
+        foreach (string id in towns)
+        {
+            string dir = $"{CollectionCatalog.Folder}/{id}", map = $"{dir}/{id}_basecolor.jpg";
+            var meshes = AssetDatabase.LoadAllAssetsAtPath(CollectionCatalog.SourceModelPath(id)).OfType<Mesh>().ToList();
+            Assert.AreEqual(1, meshes.Count, id);
+            Assert.AreEqual(delivered[id], (int)meshes[0].GetIndexCount(0) / 3, id + ": the GLB's triangles (#2085's provenance.json)");
+            StringAssert.Contains($"\"triangles\": {delivered[id]},", File.ReadAllText(Disk($"{dir}/provenance.json")), id);
+            var ti = (TextureImporter)AssetImporter.GetAtPath(map);
+            ti.GetSourceTextureWidthAndHeight(out int width, out int height);
+            Assert.AreEqual((2048, 2048), (width, height), map);
+            Assert.GreaterOrEqual(ti.maxTextureSize, 2048, map);
+            Assert.IsFalse(ti.crunchedCompression, map);
+            foreach (string platform in new[] { "Standalone", "WebGL" })
+                Assert.IsFalse(ti.GetPlatformTextureSettings(platform).overridden, $"{map}: no {platform} override");
+            var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(map);
+            Assert.AreEqual((2048, 2048), (texture.width, texture.height), map + ": imported at full size");
+        }
     }
 
     /// <summary>The five houses placed in the town kits (owner, 27 October 2026, #756) stream after the first frame like the other

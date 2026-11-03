@@ -10,8 +10,8 @@ namespace Statecraft.Game.UI
     /// <summary>The UI's only door into the simulation (spec section 6). Holds the GameSession, collects this turn's
     /// orders, runs End Turn and tells the screens to refresh. R-TURN-004's instant orders are committed and shown at once;
     /// deferred orders take effect at End Turn, in the order given. Each deferred order replaces an earlier one with the same key (one choice per event, one call-up level, one budget, one appointee
-    /// per office, one policy level per policy, one build per hex, one work order per city, one training order per city and
-    /// track, one cancel per cohort, one pioneer order per unit).</summary>
+    /// per office, one policy level per policy, one build per hex, one work order per city and role (jobs, and under gdd-0.3 the arms
+    /// workshops, #1722), one training order per city and track, one cancel per cohort, one pioneer order per unit).</summary>
     public sealed class SimBridge
     {
         readonly List<Command> deferred = new List<Command>();
@@ -77,7 +77,7 @@ namespace Statecraft.Game.UI
             SetPolicy p => "policy:" + p.Policy,
             Appoint a => "appoint:" + a.Office,
             MapAction m => FormattableString.Invariant($"map:{m.Q},{m.R}"),
-            AssignWorkers w => "work:" + w.City,
+            AssignWorkers w => "work:" + w.City + ":" + w.Role,   // #1722: a city's jobs and workshop orders keep their own slots
             Train t => "train:" + t.City + ":" + t.Track,
             CancelTraining x => FormattableString.Invariant($"untrain:{x.Cohort}"),
             ReturnCraftsmen r => "retcraft:" + r.City,
@@ -245,6 +245,8 @@ namespace Statecraft.Game.UI
             [Training.RefusedNoTraining] = "unit.reinforce_refused.no_training",
             [Training.RefusedCount] = "unit.reinforce_refused.count",
             [Pools.RefusedDebtCeiling] = "arms.refused_debt_ceiling",
+            [Orders.RefusedCardOrder] = "unit.order_refused.card_order",   // R-ENEMY-005: an operation card's refused go-to
+            [Orders.RefusedLastGarrison] = "unit.order_refused.last_garrison",   // R-CTRL-013: a card's go-to held back
         };
 
         /// <summary>The sim's refusals that carry values (#2072: Combat.Check's Arms, Training.Reinforce's unit, settlement,
@@ -262,6 +264,14 @@ namespace Statecraft.Game.UI
             (Training.RefusedNoHakhshara, "unit.reinforce_refused.no_hakhshara"),
             (Training.RefusedIdle, "unit.reinforce_refused.idle"),
             (Training.RefusedArms, "unit.reinforce_refused.arms"),
+            // R-ARMS-005 (#1722): a workshop staffing order's refusals, the panel's and the end of turn's. RefusedPeople is
+            // also the jobs order's refusal past its civilians and craftsmen less the staffed workshops (Cities.Assign).
+            (Workshops.RefusedBuiltOne, "workshop.refused_built_one"),
+            (Workshops.RefusedBuilt, "workshop.refused_built"),
+            (Workshops.RefusedPeople, "workshop.refused_people"),
+            (Workshops.RefusedPeopleNoJob, "workshop.refused_people_no_job"),
+            // R-PROJ-001 under gdd-0.3 (#1700 slice B): a second city project start in one city in one turn.
+            (Projects.RefusedCityCap, "city.project_reason.city_cap"),
         }.Select(x => (new Regex("^" + string.Join("(.+?)", Regex.Split(x.format, @"\{\d+\}").Select(Regex.Escape)) + "$"), x.key)).ToArray();
 
         /// <summary>A sim refusal in the UI's language where it has a string (<see cref="ReasonKeys"/>, <see cref="ReasonFormats"/>),

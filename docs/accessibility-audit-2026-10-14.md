@@ -72,6 +72,12 @@ It is slow and in places blind, and the map cannot be used at all.
   picks the hex at the screen centre, so pan plus that key reaches any hex; the info panel's buttons then take Tab like
   the rest. Bind zoom to keys too (`+`/`-` or PageUp/PageDown), and give the minimap a focusable control or drop it from
   the keyboard path, since pan covers it.
+- **Status:** B1 is done, after this audit. B1a, the zoom keys, is #890. B1b, the map stop (`map-focus`, after End Turn
+  in the Tab order), is #1134: Enter or Space on it picks the hex under the camera's look-at point, as a click there
+  would. The info panel's buttons then take Tab like the rest, with no code of their own (B1c). The minimap's three
+  buttons take Tab since #584, and its picture still takes no focus (B1d), as the proposed fix allows since pan covers
+  it. The whole keyboard turn, a unit order included, is pinned in #2279 (`KeyboardTurnTests`; the keyboard-only turn
+  below).
 
 ## High
 
@@ -309,8 +315,8 @@ The bars are always labelled ("Competence", "Loyalty"), so their colours carry n
 ## Focus order per screen (as tested)
 
 - **Start screen (no save):** New Game only, focused on open; Tab stays on it. Enter starts the game.
-- **Top bar:** Cabinet, Budget, Defence, Why?, New Game, End Turn, then round again (the info panel and the minimap
-  column take no focus until a hex is chosen by mouse).
+- **Top bar:** Cabinet, Budget, Defence, Why?, New Game, End Turn, then round again (the info panel's buttons show once
+  a hex is chosen, by a click or, since B1b, with Enter on the map stop after End Turn; they then take Tab).
   - Since HUD round 2 (#584, after this audit): End Turn is followed by the minimap's three buttons (whole map, settlement
     names, region borders), then round again; the minimap's picture still takes no focus (B1d). Under the open decision
     card the minimap column is disabled with the info panel, so its buttons leave the order then.
@@ -348,7 +354,8 @@ Escape closes the open screen; on the open card it is Hide; on the start screen 
 ## The keyboard-only turn, 22 October 2026
 
 The done-when's turn, played again on main `5d5bee4d` after B1a (#890), B1b (#1134) and the city panel (#381, #1122,
-#1124): unit orders are left out until #754 closes (owner, 22 October 2026).
+#1124). Unit orders were left out until #754 closed (owner, 22 October 2026); #754 closed on 22 October and the Civ
+movement slices (#1527) are on main, so the turn gives one now (2 November 2026, below).
 
 - **How tested:** `KeyboardTurnTests` (EditMode) on Map.unity at 1280x720, a new GDD game with no start screen. Keys are
   sent as the UI Toolkit events the Input System's UI provider makes of them (Tab and Shift+Tab: `NavigationMoveEvent`;
@@ -358,8 +365,10 @@ The done-when's turn, played again on main `5d5bee4d` after B1a (#890), B1b (#11
   to the screen's first control (the screens come after the HUD in the order), Tab to a line's +, Enter (focus stays,
   H2), Tab to Submit, Enter. Tab to Cabinet, Enter, Tab to a minister's seat, Enter, Tab once to the first candidate,
   Enter. Escape (focus to the Cabinet button, M1). Tab to the map stop, pan to Tel Aviv, Enter (the city panel shows),
-  Tab to Train halutzim, Enter. Tab to End Turn, Enter: the turn ends and the turn report takes the focus; Enter on its
-  Close hands it to the next card, or to End Turn when none opens.
+  Tab to Train halutzim, Enter. Tab to the map stop, pan to Golani, Enter (Golani is selected and its Move pick opens,
+  as in Civ), pan to a lit hex, Enter (Golani moves there; the focus stays on the map stop). Tab to End Turn, Enter:
+  the turn ends and the turn report takes the focus; Enter on its Close hands it to the next card, or to End Turn when
+  none opens.
 - **Attention:** the opening turn has 4 Attention; answering the card and Train halutzim cost 2 each, a budget and an
   appointment 4 each, so the five steps take more than one turn's Attention. That is the game's rule, not the keyboard's:
   the test raises the Attention to check the path. With 4, the budget and the appointment are refused with the toast
@@ -379,6 +388,11 @@ Pinned in EditMode: the card's order (the card, each option, Hide, the side menu
 Share, the card again; Shift+Tab the reverse), End Turn's (the map stop, the minimap's three buttons, Star, Report,
 Share, the side menu, New Game, End Turn; Shift+Tab to New Game) and where the focus goes after End Turn
 (`KeyboardTurnTests`). No UI string was added, so nothing goes to #564.
+
+The unit order (2 November 2026, on main `5a2b50ae7`): `AWholeTurnPlaysWithTheKeyboardAlone` now selects Golani
+through the map stop and moves it to a lit hex, both with Enter, and checks that the sim's Move is committed. Nothing
+blocked it, so no code changed. Attack and the confirm step onto a city or a friendly unit (#1808) are pinned in
+`KeyboardOrdersTests`.
 
 ## The two scroll-bar and focus-drop fixes, 23 October 2026
 
@@ -504,7 +518,15 @@ leaves the focus on the last stop instead of dropping it; and a drawn scope stil
 first control, asserted on `minimap-overview` so the fallback cannot satisfy the test). No UI
 string was added, so nothing goes to #564.
 
-## The WebGL companion is opt-in, 1 November 2026
+## The WebGL companion: off and unavailable for now, owner 2 November 2026
+
+**Status:** off and unavailable for now (owner, 2 November 2026). The owner asked to "disable the game companion" and
+chose "Remove it from the game (Recommended)": "A small PR before tonight's nightly hides it entirely: no Settings row,
+and ?companion=1 does nothing. The code stays in, switched off by one flag, so it can come back later." That flag is
+`WebCompanion.Available`, now `false`. While it is false `WebCompanion.On` is false whatever the switch, the stored
+choice or the address says, GameRoot gives Settings no switch, so the row stays hidden as it is outside WebGL, and the
+page's panel stays `hidden` because the game never publishes to it. `WebCompanionUnavailableTests` pins this. The
+rest of this section describes the companion as it works with the flag on (what `WebCompanionTests` runs, through the `WebCompanion.Offered` test seam), from the opt-in ruling of 1 November 2026.
 
 The first step proposed under H5 is the read-only WebGL companion (#1119, PR #1920): an HTML panel beside the canvas
 (`WebGLTemplates/Statecraft/index.html`, `WebCompanion.jslib`) that mirrors the open event, its choices, the game's focus,

@@ -46,6 +46,14 @@ public class CityPanelTests
         return id;
     }
 
+    /// <summary>The one refusal an untouched real game makes on its own (R-ENEMY-005; owner, 1 November 2026, #2087): on the
+    /// 15 November 1948 turn the unanswered Operation Hiram card is delegated, and its order sending the 7th Brigade to
+    /// al-Malikiyya (14,4) is refused while the ALA holds that hex, as the player's own go-to would be. The sim pins it in
+    /// WarEvents1948Tests (NoTurnBeforeTheArmisticeRefusesAnOrder, AnUntouchedGameRefusesOnlyHiramsOrderToTheSeventhBrigade);
+    /// the site tests below play through that turn and must still see every other refusal.</summary>
+    static bool IsTheMalkiyaRefusal(Rejection x) =>
+        x.Reason == Orders.RefusedCardOrder && x.Command is UnitOrder { Q: 14, R: 4 } o && o.Unit == C.StartingForces.FindIndex(f => f.Row == "brigade_7");
+
     /// <summary>Tel Aviv with <paramref name="civilians"/> civilians, <paramref name="employed"/> of them in jobs.</summary>
     static Action<GameState> Counts(int civilians, int employed) =>
         s => s.Cities[City] = s.Cities[City].WithCounts(civilians, employed, s.Cities[City].Refugees);
@@ -120,6 +128,44 @@ public class CityPanelTests
         panel.Show(CityHex.q, CityHex.r);
         Assert.AreEqual(0, bridge.State.Cities[City].Recruits, "precondition: nothing writes City.Recruits since #1130");
         Assert.AreEqual(t.Format("city.soldiers", t.Format("city.groups", 7)), ui.Q<Label>("city-soldiers").text);
+    }
+
+    /// <summary>The real content with only eras.yaml's ruleset switched to gdd-0.3 (DollarConversionTests' pattern).</summary>
+    static Content Gdd03Content()
+    {
+        var dir = Paths.Content;
+        return ContentLoader.Load(rel =>
+        {
+            var path = Path.Combine(dir, rel);
+            if (!File.Exists(path)) return null;
+            var value = File.ReadAllText(path);
+            return rel == "eras.yaml" ? value.Replace("loop: gdd", "loop: gdd, ruleset: gdd-0.3") : value;
+        }, Directory.GetFiles(Path.Combine(dir, "events"), "*.yaml").Select(x => "events/" + Path.GetFileName(x)));
+    }
+
+    [Test]
+    public void TheSoldiersLineShowsOnlyWhereFormationsAreHoused([Values] bool hebrew, [Values] bool gdd03)
+    {
+        // #1703 (R-HOUSE-003; 27M-18, owner-approved 1 November 2026: "Housed = civilians, craftsmen, recruits and groups in
+        // training. Refugees and pioneer units are not housed."): under gdd-0.3 a city's formations are not housed, so the
+        // panel has no "Soldiers housed" line and the housing line counts no formation. gdd-0.1 keeps the line (#1345).
+        var t = hebrew ? He : En;
+        var c = gdd03 ? Gdd03Content() : C;
+        Assert.AreEqual(gdd03 ? SaveGame.Gdd03Ruleset : SaveGame.GddRuleset, c.Ruleset, "precondition: the ruleset under test");
+        var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
+        var id = g.State.NextId++;
+        g.State.Units.Add(id, new Unit(id, "veteran_soldier", CityHex.q, CityHex.r, 0, "israel", 3, "", "", City));
+        var bridge = new SimBridge(g, t);
+        using var ui = new UiTestKit();
+        using var panel = new InfoPanelPresenter(ui.Root, bridge, t, Towns.ToDictionary(x => x.Id, x => x.Name));
+        panel.Show(CityHex.q, CityHex.r);
+        var s = bridge.State; var city = s.Cities[City];
+        var people = city.Civilians + city.Craftsmen + city.Recruits + s.Cohorts.Values.Where(k => k.City == City).Sum(k => k.Count);
+        Assert.AreEqual(gdd03 ? people : people + 3, Cities.Housed(s, city), "precondition: the sim's housed count");
+        Assert.AreEqual(t.Format("city.housing_condition", Cities.Housed(s, city), t.Format("city.groups", city.HousingCapacity),
+            PlayerText.Percent(city.Condition!.Value)), ui.Q<Label>("city-housing").text);
+        if (gdd03) Assert.IsNull(ui.Root.Q<Label>("city-soldiers"), "no soldiers line under gdd-0.3");
+        else Assert.AreEqual(t.Format("city.soldiers", t.Format("city.groups", 3)), ui.Q<Label>("city-soldiers").text);
     }
 
     [Test]
@@ -383,7 +429,7 @@ public class CityPanelTests
         do
         {
             var result = Simulation.Step(C, played, elapsed == 0 ? new Command[] { new PioneerWork(a, Projects.BuildYishuv, Site) } : new Command[0]);
-            Assert.IsEmpty(result.Rejected);
+            Assert.IsEmpty(result.Rejected.Where(j => !IsTheMalkiyaRefusal(j)));
             played = result.State; elapsed++;
         } while (played.Sites[Site].BuiltOn == null && elapsed < 12);
         Assert.IsNotNull(played.Sites[Site].BuiltOn, "real resolver finishes the fixture");
@@ -708,7 +754,7 @@ public class CityPanelTests
         do
         {
             var result = Simulation.Step(C, played, new Command[0]);
-            Assert.IsEmpty(result.Rejected);
+            Assert.IsEmpty(result.Rejected.Where(j => !IsTheMalkiyaRefusal(j)));
             played = result.State; elapsed++;
         } while (played.Sites[Site].BuiltOn == null && elapsed < 12);
         Assert.IsNotNull(played.Sites[Site].BuiltOn, "real resolver finishes the fixture");

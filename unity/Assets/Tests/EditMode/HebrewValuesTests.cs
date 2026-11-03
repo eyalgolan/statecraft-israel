@@ -31,8 +31,8 @@ public class HebrewValuesTests
     [Test]
     public void AValueInAHebrewTemplateIsWrappedInLeftToRightMarks()
     {
-        Assert.AreEqual("כסף " + Lrm + "$12.0m" + Lrm + " · חוב " + Lrm + "IL 3.0m" + Lrm + " · מטבע חוץ " + Lrm + "$-4.2m" + Lrm,
-            He.Format("budget.money", "$12.0m", "IL 3.0m", "$-4.2m"));
+        Assert.AreEqual("כסף " + Lrm + "$12.0m" + Lrm + " · חוב " + Lrm + "IL\u00A03.0m" + Lrm + " · מטבע חוץ " + Lrm + "$-4.2m" + Lrm,
+            He.Format("budget.money", "$12.0m", "IL\u00A03.0m", "$-4.2m"));
         Assert.AreEqual("מ־" + Lrm + "15 May 1948" + Lrm + " עד " + Lrm + "1 June 1948" + Lrm, He.Format("why.turn", "15 May 1948", "1 June 1948"));
         // A format item keeps its format: the value is formatted, then wrapped.
         Assert.AreEqual("תשומת לב " + Lrm + "2.5" + Lrm + " מתוך " + Lrm + "10.0" + Lrm, He.Format("hud.attention", 2.5, 10.0));
@@ -72,10 +72,10 @@ public class HebrewValuesTests
         var appointed = He.Format("card.appointed_name", "דוד בן־גוריון");
         Assert.AreEqual("דוד בן־גוריון (מינוי שלך)", appointed);
         Assert.IsTrue(UiDirection.RightToLeft(appointed), appointed);
-        var amount = He.Format("hud.say_million", "IL -", "3.0");
-        Assert.AreEqual(Lrm + "IL -" + Lrm + Lrm + "3.0" + Lrm + " מיליון", amount);
-        Assert.AreEqual("כסף: " + amount + ", קיטון של " + Lrm + "IL " + Lrm + Lrm + "4.0" + Lrm + " מיליון מאז התור הקודם",
-            He.Format("hud.say_down", "כסף", amount, He.Format("hud.say_million", "IL ", "4.0")));
+        var amount = He.Format("hud.say_million", "IL\u00A0-", "3.0");
+        Assert.AreEqual(Lrm + "IL\u00A0-" + Lrm + Lrm + "3.0" + Lrm + " מיליון", amount);
+        Assert.AreEqual("כסף: " + amount + ", קיטון של " + Lrm + "IL\u00A0" + Lrm + Lrm + "4.0" + Lrm + " מיליון מאז התור הקודם",
+            He.Format("hud.say_down", "כסף", amount, He.Format("hud.say_million", "IL\u00A0", "4.0")));
     }
 
     /// <summary>A template with no letter of its own ("{0} {1}", "{0:N0}") is neither language: its values are left alone,
@@ -112,7 +112,7 @@ public class HebrewValuesTests
         var en = En;
         var keys = Keys(UiPaths.Strings);
         Assert.Greater(keys.Count, 100, "the keys are read");
-        var args = new object[] { "$-4.2m", "15 May 1948", 2.5, 46, "IL 3.0m", "Mapai", 7, 1948 };
+        var args = new object[] { "$-4.2m", "15 May 1948", 2.5, 46, "IL\u00A03.0m", "Mapai", 7, 1948 };
         foreach (var key in keys)
         {
             string expected;
@@ -122,7 +122,7 @@ public class HebrewValuesTests
             CollectionAssert.AreEqual(Encoding.UTF8.GetBytes(expected), Encoding.UTF8.GetBytes(got), key);
             Assert.AreEqual(-1, got.IndexOf(Lrm, StringComparison.Ordinal), key);
         }
-        Assert.AreEqual("Money $12.0m · debt IL 3.0m · foreign currency $-4.2m", en.Format("budget.money", "$12.0m", "IL 3.0m", "$-4.2m"));
+        Assert.AreEqual("Money $12.0m · debt IL\u00A03.0m · foreign currency $-4.2m", en.Format("budget.money", "$12.0m", "IL\u00A03.0m", "$-4.2m"));
         Assert.AreEqual("15 May 1948 to 1 June 1948", en.Format("why.turn", "15 May 1948", "1 June 1948"));
     }
 
@@ -133,7 +133,7 @@ public class HebrewValuesTests
     public void TakingTheMarksOutOfAnyHebrewLineGivesTheOldTextBack()
     {
         var he = He;
-        var args = new object[] { "$-4.2m", "15 May 1948", 2.5, 46, "IL 3.0m", "Mapai", 7, 1948 };
+        var args = new object[] { "$-4.2m", "15 May 1948", 2.5, 46, "IL\u00A03.0m", "Mapai", 7, 1948 };
         int wrapped = 0, joined = 0;
         foreach (var key in Keys(UiPaths.StringsHebrew))
         {
@@ -444,7 +444,7 @@ public class HebrewValuesTests
     public IEnumerator InAHebrewLineTheDollarLeadsItsMinusAndTheDateIsOneRun()
     {
         using var r = new Rendered(
-            He.Format("budget.money", "$12.0m", "IL 3.0m", "$-4.2m"),
+            He.Format("budget.money", "$12.0m", "IL\u00A03.0m", "$-4.2m"),
             He.Format("why.turn", "15 May 1948", "1 June 1948"),
             "15 May 1948");
         yield return r.Draw();

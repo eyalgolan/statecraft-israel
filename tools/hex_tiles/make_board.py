@@ -231,6 +231,21 @@ def flora_entry(region):
             'rock': rock.get('model', 'sandbox:limestone*'), 'rockChance': float(rock.get('chance', 0.6)), 'rocksOnFlat': bool(rock.get('on_flat', False))}
 
 
+def rail_stations(path, before):
+    """The named stations of the 1948 railways (routes_1948.yaml): every `via` waypoint of a rail route the map draws
+    before the given date whose name says "station", once, by name: (name, lon, lat). A bare year is its 1 January, as
+    the map reads it (RoutePaths.Bound)."""
+    out = {}
+    for r in _yaml(path)['routes']:
+        if r.get('kind') != 'rail': continue
+        start = str(r['from']); start = start + '-01-01' if len(start) == 4 else start
+        end = r.get('to'); end = None if end is None else (str(end) + '-01-01' if len(str(end)) == 4 else str(end))
+        if not (start < before and (end is None or before < end)): continue
+        for w in r.get('via', []):
+            if 'station' in w['name'].lower(): out.setdefault(w['name'], (w['name'], float(w['lon']), float(w['lat'])))
+    return sorted(out.values())
+
+
 def route_roads(cells, kinds, before):
     """Roads along the traced 1948 routes (route_paths_1948.tsv): each route's points snapped to their nearest board
     land hex, gaps joined along hex lines; only routes of the given kinds that the map draws before the given date."""
@@ -435,6 +450,17 @@ def build_board(a):
             h = nearest(s['lon'], s['lat']); k = (h['q'], h['r'])
             if k in owner or not h['land'] or env_of(k): continue
             owner[k] = s
+    # Then the railways' named stations (defaults.stations): a free land hex holding one takes the halt tile, so the
+    # station stands where the map's railway data names it. A settlement's hex keeps its own tile; the first station by
+    # name keeps a hex two would share.
+    halts = {}
+    if recipes and 'stations' in recipes.defaults:
+        st = recipes.defaults['stations']
+        for name, lon, lat in rail_stations(os.path.join(ROOT, 'content/map/routes_1948.yaml'), str(st.get('before', '1948-05-15'))):
+            if not in_box({'lon': lon, 'lat': lat}): continue
+            h = nearest(lon, lat); k = (h['q'], h['r'])
+            if k in owner or k in halts or not h['land'] or env_of(k): continue
+            halts[k] = name
 
     out, used_regions = [], set()
     lowland = recipes.defaults.get('lowland', LOWLAND) if recipes else LOWLAND
@@ -466,6 +492,8 @@ def build_board(a):
                 e['prototype'] = SETTLEMENT_TILE.get(s['id'], TYPE_TILE.get(s.get('type'), 'moshava_village'))
                 e['note'] = s['id']
                 if e['prototype'] in ('tel_aviv_city', 'moshava_village', 'kibbutz') and terrain == 'mountain': e['terrain'] = 'hills'
+            elif k in halts:
+                e['prototype'], e['note'] = recipes.defaults['stations']['prototype'], halts[k]
             elif recipes:
                 e['prototype'], ground, set_terrain = apply_rule(recipes.rules(region, 'nature'), k[0], k[1], terrain=terrain, biome=h['biome'], coastal=coastal)
                 if set_terrain: e['terrain'] = set_terrain

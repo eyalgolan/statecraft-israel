@@ -295,6 +295,47 @@ own root rotation kept (the FBX axis turn, -90 degrees about X), so the camera's
 - Tests: `UnitFiguresTests` (every one of the nine is placed on some day of the war; the table; the swap; arms down;
   fail open; the close-zoom swap and its idle clip, the missing near model and C05).
 
+### Weapons and the C06 point-fire aim (#2083, #2084)
+
+The owner ruled on 2 November 2026: #2083, "Yes, on the soldier figures (Recommended)" ("Attach a period-correct weapon to
+the unit-token soldier figures (sourced per army and date), measured for load"), and #2084, "Yes, for firing units
+(Recommended)" ("Show the aiming pose on a unit token when it attacks"). Models by Tal Heuberger (CC BY-NC-ND 4.0).
+
+| Weapon | Army | From | Figures | Sources (agent-read; a person's check is pending) |
+|---|---|---|---|---|
+| K98k (Tal's `weapon-k98k-v1`) | Israel (Haganah, IDF) | 2 April 1948: the Nora's 4,500 Czechoslovak P-18 (K98k) rifles at Tel Aviv; the first air shipment landed the night of 31 March to 1 April | C04, C05, C06, C07 | en.wiki Arms shipments from Czechoslovakia to Israel 1947–1949; Palyam, "Nora" (Ben-Tzur); en.wiki Karabiner 98k |
+| Sten (Tal's `weapon-sten-v1`) | Israel (the Palmach) | in use 1945–1948 | C12F, the Palmach scout (Harel's third figure) | en.wiki Ayalon Institute ("the personal weapon of the Palmach"); en.wiki Sten ("clandestinely manufactured in Tel Aviv and on various kibbutzim in 1945–1948") |
+
+Every token's first day is 15 May 1948 or later (`units_1948.yaml`), after both rows' dates, so no figure is dated by
+hand (`UnitWeaponsTests` keeps that true). The rows live in `UnitWeapons.Rows`.
+
+- **[GAP] The Arab forces.** No source found places a K98k, an MG34 or a Sten with the Arab Legion, Egypt, Iraq, Syria,
+  Lebanon, the ALA or local irregulars in 1948 (Syria's Czech rifles for the ALA sank in the Lino at Bari and were later
+  captured). Their armies' British Lee-Enfield and Bren are not among Tal's models, so their figures stay as they are.
+- **[GAP] #336's 1948 soldier** (Yiftach's and Negev's third figure) has no rig and no hand bone; he stays as he is.
+- **The MG34** stays a stored source. The "200 MG34s" is not one fact (`research_notes/Map/mg34-1948-2288.md`, #2310):
+  for the January 1948 contract, one source names the MG34 for its 200 machine guns (Wikipedia, a sentence with no footnote
+  of its own), Ben-Gurion's diary of 1 February 1948 gives 200 with no type, and a Russian magazine gives 20. The *Nora*'s
+  200 machine guns have no type; the first flight, the night of 31 March to 1 April 1948, carried forty MG-34 (Morris,
+  p. 117, as quoted on Wikipedia). Nothing places a machine gun on one token figure (an owner question).
+- **The hand:** each weapon hangs under the figure's `Right_Hand` bone. The socket is Tal's own fixed pair: in their C06
+  point-fire export the K98k does not move against C06's right hand over all 97 frames, and that relation, turned into the
+  C06 rig's frame, is `UnitWeapons.SocketPosition`/`SocketRotation`/`K98kSocketScale` (the rifle about 1.1 m long on a
+  1.78 m man). C04, C05, C07 and C12F share C06's 67-bone rig and hold it the same way: in each one's bind pose the rifle's long axis
+  is within 45 degrees of C06's (measured 2 November 2026: C04 34.4, C05 10.1, C07 13.5, C12F 37.8), along the hand. The Sten takes the same socket,
+  scaled by the sourced lengths (Sten Mk II 762 mm, K98k 1,110 mm); its grip is not authored by Tal, and in C12F's idle pose it lies across her thighs, partly inside them (an owner question; Tal's own notes leave the Sten's handedness to a 3D review).
+- **The C06 aim:** while its token's attack plays (`UnitTokenMotion`), a C06 figure, near or far, holds one still frame of
+  Tal's 97-frame point-fire clip (frame 37, inside the still aim of their contact sheet) for the whole attack, which lasts
+  as long as the longest fire take on the token (C06's own is 37 frames); then every bone it moved is put back and its
+  Animator runs again, also when the units are hidden mid-attack. Tal's export is one figure, so only C06
+  takes it; every other figure keeps its own fire take. The export's rig has the same bones and rest mesh as C06's but
+  other local axes, so each sampled bone is turned into C06's frame by a correction computed from the two meshes' bind
+  poses (`UnitFigurePoseSource`); our C06 in the aim lies on Tal's export and our K98k on their rifle (`UnitWeaponsTests`).
+- **Load:** the K98k, the Sten and the pose source each stream in a bundle of their own after the people's, never in the
+  first download; the pose source carries only the clip, not the export's mesh or texture.
+- **Fail open:** until a weapon or the pose source arrives, and for good if its bundle is missing, the figure stands and
+  fires as before.
+
 ### What the player sees
 
 | Unit | Positions (dated, from the sources) | Ends |

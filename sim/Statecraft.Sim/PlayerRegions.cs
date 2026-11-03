@@ -12,6 +12,7 @@ namespace Statecraft.Sim
         public string CapitalLocation { get; set; } = "";
         public List<PlayerRegionHex> MemberHexes { get; set; } = new List<PlayerRegionHex>();
         public List<string> MemberLocations { get; set; } = new List<string>();
+        public List<PlayerRegionHex> FieldHexes { get; set; } = new List<PlayerRegionHex>();
         public string DesignNote { get; set; } = "";
         public List<string> Sources { get; set; } = new List<string>();
         public string CapitalApproval { get; set; } = "";
@@ -40,6 +41,7 @@ namespace Statecraft.Sim
         public string CapitalLocation { get; }
         public IReadOnlyList<(int Q, int R)> MemberHexes { get; }
         public IReadOnlyList<string> MemberLocations { get; }
+        public IReadOnlyList<(int Q, int R)> FieldHexes { get; }
         public string DesignNote { get; }
         public IReadOnlyList<string> Sources { get; }
         public string CapitalApproval { get; }
@@ -52,6 +54,8 @@ namespace Statecraft.Sim
             MemberHexes = Array.AsReadOnly(row.MemberHexes.Select(h => (h.Q!.Value, h.R!.Value))
                 .OrderBy(h => h.Item1).ThenBy(h => h.Item2).ToArray());
             MemberLocations = Array.AsReadOnly(row.MemberLocations.OrderBy(x => x, StringComparer.Ordinal).ToArray());
+            FieldHexes = Array.AsReadOnly(row.FieldHexes.Select(h => (h.Q!.Value, h.R!.Value))
+                .OrderBy(h => h.Item1).ThenBy(h => h.Item2).ToArray());
             DesignNote = row.DesignNote; Sources = Array.AsReadOnly(row.Sources.OrderBy(x => x, StringComparer.Ordinal).ToArray());
             CapitalApproval = row.CapitalApproval; BindingStatus = row.BindingStatus;
             ControlStatus = row.OpeningControl.Status;
@@ -65,10 +69,18 @@ namespace Statecraft.Sim
         }
     }
 
-    /// <summary>R-CITY-006. One validator and one immutable exact-identity geography index for all consumers.</summary>
+    /// <summary>R-CITY-006. One validator and one immutable exact-identity geography index for all consumers.
+    /// A member place is a settlement, a named map location, a designated site (sites.yaml) or a locality placed by
+    /// <see cref="LocalityHexesFileName"/> (owner, 2 November 2026: Q1 "Accept localities"; "Fix all, then ship
+    /// (Recommended)": "Accept site ids too"). capital_location is the region's label place (Q3 "All nine drafts as
+    /// labels"), required to be a member; it is NOT the regional-capital model the owner declined on 30 October 2026
+    /// (docs/GDD.md, "Regional-capital model"), and nothing gives it capital mechanics.</summary>
     public sealed class PlayerRegionCatalogue
     {
         public const string FileName = "regions.yaml";
+        /// <summary>Each locality's hex, written by tools/locality_hexes.py with the map's projection and rounding, so the
+        /// sim needs no trigonometry (docs/determinism.md). Read only under exact gdd-0.3, with regions.yaml.</summary>
+        public const string LocalityHexesFileName = "map/locality_hexes.yaml";
         readonly SortedDictionary<string, PlayerRegionGeography> regions = new SortedDictionary<string, PlayerRegionGeography>(StringComparer.Ordinal);
         readonly Dictionary<string, string> places = new Dictionary<string, string>(StringComparer.Ordinal);
         readonly Dictionary<string, string> capitals = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -80,7 +92,8 @@ namespace Statecraft.Sim
         public PlayerRegionGeography? AtCapital(string id) => capitals.TryGetValue(id, out var r) ? regions[r] : null;
         public PlayerRegionGeography? AtHex(int q, int r) => hexes.TryGetValue((q, r), out var id) ? regions[id] : null;
 
-        internal static PlayerRegionCatalogue Validate(Content c, IEnumerable<PlayerRegionDefinition> rows)
+        internal static PlayerRegionCatalogue Validate(Content c, IEnumerable<PlayerRegionDefinition> rows,
+            IEnumerable<SettlementHex>? localities = null)
         {
             var result = new PlayerRegionCatalogue();
             var placements = new Dictionary<string, (int, int)>(StringComparer.Ordinal);
@@ -92,6 +105,8 @@ namespace Statecraft.Sim
             }
             foreach (var p in c.SettlementHexes) Place(p.Id, p.Q, p.R);
             foreach (var p in c.MapLocations) Place(p.Id, p.Q, p.R);
+            foreach (var p in c.Sites) Place(p.Id, p.Q, p.R);
+            foreach (var p in localities ?? Enumerable.Empty<SettlementHex>()) Place(p.Id, p.Q, p.R);
             int index = 0;
             foreach (var row in rows)
             {
@@ -124,13 +139,27 @@ namespace Statecraft.Sim
                     if (c.HexAt(key.Item1, key.Item2)?.Land != true) Fail(field, "must name an existing land hex");
                     if (result.hexes.ContainsKey(key)) Fail(field, "hex already belongs to another region");
                 }
+                // #1691 Q4 (owner, 2 November 2026: "Approve as drafted (Recommended)"): optional, data only; nothing reads
+                // them in play yet. A field hex is a land hex of this region's own member_hexes, so (hex ownership being
+                // exclusive) no field hex is in two regions. Control on 15 May is checked by tools/tests (the sim never
+                // reads the control layer).
+                var ownFields = new HashSet<(int, int)>();
+                for (int i = 0; i < row.FieldHexes.Count; i++)
+                {
+                    var h = row.FieldHexes[i]; var field = FormattableString.Invariant($"field_hexes[{i}]");
+                    if (!h.Q.HasValue || !h.R.HasValue) Fail(field, "q and r are required integers");
+                    var key = (h.Q!.Value, h.R!.Value);
+                    if (c.HexAt(key.Item1, key.Item2)?.Land != true) Fail(field, "must name an existing land hex");
+                    if (!ownHexes.Contains(key)) Fail(field, "must be one of the region's member_hexes");
+                    if (!ownFields.Add(key)) Fail(field, "duplicate field hex");
+                }
                 if (row.MemberLocations.Count == 0) Fail("member_locations", "must not be empty");
                 var ownPlaces = new HashSet<string>(StringComparer.Ordinal);
                 for (int i = 0; i < row.MemberLocations.Count; i++)
                 {
                     var id = row.MemberLocations[i]; var field = FormattableString.Invariant($"member_locations[{i}]");
                     if (string.IsNullOrWhiteSpace(id) || !placements.TryGetValue(id, out var hex)) { Fail(field, "unknown place id"); continue; }
-                    if (conflicts.Contains(id)) Fail(field, "settlement and named location have inconsistent effective placements");
+                    if (conflicts.Contains(id)) Fail(field, "one place id has inconsistent placements across the place files");
                     if (!ownPlaces.Add(id)) Fail(field, "duplicate member location");
                     if (result.places.ContainsKey(id)) Fail(field, "location already belongs to another region");
                     if (!ownHexes.Contains(hex)) Fail(field, "effective location lies outside member_hexes");

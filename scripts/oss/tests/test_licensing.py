@@ -122,7 +122,53 @@ def test_tal_original_licensing_matches_manifest_exactly():
     for path in originals:
         assert sum(r["glob"] == path and r["licence"] == "CC-BY-NC-ND-4.0" for r in rules) == 1, path
     independent = [r for r in rules if r["licence"] == "CC-BY-NC-ND-4.0" and r["glob"] not in originals]
-    assert len(independent) == 50  # 146 originals + 50 independent grants (with the hex-tile props row and the #1901 -light meshes) = 196 total
+    # Tal Heuberger's #2082-#2085 files (owner, 2 November 2026: "Yes, #1177 covers them"): the 24 exact source files and,
+    # for the four #2085 towns in the game, each town's compatibility FBX and colour map. Every other grant stays as it was.
+    sources = {
+        "asset-sources/prepared-towns-20261031/" + p for p in (
+            "netanya/statecraft-netanya-approved-textured-4350a137.glb", "netanya/statecraft-netanya-approved-textured-4350a137_basecolor.jpg",
+            "ramla/statecraft-ramla-approved-textured-aaf2619f.glb", "ramla/statecraft-ramla-approved-textured-aaf2619f_basecolor.jpg",
+            "safed/statecraft-safed-approved-textured-1e2b8e59.glb", "safed/statecraft-safed-approved-textured-1e2b8e59_basecolor.jpg",
+            "tiberias/statecraft-tiberias-smartmesh-original-086ad55f.glb", "tiberias/statecraft-tiberias-smartmesh-textured-086ad55f.glb",
+            "tiberias/statecraft-tiberias-smartmesh-textured-086ad55f_basecolor.jpg")
+    } | {
+        "asset-sources/recovered-vegetation-20261031/" + p for p in (
+            "g25_papyrus/albedo.jpg", "g25_papyrus/g25_papyrus.obj", "g25_papyrus/normal.jpg",
+            "hf_tamarisk/albedo.jpg", "hf_tamarisk/hf_tamarisk.obj", "hf_tamarisk/normal.jpg")
+    } | {
+        "asset-sources/prepared-weapons-20261031/" + p for p in (
+            "k98k/statecraft-k98k-approved-textured-b48a435f.glb", "k98k/statecraft-k98k-approved-textured-b48a435f_basecolor.jpg",
+            "mg34/statecraft-mg34-approved-textured-3a384995.glb", "mg34/statecraft-mg34-approved-textured-3a384995_basecolor.jpg",
+            "sten/statecraft-sten-approved-textured-bc6b06c8.glb", "sten/statecraft-sten-approved-textured-bc6b06c8_basecolor.jpg")
+    } | {
+        "asset-sources/c06-point-fire-reference-20261031/" + p for p in (
+            "C06-POINT-FIRE-FULL-REVIEW.mp4", "C06-POINT-FIRE-PROVISIONAL-PUBLIC.fbx", "C06-POINT-FIRE-REVIEW-CONTACT-SHEET.png")
+    }
+    towns = {f"unity/Assets/Art/Collection/{t}-town-v1/{t}-town-v1{x}"
+             for t in ("tiberias", "safed", "netanya", "ramla") for x in (".fbx", "_basecolor.jpg")}
+    # #2082's papyrus and tamarisk in the game (owner, 2 November 2026: "Hula + Arava, map and boards (Recommended)"): the
+    # byte-identical Unity copies of the six recovered sources.
+    plants = {f"unity/Assets/Art/HexTiles/Props/{d}/{f}" for d in ("hula_swamp_papyrus", "arava_oasis_tamarisk")
+              for f in (d + ".obj", "albedo.jpg", "normal.jpg")}
+    # #2083 and #2084 in the game (owner, 2 November 2026): the K98k's and the Sten's compatibility FBX and colour map, and
+    # the C06 point-fire export byte for byte.
+    weapons = {f"unity/Assets/Art/Collection/weapon-{w}-v1/weapon-{w}-v1{x}" for w in ("k98k", "sten") for x in (".fbx", "_basecolor.jpg")} | {
+        "unity/Assets/Art/Collection/c06-point-fire-v1/C06-POINT-FIRE-PROVISIONAL-PUBLIC.fbx"}
+    added = sources | towns | plants | weapons
+    assert len(sources) == 24 and len(towns) == 8 and len(plants) == 6 and len(weapons) == 5
+    added_rows = [r for r in independent if r["glob"] in added]
+    assert {r["glob"] for r in added_rows} == added and len(added_rows) == 43
+    assert all("Hula + Arava, map and boards" in r["note"] for r in added_rows if r["glob"] in plants)
+    assert all(r["artist"] == "Tal Heuberger" and r["ai_generated"] is True for r in added_rows)
+    assert all("#1177" in r["note"] and "2 November 2026" in r["note"] for r in added_rows)
+    import hashlib
+    for r in added_rows:  # each row records its file's SHA-256
+        assert hashlib.sha256((ROOT / r["glob"]).read_bytes()).hexdigest() in r["source"], r["glob"]
+    # Afik Faerman's main theme (#39, #2240; owner, 2 November 2026: CC BY-NC-ND 4.0, credited to Afik): one exact-file row.
+    music = [r for r in independent if r["glob"] == "unity/Assets/StreamingAssets/audio/music/Main_1.3.ogg"]
+    assert len(music) == 1 and music[0]["artist"] == "Afik Faerman" and music[0]["ai_generated"] is False
+    assert len([r for r in independent if r["glob"] not in added and r not in music]) == 50  # the hex-tile props row and the #1901 -light meshes among them
+    assert len(independent) == 94  # 146 originals + 94 independent grants = 240 total
     for row in selected:
         assert row["licence"] == "CC-BY-NC-ND-4.0"
         assert row["artist"] == "Tal Heuberger"

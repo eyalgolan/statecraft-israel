@@ -35,6 +35,9 @@ namespace Statecraft.Sim
                 // R-POW-004: a front's exchange card waits for prisoners held either way. Only the GDD loop takes any, so the
                 // legacy loop never fires one.
                 .Where(e => e.Prisoners == "" || Prisoners.Held(s, e.Prisoners))
+                // R-EVT-007: a Deport follow-up card waits for the player's Deport of its place. Only the GDD loop records
+                // settlements, so the legacy loop never fires one.
+                .Where(e => e.Deported == "" || (s.Settlements.TryGetValue(e.Deported, out var place) && place.Depopulated))
                 // A late fire can come after a dated indicator's window has ended (chapters design 3.2): a condition on it is not met.
                 .Where(e => e.Conditions.All(k => s.Indicators.TryGetValue(k.Indicator, out var v)
                                                && (!k.Min.HasValue || v >= k.Min.Value) && (!k.Max.HasValue || v <= k.Max.Value)))
@@ -46,9 +49,10 @@ namespace Statecraft.Sim
                 .ThenBy(e => e.Objective == "" ? -1 : c.Objectives.FindIndex(o => o.Id == e.Objective)).ThenBy(e => e.Order)
                 .ThenBy(e => e.Id, StringComparer.Ordinal)
                 .ToList();
+            // R-EVT-007: a Deport card takes no soft slot, so it fires on its Deport's turn however full that turn is.
             var hardCount = eligible.Count(e => e.Anchor == "hard");
-            var chosen = new HashSet<string>(eligible.Where(e => e.Anchor == "hard")
-                .Concat(eligible.Where(e => e.Anchor != "hard").Take(Math.Max(0, MaxSoftEventsPerTurn - hardCount))).Select(e => e.Id));
+            var chosen = new HashSet<string>(eligible.Where(e => e.Anchor == "hard" || e.Deported != "")
+                .Concat(eligible.Where(e => e.Anchor != "hard" && e.Deported == "").Take(Math.Max(0, MaxSoftEventsPerTurn - hardCount))).Select(e => e.Id));
             foreach (var e in eligible.Where(e => chosen.Contains(e.Id)))
             {
                 s.FiredEvents.Add(e.Id);
@@ -61,19 +65,34 @@ namespace Statecraft.Sim
         /// once the window has ended (load-time coverage guarantees a holder there).</summary>
         public static DateTime FillDate(GameEvent e, DateTime date) => e.To.HasValue && date >= e.To.Value ? e.To.Value.AddDays(-1) : date;
 
-        /// <summary>Returns null on success, or the reason the choice was rejected.</summary>
-        public static string? Choose(Content c, GameState s, string eventId, string optionId, List<Cause> why)
+        /// <summary>R-ENEMY-005 (the owner's answer 1 on #2087, "Orders expire with the operation"): the day a card's order to a
+        /// row's anchor hex ends, the `to` of that anchor's window in map/units_1948.yaml (the latest, should two anchors share
+        /// the hex), or null when it has none. The anchor's dates, not the card's: a card's from/to is when the decision is open
+        /// (Horev's closes on 23 December 1948; the operation ran to 7 January 1949), while the anchor's are the sourced span of
+        /// the position the operation sends the unit to: Carmeli facing the bridgehead to 19 July 1948, the end of Brosh, and
+        /// Golani at the Julis camp to 24 February 1949, the Egypt armistice. An order target's `to` counts as an anchor's
+        /// (owner, 2 November 2026, #2087, option 1).</summary>
+        internal static DateTime? OrderEnds(Content c, UnitOrderEffect x) =>
+            c.UnitAnchorHexes.Where(k => k.Key.Row == x.Unit && k.Value == (x.Q, x.R) && c.UnitAnchorEnds.ContainsKey(k.Key))
+                .Select(k => (DateTime?)c.UnitAnchorEnds[k.Key])
+                .Concat(c.UnitOrderTargets.Where(k => k.Key.Row == x.Unit && (k.Value.Q, k.Value.R) == (x.Q, x.R)).Select(k => (DateTime?)k.Value.To))
+                .Max();
+
+        /// <summary>Returns null on success, or the reason the choice was rejected. <paramref name="spent"/> is the movement
+        /// points the turn's orders have spent so far, which an option's unit orders share (R-ENEMY-005).
+        /// A refused unit order goes into <paramref name="rejected"/>, as the player's refused orders do.</summary>
+        public static string? Choose(Content c, GameState s, string eventId, string optionId, List<Cause> why, Dictionary<int, int>? spent = null, List<Rejection>? rejected = null)
         {
             PopulationLedger.RefuseAggregate(s);
             if (!s.PendingEvents.Contains(eventId)) return "That event is not waiting for a decision";
             var option = Get(c, eventId).Options.FirstOrDefault(o => o.Id == optionId);
             if (option == null) return "That event has no such option";
-            Resolve(c, s, eventId, option, "chosen", why);
+            Resolve(c, s, eventId, option, "chosen", why, spent: spent, rejected: rejected);
             return null;
         }
 
         /// <param name="share">The share of each numeric effect that applies: 1, except for a disloyal minister's delegation (R-EVT-003).</param>
-        static void Resolve(Content c, GameState s, string eventId, EventOption o, string how, List<Cause> why, double share = 1.0, bool delegated = false, Person? minister = null)
+        static void Resolve(Content c, GameState s, string eventId, EventOption o, string how, List<Cause> why, double share = 1.0, bool delegated = false, Person? minister = null, Dictionary<int, int>? spent = null, List<Rejection>? rejected = null)
         {
             s.PendingEvents.Remove(eventId);
             s.ChosenOptions[eventId] = o.Id;
@@ -158,6 +177,23 @@ namespace Statecraft.Sim
             // R-EFX-008: after the city effects. A kind already unlocked stays so, with no second cause.
             foreach (var kind in o.UnlockProjects)
                 if (s.UnlockedProjects.Add(kind)) why.Add(new Cause("events", kind, 1, $"{Unlocked(c, kind)} ({title})", key: CauseKeys.EventUnlock, args: Context(title, localizedTitle)));
+            // R-ENEMY-005 (Q-ENEMY-5): the option's go-to orders, through the player's own go-to and its checks, in list order.
+            // A refused order changes nothing, as the player's does, and is reported as the player's are (Rejected); a row with
+            // no unit on the board orders nobody. gdd-0.1 only: under gdd-0.3 the operation cards stay effect-free for units
+            // (owner, 31 October 2026, #749). The owner's answer 1 on #2087: the order ends with the operation (OrderEnds), and
+            // its march goes round every enemy-held place but the one it was sent to (Movement.Search). The owner's ruling of
+            // 2 November 2026 on #2087 ("Keep a garrison in Nazareth (Recommended)"): the order never takes the last Israeli unit
+            // off an occupied place (R-CTRL-013), so it is not given to that unit, and the refusal says why.
+            if (c.Ruleset != SaveGame.Gdd03Ruleset)
+                foreach (var x in o.UnitOrders)
+                {
+                    int id = c.StartingForces.FindIndex(f => f.Row == x.Unit);   // the unit with id i is the i-th force (R-UNIT-006)
+                    if (id < 0 || !s.Units.TryGetValue(id, out var u) || u.Side != c.StartingForces[id].Side || u.Type != c.StartingForces[id].Type) continue;
+                    var refused = SettlementControl.LastGarrison(c, s, u) ? Orders.RefusedLastGarrison
+                        : Movement.GiveGoTo(c, s, id, x.Q, x.R, spent ?? new Dictionary<int, int>(), why, OrderEnds(c, x)) != null ? Orders.RefusedCardOrder
+                        : null;
+                    if (refused != null) rejected?.Add(new Rejection(new UnitOrder(id, Movement.GoTo, x.Q, x.R), refused));
+                }
             foreach (var kv in o.SetPolicy.Where(k => s.Policies.ContainsKey(k.Key)).OrderBy(k => k.Key, StringComparer.Ordinal))
             {
                 s.Policies[kv.Key] = kv.Value;
@@ -306,7 +342,7 @@ namespace Statecraft.Sim
         /// In the GDD loop a drawn option of a minister whose loyalty is below the floor applies only disloyal_effect_share of
         /// each numeric effect (R-EVT-003; #107, owner, 18 October 2026). Why: loyalty decides how hard a minister works for a
         /// decision he was left to make, competence which decision he makes; anchors and objective cards stay whole.</summary>
-        public static void Delegate(Content c, GameState s, List<Cause> why)
+        public static void Delegate(Content c, GameState s, List<Cause> why, Dictionary<int, int>? spent = null, List<Rejection>? rejected = null)
         {
             PopulationLedger.RefuseAggregate(s);
             var rng = new Rng(s.RngState);
@@ -315,9 +351,9 @@ namespace Statecraft.Sim
             {
                 var e = Get(c, id);
                 var minister = DelegatedTo(c, s, e);
-                if (e.Objective != "" || e.Prisoners != "")   // R-POW-004: an exchange card, like an objective's, has one option and draws nothing
+                if (e.Objective != "" || e.Prisoners != "" || e.Deported != "")   // R-POW-004, R-EVT-007: an exchange card or a Deport card, like an objective's, has one option and draws nothing
                 {
-                    Resolve(c, s, id, e.Options[0], $"delegated to {minister?.Name ?? "the cabinet"}", why, delegated: true, minister: minister);
+                    Resolve(c, s, id, e.Options[0], $"delegated to {minister?.Name ?? "the cabinet"}", why, delegated: true, minister: minister, spent: spent, rejected: rejected);
                     continue;
                 }
                 var competence = (minister?.Competence ?? 5) / 10.0;
@@ -328,7 +364,7 @@ namespace Statecraft.Sim
                 var share = anchored == null && mvp != null && minister != null && minister.Loyalty < mvp.DelegationLoyaltyFloor
                     ? mvp.DisloyalEffectShare!.Value : 1.0;
                 var how = $"delegated to {minister?.Name ?? "the cabinet"}" + (share < 1 ? ", carried out half-heartedly" : "");
-                Resolve(c, s, id, option, how, why, share, delegated: true, minister: minister);
+                Resolve(c, s, id, option, how, why, share, delegated: true, minister: minister, spent: spent, rejected: rejected);
             }
             s.RngState = rng.State;
         }

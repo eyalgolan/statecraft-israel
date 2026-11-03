@@ -1,6 +1,6 @@
 # Writing an event
 
-An event is one YAML file in `content/events/`. The game shows it as a card with two or more options; each option
+An event is one YAML file in `content/events/`. The game shows it as a card with one or more options; each option
 moves some numbers. This guide takes you from an empty file to a passing test run. Everything here was checked
 against the loader (`sim/Statecraft.Sim/ContentLoader.cs`, `EventRules.cs`, `Content.cs`, `ReleaseGate.cs`); if the
 code and this page disagree, the code wins and the page has a bug (please open an issue).
@@ -46,6 +46,7 @@ schema too, or that test fails. Keep the comment when you copy a file.
 | `objective` | no | Makes the event the completion card of an objective in `objectives.yaml`, which must name this event as its `card`. It fires only once the objective is completed (GDD loop only), and has exactly one option. See `docs/gdd/objective-card.md`. |
 | `site` | no | A swamp site in `sites.yaml` whose works the event is about. In the GDD loop it fires only while that site is being worked (R-SWAMP-002); the legacy loop ignores it. See `docs/gdd/fields-and-swamps.md`. |
 | `prisoners` | no | Makes the event a front's prisoner-exchange card: `egypt`, `jordan` (which also returns the Iraqi prisoners), `lebanon` or `syria`. It fires only while that front holds prisoners or the player's soldiers (GDD loop only), has exactly one option, and returns them and scores when it resolves (R-POW-004). |
+| `deported` | no | Makes the event Deport's follow-up card for a settlement target whose residents stayed: it fires only once the player's Deport has depopulated that place, carries the `displacement` tag and has exactly one option (R-EVT-007). See "deported". |
 | `options` | yes | One or more options. See below. |
 | `sources` | no by the loader, yes by the rules | A list of `{ url, checked }`. See below. |
 | `status` | no (default `draft`) | The review status. See below. |
@@ -93,8 +94,8 @@ Tags are free-form, but these five are sensitive (checked without regard to case
 
 For `displacement`, the no-gain rule has no exception: no option may raise Money, Food, Arms, Social cohesion,
 International Support or score (R-EFX-007). Score is not an event-effect target yet, so the loader already refuses
-it as unknown; do not add it to an event. The rule applies when that target exists. No event in `content/` uses
-`displacement` yet.
+it as unknown; do not add it to an event. The rule applies when that target exists. The events that use `displacement`
+are Deport's follow-up cards (see "deported").
 
 The other tag used so far is `security`. It has no rule attached.
 
@@ -111,7 +112,8 @@ overlaps the window. Turns are a month long and end on the 15th (15 June 1948, 1
 end on 15 January 1952), so a window shorter than a turn can still fire, late. For a decision card, open the window on
 the 15th on or before the historical decision, so the card reaches the player on the turn before it (R-TURN-002;
 `EventRetimingTests` pins each card's turn). Put a comment above `from` saying why you chose the date, as the example
-does. The loader only requires `from`, and that `to` is later than `from`.
+does. The loader requires `from`. When `to` is present, it must be later than `from`. An event may not span an era
+boundary; split its window at the boundary. An open window with no `to` is allowed only in the last era.
 
 ### conditions
 
@@ -190,6 +192,22 @@ while the card is shown. A variant that names an event's historical option also 
 `rejoin` that event (R-ALT-009) to close by then, since a rejoin makes that option hold. Variant title and text use the same checked office placeholders as the event itself. Only a
 reconvergence event may carry `variants`.
 
+### deported
+
+```yaml
+deported: acre
+tags: [displacement]
+```
+
+Deport's follow-up card for a settlement target (`settlement_targets.yaml`, GDD Phase 6 PR 9, #801). It fires only once
+the player's Deport has depopulated that place, at the event step of that turn, and never after Raid or Occupy
+(R-EVT-007). It takes no soft slot, so a full turn does not delay it; a Deport on the turn that ends the game raises no
+card, since no event fires then, so the end screen shows that card instead (owner, 2 November 2026, #2197). The loader refuses a card whose target is unknown or whose residents fled (Deport is
+refused there, so the card could never fire), one without the `displacement` tag, one with more than one option, and
+one with `to` or `prisoners`, one that is not `soft` or opens after the game's start, one with `conditions`,
+`requires`, `site`, `objective`, another `kind` or `variants`, and a second card for the same place. Leave out `to`. Left unanswered, it resolves to its one option without a draw. State the in-game consequence and one sourced line of the place's history
+(Q-CARD-1 (c)); a Deport in play may differ from 1948, so do not say the player's Deport is what happened.
+
 ### requires
 
 ```yaml
@@ -225,6 +243,7 @@ Each option has:
 | `grant_units` | no | GDD loop only. A list of `{ type, n, at }`: see "grant_units and city_effects". |
 | `city_effects` | no | GDD loop only. A list of `{ city, field, delta }`: see "grant_units and city_effects". |
 | `unlock_projects` | no | GDD loop only. A list of `projects.yaml` ids: see "grant_units and city_effects". |
+| `unit_orders` | no | GDD loop only, applied under gdd-0.1 only. A list of `{ unit, q, r }`: see "unit_orders". |
 | `alternative` | on every option that did not happen, in an event with a historical option | Who put it forward, on what record. See below. |
 | `rejoin` | no | Consequence cards only. The id of the event whose road the card follows; choosing this option returns later cards to the recorded course (R-ALT-009). See "kind". |
 
@@ -292,6 +311,17 @@ These act on the GDD records, so only content whose `eras.yaml` sets `systems.lo
   of the game (R-EFX-008). Naming a kind that is not locked is an error, since it would do nothing.
 
 An event with a sensitive tag may carry no grant, no positive `city_effects` delta and no unlock; a cut is allowed (R-EFX-005).
+
+### unit_orders
+
+- `unit_orders: [{ unit: golani, q: -7, r: 24 }]` gives the unit of a `map/units_1948.yaml` row a go-to order toward
+  hex (`q`, `r`) when the option is chosen or delegated (R-ENEMY-005). The hex must be one of that row's own anchor
+  hexes in `map/unit_anchor_hexes.yaml`, so a card never sends a unit where no source puts it; cite the anchor's line in
+  a comment. The order goes through the player's own go-to: one the player could not give changes nothing, and the
+  player is told so. The order ends on the anchor's `to` date (the loader refuses an anchor with none), and its march
+  goes round every enemy-held place but its hex.
+- It applies under gdd-0.1 only. Under gdd-0.3 the loader still checks it and the unit gets no order; the legacy loop
+  ignores it.
 
 ### sources
 

@@ -427,7 +427,8 @@ public class UnitFiguresTests
 
     /// <summary>Close up, a near model that never comes (null: a missing or damaged bundle) leaves the far mesh drawing (fail
     /// open); and C05, the pioneer veteran, has no idle clip (walk and run only), so his near model is never asked for and he
-    /// keeps his still far model (owner, 18 October 2026, #665: "Keep its still model"), while the figures beside him swap.</summary>
+    /// keeps his still far model (owner, 18 October 2026, #665: "Keep its still model"), while the figures beside him swap.
+    /// Close up that still model breathes in code (UnitFigureIdle, #2374), and stands still again far off.</summary>
     [Test]
     public void AMissingNearModelKeepsTheFarMeshAndC05KeepsHisStillModel()
     {
@@ -453,6 +454,13 @@ public class UnitFiguresTests
             Assert.IsTrue(FarOf(c05).All(r => !r.forceRenderingOff), "C05 keeps his still far model close up");
             Assert.IsNotNull(NearOf(c06), "C06 swaps beside him");
             Assert.IsTrue(FarOf(c06).All(r => r.forceRenderingOff));
+            var idle = c05.Find(UnitFigures.ModelName).GetChild(0).GetComponent<UnitFigureIdle>();
+            Assert.IsNotNull(idle, "C05's held pose has its code-driven idle (#2374), on the model the token draws");
+            Assert.IsTrue(idle.enabled, "close up it breathes");
+            Assert.IsTrue(c05.GetComponentsInChildren<Animator>(true).All(a => !a.enabled), "with his Animator still off");
+            View(root.GetComponent<UnitFigureDetail>(), camera, TownModelLayer.CloseExitM + 1f);
+            Assert.IsFalse(idle.enabled, "far off he stands still again");
+            Assert.AreEqual(2, asked.Count(a => a.detail == CollectionDetail.Near), "and his near model was never asked for");
         }
         finally { UnityEngine.Object.DestroyImmediate(camera.gameObject); UnityEngine.Object.DestroyImmediate(root); }
     }

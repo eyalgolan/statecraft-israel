@@ -405,6 +405,20 @@ public class CameraInputTests
         finally { Object.DestroyImmediate(rig.gameObject); }
     }
 
+    /// <summary>The owner, 3 November 2026: "Open at ~30 km, like the promo". The opening zoom is about 30 km, close enough
+    /// for the building models (TownModelLayer.CloseAt), clear of the 30 km edge where RoadVehicles and the collection
+    /// layers switch (so the first frame does not depend on rounding), and under the minimap's whole-map zoom
+    /// (CameraController.MaxDistance, where the view is wider than the map: AViewWiderThanTheMapIsCentredAndZoomingOutNeverJumps).</summary>
+    [Test]
+    public void TheGameOpensAtAbout30KmWithTheBuildingModels()
+    {
+        float start = CameraRig.StartDistance;
+        Assert.That(start, Is.InRange(25000f, 35000f), "about 30 km (owner, 3 November 2026)");
+        Assert.IsTrue(Statecraft.Game.Map.Kits.TownModelLayer.CloseAt(start, null), "the building models draw at the opening");
+        Assert.GreaterOrEqual(Mathf.Abs(start - Statecraft.Game.Map.Routes.RoadVehicles.CloseEnterM), 500f, "not on the road vehicles' edge");
+        Assert.Less(start, CameraController.MaxDistance, "the whole-map zoom is farther out");
+    }
+
     /// <summary>Issue #174: over low ground the look-at point stays on y = 0 (the approved framing); over ground high enough
     /// to come within MinClearanceShare of the camera, it is lifted just enough, and dropped again on the way back down.</summary>
     [Test]

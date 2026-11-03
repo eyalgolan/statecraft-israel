@@ -62,7 +62,7 @@ namespace Statecraft.Sim
             if (syntheticCamps == null) throw new ArgumentNullException(nameof(syntheticCamps));
             if (!content.UsesPopulationLedger || !opening.UsesPopulationLedger || !opening.PopulationLedger.IsInitialized)
                 throw new InvalidOperationException("Reception requires an initialized exact-gdd-0.3 synthetic fixture.");
-            // M content/gdd03-balance.yaml:214-221: Agreed capacity 3 and duration 6; no fallback or duplicate constants.
+            // M content/gdd03-balance.yaml `reception.capacity` and `reception.turns`: Agreed capacity 3 and duration 6; no fallback or duplicate constants.
             var capacity = content.RequirePopulationInteger("reception.capacity");
             var turns = MatchingReceptionTurns(content, opening.PopulationLedger);
             opening.PopulationLedger.Reconcile();

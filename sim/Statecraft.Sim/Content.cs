@@ -739,6 +739,13 @@ namespace Statecraft.Sim
         public string Requires { get; set; } = "";
         /// <summary>Whether StartProject refuses this kind until an event option unlocks it (R-EFX-008). Default false.</summary>
         public bool Locked { get; set; }
+        /// <summary>R-ARMS-004: the workshop worker slots the kind gives when built, 0 or 1 (an arms workshop's one worker,
+        /// gdd03-balance.yaml `arms_workshop.parts.worker_slots`). Default 0.</summary>
+        public int WorkerSlots { get; set; }
+        /// <summary>R-ARMS-004: the rulesets (eras.yaml `systems.ruleset`) whose games have the kind; empty for every GDD
+        /// ruleset. The loader leaves a kind out of the other rulesets' <see cref="Content.ProjectKinds"/>.</summary>
+        public List<string> Rulesets { get => rulesets; set => rulesets = value ?? new List<string>(); }
+        List<string> rulesets = new List<string>();
     }
 
     /// <summary>A designated site (sites.yaml; docs/GDD.md "Pioneer work": building is allowed only at designated spots, and a
@@ -1038,6 +1045,8 @@ namespace Statecraft.Sim
         public List<CityEffect> CityEffects { get; set; } = new List<CityEffect>();
         /// <summary>R-EFX-008: locked projects.yaml kinds this option makes available, in list order (D-H2, Q-HFX-1).</summary>
         public List<string> UnlockProjects { get; set; } = new List<string>();
+        /// <summary>R-ENEMY-005: go-to orders this option gives to units of map/units_1948.yaml rows, in list order (Q-ENEMY-5).</summary>
+        public List<UnitOrderEffect> UnitOrders { get; set; } = new List<UnitOrderEffect>();
         /// <summary>Who put this non-historical option forward, and on what record (R-ALT-003). Null when absent.</summary>
         public OptionAlternative? Alternative { get; set; }
         /// <summary>The event whose historical course this consequence option rejoins (R-ALT-009), or empty.</summary>
@@ -1052,6 +1061,15 @@ namespace Statecraft.Sim
         public string Type { get; set; } = "";
         public int N { get; set; }
         public string At { get; set; } = "";
+    }
+
+    /// <summary>An option's go-to order (R-ENEMY-005) for the unit of the map/units_1948.yaml row <see cref="Unit"/>, toward
+    /// hex (<see cref="Q"/>, <see cref="R"/>), which must be one of that row's anchor or order target hexes (map/unit_anchor_hexes.yaml).</summary>
+    public sealed class UnitOrderEffect
+    {
+        public string Unit { get; set; } = "";
+        public int Q { get; set; }
+        public int R { get; set; }
     }
 
     /// <summary>An option's change to one field of a city (R-EFX-004): housing_capacity or job_slots by whole units, or the
@@ -1137,6 +1155,10 @@ namespace Statecraft.Sim
         /// while that front holds prisoners or the player's soldiers, has exactly one option and resolves without a draw.
         /// Empty for every other event.</summary>
         public string Prisoners { get; set; } = "";
+        /// <summary>The settlement target (settlement_targets.yaml) whose Deport this follow-up card follows (R-EVT-007; GDD
+        /// Phase 6 PR 9, #801): it fires only once the player's Deport has depopulated that place, has exactly one option,
+        /// resolves without a draw and carries the <c>displacement</c> tag. Empty for every other event.</summary>
+        public string Deported { get; set; } = "";
         /// <summary>The place among the same turn's cards of the same `from` (R-EVT-006): a lower order comes first, before
         /// the id decides. Default 0; degania_defence has 1, so One Army opens the game (owner, 24 October 2026, #1568).</summary>
         public int Order { get; set; }
@@ -1398,10 +1420,24 @@ namespace Statecraft.Sim
         /// <summary>The forces a Historical game starts with (map/units_1948.yaml; R-UNIT-006), in file order: the unit with id i
         /// of a new game is the i-th. Empty in the legacy loop.</summary>
         public List<StartingForce> StartingForces = new List<StartingForce>();
+        /// <summary>Every anchor's hex of map/unit_anchor_hexes.yaml by (row id, anchor index), the only hexes an operation
+        /// card may order a row's unit to (R-ENEMY-005). Empty in the legacy loop.</summary>
+        public Dictionary<(string Row, int Anchor), (int Q, int R)> UnitAnchorHexes = new Dictionary<(string Row, int Anchor), (int Q, int R)>();
+        /// <summary>The end of each anchor's window (its `to` in map/units_1948.yaml) by (row id, anchor index): a card's order to
+        /// the anchor's hex ends on that day (R-ENEMY-005; the owner's answer 1 on #2087). Empty in the legacy loop.</summary>
+        public Dictionary<(string Row, int Anchor), DateTime> UnitAnchorEnds = new Dictionary<(string Row, int Anchor), DateTime>();
+        /// <summary>Each row's order targets (map/units_1948.yaml `order_targets`; owner, 2 November 2026, #2087, option 1) by
+        /// (row id, index): the hex unit_anchor_hexes.yaml gives it and its `to`, the day a card's order to it ends. An operation
+        /// card may order the row's unit there as to an anchor (R-ENEMY-005). Empty in the legacy loop.</summary>
+        public Dictionary<(string Row, int Target), (int Q, int R, DateTime To)> UnitOrderTargets = new Dictionary<(string Row, int Target), (int Q, int R, DateTime To)>();
         /// <summary>The GDD designated sites (sites.yaml), in file order. Empty in the legacy loop.</summary>
         public List<Site> Sites = new List<Site>();
-        /// <summary>The GDD city project kinds (projects.yaml), in file order. Empty in the legacy loop.</summary>
+        /// <summary>The GDD city project kinds (projects.yaml) this game's ruleset has (R-ARMS-004: a row's `rulesets`), in file
+        /// order. Empty in the legacy loop.</summary>
         public List<ProjectKind> ProjectKinds = new List<ProjectKind>();
+        /// <summary>R-ARMS-004: the projects.yaml rows limited to other rulesets, in file order. Read and validated with the
+        /// rest, never startable or shown; kept so the Hebrew overlay (#1618) still names every row of the file.</summary>
+        public List<ProjectKind> ProjectKindsOfOtherRulesets = new List<ProjectKind>();
         /// <summary>The corridors (corridors.yaml), in file order; empty in the legacy loop.</summary>
         public List<CorridorDef> Corridors = new List<CorridorDef>();
         /// <summary>The objectives (objectives.yaml), ordered by id. Read in both loops, since their cards are events; only the

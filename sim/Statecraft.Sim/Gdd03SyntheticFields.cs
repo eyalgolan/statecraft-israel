@@ -16,7 +16,7 @@ namespace Statecraft.Sim
             noviceFood = novice; trainedFood = trained; veteranFood = veteran; SlotsPerField = slots;
         }
 
-        // R-FIELD-002: content/gdd03-balance.yaml:142-145,198-201.
+        // R-FIELD-002: content/gdd03-balance.yaml `farmer.output` and `field.slots`.
         public static Gdd03FieldRates FromCatalogue(Gdd03BalanceCatalogue catalogue)
         {
             if (catalogue == null) throw new ArgumentNullException(nameof(catalogue));

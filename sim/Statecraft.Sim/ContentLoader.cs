@@ -45,6 +45,9 @@ namespace Statecraft.Sim
             public List<MapHex> Hexes { get; set; } = new List<MapHex>();
         }
         sealed class SettlementHexesFile { public List<SettlementHex> Settlements { get; set; } = new List<SettlementHex>(); }
+        sealed class LocalityHexesFile { public List<LocalityHex> Localities { get; set; } = new List<LocalityHex>(); }
+        /// <summary>A map/locality_hexes.yaml row. q and r are nullable so a missing one is refused, never read as 0.</summary>
+        sealed class LocalityHex { public string Id { get; set; } = ""; public int? Q { get; set; } public int? R { get; set; } }
         sealed class MapLocationsFile { public List<MapLocation> Locations { get; set; } = new List<MapLocation>(); }
         sealed class SettlementTargetsFile { public List<SettlementTarget> Targets { get; set; } = new List<SettlementTarget>(); }
         sealed class CitiesFile { public List<CityStart> Cities { get; set; } = new List<CityStart>(); }
@@ -58,6 +61,16 @@ namespace Statecraft.Sim
         {
             public string Ruleset { get; set; } = "";
             public List<EventExclusion>? Exclusions { get; set; }
+        }
+        sealed class Gdd03StartFile
+        {
+            public string Ruleset { get; set; } = "";
+            public List<StartCampBinding>? MilitaryCamps { get; set; }
+        }
+        sealed class StartCampBinding
+        {
+            public string City { get; set; } = "";
+            public string Location { get; set; } = "";
         }
         sealed class EventExclusion
         {
@@ -189,6 +202,24 @@ namespace Statecraft.Sim
         }
 
         internal const string ObjectivesFileName = "objectives.yaml";
+
+        /// <summary>R-CITY-006: the locality placements, with the settlement_hexes.yaml checks (unique ids, land hexes) and
+        /// q and r required. Only the exact gdd-0.3 regions path calls this.</summary>
+        static List<SettlementHex>? LocalityHexes(Content c, LocalityHexesFile file)
+        {
+            const string f = PlayerRegionCatalogue.LocalityHexesFileName;
+            Unique(f, "localities", file.Localities.Select(l => l.Id));
+            var result = new List<SettlementHex>(file.Localities.Count);
+            foreach (var l in file.Localities)
+            {
+                if (!l.Q.HasValue || !l.R.HasValue) throw new ContentException(f, $"localities[{l.Id}]", "q and r are required integers");
+                int q = l.Q.Value, r = l.R.Value;
+                if (c.HexAt(q, r)?.Land != true)
+                    throw new ContentException(f, $"localities[{l.Id}]", FormattableString.Invariant($"hex q={q} r={r} is not a land hex in {HexesFile}"));
+                result.Add(new SettlementHex { Id = l.Id, Q = q, R = r });
+            }
+            return result;
+        }
 
         /// <summary>Like <see cref="Read{T}"/>, but a missing file is null, not an error. The file is read once.</summary>
         static T? ReadOptional<T>(Func<string, string?> readFile, string relPath) where T : class
@@ -384,7 +415,8 @@ namespace Statecraft.Sim
             //                              require itself and requirements cannot form a cycle (EventRules)
             //   options: [{ id, text, historical, recommended, effects: [{ target, delta }], set_rung, set_policy,
             //              grant_units: [{ type, n, at }], city_effects: [{ city, field, delta }],
-            //              unlock_projects: [<projects.yaml id of a locked kind>] }]
+            //              unlock_projects: [<projects.yaml id of a locked kind>],
+            //              unit_orders: [{ unit, q, r }] (R-ENEMY-005) }]
             //   sources: [{ url, checked }], status
             //   objective                  the objective (objectives.yaml) whose completion card this is: it fires only once
             //                              that objective is recorded, and has exactly one option
@@ -392,6 +424,9 @@ namespace Statecraft.Sim
             //                              fires only while that site is being worked; the legacy loop ignores it
             //   prisoners                  a front (Prisoners.Fronts) whose prisoners the card returns: it fires only while
             //                              that front holds some either way, and has exactly one option (R-POW-004)
+            //   deported                   a settlement target whose Deport the card follows: it fires only once the
+            //                              player's Deport has depopulated that place, carries the displacement tag and
+            //                              has exactly one option (R-EVT-007)
             foreach (var rel in eventFiles.OrderBy(p => p, StringComparer.Ordinal))
             {
                 var e = Read<GameEvent>(readFile, rel);
@@ -412,15 +447,10 @@ namespace Statecraft.Sim
             Validate(c, settlementIds);
             if (c.Ruleset == SaveGame.Gdd03Ruleset && c.Gdd03Balance == null)
                 throw new ContentException(Gdd03BalanceCatalogue.FileName, "(file)", "required for the gdd-0.3 ruleset");
+            if (c.Ruleset == SaveGame.Gdd03Ruleset) c.Gdd03Balance!.ValidateNumbers();
             // R-POP-001: validate the identity-specific scale without altering old content reads/hash inputs.
             if (c.UsesPopulationLedger) _ = c.PopulationPeoplePerUnit;
             ApplyMapOverrides(readFile, c, settlementIds);   // after the map's own checks, before the GDD records that read it
-            // R-CITY-006: no read or hash input in either old identity. Absence leaves the capability inactive.
-            if (c.Ruleset == SaveGame.Gdd03Ruleset)
-            {
-                var regions = ReadOptional<PlayerRegionsFile>(readFile, PlayerRegionCatalogue.FileName);
-                if (regions != null) c.PlayerRegions = PlayerRegionCatalogue.Validate(c, regions.PlayerRegions);
-            }
             if (c.IsGdd)
             {
                 // GDD v0.1 city data (Phase 1 PR 3), read once eras.yaml is known to be valid. Only the GDD loop reads it, so
@@ -428,18 +458,67 @@ namespace Statecraft.Sim
                 c.Cities = Read<CitiesFile>(readFile, "cities.yaml").Cities;
                 c.UnitTypes = Read<UnitTypesFile>(readFile, "unit_types.yaml").Types;
                 c.Sites = Read<SitesFile>(readFile, "sites.yaml").Sites;   // sourced facts (Phase 1 PR 5)
-                c.ProjectKinds = Read<ProjectsFile>(readFile, "projects.yaml").Projects;   // design values (Phase 3 PR 4)
+                // Design values (Phase 3 PR 4). R-ARMS-004: a row limited to other rulesets is not this game's kind.
+                var kinds = Read<ProjectsFile>(readFile, "projects.yaml").Projects;
+                c.ProjectKinds = kinds.Where(k => k.Rulesets.Count == 0 || k.Rulesets.Contains(c.Ruleset)).ToList();
+                c.ProjectKindsOfOtherRulesets = kinds.Except(c.ProjectKinds).ToList();
                 c.Corridors = Read<CorridorsFile>(readFile, "corridors.yaml").Corridors;   // sourced, hexes derived (Phase 4 PR 2)
+                if (c.Ruleset == SaveGame.Gdd03Ruleset) ApplyGdd03Start(readFile, c);
                 ValidateGdd(c, settlementIds);
                 Gdd03Military.Validate(c); // after effective map overrides and role validation, only exact gdd-0.3
                 // The sourced starting forces (Phase 5 PR 4, R-UNIT-006), once the types and people_per_unit are known valid.
                 c.StartingForces = StartingForces.Read(readFile, c);
+            }
+            // R-CITY-006: no read or hash input in either old identity. Absence leaves the capability inactive. After the
+            // sites (a site id may be a member) and the effective map overrides; the locality hexes are read only with regions, and are required then (#2298).
+            if (c.Ruleset == SaveGame.Gdd03Ruleset)
+            {
+                var regions = ReadOptional<PlayerRegionsFile>(readFile, PlayerRegionCatalogue.FileName);
+                if (regions != null)
+                    c.PlayerRegions = PlayerRegionCatalogue.Validate(c, regions.PlayerRegions,
+                        LocalityHexes(c, Read<LocalityHexesFile>(readFile, PlayerRegionCatalogue.LocalityHexesFileName)));
             }
             EventRules.ValidateStructured(c);   // R-EFX-006: after the GDD records it names are read
             c.BuildWindows();
             c.Hash = HashOf(read);
             c.Translations = TranslationLoader.Load(allEvents, Unhashed, readTranslation, translationFiles);
             return c;
+        }
+
+        // R-CAMP-003: exact-gdd-0.3 start bindings add facilities to the shared city catalogue without changing gdd-0.1.
+        // The optional file keeps synthetic gdd-0.3 fixtures independent of the shipped map and city ids.
+        static void ApplyGdd03Start(Func<string, string?> readFile, Content c)
+        {
+            const string file = "gdd03-start.yaml";
+            var start = ReadOptional<Gdd03StartFile>(readFile, file);
+            if (start == null) return;
+            if (start.Ruleset != SaveGame.Gdd03Ruleset)
+                throw new ContentException(file, "ruleset", "must be gdd-0.3");
+            if (start.MilitaryCamps == null)
+                throw new ContentException(file, "military_camps", "required: an explicit list");
+
+            var cities = new HashSet<string>(StringComparer.Ordinal);
+            var locations = new HashSet<string>(StringComparer.Ordinal);
+            for (int i = 0; i < start.MilitaryCamps.Count; i++)
+            {
+                var row = start.MilitaryCamps[i];
+                var at = FormattableString.Invariant($"military_camps[{i}]");
+                var city = c.Cities.FirstOrDefault(x => x.Id == row.City);
+                if (city == null) throw new ContentException(file, at + ".city", "must name an existing city");
+                if (!cities.Add(row.City)) throw new ContentException(file, at + ".city", "duplicate city");
+                var location = c.MapLocations.FirstOrDefault(x => x.Id == row.Location);
+                if (location == null) throw new ContentException(file, at + ".location", "must name an existing map location");
+                if (location.Kind != "military_camp")
+                    throw new ContentException(file, at + ".location", "must name a military_camp map location");
+                if (!locations.Add(row.Location)) throw new ContentException(file, at + ".location", "duplicate location");
+                if (!city.Facilities.Contains("military_camp")) city.Facilities.Add("military_camp");
+            }
+
+            var actual = c.Cities.Count(x => x.Facilities.Contains("military_camp"));
+            var expected = Gdd03Military.Scalar(c, "start.military_camps");
+            if (actual != expected)
+                throw new ContentException(file, "military_camps",
+                    FormattableString.Invariant($"effective military-camp city count {actual} must equal start.military_camps {expected}"));
         }
 
         // R-EFX-001: this file is deliberately never read by legacy/gdd-0.1, including for hashing.
@@ -1470,6 +1549,7 @@ namespace Statecraft.Sim
             ValidateObjectiveConditions(c);
             ValidateEventSites(c);
             ValidateEventPrisoners(c);
+            ValidateEventDeported(c);
             ValidateProjects(c);
             ValidateCorridors(c);
         }
@@ -1483,6 +1563,41 @@ namespace Statecraft.Sim
                     throw new ContentException(e.File, $"events[{e.Id}].prisoners", $"unknown front '{e.Prisoners}' (one of {string.Join(", ", Prisoners.Fronts)})");
                 if (e.Options.Count != 1)
                     throw new ContentException(e.File, $"events[{e.Id}].options", "an exchange card has exactly one option");
+            }
+        }
+
+        /// <summary>A Deport follow-up card (R-EVT-007; GDD Phase 6 PR 9, #801): a settlement target whose residents stayed,
+        /// since Deport is refused where they fled (R-CTRL-018) and the card could never fire; the displacement tag, so the
+        /// release gate holds it until the owner's review (R-GATE-001); one option, which Delegate resolves without a draw; no `to`,
+        /// whose closed window would miss a later Deport; no `prisoners`; a soft anchor (it takes no soft slot either way); a window
+        /// open from the game's start; nothing else it waits for; and one card per place, so it fires on its Deport's turn, once.</summary>
+        static void ValidateEventDeported(Content c)
+        {
+            var cardOf = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var e in c.Events.Where(e => e.Deported != "").OrderBy(e => e.Id, StringComparer.Ordinal))
+            {
+                var target = c.SettlementTargets.FirstOrDefault(t => t.Id == e.Deported)
+                    ?? throw new ContentException(e.File, $"events[{e.Id}].deported", $"unknown settlement target '{e.Deported}' (settlement_targets.yaml)");
+                if (target.Residents == Fled)
+                    throw new ContentException(e.File, $"events[{e.Id}].deported", $"the residents of '{e.Deported}' fled when it was captured, so it is never deported (R-CTRL-018)");
+                if (!e.Tags.Contains("displacement", StringComparer.OrdinalIgnoreCase))
+                    throw new ContentException(e.File, $"events[{e.Id}].tags", "a Deport card carries the displacement tag (R-GATE-001)");
+                if (e.Options.Count != 1)
+                    throw new ContentException(e.File, $"events[{e.Id}].options", "a Deport card has exactly one option");
+                if (e.To != null)
+                    throw new ContentException(e.File, $"events[{e.Id}].to", "a Deport card has no to: a closed window would miss a later Deport");
+                if (e.Prisoners != "")
+                    throw new ContentException(e.File, $"events[{e.Id}].prisoners", "a Deport card is not an exchange card");
+                if (e.Anchor != "soft")
+                    throw new ContentException(e.File, $"events[{e.Id}].anchor", "a Deport card is soft: it is not on the record");
+                if (e.From > c.Rules.Start)
+                    throw new ContentException(e.File, $"events[{e.Id}].from", FormattableString.Invariant($"a Deport card opens at the game's start ({c.Rules.Start:yyyy-MM-dd}), so a Deport on any turn fires it"));
+                foreach (var (key, set) in new[] { ("conditions", e.Conditions.Count > 0), ("requires", e.Requires.Count > 0), ("site", e.Site != ""),
+                             ("objective", e.Objective != ""), ("kind", e.Kind != EventKinds.Historical), ("variants", e.Variants.Count > 0) })
+                    if (set) throw new ContentException(e.File, $"events[{e.Id}].{key}", "a Deport card waits for nothing but its Deport");
+                if (cardOf.TryGetValue(e.Deported, out var first))
+                    throw new ContentException(e.File, $"events[{e.Id}].deported", $"'{e.Deported}' already has a card, '{first}': one Deport raises one card");
+                cardOf[e.Deported] = e.Id;
             }
         }
 
@@ -1505,8 +1620,9 @@ namespace Statecraft.Sim
         static void ValidateProjects(Content c)
         {
             const string pf = "projects.yaml";
-            Unique(pf, "projects", c.ProjectKinds.Select(x => x.Id));
-            foreach (var x in c.ProjectKinds)
+            var all = c.ProjectKinds.Concat(c.ProjectKindsOfOtherRulesets).ToList();   // every row, whatever the ruleset
+            Unique(pf, "projects", all.Select(x => x.Id));
+            foreach (var x in all)
             {
                 var at = $"projects[{x.Id}]";
                 if (string.IsNullOrWhiteSpace(x.Name)) throw new ContentException(pf, at + ".name", "is required");
@@ -1522,6 +1638,32 @@ namespace Statecraft.Sim
                 // R-PROJ-005: a kind whose resource no city has could never be built.
                 if (!string.IsNullOrEmpty(x.Requires) && !c.Cities.Any(k => k.Resources.Any(r => r.Id == x.Requires)))
                     throw new ContentException(pf, at + ".requires", $"no city in cities.yaml has the resource '{x.Requires}'");
+                ValidateWorkshopKind(c, x, pf, at);
+            }
+        }
+
+        /// <summary>R-ARMS-004: a kind's `rulesets` names GDD rulesets only, and `worker_slots` is 0 or 1. A kind with a worker
+        /// slot is an arms workshop: it adds no housing, condition or job slots (its worker holds no job), exists under
+        /// gdd-0.3 only, and under gdd-0.3 the arms_workshop row has the balance catalogue's worker slots.</summary>
+        static void ValidateWorkshopKind(Content c, ProjectKind x, string pf, string at)
+        {
+            foreach (var r in x.Rulesets)
+                if (r != SaveGame.GddRuleset && r != SaveGame.Gdd03Ruleset)
+                    throw new ContentException(pf, at + ".rulesets", $"unknown ruleset '{r}' ({SaveGame.GddRuleset} or {SaveGame.Gdd03Ruleset})");
+            if (x.WorkerSlots < 0 || x.WorkerSlots > 1) throw new ContentException(pf, at + ".worker_slots", "must be 0 or 1");
+            if (x.WorkerSlots > 0)
+            {
+                if (x.JobSlots != 0) throw new ContentException(pf, at + ".job_slots", "must be 0 with worker_slots: a workshop worker holds no job");
+                if (x.Capacity != 0) throw new ContentException(pf, at + ".capacity", "must be 0 with worker_slots");
+                if (x.Condition != 0) throw new ContentException(pf, at + ".condition", "must be 0 with worker_slots");
+                if (!(x.Rulesets.Count == 1 && x.Rulesets[0] == SaveGame.Gdd03Ruleset))
+                    throw new ContentException(pf, at + ".rulesets", $"a kind with worker_slots exists under {SaveGame.Gdd03Ruleset} only: rulesets: [{SaveGame.Gdd03Ruleset}]");
+            }
+            if (c.Ruleset == SaveGame.Gdd03Ruleset && x.Id == Workshops.ArmsWorkshop)
+            {
+                var slots = Gdd03ProjectCatalogue.Read(c).Projects.Single(p => p.Key == Workshops.ArmsWorkshop).Capacity!.Amount;
+                if (x.WorkerSlots != slots)
+                    throw new ContentException(pf, at + ".worker_slots", FormattableString.Invariant($"must be {slots}, the gdd-0.3 balance catalogue's arms_workshop worker slots"));
             }
         }
 
@@ -1681,7 +1823,7 @@ namespace Statecraft.Sim
             }
         }
 
-        static readonly string[] MapLocationKinds = { "city", "kibbutz", "fort", "pass", "bridge", "reception_camp", "outpost" };
+        static readonly string[] MapLocationKinds = { "city", "kibbutz", "fort", "pass", "bridge", "reception_camp", "outpost", "military_camp" };   // military_camp: #1719
         static readonly string[] MapLocationPriorities = { "must_have", "optional" };
         static readonly string[] StartingControls = { "israeli", "arab_forces", "contested" };
 
@@ -1787,7 +1929,7 @@ namespace Statecraft.Sim
         /// <summary>Targets whose capture hex is a neighbour of their settlement's hex, not that hex (owner on #1796, 26 October
         /// 2026, "Contested + move target"): at 4.4 km (#1183) Ramla shares (-4, 24) with Rehovot, so a unit on Rehovot's hex
         /// would capture Ramla. Its target is the neighbour nearest Ramla's point, cited in settlement_targets.yaml.</summary>
-        static readonly HashSet<string> TargetOnANeighbour = new HashSet<string>(StringComparer.Ordinal) { "ramla" };
+        internal static readonly HashSet<string> TargetOnANeighbour = new HashSet<string>(StringComparer.Ordinal) { "ramla" };
 
         /// <summary>R-CTRL-001 (Q-TGT-1 (a)): every target is an arab_town row of settlements_1948.yaml on a land hex that is
         /// its own hex in settlement_hexes.yaml (capture reads the target's hex, movement the settlement's), or for a

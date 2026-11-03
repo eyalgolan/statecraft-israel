@@ -45,7 +45,7 @@
     "values": [2]
   "population.people_per_unit":
     "basis": "Agreed"
-    "note": "Population and starting state: people nominally represented by a population unit; Agreed. Source: #1668 balance.md at 605277df."
+    "note": "Population and starting state: people nominally represented by a population unit; Agreed for Open mode. Owner, 1 November 2026, D2 (\"Approve all six (Recommended)\"): the Historical MVP keeps main's census cities at 1,000 people a unit, so a Historical ledger fixture counts at rules.yaml's people_per_unit for the start day (R-POP-004); this row's 10,000 is Open mode's, when Open mode exists. Source: #1668 balance.md at 605277df."
     "values": [10000]
   "start.population":
     "basis": "Default"
@@ -193,23 +193,23 @@
     "values": [1, 1.5, 3]
   "construction.starts_per_turn":
     "basis": "Agreed"
-    "note": "Work, professions and training: new city/region project nationwide per turn; Agreed. Source: #1668 balance.md at 605277df."
+    "note": "Work, professions and training: new city/region project nationwide per turn. Amir's proposed 1, non-operative: the national limit is map_actions_per_turn (2, R-PROJ-001; docs/gdd/balance.md:57 at aa29a9b11), and the owner, 3 November 2026 (\"One per city, plus 2 nationally\", #1700 issuecomment-6597217639), set one start per city (Projects.Gdd03CityStartsPerTurn). Source: #1668 balance.md at 605277df."
     "values": [1]
   "field.slots":
     "basis": "Agreed"
-    "note": "Work, professions and training: farmer per prepared field; Agreed. Source: #1668 balance.md at 605277df."
+    "note": "Work, professions and training: farmer per prepared field. Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative regional-field model), per docs/gdd/balance.md:58 at 52fe3d60a. Source: #1668 balance.md at 605277df."
     "values": [1]
   "field.cost":
     "basis": "Agreed"
-    "note": "Work, professions and training: Money / trained-equivalent pioneer work units; Agreed. Source: #1668 balance.md at 605277df."
+    "note": "Work, professions and training: Money / trained-equivalent pioneer work units. Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative regional-field model), per docs/gdd/balance.md:59 at 52fe3d60a. Source: #1668 balance.md at 605277df."
     "values": [5]
   "field.work":
     "basis": "Agreed"
-    "note": "Work, professions and training: Money / trained-equivalent pioneer work units; Agreed. Source: #1668 balance.md at 605277df."
+    "note": "Work, professions and training: Money / trained-equivalent pioneer work units. Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative regional-field model), per docs/gdd/balance.md:59 at 52fe3d60a. Source: #1668 balance.md at 605277df."
     "values": [9]
   "field.nominal_turns":
     "basis": "Agreed"
-    "note": "Work, professions and training: turns at constant novice / trained / veteran tier; Derived; promotion can shorten remaining work. Source: #1668 balance.md at 605277df."
+    "note": "Work, professions and training: turns at constant novice / trained / veteran tier; promotion can shorten remaining work. Derived only from declined proposal values; non-operative, per docs/gdd/balance.md:60 at 52fe3d60a. Source: #1668 balance.md at 605277df."
     "values": [12, 9, 6]
   "reception.capacity":
     "basis": "Agreed"
@@ -229,12 +229,12 @@
     "values": [1]
   "housing.money_threshold":
     "basis": "Agreed"
-    "note": "Reception, housing and shortages: condition fraction / Money per resident per fraction below threshold; Agreed linear rule. Source: #1668 balance.md at 605277df."
+    "note": "Reception, housing and shortages: condition fraction below which the housing surcharge applies (R-HOUSE-005, #1703); its Money rate is housing.money_slope; Agreed linear rule. Source: #1668 balance.md at 605277df."
     "values": [0.50]
   "housing.money_slope":
     "basis": "Agreed"
-    "note": "Reception, housing and shortages: condition fraction / Money per resident per fraction below threshold; Agreed linear rule. Source: #1668 balance.md at 605277df."
-    "values": [1]
+    "note": "Reception, housing and shortages: Money per housed population unit per condition fraction below money_threshold, a turn (R-HOUSE-005, #1703). Owner, 2 November 2026: \"Scale it to unit size (Recommended)\"; the option read: \"0.1 per unit (as #2112 did for Industry), about 7.6 Money a turn at start.\" #1668's 1 Money per resident was sized for 10,000 people a unit; at D2's 1,000 people a unit it is 0.1. Agreed linear rule; a labelled design value; a balance playtest follows. Source: #1668 balance.md at 605277df."
+    "values": [0.1]
   "housing.cohesion_threshold":
     "basis": "Agreed"
     "note": "Reception, housing and shortages: condition fraction below which cohesion declines; Agreed. Source: #1668 balance.md at 605277df."
@@ -244,8 +244,8 @@
     "note": "Reception, housing and shortages: national displayed points per turn at maximal weighted severity; Agreed. Source: #1668 balance.md at 605277df."
     "values": [2]
   "housing.overflow_deterioration":
-    "basis": "Default"
-    "note": "Reception, housing and shortages: condition pp per turn multiplied by ordinary resident overflow share; Default rate; retained overcrowding principle. Source: #1668 balance.md at 605277df."
+    "basis": "Agreed"
+    "note": "Reception, housing and shortages: condition pp per turn multiplied by ordinary resident overflow share; under gdd-0.3 in place of R-HOUSE-002's overflow_condition_loss 0.15 (R-HOUSE-005, #1703). Owner, 2 November 2026: \"Yes, 5 pp under GDD 0.3 (Recommended)\"; Agreed; retained overcrowding principle. Source: #1668 balance.md at 605277df."
     "values": [5]
   "housing.max_deterioration":
     "basis": "Default"
@@ -274,7 +274,7 @@
     "values": [1]
   "import.arms_price":
     "basis": "Agreed"
-    "note": "Imports, immigration and Arms production: Money per Arms; IL millions at the display scale; Agreed. Source: #1668 balance.md at 605277df."
+    "note": "Imports, immigration and Arms production: Money per Arms; IL millions at the display scale; Agreed. Owner, 3 November 2026 (\"10, as the GDD 0.3 file says\"; recorded on #1705, issuecomment-6603516248): 10 for gdd-0.3; the live game keeps rules.yaml arms_price until the switch. Source: #1668 balance.md at 605277df."
     "values": [10]
   "import.food_per_money":
     "basis": "Agreed"
@@ -282,8 +282,8 @@
     "values": [3]
   "import.delivery_turns":
     "basis": "Agreed"
-    "note": "Imports, immigration and Arms production: turns after purchase, by ship; Agreed. Source: #1668 balance.md at 605277df."
-    "values": [1]
+    "note": "Imports, immigration and Arms production: turns after purchase; 0 keeps the retained immediate R-ARMS-002 delivery, and Amir's next-turn shipment is post-MVP (owner, 1 November 2026, D1). Source: docs/gdd/balance.md:111 at 52fe3d60a; earlier value 1 from #1668 balance.md at 605277df."
+    "values": [0]
   "immigration.ship_interval":
     "basis": "Agreed"
     "note": "Imports, immigration and Arms production: turns / population units, average; Agreed. Source: #1668 balance.md at 605277df."
@@ -350,7 +350,7 @@
     "values": [0.5]
   "military.active_money":
     "basis": "Agreed"
-    "note": "Military and control: Money per active army unit per turn, excluding basic trainees. Owner ruling, 30 October 2026 (#2013 balance rows): \"Keep the set values (Recommended)\". 0.05 Money; Amir's 1 is a declined proposal. Source: #1668 balance.md at 605277df."
+    "note": "Military and control: Money per active formation per turn, independent of strength, from the turn it graduates (27M-8), excluding basic trainees. Owner ruling, 30 October 2026 (#2013 balance rows): \"Keep the set values (Recommended)\". 0.05 Money; Amir's 1 is a declined proposal. Source: #1668 balance.md at 605277df."
     "values": [0.05]
   "military.strength":
     "basis": "Agreed"
@@ -654,7 +654,7 @@
     "parts":
       "cost":
         "basis": "Default"
-        "note": "Construction Default; upkeep Default. Source: #1668 balance.md at 605277df."
+        "note": "Construction Default; upkeep Default. Non-operative: docs/gdd/balance.md:76 at 52fe3d60a keeps the retained rules.yaml build_camp_cost 2 for the military camp, which the live camp build uses. Source: #1668 balance.md at 605277df."
         "values": [12]
       "work":
         "basis": "Default"
@@ -670,8 +670,8 @@
     "parts":
       "cost":
         "basis": "Agreed"
-        "note": "Agreed. Source: #1668 balance.md at 605277df."
-        "expression": "2 * current regional housing upkeep"
+        "note": "Owner, 1 November 2026, `Fixed price 0.5 Money + 1 work`. Source: GDD.md; #1700 https://github.com/eyalgolan/statecraft-israel/issues/1700#issuecomment-6554004118; #1703 https://github.com/eyalgolan/statecraft-israel/issues/1703#issuecomment-6554005317."
+        "values": [0.5]
       "work":
         "basis": "Agreed"
         "note": "Agreed. Source: #1668 balance.md at 605277df."

@@ -62,16 +62,18 @@ namespace Statecraft.Game.Map.Kits
         internal static readonly TownModel[] WhiteCity = { TownModel.B01WhiteCity, TownModel.B02aCornerBlock };
         internal static readonly TownModel[] Haifa = { TownModel.B04aStoneBalconies, TownModel.B04bLoadingDoors };
         internal static readonly TownModel[] Jerusalem = { TownModel.B03aArches, TownModel.B03bExternalStair, TownModel.B03cPlain };
-        /// <summary>The stone-village house: #507's courtyard house, and Tal Heuberger's plastered courtyard house (05) as a
-        /// variation (the prepared role in docs/generated-buildings-props-mapping.json).</summary>
-        internal static readonly TownModel[] Stone = { TownModel.B17CourtyardHouse, TownModel.G05CourtyardHouse };
+        /// <summary>The stone-village house (the Arab towns and villages, Safed, Acre, Jaffa and Jerusalem's village plots): Tal
+        /// Heuberger's plastered courtyard house (05) alone. #507's b17 courtyard house was dropped on 2 November 2026 (owner: "we
+        /// need everything to be in the new generation").</summary>
+        internal static readonly TownModel[] Stone = { TownModel.G05CourtyardHouse };
         /// <summary>A town centre's houses (the large moshavot's TownBlock plots): #507's two-storey house.</summary>
         internal static readonly TownModel[] TownBlock = { TownModel.B13aTwoStorey };
-        /// <summary>Netanya's houses: #507's two-storey house and Tal Heuberger's three Netanya houses (01 to 03) as variations
-        /// (the prepared roles in docs/generated-buildings-props-mapping.json), in Netanya only.</summary>
+        /// <summary>Netanya's houses: Tal Heuberger's three Netanya houses (01 to 03), in Netanya only. #507's b13a two-storey house
+        /// was dropped here on 2 November 2026 (owner: "we need everything to be in the new generation"); the other town centres
+        /// keep it (<see cref="TownBlock"/>), as no newer model replaces it there.</summary>
         internal static readonly TownModel[] Netanya =
         {
-            TownModel.B13aTwoStorey, TownModel.G01NetanyaTiledHouse, TownModel.G02NetanyaBalconyHouse, TownModel.G03NetanyaPorchHouse,
+            TownModel.G01NetanyaTiledHouse, TownModel.G02NetanyaBalconyHouse, TownModel.G03NetanyaPorchHouse,
         };
         /// <summary>Tiberias's houses: Tal Heuberger's basalt house (04). The old town "was built of basalt blocks" (en.wiki
         /// Tiberias, checked 2026-10-19, as cited in HexTiles/Prototypes/TiberiasTown.cs).</summary>
@@ -87,6 +89,13 @@ namespace Statecraft.Game.Map.Kits
         internal static readonly TownModel[] FarmShed = { TownModel.B24Barn };
         /// <summary>Haifa's German Colony: the Templers' stone houses with red roofs.</summary>
         internal static readonly TownModel[] Templer = { TownModel.B05aMoshavaHouse };
+
+        /// <summary>The cities drawn from their building models at every zoom, with no whole-town model (owner ruling, 2 November
+        /// 2026: "we had tal's smaller buildings alreaedy for tel aviv, jerusalem and haifa and jaffa - instead of the huge
+        /// buildings", confirmed as "Yes, small buildings at every zoom"). This replaces the 18 October 2026 "Whole model far,
+        /// buildings near" for these four: Collection.TownLandmarks.ModelFor gives them no whole-town model, and TownModelLayer
+        /// admits their buildings beyond its close switch too.</summary>
+        public static bool AtEveryZoom(string id) => id == "tel_aviv" || id == "jerusalem" || id == "haifa" || id == "jaffa";
 
         /// <summary>The wine moshavot (the Carmel wineries of Rishon LeZion, 1890, and Zikhron Ya'akov, 1892): their first
         /// house nearest the heart is the winery.</summary>

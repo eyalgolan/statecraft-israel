@@ -54,9 +54,12 @@ public class TownModelTests
         {
             case "tel_aviv": return new HashSet<M> { M.B01WhiteCity, M.B02aCornerBlock, M.B02bNarrowBlock, M.B32CargoShed };
             case "haifa": return new HashSet<M> { M.B04aStoneBalconies, M.B04bLoadingDoors, M.B32CargoShed, M.B05aMoshavaHouse };
-            case "jerusalem": return new HashSet<M> { M.B03aArches, M.B03bExternalStair, M.B03cPlain, M.B17CourtyardHouse, M.G05CourtyardHouse };
-            // Tal Heuberger's Netanya houses (01 to 03) in Netanya only, and the basalt house (04) in Tiberias only (#756).
-            case "netanya": return new HashSet<M> { M.B13aTwoStorey, M.G01NetanyaTiledHouse, M.G02NetanyaBalconyHouse, M.G03NetanyaPorchHouse, M.B28WaterTower };
+            // Jerusalem's village plots are stone-village plots: house 05 only (owner, 2 November 2026: "we need everything to be
+            // in the new generation"); its city blocks keep #507's b03 models, which no newer model replaces yet.
+            case "jerusalem": return new HashSet<M> { M.B03aArches, M.B03bExternalStair, M.B03cPlain, M.G05CourtyardHouse };
+            // Tal Heuberger's Netanya houses (01 to 03) in Netanya only, without #507's b13a (owner, 2 November 2026), and the
+            // basalt house (04) in Tiberias only (#756).
+            case "netanya": return new HashSet<M> { M.G01NetanyaTiledHouse, M.G02NetanyaBalconyHouse, M.G03NetanyaPorchHouse, M.B28WaterTower };
             case "tiberias": return new HashSet<M> { M.G04BasaltHouse };
         }
         switch (s.Type)
@@ -67,7 +70,7 @@ public class TownModelTests
                 var h = new HashSet<M>(moshava) { M.B13aTwoStorey };
                 if (TownModels.WineMoshava(s.Id)) h.Add(M.B23Winery);
                 return h;
-            default: return new HashSet<M> { M.B17CourtyardHouse, M.G05CourtyardHouse };   // the old towns and the Arab towns: the courtyard houses
+            default: return new HashSet<M> { M.G05CourtyardHouse };   // the old towns and the Arab towns (Safed too): house 05 only, no b17
         }
     }
 
@@ -97,21 +100,25 @@ public class TownModelTests
         }
         // The cities' own models are there (not only a fallback).
         foreach (var (id, model) in new[] { ("tel_aviv", M.B01WhiteCity), ("tel_aviv", M.B02bNarrowBlock), ("haifa", M.B04aStoneBalconies),
-                     ("haifa", M.B32CargoShed), ("jerusalem", M.B03cPlain), ("jaffa", M.B17CourtyardHouse), ("netanya", M.B13aTwoStorey),
-                     ("netanya", M.G01NetanyaTiledHouse), ("netanya", M.G02NetanyaBalconyHouse), ("netanya", M.G03NetanyaPorchHouse),
+                     ("haifa", M.B32CargoShed), ("jerusalem", M.B03cPlain), ("jaffa", M.G05CourtyardHouse), ("safed", M.G05CourtyardHouse),
+                     ("acre", M.G05CourtyardHouse), ("netanya", M.G01NetanyaTiledHouse), ("netanya", M.G02NetanyaBalconyHouse), ("netanya", M.G03NetanyaPorchHouse),
                      ("tiberias", M.G04BasaltHouse) })
             if (!built.Models.Any(m => m.Id == id && m.Model == model)) bad.Add($"{id} has no {model}");
         // The generated houses stand only where they were placed: 01 to 03 in Netanya, 04 in Tiberias (game settlements and
-        // 1948 localities alike).
+        // 1948 localities alike). And the owner, 2 November 2026: "we need everything to be in the new generation": no game
+        // settlement or locality (the mixed ones included) draws #507's b17 courtyard house, and #507's b13a two-storey house
+        // stands only on the game towns' TownBlock plots that no newer model replaces (never in Netanya).
+        var townCentres = map.Settlements.Where(s => s.Type == "town" && s.Id != "netanya").Select(s => s.Id).ToHashSet();
         foreach (var m in built.Models)
         {
             if ((m.Model == M.G01NetanyaTiledHouse || m.Model == M.G02NetanyaBalconyHouse || m.Model == M.G03NetanyaPorchHouse) && m.Id != "netanya") bad.Add($"{m.Id} has {m.Model}");
             if (m.Model == M.G04BasaltHouse && m.Id != "tiberias") bad.Add($"{m.Id} has {m.Model}");
+            if (m.Model == M.B17CourtyardHouse || (m.Model == M.B13aTwoStorey && !townCentres.Contains(m.Id))) bad.Add($"{m.Id} has {m.Model}");
         }
-        // A 1948 Arab village is built of courtyard houses.
+        // A 1948 Arab village is built of the plastered courtyard house (05) alone.
         var villages = map.Localities.Select(p => p.Settlement).Where(s => s.Type == "village" && !Localities.IsMixed(s.Id)).Select(s => s.Id).ToHashSet();
         var villageModels = built.Models.Where(m => villages.Contains(m.Id) && m.Model != M.B28WaterTower).Select(m => m.Model).Distinct().ToList();
-        CollectionAssert.AreEquivalent(new[] { M.B17CourtyardHouse, M.G05CourtyardHouse }, villageModels, "the villages' houses: the two courtyard houses");
+        CollectionAssert.AreEquivalent(new[] { M.G05CourtyardHouse }, villageModels, "the villages' houses: house 05 only");
         // Every farm shed of every kibbutz (#820: the game settlements' and the localities') is a b24 barn, and no kibbutz
         // house is.
         var kibbutzim = map.Settlements.Concat(map.Localities.Select(p => p.Settlement)).Where(s => s.Type == "kibbutz").Select(s => s.Id).ToHashSet();
@@ -183,8 +190,10 @@ public class TownModelTests
     {
         var map = OpenMap();
         var built = Build(map, out var placed);
-        var mapped = map.Settlements.Where(s => Statecraft.Game.Map.Collection.TownLandmarks.ModelFor(s) != null).ToList();
-        TestContext.WriteLine($"{mapped.Count} towns with a whole-town model: {string.Join(", ", mapped.Select(s => s.Id))}");
+        // With the four cities drawn from their building models at every zoom (owner, 2 November 2026), which have no whole-town model.
+        var mapped = map.Settlements.Where(s => Statecraft.Game.Map.Collection.TownLandmarks.ModelFor(s) != null
+            || TownLandmarksTests.BigCities.Contains(s.Id)).ToList();
+        TestContext.WriteLine($"{mapped.Count} towns with a whole-town model or buildings at every zoom: {string.Join(", ", mapped.Select(s => s.Id))}");
         var ids = mapped.Select(s => s.Id).ToHashSet();
         CollectionAssert.IsSubsetOf(new[] { "tel_aviv", "jerusalem", "haifa", "rishon_lezion", "degania_alef", "nahalal", "nazareth" }, ids);
         Assert.AreEqual(new[] { "arab_town", "city", "kibbutz", "moshav", "town" }, mapped.Select(s => s.Type).Distinct().OrderBy(t => t).ToArray());
@@ -464,10 +473,11 @@ public class TownModelTests
     }
 
     /// <summary>Owner ruling on #700, "Models up close only": at gameplay03 and diorama02 every kit mesh draws (main's
-    /// towns) and no model does; at the close views (tel_aviv30, jaffa12) the models draw (well over a hundred), every kit
-    /// individual-town mesh gives way to its close mesh (mixed locality tiles keep fallback), and the models stay within
-    /// the fixture's complete original-geometry work; zooming back out restores
-    /// the kits. The "kits" toggle stops the models too.</summary>
+    /// towns) and no model does, but for Tel Aviv, Jerusalem, Haifa and Jaffa, whose building models draw at every zoom
+    /// (owner, 2 November 2026, "Yes, small buildings at every zoom"); at the close views (tel_aviv30, jaffa12) the models
+    /// draw (well over a hundred), every kit individual-town mesh gives way to its close mesh (mixed locality tiles keep
+    /// fallback), and the models stay within the fixture's complete original-geometry work; zooming back out restores
+    /// the kits. The "kits" toggle stops the models too. The log line is the draw cost at each pose.</summary>
     [UnityTest]
     public IEnumerator TheKitsDrawFarAndTheModelsUpClose()
     {
@@ -502,31 +512,49 @@ public class TownModelTests
         // rendering more than every fixture instance once is a duplicate-submission regression.
         long maxGeometryWork = layer.Instances().Sum(i => (long)originals.meshes[(int)i.model].triangles.Length / 3);
         var results = new List<string>();
+        var big = TownLandmarksTests.BigCities;
+        int bigInstances = big.Sum(id => layer.CountFor(id));
         void Check(PromoPose pose, bool close)
         {
+            // Up close every detailed town; far off only the four cities, and in this fixture only within its focus admission
+            // (OriginalModelDistance.EnterM, 120 km: gameplay03 at 60 km, not diorama02 at 250 km). This fixture has no view
+            // admission; TheFourCitiesDrawTheirBuildingModelsAtEveryZoom checks production's at 250 km.
+            bool farFocus = pose.Distance < Statecraft.Game.Map.Collection.OriginalModelDistance.EnterM;
+            bool Ready(string town) => layer.CountFor(town) > 0 && (close || (big.Contains(town) && farFocus));
+            foreach (var s in map.Settlements)
+                if (!close && !big.Contains(s.Id)) Assert.IsFalse(layer.ReadyForTown(s.Id, cam), pose.Name + ": " + s.Id + " has no building model far off");
             Assert.AreEqual(close, layer.LastClose, pose.Name);
             foreach (var renderer in kitRs)
             {
-                bool ready = close && identity.TryGetValue(renderer, out var town) && layer.CountFor(town) > 0;
+                bool ready = identity.TryGetValue(renderer, out var town) && Ready(town);
                 Assert.AreEqual(ready, renderer.forceRenderingOff, pose.Name + ": " + renderer.name + " fallback");
             }
             foreach (var renderer in closeRs)
             {
                 var kitName = renderer.name.Substring(0, renderer.name.Length - KitLayer.CloseSuffix.Length);
                 var kit = root.Find(kitName).GetComponent<MeshRenderer>();
-                bool ready = close && identity.TryGetValue(kit, out var town) && layer.CountFor(town) > 0;
+                bool ready = identity.TryGetValue(kit, out var town) && Ready(town);
                 Assert.AreEqual(!ready, renderer.forceRenderingOff, pose.Name + ": " + renderer.name + " close mesh");
             }
             Assert.IsTrue(kitRs.Any(r => !identity.ContainsKey(r)), "mixed locality tiles stay fallback at every zoom");
             results.Add($"{pose.Name}: close={close} {layer.LastDrawn} models, {layer.LastTriangles} triangles, {layer.LastDraws} draws");
-            if (!close) { Assert.AreEqual(0, layer.LastDrawn, pose.Name + ": no model"); return; }
+            if (!close)
+            {
+                // Far off, only the four cities' buildings, never more than all of theirs: some at gameplay03 (Tel Aviv and
+                // Jaffa in view), none at diorama02 (outside this fixture's focus admission).
+                Assert.LessOrEqual(layer.LastDrawn, bigInstances, pose.Name + ": no other town's building model");
+                if (farFocus) Assert.Greater(layer.LastDrawn, 0, pose.Name + ": the four cities' buildings in view");
+                else Assert.AreEqual(0, layer.LastDrawn, pose.Name + ": nothing outside the fixture's focus admission");
+                return;
+            }
             Assert.Greater(layer.LastDrawn, 100, pose.Name + ": models drawn");
             Assert.LessOrEqual(layer.LastTriangles, maxGeometryWork, pose.Name + ": no more than all original instances once");
         }
         foreach (var pose in PromoPose.All) { pose.Apply(rig, map.Frame); RenderSample.Render(cam, 1920, 1080); layer.PrepareCamera(cam); Check(pose, false); }
         foreach (var pose in PromoPose.CloseUps) { pose.Apply(rig, map.Frame); RenderSample.Render(cam, 1920, 1080); layer.PrepareCamera(cam); Check(pose, true); }
         PromoPose.Gameplay03.Apply(rig, map.Frame); RenderSample.Render(cam, 1920, 1080); layer.PrepareCamera(cam); Check(PromoPose.Gameplay03, false);
-        TestContext.WriteLine($"{layer.Count} models; " + string.Join("; ", results));
+        TestContext.WriteLine($"{layer.Count} models ({bigInstances} in the four cities: " +
+            string.Join(", ", big.Select(id => $"{id} {layer.CountFor(id)}")) + "); " + string.Join("; ", results));
         PromoPose.CloseUps[0].Apply(rig, map.Frame);
         VisualToggles.Set("kits", false); RenderSample.Render(cam, 320, 180);
         Assert.IsFalse(layer.Draw, "the kits toggle hides the models");

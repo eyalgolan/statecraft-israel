@@ -26,13 +26,13 @@ namespace Statecraft.Game.UI
         /// link) holds for that visit, over the choice <paramref name="stored"/> in Settings; with neither, English.</summary>
         public static string AtStart(string? stored, string? url, string[] args, bool webgl)
         {
-            bool flag = webgl ? AnyQuery.IsMatch(url ?? "") : Array.IndexOf(args, "-" + Flag) >= 0;
+            bool flag = webgl ? AnyQuery.IsMatch(Boot.UrlFlags.BeforeFragment(url)) : Array.IndexOf(args, "-" + Flag) >= 0;
             return flag ? Requested(url, args, webgl) : stored == Hebrew ? Hebrew : English;
         }
 
         public static string Requested(string? url, string[] args, bool webgl)
         {
-            if (webgl) return HebrewQuery.IsMatch(url ?? "") ? Hebrew : English;
+            if (webgl) return HebrewQuery.IsMatch(Boot.UrlFlags.BeforeFragment(url)) ? Hebrew : English;
             var i = Array.IndexOf(args, "-" + Flag);
             return i >= 0 && i + 1 < args.Length && args[i + 1] == Hebrew ? Hebrew : English;
         }

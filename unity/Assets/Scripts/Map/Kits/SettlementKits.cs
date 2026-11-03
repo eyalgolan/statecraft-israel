@@ -120,13 +120,25 @@ namespace Statecraft.Game.Map.Kits
             return all.Towns;
         }
 
-        /// <summary>As the full Build, also listing everything placed (<see cref="Placed"/>), in placement order.</summary>
+        /// <summary>As the full Build, also listing everything placed (<see cref="Placed"/>), in placement order. With
+        /// <paramref name="replaceParts"/> (the main map, KitLayer), the landmarks' minarets, belfries and Jaffa's clock tower
+        /// leave the kit meshes for their own fallback meshes (<see cref="Result.Parts"/>), which Tal Heuberger's models
+        /// replace once they stream (#2266).</summary>
         public static Result Build(IReadOnlyList<Settlement> towns, IReadOnlyList<Settlement> localities, IReadOnlyList<Localities.Area> camps,
-            KitGround ground, out List<Placed> placed, Dictionary<string, Bounds[]>? columns = null)
+            KitGround ground, out List<Placed> placed, Dictionary<string, Bounds[]>? columns = null, bool replaceParts = false)
         {
-            census = placed = new List<Placed>();
+            census = placed = new List<Placed>(); SettlementKits.replaceParts = replaceParts;
             try { return Build(towns, localities, camps, ground, columns); }
-            finally { census = null; }
+            finally { census = null; SettlementKits.replaceParts = false; }
+        }
+
+        [System.ThreadStatic] static bool replaceParts;
+
+        /// <summary>#2266: a kit mesh's replaceable landmark parts (KitMesh.CloseCopySplit), drawn as submesh 1 of the kit mesh
+        /// and of its close mesh: each part's kind, owner, yaw and boxes far off and up close.</summary>
+        public sealed class LandmarkParts
+        {
+            public List<(string kind, string owner, float yaw, Bounds far, Bounds close)> Parts = new List<(string, string, float, Bounds, Bounds)>();
         }
 
         /// <summary>What <see cref="Build(IReadOnlyList{Settlement}, IReadOnlyList{Settlement}, IReadOnlyList{Localities.Area}, KitGround)"/>
@@ -155,6 +167,8 @@ namespace Statecraft.Game.Map.Kits
             /// (SettlementKits.AtWorldScale): its kind, its anchor, and its copy's box (width along x, depth along z, height
             /// over its ground level Y), in placement order.</summary>
             public List<Placed> CloseLandmarks = new List<Placed>();
+            /// <summary>#2266: the replaceable landmark parts of each kit mesh, by its name (only with replaceParts).</summary>
+            public Dictionary<string, LandmarkParts> Parts = new Dictionary<string, LandmarkParts>();
         }
 
         /// <summary>Side of the square tiles the localities' and camps' buildings are merged into (the trees' tile size).</summary>
@@ -173,6 +187,12 @@ namespace Statecraft.Game.Map.Kits
             foreach (var s in localities) places[s.Id] = s;
             try { return Build(towns, localities, camps, ground, columns, result); }
             finally { models = null; closeLandmarks = null; places = null; onceGiven = null; }
+        }
+
+        static void AddParts(Result result, KitMesh km, string meshName)
+        {
+            if (!km.HasParts) return;
+            result.Parts[meshName] = new LandmarkParts { Parts = new List<(string, string, float, Bounds, Bounds)>(km.Parts) };
         }
 
         static Result Build(IReadOnlyList<Settlement> towns, IReadOnlyList<Settlement> localities, IReadOnlyList<Localities.Area> camps,
@@ -282,6 +302,7 @@ namespace Statecraft.Game.Map.Kits
                 if (columns != null && km.VertexCount > 0) columns[s.Id] = km.Columns();
                 var mesh = km.ToMesh(s.Id + "_kit");
                 if (km.ToCloseMesh(s.Id + "_close") is Mesh close) result.Close[mesh.name] = close;
+                AddParts(result, km, mesh.name);
                 result.Towns.Add((s, mesh, totals[i]));
             }
             // A locality's columns, from its own vertices in its tile (read before ToMesh drops the CPU copy).
@@ -297,6 +318,7 @@ namespace Statecraft.Game.Map.Kits
             {
                 var mesh = kv.Value.ToMesh($"localities_{kv.Key.Item1}_{kv.Key.Item2}");
                 if (kv.Value.ToCloseMesh(mesh.name + "_close") is Mesh close) result.Close[mesh.name] = close;
+                AddParts(result, kv.Value, mesh.name);
                 result.Tiles.Add((TileName(kv.Key), mesh));
             }
             foreach (var id in spans.Keys)
@@ -412,8 +434,8 @@ namespace Statecraft.Game.Map.Kits
         // ---- Plots ----------------------------------------------------------------------------------------------------
 
         /// <summary>The kinds of building a plot lattice lays out. Real sizes (m, before the symbolic scale) and storeys are
-        /// in <see cref="Pick"/>; lattice pitch, density and scale in <see cref="Grid"/>.</summary>
-        enum Style
+        /// in <see cref="Pick"/>; lattice pitch, density and scale in <see cref="Grid"/>. Internal for the tests (KitRoofContainmentTests).</summary>
+        internal enum Style
         {
             /// <summary>Hadar HaCarmel's International Style blocks: white plaster, flat roofs (60x).</summary>
             WhiteBlock,
@@ -804,7 +826,8 @@ namespace Statecraft.Game.Map.Kits
         /// shore; the others get a seeded angle).</summary>
         static float GridYaw(string id) => id == "tel_aviv" ? 20f : id == "haifa" ? 35f : new KitRandom(id, 7).Range(0f, 90f);
 
-        struct Spec { public float w, d, h, lotR; public int storeys; public KibbutzPart part; }
+        /// <summary>A building's footprint, height, storeys and lot (internal for the tests: KitRoofContainmentTests).</summary>
+        internal struct Spec { public float w, d, h, lotR; public int storeys; public KibbutzPart part; }
 
         /// <summary>A plot's building: real size and storeys by style and by t (0 at the heart, 1 at the footprint's edge),
         /// times the scale <paramref name="m"/>. Every size fits its lattice's plot with a street to spare.</summary>
@@ -879,8 +902,8 @@ namespace Statecraft.Game.Map.Kits
             km.CutEnd(cut);
         }
 
-        /// <summary>A plot's kit parts and its census record.</summary>
-        static void EmitParts(string id, Style st, Vector2 p, float yaw, Spec b, float t, KitGround ground, KitMesh km, float bottom, float top, float m,
+        /// <summary>A plot's kit parts and its census record (internal for the tests: KitRoofContainmentTests).</summary>
+        internal static void EmitParts(string id, Style st, Vector2 p, float yaw, Spec b, float t, KitGround ground, KitMesh km, float bottom, float top, float m,
             ref KitRandom rnd)
         {
             float storey = 3.3f * m;
@@ -899,6 +922,11 @@ namespace Statecraft.Game.Map.Kits
                     var roof = white ? Jitter(C(0.90f, 0.89f, 0.86f), ref rnd, 0.03f) : Jitter(C(0.80f, 0.78f, 0.74f), ref rnd, 0.05f);
                     // A third of the blocks step down at one end: a lower wing within the plot (L and stepped massing).
                     bool stepped = b.storeys >= 3 && rnd.Chance(0.33f);
+                    // The white blocks (Haifa's Hadar): a roof parapet of Tel Aviv's size (RoofParapet's; Box's rim costs half its vertices).
+                    var detail = DetailAt(p, 47);
+                    float parapet = white && RoofDetail ? WhiteParapetM * m : 0f, parapetT = WhiteParapetThicknessM * m;
+                    // The roof the stair head stands on: the whole block's, or on a stepped block its upper part's (c1, w1 wide).
+                    Vector2 roofC = p; float roofW = b.w;
                     if (stepped)
                     {
                         float a = yaw * Mathf.Deg2Rad, share = rnd.Range(0.58f, 0.72f), side = rnd.Chance(0.5f) ? 1f : -1f;
@@ -906,23 +934,29 @@ namespace Statecraft.Game.Map.Kits
                         float u1 = side * (b.w - w1) * 0.5f, u2 = -side * (b.w - w2) * 0.5f, v2 = (b.d - d2) * 0.5f;
                         var c1 = p + new Vector2(u1 * Mathf.Cos(a), u1 * Mathf.Sin(a));
                         var c2 = p + new Vector2(u2 * Mathf.Cos(a) - v2 * Mathf.Sin(a), u2 * Mathf.Sin(a) + v2 * Mathf.Cos(a));
-                        km.Box(c1.x, c1.y, yaw, w1, b.d, bottom, top, b.h, wall, roof, Facade.WhiteCity, m);
-                        km.Box(c2.x, c2.y, yaw, w2 * 1.01f, d2, bottom, top, h2, wall, roof, Facade.WhiteCity, m);
+                        roofC = c1; roofW = w1;
+                        km.Box(c1.x, c1.y, yaw, w1, b.d, bottom, top, b.h, wall, roof, Facade.WhiteCity, m, parapet: parapet, parapetThickness: parapetT);
+                        km.Box(c2.x, c2.y, yaw, w2 * 1.01f, d2, bottom, top, h2, wall, roof, Facade.WhiteCity, m, parapet: parapet, parapetThickness: parapetT);
                         if (white) WhiteBlockDetail(km, c1, u1, b.lotR, yaw, w1, b.d, top, b.h, wall, roof, m, ref rnd);
                         Record(id, "building", p, yaw, b.w, b.d, b.h, wall);
                         Record(id, "wing", c2, yaw, w2, d2, h2, wall);
                     }
                     else
                     {
-                        km.Box(p.x, p.y, yaw, b.w, b.d, bottom, top, b.h, wall, roof, Facade.WhiteCity, m);
+                        km.Box(p.x, p.y, yaw, b.w, b.d, bottom, top, b.h, wall, roof, Facade.WhiteCity, m, parapet: parapet, parapetThickness: parapetT);
                         if (white) WhiteBlockDetail(km, p, 0f, b.lotR, yaw, b.w, b.d, top, b.h, wall, roof, m, ref rnd);
                         Record(id, "building", p, yaw, b.w, b.d, b.h, wall);
                     }
-                    // A stair tower or roof room on many Bauhaus blocks (the White City's roofs: most have one).
+                    // A stair tower or roof room on many Bauhaus blocks (the White City's roofs: most have one), on the upper
+                    // roof and set off along and across the block (its yaw), so it stays inside that roof's parapet
+                    // (KitRoofContainmentTests). The same four draws as ever, in the same order.
                     if (rnd.Chance(white ? 0.8f : 0.5f))
                     {
-                        float rw = b.w * rnd.Range(0.22f, 0.36f), rd = b.d * rnd.Range(0.3f, 0.45f);
-                        km.Box(p.x + b.w * rnd.Range(-0.15f, 0.15f), p.y + b.d * rnd.Range(-0.12f, 0.12f), yaw, rw, rd, top + b.h - 2f, top + b.h, 2.8f * m, wall, roof, Facade.Plain, m);
+                        float rw = roofW * rnd.Range(0.22f, 0.36f), rd = b.d * rnd.Range(0.3f, 0.45f);
+                        float su = roofW * rnd.Range(-0.15f, 0.15f), sv = b.d * rnd.Range(-0.12f, 0.12f), ya = yaw * Mathf.Deg2Rad;
+                        var s = roofC + new Vector2(su * Mathf.Cos(ya) - sv * Mathf.Sin(ya), su * Mathf.Sin(ya) + sv * Mathf.Cos(ya));
+                        km.Box(s.x, s.y, yaw, rw, rd, top + b.h - 2f, top + b.h, 2.8f * m, wall, roof, Facade.Plain, m);
+                        if (white && RoofDetail && detail.Chance(RoofTankShare)) RoofTank(km, s, yaw, rw, rd, top + b.h + 2.8f * m, m);
                     }
                     // Many White City roofs carry a second room (the shared laundry room beside the stair head), at the
                     // block's other end, inside its footprint (not on a stepped block, whose ends differ in height).
@@ -940,7 +974,10 @@ namespace Statecraft.Game.Map.Kits
                     var wall = Jitter(C(0.86f, 0.79f, 0.64f), ref rnd, 0.05f);
                     var roof = Jitter(C(0.82f, 0.77f, 0.66f), ref rnd, 0.04f);
                     bool tiled = rnd.Chance(0.15f);   // the red-roofed villas of the new city's garden suburbs
-                    km.Box(p.x, p.y, yaw, b.w, b.d, bottom, top, b.h, wall, roof, Facade.Stone, m, roofed: tiled);
+                    // A flat roof's parapet, its height the block's own (DetailAt).
+                    float parapet = RoofDetail ? DetailAt(p, 43).Range(StoneParapetMinM, StoneParapetMaxM) * m : 0f;
+                    km.Box(p.x, p.y, yaw, b.w, b.d, bottom, top, b.h, wall, roof, Facade.Stone, m, roofed: tiled, parapet: parapet,
+                        parapetThickness: StoneParapetThicknessM * m);
                     if (tiled) km.Pyramid(p.x, p.y, yaw, b.w * 1.04f, b.d * 1.04f, top + b.h, 2.6f * m, Jitter(C(0.70f, 0.33f, 0.22f), ref rnd, 0.06f));
                     else if (rnd.Chance(0.35f))
                         km.Box(p.x, p.y, yaw, b.w * 0.3f, b.d * 0.35f, top + b.h - 2f, top + b.h, 2.6f * m, wall, roof, Facade.Plain, m);
@@ -1032,12 +1069,47 @@ namespace Statecraft.Game.Map.Kits
         /// <summary>Grey-buff limestone, lime-plastered roofs and the plain's mud brick (sRGB).</summary>
         static readonly Color32 LimeRoof = C(0.86f, 0.83f, 0.77f), MudBrick = C(0.78f, 0.69f, 0.56f);
 
+        // ---- Roof detail (owner, 3 November 2026, "do it": the kit buildings get real geometry nearer promo 03's) ------------
+        // Flat roofs get a parapet; some of Tel Aviv's taller blocks set their top storey back from the street; some stair
+        // heads carry a water tank. All of it stands inside the building's footprint, inside its CutStart/CutEnd span (so the
+        // close mesh leaves it out with the building), and draws from the building's own stream (DetailAt), so no plot, lot,
+        // colour or census entry moves.
+
+        /// <summary>Whether the kit buildings draw their roof detail (on; tests switch it off to measure what it costs in
+        /// vertices and to show it moves nothing else).</summary>
+        internal static bool RoofDetail = true;
+
+        /// <summary>A building's own detail stream: seeded by its plot's centre (rounded to the world metre) and a salt, never
+        /// by the town's stream, so drawing it changes no other number. The same map draws the same detail on every build.</summary>
+        static KitRandom DetailAt(Vector2 p, ulong salt) =>
+            new KitRandom(((ulong)(uint)Mathf.RoundToInt(p.x) << 32 | (uint)Mathf.RoundToInt(p.y)) ^ (salt * 0x9E3779B97F4A7C15UL));
+
+        /// <summary>Parapet sizes (real m): the White City's (Tel Aviv's RoofParapet's), a town's stone house's or block's
+        /// (a height range), and a village house's low rim; and the share of village houses with one.</summary>
+        const float WhiteParapetM = 1.0f, WhiteParapetThicknessM = 0.35f;
+        const float StoneParapetMinM = 0.6f, StoneParapetMaxM = 1.0f, StoneParapetThicknessM = 0.3f;
+        const float VillageParapetMinM = 0.35f, VillageParapetMaxM = 0.65f, VillageParapetThicknessM = 0.25f, VillageParapetShare = 0.5f;
+        /// <summary>The share of White City stair heads with a water tank on their roof.</summary>
+        const float RoofTankShare = 0.4f;
+        /// <summary>A roof water tank's side cap and height (real m), and its grey (sRGB).</summary>
+        const float RoofTankM = 2.4f, RoofTankHeightM = 1.6f;
+        static readonly Color32 RoofTankGrey = C(0.66f, 0.66f, 0.64f);
+
+        /// <summary>A water tank on a <paramref name="w"/> x <paramref name="d"/> stair head at <paramref name="c"/> whose roof
+        /// is at <paramref name="roofY"/>: a square tank, at most RoofTankM a side and inside the stair head's roof.</summary>
+        static void RoofTank(KitMesh km, Vector2 c, float yaw, float w, float d, float roofY, float m)
+        {
+            float s = Mathf.Min(RoofTankM * m, 0.6f * Mathf.Min(w, d));
+            km.Box(c.x, c.y, yaw, s, s, roofY - 0.1f * m, roofY, RoofTankHeightM * m, RoofTankGrey, RoofTankGrey, Facade.Plain, m);
+        }
+
         /// <summary>A limestone wall colour, from grey to buff (exactly two draws, as one Jitter: the villages' streams rely on it).</summary>
         static Color32 StoneWall(ref KitRandom rnd) => Jitter(C(0.77f, 0.70f, 0.60f), ref rnd, 0.07f);
 
         /// <summary>A stone or mud-brick house of <paramref name="b"/>'s footprint: of two storeys or more, most step back, the top
         /// storey a smaller block on one corner of the lower roof (the lower roof its terrace); a one-storey house often has a
-        /// roof room (an upper room). <paramref name="dome"/> puts a low dome on the topmost roof. All of it stands
+        /// roof room (an upper room). <paramref name="dome"/> puts a low dome on the topmost roof; otherwise, with RoofDetail, that
+        /// roof may get a parapet (every town house's, half the village houses'). All of it stands
         /// inside the footprint, so the lot is unchanged.</summary>
         static void StoneHouse(KitMesh km, Vector2 p, float yaw, Spec b, float bottom, float top, Color32 wall, Color32 roof, Facade facade,
             float m, bool dome, ref KitRandom rnd)
@@ -1048,18 +1120,29 @@ namespace Statecraft.Game.Map.Kits
             float uw = b.w * rnd.Range(0.5f, 0.75f), ud = b.d * rnd.Range(0.5f, 0.75f);
             float su = rnd.Chance(0.5f) ? 1f : -1f, sv = rnd.Chance(0.5f) ? 1f : -1f;
             var uc = At(su * 0.5f * (b.w - uw), sv * 0.5f * (b.d - ud));
+            // The topmost flat roof's parapet (none under a dome): every town house's, half the village houses'; its height
+            // the house's own, from its own stream (DetailAt), so rnd draws what it always has.
+            var detail = DetailAt(p, 41);
+            bool village = facade == Facade.Village;
+            float parapet = RoofDetail && !dome && (!village || detail.Chance(VillageParapetShare))
+                ? (village ? detail.Range(VillageParapetMinM, VillageParapetMaxM) : detail.Range(StoneParapetMinM, StoneParapetMaxM)) * m : 0f;
+            float parapetT = (village ? VillageParapetThicknessM : StoneParapetThicknessM) * m;
             if (b.storeys >= 2 && rnd.Chance(0.75f))
             {
                 float low = b.h - storey;
                 km.Box(p.x, p.y, yaw, b.w, b.d, bottom, top, low, wall, roof, facade, m);
-                km.Box(uc.x, uc.y, yaw, uw, ud, top + low - 0.3f * m, top + low, storey, wall, roof, facade, m);
+                km.Box(uc.x, uc.y, yaw, uw, ud, top + low - 0.3f * m, top + low, storey, wall, roof, facade, m, parapet: parapet, parapetThickness: parapetT);
                 if (dome) km.Dome(uc.x, uc.y, top + b.h - 0.2f * m, Mathf.Min(uw, ud) * 0.4f, roof, rise: 0.6f);
                 return;
             }
-            km.Box(p.x, p.y, yaw, b.w, b.d, bottom, top, b.h, wall, roof, facade, m);
+            // A roof room (none under a dome) is the topmost roof, so the parapet goes on it: on the main roof the room's walls
+            // would stand through the rim. The same roll as ever (only without a dome), drawn before the main block, which draws none.
+            bool room = !dome && rnd.Chance(0.35f);
+            km.Box(p.x, p.y, yaw, b.w, b.d, bottom, top, b.h, wall, roof, facade, m, parapet: room ? 0f : parapet, parapetThickness: parapetT);
             if (dome) km.Dome(p.x, p.y, top + b.h - 0.2f * m, Mathf.Min(b.w, b.d) * 0.33f, roof, rise: 0.6f);
-            else if (rnd.Chance(0.35f))   // a roof room
-                km.Box(uc.x, uc.y, yaw, uw * 0.8f, ud * 0.8f, top + b.h - 0.3f * m, top + b.h, storey * 0.85f, wall, roof, facade, m);
+            else if (room)
+                km.Box(uc.x, uc.y, yaw, uw * 0.8f, ud * 0.8f, top + b.h - 0.3f * m, top + b.h, storey * 0.85f, wall, roof, facade, m,
+                    parapet: parapet, parapetThickness: parapetT);
         }
 
         /// <summary>Haifa's Hadar wall plaster (sRGB; Tel Aviv's is TelAvivPlaster, #658): lime white, a touch cool, so the warm
@@ -1342,7 +1425,8 @@ namespace Statecraft.Game.Map.Kits
             return wall;
         }
 
-        static Color32 EmitParts(Archetype arch, Vector2 p, float yaw, Spec b, KitGround ground, KitMesh km, float bottom, float top, float m, ref KitRandom rnd)
+        /// <summary>A locality's kit parts (internal for the tests: KitRoofContainmentTests).</summary>
+        internal static Color32 EmitParts(Archetype arch, Vector2 p, float yaw, Spec b, KitGround ground, KitMesh km, float bottom, float top, float m, ref KitRandom rnd)
         {
             switch (arch)
             {
@@ -1350,7 +1434,8 @@ namespace Statecraft.Game.Map.Kits
                 {
                     var wall = rnd.Chance(0.12f) ? Jitter(C(0.90f, 0.84f, 0.72f), ref rnd, 0.04f) : Jitter(C(0.94f, 0.92f, 0.87f), ref rnd, 0.035f);
                     var roof = Jitter(C(0.80f, 0.78f, 0.74f), ref rnd, 0.05f);
-                    km.Box(p.x, p.y, yaw, b.w, b.d, bottom, top, b.h, wall, roof, Facade.WhiteCity, m);
+                    km.Box(p.x, p.y, yaw, b.w, b.d, bottom, top, b.h, wall, roof, Facade.WhiteCity, m,
+                        parapet: RoofDetail ? WhiteParapetM * m : 0f, parapetThickness: WhiteParapetThicknessM * m);
                     // Some blocks are L-shaped: a lower wing at one end, back from the street.
                     if (rnd.Chance(0.3f))
                     {
@@ -1361,11 +1446,14 @@ namespace Statecraft.Game.Map.Kits
                         if (!ground.Water(wc.x, wc.y))
                             km.Box(wc.x, wc.y, yaw, ww, wd, bottom, top, Mathf.Max(2f * 3.3f * m, b.h - 3.3f * m), wall, roof, Facade.WhiteCity, m);
                     }
-                    // A stair tower or roof room on many Bauhaus blocks, and a parapet's shadow line.
+                    // A stair tower or roof room on many Bauhaus blocks, and a parapet's shadow line: set off along and across
+                    // the block (its yaw), so it stays inside the roof's parapet (KitRoofContainmentTests). The same draws in order.
                     if (rnd.Chance(0.55f))
                     {
-                        float rw = b.w * rnd.Range(0.25f, 0.4f), rd = b.d * rnd.Range(0.3f, 0.45f);
-                        km.Box(p.x + b.w * rnd.Range(-0.2f, 0.2f), p.y + b.d * rnd.Range(-0.15f, 0.15f), yaw, rw, rd, top + b.h - 2f, top + b.h, 2.8f * m, wall, roof, Facade.Plain, m);
+                        float rw = b.w * rnd.Range(0.25f, 0.4f), rd = b.d * rnd.Range(0.3f, 0.45f), a = yaw * Mathf.Deg2Rad;
+                        float su = b.w * rnd.Range(-0.2f, 0.2f), sv = b.d * rnd.Range(-0.15f, 0.15f);
+                        km.Box(p.x + su * Mathf.Cos(a) - sv * Mathf.Sin(a), p.y + su * Mathf.Sin(a) + sv * Mathf.Cos(a), yaw, rw, rd, top + b.h - 2f, top + b.h,
+                            2.8f * m, wall, roof, Facade.Plain, m);
                     }
                     return wall;
                 }

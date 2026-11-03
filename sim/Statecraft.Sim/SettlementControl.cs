@@ -259,7 +259,7 @@ namespace Statecraft.Sim
                     moved.Clear();
                     return new CaptureRefusal(CaptureRefusal.NoFreeHex, $"A unit has no free hex next to {name} to withdraw to");
                 }
-                var w = new Unit(u.Id, u.Type, to.Value.Q, to.Value.R, u.Service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity, u.Full);
+                var w = new Unit(u.Id, u.Type, to.Value.Q, to.Value.R, u.Service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity, u.Full, u.CombatXp);
                 s.Units[u.Id] = w;
                 moved.Add((u, w));
             }
@@ -323,6 +323,16 @@ namespace Statecraft.Sim
 
         /// <summary>Whether an Israeli military unit is on <paramref name="t"/>'s hex (a halutz has no side, R-UNIT-001).</summary>
         static bool Garrisoned(GameState s, SettlementTarget t) => s.Units.Values.Any(u => u.Q == t.Q && u.R == t.R && u.Side == Movement.PlayerSide);
+
+        /// <summary>R-CTRL-013, R-ENEMY-005 (owner, 2 November 2026, #2087: "Keep a garrison in Nazareth (Recommended)"): whether
+        /// <paramref name="u"/> is the only Israeli military unit on an occupied place (occupied or awaiting its end, the two
+        /// states step 10 ends as a Raid when no unit is left, <see cref="Tick"/>). An operation card's order never takes that
+        /// unit out. Changes nothing and draws nothing; Any is order-free, so the answer does not depend on iteration order.</summary>
+        internal static bool LastGarrison(Content c, GameState s, Unit u) =>
+            u.Side == Movement.PlayerSide
+            && s.Settlements.Any(kv => (kv.Value.State == Occupied || kv.Value.State == AwaitingEnd)
+                && c.SettlementTargets.Any(t => t.Id == kv.Key && t.Q == u.Q && t.R == u.R))
+            && !s.Units.Values.Any(x => x.Id != u.Id && x.Q == u.Q && x.R == u.R && x.Side == Movement.PlayerSide);
 
         static bool IsEnemy(Unit u) => u.Side != "" && u.Side != Movement.PlayerSide;
 

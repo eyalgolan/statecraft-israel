@@ -399,7 +399,12 @@ namespace Statecraft.Game.Map.Units
                 r.lightProbeUsage = LightProbeUsage.Off; r.reflectionProbeUsage = ReflectionProbeUsage.Off;
             }
             if (code != null) code.enabled = false;
-            if (CollectionCatalog.Animated.Contains(id) && !CollectionCatalog.IsFullQualityGeneratedInfantry(id)) UnitFigureDetail.Of(piece).Add(holder, id);   // C05 has no idle: he stays far
+            UnitFigureWeapon.Refresh(piece);   // its sourced weapon in the hand (#2083), before the detail switch reads the renderers
+            UnitFigurePointFire.Refresh(piece);   // a held point-fire aim takes the new model too (#2084)
+            // C05 has no idle clip: he stays far, and close up his held pose breathes in code instead (#2374). The switch is told
+            // only once the idle took (fail open: a model without the bones stands still, and no near model is asked for).
+            if (UnitFigureIdle.Wanted(id)) { if (UnitFigureIdle.Equip(model.transform, UnitFigureIdle.KeyOf(piece)) != null) UnitFigureDetail.Of(piece).Add(holder, id); }
+            else if (CollectionCatalog.Animated.Contains(id) && !CollectionCatalog.IsFullQualityGeneratedInfantry(id)) UnitFigureDetail.Of(piece).Add(holder, id);
             // A model that arrives mid-move walks with its token at once (#1866).
             var motion = piece.GetComponentInParent<UnitTokenMotion>();
             if (motion != null && (motion.Moving || motion.Attacking)) motion.RefreshPose();
@@ -408,7 +413,8 @@ namespace Statecraft.Game.Map.Units
 
         /// <summary>The box of <paramref name="model"/>'s meshes in <paramref name="frame"/>'s space, from each mesh's own
         /// bounds (Renderer.bounds is empty while the layer is off). Skin bounds come from the actual posed vertices,
-        /// not the imported whole-animation culling envelope. No rendered mesh or source asset is replaced. Null with no mesh.</summary>
+        /// not the imported whole-animation culling envelope. No rendered mesh or source asset is replaced. A held weapon
+        /// (UnitWeapons) is left out, so it never changes a figure's height or feet. Null with no mesh.</summary>
         internal static Bounds? BoxIn(Transform frame, Transform model)
         {
             var inv = frame.worldToLocalMatrix;
@@ -422,10 +428,11 @@ namespace Statecraft.Game.Map.Units
                     if (box is Bounds bb) { bb.Encapsulate(p); box = bb; } else box = new Bounds(p, Vector3.zero);
                 }
             }
-            foreach (var f in model.GetComponentsInChildren<MeshFilter>(true)) if (f.sharedMesh != null) Add(f.sharedMesh.bounds, f.transform);
+            foreach (var f in model.GetComponentsInChildren<MeshFilter>(true))
+                if (f.sharedMesh != null && !UnitWeapons.IsHeld(f.transform, model)) Add(f.sharedMesh.bounds, f.transform);
             foreach (var skin in model.GetComponentsInChildren<SkinnedMeshRenderer>(true))
             {
-                if (skin.sharedMesh == null) continue;
+                if (skin.sharedMesh == null || UnitWeapons.IsHeld(skin.transform, model)) continue;
                 var posed = new Mesh();
                 try
                 {

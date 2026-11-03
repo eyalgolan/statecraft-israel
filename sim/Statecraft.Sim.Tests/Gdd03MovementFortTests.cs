@@ -13,7 +13,7 @@ public class Gdd03MovementFortTests
         + "  - { id: enemy_car, kind: unit, side: egypt, class: armour, movement_points: 5 }\n"
         + "  - { id: gun, kind: unit, side: israel, class: artillery, movement_points: 2, range: 2, arms_per_fire: 2 }\n";
 
-    static Dictionary<string, string> Files(string identity = SaveGame.Gdd03Ruleset, string biome = "coastal_plain")
+    internal static Dictionary<string, string> Files(string identity = SaveGame.Gdd03Ruleset, string biome = "coastal_plain")
     {
         var f = Fixture.Gdd(new Dictionary<string, string> {
             ["unit_types.yaml"] = Types,
@@ -29,7 +29,7 @@ public class Gdd03MovementFortTests
         return f;
     }
 
-    static Content Load(string identity = SaveGame.Gdd03Ruleset, string biome = "coastal_plain") =>
+    internal static Content Load(string identity = SaveGame.Gdd03Ruleset, string biome = "coastal_plain") =>
         ContentLoader.Load(Fixture.Write(Files(identity, biome)));
 
     static Unit Of(string type, int id = 1, int q = 2, int r = 1, string side = "israel", string order = "", string target = "") =>
@@ -243,6 +243,20 @@ public class Gdd03MovementFortTests
         f["eras.yaml"] = f["eras.yaml"].Replace("gdd-0.3", "gdd-0.1");
         // Catalogue structural validation still applies, but none of these valid catalogue rows is a consumed old-rule requirement.
         Assert.NotNull(ContentLoader.Load(Fixture.Write(f)));
+    }
+
+    [Theory]
+    [InlineData("military.move_armoured", "basis: Default, values: [1.5], note: fixture")]
+    [InlineData("military.fort_bonus", "basis: Default, values: [-1], note: fixture")]
+    public void Gdd03NumberRulesRejectInvalidConsumedScalars(string key, string row)
+    {
+        var f = Files();
+        f[Gdd03BalanceCatalogue.FileName] = System.Text.RegularExpressions.Regex.Replace(f[Gdd03BalanceCatalogue.FileName],
+            "(?m)^  \"" + System.Text.RegularExpressions.Regex.Escape(key) + "\":\\n(?:    .*\\n)*", "  \"" + key + "\": { " + row + " }\n");
+        var error = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(f)));
+        Assert.Equal(Gdd03BalanceCatalogue.FileName, error.File);
+        Assert.Equal("values." + key, error.Field);
+        Assert.Contains("must be a whole number >= 0", error.Message);
     }
     // R-MOVE-007: both endpoints must belong to the same built segment for either corridor kind.
     [Theory]

@@ -1,0 +1,87 @@
+{
+  "status": "DRAFT SOURCE PRESERVATION; NO GAMEPLAY ACTIVATION",
+  "creator": "Tal Heuberger",
+  "licence": "CC-BY-NC-ND-4.0",
+  "credit": "Tal Heuberger",
+  "permission": {
+    "date": "2026-10-31",
+    "scope": "Tal authorized public distribution of the 21 prepared town/weapon files under CC BY-NC-ND 4.0 with his credit, including approved export conversions, and confirmed own paid generation account."
+  },
+  "generation": {
+    "route": "Tripo Studio, Smart Mesh P2.0,5000triangle target; geometry plus texture; October2026",
+    "inputs": "approved AI-generated concepts made from museum-description-grounded text; saved handoff records no museum reference-photo upload",
+    "concept_ids": {
+      "k98k": "c61d3482-bfc8-491f-a6d2-858fa5c4222f",
+      "mg34": "1f4e54fc-0879-4fdc-94cd-e234672b06d4",
+      "sten": "d9fef10e-ac44-4023-8f90-95004228392d"
+    }
+  },
+  "provider_sources": {
+    "checked": "2026-10-31",
+    "terms": "https://www.tripo3d.ai/terms",
+    "official_output_guide": "https://www.tripo3d.ai/help/privacy-policy/how-to-use-tripo-models-commercially",
+    "reading": "Paid users receive output distribution/licensing rights under 5.2.2; official guide permits asset packs. Input rights and competing-generation-service restrictions remain. No guarantee of copyright, historical accuracy or third-party clearance is inferred."
+  },
+  "unchanged_originals": true,
+  "validation": {
+    "hashes": "all6match recorded downloaded originals",
+    "Unity": "not run; kept closed",
+    "known_limits": [
+      "No runtime or character attachment",
+      "Scale/orientation, grip, faction/date use and material review pending",
+      "Sten magazine projection/handedness needs3Dreview",
+      "MG34 finish needs art review",
+      "Fixed-pair workflow only; no equipment switching"
+    ]
+  },
+  "files": [
+    {
+      "path": "k98k/statecraft-k98k-approved-textured-b48a435f.glb",
+      "bytes": 1672212,
+      "sha256": "325d86cb42490ad95ed8c367e2c7511fc3bb9c676d6a797074a6ba74a01c7da5",
+      "tripo_task_id": "b48a435f-d5b2-458d-9a06-1bcb7002b8b4",
+      "triangles": 5485,
+      "kind": "provider textured GLB master"
+    },
+    {
+      "path": "k98k/statecraft-k98k-approved-textured-b48a435f_basecolor.jpg",
+      "bytes": 1416101,
+      "sha256": "615e7f6f28db4cec59704c2b8cc554e5e9e4736bc0692ab6a79e98de57f3b57a",
+      "tripo_task_id": "b48a435f-d5b2-458d-9a06-1bcb7002b8b4",
+      "triangles": null,
+      "kind": "byte-exact extracted embedded base-colour JPEG"
+    },
+    {
+      "path": "mg34/statecraft-mg34-approved-textured-3a384995.glb",
+      "bytes": 1831880,
+      "sha256": "b26e3be060f2f81041616bcfebf92d9fe3087bcbd016fc5b9741cda4551da281",
+      "tripo_task_id": "3a384995-1c55-491d-aa5a-897b6ddd969b",
+      "triangles": 5203,
+      "kind": "provider textured GLB master"
+    },
+    {
+      "path": "mg34/statecraft-mg34-approved-textured-3a384995_basecolor.jpg",
+      "bytes": 1584667,
+      "sha256": "2256b301fa6be7a2c15452e764773232b01a639625c3d47797608dcab4ab0123",
+      "tripo_task_id": "3a384995-1c55-491d-aa5a-897b6ddd969b",
+      "triangles": null,
+      "kind": "byte-exact extracted embedded base-colour JPEG"
+    },
+    {
+      "path": "sten/statecraft-sten-approved-textured-bc6b06c8.glb",
+      "bytes": 1490716,
+      "sha256": "3c0d0cc4d3c9d086a4883ea23a2940a311f6c4548233a3403c515ad636753f1e",
+      "tripo_task_id": "bc6b06c8-99fb-4869-bd14-3bc653bb151c",
+      "triangles": 4851,
+      "kind": "provider textured GLB master"
+    },
+    {
+      "path": "sten/statecraft-sten-approved-textured-bc6b06c8_basecolor.jpg",
+      "bytes": 1267214,
+      "sha256": "c5ba4fbddd345bbf5da58be295b330981650f52b9e15f0d285e8fe5425b0d270",
+      "tripo_task_id": "bc6b06c8-99fb-4869-bd14-3bc653bb151c",
+      "triangles": null,
+      "kind": "byte-exact extracted embedded base-colour JPEG"
+    }
+  ]
+}

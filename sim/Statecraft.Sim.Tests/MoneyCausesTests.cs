@@ -161,7 +161,7 @@ public class MoneyCausesTests
         Assert.Contains(r.Why, w => w.Key == CauseKeys.Borrowed && w.Args[0] == CauseKeys.Purpose.Deport);
     }
 
-    // R-MONEY-003: every turn of the reference player's game, with its orders, events, upkeep and borrowing.
+    // R-MONEY-003: every turn of the reference player's game (gdd-0.1), with its orders, events, upkeep and borrowing.
     [Fact]
     public void EveryTurnOfTheReferenceRunAddsUp()
     {
@@ -170,6 +170,7 @@ public class MoneyCausesTests
         {
             var r = Simulation.Step(Real, s, GoldenRun.Orders(Real, s));
             AssertAddsUp(s, r, $"turn {t} ({s.Date:yyyy-MM-dd})");
+            Gdd03MoneyLedgerTests.AssertReconciles(s, r, $"turn {t} ({s.Date:yyyy-MM-dd})");   // #1702: the Debt lines and the floor too
             s = r.State;
         }
     }
@@ -221,7 +222,7 @@ public class MoneyCausesTests
     public void NoOtherLineWhenNothingIsLeftOver(double[] deltas, bool expected)
     {
         var why = deltas.Select(d => new Cause("economy", "treasury", d, PlayerText.Change(Real, "treasury", d), key: CauseKeys.CivilianUpkeep))
-            .Append(new Cause("economy", "debt", 5, "borrowed IL 5.0m to cover the deficit", key: CauseKeys.Borrowed))   // not a Money cause
+            .Append(new Cause("economy", "debt", 5, "borrowed IL\u00A05.0m to cover the deficit", key: CauseKeys.Borrowed))   // not a Money cause
             .ToList();
         var largest = Largest(why, 2);
         var other = EconomySystem.OtherMoney(Real, why, largest);
@@ -311,7 +312,7 @@ public class MoneyCausesTests
         for (int t = 1; t < 1000 && s.GameOver == null; t++)
         {
             var r = Simulation.Step(Real, s, GoldenRun.Orders(Real, s));
-            Assert.Empty(r.Rejected);
+            Assert.DoesNotContain(r.Rejected, j => !WarEvents1948Tests.IsTheMalkiyaRefusal(j));   // R-ENEMY-005: Hiram's refused order, pinned there
             foreach (var w in r.Why)
             {
                 if (w.Key == CauseKeys.Paid) paid.Add(w.Args[0]);

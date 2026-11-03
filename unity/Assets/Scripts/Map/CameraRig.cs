@@ -11,9 +11,21 @@ namespace Statecraft.Game.Map
     public sealed class CameraRig : MonoBehaviour
     {
         public const float Pitch = 50f, Fov = 35f;
-        // The opening zoom: under the ~106 km where a 16:9 view grows wider than the map and CameraController centres it
-        // (issue #1062: at 120 km the map could not be panned left or right).
-        public Vector3 LookAt; public float Distance = 90000f; public float Yaw;
+        /// <summary>The opening zoom (Map.unity's rig carries the same value). The owner, 3 November 2026: "Open at ~30 km, like
+        /// the promo"; PromoPose.Gameplay03 notes that promo 03's geography needs a 25-30 km view. Below TownModelLayer.CloseEnterM,
+        /// so Tal Heuberger's building models draw from the first frame; 1 km above the 30 km where RoadVehicles and the
+        /// collection layers (ProductionResidency) come in, so the opening is not on a switch's edge. Well under the ~106 km where
+        /// a 16:9 view grows wider than the map and CameraController centres it (issue #1062: at 120 km the map could not be
+        /// panned left or right). The whole country is the minimap's whole-map button (CameraController.MaxDistance).</summary>
+        public const float StartDistance = 31000f;
+        /// <summary>The opening look-at (MapScene.Build): Tel Aviv and Jaffa near the middle of the view. The latitude is the
+        /// midpoint of Tel Aviv (32.08N) and Jaffa (32.0522N), content/map/settlements_1948.yaml:32 and :46. The longitude is
+        /// Jaffa's (34.7531E, :45) moved inland by a sixth of the 16:9 view's width at StartDistance (34.75 km / 6 = 5.79 km,
+        /// 0.0614 degrees at this latitude), so Jaffa sits at the left edge of the middle third and Tel Aviv (34.78E, :31) about
+        /// 3 km left of the middle, without half the view being sea. TopInset already puts the look-at in the middle of the
+        /// map area below the top bar.</summary>
+        public const double StartLon = 34.8145, StartLat = 32.0661;
+        public Vector3 LookAt; public float Distance = StartDistance; public float Yaw;
         /// <summary>Share of the screen height (0..1) the UI covers at the top. The view is shifted so LookAt sits in the
         /// middle of the map area below it (an off-centre frustum: picking rays and WorldToScreenPoint follow it).</summary>
         public float TopInset;

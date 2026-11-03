@@ -192,7 +192,8 @@ public class Gdd03EventRulesTests
     public void RealCatalogueExcludesExactlyFiveWholeCardsAndKeepsOrder()
     {
         var old = Real(false); var modern = Real(true);
-        Assert.Equal(39, old.Events.Count); Assert.Equal(34, modern.Events.Count);
+        Assert.Equal(41, old.Events.Count);   // Deport's two cards (#801) are not excluded
+        Assert.Equal(old.Events.Count - Excluded.Length, modern.Events.Count);
         Assert.Equal(Excluded, old.Events.Select(e => e.Id).Except(modern.Events.Select(e => e.Id)).OrderBy(x => x, StringComparer.Ordinal));
         Assert.Equal(old.Events.Where(e => !Excluded.Contains(e.Id)).Select(e => e.Id), modern.Events.Select(e => e.Id));
         Assert.NotEqual(old.Hash, modern.Hash);
@@ -374,21 +375,23 @@ public class Gdd03EventRulesTests
     }
     static readonly string[] SourceBytes =
     {
-        "absorb_immigrants:7c926e12a0e54c4602177832f2db0c02393fd57981aea0f4b4eac916902d8f6a", // re-pinned for #1065 (reviewer comment matches the text)
-        "altalena:7b11813ca83ff1745263ee0bb8e7931d44641a87d7b126cde8433b225a9f479a", // re-pinned for #1065 (owner's native read; flag removed in 8fbcb2aff)
+        "absorb_immigrants:95682d1835e8de59e3e69f56a9beb13ddf91447270a672d23eaff2523898fea1", // re-pinned for #1065 (reviewer comment matches the text), then for the stale reviewer comment (comment-only)
+        "altalena:83f547759e5a991e78c32240c2ee3551b9b8ad9acdad8c135621b56805895f8d", // re-pinned for #1065 (owner's native read; flag removed in 8fbcb2aff), then for the stale reviewer comment (comment-only)
         "armistice_egypt:d361db22977057e24e0cb515afbfee37439cbdce38e465960b4978d082f5704f", // re-pinned for #1065 (Beri's native Hebrew read)
         "armistice_jordan:484bedf4869f6b01aec1a2d400c577183654a6d36930da065a77ddf203cf4450", // re-pinned for #1065 (Beri's native Hebrew read)
         "armistice_lebanon:81141de094d4d536c6c0e22b93a0d3704a3f1d999b3813a51c2d08f2ae8ecf11", // re-pinned for #1065 (Beri's native Hebrew read)
         "armistice_syria:2b83f89ff2effe21e01d511a7ea1e0a41f937ee96e39a16977ab6f7e8999257e", // re-pinned for #1065 (Beri's native Hebrew read)
         "austerity_1949:7b4534f4982116745eef2ab2f959ad52faf6efa8efb7f0f5bda3844bac590cc4", // re-pinned for #1065 (Beri's native Hebrew read)
-        "bernadotte_assassination:ea0f988df86957b3e56bf6cd0322f5d33adc927d969509e94ec67aa53e7ed0c5", // re-pinned for #1065 (Beri's native Hebrew read)
-        "burma_road_complete:892409fa6ea058024cc8ea9ec82f2577f55d9a23e0de07106321a0f561b4d21a", // re-pinned for #1065 (owner's native read; flag removed in 8fbcb2aff)
+        "bernadotte_assassination:3b7bce0f1707180fffdd254a6848efbb095cdf38dd70c7b31e83475c34623ec2", // re-pinned for #1065 (Beri's native Hebrew read), then for the stale reviewer comment (comment-only)
+        "burma_road_complete:6c49179b3844761c6f580c1436596cbace6932cbb6b620a9ea2872b6e0342ba2", // re-pinned for #1065 (owner's native read; flag removed in 8fbcb2aff), then for the stale reviewer comment (comment-only)
         "clothing_rationing_1950:ce2d24a8a98ad86a1670e62094d18fca9da71b5cd11f437cd5314a09f4a1d562", // re-pinned for #1065 (Beri's native Hebrew read)
         "degania_defence:f915a42f050777ddffd7e7e26090b51c6cf922dade41a98fe7174b1c50a62c6e", // re-pinned for #2020 (owner-approved Hebrew wording, 30 October 2026), then for #1065 (Beri's native Hebrew read)
+        "deport_acre:950dfb6a76dd47d1b2c132cac22ee67c6db956dff16592fe8036f3b43010414f", // added for #801 (Deport's follow-up cards), re-pinned for #2197 review round 2 (comments say "adapted") and the owner's sign-off (status sensitivity-reviewed, 2 Nov 2026), then for the stale DRAFT note (comment-only cleanup) and the owner's Hebrew read (flag removed), both #2292
+        "deport_nazareth:033bc3da1cd0bc93263a69c9e537ee48556eb962d416812fbba3d577475fe9cd", // added for #801 (Deport's follow-up cards), re-pinned for #2197 ("near the town", source packet N5; review round 2 comments) and the owner's sign-off (status sensitivity-reviewed, 2 Nov 2026), then for the stale DRAFT note (comment-only cleanup) and the owner's Hebrew read (flag removed), both #2292, then for two citation comments that now point inside the repo (comment-only)
         "education_registration_1951:1d5cb0e4062dc61b787a7e1b375b3c85c9a1663bd4c3c73f3c9c6f9ee5ac4da3", // re-pinned for #1065 (Beri's native Hebrew read)
         "elections_1949:962bd8064e8b98d4919be9b4ff4fab68cb9bd3d15213ea43917caa4432f42116", // re-pinned for #1065 (Beri's native Hebrew read)
-        "first_new_yishuv:086b7b8ae0ffc7975268373e80b7f60cee1321f57c7c858884e527784b0aa7c7", // re-pinned for #1065 (owner's native read; flag removed in 8fbcb2aff)
-        "first_truce:fb78d2e82393d5cfb19e56938965c7838c73426f5a23d053d612bc74f8010062", // re-pinned for #1065 (Beri's native Hebrew read)
+        "first_new_yishuv:0c75e086931ddbd0d356b8691afffb914ba1e657475d9295375baa3ee32c66b9", // re-pinned for #1065 (owner's native read; flag removed in 8fbcb2aff), then for the stale reviewer comment (comment-only)
+        "first_truce:51240c2fc8b3b944b4698cf15840652c4b3e15efe37ca14fcd398d4acec0fcb8", // re-pinned for #1065 (Beri's native Hebrew read), then for the stale reviewer comment (comment-only)
         "forex_crisis_1951:53fee056940af610e16f7793d66d38f6470027a63d0c5968c0cc748eb1dc2af0", // re-pinned for #1065 (Beri's native Hebrew read)
         "frumkin_commission:c7bfb21991dc41bfcbaaf4778c47c5226913a8289ba208474c87128768ba622c", // re-pinned for #1065 (Beri's native Hebrew read)
         "hula_drainage:b7ec7159b5cb6ecc009e1ff7e12a7f2426ee1c4b992b8c91c4675c8df3cc1bf5", // re-pinned for #1065 (Beri's native Hebrew read)
@@ -396,26 +399,90 @@ public class Gdd03EventRulesTests
         "iraqi_exodus:461dbb8a0685b7dceb6242d8e819635a27bb10033463e66d1a2e3ac68c9b8521", // re-pinned for #1065 (Beri's native Hebrew read)
         "israel_bonds:9bb4e8f38b8c9dc41b339645457efe1ce8d74580c53556faf4c81df50f67a992", // re-pinned for #1065 (Beri's native Hebrew read)
         "jerusalem_ceasefire:b850682a7736dcf2870550322f32a2d5c30963a05529dc9162dd68c9234648d6", // re-pinned for #1065 (Beri's native Hebrew read)
-        "jerusalem_demilitarisation_guard:f1614ec236826762f1ebdab53151eb7df379b25d6a060c69fb4cca794e819f28", // re-pinned for #1065 (owner's native read; flag removed in 05b5777d9)
+        "jerusalem_demilitarisation_guard:a9693784deafaad901268afd8a0c47a2f5b7d5f75eba33d6180f94b62913fb53", // re-pinned for #1065 (owner's native read; flag removed in 05b5777d9), then for the stale reviewer comment (comment-only)
         "jerusalem_military_government:526dbc88eabe4691e3ee1f3ed2c5fdeb640f11ae0a7a632c63066175b9c18176", // re-pinned for #1065 (Beri's native Hebrew read)
-        "latrun_proposal:169933e28b8fc3085c5e74176a731d83f1e1955ed0ffac9a706029f738353bf5", // re-pinned for #1065 (Beri's native Hebrew read)
+        "latrun_proposal:c35f17ffa48d949b432ce9205a245048bd50bf660940206245e8f0d6f5b62916", // re-pinned for #1065 (Beri's native Hebrew read), then for #2087 (R-ENEMY-005 unit order: Harel toward Latrun; owner rulings, 1 and 2 November 2026, order targets; hex re-derived on the 4.4 km grid by tools/unit_anchor_hexes.py and its units_1948.yaml line citations updated; card text, Hebrew and review status unchanged)
         "law_of_return:d04bb849bbb6fa089afc6e1123f8335aa1b03f49bc025f9d1c6746c48d27b398", // re-pinned for #1065 (Beri's native Hebrew read)
         "maabarot_policy:12e53e14fe3b045f7c18b75ac7af68acf079c17968baf6c82df2435675eb0884", // re-pinned for #1065 (Beri's native Hebrew read)
         "ministry_supply_crisis:2de253de7bafb65f0168bdc151dc0b47fec94843ad6f13bf3ac092d7015b55f9", // re-pinned for #1065 (Beri's native Hebrew read)
-        "operation_hiram:c8db23f9a331b0cf517e4762fe8f71dc286548ada77115b9500a93bce6ba740e", // re-pinned for #1065 (Beri's native Hebrew read)
-        "operation_horev:6e018d54d46b46676d5ab56bc2fcedbeffab23a00334f75b415aec1713507f51", // re-pinned for #1065 (Beri's native Hebrew read)
-        "operation_yoav:3d2e9a9a4416a4277e4c17da1e442895bda562c238e6f459c45b6ab89a9133fe", // re-pinned for #1065 (Beri's native Hebrew read)
-        "rafah_force_pressure:ffbb88f4e2169065fa07b111e6e67cea519c58e3cd684c0a2c092e830ff7d590", // re-pinned for #1065 (owner's native read; flag removed in 05b5777d9)
-        "railway_complete:9f21dd8129ea29f5bfe71999d4802fab0bcdc24dcd14c25b3f8b2cd9774ce15a", // re-pinned for #1065 (owner's native read; flag removed in 8fbcb2aff)
+        "operation_hiram:e7c661e53f93576d8a135008e0d1e623430967a36729b58b67a4af195165bccf", // re-pinned for #1065 (Beri's native Hebrew read), then for #2087 (R-ENEMY-005 unit orders: Carmeli to Manara, the 7th Brigade to al-Malikiyya; owner rulings, 1 and 2 November 2026, order targets; hexes re-derived on the 4.4 km grid by tools/unit_anchor_hexes.py and its units_1948.yaml line citations updated; card text, Hebrew and review status unchanged)
+        "operation_horev:373bf144ad21c326eed5895d7bf57b2d73e922c8589bab47da812e2f96f5fb45", // re-pinned for #1065 (Beri's native Hebrew read), then for #2087 (R-ENEMY-005 unit orders; owner ruling, 31 October 2026; hex re-derived on the 4.4 km grid by tools/unit_anchor_hexes.py; review status unchanged), then re-pinned for the Horev garrison line (owner, 2 November 2026, "Add the line (Recommended)", #2087)
+        "operation_yoav:c4af1976488006f26f06cddaa6a9e3379d0193f5c5c22c8e789ccff64dabfefc", // re-pinned for #1065 (Beri's native Hebrew read), then for #2087 (R-ENEMY-005 unit orders: Negev to Beersheba, Givati to Huleiqat; owner rulings, 1 and 2 November 2026, order targets; hexes re-derived on the 4.4 km grid by tools/unit_anchor_hexes.py and its units_1948.yaml line citations updated; card text, Hebrew and review status unchanged)
+        "rafah_force_pressure:37ca577e1b93f241035d8bf322810f311a084427307c5722f4122238aa9ec6b8", // re-pinned for #1065 (owner's native read; flag removed in 05b5777d9), then for the stale reviewer comment (comment-only)
+        "railway_complete:98d06d62c88d889e3e4a98f954fb04727695c37f58c6ccef94449fc16e88bd04", // re-pinned for #1065 (owner's native read; flag removed in 8fbcb2aff), then for the stale reviewer comment (comment-only)
         "reparations_claim:5412e71f4f5a90a92bd86622eb1a169feee45f0ba2fe82c5ab40bd8f3d43cafd", // re-pinned for #1065 (Beri's native Hebrew read)
         "reparations_vote:a79521d61ec59aa72a581b6598ecfade18e8d1e52dc25cef083078b0665a13b3",
         "rhodes_talks:c5c9cdf906f75e2672e5eedaeadab7f224df96f666a3097813903b81ec06f4f6", // re-pinned for #1065 (Beri's native Hebrew read)
         "second_truce:22eeb171849bac248d58cec944c03bac6aee56c96a192aabf0aba2b7e02b19f6", // re-pinned for #1065 (Beri's native Hebrew read)
         "sinai_withdrawal:4abcd39e509c3d404523f7a5609bdb8e1e5180c19524367790ba7adf0af9e06b", // re-pinned for #1065 (Beri's native Hebrew read)
-        "ten_days:7fece9c0eb4f56ece79a7247e430fb679d3d4d826165e598fd0bd982099a412a", // re-pinned for #1065 (Beri's native Hebrew read)
+        "ten_days:0be9dc54863d46b935428e7a6fd1c9d8fe21194960c976d3ed4283b9e1088962", // re-pinned for #1065 (Beri's native Hebrew read), then for #2087 (R-ENEMY-005 unit orders: Kiryati to Ramle replaces Yiftach to Lydda, sent to Ramla's capture target; owner rulings, 1 and 2 November 2026, order target; hexes re-derived on the 4.4 km grid by tools/unit_anchor_hexes.py and its units_1948.yaml line citations updated; card text, Hebrew and review status unchanged)
     };
+    // R-ENEMY-005 (owner, 31 October 2026, #749: "GDD 0.1 only"): the operation cards' unit orders apply under gdd-0.1; under
+    // gdd-0.3 the cards stay effect-free for units until a 0.3 accounting contract exists (R-EFX-001/005).
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void OperationCardOrdersApplyUnderGdd01Only(bool modern)
+    {
+        var c = Real(modern);
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        Assert.Equal("golani", c.StartingForces[0].Row);
+        var before = s.Units[0];
+        s.PendingEvents.Add("operation_horev");
+        Assert.Null(EventSystem.Choose(c, s, "operation_horev", "launch", new List<Cause>()));
+        var after = s.Units[0];
+        Assert.Equal(modern ? (before.Order, before.OrderTarget) : (Movement.GoTo, "-8,28"), (after.Order, after.OrderTarget));
+    }
+    // R-ENEMY-005, R-CTRL-013 (owner, 2 November 2026, #2087: "Keep a garrison in Nazareth (Recommended)"; owner, 31 October
+    // 2026, #749: "GDD 0.1 only"): Golani alone on Nazareth in the `occupied` state, its timer still running (the EnemyAITests
+    // cases are all `awaiting_end`), and Horev launched. Under gdd-0.1 the order is held back with Orders.RefusedLastGarrison
+    // and Golani stays; under gdd-0.3 the card gives no unit order, so nothing is refused, RefusedLastGarrison never appears,
+    // and Golani is untouched.
+    // Red without the rule's `occupied` half (SettlementControl.LastGarrison reading only `awaiting_end`): under gdd-0.1 the
+    // order is given, or refused with another reason, so no RefusedLastGarrison names unit 0. Red for a check made outside
+    // the gdd-0.3 guard (EventSystem.Resolve): under gdd-0.3 a RefusedLastGarrison would appear.
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void TheLastGarrisonRuleHoldsForAnOccupiedPlaceUnderGdd01Only(bool modern)
+    {
+        var c = Real(modern);
+        Assert.Equal(modern, c.Ruleset == SaveGame.Gdd03Ruleset);
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        Assert.Equal("golani", c.StartingForces[0].Row);
+        var nazareth = c.SettlementTargets.Single(t => t.Id == "nazareth");
+        var g = s.Units[0];
+        s.Units[0] = new Unit(g.Id, g.Type, nazareth.Q, nazareth.R, g.Service, g.Side, g.Strength, "", "", g.HomeCity, g.Full, g.CombatXp);
+        Assert.Equal(new[] { 0 }, s.Units.Values.Where(u => (u.Q, u.R) == (nazareth.Q, nazareth.R) && u.Side == Movement.PlayerSide).Select(u => u.Id));
+        s.Settlements["nazareth"] = new SettlementControl(Movement.PlayerSide, SettlementControl.Occupied, s.Date, turns: 3);
+        s.PendingEvents.Add("operation_horev");
+        var rejected = new List<Rejection>();
+        Assert.Null(EventSystem.Choose(c, s, "operation_horev", "launch", new List<Cause>(), rejected: rejected));
+        Assert.Equal(modern ? Array.Empty<string>() : new[] { Orders.RefusedLastGarrison },
+            rejected.Where(j => j.Command is UnitOrder { Unit: 0 }).Select(j => j.Reason));
+        if (modern) Assert.DoesNotContain(rejected, j => j.Reason == Orders.RefusedLastGarrison);
+        Assert.Equal((nazareth.Q, nazareth.R, "", ""), (s.Units[0].Q, s.Units[0].R, s.Units[0].Order, s.Units[0].OrderTarget));
+        Assert.False(s.CardOrders.ContainsKey(0));
+        Assert.Equal(SettlementControl.Occupied, s.Settlements["nazareth"].State);
+    }
+    // Review of #2087, optional 2: under gdd-0.3 the loader still checks the cards' orders (owner, 31 October 2026, #749), so
+    // a Horev order to a hex that is not one of golani's anchors is refused there too.
     [Fact]
-    public void AllThirtyNineSourceRecordsIncludingReviewsAndHebrewAreUnchanged()
+    public void Gdd03StillRefusesACardOrderToAHexNoAnchorHas()
+    {
+        var root = RealContentTests.ContentRoot();
+        var e = Assert.Throws<ContentException>(() => ContentLoader.Load(rel =>
+        {
+            var path = Path.Combine(root, rel);
+            var text = File.Exists(path) ? File.ReadAllText(path) : null;
+            if (rel == "eras.yaml") return text!.Replace("loop: gdd", "loop: gdd, ruleset: gdd-0.3");
+            return rel == "events/operation_horev.yaml" ? text!.Replace("{ unit: golani, q: -8, r: 28 }", "{ unit: golani, q: -8, r: 27 }") : text;
+        }, Directory.GetFiles(Path.Combine(root, "events"), "*.yaml").Select(p => "events/" + Path.GetFileName(p))));
+        Assert.Equal(("events/operation_horev.yaml", "events[operation_horev].options[launch].unit_orders[0]"), (e.File, e.Field));
+        Assert.Contains("not an anchor", e.Message);
+    }
+    [Fact]
+    public void AllFortyOneSourceRecordsIncludingReviewsAndHebrewAreUnchanged()
     {
         var root = Path.Combine(RealContentTests.ContentRoot(), "events");
         var files = Directory.GetFiles(root, "*.yaml").OrderBy(x => x, StringComparer.Ordinal).ToArray();

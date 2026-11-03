@@ -25,6 +25,13 @@ namespace Statecraft.Sim
         public const string RefusedNotYours = "That unit is not yours";
         public const string RefusedArtilleryHold = "Artillery does not hold ground";
         public const string RefusedAlready = "That unit already has that order";
+        /// <summary>R-ENEMY-005 (the owner's answer 1 on #2087): an operation card's go-to that Movement.GiveGoTo refused. The
+        /// turn's Rejected list carries it with the order, as it carries the player's refused orders (EventSystem).</summary>
+        public const string RefusedCardOrder = "The unit could not take the operation's order";
+        /// <summary>R-ENEMY-005, R-CTRL-013 (owner, 2 November 2026, #2087: "Keep a garrison in Nazareth (Recommended)"): an
+        /// operation card's go-to not carried out because the unit is the last Israeli unit on an occupied place
+        /// (SettlementControl.LastGarrison), at the order or on a later turn of its march. Listed like <see cref="RefusedCardOrder"/>.</summary>
+        public const string RefusedLastGarrison = "The unit stays: it is the last Israeli unit holding an occupied place";
 
         /// <summary>The player's side (units_1948.yaml's id). Only the player's military units take orders.</summary>
         const string PlayerSide = "israel";
@@ -33,7 +40,7 @@ namespace Statecraft.Sim
         static string Hex(Unit u) => string.Format(CultureInfo.InvariantCulture, "{0},{1}", u.Q, u.R);
 
         static Unit With(Unit u, string order, string target) =>
-            new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, order, target, u.HomeCity, u.Full);
+            new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, order, target, u.HomeCity, u.Full, u.CombatXp);
 
         /// <summary>R-ORDER-001's refusals: null when <see cref="Give"/> takes the order, else the reason shown to the player.
         /// Changes nothing: the unit card asks it before it offers fortify or hold (#754). Refused for an unknown order or

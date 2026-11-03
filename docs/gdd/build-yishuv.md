@@ -17,16 +17,16 @@ I choose designated sites to develop and send a pioneer to work under the retain
 - It is refused, with the state unchanged, for an unknown unit, a unit that is not a halutz or already has a project (one project per unit, D-D6), an unknown action or site, a site being built or built (one unit per site), or the legacy loop (R-SITE-001).
 - `StopWork(unit)` ends the build. The site is available again; the progress and the Money paid are lost (D-A3) (R-SITE-002).
 
-*Amir's #1668 proposed pausing paid progress when moving or stopping and discarding progress without refund only on explicit cancellation; the owner's 30 October 2026 conflict review did not rule on this ([conflict decision](../GDD.md#30-october-2026-conflict-decisions)). `R-SITE-002` (`docs/rules/mvp.md:187`) stays operative. On 1 November 2026 the owner answered that the MVP has no pause: stopping ends the work, the site becomes available again, and progress and Money are lost (Q51).* [S1] [S14]
+*Amir's #1668 proposed pausing paid progress when moving or stopping and discarding progress without refund only on explicit cancellation; the owner's 30 October 2026 conflict review did not rule on this ([conflict decision](../GDD.md#30-october-2026-conflict-decisions)). `R-SITE-002` (`docs/rules/mvp.md`) stays operative. On 1 November 2026 the owner answered that the MVP has no pause: stopping ends the work, the site becomes available again, and progress and Money are lost (Q51).* [S1] [S14]
 - Construction resolves after training and before production in each turn (D-A6). A build ordered this turn counts this turn: it takes 6 turns, a placeholder (R-SITE-003).
 - When the build finishes, the site is marked built on the turn's end date and the unit is idle again. It stays a halutz unit until it has worked `veteran_halutz_service` turns (docs/gdd/veteran-pioneer.md). Nothing else changes yet: no city, housing, jobs, population or Social cohesion. The objective and its card come with the objective PR (R-SITE-003).
 ### Sites and field work
 
 Sites have stable ids, authored hexes, allowed project kinds and source/availability metadata. The [location roster](../locations.md) owns names/aliases. Reference founding dates are not unlocks; approved designated build sites are available from scenario start.
 
-**Amir's proposal [S1]:** a pioneer would have to reach the target hex and pay full upfront without borrowing. The owner's 30 October 2026 conflict review did not rule on this; the operative main rules are `R-SITE-001` and `R-MONEY-003` (`docs/rules/mvp.md:185` and `:399`), which let the unit work from where it stands and borrow a short Treasury. On 1 November 2026 the owner confirmed both for the MVP: a `PioneerWork` order does not move the unit, so it works and earns experience from the turn it starts, and pioneer work borrows its shortfall (Q50, Q57 and D1) [S14].
+**Amir's proposal [S1]:** a pioneer would have to reach the target hex and pay full upfront without borrowing. The owner's 30 October 2026 conflict review did not rule on this; the operative main rules are `R-SITE-001` and `R-MONEY-003` (`docs/rules/mvp.md`), which let the unit work from where it stands and borrow a short Treasury. On 1 November 2026 the owner confirmed both for the MVP: a `PioneerWork` order does not move the unit, so it works and earns experience from the turn it starts, and pioneer work borrows its shortfall (Q50, Q57 and D1) [S14].
 
-Amir's staffed-turn tier rates and working-turn XP agree with main's `gdd-0.3` scoping (`R-VET-001` and `R-VET-002`, `docs/rules/mvp.md:193` and `:195`); the 30 October 2026 review lists them as not a conflict [S1]. For paused progress on movement or stopping, the owner's 30 October 2026 conflict review did not rule on this; the operative main rule is `R-SITE-002` (`docs/rules/mvp.md:187`), and on 1 November 2026 the owner answered that a lost worker counts as stopped (Q51) [S14]. The fixed-turn and service rules apply to `legacy` and `gdd-0.1`.
+Amir's staffed-turn tier rates and working-turn XP agree with main's `gdd-0.3` scoping (`R-VET-001` and `R-VET-002`, `docs/rules/mvp.md`); the 30 October 2026 review lists them as not a conflict [S1]. For paused progress on movement or stopping, the owner's 30 October 2026 conflict review did not rule on this; the operative main rule is `R-SITE-002` (`docs/rules/mvp.md`), and on 1 November 2026 the owner answered that a lost worker counts as stopped (Q51) [S14]. The fixed-turn and service rules apply to `legacy` and `gdd-0.1`.
 
 **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** prepared regional field slots would be staffed through a regional capital and use the proposal catalogue's cost/work values. This regional field model is non-operative.
 
@@ -34,7 +34,7 @@ Amir's staffed-turn tier rates and working-turn XP agree with main's `gdd-0.3` s
 
 A yishuv completion marks its site built, without spawning people, housing, jobs, capitals or extra cohesion. [Objectives](objective-card.md) owns required membership, grouping, dates and points. Preserve founding-only sensitivity framing without rewards from displacement.
 
-The retained camp-site construction rules above remain authoritative. **Amir's proposal [S1]:** reception camps, training centres and city variants would use the proposal catalogue's on-site pioneer/builder work and national city-start allowance. The owner's 30 October 2026 conflict review did not rule on this; `R-CAMP-001` and `R-PROJ-001` (`docs/rules/mvp.md:231`, `docs/rules/mvp.md:145`) stay operative.
+The retained camp-site construction rules above remain authoritative. **Amir's proposal [S1]:** reception camps, training centres and city variants would use the proposal catalogue's on-site pioneer/builder work and national city-start allowance. The owner's 30 October 2026 conflict review did not rule on this; `R-CAMP-001` and `R-PROJ-001` (`docs/rules/mvp.md`) stay operative.
 
 [Corridors](corridors.md) owns road/rail projects. Retain the approved Hula drainage site and drainage-only sensitivity treatment [S7]. Drained, the swamp site does nothing else; the Hula field site becomes ready to plow under the retained [field and swamp rules](fields-and-swamps.md) [S13]. The existing event retains sources/window and fires only while works are in progress [S7]. No new terrain class or unsourced claims are introduced.
 
@@ -43,11 +43,11 @@ A field is ready only once the yishuv in its hex is built; plowing then follows 
 ## Data touched
 
 - `content/sites.yaml` (new; sourced facts: id, names, hex, kinds, founding date, sources, status). The loader reads it only in the GDD loop, so the legacy content hash does not move.
-- `rules.yaml` `mvp.build_yishuv_turns` and `mvp.build_yishuv_cost`, and `attention_cost.pioneer_work` and `stop_work`: supplied by `MvpSlice.Overlay`, never under `content/` (ruling 2 [S3]).
+- `rules.yaml` `mvp.build_yishuv_turns` and `mvp.build_yishuv_cost`, and `attention_cost.pioneer_work` and `stop_work`: labelled design values under `content/` since the cutover (Q-CUT-1, R-LOOP-005); before the cutover, ruling 2 [S3] kept the placeholders in `MvpSlice.Overlay`.
 - `GameState.Sites`, hashed as `site{...}` when there are some; `Treasury`.
 - Save files: the `pioneer UNIT ACTION SITE` and `stop UNIT` lines. Scenarios: `pioneer_work` and `stop_work`.
 - Designated sites, allowed project kinds, fixed-turn progress and stable hex/facility bindings.
-- Movement/project commands share validation; the retained project uses fixed turns rather than Amir's staffed-work arithmetic, which the 30 October 2026 conflict review did not rule on (`R-SITE-003`, `docs/rules/mvp.md:189`) [S1].
+- Movement/project commands share validation; the retained project uses fixed turns rather than Amir's staffed-work arithmetic, which the 30 October 2026 conflict review did not rule on (`R-SITE-003`, `docs/rules/mvp.md`) [S1].
 - Field readiness and plowing follow the retained field rules; the declined prepared regional-capacity model is not encoded.
 
 ## Done when

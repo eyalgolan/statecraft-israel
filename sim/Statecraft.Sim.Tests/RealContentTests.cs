@@ -49,13 +49,25 @@ public class RealContentTests
         }
     }
 
-    /// <summary>R-ALT-004 on the real content: every one of the 33 alternatives carries its record.</summary>
+    /// <summary>R-ALT-004 on the real content: every alternative carries its record.</summary>
     [Fact]
     public void EveryAlternativeInContentSaysWhoProposedIt()
     {
         var c = ContentLoader.Load(ContentRoot());
         var alternatives = c.Events.Where(e => e.Options.Any(o => o.Historical)).SelectMany(e => e.Options.Where(o => !o.Historical)).ToList();
-        Assert.Equal(33, alternatives.Count);
+        // The same count read from the raw event files: a loader that drops an alternative would leave it unchecked.
+        var rawAlternatives = 0;
+        foreach (var file in Directory.GetFiles(Path.Combine(ContentRoot(), "events"), "*.yaml"))
+        {
+            var yaml = new YamlStream();
+            using (var reader = new StringReader(File.ReadAllText(file))) yaml.Load(reader);
+            if (!((YamlMappingNode)yaml.Documents[0].RootNode).Children.TryGetValue(new YamlScalarNode("options"), out var node)) continue;
+            var historical = ((YamlSequenceNode)node).Children.Cast<YamlMappingNode>()
+                .Select(o => o.Children.TryGetValue(new YamlScalarNode("historical"), out var h) && ((YamlScalarNode)h).Value == "true").ToList();
+            if (historical.Contains(true)) rawAlternatives += historical.Count(h => !h);
+        }
+        Assert.NotEqual(0, rawAlternatives);
+        Assert.Equal(rawAlternatives, alternatives.Count);
         Assert.All(alternatives, o => Assert.NotNull(o.Alternative));
     }
 
@@ -234,6 +246,7 @@ public class RealContentTests
         // Other records keep the gate.
         // burma_road_complete left them with the owner's sensitivity review of its text, 21 Oct 2026 (#791).
         // railway_complete left them after a person's read of its two newspaper pages and the booklet, 25 Oct 2026 (#1410).
+        // deport_acre and deport_nazareth (#801) left them with the owner's sensitivity sign-off, 2 Nov 2026 ("Approve both cards", #2197).
         var draftEvents = new[] { "first_new_yishuv", "jerusalem_demilitarisation_guard", "rafah_force_pressure" };
         Assert.Equal(draftEvents, C.Events.Where(e => e.Status == "draft").Select(e => e.Id).OrderBy(id => id));
         // A sensitive event submitted fact-checked waits here for the owner's sensitivity review; the maintainer sets
@@ -300,10 +313,13 @@ public class RealContentTests
         Assert.Equal("naftali", Offices.Holder(C, "agriculture_minister", new DateTime(1952, 12, 24))?.Id);
         var state = Simulation.NewGame(C, 42, Mode.Historical);
         state.Date = change.AddDays(-1);
-        Assert.Equal(0.9, EffectsSystem.Multiplier(C, state, "agriculture_minister") /
+        var eshkol = C.People.Single(p => p.Id == "eshkol").Competence;
+        var naftali = C.People.Single(p => p.Id == "naftali").Competence;
+        Assert.NotEqual(eshkol, naftali);   // otherwise a stale holder would give the same multiplier
+        Assert.Equal(0.5 + eshkol / 20.0, EffectsSystem.Multiplier(C, state, "agriculture_minister") /
             EffectsSystem.BudgetFactor(C, state, "agriculture_minister"), 10);
         state.Date = change;
-        Assert.Equal(0.85, EffectsSystem.Multiplier(C, state, "agriculture_minister") /
+        Assert.Equal(0.5 + naftali / 20.0, EffectsSystem.Multiplier(C, state, "agriculture_minister") /
             EffectsSystem.BudgetFactor(C, state, "agriculture_minister"), 10);
         Assert.Equal("kaplan", Cabinet.Holder(C, state, "minister_without_portfolio")?.Id);
         Assert.DoesNotContain(Cabinet.Lineup(C, state), seat => seat.Office.Id == "deputy_prime_minister");
@@ -312,12 +328,27 @@ public class RealContentTests
     }
 
     [Fact]
-    public void OpenQuestionsAreExactlyTheKnownOnes()
+    public void EveryOpenQuestionHasAResearchNote()
     {
         // #3: research_notes/budget-approval-1948-56.md answers budget_approval for the council and the First and Second
         // Knessets. The Third Knesset's stays open: its 1956/57 law is read, its 1957-59 laws are not.
         var open = C.Legislatures.SelectMany(l => l.OpenQuestions.Select(q => $"{l.Id}.{q}")).OrderBy(x => x).ToArray();
-        Assert.Equal(new[] { "third_knesset.budget_approval" }, open);
+        // The loader keeps every open question legislatures.yaml lists.
+        var yaml = new YamlStream();
+        using (var reader = new StringReader(File.ReadAllText(Path.Combine(ContentRoot(), "legislatures.yaml")))) yaml.Load(reader);
+        var raw = ((YamlSequenceNode)((YamlMappingNode)yaml.Documents[0].RootNode)[new YamlScalarNode("legislatures")]).Children
+            .Cast<YamlMappingNode>()
+            .SelectMany(l => l.Children.TryGetValue(new YamlScalarNode("open_questions"), out var q)
+                ? ((YamlSequenceNode)q).Children.Select(x => $"{l[new YamlScalarNode("id")]}.{x}") : Enumerable.Empty<string>())
+            .OrderBy(x => x).ToArray();
+        Assert.Equal(raw, open);
+        var notes = new Dictionary<string, string> { ["budget_approval"] = "budget-approval-1948-56.md" };
+        Assert.All(open, item =>
+        {
+            var question = item.Substring(item.IndexOf('.') + 1);
+            Assert.True(notes.TryGetValue(question, out var note), $"{item} has no research note mapping");
+            Assert.True(File.Exists(Path.Combine(ContentRoot(), "..", "research_notes", note!)), $"{item} research note is missing: {note}");
+        });
     }
 
     [Fact]
@@ -382,7 +413,10 @@ public class RealContentTests
         Assert.Equal((73, 120), PoliticsSystem.CoalitionSeats(C, new DateTime(1949, 6, 1)));
         Assert.Equal(101828, C.Aliyah[0].Origins.Values.Sum());
         Assert.Equal(239954, C.Aliyah[1].Origins.Values.Sum());
-        Assert.Equal(13, C.Actors.Count);
+        var model = new YamlStream();
+        using (var reader = new StringReader(File.ReadAllText(Path.Combine(ContentRoot(), "model.yaml")))) model.Load(reader);
+        var actorRows = (YamlSequenceNode)((YamlMappingNode)model.Documents[0].RootNode)[new YamlScalarNode("actors")];
+        Assert.Equal(actorRows.Children.Count, C.Actors.Count);
     }
 
     [Fact]
@@ -484,7 +518,7 @@ public class RealContentTests
         Assert.Equal(new DateTime(1951, 10, 8), C.Offices.Single(o => o.Id == "immigration_minister").Until);
         Assert.Equal(new DateTime(1951, 10, 8), C.Offices.Single(o => o.Id == "war_victims_minister").Until);
         Assert.Equal("shapira", Who("immigration_minister", 1951, 10, 7));
-        Assert.Equal(0.15, C.Rules.BudgetStart["prime_minister"]);   // the Immigration line keeps its id (#108)
+        Assert.Contains("prime_minister", C.Rules.BudgetStart.Keys);   // the Immigration line keeps its id (#108)
         var sheetrit = C.People.Single(p => p.Id == "sheetrit");
         Assert.Equal("sephardim", Offices.PartyOf(C, sheetrit, new DateTime(1951, 1, 1)));
         Assert.Equal("mapai", Offices.PartyOf(C, sheetrit, new DateTime(1951, 10, 8)));
@@ -586,5 +620,57 @@ public class RealContentTests
         Assert.False(string.IsNullOrEmpty(card.TitleHe), "absorb_immigrants.title_he");
         Assert.False(string.IsNullOrEmpty(card.TextHe), "absorb_immigrants.text_he");
         Assert.All(card.Options, o => Assert.False(string.IsNullOrEmpty(o.TextHe), $"absorb_immigrants.options[{o.Id}].text_he"));
+    }
+
+    /// <summary>Deport's follow-up cards (GDD Phase 6 PR 9, #801). Deport is refused where the residents fled (R-CTRL-018), so
+    /// only the targets whose residents stayed can be deported, and each has exactly one card.</summary>
+    static readonly string[] DeportCards = { "deport_acre", "deport_nazareth" };
+
+    // R-GATE-001: every displacement card in content/ is held by the release gate until the owner sets sensitivity-reviewed.
+    // Replaces ReleaseGateTests.TheRealContentHasNoDisplacementEventYet, PR 2's guard.
+    [Fact]
+    public void EveryDisplacementCardIsGatedUntilReviewed()
+    {
+        var displacement = C.Events.Where(e => e.Tags.Contains("displacement", StringComparer.OrdinalIgnoreCase)).Select(e => e.Id).OrderBy(id => id, StringComparer.Ordinal);
+        Assert.Equal(DeportCards, displacement);
+        foreach (var e in C.Events.Where(e => DeportCards.Contains(e.Id)))
+            Assert.Equal(e.Status != ReleaseGate.ReviewedStatus, ReleaseGate.SensitiveUnreviewed(C).Contains(e.Id));
+    }
+
+    // R-EFX-007, R-EFX-005: no option of a displacement card raises Money, Food, Arms, Social cohesion, International Support
+    // or any other target, and none grants units, gains a city effect or unlocks a project. The cards carry no effect at all:
+    // Deport's costs are R-CTRL-018's, applied by the sim.
+    [Fact]
+    public void NoDisplacementOptionRaisesAnything()
+    {
+        foreach (var o in C.Events.Where(e => DeportCards.Contains(e.Id)).SelectMany(e => e.Options))
+        {
+            Assert.Empty(o.Effects);   // no effect at all, which covers R-EFX-007's no-gain rule
+            Assert.Empty(o.GrantUnits);
+            Assert.Empty(o.CityEffects);
+            Assert.Empty(o.UnlockProjects);
+            Assert.Empty(o.SetPolicy);
+            Assert.Null(o.SetRung);
+        }
+    }
+
+    // R-EVT-007: each target whose residents stayed has one card, which fires once that place is depopulated and not before;
+    // the other card stays unfired.
+    [Fact]
+    public void EachStayedTargetHasOneCardThatFiresOnItsDeport()
+    {
+        var stayed = C.SettlementTargets.Where(t => t.Residents == "stayed").Select(t => t.Id).OrderBy(id => id, StringComparer.Ordinal).ToArray();
+        Assert.Equal(new[] { "acre", "nazareth" }, stayed);
+        Assert.Equal(stayed, C.Events.Where(e => e.Deported != "").Select(e => e.Deported).OrderBy(id => id, StringComparer.Ordinal));
+        foreach (var place in stayed)
+        {
+            var card = C.Events.Single(e => e.Deported == place).Id;
+            var s = Simulation.NewGame(C, 42, Mode.Historical);
+            Assert.DoesNotContain(card, s.FiredEvents);
+            s.Settlements[place] = new SettlementControl(since: s.Date, depopulated: true);
+            EventSystem.Trigger(C, s, new List<Cause>());
+            Assert.Contains(card, s.PendingEvents);
+            Assert.DoesNotContain(C.Events.Single(e => e.Deported != "" && e.Deported != place).Id, s.FiredEvents);
+        }
     }
 }

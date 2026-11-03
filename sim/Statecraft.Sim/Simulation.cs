@@ -47,8 +47,9 @@ namespace Statecraft.Sim
                 return new StepResult(s, why, rejected);
             }
 
-            RunOrders(c, s, commands, new Dictionary<int, int>(), new Dictionary<int, (int Q, int R)>(), why, rejected);
-            EventSystem.Delegate(c, s, why);
+            var spent = new Dictionary<int, int>();
+            RunOrders(c, s, commands, spent, new Dictionary<int, (int Q, int R)>(), why, rejected);
+            EventSystem.Delegate(c, s, why, spent, rejected);   // a delegated card's unit orders share the turn's movement (R-ENEMY-005)
 
             var len = SecuritySystem.TurnLengthFor(c, s.Date, s.Rung);
             // The next era's start, or the game's end (the last era's end, or mvp.end in the GDD loop, R-LOOP-004), is a
@@ -139,7 +140,7 @@ namespace Statecraft.Sim
         static void RunOrders(Content c, GameState s, IReadOnlyList<Command> commands, Dictionary<int, int> spent,
                               Dictionary<int, (int Q, int R)> attacked, List<Cause> why, List<Rejection> rejected)
         {
-            if (c.IsGdd) Movement.ContinueRoutes(c, s, spent, why);   // R-MOVE-009: the route step, before the turn's orders
+            if (c.IsGdd) Movement.ContinueRoutes(c, s, spent, why, rejected);   // R-MOVE-009: the route step, before the turn's orders
             if (c.IsGdd) SettlementControl.CaptureHeld(c, s, why);
             var priceRung = s.Rung;   // every command this turn is priced at the rung the turn started at (R-MONEY-004's war is that rung too)
             var dollarsAtStart = s.DollarsConverted;   // R-MONEY-004: the turn's limit counts every conversion order in it
@@ -155,10 +156,10 @@ namespace Statecraft.Sim
                 if (c.UsesAttention)
                 {
                     var before = s.Attention;
-                    error = AttentionSystem.TrySpend(c, s, cmd.Kind, priceRung) ?? Execute(c, s, cmd, spent, attacked, why, priceRung, dollarsAtStart);
+                    error = AttentionSystem.TrySpend(c, s, cmd.Kind, priceRung) ?? Execute(c, s, cmd, spent, attacked, why, priceRung, dollarsAtStart, rejected);
                     if (error != null) s.Attention = before;
                 }
-                else error = Execute(c, s, cmd, spent, attacked, why, priceRung, dollarsAtStart);
+                else error = Execute(c, s, cmd, spent, attacked, why, priceRung, dollarsAtStart, rejected);
                 if (error != null) rejected.Add(new Rejection(cmd, error));
                 if (c.IsGdd) SettlementControl.CaptureHeld(c, s, why);   // R-CTRL-004: only where an order ends
             }
@@ -181,7 +182,8 @@ namespace Statecraft.Sim
         /// reported as a politics cause), or the reason it failed validation. A command that fails validation leaves
         /// the state as it found it (attention is refunded by the caller).</summary>
         static string? Execute(Content c, GameState s, Command cmd, Dictionary<int, int> spent,
-                               Dictionary<int, (int Q, int R)> attacked, List<Cause> why, int startRung, int dollarsAtStart)
+                               Dictionary<int, (int Q, int R)> attacked, List<Cause> why, int startRung, int dollarsAtStart,
+                               List<Rejection> rejected)
         {
             switch (cmd)
             {
@@ -223,7 +225,7 @@ namespace Statecraft.Sim
                     return null;
                 }
                 case ChooseEventOption e:
-                    return EventSystem.Choose(c, s, e.EventId, e.OptionId, why);
+                    return EventSystem.Choose(c, s, e.EventId, e.OptionId, why, spent, rejected);   // a refused unit order is rejected on its own (R-ENEMY-005)
                 case SetMobilization m:
                     return SecuritySystem.SetMobilization(c, s, m.Level, why);
                 case Appoint a:
