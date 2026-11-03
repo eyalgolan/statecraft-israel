@@ -350,7 +350,7 @@
     "values": [0.5]
   "military.active_money":
     "basis": "Agreed"
-    "note": "Military and control: Money per active formation per turn, independent of strength, from the turn it graduates (27M-8), excluding basic trainees. Owner ruling, 30 October 2026 (#2013 balance rows): \"Keep the set values (Recommended)\". 0.05 Money; Amir's 1 is a declined proposal. Source: #1668 balance.md at 605277df."
+    "note": "Military and control: Money per active formation per turn, independent of strength (R-UNIT-010), from the turn it graduates (27M-8), excluding basic trainees. Owner ruling, 30 October 2026 (#2013 balance rows): \"Keep the set values (Recommended)\". 0.05 Money; Amir's 1 is a declined proposal. Source: #1668 balance.md at 605277df."
     "values": [0.05]
   "military.strength":
     "basis": "Agreed"
