@@ -80,7 +80,7 @@ public class MilitaryTrainingTests
         var rules = Mvp.RulesAt(s.Date).Mvp!;
         for (int turn = 0; turn < rules.VeteranSoldierService!.Value; turn++)
         {
-            Military.Serve(s, rules, why);
+            Military.Serve(Mvp, s, rules, why);
             Assert.Equal(city.Id, s.Units[unit.Id].HomeCity);
             Assert.Equal(3, Cities.Housed(s, city));
         }

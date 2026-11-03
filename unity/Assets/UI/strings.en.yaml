@@ -32,6 +32,21 @@ hud.caption.standing: "International support"
 hud.caption.fx: "Foreign currency"
 # Social cohesion (the morale indicator, R-NAT-001), the GDD loop only; the owner's ruling of 15 October 2026 (#380).
 hud.caption.cohesion: "Social cohesion"
+# Each meter's tip says what the meter is and what moves it, under its number in words (MeterTip, #2200; owner's option 1:
+# one key per HudModel.MeterIds id). treasury, immigration, cohesion and standing are sentences of the encyclopedia pages
+# (advisor.page.money_debt, .immigration, .national_meters), word for word. security, support and fx have no page yet and
+# are written from the code: security from model.yaml's border_villages_secure effect (its office's competence and budget,
+# EffectsSystem.Multiplier) and event shifts; support from EffectsSystem.Approval and model.yaml's voter_groups, with
+# coalition stability moving toward it (PoliticsSystem.UpdateStability, R-GOV-001); fx from EconomySystem.Apply's flows,
+# EconomySystem.ConvertDollars (R-MONEY-004) and fx_crisis, which stops the Food import (R-FOOD-002), and event effects on
+# fx_reserves (R-EFX-001).
+hud.tip.treasury: "Money comes in from taxes and from every filled job, and goes out on government spending, the upkeep of our military formations, training and building. When a cost is more than we have, it is still paid: Money stops at zero and the rest becomes debt."
+hud.tip.immigration: "The immigrants arrive as the historical figures bring them, and each city takes a share in proportion to its people. They wait as refugees, and each turn some of them become civilians without work; how many depends on the minister in charge of immigration."
+hud.tip.security: "Security moves with the choices made on event cards. Border villages add to it, more with an able and well-funded Minister of Agriculture."
+hud.tip.support: "Public support is the average approval of the voter groups, each weighing two of Social cohesion, security, housing and Food. Coalition stability moves toward it every turn."
+hud.tip.cohesion: "Social cohesion rises and falls with housing, work, Food, rationing and security."
+hud.tip.standing: "International support moves with the choices made on event cards."
+hud.tip.fx: "Foreign currency comes in from exports, donations and loans, and goes out on imports, which grow with the population, and on dollars converted into Money on the Defence screen during the war. Event cards can add to it or take from it. Once it runs out, the Food import stops until it recovers."
 # The other static texts of Game.uxml, each set by the presenter that owns its element (#193). Each English string is
 # the UXML's own text (HebrewUiTests.EachEnglishStaticTextIsTheUxmlsOwnText), so English shows what it always showed.
 # The top bar (HudPresenter):

@@ -43,6 +43,7 @@ namespace Statecraft.Game.EditorTools
             AssetDatabase.SaveAssets();
             Generated1948Characters.ImportRuntime();
             MakeBuildingPrefabs();
+            MakeGeneratedTownPrefabs();
             Debug.Log(FormattableString.Invariant($"CollectionImport: {CollectionCatalog.Ids.Count(id => !CollectionCatalog.IsBuilding(id) && !CollectionCatalog.IsGenerated(id))} collection models"));
         }
 
@@ -75,6 +76,29 @@ namespace Statecraft.Game.EditorTools
             }
             AssetDatabase.SaveAssets();
             Debug.Log(FormattableString.Invariant($"CollectionImport: {CollectionCatalog.Ids.Count(CollectionCatalog.IsBuilding)} building prefabs"));
+        }
+
+        /// <summary>#2085: Tal Heuberger's generated whole towns, one prefab beside each compatibility FBX
+        /// (CollectionCatalog.PrefabPath): the model with its own material on every renderer, as the placed vehicles' prefabs are.
+        /// Their import settings (the .meta files beside the FBX and the colour map) are left as they are.</summary>
+        [MenuItem("Statecraft/Collection/Make generated town prefabs")]
+        public static void MakeGeneratedTownPrefabs()
+        {
+            foreach (var id in CollectionCatalog.Ids.Where(CollectionCatalog.IsGeneratedTown))
+            {
+                var model = AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.SourceModelPath(id)) ?? throw new InvalidOperationException($"{id}: no model");
+                var mat = AssetDatabase.LoadAssetAtPath<Material>($"{Dir(id)}/{id}.mat") ?? throw new InvalidOperationException($"{id}: no material");
+                var go = (GameObject)PrefabUtility.InstantiatePrefab(model);
+                try
+                {
+                    foreach (var r in go.GetComponentsInChildren<Renderer>(true))
+                        r.sharedMaterials = Enumerable.Repeat(mat, Math.Max(1, r.sharedMaterials.Length)).ToArray();
+                    PrefabUtility.SaveAsPrefabAsset(go, CollectionCatalog.PrefabPath(id, CollectionDetail.Far));
+                }
+                finally { UnityEngine.Object.DestroyImmediate(go); }
+            }
+            AssetDatabase.SaveAssets();
+            Debug.Log(FormattableString.Invariant($"CollectionImport: {CollectionCatalog.Ids.Count(CollectionCatalog.IsGeneratedTown)} generated town prefabs"));
         }
 
         static void ImportModel(string path, bool animated)
