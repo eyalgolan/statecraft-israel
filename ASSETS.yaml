@@ -1106,6 +1106,13 @@ rules:
     source: "Tripo Studio Smart Mesh P2.0, generated 22 October 2026 by Tal Heuberger. Exact provider GLB and embedded 4096px JPEG are retained byte-identical in asset-sources/generated-1948/<id>/. Unity FBX is a documented full-geometry compatibility export, not a provider FBX. Source rigged GLBs contain zero animation clips; both existing locally retargeted idle/walk actions are exported at every frame with no simplification. No decimated copy, texture resize, Crunch or Unity mesh/animation compression. Per-character provenance records source and export hashes."
     status: verified
     note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. One review-only character is editor-only; the Syrian, Iraqi and Egyptian infantry stand on their own formations' tokens, the ALA infantry is the ALA token's third figure, the Lebanese regular stands on the Lebanese army's map-only token and the Bedouin civilian stands at the Bedouin camp areas (the owner signed off all 19 generated models on 27 October 2026, #756). No archival uniform-colour claim."
+  - glob: "unity/Assets/Art/Collection/figure-c04-sabra-pioneer-v3/fire.anim"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    artist: "Tal Heuberger"
+    source: "Tal Heuberger's Armature|fire take inside unity/Assets/Art/Collection/figure-c07-veteran-fighter-v2/figure-c07-veteran-fighter-v2.fbx (PR #507), resampled per frame from that source take (tangents rebuilt, near-static bones dropped) into a clip beside C04's model on 3 November 2026; C04 and C07 share Tal's 67-bone Armature, so the source take binds C04's bones by path. Baked beside the figure because the stream loads each figure's bundle alone."
+    status: verified
+    note: "adapted version; owner confirms Tal's permission, 3 Nov 2026 (#2375). The clip is a derived asset made by unity/Assets/Editor/FireTakeRetarget.cs from a fire take in Tal Heuberger's own FBX in this repository; no FBX or colour map changed. Credit Tal Heuberger; CC BY-NC-ND 4.0, https://creativecommons.org/licenses/by-nc-nd/4.0/. Pinned by BorrowedFireTakeTests."
   - glob: "unity/Assets/Art/Collection/figure-bedouin-civilian-1948-v1/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
@@ -3372,6 +3379,25 @@ rules:
     credit: "Tal Heuberger · CC BY-NC-ND 4.0"
     note: "Public derivative/export distribution authorized 31 October 2026; own paid generation account confirmed. In the game: one still frame (37 of 97) of its byte-identical Unity copy is held by an attacking token's C06 figures (UnitFigurePointFire; owner, 2 November 2026, #2084: \"Yes, for firing units (Recommended)\"); every other figure keeps its existing fire take, and C06 keeps it when the pose source does not arrive. This folder's README is Tal's as delivered on 31 October 2026 and describes the files before that. Cheek/sight/contact limitations remain. Provider/input restrictions remain. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
 
+  # The 1948 soldier's rigged copy (#2384): Tal Heuberger's #336 soldier skinned to the skeleton of their C07 with its takes,
+  # by tools/rig_soldier_1948.py; the colour map is Tal's byte for byte. Tal's delivered files in figure-soldier-1948-v1/ are
+  # unchanged (their rows above).
+  - glob: "unity/Assets/Art/Collection/figure-soldier-1948-v1-rigged/figure-soldier-1948-v1-rigged.fbx"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Rigged copy of Tal Heuberger's figure-soldier-1948-v1 (#336, a static mesh): Tal's mesh (4,187 vertices, 8,054 triangles, no decimation) re-posed into the rest pose of their figure-c07-veteran-fighter-v2 (#507) and skinned to C07's 67-bone skeleton with bone-heat weights, with C07's idle, walk and fire takes, every frame keyed, by tools/rig_soldier_1948.py (Blender 5.2.2). Input SHA-256 in this folder's provenance.json (tools/rig_soldier_1948.py --verify). SHA-256 39545588027f0eb77462a955228dc5d813ff5ec4ed1a5d276d954d0212e9269d."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Issue #2384 (owner, 3 November 2026: \"Ship C07 now, rig Tal's later\"; the owner confirmed Tal's OK for adapted versions the same day, as the issue records): the Yiftach and Negev tokens' third figure walks, idles and fires with this copy (UnitFigures, UnitWeapons). An adapted version of Tal's model under their permission as the owner reported it; no change to the delivered files' rows or to any other model's licence."
+  - glob: "unity/Assets/Art/Collection/figure-soldier-1948-v1-rigged/figure-soldier-1948-v1-rigged_basecolor.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Byte-for-byte copy of Tal Heuberger's figure-soldier-1948-v1_basecolor.jpg (#336; its row above), 2048x2048, beside the rigged copy so its bundle carries its own map. SHA-256 cb30823ff65a23c418986741e4ef88f680d6dd594909d4dd6b68d1ca412d6945."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Issue #2384 (owner, 3 November 2026: \"Ship C07 now, rig Tal's later\"): the same map Tal delivered, beside the rigged copy, under the same terms as its row above."
   # Tal Heuberger's #2083 weapons and #2084 C06 point-fire in the game's Collection: lossless FBX compatibility exports, the
   # delivered colour maps and the byte-for-byte point-fire export.
   - glob: "unity/Assets/Art/Collection/weapon-k98k-v1/weapon-k98k-v1.fbx"

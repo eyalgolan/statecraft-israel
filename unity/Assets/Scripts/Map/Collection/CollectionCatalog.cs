@@ -121,6 +121,12 @@ namespace Statecraft.Game.Map.Collection
         /// <summary>Tal Heuberger's khaki canvas tent, in place of a transit camp's khaki ridge tents up close (CampTentModels).</summary>
         public const string KhakiTent = "generated-1948-08-khaki-canvas-tent";
 
+        /// <summary>The rigged copy of #336's 1948 soldier (#2384; owner, 3 November 2026: "rig Tal's later"): Tal Heuberger's
+        /// static soldier skinned to the 67-bone skeleton their C06 and C07 share, with C07's idle, walk and fire takes
+        /// (tools/rig_soldier_1948.py; its provenance.json beside it). The original, figure-soldier-1948-v1, stays catalogued
+        /// and untouched; the Yiftach and Negev tokens draw this copy in its place (UnitFigures).</summary>
+        public const string Soldier1948Rigged = "figure-soldier-1948-v1-rigged";
+
         /// <summary>Every bundle, with its models in a fixed order.</summary>
         public static readonly IReadOnlyList<(string Bundle, string[] Ids)> Groups = new (string, string[])[]
         {
@@ -134,6 +140,8 @@ namespace Statecraft.Game.Map.Collection
                 "figure-arab-villager-v1", "figure-builder-1950-v1", "figure-elder-immigrant-v1", "figure-immigrant-child-v1",
                 "figure-immigrant-woman-v1", "figure-kibbutz-woman-v1", "figure-soldier-1948-v1", "figure-yemenite-immigrant-v1",
                 "figure-pioneer-farmer-v1-tpose",
+                // the soldier's rigged copy (#2384), the model the Yiftach and Negev tokens draw
+                Soldier1948Rigged,
             }),
             (Vehicles, new[]
             {
@@ -210,7 +218,8 @@ namespace Statecraft.Game.Map.Collection
         };
 
         /// <summary>The models whose near prefab is skinned and plays its idle clip: every person but C05 (his only idle is
-        /// a walk; #507 has him stand still) and #336's soldier (no rig), the sheep and the draught horse.</summary>
+        /// a walk; #507 has him stand still) and #336's soldier as delivered (no rig; his rigged copy plays C07's), the sheep
+        /// and the draught horse.</summary>
         public static readonly IReadOnlyCollection<string> Animated = new HashSet<string>(StringComparer.Ordinal)
         {
             "figure-c01-arriving-man-v2", "figure-c02-townsman-v2", "figure-c03-smith-carpenter-v2", "figure-c04-sabra-pioneer-v3",
@@ -219,6 +228,7 @@ namespace Statecraft.Game.Map.Collection
             "figure-draught-horse-idle-1948-v2", "figure-sheep-idle-1948-v1",
             "figure-arab-villager-v1", "figure-builder-1950-v1", "figure-elder-immigrant-v1", "figure-immigrant-child-v1",
             "figure-immigrant-woman-v1", "figure-kibbutz-woman-v1", "figure-yemenite-immigrant-v1", "figure-pioneer-farmer-v1-tpose",
+            Soldier1948Rigged,
             "figure-syrian-infantry-1948-v1",
             "figure-iraqi-infantry-1948-v1",
             EgyptianInfantry,

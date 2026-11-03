@@ -29,7 +29,7 @@ namespace Statecraft.Game.Map.Units
 
         public const string SabraPioneer = "figure-c04-sabra-pioneer-v3", PioneerVeteran = "figure-c05-pioneer-veteran-v2",
             YoungRecruit = "figure-c06-young-recruit-v2", VeteranFighter = "figure-c07-veteran-fighter-v2",
-            PalmachScout = "figure-c12f-palmach-scout-v2", Soldier1948 = "figure-soldier-1948-v1", ArabLegion = "figure-c08-arab-legion-v2", Irregular = "figure-c09-irregular-v2",
+            PalmachScout = "figure-c12f-palmach-scout-v2", Soldier1948 = CollectionCatalog.Soldier1948Rigged, ArabLegion = "figure-c08-arab-legion-v2", Irregular = "figure-c09-irregular-v2",
             Napoleonchik = "figure-vehicle-napoleonchik-65mm-1948-v2", WillysJeep = "figure-vehicle-willys-jeep-1948-v2",
             SandwichArmouredCar = "figure-vehicle-sandwich-convoy-1948-v2";
 
@@ -56,7 +56,9 @@ namespace Statecraft.Game.Map.Units
         /// figure on some brigade unit tokens, next to C06 and C07"): a rifleman in khaki wearing the knitted stocking cap, the
         /// Palmach's (as C07 wears it), so he stands third on the other two Palmach brigades, the 11th and 12th (their rows'
         /// numbers, palmach.org.il). On Negev's token he takes the third figure's sourced cap from C07
-        /// (<see cref="ThirdOverHeadgear"/>), so it shows C07, C06 and the soldier.</summary>
+        /// (<see cref="ThirdOverHeadgear"/>), so it shows C07, C06 and the soldier. He is drawn as his rigged copy
+        /// (<see cref="CollectionCatalog.Soldier1948Rigged"/>, #2384), which walks, idles and fires with C07's takes and
+        /// holds the K98k (UnitWeapons); Tal's delivered file, with no rig, stays catalogued and is drawn nowhere.</summary>
         public static readonly IReadOnlyDictionary<string, string> ThirdFigure = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["harel"] = PalmachScout, ["yiftach"] = Soldier1948, ["negev"] = Soldier1948,

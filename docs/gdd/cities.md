@@ -33,7 +33,7 @@ The later owner decisions recorded in [S7] do not replace this retained per-city
 
 **Amir's proposal, declined by the owner on 30 October 2026 [S17]:** each player region would pool housing, farms and Industry/workshop jobs through an authored capital. The retained per-city capacity rule remains authoritative.
 
-The proposed regional farm-assignment and field-slot rules are part of that declined proposal and are non-operative; the farmer tier rates agree with main's `gdd-0.3` rule (`R-VET-002`). Existing field and site rules remain authoritative.
+The proposed regional farm-assignment rules (staffing through a capital) are part of that declined proposal and are non-operative. Under `gdd-0.3` each prepared field takes one farmer who lives in its region, and an unworked field produces nothing (owner, 3 November 2026, "One farmer per field (Recommended)" [S24]; Q27); the farmer tier rates agree with main's `gdd-0.3` rule (`R-VET-002`). Under `gdd-0.1` the existing field and site rules remain authoritative.
 
 ### Assignments and income
 
@@ -118,6 +118,7 @@ Individual workforce screens per kibbutz, enemy resident workforce, mothballing,
 - [S21] Owner's 1 November 2026 answers, [GDD 1 November 2026 answers](../GDD.md#1-november-2026-answers).
 - [S22] Owner's 2 November 2026 ruling on the housing surcharge slope (#1703), recorded in `content/gdd03-balance.yaml` (`housing.money_slope`) and `docs/rules/mvp.md` (`R-HOUSE-005`); and the owner's 2 November 2026 answers on #2291, "Yes, 5 pp under GDD 0.3 (Recommended)" for the overflow and "Keep the 2-point loss (Recommended)" for the cohesion term, recorded in `docs/rules/mvp.md` (`R-HOUSE-005`).
 - [S23] Owner's 3 November 2026 ruling on #1700, "Builders in the MVP (Recommended)", [GDD later rulings, 3 November 2026](../GDD.md#later-rulings-3-november-2026).
+- [S24] The owner's ruling on #1694, 3 November 2026, "One farmer per field (Recommended)", https://github.com/eyalgolan/statecraft-israel/issues/1694#issuecomment-6610258738, checked 2026-11-03
 
 ## Open questions
 
