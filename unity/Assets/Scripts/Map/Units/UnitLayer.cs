@@ -760,6 +760,7 @@ namespace Statecraft.Game.Map.Units
                             var vehicle = EmptyPiece(go.transform, $"Vehicle{j}", at, heading);
                             UnitFigures.Dress(vehicle, t.Vehicles[j], map.Residency.Units,
                                 retainFar: true);   // the gun or the jeep: held while its roster token lives (#665)
+                            UnitGunFire.Equip(vehicle, t.Vehicles[j]);   // the 65 mm gun fires when the token attacks (#2373)
                             figures[offsets.Length + j] = (vehicle, offset, heading);
                         }
                         foot.y = highest;

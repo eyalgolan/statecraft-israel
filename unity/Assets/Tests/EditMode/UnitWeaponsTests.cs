@@ -82,7 +82,7 @@ public class UnitWeaponsTests
         Assert.AreEqual(CollectionCatalog.K98k, UnitWeapons.WeaponFor(UnitData.Israel, UnitFigures.VeteranFighter));
         Assert.AreEqual(CollectionCatalog.K98k, UnitWeapons.WeaponFor(UnitData.Israel, UnitFigures.PioneerVeteran));
         Assert.AreEqual(CollectionCatalog.Sten, UnitWeapons.WeaponFor(UnitData.Israel, UnitFigures.PalmachScout), "the Palmach's personal weapon");
-        Assert.IsNull(UnitWeapons.WeaponFor(UnitData.Israel, UnitFigures.Soldier1948), "#336's soldier has no rig: [GAP]");
+        Assert.AreEqual(CollectionCatalog.K98k, UnitWeapons.WeaponFor(UnitData.Israel, UnitFigures.Soldier1948), "#336's soldier, rigged to C07's skeleton (#2384)");
         foreach (var kv in UnitFigures.BySide)
         {
             Assert.IsNull(UnitWeapons.WeaponFor(kv.Key, kv.Value), kv.Key + ": no source gives this army Tal's weapons");
@@ -118,11 +118,11 @@ public class UnitWeaponsTests
     }
 
     [Test]
-    public void AnArabFigureAndTheUnriggedSoldierStayAsTheyWere()
+    public void AnArabFigureStaysAsItWas()
     {
-        foreach (var figure in new[] { UnitFigures.SyrianInfantry, UnitFigures.ArabLegion, UnitFigures.Irregular, UnitFigures.Soldier1948 })
+        foreach (var figure in new[] { UnitFigures.SyrianInfantry, UnitFigures.ArabLegion, UnitFigures.Irregular })
         {
-            var (_, piece) = Token(figure, figure == UnitFigures.Soldier1948 ? UnitData.Israel : "syria");
+            var (_, piece) = Token(figure, "syria");
             Assert.IsFalse(Model(piece).GetComponentsInChildren<Transform>(true).Any(t => t.name == UnitWeapons.HeldName), figure);
             Assert.IsNull(piece.GetComponent<UnitFigureWeapon>(), figure);
         }

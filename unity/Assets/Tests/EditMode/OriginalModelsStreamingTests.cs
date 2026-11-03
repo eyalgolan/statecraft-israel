@@ -14,7 +14,7 @@ public class OriginalModelsStreamingTests
     public void EveryOriginalHasItsOwnBundle()
     {
         var ids = CollectionCatalog.Ids.Where(id => !CollectionCatalog.IsGenerated(id) && !CollectionCatalog.IsGeneratedHouse(id)).ToArray();
-        Assert.AreEqual(73, ids.Length, "all 23 buildings and 50 collection models");
+        Assert.AreEqual(74, ids.Length, "all 23 buildings and 51 collection models (#2384 adds the rigged 1948 soldier)");
         Assert.AreEqual(ids.Length, ids.Select(CollectionCatalog.BundleOf).Distinct().Count(), "one model per bundle");
     }
 

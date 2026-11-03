@@ -512,6 +512,41 @@ public class WorkshopPanelTests
         }
     }
 
+    // R-PROJ-001 under gdd-0.3 (#1700 slice B): the city's one start a turn, worded in the UI's language on both paths a player
+    // meets it: the end of turn's refusal (SimBridge.ReasonText, as the toast shows it) and the panel's line once the city has
+    // started this turn (GddHexPanel.ReasonText). The town is named in the UI's language; the English is the sim's own.
+    [Test]
+    public void TheCityCapRefusalShowsInBothLanguages([Values] bool hebrew)
+    {
+        var t = hebrew ? He : En;
+        var expected = t.Format("city.project_reason.city_cap", hebrew ? TownsHe[City] : Towns[City]);
+
+        // The end of turn: two industry starts for Haifa in one turn; the sim refuses the second.
+        var s = GameSession.New(C03, GoldenRun.Seed, Mode.Historical).State;
+        var hexes = C03.Hexes.Where(h => h.Land && Projects.CheckCityReason(C03, s, "industry", City, h.Q, h.R) == null).Take(2).ToList();
+        Assert.AreEqual(2, hexes.Count, "precondition: two hexes Haifa may build on");
+        var reason = Simulation.Step(C03, s, hexes.Select(h => (Command)new StartProject("industry", City, h.Q, h.R)).ToArray()).Rejected.Single().Reason;
+        Assert.AreEqual(string.Format(System.Globalization.CultureInfo.InvariantCulture, Projects.RefusedCityCap, PlayerText.Settlement(C03, City)), reason,
+            "precondition: the sim's city_cap");
+        Assert.AreEqual(expected, SimBridge.ReasonText(t, reason, C03, TownsHe));
+        if (!hebrew) Assert.AreEqual(reason, expected, "the English string is the sim's own");
+
+        // The panel: Haifa has used its start this turn, so every kind it could build is refused for that one reason (the
+        // winery's missing vineyards aside), said once with no buttons.
+        var (q, r) = Hex(C03);
+        var g = GameSession.New(C03, GoldenRun.Seed, Mode.Historical);
+        g.State.Policies[MapActions.MaabarotPolicy] = 1;   // so the transit camp is refused for the shared reason too
+        g.State.MapActionsTurnDate = g.State.Date;
+        g.State.CityStartsThisTurn[City] = 1;
+        var bridge = new SimBridge(g, t) { TownNamesHe = TownsHe };
+        Assert.AreEqual("city_cap", Projects.CheckCityReason(C03, bridge.State, "housing", City, q, r)?.Kind, "precondition: the sim refuses it");
+        using var ui = new UiTestKit();
+        using var panel = Panel(ui, bridge, t);
+        panel.Show(q, r);
+        Assert.AreEqual(expected, ui.Q<Label>("city-project-reason").text);
+        Assert.IsNull(ui.Root.Q("city-project-housing"), "refused for all alike: no buttons");
+    }
+
     // R-ARMS-006, R-ARMS-007, R-CITY-010: a staffed workshop's cycle under way (staffed months of workshop.staffed_turns and
     // the Money paid), the pause while the enemy holds its city, and the last turn's pauses for its city as the Why screen
     // words them; with no cycle, the next cycle's price at its worker's tier.
@@ -567,7 +602,7 @@ public class WorkshopPanelTests
         var (bridge, id) = Game(C03, t);
         Assert.IsFalse(bridge.State.Workshops.ContainsKey(id), "precondition: never staffed, no record");
         var next = Workshops.NextCyclePrice(C03, bridge.State, id);
-        Assert.AreEqual(5m, next, "gdd03-balance workshop.cost, ordinary (content/gdd03-balance.yaml:306)");
+        Assert.AreEqual(5m, next, "gdd03-balance workshop.cost, ordinary (content/gdd03-balance.yaml)");
         using var panel = Panel(ui, bridge, t);
         var (q, r) = Hex(C03);
         panel.Show(q, r);

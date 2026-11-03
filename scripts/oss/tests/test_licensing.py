@@ -154,13 +154,17 @@ def test_tal_original_licensing_matches_manifest_exactly():
     # the C06 point-fire export byte for byte.
     weapons = {f"unity/Assets/Art/Collection/weapon-{w}-v1/weapon-{w}-v1{x}" for w in ("k98k", "sten") for x in (".fbx", "_basecolor.jpg")} | {
         "unity/Assets/Art/Collection/c06-point-fire-v1/C06-POINT-FIRE-PROVISIONAL-PUBLIC.fbx"}
-    added = sources | towns | plants | weapons
-    assert len(sources) == 24 and len(towns) == 8 and len(plants) == 6 and len(weapons) == 5
+    # #2384 in the game (owner, 3 November 2026): the 1948 soldier's rigged copy, Tal's #336 mesh on their C07's skeleton, and
+    # its colour map, Tal's byte for byte.
+    rigged = {f"unity/Assets/Art/Collection/figure-soldier-1948-v1-rigged/figure-soldier-1948-v1-rigged{x}" for x in (".fbx", "_basecolor.jpg")}
+    added = sources | towns | plants | weapons | rigged
+    assert len(sources) == 24 and len(towns) == 8 and len(plants) == 6 and len(weapons) == 5 and len(rigged) == 2
     added_rows = [r for r in independent if r["glob"] in added]
-    assert {r["glob"] for r in added_rows} == added and len(added_rows) == 43
+    assert {r["glob"] for r in added_rows} == added and len(added_rows) == 45
     assert all("Hula + Arava, map and boards" in r["note"] for r in added_rows if r["glob"] in plants)
     assert all(r["artist"] == "Tal Heuberger" and r["ai_generated"] is True for r in added_rows)
-    assert all("#1177" in r["note"] and "2 November 2026" in r["note"] for r in added_rows)
+    assert all("#1177" in r["note"] and "2 November 2026" in r["note"] for r in added_rows if r["glob"] not in rigged)
+    assert all("#2384" in r["note"] and "3 November 2026" in r["note"] for r in added_rows if r["glob"] in rigged)
     import hashlib
     for r in added_rows:  # each row records its file's SHA-256
         assert hashlib.sha256((ROOT / r["glob"]).read_bytes()).hexdigest() in r["source"], r["glob"]
@@ -178,7 +182,7 @@ def test_tal_original_licensing_matches_manifest_exactly():
     assert all((ROOT / r["glob"]).is_file() for r in fire_rows)
     assert not [r["glob"] for r in rules if r["glob"].endswith("/fire.anim") and r["glob"] not in fire]  # no enemy fire take yet (#2399)
     assert len([r for r in independent if r["glob"] not in added and r not in music and r["glob"] not in fire]) == 50  # the hex-tile props row and the #1901 -light meshes among them
-    assert len(independent) == 95  # 146 originals + 95 independent grants = 241 total
+    assert len(independent) == 97  # 146 originals + 97 independent grants = 243 total
     for row in selected:
         assert row["licence"] == "CC-BY-NC-ND-4.0"
         assert row["artist"] == "Tal Heuberger"

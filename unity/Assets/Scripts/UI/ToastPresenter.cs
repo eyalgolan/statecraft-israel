@@ -32,7 +32,7 @@ namespace Statecraft.Game.UI
             onRouteStep = _ =>
             {
                 var lines = bridge.Session.Now.Why
-                    .Where(x => x.Key == WhyKeys.Arrived || x.Key == WhyKeys.StoppedNoRoute || x.Key == WhyKeys.StoppedFull)
+                    .Where(x => x.Key == WhyKeys.Arrived || x.Key == WhyKeys.StoppedNoRoute || x.Key == WhyKeys.StoppedFull || x.Key == WhyKeys.CardOrderEnded)
                     .Select(x => UnitNames.Line(x, bridge.Content, units, text, TownNamesHe)).ToList();
                 if (lines.Count > 0) Append(string.Join("\n", lines));
             };

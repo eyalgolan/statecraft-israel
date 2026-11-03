@@ -65,15 +65,15 @@ public class CollectionImportTests
     public void TheCatalogKeeps73IndependentOriginalsAndTheGeneratedInfantryBundle()
     {
         var ids = CollectionCatalog.Ids.ToList();
-        Assert.AreEqual(95, ids.Count);
+        Assert.AreEqual(96, ids.Count);
         Assert.AreEqual(ids.Count, ids.Distinct().Count(), "an id in two bundles");
-        Assert.AreEqual(94, CollectionCatalog.Bundles.Count,
-            "73 independent originals, #1763's shared generated bundle and one bundle for each later generated model (#2083's two weapons and #2084's pose source among them)");
+        Assert.AreEqual(95, CollectionCatalog.Bundles.Count,
+            "73 independent originals, the 1948 soldier's rigged copy (#2384), #1763's shared generated bundle and one bundle for each later generated model (#2083's two weapons and #2084's pose source among them)");
         Assert.IsTrue(CollectionCatalog.Bundles.Where(b => b.Bundle != CollectionCatalog.ArabArmies)
             .All(b => b.Ids.Length == 1 && b.Bundle == "collection-" + b.Ids[0]));
-        CollectionAssert.AreEqual(new[] { 21, 13, 6, 10, 5, 2, 4, 4, 4, 2, 1 }, CollectionCatalog.Groups.Select(g => g.Ids.Length));
+        CollectionAssert.AreEqual(new[] { 22, 13, 6, 10, 5, 2, 4, 4, 4, 2, 1 }, CollectionCatalog.Groups.Select(g => g.Ids.Length));
         CollectionAssert.AreEqual(GeneratedInfantry, CollectionCatalog.Bundles.Single(b => b.Bundle == CollectionCatalog.ArabArmies).Ids);
-        Assert.AreEqual(27, CollectionCatalog.Animated.Count);
+        Assert.AreEqual(28, CollectionCatalog.Animated.Count);
         CollectionAssert.IsSubsetOf(CollectionCatalog.Animated, ids);
         CollectionAssert.DoesNotContain(CollectionCatalog.Animated, "figure-c05-pioneer-veteran-v2", "C05's only idle is a walk");
         Assert.AreEqual("collection-vehicle-altalena-lst-1948-v2wl", CollectionCatalog.BundleOf("vehicle-altalena-lst-1948-v2wl"));
@@ -130,8 +130,9 @@ public class CollectionImportTests
     /// <summary>Issue #708, owner ruling of 18 October 2026: "the 8 figures in #708 can be merged without his license line";
     /// and #886, owner ruling of 19 October 2026: "Yes, both" (the pioneer farmer and the Jerusalem variant, on the same
     /// terms). The nine figures offered only in #336 are slimmed like #507's people and stream in the people bundle after its
-    /// twelve; eight keep their idle clip, and the soldier, which #336 ships with no rig, is static at both zooms. Placing
-    /// them is #666, #665, #200 and #886's work, not this import's.</summary>
+    /// twelve; eight keep their idle clip, and the soldier, which #336 ships with no rig, is static at both zooms (his rigged
+    /// copy, #2384, follows the nine as the group's last model). Placing them is #666, #665, #200 and #886's work, not this
+    /// import's.</summary>
     [Test]
     public void TheNineFiguresOf336StreamInThePeopleBundleAfterThe12Of507()
     {
@@ -142,7 +143,8 @@ public class CollectionImportTests
             "figure-pioneer-farmer-v1-tpose",
         };
         var people = CollectionCatalog.Groups.Single(b => b.Bundle == CollectionCatalog.People).Ids;
-        CollectionAssert.AreEqual(nine, people.Skip(12).ToArray());
+        CollectionAssert.AreEqual(nine, people.Skip(12).Take(9).ToArray());
+        CollectionAssert.AreEqual(new[] { CollectionCatalog.Soldier1948Rigged }, people.Skip(21).ToArray(), "the soldier's rigged copy, after #336's nine");
         CollectionAssert.AreEqual(nine.Where(id => id != "figure-soldier-1948-v1"), nine.Where(Animated));
         foreach (var id in nine)
             foreach (var d in new[] { CollectionDetail.Far, CollectionDetail.Near })
@@ -174,6 +176,8 @@ public class CollectionImportTests
                     .ToArray();
             files.AddRange(fire);
             if (Animated(id) || OriginalModelPose.Required(id)) files.Add($"{Dir(id)}/{id}-near.controller");
+            // The 1948 soldier's rigged copy (#2384) records its derivation beside it, as the generated models do.
+            if (id == CollectionCatalog.Soldier1948Rigged) files.Add($"{Dir(id)}/provenance.json");
             foreach (var suffix in new[] { "-far.fbx", "-near.fbx", "-far.prefab", "-near.prefab" })
             {
                 var retained = $"{Dir(id)}/{id}{suffix}";
