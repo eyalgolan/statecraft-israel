@@ -48,8 +48,6 @@ objectives:
     name_he_review: agent-checked
     # R-OBJ-004 (D-B4; owner, 18 October 2026, #738, option (a)): once the Jewish population has reached the milestone,
     # the cities' overflow is at most a share of the people they house and their employed at least a share of civilians.
-    # Then changed (3 Nov 2026): the employed share is over civilians and craftsmen, as R-CITY-005 counts them (owner, #1714:
-    # "Both rulesets (Recommended)").
     completes_when:
       absorbed:
         population_at_least: 1000000   # Q-ABS-1's milestone: the Jewish population passes 1,000,000 (JTA, 22 November 1949)

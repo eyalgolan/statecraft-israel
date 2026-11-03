@@ -34,15 +34,6 @@ options:
     set_rung: 5
     effects:
       - { target: security, delta: 0.02 }
-    # Unit orders (R-ENEMY-005; owner, 1 November 2026, #2087: "military operations must have unit orders", sourced places
-    # only). Carmeli to Manara, 29 October 1948 to the Lebanon armistice, map/units_1948.yaml line 242 (carmeli's order target
-    # "Manara"; he.wiki Operation Hiram and the Haganah Heritage lexicon); the 7th Brigade to al-Malikiyya, 31 October 1948
-    # to the Lebanon armistice, line 628 (brigade_7's order target; Dupuy p. 104); war-1948.md section 3, the Hiram row (line 145).
-    # The hexes are the targets' own (map/unit_anchor_hexes.yaml). An enemy unit on al-Malikiyya's hex refuses the 7th
-    # Brigade's order, as it would the player's, and the turn's refusals say so.
-    unit_orders:
-      - { unit: carmeli, q: 15, r: 3 }
-      - { unit: brigade_7, q: 14, r: 4 }
   - id: advance_into_lebanon
     text: Advance further into Lebanon
     text_he: להתקדם הלאה לתוך לבנון
@@ -51,7 +42,6 @@ options:
     effects:
       - { target: security, delta: 0.025 }
       - { target: intl_standing, delta: -0.08 }
-    # No unit orders: no source places a unit for this alternative (R-ENEMY-005, #749), until one is found.
 sources:
   - { url: "https://en.wikipedia.org/wiki/Operation_Hiram", checked: 2026-10-10 }
   - { url: "https://www.un.org/unispal/document/auto-insert-211203/", checked: 2026-10-14 }

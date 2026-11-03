@@ -143,7 +143,6 @@ public class SchemaTests
     public static IEnumerable<object[]> RealFiles()
     {
         yield return new object[] { "gdd03-events.yaml", "gdd03-events.schema.json" };
-        yield return new object[] { "gdd03-start.yaml", "gdd03-start.schema.json" };
         yield return new object[] { "people.yaml", "people.schema.json" };
         yield return new object[] { "offices.yaml", "offices.schema.json" };
         yield return new object[] { "parties.yaml", "parties.schema.json" };
@@ -199,8 +198,6 @@ public class SchemaTests
         yield return new object[] { "map-overrides.schema.json", "/properties/locations/items", typeof(LocationOverride) };
         yield return new object[] { "gdd03-events.schema.json", "", typeof(ContentLoader).GetNestedType("Gdd03EventsFile", BindingFlags.NonPublic)! };
         yield return new object[] { "gdd03-events.schema.json", "/properties/exclusions/items", typeof(ContentLoader).GetNestedType("EventExclusion", BindingFlags.NonPublic)! };
-        yield return new object[] { "gdd03-start.schema.json", "", typeof(ContentLoader).GetNestedType("Gdd03StartFile", BindingFlags.NonPublic)! };
-        yield return new object[] { "gdd03-start.schema.json", "/properties/military_camps/items", typeof(ContentLoader).GetNestedType("StartCampBinding", BindingFlags.NonPublic)! };
         yield return new object[] { "event.schema.json", "", typeof(GameEvent) };
         yield return new object[] { "event.schema.json", "/properties/conditions/items", typeof(EventCondition) };
         yield return new object[] { "event.schema.json", "/definitions/requirement", typeof(EventRequirement) };

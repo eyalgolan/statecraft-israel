@@ -1,0 +1,322 @@
+{
+  "asset": "figure-c07-veteran-fighter-v2-nokeffiyeh",
+  "creator_credit": "Tal Heuberger",
+  "licence": "CC-BY-NC-ND-4.0",
+  "what": "Tal Heuberger's figure-c07-veteran-fighter-v2 (#507) with the keffiyeh removed, by tools/c07_nokeffiyeh.py (Blender 5.2.2 LTS), under the owner's ruling of 3 November 2026 (\"no israeli soldir should wear a khafia on their neck\"); the owner confirms Tal's permission for adapted versions, 3 November 2026. The mesh is edited: the chart pieces are welded into one surface, the scarf's faces are deleted with the pieces and flaps it leaves, the holes it exposes (the sweater's collar ring and a V down the chest, a crescent at the nape, small gaps on the neck's sides) are closed with new triangles relaxed onto the surrounding body and textured from the texels of the kept faces beside them, and the new vertices are skinned from their neighbours. The kept vertices do not move; the armature, its 67 bones and the nine takes are Tal's, re-exported with every frame keyed; the colour map is Tal's byte for byte. The original files are unchanged.",
+  "inputs": {
+    "figure-c07-veteran-fighter-v2.fbx": "7f839d2d37c6eff68e5dc3cb4f19f3bcb50a780ae9b31f90edda3e6f461b5ec3",
+    "figure-c07-veteran-fighter-v2_basecolor.jpg": "41b38f3a57cfe5acfefc90271dcbb440da43bdf2df4944859bf7a3c85d7a0e57"
+  },
+  "files": {
+    "figure-c07-veteran-fighter-v2-nokeffiyeh.fbx": "7c1330ab5bdbae0fe82fe7a641bae1290db40a6dde920e01b066423e8368117d",
+    "figure-c07-veteran-fighter-v2-nokeffiyeh_basecolor.jpg": "41b38f3a57cfe5acfefc90271dcbb440da43bdf2df4944859bf7a3c85d7a0e57"
+  },
+  "bones": 67,
+  "takes": {
+    "box_01": [
+      1,
+      54
+    ],
+    "defeat_02": [
+      1,
+      204
+    ],
+    "defeat_03": [
+      1,
+      134
+    ],
+    "fire": [
+      1,
+      37
+    ],
+    "hit_to_body_01": [
+      1,
+      32
+    ],
+    "idle": [
+      1,
+      423
+    ],
+    "run": [
+      1,
+      31
+    ],
+    "shoot": [
+      1,
+      218
+    ],
+    "walk": [
+      1,
+      57
+    ]
+  },
+  "take_names": [
+    "Armature|Armature|box_01",
+    "Armature|Armature|defeat_02",
+    "Armature|Armature|defeat_03",
+    "Armature|Armature|fire",
+    "Armature|Armature|hit_to_body_01",
+    "Armature|Armature|idle",
+    "Armature|Armature|run",
+    "Armature|Armature|shoot",
+    "Armature|Armature|walk"
+  ],
+  "fps": 24,
+  "vertices": 14873,
+  "triangles": 29645,
+  "height_m": 0.926,
+  "unweighted_vertices": 0,
+  "max_influences": 4,
+  "scarf_texels_in_box": {
+    "faces": 40,
+    "patches": [
+      5,
+      4,
+      3,
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    "scarf_patches": 0
+  },
+  "open_edges_in_box": {
+    "copy": 172,
+    "original": 303,
+    "new_in_copy": 57,
+    "new_hidden_inside": 23,
+    "new_exposed": 34,
+    "exposed_sample": [
+      [
+        0.038,
+        0.037,
+        0.875
+      ],
+      [
+        0.035,
+        0.011,
+        0.854
+      ],
+      [
+        0.04,
+        0.032,
+        0.876
+      ],
+      [
+        -0.009,
+        0.065,
+        0.886
+      ],
+      [
+        -0.001,
+        0.066,
+        0.886
+      ],
+      [
+        0.026,
+        0.038,
+        0.863
+      ],
+      [
+        0.024,
+        0.038,
+        0.869
+      ],
+      [
+        0.012,
+        0.044,
+        0.881
+      ],
+      [
+        -0.023,
+        0.014,
+        0.843
+      ],
+      [
+        0.008,
+        0.044,
+        0.882
+      ],
+      [
+        0.028,
+        0.04,
+        0.852
+      ],
+      [
+        0.003,
+        0.053,
+        0.884
+      ]
+    ]
+  },
+  "source_mesh": {
+    "vertices": 31742,
+    "faces": 32439,
+    "uv_pieces": 2352
+  },
+  "welded": {
+    "vertices": 16354,
+    "faces": 32437,
+    "boundary_edges": 432,
+    "pieces": 26
+  },
+  "scarf_faces_deleted": 4620,
+  "scarf_pieces": [
+    2148,
+    238,
+    176,
+    164,
+    158,
+    142,
+    140,
+    138,
+    138,
+    134,
+    128,
+    122,
+    120,
+    116,
+    115,
+    114,
+    113,
+    109,
+    107
+  ],
+  "loose_pieces_deleted": [
+    15
+  ],
+  "sticks_out_deleted": [
+    126,
+    7,
+    1,
+    0
+  ],
+  "spikes_deleted": [
+    30,
+    3
+  ],
+  "pinches_cut": [
+    3,
+    0
+  ],
+  "neck_axis_xy": [
+    0.0031,
+    0.032
+  ],
+  "holes_closed": [
+    {
+      "what": "collar ring and chest V",
+      "rim_vertices": 123,
+      "v_rim_vertices": 35,
+      "v_triangles": 33,
+      "ring_faces": 118
+    },
+    {
+      "what": "neck bottom",
+      "rim_vertices": 28
+    },
+    {
+      "what": "nape crescent and neck-side gaps",
+      "open_edges": 76,
+      "nets": [
+        {
+          "open_edges": 4,
+          "free_arc_deg": 337.5,
+          "triangles": 2,
+          "how": "net"
+        },
+        {
+          "open_edges": 9,
+          "free_arc_deg": 308.5,
+          "triangles": 9,
+          "how": "skirt"
+        },
+        {
+          "open_edges": 4,
+          "free_arc_deg": 336.8,
+          "triangles": 2,
+          "how": "net"
+        },
+        {
+          "open_edges": 38,
+          "free_arc_deg": 124.0,
+          "triangles": 6,
+          "how": "skirt"
+        },
+        {
+          "open_edges": 7,
+          "free_arc_deg": 358.9,
+          "triangles": 5,
+          "how": "net"
+        },
+        {
+          "open_edges": 6,
+          "free_arc_deg": 339.6,
+          "triangles": 6,
+          "how": "skirt"
+        },
+        {
+          "open_edges": 4,
+          "free_arc_deg": 318.2,
+          "triangles": 4,
+          "how": "skirt"
+        },
+        {
+          "open_edges": 4,
+          "free_arc_deg": 330.0,
+          "triangles": 3,
+          "how": "skirt"
+        }
+      ]
+    }
+  ],
+  "new_faces": 2024,
+  "new_vertices": 903,
+  "new_face_texels": {
+    "skin": 363,
+    "cloth": 1661
+  },
+  "new_vertex_influences_max": 4,
+  "subdivisions": 2,
+  "relax_iterations": 25,
+  "collar_rib_m": 0.008,
+  "collar_rib_width_m": [
+    0.02,
+    0.035
+  ],
+  "rim_vertices_eased": 125,
+  "rim_ease_passes": 3,
+  "rim_vertices_weighted": 15,
+  "loose_vertices_dropped": 0,
+  "texel_patches": {
+    "cloth": {
+      "texels": [
+        344,
+        400,
+        664,
+        696
+      ],
+      "uv": [
+        0.3359375,
+        0.6484375,
+        0.0546875,
+        0.03125
+      ]
+    },
+    "skin": {
+      "texels": [
+        64,
+        112,
+        508,
+        548
+      ],
+      "uv": [
+        0.0625,
+        0.49609375,
+        0.046875,
+        0.0390625
+      ]
+    }
+  }
+}

@@ -262,10 +262,9 @@ namespace Statecraft.Game.Map.Kits
         /// (<paramref name="x"/>, <paramref name="z"/>), <paramref name="w"/> wide along its own x after a yaw of
         /// <paramref name="yawDeg"/>, <paramref name="d"/> deep; walls from <paramref name="bottom"/> (sunk into the slope) to
         /// <paramref name="ground"/> + <paramref name="h"/>. <paramref name="metresPerReal"/> turns world metres into real
-        /// metres for the facade uv (the symbolic scale). With <paramref name="parapet"/> above 0 and a flat roof, a plastered
-        /// rim stands round the roof's edge (Parapet).</summary>
+        /// metres for the facade uv (the symbolic scale).</summary>
         public void Box(float x, float z, float yawDeg, float w, float d, float bottom, float ground, float h, Color32 wall, Color32 roof,
-            Facade facade, float metresPerReal, bool roofed = false, float parapet = 0f, float parapetThickness = 0f)
+            Facade facade, float metresPerReal, bool roofed = false)
         {
             var c = Corners(x, z, yawDeg, w, d);
             float top = ground + h;
@@ -283,32 +282,7 @@ namespace Statecraft.Game.Map.Kits
                 var r = roof; r.a = 0;
                 Face(new Vector3(c[0].x, top, c[0].y), new Vector3(c[3].x, top, c[3].y), new Vector3(c[2].x, top, c[2].y), new Vector3(c[1].x, top, c[1].y), r,
                     Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero);
-                if (parapet > 0f && 2f * parapetThickness < Mathf.Min(w, d)) Parapet(c, Corners(x, z, yawDeg, w - 2f * parapetThickness, d - 2f * parapetThickness), top, parapet, wall);
             }
-        }
-
-        /// <summary>A flat roof's parapet: a rim <paramref name="height"/> high on the roof
-        /// at <paramref name="roofY"/>, between the footprint's corners <paramref name="outer"/> and the inner corners
-        /// <paramref name="inner"/> (both as Corners gives them). Its outer face continues the wall upwards but is Plain (no
-        /// window rows), so it reads as a light band at the roof's edge; its inner face looks onto the roof; its top is one
-        /// ring of 8 vertices. 40 vertices in all.</summary>
-        void Parapet(Vector2[] outer, Vector2[] inner, float roofY, float height, Color32 colour)
-        {
-            colour.a = (byte)Facade.Plain;
-            float y = roofY + height;
-            Vector3 P(Vector2 q, float h) => new Vector3(q.x, h, q.y);
-            for (int i = 0; i < 4; i++)
-            {
-                int j = (i + 1) % 4;
-                // Outside (as Box's walls), then inside: the same edge reversed, so it faces the roof.
-                Face(P(outer[i], roofY), P(outer[i], y), P(outer[j], y), P(outer[j], roofY), colour, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero);
-                Face(P(inner[j], roofY), P(inner[j], y), P(inner[i], y), P(inner[i], roofY), colour, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero);
-            }
-            int o = pos.Count;
-            for (int i = 0; i < 4; i++) V(P(outer[i], y), Vector3.up, colour, Vector2.zero);
-            for (int i = 0; i < 4; i++) V(P(inner[i], y), Vector3.up, colour, Vector2.zero);
-            // Clockwise seen from above, as the roof (outer i, inner i, inner i+1, outer i+1).
-            for (int i = 0; i < 4; i++) { int j = (i + 1) % 4; Quad(o + i, o + 4 + i, o + 4 + j, o + j); }
         }
 
         /// <summary>A gable roof on a w x d box whose walls end at <paramref name="eaves"/>: the ridge runs along the longer

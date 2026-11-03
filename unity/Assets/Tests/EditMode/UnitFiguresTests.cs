@@ -36,7 +36,7 @@ public class UnitFiguresTests
     /// review-only.</summary>
     static readonly string[] WarModels =
     {
-        "figure-c04-sabra-pioneer-v3", "figure-c05-pioneer-veteran-v2", "figure-c06-young-recruit-v2", "figure-c07-veteran-fighter-v2",
+        "figure-c04-sabra-pioneer-v3", "figure-c05-pioneer-veteran-v2", "figure-c06-young-recruit-v2", CollectionCatalog.VeteranFighterNoKeffiyeh,
         "figure-c12f-palmach-scout-v2", "figure-c08-arab-legion-v2",
         "figure-syrian-infantry-1948-v1", "figure-c09-irregular-v2", "figure-iraqi-infantry-1948-v1", "figure-egyptian-infantry-1948-v1",
         "figure-ala-infantry-1948-v1", "figure-lebanese-regular-1948-v1",
@@ -183,6 +183,28 @@ public class UnitFiguresTests
     }
 
     /// <summary>The mapping table (docs/units.md, "The 1948 Collection on the tokens").</summary>
+    /// <summary>Owner, 3 November 2026: "no israeli soldir should wear a khafia on their neck". The audit of 3 November 2026
+    /// (tools/c07_nokeffiyeh.py) found one such model among the figures the Israeli tokens draw: Tal Heuberger's delivered C07,
+    /// with a black-and-white keffiyeh round the neck. No Israeli token figure, by any headgear, index or row, and no hex tile's
+    /// proto soldier, may be it; the copy without the scarf stands in its place.</summary>
+    [Test]
+    public void NoIsraeliTokenFigureWearsAKeffiyeh()
+    {
+        var keffiyeh = new[] { "figure-c07-veteran-fighter-v2" };
+        CollectionAssert.IsEmpty(UnitFigures.ByHeadgear.Values.Intersect(keffiyeh), "a headgear's figure");
+        CollectionAssert.IsEmpty(UnitFigures.ThirdFigure.Values.Intersect(keffiyeh), "a row's third figure");
+        CollectionAssert.DoesNotContain(keffiyeh, UnitFigures.PioneerVeteran);
+        var headgears = UnitData.Headgears.Concat(new string[] { null }).ToArray();
+        foreach (var u in Units.Where(u => u.Side == UnitData.Israel))
+            foreach (var index in Enumerable.Range(0, 3))
+                foreach (var headgear in headgears)
+                    CollectionAssert.DoesNotContain(keffiyeh, UnitFigures.FigureFor(u, index, headgear), $"{u.Id} figure {index} in {headgear ?? "the default"}");
+        foreach (var (id, figure, _) in Statecraft.HexTiles.HexModels.FigureAliases)
+            CollectionAssert.DoesNotContain(keffiyeh, figure, id);
+        Assert.AreEqual(CollectionCatalog.VeteranFighterNoKeffiyeh, UnitFigures.VeteranFighter);
+        CollectionAssert.Contains(CollectionCatalog.Ids, "figure-c07-veteran-fighter-v2", "Tal's delivered C07 stays catalogued, unchanged");
+    }
+
     [Test]
     public void TheTableGivesEachTokenItsFiguresAndVehicles()
     {

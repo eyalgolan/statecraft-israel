@@ -460,9 +460,6 @@ why.line.on_its_way: "{0} בדרך למשבצת {1}"
 why.line.stopped_no_route: "{0}: עצירה, כי אין מסלול שמגיע למשבצת {1}"
 why.line.stopped_full: "{0}: עצירה, כי משבצת {1} מלאה"
 why.line.arrived: "{0}: הגעה למשבצת {1}"
-# An operation card's order ended with its operation (R-ENEMY-005; the owner's answer 1 on #2087). Agent-drafted Hebrew;
-# native review pending (#564).
-why.line.card_order_ended: "{0}: עצירה, כי פקודת המבצע לנוע למשבצת {1} הסתיימה"
 # B1: the economy, population, effect and security Why lines (CauseKeys, CauseText). A change reads "{0}: שינוי {1}", as
 # event.effect.amount does, so the pattern has Hebrew and UiText marks the amount (#543). Counts as "Label: N" (HE-04);
 # no verb agrees with a placeholder (HE-15). Native review: owner, 25 Oct 2026 (recommendations page), for every
@@ -1245,12 +1242,6 @@ unit.order_refused.not_military: "רק יחידה צבאית מקבלת פקוד
 unit.order_refused.not_yours: "היחידה אינה שלך"
 unit.order_refused.artillery_hold: "ארטילריה אינה מחזיקה בשטח"
 unit.order_refused.already: "היחידה כבר קיבלה פקודה זו"
-# An operation card's refused go-to (R-ENEMY-005; the owner's answer 1 on #2087). Agent-drafted Hebrew; native review
-# pending (#564).
-unit.order_refused.card_order: "לא ניתן היה לבצע את פקודת המבצע ליחידה"
-# An operation card's go-to held back from the last Israeli unit on an occupied place (R-ENEMY-005, R-CTRL-013; #2087).
-# Agent-drafted Hebrew; native review pending (#564).
-unit.order_refused.last_garrison: "היחידה נשארת במקום: היא היחידה הישראלית האחרונה המחזיקה בו"
 
 # #2072 Attack and Reinforce refusals (Combat.Check, Training.Reinforce), shown on the unit card and in the toast. A
 # settlement in {0}/{1} opens the line as its label or follows a prefix, so no verb agrees with its gender (HE-15).

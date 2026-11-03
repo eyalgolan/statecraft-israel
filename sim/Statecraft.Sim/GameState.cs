@@ -107,9 +107,6 @@ namespace Statecraft.Sim
         public SortedDictionary<string, CorridorWork> Corridors = new SortedDictionary<string, CorridorWork>(StringComparer.Ordinal);
         /// <summary>The locked projects.yaml kinds an event option has unlocked (R-EFX-008), by id (ordinal).</summary>
         public SortedSet<string> UnlockedProjects = new SortedSet<string>(StringComparer.Ordinal);
-        /// <summary>The units whose go-to an operation card gave (R-ENEMY-005), by unit id, each with the day the order ends: the
-        /// end of the window of the anchor it goes to (the owner's answer 1 on #2087, "Orders expire with the operation").</summary>
-        public SortedDictionary<int, DateTime> CardOrders = new SortedDictionary<int, DateTime>();
         /// <summary>The next id a new unit, training cohort or city project takes (they share it). Ids are never reused.</summary>
         public int NextId;
         /// <summary>The date each completed objective was completed, by objective id (ordinal).</summary>
@@ -177,7 +174,6 @@ namespace Statecraft.Sim
             c.Workshops = new SortedList<int, Workshop>(Workshops);
             c.Corridors = new SortedDictionary<string, CorridorWork>(Corridors, StringComparer.Ordinal);
             c.UnlockedProjects = new SortedSet<string>(UnlockedProjects, StringComparer.Ordinal);
-            c.CardOrders = new SortedDictionary<int, DateTime>(CardOrders);
             c.Objectives = new SortedDictionary<string, DateTime>(Objectives, StringComparer.Ordinal);
             c.Settlements = new SortedDictionary<string, SettlementControl>(Settlements, StringComparer.Ordinal);
             c.PrisonersHeld = new SortedDictionary<string, int>(PrisonersHeld, StringComparer.Ordinal);
@@ -276,8 +272,6 @@ namespace Statecraft.Sim
             if (Workshops.Count > 0) Section("wshop", '[', ']', Workshops.Values.Select(x => x.Canonical()));   // R-ARMS-005, gdd-0.3 only
             if (Corridors.Count > 0) Section("corr", '{', '}', Corridors.Values.Select(x => x.Canonical()));
             if (UnlockedProjects.Count > 0) Section("unlocked", '[', ']', UnlockedProjects);
-            if (CardOrders.Count > 0)   // R-ENEMY-005: only while a card's order stands, so a game with none hashes as before
-                Section("cardorders", '{', '}', CardOrders.Select(kv => kv.Key.ToString(CultureInfo.InvariantCulture) + "=" + kv.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
             if (NextId != 0) { Sep(); Nl(); sb.Append("next=").Append(NextId.ToString(CultureInfo.InvariantCulture)); }
             if (Objectives.Count > 0)
                 Section("obj", '{', '}', Objectives.Select(kv => kv.Key + "=" + kv.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));

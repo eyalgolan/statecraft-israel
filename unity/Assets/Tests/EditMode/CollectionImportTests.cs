@@ -62,15 +62,15 @@ public class CollectionImportTests
     public void TheCatalogKeeps73IndependentOriginalsAndTheGeneratedInfantryBundle()
     {
         var ids = CollectionCatalog.Ids.ToList();
-        Assert.AreEqual(95, ids.Count);
+        Assert.AreEqual(96, ids.Count);
         Assert.AreEqual(ids.Count, ids.Distinct().Count(), "an id in two bundles");
-        Assert.AreEqual(94, CollectionCatalog.Bundles.Count,
-            "73 independent originals, #1763's shared generated bundle and one bundle for each later generated model (#2083's two weapons and #2084's pose source among them)");
+        Assert.AreEqual(95, CollectionCatalog.Bundles.Count,
+            "73 independent originals, C07's keffiyeh-free copy, #1763's shared generated bundle and one bundle for each later generated model (#2083's two weapons and #2084's pose source among them)");
         Assert.IsTrue(CollectionCatalog.Bundles.Where(b => b.Bundle != CollectionCatalog.ArabArmies)
             .All(b => b.Ids.Length == 1 && b.Bundle == "collection-" + b.Ids[0]));
-        CollectionAssert.AreEqual(new[] { 21, 13, 6, 10, 5, 2, 4, 4, 4, 2, 1 }, CollectionCatalog.Groups.Select(g => g.Ids.Length));
+        CollectionAssert.AreEqual(new[] { 22, 13, 6, 10, 5, 2, 4, 4, 4, 2, 1 }, CollectionCatalog.Groups.Select(g => g.Ids.Length));
         CollectionAssert.AreEqual(GeneratedInfantry, CollectionCatalog.Bundles.Single(b => b.Bundle == CollectionCatalog.ArabArmies).Ids);
-        Assert.AreEqual(27, CollectionCatalog.Animated.Count);
+        Assert.AreEqual(28, CollectionCatalog.Animated.Count);
         CollectionAssert.IsSubsetOf(CollectionCatalog.Animated, ids);
         CollectionAssert.DoesNotContain(CollectionCatalog.Animated, "figure-c05-pioneer-veteran-v2", "C05's only idle is a walk");
         Assert.AreEqual("collection-vehicle-altalena-lst-1948-v2wl", CollectionCatalog.BundleOf("vehicle-altalena-lst-1948-v2wl"));
@@ -139,7 +139,8 @@ public class CollectionImportTests
             "figure-pioneer-farmer-v1-tpose",
         };
         var people = CollectionCatalog.Groups.Single(b => b.Bundle == CollectionCatalog.People).Ids;
-        CollectionAssert.AreEqual(nine, people.Skip(12).ToArray());
+        CollectionAssert.AreEqual(nine, people.Skip(12).Take(9).ToArray());
+        CollectionAssert.AreEqual(new[] { CollectionCatalog.VeteranFighterNoKeffiyeh }, people.Skip(21).ToArray(), "C07's keffiyeh-free copy, after #336's nine");
         CollectionAssert.AreEqual(nine.Where(id => id != "figure-soldier-1948-v1"), nine.Where(Animated));
         foreach (var id in nine)
             foreach (var d in new[] { CollectionDetail.Far, CollectionDetail.Near })
@@ -167,6 +168,8 @@ public class CollectionImportTests
                 return new[] { CollectionCatalog.SourceModelPath(id), $"{Dir(id)}/{id}.mat", ColourMap(id), $"{Dir(id)}/{id}.prefab", $"{Dir(id)}/provenance.json" }
                     .Concat(CollectionCatalog.IsGeneratedProp(id) || CollectionCatalog.IsGeneratedTown(id) || CollectionCatalog.IsGeneratedWeapon(id) ? Array.Empty<string>() : new[] { $"{Dir(id)}/{id}.controller" }).ToArray();
             if (Animated(id) || OriginalModelPose.Required(id)) files.Add($"{Dir(id)}/{id}-near.controller");
+            // C07's keffiyeh-free copy (owner, 3 November 2026) records its derivation beside it, as the generated models do.
+            if (id == CollectionCatalog.VeteranFighterNoKeffiyeh) files.Add($"{Dir(id)}/provenance.json");
             foreach (var suffix in new[] { "-far.fbx", "-near.fbx", "-far.prefab", "-near.prefab" })
             {
                 var retained = $"{Dir(id)}/{id}{suffix}";

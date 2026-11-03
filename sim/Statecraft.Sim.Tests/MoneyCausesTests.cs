@@ -312,7 +312,7 @@ public class MoneyCausesTests
         for (int t = 1; t < 1000 && s.GameOver == null; t++)
         {
             var r = Simulation.Step(Real, s, GoldenRun.Orders(Real, s));
-            Assert.DoesNotContain(r.Rejected, j => !WarEvents1948Tests.IsTheMalkiyaRefusal(j));   // R-ENEMY-005: Hiram's refused order, pinned there
+            Assert.Empty(r.Rejected);
             foreach (var w in r.Why)
             {
                 if (w.Key == CauseKeys.Paid) paid.Add(w.Args[0]);

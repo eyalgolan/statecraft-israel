@@ -3357,6 +3357,25 @@ rules:
     credit: "Tal Heuberger · CC BY-NC-ND 4.0"
     note: "Public derivative/export distribution authorized 31 October 2026; own paid generation account confirmed. In the game: one still frame (37 of 97) of its byte-identical Unity copy is held by an attacking token's C06 figures (UnitFigurePointFire; owner, 2 November 2026, #2084: \"Yes, for firing units (Recommended)\"); every other figure keeps its existing fire take, and C06 keeps it when the pose source does not arrive. This folder's README is Tal's as delivered on 31 October 2026 and describes the files before that. Cheek/sight/contact limitations remain. Provider/input restrictions remain. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
 
+  # C07's keffiyeh-free copy (owner, 3 November 2026: "no israeli soldir should wear a khafia on their neck"): Tal Heuberger's
+  # #507 veteran fighter with the scarf removed and the neck and collar closed, by tools/c07_nokeffiyeh.py; the colour map is
+  # Tal's byte for byte. Tal's delivered files in figure-c07-veteran-fighter-v2/ are unchanged (their rows above).
+  - glob: "unity/Assets/Art/Collection/figure-c07-veteran-fighter-v2-nokeffiyeh/figure-c07-veteran-fighter-v2-nokeffiyeh.fbx"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Adapted copy of Tal Heuberger's figure-c07-veteran-fighter-v2 (#507): the mesh with the keffiyeh's 4,620 faces deleted (with the pieces and flaps they leave), the sweater's collar ring and chest V, the nape and the neck's sides closed with 2,024 new triangles relaxed onto the surrounding body and textured from plain patches of Tal's map, the new vertices skinned from their neighbours; the kept vertices unmoved but the sweater's cut rim eased along the surface; the 67-bone rig and nine takes Tal's, re-exported every frame keyed, by tools/c07_nokeffiyeh.py (Blender 5.2.2). Input SHA-256 in this folder's provenance.json (tools/c07_nokeffiyeh.py --verify). SHA-256 7c1330ab5bdbae0fe82fe7a641bae1290db40a6dde920e01b066423e8368117d."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Adapted version (keffiyeh removed per owner ruling 3 Nov 2026); owner confirms Tal's permission, 3 Nov 2026. Owner, 3 November 2026: \"no israeli soldir should wear a khafia on their neck\": every Israeli token that wore the knitted stocking cap drew Tal's C07 with its scarf (UnitFigures.ByHeadgear); they draw this copy in its place, as do the hex tiles' proto C07 (HexModels). No change to the delivered files' rows or to any other model's licence."
+  - glob: "unity/Assets/Art/Collection/figure-c07-veteran-fighter-v2-nokeffiyeh/figure-c07-veteran-fighter-v2-nokeffiyeh_basecolor.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Byte-for-byte copy of Tal Heuberger's figure-c07-veteran-fighter-v2_basecolor.jpg (#507; its row above), 1024x1024, beside the adapted copy so its bundle carries its own map. SHA-256 41b38f3a57cfe5acfefc90271dcbb440da43bdf2df4944859bf7a3c85d7a0e57."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Adapted version (keffiyeh removed per owner ruling 3 Nov 2026); owner confirms Tal's permission, 3 Nov 2026: the same map Tal delivered, unchanged, beside the keffiyeh-free copy, which textures its new faces from two plain patches of it (owner, 3 November 2026). Under the same terms as its row above."
   # Tal Heuberger's #2083 weapons and #2084 C06 point-fire in the game's Collection: lossless FBX compatibility exports, the
   # delivered colour maps and the byte-for-byte point-fire export.
   - glob: "unity/Assets/Art/Collection/weapon-k98k-v1/weapon-k98k-v1.fbx"

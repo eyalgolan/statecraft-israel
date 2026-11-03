@@ -41,14 +41,13 @@ namespace Statecraft.Sim
             HoldsFire = "holds_fire", AttackCalledOff = "attack_called_off", Engagement = "engagement", Destroyed = "destroyed",
             Retreated = "retreated", SurrenderedPrisoners = "surrendered_prisoners", SurrenderedHeld = "surrendered_held",
             SentHome = "sent_home", Withdrew = "withdrew", OnItsWay = "on_its_way",
-            StoppedNoRoute = "stopped_no_route", StoppedFull = "stopped_full", Arrived = "arrived",
-            CardOrderEnded = "card_order_ended";
+            StoppedNoRoute = "stopped_no_route", StoppedFull = "stopped_full", Arrived = "arrived";
 
         public static readonly IReadOnlyList<string> All = new[]
         {
             UnitMoved, FortifyLost, Fortifying, Holds, AttackEndedTruce, AttackOrdered, AttackEnded, HoldsFire,
             AttackCalledOff, Engagement, Destroyed, Retreated, SurrenderedPrisoners, SurrenderedHeld, SentHome,
-            Withdrew, OnItsWay, StoppedNoRoute, StoppedFull, Arrived, CardOrderEnded,
+            Withdrew, OnItsWay, StoppedNoRoute, StoppedFull, Arrived,
         };
     }
 

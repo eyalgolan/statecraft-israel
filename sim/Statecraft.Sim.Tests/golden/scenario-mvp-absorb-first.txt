@@ -117,13 +117,13 @@ city{
   tiberias=6,2,8,2,1,c0.18928571428571433 [3FC83A83A83A83AA]
   zikhron_yaakov=2,1,2,1,1,c0.35 [3FD6666666666666]
 units[
-  0:veteran_soldier@4,14|side=israel|strength=4
-  1:veteran_soldier@15,3|side=israel|strength=2
+  0:veteran_soldier@11,11|side=israel|strength=4
+  1:veteran_soldier@6,9|side=israel|strength=2
   2:veteran_soldier@0,17|side=israel|strength=4
-  3:veteran_soldier@-3,24|side=israel|strength=3
-  4:veteran_soldier@-9,29|side=israel|strength=3
+  3:veteran_soldier@-3,21|side=israel|strength=3
+  4:veteran_soldier@-6,26|side=israel|strength=3
   5:veteran_soldier@0,26|side=israel|strength=3
-  7:veteran_soldier@-10,35|side=israel|strength=1
+  7:veteran_soldier@-11,31|side=israel|strength=1
   8:egyptian_army@-8,27|side=egypt|strength=10|order=fortify|target=-8,27
   9:arab_legion@-3,25|side=jordan|strength=3|order=fortify|target=-3,25
   10:syrian_army@15,6|side=syria|strength=3|order=fortify|target=15,6
@@ -390,9 +390,6 @@ cproj[
 next=273
 obj{
   absorb_immigrants=1950-01-15
-ctrl{
-  beersheba=owner=israel,state=awaiting_choice,since=1949-01-15,fled=1
-  ramla=owner=israel,state=awaiting_choice,since=1948-09-15,fled=1
 score=100
 scoreparts=100,0,0
 food=3003,1001,0

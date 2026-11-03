@@ -28,7 +28,7 @@ namespace Statecraft.Game.Map.Units
         public const string ModelName = "CollectionModel";
 
         public const string SabraPioneer = "figure-c04-sabra-pioneer-v3", PioneerVeteran = "figure-c05-pioneer-veteran-v2",
-            YoungRecruit = "figure-c06-young-recruit-v2", VeteranFighter = "figure-c07-veteran-fighter-v2",
+            YoungRecruit = "figure-c06-young-recruit-v2", VeteranFighter = CollectionCatalog.VeteranFighterNoKeffiyeh,
             PalmachScout = "figure-c12f-palmach-scout-v2", Soldier1948 = "figure-soldier-1948-v1", ArabLegion = "figure-c08-arab-legion-v2", Irregular = "figure-c09-irregular-v2",
             Napoleonchik = "figure-vehicle-napoleonchik-65mm-1948-v2", WillysJeep = "figure-vehicle-willys-jeep-1948-v2",
             SandwichArmouredCar = "figure-vehicle-sandwich-convoy-1948-v2";
@@ -39,7 +39,9 @@ namespace Statecraft.Game.Map.Units
 
         /// <summary>An Israeli rifleman's figure by his headgear (the sourced <see cref="UnitEntry.Headgear"/>, or the uniform
         /// default), as Tal Heuberger's figures wear them and #507 paired them: the bush (slouch) hat is the sabra pioneer (C04), the
-        /// Mk II steel helmet the young recruit (C06), the Palmach's knitted stocking cap the veteran fighter (C07).</summary>
+        /// Mk II steel helmet the young recruit (C06), the Palmach's knitted stocking cap the veteran fighter (C07), drawn as his
+        /// keffiyeh-free copy (<see cref="CollectionCatalog.VeteranFighterNoKeffiyeh"/>; owner, 3 November 2026: "no israeli soldir
+        /// should wear a khafia on their neck"); Tal's delivered C07, with the scarf, stays catalogued and is drawn nowhere.</summary>
         public static readonly IReadOnlyDictionary<string, string> ByHeadgear = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             [UnitData.SlouchHat] = SabraPioneer, [UnitData.SteelHelmet] = YoungRecruit, [UnitData.WoolCap] = VeteranFighter,

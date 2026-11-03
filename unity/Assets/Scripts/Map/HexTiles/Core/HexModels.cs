@@ -100,7 +100,7 @@ namespace Statecraft.HexTiles
         public static readonly (string id, string figure, string level)[] FigureAliases =
         {
             ("proto:figure-palmach-scout-c12f-1948-v2", "figure-c12f-palmach-scout-v2", "near"),
-            ("proto:figure-veteran-fighter-c07-1948-v2", "figure-c07-veteran-fighter-v2", "near"),
+            ("proto:figure-veteran-fighter-c07-1948-v2", CollectionCatalog.VeteranFighterNoKeffiyeh, "near"),   // the keffiyeh-free copy (owner, 3 November 2026)
             ("proto:figure-young-recruit-c06-1948-v2", "figure-c06-young-recruit-v2", "near"),
             ("proto:figure-townsman-c02-1948-v2", "figure-c02-townsman-v2", "far"),
             ("proto:figure-woman-blue-dress-c10-1948-v2", "figure-c10-woman-blue-dress-v2", "far"),

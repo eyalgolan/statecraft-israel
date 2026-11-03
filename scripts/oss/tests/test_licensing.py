@@ -154,13 +154,24 @@ def test_tal_original_licensing_matches_manifest_exactly():
     # the C06 point-fire export byte for byte.
     weapons = {f"unity/Assets/Art/Collection/weapon-{w}-v1/weapon-{w}-v1{x}" for w in ("k98k", "sten") for x in (".fbx", "_basecolor.jpg")} | {
         "unity/Assets/Art/Collection/c06-point-fire-v1/C06-POINT-FIRE-PROVISIONAL-PUBLIC.fbx"}
-    added = sources | towns | plants | weapons
-    assert len(sources) == 24 and len(towns) == 8 and len(plants) == 6 and len(weapons) == 5
+    # C07's keffiyeh-free copy (owner, 3 November 2026: "no israeli soldir should wear a khafia on their neck"): the adapted
+    # FBX and its colour map, Tal's byte for byte; an explicit path row each (no folder fallback to the code row).
+    nokeffiyeh = {f"unity/Assets/Art/Collection/figure-c07-veteran-fighter-v2-nokeffiyeh/figure-c07-veteran-fighter-v2-nokeffiyeh{x}" for x in (".fbx", "_basecolor.jpg")}
+    added = sources | towns | plants | weapons | nokeffiyeh
+    assert len(sources) == 24 and len(towns) == 8 and len(plants) == 6 and len(weapons) == 5 and len(nokeffiyeh) == 2
     added_rows = [r for r in independent if r["glob"] in added]
-    assert {r["glob"] for r in added_rows} == added and len(added_rows) == 43
+    assert {r["glob"] for r in added_rows} == added and len(added_rows) == 45
     assert all("Hula + Arava, map and boards" in r["note"] for r in added_rows if r["glob"] in plants)
     assert all(r["artist"] == "Tal Heuberger" and r["ai_generated"] is True for r in added_rows)
-    assert all("#1177" in r["note"] and "2 November 2026" in r["note"] for r in added_rows)
+    assert all("#1177" in r["note"] and "2 November 2026" in r["note"] for r in added_rows if r["glob"] not in nokeffiyeh)
+    for r in added_rows:
+        if r["glob"] in nokeffiyeh:
+            assert "version (keffiyeh removed per owner ruling 3 Nov 2026); owner confirms Tal's permission, 3 Nov 2026" in r["note"], r["glob"]
+            assert r["licence"] == "CC-BY-NC-ND-4.0" and r["status"] == "verified"
+    licensing = (ROOT / "LICENSING.md").read_text(encoding="utf-8")
+    row = next(l for l in licensing.splitlines() if l.startswith("| Tal Heuberger's C07 veteran fighter, keffiyeh-free copy"))
+    assert "`unity/Assets/Art/Collection/figure-c07-veteran-fighter-v2-nokeffiyeh/`" in row and "CC BY-NC-ND 4.0" in row
+    assert "version (keffiyeh removed per owner ruling 3 Nov 2026); owner confirms Tal's permission, 3 Nov 2026" in row
     import hashlib
     for r in added_rows:  # each row records its file's SHA-256
         assert hashlib.sha256((ROOT / r["glob"]).read_bytes()).hexdigest() in r["source"], r["glob"]
@@ -168,7 +179,7 @@ def test_tal_original_licensing_matches_manifest_exactly():
     music = [r for r in independent if r["glob"] == "unity/Assets/StreamingAssets/audio/music/Main_1.3.ogg"]
     assert len(music) == 1 and music[0]["artist"] == "Afik Faerman" and music[0]["ai_generated"] is False
     assert len([r for r in independent if r["glob"] not in added and r not in music]) == 50  # the hex-tile props row and the #1901 -light meshes among them
-    assert len(independent) == 94  # 146 originals + 94 independent grants = 240 total
+    assert len(independent) == 96  # 146 originals + 96 independent grants = 242 total
     for row in selected:
         assert row["licence"] == "CC-BY-NC-ND-4.0"
         assert row["artist"] == "Tal Heuberger"

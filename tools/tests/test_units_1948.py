@@ -25,9 +25,6 @@ def sources(u):
     for a in u['anchors']:
         out += a['sources']
         out += (a.get('toward') or {}).get('sources') or []
-    # An order target (owner, 2 November 2026, #2087, option 1) keeps the anchor rules, so its sources count here too.
-    for t in u.get('order_targets') or []:
-        out += t['sources']
     for t in u.get('aircraft') or []:
         out += t['sources']
     out += u.get('headgear_sources') or []
@@ -45,7 +42,7 @@ def wiki(s):
 
 def test_every_window_ends_for_a_stated_reason():
     for u in UNITS:
-        for a in u['anchors'] + (u.get('order_targets') or []):   # an order target ends by the anchor rules (#2087)
+        for a in u['anchors']:
             where = f"{u['id']} {a['place']}"
             assert a['sources'], where
             assert a.get('end_basis') in ('source', 'front_armistice'), where

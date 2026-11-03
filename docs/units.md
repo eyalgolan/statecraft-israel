@@ -264,7 +264,7 @@ own root rotation kept (the FBX axis turn, -90 degrees about X), so the camera's
 |---|---|---|---|
 | C04 sabra pioneer | an Israeli rifleman in the bush hat (the uniform default's first figure; the showcase trio's first) | #507's pairing | always |
 | C06 young recruit | an Israeli rifleman in the Mk II steel helmet (every token's second figure) | #507's pairing | always |
-| C07 veteran fighter | an Israeli rifleman in the knitted stocking cap: the Negev Brigade's first, the showcase's third | the Negev headgear photographs (Sources) | always |
+| C07 veteran fighter | an Israeli rifleman in the knitted stocking cap: the Negev Brigade's first, the showcase's third. Drawn as his keffiyeh-free copy, `figure-c07-veteran-fighter-v2-nokeffiyeh` (owner, 3 November 2026: "no israeli soldir should wear a khafia on their neck"): Tal's C07 with the black-and-white scarf removed and the neck and the sweater's collar closed (`tools/c07_nokeffiyeh.py`, its `provenance.json` beside the model), with C07's rig and nine takes; Tal's delivered file, with the scarf, is unchanged and drawn nowhere | the Negev headgear photographs (Sources); the owner's ruling of 3 November 2026 | always |
 | C05 pioneer veteran | the third figure of every Israeli brigade with the uniform default, except Harel and Yiftach | a presentation choice: the default's third figure is not sourced | always |
 | #336's 1948 soldier | the third figure of Yiftach and Negev, the Palmach brigades other than Harel: a rifleman in khaki in the Palmach's knitted stocking cap, so Negev's token shows C07, C06 and him and keeps its sourced caps | owner, 21 October 2026 (#708, through the coordinator): "a third figure on some brigade unit tokens, next to C06 and C07"; the rows' numbers (11th and 12th Brigade (Palmach)) | always |
 | C12F Palmach scout | Harel's third figure, at Sha'ar HaGai on the convoy road | Harel's row (a Palmach brigade escorting the convoys, Izkor); en.wiki Netiva Ben-Yehuda (a Palmach woman's duties included "escorting convoys") | always |
@@ -290,6 +290,10 @@ own root rotation kept (the FBX axis turn, -90 degrees about X), so the camera's
   has no rig and keeps his still far model too. The vehicles stay far.
 - **Fail open:** an Israeli figure keeps its code-built mesh until its model arrives, and for good if the bundle is
   missing or damaged; a vehicle and an Arab force's token are not drawn until their model arrives.
+- **No keffiyeh on an Israeli soldier** (owner, 3 November 2026: "no israeli soldir should wear a khafia on their neck"):
+  the audit of 3 November 2026 found one such model among the figures the Israeli tokens draw, Tal's delivered C07; the
+  tokens and the hex tiles' proto C07 draw his keffiyeh-free copy instead. `UnitFiguresTests.NoIsraeliTokenFigureWearsAKeffiyeh`
+  keeps the delivered C07 off every Israeli token figure, by any headgear, index or row.
 - Tests: `UnitFiguresTests` (every one of the nine is placed on some day of the war; the table; the swap; arms down;
   fail open; the close-zoom swap and its idle clip, the missing near model and C05).
 

@@ -120,6 +120,14 @@ namespace Statecraft.Game.Map.Collection
         /// <summary>Tal Heuberger's khaki canvas tent, in place of a transit camp's khaki ridge tents up close (CampTentModels).</summary>
         public const string KhakiTent = "generated-1948-08-khaki-canvas-tent";
 
+        /// <summary>The keffiyeh-free copy of Tal Heuberger's C07 veteran fighter (owner, 3 November 2026: "no israeli soldir
+        /// should wear a khafia on their neck"; the owner confirms Tal's permission for adapted versions the same day): C07's
+        /// mesh with the scarf removed and the neck and collar closed, its rig and nine takes as Tal's, by
+        /// tools/c07_nokeffiyeh.py (its provenance.json beside it). The original, figure-c07-veteran-fighter-v2, stays
+        /// catalogued and untouched; the Israeli tokens draw this copy in its place (UnitFigures), as do the hex tiles'
+        /// proto C07 (HexModels).</summary>
+        public const string VeteranFighterNoKeffiyeh = "figure-c07-veteran-fighter-v2-nokeffiyeh";
+
         /// <summary>Every bundle, with its models in a fixed order.</summary>
         public static readonly IReadOnlyList<(string Bundle, string[] Ids)> Groups = new (string, string[])[]
         {
@@ -133,6 +141,8 @@ namespace Statecraft.Game.Map.Collection
                 "figure-arab-villager-v1", "figure-builder-1950-v1", "figure-elder-immigrant-v1", "figure-immigrant-child-v1",
                 "figure-immigrant-woman-v1", "figure-kibbutz-woman-v1", "figure-soldier-1948-v1", "figure-yemenite-immigrant-v1",
                 "figure-pioneer-farmer-v1-tpose",
+                // C07's keffiyeh-free copy (owner, 3 November 2026), the model the Israeli tokens draw for the stocking cap
+                VeteranFighterNoKeffiyeh,
             }),
             (Vehicles, new[]
             {
@@ -218,6 +228,7 @@ namespace Statecraft.Game.Map.Collection
             "figure-draught-horse-idle-1948-v2", "figure-sheep-idle-1948-v1",
             "figure-arab-villager-v1", "figure-builder-1950-v1", "figure-elder-immigrant-v1", "figure-immigrant-child-v1",
             "figure-immigrant-woman-v1", "figure-kibbutz-woman-v1", "figure-yemenite-immigrant-v1", "figure-pioneer-farmer-v1-tpose",
+            VeteranFighterNoKeffiyeh,
             "figure-syrian-infantry-1948-v1",
             "figure-iraqi-infantry-1948-v1",
             EgyptianInfantry,
