@@ -456,6 +456,10 @@ why.cause.borrowed.occupation: "הלוואה של {0} לעלות ההחזקה ({
 why.cause.borrowed.event: "הלוואה של {0} עבור {1}"
 # The gdd-0.3 arms workshop's cycle (#1701, R-ARMS-006). Agent-drafted Hebrew; native review pending (#564).
 why.cause.borrowed.workshop: "הלוואה של {0} למחזור עבודה בסדנת נשק"
+# The gdd-0.3 housing surcharge (#1703, R-HOUSE-005), not part of #1642's owner review above. The word "היטל דיור" is the
+# owner's choice (2 Nov 2026: "היטל דיור (Recommended)"); the rest of the line is agent-drafted Hebrew, native review
+# pending (#564).
+why.cause.borrowed.housing_surcharge: "הלוואה של {0} להיטל הדיור"
 # #2199: the why.cause.paid.* lines below are agent-drafted Hebrew, not part of #1642's owner review above. Each reuses
 # its why.cause.borrowed.* purpose phrase, except paid.occupation, which is newly worded. Native review pending (#564).
 why.cause.paid.corridor: "{0}: שינוי {1} (לבניית קטע של כביש או מסילה)"
@@ -1061,6 +1065,11 @@ share.site_downloaded: "אפשר לצרף לפוסט את התמונה שהור�
 # Event/upkeep cause templates (#1680, #564), review state per key.
 # agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved recommendation).
 why.cause.military_upkeep: "{0}: שינוי {1} (תחזוקה צבאית)"
+# The gdd-0.3 housing surcharge and cohesion lines (#1703, R-HOUSE-005). Agent-drafted Hebrew; native review pending (#564).
+# The surcharge's word "היטל דיור" is the owner's choice (2 Nov 2026: "היטל דיור (Recommended)"), and "מצב הדיור" is
+# Q-UI-2's approved term for housing condition; the rest of each line awaits the native read.
+why.cause.housing_surcharge: "{0}: שינוי {1} (היטל דיור)"
+why.cause.housing_cohesion: "{0}: שינוי {1} (מצב הדיור)"
 # agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted).
 why.cause.event_new: "אירוע חדש: {0}"
 # agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted).
