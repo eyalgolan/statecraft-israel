@@ -52,7 +52,7 @@ namespace Statecraft.Sim
             foreach (var port in fixturePorts) { RequiredText(port, "fixture_port"); ports.Add(port); }
             if (!ports.Contains(doc.FixturePort!)) throw Error("fixture_port", "unknown synthetic fixture reference");
 
-            // R-CITY-003: M content/gdd03-balance.yaml:287-298. Preserve Agreed/Default; Deferred is never numeric.
+            // R-CITY-003: M content/gdd03-balance.yaml `immigration.*`. Preserve Agreed/Default; Deferred is never numeric.
             var interval = Numbers(catalogue, "immigration.ship_interval", "Agreed", 1)[0];
             var average = Numbers(catalogue, "immigration.units_per_ship", "Agreed", 1)[0];
             var mix = Numbers(catalogue, "immigration.mix", "Default", 4);
