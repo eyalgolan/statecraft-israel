@@ -443,6 +443,23 @@ namespace Statecraft.Game.Tests
             }
         }
 
+        /// <summary>The residency anchors' radius (FillResidencyAnchors, the row's own ClearanceOf(w), from #2274) is the radius
+        /// #2351 gave them (ClearanceOf(w.Model)) for every row there is: every sourced placement and a built arms workshop's b21.</summary>
+        [Test]
+        public void EachRowsResidencyRadiusIsItsModelsClearance()
+        {
+            var c = Rules(Statecraft.Sim.SaveGame.Gdd03Ruleset);
+            var workshops = SpecialBuildingModels.ArmsWorkshops(c, new[] { Workshop(c, 1, "rehovot", Built) });
+            Assert.AreEqual(1, workshops.Count, "premise: one built workshop's row");
+            var rows = SpecialBuildingModels.EveryPlacement.Concat(workshops).ToList();
+            foreach (var w in rows)
+            {
+                float byRow = SpecialBuildingModels.ClearanceOf(w), byModel = SpecialBuildingModels.ClearanceOf(w.Model);
+                TestContext.WriteLine(FormattableString.Invariant($"{w.Key} ({w.Model}): ClearanceOf(w) {byRow:R}, ClearanceOf(w.Model) {byModel:R}"));
+                Assert.AreEqual(byModel, byRow, 0f, w.Key);
+            }
+        }
+
         /// <summary>Where the specials stand does not depend on the order their bundles arrive (#2266's contract): every spot is
         /// planned from the full wanted list before any model is drawn. Answered in catalogue order and in reverse, the same
         /// keys stand at the same points.</summary>
@@ -762,6 +779,146 @@ namespace Statecraft.Game.Tests
             AnswerAll(); // Earlier-date retirement reacquires its still-needed original through the fake source.
             CollectionAssert.AreEquivalent(opening, layer.Placed.Select(p => p.Key), "an earlier date shows only what stood then");
             Assert.AreEqual(opening.Length, layer.transform.childCount);
+        }
+
+        // ---- #2274 merged with #2281 (one planner, the props off the farm scenes, no rebuild per frame) ----
+
+        /// <summary>The hex props keep clear of each of the four props where it is drawn (HexPropModels.Others reads the same plan
+        /// the layer draws from), on the Altalena's turn, 15 June 1948, when all four stand.</summary>
+        [Test]
+        public void TheHexPropsKeepClearOfEachPropWhereItIsDrawn()
+        {
+            var map = OpenMap();
+            var date = new DateTime(1948, 6, 15);
+            var savedProps = HexPropModels.Request;
+            HexPropModels.Request = (id, done) => { };
+            try
+            {
+                var layer = CollectionGeometryFixture.Special(map, date)!; AnswerAll();
+                var kept = HexPropModels.ShowAt(map, date)!.Others(map, date);
+                foreach (var key in PropKeys)
+                {
+                    var p = layer.Placed.Single(x => x.Key == key); var drawn = new Vector2(p.At.x, p.At.z);
+                    Assert.IsTrue(kept.Any(d => (d.centre - drawn).magnitude < 1f && Mathf.Abs(d.radius - SpecialBuildingModels.ClearanceOf(p.Model)) < 0.01f),
+                        key + ": the hex props keep clear of it where it is drawn");
+                }
+            }
+            finally { HexPropModels.Request = savedProps; }
+        }
+
+        /// <summary>The four props keep off the farm scenes' plan (RuralLife.PlanOf), as a workshop does: with a farm scene planned
+        /// right on each prop's spot, every prop the plan still places stands clear of every scene.</summary>
+        [Test]
+        public void ThePropsKeepOffTheFarmScenesPlan()
+        {
+            var map = OpenMap();
+            var d = new DateTime(1948, 6, 15);
+            var rows = SpecialBuildingModels.Placements(d);
+            var clear = SpecialBuildingModels.Plan(map, d, rows, _ => true, log: false, Array.Empty<(RuralLife.Want, Vector2)>())
+                .Where(x => x.want.TownEdge).ToList();
+            Assert.Greater(clear.Count, 0, "premise: the props have spots with no farm scenes");
+            var fake = clear.Select(x => (want: new RuralLife.Want("test_" + x.want.Key, RuralLife.Models[0], x.at, 0f), spot: x.at)).ToList();
+            var moved = SpecialBuildingModels.Plan(map, d, rows, _ => true, log: false, fake).Where(x => x.want.TownEdge).ToList();
+            Assert.Greater(moved.Count, 0, "the props still stand");
+            var scenes = fake.Select(f => (f.spot, RuralLife.SceneRadiusM(f.want.Model))).ToList();
+            foreach (var (w, at) in moved)
+                Assert.IsTrue(TownLandmarks.Clear(at, SpecialBuildingModels.ClearanceOf(w), scenes), w.Key + " keeps off the farm scenes' plan");
+        }
+
+        /// <summary>With no workshop built, a change of the farm scenes' plan moves the props on GameRoot's next refresh (the same
+        /// date): the props are drawn on the plan shown, a scene put on a prop's ground moves it in the plan (the premise), and
+        /// the layer then draws every prop where the new plan puts it.</summary>
+        [Test]
+        public void ARuralPlanChangeMovesThePropsWithNoWorkshopBuilt()
+        {
+            var map = OpenMap();
+            var d = new DateTime(1948, 6, 15);
+            var savedPeople = CivilianPeople.Request; var savedRural = RuralLife.Request;
+            CivilianPeople.Request = (id, detail, done) => { }; RuralLife.Request = (id, detail, done) => { };
+            try
+            {
+                CollectionGeometryFixture.People(map, d, Array.Empty<Statecraft.Sim.Placement>(), Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content));
+                var rural = CollectionGeometryFixture.Rural(map)!;
+                var special = CollectionGeometryFixture.Special(map, d)!; AnswerAll();
+                Dictionary<string, Vector2> Planned() => SpecialBuildingModels.Plan(map, d, SpecialBuildingModels.Placements(d), _ => true, false, RuralLife.PlanOf(map))
+                    .Where(x => x.want.TownEdge).ToDictionary(x => x.want.Key, x => x.at);
+                Dictionary<string, Vector2> Drawn() => special.Placed.Where(p => PropKeys.Contains(p.Key)).ToDictionary(p => p.Key, p => new Vector2(p.At.x, p.At.z));
+                bool Same(Dictionary<string, Vector2> a, Dictionary<string, Vector2> b) =>
+                    a.Count == b.Count && a.All(kv => b.TryGetValue(kv.Key, out var o) && (o - kv.Value).magnitude < 1e-3f);
+                var old = Drawn();
+                Assert.Greater(old.Count, 0, "premise: the props are drawn");
+                Assert.IsTrue(Same(old, Planned()), "premise: the props are drawn on the plan shown");
+                var wants = rural.Wanted.ToList(); var others = rural.OthersShown.ToList();
+                bool moved = false;
+                foreach (var s in old.Values)
+                {
+                    foreach (var m in RuralLife.Models)
+                    {
+                        rural.ShowForTest(wants.Append(new RuralLife.Want("test_scene", m, s, 0f)).ToList(), others.ToList());
+                        if (!Same(old, Planned())) { moved = true; break; }
+                    }
+                    if (moved) break;
+                }
+                Assert.IsTrue(moved, "premise: a farm scene on a prop's ground moves a prop in the plan");
+                CollectionGeometryFixture.Special(map, d); AnswerAll();
+                var now = Planned(); var drawn = Drawn();
+                CollectionAssert.AreEquivalent(now.Keys, drawn.Keys, "the props the new plan places are the ones drawn");
+                foreach (var kv in now) Assert.Less((drawn[kv.Key] - kv.Value).magnitude, 1e-3f, kv.Key + " drawn where the new plan puts it");
+            }
+            finally { CivilianPeople.Request = savedPeople; RuralLife.Request = savedRural; }
+        }
+
+        /// <summary>The layer never rebuilds per frame, only on an event (53 on #2274: "never per frame"). Shown as GameRoot's
+        /// RenderPlacementsIfChanged shows it (the civilians, the farm scenes, then the specials), three frames with the same
+        /// inputs and the layers' per-frame LateUpdate keep every drawn model and ask for nothing. Then an event, a change of the
+        /// farm scenes' plan while the well (which keeps off the farm scenes) stands, rebuilds it: the old fort is destroyed,
+        /// which shows the frames' identity check can see a rebuild.</summary>
+        [Test]
+        public void NoRebuildAcrossFramesWithoutAnEventOneOnARuralPlanChange()
+        {
+            var map = OpenMap();
+            var c = Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content);
+            var d = new DateTime(1948, 6, 15);
+            var savedPeople = CivilianPeople.Request; var savedRural = RuralLife.Request;
+            CivilianPeople.Request = (id, detail, done) => { }; RuralLife.Request = (id, detail, done) => { };
+            try
+            {
+                CollectionGeometryFixture.People(map, d, Array.Empty<Statecraft.Sim.Placement>(), c);
+                var rural = CollectionGeometryFixture.Rural(map)!;
+                var layer = CollectionGeometryFixture.Special(map, d)!;
+                AnswerAll();
+                int v = RuralLife.VersionOf(map);
+                Assert.Greater(v, 0, "premise: a farm-scene plan is shown, so the stamp path is live");
+                Assert.IsNotNull(layer.transform.Find("beersheba_abrahams_well"), "premise: the well is drawn");
+                Assert.IsNotNull(layer.transform.Find("latrun_tegart"), "premise: the fort is drawn");
+                var before = layer.Placed.Select(p => p.Key).ToDictionary(k => k, k => layer.transform.Find(k)!.gameObject);
+                var lateSpecial = typeof(SpecialBuildingModels).GetMethod("LateUpdate", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+                var lateRural = typeof(RuralLife).GetMethod("LateUpdate", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+                for (int frame = 0; frame < 3; frame++)
+                {
+                    CollectionGeometryFixture.People(map, d, Array.Empty<Statecraft.Sim.Placement>(), c);
+                    CollectionGeometryFixture.Rural(map);
+                    CollectionGeometryFixture.Special(map, d);
+                    lateSpecial.Invoke(layer, null); lateRural.Invoke(rural, null);
+                    Assert.AreEqual(v, RuralLife.VersionOf(map), $"frame {frame}: the farm-scene plan's version did not move");
+                    CollectionAssert.IsEmpty(asked, $"frame {frame}: nothing asked for again");
+                    AnswerAll();
+                    foreach (var kv in before)
+                    {
+                        var now = layer.transform.Find(kv.Key);
+                        Assert.IsTrue(now != null && ReferenceEquals(kv.Value, now.gameObject), $"frame {frame}: {kv.Key} is the same object, not rebuilt");
+                    }
+                    Assert.AreEqual(before.Count, layer.transform.childCount, $"frame {frame}: no model added or removed");
+                }
+                // The event: a farm scene by the drawn well changes the plan.
+                var well = layer.Placed.Single(p => p.Key == "beersheba_abrahams_well").At;
+                rural.ShowForTest(rural.Wanted.Append(new RuralLife.Want("test_scene", RuralLife.Models[0], new Vector2(well.x, well.z), 0f)).ToList(),
+                    rural.OthersShown.ToList());
+                Assert.AreNotEqual(v, RuralLife.VersionOf(map), "premise: the farm-scene plan's version moved");
+                CollectionGeometryFixture.Special(map, d); AnswerAll();
+                Assert.IsTrue(before["latrun_tegart"] == null, "the event rebuilt the layer: the old fort object is destroyed");
+            }
+            finally { CivilianPeople.Request = savedPeople; RuralLife.Request = savedRural; }
         }
 
         // ---- #1701 slice F (owner, 27 October 2026: "Arms workshops (Recommended)"): b21 on each built arms workshop, gdd-0.3 only ----

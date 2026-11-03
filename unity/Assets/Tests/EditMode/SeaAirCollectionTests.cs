@@ -13,6 +13,8 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.TestTools;
+using UnityEngine.TestTools.Constraints;
+using Is = NUnit.Framework.Is;
 using Object = UnityEngine.Object;
 
 /// <summary>Issue #669: Tal Heuberger's immigrant steamer off Haifa, fishing boats off Jaffa and Acre, the Altalena off Tel Aviv on
@@ -838,6 +840,90 @@ public class SeaAirCollectionTests
         Assert.AreEqual(layer.Placed.Count, keepOf.Count, "and their keep-clear entries");
         Assert.AreEqual(layer.Placed.Count, layer.KeepClear.Count);
         foreach (System.Collections.DictionaryEntry e in keepOf) Assert.IsTrue((GameObject)e.Key != null, "no entry for a destroyed object");
+    }
+
+    /// <summary>The layer on <paramref name="date"/> as the window test above builds it (every craft resident), drawn.</summary>
+    SeaAirCollection DrawnLayer(MapScene map, DateTime date)
+    {
+        var go = new GameObject(SeaAirCollection.Name); go.transform.SetParent(map.Terrain.transform, false);
+        var layer = go.AddComponent<SeaAirCollection>();
+        typeof(SeaAirCollection).GetField("map", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.SetValue(layer, map);
+        layer.ConfigureResidency(new CollectionResidencyPolicy(1000000, 1000001, 1000000, 1000001, int.MaxValue, "TEST ONLY"),
+            (id, detail, done) => { SeaAirCollection.Request(id, detail, done); return new ReleaseProbe(() => { }); });
+        SeaAirCollection.ShowAt(map, date, Array.Empty<Placement>(), C);
+        AnswerAll();
+        return layer;
+    }
+
+    /// <summary>The Dakota's keep-clear box survives a retirement, as every other craft's does (#2274 merged with main's per-object
+    /// boxes): FlyDakota keeps it by object, so ClearForRetirement's rebuild from those boxes keeps it. The retirement here is
+    /// degenerate (an empty key set: no craft whose window ends inside the Dakota's, 15 May to 11 June 1948, was found), and it
+    /// runs exactly that rebuild.</summary>
+    [Test]
+    public void ARetirementKeepsTheDakotasKeepClearBox()
+    {
+        var map = OpenMap();
+        var layer = DrawnLayer(map, new DateTime(1948, 5, 15));
+        var keepOf = (System.Collections.IDictionary)typeof(SeaAirCollection).GetField("keepOf", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(layer)!;
+        Assert.IsTrue(layer.Placed.Any(p => p.Model == SeaAirCollection.Dakota), "premise: the Dakota is drawn");
+        Assert.AreEqual(layer.Placed.Count, keepOf.Count, "one keep-clear entry a drawn craft, the Dakota's included");
+        var dakota = layer.transform.Find(SeaAirCollection.DakotaKey)!.gameObject;
+        var retire = typeof(SeaAirCollection).GetMethod("ClearForRetirement", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic,
+            null, new[] { typeof(IReadOnlyCollection<(string id, CollectionDetail detail)>) }, null)!;
+        retire.Invoke(layer, new object[] { Array.Empty<(string id, CollectionDetail detail)>() });
+        Assert.IsTrue(layer.KeepClear.Any(b => ReferenceEquals(b, keepOf[dakota])), "the Dakota's box is still kept clear");
+        Assert.AreEqual(layer.Placed.Count, layer.KeepClear.Count);
+    }
+
+    /// <summary>#2351's allocation-free residency fill with #2274's Dakota in it: the Dakota's anchor is the ground under its
+    /// loop's centre (never the Tel Aviv coast point its row names), with its wingspan as radius; filling allocates nothing
+    /// once warm; and the fill runs only when the view's policy lets a camera scan, so the Dakota is resident only close up.</summary>
+    [Test]
+    public void TheDakotasResidencyAnchorIsItsLoopCentreOnlyWhenScannedAndAllocatesNothing()
+    {
+        var map = OpenMap();
+        var layer = DrawnLayer(map, new DateTime(1948, 5, 15));
+        var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+        var fill = (Action<List<(string key, Vector3 at, float radius)>>)Delegate.CreateDelegate(
+            typeof(Action<List<(string key, Vector3 at, float radius)>>), layer, typeof(SeaAirCollection).GetMethod("FillResidencyAnchors", flags)!);
+        int fills = 0;
+        Action<List<(string key, Vector3 at, float radius)>> counted = anchors => { fills++; fill(anchors); };
+        var list = new List<(string key, Vector3 at, float radius)>();
+        fill(list);
+        var centre = (Vector2?)typeof(SeaAirCollection).GetMethod("DakotaCentre", flags)!.Invoke(layer, null);
+        Assert.IsTrue(centre.HasValue, "premise: the Dakota's loop has a centre on this map");
+        var c = centre!.Value;
+        var dakota = list.Where(a => a.key == SeaAirCollection.DakotaKey).ToList();
+        Assert.AreEqual(1, dakota.Count, "one anchor for the Dakota");
+        Assert.Less((dakota[0].at - new Vector3(c.x, 0f, c.y)).magnitude, 1e-3f, "on the ground under its loop's centre");
+        Assert.AreEqual(SeaAirCollection.SizeOf(SeaAirCollection.Dakota), dakota[0].radius, 1e-4f, "its wingspan");
+        var coast = SeaCraft.Coasts.Single(x => x.place == SeaAirCollection.DakotaTown);
+        var coastAt = map.Frame.ToWorld(coast.lon, coast.lat, 0);
+        Assert.IsFalse(list.Any(a => a.key == SeaAirCollection.DakotaKey && (a.at - coastAt).magnitude < 1f), "not at the Tel Aviv coast point");
+
+        TestDelegate hundredFills = () => { for (int i = 0; i < 100; i++) { list.Clear(); fill(list); } };
+        hundredFills();   // once unmeasured: the JIT, as #2351's test does
+        Assert.That(hundredFills, Is.Not.AllocatingGCMemory());
+
+        var cameraObject = new GameObject("TEST Dakota residency camera", typeof(Camera));
+        try
+        {
+            var camera = cameraObject.GetComponent<Camera>();
+            var view = new CollectionResidencyView(new CollectionResidencyPolicy(100f, 110f, 100f, 110f, 2, "TEST ONLY"));
+            camera.transform.SetPositionAndRotation(new Vector3(c.x, 1000f, c.y), Quaternion.Euler(90f, 0f, 0f));
+            for (int frame = 0; frame < 3; frame++) view.Observe(camera, counted, frame);
+            Assert.AreEqual(0, fills, "a camera above the view height fills no anchors");
+            Assert.IsFalse(view.Keys.Contains(SeaAirCollection.DakotaKey));
+            camera.transform.SetPositionAndRotation(new Vector3(c.x, 10f, c.y), Quaternion.Euler(90f, 0f, 0f));
+            for (int frame = 3; frame < 8; frame++) view.Observe(camera, counted, frame);
+            Assert.AreEqual(5, fills, "a close camera fills the anchors once a frame");
+            Assert.IsTrue(view.Keys.Contains(SeaAirCollection.DakotaKey), "the Dakota is resident close up");
+            int next = 8;
+            TestDelegate hundredFrames = () => { for (int i = 0; i < 100; i++) { view.Observe(camera, counted, next); view.Prune(next); next++; } };
+            hundredFrames();
+            Assert.That(hundredFrames, Is.Not.AllocatingGCMemory());
+        }
+        finally { Object.DestroyImmediate(cameraObject); }
     }
 
     /// <summary>Nothing is drawn until the stream answers, and only the far mesh, once per model. Then every craft is drawn,
