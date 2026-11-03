@@ -76,15 +76,15 @@ public class HudTests
     {
         var m = HudModel.From(NewBridge(), Text);
         Assert.AreEqual("1948", m.Year);
-        Assert.AreEqual("Turn 0", m.Turn);
+        Assert.AreEqual(Text.Format("hud.turn", 0), m.Turn);
         Assert.AreEqual("15 May 1948", m.Date);
         Assert.AreEqual("IL\u00A020.0m", m.Treasury.Value);          // Israeli pounds (playtest 1, item 7)
         Assert.AreEqual("$40.0m", m.Fx.Value);
         Assert.AreEqual("30%", m.Security.Value);                    // the 0-100 scale, with its unit (fix round 1, I2)
         Assert.AreEqual("50%", m.Standing.Value);
         StringAssert.EndsWith("%", m.Support.Value);
-        Assert.AreEqual("Level 5 of 5", m.SecurityLevel);
-        Assert.AreEqual("Attention 4.0 of 4.0", m.Attention);
+        Assert.AreEqual(Text.Format("hud.level", 5), m.SecurityLevel);
+        Assert.AreEqual(Text.Format("hud.attention", 4.0, 4.0), m.Attention);
         Assert.AreEqual("", m.Treasury.Delta);                       // no previous turn yet
     }
 
@@ -220,9 +220,9 @@ public class HudTests
     public void TheGddGameShowsItsScore()
     {
         var bridge = GddBridge();
-        Assert.AreEqual("Score 0", HudModel.From(bridge, Text).Score);
+        Assert.AreEqual(Text.Format("hud.score", 0), HudModel.From(bridge, Text).Score);
         bridge.State.Score = 150;
-        Assert.AreEqual("Score 150", HudModel.From(bridge, Text).Score);
+        Assert.AreEqual(Text.Format("hud.score", 150), HudModel.From(bridge, Text).Score);
         // The value carries left-to-right marks in a Hebrew line (U+200E, #543), as every Hebrew value does.
         var he = HudModel.From(bridge, He).Score;
         Assert.AreEqual("ניקוד \u200E150\u200E", he);
@@ -236,11 +236,11 @@ public class HudTests
         var bridge = GddBridge();
         using var hud = new HudPresenter(ui.Root, bridge, Text);
         var label = ui.Q<Label>("score");
-        Assert.AreEqual("Score 0", label.text);
+        Assert.AreEqual(Text.Format("hud.score", 0), label.text);
         Assert.AreEqual(DisplayStyle.Flex, label.style.display.value);
         bridge.State.Score = 150;
         hud.Render();
-        Assert.AreEqual("Score 150", label.text);
+        Assert.AreEqual(Text.Format("hud.score", 150), label.text);
     }
 
     // ---- The exhausted-turn count (#812, R-END-002): "1 of 3" under the date while Money and Food are both out ----
@@ -258,7 +258,7 @@ public class HudTests
         var limit = bridge.Content.RulesAt(bridge.State.Date).Mvp!.DefeatTurns!.Value;
         bridge.State.ExhaustedTurns = 1;
         hud.Render();
-        Assert.AreEqual($"Money and Food ran out: turn 1 of {limit}", label.text);
+        Assert.AreEqual(Text.Format("hud.exhausted", 1, limit), label.text);
         Assert.AreEqual(DisplayStyle.Flex, label.style.display.value);
         // The value carries left-to-right marks in a Hebrew line (U+200E, #543), as every Hebrew value does.
         var he = HudModel.From(bridge, He).Exhausted;
@@ -278,7 +278,7 @@ public class HudTests
         using var hud = new HudPresenter(ui.Root, bridge, Text);
         var meter = ui.Q<VisualElement>("meter-cohesion");
         Assert.AreEqual(DisplayStyle.Flex, meter.style.display.value, "shown in the GDD loop");
-        Assert.AreEqual("Social cohesion", meter.Q<Label>(className: "meter-name").text);
+        Assert.AreEqual(Text["hud.caption.cohesion"], meter.Q<Label>(className: "meter-name").text);
         Assert.AreEqual("rings", meter.Q<UiIcon>().Glyph);
         Assert.Greater(bridge.State.Indicators["morale"], 0.0, "precondition: the indicator starts at its base");
         Assert.AreEqual(PlayerText.Percent(bridge.State.Indicators["morale"]), ui.Q<Label>("cohesion-value").text);
@@ -291,12 +291,12 @@ public class HudTests
         Assert.AreEqual("63%", ui.Q<Label>("cohesion-value").text);
         Assert.AreEqual("+5%", ui.Q<Label>("cohesion-delta").text);
         Assert.IsTrue(ui.Q<Label>("cohesion-delta").ClassListContains("delta-up"));
-        Assert.AreEqual("Social cohesion: 63%, up 5 points since last turn", meter.tooltip);
+        Assert.AreEqual(Text.Format("hud.say_up", Text["hud.caption.cohesion"], "63%", Text.Format("hud.say_points", 5)), meter.tooltip);
         now.Indicators["morale"] = 0.574;                                     // 58% -> 57%: down 1 point
         hud.Render();
         Assert.AreEqual("-1%", ui.Q<Label>("cohesion-delta").text);
         Assert.IsTrue(ui.Q<Label>("cohesion-delta").ClassListContains("delta-down"));
-        Assert.AreEqual("Social cohesion: 57%, down 1 point since last turn", meter.tooltip);
+        Assert.AreEqual(Text.Format("hud.say_down", Text["hud.caption.cohesion"], "57%", Text.Format("hud.say_point", 1)), meter.tooltip);
         using var heUi = new UiTestKit();
         using var heHud = new HudPresenter(heUi.Root, GddBridge(), He);
         Assert.AreEqual("לכידות חברתית", heUi.Q<VisualElement>("meter-cohesion").Q<Label>(className: "meter-name").text);
@@ -323,7 +323,7 @@ public class HudTests
         foreach (var id in bridge.NeedsOrders.ToList()) bridge.Skip(id);
         ui.Press("end-turn");
         Assert.AreEqual(1, bridge.State.Turn);
-        Assert.AreEqual("Turn 1", ui.Q<Label>("turn").text);
+        Assert.AreEqual(Text.Format("hud.turn", 1), ui.Q<Label>("turn").text);
         Assert.AreEqual("15 June 1948", ui.Q<Label>("date").text);   // monthly turns since the GDD cutover
         var arrivals = bridge.Session.Last!.Why.Where(w => w.System == "population").Sum(w => w.Delta);
         Assert.AreEqual(arrivals.ToString("N0", System.Globalization.CultureInfo.InvariantCulture), ui.Q<Label>("immigration-value").text);
@@ -344,7 +344,7 @@ public class HudTests
         Assert.IsNull(bridge.Queue(new SetMobilization(0.9)));      // replaces the first: still one order
         Assert.AreEqual(1, bridge.Queued.Count);
         Assert.IsNull(bridge.Queue(new SecurityOrder(-1)));
-        Assert.AreEqual("Not enough attention (need 2.0, have 0.0)", bridge.Queue(new SetPolicy("rationing", 1)));
+        Assert.AreEqual(Text.Format("order.no_attention", 2.0, 0.0), bridge.Queue(new SetPolicy("rationing", 1)));
     }
 
     [Test]
@@ -574,7 +574,7 @@ public class HudTests
         new ToastPresenter(ui.Root, bridge, Text);
         LogAssert.Expect(LogType.Log, new System.Text.RegularExpressions.Regex("unknown policy 'curfew'"));   // the id: log only (#622)
         Assert.IsNotNull(bridge.Queue(new SetPolicy("curfew", 1)));
-        Assert.AreEqual("Not done: Unknown policy", ui.Q<Label>("toast").text);
+        Assert.AreEqual(Text.Format("toast.refused", Text.Format("order.unknown", Text["order.kind.policy"])), ui.Q<Label>("toast").text);
         Assert.AreEqual(DisplayStyle.Flex, ui.Q<Label>("toast").style.display.value);
         Assert.IsNull(bridge.Queue(new SecurityOrder(-1)));
         Assert.AreEqual(DisplayStyle.None, ui.Q<Label>("toast").style.display.value);
@@ -692,7 +692,7 @@ public class HudTests
         Assert.AreEqual(0, bridge.Queued.Count);
         Assert.IsNull(bridge.BeforeLast);
         Assert.AreSame(order, seen![0].Command);
-        Assert.AreEqual("Not done: The turn could not run. Your orders were cleared. Give them again.", ui.Q<Label>("toast").text);   // "boom": the log only (#622)
+        Assert.AreEqual(Text.Format("toast.refused", Text["order.failed"]), ui.Q<Label>("toast").text);   // "boom": the log only (#622)
     }
 
     /// <summary>#912: the sim and autosave have advanced before End Turn notifies presenters. A broken presenter is
@@ -896,7 +896,6 @@ public class HudTests
     }
 
     static readonly string[] MeterIds = { "treasury", "immigration", "security", "support", "cohesion", "standing", "fx" };
-    static string Inv(System.FormattableString f) => System.FormattableString.Invariant(f);
     static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings.Replace("strings.en.yaml", "strings.he.yaml")).text, "strings.he.yaml");
 
     /// <summary>Ends turns until Immigration shows a change (it compares two turns' arrivals), so every meter can show one.
@@ -916,8 +915,8 @@ public class HudTests
         using var ui = new UiTestKit();
         var bridge = NewBridge();
         var hud = new HudPresenter(ui.Root, bridge, Text);
-        Assert.AreEqual("Money (net): IL\u00A020.0 million", ui.Q<VisualElement>("meter-treasury").tooltip);           // turn 0: no change
-        Assert.AreEqual("Foreign currency: $40.0 million", ui.Q<VisualElement>("meter-fx").tooltip);
+        Assert.AreEqual(Text.Format("hud.say", Text["hud.caption.treasury"], Text.Format("hud.say_million", "IL\u00A0", "20.0")), ui.Q<VisualElement>("meter-treasury").tooltip);           // turn 0: no change
+        Assert.AreEqual(Text.Format("hud.say", Text["hud.caption.fx"], Text.Format("hud.say_million", "$", "40.0")), ui.Q<VisualElement>("meter-fx").tooltip);
         Assert.AreEqual("Security: 30%", ui.Q<VisualElement>("meter-security").tooltip);
         bridge.EndTurn();
         var prev = bridge.Session.Previous!; var now = bridge.State;
@@ -928,8 +927,8 @@ public class HudTests
         hud.Render();
         var net = System.Math.Round(now.Treasury - now.Debt, 1, System.MidpointRounding.AwayFromZero);
         Assert.Greater(net, 0, "the test expects a positive net position after one turn");
-        Assert.AreEqual(Inv($"Money (net): IL\u00A0{net:0.0} million, down IL\u00A01.4 million since last turn"), ui.Q<VisualElement>("meter-treasury").tooltip);
-        Assert.AreEqual(Inv($"Foreign currency: ${now.FxReserves:0.0} million, up $2.0 million since last turn"), ui.Q<VisualElement>("meter-fx").tooltip);
+        Assert.AreEqual(Text.Format("hud.say_down", Text["hud.caption.treasury"], Text.Format("hud.say_million", "IL\u00A0", net.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)), Text.Format("hud.say_million", "IL\u00A0", "1.4")), ui.Q<VisualElement>("meter-treasury").tooltip);
+        Assert.AreEqual(Text.Format("hud.say_up", Text["hud.caption.fx"], Text.Format("hud.say_million", "$", now.FxReserves.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)), Text.Format("hud.say_million", "$", "2.0")), ui.Q<VisualElement>("meter-fx").tooltip);
         Assert.AreEqual($"Security: {ui.Q<Label>("security-value").text}, up 5 points since last turn", ui.Q<VisualElement>("meter-security").tooltip);
         Assert.AreEqual($"International support: {ui.Q<Label>("standing-value").text}, down 1 point since last turn", ui.Q<VisualElement>("meter-standing").tooltip);
         // Immigration after one turn has no change yet (it needs two turns of arrivals): the caption and the count only.
@@ -982,7 +981,7 @@ public class HudTests
         now.Debt = now.Treasury + 3;                                         // net -3.0
         prev.Debt = prev.Treasury - 1;                                       // net +1.0 before: down by 4
         m = HudModel.From(bridge, Text);
-        Assert.AreEqual("Money: IL\u00A0-3.0 million, down IL\u00A04.0 million since last turn", HudModel.Spoken(Text, "Money", m.Treasury));
+        Assert.AreEqual(Text.Format("hud.say_down", "Money", Text.Format("hud.say_million", "IL\u00A0-", "3.0"), Text.Format("hud.say_million", "IL\u00A0", "4.0")), HudModel.Spoken(Text, "Money", m.Treasury));
         using var ui = new UiTestKit();
         var he = He;
         new HudPresenter(ui.Root, bridge, he);

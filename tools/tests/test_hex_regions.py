@@ -47,7 +47,7 @@ def test_the_whole_country_is_deterministic(country):
 def test_default_country_balances_villages_and_regional_landscape(country):
     hexes = {(h["q"], h["r"]): h for h in country["hexes"]}
     assert sum(h["prototype"] == "arab_village" for h in hexes.values()) == 67   # 4.4 km hexes since #1183
-    assert sum(bool(h["note"]) for h in hexes.values()) == 97   # Hanita kept out of the fringe (owner, 26 October 2026, #1183)
+    assert sum(bool(h["note"]) for h in hexes.values()) == 97 + 5   # Hanita kept out of the fringe (owner, 26 October 2026, #1183); 5 halts
     variants = {h["prototype"] for h in hexes.values() if re.fullmatch(
         r"(wheat_fields|citrus_orchard|olive_terraces|mixed_farm|forest)_(north|centre|south)_[ab]", h["prototype"])}
     assert len(variants) == 22   # 16 on the 5 km grid
@@ -57,6 +57,23 @@ def test_default_country_balances_villages_and_regional_landscape(country):
     assert hexes[(10, 8)]["prototype"] == hexes[(4, 12)]["prototype"] == "arab_village"   # Sakhnin, Ijzim
     core = {s["id"] for s in mb.settlements(str(ROOT / "content/map/settlements_1948.yaml"))}
     assert core <= {h["note"] for h in hexes.values()}
+
+
+def test_the_railways_named_stations_take_the_halt_tile_on_free_land_hexes(country):
+    """Owner, 27 October 2026, "2+3": Tal Heuberger's railway-halt props go on the board where the map's railway data names
+    a station (routes_1948.yaml, a rail route's `via` waypoint whose name says "station", drawn before 15 May 1948). A
+    station on a settlement's hex leaves that hex's own tile; no halt stands anywhere else."""
+    halts = {(h["q"], h["r"]): h["note"] for h in country["hexes"] if h["prototype"] == "railway_halt"}
+    assert halts == {(4, 11): "Atlit railway station", (2, 14): "Binyamina railway station", (2, 16): "Qaqun (Ahituv station)",
+                     (-1, 21): "Rosh HaAyin South railway station", (-4, 27): "Beit Shemesh railway station (Artuf)"}
+    names = [n for n, _, _ in mb.rail_stations(str(ROOT / "content/map/routes_1948.yaml"), "1948-05-15")]
+    assert len(names) == 18 and set(halts.values()) <= set(names)
+    # The Yarkon link's two stations are drawn only from 20 September 1949.
+    assert "Tel Aviv North railway station" not in names
+    assert "Tel Aviv North railway station" in [n for n, _, _ in mb.rail_stations(str(ROOT / "content/map/routes_1948.yaml"), "1949-09-21")]
+    # Every hex a settlement holds keeps its settlement tile.
+    settled = {h["note"] for h in country["hexes"] if h["note"] and h["prototype"] != "railway_halt"}
+    assert len(settled) == 97
 
 
 def test_published_country_matches_its_region_recipes(country):

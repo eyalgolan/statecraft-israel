@@ -54,6 +54,19 @@ namespace Statecraft.Game.Map.Kits
             closeLandmarks?.Add(new Placed(id, kind, at, yaw, b.size.x, b.size.z, b.max.y - y, default, y));
         }
 
+        /// <summary>As AtWorldScale, where the landmark's parts from <paramref name="part"/> on are a replaceable
+        /// <paramref name="partKind"/> (a minaret, a belfry, a clock tower; #2266, owner 2 November 2026: "tal's high quality
+        /// models replace the built ones everytwhere"). On the main map (replaceParts) they leave the kit and close meshes
+        /// for their own fallback meshes (KitMesh.CloseCopySplit); elsewhere the landmark is as AtWorldScale draws it.</summary>
+        static void AtWorldScale(string id, string kind, KitMesh km, (int v, int i) start, (int v, int i) part, string partKind, float partYaw,
+            Vector2 at, float y, float kitScale)
+        {
+            if (!replaceParts) { AtWorldScale(id, kind, km, start, at, y, kitScale); return; }
+            float k = Mathf.Min(1f, ModelScale / kitScale);
+            var b = km.CloseCopySplit(start, part, partKind, id, partYaw, new Vector3(at.x, y, at.y), 0f, k, k, k);
+            closeLandmarks?.Add(new Placed(id, kind, at, 0f, b.size.x, b.size.z, b.max.y - y, default, y));
+        }
+
         static Vector2 World(KitGround g, double lon, double lat) { var w = g.Frame.ToWorld(lon, lat, 0); return new Vector2(w.x, w.z); }
 
         /// <summary>The unit vector from settlement <paramref name="s"/>'s point towards a sourced coordinate.</summary>
@@ -105,7 +118,7 @@ namespace Statecraft.Game.Map.Kits
                 km.Box(p.x, p.y, 15f, 5f * m, 5f * m, y - 2f * m, y, 24f * m, stone, stone, Facade.Stone, m, roofed: true);
                 km.Box(p.x, p.y, 15f, 4f * m, 4f * m, y + 24f * m, y + 24f * m, 4f * m, C(0.90f, 0.82f, 0.64f), stone, Facade.Plain, m, roofed: true);
                 km.Pyramid(p.x, p.y, 15f, 4.4f * m, 4.4f * m, y + 28f * m, 3.5f * m, C(0.55f, 0.47f, 0.40f));
-                AtWorldScale(s.Id, "clock_tower", km, start, p, y, m);
+                AtWorldScale(s.Id, "clock_tower", km, start, start, "clock_tower", 15f, p, y, m);
                 Record(s.Id, "clock_tower", p, 15f, 5f * m, 5f * m, 31.5f * m, stone);
                 n++;
             }
@@ -507,10 +520,11 @@ namespace Statecraft.Game.Map.Kits
             km.Dome(p.x, p.y, y + 7f * m - 0.5f * m, 5.5f * m, C(0.80f, 0.80f, 0.76f));
             float mx = p.x + 8.5f * m, mz = p.y - 6f * m;
             float my = ground.Y(mx, mz);
+            var minaret = km.CutStart();
             km.Shaft(new Vector3(mx, my - 2f * m, mz), new Vector3(mx, my + 26f * m, mz), 1.6f * m, 1.35f * m, stone, 8);
             km.Shaft(new Vector3(mx, my + 20f * m, mz), new Vector3(mx, my + 21f * m, mz), 2.1f * m, 2.1f * m, stone, 8);   // the balcony
             km.Cone(new Vector3(mx, my + 26f * m, mz), 1.5f * m, 4.5f * m, C(0.62f, 0.62f, 0.58f), 8);
-            AtWorldScale(owner, "mosque", km, start, p, y, m);
+            AtWorldScale(owner, "mosque", km, start, minaret, "minaret", 0f, p, y, m);
             Record(owner, "mosque", p, 0f, 14f * m, 14f * m, 30.5f * m, stone);
             return 1;
         }
@@ -533,9 +547,10 @@ namespace Statecraft.Game.Map.Kits
             km.Box(p.x, p.y, yaw, w, d, bottom, top, 5.5f * m, stone, roof, Facade.Stone, m);
             float a = yaw * Mathf.Deg2Rad, u = 0.5f * w - 1.4f * m, v = -(0.5f * d - 1.4f * m);
             float mx = p.x + u * Mathf.Cos(a) - v * Mathf.Sin(a), mz = p.y + u * Mathf.Sin(a) + v * Mathf.Cos(a);
+            var minaret = km.CutStart();
             km.Box(mx, mz, yaw, 2.8f * m, 2.8f * m, top + 5.5f * m - 0.3f * m, top + 5.5f * m, 7.9f * m, stone, roof, Facade.Plain, m);
             km.Box(mx, mz, yaw, 3.3f * m, 3.3f * m, top + 13.4f * m - 0.2f * m, top + 13.4f * m, 0.6f * m, stone, roof, Facade.Plain, m);   // the balcony's parapet
-            AtWorldScale(owner, "village_mosque", km, start, p, top, m);
+            AtWorldScale(owner, "village_mosque", km, start, minaret, "minaret", yaw, p, top, m);
             Record(owner, "village_mosque", p, yaw, w, d, 14f * m, stone);
             return 1;
         }
@@ -550,10 +565,11 @@ namespace Statecraft.Game.Map.Kits
             float yq = ground.Y(q.x, q.y);
             var start = km.CutStart();
             km.Box(q.x, q.y, 0f, 9f * m, 18f * m, yq - 2f * m, yq, 12f * m, stone, stone, Facade.Stone, m, roofed: true);
+            km.Gable(q.x, q.y, 0f, 9f * m, 18f * m, yq + 12f * m, 4f * m, C(0.66f, 0.34f, 0.24f), stone);
+            var belfry = km.CutStart();   // the belfry last, so it can be replaced (#2266)
             km.Box(q.x, q.y + 7f * m, 0f, 4.5f * m, 4.5f * m, yq + 12f * m, yq + 12f * m, 14f * m, stone, stone, Facade.Stone, m, roofed: true);
             km.Pyramid(q.x, q.y + 7f * m, 0f, 4.8f * m, 4.8f * m, yq + 26f * m, 6f * m, C(0.60f, 0.52f, 0.44f));
-            km.Gable(q.x, q.y, 0f, 9f * m, 18f * m, yq + 12f * m, 4f * m, C(0.66f, 0.34f, 0.24f), stone);
-            AtWorldScale(owner, "church", km, start, q, yq, m);
+            AtWorldScale(owner, "church", km, start, belfry, "belfry", 0f, q, yq, m);
             Record(owner, "church", q, 0f, 9f * m, 18f * m, 32f * m, stone);
             return true;
         }

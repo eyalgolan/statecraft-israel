@@ -3,7 +3,7 @@ using System;
 namespace Statecraft.Sim
 {
     /// <summary>Immutable catalogue contract for #1699; data only, never a live-loop switch.
-    /// Source: content/gdd03-balance.yaml `military.camp_capacity` to `military.active_money` (#1668 balance.md:129-137).
+    /// Source: content/gdd03-balance.yaml `military.camp_capacity` to `military.active_money` (#1668 balance.md:129-137 at 605277df).
     /// No commands, state mutations, combat terms or inferred defaults.</summary>
     public sealed class Gdd03MilitaryCatalogue
     {

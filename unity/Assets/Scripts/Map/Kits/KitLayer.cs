@@ -18,6 +18,15 @@ namespace Statecraft.Game.Map.Kits
         public const string RootName = "Kits", VegetationName = "Vegetation", SeaCraftName = "SeaCraft", TownModelsName = "TownModels",
             CloseSuffix = " close";
 
+        /// <summary>One replaceable landmark part (#2266): Kit and Close name its kit mesh's renderers under the root (Close
+        /// null without a close mesh). Each draws the part as its submesh 1 while it has two materials (<see cref="ShowParts"/>).</summary>
+        public readonly struct LandmarkPart
+        {
+            public readonly string Kind, Owner, Kit; public readonly string? Close; public readonly float Yaw; public readonly Bounds Far, Near;
+            public LandmarkPart(string kind, string owner, string kit, string? close, float yaw, Bounds far, Bounds near)
+            { Kind = kind; Owner = owner; Kit = kit; Close = close; Yaw = yaw; Far = far; Near = near; }
+        }
+
         public sealed class Stats
         {
             public int Buildings, Vertices, Triangles, Trees, CorridorSegments, Localities, LocalityBuildings, Camps, Tents, Draws, Boats, Models, CloseVertices; public float BuildMs, PlantMs;
@@ -27,10 +36,26 @@ namespace Statecraft.Game.Map.Kits
             /// Collection's craft (SeaAirCollection, #669) keep clear of both.</summary>
             public IReadOnlyList<SeaCraft.Craft> Crafts = System.Array.Empty<SeaCraft.Craft>();
             public IReadOnlyList<SettlementKits.Placed> HarbourWorks = System.Array.Empty<SettlementKits.Placed>();
+            /// <summary>#2266: every replaceable landmark part (a minaret, a belfry, Jaffa's clock tower), with the names of the
+            /// kit and close renderers that draw it as their submesh 1 (the code-built fallback), its yaw and its boxes far off and
+            /// up close.</summary>
+            public IReadOnlyList<LandmarkPart> LandmarkParts = System.Array.Empty<LandmarkPart>();
             public override string ToString() =>
                 $"KITS buildings={Buildings} vertices={Vertices} triangles={Triangles} trees={Trees} route_segments={CorridorSegments} build_ms={BuildMs:0} plant_ms={PlantMs:0} " +
                 $"localities={Localities} locality_buildings={LocalityBuildings} camps={Camps} tents={Tents} boats={Boats} draws={Draws} models={Models} close_vertices={CloseVertices}";
         }
+
+        /// <summary>#2266: whether <paramref name="renderer"/> draws its mesh's submesh 1, the kit's code-built landmark parts
+        /// (two materials), or not (one), when Tal Heuberger's models stand in their place.</summary>
+        public static void ShowParts(Renderer renderer, bool on)
+        {
+            if (!(renderer.GetComponent<MeshFilter>()?.sharedMesh is Mesh mesh) || mesh.subMeshCount < 2) return;
+            var m = renderer.sharedMaterial;
+            renderer.sharedMaterials = on ? new[] { m, m } : new[] { m };
+        }
+
+        /// <summary>Whether the renderer draws its landmark parts (submesh 1).</summary>
+        public static bool PartsShown(Renderer renderer) => renderer.sharedMaterials.Length > 1;
 
         public static GameObject Build(IReadOnlyList<Settlement> settlements, Terrain terrain, GeoFrame frame, HexFile hexes, float elevMinM,
             Material kitMaterial, Material treeMaterial, TownModelSet? townModels, MapRuntimeAssets assets, GameObject markers, out Stats stats,
@@ -55,7 +80,7 @@ namespace Statecraft.Game.Map.Kits
             stats.CorridorSegments = ground.CorridorSegments;
             if (tokens != null) ground.Tokens.AddRange(tokens);
             var clock = System.Diagnostics.Stopwatch.StartNew();
-            var built = SettlementKits.Build(settlements, localities, camps, ground, out var placed, columns);   // columns: the labels' kit footprints (issue #214)
+            var built = SettlementKits.Build(settlements, localities, camps, ground, out var placed, columns, replaceParts: true);   // columns: the labels' kit footprints (issue #214)
             foreach (var l in built.Claimed) ground.Lots.Add((l.centre, l.radius));
             stats.Footprints = new List<(Vector2, float, string)>(ground.Footprints);
             MeshRenderer Add(string name, Mesh mesh, bool count = true)
@@ -73,6 +98,7 @@ namespace Statecraft.Game.Map.Kits
             // Issue #659 (owner ruling on #700: "Models up close only"): each kit mesh, and beside it its close mesh (without
             // its buildings, with the models' plinths), which TownModelLayer swaps in when the camera is close.
             var swaps = new List<(Renderer kit, Renderer? close)>();
+            var parts = new List<LandmarkPart>();
             var rendererTownIds = new Dictionary<Renderer, string>();
             var rendererTileIds = new Dictionary<Renderer, string[]>();
             Renderer AddKit(string name, Mesh mesh, string? townId = null)
@@ -81,6 +107,14 @@ namespace Statecraft.Game.Map.Kits
                 Renderer? close = null;
                 if (built.Close.TryGetValue(mesh.name, out var cm)) { close = Add(name + CloseSuffix, cm, count: false); st.CloseVertices += cm.vertexCount; }
                 swaps.Add((kit, close));
+                // #2266: the kit's replaceable landmark parts are each mesh's submesh 1, drawn (the code-built fallback) until
+                // Tal Heuberger's models stand in their place (HexPropModels gives the renderers one material then).
+                if (built.Parts.TryGetValue(mesh.name, out var lp))
+                {
+                    ShowParts(kit, true); if (close != null) ShowParts(close, true);
+                    foreach (var (kind, owner, yaw, far, near) in lp.Parts)
+                        parts.Add(new LandmarkPart(kind, owner, name, close != null ? name + CloseSuffix : null, yaw, far, near));
+                }
                 if (townId != null) rendererTownIds[kit] = townId;
                 return kit;
             }
@@ -112,6 +146,7 @@ namespace Statecraft.Game.Map.Kits
             if (residency == null) throw new System.ArgumentNullException(nameof(residency));
             towns.ConfigureProduction(residency.Towns);
             towns.Init(built.Models, townModels, swaps, nearTowns, rendererTownIds, rendererTileIds);
+            stats.LandmarkParts = parts;
             var localityIds = new HashSet<string>(System.StringComparer.Ordinal);
             foreach (var locality in localities) localityIds.Add(locality.Id);
             towns.ConfigureTownFootprints(stats.Footprints, localityIds);

@@ -63,4 +63,42 @@ options:
         Assert.Contains(expected, m => m.Contains("elected 25 January 1949"));  // calendar is exercised
         Assert.Equal(expected, Run(new CultureInfo(culture)));
     }
+
+    static Content LoadReal(CultureInfo culture)
+    {
+        var previousCulture = CultureInfo.CurrentCulture;
+        var previousUiCulture = CultureInfo.CurrentUICulture;
+        try
+        {
+            CultureInfo.CurrentCulture = culture;
+            CultureInfo.CurrentUICulture = culture;
+            return ContentLoader.Load(RealContentTests.ContentRoot());
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = previousCulture;
+            CultureInfo.CurrentUICulture = previousUiCulture;
+        }
+    }
+
+    [Theory]
+    [InlineData("he-IL")]
+    [InlineData("de-DE")]
+    public void RealContentLoadsCultureIndependently(string culture)
+    {
+        var expected = LoadReal(CultureInfo.InvariantCulture);
+        var actual = LoadReal(new CultureInfo(culture));
+
+        Assert.Equal(expected.Hash, actual.Hash);
+        // rules.yaml map_actions.transit_camp.cost -- a Money cost with a decimal point (double).
+        Assert.Equal(expected.Rules.MapActions["transit_camp"].Cost, actual.Rules.MapActions["transit_camp"].Cost);
+        // rules.yaml natural_increase_per_year -- an annual rate with a decimal point (double).
+        Assert.Equal(expected.Rules.NaturalIncreasePerYear, actual.Rules.NaturalIncreasePerYear);
+        // model.yaml effects[rationing_grates].k -- a negative multiplier with a decimal point (double).
+        Assert.Equal(expected.Effects.Single(e => e.Id == "rationing_grates").K,
+            actual.Effects.Single(e => e.Id == "rationing_grates").K);
+        // model.yaml policies[rationing].from -- a policy start date (DateTime?).
+        Assert.Equal(expected.Policies.Single(p => p.Id == "rationing").From,
+            actual.Policies.Single(p => p.Id == "rationing").From);
+    }
 }

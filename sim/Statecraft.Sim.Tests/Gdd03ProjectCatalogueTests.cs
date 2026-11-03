@@ -28,7 +28,7 @@ public class Gdd03ProjectCatalogueTests
             Assert.Equal(3m, c.BuilderSlots.Amount);
             Assert.Equal(1m, c.CityStarts.Amount);
             Assert.Equal(new[] { 1m, 1.5m, 3m }, new[] { c.OrdinaryOrNoviceRate.Amount, c.ApprenticeRate.Amount, c.ExpertRate.Amount });
-            // content/gdd03-balance.yaml `maabara`, `permanent_housing`, `industry`, `reception_camp`, `training_centre`, `arms_workshop` and `military_camp`; GDD balance.md:78-84.
+            // content/gdd03-balance.yaml `maabara`, `permanent_housing`, `industry`, `reception_camp`, `training_centre`, `arms_workshop` and `military_camp`; GDD balance.md:78-84 at 605277df.
             var expected = new[] {
                 ("maabara", 5m, 1m, 0.10m), ("permanent_housing", 15m, 3m, 0.25m),
                 ("industry", 10m, 3m, 0.25m), ("reception_camp", 10m, 3m, 0.25m),

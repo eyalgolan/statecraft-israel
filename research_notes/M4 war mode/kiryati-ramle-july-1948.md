@@ -63,7 +63,7 @@ it does not say how long the units stayed.
 
 ### 3. Izkor: memorial to the 42nd Battalion of the Kiryati Brigade (located, not read)
 
-[S, not opened; a person's check pending]
+[GAP, not opened; a person's check pending]
 
 - Source: Ministry of Defence, Izkor, "אנדרטה לחללי גדוד 42 מחטיבת קרייתי במלחמת העצמאות",
   https://www.izkor.gov.il/en_fa46c51af7b40424bb29dac10daa62dc. On 2026-11-01 the live page returned HTTP 403
@@ -117,7 +117,7 @@ were not used as the position anchor. The anchor adds a unit position only; it a
   https://web.archive.org/web/20260118233403/https://bengurionarchive.bgu.ac.il/en/node/9409. [V, agent read
   2026-11-01; a person's check pending]
 - Izkor, memorial to the 42nd Battalion, Kiryati Brigade,
-  https://www.izkor.gov.il/en_fa46c51af7b40424bb29dac10daa62dc. [S, not opened (HTTP 403); a person's check pending]
+  https://www.izkor.gov.il/en_fa46c51af7b40424bb29dac10daa62dc. [GAP, not opened (HTTP 403); a person's check pending]
 - en.wiki, "Operation Dani", the table of communities captured, https://en.wikipedia.org/wiki/Operation_Dani. [S,
   agent read 2026-11-01 for #2087; a person's check pending]
 - he.wiki, "מבצע דני", https://he.wikipedia.org/wiki/%D7%9E%D7%91%D7%A6%D7%A2_%D7%93%D7%A0%D7%99. [S, agent read
