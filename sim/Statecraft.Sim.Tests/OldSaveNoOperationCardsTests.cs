@@ -8,9 +8,6 @@ using Statecraft.Sim;
 /// </summary>
 public class OldSaveNoOperationCardsTests
 {
-    /// <summary>The events whose options give unit orders under gdd-0.1 (#2087).</summary>
-    static readonly string[] OperationCards = { "ten_days", "latrun_proposal", "operation_yoav", "operation_hiram", "operation_horev" };
-
     [Fact]
     public void V034Gdd01SaveWithNoOperationCardStillLoadsIdentically()
     {
@@ -22,6 +19,14 @@ public class OldSaveNoOperationCardsTests
         var saved = SaveGame.Parse(text);
         Assert.Equal(SaveGame.GddRuleset, saved.Ruleset);
 
+        // The operation cards: the events whose options give unit orders under gdd-0.1 (#2087). A card given unit
+        // orders later fails here, so this fixture is checked against it.
+        var operationCards = content.Events.Where(e => e.Options.Any(o => o.UnitOrders.Count > 0)).Select(e => e.Id)
+            .OrderBy(id => id, StringComparer.Ordinal).ToArray();
+        Assert.NotEmpty(operationCards);
+        Assert.Equal(
+            new[] { "latrun_proposal", "operation_hiram", "operation_horev", "operation_yoav", "ten_days" }, operationCards);
+
         var loaded = GameSession.Load(content, text, out var warnings);
 
         // The game is four turns, 15 May to 15 September 1948: first_truce is refused, so ten_days (which requires
@@ -29,7 +34,7 @@ public class OldSaveNoOperationCardsTests
         // never fires; operation_yoav, operation_hiram and operation_horev open on 15 October, 31 October and 15 December
         // 1948, after the last turn ends. So no operation card is chosen or delegated. If one fires here, a content change
         // moved it into this game and the fixture no longer keeps clear of the operation cards' rules.
-        Assert.DoesNotContain(loaded.State.FiredEvents, OperationCards.Contains);
+        Assert.DoesNotContain(loaded.State.FiredEvents, operationCards.Contains);
 
         // The replay and the open turn first: with other content, drift only adds replay_differs, so checking the
         // warnings first would hide which part drifted.
