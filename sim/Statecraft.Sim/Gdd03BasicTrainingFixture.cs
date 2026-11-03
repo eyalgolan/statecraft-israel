@@ -55,6 +55,9 @@ namespace Statecraft.Sim
         readonly SortedDictionary<string, Gdd03FixtureMilitaryCamp> camps = new SortedDictionary<string, Gdd03FixtureMilitaryCamp>(StringComparer.Ordinal);
         readonly int capacity, basicTurns;
         readonly decimal moneyPerCourse, activeMoney;
+        // A graduate's military qualification: the course's unit class, content/unit_types.yaml `recruit` `class` (infantry).
+        // Value: the course's unit class (unit_types.yaml); maintainer call on the source of the value, not an owner ruling.
+        readonly string graduateQualification;
         readonly SortedDictionary<string, Gdd03FixtureFormation> formations = new SortedDictionary<string, Gdd03FixtureFormation>(StringComparer.Ordinal);
         // Per fixture instance only (not saved): each trainee's enrolment month and last counted month ordinal.
         readonly SortedDictionary<int, (int enrolment, int lastCounted)> months = new SortedDictionary<int, (int, int)>();
@@ -85,8 +88,12 @@ namespace Statecraft.Sim
                 throw new ContentException(Gdd03BalanceCatalogue.FileName, "values.military.issue_arms", "must be 1: one item per population unit");
             if (terms.RepeatIssueArms != 0)
                 throw new ContentException(Gdd03BalanceCatalogue.FileName, "values.military.repeat_issue", "must be 0: never a second issue");
+            var recruit = content.UnitTypes.FirstOrDefault(t => string.Equals(t.Id, "recruit", StringComparison.Ordinal));
+            if (recruit == null || string.IsNullOrWhiteSpace(recruit.Class))
+                throw new ContentException("unit_types.yaml", "types.recruit.class", "required: a basic training graduate's qualification");
+            PopulationText.ValidateText(recruit.Class);
             if (spareArms < 0 || money < 0) throw new ArgumentException("Spare Arms and Money must be nonnegative.");
-            this.state = state;
+            this.state = state; graduateQualification = recruit.Class;
             capacity = terms.CampCapacity; basicTurns = terms.BasicTurns; moneyPerCourse = terms.TrainingMoney; activeMoney = terms.ActiveMoney;
             foreach (var camp in camps) this.camps.Add(camp.Id, camp); // a duplicate id throws ArgumentException
             foreach (var formation in formations)
@@ -232,13 +239,14 @@ namespace Statecraft.Sim
         /// <summary>R-TRAIN-003 and R-UNIT-003 under gdd-0.3: the month that counts the last course turn releases the
         /// trainee into its cohort's formation (Q43(b), "released in the turn its last course turn counts"). The same
         /// record, in place (27M-7), becomes an active soldier serving that formation; it keeps its item, and nothing is
-        /// charged or refunded ("Its reserved Arms are neither charged again nor refunded on completion"). Its
-        /// qualification stays as it was ("", 53's maintainer call, not an owner ruling): the live recruit path gives a
-        /// formation no qualification (<see cref="Unit"/>, Training.cs's completion) and the Historical start gives its
-        /// soldiers "" (#1717). The cohort's first graduate claims the first free formation in the camp's region: supplied
-        /// to this fixture, not claimed by another cohort, and serving no one (53's maintainer call, not an owner ruling).
-        /// A graduation in a month whose upkeep was already paid is refused (53's maintainer call, not an owner ruling:
-        /// Advance, then PayUpkeep, in a month), so a formation always pays in its graduation month (27M-8).</summary>
+        /// charged or refunded ("Its reserved Arms are neither charged again nor refunded on completion"). Its military
+        /// qualification becomes the course's unit class (docs/GDD.md:372: a returned captive "keeps their id and military
+        /// qualification"), so <see cref="Start"/> refuses it basic training again. Value: the course's unit class
+        /// (unit_types.yaml); maintainer call on the source of the value, not an owner ruling. The cohort's first graduate
+        /// claims the first free formation in the camp's region: supplied to this fixture, not claimed by another cohort,
+        /// and serving no one (53's maintainer call, not an owner ruling). A graduation in a month whose upkeep was already
+        /// paid is refused (53's maintainer call, not an owner ruling: Advance, then PayUpkeep, in a month), so a formation
+        /// always pays in its graduation month (27M-8).</summary>
         void Graduate(PopulationUnit trainee, Gdd03FixtureMilitaryCamp camp, int monthOrdinal)
         {
             if (lastPaidMonth is int paid && monthOrdinal <= paid)
@@ -254,8 +262,9 @@ namespace Statecraft.Sim
                     .Select(f => f.Id).FirstOrDefault()
                     ?? throw new ArgumentException("No free formation in region " + camp.Region + " for this cohort.");
             }
-            Commit(new[] { trainee.WithPlacement(PopulationStatus.ActiveSoldier, trainee.Location,
-                new PopulationAssignment(PopulationAssignmentKind.ActiveService, formation), trainee.Captor, trainee.Home) });
+            Commit(new[] { new PopulationUnit(trainee.Id, PopulationStatus.ActiveSoldier, trainee.ReceptionTicks, trainee.Location,
+                new PopulationAssignment(PopulationAssignmentKind.ActiveService, formation), trainee.Profession, trainee.Tier,
+                trainee.WorkXp, graduateQualification, trainee.CombatXp, trainee.Equipment, trainee.Captor, trainee.Home) });
             if (!cohortFormation.ContainsKey(cohort)) graduationMonth.Add(formation, monthOrdinal);
             cohortFormation[cohort] = formation;
             months.Remove(trainee.Id); issued.Remove(trainee.Id); cohortOf.Remove(trainee.Id);
