@@ -639,11 +639,12 @@ namespace Statecraft.Game.Map.Collection
             var people = map.Terrain.transform.Find(CivilianPeople.Name)?.GetComponent<CivilianPeople>();
             if (people != null) foreach (var p in people.Wanted) taken.Add((new Vector2(p.At.x, p.At.z), CivilianPeople.FigureClearanceM));
             foreach (var a in WildlifeLayer.Wants(map)) taken.Add((a.At, 0.5f * WildlifeLayer.SizeM));
-            // A workshop (#1701 slice F) also keeps off the farm scenes (#667): where they WILL stand (RuralLife's plan with every
-            // model available, RuralLife.PlanOf, the one HexPropModels.Others reads too), never what has streamed so far, so its
-            // spot is the same whichever layer streams first and the props keep clear of the b21 that is drawn.
+            // A workshop (#1701 slice F) and Tal's four props (KeepsOffFarms) also keep off the farm scenes (#667): where they
+            // WILL stand (RuralLife's plan with every model available, RuralLife.PlanOf, the one HexPropModels.Others reads too),
+            // never what has streamed so far, so a spot is the same whichever layer streams first and the hex props keep clear
+            // of the models drawn.
             var farms = new List<(Vector2 centre, float radius)>();
-            if (wants.Any(w => w.Model == Workshop))
+            if (wants.Any(KeepsOffFarms))
                 foreach (var (want, spot) in ruralPlan ?? RuralLife.PlanOf(map))
                     farms.Add((spot, RuralLife.SceneRadiusM(want.Model)));
             bool FreeOn(Vector2 p, float r, DateTime on) => TownLandmarks.Clear(p, r, taken) && TownLandmarks.Clear(p, r, footprints)
@@ -651,7 +652,8 @@ namespace Statecraft.Game.Map.Collection
                 && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, on);
             bool Free(Vector2 p, float r) => FreeOn(p, r, date);
             // The four props stand at a town's edge (owner on #2274: "Bigger, closer"): inside a footprint if need be, clear of the
-            // towns' building models, of the tokens standing in towns and of every settlement's and locality's name point instead.
+            // towns' building models, of the tokens standing in towns and of every settlement's and locality's name point instead,
+            // and of the farm scenes' plan, as the workshops (coordinator, 2 November 2026, on #2274: Q3).
             List<(Vector2, float)>? buildings = null, clearings = null; List<Vector2>? names = null;
             bool FreeAtEdge(Vector2 p, float r)
             {
@@ -666,6 +668,7 @@ namespace Statecraft.Game.Map.Collection
                 }
                 foreach (var n in names!) if ((n - p).sqrMagnitude <= r * r) return false;
                 return TownLandmarks.Clear(p, r, taken) && TownLandmarks.Clear(p, r, buildings) && TownLandmarks.Clear(p, r, clearings!)
+                    && TownLandmarks.Clear(p, r, farms)
                     && ground.Inside(p.x - r, p.y - r) && ground.Inside(p.x + r, p.y + r)
                     && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, date);
             }
@@ -739,6 +742,10 @@ namespace Statecraft.Game.Map.Collection
             }
             return plan;
         }
+
+        /// <summary>Whether a row keeps off the farm scenes' plan (RuralLife.PlanOf): a workshop (#1701 slice F) and Tal's four
+        /// props (<see cref="Want.TownEdge"/>; coordinator, 2 November 2026, on #2274: Q3).</summary>
+        internal static bool KeepsOffFarms(Want w) => w.Model == Workshop || w.TownEdge;
 
         /// <summary>The ground (m) a place's name pill can take, a workshop among a town's houses keeping off it: the band from the
         /// footprint's south edge to <see cref="TownLabelHeightM"/> past its north edge, <see cref="TownLabelHalfWidthM"/> either
