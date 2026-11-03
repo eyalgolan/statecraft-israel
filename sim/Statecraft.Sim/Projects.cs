@@ -256,14 +256,14 @@ namespace Statecraft.Sim
         /// has one.</summary>
         public static int Builders(GameState s, string city) => s.CityProjects.Values.Count(p => p.Builder && p.City == city);
 
-        /// <summary>R-CITY-011: the city's free people: its civilians and craftsmen who hold no job and are not a staffed arms
-        /// workshop's worker (R-ARMS-005) or a builder.</summary>
         /// <summary>R-CITY-011: the builders this turn's queued gdd-0.3 StartProject orders for <paramref name="city"/> may take,
         /// one each at most (#1700 review: the panel limits count them, so a count up to a limit is accepted whichever order
         /// runs first). 0 under every other ruleset.</summary>
         internal static int Starting(GameState s, string city, IEnumerable<Command> pending) =>
             s.Ruleset == SaveGame.Gdd03Ruleset ? pending.OfType<StartProject>().Count(p => p.City == city) : 0;
 
+        /// <summary>R-CITY-011: the city's free people: its civilians and craftsmen who hold no job and are not a staffed arms
+        /// workshop's worker (R-ARMS-005) or a builder.</summary>
         static int Free(GameState s, City x) => x.Civilians + x.Craftsmen - x.Employed - Workshops.Staffed(s, x.Id) - Builders(s, x.Id);
 
         static string Refused(string format, params object[] values) => string.Format(System.Globalization.CultureInfo.InvariantCulture, format, values);
