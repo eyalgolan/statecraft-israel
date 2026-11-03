@@ -25,6 +25,8 @@
 #     gdd03-balance.yaml housing_repair cost 0.5, work 1, condition_pp 10, which the loader checks). No capacity or job
 #     slots. It is done on the city's own hex and takes no hex of its own, so it is left as no record once done (owner,
 #     3 November 2026: "No hex needed (Recommended)").
+#     Its name_he "שיפוץ דיור": native review: owner, 3 Nov 2026 ("Approve 'שיפוץ דיור'", recorded on #564,
+#     https://github.com/eyalgolan/statecraft-israel/issues/564#issuecomment-6611646005).
 # name: the phrase the player reads in a sentence ("a transit camp").
 # name_he: the Hebrew UI's noun for the kind (#1122, owner ruling 3), optional: without it the Hebrew UI shows `name`.
 #   Draft wording, not a native-language approval: name_he_review: agent-checked until a native speaker reviews it.
