@@ -351,7 +351,9 @@ people:
             Regions = new List<MapEditorRegion> { new MapEditorRegion {
                 Hex = new MapEditorHex { Q = 1, R = -2 }, RegionId = "fixture'only" } },
             Infrastructure = new List<MapEditorInfrastructure> { new MapEditorInfrastructure {
-                Hex = new MapEditorHex { Q = 1, R = -2 }, Id = "fixture'only", Kind = "fixture'only", ParentId = "fixture'only" } }
+                Hex = new MapEditorHex { Q = 1, R = -2 }, Id = "fixture'only", Kind = "fixture'only", ParentId = "fixture'only" } },
+            Offsets = new List<MapEditorOffset> { new MapEditorOffset {
+                Id = "fixture_only", Kind = "label", Hex = new MapEditorHex { Q = 1, R = -2 }, EastM = 120, NorthM = -40 } }
         };
         value.Overlay = MapOverrides.Parse("terrain: [{ hex: { q: 1, r: -2 }, value: hills }]\n"
             + "control: [{ hex: { q: 1, r: -2 }, period: fixture_only, value: I }]\n"
@@ -390,6 +392,8 @@ people:
     [InlineData("version: 'map-editor-0.3'", "version: future")]
     [InlineData("ruleset: 'gdd-0.3'", "ruleset: legacy")]
     [InlineData("draft: true", "unknown: true")]
+    [InlineData("kind: 'label'", "kind: 'badge'")]
+    [InlineData("north_m: -40", "north_m: -40.5")]
     public void AuthoringSchemaRejectsWrongVersionRulesetAndMissingFields(string old, string replacement) =>
         Assert.NotEmpty(Errors("map-editor-overlay.schema.json", SyntheticEditorEnvelope().Replace(old, replacement)));
 
