@@ -74,8 +74,9 @@ namespace Statecraft.Sim
             var byDefault = x.JobsDefault && job == null;
             var staffed = Staffed(s, city);
             // R-CITY-009: while the city's job default is on, a newly staffed workshop may take its worker from the default's
-            // jobs (the default then fills one job fewer, R-CITY-001); a number the player set is not lowered.
-            var free = x.Civilians + x.Craftsmen - Math.Max(x.JobsDefault ? 0 : x.Employed, job ?? 0) - staffed - Training.Ordered(city, list);
+            // jobs (the default then fills one job fewer, R-CITY-001); a number the player set is not lowered. R-CITY-011: a
+            // builder is not free.
+            var free = x.Civilians + x.Craftsmen - Math.Max(x.JobsDefault ? 0 : x.Employed, job ?? 0) - staffed - Projects.Builders(s, city) - Training.Ordered(city, list);
             if (count - staffed > free) return Refused(byDefault ? RefusedPeople : RefusedPeopleNoJob, name, Math.Max(0, free));
             return null;
         }
@@ -106,7 +107,7 @@ namespace Statecraft.Sim
             var built = BuiltIn(c, s, city);
             var x = s.Cities[city];
             var staffed = Staffed(s, city);
-            var employed = Math.Min(x.Employed, x.Civilians + x.Craftsmen - count);
+            var employed = Math.Min(x.Employed, x.Civilians + x.Craftsmen - count - Projects.Builders(s, city));   // R-CITY-011: nor a builder's
             if (employed != x.Employed)
             {
                 s.Cities[city] = x.WithCounts(x.Civilians, employed, x.Refugees);
@@ -125,7 +126,7 @@ namespace Statecraft.Sim
 
         /// <summary>R-ARMS-006, step 6 of the turn after the cities' wages, gdd-0.3 only. In ascending project id, a staffed
         /// workshop whose city the enemy does not hold (R-CITY-010) works this month when one of its city's people without a
-        /// job is left for it (each workshop of the city takes one). With no cycle under way it first pays for one at its
+        /// job is left for it (each workshop of the city takes one, after the city's builders, R-CITY-011). With no cycle under way it first pays for one at its
         /// worker's tier (gdd03-balance.yaml workshop.cost: 27M-11, "At the monthly production step."), borrowing a short
         /// Treasury's rest (R-MONEY-003; 27M-12, "paid like any GDD cost"), unless that would take the debt past
         /// mvp.debt_ceiling (#1701 OQ4, owner 2 November 2026: "Refuse past the ceiling (Recommended)"): then the workshop
@@ -148,7 +149,8 @@ namespace Statecraft.Sim
                 if (held.Contains(city)) continue;
                 var name = PlayerText.Settlement(c, city);
                 var x = s.Cities[city];
-                working.TryGetValue(city, out var taken);
+                // R-CITY-011: step 5's builders took their people first.
+                if (!working.TryGetValue(city, out var taken)) taken = Projects.Builders(s, city);
                 if (taken >= x.Civilians + x.Craftsmen - x.Employed)
                 {
                     why.Add(new Cause("city", city, 0, $"{name}: an arms workshop has no worker without a job this month", key: CauseKeys.WorkshopPaused, args: new[] { NoWorker }));

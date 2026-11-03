@@ -1220,6 +1220,13 @@ why.cause.site_completed: "{0}: מצב האתר: {1}"
 why.cause.project_started: "{0}: תחילת {1}, עלות {2}"
 why.cause.project_cancelled: "{0}: ביטול {1}; הכסף שהוצא לא יוחזר"
 why.cause.project_completed: "{0}: סיום {1}"
+# The gdd-0.3 builders (#1700; R-CITY-011, R-PROJ-003). Agent-drafted Hebrew: native-review-pending (#564).
+# native-review-pending
+why.cause.project_builder: "{0}: בונה החל לעבוד על {1}"
+# native-review-pending
+why.cause.project_waiting.no_builder: "{0}: העבודה על {1} ממתינה: אין בונה"
+# native-review-pending
+why.cause.project_waiting.no_worker: "{0}: העבודה על {1} ממתינה: לא נותר אדם ללא משרה שיבנה"
 why.cause.arms_bought: "נשק שנרכש: {0}, עלות {1}"
 # The gdd-0.3 arms workshops (#1701; R-ARMS-005, R-ARMS-006). Agent-drafted Hebrew; native review pending (#564).
 why.cause.workshop_workers: "{0}: סדנאות נשק מאוישות: {1}"

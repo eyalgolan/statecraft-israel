@@ -169,8 +169,9 @@ public class NoCityLossDefeatTests
     public void Gdd03HeldCityPausesItsJobsAndProjectsUntilRetaken()
     {
         var c = Load(); var s = Simulation.NewGame(c, 1, Mode.Historical); Occupy(s);
-        s.CityProjects.Add(10, new CityProject(10, "housing", "town_a", 1, 1, 3));
-        s.CityProjects.Add(11, new CityProject(11, "housing", "town_b", 3, 2, 3));
+        // Each with a builder (R-CITY-011, #1700), so only the hold pauses it.
+        s.CityProjects.Add(10, new CityProject(10, "housing", "town_a", 1, 1, 3, builder: true));
+        s.CityProjects.Add(11, new CityProject(11, "housing", "town_b", 3, 2, 3, builder: true));
         s.Objectives["already_awarded"] = s.Date;
         var cities = s.Cities.Keys.ToArray();
         var held = Simulation.Step(c, s, Array.Empty<Command>());
@@ -199,7 +200,8 @@ public class NoCityLossDefeatTests
     {
         var c = Load(ruleset); var s = Simulation.NewGame(c, 1, Mode.Historical);
         if (halutz) s.Units.Add(1, new Unit(1, "halutz", 1, 0)); else Occupy(s);
-        s.CityProjects.Add(10, new CityProject(10, "housing", "town_a", 1, 1, 3));
+        // With a builder under gdd-0.3 (R-CITY-011, #1700), so only a hold could pause it; gdd-0.1 has no builders.
+        s.CityProjects.Add(10, new CityProject(10, "housing", "town_a", 1, 1, 3, builder: ruleset == SaveGame.Gdd03Ruleset));
         var result = Simulation.Step(c, s, Array.Empty<Command>());
         Assert.True(Paid(result, "town_a"));
         Assert.Equal(2, result.State.CityProjects[10].TurnsLeft);
