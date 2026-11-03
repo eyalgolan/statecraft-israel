@@ -29,9 +29,13 @@ namespace Statecraft.Game.Map.Units
 
         public const string SabraPioneer = "figure-c04-sabra-pioneer-v3", PioneerVeteran = "figure-c05-pioneer-veteran-v2",
             YoungRecruit = "figure-c06-young-recruit-v2", VeteranFighter = "figure-c07-veteran-fighter-v2",
-            PalmachScout = "figure-c12f-palmach-scout-v2", Soldier1948 = "figure-soldier-1948-v1", ArabLegion = "figure-c08-arab-legion-v2", Irregular = "figure-c09-irregular-v2",
+            PalmachScout = "figure-c12f-palmach-scout-v2", ArabLegion = "figure-c08-arab-legion-v2", Irregular = "figure-c09-irregular-v2",
             Napoleonchik = "figure-vehicle-napoleonchik-65mm-1948-v2", WillysJeep = "figure-vehicle-willys-jeep-1948-v2",
             SandwichArmouredCar = "figure-vehicle-sandwich-convoy-1948-v2";
+
+        /// <summary>#336's 1948 soldier, unrigged (no walk, no fire): the third figure of Yiftach and Negev until #2377, on no
+        /// token since. He stays in the people bundle (<see cref="CollectionCatalog"/>), his files untouched.</summary>
+        public const string Soldier1948 = "figure-soldier-1948-v1";
 
         public const string SyrianInfantry = "figure-syrian-infantry-1948-v1",
             AlaInfantry = CollectionCatalog.AlaInfantry, IraqiInfantry = "figure-iraqi-infantry-1948-v1",
@@ -52,21 +56,26 @@ namespace Statecraft.Game.Map.Units
         /// a Palmach woman's duties included "escorting convoys" (https://en.wikipedia.org/wiki/Netiva_Ben-Yehuda, checked
         /// 2026-10-18), and the Palmach memorial site records 34 of its women killed, seventeen in action
         /// (https://en.wikipedia.org/wiki/Palmach, checked 2026-10-18).
-        /// Yiftach's and Negev's is #336's 1948 soldier (owner, 21 October 2026, through the coordinator: "place it as a third
-        /// figure on some brigade unit tokens, next to C06 and C07"): a rifleman in khaki wearing the knitted stocking cap, the
-        /// Palmach's (as C07 wears it), so he stands third on the other two Palmach brigades, the 11th and 12th (their rows'
-        /// numbers, palmach.org.il). On Negev's token he takes the third figure's sourced cap from C07
-        /// (<see cref="ThirdOverHeadgear"/>), so it shows C07, C06 and the soldier.</summary>
+        /// Yiftach's and Negev's, the other two Palmach brigades (the 11th and 12th, their rows' numbers, palmach.org.il), is
+        /// the veteran fighter (C07): the rifleman in the Palmach's knitted stocking cap, the cap and the rifle of the Negev
+        /// Brigade's sourced photographs (docs/units.md, Sources: "Palmach (Negev Brigade) soldiers briefed before an
+        /// operation, 1948: khaki shirts and trousers, web belts with pouches, knitted stocking caps, rifles"), with his own
+        /// walk and fire takes. From 21 October 2026 to #2377 it was #336's 1948 soldier (owner, through the coordinator:
+        /// "place it as a third figure on some brigade unit tokens, next to C06 and C07"), a rifleman in the same cap but with
+        /// no rig, so those tokens neither walked nor fired; the owner chose an animated figure instead (3 November 2026,
+        /// #2377: "do everything with the 0$ and make it as high quality as possible"). On Negev's token C07 is also the
+        /// figure its sourced third cap gives (<see cref="ThirdOverHeadgear"/>), so it shows C07, C06 and C07, as its
+        /// photographs do.</summary>
         public static readonly IReadOnlyDictionary<string, string> ThirdFigure = new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            ["harel"] = PalmachScout, ["yiftach"] = Soldier1948, ["negev"] = Soldier1948,
+            ["harel"] = PalmachScout, ["yiftach"] = VeteranFighter, ["negev"] = VeteranFighter,
         };
 
         /// <summary>The headgear a sourced third figure must wear for a <see cref="ThirdFigure"/> row to stand in its place: the
-        /// soldier's knitted stocking cap, so a row never changes what its headgear source shows.</summary>
+        /// veteran fighter's knitted stocking cap, so a row never changes what its headgear source shows.</summary>
         public static readonly IReadOnlyDictionary<string, string> ThirdOverHeadgear = new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            [Soldier1948] = UnitData.WoolCap,
+            [VeteranFighter] = UnitData.WoolCap,
         };
 
         /// <summary>An Arab force's own figure, by side. The generated 1948 infantry have separate Syrian, Egyptian, ALA and
