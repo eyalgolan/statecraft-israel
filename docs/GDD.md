@@ -401,6 +401,12 @@ On 2 November 2026 the owner ruled on Arms bought on credit, a lever on the war 
 |-|-|-|
 | A lever for the war-time debt (#813) | "Spend the dollars (Recommended)" | During the war (rungs 4 and 5) the player may convert up to $4m a month of foreign currency into Money, $100m in total; the reserves run out sooner, so the sourced 1951 currency crisis and its Food-import cut come closer (`R-MONEY-004`; [ruling](https://github.com/eyalgolan/statecraft-israel/issues/813#issuecomment-6564883926), [options](https://github.com/eyalgolan/statecraft-israel/issues/813#issuecomment-6564855158)). This overrides D-C3 ("Keep them internal, under Money, at least through cutover ... and hide them if they confuse") only for the foreign-currency reserve shown on the Defence screen where this order is made; the top bar keeps its Foreign currency meter (owner, 2 November 2026: "Keep it", [#2204](https://github.com/eyalgolan/statecraft-israel/pull/2204#issuecomment-6569134870)). |
 
+#### Later rulings, 3 November 2026
+
+| Question | Owner's answer (3 November 2026) | Rule |
+|-|-|-|
+| City building in the MVP ([#1700](https://github.com/eyalgolan/statecraft-israel/issues/1700)) | "Builders in the MVP (Recommended)" ([recorded on #1700](https://github.com/eyalgolan/statecraft-israel/issues/1700#issuecomment-6595906828)) | The option read: "Builders in the MVP: projects need Money and people, a project with nobody on it waits, one start a turn." MVP city projects are built by assigned builders as #1700 specifies: a project needs its Money and its builders, a project with no builders waits and makes no progress, and at most one project start per city per turn, and the national `map_actions_per_turn` 2 still applies; the start limit is the owner's corrected ruling, "One per city, plus 2 nationally" (owner, 3 November 2026). Open: the inactive `gdd-0.3` fixture of #2257 still counts `construction.starts_per_turn` (1) nationwide, not per city (`sim/Statecraft.Sim/Gdd03ProjectBuildFixture.cs:47`). Money shortfalls still borrow (D1). This replaces the worker-free construction of `R-PROJ-001` (Q-PROJ-3) and adds the per-city start limit to its two starts a turn (Q-PROJ-4) as MVP design; the game keeps those `gdd-0.1` rules until #1700 lands. |
+
 ## Deferred decisions
 
 These are recorded once here. Feature files link here instead of maintaining competing open-question lists.

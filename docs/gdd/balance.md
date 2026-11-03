@@ -52,7 +52,7 @@ All operative starting roles partition the retained census-derived population to
 | `craft.course_cost` / `craft.course_turns` (proposal) | `5 / 6` | Money / turns; initial Industry apprenticeship course | Amir's proposal; the owner's 30 October 2026 conflict review did not rule on this [S11], and the same day the owner kept the set values instead ("Keep the set values (Recommended)", #2013 balance rows), which `content/gdd03-balance.yaml` holds (#2115) |
 | `craft.course_income` | `1` | Money per staffed course turn | Agreed |
 | `craft.expert_work_turns` | `36` | actual apprentice working turns to expert | Agreed |
-| `builder.slots_per_project` | `3` | simultaneous builders | Amir's proposal; the owner's 30 October 2026 conflict review did not rule on this [S11]; `content/gdd03-balance.yaml` lists it as `3` (basis Agreed, transcribed from #1668); live city projects need no workers (`R-PROJ-001`, `docs/rules/mvp.md:145`) |
+| `builder.slots_per_project` | `3` | simultaneous builders | Amir's proposal; the owner's 30 October 2026 conflict review did not rule on this [S11]; `content/gdd03-balance.yaml` lists it as `3` (basis Agreed, transcribed from #1668); the owner adopted builders for the MVP on 3 November 2026 ("Builders in the MVP (Recommended)") [S16]; live city projects need no workers until #1700 lands (`R-PROJ-001`, `docs/rules/mvp.md:149`) |
 | `builder.work_rate` | `1 / 1.5 / 3` | work units per turn: ordinary or novice / apprentice / expert | Amir's proposal; the owner's 30 October 2026 conflict review did not rule on this [S11]; `content/gdd03-balance.yaml` lists it as `1 / 1.5 / 3` (basis Agreed, transcribed from #1668); live city projects advance one turn a turn (`R-PROJ-003`, `docs/rules/mvp.md:149`) |
 | `construction.starts_per_turn` | `2` | new city projects nationwide per turn | Retained `R-PROJ-001` limit, configured by `map_actions_per_turn` [S10]; Amir's proposed `1`: the owner's 30 October 2026 conflict review did not rule on this [S11]; `content/gdd03-balance.yaml` lists it as `1` (basis Agreed, transcribed from #1668) |
 | `field.slots` | `1` | farmer per prepared field | Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative regional-field model) |
@@ -63,7 +63,7 @@ Amir's farmer/pioneer work XP, counting actual qualifying turns and allowing pro
 
 ### Project catalogue
 
-**Amir's proposal, declined by the owner on 30 October 2026 (Upkeep conflict, option A) [S11]:** completed facilities could have upkeep. For Amir's assigned builders and work in city construction and on-site pioneer work for standalone facilities, the owner's 30 October 2026 conflict review did not rule on this; the worker-free fixed-time `R-PROJ-001` to `R-PROJ-003` (`docs/rules/mvp.md:145`) and `R-CAMP-001` (`docs/rules/mvp.md:231`) stay operative.
+**Amir's proposal, declined by the owner on 30 October 2026 (Upkeep conflict, option A) [S11]:** completed facilities could have upkeep. For Amir's assigned builders and work in city construction, the owner adopted builders for the MVP on 3 November 2026 ("Builders in the MVP (Recommended)") [S16]; the worker-free fixed-time `R-PROJ-001` to `R-PROJ-003` (`docs/rules/mvp.md:149`) describe the game until #1700 lands. For on-site pioneer work for standalone facilities, the 30 October 2026 conflict review did not rule; `R-CAMP-001` (`docs/rules/mvp.md:237`) stays operative.
 
 | Project key | Cost (Money) | Retained duration / proposed work | Completion effect | Upkeep (Money/turn) | Basis |
 | --- | --- | --- | --- | --- | --- |
@@ -193,7 +193,7 @@ Historical census estimates, real camp opening dates, authored region borders, a
 
 - [S1] Design authority and provenance, docs/GDD.md.
 - [S3] Owner play-time ruling, [#1687](https://github.com/eyalgolan/statecraft-israel/issues/1687#issuecomment-6511461164) (checked 2026-10-30).
-- [S4] Retained census scale and worker-free city projects, docs/gdd/cities.md.
+- [S4] Retained census scale and city projects, docs/gdd/cities.md.
 - [S5] Retained pioneer training duration, docs/gdd/training.md.
 - [S6] Retained military-unit Strength rule, docs/gdd/military-combat.md.
 - [S7] Retained CBS arrivals rule, docs/gdd/one-city.md.
@@ -205,6 +205,7 @@ Historical census estimates, real camp opening dates, authored region borders, a
 - [S13] Owner's 2 November 2026 ruling on #813, "Spend the dollars (Recommended)", [GDD later rulings, 2 November 2026](../GDD.md#later-rulings-2-november-2026); the $100m is the Export-Import Bank's 1949 credit (FRUS 1949 vol. VI, editorial note d407).
 - [S14] Israel's dollar rates, 1948-1952: IMF, Annual Report 1950, Appendix I, pp. 88-89; Federal Reserve Bulletin, November 1949, p. 1336; Michaely, *Israel's Foreign Exchange Rate System* (1971), p. 10 and Table 2-1; Patinkin, *The Israel Economy: The First Decade*, Table 43, p. 121 ([#813](https://github.com/eyalgolan/statecraft-israel/issues/813#issuecomment-6565039439), checked 2026-11-02).
 - [S15] Owner's 2 November 2026 ruling on the housing surcharge slope (#1703), recorded in `content/gdd03-balance.yaml` (`housing.money_slope`) and `docs/rules/mvp.md` (`R-HOUSE-005`); and the owner's 2 November 2026 answers on #2291, "Yes, 5 pp under GDD 0.3 (Recommended)" for the overflow and "Keep the 2-point loss (Recommended)" for the cohesion term, recorded in `docs/rules/mvp.md` (`R-HOUSE-005`).
+- [S16] Owner's 3 November 2026 ruling on #1700, "Builders in the MVP (Recommended)", [GDD later rulings, 3 November 2026](../GDD.md#later-rulings-3-november-2026).
 
 ## Open questions
 
