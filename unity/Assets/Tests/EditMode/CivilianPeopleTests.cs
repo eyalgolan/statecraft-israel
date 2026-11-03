@@ -520,9 +520,11 @@ public sealed class CivilianPeopleTests
         placed.UnionWith(Statecraft.Game.Map.Kits.TownModels.Ids); // #1273: 18 originals and five generated houses are catalogued and requested by TownModelLayer
         // Tel Aviv's, Jerusalem's and Haifa's whole towns stay catalogued but unused: the four cities draw their buildings at
         // every zoom (owner, 2 November 2026, "Yes, small buildings at every zoom").
-        CollectionAssert.AreEquivalent(new[] { SpecialBuildingModels.Workshop, TownLandmarks.Jerusalem, TownLandmarks.TelAviv, TownLandmarks.Jerusalem3D, TownLandmarks.Haifa },
+        // #336's soldier as delivered has no rig; the tokens draw his rigged copy in his place (#2384; owner, 3 November 2026:
+        // "rig Tal's later"), and the delivered file stays catalogued, unchanged and unplaced.
+        CollectionAssert.AreEquivalent(new[] { SpecialBuildingModels.Workshop, TownLandmarks.Jerusalem, TownLandmarks.TelAviv, TownLandmarks.Jerusalem3D, TownLandmarks.Haifa, "figure-soldier-1948-v1" },
             CollectionCatalog.Ids.Where(id => !placed.Contains(id)).ToList(),
-            "every catalogued model has a place but b21, the first Jerusalem and the three cities' whole towns, each held back by an owner ruling");
+            "every catalogued model has a place but b21, the first Jerusalem, the three cities' whole towns and the unrigged soldier, each held back by an owner ruling");
         CollectionAssert.IsSubsetOf(placed.ToList(), CollectionCatalog.Ids.ToList(), "every placed id is a catalogued model");
     }
 

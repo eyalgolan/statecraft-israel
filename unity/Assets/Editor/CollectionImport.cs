@@ -264,7 +264,7 @@ namespace Statecraft.Game.EditorTools
         public static readonly IReadOnlyCollection<string> TokenFigures = new HashSet<string>(StringComparer.Ordinal)
         {
             UnitFigures.SabraPioneer, UnitFigures.PioneerVeteran, UnitFigures.YoungRecruit, UnitFigures.VeteranFighter,
-            UnitFigures.PalmachScout, UnitFigures.ArabLegion, UnitFigures.Irregular,
+            UnitFigures.PalmachScout, UnitFigures.Soldier1948, UnitFigures.ArabLegion, UnitFigures.Irregular,
             UnitFigures.SyrianInfantry, UnitFigures.IraqiInfantry, UnitFigures.EgyptianInfantry, UnitFigures.AlaInfantry,
             UnitFigures.LebaneseRegular,
         };
@@ -286,9 +286,18 @@ namespace Statecraft.Game.EditorTools
         }
 
         /// <summary>Sets <paramref name="controller"/>'s walk state to the model's walk take and its attack state to its
-        /// fire take, adding each state the first time; a take the model lacks adds no state (C04 has no fire).</summary>
+        /// fire take, adding each state the first time; a take the model lacks adds no state (C04 has no fire). The default
+        /// state, when it plays the idle take, is named idle, the state a token's figures return to after a move
+        /// (UnitFigureMotion.IdleState): a controller made from an original's "Armature|idle" take is named after the take.</summary>
         internal static void AddMotionStates(AnimatorController controller, string model)
         {
+            var idle = controller.layers[0].stateMachine.defaultState;
+            if (idle != null && idle.motion is AnimationClip take && idle.name != UnitFigureMotion.IdleState
+                && (take.name == "idle" || take.name.EndsWith("|idle", StringComparison.OrdinalIgnoreCase)))
+            {
+                idle.name = UnitFigureMotion.IdleState;
+                EditorUtility.SetDirty(controller);
+            }
             var clips = AssetDatabase.LoadAllAssetsAtPath(model).OfType<AnimationClip>()
                 .Where(c => !c.name.StartsWith("__preview__", StringComparison.Ordinal)).ToList();
             SetState(controller, UnitFigureMotion.WalkState, WalkTake(clips));
