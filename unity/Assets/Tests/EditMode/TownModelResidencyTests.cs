@@ -900,7 +900,8 @@ public class TownModelResidencyTests
     const float TwelveKmM = 11_775f, ThirtyKmM = 30_394f, GameplayM = 60_000f;
 
     /// <summary>The v0.3.2 blocker (white 100x kit houses where v0.3.1 drew Tal Heuberger's building models): Imwas's merged
-    /// locality tile swaps to its building models at 12 km and at 30 km, and the models draw.</summary>
+    /// locality tile swaps to its building models at 12 km and at 30 km, and the models draw; at 90 km, within the far band,
+    /// it swaps to their far-off copies (#2378: a village has no whole-town model).</summary>
     [Test]
     public void ImwasVillageTileSwapsToBuildingModelsAtTwelveAndThirtyKm()
     {
@@ -908,7 +909,7 @@ public class TownModelResidencyTests
         var imwas = s.Footprint("imwas");
         Assert.Greater(s.layer.CountFor("imwas"), 0, "Imwas has building models");
         var (kit, close) = s.Tile(imwas.centre);
-        foreach (float d in new[] { TwelveKmM, ThirtyKmM })
+        foreach (float d in new[] { TwelveKmM, ThirtyKmM, 90_000f })
         {
             var camera = s.Camera(imwas.centre, d);
             string at = FormattableString.Invariant($"Imwas at {d / 1000f} km");
@@ -966,15 +967,14 @@ public class TownModelResidencyTests
     /// jaffa - instead of the huge buildings", confirmed as "Yes, small buildings at every zoom". In the player's streaming
     /// path and the production policy, each of the four cities in view is drawn from its building models at the widest zoom
     /// (250 km), the opening zoom (90 km), the gameplay view (60 km), 30 km and the closest zoom: they are asked for, the
-    /// kit gives way and the models draw. Another town in view far off keeps its kit and asks for nothing.</summary>
+    /// kit gives way and the models draw (the far-off copies beyond the close switch, #2378). Another town in view far off
+    /// with a whole-town model (Petah Tikva) keeps its kit and asks for nothing.</summary>
     [Test]
     public void TheFourCitiesDrawTheirBuildingModelsAtEveryZoom()
     {
         using var s = new StreamedMap();
         // First, a fresh camera over Petah Tikva (beside Tel Aviv and Jaffa) at the opening zoom: it keeps its kit (and its
-        // whole-town model), and only the four cities' kinds are asked for.
-        var cityKinds = TownLandmarksTests.BigCities.SelectMany(id => s.layer.InstancesOf(id)).Select(m => TownModels.Ids[(int)m.Model])
-            .ToHashSet(StringComparer.Ordinal);
+        // whole-town model), and only far-off copies are asked for.
         var petah = s.Footprint("petah_tikva");
         var far = s.Camera(petah.centre, 90_000f);
         s.Settle(far);
@@ -982,7 +982,10 @@ public class TownModelResidencyTests
         Assert.IsFalse(s.kits.Find("petah_tikva").GetComponent<MeshRenderer>().forceRenderingOff, "Petah Tikva's kit draws at 90 km");
         Assert.IsTrue(s.layer.ReadyForTown("tel_aviv", far), "Tel Aviv in the same view: its building models");
         CollectionAssert.IsNotEmpty(s.RequestOrder);
-        CollectionAssert.IsSubsetOf(s.RequestOrder.Distinct().ToList(), cityKinds.ToList(), "far off only the four cities' kinds are asked for");
+        // #2378: far off only far-off copies are asked for, never an original; the cities' among them.
+        foreach (var id in s.RequestOrder) Assert.IsTrue(CollectionCatalog.IsFarCopy(id), "far off, asked for an original: " + id);
+        CollectionAssert.IsSubsetOf(s.layer.InstancesOf("tel_aviv").Select(m => CollectionCatalog.FarCopy(TownModels.Ids[(int)m.Model])).Distinct().ToList(),
+            s.RequestOrder.Distinct().ToList(), "Tel Aviv's far-off copies are asked for");
         // A merged village tile never holds one of the four cities (AdmitInView decides a place by its first id).
         var viewPlaces = (System.Collections.IEnumerable)typeof(TownModelLayer).GetField("viewPlaces", Flags)!.GetValue(s.layer)!;
         foreach (var (ids, _) in viewPlaces.Cast<(string[] ids, Bounds bounds)>())
@@ -1063,38 +1066,41 @@ public class TownModelResidencyTests
         Assert.That(() => submit(default, camera), UnityEngine.TestTools.Constraints.Is.Not.AllocatingGCMemory(), "one far submission");
     }
 
-    /// <summary>A failed building bundle in one of the four cities (Tel Aviv's b01): the city keeps its code-built kit at 90 km
-    /// and at 2 km (it has no whole-town model to fall back to), the map draws on, the kind is asked for once, and the layer
-    /// warns once.</summary>
+    /// <summary>A failed building bundle in one of the four cities (Tel Aviv's b01: its far-off copy at 90 km, the original at
+    /// 2 km): the city keeps its code-built kit there (it has no whole-town model to fall back to), the map draws on, the
+    /// original is asked for once, the far-off copy once per visit of the far band (its lease retires at 2 km), and the
+    /// layer warns once for each failed id.</summary>
     [Test]
     public void ACityWhoseBuildingBundleFailsKeepsItsKit()
     {
         using var s = new StreamedMap();
-        const string failed = "b01-white-city-v2";
+        const string original = "b01-white-city-v2"; string far = CollectionCatalog.FarCopy(original);
         int warnings = 0;
-        void Count(string message, string _, LogType type) { if (type == LogType.Warning && message.Contains(failed)) warnings++; }
+        void Count(string message, string _, LogType type) { if (type == LogType.Warning && message.Contains(original)) warnings++; }
         Application.logMessageReceived += Count;
         try
         {
             var at = s.Footprint("tel_aviv").centre;
             var kit = s.kits.Find("tel_aviv").GetComponent<MeshRenderer>();
             var camera = s.Camera(at, 90_000f);
-            foreach (float d in new[] { 90_000f, 2_000f, 90_000f })
+            foreach (var (d, failed) in new[] { (90_000f, far), (2_000f, original), (90_000f, far) })
             {
                 s.Pose(camera, at, d); s.SettleFailing(camera, failed);
                 string where = FormattableString.Invariant($"Tel Aviv at {d / 1000f} km");
-                Assert.IsFalse(s.layer.ReadyForTown("tel_aviv", camera), where + ": not ready without b01");
+                Assert.IsFalse(s.layer.ReadyForTown("tel_aviv", camera), where + ": not ready without " + failed);
                 Assert.IsFalse(kit.forceRenderingOff, where + ": the kit draws");
                 Assert.DoesNotThrow(() => s.Submit(camera), where);
             }
-            Assert.AreEqual(1, s.RequestOrder.Count(id => id == failed), "b01 is asked for once");
-            Assert.AreEqual(1, warnings, "one warning for the failed kind");
+            Assert.AreEqual(2, s.RequestOrder.Count(id => id == far), "the far-off copy of b01 is asked for once per far visit");
+            Assert.AreEqual(1, s.RequestOrder.Count(id => id == original), "b01 is asked for once");
+            Assert.AreEqual(2, warnings, "one warning for each failed id");
         }
         finally { Application.logMessageReceived -= Count; }
     }
 
-    /// <summary>The 1.5 GB guard: zooming out to the 60 km gameplay view releases every building-model lease and the kits
-    /// draw again.</summary>
+    /// <summary>The 1.5 GB guard: zooming out to the 60 km gameplay view releases every original's lease (the four cities'
+    /// too: beyond the close switch they draw their far-off copies, #2378) and asks for far-off copies instead; until those
+    /// arrive the kits draw again.</summary>
     [Test]
     public void BuildingModelsUnloadAtSixtyKm()
     {
@@ -1105,18 +1111,50 @@ public class TownModelResidencyTests
         s.Settle(camera);
         Assert.IsTrue(s.layer.ReadyForTown("imwas", camera), "precondition: Imwas ready at 30 km");
         Assert.IsNotEmpty(s.RequestOrder);
+        foreach (var id in s.RequestOrder) Assert.IsFalse(CollectionCatalog.IsFarCopy(id), "at 30 km the originals are asked for, not " + id);
+        int originals = s.RequestOrder.Count;
         s.Pose(camera, imwas.centre, GameplayM);
         s.layer.PrepareCamera(camera); s.layer.RetireReleasedModels();
         // The four cities' buildings in view stay at every zoom (owner, 2 November 2026). From 60 km over Imwas the view holds
-        // Jerusalem, Tel Aviv and Jaffa, not Haifa: a fixed expectation, and only those three cities' kinds stay.
+        // Jerusalem, Tel Aviv and Jaffa, not Haifa: a fixed expectation.
         var inView = new[] { "jaffa", "jerusalem", "tel_aviv" };
         CollectionAssert.AreEquivalent(inView, TownLandmarksTests.BigCities.Where(id => s.layer.AdmitsTown(id, camera)).ToList(),
             "the cities admitted at 60 km over Imwas");
-        var kept = inView.SelectMany(id => s.layer.InstancesOf(id)).Select(m => TownModels.Ids[(int)m.Model]).ToHashSet(StringComparer.Ordinal);
-        Assert.AreEqual(s.RequestOrder.Count(id => !kept.Contains(id)), s.Released,
-            "every building-model lease is released at 60 km but the kinds of the four cities in view: " + string.Join(", ", kept));
-        Assert.IsFalse(s.layer.ReadyForTown("imwas", camera), "no building models at 60 km");
-        Assert.IsFalse(kit.forceRenderingOff, "the kit tile draws again at 60 km");
+        Assert.AreEqual(originals, s.Released, "every original's lease is released at 60 km, the cities' too");
+        var asked = s.RequestOrder.Skip(originals).ToList();
+        CollectionAssert.IsNotEmpty(asked, "the far-off copies are asked for at 60 km");
+        foreach (var id in asked) Assert.IsTrue(CollectionCatalog.IsFarCopy(id), "at 60 km only far-off copies are asked for, not " + id);
+        Assert.IsFalse(s.layer.ReadyForTown("imwas", camera), "no building models at 60 km until the far-off copies arrive");
+        Assert.IsFalse(kit.forceRenderingOff, "the kit tile draws again at 60 km until then");
+    }
+
+    /// <summary>#2378 (owner, 3 November 2026: "Ask Tal; allow them far off only"): over Tel Aviv a fresh camera at 39 km asks
+    /// for the originals and draws them; at 41 km and at 90 km it asks for the far-off copies ("&lt;id&gt;-far",
+    /// CollectionCatalog.FarCopy) and never an original, and draws at least the city's instances (the copy stands in the
+    /// original's matrix); every kind the city places is asked for at its tier.</summary>
+    [Test]
+    public void BelowTheCloseSwitchTheOriginalsStreamAndBeyondItTheFarCopies()
+    {
+        using var s = new StreamedMap();
+        var at = s.Footprint("tel_aviv").centre;
+        var kinds = s.layer.InstancesOf("tel_aviv").Select(m => TownModels.Ids[(int)m.Model]).Distinct().ToList();
+        foreach (var (d, far) in new[] { (39_000f, false), (41_000f, true), (90_000f, true) })
+        {
+            // The earlier cameras stay (nothing retires), so a kind asked for at 41 km is not asked for again at 90 km: the
+            // new requests of each pose are checked for their tier, and Tel Aviv's kinds against every request so far.
+            int before = s.RequestOrder.Count;
+            var camera = s.Camera(at, d);
+            string where = FormattableString.Invariant($"Tel Aviv at {d / 1000f} km");
+            s.Settle(camera);
+            Assert.IsTrue(s.layer.ReadyForTown("tel_aviv", camera), where + ": ready");
+            var asked = s.RequestOrder.Skip(before).Distinct().ToList();
+            CollectionAssert.IsNotEmpty(asked, where);
+            foreach (var id in asked) Assert.AreEqual(far, CollectionCatalog.IsFarCopy(id), where + ": asked for " + id);
+            foreach (var kind in kinds) CollectionAssert.Contains(s.RequestOrder, far ? CollectionCatalog.FarCopy(kind) : kind, where);
+            s.Submit(camera);
+            Assert.GreaterOrEqual(s.layer.LastDrawn, s.layer.CountFor("tel_aviv"), where + ": Tel Aviv's instances drawn");
+            Assert.AreEqual(!far, s.layer.LastClose, where + ": the close switch");
+        }
     }
 
     /// <summary>The production view admission (ConfigureProduction) on a synthetic layer: towns and merged village tiles wired

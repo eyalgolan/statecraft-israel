@@ -378,9 +378,9 @@ public class TownLandmarksTests
                 var buildingLayer = root.GetComponentInChildren<TownModelLayer>();
                 bool plainReady = (bool)ResidencyCall(buildingLayer, typeof(TownModelLayer), "ReadyForTown", plain.Id, Camera.main)!;
                 Assert.AreEqual(plainReady, plainKit.forceRenderingOff, "an unrelated plain town keeps fallback");
-                // Above the close switch only the four cities' building models are admitted (TownModelLayer.AtZoom), so the
-                // plain town is never ready there and its kit must draw.
-                if (!close) Assert.IsFalse(plainReady, $"{d:F0} m: the plain town's building models are not admitted");
+                // Above the close switch a plain town (no whole-town model) draws the far-off copies of its building models
+                // within the far band (#2378: 60 km) and nothing beyond it (120 km), where its kit must draw.
+                if (!close) Assert.AreEqual(TownModelLayer.FarAt(d, null), plainReady, $"{d:F0} m: the plain town's far-off copies");
             }
         }
         finally { byId[unmapped] = row; }

@@ -167,8 +167,10 @@ def test_tal_original_licensing_matches_manifest_exactly():
     # Afik Faerman's main theme (#39, #2240; owner, 2 November 2026: CC BY-NC-ND 4.0, credited to Afik): one exact-file row.
     music = [r for r in independent if r["glob"] == "unity/Assets/StreamingAssets/audio/music/Main_1.3.ogg"]
     assert len(music) == 1 and music[0]["artist"] == "Afik Faerman" and music[0]["ai_generated"] is False
-    assert len([r for r in independent if r["glob"] not in added and r not in music]) == 50  # the hex-tile props row and the #1901 -light meshes among them
-    assert len(independent) == 94  # 146 originals + 94 independent grants = 240 total
+    # The hex-tile props row, the #1901 -light meshes and the two #2378 far-off copy rows (*-far.asset, *-far.png; owner,
+    # 3 November 2026, confirms Tal's permission) among them.
+    assert len([r for r in independent if r["glob"] not in added and r not in music]) == 52
+    assert len(independent) == 96  # 146 originals + 96 independent grants = 242 total
     for row in selected:
         assert row["licence"] == "CC-BY-NC-ND-4.0"
         assert row["artist"] == "Tal Heuberger"

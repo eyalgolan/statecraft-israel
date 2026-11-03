@@ -145,7 +145,14 @@ namespace Statecraft.Game.Map.Kits
             var towns = townGo.AddComponent<TownModelLayer>();
             if (residency == null) throw new System.ArgumentNullException(nameof(residency));
             towns.ConfigureProduction(residency.Towns);
-            towns.Init(built.Models, townModels, swaps, nearTowns, rendererTownIds, rendererTileIds);
+            // #2378: beyond the close switch the places with no whole-town model draw the far-off copies of their building
+            // models: the game settlements TownLandmarks gives none (the four cities, the towns with no row) and every 1948
+            // locality (TownLandmarks.Wants seats the game settlements only); the other settlements keep "Whole model far,
+            // buildings near" (owner, 18 October 2026).
+            var farTowns = new List<string>();
+            foreach (var s in settlements) if (Collection.TownLandmarks.ModelFor(s) == null) farTowns.Add(s.Id);
+            foreach (var s in localities) farTowns.Add(s.Id);
+            towns.Init(built.Models, townModels, swaps, nearTowns, rendererTownIds, rendererTileIds, farTowns);
             stats.LandmarkParts = parts;
             var localityIds = new HashSet<string>(System.StringComparer.Ordinal);
             foreach (var locality in localities) localityIds.Add(locality.Id);

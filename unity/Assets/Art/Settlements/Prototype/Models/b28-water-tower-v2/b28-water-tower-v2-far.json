@@ -1,0 +1,15 @@
+{
+    "tool": "FarModelLevels",
+    "source": "Assets/Art/Settlements/Prototype/Models/b28-water-tower-v2/b28-water-tower-v2.fbx",
+    "source_sha256": "d858dfc502a37ab848f57ca989b44c4310d4c5f0d35da60925e958187e90b706",
+    "colour_map": "Assets/Art/Settlements/Prototype/Models/b28-water-tower-v2/b28-water-tower-v2_basecolor.jpg",
+    "colour_map_sha256": "1bbeeda19ba2cd78e16ff5a4bc186f5d59416328354ca93e7bb42d1c41979940",
+    "source_triangles": 5999,
+    "triangles": 400,
+    "target_triangles": 400,
+    "cell_px": 8,
+    "supersample": 3,
+    "sample_px": 512,
+    "atlas_px": 256,
+    "provenance": "Derived from Tal Heuberger's original (the source FBX and colour map above) by FarModelLevels: a subset of the model's own vertices (exact positions, none added or moved) and a colour map baked from the original's. Same licence, CC BY-NC-ND 4.0, credit Tal Heuberger; lighter far-off derived copy; owner confirms Tal's permission, 3 Nov 2026 (#2378)."
+}
