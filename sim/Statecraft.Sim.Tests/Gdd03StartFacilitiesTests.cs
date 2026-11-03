@@ -41,7 +41,10 @@ public class Gdd03StartFacilitiesTests
     [Fact]
     public void AbsentOverlayLeavesGdd03CitiesUnchanged()
     {
-        var c = LoadShipped(true, null);
+        var reads = new List<string>();
+        var c = LoadShipped(true, null, reads.Add);
+        Assert.Equal(SaveGame.Gdd03Ruleset, c.Ruleset);
+        Assert.Contains(OverlayFile, reads); // requested under gdd-0.3; the reader returned null, so the absent path ran
         Assert.Equal(new[] { "tel_aviv" }, c.Cities.Where(x => x.Facilities.Contains("military_camp")).Select(x => x.Id));
         Assert.Equal(new[] { "military_camp", "hakhshara" }, c.Cities.Single(x => x.Id == "tel_aviv").Facilities);
         Assert.False(Training.HasFacility(c, Simulation.NewGame(c, 1, Mode.Historical), "jerusalem", "military_camp"));
