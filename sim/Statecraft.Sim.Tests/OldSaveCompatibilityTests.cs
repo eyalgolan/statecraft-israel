@@ -23,9 +23,10 @@ public class OldSaveCompatibilityTests
 
         // Owner, 3 Nov 2026, #2087, option (a) "Accept replay differs": a v0.3.4 save that chose or delegated an
         // operation card replays differently now that the cards' unit orders apply under gdd-0.1, and loads with
-        // replay_differs. This save chose or delegated such a card, so it checks the accepted outcome: it still loads,
-        // keeps its open order and warns content_changed plus replay_differs, nothing else. A v0.3.4 save that never
-        // touches these cards still replays identically (OldSaveNoOperationCardsTests).
+        // replay_differs. No v0.3.4 save that never touches these cards was produced, so this save checks the accepted
+        // outcome: it still loads, keeps its open order and warns content_changed plus replay_differs, nothing else.
+        // Then changed (3 Nov 2026, maintainer agent; the lines above are Beri's, unchanged): a v0.3.4 save that never
+        // touches these cards now exists and still replays identically (OldSaveNoOperationCardsTests).
         var order = Assert.IsType<UnitOrder>(Assert.Single(loaded.Committed));
         Assert.Equal((3, Orders.Fortify), (order.Unit, order.Order));
 
