@@ -32,18 +32,19 @@ namespace Statecraft.Sim
         internal int Turn { get; private set; }
         internal IReadOnlyList<Gdd03FixtureProject> Projects => projects;
 
-        internal Gdd03ProjectBuildFixture(Gdd03ProjectCatalogue catalogue, decimal money)
+        /// <summary>The national limit on city starts a turn: the game's map_actions_per_turn (content/rules.yaml), read
+        /// from <paramref name="rules"/>, which the owner's 3 November 2026 ruling keeps ("One per city, plus 2 nationally").</summary>
+        internal int NationalStarts { get; }
+
+        internal Gdd03ProjectBuildFixture(Gdd03ProjectCatalogue catalogue, Rules rules, decimal money)
         {
             this.catalogue = catalogue ?? throw new ArgumentNullException(nameof(catalogue));
+            NationalStarts = (rules ?? throw new ArgumentNullException(nameof(rules))).MapActionsPerTurn;
             Money = money;
         }
 
-        /// <summary>The national limit on city starts a turn: the game's map_actions_per_turn (content/rules.yaml), which
-        /// the owner's 3 November 2026 ruling keeps ("One per city, plus 2 nationally").</summary>
-        internal const int NationalStarts = 2;
-
         /// <summary>Pays the kind's full cost up front, borrowing any shortfall (D1, R-MONEY-003). A city starts at most
-        /// <see cref="Statecraft.Sim.Projects.Gdd03CityStartsPerTurn"/> (1) project a turn, and <see cref="NationalStarts"/> (2) start a turn
+        /// <see cref="Statecraft.Sim.Projects.Gdd03CityStartsPerTurn"/> (1) project a turn, and <see cref="NationalStarts"/> (map_actions_per_turn) starts a turn
         /// nationally, as R-PROJ-001 under gdd-0.3; a start past either is refused before anything is paid, the city's
         /// limit first. Cancel and housing repair are other #1700 slices.</summary>
         internal int Start(string key, string city)
