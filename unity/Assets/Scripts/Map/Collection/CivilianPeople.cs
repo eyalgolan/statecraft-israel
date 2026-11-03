@@ -393,6 +393,8 @@ namespace Statecraft.Game.Map.Collection
             new Dictionary<(string, CollectionDetail), List<GameObject>>();
         readonly Dictionary<string, Transform> peopleByKey = new Dictionary<string, Transform>(StringComparer.Ordinal);
         readonly List<(Transform Person, bool Animate)> pairs = new List<(Transform, bool)>();
+        readonly List<Renderer> applyRenderers = new List<Renderer>();
+        readonly List<Animator> applyAnimators = new List<Animator>();
         readonly List<(string key, Vector3 at, float radius)> residencyAnchors = new List<(string, Vector3, float)>();
         bool lastClose;
 
@@ -570,11 +572,20 @@ namespace Statecraft.Game.Map.Collection
                 if (pair.Person == null) continue;
                 var far = pair.Person.Find("Far"); var nearRoot = pair.Person.Find("Near");
                 bool near = close && nearRoot != null;
-                if (far != null) foreach (var renderer in far.GetComponentsInChildren<Renderer>(true)) if (renderer != null) renderer.forceRenderingOff = near;
+                if (far != null)
+                {
+                    applyRenderers.Clear();
+                    far.GetComponentsInChildren(true, applyRenderers);
+                    foreach (var renderer in applyRenderers) if (renderer != null) renderer.forceRenderingOff = near;
+                }
                 if (nearRoot != null)
                 {
-                    foreach (var renderer in nearRoot.GetComponentsInChildren<Renderer>(true)) if (renderer != null) renderer.forceRenderingOff = !near;
-                    foreach (var animator in nearRoot.GetComponentsInChildren<Animator>(true)) if (animator != null) animator.enabled = near && pair.Animate;
+                    applyRenderers.Clear();
+                    nearRoot.GetComponentsInChildren(true, applyRenderers);
+                    foreach (var renderer in applyRenderers) if (renderer != null) renderer.forceRenderingOff = !near;
+                    applyAnimators.Clear();
+                    nearRoot.GetComponentsInChildren(true, applyAnimators);
+                    foreach (var animator in applyAnimators) if (animator != null) animator.enabled = near && pair.Animate;
                 }
             }
         }
