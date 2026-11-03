@@ -41,8 +41,10 @@ hud.tip.standing: "התמיכה הבינלאומית זזה בעקבות הבח�
 hud.tip.fx: "מטבע החוץ נכנס מיצוא, מתרומות ומהלוואות, ויוצא על יבוא שגדל עם האוכלוסייה ועל דולרים שמומרים לכסף במסך הביטחון בזמן המלחמה. כרטיסי האירוע יכולים להוסיף לו או לגרוע ממנו. כשהוא אוזל, יבוא המזון נעצר עד שהוא מתאושש."
 # native-review-pending
 hud.nav.cabinet: "ממשלה"
-# The Cabinet disc's tip while a seat is vacant that the player can fill (#1109). For the native reviewer (#564).
+# The Cabinet disc's tip while a seat is vacant that the player can fill (#1109). Native review: owner, 3 Nov 2026 (HE
+# batch 2: "approved").
 hud.nav.cabinet_vacant: "ממשלה: יש תפקיד פנוי. אפשר למנות אליו מישהו."
+# For the native reviewer (#564)
 hud.nav.budget: "תקציב"
 # The Budget disc's tip while the Budget screen has changes that are not submitted and could be (#1109). For the native reviewer (#564).
 # Approved by Beri, a native speaker, on #1352 (22 Oct 2026).
@@ -52,8 +54,9 @@ hud.nav.why: "למה?"
 # The encyclopedia (spec 10), which replaces How to play. Agent-drafted; native review: owner, 3 Nov 2026 (HE batch 1:
 # "All fine as they are").
 hud.nav.encyclopedia: "אנציקלופדיה"
-# For the native reviewer (#564)
+# hud.nav.objectives: native review: owner, 3 Nov 2026 (HE batch 2: "approved").
 hud.nav.objectives: "יעדים"
+# For the native reviewer (#564)
 hud.nav.settings: "הגדרות"
 hud.new_game: "משחק חדש"
 hud.end_turn: "סיום התור"
@@ -126,14 +129,11 @@ advisor.page.food.title: "מלאי המזון"
 advisor.page.food.text: "אני עוקבת אחרי המלאי הזה בכל חודש. המזון הוא מלאי לאומי אחד: בכל תור השדות החרושים מוסיפים את היבול שלהם, המדינה אוכלת את מה שהיא צריכה, ויבוא ממלא את המלאי מחדש, אלא אם מטבע החוץ שלנו אזל. מחסור מוריד את הלכידות החברתית, ומלאי ריק כשהחוב בתקרה מפעיל את מונה ההפסד."
 advisor.page.national_meters.title: "המדדים הלאומיים"
 advisor.page.national_meters.text: "הלכידות החברתית עולה ויורדת עם הדיור, התעסוקה, המזון, הקיצוב והביטחון. התמיכה הבינלאומית זזה בעקבות הבחירות בכרטיסי האירוע. אף אחת מהן אינה מסיימת את המשחק, אבל אירועים מסוימים מגיבים כשאחת מהן נמוכה, ודוח הסיום מציג את שתיהן. קרבות ותנועת יחידות אינם משנים אף אחת מהן."
-# security and public_support (#2223): agent-drafted Hebrew, he_review: pending (#564).
-# native-review-pending
+# security and public_support (#2223): agent-drafted Hebrew; all four: native review: owner, 3 Nov 2026 (HE batch 2:
+# "approved").
 advisor.page.security.title: "ביטחון"
-# native-review-pending
 advisor.page.security.text: "יישובי הספר מוסיפים לביטחון במשך כמה תורות, ויותר מכך כששר החקלאות מוכשר ומשרדו מתוקצב היטב. הבחירות בכרטיסי האירוע יכולות להעלות אותו או להוריד אותו. הביטחון מחזק את הלכידות החברתית, ושתיים מארבע קבוצות הבוחרים שוקלות אותו, ולכן הוא משפיע גם על התמיכה הציבורית. הדרגה שליד שמו היא רמת הביטחון, מ־1, איום שגרתי, ועד 5, מלחמה כוללת: כרטיסי האירוע קובעים אותה, ורמה גבוהה יותר מגייסת יותר מילואים. קרבות ותנועות אינם משנים את המדד עצמו."
-# native-review-pending
 advisor.page.public_support.title: "תמיכה ציבורית"
-# native-review-pending
 advisor.page.public_support.text: "התמיכה הציבורית היא ממוצע התמיכה של ארבע קבוצות בוחרים, וכל קבוצה שוקלת שניים מבין הלכידות החברתית, הביטחון, הדיור והמזון: הלכידות החברתית נחשבת אצל שלוש מהקבוצות, הביטחון והדיור אצל שתיים כל אחד, והמזון אצל אחת. שום דבר אינו משנה אותה ישירות: היא נעה בעקבות ארבעתם. יציבות הקואליציה נעה לעברה בכל תור, וכשהיציבות נמוכה, הצבעה על התקציב עלולה להיות נגד הממשלה גם כשיש לקואליציה רוב. אף אחת מהן אינה מסיימת את המשחק."
 # advisor.page.units_movement: approved by Beri, a native speaker, on #2095 (1 Nov 2026): title and text as written.
 advisor.page.units_movement.title: "תנועת יחידות"
@@ -151,7 +151,7 @@ advisor.page.capture.title: "כיבוש מקום"
 advisor.page.capture.text: "יחידה צבאית שעוצרת במקום שבידי האויב ושאפשר לכבוש אותו, כובשת אותו מיד; מעבר דרכו אינו כובש אותו. אז חלון הכיבוש מציג את התשובות בסדר קבוע, ולצד כל אחת מה היא משנה מיד או למה היא נדחית. ״פשיטה ונסיגה״ מוציאה את הכוחות שלנו ומחזירה את המקום לשליטת האויב; ״שחרור״ משאיר שם יחידה אחת מספר קבוע של תורות, בעלות כספית בכל תור. הבחירה שלכם; היא נכנסת לתוקף בסיום התור, ועד שהיא ניתנת, הכוחות נשארים."
 advisor.page.enemy_phase.title: "התור של האויב"
 advisor.page.enemy_phase.text: "בסיום התור כל יחידת אויב מקבלת את הפקודות שלה, לפי אותם כללים שחלים עלינו. במשחק ההיסטורי כל כוח ערבי פועל לפי תסריט משלו, לעבר היעד ההיסטורי שלו. יחידה שיצאה מהתסריט תוקפת עמדה סמוכה רק כשיש לה יתרון ברור, ואחרת היא מתבצרת. ההתקפות של האויב נערכות כשהתור מוכרע, ואף אחת מהן אינה מגיעה בזמן הפוגה."
-# The Objectives screen (#1189). For the native reviewer (#564).
+# The Objectives screen (#1189). Native review: owner, 3 Nov 2026 (HE batch 2: "approved").
 objectives.title: "יעדים"
 objectives.done: "הושלם ב־{0}; בהיסטוריה ב־{1}"
 objectives.open: "טרם הושלם; בהיסטוריה ב־{0}"
@@ -191,16 +191,17 @@ settings.sound.off: "כבוי"
 settings.sound.low: "חלש"
 settings.sound.high: "חזק"
 # The start menu's music volume (#39, MenuMusic), in the sound effects' three steps. The adjectives are feminine, agreeing
-# with "מוזיקה" (as the quality row's agree with "איכות"). Agent-drafted Hebrew; native review pending (#564).
+# with "מוזיקה" (as the quality row's agree with "איכות"). Agent-drafted Hebrew; native review:
+# owner, 3 Nov 2026 (HE batch 2: "approved").
 settings.music: "מוזיקה"
 settings.music.off: "כבויה"
 settings.music.low: "חלשה"
 settings.music.high: "חזקה"
-# The language choice (#1036); the languages' names are on their buttons, in themselves (SettingsPresenter). For the
-# native reviewer (#564).
+# The language choice (#1036); the languages' names are on their buttons, in themselves (SettingsPresenter). Native
+# review: owner, 3 Nov 2026 (HE batch 2: "approved").
 settings.language: "שפה"
-# The UI scale choice (#40): "the size of the interface"; its buttons are numbers (100%, 125%, 150%). For the native
-# reviewer (#564).
+# The UI scale choice (#40): "the size of the interface"; its buttons are numbers (100%, 125%, 150%). Native review:
+# owner, 3 Nov 2026 (HE batch 2: "approved").
 settings.uiscale: "גודל הממשק"
 # The Community row and the start screen's button (#1168): "קהילה" for the row; the button is a noun phrase ("marking
 # with a star on GitHub"), like the other buttons, so no verb agrees with the player's gender; GitHub in Hebrew letters,
@@ -251,8 +252,9 @@ start.continue: "המשך"
 start.new_game: "משחק חדש"
 boot.loading: "טוען את מפת 1948…"
 toast.refused: "לא בוצע: {0}"
-# Agent-drafted Hebrew; native review pending (#564).
+# Agent-drafted Hebrew; native review: owner, 3 Nov 2026 (HE batch 2: "approved").
 toast.unit_unseen_skipped: "יחידה שחיכתה להוראות לא הוצגה על המפה, ולכן היא מדלגת על התור הזה"
+# Agent-drafted Hebrew; native review pending (#564).
 event.office: "{0}: {1}"
 event.more: "החלטות ממתינות נוספות: {0}"
 # Approved: owner, 25 Oct 2026 (recommendations page, item 4).
@@ -263,8 +265,9 @@ event.illustration: "איור"
 event.photo: "תצלום"
 event.ai_label: "איור שנוצר בבינה מלאכותית"
 # Too little Attention left to answer the card (#1034, #1043). "אפשר לסיים" and "לידי" keep the line free of the
-# player's and the minister's gender. For the native reviewer (#564).
+# player's and the minister's gender. Native review: owner, 3 Nov 2026 (HE batch 2: "approved").
 event.no_attention: "לא נשארה לך מספיק תשומת לב לענות בתור הזה. אפשר לסיים את התור, וההחלטה תעבור לידי {0}."
+# For the native reviewer (#564)
 event.cabinet: "הממשלה"
 event.option_cost: "{0} (עולה {1:0.0} תשומת לב)"
 # The objective card's line (#380; the owner's wording, #379): early, on time, later.
@@ -273,12 +276,13 @@ event.objective_early_one: "הושלם ב־{0}; בהיסטוריה ב־{1}; מו
 event.objective_on_time: "הושלם בזמן, כמו בהיסטוריה."
 event.objective_late: "הושלם באיחור של {0} חודשים לעומת ההיסטוריה."
 event.objective_late_one: "הושלם באיחור של חודש אחד לעומת ההיסטוריה."
-# A consequence card's banner and the rejoin line (#954). For the native reviewer (#564).
+# A consequence card's banner and the rejoin line (#954). Native review: owner, 3 Nov 2026 (HE batch 2: "approved").
 event.alt_origin: "מסלול חלופי. הוא נובע מהחלטת הממשלה: {0} ({1}). בהיסטוריה: {2}."
 event.alt_origin_no_record: "מסלול חלופי. הוא נובע מהחלטת הממשלה: {0} ({1})."
 event.rejoin: "חוזר למסלול ההיסטורי."
 # The capture dialog (GDD Phase 6 PR 10, #802). SENSITIVE: the owner reviews every line before any shareable build.
-# Agent-drafted, for the native reviewer (#564). Q-UI-1 (b): direct Hebrew equivalents of the GDD's words, except the
+# Agent-drafted; all 17 keys below: native review: owner, 3 Nov 2026 (HE batch 2: "approved"), "שחרור" included.
+# Q-UI-1 (b): direct Hebrew equivalents of the GDD's words, except the
 # owner's own (22 October 2026, #1317): Occupy is "שחרור", and the Deport line is the owner's "displaced" wording.
 # Gender-neutral phrasing ("יש לבחור").
 capture.intro: "כוחות ישראליים מחזיקים ב{0}, ואין שם כוחות אויב. יש לבחור מה יקרה עכשיו. הבחירה תיכנס לתוקף בסיום התור; עד שתיבחר אפשרות, הכוחות נשארים במקום."
@@ -298,7 +302,8 @@ capture.delta_attention: "{0:+0.0;-0.0}"
 capture.delta_count: "{0:+#,##0;-#,##0}"
 capture.none: "אף אחת מהאפשרויות אינה זמינה בתור הזה. הכוחות נשארים במקום, וההחלטה ממתינה."
 capture.reopen: "החלטה ממתינה: {0}"
-# The end of an occupation (#802). SENSITIVE, agent-drafted, for the native reviewer (#564). The state is "held" (מוחזק,
+# The end of an occupation (#802). SENSITIVE, agent-drafted; native review: owner, 3 Nov 2026 (HE batch 2: "approved").
+# The state is "held" (מוחזק,
 # תקופת ההחזקה; owner, #803), never שחרור, which is Occupy's name only (owner, #1317). Direct option names: סיפוח, נסיגה.
 capture.end.intro: "תקופת ההחזקה ב{0} הסתיימה. יש לבחור אם לספח את המקום או לסגת ממנו. הבחירה תיכנס לתוקף בסיום התור; עד שתיבחר אפשרות, היחידה נשארת במקום ועלות ההחזקה נמשכת."
 capture.end.option.annex: "סיפוח"
@@ -309,7 +314,9 @@ capture.end.about.withdraw: "הכוחות יוצאים, והמקום חוזר ל
 capture.end.changes: "שינויים מיידיים במשאבים:"
 capture.end.changes_none: "שינויים מיידיים במשאבים: אין"
 capture.end.none: "אף אחת מהאפשרויות אינה זמינה בתור הזה. היחידה נשארת במקום, עלות ההחזקה נמשכת, וההחלטה ממתינה."
-# Why an option cannot be chosen (#802), by the sim's refusal id. SENSITIVE, agent-drafted, for the native reviewer (#564).
+# Why an option cannot be chosen (#802), by the sim's refusal id. SENSITIVE, agent-drafted. capture.refusal.needs_unit,
+# capture.refusal.no_one_to_deport, capture.refusal.already_city and capture.refusal.unknown_outcome: native review:
+# owner, 3 Nov 2026 (HE batch 2: "approved").
 # attention, no_free_hex and not_awaiting: native review: owner, 25 Oct 2026 (recommendations page, item 6).
 capture.refusal.attention: "אין די תשומת לב בתור הזה. עלות: {1:0.0}; יתרה: {2:0.0}."
 capture.refusal.needs_unit: "לשם כך נדרשת יחידה צבאית ישראלית ב{0}."
@@ -318,7 +325,7 @@ capture.refusal.no_one_to_deport: "תושביו נמלטו בעת הכיבוש, 
 capture.refusal.already_city: "{0} כבר עיר."
 capture.refusal.not_awaiting: "אין החלטה ממתינה עבור {0}."
 capture.refusal.unknown_outcome: "האפשרות הזו אינה מוכרת."
-# SENSITIVE agent draft for #803: [NATIVE REVIEW REQUIRED] native and owner review pending.
+# SENSITIVE agent draft for #803: native review: owner, 3 Nov 2026 (HE batch 2: "approved").
 map.control.awaiting_choice: "החלטה ממתינה"
 map.control.occupied: "מוחזק"
 map.control.awaiting_end: "תקופת ההחזקה הסתיימה"
@@ -328,6 +335,7 @@ info.control.occupied: "{0}: מוחזק, תורות שנותרו: {1}"
 info.control.awaiting_end: "{0}: תקופת ההחזקה הסתיימה, החלטה ממתינה"
 info.control.depopulated: "{0}: התושבים נעקרו ממקומם, המקום מרוקן מתושביו"
 hud.standing_displaced_places: "מקומות שרוקנו מתושביהם בעקבות גירוש: {0}"
+# [NATIVE REVIEW REQUIRED] native and owner review pending.
 start.listen: "השמעת ההקלטה"
 start.stop: "עצירת ההקלטה"
 start.loading: "טוען את ההקלטה…"
@@ -335,7 +343,7 @@ start.recording_failed: "לא ניתן היה להשמיע את ההקלטה."
 outcome.order: "הפקודה שלך: {0}"
 outcome.skip: "לחיצה, Enter או רווח לדילוג · Esc מדלג על הכול"
 order.game_over: "המשחק הסתיים"
-# Hebrew draft for #1398; native review pending (#564).
+# Hebrew draft for #1398; native review: owner, 3 Nov 2026 (HE batch 2: "approved").
 order.going_home: "היחידה חוזרת הביתה בסיום התור"
 # order.no_attention and order.unknown: native review: owner, 3 Nov 2026 (HE batch 3: "Approve all as they are").
 order.no_attention: "אין מספיק תשומת לב (נדרש {0:0.0}, יש {1:0.0})"
