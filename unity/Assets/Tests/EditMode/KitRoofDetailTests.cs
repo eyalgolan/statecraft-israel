@@ -93,4 +93,39 @@ public class KitRoofDetailTests
         }
         finally { Destroy(off); Destroy(on); }
     }
+
+    /// <summary>On every set-back Tel Aviv block the stair head stands on the top storey's roof: a sweep of the real specs
+    /// (SettlementKits.TelAviv.cs: block 21-24 x 13-15 m, a stepped block's main part 0.6-0.72 of its width; Fits' sizes 1,
+    /// 0.72 and 0.5) and of every draw's range ends (set-back 2.5-3.5 m, width share 0.6-0.85, shift +-0.5; stair head
+    /// 0.2-0.3 w x 0.3-0.42 d, set off +-0.2 pw and +-0.15 pd). Each draw enters the stair head's reach linearly, so its range
+    /// ends bound it; the sizes and set-backs take five steps, as the set-back's cap bends there.</summary>
+    [Test]
+    public void SetBackStairHeadStandsOnTheTopStorey()
+    {
+        float m = KitScale.DefaultCityBlocks, eps = 1e-3f * m;
+        float[] Steps(float a, float b) => new[] { a, a + 0.25f * (b - a), a + 0.5f * (b - a), a + 0.75f * (b - a), b };
+        float[] ends = { 0f, 1f };
+        int n = 0;
+        foreach (float k in new[] { 1f, 0.72f, 0.5f })
+        foreach (float bw in new[] { 21f, 24f })
+        foreach (float part in new[] { 1f, 0.6f, 0.72f })
+        foreach (float bd in Steps(13f, 15f))
+        foreach (float backM in Steps(2.5f, 3.5f))
+        foreach (float s in ends) foreach (float sh in ends) foreach (float u in ends) foreach (float v in ends)
+        foreach (float rwS in ends) foreach (float rdS in ends)
+        {
+            float w = bw * part * k * m, d = bd * k * m;
+            float share = Mathf.Lerp(0.6f, 0.85f, s), shift = Mathf.Lerp(-0.5f, 0.5f, sh), fu = Mathf.Lerp(-0.2f, 0.2f, u), fv = Mathf.Lerp(-0.15f, 0.15f, v);
+            float rw = w * Mathf.Lerp(0.2f, 0.3f, rwS), rd = d * Mathf.Lerp(0.3f, 0.42f, rdS);
+            var (pw, pd, pu, pv, su, sv) = SettlementKits.TelAvivRoofLayout(w, d, m, true, backM, share, shift, fu, fv);
+            string spec = $"block {bw * part * k:0.##} x {bd * k:0.##} m, set-back {backM:0.##} m: top storey {pw / m:0.##} x {pd / m:0.##} m";
+            Assert.LessOrEqual(Mathf.Abs(su - pu) + 0.5f * rw, 0.5f * pw + eps, spec + ", stair head past its side");
+            Assert.LessOrEqual(Mathf.Abs(sv - pv) + 0.5f * rd, 0.5f * pd + eps, spec + ", stair head past its front or back");
+            // And the top storey stands on the main block's roof.
+            Assert.LessOrEqual(Mathf.Abs(pu) + 0.5f * pw, 0.5f * w + eps, spec + ", top storey past the block's side");
+            Assert.LessOrEqual(Mathf.Abs(pv) + 0.5f * pd, 0.5f * d + eps, spec + ", top storey past the block's front or back");
+            n++;
+        }
+        Assert.Greater(n, 0, "specs swept");
+    }
 }

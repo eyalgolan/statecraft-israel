@@ -92,23 +92,22 @@ namespace Statecraft.Game.Map.Kits
             WhiteBlockDetail(km, c, du, b.lotR, yaw, w, b.d, top, body, wall, terrace, m, ref rnd);
             RoofParapet(km, c, yaw, w, b.d, top + body, wall, m);
             // The set-back top storey: back from the street side (-v, WhiteBlockDetail's) by SetbackMinM to SetbackMaxM, and in from the other
-            // three sides by SetbackInsetM, clear of the parapet; pw x pd at (du + pu, pv) in the block's frame.
-            float pw = w, pd = b.d, pu = 0f, pv = 0f;
-            if (setback)
-            {
-                float inset = SetbackInsetM * m, back = detail.Range(SetbackMinM, SetbackMaxM) * m;
-                pw = Mathf.Min(w * detail.Range(0.6f, 0.85f), w - 2f * inset); pd = b.d - back - inset;
-                pu = detail.Range(-0.5f, 0.5f) * (w - 2f * inset - pw); pv = 0.5f * (back - inset);
-                var pc = At(du + pu, pv);
-                km.Box(pc.x, pc.y, yaw, pw, pd, top + body - 0.3f * m, top + body, storey, wall, terrace, Facade.WhiteCity, m);
-                Ribbons(km, pc, yaw, pw, pd, top + body, storey, m);
-            }
+            // three sides by SetbackInsetM, clear of the parapet; pw x pd at (du + pu, pv) in the block's frame (TelAvivRoofLayout).
+            float back = 0f, topShare = 1f, shift = 0f;
+            if (setback) { back = detail.Range(SetbackMinM, SetbackMaxM); topShare = detail.Range(0.6f, 0.85f); shift = detail.Range(-0.5f, 0.5f); }
             // The stair head (on the top storey's roof on a set-back block: pw >= 0.6 w and pd >= 0.65 d keep it inside) and
             // the shared laundry room on the terrace (none beside a set-back top storey, which is the roof's room). Both draw
             // their numbers either way, so the town's stream is unchanged.
             float rw = w * rnd.Range(0.2f, 0.3f), rd = b.d * rnd.Range(0.3f, 0.42f);
             float fu = rnd.Range(-0.2f, 0.2f), fv = rnd.Range(-0.15f, 0.15f);
-            var r1 = At(du + pu + fu * pw, pv + fv * pd);
+            var (pw, pd, pu, pv, su, sv) = TelAvivRoofLayout(w, b.d, m, setback, back, topShare, shift, fu, fv);
+            if (setback)
+            {
+                var pc = At(du + pu, pv);
+                km.Box(pc.x, pc.y, yaw, pw, pd, top + body - 0.3f * m, top + body, storey, wall, terrace, Facade.WhiteCity, m);
+                Ribbons(km, pc, yaw, pw, pd, top + body, storey, m);
+            }
+            var r1 = At(du + su, sv);
             km.Box(r1.x, r1.y, yaw, rw, rd, top + h - 2f, top + h, 2.8f * m, wall, terrace, Facade.Plain, m);
             if (RoofDetail && detail.Chance(RoofTankShare)) RoofTank(km, r1, yaw, rw, rd, top + h + 2.8f * m, m);
             if (rnd.Chance(0.4f))
@@ -124,6 +123,28 @@ namespace Statecraft.Game.Map.Kits
         /// SetbackMinM to SetbackMaxM (real m) from the street and SetbackInsetM from the other sides.</summary>
         const int SetbackMinStoreys = 5;
         const float SetbackShare = 0.45f, SetbackMinM = 2.5f, SetbackMaxM = 3.5f, SetbackInsetM = 0.5f;
+        /// <summary>The least depth share a set-back top storey keeps: the stair head (half its depth up to 0.21 d, set off up
+        /// to 0.15 pd) stays on it while pd >= 0.6 d. A shrunk block (Fits' 0.72 and 0.5) is too shallow for the full set-back.</summary>
+        const float SetbackMinDepthShare = 0.65f;
+
+        /// <summary>A Tel Aviv block's roof layout in its main block's frame (u along the street from its centre, v across), for a
+        /// <paramref name="w"/> x <paramref name="d"/> main block: the top storey's pw x pd at (pu, pv) (the whole roof unless
+        /// <paramref name="setback"/>) and the stair head's centre (su, sv). <paramref name="backM"/> (real m), <paramref name="share"/>
+        /// and <paramref name="shift"/> are the set-back's draws, <paramref name="fu"/> and <paramref name="fv"/> the stair head's.
+        /// The set-back is capped so pd >= SetbackMinDepthShare d; pw >= 0.6 w holds as drawn (share >= 0.6, and w - 2 inset >= 0.6 w
+        /// for any w of 2.5 real m or more, every block's).</summary>
+        internal static (float pw, float pd, float pu, float pv, float su, float sv) TelAvivRoofLayout(float w, float d, float m, bool setback,
+            float backM, float share, float shift, float fu, float fv)
+        {
+            float pw = w, pd = d, pu = 0f, pv = 0f;
+            if (setback)
+            {
+                float inset = SetbackInsetM * m, back = Mathf.Min(backM * m, Mathf.Max(0f, (1f - SetbackMinDepthShare) * d - inset));
+                pw = Mathf.Min(w * share, w - 2f * inset); pd = d - back - inset;
+                pu = shift * (w - 2f * inset - pw); pv = 0.5f * (back - inset);
+            }
+            return (pw, pd, pu, pv, pu + fu * pw, pv + fv * pd);
+        }
 
         /// <summary>Glass of the ribbon windows: near black, as promo 03's deep-set windows read.</summary>
         static readonly Color32 RibbonGlass = new Color32(38, 42, 48, 0);
