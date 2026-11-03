@@ -1036,9 +1036,10 @@ advisor.credit.dayan: "צילום: משה דיין, 9 בדצמבר 1953, NLI 997
 # The 15 opening cues' Hebrew, agent-drafted: native review: owner, 3 Nov 2026 (HE batch 1: "All fine as they are").
 # greeting.text's English became "The decisions are yours," (owner, 3 Nov 2026: "'Yours' (Recommended)"), and
 # greeting.cue.2's English stays "The decisions are theirs," to match the English voice clip (owner, 3 Nov 2026:
-# "Caption follows the voice (Recommended)"); their Hebrew is unchanged.
+# "Caption follows the voice (Recommended)"). greeting.text's Hebrew is unchanged; greeting.cue.2's Hebrew follows
+# the English voice too: "ההחלטות בידיהם," (owner, 3 Nov 2026: "ההחלטות בידיהם, (Recommended)").
 advisor.opening.greeting.cue.1: "למדינה צרכים דחופים ואמצעים מוגבלים."
-advisor.opening.greeting.cue.2: "ההחלטות בידיכם,"
+advisor.opening.greeting.cue.2: "ההחלטות בידיהם,"
 advisor.opening.greeting.cue.3: "והיועצים יסבירו מה כל בחירה משנה."
 advisor.opening.attention.cue.1: "תשומת לב היא היכולת לקבל החלטות בחודש הזה."
 advisor.opening.attention.cue.2: "היא מתמלאת מחדש בחודש הבא, ומה שנשאר עכשיו אינו עובר הלאה."
