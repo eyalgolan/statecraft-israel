@@ -90,14 +90,14 @@ options:
         var actual = LoadReal(new CultureInfo(culture));
 
         Assert.Equal(expected.Hash, actual.Hash);
-        // rules.yaml map_actions.transit_camp.cost -- transit_camp Money cost 1.5, a decimal (double).
+        // rules.yaml map_actions.transit_camp.cost -- a Money cost with a decimal point (double).
         Assert.Equal(expected.Rules.MapActions["transit_camp"].Cost, actual.Rules.MapActions["transit_camp"].Cost);
-        // rules.yaml natural_increase_per_year -- annual rate 0.0169, a decimal (double).
+        // rules.yaml natural_increase_per_year -- an annual rate with a decimal point (double).
         Assert.Equal(expected.Rules.NaturalIncreasePerYear, actual.Rules.NaturalIncreasePerYear);
-        // model.yaml effects[rationing_grates].k -- negative multiplier -0.15, a decimal (double).
+        // model.yaml effects[rationing_grates].k -- a negative multiplier with a decimal point (double).
         Assert.Equal(expected.Effects.Single(e => e.Id == "rationing_grates").K,
             actual.Effects.Single(e => e.Id == "rationing_grates").K);
-        // model.yaml policies[rationing].from -- policy start date 1949-03-10 (DateTime?).
+        // model.yaml policies[rationing].from -- a policy start date (DateTime?).
         Assert.Equal(expected.Policies.Single(p => p.Id == "rationing").From,
             actual.Policies.Single(p => p.Id == "rationing").From);
     }
