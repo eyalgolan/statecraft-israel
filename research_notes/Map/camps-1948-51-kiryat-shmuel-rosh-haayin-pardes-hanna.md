@@ -146,4 +146,4 @@ one of the two 1949 issues not scanned. **Searched, not found.**
 2. Rosh HaAyin and Pardes Hanna: existence is now on a reliable secondary (KC1, a Yad Ben-Zvi book) as well as the
    earlier primaries; neither camp has its own point, so a record would still have to use the town point or wait.
 3. Open the GPO records (D826-082, D199-084, D200-045) at the GPO itself to confirm the captions and dates.
-4. Scan the remaining 451 *Jerusalem Post* issues (13 July 1950 to 30 November 1951) for Kiryat Shmuel.
+4. Scan the remaining 451 *Jerusalem Post* issues (after 13 July 1950, to 30 November 1951) for Kiryat Shmuel.
