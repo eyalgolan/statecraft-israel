@@ -399,7 +399,7 @@ public class ArmsWorkshopTests
     // ---- #1722 review (F1, C4): the hex panel's next-cycle price and cycle length come from the sim ----
 
     // R-ARMS-006: the price NextCyclePrice gives before a turn is the worker's tier price (gdd03-balance workshop.cost 5/4/3,
-    // content/gdd03-balance.yaml:306) and what that turn's production step charges and records, at every worker tier.
+    // content/gdd03-balance.yaml) and what that turn's production step charges and records, at every worker tier.
     [Theory]
     [InlineData(SyntheticWorkshopTier.Ordinary, 5)]
     [InlineData(SyntheticWorkshopTier.Novice, 5)]

@@ -602,7 +602,7 @@ public class WorkshopPanelTests
         var (bridge, id) = Game(C03, t);
         Assert.IsFalse(bridge.State.Workshops.ContainsKey(id), "precondition: never staffed, no record");
         var next = Workshops.NextCyclePrice(C03, bridge.State, id);
-        Assert.AreEqual(5m, next, "gdd03-balance workshop.cost, ordinary (content/gdd03-balance.yaml:306)");
+        Assert.AreEqual(5m, next, "gdd03-balance workshop.cost, ordinary (content/gdd03-balance.yaml)");
         using var panel = Panel(ui, bridge, t);
         var (q, r) = Hex(C03);
         panel.Show(q, r);

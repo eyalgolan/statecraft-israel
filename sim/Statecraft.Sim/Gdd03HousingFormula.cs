@@ -13,7 +13,7 @@ namespace Statecraft.Sim
 
         Gdd03HousingFormula(Gdd03BalanceCatalogue c)
         {
-            // content/gdd03-balance.yaml:226-253; GDD balance.md:100-105 at 605277df.
+            // content/gdd03-balance.yaml `housing.*`; GDD balance.md:100-105 at 605277df.
             conditionMax = Scalar(c, "housing.condition_max", true);
             moneyThreshold = Scalar(c, "housing.money_threshold", true);
             moneySlope = Scalar(c, "housing.money_slope", false);
@@ -29,7 +29,7 @@ namespace Statecraft.Sim
                 || repair.Values.Count != 0 || !string.IsNullOrEmpty(repair.Expression)
                 || !repair.Parts.TryGetValue("condition_pp", out var effect))
                 throw Invalid("housing_repair", "requires agreed repair condition part");
-            // content/gdd03-balance.yaml:683-687. No repair cost/work/availability policy here.
+            // content/gdd03-balance.yaml `housing_repair.parts.condition_pp`. No repair cost/work/availability policy here.
             repairPp = Number(effect, "housing_repair.parts.condition_pp", false);
         }
 
