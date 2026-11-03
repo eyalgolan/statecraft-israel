@@ -289,7 +289,12 @@ public class OccupyTests
             new Command[] { new Move(1, 1, 0) }, new Command[] { Occupy() },
         };
         var expected = new[] { "awaiting_choice/0@1,0", "occupied/2@1,0", "none@2,0", "awaiting_choice/0@1,0", "occupied/2@1,0" };
-        var runs = new[] { false, true }.Select(gdd03 => { var c = Load(gdd03); return Play(c, CombatTests.With(c, Soldier(1, 2, 0)), "town_a", null, turns); }).ToList();
+        var runs = new[] { false, true }.Select(gdd03 =>
+        {
+            var c = Load(gdd03);
+            Fixture.UseModelOpening(c); // Compare occupation rules from identical opening conditions.
+            return Play(c, CombatTests.With(c, Soldier(1, 2, 0)), "town_a", null, turns);
+        }).ToList();
         Assert.Equal(expected, runs[0].Select(x => x.Trace));
         Assert.Equal(expected, runs[1].Select(x => x.Trace));
         Assert.Equal(runs[0].Select(x => x.State), runs[1].Select(x => x.State));

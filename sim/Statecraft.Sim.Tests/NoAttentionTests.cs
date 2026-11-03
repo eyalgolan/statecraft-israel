@@ -25,17 +25,7 @@ public class NoAttentionTests
     {
         var c = kind is "resolve_capture" or "end_occupation"
             ? CaptureTests.Load(files=>Select(files,modern),CaptureTests.AllTargets) : Load(modern);
-        if (modern)
-        {
-            // This test isolates Attention, so both identities need identical starting indicators. Override only
-            // this fixture's catalogue to its model bases; #1715's dedicated tests pin the approved 65/60 openings.
-            var maximum = c.Gdd03Balance!.Values["indicator.display_max"].Values.Single();
-            foreach (var i in c.Indicators)
-            {
-                var key = i.Id == "morale" ? "start.cohesion" : i.Id == "intl_standing" ? "start.support" : null;
-                if (key != null) c.Gdd03Balance.Values[key].Values = new() { (decimal)i.Base * maximum };
-            }
-        }
+        Fixture.UseModelOpening(c); // Compare Attention rules from identical opening conditions.
         var s=Simulation.NewGame(c,1,Mode.Historical); s.Attention=500; s.NextId=1000;
         Command valid=CommandGuardTests.Samples.Values.Single(x=>x.Kind==kind), invalid=valid;
         switch(kind)
