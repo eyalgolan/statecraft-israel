@@ -12,6 +12,7 @@ As a player of the MVP, I want to send a group of halutzim to plow the fields of
 - Plowing takes 3 turns, counting the turn of the order, and costs IL 0.5m. Both are design values the owner may override (`Q-FIELD-3` [S3]).
 - When the plowing finishes, the field site is plowed on the turn's end date and the unit is idle again (R-FIELD-001).
 - A plowed field needs no workers (`Q-FIELD-2` [S3]). Each turn, in the turn's sixth step, after the cities' production, it adds 1 unit of Food to the national stock, one population unit's food for a month (R-FIELD-002, `Q-FIELD-3` [S3]).
+  - Then changed (3 Nov 2026): that holds under `gdd-0.1`; under `gdd-0.3` a field takes one farmer and an unworked field produces nothing (R-FIELD-002; owner, 3 November 2026, #1694 [S5]).
 - The effect is small on purpose: the nation eats 650 to 1,400 units of Food a turn over the MVP, so one field is about 0.1% of a month's need (`Q-FIELD-3` [S3]). In a turn with imports the import only tops the stock up by less; the field shows in the stock when foreign currency is exhausted and nothing is imported.
 - The reference player of the goldens plows the lowest-id ready field once every yishuv site is taken, before any camp site (D-A7).
 - The MVP has one swamp site, the Hula, at the swamp hex `(14, 3)`, sourced to the `hula_drainage` event's sources; its name names only the drainage (`Q-SWAMP-1`, `Q-SWAMP-3`, "Allow as planned" [S4]). The Hula field site shares its hex. It is a design placement, not a historical field.
@@ -46,6 +47,7 @@ As a player of the MVP, I want to send a group of halutzim to plow the fields of
 - [S2] GDD Phase 4 plan, PR 4 and the owner questions table, docs/superpowers/plans/2026-10-15-gdd-phase-4.md
 - [S3] GDD Phase 4 owner answers, https://github.com/eyalgolan/statecraft-israel/issues/782, checked 2026-10-17
 - [S4] Q-SWAMP-3, the owner's decision on the Hula, https://github.com/eyalgolan/statecraft-israel/issues/789, checked 2026-10-17
+- [S5] The owner's ruling on #1694, 3 November 2026, "One farmer per field (Recommended)", https://github.com/eyalgolan/statecraft-israel/issues/1694#issuecomment-6610258738, checked 2026-11-03
 
 ## Open questions
 
