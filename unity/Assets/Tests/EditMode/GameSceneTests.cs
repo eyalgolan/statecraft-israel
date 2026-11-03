@@ -943,6 +943,9 @@ public class GameSceneTests
         Assert.AreEqual(3, Web("http://localhost:8000/?smoke=3"));
         Assert.AreEqual(3, Web("http://localhost:8000/?smoke=3&golden"));
         Assert.AreEqual(3, Web("http://localhost:8000/?smoke=3#top"));
+        Assert.AreEqual(0, Web("http://localhost:8000/index.html#&smoke=5"), "#2264: a flag after the '#' is not the query");
+        Assert.AreEqual(0, Web("http://localhost:8000/index.html?a=1#&smoke"), "bare, after the '#'");
+        Assert.AreEqual(3, Web("http://localhost:8000/?smoke=3#&smoke=9"), "the query wins over the fragment");
         Assert.AreEqual(GameRoot.DefaultSmokeTurns, Web("http://localhost:8000/?smoke"));
         Assert.AreEqual(GameRoot.DefaultSmokeTurns, Web("http://localhost:8000/?smoke&golden"));
         Assert.AreEqual(GameRoot.DefaultSmokeTurns, Web("http://localhost:8000/?golden&smoke="));
