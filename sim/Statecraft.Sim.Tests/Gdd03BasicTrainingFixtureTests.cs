@@ -164,6 +164,20 @@ public class Gdd03BasicTrainingFixtureTests
         Assert.Equal(CampSouth, p.Assignment.Target); Assert.Equal("south", p.Location!.Region);
     }
 
+    // 27M-7 (docs/GDD.md:374): "Training is ordered in the camp's city, with no travel (27M-7)." With both camps operating,
+    // stock and room to spare, a recruit from another region is refused by the region rule alone, with the fixture's own
+    // reason before any write (the ledger's later target-region check, PopulationLedger.cs:242, is only a backstop), and
+    // nothing changes.
+    [Fact] public void AWrongRegionIsRefusedAtAnOperatingCampWithStock()
+    {
+        var c = Catalogue(); var s = State(c); var f = Fixture(c, s, spare: 10, money: 10m);
+        var ex = Unchanged(s, f, () => f.Start(new[] { 5 }, CampNorth, 0), typeof(ArgumentException));
+        Assert.Equal("Unit 5 is not in the camp's region.", ex.Message);
+        ex = Unchanged(s, f, () => f.Start(new[] { 0, 5 }, CampSouth, 0), typeof(ArgumentException));
+        Assert.Equal("Unit 0 is not in the camp's region.", ex.Message);
+        Assert.Equal("south", s.PopulationLedger.Get(5).Location!.Region);
+    }
+
     // R-TRAIN-001 (docs/rules/mvp.md:167): takes "the city's civilians without a job"; docs/GDD.md:374: "Refugees cannot
     // train until they become civilians". A refugee or a worker refuses the whole order, as do a repeated id and an empty order.
     [Fact] public void RefugeesWorkersAndMalformedOrdersAreRefused()
@@ -234,6 +248,29 @@ public class Gdd03BasicTrainingFixtureTests
         Assert.Equal(item, l.Get(0).Equipment.MilitaryId);
         Unchanged(s, f, () => f.Advance(1, 6), typeof(ArgumentException)); // never started
         l.Reconcile();
+    }
+
+    // content/gdd03-balance.yaml:311-314 `military.basic_turns` [3], read from the catalogue, not a literal: with a synthetic
+    // 2 or 4, the enrolment month and every later month count until the turn that would reach that value, which is Deferred.
+    [Theory, InlineData(2), InlineData(4)]
+    public void TheCompletionTurnComesFromTheCatalogue(int turns)
+    {
+        var c = Catalogue("military.basic_turns", Agreed(turns)); var s = State(c); var f = Fixture(c, s); var l = s.PopulationLedger;
+        f.Start(new[] { 0 }, CampNorth, 0);
+        for (int month = 0; month < turns - 1; month++) f.Advance(0, month);
+        Assert.Equal(turns - 1, l.Get(0).Assignment.ProgressTicks);
+        Unchanged(s, f, () => f.Advance(0, turns - 1), typeof(NotSupportedException), "Deferred:");
+    }
+
+    // R-MONEY-003 (docs/rules/mvp.md:409): "A shortfall changes nothing but the Treasury and the debt, and a refused order
+    // changes nothing". The order's Money is computed before anything is written, so a cost that
+    // cannot be represented throws with the ledger, spare Arms, Money and Debt all unchanged, not a half-applied order.
+    [Fact] public void ACostThatOverflowsChangesNothing()
+    {
+        var c = Catalogue("military.training_money", Agreed(decimal.MaxValue)); var s = State(c); var f = Fixture(c, s, spare: 5);
+        Unchanged(s, f, () => f.Start(new[] { 0, 1 }, CampNorth, 0), typeof(OverflowException));
+        Assert.Equal(PopulationStatus.FreeCivilian, s.PopulationLedger.Get(0).Status);
+        Assert.Equal(5, f.SpareArms);
     }
 
     // #1699 Done when: "Draft, train, cancel and demobilise in any order never change total units or total Arms (spare +

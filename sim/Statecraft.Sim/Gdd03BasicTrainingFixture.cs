@@ -123,6 +123,10 @@ namespace Statecraft.Sim
             if (need > SpareArms)
                 throw new ArgumentException(string.Format(CultureInfo.InvariantCulture,
                     "Basic training: not enough Arms (need {0}, have {1}).", need, SpareArms));
+            // R-MONEY-003: Money stops at 0 and the shortfall moves to debt. The cost and both new balances are computed
+            // before any write, so a cost that cannot be represented (an OverflowException) leaves everything unchanged.
+            decimal cost = moneyPerCourse * recruits.Length;
+            decimal paid = Math.Min(Money, cost), debt = Debt + (cost - paid);
 
             var course = new PopulationAssignment(PopulationAssignmentKind.Course, camp.Id);
             Commit(recruits.Select(p =>
@@ -135,7 +139,7 @@ namespace Statecraft.Sim
                 return trainee.WithPlacement(PopulationStatus.Trainee, p.Location, course, p.Captor, p.Home);
             }).ToArray());
             SpareArms -= need;
-            Pay(moneyPerCourse * recruits.Length);
+            Money -= paid; Debt = debt;
             foreach (var p in recruits) months[p.Id] = (monthOrdinal, monthOrdinal - 1);
         }
 
@@ -157,14 +161,6 @@ namespace Statecraft.Sim
             Commit(new[] { trainee.WithPlacement(trainee.Status, trainee.Location,
                 new PopulationAssignment(PopulationAssignmentKind.Course, camp.Id, progress), trainee.Captor, trainee.Home) });
             months[traineeId] = (known.enrolment, monthOrdinal);
-        }
-
-        // R-MONEY-003: a cost above Money is paid, Money stops at 0 and the shortfall moves to debt.
-        void Pay(decimal amount)
-        {
-            var paid = Math.Min(Money, amount);
-            Money -= paid;
-            Debt += amount - paid;
         }
     }
 }
