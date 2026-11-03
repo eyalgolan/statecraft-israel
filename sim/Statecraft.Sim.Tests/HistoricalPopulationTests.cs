@@ -6,7 +6,7 @@ using Statecraft.Sim;
 /// The inventory is not yet wired into Simulation.NewGame (see R-POP-004 and docs/population-ledger.md).</summary>
 public class HistoricalPopulationTests
 {
-    static Content Real(bool modern)
+    internal static Content Real(bool modern)
     {
         var root = RealContentTests.ContentRoot();
         return ContentLoader.Load(rel =>
