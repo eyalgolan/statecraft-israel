@@ -309,7 +309,8 @@ hand (`UnitWeaponsTests` keeps that true). The rows live in `UnitWeapons.Rows`.
 - **[GAP] The Arab forces.** No source found places a K98k, an MG34 or a Sten with the Arab Legion, Egypt, Iraq, Syria,
   Lebanon, the ALA or local irregulars in 1948 (Syria's Czech rifles for the ALA sank in the Lino at Bari and were later
   captured). Their armies' British Lee-Enfield and Bren are not among Tal's models, so their figures stay as they are.
-- **[GAP] #336's 1948 soldier** (Yiftach's and Negev's third figure) has no rig and no hand bone; he stays as he is.
+- **[GAP] #336's 1948 soldier** has no rig and no hand bone. Since #2377 the animated C07 stands in Yiftach's and Negev's
+  third slot, and rigging the soldier is #2384 (owner, 3 November 2026: "Ship C07 now, rig Tal's later (Recommended)").
 - **The MG34** stays a stored source. The "200 MG34s" is not one fact (`research_notes/Map/mg34-1948-2288.md`, #2310):
   for the January 1948 contract, one source names the MG34 for its 200 machine guns (Wikipedia, a sentence with no footnote
   of its own), Ben-Gurion's diary of 1 February 1948 gives 200 with no type, and a Russian magazine gives 20. The *Nora*'s

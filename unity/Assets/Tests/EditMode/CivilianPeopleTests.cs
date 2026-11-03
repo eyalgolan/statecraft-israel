@@ -520,7 +520,8 @@ public sealed class CivilianPeopleTests
         placed.UnionWith(Statecraft.Game.Map.Kits.TownModels.Ids); // #1273: 18 originals and five generated houses are catalogued and requested by TownModelLayer
         // Tel Aviv's, Jerusalem's and Haifa's whole towns stay catalogued but unused: the four cities draw their buildings at
         // every zoom (owner, 2 November 2026, "Yes, small buildings at every zoom"). #336's 1948 soldier has no rig: the owner
-        // put the animated C07 on Yiftach's and Negev's tokens in his place (3 November 2026, #2377), so he stands nowhere.
+        // chose the animated C07 on Yiftach's and Negev's tokens now and rigging the soldier later (3 November 2026, "Ship C07
+        // now, rig Tal's later (Recommended)", #2377, #2384), so until #2384 it stands nowhere.
         CollectionAssert.AreEquivalent(new[] { SpecialBuildingModels.Workshop, TownLandmarks.Jerusalem, TownLandmarks.TelAviv, TownLandmarks.Jerusalem3D, TownLandmarks.Haifa,
                 Statecraft.Game.Map.Units.UnitFigures.Soldier1948 },
             CollectionCatalog.Ids.Where(id => !placed.Contains(id)).ToList(),
