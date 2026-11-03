@@ -249,14 +249,15 @@ public class PlayerRegionsContentTests
         Assert.Equal("regions.yaml: player_regions[1].field_hexes[0]: must be one of the region's member_hexes", e.Message);
     }
 
-    // The site is listed first, so it must resolve (sites.yaml is always placed) before the locality is refused.
+    // regions.yaml names localities, so map/locality_hexes.yaml is required with it: a missing file is refused by name
+    // instead of every locality member failing as "unknown place id" (#2298).
     [Fact]
-    public void WithoutTheLocalityHexesALocalityIsUnknown()
+    public void WithoutTheLocalityHexesTheRegionsAreRefusedNamingTheFile()
     {
         var e = Assert.Throws<ContentException>(() => Load("player_regions:\n"
             + LocalityAndSite.Replace("[tarshiha, kiryat_shmona]", "[kiryat_shmona, tarshiha]"), localities: false));
-        Assert.Equal("regions.yaml", e.File); Assert.Equal("player_regions[0].member_locations[1]", e.Field);
-        Assert.Equal("regions.yaml: player_regions[0].member_locations[1]: unknown place id", e.Message);
+        Assert.Equal(PlayerRegionCatalogue.LocalityHexesFileName, e.File); Assert.Equal("(file)", e.Field);
+        Assert.Equal("map/locality_hexes.yaml: (file): missing file", e.Message);
     }
 
     // map/locality_hexes.yaml is generated, but the sim still refuses a malformed row instead of placing it: the

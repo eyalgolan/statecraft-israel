@@ -195,9 +195,8 @@ namespace Statecraft.Sim
 
         /// <summary>R-CITY-006: the locality placements, with the settlement_hexes.yaml checks (unique ids, land hexes) and
         /// q and r required. Only the exact gdd-0.3 regions path calls this.</summary>
-        static List<SettlementHex>? LocalityHexes(Content c, LocalityHexesFile? file)
+        static List<SettlementHex>? LocalityHexes(Content c, LocalityHexesFile file)
         {
-            if (file == null) return null;
             const string f = PlayerRegionCatalogue.LocalityHexesFileName;
             Unique(f, "localities", file.Localities.Select(l => l.Id));
             var result = new List<SettlementHex>(file.Localities.Count);
@@ -458,13 +457,13 @@ namespace Statecraft.Sim
                 c.StartingForces = StartingForces.Read(readFile, c);
             }
             // R-CITY-006: no read or hash input in either old identity. Absence leaves the capability inactive. After the
-            // sites (a site id may be a member) and the effective map overrides; the locality hexes are read only with regions.
+            // sites (a site id may be a member) and the effective map overrides; the locality hexes are read only with regions, and are required then (#2298).
             if (c.Ruleset == SaveGame.Gdd03Ruleset)
             {
                 var regions = ReadOptional<PlayerRegionsFile>(readFile, PlayerRegionCatalogue.FileName);
                 if (regions != null)
                     c.PlayerRegions = PlayerRegionCatalogue.Validate(c, regions.PlayerRegions,
-                        LocalityHexes(c, ReadOptional<LocalityHexesFile>(readFile, PlayerRegionCatalogue.LocalityHexesFileName)));
+                        LocalityHexes(c, Read<LocalityHexesFile>(readFile, PlayerRegionCatalogue.LocalityHexesFileName)));
             }
             EventRules.ValidateStructured(c);   // R-EFX-006: after the GDD records it names are read
             c.BuildWindows();
