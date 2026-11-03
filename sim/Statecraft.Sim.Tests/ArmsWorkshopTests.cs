@@ -204,6 +204,30 @@ public class ArmsWorkshopTests
         Assert.Equal(new[] { "0" }, off.Why.Single(x => x.Key == CauseKeys.WorkshopWorkers).Args);
     }
 
+    // R-ARMS-005 (#2270): Workshops.Staff applies the count to built workshops in ascending project-id order.
+    [Fact]
+    public void StaffingCountSelectsTheLowestProjectIdsAndKeepsLaterRecords()
+    {
+        var (c, s, first) = Built(civilians: 10, employed: 0, jobs: 0, jobsDefault: false);
+        var firstProject = s.CityProjects[first];
+        s.CityProjects.Remove(first);
+        var second = s.NextId++;
+        s.CityProjects.Add(second, new CityProject(second, Workshops.ArmsWorkshop, "town_a", 2, 0, 0, s.Date));
+        s.CityProjects.Add(first, firstProject);   // inserted after the higher id; SortedList still orders it first
+
+        var one = Step(c, s, Staff(1));
+        Assert.True(one.State.Workshops[first].Staffed);
+        Assert.False(one.State.Workshops.ContainsKey(second));
+
+        var two = Step(c, one.State, Staff(2));
+        Assert.True(two.State.Workshops[first].Staffed);
+        Assert.True(two.State.Workshops[second].Staffed);
+
+        var oneAgain = Step(c, two.State, Staff(1));
+        Assert.True(oneAgain.State.Workshops[first].Staffed);
+        Assert.False(oneAgain.State.Workshops[second].Staffed);
+    }
+
     // R-ARMS-005 (#1722 slice E): Workshops.Check, which the hex panel asks before it offers a staffing order, gives exactly
     // the refusal the order gets at End turn, and changes nothing.
     [Theory]
@@ -264,6 +288,20 @@ public class ArmsWorkshopTests
         Assert.True(r.State.Workshops[first].Staffed && r.State.Workshops[second].Staffed);
     }
 
+    // R-ARMS-005 (#2270): Workshops.BuiltIn counts only this city's built projects whose kind has a worker slot.
+    [Fact]
+    public void BuiltCountsOnlyThisCitysProjectsWithWorkerSlots()
+    {
+        var (c, s, _) = Built(jobsDefault: false);
+        var industry = s.NextId++;
+        s.CityProjects.Add(industry, new CityProject(industry, "industry", "town_a", 2, 0, 0, s.Date));
+        var elsewhere = s.NextId++;
+        s.CityProjects.Add(elsewhere, new CityProject(elsewhere, Workshops.ArmsWorkshop, "town_b", 3, 0, 0, s.Date));
+
+        Assert.Equal(1, Workshops.Built(c, s, "town_a"));
+        Assert.Equal("Town A has 1 arms workshop", Assert.Single(Step(c, s, Staff(2)).Rejected).Reason);
+    }
+
     // R-ARMS-005 with R-CITY-001 (#1722 slice E): with this turn's queue, Check counts a pending "job" order's jobs (which turn
     // the job default off) and every Train or reassignment there, so an order it accepts is still accepted if the job order
     // runs first. Here the job order takes the last free person, and the turn refuses the staffing with Check's words.
@@ -278,6 +316,24 @@ public class ArmsWorkshopTests
         var reason = Workshops.Check(c, s, "town_a", 1, new Command[] { job, Staff(1) });
         Assert.Equal("Town A has 0 civilians and craftsmen without a job", reason);
         Assert.Equal(reason, Assert.Single(Step(c, s, job, Staff(1)).Rejected).Reason);
+    }
+
+    // R-ARMS-005 with R-CITY-001 (#2289): Workshops.Check subtracts this turn's queued Train and pioneer-reassignment orders.
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CheckCountsThisTurnsTrainingOrders(bool reassign)
+    {
+        var (c, s, _) = Built(civilians: 10, employed: 9, jobs: 10, jobsDefault: false);
+        var x = s.Cities["town_a"];
+        s.Cities["town_a"] = x.WithQualified(new Qualified(0, 0, new[] { 1 }));
+        Command order = reassign
+            ? new ReassignPioneers("town_a", "halutz", 1)
+            : new Train("town_a", "halutz", 1);
+        const string reason = "Town A has 0 civilians and craftsmen without a job";
+
+        Assert.Equal(reason, Workshops.Check(c, s, "town_a", 1, new[] { order, Staff(1) }));
+        Assert.Equal(reason, Assert.Single(Step(c, s, order, Staff(1)).Rejected).Reason);
     }
 
     // R-ARMS-005 with R-CITY-001 (#1722 slice E): the jobs stepper's limit counts a pending staffing order's newly staffed
@@ -454,6 +510,26 @@ public class ArmsWorkshopTests
         Assert.Equal(("town_a", 1.0, "Town A: an arms workshop made 1 Arms"), (made.Target, made.Delta, made.Message));
         Assert.Equal(idle.Arms + 2, after.Arms);
         Assert.Equal((null, 0), (after.Workshops[id].PaidCost, after.Workshops[id].Progress));
+    }
+
+    // R-ARMS-006 (#2270): in Workshops.Produce, a complete paid cycle waits at a full Arms stock, never overflowing or charging again.
+    [Fact]
+    public void AFullArmsStockKeepsACompletedPaidCycleWaiting()
+    {
+        var (c, s, id) = Staffed(paid: 5m, progress: 2);
+        s.Arms = int.MaxValue;
+
+        var first = Step(c, s);
+        Assert.Equal(int.MaxValue, first.State.Arms);
+        Assert.Equal((5m, 3), (first.State.Workshops[id].PaidCost, first.State.Workshops[id].Progress));
+        Assert.Empty(Charges(first));
+        Assert.DoesNotContain(first.Why, w => w.Key == CauseKeys.WorkshopArms);
+
+        var second = Step(c, first.State);
+        Assert.Equal(int.MaxValue, second.State.Arms);
+        Assert.Equal((5m, 3), (second.State.Workshops[id].PaidCost, second.State.Workshops[id].Progress));
+        Assert.Empty(Charges(second));
+        Assert.DoesNotContain(second.Why, w => w.Key == CauseKeys.WorkshopArms);
     }
 
     static GameState Clear(GameState s) { var x = s.Clone(); x.Workshops.Clear(); return x; }

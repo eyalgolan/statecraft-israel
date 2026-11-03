@@ -482,4 +482,39 @@ public class MapOverridesTests
         var moved = Broken(DependencyDiagnostics(DependencyFixture(), "[{ id: town_a, hex: { q: 2, r: 0 } }]"));
         Assert.Contains(moved, x => x.Field == "objectives[objective_b]" && x.Message.Contains("site_a"));
     }
+
+    // #2309: MapOverrides' objective dependency diagnostics inspect every SitesBuilt entry, not only SiteBuilt.
+    [Fact]
+    public void APluralSiteObjectiveBindingBlocksWithItsId()
+    {
+        var c = DependencyFixture();
+        c.Objectives[1].CompletesWhen = new ObjectiveCondition { SitesBuilt = new List<string> { "site_a" } };
+        c.SettlementTargets.Clear();   // isolate the objective adapter from the target moved by this overlay
+        var row = Assert.Single(Broken(DependencyDiagnostics(c, "[{ id: town_a, hex: { q: 2, r: 0 } }]")));
+        Assert.Equal("objectives[objective_b]", row.Field);
+        Assert.Equal("site 'site_a' hex q=2 r=0 now holds the settlement town_a", row.Message);
+    }
+
+    // #2309: in the objective dependency diagnostics, an unknown objective site produces one diagnostic and is not dereferenced.
+    [Fact]
+    public void AnUnknownObjectiveSiteBlocksOnceWithItsId()
+    {
+        var c = DependencyFixture();
+        c.Objectives[1].CompletesWhen = new ObjectiveCondition { SiteBuilt = "no_site" };
+        var row = Assert.Single(Broken(DependencyDiagnostics(c)));
+        Assert.Equal("objectives[objective_b]", row.Field);
+        Assert.Equal("unknown site 'no_site'", row.Message);
+    }
+
+    // #2309: in the objective dependency diagnostics, an objective site without the yishuv kind is diagnosed.
+    [Fact]
+    public void ANonYishuvObjectiveSiteBlocksWithItsId()
+    {
+        var c = DependencyFixture();
+        c.Sites.Add(new Site { Id = "site_b", Q = 1, R = 0, Kinds = new List<string> { "industry" } });
+        c.Objectives[1].CompletesWhen = new ObjectiveCondition { SiteBuilt = "site_b" };
+        var row = Assert.Single(Broken(DependencyDiagnostics(c)));
+        Assert.Equal("objectives[objective_b]", row.Field);
+        Assert.Equal("site 'site_b' cannot be built as a yishuv", row.Message);
+    }
 }
