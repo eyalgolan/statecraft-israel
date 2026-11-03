@@ -50,8 +50,8 @@ namespace Statecraft.Sim
 
         /// <summary>R-POP-004 (#1689 region slice): the Inventory as an initialized Historical ledger fixture, each record in
         /// its real region of regions.yaml. A census record takes the region that lists its city (AtLocation). A formation
-        /// record takes the region of its starting anchor hex (AtHex): the plan's first option for its open question 1, kept
-        /// to this one line until a maintainer answers. A source with no region is refused; no region is invented. Records
+        /// record takes the region of its starting anchor hex (AtHex): the owner's ruling on #1689's open question 1
+        /// (3 November 2026: "Its anchor hex's region (Recommended)"). A source with no region is refused; no region is invented. Records
         /// are free civilians with no assignment and soldiers serving in their own formation, with no profession, tier or
         /// qualification (#1717 and #1692 add those). mode Historical gives #2299's 1,000-a-record scale (D2). Fixture-only:
         /// NewGame does not call it (R-POP-002).</summary>
