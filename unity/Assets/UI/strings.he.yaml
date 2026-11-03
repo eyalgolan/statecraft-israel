@@ -877,6 +877,22 @@ city.project_reason.turn_cap: "אי אפשר להתחיל יותר מ־{0} מי�
 # The toggle that folds a city's own projects on a stacked bar or a short window (owner ruling on #1150), {0} the
 # number of kinds. For the native reviewer (#564).
 city.projects_toggle: "מיזמי העיר ({0})"
+# #1722 slice E (#1701; R-ARMS-005 to R-ARMS-007), gdd-0.3 only: a built arms workshop's part of the info panel, as in
+# strings.en.yaml. Counts as "Label: N" (HE-04); the refusals follow unit.reinforce_refused.idle. Agent-drafted Hebrew;
+# native review pending (#564).
+city.workshops_staffed: "סדנאות נשק מאוישות: {0} מתוך {1}"
+city.workshops_ordered: "סדנאות נשק מאוישות בסיום התור: {0} מתוך {1}"
+city.workshop_staffed: "הסדנה הזאת: מאוישת"
+city.workshop_unstaffed: "הסדנה הזאת: לא מאוישת, בהמתנה"
+city.workshop_cycle: "חודשים מאוישים במחזור: {0} מתוך {1} · שולם: {2}"
+city.workshop_next: "אין מחזור עבודה פעיל · עלות המחזור הבא: {0}"
+city.workshop_held: "בהמתנה: {0} בשליטת האויב"
+workshop.refused_built_one: "{0}: יש רק סדנת נשק אחת"
+workshop.refused_built: "{0}: סדנאות נשק בנויות: {1}"
+# A no-break space (U+00A0) joins "יש" to its count, so a narrow panel never wraps "(יש" and "0)" apart.
+# Agent-drafted Hebrew; native review pending (#564).
+workshop.refused_people: "{0}: אין די אזרחים ובעלי מלאכה (יש\u00A0{1})"
+workshop.refused_people_no_job: "{0}: אין די אזרחים ובעלי מלאכה ללא משרה (יש\u00A0{1})"
 site.available: "אתר ייעודי ליישוב חדש"
 site.group: "קבוצת חלוצים {0}"
 site.build: "הקמת יישוב עם {0}: {1}, {2}"

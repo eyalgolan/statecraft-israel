@@ -22,11 +22,15 @@ namespace Statecraft.Sim
         /// <summary>R-CITY-001 with R-TRAIN-001: <see cref="MaxWorkers(City)"/> once the city's Train, Reinforce and Reassign
         /// orders in <paramref name="pending"/> (this turn's queue) have taken their civilians, so a count up to it keeps every one
         /// of them accepted, whatever order they run in. Every queued reassignment counts in full, craftsmen too (#1548): if the
-        /// job order runs first, the civilians a reassignment needs are already in work.</summary>
+        /// job order runs first, the civilians a reassignment needs are already in work. R-ARMS-005: the staffed arms workshops
+        /// count as a pending "workshop" order leaves them, when it staffs more (#1722 slice E, as Training.Available does).</summary>
         public static int MaxWorkers(GameState s, string city, IEnumerable<Command> pending)
         {
             var x = s.Cities[city];
-            return Math.Max(0, Math.Min(x.JobSlots, x.Civilians + x.Craftsmen - Workshops.Staffed(s, city) - Training.Ordered(city, pending)));
+            var list = pending as IReadOnlyCollection<Command> ?? pending.ToList();
+            var staffed = Math.Max(Workshops.Staffed(s, city),
+                list.OfType<AssignWorkers>().Where(w => w.City == city && w.Role == Workshops.Role).Select(w => w.Count).DefaultIfEmpty(0).Max());
+            return Math.Max(0, Math.Min(x.JobSlots, x.Civilians + x.Craftsmen - staffed - Training.Ordered(city, list)));
         }
 
         /// <summary>R-CITY-007: a city's start people in units: the nearest unit (a half rounds up), and at least 1 for a city
