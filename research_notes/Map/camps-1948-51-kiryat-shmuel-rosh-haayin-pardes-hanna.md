@@ -3,7 +3,8 @@
 Status: **draft, needs a person to check**. An AI agent opened every source below on 1 November 2026 and wrote this
 note. `docs/CONTENT_POLICY.md` section 2, rule 6, still requires a person to check each claim against its source before
 use. This note changes nothing in `content/`, `sim/` or `unity/`, and proposes no record. It adds to
-`research_notes/Map/camps-1948-51.md` (Beri, #1766, #1797) for the three places that PR #2169 left out; it does not
+`research_notes/Map/camps-1948-51.md` (Beri, #1766, #1797) for the three places that PR #2169 left out (merged 2
+November 2026 as 423f03c0c: six camp records in `content/map/locations_1948.yaml`, none for these three); it does not
 restate that note's rows, and it uses that note's tags: **[V]** the agent read the record itself; **[S]** secondary, or a
 page that is not the record; **[C]** two sources disagree, both kept; **[GAP]** still open, with what was tried.
 
@@ -41,15 +42,15 @@ All requests used the User-Agent `statecraft-israel-research/1.0 (+https://githu
 
 ## 1. Kiryat Shmuel, Haifa (the owner's starting training-centre host)
 
-The owner's ruling (`docs/GDD.md` O8, 27M-25) is a design value: "the training centre is an ordinary facility in Kiryat
-Shmuel, Haifa". Nothing below establishes a historical training centre there; the location record needs only the place.
+The owner's ruling (`docs/GDD.md` O8 and 27M-25; the quoted words are the GDD's "Reception in the MVP" row) is a design
+value: "the training centre is an ordinary facility in Kiryat Shmuel, Haifa". Nothing below establishes a historical training centre there; the location record needs only the place.
 
 | Claim | Exact quote | Source | Type | Tag | Confidence |
 |---|---|---|---|---|---|
 | Coordinates of the neighbourhood | P625 = latitude 32.83401944, longitude 35.06784167 (two statements, same value; one is referenced only "imported from Wikimedia project" English Wikipedia, the other has no reference) | WD1 | tertiary | [S] | high that this is the point Wikidata holds; it is a present-day centre point, not a 1948 site |
 | Same point in both Wikipedias | he: `coordinates` lat 32.83401944, lon 35.06784167 (primary); en: `{{coord\|32\|50\|2.47\|N\|35\|4\|4.23\|E}}` = 32.834019, 35.067842 (computed) | HW1, EW1 | tertiary | [S] | high (same value; the three are not independent) |
 | The point sits on the 1940s Survey of Palestine label | The 1:20,000 tiles print "Qiryat Shemuel"; the label's centre reads at about 32.8325 N, 35.0663 E, about 0.17 km south and 0.14 km west of the Wikidata point (eye reading, about 50 m). The 1958 1:100,000 sheet prints "Qiryat Shemuel" next to the point; the 1951 1:250,000 layer prints "Qir. Shemuel" beside a circle about 0.37 km west of it. None of the three prints a camp label in the windows read. | P1, P2, P5 | primary (maps) | [V, agent read 2026-11-01; a person's check pending] | medium (the site's georeferencing was not checked; edition of the 1:20,000 mosaic not shown) |
-| Hex on the current grid | `tools/hexgrid.py settlement_hex(35.06784167, 32.83401944)` with main's `content/map/hexes.json` returns (6, 8); Haifa is (5, 8) in `content/map/settlement_hexes.yaml`. A rebake (#1796) would move it. | repo | computed | n/a | high for main at 32e7d9cf8 |
+| Hex on the current grid | `tools/hexgrid.py settlement_hex(35.06784167, 32.83401944)` with main's `content/map/hexes.json` (the 4.4 km bake, #1796) returns (6, 9), the same hex as Haifa (6, 9) in `content/map/settlement_hexes.yaml`. On the earlier 5 km grid (main at 32e7d9cf8) it was (6, 8), beside Haifa's (5, 8). | repo | computed | n/a | high for main at f2899979f; a later rebake would move it |
 | Hebrew name | Wikidata he label "קריית שמואל"; the article title "קריית שמואל (חיפה)"; the period maps spell it "Qiryat Shemuel" (English) | WD1, HW1, P1 | tertiary, primary (map) | [S] | high |
 | Inside Haifa's area in 1945 | already in `research_notes/Map/regions-1948-opening-control-p1.md` (gdd03-0730): the 1945 village statistics count "Qiryat Shmuel—160" inside Haifa (Urban) | repo | primary via repo | (as there) | (as there) |
 | Founded 1935-38, joined Haifa 1952 | "בניית התשתית לשכונה החלה בט"ו בתמוז תרצ"ה (16 ביולי 1935)"; "בשנת 1952 צורפה קריית שמואל כשכונה לעיר חיפה" (the Kiryat Haim article says 1950: [C], already recorded in `research_notes/Era 1882-1948/settlements-pre-1948-haifa-carmel.md`) | HW1 | tertiary | [S] / [C] | medium |
