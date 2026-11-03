@@ -16,7 +16,8 @@ namespace Statecraft.Game.Map.Units
     /// The near prefabs are asked for only once a camera first comes close, through the same stream, after the first frame.
     /// It fails open: until a near prefab arrives, and for good when it is missing or damaged, the far model stays. C05, the
     /// pioneer veteran, has no idle clip (walk and run only), so he keeps his still far model close up (owner, 18 October
-    /// 2026, #665: "Keep its still model"). One per unit layer or showcase; nothing is allocated while the zoom band holds.</summary>
+    /// 2026, #665: "Keep its still model"); the switch turns his code-driven idle (UnitFigureIdle, #2374) on and off with the
+    /// zoom instead, and asks for no near model. One per unit layer or showcase; nothing is allocated while the zoom band holds.</summary>
     [ExecuteAlways]
     public sealed class UnitFigureDetail : MonoBehaviour
     {
@@ -29,6 +30,8 @@ namespace Statecraft.Game.Map.Units
             public string Id = "";
             public Renderer[] FarRenderers = Array.Empty<Renderer>(), NearRenderers = Array.Empty<Renderer>();
             public Animator[] Animators = Array.Empty<Animator>();
+            /// <summary>A figure that idles in code on its far model (C05): it has no near model to ask for.</summary>
+            public UnitFigureIdle? Idle;
         }
 
         readonly List<Figure> figures = new List<Figure>();
@@ -57,13 +60,14 @@ namespace Statecraft.Game.Map.Units
             return assets != null ? assets.gameObject : piece.root.gameObject;
         }
 
-        /// <summary>A figure whose far model <paramref name="holder"/> now holds (its first child), with an idle clip.</summary>
+        /// <summary>A figure whose far model <paramref name="holder"/> now holds (its first child), with an idle clip, or with
+        /// a code-driven idle on the far model itself (UnitFigureIdle).</summary>
         internal void Add(Transform holder, string id)
         {
             var far = holder.GetChild(0);
-            var f = new Figure { Holder = holder, Far = far, Id = id, FarRenderers = far.GetComponentsInChildren<Renderer>(true) };
+            var f = new Figure { Holder = holder, Far = far, Id = id, FarRenderers = far.GetComponentsInChildren<Renderer>(true), Idle = far.GetComponent<UnitFigureIdle>() };
             figures.Add(f);
-            if (LastClose) { Ask(f); Attach(f); }
+            if (LastClose && f.Idle == null) { Ask(f); Attach(f); }
             Show(f);
         }
 
@@ -79,7 +83,7 @@ namespace Statecraft.Game.Map.Units
             if (close == LastClose) return;
             LastClose = close;
             figures.RemoveAll(Gone);
-            foreach (var f in figures) { if (close) { Ask(f); Attach(f); } Show(f); }
+            foreach (var f in figures) { if (close && f.Idle == null) { Ask(f); Attach(f); } Show(f); }
         }
 
         internal CollectionResidencyMetrics.Category ResidencySnapshot()
@@ -141,7 +145,7 @@ namespace Statecraft.Game.Map.Units
         /// feet, casting shadows as it does, with the probes off as on the far model.</summary>
         void Attach(Figure f)
         {
-            if (f.NearRenderers.Length > 0 || f.Holder == null) return;
+            if (f.NearRenderers.Length > 0 || f.Holder == null || f.Idle != null) return;
             var prefab = UnitFigures.Near(f.Id);
             if (prefab == null) return;
             var near = Instantiate(prefab, f.Holder, false).transform;   // the prefab's own root rotation (the FBX axis turn) kept
@@ -188,6 +192,7 @@ namespace Statecraft.Game.Map.Units
             foreach (var r in f.FarRenderers) if (r != null) r.forceRenderingOff = near;
             foreach (var r in f.NearRenderers) if (r != null) r.forceRenderingOff = !near;
             foreach (var a in f.Animators) if (a != null) a.enabled = near;
+            if (f.Idle != null) f.Idle.enabled = LastClose;   // C05's code-driven idle runs close up, on his far model (#2374)
             // A figure that turns near mid-move or mid-attack takes up its token's walk or fire at once (#1866).
             var motion = near && f.Holder != null ? f.Holder.GetComponentInParent<UnitTokenMotion>() : null;
             if (motion != null && (motion.Moving || motion.Attacking)) motion.RefreshPose();
