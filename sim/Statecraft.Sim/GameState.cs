@@ -135,6 +135,11 @@ namespace Statecraft.Sim
         public SortedDictionary<string, int> PrisonersReturned = new SortedDictionary<string, int>(StringComparer.Ordinal);
         /// <summary>The player's soldiers held by the enemy, in population units, by the side that took them (R-POW-005; Q-POW-4).</summary>
         public SortedDictionary<string, int> SoldiersHeld = new SortedDictionary<string, int>(StringComparer.Ordinal);
+        /// <summary>R-WAR-005, under exact gdd-0.3 only: each front's consecutive quiet turns (Q48), set at every turn end;
+        /// R-WAR-006 sets a front to 0 on a refused armistice. Empty under every other ruleset.</summary>
+        public SortedDictionary<string, int> QuietTurns = new SortedDictionary<string, int>(StringComparer.Ordinal);
+        /// <summary>R-WAR-005: the fronts with a unit in an engagement this turn, instant attacks included; cleared at the turn end.</summary>
+        public SortedSet<string> EngagedFronts = new SortedSet<string>(StringComparer.Ordinal);
         /// <summary>The places the player has deported, the permanent record of R-CTRL-018 and R-CTRL-019: a count of places,
         /// not people (Q-CAP-2 (b)), with no destination on the board (Q-DEP-3 (a)).</summary>
         public int DisplacedByPlayer;
@@ -173,6 +178,8 @@ namespace Statecraft.Sim
             c.PrisonersHeld = new SortedDictionary<string, int>(PrisonersHeld, StringComparer.Ordinal);
             c.PrisonersReturned = new SortedDictionary<string, int>(PrisonersReturned, StringComparer.Ordinal);
             c.SoldiersHeld = new SortedDictionary<string, int>(SoldiersHeld, StringComparer.Ordinal);
+            c.QuietTurns = new SortedDictionary<string, int>(QuietTurns, StringComparer.Ordinal);
+            c.EngagedFronts = new SortedSet<string>(EngagedFronts, StringComparer.Ordinal);
             return c;
         }
 
@@ -290,6 +297,9 @@ namespace Statecraft.Sim
             if (PrisonersHeld.Count > 0) Section("pow", '{', '}', Counts(PrisonersHeld));
             if (PrisonersReturned.Count > 0) Section("powret", '{', '}', Counts(PrisonersReturned));
             if (SoldiersHeld.Count > 0) Section("ownheld", '{', '}', Counts(SoldiersHeld));
+            // R-WAR-005: gdd-0.3 only, so every other ruleset hashes as before.
+            if (QuietTurns.Count > 0) Section("quiet", '{', '}', Counts(QuietTurns));
+            if (EngagedFronts.Count > 0) Section("engaged", '[', ']', EngagedFronts);
             if (DisplacedByPlayer != 0) { Sep(); Nl(); sb.Append("displaced=").Append(DisplacedByPlayer.ToString(CultureInfo.InvariantCulture)); }   // R-CTRL-019: only after a Deport
             if (UsesPopulationLedger) Section("population-ledger", '{', '}', PopulationLedger.Canonical());
             if (UsesPopulationLedger && playerRegions.Count > 0)

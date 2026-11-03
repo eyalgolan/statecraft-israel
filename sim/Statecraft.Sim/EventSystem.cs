@@ -171,6 +171,7 @@ namespace Statecraft.Sim
             if (o.SetRung.HasValue) SecuritySystem.SetRung(c, s, o.SetRung.Value, why);
             // R-POW-004: an exchange card returns its front's prisoners, whichever way it was resolved (it has one option).
             if (Get(c, eventId).Prisoners is var front && front != "") Prisoners.Return(c, s, front, why);
+            Armistice.Resolved(c, s, eventId, o.Id);   // R-WAR-006, R-WAR-007: gdd-0.3 only
         }
 
         /// <summary>A late-fired event can be resolved after a dated record's window has ended (chapters design 3.2): an
