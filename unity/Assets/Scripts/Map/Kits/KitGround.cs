@@ -54,6 +54,8 @@ namespace Statecraft.Game.Map.Kits
 
         /// <summary>The terrain's world position (the hex grid's origin: HexGrid.ToWorld).</summary>
         public Vector3 TerrainOrigin => terrain.transform.position;
+        /// <summary>The sea's surface (world y): the heightmap's 0 m.</summary>
+        public float SeaLevelY => seaLevelY;
         public float Width => Frame.WidthM;
         public float Length => Frame.LengthM;
 

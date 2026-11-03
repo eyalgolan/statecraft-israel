@@ -13,7 +13,7 @@ public class Gdd03MovementFortTests
         + "  - { id: enemy_car, kind: unit, side: egypt, class: armour, movement_points: 5 }\n"
         + "  - { id: gun, kind: unit, side: israel, class: artillery, movement_points: 2, range: 2, arms_per_fire: 2 }\n";
 
-    static Dictionary<string, string> Files(string identity = SaveGame.Gdd03Ruleset, string biome = "coastal_plain")
+    internal static Dictionary<string, string> Files(string identity = SaveGame.Gdd03Ruleset, string biome = "coastal_plain")
     {
         var f = Fixture.Gdd(new Dictionary<string, string> {
             ["unit_types.yaml"] = Types,
@@ -29,7 +29,7 @@ public class Gdd03MovementFortTests
         return f;
     }
 
-    static Content Load(string identity = SaveGame.Gdd03Ruleset, string biome = "coastal_plain") =>
+    internal static Content Load(string identity = SaveGame.Gdd03Ruleset, string biome = "coastal_plain") =>
         ContentLoader.Load(Fixture.Write(Files(identity, biome)));
 
     static Unit Of(string type, int id = 1, int q = 2, int r = 1, string side = "israel", string order = "", string target = "") =>
