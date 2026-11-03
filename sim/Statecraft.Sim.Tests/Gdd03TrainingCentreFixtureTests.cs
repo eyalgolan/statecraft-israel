@@ -65,29 +65,39 @@ public class Gdd03TrainingCentreFixtureTests
             Array.Empty<int>(), Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
     static (int teacher, int trainee) Pair(CivilianProfession p) => p == CivilianProfession.Farmer ? (0, 1) : (2, 3);
 
-    static void Unchanged(GameState s, Action act, Type expected, string? deferredPrefix = null)
+    // A ruled #1668 Q43 refusal is a plain ArgumentException with its reason; only unbuilt cases say "Deferred:".
+    const string BedWaits = Gdd03TrainingCentreFixture.BedWaitsReason;
+    const string GraduationMonth = Gdd03TrainingCentreFixture.GraduationMonthReason;
+    const string CourseAtOpening = Gdd03TrainingCentreFixture.CourseAtOpeningReason;
+
+    static void Unchanged(GameState s, Action act, Type expected, string? messagePrefix = null)
     {
         var before = s.Describe();
         var ex = Assert.Throws(expected, act);
-        if (deferredPrefix != null) Assert.StartsWith(deferredPrefix, ex.Message, StringComparison.Ordinal);
+        if (messagePrefix != null) Assert.StartsWith(messagePrefix, ex.Message, StringComparison.Ordinal);
         else Assert.False(ex.Message.StartsWith("Deferred:", StringComparison.Ordinal), ex.Message);
         Assert.Equal(before, s.Describe());
     }
 
-    // R-TRAIN-005, R-TRAIN-006, R-TRAIN-008: a matching equipped novice and veteran teacher start a course; a counted course
-    // turn keeps the same id and every record field, creates no person and earns no work XP. The turn that would bring the
-    // course within one turn of its end (the first one where the two answers to #1668 Q43(a) differ) is Deferred.
+    // R-TRAIN-005, R-TRAIN-006, R-QUAL-008: a matching equipped novice and veteran teacher start a course; a counted course
+    // turn keeps the same id and every record field, creates no person and earns no work XP. GDD 0.3 (docs/GDD.md:372): "A
+    // course occupies its people from its first turn (Q43(a)); they are released in the turn its last course turn counts and
+    // can be assigned from the next planning, or at once on cancellation, and work starts the turn after (Q43(b), Q43(c))."
+    // #1697: "A free civilian or a matching equipped novice may enrol; completion gives the trained tier." So the enrolment
+    // month is course turn 1 and the third counted turn graduates: the pupil takes the trained tier and pupil and teacher
+    // are released as civilians without a job, keeping their ids and every other record field.
     [Theory]
     [InlineData(CivilianProfession.Farmer)]
     [InlineData(CivilianProfession.Pioneer)]
-    public void MatchingNoviceCountsTurnsUntilGraduationTimingIsDeferred(CivilianProfession profession)
+    public void MatchingNoviceCountsThreeTurnsFromEnrolmentAndGraduates(CivilianProfession profession)
     {
         var c = Catalogue(); var s = State(c); var f = new Gdd03TrainingCentreFixture(c, s, Centres());
         var (teacher, trainee) = Pair(profession); var l = s.PopulationLedger;
         var before = l.Get(trainee); var teacherBefore = l.Get(teacher);
         int count = l.Units.Count, next = l.NextPopulationId; var people = l.TotalPeople;
 
-        f.Start(trainee, teacher, CentreA, Month(s, 0));
+        var enrolment = Month(s, 0);
+        f.Start(trainee, teacher, CentreA, enrolment);
         var p = l.Get(trainee);
         Assert.Equal(PopulationStatus.Trainee, p.Status);
         Assert.Equal(PopulationAssignmentKind.Course, p.Assignment.Kind);
@@ -95,7 +105,7 @@ public class Gdd03TrainingCentreFixtureTests
         Assert.Equal(PopulationAssignmentKind.Teaching, l.Get(teacher).Assignment.Kind);
         Assert.Equal(CentreA, l.Get(teacher).Assignment.Target);
 
-        f.Advance(trainee, Month(s, 1));
+        f.Advance(trainee, enrolment);
         var after = l.Get(trainee); var teacherAfter = l.Get(teacher);
         Assert.Equal(1, after.Assignment.ProgressTicks); Assert.Equal(PopulationStatus.Trainee, after.Status);
         Assert.Equal(CivilianTier.Novice, after.Tier); Assert.Equal(profession, after.Profession);
@@ -105,45 +115,72 @@ public class Gdd03TrainingCentreFixtureTests
         Assert.Equal(CivilianTier.Veteran, teacherAfter.Tier); Assert.Equal(teacherBefore.WorkXp, teacherAfter.WorkXp);
         Assert.Equal(count, l.Units.Count); Assert.Equal(next, l.NextPopulationId); Assert.Equal(people, l.TotalPeople);
 
-        Unchanged(s, () => f.Advance(trainee, Month(s, 2)), typeof(NotSupportedException), "Deferred: #1668 Q43");
-        Assert.Equal(CivilianTier.Novice, l.Get(trainee).Tier);
+        f.Advance(trainee, Month(s, 1));
+        Assert.Equal(2, l.Get(trainee).Assignment.ProgressTicks);
+        Assert.Equal(PopulationStatus.Trainee, l.Get(trainee).Status); Assert.Equal(CivilianTier.Novice, l.Get(trainee).Tier);
+
+        f.Advance(trainee, Month(s, 2));
+        var graduate = l.Get(trainee); var released = l.Get(teacher);
+        Assert.Equal(PopulationStatus.FreeCivilian, graduate.Status); Assert.Same(PopulationAssignment.Unassigned, graduate.Assignment);
+        Assert.Equal(CivilianTier.Trained, graduate.Tier); Assert.Equal(profession, graduate.Profession);
+        Assert.Equal(before.WorkXp, graduate.WorkXp); Assert.Equal(before.ReceptionTicks, graduate.ReceptionTicks);
+        Assert.Same(before.Equipment, graduate.Equipment); Assert.True(graduate.Equipment.ToolsPaid);
+        Assert.Same(before.Location, graduate.Location);
+        Assert.Equal(before.CombatXp, graduate.CombatXp); Assert.Equal(before.Qualification, graduate.Qualification);
+        Assert.Equal(PopulationStatus.FreeCivilian, released.Status); Assert.Same(PopulationAssignment.Unassigned, released.Assignment);
+        Assert.Equal(CivilianTier.Veteran, released.Tier); Assert.Equal(teacherBefore.WorkXp, released.WorkXp);
+        Assert.Equal(teacherBefore.Equipment, released.Equipment); Assert.Same(teacherBefore.Location, released.Location);
+        Assert.Equal(count, l.Units.Count); Assert.Equal(next, l.NextPopulationId); Assert.Equal(people, l.TotalPeople);
         l.Reconcile();
     }
 
-    // R-TRAIN-006: the Agreed course length is read from the catalogue, not a literal: with a synthetic 4, two turns
-    // count before the Deferred graduation-timing turn.
+    // R-TRAIN-006: the Agreed course length is read from the catalogue, not a literal: with a synthetic 4, the course
+    // graduates on its fourth counted turn, the enrolment month included (Q43(a), docs/GDD.md:372: "A course occupies its
+    // people from its first turn"), not on the third.
     [Fact] public void CourseLengthComesFromTheCatalogue()
     {
-        var c = Catalogue("profession.course_turns", Agreed(4)); var s = State(c);
+        var c = Catalogue("profession.course_turns", Agreed(4)); var s = State(c); var l = s.PopulationLedger;
         var f = new Gdd03TrainingCentreFixture(c, s, Centres());
         f.Start(1, 0, CentreA, Month(s, 0));
-        f.Advance(1, Month(s, 1)); f.Advance(1, Month(s, 2));
-        Assert.Equal(2, s.PopulationLedger.Get(1).Assignment.ProgressTicks);
-        Unchanged(s, () => f.Advance(1, Month(s, 3)), typeof(NotSupportedException), "Deferred: #1668 Q43");
+        f.Advance(1, Month(s, 0)); f.Advance(1, Month(s, 1)); f.Advance(1, Month(s, 2));
+        Assert.Equal(3, l.Get(1).Assignment.ProgressTicks);
+        Assert.Equal(PopulationStatus.Trainee, l.Get(1).Status); Assert.Equal(CivilianTier.Novice, l.Get(1).Tier);
+        f.Advance(1, Month(s, 3));
+        Assert.Equal(PopulationStatus.FreeCivilian, l.Get(1).Status); Assert.Equal(CivilianTier.Trained, l.Get(1).Tier);
     }
 
-    // R-TRAIN-006: one month counts once; a stale or repeated snapshot cannot add a second course turn.
+    // R-TRAIN-006: one month counts once, the enrolment month included (Q43(a)); a stale or repeated snapshot cannot add
+    // a second course turn.
     [Fact] public void AMonthCountsOnceForACourse()
     {
         var c = Catalogue("profession.course_turns", Agreed(5)); var s = State(c); var f = new Gdd03TrainingCentreFixture(c, s, Centres());
-        f.Start(1, 0, CentreA, Month(s, 0));
-        var m1 = Month(s, 1); f.Advance(1, m1);
+        var m0 = Month(s, 0);
+        f.Start(1, 0, CentreA, m0);
+        f.Advance(1, m0);
         Assert.Equal(1, s.PopulationLedger.Get(1).Assignment.ProgressTicks);
+        Unchanged(s, () => f.Advance(1, m0), typeof(ArgumentException));
+        Unchanged(s, () => f.Advance(1, Month(s, 0)), typeof(ArgumentException));
+        var m1 = Month(s, 1); f.Advance(1, m1);
+        Assert.Equal(2, s.PopulationLedger.Get(1).Assignment.ProgressTicks);
         Unchanged(s, () => f.Advance(1, m1), typeof(ArgumentException));
         // A fresh snapshot with an ordinal that was already counted, or an earlier one, is refused too.
         Unchanged(s, () => f.Advance(1, Month(s, 1)), typeof(ArgumentException));
         f.Advance(1, Month(s, 3));
         Unchanged(s, () => f.Advance(1, Month(s, 2)), typeof(ArgumentException));
-        Assert.Equal(2, s.PopulationLedger.Get(1).Assignment.ProgressTicks);
+        Assert.Equal(3, s.PopulationLedger.Get(1).Assignment.ProgressTicks);
     }
 
-    // R-TRAIN-008: a snapshot taken after enrolment but carrying the enrolment month's ordinal is still the enrolment
-    // month, so it is not counted (#1668 Q43(a)).
-    [Fact] public void TheEnrolmentOrdinalIsNeverCounted()
+    // R-TRAIN-006: a snapshot taken after enrolment but carrying the enrolment month's ordinal is still the enrolment
+    // month, so it counts once, as course turn 1 (#1668 Q43(a), docs/GDD.md:372: "A course occupies its people from its
+    // first turn"). A snapshot with an ordinal before the enrolment month is refused.
+    [Fact] public void TheEnrolmentOrdinalCountsOnce()
     {
         var c = Catalogue(); var s = State(c); var f = new Gdd03TrainingCentreFixture(c, s, Centres());
-        f.Start(1, 0, CentreA, Month(s, 0));
-        Unchanged(s, () => f.Advance(1, Month(s, 0)), typeof(NotSupportedException), "Deferred: #1668 Q43");
+        f.Start(1, 0, CentreA, Month(s, 1));
+        Unchanged(s, () => f.Advance(1, Month(s, 0)), typeof(ArgumentException));
+        f.Advance(1, Month(s, 1));
+        Assert.Equal(1, s.PopulationLedger.Get(1).Assignment.ProgressTicks);
+        Unchanged(s, () => f.Advance(1, Month(s, 1)), typeof(ArgumentException));
     }
 
     // R-TRAIN-005: a busy teacher refuses a second pupil (Agreed profession.trainees_per_teacher = 1).
@@ -224,13 +261,15 @@ public class Gdd03TrainingCentreFixtureTests
         Unchanged(s, () => f.Start(trainee, teacher, centre, Month(s, 0)), typeof(ArgumentException));
     }
 
-    // R-TRAIN-007: cancel at every course turn this slice can reach keeps id, tools, payment fact and reception credit;
+    // R-TRAIN-007: cancel at every course turn before graduation keeps id, tools, payment fact and reception credit;
     // grants nothing unfinished; clears progress; releases the teacher and the bed; moves no one.
     [Theory]
     [InlineData(CivilianProfession.Farmer, 0)]
     [InlineData(CivilianProfession.Farmer, 1)]
+    [InlineData(CivilianProfession.Farmer, 2)]
     [InlineData(CivilianProfession.Pioneer, 0)]
     [InlineData(CivilianProfession.Pioneer, 1)]
+    [InlineData(CivilianProfession.Pioneer, 2)]
     public void CancelAtEveryTurnRetainsPaidStateAndReleasesTeacherAndBed(CivilianProfession profession, int counted)
     {
         var c = Catalogue(); var s = State(c, Refugee(), Refugee()); var l = s.PopulationLedger;
@@ -266,7 +305,9 @@ public class Gdd03TrainingCentreFixtureTests
         Assert.Equal(0, l.Get(1).Assignment.ProgressTicks);
         f.Advance(1, Month(s, 3));
         Assert.Equal(1, l.Get(1).Assignment.ProgressTicks);
-        Unchanged(s, () => f.Advance(1, Month(s, 4)), typeof(NotSupportedException), "Deferred: #1668 Q43");
+        // The restart's count starts again: the old course's turn does not carry over, so month 4 does not graduate.
+        f.Advance(1, Month(s, 4));
+        Assert.Equal(2, l.Get(1).Assignment.ProgressTicks); Assert.Equal(CivilianTier.Novice, l.Get(1).Tier);
     }
 
     // R-TRAIN-005: teacher and trainee hold exclusive assignments; other assignment paths refuse them.
@@ -295,14 +336,123 @@ public class Gdd03TrainingCentreFixtureTests
         Unchanged(idle, () => new Gdd03TrainingCentreFixture(c, idle, Centres()), typeof(NotSupportedException), "Deferred: #1668 Q42");
     }
 
-    // R-TRAIN-008: #1668 Q43(a) is not built in this fixture: the enrolment month is not counted.
-    [Fact] public void CourseTurnBoundariesStayDeferred()
+    // R-TRAIN-006, R-TRAIN-008: #1668 Q43(a) (docs/GDD.md:372: "A course occupies its people from its first turn"). The
+    // enrolment month counts once even though its opening snapshot predates the course, unless the centre was not
+    // available at that month's freeze (27 Oct list Q9 stays Deferred). Every later month still needs the course at its
+    // opening: a month-1 snapshot taken before the course started is refused with the Q43(a) reason (a ruled rule).
+    [Fact] public void TheEnrolmentMonthCountsAndLaterMonthsNeedTheCourseAtTheirOpening()
     {
         var c = Catalogue(); var s = State(c);
         var f = new Gdd03TrainingCentreFixture(c, s, Centres());
-        var enrolment = Month(s, 0);
+        var enrolment = Month(s, 0); var closedEnrolment = Month(s, 0, centresAvailable: false); var staleLater = Month(s, 1);
         f.Start(1, 0, CentreA, enrolment);
-        Unchanged(s, () => f.Advance(1, enrolment), typeof(NotSupportedException), "Deferred: #1668 Q43");
+        Unchanged(s, () => f.Advance(1, closedEnrolment), typeof(NotSupportedException), "Deferred: #1668 27 Oct list Q9");
+        Unchanged(s, () => f.Advance(1, staleLater), typeof(ArgumentException), CourseAtOpening);
+        f.Advance(1, enrolment);
+        Assert.Equal(1, s.PopulationLedger.Get(1).Assignment.ProgressTicks);
+        Unchanged(s, () => f.Advance(1, enrolment), typeof(ArgumentException));
+        Unchanged(s, () => f.Advance(1, staleLater), typeof(ArgumentException), CourseAtOpening);
+    }
+
+    // R-TRAIN-006, 27 Oct list Q9: in the enrolment month the centre's availability is read from the month's facility
+    // list (the opening may predate the course). A centre listed with no free place (opening capacity 0) at that month's
+    // freeze counts no course turn: refused Deferred, state unchanged; the next month with a place counts as before.
+    [Fact] public void TheEnrolmentMonthCountsNothingWhenTheCentreHasNoPlace()
+    {
+        var c = Catalogue(); var s = State(c); var f = new Gdd03TrainingCentreFixture(c, s, Centres());
+        var noPlace = Gdd03SyntheticMonthContext.CreateSynthetic(SaveGame.Gdd03Ruleset, 0, s.PopulationLedger.Units,
+            Facilities.Select(id => new Gdd03SyntheticFacilitySnapshot(id, true, id == CentreA ? 0 : 1)),
+            Array.Empty<int>(), Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
+        f.Start(1, 0, CentreA, Month(s, 0));
+        Unchanged(s, () => f.Advance(1, noPlace), typeof(NotSupportedException), "Deferred: #1668 27 Oct list Q9");
+        Assert.Equal(0, s.PopulationLedger.Get(1).Assignment.ProgressTicks);
+        f.Advance(1, Month(s, 1));
+        Assert.Equal(1, s.PopulationLedger.Get(1).Assignment.ProgressTicks);
+    }
+
+    // R-TRAIN-006, R-QUAL-008: graduation reuses the trained-tier transform and charges nothing; a teacher who still has
+    // another pupil keeps teaching. Two pupils per teacher is a synthetic value (the catalogue's is 1).
+    [Fact] public void AGraduationKeepsATeacherWhoStillHasAPupil()
+    {
+        var c = Catalogue("profession.trainees_per_teacher", Agreed(2)); var s = State(c); var l = s.PopulationLedger;
+        var f = new Gdd03TrainingCentreFixture(c, s, Centres());
+        var m0 = Month(s, 0);
+        f.Start(1, 0, CentreA, m0); f.Advance(1, m0);
+        f.Start(5, 0, CentreA, Month(s, 1)); f.Advance(1, Month(s, 1));
+        f.Advance(1, Month(s, 2));
+        Assert.Equal(CivilianTier.Trained, l.Get(1).Tier); Assert.Same(PopulationAssignment.Unassigned, l.Get(1).Assignment);
+        Assert.Equal(PopulationAssignmentKind.Teaching, l.Get(0).Assignment.Kind); Assert.Equal(CentreA, l.Get(0).Assignment.Target);
+        Assert.Equal(PopulationStatus.Trainee, l.Get(5).Status); Assert.Equal(0, l.Get(5).Assignment.TeacherId);
+        f.Cancel(5);
+        Assert.Same(PopulationAssignment.Unassigned, l.Get(0).Assignment);
+        l.Reconcile();
+    }
+
+    // R-TRAIN-007, R-TRAIN-008, #1668 Q43(b) (#1697: "on graduation the people are released in the turn the last course
+    // turn counts and can be assigned from the next turn's planning"): in the graduation month neither the graduate nor the
+    // released teacher can start a course, with any snapshot of that month; from the next month the teacher can.
+    [Fact] public void GraduatesAndTheirTeacherCannotStartACourseInTheGraduationMonth()
+    {
+        var c = Catalogue(); var s = State(c); var l = s.PopulationLedger; var f = new Gdd03TrainingCentreFixture(c, s, Centres());
+        var m0 = Month(s, 0);
+        f.Start(1, 0, CentreA, m0); f.Advance(1, m0); f.Advance(1, Month(s, 1));
+        var graduation = Month(s, 2);
+        f.Advance(1, graduation);
+        Assert.Equal(CivilianTier.Trained, l.Get(1).Tier);
+        Unchanged(s, () => f.Start(5, 0, CentreB, graduation), typeof(ArgumentException), GraduationMonth);
+        Unchanged(s, () => f.Start(5, 0, CentreB, Month(s, 2)), typeof(ArgumentException), GraduationMonth);
+        Unchanged(s, () => f.Start(5, 0, CentreA, Month(s, 2)), typeof(ArgumentException), GraduationMonth);
+        Unchanged(s, () => f.Start(5, 0, CentreB, Month(s, 1)), typeof(ArgumentException), GraduationMonth);
+        // The graduate is trained now, so no course takes them as a pupil (R-TRAIN-006), this month or later.
+        Unchanged(s, () => f.Start(1, 4, CentreB, graduation), typeof(ArgumentException));
+        Unchanged(s, () => f.Start(1, 4, CentreB, Month(s, 3)), typeof(ArgumentException));
+        f.Start(5, 0, CentreB, Month(s, 3));
+        Assert.Equal(PopulationStatus.Trainee, l.Get(5).Status); Assert.Equal(0, l.Get(5).Assignment.TeacherId);
+    }
+
+    // #1716 month snapshot, #1668 Q43(c) (#1697: "a person whose course ends this turn starts work the next turn"): the
+    // graduation month's opening snapshot still has the graduate on the course, not at work; a job given after the
+    // graduation is in the next month's snapshot.
+    [Fact] public void AGraduateWorksFromTheNextMonthsSnapshot()
+    {
+        var c = Catalogue(); var s = State(c); var f = new Gdd03TrainingCentreFixture(c, s, Centres());
+        var work = new Gdd03AssignmentFixture(c, s, new[] { new Gdd03FixtureSlot(Field, Gdd03FixtureWork.Farm, 2, "fixture") });
+        var m0 = Month(s, 0);
+        f.Start(1, 0, CentreA, m0); f.Advance(1, m0); f.Advance(1, Month(s, 1));
+        var graduation = Month(s, 2);
+        f.Advance(1, graduation);
+        Assert.DoesNotContain(1, graduation.WorkEligibleIds); Assert.Contains(1, graduation.CourseEligibleIds);
+        Assert.Equal(Gdd03FixtureAssignmentResult.Applied, work.Assign(1, Field));
+        Assert.Equal(Gdd03FixtureAssignmentResult.Applied, work.Assign(0, Field));
+        var next = Month(s, 3);
+        Assert.Contains(1, next.WorkEligibleIds); Assert.Contains(0, next.WorkEligibleIds);
+        Assert.DoesNotContain(1, next.CourseEligibleIds);
+    }
+
+    // R-TRAIN-008, #1668 Q43(b) with Q41: a bed freed by a graduation is not reused that month. Camp A is full at the
+    // graduation month's opening (two refugees and the pupil); the next month a new course takes the bed.
+    [Fact] public void ABedFreedByGraduationIsNotReusedThatMonth()
+    {
+        var c = Catalogue(); var s = State(c, Refugee(), Refugee()); var f = new Gdd03TrainingCentreFixture(c, s, Centres());
+        var m0 = Month(s, 0);
+        f.Start(1, 0, CentreA, m0); f.Advance(1, m0); f.Advance(1, Month(s, 1));
+        var graduation = Month(s, 2);
+        f.Advance(1, graduation);
+        Unchanged(s, () => f.Start(5, 4, CentreA, graduation), typeof(ArgumentException), BedWaits);
+        f.Start(5, 4, CentreA, Month(s, 3));
+        Assert.Equal(PopulationStatus.Trainee, s.PopulationLedger.Get(5).Status);
+    }
+
+    // R-TRAIN-007: a graduate is no longer a pupil, so a further course turn or a cancel is refused unchanged, and the
+    // released teacher leaves no idle Teaching assignment behind (a new fixture over the state validates).
+    [Fact] public void AGraduateIsNoLongerAPupil()
+    {
+        var c = Catalogue(); var s = State(c); var f = new Gdd03TrainingCentreFixture(c, s, Centres());
+        var m0 = Month(s, 0);
+        f.Start(1, 0, CentreA, m0); f.Advance(1, m0); f.Advance(1, Month(s, 1)); f.Advance(1, Month(s, 2));
+        Unchanged(s, () => f.Advance(1, Month(s, 3)), typeof(ArgumentException));
+        Unchanged(s, () => f.Cancel(1), typeof(ArgumentException));
+        _ = new Gdd03TrainingCentreFixture(c, s, Centres());
     }
 
     // #1716 Q43(b) release, R-TRAIN-007, R-TRAIN-008 (owner-approved answer, 1 Nov 2026, #1668 Q43(b): "Cancellation: they
@@ -336,7 +486,8 @@ public class Gdd03TrainingCentreFixtureTests
     // #1716 Q43(b) release, R-TRAIN-005, R-TRAIN-007, R-TRAIN-008 (owner-approved answer, 1 Nov 2026, #1668 Q43(b):
     // "Cancellation: they are released at once"). Both people of a course held at the month's opening and cancelled this
     // turn may start a new course in the same month: the pupil restarts as a full new course with another teacher, and the
-    // teacher takes another pupil at another centre. The restart's own enrolment month is still not counted (Q43(a)).
+    // teacher takes another pupil at another centre. The restart's own enrolment month counts as its first course turn
+    // (Q43(a), docs/GDD.md:372: "A course occupies its people from its first turn"), once.
     [Fact] public void PeopleReleasedByACancelMayStartAnotherCourseThatMonth()
     {
         var c = Catalogue(); var s = State(c); var l = s.PopulationLedger; var f = new Gdd03TrainingCentreFixture(c, s, Centres());
@@ -355,14 +506,17 @@ public class Gdd03TrainingCentreFixtureTests
         }
         var month = Month(s, 1);
         Assert.Contains(1, month.CourseEligibleIds); Assert.Contains(5, month.CourseEligibleIds);
-        Unchanged(s, () => f.Advance(1, month), typeof(NotSupportedException), "Deferred: #1668 Q43");
-        f.Advance(1, Month(s, 2));
+        f.Advance(1, month);
         Assert.Equal(1, l.Get(1).Assignment.ProgressTicks);
+        Unchanged(s, () => f.Advance(1, month), typeof(ArgumentException));
+        f.Advance(1, Month(s, 2));
+        Assert.Equal(2, l.Get(1).Assignment.ProgressTicks);
     }
 
     // #1716 Q43(b) release, R-TRAIN-006, R-TRAIN-007: the same pupil restarts with the same teacher at the same centre in
-    // the month of the cancel. It is a full new course, and its enrolment month is still not counted (Q43(a)), even with
-    // the month snapshot taken before the cancel, which still shows the old course.
+    // the month of the cancel. It is a full new course, and its enrolment month counts once as its first course turn
+    // (Q43(a), docs/GDD.md:372: "A course occupies its people from its first turn"), even with the month snapshot taken
+    // before the cancel, which still shows the old course.
     [Fact] public void TheSamePupilAndTeacherRestartAtTheSameCentreAfterACancel()
     {
         var c = Catalogue(); var s = State(c); var l = s.PopulationLedger; var f = new Gdd03TrainingCentreFixture(c, s, Centres());
@@ -375,7 +529,9 @@ public class Gdd03TrainingCentreFixtureTests
         Assert.Equal(PopulationStatus.Trainee, p.Status); Assert.Equal(CentreA, p.Assignment.Target);
         Assert.Equal(0, p.Assignment.TeacherId); Assert.Equal(0, p.Assignment.ProgressTicks);
         Assert.Equal(tools, p.Equipment);
-        Unchanged(s, () => f.Advance(1, opening), typeof(NotSupportedException), "Deferred: #1668 Q43");
+        f.Advance(1, opening);
+        Assert.Equal(1, l.Get(1).Assignment.ProgressTicks);
+        Unchanged(s, () => f.Advance(1, opening), typeof(ArgumentException));
     }
 
     // R-TRAIN-005, R-TRAIN-007: only a cancel ends a course here. A teacher still teaching and a pupil still on a course
@@ -403,7 +559,7 @@ public class Gdd03TrainingCentreFixtureTests
         var opening = Month(s, 1);   // camp A: pupil 1 and refugee 6 hold 2 of its 3 beds
         f.Cancel(1);
         f.Start(1, 0, CentreA, opening);   // the one bed free at the opening
-        Unchanged(s, () => f.Start(5, 0, CentreA, opening), typeof(NotSupportedException), "Deferred: #1668 Q43");
+        Unchanged(s, () => f.Start(5, 0, CentreA, opening), typeof(ArgumentException), BedWaits);
     }
 
     // R-TRAIN-008, #1716 Q43(b): with the camp full at the month's opening, a cancelled pupil's own bed waits for the
@@ -415,7 +571,7 @@ public class Gdd03TrainingCentreFixtureTests
         f.Start(1, 0, CentreA, Month(s, 0));
         var opening = Month(s, 1);   // camp A: pupil 1 and refugees 6 and 7 hold all 3 beds
         f.Cancel(1);
-        Unchanged(s, () => f.Start(1, 0, CentreA, opening), typeof(NotSupportedException), "Deferred: #1668 Q43");
+        Unchanged(s, () => f.Start(1, 0, CentreA, opening), typeof(ArgumentException), BedWaits);
         f.Start(1, 0, CentreA, Month(s, 2));
         Assert.Equal(PopulationStatus.Trainee, s.PopulationLedger.Get(1).Status);
     }
@@ -489,6 +645,22 @@ public class Gdd03TrainingCentreFixtureTests
         Unchanged(s, () => f.Start(5, 6, CentreB, opening), typeof(NotSupportedException), "Deferred: #1668 Q43");
     }
 
+    // R-TRAIN-008 (with #1668 Q41): a course started and cancelled in the same month still counts against that month's
+    // beds, so the bed it freed is not reused that month, by another pupil or by the same one; the next month it is.
+    // Camp A has two refugees, so one of its three beds is free at the month's opening.
+    [Fact] public void ACourseStartedAndCancelledThisMonthStillHoldsItsBedThatMonth()
+    {
+        var c = Catalogue(); var s = State(c, Refugee(), Refugee()); var f = new Gdd03TrainingCentreFixture(c, s, Centres());
+        var m0 = Month(s, 0);
+        f.Start(1, 0, CentreA, m0);
+        f.Cancel(1);
+        Unchanged(s, () => f.Start(5, 4, CentreA, m0), typeof(ArgumentException), BedWaits);
+        Unchanged(s, () => f.Start(1, 0, CentreA, m0), typeof(ArgumentException), BedWaits);
+        Unchanged(s, () => f.Start(5, 4, CentreA, Month(s, 0)), typeof(ArgumentException), BedWaits);
+        f.Start(5, 4, CentreA, Month(s, 1));
+        Assert.Equal(PopulationStatus.Trainee, s.PopulationLedger.Get(5).Status);
+    }
+
     // R-TRAIN-008: #1668 Q43(b) and Q41: a bed freed after the month's opening (here by a cancel) is not reused that month.
     [Fact] public void ABedFreedAfterTheOpeningIsNotReusedThatMonth()
     {
@@ -496,7 +668,7 @@ public class Gdd03TrainingCentreFixtureTests
         f.Start(1, 0, CentreA, Month(s, 0));
         var m1 = Month(s, 1);
         f.Cancel(1);
-        Unchanged(s, () => f.Start(5, 4, CentreA, m1), typeof(NotSupportedException), "Deferred: #1668 Q43");
+        Unchanged(s, () => f.Start(5, 4, CentreA, m1), typeof(ArgumentException), BedWaits);
         f.Start(5, 4, CentreA, Month(s, 2));
         Assert.Equal(PopulationStatus.Trainee, s.PopulationLedger.Get(5).Status);
     }
