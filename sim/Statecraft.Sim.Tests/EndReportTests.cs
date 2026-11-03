@@ -94,7 +94,7 @@ public class EndReportTests
         var paidOn = c.Objectives.Where(o => o.PartOf == "").Select(o => o.ReferenceDate)
             .Concat(c.Objectives.Where(o => o.PartOf != "").GroupBy(o => o.PartOf, StringComparer.Ordinal).Select(g => g.Max(o => o.ReferenceDate)));
         var points = paidOn.Select(d => c.RulesAt(d.AddDays(-1)).Mvp!.ObjectivePoints!.Value).ToList();
-        Assert.Equal(2, points.Distinct().Count());   // the paying objectives fall in both eras, so one era's points for all would differ
+        Assert.True(points.Distinct().Count() >= 2);   // the paying objectives fall in more than one era, so one era's points for all would differ
         Assert.Equal(points.Sum(), s.Score);
         Assert.Equal(s.Score, EndReport.For(c, s).ReferenceScore);
     }

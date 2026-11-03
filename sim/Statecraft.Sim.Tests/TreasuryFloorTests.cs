@@ -9,7 +9,8 @@ public class TreasuryFloorTests
     static readonly Content Real = ContentLoader.Load(RealContentTests.ContentRoot());
 
     // R-MONEY-003: the golden run (the reference player on the real GDD loop) never leaves a negative Treasury, though it
-    // eventually borrows. What goes below 0 is the net position (Treasury minus Debt) the top bar shows.
+    // eventually borrows. What goes below 0 is the net position (Treasury minus Debt) the top bar shows. The exact turn of
+    // the first debt is not pinned here: the golden run's state hash (golden/manifest.txt) covers it.
     [Fact]
     public void TheReferenceRunNeverLeavesANegativeTreasury()
     {
@@ -22,6 +23,7 @@ public class TreasuryFloorTests
             if (firstDebt == null && s.Debt > 0) firstDebt = s.Turn;
         }
         Assert.NotNull(firstDebt);
+        Assert.InRange(firstDebt!.Value, 1, s.Turn);   // a turn of this run
     }
 
     // R-MONEY-003: an event's cost is a payment like any other. With IL 0.4m in the Treasury, the IL 1m claim on Germany

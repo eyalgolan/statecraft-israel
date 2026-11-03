@@ -280,7 +280,12 @@ options:
     {
         var m = c.RulesAt(s.Date).Mvp!;
         var capacity = s.Treasury + moneyBeforePurchase + m.DebtCeiling!.Value - s.Debt;
-        return checked((int)Math.Floor(capacity / m.ArmsPrice!.Value) + 1);
+        // The smallest n with n * price > capacity (exactly at the ceiling is not past it, Pools.BorrowsPastDebtCeiling).
+        // Near an exact multiple, float rounding here and in Pools could disagree by one Arms, so fail loudly there.
+        var arms = capacity / m.ArmsPrice!.Value;
+        Assert.True(Math.Abs(arms - Math.Round(arms)) > 1e-6,
+            FormattableString.Invariant($"capacity {capacity} is an exact multiple of the Arms price {m.ArmsPrice.Value}; the boundary is ambiguous"));
+        return checked((int)Math.Floor(arms) + 1);
     }
 
     // R-MONEY-004, R-ARMS-002 (#2206; owner, 2 November 2026: "Conversion counts first (Recommended)"): a turn's dollar

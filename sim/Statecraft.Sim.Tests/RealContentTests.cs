@@ -55,7 +55,19 @@ public class RealContentTests
     {
         var c = ContentLoader.Load(ContentRoot());
         var alternatives = c.Events.Where(e => e.Options.Any(o => o.Historical)).SelectMany(e => e.Options.Where(o => !o.Historical)).ToList();
-        Assert.NotEmpty(alternatives);
+        // The same count read from the raw event files: a loader that drops an alternative would leave it unchecked.
+        var rawAlternatives = 0;
+        foreach (var file in Directory.GetFiles(Path.Combine(ContentRoot(), "events"), "*.yaml"))
+        {
+            var yaml = new YamlStream();
+            using (var reader = new StringReader(File.ReadAllText(file))) yaml.Load(reader);
+            if (!((YamlMappingNode)yaml.Documents[0].RootNode).Children.TryGetValue(new YamlScalarNode("options"), out var node)) continue;
+            var historical = ((YamlSequenceNode)node).Children.Cast<YamlMappingNode>()
+                .Select(o => o.Children.TryGetValue(new YamlScalarNode("historical"), out var h) && ((YamlScalarNode)h).Value == "true").ToList();
+            if (historical.Contains(true)) rawAlternatives += historical.Count(h => !h);
+        }
+        Assert.NotEqual(0, rawAlternatives);
+        Assert.Equal(rawAlternatives, alternatives.Count);
         Assert.All(alternatives, o => Assert.NotNull(o.Alternative));
     }
 
