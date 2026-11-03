@@ -114,23 +114,33 @@ public class CityBuildersTests
     [InlineData("industry", 2)]
     public void Gdd03BuiltInTodaysTurns(string kind, int turns)
     {
-        var (c, s) = Game();
-        s.Policies[MapActions.MaabarotPolicy] = 1;
-        var k = c.ProjectKinds.Single(x => x.Id == kind);
-        var state = Step(c, s, new StartProject(kind, "town_a", 1, 1)).State;
-        var id = state.CityProjects.Keys.Single();
-        Assert.True(state.CityProjects[id].Builder || state.CityProjects[id].BuiltOn != null);
-        for (int i = 1; i < turns; i++)
+        // town_a's condition at 0.8: the kind's change (the transit camp's -0.1) is never cut at 0 or 1 (R-HOUSE-001), and
+        // it stays above the gdd-0.3 surcharge and cohesion thresholds (R-HOUSE-005), so only the condition differs below.
+        (City Was, City Built, City Later, ProjectKind K) Run(string projects)
         {
-            Assert.Null(state.CityProjects[id].BuiltOn);
-            state = Step(c, state).State;
+            var (c, s) = Game(projects: projects);
+            s.Policies[MapActions.MaabarotPolicy] = 1;
+            s.Cities["town_a"] = s.Cities["town_a"].WithCondition(0.8);
+            var row = c.ProjectKinds.Single(x => x.Id == kind);
+            var state = Step(c, s, new StartProject(kind, "town_a", 1, 1)).State;
+            var id = state.CityProjects.Keys.Single();
+            Assert.True(state.CityProjects[id].Builder || state.CityProjects[id].BuiltOn != null);
+            for (int i = 1; i < turns; i++)
+            {
+                Assert.Null(state.CityProjects[id].BuiltOn);
+                state = Step(c, state).State;
+            }
+            Assert.NotNull(state.CityProjects[id].BuiltOn);
+            return (s.Cities["town_a"], state.Cities["town_a"], Step(c, state).State.Cities["town_a"], row);
         }
-        Assert.NotNull(state.CityProjects[id].BuiltOn);
-        var was = s.Cities["town_a"];
-        var built = state.Cities["town_a"];
+        var (was, built, later, k) = Run(Fixture.GddProjects + ArmsWorkshopTests.Row);
         Assert.Equal((was.HousingCapacity + k.Capacity, was.JobSlots + k.JobSlots), (built.HousingCapacity, built.JobSlots));
-        var later = Step(c, state).State.Cities["town_a"];
         Assert.Equal((built.HousingCapacity, built.JobSlots), (later.HousingCapacity, later.JobSlots));
+        // The condition, against the same run with the kinds' condition at 0: the gdd-0.3 housing step (R-HOUSE-002) moves
+        // both runs alike, so the difference is the kind's condition, on the turn it is built and, added once, after it.
+        var (_, plain, plainLater, _) = Run(Fixture.GddProjects.Replace("condition: -0.1", "condition: 0") + ArmsWorkshopTests.Row);
+        Assert.Equal(plain.Condition!.Value + k.Condition, built.Condition!.Value, 9);
+        Assert.Equal(plainLater.Condition!.Value + k.Condition, later.Condition!.Value, 9);
     }
 
     // R-PROJ-003: Money is never an input to progress.
@@ -318,6 +328,9 @@ public class CityBuildersTests
         Assert.Equal("5:housing@town_a,1,1/2", p.Canonical());
         Assert.Equal("5:housing@town_a,1,1/2;builder", p.WithBuilder(true).Canonical());
         Assert.Equal("5:housing@town_a,1,1/done,1948-05-15", p.WithBuilder(true).Built(new DateTime(1948, 5, 15)).Canonical());
+        // The hash leaves the flag out once built, so check the record itself: Built frees the builder, and Builders,
+        // which counts the flag, never counts a built project (#1700 slice A review NIT).
+        Assert.False(p.WithBuilder(true).Built(new DateTime(1948, 5, 15)).Builder);
     }
     // R-SAVE with R-CITY-011 (review MUST-1): a save is the command log, so a game with builders, saved and loaded, replays to
     // the same state, the builders included, and goes on identically.
@@ -485,5 +498,21 @@ public class CityBuildersTests
             (Training.Idle(one.State, x), Cities.MaxWorkers(one.State, x), x.Employed));
         var id = one.State.CityProjects.Keys.Single();
         Assert.NotNull(Step(c, one.State).State.CityProjects[id].BuiltOn);
+    }
+
+    // R-PROJ-001, R-PROJ-003 with R-CITY-011 (#1700 slice A review: a gdd-0.1 hash check, plan test 14): under gdd-0.1 a
+    // start takes no builder, so a job order up to all the city's people is accepted before or after it and the whole state
+    // hash is the same either way, on the start's turn and the turn it is built. Under gdd-0.3 the same two orders differ
+    // (Gdd03AutoBuilderFollowsQueueOrderWithAJobOrder). Compared in the same run: no literal hash outside the golden manifest.
+    [Fact]
+    public void Gdd01StartOrderLeavesTheHashUnchanged()
+    {
+        var (c, s) = Game(civilians: 10, employed: 9, jobs: 10, gdd03: false);   // one person without a job
+        var jobFirst = Step(c, s, new AssignWorkers("town_a", "job", 10), Housing());
+        var startFirst = Step(c, s, Housing(), new AssignWorkers("town_a", "job", 10));
+        Assert.Empty(jobFirst.Rejected);
+        Assert.Empty(startFirst.Rejected);
+        Assert.Equal(jobFirst.State.Hash(), startFirst.State.Hash());
+        Assert.Equal(Step(c, jobFirst.State).State.Hash(), Step(c, startFirst.State).State.Hash());
     }
 }
