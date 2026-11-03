@@ -197,6 +197,7 @@ public partial class DesignValuesTests
     [InlineData("transit.cost", "Default", "0.50", PostMvp, Nov1)]
     [InlineData("reception.queue_cohesion_loss", "Default", "1", PostMvp, Nov1)]
     [InlineData("housing.max_deterioration", "Default", "10", "declined by the owner", Oct30)]
+    [InlineData("housing.overflow_deterioration", "Agreed", "5", "\"Yes, 5 pp under GDD 0.3 (Recommended)\"", "2 November 2026")]
     public void Gdd03RowsFollowTheOwnersLaterRulings(string key, string basis, string values, string ruling, string date)
     {
         var row=ContentLoader.Load(RealContentTests.ContentRoot()).Gdd03Balance!.Values[key];
@@ -292,6 +293,19 @@ public partial class DesignValuesTests
         Assert.Contains("1 November 2026",row.Note);
         Assert.Contains("design value",row.Note);
         Assert.Contains(basis,row.Note);
+        Assert.Contains("Source: #1668 balance.md at 605277df.",row.Note);
+    }
+    // R-HOUSE-005, #1703 (owner, 2 November 2026: "Scale it to unit size (Recommended)"; the option read: "0.1 per unit (as
+    // #2112 did for Industry), about 7.6 Money a turn at start."): the surcharge's slope is 0.1 Money per housed unit.
+    [Fact]
+    public void Gdd03HousingSurchargeSlopeIsScaledToUnitSize()
+    {
+        var row=ContentLoader.Load(RealContentTests.ContentRoot()).Gdd03Balance!.Values["housing.money_slope"];
+        Assert.Equal("Agreed",row.Basis);
+        Assert.Equal(new[]{0.1m},row.Values);
+        Assert.Contains("\"Scale it to unit size (Recommended)\"",row.Note);
+        Assert.Contains("2 November 2026",row.Note);
+        Assert.Contains("design value",row.Note);
         Assert.Contains("Source: #1668 balance.md at 605277df.",row.Note);
     }
 

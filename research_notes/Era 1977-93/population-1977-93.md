@@ -88,16 +88,21 @@ Every [V] in this note was an agent's reading on 2026-10-23, unless the tag give
 | CBS SA 1991 | Central Bureau of Statistics, *Statistical Abstract of Israel 1991* (No. 42), Table 16.2 "Dwellings, by size, and rooms", printed page 451 (PDF p. 487) (opened 1 Nov) | https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1991_num42.pdf |
 | CBS SA 1992 | *Statistical Abstract of Israel 1992* (No. 43), Table 16.2, printed page 468 (PDF p. 489); Table 16.3 "Dwellings, area and capital formation in caravans and cabins", printed page 469 (PDF p. 490); Table 16.5, printed page 473 (PDF p. 494) (opened 1 Nov) | https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1992_num43.pdf |
 | CBS SA 1993 | *Statistical Abstract of Israel 1993* (No. 44), Table 16.2, printed page 486 (PDF p. 509); Table 16.3, printed page 487 (PDF p. 510) (opened 1 Nov) | https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1993_num44.pdf |
+| JTA 1989-09-18 | JTA, 18 September 1989, "Absorption Ministry is Gearing Up for Massive Influx of Soviet Jews" (opened 2 Nov) | https://www.jta.org/archive/absorption-ministry-is-gearing-up-for-massive-influx-of-soviet-jews |
 | JTA 1989-10-03 | JTA, 3 October 1989, "As New Refugee Policy Takes Effect, Dutch Embassy Stops Issuing Visas" (opened 1 Nov) | https://www.jta.org/archive/as-new-refugee-policy-takes-effect-dutch-embassy-stops-issuing-visas |
 | JTA 1989-10-06 | JTA, 6 October 1989, "Hias Seeking to Help Thousands Lining Up at Embassy in Moscow" (opened 1 Nov) | https://www.jta.org/archive/hias-seeking-to-help-thousands-lining-up-at-embassy-in-moscow |
 | JTA 1989-10-13 | JTA, 13 October 1989, "U.S. Communities Asked to Absorb Much Larger Numbers of Soviet Jews" (opened 1 Nov) | https://www.jta.org/archive/u-s-communities-asked-to-absorb-much-larger-numbers-of-soviet-jews |
 | JTA 1989-11-07 | JTA, 7 November 1989, "U.S. Takes Step Toward Shutting Down 'Vienna-Rome Pipeline' for Refugees" (opened 1 Nov) | https://www.jta.org/archive/u-s-takes-step-toward-shutting-down-vienna-rome-pipeline-for-refugees |
+| JTA 1990-01-08 | JTA, 8 January 1990, "As Soviets Arrive by the Hundreds, Israel Wonders How to Pay for Them" (opened 2 Nov) | https://www.jta.org/archive/as-soviets-arrive-by-the-hundreds-israel-wonders-how-to-pay-for-them |
 | JTA 1990-06-27 | JTA, 27 June 1990, "Israel and Jewish Agency Adopt Plan to Absorb 450,000 Olim over 3 Years" (opened 1 Nov) | https://www.jta.org/archive/israel-and-jewish-agency-adopt-plan-to-absorb-450000-olim-over-3-years |
 | JTA 1990-08-01 | JTA, 1 August 1990, "News Analysis: Clash Between Sharon and Moda'i on Soviet Olim a Battle of Wills" (opened 1 Nov) | https://www.jta.org/archive/news-analysis-clash-between-sharon-and-modai-on-soviet-olim-a-battle-of-wills |
 | JTA 1990-08-03 | JTA, 3 August 1990, "Government Ok's Sharon's Request to Import Prefabricated Homes" (opened 1 Nov) | https://www.jta.org/archive/government-oks-sharons-request-to-import-prefabricated-homes |
+| JTA 1990-11-22 | JTA, 22 November 1990, "No More Tax Break for Olim" (opened 2 Nov) | https://www.jta.org/archive/no-more-tax-break-for-olim |
+| JTA 1990-12-19 | JTA, 19 December 1990, "Jewish Agency Hit by Cash Shortage Caused by High Cost of Soviet Aliyah" (opened 2 Nov) | https://www.jta.org/archive/jewish-agency-hit-by-cash-shortage-caused-by-high-cost-of-soviet-aliyah |
 | JTA 1991-03-06 | JTA, 6 March 1991, "Knesset Protests Absorption Cuts, Fearing Effect on Soviet Aliyah" (opened 1 Nov) | https://www.jta.org/archive/knesset-protests-absorption-cuts-fearing-effect-on-soviet-aliyah |
 | JTA 1991-03-11 | JTA, 11 March 1991, "Sharon Quits As 'absorption Czar' As Public Eye Turns to Immigrants" (opened 1 Nov) | https://www.jta.org/archive/sharon-quits-as-absorption-czar-as-public-eye-turns-to-immigrants |
 | JTA 1991-03-13 | JTA, 13 March 1991, "Israel Partially Restores Cuts in Subsidies to New Immigrants" (opened 1 Nov) | https://www.jta.org/archive/israel-partially-restores-cuts-in-subsidies-to-new-immigrants |
+| JTA 1991-03-20 | JTA, 20 March 1991, "Shamir Backs Jewish Agency Program to Give Olim Loans Instead of Grants" (opened 2 Nov) | https://www.jta.org/archive/shamir-backs-jewish-agency-program-to-give-olim-loans-instead-of-grants |
 | PL 101-167 | Public Law 101-167, 21 November 1989, 103 Stat. 1195; sections 599D and 599E on pages 1261-1264 (opened 2 Nov) | https://www.govinfo.gov/content/pkg/STATUTE-103/pdf/STATUTE-103-Pg1195.pdf |
 
 Also opened, not usable for this era: *Statistical Abstract of Israel 2010*, Table 4.10, "Departures and returns of
@@ -561,6 +566,32 @@ November 1988, 78.4 percent in January 1990). This pass adds the size of the pac
 - [GAP] The grant schedule in the Absorption Ministry's or the Jewish Agency's own regulations, and the cabinet
   decision that set the 21,000 shekels. Not found in any source read; no ministry text was reached.
 
+**Absorption basket by date, 1989-91 (added 2 November 2026, issue #160)**
+
+Five more JTA items on the size and the payers of the basket. Four were read on the bulletin page image, where the
+date line (the bulletin's own date and the reporter's dateline) is printed; the 8 Jan 1990 item was read in its web text only.
+
+| Date of item | What it says | Source | Tag |
+|---|---|---|---|
+| 17 Sep 1989 (dateline "Sept. 17", reporting a news conference "over the weekend") | Absorption Minister Peretz: "each immigrant family will receive an 'absorption basket' equivalent to $11,000 for their first year in the country"; immigrants to go "directly to absorption centers" and, if needed, hotels, sanatoriums and army barracks | JTA 1989-09-18, p. 3, at https://www.jta.org/archive/absorption-ministry-is-gearing-up-for-massive-influx-of-soviet-jews (PDF: http://pdfs.jta.org/1989/1989-09-18_177.pdf) | [V, agent read 2 Nov; a person's check pending], press |
+| 8 Jan 1990 (bulletin of that day; the Cabinet met "Sunday") | The US had given the Jewish Agency, through the UJA, "an annual stipend" for absorption since 1973, then "$25 million"; Dinitz asked for more. A national "voluntary loan" was "favored by" Finance Minister Peres and "pressed" by Deputy Minister Beilin, and "resisted" by others | JTA 1990-01-08, at https://www.jta.org/archive/as-soviets-arrive-by-the-hundreds-israel-wonders-how-to-pay-for-them (text of the web page only; the page image was not opened) | [V, web text only; agent read 2 Nov; a person's check pending], press |
+| 21 Nov 1990 (dateline "Nov. 21"; effective 1 Dec) | Customs authorities: cash instead of the electrical-appliance tax exemption: "$2,500 electrical appliance grant", "$750 on arrival", the rest at the end of the first year. "In addition to the $9,000 given to each immigrant family in what is called an 'absorption basket'"; "A third of the absorption basket is paid upon arrival in Israel and the balance in monthly installments of $500" | JTA 1990-11-22, p. 3, at https://www.jta.org/archive/no-more-tax-break-for-olim (PDF: http://pdfs.jta.org/1990/1990-11-22_219.pdf) | [V, agent read 2 Nov; a person's check pending], press |
+| 19 Dec 1990 (bulletin of that day; the item's dateline names no day) | The Jewish Agency "pays the cost of transporting the immigrants and their luggage to Israel, as well as 25 percent of the absorption grant they receive during their first year"; it "now lacks $120 million" and had "a $40 million overdraft" | JTA 1990-12-19, p. 4, at https://www.jta.org/archive/jewish-agency-hit-by-cash-shortage-caused-by-high-cost-of-soviet-aliyah (PDF: http://pdfs.jta.org/1990/1990-12-19_237.pdf) | [V, agent read 2 Nov; a person's check pending], press |
+| 19 Mar 1991 (dateline "March 19", meeting "Tuesday") | The Agency's loan programme: "each immigrant would be entitled to a $1,000 loan repayable over a period of 10 years, starting in the fourth year". "Last week, Moda'i restored some of the cuts, bringing the subsidy back to its previous level of $7,600 for a family of three, $2,600 of which will now be a loan"; "still considerably below the $9,600 grant originally handed families of three"; loan "retroactive to March 1"; the Agency cited "a $113 million shortfall" for April to December 1991 | JTA 1991-03-20, p. 3, at https://www.jta.org/archive/shamir-backs-jewish-agency-program-to-give-olim-loans-instead-of-grants (PDF: http://pdfs.jta.org/1991/1991-03-20_055.pdf) | [V, agent read 2 Nov; a person's check pending], press |
+
+- [C] The size of the basket for an immigrant family (only the March 1991 items say "of three"), by item, in the press's own dollars: $11,000 (Peretz, Sep 1989); about $11,000 in cash and services for a family of three "reduced to $7,000" (6 Mar 1991, already weighed against the shekel figures of 13 March in the [C] on the size of the package, above);
+  $9,000 (customs item, Nov 1990, with the $2,500 appliance grant on top); $9,600 "originally" (Mar 1991; the 13 March item
+  above gives the same $9,600 as the "original 21,000 shekels"); $7,600 after the March 1991 partial restoration, with
+  $2,600 of it a loan (20 March), against "$7,750" for 17,000 shekels in the 13 March item. The items do not say
+  what each total includes (cash, services, the appliance grant), so no one figure is chosen and none is a schedule.
+- [C] The Jewish Agency's share, three values: "half" (JTA 27 Jun 1990, above), "25 percent" (19 Dec 1990) and "one-third"
+  (6 Mar 1991, above). All three are press descriptions; the dates differ, so they may be successive shares, but no
+  source read says so.
+- Timing, as stated in the 22 Nov 1990 item only: a third of the basket on arrival, the balance in monthly instalments
+  of $500. It is the only payment schedule found.
+- [GAP] still open, narrowed: the Absorption Ministry's or the Agency's own grant tables and the decision that set
+  the 21,000 shekels. The items above are press accounts of them.
+
 **Housing: what was built, 1985-92 (CBS)**
 
 [V, agent read 1 Nov; a person's check pending] CBS, *Statistical Abstract of Israel* (numbers 42, 43 and 44, of 1991, 1992
@@ -647,6 +678,7 @@ full-volume PDFs on the CBS site; only the construction chapter tables named abo
 `https://www.jta.org/wp-json/wp/v2/archive?search=direct+absorption&after=1989-06-01T00:00:00&before=1992-12-31T00:00:00&per_page=40`
 (412 items) and `search=absorption+basket` over the same window (35 items); only the titles were scanned and the items named above were read in full.
 Added 2 November 2026: Public Law 101-167 (103 Stat. 1195, govinfo, pages 1261 to 1264) and the four Federal Register day volumes named in the US-rule gap above.
+Added 2 November 2026 (second pass): five more JTA items on the basket, 1989-09-18, 1990-01-08, 1990-11-22, 1990-12-19 and 1991-03-20; searches `search=absorption+basket` (14 items 1989-06 to 1990-12, 14 items for 1991) and `search=absorption+grant` (42 and 38 items), titles scanned.
 
 ---
 
