@@ -33,14 +33,16 @@ using Statecraft.Sim;
 //   strength and turn length"; content/gdd03-balance.yaml `military.active_money` [0.05].
 // Maintainer calls by coordinator 53 (3 November 2026), not owner rulings: formations are pre-bound, empty ActiveService
 // targets supplied by the tests; one Start order is one cohort and one formation, its strength its count; only formations
-// this fixture graduated pay; a graduating Advance after that month's PayUpkeep is refused. A graduate's qualification
-// stays "": the live recruit path gives a formation no qualification (sim/Statecraft.Sim/GddState.cs:207, Training.cs:246)
-// and the Historical start gives its soldiers "" (HistoricalPopulation.cs:80).
+// this fixture graduated pay; a graduating Advance after that month's PayUpkeep is refused. A graduate's military
+// qualification (docs/GDD.md:372: a returned captive "keeps their id and military qualification") is the course's unit
+// class, content/unit_types.yaml `recruit` `class` (infantry); value: the course's unit class (unit_types.yaml); maintainer
+// call on the source of the value, not an owner ruling.
 public class Gdd03BasicTrainingFixtureTests
 {
-    static readonly Lazy<Gdd03BalanceCatalogue> Real = new(() => ContentLoader.Load(RealContentTests.ContentRoot()).Gdd03Balance!);
+    static readonly Lazy<Content> RealContent = new(() => ContentLoader.Load(RealContentTests.ContentRoot()));
+    static readonly Lazy<Gdd03BalanceCatalogue> Real = new(() => RealContent.Value.Gdd03Balance!);
     const string CampNorth = "fixture-camp-north", CampSouth = "fixture-camp-south", Field = "fixture-field", Service = "fixture-service";
-    const string Infantry = "infantry", Carried = "fixture-carried-item";
+    const string Infantry = "infantry", FixtureClass = "fixture-class", Carried = "fixture-carried-item";
     const string FormationNorthA = "fixture-formation-north-a", FormationNorthB = "fixture-formation-north-b",
         FormationSouth = "fixture-formation-south";
 
@@ -50,6 +52,14 @@ public class Gdd03BasicTrainingFixtureTests
         var values = new Dictionary<string, Gdd03DesignValue>(Real.Value.Values, StringComparer.Ordinal);
         if (key != null) { if (replacement == null) values.Remove(key); else values[key] = replacement; }
         c.Gdd03Balance = new Gdd03BalanceCatalogue { Ruleset = Real.Value.Ruleset, Values = values };
+        c.UnitTypes = RealContent.Value.UnitTypes;
+        return c;
+    }
+    // The real unit types with `recruit` replaced by one of the given class, or without `recruit` when the class is null.
+    static Content WithRecruitClass(Content c, string? recruitClass)
+    {
+        c.UnitTypes = RealContent.Value.UnitTypes.Where(t => t.Id != "recruit").ToList();
+        if (recruitClass != null) c.UnitTypes.Add(new UnitType { Id = "recruit", Kind = "unit", Side = "israel", Class = recruitClass });
         return c;
     }
     static Gdd03DesignValue Agreed(decimal v) => new() { Basis = "Agreed", Values = new() { v }, Note = "synthetic test value" };
@@ -64,7 +74,7 @@ public class Gdd03BasicTrainingFixtureTests
                 new PopulationTarget(FormationNorthA, PopulationAssignmentKind.ActiveService, "north"),
                 new PopulationTarget(FormationNorthB, PopulationAssignmentKind.ActiveService, "north"),
                 new PopulationTarget(FormationSouth, PopulationAssignmentKind.ActiveService, "south") },
-        Array.Empty<string>(), new[] { Infantry });
+        Array.Empty<string>(), new[] { Infantry, FixtureClass });
 
     static PopulationUnit Person(PopulationStatus status = PopulationStatus.FreeCivilian, string region = "north",
         PopulationAssignment? assignment = null, string qualification = "", string? military = null, string? tools = null)
@@ -289,7 +299,7 @@ public class Gdd03BasicTrainingFixtureTests
         Assert.Equal(FormationNorthA, p.Assignment.Target);
         Assert.Equal(0, p.Assignment.ProgressTicks); Assert.Null(p.Assignment.TeacherId);
         Assert.Equal(item, p.Equipment.MilitaryId); Assert.True(p.Equipment.MilitaryPaid);
-        Assert.Equal("", p.Qualification);
+        Assert.Equal(Infantry, p.Qualification);
         Assert.Same(before.Location, p.Location);
         Assert.Equal(before.Equipment.ToolsId, p.Equipment.ToolsId); Assert.Equal(before.Profession, p.Profession);
         Assert.Equal(before.Tier, p.Tier); Assert.Equal(before.WorkXp, p.WorkXp); Assert.Equal(before.CombatXp, p.CombatXp);
@@ -419,6 +429,9 @@ public class Gdd03BasicTrainingFixtureTests
                 Assert.Throws<ContentException>(() => new Gdd03BasicTrainingFixture(Catalogue(key, replacement), state, Camps(), Formations(), 1, 1m));
         Assert.Throws<ContentException>(() => new Gdd03BasicTrainingFixture(Catalogue("military.issue_arms", Agreed(2)), state, Camps(), Formations(), 1, 1m));
         Assert.Throws<ContentException>(() => new Gdd03BasicTrainingFixture(Catalogue("military.repeat_issue", Agreed(1)), state, Camps(), Formations(), 1, 1m));
+        foreach (var recruitClass in new[] { null, "" })
+            Assert.Throws<ContentException>(() => new Gdd03BasicTrainingFixture(WithRecruitClass(Catalogue(), recruitClass), state,
+                Camps(), Formations(), 1, 1m));
         Assert.Throws<ArgumentException>(() => new Gdd03BasicTrainingFixture(g, state, Camps(), Formations(), -1, 1m));
         Assert.Throws<ArgumentException>(() => new Gdd03BasicTrainingFixture(g, state, Camps(), Formations(), 1, -1m));
         Assert.Throws<ArgumentException>(() => new Gdd03BasicTrainingFixture(g, state, Camps().Concat(Camps()), Formations(), 1, 1m));
@@ -709,6 +722,33 @@ public class Gdd03BasicTrainingFixtureTests
         Unchanged(s, f, () => f.Advance(0, 3), typeof(ArgumentException));
         var ex = Unchanged(s, f, () => f.Start(new[] { 0 }, CampNorth, 3), typeof(ArgumentException));
         Assert.Contains("is not a civilian without a job", ex.Message, StringComparison.Ordinal);
+    }
+
+    // #1699 Done when: "a basic-training order for an already qualified soldier is refused (it cannot be used to avoid
+    // active upkeep)". Graduation gives the record the course's unit class as its military qualification (infantry for
+    // `recruit`, content/unit_types.yaml), so a graduate who is a free civilian without a job again is refused because of
+    // that qualification, not its status. No fixture path demobilises a graduate, so the test moves the record directly.
+    [Fact] public void AGraduateBackInCivilianLifeIsRefusedBasicTraining()
+    {
+        var c = Catalogue(); var s = State(c); var f = Fixture(c, s); var l = s.PopulationLedger;
+        f.Start(new[] { 0 }, CampNorth, 0);
+        Graduate(f, 0, 0);
+        var graduate = l.Get(0);
+        l.Replace(graduate.WithPlacement(PopulationStatus.FreeCivilian, graduate.Location, PopulationAssignment.Unassigned,
+            graduate.Captor, graduate.Home));
+        Assert.Equal(Infantry, l.Get(0).Qualification);
+        var ex = Unchanged(s, f, () => f.Start(new[] { 0 }, CampNorth, 3), typeof(ArgumentException));
+        Assert.Contains("is already a qualified soldier", ex.Message, StringComparison.Ordinal);
+    }
+
+    // The qualification is read from the content, not a literal: with `recruit` given a synthetic class, a graduate holds
+    // that class.
+    [Fact] public void TheGraduatesQualificationIsTheCoursesUnitClass()
+    {
+        var c = WithRecruitClass(Catalogue(), FixtureClass); var s = State(c); var f = Fixture(c, s);
+        f.Start(new[] { 0 }, CampNorth, 0);
+        Graduate(f, 0, 0);
+        Assert.Equal(FixtureClass, s.PopulationLedger.Get(0).Qualification);
     }
 
     // R-TRAIN-002 and docs/GDD.md:372 (cancel); R-UNIT-003 (strength is the cohort's count). A cancelled trainee is out of its
