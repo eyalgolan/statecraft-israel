@@ -3224,7 +3224,7 @@ rules:
     credit: "Tal Heuberger · CC BY-NC-ND 4.0"
     note: "Public source/export distribution authorized 31 October 2026; own paid account confirmed. Input reference bases separately recorded; no photographs included. No exact 1948 historical, modular, hex, art or Unity/runtime acceptance asserted. No existing asset grant changed. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
 
-  # Recovered source pair, Tal scoped contribution permission 31 October 2026; no runtime registration.
+  # Recovered source pair, Tal scoped contribution permission 31 October 2026; the game's copies are the hex-tile props rows (#2082).
   - glob: "asset-sources/recovered-vegetation-20261031/g25_papyrus/g25_papyrus.obj"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
@@ -3232,7 +3232,7 @@ rules:
     status: verified
     artist: "Tal Heuberger"
     credit: "Tal Heuberger · CC BY-NC-ND 4.0"
-    note: "Author permitted public redistribution and approved export conversions 31 October 2026 and confirmed own paid generation account. This records the author statement, not independent legal review. Byte-preserved recovery; no historical/ecological, art, registration or Unity acceptance asserted. Provider/input restrictions remain; see provenance.json. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
+    note: "Author permitted public redistribution and approved export conversions 31 October 2026 and confirmed own paid generation account. This records the author statement, not independent legal review. Byte-preserved recovery; no historical/ecological, art, registration or Unity acceptance asserted. The papyrus and tamarisk are in the game through their byte-identical copies in the hex-tile props rows (#2082). This folder's README is Tal's as delivered on 31 October 2026 and describes the files before that. Provider/input restrictions remain; see provenance.json. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
   - glob: "asset-sources/recovered-vegetation-20261031/g25_papyrus/albedo.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
@@ -3240,7 +3240,7 @@ rules:
     status: verified
     artist: "Tal Heuberger"
     credit: "Tal Heuberger · CC BY-NC-ND 4.0"
-    note: "Author permitted public redistribution and approved export conversions 31 October 2026 and confirmed own paid generation account. This records the author statement, not independent legal review. Byte-preserved recovery; no historical/ecological, art, registration or Unity acceptance asserted. Provider/input restrictions remain; see provenance.json. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
+    note: "Author permitted public redistribution and approved export conversions 31 October 2026 and confirmed own paid generation account. This records the author statement, not independent legal review. Byte-preserved recovery; no historical/ecological, art, registration or Unity acceptance asserted. The papyrus and tamarisk are in the game through their byte-identical copies in the hex-tile props rows (#2082). This folder's README is Tal's as delivered on 31 October 2026 and describes the files before that. Provider/input restrictions remain; see provenance.json. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
   - glob: "asset-sources/recovered-vegetation-20261031/g25_papyrus/normal.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
@@ -3248,7 +3248,7 @@ rules:
     status: verified
     artist: "Tal Heuberger"
     credit: "Tal Heuberger · CC BY-NC-ND 4.0"
-    note: "Author permitted public redistribution and approved export conversions 31 October 2026 and confirmed own paid generation account. This records the author statement, not independent legal review. Byte-preserved recovery; no historical/ecological, art, registration or Unity acceptance asserted. Provider/input restrictions remain; see provenance.json. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
+    note: "Author permitted public redistribution and approved export conversions 31 October 2026 and confirmed own paid generation account. This records the author statement, not independent legal review. Byte-preserved recovery; no historical/ecological, art, registration or Unity acceptance asserted. The papyrus and tamarisk are in the game through their byte-identical copies in the hex-tile props rows (#2082). This folder's README is Tal's as delivered on 31 October 2026 and describes the files before that. Provider/input restrictions remain; see provenance.json. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
   - glob: "asset-sources/recovered-vegetation-20261031/hf_tamarisk/hf_tamarisk.obj"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
@@ -3256,7 +3256,7 @@ rules:
     status: verified
     artist: "Tal Heuberger"
     credit: "Tal Heuberger · CC BY-NC-ND 4.0"
-    note: "Author permitted public redistribution and approved export conversions 31 October 2026 and confirmed own paid generation account. This records the author statement, not independent legal review. Byte-preserved recovery; no historical/ecological, art, registration or Unity acceptance asserted. Provider/input restrictions remain; see provenance.json. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
+    note: "Author permitted public redistribution and approved export conversions 31 October 2026 and confirmed own paid generation account. This records the author statement, not independent legal review. Byte-preserved recovery; no historical/ecological, art, registration or Unity acceptance asserted. The papyrus and tamarisk are in the game through their byte-identical copies in the hex-tile props rows (#2082). This folder's README is Tal's as delivered on 31 October 2026 and describes the files before that. Provider/input restrictions remain; see provenance.json. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
   - glob: "asset-sources/recovered-vegetation-20261031/hf_tamarisk/albedo.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
@@ -3264,7 +3264,7 @@ rules:
     status: verified
     artist: "Tal Heuberger"
     credit: "Tal Heuberger · CC BY-NC-ND 4.0"
-    note: "Author permitted public redistribution and approved export conversions 31 October 2026 and confirmed own paid generation account. This records the author statement, not independent legal review. Byte-preserved recovery; no historical/ecological, art, registration or Unity acceptance asserted. Provider/input restrictions remain; see provenance.json. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
+    note: "Author permitted public redistribution and approved export conversions 31 October 2026 and confirmed own paid generation account. This records the author statement, not independent legal review. Byte-preserved recovery; no historical/ecological, art, registration or Unity acceptance asserted. The papyrus and tamarisk are in the game through their byte-identical copies in the hex-tile props rows (#2082). This folder's README is Tal's as delivered on 31 October 2026 and describes the files before that. Provider/input restrictions remain; see provenance.json. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
   - glob: "asset-sources/recovered-vegetation-20261031/hf_tamarisk/normal.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
@@ -3272,9 +3272,9 @@ rules:
     status: verified
     artist: "Tal Heuberger"
     credit: "Tal Heuberger · CC BY-NC-ND 4.0"
-    note: "Author permitted public redistribution and approved export conversions 31 October 2026 and confirmed own paid generation account. This records the author statement, not independent legal review. Byte-preserved recovery; no historical/ecological, art, registration or Unity acceptance asserted. Provider/input restrictions remain; see provenance.json. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
+    note: "Author permitted public redistribution and approved export conversions 31 October 2026 and confirmed own paid generation account. This records the author statement, not independent legal review. Byte-preserved recovery; no historical/ecological, art, registration or Unity acceptance asserted. The papyrus and tamarisk are in the game through their byte-identical copies in the hex-tile props rows (#2082). This folder's README is Tal's as delivered on 31 October 2026 and describes the files before that. Provider/input restrictions remain; see provenance.json. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
 
-  # New exact source-only weapon records; no change to existing Collection grants.
+  # Exact weapon source records; the K98k and the Sten are in the game through the Collection rows below (#2083), the MG34 is not.
   - glob: "asset-sources/prepared-weapons-20261031/k98k/statecraft-k98k-approved-textured-b48a435f.glb"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
@@ -3282,7 +3282,7 @@ rules:
     status: verified
     artist: "Tal Heuberger"
     credit: "Tal Heuberger · CC BY-NC-ND 4.0"
-    note: "Public source redistribution authorized 31 October 2026; own paid generation account confirmed by author. Original bytes preserved. No Unity, fixed-pair, historical/faction or art acceptance; provider/input restrictions remain. No museum photographs were uploaded according to saved generation handoff. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
+    note: "Public source redistribution authorized 31 October 2026; own paid generation account confirmed by author. Original bytes preserved. No Unity, fixed-pair, historical/faction or art acceptance; provider/input restrictions remain. No museum photographs were uploaded according to saved generation handoff. The K98k and the Sten are in the game through their compatibility exports in the Collection rows (#2083); the MG34 stays a source. This folder's README is Tal's as delivered on 31 October 2026 and describes the files before that. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
   - glob: "asset-sources/prepared-weapons-20261031/k98k/statecraft-k98k-approved-textured-b48a435f_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
@@ -3290,7 +3290,7 @@ rules:
     status: verified
     artist: "Tal Heuberger"
     credit: "Tal Heuberger · CC BY-NC-ND 4.0"
-    note: "Public source redistribution authorized 31 October 2026; own paid generation account confirmed by author. Original bytes preserved. No Unity, fixed-pair, historical/faction or art acceptance; provider/input restrictions remain. No museum photographs were uploaded according to saved generation handoff. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
+    note: "Public source redistribution authorized 31 October 2026; own paid generation account confirmed by author. Original bytes preserved. No Unity, fixed-pair, historical/faction or art acceptance; provider/input restrictions remain. No museum photographs were uploaded according to saved generation handoff. The K98k and the Sten are in the game through their compatibility exports in the Collection rows (#2083); the MG34 stays a source. This folder's README is Tal's as delivered on 31 October 2026 and describes the files before that. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
   - glob: "asset-sources/prepared-weapons-20261031/mg34/statecraft-mg34-approved-textured-3a384995.glb"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
@@ -3298,7 +3298,7 @@ rules:
     status: verified
     artist: "Tal Heuberger"
     credit: "Tal Heuberger · CC BY-NC-ND 4.0"
-    note: "Public source redistribution authorized 31 October 2026; own paid generation account confirmed by author. Original bytes preserved. No Unity, fixed-pair, historical/faction or art acceptance; provider/input restrictions remain. No museum photographs were uploaded according to saved generation handoff. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
+    note: "Public source redistribution authorized 31 October 2026; own paid generation account confirmed by author. Original bytes preserved. No Unity, fixed-pair, historical/faction or art acceptance; provider/input restrictions remain. No museum photographs were uploaded according to saved generation handoff. The K98k and the Sten are in the game through their compatibility exports in the Collection rows (#2083); the MG34 stays a source. This folder's README is Tal's as delivered on 31 October 2026 and describes the files before that. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
   - glob: "asset-sources/prepared-weapons-20261031/mg34/statecraft-mg34-approved-textured-3a384995_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
@@ -3306,7 +3306,7 @@ rules:
     status: verified
     artist: "Tal Heuberger"
     credit: "Tal Heuberger · CC BY-NC-ND 4.0"
-    note: "Public source redistribution authorized 31 October 2026; own paid generation account confirmed by author. Original bytes preserved. No Unity, fixed-pair, historical/faction or art acceptance; provider/input restrictions remain. No museum photographs were uploaded according to saved generation handoff. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
+    note: "Public source redistribution authorized 31 October 2026; own paid generation account confirmed by author. Original bytes preserved. No Unity, fixed-pair, historical/faction or art acceptance; provider/input restrictions remain. No museum photographs were uploaded according to saved generation handoff. The K98k and the Sten are in the game through their compatibility exports in the Collection rows (#2083); the MG34 stays a source. This folder's README is Tal's as delivered on 31 October 2026 and describes the files before that. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
   - glob: "asset-sources/prepared-weapons-20261031/sten/statecraft-sten-approved-textured-bc6b06c8.glb"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
@@ -3314,7 +3314,7 @@ rules:
     status: verified
     artist: "Tal Heuberger"
     credit: "Tal Heuberger · CC BY-NC-ND 4.0"
-    note: "Public source redistribution authorized 31 October 2026; own paid generation account confirmed by author. Original bytes preserved. No Unity, fixed-pair, historical/faction or art acceptance; provider/input restrictions remain. No museum photographs were uploaded according to saved generation handoff. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
+    note: "Public source redistribution authorized 31 October 2026; own paid generation account confirmed by author. Original bytes preserved. No Unity, fixed-pair, historical/faction or art acceptance; provider/input restrictions remain. No museum photographs were uploaded according to saved generation handoff. The K98k and the Sten are in the game through their compatibility exports in the Collection rows (#2083); the MG34 stays a source. This folder's README is Tal's as delivered on 31 October 2026 and describes the files before that. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
   - glob: "asset-sources/prepared-weapons-20261031/sten/statecraft-sten-approved-textured-bc6b06c8_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
@@ -3322,9 +3322,9 @@ rules:
     status: verified
     artist: "Tal Heuberger"
     credit: "Tal Heuberger · CC BY-NC-ND 4.0"
-    note: "Public source redistribution authorized 31 October 2026; own paid generation account confirmed by author. Original bytes preserved. No Unity, fixed-pair, historical/faction or art acceptance; provider/input restrictions remain. No museum photographs were uploaded according to saved generation handoff. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
+    note: "Public source redistribution authorized 31 October 2026; own paid generation account confirmed by author. Original bytes preserved. No Unity, fixed-pair, historical/faction or art acceptance; provider/input restrictions remain. No museum photographs were uploaded according to saved generation handoff. The K98k and the Sten are in the game through their compatibility exports in the Collection rows (#2083); the MG34 stays a source. This folder's README is Tal's as delivered on 31 October 2026 and describes the files before that. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
 
-  # Separate C06 point-fire reference derivative; never enabled by this source-only draft.
+  # Separate C06 point-fire reference derivative; one still frame of its byte-identical Unity copy is used in the game (#2084).
   - glob: "asset-sources/c06-point-fire-reference-20261031/C06-POINT-FIRE-PROVISIONAL-PUBLIC.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
@@ -3332,7 +3332,7 @@ rules:
     status: verified
     artist: "Tal Heuberger"
     credit: "Tal Heuberger · CC BY-NC-ND 4.0"
-    note: "Public derivative/export distribution authorized 31 October 2026; own paid generation account confirmed. Source/reference only,not enabled. Existing fire/shoot retained;fallback need unproven;project owner decision required. Cheek/sight/contact limitations and unrun Unity/runtime gates remain. Provider/input restrictions remain. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
+    note: "Public derivative/export distribution authorized 31 October 2026; own paid generation account confirmed. In the game: one still frame (37 of 97) of its byte-identical Unity copy is held by an attacking token's C06 figures (UnitFigurePointFire; owner, 2 November 2026, #2084: \"Yes, for firing units (Recommended)\"); every other figure keeps its existing fire take, and C06 keeps it when the pose source does not arrive. This folder's README is Tal's as delivered on 31 October 2026 and describes the files before that. Cheek/sight/contact limitations remain. Provider/input restrictions remain. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
   - glob: "asset-sources/c06-point-fire-reference-20261031/C06-POINT-FIRE-FULL-REVIEW.mp4"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
@@ -3340,7 +3340,7 @@ rules:
     status: verified
     artist: "Tal Heuberger"
     credit: "Tal Heuberger · CC BY-NC-ND 4.0"
-    note: "Public derivative/export distribution authorized 31 October 2026; own paid generation account confirmed. Source/reference only,not enabled. Existing fire/shoot retained;fallback need unproven;project owner decision required. Cheek/sight/contact limitations and unrun Unity/runtime gates remain. Provider/input restrictions remain. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
+    note: "Public derivative/export distribution authorized 31 October 2026; own paid generation account confirmed. In the game: one still frame (37 of 97) of its byte-identical Unity copy is held by an attacking token's C06 figures (UnitFigurePointFire; owner, 2 November 2026, #2084: \"Yes, for firing units (Recommended)\"); every other figure keeps its existing fire take, and C06 keeps it when the pose source does not arrive. This folder's README is Tal's as delivered on 31 October 2026 and describes the files before that. Cheek/sight/contact limitations remain. Provider/input restrictions remain. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
   - glob: "asset-sources/c06-point-fire-reference-20261031/C06-POINT-FIRE-REVIEW-CONTACT-SHEET.png"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
@@ -3348,8 +3348,50 @@ rules:
     status: verified
     artist: "Tal Heuberger"
     credit: "Tal Heuberger · CC BY-NC-ND 4.0"
-    note: "Public derivative/export distribution authorized 31 October 2026; own paid generation account confirmed. Source/reference only,not enabled. Existing fire/shoot retained;fallback need unproven;project owner decision required. Cheek/sight/contact limitations and unrun Unity/runtime gates remain. Provider/input restrictions remain. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
+    note: "Public derivative/export distribution authorized 31 October 2026; own paid generation account confirmed. In the game: one still frame (37 of 97) of its byte-identical Unity copy is held by an attacking token's C06 figures (UnitFigurePointFire; owner, 2 November 2026, #2084: \"Yes, for firing units (Recommended)\"); every other figure keeps its existing fire take, and C06 keeps it when the pose source does not arrive. This folder's README is Tal's as delivered on 31 October 2026 and describes the files before that. Cheek/sight/contact limitations remain. Provider/input restrictions remain. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
 
+  # Tal Heuberger's #2083 weapons and #2084 C06 point-fire in the game's Collection: lossless FBX compatibility exports, the
+  # delivered colour maps and the byte-for-byte point-fire export.
+  - glob: "unity/Assets/Art/Collection/weapon-k98k-v1/weapon-k98k-v1.fbx"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Documented full-geometry compatibility export of Tal Heuberger's textured GLB asset-sources/prepared-weapons-20261031/k98k/statecraft-k98k-approved-textured-b48a435f.glb (SHA-256 325d86cb42490ad95ed8c367e2c7511fc3bb9c676d6a797074a6ba74a01c7da5) by tools/prepared_weapons.py (Blender 5.0.1): 5485 triangles, connectivity identical, max vertex error 2.9e-08, UV error 0.0; no decimation, welding, pivot or UV rewrite. SHA-256 24f360c34f364daeb12fba4eb25eeb6f5220a50a61bfd7f98979d999377db9f4."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Tal Heuberger's K98k from #2083 (Tripo Studio, approved AI concepts; provenance in asset-sources/prepared-weapons-20261031/provenance.json and this folder's provenance.json) in the game: held in the right hand of the Israeli soldier figures by UnitWeapons (owner, 2 November 2026, #2083: \"Yes, on the soldier figures (Recommended)\"). Tal's 31 October 2026 permission covers approved export conversions; the same compatibility-export precedent as the #2085 towns and the placed vehicles (#1932, #2046). Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported). Period and army use per the sourced rows in UnitWeapons (agent-read, a person's check pending); no art or historical acceptance asserted."
+  - glob: "unity/Assets/Art/Collection/weapon-k98k-v1/weapon-k98k-v1_basecolor.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Byte-for-byte copy of Tal Heuberger's delivered base-colour map asset-sources/prepared-weapons-20261031/k98k/statecraft-k98k-approved-textured-b48a435f_basecolor.jpg (the image the GLB embeds), 2048x2048. SHA-256 615e7f6f28db4cec59704c2b8cc554e5e9e4736bc0692ab6a79e98de57f3b57a."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Tal Heuberger's K98k from #2083 (Tripo Studio, approved AI concepts; provenance in asset-sources/prepared-weapons-20261031/provenance.json and this folder's provenance.json) in the game: held in the right hand of the Israeli soldier figures by UnitWeapons (owner, 2 November 2026, #2083: \"Yes, on the soldier figures (Recommended)\"). Tal's 31 October 2026 permission covers approved export conversions; the same compatibility-export precedent as the #2085 towns and the placed vehicles (#1932, #2046). Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported). Period and army use per the sourced rows in UnitWeapons (agent-read, a person's check pending); no art or historical acceptance asserted."
+  - glob: "unity/Assets/Art/Collection/weapon-sten-v1/weapon-sten-v1.fbx"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Documented full-geometry compatibility export of Tal Heuberger's textured GLB asset-sources/prepared-weapons-20261031/sten/statecraft-sten-approved-textured-bc6b06c8.glb (SHA-256 3c0d0cc4d3c9d086a4883ea23a2940a311f6c4548233a3403c515ad636753f1e) by tools/prepared_weapons.py (Blender 5.0.1): 4851 triangles, connectivity identical, max vertex error 4.2e-08, UV error 0.0; no decimation, welding, pivot or UV rewrite. SHA-256 e4d07630ac3d161e5930e3edee35b16e74569b114f86bfa66ede163941d725da."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Tal Heuberger's Sten from #2083 (Tripo Studio, approved AI concepts; provenance in asset-sources/prepared-weapons-20261031/provenance.json and this folder's provenance.json) in the game: held in the right hand of the Israeli soldier figures by UnitWeapons (owner, 2 November 2026, #2083: \"Yes, on the soldier figures (Recommended)\"). Tal's 31 October 2026 permission covers approved export conversions; the same compatibility-export precedent as the #2085 towns and the placed vehicles (#1932, #2046). Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported). Period and army use per the sourced rows in UnitWeapons (agent-read, a person's check pending); no art or historical acceptance asserted."
+  - glob: "unity/Assets/Art/Collection/weapon-sten-v1/weapon-sten-v1_basecolor.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Byte-for-byte copy of Tal Heuberger's delivered base-colour map asset-sources/prepared-weapons-20261031/sten/statecraft-sten-approved-textured-bc6b06c8_basecolor.jpg (the image the GLB embeds), 2048x2048. SHA-256 c5ba4fbddd345bbf5da58be295b330981650f52b9e15f0d285e8fe5425b0d270."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Tal Heuberger's Sten from #2083 (Tripo Studio, approved AI concepts; provenance in asset-sources/prepared-weapons-20261031/provenance.json and this folder's provenance.json) in the game: held in the right hand of the Israeli soldier figures by UnitWeapons (owner, 2 November 2026, #2083: \"Yes, on the soldier figures (Recommended)\"). Tal's 31 October 2026 permission covers approved export conversions; the same compatibility-export precedent as the #2085 towns and the placed vehicles (#1932, #2046). Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported). Period and army use per the sourced rows in UnitWeapons (agent-read, a person's check pending); no art or historical acceptance asserted."
+  - glob: "unity/Assets/Art/Collection/c06-point-fire-v1/C06-POINT-FIRE-PROVISIONAL-PUBLIC.fbx"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Byte-for-byte copy of Tal Heuberger's C06 point-fire export asset-sources/c06-point-fire-reference-20261031/C06-POINT-FIRE-PROVISIONAL-PUBLIC.fbx (exact input/output hashes, scoped permission and metadata edits in that folder's provenance.json), imported losslessly (every frame, no compression); only its 97-frame clip streams, in the pose source prefab, never its mesh or texture. SHA-256 9a7c8b59eb6dbf5138ee9fe1b8cb6296e430cda105b98cecae9c3a93bfdd3868."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "C06 point-fire from #2084 in the game: one still frame of it (frame 37 of 97) is held by an attacking token's C06 figures (UnitFigurePointFire; owner, 2 November 2026, #2084: \"Yes, for firing units (Recommended)\"). Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported). Tal's labels (provisional, review, not accepted) and known limits stand; no art or production acceptance asserted."
   # Tal Heuberger's #2085 whole towns in the game's Collection: lossless FBX compatibility exports and the delivered colour maps.
   - glob: "unity/Assets/Art/Collection/tiberias-town-v1/tiberias-town-v1.fbx"
     licence: CC-BY-NC-ND-4.0

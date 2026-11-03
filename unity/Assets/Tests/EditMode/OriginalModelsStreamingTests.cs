@@ -138,12 +138,13 @@ public class OriginalModelsStreamingTests
             Assert.AreEqual(model.defaultClipAnimations.Length, clips, id);
             // A generated static prop, house or whole town keeps its delivered import untouched (curve resampling on): it has no
             // clips, so the setting changes nothing. Every model with clips imports with resampling off.
-            if (CollectionCatalog.IsGeneratedProp(id) || CollectionCatalog.IsGeneratedHouse(id) || CollectionCatalog.IsGeneratedTown(id)) { Assert.AreEqual(0, clips, id + " is static"); Assert.IsTrue(model.resampleCurves, id + " keeps its delivered import"); }
+            if (CollectionCatalog.IsGeneratedProp(id) || CollectionCatalog.IsGeneratedHouse(id) || CollectionCatalog.IsGeneratedTown(id) || CollectionCatalog.IsGeneratedWeapon(id)) { Assert.AreEqual(0, clips, id + " is static"); Assert.IsTrue(model.resampleCurves, id + " keeps its delivered import"); }
             else Assert.IsFalse(model.resampleCurves, id);
             var serialized = new SerializedObject(model);
             var lod = serialized.FindProperty("m_GenerateMeshLods") ?? serialized.FindProperty("generateMeshLods");
             Assert.IsNotNull(lod, "Unity's LOD setting must be verifiable");
             Assert.IsFalse(lod.boolValue, id);
+            if (CollectionCatalog.IsFigurePose(id)) continue;   // #2084's pose source streams only its clip: no colour map
             string dir = CollectionCatalog.IsBuilding(id) ? CollectionCatalog.BuildingsFolder : CollectionCatalog.Folder;
             var texture = (TextureImporter)AssetImporter.GetAtPath($"{dir}/{id}/{id}_basecolor.jpg");
             texture.GetSourceTextureWidthAndHeight(out int width, out int height);

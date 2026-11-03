@@ -44,6 +44,7 @@ namespace Statecraft.Game.EditorTools
             Generated1948Characters.ImportRuntime();
             MakeBuildingPrefabs();
             MakeGeneratedTownPrefabs();
+            MakeTokenFigureExtras();
             Debug.Log(FormattableString.Invariant($"CollectionImport: {CollectionCatalog.Ids.Count(id => !CollectionCatalog.IsBuilding(id) && !CollectionCatalog.IsGenerated(id))} collection models"));
         }
 
@@ -99,6 +100,92 @@ namespace Statecraft.Game.EditorTools
             }
             AssetDatabase.SaveAssets();
             Debug.Log(FormattableString.Invariant($"CollectionImport: {CollectionCatalog.Ids.Count(CollectionCatalog.IsGeneratedTown)} generated town prefabs"));
+        }
+
+        /// <summary>#2083 and #2084: Tal Heuberger's weapons and the C06 point-fire pose source for the token figures.
+        /// Each weapon gets one prefab beside its compatibility FBX, made as the generated towns' are, with a material
+        /// like theirs on their delivered map (the FBX and map import settings are the .meta files beside them, the towns').
+        /// The point-fire export is imported losslessly (every frame, no compression), and its prefab
+        /// (<see cref="MakeFigurePosePrefab"/>) holds only the clip and the rig correction, no mesh.
+        /// Headless: Unity -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -executeMethod Statecraft.Game.EditorTools.CollectionImport.MakeTokenFigureExtras</summary>
+        [MenuItem("Statecraft/Collection/Make token weapon and pose prefabs")]
+        public static void MakeTokenFigureExtras()
+        {
+            var townMat = AssetDatabase.LoadAssetAtPath<Material>($"{Dir(CollectionCatalog.TiberiasTown)}/{CollectionCatalog.TiberiasTown}.mat")
+                ?? throw new InvalidOperationException("no town material to copy");
+            foreach (var id in CollectionCatalog.Ids.Where(CollectionCatalog.IsGeneratedWeapon))
+            {
+                string matPath = $"{Dir(id)}/{id}.mat";
+                if (AssetDatabase.LoadAssetAtPath<Material>(matPath) == null)
+                {
+                    var map = AssetDatabase.LoadAssetAtPath<Texture2D>($"{Dir(id)}/{id}_basecolor.jpg") ?? throw new InvalidOperationException($"{id}: no map");
+                    var made = new Material(townMat) { name = id };
+                    made.SetTexture("_BaseMap", map); made.SetTexture("_MainTex", map);
+                    AssetDatabase.CreateAsset(made, matPath);
+                }
+                var model = AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.SourceModelPath(id)) ?? throw new InvalidOperationException($"{id}: no model");
+                var mat = AssetDatabase.LoadAssetAtPath<Material>(matPath)!;
+                var go = (GameObject)PrefabUtility.InstantiatePrefab(model);
+                try
+                {
+                    foreach (var r in go.GetComponentsInChildren<Renderer>(true))
+                        r.sharedMaterials = Enumerable.Repeat(mat, Math.Max(1, r.sharedMaterials.Length)).ToArray();
+                    PrefabUtility.SaveAsPrefabAsset(go, CollectionCatalog.PrefabPath(id, CollectionDetail.Far));
+                }
+                finally { UnityEngine.Object.DestroyImmediate(go); }
+            }
+            ImportModel(CollectionCatalog.SourceModelPath(CollectionCatalog.C06PointFire), animated: true);
+            MakeFigurePosePrefab();
+            AssetDatabase.SaveAssets();
+            Debug.Log("CollectionImport: token weapon and pose prefabs");
+        }
+
+        /// <summary>The frame the point-fire aim holds: frame 37 of 97 (24 fps, frame 1 at 0 s), inside the still aim that Tal
+        /// Heuberger's contact sheet shows from frame 25 to frame 65, between their carrying endpoints.</summary>
+        public const int PointFireAimFrame = 37;
+
+        /// <summary>The C06 point-fire pose source's prefab: an empty object with <see cref="UnitFigurePoseSource"/>, holding the
+        /// export's clip and, per bone of C06's 67, the correction from the export's rig frame to C06's: the export's bind pose
+        /// x its mesh's root-from-local x C06's mesh's local-from-root x C06's inverse bind pose (both meshes' rest vertices
+        /// agree; Generated1948AssetTests checks it). Bones are listed parents first.</summary>
+        internal static void MakeFigurePosePrefab()
+        {
+            string id = CollectionCatalog.C06PointFire, source = CollectionCatalog.SourceModelPath(id);
+            var export = AssetDatabase.LoadAssetAtPath<GameObject>(source) ?? throw new InvalidOperationException("no point-fire export");
+            var clip = AssetDatabase.LoadAllAssetsAtPath(source).OfType<AnimationClip>().Single(c => !c.name.StartsWith("__preview__", StringComparison.Ordinal));
+            var c06 = AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(UnitFigures.YoungRecruit, CollectionDetail.Far))
+                ?? throw new InvalidOperationException("no C06 prefab");
+            var corrections = PointFireCorrections(export, c06, out var bones);
+            var go = new GameObject(id);
+            try
+            {
+                var src = go.AddComponent<UnitFigurePoseSource>();
+                src.Clip = clip; src.AimTime = (PointFireAimFrame - 1) / clip.frameRate; src.Figure = UnitFigures.YoungRecruit;
+                src.Bones = bones; src.Correction = corrections;
+                PrefabUtility.SaveAsPrefabAsset(go, CollectionCatalog.PrefabPath(id, CollectionDetail.Far));
+            }
+            finally { UnityEngine.Object.DestroyImmediate(go); }
+        }
+
+        /// <summary>Per bone (by name, parents first), the export-to-C06 rig correction (see <see cref="MakeFigurePosePrefab"/>).</summary>
+        internal static Matrix4x4[] PointFireCorrections(GameObject export, GameObject c06, out string[] bones)
+        {
+            var e = export.GetComponentsInChildren<SkinnedMeshRenderer>(true).Single();
+            var c = c06.GetComponentsInChildren<SkinnedMeshRenderer>(true).Single();
+            Matrix4x4 RootFrom(Transform t, Transform root) { var m = Matrix4x4.identity; for (var at = t; at != root; at = at.parent) m = Matrix4x4.TRS(at.localPosition, at.localRotation, at.localScale) * m; return m; }
+            var eMesh = RootFrom(e.transform, export.transform); var cMesh = RootFrom(c.transform, c06.transform);
+            var eBind = e.sharedMesh.bindposes; var cBind = c.sharedMesh.bindposes;
+            int Depth(Transform t) { int d = 0; for (var at = t; at != null; at = at.parent) d++; return d; }
+            var order = c.bones.Select((b, i) => (b, i)).OrderBy(x => Depth(x.b)).ThenBy(x => x.i).ToArray();
+            bones = order.Select(x => x.b.name).ToArray();
+            var result = new Matrix4x4[order.Length];
+            for (int k = 0; k < order.Length; k++)
+            {
+                int ci = order[k].i, ei = Array.FindIndex(e.bones, b => b.name == order[k].b.name);
+                if (ei < 0) throw new InvalidOperationException("the export lacks bone " + order[k].b.name);
+                result[k] = eBind[ei] * eMesh.inverse * cMesh * cBind[ci].inverse;
+            }
+            return result;
         }
 
         static void ImportModel(string path, bool animated)
@@ -256,7 +343,9 @@ namespace Statecraft.Game.EditorTools
         public static AssetBundleBuild[] Builds() => CollectionCatalog.Bundles.Select(b => new AssetBundleBuild
         {
             assetBundleName = b.Bundle,
-            assetNames = b.Ids.SelectMany(id => new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near), CollectionCatalog.SourceModelPath(id) }).Distinct().ToArray(),
+            // The point-fire pose source carries only its prefab (and the clip it references), never the export's mesh (#2084).
+            assetNames = b.Ids.SelectMany(id => CollectionCatalog.IsFigurePose(id) ? new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far) }
+                : new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near), CollectionCatalog.SourceModelPath(id) }).Distinct().ToArray(),
         }).ToArray();
 
         /// <summary>Writes <see cref="CollectionCatalog.ChecksFile"/> into <paramref name="folder"/> for the built

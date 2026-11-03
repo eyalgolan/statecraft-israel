@@ -70,7 +70,11 @@ namespace Statecraft.Game.Map.Collection
             // Generated static props signed off the same day, each in a bundle of its own, "collection-" + id (a group name only).
             GeneratedProps = "collection-generated-props",
             // Tal Heuberger's generated whole towns (#2085, #1288), each in a bundle of its own, "collection-" + id (a group name only).
-            GeneratedTowns = "collection-generated-towns";
+            GeneratedTowns = "collection-generated-towns",
+            // Tal Heuberger's prepared weapons (#2083) held by the Israeli soldier figures (UnitWeapons), and their C06 point-fire
+            // pose source (#2084) for the attacking C06 figures (UnitFigurePointFire); each in a bundle of its own, "collection-" + id,
+            // opened after the people's (group names only).
+            GeneratedWeapons = "collection-generated-weapons", FigurePoses = "collection-figure-poses";
 
         /// <summary>Tal Heuberger's whole-town models of Tiberias, Safed, Netanya (#1288 asks for one each) and Ramla (#2085), Far
         /// landmarks on their towns (TownLandmarks). Their sources are asset-sources/prepared-towns-20261031/ (#2085); the Unity FBX
@@ -78,6 +82,17 @@ namespace Statecraft.Game.Map.Collection
         /// vehicles, and the colour map is Tal's delivered JPG byte for byte.</summary>
         public const string TiberiasTown = "tiberias-town-v1", SafedTown = "safed-town-v1", NetanyaTown = "netanya-town-v1",
             RamlaTown = "ramla-town-v1";
+
+        /// <summary>Tal Heuberger's K98k rifle and Sten submachine gun (#2083; owner, 2 November 2026: "Yes, on the soldier figures
+        /// (Recommended)"). Their sources are asset-sources/prepared-weapons-20261031/; the Unity FBX is a documented lossless
+        /// compatibility conversion of the textured GLB (tools/prepared_weapons.py), and the colour map is Tal's JPG byte for byte.</summary>
+        public const string K98k = "weapon-k98k-v1", Sten = "weapon-sten-v1";
+
+        /// <summary>Tal Heuberger's C06 point-fire export (#2084; owner, 2 November 2026: "Yes, for firing units (Recommended)"),
+        /// byte for byte from asset-sources/c06-point-fire-reference-20261031/. Its bundle carries only the pose source prefab
+        /// (the clip and the rig correction, UnitFigurePoseSource), not the export's mesh.</summary>
+        public const string C06PointFire = "c06-point-fire-v1";
+        public const string C06PointFireFile = "C06-POINT-FIRE-PROVISIONAL-PUBLIC.fbx";
 
         /// <summary>The Egyptian infantry, Tal Heuberger's figure for the Egyptian Expeditionary Force (owner, 27 October 2026,
         /// "Sign off all 19" and, for Egypt, "One token").</summary>
@@ -174,6 +189,8 @@ namespace Statecraft.Game.Map.Collection
                 "netanya-town-v1",
                 "ramla-town-v1",
             }),
+            (GeneratedWeapons, new[] { K98k, Sten }),
+            (FigurePoses, new[] { C06PointFire }),
         };
 
         /// <summary>A bundle that is opened only after another has settled (opened or failed) when both are asked for: the Arab
@@ -186,6 +203,9 @@ namespace Statecraft.Game.Map.Collection
             ["collection-" + AlaInfantry] = People,
             ["collection-" + BedouinCivilian] = People,
             ["collection-" + LebaneseRegular] = People,
+            ["collection-" + K98k] = People,
+            ["collection-" + Sten] = People,
+            ["collection-" + C06PointFire] = People,
         };
 
         /// <summary>The models whose near prefab is skinned and plays its idle clip: every person but C05 (his only idle is
@@ -219,13 +239,22 @@ namespace Statecraft.Game.Map.Collection
         /// generated props, drawn far off by TownLandmarks.</summary>
         public static bool IsGeneratedTown(string id) => id == TiberiasTown || id == SafedTown || id == NetanyaTown || id == RamlaTown;
 
+        /// <summary>Tal Heuberger's prepared weapons (#2083): static full-quality originals with one prefab beside the FBX, like the
+        /// generated towns, held by the token figures (UnitWeapons).</summary>
+        public static bool IsGeneratedWeapon(string id) => id == K98k || id == Sten;
+
+        /// <summary>Tal Heuberger's C06 point-fire pose source (#2084): a prefab with no mesh, only the clip it samples.</summary>
+        public static bool IsFigurePose(string id) => id == C06PointFire;
+
         /// <summary>The model file a catalogued id is imported from: <c>&lt;id&gt;.fbx</c> beside its prefab, except the vehicle
         /// delivery's documented <c>&lt;id&gt;-compatibility.fbx</c> (docs/vehicle-review-2026-10-22.md).</summary>
         public static string SourceModelPath(string id) =>
+            id == C06PointFire ? $"{Folder}/{id}/{C06PointFireFile}" :
             $"{(IsBuilding(id) ? BuildingsFolder : Folder)}/{id}/{id}{(id == SyrianR35 ? "-compatibility" : "")}.fbx";
 
         /// <summary>Every generated model (figure, prop or whole town): imported by its own lossless importer, not the original Collection's.</summary>
-        public static bool IsGenerated(string id) => IsFullQualityGeneratedInfantry(id) || IsGeneratedProp(id) || IsGeneratedTown(id);
+        public static bool IsGenerated(string id) => IsFullQualityGeneratedInfantry(id) || IsGeneratedProp(id) || IsGeneratedTown(id)
+            || IsGeneratedWeapon(id) || IsFigurePose(id);
 
         // Categories describe placement; every model streams in a bundle of its own, except #1763's two figures, which share theirs.
         public static IEnumerable<string> Ids => Groups.SelectMany(b => b.Ids).Concat(Kits.TownModels.Ids);

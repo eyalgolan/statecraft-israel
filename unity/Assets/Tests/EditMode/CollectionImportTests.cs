@@ -62,13 +62,13 @@ public class CollectionImportTests
     public void TheCatalogKeeps73IndependentOriginalsAndTheGeneratedInfantryBundle()
     {
         var ids = CollectionCatalog.Ids.ToList();
-        Assert.AreEqual(92, ids.Count);
+        Assert.AreEqual(95, ids.Count);
         Assert.AreEqual(ids.Count, ids.Distinct().Count(), "an id in two bundles");
-        Assert.AreEqual(91, CollectionCatalog.Bundles.Count,
-            "73 independent originals, #1763's shared generated bundle and one bundle for each later generated model");
+        Assert.AreEqual(94, CollectionCatalog.Bundles.Count,
+            "73 independent originals, #1763's shared generated bundle and one bundle for each later generated model (#2083's two weapons and #2084's pose source among them)");
         Assert.IsTrue(CollectionCatalog.Bundles.Where(b => b.Bundle != CollectionCatalog.ArabArmies)
             .All(b => b.Ids.Length == 1 && b.Bundle == "collection-" + b.Ids[0]));
-        CollectionAssert.AreEqual(new[] { 21, 13, 6, 10, 5, 2, 4, 4, 4 }, CollectionCatalog.Groups.Select(g => g.Ids.Length));
+        CollectionAssert.AreEqual(new[] { 21, 13, 6, 10, 5, 2, 4, 4, 4, 2, 1 }, CollectionCatalog.Groups.Select(g => g.Ids.Length));
         CollectionAssert.AreEqual(GeneratedInfantry, CollectionCatalog.Bundles.Single(b => b.Bundle == CollectionCatalog.ArabArmies).Ids);
         Assert.AreEqual(27, CollectionCatalog.Animated.Count);
         CollectionAssert.IsSubsetOf(CollectionCatalog.Animated, ids);
@@ -161,9 +161,11 @@ public class CollectionImportTests
                 Model(id), $"{Dir(id)}/{id}.mat", ColourMap(id),
                 CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near),
             };
+            // #2084's pose source: Tal's export byte for byte and the prefab beside it; no map, material or record of its own.
+            if (CollectionCatalog.IsFigurePose(id)) return new[] { CollectionCatalog.SourceModelPath(id), $"{Dir(id)}/{id}.prefab" };
             if (CollectionCatalog.IsGenerated(id))
                 return new[] { CollectionCatalog.SourceModelPath(id), $"{Dir(id)}/{id}.mat", ColourMap(id), $"{Dir(id)}/{id}.prefab", $"{Dir(id)}/provenance.json" }
-                    .Concat(CollectionCatalog.IsGeneratedProp(id) || CollectionCatalog.IsGeneratedTown(id) ? Array.Empty<string>() : new[] { $"{Dir(id)}/{id}.controller" }).ToArray();
+                    .Concat(CollectionCatalog.IsGeneratedProp(id) || CollectionCatalog.IsGeneratedTown(id) || CollectionCatalog.IsGeneratedWeapon(id) ? Array.Empty<string>() : new[] { $"{Dir(id)}/{id}.controller" }).ToArray();
             if (Animated(id) || OriginalModelPose.Required(id)) files.Add($"{Dir(id)}/{id}-near.controller");
             foreach (var suffix in new[] { "-far.fbx", "-near.fbx", "-far.prefab", "-near.prefab" })
             {
@@ -326,7 +328,8 @@ public class CollectionImportTests
             var deps = AssetDatabase.GetDependencies(entries, true);
             var outside = deps.Where(d => !folders.Any(f => d.StartsWith(f, StringComparison.Ordinal))
                 && !d.StartsWith("Packages/com.unity.render-pipelines.", StringComparison.Ordinal)
-                && d != "Assets/Scripts/Map/Collection/OriginalModelDistance.cs" && d != "Assets/Scripts/Map/Collection/OriginalModelPose.cs").ToArray();
+                && d != "Assets/Scripts/Map/Collection/OriginalModelDistance.cs" && d != "Assets/Scripts/Map/Collection/OriginalModelPose.cs"
+                && d != "Assets/Scripts/Map/Units/UnitFigurePoseSource.cs").ToArray();   // #2084's pose source prefab
             CollectionAssert.IsEmpty(outside, bundle + " pulls in files from outside its models' folders");
         }
         // No asset carries a bundle label: the bundles are built from the catalog alone (CollectionImport.Builds).
@@ -361,8 +364,10 @@ public class CollectionImportTests
             CollectionAssert.IsEmpty(FilesOf(id, resources), id + " in a Resources asset's closure");
             string own = CollectionCatalog.BundleOf(id)!;
             string source = CollectionCatalog.SourceModelPath(id), folder = source.Substring(0, source.LastIndexOf('/') + 1);
-            // Its model, streamed prefab, material and colour map are all in its own bundle's closure.
-            foreach (var file in new[] { source, CollectionCatalog.PrefabPath(id, CollectionDetail.Near), folder + id + ".mat", folder + id + "_basecolor.jpg" })
+            // Its model, streamed prefab, material and colour map are all in its own bundle's closure; #2084's pose source has
+            // only its export (for the clip) and its prefab.
+            foreach (var file in CollectionCatalog.IsFigurePose(id) ? new[] { source, CollectionCatalog.PrefabPath(id, CollectionDetail.Near) }
+                : new[] { source, CollectionCatalog.PrefabPath(id, CollectionDetail.Near), folder + id + ".mat", folder + id + "_basecolor.jpg" })
                 CollectionAssert.Contains(closures[own], file, id + " in its own bundle");
             foreach (var other in closures.Where(c => c.Key != own))
                 CollectionAssert.IsEmpty(FilesOf(id, other.Value), id + " pulled into " + other.Key);
@@ -409,11 +414,14 @@ public class CollectionImportTests
         CollectionAssert.AreEqual(CollectionCatalog.Bundles.Select(b => b.Bundle), builds.Select(b => b.assetBundleName));
         // Each model's source file, written out here rather than read from CollectionCatalog.SourceModelPath (which Builds
         // uses): a town building's <id>.fbx in the buildings' folder, the R35's compatibility FBX, every other model's
-        // <id>.fbx in its own Collection folder (never a -near.fbx or -far.fbx).
+        // <id>.fbx in its own Collection folder (never a -near.fbx or -far.fbx). #2084's pose source builds only its prefab
+        // (the clip comes in as its dependency, never the export's mesh as an entry).
+        string[] Entries(string id) => CollectionCatalog.IsFigurePose(id) ? new[] { $"{Dir(id)}/{id}.prefab" }
+            : new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near), Source(id) };
         string Source(string id) => CollectionCatalog.IsBuilding(id) ? $"{CollectionCatalog.BuildingsFolder}/{id}/{id}.fbx"
             : id == CollectionCatalog.SyrianR35 ? $"{Dir(id)}/{id}-compatibility.fbx" : Model(id);
         foreach (var (b, (bundle, ids)) in builds.Zip(CollectionCatalog.Bundles, (b, c) => (b, c)))
-            CollectionAssert.AreEquivalent(ids.SelectMany(id => new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near), Source(id) }).Distinct(),
+            CollectionAssert.AreEquivalent(ids.SelectMany(Entries).Distinct(),
                 b.assetNames, bundle);
         // A strict bundle build fails on a name with no asset behind it, and the map above would not see it: every name is a file.
         var missing = builds.SelectMany(b => b.assetNames.Where(n => !System.IO.File.Exists(n) || string.IsNullOrEmpty(AssetDatabase.AssetPathToGUID(n))).Select(n => b.assetBundleName + ": " + n)).ToList();
