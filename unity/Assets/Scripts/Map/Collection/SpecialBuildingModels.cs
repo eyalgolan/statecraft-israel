@@ -600,14 +600,16 @@ namespace Statecraft.Game.Map.Collection
             Rebuild();
         }
 
-        /// <summary>Each wanted row's planned spot: <see cref="Plan"/> over the whole wanted list with every model available
-        /// (#2266's contract), whatever has streamed. The residency reads it (a near-only prop with no spot is not asked for) and
-        /// Rebuild draws from it. <paramref name="log"/> writes the warnings, once per Show (ShowAt), not on every redraw.</summary>
+        /// <summary>Each wanted row's planned spot and, beside a road, the road's direction: <see cref="PlanWithRoutes"/> over the
+        /// whole wanted list with every model available (#2266's contract), whatever has streamed. The residency reads it (a
+        /// near-only prop with no spot is not asked for) and Rebuild draws from it. <paramref name="log"/> writes the warnings,
+        /// once per Show (ShowAt), not on every redraw.</summary>
         void Replan(bool log)
         {
             planned.Clear();
             if (map == null || map.Terrain == null) return;
-            foreach (var (w, at) in Plan(map, date, wants, _ => true, log)) planned[w.Key] = (at, null);
+            var plan = PlanWithRoutes(map, date, wants, _ => true, log, null, out var along);
+            foreach (var (w, at) in plan) planned[w.Key] = (at, along.TryGetValue(w.Key, out var road) ? road : (Vector2?)null);
         }
 
         readonly Dictionary<string, (Vector2 at, Vector2? along)> planned = new Dictionary<string, (Vector2, Vector2?)>(StringComparer.Ordinal);
