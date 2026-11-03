@@ -334,6 +334,36 @@ namespace Statecraft.Sim
                 : TurnsLeft.ToString(CultureInfo.InvariantCulture) + (Progress == 0 ? "" : "," + BitConverter.DoubleToInt64Bits(Progress).ToString("X16", CultureInfo.InvariantCulture)));
     }
 
+    /// <summary>R-ARMS-005, R-ARMS-006 (gdd-0.3 only): the cycle of the built arms workshop that is city project
+    /// <see cref="Project"/>. <see cref="Staffed"/>: whether one of its city's people without a job works it, priced at
+    /// <see cref="WorkerTier"/> (always Ordinary on the aggregate cities until the population ledger's tiers are live; #1701
+    /// OQ6). <see cref="PaidCost"/>: the Money paid for the cycle under way, null when none is; <see cref="Progress"/>: its
+    /// staffed months so far. Immutable; a change replaces the record.</summary>
+    public sealed class Workshop
+    {
+        public int Project { get; }
+        public bool Staffed { get; }
+        public SyntheticWorkshopTier WorkerTier { get; }
+        public decimal? PaidCost { get; }
+        public int Progress { get; }
+
+        public Workshop(int project, bool staffed, SyntheticWorkshopTier workerTier, decimal? paidCost = null, int progress = 0)
+        {
+            Project = project; Staffed = staffed; WorkerTier = workerTier; PaidCost = paidCost; Progress = progress;
+        }
+
+        /// <summary>The same workshop, staffed or not; its cycle is kept (a pause, not a loss: R-ARMS-007).</summary>
+        public Workshop WithStaffed(bool staffed) => new Workshop(Project, staffed, WorkerTier, PaidCost, Progress);
+
+        /// <summary>The same workshop with a cycle paid at <paramref name="cost"/> and <paramref name="progress"/> months done.</summary>
+        public Workshop WithCycle(decimal? cost, int progress) => new Workshop(Project, Staffed, WorkerTier, cost, progress);
+
+        /// <summary>The record as the state hash writes it: "PROJECT:on|off,TIER" and, while a cycle is under way,
+        /// "/COST,PROGRESS" (the cost as invariant decimal text).</summary>
+        public string Canonical() => string.Format(CultureInfo.InvariantCulture, "{0}:{1},{2}", Project, Staffed ? "on" : "off", WorkerTier)
+            + (PaidCost is decimal cost ? string.Format(CultureInfo.InvariantCulture, "/{0},{1}", cost, Progress) : "");
+    }
+
     /// <summary>Work on one corridor segment (R-COR-001 to R-COR-003): <see cref="Unit"/> building it with
     /// <see cref="Progress"/> turns of work done, or, once <see cref="BuiltOn"/> is set, built on that date. Immutable.</summary>
     public sealed class SegmentWork

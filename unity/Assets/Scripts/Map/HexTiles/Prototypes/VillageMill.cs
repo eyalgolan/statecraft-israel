@@ -18,11 +18,12 @@ namespace Statecraft.HexTiles.Prototypes
     /// Sizes (shares of S, as asked of Place): mill 0.27 wide, threshing floors 0.18 and 0.16, terrace walls 0.10, well
     /// 0.12, sycamore figs 0.22 to 0.24 tall, olives 0.15 to 0.17.
     ///
-    /// Triangle estimate, at the maximum counts (Higgsfield props, local only, measured): mill 5,853 + 2 threshing floors
+    /// Triangle estimate, at the maximum counts (Tal Heuberger's hex-props models, measured): mill 5,853 + 2 threshing floors
     /// x 3,883 = 7,766 + 5 terrace walls x 3,816 = 19,080 + well 4,768 + 2 sycamores x 3,218 = 6,436 + 4 olives x 1,600 =
     /// 6,400. Total about 50,300 of 60,000.
     ///
-    /// Models are tiles:village_mill/... and the railway_halt well (local, pending rights); without them the tile draws Box and Tree stand-ins.</summary>
+    /// Models are Tal Heuberger's tiles:village_mill/... and the railway_halt well, from the hex-props bundle (see HexProps);
+    /// until the bundle arrives the tile draws Box and Tree stand-ins.</summary>
     [HexPrototype("village_mill", Kind = "village")]
     public sealed class VillageMill : IHexPrototype
     {

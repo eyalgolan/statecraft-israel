@@ -11,10 +11,11 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-/// <summary>The hex tiles' 20 Higgsfield props (Tal Heuberger, #1155) load under the owner's ruling of 23 October 2026,
-/// "Own streamed bundle": outside every Resources folder (so the default first download does not carry them), outside
-/// The 1948 Collection (which stays Tal's Tripo models), and in a bundle of their own that only a ?hex-tiles board or the
-/// main map (HexPropModels, its first camera) asks for.</summary>
+/// <summary>The hex tiles' 20 Higgsfield props (Tal Heuberger, #1155) and their papyrus and tamarisk (#2082; owner, 2 November
+/// 2026: "Hula + Arava, map and boards (Recommended)") load under the owner's ruling of 23 October 2026, "Own streamed
+/// bundle": outside every Resources folder (so the default first download does not carry them), outside The 1948
+/// Collection (which stays Tal's Tripo models), and in bundles of their own that only a ?hex-tiles board or the main map
+/// (HexPropModels, its first camera; and, for the papyrus, the main map's Hula at close zoom) asks for.</summary>
 public class HexPropsTests
 {
     const string Art = "Assets/Art/HexTiles/";
@@ -23,10 +24,12 @@ public class HexPropsTests
     static readonly string[] Prefabs =
     {
         "Assets/Art/HexTiles/arab_village/minaret.prefab", "Assets/Art/HexTiles/arab_village/prickly_pear.prefab",
+        "Assets/Art/HexTiles/arava_oasis/tamarisk.prefab",
         "Assets/Art/HexTiles/caesarea_ruins/arches.prefab", "Assets/Art/HexTiles/caesarea_ruins/boulders.prefab",
         "Assets/Art/HexTiles/caesarea_ruins/jetty.prefab",
         "Assets/Art/HexTiles/coastal_dunes/scrub.prefab",
         "Assets/Art/HexTiles/desert_edge/tent.prefab",
+        "Assets/Art/HexTiles/hula_swamp/papyrus.prefab",
         "Assets/Art/HexTiles/jaffa_old_city/belfry.prefab", "Assets/Art/HexTiles/jaffa_old_city/clock_tower.prefab",
         "Assets/Art/HexTiles/jaffa_old_city/sea_minaret.prefab",
         "Assets/Art/HexTiles/judean_highlands/garrigue.prefab",
@@ -49,7 +52,7 @@ public class HexPropsTests
     [Test]
     public void ThePropsAreNotInResourcesAndNotInTheCollection()
     {
-        Assert.AreEqual(20, HexProps.Ids.Count);
+        Assert.AreEqual(22, HexProps.Ids.Count);
         foreach (var id in HexProps.Ids)
         {
             Assert.IsNotNull(AssetDatabase.LoadAssetAtPath<GameObject>(HexProps.PrefabPath(id)), id);
@@ -73,13 +76,24 @@ public class HexPropsTests
         Assert.AreNotEqual(CollectionCatalog.ChecksFile, HexProps.ChecksFile);
     }
 
+    const string PapyrusPrefab = "Assets/Art/HexTiles/hula_swamp/papyrus.prefab";
+
     [Test]
-    public void TheHexPropsBundleCarriesTheTwentyPropsAndNothingElse()
+    public void TheHexPropsBundlesCarryTheTwentyTwoPropsAndNothingElse()
     {
         var builds = Builds();
-        Assert.AreEqual(1, builds.Length);
+        Assert.AreEqual(2, builds.Length);
         Assert.AreEqual("hex-props", builds[0].assetBundleName);
-        CollectionAssert.AreEqual(Prefabs, builds[0].assetNames);
+        CollectionAssert.AreEqual(Prefabs.Where(p => p != PapyrusPrefab), builds[0].assetNames);
+        // The papyrus alone in its own bundle: the main map's Hula fetches it without the boards' other props.
+        Assert.AreEqual("hex-props-papyrus", builds[1].assetBundleName);
+        CollectionAssert.AreEqual(new[] { PapyrusPrefab }, builds[1].assetNames);
+        Assert.AreEqual("hex-props-papyrus", HexProps.BundleOf("tiles:hula_swamp/papyrus"));
+        Assert.AreEqual("hex-props", HexProps.BundleOf("tiles:arava_oasis/tamarisk"));
+        Assert.IsNull(HexProps.BundleOf("tiles:negev_loess/tamarisk"), "the other tamarisk ids stay stand-ins (#1950, #1952)");
+        CollectionAssert.IsEmpty(AssetDatabase.GetDependencies(builds[0].assetNames, true).Intersect(
+            AssetDatabase.GetDependencies(builds[1].assetNames, true)).Where(d => d.StartsWith(Art, StringComparison.Ordinal)),
+            "the two bundles share no prop file");
         CollectionAssert.AreEqual(Prefabs, HexProps.Ids.Select(HexProps.PrefabPath));
         // Every prefab under the props' folder is in the bundle (none is left behind), and every dependency stays in it.
         var found = AssetDatabase.FindAssets("t:Prefab", new[] { Art.TrimEnd('/') }).Select(AssetDatabase.GUIDToAssetPath);
@@ -100,7 +114,7 @@ public class HexPropsTests
         LogAssert.Expect(LogType.Warning, new Regex("^Collection: no model 'figure-sheep-idle-1948-v1' in the hex-tile props"));
         Assert.IsFalse(stream.Enqueue("figure-sheep-idle-1948-v1", CollectionDetail.Far, got.Add), "a Collection model is not a prop");
         Step(stream.Run(), 100);
-        Assert.AreEqual(21, got.Count);
+        Assert.AreEqual(23, got.Count);
         Assert.IsNull(got[0], "the Collection id, answered at once");
         CollectionAssert.AreEqual(Prefabs.Select(p => System.IO.Path.GetFileNameWithoutExtension(p)), got.Skip(1).Select(g => g?.name));
         LogAssert.NoUnexpectedReceived();
@@ -139,6 +153,41 @@ public class HexPropsTests
         Assert.IsFalse(HexCollectionFigures.Streams("tiles:railway_halt/station"));
         HexModels.Clear();
         Assert.AreEqual("station", HexModels.Prefab("tiles:railway_halt/station")?.name);
+    }
+
+    /// <summary>#2082: the papyrus and tamarisk prefabs draw Tal Heuberger's OBJ meshes, copied byte for byte from
+    /// asset-sources/recovered-vegetation-20261031 (only the file name changes), with their albedo and normal maps, at their
+    /// scale (the import's file scale, no rescale: each stands 1 unit tall, as delivered), and the two tiles place them.</summary>
+    [TestCase("tiles:hula_swamp/papyrus", "hula_swamp_papyrus", "g25_papyrus", 2260, "hula_swamp")]
+    [TestCase("tiles:arava_oasis/tamarisk", "arava_oasis_tamarisk", "hf_tamarisk", 7306, "arava_oasis")]
+    public void TalsPapyrusAndTamariskAreTalsMeshesAtTalsScale(string id, string folder, string source, int triangles, string tile)
+    {
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(HexProps.PrefabPath(id));
+        Assert.IsNotNull(prefab, id);
+        Assert.IsFalse(UnderResources(HexProps.PrefabPath(id)), id);
+        var dir = $"Assets/Art/HexTiles/Props/{folder}/";
+        var repo = System.IO.Path.GetFullPath(System.IO.Path.Combine(Application.dataPath, "../.."));
+        var src = System.IO.Path.Combine(repo, "asset-sources/recovered-vegetation-20261031", source);
+        foreach (var (copy, original) in new[] { (folder + ".obj", source + ".obj"), ("albedo.jpg", "albedo.jpg"), ("normal.jpg", "normal.jpg") })
+            CollectionAssert.AreEqual(System.IO.File.ReadAllBytes(System.IO.Path.Combine(src, original)),
+                System.IO.File.ReadAllBytes(System.IO.Path.Combine(repo, "unity", dir + copy)), $"{id}: {copy} is {original} byte for byte");
+        var filters = prefab.GetComponentsInChildren<MeshFilter>(true);
+        Assert.That(filters.Select(f => AssetDatabase.GetAssetPath(f.sharedMesh)).Distinct(), Is.EqualTo(new[] { dir + folder + ".obj" }), id);
+        Assert.AreEqual(triangles, filters.Sum(f => HexModels.IndexTriangles(f.sharedMesh)), id + " triangles as delivered");
+        var importer = (ModelImporter)AssetImporter.GetAtPath(dir + folder + ".obj");
+        Assert.AreEqual(1f, importer.globalScale, id + ": no import rescale");
+        Assert.AreEqual(Vector3.one, prefab.transform.localScale, id + ": no prefab rescale");
+        var bounds = filters[0].sharedMesh.bounds;
+        Assert.AreEqual(1f, bounds.size.y, 1e-3f, id + " stands 1 unit tall, as its OBJ");
+        foreach (var r in prefab.GetComponentsInChildren<MeshRenderer>(true))
+            foreach (var m in r.sharedMaterials)
+            {
+                Assert.AreEqual(dir + "albedo.jpg", AssetDatabase.GetAssetPath(m.GetTexture("_BaseMap")), id);
+                Assert.AreEqual(dir + "normal.jpg", AssetDatabase.GetAssetPath(m.GetTexture("_BumpMap")), id);
+            }
+        var ctx = new HexTileContext(2, -1, new FlatSurface(), 1948);
+        HexPrototypes.Create(tile).Build(ctx);
+        Assert.That(ctx.Placements.Count(p => p.Model == id), Is.GreaterThan(0), tile + " places " + id);
     }
 
     static void Step(IEnumerator run, int frames)

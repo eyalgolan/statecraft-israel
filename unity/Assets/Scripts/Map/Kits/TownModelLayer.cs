@@ -6,7 +6,9 @@ using UnityEngine.Rendering;
 namespace Statecraft.Game.Map.Kits
 {
     /// <summary>Original building meshes for admitted towns and villages, instanced per model/tile. At overview zoom
-    /// TownLandmarks owns the whole-town representation; close cameras own individual buildings. Under the production policy
+    /// TownLandmarks owns the whole-town representation; close cameras own individual buildings. Tel Aviv, Jerusalem, Haifa
+    /// and Jaffa are the exception: their buildings are admitted at every zoom, by view as below (owner ruling, 2 November
+    /// 2026, "Yes, small buildings at every zoom": <see cref="TownModels.AtEveryZoom"/>). Under the production policy
     /// (owner ruling, 31 Oct 2026, "Load all in view (Recommended)") a close camera admits every town and every merged village
     /// tile in its view (+<see cref="ViewMarginM"/>), nearest first, and they unload above <see cref="CloseExitM"/>. Each camera
     /// swaps only complete towns and complete village tiles; loading and failed places retain code-built fallback. Source
@@ -114,7 +116,7 @@ namespace Statecraft.Game.Map.Kits
             public readonly List<string> inView = new List<string>();
             public readonly HashSet<string> viewed = new HashSet<string>(System.StringComparer.Ordinal);
             public Matrix4x4 viewMatrix;
-            public bool viewValid;
+            public bool viewValid, viewClose;
         }
         sealed class Model
         {
@@ -128,6 +130,7 @@ namespace Statecraft.Game.Map.Kits
         readonly Dictionary<TownModel, Model> models = new Dictionary<TownModel, Model>();
         readonly Dictionary<string, TownModel[]> required = new Dictionary<string, TownModel[]>(System.StringComparer.Ordinal);
         readonly List<int> deadCameras = new List<int>();
+        readonly HashSet<TownModel> warnedKinds = new HashSet<TownModel>();
         readonly List<System.IDisposable> retiring = new List<System.IDisposable>();
         readonly List<(Renderer renderer, bool off)> previousRenderers = new List<(Renderer, bool)>();
         bool reconcileDirty;
@@ -257,12 +260,14 @@ namespace Statecraft.Game.Map.Kits
             }
         }
         public int Count { get; private set; }
-        /// <summary>For the last camera: whether it drew the models (else the kits), and the instances, triangles, draws and
-        /// shadow casters it submitted (test and profiling aids).</summary>
+        /// <summary>For the last camera: whether it was below the close switch and drew the models (else the kits), and the
+        /// instances, triangles and draws it submitted, the cities drawn at every zoom included (test and profiling aids).</summary>
         public bool LastClose { get; private set; }
         public int LastDrawn { get; private set; }
         public long LastTriangles { get; private set; }
         public int LastDraws { get; private set; }
+        /// <summary>For the last camera: the instances it submitted with shadow casting on (a test and profiling aid).</summary>
+        public int LastShadowCasters { get; private set; }
 
         /// <summary>Explicit town ids and renderer identities distinguish individual towns from mixed locality tiles
         /// (<paramref name="rendererTileIds"/>: each tile renderer's villages). A complete editor model set is optional in a
@@ -452,16 +457,8 @@ namespace Statecraft.Game.Map.Kits
                 if (Collection.CollectionResidencyView.TryGroundFocus(cam, out var focus))
                 {
                     next = choice.hadFocus && focus == choice.focus && EdgeAllowance == null ? choice.selected : FocusedTownsWithFootprints(
-                        places, admissionFootprintsById, townFootprints, focus, choice.primary, EdgeAllowance == null ? null : (local, edge) =>
-                    {
-                        var admitted = new List<string>();
-                        foreach (var c in OrderedChoices()) if (c.primary != null && !admitted.Contains(c.primary)) admitted.Add(c.primary);
-                        foreach (string id in local) if (!admitted.Contains(id)) admitted.Add(id);
-                        // Include other retained edges so the allowance sees existing residency as well as all primaries.
-                        foreach (var c in OrderedChoices()) if (c != choice)
-                            foreach (string id in c.selected) if (!admitted.Contains(id)) admitted.Add(id);
-                        return EdgeAllowance!(admitted, edge);
-                    }, admittedEnterM, admittedExitM, admittedEdgeM, admittedEdges);
+                        places, admissionFootprintsById, townFootprints, focus, choice.primary, AllowanceFor(choice),
+                        admittedEnterM, admittedExitM, admittedEdgeM, admittedEdges);
                     choice.focus = focus; choice.hadFocus = true;
                 }
                 else choice.hadFocus = false;
@@ -496,26 +493,42 @@ namespace Statecraft.Game.Map.Kits
             }
         }
 
+        /// <summary>The edge allowance for <paramref name="owner"/>'s focus selection, or null without one. A method of its own,
+        /// so PrepareCameraCore holds no closure: a closure there was allocated on every call, far off too, where the four
+        /// cities now draw.</summary>
+        System.Func<IReadOnlyList<string>, string, bool>? AllowanceFor(Choice owner) => EdgeAllowance == null ? null : (local, edge) =>
+        {
+            var admitted = new List<string>();
+            foreach (var c in OrderedChoices()) if (c.primary != null && !admitted.Contains(c.primary)) admitted.Add(c.primary);
+            foreach (string id in local) if (!admitted.Contains(id)) admitted.Add(id);
+            // Include other retained edges so the allowance sees existing residency as well as all primaries.
+            foreach (var c in OrderedChoices()) if (c != owner)
+                foreach (string id in c.selected) if (!admitted.Contains(id)) admitted.Add(id);
+            return EdgeAllowance!(admitted, edge);
+        };
+
         /// <summary>Owner ruling, 31 Oct 2026, "Load all in view (Recommended)": under the production policy a close camera
         /// admits every town and village tile in its view (<see cref="ViewMarginM"/>, kept to <see cref="ViewKeepM"/>), nearest
-        /// its ground focus first. Returns whether the admitted set changed.</summary>
+        /// its ground focus first; a far camera only the cities drawn at every zoom (<see cref="AtZoom"/>). Returns whether the
+        /// admitted set changed.</summary>
         bool AdmitInView(Choice choice, Camera cam)
         {
-            if (!viewAdmission || !SpatialPolicyConfigured || !choice.close)
+            if (!viewAdmission || !SpatialPolicyConfigured)
             {
                 choice.viewValid = false;
                 if (choice.inView.Count == 0) return false;
                 choice.inView.Clear(); choice.viewed.Clear(); return true;
             }
             var viewProjection = cam.projectionMatrix * cam.worldToCameraMatrix;
-            if (choice.viewValid && viewProjection == choice.viewMatrix) return false;
-            choice.viewMatrix = viewProjection; choice.viewValid = true;
+            if (choice.viewValid && viewProjection == choice.viewMatrix && choice.viewClose == choice.close) return false;
+            choice.viewMatrix = viewProjection; choice.viewValid = true; choice.viewClose = choice.close;
             GeometryUtility.CalculateFrustumPlanes(viewProjection, frustum);
             var from = choice.hadFocus ? choice.focus : cam.transform.position;
             viewScratch.Clear();
             for (int i = 0; i < viewPlaces.Count; i++)
             {
                 var (ids, bounds) = viewPlaces[i];
+                if (!AtZoom(choice, ids[0])) continue;   // a village tile's first village: never one of the four cities
                 float margin = choice.viewed.Contains(ids[0]) ? ViewKeepM : ViewMarginM;
                 var wide = bounds; wide.Expand(new Vector3(2f * margin, 0f, 2f * margin));
                 if (GeometryUtility.TestPlanesAABB(frustum, wide)) viewScratch.Add((i, GroundDistance(bounds, from), ids[0]));
@@ -553,11 +566,14 @@ namespace Statecraft.Game.Map.Kits
             previousRenderers.Clear();
         }
 
-        /// <summary>Whether the camera-focus selection holds this town at close zoom (the focused town and its edges).</summary>
-        internal bool WantsTown(string id, Camera cam) => choices.TryGetValue(cam.GetInstanceID(), out var c) && c.close && c.towns.Contains(id);
+        /// <summary>Whether a camera's zoom admits a place's building models: every place below the close switch, beyond it
+        /// only the cities drawn at every zoom (owner ruling, 2 November 2026, "Yes, small buildings at every zoom").</summary>
+        static bool AtZoom(Choice c, string id) => c.close || TownModels.AtEveryZoom(id);
+        /// <summary>Whether the camera-focus selection holds this town at its zoom (the focused town and its edges).</summary>
+        internal bool WantsTown(string id, Camera cam) => choices.TryGetValue(cam.GetInstanceID(), out var c) && AtZoom(c, id) && c.towns.Contains(id);
         /// <summary>Whether this camera admits the place's building models: the focus selection, or (production) its view.</summary>
         internal bool AdmitsTown(string id, Camera cam) =>
-            choices.TryGetValue(cam.GetInstanceID(), out var c) && c.close && (c.towns.Contains(id) || c.viewed.Contains(id));
+            choices.TryGetValue(cam.GetInstanceID(), out var c) && AtZoom(c, id) && (c.towns.Contains(id) || c.viewed.Contains(id));
         internal bool ReadyForTown(string id, Camera cam)
         {
             if (!Draw || !AdmitsTown(id, cam) || !required.TryGetValue(id, out var kinds) || kinds.Length == 0) return false;
@@ -691,11 +707,13 @@ namespace Statecraft.Game.Map.Kits
             {
                 if (required.TryGetValue(id, out var kinds)) foreach (var kind in kinds) if (needed.Add(kind)) ordered.Add(kind);
             }
-            // A focused town loads before any edge town, even when its model's enum value is larger.
-            foreach (var c in OrderedChoices()) if (c.close && c.primary != null) AddTown(c.primary);
-            foreach (var c in OrderedChoices()) if (c.close) foreach (string id in c.selected) if (id != c.primary) AddTown(id);
-            // Then every town and village in view, nearest first (owner ruling, 31 Oct 2026, "Load all in view").
-            foreach (var c in OrderedChoices()) if (c.close) foreach (string id in c.inView) AddTown(id);
+            // A focused town loads before any edge town, even when its model's enum value is larger; each only at a zoom that
+            // admits it (AtZoom).
+            foreach (var c in OrderedChoices()) if (c.primary != null && AtZoom(c, c.primary)) AddTown(c.primary);
+            foreach (var c in OrderedChoices()) foreach (string id in c.selected) if (id != c.primary && AtZoom(c, id)) AddTown(id);
+            // Then every town and village in view, nearest first (owner ruling, 31 Oct 2026, "Load all in view"); AdmitInView
+            // has already left out what this zoom does not admit.
+            foreach (var c in OrderedChoices()) foreach (string id in c.inView) AddTown(id);
             var obsolete = new List<TownModel>();
             foreach (var pair in models) if (!needed.Contains(pair.Key)) obsolete.Add(pair.Key);
             foreach (var id in obsolete)
@@ -724,7 +742,13 @@ namespace Statecraft.Game.Map.Kits
                     model.answered = true; Collection.CollectionResidencyMetrics.MarkDirty();
                     var filter = prefab == null ? null : prefab.GetComponentInChildren<MeshFilter>(true);
                     var renderer = prefab == null ? null : prefab.GetComponentInChildren<MeshRenderer>(true);
-                    if (filter == null || renderer == null || filter.sharedMesh == null || renderer.sharedMaterial == null) return;
+                    if (filter == null || renderer == null || filter.sharedMesh == null || renderer.sharedMaterial == null)
+                    {
+                        // Once per kind for this layer: its places keep their code-built kits (Tel Aviv, Jerusalem, Haifa and
+                        // Jaffa at every zoom: they have no whole-town model to fall back to).
+                        if (warnedKinds.Add(id)) Debug.LogWarning($"TOWN MODELS: {TownModels.Ids[(int)id]} did not stream; the places built from it keep their kits.");
+                        return;
+                    }
                     model.mesh = filter.sharedMesh; model.material = renderer.sharedMaterial; Collection.CollectionResidencyMetrics.MarkDirty();
                 });
                 if (isActiveAndEnabled && generation == lifetimeGeneration && models.TryGetValue(id, out var live) && live == model) model.lease = lease;
@@ -790,10 +814,15 @@ namespace Statecraft.Game.Map.Kits
             PrepareCameraCore(cam, inRender: true);
             bool close = choices.TryGetValue(cam.GetInstanceID(), out var choice) && choice.close;
             LastClose = close;
-            int drawn = 0, draws = 0; long tris = 0;
-            if (close && Draw)
+            int drawn = 0, draws = 0, casters = 0; long tris = 0;
+            // Owner ruling on #2267, 2 November 2026, "Shadows off far, then measure (Recommended)": beyond the close switch the
+            // cities drawn at every zoom cast no shadows; below it every building casts.
+            var shadows = close ? ShadowCastingMode.On : ShadowCastingMode.Off;
+            // Far off too: ReadyForTown admits the cities drawn at every zoom there (AtZoom), and nothing else.
+            if (Draw)
             {
-                var planes = GeometryUtility.CalculateFrustumPlanes(cam);
+                // Into the scratch array (no Plane[6] per camera per frame: this runs far off too, the common view).
+                GeometryUtility.CalculateFrustumPlanes(cam.projectionMatrix * cam.worldToCameraMatrix, frustum);
                 foreach (var t in tiles)
                 {
                     if (!ReadyForTown(t.town, cam)) continue;
@@ -801,19 +830,20 @@ namespace Statecraft.Game.Map.Kits
                     if (villageTiles.TryGetValue(t.town, out var villages) && !VillagesReady(villages, cam)) continue;
                     // The shadow pass sees casters outside the view too: cull on a widened box (as the trees).
                     var wide = t.bounds; wide.Expand(new Vector3(3000f, 0f, 3000f));
-                    if (!GeometryUtility.TestPlanesAABB(planes, wide)) continue;
+                    if (!GeometryUtility.TestPlanesAABB(frustum, wide)) continue;
                     var mesh = set != null ? set.Mesh(t.model) : models[t.model].mesh!; // always the original mesh
                     var rp = new RenderParams(set != null ? set.Material(t.model) : models[t.model].material!)
                     {
-                        worldBounds = t.bounds, camera = cam, shadowCastingMode = ShadowCastingMode.On, receiveShadows = true,
+                        worldBounds = t.bounds, camera = cam, shadowCastingMode = shadows, receiveShadows = true,
                         layer = gameObject.layer,
                     };
                     Graphics.RenderMeshInstanced(rp, mesh, 0, t.m);
                     draws++; drawn += t.m.Length; tris += (long)t.m.Length * mesh.GetIndexCount(0) / 3;
+                    if (shadows != ShadowCastingMode.Off) casters += t.m.Length;
                 }
             }
             LastClose = close && drawn > 0;
-            LastDrawn = drawn; LastTriangles = tris; LastDraws = draws;
+            LastDrawn = drawn; LastTriangles = tris; LastDraws = draws; LastShadowCasters = casters;
         }
     }
 }

@@ -1,7 +1,6 @@
 # yaml-language-server: $schema=../schema/event.schema.json
-# Deport's follow-up card for Acre (GDD Phase 6 PR 9, #801). DRAFT: a person's source check and the owner's sensitivity
-# review of every line, in English and Hebrew, come before this card leaves `draft` (CONTENT_POLICY section 2; the owner,
-# 1 November 2026: "Write the cards first (Recommended)"). Q-CARD-1 (c) (owner, 18 October 2026, #783): the in-game
+# Deport's follow-up card for Acre (GDD Phase 6 PR 9, #801; the owner, 1 November 2026: "Write the cards first
+# (Recommended)"). Q-CARD-1 (c) (owner, 18 October 2026, #783): the in-game
 # consequence with one sourced line of history. Q-CARD-3 (a): no image, and Deport never gets a video. Q-SENS-1b (a): the
 # housing left behind is not named. R-EFX-007: no option raises anything; this card has no effect at all, since Deport's
 # costs are R-CTRL-018's, applied by the sim. R-GATE-001: the release gate refuses a shareable build while it is not
@@ -25,9 +24,10 @@ text: 'Acre''s residents have been displaced, and the town is depopulated. Socia
 # (why.cause.place_deported, capture.about.deport). The history sentence is ADAPTED from he.wiki, not quoted: he.wiki's
 # "בימים הראשונים לאחר הכיבוש" (after the conquest) becomes "after Acre surrendered on 18 May 1948", with the day from
 # the section before and the year from the article title; the rest of the clause keeps he.wiki's words.
+# The owner read the Hebrew next to the English and approved it as written (2 Nov 2026: "all approved", confirmed as
+# "hebrew approved", per #2197), so the card no longer carries text_he_review (#2292).
 title_he: עכו התרוקנה מתושביה
 text_he: 'תושבי עכו נעקרו ממקומם, והעיר התרוקנה מתושביה. הלכידות החברתית והתמיכה הבינלאומית ירדו, והתמיכה הבינלאומית תמשיך לרדת עד סוף המשחק. אי אפשר לבנות בה דבר, ואי אפשר לסלול דרכה כביש או מסילת ברזל חדשים. מבחינה היסטורית, בימים הראשונים לאחר שעכו נכנעה ב־18 במאי 1948 נמשכה יציאת התושבים ללבנון ולגליל המרכזי, אולם לא הוצאו פקודות גירוש ולא הופעל לחץ על התושבים לעזוב.'
-text_he_review: agent-checked
 anchor: soft
 tags: [displacement]
 deported: acre
@@ -40,5 +40,5 @@ options:
 sources:
   - { url: "https://he.wikipedia.org/w/index.php?oldid=42972755", checked: 2026-11-01 }
 # The owner's sensitivity sign-off (R-GATE-001; WRITING_EVENTS, "tags and the sensitive review"): "Approve both cards"
-# (owner, 2 November 2026, #2197), of this card as written, English and Hebrew. The DRAFT note at the top predates it.
+# (owner, 2 November 2026, #2197), of this card as written, English and Hebrew. The card was drafted before it.
 status: sensitivity-reviewed

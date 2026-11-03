@@ -61,6 +61,9 @@ public class GoldenCheckTests
     [TestCase("http://localhost:8000/index.html?golden-x&smoke=5", false)]
     [TestCase("http://localhost:8000/index.html?golden#top", true)]
     [TestCase("http://localhost:8000/index.html?golden=1", true)]
+    [TestCase("http://x/index.html#?golden", false)]                        // #2215: the fragment is not the query
+    [TestCase("http://x/index.html?a=1#&golden", false)]
+    [TestCase("http://x/index.html#&golden", false)]
     public void TheGoldenFlagIsAQueryParameterNotAPathWord(string url, bool expected) =>
         Assert.AreEqual(expected, UrlFlags.Has(url, "golden"));
 
@@ -69,6 +72,8 @@ public class GoldenCheckTests
     {
         Assert.AreEqual(5, UrlFlags.Int("http://x/index.html?golden&smoke=5", "smoke"));
         Assert.AreEqual(0, UrlFlags.Int("http://x/smoke=5/index.html", "smoke"));
+        Assert.AreEqual(0, UrlFlags.Int("http://x/index.html#&smoke=5", "smoke"));
+        Assert.AreEqual(5, UrlFlags.Int("http://x/index.html?smoke=5#&smoke=7", "smoke"));
     }
 
     [Test]

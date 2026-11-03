@@ -16,12 +16,12 @@ namespace Statecraft.HexTiles.Prototypes
     /// Sizes (shares of S, as asked of Place): arcades 0.32 and 0.28 wide, boulders 0.07 to 0.10, landing stage 0.18,
     /// date palms 0.16 to 0.19 tall, scrub 0.08 to 0.10.
     ///
-    /// Triangle estimate, at the maximum counts (Higgsfield props, local only, measured): 2 arcades x 7,390 = 14,780 + 4
+    /// Triangle estimate, at the maximum counts (Tal Heuberger's hex-props models, measured): 2 arcades x 7,390 = 14,780 + 4
     /// boulder groups x 1,435 = 5,740 + landing stage 4,428 + 8 scrub x 320 = 2,560 + 3 date palms x 284 = 852. Total
     /// about 28,400 of 35,000.
     ///
-    /// Models are tiles:caesarea_ruins/... and the coastal_dunes scrub (local, pending rights); without them the tile draws
-    /// Box, Rock, Palm and Tree stand-ins.</summary>
+    /// Models are Tal Heuberger's tiles:caesarea_ruins/... and the coastal_dunes scrub, from the hex-props bundle (see
+    /// HexProps); until the bundle arrives the tile draws Box, Rock, Palm and Tree stand-ins.</summary>
     [HexPrototype("caesarea_ruins", Kind = "nature", Region = "centre")]
     public sealed class CaesareaRuins : IHexPrototype
     {

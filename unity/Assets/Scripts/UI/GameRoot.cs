@@ -122,6 +122,13 @@ namespace Statecraft.Game.UI
         /// <summary>The opening (#530) outside Play mode: off by default, so EditMode tests that press New Game meet the advisors
         /// as a player's first game does; the opening's own tests set it.</summary>
         internal bool OpeningInEditMode { get; set; }
+        /// <summary>The start menu's music (#39) outside Play mode: off by default, so EditMode tests stay silent and fetch
+        /// nothing; its wiring test sets it.</summary>
+        internal bool MenuMusicInEditMode { get; set; }
+        /// <summary>The start menu's music, kept for the page across Begins (a language switch); null until a start screen
+        /// shows in a player. Disposed with the component (OnDisable).</summary>
+        internal MenuMusic? Music => music;
+        MenuMusic? music;
 
         public void Configure(GameBoot boot, UIDocument document, TextAsset strings, TextAsset stringsHe, PortraitCatalog portraits,
             MapScene map, PlacementLayer placements, MapPointer pointer, CameraController cameraController)
@@ -189,6 +196,7 @@ namespace Statecraft.Game.UI
         {
             if (boot != null) { boot.Ready -= Begin; boot.Failed -= OnBootFailed; }
             Shutdown();
+            music?.Dispose(); music = null;   // the page's music goes with the component, not with a rebuild (Begin)
         }
 
         // "smoke" as a whole query parameter: bare ("?smoke", "&smoke=") or with a number; it ends at '&', '#' or the end, so
@@ -202,7 +210,10 @@ namespace Statecraft.Game.UI
         {
             if (webgl)
             {
-                var m = SmokeQuery.Match(url ?? "");
+                // Only the query counts: a flag after the '#' is the fragment (#2264; UrlFlags does the same since #2215).
+                var query = url ?? "";
+                var hash = query.IndexOf('#');
+                var m = SmokeQuery.Match(hash < 0 ? query : query.Substring(0, hash));
                 if (!m.Success) return 0;
                 var digits = m.Groups[1].Value;
                 return digits.Length == 0 ? DefaultSmokeTurns : int.TryParse(digits, NumberStyles.None, CultureInfo.InvariantCulture, out var n) ? n : 0;
@@ -350,8 +361,15 @@ namespace Statecraft.Game.UI
                 setCompanion = set;
                 companionSwitch = (() => companion != null, on => { companionPicked = on; set(on); });
             }
+            // The start menu's music (#39): made where the start screen first shows, in a player only (in EditMode only where a
+            // test asks: MenuMusicInEditMode), and kept for the page: the rebuild a language switch makes goes on with the same
+            // theme, which turns back up from the old screen's closing instead of being cut and fetched again. Made before
+            // Settings, whose Music row sets its volume. Its duck is the new screen's recording, or none.
+            if (music == null && showsStart && (Application.isPlaying || MenuMusicInEditMode))
+                music = new MenuMusic(root, Application.platform == RuntimePlatform.WebGLPlayer);
+            if (music != null) music.Duck = null;
             Own(new SettingsPresenter(root, text, SettingsFile(), switchLanguage, panel: document.panelSettings, audio: audio, advisors: AdvisorSession.Settings,
-                companion: companionSwitch));
+                companion: companionSwitch, music: music));
             // "Report a bug or idea" (#1169), from Settings and the start screen: the version line names the content GameBoot logged.
             feedback = Own(new FeedbackPresenter(root, text, ReportLinks.Version(Application.version, inputs.Content.Hash)));
             var feedbackPanel = feedback;
@@ -602,9 +620,11 @@ namespace Statecraft.Game.UI
             {
                 var cam = cameraController;
                 var recording = Own(new DeclarationRecording(root, text, toast.Show));   // never built in automated runs (Skipped)
+                if (music != null) music.Duck = () => recording.Playing;           // the theme drops low under Ben-Gurion's voice
                 start = Own(new StartScreenPresenter(root, newGame!, resumed, shown =>
                 {
                     if (cam != null) cam.enabled = !shown;
+                    music?.Show(shown);                                            // loops on the menu, fades out as a game starts
                     if (!shown) { if (start?.Resumed != false) advisor?.Resume(); else if (opening == null) advisor?.NewGame(); }
                 }, recording, text, SettingsFile(), switchLanguage));
                 start.Show();
@@ -808,6 +828,13 @@ namespace Statecraft.Game.UI
             offerMove?.Invoke();
         }
 
+        /// <summary>Marks the hex under the pointer (<paramref name="under"/>; null: off the map) only where a click would give the
+        /// open Move or Attack pick's order (PickTakes), else nothing (#2201: a player could not tell which hex a click would
+        /// take). A hex the pick does not take, such as water, stays unmarked: a click there ends the pick. The camera distance
+        /// thins the band up close (MapScene.HoverCloseM).</summary>
+        internal static void MarkHover(MapScene map, InfoPanelPresenter? info, (int q, int r)? under, float cameraDistanceM = float.PositiveInfinity) =>
+            map.ShowHover(under is (int q, int r) && info != null && info.PickTakesHovered(q, r) ? under : null, cameraDistanceM);
+
         /// <summary>A right click on the map (MapPointer.HexOrdered; owner, 25 Oct 2026, "Civ: select, then click"): while the
         /// shown unit's pick takes (q, r), the order a left click there gives (PickTarget), even on another unit's hex.
         /// Otherwise nothing: no unit shown, a hex it cannot reach, or a screen over the panel (#210).</summary>
@@ -950,6 +977,10 @@ namespace Statecraft.Game.UI
                 PlacementLayer.Drawn(Bridge.State.Placements, Bridge.State.CityProjects.Values), Bridge.Content);
             // Tal Heuberger's ibex and striped hyena, sparse in their sourced terrain zones and visible only at close zoom (#670).
             Statecraft.Game.Map.Collection.WildlifeLayer.Show(map);
+            // Tal Heuberger's papyrus at the Hula swamp's sourced site, close up only, streamed on the first close view, gone
+            // once the swamp is drained (#2082; owner, 2 November 2026: "Hula + Arava, map and boards").
+            Statecraft.Game.Map.Collection.HulaPapyrusLayer.ShowAt(map, Bridge.Content,
+                Statecraft.Game.Map.Collection.HulaPapyrusLayer.Drained(Bridge.State));
             // Tal Heuberger's civilian figures at towns, villages, transit camps and building sites, ambience only and streamed
             // after the first frame (#666, #708, #886): the residents follow the settlement state, the builders the projects.
             Statecraft.Game.Map.Collection.CivilianPeople.ShowAt(map, Bridge.State.Date, Bridge.State.Placements, Bridge.Content,
@@ -1063,8 +1094,10 @@ namespace Statecraft.Game.UI
             var hover = MapLabelsPresenter.HoverPosition(UnityEngine.InputSystem.Pointer.current);
             labels.Hover(hover);
             HoverCity(hover);
-            if (hover is Vector2 at && pointer.HexAt(at) is (int q, int r)) info?.ShowRouteTo(q, r);
+            var under = hover is Vector2 at ? pointer.HexAt(at) : null;
+            if (under is (int q, int r)) info?.ShowRouteTo(q, r);
             else if (UnityEngine.InputSystem.Pointer.current is UnityEngine.InputSystem.Mouse) info?.HideRoute();
+            MarkHover(map, info, under, rig != null ? rig.Distance : float.PositiveInfinity);
             var touch = UnityEngine.InputSystem.Touchscreen.current;
             if (touch != null && touch.primaryTouch.press.wasPressedThisFrame) labels.Tap(touch.primaryTouch.position.ReadValue());
         }
