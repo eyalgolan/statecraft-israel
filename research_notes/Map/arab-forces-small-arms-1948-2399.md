@@ -22,8 +22,9 @@ Army, Iraqi Army, Lebanese Army, Arab Liberation Army (ALA)), so that a Lee-Enfi
 - **Syrian Army, Lebanese Army, Iraqi Army: no source opened names a rifle or machine gun in 1948** [GAP]. O'Ballance gives the
   Iraqi army British supply under the January 1948 treaty and lists "aircraft, 25-pounder guns, A.A. guns, anti-tank guns and
   armoured cars" (p. 83), no small arms. Syria and Lebanon: no weapon named on p. 80 or 81.
-- **ALA: a contemporary British report and O'Ballance.** "They are armed with rifles, Brens and other automatic weapons" (a 25
-  February 1948 item, as printed in *The Nation*, 8 May 1948, hosted by cojs.org) and O'Ballance p. 84: "plentifully supplied with
+- **ALA: an item printed in *The Nation* and O'Ballance.** "They are armed with rifles, Brens and other automatic weapons" (an item
+  opening "According to a reliable source", dated 25 February 1948, printed in *The Nation*, 8 May 1948, under "British Record on
+  Partition", hosted by cojs.org) and O'Ballance p. 84: "plentifully supplied with
   small arms and ammunition", the main source Syria, "where the French had left large stocks behind them", plus the Western Desert.
   Type of rifle: [GAP].
 - **The Wikipedia infobox for the war lists, for the Arab side, "Lee-Enfield rifles, Bren Guns, Sten guns, MAS 36s"** with no
@@ -44,7 +45,7 @@ Tags: [V, agent read 3 November 2026; a person's check pending] means the agent 
 | Arab Legion | Bren used | en.wikipedia "Bren light machine gun", revision 1382220402 (27 Oct 2026), "Users", Jordan entry, same Young p. 24 | "Jordan: Arab Legion" | [S] | 2026-11-03 |
 | Arab Legion | .303 ammunition was the only surplus the Legion had beyond first and second line scales | O'Ballance printed p. 138 (OCR text read; page image not viewed) | "some .303 ammunition which had been obtained from a British depot when it had been evacuated" (OCR "-303") | [S] for the OCR | 2026-11-03 |
 | Egyptian Army | Equipment British, Britain obliged by treaty to supply arms; Parliament told of 298 Bren carriers and "quantities of small arms and ammunition" May 1945 to June 1947 | O'Ballance printed p. 77, page image viewed | "Their equipment was also British, Britain having treaty obligations to supply them with arms and ammunition." The Bren carriers are vehicles, not the Bren gun | [V, agent read 3 November 2026; a person's check pending] | 2026-11-03 |
-| Egyptian Army | War fought with .303 Enfields and 98k surplus Mausers | Dan Reynolds, "The Rifles of Egypt 1922 - 1958", https://carbinesforcollectors.com/egyptpage1.html ("Copyright 2002-2008", no other date; no footnote seen for this sentence) | "Egypt fought the war with .303 Enfield and 98k surplus Mausers bought on the world market" (the sentence goes on with 8mm Carcano for training; I did not see the page say that was used in combat) | [S] | 2026-11-03 |
+| Egyptian Army | War fought with .303 Enfields and 98k surplus Mausers | Dan Reynolds, "The Rifles of Egypt 1922 - 1958", https://carbinesforcollectors.com/egyptpage1.html ("Copyright 2002-2008", no other date; no footnote seen for this sentence) | "Egypt fought the war with .303 Enfield and 98k surplus Mausers bought on the world market" (the sentence goes on with 8mm Carcano for training; the agent did not see the page say that was used in combat) | [S] | 2026-11-03 |
 | Egyptian Army | Lee-Enfield and Bren in service | en.wikipedia "Lee-Enfield" rev. 1381877288 lists "Kingdom of Egypt" (citing McNab 2002, p. 58, not opened, no date given for the use); "Bren light machine gun" rev. 1382220402 lists "Egypt" with Smith 1969, p. 613 and the year 1958 | no 1948 date in either entry | [S], does not date to 1948 | 2026-11-03 |
 | Iraqi Army | British arms and equipment supplied under the January 1948 treaty | O'Ballance printed p. 83 (OCR text read; image not viewed) | "aircraft, 25-pounder guns, A.A. guns, anti-tank guns and armoured cars"; no rifle or LMG named | [S] for the OCR; no weapon claim | 2026-11-03 |
 | Iraqi Army | Lee-Enfield listed for the Kingdom of Iraq | en.wikipedia "Lee-Enfield" rev. 1381877288, citing Skennerton 2007, p. 587 (not opened) | "Kingdom of Iraq" with no date | [S], does not date to 1948 | 2026-11-03 |
@@ -65,6 +66,10 @@ Tags: [V, agent read 3 November 2026; a person's check pending] means the agent 
   say no source places a K98k with an Arab force; that line predates this page and rests on the sources it searched. Both are kept; a
   hobby page alone is not enough to change the [GAP] in `docs/units.md`.
 
+- **The Sten with the Arab Legion.** O'Ballance p. 80 puts "Stens" with the Legion ("Bren guns, Stens, rifles"); `docs/units.md`
+  line 310 on main says "No source found places a K98k, an MG34 or a Sten with the Arab Legion, Egypt, Iraq, Syria, Lebanon, the ALA or
+  local irregulars" [C]. Both are kept; this note does not change `docs/units.md`.
+
 ## Search log (all 3 November 2026, no Tavily key on this box: built-in WebSearch and WebFetch, named per row)
 
 | Tool and query or URL | Returned | Result |
@@ -83,6 +88,7 @@ Tags: [V, agent read 3 November 2026; a person's check pending] means the agent 
 
 - Rifle and LMG per force for Syria, Lebanon, Iraq: needs a book page or archive item (Pollack, *Arabs at War*; Malsagne,
   "L'armee libanaise dans la guerre de Palestine (1948-1949)"; Young, *The Arab Legion*, p. 24).
+- Whether the Legion's Stens were carried by its infantry or only by some troops (O'Ballance does not say).
 - Bren for Egypt, Syria, Lebanon, Iraq in 1948.
 - A person to open Young p. 24 and Hughes and Dupuy, which this box could not reach.
 - Nothing here decides the Lee-Enfield or Bren model. For the Arab Legion, a source opened (O'Ballance p. 80) names the Bren and
