@@ -43,7 +43,7 @@ A field is ready only once the yishuv in its hex is built; plowing then follows 
 ## Data touched
 
 - `content/sites.yaml` (new; sourced facts: id, names, hex, kinds, founding date, sources, status). The loader reads it only in the GDD loop, so the legacy content hash does not move.
-- `rules.yaml` `mvp.build_yishuv_turns` and `mvp.build_yishuv_cost`, and `attention_cost.pioneer_work` and `stop_work`: supplied by `MvpSlice.Overlay`, never under `content/` (ruling 2 [S3]).
+- `rules.yaml` `mvp.build_yishuv_turns` and `mvp.build_yishuv_cost`, and `attention_cost.pioneer_work` and `stop_work`: labelled design values under `content/` since the cutover (Q-CUT-1, R-LOOP-005); before the cutover, ruling 2 [S3] kept the placeholders in `MvpSlice.Overlay`.
 - `GameState.Sites`, hashed as `site{...}` when there are some; `Treasury`.
 - Save files: the `pioneer UNIT ACTION SITE` and `stop UNIT` lines. Scenarios: `pioneer_work` and `stop_work`.
 - Designated sites, allowed project kinds, fixed-turn progress and stable hex/facility bindings.
