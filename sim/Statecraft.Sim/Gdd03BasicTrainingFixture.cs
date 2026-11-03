@@ -65,6 +65,9 @@ namespace Statecraft.Sim
         // once its first member graduates.
         readonly SortedDictionary<int, int> cohortOf = new SortedDictionary<int, int>();
         readonly SortedDictionary<int, string> cohortFormation = new SortedDictionary<int, string>();
+        // Per fixture instance only (not saved): each claimed formation's graduation month, the month its first member
+        // graduated (27M-8, R-UNIT-010).
+        readonly SortedDictionary<string, int> graduationMonth = new SortedDictionary<string, int>(StringComparer.Ordinal);
         int nextCohort;
         int? lastPaidMonth;
         internal int SpareArms { get; private set; }
@@ -253,6 +256,7 @@ namespace Statecraft.Sim
             }
             Commit(new[] { trainee.WithPlacement(PopulationStatus.ActiveSoldier, trainee.Location,
                 new PopulationAssignment(PopulationAssignmentKind.ActiveService, formation), trainee.Captor, trainee.Home) });
+            if (!cohortFormation.ContainsKey(cohort)) graduationMonth.Add(formation, monthOrdinal);
             cohortFormation[cohort] = formation;
             months.Remove(trainee.Id); issued.Remove(trainee.Id); cohortOf.Remove(trainee.Id);
         }
@@ -260,9 +264,11 @@ namespace Statecraft.Sim
         /// <summary>R-UNIT-010 under gdd-0.3, the fixture's step 7: each formation this fixture graduated that still has an
         /// active soldier pays <c>military.active_money</c> once, independent of strength ("IL 0.05m per formation per
         /// turn, independent of strength"), from its graduation month (27M-8: "A formation pays military upkeep from the
-        /// turn it graduates"). Trainees pay none. Only this fixture's formations count (53's maintainer call, not an owner
-        /// ruling); it owns its Money. The shortfall is borrowed (R-MONEY-003); no Arms or strength change. Each month
-        /// ordinal is paid once and never an earlier one; the cost is computed before any write.</summary>
+        /// turn it graduates"; R-UNIT-010: "including a formation that graduated this turn"), so a month before a
+        /// formation's graduation month charges it nothing. Trainees pay none. Only this fixture's formations count (53's
+        /// maintainer call, not an owner ruling); it owns its Money. The shortfall is borrowed (R-MONEY-003); no Arms or
+        /// strength change. Each month ordinal is paid once and never an earlier one; the cost is computed before any
+        /// write.</summary>
         internal void PayUpkeep(int monthOrdinal)
         {
             ValidateInventory();
@@ -271,7 +277,7 @@ namespace Statecraft.Sim
                 throw new ArgumentException("This month's upkeep was already paid, or the month is before the last one paid.");
             var serving = new HashSet<string>(state.PopulationLedger.Units
                 .Where(p => p.Status == PopulationStatus.ActiveSoldier).Select(p => p.Assignment.Target!), StringComparer.Ordinal);
-            int count = cohortFormation.Values.Count(serving.Contains);
+            int count = cohortFormation.Values.Count(f => serving.Contains(f) && graduationMonth[f] <= monthOrdinal);
             decimal cost = activeMoney * count;
             decimal paidNow = Math.Min(Money, cost), debt = Debt + (cost - paidNow);
             Money -= paidNow; Debt = debt; lastPaidMonth = monthOrdinal;
