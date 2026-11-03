@@ -925,6 +925,8 @@ namespace Statecraft.Game.Map.Kits
                     // The white blocks (Haifa's Hadar): a roof parapet of Tel Aviv's size (RoofParapet's; Box's rim costs half its vertices).
                     var detail = DetailAt(p, 47);
                     float parapet = white && RoofDetail ? WhiteParapetM * m : 0f, parapetT = WhiteParapetThicknessM * m;
+                    // The roof the stair head stands on: the whole block's, or on a stepped block its upper part's (c1, w1 wide).
+                    Vector2 roofC = p; float roofW = b.w;
                     if (stepped)
                     {
                         float a = yaw * Mathf.Deg2Rad, share = rnd.Range(0.58f, 0.72f), side = rnd.Chance(0.5f) ? 1f : -1f;
@@ -932,6 +934,7 @@ namespace Statecraft.Game.Map.Kits
                         float u1 = side * (b.w - w1) * 0.5f, u2 = -side * (b.w - w2) * 0.5f, v2 = (b.d - d2) * 0.5f;
                         var c1 = p + new Vector2(u1 * Mathf.Cos(a), u1 * Mathf.Sin(a));
                         var c2 = p + new Vector2(u2 * Mathf.Cos(a) - v2 * Mathf.Sin(a), u2 * Mathf.Sin(a) + v2 * Mathf.Cos(a));
+                        roofC = c1; roofW = w1;
                         km.Box(c1.x, c1.y, yaw, w1, b.d, bottom, top, b.h, wall, roof, Facade.WhiteCity, m, parapet: parapet, parapetThickness: parapetT);
                         km.Box(c2.x, c2.y, yaw, w2 * 1.01f, d2, bottom, top, h2, wall, roof, Facade.WhiteCity, m, parapet: parapet, parapetThickness: parapetT);
                         if (white) WhiteBlockDetail(km, c1, u1, b.lotR, yaw, w1, b.d, top, b.h, wall, roof, m, ref rnd);
@@ -944,13 +947,16 @@ namespace Statecraft.Game.Map.Kits
                         if (white) WhiteBlockDetail(km, p, 0f, b.lotR, yaw, b.w, b.d, top, b.h, wall, roof, m, ref rnd);
                         Record(id, "building", p, yaw, b.w, b.d, b.h, wall);
                     }
-                    // A stair tower or roof room on many Bauhaus blocks (the White City's roofs: most have one).
+                    // A stair tower or roof room on many Bauhaus blocks (the White City's roofs: most have one), on the upper
+                    // roof and set off along and across the block (its yaw), so it stays inside that roof's parapet
+                    // (KitRoofContainmentTests). The same four draws as ever, in the same order.
                     if (rnd.Chance(white ? 0.8f : 0.5f))
                     {
-                        float rw = b.w * rnd.Range(0.22f, 0.36f), rd = b.d * rnd.Range(0.3f, 0.45f);
-                        float sx = p.x + b.w * rnd.Range(-0.15f, 0.15f), sz = p.y + b.d * rnd.Range(-0.12f, 0.12f);
-                        km.Box(sx, sz, yaw, rw, rd, top + b.h - 2f, top + b.h, 2.8f * m, wall, roof, Facade.Plain, m);
-                        if (white && RoofDetail && detail.Chance(RoofTankShare)) RoofTank(km, new Vector2(sx, sz), yaw, rw, rd, top + b.h + 2.8f * m, m);
+                        float rw = roofW * rnd.Range(0.22f, 0.36f), rd = b.d * rnd.Range(0.3f, 0.45f);
+                        float su = roofW * rnd.Range(-0.15f, 0.15f), sv = b.d * rnd.Range(-0.12f, 0.12f), ya = yaw * Mathf.Deg2Rad;
+                        var s = roofC + new Vector2(su * Mathf.Cos(ya) - sv * Mathf.Sin(ya), su * Mathf.Sin(ya) + sv * Mathf.Cos(ya));
+                        km.Box(s.x, s.y, yaw, rw, rd, top + b.h - 2f, top + b.h, 2.8f * m, wall, roof, Facade.Plain, m);
+                        if (white && RoofDetail && detail.Chance(RoofTankShare)) RoofTank(km, s, yaw, rw, rd, top + b.h + 2.8f * m, m);
                     }
                     // Many White City roofs carry a second room (the shared laundry room beside the stair head), at the
                     // block's other end, inside its footprint (not on a stepped block, whose ends differ in height).
@@ -1129,10 +1135,14 @@ namespace Statecraft.Game.Map.Kits
                 if (dome) km.Dome(uc.x, uc.y, top + b.h - 0.2f * m, Mathf.Min(uw, ud) * 0.4f, roof, rise: 0.6f);
                 return;
             }
-            km.Box(p.x, p.y, yaw, b.w, b.d, bottom, top, b.h, wall, roof, facade, m, parapet: parapet, parapetThickness: parapetT);
+            // A roof room (none under a dome) is the topmost roof, so the parapet goes on it: on the main roof the room's walls
+            // would stand through the rim. The same roll as ever (only without a dome), drawn before the main block, which draws none.
+            bool room = !dome && rnd.Chance(0.35f);
+            km.Box(p.x, p.y, yaw, b.w, b.d, bottom, top, b.h, wall, roof, facade, m, parapet: room ? 0f : parapet, parapetThickness: parapetT);
             if (dome) km.Dome(p.x, p.y, top + b.h - 0.2f * m, Mathf.Min(b.w, b.d) * 0.33f, roof, rise: 0.6f);
-            else if (rnd.Chance(0.35f))   // a roof room
-                km.Box(uc.x, uc.y, yaw, uw * 0.8f, ud * 0.8f, top + b.h - 0.3f * m, top + b.h, storey * 0.85f, wall, roof, facade, m);
+            else if (room)
+                km.Box(uc.x, uc.y, yaw, uw * 0.8f, ud * 0.8f, top + b.h - 0.3f * m, top + b.h, storey * 0.85f, wall, roof, facade, m,
+                    parapet: parapet, parapetThickness: parapetT);
         }
 
         /// <summary>Haifa's Hadar wall plaster (sRGB; Tel Aviv's is TelAvivPlaster, #658): lime white, a touch cool, so the warm
@@ -1436,11 +1446,14 @@ namespace Statecraft.Game.Map.Kits
                         if (!ground.Water(wc.x, wc.y))
                             km.Box(wc.x, wc.y, yaw, ww, wd, bottom, top, Mathf.Max(2f * 3.3f * m, b.h - 3.3f * m), wall, roof, Facade.WhiteCity, m);
                     }
-                    // A stair tower or roof room on many Bauhaus blocks, and a parapet's shadow line.
+                    // A stair tower or roof room on many Bauhaus blocks, and a parapet's shadow line: set off along and across
+                    // the block (its yaw), so it stays inside the roof's parapet (KitRoofContainmentTests). The same draws in order.
                     if (rnd.Chance(0.55f))
                     {
-                        float rw = b.w * rnd.Range(0.25f, 0.4f), rd = b.d * rnd.Range(0.3f, 0.45f);
-                        km.Box(p.x + b.w * rnd.Range(-0.2f, 0.2f), p.y + b.d * rnd.Range(-0.15f, 0.15f), yaw, rw, rd, top + b.h - 2f, top + b.h, 2.8f * m, wall, roof, Facade.Plain, m);
+                        float rw = b.w * rnd.Range(0.25f, 0.4f), rd = b.d * rnd.Range(0.3f, 0.45f), a = yaw * Mathf.Deg2Rad;
+                        float su = b.w * rnd.Range(-0.2f, 0.2f), sv = b.d * rnd.Range(-0.15f, 0.15f);
+                        km.Box(p.x + su * Mathf.Cos(a) - sv * Mathf.Sin(a), p.y + su * Mathf.Sin(a) + sv * Mathf.Cos(a), yaw, rw, rd, top + b.h - 2f, top + b.h,
+                            2.8f * m, wall, roof, Facade.Plain, m);
                     }
                     return wall;
                 }

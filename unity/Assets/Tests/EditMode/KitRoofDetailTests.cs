@@ -60,9 +60,10 @@ public class KitRoofDetailTests
         SettlementKits.Result off; List<SettlementKits.Placed> offPlaced;
         try { off = Build(map, out offPlaced); }
         finally { SettlementKits.RoofDetail = true; }
-        var on = Build(map, out var onPlaced);
+        SettlementKits.Result? on = null;
         try
         {
+            on = Build(map, out var onPlaced);
             // It draws from each building's own stream: every building, landmark and palm is where, as large and as coloured
             // as without it.
             Assert.AreEqual(offPlaced.Count, onPlaced.Count, "census entries");
@@ -103,7 +104,7 @@ public class KitRoofDetailTests
             Assert.Greater(onTiles, offTiles, "the villages gain roof detail");
             Assert.LessOrEqual(onAll, MaxGrowth * offAll, "the far map's vertices");
         }
-        finally { Destroy(off); Destroy(on); }
+        finally { Destroy(off); if (on != null) Destroy(on); }
     }
 
     /// <summary>On every set-back Tel Aviv block the stair head stands on the top storey's roof: a sweep of the real specs
