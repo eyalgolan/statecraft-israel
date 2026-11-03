@@ -28,7 +28,9 @@ namespace Statecraft.Sim
         /// gives completed-work evidence at its turn-start <c>pioneer.work_rate</c> (R-VET-002), and its
         /// <see cref="CivilianProfessionRules.AfterWork"/> result is committed once into a copy, in ascending id. The
         /// turn-start state is not changed, so resolving the same snapshot twice gives the same single tick (R-VET-001).
-        /// Idle, travel, course and teaching records give no evidence and keep their tier and work XP (answer 4).</summary>
+        /// Idle, travel, course and teaching records give no evidence and keep their tier and work XP (answer 4). The
+        /// resolver reads any tier's catalogue rate, but no MVP path reaches a Novice pioneer today: MVP pioneers are
+        /// course-trained (answer 2).</summary>
         internal static PioneerWorkTurn ResolveTurnEnd(Content content, GameState turnStart, IEnumerable<string> advancingProjects)
         {
             if (content == null) throw new ArgumentNullException(nameof(content));
@@ -55,7 +57,9 @@ namespace Statecraft.Sim
                 // AfterWork returns the same record when it is not a working pioneer (e.g. reception not finished): no work.
                 if (ReferenceEquals(next, p)) continue;
                 work[target] = (work.TryGetValue(target, out var sum) ? sum : 0m) + quote;
-                candidate.PopulationLedger.Replace(next);
+                // Maintainer call, not a rule (no ruling covers it): a veteran keeps working at its rate but its work XP
+                // stops at promotion, as a legacy veteran gains no more service (R-VET-001).
+                if (p.Tier != CivilianTier.Veteran) candidate.PopulationLedger.Replace(next);
             }
             candidate.PopulationLedger.Reconcile();
             return new PioneerWorkTurn(candidate, work);

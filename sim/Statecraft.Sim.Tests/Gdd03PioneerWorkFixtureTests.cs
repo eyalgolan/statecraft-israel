@@ -91,7 +91,7 @@ public class Gdd03PioneerWorkFixtureTests
         Assert.Equal(1.5m, Resolve(c, ninth.State, "site-a").WorkByTarget["site-a"]);
     }
 
-    // R-VET-002: the work quote reads pioneer.work_rate at the turn-start tier (novice 0.75, trained 1, veteran 1.5), not
+    // R-VET-002: the work quote reads pioneer.work_rate at the turn-start tier (trained 1, veteran 1.5), not
     // veteran_progress 2. Only advancing targets are quoted.
     [Fact]
     public void Gdd03VeteranPioneerWorksAtCatalogueRateNotDoubleProgress()
@@ -100,9 +100,13 @@ public class Gdd03PioneerWorkFixtureTests
         var s = State(c, Pioneer("site-a"), Pioneer("site-a", 9, CivilianTier.Veteran), Pioneer("segment-b", 9, CivilianTier.Veteran));
         var turn = Resolve(c, s, "site-a");
         Assert.Equal(2.5m, turn.WorkByTarget["site-a"]);
+        // Catalogue rate only: no MVP path reaches a Novice pioneer today (MVP pioneers are course-trained, R-VET-001,
+        // owner answer 2 on #1693). Kept to pin the catalogue's novice row, not as an MVP route.
         Assert.Equal(0.75m, Resolve(c, State(c, Pioneer("site-a", 0, CivilianTier.Novice)), "site-a").WorkByTarget["site-a"]);
         Assert.False(turn.WorkByTarget.ContainsKey("segment-b"));
-        Assert.Equal(10, turn.State.PopulationLedger.Get(1).WorkXp);
+        // Maintainer call, not a rule (no ruling covers it): a veteran's work XP stops at promotion, as a legacy veteran
+        // gains no more service (R-VET-001). The veteran still works at its 1.5 rate.
+        Assert.Equal(9, turn.State.PopulationLedger.Get(1).WorkXp);
         Assert.Equal(CivilianTier.Veteran, turn.State.PopulationLedger.Get(1).Tier);
     }
 
@@ -121,10 +125,11 @@ public class Gdd03PioneerWorkFixtureTests
         Assert.Equal(5, s.PopulationLedger.Get(0).WorkXp);
     }
 
-    // R-QUAL-006, answer 4: a pioneer a Train order takes into a course keeps its tier and work XP dormant and earns no work
-    // XP on course turns; back at work it continues from the same count.
+    // Answer 4: a record already in a course (set to Trainee/Course directly here) gets no work XP and keeps its tier and
+    // work XP; back at work it continues from the same count. Running a real Train order (R-QUAL-006) belongs to #1689's
+    // integration slice.
     [Fact]
-    public void Gdd03TrainOrderKeepsPioneerTierAndWorkXpDormant()
+    public void Gdd03PioneerInCourseGetsNoWorkXpAndKeepsTierAndXp()
     {
         var c = Catalogue();
         var s = Turns(c, State(c, Pioneer("site-a")), 4, "site-a");
@@ -139,10 +144,10 @@ public class Gdd03PioneerWorkFixtureTests
         Assert.Equal(5, s.PopulationLedger.Get(0).WorkXp);
     }
 
-    // R-VET-001, R-UNIT-011: work promotion leaves combat XP and qualification as they were, and combat XP changes
-    // neither work XP, tier nor the work quote.
+    // R-VET-001, R-UNIT-011: work promotion leaves combat XP and qualification as they were, and two records that differ
+    // only in combat XP gain the same work XP, keep the same tier and get the same work quote. No combat XP is advanced here.
     [Fact]
-    public void WorkXpAndCombatXpAreIndependent()
+    public void Gdd03WorkPromotionKeepsCombatXpAndWorkIgnoresCombatXpLevel()
     {
         var c = Catalogue();
         var s = Resolve(c, State(c, Pioneer("site-a", 8, combatXp: 7)), "site-a").State;
@@ -153,6 +158,7 @@ public class Gdd03PioneerWorkFixtureTests
         var b = State(c, Pioneer("site-a", 3, combatXp: 12));
         var ta = Resolve(c, a, "site-a"); var tb = Resolve(c, b, "site-a");
         Assert.Equal(ta.WorkByTarget["site-a"], tb.WorkByTarget["site-a"]);
+        Assert.Equal(4, ta.State.PopulationLedger.Get(0).WorkXp); Assert.Equal(CivilianTier.Trained, ta.State.PopulationLedger.Get(0).Tier);
         Assert.Equal(4, tb.State.PopulationLedger.Get(0).WorkXp); Assert.Equal(12, tb.State.PopulationLedger.Get(0).CombatXp);
         Assert.Equal(CivilianTier.Trained, tb.State.PopulationLedger.Get(0).Tier);
     }
