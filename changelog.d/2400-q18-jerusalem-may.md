@@ -1,4 +1,4 @@
 ### Changed
 
-- The info panel for Jerusalem's hex names West Jerusalem as Israeli-held from the start, 15 May 1948, not from 11 June
-  (#2039): before 11 June it said "No-man's land". The map's colours are unchanged.
+- The info panel for Jerusalem's hex now names West Jerusalem as Israeli-held from 15 May 1948, extending #2400's change
+  from 11 June to the opening period, when it said "No-man's land" (#2039). The map's colours are unchanged.
