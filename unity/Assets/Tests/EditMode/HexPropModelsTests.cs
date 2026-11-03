@@ -186,6 +186,24 @@ namespace Statecraft.Game.Tests
             CollectionAssert.IsEmpty(asked, "asked once");
         }
 
+        /// <summary>#2266 review of the tamarisk round: the main map's props, from the first camera to the first close one, ask
+        /// for the hex-props bundle alone. Never the tamarisk's (only the boards draw it; no tamarisk on the main map, #1951),
+        /// and never the papyrus's (HulaPapyrusLayer asks for that one at the Hula).</summary>
+        [Test]
+        public void TheMainMapsPropsAskOnlyForTheHexPropsBundle()
+        {
+            var map = OpenMap();
+            var layer = HexPropModels.ShowAt(map, Opening)!;
+            layer.Choose(default, At(60000f));
+            var ids = asked.Select(a => a.id).ToList();
+            AnswerAll();
+            layer.Choose(default, At(Statecraft.Game.Map.Kits.TownModelLayer.CloseEnterM));
+            ids.AddRange(asked.Select(a => a.id));
+            Assert.That(ids, Is.Not.Empty, "the first camera asked for the props");
+            CollectionAssert.AreEquivalent(new[] { HexProps.Bundle }, ids.Select(HexProps.Catalog.BundleOf).Distinct(),
+                "the bundles the main map's props ask for: " + string.Join(", ", ids));
+        }
+
         // ---- #2266 rulings (owner, 2 November 2026) ----
 
         static Transform Kits(MapScene map) => map.transform.Find(Statecraft.Game.Map.Kits.KitLayer.RootName)!;

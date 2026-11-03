@@ -93,6 +93,7 @@ public class HexPropsTests
         CollectionAssert.AreEqual(new[] { TamariskPrefab }, builds[2].assetNames);
         Assert.AreEqual("hex-props-papyrus", HexProps.BundleOf("tiles:hula_swamp/papyrus"));
         Assert.AreEqual("hex-props-tamarisk", HexProps.BundleOf("tiles:arava_oasis/tamarisk"));
+        Assert.IsTrue(HexProps.Has("tiles:jaffa_old_city/clock_tower"), "a prop that stays in hex-props");
         Assert.AreEqual("hex-props", HexProps.BundleOf("tiles:jaffa_old_city/clock_tower"));
         Assert.IsNull(HexProps.BundleOf("tiles:negev_loess/tamarisk"), "the other tamarisk ids stay stand-ins (#1950, #1952)");
         for (int a = 0; a < builds.Length; a++)
@@ -111,9 +112,9 @@ public class HexPropsTests
         foreach (var id in HexProps.Ids) StringAssert.StartsWith("tiles:", id);
     }
 
-    /// <summary>The main map's first camera fetches the hex-props bundle (HexPropModels), so it carries none of #2082's
-    /// papyrus and tamarisk: the papyrus streams alone for the Hula's close view, the tamarisk alone for the boards (no
-    /// tamarisk on the main map, #1951). With the tamarisk in hex-props, #2278's build measured 9,470,644 B for it
+    /// <summary>The main map's first camera fetches the hex-props bundle (HexPropModels), so it carries neither of #2082's
+    /// split-out props: the papyrus streams alone for the Hula's close view (the main map's only use of it), the tamarisk
+    /// alone for the boards (no tamarisk on the main map, #1951). With the tamarisk in hex-props, #2278's build measured 9,470,644 B for it
     /// instead of 5,830,676 B.</summary>
     [Test]
     public void TheHexPropsBundleCarriesNoBoardOnlyProp()
