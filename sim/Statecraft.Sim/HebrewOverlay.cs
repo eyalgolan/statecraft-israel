@@ -38,7 +38,7 @@ namespace Statecraft.Sim
             Bind("legislatures.yaml", "legislatures", "body", c => c.Legislatures, nameof(Legislature.BodyHe), nameof(Legislature.BodyHeReview)),
             Bind("governments.yaml", "governments", "name", c => c.Governments, nameof(Government.NameHe), nameof(Government.NameHeReview)),
             Bind("map/locations_1948.yaml", "locations", "name", c => c.MapLocations, nameof(MapLocation.NameHe), nameof(MapLocation.NameHeReview)),
-            Bind("projects.yaml", "projects", "name", c => c.ProjectKinds, nameof(ProjectKind.NameHe), nameof(ProjectKind.NameHeReview)),
+            Bind("projects.yaml", "projects", "name", c => c.ProjectKinds.Concat(c.ProjectKindsOfOtherRulesets), nameof(ProjectKind.NameHe), nameof(ProjectKind.NameHeReview)),
             Bind("sites.yaml", "sites", "name", c => c.Sites, nameof(Site.NameHe), null),
             Bind("corridors.yaml", "corridors", "name", c => c.Corridors, nameof(CorridorDef.NameHe), null),
             Bind("objectives.yaml", "objectives", "name", c => c.Objectives, nameof(Objective.NameHe), nameof(Objective.NameHeReview)),

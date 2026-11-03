@@ -245,7 +245,7 @@ public class ReplacementTests
         Assert.Equal(2, r.State.Units[id].Strength);   // training_turns 3 counts the turn of the order: two turns to go
         var k = Assert.Single(r.State.Cohorts.Values);
         Assert.Equal((id, 2), (k.Unit, k.TurnsLeft));
-        Assert.Contains(r.Why, x => x.Message == "Tel Aviv: 1 group began basic training as replacements for unit " + id + ", cost IL 0.5m");
+        Assert.Contains(r.Why, x => x.Message == "Tel Aviv: 1 group began basic training as replacements for unit " + id + ", cost IL\u00A00.5m");
     }
 
     // R-TRAIN-004 with R-CITY-001: a queued Reinforce takes its city's civilians as a queued Train does.

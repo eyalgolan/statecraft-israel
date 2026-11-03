@@ -118,7 +118,8 @@ public class Gdd03MoneyLedgerTests
         Assert.True(turns >= 40, $"the run lasts {turns} turns");
         Assert.Subset(paid, new HashSet<string> { CauseKeys.Purpose.Training, CauseKeys.Purpose.Project, CauseKeys.Purpose.Yishuv, CauseKeys.Purpose.Arms });
         Assert.Subset(borrowed, new HashSet<string> { CauseKeys.Purpose.Deficit, CauseKeys.Purpose.Project, CauseKeys.Purpose.Yishuv, CauseKeys.Purpose.Arms, CauseKeys.Purpose.Event });
-        Assert.Subset(keys, new HashSet<string> { CauseKeys.MoneyFlows, CauseKeys.WagesPaid, CauseKeys.MilitaryUpkeep, CauseKeys.Paid, CauseKeys.EventAmount, CauseKeys.DollarsConverted });
+        Assert.Subset(keys, new HashSet<string> { CauseKeys.MoneyFlows, CauseKeys.WagesPaid, CauseKeys.MilitaryUpkeep, CauseKeys.Paid, CauseKeys.EventAmount, CauseKeys.DollarsConverted,
+            CauseKeys.HousingSurcharge });   // #1703 (R-HOUSE-005): the housing surcharge is its own Money line, so it reconciles too
         // R-MONEY-002: civilian upkeep stays IL 0m under gdd-0.3 (the owner's 30 October 2026 "Keep ruling" on UPKEEP), so the
         // whole game, with its built yishuvim and housing, never charges it.
         Assert.DoesNotContain(CauseKeys.CivilianUpkeep, keys);
@@ -205,7 +206,7 @@ public class Gdd03MoneyLedgerTests
             foreach (var w in a.Why.Where(w => w.Key == CauseKeys.Borrowed)) borrowedFor.Add(w.Args[0]);
             poor = a.State; rich = b.State;
         }
-        Assert.True(poor.Debt > 0 && rich.Debt == 0, $"the empty Treasury borrowed IL {N(poor.Debt)}m, the full one IL {N(rich.Debt)}m");
+        Assert.True(poor.Debt > 0 && rich.Debt == 0, $"the empty Treasury borrowed IL\u00A0{N(poor.Debt)}m, the full one IL\u00A0{N(rich.Debt)}m");
         Assert.Subset(borrowedFor, new HashSet<string> { CauseKeys.Purpose.Deficit, CauseKeys.Purpose.Training, CauseKeys.Purpose.Project, CauseKeys.Purpose.Arms });
     }
 

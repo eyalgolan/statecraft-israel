@@ -15,7 +15,7 @@ supported places remain supported even when additional authoring is optional.
 | --- | --- |
 | [Balance](balance.md) | Numerical values, provenance, start inventory |
 | [Training](training.md) | Identity, retained qualifications/courses and conversion/demobilisation |
-| [Cities](cities.md) | Per-city work, housing and worker-free projects |
+| [Cities](cities.md) | Per-city work, housing and city projects with builders |
 | [Resources](cutover-resource-layer.md) | Retained pools, borrowing, imports and shortages |
 | [Military combat](military-combat.md) | Movement, veterancy (combat experience under `gdd-0.3`, time served under `gdd-0.1`), forts, AI, truces and prisoners |
 | [Settlement control](settlement-control.md) | Individual settlement control, annexation and civilian protections |

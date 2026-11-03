@@ -23,7 +23,7 @@ Already decided, and kept as they are (quoted, not reopened):
 
 - **Q-MOVE-1 to Q-MOVE-5** (owner, 15 October 2026, "Take all recommendations", #375; `docs/superpowers/plans/2026-10-15-gdd-phase-5.md:374`, table `:921-922`): integer movement points per unit type and an integer cost per biome, lake and sea impassable (Q-MOVE-1); only the corridors Phase 4 builds lower the cost (Q-MOVE-2); a stack limit per hex (Q-MOVE-3); no zone of control (Q-MOVE-4); no transport (Q-MOVE-5). This spec changes no cost, no point value and no stacking rule.
 - **D-A6** (owner, 14 October 2026; `docs/superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md:478`): "The fixed order of §2.3. Actions are capped by Attention, with unit orders free." The resolver order (`:257-268`) is unchanged. One line of §2.3's command table, "An attack resolves in the resolution phase" (`:251`), is superseded by the owner's "Instant, like Civ"; section 9 lists the edit.
-- **R-ENEMY-001**: the enemy gets its orders in resolver step 1, after the player's orders (`docs/rules/mvp.md:243`; `TurnResolver.cs:18`). Unchanged: the enemy still moves and attacks after End turn.
+- **R-ENEMY-001**: the enemy gets its orders in resolver step 1, after the player's orders (`docs/rules/mvp.md`; `TurnResolver.cs:18`). Unchanged: the enemy still moves and attacks after End turn.
 
 The owner then answered this spec's four questions (23 October 2026, recorded on #1402 and #1398, verbatim):
 
@@ -52,10 +52,10 @@ The research summary (`civ-movement-research.md`, 23 October 2026, from the civi
 ### 2.2 What main already does (verified)
 
 - **The sim already moves at command time.** `Simulation.Step` (`sim/Statecraft.Sim/Simulation.cs:31-82`) runs the turn's orders in order in `RunOrders` (`:48`, `:100-116`), and only then `TurnResolver.Resolve` (`:60`): enemy orders (`TurnResolver.cs:18`), combat (`:19`), capture (`:20`), the order step (`:21`). `Move` is applied in `Execute` (`Simulation.cs:190-191`) through `Movement.Move` (`Movement.cs:58-84`).
-- **Points per turn already exist.** `content/unit_types.yaml`: recruit 3, veteran soldier 3, artillery 2, armoured car 5, every Arab type 3; the halutz types none, so they cannot move (R-MOVE-001, `docs/rules/mvp.md:189`). `RunOrders` keeps a local `spent` dictionary (`Simulation.cs:103`) and `Movement.Move` charges each move against it (`Movement.cs:69-72`), so a unit can already split its points over several moves in one turn.
+- **Points per turn already exist.** `content/unit_types.yaml`: recruit 3, veteran soldier 3, artillery 2, armoured car 5, every Arab type 3; the halutz types none, so they cannot move (R-MOVE-001, `docs/rules/mvp.md`). `RunOrders` keeps a local `spent` dictionary (`Simulation.cs:103`) and `Movement.Move` charges each move against it (`Movement.cs:69-72`), so a unit can already split its points over several moves in one turn.
 - **The preview ignores spent points.** `Movement.Reachable` (`Movement.cs:30-38`) and `Movement.Path` (`:42-51`) search with the unit's full points.
 - **The wait is the Unity layer only.** `SimBridge` holds the turn's orders until End turn ("Orders take effect at End Turn", `unity/Assets/Scripts/UI/SimBridge.cs:10`), allows one Move per unit (key `move:{unit}`, `:65`), and the map draws `bridge.State`, the state at the turn's start (`GameRoot.cs:344`). The copy says so: "The unit moves when you end the turn" (`unity/Assets/UI/strings.en.yaml:89`), "Move ordered: the unit moves when you end the turn" (`:453`), "Attack ordered: the unit attacks when you end the turn" (`:467`).
-- **Attacks are standing orders.** `UnitOrder(unit, attack, q, r)` sets the unit's order (`Combat.Give`, `Combat.cs:118-126`), and resolver step 2 resolves it every turn while the hex holds an enemy (`Combat.Resolve`, `:197-240`; R-COMBAT-001, `mvp.md:217`). Units of one side attacking one hex sum their strength (Q-COMBAT-2; R-COMBAT-002, `mvp.md:219`), and artillery fires only beside another attacker (R-COMBAT-007, `mvp.md:231`).
+- **Attacks are standing orders.** `UnitOrder(unit, attack, q, r)` sets the unit's order (`Combat.Give`, `Combat.cs:118-126`), and resolver step 2 resolves it every turn while the hex holds an enemy (`Combat.Resolve`, `:197-240`; R-COMBAT-001, `mvp.md`). Units of one side attacking one hex sum their strength (Q-COMBAT-2; R-COMBAT-002, `mvp.md`), and artillery fires only beside another attacker (R-COMBAT-007, `mvp.md`).
 - **Saves are seed plus one command batch per turn** (`SaveGame.cs:30-46`, `Record` `:82-89`, schema 2 `:49`), replayed on load (`GameSession.Load`, `GameSession.cs:50-75`). Unity writes the autosave only after End turn (`GameStart.Autosave`, `GameStart.cs:64-90`, subscribed to `TurnEnded` at `:89`).
 - **A dry run already exists.** `Simulation.DelegatedTo` runs `RunOrders` on a clone (`Simulation.cs:84-96`).
 - **The goldens.** `docs/determinism.md:31-56` and `sim/Statecraft.Sim.Tests/golden/manifest.txt`: hash1950, hash1952, smoke5, smoke-orders, four scenarios, mvp-end. A probe for this spec played the golden run to the end on main (a scratch console program calling `GoldenRun.Orders` and `Simulation.Step`): the reference player orders **0** attacks and **0** moves in the whole run, and the run has **1** engagement, the Arab Legion's on 15 October 1948 (as `docs/determinism.md:374` records). None of the four scenario files names a `move` or `unit_order` (`grep` over `sim/Statecraft.Sim.Tests/scenarios/*.yaml`).
@@ -106,7 +106,7 @@ Then, as today, `EventSystem.Delegate`, resolver step 1 (the enemy's orders, no 
 
 So the RNG stream is fixed by the log: replaying a save draws the same values in the same order. Because the committed orders run before every deferred one, a vote queued after an attack cannot shift the attack's draw, and withdrawing a deferred order never changes a result already on screen.
 
-One consequence, stated so nobody is surprised: an event answer is deferred (it takes effect at End turn, as the card says, `strings.en.yaml:91`), so on the turn a truce card is answered, attacks made before End turn come before the acceptance. R-COMBAT-009 binds "from accepting the card" (`mvp.md:237`), and the acceptance happens at End turn, so this follows the ruling's own words.
+One consequence, stated so nobody is surprised: an event answer is deferred (it takes effect at End turn, as the card says, `strings.en.yaml:91`), so on the turn a truce card is answered, attacks made before End turn come before the acceptance. R-COMBAT-009 binds "from accepting the card" (`mvp.md`), and the acceptance happens at End turn, so this follows the ruling's own words.
 
 ### 3.4 Mid-turn save and reload
 
@@ -120,9 +120,9 @@ Decision:
 - Deferred orders are not saved, as today: after a reload the player gives them again. Skips (section 7) are not saved either; they change nothing in the game.
 - Reloading cannot re-roll an attack: the open turn replays the same orders on the same state, so the same draws come out.
 
-**Old saves** (owner: "Refuse with a clear message (spec)"). A schema 2 GDD save that contains a player attack (`order <unit> attack <q> <r>`) is refused with the existing `older_rules` code (R-SAVE-001, `mvp.md:53`), which the UI already words: "Your saved game was made with an earlier version of the game's rules and cannot be continued. A new game has started." (`save.refused.older_rules`, `strings.en.yaml:475`). Its attacks were standing orders, so it would replay differently.
+**Old saves** (owner: "Refuse with a clear message (spec)"). A schema 2 GDD save that contains a player attack (`order <unit> attack <q> <r>`) is refused with the existing `older_rules` code (R-SAVE-001, `mvp.md`), which the UI already words: "Your saved game was made with an earlier version of the game's rules and cannot be continued. A new game has started." (`save.refused.older_rules`, `strings.en.yaml:475`). Its attacks were standing orders, so it would replay differently.
 
-Two other rule changes can also make a schema 2 save replay differently, more rarely: instant capture (a unit that ended a move on a target and left it in the same turn now captures it) and the full-points step (a move the old rules refused now goes through). For the same clear message, a schema 2 GDD save whose replay does not end on its saved hash is refused as `older_rules` too, not as "damaged" (it was not damaged: the rules changed). Every other schema 2 save loads. A schema 3 save loaded by an older build is refused as `newer_version` (R-SAVE-002, `mvp.md:55`), as today.
+Two other rule changes can also make a schema 2 save replay differently, more rarely: instant capture (a unit that ended a move on a target and left it in the same turn now captures it) and the full-points step (a move the old rules refused now goes through). For the same clear message, a schema 2 GDD save whose replay does not end on its saved hash is refused as `older_rules` too, not as "damaged" (it was not damaged: the rules changed). Every other schema 2 save loads. A schema 3 save loaded by an older build is refused as `newer_version` (R-SAVE-002, `mvp.md`), as today.
 
 ## 4. Decision 2: instant combat
 
@@ -134,7 +134,7 @@ Two other rule changes can also make a schema 2 save replay differently, more ra
 - The Arms check reads the stock as it is: an attack needs `mvp.arms_per_attack` (artillery: its `arms_per_fire`) and the stock must hold it. The "other attacks already ordered" part of Q-COMBAT-4's check (`Combat.cs:109-112`) goes, since no player attack waits for step 2. The Arms are paid at once.
 - One engagement is fought at once (section 4.2), with one RNG draw.
 - The attack ends the unit's movement for the turn (its spent points become its full points) and clears its order (a fortify or hold is lost, as giving an attack replaces the order today, R-COMBAT-001).
-- Losses, retreat and surrender follow R-COMBAT-003 unchanged (`mvp.md:221`). The attackers never advance (Q-COMBAT-3).
+- Losses, retreat and surrender follow R-COMBAT-003 unchanged (`mvp.md`). The attackers never advance (Q-COMBAT-3).
 
 ### 4.2 Who fights in the engagement (decided: OQ-1)
 
@@ -150,7 +150,7 @@ A player engagement draws `Combat.DrawsPerEngagement` (1) value at the moment it
 
 ### 4.4 Capture at the click (decided: OQ-2, "Instant")
 
-Today a capture is recorded at End turn, in resolver step 3 (R-CTRL-004, `mvp.md:39`; `SettlementControl.Capture`, `SettlementControl.cs:24-43`, called at `TurnResolver.cs:20`). The owner ruled (OQ-2): "Instant": a town is captured the moment a unit takes it. This spec recommended the opposite; the design below follows the ruling.
+Today a capture is recorded at End turn, in resolver step 3 (R-CTRL-004, `mvp.md`; `SettlementControl.Capture`, `SettlementControl.cs:24-43`, called at `TurnResolver.cs:20`). The owner ruled (OQ-2): "Instant": a town is captured the moment a unit takes it. This spec recommended the opposite; the design below follows the ruling.
 
 **When.** The capture check (`SettlementControl.Capture`'s player branch, unchanged in what it tests) runs after the route step and after each order of the turn, inside `RunOrders`, and still in resolver step 3. So a curated target on `mvp.enemy_held_localities` is captured as soon as one of the player's military units stands on its hex with no enemy military unit there: at the end of the `Move`, or of the go-to stop, that put it there. A halutz holds nothing (#796), as today.
 
@@ -172,7 +172,7 @@ Today a capture is recorded at End turn, in resolver step 3 (R-CTRL-004, `mvp.md
 
 ### 4.5 Truces
 
-R-COMBAT-009 (`mvp.md:237`) keeps its refusal ("A truce is in force"), checked at the click. Its clause "Accepting a truce ends and clears every standing attack of the player's" has nothing left to act on, since the player has no standing attacks; `Combat.EndAttacksForTruce` (`Combat.cs:75-84`) and its call are removed. The enemy's truce guard (R-ENEMY-006) is untouched.
+R-COMBAT-009 (`mvp.md`) keeps its refusal ("A truce is in force"), checked at the click. Its clause "Accepting a truce ends and clears every standing attack of the player's" has nothing left to act on, since the player has no standing attacks; `Combat.EndAttacksForTruce` (`Combat.cs:75-84`) and its call are removed. The enemy's truce guard (R-ENEMY-006) is untouched.
 
 ### 4.6 Other readers of a player attack order
 
@@ -203,7 +203,7 @@ The per-turn stop is the last hex of that turn. If it is full of the unit's side
 
 At the start of each player turn (step 0 of `RunOrders`, section 3.3), in ascending id, each player unit with a go-to order:
 
-- **stops** (order cleared, a Why line, and it needs orders) when no route reaches the hex any more (the hex now holds an enemy unit, or the way is shut), or when the hex itself is full on the turn the unit would arrive. It does not stop because an enemy unit is next to it: there is no zone of control (Q-MOVE-4), and passing next to an enemy has no effect (R-MOVE-004, `mvp.md:195`);
+- **stops** (order cleared, a Why line, and it needs orders) when no route reaches the hex any more (the hex now holds an enemy unit, or the way is shut), or when the hex itself is full on the turn the unit would arrive. It does not stop because an enemy unit is next to it: there is no zone of control (Q-MOVE-4), and passing next to an enemy has no effect (R-MOVE-004, `mvp.md`);
 - otherwise moves along a fresh route as far as its points reach (the route is recomputed each turn from where the unit is), and on arriving clears the order.
 
 The move spends the unit's points for that turn as any move does, so the player can see and use what is left.

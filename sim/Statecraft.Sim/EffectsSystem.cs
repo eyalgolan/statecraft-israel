@@ -90,7 +90,7 @@ namespace Statecraft.Sim
             // Read every source before writing anything, so effect order cannot change results.
             var v = c.At(s.Date);
             var targets = v.Effects.ToDictionary(e => e.Id, e =>
-                e.K * Source(s, e.Source) * Multiplier(c, s, e.Office));
+                RetiredGdd03Link(c, e) ? 0.0 : e.K * Source(s, e.Source) * Multiplier(c, s, e.Office));
             var moved = new HashSet<string>();
             foreach (var e in v.Effects)
             {
@@ -113,6 +113,13 @@ namespace Statecraft.Sim
             }
             UpdateSituations(c, s, why);
         }
+
+        /// <summary>#1703, R-HOUSE-005 (with #1715's "Disable `homes_lift_morale` ... under 0.3"): under gdd-0.3 the legacy link
+        /// from the national `housing` indicator into `morale` (homes_lift_morale) adds nothing, because the cities' housing
+        /// cohesion term (Cities.UpdateCondition) is the one housing penalty on Social cohesion. Its contribution starts at 0 and
+        /// stays there. gdd-0.1 and legacy keep it.</summary>
+        static bool RetiredGdd03Link(Content c, Effect e) =>
+            c.Ruleset == SaveGame.Gdd03Ruleset && e.Source == Cities.HousingIndicator && e.Target == Cities.CohesionIndicator;
 
         /// <summary>An effect's source level: a policy, an indicator, or the cities' employed share (R-CITY-005). The legacy
         /// loop has no cities, so there the share reads 0 and the effect adds nothing (not 1, which would lift morale).</summary>

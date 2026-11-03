@@ -192,7 +192,8 @@ public class Gdd03EventRulesTests
     public void RealCatalogueExcludesExactlyFiveWholeCardsAndKeepsOrder()
     {
         var old = Real(false); var modern = Real(true);
-        Assert.Equal(41, old.Events.Count); Assert.Equal(36, modern.Events.Count);   // Deport's two cards (#801) are not excluded
+        Assert.Equal(41, old.Events.Count);   // Deport's two cards (#801) are not excluded
+        Assert.Equal(old.Events.Count - Excluded.Length, modern.Events.Count);
         Assert.Equal(Excluded, old.Events.Select(e => e.Id).Except(modern.Events.Select(e => e.Id)).OrderBy(x => x, StringComparer.Ordinal));
         Assert.Equal(old.Events.Where(e => !Excluded.Contains(e.Id)).Select(e => e.Id), modern.Events.Select(e => e.Id));
         Assert.NotEqual(old.Hash, modern.Hash);
@@ -385,8 +386,8 @@ public class Gdd03EventRulesTests
         "burma_road_complete:6c49179b3844761c6f580c1436596cbace6932cbb6b620a9ea2872b6e0342ba2", // re-pinned for #1065 (owner's native read; flag removed in 8fbcb2aff), then for the stale reviewer comment (comment-only)
         "clothing_rationing_1950:ce2d24a8a98ad86a1670e62094d18fca9da71b5cd11f437cd5314a09f4a1d562", // re-pinned for #1065 (Beri's native Hebrew read)
         "degania_defence:f915a42f050777ddffd7e7e26090b51c6cf922dade41a98fe7174b1c50a62c6e", // re-pinned for #2020 (owner-approved Hebrew wording, 30 October 2026), then for #1065 (Beri's native Hebrew read)
-        "deport_acre:1db490f43ffdb0ca13a3c481b9e533b9710a97bcadb6c11987e7a09f518753b8", // added for #801 (Deport's follow-up cards), re-pinned for #2197 review round 2 (comments say "adapted") and the owner's sign-off (status sensitivity-reviewed, 2 Nov 2026)
-        "deport_nazareth:582d47c77cb402fa4e0b249fd508a4414b9e317fa21d11a216af6a3bdab0c783", // added for #801 (Deport's follow-up cards), re-pinned for #2197 ("near the town", source packet N5; review round 2 comments) and the owner's sign-off (status sensitivity-reviewed, 2 Nov 2026)
+        "deport_acre:950dfb6a76dd47d1b2c132cac22ee67c6db956dff16592fe8036f3b43010414f", // added for #801 (Deport's follow-up cards), re-pinned for #2197 review round 2 (comments say "adapted") and the owner's sign-off (status sensitivity-reviewed, 2 Nov 2026), then for the stale DRAFT note (comment-only cleanup) and the owner's Hebrew read (flag removed), both #2292
+        "deport_nazareth:37165228a386dc01ad46b3405304605e1959f265d458ab312cc68e38c3afa165", // added for #801 (Deport's follow-up cards), re-pinned for #2197 ("near the town", source packet N5; review round 2 comments) and the owner's sign-off (status sensitivity-reviewed, 2 Nov 2026), then for the stale DRAFT note (comment-only cleanup) and the owner's Hebrew read (flag removed), both #2292
         "education_registration_1951:1d5cb0e4062dc61b787a7e1b375b3c85c9a1663bd4c3c73f3c9c6f9ee5ac4da3", // re-pinned for #1065 (Beri's native Hebrew read)
         "elections_1949:962bd8064e8b98d4919be9b4ff4fab68cb9bd3d15213ea43917caa4432f42116", // re-pinned for #1065 (Beri's native Hebrew read)
         "first_new_yishuv:0c75e086931ddbd0d356b8691afffb914ba1e657475d9295375baa3ee32c66b9", // re-pinned for #1065 (owner's native read; flag removed in 8fbcb2aff), then for the stale reviewer comment (comment-only)

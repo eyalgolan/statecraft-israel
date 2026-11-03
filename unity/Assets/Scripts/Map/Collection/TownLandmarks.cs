@@ -15,6 +15,10 @@ namespace Statecraft.Game.Map.Collection
     /// (BuildingPreview at 3ef0a7a5): White City at Tel Aviv, the stone city at Jerusalem, the port city at Haifa, the
     /// moshava town at the six moshavot, Nahalal at the moshav, the compound at every kibbutz, the stone village at every
     /// Arab town, the ma'abara at a transit camp and the shikun at a housing project.
+    /// Owner ruling of 2 November 2026, "Yes, small buildings at every zoom": Tel Aviv, Jerusalem, Haifa and Jaffa have no
+    /// whole-town model; their building models draw at every zoom instead (<see cref="Kits.TownModels.AtEveryZoom"/>). Tel
+    /// Aviv's, Jerusalem's and Haifa's whole-town models stay in the repository and the streamed catalogue, unused on the map;
+    /// the stone village still stands at the other Arab towns but Ramla (its own town, see <see cref="ById"/>).
     /// Owner ruling of 18 October 2026 (recorded on #917, #663, #659 and #700): the towns are Tal Heuberger's models, "Whole model
     /// far, buildings near". Far off, a mapped town's whole-town model stands ON its town, on its core (<see cref="CoreOf"/>:
     /// where most of its building models stand, inside its kit footprint, clear of the next town and of the sea), as wide as
@@ -55,16 +59,17 @@ namespace Statecraft.Game.Map.Collection
             Tiberias = CollectionCatalog.TiberiasTown, Safed = CollectionCatalog.SafedTown, Netanya = CollectionCatalog.NetanyaTown,
             Ramla = CollectionCatalog.RamlaTown;
 
-        /// <summary>By settlement id first (#507's mapping). Jerusalem stands as #336's second take of the stone city
-        /// (<see cref="Jerusalem3D"/>, Tal Heuberger, #886) for the whole game: the owner, 21 October 2026, on #708
-        /// (issuecomment-6323524970), "it is Jerusalem's only far-zoom model for the whole game. The first model stays in the
-        /// repository, unused on the map. No date switch". #507's <see cref="Jerusalem"/> is therefore not placed.
+        /// <summary>By settlement id first (#507's mapping). Tel Aviv, Jerusalem and Haifa have no row: the owner, 2 November
+        /// 2026, "Yes, small buildings at every zoom" (<see cref="Kits.TownModels.AtEveryZoom"/>). That replaces #507's
+        /// White City at Tel Aviv and port city at Haifa, and the owner's ruling of 21 October 2026 on #708
+        /// (issuecomment-6323524970) that #336's second stone city (<see cref="Jerusalem3D"/>, Tal Heuberger, #886) "is
+        /// Jerusalem's only far-zoom model for the whole game". <see cref="TelAviv"/>, <see cref="Haifa"/>,
+        /// <see cref="Jerusalem3D"/> and #507's <see cref="Jerusalem"/> stay in the repository, unused on the map.
         /// Tiberias, Safed and Netanya stand as Tal Heuberger's own whole-town models (#2085), the three towns #1288 found with
         /// none. Ramla, an Arab town, stands as Tal's own town instead of the stone village (<see cref="ByType"/>): the owner,
         /// 2 November 2026, "Yes, Tal's Ramla (Recommended)" ("Ramla draws Tal's town instead of the stone village").</summary>
         public static readonly IReadOnlyDictionary<string, string> ById = new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            ["tel_aviv"] = TelAviv, ["jerusalem"] = Jerusalem3D, ["haifa"] = Haifa,
             ["petah_tikva"] = Moshava, ["rishon_lezion"] = Moshava, ["zikhron_yaakov"] = Moshava,
             ["rosh_pinna"] = Moshava, ["rehovot"] = Moshava, ["hadera"] = Moshava,
             ["tiberias"] = Tiberias, ["safed"] = Safed, ["netanya"] = Netanya, ["ramla"] = Ramla,
@@ -96,9 +101,10 @@ namespace Statecraft.Game.Map.Collection
         internal static Action<string, CollectionDetail, Action<GameObject?>> Request = DefaultRequest;
         internal static Func<string, CollectionDetail, Action<GameObject?>, IDisposable> Acquire = CollectionStream.Acquire;
 
-        /// <summary>The model for settlement <paramref name="s"/>, or null for none.</summary>
-        public static string? ModelFor(Settlement s) =>
-            ById.TryGetValue(s.Id, out var m) ? m : ByType.TryGetValue(s.Type, out var t) ? t : null;
+        /// <summary>The model for settlement <paramref name="s"/>, or null for none: none for the cities drawn from their
+        /// building models at every zoom (Jaffa, an Arab town, would otherwise take <see cref="ByType"/>'s stone village).</summary>
+        public static string? ModelFor(Settlement s) => Kits.TownModels.AtEveryZoom(s.Id) ? null
+            : ById.TryGetValue(s.Id, out var m) ? m : ByType.TryGetValue(s.Type, out var t) ? t : null;
 
         /// <summary>The model for a placement of <paramref name="action"/> as at <paramref name="date"/>, or null: none for that
         /// action, before its sourced date, or no sourced date at all.</summary>
@@ -366,6 +372,34 @@ namespace Statecraft.Game.Map.Collection
         }
         // Owner ruling, 30 October 2026: whole towns and placement landmarks remain v0.3.1 Far demand, map-wide.
         bool Allowed(Want want) => map != null ? map.Residency.Towns.Enabled : true;
+
+        /// <summary>A town want's core and radius, as the whole-town model is seated on it (<see cref="CoreOf"/>): its kit plots
+        /// (TownModelLayer, built with the kits), the unit clearings, the other towns and the water. No streamed state.</summary>
+        static (Vector2 core, float radius) CoreFor(MapScene map, Kits.TownModelLayer? layer, IReadOnlyList<Want> wants, Want w, Kits.KitGround ground,
+            List<(Vector2 c, string id)> townCentres)
+        {
+            var plots = layer == null ? (IReadOnlyList<Vector2>)Array.Empty<Vector2>()
+                : layer.InstancesOf(w.Key).Select(m => m.Plot).Distinct().ToList();
+            var others = wants.Where(o => o.OnTown && o.Key != w.Key).Select(o => o.At).Concat(townCentres.Where(o => o.id != w.Key).Select(o => o.c));
+            return CoreOf(w.At, w.Radius, plots, map.UnitClearings, others, ground.Water, w.Land);
+        }
+
+        /// <summary>Every game settlement's centre (its kit footprint's), for the cores' neighbour limit; once per build.</summary>
+        static List<(Vector2 c, string id)> TownCentres(MapScene map)
+        {
+            var gameIds = new HashSet<string>(map.Settlements.Select(x => x.Id), StringComparer.Ordinal);
+            return map.KitFootprints.Where(f => gameIds.Contains(f.id)).Select(f => (c: f.centre, id: f.id)).ToList();
+        }
+
+        /// <summary>#2266: where each wanted whole-town model stands once it streams: its core and the reach of its square
+        /// model about it (its half edge, the core's radius, times the square root of two, for any yaw). Planned from the map and
+        /// the wants alone, so the hex props keep clear of the whole towns whatever has streamed (HexPropModels.Others).</summary>
+        internal IReadOnlyList<(string Key, Vector2 Core, float Reach)> PlannedSeats()
+        {
+            if (map == null || !map.Residency.Towns.Enabled) return Array.Empty<(string, Vector2, float)>();
+            var ground = PlacementLayer.CampGround(map); var layer = Layer(); var centres = TownCentres(map);
+            return wants.Where(w => w.OnTown).Select(w => { var (c, r) = CoreFor(map, layer, wants, w, ground, centres); return (w.Key, c, r * Mathf.Sqrt(2f)); }).ToList();
+        }
         bool WholeReady(string id, Camera camera) =>
             Seats.ContainsKey(id) && Layer()?.ReadyForTown(id, camera) != true;
 
@@ -512,9 +546,7 @@ namespace Statecraft.Game.Map.Collection
                 return !ground.OnRoute(p, rad) && !ground.OnToken(p, rad) && !ground.OnToken(p, rad, date);
             }
             var layer = Layer();
-            // Every game settlement's centre (its kit footprint's), for the cores' neighbour limit.
-            var gameIds = new HashSet<string>(map.Settlements.Select(x => x.Id), StringComparer.Ordinal);
-            var townCentres = map.KitFootprints.Where(f => gameIds.Contains(f.id)).Select(f => (c: f.centre, id: f.id)).ToList();
+            var centres = TownCentres(map);
             foreach (var w in wants)
             {
                 if (!Allowed(w)) continue;
@@ -524,10 +556,7 @@ namespace Statecraft.Game.Map.Collection
                 if (w.OnTown)
                 {
                     // On the town's core, not its whole kit footprint (Tel Aviv's held Jaffa, Haifa's the bay).
-                    var plots = layer == null ? (IReadOnlyList<Vector2>)Array.Empty<Vector2>()
-                        : layer.InstancesOf(w.Key).Select(m => m.Plot).Distinct().ToList();
-                    var others = wants.Where(o => o.OnTown && o.Key != w.Key).Select(o => o.At).Concat(townCentres.Where(o => o.id != w.Key).Select(o => o.c));
-                    var (core, rad) = CoreOf(w.At, w.Radius, plots, map.UnitClearings, others, ground.Water, w.Land);
+                    var (core, rad) = CoreFor(map, layer, wants, w, ground, centres);
                     at = core; edge = 2f * rad;
                     (normal, baseY) = SeatOn(at, rad, ground.Y, ground.Water);
                 }

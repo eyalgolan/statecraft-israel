@@ -268,6 +268,8 @@ namespace Statecraft.Game.Map.Collection
         public readonly List<Want> Scenes = new List<Want>();
         public readonly List<string> Missing = new List<string>();
         public IReadOnlyList<Want> Wanted => wants;
+        /// <summary>The other layers' ground this layer keeps clear of (its Plan's input), as last shown.</summary>
+        internal List<(Vector2 centre, float radius)> OthersShown => others;
         public bool LastClose { get; private set; }
 
         /// <summary>The ground the other Collection layers hold (centre, radius m): the civilian figures CivilianPeople wants
@@ -357,11 +359,14 @@ namespace Statecraft.Game.Map.Collection
             }
         }
 
-        void Rebuild()
+        /// <summary>Where the scenes stand: each want in order, the first MaxAnchorsPerModel of each model with clear ground (Spot),
+        /// clear of <paramref name="others"/> and of each other, every one taking its ground; those whose model
+        /// <paramref name="available"/> holds are listed. It reads only
+        /// the map, the wants and the other layers' ground, never what has streamed, so with every model available it is the
+        /// plan the layer draws once everything has arrived (HexPropModels keeps clear of it, #2266).</summary>
+        internal static List<(Want want, Vector2 spot)> Plan(MapScene map, IReadOnlyList<Want> wants, List<(Vector2 centre, float radius)> others,
+            Func<string, bool> available)
         {
-            CollectionResidencyMetrics.MarkDirty();
-            if (map == null || map.Terrain == null) return;
-            ClearVisuals();
             var ground = PlacementLayer.CampGround(map);
             var footprints = map.KitFootprints.Select(f => (f.centre, f.radius)).ToList();
             var taken = new List<(Vector2 centre, float radius)>();
@@ -377,22 +382,41 @@ namespace Statecraft.Game.Map.Collection
                 return !ground.OnRoute(p, radius) && !ground.OnToken(p, radius);
             }
             var used = new Dictionary<string, int>(StringComparer.Ordinal);
-            var holes = new List<(Vector2 centre, float radius)>();
-            var nearKeys = residencyView?.Keys;
+            var plan = new List<(Want, Vector2)>();
             foreach (var want in wants)
             {
-                bool hasFar = prefabs.TryGetValue((want.Model, CollectionDetail.Far), out var farPrefab) && farPrefab != null;
-                bool hasNear = prefabs.TryGetValue((want.Model, CollectionDetail.Near), out var nearPrefab) && nearPrefab != null;
-                // A streamed representation is what makes this a real scene. Until then it owns no anchor, clearance,
-                // tree hole or Near demand; a failed Far answer therefore cannot leave an empty permanent clearing.
-                if (!hasFar && !hasNear) continue;
+                // Every want takes its ground whether or not its model has streamed (only the plan's output is filtered), so a
+                // later scene's spot never depends on what streamed first (#2266 review; the same shape as #2281's).
                 used.TryGetValue(want.Model, out int n);
                 if (n >= MaxAnchorsPerModel) continue;
                 var at = Spot(want, Free);
                 if (at == null) continue;
                 used[want.Model] = n + 1;
-                Scenes.Add(want);
                 taken.Add((at.Value, ClearanceRadiusM));
+                if (available(want.Model)) plan.Add((want, at.Value));
+            }
+            return plan;
+        }
+
+        void Rebuild()
+        {
+            CollectionResidencyMetrics.MarkDirty();
+            if (map == null || map.Terrain == null) return;
+            ClearVisuals();
+            var ground = PlacementLayer.CampGround(map);
+            // A streamed representation is what makes this a real scene. Until then it draws nothing, owns no tree hole and
+            // asks for no Near; but every scene stands at its spot in the plan with every model available, so a scene that
+            // streams in later lands where the plan put it, which the hex props keep clear of (HexPropModels, #2266 review).
+            bool Streamed(string model) => (prefabs.TryGetValue((model, CollectionDetail.Far), out var f) && f != null)
+                || (prefabs.TryGetValue((model, CollectionDetail.Near), out var nr) && nr != null);
+            var used = new Dictionary<string, int>(StringComparer.Ordinal);
+            var holes = new List<(Vector2 centre, float radius)>();
+            var nearKeys = residencyView?.Keys;
+            foreach (var (want, spot) in Plan(map, wants, others, Streamed))
+            {
+                used.TryGetValue(want.Model, out int n); used[want.Model] = n + 1;
+                Vector2? at = spot;
+                Scenes.Add(want);
                 holes.Add((at.Value, SceneRadiusM(want.Model)));
                 bool nearAvailable = (nearKeys == null || nearKeys.Contains(want.Key + "|" + want.Model))
                     && prefabs.TryGetValue((want.Model, CollectionDetail.Near), out var admittedNear) && admittedNear != null;

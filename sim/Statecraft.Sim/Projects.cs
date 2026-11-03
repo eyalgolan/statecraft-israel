@@ -241,6 +241,33 @@ namespace Statecraft.Sim
             Corridors.Advance(c, s, next, why);   // R-COR-002: after the sites (Phase 4 PR 2)
         }
 
+        /// <summary>R-CITY-011 (#1700): the AssignWorkers role that puts builders on a city's projects being built (gdd-0.3 only).</summary>
+        public const string BuildRole = "build";
+
+        /// <summary>R-PROJ-003 with R-CITY-011: why a city project gained no progress this turn (CauseKeys.ProjectWaiting's
+        /// second argument): it has no builder, or no person of its city without a job was left for its builder.</summary>
+        public const string NoBuilder = "no_builder", NoWorker = "no_worker";
+
+        /// <summary>R-CITY-011: the build order's refusal past the city's projects being built, formats with the settlement's
+        /// name ({0}) and a count ({1}, invariant).</summary>
+        public const string RefusedBeingBuiltOne = "{0} has 1 city project being built", RefusedBeingBuilt = "{0} has {1} city projects being built";
+
+        /// <summary>R-CITY-011: the city's builders, each one of its people who hold no job. 0 outside gdd-0.3, where no project
+        /// has one.</summary>
+        public static int Builders(GameState s, string city) => s.CityProjects.Values.Count(p => p.Builder && p.City == city);
+
+        /// <summary>R-CITY-011: the builders this turn's queued gdd-0.3 StartProject orders for <paramref name="city"/> may take,
+        /// one each at most (#1700 review: the panel limits count them, so a count up to a limit is accepted whichever order
+        /// runs first). 0 under every other ruleset.</summary>
+        internal static int Starting(GameState s, string city, IEnumerable<Command> pending) =>
+            s.Ruleset == SaveGame.Gdd03Ruleset ? pending.OfType<StartProject>().Count(p => p.City == city) : 0;
+
+        /// <summary>R-CITY-011: the city's free people: its civilians and craftsmen who hold no job and are not a staffed arms
+        /// workshop's worker (R-ARMS-005) or a builder.</summary>
+        static int Free(GameState s, City x) => x.Civilians + x.Craftsmen - x.Employed - Workshops.Staffed(s, x.Id) - Builders(s, x.Id);
+
+        static string Refused(string format, params object[] values) => string.Format(System.Globalization.CultureInfo.InvariantCulture, format, values);
+
         /// <summary>The city project at hex (q, r), being built or built, or null (Q-PROJ-2: one project or placement a hex).</summary>
         public static CityProject? CityProjectAt(GameState s, int q, int r) => s.CityProjects.Values.FirstOrDefault(p => p.Q == q && p.R == r);
 
@@ -310,7 +337,9 @@ namespace Statecraft.Sim
         /// <summary>R-PROJ-001: starts city project <paramref name="kind"/> for <paramref name="city"/> on hex (q, r), or returns
         /// the reason (<see cref="CheckCity"/>; state untouched). The Treasury pays the kind's cost now and borrows what it lacks
         /// (Q-PROJ-1, Q-MONEY-3); the project takes the next id and the kind's turns, the turn of the order the first (D-A3). It
-        /// needs no workers (Q-PROJ-3). Step has already refused it in the legacy loop.</summary>
+        /// needs no workers (Q-PROJ-3); under gdd-0.3 it takes one of the city's free people as its builder when it has one, as
+        /// the order runs (R-CITY-011, owner, 3 November 2026: "Yes, if someone is free"), and never anyone in a job. Step has
+        /// already refused it in the legacy loop.</summary>
         public static string? StartCity(Content c, GameState s, string kind, string city, int q, int r, List<Cause> why)
         {
             var reason = CheckCity(c, s, kind, city, q, r);
@@ -321,13 +350,16 @@ namespace Statecraft.Sim
             var name = PlayerText.Settlement(c, city);
             EconomySystem.PayOrBorrow(c, s, k.Cost, "to build " + k.Name, why, CauseKeys.Purpose.Project, k.Id);
             var id = s.NextId++;
-            s.CityProjects.Add(id, new CityProject(id, kind, city, q, r, k.Turns));
+            var builder = c.Ruleset == SaveGame.Gdd03Ruleset && Free(s, s.Cities[city]) >= 1;
+            s.CityProjects.Add(id, new CityProject(id, kind, city, q, r, k.Turns, builder: builder));
             why.Add(new Cause("city", city, 1, $"{name}: {k.Name} began, cost {PlayerText.Money(c, "treasury", k.Cost)}", key: CauseKeys.ProjectStarted, args: new[] { kind, CauseKeys.Number(k.Cost) }));
+            if (builder) why.Add(new Cause("city", city, 1, $"{name}: a builder started on {k.Name}", key: CauseKeys.ProjectBuilder, args: new[] { kind }));
             return null;
         }
 
         /// <summary>R-PROJ-002 (D-A3): city project <paramref name="project"/> leaves the state; the Money spent is not returned,
-        /// and with no workers (Q-PROJ-3) there are no people to return. Refused, state untouched, for a project that does not
+        /// and with no workers (Q-PROJ-3) there are no people to return; under gdd-0.3 its builder, if any, is free again at once
+        /// (R-CITY-011). Refused, state untouched, for a project that does not
         /// exist or is built. Step has already refused it in the legacy loop.</summary>
         public static string? CancelCity(Content c, GameState s, int project, List<Cause> why)
         {
@@ -339,16 +371,74 @@ namespace Statecraft.Sim
             return null;
         }
 
+        /// <summary>R-CITY-011 (#1700; owner, 3 November 2026: "Builders in the MVP (Recommended)", "One builder, today's times
+        /// (Recommended)"): AssignWorkers(city, "build", count), gdd-0.3 only, sets how many of the city's projects being built
+        /// have a builder. A rise puts builders on the projects that have none, in ascending id; a fall takes them off the
+        /// projects that have one, in descending id. A new builder is one of the city's free people; while its job default is
+        /// on (R-CITY-009) the order may take one from the default's jobs, as R-ARMS-005's workshop order does. Refused, state
+        /// untouched, for a negative count, more than the city's projects being built, or more new builders than its free
+        /// people. Cities.Assign has already refused an unknown city.</summary>
+        internal static string? AssignBuilders(Content c, GameState s, string city, int count, List<Cause> why)
+        {
+            if (count < 0) return "The number of workers cannot be negative";
+            var x = s.Cities[city];
+            var name = PlayerText.Settlement(c, city);
+            var building = s.CityProjects.Values.Where(p => p.City == city && p.BuiltOn == null).OrderBy(p => p.Id).ToList();
+            if (count > building.Count) return building.Count == 1 ? Refused(RefusedBeingBuiltOne, name) : Refused(RefusedBeingBuilt, name, building.Count);
+            var builders = Builders(s, city);
+            var staffed = Workshops.Staffed(s, city);
+            // R-CITY-009 with R-ARMS-005: while the job default is on, a new builder may come from the default's jobs (the
+            // default then fills one job fewer, R-CITY-001); a number the player set is not lowered.
+            var free = x.Civilians + x.Craftsmen - (x.JobsDefault ? 0 : x.Employed) - staffed - builders;
+            if (count - builders > free)
+                return Refused(x.JobsDefault ? Workshops.RefusedPeople : Workshops.RefusedPeopleNoJob, name, Math.Max(0, free));
+            var employed = Math.Min(x.Employed, x.Civilians + x.Craftsmen - staffed - count);
+            if (employed != x.Employed)
+            {
+                s.Cities[city] = x.WithCounts(x.Civilians, employed, x.Refugees);
+                why.Add(new Cause("city", city, employed - x.Employed, FormattableString.Invariant($"{name}: {employed} groups in work"), key: CauseKeys.WorkersAssigned, args: new[] { CauseKeys.Number(employed) }));
+            }
+            if (count > builders)
+                foreach (var p in building.Where(p => !p.Builder).Take(count - builders))
+                {
+                    s.CityProjects[p.Id] = p.WithBuilder(true);
+                    var k = c.ProjectKinds.First(y => y.Id == p.Kind);
+                    why.Add(new Cause("city", city, 1, $"{name}: a builder started on {k.Name}", key: CauseKeys.ProjectBuilder, args: new[] { k.Id }));
+                }
+            else
+                foreach (var p in building.Where(p => p.Builder).Reverse().Take(builders - count)) s.CityProjects[p.Id] = p.WithBuilder(false);
+            return null;
+        }
+
         /// <summary>R-PROJ-003, step 5 of the turn (D-A6), after the pioneer work: in ascending id, each city project being built
         /// has one turn less to go. One that reaches 0 is built on <paramref name="next"/>, the turn's end date, and adds its
         /// kind's housing capacity, condition (kept from 0 to 1) and job slots to its city, once: a built project is never
-        /// advanced again. R-CITY-010: a project in a city the enemy holds keeps its record as it is.</summary>
+        /// advanced again. R-CITY-010: a project in a city the enemy holds keeps its record as it is. R-CITY-011 (gdd-0.3 only):
+        /// a project gains the turn's progress only when it has a builder and its city still has that person without a job
+        /// (each project with a builder takes one, in ascending id); otherwise it waits with its record as it is, and the turn
+        /// report says why. Money is never an input to progress.</summary>
         public static void AdvanceCity(Content c, GameState s, DateTime next, List<Cause> why)
         {
             var r = c.RulesAt(s.Date).Mvp!;   // the loader requires it in the GDD loop, the only loop TurnResolver runs this in
             var held = Cities.Held(c, s);
-            foreach (var p in s.CityProjects.Values.Where(x => x.BuiltOn == null && !held.Contains(x.City)).ToList())
+            var builders = c.Ruleset == SaveGame.Gdd03Ruleset;
+            var working = new Dictionary<string, int>(StringComparer.Ordinal);
+            foreach (var p in s.CityProjects.Values.Where(x => x.BuiltOn == null && !held.Contains(x.City)).OrderBy(x => x.Id).ToList())
             {
+                if (builders)
+                {
+                    var x = s.Cities[p.City];
+                    working.TryGetValue(p.City, out var taken);
+                    var waits = !p.Builder ? NoBuilder : taken >= x.Civilians + x.Craftsmen - x.Employed ? NoWorker : null;
+                    if (waits != null)
+                    {
+                        var kind = c.ProjectKinds.First(y => y.Id == p.Kind);
+                        var because = waits == NoBuilder ? "no builder" : "no person without a job is left for its builder";
+                        why.Add(new Cause("city", p.City, 0, $"{PlayerText.Settlement(c, p.City)}: {kind.Name} waits: {because}", key: CauseKeys.ProjectWaiting, args: new[] { kind.Id, waits }));
+                        continue;
+                    }
+                    working[p.City] = taken + 1;
+                }
                 // R-MIN-001, R-MIN-002 (D-H3; Q-MIN-1, Q-MIN-2): the office of the kind's system scales the turn of
                 // progress the project gains this turn, with R-MIN-002's floor and carry as at the sites (Advance).
                 var acc = p.Progress + EffectsSystem.GddSystemMultiplier(c, s, r, SystemOfKind(p.Kind));
@@ -357,9 +447,9 @@ namespace Statecraft.Sim
                 if (p.TurnsLeft > whole) { s.CityProjects[p.Id] = p.WithProgress(p.TurnsLeft - whole, acc); continue; }
                 s.CityProjects[p.Id] = p.Built(next);
                 var k = c.ProjectKinds.First(x => x.Id == p.Kind);
-                var x = s.Cities[p.City];
-                var condition = x.Condition is double now ? Math.Min(1.0, Math.Max(0.0, now + k.Condition)) : (double?)null;
-                s.Cities[p.City] = new City(x.Id, x.HousingCapacity + k.Capacity, x.JobSlots + k.JobSlots, x.Civilians, x.Employed, x.Refugees, x.Recruits, condition, x.Craftsmen, x.JobsDefault, x.Qualified);
+                var city = s.Cities[p.City];
+                var condition = city.Condition is double now ? Math.Min(1.0, Math.Max(0.0, now + k.Condition)) : (double?)null;
+                s.Cities[p.City] = new City(city.Id, city.HousingCapacity + k.Capacity, city.JobSlots + k.JobSlots, city.Civilians, city.Employed, city.Refugees, city.Recruits, condition, city.Craftsmen, city.JobsDefault, city.Qualified);
                 why.Add(new Cause("city", p.City, 1, $"{PlayerText.Settlement(c, p.City)}: {k.Name} was finished", key: CauseKeys.ProjectCompleted, args: new[] { k.Id }));
             }
         }

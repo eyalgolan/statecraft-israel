@@ -1,0 +1,22 @@
+{
+  "id": "weapon-k98k-v1",
+  "source": "asset-sources/prepared-weapons-20261031/k98k/statecraft-k98k-approved-textured-b48a435f.glb",
+  "source_glb_sha256": "325d86cb42490ad95ed8c367e2c7511fc3bb9c676d6a797074a6ba74a01c7da5",
+  "creator_credit": "Tal Heuberger",
+  "licence": "CC-BY-NC-ND-4.0",
+  "pull_request": 2083,
+  "texture_dimensions": [
+    2048,
+    2048
+  ],
+  "texture_sha256": "615e7f6f28db4cec59704c2b8cc554e5e9e4736bc0692ab6a79e98de57f3b57a",
+  "compatibility_fbx_sha256": "24f360c34f364daeb12fba4eb25eeb6f5220a50a61bfd7f98979d999377db9f4",
+  "triangles": 5485,
+  "geometry_max_vertex_error": 2.8870999813079834e-08,
+  "uv_max_error": 0.0,
+  "triangle_connectivity": "identical",
+  "blender": "5.0.1",
+  "decimation": false,
+  "welding": false,
+  "conversion": "Standard glTF Y-up / FBX Y-up compatibility export (Tal's permission of 31 October 2026 covers export conversions); no pivot, mesh or UV rewrite; no clips in the source; map copied byte for byte from the delivered JPG"
+}

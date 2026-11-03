@@ -20,19 +20,21 @@ namespace Statecraft.HexTiles.Prototypes
     /// ring at 0.16 S between them, tamarisks at 0.28 S (0.065 S clearance), acacias at least 0.40 S from the pool (0.08 S
     /// clearance). Every tall piece is tested with InUnitSpot, so the rings are partial on the centre side.
     ///
-    /// Stand-ins: tiles:arava_oasis/reeds (Pine, reed green), tiles:arava_oasis/tamarisk (Tree, grey-green) and
-    /// tiles:arava_oasis/well (Box, stone).
+    /// Stand-ins: tiles:arava_oasis/reeds (Pine, reed green) and tiles:arava_oasis/well (Box, stone). The tamarisks are Tal
+    /// Heuberger's model, tiles:arava_oasis/tamarisk (#2082; owner, 2 November 2026: "Hula + Arava, map and boards
+    /// (Recommended)"), a Tree stand-in (grey-green) until it streams.
     ///
     /// Worst-case triangles on a flat surface (caps below; local meshes counted from their OBJ files on 19 October 2026):
     /// 12 date palms x 284 = 3,408. 8 acacias x 1,164 = 9,312. 3 desert rocks x 700 = 2,100. 14 reed Pine stand-ins x 50 =
-    /// 700. 5 tamarisk Tree stand-ins x 56 = 280. The well box 16 and the pool flat 12. Total about 15,830; budget 18,000.</summary>
+    /// 700. 5 tamarisks x 7,306 (Tal's model at full detail, as the shipped buildings' budgets were raised for theirs) =
+    /// 36,530. The well box 16 and the pool flat 12. Total about 52,080; budget 53,000.</summary>
     [HexPrototype("arava_oasis", Kind = "nature", Region = "south")]
     public sealed class AravaOasis : IHexPrototype
     {
         public string Title => "Arava oasis: spring pool, date palms, tamarisks (1948)";
         public HexTerrain Terrain => HexTerrain.Flat;
         public string Ground => "desert";
-        public int TriangleBudget => 18000;
+        public int TriangleBudget => 53000;   // Tal's tamarisk at full detail (#2082): 5 x 7,306 of the about 52,080
 
         const string Palm = "sandbox:date_palm", Acacia = "sandbox:acacia_lite", Rock = "sandbox:desert_rock*",
             Reeds = "tiles:arava_oasis/reeds", Tamarisk = "tiles:arava_oasis/tamarisk", Well = "tiles:arava_oasis/well";

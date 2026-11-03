@@ -39,7 +39,7 @@ public class CorridorsTests
         Assert.Null(r.State.Corridors["road_a"].Segments[0]);
         Assert.True(Projects.IsBusy(r.State, id[0]));
         Assert.Equal(Step(c, s).State.Treasury - 1.5, r.State.Treasury, 9);
-        Assert.Contains(r.Why, x => x.System == "map" && x.Message == "Road A, segment 2: a group of halutzim began building, cost IL 1.5m");
+        Assert.Contains(r.Why, x => x.System == "map" && x.Message == "Road A, segment 2: a group of halutzim began building, cost IL\u00A01.5m");
         var rail = Step(c, s, new PioneerWork(id[0], Corridors.BuildRail, "rail_a:1"));
         Assert.Empty(rail.Rejected);
         Assert.Equal(Step(c, s).State.Treasury - 3, rail.State.Treasury, 9);   // the rail kind's cost
@@ -222,7 +222,7 @@ public class CorridorsTests
         var why = new List<Cause>();
         Assert.Null(Projects.Start(c, s, id[0], Corridors.BuildRoad, "road_a:1", why));
         Assert.Equal((0.0, 4.0), (s.Treasury, s.Debt));
-        Assert.Contains(why, x => x.System == "economy" && x.Target == "debt" && x.Message == "Borrowed IL 1.0m to build a corridor segment");
+        Assert.Contains(why, x => x.System == "economy" && x.Target == "debt" && x.Message == "Borrowed IL\u00A01.0m to build a corridor segment");
     }
 
     // R-COR-002: corridors advance after sites, in ordinal corridor id, then segment index.

@@ -1,7 +1,7 @@
 # Where the Lebanese army stood on 15 May 1948 (#1871, research part)
 
 Status: **draft, needs a person to check**. This is research only. An AI agent opened every source marked "agent read" below
-on 28 October 2026 and recorded the day it opened each. `docs/CONTENT_POLICY.md` section 2, rule 6, still requires a person
+on 28 October and 3 November 2026 and recorded the day it opened each. `docs/CONTENT_POLICY.md` section 2, rule 6, still requires a person
 to check every claim against its source before use. This note changes nothing in `content/`, `sim/` or `unity/`; placing the
 token is a separate PR.
 
@@ -25,12 +25,18 @@ in Operation Hiram. The row under discussion is `lebanese_army` in `content/map/
   of 18 May (dateline "TEL AVIV, May 17") has "200 Lebanese soldiers" killed "yesterday" in the "Malakia area", which puts
   Lebanese soldiers there on 16 May (derived from the dateline). So al-Malikiyya on 15 May rests on Dupuy alone, in conflict
   with the owner's ruling [C]; the only place-neutral fact for 15 May is the frontier near it.
+  Lebanon's own reply to the Security Council (S/770, 22 May) names no place either: its forces "are operating in northern
+  Palestine", and Lebanon states that "Zionist armed bands violated the Lebanese frontiers on the night of 14 and 15 May, 1948, before the Lebanese
+  forces entered Palestine" (read 3 November). The 15 May place stays [GAP].
 - **Operation Hiram: al-Malikiyya fell to the Israeli 7th Brigade after Sasa and Saliha.** Dupuy p. 104 gives the order but no
   calendar day for the capture itself. The operation was "launched at dusk on October 28" (p. 101); Sasa was taken "by
   midnight" after dark on 29 October and Tarshiha on 30 October (p. 103); the 7th Brigade then takes Saliha and then Malkiya,
   and "Thus at about dawn on the 31st, Operation Hiram drew to a close" (p. 104). So, derived from Dupuy's order (pp. 103-104),
   not printed: the village fell on 30 or 31 October, by about dawn on 31 October. No JTA bulletin of 27 October to 8 November
-  names it (search below).
+  names it (search below). A contemporaneous primary source now gives the day: Ben-Gurion's diary for 31 October 1948 has
+  Carmel reporting "This morning at 5-6 we arrived and conquered Malkiyya", after the 7th Brigade "went to Malkiyya" once
+  Tarshiha had fallen (read 3 November; table below). That is 31 October, about 05:00 to 06:00, which agrees with Dupuy's
+  "about dawn on the 31st" (p. 104).
 
 ## Answer table
 
@@ -53,8 +59,11 @@ Tags: `[V, agent read 2026-10-28; a person's check pending]` for a source whose 
 | The Jews were "ousted ... from Malkieh, on the Lebanese border" by "these Arab units", in a paragraph about a Syrian force; event date 7 June | JTA bulletin, 9 June 1948, p. 3 (http://pdfs.jta.org/1948/1948-06-09_133.pdf), dateline "TEL AVIV, June 8" | "Yesterday these Arab units ousted the Jews from Malkieh, on the Lebanese border, and laid siege to Mishmar HaYarden." | [V, agent read 2026-10-28; a person's check pending] | 2026-10-28 |
 | In the Ten Days northern-front account, describing positions before Operation Brosh, which "was launched immediately after nightfall on July 9" (same page): the "Lebanese Army held a line from Rosh Hanikra, on the coast, to the vicinity of Malkiya". The sentence carries no day; about 9 July is derived from the page | Dupuy p. 83 | "The Lebanese Army held a line from Rosh Hanikra, on the coast, to the vicinity of Malkiya." | [V, agent read 2026-10-28; a person's check pending] | 2026-10-28 |
 | Operation Hiram "launched at dusk on October 28" (p. 101; printed p. 102 is the map "Operation Hiram October 31, 1948", with no text). Sasa in Israeli hands "by midnight" after dark on 29 October and Tarshiha taken on 30 October (p. 103). The 7th Brigade "moved northeastward from Sasa, capturing first the village of Saliha and then Malkiya, which had been the scene of some of the earliest fighting of the war"; "Thus at about dawn on the 31st, Operation Hiram drew to a close" (p. 104) | Dupuy pp. 101, 103 and 104 | "Operation Hiram was launched at dusk on October 28." / "By midnight the village and the crossroads were in the hands of the Israelis." / "Carmel himself, with his 7th Brigade column, moved northeastward from Sasa, capturing first the village of Saliha and then Malkiya" / "Thus at about dawn on the 31st, Operation Hiram drew to a close." | [V, agent read 2026-10-28; a person's check pending] | 2026-10-28 |
+| Lebanon's reply to the Security Council's questions of 18 May: its armed forces "are operating in northern Palestine"; Lebanon states that "Zionist armed bands violated the Lebanese frontiers" on the night of 14-15 May "before the Lebanese forces entered Palestine"; no village or line named | UN document S/770, 22 May 1948, "Cablegram dated 18 May 1948 from the President of the Security Council addressed to the Foreign Minister of Lebanon, and reply thereto submitted by the representative of Lebanon at the 301st meeting", answers (b) and (f) (https://unispal.un.org/pdfs/98BE7A17E488F06985256DB200676705.pdf, 2 pages, text layer read) | "They are operating in northern Palestine." / "Zionist armed bands violated the Lebanese frontiers on the night of 14 and 15 May, 1948, before the Lebanese forces entered Palestine." | [V, agent read 2026-11-03; a person's check pending] | 2026-11-03 |
+| Operation Hiram, 31 October 1948: Carmel (Northern Front) reports to Ben-Gurion that after Tarshiha "the 7th Brigade went to Malkiyya" and "This morning at 5-6 we arrived and conquered Malkiyya", with about 200 prisoners; Tarshiha had fallen "yesterday morning (on Saturday)", i.e. 30 October | Ben-Gurion Archive, diary entry "Sunday, October 31, 1948, Nazareth" (English edition; square brackets are the archive's), https://bengurionarchive.bgu.ac.il/en/node/12338 (page text read; the scan was not opened). Event date: the entry's own day, 31 October, with Carmel's "this morning" | "After [the capture of] Tarshiha [by the 9th Brigade], the 7th Brigade went to Malkiyya." / "This morning at 5-6 we arrived and conquered Malkiyya." | [V, agent read 2026-11-03; a person's check pending] | 2026-11-03 |
+| Lebanon fought "one insignificant, symbolic half-day battle at the border village of Malikiyya in June 1948, advancing a short distance into Israel/Palestine" | Matthew Hughes, "Collusion across the Litani? Lebanon and the 1948 War", in Rogan and Shlaim (eds), *The War for Palestine*, chapter 9, pp. 204-227, chapter abstract on Cambridge Core (https://cambridge.org/core/books/war-for-palestine/collusion-across-the-litani-lebanon-and-the-1948-war/F898A5949CE15EDDD0E736B331445A98); the chapter text was not opened (lending-only) | "It fought one insignificant, symbolic half-day battle at the border village of Malikiyya in June 1948, advancing a short distance into Israel/Palestine, before settling down to await the outcome of the war." | [S] | 2026-11-03 |
 | al-Malikiyya "changed hands no fewer than five times between May and October 1948"; battle there on 5-6 June | en.wiki, Al-Malkiyya, oldid 1377919542 (https://en.wikipedia.org/w/index.php?oldid=1377919542) | "Al-Malikiyya changed hands no fewer than five times between May and October 1948." (the article cites Khalidi, 1992, p. 471, for it) / "A battle was fought in the village on 5–6 June 1948." | [S] | 2026-10-28 |
-| Morris, *1948*, p. 260 (the 3rd Battalion, 5-6 June) | Not opened: the Internet Archive copy `1948historyoffir00morr` is lending-only (text download HTTP 401, in-book search HTTP 403 and 404) | none | [GAP] | 2026-10-28 |
+| Morris, *1948*, p. 260 (the 3rd Battalion, 5-6 June) | Not opened: the Internet Archive copy `1948historyoffir00morr` is lending-only (text download HTTP 401, in-book search HTTP 403 and 404) | none | [GAP] (3 November: tried again, the text download now HTTP 403; the Hughes chapter above, `warforpalestiner0000unse_t0u0`, is also lending-only, HTTP 401) | 2026-11-03 |
 
 ## Where the sources disagree
 
@@ -74,6 +83,10 @@ Tags: `[V, agent read 2026-10-28; a person's check pending]` for a source whose 
    printed as one list: Israeli (Palmach, night of 14-15 May, p. 45), Lebanese (15 May), Israeli (28-29 May), Lebanese (6
    June), Israeli (Hiram). That is five captures, which lines up with en.wiki's "no fewer than five times" (citing Khalidi)
    if each capture is counted as a change of hands.
+4. **Whether the Lebanese army fought at al-Malikiyya in May at all.** Dupuy p. 45 has the Lebanese taking al-Malikiyya on 15 May
+   (and p. 46 Kadesh the next day), holding until 28-29 May (pp. 46-47), a page reading after review. Hughes's chapter abstract (above, [S]) has one half-day battle there, in June. The Lebanese reply of
+   22 May (S/770) says only that its forces "entered Palestine" after the night of 14-15 May and are in "northern
+   Palestine". Kept side by side; nothing read here settles it.
 
 ## What the issue's question needs, as facts
 
@@ -85,7 +98,8 @@ Tags: `[V, agent read 2026-10-28; a person's check pending]` for a source whose 
 - **For a map-only token from 6 June:** Dupuy p. 47 (second capture on 6 June), JTA 7 June (attack, dateline 6 June), JTA 8 June
   (forced out, 7 June) and JTA 9 June (7 June, Syrian context).
 - **Hiram:** Israeli capture after Sasa and Saliha; derived from Dupuy's order (pp. 103-104), not printed: on 30 or 31 October,
-  by about dawn on 31 October. The exact day is not read.
+  by about dawn on 31 October. Read on 3 November: Ben-Gurion's diary for 31 October (Carmel: "This morning at 5-6 we arrived
+  and conquered Malkiyya") gives the day and hour band, and Tarshiha on 30 October, as printed (table above).
 
 ## Search log
 
@@ -106,10 +120,22 @@ All searches 28 October 2026 from this box, built-in tools only (no Tavily key);
 | Internet Archive search-inside, `1948historyoffir00morr` | Malikiyya, Malkiya | HTTP 403 and 404 | none |
 | UN Digital Library search "Lebanese forces Palestine 1948 Malkiya" | n/a | HTTP 202, empty body | none; no UN S/ document was opened |
 
+Searches of 3 November 2026 (same box, built-in tools; WebSearch and WebFetch used, no Tavily key):
+
+| Query | Range | Count | Read |
+|---|---|---|---|
+| JTA wp-json `archive?search=` Sasa, Safsaf, Jish, Galilee, Saliha, Tarshiha, Malkiya, Malikiyeh | 28 October to 6 November 1948 | 1, 2, 7, 4, 0, 1, 0, 0 | opened the item of 1 November ("U.N. cease-fire in effect on Palestine's northern front"): Tarshiha, Saasa and Jish named, no al-Malikiyya; the other hits were not opened for the village |
+| WebSearch, Hiram and al-Malikiyya date; Lebanese army 15 May position; UN S/ cables of May 1948 and October to November 1948 | n/a | snippets only | led to S/770 and the Ben-Gurion diary (both opened, rows above); nothing else in the results was cited |
+| UN S/1073 (8 November 1948, Israel on Upper Galilee), `digitallibrary.un.org/record/471490` | n/a | 1 document | text layer garbled; no al-Malikiyya found by grep for `malk` and `malik` |
+| UN S/800 (29 May) and S/854 (23 June), `digitallibrary.un.org` | n/a | 2 documents | Truce Commission and Mediator cables, no Lebanese place |
+| Zochrot page for al-Malikiyya, https://zochrot.org/villages/village_details/49252/en | n/a | HTTP 403 for curl | not opened as a page; not cited (a WebFetch summary is not a source) |
+| `moulahazat.com` "Malikiya Battle And Lebanese Politics" (a blog) | n/a | 1 page | opened: "May" and "October" only, no day, no source for them; not cited |
+| archive.org lending copies, Morris `1948historyoffir00morr` and Hughes chapter `warforpalestiner0000unse_t0u0` | n/a | HTTP 403 and 401 | none |
+
 ## Open gaps
 
-- Morris p. 260 and p. 258 (lending copy).
+- Morris p. 260 and p. 258, and the Hughes chapter pp. 204-227 (both lending copies, not opened).
 - The official Lebanese account (as he.wiki cites it) and any Lebanese army history giving the 15 May position.
 - UN S/ documents of May to June 1948 (none opened): a Lebanese or Mediator report with a place is the likeliest source for 15 May.
-- The calendar day of the Israeli capture of al-Malikiyya in Operation Hiram.
+- The day of the Israeli capture in Operation Hiram is no longer open: 31 October, about 05:00 to 06:00 (Ben-Gurion diary, table above). A person's check of the diary scan is pending.
 - The dating of the sentence at Dupuy p. 83 (no day printed; about 9 July is derived from the page).

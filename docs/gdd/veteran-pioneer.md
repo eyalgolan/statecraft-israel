@@ -13,10 +13,10 @@ I see work experience and predict its effect on future projects.
 - A veteran does the same pioneer work as a halutz, with the same cost and the same refusals (R-SITE-001). A veteran gains no more service.
 - Both numbers are labelled design values that an agent proposed and the owner took (owner answer on #782 [S4]); the owner may still change them.
 
-*Amir's #1668 working-turn XP and catalogue tier rates agree with main's `gdd-0.3` scoping (`R-VET-001` and `R-VET-002`, `docs/rules/mvp.md:193` and `:195`); the 30 October 2026 review lists them as not a conflict ([conflict decision](../GDD.md#30-october-2026-conflict-decisions)). The six-turn service threshold and veteran double progress above are the `legacy` and `gdd-0.1` rules.* (unitless) [S1]
+*Amir's #1668 working-turn XP and catalogue tier rates agree with main's `gdd-0.3` scoping (`R-VET-001` and `R-VET-002`, `docs/rules/mvp.md`); the 30 October 2026 review lists them as not a conflict ([conflict decision](../GDD.md#30-october-2026-conflict-decisions)). The six-turn service threshold and veteran double progress above are the `legacy` and `gdd-0.1` rules.* (unitless) [S1]
 [Training](training.md#population-identity-and-civilian-professions) owns population identity and qualifications [S5]. The six-turn service threshold and veteran double-progress rules above remain operative for `legacy` and `gdd-0.1`.
 
-Amir's replacement of founding/service progression and veteran double progress by actual work turns and catalogue tier rates [S6] agrees with main's `gdd-0.3` scoping (`R-VET-001` and `R-VET-002`, `docs/rules/mvp.md:193` and `:195`) and was not a 30 October 2026 conflict [S1]. The six-turn service and double-progress rules stay for `legacy` and `gdd-0.1`.
+Amir's replacement of founding/service progression and veteran double progress by actual work turns and catalogue tier rates [S6] agrees with main's `gdd-0.3` scoping (`R-VET-001` and `R-VET-002`, `docs/rules/mvp.md`) and was not a 30 October 2026 conflict [S1]. The six-turn service and double-progress rules stay for `legacy` and `gdd-0.1`.
 
 [Sites](build-yishuv.md) and [corridors](corridors.md) use the retained service/progress rules above. Amir's shared work/XP logic agrees with main's `gdd-0.3` scoping (`R-VET-001`) [S1].
 

@@ -20,11 +20,13 @@ namespace Statecraft.HexTiles.Prototypes
     /// seeded bow; it is a wide band of dry plains ground with a dirt track on it. Pools are flats (the only flats; they
     /// sit low on flat ground, maxRiseM 120), at most four, of different sizes, checked pairwise against each other's
     /// half-diagonals so they never overlap, and kept out of the unit spot and off the causeway. Papyrus grows in tight
-    /// clumps, reeds ring the pools. Tall pieces keep out of ctx.InUnitSpot. Every prop is a deliberate stand-in.
+    /// clumps, reeds ring the pools. Tall pieces keep out of ctx.InUnitSpot. The papyrus is Tal Heuberger's model (#2082;
+    /// owner, 2 November 2026: "Hula + Arava, map and boards (Recommended)"), one whole clump of stems per piece, at the
+    /// clump's height; the reeds and buffalo are deliberate stand-ins.
     ///
-    /// Triangle budget by arithmetic (hard caps below; FlatSurface refuses nothing): 4 pools x 12 = 48; 72 papyrus +
-    /// 44 reeds + 4 buffalo = 120 stand-ins x under 100 = under 12,000. Worst case under 12,100. The budget is 30,000, so a
-    /// light papyrus model can replace the stand-in later.</summary>
+    /// Triangle budget by arithmetic (hard caps below; FlatSurface refuses nothing): 4 pools x 12 = 48; 10 papyrus clumps
+    /// x 2,260 (Tal's model) = 22,600; 44 reeds + 4 buffalo = 48 stand-ins x under 100 = under 4,800. Worst case under
+    /// 27,450; the budget is 30,000.</summary>
     [HexPrototype("hula_swamp", Kind = "nature", Region = "north")]
     public sealed class HulaSwamp : IHexPrototype
     {
@@ -34,7 +36,7 @@ namespace Statecraft.HexTiles.Prototypes
         public int TriangleBudget => 30000;
 
         const string Papyrus = "tiles:hula_swamp/papyrus", Reed = "tiles:hula_swamp/reed", Buffalo = "tiles:hula_swamp/buffalo";
-        const int MaxPools = 4, MaxPapyrus = 72, MaxReeds = 44, Herd = 4;
+        const int MaxPools = 4, MaxPapyrus = 10, MaxReeds = 44, Herd = 4;
         const float Scale = HexScale.PieceScale;
 
         static readonly Color PoolWater = new Color(0.10f, 0.24f, 0.24f), PapyrusGreen = new Color(0.42f, 0.66f, 0.20f),
@@ -117,20 +119,17 @@ namespace Statecraft.HexTiles.Prototypes
                 wallow = pools[0].at + Quaternion.Euler(0f, pools[0].yaw, 0f) * new Vector3(0.5f * pools[0].w + 0.12f * s, 0f, 0f);
             bool NearWallow(Vector3 p) => wallow is Vector3 wl && Flat(p - wl).magnitude < 0.20f * s;
 
-            // 5. Papyrus: large, tight clumps of tall thin bright-green stems in the wet ground between the pools.
+            // 5. Papyrus: large, tight clumps of tall bright-green stems in the wet ground between the pools. Tal's model is a
+            //    whole clump (about 0.87 as wide as it is tall), so each clump is one piece at the stems' height (0.10 to 0.14
+            //    S, as the stand-in stems were), its footprint the clump's width; up to MaxPapyrus clumps, as many as the 72
+            //    stems of 8 to 12 made before.
             int papyrus = 0;
             for (int clump = 0; clump < 30 && papyrus < MaxPapyrus; clump++)
             {
                 var centre = ctx.RandomPoint(0.06f * s);
                 if (ctx.InUnitSpot(centre, 0.10f * s) || NearRoad(centre, 0.12f * s) || InPool(centre, 0.10f * s) || NearWallow(centre)) continue;
-                int n = 8 + ctx.Rng.Next(5);
-                for (int k = 0; k < n && papyrus < MaxPapyrus; k++)
-                {
-                    var at = centre + new Vector3(ctx.Range(-0.08f, 0.08f) * s, 0f, ctx.Range(-0.08f, 0.08f) * s);
-                    float h = ctx.Range(0.10f, 0.14f) * s;
-                    if (ctx.InUnitSpot(at, 0.03f * s) || NearRoad(at, 0.05f * s) || InPool(at, 0.03f * s)) continue;
-                    if (ctx.PlaceByHeight(Papyrus, at, ctx.Range(0f, 360f), h, StandIn.Pine, PapyrusGreen, 0.22f)) papyrus++;
-                }
+                float h = ctx.Range(0.10f, 0.14f) * s;
+                if (ctx.PlaceByHeight(Papyrus, centre, ctx.Range(0f, 360f), h, StandIn.Pine, PapyrusGreen, 0.87f)) papyrus++;
             }
 
             // 6. Life: a few water buffalo wallowing at the largest pool's edge (the first placed), one heading.
