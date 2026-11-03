@@ -7,25 +7,25 @@ I can follow a population unit through civilian work, military service and retur
 
 ## Rules
 
-- One military camp and one Hakhshara exist in Tel Aviv at the start. This is a design assumption, not a claim about the city (D-D5 [S2]). The GDD leaves training capacity open, so there is no capacity limit (unitless).
-- Pioneers build more: `PioneerWork(unit, build_camp, site)` at a camp site takes 6 turns and IL 2m, labelled design values an agent proposed and the owner accepted (#927; the balance pass, #813, may tune them), and follows the yishuv build's rules. Built, the site's city has the facility from the next turn, with no capacity limit (`Q-CAMP-1`, `Q-CAMP-3` [S4]) (R-CAMP-001).
+- One military camp and one Hakhshara exist in Tel Aviv at the start. This is a design assumption, not a claim about the city (D-D5 [S2]). **Scope note:** this is the live `gdd-0.1` start, and its camps have no capacity limit (unitless). Under `gdd-0.3`, 27M-25 says: "Schneller and Tel HaShomer operate from the start, the other military camps are build sites, every camp uses `military.camp_capacity` 5, and the reception site is Kiryat Shmuel, Haifa" [S11].
+- Pioneers build more: `PioneerWork(unit, build_camp, site)` at a camp site takes 6 turns and IL 2m, labelled design values an agent proposed and the owner accepted (#927; the balance pass, #813, may tune them), and follows the yishuv build's rules. Under live `gdd-0.1`, the built site's city has the facility from the next turn, with no capacity limit (`Q-CAMP-1`, `Q-CAMP-3` [S4]) (R-CAMP-001).
 - The camp sites are `Camp 80` near Pardes Hanna, for Hadera, and Tzrifin, for Rishon LeZion, both military camps (`Q-CAMP-2` [S5]; owner, "Both military", #927). A camp serves the city nearest by hex, and a tie goes to the nearest by km (R-CAMP-002). Both rows are drafts: their sources were read by AI agents for the research note, and Tzrifin's exact position and a GIS clearance are still gaps.
 - `Train(city, track, n)` takes civilians without a job into training as recruits (military camp) or halutzim (Hakhshara). It costs 1 Attention and IL 0.5m per group, both placeholders, paid at once. A short Treasury borrows the rest, as map actions do (owner decision on #468) (R-TRAIN-001).
 
 **Then decided ([owner, 30 Oct 2026](../GDD.md#30-october-2026-conflict-decisions)):** Basic military training costs 0.5 per course in Money; the Money value is no longer a placeholder [S10].
 - Basic training takes 1 unit of Arms a group when it starts, a design value the owner approved (#781); too few Arms refuses the order with a reason, and cancelling the group returns its Arms to the pool (owner, #1047). Pioneer training takes no Arms (R-ARMS-003).
 - It is refused, with the state unchanged, for fewer than 1 group (unitless), more than the city's civilians without a job, an unknown city or track, a city without the facility, or the legacy loop (R-TRAIN-001).
-- People in training are neither civilians nor recruits: they hold no job and are not counted by housing or Social cohesion while they train.
+- People in training are neither civilians nor recruits: they hold no job and are not counted by Social cohesion while they train.
 - `CancelTraining(cohort)` returns the people as civilians without a job; the Money spent is not returned (D-A3 [S2]). It costs 0.5 Attention, a placeholder (R-TRAIN-002).
 - Training resolves before production in each turn, in the order the owner approved (D-A6, #456 [S2][S3]). A cohort ordered this turn counts this turn: basic training takes 3 turns and pioneer training 4 turns, both placeholders (R-TRAIN-003).
-- A finished recruit cohort adds to the city's recruits, a count until soldiers become units. A finished halutz cohort becomes one movable unit per group at the city's hex, with consecutive ids (D-A2 [S2], R-TRAIN-003).
+- A finished recruit cohort becomes one military unit at the city's settlement hex, with its count as Strength. A finished halutz cohort becomes one movable unit per group at the city's hex, with consecutive ids (D-A2 [S2], R-TRAIN-003, `R-UNIT-003`).
 
 The owner later decided that craftsmen, halutzim and veteran pioneers may return to civilian life and retain their qualification, and qualified civilians may be reassigned without retraining (R-QUAL-001 to R-QUAL-007; #1511).
 
 *Considered and declined (owner, 30 Oct 2026; keep the recorded ruling; [conflict decision](../GDD.md#30-october-2026-conflict-decisions)): Amir's #1668 proposed permanent, mutually exclusive trained civilian professions with no switching or retraining UI.* [S1] *On 1 November 2026 the owner kept two-way professions for the MVP (D3, "Approve all six (Recommended)"); the lock is post-MVP.* [S11]
 ### Population identity and civilian professions
 
-Each population unit has a stable id, location, retained civilian qualification and retained military service state. Civilian-to-military conversion and demobilisation change the same unit; they do not spawn another group. Amir's proposed regional location, reception progress, combat XP and reusable-equipment fields are non-operative [S6]; Amir's working-turn XP agrees with main's `gdd-0.3` rule (`R-VET-001`).
+Each population unit has a stable id, location, retained civilian qualification and retained military service state. Civilian-to-military conversion and demobilisation change the same unit; they do not spawn another group. Amir's proposed regional location, reception progress, combat XP and reusable-equipment fields are non-operative [S6]. Combat XP itself is built on aggregate military units under exact `gdd-0.3` (`R-UNIT-011`; owner, 2 November 2026: "Build it now (Recommended)"); Amir's per-person field is not. Amir's working-turn XP agrees with main's `gdd-0.3` rule (`R-VET-001`).
 
 **Amir's proposal, declined by the owner on 30 October 2026 [S6]:** farmer, pioneer and craftsman would be mutually exclusive, and a trained civilian profession could not be replaced. The retained rule permits qualified civilians to return and be reassigned without retraining. On 1 November 2026 the owner kept this two-way rule for the MVP (`R-QUAL-001` to `R-QUAL-007`): a Train order can take a qualified civilian, who then loses the qualification (`R-QUAL-006`), and the lock at the first qualified level (Q9) is post-MVP (D3) [S11].
 
@@ -72,7 +72,7 @@ Cancelled retained courses award no unfinished qualification. A course whose slo
 - `content/sites.yaml`: the `camp_80` and `tzrifin` rows, each with a `city`.
 - Save files: the `train CITY TRACK N` and `untrain COHORT` lines (and `retcraft`, `regcraft`, `regpioneer`, `order UNIT return_civilian`, R-QUAL-007). Scenarios: `train` and `cancel_training` (and `return_craftsmen`, `reassign_craftsmen`, `reassign_pioneers`).
 - `sim/Statecraft.Sim.Tests/golden/manifest.txt`: `mvp-slice` moved (retired at the cutover); `scenario-mvp-absorb-first` did not. Phase 4 PR 3 moves `hash1950`, `hash1952` and `mvp-end`: the reference player builds the two camps once the yishuv sites are taken (docs/determinism.md).
-- Finished recruit cohorts remain city recruit counts until soldiers become units; Amir's proposal to replace those counts during training is non-operative [S6].
+- Finished recruit cohorts become military units and never fill `City.Recruits` (`R-TRAIN-003`, `R-UNIT-003`); Amir's proposal to replace recruit counts during training is non-operative [S6].
 - Unit types, scenario inventory, facilities and training commands require coordinated migration.
 - **Amir's proposal [S6]:** reception beds, teacher housing and proposed military trainee slots would be distinct capacity fields; the owner's 30 October 2026 conflict review did not rule on this, and main has only inactive `gdd-0.3` fixtures for them (`docs/rules/mvp.md:107`, `docs/rules/mvp.md:167`). Reception beds are post-MVP, the teacher lives as an ordinary resident, and every military camp uses `military.camp_capacity` (owner, 1 November 2026, "Keep R-CITY-004 (Recommended)", Q42 and 27M-25) [S11].
 - Historical army size comes from the sourced `content/map/units_1948.yaml` seed (`Q-START-1`, decided 15 October 2026); only the non-Historical parameter `A` and real reception-facility availability stay deferred in the GDD (owner, 30 Oct 2026) [S6]; the starting centre and reception host is Kiryat Shmuel, Haifa (owner, 1 November 2026, O8 and 27M-25) [S11].
@@ -109,7 +109,6 @@ Camp growth into permanent towns, soldier training in civilian centres and unsou
 ## Open questions
 
 - The placeholder values (training turns, cost per group, the two Attention costs) wait for the owner.
-- Whether people in training, and recruits, take up the city's housing. Housing counts civilians only (R-CITY-004), so a group in training frees a place that a waiting refugee then takes.
 - Whether the turn of the order counts as a training turn. This is the plan's reading of D-A6, not part of the owner's ruling. The other reading adds a turn.
 - Social cohesion's employed share rises while civilians without work are in training, because they leave the civilians (R-CITY-005).
 No additional balance decisions are required. Remaining principle and authoring decisions are listed only in [the GDD](../GDD.md#deferred-decisions).
