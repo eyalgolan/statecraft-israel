@@ -197,19 +197,19 @@
     "values": [1]
   "field.slots":
     "basis": "Agreed"
-    "note": "Work, professions and training: farmer per prepared field; Agreed. Source: #1668 balance.md at 605277df."
+    "note": "Work, professions and training: farmer per prepared field. Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative regional-field model), per docs/gdd/balance.md:58 at 52fe3d60a. Source: #1668 balance.md at 605277df."
     "values": [1]
   "field.cost":
     "basis": "Agreed"
-    "note": "Work, professions and training: Money / trained-equivalent pioneer work units; Agreed. Source: #1668 balance.md at 605277df."
+    "note": "Work, professions and training: Money / trained-equivalent pioneer work units. Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative regional-field model), per docs/gdd/balance.md:59 at 52fe3d60a. Source: #1668 balance.md at 605277df."
     "values": [5]
   "field.work":
     "basis": "Agreed"
-    "note": "Work, professions and training: Money / trained-equivalent pioneer work units; Agreed. Source: #1668 balance.md at 605277df."
+    "note": "Work, professions and training: Money / trained-equivalent pioneer work units. Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative regional-field model), per docs/gdd/balance.md:59 at 52fe3d60a. Source: #1668 balance.md at 605277df."
     "values": [9]
   "field.nominal_turns":
     "basis": "Agreed"
-    "note": "Work, professions and training: turns at constant novice / trained / veteran tier; Derived; promotion can shorten remaining work. Source: #1668 balance.md at 605277df."
+    "note": "Work, professions and training: turns at constant novice / trained / veteran tier; promotion can shorten remaining work. Derived only from declined proposal values; non-operative, per docs/gdd/balance.md:60 at 52fe3d60a. Source: #1668 balance.md at 605277df."
     "values": [12, 9, 6]
   "reception.capacity":
     "basis": "Agreed"
@@ -274,7 +274,7 @@
     "values": [1]
   "import.arms_price":
     "basis": "Agreed"
-    "note": "Imports, immigration and Arms production: Money per Arms; IL millions at the display scale; Agreed. Source: #1668 balance.md at 605277df."
+    "note": "Imports, immigration and Arms production: Money per Arms; IL millions at the display scale; Agreed. Owner, 3 November 2026 (\"10, as the GDD 0.3 file says\"; recorded on #1705, issuecomment-6603516248): 10 for gdd-0.3; the live game keeps rules.yaml arms_price until the switch. Source: #1668 balance.md at 605277df."
     "values": [10]
   "import.food_per_money":
     "basis": "Agreed"
@@ -282,8 +282,8 @@
     "values": [3]
   "import.delivery_turns":
     "basis": "Agreed"
-    "note": "Imports, immigration and Arms production: turns after purchase, by ship; Agreed. Source: #1668 balance.md at 605277df."
-    "values": [1]
+    "note": "Imports, immigration and Arms production: turns after purchase; 0 keeps the retained immediate R-ARMS-002 delivery, and Amir's next-turn shipment is post-MVP (owner, 1 November 2026, D1). Source: docs/gdd/balance.md:111 at 52fe3d60a; earlier value 1 from #1668 balance.md at 605277df."
+    "values": [0]
   "immigration.ship_interval":
     "basis": "Agreed"
     "note": "Imports, immigration and Arms production: turns / population units, average; Agreed. Source: #1668 balance.md at 605277df."
