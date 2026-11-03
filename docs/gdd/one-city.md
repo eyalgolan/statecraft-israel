@@ -8,7 +8,7 @@ I inspect a retained managed city and assign people under its existing rules.
 ## Rules
 
 - Civilians and refugees are counts per city, in population units of `people_per_unit` people (D-A1, D-A2 [S2]). The slice has one city, Tel Aviv (D-A4 [S2]).
-- `AssignWorkers(city, job, n)` sets how many of the city's people work. It is refused, with the state unchanged, for a negative count, more than the city's jobs or its civilians and craftsmen, an unknown city or role, or the legacy loop (R-CITY-001). Under gdd-0.3 the role `workshop` staffs the city's arms workshops and `build` puts builders on its projects (R-ARMS-005, R-CITY-011). It costs 0.5 Attention (a placeholder) (unitless).
+- `AssignWorkers(city, job, n)` sets how many of the city's people work. It is refused, with the state unchanged, for a negative count, more than the city's jobs or its civilians and craftsmen, an unknown city or role, or the legacy loop (R-CITY-001). Under `gdd-0.3` the role `workshop` staffs the city's arms workshops and `build` puts builders on its projects (R-ARMS-005, R-CITY-011). Under `legacy`/`gdd-0.1` it costs 0.5 Attention (a placeholder).
 - Each turn resolves in the order the owner approved for the plan's resolution phase (D-A6, #456 [S2][S3]): production, then housing and Social cohesion, then arrivals. A turn's arrivals are housed on the next turn.
 - Production: each employed unit earns `income_per_job_per_year` IL millions a year, for the turn's share of a year (R-CITY-002).
 - Arrivals: the CBS series in `content/aliyah.yaml` arrives as refugees, in whole units, counted cumulatively so that no unit is lost or counted twice (R-CITY-003, D-A5 [S2]). With twelve cities they are spread over all of them: see `cities.md`.
