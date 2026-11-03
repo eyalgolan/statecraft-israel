@@ -646,6 +646,92 @@ namespace Statecraft.Game.Tests
                 $"the donkey at its full-plan spot {fullSpot}, not {subSpot} where the absent sheep's ground would put it");
         }
 
+        /// <summary>Review of #2266 at f9802bed6, C1: a standalone prop stands in the same place whichever props have streamed,
+        /// in whatever order, and whichever failed: every want takes its ground, and only the streamed ones are drawn.</summary>
+        [Test]
+        public void StandalonePropsStandInTheSamePlacesWhateverStreamedOrFailed()
+        {
+            var map = OpenMap();
+            List<(string Name, string Model, Vector3 At)> Run(Func<string, bool> answered, bool reverse)
+            {
+                var old = map.Terrain.transform.Find(HexPropModels.Name);
+                if (old != null) UnityEngine.Object.DestroyImmediate(old.gameObject);
+                asked.Clear();
+                var layer = HexPropModels.ShowAt(map, Opening)!;
+                layer.Choose(default, At(Statecraft.Game.Map.Kits.TownModelLayer.CloseEnterM));
+                var pending = asked.ToList(); asked.Clear();
+                if (reverse) pending.Reverse();
+                foreach (var (id, done) in pending) done(answered(id) ? AssetDatabase.LoadAssetAtPath<GameObject>(HexProps.PrefabPath(id)) : null);
+                return layer.Placed.Select(p => (p.Name, p.Model, p.At)).ToList();
+            }
+            var all = Run(_ => true, reverse: false);
+            Assert.Greater(all.Count, 1000);
+            int moved = 0;
+            foreach (var missing in HexPropModels.Standalone)
+            {
+                var some = Run(id => id != missing, reverse: true);
+                var expected = all.Where(p => p.Model != missing).ToList();
+                CollectionAssert.AreEquivalent(expected.Select(p => p.Name), some.Select(p => p.Name), missing + " failed: the same props stand");
+                var at = expected.ToDictionary(p => p.Name, p => p.At);
+                foreach (var p in some) if ((at[p.Name] - p.At).magnitude >= 1f) moved++;
+                TestContext.WriteLine($"{missing} failed: {some.Count} props, {some.Count(p => (at[p.Name] - p.At).magnitude >= 1f)} moved");
+            }
+            Assert.AreEqual(0, moved, "no prop moves when another model is missing or the answers come in another order");
+        }
+
+        /// <summary>Review of #2266 at f9802bed6, C2: a camera that asks for the props while rendering does not get its answer
+        /// built inside the render, even when the answer comes at once: the request waits for LateUpdate.</summary>
+        [Test]
+        public void NothingIsBuiltInsideACameraRender()
+        {
+            var map = OpenMap();
+            HexPropModels.Request = (id, done) => done(AssetDatabase.LoadAssetAtPath<GameObject>(HexProps.PrefabPath(id)));   // answers at once
+            var layer = HexPropModels.ShowAt(map, Opening)!;
+            var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+            typeof(HexPropModels).GetMethod("ChooseCore", flags)!.Invoke(layer, new object[] { At(Statecraft.Game.Map.Kits.TownModelLayer.CloseEnterM), true });
+            Assert.AreEqual(0, layer.Replaced.Count, "no landmark model instantiated inside the render");
+            Assert.AreEqual(0, layer.Placed.Count, "no standalone prop instantiated inside the render");
+            typeof(HexPropModels).GetMethod("LateUpdate", flags)!.Invoke(layer, null);
+            Assert.Greater(layer.Replaced.Count, 0, "built after the render");
+            Assert.Greater(layer.Placed.Count, 0);
+        }
+
+        /// <summary>Review of #2266 at f9802bed6, C3: the close switch writes the standalone renderers only when it changes,
+        /// not for every camera every frame.</summary>
+        [Test]
+        public void TheCloseSwitchWritesOnlyAChange()
+        {
+            var map = OpenMap();
+            var layer = Show(map, Opening);
+            var r = layer.transform.Find(layer.Placed[0].Name).GetComponentInChildren<Renderer>();
+            Assert.IsFalse(r.forceRenderingOff, "drawn up close");
+            r.forceRenderingOff = true;   // a marker: an unchanged switch must not touch it
+            layer.Choose(default, At(Statecraft.Game.Map.Kits.TownModelLayer.CloseEnterM));
+            Assert.IsTrue(r.forceRenderingOff, "still close: nothing written");
+            layer.Choose(default, At(Statecraft.Game.Map.Kits.TownModelLayer.CloseExitM + 1f));
+            layer.Choose(default, At(Statecraft.Game.Map.Kits.TownModelLayer.CloseEnterM));
+            Assert.IsFalse(r.forceRenderingOff, "a change writes every renderer");
+        }
+
+        /// <summary>Review of #2266 at f9802bed6, C6: the kits are built only by MapScene.Build, which first destroys the map's
+        /// children, this layer and Tal Heuberger's models with them. After a rebuild no model is left over, and the new kit
+        /// draws its own parts until a new layer replaces them.</summary>
+        [Test]
+        public void AMapRebuildLeavesNoModelBehindAndTheKitWhole()
+        {
+            var map = OpenMap();
+            var layer = Show(map, Opening);
+            Assert.Greater(layer.Replaced.Count, 0);
+            map.Build();
+            Assert.IsTrue(layer == null, "the layer went with the old map");
+            Assert.AreEqual(0, UnityEngine.Object.FindObjectsByType<HexPropModels>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length);
+            Assert.AreEqual(0, UnityEngine.Object.FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None)
+                .Count(t => t.name.EndsWith(":far", StringComparison.Ordinal) || t.name.EndsWith(":close", StringComparison.Ordinal)), "no landmark model left over");
+            var kits = Kits(map);
+            Assert.IsTrue(map.KitStats.LandmarkParts.Select(p => p.Kit).Distinct()
+                .All(k => Statecraft.Game.Map.Kits.KitLayer.PartsShown(kits.Find(k).GetComponent<Renderer>())), "the new kit draws its own parts");
+        }
+
         /// <summary>Review of #2266's delta, C2: a disabled layer hides Tal Heuberger's models under it, so the kit draws its own
         /// parts again; enabled again, the models stand in for them. Never an empty spot.</summary>
         [Test]
