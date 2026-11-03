@@ -75,6 +75,18 @@ public class SimBridgeGuardTests
         }
     }
 
+    /// <summary>#1722 (R-ARMS-005): AssignWorkers is keyed by city and role, so a workshop staffing order and a jobs order for
+    /// the same city keep their own slots, while a second order of one role for one city still replaces the first.</summary>
+    [Test]
+    public void AssignWorkersIsKeyedByCityAndRole()
+    {
+        var job = new AssignWorkers("tel_aviv", "job", 1);
+        Assert.AreNotEqual(SimBridge.Key(job), SimBridge.Key(new AssignWorkers("tel_aviv", Workshops.Role, 1)), "the two roles");
+        Assert.AreNotEqual(SimBridge.Key(job), SimBridge.Key(new AssignWorkers("jerusalem", "job", 1)), "two cities");
+        Assert.AreEqual(SimBridge.Key(job), SimBridge.Key(new AssignWorkers("tel_aviv", "job", 5)), "one role, one city: the later order replaces it");
+        Assert.AreEqual(SimBridge.Key(new AssignWorkers("tel_aviv", Workshops.Role, 0)), SimBridge.Key(new AssignWorkers("tel_aviv", Workshops.Role, 2)));
+    }
+
     [Test]
     public void NoCommandTypeFallsToTheDefaultBranch()
     {

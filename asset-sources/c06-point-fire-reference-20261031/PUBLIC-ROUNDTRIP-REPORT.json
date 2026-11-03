@@ -1,0 +1,48 @@
+{
+  "status": "LOCAL EXPORT REVIEW; Unity/runtime untested",
+  "source_sha256": "43325685beb1e4a9e9767bb0f58ac0d37772f30f143bbd9bfed75826fab3d17f",
+  "source_unchanged": true,
+  "bone_counts": [
+    67,
+    67
+  ],
+  "same_bone_names": true,
+  "same_bone_parents": true,
+  "world_rest_matrix_max_error": 3.4928321838378906e-05,
+  "all97_world_pose_matrix_max_error": 3.802776336669922e-05,
+  "weights_exact": true,
+  "vertex_counts": [
+    30284,
+    30284
+  ],
+  "vertex_position_max_error": 1.5736701644644337e-07,
+  "actions": [
+    {
+      "name": "Armature|C06_POINT_FIRE_PROVISIONAL_REVIEW_97F",
+      "range": [
+        1.0,
+        97.0
+      ]
+    },
+    {
+      "name": "K98k_FIXED_PAIR_AUTHORING|C06_POINT_FIRE_PROVISIONAL_REVIEW_97F",
+      "range": [
+        1.0,
+        97.0
+      ]
+    },
+    {
+      "name": "tripo_node_0fa6038f-9e8d-4708-a9e8-755be6fdcc67|C06_POINT_FIRE_PROVISIONAL_REVIEW_97F",
+      "range": [
+        1.0,
+        97.0
+      ]
+    }
+  ],
+  "export_bytes": 10167581,
+  "export_sha256": "9a7c8b59eb6dbf5138ee9fe1b8cb6296e430cda105b98cecae9c3a93bfdd3868",
+  "import_animation_offset": 0,
+  "axis_forward": "-Z",
+  "axis_up": "Y",
+  "limitations": "FBX float/axis conversion measured; no rig replacement, weight edits or mesh changes. No Unity check."
+}

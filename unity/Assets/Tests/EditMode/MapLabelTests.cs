@@ -218,8 +218,8 @@ public class MapLabelTests
         CollectionAssert.AreEquivalent(new[] { "negba", "hulda", "nir_am", "latrun_fort", "iraq_suwaydan_fort",
             "shaar_hagai", "ad_halom_bridge", "shaar_haaliyah", "jerusalem", "east_jerusalem_old_city" },
             locations.Where(l => l.Priority == "must_have").Select(l => l.Id).ToArray(), "the ten required #1008 locations stay intact");
-        Assert.AreEqual(12, locations.Count, "the ten required locations, the optional #1007 outpost and optional nirim (#2113)");
-        CollectionAssert.AreEqual(new[] { "umm_rashrash", "nirim" }, locations.Where(l => l.Priority == "optional").Select(l => l.Id).ToArray(), "the optional rows, in file order");
+        Assert.AreEqual(18, locations.Count, "the ten required locations, the optional #1007 outpost, optional nirim (#2113) and the six optional #1719 camps");
+        CollectionAssert.AreEqual(new[] { "umm_rashrash", "nirim", "military_tzrifin", "military_tel_litvinsky", "military_schneller", "military_camp_80", "reception_atlit", "reception_beit_lid" }, locations.Where(l => l.Priority == "optional").Select(l => l.Id).ToArray(), "the optional rows, in file order");
         var outpost = locations.Single(l => l.Id == "umm_rashrash");
         Assert.AreEqual("outpost", outpost.Kind);
         Assert.IsFalse(outpost.ManagedCity || outpost.DesignatedSite || outpost.SettlementControlTarget, "an optional map record grants no gameplay role");

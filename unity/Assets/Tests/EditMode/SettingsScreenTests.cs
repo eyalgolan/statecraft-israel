@@ -286,7 +286,7 @@ public class SettingsScreenTests
     [Test]
     public void EachUiScaleTakesEffectAtOnceAndSurvivesAReload([Values(false, true)] bool hebrew)
     {
-        VerifyOnEveryShape(125, 150);   // the mechanism a scale gets once it is verified; the game verifies none yet
+        VerifyOnEveryShape(125, 150);   // every window shape, not only the game's verified range
         var text = hebrew ? He : En;
         using (var ui = new UiTestKit())
         {
@@ -331,7 +331,7 @@ public class SettingsScreenTests
     }
 
     /// <summary>As if the layout suites passed at these scales on every window shape: what a test of the scale's mechanism
-    /// needs now that the game offers only verified scales (SettingsPresenter.VerifiedShapes, empty for now). TearDown puts
+    /// needs now that the game offers only verified scales (SettingsPresenter.VerifiedShapes). TearDown puts
     /// the table back.</summary>
     public static void VerifyOnEveryShape(params int[] percents)
     {
@@ -339,20 +339,23 @@ public class SettingsScreenTests
     }
 
     /// <summary>The owner's ruling on #1011 (19 Oct 2026), case 1: only the scales verified to fit are offered, 100% always.
-    /// No scale above 100% is verified yet (at 125% and 150% the layout suites fail on every window shape), so on each
-    /// shape the suites cover Settings offers 100% alone, marked. When a scale is verified, this test changes with it.</summary>
+    /// Since #1853 the layout suites pass at 125% and 150% on every window they cover, 360x800 to 2560x1080 (#40, 2 Nov 2026),
+    /// so both are verified on that range of shapes and offered on each window inside it. Outside it (narrower than
+    /// 360x800 or wider than 2560x1080) Settings offers 100% alone. 100% stays marked: it is the default.</summary>
     [UnityTest]
     public IEnumerator OnlyTheVerifiedUiScalesAreOffered()
     {
-        Assert.IsEmpty(SettingsPresenter.VerifiedShapes, "no scale above 100% is verified yet");
-        foreach (var (w, h) in new[] { (1920, 1080), (1280, 720), (1024, 768), (960, 1080), (360, 800), (2560, 1080) })
+        foreach (var percent in new[] { 125, 150 })
+            Assert.AreEqual((360f / 800f, 2560f / 1080f), SettingsPresenter.VerifiedShapes[percent], $"{percent}% is verified from 360x800 to 2560x1080");
+        foreach (var (w, h) in new[] { (1920, 1080), (1280, 720), (1024, 768), (960, 1080), (360, 800), (2560, 1080), (320, 800), (1280, 400) })
         {
             var window = new Window(w, h, dir);
+            var inside = w / (float)h >= 360f / 800f && w / (float)h <= 2560f / 1080f;
             try
             {
                 yield return window.Settle();
                 foreach (var (name, percent) in UiScaleButtons)
-                    Assert.AreEqual(percent == 100, window.Root.Q<Button>(name).resolvedStyle.display == DisplayStyle.Flex, $"{w}x{h}: {percent}% offered");
+                    Assert.AreEqual(percent == 100 || inside, window.Root.Q<Button>(name).resolvedStyle.display == DisplayStyle.Flex, $"{w}x{h}: {percent}% offered");
                 Assert.IsTrue(window.Root.Q<Button>("settings-uiscale-100").ClassListContains(SettingsPresenter.SelectedClass), $"{w}x{h}: 100% marked");
             }
             finally { window.Dispose(); }
@@ -364,6 +367,7 @@ public class SettingsScreenTests
     [Test]
     public void ASavedScaleThatIsNotVerifiedFallsBackTo100OnLoad([Values(125, 150)] int saved)
     {
+        SettingsPresenter.VerifiedShapes.Remove(saved);   // as if not verified; TearDown puts the table back
         new SettingsStore(dir).Write(SettingsPresenter.UiScaleKey, saved.ToString());
         using var ui = new UiTestKit();
         using var settings = new SettingsPresenter(ui.Root, En, new SettingsStore(dir), panel: ui.Doc.panelSettings);
@@ -372,13 +376,14 @@ public class SettingsScreenTests
         Assert.AreEqual(saved.ToString(), new SettingsStore(dir).Read(SettingsPresenter.UiScaleKey), "the choice is kept");
     }
 
-    /// <summary>Case 3: the fit follows the window. With 150% verified only on shapes from 1:2 to 1:1 (a stand-in: the
-    /// game verifies none yet), a saved 150% holds on 960x1080; a resize to 16:9 drops the panel to 100% and stops
-    /// offering 150%; back on 960x1080 the kept choice returns.</summary>
+    /// <summary>Case 3: the fit follows the window. With 150% verified only on shapes from 1:2 to 1:1 and 125% not at all
+    /// (stand-ins narrower than the game's table), a saved 150% holds on 960x1080; a resize to 16:9 drops the panel to
+    /// 100% and stops offering 150%; back on 960x1080 the kept choice returns.</summary>
     [UnityTest]
     public IEnumerator ResizingOutOfAVerifiedShapeFallsBackTo100()
     {
         SettingsPresenter.VerifiedShapes[150] = (0.5f, 1f);
+        SettingsPresenter.VerifiedShapes.Remove(125);
         new SettingsStore(dir).Write(SettingsPresenter.UiScaleKey, "150");
         var window = new Window(960, 1080, dir);
         try
