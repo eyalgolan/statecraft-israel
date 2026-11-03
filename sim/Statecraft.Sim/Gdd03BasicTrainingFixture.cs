@@ -162,5 +162,7 @@ namespace Statecraft.Sim
                 new PopulationAssignment(PopulationAssignmentKind.Course, camp.Id, progress), trainee.Captor, trainee.Home) });
             months[traineeId] = (known.enrolment, monthOrdinal);
         }
+
+        internal void Cancel(int traineeId) => throw new NotImplementedException();
     }
 }
