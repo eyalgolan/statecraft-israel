@@ -59,8 +59,9 @@ namespace Statecraft.Sim
         /// as it stands when step 11 runs, before the turn's population step) has reached the gate, the cities' overflow is at
         /// most its share of the people they house and their employed at least its share of their civilians and craftsmen, as
         /// R-CITY-005 counts them (Cities.EmployedShare; owner, 3 November 2026, #1714: "Both rulesets (Recommended)", so
-        /// gdd-0.1 and gdd-0.3 alike). Refugees waiting do not count: the turn's arrivals (step 9) always wait at step 11, after housing (step 8). The city counts are
-        /// integer sums times a decimal share, so city order and the runtime cannot change them.</summary>
+        /// gdd-0.1 and gdd-0.3 alike). Refugees waiting do not count: the turn's arrivals (step 9) always wait at step 11,
+        /// after housing (step 8). The city counts are integer sums times a decimal share, so city order and the runtime
+        /// cannot change them.</summary>
         static bool Absorbed(GameState s, AbsorbCondition a)
         {
             if (s.TotalPopulation < a.PopulationAtLeast) return false;
