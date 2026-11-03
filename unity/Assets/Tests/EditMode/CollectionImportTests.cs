@@ -26,6 +26,9 @@ public class CollectionImportTests
     };
 
     static bool UnderResources(string path) => path.Split('/').Any(s => s.Equals("Resources", StringComparison.OrdinalIgnoreCase));
+    /// <summary>The figures that attack with a fire take baked beside their model (CollectionImport.BorrowedFireTakes, #2375).</summary>
+    static IEnumerable<string> BorrowingFigures => ((IReadOnlyDictionary<string, string>)Type.GetType("Statecraft.Game.EditorTools.CollectionImport, Assembly-CSharp-Editor")!
+        .GetField("BorrowedFireTakes")!.GetValue(null)).Keys;
 
     /// <summary>Found by #668's WebGL build: every Build.* ran BuildBundles, which copied the bundles into
     /// StreamingAssets/collection without their .manifest files and then asked Unity for each one's CRC there, which Unity
@@ -163,11 +166,15 @@ public class CollectionImportTests
                 Model(id), $"{Dir(id)}/{id}.mat", ColourMap(id),
                 CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near),
             };
+            // A figure that borrows its fire take has it baked beside its model, in its own bundle (#2375).
+            var fire = BorrowingFigures.Contains(id) ? new[] { $"{Dir(id)}/fire.anim" } : Array.Empty<string>();
             // #2084's pose source: Tal's export byte for byte and the prefab beside it; no map, material or record of its own.
             if (CollectionCatalog.IsFigurePose(id)) return new[] { CollectionCatalog.SourceModelPath(id), $"{Dir(id)}/{id}.prefab" };
             if (CollectionCatalog.IsGenerated(id))
                 return new[] { CollectionCatalog.SourceModelPath(id), $"{Dir(id)}/{id}.mat", ColourMap(id), $"{Dir(id)}/{id}.prefab", $"{Dir(id)}/provenance.json" }
-                    .Concat(CollectionCatalog.IsGeneratedProp(id) || CollectionCatalog.IsGeneratedTown(id) || CollectionCatalog.IsGeneratedWeapon(id) ? Array.Empty<string>() : new[] { $"{Dir(id)}/{id}.controller" }).ToArray();
+                    .Concat(CollectionCatalog.IsGeneratedProp(id) || CollectionCatalog.IsGeneratedTown(id) || CollectionCatalog.IsGeneratedWeapon(id) ? Array.Empty<string>() : new[] { $"{Dir(id)}/{id}.controller" })
+                    .ToArray();
+            files.AddRange(fire);
             if (Animated(id) || OriginalModelPose.Required(id)) files.Add($"{Dir(id)}/{id}-near.controller");
             // The 1948 soldier's rigged copy (#2384) records its derivation beside it, as the generated models do.
             if (id == CollectionCatalog.Soldier1948Rigged) files.Add($"{Dir(id)}/provenance.json");
