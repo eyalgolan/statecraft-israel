@@ -47,7 +47,8 @@ namespace Statecraft.Game.Map.Kits
 
         /// <summary>Draws one Tel Aviv block and records it in the census: warm cream plaster (#658; a few a slightly yellower cream), ribbon windows
         /// along both long sides (Ribbons), a balcony band on every upper storey (WhiteBlockDetail), some on pilotis, some stepped, and a
-        /// flat roof terrace behind a parapet with its stair head.</summary>
+        /// flat roof terrace behind a parapet with its stair head; with RoofDetail, some set their top storey back from the street
+        /// and some stair heads carry a water tank.</summary>
         static void TelAvivBlock(string id, Vector2 p, float yaw, Spec b, float bottom, float top, KitMesh km, ref KitRandom rnd)
         {
             float m = KitScale.CityBlocks, storey = 3.3f * m, a = yaw * Mathf.Deg2Rad, ca = Mathf.Cos(a), sa = Mathf.Sin(a);
@@ -70,33 +71,59 @@ namespace Statecraft.Game.Map.Kits
                 RoofParapet(km, c2, yaw, w2, d2, top + h2, wall, m);
                 Record(id, "wing", c2, yaw, w2, d2, h2, wall);
             }
+            // Roof detail (SettlementKits.RoofDetail), from the block's own stream: some taller blocks set their top storey back
+            // from the street (the main block then ends a storey lower, its roof the top storey's terrace).
+            var detail = DetailAt(p, 53);
+            bool setback = RoofDetail && b.storeys >= SetbackMinStoreys && detail.Chance(SetbackShare);
+            float body = setback ? h - storey : h;
             if (pilotis)
             {
                 // The ground storey stands back under the block, in the block's shadow; the block above starts one storey up.
                 var shade = C(wall.r / 255f * 0.62f, wall.g / 255f * 0.62f, wall.b / 255f * 0.64f);
                 km.Box(c.x, c.y, yaw, w * 0.72f, b.d * 0.6f, bottom, top, storey, shade, shade, Facade.Plain, m, roofed: true);
-                km.Box(c.x, c.y, yaw, w, b.d, top + storey - 0.3f * m, top + storey, h - storey, wall, terrace, Facade.WhiteCity, m);
-                Ribbons(km, c, yaw, w, b.d, top + storey, h - storey, m);
+                km.Box(c.x, c.y, yaw, w, b.d, top + storey - 0.3f * m, top + storey, body - storey, wall, terrace, Facade.WhiteCity, m);
+                Ribbons(km, c, yaw, w, b.d, top + storey, body - storey, m);
             }
             else
             {
-                km.Box(c.x, c.y, yaw, w, b.d, bottom, top, h, wall, terrace, Facade.WhiteCity, m);
-                Ribbons(km, c, yaw, w, b.d, top, h, m);
+                km.Box(c.x, c.y, yaw, w, b.d, bottom, top, body, wall, terrace, Facade.WhiteCity, m);
+                Ribbons(km, c, yaw, w, b.d, top, body, m);
             }
-            WhiteBlockDetail(km, c, du, b.lotR, yaw, w, b.d, top, h, wall, terrace, m, ref rnd);
-            RoofParapet(km, c, yaw, w, b.d, top + h, wall, m);
-            // The stair head and the shared laundry room on the terrace.
+            WhiteBlockDetail(km, c, du, b.lotR, yaw, w, b.d, top, body, wall, terrace, m, ref rnd);
+            RoofParapet(km, c, yaw, w, b.d, top + body, wall, m);
+            // The set-back top storey: back from the street side (-v, WhiteBlockDetail's) by SetbackMinM to SetbackMaxM, and in from the other
+            // three sides by SetbackInsetM, clear of the parapet; pw x pd at (du + pu, pv) in the block's frame.
+            float pw = w, pd = b.d, pu = 0f, pv = 0f;
+            if (setback)
+            {
+                float inset = SetbackInsetM * m, back = detail.Range(SetbackMinM, SetbackMaxM) * m;
+                pw = Mathf.Min(w * detail.Range(0.6f, 0.85f), w - 2f * inset); pd = b.d - back - inset;
+                pu = detail.Range(-0.5f, 0.5f) * (w - 2f * inset - pw); pv = 0.5f * (back - inset);
+                var pc = At(du + pu, pv);
+                km.Box(pc.x, pc.y, yaw, pw, pd, top + body - 0.3f * m, top + body, storey, wall, terrace, Facade.WhiteCity, m);
+                Ribbons(km, pc, yaw, pw, pd, top + body, storey, m);
+            }
+            // The stair head (on the top storey's roof on a set-back block: pw >= 0.6 w and pd >= 0.65 d keep it inside) and
+            // the shared laundry room on the terrace (none beside a set-back top storey, which is the roof's room). Both draw
+            // their numbers either way, so the town's stream is unchanged.
             float rw = w * rnd.Range(0.2f, 0.3f), rd = b.d * rnd.Range(0.3f, 0.42f);
-            var r1 = At(du + rnd.Range(-0.2f, 0.2f) * w, rnd.Range(-0.15f, 0.15f) * b.d);
+            float fu = rnd.Range(-0.2f, 0.2f), fv = rnd.Range(-0.15f, 0.15f);
+            var r1 = At(du + pu + fu * pw, pv + fv * pd);
             km.Box(r1.x, r1.y, yaw, rw, rd, top + h - 2f, top + h, 2.8f * m, wall, terrace, Facade.Plain, m);
+            if (RoofDetail && detail.Chance(RoofTankShare)) RoofTank(km, r1, yaw, rw, rd, top + h + 2.8f * m, m);
             if (rnd.Chance(0.4f))
             {
                 float lw = w * rnd.Range(0.14f, 0.2f), ld = b.d * rnd.Range(0.22f, 0.3f);
                 var r2 = At(du + (rnd.Chance(0.5f) ? 1f : -1f) * (0.5f * w - 0.6f * lw), rnd.Range(-0.2f, 0.2f) * b.d);
-                km.Box(r2.x, r2.y, yaw, lw, ld, top + h - 2f, top + h, 2.4f * m, wall, terrace, Facade.Plain, m);
+                if (!setback) km.Box(r2.x, r2.y, yaw, lw, ld, top + h - 2f, top + h, 2.4f * m, wall, terrace, Facade.Plain, m);
             }
             Record(id, "building", p, yaw, b.w, b.d, b.h, wall);
         }
+
+        /// <summary>The set-back top storey: on blocks of at least SetbackMinStoreys storeys, a SetbackShare of them; set back
+        /// SetbackMinM to SetbackMaxM (real m) from the street and SetbackInsetM from the other sides.</summary>
+        const int SetbackMinStoreys = 5;
+        const float SetbackShare = 0.45f, SetbackMinM = 2.5f, SetbackMaxM = 3.5f, SetbackInsetM = 0.5f;
 
         /// <summary>Glass of the ribbon windows: near black, as promo 03's deep-set windows read.</summary>
         static readonly Color32 RibbonGlass = new Color32(38, 42, 48, 0);
