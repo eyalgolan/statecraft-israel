@@ -259,6 +259,76 @@ public partial class DesignValuesTests
         Assert.Equal(new[]{0.5m,1m,2m},v["combat.draw_count"].Parts["ratio_thresholds"].Values);
         Assert.Null(ContentLoader.Load(Fixture.Write()).Gdd03Balance); // old authored content still loads
     }
+    // R-LOOP-005: every numeric gdd-0.3 catalogue row is checked when the authored file loads.
+    static ContentException RefusedNumber(string oldText, string newText)
+    {
+        var yaml=File.ReadAllText(Path.Combine(RealContentTests.ContentRoot(),CatalogueFile));
+        Assert.Contains(oldText,yaml);
+        var changed=yaml.Replace(oldText,newText);
+        Assert.NotEqual(yaml,changed);
+        var files=Fixture.Gdd(new Dictionary<string,string>{{CatalogueFile,changed}});
+        files["eras.yaml"]=files["eras.yaml"].Replace("loop: gdd", "loop: gdd, ruleset: gdd-0.3");
+        var dir=Fixture.Write(files);
+        return Assert.Throws<ContentException>(()=>ContentLoader.Load(dir));
+    }
+    [Fact] public void Gdd03LoaderRefusesNegativeCountsAtLoad()
+    {
+        var ex=RefusedNumber("\"import.delivery_turns\":\n    \"basis\": \"Agreed\"\n    \"note\": \"Imports, immigration and Arms production: turns after purchase, by ship; Agreed. Source: #1668 balance.md at 605277df.\"\n    \"values\": [1]",
+            "\"import.delivery_turns\":\n    \"basis\": \"Agreed\"\n    \"note\": \"Imports, immigration and Arms production: turns after purchase, by ship; Agreed. Source: #1668 balance.md at 605277df.\"\n    \"values\": [-1]");
+        Assert.Equal(CatalogueFile,ex.File); Assert.Equal("values.import.delivery_turns",ex.Field);
+        Assert.Contains("must be a whole number >= 0",ex.Message);
+    }
+    [Fact] public void Gdd03LoaderRefusesNegativePricesAtLoad()
+    {
+        var ex=RefusedNumber("\"values\": [0.5]\n  \"craft.course_turns\"", "\"values\": [-0.5]\n  \"craft.course_turns\"");
+        Assert.Equal(CatalogueFile,ex.File); Assert.Equal("values.craft.course_cost",ex.Field);
+        Assert.Contains("must be >= 0",ex.Message);
+    }
+    [Fact] public void Gdd03LoaderRefusesFractionsOutsideZeroToOneAtLoad()
+    {
+        var ex=RefusedNumber("\"values\": [0.35]\n  \"start.food_production\"", "\"values\": [1.01]\n  \"start.food_production\"");
+        Assert.Equal(CatalogueFile,ex.File); Assert.Equal("values.start.housing_condition",ex.Field);
+        Assert.Contains("must be between 0 and 1",ex.Message);
+    }
+    [Fact] public void Gdd03LoaderRefusesPercentsOutsideZeroToOneHundredAtLoad()
+    {
+        var ex=RefusedNumber("\"values\": [75, 10, 10, 5]", "\"values\": [101, 10, 10, 5]");
+        Assert.Equal(CatalogueFile,ex.File); Assert.Equal("values.immigration.mix",ex.Field);
+        Assert.Contains("must be between 0 and 100",ex.Message);
+    }
+    [Fact] public void Gdd03NumericRulesAllowListedNegativeException()
+    {
+        var yaml=File.ReadAllText(Path.Combine(RealContentTests.ContentRoot(),CatalogueFile));
+        const string tail="\n        \"note\": \"Completion effect in #1668 balance.md at 605277df.\"\n    \"note\": \"ordinary housing `+3`";
+        const string oldText="\"values\": [10]"+tail, newText="\"values\": [-10]"+tail;
+        Assert.Contains(oldText,yaml);
+        var files=Fixture.Gdd(new Dictionary<string,string>{{CatalogueFile,yaml.Replace(oldText,newText)}});
+        files["eras.yaml"]=files["eras.yaml"].Replace("loop: gdd", "loop: gdd, ruleset: gdd-0.3");
+        var catalogue=ContentLoader.Load(Fixture.Write(files)).Gdd03Balance;
+        Assert.NotNull(catalogue);
+        Assert.Equal(-10m,Assert.Single(catalogue.Values["permanent_housing"].Parts["condition_pp"].Values));
+    }
+    [Fact] public void Gdd03NumericRulesAcceptTheRealCatalogueAndEveryListedKeyExists()
+    {
+        var yaml=File.ReadAllText(Path.Combine(RealContentTests.ContentRoot(),CatalogueFile));
+        var files=Fixture.Gdd(new Dictionary<string,string>{{CatalogueFile,yaml}});
+        files["eras.yaml"]=files["eras.yaml"].Replace("loop: gdd", "loop: gdd, ruleset: gdd-0.3");
+        var catalogue=ContentLoader.Load(Fixture.Write(files)).Gdd03Balance;
+        Assert.NotNull(catalogue);
+        Assert.Equal(-10m,Assert.Single(catalogue.Values["maabara"].Parts["condition_pp"].Values));
+        var listed=Gdd03BalanceCatalogue.NegativeExceptions.Keys
+            .Concat(Gdd03BalanceCatalogue.WholeNumberKeys)
+            .Concat(Gdd03BalanceCatalogue.FractionKeys)
+            .Concat(Gdd03BalanceCatalogue.PercentKeys).ToList();
+        Assert.Equal(listed.Count,listed.Distinct(StringComparer.Ordinal).Count());
+        foreach (var at in listed)   // a misspelt key would silently check nothing
+        {
+            var path=at.Substring("values.".Length).Split(new[]{".parts."},StringSplitOptions.None);
+            var row=catalogue.Values[path[0]];
+            if (path.Length==2) row=row.Parts[path[1]];
+            Assert.NotEmpty(row.Values);
+        }
+    }
     [Theory]
     [InlineData("bad: { basis: Unknown, values: [1], note: test }")]
     [InlineData("bad: { basis: Agreed, values: [1] }")]
