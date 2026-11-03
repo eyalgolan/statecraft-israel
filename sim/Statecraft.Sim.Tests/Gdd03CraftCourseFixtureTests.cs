@@ -66,7 +66,9 @@ public class Gdd03CraftCourseFixtureTests
 
     const string GraduationMonth = Gdd03TrainingCentreFixture.GraduationMonthReason;
     const string CourseAtOpening = Gdd03CraftCourseFixture.CourseAtOpeningReason;
-    const string QualifiedDeferred = "Deferred: #1668 D3", CraftsmanDeferred = "Deferred: #1668 27M-5 (ruled: \"graduates may re-enrol at any time\", docs/gdd/training.md:66; not built here: no ruled text says which tier", SlotDeferred = "Deferred: #1668 Q52";
+    // The whole D3 reason is pinned: it must say the case is deferred and not ruled, and quote both sides unresolved.
+    const string QualifiedDeferred = "Deferred: #1668 D3 (deferred, not ruled: a trained or veteran farmer or pioneer starting the craftsman course. The #1698 body, agent-recorded scope, says \"The course cannot replace another trained profession\"; docs/GDD.md:349 (D3) says \"a Train order can take a qualified civilian, who then loses the qualification (R-QUAL-006)\"; see R-QUAL-006. No answer is chosen here.)";
+    const string CraftsmanDeferred = "Deferred: #1668 27M-5 (ruled: \"graduates may re-enrol at any time\", docs/gdd/training.md:66; not built here: no ruled text says which tier", SlotDeferred = "Deferred: #1668 Q52";
 
     static void Unchanged(GameState s, Action act, Type expected, string? messagePrefix = null)
     {
@@ -134,11 +136,27 @@ public class Gdd03CraftCourseFixtureTests
     }
 
     // R-CRAFT-003: every other start is refused with the state unchanged. Plain refusals: a refugee, a free civilian not
-    // yet received, an unknown course, a course outside the person's region, a person already on a course. Decided but not
-    // built here (Deferred, no answer chosen): a trained or veteran farmer or pioneer (D3 two-way professions against the
-    // #1698 body's "The course cannot replace another trained profession"), and any craftsman. Re-enrolment is ruled
+    // yet received, an unknown course, a course outside the person's region, a person already on a course. Deferred, not
+    // ruled (no answer chosen): a trained or veteran farmer or pioneer. The #1698 body (agent-recorded scope) says "The
+    // course cannot replace another trained profession"; docs/GDD.md:349 (D3) says "a Train order can take a qualified
+    // civilian, who then loses the qualification (R-QUAL-006)"; see R-QUAL-006. Deferred too: any craftsman. Re-enrolment is ruled
     // (docs/gdd/training.md:66, "graduates may re-enrol at any time"; 27M-5), but no ruled text says which tier a
     // craftsman holds during and after a new craftsman course, so that part stays Deferred with that reason.
+    // R-CRAFT-003: every trained or veteran farmer or pioneer is refused with the pinned "deferred, not ruled" D3 reason and
+    // the state unchanged (see the comment above IneligibleStartsAreRefusedWithoutMutation for the three sources).
+    [Theory]
+    [InlineData(CivilianProfession.Farmer, CivilianTier.Trained)]
+    [InlineData(CivilianProfession.Farmer, CivilianTier.Veteran)]
+    [InlineData(CivilianProfession.Pioneer, CivilianTier.Trained)]
+    [InlineData(CivilianProfession.Pioneer, CivilianTier.Veteran)]
+    public void QualifiedFarmersAndPioneersStayDeferredNotRuled(CivilianProfession profession, CivilianTier tier)
+    {
+        var c = Catalogue(); var s = State(c, Person(profession, tier, "tools-q"));
+        var f = new Gdd03CraftCourseFixture(c, s, Courses);
+        Unchanged(s, () => f.Start(12, CraftA, Month(s, 0)), typeof(NotSupportedException), QualifiedDeferred);
+        Assert.Equal(QualifiedDeferred, Assert.Throws<NotSupportedException>(() => f.Start(12, CraftA, Month(s, 0))).Message);
+    }
+
     [Fact] public void IneligibleStartsAreRefusedWithoutMutation()
     {
         var c = Catalogue(); var s = State(c); var f = new Gdd03CraftCourseFixture(c, s, Courses); var m = Month(s, 0);

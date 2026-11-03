@@ -10,7 +10,7 @@ namespace Statecraft.Sim
     /// turns follow Gdd03TrainingCentreFixture's Q43 timing (#2391; docs/GDD.md:372, from the 1 November 2026 answers the
     /// owner approved): the enrolment month is course turn 1, and the turn that reaches Agreed `craft.course_turns` makes
     /// an apprentice, released at once. No teacher is read or created ("The course adds no mentor population unit").
-    /// Cases decided but not built here are refused with a "Deferred:" NotSupportedException.</summary>
+    /// Cases not built here (decided or, for D3, not ruled) are refused with a "Deferred:" NotSupportedException.</summary>
     internal sealed class Gdd03CraftCourseFixture
     {
         readonly GameState state;
@@ -37,7 +37,8 @@ namespace Statecraft.Sim
         }
 
         static NotSupportedException Deferred(string question) => new NotSupportedException("Deferred: " + question);
-        const string D3 = "#1668 D3 (decided, not built here: a trained or veteran farmer or pioneer starting the craftsman course; the #1698 body says the course cannot replace another trained profession, and D3's two-way professions let a Train order take a qualified civilian).";
+        // D3 is deferred, not ruled: the three sources below are quoted, not resolved, and no answer is built.
+        const string D3 = "#1668 D3 (deferred, not ruled: a trained or veteran farmer or pioneer starting the craftsman course. The #1698 body, agent-recorded scope, says \"The course cannot replace another trained profession\"; docs/GDD.md:349 (D3) says \"a Train order can take a qualified civilian, who then loses the qualification (R-QUAL-006)\"; see R-QUAL-006. No answer is chosen here.)";
         // Re-enrolment is ruled; the tiers during and after a new course are not, so only that part stays Deferred.
         const string Q27M5 = "#1668 27M-5 (ruled: \"graduates may re-enrol at any time\", docs/gdd/training.md:66; not built here: no ruled text says which tier a craftsman holds during and after a new craftsman course).";
         const string Q52 = "#1668 Q52 (decided, not built here: a course whose Industry slot is lost is cancelled like CancelTraining; the slot is #1692's).";
