@@ -1,6 +1,6 @@
 # Writing an event
 
-An event is one YAML file in `content/events/`. The game shows it as a card with two or more options; each option
+An event is one YAML file in `content/events/`. The game shows it as a card with one or more options; each option
 moves some numbers. This guide takes you from an empty file to a passing test run. Everything here was checked
 against the loader (`sim/Statecraft.Sim/ContentLoader.cs`, `EventRules.cs`, `Content.cs`, `ReleaseGate.cs`); if the
 code and this page disagree, the code wins and the page has a bug (please open an issue).
@@ -112,7 +112,8 @@ overlaps the window. Turns are a month long and end on the 15th (15 June 1948, 1
 end on 15 January 1952), so a window shorter than a turn can still fire, late. For a decision card, open the window on
 the 15th on or before the historical decision, so the card reaches the player on the turn before it (R-TURN-002;
 `EventRetimingTests` pins each card's turn). Put a comment above `from` saying why you chose the date, as the example
-does. The loader only requires `from`, and that `to` is later than `from`.
+does. The loader requires `from`. When `to` is present, it must be later than `from`. An event may not span an era
+boundary; split its window at the boundary. An open window with no `to` is allowed only in the last era.
 
 ### conditions
 
