@@ -38,7 +38,8 @@ namespace Statecraft.Sim
 
         static NotSupportedException Deferred(string question) => new NotSupportedException("Deferred: " + question);
         const string D3 = "#1668 D3 (decided, not built here: a trained or veteran farmer or pioneer starting the craftsman course; the #1698 body says the course cannot replace another trained profession, and D3's two-way professions let a Train order take a qualified civilian).";
-        const string Q27M5 = "#1668 27M-5 (decided, not built here: a craftsman starting the craftsman course again).";
+        // Re-enrolment is ruled; the tiers during and after a new course are not, so only that part stays Deferred.
+        const string Q27M5 = "#1668 27M-5 (ruled: \"graduates may re-enrol at any time\", docs/gdd/training.md:66; not built here: no ruled text says which tier a craftsman holds during and after a new craftsman course).";
         const string Q52 = "#1668 Q52 (decided, not built here: a course whose Industry slot is lost is cancelled like CancelTraining; the slot is #1692's).";
         internal const string CourseAtOpeningReason = "After the enrolment month, a course turn counts only when the month's opening holds the course (#1668 Q43(a), GDD 1 Nov 2026).";
 

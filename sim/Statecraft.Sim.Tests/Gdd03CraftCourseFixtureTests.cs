@@ -66,7 +66,7 @@ public class Gdd03CraftCourseFixtureTests
 
     const string GraduationMonth = Gdd03TrainingCentreFixture.GraduationMonthReason;
     const string CourseAtOpening = Gdd03CraftCourseFixture.CourseAtOpeningReason;
-    const string QualifiedDeferred = "Deferred: #1668 D3", CraftsmanDeferred = "Deferred: #1668 27M-5", SlotDeferred = "Deferred: #1668 Q52";
+    const string QualifiedDeferred = "Deferred: #1668 D3", CraftsmanDeferred = "Deferred: #1668 27M-5 (ruled: \"graduates may re-enrol at any time\", docs/gdd/training.md:66; not built here: no ruled text says which tier", SlotDeferred = "Deferred: #1668 Q52";
 
     static void Unchanged(GameState s, Action act, Type expected, string? messagePrefix = null)
     {
@@ -136,7 +136,9 @@ public class Gdd03CraftCourseFixtureTests
     // R-CRAFT-003: every other start is refused with the state unchanged. Plain refusals: a refugee, a free civilian not
     // yet received, an unknown course, a course outside the person's region, a person already on a course. Decided but not
     // built here (Deferred, no answer chosen): a trained or veteran farmer or pioneer (D3 two-way professions against the
-    // #1698 body's "The course cannot replace another trained profession"), and any craftsman (27M-5 re-enrolment).
+    // #1698 body's "The course cannot replace another trained profession"), and any craftsman. Re-enrolment is ruled
+    // (docs/gdd/training.md:66, "graduates may re-enrol at any time"; 27M-5), but no ruled text says which tier a
+    // craftsman holds during and after a new craftsman course, so that part stays Deferred with that reason.
     [Fact] public void IneligibleStartsAreRefusedWithoutMutation()
     {
         var c = Catalogue(); var s = State(c); var f = new Gdd03CraftCourseFixture(c, s, Courses); var m = Month(s, 0);
@@ -189,7 +191,7 @@ public class Gdd03CraftCourseFixtureTests
 
     // R-CRAFT-003, Q43(b) as in #2391 (Gdd03TrainingCentreFixture.GraduationMonthReason): a person released by a graduation
     // cannot start a course in the graduation month, with any snapshot of it. From the next month an apprentice's
-    // re-enrolment (27M-5) is decided but not built here.
+    // re-enrolment is ruled (27M-5) but its tiers are not, so it stays Deferred.
     [Fact] public void AGraduateCannotStartACourseInTheGraduationMonth()
     {
         var c = Catalogue(); var s = State(c); var f = new Gdd03CraftCourseFixture(c, s, Courses);
