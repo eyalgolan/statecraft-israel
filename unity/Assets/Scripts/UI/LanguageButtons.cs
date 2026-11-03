@@ -14,7 +14,7 @@ namespace Statecraft.Game.UI
     public sealed class LanguageButtons : IDisposable
     {
         /// <summary>Each language's code and its name in itself.</summary>
-        public static readonly (string language, string name)[] All = { (UiLanguage.English, "English"), (UiLanguage.Hebrew, "עברית") };
+        public static readonly (string language, string name)[] All = { (UiLanguage.English, "English"), (UiLanguage.Hebrew, "עברית"), (UiLanguage.Romanian, "Română") };
 
         readonly (Button button, string language, Action pick)[] buttons;
         readonly string current;

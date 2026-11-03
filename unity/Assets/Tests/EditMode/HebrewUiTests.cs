@@ -867,6 +867,81 @@ public class HebrewUiTests
         finally { Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt); }
     }
 
+    // --- A language from translations/ (#1606) --------------------------------------------------------------------------
+
+    /// <summary>A language from translations/ chosen in Settings or on the start screen is kept like English and Hebrew
+    /// ("Remember it", owner, 24 Oct 2026): the next start reads it back instead of falling to English. A flag still wins,
+    /// and a value the buttons do not offer is still English.</summary>
+    [Test]
+    public void AStoredRomanianChoiceHoldsAtTheNextStart()
+    {
+        const string page = "http://localhost:8000/index.html";
+        var none = new string[0];
+        Assert.AreEqual(UiLanguage.Romanian, UiLanguage.AtStart(UiLanguage.Romanian, page, none, webgl: true));
+        Assert.AreEqual(UiLanguage.Romanian, UiLanguage.AtStart(UiLanguage.Romanian, null, none, webgl: false));
+        Assert.AreEqual(UiLanguage.Hebrew, UiLanguage.AtStart(UiLanguage.Romanian, page + "?lang=he", none, webgl: true), "a flag wins");
+        Assert.AreEqual(UiLanguage.English, UiLanguage.AtStart("fr", page, none, webgl: true), "a value the game does not offer");
+    }
+
+    /// <summary>A new language's strings: each key its translations/&lt;lang&gt;/ui.yaml has reads the translation, every
+    /// other key the English (the per-string fallback of #1606).</summary>
+    [Test]
+    public void ANewLanguageFallsBackToTheEnglishPerString()
+    {
+        var text = En.Over(new[] { new KeyValuePair<string, string>("ui.lang", "xx"), new KeyValuePair<string, string>("start.new_game", "[xx] start.new_game") }, "translations/xx/ui.yaml");
+        Assert.AreEqual("xx", text["ui.lang"]);
+        Assert.AreEqual("[xx] start.new_game", text["start.new_game"], "a key the translation has");
+        Assert.AreEqual(En["hud.turn"], text["hud.turn"], "a key it lacks: the English");
+        Assert.AreEqual("en", En["ui.lang"], "the English strings are left as they were");
+    }
+
+    /// <summary>Romanian (translations/ro, #1604) is offered in both places beside English and Hebrew, named in itself. A
+    /// press on the start screen keeps it under Settings' key and rebuilds the UI from translations/ro/ui.yaml over the
+    /// English, left to right in the Latin face; Settings shows the same choice, and a reload comes back to it. A key the
+    /// translation adds (a marker here, not Romanian) shows; the rest is English.</summary>
+    [Test]
+    public void RomanianIsOfferedInBothPlacesAndItsStringsFallBackToEnglish()
+    {
+        var translations = Inputs.Content.Translations;
+        var i = translations.FindIndex(t => t.Lang == UiLanguage.Romanian);
+        Assert.GreaterOrEqual(i, 0, "precondition: translations/ro loads with the content");
+        var real = translations[i];
+        const string marker = "[ro] start.new_game";
+        translations[i] = new Statecraft.Sim.TranslationSet
+        {
+            Lang = real.Lang, Events = real.Events, Content = real.Content,
+            Ui = real.Ui.Append(new KeyValuePair<string, string>("start.new_game", marker)).ToList(),
+        };
+        try
+        {
+            var settings = new SettingsStore(Path.Combine(saveDir, "settings"));
+            var game = BootWithStartScreen(settings, null);
+            Assert.AreEqual("Română", Ui.Q<Button>("start-language-ro").text, "named in itself on the start screen");
+            Assert.AreEqual("Română", Ui.Q<Button>("settings-language-ro").text, "and in Settings");
+            Assert.IsFalse(Marked("start-language-ro"), "English is in use");
+
+            UiTestKit.Press(Ui.Q<Button>("start-language-ro"));
+            Assert.AreEqual(UiLanguage.Romanian, settings.Read(SettingsPresenter.LanguageKey), "kept under Settings' key");
+            Assert.IsTrue(StartOpen, "the start screen stays up");
+            Assert.IsTrue(Marked("start-language-ro"), "Romanian is marked on the start screen");
+            Assert.IsFalse(Marked("start-language-en"));
+            Assert.IsTrue(Marked("settings-language-ro"), "and in Settings");
+            Assert.AreEqual(marker, Ui.Q<Button>("start-new-game").text, "a key translations/ro has");
+            Assert.AreEqual(En.Format("hud.turn", game.Bridge!.State.Turn), Ui.Q<Label>("turn").text, "a key it lacks: the English");
+            Assert.IsFalse(Ui.Q("root").ClassListContains(UiLanguage.HebrewClass), "left to right, the Latin face");
+
+            game.Language = null;                                      // a reload: only the file remains
+            game.Begin(Inputs, 0, startScreen: true);
+            Assert.IsTrue(Marked("start-language-ro"), "Romanian after a reload");
+            Assert.AreEqual(marker, Ui.Q<Button>("start-new-game").text);
+
+            UiTestKit.Press(Ui.Q<Button>("settings-language-en"));
+            Assert.AreEqual(En["start.new_game"], Ui.Q<Button>("start-new-game").text, "English again from Settings");
+            Assert.AreEqual(UiLanguage.English, settings.Read(SettingsPresenter.LanguageKey));
+        }
+        finally { translations[i] = real; }
+    }
+
     /// <summary>#1210: the one rule the event card and the outcome caption share. In Hebrew a text with a Hebrew form shows
     /// it, a text without one falls back to the English (fail open); in English the English always.</summary>
     [Test]

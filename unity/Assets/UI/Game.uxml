@@ -490,6 +490,7 @@
                 <ui:VisualElement class="row settings-choices">
                     <ui:Button name="settings-language-en" class="settings-switch" />
                     <ui:Button name="settings-language-he" class="settings-switch" />
+                    <ui:Button name="settings-language-ro" class="settings-switch" />
                 </ui:VisualElement>
             </ui:VisualElement>
             <!-- UI scale (SettingsPresenter.UiScales): three buttons, the one that is set carries .settings-choice-selected. -->
@@ -654,6 +655,7 @@
                         <ui:VisualElement name="start-language" class="row start-language">
                             <ui:Button name="start-language-en" class="start-language-button" />
                             <ui:Button name="start-language-he" class="start-language-button" />
+                            <ui:Button name="start-language-ro" class="start-language-button" />
                         </ui:VisualElement>
                         <!-- Quit (#2153, QuitButton): desktop players only, hidden in the browser; as quiet as Report, last in
                              the row and in the Tab order (the panel keeps its height). -->

@@ -181,9 +181,17 @@ namespace Statecraft.Game.UI
             line.languageDirection = !hebrew ? LanguageDirection.Inherit : UiDirection.RightToLeft(words) ? LanguageDirection.RTL : LanguageDirection.LTR;
         }
 
-        /// <summary>The strings of the UI's language (UiLanguage): strings.he.yaml when Hebrew is asked for or chosen, else English.</summary>
-        UiText Strings() => (Language ?? UiLanguage.AtStart(SettingsFile()?.Read(SettingsPresenter.LanguageKey))) == UiLanguage.Hebrew
-            ? UiText.Parse(stringsHe.text, "strings.he.yaml") : UiText.Parse(strings.text);
+        /// <summary>The strings of the UI's language (UiLanguage): strings.he.yaml when Hebrew is asked for or chosen; a language
+        /// from translations/ (#1606) as its ui.yaml over the English, per string, once <paramref name="content"/> carries it
+        /// (before the content loads, the loading line is English); else English.</summary>
+        UiText Strings(Content? content = null)
+        {
+            var language = Language ?? UiLanguage.AtStart(SettingsFile()?.Read(SettingsPresenter.LanguageKey));
+            if (language == UiLanguage.Hebrew) return UiText.Parse(stringsHe.text, "strings.he.yaml");
+            var english = UiText.Parse(strings.text);
+            var set = language == UiLanguage.English ? null : content?.Translations.Find(t => t.Lang == language);
+            return set == null ? english : english.Over(set.Ui, $"translations/{language}/ui.yaml");
+        }
 
         void OnDisable()
         {
@@ -254,7 +262,7 @@ namespace Statecraft.Game.UI
             Shutdown(keepCompanionPage: companion != null && CompanionWanted());
             smokeRun = smoke > 0;
 
-            var text = Strings();
+            var text = Strings(inputs.Content);
             var store = Store ?? SaveStore.ForPlatform();
             var notes = new List<string>();
             // A smoke run is reproducible: a fresh game with the golden seed, never the player's autosave.
