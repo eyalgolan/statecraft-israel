@@ -23,7 +23,7 @@ using Object = UnityEngine.Object;
 /// plays the attack as the game does (UnitTokenMotion.PlayAttack; the layer adds the motion only in play mode, so the still
 /// adds it the same way) and advances it to half its length; an Animator does not run in edit mode, so every figure's
 /// Animator is advanced by hand by the same time. Explicit.</summary>
-[Explicit("writes stills for a pull request, not a check")]
+[Explicit("writes pull-request stills or logs weapon load; not a check")]
 public class TalWeaponsShots
 {
     string saveDir = "";

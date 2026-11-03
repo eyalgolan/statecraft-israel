@@ -139,6 +139,22 @@ public class UnitPlacerSpeedTests
         return h;
     }
 
+    /// <summary>Round 4 tries the anchor itself after the full-size centre, compact centre/inside points and town round
+    /// all fail. The anchor is deliberately not one of the earlier grid points, so only Mesh can return it.</summary>
+    [Test]
+    public void TheFourthRoundPlacesAtAClearAnchorBetweenTheGridPoints()
+    {
+        var anchor = new UnitAnchor { Place = "between grid points", Lon = 100, Lat = 100, From = "1948-05-15", To = "1948-05-16" };
+        var unit = new UnitEntry { Id = "test", Side = UnitData.Israel, Service = UnitData.Army, Anchors = new List<UnitAnchor> { anchor } };
+        var hexes = new[] { new MapHex { Q = 0, R = 0, Lon = 0, Lat = 0, Land = true } };
+
+        var spots = UnitPlacer.PlaceAll(new[] { unit }, hexes, 1000, (lon, lat) => (lon, lat),
+            (service, x, z, compact, inTown, ax, az) => compact && !inTown && x == ax && z == az,
+            (x, z) => 0.0);
+
+        Assert.AreEqual(new AnchorSpot(0, 0, 100, 100, compact: true), spots[anchor]);
+    }
+
     [Test]
     public void TheFastPlacerGivesExactlyTheOriginalSpots()
     {

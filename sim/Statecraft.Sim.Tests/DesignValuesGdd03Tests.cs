@@ -253,11 +253,21 @@ public partial class DesignValuesTests
         Assert.Equal(10000m,Assert.Single(v["population.people_per_unit"].Values));
         Assert.Equal(new[]{0.75m,1m,1.5m},v["pioneer.work_rate"].Values);
         Assert.Equal(0.10m,Assert.Single(v["maabara"].Parts["upkeep"].Values));
-        Assert.Equal("2 * current regional housing upkeep",v["housing_repair"].Parts["cost"].Expression);
+        Assert.Equal(0.5m,Assert.Single(v["housing_repair"].Parts["cost"].Values));
         Assert.Equal(65m,Assert.Single(v["start.population"].Values));
         Assert.Equal(new[]{5m,10m,5m},v["start.farmers"].Values);
         Assert.Equal(new[]{0.5m,1m,2m},v["combat.draw_count"].Parts["ratio_thresholds"].Values);
         Assert.Null(ContentLoader.Load(Fixture.Write()).Gdd03Balance); // old authored content still loads
+    }
+    // The owner's #1700 ruling (docs/GDD.md, "Housing repair price"): "Fixed price 0.5 Money + 1 work", +10 pp condition.
+    // Catalogue only: no gameplay path reads the repair cost or work yet (Gdd03HousingFormula reads condition_pp only).
+    [Fact] public void HousingRepairCatalogueHoldsTheOwnersFixedPrice()
+    {
+        var repair = ContentLoader.Load(RealContentTests.ContentRoot()).Gdd03Balance!.Values["housing_repair"];
+        Assert.Empty(repair.Parts["cost"].Expression);
+        Assert.Equal(0.5m, Assert.Single(repair.Parts["cost"].Values));
+        Assert.Equal(1m, Assert.Single(repair.Parts["work"].Values));
+        Assert.Equal(10m, Assert.Single(repair.Parts["condition_pp"].Values));
     }
     // R-LOOP-005: every numeric gdd-0.3 catalogue row is checked when the authored file loads.
     // Sets one row's values (or one part's), found by its YAML key, whatever its current value or note text says.

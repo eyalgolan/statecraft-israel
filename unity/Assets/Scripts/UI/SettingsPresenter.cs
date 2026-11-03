@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using Statecraft.Game.Map;
 using Statecraft.Sim;
@@ -153,7 +154,7 @@ namespace Statecraft.Game.UI
                 return (b, percent, pick);
             });
             var storedScale = store?.Read(UiScaleKey);
-            int startScale = Array.Find(UiScales, p => p.ToString() == storedScale);   // 0 when the file names none of them
+            int startScale = Array.Find(UiScales, p => p.ToString(CultureInfo.InvariantCulture) == storedScale);   // 0 when the file names none of them
             chosen = startScale > 0 ? startScale : UiScales[0];
             ApplyScale(Fits(chosen) ? chosen : UiScales[0]);
             // The fit depends on the window's shape, which a resize changes: the offer and the applied scale follow the
@@ -282,7 +283,7 @@ namespace Statecraft.Game.UI
             chosen = percent;
             ApplyScale(percent);
             Show();
-            try { store?.Write(UiScaleKey, percent.ToString()); }
+            try { store?.Write(UiScaleKey, percent.ToString(CultureInfo.InvariantCulture)); }
             catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
             {
                 Debug.LogWarning($"Settings: could not keep the UI scale ({e.Message}); it holds until the page is closed");
