@@ -654,7 +654,7 @@
     "parts":
       "cost":
         "basis": "Default"
-        "note": "Construction Default; upkeep Default. Source: #1668 balance.md at 605277df."
+        "note": "Construction Default; upkeep Default. Non-operative: docs/gdd/balance.md:76 at 52fe3d60a keeps the retained rules.yaml build_camp_cost 2 for the military camp, which the live camp build uses. Source: #1668 balance.md at 605277df."
         "values": [12]
       "work":
         "basis": "Default"
