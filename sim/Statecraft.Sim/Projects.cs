@@ -268,6 +268,16 @@ namespace Statecraft.Sim
 
         static string Refused(string format, params object[] values) => string.Format(System.Globalization.CultureInfo.InvariantCulture, format, values);
 
+        /// <summary>R-PROJ-001 under gdd-0.3 only (#1700 slice B; owner, 3 November 2026: "One per city, plus 2 nationally"):
+        /// the city projects one city may start in a turn. A design value from that ruling, not construction.starts_per_turn
+        /// (content/gdd03-balance.yaml), whose 1 is Amir's nationwide catalogue reading; map_actions_per_turn stays the
+        /// national limit.</summary>
+        public const int Gdd03CityStartsPerTurn = 1;
+
+        /// <summary>R-PROJ-001 under gdd-0.3: the city_cap refusal, formatted with the settlement's name ({0}). The English is
+        /// what a turn's Rejected list and a save carry; the UI words it in its language (SimBridge.ReasonText).</summary>
+        public const string RefusedCityCap = "{0} has started a city project this turn";
+
         /// <summary>The city project at hex (q, r), being built or built, or null (Q-PROJ-2: one project or placement a hex).</summary>
         public static CityProject? CityProjectAt(GameState s, int q, int r) => s.CityProjects.Values.FirstOrDefault(p => p.Q == q && p.R == r);
 
@@ -275,14 +285,16 @@ namespace Statecraft.Sim
         /// (q, r) now, else the reason. Refused for an unknown kind or city; a kind whose resource the city lacks (R-PROJ-005); a
         /// transit camp without the ma'abarot policy (Q-HOUSE-3, D-D3: the policy carries its sourced date); a hex that is not
         /// land, is further than map_action_max_distance from the city's settlement hex, or holds a placement or another city
-        /// project (Q-PROJ-2); and once map_actions_per_turn city projects were started this turn
-        /// (Q-PROJ-4). A short Treasury is not a reason: it borrows (Q-MONEY-3). The reference player asks this before it orders.</summary>
+        /// project (Q-PROJ-2); under gdd-0.3, once the city started <see cref="Gdd03CityStartsPerTurn"/> this turn; and once
+        /// map_actions_per_turn city projects were started this turn (Q-PROJ-4). A short Treasury is not a reason: it borrows
+        /// (Q-MONEY-3). The reference player asks this before it orders.</summary>
         public static string? CheckCity(Content c, GameState s, string kind, string city, int q, int r) => CheckCityReason(c, s, kind, city, q, r)?.Text;
 
         /// <summary><see cref="CheckCity"/>'s one validator (#1122, owner ruling 2): null when the project may be started, else a
         /// stable kind and invariant values for a UI to word in its language (the map actions' pattern), plus the English text.
         /// The kinds, in check order: unknown_kind, unknown_city, locked (kind), maabarot_policy, no_resource (city, resource, kind), not_land,
-        /// too_far (distance, city), occupied (the placement's action), occupied_project (the project's kind), turn_cap (cap).</summary>
+        /// too_far (distance, city), occupied (the placement's action), occupied_project (the project's kind), city_cap (city;
+        /// gdd-0.3 only), turn_cap (cap).</summary>
         public static MapActionReason? CheckCityReason(Content c, GameState s, string kind, string city, int q, int r)
         {
             var k = c.ProjectKinds.FirstOrDefault(x => x.Id == kind);
@@ -308,6 +320,11 @@ namespace Statecraft.Sim
                 return new MapActionReason("occupied", $"This hex already has {PlayerText.MapAction(c, placed.Action)}", placed.Action);
             if (CityProjectAt(s, q, r) is CityProject other)
                 return new MapActionReason("occupied_project", $"This hex already has {c.ProjectKinds.First(x => x.Id == other.Kind).Name}", other.Kind);
+            // R-PROJ-001 under gdd-0.3 (owner, 3 November 2026: "One per city, plus 2 nationally"): the city's own limit,
+            // before the national one, so a player over both sees the city's reason.
+            if (c.Ruleset == SaveGame.Gdd03Ruleset && s.MapActionsTurnDate == s.Date
+                && s.CityStartsThisTurn.TryGetValue(city, out var started) && started >= Gdd03CityStartsPerTurn)
+                return new MapActionReason("city_cap", string.Format(System.Globalization.CultureInfo.InvariantCulture, RefusedCityCap, name), city);
             // Last, as for map actions, so a player over the cap still sees the specific reason an order is illegal. The count
             // is the map actions' own (one national limit, Q-PROJ-4).
             if ((s.MapActionsTurnDate == s.Date ? s.MapActionsThisTurn : 0) >= rules.MapActionsPerTurn)
@@ -345,8 +362,10 @@ namespace Statecraft.Sim
             var reason = CheckCity(c, s, kind, city, q, r);
             if (reason != null) return reason;
             var k = c.ProjectKinds.First(x => x.Id == kind);
-            if (s.MapActionsTurnDate != s.Date) { s.MapActionsTurnDate = s.Date; s.MapActionsThisTurn = 0; }
+            if (s.MapActionsTurnDate != s.Date) { s.MapActionsTurnDate = s.Date; s.MapActionsThisTurn = 0; s.CityStartsThisTurn.Clear(); }
             s.MapActionsThisTurn++;
+            if (c.Ruleset == SaveGame.Gdd03Ruleset)   // R-PROJ-001: the city's start, gdd-0.3 only, so no other ruleset's hash moves
+                s.CityStartsThisTurn[city] = s.CityStartsThisTurn.TryGetValue(city, out var n) ? n + 1 : 1;
             var name = PlayerText.Settlement(c, city);
             EconomySystem.PayOrBorrow(c, s, k.Cost, "to build " + k.Name, why, CauseKeys.Purpose.Project, k.Id);
             var id = s.NextId++;

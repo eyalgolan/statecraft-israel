@@ -81,6 +81,11 @@ namespace Statecraft.Sim
         /// acceptance, so replacing a camp with housing cannot reopen the per-turn cap; a new date starts from zero.</summary>
         public DateTime MapActionsTurnDate;
         public int MapActionsThisTurn;
+        /// <summary>R-PROJ-001 under gdd-0.3 only (#1700 slice B): the city projects each city started in the turn of
+        /// <see cref="MapActionsTurnDate"/>, by city id (ordinal), counted on acceptance. Read only while that date is the
+        /// turn's, and cleared when a start or map action moves it on, as MapActionsThisTurn is reset. Empty under every
+        /// other ruleset, and then left out of the hash.</summary>
+        public SortedDictionary<string, int> CityStartsThisTurn = new SortedDictionary<string, int>(StringComparer.Ordinal);
         /// <summary>Why the game ended, as one of the <see cref="GameOverCodes"/>; null while it is on. Never display it: use PlayerText.GameOver.</summary>
         public string? GameOver;
         // GDD v0.1 state (spec 2026-10-12 section 2.2). Empty in the legacy loop, and then left out of the hash (R-LOOP-002).
@@ -165,6 +170,7 @@ namespace Statecraft.Sim
             c.Cohorts = new SortedList<int, Cohort>(Cohorts);
             c.Sites = new SortedDictionary<string, SiteWork>(Sites, StringComparer.Ordinal);
             c.CityProjects = new SortedList<int, CityProject>(CityProjects);
+            c.CityStartsThisTurn = new SortedDictionary<string, int>(CityStartsThisTurn, StringComparer.Ordinal);
             c.Workshops = new SortedList<int, Workshop>(Workshops);
             c.Corridors = new SortedDictionary<string, CorridorWork>(Corridors, StringComparer.Ordinal);
             c.UnlockedProjects = new SortedSet<string>(UnlockedProjects, StringComparer.Ordinal);
@@ -261,6 +267,8 @@ namespace Statecraft.Sim
             if (Cohorts.Count > 0) Section("train", '[', ']', Cohorts.Values.Select(x => x.Canonical()));
             if (Sites.Count > 0) Section("site", '{', '}', Sites.Values.Select(x => x.Canonical()));
             if (CityProjects.Count > 0) Section("cproj", '[', ']', CityProjects.Values.Select(x => x.Canonical()));
+            if (CityStartsThisTurn.Count > 0)   // R-PROJ-001, gdd-0.3 only
+                Section("cstart", '{', '}', CityStartsThisTurn.Select(kv => kv.Key + "=" + kv.Value.ToString(CultureInfo.InvariantCulture)));
             if (Workshops.Count > 0) Section("wshop", '[', ']', Workshops.Values.Select(x => x.Canonical()));   // R-ARMS-005, gdd-0.3 only
             if (Corridors.Count > 0) Section("corr", '{', '}', Corridors.Values.Select(x => x.Canonical()));
             if (UnlockedProjects.Count > 0) Section("unlocked", '[', ']', UnlockedProjects);
