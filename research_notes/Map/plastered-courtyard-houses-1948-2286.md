@@ -14,15 +14,17 @@ written as the sources write them.
 #2286 asks: before 1949, were the houses of Arab villages and towns plastered or bare stone, flat, domed or vaulted on top, with
 courtyards, how many storeys and what colour, and how did that differ by region? Then: does Tal Heuberger's house 05
 (`unity/Assets/Art/Settlements/Prototype/Models/generated-1948-05-plastered-courtyard-house-original/`) match? The pool it
-fills is `TownModels.Stone` (`unity/Assets/Scripts/Map/Kits/TownModels.cs:65-67`).
+fills is `TownModels.Stone` (`unity/Assets/Scripts/Map/Kits/TownModels.cs:68`; since #2259 merged, 05 is the only house in that pool).
 
 **What closed, from two pre-1949 primary texts and Library of Congress photographs**
 
 - **Walls.** Tawfiq Canaan, who wrote while the Mandate stood (1932 and 1933), says houses were of two kinds: stone in the
   mountains, clay brick in the Mediterranean plain and the Jordan depression. He says plastering "is regarded as a luxury which can
-  be introduced any time later", that "Not every peasant whitewashes his house", and that those who did used indigo so that the
-  wash often had "a decided bluish tint". So a fully plastered cream house is not the plain hill-village case in this source. It
-  fits richer houses, and a town such as Safed in the c.1900-1920 photograph below.
+  be introduced any time later", that "Not every peasant whitewashes his house", and that indigo in the whitewash often gave "a decided
+  bluish tint". Canaan's plaster passage (pp. 25-26) names "the ceiling (sagf) and the walls (hrtan)" without saying inside or
+  outside, so the text does not settle whether a full outer plaster was usual; the one outer surface he names is "the outer
+  surface of the jambs and lintel" (p. 27). Reading "no full outer plaster" from this would be an inference, and this note does
+  not draw it. A plastered look is shown for the town of Safed, about 30 years before 1948, in the photograph below.
 - **Roof.** Canaan: roofs are "more or less flat, with a low dome-like elevation in the centre" (the top of the vault below); clay
   houses have wooden roofs, sealed with a layer of huwar (clay) and straw that "must be renewed each year". A 1989 secondary book
   ([S]) says hill-village houses had a domed roof. The two describe the same vaulted room from inside and outside; how the game
@@ -30,7 +32,8 @@ fills is `TownModels.Stone` (`unity/Assets/Scripts/Map/Kits/TownModels.cs:65-67`
 - **Courtyards.** Both say a house opened on a shared courtyard; a peasant house was one room, richer ones several, some of two
   storeys.
 - **Colour.** Black and white photographs cannot give colour. Text gives: whitewash (bluish with indigo) round the door, door panels
-  painted blue or green ([S], 1989). Model 05's shutters are brown.
+  painted blue or green ([S], 1989). Canaan 1933 p. 25 says wooden shutters were installed ("daffet es-subbak"), so shutters
+  are attested; their colour was not found. Model 05's shutters are brown.
 
 **What stays [GAP]:** colour of any wall in 1948 (no colour source opened); houses of Acre, Jaffa and Tantura in 1948 (no
 description of house walls found); the Arab quarter of Safed; Galilee hill villages other than the Huleh reed-mat villages; any
@@ -38,7 +41,8 @@ description of house walls found); the Arab quarter of Safed; Galilee hill villa
 
 ## Answer table
 
-Tags: written in full as in the rows. [S] secondary; [C] sources conflict, both kept; [GAP] still open. A photograph row records
+Tags: [V] verified by an agent reading the record itself (each row says "agent read" and the day); [S] secondary or a page that
+is not the record; [C] conflicting, both values kept; [GAP] still open, with what was tried. A photograph row records
 what the agent saw in the image file, which is the agent's reading, not the caption.
 
 | Claim | Source and page or URL | Printed text | Tag | Day read |
@@ -55,8 +59,8 @@ what the agent saw in the image file, which is the agent's reading, not the capt
 | Domes proper (the hemispherical dome on a cross-vault) are rare on private houses | Canaan 1933, p. 20 | "A shallow dome is called qubbeh (i)msatlahah. ..." then "Only few private houses of the better-class town-dwellers show this form of vaulting." | [V, agent read 2026-11-03; a person's check pending] | 2026-11-03 |
 | The roof is sealed with clay and straw renewed yearly; richer people plaster it with sand and lime | Canaan 1933, p. 24 | "The simplest device adopted in most villages is a layer of huwar and straw ... Such a protecting layer must be renewed each year." and "Richer people choose a more efficient way. The roof is plastered with hasmeh ... and lime." | [V, agent read 2026-11-03; a person's check pending] | 2026-11-03 |
 | Peasants moved in before plastering, which was a luxury | Canaan 1933, p. 25 | "Most peasants occupy their houses before they are finished, since plastering is regarded as a luxury which can be introduced any time later when the proprietor has saved money." | [V, agent read 2026-11-03; a person's check pending] | 2026-11-03 |
-| Wall plaster was lime with flax in three coats, polished for days | Canaan 1933, p. 26 | "The plaster consists as a rule of three coats: marseh (rendering coat), sihhiyeh (floating coat) and nameh (setting or fine coat)." and "It needed to be polished for several days" | [V, agent read 2026-11-03; a person's check pending] | 2026-11-03 |
-| Not every peasant whitewashed; those who did added indigo, giving a bluish tint, and most whitewashed the door jambs and lintel | Canaan 1933, p. 27 | "Not every peasant whitewashes his house" and "Many peasants use so much nileh that the whitewashing has a decided bluish tint. Most peasants and some townsfolk also whitewash the outer surface of the jambs and lintel, especially around the door." | [V, agent read 2026-11-03; a person's check pending] | 2026-11-03 |
+| Plaster of "the ceiling and the walls" was lime with flax in three coats, polished for days; the text does not say whether this is the inside or the outside finish | Canaan 1933, pp. 25-26 | "The plastering material (gsarah) of the ceiling (sagf) and the walls (hrtan) was made of lime mixed with flax-threads" (the OCR prints "hrtan"); "The plaster consists as a rule of three coats: marseh (rendering coat), sihhiyeh (floating coat) and nameh (setting or fine coat)." and "It needed to be polished for several days" | [V, agent read 2026-11-03; a person's check pending] | 2026-11-03 |
+| Not every peasant whitewashed; those who did added indigo, giving a bluish tint, and most whitewashed the door jambs and lintel | Canaan 1933, p. 27 | "Not every peasant whitewashes his house" (where on the house is not said) and "Many peasants use so much nileh that the whitewashing has a decided bluish tint. Most peasants and some townsfolk also whitewash the outer surface of the jambs and lintel, especially around the door." | [V, agent read 2026-11-03; a person's check pending] | 2026-11-03 |
 | Joints were pointed with lime and ashes; the pointing "protruded slightly beyond the surface of stones" in the old style | Canaan 1933, p. 27 | "Formerly lime with qusrmal or lime with humrä were used. Such a pointing is known as kuhleh 'arabiyeh. It covered not only the joints but also the edges of the stone" | [V, agent read 2026-11-03; a person's check pending] | 2026-11-03 |
 | Highland houses: grey limestone, mostly single-storey, thick walls, a domed roof, one low arched door | S. Amiry and V. Tamari, *The Palestinian Village Home*, British Museum Publications 1989 (RIWAQ reprint 2003, PDF at `https://palestine.araburbanism.com/img/The%20Palestinian%20Village%20Home.pdf`), p. 25 | "Most highland village houses were simple square structures built from the limestone rock abundant in the surrounding hills" and "Most houses were single-storey, with only one low, arched entrance." and "growing freely on the domed roof" | [S] | 2026-11-03 |
 | Same book: Mandate-period houses had larger windows, often in pairs; part of the front was whitewashed, doors painted blue or green; wealthier houses had two or three storeys | Amiry and Tamari 1989, pp. 25-26 | "later houses dating from the Mandate period have relatively large windows, often in pairs" and "It was common to whitewash part of the front façade, particularly the arched doorway" and "the wooden panels of the door painted blue or green" and "These wealthier houses often had two or three storeys" | [S] | 2026-11-03 |
@@ -68,7 +72,7 @@ what the agent saw in the image file, which is the agent's reading, not the capt
 | Photograph, Abu Ghosh village, between 1934 and 1939 (LC-DIG-matpc-16880, title "Abu Ghosh village"): light cubic houses with flat tops and rectangular windows, terraced on a hillside; the surface finish (plaster or dressed stone) cannot be told at 640 px | `https://tile.loc.gov/storage-services/service/pnp/matpc/16800/16880r.jpg` | the agent's reading of the image | [V, agent read 2026-11-03; a person's check pending] for what the image shows | 2026-11-03 |
 | Air photographs, 1932 (series "Air views of Palestine", LC-DIG-matpc-15868 Cana of Galilee, -15869 and -15870 Nazareth, -15884 Jaffa from the land side): Cana is a low cluster of flat-topped houses; Nazareth is dense and mostly flat-roofed with some pitched roofs on newer buildings; Jaffa is a dense waterfront town with ships off it, and its land side shows newer blocks among orchards, roof form not readable | `https://tile.loc.gov/storage-services/service/pnp/matpc/15800/15868r.jpg` (also 15869r, 15870r, 15884r) | the agent's reading of the images | [V, agent read 2026-11-03; a person's check pending] for what the images show | 2026-11-03 |
 | Air photographs of Beit Jala (LC-DIG-matpc-22173, [1931] in the LOC record) and Safad (-22278, date not read): dense clusters on slopes and ridges; roof form not readable at this size | `https://tile.loc.gov/storage-services/service/pnp/matpc/22100/22173r.jpg` (and 22200/22278r.jpg) | the agent's reading of the images | [V, agent read 2026-11-03; a person's check pending] for what the images show | 2026-11-03 |
-| Model 05's role: "Generic existing Village/ArabTown courtyard variation"; in `TownModels.Stone` alone | `docs/generated-buildings-props-mapping.json:41-48`; `unity/Assets/Scripts/Map/Kits/TownModels.cs:65-67`; `SettlementKits.Models.cs:199` | "Generic existing Village/ArabTown courtyard variation (including existing Jerusalem Village-style plots)" | [V, agent read 2026-11-03; a person's check pending] | 2026-11-03 |
+| Model 05's role: "Generic existing Village/ArabTown courtyard variation"; in `TownModels.Stone` alone | `docs/generated-buildings-props-mapping.json:41-48`; `unity/Assets/Scripts/Map/Kits/TownModels.cs:68`; `SettlementKits.Models.cs:199` | "Generic existing Village/ArabTown courtyard variation (including existing Jerusalem Village-style plots)" | [V, agent read 2026-11-03; a person's check pending] | 2026-11-03 |
 | Model 05's roof: "one continuous L-shaped roof deck" (flat) | `.../generated-1948-05-plastered-courtyard-house-original/provenance.json`, key `source_caveats` | "one continuous L-shaped roof deck replaces the provider original without its roof deck." | [V, agent read 2026-11-03; a person's check pending] | 2026-11-03 |
 | Model 05's surface, from its 4096 px colour map: cream, cracked plaster walls; brown wooden shutters and doors; an arched doorway; small square windows | `.../generated-1948-05-plastered-courtyard-house-original_basecolor.jpg`, viewed at 1000 px | the agent's reading of the image; the 3D model itself was not opened in Unity | [V, agent read 2026-11-03; a person's check pending] | 2026-11-03 |
 
@@ -78,22 +82,23 @@ Result key: **matches**, **differs** (with what), **cannot tell**. All of it res
 
 | Region | Wall finish | Roof | Courtyard, storeys | Colour | Result for 05 |
 |---|---|---|---|---|---|
-| Mountainous or highland villages, as the sources say (Canaan; Amiry) | Limestone with part of the front, above all the door, whitewashed is the case described (Amiry 1989 pp. 25-26 [S]); plaster a later luxury and "Not every peasant whitewashes" (Canaan 1933 pp. 25, 27); full plaster on peasant houses not described | Vault inside, flat with a low dome outside (Canaan); "domed" ([S]) | Courtyard yes (both); mostly one storey (Amiry p. 25 [S]), two in larger houses (Canaan 1932 p. 229) | whitewash bluish with indigo; doors blue or green ([S]) | **Differs** on full cream plaster and brown shutters for a peasant house; courtyard house by name, layout not read, so **cannot tell**; roof **cannot tell** ([C]) |
+| Mountainous or highland villages, as the sources say (Canaan; Amiry) | Limestone with part of the front, above all the door, whitewashed is the case described (Amiry 1989 pp. 25-26 [S]); plaster a later luxury and "Not every peasant whitewashes" (Canaan 1933 pp. 25, 27); full plaster on peasant houses not described; inside or outside of the plaster passage not stated | Vault inside, flat with a low dome outside (Canaan); "domed" ([S]) | Courtyard yes (both); mostly one storey (Amiry p. 25 [S]), two in larger houses (Canaan 1932 p. 229) | whitewash bluish with indigo; doors blue or green ([S]) | Full cream plaster: **cannot tell** (the text does not settle the outside finish), but a fully plastered house is not what Amiry describes; brown shutters: wooden shutters are attested, colour not found; courtyard house by name, layout not read, so **cannot tell**; roof **cannot tell** ([C]) |
 | Coastal plain villages (Tantura, Majdal, Qisariya) | Clay brick, for "the Mediterranean plain" generally, not these villages (Canaan 1932 p. 230); plaster not stated | Wooden, clay and straw, yearly renewal (Canaan) | Courtyard not described for the plain | not found | **Cannot tell**: a plastered clay house could look like 05, but no source says it did |
 | Galilee villages (Kafr Kanna, Nazareth area) | Not found for walls; Cana and Nazareth air photographs show flat tops only | flat tops in the 1932 air photographs | not found | not found | **Cannot tell** |
 | Huleh villages | Reed-mat huts of the poor, called temporary by Canaan (1932 p. 228) | reed mats | none described | not found | **Differs** for those huts only; a 1932 text, so what stood there in 1948 **cannot tell** |
-| Safed | white plaster or whitewash, stepped levels, flat roofs in the c.1900-1920 photograph | flat | stepped levels | black and white only | **Matches** the plastered look and flat roof; storeys and courtyard **cannot tell** |
+| Safed | white plaster or whitewash, stepped levels, flat roofs in the c.1900-1920 photograph (the town's look about 30 years before 1948; the title names no quarter, so the Arab quarter is not identified) | flat | stepped levels | black and white only | **Matches** the plastered look and flat roof for the town as it was c.1900-1920; storeys, courtyard and the quarter **cannot tell** |
 | Jaffa and Acre | Jaffa "tuffstone" in 1906 (Baedeker p. 8); Acre not found; Jaffa's land side in 1932 shows newer blocks among orchards | roof form not readable in the air photograph | not found | not found | **Cannot tell**; the courtyard house is not shown to fit |
 | Jerusalem village plots (Silwan, Lifta) | the Siloam photograph found shows only distant shapes; no wall finish read | not read | not read | not read | **Cannot tell** |
 
 ## For the owner (no change made here)
 
-- 05 reads as a plausible rich-house or small-town look (plaster, flat deck, courtyard), and a weaker fit for a typical hill
-  peasant house (bare stone, door surround in white, blue or green doors).
+- 05 reads as a plausible rich-house or small-town look (plaster, flat deck, courtyard): the Safed photograph is the town's look
+  about 30 years before 1948 and the quarter is not identified. It is a weaker fit for the hill peasant house described by Amiry
+  (limestone, door surround whitewashed, blue or green doors); Canaan does not settle the outside finish.
 - If a second look is wanted: a bare-stone variant for the hill villages, a clay-brick variant for the plain, and nothing for the
   Huleh reed-mat villages. This note does not say that any of them must be built.
-- The brown shutters on 05 are not supported by the two text sources (door panels blue or green, [S]); no source read gives
-  shutter colour.
+- Wooden shutters are attested (Canaan 1933 p. 25); only their colour was not found. Blue or green is for door panels ([S]), and no
+  source read gives shutter colour, so the brown on 05 is neither supported nor contradicted.
 
 ## Search log
 
