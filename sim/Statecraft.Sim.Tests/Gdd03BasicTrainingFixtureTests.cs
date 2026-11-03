@@ -554,4 +554,42 @@ public class Gdd03BasicTrainingFixtureTests
         f.Start(new[] { 2 }, CampNorth, 0);
         Assert.Equal(PopulationStatus.Trainee, s.PopulationLedger.Get(2).Status);
     }
+
+    static PopulationUnit WithMilitary(PopulationUnit p, string item) => new(p.Id, p.Status, p.ReceptionTicks, p.Location,
+        p.Assignment, p.Profession, p.Tier, p.WorkXp, p.Qualification, p.CombatXp,
+        new PopulationEquipment(p.Equipment.ToolsId, p.Equipment.ToolsPaid, item, true), p.Captor, p.Home);
+
+    // R-ARMS-003 (docs/rules/mvp.md:433): "cancelling the cohort (R-TRAIN-002) returns them to the pool", where "them" is
+    // "the Arms it took". If the issued item was swapped on the ledger after Start, the record no longer holds what this
+    // fixture issued: cancel throws and changes nothing, rather than returning to the spare an item it no longer finds.
+    [Fact] public void CancelIsRefusedWhenTheIssuedItemWasReplaced()
+    {
+        var c = Catalogue(); var s = State(c); var f = Fixture(c, s, spare: 5); var l = s.PopulationLedger;
+        f.Start(new[] { 0 }, CampNorth, 0);
+        l.Replace(WithMilitary(l.Get(0), "fixture-swapped-item"));
+        Unchanged(s, f, () => f.Cancel(0), typeof(InvalidOperationException));
+        Assert.Equal("fixture-swapped-item", l.Get(0).Equipment.MilitaryId);
+        Assert.Equal(4, f.SpareArms);
+    }
+
+    // R-ARMS-003 (docs/rules/mvp.md:433): "The cohort keeps the Arms it took". A cancel ends what this fixture issued for that
+    // course: if the same record later enrols carrying an item it got another way, it took no Arms, so cancelling that
+    // second course keeps the carried item and the spare stock unchanged.
+    [Fact] public void ACancelledRecruitWhoReEnrolsEquippedKeepsTheItemOnASecondCancel()
+    {
+        var c = Catalogue(); var s = State(c); var f = Fixture(c, s, spare: 5); var l = s.PopulationLedger;
+        f.Start(new[] { 0 }, CampNorth, 0);
+        f.Cancel(0);
+        Assert.Equal(5, f.SpareArms);
+        l.Replace(WithMilitary(l.Get(0), Carried + "-0"));
+        f.Start(new[] { 0 }, CampNorth, 1);
+        Assert.Equal(5, f.SpareArms);
+
+        f.Cancel(0);
+
+        Assert.Equal(PopulationStatus.FreeCivilian, l.Get(0).Status);
+        Assert.Equal(Carried + "-0", l.Get(0).Equipment.MilitaryId);
+        Assert.Equal(5, f.SpareArms);
+        l.Reconcile();
+    }
 }
