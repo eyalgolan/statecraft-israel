@@ -405,7 +405,7 @@ On 2 November 2026 the owner ruled on Arms bought on credit, a lever on the war 
 
 | Question | Owner's answer (3 November 2026) | Rule |
 |-|-|-|
-| City building in the MVP ([#1700](https://github.com/eyalgolan/statecraft-israel/issues/1700)) | "Builders in the MVP (Recommended)" | The option read: "Builders in the MVP: projects need Money and people, a project with nobody on it waits, one start a turn." MVP city projects are built by assigned builders as #1700 specifies: a project needs its Money and its builders, a project with no builders waits and makes no progress, and one city project starts a turn nationally. Money shortfalls still borrow (D1). This replaces the worker-free construction and two starts a turn of `R-PROJ-001` (Q-PROJ-3, Q-PROJ-4) as MVP design; the game keeps those `gdd-0.1` rules until #1700 lands. |
+| City building in the MVP ([#1700](https://github.com/eyalgolan/statecraft-israel/issues/1700)) | "Builders in the MVP (Recommended)" ([recorded on #1700](https://github.com/eyalgolan/statecraft-israel/issues/1700#issuecomment-6595906828)) | The option read: "Builders in the MVP: projects need Money and people, a project with nobody on it waits, one start a turn." MVP city projects are built by assigned builders as #1700 specifies: a project needs its Money and its builders, a project with no builders waits and makes no progress, and one city project starts a turn nationally. Money shortfalls still borrow (D1). This replaces the worker-free construction and two starts a turn of `R-PROJ-001` (Q-PROJ-3, Q-PROJ-4) as MVP design; the game keeps those `gdd-0.1` rules until #1700 lands. |
 
 ## Deferred decisions
 
