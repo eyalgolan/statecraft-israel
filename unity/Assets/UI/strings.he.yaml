@@ -728,7 +728,8 @@ info.build_housing_plain: "בניית דיור"
 info.map_action.transit_camp: "מעברה"
 info.map_action.housing: "מיזם דיור"
 info.map_action_reason.unknown: "פעולת מפה כזאת אינה קיימת"
-# For the native reviewer (#564)
+# The ten info.map_action_reason.* keys below, chapter to occupied: native review: owner, 3 Nov 2026
+# (HE batch 4: "Approve all as they are").
 info.map_action_reason.chapter: "פעולת המפה הזאת אינה זמינה בפרק זה"
 info.map_action_reason.game: "פעולת המפה הזאת אינה זמינה במשחק זה"
 info.map_action_reason.action_from: "אפשר להקים {0} החל מ־{1}"
@@ -740,10 +741,11 @@ info.map_action_reason.too_far_one: "המשבצת הזאת נמצאת במרחק
 info.map_action_reason.too_far_many: "המשבצת הזאת נמצאת במרחק של יותר מ־{0} משבצות מיישוב"
 info.map_action_reason.occupied: "במשבצת הזאת כבר יש {0}"
 # Draft alignment with English for #1139; native review pending (#564).
+# info.map_action_reason.turn_cap: native review: owner, 3 Nov 2026 (HE batch 4: "Approve all as they are").
 info.map_action_reason.turn_cap: "המגבלה היא {0} פעולות מפה בכל תור. אפשר לנסות שוב בתור הבא."
 # Cabinet candidate refusals (#901). The sim supplies content ids and ISO dates; the UI supplies the Hebrew names and
 # wording. No verb agrees with the person's gender ("כבר בתפקיד", not "מכהן"), since a woman can be any candidate.
-# Short, neutral drafts for the native reviewer (#564).
+# Short, neutral drafts; native review: owner, 3 Nov 2026 (HE batch 4: "Approve all as they are").
 cabinet.reason.office_unknown: "המשרה הזאת אינה קיימת במשחק"
 cabinet.reason.historical_office: "אי אפשר למנות לתפקיד ההיסטורי {0}"
 cabinet.reason.abolished: "המשרה {0} בוטלה ב־{1}"
@@ -759,6 +761,7 @@ cabinet.reason.already_holds: "{0} כבר בתפקיד {1}"
 cabinet.reason.no_government: "אין ממשלה מכהנת"
 cabinet.reason.not_career_officer: "ל{0} אין שירות קבע בצה״ל"
 cabinet.reason.party_not_coalition: "{0} ממפלגת {1}, שאינה בקואליציה"
+# For the native reviewer (#564)
 info.biome.sea: "ים"
 info.biome.lake: "אגם"
 info.biome.coastal_plain: "מישור החוף"
@@ -771,10 +774,12 @@ unit.subtitle: "{0} · {1}"
 unit.service.army: "צבא היבשה"
 unit.service.air: "חיל האוויר"
 unit.service.navy: "חיל הים"
-# טיוטות לכרטיס של יחידה שהוקמה במהלך המשחק (#1396); agent-checked, native review pending (#564).
+# טיוטות לכרטיס של יחידה שהוקמה במהלך המשחק (#1396); agent-checked,
+# native review: owner, 3 Nov 2026 (HE batch 4: "Approve all as they are").
 unit.type.veteran_soldier: "חיילים ותיקים"
 unit.strength: "כוח: {0}"
 unit.home_city: "עיר הבית: {0}"
+# Agent-checked; native review pending (#564).
 unit.position: "מיקום: {0}, מאז {1}"
 unit.position_plain: "מיקום: {0}"
 unit.formed: "הוקמה: {0}"
@@ -785,12 +790,15 @@ unit.flying: "{0}, בטיסה מעל הבסיס"
 unit.parked: "{0}, על הקרקע בבסיס"
 unit.national: "גיוס מילואים {0} · רמת ביטחון {1} מתוך 5"
 # The squadron card's footer in the GDD loop: the security level alone (#753). For the native reviewer (#564).
+# unit.security: native review: owner, 3 Nov 2026 (HE batch 4: "Approve all as they are").
 unit.security: "רמת ביטחון {0} מתוך 5"
+# For the native reviewer (#564)
 unit.sources: "מקורות: {0}"
 unit.draft_wikipedia: "טיוטה: מוויקיפדיה בלבד, טרם נבדק מול מחקר שפורסם"
 unit.draft: "טיוטה: טרם נבדק בידי היסטוריון"
 unit.defence: "פתיחת מסך הביטחון"
-# Hebrew draft for a raised unit's type and home city (#1399); native review pending (#564).
+# Hebrew draft for a raised unit's type and home city (#1399); native review: owner,
+# 3 Nov 2026 (HE batch 4: "Approve all as they are").
 unit.raised_name: "{0}, {1}"
 # A unit raised in play, named as one formation in the Why lines and toasts (Codex's review of #1527): agent-drafted Hebrew,
 # native review: owner, 25 Oct 2026 (recommendations page, item 1). יחידת as the UI's "היחידה"; קבוצת חלוצים as site.group.
@@ -802,20 +810,20 @@ unit.name.halutz: "קבוצת חלוצים"
 unit.name.veteran_halutz: "קבוצת חלוצים ותיקים"
 # The unit card's Move order (#754): the order's name is Q-UI-2's, approved by the owner (#375).
 unit.order.move: "תנועה"
-# Hebrew route draft for #1398; native review pending (#564).
+# Hebrew route draft for #1398; native review: owner, 3 Nov 2026 (HE batch 4: "Approve all as they are").
 unit.move_pick: "בחרו משבצת מוארת כדי לנוע אליה עכשיו, או משבצת אחרת כדי לשלוח אליה את היחידה במשך כמה תורות"
-# Hebrew draft for #1398; native review pending (#564).
+# Hebrew draft for #1398; native review: owner, 3 Nov 2026 (HE batch 4: "Approve all as they are").
 unit.points: "נקודות תנועה: {0} מתוך {1}"
-# Hebrew route draft for #1398; native review pending (#564).
+# Hebrew route draft for #1398; native review: owner, 3 Nov 2026 (HE batch 4: "Approve all as they are").
 unit.go_to_given: "בדרך למשבצת שנבחרה. תורות עד ההגעה: {0}"
 # Fortify and Hold (#754): the names are Q-UI-2's, approved by the owner (#375).
 unit.order.fortify: "ביצור"
 unit.order.hold: "החזקה"
-# Civ movement U4: agent-drafted Hebrew; native review pending (#564).
+# Civ movement U4: agent-drafted Hebrew; native review: owner, 3 Nov 2026 (HE batch 4: "Approve all as they are").
 unit.order.skip: "דילוג על התור"
 # Approved by Beri, a native speaker, on #1269 (21 Oct 2026). For the native reviewer (#564)
 unit.fortify_queued: "ניתנה פקודת ביצור: היחידה תהיה מבוצרת מסוף התור"
-# Hebrew draft for #1398; native review pending (#564).
+# Hebrew draft for #1398; native review: owner, 3 Nov 2026 (HE batch 4: "Approve all as they are").
 unit.hold_queued: "מחזיקה במשבצת שלה"
 # Attack (#754): the name is Q-UI-2's, approved by the owner (#375).
 unit.order.attack: "התקפה"
@@ -830,7 +838,7 @@ unit.attack_band: "{0} מתוך {1}: אתם מאבדים {2:N0} איש, הם מ�
 unit.attack_band_retreat: "{0} מתוך {1}: אתם מאבדים {2:N0} איש, הם מאבדים {3:N0} ונסוגים"
 # Approved by Beri, a native speaker, on #1277 (21 Oct 2026). For the native reviewer (#564)
 # The unit card's Send home order and its queued line (R-UNIT-005, #1309), in unit.order.*'s and unit.*_queued's form.
-# Hebrew drafts: agent-checked; native review pending (#564).
+# Hebrew drafts: agent-checked; native review: owner, 3 Nov 2026 (HE batch 4: "Approve all as they are").
 unit.order.send_home: "שליחה הביתה"
 unit.send_home_queued: "ניתנה פקודת שליחה הביתה: היחידה תחזור הביתה בסיום התור"
 # Reinforce (#1510, R-TRAIN-004). Approved by Beri, a native speaker, on #564 (24 Oct 2026).
@@ -845,23 +853,32 @@ save.refused.newer_version: "המשחק השמור נוצר בגרסה חדשה 
 # save.warning.*: a save made with other content is continued, and each warning kind the sim returns
 # (GameSession.ContentChanged, ReplayDiffers) is said here, not in the sim's English (#637). For the native reviewer (#564).
 # Draft alignment with English for #1139; native review pending (#564).
+# save.warning.content_changed and save.warning.replay_differs: native review: owner, 3 Nov 2026
+# (HE batch 4: "Approve all as they are").
 save.warning.content_changed: "המשחק השתנה מאז יצירת השמירה הזאת. ייתכן שהאירועים יתפתחו אחרת."
 save.warning.replay_differs: "חלקים מהמשחק ששוחזר שונים מהשמירה. בדקו את מצב המשחק לפני שתמשיכו."
+# For the native reviewer (#564)
 boot.failed: "לא ניתן היה להפעיל את Statecraft: {0}. יש לטעון את הדף מחדש."
 # boot.reason_other fills boot.failed's {0} instead of the exception's English text, which goes to the log (#637).
 # For the native reviewer (#564).
+# boot.reason_other: native review: owner, 3 Nov 2026 (HE batch 4: "Approve all as they are").
 boot.reason_other: "קבצי המשחק לא נטענו"
+# For the native reviewer (#564)
 save.write_failed: "לא ניתן היה לשמור את המשחק."
 # The info panel in the GDD loop (GddHexPanel, #381); the GDD's Hebrew for Halutz (חלוץ) and Hakhshara (הכשרה).
 city.housing: "דיור: {0} מתוך {1}"
 city.housing_condition: "דיור: {0} מתוך {1}, מצב {2}"
 # The people beyond the city's housing, in groups (R-HOUSE-002, #1121): new wording, no approved term. For the native
 # reviewer (#564).
+# city.overflow: native review: owner, 3 Nov 2026 (HE batch 4: "Approve all as they are").
 city.overflow: "חריגה מהדיור: {0}"
+# For the native reviewer (#564)
 city.jobs: "משרות: {0} מתוך {1} מאוישות"
 # The approved word for craftsman, בעל מלאכה (Q-UI-2, #375), in the plural, with a count of groups (#1121). For the
 # native reviewer (#564).
+# city.craftsmen: native review: owner, 3 Nov 2026 (HE batch 4: "Approve all as they are").
 city.craftsmen: "בעלי מלאכה: {0}"
+# For the native reviewer (#564)
 city.refugees: "פליטים ממתינים: {0}"
 # #1345: every Israeli formation the city houses.
 # Approved by Beri, a native speaker, on #1345 (23 Oct 2026).
@@ -872,15 +889,18 @@ city.train_halutz: "הכשרת חלוצים: קבוצה אחת, {0}, {1}"
 # Approved by Beri, a native speaker, on #1346 (22 Oct 2026): city.train_artillery, city.track_artillery, city.train_armoured_car, city.track_armoured_car.
 city.train_artillery: "אימון ארטילריה: קבוצה אחת, {0}, {1}"
 city.train_armoured_car: "אימון שריוניות: קבוצה אחת, {0}, {1}"
-# Craft training (R-CRAFT-001, #1357), with city.craftsmen's approved בעל מלאכה in the plural. For the native reviewer (#564).
+# Craft training (R-CRAFT-001, #1357), with city.craftsmen's approved בעל מלאכה in the plural. Native review:
+# owner, 3 Nov 2026 (HE batch 4: "Approve all as they are").
 city.train_craftsman: "הכשרת בעלי מלאכה: קבוצה אחת, {0}, {1}"
+# For the native reviewer (#564)
 city.train_ordered: "הוזמנו {0}"
 city.track_recruit: "מגויסים"
 city.track_halutz: "חלוצים"
 city.track_artillery: "ארטילריה"
 city.track_armoured_car: "שריוניות"
-# For the native reviewer (#564).
+# Native review: owner, 3 Nov 2026 (HE batch 4: "Approve all as they are").
 city.track_craftsman: "בעלי מלאכה"
+# For the native reviewer (#564)
 city.cohort: "{0}: {1} באימון, עוד {2}"
 city.cancel: "ביטול"
 city.groups_one: "קבוצה אחת"
@@ -896,7 +916,8 @@ city.reassign_halutz: "שיבוץ מחדש של חלוצים: 1 מתוך {0}"
 city.reassign_veteran_halutz: "שיבוץ מחדש של חלוצים ותיקים: 1 מתוך {0}"
 pioneer.return: "החזרת {0} לחיים אזרחיים"
 
-# Pioneer card (#1549). All new Hebrew keys below: native-review-pending (#564).
+# Pioneer card (#1549). All new Hebrew keys below: native review: owner, 3 Nov 2026
+# (HE batch 4: "Approve all as they are").
 pioneer.card.open: "פתיחת {0}"
 pioneer.card.location: "משבצת: {0}"
 pioneer.card.track: "מסלול: {0}"
@@ -908,6 +929,7 @@ pioneer.card.work_ordered: "לקבוצה זו ניתנה הוראת בנייה �
 # every sentence takes them as nouns; "הקמת" keeps the order line's gender neutral. The resource in no_resource is
 # named by a city.resource.<id> string below (#1781; the winery requires vineyards), so that line is Hebrew
 # throughout. For the native reviewer (#564).
+# The six city project lines below: native review: owner, 3 Nov 2026 (HE batch 4: "Approve all as they are").
 city.project_for: "מיזם עבור {0}"
 city.project_start: "הקמת {0}: {1}, {2}"
 city.project_ordered: "הוזמנה הקמת {0}"
@@ -916,11 +938,13 @@ city.project_built: "{0} עבור {1}: הבנייה הושלמה ב־{2}"
 city.project_reason.no_resource: "ב{0} אין {1} עבור {2}"
 # A city resource's name by its id (#1781); see the English file for why it lives here and not in content.
 # "כרמים" is he.wiki's כרם (a vineyard, where vines are grown), in the plural. For the native reviewer (#564).
+# city.resource.vineyards: native review: owner, 3 Nov 2026 (HE batch 4: "Approve all as they are").
 city.resource.vineyards: "כרמים"
 # turn_cap: approved by Beri, a native speaker, on #1267 (21 Oct 2026).
 city.project_reason.turn_cap: "אי אפשר להתחיל יותר מ־{0} מיזמים עירוניים בתור אחד"
 # The toggle that folds a city's own projects on a stacked bar or a short window (owner ruling on #1150), {0} the
 # number of kinds. For the native reviewer (#564).
+# city.projects_toggle: native review: owner, 3 Nov 2026 (HE batch 4: "Approve all as they are").
 city.projects_toggle: "מיזמי העיר ({0})"
 # #1722 slice E (#1701; R-ARMS-005 to R-ARMS-007), gdd-0.3 only: a built arms workshop's part of the info panel, as in
 # strings.en.yaml. Counts as "Label: N" (HE-04); the refusals follow unit.reinforce_refused.idle. Agent-drafted Hebrew;
