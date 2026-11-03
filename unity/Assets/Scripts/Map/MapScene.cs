@@ -861,7 +861,9 @@ namespace Statecraft.Game.Map
             }
 
             if (!cam.TryGetComponent(out CameraRig rig)) rig = cam.gameObject.AddComponent<CameraRig>();
-            rig.LookAt = Frame.ToWorld(34.95, 31.95, 0); rig.Init(); // central Israel: Tel Aviv–Jerusalem corridor
+            // The opening look-at: promo 03's centre (PromoPose.Gameplay03: Jaffa and Tel Aviv to the left, Lydda and Ramla to the
+            // right, the sea top-left), at CameraRig.StartDistance (owner, 3 November 2026: "Open at ~30 km, like the promo").
+            rig.LookAt = Frame.ToWorld(34.86, 32.00, 0); rig.Init();
             rig.Volume.transform.SetParent(transform, true);
             // VolumeProfile's own teardown only releases its components, it does not destroy them (Core RP 17.3), so own both.
             var assets = terrainGo.GetComponent<MapRuntimeAssets>();
