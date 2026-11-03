@@ -17,10 +17,12 @@ namespace Statecraft.HexTiles
     /// Each prefab sits at Assets/Art/HexTiles/&lt;tile&gt;/&lt;prop&gt;.prefab, beside its model in
     /// Assets/Art/HexTiles/Props/&lt;tile&gt;_&lt;prop&gt;/ (HexSandboxImport.RunHiggsfield -prefabsRoot Assets/Art).
     /// The papyrus is a bundle of its own, <see cref="PapyrusBundle"/>, in the same stream: the main map asks for it at the
-    /// Hula (HulaPapyrusLayer) without the hex boards' other props.</summary>
+    /// Hula (HulaPapyrusLayer) without the hex boards' other props. The tamarisk is a bundle of its own too,
+    /// <see cref="TamariskBundle"/>: only the boards draw it (no tamarisk on the main map, #1951), so the main map's first
+    /// camera, which fetches <see cref="Bundle"/>, does not fetch it.</summary>
     public static class HexProps
     {
-        public const string Bundle = "hex-props", PapyrusBundle = "hex-props-papyrus";
+        public const string Bundle = "hex-props", PapyrusBundle = "hex-props-papyrus", TamariskBundle = "hex-props-tamarisk";
         public const string Papyrus = "tiles:hula_swamp/papyrus", Tamarisk = "tiles:arava_oasis/tamarisk";
         /// <summary>The folder in the build's StreamingAssets that holds the bundle, and the checks file beside it.</summary>
         public const string StreamingFolder = "hex-props", ChecksFile = "hex-props-checks.txt";
@@ -47,14 +49,14 @@ namespace Statecraft.HexTiles
 
         public static bool Has(string id) => ids.Contains(id);
 
-        /// <summary>The prop's bundle: <see cref="PapyrusBundle"/> for the papyrus, <see cref="Bundle"/> for the rest; null
-        /// for an id that is not a prop.</summary>
-        public static string? BundleOf(string id) => !Has(id) ? null : id == Papyrus ? PapyrusBundle : Bundle;
+        /// <summary>The prop's bundle: <see cref="PapyrusBundle"/> for the papyrus, <see cref="TamariskBundle"/> for the
+        /// tamarisk, <see cref="Bundle"/> for the rest; null for an id that is not a prop.</summary>
+        public static string? BundleOf(string id) => !Has(id) ? null : id == Papyrus ? PapyrusBundle : id == Tamarisk ? TamariskBundle : Bundle;
 
         /// <summary>The prop's prefab path in the project, which is also its name inside the bundle (lower case there).</summary>
         public static string PrefabPath(string id) => PrefabRoot + HexModels.PathOf(id) + ".prefab";
 
-        /// <summary>What the loader streams: two bundles, one prefab per prop (the detail is not used).</summary>
+        /// <summary>What the loader streams: three bundles, one prefab per prop (the detail is not used).</summary>
         public static readonly CollectionStream.Catalog Catalog = new CollectionStream.Catalog("the hex-tile props", StreamingFolder,
             ChecksFile, BundleOf, (id, _) => PrefabPath(id));
     }

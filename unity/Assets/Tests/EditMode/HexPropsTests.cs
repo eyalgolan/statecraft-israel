@@ -76,24 +76,30 @@ public class HexPropsTests
         Assert.AreNotEqual(CollectionCatalog.ChecksFile, HexProps.ChecksFile);
     }
 
-    const string PapyrusPrefab = "Assets/Art/HexTiles/hula_swamp/papyrus.prefab";
+    const string PapyrusPrefab = "Assets/Art/HexTiles/hula_swamp/papyrus.prefab", TamariskPrefab = "Assets/Art/HexTiles/arava_oasis/tamarisk.prefab";
 
     [Test]
     public void TheHexPropsBundlesCarryTheTwentyTwoPropsAndNothingElse()
     {
         var builds = Builds();
-        Assert.AreEqual(2, builds.Length);
+        Assert.AreEqual(3, builds.Length);
         Assert.AreEqual("hex-props", builds[0].assetBundleName);
-        CollectionAssert.AreEqual(Prefabs.Where(p => p != PapyrusPrefab), builds[0].assetNames);
+        CollectionAssert.AreEqual(Prefabs.Where(p => p != PapyrusPrefab && p != TamariskPrefab), builds[0].assetNames);
         // The papyrus alone in its own bundle: the main map's Hula fetches it without the boards' other props.
         Assert.AreEqual("hex-props-papyrus", builds[1].assetBundleName);
         CollectionAssert.AreEqual(new[] { PapyrusPrefab }, builds[1].assetNames);
+        // The tamarisk alone in its own bundle: only the boards draw it, so the main map's first camera does not fetch it.
+        Assert.AreEqual("hex-props-tamarisk", builds[2].assetBundleName);
+        CollectionAssert.AreEqual(new[] { TamariskPrefab }, builds[2].assetNames);
         Assert.AreEqual("hex-props-papyrus", HexProps.BundleOf("tiles:hula_swamp/papyrus"));
-        Assert.AreEqual("hex-props", HexProps.BundleOf("tiles:arava_oasis/tamarisk"));
+        Assert.AreEqual("hex-props-tamarisk", HexProps.BundleOf("tiles:arava_oasis/tamarisk"));
+        Assert.AreEqual("hex-props", HexProps.BundleOf("tiles:jaffa_old_city/clock_tower"));
         Assert.IsNull(HexProps.BundleOf("tiles:negev_loess/tamarisk"), "the other tamarisk ids stay stand-ins (#1950, #1952)");
-        CollectionAssert.IsEmpty(AssetDatabase.GetDependencies(builds[0].assetNames, true).Intersect(
-            AssetDatabase.GetDependencies(builds[1].assetNames, true)).Where(d => d.StartsWith(Art, StringComparison.Ordinal)),
-            "the two bundles share no prop file");
+        for (int a = 0; a < builds.Length; a++)
+            for (int b = a + 1; b < builds.Length; b++)
+                CollectionAssert.IsEmpty(AssetDatabase.GetDependencies(builds[a].assetNames, true).Intersect(
+                    AssetDatabase.GetDependencies(builds[b].assetNames, true)).Where(d => d.StartsWith(Art, StringComparison.Ordinal)),
+                    $"{builds[a].assetBundleName} and {builds[b].assetBundleName} share a prop file");
         CollectionAssert.AreEqual(Prefabs, HexProps.Ids.Select(HexProps.PrefabPath));
         // Every prefab under the props' folder is in the bundle (none is left behind), and every dependency stays in it.
         var found = AssetDatabase.FindAssets("t:Prefab", new[] { Art.TrimEnd('/') }).Select(AssetDatabase.GUIDToAssetPath);
@@ -103,6 +109,24 @@ public class HexPropsTests
         CollectionAssert.IsEmpty(outside, "the hex-props bundle pulls in files from outside Assets/Art/HexTiles");
         // Each prop is named by a tile: the ids are the "tiles:" ids the prototypes place.
         foreach (var id in HexProps.Ids) StringAssert.StartsWith("tiles:", id);
+    }
+
+    /// <summary>The main map's first camera fetches the hex-props bundle (HexPropModels), so it carries none of #2082's
+    /// papyrus and tamarisk: the papyrus streams alone for the Hula's close view, the tamarisk alone for the boards (no
+    /// tamarisk on the main map, #1951). With the tamarisk in hex-props, #2278's build measured 9,470,644 B for it
+    /// instead of 5,830,676 B.</summary>
+    [Test]
+    public void TheHexPropsBundleCarriesNoBoardOnlyProp()
+    {
+        var main = Builds().Single(b => b.assetBundleName == HexProps.Bundle).assetNames;
+        var mainFiles = AssetDatabase.GetDependencies(main, true);
+        foreach (var id in new[] { HexProps.Papyrus, HexProps.Tamarisk })
+        {
+            Assert.AreNotEqual(HexProps.Bundle, HexProps.BundleOf(id), id);
+            CollectionAssert.DoesNotContain(main, HexProps.PrefabPath(id), id);
+            CollectionAssert.IsEmpty(AssetDatabase.GetDependencies(HexProps.PrefabPath(id), true).Intersect(mainFiles)
+                .Where(d => d.StartsWith(Art, StringComparison.Ordinal)), id + "'s files in the hex-props bundle");
+        }
     }
 
     [Test]

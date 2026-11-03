@@ -7,7 +7,8 @@ using UnityEditor;
 namespace Statecraft.Game.EditorTools
 {
     /// <summary>The hex tiles' props bundles (<see cref="HexProps"/>; owner, 23 October 2026: "Own streamed bundle"): one
-    /// bundle of the prop prefabs, and the papyrus alone in a second (the main map's Hula asks for it without the rest), whose
+    /// bundle of the prop prefabs, the papyrus alone in a second (the main map's Hula asks for it without the rest) and the
+    /// tamarisk alone in a third (boards only, so the main map's first camera does not fetch it), whose
     /// models, materials and colour maps come in as dependencies, built by the
     /// Collection's bundle build into StreamingAssets/<see cref="HexProps.StreamingFolder"/> with its own checks file.
     /// Every Build.* player build runs it after The 1948 Collection's; HexPropsTests pins what it carries.</summary>
@@ -20,6 +21,7 @@ namespace Statecraft.Game.EditorTools
         {
             new AssetBundleBuild { assetBundleName = HexProps.Bundle, assetNames = HexProps.Ids.Where(id => HexProps.BundleOf(id) == HexProps.Bundle).Select(HexProps.PrefabPath).ToArray() },
             new AssetBundleBuild { assetBundleName = HexProps.PapyrusBundle, assetNames = new[] { HexProps.PrefabPath(HexProps.Papyrus) } },
+            new AssetBundleBuild { assetBundleName = HexProps.TamariskBundle, assetNames = new[] { HexProps.PrefabPath(HexProps.Tamarisk) } },
         };
 
         public static string BuildBundles(BuildTarget target) =>
