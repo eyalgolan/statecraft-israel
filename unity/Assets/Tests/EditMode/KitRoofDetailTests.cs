@@ -88,6 +88,18 @@ public class KitRoofDetailTests
             int offAll = offTowns.Values.Sum() + offTiles, onAll = onTowns.Values.Sum() + onTiles;
             TestContext.WriteLine($"ROOF_DETAIL localities (tiles) vertices {offTiles} -> {onTiles} (x{onTiles / (float)offTiles:0.00})");
             TestContext.WriteLine($"ROOF_DETAIL far map vertices {offAll} -> {onAll} (x{onAll / (float)offAll:0.00})");
+            // What the towns' streams drew, for comparing two versions of the roof code: every census entry's place, size and
+            // colour (a later building's numbers move if an earlier one draws more or fewer), and the close meshes' vertices.
+            ulong census = 14695981039346656037UL;
+            void Mix(int x) => census = (census ^ (uint)x) * 1099511628211UL;
+            foreach (var e in onPlaced)
+            {
+                Mix((int)KitRandom.Fnv1a(e.Id)); Mix((int)KitRandom.Fnv1a(e.Kind));
+                foreach (float f in new[] { e.C.x, e.C.y, e.Yaw, e.W, e.D, e.H }) Mix(System.BitConverter.SingleToInt32Bits(f));
+                Mix(e.Wall.r | e.Wall.g << 8 | e.Wall.b << 16 | e.Wall.a << 24);
+            }
+            TestContext.WriteLine($"ROOF_DETAIL census {onPlaced.Count} entries, digest {census:X16}; close meshes {on.Close.Count}, " +
+                $"{on.Close.Values.Sum(c => c.vertexCount)} vertices");
             Assert.Greater(onTiles, offTiles, "the villages gain roof detail");
             Assert.LessOrEqual(onAll, MaxGrowth * offAll, "the far map's vertices");
         }

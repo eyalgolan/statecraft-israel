@@ -434,8 +434,8 @@ namespace Statecraft.Game.Map.Kits
         // ---- Plots ----------------------------------------------------------------------------------------------------
 
         /// <summary>The kinds of building a plot lattice lays out. Real sizes (m, before the symbolic scale) and storeys are
-        /// in <see cref="Pick"/>; lattice pitch, density and scale in <see cref="Grid"/>.</summary>
-        enum Style
+        /// in <see cref="Pick"/>; lattice pitch, density and scale in <see cref="Grid"/>. Internal for the tests (KitRoofContainmentTests).</summary>
+        internal enum Style
         {
             /// <summary>Hadar HaCarmel's International Style blocks: white plaster, flat roofs (60x).</summary>
             WhiteBlock,
@@ -826,7 +826,8 @@ namespace Statecraft.Game.Map.Kits
         /// shore; the others get a seeded angle).</summary>
         static float GridYaw(string id) => id == "tel_aviv" ? 20f : id == "haifa" ? 35f : new KitRandom(id, 7).Range(0f, 90f);
 
-        struct Spec { public float w, d, h, lotR; public int storeys; public KibbutzPart part; }
+        /// <summary>A building's footprint, height, storeys and lot (internal for the tests: KitRoofContainmentTests).</summary>
+        internal struct Spec { public float w, d, h, lotR; public int storeys; public KibbutzPart part; }
 
         /// <summary>A plot's building: real size and storeys by style and by t (0 at the heart, 1 at the footprint's edge),
         /// times the scale <paramref name="m"/>. Every size fits its lattice's plot with a street to spare.</summary>
@@ -901,8 +902,8 @@ namespace Statecraft.Game.Map.Kits
             km.CutEnd(cut);
         }
 
-        /// <summary>A plot's kit parts and its census record.</summary>
-        static void EmitParts(string id, Style st, Vector2 p, float yaw, Spec b, float t, KitGround ground, KitMesh km, float bottom, float top, float m,
+        /// <summary>A plot's kit parts and its census record (internal for the tests: KitRoofContainmentTests).</summary>
+        internal static void EmitParts(string id, Style st, Vector2 p, float yaw, Spec b, float t, KitGround ground, KitMesh km, float bottom, float top, float m,
             ref KitRandom rnd)
         {
             float storey = 3.3f * m;
@@ -1414,7 +1415,8 @@ namespace Statecraft.Game.Map.Kits
             return wall;
         }
 
-        static Color32 EmitParts(Archetype arch, Vector2 p, float yaw, Spec b, KitGround ground, KitMesh km, float bottom, float top, float m, ref KitRandom rnd)
+        /// <summary>A locality's kit parts (internal for the tests: KitRoofContainmentTests).</summary>
+        internal static Color32 EmitParts(Archetype arch, Vector2 p, float yaw, Spec b, KitGround ground, KitMesh km, float bottom, float top, float m, ref KitRandom rnd)
         {
             switch (arch)
             {
