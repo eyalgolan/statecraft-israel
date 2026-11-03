@@ -861,9 +861,10 @@ namespace Statecraft.Game.Map
             }
 
             if (!cam.TryGetComponent(out CameraRig rig)) rig = cam.gameObject.AddComponent<CameraRig>();
-            // The opening: Tel Aviv and Jaffa near the middle (CameraRig.StartLon/StartLat) at CameraRig.StartDistance (owner,
-            // 3 November 2026: "Open at ~30 km, like the promo").
-            rig.LookAt = Frame.ToWorld(CameraRig.StartLon, CameraRig.StartLat, 0); rig.Init();
+            // The opening: Tel Aviv and Jaffa both in frame at CameraRig.StartDistance, including on a phone held upright
+            // (owner, 3 November 2026: "Open at ~30 km, like the promo").
+            var telAviv = list.Single(s => s.Id == "tel_aviv"); var jaffa = list.Single(s => s.Id == "jaffa");
+            rig.LookAt = CameraRig.OpeningLookAt(Frame, cam.aspect, telAviv, jaffa); rig.Init();
             rig.Volume.transform.SetParent(transform, true);
             // VolumeProfile's own teardown only releases its components, it does not destroy them (Core RP 17.3), so own both.
             var assets = terrainGo.GetComponent<MapRuntimeAssets>();

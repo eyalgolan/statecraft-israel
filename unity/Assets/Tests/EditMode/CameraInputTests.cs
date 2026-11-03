@@ -415,7 +415,9 @@ public class CameraInputTests
         float start = CameraRig.StartDistance;
         Assert.That(start, Is.InRange(25000f, 35000f), "about 30 km (owner, 3 November 2026)");
         Assert.IsTrue(Statecraft.Game.Map.Kits.TownModelLayer.CloseAt(start, null), "the building models draw at the opening");
-        Assert.GreaterOrEqual(Mathf.Abs(start - Statecraft.Game.Map.Routes.RoadVehicles.CloseEnterM), 500f, "not on the road vehicles' edge");
+        Assert.GreaterOrEqual(start, Statecraft.Game.Map.Routes.RoadVehicles.CloseEnterM + 1000f, "1 km beyond the road vehicles' enter edge");
+        Assert.GreaterOrEqual(start, Statecraft.Game.Map.Collection.ProductionResidency.Approved().Units.ViewEnterM + 1000f,
+            "1 km beyond the collection layers' enter edge");
         Assert.Less(start, CameraController.MaxDistance, "the whole-map zoom is farther out");
     }
 
