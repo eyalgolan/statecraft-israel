@@ -266,7 +266,7 @@ own root rotation kept (the FBX axis turn, -90 degrees about X), so the camera's
 | C06 young recruit | an Israeli rifleman in the Mk II steel helmet (every token's second figure) | #507's pairing | always |
 | C07 veteran fighter | an Israeli rifleman in the knitted stocking cap: the Negev Brigade's first, the showcase's third | the Negev headgear photographs (Sources) | always |
 | C05 pioneer veteran | the third figure of every Israeli brigade with the uniform default, except Harel and Yiftach | a presentation choice: the default's third figure is not sourced | always |
-| #336's 1948 soldier | the third figure of Yiftach and Negev, the Palmach brigades other than Harel: a rifleman in khaki in the Palmach's knitted stocking cap, so Negev's token shows C07, C06 and him and keeps its sourced caps | owner, 21 October 2026 (#708, through the coordinator): "a third figure on some brigade unit tokens, next to C06 and C07"; the rows' numbers (11th and 12th Brigade (Palmach)) | always |
+| #336's 1948 soldier | the third figure of Yiftach and Negev, the Palmach brigades other than Harel: a rifleman in khaki in the Palmach's knitted stocking cap, so Negev's token shows C07, C06 and him and keeps its sourced caps. Drawn as his rigged copy, `figure-soldier-1948-v1-rigged` (#2384): Tal's mesh on the skeleton C06 and C07 share, with C07's idle, walk and fire takes (`tools/rig_soldier_1948.py`), so he walks and fires with the others; Tal's delivered file is unchanged and drawn nowhere | owner, 21 October 2026 (#708, through the coordinator): "a third figure on some brigade unit tokens, next to C06 and C07"; the rows' numbers (11th and 12th Brigade (Palmach)) | always |
 | C12F Palmach scout | Harel's third figure, at Sha'ar HaGai on the convoy road | Harel's row (a Palmach brigade escorting the convoys, Izkor); en.wiki Netiva Ben-Yehuda (a Palmach woman's duties included "escorting convoys") | always |
 | C08 Arab Legion | the Arab Legion's three figures | the row; owner, #756 (Tal Heuberger's models approved) | the row's windows |
 | C09 irregular | the Arab Liberation Army's first two figures | en.wiki Arab Liberation Army: "an irregular army" of volunteers | the row's windows |
@@ -286,8 +286,8 @@ own root rotation kept (the FBX axis turn, -90 degrees about X), so the camera's
   45 km), each figure whose model has an idle clip (`CollectionCatalog.Animated`) shows its skinned near model playing the
   clip, as tall as its far model and under the same holder (`UnitFigureDetail`). The near models are asked for only once a
   camera first comes close; until one arrives, and for good if it is missing, the far mesh stays. C05 has no idle clip
-  (walk and run only) and keeps his still far model (owner, 18 October 2026, #665: "Keep its still model"); #336's soldier
-  has no rig and keeps his still far model too. The vehicles stay far.
+  (walk and run only) and keeps his still far model (owner, 18 October 2026, #665: "Keep its still model"); #336's soldier,
+  drawn as his rigged copy (#2384), plays C07's idle. The vehicles stay far.
 - **Fail open:** an Israeli figure keeps its code-built mesh until its model arrives, and for good if the bundle is
   missing or damaged; a vehicle and an Arab force's token are not drawn until their model arrives.
 - Tests: `UnitFiguresTests` (every one of the nine is placed on some day of the war; the table; the swap; arms down;
@@ -301,7 +301,7 @@ the unit-token soldier figures (sourced per army and date), measured for load"),
 
 | Weapon | Army | From | Figures | Sources (agent-read; a person's check is pending) |
 |---|---|---|---|---|
-| K98k (Tal's `weapon-k98k-v1`) | Israel (Haganah, IDF) | 2 April 1948: the Nora's 4,500 Czechoslovak P-18 (K98k) rifles at Tel Aviv; the first air shipment landed the night of 31 March to 1 April | C04, C05, C06, C07 | en.wiki Arms shipments from Czechoslovakia to Israel 1947–1949; Palyam, "Nora" (Ben-Tzur); en.wiki Karabiner 98k |
+| K98k (Tal's `weapon-k98k-v1`) | Israel (Haganah, IDF) | 2 April 1948: the Nora's 4,500 Czechoslovak P-18 (K98k) rifles at Tel Aviv; the first air shipment landed the night of 31 March to 1 April | C04, C05, C06, C07, the 1948 soldier's rigged copy (#2384) | en.wiki Arms shipments from Czechoslovakia to Israel 1947–1949; Palyam, "Nora" (Ben-Tzur); en.wiki Karabiner 98k |
 | Sten (Tal's `weapon-sten-v1`) | Israel (the Palmach) | in use 1945–1948 | C12F, the Palmach scout (Harel's third figure) | en.wiki Ayalon Institute ("the personal weapon of the Palmach"); en.wiki Sten ("clandestinely manufactured in Tel Aviv and on various kibbutzim in 1945–1948") |
 
 Every token's first day is 15 May 1948 or later (`units_1948.yaml`), after both rows' dates, so no figure is dated by
@@ -310,7 +310,8 @@ hand (`UnitWeaponsTests` keeps that true). The rows live in `UnitWeapons.Rows`.
 - **[GAP] The Arab forces.** No source found places a K98k, an MG34 or a Sten with the Arab Legion, Egypt, Iraq, Syria,
   Lebanon, the ALA or local irregulars in 1948 (Syria's Czech rifles for the ALA sank in the Lino at Bari and were later
   captured). Their armies' British Lee-Enfield and Bren are not among Tal's models, so their figures stay as they are.
-- **[GAP] #336's 1948 soldier** (Yiftach's and Negev's third figure) has no rig and no hand bone; he stays as he is.
+- **#336's 1948 soldier** (Yiftach's and Negev's third figure) is drawn as his rigged copy (#2384), which has C07's 67 bones
+  and hand bone and holds the K98k like the others; Tal's delivered file, with no rig, is drawn nowhere.
 - **The MG34** stays a stored source. The "200 MG34s" is not one fact (`research_notes/Map/mg34-1948-2288.md`, #2310):
   for the January 1948 contract, one source names the MG34 for its 200 machine guns (Wikipedia, a sentence with no footnote
   of its own), Ben-Gurion's diary of 1 February 1948 gives 200 with no type, and a Russian magazine gives 20. The *Nora*'s
