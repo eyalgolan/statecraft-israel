@@ -39,6 +39,7 @@ hud.tip.support: "התמיכה הציבורית היא ממוצע התמיכה �
 hud.tip.cohesion: "הלכידות החברתית עולה ויורדת עם הדיור, התעסוקה, המזון, הקיצוב והביטחון."
 hud.tip.standing: "התמיכה הבינלאומית זזה בעקבות הבחירות בכרטיסי האירוע."
 hud.tip.fx: "מטבע החוץ נכנס מיצוא, מתרומות ומהלוואות, ויוצא על יבוא שגדל עם האוכלוסייה ועל דולרים שמומרים לכסף במסך הביטחון בזמן המלחמה. כרטיסי האירוע יכולים להוסיף לו או לגרוע ממנו. כשהוא אוזל, יבוא המזון נעצר עד שהוא מתאושש."
+# native-review-pending
 hud.nav.cabinet: "ממשלה"
 # The Cabinet disc's tip while a seat is vacant that the player can fill (#1109). For the native reviewer (#564).
 hud.nav.cabinet_vacant: "ממשלה: יש תפקיד פנוי. אפשר למנות אליו מישהו."
@@ -58,6 +59,7 @@ hud.new_game: "משחק חדש"
 hud.end_turn: "סיום התור"
 # Civ movement U4: agent-drafted Hebrew; native review: owner, 3 Nov 2026 (HE batch 1: "All fine as they are").
 hud.end_turn_needs_orders: "יחידה ממתינה להוראות"
+# For the native reviewer (#564)
 budget.title: "תקציב"
 budget.reset: "איפוס"
 budget.submit: "הגשת התקציב"
@@ -491,6 +493,8 @@ why.cause.paid.workshop: "{0}: שינוי {1} (למחזור עבודה בסדנ�
 # Agent-drafted Hebrew, not part of #1642's owner review; native review: owner, 3 Nov 2026 (HE batch 1: "All fine as
 # they are").
 why.cause.money_other: "{0}: שינוי {1} (סיבות אחרות)"
+# Native review: owner, 25 Oct 2026 (recommendations page), for every why.cause, why.name, why.effect, why.situation
+# and why.region key below (#1642).
 why.cause.fx_crisis_began: "יתרות מטבע החוץ אזלו"
 why.cause.fx_crisis_eased: "הקלה במשבר מטבע החוץ"
 why.cause.fx_crisis_food: "{0}: שינוי {1} (משבר מטבע חוץ: קיצוץ ביבוא המזון)"
