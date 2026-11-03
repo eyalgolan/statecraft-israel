@@ -146,17 +146,22 @@ def test_tal_original_licensing_matches_manifest_exactly():
     }
     towns = {f"unity/Assets/Art/Collection/{t}-town-v1/{t}-town-v1{x}"
              for t in ("tiberias", "safed", "netanya", "ramla") for x in (".fbx", "_basecolor.jpg")}
-    added = sources | towns
-    assert len(sources) == 24 and len(towns) == 8
+    # #2082's papyrus and tamarisk in the game (owner, 2 November 2026: "Hula + Arava, map and boards (Recommended)"): the
+    # byte-identical Unity copies of the six recovered sources.
+    plants = {f"unity/Assets/Art/HexTiles/Props/{d}/{f}" for d in ("hula_swamp_papyrus", "arava_oasis_tamarisk")
+              for f in (d + ".obj", "albedo.jpg", "normal.jpg")}
+    added = sources | towns | plants
+    assert len(sources) == 24 and len(towns) == 8 and len(plants) == 6
     added_rows = [r for r in independent if r["glob"] in added]
-    assert {r["glob"] for r in added_rows} == added and len(added_rows) == 32
+    assert {r["glob"] for r in added_rows} == added and len(added_rows) == 38
+    assert all("Hula + Arava, map and boards" in r["note"] for r in added_rows if r["glob"] in plants)
     assert all(r["artist"] == "Tal Heuberger" and r["ai_generated"] is True for r in added_rows)
     assert all("#1177" in r["note"] and "2 November 2026" in r["note"] for r in added_rows)
     import hashlib
     for r in added_rows:  # each row records its file's SHA-256
         assert hashlib.sha256((ROOT / r["glob"]).read_bytes()).hexdigest() in r["source"], r["glob"]
     assert len([r for r in independent if r["glob"] not in added]) == 50  # the hex-tile props row and the #1901 -light meshes among them
-    assert len(independent) == 82  # 146 originals + 82 independent grants = 228 total
+    assert len(independent) == 88  # 146 originals + 88 independent grants = 234 total
     for row in selected:
         assert row["licence"] == "CC-BY-NC-ND-4.0"
         assert row["artist"] == "Tal Heuberger"

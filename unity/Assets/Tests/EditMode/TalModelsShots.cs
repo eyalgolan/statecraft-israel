@@ -454,6 +454,44 @@ public class TalModelsShots
         finally { SeaAirCollection.Request = savedCraft; }
     }
 
+    /// <summary>#2082: Tal's papyrus at the Hula swamp (site hula, hex (16, 3)) on the opening turn, from the closest zoom the
+    /// player can reach, the camera on the middle of the stands. "Before" withholds the model (#2271's map: no papyrus layer
+    /// draws anything without it); "after" answers it with the editor's prefab, as the papyrus bundle would.</summary>
+    IEnumerator Hula(bool hebrew, bool after)
+    {
+        var saved = HulaPapyrusLayer.Request;
+        try
+        {
+            yield return Boot(hebrew);
+            var map = Object.FindFirstObjectByType<MapScene>();
+            var state = root.Bridge!.State; var content = root.Bridge.Content;
+            HulaPapyrusLayer.Request = (id, detail, done) =>
+                done(after ? AssetDatabase.LoadAssetAtPath<GameObject>(Statecraft.HexTiles.HexProps.PrefabPath(id)) : null);
+            Drop(map, HulaPapyrusLayer.Name);
+            var layer = HulaPapyrusLayer.ShowAt(map, content, HulaPapyrusLayer.Drained(state))!;
+            var wants = HulaPapyrusLayer.Wants(map, content);
+            Assert.IsNotEmpty(wants, "the Hula's clumps");
+            var sum = Vector2.zero; foreach (var w in wants) sum += w.At;
+            var at = new Vector3(sum.x / wants.Count, 0f, sum.y / wants.Count);
+            at.y = map.Terrain.SampleHeight(at) + map.Terrain.transform.position.y;
+            Look(at, CameraController.MinDistance);
+            // An EditMode scene does not enable the layer's render callback, so the close-zoom switch is set as that callback
+            // sets it for this camera: the view distance against the layer's own band.
+            float view = TownLandmarks.ViewDistance(Camera.main);
+            Assert.IsTrue(HulaPapyrusLayer.CloseAt(view, null), $"the closest zoom is close ({view:F0} m)");
+            layer.SetClose(true);
+            for (int i = 0; i < 5; i++) { Camera.main.Render(); yield return null; }
+            CivMovementShots.Shot(rt!, Path.Combine("..", "tal-models-shots", $"hula-{(after ? "after" : "before")}-{(hebrew ? "he" : "en")}"));
+            Debug.Log($"SHOT hula {(after ? "after" : "before")} on {state.Date:yyyy-MM-dd} at {at} from {CameraController.MinDistance:F0} m: wanted {layer.Wanted}, placed {layer.Placed.Count}, close {layer.LastClose}, clump {HulaPapyrusLayer.ClumpM:F1} m");
+        }
+        finally { HulaPapyrusLayer.Request = saved; }
+    }
+
+    [UnityTest] public IEnumerator HulaBeforeEnglish() { yield return Hula(false, false); }
+    [UnityTest] public IEnumerator HulaAfterEnglish() { yield return Hula(false, true); }
+    [UnityTest] public IEnumerator HulaBeforeHebrew() { yield return Hula(true, false); }
+    [UnityTest] public IEnumerator HulaAfterHebrew() { yield return Hula(true, true); }
+
     [UnityTest] public IEnumerator SpitfireBeforeEnglish() { yield return Spitfire(false, false); }
     [UnityTest] public IEnumerator SpitfireAfterEnglish() { yield return Spitfire(false, true); }
 
