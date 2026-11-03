@@ -337,10 +337,12 @@ outcome.skip: "לחיצה, Enter או רווח לדילוג · Esc מדלג על
 order.game_over: "המשחק הסתיים"
 # Hebrew draft for #1398; native review pending (#564).
 order.going_home: "היחידה חוזרת הביתה בסיום התור"
+# order.no_attention and order.unknown: native review: owner, 3 Nov 2026 (HE batch 3: "Approve all as they are").
 order.no_attention: "אין מספיק תשומת לב (נדרש {0:0.0}, יש {1:0.0})"
 order.unknown: "לא ניתן לזהות {0}"
 # The kind of thing a refused order names in order.unknown (SimBridge.Validate; #595), one key per kind. order.unknown puts
-# the kind after the verb, so no adjective has to agree with its gender. For the native reviewer (#564).
+# the kind after the verb, so no adjective has to agree with its gender. Native review: owner, 3 Nov 2026 (HE batch 3:
+# "Approve all as they are").
 order.kind.policy: "מדיניות"
 order.kind.office: "תפקיד"
 order.kind.person: "אדם"
@@ -355,13 +357,17 @@ order.kind.unit: "יחידה"
 order.kind.pioneer_work: "עבודה חלוצית"
 order.kind.site: "אתר"
 # A city project (#735; Q-UI-2's approved "מיזם דיור" for housing, with עירוני for any kind). For the native reviewer (#564).
+# order.kind.city_project: native review: owner, 3 Nov 2026 (HE batch 3: "Approve all as they are").
 order.kind.city_project: "מיזם עירוני"
 # For the native reviewer (#564): "a segment of a road or a railway" (#786).
+# order.kind.corridor_segment: native review: owner, 3 Nov 2026 (HE batch 3: "Approve all as they are").
 order.kind.corridor_segment: "קטע של כביש או מסילה"
+# For the native reviewer (#564)
 order.invalid: "הפקודה אינה תקפה"
 # order.failed: the turn failed and SimBridge.EndTurn cleared the queue, so the player gives the orders again (#622;
-# maintainer, 15 October 2026). For the native reviewer (#564).
+# maintainer, 15 October 2026). Native review: owner, 3 Nov 2026 (HE batch 3: "Approve all as they are").
 order.failed: "לא ניתן היה להריץ את התור. הפקודות שלך נמחקו. יש לתת אותן שוב."
+# For the native reviewer (#564)
 defence.rung1: "1  איום שגרתי: תקריות גבול, שימור ההרתעה"
 defence.rung2: "2  גל: טרור או הסתננות, התעצמות האויב"
 defence.rung3: "3  פעולה מוגבלת: פשיטות, פעולות תגמול"
@@ -420,7 +426,9 @@ why.situations: "מצבים"
 why.other: "אחר"
 why.nothing: "לא קרה דבר ראוי לציון בתור הזה."
 # Hebrew drafts for the structured unit Why lines (#1399); native review pending (#564), except #1631's 16 lines and
-# attack_ended_truce: native review: owner, 25 Oct 2026 (recommendations page, items 1 and 11). HE-15: {0} is any
+# attack_ended_truce: native review: owner, 25 Oct 2026 (recommendations page, items 1 and 11); and why.line.attack_ended,
+# why.line.attack_called_off, why.line.engagement and why.line.on_its_way: native review: owner, 3 Nov 2026 (HE batch 3:
+# "Approve all as they are"). HE-15: {0} is any
 # unit's name, the Arab forces' masculine, Israel's feminine and a raised unit's, so no verb or pronoun agrees with it: the
 # name opens the line as its label ("{0}: ..."), or sits in a noun phrase (Codex's review of #1527).
 why.line.unit_moved: "{0}: תנועה למשבצת {1} תמורת {2} נקודות תנועה"
@@ -466,14 +474,16 @@ why.cause.borrowed.project: "הלוואה של {0} לבניית {1}"
 why.cause.borrowed.deport: "הלוואה של {0} לגירוש ({1})"
 why.cause.borrowed.occupation: "הלוואה של {0} לעלות ההחזקה ({1})"
 why.cause.borrowed.event: "הלוואה של {0} עבור {1}"
-# The gdd-0.3 arms workshop's cycle (#1701, R-ARMS-006). Agent-drafted Hebrew; native review pending (#564).
+# The gdd-0.3 arms workshop's cycle (#1701, R-ARMS-006). Agent-drafted Hebrew; native review: owner, 3 Nov 2026
+# (HE batch 3: "Approve all as they are").
 why.cause.borrowed.workshop: "הלוואה של {0} למחזור עבודה בסדנת נשק"
 # The gdd-0.3 housing surcharge (#1703, R-HOUSE-005), not part of #1642's owner review above. The word "היטל דיור" is the
-# owner's choice (2 Nov 2026: "היטל דיור (Recommended)"); the rest of the line is agent-drafted Hebrew, native review
-# pending (#564).
+# owner's choice (2 Nov 2026: "היטל דיור (Recommended)"); the rest of the line is agent-drafted Hebrew, native review:
+# owner, 3 Nov 2026 (HE batch 3: "Approve all as they are").
 why.cause.borrowed.housing_surcharge: "הלוואה של {0} להיטל הדיור"
 # #2199: the why.cause.paid.* lines below are agent-drafted Hebrew, not part of #1642's owner review above. Each reuses
-# its why.cause.borrowed.* purpose phrase, except paid.occupation, which is newly worded. Native review pending (#564).
+# its why.cause.borrowed.* purpose phrase, except paid.occupation, which is newly worded. Native review: owner, 3 Nov
+# 2026 (HE batch 3: "Approve all as they are").
 why.cause.paid.corridor: "{0}: שינוי {1} (לבניית קטע של כביש או מסילה)"
 why.cause.paid.arms: "{0}: שינוי {1} (לרכישת נשק)"
 why.cause.paid.training: "{0}: שינוי {1} (לאימון ולהכשרה)"
@@ -485,9 +495,10 @@ why.cause.paid.yishuv: "{0}: שינוי {1} (להקמת יישוב)"
 why.cause.paid.project: "{0}: שינוי {1} (לבניית {2})"
 why.cause.paid.occupation: "{0}: שינוי {1} (לעלות ההחזקה של {2})"
 # A map action's cost (#2199); {2} is an info.map_action.* noun, as in why.cause.map_borrowed. Agent-drafted Hebrew;
-# native review pending (#564).
+# native review: owner, 3 Nov 2026 (HE batch 3: "Approve all as they are").
 why.cause.paid.map_action: "{0}: שינוי {1} (לבניית {2})"
-# The gdd-0.3 arms workshop's cycle (#1701, R-ARMS-006). Agent-drafted Hebrew; native review pending (#564).
+# The gdd-0.3 arms workshop's cycle (#1701, R-ARMS-006). Agent-drafted Hebrew; native review: owner, 3 Nov 2026
+# (HE batch 3: "Approve all as they are").
 why.cause.paid.workshop: "{0}: שינוי {1} (למחזור עבודה בסדנת נשק)"
 # #2212: Money's Other line in the turn report and the meter tip, the causes left out after the two largest, summed.
 # Agent-drafted Hebrew, not part of #1642's owner review; native review: owner, 3 Nov 2026 (HE batch 1: "All fine as
@@ -566,16 +577,18 @@ report.enemy_attack: "{0} פתח בהתקפה על אחת היחידות שלכ�
 report.enemy_fortify: "{0} התבצר בעמדתו"
 report.unit: "כוח {0}"
 # The arms workshops' lines (#1701 A1), {0} the city's name, in brackets so no prefix joins a name that may fall back to
-# English (HE-07); the Arms count as "Label: N" (HE-04). Agent-drafted Hebrew; native review pending (#564).
+# English (HE-07); the Arms count as "Label: N" (HE-04). Agent-drafted Hebrew; native review: owner, 3 Nov 2026
+# (HE batch 3: "Approve all as they are").
 report.workshops: "סדנאות נשק"
 report.workshop_arms: "סדנת נשק ({0}): תוספת נשק: 1"
 report.workshop_paused_debt: "סדנת נשק ({0}) בהמתנה: תקרת החוב"
 # A city's workshop lines combined, for two or more ("Combine per city", #1701): {0} the city's name, {1} how many, in
-# brackets after the name as in the EN lines; the Arms count as "Label: N" (HE-04). Agent-drafted Hebrew; native review
-# pending (#564).
+# brackets after the name as in the EN lines; the Arms count as "Label: N" (HE-04). Agent-drafted Hebrew; native review:
+# owner, 3 Nov 2026 (HE batch 3: "Approve all as they are").
 report.workshop_arms_n: "סדנאות נשק ({0}) ({1}): תוספת נשק: {1}"
 report.workshop_paused_debt_n: "סדנאות נשק ({0}) ({1}) בהמתנה: תקרת החוב"
 # The end screen (#812; D-H4): the sim's end report, formatted only. For the native reviewer (#564).
+# The nine end.* keys below: native review: owner, 3 Nov 2026 (HE batch 3: "Approve all as they are").
 end.title: "המשחק הסתיים"
 end.outcome.mvp_ended: "המשחק הגיע לתורו האחרון."
 end.outcome.defeat_economy: "הכסף והמזון אזלו."
@@ -585,6 +598,7 @@ end.objective_open: "יעד {0}: לא הושלם; בהיסטוריה ב־{1}"
 end.parameter: "{0}: {1}"
 end.population: "אוכלוסייה: {0}"
 end.population_history: "אוכלוסייה: {0}; לפי הלמ״ס {2} ב־{1}"
+# For the native reviewer (#564)
 cabinet.coalition: "קואליציה: {0} מתוך {1} {3} · יציבות {2}"
 cabinet.vacant: "(פנוי)"
 cabinet.person: "{0} · {1} · כישורים {2}, נאמנות {3}"
@@ -600,8 +614,11 @@ cabinet.party_seats: "{0} {1}"
 # The headings of the two groups of party chips under the half circle (CabinetPresenter.RenderHouse), so a chip's
 # side is read, not only seen in its swatch's colour (#41 M5). The same nouns as cabinet.coalition and
 # cabinet.opposition, with no adjective to agree. For the native reviewer (#564).
+# cabinet.coalition_group and cabinet.opposition_group: native review: owner, 3 Nov 2026
+# (HE batch 3: "Approve all as they are").
 cabinet.coalition_group: "קואליציה"
 cabinet.opposition_group: "אופוזיציה"
+# For the native reviewer (#564)
 cabinet.unrecorded: "לא תועד"
 cabinet.members_unit: "חברים"
 cabinet.seats: "מנדטים"
@@ -614,6 +631,7 @@ card.appointed_name: "{0} (מינוי שלך)"
 card.offices_separator: " · "
 # The tag on the selected Cabinet seat's card (PersonCard; #41 M6). Not "נבחר": on a minister's card in a game about the
 # Knesset it reads as "elected". "מסומן" agrees with the card (כרטיס), masculine. For the native reviewer (#564).
+# card.selected: native review: owner, 3 Nov 2026 (HE batch 3: "Approve all as they are").
 card.selected: "מסומן"
 # The empty info panel's hint: moving a unit (owner, 25 Oct 2026, "Civ: select, then click"), a click, or Tab to the
 # map's stop and Enter (#41 B1b, #1116), and drag panning (#998, #1791, #1808). "Tab" and "Enter" are the keys' printed names.
@@ -675,20 +693,26 @@ info.locality_today: "{0} (היום: {1})"
 # info.town_in_water: a town in a lake or sea hex drawn on the land hex next to it (#204), named by its name_he. "מוצגת
 # ... שלה" is feminine, as Hebrew city names are; the drift guard (EveryTownDrawnOffItsOwnHexLiesInWater) says only
 # Tiberias gets this line today. For the native reviewer (#564).
+# info.town_in_water: native review: owner, 3 Nov 2026 (HE batch 3: "Approve all as they are").
 info.town_in_water: "{0} מוצגת כאן, כי המשבצת שלה מכוסה במים."
+# For the native reviewer (#564)
 map.today: "היום: {0}"
 map.mixed: "יישוב מעורב"
 # map.tier: the tooltip of the population-tier badge on a city's pill (#710): {0} its tier, {1} the number of tiers, {2} its
 # 1948 people. For the native reviewer (#564).
+# map.tier: native review: owner, 3 Nov 2026 (HE batch 3: "Approve all as they are").
 map.tier: "דרגת אוכלוסייה {0} מתוך {1}: {2} תושבים ב-1948"
+# For the native reviewer (#564)
 minimap.overview: "התרחקות מרבית"
 minimap.labels: "הצגה או הסתרה של שמות היישובים"
 minimap.borders: "הצגה או הסתרה של גבולות האזורים"
 ui.lang: "he"
-# ui.quit: Quit on the start screen and in Settings, desktop players only (#2153). An action noun (HE-03). For the native reviewer (#564).
+# ui.quit: Quit on the start screen and in Settings, desktop players only (#2153). An action noun (HE-03). Native review:
+# owner, 3 Nov 2026 (HE batch 3: "Approve all as they are").
 ui.quit: "יציאה"
 # ui.quit_confirm: Settings' Quit after its first press, in the button's place; the second press quits (#2188). "יש ל..." as in
-# newgame.confirm (HE-03), with the action noun of ui.quit. For the native reviewer (#564).
+# newgame.confirm (HE-03), with the action noun of ui.quit. Native review: owner, 3 Nov 2026 (HE batch 3:
+# "Approve all as they are").
 ui.quit_confirm: "יש ללחוץ שוב ליציאה"
 # #701: {1} is a month and a year ("אוגוסט 1950"). A date label with no verb, since a fixed "נבנה" is wrong for a feminine
 # name ("מעברה"); Beri approved this wording as a native speaker (17 October 2026). For the native reviewer (#564).
@@ -699,10 +723,12 @@ info.build_housing: "בניית דיור ({0})"
 info.build_camp_plain: "הקמת מעברה"
 info.build_housing_plain: "בניית דיור"
 # Map-action refusal text (#881). info.map_action.* are nouns ("מעברה", "מיזם דיור"), so every sentence they go into
-# uses a verb or "יש" that does not agree with their gender ("אפשר להקים {0}", "כבר יש {0}"). For the native reviewer (#564).
+# uses a verb or "יש" that does not agree with their gender ("אפשר להקים {0}", "כבר יש {0}"). Native review: owner,
+# 3 Nov 2026 (HE batch 3: "Approve all as they are").
 info.map_action.transit_camp: "מעברה"
 info.map_action.housing: "מיזם דיור"
 info.map_action_reason.unknown: "פעולת מפה כזאת אינה קיימת"
+# For the native reviewer (#564)
 info.map_action_reason.chapter: "פעולת המפה הזאת אינה זמינה בפרק זה"
 info.map_action_reason.game: "פעולת המפה הזאת אינה זמינה במשחק זה"
 info.map_action_reason.action_from: "אפשר להקים {0} החל מ־{1}"
