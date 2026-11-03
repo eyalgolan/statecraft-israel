@@ -14,7 +14,7 @@ public class Gdd03MilitaryCatalogueTests
     [Fact] public void ReadsEverySettledNonCombatTermAsAnImmutableSnapshot()
     {
         var c = Catalogue(); var terms = Gdd03MilitaryCatalogue.Read(c);
-        // content/gdd03-balance.yaml:307-354; #1668 balance.md:129-137.
+        // content/gdd03-balance.yaml `military.camp_capacity` to `military.active_money`; #1668 balance.md:129-137.
         // camp_capacity: #1668's 5 places at 10,000 people a unit is 50 units at 1,000 a unit (owner, 1 November 2026:
         // "Main's base x 0.3's tiers (Recommended)"; #2112).
         Assert.Equal(50, terms.CampCapacity); Assert.Equal(3, terms.BasicTurns);
