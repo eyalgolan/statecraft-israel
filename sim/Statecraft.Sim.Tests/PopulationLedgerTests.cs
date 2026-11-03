@@ -221,4 +221,41 @@ public class PopulationLedgerTests
         Assert.Throws<NotSupportedException>(()=>Simulation.DelegatedTo(c,s,Array.Empty<Command>(),"missing"));
         Assert.Equal(hash,s.Hash());
     }
+
+    static PopulationUnit WithTier(CivilianProfession profession, CivilianTier tier, int workXp = 0) => new PopulationUnit(0,
+        PopulationStatus.FreeCivilian, 1, new PopulationLocation("north", 0, 0, "camp"), PopulationAssignment.Unassigned,
+        profession, tier, workXp, "basic", 9, new PopulationEquipment("tools", true, "arms", true));
+
+    // R-POP-002, R-CRAFT-003 (#1698 follow-up, the 1 November 2026 answers the owner approved: the novice craftsman label
+    // starts with the craftsman course): a craftsman may be a novice. Accepted outside a course too, a maintainer reading
+    // of Q55 ("workshop work by a novice craftsman"), not an owner ruling.
+    [Fact] public void NoviceCraftsmanIsAValidLedgerTier()
+    {
+        var s = State(Row("start", 0, WithTier(CivilianProfession.Craftsman, CivilianTier.Novice))); var l = s.PopulationLedger;
+        l.Reconcile(); Assert.Equal(CivilianTier.Novice, l.Get(0).Tier);
+        l.Transition(0, PopulationStatus.Trainee, l.Get(0).Location, new PopulationAssignment(PopulationAssignmentKind.Course, "course", 2));
+        l.Reconcile(); Assert.Equal(CivilianProfession.Craftsman, l.Get(0).Profession);
+        var farmer = State(Row()); farmer.PopulationLedger.Replace(WithTier(CivilianProfession.Craftsman, CivilianTier.Novice));
+        Assert.Equal(CivilianTier.Novice, farmer.PopulationLedger.Get(0).Tier);
+    }
+
+    // R-POP-002: tiers of other professions stay refused, at creation and on replacement, with the state unchanged.
+    [Theory]
+    [InlineData(CivilianProfession.Craftsman, CivilianTier.None)]
+    [InlineData(CivilianProfession.Craftsman, CivilianTier.Trained)]
+    [InlineData(CivilianProfession.Craftsman, CivilianTier.Veteran)]
+    [InlineData(CivilianProfession.Farmer, CivilianTier.None)]
+    [InlineData(CivilianProfession.Farmer, CivilianTier.Apprentice)]
+    [InlineData(CivilianProfession.Farmer, CivilianTier.Expert)]
+    [InlineData(CivilianProfession.Pioneer, CivilianTier.Apprentice)]
+    [InlineData(CivilianProfession.Pioneer, CivilianTier.Expert)]
+    [InlineData(CivilianProfession.None, CivilianTier.Novice)]
+    [InlineData(CivilianProfession.None, CivilianTier.Apprentice)]
+    public void TiersOfOtherProfessionsAreStillRefused(CivilianProfession profession, CivilianTier tier)
+    {
+        Assert.Throws<ArgumentException>(() => State(Row("start", 0, WithTier(profession, tier))));
+        var s = State(Row()); var before = s.Describe();
+        Assert.Throws<ArgumentException>(() => s.PopulationLedger.Replace(WithTier(profession, tier)));
+        Assert.Equal(before, s.Describe());
+    }
 }
