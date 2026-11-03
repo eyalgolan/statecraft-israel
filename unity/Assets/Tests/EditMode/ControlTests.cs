@@ -293,7 +293,7 @@ public class ControlTests
         // a demilitarized zone hex: the zone's own line, not a second "Demilitarized zone"
         var dmz = m.Control!.Periods.Count > 0 ? FindHex(m, After, Control1948.Side.Dmz) : default;
         Assert.AreEqual("Demilitarized zone", InfoPanelPresenter.ControlText(m, En, dmz.q, dmz.r, After));
-        StringAssert.DoesNotContain("Demilitarized zone", InfoPanelPresenter.RegionText(m, En, dmz.q, dmz.r, After));
+        StringAssert.DoesNotContain(En["info.control_dmz"], InfoPanelPresenter.RegionText(m, En, dmz.q, dmz.r, After));
         // no-man's land from a minimal file too (the data has it only in the opening period, in the Old City's hex)
         var nml = Control1948.Parse("layer: x\nshown_from: 1948-06-11\nperiods:\n  - { id: a, from: 1948-06-11, until: null, legend: held, line_date: '1948-07-09', fronts: [] }\nhexes:\n  - [1, 2, 'm']\n");
         Assert.AreEqual((Control1948.Side.NoMansLand, (string?)null), nml.At(1, 2, Truce1));
