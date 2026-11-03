@@ -10,7 +10,7 @@ I plan standing orders, resolve the month predictably and reload under the rules
 - `systems.loop` in eras.yaml is `legacy` or `gdd`, the same in every era; absent means legacy (R-LOOP-001).
 - The GDD state (cities, units, the next unit id, completed objectives, the score) is hashed only when it is set, so the legacy hash text is unchanged (R-LOOP-002).
 - Until the cutover, `MvpSlice.Overlay` gave the real content with the switch on and monthly turns. The cutover turned the switch on in the real content and retired the overlay with its rule ID.
-- A save names its ruleset, `legacy`, `gdd-0.1` or `gdd-0.3`, the last saved as schema 4 (unitless) and selected by no content yet; a game refuses a save from another ruleset (R-SAVE-001, decision D-E4 [S2]), and a save from a ruleset it does not know as made by a newer version (R-SAVE-002).
+- A save names its ruleset, `legacy`, `gdd-0.1` or `gdd-0.3`, the last saved as save schema four and selected by no content yet; a game refuses a save from another ruleset (R-SAVE-001, decision D-E4 [S2]), and a save from a ruleset it does not know as made by a newer version (R-SAVE-002).
 - Before the cutover, balance values the owner had not set lived only in the overlay or in test fixtures [S3]; since it they are labelled design values in `content/` (R-LOOP-005).
 ### Ruleset boundary
 
