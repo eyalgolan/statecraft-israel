@@ -1,6 +1,7 @@
 using Statecraft.Sim;
 
-// R-CAMP-003: the optional overlay changes only exact gdd-0.3 and binds its shipped start camps to existing map locations.
+// R-CAMP-003: the optional overlay changes only exact gdd-0.3; it names the map location each shipped start camp stands for,
+// and only the city's military_camp facility flag is kept.
 public class Gdd03StartFacilitiesTests
 {
     const string OverlayFile = "gdd03-start.yaml";
