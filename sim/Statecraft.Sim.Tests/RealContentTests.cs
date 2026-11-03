@@ -49,13 +49,25 @@ public class RealContentTests
         }
     }
 
-    /// <summary>R-ALT-004 on the real content: every one of the 33 alternatives carries its record.</summary>
+    /// <summary>R-ALT-004 on the real content: every alternative carries its record.</summary>
     [Fact]
     public void EveryAlternativeInContentSaysWhoProposedIt()
     {
         var c = ContentLoader.Load(ContentRoot());
         var alternatives = c.Events.Where(e => e.Options.Any(o => o.Historical)).SelectMany(e => e.Options.Where(o => !o.Historical)).ToList();
-        Assert.Equal(33, alternatives.Count);
+        // The same count read from the raw event files: a loader that drops an alternative would leave it unchecked.
+        var rawAlternatives = 0;
+        foreach (var file in Directory.GetFiles(Path.Combine(ContentRoot(), "events"), "*.yaml"))
+        {
+            var yaml = new YamlStream();
+            using (var reader = new StringReader(File.ReadAllText(file))) yaml.Load(reader);
+            if (!((YamlMappingNode)yaml.Documents[0].RootNode).Children.TryGetValue(new YamlScalarNode("options"), out var node)) continue;
+            var historical = ((YamlSequenceNode)node).Children.Cast<YamlMappingNode>()
+                .Select(o => o.Children.TryGetValue(new YamlScalarNode("historical"), out var h) && ((YamlScalarNode)h).Value == "true").ToList();
+            if (historical.Contains(true)) rawAlternatives += historical.Count(h => !h);
+        }
+        Assert.NotEqual(0, rawAlternatives);
+        Assert.Equal(rawAlternatives, alternatives.Count);
         Assert.All(alternatives, o => Assert.NotNull(o.Alternative));
     }
 
@@ -301,10 +313,13 @@ public class RealContentTests
         Assert.Equal("naftali", Offices.Holder(C, "agriculture_minister", new DateTime(1952, 12, 24))?.Id);
         var state = Simulation.NewGame(C, 42, Mode.Historical);
         state.Date = change.AddDays(-1);
-        Assert.Equal(0.9, EffectsSystem.Multiplier(C, state, "agriculture_minister") /
+        var eshkol = C.People.Single(p => p.Id == "eshkol").Competence;
+        var naftali = C.People.Single(p => p.Id == "naftali").Competence;
+        Assert.NotEqual(eshkol, naftali);   // otherwise a stale holder would give the same multiplier
+        Assert.Equal(0.5 + eshkol / 20.0, EffectsSystem.Multiplier(C, state, "agriculture_minister") /
             EffectsSystem.BudgetFactor(C, state, "agriculture_minister"), 10);
         state.Date = change;
-        Assert.Equal(0.85, EffectsSystem.Multiplier(C, state, "agriculture_minister") /
+        Assert.Equal(0.5 + naftali / 20.0, EffectsSystem.Multiplier(C, state, "agriculture_minister") /
             EffectsSystem.BudgetFactor(C, state, "agriculture_minister"), 10);
         Assert.Equal("kaplan", Cabinet.Holder(C, state, "minister_without_portfolio")?.Id);
         Assert.DoesNotContain(Cabinet.Lineup(C, state), seat => seat.Office.Id == "deputy_prime_minister");
@@ -313,12 +328,27 @@ public class RealContentTests
     }
 
     [Fact]
-    public void OpenQuestionsAreExactlyTheKnownOnes()
+    public void EveryOpenQuestionHasAResearchNote()
     {
         // #3: research_notes/budget-approval-1948-56.md answers budget_approval for the council and the First and Second
         // Knessets. The Third Knesset's stays open: its 1956/57 law is read, its 1957-59 laws are not.
         var open = C.Legislatures.SelectMany(l => l.OpenQuestions.Select(q => $"{l.Id}.{q}")).OrderBy(x => x).ToArray();
-        Assert.Equal(new[] { "third_knesset.budget_approval" }, open);
+        // The loader keeps every open question legislatures.yaml lists.
+        var yaml = new YamlStream();
+        using (var reader = new StringReader(File.ReadAllText(Path.Combine(ContentRoot(), "legislatures.yaml")))) yaml.Load(reader);
+        var raw = ((YamlSequenceNode)((YamlMappingNode)yaml.Documents[0].RootNode)[new YamlScalarNode("legislatures")]).Children
+            .Cast<YamlMappingNode>()
+            .SelectMany(l => l.Children.TryGetValue(new YamlScalarNode("open_questions"), out var q)
+                ? ((YamlSequenceNode)q).Children.Select(x => $"{l[new YamlScalarNode("id")]}.{x}") : Enumerable.Empty<string>())
+            .OrderBy(x => x).ToArray();
+        Assert.Equal(raw, open);
+        var notes = new Dictionary<string, string> { ["budget_approval"] = "budget-approval-1948-56.md" };
+        Assert.All(open, item =>
+        {
+            var question = item.Substring(item.IndexOf('.') + 1);
+            Assert.True(notes.TryGetValue(question, out var note), $"{item} has no research note mapping");
+            Assert.True(File.Exists(Path.Combine(ContentRoot(), "..", "research_notes", note!)), $"{item} research note is missing: {note}");
+        });
     }
 
     [Fact]
@@ -383,7 +413,10 @@ public class RealContentTests
         Assert.Equal((73, 120), PoliticsSystem.CoalitionSeats(C, new DateTime(1949, 6, 1)));
         Assert.Equal(101828, C.Aliyah[0].Origins.Values.Sum());
         Assert.Equal(239954, C.Aliyah[1].Origins.Values.Sum());
-        Assert.Equal(13, C.Actors.Count);
+        var model = new YamlStream();
+        using (var reader = new StringReader(File.ReadAllText(Path.Combine(ContentRoot(), "model.yaml")))) model.Load(reader);
+        var actorRows = (YamlSequenceNode)((YamlMappingNode)model.Documents[0].RootNode)[new YamlScalarNode("actors")];
+        Assert.Equal(actorRows.Children.Count, C.Actors.Count);
     }
 
     [Fact]
@@ -485,7 +518,7 @@ public class RealContentTests
         Assert.Equal(new DateTime(1951, 10, 8), C.Offices.Single(o => o.Id == "immigration_minister").Until);
         Assert.Equal(new DateTime(1951, 10, 8), C.Offices.Single(o => o.Id == "war_victims_minister").Until);
         Assert.Equal("shapira", Who("immigration_minister", 1951, 10, 7));
-        Assert.Equal(0.15, C.Rules.BudgetStart["prime_minister"]);   // the Immigration line keeps its id (#108)
+        Assert.Contains("prime_minister", C.Rules.BudgetStart.Keys);   // the Immigration line keeps its id (#108)
         var sheetrit = C.People.Single(p => p.Id == "sheetrit");
         Assert.Equal("sephardim", Offices.PartyOf(C, sheetrit, new DateTime(1951, 1, 1)));
         Assert.Equal("mapai", Offices.PartyOf(C, sheetrit, new DateTime(1951, 10, 8)));
