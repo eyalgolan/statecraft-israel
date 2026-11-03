@@ -849,15 +849,26 @@ namespace Statecraft.Game.Tests
                 Assert.Greater(old.Count, 0, "premise: the props are drawn");
                 Assert.IsTrue(Same(old, Planned()), "premise: the props are drawn on the plan shown");
                 var wants = rural.Wanted.ToList(); var others = rural.OthersShown.ToList();
+                // A farm scene stands on a 700 m clear disc (RuralLife.ClearanceRadiusM) at its first ring, FirstRingClearances
+                // clearances out from its anchor on one of Bearings bearings. So the test's scene (the widest, first in the list:
+                // RuralLife.Plan drops a want past MaxAnchorsPerModel) is anchored one first ring away from a target on each
+                // bearing in turn: on the bearing it tries first it lands on the target if that ground is clear. The targets are
+                // each prop's spot and points 300 m round it, until the plan moves a prop.
+                var model = RuralLife.Models.OrderByDescending(RuralLife.SceneRadiusM).First();
+                float ring = RuralLife.ClearanceRadiusM * RuralLife.FirstRingClearances;
                 bool moved = false;
                 foreach (var s in old.Values)
                 {
-                    foreach (var m in RuralLife.Models)
+                    foreach (var target in new[] { s, s + new Vector2(300f, 0f), s - new Vector2(300f, 0f), s + new Vector2(0f, 300f), s - new Vector2(0f, 300f) })
                     {
-                        // First in the list: RuralLife.Plan skips a want past its model's MaxAnchorsPerModel, so one appended last
-                        // could be dropped before it takes any ground.
-                        rural.ShowForTest(wants.Prepend(new RuralLife.Want("test_scene", m, s, 0f)).ToList(), others.ToList());
-                        if (!Same(old, Planned())) { moved = true; break; }
+                        for (int b = 0; b < RuralLife.Bearings && !moved; b++)
+                        {
+                            float angle = b * (360f / RuralLife.Bearings) * Mathf.Deg2Rad;
+                            var anchor = target - new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * ring;
+                            rural.ShowForTest(wants.Prepend(new RuralLife.Want("test_scene", model, anchor, 0f)).ToList(), others.ToList());
+                            moved = !Same(old, Planned());
+                        }
+                        if (moved) break;
                     }
                     if (moved) break;
                 }
