@@ -118,7 +118,8 @@ public class Gdd03MoneyLedgerTests
         Assert.True(turns >= 40, $"the run lasts {turns} turns");
         Assert.Subset(paid, new HashSet<string> { CauseKeys.Purpose.Training, CauseKeys.Purpose.Project, CauseKeys.Purpose.Yishuv, CauseKeys.Purpose.Arms });
         Assert.Subset(borrowed, new HashSet<string> { CauseKeys.Purpose.Deficit, CauseKeys.Purpose.Project, CauseKeys.Purpose.Yishuv, CauseKeys.Purpose.Arms, CauseKeys.Purpose.Event });
-        Assert.Subset(keys, new HashSet<string> { CauseKeys.MoneyFlows, CauseKeys.WagesPaid, CauseKeys.MilitaryUpkeep, CauseKeys.Paid, CauseKeys.EventAmount, CauseKeys.DollarsConverted });
+        Assert.Subset(keys, new HashSet<string> { CauseKeys.MoneyFlows, CauseKeys.WagesPaid, CauseKeys.MilitaryUpkeep, CauseKeys.Paid, CauseKeys.EventAmount, CauseKeys.DollarsConverted,
+            CauseKeys.HousingSurcharge });   // #1703 (R-HOUSE-005): the housing surcharge is its own Money line, so it reconciles too
         // R-MONEY-002: civilian upkeep stays IL 0m under gdd-0.3 (the owner's 30 October 2026 "Keep ruling" on UPKEEP), so the
         // whole game, with its built yishuvim and housing, never charges it.
         Assert.DoesNotContain(CauseKeys.CivilianUpkeep, keys);

@@ -13,7 +13,8 @@ namespace Statecraft.HexTiles.Prototypes
     /// touches water, so the FlatSurface test never places it). 4 date palms x 284 = 1,136. 16 scrub stand-ins x about 46 =
     /// 740. 12 flats x 12 = 144. Total about 15,500 of 20,000 with the boat.
     ///
-    /// The scrub has no model (tiles:coastal_dunes/scrub), so it draws the Tree stand-in tinted pale sage.</summary>
+    /// The scrub is Tal Heuberger's model from the hex-props bundle (tiles:coastal_dunes/scrub, see HexProps); until the bundle
+    /// arrives it draws the Tree stand-in tinted pale sage.</summary>
     [HexPrototype("coastal_dunes", Kind = "nature")]
     public sealed class CoastalDunes : IHexPrototype
     {

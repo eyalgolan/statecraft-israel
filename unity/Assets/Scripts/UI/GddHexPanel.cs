@@ -18,9 +18,10 @@ namespace Statecraft.Game.UI
     /// <para>On any hex a city can build on (Projects.CitiesFor, #1122): the city that builds (the player picks when several
     /// can), and Build for each content project kind with its cost and turns (Projects.CityTurnsToBuild), disabled with the sim's own refusal
     /// (Projects.CheckCityReason) worded in the UI's language; or the project there, with its turns left and Cancel, or the
-    /// day it was finished (R-PROJ-001 to R-PROJ-003).</para>
+    /// day it was finished (R-PROJ-001 to R-PROJ-003); under gdd-0.3, on a built arms workshop, its staffing and cycle (#1722,
+    /// R-ARMS-005 to R-ARMS-007).</para>
     /// <para>Every number is the sim's, and every order goes through the bridge's queue: the sim rules on it when the turn
-    /// runs. No rule lives here: the limits are the sim's public helpers (Cities.MaxWorkers, Training.Available), asked with
+    /// runs. No rule lives here: the limits are the sim's public helpers (Cities.MaxWorkers, Training.Available, Workshops.Check), asked with
     /// the queue, and a button is disabled only where the sim would refuse that order, or another one in the queue, anyway.</para></summary>
     public static class GddHexPanel
     {
@@ -91,7 +92,8 @@ namespace Statecraft.Game.UI
         static void City(VisualElement host, SimBridge bridge, UiText text, string id)
         {
             var c = bridge.Content; var s = bridge.State; var city = s.Cities[id];
-            // R-HOUSE-003: the housed are the civilians, the recruits and the groups in training (Cities.Housed), against the
+            // R-HOUSE-003: the housed are the civilians, craftsmen, recruits and groups in training, and under gdd-0.1 the
+            // city's Israeli formations too (Cities.Housed), against the
             // capacity; R-HOUSE-001: the city's housing condition, 0 to 1, through the one percent formatter, on the same line
             // so the panel is no taller (the GDD loop always has a condition; the plain form is for a city without one).
             var housed = Cities.Housed(s, city); var capacity = Groups(text, city.HousingCapacity);
@@ -108,9 +110,12 @@ namespace Statecraft.Game.UI
             var waiting = Row(host, "city-waiting-row"); waiting.AddToClassList(PairsClass);
             Line(waiting, "city-refugees", text.Format("city.refugees", Groups(text, city.Refugees)));
             Line(waiting, "city-overflow", text.Format("city.overflow", Cities.Overflow(s, city)));
-            // #1345: trained recruits are formations housed in their home city since #1130, so the line counts every Israeli
-            // formation the city houses (Cities.Soldiers, part of Cities.Housed), not City.Recruits, which nothing writes now.
-            Line(host, "city-soldiers", text.Format("city.soldiers", Groups(text, Cities.Soldiers(s, city))));
+            // #1345: under gdd-0.1 trained recruits are formations housed in their home city since #1130, so the line counts
+            // every Israeli formation the city houses (Cities.Soldiers, part of Cities.Housed), not City.Recruits, which nothing
+            // writes now. Under gdd-0.3 formations are not housed (R-HOUSE-003, 27M-18; #1703), so there is no such line: the
+            // housing line above already shows the gdd-0.3 housed count.
+            if (c.Ruleset != SaveGame.Gdd03Ruleset)
+                Line(host, "city-soldiers", text.Format("city.soldiers", Groups(text, Cities.Soldiers(s, city))));
 
             // The Assign stepper: the ordered count (or the current one), one group a press, within R-CITY-001's limits as
             // the sim gives them with this turn's Train orders; stepping back to the current count withdraws the order.
@@ -326,6 +331,7 @@ namespace Statecraft.Game.UI
                 if (project.BuiltOn is DateTime built)
                 {
                     Line(host, "city-project-state", text.Format("city.project_built", Kind(project.Kind), townName(project.City), Date(text, built)));
+                    WorkshopPart(host, bridge, text, project, townName);
                     return;
                 }
                 Line(host, "city-project-state", text.Format("city.project_building", Kind(project.Kind), townName(project.City), Turns(text, Projects.CityTurnsToBuild(c, s, project.Kind, project.TurnsLeft, project.Progress))));
@@ -384,6 +390,52 @@ namespace Statecraft.Game.UI
                         : text.Format("city.project_start", ContentNames.Of(text, k), PlayerText.Money(c, "treasury", k.Cost), Turns(text, Projects.CityTurnsToBuild(c, s, k.Id, k.Turns, 0))),
                     () => bridge.Queue(new StartProject(k.Id, city, q, r))).SetEnabled(!ordered);
             }
+        }
+
+        /// <summary>#1722 slice E (#1701; R-ARMS-005 to R-ARMS-007), gdd-0.3 only: on a built arms workshop (a kind with a worker
+        /// slot, R-ARMS-004), its city's staffing stepper and this workshop's state. AssignWorkers(city, "workshop", n) staffs the
+        /// city's first n built workshops in ascending id, so the stepper is the city's count (Workshops.Staffed, or the queued
+        /// order's) of Workshops.Built; stepping back to the current count withdraws the order. + is off where Workshops.Check,
+        /// asked with this turn's queue, refuses one more, and while a workshop is left unstaffed that refusal shows in the UI's
+        /// language (SimBridge.ReasonText). This workshop: staffed or not (its Workshop record), its cycle under way (staffed
+        /// months of workshop.staffed_turns and the Money paid) or the next cycle's price at its worker's tier, the pause while
+        /// the enemy holds its city (Cities.Held, R-CITY-010), and the last turn's pauses for its city as the Why screen words
+        /// them (CauseKeys.WorkshopPaused). Nothing is computed here.</summary>
+        static void WorkshopPart(VisualElement host, SimBridge bridge, UiText text, CityProject project, Func<string, string> townName)
+        {
+            var c = bridge.Content; var s = bridge.State;
+            if (c.Ruleset != SaveGame.Gdd03Ruleset || c.ProjectKinds.First(k => k.Id == project.Kind).WorkerSlots == 0) return;
+            var city = project.City;
+            var built = Workshops.Built(c, s, city);
+            var staffed = Workshops.Staffed(s, city);
+            var queued = bridge.QueuedLike(new AssignWorkers(city, Workshops.Role, 0)) as AssignWorkers;
+            var target = queued?.Count ?? staffed;
+            var refusal = Workshops.Check(c, s, city, target + 1, bridge.Queued);
+            var row = Row(host, "city-workshops-row");
+            Button(row, "city-workshops-less", "−", () => Staff(bridge, city, staffed, target - 1)).SetEnabled(target > 0);
+            Line(row, "city-workshops", text.Format(queued == null ? "city.workshops_staffed" : "city.workshops_ordered", target, built));
+            Button(row, "city-workshops-more", "+", () => Staff(bridge, city, staffed, target + 1)).SetEnabled(refusal == null);
+            if (refusal != null && target < built) Line(host, "city-workshops-reason", SimBridge.ReasonText(text, refusal, c, bridge.TownNamesHe));
+
+            s.Workshops.TryGetValue(project.Id, out var w);
+            Line(host, "city-workshop-state", text[w?.Staffed == true ? "city.workshop_staffed" : "city.workshop_unstaffed"]);
+            if (w != null)
+            {
+                var rules = SyntheticWorkshopRules.FromCatalogue(c.Gdd03Balance!);   // the loader requires it under gdd-0.3
+                Line(host, "city-workshop-cycle", w.PaidCost is decimal paid
+                    ? text.Format("city.workshop_cycle", w.Progress, rules.StaffedTurns, PlayerText.Money(c, "treasury", (double)paid))
+                    : text.Format("city.workshop_next", PlayerText.Money(c, "treasury", (double)rules.Price(w.WorkerTier))));
+            }
+            if (Cities.Held(c, s).Contains(city)) Line(host, "city-workshop-held", text.Format("city.workshop_held", townName(city)));
+            var paused = (bridge.Session.Last?.Why ?? Array.Empty<Cause>()).Where(x => x.Key == CauseKeys.WorkshopPaused && x.Target == city)
+                .Select(x => CauseText.Line(x, c, Array.Empty<Statecraft.Game.Map.Units.UnitEntry>(), text, bridge.TownNamesHe)).Distinct().ToList();
+            for (int i = 0; i < paused.Count; i++) Line(host, "city-workshop-paused-" + i.ToString(CultureInfo.InvariantCulture), paused[i]);
+        }
+
+        static void Staff(SimBridge bridge, string city, int current, int count)
+        {
+            if (count != current) { bridge.Queue(new AssignWorkers(city, Workshops.Role, count)); return; }
+            if (bridge.QueuedLike(new AssignWorkers(city, Workshops.Role, 0)) is Command order) bridge.Withdraw(order);
         }
 
         /// <summary>A city-project refusal (Projects.CheckCityReason) in the UI's language: the map actions' strings where the

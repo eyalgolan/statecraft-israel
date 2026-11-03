@@ -18,6 +18,41 @@ namespace Statecraft.Sim
         /// of its city without a job was left for it, or paying for its next cycle would take the debt past mvp.debt_ceiling.</summary>
         public const string NoWorker = "no_worker", DebtCeiling = "debt_ceiling";
 
+        /// <summary>R-ARMS-005: a staffing order's refusals (Check), formats with the settlement's name ({0}) and a count ({1},
+        /// invariant). The English is what a turn's Rejected list and a save carry; the UI words it in its language
+        /// (SimBridge.ReasonText, #1722).</summary>
+        public const string RefusedBuiltOne = "{0} has 1 arms workshop", RefusedBuilt = "{0} has {1} arms workshops",
+            RefusedPeople = "{0} has {1} civilians and craftsmen", RefusedPeopleNoJob = "{0} has {1} civilians and craftsmen without a job";
+
+        static string Refused(string format, params object[] values) => string.Format(System.Globalization.CultureInfo.InvariantCulture, format, values);
+
+        /// <summary>R-ARMS-005: the number of the city's built arms workshops, the most AssignWorkers(city, "workshop", n) staffs.</summary>
+        public static int Built(Content c, GameState s, string city) => BuiltIn(c, s, city).Count;
+
+        /// <summary>R-ARMS-005: why AssignWorkers(<paramref name="city"/>, "workshop", <paramref name="count"/>) would be
+        /// refused, or null; nothing changes. With an empty <paramref name="pending"/> it is the order's own check. With this
+        /// turn's queue (#1722 slice E, the hex panel) it also counts the city's pending "job" order (whose jobs then hold
+        /// no workshop worker, and which turns R-CITY-009's default off) and its Train and reassignment orders
+        /// (Training.Ordered), so a count it accepts is still accepted whichever of them runs first.</summary>
+        public static string? Check(Content c, GameState s, string city, int count, IEnumerable<Command> pending)
+        {
+            if (!s.Cities.TryGetValue(city, out var x)) return "There is no such city";
+            if (c.Ruleset != SaveGame.Gdd03Ruleset) return "There is no such role";
+            if (count < 0) return "The number of workers cannot be negative";
+            var name = PlayerText.Settlement(c, city);
+            var built = Built(c, s, city);
+            if (count > built) return built == 1 ? Refused(RefusedBuiltOne, name) : Refused(RefusedBuilt, name, built);
+            var list = pending as IReadOnlyCollection<Command> ?? pending.ToList();
+            var job = list.OfType<AssignWorkers>().Where(w => w.City == city && w.Role == "job").Select(w => (int?)w.Count).Max();
+            var byDefault = x.JobsDefault && job == null;
+            var staffed = Staffed(s, city);
+            // R-CITY-009: while the city's job default is on, a newly staffed workshop may take its worker from the default's
+            // jobs (the default then fills one job fewer, R-CITY-001); a number the player set is not lowered.
+            var free = x.Civilians + x.Craftsmen - Math.Max(x.JobsDefault ? 0 : x.Employed, job ?? 0) - staffed - Training.Ordered(city, list);
+            if (count - staffed > free) return Refused(byDefault ? RefusedPeople : RefusedPeopleNoJob, name, Math.Max(0, free));
+            return null;
+        }
+
         /// <summary>R-ARMS-005: the city's built workshops (a project whose kind has a worker slot, R-ARMS-004), in ascending id.</summary>
         static List<CityProject> BuiltIn(Content c, GameState s, string city) =>
             s.CityProjects.Values.Where(p => p.City == city && p.BuiltOn != null && c.ProjectKinds.First(k => k.Id == p.Kind).WorkerSlots > 0).ToList();
@@ -36,18 +71,11 @@ namespace Statecraft.Sim
         internal static string? Staff(Content c, GameState s, string city, int count, List<Cause> why)
         {
             PopulationLedger.RefuseAggregate(s);
-            if (count < 0) return "The number of workers cannot be negative";
+            if (Check(c, s, city, count, Array.Empty<Command>()) is string refused) return refused;
             var name = PlayerText.Settlement(c, city);
             var built = BuiltIn(c, s, city);
-            if (count > built.Count)
-                return FormattableString.Invariant($"{name} has {built.Count} {(built.Count == 1 ? "arms workshop" : "arms workshops")}");
             var x = s.Cities[city];
             var staffed = Staffed(s, city);
-            // R-CITY-009: while the city's job default is on, a newly staffed workshop may take its worker from the default's
-            // jobs (the default then fills one job fewer, R-CITY-001); a number the player set is not lowered.
-            var free = x.Civilians + x.Craftsmen - (x.JobsDefault ? 0 : x.Employed) - staffed;
-            if (count - staffed > free)
-                return FormattableString.Invariant($"{name} has {Math.Max(0, free)} civilians and craftsmen{(x.JobsDefault ? "" : " without a job")}");
             var employed = Math.Min(x.Employed, x.Civilians + x.Craftsmen - count);
             if (employed != x.Employed)
             {
