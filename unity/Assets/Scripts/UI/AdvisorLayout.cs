@@ -11,7 +11,7 @@ namespace Statecraft.Game.UI
     /// above the minimap. An upright phone (three rows): a sheet from the left column's edge (from the side menu's left
     /// edge and under it, where the tight HUD makes the menu a row under the bar) to the window's right edge, under
     /// "Decision waiting" and the toast, its foot 12 px above the higher of the info panel and the minimap's label.
-    /// Hebrew: the same place (the HUD does not mirror its panels, Statecraft.uss:943-946).</summary>
+    /// Hebrew: the same place (the HUD does not mirror its panels; Statecraft.uss's .lang-he row-reverse rule reverses their rows).</summary>
     public static class AdvisorLayout
     {
         public const float Width = 400f, EdgePx = 16f, GapPx = 12f, DecisionRowPx = 46f, BelowPx = 8f;

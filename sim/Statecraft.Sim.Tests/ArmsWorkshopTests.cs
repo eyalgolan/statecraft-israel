@@ -459,7 +459,7 @@ public class ArmsWorkshopTests
     static GameState Clear(GameState s) { var x = s.Clone(); x.Workshops.Clear(); return x; }
 
     // R-ARMS-006 (27M-13: "The cost tier follows the worker (novice or ordinary / apprentice / expert)."; gdd03-balance
-    // workshop.cost 5/4/3, which docs/GDD.md:370 keeps as "Money per Arms"; OQ1, owner 2 November 2026: "Keep as ruled").
+    // workshop.cost 5/4/3, which the GDD's 1 November 2026 per-unit rates ruling keeps as "Money per Arms"; OQ1, owner 2 November 2026: "Keep as ruled").
     [Theory]
     [InlineData(SyntheticWorkshopTier.Ordinary, 5)]
     [InlineData(SyntheticWorkshopTier.Novice, 5)]

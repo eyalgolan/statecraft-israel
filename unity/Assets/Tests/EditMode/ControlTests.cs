@@ -381,7 +381,7 @@ public class ControlTests
                 doc.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml);
                 go.SetActive(true);
                 var root = doc.rootVisualElement;
-                // Mirror GameRoot.Begin (GameRoot.cs:244-247): Hebrew uses its own face and layout classes.
+                // Mirror GameRoot.Begin: Hebrew uses its own face and layout classes.
                 root.Q("root").EnableInClassList(UiLanguage.HebrewClass, lang["ui.lang"] == UiLanguage.Hebrew);
                 root.Q("root").RemoveFromClassList("loading");
                 var bridge = new SimBridge(GameSession.New(c, GoldenRun.Seed, Mode.Historical), lang);
@@ -392,7 +392,7 @@ public class ControlTests
                 // and the GDD column shown at once squeeze the text column to 0 px, and a later layout pass can stack the order
                 // row over 1300 px tall, so the panel's height depended on how many passes ran before the check.
                 var info = new InfoPanelPresenter(root, bridge, lang, new Dictionary<string, string>());
-                // GameRoot.cs:585: paragraph direction is applied after the presenters have rendered.
+                // GameRoot.Begin / UiDirection: paragraph direction is applied after the presenters have rendered.
                 var direction = lang["ui.lang"] == UiLanguage.Hebrew ? new UiDirection(root, bridge) : null;
                 try
                 {
