@@ -854,7 +854,9 @@ namespace Statecraft.Game.Tests
                 {
                     foreach (var m in RuralLife.Models)
                     {
-                        rural.ShowForTest(wants.Append(new RuralLife.Want("test_scene", m, s, 0f)).ToList(), others.ToList());
+                        // First in the list: RuralLife.Plan skips a want past its model's MaxAnchorsPerModel, so one appended last
+                        // could be dropped before it takes any ground.
+                        rural.ShowForTest(wants.Prepend(new RuralLife.Want("test_scene", m, s, 0f)).ToList(), others.ToList());
                         if (!Same(old, Planned())) { moved = true; break; }
                     }
                     if (moved) break;
