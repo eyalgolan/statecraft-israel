@@ -171,6 +171,7 @@ public class TranslationLoaderTests
     [Theory]
     [InlineData("advisor.defeat_economy")]
     [InlineData("how_to_play.title")]
+    [InlineData("encyclopedia.title")]
     public void OnlyHebrewTranslatesTheAdvisorsAndHowToPlay(string key)
     {
         var e = Refused(new Dictionary<string, string> { ["ro/ui.yaml"] = Ro + $"{key}: \"x\"\n" });
