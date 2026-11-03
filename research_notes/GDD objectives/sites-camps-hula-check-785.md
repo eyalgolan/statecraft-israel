@@ -15,7 +15,7 @@ its earlier map reads are not new map verification here. The existing
 [seven-row note](sites-draft-rows-check-785.md) and [Kiryat Shmona / Beit Shemesh note](sites-ks-bs-check-785.md)
 cover other slices.
 
-Every finding below is **an agent read; a person's check pending**. “Matches” means the identified
+Every finding below is **an agent read 2 November 2026; a person's check pending**. “Matches” means the identified
 source prints the claim, not that a historian or sensitivity reviewer approved it. Wikipedia is secondary;
 its citation to another publication is not a read of that publication. The PDFs were searched through their
 text layers and the cited dates, coordinate line and map captions were checked against rendered pages.
@@ -27,18 +27,18 @@ No source image, traced boundary or dataset is added.
 |---|---|---|---|
 | `camp_80` | Gshur dates the move from Kfar Yona to Camp 80 near Pardes Hanna to 13 July 1948; Gshur and the Nahal Association both describe training there. | Gshur gives early October for the first course's end; the Association gives September. These are retained as different accounts. | A person's source check; exact course-end day and historical camp footprint remain gaps. |
 | `tzrifin` | The 2016 survey describes Compound 1, gives its point, and reproduces earlier plans/aerial imagery. Hebrew Wikipedia prints the row's capture dates and Bahad 4 start year. | A modern compound point and a planning boundary are not the whole 1948–51 camp. The Wikipedia-dependent days/year are not independently established by this survey. | A person's check of the underlying dated sources and historical camp location; the existing sensitivity review remains open. |
-| `hula` | FRUS distinguishes the northern swamp/lake drainage from preliminary Jordan works below the lake in the DMZ. JTA reports works resuming in March 1951. | Their geographical descriptions and dates do not validate the row's rebaked swamp hex or clear it against historical villages/cadastral boundaries. | A person's source check and a separate historical-map overlay. |
+| `hula` | FRUS distinguishes the northern swamp/lake drainage from preliminary Jordan works below the lake in the DMZ. JTA reports works resuming in March 1951. | JTA places swamp drainage inside the DMZ; FRUS places the swamp/lake drainage outside it. This source conflict remains unresolved. Neither report validates the row's rebaked swamp hex or clears it against historical villages/cadastral boundaries. | A person's source check and a separate historical-map overlay. |
 | `hula_field` | FRUS discusses future reclaimed farmland. | That is not evidence of a completed field at the game's chosen hex or on a specific completion day. | Preserve the row's explicit design-placement classification; no historical-field sign-off follows from this read. |
 
 ## Camp 80: the disagreement stays visible
 
-**Agent read; a person's check pending.** [Gshur][gshur], printed pp. 114–115
+**Agent read 2 November 2026; a person's check pending.** [Gshur][gshur], printed pp. 114–115
 (PDF pages 5–6), describes the 1931-born trainees and the move on 13 July 1948 after artillery fire at Kfar Yona.
 Printed p. 120 (PDF page 11) describes enlistment on 12 September and about another month of training;
 p. 122 (PDF page 13) explicitly puts the first course's end in early October. It does not supply an exact day there.
 
-The [Nahal Association retrospective][nahal], paragraphs beginning “הנח״ל זורם” and “המחזור הראשון”,
-places training at Camp 80 near Pardes Hanna and ends the first course in September 1948.
+The [Nahal Association retrospective][nahal], under the “הנח״ל זורם” heading and in the paragraphs beginning
+“הנח"ל החל זורם” and “המחזור הראשון”, places training at Camp 80 near Pardes Hanna and ends the first course in September 1948.
 The baseline row already prefers the IDF-published, referenced Gshur article; this note records the disagreement
 and does not replace that decision with a guessed day.
 
@@ -49,7 +49,7 @@ No historical GIS clearance or absence-of-displacement finding is established.
 
 ## Tzrifin: keep the modern compound separate
 
-**Agent read; a person's check pending.** [Leshem-Shefer][survey], January 2016 cover (PDF page 1),
+**Agent read 2 November 2026; a person's check pending.** [Leshem-Shefer][survey], January 2016 cover (PDF page 1),
 §1.1, printed p. 5 (PDF page 5), explicitly places Compound 1 in the camp's south-east and gives
 `185821, 651281`. The source calls it a point for Compound 1; this note does not convert it or promote it
 to a surveyed 1948–51 camp position.
@@ -68,15 +68,16 @@ The row's historical-location gap and sensitivity flag remain; this note supplie
 
 ## Hula swamp and field: reported works are not a surveyed field
 
-**Agent read; a person's check pending.** [FRUS doc. 288][frus] is Tyler's telegram of 5 March 1951,
+**Agent read 2 November 2026; a person's check pending.** [FRUS doc. 288][frus] is Tyler's telegram of 5 March 1951,
 relaying General Riley's account, including a Syrian complaint about works starting around 14 February.
-Its numbered paragraphs distinguish northern drainage outside the DMZ from preliminary Jordan work within it.
+Its numbered points distinguish northern drainage outside the DMZ from preliminary Jordan work within it.
 This diplomatic report supplies no surveyed polygon.
 
-[JTA's 27 March 1951 report][jta] describes resumption of work, including activity along the Jordan,
-and presents future farmland and completion as expectations. Its broad “drainage” wording should not erase
-FRUS's distinction between the two work areas. These reports concern different dates and are not
-independent geographical clearance of the same boundary.
+[JTA's 27 March 1951 report][jta] places the resumed swamp-drainage work inside the DMZ,
+while FRUS places the swamp/lake drainage outside it and the preliminary Jordan works within it.
+The sources conflict on where the swamp works were; this note does not resolve that conflict.
+JTA also describes activity along the Jordan and presents future farmland and completion as expectations.
+The reports concern different dates, and neither provides independent geographical clearance of the same boundary.
 
 For `hula_field`, FRUS's projected farmland is not a field-completion record. The baseline row explicitly
 makes the field a design placement at the swamp site, available after drainage. Its hex and project-state rule
@@ -85,7 +86,7 @@ assessment or earlier map-research result changes here.
 
 ## Source access and review hand-off
 
-All reads in this table are **agent reads; a person's check pending**. No `checked:`, `status`,
+All reads in this table are **agent reads 2 November 2026; a person's check pending**. No `checked:`, `status`,
 `reviewed_by`, coordinate or hex is edited in `content/`.
 
 | Source | Route and extent actually read on 2 November 2026 (UTC) |
@@ -105,6 +106,8 @@ separate review work. This note neither closes #785 nor signs any row.
 
 OpenAI Codex reopened the public sources, compared them with the pinned rows and drafted this note.
 The source and diff review described here was performed by an AI agent, not an independent human reviewer.
+For the 3 November 2026 review follow-up, Codex reopened FRUS, the JTA archive article and the Nahal page;
+the other 2 November reads were not re-certified.
 
 [gshur]: https://www.maarachot.idf.il/media/qyen3yoj/%D7%9E%D7%9B%D7%95%D7%91%D7%A2-%D7%92%D7%A8%D7%91-%D7%9C%D7%9B%D7%95%D7%91%D7%A2-%D7%98%D7%9E%D7%91%D7%9C-%D7%94%D7%A0%D7%97%D7%9C-%D7%91%D7%A9%D7%A0%D7%AA%D7%95-%D7%94%D7%A8%D7%90%D7%A9%D7%95%D7%A0%D7%94.pdf
 [nahal]: https://www.nahal.co.il/%D7%9E%D7%92%D7%9C-%D7%95%D7%97%D7%A8%D7%91/
