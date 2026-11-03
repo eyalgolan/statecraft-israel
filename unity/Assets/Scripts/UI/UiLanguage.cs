@@ -8,12 +8,12 @@ namespace Statecraft.Game.UI
     /// <summary>The UI's language (#193): English unless Hebrew is asked for, "?lang=he" in the page URL on WebGL or
     /// "-lang he" on the desktop command line, or chosen in Settings (#1036, kept in settings.txt). The content text
     /// (events, names) is English only until #55. Any other value, or a bare flag, is English. A language from translations/
-    /// (#1606, Romanian) is offered by the language buttons (LanguageButtons.All) and kept like the others; its UI strings
-    /// come from its translations/&lt;lang&gt;/ui.yaml over the English, per string (GameRoot.Strings).</summary>
+    /// (#1606) is kept like the others once the language buttons offer it (LanguageButtons.All); its UI strings come from
+    /// its translations/&lt;lang&gt;/ui.yaml over the English, per string (GameRoot.Strings).</summary>
     public static class UiLanguage
     {
         public const string Flag = "lang";
-        public const string English = "en", Hebrew = "he", Romanian = "ro";
+        public const string English = "en", Hebrew = "he";
         /// <summary>On the UI root while the UI is Hebrew: the Hebrew face, the advanced text generator and the mirrored rows
         /// (Statecraft.uss).</summary>
         public const string HebrewClass = "lang-he";

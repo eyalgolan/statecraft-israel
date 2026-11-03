@@ -886,18 +886,25 @@ public class HebrewUiTests
 
     // --- A language from translations/ (#1606) --------------------------------------------------------------------------
 
-    /// <summary>A language from translations/ chosen in Settings or on the start screen is kept like English and Hebrew
-    /// ("Remember it", owner, 24 Oct 2026): the next start reads it back instead of falling to English. A flag still wins,
-    /// and a value the buttons do not offer is still English.</summary>
+    /// <summary>Romanian (translations/ro, from #1604) is not offered yet (owner, 3 Nov 2026: "Hide until more is
+    /// translated"): no button for it on the start screen or in Settings, and a stored "ro" reads as English at the next
+    /// start, since only a language the buttons offer is kept. A flag still wins.</summary>
     [Test]
-    public void AStoredRomanianChoiceHoldsAtTheNextStart()
+    public void RomanianIsNotOfferedYet()
     {
+        CollectionAssert.AreEqual(new[] { UiLanguage.English, UiLanguage.Hebrew }, LanguageButtons.All.Select(l => l.language).ToArray(),
+            "English and Hebrew only");
         const string page = "http://localhost:8000/index.html";
         var none = new string[0];
-        Assert.AreEqual(UiLanguage.Romanian, UiLanguage.AtStart(UiLanguage.Romanian, page, none, webgl: true));
-        Assert.AreEqual(UiLanguage.Romanian, UiLanguage.AtStart(UiLanguage.Romanian, null, none, webgl: false));
-        Assert.AreEqual(UiLanguage.Hebrew, UiLanguage.AtStart(UiLanguage.Romanian, page + "?lang=he", none, webgl: true), "a flag wins");
-        Assert.AreEqual(UiLanguage.English, UiLanguage.AtStart("fr", page, none, webgl: true), "a value the game does not offer");
+        Assert.AreEqual(UiLanguage.English, UiLanguage.AtStart("ro", page, none, webgl: true), "a stored ro is not offered");
+        Assert.AreEqual(UiLanguage.English, UiLanguage.AtStart("ro", null, none, webgl: false));
+        Assert.AreEqual(UiLanguage.Hebrew, UiLanguage.AtStart("ro", page + "?lang=he", none, webgl: true), "a flag wins");
+
+        var settings = new SettingsStore(Path.Combine(saveDir, "settings"));
+        BootWithStartScreen(settings, null);
+        Assert.IsTrue(StartOpen, "precondition: the start screen shows");
+        Assert.IsNull(Ui.Q<Button>("start-language-ro"), "no Romanian on the start screen");
+        Assert.IsNull(Ui.Q<Button>("settings-language-ro"), "nor in Settings");
     }
 
     /// <summary>A new language's strings: each key its translations/&lt;lang&gt;/ui.yaml has reads the translation, every
@@ -912,15 +919,14 @@ public class HebrewUiTests
         Assert.AreEqual("en", En["ui.lang"], "the English strings are left as they were");
     }
 
-    /// <summary>Romanian (translations/ro, #1604) is offered in both places beside English and Hebrew, named in itself. A
-    /// press on the start screen keeps it under Settings' key and rebuilds the UI from translations/ro/ui.yaml over the
-    /// English, left to right in the Latin face; Settings shows the same choice, and a reload comes back to it. A key the
-    /// translation adds (a marker here, not Romanian) shows; the rest is English.</summary>
+    /// <summary>The way in for a language once it is offered: GameRoot builds the UI from its translations/&lt;lang&gt;/ui.yaml
+    /// (Content.Translations, #2124) over the English, left to right in the Latin face. A key the translation adds (a marker
+    /// here, not Romanian) shows; the rest is English.</summary>
     [Test]
-    public void RomanianIsOfferedInBothPlacesAndItsStringsFallBackToEnglish()
+    public void ATranslatedLanguagesStringsFallBackToEnglish()
     {
         var translations = Inputs.Content.Translations;
-        var i = translations.FindIndex(t => t.Lang == UiLanguage.Romanian);
+        var i = translations.FindIndex(t => t.Lang == "ro");
         Assert.GreaterOrEqual(i, 0, "precondition: translations/ro loads with the content");
         var real = translations[i];
         const string marker = "[ro] start.new_game";
@@ -931,30 +937,10 @@ public class HebrewUiTests
         };
         try
         {
-            var settings = new SettingsStore(Path.Combine(saveDir, "settings"));
-            var game = BootWithStartScreen(settings, null);
-            Assert.AreEqual("Română", Ui.Q<Button>("start-language-ro").text, "named in itself on the start screen");
-            Assert.AreEqual("Română", Ui.Q<Button>("settings-language-ro").text, "and in Settings");
-            Assert.IsFalse(Marked("start-language-ro"), "English is in use");
-
-            UiTestKit.Press(Ui.Q<Button>("start-language-ro"));
-            Assert.AreEqual(UiLanguage.Romanian, settings.Read(SettingsPresenter.LanguageKey), "kept under Settings' key");
-            Assert.IsTrue(StartOpen, "the start screen stays up");
-            Assert.IsTrue(Marked("start-language-ro"), "Romanian is marked on the start screen");
-            Assert.IsFalse(Marked("start-language-en"));
-            Assert.IsTrue(Marked("settings-language-ro"), "and in Settings");
+            var game = BootWithStartScreen(new SettingsStore(Path.Combine(saveDir, "settings")), "ro");
             Assert.AreEqual(marker, Ui.Q<Button>("start-new-game").text, "a key translations/ro has");
             Assert.AreEqual(En.Format("hud.turn", game.Bridge!.State.Turn), Ui.Q<Label>("turn").text, "a key it lacks: the English");
             Assert.IsFalse(Ui.Q("root").ClassListContains(UiLanguage.HebrewClass), "left to right, the Latin face");
-
-            game.Language = null;                                      // a reload: only the file remains
-            game.Begin(Inputs, 0, startScreen: true);
-            Assert.IsTrue(Marked("start-language-ro"), "Romanian after a reload");
-            Assert.AreEqual(marker, Ui.Q<Button>("start-new-game").text);
-
-            UiTestKit.Press(Ui.Q<Button>("settings-language-en"));
-            Assert.AreEqual(En["start.new_game"], Ui.Q<Button>("start-new-game").text, "English again from Settings");
-            Assert.AreEqual(UiLanguage.English, settings.Read(SettingsPresenter.LanguageKey));
         }
         finally { translations[i] = real; }
     }

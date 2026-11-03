@@ -13,8 +13,10 @@ namespace Statecraft.Game.UI
     /// new language is one more entry in All and a button named for it in each place in Game.uxml.</summary>
     public sealed class LanguageButtons : IDisposable
     {
-        /// <summary>Each language's code and its name in itself.</summary>
-        public static readonly (string language, string name)[] All = { (UiLanguage.English, "English"), (UiLanguage.Hebrew, "עברית"), (UiLanguage.Romanian, "Română") };
+        /// <summary>Each language's code and its name in itself. Romanian (translations/ro) is left out on purpose until more of
+        /// it is translated (owner, 3 Nov 2026, #1606: "Hide until more is translated"). The game already reads its strings
+        /// (GameRoot.Strings), so offering it is ("ro", "Română") here and a button for it in each place in Game.uxml.</summary>
+        public static readonly (string language, string name)[] All = { (UiLanguage.English, "English"), (UiLanguage.Hebrew, "עברית") };
 
         readonly (Button button, string language, Action pick)[] buttons;
         readonly string current;

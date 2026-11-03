@@ -378,10 +378,10 @@ public class StartScreenTests
         cont.Focus();
         Assert.AreSame(cont, rig.Ui.Root.focusController?.focusedElement, "Continue has the focus");
         // Tab walks the screen's buttons only: Continue, New Game, the recording's button, Star on GitHub (#1168), Report a
-        // bug or idea (#1169), the languages (#2054), English, Hebrew then Romanian (#1606), and Quit (#2153; the editor is a
-        // desktop platform, so it shows).
+        // bug or idea (#1169), the two languages (#2054), English then Hebrew, and Quit (#2153; the editor is a desktop
+        // platform, so it shows).
         var seen = new List<string>();
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < 7; i++)
         {
             var at = (VisualElement)rig.Ui.Root.focusController!.focusedElement;
             using (var e = NavigationMoveEvent.GetPooled(NavigationMoveEvent.Direction.Next)) { e.target = at; at.SendEvent(e); }
@@ -390,11 +390,10 @@ public class StartScreenTests
         }
         Assert.AreEqual("start-new-game", seen[0], "Tab moves from Continue to New Game: " + string.Join(", ", seen));
         Assert.IsTrue(seen.All(n => n == "start-continue" || n == "start-new-game" || n == "start-listen" || n == "start-star" || n == "start-report"
-            || n == "start-language-en" || n == "start-language-he" || n == "start-language-ro" || n == "start-quit"), "Tab stays on the screen's buttons: " + string.Join(", ", seen));
+            || n == "start-language-en" || n == "start-language-he" || n == "start-quit"), "Tab stays on the screen's buttons: " + string.Join(", ", seen));
         var en = seen.IndexOf("start-language-en");
         Assert.IsTrue(en >= 0 && en + 1 < seen.Count && seen[en + 1] == "start-language-he", "Tab reaches English, then Hebrew: " + string.Join(", ", seen));
-        Assert.IsTrue(en + 2 < seen.Count && seen[en + 2] == "start-language-ro", "Tab reaches Romanian after Hebrew: " + string.Join(", ", seen));
-        Assert.IsTrue(en + 3 < seen.Count && seen[en + 3] == "start-quit", "Tab reaches Quit after Romanian: " + string.Join(", ", seen));
+        Assert.IsTrue(en + 2 < seen.Count && seen[en + 2] == "start-quit", "Tab reaches Quit after Hebrew: " + string.Join(", ", seen));
         CollectionAssert.Contains(seen, "start-listen", "Tab reaches the recording's button: " + string.Join(", ", seen));
         rig.Ui.Press("start-continue");
         yield return null; yield return null;
@@ -795,8 +794,8 @@ public class StartScreenTests
                 {
                     if (hebrew) Assert.LessOrEqual(quit.xMax, pair.xMin + 0.5f, $"{at}: Quit {quit} is left of the languages {pair}");
                     else Assert.GreaterOrEqual(quit.xMin, pair.xMax - 0.5f, $"{at}: Quit {quit} is right of the languages {pair}");
-                    var last = R("start-language-ro");   // the last language button (#1606)
-                    quitGaps[(w, hebrew ? 1 : 0)] = hebrew ? last.xMin - quit.xMax : quit.xMin - last.xMax;
+                    var nearHe = R("start-language-he");
+                    quitGaps[(w, hebrew ? 1 : 0)] = hebrew ? nearHe.xMin - quit.xMax : quit.xMin - nearHe.xMax;
                 }
             }
             finally
