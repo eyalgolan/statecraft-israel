@@ -311,8 +311,11 @@ hand (`UnitWeaponsTests` keeps that true). The rows live in `UnitWeapons.Rows`.
   Lebanon, the ALA or local irregulars in 1948 (Syria's Czech rifles for the ALA sank in the Lino at Bari and were later
   captured). Their armies' British Lee-Enfield and Bren are not among Tal's models, so their figures stay as they are.
 - **[GAP] #336's 1948 soldier** (Yiftach's and Negev's third figure) has no rig and no hand bone; he stays as he is.
-- **The MG34** stays a stored source: the Czech contract and the Nora brought 200 MG34s, but nothing places a machine gun
-  on one token figure (an owner question).
+- **The MG34** stays a stored source. The "200 MG34s" is not one fact (`research_notes/Map/mg34-1948-2288.md`, #2310):
+  for the January 1948 contract, one source names the MG34 for its 200 machine guns (Wikipedia, a sentence with no footnote
+  of its own), Ben-Gurion's diary of 1 February 1948 gives 200 with no type, and a Russian magazine gives 20. The *Nora*'s
+  200 machine guns have no type; the first flight, the night of 31 March to 1 April 1948, carried forty MG-34 (Morris,
+  p. 117, as quoted on Wikipedia). Nothing places a machine gun on one token figure (an owner question).
 - **The hand:** each weapon hangs under the figure's `Right_Hand` bone. The socket is Tal's own fixed pair: in their C06
   point-fire export the K98k does not move against C06's right hand over all 97 frames, and that relation, turned into the
   C06 rig's frame, is `UnitWeapons.SocketPosition`/`SocketRotation`/`K98kSocketScale` (the rifle about 1.1 m long on a
