@@ -21,8 +21,8 @@ namespace Statecraft.Sim
         /// 11 June) to 8 July, when Egypt renewed the fighting (first_truce.yaml, ten_days.yaml; the 11 June anchors' `to` in
         /// map/units_1948.yaml). The second from 18 July 1948 (second_truce.yaml: 19:00 on 18 July) to 15 October, Operation
         /// Yoav (second_truce.yaml; operation_yoav.yaml `from`). The same windows as the map's display-only truce periods
-        /// (docs/rules/mvp.md R-ENEMY-006). A stopgap by date: #750 replaces it with the full war state (a refused truce, the
-        /// security rung), so a refused truce card does not lift it yet.</summary>
+        /// (docs/rules/mvp.md R-ENEMY-006). This enemy guard remains date-driven in every mode; #750 separately made accepted
+        /// truce cards bind the player's attacks (R-COMBAT-009).</summary>
         static readonly (DateTime From, DateTime Until)[] Truces =
         {
             (new DateTime(1948, 6, 11), new DateTime(1948, 7, 8)),
