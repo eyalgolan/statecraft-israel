@@ -22,8 +22,8 @@ namespace Statecraft.Sim
     }
 
     /// <summary>A synthetic formation supplied by a test: an ActiveService target already bound in the ledger fixture, and its
-    /// region. A cohort graduates into the first free one in its camp's region (#1699; 53's maintainer call, 3 November 2026:
-    /// "pre-bound, empty ActiveService targets supplied by the tests; no ledger API change").</summary>
+    /// region. A cohort graduates into the first free one in its camp's region (#1699; 53's maintainer call, not an owner
+    /// ruling, 3 November 2026: "pre-bound, empty ActiveService targets supplied by the tests; no ledger API change").</summary>
     internal sealed class Gdd03FixtureFormation
     {
         internal string Id { get; }
@@ -60,8 +60,9 @@ namespace Statecraft.Sim
         readonly SortedDictionary<int, (int enrolment, int lastCounted)> months = new SortedDictionary<int, (int, int)>();
         // Per fixture instance only (not saved): the trainees whose item this fixture issued from its spare Arms.
         readonly SortedSet<int> issued = new SortedSet<int>();
-        // Per fixture instance only (not saved). 53's maintainer call (3 November 2026): one Start order is one cohort and
-        // graduates into one formation. Each current trainee's cohort, and each cohort's formation once its first member graduates.
+        // Per fixture instance only (not saved). 53's maintainer call (not an owner ruling, 3 November 2026): one Start
+        // order is one cohort and graduates into one formation. Each current trainee's cohort, and each cohort's formation
+        // once its first member graduates.
         readonly SortedDictionary<int, int> cohortOf = new SortedDictionary<int, int>();
         readonly SortedDictionary<int, string> cohortFormation = new SortedDictionary<int, string>();
         int nextCohort;
@@ -225,15 +226,16 @@ namespace Statecraft.Sim
             issued.Remove(traineeId); months.Remove(traineeId); cohortOf.Remove(traineeId);
         }
 
-        /// <summary>R-TRAIN-003 and R-UNIT-003 under gdd-0.3: the month that counts the last course turn releases the trainee
-        /// into its cohort's formation (Q43(b), "released in the turn its last course turn counts"). The same record, in place
-        /// (27M-7), becomes an active soldier serving that formation; it keeps its item, and nothing is charged or refunded
-        /// ("Its reserved Arms are neither charged again nor refunded on completion"). Its qualification stays as it was (""):
-        /// the live recruit path gives a formation no qualification (<see cref="Unit"/>, Training.cs's completion) and the
-        /// Historical start gives its soldiers "" (#1717). The cohort's first graduate claims the first free formation in the
-        /// camp's region: supplied to this fixture, not claimed by another cohort, and serving no one (53's maintainer call).
-        /// A graduation in a month whose upkeep was already paid is refused (53's maintainer call: Advance, then PayUpkeep,
-        /// in a month), so a formation always pays in its graduation month (27M-8).</summary>
+        /// <summary>R-TRAIN-003 and R-UNIT-003 under gdd-0.3: the month that counts the last course turn releases the
+        /// trainee into its cohort's formation (Q43(b), "released in the turn its last course turn counts"). The same
+        /// record, in place (27M-7), becomes an active soldier serving that formation; it keeps its item, and nothing is
+        /// charged or refunded ("Its reserved Arms are neither charged again nor refunded on completion"). Its
+        /// qualification stays as it was ("", 53's maintainer call, not an owner ruling): the live recruit path gives a
+        /// formation no qualification (<see cref="Unit"/>, Training.cs's completion) and the Historical start gives its
+        /// soldiers "" (#1717). The cohort's first graduate claims the first free formation in the camp's region: supplied
+        /// to this fixture, not claimed by another cohort, and serving no one (53's maintainer call, not an owner ruling).
+        /// A graduation in a month whose upkeep was already paid is refused (53's maintainer call, not an owner ruling:
+        /// Advance, then PayUpkeep, in a month), so a formation always pays in its graduation month (27M-8).</summary>
         void Graduate(PopulationUnit trainee, Gdd03FixtureMilitaryCamp camp, int monthOrdinal)
         {
             if (lastPaidMonth is int paid && monthOrdinal <= paid)
@@ -256,11 +258,11 @@ namespace Statecraft.Sim
         }
 
         /// <summary>R-UNIT-010 under gdd-0.3, the fixture's step 7: each formation this fixture graduated that still has an
-        /// active soldier pays <c>military.active_money</c> once, independent of strength ("IL 0.05m per formation per turn,
-        /// independent of strength"), from its graduation month (27M-8: "A formation pays military upkeep from the turn it
-        /// graduates"). Trainees pay none. Only this fixture's formations count (53's maintainer call); it owns its Money.
-        /// The shortfall is borrowed (R-MONEY-003); no Arms or strength change. Each month ordinal is paid once and never an
-        /// earlier one; the cost is computed before any write.</summary>
+        /// active soldier pays <c>military.active_money</c> once, independent of strength ("IL 0.05m per formation per
+        /// turn, independent of strength"), from its graduation month (27M-8: "A formation pays military upkeep from the
+        /// turn it graduates"). Trainees pay none. Only this fixture's formations count (53's maintainer call, not an owner
+        /// ruling); it owns its Money. The shortfall is borrowed (R-MONEY-003); no Arms or strength change. Each month
+        /// ordinal is paid once and never an earlier one; the cost is computed before any write.</summary>
         internal void PayUpkeep(int monthOrdinal)
         {
             ValidateInventory();
