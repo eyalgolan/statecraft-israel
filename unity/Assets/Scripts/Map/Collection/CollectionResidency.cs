@@ -199,13 +199,23 @@ namespace Statecraft.Game.Map.Collection
             internal int Frame;
             internal bool Visible;
             internal HashSet<string> Keys = new HashSet<string>(StringComparer.Ordinal);
+            internal HashSet<string> ScratchKeys = new HashSet<string>(StringComparer.Ordinal);
         }
         readonly CollectionResidencyPolicy policy;
         readonly Dictionary<int, Choice> cameras = new Dictionary<int, Choice>();
-        internal HashSet<string> Keys => new HashSet<string>(cameras.Values.SelectMany(c => c.Keys), StringComparer.Ordinal);
+        readonly List<int> goneCameraIds = new List<int>();
+        // Callers retain Keys across Observe to detect a demand change. These two sets take turns so that snapshot remains
+        // unchanged through the comparison without allocating a detached HashSet every frame.
+        HashSet<string> keys = new HashSet<string>(StringComparer.Ordinal);
+        HashSet<string> scratchKeys = new HashSet<string>(StringComparer.Ordinal);
+        internal HashSet<string> Keys => keys;
         internal bool Observes(int cameraId) => cameras.ContainsKey(cameraId);
         internal CollectionResidencyView(CollectionResidencyPolicy policy) { this.policy = policy; }
-        internal void Clear() => cameras.Clear();
+        internal void Clear()
+        {
+            cameras.Clear(); goneCameraIds.Clear(); scratchKeys.Clear();
+            var old = keys; keys = scratchKeys; scratchKeys = old;
+        }
         // Unproject in camera space: subtracting near/far WORLD points at hundreds of kilometres loses
         // direction precision, moving a 100km ground focus kilometres off its actual footprint.
         internal static bool TryGroundFocus(Camera camera, out Vector3 focus)
@@ -227,29 +237,62 @@ namespace Statecraft.Game.Map.Collection
 
         internal bool Prune(int frame)
         {
-            var gone = cameras.Where(p => p.Value.Camera == null || !p.Value.Camera.isActiveAndEnabled
-                || frame - p.Value.Frame > policy.CameraGraceFrames).Select(p => p.Key).ToArray();
-            foreach (int id in gone) cameras.Remove(id);
-            return gone.Length != 0;
+            bool changed = PruneCameras(frame);
+            if (changed) RebuildKeys();
+            return changed;
+        }
+        bool PruneCameras(int frame)
+        {
+            goneCameraIds.Clear();
+            foreach (var pair in cameras)
+                if (pair.Value.Camera == null || !pair.Value.Camera.isActiveAndEnabled
+                    || frame - pair.Value.Frame > policy.CameraGraceFrames)
+                    goneCameraIds.Add(pair.Key);
+            for (int i = 0; i < goneCameraIds.Count; i++) cameras.Remove(goneCameraIds[i]);
+            return goneCameraIds.Count != 0;
+        }
+        void RebuildKeys()
+        {
+            scratchKeys.Clear();
+            foreach (var choice in cameras.Values)
+                foreach (string key in choice.Keys)
+                    scratchKeys.Add(key);
+            var old = keys; keys = scratchKeys; scratchKeys = old;
         }
         internal void Observe(Camera camera, IEnumerable<(string key, Vector3 at, float radius)> anchors, int frame)
         {
             if (camera.cameraType == CameraType.Preview || camera.cameraType == CameraType.Reflection) return;
-            Prune(frame);
+            PruneCameras(frame);
             int id = camera.GetInstanceID();
             if (!cameras.TryGetValue(id, out var choice)) cameras[id] = choice = new Choice { Camera = camera };
             choice.Frame = frame;
             float height = Kits.TownModelLayer.ViewDistance(camera);
             choice.Visible = height <= (choice.Visible ? policy.ViewExitM : policy.ViewEnterM);
-            var old = choice.Keys; choice.Keys = new HashSet<string>(StringComparer.Ordinal);
-            if (!choice.Visible) return;
-            if (!TryGroundFocus(camera, out var focus)) return;
-            foreach (var (key, at, extent) in anchors)
+            var old = choice.Keys; var next = choice.ScratchKeys; next.Clear();
+            if (choice.Visible && TryGroundFocus(camera, out var focus))
             {
-                float dx = focus.x - at.x, dz = focus.z - at.z;
-                float radius = (old.Contains(key) ? policy.ExitM : policy.EnterM) + Mathf.Max(0, extent);
-                if (dx * dx + dz * dz <= radius * radius) choice.Keys.Add(key);
+                if (anchors is List<(string key, Vector3 at, float radius)> list)
+                {
+                    for (int i = 0; i < list.Count; i++)
+                    {
+                        var (key, at, extent) = list[i];
+                        float dx = focus.x - at.x, dz = focus.z - at.z;
+                        float radius = (old.Contains(key) ? policy.ExitM : policy.EnterM) + Mathf.Max(0, extent);
+                        if (dx * dx + dz * dz <= radius * radius) next.Add(key);
+                    }
+                }
+                else
+                {
+                    foreach (var (key, at, extent) in anchors)
+                    {
+                        float dx = focus.x - at.x, dz = focus.z - at.z;
+                        float radius = (old.Contains(key) ? policy.ExitM : policy.EnterM) + Mathf.Max(0, extent);
+                        if (dx * dx + dz * dz <= radius * radius) next.Add(key);
+                    }
+                }
             }
+            choice.Keys = next; choice.ScratchKeys = old;
+            RebuildKeys();
         }
     }
 }
