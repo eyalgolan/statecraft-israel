@@ -20,7 +20,8 @@ public class EncyclopediaScreenTests
     static readonly Content C = ContentLoader.Load(Paths.Content);
     static UiText En => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
     static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
-    // A copy with every page approved, so the Hebrew checks also read any page still pending (none since 3 Nov 2026).
+    // A copy with every page approved, so the Hebrew checks also read the pages still pending (security and public_support, #2223).
+    // Then changed (3 Nov 2026): those two were approved (HE batch 2), so no shipped page is pending now.
     static AdvisorCatalog Approved() => AdvisorCatalog.Parse(File.ReadAllText(AdvisorCatalog.Path).Replace("he_review: pending", "he_review: approved"));
 
     [Test]
@@ -156,9 +157,10 @@ public class EncyclopediaScreenTests
 
     /// <summary>On the SHIPPED catalogue (AdvisorCatalog.Load(), not Approved()), the Hebrew encyclopedia lists every
     /// approved page: the nine that replace How to play, which Beri read as a native speaker on #2095 (1 Nov 2026), and the
-    /// other 16, which the owner read as a native speaker the same day ("all 16 pages look good"), and Security and Public
-    /// support (#2223), which the owner read as a native speaker on 3 Nov 2026 (HE batch 2: "approved"). No page is
-    /// pending, so the Hebrew list leaves none out.</summary>
+    /// other 16, which the owner read as a native speaker the same day ("all 16 pages look good"). Security and Public
+    /// support (#2223) wait for their native read (OQ-4), so they are the only pages the Hebrew list leaves out.
+    /// Then changed (3 Nov 2026): the owner read Security and Public support as a native speaker (HE batch 2: "approved"),
+    /// so no page is pending and the Hebrew list leaves none out.</summary>
     [Test]
     public void TheShippedHebrewEncyclopediaListsEveryApprovedPage()
     {
