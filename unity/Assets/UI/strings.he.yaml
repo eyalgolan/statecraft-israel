@@ -646,6 +646,12 @@ info.control_arab_by: "בשליטת כוחות ערביים ({0})"
 info.control_side_israel: "הצד הישראלי של קו שביתת הנשק"
 info.control_side_arab: "הצד הערבי של קו שביתת הנשק"
 info.control_side_arab_by: "הצד הערבי של קו שביתת הנשק ({0})"
+# The Jerusalem hex's control line (#2039): the hex also holds the Old City, and its panel names West Jerusalem.
+# Agent-drafted Hebrew, both: native-review-pending (#564).
+# native-review-pending
+info.control_israel_west_jerusalem: "בשליטת ישראל (מערב ירושלים)"
+# native-review-pending
+info.control_side_israel_west_jerusalem: "הצד הישראלי של קו שביתת הנשק (מערב ירושלים)"
 info.control_contested: "שטח שבמחלוקת"
 info.control_no_mans_land: "שטח הפקר"
 info.control_dmz: "אזור מפורז"
