@@ -890,7 +890,7 @@ event.effect.condition: "housing condition"
 # quote. Each step is the advisor's recorded line, without balance values. opening.attention and opening.event use the
 # copy-fix wording ("next month", "when the month ends") the owner approved in chat on 24 October 2026, 04:14 UTC:
 # "Approve all 8".
-advisor.opening.greeting.text: "The country has urgent needs and limited means. The decisions are theirs, and the advisers will explain what each choice changes."
+advisor.opening.greeting.text: "The country has urgent needs and limited means. The decisions are yours, and the advisers will explain what each choice changes."
 advisor.opening.attention.text: "Attention is the capacity for decisions this month. It refills next month, and any amount left now does not carry over."
 advisor.opening.city.text: "A city shows its housing, housing condition, jobs, and people. Employment brings in Money, while overcrowding can weaken Social cohesion."
 advisor.opening.training.text: "Training uses civilians without work, Money, and time. Halutz and craftsman training supports development; military training also requires Arms."
@@ -942,7 +942,8 @@ advisor.credit.dayan: "Photograph: Moshe Dayan, 9 December 1953, NLI 99700813664
 
 # Caption keys: same text as the C68 recorded opening lines. The lines with an English clip (S6b, Task 26) are cut at
 # the clip's sentence and clause pauses; their start times are the media rows' cues.
-# Hebrew cues remain agent drafts and require the parent opening row’s native approval.
+# The opening cues' Hebrew is owner-reviewed (native review: owner, 3 Nov 2026, HE batch 1), with greeting.cue.2
+# following the English voice.
 advisor.opening.greeting.cue.1: "The country has urgent needs and limited means."
 advisor.opening.greeting.cue.2: "The decisions are theirs,"
 advisor.opening.greeting.cue.3: "and the advisers will explain what each choice changes."
