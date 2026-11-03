@@ -171,7 +171,7 @@ public class CollectionImportTests
             if (CollectionCatalog.IsGenerated(id))
                 return new[] { CollectionCatalog.SourceModelPath(id), $"{Dir(id)}/{id}.mat", ColourMap(id), $"{Dir(id)}/{id}.prefab", $"{Dir(id)}/provenance.json" }
                     .Concat(CollectionCatalog.IsGeneratedProp(id) || CollectionCatalog.IsGeneratedTown(id) || CollectionCatalog.IsGeneratedWeapon(id) ? Array.Empty<string>() : new[] { $"{Dir(id)}/{id}.controller" })
-                    .Concat(fire).ToArray();
+                    .ToArray();
             files.AddRange(fire);
             if (Animated(id) || OriginalModelPose.Required(id)) files.Add($"{Dir(id)}/{id}-near.controller");
             foreach (var suffix in new[] { "-far.fbx", "-near.fbx", "-far.prefab", "-near.prefab" })
