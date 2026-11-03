@@ -64,7 +64,7 @@ Armoured units use their own allowance/factor. Permanent forts benefit whichever
 
 Under `gdd-0.3` a goal-driven enemy unit attacks at a ratio of at least 1.5 (owner, 1 November 2026, O4: "1.5:1 in gdd-0.3 (Recommended)"); `gdd-0.1` keeps the 2:1 of `R-ENEMY-003` [S21] (unitless).
 
-Operation cards order only already present sourced units; exact orders remain reviewed authoring work. Event changes reset applicable sensitivity review. Armistice removes that front's forces, releases player units and leaves agreement lines display-only.
+Operation cards order only already present sourced units [S22]; exact orders remain reviewed authoring work. Event changes reset applicable sensitivity review. Armistice removes that front's forces, releases player units and leaves agreement lines display-only.
 
 Truces refuse attacks but permit movement. First refusal ends with the turn covering 8 July 1948 and second with the turn covering 15 October 1948 under the retained MFA chronology [S10]. The old security-rung timer no longer forces war. Early armistices cannot open before the turn on/after 16 November 1948 and need the quiet-turn period; hard anchors retain agreement dates [S2]. A refused offer can return after another qualifying period. The quiet-turn count runs per front from the scenario start, so turns before 16 November 1948 count, though no offer comes before the 15 December 1948 turn. A quiet turn has no engagement involving that front's units, whoever attacked; a mixed-front engagement breaks the count for every front in it, and a refused order does not break it. Two full quiet turns must follow a refusal (owner, 1 November 2026, Q48 and Q49) [S21].
 
