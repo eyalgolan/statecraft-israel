@@ -20,7 +20,7 @@ public class EncyclopediaScreenTests
     static readonly Content C = ContentLoader.Load(Paths.Content);
     static UiText En => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
     static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
-    // A copy with every page approved, so the Hebrew checks also read the pages still pending (security and public_support, #2223).
+    // A copy with every page approved, so the Hebrew checks also read any page still pending (none since 3 Nov 2026).
     static AdvisorCatalog Approved() => AdvisorCatalog.Parse(File.ReadAllText(AdvisorCatalog.Path).Replace("he_review: pending", "he_review: approved"));
 
     [Test]
@@ -156,14 +156,15 @@ public class EncyclopediaScreenTests
 
     /// <summary>On the SHIPPED catalogue (AdvisorCatalog.Load(), not Approved()), the Hebrew encyclopedia lists every
     /// approved page: the nine that replace How to play, which Beri read as a native speaker on #2095 (1 Nov 2026), and the
-    /// other 16, which the owner read as a native speaker the same day ("all 16 pages look good"). Security and Public
-    /// support (#2223) wait for their native read (OQ-4), so they are the only pages the Hebrew list leaves out.</summary>
+    /// other 16, which the owner read as a native speaker the same day ("all 16 pages look good"), and Security and Public
+    /// support (#2223), which the owner read as a native speaker on 3 Nov 2026 (HE batch 2: "approved"). No page is
+    /// pending, so the Hebrew list leaves none out.</summary>
     [Test]
     public void TheShippedHebrewEncyclopediaListsEveryApprovedPage()
     {
         var shipped = AdvisorCatalog.Load();
         Assert.AreEqual(27, shipped.Pages.Count, "shipped pages");
-        CollectionAssert.AreEquivalent(new[] { "security", "public_support" }, shipped.Pages.Where(p => !p.ApprovedIn(true)).Select(p => p.Id), "pending pages");
+        CollectionAssert.IsEmpty(shipped.Pages.Where(p => !p.ApprovedIn(true)).Select(p => p.Id), "pending pages");
         using var ui = new UiTestKit();
         using var nav = new ScreenNav(ui.Root);
         using var pedia = new EncyclopediaPresenter(ui.Root, He, shipped, nav, null);
@@ -171,8 +172,8 @@ public class EncyclopediaScreenTests
         var entries = ui.Q<ScrollView>("encyclopedia-list").contentContainer.Children().Select(c => c.name).ToList();
         var missing = shipped.Pages.Where(p => p.ApprovedIn(true)).Select(p => p.Id).Where(p => !entries.Contains("encyclopedia-page-" + p)).ToList();
         Assert.IsEmpty(missing, "pages missing from the shipped Hebrew list: " + string.Join(", ", missing));
-        CollectionAssert.DoesNotContain(entries, "encyclopedia-page-security", "pending in Hebrew");
-        CollectionAssert.DoesNotContain(entries, "encyclopedia-page-public_support", "pending in Hebrew");
+        CollectionAssert.Contains(entries, "encyclopedia-page-security", "approved in Hebrew on 3 Nov 2026");
+        CollectionAssert.Contains(entries, "encyclopedia-page-public_support", "approved in Hebrew on 3 Nov 2026");
     }
 
     /// <summary>Under gdd-0.3 a lost city alone does not end the game (R-END-003, #1668): the defeat page says so.</summary>
