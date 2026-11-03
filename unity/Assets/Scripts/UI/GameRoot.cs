@@ -202,7 +202,10 @@ namespace Statecraft.Game.UI
         {
             if (webgl)
             {
-                var m = SmokeQuery.Match(url ?? "");
+                // Only the query counts: a flag after the '#' is the fragment (#2264; UrlFlags does the same since #2215).
+                var query = url ?? "";
+                var hash = query.IndexOf('#');
+                var m = SmokeQuery.Match(hash < 0 ? query : query.Substring(0, hash));
                 if (!m.Success) return 0;
                 var digits = m.Groups[1].Value;
                 return digits.Length == 0 ? DefaultSmokeTurns : int.TryParse(digits, NumberStyles.None, CultureInfo.InvariantCulture, out var n) ? n : 0;

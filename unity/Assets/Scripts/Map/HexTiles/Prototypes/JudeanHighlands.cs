@@ -20,7 +20,8 @@ namespace Statecraft.HexTiles.Prototypes
     /// 10 olives x ~1,600 = 16,000. 5 carobs x ~650 = 3,250. 3 pines x ~1,600 = 4,800. 24 garrigue stand-ins x under 100 =
     /// under 2,400. Total under 31,400 of 40,000 (still under 36,000 if the limestone variants run twice as heavy).
     ///
-    /// The garrigue has no model (tiles:judean_highlands/garrigue), so it draws the Tree stand-in tinted dusty green.</summary>
+    /// The garrigue is Tal Heuberger's model from the hex-props bundle (tiles:judean_highlands/garrigue, see HexProps); until
+    /// the bundle arrives it draws the Tree stand-in tinted dusty green.</summary>
     [HexPrototype("judean_highlands", Kind = "nature")]
     public sealed class JudeanHighlands : IHexPrototype
     {
