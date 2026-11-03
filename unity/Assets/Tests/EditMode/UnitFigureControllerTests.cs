@@ -74,7 +74,7 @@ public class UnitFigureControllerTests
 
     /// <summary>The committed controllers are what PrepareTokenFigureControllers makes: the idle default untouched, a walk
     /// state on the figure's own walk take, and an attack state on its own fire take where the FBX has one, else on the take
-    /// baked beside its model for a figure that borrows one (#2375, #2376; BorrowedFireTakeTests), else none (C05).</summary>
+    /// baked beside its model for a figure that borrows one (#2375; BorrowedFireTakeTests), else none (C05).</summary>
     [Test]
     public void EachTokenFigureControllerWalksAndFiresWithItsOwnTakes()
     {

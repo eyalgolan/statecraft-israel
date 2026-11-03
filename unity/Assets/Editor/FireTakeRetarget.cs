@@ -15,17 +15,14 @@ using Object = UnityEngine.Object;
 
 namespace Statecraft.Game.EditorTools
 {
-    /// <summary>Bakes the fire takes the token figures borrow (CollectionImport.BorrowedFireTakes; #2375, #2376) as a clip
-    /// named fire beside each borrowing figure's model, from Tal Heuberger's own fire takes, with no change to any FBX: the
+    /// <summary>Bakes the fire takes the token figures borrow (CollectionImport.BorrowedFireTakes; #2375) as a clip named
+    /// fire beside each borrowing figure's model, from Tal Heuberger's own fire takes, with no change to any FBX: the
     /// source's take is played on the figure's model and the figure's own bones are recorded at every frame of the take,
     /// each bone the take moves (a bone it holds still keeps its pose on two keys; one it never touches is left to the
-    /// controller's default pose). Where the figure's rig binds the source take by bone path (C04 and C07 share one
-    /// Armature), the clip is resampled per frame from the source take (tangents rebuilt, near-static bones dropped);
-    /// otherwise the source and the figure are imported as Humanoid
-    /// for the length of the bake, the take plays through Unity's Humanoid rig, and both imports are put back byte for
-    /// byte afterwards (the committed imports stay Generic and lossless, #1273, and the figures' own idle and walk play
-    /// exactly as before). The baked clip binds the figure's own bone paths, as its walk does. Idempotent: a second bake
-    /// writes the same curves into the same asset.
+    /// controller's default pose). The figure's rig must bind the source take by bone path (C04 and C07 share one
+    /// Armature), so the clip is resampled per frame from the source take (tangents rebuilt, near-static bones dropped).
+    /// The baked clip binds the figure's own bone paths, as its walk does. Idempotent: a second bake writes the same
+    /// curves into the same asset.
     /// Headless: Unity -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -executeMethod Statecraft.Game.EditorTools.FireTakeRetarget.Bake</summary>
     public static class FireTakeRetarget
     {
@@ -45,8 +42,9 @@ namespace Statecraft.Game.EditorTools
         {
             string figureModel = CollectionImport.Model(figure, CollectionDetail.Near), sourceModel = CollectionImport.Model(source, CollectionDetail.Near);
             var take = FireTake(sourceModel);
-            bool sameRig = BindsByPath(take, figureModel);
-            var clip = sameRig ? Sample(figureModel, take) : Retarget(figureModel, sourceModel);
+            if (take.isHumanMotion || !BindsByPath(take, figureModel))
+                throw new InvalidOperationException(figure + ": " + source + "'s fire take does not bind this figure's rig by bone path");
+            var clip = Sample(figureModel, take);
             clip.name = "fire";
             string path = CollectionImport.FireTakePath(figure);
             var existing = AssetDatabase.LoadAssetAtPath<AnimationClip>(path);
@@ -54,7 +52,7 @@ namespace Statecraft.Game.EditorTools
             else { EditorUtility.CopySerialized(clip, existing); EditorUtility.SetDirty(existing); Object.DestroyImmediate(clip); }
             AssetDatabase.SaveAssets();
             var saved = AssetDatabase.LoadAssetAtPath<AnimationClip>(path);
-            Debug.Log(FormattableString.Invariant($"FireTakeRetarget: {figure} fires with {source}'s {take.name} ({(sameRig ? "same rig, by bone path" : "retargeted through Humanoid")}): {saved.length:F3} s at {saved.frameRate} fps, {AnimationUtility.GetCurveBindings(saved).Length} curves, {new FileInfo(path).Length} bytes -> {path}"));
+            Debug.Log(FormattableString.Invariant($"FireTakeRetarget: {figure} fires with {source}'s {take.name} (same rig, by bone path): {saved.length:F3} s at {saved.frameRate} fps, {AnimationUtility.GetCurveBindings(saved).Length} curves, {new FileInfo(path).Length} bytes -> {path}"));
         }
 
         /// <summary>The one fire take among a model's imported takes.</summary>
@@ -73,62 +71,8 @@ namespace Statecraft.Game.EditorTools
             return bindings.Length > 0 && bindings.All(b => root.transform.Find(b.path) != null);
         }
 
-        /// <summary>Plays <paramref name="sourceModel"/>'s fire take on <paramref name="figureModel"/> through Humanoid and
-        /// records the figure's bones; both models import as they did before it returns.</summary>
-        static AnimationClip Retarget(string figureModel, string sourceModel)
-        {
-            var models = new[] { figureModel, sourceModel };
-            var metas = models.ToDictionary(m => m, m => File.ReadAllText(m + ".meta"));
-            AnimationClip clip;
-            try
-            {
-                foreach (var model in models) ImportAsHumanoid(model);
-                var take = FireTake(sourceModel);
-                if (!take.isHumanMotion) throw new InvalidOperationException(sourceModel + ": the fire take did not import as Humanoid motion");
-                clip = Sample(figureModel, take);
-            }
-            finally { foreach (var model in models) RestoreImport(model, metas[model]); }
-            foreach (var model in models)
-            {
-                string meta = File.ReadAllText(model + ".meta");
-                if (meta != metas[model]) throw new InvalidOperationException(model + ".meta: not restored byte for byte after the bake");
-                var imp = (ModelImporter)AssetImporter.GetAtPath(model);
-                if (imp.animationType != ModelImporterAnimationType.Generic) throw new InvalidOperationException(model + ": not Generic again after the bake");
-            }
-            return clip;
-        }
-
-        /// <summary>Imports <paramref name="model"/> as Humanoid with its avatar made from itself, every take's root motion
-        /// baked into the pose (so the hips move as the source authored them, scaled to the figure), until RestoreImport.</summary>
-        static void ImportAsHumanoid(string model)
-        {
-            var imp = AssetImporter.GetAtPath(model) as ModelImporter ?? throw new FileNotFoundException("no model", model);
-            imp.animationType = ModelImporterAnimationType.Human;
-            imp.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
-            var clips = imp.clipAnimations.Length > 0 ? imp.clipAnimations : imp.defaultClipAnimations;
-            foreach (var c in clips)
-            {
-                c.lockRootRotation = true; c.lockRootHeightY = true; c.lockRootPositionXZ = true;
-                c.keepOriginalOrientation = true; c.keepOriginalPositionY = true; c.keepOriginalPositionXZ = true;
-            }
-            imp.clipAnimations = clips;
-            imp.SaveAndReimport();
-            var avatar = AssetDatabase.LoadAllAssetsAtPath(model).OfType<Avatar>().SingleOrDefault();
-            if (avatar == null || !avatar.isValid || !avatar.isHuman) throw new InvalidOperationException(model + ": no valid Humanoid avatar");
-            Debug.Log(model + " as Humanoid: " + string.Join(", ", imp.humanDescription.human.Select(h => h.humanName + "=" + h.boneName)));
-        }
-
-        /// <summary>Puts <paramref name="model"/>'s import back to <paramref name="meta"/>, its .meta before the bake.</summary>
-        static void RestoreImport(string model, string meta)
-        {
-            File.WriteAllText(model + ".meta", meta);
-            AssetDatabase.Refresh();
-            AssetDatabase.ImportAsset(model, ImportAssetOptions.ForceUpdate);
-        }
-
-        /// <summary><paramref name="take"/> played on <paramref name="figureModel"/> frame by frame (through its Humanoid
-        /// avatar for a Humanoid take, by bone path for a Generic one), the figure's own bones recorded as a Generic clip on
-        /// their paths from its Animator.</summary>
+        /// <summary><paramref name="take"/> played on <paramref name="figureModel"/> frame by frame by bone path, the
+        /// figure's own bones recorded as a Generic clip on their paths from its Animator.</summary>
         static AnimationClip Sample(string figureModel, AnimationClip take)
         {
             var scene = EditorSceneManager.NewPreviewScene();
@@ -138,7 +82,6 @@ namespace Statecraft.Game.EditorTools
                 var go = Object.Instantiate(model);
                 SceneManager.MoveGameObjectToScene(go, scene);
                 var animator = go.GetComponent<Animator>() ?? throw new InvalidOperationException(figureModel + ": no Animator on the model's root");
-                if (take.isHumanMotion && (animator.avatar == null || !animator.avatar.isHuman)) throw new InvalidOperationException(figureModel + ": no Humanoid avatar on the model");
                 animator.applyRootMotion = false;
                 animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
                 animator.Rebind();
@@ -201,7 +144,7 @@ namespace Statecraft.Game.EditorTools
                             clip.SetCurve(path, typeof(Transform), "localPosition." + "xyz"[c], Curve(shifting ? frames : 2, take.frameRate, f => positions[b, shifting ? f : 0][component], frames));
                         }
                 }
-                if (moved == 0) throw new InvalidOperationException(figureModel + ": the Humanoid take moved no bone");
+                if (moved == 0) throw new InvalidOperationException(figureModel + ": the take moved no bone");
                 clip.EnsureQuaternionContinuity();
                 return clip;
             }
@@ -274,8 +217,8 @@ namespace Statecraft.Game.EditorTools
                                 animator.applyRootMotion = false;
                                 animator.Rebind();
                                 var bones = go.GetComponentsInChildren<Transform>(true);
-                                var right = bones.FirstOrDefault(t => t.name == "Right_Hand" || t.name == "mixamorig:RightHand");
-                                var left = bones.FirstOrDefault(t => t.name == "Left_Hand" || t.name == "mixamorig:LeftHand");
+                                var right = bones.FirstOrDefault(t => t.name == "Right_Hand");
+                                var left = bones.FirstOrDefault(t => t.name == "Left_Hand");
                                 var graph = Pose(animator, clip, fractions[row]);
                                 try
                                 {

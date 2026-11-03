@@ -10,11 +10,11 @@ using UnityEditor.Animations;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-/// <summary>#2375 and #2376 (owner, 3 November 2026: the project has Tal Heuberger's permission for these adapted versions):
-/// the token figures whose FBX has no fire take attack with a take baked beside their model from another of Tal Heuberger's
-/// figures (CollectionImport.BorrowedFireTakes, FireTakeRetarget): C04 with a clip resampled per frame from C07's
-/// Armature|fire take (tangents rebuilt, near-static bones dropped), the Syrian, Iraqi,
-/// Egyptian, Lebanese and ALA infantry with C09's through Humanoid, each on its own rig, so its own bundle carries it.</summary>
+/// <summary>#2375 (owner, 3 November 2026: the project has Tal Heuberger's permission for this adapted version): the token
+/// figure whose FBX has no fire take attacks with a take baked beside its model from another of Tal Heuberger's figures
+/// (CollectionImport.BorrowedFireTakes, FireTakeRetarget): C04 with a clip resampled per frame from C07's Armature|fire take
+/// (tangents rebuilt, near-static bones dropped), so its own bundle carries it. The Syrian, Iraqi, Egyptian, Lebanese and
+/// ALA infantry get none yet (owner, 3 November 2026: "C04 only; enemies wait (Recommended)"; #2399).</summary>
 public class BorrowedFireTakeTests
 {
     static Type Import => Type.GetType("Statecraft.Game.EditorTools.CollectionImport, Assembly-CSharp-Editor")!;
@@ -31,23 +31,36 @@ public class BorrowedFireTakeTests
     static AnimatorState Attack(string id) => AssetDatabase.LoadAssetAtPath<AnimatorController>(ControllerPath(id))
         .layers[0].stateMachine.states.Select(s => s.state).SingleOrDefault(s => s.name == UnitFigureMotion.AttackState);
     static Transform Hand(Transform root, bool right) => root.GetComponentsInChildren<Transform>(true)
-        .Single(t => t.name == (right ? "Right_Hand" : "Left_Hand") || t.name == (right ? "mixamorig:RightHand" : "mixamorig:LeftHand"));
+        .Single(t => t.name == (right ? "Right_Hand" : "Left_Hand"));
 
     static readonly string[] Enemies = { UnitFigures.SyrianInfantry, UnitFigures.IraqiInfantry, UnitFigures.EgyptianInfantry, UnitFigures.AlaInfantry, UnitFigures.LebaneseRegular };
 
-    /// <summary>The two issues' figures, each borrowing from the figure the issue names, and no figure that has its own take.</summary>
+    /// <summary>Only C04 borrows, from the figure #2375 names, and it has no take of its own.</summary>
     [Test]
-    public void TheIssuesFiguresBorrowFromTheFiguresTheIssuesName()
+    public void OnlyTheSabraPioneerBorrowsTheVeteranFightersTake()
     {
         Assert.AreEqual(UnitFigures.VeteranFighter, Borrowed[UnitFigures.SabraPioneer], "#2375: C04 with C06/C07's take (C07's, the one players see on C07)");
-        foreach (var id in Enemies) Assert.AreEqual(UnitFigures.Irregular, Borrowed[id], "#2376: " + id + " with C09's take");
-        CollectionAssert.AreEquivalent(Enemies.Append(UnitFigures.SabraPioneer), Borrowed.Keys);
+        CollectionAssert.AreEquivalent(new[] { UnitFigures.SabraPioneer }, Borrowed.Keys);
         foreach (var pair in Borrowed)
         {
             Assert.That(TokenFigures, Has.Member(pair.Key), pair.Key + " stands on tokens");
             Assert.IsFalse(AssetDatabase.LoadAllAssetsAtPath(ModelPath(pair.Key)).OfType<AnimationClip>().Any(c => UnitTokenMotion.CollectionFireTake(c.name)),
                 pair.Key + " has no fire take of its own");
             Assert.IsNotNull(SourceFireTake(pair.Value), pair.Value + " has one to lend");
+        }
+    }
+
+    /// <summary>#2399 (owner, 3 November 2026: "C04 only; enemies wait (Recommended)"): the five generated enemy infantry
+    /// figures hold no weapon yet, so none attacks with a fire take until #2399 settles their figures and weapons: no borrowed
+    /// take, no clip baked beside the model and no attack state on the controller.</summary>
+    [Test]
+    public void TheEnemyInfantryHaveNoFireTakeYet()
+    {
+        foreach (var id in Enemies)
+        {
+            Assert.IsFalse(Borrowed.ContainsKey(id), id + ": borrows no fire take yet (#2399)");
+            Assert.IsNull(AssetDatabase.LoadAssetAtPath<AnimationClip>(FireTakePath(id)), id + ": no fire take baked beside its model (#2399)");
+            Assert.IsNull(Attack(id), id + ": no attack state (#2399)");
         }
     }
 
@@ -76,7 +89,7 @@ public class BorrowedFireTakeTests
     }
 
     /// <summary>Every curve of a baked take binds a bone of the figure's own game prefab, and the take moves its hips and both
-    /// arms (a retarget that mapped no arm would leave the rifle still).</summary>
+    /// arms (a bake that keyed no arm would leave the rifle still).</summary>
     [Test]
     public void EveryBakedTakeBindsTheFiguresOwnRigAndMovesItsArms()
     {
@@ -89,8 +102,7 @@ public class BorrowedFireTakeTests
             foreach (var path in paths) Assert.IsNotNull(root.Find(path), id + ": " + path);
             var animated = paths.Select(p => root.Find(p).name).ToArray();
             foreach (var bone in new[] { "Hips", "Left_UpperArm", "Right_UpperArm", "Left_Hand", "Right_Hand" })
-                Assert.IsTrue(animated.Contains(bone) || animated.Contains("mixamorig:" + bone.Replace("_UpperArm", "Arm").Replace("_", "")),
-                    id + ": the take moves " + bone + " (animated: " + string.Join(", ", animated) + ")");
+                Assert.IsTrue(animated.Contains(bone), id + ": the take moves " + bone + " (animated: " + string.Join(", ", animated) + ")");
         }
     }
 
@@ -162,9 +174,9 @@ public class BorrowedFireTakeTests
     }
 
     /// <summary>A baked take keys every frame of the source take on each bone the take moves and holds a still bone on two
-    /// keys spanning the take; the arms of a retargeted one turn over the take (the aim and recoil), not only hold.</summary>
+    /// keys spanning the take.</summary>
     [Test]
-    public void ABakedTakeKeysEverySourceFrameAndARetargetedOneMovesTheArms()
+    public void ABakedTakeKeysEverySourceFrame()
     {
         foreach (var pair in Borrowed)
         {
@@ -182,29 +194,6 @@ public class BorrowedFireTakeTests
                 }
                 else Assert.AreEqual(frames, curve.length, what + " keyed every frame");
             }
-        }
-        foreach (var id in Enemies)
-        {
-            var clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(FireTakePath(id));
-            int frames = Mathf.RoundToInt(clip.length * clip.frameRate) + 1;
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(id, CollectionDetail.Near));
-            var go = Object.Instantiate(prefab);
-            try
-            {
-                var animator = go.GetComponentInChildren<Animator>(true);
-                var right = Hand(go.transform, true);
-                var shoulder = right.parent.parent.parent;   // hand, forearm, upper arm, shoulder
-                clip.SampleAnimation(animator.gameObject, 0f);
-                var start = Quaternion.Inverse(shoulder.rotation) * right.rotation;
-                float swing = 0f;
-                for (int f = 1; f < frames; f++)
-                {
-                    clip.SampleAnimation(animator.gameObject, f / clip.frameRate);
-                    swing = Mathf.Max(swing, Quaternion.Angle(start, Quaternion.Inverse(shoulder.rotation) * right.rotation));
-                }
-                Assert.Greater(swing, 0.5f, id + ": the right hand turns against the shoulder over the take (" + swing.ToString("F2") + " degrees)");
-            }
-            finally { Object.DestroyImmediate(go); }
         }
     }
 }

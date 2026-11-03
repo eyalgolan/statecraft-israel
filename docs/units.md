@@ -329,14 +329,13 @@ hand (`UnitWeaponsTests` keeps that true). The rows live in `UnitWeapons.Rows`.
   takes it; every other figure keeps its own fire take. The export's rig has the same bones and rest mesh as C06's but
   other local axes, so each sampled bone is turned into C06's frame by a correction computed from the two meshes' bind
   poses (`UnitFigurePoseSource`); our C06 in the aim lies on Tal's export and our K98k on their rifle (`UnitWeaponsTests`).
-- **Borrowed fire takes (#2375, #2376):** C04 has no fire take of its own and uses a clip resampled per frame from C07's
+- **Borrowed fire take (#2375):** C04 has no fire take of its own and uses a clip resampled per frame from C07's
   Armature|fire take (tangents rebuilt, near-static bones dropped); the two share Tal's 67-bone Armature
-  (`CollectionImport.BorrowedFireTakes`). The Syrian, Iraqi, Egyptian, Lebanese and ALA infantry play
-  C09's, the figure whose walk Tal retargeted onto them, retargeted onto each one's own rig through Unity's Humanoid rig
-  and baked beside its model as `fire.anim` (`FireTakeRetarget`: both models import as Humanoid for the bake only and are
-  put back byte for byte, so every committed import stays Generic and their own idle and walk play exactly as before).
-  Each baked take lives in its figure's folder because the stream loads each figure's bundle alone. Tal Heuberger's takes,
-  CC BY-NC-ND 4.0; the owner confirmed Tal's permission for these adapted versions on 3 November 2026.
+  (`CollectionImport.BorrowedFireTakes`). `FireTakeRetarget` bakes it beside C04's model as `fire.anim`, because the
+  stream loads each figure's bundle alone; no FBX import changes. Tal Heuberger's take, CC BY-NC-ND 4.0; the owner
+  confirmed Tal's permission for this adapted version on 3 November 2026. The Syrian, Iraqi, Egyptian, Lebanese and ALA
+  infantry have no fire take yet and keep their idle or walk when their unit attacks: they hold no weapon, and they wait
+  for #2399 (owner, 3 November 2026: "C04 only; enemies wait (Recommended)").
 - **Load:** the K98k, the Sten and the pose source each stream in a bundle of their own after the people's, never in the
   first download; the pose source carries only the clip, not the export's mesh or texture.
 - **Fail open:** until a weapon or the pose source arrives, and for good if its bundle is missing, the figure stands and

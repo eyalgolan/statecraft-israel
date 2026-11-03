@@ -269,19 +269,16 @@ namespace Statecraft.Game.EditorTools
             UnitFigures.LebaneseRegular,
         };
 
-        /// <summary>The token figures whose own FBX has no fire take, and the figure whose fire take each plays (#2375, #2376;
-        /// owner, 3 November 2026: the project has Tal Heuberger's permission for these adapted versions). FireTakeRetarget bakes
-        /// each as <see cref="FireTakePath"/> beside the figure's model, so the figure's own bundle carries it (a clip inside another
+        /// <summary>The token figures whose own FBX has no fire take, and the figure whose fire take each plays (#2375; owner,
+        /// 3 November 2026: the project has Tal Heuberger's permission for this adapted version). FireTakeRetarget bakes each as
+        /// <see cref="FireTakePath"/> beside the figure's model, so the figure's own bundle carries it (a clip inside another
         /// figure's FBX would be a reference into that figure's bundle, which the stream does not load; CollectionImportTests
         /// EachOriginalBundleKeepsItsPrefabAndOnlyItsOwnAssetsAndPlacementScripts): resampled per frame from the source take
-        /// (tangents rebuilt, near-static bones dropped) where the rig is the same (C04 shares C07's Armature), else retargeted
-        /// through Unity's Humanoid rig, as Tal's own retargets of C09's walk.</summary>
+        /// (tangents rebuilt, near-static bones dropped), since C04 shares C07's Armature. The enemy infantry borrow none yet
+        /// (owner, 3 November 2026: "C04 only; enemies wait (Recommended)"; #2399).</summary>
         public static readonly IReadOnlyDictionary<string, string> BorrowedFireTakes = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             [UnitFigures.SabraPioneer] = UnitFigures.VeteranFighter,
-            [UnitFigures.SyrianInfantry] = UnitFigures.Irregular, [UnitFigures.IraqiInfantry] = UnitFigures.Irregular,
-            [UnitFigures.EgyptianInfantry] = UnitFigures.Irregular, [UnitFigures.AlaInfantry] = UnitFigures.Irregular,
-            [UnitFigures.LebaneseRegular] = UnitFigures.Irregular,
         };
 
         /// <summary>Where a borrowing figure's baked fire take lives: a clip named fire, which UnitTokenMotion.CollectionFireTake

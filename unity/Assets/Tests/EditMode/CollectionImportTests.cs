@@ -26,7 +26,7 @@ public class CollectionImportTests
     };
 
     static bool UnderResources(string path) => path.Split('/').Any(s => s.Equals("Resources", StringComparison.OrdinalIgnoreCase));
-    /// <summary>The figures that attack with a fire take baked beside their model (CollectionImport.BorrowedFireTakes, #2375, #2376).</summary>
+    /// <summary>The figures that attack with a fire take baked beside their model (CollectionImport.BorrowedFireTakes, #2375).</summary>
     static IEnumerable<string> BorrowingFigures => ((IReadOnlyDictionary<string, string>)Type.GetType("Statecraft.Game.EditorTools.CollectionImport, Assembly-CSharp-Editor")!
         .GetField("BorrowedFireTakes")!.GetValue(null)).Keys;
 
@@ -164,7 +164,7 @@ public class CollectionImportTests
                 Model(id), $"{Dir(id)}/{id}.mat", ColourMap(id),
                 CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near),
             };
-            // A figure that borrows its fire take has it baked beside its model, in its own bundle (#2375, #2376).
+            // A figure that borrows its fire take has it baked beside its model, in its own bundle (#2375).
             var fire = BorrowingFigures.Contains(id) ? new[] { $"{Dir(id)}/fire.anim" } : Array.Empty<string>();
             // #2084's pose source: Tal's export byte for byte and the prefab beside it; no map, material or record of its own.
             if (CollectionCatalog.IsFigurePose(id)) return new[] { CollectionCatalog.SourceModelPath(id), $"{Dir(id)}/{id}.prefab" };

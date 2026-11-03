@@ -16,12 +16,12 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
-/// <summary>The tool runs behind #2375 and #2376, not checks. BakeThenPrepareControllersThenShoot bakes the borrowed fire
-/// takes (FireTakeRetarget.Bake), gives the controllers their attack states (CollectionImport.PrepareTokenFigureControllers)
-/// and writes one contact sheet per figure for review. TokenCaptures renders the changed tokens in the real map with the
-/// dated legacy roster (20 June 1948, when every changed army stands on the map), close up as the player sees them,
-/// standing, mid-walk and at three points of the fire take (owner, 3 November 2026: "Yes, send me captures"). Both write
-/// into $STATECRAFT_FIRE_STILLS or unity/../captures/fire-takes. Explicit.</summary>
+/// <summary>The tool runs behind #2375, not checks. BakeThenPrepareControllersThenShoot bakes the borrowed fire take
+/// (FireTakeRetarget.Bake), gives the controllers their attack states (CollectionImport.PrepareTokenFigureControllers)
+/// and writes one contact sheet per figure for review. TokenCaptures renders the changed token in the real map with the
+/// dated legacy roster (20 May 1948), close up as the player sees it, standing, mid-walk and at three points of the fire
+/// take (owner, 3 November 2026: "Yes, send me captures"). Both write into $STATECRAFT_FIRE_STILLS or
+/// unity/../captures/fire-takes. Explicit.</summary>
 [Explicit("bakes assets and writes stills for review, not a check")]
 public class FireTakeRetargetShots
 {
@@ -47,17 +47,11 @@ public class FireTakeRetargetShots
         Retarget.GetMethod("Stills")!.Invoke(null, new object[] { Folder });
     }
 
-    /// <summary>The changed tokens: an Israeli token with the slouch hat (C04) and each Arab army's token (Syria, Iraq, Egypt,
-    /// Lebanon and the ALA, whose third figure is the ALA infantry beside two C09), each on a date its token stands on the map
-    /// (the ALA's window is 15 to 29 May 1948; the Syrian, Iraqi and Lebanese tokens with figures stand on 20 June).</summary>
+    /// <summary>The changed token: an Israeli token with the slouch hat (C04), on a date it stands on the map. The enemy
+    /// infantry get no fire take yet (#2399).</summary>
     static readonly (DateTime date, string label, Func<PlacedToken, bool> pick)[] Subjects =
     {
         (new DateTime(1948, 5, 20), "israel-c04", t => t.Token.Unit.Side == UnitData.Israel && t.Token.Figures > 0 && t.Token.Headgear.Contains(UnitData.SlouchHat)),
-        (new DateTime(1948, 6, 20), "syria", t => t.Token.Unit.Side == "syria" && t.Token.Figures > 0),
-        (new DateTime(1948, 6, 20), "iraq", t => t.Token.Unit.Side == "iraq" && t.Token.Figures > 0),
-        (new DateTime(1948, 5, 20), "egypt", t => t.Token.Unit.Side == "egypt" && t.Token.Figures > 0),
-        (new DateTime(1948, 5, 20), "ala", t => t.Token.Unit.Side == "ala" && t.Token.Figures > 0),
-        (new DateTime(1948, 6, 20), "lebanon", t => t.Token.Unit.Side == "lebanon" && t.Token.Figures > 0),
     };
 
     [UnityTest]
@@ -82,7 +76,7 @@ public class FireTakeRetargetShots
         var records = new List<string>
         {
             "Unity editor renders of the real map and the dated legacy roster (rung 5, mobilization 0.8), the game's camera at close zoom (1.25 x the closest the player reaches, yaw 0).",
-            "1-standing: the figures as an attack shows them before #2375/#2376 (no fire take, so they stand). 2-moving: mid-walk, a figure's height into a slide (unchanged by this change). 3-firing-NN: the fire take at NN % of its length, as UnitTokenMotion plays it.",
+            "1-standing: the figures as an attack shows them before #2375 (no fire take, so they stand). 2-moving: mid-walk, a figure's height into a slide (unchanged by this change). 3-firing-NN: the fire take at NN % of its length, as UnitTokenMotion plays it.",
             "Not a player run; no simulated state or placement modified.",
         };
         var render = Generated.GetMethod("RenderMap", Any)!;
@@ -119,7 +113,7 @@ public class FireTakeRetargetShots
                     var live = animators.Where(a => a.isActiveAndEnabled).ToArray();
                     var motion = token.GetComponent<UnitTokenMotion>() ?? token.gameObject.AddComponent<UnitTokenMotion>();
                     motion.enabled = false;
-                    var hands = token.GetComponentsInChildren<Transform>(true).Where(t => t.name == "Right_Hand" || t.name == "mixamorig:RightHand").ToArray();
+                    var hands = token.GetComponentsInChildren<Transform>(true).Where(t => t.name == "Right_Hand").ToArray();
                     var standing = hands.Select(h => h.position).ToArray();
                     string figures = string.Join("/", token.GetComponentsInChildren<UnitFigureResidency>(true).Select(o => o.ModelId));
                     string State(Animator a) => a.GetCurrentAnimatorStateInfo(0).fullPathHash == UnitFigureMotion.Attack ? "attack"
@@ -165,7 +159,7 @@ public class FireTakeRetargetShots
             }
             File.WriteAllLines(Path.Combine(folder, "README.txt"), records);
             Debug.Log("FireTakeRetarget token captures -> " + folder + "\n" + string.Join("\n", records));
-            CollectionAssert.IsEmpty(missing, "every changed army's token was found");
+            CollectionAssert.IsEmpty(missing, "the changed token was found");
         }
         finally
         {

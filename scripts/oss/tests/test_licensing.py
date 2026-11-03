@@ -167,18 +167,18 @@ def test_tal_original_licensing_matches_manifest_exactly():
     # Afik Faerman's main theme (#39, #2240; owner, 2 November 2026: CC BY-NC-ND 4.0, credited to Afik): one exact-file row.
     music = [r for r in independent if r["glob"] == "unity/Assets/StreamingAssets/audio/music/Main_1.3.ogg"]
     assert len(music) == 1 and music[0]["artist"] == "Afik Faerman" and music[0]["ai_generated"] is False
-    # The fire takes baked for the figures without one (#2375, #2376; owner, 3 November 2026: Tal Heuberger's permission for
-    # these adapted versions): one exact-file row per figure, each a derived clip of a take inside Tal's own FBX.
-    fire = {f"unity/Assets/Art/Collection/{f}/fire.anim" for f in (
-        "figure-c04-sabra-pioneer-v3", "figure-syrian-infantry-1948-v1", "figure-iraqi-infantry-1948-v1",
-        "figure-egyptian-infantry-1948-v1", "figure-ala-infantry-1948-v1", "figure-lebanese-regular-1948-v1")}
+    # The fire take baked for C04, which has none of its own (#2375; owner, 3 November 2026: Tal Heuberger's permission for
+    # this adapted version): one exact-file row, a derived clip of a take inside Tal's own FBX. The enemy infantry get none
+    # yet (owner, 3 November 2026: "C04 only; enemies wait (Recommended)"; #2399).
+    fire = {"unity/Assets/Art/Collection/figure-c04-sabra-pioneer-v3/fire.anim"}
     fire_rows = [r for r in independent if r["glob"] in fire]
-    assert {r["glob"] for r in fire_rows} == fire and len(fire_rows) == 6
+    assert {r["glob"] for r in fire_rows} == fire and len(fire_rows) == 1
     assert all(r["artist"] == "Tal Heuberger" and r["ai_generated"] is True for r in fire_rows)
-    assert all("owner confirms Tal's permission, 3 Nov 2026 (#2375/#2376)" in r["note"] and "FireTakeRetarget" in r["note"] for r in fire_rows)
+    assert all("owner confirms Tal's permission, 3 Nov 2026 (#2375)" in r["note"] and "FireTakeRetarget" in r["note"] for r in fire_rows)
     assert all((ROOT / r["glob"]).is_file() for r in fire_rows)
+    assert not [r["glob"] for r in rules if r["glob"].endswith("/fire.anim") and r["glob"] not in fire]  # no enemy fire take yet (#2399)
     assert len([r for r in independent if r["glob"] not in added and r not in music and r["glob"] not in fire]) == 50  # the hex-tile props row and the #1901 -light meshes among them
-    assert len(independent) == 100  # 146 originals + 100 independent grants = 246 total
+    assert len(independent) == 95  # 146 originals + 95 independent grants = 241 total
     for row in selected:
         assert row["licence"] == "CC-BY-NC-ND-4.0"
         assert row["artist"] == "Tal Heuberger"
@@ -199,14 +199,12 @@ def test_no_asset_licence_rule_matches_generated_manifest_paths():
     assert captured == [], f"Asset-licence rows capture generated paths: {captured}"
 
 
-def test_borrowed_fire_clips_resolve_to_explicit_cc_by_nc_nd_row():
-    """The six derived clips have an exact LICENSING.md row and do not fall back to the PolyForm code row."""
+def test_borrowed_fire_clip_resolves_to_explicit_cc_by_nc_nd_row():
+    """C04's derived clip has an exact LICENSING.md row and does not fall back to the PolyForm code row."""
     import re
     text = (ROOT / "LICENSING.md").read_text(encoding="utf-8")
-    row = next(l for l in text.splitlines() if l.startswith("| Derived borrowed fire clips by Tal Heuberger |"))
-    fire = {f"unity/Assets/Art/Collection/{f}/fire.anim" for f in (
-        "figure-c04-sabra-pioneer-v3", "figure-syrian-infantry-1948-v1", "figure-iraqi-infantry-1948-v1",
-        "figure-egyptian-infantry-1948-v1", "figure-ala-infantry-1948-v1", "figure-lebanese-regular-1948-v1")}
+    row = next(l for l in text.splitlines() if l.startswith("| Derived borrowed fire clip by Tal Heuberger |"))
+    fire = {"unity/Assets/Art/Collection/figure-c04-sabra-pioneer-v3/fire.anim"}
     assert set(re.findall(r"`(unity/Assets/Art/Collection/[^`]+/fire\.anim)`", row)) == fire
     assert "[CC BY-NC-ND 4.0](LICENSES/CC-BY-NC-ND-4.0.txt)" in row
     assert "PolyForm" not in row

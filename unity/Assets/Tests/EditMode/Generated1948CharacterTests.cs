@@ -272,12 +272,10 @@ public class Generated1948CharacterTests
         Assert.AreEqual($"{dir}/{id}.controller", AssetDatabase.GetAssetPath(controller));
         Assert.AreEqual(1, controller!.layers.Length);
         var machine = controller.layers[0].stateMachine;
-        // A figure that stands on unit tokens also walks with its own walk take (#1866) and fires with C09's take baked
-        // beside its model (#2376, BorrowedFireTakeTests); the Bedouin civilian stays idle only.
+        // A figure that stands on unit tokens also walks with its own walk take (#1866); the Bedouin civilian stays idle only.
         bool token = id != "figure-bedouin-civilian-1948-v1";
-        CollectionAssert.AreEquivalent(token ? new[] { "idle", "walk", "attack" } : new[] { "idle" }, machine.states.Select(s => s.state.name));
+        CollectionAssert.AreEquivalent(token ? new[] { "idle", "walk" } : new[] { "idle" }, machine.states.Select(s => s.state.name));
         if (token) Assert.AreSame(clips.Single(c => c.name == "walk"), machine.states.Single(s => s.state.name == "walk").state.motion);
-        if (token) Assert.AreEqual($"{dir}/fire.anim", AssetDatabase.GetAssetPath(machine.states.Single(s => s.state.name == "attack").state.motion));
         Assert.IsNotNull(machine.defaultState);
         Assert.AreSame(clips.Single(c => c.name == "idle"), machine.defaultState.motion, "the default idle comes from this character's FBX");
         Assert.AreEqual(source, AssetDatabase.GetAssetPath(machine.defaultState.motion));

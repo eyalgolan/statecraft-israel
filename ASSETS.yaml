@@ -1112,42 +1112,7 @@ rules:
     artist: "Tal Heuberger"
     source: "Tal Heuberger's Armature|fire take inside unity/Assets/Art/Collection/figure-c07-veteran-fighter-v2/figure-c07-veteran-fighter-v2.fbx (PR #507), resampled per frame from that source take (tangents rebuilt, near-static bones dropped) into a clip beside C04's model on 3 November 2026; C04 and C07 share Tal's 67-bone Armature, so the source take binds C04's bones by path. Baked beside the figure because the stream loads each figure's bundle alone."
     status: verified
-    note: "adapted version; owner confirms Tal's permission, 3 Nov 2026 (#2375/#2376). The clip is a derived asset made by unity/Assets/Editor/FireTakeRetarget.cs from a fire take in Tal Heuberger's own FBX in this repository; no FBX or colour map changed. Credit Tal Heuberger; CC BY-NC-ND 4.0, https://creativecommons.org/licenses/by-nc-nd/4.0/. Pinned by BorrowedFireTakeTests."
-  - glob: "unity/Assets/Art/Collection/figure-syrian-infantry-1948-v1/fire.anim"
-    licence: CC-BY-NC-ND-4.0
-    ai_generated: true
-    artist: "Tal Heuberger"
-    source: "Tal Heuberger's Armature|fire take inside unity/Assets/Art/Collection/figure-c09-irregular-v2/figure-c09-irregular-v2.fbx (PR #507), the figure whose walk Tal retargeted onto the Syrian infantry, played on this figure's own rig through Unity's Humanoid rig (both models imported as Humanoid for the bake only, every root curve baked into the pose) and recorded on its own bones at every frame of the take on 3 November 2026; the committed imports stay Generic. Baked beside the figure because the stream loads each figure's bundle alone."
-    status: verified
-    note: "adapted version; owner confirms Tal's permission, 3 Nov 2026 (#2375/#2376). The clip is a derived asset made by unity/Assets/Editor/FireTakeRetarget.cs from a fire take in Tal Heuberger's own FBX in this repository; no FBX or colour map changed. Credit Tal Heuberger; CC BY-NC-ND 4.0, https://creativecommons.org/licenses/by-nc-nd/4.0/. Pinned by BorrowedFireTakeTests."
-  - glob: "unity/Assets/Art/Collection/figure-iraqi-infantry-1948-v1/fire.anim"
-    licence: CC-BY-NC-ND-4.0
-    ai_generated: true
-    artist: "Tal Heuberger"
-    source: "Tal Heuberger's Armature|fire take inside unity/Assets/Art/Collection/figure-c09-irregular-v2/figure-c09-irregular-v2.fbx (PR #507), the figure whose walk Tal retargeted onto the Iraqi infantry, played on this figure's own rig through Unity's Humanoid rig (both models imported as Humanoid for the bake only, every root curve baked into the pose) and recorded on its own bones at every frame of the take on 3 November 2026; the committed imports stay Generic. Baked beside the figure because the stream loads each figure's bundle alone."
-    status: verified
-    note: "adapted version; owner confirms Tal's permission, 3 Nov 2026 (#2375/#2376). The clip is a derived asset made by unity/Assets/Editor/FireTakeRetarget.cs from a fire take in Tal Heuberger's own FBX in this repository; no FBX or colour map changed. Credit Tal Heuberger; CC BY-NC-ND 4.0, https://creativecommons.org/licenses/by-nc-nd/4.0/. Pinned by BorrowedFireTakeTests."
-  - glob: "unity/Assets/Art/Collection/figure-egyptian-infantry-1948-v1/fire.anim"
-    licence: CC-BY-NC-ND-4.0
-    ai_generated: true
-    artist: "Tal Heuberger"
-    source: "Tal Heuberger's Armature|fire take inside unity/Assets/Art/Collection/figure-c09-irregular-v2/figure-c09-irregular-v2.fbx (PR #507), the figure whose walk Tal retargeted onto the Egyptian infantry, played on this figure's own rig through Unity's Humanoid rig (both models imported as Humanoid for the bake only, every root curve baked into the pose) and recorded on its own bones at every frame of the take on 3 November 2026; the committed imports stay Generic. Baked beside the figure because the stream loads each figure's bundle alone."
-    status: verified
-    note: "adapted version; owner confirms Tal's permission, 3 Nov 2026 (#2375/#2376). The clip is a derived asset made by unity/Assets/Editor/FireTakeRetarget.cs from a fire take in Tal Heuberger's own FBX in this repository; no FBX or colour map changed. Credit Tal Heuberger; CC BY-NC-ND 4.0, https://creativecommons.org/licenses/by-nc-nd/4.0/. Pinned by BorrowedFireTakeTests."
-  - glob: "unity/Assets/Art/Collection/figure-ala-infantry-1948-v1/fire.anim"
-    licence: CC-BY-NC-ND-4.0
-    ai_generated: true
-    artist: "Tal Heuberger"
-    source: "Tal Heuberger's Armature|fire take inside unity/Assets/Art/Collection/figure-c09-irregular-v2/figure-c09-irregular-v2.fbx (PR #507), the figure whose walk Tal retargeted onto the ALA infantry, played on this figure's own rig through Unity's Humanoid rig (both models imported as Humanoid for the bake only, every root curve baked into the pose) and recorded on its own bones at every frame of the take on 3 November 2026; the committed imports stay Generic. Baked beside the figure because the stream loads each figure's bundle alone."
-    status: verified
-    note: "adapted version; owner confirms Tal's permission, 3 Nov 2026 (#2375/#2376). The clip is a derived asset made by unity/Assets/Editor/FireTakeRetarget.cs from a fire take in Tal Heuberger's own FBX in this repository; no FBX or colour map changed. Credit Tal Heuberger; CC BY-NC-ND 4.0, https://creativecommons.org/licenses/by-nc-nd/4.0/. Pinned by BorrowedFireTakeTests."
-  - glob: "unity/Assets/Art/Collection/figure-lebanese-regular-1948-v1/fire.anim"
-    licence: CC-BY-NC-ND-4.0
-    ai_generated: true
-    artist: "Tal Heuberger"
-    source: "Tal Heuberger's Armature|fire take inside unity/Assets/Art/Collection/figure-c09-irregular-v2/figure-c09-irregular-v2.fbx (PR #507), the figure whose walk Tal retargeted onto the Lebanese regular, played on this figure's own rig through Unity's Humanoid rig (both models imported as Humanoid for the bake only, every root curve baked into the pose) and recorded on its own bones at every frame of the take on 3 November 2026; the committed imports stay Generic. Baked beside the figure because the stream loads each figure's bundle alone."
-    status: verified
-    note: "adapted version; owner confirms Tal's permission, 3 Nov 2026 (#2375/#2376). The clip is a derived asset made by unity/Assets/Editor/FireTakeRetarget.cs from a fire take in Tal Heuberger's own FBX in this repository; no FBX or colour map changed. Credit Tal Heuberger; CC BY-NC-ND 4.0, https://creativecommons.org/licenses/by-nc-nd/4.0/. Pinned by BorrowedFireTakeTests."
+    note: "adapted version; owner confirms Tal's permission, 3 Nov 2026 (#2375). The clip is a derived asset made by unity/Assets/Editor/FireTakeRetarget.cs from a fire take in Tal Heuberger's own FBX in this repository; no FBX or colour map changed. Credit Tal Heuberger; CC BY-NC-ND 4.0, https://creativecommons.org/licenses/by-nc-nd/4.0/. Pinned by BorrowedFireTakeTests."
   - glob: "unity/Assets/Art/Collection/figure-bedouin-civilian-1948-v1/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
