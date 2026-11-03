@@ -42,10 +42,10 @@ public class WhyHexPlacesTests
     public void AMoveElsewhereSaysHowFarAndWhichWayFromTheNearestTown()
     {
         // (7,9) is the hex east of Haifa's (6,9): 7.6 km between the centres, said to the nearest 5 km.
-        Assert.AreEqual(GolaniName(En) + " moved to a hex 10 km east of Haifa for 2 movement points", UnitNames.Line(Moved("7,9", 2), C, Rows, En));
+        Assert.AreEqual(En.Format("why.line.unit_moved", GolaniName(En), En.Format("why.hex.away", 10, En["why.hex.east"], "Haifa"), 2), UnitNames.Line(Moved("7,9", 2), C, Rows, En));
         StringAssert.Contains("משבצת 10 ק״מ ממזרח לחיפה", UnitNames.Line(Moved("7,9", 2), C, Rows, He, NamesHe));
         // (-3,22) is one hex from Tel Aviv, Jaffa, Lod, Petah Tikva and Rishon LeZion alike: the first in settlement_hexes.yaml's order wins.
-        StringAssert.Contains("a hex 10 km south-east of Tel Aviv", UnitNames.Line(Moved("-3,22", 2), C, Rows, En));
+        StringAssert.Contains(En.Format("why.hex.away", 10, En["why.hex.south_east"], "Tel Aviv"), UnitNames.Line(Moved("-3,22", 2), C, Rows, En));
     }
 
     /// <summary>A one-letter prefix joins a Hebrew place name directly, a name of two words included ("לחיפה", "בתל

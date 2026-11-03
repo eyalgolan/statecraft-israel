@@ -92,8 +92,8 @@ public class DeclarationRecordingTests
     public void ThePressLoadsThenPlaysAndOnlyThenShowsTheCaptionsAndStop()
     {
         using var r = new Rig();
-        Assert.AreEqual("Recording: Ralph Hellinger, Israel State Archives", r.Ui.Q<Label>("start-recording-credit").text);
-        Assert.AreEqual("Play the recording", r.Listen.text);
+        Assert.AreEqual(Text["start.recording_credit"], r.Ui.Q<Label>("start-recording-credit").text);
+        Assert.AreEqual(Text["start.listen"], r.Listen.text);
         Assert.IsFalse(r.Recording.Playing, "nothing plays by itself");
         Assert.IsEmpty(r.Fetch.Urls, "nothing is fetched before the press");
 
@@ -101,7 +101,7 @@ public class DeclarationRecordingTests
         Assert.AreEqual(DeclarationRecording.Phase.Loading, r.Recording.State);
         Assert.AreEqual(1, r.Fetch.Urls.Count);
         StringAssert.EndsWith("/" + DeclarationRecording.File, r.Fetch.Urls[0]);
-        Assert.AreEqual("Loading the recording…", r.Listen.text);
+        Assert.AreEqual(Text["start.loading"], r.Listen.text);
         Assert.IsFalse(r.Captions, "no captions over silence while it loads");
         Assert.IsEmpty(r.Out.Played);
 
@@ -112,13 +112,13 @@ public class DeclarationRecordingTests
         Assert.IsFalse(r.Captions);
         r.Ticks(200);
         Assert.AreEqual(DeclarationRecording.Phase.Playing, r.Recording.State);
-        Assert.AreEqual("Stop the recording", r.Listen.text);
+        Assert.AreEqual(Text["start.stop"], r.Listen.text);
         Assert.IsTrue(r.Captions, "captions while it is heard");
 
         r.Press();
         Assert.AreEqual(DeclarationRecording.Phase.Idle, r.Recording.State);
         Assert.IsFalse(r.Captions);
-        Assert.AreEqual("Play the recording", r.Listen.text);
+        Assert.AreEqual(Text["start.listen"], r.Listen.text);
         Assert.IsFalse(r.Out.IsPlaying, "the press stops the audio");
         Assert.IsTrue(clip == null, "the clip is released on stop");
         Assert.IsEmpty(r.Said);
@@ -144,7 +144,7 @@ public class DeclarationRecordingTests
         r.Out.IsPlaying = false;                          // the clip ended
         r.Ticks(200);
         Assert.AreEqual(DeclarationRecording.Phase.Idle, r.Recording.State);
-        Assert.AreEqual("Play the recording", r.Listen.text);
+        Assert.AreEqual(Text["start.listen"], r.Listen.text);
         Assert.IsEmpty(r.Said, "the end is not a failure");
     }
 
@@ -169,7 +169,7 @@ public class DeclarationRecordingTests
         LogAssert.Expect(LogType.Warning, new Regex("^RECORDING failed .*did not decode"));
         r.Fetch.Answer();
         Assert.AreEqual(DeclarationRecording.Phase.Idle, r.Recording.State);
-        Assert.AreEqual(new[] { "The recording could not be played." }, r.Said);
+        Assert.AreEqual(new[] { Text["start.recording_failed"] }, r.Said);
     }
 
     [Test]
@@ -180,7 +180,7 @@ public class DeclarationRecordingTests
         LogAssert.Expect(LogType.Warning, new Regex("^RECORDING failed .*404"));
         r.Fetch.Pending!(null, "HTTP/1.1 404 Not Found");
         Assert.AreEqual(DeclarationRecording.Phase.Idle, r.Recording.State);
-        Assert.AreEqual(new[] { "The recording could not be played." }, r.Said);
+        Assert.AreEqual(new[] { Text["start.recording_failed"] }, r.Said);
         Assert.IsFalse(r.Captions);
         Assert.IsEmpty(r.Out.Played);
     }

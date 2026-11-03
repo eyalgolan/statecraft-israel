@@ -186,7 +186,7 @@ public class EndScreenTests
         using (var none = new Kit(En, Ended))
             CollectionAssert.DoesNotContain(none.Ui.Q<ScrollView>("end-screen-rows").Children().Select(x => x.name), "end-screen-prisoners");
         using var k = new Kit(En, s => { Ended(s); s.PrisonersReturned["lebanon"] = 4; });
-        Assert.AreEqual("Prisoners returned: 4,000", k.Line("prisoners"));
+        Assert.AreEqual(En.Format("defence.prisoners_returned", 4000), k.Line("prisoners"));
         Assert.AreEqual("שבויים שהוחזרו: \u200e4,000\u200e", EndScreenPresenter.Lines(C, k.Bridge.State, He).Single(l => l.Name == "prisoners").Text);
         // The same count as the Defence screen shows over the same state.
         k.Q("screen-defence").style.display = DisplayStyle.Flex;   // open, as ScreenNav opens it (a hidden screen does not re-render)

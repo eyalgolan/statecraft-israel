@@ -50,7 +50,7 @@ public class EventCardTests
         StringAssert.Contains("David Ben-Gurion must decide whether Israel signs.", ui.Q<Label>("event-text").text);
         Assert.AreEqual(catalog.Get("ben_gurion"), ui.Q<VisualElement>("event-image").style.backgroundImage.value.texture);
         Assert.AreEqual(DisplayStyle.None, ui.Q<Label>("event-draft").style.display.value);
-        Assert.AreEqual("Sign the armistice (costs 2.0 Attention)", ui.Q<Button>("option-sign").text);   // its price shows (#1034)
+        Assert.AreEqual(Text.Format("event.option_cost", "Sign the armistice", 2.0), ui.Q<Button>("option-sign").text);   // its price shows (#1034)
     }
 
     [Test]
@@ -181,7 +181,7 @@ public class EventCardTests
             ev.Status = "draft";
             new EventCardPresenter(ui.Root, bridge, Text, null);
             Assert.AreEqual(DisplayStyle.Flex, ui.Q<Label>("event-draft").style.display.value);
-            Assert.AreEqual("DRAFT", ui.Q<Label>("event-draft").text);
+            Assert.AreEqual(Text["event.draft"], ui.Q<Label>("event-draft").text);
         }
         finally { ev.Status = old; }
     }
@@ -509,7 +509,7 @@ public class EventCardTests
         Assert.IsNull(bridge.Queue(appoint));
         g.State.Attention = bridge.Price(appoint)!.Value;   // the rest of the turn's Attention is spent
         card.Render();
-        Assert.AreEqual("You don't have enough Attention left to answer this turn. End the turn and the decision goes to Aharon Zisling.", ui.Q<Label>("event-delegate").text);
+        Assert.AreEqual(Text.Format("event.no_attention", "Aharon Zisling"), ui.Q<Label>("event-delegate").text);
         var turn = bridge.EndTurn();
         Assert.IsTrue(turn.Why.Any(w => w.Message.StartsWith("Delegated to Aharon Zisling:")), "End Turn hands it to the appointee");
     }
@@ -631,7 +631,7 @@ sources: [{ url: ""https://example.org/record"", checked: 2026-10-17 }]
         var banner = ui.Q<Label>("event-alt-banner");
         Assert.AreEqual(DisplayStyle.Flex, banner.style.display.value);
         // The option the player took and its card's title, then the record's option on that card (Timeline.Origin, HistoricalOption).
-        Assert.AreEqual("Alternative course. It follows the government's decision: The road not taken (The road of David Ben-Gurion). In the record: What happened.", banner.text);
+        Assert.AreEqual(Text.Format("event.alt_origin", "The road not taken", "The road of David Ben-Gurion", "What happened"), banner.text);
         // The card itself is as before: its title, text and priced options.
         Assert.AreEqual("After the road", ui.Q<Label>("event-title").text);
         Assert.AreEqual("What was feared.", ui.Q<Label>("event-text").text);
@@ -651,7 +651,7 @@ sources: [{ url: ""https://example.org/record"", checked: 2026-10-17 }]
         Assert.IsNull(Timeline.HistoricalOption(c.Events.First(e => e.Id == "banner_after")), "precondition: the card it follows has no record");
         var banner = ui.Q<Label>("event-alt-banner");
         Assert.AreEqual(DisplayStyle.Flex, banner.style.display.value);
-        Assert.AreEqual("Alternative course. It follows the government's decision: Hold the course (After the road).", banner.text);
+        Assert.AreEqual(Text.Format("event.alt_origin_no_record", "Hold the course", "After the road"), banner.text);
     }
 
     [Test]
@@ -672,7 +672,7 @@ sources: [{ url: ""https://example.org/record"", checked: 2026-10-17 }]
         new EventCardPresenter(ui.Root, bridge, Text, null);
         var lines = ui.Q<VisualElement>("event-options").Query<Label>(className: EventCardPresenter.RejoinClass).ToList();
         Assert.AreEqual(1, lines.Count, "only the option with `rejoin` has the line");
-        Assert.AreEqual("Returns to the recorded course.", lines[0].text);
+        Assert.AreEqual(Text["event.rejoin"], lines[0].text);
         var children = ui.Q<VisualElement>("event-options").Children().ToList();
         Assert.AreEqual(children.IndexOf(ui.Q<Button>("option-back")) + 1, children.IndexOf(lines[0]), "the line sits under its option");
         Assert.IsFalse(lines[0].focusable, "Tab still reaches only the options");

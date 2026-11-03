@@ -1047,7 +1047,7 @@ public class UnitsInPlayTests
         var body = ProseCard(u, He).Body;
         StringAssert.Contains(formedLine, body);
         StringAssert.Contains(sinceText, body);
-        StringAssert.Contains($"At Test Place since {since}\nFormed {formed}\n", ProseCard(u, Text).Body);
+        StringAssert.Contains(Text.Format("unit.position", "Test Place", since) + "\n" + Text.Format("unit.formed", formed) + "\n", ProseCard(u, Text).Body);
     }
 
     const string FormedHe = "formed_he: סוף 1947, formed_he_sources: " + HeSource + ", formed_he_review: agent-checked, ";
@@ -1062,7 +1062,7 @@ public class UnitsInPlayTests
     {
         var u = ProseUnit(PlaceHe + sinceHe, "formed: Late 1947, " + formedHe);
         StringAssert.StartsWith(start, ProseCard(u, He).Body);
-        StringAssert.StartsWith("At Test Place since the first half of May 1948\nFormed Late 1947\n", ProseCard(u, Text).Body);
+        StringAssert.StartsWith(Text.Format("unit.position", "Test Place", "the first half of May 1948") + "\n" + Text.Format("unit.formed", "Late 1947") + "\n", ProseCard(u, Text).Body);
     }
 
     /// <summary>#1292, the issue's example: the Negev Brigade's Hebrew card has no English month name left.</summary>
@@ -1137,13 +1137,13 @@ public class UnitsInPlayTests
         PlacedToken Token(string id, GameState s) => new PlacedToken(UnitRoster.Build(Units, C, s).Single(t => t.Unit.Id == id), default);
         var start = StateAt(C.Rules.Start, 5, 0.8);
         var kiryati = UnitCard.For(Token("kiryati", start), start, text);
-        StringAssert.Contains("At Tel Aviv since February 1948", kiryati.Body);
+        StringAssert.Contains(text.Format("unit.position", "Tel Aviv", "February 1948"), kiryati.Body);
         StringAssert.DoesNotContain("15 May 1948", kiryati.Body);
         var givati = UnitCard.For(Token("givati", start), start, text);
         StringAssert.Contains("At Gedera\n", givati.Body + "\n");
         StringAssert.DoesNotContain("since", givati.Body.Split('\n').First(l => l.StartsWith("At ")), "its move south is not dated");
         var latrun = StateAt(new DateTime(1948, 5, 29), 5, 0.8);
-        StringAssert.Contains("At Hulda (headquarters for the Latrun attacks) since 24 May 1948", UnitCard.For(Token("brigade_7", latrun), latrun, text).Body);
+        StringAssert.Contains(text.Format("unit.position", "Hulda (headquarters for the Latrun attacks)", "24 May 1948"), UnitCard.For(Token("brigade_7", latrun), latrun, text).Body);
         var ship = UnitCard.For(Token("ins_haganah", start), start, text);
         StringAssert.Contains("commissioned 1948", ship.Subtitle);
         StringAssert.Contains("Wikipedia only", UnitCard.For(Token("golani", start), start, text).Note, "Golani is still Wikipedia only; Kiryati cites the Haganah lexicon (P66)");
@@ -1186,7 +1186,8 @@ public class UnitsInPlayTests
             Assert.AreEqual("", ui.Q<Label>("info-region").text, "a unit's card names no sub-district (review MF2)");
             var words = ui.Q<VisualElement>("info-panel").Query<Label>().ToList().Select(l => l.text).ToList();
             Assert.AreEqual("Golani Brigade", ui.Q<Label>("info-title").text);
-            Assert.IsTrue(words.Any(w => w.Contains("At Yavne'el since February 1948")), string.Join(" | ", words));
+            var position = Text.Format("unit.position", "Yavne'el", "February 1948");
+            Assert.IsTrue(words.Any(w => w.Contains(position)), string.Join(" | ", words));
             Assert.IsFalse(words.Any(w => w.Contains("Reserve call-up")), "the GDD loop: the call-up no longer sets the figures (#1205) | " + string.Join(" | ", words));
             Assert.IsTrue(words.Any(w => w.Contains("Wikipedia only")), "a Wikipedia-only position says it is a draft");
             Assert.AreEqual(DisplayStyle.None, ui.Q<Button>("build-camp").style.display.value, "no orders on a unit");

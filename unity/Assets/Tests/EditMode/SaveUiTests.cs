@@ -354,7 +354,7 @@ public class SaveUiTests
         Assert.DoesNotThrow(() => session = GameStart.Begin(C, store, () => 6UL, notes, Text));
         Assert.AreEqual(0, session!.State.Turn);
         Assert.AreEqual(1, notes.Count);
-        Assert.AreEqual("Your saved game could not be loaded (the file could not be read or replayed). A new game has started.", notes[0]);
+        Assert.AreEqual(Unreadable(Text), notes[0]);
         StringAssert.DoesNotContain("disk gone", notes[0]);          // raw exception text can carry file paths: it is logged, not shown
         Assert.IsTrue(store.SetAsideCalled);
     }
@@ -433,7 +433,7 @@ public class SaveUiTests
         ui.Press("new-game");
         Assert.AreSame(session, bridge.Session, "one press after a change only arms again");
         Assert.IsTrue(newGame.Armed);
-        Assert.AreEqual("Press New game again to abandon this game and start over.", ui.Q<Label>("toast").text);
+        Assert.AreEqual(Text["newgame.confirm"], ui.Q<Label>("toast").text);
         Assert.AreEqual(1, bridge.Queued.Count);
     }
 
@@ -449,7 +449,7 @@ public class SaveUiTests
         ui.Press("new-game");
         Assert.DoesNotThrow(() => ui.Press("new-game"));
         Assert.AreEqual(0, bridge.State.Turn);
-        StringAssert.StartsWith("The old saved game could not be removed", ui.Q<Label>("toast").text);
+        StringAssert.StartsWith(Text["newgame.delete_failed"], ui.Q<Label>("toast").text);
     }
 
     sealed class DeleteFailsStore : SaveStore
@@ -470,7 +470,7 @@ public class SaveUiTests
         var newGame = new NewGamePresenter(ui.Root, bridge, store, toast, Text, () => 4UL);
         ui.Press("new-game");
         Assert.IsTrue(newGame.Armed);
-        Assert.AreEqual("Press New game again to abandon this game and start over.", ui.Q<UnityEngine.UIElements.Label>("toast").text);
+        Assert.AreEqual(Text["newgame.confirm"], ui.Q<UnityEngine.UIElements.Label>("toast").text);
         Assert.AreEqual(1, bridge.State.Turn);
         ui.Press("new-game");
         Assert.AreEqual(0, bridge.State.Turn);
@@ -502,7 +502,7 @@ public class SaveUiTests
             Assert.DoesNotThrow(() => bridge.EndTurn());
             Assert.AreEqual(1, bridge.State.Turn);
             Assert.AreEqual(1, errors.Count);
-            StringAssert.StartsWith("Your game could not be saved", errors[0]);
+            StringAssert.StartsWith(Text["save.write_failed"], errors[0]);
         }
         finally { File.Delete(file); }
     }
@@ -563,9 +563,9 @@ public class SaveUiTests
         new NewGamePresenter(ui.Root, bridge, store, toast, Text, () => 4UL);
         foreach (var id in bridge.NeedsOrders.ToList()) bridge.Skip(id);
         ui.Press("end-turn");
-        Assert.AreEqual("Turn 1", ui.Q<Label>("turn").text);
+        Assert.AreEqual(Text.Format("hud.turn", 1), ui.Q<Label>("turn").text);
         ui.Press("new-game"); ui.Press("new-game");
-        Assert.AreEqual("Turn 0", ui.Q<Label>("turn").text);
+        Assert.AreEqual(Text.Format("hud.turn", 0), ui.Q<Label>("turn").text);
         Assert.AreEqual(DisplayStyle.None, ui.Q<Label>("toast").style.display.value);
     }
 

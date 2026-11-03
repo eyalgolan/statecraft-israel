@@ -171,7 +171,7 @@ public class SubdistrictTests
         // sub-districts stay loaded under them as the base (and outline the frontier)
         Assert.AreEqual("control_1948_49:opening", current!.Name);
         var label = Object.FindFirstObjectByType<UIDocument>().rootVisualElement.Q<Label>("map-layer");
-        StringAssert.Contains("Front lines of 9 July 1948, adjusted", label.text, "labelled on screen");
+        StringAssert.Contains(Text.Format("map.caption_adjusted", "9 July 1948"), label.text, "labelled on screen");
         Assert.AreEqual(DisplayStyle.Flex, label.style.display.value, "shown while the layer is drawn");
         Assert.AreEqual(Subdistricts1948.Parse(FileText).Layer.Count, root.Regions!.Subdistricts.Layer.Count);
     }

@@ -72,12 +72,13 @@ public class PromoScreensTests
                 Assert.AreEqual(i < seats, dots[i].HasValue && coalitionColours.Contains(dots[i]!.Value), $"{where}: seat {i}");
             Assert.AreEqual(size, dots.Count);
             Assert.AreEqual(leg.Size.ToString(), ui.Q<Label>("cabinet-house-size").text, where);
-            Assert.AreEqual($"Coalition: {seats} of {size} seats · stability {PlayerText.Percent(g.State.CoalitionStability)}", ui.Q<Label>("cabinet-coalition").text, where);
-            Assert.AreEqual($"Opposition: {leg.Seats.Where(kv => !gov.CoalitionOn(g.State.Date).Contains(kv.Key)).Sum(kv => kv.Value)} seats", ui.Q<Label>("cabinet-opposition").text, where);
-            Assert.AreEqual($"Majority: {size / 2 + 1} seats", ui.Q<Label>("cabinet-majority").text, where);
+            var unit = Text[leg.Elected.HasValue ? "cabinet.seats" : "cabinet.seats_appointed"];   // the seat unit by CabinetPresenter.SeatUnit's rule (#193)
+            Assert.AreEqual(Text.Format("cabinet.coalition", seats, size, PlayerText.Percent(g.State.CoalitionStability), unit), ui.Q<Label>("cabinet-coalition").text, where);
+            Assert.AreEqual(Text.Format("cabinet.opposition", leg.Seats.Where(kv => !gov.CoalitionOn(g.State.Date).Contains(kv.Key)).Sum(kv => kv.Value), unit), ui.Q<Label>("cabinet-opposition").text, where);
+            Assert.AreEqual(Text.Format("cabinet.majority", size / 2 + 1, unit), ui.Q<Label>("cabinet-majority").text, where);
             var top = leg.Seats.OrderByDescending(kv => kv.Value).First();
-            Assert.AreEqual($"Largest party: {C.Parties.First(p => p.Id == top.Key).Name}, {top.Value} seats", ui.Q<Label>("cabinet-largest").text, where);
-            Assert.AreEqual($"Answerable to the {leg.Body} · {leg.Size} members", ui.Q<Label>("cabinet-legislature").text, where);
+            Assert.AreEqual(Text.Format("cabinet.largest", C.Parties.First(p => p.Id == top.Key).Name, top.Value, unit), ui.Q<Label>("cabinet-largest").text, where);
+            Assert.AreEqual(Text.Format("cabinet.legislature", leg.Body, leg.Size), ui.Q<Label>("cabinet-legislature").text, where);
             Assert.AreEqual((float)g.State.CoalitionStability, ui.Q<UiBar>("cabinet-stability").Value, 1e-6f, where);
             foreach (var kv in leg.Seats.Where(kv => kv.Value > 0))
                 Assert.AreEqual($"{C.Parties.First(p => p.Id == kv.Key).Name} {kv.Value}", ui.Q<Label>("party-" + kv.Key + "-label").text, where);
@@ -130,11 +131,11 @@ public class PromoScreensTests
             var cabinet = new CabinetPresenter(ui.Root, new SimBridge(g, Text), Text, null);
             string Side(string party) => ((Label)ui.Q<VisualElement>("party-" + party).parent.Children().First()).text;
             var leaving = new[] { "general_zionists", "sephardim", "yemenite_association" };
-            foreach (var p in leaving) Assert.AreEqual("Coalition", Side(p), "24 May 1953: " + p);
+            foreach (var p in leaving) Assert.AreEqual(Text["cabinet.coalition_group"], Side(p), "24 May 1953: " + p);
             g.State.Date = change;
             cabinet.Render();
-            foreach (var p in leaving) Assert.AreEqual("Opposition", Side(p), "25 May 1953, the same screen: " + p);
-            Assert.AreEqual("Coalition", Side("mapai"), "25 May 1953: mapai");
+            foreach (var p in leaving) Assert.AreEqual(Text["cabinet.opposition_group"], Side(p), "25 May 1953, the same screen: " + p);
+            Assert.AreEqual(Text["cabinet.coalition_group"], Side("mapai"), "25 May 1953: mapai");
             cabinet.Dispose();
         }
 
@@ -148,7 +149,7 @@ public class PromoScreensTests
             var cabinet = new CabinetPresenter(ui.Root, new SimBridge(start, Text), Text, null);
             var parties = ui.Q<VisualElement>("cabinet-parties");
             Assert.AreSame(parties, ui.Q<VisualElement>("party-unrecorded").parent, "the seats not recorded are on neither side");
-            CollectionAssert.AreEqual(new[] { "Coalition" }, parties.Query<Label>(className: "party-group-heading").ToList().Select(l => l.text),
+            CollectionAssert.AreEqual(new[] { Text["cabinet.coalition_group"] }, parties.Query<Label>(className: "party-group-heading").ToList().Select(l => l.text),
                 "no heading over an opposition without a party");
             cabinet.Dispose();
         }
@@ -238,7 +239,7 @@ public class PromoScreensTests
                 Assert.AreEqual(seat.Office.Title, ui.Q<Label>(id + "-office").text, id);
             if (seat.Holder == null)
             {
-                Assert.AreEqual("(vacant)", ui.Q<Label>(id + "-holder").text, id);
+                Assert.AreEqual(Text["cabinet.vacant"], ui.Q<Label>(id + "-holder").text, id);
                 Assert.AreEqual(DisplayStyle.None, ui.Q<VisualElement>(id + "-competence-row").style.display.value, id + ": no bars for a vacancy");
                 continue;
             }
@@ -255,7 +256,7 @@ public class PromoScreensTests
         var held = lineup.Where(x => x.Holder?.Id == pm.Id).Select(x => x.Office.Title).ToList();
         Assert.AreEqual(string.Join(" · ", held), ui.Q<Label>("seat-prime_minister-office").text);
         CollectionAssert.Contains(held, "Minister of Defense", "Ben-Gurion held Defence too");
-        Assert.AreEqual("Party: Mapai", ui.Q<Label>("seat-prime_minister-party").text);
+        Assert.AreEqual(Text.Format("card.party", "Mapai"), ui.Q<Label>("seat-prime_minister-party").text);
         Assert.IsNull(ui.Q<ScrollView>("cabinet-seats").Q<Button>("seat-prime_minister"), "the PM is the side card, not a grid card");
         cabinet.Dispose();
         // Review M3: a disposed screen keeps no card, chip or seat.
@@ -393,8 +394,8 @@ public class PromoScreensTests
         Assert.AreEqual((float)SecuritySystem.MinMobilization(C, g.State.Date, g.State.Rung), bar.Mark!.Value, 1e-6f, "the level's minimum is marked");
         Assert.AreEqual(PlayerText.Percent(g.State.Mobilization), ui.Q<Label>("mob-percent").text);
         Assert.AreEqual((float)g.State.Budget[DefencePresenter.BudgetLine], ui.Q<UiBar>("defence-budget-bar").Value, 1e-6f);
-        Assert.AreEqual($"{PlayerText.Percent(g.State.Budget[DefencePresenter.BudgetLine])} of budget spending", ui.Q<Label>("defence-budget-share").text);
-        Assert.AreEqual("LEADERSHIP", ui.Q<Label>("defence-title-leadership").text, "the caption from strings, in capitals");
+        Assert.AreEqual(Text.Format("defence.budget_share", PlayerText.Percent(g.State.Budget[DefencePresenter.BudgetLine])), ui.Q<Label>("defence-budget-share").text);
+        Assert.AreEqual(Text["defence.section_leadership"].ToUpperInvariant(), ui.Q<Label>("defence-title-leadership").text, "the caption from strings, in capitals");
         // An order to lower the level: the target rung is marked, and the bar's minimum follows it.
         ui.Press("de-escalate");
         Assert.IsTrue(ui.Q<VisualElement>("rung-4").ClassListContains("rung-target"));
@@ -411,7 +412,7 @@ public class PromoScreensTests
         shares[DefencePresenter.BudgetLine] -= 0.05; shares[other] += 0.05;
         Assert.IsNull(bridge.Queue(new AllocateBudget(shares)));
         Assert.AreEqual((float)shares[DefencePresenter.BudgetLine], ui.Q<UiBar>("defence-budget-bar").Value, 1e-6f);
-        Assert.AreEqual($"{PlayerText.Percent(shares[DefencePresenter.BudgetLine])} of budget spending", ui.Q<Label>("defence-budget-share").text);
+        Assert.AreEqual(Text.Format("defence.budget_share", PlayerText.Percent(shares[DefencePresenter.BudgetLine])), ui.Q<Label>("defence-budget-share").text);
         defence.Dispose();
         foreach (var office in DefencePresenter.Leaders) Assert.AreEqual(0, ui.Q<VisualElement>("lead-" + office).childCount, office + ": emptied on Dispose");
         Assert.IsNull(bar.Mark);

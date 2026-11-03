@@ -114,12 +114,12 @@ public class OutcomeClipTests
         Assert.AreEqual("maabarot_policy", r.Outcomes.Showing?.Event);
         StringAssert.EndsWith("/video/maabarot_policy-outcome.mp4", r.OutcomePlayer.Current, "its clip is asked of its own player");
         var option = C.Events.First(e => e.Id == "maabarot_policy").Options.First(o => o.Id == "maabarot");
-        Assert.AreEqual("Your order: " + option.Text, r.Outcomes.Caption);
+        Assert.AreEqual(Text.Format("outcome.order", option.Text), r.Outcomes.Caption);
         Assert.IsTrue(r.Open);
         Assert.IsFalse(r.Root.Q("top-bar").enabledSelf, "the bar waits while it plays");
         Assert.IsFalse(r.Root.Q("info-panel").enabledSelf);
         Assert.IsFalse(r.Root.Q("event-layer").enabledSelf);
-        Assert.AreEqual("AI-generated illustration", r.Root.Q<Label>("outcome-label").text);
+        Assert.AreEqual(Text["event.ai_label"], r.Root.Q<Label>("outcome-label").text);
     }
 
     /// <summary>#1210: in Hebrew the caption is the order in the option's text_he, the way the event card shows it; an

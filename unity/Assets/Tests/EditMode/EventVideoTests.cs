@@ -150,16 +150,16 @@ public class EventVideoTests
             yield return Frames(4);
             var credit = r.Credit.text;
             Assert.IsTrue(r.Shows("event-illustration"), "a clip and a photograph: the switch shows");
-            Assert.AreEqual("Illustration", r.Switch.text);
+            Assert.AreEqual(Text["event.illustration"], r.Switch.text);
             Press(r.Switch);
             yield return Frames(2);
-            Assert.AreEqual("Photograph", r.Switch.text);
-            Assert.AreEqual("AI-generated illustration", r.Credit.text, "the AI label replaces the credit");
+            Assert.AreEqual(Text["event.photo"], r.Switch.text);
+            Assert.AreEqual(Text["event.ai_label"], r.Credit.text, "the AI label replaces the credit");
             Assert.AreEqual(row.Alt, r.Root.Q("event-photo").tooltip, "the clip's alt text");
             Assert.IsTrue(r.Card.IllustrationShown);
             Press(r.Switch);
             yield return Frames(2);
-            Assert.AreEqual("Illustration", r.Switch.text);
+            Assert.AreEqual(Text["event.illustration"], r.Switch.text);
             Assert.AreEqual(credit, r.Credit.text, "the photograph's credit is back");
             Assert.IsFalse(r.Card.IllustrationShown);
         }
@@ -183,7 +183,7 @@ public class EventVideoTests
         Assert.IsFalse(r.Card.IllustrationShown, "the failed clip is stopped");
         Assert.IsFalse(r.Shows("event-illustration"), "and the switch is gone for this event");
         Assert.AreEqual(credit, r.Credit.text, "the photograph and its credit are back");
-        Assert.AreEqual("Illustration", r.Switch.text);
+        Assert.AreEqual(Text["event.illustration"], r.Switch.text);
     }
 
     [UnityTest]

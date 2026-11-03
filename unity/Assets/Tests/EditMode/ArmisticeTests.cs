@@ -143,10 +143,10 @@ public class ArmisticeTests
     {
         var m = Regions();
         Assert.AreEqual("Mandate sub-districts, 1947", L(m, Start));
-        Assert.AreEqual("Mandate sub-districts, 1947 · 1949 armistice lines: Egypt", L(m, new DateTime(1949, 3, 1)));
-        Assert.AreEqual("Mandate sub-districts, 1947 · 1949 armistice lines: Egypt, Lebanon, Jordan (low accuracy)", L(m, new DateTime(1949, 4, 10)));
-        StringAssert.EndsWith("Jordan (low accuracy), Syria", L(m, new DateTime(1949, 8, 1)));
-        StringAssert.Contains("Egypt (and the 1950 modus vivendi)", L(m, new DateTime(1950, 3, 1)));
+        Assert.AreEqual(Text.Format("map.layer_with_armistice", "Mandate sub-districts, 1947", "1949 armistice lines", "Egypt"), L(m, new DateTime(1949, 3, 1)));
+        Assert.AreEqual(Text.Format("map.layer_with_armistice", "Mandate sub-districts, 1947", "1949 armistice lines", "Egypt, Lebanon, " + Text.Format("map.layer_front_low", "Jordan")), L(m, new DateTime(1949, 4, 10)));
+        StringAssert.EndsWith(Text.Format("map.layer_front_low", "Jordan") + ", Syria", L(m, new DateTime(1949, 8, 1)));
+        StringAssert.Contains(Text.Format("map.layer_front_note", "Egypt", "1950 modus vivendi"), L(m, new DateTime(1950, 3, 1)));
         StringAssert.DoesNotContain("modus vivendi", L(m, new DateTime(1950, 2, 21)));
         // a front without line data says so (the rule for any front the data leaves out)
         var noJordan = new MapRegions(Subdistricts1948.Parse(SubText), Armistice1949.Parse(
@@ -250,7 +250,7 @@ public class ArmisticeTests
         root.Begin(Inputs, 0);
         // Since #674 the start shows sides (ControlTests); the armistice layer's own label is tested on MapRegions above
         Assert.AreEqual("control_1948_49:opening", MapBorders.Current!.Name);
-        StringAssert.Contains("Front lines of 9 July 1948, adjusted", Object.FindFirstObjectByType<UIDocument>().rootVisualElement.Q<Label>("map-layer").text);
+        StringAssert.Contains(Text.Format("map.caption_adjusted", "9 July 1948"), Object.FindFirstObjectByType<UIDocument>().rootVisualElement.Q<Label>("map-layer").text);
     }
 
     [Test]
@@ -289,7 +289,7 @@ public class ArmisticeTests
     {
         var c = Inputs.Content; var t = Text;
         var text = L(Regions(), new DateTime(1950, 3, 1));
-        StringAssert.Contains("Jordan (low accuracy)", text);
+        StringAssert.Contains(t.Format("map.layer_front_low", "Jordan"), text);
         foreach (var (w, h) in new[] { (1920, 1080), (1280, 720), (1531, 784), (1366, 657), (2560, 1080), (1920, 900), (1280, 1024),
                                        (960, 600), (1024, 768), (390, 844), (375, 667), (1600, 757),
                                        // the two-row bar's shapes (#380's re-tier gives a square window two rows; review B1 of #831)

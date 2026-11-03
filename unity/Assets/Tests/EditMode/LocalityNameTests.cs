@@ -64,8 +64,8 @@ public class LocalityNameTests
         var (q, r) = HexPicker.FromLonLat(p1.Settlement.Lon, p1.Settlement.Lat, map.Hexes.bounds, map.Hexes.hex_size_km);
         info.Show(q, r);
         Assert.AreEqual(DisplayStyle.Flex, label.style.display.value);
-        StringAssert.StartsWith("1948 localities: ", label.text);
-        StringAssert.Contains($"{p1.Settlement.Name} (today: {Localities.TodayName(p1, false)})", label.text);
+        StringAssert.StartsWith(En.Format("info.localities", ""), label.text);
+        StringAssert.Contains(En.Format("info.locality_today", p1.Settlement.Name, Localities.TodayName(p1, false)!), label.text);
         foreach (var p in at(q, r))
         {
             StringAssert.Contains(p.Settlement.Name, label.text, "every locality of the hex is listed");
@@ -146,7 +146,7 @@ public class LocalityNameTests
         Assert.AreEqual("יישובים ב-1948: סאלחיה", InfoPanelPresenter.LocalitiesText(He, new[] { salihiyya }));
         Assert.AreEqual("יישובים ב-1948: נענה", InfoPanelPresenter.LocalitiesText(He, new[] { naana }));
         Assert.AreEqual("יישובים ב-1948: אום אל-פחם", InfoPanelPresenter.LocalitiesText(He, new[] { fahm }));
-        Assert.AreEqual("1948 localities: Beisan (today: Beit She'an), Salihiya, Na'ana, Umm el Fahm (today: Umm al-Fahm)",
+        Assert.AreEqual(En.Format("info.localities", En.Format("info.locality_today", "Beisan", "Beit She'an") + ", Salihiya, Na'ana, " + En.Format("info.locality_today", "Umm el Fahm", "Umm al-Fahm")),
             InfoPanelPresenter.LocalitiesText(En, new[] { beisan, salihiyya, naana, fahm }));
     }
 

@@ -338,14 +338,13 @@ public class TimelineScreenTests
         {
             Assert.IsNull(label, "design cannot be represented as a documented proposal");
             var design = Rows(ui.Root)[0].Q<Label>("timeline-design"); Assert.IsNotNull(design, "GDD195 requires identifying a design assumption");
-            Assert.AreEqual(hebrew ? "הנחת תכנון." : "Design assumption.", design.text);
+            Assert.AreEqual(hebrew ? "הנחת תכנון." : text["timeline.alt_design"], design.text);
             Assert.IsFalse(design.focusable); return;
         }
         Assert.IsNotNull(label, "the chosen considered alternative needs its recorded attribution (Q-ALT-7)");
         Assert.IsNull(Rows(ui.Root)[0].Q<Label>("timeline-design"), "a considered alternative is not a design-only assumption");
-        if (!hebrew) Assert.AreEqual(basis == OptionAlternative.Proposed
-            ? "Not adopted. Proposed by Fixture body, 16 May 1948."
-            : "Not adopted. Debated by Fixture body, 16 May 1948.", label.text);
+        if (!hebrew) Assert.AreEqual(text.Format(basis == OptionAlternative.Proposed ? "timeline.alt_proposed" : "timeline.alt_debated",
+            "Fixture body", "16 May 1948"), label.text);
         else
         {
             StringAssert.Contains(basis == OptionAlternative.Proposed ? "הוצע בידי" : "נדון בידי", label.text);

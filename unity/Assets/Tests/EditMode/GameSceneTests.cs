@@ -645,7 +645,7 @@ public class GameSceneTests
         Directory.CreateDirectory(saveDir);
         File.WriteAllText(Path.Combine(saveDir, SaveStore.AutosaveName), "not a save");
         var root = Boot();
-        StringAssert.StartsWith("Your saved game could not be loaded", Ui.Q<Label>("toast").text);
+        StringAssert.StartsWith(Text.Format("save.unreadable", Text["save.reason_other"]), Ui.Q<Label>("toast").text);
         Assert.IsTrue(File.Exists(Path.Combine(saveDir, "autosave.bad.txt")));
         root.Bridge!.EndTurn();
         Assert.IsTrue(File.Exists(Path.Combine(saveDir, SaveStore.AutosaveName)), "the turn was autosaved");
@@ -1070,7 +1070,7 @@ public class GameSceneTests
             for (int i = 0; i < 5; i++) yield return null;
             var ui = doc.rootVisualElement;
             // #637: the player reads a short localised reason; the content error stays in Error and the log.
-            Assert.AreEqual("Statecraft could not start: its files failed to load. Reload the page.", ui.Q<Label>("loading").text);
+            Assert.AreEqual(Text.Format("boot.failed", Text["boot.reason_other"]), ui.Q<Label>("loading").text);
             Assert.AreEqual(DisplayStyle.Flex, ui.Q<Label>("loading").resolvedStyle.display);
             Assert.IsTrue(ui.Q("root").ClassListContains("loading"), "the panels stay hidden");
             Assert.AreEqual(Visibility.Hidden, ui.Q("info-panel").resolvedStyle.visibility);
@@ -1110,7 +1110,7 @@ public class GameSceneTests
             _ = boot.BootAsync(() => throw new IOException("Could not find file '/Users/someone/Statecraft Israel.app/Contents/Resources/Data/StreamingAssets/map/heightmap.json'."));
             for (int i = 0; i < 3; i++) yield return null;
             var line = doc.rootVisualElement.Q<Label>("loading").text;
-            Assert.AreEqual("Statecraft could not start: its files failed to load. Reload the page.", line);   // #637: no exception text
+            Assert.AreEqual(Text.Format("boot.failed", Text["boot.reason_other"]), line);   // #637: no exception text
             StringAssert.DoesNotContain("/Users/", line);
         }
         finally

@@ -60,11 +60,11 @@ public class DefenceScreenTests
             Assert.IsTrue(ui.Q<VisualElement>("rung-5").ClassListContains("rung-current"));
             Assert.IsFalse(ui.Q<VisualElement>("rung-2").ClassListContains("rung-current"));
             for (int rung = 1; rung <= 5; rung++)   // the GDD game plays monthly turns on every rung (R-TURN-001)
-                Assert.AreEqual("turns of a month", ui.Q<Label>($"rung-{rung}-turn").text, $"rung {rung}");
+                Assert.AreEqual(Text["defence.turn_month"], ui.Q<Label>($"rung-{rung}-turn").text, $"rung {rung}");
             Assert.AreEqual(DisplayStyle.None, ui.Q<Label>("ceasefire").style.display.value);   // no clock in the GDD loop (R-WAR-003)
-            Assert.AreEqual("Minister of Defense David Ben-Gurion · Chief of Staff Yaakov Dori", ui.Q<Label>("defence-command").text);
-            Assert.AreEqual("80% of reserves called up (level 5 needs at least 80%)", ui.Q<Label>("mob-level").text);
-            Assert.AreEqual("Costs IL\u00A048.0m a year in pay and lost work", ui.Q<Label>("mob-cost").text);
+            Assert.AreEqual(Text.Format("defence.command", "David Ben-Gurion", "Yaakov Dori"), ui.Q<Label>("defence-command").text);
+            Assert.AreEqual(Text.Format("defence.mob", "80%", 5, "80%"), ui.Q<Label>("mob-level").text);
+            Assert.AreEqual(Text.Format("defence.mob_cost", "IL\u00A048.0m"), ui.Q<Label>("mob-cost").text);
             Assert.IsFalse(ui.Q<Button>("escalate").enabledSelf);
         }
     }
@@ -76,8 +76,8 @@ public class DefenceScreenTests
         using (ui)
         {
             ui.Press("de-escalate");
-            Assert.AreEqual("Ordered: level 5 to 4", ui.Q<Label>("order-pending").text);
-            Assert.AreEqual("80% of reserves called up (level 4 needs at least 40%)", ui.Q<Label>("mob-level").text);
+            Assert.AreEqual(Text.Format("defence.order", 5, 4), ui.Q<Label>("order-pending").text);
+            Assert.AreEqual(Text.Format("defence.mob", "80%", 4, "40%"), ui.Q<Label>("mob-level").text);
             ui.Press("mob-down");
             Assert.AreEqual(0.75, defence.ProposedMobilization, 1e-9);
             bridge.EndTurn();
@@ -115,8 +115,8 @@ public class DefenceScreenTests
             bridge.EndTurn();
             Assert.AreEqual(0.4, bridge.State.Mobilization, 1e-9);
             ui.Press("escalate");                                                          // back to full war needs 80% again
-            StringAssert.StartsWith("80% of reserves called up (level 5 needs at least 80%)", ui.Q<Label>("mob-level").text);
-            Assert.AreEqual("Costs IL\u00A048.0m a year in pay and lost work", ui.Q<Label>("mob-cost").text);
+            StringAssert.StartsWith(Text.Format("defence.mob", "80%", 5, "80%"), ui.Q<Label>("mob-level").text);
+            Assert.AreEqual(Text.Format("defence.mob_cost", "IL\u00A048.0m"), ui.Q<Label>("mob-cost").text);
             bridge.EndTurn();
             Assert.AreEqual(0.8, bridge.State.Mobilization, 1e-9);
             Assert.AreEqual(5, bridge.State.Rung);
@@ -132,7 +132,7 @@ public class DefenceScreenTests
             Assert.IsNull(bridge.Queue(new SetPolicy(C.Policies[0].Id, 0.5)));
             Assert.IsNull(bridge.Queue(new SetPolicy(C.Policies[1].Id, 0.5)));
             ui.Press("de-escalate");
-            Assert.AreEqual("Not done: Not enough attention (need 2.0, have 0.0)", ui.Q<Label>("toast").text);
+            Assert.AreEqual(Text.Format("toast.refused", Text.Format("order.no_attention", 2.0, 0.0)), ui.Q<Label>("toast").text);
             Assert.AreEqual("", ui.Q<Label>("order-pending").text);
         }
     }
@@ -157,7 +157,7 @@ public class DefenceScreenTests
             foreach (var id in levers)
                 Assert.AreEqual(DisplayStyle.Flex, legacy.Q<Button>(id).style.display.value, id);
             Assert.AreEqual(DisplayStyle.Flex, legacy.Q<Label>("ceasefire").style.display.value);
-            Assert.AreEqual("If full war goes on, the UN imposes a ceasefire in 52 weeks", legacy.Q<Label>("ceasefire").text);
+            Assert.AreEqual(Text.Format("defence.ceasefire", 52), legacy.Q<Label>("ceasefire").text);
         }
     }
 
@@ -184,10 +184,10 @@ public class DefenceScreenTests
         var (ui, bridge, defence) = Open();
         using (ui)
         {
-            Assert.AreEqual("War state: level 5, set by the events of the war", ui.Q<Label>("war-state").text);
+            Assert.AreEqual(Text.Format("defence.war_state", 5), ui.Q<Label>("war-state").text);
             bridge.State.Rung = 3;
             defence.Render();
-            Assert.AreEqual("War state: level 3, set by the events of the war", ui.Q<Label>("war-state").text);
+            Assert.AreEqual(Text.Format("defence.war_state", 3), ui.Q<Label>("war-state").text);
             Assert.AreEqual(DisplayStyle.Flex, ui.Q<Label>("war-state").style.display.value);
         }
         var (legacy, _, _) = OpenLegacy();
@@ -210,7 +210,7 @@ public class DefenceScreenTests
             bridge.State.ChosenOptions["first_truce"] = "accept";
             defence.Render();
             Assert.AreEqual(DisplayStyle.Flex, truce.style.display.value);
-            Assert.AreEqual("A truce is in force: our units cannot attack until 8 July 1948", truce.text);
+            Assert.AreEqual(Text.Format("defence.truce", "8 July 1948"), truce.text);
             Assert.AreEqual(DisplayStyle.None, ui.Q<Label>("ceasefire").style.display.value, "no ceasefire clock (R-WAR-003)");
             bridge.State.Date = new System.DateTime(1948, 7, 15);
             defence.Render();
@@ -254,15 +254,15 @@ public class DefenceScreenTests
         using (ui)
         {
             Assert.AreEqual(DisplayStyle.Flex, ui.Q<VisualElement>("defence-prisoners").style.display.value);
-            Assert.AreEqual("Enemy prisoners held: 0", ui.Q<Label>("prisoners-held").text);
+            Assert.AreEqual(Text.Format("defence.prisoners_held", 0), ui.Q<Label>("prisoners-held").text);
             var s = bridge.State;
             s.PrisonersHeld["egypt"] = 2; s.PrisonersHeld["jordan"] = 1;
             s.PrisonersReturned["lebanon"] = 4;
             s.SoldiersHeld["egypt"] = 1;
             defence.Render();
-            Assert.AreEqual("Enemy prisoners held: 3,000", ui.Q<Label>("prisoners-held").text);
-            Assert.AreEqual("Prisoners returned: 4,000", ui.Q<Label>("prisoners-returned").text);
-            Assert.AreEqual("Our soldiers held by the enemy: 1,000", ui.Q<Label>("soldiers-held").text);
+            Assert.AreEqual(Text.Format("defence.prisoners_held", 3000), ui.Q<Label>("prisoners-held").text);
+            Assert.AreEqual(Text.Format("defence.prisoners_returned", 4000), ui.Q<Label>("prisoners-returned").text);
+            Assert.AreEqual(Text.Format("defence.soldiers_held", 1000), ui.Q<Label>("soldiers-held").text);
         }
         var (legacy, _, _) = OpenLegacy();
         using (legacy) Assert.AreEqual(DisplayStyle.None, legacy.Q<VisualElement>("defence-prisoners").style.display.value);
@@ -304,7 +304,7 @@ public class DefenceScreenTests
         using (ui)
         {
             bridge.EndTurn();   // a monthly turn counts 4 weeks (SecuritySystem.Weeks) since the GDD cutover
-            Assert.AreEqual("If full war goes on, the UN imposes a ceasefire in 48 weeks", ui.Q<Label>("ceasefire").text);
+            Assert.AreEqual(Text.Format("defence.ceasefire", 48), ui.Q<Label>("ceasefire").text);
             Assert.AreEqual(48, bridge.State.CeasefireWeeksLeft);
         }
     }
@@ -317,9 +317,9 @@ public class DefenceScreenTests
         {
             ui.Press("de-escalate");
             Assert.AreEqual(DisplayStyle.Flex, ui.Q<Label>("ceasefire").style.display.value);
-            Assert.AreEqual("The UN ceasefire clock stops if the level is lowered", ui.Q<Label>("ceasefire").text);
+            Assert.AreEqual(Text["defence.ceasefire_stops"], ui.Q<Label>("ceasefire").text);
             ui.Press("escalate");
-            Assert.AreEqual("If full war goes on, the UN imposes a ceasefire in 52 weeks", ui.Q<Label>("ceasefire").text);
+            Assert.AreEqual(Text.Format("defence.ceasefire", 52), ui.Q<Label>("ceasefire").text);
         }
     }
 
@@ -334,7 +334,7 @@ public class DefenceScreenTests
             Assert.AreEqual(DisplayStyle.None, ui.Q<Label>("ceasefire").style.display.value);
             ui.Press("escalate");
             Assert.AreEqual(DisplayStyle.Flex, ui.Q<Label>("ceasefire").style.display.value);
-            Assert.AreEqual($"UN ceasefire: {C.Rules.CeasefireWeeks} weeks once level 5 is reached", ui.Q<Label>("ceasefire").text);
+            Assert.AreEqual(Text.Format("defence.ceasefire_starts", C.Rules.CeasefireWeeks), ui.Q<Label>("ceasefire").text);
             bridge.EndTurn();
             Assert.AreEqual(5, bridge.State.Rung);
             Assert.AreEqual(C.Rules.CeasefireWeeks - 4, bridge.State.CeasefireWeeksLeft);   // the clock started and ran one monthly turn (4 weeks)
@@ -375,7 +375,7 @@ public class DefenceScreenTests
         using var ui = new UiTestKit();
         var bridge = new SimBridge(GameSession.New(c, GoldenRun.Seed, Mode.Historical), Text);
         new DefencePresenter(ui.Root, bridge, Text);
-        StringAssert.StartsWith("Minister of Defense (vacant) · Chief of Staff ", ui.Q<Label>("defence-command").text);
+        StringAssert.StartsWith(Text.Format("defence.command", Text["cabinet.vacant"], ""), ui.Q<Label>("defence-command").text);
         Assert.AreEqual(Text.Format("defence.mob_cost", PlayerText.Money(c, "treasury", EconomySystem.MobilizationCost(c, bridge.State.Date, bridge.State.Mobilization))),
             ui.Q<Label>("mob-cost").text);
     }

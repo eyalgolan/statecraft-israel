@@ -65,7 +65,7 @@ public class MapActionUiTests
         StringAssert.StartsWith("Coastal plain · elevation ", ui.Q<Label>("info-subtitle").text);
         StringAssert.DoesNotContain("hex (", ui.Q<Label>("info-subtitle").text, "no debug coordinates in player text (playtest 2, P2-6)");
         Assert.IsFalse(ui.Q<Button>("build-camp").enabledSelf);
-        Assert.AreEqual("Transit camps and housing projects can be placed from 1 January 1950", ui.Q<Label>("info-reason").text);
+        Assert.AreEqual(Text.Format("info.map_action_reason.all_from", "1 January 1950"), ui.Q<Label>("info-reason").text);
     }
 
     /// <summary>#881: the sim supplies a refusal kind and ISO date; the Hebrew UI supplies both the words and Hebrew date.</summary>
@@ -91,12 +91,12 @@ public class MapActionUiTests
         var tlv = C.SettlementHexes.Single(s => s.Id == "tel_aviv");
         info.Show(tlv.Q, tlv.R);
         Assert.IsTrue(ui.Q<Button>("build-camp").enabledSelf, ui.Q<Label>("info-reason").text);
-        Assert.AreEqual("Place a transit camp (IL\u00A01.5m)", ui.Q<Button>("build-camp").text);
+        Assert.AreEqual(Text.Format("info.build_camp", "IL\u00A01.5m"), ui.Q<Button>("build-camp").text);
         ui.Press("build-camp");
-        Assert.AreEqual("Ordered: A transit camp, at End turn", ui.Q<Label>("info-placement").text);
+        Assert.AreEqual(Text.Format("info.queued", "A transit camp"), ui.Q<Label>("info-placement").text);
         bridge.EndTurn();
         Assert.AreEqual(MapActions.TransitCamp, MapActions.At(bridge.State, tlv.Q, tlv.R)!.Action);
-        Assert.AreEqual("A transit camp built here in August 1950", ui.Q<Label>("info-placement").text);
+        Assert.AreEqual(Text.Format("info.built", "A transit camp", "August 1950"), ui.Q<Label>("info-placement").text);
     }
 
     /// <summary>#701: in the Hebrew UI the build date names its month in Hebrew (date.month_year), not "August 1950". The line
@@ -439,7 +439,7 @@ public class MapActionUiTests
         try
         {
             info.Show(tlv.Q, tlv.R);
-            Assert.AreEqual("Build housing", ui.Q<Button>("build-housing").text);
+            Assert.AreEqual(Text["info.build_housing_plain"], ui.Q<Button>("build-housing").text);
             Assert.IsFalse(ui.Q<Button>("build-housing").enabledSelf);
         }
         finally { C.Rules.MapActions[MapActions.Housing] = rule; }

@@ -237,7 +237,7 @@ public class DecisionCardTests
             Assert.IsFalse(r.Shows("event-scrim"), $"{where}: the backdrop is gone");
             Assert.IsFalse(r.Shows("event-gutter"), $"{where}: and its strip under the left column");
             Assert.IsTrue(r.Shows("event-reopen"), $"{where}: Decision waiting shows");
-            Assert.AreEqual("Decision waiting", r.Waiting.text);
+            Assert.AreEqual(Text["event.reopen"], r.Waiting.text);
             Assert.IsFalse(r.Hud.ClassListContains(EventCardPresenter.ModalClass), where);
             Covered(r, false, where);
             Assert.AreSame(r.Waiting, r.Focused, $"{where}: Decision waiting has the focus");

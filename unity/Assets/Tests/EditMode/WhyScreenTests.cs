@@ -23,14 +23,15 @@ public class WhyScreenTests
         // The legacy loop: the call-up order is refused in the GDD loop (R-WAR-002, #750), and this test reads its cause.
         var bridge = new SimBridge(GameSession.New(SimBridgeGddTests.Legacy, GoldenRun.Seed, Mode.Historical), Text);
         new WhyPresenter(ui.Root, bridge, Text);
-        Assert.AreEqual("Nothing has happened yet: end the turn to see its causes.", ui.Q<Label>("why-empty").text);
+        Assert.AreEqual(Text["why.empty"], ui.Q<Label>("why-empty").text);
         bridge.Queue(new SetMobilization(1.0));
         var r = bridge.EndTurn();
-        Assert.AreEqual("15 May 1948 to 15 June 1948", ui.Q<Label>("why-turn").text);
+        Assert.AreEqual(Text.Format("why.turn", "15 May 1948", "15 June 1948"), ui.Q<Label>("why-turn").text);
         var lines = ui.Q<ScrollView>("why-rows").Query<Label>(className: "why-line").ToList();
         Assert.AreEqual(r.Why.Count, lines.Count);
-        Assert.AreEqual("Immigration and population", ui.Q<Label>("why-group-population").text);
-        Assert.IsTrue(lines.Any(l => l.text == "Reserve call-up set to 100%"));
+        Assert.AreEqual(Text["why.population"], ui.Q<Label>("why-group-population").text);
+        var callUp = Text.Format("why.cause.call_up_set", "100%");
+        Assert.IsTrue(lines.Any(l => l.text == callUp));
         var groups = ui.Q<ScrollView>("why-rows").Query<Label>(className: "why-group").ToList().Select(l => l.name).ToList();
         Assert.Less(groups.IndexOf("why-group-security"), groups.IndexOf("why-group-economy"));
     }
@@ -93,7 +94,7 @@ public class WhyScreenTests
             var rows = ui.Q<ScrollView>("why-rows");
             var headers = rows.Query<Label>(className: "why-group").ToList();
             Assert.AreEqual("why-group-zzz", headers.Last().name);
-            Assert.AreEqual("Other", headers.Last().text);
+            Assert.AreEqual(Text["why.other"], headers.Last().text);
             Assert.IsFalse(rows.Query<Label>().ToList().Any(l => l.text == "zzz"), "the raw id is never shown");
             Assert.AreEqual("Something odd happened", rows.Query<Label>(className: "why-line").ToList().Last().text);
         }
@@ -130,7 +131,7 @@ public class WhyScreenTests
             bridge.EndTurn();
             var real = bridge.Session.Last!;
             why.Show(new StepResult(real.State, new Cause[0], real.Rejected));
-            Assert.AreEqual("Nothing notable happened this turn.", ui.Q<Label>("why-nothing").text);
+            Assert.AreEqual(Text["why.nothing"], ui.Q<Label>("why-nothing").text);
         }
     }
 
@@ -148,7 +149,7 @@ public class WhyScreenTests
             var second = ui.Q<ScrollView>("why-rows").Query<Label>(className: "why-line").ToList();
             Assert.AreEqual(r.Why.Count, second.Count);
             Assert.AreNotSame(first[0], second[0]);
-            Assert.AreEqual("15 June 1948 to 15 July 1948", ui.Q<Label>("why-turn").text);
+            Assert.AreEqual(Text.Format("why.turn", "15 June 1948", "15 July 1948"), ui.Q<Label>("why-turn").text);
         }
     }
 

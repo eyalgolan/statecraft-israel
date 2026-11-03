@@ -38,7 +38,7 @@ public class CabinetScreenTests
         var bridge = In1950();
         var cabinet = new CabinetPresenter(ui.Root, bridge, Text, null);
         Assert.AreEqual("First Government", ui.Q<Label>("cabinet-government").text);
-        StringAssert.StartsWith("Coalition: 73 of 120 seats", ui.Q<Label>("cabinet-coalition").text);
+        StringAssert.StartsWith(Text.Format("cabinet.coalition", 73, 120, "", Text["cabinet.seats"]), ui.Q<Label>("cabinet-coalition").text);
         StringAssert.IsMatch(@"stability \d+%$", ui.Q<Label>("cabinet-coalition").text);   // fix round 1, I2: the unit
         // The finance card (promo 04): name, office, party, and competence and loyalty as bars with their values out of 10.
         Assert.AreEqual("Eliezer Kaplan", ui.Q<Label>("seat-finance_minister-holder").text);
@@ -51,7 +51,7 @@ public class CabinetScreenTests
         UiTestKit.Press(ui.Q<Button>("seat-finance_minister"));
         Assert.AreEqual("finance_minister", cabinet.Selected);
         Assert.IsFalse(ui.Q<Button>("appoint-zisling").enabledSelf);
-        Assert.AreEqual("Aharon Zisling's party (Mapam) is not in the coalition", ui.Q<Label>("cand-zisling-reason").text);
+        Assert.AreEqual(Text.Format("cabinet.reason.party_not_coalition", "Aharon Zisling", "Mapam"), ui.Q<Label>("cand-zisling-reason").text);
         Assert.IsTrue(ui.Q<Button>("appoint-golda_meir").enabledSelf);
     }
 
@@ -165,10 +165,10 @@ public class CabinetScreenTests
         var cabinet = new CabinetPresenter(ui.Root, bridge, Text, null);
         cabinet.Select("finance_minister");
         UiTestKit.Press(ui.Q<Button>("appoint-golda_meir"));
-        Assert.AreEqual("Ordered: Golda Meir to Minister of Finance, at End turn", ui.Q<Label>("cabinet-status").text);
+        Assert.AreEqual(Text.Format("cabinet.queued", "Golda Meir", "Minister of Finance"), ui.Q<Label>("cabinet-status").text);
         bridge.EndTurn();
         Assert.AreEqual("golda_meir", Cabinet.Holder(C, bridge.State, "finance_minister")!.Id);
-        StringAssert.EndsWith("(your appointee)", ui.Q<Label>("seat-finance_minister-holder").text);
+        StringAssert.EndsWith(Text.Format("card.appointed_name", "").Trim(), ui.Q<Label>("seat-finance_minister-holder").text);
         Assert.IsTrue(bridge.Session.Last!.Why.Any(w => w.Message == "Golda Meir appointed Minister of Finance, replacing Eliezer Kaplan"));
     }
 
@@ -267,7 +267,7 @@ public class CabinetScreenTests
         cabinet.Select("finance_minister");
         UiTestKit.Press(ui.Q<Button>("appoint-golda_meir"));
         bridge.EndTurn();
-        StringAssert.EndsWith("(your appointee)", ui.Q<Label>("seat-finance_minister-holder").text);
+        StringAssert.EndsWith(Text.Format("card.appointed_name", "").Trim(), ui.Q<Label>("seat-finance_minister-holder").text);
         StepUntilNextTurnCrosses(bridge.Session, new DateTime(1950, 11, 1));
         bridge.EndTurn();
         var gov = Offices.Government(C, bridge.State.Date)!;
@@ -309,7 +309,7 @@ public class CabinetScreenTests
         Assert.AreEqual("minister_without_portfolio", cabinet.Selected);
         Assert.IsTrue(ui.Q<Button>("seat-minister_without_portfolio").ClassListContains("seat-selected"));
         Assert.IsTrue(ui.Q<Button>("seat-minister_without_portfolio-2").ClassListContains("seat-selected"));
-        StringAssert.Contains("several holders", ui.Q<Label>("cabinet-pick-reason").text);
+        StringAssert.Contains(Text.Format("cabinet.reason.several_holders", "Minister without Portfolio"), ui.Q<Label>("cabinet-pick-reason").text);
         Assert.AreEqual(DisplayStyle.Flex, ui.Q<Label>("cabinet-pick-reason").style.display.value);
 
         g.State.Date = new DateTime(1953, 7, 1);   // Yosef has moved to Development: one holder, one card
@@ -334,7 +334,7 @@ public class CabinetScreenTests
         try
         {
             new CabinetPresenter(ui.Root, new SimBridge(g, Text), Text, catalog);
-            Assert.AreEqual("(vacant)", ui.Q<Label>("seat-" + vacant!.Office.Id + "-holder").text);
+            Assert.AreEqual(Text["cabinet.vacant"], ui.Q<Label>("seat-" + vacant!.Office.Id + "-holder").text);
             Assert.AreEqual(vacant.Office.Title, ui.Q<Label>("seat-" + vacant.Office.Id + "-office").text);
             Assert.AreEqual(DisplayStyle.None, ui.Q<Button>("seat-" + vacant.Office.Id).Q<VisualElement>(className: PersonCard.PortraitClass).style.display.value);
             Assert.AreEqual("", ui.Q<Label>("seat-" + vacant.Office.Id + "-initials").text, "a vacancy has no initials either");
@@ -377,10 +377,10 @@ public class CabinetScreenTests
         using var ui = Shown();
         var cabinet = new CabinetPresenter(ui.Root, new SimBridge(GameSession.New(c, GoldenRun.Seed, Mode.Historical), Text), Text, null);
         var leg = Offices.Legislature(c, c.Rules.Start)!;
-        Assert.AreEqual($"Answerable to the {leg.Body} · {leg.Size} members", ui.Q<Label>("cabinet-legislature").text);
+        Assert.AreEqual(Text.Format("cabinet.legislature", leg.Body, leg.Size), ui.Q<Label>("cabinet-legislature").text);
         c.Eras[0].Systems.Legislature = EraSystems.Assembly;
         cabinet.Render();
-        Assert.AreEqual($"Consults the {leg.Body} · {leg.Size} members · its votes do not bind", ui.Q<Label>("cabinet-legislature").text);
+        Assert.AreEqual(Text.Format("cabinet.legislature_advisory", leg.Body, leg.Size), ui.Q<Label>("cabinet-legislature").text);
         cabinet.Dispose();
     }
 

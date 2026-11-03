@@ -154,7 +154,7 @@ public class AdvisorOpeningTests
     {
         using var rig = new Rig(En, Store()); rig.Ui.Press("nav-encyclopedia"); rig.Ui.Press("encyclopedia-opening");
         Assert.IsTrue(rig.Advisor.InChain); Assert.AreEqual(0, rig.Advisor.ChainStep); Assert.IsNull(rig.Nav.Current);
-        Assert.AreEqual("Show the opening advice again", rig.Ui.Q<Button>("encyclopedia-opening").text);
+        Assert.AreEqual(En["encyclopedia.opening"], rig.Ui.Q<Button>("encyclopedia-opening").text);
     }
 
     [Test]

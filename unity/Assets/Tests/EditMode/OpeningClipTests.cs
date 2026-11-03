@@ -123,7 +123,7 @@ public class OpeningClipTests
         Assert.IsTrue(r.Opening.ClipWaiting, "the clip waits for the hold");
         r.Opening.HoldElapsed();
         Assert.AreEqual(CardVideo.Url("opening_yemen.mp4"), r.Video!.Current, "the new shot plays in the same frame");
-        Assert.AreEqual("AI-generated illustration", r.Credit.text);
+        Assert.AreEqual(Text("en")["event.ai_label"], r.Credit.text);
         Assert.AreEqual(r.Data.Panels[2].Clip!.Alt, r.Photo.tooltip, "the clip's alt text");
         Assert.IsTrue(r.CaptionShown, "Yemen's caption shows with its clip");
         Assert.AreEqual("Operation On Wings of Eagles flew about 49,000 Yemenite Jews.", r.Caption.text);

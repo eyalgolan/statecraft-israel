@@ -176,7 +176,7 @@ public class TurnReportTests
             Assert.AreEqual(text["report.enemy"], k.Ui.Q<Label>("turn-report-heading-" + TurnReportPresenter.EnemyRow).text);
             var lines = Causes(k.Ui, TurnReportPresenter.EnemyRow);
             CollectionAssert.AreEqual(expected, lines);
-            CollectionAssert.Contains(lines, hebrew ? "הלגיון הערבי עבר לעמדה חדשה" : "Arab Legion moved to a new position", "the Legion's march on Latrun");
+            CollectionAssert.Contains(lines, hebrew ? "הלגיון הערבי עבר לעמדה חדשה" : text.Format("report.enemy_move", "Arab Legion"), "the Legion's march on Latrun");
         }
     }
 
@@ -289,7 +289,7 @@ public class TurnReportTests
             Assert.IsFalse(turn.Why.Any(w => w.Message.StartsWith($"Unit {ala} will attack")), "the attack stands: no order this turn");
             Assert.IsTrue(turn.Why.Any(w => w.Message.StartsWith($"The attack on hex {a.Q},{a.R - 1}")), "and it engages");
             var lines = Causes(k.Ui, TurnReportPresenter.EnemyRow);
-            CollectionAssert.Contains(lines, hebrew ? "צבא ההצלה פתח בהתקפה על אחת היחידות שלכם" : "Arab Liberation Army launched an attack on one of your units");
+            CollectionAssert.Contains(lines, hebrew ? "צבא ההצלה פתח בהתקפה על אחת היחידות שלכם" : text.Format("report.enemy_attack", "Arab Liberation Army"));
         }
     }
 
