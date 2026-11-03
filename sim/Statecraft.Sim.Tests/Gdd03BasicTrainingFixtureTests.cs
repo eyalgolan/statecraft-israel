@@ -663,9 +663,9 @@ public class Gdd03BasicTrainingFixtureTests
 
     // R-UNIT-003 (docs/rules/mvp.md): "A finished recruit cohort becomes exactly one Israeli infantry formation ... with
     // `Strength` equal to the cohort's `Count` in population units"; the live path makes one unit per cohort with
-    // `strength: k.Count` (sim/Statecraft.Sim/Training.cs:244-246). 53's maintainer call: one Start order is one cohort and
-    // one formation. Two orders in the same camp and month are two cohorts, so two formations; a carried item stays on its
-    // record and the spare stock is unchanged by graduation.
+    // `strength: k.Count` (sim/Statecraft.Sim/Training.cs:244-246). 53's maintainer call (not an owner ruling): one Start
+    // order is one cohort and one formation. Two orders in the same camp and month are two cohorts, so two formations; a
+    // carried item stays on its record and the spare stock is unchanged by graduation.
     [Fact] public void AStartOrderGraduatesAsOneFormationWithItsCountAsStrength()
     {
         var c = Catalogue(); var s = State(c); var f = Fixture(c, s, spare: 10); var l = s.PopulationLedger;
@@ -681,8 +681,8 @@ public class Gdd03BasicTrainingFixtureTests
         l.Reconcile();
     }
 
-    // 53's maintainer call: the cohort is the Start order, so a member whose last course turn counts in a later month still
-    // joins the formation its cohort already graduated into, not a new one.
+    // 53's maintainer call (not an owner ruling): the cohort is the Start order, so a member whose last course turn counts
+    // in a later month still joins the formation its cohort already graduated into, not a new one.
     [Fact] public void ALateMemberJoinsItsCohortsFormation()
     {
         var c = Catalogue(); var s = State(c); var f = Fixture(c, s);
@@ -733,9 +733,9 @@ public class Gdd03BasicTrainingFixtureTests
         l.Reconcile();
     }
 
-    // 53's maintainer call: formations are "pre-bound, empty ActiveService targets supplied by the tests". A cohort takes the
-    // first one in its camp's region that is neither claimed nor serving anyone; with none, the graduating month is refused
-    // with the state unchanged and the trainee keeps its course.
+    // 53's maintainer call (not an owner ruling): formations are "pre-bound, empty ActiveService targets supplied by the
+    // tests". A cohort takes the first one in its camp's region that is neither claimed nor serving anyone; with none, the
+    // graduating month is refused with the state unchanged and the trainee keeps its course.
     [Fact] public void GraduationNeedsAFreeFormationInTheCampsRegion()
     {
         var c = Catalogue(); var s = State(c); var l = s.PopulationLedger;
@@ -785,8 +785,9 @@ public class Gdd03BasicTrainingFixtureTests
         Assert.Equal(7.9m, f.Money);
     }
 
-    // #1699 body: "trainees and captured units pay none"; 53's maintainer call: only formations this fixture graduated pay.
-    // Trainees pay nothing, and the active soldier 8 of a formation this fixture did not make is not charged here.
+    // #1699 body: "trainees and captured units pay none"; 53's maintainer call (not an owner ruling): only formations this
+    // fixture graduated pay. Trainees pay nothing, and the active soldier 8 of a formation this fixture did not make is not
+    // charged here.
     [Fact] public void TraineesAndOtherFormationsPayNoUpkeep()
     {
         var c = Catalogue(); var s = State(c); var f = Fixture(c, s, money: 10m);
@@ -824,9 +825,9 @@ public class Gdd03BasicTrainingFixtureTests
         Assert.Equal(9.45m, f.Money);
     }
 
-    // 53's maintainer call (Q5): within a month the order is Advance, then PayUpkeep, so 27M-8 always holds. In that order the
-    // graduation month pays. A graduating Advance for a month whose upkeep already ran is a caller error: it is refused with
-    // nothing changed, and the trainee graduates in a later month, which then pays.
+    // 53's maintainer call (Q5, not an owner ruling): within a month the order is Advance, then PayUpkeep, so 27M-8 always
+    // holds. In that order the graduation month pays. A graduating Advance for a month whose upkeep already ran is a caller
+    // error: it is refused with nothing changed, and the trainee graduates in a later month, which then pays.
     [Fact] public void AGraduationAfterThatMonthsUpkeepIsRefused()
     {
         var c = Catalogue(); var s = State(c); var f = Fixture(c, s, money: 10m);
