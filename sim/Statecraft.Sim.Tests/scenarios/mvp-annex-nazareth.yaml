@@ -3,8 +3,9 @@
 # (R-CTRL-004); the scenario answers with Occupy on 15 July 1948 (R-CTRL-011), the timer runs out after three turn
 # resolutions, on 15 October 1948 (R-CTRL-012), and on 15 December 1948 the
 # scenario annexes Nazareth (R-CTRL-016), in the turn that delegates Operation Horev: the annexation runs with the
-# turn's orders, before Horev's order sends Golani toward the Julis camp (R-ENEMY-005, #2087), which a month later
-# would find no occupation left to end. Nazareth's residents stayed (#793), so it becomes one city by the starting-city
+# turn's orders, before Horev is delegated, so Nazareth is no longer occupied when the last-garrison check runs and
+# Horev's order sends Golani from the annexed town toward the Julis camp (R-ENEMY-005, R-CTRL-013, #2087). Nazareth's
+# residents stayed (#793), so it becomes one city by the starting-city
 # rule from its census-day count (OWNER QUESTION 1 (a) on #799; the owner approved the count on 24 October 2026), the
 # upkeep stops and the unit may leave (OWNER QUESTION 3 (a)). It plays the real content, so it moves whenever a rule or
 # value it reaches changes, Nazareth's approved count included.
