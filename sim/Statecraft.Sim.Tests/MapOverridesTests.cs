@@ -355,4 +355,131 @@ public class MapOverridesTests
         Assert.Equal(MapOverrides.FileName, written.File);
     }
 
+    // R-MEDIT-003, Q58 (#1721 slice A): with the loaded content the corridor, force-anchor, target and objective adapters run
+    // against the base map plus this overlay's location moves. A broken binding is a blocking row that names its record;
+    // nothing is repaired. All records below are SYNTHETIC fixtures, not historical data.
+    static Content DependencyFixture()
+    {
+        var c = new Content
+        {
+            Hexes = new List<MapHex>
+            {
+                new MapHex { Q = 0, R = 0, Land = true, Biome = "hills" }, new MapHex { Q = 1, R = 0, Land = true, Biome = "hills" },
+                new MapHex { Q = 2, R = 0, Land = true, Biome = "hills" }, new MapHex { Q = 3, R = 0, Land = false, Biome = "sea" },
+            },
+        };
+        c.SettlementHexes.Add(new SettlementHex { Id = "town_a", Q = 0, R = 0 });
+        c.SettlementTargets.Add(new SettlementTarget { Id = "town_a", Q = 0, R = 0 });
+        c.Sites.Add(new Site { Id = "site_a", Q = 2, R = 0, Kinds = new List<string> { Projects.YishuvKind } });
+        c.Corridors.Add(new CorridorDef { Id = "corridor_a", Kind = Corridors.Rail, Segments = new List<SegmentDef>
+        {
+            new SegmentDef { To = "fixture_one", Hexes = new List<List<int>> { new List<int> { 0, 0 }, new List<int> { 1, 0 } } },
+            new SegmentDef { To = "fixture_two", Hexes = new List<List<int>> { new List<int> { 2, 0 } } },
+        } });
+        c.StartingForces.Add(new StartingForce { Row = "unit_a", Anchor = "fixture_place", Q = 1, R = 0 });
+        c.Objectives.Add(new Objective { Id = "objective_a", CompletesWhen = new ObjectiveCondition { CorridorComplete = "corridor_a" } });
+        c.Objectives.Add(new Objective { Id = "objective_b", CompletesWhen = new ObjectiveCondition { SiteBuilt = "site_a" } });
+        return c;
+    }
+
+    static readonly string[] AdaptedKinds = { "corridors", "anchors", "targets", "objectives" };
+
+    static List<MapEditorDiagnostic> Broken(IEnumerable<MapEditorDiagnostic> rows) =>
+        rows.Where(x => x.Code == "MAPEDIT_DEPENDENCY_BROKEN").ToList();
+
+    static IReadOnlyList<MapEditorDiagnostic> DependencyDiagnostics(Content c, string locations = "[]")
+    {
+        var value = MapEditorOverlay.Parse(EditorFixture.Replace("draft: true", "draft: false")
+            .Replace("locations: [] }", "locations: " + locations + " }"), SaveGame.Gdd03Ruleset);
+        return value.Diagnostics("fixture-only", new string('a', 64), c);
+    }
+
+    [Fact]
+    public void AValidOverlayHasRealAdaptersForCorridorsAnchorsTargetsAndObjectives()
+    {
+        var diagnostics = DependencyDiagnostics(DependencyFixture());
+        Assert.DoesNotContain(diagnostics, x => AdaptedKinds.Contains(x.Field));
+        Assert.Empty(Broken(diagnostics));
+        // Post-MVP adapters and the base manifest stay unavailable, so export stays refused.
+        foreach (var field in new[] { "regions", "fields", "facilities", "base_manifest" })
+            Assert.Contains(diagnostics, x => x.Code == "MAPEDIT_DEPENDENCY_UNAVAILABLE" && x.Field == field);
+        // Without the content there is nothing to check against: the four rows stay unavailable, as before.
+        var bare = MapEditorOverlay.Parse(EditorFixture, SaveGame.Gdd03Ruleset).Diagnostics("fixture-only", new string('a', 64));
+        foreach (var field in AdaptedKinds) Assert.Contains(bare, x => x.Code == "MAPEDIT_DEPENDENCY_UNAVAILABLE" && x.Field == field);
+    }
+
+    [Fact]
+    public void ABrokenCorridorEndpointBlocksWithItsIdAndTheGeometryIsUnchanged()
+    {
+        var c = DependencyFixture();
+        c.Corridors[0].Segments[1].Hexes[0] = new List<int> { 3, 0 };   // the last segment now ends on a sea hex
+        var before = c.Corridors[0].Segments.Select(x => (x.To, string.Join(";", x.Hexes.Select(h => string.Join(",", h))))).ToList();
+        var row = Assert.Single(Broken(DependencyDiagnostics(c)));
+        Assert.Equal("corridors[corridor_a]", row.Field);
+        Assert.Contains("segment 2", row.Message);
+        Assert.Equal(before, c.Corridors[0].Segments.Select(x => (x.To, string.Join(";", x.Hexes.Select(h => string.Join(",", h))))).ToList());
+        Assert.Equal(MapOverrides.FileName, row.File);
+        Assert.NotEmpty(row.Action);
+    }
+
+    [Fact]
+    public void ACorridorHexNotNextToThePreviousOneBlocks()
+    {
+        var c = DependencyFixture();
+        c.Corridors[0].Segments[0].Hexes[1] = new List<int> { 2, 0 };   // skips q=1: a land hex, but two steps from q=0
+        var row = Assert.Single(Broken(DependencyDiagnostics(c)));
+        Assert.Equal("corridors[corridor_a]", row.Field);
+        Assert.Contains("is not next to q=0 r=0", row.Message);
+    }
+
+    [Fact]
+    public void ABrokenForceAnchorBlocksWithItsId()
+    {
+        var c = DependencyFixture();
+        c.StartingForces[0].Q = 9;   // off the map
+        var row = Assert.Single(Broken(DependencyDiagnostics(c)));
+        Assert.Equal("anchors[unit_a]", row.Field);
+        Assert.Equal(9, c.StartingForces[0].Q);
+    }
+
+    [Fact]
+    public void ABrokenTargetBindingBlocksWithItsId()
+    {
+        var c = DependencyFixture();
+        // Moving the target's settlement leaves the target on the old hex: its binding breaks, the target does not move.
+        var value = MapEditorOverlay.Parse(EditorFixture.Replace("draft: true", "draft: false")
+            .Replace("locations: [] }", "locations: [{ id: town_a, hex: { q: 1, r: 0 } }] }"), SaveGame.Gdd03Ruleset);
+        var row = Assert.Single(Broken(value.Diagnostics("fixture-only", new string('a', 64), c)));
+        Assert.Equal("targets[town_a]", row.Field);
+        Assert.False(value.CanExport);
+        Assert.Equal((0, 0), (c.SettlementTargets[0].Q, c.SettlementTargets[0].R));
+    }
+
+    [Fact]
+    public void RamlasTargetIsBoundToANeighbourOfItsSettlement()
+    {
+        // The loader's one exception (TargetOnANeighbour): the target sits next to the settlement, not on it.
+        var c = DependencyFixture();
+        c.Hexes.Add(new MapHex { Q = 1, R = 1, Land = true, Biome = "hills" });
+        c.SettlementHexes.Add(new SettlementHex { Id = "ramla", Q = 1, R = 0 });
+        c.SettlementTargets.Add(new SettlementTarget { Id = "ramla", Q = 0, R = 0 });
+        Assert.Empty(Broken(DependencyDiagnostics(c)));
+        // Moved two steps away, the settlement is no longer next to its target: the binding breaks, the target stays.
+        var row = Assert.Single(Broken(DependencyDiagnostics(c, "[{ id: ramla, hex: { q: 1, r: 1 } }]")));
+        Assert.Equal("targets[ramla]", row.Field);
+        Assert.Equal((0, 0), (c.SettlementTargets[1].Q, c.SettlementTargets[1].R));
+    }
+
+    [Fact]
+    public void ABrokenObjectiveBindingBlocksWithItsId()
+    {
+        var c = DependencyFixture();
+        c.Objectives[0].CompletesWhen!.CorridorComplete = "unknown_corridor";
+        var row = Assert.Single(Broken(DependencyDiagnostics(c)));
+        Assert.Equal("objectives[objective_a]", row.Field);
+        Assert.Contains("unknown_corridor", row.Message);
+        // A settlement moved onto the objective's yishuv site breaks that objective's site binding as well.
+        var moved = Broken(DependencyDiagnostics(DependencyFixture(), "[{ id: town_a, hex: { q: 2, r: 0 } }]"));
+        Assert.Contains(moved, x => x.Field == "objectives[objective_b]" && x.Message.Contains("site_a"));
+    }
 }
