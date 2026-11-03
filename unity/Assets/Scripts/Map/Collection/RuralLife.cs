@@ -303,11 +303,44 @@ namespace Statecraft.Game.Map.Collection
         }
 
         List<(Vector2 centre, float radius)> others = new List<(Vector2, float)>();
+        System.Collections.ObjectModel.ReadOnlyCollection<(Want want, Vector2 spot)>? fullPlan;
+        bool everShown;
+        int planVersion;
+
+        /// <summary>#1701 slice F with #2266: the scenes' full plan (every model available) for what this layer was last shown,
+        /// computed once per change of its wants or the ground it keeps clear of, read-only. It plans against exactly the
+        /// layer's own inputs (<see cref="OthersShown"/>, never the map's current ground), the ones its own Rebuild plans
+        /// against, so the scenes drawn and the ground the others keep clear of are one plan. Plan reads nothing else that
+        /// changes on a map (its ground, routes and tokens are the map's build; no date). The other layers that keep clear of
+        /// the scenes read it through <see cref="PlanOf"/> and rebuild when <see cref="VersionOf"/> moves.</summary>
+        internal IReadOnlyList<(Want want, Vector2 spot)> FullPlan => fullPlan ??= Plan(map!, wants, others, _ => true).AsReadOnly();
+
+        /// <summary>The rural plan the other layers keep clear of: the shown layer's <see cref="FullPlan"/>. Before a rural layer
+        /// is shown (tests and editor tools; GameRoot shows it first), it is computed from the map's own wants and the other
+        /// layers' current ground on each call: deterministic, not cached, and its version is 0.</summary>
+        internal static IReadOnlyList<(Want want, Vector2 spot)> PlanOf(MapScene map)
+        {
+            var layer = Shown(map);
+            return layer != null ? layer.FullPlan : Plan(map, Wants(map), OtherProps(map), _ => true);
+        }
+
+        /// <summary>A stamp of the plan <see cref="PlanOf"/> returns: it moves each time the shown layer's inputs change, so the
+        /// layers built on the plan (SpecialBuildingModels' workshops, HexPropModels) rebuild together onto the new one.</summary>
+        internal static int VersionOf(MapScene map) => Shown(map)?.planVersion ?? 0;
+
+        static RuralLife? Shown(MapScene map)
+        {
+            var layer = map.Terrain != null ? map.Terrain.transform.Find(Name)?.GetComponent<RuralLife>() : null;
+            return layer != null && layer.map != null && layer.everShown ? layer : null;
+        }
+
+        /// <summary>Shows exactly these wants and other layers' ground (a test seam, as Show(map) does with the map's own).</summary>
+        internal void ShowForTest(List<Want> next, List<(Vector2 centre, float radius)> nextOthers) => Show(next, nextOthers);
 
         void Show(List<Want> next, List<(Vector2 centre, float radius)> nextOthers)
         {
-            if (next.SequenceEqual(wants) && nextOthers.SequenceEqual(others)) return;
-            wants = next; others = nextOthers;
+            if (everShown && next.SequenceEqual(wants) && nextOthers.SequenceEqual(others)) return;
+            wants = next; others = nextOthers; fullPlan = null; everShown = true; planVersion++;
             OriginalModelRequests.WhenVisible(this, () =>
             {
                 desiredDetails.Add(CollectionDetail.Far); desiredDetails.Add(CollectionDetail.Near);

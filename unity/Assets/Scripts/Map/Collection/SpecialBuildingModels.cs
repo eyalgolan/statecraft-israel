@@ -9,7 +9,8 @@ namespace Statecraft.Game.Map.Collection
 {
     /// <summary>Issue #707: Tal Heuberger's single-building models at sourced places, and the tank stopped at Degania Alef. They use the collection stream after the
     /// first frame, draw only close up (#700's switch, TownModelLayer.CloseEnterM / CloseExitM), follow the game date and
-    /// fail open. b21 remains catalogued but unplaced until an artisan-workshop location is sourced.</summary>
+    /// fail open. #1701 slice F (owner, 27 October 2026: "Arms workshops (Recommended)"): under gdd-0.3, b21 stands on the hex of
+    /// each built arms workshop (<see cref="ArmsWorkshops"/>).</summary>
     [ExecuteAlways]
     public sealed class SpecialBuildingModels : MonoBehaviour
     {
@@ -84,6 +85,31 @@ namespace Statecraft.Game.Map.Collection
         };
 
         public static IReadOnlyList<Want> Placements(DateTime date) => All.Where(x => date >= x.From).ToList();
+
+        /// <summary>#1701 slice F: one b21 per built arms workshop (R-ARMS-004, Workshops.ArmsWorkshop), on its city project's
+        /// hex from the day the build completed (CityProject.BuiltOn), in ascending project id. Under gdd-0.3 only; nothing for a
+        /// project still being built, nor for one no longer in the state.</summary>
+        public static IReadOnlyList<Want> ArmsWorkshops(Statecraft.Sim.Content content, IEnumerable<Statecraft.Sim.CityProject> projects)
+        {
+            var list = new List<Want>();
+            if (content.Ruleset != Statecraft.Sim.SaveGame.Gdd03Ruleset) return list;
+            foreach (var p in projects.OrderBy(x => x.Id))
+            {
+                if (p.Kind != Statecraft.Sim.Workshops.ArmsWorkshop || !(p.BuiltOn is DateTime on)) continue;
+                var hex = content.HexAt(p.Q, p.R);
+                if (hex == null) continue;
+                list.Add(new Want(WorkshopKey(p.Id), Workshop, on, hex.Lon, hex.Lat,
+                    FormattableString.Invariant($"city project {p.Id}: {p.City}'s arms workshop on hex {p.Q},{p.R}")));
+            }
+            return list;
+        }
+
+        /// <summary>The layer key (and instance name) of the b21 standing for city project <paramref name="project"/>.</summary>
+        public static string WorkshopKey(int project) => FormattableString.Invariant($"arms_workshop_{project}");
+
+        /// <summary>How far from its hex's centre a workshop's model may reach (m): the hex's inner radius (HexScale.HexM is the
+        /// circumradius), so the whole model stands on the project's own hex.</summary>
+        public const float HexInnerRadiusM = 0.8660254f * Statecraft.HexTiles.HexScale.HexM;
 
         /// <summary>How far inside a town's footprint <paramref name="anchor"/> lies (m, 0 outside every footprint): a sourced
         /// point at a town's edge (Netanya's entrance) is inside the kit's symbolic footprint, so the search starts that far
@@ -248,6 +274,7 @@ namespace Statecraft.Game.Map.Collection
                 }
                 originals.Remove(key.id);
                 Placed.RemoveAll(p => p.Model == key.id);
+                if (key.id == Workshop) workshopBoxes = new List<Bounds[]>();   // a new list: the retired b21 leave the labels too
             }
             return removed;
         }
@@ -264,7 +291,7 @@ namespace Statecraft.Game.Map.Collection
                 var old = transform.GetChild(i).gameObject; if (residencyView != null) retired.Add(old);
                 if (Application.isPlaying) { if (gameObject.activeInHierarchy) old.transform.SetParent(null); Destroy(old); } else DestroyImmediate(old);
             }
-            renderers.Clear(); Placed.Clear();
+            renderers.Clear(); Placed.Clear(); workshopBoxes = new List<Bounds[]>();
             originals.Clear();
             if (map != null) Statecraft.Game.Map.Units.UnitShowcase.HideTrees(map, Name, Array.Empty<(Vector2, float)>());
         }
@@ -294,12 +321,42 @@ namespace Statecraft.Game.Map.Collection
         void OnDestroy() { residency?.Dispose(); residency = null; }
 
         MapScene? map; DateTime date; bool shown;
+        IReadOnlyList<Want> workshops = Array.Empty<Want>();
+        int ruralVersion;
+
+        internal static bool Same(IReadOnlyList<Want> a, IReadOnlyList<Want> b)
+        {
+            if (a.Count != b.Count) return false;
+            for (int i = 0; i < a.Count; i++)
+                if (a[i].Key != b[i].Key || a[i].From != b[i].From || a[i].Lon != b[i].Lon || a[i].Lat != b[i].Lat) return false;
+            return true;
+        }
         public readonly List<(string Key, string Model, Vector3 At)> Placed = new List<(string, string, Vector3)>();
+        List<Bounds[]> workshopBoxes = new List<Bounds[]>();
+
+        /// <summary>Review of #2281 (option 3, coordinator 3 November 2026): the drawn b21s' world boxes while they are drawn (the
+        /// close zoom), for the name pills to keep clear of. GameRoot passes them to MapLabelsPresenter's keepClear with the
+        /// units' and the craft's; a new list each rebuild, so the labels refresh when it changes.</summary>
+        public IReadOnlyList<Bounds[]> KeepClear => isActiveAndEnabled && LastClose ? workshopBoxes : (IReadOnlyList<Bounds[]>)Array.Empty<Bounds[]>();
+
+        /// <summary>As <see cref="KeepClear"/> for <paramref name="camera"/>: whether that camera last drew the b21 (its own
+        /// close-zoom switch), not whichever camera rendered last (review of #2281, S4).</summary>
+        public IReadOnlyList<Bounds[]> KeepClearFor(Camera camera) =>
+            isActiveAndEnabled && closeFor.TryGetValue(camera.GetInstanceID(), out var close) && close ? workshopBoxes : (IReadOnlyList<Bounds[]>)Array.Empty<Bounds[]>();
         public bool FailedOpen { get; private set; }
         public bool LastClose { get; private set; }
         readonly Dictionary<string, List<GameObject>> originals = new Dictionary<string, List<GameObject>>(StringComparer.Ordinal);
 
-        public static SpecialBuildingModels? ShowAt(MapScene map, DateTime date)
+        public static SpecialBuildingModels? ShowAt(MapScene map, DateTime date) => ShowAt(map, date, Array.Empty<Want>());
+
+        /// <summary>As <see cref="ShowAt(MapScene, DateTime)"/>, with a b21 at each built arms workshop of the state
+        /// (<see cref="ArmsWorkshops"/>; gdd-0.3 only).</summary>
+        public static SpecialBuildingModels? ShowAt(MapScene map, DateTime date, Statecraft.Sim.Content content,
+            IEnumerable<Statecraft.Sim.CityProject> projects) => ShowAt(map, date, ArmsWorkshops(content, projects));
+
+        /// <summary>As <see cref="ShowAt(MapScene, DateTime)"/>, with <paramref name="workshops"/> (<see cref="ArmsWorkshops"/>,
+        /// computed once by the caller for this layer and HexPropModels).</summary>
+        internal static SpecialBuildingModels? ShowAt(MapScene map, DateTime date, IReadOnlyList<Want> workshops)
         {
             if (map == null || map.Terrain == null || map.Hexes == null) return null;
             var layer = map.Terrain.transform.Find(Name)?.GetComponent<SpecialBuildingModels>();
@@ -310,9 +367,13 @@ namespace Statecraft.Game.Map.Collection
             }
             if (layer.residencyView == null) layer.ConfigureResidency(map.Residency.Special, null);
             // GameRoot calls this on every refresh: rebuild only when the game date changes (the dated list and the dated
-            // tokens' clearance both follow it).
-            if (layer.shown && layer.date == date) return layer;
-            layer.shown = true; layer.date = date; layer.Show(Placements(date)); return layer;
+            // tokens' clearance both follow it), the built arms workshops do (one completed, or one left the state), or, with
+            // workshops, the rural plan they keep clear of (RuralLife.VersionOf: HexPropModels rebuilds on it too, so the props
+            // keep clear of the b21 drawn).
+            int rural = workshops.Count == 0 ? 0 : RuralLife.VersionOf(map);
+            if (layer.shown && layer.date == date && Same(layer.workshops, workshops) && layer.ruralVersion == rural) return layer;
+            layer.shown = true; layer.date = date; layer.workshops = workshops; layer.ruralVersion = rural;
+            layer.Show(workshops.Count == 0 ? Placements(date) : Placements(date).Concat(workshops).ToList()); return layer;
         }
 
         internal void ShowForTest(IReadOnlyList<Want> wants) => Show(wants);
@@ -326,11 +387,12 @@ namespace Statecraft.Game.Map.Collection
             Rebuild();
         }
 
-        /// <summary>Where the buildings stand: each want in order, of the models <paramref name="available"/> holds, at its
-        /// route-facing (Degania) or seeded spot, clear of the towns, the routes, the tokens of <paramref name="date"/>, the
-        /// civilians, the wildlife and each other. It reads only the map and the date, never what has streamed, so with every
+        /// <summary>Where the buildings stand: each want in order at its route-facing (Degania) or seeded spot, clear of the towns,
+        /// the routes, the tokens of <paramref name="date"/>, the civilians, the wildlife and each other (a workshop also of its
+        /// hex's edge and the farm scenes' plan); the list keeps those whose model <paramref name="available"/> holds. It reads only the map and the date, never what has streamed, so with every
         /// model available it is the plan the layer draws once everything has arrived (HexPropModels keeps clear of it, #2266).</summary>
-        internal static List<(Want want, Vector2 at)> Plan(MapScene map, DateTime date, IReadOnlyList<Want> wants, Func<string, bool> available, bool log)
+        internal static List<(Want want, Vector2 at)> Plan(MapScene map, DateTime date, IReadOnlyList<Want> wants, Func<string, bool> available, bool log,
+            IReadOnlyList<(RuralLife.Want want, Vector2 spot)>? ruralPlan = null)
         {
             var ground = PlacementLayer.CampGround(map);
             var footprints = map.KitFootprints.Select(f => (f.centre, f.radius)).ToList();
@@ -339,14 +401,23 @@ namespace Statecraft.Game.Map.Collection
             var people = map.Terrain.transform.Find(CivilianPeople.Name)?.GetComponent<CivilianPeople>();
             if (people != null) foreach (var p in people.Wanted) taken.Add((new Vector2(p.At.x, p.At.z), CivilianPeople.FigureClearanceM));
             foreach (var a in WildlifeLayer.Wants(map)) taken.Add((a.At, 0.5f * WildlifeLayer.SizeM));
-            bool Free(Vector2 p, float r) => TownLandmarks.Clear(p, r, taken) && TownLandmarks.Clear(p, r, footprints)
+            // A workshop (#1701 slice F) also keeps off the farm scenes (#667): where they WILL stand (RuralLife's plan with every
+            // model available, RuralLife.PlanOf, the one HexPropModels.Others reads too), never what has streamed so far, so its
+            // spot is the same whichever layer streams first and the props keep clear of the b21 that is drawn.
+            var farms = new List<(Vector2 centre, float radius)>();
+            if (wants.Any(w => w.Model == Workshop))
+                foreach (var (want, spot) in ruralPlan ?? RuralLife.PlanOf(map))
+                    farms.Add((spot, RuralLife.SceneRadiusM(want.Model)));
+            bool FreeOn(Vector2 p, float r, DateTime on) => TownLandmarks.Clear(p, r, taken) && TownLandmarks.Clear(p, r, footprints)
                 && ground.Inside(p.x - r, p.y - r) && ground.Inside(p.x + r, p.y + r)
-                && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, date);
+                && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, on);
+            bool Free(Vector2 p, float r) => FreeOn(p, r, date);
             var plan = new List<(Want, Vector2)>();
             var kits = map.transform.Find(Kits.KitLayer.RootName);
             foreach (var w in wants)
             {
-                if (!available(w.Model)) continue;
+                // Every want takes its ground whether or not its model has streamed (only the plan's output is filtered), so a
+                // later want's spot, a workshop's included, never depends on what streamed first.
                 var anchor3 = map.Frame.ToWorld(w.Lon, w.Lat, 0); var anchor = new Vector2(anchor3.x, anchor3.z);
                 float clearance = ClearanceOf(w.Model);
                 Vector2? at = null;
@@ -357,17 +428,163 @@ namespace Statecraft.Game.Map.Collection
                     if (village is Bounds drawn && footprint.id != null)   // no kit or no footprint: the seeded spot below
                         at = RouteFacingEdgeSpot(footprint.centre, drawn, clearance, map.KitRouteCorridors, Free);
                 }
-                if (at == null)
+                if (at == null && w.Model == Workshop)
                 {
-                    if (w.Key == "degania_r35" && log)
+                    // On the project's own hex (its centre is the anchor), clear of the farm scenes, and as far out of a town's
+                    // footprint as the civilian figures keep from its label (CivilianPeople.LabelClearanceM). The units' tokens and
+                    // figures are those of the map's planned unit spots (MapScene.UnitClearings and UnitTokens, built with the map
+                    // from units_1948, not the units' live places) on the day the workshop was built (w.From), so its spot does not
+                    // move as the game's date passes a token's last day (review of #2281, S2).
+                    var built = w.From;
+                    bool OnHex(Vector2 p, float r) => (p - anchor).magnitude + r <= HexInnerRadiusM && TownLandmarks.Clear(p, r, farms)
+                        && ClearOfFigures(map, p, r, built) && FreeOn(p, r, built);
+                    float inside = Inside(anchor, footprints);
+                    at = SeededSpot(w.Key, anchor, clearance, OnHex, inside > 0f ? inside + CivilianPeople.LabelClearanceM : 0f);
+                    // A town whose footprint covers the whole hex (Jerusalem, Tel Aviv): a gap between its drawn buildings (owner,
+                    // 2 November 2026: "Among the houses").
+                    if (at == null && inside > 0f) at = TownGap(map, w.Key, anchor, clearance, (p, r) =>
+                        (p - anchor).magnitude + r <= HexInnerRadiusM && TownLandmarks.Clear(p, r, farms) && TownLandmarks.Clear(p, r, taken)
+                        && ClearOfFigures(map, p, r, built)
+                        && ground.Inside(p.x - r, p.y - r) && ground.Inside(p.x + r, p.y + r)
+                        && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, built));
+                }
+                else if (at == null)
+                {
+                    if (w.Key == "degania_r35" && log && available(w.Model))
                         Debug.LogWarning("BUILDINGS: route-facing spot unavailable for degania_r35; falling back to the seeded spot.");
                     at = SeededSpot(w.Key, anchor, clearance, Free, Inside(anchor, footprints));
                 }
-                if (at == null) { if (log) Debug.LogWarning($"BUILDINGS: no clear ground near {w.Key}; its {w.Model} is not drawn."); continue; }
+                if (at == null) { if (log && available(w.Model)) Debug.LogWarning($"BUILDINGS: no clear ground near {w.Key}; its {w.Model} is not drawn."); continue; }
                 taken.Add((at.Value, clearance));
-                plan.Add((w, at.Value));
+                if (available(w.Model)) plan.Add((w, at.Value));
             }
             return plan;
+        }
+
+        /// <summary>The ground (m) a place's name pill can take, a workshop among a town's houses keeping off it: the band from the
+        /// footprint's south edge to <see cref="TownLabelHeightM"/> past its north edge, <see cref="TownLabelHalfWidthM"/> either
+        /// side of its centre. It models MapLabelsPresenter's Above spots (centred, or starting at the kit's centre to either
+        /// side, as far as the half width reaches); a pill pushed Beside or Below its kit is not modelled, and the on-screen
+        /// checks (MapLabelTests.NoNamePillCoversAWorkshopModel*) take the zooms and framings a player sees.
+        /// Design values: a long locality pill is about 141 by 23 px at a 1280 px frame, some 18 m a pixel at the 30 km zoom
+        /// and 27 m at the close zoom's 45 km exit, with the lift above the kit and a margin.</summary>
+        public const float TownLabelHalfWidthM = 2000f, TownLabelHeightM = 1000f;
+
+        /// <summary>Whether a disc of <paramref name="r"/> at <paramref name="p"/> keeps clear of the name pill of the place whose
+        /// footprint is centred at <paramref name="centre"/> with <paramref name="radius"/>.</summary>
+        public static bool ClearOfName(Vector2 p, float r, Vector2 centre, float radius) =>
+            Mathf.Abs(p.x - centre.x) >= TownLabelHalfWidthM + r
+            || p.y - centre.y <= -radius - r || p.y - centre.y >= radius + TownLabelHeightM + r;
+
+        /// <summary>How far north on the ground a unit's figures hide what stands behind them (m): their height,
+        /// UnitBadge.FigureHeightM times UnitShowcase.FigureScale (as UnitLayer sizes them, UnitLayer.cs:764), seen at the view's
+        /// shallowest ray, CameraRig.Pitch - Fov/2, so height times cot(Pitch - Fov/2). (The flag's thin pole stands higher; keeping clear of its full height and
+        /// its cloth's reach leaves Jerusalem's hex no ground, and ArmsWorkshopVisibilityTests checks the drawn tokens, flags
+        /// included.)</summary>
+        public static float FigureShadowM => Units.UnitBadge.FigureHeightM * Units.UnitShowcase.FigureScale
+            / Mathf.Tan((CameraRig.Pitch - 0.5f * CameraRig.Fov) * Mathf.Deg2Rad);
+        // The framing (review of #2281, S1): CameraRig turns the camera Euler(Pitch, Yaw, 0) (CameraRig.cs:72), so Pitch is the
+        // view's depression below the horizon, exact on the screen's centre row; rows above it look down at less, to
+        // Pitch - Fov/2 at the top edge, where a figure hides the most ground. The bound takes that shallowest ray: 2.49 km x
+        // cot(32.5 deg) = 3.91 km (2.09 km at the centre row's 50 deg). The yaw is 0 under gdd-0.3, the only ruleset with
+        // workshops (CameraHeadingPolicy.cs:6, fixed north), and FigureScale does not change with the zoom (UnitLayer.cs:738-768).
+
+        /// <summary>Review of #2281 (the Jerusalem b21 hidden behind a garrison's figures): whether a model of clearance
+        /// <paramref name="r"/> at <paramref name="p"/> stands clear of the ground a unit spot's figures hide in the map's oblique
+        /// view: north of the spot (the camera looks north, CameraRig yaw 0), within the spot's disc either side, as far as
+        /// <see cref="FigureShadowM"/> past it. The spots: the units' town clearings (MapScene.UnitClearings) and their rings
+        /// out of town (MapScene.UnitTokens, while their dates last), the planned ground the figures stand on.</summary>
+        public static bool ClearOfFigures(MapScene map, Vector2 p, float r, DateTime on)
+        {
+            foreach (var (c, radius) in map.UnitClearings) if (Hidden(p, r, c, radius)) return false;
+            foreach (var (c, radius, until) in map.UnitTokens) if (until > on && Hidden(p, r, c, radius)) return false;   // as KitGround.OnToken
+            return true;
+        }
+
+        /// <summary>Whether a disc of <paramref name="r"/> at <paramref name="p"/> is on the ground the figures of a unit spot at
+        /// <paramref name="c"/> (its disc <paramref name="radius"/>) hide: within the disc either side, from its south edge to
+        /// <see cref="FigureShadowM"/> past its north edge.</summary>
+        public static bool Hidden(Vector2 p, float r, Vector2 c, float radius) =>
+            Mathf.Abs(p.x - c.x) < radius + r && p.y + r > c.y - radius && p.y - r < c.y + radius + FigureShadowM;
+
+        /// <summary>Whether a disc of <paramref name="r"/> at <paramref name="p"/> keeps clear of the box centred at <paramref name="c"/>,
+        /// turned <paramref name="yawDeg"/> anticlockwise in x-z (KitMesh.Corners), <paramref name="w"/> along its turn and
+        /// <paramref name="d"/> across.</summary>
+        public static bool ClearOfBox(Vector2 p, float r, Vector2 c, float yawDeg, float w, float d)
+        {
+            float a = yawDeg * Mathf.Deg2Rad, ca = Mathf.Cos(a), sa = Mathf.Sin(a);
+            var q = p - c; float u = q.x * ca + q.y * sa, v = -q.x * sa + q.y * ca;
+            float du = Mathf.Max(0f, Mathf.Abs(u) - 0.5f * w), dv = Mathf.Max(0f, Mathf.Abs(v) - 0.5f * d);
+            return du * du + dv * dv >= r * r;
+        }
+
+        /// <summary>Review of #2281: what else the kits drew on the hex about <paramref name="anchor"/>, which no house stands on by
+        /// design: the walls, platforms, landmarks, harbour works and street palms the kits placed and each landmark's close copy
+        /// (KitLayer.Stats.Landmarks), and the replaceable landmark parts' close boxes (KitLayer.Stats.LandmarkParts, #2266). All
+        /// planned at map build.</summary>
+        internal static List<(Vector2 c, float yaw, float w, float d)> TownLandmarkBoxes(MapScene map, Vector2 anchor)
+        {
+            var boxes = new List<(Vector2 c, float yaw, float w, float d)>();
+            var stats = map.KitStats;
+            if (stats == null) return boxes;
+            foreach (var p in stats.Landmarks)
+                if ((p.C - anchor).magnitude <= HexInnerRadiusM + 0.5f * (p.W + p.D)) boxes.Add((p.C, p.Yaw, p.W, p.D));
+            foreach (var part in stats.LandmarkParts)
+            {
+                var c = new Vector2(part.Near.center.x, part.Near.center.z);
+                if ((c - anchor).magnitude <= HexInnerRadiusM + 0.5f * (part.Near.size.x + part.Near.size.z)) boxes.Add((c, 0f, part.Near.size.x, part.Near.size.z));
+            }
+            return boxes;
+        }
+
+        /// <summary>The drawn buildings on the hex about <paramref name="anchor"/>: each town model instance the kit planned at
+        /// map build (TownModelLayer.InstancesOf; never what has streamed) for every footprint that reaches the hex, as a disc of
+        /// its half diagonal; <paramref name="names"/>: those footprints (their names stand above them).</summary>
+        internal static List<(Vector2 centre, float radius)> TownBuildings(MapScene map, Vector2 anchor, out List<(Vector2 centre, float radius)> names)
+        {
+            var discs = new List<(Vector2 centre, float radius)>(); names = new List<(Vector2 centre, float radius)>();
+            var layer = map.GetComponentInChildren<Kits.TownModelLayer>(true);
+            foreach (var f in map.KitFootprints)
+            {
+                if ((anchor - f.centre).magnitude >= f.radius + HexInnerRadiusM) continue;
+                names.Add((f.centre, f.radius));
+                if (layer == null) continue;
+                foreach (var b in layer.InstancesOf(f.id)) discs.Add((b.C, 0.5f * Mathf.Sqrt(b.W * b.W + b.D * b.D)));
+            }
+            return discs;
+        }
+
+        /// <summary>#1701 slice F, owner 2 November 2026 ("Among the houses"): a workshop on a hex a town's footprint covers stands
+        /// in a gap between the drawn buildings on the hex (<see cref="TownBuildings"/>), off the kits' walls, platforms and
+        /// landmarks (<see cref="TownLandmarkBoxes"/>), clear of every name there
+        /// (<see cref="ClearOfName"/>) and <paramref name="free"/> (the hex, the routes, the tokens, the other models). A fixed search: rings
+        /// half a clearance apart outward from the hex centre, each from an FNV-1a bearing of the key. Null when no gap is
+        /// clear.</summary>
+        internal static Vector2? TownGap(MapScene map, string key, Vector2 anchor, float clearance, Func<Vector2, float, bool> free)
+        {
+            var houses = TownBuildings(map, anchor, out var names);
+            var landmarks = TownLandmarkBoxes(map, anchor);
+            uint h = 2166136261;
+            foreach (char c in key) { h ^= c; h *= 16777619; }
+            float step = 0.5f * clearance;
+            for (float radius = 0f; radius + clearance <= HexInnerRadiusM; radius += step)
+            {
+                int n = radius == 0f ? 1 : Mathf.Max(6, Mathf.CeilToInt(2f * Mathf.PI * radius / step));
+                int start = (int)(h % (uint)n);
+                for (int i = 0; i < n; i++)
+                {
+                    float angle = 2f * Mathf.PI * ((start + i) % n) / n;
+                    var p = anchor + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
+                    bool named = false;
+                    foreach (var (c, fr) in names) if (!ClearOfName(p, clearance, c, fr)) { named = true; break; }
+                    if (named || !TownLandmarks.Clear(p, clearance, houses)) continue;
+                    bool onLandmark = false;
+                    foreach (var (bc, yaw, bw, bd) in landmarks) if (!ClearOfBox(p, clearance, bc, yaw, bw, bd)) { onLandmark = true; break; }
+                    if (onLandmark || !free(p, clearance)) continue;
+                    return p;
+                }
+            }
+            return null;
         }
 
         void Rebuild()
@@ -377,6 +594,7 @@ namespace Statecraft.Game.Map.Collection
             ClearVisuals();
             var ground = PlacementLayer.CampGround(map);
             var holes = new List<(Vector2 centre, float radius)>();
+            var boxes = new List<Bounds[]>();
             foreach (var (w, spot) in Plan(map, date, wants, m => prefabs.TryGetValue(m, out var p) && p != null, log: true))
             {
                 var prefab = prefabs[w.Model]!;
@@ -393,7 +611,10 @@ namespace Statecraft.Game.Map.Collection
                 go.transform.position += new Vector3(pos.x - b.center.x, pos.y - b.min.y, pos.z - b.center.z);
                 foreach (var r in go.GetComponentsInChildren<Renderer>(true)) { r.shadowCastingMode = ShadowCastingMode.On; r.forceRenderingOff = !LastClose; renderers.Add(r); }
                 Placed.Add((w.Key, w.Model, pos));
+                if (w.Model == Workshop) boxes.Add(new[] { Bounds(go) });
             }
+            // Published once, whole (review of #2281, M1): a list handed to the labels is never changed after.
+            workshopBoxes = boxes;
             // No kit tree stands on a building: the trees whose crowns reach its ground are left out at draw time, as under
             // the unit figures (Kits.VegetationLayer.Hide).
             Units.UnitShowcase.HideTrees(map, Name, holes);
