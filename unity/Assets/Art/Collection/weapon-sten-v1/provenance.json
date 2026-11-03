@@ -1,0 +1,22 @@
+{
+  "id": "weapon-sten-v1",
+  "source": "asset-sources/prepared-weapons-20261031/sten/statecraft-sten-approved-textured-bc6b06c8.glb",
+  "source_glb_sha256": "3c0d0cc4d3c9d086a4883ea23a2940a311f6c4548233a3403c515ad636753f1e",
+  "creator_credit": "Tal Heuberger",
+  "licence": "CC-BY-NC-ND-4.0",
+  "pull_request": 2083,
+  "texture_dimensions": [
+    2048,
+    2048
+  ],
+  "texture_sha256": "c5ba4fbddd345bbf5da58be295b330981650f52b9e15f0d285e8fe5425b0d270",
+  "compatibility_fbx_sha256": "e4d07630ac3d161e5930e3edee35b16e74569b114f86bfa66ede163941d725da",
+  "triangles": 4851,
+  "geometry_max_vertex_error": 4.214684778958144e-08,
+  "uv_max_error": 0.0,
+  "triangle_connectivity": "identical",
+  "blender": "5.0.1",
+  "decimation": false,
+  "welding": false,
+  "conversion": "Standard glTF Y-up / FBX Y-up compatibility export (Tal's permission of 31 October 2026 covers export conversions); no pivot, mesh or UV rewrite; no clips in the source; map copied byte for byte from the delivered JPG"
+}

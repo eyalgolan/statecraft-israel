@@ -27,7 +27,9 @@ namespace Statecraft.HexTiles.Prototypes
     /// - Church Box, and belfry, clock tower and minaret Pine stand-ins: about 160. Quay flat: 12.
     /// - Total about 66,000 of 70,000 with the harbour, about 39,100 without it.
     ///
-    /// The clock tower, church, belfry and minaret have no models (tiles:jaffa_old_city/...), so they always draw stand-ins.</summary>
+    /// The clock tower, belfry and sea minaret are Tal Heuberger's models from the hex-props bundle (tiles:jaffa_old_city/...,
+    /// see HexProps) and draw stand-ins until it arrives. The church (tiles:jaffa_old_city/st_peter) has no model, so it always
+    /// draws its stand-in.</summary>
     [HexPrototype("jaffa_old_city", Kind = "city")]
     public sealed class JaffaOldCity : IHexPrototype
     {

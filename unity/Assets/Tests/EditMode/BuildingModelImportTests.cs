@@ -130,23 +130,61 @@ public class BuildingModelImportTests
             Assert.IsFalse(imp.isReadable, path + " GPU-only");
             if (Generated(id))
             {
-                // The generated houses keep their delivered, approved import: compressed, quality 100, exactly 4096, no overrides.
+                // The generated houses keep their delivered, approved import: compressed, quality 100, exactly 4096, and no
+                // override but the web cap (TheGeneratedHousesColourMapsAreCappedAt2048OnTheWebOnly).
                 Assert.AreEqual(4096, imp.maxTextureSize, path + " max size");
                 Assert.AreEqual(100, imp.compressionQuality, path + " quality");
                 Assert.AreEqual(TextureImporterCompression.Compressed, imp.textureCompression, path + " compression");
-                foreach (var target in new[] { "Standalone", "WebGL", "Android", "iPhone" })
+                foreach (var target in new[] { "Standalone", "Android", "iPhone" })
                     Assert.IsFalse(imp.GetPlatformTextureSettings(target).overridden, path + " " + target + " override");
             }
-            foreach (var target in new[] { "Standalone", "WebGL" })
+            foreach (var target in Generated(id) ? new[] { "Standalone" } : new[] { "Standalone", "WebGL" })
             {
                 var setting = imp.GetPlatformTextureSettings(target);
                 Assert.GreaterOrEqual(setting.maxTextureSize, Math.Max(width, height), path + " " + target + " keeps source size");
                 Assert.IsFalse(setting.crunchedCompression, path + " " + target);
             }
+            // Imported at the source size, or at the active target's cap where it overrides one (the houses on WebGL: 2048).
+            // Only WebGL and the desktop target are mapped here: no colour map in this folder overrides Android or iOS (asserted above
+            // for the houses).
+            var active = imp.GetPlatformTextureSettings(EditorUserBuildSettings.activeBuildTarget == BuildTarget.WebGL ? "WebGL" : "Standalone");
+            int cap = active.overridden ? active.maxTextureSize : imp.maxTextureSize;
+            int longest = Math.Max(width, height), w = width, h = height;
+            if (longest > cap) { w = width * cap / longest; h = height * cap / longest; }   // Unity keeps the aspect ratio
             var tex = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
-            Assert.AreEqual(width, tex.width, path + " source width"); Assert.AreEqual(height, tex.height, path + " source height");
+            Assert.AreEqual(w, tex.width, path + " imported width"); Assert.AreEqual(h, tex.height, path + " imported height");
             Assert.Greater(tex.mipmapCount, 1, path + " imported mipmaps");
         }
+    }
+
+    /// <summary>Owner, 2 November 2026: "Cap at 2048 px on web (Recommended)". Each generated house's colour map imports at
+    /// 2048 px in the WebGL build only, through a WebGL override, so its streamed bundle is smaller. The default and desktop
+    /// import keep the delivered 4096 px, and the source JPG is unchanged.</summary>
+    [Test]
+    public void TheGeneratedHousesColourMapsAreCappedAt2048OnTheWebOnly()
+    {
+        var houses = Ids.Where(Generated).ToArray();
+        Assert.AreEqual(5, houses.Length, "houses 01 to 05");
+        foreach (var id in houses)
+        {
+            var path = ColourMap(id); var imp = (TextureImporter)AssetImporter.GetAtPath(path);
+            var web = imp.GetPlatformTextureSettings("WebGL");
+            Assert.IsTrue(web.overridden, path + " WebGL override");
+            Assert.AreEqual(2048, web.maxTextureSize, path + " WebGL max size");
+            Assert.AreEqual(TextureImporterFormat.Automatic, web.format, path + " WebGL format");
+            Assert.AreEqual(TextureImporterCompression.Compressed, web.textureCompression, path + " WebGL compression");
+            Assert.IsFalse(web.crunchedCompression, path + " WebGL crunch");
+            Assert.AreEqual(100, web.compressionQuality, path + " WebGL quality");
+            Assert.Greater(imp.maxTextureSize, web.maxTextureSize, path + " the default keeps more than the web cap");
+            Assert.IsFalse(imp.GetPlatformTextureSettings("Standalone").overridden, path + " desktop keeps the default");
+        }
+        // Only the houses: no other generated model's colour map (the tents, the props, the vehicles) has a WebGL override.
+        var others = AssetDatabase.FindAssets("t:Texture2D", new[] { "Assets" }).Select(AssetDatabase.GUIDToAssetPath)
+            .Where(p => System.IO.Path.GetFileName(p).StartsWith("generated-1948-", StringComparison.Ordinal) && p.EndsWith("_basecolor.jpg", StringComparison.Ordinal)
+                && !p.StartsWith(Folder + "/", StringComparison.Ordinal)).ToArray();
+        Assert.GreaterOrEqual(others.Length, 6, "the tents, the props and the vehicles");
+        foreach (var path in others)
+            Assert.IsFalse(((TextureImporter)AssetImporter.GetAtPath(path)).GetPlatformTextureSettings("WebGL").overridden, path + " WebGL override");
     }
 
     [Test]

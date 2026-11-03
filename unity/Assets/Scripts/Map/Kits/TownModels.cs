@@ -90,6 +90,13 @@ namespace Statecraft.Game.Map.Kits
         /// <summary>Haifa's German Colony: the Templers' stone houses with red roofs.</summary>
         internal static readonly TownModel[] Templer = { TownModel.B05aMoshavaHouse };
 
+        /// <summary>The cities drawn from their building models at every zoom, with no whole-town model (owner ruling, 2 November
+        /// 2026: "we had tal's smaller buildings alreaedy for tel aviv, jerusalem and haifa and jaffa - instead of the huge
+        /// buildings", confirmed as "Yes, small buildings at every zoom"). This replaces the 18 October 2026 "Whole model far,
+        /// buildings near" for these four: Collection.TownLandmarks.ModelFor gives them no whole-town model, and TownModelLayer
+        /// admits their buildings beyond its close switch too.</summary>
+        public static bool AtEveryZoom(string id) => id == "tel_aviv" || id == "jerusalem" || id == "haifa" || id == "jaffa";
+
         /// <summary>The wine moshavot (the Carmel wineries of Rishon LeZion, 1890, and Zikhron Ya'akov, 1892): their first
         /// house nearest the heart is the winery.</summary>
         public static bool WineMoshava(string id) => id == "rishon_lezion" || id == "zikhron_yaakov";
