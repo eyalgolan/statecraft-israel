@@ -279,7 +279,7 @@ namespace Statecraft.Game.Map.Collection
                 var old = transform.GetChild(i).gameObject; if (residencyView != null) retired.Add(old);
                 if (Application.isPlaying) { if (gameObject.activeInHierarchy) old.transform.SetParent(null); Destroy(old); } else DestroyImmediate(old);
             }
-            renderers.Clear(); Placed.Clear();
+            renderers.Clear(); Placed.Clear(); workshopBoxes = new List<Bounds[]>();
             originals.Clear();
             if (map != null) Statecraft.Game.Map.Units.UnitShowcase.HideTrees(map, Name, Array.Empty<(Vector2, float)>());
         }
@@ -311,16 +311,6 @@ namespace Statecraft.Game.Map.Collection
         MapScene? map; DateTime date; bool shown;
         IReadOnlyList<Want> workshops = Array.Empty<Want>();
         int ruralVersion;
-        IReadOnlyList<PlaceName> names = Array.Empty<PlaceName>();
-
-        internal static bool SameNames(IReadOnlyList<PlaceName> a, IReadOnlyList<PlaceName> b)
-        {
-            if (ReferenceEquals(a, b)) return true;
-            if (a.Count != b.Count) return false;
-            for (int i = 0; i < a.Count; i++)
-                if (a[i].Id != b[i].Id || a[i].At != b[i].At || a[i].HalfX != b[i].HalfX || a[i].Low != b[i].Low || a[i].High != b[i].High) return false;
-            return true;
-        }
 
         internal static bool Same(IReadOnlyList<Want> a, IReadOnlyList<Want> b)
         {
@@ -330,6 +320,12 @@ namespace Statecraft.Game.Map.Collection
             return true;
         }
         public readonly List<(string Key, string Model, Vector3 At)> Placed = new List<(string, string, Vector3)>();
+        List<Bounds[]> workshopBoxes = new List<Bounds[]>();
+
+        /// <summary>Review of #2281 (option 3, coordinator 3 November 2026): the drawn b21s' world boxes while they are drawn (the
+        /// close zoom), for the name pills to keep clear of. GameRoot passes them to MapLabelsPresenter's keepClear with the
+        /// units' and the craft's; a new list each rebuild, so the labels refresh when it changes.</summary>
+        public IReadOnlyList<Bounds[]> KeepClear => isActiveAndEnabled && LastClose ? workshopBoxes : (IReadOnlyList<Bounds[]>)Array.Empty<Bounds[]>();
         public bool FailedOpen { get; private set; }
         public bool LastClose { get; private set; }
         readonly Dictionary<string, List<GameObject>> originals = new Dictionary<string, List<GameObject>>(StringComparer.Ordinal);
@@ -339,12 +335,11 @@ namespace Statecraft.Game.Map.Collection
         /// <summary>As <see cref="ShowAt(MapScene, DateTime)"/>, with a b21 at each built arms workshop of the state
         /// (<see cref="ArmsWorkshops"/>; gdd-0.3 only).</summary>
         public static SpecialBuildingModels? ShowAt(MapScene map, DateTime date, Statecraft.Sim.Content content,
-            IEnumerable<Statecraft.Sim.CityProject> projects) => ShowAt(map, date, ArmsWorkshops(content, projects), LocationNames(map, content.MapLocations));
+            IEnumerable<Statecraft.Sim.CityProject> projects) => ShowAt(map, date, ArmsWorkshops(content, projects));
 
         /// <summary>As <see cref="ShowAt(MapScene, DateTime)"/>, with <paramref name="workshops"/> (<see cref="ArmsWorkshops"/>,
         /// computed once by the caller for this layer and HexPropModels).</summary>
-        internal static SpecialBuildingModels? ShowAt(MapScene map, DateTime date, IReadOnlyList<Want> workshops,
-            IReadOnlyList<PlaceName>? names = null)
+        internal static SpecialBuildingModels? ShowAt(MapScene map, DateTime date, IReadOnlyList<Want> workshops)
         {
             if (map == null || map.Terrain == null || map.Hexes == null) return null;
             var layer = map.Terrain.transform.Find(Name)?.GetComponent<SpecialBuildingModels>();
@@ -359,9 +354,8 @@ namespace Statecraft.Game.Map.Collection
             // workshops, the rural plan they keep clear of (RuralLife.VersionOf: HexPropModels rebuilds on it too, so the props
             // keep clear of the b21 drawn).
             int rural = workshops.Count == 0 ? 0 : RuralLife.VersionOf(map);
-            names ??= Array.Empty<PlaceName>();
-            if (layer.shown && layer.date == date && Same(layer.workshops, workshops) && layer.ruralVersion == rural && SameNames(layer.names, names)) return layer;
-            layer.shown = true; layer.date = date; layer.workshops = workshops; layer.ruralVersion = rural; layer.names = names;
+            if (layer.shown && layer.date == date && Same(layer.workshops, workshops) && layer.ruralVersion == rural) return layer;
+            layer.shown = true; layer.date = date; layer.workshops = workshops; layer.ruralVersion = rural;
             layer.Show(workshops.Count == 0 ? Placements(date) : Placements(date).Concat(workshops).ToList()); return layer;
         }
 
@@ -381,7 +375,7 @@ namespace Statecraft.Game.Map.Collection
         /// hex's edge and the farm scenes' plan); the list keeps those whose model <paramref name="available"/> holds. It reads only the map and the date, never what has streamed, so with every
         /// model available it is the plan the layer draws once everything has arrived (HexPropModels keeps clear of it, #2266).</summary>
         internal static List<(Want want, Vector2 at)> Plan(MapScene map, DateTime date, IReadOnlyList<Want> wants, Func<string, bool> available, bool log,
-            IReadOnlyList<(RuralLife.Want want, Vector2 spot)>? ruralPlan = null, IReadOnlyList<PlaceName>? names = null)
+            IReadOnlyList<(RuralLife.Want want, Vector2 spot)>? ruralPlan = null)
         {
             var ground = PlacementLayer.CampGround(map);
             var footprints = map.KitFootprints.Select(f => (f.centre, f.radius)).ToList();
@@ -418,22 +412,17 @@ namespace Statecraft.Game.Map.Collection
                 }
                 if (at == null && w.Model == Workshop)
                 {
-                    // On the project's own hex (its centre is the anchor), clear of the farm scenes, of the names of the places
-                    // on the hex (the towns' and localities' bands, ClearOfName; the map locations' pills, ClearOfPlaceName), and
-                    // as far out of a town's footprint as the civilian figures keep from its label (CivilianPeople.LabelClearanceM).
-                    var townNames = new List<(Vector2 centre, float radius)>();
-                    foreach (var f in map.KitFootprints) if ((anchor - f.centre).magnitude < f.radius + HexInnerRadiusM) townNames.Add((f.centre, f.radius));
-                    bool Named(Vector2 p, float r) { foreach (var (c, fr) in townNames) if (!ClearOfName(p, r, c, fr)) return true; return false; }
+                    // On the project's own hex (its centre is the anchor), clear of the farm scenes, and as far out of a town's
+                    // footprint as the civilian figures keep from its label (CivilianPeople.LabelClearanceM).
                     bool OnHex(Vector2 p, float r) => (p - anchor).magnitude + r <= HexInnerRadiusM && TownLandmarks.Clear(p, r, farms)
-                        && !Named(p, r) && ClearOfPlaceNames(p, r, names) && Free(p, r);
+                        && ClearOfFigures(map, p, r, date) && Free(p, r);
                     float inside = Inside(anchor, footprints);
                     at = SeededSpot(w.Key, anchor, clearance, OnHex, inside > 0f ? inside + CivilianPeople.LabelClearanceM : 0f);
-                    // No such spot on the rings (a town whose footprint covers the whole hex, Jerusalem and Tel Aviv, or names
-                    // over the rings' ground): the whole hex's gaps between the drawn buildings (owner, 2 November 2026: "Among
-                    // the houses").
-                    if (at == null) at = TownGap(map, w.Key, anchor, clearance, (p, r) =>
+                    // A town whose footprint covers the whole hex (Jerusalem, Tel Aviv): a gap between its drawn buildings (owner,
+                    // 2 November 2026: "Among the houses").
+                    if (at == null && inside > 0f) at = TownGap(map, w.Key, anchor, clearance, (p, r) =>
                         (p - anchor).magnitude + r <= HexInnerRadiusM && TownLandmarks.Clear(p, r, farms) && TownLandmarks.Clear(p, r, taken)
-                        && ClearOfPlaceNames(p, r, names)
+                        && ClearOfFigures(map, p, r, date)
                         && ground.Inside(p.x - r, p.y - r) && ground.Inside(p.x + r, p.y + r)
                         && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, date));
                 }
@@ -465,70 +454,25 @@ namespace Statecraft.Game.Map.Collection
             Mathf.Abs(p.x - centre.x) >= TownLabelHalfWidthM + r
             || p.y - centre.y <= -radius - r || p.y - centre.y >= radius + TownLabelHeightM + r;
 
-        /// <summary>Review of #2281 on main (the "East Jerusalem / Old City" pill over the Jerusalem b21): the ground a map
-        /// location's name pill can take (#1008, MapLabelsPresenter's location pills), in world metres about its point
-        /// <see cref="At"/>: <see cref="HalfX"/> either side, from <see cref="Low"/> to <see cref="High"/> north (negative is
-        /// south), the pill's screen extent turned into the ground it hides (<see cref="LocationNames"/>).</summary>
-        public readonly struct PlaceName
+        /// <summary>How far north on the ground a unit's figures hide what stands behind them (m): their height,
+        /// UnitBadge.FigureHeightM times UnitShowcase.FigureScale (as UnitLayer sizes them, UnitLayer.cs:764), seen at
+        /// CameraRig.Pitch, so height times cot(Pitch). (The flag's thin pole stands higher; keeping clear of its full height and
+        /// its cloth's reach leaves Jerusalem's hex no ground, and ArmsWorkshopVisibilityTests checks the drawn tokens, flags
+        /// included.)</summary>
+        public static float FigureShadowM => Units.UnitBadge.FigureHeightM * Units.UnitShowcase.FigureScale / Mathf.Tan(CameraRig.Pitch * Mathf.Deg2Rad);
+
+        /// <summary>Review of #2281 (the Jerusalem b21 hidden behind a garrison's figures): whether a model of clearance
+        /// <paramref name="r"/> at <paramref name="p"/> stands clear of the ground a unit spot's figures hide in the map's oblique
+        /// view: north of the spot (the camera looks north, CameraRig yaw 0), within the spot's disc either side, as far as
+        /// <see cref="FigureShadowM"/> past it. The spots: the units' town clearings (MapScene.UnitClearings) and their rings
+        /// out of town (MapScene.UnitTokens, while their dates last), the planned ground the figures stand on.</summary>
+        public static bool ClearOfFigures(MapScene map, Vector2 p, float r, DateTime date)
         {
-            public readonly string Id; public readonly Vector2 At; public readonly float HalfX, Low, High;
-            public PlaceName(string id, Vector2 at, float halfX, float low, float high) { Id = id; At = at; HalfX = halfX; Low = low; High = high; }
-        }
-
-        /// <summary>The zoom the location pills are sized at (m): the close zoom's entry, TownModelLayer.CloseEnterM, the farthest
-        /// a model is drawn coming in (the owner accepted the 45 km exit: "Accept it (Recommended)", 2 November 2026).</summary>
-        public const float LocationNameZoomM = Kits.TownModelLayer.CloseEnterM;
-
-        /// <summary>A pill's width per character of its name, in ems (design value: the widest measured, "East Jerusalem / Old
-        /// City" at 264 px in 23 px type, is 0.46 em a character with its padding; 0.5 keeps a margin).</summary>
-        public const float PillEmPerChar = 0.5f;
-
-        /// <summary>The name pills of the map locations that are no game settlement (MapLabelsPresenter.cs:262-283: the same
-        /// list, the same point, MapScene.LocationPoint). Each pill hangs on its marker box (MapLabelsPresenter.KitBounds, :345,
-        /// falls back to MarkerBox, :404-408: a cube of SettlementPlacer.MarkerHeightM(type) on the point) at one of SpotRect's
-        /// spots (:412-426): above it from the box's centre or reaching to either side by the pill's width, beside it, or below it, each
-        /// LiftPx (:78) clear. The union of those spots, in screen pixels, turned into ground at <see cref="LocationNameZoomM"/>
-        /// with CameraRig's Fov and Pitch (CameraRig.cs:13): a pixel is 2 d tan(Fov/2) / 1080 m across (the panel's reference
-        /// height) and that over sin(Pitch) deep; a box's top edge stands H cot(Pitch) north of its foot. The pill's size comes
-        /// from Statecraft.uss:827-852 (.map-label: 18 px type, 12 px side padding, 3 px top and bottom, 1 px border;
-        /// .map-label-city: 23 px) and the longer of its English and Hebrew names.</summary>
-        public static IReadOnlyList<PlaceName> LocationNames(MapScene map, IEnumerable<Statecraft.Sim.MapLocation> locations)
-        {
-            var list = new List<PlaceName>();
-            var settlements = new HashSet<string>(map.Settlements.Select(s => s.Id), StringComparer.Ordinal);
-            float tanHalf = Mathf.Tan(0.5f * CameraRig.Fov * Mathf.Deg2Rad), pitch = CameraRig.Pitch * Mathf.Deg2Rad;
-            float across = 2f * LocationNameZoomM * tanHalf / 1080f, deep = across / Mathf.Sin(pitch), cot = 1f / Mathf.Tan(pitch);
-            float lift = Statecraft.Game.UI.MapLabelsPresenter.LiftPx;
-            foreach (var loc in locations)
-            {
-                if (settlements.Contains(loc.Id)) continue;
-                string type = Statecraft.Game.UI.MapLabelsPresenter.LabelType(loc.Kind);
-                float font = type == "city" ? 23f : 18f;
-                int chars = Math.Max(loc.Name.Length, string.IsNullOrEmpty(loc.NameHe) ? 0 : loc.NameHe.Length);
-                float w = chars * PillEmPerChar * font + 2f * 12f + 2f, h = 1.35f * font + 3f + 2f;
-                float box = SettlementPlacer.MarkerHeightM(type);
-                var (lon, lat) = map.LocationPoint(loc.Id, loc.Lon, loc.Lat);
-                var at3 = map.Frame.ToWorld(lon, lat, 0);
-                list.Add(new PlaceName(loc.Id, new Vector2(at3.x, at3.z), 0.5f * box + (lift + w) * across,
-                    -0.5f * box - (lift + h) * deep, 0.5f * box + box * cot + (lift + h) * deep));
-            }
-            return list;
-        }
-
-        /// <summary>Whether a model of clearance <paramref name="r"/> at <paramref name="p"/>, its top <paramref name="topNorth"/>
-        /// m north on screen of its foot, keeps off <paramref name="name"/>'s pill ground.</summary>
-        public static bool ClearOfPlaceName(Vector2 p, float r, float topNorth, PlaceName name) =>
-            Mathf.Abs(p.x - name.At.x) >= name.HalfX + r
-            || p.y + r + topNorth <= name.At.y + name.Low || p.y - r >= name.At.y + name.High;
-
-        /// <summary>A b21's top, north on screen of its foot (m): its height (at most its length, SizeOf) times cot(Pitch).</summary>
-        static float WorkshopTopNorth => SizeOf(Workshop) / Mathf.Tan(CameraRig.Pitch * Mathf.Deg2Rad);
-
-        static bool ClearOfPlaceNames(Vector2 p, float r, IReadOnlyList<PlaceName>? names)
-        {
-            if (names == null) return true;
-            float top = WorkshopTopNorth;
-            foreach (var n in names) if (!ClearOfPlaceName(p, r, top, n)) return false;
+            float shadow = FigureShadowM;
+            bool Hides(Vector2 c, float radius) =>
+                Mathf.Abs(p.x - c.x) < radius + r && p.y + r > c.y - radius && p.y - r < c.y + radius + shadow;
+            foreach (var (c, radius) in map.UnitClearings) if (Hides(c, radius)) return false;
+            foreach (var (c, radius, until) in map.UnitTokens) if (until >= date && Hides(c, radius)) return false;
             return true;
         }
 
@@ -619,7 +563,7 @@ namespace Statecraft.Game.Map.Collection
             ClearVisuals();
             var ground = PlacementLayer.CampGround(map);
             var holes = new List<(Vector2 centre, float radius)>();
-            foreach (var (w, spot) in Plan(map, date, wants, m => prefabs.TryGetValue(m, out var p) && p != null, log: true, names: names))
+            foreach (var (w, spot) in Plan(map, date, wants, m => prefabs.TryGetValue(m, out var p) && p != null, log: true))
             {
                 var prefab = prefabs[w.Model]!;
                 Vector2? at = spot;
@@ -635,6 +579,7 @@ namespace Statecraft.Game.Map.Collection
                 go.transform.position += new Vector3(pos.x - b.center.x, pos.y - b.min.y, pos.z - b.center.z);
                 foreach (var r in go.GetComponentsInChildren<Renderer>(true)) { r.shadowCastingMode = ShadowCastingMode.On; r.forceRenderingOff = !LastClose; renderers.Add(r); }
                 Placed.Add((w.Key, w.Model, pos));
+                if (w.Model == Workshop) workshopBoxes.Add(new[] { Bounds(go) });
             }
             // No kit tree stands on a building: the trees whose crowns reach its ground are left out at draw time, as under
             // the unit figures (Kits.VegetationLayer.Hide).

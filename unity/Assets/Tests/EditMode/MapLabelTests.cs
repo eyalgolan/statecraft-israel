@@ -330,7 +330,8 @@ public class MapLabelTests
                 new[] { new Statecraft.Sim.CityProject(9, Statecraft.Sim.Workshops.ArmsWorkshop, city, home.Q, home.R, 0, built) })!;
             var model = layer.transform.Find(Statecraft.Game.Map.Collection.SpecialBuildingModels.WorkshopKey(9));
             Assert.IsNotNull(model, "the workshop model stands at " + city);
-            labels = new MapLabelsPresenter(hd.Root, map, cam, locations: Locations());
+            // As GameRoot wires it (#1701 slice F, option 3): the names keep clear of the drawn b21 (SpecialBuildingModels.KeepClear).
+            labels = new MapLabelsPresenter(hd.Root, map, cam, keepClear: () => layer.KeepClear, locations: Locations());
             var all = labels.Labels.Concat(labels.LocalityLabels).Concat(labels.LocationLabels).ToList();
             var slots = labels.Slots.Concat(labels.LocalitySlots).Concat(labels.LocationSlots).ToList();
             var failures = new System.Collections.Generic.List<string>();
@@ -341,6 +342,9 @@ public class MapLabelTests
                 foreach (var offset in new[] { 0f, -2500f, 2500f })
                 {
                     rig.LookAt = model!.position + new Vector3(offset, 0f, 0f); rig.Distance = distance; rig.Yaw = 0; rig.TopInset = 0; rig.Apply();
+                    layer.Choose(default, cam);   // the render callback's close-zoom switch, as a camera rendering would run it
+                    // Beyond the close zoom (the view ray's ground distance, TownModelLayer.ViewDistance) the b21 is not drawn.
+                    if (!layer.LastClose) { TestContext.WriteLine($"{distance:0} m, {offset:0} m: the b21 is not drawn here"); continue; }
                     for (int i = 0; i < 20 && all.Any(l => float.IsNaN(l.resolvedStyle.width) || l.resolvedStyle.width <= 0); i++) yield return null;
                     labels.Refresh(force: true); yield return null;
                     labels.Refresh(force: true); yield return null;
