@@ -35,7 +35,7 @@ public sealed class CollectionResidencyViewAllocationTests
             // Prove the recorder catches the kind of managed allocation this regression guards against.
             Assert.That(() => { var allocated = new int[1]; GC.KeepAlive(allocated); }, new AllocatingGCMemoryConstraint());
             int nextFrame = 5; bool demandStayedFixed = true, nothingWasPruned = true;
-            Assert.That(() =>
+            TestDelegate hundredFrames = () =>
             {
                 for (int i = 0; i < 100; i++)
                 {
@@ -47,7 +47,14 @@ public sealed class CollectionResidencyViewAllocationTests
                         && view.Keys.Count == 1 && view.Keys.Contains("fixed");
                     nothingWasPruned &= !view.Prune(nextFrame - 1);
                 }
-            }, Is.Not.AllocatingGCMemory());
+            };
+            // Run the exact measured delegate once before measuring it. Mono JIT-compiles this lambda on its first call,
+            // and compiling each "fixed" literal allocates a temporary string (2 GC.Alloc samples on the first call, 0 on
+            // later calls, measured in Unity 6000.3.25f1 on he_IL and en_US, PR 2351). That one-time cost belongs to the
+            // test, not to the view; the measured call below still runs all 100 frames, so any per-frame allocation in
+            // Observe or Prune still fails it.
+            hundredFrames();
+            Assert.That(hundredFrames, Is.Not.AllocatingGCMemory());
             Assert.IsTrue(demandStayedFixed, "the fixed camera keeps the same resident key");
             Assert.IsTrue(nothingWasPruned, "the observed camera remains live");
         }
