@@ -438,6 +438,7 @@ public class CauseTextTests
             new Cause("draft", "town", -1, "Town: Housing was cancelled; the Money spent is not returned", key: CauseKeys.ProjectCancelled, args: new[] { "housing" }),
             new Cause("draft", "town", 1, "Town: Housing was finished", key: CauseKeys.ProjectCompleted, args: new[] { "housing" }),
             new Cause("draft", "town", 1, "Town: a builder started on Housing", key: CauseKeys.ProjectBuilder, args: new[] { "housing" }),   // #1700
+            new Cause("draft", "town", -1, "Town: a builder left Housing and is free again", key: CauseKeys.ProjectBuilderFreed, args: new[] { "housing" }),   // #1700 slice B
             new Cause("draft", "town", 0, "Town: Housing waits: no builder", key: CauseKeys.ProjectWaiting, args: new[] { "housing", Projects.NoBuilder }),
             new Cause("draft", "arms", 2000000000, "Bought 2000000000 Arms, cost IL\u00A01.3m", key: CauseKeys.ArmsBought, args: new[] { "1.25" }),
             new Cause("draft", "town", 2, "Town: arms workshops staffed: 2", key: CauseKeys.WorkshopWorkers, args: new[] { "2" }),
