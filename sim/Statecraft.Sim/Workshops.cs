@@ -20,20 +20,48 @@ namespace Statecraft.Sim
 
         /// <summary>R-ARMS-005: a staffing order's refusals (Check), formats with the settlement's name ({0}) and a count ({1},
         /// invariant). The English is what a turn's Rejected list and a save carry; the UI words it in its language
-        /// (SimBridge.ReasonText, #1722).</summary>
+        /// (SimBridge.ReasonText, #1722). <see cref="RefusedPeople"/> is also the jobs order's refusal past the city's
+        /// civilians and craftsmen less its staffed workshops (Cities.Assign, R-CITY-001).</summary>
         public const string RefusedBuiltOne = "{0} has 1 arms workshop", RefusedBuilt = "{0} has {1} arms workshops",
             RefusedPeople = "{0} has {1} civilians and craftsmen", RefusedPeopleNoJob = "{0} has {1} civilians and craftsmen without a job";
+
+        /// <summary>R-ARMS-005 (#1701 OQ6): the tier a newly staffed workshop's worker is priced at on the aggregate cities,
+        /// until the population ledger's tiers are live (R-POP-004). Staff gives it, and NextCyclePrice prices a workshop
+        /// never staffed at it.</summary>
+        internal const SyntheticWorkshopTier AggregateTier = SyntheticWorkshopTier.Ordinary;
 
         static string Refused(string format, params object[] values) => string.Format(System.Globalization.CultureInfo.InvariantCulture, format, values);
 
         /// <summary>R-ARMS-005: the number of the city's built arms workshops, the most AssignWorkers(city, "workshop", n) staffs.</summary>
         public static int Built(Content c, GameState s, string city) => BuiltIn(c, s, city).Count;
 
+        /// <summary>R-ARMS-006 (#1722, the hex panel): what the production step would charge for the built workshop
+        /// <paramref name="project"/>'s next cycle, at its worker's tier, or at <see cref="AggregateTier"/> for a workshop
+        /// never staffed (the tier Staff would give it). Null while a cycle is under way (its price is the Workshop record's
+        /// PaidCost), for an unknown id, a project still being built or with no worker slot, and outside gdd-0.3. Nothing
+        /// changes.</summary>
+        public static decimal? NextCyclePrice(Content c, GameState s, int project)
+        {
+            if (c.Ruleset != SaveGame.Gdd03Ruleset) return null;
+            if (!s.CityProjects.TryGetValue(project, out var p) || !IsBuilt(c, p)) return null;
+            s.Workshops.TryGetValue(project, out var w);
+            return w?.PaidCost != null ? null : Price(Rules(c), w);
+        }
+
+        /// <summary>R-ARMS-006: a cycle's staffed months (gdd03-balance workshop.staffed_turns) under gdd-0.3, else null.</summary>
+        public static int? CycleMonths(Content c) => c.Ruleset == SaveGame.Gdd03Ruleset ? Rules(c).StaffedTurns : (int?)null;
+
+        static SyntheticWorkshopRules Rules(Content c) => SyntheticWorkshopRules.FromCatalogue(c.Gdd03Balance!);   // the loader requires it under gdd-0.3
+
+        /// <summary>R-ARMS-006 (27M-13): a cycle's price at the worker's tier; <see cref="AggregateTier"/> with no record.</summary>
+        static decimal Price(SyntheticWorkshopRules rules, Workshop? w) => rules.Price(w?.WorkerTier ?? AggregateTier);
+
         /// <summary>R-ARMS-005: why AssignWorkers(<paramref name="city"/>, "workshop", <paramref name="count"/>) would be
         /// refused, or null; nothing changes. With an empty <paramref name="pending"/> it is the order's own check. With this
         /// turn's queue (#1722 slice E, the hex panel) it also counts the city's pending "job" order (whose jobs then hold
         /// no workshop worker, and which turns R-CITY-009's default off) and its Train and reassignment orders
-        /// (Training.Ordered), so a count it accepts is still accepted whichever of them runs first.</summary>
+        /// (Training.Ordered) and the builder each queued gdd-0.3 StartProject there may take (R-CITY-011), so a count it
+        /// accepts is still accepted whichever of them runs first.</summary>
         public static string? Check(Content c, GameState s, string city, int count, IEnumerable<Command> pending)
         {
             if (!s.Cities.TryGetValue(city, out var x)) return "There is no such city";
@@ -47,15 +75,19 @@ namespace Statecraft.Sim
             var byDefault = x.JobsDefault && job == null;
             var staffed = Staffed(s, city);
             // R-CITY-009: while the city's job default is on, a newly staffed workshop may take its worker from the default's
-            // jobs (the default then fills one job fewer, R-CITY-001); a number the player set is not lowered.
-            var free = x.Civilians + x.Craftsmen - Math.Max(x.JobsDefault ? 0 : x.Employed, job ?? 0) - staffed - Training.Ordered(city, list);
+            // jobs (the default then fills one job fewer, R-CITY-001); a number the player set is not lowered. R-CITY-011: a
+            // builder is not free, nor the one a queued start there may take.
+            var free = x.Civilians + x.Craftsmen - Math.Max(x.JobsDefault ? 0 : x.Employed, job ?? 0) - staffed - Projects.Builders(s, city) - Projects.Starting(s, city, list) - Training.Ordered(city, list);
             if (count - staffed > free) return Refused(byDefault ? RefusedPeople : RefusedPeopleNoJob, name, Math.Max(0, free));
             return null;
         }
 
         /// <summary>R-ARMS-005: the city's built workshops (a project whose kind has a worker slot, R-ARMS-004), in ascending id.</summary>
         static List<CityProject> BuiltIn(Content c, GameState s, string city) =>
-            s.CityProjects.Values.Where(p => p.City == city && p.BuiltOn != null && c.ProjectKinds.First(k => k.Id == p.Kind).WorkerSlots > 0).ToList();
+            s.CityProjects.Values.Where(p => p.City == city && IsBuilt(c, p)).ToList();
+
+        /// <summary>R-ARMS-004: a built project whose kind has a worker slot.</summary>
+        static bool IsBuilt(Content c, CityProject p) => p.BuiltOn != null && c.ProjectKinds.First(k => k.Id == p.Kind).WorkerSlots > 0;
 
         /// <summary>R-ARMS-005: the city's staffed workshops, each worked by one of its people who holds no job. 0 outside gdd-0.3,
         /// which has no workshop record.</summary>
@@ -76,7 +108,7 @@ namespace Statecraft.Sim
             var built = BuiltIn(c, s, city);
             var x = s.Cities[city];
             var staffed = Staffed(s, city);
-            var employed = Math.Min(x.Employed, x.Civilians + x.Craftsmen - count);
+            var employed = Math.Min(x.Employed, x.Civilians + x.Craftsmen - count - Projects.Builders(s, city));   // R-CITY-011: nor a builder's
             if (employed != x.Employed)
             {
                 s.Cities[city] = x.WithCounts(x.Civilians, employed, x.Refugees);
@@ -86,7 +118,7 @@ namespace Statecraft.Sim
             {
                 var on = i < count;
                 if (s.Workshops.TryGetValue(built[i].Id, out var w)) { if (w.Staffed != on) s.Workshops[w.Project] = w.WithStaffed(on); }
-                else if (on) s.Workshops.Add(built[i].Id, new Workshop(built[i].Id, true, SyntheticWorkshopTier.Ordinary));
+                else if (on) s.Workshops.Add(built[i].Id, new Workshop(built[i].Id, true, AggregateTier));
             }
             why.Add(new Cause("city", city, count - staffed, FormattableString.Invariant($"{name}: arms workshops staffed: {count}"),
                 key: CauseKeys.WorkshopWorkers, args: new[] { CauseKeys.Number(count) }));
@@ -95,7 +127,7 @@ namespace Statecraft.Sim
 
         /// <summary>R-ARMS-006, step 6 of the turn after the cities' wages, gdd-0.3 only. In ascending project id, a staffed
         /// workshop whose city the enemy does not hold (R-CITY-010) works this month when one of its city's people without a
-        /// job is left for it (each workshop of the city takes one). With no cycle under way it first pays for one at its
+        /// job is left for it (each workshop of the city takes one, after the city's builders, R-CITY-011). With no cycle under way it first pays for one at its
         /// worker's tier (gdd03-balance.yaml workshop.cost: 27M-11, "At the monthly production step."), borrowing a short
         /// Treasury's rest (R-MONEY-003; 27M-12, "paid like any GDD cost"), unless that would take the debt past
         /// mvp.debt_ceiling (#1701 OQ4, owner 2 November 2026: "Refuse past the ceiling (Recommended)"): then the workshop
@@ -107,7 +139,7 @@ namespace Statecraft.Sim
         {
             if (c.Ruleset != SaveGame.Gdd03Ruleset || s.Workshops.Count == 0) return;
             PopulationLedger.RefuseAggregate(s);
-            var rules = SyntheticWorkshopRules.FromCatalogue(c.Gdd03Balance!);   // the loader requires it under gdd-0.3
+            var rules = Rules(c);
             var ceiling = c.RulesAt(s.Date).Mvp!.DebtCeiling!.Value;
             var held = Cities.Held(c, s);
             var working = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -118,7 +150,8 @@ namespace Statecraft.Sim
                 if (held.Contains(city)) continue;
                 var name = PlayerText.Settlement(c, city);
                 var x = s.Cities[city];
-                working.TryGetValue(city, out var taken);
+                // R-CITY-011: step 5's builders took their people first.
+                if (!working.TryGetValue(city, out var taken)) taken = Projects.Builders(s, city);
                 if (taken >= x.Civilians + x.Craftsmen - x.Employed)
                 {
                     why.Add(new Cause("city", city, 0, $"{name}: an arms workshop has no worker without a job this month", key: CauseKeys.WorkshopPaused, args: new[] { NoWorker }));
@@ -128,7 +161,7 @@ namespace Statecraft.Sim
                 var cycle = w;
                 if (cycle.PaidCost == null)
                 {
-                    var price = rules.Price(cycle.WorkerTier);
+                    var price = Price(rules, cycle);
                     var left = s.Treasury - (double)price;   // R-MONEY-003's debt after: the debt plus what the Treasury lacks
                     if (left < 0 && s.Debt - left > ceiling)
                     {

@@ -398,9 +398,10 @@ namespace Statecraft.Game.UI
         /// order's) of Workshops.Built; stepping back to the current count withdraws the order. + is off where Workshops.Check,
         /// asked with this turn's queue, refuses one more, and while a workshop is left unstaffed that refusal shows in the UI's
         /// language (SimBridge.ReasonText). This workshop: staffed or not (its Workshop record), its cycle under way (staffed
-        /// months of workshop.staffed_turns and the Money paid) or the next cycle's price at its worker's tier, the pause while
-        /// the enemy holds its city (Cities.Held, R-CITY-010), and the last turn's pauses for its city as the Why screen words
-        /// them (CauseKeys.WorkshopPaused). Nothing is computed here.</summary>
+        /// months of Workshops.CycleMonths and the Money paid) or, staffed before or not, the next cycle's price
+        /// (Workshops.NextCyclePrice, what the production step would charge), the pause while the enemy holds its city
+        /// (Cities.Held, R-CITY-010), and the last turn's pauses for its city as the Why screen words them
+        /// (CauseKeys.WorkshopPaused). Nothing is computed here.</summary>
         static void WorkshopPart(VisualElement host, SimBridge bridge, UiText text, CityProject project, Func<string, string> townName)
         {
             var c = bridge.Content; var s = bridge.State;
@@ -419,13 +420,10 @@ namespace Statecraft.Game.UI
 
             s.Workshops.TryGetValue(project.Id, out var w);
             Line(host, "city-workshop-state", text[w?.Staffed == true ? "city.workshop_staffed" : "city.workshop_unstaffed"]);
-            if (w != null)
-            {
-                var rules = SyntheticWorkshopRules.FromCatalogue(c.Gdd03Balance!);   // the loader requires it under gdd-0.3
-                Line(host, "city-workshop-cycle", w.PaidCost is decimal paid
-                    ? text.Format("city.workshop_cycle", w.Progress, rules.StaffedTurns, PlayerText.Money(c, "treasury", (double)paid))
-                    : text.Format("city.workshop_next", PlayerText.Money(c, "treasury", (double)rules.Price(w.WorkerTier))));
-            }
+            if (w != null && w.PaidCost is decimal paid)
+                Line(host, "city-workshop-cycle", text.Format("city.workshop_cycle", w.Progress, Workshops.CycleMonths(c)!.Value, PlayerText.Money(c, "treasury", (double)paid)));
+            else if (Workshops.NextCyclePrice(c, s, project.Id) is decimal next)
+                Line(host, "city-workshop-cycle", text.Format("city.workshop_next", PlayerText.Money(c, "treasury", (double)next)));
             if (Cities.Held(c, s).Contains(city)) Line(host, "city-workshop-held", text.Format("city.workshop_held", townName(city)));
             var paused = (bridge.Session.Last?.Why ?? Array.Empty<Cause>()).Where(x => x.Key == CauseKeys.WorkshopPaused && x.Target == city)
                 .Select(x => CauseText.Line(x, c, Array.Empty<Statecraft.Game.Map.Units.UnitEntry>(), text, bridge.TownNamesHe)).Distinct().ToList();

@@ -68,7 +68,7 @@ public class BudgetScreenTests
         Assert.AreEqual("spending effect 150%", ui.Q<Label>("budget-defense_minister-factor").text);   // capped at 1.5 (playtest 2, P2-6)
         var (seats, size) = PoliticsSystem.CoalitionSeats(C, bridge.State.Date);   // the council approves the budget (#3)
         Assert.AreEqual(System.FormattableString.Invariant($"The Provisional State Council must approve it: the coalition holds {seats} of {size} seats"), ui.Q<Label>("budget-vote").text);
-        Assert.AreEqual("Money IL 20.0m · debt IL 0.0m · foreign currency $40.0m", ui.Q<Label>("budget-money").text);
+        Assert.AreEqual("Money IL\u00A020.0m · debt IL\u00A00.0m · foreign currency $40.0m", ui.Q<Label>("budget-money").text);
         UiTestKit.Press(ui.Q<Button>("budget-education_minister-up"));
         Assert.AreEqual("11%", ui.Q<Label>("budget-education_minister-share").text);
         Assert.AreEqual("Changed: submit to put it to the vote", ui.Q<Label>("budget-status").text);
@@ -101,7 +101,7 @@ public class BudgetScreenTests
         foreach (var office in C.Rules.BudgetStart.Keys)
             Assert.AreEqual("spending effect " + PlayerText.Percent(EffectsSystem.BudgetFactor(budget.Draft, office)), ui.Q<Label>($"budget-{office}-factor").text, office);
         var f = EconomySystem.Flows(C, bridge.State, 1.0);
-        Assert.AreEqual(System.FormattableString.Invariant($"Taxes IL {f.Tax:0.0}m, spending IL {f.Spending:0.0}m and reserve call-up IL {f.Mobilization:0.0}m a year"), ui.Q<Label>("budget-flow").text);
+        Assert.AreEqual(System.FormattableString.Invariant($"Taxes IL\u00A0{f.Tax:0.0}m, spending IL\u00A0{f.Spending:0.0}m and reserve call-up IL\u00A0{f.Mobilization:0.0}m a year"), ui.Q<Label>("budget-flow").text);
         UiTestKit.Press(ui.Q<Button>("budget-education_minister-up"));
         Assert.AreEqual("spending effect " + PlayerText.Percent(EffectsSystem.BudgetFactor(budget.Draft, "education_minister")), ui.Q<Label>("budget-education_minister-factor").text);
     }

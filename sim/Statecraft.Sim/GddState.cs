@@ -296,8 +296,8 @@ namespace Statecraft.Sim
     /// <summary>A city project (projects.yaml; R-PROJ-001 to R-PROJ-003): <see cref="Kind"/> built for <see cref="City"/> on hex
     /// (<see cref="Q"/>, <see cref="R"/>) with <see cref="TurnsLeft"/> more turns to go, or, once <see cref="BuiltOn"/> is set,
     /// built on that date (its capacity, condition and slots added then, once). A built project keeps its record, so its hex
-    /// stays taken (Q-PROJ-2) and the map can draw it (Phase 3 PR 8). No workers (Q-PROJ-3). Immutable; a change replaces the
-    /// record.</summary>
+    /// stays taken (Q-PROJ-2) and the map can draw it (Phase 3 PR 8). No workers (Q-PROJ-3); under gdd-0.3 at most one
+    /// builder (<see cref="Builder"/>, R-CITY-011). Immutable; a change replaces the record.</summary>
     public sealed class CityProject
     {
         public int Id { get; }
@@ -311,27 +311,35 @@ namespace Statecraft.Sim
         /// <summary>The turn-equivalents of work accumulated toward the next whole turn (R-MIN-002), as
         /// <see cref="SiteWork.Progress"/>. In [0, 1) while being built; 0 once built and on a kind no minister system scales.</summary>
         public double Progress { get; }
+        /// <summary>R-CITY-011 (#1700, gdd-0.3 only): whether one of the city's people without a job builds it. Always false
+        /// once built (the builder is freed) and under every other ruleset.</summary>
+        public bool Builder { get; }
 
-        public CityProject(int id, string kind, string city, int q, int r, int turnsLeft, DateTime? builtOn = null, double progress = 0)
+        public CityProject(int id, string kind, string city, int q, int r, int turnsLeft, DateTime? builtOn = null, double progress = 0, bool builder = false)
         {
-            Id = id; Kind = kind; City = city; Q = q; R = r; TurnsLeft = turnsLeft; BuiltOn = builtOn; Progress = progress;
+            Id = id; Kind = kind; City = city; Q = q; R = r; TurnsLeft = turnsLeft; BuiltOn = builtOn; Progress = progress; Builder = builder;
         }
 
+        /// <summary>The same project with or without its builder (R-CITY-011).</summary>
+        public CityProject WithBuilder(bool builder) => new CityProject(Id, Kind, City, Q, R, TurnsLeft, BuiltOn, Progress, builder);
+
         /// <summary>The same project with <paramref name="turnsLeft"/> turns to go.</summary>
-        public CityProject WithTurnsLeft(int turnsLeft) => new CityProject(Id, Kind, City, Q, R, turnsLeft, BuiltOn, Progress);
+        public CityProject WithTurnsLeft(int turnsLeft) => new CityProject(Id, Kind, City, Q, R, turnsLeft, BuiltOn, Progress, Builder);
 
         /// <summary>The same project with <paramref name="turnsLeft"/> turns to go and <paramref name="progress"/>
         /// accumulated (R-MIN-002's floor with carry).</summary>
-        public CityProject WithProgress(int turnsLeft, double progress) => new CityProject(Id, Kind, City, Q, R, turnsLeft, BuiltOn, progress);
+        public CityProject WithProgress(int turnsLeft, double progress) => new CityProject(Id, Kind, City, Q, R, turnsLeft, BuiltOn, progress, Builder);
 
-        /// <summary>The same project, built on <paramref name="on"/>.</summary>
+        /// <summary>The same project, built on <paramref name="on"/>; its builder, if any, is freed (R-CITY-011).</summary>
         public CityProject Built(DateTime on) => new CityProject(Id, Kind, City, Q, R, 0, on);
 
         /// <summary>The record as the state hash writes it: "id:KIND@CITY,Q,R/TURNSLEFT" while building, ",PROGRESS"
-        /// appended as IEEE bits when it is not 0 (R-MIN-002), "/done,yyyy-MM-dd" once built.</summary>
+        /// appended as IEEE bits when it is not 0 (R-MIN-002) and ";builder" when it has one (R-CITY-011, so no record without
+        /// a builder, and no gdd-0.1 hash, changes), "/done,yyyy-MM-dd" once built.</summary>
         public string Canonical() => string.Format(CultureInfo.InvariantCulture, "{0}:{1}@{2},{3},{4}/", Id, Kind, City, Q, R)
             + (BuiltOn is DateTime on ? "done," + on.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
-                : TurnsLeft.ToString(CultureInfo.InvariantCulture) + (Progress == 0 ? "" : "," + BitConverter.DoubleToInt64Bits(Progress).ToString("X16", CultureInfo.InvariantCulture)));
+                : TurnsLeft.ToString(CultureInfo.InvariantCulture) + (Progress == 0 ? "" : "," + BitConverter.DoubleToInt64Bits(Progress).ToString("X16", CultureInfo.InvariantCulture))
+                    + (Builder ? ";builder" : ""));
     }
 
     /// <summary>R-ARMS-005, R-ARMS-006 (gdd-0.3 only): the cycle of the built arms workshop that is city project

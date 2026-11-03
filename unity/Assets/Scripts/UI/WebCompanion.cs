@@ -57,7 +57,7 @@ namespace Statecraft.Game.UI
         /// "on") or "?companion=1" in the page address turns it on. The address wins over a stored "off" for that visit and
         /// writes nothing: the owner's ruling of 2 November 2026, "Link wins, that visit (Recommended)". None of them counts
         /// while the build does not offer it (<see cref="Available"/>).</summary>
-        public static bool On(bool? picked, string? stored, string? url) => Offered() && (picked ?? (stored == "on" || Asked.IsMatch(url ?? "")));
+        public static bool On(bool? picked, string? stored, string? url) => Offered() && (picked ?? (stored == "on" || Asked.IsMatch(Boot.UrlFlags.BeforeFragment(url))));
 
         readonly VisualElement root;
         readonly UiText text;

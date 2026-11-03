@@ -82,9 +82,11 @@ public class NoAttentionTests
         var oldGood=Simulation.Preview(oldContent,oldState,new[]{oldValid});
         var oldBad=Simulation.Preview(oldContent,oldState,new[]{oldInvalid});
         Assert.Equal(oldBad.Rejected.Single().Reason,bad.Rejected.Single().Reason);
-        Assert.Equal(WithoutLegacyAccounting(oldGood.State.Describe()),WithoutLegacyAccounting(good.State.Describe()));
+        // R-CITY-011 (#1700): under gdd-0.3 a start takes a free person as its builder, its one difference from gdd-0.1.
+        string Same(string modern) { if (kind != "start_project") return modern; Assert.Single(Regex.Matches(modern, ";builder")); return modern.Replace(";builder", ""); }
+        Assert.Equal(WithoutLegacyAccounting(oldGood.State.Describe()),WithoutLegacyAccounting(Same(good.State.Describe())));
         Assert.Equal(WithoutLegacyAccounting(oldBad.State.Describe()),WithoutLegacyAccounting(bad.State.Describe()));
-        Assert.Equal(WithoutLegacyAccounting(Simulation.Step(oldContent,oldState,new[]{oldValid}).State.Describe()),WithoutLegacyAccounting(step.State.Describe()));
+        Assert.Equal(WithoutLegacyAccounting(Simulation.Step(oldContent,oldState,new[]{oldValid}).State.Describe()),WithoutLegacyAccounting(Same(step.State.Describe())));
     }
     [Fact] public void InitialAndEndTurnRefillAreAbsentAndCanonicalStateIgnoresCompatibilityPool()
     {

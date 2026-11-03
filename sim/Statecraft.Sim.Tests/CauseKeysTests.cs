@@ -150,7 +150,7 @@ public class CauseKeysTests
         var s = new GameState { Treasury = 0, Debt = 0 }; var why = new List<Cause>();
         EconomySystem.PayNamedOrBorrow(Fix, s, 3, "for civilian upkeep", why, CauseKeys.Purpose.CivilianUpkeep);   // as PayCivilianUpkeep
         var line = Assert.Single(why);
-        Assert.Equal((CauseKeys.Borrowed, "Borrowed IL 3.0m for civilian upkeep"), (line.Key, line.Message));
+        Assert.Equal((CauseKeys.Borrowed, "Borrowed IL\u00A03.0m for civilian upkeep"), (line.Key, line.Message));
         Assert.Equal(new[] { CauseKeys.Purpose.CivilianUpkeep }, line.Args);
 
         // #2199: PayOrBorrow names the whole cost as a Money line first, with the same purpose, then the borrowing.

@@ -146,17 +146,29 @@ def test_tal_original_licensing_matches_manifest_exactly():
     }
     towns = {f"unity/Assets/Art/Collection/{t}-town-v1/{t}-town-v1{x}"
              for t in ("tiberias", "safed", "netanya", "ramla") for x in (".fbx", "_basecolor.jpg")}
-    added = sources | towns
-    assert len(sources) == 24 and len(towns) == 8
+    # #2082's papyrus and tamarisk in the game (owner, 2 November 2026: "Hula + Arava, map and boards (Recommended)"): the
+    # byte-identical Unity copies of the six recovered sources.
+    plants = {f"unity/Assets/Art/HexTiles/Props/{d}/{f}" for d in ("hula_swamp_papyrus", "arava_oasis_tamarisk")
+              for f in (d + ".obj", "albedo.jpg", "normal.jpg")}
+    # #2083 and #2084 in the game (owner, 2 November 2026): the K98k's and the Sten's compatibility FBX and colour map, and
+    # the C06 point-fire export byte for byte.
+    weapons = {f"unity/Assets/Art/Collection/weapon-{w}-v1/weapon-{w}-v1{x}" for w in ("k98k", "sten") for x in (".fbx", "_basecolor.jpg")} | {
+        "unity/Assets/Art/Collection/c06-point-fire-v1/C06-POINT-FIRE-PROVISIONAL-PUBLIC.fbx"}
+    added = sources | towns | plants | weapons
+    assert len(sources) == 24 and len(towns) == 8 and len(plants) == 6 and len(weapons) == 5
     added_rows = [r for r in independent if r["glob"] in added]
-    assert {r["glob"] for r in added_rows} == added and len(added_rows) == 32
+    assert {r["glob"] for r in added_rows} == added and len(added_rows) == 43
+    assert all("Hula + Arava, map and boards" in r["note"] for r in added_rows if r["glob"] in plants)
     assert all(r["artist"] == "Tal Heuberger" and r["ai_generated"] is True for r in added_rows)
     assert all("#1177" in r["note"] and "2 November 2026" in r["note"] for r in added_rows)
     import hashlib
     for r in added_rows:  # each row records its file's SHA-256
         assert hashlib.sha256((ROOT / r["glob"]).read_bytes()).hexdigest() in r["source"], r["glob"]
-    assert len([r for r in independent if r["glob"] not in added]) == 50  # the hex-tile props row and the #1901 -light meshes among them
-    assert len(independent) == 82  # 146 originals + 82 independent grants = 228 total
+    # Afik Faerman's main theme (#39, #2240; owner, 2 November 2026: CC BY-NC-ND 4.0, credited to Afik): one exact-file row.
+    music = [r for r in independent if r["glob"] == "unity/Assets/StreamingAssets/audio/music/Main_1.3.ogg"]
+    assert len(music) == 1 and music[0]["artist"] == "Afik Faerman" and music[0]["ai_generated"] is False
+    assert len([r for r in independent if r["glob"] not in added and r not in music]) == 50  # the hex-tile props row and the #1901 -light meshes among them
+    assert len(independent) == 94  # 146 originals + 94 independent grants = 240 total
     for row in selected:
         assert row["licence"] == "CC-BY-NC-ND-4.0"
         assert row["artist"] == "Tal Heuberger"

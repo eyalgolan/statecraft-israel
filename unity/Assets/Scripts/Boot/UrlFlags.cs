@@ -12,7 +12,8 @@ namespace Statecraft.Game.Boot
     {
         public static bool Has(string? url, string name) => Regex.IsMatch(BeforeFragment(url), @"[?&]" + Regex.Escape(name) + @"(?=[=&]|$)");
 
-        static string BeforeFragment(string? url)
+        /// <summary>The page address without its fragment: everything before the first '#'. The other URL parsers cut with it too (#2265).</summary>
+        internal static string BeforeFragment(string? url)
         {
             url ??= "";
             var hash = url.IndexOf('#');

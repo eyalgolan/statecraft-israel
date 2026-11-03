@@ -236,6 +236,11 @@ namespace Statecraft.Game.Map.Collection
         /// <summary>The standalone props need a build (an arrival or a date change) once a camera is close; in a render, it
         /// waits for LateUpdate (nothing is instantiated while a camera renders).</summary>
         bool standaloneDirty, standaloneQueued;
+        /// <summary>A camera asked for the props while rendering: the request waits for LateUpdate, so an answer that comes at
+        /// once never instantiates inside a render (#2266 review).</summary>
+        bool askQueued;
+        /// <summary>The close state last written to the standalone renderers (null: none yet): ChooseCore writes only a change.</summary>
+        bool? appliedClose;
         List<Want> wants = new List<Want>();
         List<Want>? fixedWants;
         readonly Dictionary<string, GameObject?> prefabs = new Dictionary<string, GameObject?>(StringComparer.Ordinal);
@@ -326,7 +331,11 @@ namespace Statecraft.Game.Map.Collection
             Rebuild();
         }
 
-        void LateUpdate() { if (standaloneQueued) BuildStandaloneIfDue(inRender: false); }
+        void LateUpdate()
+        {
+            if (askQueued) { askQueued = false; Ask(); }
+            if (standaloneQueued) BuildStandaloneIfDue(inRender: false);
+        }
 
         // ---- The keep-clear ground (#2266 review: planned, cached, indexed) ----
 
@@ -365,11 +374,9 @@ namespace Statecraft.Game.Map.Collection
         {
             const float Cell = 2000f;
             readonly Dictionary<(int, int), List<(Vector2 c, float r)>> cells = new Dictionary<(int, int), List<(Vector2, float)>>();
-            float largest;
             public DiscGrid(IEnumerable<(Vector2 centre, float radius)> discs) { foreach (var (c, r) in discs) Add(c, r); }
             public void Add(Vector2 c, float r)
             {
-                largest = Mathf.Max(largest, r);
                 for (int x = Mathf.FloorToInt((c.x - r) / Cell); x <= Mathf.FloorToInt((c.x + r) / Cell); x++)
                     for (int z = Mathf.FloorToInt((c.y - r) / Cell); z <= Mathf.FloorToInt((c.y + r) / Cell); z++)
                     {
@@ -424,9 +431,11 @@ namespace Statecraft.Game.Map.Collection
             var holes = new List<(Vector2 centre, float radius)>();
             var row = new Vector2[5];
             var spots = new List<(Want w, Vector2 spot, string name)>();
+            // Every want takes its ground whether or not its model has streamed (or failed): a prop's spot never depends on
+            // which others have arrived (#2266 review, as RuralLife.Plan). Only the streamed ones are drawn.
             foreach (var w in wants)
             {
-                if (!prefabs.TryGetValue(w.Model, out var prefab) || prefab == null) continue;
+                bool drawn = prefabs.TryGetValue(w.Model, out var prefab) && prefab != null;
                 float clearance = ClearanceOf(w.Model);
                 bool hedge = w.Model == PricklyPear;
                 bool RowFree(Vector2 p, float r)
@@ -438,14 +447,16 @@ namespace Statecraft.Game.Map.Collection
                 var at = NearestSpot(w.Key, w.Anchor, clearance, hedge ? RowFree : (Func<Vector2, float, bool>)Free, w.Start, ReachOf(w.Model, ground.HexSizeM));
                 if (at == null)
                 {
-                    if (w.Model != Garrigue && w.Model != Scrub) Debug.LogWarning($"HEXPROPS: no clear ground near {w.Key}; its {w.Model} is not drawn.");
+                    if (drawn && w.Model != Garrigue && w.Model != Scrub) Debug.LogWarning($"HEXPROPS: no clear ground near {w.Key}; its {w.Model} is not drawn.");
                     continue;
                 }
                 int count = hedge ? HedgeMembers(w, at.Value, row) : 1;
                 for (int i = 0; i < count; i++)
                 {
                     var spot = hedge ? row[i] : at.Value;
-                    taken.Add(spot, clearance); holes.Add((spot, clearance));
+                    taken.Add(spot, clearance);
+                    if (!drawn) continue;
+                    holes.Add((spot, clearance));
                     spots.Add((w, spot, hedge ? w.Key + "#" + i : w.Key));
                 }
             }
@@ -475,7 +486,7 @@ namespace Statecraft.Game.Map.Collection
                     foreach (var r in go.GetComponentsInChildren<Renderer>(true)) r.shadowCastingMode = ShadowCastingMode.On;
                 }
                 next[name] = (go, w.Model, spot);
-                foreach (var r in go.GetComponentsInChildren<Renderer>(true)) { r.forceRenderingOff = !LastClose; renderers.Add(r); }
+                foreach (var r in go.GetComponentsInChildren<Renderer>(true)) { r.forceRenderingOff = !(appliedClose ?? LastClose); renderers.Add(r); }
                 Placed.Add((w.Key, w.Model, pos, name));
             }
             foreach (var gone in live.Values) DestroyNow(gone.go);
@@ -602,10 +613,25 @@ namespace Statecraft.Game.Map.Collection
             // The kit's minarets, belfries and clock tower draw at every zoom (owner, 2 November 2026: "tal's high quality models
             // replace the built ones everytwhere"), so with any to replace the first camera to render (after the first frame)
             // asks; the standalone props are built only once a camera comes in close, where they draw.
-            if (map != null && (close || map.KitStats?.LandmarkParts.Count > 0)) Ask();
+            if (map != null && !requested && (close || map.KitStats?.LandmarkParts.Count > 0))
+            {
+                if (!inRender) Ask();
+                else
+                {
+                    askQueued = true;
+#if UNITY_EDITOR
+                    if (!Application.isPlaying) UnityEditor.EditorApplication.QueuePlayerLoopUpdate();
+#endif
+                }
+            }
             if (close && !everClose) { everClose = true; standaloneDirty = true; }
             if (close) BuildStandaloneIfDue(inRender);
-            foreach (var r in renderers) if (r != null) r.forceRenderingOff = !close;
+            // Only a change is written: thousands of props, every camera, every frame (#2266 review).
+            if (appliedClose != close)
+            {
+                appliedClose = close;
+                foreach (var r in renderers) if (r != null) r.forceRenderingOff = !close;
+            }
         }
     }
 }

@@ -115,7 +115,7 @@ public class RemainingCauseKeysTests
                 sites++;
             }
         }
-        Assert.Equal(114, sites);   // 114 with #1703's gdd-0.3 housing surcharge and housing cohesion lines; 112 with the arms workshops' five (R-ARMS-005 with its job-default line, R-ARMS-006; #1701); 107 with R-MONEY-004's DollarsConverted (#813); 106 since #2212: EconomySystem.OtherMoney's line (105 since #2199: PayOrBorrow's Paid line)
+        Assert.Equal(118, sites);   // 118 with #1700's builders (R-CITY-011: two ProjectBuilder lines, ProjectWaiting, the build order's job-default line); 114 with #1703's gdd-0.3 housing surcharge and housing cohesion lines; 112 with the arms workshops' five (R-ARMS-005 with its job-default line, R-ARMS-006; #1701); 107 with R-MONEY-004's DollarsConverted (#813); 106 since #2212: EconomySystem.OtherMoney's line (105 since #2199: PayOrBorrow's Paid line)
     }
 
     [Fact]
@@ -374,7 +374,7 @@ public class RemainingCauseKeysTests
         Assert.Equal("Town A: 4 groups in work", workers.Message);
         var training = Assert.Single(result.Why, x => x.Key == "training_started");
         Assert.Equal(new[] { "3", "basic", "", "1.5" }, training.Args);
-        Assert.Equal("Town A: 3 groups began basic training, cost IL 1.5m", training.Message);
+        Assert.Equal("Town A: 3 groups began basic training, cost IL\u00A01.5m", training.Message);
     }
 
     [Theory]

@@ -474,6 +474,15 @@
                     <ui:Button name="settings-sound-high" text="High" class="settings-switch" />
                 </ui:VisualElement>
             </ui:VisualElement>
+            <!-- Music (#39, MenuMusic): the start menu's theme, three volume steps like the sound effects'. -->
+            <ui:VisualElement class="row settings-row">
+                <ui:Label name="settings-music-label" text="Music" class="settings-name" />
+                <ui:VisualElement class="row settings-choices">
+                    <ui:Button name="settings-music-off" text="Off" class="settings-switch" />
+                    <ui:Button name="settings-music-low" text="Low" class="settings-switch" />
+                    <ui:Button name="settings-music-high" text="High" class="settings-switch" />
+                </ui:VisualElement>
+            </ui:VisualElement>
             <!-- How much the advisors say (spec 6, AdvisorSettings): four levels, the one set carries .settings-choice-selected. -->
             <ui:VisualElement class="row settings-row">
                 <ui:Label name="settings-advisors-label" text="Advisors" class="settings-name" />

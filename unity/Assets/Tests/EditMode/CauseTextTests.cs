@@ -78,7 +78,7 @@ public class CauseTextTests
     [Test]
     public void MissingHebrewPlaceNamesKeepTheMarkedEnglishFallback()
     {
-        var row = new Cause("city", "hadera", 0, "Hadera: jobs paid IL 0.0m", key: CauseKeys.WagesPaid);
+        var row = new Cause("city", "hadera", 0, "Hadera: jobs paid IL\u00A00.0m", key: CauseKeys.WagesPaid);
         var missing = new Dictionary<string, string>();
         var line = CauseText.Line(row, C, NoRows, He);
         Assert.IsTrue(string.Equals(line, CauseText.Line(row, C, NoRows, He, missing), StringComparison.Ordinal));
@@ -221,7 +221,7 @@ public class CauseTextTests
     [Test]
     public void OtherLinesAreUnchanged()
     {
-        var plain = new Cause("economy", "treasury", -1, "Money IL -1.0m (military upkeep)");
+        var plain = new Cause("economy", "treasury", -1, "Money IL\u00A0-1.0m (military upkeep)");
         Assert.AreEqual(plain.Message, CauseText.Line(plain, C, NoRows, He));
         var turn = Turns().First(t => t.Why.Any(w => WhyKeys.All.Contains(w.Key)));
         foreach (var w in turn.Why.Where(w => WhyKeys.All.Contains(w.Key)))
@@ -404,7 +404,7 @@ public class CauseTextTests
     // including large counts, money rounding and Hebrew names. Actual producer metadata is gated in managed tests.
     static Content RemainingFixture() => new Content
     {
-        Money = new List<MoneyAccount> { new MoneyAccount { Id = "treasury", Name = "Money", Prefix = "IL " }, new MoneyAccount { Id = "debt", Name = "Debt", Prefix = "IL " }, new MoneyAccount { Id = "fx_reserves", Name = "Foreign currency", Prefix = "$" } },
+        Money = new List<MoneyAccount> { new MoneyAccount { Id = "treasury", Name = "Money", Prefix = "IL\u00A0" }, new MoneyAccount { Id = "debt", Name = "Debt", Prefix = "IL\u00A0" }, new MoneyAccount { Id = "fx_reserves", Name = "Foreign currency", Prefix = "$" } },
         SettlementNames = new Dictionary<string, string> { ["town"] = "Town" },
         Sites = new List<Site> { new Site { Id = "site", Name = "Site", NameHe = "אתר" } },
         Corridors = new List<CorridorDef> { new CorridorDef { Id = "road", Name = "Road", NameHe = "דרך" } },
@@ -419,29 +419,31 @@ public class CauseTextTests
     static Cause[] RemainingRows() => new[]
     {
             new Cause("draft", "town", 1, "Town: 2000000000 groups in work", key: CauseKeys.WorkersAssigned, args: new[] { "2000000000" }),
-            new Cause("draft", "town", 1.25, "Town: jobs paid IL +1.3m", key: CauseKeys.WagesPaid),
+            new Cause("draft", "town", 1.25, "Town: jobs paid IL\u00A0+1.3m", key: CauseKeys.WagesPaid),
             new Cause("draft", "town", 3, "Town: 3 groups of immigrants housed", key: CauseKeys.ImmigrantsHoused, args: new[] { "3" }),
             new Cause("draft", "town", 3, "Town: 3 groups more than its homes hold", key: CauseKeys.HousingShortage, args: new[] { "3" }),
             new Cause("draft", "town", 3, "Town: 3 groups of immigrants arrived and wait for homes", key: CauseKeys.ImmigrantsWaiting, args: new[] { "3" }),
             new Cause("draft", "units", 3, "Recruits became veteran soldiers", key: CauseKeys.RecruitsVeteran),
-            new Cause("draft", "road", 1, "Road, segment 2: a group of halutzim began building, cost IL 1.3m", key: CauseKeys.CorridorStarted, args: new[] { "road", "2", "1.25" }),
+            new Cause("draft", "road", 1, "Road, segment 2: a group of halutzim began building, cost IL\u00A01.3m", key: CauseKeys.CorridorStarted, args: new[] { "road", "2", "1.25" }),
             new Cause("draft", "road", -1, "Road, segment 2: the halutzim stopped building; the Money spent is not returned", key: CauseKeys.CorridorCancelled, args: new[] { "road", "2" }),
             new Cause("draft", "road", 1, "Road, segment 2 built", key: CauseKeys.CorridorCompleted, args: new[] { "road", "2" }),
             new Cause("draft", "site", 1, "A group of halutzim became veteran pioneers", key: CauseKeys.PioneersVeteran),
-            new Cause("draft", "debt", 1.25, "Borrowed IL 1.3m to build a housing project", key: CauseKeys.MapBorrowed, args: new[] { "housing" }),
-            new Cause("draft", "housing", 1, "Built a housing project: cost IL 1.3m, Housing +2.5%, Social cohesion -2.5%", key: CauseKeys.MapBuilt, args: new[] { "1.25", "0.025", "-0.025" }),
-            new Cause("draft", "site", 1, "Site: a group of halutzim began plowing, cost IL 1.3m", key: CauseKeys.LandWorkStarted, args: new[] { "plow", "1.25" }),
-            new Cause("draft", "site", 1, "Site: a group of halutzim began building a yishuv, cost IL 1.3m", key: CauseKeys.SiteStarted, args: new[] { "yishuv", "1.25" }),
+            new Cause("draft", "debt", 1.25, "Borrowed IL\u00A01.3m to build a housing project", key: CauseKeys.MapBorrowed, args: new[] { "housing" }),
+            new Cause("draft", "housing", 1, "Built a housing project: cost IL\u00A01.3m, Housing +2.5%, Social cohesion -2.5%", key: CauseKeys.MapBuilt, args: new[] { "1.25", "0.025", "-0.025" }),
+            new Cause("draft", "site", 1, "Site: a group of halutzim began plowing, cost IL\u00A01.3m", key: CauseKeys.LandWorkStarted, args: new[] { "plow", "1.25" }),
+            new Cause("draft", "site", 1, "Site: a group of halutzim began building a yishuv, cost IL\u00A01.3m", key: CauseKeys.SiteStarted, args: new[] { "yishuv", "1.25" }),
             new Cause("draft", "site", -1, "Site: the halutzim stopped building; the Money spent is not returned", key: CauseKeys.SiteCancelled),
             new Cause("draft", "site", 1, "Site founded", key: CauseKeys.SiteCompleted, args: new[] { "founded" }),
-            new Cause("draft", "town", 1, "Town: Housing began, cost IL 1.3m", key: CauseKeys.ProjectStarted, args: new[] { "housing", "1.25" }),
+            new Cause("draft", "town", 1, "Town: Housing began, cost IL\u00A01.3m", key: CauseKeys.ProjectStarted, args: new[] { "housing", "1.25" }),
             new Cause("draft", "town", -1, "Town: Housing was cancelled; the Money spent is not returned", key: CauseKeys.ProjectCancelled, args: new[] { "housing" }),
             new Cause("draft", "town", 1, "Town: Housing was finished", key: CauseKeys.ProjectCompleted, args: new[] { "housing" }),
-            new Cause("draft", "arms", 2000000000, "Bought 2000000000 Arms, cost IL 1.3m", key: CauseKeys.ArmsBought, args: new[] { "1.25" }),
+            new Cause("draft", "town", 1, "Town: a builder started on Housing", key: CauseKeys.ProjectBuilder, args: new[] { "housing" }),   // #1700
+            new Cause("draft", "town", 0, "Town: Housing waits: no builder", key: CauseKeys.ProjectWaiting, args: new[] { "housing", Projects.NoBuilder }),
+            new Cause("draft", "arms", 2000000000, "Bought 2000000000 Arms, cost IL\u00A01.3m", key: CauseKeys.ArmsBought, args: new[] { "1.25" }),
             new Cause("draft", "town", 2, "Town: arms workshops staffed: 2", key: CauseKeys.WorkshopWorkers, args: new[] { "2" }),
             new Cause("draft", "town", 1, "Town: an arms workshop made 1 Arms", key: CauseKeys.WorkshopArms),
             new Cause("draft", "town", 0, "Town: an arms workshop has no worker without a job this month", key: CauseKeys.WorkshopPaused, args: new[] { Workshops.NoWorker }),
-            new Cause("draft", "treasury", 1.44, "Converted $4.0m of foreign currency into Money: IL +1.4m", key: CauseKeys.DollarsConverted, args: new[] { "4" }),
+            new Cause("draft", "treasury", 1.44, "Converted $4.0m of foreign currency into Money: IL\u00A0+1.4m", key: CauseKeys.DollarsConverted, args: new[] { "4" }),
             new Cause("draft", "food", 2000000000, "Site: the plowed land yielded 2000000000 units of Food", key: CauseKeys.FoodHarvest, args: new[] { "site" }),
             new Cause("draft", "food", -2000000000, "Food ran out: 2000000000 of 2000000001 units of the month's need went unmet", key: CauseKeys.FoodShortage, args: new[] { "2000000001" }),
             new Cause("draft", "food", -1, "No Food imported (foreign currency crisis): the stock fell to 2000000000 units", key: CauseKeys.FoodWithoutImports, args: new[] { "2000000000" }),
@@ -451,7 +453,7 @@ public class CauseTextTests
             new Cause("draft", "town", -3, "Town: 3 groups of qualified craftsmen are craftsmen again", key: CauseKeys.CraftsmenReassigned, args: new[] { "3" }),
             new Cause("draft", "42", 1, "Unit 42 returned to civilian life in Town and keeps its training", key: CauseKeys.PioneerReturned, args: new[] { "town" }),
             new Cause("draft", "town", -3, "Town: 3 groups of qualified veteran pioneers are units again", key: CauseKeys.PioneersReassigned, args: new[] { "3", "veteran" }),
-            new Cause("draft", "town", -3, "Town: 3 groups began basic training as replacements for unit 42, cost IL 1.3m", key: CauseKeys.TrainingStarted, args: new[] { "3", "basic", "42", "1.25" }),
+            new Cause("draft", "town", -3, "Town: 3 groups began basic training as replacements for unit 42, cost IL\u00A01.3m", key: CauseKeys.TrainingStarted, args: new[] { "3", "basic", "42", "1.25" }),
             new Cause("draft", "arms", -3, "Town: basic training took 3 Arms", key: CauseKeys.TrainingArms, args: new[] { "town", "basic" }),
             new Cause("draft", "town", 3, "Town: 3 groups left basic training; the Money spent is not returned", key: CauseKeys.TrainingCancelled, args: new[] { "3", "basic" }),
             new Cause("draft", "arms", 3, "Town: basic training returned 3 Arms", key: CauseKeys.TrainingArmsReturned, args: new[] { "town", "basic" }),
@@ -480,7 +482,7 @@ public class CauseTextTests
             new Cause("draft", "town", 0, "Town: Israeli units withdrew and it is under enemy control again. Its residents fled when it was captured", key: CauseKeys.PlaceWithdrawn, args: new[] { "1", "1" }),
             new Cause("draft", "town", 0, "Town: Deport. Its residents are displaced and the place is depopulated", key: CauseKeys.PlaceDeported),
             new Cause("draft", "morale", -0.025, "Social cohesion -2.5% (Deport of Town)", key: CauseKeys.DeportEffect, args: new[] { "town" }),
-            new Cause("draft", "treasury", -1.25, "Money IL -1.3m (Deport of Town)", key: CauseKeys.DeportCost, args: new[] { "town" }),
+            new Cause("draft", "treasury", -1.25, "Money IL\u00A0-1.3m (Deport of Town)", key: CauseKeys.DeportCost, args: new[] { "town" }),
             new Cause("draft", "town", 3, "Town is occupied for 3 turns: an Israeli unit stays there. Its residents fled when it was captured", key: CauseKeys.OccupationStarted, args: new[] { "1" }),
             new Cause("draft", "town", 0, "Town: no decision was made before the game ended, so it counts as a raid", key: CauseKeys.PendingBecameRaid),
             new Cause("draft", "town", 0, "Town: no Israeli unit holds it any more, so the occupation ended as a raid. It is under enemy control again. Its residents fled when it was captured", key: CauseKeys.OccupationLostUnit, args: new[] { "1" }),
@@ -547,10 +549,11 @@ public class CauseTextTests
             new Cause("draft", "town", 0, "Town: the occupation period has ended. It awaits a decision", key: CauseKeys.OccupationCountdown),
             new Cause("draft", "office", 0, "Person appointed Office", key: CauseKeys.Appointed, args: new[] { "person", "התפקיד שנשמר", "" }),
             new Cause("draft", "coalition_stability", -0.025, "Coalition stability -2.5% (Former resents the reshuffle)", key: CauseKeys.Reshuffle, args: new[] { "", "former", "same", "Office", "התפקיד שנשמר" }),
-            new Cause("draft", "town", -1, "Town: 1 group began armoured car training, cost IL 1.3m", key: CauseKeys.TrainingStarted, args: new[] { "1", "armour", "", "1.25" }),
-            new Cause("draft", "site", 1, "Site: a group of halutzim began draining the swamp, cost IL 1.3m", key: CauseKeys.LandWorkStarted, args: new[] { "drain", "1.25" }),
-            new Cause("draft", "site", 1, "Site: a group of halutzim began building a training camp, cost IL 1.3m", key: CauseKeys.SiteStarted, args: new[] { "camp", "1.25" }),
+            new Cause("draft", "town", -1, "Town: 1 group began armoured car training, cost IL\u00A01.3m", key: CauseKeys.TrainingStarted, args: new[] { "1", "armour", "", "1.25" }),
+            new Cause("draft", "site", 1, "Site: a group of halutzim began draining the swamp, cost IL\u00A01.3m", key: CauseKeys.LandWorkStarted, args: new[] { "drain", "1.25" }),
+            new Cause("draft", "site", 1, "Site: a group of halutzim began building a training camp, cost IL\u00A01.3m", key: CauseKeys.SiteStarted, args: new[] { "camp", "1.25" }),
             new Cause("draft", "town", 0, "Town: an arms workshop's next cycle waits: paying for it would take the debt past its ceiling", key: CauseKeys.WorkshopPaused, args: new[] { Workshops.DebtCeiling }),   // #1701 OQ4
+            new Cause("draft", "town", 0, "Town: Housing waits: no person without a job is left for its builder", key: CauseKeys.ProjectWaiting, args: new[] { "housing", Projects.NoWorker }),   // #1700
         };
         // A renderer receives no live state: both resident variants must survive the settlement record's removal.
         foreach (var row in rows)

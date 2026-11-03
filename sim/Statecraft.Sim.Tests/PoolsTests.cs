@@ -242,7 +242,7 @@ public class PoolsTests
         Assert.Empty(r.Rejected);
         Assert.Equal(24, r.State.Arms);
         Assert.Equal(Step(c, s).Treasury - 4 * 0.25, r.State.Treasury, 9);
-        Assert.Contains(r.Why, x => x.System == "economy" && x.Target == "arms" && x.Delta == 4 && x.Message == "Bought 4 Arms, cost IL 1.0m");
+        Assert.Contains(r.Why, x => x.System == "economy" && x.Target == "arms" && x.Delta == 4 && x.Message == "Bought 4 Arms, cost IL\u00A01.0m");
         Assert.Equal(1.0, c.Rules.AttentionCost["buy_arms"]);   // before the rung step (R-GOV-002)
     }
 
@@ -258,7 +258,7 @@ public class PoolsTests
         Assert.Null(Pools.BuyArms(c, s, 4, why));
         Assert.Equal((0.0, 24), (s.Treasury, s.Arms));
         Assert.Equal(3.5, s.Debt, 9);
-        Assert.Contains(why, x => x.System == "economy" && x.Target == "debt" && x.Message == "Borrowed IL 0.5m for Arms");
+        Assert.Contains(why, x => x.System == "economy" && x.Target == "debt" && x.Message == "Borrowed IL\u00A00.5m for Arms");
     }
 
     // R-ARMS-002: fewer than one unit is refused, the state as if the order had not been given (Attention refunded too),

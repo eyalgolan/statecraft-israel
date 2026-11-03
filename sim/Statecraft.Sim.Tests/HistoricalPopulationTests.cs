@@ -107,6 +107,99 @@ public class HistoricalPopulationTests
         Assert.Equal(3, Count(rows, HistoricalPopulation.FormationPrefix + "kiryati"));
     }
 
+    // R-POP-001, R-POP-004 with D2 (owner, 1 November 2026, "Approve all six (Recommended)"): a ledger fixture of the
+    // Historical start counts its records at rules.yaml's people_per_unit for the start day (1,000), as StartingForces and
+    // Cities do, while the gdd-0.3 catalogue's population.people_per_unit still reads Open mode's 10,000.
+    [Fact]
+    public void HistoricalLedgerFixtureCountsAtTheRulesScale()
+    {
+        var c = Real(true);
+        // Precondition, not the claim: the two scales differ (D2), so the total below tells them apart.
+        Assert.Equal((1000, 10000), (c.RulesAt(c.Rules.Start).Mvp!.PeoplePerUnit, c.PopulationPeoplePerUnit));
+        var inventory = HistoricalPopulation.Inventory(c);
+        Assert.NotEmpty(inventory);
+        var s = PopulationLedger.CreateFixture(c, PopulationLedgerTests.Bindings(), LedgerRows(inventory), mode: Mode.Historical);
+        Assert.Equal(Mode.Historical, s.Mode);
+        Assert.Equal(inventory.Count, s.PopulationLedger.Units.Count);
+        Assert.Equal((double)inventory.Count * 1000, s.PopulationLedger.TotalPeople);
+        // R-POP-003: Clone keeps the fixture's scale rather than re-reading the catalogue.
+        Assert.Equal((double)inventory.Count * 1000, s.Clone().PopulationLedger.TotalPeople);
+    }
+
+    // R-POP-001 with D2: the catalogue's 10,000 is Open mode's, so an Open fixture and a synthetic one (no mode) keep it.
+    [Fact]
+    public void OpenAndSyntheticLedgerFixturesKeepTheCatalogueScale()
+    {
+        var c = Real(true);
+        var row = new PopulationInventoryRow("synthetic", 0, PopulationLedgerTests.Person());
+        var open = PopulationLedger.CreateFixture(c, PopulationLedgerTests.Bindings(), new[] { row }, mode: Mode.Open);
+        Assert.Equal(Mode.Open, open.Mode);
+        Assert.Equal(10000d, open.PopulationLedger.TotalPeople);
+        Assert.Equal(10000d, PopulationLedger.CreateFixture(c, PopulationLedgerTests.Bindings(), new[] { row }).PopulationLedger.TotalPeople);
+    }
+
+    // R-POP-003 with D2: the canonical writer emits the scale. A synthetic fixture's GameState.Mode is the enum default,
+    // Historical, so the same rows with and without mode Historical differ only in their scale, and their hashes differ.
+    [Fact]
+    public void CanonicalStateTellsTheTwoScalesApart()
+    {
+        var c = Real(true);
+        var row = new PopulationInventoryRow("synthetic", 0, PopulationLedgerTests.Person());
+        var historical = PopulationLedger.CreateFixture(c, PopulationLedgerTests.Bindings(), new[] { row }, mode: Mode.Historical);
+        var synthetic = PopulationLedger.CreateFixture(c, PopulationLedgerTests.Bindings(), new[] { row });
+        Assert.Equal((Mode.Historical, Mode.Historical), (historical.Mode, synthetic.Mode));
+        Assert.Equal((1000d, 10000d), (historical.PopulationLedger.TotalPeople, synthetic.PopulationLedger.TotalPeople));
+        Assert.NotEqual(historical.Hash(), synthetic.Hash());
+        Assert.Equal(historical.Hash(), historical.Clone().Hash());
+    }
+
+    // R-POP-004 with D2: census and units_1948 rows are the Historical start's, so a fixture of them needs mode Historical;
+    // without it they would silently count at Open mode's 10,000.
+    [Theory]
+    [InlineData(null)]
+    [InlineData(Mode.Open)]
+    public void HistoricalRowsRefuseAnyOtherScale(Mode? mode)
+    {
+        var c = Real(true);
+        var inventory = HistoricalPopulation.Inventory(c);
+        foreach (var prefix in new[] { HistoricalPopulation.CensusPrefix, HistoricalPopulation.FormationPrefix })
+        {
+            var rows = LedgerRows(inventory.Where(r => r.Source.StartsWith(prefix, StringComparison.Ordinal)).Take(1).ToList());
+            Assert.Single(rows);
+            var e = Assert.Throws<ArgumentException>(() => PopulationLedger.CreateFixture(c, PopulationLedgerTests.Bindings(), rows, mode: mode));
+            Assert.Equal("Census and units_1948 rows are the Historical start's; their fixture needs mode Historical (R-POP-004).", e.Message);
+        }
+    }
+
+    // R-POP-001's no-fallback rule on the Historical scale: a missing, zero or negative rules.yaml people_per_unit for the
+    // start day is refused, never replaced by the catalogue's value.
+    [Theory]
+    [InlineData(null)]
+    [InlineData(0)]
+    [InlineData(-1000)]
+    public void HistoricalScaleHasNoFallback(int? peoplePerUnit)
+    {
+        var c = Real(true);
+        var rules = c.RulesAt(c.Rules.Start);
+        if (peoplePerUnit is int ppu) rules.Mvp!.PeoplePerUnit = ppu; else rules.Mvp = null;
+        var row = new PopulationInventoryRow("synthetic", 0, PopulationLedgerTests.Person());
+        var e = Assert.Throws<InvalidOperationException>(() => PopulationLedger.CreateFixture(c, PopulationLedgerTests.Bindings(), new[] { row }, mode: Mode.Historical));
+        Assert.Equal("The Historical scale needs a positive mvp.people_per_unit in rules.yaml for the start day; no fallback.", e.Message);
+    }
+
+    // The real inventory as ledger rows: a free civilian per census unit and an active soldier per formation unit.
+    static IEnumerable<PopulationInventoryRow> LedgerRows(IEnumerable<HistoricalPopulationRow> inventory)
+    {
+        var civilian = PopulationLedgerTests.Person();
+        var civilianTemplate = new PopulationUnit(0, PopulationStatus.FreeCivilian, 0, civilian.Location, PopulationAssignment.Unassigned,
+            civilian.Profession, civilian.Tier, 0, "basic", 0, PopulationEquipment.None);
+        var soldierTemplate = new PopulationUnit(0, PopulationStatus.ActiveSoldier, 0, civilian.Location,
+            new PopulationAssignment(PopulationAssignmentKind.ActiveService, "service"), civilian.Profession, civilian.Tier, 0, "basic", 0,
+            PopulationEquipment.None);
+        return inventory.Select(r => new PopulationInventoryRow(
+            r.Source, r.Ordinal, r.Status == PopulationStatus.ActiveSoldier ? soldierTemplate : civilianTemplate)).ToList();
+    }
+
     // R-POP-001, R-POP-004: inventory order is source key by ordinal string comparison, then a contiguous within-source
     // ordinal from 0, so ascending population ids follow it (Q10). Repeated reads are identical (docs/determinism.md).
     [Fact]
@@ -137,5 +230,103 @@ public class HistoricalPopulationTests
     public void NewGameDoesNotInitializeTheLedgerYet()
     {
         Assert.False(Simulation.NewGame(Real(true), 1, Mode.Historical).PopulationLedger.IsInitialized);
+    }
+
+    // R-POP-003, R-POP-004 (#1689 region slice): the region-bound fixture builder adds no NewGame path. gdd-0.1 and legacy
+    // games still have no ledger and write no ledger section, so their hashes stay; gdd-0.1 content refuses the builder.
+    [Fact]
+    public void NewGameStillHasNoLedger()
+    {
+        foreach (var (content, ruleset) in new[] { (Real(false), SaveGame.GddRuleset), (RealContentTests.Legacy(), SaveGame.LegacyRuleset) })
+        {
+            Assert.Equal(ruleset, content.Ruleset);
+            var s = Simulation.NewGame(content, 1, Mode.Historical);
+            Assert.False(s.PopulationLedger.IsInitialized);
+            Assert.DoesNotContain("population-ledger", s.Describe());
+        }
+        Assert.Throws<InvalidOperationException>(() => HistoricalPopulation.LedgerFixture(Real(false)));
+    }
+
+    // R-POP-004 (#1689 region slice): the Historical ledger fixture holds the inventory, no more and no less: per source, as
+    // many records as Inventory lists, census records free civilians and formation records active soldiers.
+    [Fact]
+    public void HistoricalFixtureHoldsTheInventoryNoMoreNoLess()
+    {
+        var c = Real(true);
+        var inventory = HistoricalPopulation.Inventory(c);
+        var units = HistoricalPopulation.LedgerFixture(c).PopulationLedger.Units;
+        Assert.Equal(inventory.Count, units.Count);
+        Assert.Equal(inventory.Select(r => r.Status), units.Select(u => u.Status));
+        Assert.Equal(inventory.Count(r => r.Status == PopulationStatus.FreeCivilian), units.Count(u => u.Status == PopulationStatus.FreeCivilian));
+        Assert.Equal(inventory.Count(r => r.Status == PopulationStatus.ActiveSoldier), units.Count(u => u.Status == PopulationStatus.ActiveSoldier));
+    }
+
+    // R-POP-001, R-POP-004, D2: the builder goes through #2299's Historical path, so its records count at 1,000 people.
+    [Fact]
+    public void HistoricalFixtureCountsAtTheRulesScale()
+    {
+        var c = Real(true);
+        var s = HistoricalPopulation.LedgerFixture(c);
+        Assert.Equal(Mode.Historical, s.Mode);
+        Assert.Equal((double)s.PopulationLedger.Units.Count * 1000, s.PopulationLedger.TotalPeople);
+    }
+
+    // R-POP-002, R-POP-004 (#1691 regions): each census record carries the content/regions.yaml region that lists its city
+    // (census/tel_aviv is tel_aviv_jaffa; Jaffa gets no records of its own), and no record has an empty or unknown region.
+    [Fact]
+    public void EveryCensusRecordCarriesItsCitysRegion()
+    {
+        var c = Real(true);
+        var inventory = HistoricalPopulation.Inventory(c);
+        var units = HistoricalPopulation.LedgerFixture(c).PopulationLedger.Units;
+        for (int i = 0; i < inventory.Count; i++)
+        {
+            Assert.Contains(units[i].Location!.Region, c.PlayerRegions.Regions.Keys);
+            if (inventory[i].Source.StartsWith(HistoricalPopulation.CensusPrefix, StringComparison.Ordinal))
+                Assert.Equal(c.PlayerRegions.AtLocation(inventory[i].Source.Substring(HistoricalPopulation.CensusPrefix.Length))!.Id,
+                    units[i].Location!.Region);
+        }
+        var telAviv = inventory.Select((r, i) => (r, i)).Where(x => x.r.Source == HistoricalPopulation.CensusPrefix + "tel_aviv").ToList();
+        Assert.NotEmpty(telAviv);
+        Assert.All(telAviv, x => Assert.Equal("tel_aviv_jaffa", units[x.i].Location!.Region));
+        Assert.DoesNotContain(inventory, r => r.Source == HistoricalPopulation.CensusPrefix + "jaffa");
+    }
+
+    // R-POP-001, R-POP-004, Q10: ids run from 0 with no gaps in the inventory's order (source key by ordinal string compare,
+    // then ordinal), and two builds are identical.
+    [Fact]
+    public void IdsAscendBySourceKeyThenOrdinal()
+    {
+        var c = Real(true);
+        var s = HistoricalPopulation.LedgerFixture(c);
+        var units = s.PopulationLedger.Units;
+        Assert.Equal(Enumerable.Range(0, units.Count), units.Select(u => u.Id));
+        Assert.Equal(units.Count, s.PopulationLedger.NextPopulationId);
+        Assert.Equal(s.Hash(), HistoricalPopulation.LedgerFixture(Real(true)).Hash());
+    }
+
+    // R-POP-001: the fixture reconciles; the created ids are exactly the living ones.
+    [Fact]
+    public void HistoricalFixtureReconciles()
+    {
+        var l = HistoricalPopulation.LedgerFixture(Real(true)).PopulationLedger;
+        Assert.True(l.IsInitialized);
+        l.Reconcile();
+    }
+
+    // R-POP-004: a record whose city or formation has no region in regions.yaml is refused; no region is invented.
+    [Fact]
+    public void ARecordWithNoRegionIsRefused()
+    {
+        var c = Real(true);
+        c.Cities.First(x => x.Id == "rosh_pinna").Id = "nowhere";
+        var e = Assert.Throws<InvalidOperationException>(() => HistoricalPopulation.LedgerFixture(c));
+        Assert.Contains("census/nowhere", e.Message);
+
+        c = Real(true);
+        var golani = c.StartingForces.First(f => f.Row == "golani");
+        (golani.Q, golani.R) = (1000, 1000);
+        e = Assert.Throws<InvalidOperationException>(() => HistoricalPopulation.LedgerFixture(c));
+        Assert.Contains("units_1948/golani", e.Message);
     }
 }

@@ -11,7 +11,8 @@ namespace Statecraft.Game.Map.Kits
     /// standing on the plot's ground level with a stone plinth below it where the ground falls away. Far off the kit's
     /// own buildings draw, exactly as before; up close (TownModelLayer.CloseEnterM) the models draw instead, with each
     /// town's close mesh (KitMesh.ToCloseMesh: its palms without the kit buildings, plus the plinths and, issue #1032, its
-    /// landmarks at the world scale, KitMesh.CloseCopy). The
+    /// landmarks at the world scale, KitMesh.CloseCopy). Tel Aviv, Jerusalem, Haifa and Jaffa draw their models at every
+    /// zoom (owner, 2 November 2026, "Yes, small buildings at every zoom": TownModels.AtEveryZoom). The
     /// layout, the lots and the census do not change.</summary>
     public static partial class SettlementKits
     {

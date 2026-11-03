@@ -1,0 +1,28 @@
+statecraft-save 3
+content 162a08693f3d6873262f7006afee478d29e837435723d8edb88dde0e24c892b3
+seed 1948
+mode Historical
+ruleset gdd-0.1
+turn
+move 0 9 11
+work tel_aviv job 90
+train tel_aviv halutz 158
+turn
+move 0 8 11
+project housing haifa 6 9
+event first_truce accept
+turn
+capture nazareth occupy
+project industry haifa 7 9
+order 1 fortify
+turn
+dollars 1
+arms 10
+turn
+event latrun_proposal accept_vote
+order 2 hold
+turn
+event operation_yoav stop_at_ceasefire
+open
+order 3 fortify
+end 80b1596bd2509ad7c1a4a60cfc57abb5bfc380b4dede7a7e90df2c13fd53926f
