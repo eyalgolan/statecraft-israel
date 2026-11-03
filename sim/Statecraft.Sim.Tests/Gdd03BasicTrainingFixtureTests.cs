@@ -772,6 +772,21 @@ public class Gdd03BasicTrainingFixtureTests
         Assert.Equal(9.4m, f.Money); Assert.Equal(0m, f.Debt);
     }
 
+    // R-UNIT-010 (docs/rules/mvp.md): "including a formation that graduated this turn"; 27M-8 (docs/GDD.md:374): "from the
+    // turn it graduates". A formation's upkeep starts at its graduation month even when the first PayUpkeep comes after the
+    // graduation but names an earlier month: that month charges nothing, and the graduation month pays.
+    [Fact] public void UpkeepForAMonthBeforeGraduationChargesNothing()
+    {
+        var c = Catalogue(); var s = State(c); var f = Fixture(c, s, money: 10m);
+        f.Start(new[] { 0 }, CampNorth, 4);
+        f.Advance(0, 4); f.Advance(0, 5); f.Advance(0, 6);
+        Assert.Equal(PopulationStatus.ActiveSoldier, s.PopulationLedger.Get(0).Status);
+        f.PayUpkeep(5);
+        Assert.Equal(9.5m, f.Money); Assert.Equal(0m, f.Debt);
+        f.PayUpkeep(6);
+        Assert.Equal(9.45m, f.Money);
+    }
+
     // R-UNIT-010 (docs/rules/mvp.md): "IL 0.05m per formation per turn, independent of strength". A formation of three and
     // a formation of one pay 0.05 each.
     [Fact] public void UpkeepIsPerFormationNotPerSoldier()
