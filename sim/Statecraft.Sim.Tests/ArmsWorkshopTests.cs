@@ -160,6 +160,19 @@ public class ArmsWorkshopTests
         Assert.Equal("Town A has 9 civilians and craftsmen", Assert.Single(refused.Rejected).Reason);
     }
 
+    // R-ARMS-005 with R-CITY-001 (#2270): Cities.MaxWorkers(GameState, City) stops at 0 when staffed workshops outnumber the
+    // city's people, so the job default never sets a negative Employed.
+    [Fact]
+    public void AStaffedWorkshopCannotMakeTheMaximumOrDefaultJobsNegative()
+    {
+        var (c, s, id) = Built(civilians: 0, employed: 0, jobs: 10);
+        s.Workshops.Add(id, new Workshop(id, true, SyntheticWorkshopTier.Ordinary));
+        Assert.Equal(0, Cities.MaxWorkers(s, s.Cities["town_a"]));
+        var r = Step(c, s);
+        Assert.Equal(0, r.State.Cities["town_a"].Employed);
+        Assert.DoesNotContain(r.Why, w => w.Key == CauseKeys.WorkersAssigned && w.Target == "town_a");
+    }
+
     public static IEnumerable<object[]> StaffRefusals() => new List<object[]>
     {
         new object[] { "gdd-0.1", "There is no such role" },
@@ -226,6 +239,17 @@ public class ArmsWorkshopTests
         var oneAgain = Step(c, two.State, Staff(1));
         Assert.True(oneAgain.State.Workshops[first].Staffed);
         Assert.False(oneAgain.State.Workshops[second].Staffed);
+    }
+
+    // R-ARMS-005 (#2270): Workshops.Staff adds no record for a never-staffed workshop that the order leaves off.
+    [Fact]
+    public void LeavingANeverStaffedWorkshopOffCreatesNoRecord()
+    {
+        var (c, s, id) = Built(jobsDefault: false);
+        var r = Step(c, s, Staff(0));
+        Assert.Empty(r.Rejected);
+        Assert.False(r.State.Workshops.ContainsKey(id));
+        Assert.DoesNotContain("wshop", r.State.Describe());
     }
 
     // R-ARMS-005 (#1722 slice E): Workshops.Check, which the hex panel asks before it offers a staffing order, gives exactly
@@ -447,6 +471,13 @@ public class ArmsWorkshopTests
         Assert.Contains("wshop", staffed.Describe());
         var other = staffed.Clone(); other.Workshops[id] = other.Workshops[id].WithStaffed(false);
         Assert.NotEqual(staffed.Hash(), other.Hash());
+    }
+
+    // R-ARMS-006 (#2270): Workshop.Canonical writes no "/COST,PROGRESS" suffix while no cycle is paid.
+    [Fact]
+    public void AnUnpaidWorkshopCanonicalHasNoCycleSuffix()
+    {
+        Assert.Equal("7:off,Ordinary", new Workshop(7, false, SyntheticWorkshopTier.Ordinary).Canonical());
     }
 
     // ---- R-ARMS-006: the monthly cycle at the production step (slice C) ----
@@ -755,6 +786,40 @@ public class ArmsWorkshopTests
             Assert.Equal("Town A has 0 civilians without work", Assert.Single(r.Rejected).Reason);
             Assert.DoesNotContain(r.Why, w => w.Key == CauseKeys.WorkshopPaused);
         }
+    }
+
+    // R-TRAIN-001 with R-ARMS-005 (#2270): Training.Idle stops at 0 when a staffed workshop's worker leaves no free civilian,
+    // so a Train refusal never names a negative count.
+    [Fact]
+    public void TrainReportsZeroIdleWhenAStaffedWorkshopExceedsTheFreePopulation()
+    {
+        var (c, s, id) = Built(civilians: 3, employed: 3, jobs: 3, jobsDefault: false);
+        s.Workshops.Add(id, new Workshop(id, true, SyntheticWorkshopTier.Ordinary));
+        var r = Step(c, s, new Train("town_a", "halutz", 1));
+        Assert.Equal("Town A has 0 civilians without work", Assert.Single(r.Rejected).Reason);
+    }
+
+    // R-QUAL-005 with R-ARMS-005 (#2270): the same Training.Idle floor keeps a pioneer-reassignment refusal from naming a
+    // negative count.
+    [Fact]
+    public void ReassignPioneersReportsZeroIdleWhenAStaffedWorkshopExceedsTheFreePopulation()
+    {
+        var (c, s, id) = Built(civilians: 3, employed: 3, jobs: 3, jobsDefault: false);
+        var x = s.Cities["town_a"];
+        s.Cities["town_a"] = x.WithQualified(new Qualified(0, 0, new[] { 0 }));
+        s.Workshops.Add(id, new Workshop(id, true, SyntheticWorkshopTier.Ordinary));
+        var r = Step(c, s, new ReassignPioneers("town_a", "halutz", 1));
+        Assert.Equal("Town A has 0 civilians without work", Assert.Single(r.Rejected).Reason);
+    }
+
+    // R-ARMS-005 with R-CITY-001 (#2289): Workshops.Check names 0, never a negative number, when this turn's Train orders
+    // take more people than are free.
+    [Fact]
+    public void CheckReportsZeroFreePeopleWhenPendingTrainingExceedsThem()
+    {
+        var (c, s, _) = Built(civilians: 10, employed: 9, jobs: 10, jobsDefault: false);
+        var pending = new Command[] { new Train("town_a", "halutz", 3) };
+        Assert.Equal("Town A has 0 civilians and craftsmen without a job", Workshops.Check(c, s, "town_a", 1, pending));
     }
 
     // R-TRAIN-001: Training.Available reads only a "job" AssignWorkers as a jobs order; a pending "workshop" order takes
