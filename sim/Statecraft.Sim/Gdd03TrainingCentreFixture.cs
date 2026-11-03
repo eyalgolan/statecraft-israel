@@ -152,8 +152,10 @@ namespace Statecraft.Sim
                 throw new ArgumentException(HostCityReason);
             if (At(PopulationAssignmentKind.Teaching, centre.Id).Any(t => t.Id != teacher.Id)) throw new ArgumentException(OneTeacherReason);
 
-            // Both must be in the month's snapshot. What either held at its opening does not matter (owner ruling, 3
-            // November 2026): a job, or a course or teaching cancelled this turn, is no bar; only a graduation is.
+            // Both must be in the month's snapshot. What either held at its opening does not matter, a reading of
+            // docs/gdd/cities.md:42 ("Reassignment releases old capacity atomically.") with docs/GDD.md:372 Q43(b)/(c)
+            // ("can be assigned from the next planning, or at once on cancellation") and docs/gdd/training.md:66 ("at
+            // once"): a job, or a course or teaching cancelled this turn, is no bar; only a graduation is.
             Opening(month, trainee.Id); Opening(month, teacher.Id);
             // #1668 Q43(b) (#1697, 1 Nov 2026): "on graduation the people are released in the turn the last course turn
             // counts and can be assigned from the next turn's planning", so neither starts a course in that month.

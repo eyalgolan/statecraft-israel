@@ -726,8 +726,8 @@ public class Gdd03TrainingCentreFixtureTests
         Assert.Equal(PopulationAssignmentKind.Course, month.OpeningPeople.Single(p => p.Id == 6).Assignment.Kind);
     }
 
-    // R-TRAIN-005, R-TRAIN-008 (owner ruling, 3 November 2026: a person who held another assignment at the month's opening
-    // may start a course that month): a teacher who worked at the month's opening and was released afterwards starts
+    // R-TRAIN-005, R-TRAIN-008 (a reading of docs/gdd/cities.md:42, atomic reassignment, with docs/GDD.md:372 Q43(b)/(c)
+    // and docs/gdd/training.md:66: what a person held at the month's opening is no bar to a course): a teacher who worked at the month's opening and was released afterwards starts
     // teaching that month, and the course counts that month.
     [Fact] public void ATeacherWhoWorkedAtTheOpeningStartsThatMonth()
     {
@@ -742,8 +742,8 @@ public class Gdd03TrainingCentreFixtureTests
         Assert.Equal(1, s.PopulationLedger.Get(5).Assignment.ProgressTicks);
     }
 
-    // R-TRAIN-005 (owner ruling, 3 November 2026; docs/gdd/cities.md:42: "Reassignment releases old capacity
-    // atomically."): a pupil and a teacher who both hold a job start a course; the jobs are released in the same commit,
+    // R-TRAIN-005 (docs/gdd/cities.md:42: "Reassignment releases old capacity atomically.", read with docs/GDD.md:372
+    // Q43(b)/(c) and docs/gdd/training.md:66): a pupil and a teacher who both hold a job start a course; the jobs are released in the same commit,
     // so the work slots are free at once and this month's snapshot shows them on the course and off work.
     [Fact] public void PeopleWithAJobStartACourseAndLeaveItInTheSameCommit()
     {
