@@ -170,8 +170,8 @@ namespace Statecraft.Sim
         /// are not refunded and Arms return to the pool". The same record stays in place as a free civilian without a job and
         /// its course progress ends. Only an item this fixture issued goes back to the spare Arms (R-ARMS-003 "the Arms it
         /// took"); a carried item stays on the record. Money and Debt are unchanged. A record that is not a current trainee of
-        /// this fixture is refused with nothing changed. The carried item stays per R-ARMS-003 ('the Arms it took'); the
-        /// issued-item guard below is a maintainer call (not an owner ruling).</summary>
+        /// this fixture is refused with nothing changed. The carried item stays by our reading of R-ARMS-003 ('the Arms it
+        /// took'); the issued-item guard below is a maintainer call (not an owner ruling).</summary>
         internal void Cancel(int traineeId)
         {
             ValidateInventory();
