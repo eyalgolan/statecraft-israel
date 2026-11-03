@@ -40,25 +40,32 @@ namespace Statecraft.Sim
     /// <summary>#1699 first slice: a recruit's basic training starts on the #1689 population ledger and holds its issued
     /// Arms (ARMS-1, ARMS-2, 27M-7, R-TRAIN-001, R-ARMS-003), synthetic fixtures only. No command, save, loader, resolver,
     /// Food or UI caller. Like <see cref="Gdd03ProjectBuildFixture"/> it owns its spare Arms, Money and Debt, so the ledger
-    /// never touches resources (R-POP-002). Completion into a formation is refused with a "Deferred:" NotSupportedException.
-    /// Cancel returns an issued item to the spare Arms (R-TRAIN-002, R-ARMS-003, docs/GDD.md:372).</summary>
+    /// never touches resources (R-POP-002). Cancel returns an issued item to the spare Arms (R-TRAIN-002, R-ARMS-003,
+    /// docs/GDD.md:372). The last course turn graduates the record into its cohort's formation (R-TRAIN-003, R-UNIT-003), and
+    /// each formation it graduated pays upkeep from its graduation month (27M-8, R-UNIT-010).</summary>
     internal sealed class Gdd03BasicTrainingFixture
     {
         /// <summary>Issued item ids are this prefix plus the population id. It is disjoint from the census and units_1948
         /// source prefixes (<see cref="HistoricalPopulation.CensusPrefix"/>, <see cref="HistoricalPopulation.FormationPrefix"/>),
         /// so no id can equal a starting formation's item; a record holds at most one military item, so no two records are issued the same id.</summary>
         internal const string IssuedPrefix = "basic_training/";
-        const string Completion = "Deferred: completing basic training into a formation (#1699; R-TRAIN-003, R-UNIT-003).";
         const string CampLoss = "Deferred: a camp that stops operating during a course (#1699, 27M-9).";
 
         readonly GameState state;
         readonly SortedDictionary<string, Gdd03FixtureMilitaryCamp> camps = new SortedDictionary<string, Gdd03FixtureMilitaryCamp>(StringComparer.Ordinal);
         readonly int capacity, basicTurns;
-        readonly decimal moneyPerCourse;
+        readonly decimal moneyPerCourse, activeMoney;
+        readonly SortedDictionary<string, Gdd03FixtureFormation> formations = new SortedDictionary<string, Gdd03FixtureFormation>(StringComparer.Ordinal);
         // Per fixture instance only (not saved): each trainee's enrolment month and last counted month ordinal.
         readonly SortedDictionary<int, (int enrolment, int lastCounted)> months = new SortedDictionary<int, (int, int)>();
         // Per fixture instance only (not saved): the trainees whose item this fixture issued from its spare Arms.
         readonly SortedSet<int> issued = new SortedSet<int>();
+        // Per fixture instance only (not saved). 53's maintainer call (3 November 2026): one Start order is one cohort and
+        // graduates into one formation. Each current trainee's cohort, and each cohort's formation once its first member graduates.
+        readonly SortedDictionary<int, int> cohortOf = new SortedDictionary<int, int>();
+        readonly SortedDictionary<int, string> cohortFormation = new SortedDictionary<int, string>();
+        int nextCohort;
+        int? lastPaidMonth;
         internal int SpareArms { get; private set; }
         internal decimal Money { get; private set; }
         internal decimal Debt { get; private set; }
@@ -76,8 +83,13 @@ namespace Statecraft.Sim
                 throw new ContentException(Gdd03BalanceCatalogue.FileName, "values.military.repeat_issue", "must be 0: never a second issue");
             if (spareArms < 0 || money < 0) throw new ArgumentException("Spare Arms and Money must be nonnegative.");
             this.state = state;
-            capacity = terms.CampCapacity; basicTurns = terms.BasicTurns; moneyPerCourse = terms.TrainingMoney;
+            capacity = terms.CampCapacity; basicTurns = terms.BasicTurns; moneyPerCourse = terms.TrainingMoney; activeMoney = terms.ActiveMoney;
             foreach (var camp in camps) this.camps.Add(camp.Id, camp); // a duplicate id throws ArgumentException
+            foreach (var formation in formations)
+            {
+                if (this.camps.ContainsKey(formation.Id)) throw new ArgumentException("A formation cannot be a camp.");
+                this.formations.Add(formation.Id, formation); // a duplicate id throws ArgumentException
+            }
             SpareArms = spareArms; Money = money;
             ValidateInventory();
         }
@@ -159,11 +171,13 @@ namespace Statecraft.Sim
             Money -= paid; Debt = debt;
             foreach (var p in recruits) months[p.Id] = (monthOrdinal, monthOrdinal - 1);
             foreach (var p in recruits) if (p.Equipment.MilitaryId == null) issued.Add(p.Id);
+            foreach (var p in recruits) cohortOf[p.Id] = nextCohort;
+            nextCohort++;
         }
 
         /// <summary>R-TRAIN-001 "counting the turn it was ordered in": count one course turn a month ordinal, the enrolment
-        /// month included, each ordinal once and never an earlier one. The turn that would reach <c>military.basic_turns</c>
-        /// completes the course and is Deferred.</summary>
+        /// month included, each ordinal once and never an earlier one. The turn that reaches <c>military.basic_turns</c>
+        /// graduates the record (<see cref="Graduate"/>).</summary>
         internal void Advance(int traineeId, int monthOrdinal)
         {
             ValidateInventory();
@@ -175,7 +189,7 @@ namespace Statecraft.Sim
             if (monthOrdinal < known.enrolment || monthOrdinal <= known.lastCounted)
                 throw new ArgumentException("This month ordinal was already counted or is before enrolment.");
             int progress = checked(trainee.Assignment.ProgressTicks + 1);
-            if (progress >= basicTurns) throw new NotSupportedException(Completion);
+            if (progress >= basicTurns) { Graduate(trainee, camp, monthOrdinal); return; }
             Commit(new[] { trainee.WithPlacement(trainee.Status, trainee.Location,
                 new PopulationAssignment(PopulationAssignmentKind.Course, camp.Id, progress), trainee.Captor, trainee.Home) });
             months[traineeId] = (known.enrolment, monthOrdinal);
@@ -208,9 +222,57 @@ namespace Statecraft.Sim
             Commit(new[] { person.WithPlacement(PopulationStatus.FreeCivilian, trainee.Location, PopulationAssignment.Unassigned,
                 trainee.Captor, trainee.Home) });
             SpareArms = spare;
-            issued.Remove(traineeId); months.Remove(traineeId);
+            issued.Remove(traineeId); months.Remove(traineeId); cohortOf.Remove(traineeId);
         }
 
-        internal void PayUpkeep(int monthOrdinal) => throw new NotImplementedException();
+        /// <summary>R-TRAIN-003 and R-UNIT-003 under gdd-0.3: the month that counts the last course turn releases the trainee
+        /// into its cohort's formation (Q43(b), "released in the turn its last course turn counts"). The same record, in place
+        /// (27M-7), becomes an active soldier serving that formation; it keeps its item, and nothing is charged or refunded
+        /// ("Its reserved Arms are neither charged again nor refunded on completion"). Its qualification stays as it was (""):
+        /// the live recruit path gives a formation no qualification (<see cref="Unit"/>, Training.cs's completion) and the
+        /// Historical start gives its soldiers "" (#1717). The cohort's first graduate claims the first free formation in the
+        /// camp's region: supplied to this fixture, not claimed by another cohort, and serving no one (53's maintainer call).
+        /// A graduation in a month whose upkeep was already paid is refused (53's maintainer call: Advance, then PayUpkeep,
+        /// in a month), so a formation always pays in its graduation month (27M-8).</summary>
+        void Graduate(PopulationUnit trainee, Gdd03FixtureMilitaryCamp camp, int monthOrdinal)
+        {
+            if (lastPaidMonth is int paid && monthOrdinal <= paid)
+                throw new ArgumentException(string.Format(CultureInfo.InvariantCulture,
+                    "Upkeep was already paid for month {0}: graduate with Advance before that month's PayUpkeep (27M-8).", paid));
+            int cohort = cohortOf[trainee.Id];
+            if (!cohortFormation.TryGetValue(cohort, out var formation))
+            {
+                var ledger = state.PopulationLedger.Units;
+                formation = formations.Values.Where(f => string.Equals(f.Region, camp.Region, StringComparison.Ordinal)
+                        && !cohortFormation.ContainsValue(f.Id)
+                        && !ledger.Any(p => string.Equals(p.Assignment.Target, f.Id, StringComparison.Ordinal)))
+                    .Select(f => f.Id).FirstOrDefault()
+                    ?? throw new ArgumentException("No free formation in region " + camp.Region + " for this cohort.");
+            }
+            Commit(new[] { trainee.WithPlacement(PopulationStatus.ActiveSoldier, trainee.Location,
+                new PopulationAssignment(PopulationAssignmentKind.ActiveService, formation), trainee.Captor, trainee.Home) });
+            cohortFormation[cohort] = formation;
+            months.Remove(trainee.Id); issued.Remove(trainee.Id); cohortOf.Remove(trainee.Id);
+        }
+
+        /// <summary>R-UNIT-010 under gdd-0.3, the fixture's step 7: each formation this fixture graduated that still has an
+        /// active soldier pays <c>military.active_money</c> once, independent of strength ("IL 0.05m per formation per turn,
+        /// independent of strength"), from its graduation month (27M-8: "A formation pays military upkeep from the turn it
+        /// graduates"). Trainees pay none. Only this fixture's formations count (53's maintainer call); it owns its Money.
+        /// The shortfall is borrowed (R-MONEY-003); no Arms or strength change. Each month ordinal is paid once and never an
+        /// earlier one; the cost is computed before any write.</summary>
+        internal void PayUpkeep(int monthOrdinal)
+        {
+            ValidateInventory();
+            if (monthOrdinal < 0) throw new ArgumentException("The month ordinal must be nonnegative.");
+            if (lastPaidMonth is int paid && monthOrdinal <= paid)
+                throw new ArgumentException("This month's upkeep was already paid, or the month is before the last one paid.");
+            var serving = new HashSet<string>(state.PopulationLedger.Units
+                .Where(p => p.Status == PopulationStatus.ActiveSoldier).Select(p => p.Assignment.Target!), StringComparer.Ordinal);
+            int count = cohortFormation.Values.Count(serving.Contains);
+            decimal cost = activeMoney * count;
+            decimal paidNow = Math.Min(Money, cost), debt = Debt + (cost - paidNow);
+            Money -= paidNow; Debt = debt; lastPaidMonth = monthOrdinal;
+        }
     }
 }
