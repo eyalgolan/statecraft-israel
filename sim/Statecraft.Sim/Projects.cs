@@ -55,10 +55,13 @@ namespace Statecraft.Sim
             : "";
 
         /// <summary>The GDD minister system a city project's kind belongs to (R-MIN-001; Q-MIN-1): housing, a transit
-        /// camp included (Q-HOUSE-3's low-condition housing type) and a gdd-0.3 housing repair (R-HOUSE-006), and industry
-        /// construction are Labour's; a kind the map does not name is "" (neutral).</summary>
+        /// camp included (Q-HOUSE-3's low-condition housing type) and a gdd-0.3 housing repair (R-HOUSE-006; maintainer call
+        /// (not an owner ruling): a repair counts as a Housing build, so housing construction's multiplier applies and with a
+        /// weak minister it can take more than one turn), and industry construction are Labour's; a kind the map does not
+        /// name is "" (neutral).</summary>
         public static string SystemOfKind(string kind) =>
             kind == "industry" ? EffectsSystem.IndustryConstructionSystem
+            // HousingRepair here is a maintainer call, not an owner ruling (R-HOUSE-006): see the summary above.
             : kind == "housing" || kind == "transit_camp" || kind == HousingRepair ? EffectsSystem.HousingConstructionSystem
             : "";
 

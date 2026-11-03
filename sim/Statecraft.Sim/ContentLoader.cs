@@ -1596,8 +1596,9 @@ namespace Statecraft.Sim
         }
 
         /// <summary>R-HOUSE-006: the housing_repair row exists under gdd-0.3 only and adds no capacity or job slots, and under
-        /// gdd-0.3 it has the balance catalogue's housing_repair price and effect: its cost, its work as turns and its
-        /// condition_pp as a change of the 0 to 1 condition (owner, 1 November 2026: "Fixed price 0.5 Money + 1 work").</summary>
+        /// gdd-0.3 it has the balance catalogue's housing_repair price and effect: its cost, its work as turns (maintainer call
+        /// (not an owner ruling): 1 work is one turn, as arms_workshop's work 3 is its 3 turns) and its condition_pp as a change
+        /// of the 0 to 1 condition (owner, 1 November 2026: "Fixed price 0.5 Money + 1 work").</summary>
         static void ValidateRepairKind(Content c, ProjectKind x, string pf, string at)
         {
             if (x.Id != Projects.HousingRepair) return;
@@ -1617,6 +1618,7 @@ namespace Statecraft.Sim
                     throw new ContentException(pf, at + "." + field, FormattableString.Invariant($"must be {expected}, the gdd-0.3 balance catalogue's {key} {part}"));
             }
             Match("cost", (decimal)x.Cost, Part("cost"), "cost");
+            // Maintainer call (not an owner ruling): work is matched as turns, 1 work = 1 turn (the arms_workshop precedent).
             Match("turns", x.Turns, Part("work"), "work");
             Match("condition", (decimal)x.Condition, Part("condition_pp") / 100m, "condition_pp / 100");
         }
