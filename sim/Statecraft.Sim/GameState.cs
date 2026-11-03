@@ -188,7 +188,7 @@ namespace Statecraft.Sim
         {
             using var sha = SHA256.Create();
             var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(CanonicalText(false)));
-            return string.Concat(bytes.Select(b => b.ToString("x2")));
+            return string.Concat(bytes.Select(b => b.ToString("x2", CultureInfo.InvariantCulture)));
         }
 
         /// <summary>The state in the order and form <see cref="Hash"/> hashes it, one line per section, with each number
@@ -226,12 +226,12 @@ namespace Statecraft.Sim
             }
             void Sep() { if (!readable) sb.Append(';'); }
             sb.Append(Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)).Append(';')
-              .Append(RngState).Append(';').Append(Mode).Append(';').Append(Turn).Append(';');
+              .Append(RngState.ToString(CultureInfo.InvariantCulture)).Append(';').Append(Mode).Append(';').Append(Turn.ToString(CultureInfo.InvariantCulture)).Append(';');
             Map("ind", Indicators); Map("pol", Policies); Map("eff", EffectContributions); Map("shift", IndicatorShifts);
             Map("bud", Budget); Map("pop", Population);
             List("sit", ActiveSituations);
             Num("treasury", Treasury); Num("debt", Debt); Num("fx", FxReserves);
-            Nl(); sb.Append("rung=").Append(Rung).Append(";cf=").Append(CeasefireWeeksLeft).Append(';');
+            Nl(); sb.Append("rung=").Append(Rung.ToString(CultureInfo.InvariantCulture)).Append(";cf=").Append(CeasefireWeeksLeft.ToString(CultureInfo.InvariantCulture)).Append(';');
             Num("mob", Mobilization); Num("stab", CoalitionStability); if (usesAttention) Num("att", Attention);
             List("fired", FiredEvents);
             List("pending", PendingEvents);
@@ -248,10 +248,10 @@ namespace Statecraft.Sim
             Nl(); sb.Append("map[");
             foreach (var p in Placements)
             {
-                Entry(); sb.Append(p.Action).Append('@').Append(p.Q).Append(',').Append(p.R).Append('@').Append(p.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)); Sep();
+                Entry(); sb.Append(p.Action).Append('@').Append(p.Q.ToString(CultureInfo.InvariantCulture)).Append(',').Append(p.R.ToString(CultureInfo.InvariantCulture)).Append('@').Append(p.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)); Sep();
             }
             Close(']');
-            Nl(); sb.Append("mapturn=").Append(MapActionsTurnDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)).Append(':').Append(MapActionsThisTurn).Append(';');
+            Nl(); sb.Append("mapturn=").Append(MapActionsTurnDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)).Append(':').Append(MapActionsThisTurn.ToString(CultureInfo.InvariantCulture)).Append(';');
             Nl(); sb.Append("over=").Append(GameOver ?? "");
             // GDD v0.1 sections (spec 2026-10-12 section 2.4): each written only when set, so with the legacy loop the text
             // above is the whole text, byte for byte. The over= line has no separator after it, so each section adds one.

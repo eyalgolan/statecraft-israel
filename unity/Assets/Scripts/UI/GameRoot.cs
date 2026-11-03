@@ -989,6 +989,11 @@ namespace Statecraft.Game.UI
             Statecraft.Game.Map.Collection.RuralLife.Show(map);
             // Tal Heuberger's Tegart fort, barracks and factory at their sourced places and dates, close up only, streamed (#707).
             Statecraft.Game.Map.Collection.SpecialBuildingModels.ShowAt(map, Bridge.State.Date);
+            // Tal Heuberger's hex-tile props (owner, 27 October 2026: "2+3"; 2 November 2026: "Every zoom" for the landmarks): his
+            // minarets, belfries and Jaffa's clock tower in place of the kit's at every zoom, so the bundle streams after the first
+            // frame; the stations, camp tents, village hedges and hill scatter close up only, built at the first close camera.
+            // After the layers they keep clear of.
+            Statecraft.Game.Map.Collection.HexPropModels.ShowAt(map, Bridge.State.Date);
             // Tal Heuberger's ships off Haifa, Jaffa, Acre and (on the Altalena's turn) Tel Aviv, and the C-54 at Lod, streamed after the first frame (#669).
             seaAir = Statecraft.Game.Map.Collection.SeaAirCollection.ShowAt(map, Bridge.State.Date, Bridge.State.Placements, Bridge.Content);
             RenderSitesIfChanged();
