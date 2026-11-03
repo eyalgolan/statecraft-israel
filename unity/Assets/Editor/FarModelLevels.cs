@@ -390,9 +390,10 @@ namespace Statecraft.Game.EditorTools
                         pixels[(cy + y) * width + cx + x] = new Color(r * inv, g * inv, bl * inv, 1f);
                     }
             }
+            bool Used(int i) => (i / width / CellPx) * cells + (i % width) / CellPx < faces.Count;
             int used = faces.Count * CellPx * CellPx; var mean = Color.black;
-            for (int i = 0; i < used; i++) mean += pixels[i] / used;
-            for (int i = used; i < pixels.Length; i++) pixels[i] = mean;
+            for (int i = 0; i < pixels.Length; i++) if (Used(i)) mean += pixels[i] / used;
+            for (int i = 0; i < pixels.Length; i++) if (!Used(i)) pixels[i] = mean;
             atlas.Reinitialize(width, height, TextureFormat.RGB24, false);
             atlas.SetPixels(pixels); atlas.Apply(false, false);
             return uv.ToList();

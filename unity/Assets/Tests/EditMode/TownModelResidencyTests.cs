@@ -1121,6 +1121,10 @@ public class TownModelResidencyTests
         CollectionAssert.AreEquivalent(inView, TownLandmarksTests.BigCities.Where(id => s.layer.AdmitsTown(id, camera)).ToList(),
             "the cities admitted at 60 km over Imwas");
         Assert.AreEqual(originals, s.Released, "every original's lease is released at 60 km, the cities' too");
+        var residency = s.layer.ResidencySnapshot();
+        Assert.AreEqual(0, residency.strongCacheRefs, "no original mesh or material is strongly referenced after unload");
+        CollectionAssert.IsEmpty(residency.detailIds.Where(id => id.EndsWith("|Near", StringComparison.Ordinal)).ToList(),
+            "no unloaded original remains in the Near residency snapshot");
         var asked = s.RequestOrder.Skip(originals).ToList();
         CollectionAssert.IsNotEmpty(asked, "the far-off copies are asked for at 60 km");
         foreach (var id in asked) Assert.IsTrue(CollectionCatalog.IsFarCopy(id), "at 60 km only far-off copies are asked for, not " + id);

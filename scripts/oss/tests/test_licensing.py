@@ -167,6 +167,18 @@ def test_tal_original_licensing_matches_manifest_exactly():
     # Afik Faerman's main theme (#39, #2240; owner, 2 November 2026: CC BY-NC-ND 4.0, credited to Afik): one exact-file row.
     music = [r for r in independent if r["glob"] == "unity/Assets/StreamingAssets/audio/music/Main_1.3.ogg"]
     assert len(music) == 1 and music[0]["artist"] == "Afik Faerman" and music[0]["ai_generated"] is False
+    far_globs = {
+        "unity/Assets/Art/Settlements/Prototype/Models/*/*-far.asset",
+        "unity/Assets/Art/Settlements/Prototype/Models/*/*-far.png",
+    }
+    far_rows = [r for r in independent if r["glob"] in far_globs]
+    assert len(far_rows) == 2 and {r["glob"] for r in far_rows} == far_globs
+    assert all(r["licence"] == "CC-BY-NC-ND-4.0" and r["artist"] == "Tal Heuberger" for r in far_rows)
+    licensing = (ROOT / "LICENSING.md").read_text(encoding="utf-8")
+    far_licensing_rows = [next(line for line in licensing.splitlines() if line.startswith(prefix)) for prefix in (
+        "| New 22 October buildings, tents and props ", "| Original 3D model files by Tal Heuberger |")]
+    assert all("`*-far.asset`" in row and "`*-far.png`" in row for row in far_licensing_rows)
+    assert all("[CC BY-NC-ND 4.0]" in row and "Tal Heuberger" in row for row in far_licensing_rows)
     # The hex-tile props row, the #1901 -light meshes and the two #2378 far-off copy rows (*-far.asset, *-far.png; owner,
     # 3 November 2026, confirms Tal's permission) among them.
     assert len([r for r in independent if r["glob"] not in added and r not in music]) == 52
