@@ -160,7 +160,7 @@ public class InfoPanelLayoutTests
     /// <summary>#2039, owner ruling of 2 Nov 2026 ("Keep hexes, fix the panel"): the hex the game names Jerusalem also holds
     /// the Old City, so the control data puts it on the Arab side from 11 June 1948 and the map colours it so; its panel line
     /// names West Jerusalem as Israeli-held instead, in English and Hebrew. From the start, 15 May 1948, too: the opening period's
-    /// no-man's land (data code m, to 10 June) names it so as well (owner question Q18 on #2400).</summary>
+    /// no-man's land (data code m, to 10 June) names it so as well (owner, 3 November 2026: "Israeli-held from 15 May (Recommended)", on #2400).</summary>
     [UnityTest]
     public IEnumerator TheJerusalemPanelNamesWestJerusalemAsIsraeliHeld([Values(false, true)] bool hebrew)
     {
