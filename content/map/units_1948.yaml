@@ -1213,12 +1213,10 @@ units:
   sector_he_sources: [{url: 'https://he.wikipedia.org/wiki/%D7%94%D7%A6%D7%91%D7%90_%D7%94%D7%A1%D7%95%D7%A8%D7%99', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%94%D7%9B%D7%A0%D7%A8%D7%AA', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%A6%D7%9E%D7%97_%28%D7%9E%D7%A8%D7%9B%D7%96_%D7%90%D7%96%D7%95%D7%A8%D7%99%29', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%92%D7%A9%D7%A8_%D7%91%D7%A0%D7%95%D7%AA_%D7%99%D7%A2%D7%A7%D7%91', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%9E%D7%A9%D7%9E%D7%A8_%D7%94%D7%99%D7%A8%D7%93%D7%9F', checked: '2026-10-22'}]
   wikipedia_only: false
   # The owner person-checked this row on 21 October 2026 (#1240): https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250
-  # Its anchor from 8 July 1948 (#1270, S1) came later and is not covered by that check, so the row is to_verify until a
-  # person checks it (#1270, status of 22 October 2026: the new anchors as to_verify, through the release gate's person check).
-  status: to_verify
+  # The owner person-checked the anchor from 8 July 1948 (#1270, S1) on 3 November 2026: https://github.com/eyalgolan/statecraft-israel/pull/2180#issuecomment-6606070287
+  status: fact-checked
   to_verify:
   - "The 15 May strength rests on two full-text search snippets that give the same figures, Glubb (1957) and Rogan and Shlaim (2007, chapter not identified), and the second reproduces Glubb's figures and total (review of #860), so the figure rests on Glubb alone, merged as data only (owner, 17 October 2026, on #860). Check both printed pages (the note, section 9)."
-  - "The anchor from 8 July 1948 to the Syrian armistice (#1270, S1) is agent-read only (research_notes/GDD phase 5/enemy-script-anchors-check-1270.md): a person checks Dupuy pp. 83, 84 and 104, O'Ballance pp. 150, 153-154 and 205 and the armistice text, then the row is fact-checked again."
   strength:
     value: 3000
     as_of: '1948-05-15'
@@ -1265,7 +1263,7 @@ units:
     - {url: 'https://en.wikipedia.org/wiki/1948_Arab%E2%80%93Israeli_War', checked: '2026-10-17'}
     - {url: 'https://en.wikipedia.org/wiki/Mishmar_HaYarden_(moshava)', checked: '2026-10-17'}
   # #1270, anchor S1 (research_notes/GDD phase 5/enemy-script-after-first-truce-1270.md; agent-read in
-  # enemy-script-anchors-check-1270.md, a person's check pending): the bridgehead held from the Ten Days to the armistice.
+  # enemy-script-anchors-check-1270.md; person-checked by the owner on 3 November 2026): the bridgehead held from the Ten Days to the armistice.
   - place: The bridgehead at Mishmar HaYarden
     place_he: "ראש הגשר במשמר הירדן"
     place_he_review: agent-checked
