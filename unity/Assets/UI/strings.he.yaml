@@ -1034,8 +1034,9 @@ advisor.credit.dayan: "צילום: משה דיין, 9 בדצמבר 1953, NLI 997
 # Caption keys: same text as the C68 recorded opening lines. The lines with an English clip (S6b, Task 26) are cut at
 # the clip's sentence and clause pauses; their start times are the media rows' cues.
 # The 15 opening cues' Hebrew, agent-drafted: native review: owner, 3 Nov 2026 (HE batch 1: "All fine as they are").
-# greeting.cue.2's English became "The decisions are yours," (owner, 3 Nov 2026: "'Yours' (Recommended)"); its
-# Hebrew is unchanged.
+# greeting.text's English became "The decisions are yours," (owner, 3 Nov 2026: "'Yours' (Recommended)"), and
+# greeting.cue.2's English stays "The decisions are theirs," to match the English voice clip (owner, 3 Nov 2026:
+# "Caption follows the voice (Recommended)"); their Hebrew is unchanged.
 advisor.opening.greeting.cue.1: "למדינה צרכים דחופים ואמצעים מוגבלים."
 advisor.opening.greeting.cue.2: "ההחלטות בידיכם,"
 advisor.opening.greeting.cue.3: "והיועצים יסבירו מה כל בחירה משנה."

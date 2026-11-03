@@ -944,7 +944,7 @@ advisor.credit.dayan: "Photograph: Moshe Dayan, 9 December 1953, NLI 99700813664
 # the clip's sentence and clause pauses; their start times are the media rows' cues.
 # Hebrew cues remain agent drafts and require the parent opening row’s native approval.
 advisor.opening.greeting.cue.1: "The country has urgent needs and limited means."
-advisor.opening.greeting.cue.2: "The decisions are yours,"
+advisor.opening.greeting.cue.2: "The decisions are theirs,"
 advisor.opening.greeting.cue.3: "and the advisers will explain what each choice changes."
 advisor.opening.attention.cue.1: "Attention is the capacity for decisions this month."
 advisor.opening.attention.cue.2: "It refills next month, and any amount left now does not carry over."
