@@ -510,6 +510,8 @@ public class HebrewUiTests
         ("settings-quality-high", "settings.quality.high"), ("settings-quality-low", "settings.quality.low"),
         ("settings-sound-label", "settings.sound"), ("settings-sound-off", "settings.sound.off"),
         ("settings-sound-low", "settings.sound.low"), ("settings-sound-high", "settings.sound.high"),
+        ("settings-music-label", "settings.music"), ("settings-music-off", "settings.music.off"),
+        ("settings-music-low", "settings.music.low"), ("settings-music-high", "settings.music.high"),
         ("settings-advisors-label", "settings.advisors"), ("settings-language-label", "settings.language"),
         ("settings-uiscale-label", "settings.uiscale"), ("settings-companion-label", "settings.companion"),   // #1119
         ("settings-community-label", "settings.community"), ("settings-star", "community.star"), ("start-star", "community.star"),

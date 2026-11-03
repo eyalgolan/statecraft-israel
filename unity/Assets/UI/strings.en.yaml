@@ -173,6 +173,10 @@ settings.sound: "Sound effects"
 settings.sound.off: "Off"
 settings.sound.low: "Low"
 settings.sound.high: "High"
+settings.music: "Music"
+settings.music.off: "Off"
+settings.music.low: "Low"
+settings.music.high: "High"
 # The language choice (#1036). The two languages are named on their buttons in themselves ("English", "עברית"), set in
 # SettingsPresenter, not here.
 settings.language: "Language"

@@ -184,6 +184,12 @@ settings.sound: "צליל"
 settings.sound.off: "כבוי"
 settings.sound.low: "חלש"
 settings.sound.high: "חזק"
+# The start menu's music volume (#39, MenuMusic), in the sound effects' three steps. The adjectives are feminine, agreeing
+# with "מוזיקה" (as the quality row's agree with "איכות"). Agent-drafted Hebrew; native review pending (#564).
+settings.music: "מוזיקה"
+settings.music.off: "כבויה"
+settings.music.low: "חלשה"
+settings.music.high: "חזקה"
 # The language choice (#1036); the languages' names are on their buttons, in themselves (SettingsPresenter). For the
 # native reviewer (#564).
 settings.language: "שפה"

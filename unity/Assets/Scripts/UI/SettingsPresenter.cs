@@ -10,7 +10,8 @@ using UnityEngine.UIElements;
 namespace Statecraft.Game.UI
 {
     /// <summary>The Settings screen (#40), opened from the left column's gear like the other screens (ScreenNav). Its options:
-    /// the graphics quality (GraphicsQuality: Auto / High / Low), the sound effects volume (GameAudio, #39), the UI's language (#1036),
+    /// the graphics quality (GraphicsQuality: Auto / High / Low), the sound effects volume (GameAudio, #39), the start menu's music
+    /// volume (MenuMusic, #39), the UI's language (#1036),
     /// the UI scale (100% / 125% / 150%), the tilt-shift blur, the WebGL companion (#1119, its row only where a page shows it) and a Community row whose "Star on GitHub" opens the repository
     /// (#1168, ExternalLink). The blur option turns it off and on: applied at once (TiltShift.Enabled, what the "tiltshift"
     /// toggle sets) and kept in the SettingsStore, so it holds after a reload. A stored "off" only ever turns the blur off, so ?notiltshift still boots without it. The
@@ -18,7 +19,7 @@ namespace Statecraft.Game.UI
     /// automatic last fallback step (TiltShift.FallbackOff), which it never changes.</summary>
     public sealed class SettingsPresenter : IDisposable
     {
-        public const string TiltShiftKey = "tiltshift", QualityKey = "quality", LanguageKey = "lang", UiScaleKey = "uiscale", SoundKey = "sfx", CompanionKey = "companion", SelectedClass = "settings-choice-selected";
+        public const string TiltShiftKey = "tiltshift", QualityKey = "quality", LanguageKey = "lang", UiScaleKey = "uiscale", SoundKey = "sfx", MusicKey = "music", CompanionKey = "companion", SelectedClass = "settings-choice-selected";
         /// <summary>The owner's UI scales (#40, 18 Oct 2026), in percent; the first is the default.</summary>
         public static readonly int[] UiScales = { 100, 125, 150 };
         /// <summary>The owner's ruling on #1011 (19 Oct 2026): Settings offers only the UI scales verified to fit, and 100% always,
@@ -37,10 +38,15 @@ namespace Statecraft.Game.UI
         };
         /// <summary>The sound effects' volume steps (#39): the stored word and GameAudio's volume. With no stored choice, "high".</summary>
         public static readonly (string level, float volume)[] SoundLevels = { ("off", 0f), ("low", 0.35f), ("high", 1f) };
+        /// <summary>The Music row's step with no stored choice (owner, #2297, 2 Nov 2026: "Low by default (Recommended)").</summary>
+        public const string MusicDefault = "low";
         readonly SettingsStore? store; readonly UiText text; readonly VisualElement root, screen; readonly Button tiltShift;
         readonly (Button button, GraphicsQuality.Choice choice, Action pick)[] quality;
         readonly LanguageButtons languages;
         readonly (Button button, string level, Action pick)[] sound;
+        readonly (Button button, string level, Action pick)[] musicLevels;
+        readonly MenuMusic? music;
+        string musicLevel;
         readonly AdvisorSettings? advisors;
         readonly (Button button, string level, Action pick)[] helpLevels;
         readonly GameAudio? audio;
@@ -62,10 +68,11 @@ namespace Statecraft.Game.UI
         /// <param name="audio">The sound effects the volume applies to; null keeps only the choice.</param>
         /// <param name="companion">The WebGL companion (#1119, WebCompanion): whether it runs, and what turns it on or off at
         /// once; null (no page to show it in) hides its row.</param>
+        /// <param name="music">The start menu's music the Music volume applies to; null keeps only the choice.</param>
         public SettingsPresenter(VisualElement root, UiText text, SettingsStore? store, Action<string>? switchLanguage = null, PanelSettings? panel = null, GameAudio? audio = null, AdvisorSettings? advisors = null,
-            (Func<bool> on, Action<bool> set)? companion = null)
+            (Func<bool> on, Action<bool> set)? companion = null, MenuMusic? music = null)
         {
-            this.store = store; this.text = text; this.root = root; this.audio = audio; this.advisors = advisors; this.companion = companion;
+            this.store = store; this.text = text; this.root = root; this.audio = audio; this.advisors = advisors; this.companion = companion; this.music = music;
             screen = root.Q<VisualElement>("screen-settings");
             screen.Q<Label>("settings-screen-title").text = text["settings.title"];
             screen.Q<Label>("settings-tiltshift-label").text = text["settings.tiltshift"];
@@ -101,6 +108,21 @@ namespace Statecraft.Game.UI
                 var b = screen.Q<Button>("settings-sound-" + l.level);
                 b.text = text["settings.sound." + l.level];
                 Action pick = () => PickSound(l.level);
+                b.clicked += pick;
+                return (b, l.level, pick);
+            });
+            // Music (#39, MenuMusic): the same three steps as the sound effects, kept apart from them. With no stored choice,
+            // "low", the owner's ruling on #2297 (2 Nov 2026): "Low by default (Recommended)", "35% volume: the theme sits
+            // under the menu".
+            screen.Q<Label>("settings-music-label").text = text["settings.music"];
+            var storedMusic = store?.Read(MusicKey);
+            musicLevel = Array.Exists(SoundLevels, l => l.level == storedMusic) ? storedMusic! : MusicDefault;
+            ApplyMusic();
+            musicLevels = Array.ConvertAll(SoundLevels, l =>
+            {
+                var b = screen.Q<Button>("settings-music-" + l.level);
+                b.text = text["settings.music." + l.level];
+                Action pick = () => PickMusic(l.level);
                 b.clicked += pick;
                 return (b, l.level, pick);
             });
@@ -166,6 +188,7 @@ namespace Statecraft.Game.UI
             foreach (var (b, _, pick) in quality) b.clicked -= pick;
             languages.Dispose();
             foreach (var (b, _, pick) in sound) b.clicked -= pick;
+            foreach (var (b, _, pick) in musicLevels) b.clicked -= pick;
             foreach (var (b, _, pick) in scales) b.clicked -= pick;
             foreach (var (b, _, pick) in helpLevels) b.clicked -= pick;
             unbindStar();
@@ -237,6 +260,23 @@ namespace Statecraft.Game.UI
             if (audio != null) audio.Volume = Array.Find(SoundLevels, l => l.level == soundLevel).volume;
         }
 
+        void PickMusic(string level)
+        {
+            musicLevel = level;
+            ApplyMusic();
+            Show();
+            try { store?.Write(MusicKey, level); }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                Debug.LogWarning($"Settings: could not keep the music choice ({e.Message}); it holds until the page is closed");
+            }
+        }
+
+        void ApplyMusic()
+        {
+            if (music != null) music.Volume = Array.Find(SoundLevels, l => l.level == musicLevel).volume;
+        }
+
         void PickScale(int percent)
         {
             chosen = percent;
@@ -286,6 +326,7 @@ namespace Statecraft.Game.UI
             foreach (var (b, c, _) in quality) b.EnableInClassList(SelectedClass, c == GraphicsQuality.Current);
             languages.Mark();
             foreach (var (b, l, _) in sound) b.EnableInClassList(SelectedClass, l == soundLevel);
+            foreach (var (b, l, _) in musicLevels) b.EnableInClassList(SelectedClass, l == musicLevel);
             foreach (var (b, level, _) in helpLevels) b.EnableInClassList(SelectedClass, level == advisors?.Level);
             foreach (var (b, p, _) in scales)
             {
