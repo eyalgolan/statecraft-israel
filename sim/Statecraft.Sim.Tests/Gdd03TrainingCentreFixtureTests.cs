@@ -156,7 +156,7 @@ public class Gdd03TrainingCentreFixtureTests
     }
 
     // R-TRAIN-005: the pupil limit is the catalogue value; a synthetic 2 admits a second pupil for the same teacher.
-    // This only proves the value is read from the catalogue: the GDD allows one pupil per teacher (training.md:31).
+    // This only proves the value is read from the catalogue: the GDD allows one pupil per teacher (training.md:31 at 605277df).
     [Fact] public void PupilLimitComesFromTheCatalogue()
     {
         var c = Catalogue("profession.trainees_per_teacher", Agreed(2)); var s = State(c);

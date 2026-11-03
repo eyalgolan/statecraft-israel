@@ -227,6 +227,9 @@ namespace Statecraft.Game.Map.Collection
             CollectionStream.Request(HexProps.Catalog, id, CollectionDetail.Near, done);
 
         MapScene? map; DateTime date; bool shown, requested;
+        /// <summary>The b21 of each built arms workshop (#1701 slice F), kept clear of with the sourced buildings.</summary>
+        IReadOnlyList<SpecialBuildingModels.Want> workshops = Array.Empty<SpecialBuildingModels.Want>();
+        int ruralVersion;
         /// <summary>Whether a camera has come in to the close zoom: the standalone props are built only from then on (none of
         /// them draws further out, #2266 review).</summary>
         bool everClose;
@@ -262,7 +265,16 @@ namespace Statecraft.Game.Map.Collection
         /// rest is the trees' pass; a test aid).</summary>
         public (long others, long search, long instances, long total) LastBuildMs { get; private set; }
 
-        public static HexPropModels? ShowAt(MapScene map, DateTime date)
+        public static HexPropModels? ShowAt(MapScene map, DateTime date) => ShowAt(map, date, Array.Empty<SpecialBuildingModels.Want>());
+
+        /// <summary>As <see cref="ShowAt(MapScene, DateTime)"/>, keeping clear of the b21 planned at each built arms workshop of the
+        /// state too (SpecialBuildingModels.ArmsWorkshops; gdd-0.3 only, #1701 slice F).</summary>
+        public static HexPropModels? ShowAt(MapScene map, DateTime date, Statecraft.Sim.Content content, IEnumerable<Statecraft.Sim.CityProject> projects) =>
+            ShowAt(map, date, SpecialBuildingModels.ArmsWorkshops(content, projects));
+
+        /// <summary>As <see cref="ShowAt(MapScene, DateTime)"/>, with <paramref name="workshops"/> (SpecialBuildingModels.ArmsWorkshops,
+        /// computed once by the caller for both layers).</summary>
+        internal static HexPropModels? ShowAt(MapScene map, DateTime date, IReadOnlyList<SpecialBuildingModels.Want> workshops)
         {
             if (map == null || map.Terrain == null || map.Hexes == null) return null;
             var layer = map.Terrain.transform.Find(Name)?.GetComponent<HexPropModels>();
@@ -271,10 +283,13 @@ namespace Statecraft.Game.Map.Collection
                 var go = new GameObject(Name); go.transform.SetParent(map.Terrain.transform, false);
                 layer = go.AddComponent<HexPropModels>(); layer.map = map;
             }
-            // GameRoot calls this on every refresh: rebuild only when the date changes (the dated stations and tokens follow it).
-            if (layer.shown && layer.date == date) return layer;
+            // GameRoot calls this on every refresh: rebuild only when the date changes (the dated stations and tokens follow it),
+            // the built arms workshops do, or the rural plan the props keep clear of does (RuralLife.VersionOf; the workshops' b21
+            // rebuild on it too, so both stand on one plan).
+            int rural = RuralLife.VersionOf(map);
+            if (layer.shown && layer.date == date && SpecialBuildingModels.Same(layer.workshops, workshops) && layer.ruralVersion == rural) return layer;
             layer.fixedWants ??= FixedWants(map);
-            layer.shown = true; layer.date = date;
+            layer.shown = true; layer.date = date; layer.workshops = workshops; layer.ruralVersion = rural;
             layer.wants = StationWants(map, date); layer.wants.AddRange(layer.fixedWants);
             layer.standaloneDirty = true; layer.BuildStandaloneIfDue(inRender: false);
             return layer;
@@ -324,29 +339,24 @@ namespace Statecraft.Game.Map.Collection
 
         // ---- The keep-clear ground (#2266 review: planned, cached, indexed) ----
 
-        List<(Vector2 centre, float radius)>? ruralPlan; IReadOnlyList<RuralLife.Want>? ruralPlanWants; List<(Vector2, float)>? ruralPlanOthers;
         IReadOnlyList<(string Key, Vector2 Core, float Reach)>? seatsPlan; object? seatsPlanWants;
 
         /// <summary>The ground the other Collection layers hold or will hold, so no prop stands on them: the civilian figures
         /// and the wildlife (as RuralLife.OtherProps), and the rural scenes', special buildings' and whole-town models' PLANNED
         /// spots (their plans with every model available, which is also where each of them draws its streamed models), never
         /// what has streamed so far: the props stand in the same places whatever the camera has visited, and a scene or
-        /// building that streams in later never lands on one (#2266 review). The layers' own inputs are read when they are
-        /// shown (GameRoot shows them first); the date-independent plans are kept until their inputs change.</summary>
+        /// building that streams in later never lands on one (#2266 review). The rural plan is the one RuralLife keeps for
+        /// what it was last shown (RuralLife.PlanOf), the same one SpecialBuildingModels places the workshops' b21 against, so
+        /// the props keep clear of the b21 that is drawn (#1701 slice F); the special buildings include the state's workshops.</summary>
         internal List<(Vector2 centre, float radius)> Others(MapScene map, DateTime date)
         {
-            var otherProps = RuralLife.OtherProps(map);
-            var discs = new List<(Vector2 centre, float radius)>(otherProps);
-            var rural = map.Terrain.transform.Find(RuralLife.Name)?.GetComponent<RuralLife>();
-            IReadOnlyList<RuralLife.Want> rw = rural != null ? rural.Wanted : RuralLife.Wants(map);
-            var ro = rural != null && rural.OthersShown.Count > 0 ? rural.OthersShown : otherProps;
-            if (ruralPlan == null || !ReferenceEquals(rw, ruralPlanWants) && !rw.SequenceEqual(ruralPlanWants!) || !ro.SequenceEqual(ruralPlanOthers!))
-            {
-                ruralPlan = RuralLife.Plan(map, rw, ro, _ => true).Select(x => (x.spot, RuralLife.SceneRadiusM(x.want.Model))).ToList();
-                ruralPlanWants = rw; ruralPlanOthers = new List<(Vector2, float)>(ro);
-            }
-            discs.AddRange(ruralPlan);
-            foreach (var (w, at) in SpecialBuildingModels.Plan(map, date, SpecialBuildingModels.Placements(date), _ => true, log: false))
+            var discs = new List<(Vector2 centre, float radius)>(RuralLife.OtherProps(map));
+            var rural = RuralLife.PlanOf(map);
+            foreach (var (want, spot) in rural) discs.Add((spot, RuralLife.SceneRadiusM(want.Model)));
+            // With the b21 of each built arms workshop (#1701 slice F), after the sourced buildings as their layer orders them.
+            var buildings = workshops.Count == 0 ? SpecialBuildingModels.Placements(date)
+                : SpecialBuildingModels.Placements(date).Concat(workshops).ToList();
+            foreach (var (w, at) in SpecialBuildingModels.Plan(map, date, buildings, _ => true, log: false, rural))
                 discs.Add((at, SpecialBuildingModels.ClearanceOf(w.Model)));
             // The whole-town models (TownLandmarks, shown first by GameRoot) where they will stand, by the same plan.
             var towns = map.Terrain.transform.Find(TownLandmarks.Name)?.GetComponent<TownLandmarks>();

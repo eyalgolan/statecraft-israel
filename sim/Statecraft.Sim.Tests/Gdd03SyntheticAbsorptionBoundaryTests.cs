@@ -8,7 +8,7 @@ public class Gdd03SyntheticAbsorptionBoundaryTests
         ContentLoader.Load(RealContentTests.ContentRoot()).Gdd03Balance!;
 
     // All counts here are test-only synthetic settled facts, not population/region initialization.
-    // 100/101 follows the strict target/scale in gdd03-balance.yaml:46-49,512-515.
+    // 100/101 follows the strict target/scale in gdd03-balance.yaml `population.people_per_unit` and `absorption.population_target`.
     [Theory]
     [InlineData(100, false)]
     [InlineData(101, true)]
