@@ -56,4 +56,41 @@ public sealed class CollectionResidencyViewAllocationTests
             Object.DestroyImmediate(cameraObject);
         }
     }
+
+    [Test]
+    public void TheFillDelegateRunsOnlyWhenTheCameraIsCloseEnoughToScanAndAllocatesNothing()
+    {
+        var cameraObject = new GameObject("collection residency fill camera", typeof(Camera));
+        try
+        {
+            var camera = cameraObject.GetComponent<Camera>();
+            var view = new CollectionResidencyView(new CollectionResidencyPolicy(
+                100f, 110f, 100f, 110f, 2, "TEST ONLY"));
+            int fills = 0;
+            Action<List<(string key, Vector3 at, float radius)>> fill = anchors => { fills++; anchors.Add(("fixed", Vector3.zero, 0f)); };
+
+            // Too high to scan (1 km over a 100 m view enter height): the anchors are never built, as with the old lazy sources.
+            camera.transform.SetPositionAndRotation(new Vector3(0f, 1000f, 0f), Quaternion.Euler(90f, 0f, 0f));
+            for (int frame = 0; frame < 3; frame++) view.Observe(camera, fill, frame);
+            Assert.AreEqual(0, fills, "a camera above the view height builds no anchors");
+            Assert.AreEqual(0, view.Keys.Count);
+
+            camera.transform.SetPositionAndRotation(new Vector3(0f, 10f, 0f), Quaternion.Euler(90f, 0f, 0f));
+            for (int frame = 3; frame < 8; frame++) view.Observe(camera, fill, frame);
+            Assert.AreEqual(5, fills, "a close camera builds the anchors once per observation");
+            CollectionAssert.AreEquivalent(new[] { "fixed" }, view.Keys);
+
+            int nextFrame = 8;
+            Assert.That(() =>
+            {
+                for (int i = 0; i < 100; i++) { view.Observe(camera, fill, nextFrame); view.Prune(nextFrame); nextFrame++; }
+            }, Is.Not.AllocatingGCMemory());
+            Assert.AreEqual(105, fills);
+            Assert.IsTrue(view.Keys.Count == 1 && view.Keys.Contains("fixed"));
+        }
+        finally
+        {
+            Object.DestroyImmediate(cameraObject);
+        }
+    }
 }

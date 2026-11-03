@@ -204,6 +204,7 @@ namespace Statecraft.Game.Map.Collection
         readonly CollectionResidencyPolicy policy;
         readonly Dictionary<int, Choice> cameras = new Dictionary<int, Choice>();
         readonly List<int> goneCameraIds = new List<int>();
+        readonly List<(string key, Vector3 at, float radius)> filledAnchors = new List<(string, Vector3, float)>();
         // Callers retain Keys across Observe to detect a demand change. These two sets take turns so that snapshot remains
         // unchanged through the comparison without allocating a detached HashSet every frame.
         HashSet<string> keys = new HashSet<string>(StringComparer.Ordinal);
@@ -259,7 +260,14 @@ namespace Statecraft.Game.Map.Collection
                     scratchKeys.Add(key);
             var old = keys; keys = scratchKeys; scratchKeys = old;
         }
-        internal void Observe(Camera camera, IEnumerable<(string key, Vector3 at, float radius)> anchors, int frame)
+        internal void Observe(Camera camera, IEnumerable<(string key, Vector3 at, float radius)> anchors, int frame) =>
+            Observe(camera, anchors, null, frame);
+        // The anchors are built only when this camera is close enough to scan them, as the old lazy enumerables were, so
+        // the far view does no per-anchor work. Pass a cached delegate: a method group converts to a new one per call.
+        internal void Observe(Camera camera, Action<List<(string key, Vector3 at, float radius)>> fillAnchors, int frame) =>
+            Observe(camera, null, fillAnchors, frame);
+        void Observe(Camera camera, IEnumerable<(string key, Vector3 at, float radius)>? anchors,
+            Action<List<(string key, Vector3 at, float radius)>>? fillAnchors, int frame)
         {
             if (camera.cameraType == CameraType.Preview || camera.cameraType == CameraType.Reflection) return;
             PruneCameras(frame);
@@ -271,6 +279,7 @@ namespace Statecraft.Game.Map.Collection
             var old = choice.Keys; var next = choice.ScratchKeys; next.Clear();
             if (choice.Visible && TryGroundFocus(camera, out var focus))
             {
+                if (fillAnchors != null) { filledAnchors.Clear(); fillAnchors(filledAnchors); anchors = filledAnchors; }
                 if (anchors is List<(string key, Vector3 at, float radius)> list)
                 {
                     for (int i = 0; i < list.Count; i++)
@@ -283,7 +292,7 @@ namespace Statecraft.Game.Map.Collection
                 }
                 else
                 {
-                    foreach (var (key, at, extent) in anchors)
+                    foreach (var (key, at, extent) in anchors!)
                     {
                         float dx = focus.x - at.x, dz = focus.z - at.z;
                         float radius = (old.Contains(key) ? policy.ExitM : policy.EnterM) + Mathf.Max(0, extent);

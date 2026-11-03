@@ -267,10 +267,9 @@ namespace Statecraft.Game.Map.Collection
             var keys = residencyView?.Keys;
             return keys == null ? wants : wants.Where(w => keys.Contains(w.Key));
         }
-        readonly List<(string key, Vector3 at, float radius)> residencyAnchors = new List<(string, Vector3, float)>();
-        void RefreshResidencyAnchors()
+        Action<List<(string key, Vector3 at, float radius)>>? fillResidencyAnchors;
+        void FillResidencyAnchors(List<(string key, Vector3 at, float radius)> anchors)
         {
-            residencyAnchors.Clear();
             if (map == null) return;
             var edge = EdgeSpot(map.Frame);   // the Spitfire's anchor is on the ground under it; only its distance counts
             for (int i = 0; i < wants.Count; i++)
@@ -279,7 +278,7 @@ namespace Statecraft.Game.Map.Collection
                 var c = default((string place, double lon, double lat, Vector2 seaward, int boats));
                 for (int j = 0; j < SeaCraft.Coasts.Length; j++)
                     if (SeaCraft.Coasts[j].place == w.Place) { c = SeaCraft.Coasts[j]; break; }
-                residencyAnchors.Add((w.Key, w.Model == C54 ? map.Frame.ToWorld(LodLon, LodLat, 0) : w.Model == Spitfire ? new Vector3(edge.x, 0, edge.y)
+                anchors.Add((w.Key, w.Model == C54 ? map.Frame.ToWorld(LodLon, LodLat, 0) : w.Model == Spitfire ? new Vector3(edge.x, 0, edge.y)
                     : map.Frame.ToWorld(c.lon, c.lat, 0), SizeOf(w.Model)));
             }
         }
@@ -340,8 +339,7 @@ namespace Statecraft.Game.Map.Collection
         void ObserveResidency(Camera camera)
         {
             var before = residencyView!.Keys;
-            RefreshResidencyAnchors();
-            residencyView.Observe(camera, residencyAnchors, Time.frameCount);
+            residencyView.Observe(camera, fillResidencyAnchors ??= FillResidencyAnchors, Time.frameCount);
             if (!SameKeys(before, residencyView.Keys))
             { if (Application.isPlaying) residencyDirty = true; else RefreshResidencyCore(false); }
         }

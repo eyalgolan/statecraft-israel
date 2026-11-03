@@ -173,7 +173,7 @@ namespace Statecraft.Game.Map.Collection
         readonly HashSet<string> asked = new HashSet<string>(StringComparer.Ordinal);
         readonly Dictionary<int, bool> closeFor = new Dictionary<int, bool>();
         readonly List<Renderer> renderers = new List<Renderer>();
-        readonly List<(string key, Vector3 at, float radius)> residencyAnchors = new List<(string, Vector3, float)>();
+        Action<List<(string key, Vector3 at, float radius)>>? fillResidencyAnchors;
         IReadOnlyList<Want> wants = Array.Empty<Want>();
 
         CollectionResidency? residency;
@@ -201,14 +201,13 @@ namespace Statecraft.Game.Map.Collection
             var keys = residencyView?.Keys;
             return keys == null ? wants : wants.Where(w => keys.Contains(w.Key));
         }
-        void RefreshResidencyAnchors()
+        void FillResidencyAnchors(List<(string key, Vector3 at, float radius)> anchors)
         {
-            residencyAnchors.Clear();
             if (map == null) return;
             for (int i = 0; i < wants.Count; i++)
             {
                 var w = wants[i];
-                residencyAnchors.Add((w.Key, map.Frame.ToWorld(w.Lon, w.Lat, 0), ClearanceOf(w.Model)));
+                anchors.Add((w.Key, map.Frame.ToWorld(w.Lon, w.Lat, 0), ClearanceOf(w.Model)));
             }
         }
         static bool SameKeys(HashSet<string> before, HashSet<string> after)
@@ -273,8 +272,7 @@ namespace Statecraft.Game.Map.Collection
         void ObserveResidency(Camera camera, bool inRender)
         {
             var before = residencyView!.Keys;
-            RefreshResidencyAnchors();
-            residencyView.Observe(camera, residencyAnchors, Time.frameCount);
+            residencyView.Observe(camera, fillResidencyAnchors ??= FillResidencyAnchors, Time.frameCount);
             if (!SameKeys(before, residencyView.Keys))
             {
                 if (Application.isPlaying || inRender)

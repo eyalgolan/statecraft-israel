@@ -395,7 +395,7 @@ namespace Statecraft.Game.Map.Collection
         readonly List<(Transform Person, bool Animate)> pairs = new List<(Transform, bool)>();
         readonly List<Renderer> applyRenderers = new List<Renderer>();
         readonly List<Animator> applyAnimators = new List<Animator>();
-        readonly List<(string key, Vector3 at, float radius)> residencyAnchors = new List<(string, Vector3, float)>();
+        Action<List<(string key, Vector3 at, float radius)>>? fillResidencyAnchors;
         bool lastClose;
 
         public readonly List<PlacedFigure> Placed = new List<PlacedFigure>();
@@ -551,9 +551,7 @@ namespace Statecraft.Game.Map.Collection
             if (residencyView != null)
             {
                 var previousDemand = residencyView.Keys;
-                residencyAnchors.Clear();
-                for (int i = 0; i < wanted.Count; i++) residencyAnchors.Add((wanted[i].Key, wanted[i].At, FigureClearanceM));
-                residencyView.Observe(camera, residencyAnchors, Time.frameCount);
+                residencyView.Observe(camera, fillResidencyAnchors ??= FillResidencyAnchors, Time.frameCount);
                 bool same = previousDemand.Count == residencyView.Keys.Count;
                 foreach (string key in previousDemand) if (!residencyView.Keys.Contains(key)) { same = false; break; }
                 if (!same) { RefreshResidencyCore(false); SyncNearVisuals(); Apply(lastClose); }
@@ -565,6 +563,10 @@ namespace Statecraft.Game.Map.Collection
             Apply(close);
         }
 
+        void FillResidencyAnchors(List<(string key, Vector3 at, float radius)> anchors)
+        {
+            for (int i = 0; i < wanted.Count; i++) anchors.Add((wanted[i].Key, wanted[i].At, FigureClearanceM));
+        }
         void Apply(bool close)
         {
             foreach (var pair in pairs)

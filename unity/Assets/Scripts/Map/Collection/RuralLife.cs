@@ -258,7 +258,7 @@ namespace Statecraft.Game.Map.Collection
         readonly Dictionary<int, bool> closeFor = new Dictionary<int, bool>();
         readonly List<(Renderer Renderer, CollectionDetail Detail, string Instance)> renderers = new List<(Renderer, CollectionDetail, string)>();
         readonly List<(Animator Animator, CollectionDetail Detail)> animators = new List<(Animator, CollectionDetail)>();
-        readonly List<(string key, Vector3 at, float radius)> residencyAnchors = new List<(string, Vector3, float)>();
+        Action<List<(string key, Vector3 at, float radius)>>? fillResidencyAnchors;
         readonly HashSet<string> nearInstances = new HashSet<string>(StringComparer.Ordinal);
         readonly Dictionary<(string Model, CollectionDetail Detail), List<GameObject>> originals =
             new Dictionary<(string, CollectionDetail), List<GameObject>>();
@@ -471,19 +471,21 @@ namespace Statecraft.Game.Map.Collection
         void OnDisable() { RenderPipelineManager.beginCameraRendering -= Choose; ReleaseResidency(); }
         void OnDestroy() { residency?.Dispose(); residency = null; }
 
+        void FillResidencyAnchors(List<(string key, Vector3 at, float radius)> anchors)
+        {
+            for (int i = 0; i < wants.Count; i++)
+            {
+                var w = wants[i];
+                anchors.Add((w.ResidencyKey, new Vector3(w.Anchor.x, 0, w.Anchor.y), w.AnchorRadius));
+            }
+        }
         internal void Choose(ScriptableRenderContext context, Camera camera)
         {
             if (camera.cameraType == CameraType.Preview || camera.cameraType == CameraType.Reflection) return;
             if (residencyView != null)
             {
                 var previousDemand = residencyView.Keys;
-                residencyAnchors.Clear();
-                for (int i = 0; i < wants.Count; i++)
-                {
-                    var w = wants[i];
-                    residencyAnchors.Add((w.ResidencyKey, new Vector3(w.Anchor.x, 0, w.Anchor.y), w.AnchorRadius));
-                }
-                residencyView.Observe(camera, residencyAnchors, Time.frameCount);
+                residencyView.Observe(camera, fillResidencyAnchors ??= FillResidencyAnchors, Time.frameCount);
                 bool same = previousDemand.Count == residencyView.Keys.Count;
                 foreach (string key in previousDemand) if (!residencyView.Keys.Contains(key)) { same = false; break; }
                 if (!same) { RefreshResidencyCore(false); SyncNearVisuals(); }
