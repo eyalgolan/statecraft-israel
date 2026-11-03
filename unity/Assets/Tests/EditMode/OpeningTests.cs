@@ -33,6 +33,36 @@ public class OpeningTests
         saveDirectory = null;
     }
 
+    /// <summary>The map's real opening keeps both neighbouring cities at least 5% inside every supported phone and desktop
+    /// shape. The points come from the content MapScene just built, so this follows a sourced coordinate change.</summary>
+    [TestCase(390, 844)]
+    [TestCase(375, 667)]
+    [TestCase(900, 1600)]
+    [TestCase(1600, 900)]
+    [TestCase(2100, 900)]
+    public void TheOpeningKeepsTelAvivAndJaffaInsideTheScreen(int width, int height)
+    {
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        // A target of the screen's size gives the camera that pixel rect and aspect (pixelRect's setter divides by the editor's
+        // own screen size, which a batch run does not fix).
+        var camera = Camera.main; var target = new RenderTexture(width, height, 24);
+        try
+        {
+            camera.targetTexture = target; camera.aspect = (float)width / height;
+            var map = Object.FindFirstObjectByType<MapScene>(); map.Build(Inputs.Map);
+            const float margin = 0.05f;
+            foreach (var id in new[] { "tel_aviv", "jaffa" })
+            {
+                var place = map.Settlements.Single(s => s.Id == id);
+                var screen = camera.WorldToScreenPoint(map.Frame.ToWorld(place.Lon, place.Lat, 0f));
+                Assert.Greater(screen.z, 0f, $"{width}x{height}: {id} is in front of the camera");
+                Assert.That(screen.x, Is.InRange(width * margin, width * (1f - margin)), $"{width}x{height}: {id} x");
+                Assert.That(screen.y, Is.InRange(height * margin, height * (1f - margin)), $"{width}x{height}: {id} y");
+            }
+        }
+        finally { camera.targetTexture = null; target.Release(); Object.DestroyImmediate(target); }
+    }
+
     [UnityTest]
     public IEnumerator CanBeSkippedAndReplayed()
     {
