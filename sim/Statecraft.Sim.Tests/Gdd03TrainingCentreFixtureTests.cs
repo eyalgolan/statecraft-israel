@@ -645,6 +645,22 @@ public class Gdd03TrainingCentreFixtureTests
         Unchanged(s, () => f.Start(5, 6, CentreB, opening), typeof(NotSupportedException), "Deferred: #1668 Q43");
     }
 
+    // R-TRAIN-008 (with #1668 Q41): a course started and cancelled in the same month still counts against that month's
+    // beds, so the bed it freed is not reused that month, by another pupil or by the same one; the next month it is.
+    // Camp A has two refugees, so one of its three beds is free at the month's opening.
+    [Fact] public void ACourseStartedAndCancelledThisMonthStillHoldsItsBedThatMonth()
+    {
+        var c = Catalogue(); var s = State(c, Refugee(), Refugee()); var f = new Gdd03TrainingCentreFixture(c, s, Centres());
+        var m0 = Month(s, 0);
+        f.Start(1, 0, CentreA, m0);
+        f.Cancel(1);
+        Unchanged(s, () => f.Start(5, 4, CentreA, m0), typeof(ArgumentException), BedWaits);
+        Unchanged(s, () => f.Start(1, 0, CentreA, m0), typeof(ArgumentException), BedWaits);
+        Unchanged(s, () => f.Start(5, 4, CentreA, Month(s, 0)), typeof(ArgumentException), BedWaits);
+        f.Start(5, 4, CentreA, Month(s, 1));
+        Assert.Equal(PopulationStatus.Trainee, s.PopulationLedger.Get(5).Status);
+    }
+
     // R-TRAIN-008: #1668 Q43(b) and Q41: a bed freed after the month's opening (here by a cancel) is not reused that month.
     [Fact] public void ABedFreedAfterTheOpeningIsNotReusedThatMonth()
     {

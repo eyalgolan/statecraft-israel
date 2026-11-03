@@ -39,6 +39,9 @@ namespace Statecraft.Sim
         // (-1 before the first), and of the month in which a graduation released each person.
         readonly SortedDictionary<int, (int enrolment, int lastCounted)> months = new SortedDictionary<int, (int, int)>();
         readonly SortedDictionary<int, int> graduated = new SortedDictionary<int, int>();
+        // Per fixture instance only: the month ordinal and parent camp of every course started, kept after a cancel or a
+        // graduation, so a bed a course took this month is not reused that month (R-TRAIN-008).
+        readonly List<(int month, string camp)> starts = new List<(int, string)>();
 
         internal Gdd03TrainingCentreFixture(Content content, GameState state, IEnumerable<Gdd03FixtureTrainingCentre> centres)
         {
@@ -184,8 +187,8 @@ namespace Statecraft.Sim
                     && string.Equals(p.Assignment.Target, centre.ParentCamp, StringComparison.Ordinal))
                 || (p.Assignment.Kind == PopulationAssignmentKind.Course
                     && string.Equals(p.Assignment.Target, centre.Id, StringComparison.Ordinal)));
-            int startedThisMonth = months.Count(m => m.Value.enrolment == month.MonthOrdinal
-                && string.Equals(CentreOf(ledger.Get(m.Key)).ParentCamp, centre.ParentCamp, StringComparison.Ordinal));
+            int startedThisMonth = starts.Count(x => x.month == month.MonthOrdinal
+                && string.Equals(x.camp, centre.ParentCamp, StringComparison.Ordinal));
             if (openingBeds + startedThisMonth >= bedsPerCamp) throw new ArgumentException(BedWaitsReason);
 
             var course = new PopulationAssignment(PopulationAssignmentKind.Course, centre.Id, 0, teacher.Id);
@@ -194,6 +197,7 @@ namespace Statecraft.Sim
             else Commit(teacher.WithPlacement(teacher.Status, teacher.Location,
                 new PopulationAssignment(PopulationAssignmentKind.Teaching, centre.Id), teacher.Captor, teacher.Home), pupil);
             months[trainee.Id] = (month.MonthOrdinal, -1);
+            starts.Add((month.MonthOrdinal, centre.ParentCamp));
         }
 
         /// <summary>R-TRAIN-006: count one completed course turn, once per month ordinal: in the enrolment month (Q43(a), "A
