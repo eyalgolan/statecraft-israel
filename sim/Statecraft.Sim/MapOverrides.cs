@@ -408,9 +408,12 @@ namespace Statecraft.Sim
 
         /// <summary>Infrastructure diagnostics. Caller supplies current base identity; this is not Content.Hash.
         /// Missing domain adapters are explicit errors, even on an empty candidate. With the loaded <paramref name="content"/>
-        /// the corridor, force-anchor, target and objective bindings are checked against its map plus this overlay's location
-        /// moves, and each broken one is a blocking row naming its record (Q58, #1721 slice A). No automatic repair is
+        /// the corridor, force-anchor, target and objective bindings are checked, and each broken one is a blocking row naming
+        /// its record (Q58, #1721 slice A). This overlay's location moves apply to the target and objective-site checks only;
+        /// corridors and anchors are checked against the map alone, since no overlay edit changes them. No automatic repair is
         /// performed: no corridor, anchor, target or site is moved or rerouted.</summary>
+        /// <param name="content">The base content loaded with no editor overlay applied. Omitted, the four adapters stay
+        /// unavailable.</param>
         public IReadOnlyList<MapEditorDiagnostic> Diagnostics(string currentRevision, string currentDigest, Content? content = null)
         {
             var result = new List<MapEditorDiagnostic>();

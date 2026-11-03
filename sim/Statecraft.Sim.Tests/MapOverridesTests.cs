@@ -423,6 +423,16 @@ public class MapOverridesTests
     }
 
     [Fact]
+    public void ACorridorHexNotNextToThePreviousOneBlocks()
+    {
+        var c = DependencyFixture();
+        c.Corridors[0].Segments[0].Hexes[1] = new List<int> { 2, 0 };   // skips q=1: a land hex, but two steps from q=0
+        var row = Assert.Single(Broken(DependencyDiagnostics(c)));
+        Assert.Equal("corridors[corridor_a]", row.Field);
+        Assert.Contains("is not next to q=0 r=0", row.Message);
+    }
+
+    [Fact]
     public void ABrokenForceAnchorBlocksWithItsId()
     {
         var c = DependencyFixture();
@@ -443,6 +453,21 @@ public class MapOverridesTests
         Assert.Equal("targets[town_a]", row.Field);
         Assert.False(value.CanExport);
         Assert.Equal((0, 0), (c.SettlementTargets[0].Q, c.SettlementTargets[0].R));
+    }
+
+    [Fact]
+    public void RamlasTargetIsBoundToANeighbourOfItsSettlement()
+    {
+        // The loader's one exception (TargetOnANeighbour): the target sits next to the settlement, not on it.
+        var c = DependencyFixture();
+        c.Hexes.Add(new MapHex { Q = 1, R = 1, Land = true, Biome = "hills" });
+        c.SettlementHexes.Add(new SettlementHex { Id = "ramla", Q = 1, R = 0 });
+        c.SettlementTargets.Add(new SettlementTarget { Id = "ramla", Q = 0, R = 0 });
+        Assert.Empty(Broken(DependencyDiagnostics(c)));
+        // Moved two steps away, the settlement is no longer next to its target: the binding breaks, the target stays.
+        var row = Assert.Single(Broken(DependencyDiagnostics(c, "[{ id: ramla, hex: { q: 1, r: 1 } }]")));
+        Assert.Equal("targets[ramla]", row.Field);
+        Assert.Equal((0, 0), (c.SettlementTargets[1].Q, c.SettlementTargets[1].R));
     }
 
     [Fact]
