@@ -223,8 +223,17 @@ public class KeyboardTurnTests
         yield return Enter();
         Assert.AreEqual("cabinet", ScreenOpen(), "Enter opens the Cabinet");
         yield return TabTo(v => v.name.StartsWith("seat-", StringComparison.Ordinal) && v.name != "seat-prime_minister", "a minister's seat");
+        var seat = FocusedName;
         yield return Enter();
-        yield return TabTo(v => ui.Q("cabinet-candidates").Contains(v), "a candidate");
+        // #2340 M2: Enter on a seat hands the focus to its first candidate that can be appointed (the list comes before
+        // the cards in the Tab order, so it used to be up to 60 Tabs away), and Escape from the list goes back to the seat.
+        var first = ui.Q("cabinet-candidates").Query<Button>().ToList().First(b => b.enabledInHierarchy);
+        Assert.AreEqual(first.name, FocusedName, $"Enter on {seat} focuses its first candidate that can be appointed, with no Tab");
+        yield return Escape();
+        Assert.AreEqual("cabinet", ScreenOpen(), "Escape in the candidate list does not close the Cabinet");
+        Assert.AreEqual(seat, FocusedName, "Escape in the candidate list gives the focus back to the seat");
+        yield return Enter();
+        Assert.AreEqual(first.name, FocusedName, "Enter on the seat again focuses the same candidate");
         yield return Enter();
         Assert.IsTrue(Bridge.Queued.OfType<Appoint>().Any(), "the appointment is ordered");
         // The lists' own scroll bars used to take Tab after their last row (K1). They are out of the order now

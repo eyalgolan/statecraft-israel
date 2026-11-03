@@ -87,6 +87,7 @@ namespace Statecraft.Game.UI
         /// <summary>Set by SwitchLanguage for its Begin (#2054): whether the start screen it rebuilds offered Continue.</summary>
         bool keptResumed = true;
         AdvisorPresenter? advisor;
+        CabinetPresenter? cabinet;
         EncyclopediaPresenter? encyclopedia;
         /// <summary>Tests supply an in-memory approval copy for Hebrew layout; the shipped review fields are unchanged.</summary>
         internal AdvisorCatalog? AdvisorCatalogForTests { get; set; }
@@ -373,7 +374,7 @@ namespace Statecraft.Game.UI
             // "Report a bug or idea" (#1169), from Settings and the start screen: the version line names the content GameBoot logged.
             feedback = Own(new FeedbackPresenter(root, text, ReportLinks.Version(Application.version, inputs.Content.Hash)));
             var feedbackPanel = feedback;
-            Own(new CabinetPresenter(root, bridge, text, portraits));
+            cabinet = Own(new CabinetPresenter(root, bridge, text, portraits));
             // After End Turn, what changed in the top bar and the sim's causes (#1037); under an outcome clip, which plays first.
             report = Own(new TurnReportPresenter(root, bridge, text, nav!));
             // "Share" (#1170), from Settings and the turn report: the frame is captured at its end, before the panel shows.
@@ -381,7 +382,7 @@ namespace Statecraft.Game.UI
             // Star, Report and Share as round icons at the map screen's bottom left (#1236): the same actions as Settings' buttons.
             Own(new CommunityIconsPresenter(root, text, feedbackPanel, sharePanel));
             // Both panels in one hook: the same Escape never closes the screen under the panel too.
-            nav!.TakesEscape = () => feedbackPanel.Escape() || sharePanel.Escape() || advisor?.CloseOverlay() == true || advisor?.OverlayClosedThisFrame == true || advisor?.Escape() == true || this.info?.Escape() == true;   // the field: the panel is made below
+            nav!.TakesEscape = () => feedbackPanel.Escape() || sharePanel.Escape() || advisor?.CloseOverlay() == true || advisor?.OverlayClosedThisFrame == true || advisor?.Escape() == true || cabinet?.Escape() == true || this.info?.Escape() == true;   // the field: the panel is made below
             var names = map.SettlementsFor(inputs.Map.SettlementsYaml).ToDictionary(s => s.Id, s => s.Name);   // the map's parse (issue #321)
             // The capture dialog (GDD Phase 6 PR 10, #802): in the decision layer, after the card, which goes first; the
             // places' Hebrew names from the same parse.
@@ -942,7 +943,7 @@ namespace Statecraft.Game.UI
             for (int i = owned.Count - 1; i >= 0; i--) owned[i].Dispose();
             owned.Clear();
             if (hoveredCity != null) { hoveredCity = null; HandCursor(false); }   // the next Begin's pills start unlit
-            companion = null; minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; opening = null; card = null; outcomes = null; report = null; end = null; advisor = null; encyclopedia = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
+            companion = null; minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; opening = null; card = null; outcomes = null; report = null; end = null; advisor = null; cabinet = null; encyclopedia = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
             // A ?profile run cut short (a stopped coroutine never reaches its restore line) must not leave the terrain at the
             // profile's pixel error (Task 24 review M1). Nothing else changes it, so restoring is always right.
             if (map != null && map.Terrain != null) map.Terrain.heightmapPixelError = MapBuilder.TerrainPixelError;
@@ -1142,7 +1143,8 @@ namespace Statecraft.Game.UI
                 if (!done) done = end?.Close() == true || end?.ClosedThisFrame == true;
                 if (!done) done = report?.Close() == true || report?.ClosedThisFrame == true;
                 done |= start?.Escape() == true;
-                done |= nav?.Close() == true;
+                // Escape in the Cabinet's candidate list goes back to the seat, not out of the screen (#2340 M2).
+                done |= cabinet?.Escape() == true || nav?.Close() == true;
                 // A screen/card that consumed this Cancel must not also dismiss the map selection in this frame.
                 if (!done && nav?.ClosedThisFrame != true && document.rootVisualElement.focusController?.focusedElement == null
                     && capture?.Escape() != true && card?.Escape() != true && card?.CollapsedThisFrame != true)
