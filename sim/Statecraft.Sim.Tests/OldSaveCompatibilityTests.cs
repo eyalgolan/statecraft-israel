@@ -2,13 +2,14 @@ using System.IO;
 using Statecraft.Sim;
 
 /// <summary>
-/// The fixture is a real gdd-0.1 save written by v0.3.4. Replay drift under gdd-0.1 means a v0.3.4 player's save
-/// no longer loads identically; that is a release blocker, not a fixture to regenerate.
+/// The fixture is a real gdd-0.1 save written by v0.3.4. It delegates ten_days and chooses operation_yoav, whose unit
+/// orders now apply under gdd-0.1 (R-ENEMY-005), so it replays differently by design (owner, 3 Nov 2026, #2087). Any
+/// other replay change still needs an owner decision, not a fixture to regenerate.
 /// </summary>
 public class OldSaveCompatibilityTests
 {
     [Fact]
-    public void V034Gdd01SaveStillLoadsIdentically()
+    public void V034Gdd01SaveStillLoadsAndReportsReplayDiffers()
     {
         var content = ContentLoader.Load(RealContentTests.ContentRoot());
         var repo = Directory.GetParent(RealContentTests.ContentRoot())!.FullName;
@@ -20,15 +21,13 @@ public class OldSaveCompatibilityTests
 
         var loaded = GameSession.Load(content, text, out var warnings);
 
-        // The replay and the open turn first: with other content, drift only adds replay_differs, so checking the
-        // warnings first would hide which part drifted.
-        // If this fails after a deliberate gdd-0.1 rule or design-value change (a golden re-pin, docs/determinism.md),
-        // v0.3.4 players' saves no longer replay identically: they load with replay_differs (GameSession.Load). That needs an
-        // owner decision, not a fixture update or deleting this test (as #1780's hand-pinned hash tests were).
-        Assert.Equal(saved.FinalHash, loaded.State.Hash());
+        // Owner, 3 Nov 2026, #2087, option (a) "Accept replay differs": a v0.3.4 save that chose or delegated an
+        // operation card replays differently now that the cards' unit orders apply under gdd-0.1, and loads with
+        // replay_differs. No v0.3.4 save that never touches these cards was produced, so this save checks the accepted
+        // outcome: it still loads, keeps its open order and warns content_changed plus replay_differs, nothing else.
         var order = Assert.IsType<UnitOrder>(Assert.Single(loaded.Committed));
         Assert.Equal((3, Orders.Fortify), (order.Unit, order.Order));
 
-        Assert.Equal(new[] { GameSession.ContentChanged }, warnings);
+        Assert.Equal(new[] { GameSession.ContentChanged, GameSession.ReplayDiffers }, warnings);
     }
 }

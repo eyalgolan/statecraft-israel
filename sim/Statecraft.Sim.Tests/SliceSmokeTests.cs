@@ -171,7 +171,7 @@ public class SliceSmokeTests
             Assert.Equal(turn + 1, recorded.Count);
             Assert.Equal(o.Orders, recorded.Sum(batch => batch.Count));
             foreach (var cmd in cmds.Where(x => r.Rejected.All(j => j.Command != x))) o.Carried.Add(cmd.Kind);
-            foreach (var x in r.Rejected)
+            foreach (var x in r.Rejected.Where(j => !WarEvents1948Tests.IsTheMalkiyaRefusal(j)))
                 o.Failures.Add($"turn {turn + 1}: refused {Describe(x.Command)}: {x.Reason}");
             if (guard != null) Check(turn + 1, c, guard, Shown(c, g).ToList(), o);
             if (reload)
