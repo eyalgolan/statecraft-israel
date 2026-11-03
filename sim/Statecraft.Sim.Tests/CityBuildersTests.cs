@@ -392,4 +392,88 @@ public class CityBuildersTests
         Assert.Equal(9, r.State.Cities["town_a"].Employed);
         Assert.Equal(10, Step(c, s).State.Cities["town_a"].Employed);
     }
+    // R-CITY-011 (second review): a start's free person excludes an existing builder and a staffed workshop's worker.
+    [Fact]
+    public void Gdd03StartSeesAnExistingBuilder()
+    {
+        var (c, s) = Game(civilians: 10, employed: 9, jobs: 9);   // one person without a job, already a builder
+        Add(s, "industry", 2, 0, 5, true);
+        var r = Step(c, s, Housing());
+        Assert.Empty(r.Rejected);
+        Assert.False(r.State.CityProjects.Values.Single(p => p.Kind == "housing").Builder);
+    }
+
+    [Fact]
+    public void Gdd03StartSeesAStaffedWorkshop()
+    {
+        var (c, s, workshop) = ArmsWorkshopTests.Built(civilians: 10, employed: 9, jobs: 9, jobsDefault: false);
+        s.Workshops.Add(workshop, new Workshop(workshop, true, SyntheticWorkshopTier.Ordinary));   // its worker is the one
+        var r = Step(c, s, new StartProject("housing", "town_a", 2, 0));
+        Assert.Empty(r.Rejected);
+        Assert.False(r.State.CityProjects.Values.Single(p => p.Kind == "housing").Builder);
+    }
+
+    // R-CITY-011 (second review): the start runs in queue order against AssignWorkers too: a job order queued first takes
+    // the free person; queued after the start, it is refused past the people less the builder.
+    [Fact]
+    public void Gdd03AutoBuilderFollowsQueueOrderWithAJobOrder()
+    {
+        var (c, s) = Game(civilians: 10, employed: 9, jobs: 10);
+        var jobFirst = Step(c, s, new AssignWorkers("town_a", "job", 10), Housing());
+        Assert.Empty(jobFirst.Rejected);
+        Assert.False(jobFirst.State.CityProjects.Values.Single().Builder);
+        var startFirst = Step(c, s, Housing(), new AssignWorkers("town_a", "job", 10));
+        Assert.True(startFirst.State.CityProjects.Values.Single().Builder);
+        Assert.Equal("Town A has 9 civilians and craftsmen", Assert.Single(startFirst.Rejected).Reason);
+    }
+
+    // R-CITY-011 with R-ARMS-005's job-default rule (second review): while the default is on, a build order may take its
+    // builder from the default's jobs (the employed fall, with the city's line) and is refused only past the people.
+    [Fact]
+    public void Gdd03BuildOrderMayTakeFromTheJobDefault()
+    {
+        var (c, s) = Game(civilians: 10, employed: 10, jobs: 10, jobsDefault: true);
+        var id = Add(s, "housing", 1, 1, 2, false);
+        var r = Simulation.Preview(c, s, new Command[] { Build(1) });   // the orders only, before the turn's housing step
+        Assert.Empty(r.Rejected);
+        Assert.True(r.State.CityProjects[id].Builder);
+        var x = r.State.Cities["town_a"];
+        Assert.Equal((9, true), (x.Employed, x.JobsDefault));
+        var line = Assert.Single(r.Why, w => w.Key == CauseKeys.WorkersAssigned);
+        Assert.Equal("Town A: 9 groups in work", line.Message);
+
+        var (c2, s2) = Game(civilians: 1, employed: 1, jobs: 1, jobsDefault: true);
+        Add(s2, "housing", 1, 1, 2, false);
+        Add(s2, "industry", 2, 0, 2, false);
+        Assert.Equal("Town A has 1 civilians and craftsmen", Assert.Single(Step(c2, s2, Build(2)).Rejected).Reason);
+    }
+
+    // R-ARMS-005 with R-CITY-011 (second review): staffing a workshop from the job default leaves the builders out of the jobs.
+    [Fact]
+    public void Gdd03WorkshopStaffingFromTheDefaultLeavesBuildersOut()
+    {
+        var (c, s, _) = ArmsWorkshopTests.Built(civilians: 10, employed: 9, jobs: 10, jobsDefault: true);
+        Add(s, "housing", 2, 0, 2, true);
+        var r = Simulation.Preview(c, s, new Command[] { ArmsWorkshopTests.Staff(1) });
+        Assert.Empty(r.Rejected);
+        Assert.Equal(8, r.State.Cities["town_a"].Employed);   // 10 people less the worker and the builder
+    }
+
+    // R-PROJ-001, R-PROJ-003 (plan test 14, second review): under gdd-0.1 a start in a city with people without a job takes
+    // no builder, writes no new field or Why line, and changes no count; byte identity with main is the golden manifest's.
+    [Fact]
+    public void Gdd01StartWithFreePeopleTakesNoBuilder()
+    {
+        var (c, s) = Game(civilians: 10, employed: 8, jobs: 8, gdd03: false);
+        var one = Step(c, s, Housing());
+        var none = Step(c, s);
+        Assert.Empty(one.Rejected);
+        Assert.DoesNotContain(";builder", one.State.Describe());
+        Assert.DoesNotContain(one.Why, w => w.Key == CauseKeys.ProjectBuilder || w.Key == CauseKeys.ProjectWaiting);
+        var x = one.State.Cities["town_a"]; var was = none.State.Cities["town_a"];
+        Assert.Equal((Training.Idle(none.State, was), Cities.MaxWorkers(none.State, was), was.Employed),
+            (Training.Idle(one.State, x), Cities.MaxWorkers(one.State, x), x.Employed));
+        var id = one.State.CityProjects.Keys.Single();
+        Assert.NotNull(Step(c, one.State).State.CityProjects[id].BuiltOn);
+    }
 }
