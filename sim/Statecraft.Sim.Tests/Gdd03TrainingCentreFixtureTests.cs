@@ -69,9 +69,10 @@ public class Gdd03TrainingCentreFixtureTests
     static (int teacher, int trainee) Pair(CivilianProfession p) => p == CivilianProfession.Farmer ? (0, 1) : (2, 3);
 
     // A ruled #1668 Q42 or Q43 refusal is a plain ArgumentException with its reason; only unbuilt cases say "Deferred:".
-    const string OneTeacher = Gdd03TrainingCentreFixture.OneTeacherReason;
+    const string OneTeacherOnePupil = Gdd03TrainingCentreFixture.OneTeacherOnePupilReason;
     const string TeacherNeedsAPupil = Gdd03TrainingCentreFixture.TeacherNeedsAPupilReason;
-    const string HostCity = Gdd03TrainingCentreFixture.HostCityReason;
+    const string TeacherCity = Gdd03TrainingCentreFixture.TeacherCityReason;
+    const string PupilCity = Gdd03TrainingCentreFixture.PupilCityReason;
     const string GraduationMonth = Gdd03TrainingCentreFixture.GraduationMonthReason;
     const string CourseAtOpening = Gdd03TrainingCentreFixture.CourseAtOpeningReason;
 
@@ -197,19 +198,27 @@ public class Gdd03TrainingCentreFixtureTests
         Unchanged(s, () => f.Start(5, 0, CentreB, Month(s, 1)), typeof(ArgumentException));
     }
 
-    // R-TRAIN-005: the pupil limit is the catalogue value; a synthetic 2 admits a second pupil for the same teacher.
-    // This only proves the value is read from the catalogue: the GDD allows one pupil per teacher (training.md:31 at 605277df).
-    [Fact] public void PupilLimitComesFromTheCatalogue()
+    // R-TRAIN-005, Q42 (docs/GDD.md:372: "One veteran teacher and one pupil per centre"): a centre holds one pupil
+    // whatever the catalogue's per-teacher limit says. With a synthetic profession.trainees_per_teacher of 2 (the
+    // catalogue's is 1), a second pupil for the same teacher at the same centre is refused with the Q42 reason, in the
+    // same month or a later one, the state unchanged; an inventory with two pupils at one centre is refused the same way.
+    [Fact] public void ACentreTakesOnePupilWhateverThePerTeacherLimit()
     {
         var c = Catalogue("profession.trainees_per_teacher", Agreed(2)); var s = State(c);
         var f = new Gdd03TrainingCentreFixture(c, s, Centres());
         f.Start(1, 0, CentreA, Month(s, 0));
-        f.Start(5, 0, CentreA, Month(s, 0));
-        Assert.Equal(0, s.PopulationLedger.Get(5).Assignment.TeacherId);
-        f.Cancel(1);
-        Assert.Equal(PopulationAssignmentKind.Teaching, s.PopulationLedger.Get(0).Assignment.Kind);
-        f.Cancel(5);
-        Assert.Same(PopulationAssignment.Unassigned, s.PopulationLedger.Get(0).Assignment);
+        Unchanged(s, () => f.Start(5, 0, CentreA, Month(s, 0)), typeof(ArgumentException), OneTeacherOnePupil);
+        Unchanged(s, () => f.Start(5, 0, CentreA, Month(s, 1)), typeof(ArgumentException), OneTeacherOnePupil);
+        Assert.Equal(0, s.PopulationLedger.Get(1).Assignment.TeacherId); Assert.Equal(PopulationStatus.FreeCivilian, s.PopulationLedger.Get(5).Status);
+
+        // Id 6 teaches at centre A with two pupils, 7 and 8.
+        var two = State(c,
+            Person(CivilianProfession.Farmer, CivilianTier.Veteran, "tools-6", assignment: new PopulationAssignment(PopulationAssignmentKind.Teaching, CentreA)),
+            Person(CivilianProfession.Farmer, CivilianTier.Novice, "tools-7", PopulationStatus.Trainee,
+                assignment: new PopulationAssignment(PopulationAssignmentKind.Course, CentreA, 0, 6)),
+            Person(CivilianProfession.Farmer, CivilianTier.Novice, "tools-8", PopulationStatus.Trainee,
+                assignment: new PopulationAssignment(PopulationAssignmentKind.Course, CentreA, 0, 6)));
+        Unchanged(two, () => new Gdd03TrainingCentreFixture(c, two, Centres()), typeof(ArgumentException), OneTeacherOnePupil);
     }
 
     // R-TRAIN-005: the MVP has no reception-bed layer (owner, 1 November 2026, "No reception-bed layer (Recommended)";
@@ -286,7 +295,8 @@ public class Gdd03TrainingCentreFixtureTests
         new object[] { "same person", 1, 1, CentreA, true },
         new object[] { "unknown centre", 0, 1, "fixture-unknown", true },
         new object[] { "centre not operating", 0, 1, CentreA, false },
-        // Q42: teacher and pupil are housed in the centre's city, so all three must share its region.
+        // The teacher is housed in the centre's city (Q42) and, by our reading, the pupil trains there; the region stands
+        // in for the city.
         new object[] { "other region", 0, 1, CentreSouth, true },
         new object[] { "trainee in another region", 0, 14, CentreA, true },
         new object[] { "teacher in another region", 16, 1, CentreA, true },
@@ -313,17 +323,19 @@ public class Gdd03TrainingCentreFixtureTests
         Unchanged(s, () => f.Start(trainee, teacher, centre, Month(s, 0)), typeof(ArgumentException));
     }
 
-    // R-TRAIN-005, Q42 (docs/GDD.md:372: "the teacher housed in the centre's city"): a teacher or pupil outside the
-    // centre's region is refused with the Q42 reason, before the ledger is asked, and the state is unchanged.
+    // R-TRAIN-005, Q42 (docs/GDD.md:372: "the teacher housed in the centre's city"): a teacher outside the centre's region
+    // is refused with the Q42 reason; a pupil outside it with our reading's reason (Q42 rules only on the teacher). Both
+    // are refused before the ledger is asked, the state unchanged. The region stands in for the city.
     [Fact] public void ATeacherOrPupilOutsideTheHostRegionIsRefused()
     {
         var c = Catalogue(); var s = State(c,
             Person(CivilianProfession.Farmer, CivilianTier.Veteran, "tools-6", region: "south"),
             Person(CivilianProfession.Farmer, CivilianTier.Novice, "tools-7", region: "south"));
         var f = new Gdd03TrainingCentreFixture(c, s, Centres());
-        Unchanged(s, () => f.Start(1, 6, CentreA, Month(s, 0)), typeof(ArgumentException), HostCity);
-        Unchanged(s, () => f.Start(7, 0, CentreA, Month(s, 0)), typeof(ArgumentException), HostCity);
-        Unchanged(s, () => f.Start(1, 0, CentreSouth, Month(s, 0)), typeof(ArgumentException), HostCity);
+        Unchanged(s, () => f.Start(1, 6, CentreA, Month(s, 0)), typeof(ArgumentException), TeacherCity);
+        Unchanged(s, () => f.Start(7, 0, CentreA, Month(s, 0)), typeof(ArgumentException), PupilCity);
+        Unchanged(s, () => f.Start(1, 0, CentreSouth, Month(s, 0)), typeof(ArgumentException), TeacherCity);
+        Unchanged(s, () => f.Start(1, 6, CentreSouth, Month(s, 0)), typeof(ArgumentException), PupilCity);
         f.Start(7, 6, CentreSouth, Month(s, 0));
         Assert.Equal(CentreSouth, s.PopulationLedger.Get(7).Assignment.Target);
     }
@@ -399,8 +411,8 @@ public class Gdd03TrainingCentreFixtureTests
             assignment: new PopulationAssignment(PopulationAssignmentKind.Work, Field)));
         var f = new Gdd03TrainingCentreFixture(c, s, Centres());
         f.Start(1, 0, CentreA, Month(s, 0));
-        Unchanged(s, () => f.Start(5, 4, CentreA, Month(s, 0)), typeof(ArgumentException), OneTeacher);
-        Unchanged(s, () => f.Start(6, 4, CentreA, Month(s, 0)), typeof(ArgumentException), OneTeacher);
+        Unchanged(s, () => f.Start(5, 4, CentreA, Month(s, 0)), typeof(ArgumentException), OneTeacherOnePupil);
+        Unchanged(s, () => f.Start(6, 4, CentreA, Month(s, 0)), typeof(ArgumentException), OneTeacherOnePupil);
         Assert.Equal(Field, s.PopulationLedger.Get(6).Assignment.Target);
 
         // Ids 6 and 7 teach at centre A, each with a pupil (8 and 9).
@@ -411,7 +423,7 @@ public class Gdd03TrainingCentreFixtureTests
                 assignment: new PopulationAssignment(PopulationAssignmentKind.Course, CentreA, 0, 6)),
             Person(CivilianProfession.Farmer, CivilianTier.Novice, "tools-9", PopulationStatus.Trainee,
                 assignment: new PopulationAssignment(PopulationAssignmentKind.Course, CentreA, 0, 7)));
-        Unchanged(two, () => new Gdd03TrainingCentreFixture(c, two, Centres()), typeof(ArgumentException), OneTeacher);
+        Unchanged(two, () => new Gdd03TrainingCentreFixture(c, two, Centres()), typeof(ArgumentException), OneTeacherOnePupil);
     }
 
     // R-TRAIN-005, R-TRAIN-008, Q42: a centre's teacher teaches its one pupil, so a Teaching record with no pupil is an
@@ -459,21 +471,21 @@ public class Gdd03TrainingCentreFixtureTests
         Assert.Equal(1, s.PopulationLedger.Get(1).Assignment.ProgressTicks);
     }
 
-    // R-TRAIN-006, R-QUAL-008: graduation reuses the trained-tier transform and charges nothing; a teacher who still has
-    // another pupil keeps teaching. Two pupils per teacher is a synthetic value (the catalogue's is 1).
-    [Fact] public void AGraduationKeepsATeacherWhoStillHasAPupil()
+    // R-TRAIN-006, R-QUAL-008, Q42: graduation reuses the trained-tier transform and charges nothing. A centre has one
+    // pupil (Q42), so even with a synthetic two pupils per teacher (the catalogue's is 1) no second pupil joins the
+    // teacher's centre, and the graduation releases the teacher with its one pupil.
+    [Fact] public void AGraduationReleasesTheCentresOneTeacher()
     {
         var c = Catalogue("profession.trainees_per_teacher", Agreed(2)); var s = State(c); var l = s.PopulationLedger;
         var f = new Gdd03TrainingCentreFixture(c, s, Centres());
         var m0 = Month(s, 0);
         f.Start(1, 0, CentreA, m0); f.Advance(1, m0);
-        f.Start(5, 0, CentreA, Month(s, 1)); f.Advance(1, Month(s, 1));
+        Unchanged(s, () => f.Start(5, 0, CentreA, Month(s, 1)), typeof(ArgumentException), OneTeacherOnePupil);
+        f.Advance(1, Month(s, 1));
         f.Advance(1, Month(s, 2));
         Assert.Equal(CivilianTier.Trained, l.Get(1).Tier); Assert.Same(PopulationAssignment.Unassigned, l.Get(1).Assignment);
-        Assert.Equal(PopulationAssignmentKind.Teaching, l.Get(0).Assignment.Kind); Assert.Equal(CentreA, l.Get(0).Assignment.Target);
-        Assert.Equal(PopulationStatus.Trainee, l.Get(5).Status); Assert.Equal(0, l.Get(5).Assignment.TeacherId);
-        f.Cancel(5);
         Assert.Same(PopulationAssignment.Unassigned, l.Get(0).Assignment);
+        Assert.Equal(PopulationStatus.FreeCivilian, l.Get(5).Status);
         l.Reconcile();
     }
 
@@ -639,9 +651,9 @@ public class Gdd03TrainingCentreFixtureTests
         Unchanged(s, () => work.Assign(0, Field), typeof(ArgumentException));
     }
 
-    // R-TRAIN-007, R-TRAIN-008, #1716 Q43(b): a place freed by a cancel is free at once. Two pupils per teacher is a
-    // synthetic value (the catalogue's is 1), so that the centre's one teacher can take two starts in a month: after the
-    // cancel the same pupil restarts and a second pupil joins in that month, up to the catalogue limit and no further.
+    // R-TRAIN-007, R-TRAIN-008, #1716 Q43(b), Q42: a place freed by a cancel is free at once, and it is the centre's one
+    // place. With a synthetic two pupils per teacher (the catalogue's is 1), the same pupil restarts in the month of the
+    // cancel, and a second pupil is still refused with the Q42 reason, the state unchanged.
     [Fact] public void APlaceFreedByACancelIsFreeAtOnce()
     {
         var c = Catalogue("profession.trainees_per_teacher", Agreed(2)); var s = State(c, Refugee(CampA),
@@ -651,9 +663,9 @@ public class Gdd03TrainingCentreFixtureTests
         var opening = Month(s, 1);
         f.Cancel(1);
         f.Start(1, 0, CentreA, opening);
-        f.Start(5, 0, CentreA, opening);
-        Assert.Equal(0, s.PopulationLedger.Get(1).Assignment.TeacherId); Assert.Equal(0, s.PopulationLedger.Get(5).Assignment.TeacherId);
-        Unchanged(s, () => f.Start(7, 0, CentreA, opening), typeof(ArgumentException));
+        Assert.Equal(0, s.PopulationLedger.Get(1).Assignment.TeacherId); Assert.Equal(CentreA, s.PopulationLedger.Get(1).Assignment.Target);
+        Unchanged(s, () => f.Start(5, 0, CentreA, opening), typeof(ArgumentException), OneTeacherOnePupil);
+        Unchanged(s, () => f.Start(7, 0, CentreA, opening), typeof(ArgumentException), OneTeacherOnePupil);
     }
 
     // R-TRAIN-007, #1716 Q43(b): refugees in a camp of the centre's region do not hold a cancelled pupil's place, so with
@@ -880,7 +892,7 @@ public class Gdd03TrainingCentreFixtureTests
             new Gdd03FixtureTrainingCentre(CentreA, "north", true), new Gdd03FixtureTrainingCentre(CentreA, "south", true) }));
         new Gdd03TrainingCentreFixture(c, s, Centres()).Start(1, 0, CentreA, Month(s, 0));
         Unchanged(s, () => new Gdd03TrainingCentreFixture(c, s, new[] { new Gdd03FixtureTrainingCentre(CentreA, "south", true) }),
-            typeof(ArgumentException), HostCity);
+            typeof(ArgumentException), TeacherCity);
     }
 
     // R-TRAIN-006: deterministic and isolated: centre input order does not matter and a clone keeps its own course state.
