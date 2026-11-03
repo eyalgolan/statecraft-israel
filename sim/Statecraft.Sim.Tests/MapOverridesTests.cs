@@ -442,6 +442,17 @@ public class MapOverridesTests
         Assert.Equal(9, c.StartingForces[0].Q);
     }
 
+    // R-MEDIT-003 (#2309): the force-anchor adapter blocks a scripted anchor hex that is not land, naming its row and hex.
+    [Fact]
+    public void ASeaScriptedAnchorBlocksWithItsIdAndExactHex()
+    {
+        var c = DependencyFixture();
+        c.StartingForces[0].Script = (3, 0);
+        var row = Assert.Single(Broken(DependencyDiagnostics(c)));
+        Assert.Equal("anchors[unit_a]", row.Field);
+        Assert.Equal("scripted anchor hex q=3 r=0 is not a land hex of the map", row.Message);
+    }
+
     [Fact]
     public void ABrokenTargetBindingBlocksWithItsId()
     {
@@ -453,6 +464,29 @@ public class MapOverridesTests
         Assert.Equal("targets[town_a]", row.Field);
         Assert.False(value.CanExport);
         Assert.Equal((0, 0), (c.SettlementTargets[0].Q, c.SettlementTargets[0].R));
+    }
+
+    // R-MEDIT-003 (#2309): the target adapter blocks a target hex that is not land, even while it still matches its settlement.
+    [Fact]
+    public void ASeaTargetBlocksWithItsIdAndExactHex()
+    {
+        var c = DependencyFixture();
+        c.SettlementHexes.Add(new SettlementHex { Id = "town_b", Q = 3, R = 0 });
+        c.SettlementTargets.Add(new SettlementTarget { Id = "town_b", Q = 3, R = 0 });
+        var row = Assert.Single(Broken(DependencyDiagnostics(c)));
+        Assert.Equal("targets[town_b]", row.Field);
+        Assert.Equal("target hex q=3 r=0 is not a land hex of the map", row.Message);
+    }
+
+    // R-MEDIT-003 (#2309): a target with no settlement hex gets that one row, and no "no longer matches" row after it.
+    [Fact]
+    public void ATargetWithoutASettlementHexProducesOnlyItsExactDiagnostic()
+    {
+        var c = DependencyFixture();
+        c.SettlementTargets.Add(new SettlementTarget { Id = "ghost", Q = 1, R = 0 });
+        var row = Assert.Single(Broken(DependencyDiagnostics(c)));
+        Assert.Equal("targets[ghost]", row.Field);
+        Assert.Equal("settlement 'ghost' has no hex", row.Message);
     }
 
     [Fact]
@@ -481,5 +515,49 @@ public class MapOverridesTests
         // A settlement moved onto the objective's yishuv site breaks that objective's site binding as well.
         var moved = Broken(DependencyDiagnostics(DependencyFixture(), "[{ id: town_a, hex: { q: 2, r: 0 } }]"));
         Assert.Contains(moved, x => x.Field == "objectives[objective_b]" && x.Message.Contains("site_a"));
+    }
+
+    // #2309: MapOverrides' objective dependency diagnostics inspect every SitesBuilt entry, not only SiteBuilt.
+    [Fact]
+    public void APluralSiteObjectiveBindingBlocksWithItsId()
+    {
+        var c = DependencyFixture();
+        c.Objectives[1].CompletesWhen = new ObjectiveCondition { SitesBuilt = new List<string> { "site_a" } };
+        c.SettlementTargets.Clear();   // isolate the objective adapter from the target moved by this overlay
+        var row = Assert.Single(Broken(DependencyDiagnostics(c, "[{ id: town_a, hex: { q: 2, r: 0 } }]")));
+        Assert.Equal("objectives[objective_b]", row.Field);
+        Assert.Equal("site 'site_a' hex q=2 r=0 now holds the settlement town_a", row.Message);
+    }
+
+    // #2309: in the objective dependency diagnostics, an unknown objective site produces one diagnostic and is not dereferenced.
+    [Fact]
+    public void AnUnknownObjectiveSiteBlocksOnceWithItsId()
+    {
+        var c = DependencyFixture();
+        c.Objectives[1].CompletesWhen = new ObjectiveCondition { SiteBuilt = "no_site" };
+        var row = Assert.Single(Broken(DependencyDiagnostics(c)));
+        Assert.Equal("objectives[objective_b]", row.Field);
+        Assert.Equal("unknown site 'no_site'", row.Message);
+    }
+
+    // #2309: in the objective dependency diagnostics, an objective site without the yishuv kind is diagnosed.
+    [Fact]
+    public void ANonYishuvObjectiveSiteBlocksWithItsId()
+    {
+        var c = DependencyFixture();
+        c.Sites.Add(new Site { Id = "site_b", Q = 1, R = 0, Kinds = new List<string> { "industry" } });
+        c.Objectives[1].CompletesWhen = new ObjectiveCondition { SiteBuilt = "site_b" };
+        var row = Assert.Single(Broken(DependencyDiagnostics(c)));
+        Assert.Equal("objectives[objective_b]", row.Field);
+        Assert.Equal("site 'site_b' cannot be built as a yishuv", row.Message);
+    }
+
+    // R-MEDIT-003 (#2309): the objective adapter skips an objective with no completion condition (no row, no exception).
+    [Fact]
+    public void AnObjectiveWithoutACompletionConditionNeedsNoDependencyDiagnostic()
+    {
+        var c = DependencyFixture();
+        c.Objectives.Add(new Objective { Id = "objective_c" });
+        Assert.Empty(Broken(DependencyDiagnostics(c)));
     }
 }

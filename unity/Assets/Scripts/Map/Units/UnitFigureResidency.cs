@@ -18,6 +18,7 @@ namespace Statecraft.Game.Map.Units
         string id = "";
         CollectionResidency? residency, retainedFarResidency, retainedNearResidency;
         CollectionResidencyView? view;
+        readonly List<(string key, Vector3 at, float radius)> residencyAnchors = new List<(string, Vector3, float)>(1);
         bool nearWanted, initialized, draws = true, retainFar;
         Func<string, CollectionDetail, Action<GameObject?>, IDisposable>? acquire;
         internal void Initialize(string model, CollectionResidencyPolicy policy,
@@ -104,8 +105,15 @@ namespace Statecraft.Game.Map.Units
         {
             if (this == null || !initialized || view == null || camera.cameraType == CameraType.Preview || camera.cameraType == CameraType.Reflection) return;
             bool first = !observed; observed = true; var before = view.Keys;
-            view.Observe(camera, new[] { (id, transform.position, 0f) }, Time.frameCount);
-            if (first || !before.SetEquals(view.Keys)) Schedule(view.Keys.Contains(id));
+            residencyAnchors.Clear(); residencyAnchors.Add((id, transform.position, 0f));
+            view.Observe(camera, residencyAnchors, Time.frameCount);
+            bool changed = first;
+            if (!changed)
+            {
+                changed = before.Count != view.Keys.Count;
+                if (!changed) foreach (string key in before) if (!view.Keys.Contains(key)) { changed = true; break; }
+            }
+            if (changed) Schedule(view.Keys.Contains(id));
         }
         void LateUpdate()
         {

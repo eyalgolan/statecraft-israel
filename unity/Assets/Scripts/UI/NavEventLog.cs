@@ -1,4 +1,5 @@
 #nullable enable
+using System;
 using System.Collections.Generic;
 using Statecraft.Game.Boot;
 using UnityEngine.InputSystem;
@@ -72,16 +73,15 @@ namespace Statecraft.Game.UI
                 var card = hud.Q(name);
                 if (card == null || card.resolvedStyle.display == DisplayStyle.None) continue;
                 var b = card.worldBound;
-                parts.Add($"{name}{Classes(card)} opacity={card.resolvedStyle.opacity:0.00} "
-                          + $"box=({b.x:0}, {b.y:0}, {b.width:0}x{b.height:0}) enabled={card.enabledInHierarchy}");
+                parts.Add(FormattableString.Invariant($"{name}{Classes(card)} opacity={card.resolvedStyle.opacity:0.00} box=({b.x:0}, {b.y:0}, {b.width:0}x{b.height:0}) enabled={card.enabledInHierarchy}"));
             }
             return parts.Count == 0 ? "-" : string.Join(" | ", parts);
         }
 
-        void OnDown(PointerDownEvent e) => DiagLog.NavLine($"ui pointerdown id={e.pointerId} at ({e.position.x:0}, {e.position.y:0}) target={Name(e.target)} path={Path(e.target)} modals={Modals()}");
-        void OnUp(PointerUpEvent e) => DiagLog.NavLine($"ui pointerup id={e.pointerId} at ({e.position.x:0}, {e.position.y:0}) target={Name(e.target)}");
+        void OnDown(PointerDownEvent e) => DiagLog.NavLine(FormattableString.Invariant($"ui pointerdown id={e.pointerId} at ({e.position.x:0}, {e.position.y:0}) target={Name(e.target)} path={Path(e.target)} modals={Modals()}"));
+        void OnUp(PointerUpEvent e) => DiagLog.NavLine(FormattableString.Invariant($"ui pointerup id={e.pointerId} at ({e.position.x:0}, {e.position.y:0}) target={Name(e.target)}"));
         void OnClick(ClickEvent e) => DiagLog.NavLine($"ui click count={e.clickCount} target={Name(e.target)}");
-        void OnButtonUp(PointerUpEvent e) => DiagLog.NavLine($"button pointerup at ({e.position.x:0}, {e.position.y:0}) on={Name(e.currentTarget)} inside={((VisualElement)e.currentTarget).worldBound.Contains(e.position)}");
+        void OnButtonUp(PointerUpEvent e) => DiagLog.NavLine(FormattableString.Invariant($"button pointerup at ({e.position.x:0}, {e.position.y:0}) on={Name(e.currentTarget)} inside={((VisualElement)e.currentTarget).worldBound.Contains(e.position)}"));
         void OnCaptureOut(PointerCaptureOutEvent e) => DiagLog.NavLine($"button capture out on={Name(e.currentTarget)}");
 
         /// <summary>Every raw mouse state event the Input System processes (after any merging), with its position and buttons.</summary>
@@ -90,7 +90,7 @@ namespace Statecraft.Game.UI
             if (!(d is Mouse m) || !(e.IsA<StateEvent>() || e.IsA<DeltaStateEvent>())) return;
             var at = m.position.ReadValueFromEvent(e);
             var left = m.leftButton.ReadValueFromEvent(e);
-            DiagLog.NavLine($"raw mouse left={left:0} at ({at.x:0}, {at.y:0}) t={e.time:0.000}");
+            DiagLog.NavLine(FormattableString.Invariant($"raw mouse left={left:0} at ({at.x:0}, {at.y:0}) t={e.time:0.000}"));
         }
 
         void OnSubmit(NavigationSubmitEvent e) => DiagLog.NavLine($"ui submit target={Name(e.target)}");

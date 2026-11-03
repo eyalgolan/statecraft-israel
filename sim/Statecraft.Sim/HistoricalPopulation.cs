@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 namespace Statecraft.Sim
@@ -53,8 +54,9 @@ namespace Statecraft.Sim
         /// record takes the region of its starting anchor hex (AtHex): the owner's ruling on #1689's open question 1
         /// (3 November 2026: "Its anchor hex's region (Recommended)"). A source with no region is refused; no region is invented. Records
         /// are free civilians with no assignment and soldiers serving in their own formation, with no profession, tier or
-        /// qualification (#1717 and #1692 add those). mode Historical gives #2299's 1,000-a-record scale (D2). Fixture-only:
-        /// NewGame does not call it (R-POP-002).</summary>
+        /// qualification (#1717 and #1692 add those). Each soldier carries one issued military item, id
+        /// <c>units_1948/&lt;row&gt;/&lt;ordinal&gt;</c>, owned and recorded as paid, apart from the spare Arms (#1717, 27M-24).
+        /// mode Historical gives #2299's 1,000-a-record scale (D2). Fixture-only: NewGame does not call it (R-POP-002).</summary>
         internal static GameState LedgerFixture(Content c)
         {
             var inventory = Inventory(c);
@@ -75,7 +77,9 @@ namespace Statecraft.Sim
             var rows = inventory.Select(r => new PopulationInventoryRow(r.Source, r.Ordinal, new PopulationUnit(0, r.Status, 0,
                 locations[regions[r.Source]], r.Status == PopulationStatus.ActiveSoldier
                     ? new PopulationAssignment(PopulationAssignmentKind.ActiveService, r.Source) : PopulationAssignment.Unassigned,
-                CivilianProfession.None, CivilianTier.None, 0, "", 0, PopulationEquipment.None)));
+                CivilianProfession.None, CivilianTier.None, 0, "", 0, r.Status == PopulationStatus.ActiveSoldier
+                    ? new PopulationEquipment(militaryId: r.Source + "/" + r.Ordinal.ToString(CultureInfo.InvariantCulture), militaryPaid: true)
+                    : PopulationEquipment.None)));
             return PopulationLedger.CreateFixture(c, bindings, rows, mode: Mode.Historical);
         }
     }

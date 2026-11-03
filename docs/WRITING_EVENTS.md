@@ -1,6 +1,6 @@
 # Writing an event
 
-An event is one YAML file in `content/events/`. The game shows it as a card with two or more options; each option
+An event is one YAML file in `content/events/`. The game shows it as a card with one or more options; each option
 moves some numbers. This guide takes you from an empty file to a passing test run. Everything here was checked
 against the loader (`sim/Statecraft.Sim/ContentLoader.cs`, `EventRules.cs`, `Content.cs`, `ReleaseGate.cs`); if the
 code and this page disagree, the code wins and the page has a bug (please open an issue).
@@ -112,7 +112,8 @@ overlaps the window. Turns are a month long and end on the 15th (15 June 1948, 1
 end on 15 January 1952), so a window shorter than a turn can still fire, late. For a decision card, open the window on
 the 15th on or before the historical decision, so the card reaches the player on the turn before it (R-TURN-002;
 `EventRetimingTests` pins each card's turn). Put a comment above `from` saying why you chose the date, as the example
-does. The loader only requires `from`, and that `to` is later than `from`.
+does. The loader requires `from`. When `to` is present, it must be later than `from`. An event may not span an era
+boundary; split its window at the boundary. An open window with no `to` is allowed only in the last era.
 
 ### conditions
 
@@ -242,6 +243,7 @@ Each option has:
 | `grant_units` | no | GDD loop only. A list of `{ type, n, at }`: see "grant_units and city_effects". |
 | `city_effects` | no | GDD loop only. A list of `{ city, field, delta }`: see "grant_units and city_effects". |
 | `unlock_projects` | no | GDD loop only. A list of `projects.yaml` ids: see "grant_units and city_effects". |
+| `unit_orders` | no | GDD loop only, applied under gdd-0.1 only. A list of `{ unit, q, r }`: see "unit_orders". |
 | `alternative` | on every option that did not happen, in an event with a historical option | Who put it forward, on what record. See below. |
 | `rejoin` | no | Consequence cards only. The id of the event whose road the card follows; choosing this option returns later cards to the recorded course (R-ALT-009). See "kind". |
 
@@ -309,6 +311,17 @@ These act on the GDD records, so only content whose `eras.yaml` sets `systems.lo
   of the game (R-EFX-008). Naming a kind that is not locked is an error, since it would do nothing.
 
 An event with a sensitive tag may carry no grant, no positive `city_effects` delta and no unlock; a cut is allowed (R-EFX-005).
+
+### unit_orders
+
+- `unit_orders: [{ unit: golani, q: -7, r: 24 }]` gives the unit of a `map/units_1948.yaml` row a go-to order toward
+  hex (`q`, `r`) when the option is chosen or delegated (R-ENEMY-005). The hex must be one of that row's own anchor
+  hexes in `map/unit_anchor_hexes.yaml`, so a card never sends a unit where no source puts it; cite the anchor's line in
+  a comment. The order goes through the player's own go-to: one the player could not give changes nothing, and the
+  player is told so. The order ends on the anchor's `to` date (the loader refuses an anchor with none), and its march
+  goes round every enemy-held place but its hex.
+- It applies under gdd-0.1 only. Under gdd-0.3 the loader still checks it and the unit gets no order; the legacy loop
+  ignores it.
 
 ### sources
 

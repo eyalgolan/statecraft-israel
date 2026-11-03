@@ -13,7 +13,7 @@ namespace Statecraft.Sim
 
         Gdd03HousingFormula(Gdd03BalanceCatalogue c)
         {
-            // content/gdd03-balance.yaml:226-253; GDD balance.md:100-105 at 605277df.
+            // content/gdd03-balance.yaml `housing.*`; GDD balance.md:100-105 at 605277df.
             conditionMax = Scalar(c, "housing.condition_max", true);
             moneyThreshold = Scalar(c, "housing.money_threshold", true);
             moneySlope = Scalar(c, "housing.money_slope", false);
@@ -29,7 +29,7 @@ namespace Statecraft.Sim
                 || repair.Values.Count != 0 || !string.IsNullOrEmpty(repair.Expression)
                 || !repair.Parts.TryGetValue("condition_pp", out var effect))
                 throw Invalid("housing_repair", "requires agreed repair condition part");
-            // content/gdd03-balance.yaml:683-687. No repair cost/work/availability policy here.
+            // content/gdd03-balance.yaml `housing_repair.parts.condition_pp`. No repair cost/work/availability policy here.
             repairPp = Number(effect, "housing_repair.parts.condition_pp", false);
         }
 
@@ -80,7 +80,7 @@ namespace Statecraft.Sim
             var unpaid = input.UpkeepDue == 0m ? 0m :
                 (unpaidPp / 100m) * ((input.UpkeepDue - input.UpkeepPaid) / input.UpkeepDue);
             var after = Clamp(input.ConditionBefore - overflow - unpaid);
-            // GDD cities.md:31,33. Contribution in displayed points, not indicator storage.
+            // GDD cities.md:31,33 at 605277df. Contribution in displayed points, not indicator storage.
             var cohesion = input.OwnPopulation == 0 ? 0m : maxCohesionLoss
                 * ((decimal)input.CohesionResidents / input.OwnPopulation)
                 * Math.Max(0m, (cohesionThreshold - after) / cohesionThreshold);

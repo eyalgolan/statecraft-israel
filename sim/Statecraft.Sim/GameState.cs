@@ -81,6 +81,11 @@ namespace Statecraft.Sim
         /// acceptance, so replacing a camp with housing cannot reopen the per-turn cap; a new date starts from zero.</summary>
         public DateTime MapActionsTurnDate;
         public int MapActionsThisTurn;
+        /// <summary>R-PROJ-001 under gdd-0.3 only (#1700 slice B): the city projects each city started in the turn of
+        /// <see cref="MapActionsTurnDate"/>, by city id (ordinal), counted on acceptance. Read only while that date is the
+        /// turn's, and cleared when a start or map action moves it on, as MapActionsThisTurn is reset. Empty under every
+        /// other ruleset, and then left out of the hash.</summary>
+        public SortedDictionary<string, int> CityStartsThisTurn = new SortedDictionary<string, int>(StringComparer.Ordinal);
         /// <summary>Why the game ended, as one of the <see cref="GameOverCodes"/>; null while it is on. Never display it: use PlayerText.GameOver.</summary>
         public string? GameOver;
         // GDD v0.1 state (spec 2026-10-12 section 2.2). Empty in the legacy loop, and then left out of the hash (R-LOOP-002).
@@ -102,6 +107,9 @@ namespace Statecraft.Sim
         public SortedDictionary<string, CorridorWork> Corridors = new SortedDictionary<string, CorridorWork>(StringComparer.Ordinal);
         /// <summary>The locked projects.yaml kinds an event option has unlocked (R-EFX-008), by id (ordinal).</summary>
         public SortedSet<string> UnlockedProjects = new SortedSet<string>(StringComparer.Ordinal);
+        /// <summary>The units whose go-to an operation card gave (R-ENEMY-005), by unit id, each with the day the order ends: the
+        /// end of the window of the anchor it goes to (the owner's answer 1 on #2087, "Orders expire with the operation").</summary>
+        public SortedDictionary<int, DateTime> CardOrders = new SortedDictionary<int, DateTime>();
         /// <summary>The next id a new unit, training cohort or city project takes (they share it). Ids are never reused.</summary>
         public int NextId;
         /// <summary>The date each completed objective was completed, by objective id (ordinal).</summary>
@@ -165,9 +173,11 @@ namespace Statecraft.Sim
             c.Cohorts = new SortedList<int, Cohort>(Cohorts);
             c.Sites = new SortedDictionary<string, SiteWork>(Sites, StringComparer.Ordinal);
             c.CityProjects = new SortedList<int, CityProject>(CityProjects);
+            c.CityStartsThisTurn = new SortedDictionary<string, int>(CityStartsThisTurn, StringComparer.Ordinal);
             c.Workshops = new SortedList<int, Workshop>(Workshops);
             c.Corridors = new SortedDictionary<string, CorridorWork>(Corridors, StringComparer.Ordinal);
             c.UnlockedProjects = new SortedSet<string>(UnlockedProjects, StringComparer.Ordinal);
+            c.CardOrders = new SortedDictionary<int, DateTime>(CardOrders);
             c.Objectives = new SortedDictionary<string, DateTime>(Objectives, StringComparer.Ordinal);
             c.Settlements = new SortedDictionary<string, SettlementControl>(Settlements, StringComparer.Ordinal);
             c.PrisonersHeld = new SortedDictionary<string, int>(PrisonersHeld, StringComparer.Ordinal);
@@ -261,9 +271,13 @@ namespace Statecraft.Sim
             if (Cohorts.Count > 0) Section("train", '[', ']', Cohorts.Values.Select(x => x.Canonical()));
             if (Sites.Count > 0) Section("site", '{', '}', Sites.Values.Select(x => x.Canonical()));
             if (CityProjects.Count > 0) Section("cproj", '[', ']', CityProjects.Values.Select(x => x.Canonical()));
+            if (CityStartsThisTurn.Count > 0)   // R-PROJ-001, gdd-0.3 only
+                Section("cstart", '{', '}', CityStartsThisTurn.Select(kv => kv.Key + "=" + kv.Value.ToString(CultureInfo.InvariantCulture)));
             if (Workshops.Count > 0) Section("wshop", '[', ']', Workshops.Values.Select(x => x.Canonical()));   // R-ARMS-005, gdd-0.3 only
             if (Corridors.Count > 0) Section("corr", '{', '}', Corridors.Values.Select(x => x.Canonical()));
             if (UnlockedProjects.Count > 0) Section("unlocked", '[', ']', UnlockedProjects);
+            if (CardOrders.Count > 0)   // R-ENEMY-005: only while a card's order stands, so a game with none hashes as before
+                Section("cardorders", '{', '}', CardOrders.Select(kv => kv.Key.ToString(CultureInfo.InvariantCulture) + "=" + kv.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
             if (NextId != 0) { Sep(); Nl(); sb.Append("next=").Append(NextId.ToString(CultureInfo.InvariantCulture)); }
             if (Objectives.Count > 0)
                 Section("obj", '{', '}', Objectives.Select(kv => kv.Key + "=" + kv.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));

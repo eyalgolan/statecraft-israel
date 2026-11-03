@@ -394,7 +394,10 @@ namespace Statecraft.Game.Map.Units
             if (code != null) code.enabled = false;
             UnitFigureWeapon.Refresh(piece);   // its sourced weapon in the hand (#2083), before the detail switch reads the renderers
             UnitFigurePointFire.Refresh(piece);   // a held point-fire aim takes the new model too (#2084)
-            if (CollectionCatalog.Animated.Contains(id) && !CollectionCatalog.IsFullQualityGeneratedInfantry(id)) UnitFigureDetail.Of(piece).Add(holder, id);   // C05 has no idle: he stays far
+            // C05 has no idle clip: he stays far, and close up his held pose breathes in code instead (#2374). The switch is told
+            // only once the idle took (fail open: a model without the bones stands still, and no near model is asked for).
+            if (UnitFigureIdle.Wanted(id)) { if (UnitFigureIdle.Equip(model.transform, UnitFigureIdle.KeyOf(piece)) != null) UnitFigureDetail.Of(piece).Add(holder, id); }
+            else if (CollectionCatalog.Animated.Contains(id) && !CollectionCatalog.IsFullQualityGeneratedInfantry(id)) UnitFigureDetail.Of(piece).Add(holder, id);
             // A model that arrives mid-move walks with its token at once (#1866).
             var motion = piece.GetComponentInParent<UnitTokenMotion>();
             if (motion != null && (motion.Moving || motion.Attacking)) motion.RefreshPose();

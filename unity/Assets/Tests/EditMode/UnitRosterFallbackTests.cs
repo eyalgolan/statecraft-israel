@@ -75,7 +75,7 @@ public class UnitRosterFallbackTests
         var pending = new Dictionary<string, Action<GameObject?>>(StringComparer.Ordinal);
         UnitFigures.Source = (id, detail, done) =>
         {
-            Assert.AreEqual(CollectionDetail.Far, detail, "no Near request at the start view");
+            Assert.AreEqual(CollectionDetail.Far, detail, "no Near request at the 90 km view");
             pending[id] = done;
         };
         return pending;

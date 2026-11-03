@@ -245,6 +245,8 @@ namespace Statecraft.Game.UI
             [Training.RefusedNoTraining] = "unit.reinforce_refused.no_training",
             [Training.RefusedCount] = "unit.reinforce_refused.count",
             [Pools.RefusedDebtCeiling] = "arms.refused_debt_ceiling",
+            [Orders.RefusedCardOrder] = "unit.order_refused.card_order",   // R-ENEMY-005: an operation card's refused go-to
+            [Orders.RefusedLastGarrison] = "unit.order_refused.last_garrison",   // R-CTRL-013: a card's go-to held back
         };
 
         /// <summary>The sim's refusals that carry values (#2072: Combat.Check's Arms, Training.Reinforce's unit, settlement,
@@ -268,6 +270,8 @@ namespace Statecraft.Game.UI
             (Workshops.RefusedBuilt, "workshop.refused_built"),
             (Workshops.RefusedPeople, "workshop.refused_people"),
             (Workshops.RefusedPeopleNoJob, "workshop.refused_people_no_job"),
+            // R-PROJ-001 under gdd-0.3 (#1700 slice B): a second city project start in one city in one turn.
+            (Projects.RefusedCityCap, "city.project_reason.city_cap"),
         }.Select(x => (new Regex("^" + string.Join("(.+?)", Regex.Split(x.format, @"\{\d+\}").Select(Regex.Escape)) + "$"), x.key)).ToArray();
 
         /// <summary>A sim refusal in the UI's language where it has a string (<see cref="ReasonKeys"/>, <see cref="ReasonFormats"/>),

@@ -313,7 +313,7 @@ public sealed class FarMapWideResidencyTests
             var towns = TownLandmarks.ShowAt(map, new DateTime(1949, 1, 1), Array.Empty<Placement>(), content)!;
             var mapped = towns.Wanted.Where(w => w.OnTown).ToList();
             CollectionAssert.AreEquivalent(mapped.Select(w => w.Model).Distinct().ToList(), requested,
-                "the 90 km start view requests every wanted whole-town Far model map-wide");
+                "the map's build requests every wanted whole-town Far model map-wide");
             CollectionAssert.AreEquivalent(mapped.Select(w => w.Key).ToList(), towns.Seats.Keys.ToList(),
                 "every mapped town draws even when towns share one requested model");
 
@@ -329,7 +329,7 @@ public sealed class FarMapWideResidencyTests
             foreach (var want in mapped)
                 Assert.AreEqual(buildings.ReadyForTown(want.Key, camera),
                     towns.transform.Find(want.Key).GetComponentsInChildren<Renderer>(true).All(r => r.forceRenderingOff),
-                    want.Key + " at the 90 km start view: its whole-town model unless its far-off copies are ready");
+                    want.Key + " at the 90 km view: its whole-town model unless its far-off copies are ready");
 
             camera.transform.position = new Vector3(focus.At.x, 10000f, focus.At.y);
             towns.Choose(default, camera);
