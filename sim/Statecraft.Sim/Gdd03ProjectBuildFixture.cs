@@ -25,6 +25,7 @@ namespace Statecraft.Sim
         const decimal MvpUpkeep = 0m;
         readonly Gdd03ProjectCatalogue catalogue;
         readonly List<Gdd03FixtureProject> projects = new List<Gdd03FixtureProject>();
+        int startsThisTurn;
         internal decimal Money { get; private set; }
         internal decimal Debt { get; private set; }
         internal int Turn { get; private set; }
@@ -36,15 +37,19 @@ namespace Statecraft.Sim
             Money = money;
         }
 
-        /// <summary>Pays the kind's full cost up front, borrowing any shortfall (D1, R-MONEY-003). The national
-        /// start allowance, cancel and housing repair are other #1700 slices.</summary>
+        /// <summary>Pays the kind's full cost up front, borrowing any shortfall (D1, R-MONEY-003). Only the
+        /// catalogue's `construction.starts_per_turn` city starts are allowed a turn, nationwide; a start past it is
+        /// refused before anything is paid. Cancel and housing repair are other #1700 slices.</summary>
         internal int Start(string key)
         {
             var kind = catalogue.Projects.SingleOrDefault(p => p.Key == key)
                 ?? throw new InvalidOperationException("Unknown project kind: " + key);
+            if (startsThisTurn >= catalogue.CityStarts.Amount)
+                throw new InvalidOperationException("Only " + catalogue.CityStarts.Amount + " city start is allowed a turn");
             Pay(kind.Cost.Amount);
             var project = new Gdd03FixtureProject(projects.Count + 1, kind);
             projects.Add(project);
+            startsThisTurn++;
             return project.Id;
         }
 
@@ -66,6 +71,7 @@ namespace Statecraft.Sim
                     if (!Enum.IsDefined(typeof(Gdd03BuilderTier), tier)) throw new InvalidOperationException("Unknown builder tier " + (int)tier);
             }
             Turn++;
+            startsThisTurn = 0;
             foreach (var p in projects)
             {
                 if (p.CompletedTurn != null || !builders.TryGetValue(p.Id, out var tiers)) continue;

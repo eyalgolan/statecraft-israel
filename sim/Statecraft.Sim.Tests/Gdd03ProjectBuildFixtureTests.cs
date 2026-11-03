@@ -70,6 +70,7 @@ public class Gdd03ProjectBuildFixtureTests
         f.Start("permanent_housing"); // 15 Money: the 1 short is borrowed (D1, R-MONEY-003)
         Assert.Equal(0m, f.Money);
         Assert.Equal(1m, f.Debt);
+        f.EndTurn(Nobody); // one city start a turn (construction.starts_per_turn)
         var id = f.Start("industry"); // 10 Money, all borrowed
         Assert.Equal(0m, f.Money);
         Assert.Equal(11m, f.Debt);
@@ -80,9 +81,36 @@ public class Gdd03ProjectBuildFixtureTests
         Assert.Equal(0m, f.Projects[1].WorkDone);
         Assert.Throws<System.InvalidOperationException>(() => f.EndTurn(On(id, (Gdd03BuilderTier)7))); // no such tier
         Assert.Equal(0m, f.Projects[1].WorkDone);
-        Assert.Equal(0, f.Turn);
+        Assert.Equal(1, f.Turn);
         f.EndTurn(On(id, Gdd03BuilderTier.Apprentice)); // 1.5 of 3
         Assert.Equal(1.5m, f.Projects[1].WorkDone);
         Assert.Null(f.Projects[1].CompletedTurn);
+    }
+
+    [Fact]
+    public void OneCityStartATurnNationwideAndRunningProjectsCarryOn()
+    {
+        // #1700 start allowance, inactive gdd-0.3 note under R-PROJ-001; the live game keeps its own limit.
+        var f = new Gdd03ProjectBuildFixture(Catalogue(), 30m);
+        var housing = f.Start("permanent_housing"); // the turn's one start (construction.starts_per_turn = 1)
+        Assert.Equal(15m, f.Money);
+        Assert.Throws<System.InvalidOperationException>(() => f.Start("maabara")); // a second start this turn
+        Assert.Equal(15m, f.Money); // refused with Money and state unchanged
+        Assert.Equal(0m, f.Debt);
+        Assert.Single(f.Projects);
+        f.EndTurn(On(housing, Gdd03BuilderTier.OrdinaryOrNovice));
+        var industry = f.Start("industry"); // a new turn, a new start
+        Assert.Equal(5m, f.Money);
+        Assert.Throws<System.InvalidOperationException>(() => f.Start("maabara"));
+        Assert.Equal(5m, f.Money);
+        Assert.Equal(2, f.Projects.Count);
+        // The refused start does not stop projects already running.
+        f.EndTurn(new Dictionary<int, Gdd03BuilderTier[]>
+        {
+            [housing] = new[] { Gdd03BuilderTier.OrdinaryOrNovice },
+            [industry] = new[] { Gdd03BuilderTier.Expert }
+        });
+        Assert.Equal(2m, f.Projects[0].WorkDone);
+        Assert.Equal(2, f.Projects[1].CompletedTurn);
     }
 }
