@@ -5,7 +5,8 @@ using System.Linq;
 
 namespace Statecraft.Game.Map.Collection
 {
-    /// <summary>Requested placement detail; both requests resolve to the same full original prefab. No far mesh is generated.</summary>
+    /// <summary>Requested placement detail; both requests resolve to the same full original prefab. No far mesh is generated
+    /// from an original: the town models' far-off copies (#2378) are ids of their own (<see cref="CollectionCatalog.FarCopy"/>).</summary>
     public enum CollectionDetail { Far, Near }
 
     /// <summary>Tal Heuberger's 73 originals from #507 and #336, pinned by docs/original-models.json.
@@ -268,9 +269,20 @@ namespace Statecraft.Game.Map.Collection
 
         // Categories describe placement; every model streams in a bundle of its own, except #1763's two figures, which share theirs.
         public static IEnumerable<string> Ids => Groups.SelectMany(b => b.Ids).Concat(Kits.TownModels.Ids);
+
+        /// <summary>The far-off copies of the 23 town building models (#2378; owner, 3 November 2026: "Ask Tal; allow them far
+        /// off only", then "I have Tal's OK; go ahead"): "&lt;id&gt;-far", each in a bundle of its own that carries only its
+        /// prefab (the derived mesh, baked colour map and material come in as dependencies, nothing of the original), made by
+        /// the editor's FarModelLevels beside the original. Not among <see cref="Ids"/>: those are Tal Heuberger's originals.
+        /// TownModelLayer asks for them beyond its close switch and for the originals below it.</summary>
+        public const string FarSuffix = Kits.TownModels.FarSuffix;
+        public static string FarCopy(string id) => id + FarSuffix;
+        public static bool IsFarCopy(string id) => id.EndsWith(FarSuffix, StringComparison.Ordinal)
+            && Kits.TownModels.Ids.Contains(id.Substring(0, id.Length - FarSuffix.Length));
         public static readonly IReadOnlyList<(string Bundle, string[] Ids)> Bundles =
             Ids.Where(id => !Groups.Single(g => g.Bundle == ArabArmies).Ids.Contains(id)).Select(id => ("collection-" + id, new[] { id }))
-                .Concat(Groups.Where(g => g.Bundle == ArabArmies)).ToArray();
+                .Concat(Groups.Where(g => g.Bundle == ArabArmies))
+                .Concat(Kits.TownModels.Ids.Select(id => ("collection-" + FarCopy(id), new[] { FarCopy(id) }))).ToArray();
         public static bool IsBuilding(string id) => Kits.TownModels.Ids.Contains(id)
             || Groups.Single(b => b.Bundle == Buildings).Ids.Contains(id);
 
@@ -292,6 +304,7 @@ namespace Statecraft.Game.Map.Collection
 
         /// <summary>The prefab's project path, which is also its name inside the bundle (lower case there).</summary>
         public static string PrefabPath(string id, CollectionDetail detail) =>
+            IsFarCopy(id) ? $"{BuildingsFolder}/{id.Substring(0, id.Length - FarSuffix.Length)}/{id}.prefab" :
             IsGenerated(id) ? $"{Folder}/{id}/{id}.prefab" :
             IsBuilding(id)
                 ? $"{BuildingsFolder}/{id}/{id}-stream.prefab"

@@ -1,0 +1,15 @@
+{
+    "tool": "FarModelLevels",
+    "source": "Assets/Art/Settlements/Prototype/Models/b17-stone-courtyard-house-v2/b17-stone-courtyard-house-v2.fbx",
+    "source_sha256": "01978a1f4051d1032c6c95ee30f790ea63dc966dcb14c9b204f4f34c355580bf",
+    "colour_map": "Assets/Art/Settlements/Prototype/Models/b17-stone-courtyard-house-v2/b17-stone-courtyard-house-v2_basecolor.jpg",
+    "colour_map_sha256": "e713e427ebd794d7f0a6a5a3abae2ec0f9bab7a4f5df3405bc4a7619224787ac",
+    "source_triangles": 5999,
+    "triangles": 399,
+    "target_triangles": 400,
+    "cell_px": 8,
+    "supersample": 3,
+    "sample_px": 512,
+    "atlas_px": 256,
+    "provenance": "Derived from Tal Heuberger's original (the source FBX and colour map above) by FarModelLevels: a subset of the model's own vertices (exact positions, none added or moved) and a colour map baked from the original's. Same licence, CC BY-NC-ND 4.0, credit Tal Heuberger; lighter far-off derived copy; owner confirms Tal's permission, 3 Nov 2026 (#2378)."
+}

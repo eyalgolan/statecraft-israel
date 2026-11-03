@@ -1,0 +1,15 @@
+{
+    "tool": "FarModelLevels",
+    "source": "Assets/Art/Settlements/Prototype/Models/b02b-tel-aviv-narrow-block-v2/b02b-tel-aviv-narrow-block-v2.fbx",
+    "source_sha256": "3b3c66bb62d97d678099cdbf94d10b21f65a6e01c97f038882f3b83ea76cdb7c",
+    "colour_map": "Assets/Art/Settlements/Prototype/Models/b02b-tel-aviv-narrow-block-v2/b02b-tel-aviv-narrow-block-v2_basecolor.jpg",
+    "colour_map_sha256": "cd317ce8c560fff93827fe69613424d908e0e184fbc58ac03b0aed3d06410289",
+    "source_triangles": 5999,
+    "triangles": 399,
+    "target_triangles": 400,
+    "cell_px": 8,
+    "supersample": 3,
+    "sample_px": 512,
+    "atlas_px": 256,
+    "provenance": "Derived from Tal Heuberger's original (the source FBX and colour map above) by FarModelLevels: a subset of the model's own vertices (exact positions, none added or moved) and a colour map baked from the original's. Same licence, CC BY-NC-ND 4.0, credit Tal Heuberger; lighter far-off derived copy; owner confirms Tal's permission, 3 Nov 2026 (#2378)."
+}

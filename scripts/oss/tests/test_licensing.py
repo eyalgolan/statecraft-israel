@@ -181,8 +181,22 @@ def test_tal_original_licensing_matches_manifest_exactly():
     assert all("owner confirms Tal's permission, 3 Nov 2026 (#2375)" in r["note"] and "FireTakeRetarget" in r["note"] for r in fire_rows)
     assert all((ROOT / r["glob"]).is_file() for r in fire_rows)
     assert not [r["glob"] for r in rules if r["glob"].endswith("/fire.anim") and r["glob"] not in fire]  # no enemy fire take yet (#2399)
-    assert len([r for r in independent if r["glob"] not in added and r not in music and r["glob"] not in fire]) == 50  # the hex-tile props row and the #1901 -light meshes among them
-    assert len(independent) == 97  # 146 originals + 97 independent grants = 243 total
+    far_globs = {
+        "unity/Assets/Art/Settlements/Prototype/Models/*/*-far.asset",
+        "unity/Assets/Art/Settlements/Prototype/Models/*/*-far.png",
+    }
+    far_rows = [r for r in independent if r["glob"] in far_globs]
+    assert len(far_rows) == 2 and {r["glob"] for r in far_rows} == far_globs
+    assert all(r["licence"] == "CC-BY-NC-ND-4.0" and r["artist"] == "Tal Heuberger" for r in far_rows)
+    licensing = (ROOT / "LICENSING.md").read_text(encoding="utf-8")
+    far_licensing_rows = [next(line for line in licensing.splitlines() if line.startswith(prefix)) for prefix in (
+        "| New 22 October buildings, tents and props ", "| Original 3D model files by Tal Heuberger |")]
+    assert all("`*-far.asset`" in row and "`*-far.png`" in row for row in far_licensing_rows)
+    assert all("[CC BY-NC-ND 4.0]" in row and "Tal Heuberger" in row for row in far_licensing_rows)
+    # The hex-tile props row, the #1901 -light meshes and the two #2378 far-off copy rows (*-far.asset, *-far.png; owner,
+    # 3 November 2026, confirms Tal's permission) among them.
+    assert len([r for r in independent if r["glob"] not in added and r not in music and r["glob"] not in fire]) == 52
+    assert len(independent) == 99  # 146 originals + 99 independent grants = 245 total
     for row in selected:
         assert row["licence"] == "CC-BY-NC-ND-4.0"
         assert row["artist"] == "Tal Heuberger"

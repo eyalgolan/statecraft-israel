@@ -67,10 +67,24 @@ public class CollectionImportTests
         var ids = CollectionCatalog.Ids.ToList();
         Assert.AreEqual(96, ids.Count);
         Assert.AreEqual(ids.Count, ids.Distinct().Count(), "an id in two bundles");
-        Assert.AreEqual(95, CollectionCatalog.Bundles.Count,
-            "73 independent originals, the 1948 soldier's rigged copy (#2384), #1763's shared generated bundle and one bundle for each later generated model (#2083's two weapons and #2084's pose source among them)");
+        Assert.AreEqual(118, CollectionCatalog.Bundles.Count,
+            "73 independent originals, the 1948 soldier's rigged copy (#2384), #1763's shared generated bundle, one bundle for each later generated model (#2083's two weapons and #2084's pose source among them) and one for each of the 23 town models' far-off copies (#2378)");
         Assert.IsTrue(CollectionCatalog.Bundles.Where(b => b.Bundle != CollectionCatalog.ArabArmies)
             .All(b => b.Ids.Length == 1 && b.Bundle == "collection-" + b.Ids[0]));
+        // #2378: each town model's far-off copy streams in a bundle of its own; the copies are not among the originals.
+        var farCopies = Statecraft.Game.Map.Kits.TownModels.Ids.Select(CollectionCatalog.FarCopy).ToList();
+        Assert.AreEqual(23, farCopies.Count);
+        CollectionAssert.IsEmpty(farCopies.Intersect(ids).ToList(), "a far-off copy among the originals");
+        foreach (var far in farCopies)
+        {
+            Assert.IsTrue(CollectionCatalog.IsFarCopy(far), far);
+            Assert.AreEqual("collection-" + far, CollectionCatalog.BundleOf(far), far);
+            Assert.IsFalse(CollectionCatalog.IsBuilding(far), far + " is no original building");
+            StringAssert.EndsWith("/" + far + ".prefab", CollectionCatalog.PrefabPath(far, CollectionDetail.Far), far);
+            Assert.AreEqual(CollectionCatalog.PrefabPath(far, CollectionDetail.Far), CollectionCatalog.PrefabPath(far, CollectionDetail.Near), far);
+        }
+        Assert.IsFalse(CollectionCatalog.IsFarCopy("b07-kibbutz-dining-hall-v2"));
+        Assert.IsFalse(CollectionCatalog.IsFarCopy("b11-shikun-housing-v2-far"), "a special building has no far-off copy");
         CollectionAssert.AreEqual(new[] { 22, 13, 6, 10, 5, 2, 4, 4, 4, 2, 1 }, CollectionCatalog.Groups.Select(g => g.Ids.Length));
         CollectionAssert.AreEqual(GeneratedInfantry, CollectionCatalog.Bundles.Single(b => b.Bundle == CollectionCatalog.ArabArmies).Ids);
         Assert.AreEqual(28, CollectionCatalog.Animated.Count);
@@ -334,8 +348,9 @@ public class CollectionImportTests
         {
             var entries = ids.SelectMany(id => new[] { CollectionDetail.Far, CollectionDetail.Near }.Select(d => CollectionCatalog.PrefabPath(id, d))).ToArray();
             foreach (var e in entries) Assert.IsNotNull(AssetDatabase.LoadAssetAtPath<GameObject>(e), e);
-            var folders = ids.Select(id => CollectionCatalog.IsBuilding(id)
-                ? $"Assets/Art/Settlements/Prototype/Models/{id}/" : Dir(id) + "/").ToArray();
+            // A town model's far-off copy (#2378) lives beside its original.
+            var folders = ids.Select(id => CollectionCatalog.IsBuilding(id) || CollectionCatalog.IsFarCopy(id)
+                ? $"Assets/Art/Settlements/Prototype/Models/{(CollectionCatalog.IsFarCopy(id) ? id.Substring(0, id.Length - CollectionCatalog.FarSuffix.Length) : id)}/" : Dir(id) + "/").ToArray();
             var deps = AssetDatabase.GetDependencies(entries, true);
             var outside = deps.Where(d => !folders.Any(f => d.StartsWith(f, StringComparison.Ordinal))
                 && !d.StartsWith("Packages/com.unity.render-pipelines.", StringComparison.Ordinal)
@@ -348,11 +363,13 @@ public class CollectionImportTests
     }
 
     /// <summary>The paths of <paramref name="closure"/> that belong to the model <paramref name="id"/>: the files of its folder
-    /// (the collection's, or the town buildings' for a house).</summary>
+    /// (the collection's, or the town buildings' for a house), but not those of its far-off copy (#2378: a bundle of its
+    /// own, beside the original).</summary>
     static string[] FilesOf(string id, IEnumerable<string> closure)
     {
         string source = CollectionCatalog.SourceModelPath(id), folder = source.Substring(0, source.LastIndexOf('/') + 1);
-        return closure.Where(p => p.StartsWith(folder, StringComparison.Ordinal)).ToArray();
+        string farCopy = folder + CollectionCatalog.FarCopy(id) + ".";
+        return closure.Where(p => p.StartsWith(folder, StringComparison.Ordinal) && !p.StartsWith(farCopy, StringComparison.Ordinal)).ToArray();
     }
 
     /// <summary>Every placed generated model (Tal Heuberger's figures, props and houses, #756) reaches the player only through its own
@@ -426,8 +443,10 @@ public class CollectionImportTests
         // Each model's source file, written out here rather than read from CollectionCatalog.SourceModelPath (which Builds
         // uses): a town building's <id>.fbx in the buildings' folder, the R35's compatibility FBX, every other model's
         // <id>.fbx in its own Collection folder (never a -near.fbx or -far.fbx). #2084's pose source builds only its prefab
-        // (the clip comes in as its dependency, never the export's mesh as an entry).
+        // (the clip comes in as its dependency, never the export's mesh as an entry); so does a town model's far-off copy
+        // (#2378: its derived mesh, baked map and material come in as dependencies, never the original's FBX).
         string[] Entries(string id) => CollectionCatalog.IsFigurePose(id) ? new[] { $"{Dir(id)}/{id}.prefab" }
+            : CollectionCatalog.IsFarCopy(id) ? new[] { $"{CollectionCatalog.BuildingsFolder}/{id.Substring(0, id.Length - CollectionCatalog.FarSuffix.Length)}/{id}.prefab" }
             : new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near), Source(id) };
         string Source(string id) => CollectionCatalog.IsBuilding(id) ? $"{CollectionCatalog.BuildingsFolder}/{id}/{id}.fbx"
             : id == CollectionCatalog.SyrianR35 ? $"{Dir(id)}/{id}-compatibility.fbx" : Model(id);

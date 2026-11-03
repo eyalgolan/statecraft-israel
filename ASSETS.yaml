@@ -1279,6 +1279,21 @@ rules:
     source: "Derived from Tal Heuberger's originals (the FBX files in the generated-1948-01 to 05 house folders, listed in the ASSETS.yaml rows for unity/Assets/Art/Settlements/Prototype/Models/generated-1948-0N-*/*.fbx) by unity/Assets/Editor/HexTiles/HexHouseLevels.cs: a quadric-error half-edge collapse that keeps a subset of their own vertices (exact positions, UVs and normals) and adds none. Each <id>-light.json beside the mesh records the source FBX path, its SHA-256, the settings and the triangle counts."
     status: verified
     note: "Same licence as the originals, CC BY-NC-ND 4.0, credit Tal Heuberger, with Tal's permission for these lighter derived meshes (30 October 2026, recorded by the owner in PR #1994). The prefabs and JSON records beside them retain the code-row terms. Drawn only in the editor, on the hex-tile boards (HexModels.HouseLevels); no streamed bundle carries them."
+  # Far-off copies of the 23 town building models (#2378): derived meshes and colour maps, made in the editor from the FBX and JPG rows above by unity/Assets/Editor/FarModelLevels.cs.
+  - glob: "unity/Assets/Art/Settlements/Prototype/Models/*/*-far.asset"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    artist: "Tal Heuberger"
+    source: "Derived from Tal Heuberger's originals (the FBX files of the 23 town models that unity/Assets/Scripts/Map/Kits/TownModels.cs lists, in the ASSETS.yaml rows for unity/Assets/Art/Settlements/Prototype/Models/<id>/<id>.fbx) by unity/Assets/Editor/FarModelLevels.cs: a quadric-error edge collapse to at most 400 triangles that keeps a subset of their own vertices (exact positions) and adds none. Each <id>-far.json beside the mesh records the source FBX and colour map paths, their SHA-256, the settings and the triangle counts."
+    status: verified
+    note: "lighter far-off derived copy; owner confirms Tal's permission, 3 Nov 2026 (#2378). Same licence as the originals, CC BY-NC-ND 4.0, credit Tal Heuberger. Drawn by TownModelLayer beyond its 40 km close switch only; below it the originals draw, unchanged (#1273). Streamed in a bundle of its own after the first frame. The prefab, material and JSON record beside it retain the code-row terms."
+  - glob: "unity/Assets/Art/Settlements/Prototype/Models/*/*-far.png"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    artist: "Tal Heuberger"
+    source: "Baked from Tal Heuberger's delivered colour maps (the <id>_basecolor.jpg files beside them, in the ASSETS.yaml rows above) by unity/Assets/Editor/FarModelLevels.cs: each far triangle's 8x8 texel cell of a 256 texel wide map samples the colour of the nearest point of the original surface. The <id>-far.json beside it records the source colour map's path and SHA-256."
+    status: verified
+    note: "lighter far-off derived copy; owner confirms Tal's permission, 3 Nov 2026 (#2378). Same licence as the originals, CC BY-NC-ND 4.0, credit Tal Heuberger. The colour map of the far mesh beside it, drawn beyond the 40 km close switch only."
   - glob: "unity/Assets/Art/Collection/generated-1948-06-bedouin-b-enclosed-striped-tent/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true

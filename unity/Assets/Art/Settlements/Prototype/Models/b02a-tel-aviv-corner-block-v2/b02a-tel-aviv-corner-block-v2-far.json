@@ -1,0 +1,15 @@
+{
+    "tool": "FarModelLevels",
+    "source": "Assets/Art/Settlements/Prototype/Models/b02a-tel-aviv-corner-block-v2/b02a-tel-aviv-corner-block-v2.fbx",
+    "source_sha256": "d7ea68f3167c99bee77f246116b5c11f64c15fb20d5807af497ccef8bc2dd57d",
+    "colour_map": "Assets/Art/Settlements/Prototype/Models/b02a-tel-aviv-corner-block-v2/b02a-tel-aviv-corner-block-v2_basecolor.jpg",
+    "colour_map_sha256": "142cdaa69584d105bcfe94a33c9dd48088f6d635328a95cebc9096784f6407e1",
+    "source_triangles": 6000,
+    "triangles": 400,
+    "target_triangles": 400,
+    "cell_px": 8,
+    "supersample": 3,
+    "sample_px": 512,
+    "atlas_px": 256,
+    "provenance": "Derived from Tal Heuberger's original (the source FBX and colour map above) by FarModelLevels: a subset of the model's own vertices (exact positions, none added or moved) and a colour map baked from the original's. Same licence, CC BY-NC-ND 4.0, credit Tal Heuberger; lighter far-off derived copy; owner confirms Tal's permission, 3 Nov 2026 (#2378)."
+}

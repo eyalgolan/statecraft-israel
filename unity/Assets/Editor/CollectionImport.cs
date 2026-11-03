@@ -376,12 +376,14 @@ namespace Statecraft.Game.EditorTools
         public static string BundleCache(BuildTarget target) => Path.Combine("Library", "CollectionBundles", target.ToString());
 
         /// <summary>The bundles: each catalog bundle carries its models' far and near prefabs and source model files
-        /// (CollectionCatalog.SourceModelPath); their meshes, clips, controllers, materials and colour maps come in as dependencies.</summary>
+        /// (CollectionCatalog.SourceModelPath); their meshes, clips, controllers, materials and colour maps come in as dependencies.
+        /// A town model's far-off copy (#2378) carries only its prefab: its derived mesh, baked map and material follow as
+        /// dependencies, and nothing of the original.</summary>
         public static AssetBundleBuild[] Builds() => CollectionCatalog.Bundles.Select(b => new AssetBundleBuild
         {
             assetBundleName = b.Bundle,
             // The point-fire pose source carries only its prefab (and the clip it references), never the export's mesh (#2084).
-            assetNames = b.Ids.SelectMany(id => CollectionCatalog.IsFigurePose(id) ? new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far) }
+            assetNames = b.Ids.SelectMany(id => CollectionCatalog.IsFigurePose(id) || CollectionCatalog.IsFarCopy(id) ? new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far) }
                 : new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near), CollectionCatalog.SourceModelPath(id) }).Distinct().ToArray(),
         }).ToArray();
 
