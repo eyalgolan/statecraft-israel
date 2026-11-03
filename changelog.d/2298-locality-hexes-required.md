@@ -1,0 +1,1 @@
+- GDD 0.3 content with `regions.yaml` but no `map/locality_hexes.yaml` is now refused with an error that names the missing file, instead of "unknown place id" on the region rows (#2298). The shipped game already has the file.
