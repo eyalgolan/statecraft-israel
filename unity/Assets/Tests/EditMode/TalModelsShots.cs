@@ -30,7 +30,7 @@ public class TalModelsShots
     RenderTexture? rt; PanelSettings? ps;
     GameRoot root = null!;
     Action<string, CollectionDetail, Action<GameObject?>>? savedRural, savedPeople, savedSpecial, savedUnits, savedLandmark;
-    Func<string, CollectionDetail, Action<GameObject?>, IDisposable>? savedTown;
+    Func<string, CollectionDetail, Action<GameObject?>, IDisposable>? savedTown, savedWhole;
 
     [SetUp]
     public void Prepare()
@@ -39,6 +39,7 @@ public class TalModelsShots
         Directory.CreateDirectory(ShotDir); Directory.CreateDirectory(CivMovementShots.ShotDir);
         savedRural = RuralLife.Request; savedPeople = CivilianPeople.Request; savedSpecial = SpecialBuildingModels.Request;
         savedUnits = UnitFigures.Source; savedTown = TownModelLayer.ModelAcquire; savedLandmark = TownLandmarks.Request;
+        savedWhole = TownLandmarks.Acquire;
     }
 
     [TearDown]
@@ -46,6 +47,7 @@ public class TalModelsShots
     {
         RuralLife.Request = savedRural!; CivilianPeople.Request = savedPeople!; SpecialBuildingModels.Request = savedSpecial!;
         UnitFigures.Source = savedUnits; TownModelLayer.ModelAcquire = savedTown!; TownLandmarks.Request = savedLandmark!;
+        TownLandmarks.Acquire = savedWhole!;
         EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         if (ps != null) Object.DestroyImmediate(ps);
         if (rt != null) { rt.Release(); Object.DestroyImmediate(rt); }
@@ -194,6 +196,95 @@ public class TalModelsShots
         CivMovementShots.Shot(rt!, Path.Combine("..", "tal-models-shots", $"houses-{town}-{(hebrew ? "he" : "en")}"));
         Debug.Log($"SHOT houses {town} at {at} from {CameraController.MinDistance:F0} m: {models}");
     }
+
+    /// <summary>The median time (ms) of <paramref name="n"/> renders of the map camera at the shots' size, each waited for
+    /// on the GPU by a one-pixel read back, after two unmeasured renders. An editor (Metal) figure, for before and after on
+    /// the same machine, not a WebGL frame time.</summary>
+    static float RenderMs(int n)
+    {
+        var cam = Camera.main;
+        var frame = new RenderTexture(CivMovementShots.Width, CivMovementShots.Height, 24, RenderTextureFormat.ARGB32);
+        var pixel = new Texture2D(1, 1, TextureFormat.RGBA32, false);
+        var before = cam.targetTexture; var ms = new List<float>();
+        try
+        {
+            cam.targetTexture = frame;
+            for (int i = 0; i < n + 2; i++)
+            {
+                var clock = System.Diagnostics.Stopwatch.StartNew();
+                cam.Render();
+                RenderTexture.active = frame; pixel.ReadPixels(new Rect(0, 0, 1, 1), 0, 0); pixel.Apply(); RenderTexture.active = null;
+                if (i >= 2) ms.Add((float)clock.Elapsed.TotalMilliseconds);
+            }
+        }
+        finally
+        {
+            cam.targetTexture = before; RenderTexture.active = null;
+            frame.Release(); Object.DestroyImmediate(frame); Object.DestroyImmediate(pixel);
+        }
+        ms.Sort();
+        return ms[ms.Count / 2];
+    }
+
+    /// <summary>Owner ruling, 2 November 2026, "Yes, small buildings at every zoom": Tel Aviv, Jerusalem, Haifa and Jaffa from
+    /// the opening view (the game's own camera, 90 km), the widest zoom (diorama02, 250 km), and each city at 90 km and
+    /// 30 km, with the town layers' requests (whole towns and buildings) answered with the editor's prefabs, as the player's
+    /// stream would answer them. Each frame logs its draw cost: the building models' instances, triangles and instanced
+    /// draws (TownModelLayer), the whole-town models in view and their triangles (TownLandmarks), and the median render time.
+    /// Run on main and on this branch for the before and after.</summary>
+    IEnumerator BigCities(bool hebrew)
+    {
+        Directory.CreateDirectory(Path.Combine(CivMovementShots.ShotDir, "..", "big-cities-shots"));
+        yield return Boot(hebrew);
+        string lang = hebrew ? "he" : "en";
+        var map = Object.FindFirstObjectByType<MapScene>();
+        TownModelLayer.ModelAcquire = (id, detail, done) => { done(Prefab(id, detail)); return new NoLease(); };
+        TownLandmarks.Acquire = (id, detail, done) => { done(Prefab(id, detail)); return new NoLease(); };
+        Drop(map, TownLandmarks.Name);
+        var landmarks = TownLandmarks.ShowAt(map, root.Bridge!.State.Date, Array.Empty<Placement>(), root.Bridge.Content)!;
+        var layer = Object.FindFirstObjectByType<TownModelLayer>();
+        Assert.IsNotNull(layer, "the town layer");
+        for (int i = 0; i < 3; i++) { Camera.main.Render(); yield return null; }
+        IEnumerator Frame(string name)
+        {
+            for (int i = 0; i < 3; i++) { Camera.main.Render(); yield return null; }
+            CivMovementShots.Shot(rt!, Path.Combine("..", "big-cities-shots", $"{name}-{lang}"));
+            int drawn = layer.LastDrawn, draws = layer.LastDraws; long tris = layer.LastTriangles;
+            var cam = Camera.main;
+            landmarks.Choose(default, cam);
+            var planes = GeometryUtility.CalculateFrustumPlanes(cam);
+            int wholes = 0; long wholeTris = 0;
+            foreach (var r in landmarks.GetComponentsInChildren<MeshRenderer>(true))
+            {
+                if (r.forceRenderingOff || !r.enabled || !r.gameObject.activeInHierarchy || !GeometryUtility.TestPlanesAABB(planes, r.bounds)) continue;
+                var mesh = r.GetComponent<MeshFilter>()?.sharedMesh;
+                if (mesh == null) continue;
+                wholes++; for (int k = 0; k < mesh.subMeshCount; k++) wholeTris += mesh.GetIndexCount(k) / 3;
+            }
+            float ms = RenderMs(10);
+            Debug.Log(FormattableString.Invariant(
+                $"COST {name}-{lang} distance={TownModelLayer.ViewDistance(cam):F0} buildings={drawn} building_tris={tris} building_draws={draws} whole_towns={wholes} whole_tris={wholeTris} render_ms={ms:F2}"));
+        }
+        // The game's own opening view first, untouched.
+        yield return Frame("opening");
+        PromoPose.Diorama02.Apply(Camera.main.GetComponent<CameraRig>(), map.Frame);
+        yield return Frame("widest");
+        foreach (var id in new[] { "tel_aviv", "jerusalem", "haifa", "jaffa" })
+        {
+            var c = map.KitFootprints.First(f => f.id == id).centre;
+            var at = new Vector3(c.x, 0f, c.y);
+            at.y = map.Terrain.SampleHeight(at) + map.Terrain.transform.position.y;
+            foreach (var km in new[] { 90, 30 })
+            {
+                Look(at, km * 1000f);
+                yield return Frame($"{id.Replace('_', '-')}-{km}km");
+            }
+        }
+        Debug.Log("LANDMARKS placed: " + string.Join(", ", landmarks.Placed.Select(p => p.Key + "=" + p.Model)));
+    }
+
+    [UnityTest] public IEnumerator BigCitiesEnglish() { yield return BigCities(false); }
+    [UnityTest] public IEnumerator BigCitiesHebrew() { yield return BigCities(true); }
 
     /// <summary>#2085: a town from the far zoom (50 km, inside the 40 km+ band where whole-town models stand), the camera on the
     /// centre of the town's kit footprint, 15 May 1948. The landmarks' requests are answered with the editor's prefabs, as the
