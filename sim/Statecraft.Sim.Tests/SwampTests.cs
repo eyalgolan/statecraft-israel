@@ -127,7 +127,7 @@ options:
         Assert.Empty(r.Rejected);
         Assert.Equal(("marsh", (int?)id, 2), (r.State.Sites["marsh"].Site, r.State.Sites["marsh"].Unit, r.State.Sites["marsh"].TurnsLeft));
         Assert.Equal(Step(c, s).State.Treasury - 2, r.State.Treasury, 9);
-        Assert.Contains(r.Why, x => x.System == "map" && x.Message == "Marsh: a group of halutzim began draining the swamp, cost IL 2.0m");
+        Assert.Contains(r.Why, x => x.System == "map" && x.Message == "Marsh: a group of halutzim began draining the swamp, cost IL\u00A02.0m");
 
         var mid = Step(c, r.State);
         Assert.Null(mid.State.Sites["marsh"].BuiltOn);

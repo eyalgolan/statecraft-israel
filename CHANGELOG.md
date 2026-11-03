@@ -27,7 +27,7 @@ checks this (see `CONTRIBUTING.md`).
 - Umm Rashrash (future Eilat) is on the map as an optional outpost, named in English and Hebrew (Refs #1007).
   It has no 1948 population and gives no bonus or points; the objective-1 bonus waits on #752. The row is a draft with agent-checked Hebrew.
 - Hebrew event cards: a native speaker read the 38 agent-checked cards (#1065). The four 1949 armistice cards and the
-  one-million and Altalena cards take his wording, and 32 cards lose their `text_he_review: agent-checked` flag.
+  one-million and Altalena cards take their wording, and 32 cards lose their `text_he_review: agent-checked` flag.
 - Hebrew event cards: the owner read the Hebrew of `altalena`, `first_new_yishuv`, `burma_road_complete` and
   `railway_complete` next to the English and approved all four as written (#1065), so they lose their
   `text_he_review: agent-checked` flag. No event card is flagged any more.

@@ -138,6 +138,10 @@ public class BorderCivTests
         Assert.AreEqual(BorderVariant.Legacy, MapBorders.VariantRequested("https://x.invalid/?bordervariant=legacy", new string[0], webgl: true));
         Assert.AreEqual(BorderVariant.Legacy, MapBorders.VariantRequested("https://x.invalid/?golden&bordervariant=Legacy#x", new string[0], webgl: true));
         Assert.AreEqual(BorderVariant.Legacy, MapBorders.VariantRequested(null, new[] { "Statecraft", "-bordervariant", "legacy" }, webgl: false));
+        // #2265: only the query is read; a flag in the fragment is not a query parameter.
+        Assert.AreEqual(BorderVariant.A2, MapBorders.VariantRequested("https://x.invalid/?x=1#&bordervariant=legacy", new string[0], webgl: true));
+        Assert.AreEqual(BorderVariant.A2, MapBorders.VariantRequested("https://x.invalid/#?bordervariant=b", new string[0], webgl: true));
+        Assert.AreEqual(BorderVariant.B, MapBorders.VariantRequested("https://x.invalid/?bordervariant=b#&bordervariant=c", new string[0], webgl: true));
         Assert.AreEqual(BorderVariant.A, MapBorders.VariantRequested("https://x.invalid/?bordervariant=a", new string[0], webgl: true));
         Assert.AreEqual(BorderVariant.B, MapBorders.VariantRequested("https://x.invalid/?golden&bordervariant=b", new string[0], webgl: true));
         Assert.AreEqual(BorderVariant.C, MapBorders.VariantRequested("https://x.invalid/?bordervariant=C#x", new string[0], webgl: true));

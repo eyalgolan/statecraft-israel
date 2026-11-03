@@ -191,7 +191,7 @@ namespace Statecraft.Game.Map
             string? v = null;
             if (webgl)
             {
-                var m = System.Text.RegularExpressions.Regex.Match(url ?? "", @"[?&]bordervariant=((?i:legacy|[abc]2?))(?=[&#]|$)");
+                var m = System.Text.RegularExpressions.Regex.Match(UrlFlags.BeforeFragment(url), @"[?&]bordervariant=((?i:legacy|[abc]2?))(?=[&#]|$)");
                 if (m.Success) v = m.Groups[1].Value;
             }
             else

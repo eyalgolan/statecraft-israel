@@ -91,7 +91,7 @@ public class MapActionUiTests
         var tlv = C.SettlementHexes.Single(s => s.Id == "tel_aviv");
         info.Show(tlv.Q, tlv.R);
         Assert.IsTrue(ui.Q<Button>("build-camp").enabledSelf, ui.Q<Label>("info-reason").text);
-        Assert.AreEqual("Place a transit camp (IL 1.5m)", ui.Q<Button>("build-camp").text);
+        Assert.AreEqual("Place a transit camp (IL\u00A01.5m)", ui.Q<Button>("build-camp").text);
         ui.Press("build-camp");
         Assert.AreEqual("Ordered: A transit camp, at End turn", ui.Q<Label>("info-placement").text);
         bridge.EndTurn();

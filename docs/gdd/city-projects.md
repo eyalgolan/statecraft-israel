@@ -11,7 +11,7 @@ As a player of the MVP, I want to build housing and industry in a city over seve
 - A transit camp costs IL 1.5m, takes 1 turn and adds 5 units of capacity but lowers the condition by 0.02 (unitless). It needs the ma'abarot policy, which carries its sourced date [S4] (R-PROJ-001).
 - Industry costs IL 2m, takes 6 turns and adds 5 units of job slots (R-PROJ-003).
 - `StartProject(kind, city, q, r)` goes on a land hex within 1 hex of the city's settlement hex that has no placement or other project. It is paid at once and borrows what the Treasury lacks. At most 2 projects (unitless) start a turn, nationally. It costs 1 Attention (R-PROJ-001).
-- A project needs no workers (R-PROJ-001).
+- A project needs no workers (R-PROJ-001) (`gdd-0.1` today; `gdd-0.3` adds builders, owner 3 November 2026 [S7]; under `gdd-0.3`, at most one project start per city per turn, and the national `map_actions_per_turn` 2 (unitless) still applies, "One per city, plus 2 nationally" (owner, 3 November 2026)).
 - `CancelProject(id)` stops a project being built; the Money is not returned. It costs 0.5 Attention (R-PROJ-002).
 - Construction resolves on the turn's construction step, after the pioneer work; the turn of the order counts. A finished project adds its capacity, condition and job slots once (R-PROJ-003).
 - A specialised project, such as the winery, needs a local resource: it starts only in a city whose `cities.yaml` row lists that resource with its sources, and otherwise it is an ordinary project. The winery needs vineyards, adds 10 units of job slots for IL 2m over 6 turns (design values, `Q-SPEC-2`) and goes in Rishon LeZion, its vineyards flagged `to_verify` (owner, 20 October 2026, on #737 [S6], replacing the 18 October default of Zikhron Ya'akov [S5]; R-PROJ-005).
@@ -43,6 +43,7 @@ As a player of the MVP, I want to build housing and industry in a city over seve
 - [S4] The ma'abara date and the map action costs, content/rules.yaml
 - [S5] The owner's ruling on #737, 18 October 2026, https://github.com/eyalgolan/statecraft-israel/issues/737#issuecomment-6249501060, checked 2026-10-18
 - [S6] The owner's ruling on #737, 20 October 2026, https://github.com/eyalgolan/statecraft-israel/issues/737#issuecomment-6296386086, checked 2026-10-20
+- [S7] Owner's 3 November 2026 ruling on #1700, "Builders in the MVP (Recommended)", [GDD later rulings, 3 November 2026](../GDD.md#later-rulings-3-november-2026).
 
 ## Open questions
 

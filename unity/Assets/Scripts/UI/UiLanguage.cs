@@ -29,13 +29,13 @@ namespace Statecraft.Game.UI
         /// value the language buttons do not offer is English too.</summary>
         public static string AtStart(string? stored, string? url, string[] args, bool webgl)
         {
-            bool flag = webgl ? AnyQuery.IsMatch(url ?? "") : Array.IndexOf(args, "-" + Flag) >= 0;
+            bool flag = webgl ? AnyQuery.IsMatch(Boot.UrlFlags.BeforeFragment(url)) : Array.IndexOf(args, "-" + Flag) >= 0;
             return flag ? Requested(url, args, webgl) : Array.Exists(LanguageButtons.All, l => l.language == stored) ? stored! : English;
         }
 
         public static string Requested(string? url, string[] args, bool webgl)
         {
-            if (webgl) return HebrewQuery.IsMatch(url ?? "") ? Hebrew : English;
+            if (webgl) return HebrewQuery.IsMatch(Boot.UrlFlags.BeforeFragment(url)) ? Hebrew : English;
             var i = Array.IndexOf(args, "-" + Flag);
             return i >= 0 && i + 1 < args.Length && args[i + 1] == Hebrew ? Hebrew : English;
         }

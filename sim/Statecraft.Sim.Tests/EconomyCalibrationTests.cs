@@ -75,7 +75,7 @@ public class EconomyCalibrationTests
     {
         var perYear = C.Rules.TaxPerCapitaPerYear * On(new DateTime(1950, 10, 1), s => s.TotalPopulation);
         Assert.True(Math.Abs(perYear - 60) / 60 <= DebtTolerance,
-            $"[consistency: tax_per_capita_per_year is derived from this anchor] tax revenue {F(perYear)}m a year; budget IL 60m");
+            $"[consistency: tax_per_capita_per_year is derived from this anchor] tax revenue {F(perYear)}m a year; budget IL\u00A060m");
     }
 
     [Fact]

@@ -40,6 +40,21 @@ public class HebrewUiTests
 
     // --- The flag ---------------------------------------------------------------------------------------------------
 
+    // #2265: only the query is read; a flag in the fragment (after the first '#') is not a query parameter.
+    [Test]
+    public void ALanguageFlagAfterTheFragmentIsIgnored()
+    {
+        var none = new string[0];
+        foreach (var q in new[] { "?x=1#&lang=he", "#?lang=he" })
+            Assert.AreEqual(UiLanguage.English, UiLanguage.Requested("http://localhost:8000/index.html" + q, none, webgl: true), q);
+        // A fragment-only flag is no flag: the stored choice stands, in both directions.
+        Assert.AreEqual(UiLanguage.Hebrew, UiLanguage.AtStart(UiLanguage.Hebrew, "http://localhost:8000/index.html#&lang=en", none, webgl: true));
+        Assert.AreEqual(UiLanguage.English, UiLanguage.AtStart(null, "http://localhost:8000/index.html?x=1#?lang=he", none, webgl: true));
+        // The query still counts when a fragment follows.
+        Assert.AreEqual(UiLanguage.Hebrew, UiLanguage.Requested("http://localhost:8000/index.html?lang=he#x", none, webgl: true));
+        Assert.AreEqual(UiLanguage.English, UiLanguage.AtStart(UiLanguage.Hebrew, "http://localhost:8000/index.html?lang=en#x", none, webgl: true));
+    }
+
     [Test]
     public void HebrewIsOnlyAskedForByHand()
     {
@@ -357,7 +372,7 @@ public class HebrewUiTests
     {
         foreach (var s in new[] { "תור 1", "5  מלחמה כוללת", "קואליציה: 30 מתוך 37", "‏…אנו", "العربية" })
             Assert.IsTrue(UiDirection.RightToLeft(s), s);
-        foreach (var s in new[] { "15 May 1948", "IL 20.0m", "+5%", "-5%", "30%", "", "David Ben-Gurion", "Mapai :מפלגה", "$40.0m", "1948" })
+        foreach (var s in new[] { "15 May 1948", "IL\u00A020.0m", "+5%", "-5%", "30%", "", "David Ben-Gurion", "Mapai :מפלגה", "$40.0m", "1948" })
             Assert.IsFalse(UiDirection.RightToLeft(s), s);
         Assert.IsFalse(UiDirection.RightToLeft(null));
     }
@@ -510,6 +525,8 @@ public class HebrewUiTests
         ("settings-quality-high", "settings.quality.high"), ("settings-quality-low", "settings.quality.low"),
         ("settings-sound-label", "settings.sound"), ("settings-sound-off", "settings.sound.off"),
         ("settings-sound-low", "settings.sound.low"), ("settings-sound-high", "settings.sound.high"),
+        ("settings-music-label", "settings.music"), ("settings-music-off", "settings.music.off"),
+        ("settings-music-low", "settings.music.low"), ("settings-music-high", "settings.music.high"),
         ("settings-advisors-label", "settings.advisors"), ("settings-language-label", "settings.language"),
         ("settings-uiscale-label", "settings.uiscale"), ("settings-companion-label", "settings.companion"),   // #1119
         ("settings-community-label", "settings.community"), ("settings-star", "community.star"), ("start-star", "community.star"),
