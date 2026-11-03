@@ -178,7 +178,7 @@ Check: manual.
 | `order.unknown` | Unknown {0} | Fixed in #630 (kind only) | UI-07 |
 | `order.no_attention` | Not enough attention (need {0:0.0}, have {1:0.0}) | Mixed, no next step, repeats "Not" after "Not done:" | UI-05 |
 | `save.write_failed` | Your game could not be saved. | Weak, no why or next step | UI-05 |
-| `info.hint` | Click the map, or Tab to it and press Enter, to inspect a hex; right-drag to move the map | Exception to settle | UI-08 |
+| `info.hint` | Click a unit, then a hex, to move it. Click the map, or Tab and Enter, to inspect a hex; drag to move the map | Exception to settle | UI-08 |
 | `cabinet.majority` | Majority: {0} {1} | Reads as a holding; candidate "Needed for a majority: {0} {1}" | UI-03 |
 | `hud.say_point` | {0:0} point | Good, the two-key plural (with `hud.say_points`) | UI-17 |
 | `hud.caption.support` | Public support | Sentence case since #630 | UI-02 |
