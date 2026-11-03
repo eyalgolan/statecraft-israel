@@ -7,4 +7,4 @@
   pauses, one line a city for each, with a count for two or more. Staffing can take its worker from a city's automatic jobs, and a staffed worker cannot be sent to training.
   The current game (gdd-0.1) is unchanged, though `projects.yaml` gained
   the gdd-0.3 row, so older saves show the "different game content" notice. The Hebrew workshop name and turn-report lines
-  are agent drafts awaiting a native read. The hex panel order and the b21 map model come later.
+  are agent drafts awaiting a native read. The b21 map model comes later.
