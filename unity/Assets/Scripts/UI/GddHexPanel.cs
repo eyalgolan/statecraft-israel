@@ -377,8 +377,9 @@ namespace Statecraft.Game.UI
             var words = refusals.Select(x => x == null ? null : ReasonText(x, text, c, townName)).ToList();
             // Every kind refused for one reason (not land, a placement there, the turn's limit): said once, with no buttons,
             // as the map actions do (#398). A kind this city lacks the resource for (R-PROJ-005: the winery outside Rishon
-            // LeZion) does not split that line into one per kind.
-            var shared = words.Where((x, i) => refusals[i]?.Kind != "no_resource").ToList();
+            // LeZion) does not split that line into one per kind, nor does the gdd-0.3 housing repair off its city's own hex
+            // (R-HOUSE-006: repair_city_hex comes before the shared reasons, so it would hide them on every other hex).
+            var shared = words.Where((x, i) => refusals[i]?.Kind != "no_resource" && refusals[i]?.Kind != "repair_city_hex").ToList();
             if (words.All(x => x != null) && shared.Count > 0 && shared.Distinct().Count() == 1) { Line(list, "city-project-reason", shared[0]!); return; }
             // A kind the sim refuses shows its reason alone, which names the kind (no disabled Build above it: one line, not two).
             for (int i = 0; i < c.ProjectKinds.Count; i++)
