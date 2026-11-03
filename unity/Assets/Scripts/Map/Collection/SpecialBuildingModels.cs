@@ -173,6 +173,7 @@ namespace Statecraft.Game.Map.Collection
         readonly HashSet<string> asked = new HashSet<string>(StringComparer.Ordinal);
         readonly Dictionary<int, bool> closeFor = new Dictionary<int, bool>();
         readonly List<Renderer> renderers = new List<Renderer>();
+        Action<List<(string key, Vector3 at, float radius)>>? fillResidencyAnchors;
         IReadOnlyList<Want> wants = Array.Empty<Want>();
 
         CollectionResidency? residency;
@@ -200,10 +201,20 @@ namespace Statecraft.Game.Map.Collection
             var keys = residencyView?.Keys;
             return keys == null ? wants : wants.Where(w => keys.Contains(w.Key));
         }
-        IEnumerable<(string key, Vector3 at, float radius)> Anchors()
+        void FillResidencyAnchors(List<(string key, Vector3 at, float radius)> anchors)
         {
-            if (map == null) yield break;
-            foreach (var w in wants) yield return (w.Key, map.Frame.ToWorld(w.Lon, w.Lat, 0), ClearanceOf(w.Model));
+            if (map == null) return;
+            for (int i = 0; i < wants.Count; i++)
+            {
+                var w = wants[i];
+                anchors.Add((w.Key, map.Frame.ToWorld(w.Lon, w.Lat, 0), ClearanceOf(w.Model)));
+            }
+        }
+        static bool SameKeys(HashSet<string> before, HashSet<string> after)
+        {
+            if (before.Count != after.Count) return false;
+            foreach (string key in before) if (!after.Contains(key)) return false;
+            return true;
         }
         void RefreshResidency() => RefreshResidencyCore(true);
         void RefreshResidencyCore(bool redraw)
@@ -261,8 +272,8 @@ namespace Statecraft.Game.Map.Collection
         void ObserveResidency(Camera camera, bool inRender)
         {
             var before = residencyView!.Keys;
-            residencyView.Observe(camera, Anchors(), Time.frameCount);
-            if (!before.SetEquals(residencyView.Keys))
+            residencyView.Observe(camera, fillResidencyAnchors ??= FillResidencyAnchors, Time.frameCount);
+            if (!SameKeys(before, residencyView.Keys))
             {
                 if (Application.isPlaying || inRender)
                 {
