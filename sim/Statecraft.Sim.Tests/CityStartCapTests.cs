@@ -104,7 +104,8 @@ public class CityStartCapTests
         Assert.Equal(2, two.State.CityProjects.Count);
     }
 
-    // A refused start does not stop the city's project already running.
+    // The cap limits starts, not building: in a turn where the city has used its start and city_cap refuses another, the
+    // city's project already running advances exactly as in a turn where the city starts nothing.
     [Fact]
     public void Gdd03RunningProjectsKeepProgressing()
     {
@@ -112,12 +113,17 @@ public class CityStartCapTests
         var s = New(c);
         var one = Simulation.Step(c, s, new Command[] { A1() });
         var running = one.State.CityProjects.Values.Single();
+        var idle = Simulation.Step(c, one.State, new Command[0]);
         var two = Simulation.Step(c, one.State, new Command[] { A2(), new StartProject("industry", "town_a", 2, 0) });
         Assert.Equal(CityCapText, Assert.Single(two.Rejected).Reason);
-        Assert.True(two.State.CityProjects[running.Id].TurnsLeft < running.TurnsLeft);
+        Assert.Equal(1, two.State.CityStartsThisTurn["town_a"]);   // the slot is used; the refused start is not counted
+        var advanced = idle.State.CityProjects[running.Id];
+        Assert.True(advanced.TurnsLeft < running.TurnsLeft);
+        Assert.Equal(advanced.Canonical(), two.State.CityProjects[running.Id].Canonical());
     }
 
-    // Under gdd-0.1 nothing changes: two starts in one city in one turn are both accepted, and the state hashes as on main.
+    // Under gdd-0.1 nothing changes: two starts in one city in one turn are both accepted, and nothing new is recorded or
+    // hashed (legacy byte identity is the golden manifest's job, not a literal here).
     [Fact]
     public void Gdd01KeepsTwoNationallyNoCityCap()
     {
@@ -128,7 +134,7 @@ public class CityStartCapTests
         Assert.Empty(r.Rejected);
         Assert.Equal(2, r.State.CityProjects.Count);
         Assert.Empty(r.State.CityStartsThisTurn);
-        Assert.Equal("ac8a5c06580ceb450fafcdd2832660426d978f1813151645ac0550d9c73faac9", r.State.Hash());   // origin/main d1ffbad94, before slice B
+        Assert.DoesNotContain("cstart{", r.State.Describe());
         Assert.Equal("No more than 2 city projects in one turn", Simulation.Step(c, s, new Command[] { A1(), B(), C() }).Rejected.Single().Reason);
     }
 
