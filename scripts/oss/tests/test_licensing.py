@@ -199,6 +199,19 @@ def test_no_asset_licence_rule_matches_generated_manifest_paths():
     assert captured == [], f"Asset-licence rows capture generated paths: {captured}"
 
 
+def test_borrowed_fire_clips_resolve_to_explicit_cc_by_nc_nd_row():
+    """The six derived clips have an exact LICENSING.md row and do not fall back to the PolyForm code row."""
+    import re
+    text = (ROOT / "LICENSING.md").read_text(encoding="utf-8")
+    row = next(l for l in text.splitlines() if l.startswith("| Derived borrowed fire clips by Tal Heuberger |"))
+    fire = {f"unity/Assets/Art/Collection/{f}/fire.anim" for f in (
+        "figure-c04-sabra-pioneer-v3", "figure-syrian-infantry-1948-v1", "figure-iraqi-infantry-1948-v1",
+        "figure-egyptian-infantry-1948-v1", "figure-ala-infantry-1948-v1", "figure-lebanese-regular-1948-v1")}
+    assert set(re.findall(r"`(unity/Assets/Art/Collection/[^`]+/fire\.anim)`", row)) == fire
+    assert "[CC BY-NC-ND 4.0](LICENSES/CC-BY-NC-ND-4.0.txt)" in row
+    assert "PolyForm" not in row
+
+
 def test_tal_history_excludes_current_originals_and_keeps_generated_code_terms():
     text = (ROOT / "LICENSING.md").read_text(encoding="utf-8")
     original = next(l for l in text.splitlines() if l.startswith("| Original 3D model files by Tal Heuberger |"))

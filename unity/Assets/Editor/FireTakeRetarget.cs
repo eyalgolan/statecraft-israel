@@ -20,7 +20,8 @@ namespace Statecraft.Game.EditorTools
     /// source's take is played on the figure's model and the figure's own bones are recorded at every frame of the take,
     /// each bone the take moves (a bone it holds still keeps its pose on two keys; one it never touches is left to the
     /// controller's default pose). Where the figure's rig binds the source take by bone path (C04 and C07 share one
-    /// Armature) that is the take as it is, at its own keys; otherwise the source and the figure are imported as Humanoid
+    /// Armature), the clip is resampled per frame from the source take (tangents rebuilt, near-static bones dropped);
+    /// otherwise the source and the figure are imported as Humanoid
     /// for the length of the bake, the take plays through Unity's Humanoid rig, and both imports are put back byte for
     /// byte afterwards (the committed imports stay Generic and lossless, #1273, and the figures' own idle and walk play
     /// exactly as before). The baked clip binds the figure's own bone paths, as its walk does. Idempotent: a second bake
@@ -64,7 +65,7 @@ namespace Statecraft.Game.EditorTools
             ?? throw new InvalidOperationException(model + ": no fire take");
 
         /// <summary>Whether every bone path <paramref name="clip"/> animates exists on <paramref name="model"/>'s rig, so the
-        /// clip plays on it as it is.</summary>
+        /// clip binds directly by bone path.</summary>
         internal static bool BindsByPath(AnimationClip clip, string model)
         {
             var root = AssetDatabase.LoadAssetAtPath<GameObject>(model) ?? throw new FileNotFoundException("no model", model);

@@ -273,8 +273,9 @@ namespace Statecraft.Game.EditorTools
         /// owner, 3 November 2026: the project has Tal Heuberger's permission for these adapted versions). FireTakeRetarget bakes
         /// each as <see cref="FireTakePath"/> beside the figure's model, so the figure's own bundle carries it (a clip inside another
         /// figure's FBX would be a reference into that figure's bundle, which the stream does not load; CollectionImportTests
-        /// EachOriginalBundleKeepsItsPrefabAndOnlyItsOwnAssetsAndPlacementScripts): the take as it is where the rig is the same
-        /// (C04 shares C07's Armature), else retargeted through Unity's Humanoid rig, as Tal's own retargets of C09's walk.</summary>
+        /// EachOriginalBundleKeepsItsPrefabAndOnlyItsOwnAssetsAndPlacementScripts): resampled per frame from the source take
+        /// (tangents rebuilt, near-static bones dropped) where the rig is the same (C04 shares C07's Armature), else retargeted
+        /// through Unity's Humanoid rig, as Tal's own retargets of C09's walk.</summary>
         public static readonly IReadOnlyDictionary<string, string> BorrowedFireTakes = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             [UnitFigures.SabraPioneer] = UnitFigures.VeteranFighter,

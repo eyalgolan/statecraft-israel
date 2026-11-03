@@ -12,7 +12,8 @@ using Object = UnityEngine.Object;
 
 /// <summary>#2375 and #2376 (owner, 3 November 2026: the project has Tal Heuberger's permission for these adapted versions):
 /// the token figures whose FBX has no fire take attack with a take baked beside their model from another of Tal Heuberger's
-/// figures (CollectionImport.BorrowedFireTakes, FireTakeRetarget): C04 with C07's take as it is, the Syrian, Iraqi,
+/// figures (CollectionImport.BorrowedFireTakes, FireTakeRetarget): C04 with a clip resampled per frame from C07's
+/// Armature|fire take (tangents rebuilt, near-static bones dropped), the Syrian, Iraqi,
 /// Egyptian, Lebanese and ALA infantry with C09's through Humanoid, each on its own rig, so its own bundle carries it.</summary>
 public class BorrowedFireTakeTests
 {
@@ -128,9 +129,9 @@ public class BorrowedFireTakeTests
         }
     }
 
-    /// <summary>C04's take is C07's Armature|fire pose for pose: the two share Tal Heuberger's 67-bone Armature, so the take
-    /// binds C04's bones by path and the bake records it at its own keys; every bone, at every frame, is where C07's take
-    /// puts it (a bone the bake leaves out is one the take holds at the rig's rest pose).</summary>
+    /// <summary>C04's take is resampled per frame from C07's Armature|fire take (tangents rebuilt, near-static bones dropped):
+    /// the two share Tal Heuberger's 67-bone Armature, so the source take binds C04's bones by path; every bone, at every
+    /// frame, is where C07's take puts it (a bone the bake leaves out is one the take holds at the rig's rest pose).</summary>
     [Test]
     public void TheSabraPioneerPlaysTheVeteranFightersTakePoseForPose()
     {
