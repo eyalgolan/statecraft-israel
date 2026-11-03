@@ -219,14 +219,13 @@ namespace Statecraft.Sim
                 return;
             }
             // Graduation (Q43(b)): the trained tier from the pupil's pre-release course record, then pupil and teacher are
-            // released in one commit, so no teacher is left teaching with no pupil.
+            // released in one commit, so no teacher is left teaching with no pupil. The pupil is the centre's one pupil (Q42).
             var graduate = Released(CivilianProfessionRules.AfterMatchingCourse(content, state, trainee.Id, trainee.Profession));
             var teacher = ledger.Get(trainee.Assignment.TeacherId!.Value);
-            bool teacherReleased = Pupils(teacher.Id) == 1;
-            if (teacherReleased) Commit(graduate, Released(teacher)); else Commit(graduate);
+            Commit(graduate, Released(teacher));
             months.Remove(trainee.Id);
             graduated[trainee.Id] = month.MonthOrdinal;
-            if (teacherReleased) graduated[teacher.Id] = month.MonthOrdinal;
+            graduated[teacher.Id] = month.MonthOrdinal;
         }
 
         /// <summary>R-TRAIN-007: cancel keeps the id, profession, tier, the record's tools fields and its reception progress;
@@ -239,7 +238,7 @@ namespace Statecraft.Sim
             var ledger = state.PopulationLedger; var trainee = ledger.Get(traineeId); var centre = CentreOf(trainee);
             if (!centre.Operating) throw Deferred(Q9);
             var teacher = ledger.Get(trainee.Assignment.TeacherId!.Value);
-            if (Pupils(teacher.Id) > 1) Commit(Released(trainee)); else Commit(Released(trainee), Released(teacher));
+            Commit(Released(trainee), Released(teacher)); // the centre's one pupil (Q42), so its teacher is released too
             months.Remove(trainee.Id);
         }
     }
