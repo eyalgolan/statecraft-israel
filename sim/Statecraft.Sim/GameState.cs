@@ -138,7 +138,7 @@ namespace Statecraft.Sim
         /// <summary>R-WAR-005, under exact gdd-0.3 only: each front's consecutive quiet turns (Q48), set at every turn end;
         /// R-WAR-006 sets a front to 0 on a refused armistice. Empty under every other ruleset.</summary>
         public SortedDictionary<string, int> QuietTurns = new SortedDictionary<string, int>(StringComparer.Ordinal);
-        /// <summary>R-WAR-005: the fronts with a unit in an engagement this turn, instant attacks included; cleared at the turn end.</summary>
+        /// <summary>R-WAR-005: the fronts with a unit in an engagement this turn, instant attacks included, and a front whose armistice was refused this turn (R-WAR-006, Q49); cleared at the turn end.</summary>
         public SortedSet<string> EngagedFronts = new SortedSet<string>(StringComparer.Ordinal);
         /// <summary>The places the player has deported, the permanent record of R-CTRL-018 and R-CTRL-019: a count of places,
         /// not people (Q-CAP-2 (b)), with no destination on the board (Q-DEP-3 (a)).</summary>
