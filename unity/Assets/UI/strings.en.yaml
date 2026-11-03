@@ -807,6 +807,8 @@ city.project_reason.no_resource: "{0} has no {1} for {2}"
 # key only (HebrewOverlay.Bindings), and a nested record has no such key. Without an entry the id stands.
 city.resource.vineyards: "vineyards"
 city.project_reason.turn_cap: "No more than {0} city projects in one turn"
+# #1700 slice B, gdd-0.3 only (R-PROJ-001; owner, 3 November 2026: "One per city, plus 2 nationally"): {0} the city.
+city.project_reason.city_cap: "{0} has started a city project this turn"
 # The toggle that folds a city's own projects on a stacked bar or a short window (owner ruling on #1150).
 city.projects_toggle: "City projects ({0})"
 # #1722 slice E (#1701; R-ARMS-005 to R-ARMS-007), gdd-0.3 only: a built arms workshop's part of the info panel. The
@@ -1090,6 +1092,7 @@ why.cause.project_cancelled: "{0}: {1} was cancelled; the Money spent is not ret
 why.cause.project_completed: "{0}: {1} was finished"
 # The gdd-0.3 builders (#1700; R-CITY-011, R-PROJ-003).
 why.cause.project_builder: "{0}: a builder started on {1}"
+why.cause.project_builder_freed: "{0}: a builder left {1} and is free again"
 why.cause.project_waiting.no_builder: "{0}: {1} waits: no builder"
 why.cause.project_waiting.no_worker: "{0}: {1} waits: no person without a job is left for its builder"
 why.cause.arms_bought: "Bought {0} Arms, cost {1}"

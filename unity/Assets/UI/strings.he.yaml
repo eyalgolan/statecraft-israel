@@ -893,6 +893,9 @@ city.project_reason.no_resource: "ב{0} אין {1} עבור {2}"
 city.resource.vineyards: "כרמים"
 # turn_cap: approved by Beri, a native speaker, on #1267 (21 Oct 2026).
 city.project_reason.turn_cap: "אי אפשר להתחיל יותר מ־{0} מיזמים עירוניים בתור אחד"
+# #1700 slice B, gdd-0.3 only (R-PROJ-001), {0} the city, as the workshop refusals ("{0}: ...").
+# Agent-drafted Hebrew; native review pending (#564). No verb agrees with {0} (HE-15).
+city.project_reason.city_cap: "{0}: כבר יש התחלת מיזם עירוני בתור הזה"
 # The toggle that folds a city's own projects on a stacked bar or a short window (owner ruling on #1150), {0} the
 # number of kinds. For the native reviewer (#564).
 city.projects_toggle: "מיזמי העיר ({0})"
@@ -1230,11 +1233,13 @@ why.cause.project_cancelled: "{0}: ביטול {1}; הכסף שהוצא לא יו
 why.cause.project_completed: "{0}: סיום {1}"
 # The gdd-0.3 builders (#1700; R-CITY-011, R-PROJ-003). Agent-drafted Hebrew: native-review-pending (#564).
 # native-review-pending
-why.cause.project_builder: "{0}: בונה החל לעבוד על {1}"
+why.cause.project_builder: "{0}: תחילת עבודת בונה על {1}"
+# native-review-pending
+why.cause.project_builder_freed: "{0}: שחרור בונה מהעבודה על {1}"
 # native-review-pending
 why.cause.project_waiting.no_builder: "{0}: העבודה על {1} ממתינה: אין בונה"
 # native-review-pending
-why.cause.project_waiting.no_worker: "{0}: העבודה על {1} ממתינה: לא נותר אדם ללא משרה שיבנה"
+why.cause.project_waiting.no_worker: "{0}: העבודה על {1} ממתינה: לא נותר אדם ללא משרה לבנייה"
 why.cause.arms_bought: "נשק שנרכש: {0}, עלות {1}"
 # The gdd-0.3 arms workshops (#1701; R-ARMS-005, R-ARMS-006). Agent-drafted Hebrew; native review pending (#564).
 why.cause.workshop_workers: "{0}: סדנאות נשק מאוישות: {1}"
