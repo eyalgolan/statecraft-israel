@@ -23,19 +23,19 @@ using Statecraft.Sim;
 // - R-ARMS-003 (docs/rules/mvp.md): "The cohort keeps the Arms it took, and the state hash writes them with it; cancelling
 //   the cohort (R-TRAIN-002) returns them to the pool, up to the most the stock can hold, although the Money stays paid"
 // Completion and upkeep (#1699 third slice), quoted at 3b18babc1:
-// - docs/rules/mvp.md:251 (R-UNIT-003): "A finished recruit cohort becomes exactly one Israeli infantry formation at its city's
+// - R-UNIT-003 (docs/rules/mvp.md): "A finished recruit cohort becomes exactly one Israeli infantry formation at its city's
 //   settlement hex, with `Strength` equal to the cohort's `Count` in population units ... Its reserved Arms are neither
 //   charged again nor refunded on completion (R-ARMS-003)."
 // - docs/GDD.md:372 (Q43(b)): "they are released in the turn its last course turn counts".
 // - docs/GDD.md:374 (27M-8): "A formation pays military upkeep from the turn it graduates (27M-8)."
-// - docs/rules/mvp.md:265 (R-UNIT-010): "each Israeli military formation pays `military_upkeep_per_turn` Money, including a
+// - R-UNIT-010 (docs/rules/mvp.md): "each Israeli military formation pays `military_upkeep_per_turn` Money, including a
 //   formation that graduated this turn. The owner-accepted initial rate is IL 0.05m per formation per turn, independent of
 //   strength and turn length"; content/gdd03-balance.yaml `military.active_money` [0.05].
 // Maintainer calls by coordinator 53 (3 November 2026), not owner rulings: formations are pre-bound, empty ActiveService
 // targets supplied by the tests; one Start order is one cohort and one formation, its strength its count; only formations
 // this fixture graduated pay; a graduating Advance after that month's PayUpkeep is refused. A graduate's qualification
 // stays "": the live recruit path gives a formation no qualification (sim/Statecraft.Sim/GddState.cs:207, Training.cs:246)
-// and the Historical start gives its soldiers "" (HistoricalPopulation.cs:78).
+// and the Historical start gives its soldiers "" (HistoricalPopulation.cs:80).
 public class Gdd03BasicTrainingFixtureTests
 {
     static readonly Lazy<Gdd03BalanceCatalogue> Real = new(() => ContentLoader.Load(RealContentTests.ContentRoot()).Gdd03Balance!);
@@ -661,7 +661,7 @@ public class Gdd03BasicTrainingFixtureTests
         for (int month = enrolment; month < enrolment + turns; month++) f.Advance(id, month);
     }
 
-    // R-UNIT-003 (docs/rules/mvp.md:251): "A finished recruit cohort becomes exactly one Israeli infantry formation ... with
+    // R-UNIT-003 (docs/rules/mvp.md): "A finished recruit cohort becomes exactly one Israeli infantry formation ... with
     // `Strength` equal to the cohort's `Count` in population units"; the live path makes one unit per cohort with
     // `strength: k.Count` (sim/Statecraft.Sim/Training.cs:244-246). 53's maintainer call: one Start order is one cohort and
     // one formation. Two orders in the same camp and month are two cohorts, so two formations; a carried item stays on its
@@ -696,7 +696,7 @@ public class Gdd03BasicTrainingFixtureTests
         s.PopulationLedger.Reconcile();
     }
 
-    // R-TRAIN-002 (docs/rules/mvp.md:169): "A cohort that does not exist, or has finished, is refused with the state unchanged."
+    // R-TRAIN-002 (docs/rules/mvp.md): "A cohort that does not exist, or has finished, is refused with the state unchanged."
     // A graduate cannot be cancelled or advanced, and cannot take basic training again (#1699 Done when row 2: "a
     // basic-training order for an already qualified soldier is refused (it cannot be used to avoid active upkeep)"): Start
     // takes only free civilians.
@@ -755,7 +755,7 @@ public class Gdd03BasicTrainingFixtureTests
         Assert.Equal(PopulationStatus.Trainee, s2.PopulationLedger.Get(1).Status);
     }
 
-    // 27M-8 (docs/GDD.md:374): "A formation pays military upkeep from the turn it graduates"; R-UNIT-010 (docs/rules/mvp.md:265)
+    // 27M-8 (docs/GDD.md:374): "A formation pays military upkeep from the turn it graduates"; R-UNIT-010 (docs/rules/mvp.md)
     // "including a formation that graduated this turn"; `military.active_money` [0.05]. Nothing is paid before graduation; the
     // graduation month pays, and so does every later month.
     [Fact] public void AFormationPaysUpkeepFromItsGraduationMonth()
@@ -772,7 +772,7 @@ public class Gdd03BasicTrainingFixtureTests
         Assert.Equal(9.4m, f.Money); Assert.Equal(0m, f.Debt);
     }
 
-    // R-UNIT-010 (docs/rules/mvp.md:265): "IL 0.05m per formation per turn, independent of strength". A formation of three and
+    // R-UNIT-010 (docs/rules/mvp.md): "IL 0.05m per formation per turn, independent of strength". A formation of three and
     // a formation of one pay 0.05 each.
     [Fact] public void UpkeepIsPerFormationNotPerSoldier()
     {
@@ -797,7 +797,7 @@ public class Gdd03BasicTrainingFixtureTests
         Assert.Equal(PopulationStatus.ActiveSoldier, s.PopulationLedger.Get(8).Status);
     }
 
-    // R-MONEY-003 (docs/rules/mvp.md:409): the Treasury stops at 0 and the shortfall is borrowed; R-UNIT-010: "R-MONEY-003
+    // R-MONEY-003 (docs/rules/mvp.md): the Treasury stops at 0 and the shortfall is borrowed; R-UNIT-010: "R-MONEY-003
     // borrows a shortfall; no strength is removed or Arms consumed for upkeep".
     [Fact] public void UpkeepBorrowsTheShortfall()
     {
