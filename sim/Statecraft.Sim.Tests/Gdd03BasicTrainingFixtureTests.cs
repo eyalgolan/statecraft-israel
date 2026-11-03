@@ -438,7 +438,8 @@ public class Gdd03BasicTrainingFixtureTests
     // R-ARMS-003 (docs/rules/mvp.md): "The cohort keeps the Arms it took ... cancelling the cohort (R-TRAIN-002) returns
     // them to the pool". A recruit who arrived equipped took no Arms, so the carried item stays on the record and the spare
     // stock is unchanged. A record that arrived carrying an id with this fixture's own prefix is no exception: the refund
-    // follows what this fixture issued, not the item's name. The carried item stays per R-ARMS-003 ('the Arms it took').
+    // follows what this fixture issued, not the item's name. The carried item stays by our reading of R-ARMS-003 ('the
+    // Arms it took').
     [Fact] public void AnEquippedRecruitKeepsTheirItemOnCancel()
     {
         var c = Catalogue(); var s = State(c); var f = Fixture(c, s, spare: 0);
@@ -575,7 +576,8 @@ public class Gdd03BasicTrainingFixtureTests
 
     // R-ARMS-003 (docs/rules/mvp.md): "The cohort keeps the Arms it took". A cancel ends what this fixture issued for that
     // course: if the same record later enrols carrying an item it got another way, it took no Arms, so cancelling that
-    // second course keeps the carried item and the spare stock unchanged, per R-ARMS-003 ('the Arms it took').
+    // second course keeps the carried item and the spare stock unchanged, by our reading of R-ARMS-003 ('the Arms it
+    // took').
     [Fact] public void ACancelledRecruitWhoReEnrolsEquippedKeepsTheItemOnASecondCancel()
     {
         var c = Catalogue(); var s = State(c); var f = Fixture(c, s, spare: 5); var l = s.PopulationLedger;
