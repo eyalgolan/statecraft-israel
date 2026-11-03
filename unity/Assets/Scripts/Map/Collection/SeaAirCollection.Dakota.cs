@@ -181,7 +181,7 @@ namespace Statecraft.Game.Map.Collection
             var keep = new Bounds();
             keep.SetMinMax(centre - new Vector3(SpitfireLoopHalfLengthM + reach, half.y + 1f, SpitfireLoopHalfWidthM + reach),
                 centre + new Vector3(SpitfireLoopHalfLengthM + reach, up, SpitfireLoopHalfWidthM + reach));
-            keepAll.Add(new[] { keep });
+            Keep(go, keep);
         }
 
         /// <summary>Egypt's flag as the owner ruled for the Spitfire on #2260 (2 November 2026, "Smaller flag, no pole"): the cloth
