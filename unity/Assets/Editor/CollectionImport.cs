@@ -264,13 +264,30 @@ namespace Statecraft.Game.EditorTools
         public static readonly IReadOnlyCollection<string> TokenFigures = new HashSet<string>(StringComparer.Ordinal)
         {
             UnitFigures.SabraPioneer, UnitFigures.PioneerVeteran, UnitFigures.YoungRecruit, UnitFigures.VeteranFighter,
-            UnitFigures.PalmachScout, UnitFigures.ArabLegion, UnitFigures.Irregular,
+            UnitFigures.PalmachScout, UnitFigures.Soldier1948, UnitFigures.ArabLegion, UnitFigures.Irregular,
             UnitFigures.SyrianInfantry, UnitFigures.IraqiInfantry, UnitFigures.EgyptianInfantry, UnitFigures.AlaInfantry,
             UnitFigures.LebaneseRegular, UnitFigures.LocalIrregular,
         };
 
+        /// <summary>The token figures whose own FBX has no fire take, and the figure whose fire take each plays (#2375; owner,
+        /// 3 November 2026: the project has Tal Heuberger's permission for this adapted version). FireTakeRetarget bakes each as
+        /// <see cref="FireTakePath"/> beside the figure's model, so the figure's own bundle carries it (a clip inside another
+        /// figure's FBX would be a reference into that figure's bundle, which the stream does not load; CollectionImportTests
+        /// EachOriginalBundleKeepsItsPrefabAndOnlyItsOwnAssetsAndPlacementScripts): resampled per frame from the source take
+        /// (tangents rebuilt, near-static bones dropped), since C04 shares C07's Armature. The enemy infantry borrow none yet
+        /// (owner, 3 November 2026: "C04 only; enemies wait (Recommended)"; #2399).</summary>
+        public static readonly IReadOnlyDictionary<string, string> BorrowedFireTakes = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            [UnitFigures.SabraPioneer] = UnitFigures.VeteranFighter,
+        };
+
+        /// <summary>Where a borrowing figure's baked fire take lives: a clip named fire, which UnitTokenMotion.CollectionFireTake
+        /// counts as a fire take, beside the figure's model.</summary>
+        public static string FireTakePath(string id) => $"{Dir(id)}/fire.anim";
+
         /// <summary>Adds the token figures' walk and attack states to their existing controllers, from the takes already in
-        /// each figure's own FBX. Reimports nothing: no model, texture, clip or prefab changes. Idempotent.
+        /// each figure's own FBX, or the fire take baked beside it (<see cref="BorrowedFireTakes"/>). Reimports nothing: no
+        /// model, texture, clip or prefab changes. Idempotent.
         /// Headless: Unity -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -executeMethod Statecraft.Game.EditorTools.CollectionImport.PrepareTokenFigureControllers</summary>
         [MenuItem("Statecraft/Collection/Add token figure walk and attack states")]
         public static void PrepareTokenFigureControllers()
@@ -286,13 +303,33 @@ namespace Statecraft.Game.EditorTools
         }
 
         /// <summary>Sets <paramref name="controller"/>'s walk state to the model's walk take and its attack state to its
-        /// fire take, adding each state the first time; a take the model lacks adds no state (C04 has no fire).</summary>
+        /// fire take, or to the one baked beside the model for a figure that borrows one, adding each state the first time; a
+        /// take the model lacks and borrows nowhere adds no state (C05 has no fire). The default state, when it plays the idle
+        /// take, is named idle, the state a token's figures return to after a move (UnitFigureMotion.IdleState): a controller
+        /// made from an original's "Armature|idle" take is named after the take.</summary>
         internal static void AddMotionStates(AnimatorController controller, string model)
         {
+            var idle = controller.layers[0].stateMachine.defaultState;
+            if (idle != null && idle.motion is AnimationClip take && idle.name != UnitFigureMotion.IdleState
+                && (take.name == "idle" || take.name.EndsWith("|idle", StringComparison.OrdinalIgnoreCase)))
+            {
+                idle.name = UnitFigureMotion.IdleState;
+                EditorUtility.SetDirty(controller);
+            }
             var clips = AssetDatabase.LoadAllAssetsAtPath(model).OfType<AnimationClip>()
                 .Where(c => !c.name.StartsWith("__preview__", StringComparison.Ordinal)).ToList();
             SetState(controller, UnitFigureMotion.WalkState, WalkTake(clips));
-            SetState(controller, UnitFigureMotion.AttackState, clips.FirstOrDefault(c => UnitTokenMotion.CollectionFireTake(c.name)));
+            SetState(controller, UnitFigureMotion.AttackState, clips.FirstOrDefault(c => UnitTokenMotion.CollectionFireTake(c.name)) ?? BorrowedFireTake(model));
+        }
+
+        /// <summary>The fire take baked beside <paramref name="model"/> for a figure in <see cref="BorrowedFireTakes"/>, or null
+        /// for any other model.</summary>
+        static AnimationClip? BorrowedFireTake(string model)
+        {
+            string id = Path.GetFileNameWithoutExtension(model);
+            if (!BorrowedFireTakes.ContainsKey(id)) return null;
+            return AssetDatabase.LoadAssetAtPath<AnimationClip>(FireTakePath(id))
+                ?? throw new InvalidOperationException(id + ": no baked fire take (run FireTakeRetarget.Bake first)");
         }
 
         /// <summary>The walk take: a take named walk first, else C05's idle_walk (his only walk), whatever the takes' order.</summary>
@@ -339,12 +376,14 @@ namespace Statecraft.Game.EditorTools
         public static string BundleCache(BuildTarget target) => Path.Combine("Library", "CollectionBundles", target.ToString());
 
         /// <summary>The bundles: each catalog bundle carries its models' far and near prefabs and source model files
-        /// (CollectionCatalog.SourceModelPath); their meshes, clips, controllers, materials and colour maps come in as dependencies.</summary>
+        /// (CollectionCatalog.SourceModelPath); their meshes, clips, controllers, materials and colour maps come in as dependencies.
+        /// A town model's far-off copy (#2378) carries only its prefab: its derived mesh, baked map and material follow as
+        /// dependencies, and nothing of the original.</summary>
         public static AssetBundleBuild[] Builds() => CollectionCatalog.Bundles.Select(b => new AssetBundleBuild
         {
             assetBundleName = b.Bundle,
             // The point-fire pose source carries only its prefab (and the clip it references), never the export's mesh (#2084).
-            assetNames = b.Ids.SelectMany(id => CollectionCatalog.IsFigurePose(id) ? new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far) }
+            assetNames = b.Ids.SelectMany(id => CollectionCatalog.IsFigurePose(id) || CollectionCatalog.IsFarCopy(id) ? new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far) }
                 : new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near), CollectionCatalog.SourceModelPath(id) }).Distinct().ToArray(),
         }).ToArray();
 

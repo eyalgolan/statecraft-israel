@@ -5,7 +5,8 @@ using System.Linq;
 
 namespace Statecraft.Game.Map.Collection
 {
-    /// <summary>Requested placement detail; both requests resolve to the same full original prefab. No far mesh is generated.</summary>
+    /// <summary>Requested placement detail; both requests resolve to the same full original prefab. No far mesh is generated
+    /// from an original: the town models' far-off copies (#2378) are ids of their own (<see cref="CollectionCatalog.FarCopy"/>).</summary>
     public enum CollectionDetail { Far, Near }
 
     /// <summary>Tal Heuberger's 73 originals from #507 and #336, pinned by docs/original-models.json.
@@ -120,6 +121,12 @@ namespace Statecraft.Game.Map.Collection
         /// <summary>Tal Heuberger's khaki canvas tent, in place of a transit camp's khaki ridge tents up close (CampTentModels).</summary>
         public const string KhakiTent = "generated-1948-08-khaki-canvas-tent";
 
+        /// <summary>The rigged copy of #336's 1948 soldier (#2384; owner, 3 November 2026: "rig Tal's later"): Tal Heuberger's
+        /// static soldier skinned to the 67-bone skeleton their C06 and C07 share, with C07's idle, walk and fire takes
+        /// (tools/rig_soldier_1948.py; its provenance.json beside it). The original, figure-soldier-1948-v1, stays catalogued
+        /// and untouched; the Yiftach and Negev tokens draw this copy in its place (UnitFigures).</summary>
+        public const string Soldier1948Rigged = "figure-soldier-1948-v1-rigged";
+
         /// <summary>Tal Heuberger's Egyptian Dakota C-47, flying a slow loop off Tel Aviv on the turns of the first Egyptian bombing
         /// period, 15 May to 11 June 1948 (SeaAirCollection; owner, 2 November 2026: "Over Tel Aviv, 15 May-11 Jun
         /// (Recommended)", and on #2274, "Off the coast is fine (Recommended)"). Like the R35, its source is the vehicle delivery's compatibility FBX (<see cref="SourceModelPath"/>).</summary>
@@ -149,6 +156,8 @@ namespace Statecraft.Game.Map.Collection
                 "figure-arab-villager-v1", "figure-builder-1950-v1", "figure-elder-immigrant-v1", "figure-immigrant-child-v1",
                 "figure-immigrant-woman-v1", "figure-kibbutz-woman-v1", "figure-soldier-1948-v1", "figure-yemenite-immigrant-v1",
                 "figure-pioneer-farmer-v1-tpose",
+                // the soldier's rigged copy (#2384), the model the Yiftach and Negev tokens draw
+                Soldier1948Rigged,
             }),
             (Vehicles, new[]
             {
@@ -232,7 +241,8 @@ namespace Statecraft.Game.Map.Collection
         };
 
         /// <summary>The models whose near prefab is skinned and plays its idle clip: every person but C05 (his only idle is
-        /// a walk; #507 has him stand still) and #336's soldier (no rig), the sheep and the draught horse.</summary>
+        /// a walk; #507 has him stand still) and #336's soldier as delivered (no rig; his rigged copy plays C07's), the sheep
+        /// and the draught horse.</summary>
         public static readonly IReadOnlyCollection<string> Animated = new HashSet<string>(StringComparer.Ordinal)
         {
             "figure-c01-arriving-man-v2", "figure-c02-townsman-v2", "figure-c03-smith-carpenter-v2", "figure-c04-sabra-pioneer-v3",
@@ -241,6 +251,7 @@ namespace Statecraft.Game.Map.Collection
             "figure-draught-horse-idle-1948-v2", "figure-sheep-idle-1948-v1",
             "figure-arab-villager-v1", "figure-builder-1950-v1", "figure-elder-immigrant-v1", "figure-immigrant-child-v1",
             "figure-immigrant-woman-v1", "figure-kibbutz-woman-v1", "figure-yemenite-immigrant-v1", "figure-pioneer-farmer-v1-tpose",
+            Soldier1948Rigged,
             "figure-syrian-infantry-1948-v1",
             "figure-iraqi-infantry-1948-v1",
             EgyptianInfantry,
@@ -283,9 +294,20 @@ namespace Statecraft.Game.Map.Collection
 
         // Categories describe placement; every model streams in a bundle of its own, except #1763's two figures, which share theirs.
         public static IEnumerable<string> Ids => Groups.SelectMany(b => b.Ids).Concat(Kits.TownModels.Ids);
+
+        /// <summary>The far-off copies of the 23 town building models (#2378; owner, 3 November 2026: "Ask Tal; allow them far
+        /// off only", then "I have Tal's OK; go ahead"): "&lt;id&gt;-far", each in a bundle of its own that carries only its
+        /// prefab (the derived mesh, baked colour map and material come in as dependencies, nothing of the original), made by
+        /// the editor's FarModelLevels beside the original. Not among <see cref="Ids"/>: those are Tal Heuberger's originals.
+        /// TownModelLayer asks for them beyond its close switch and for the originals below it.</summary>
+        public const string FarSuffix = Kits.TownModels.FarSuffix;
+        public static string FarCopy(string id) => id + FarSuffix;
+        public static bool IsFarCopy(string id) => id.EndsWith(FarSuffix, StringComparison.Ordinal)
+            && Kits.TownModels.Ids.Contains(id.Substring(0, id.Length - FarSuffix.Length));
         public static readonly IReadOnlyList<(string Bundle, string[] Ids)> Bundles =
             Ids.Where(id => !Groups.Single(g => g.Bundle == ArabArmies).Ids.Contains(id)).Select(id => ("collection-" + id, new[] { id }))
-                .Concat(Groups.Where(g => g.Bundle == ArabArmies)).ToArray();
+                .Concat(Groups.Where(g => g.Bundle == ArabArmies))
+                .Concat(Kits.TownModels.Ids.Select(id => ("collection-" + FarCopy(id), new[] { FarCopy(id) }))).ToArray();
         public static bool IsBuilding(string id) => Kits.TownModels.Ids.Contains(id)
             || Groups.Single(b => b.Bundle == Buildings).Ids.Contains(id);
 
@@ -307,6 +329,7 @@ namespace Statecraft.Game.Map.Collection
 
         /// <summary>The prefab's project path, which is also its name inside the bundle (lower case there).</summary>
         public static string PrefabPath(string id, CollectionDetail detail) =>
+            IsFarCopy(id) ? $"{BuildingsFolder}/{id.Substring(0, id.Length - FarSuffix.Length)}/{id}.prefab" :
             IsGenerated(id) ? $"{Folder}/{id}/{id}.prefab" :
             IsBuilding(id)
                 ? $"{BuildingsFolder}/{id}/{id}-stream.prefab"

@@ -197,7 +197,7 @@
     "values": [1]
   "field.slots":
     "basis": "Agreed"
-    "note": "Work, professions and training: farmer per prepared field. Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative regional-field model), per docs/gdd/balance.md:58 at 52fe3d60a. Source: #1668 balance.md at 605277df."
+    "note": "Work, professions and training: farmer per prepared field. Owner, 3 November 2026 (#1694): \"One farmer per field (Recommended)\", each field takes one farmer and an unworked field produces nothing (R-FIELD-002 under gdd-0.3). Amir's regional pooling through a capital stays declined (30 October 2026). Source: #1668 balance.md at 605277df."
     "values": [1]
   "field.cost":
     "basis": "Agreed"
@@ -350,7 +350,7 @@
     "values": [0.5]
   "military.active_money":
     "basis": "Agreed"
-    "note": "Military and control: Money per active formation per turn, independent of strength, from the turn it graduates (27M-8), excluding basic trainees. Owner ruling, 30 October 2026 (#2013 balance rows): \"Keep the set values (Recommended)\". 0.05 Money; Amir's 1 is a declined proposal. Source: #1668 balance.md at 605277df."
+    "note": "Military and control: Money per active formation per turn, independent of strength (R-UNIT-010), from the turn it graduates (27M-8), excluding basic trainees. Owner ruling, 30 October 2026 (#2013 balance rows): \"Keep the set values (Recommended)\". 0.05 Money; Amir's 1 is a declined proposal. Source: #1668 balance.md at 605277df."
     "values": [0.05]
   "military.strength":
     "basis": "Agreed"

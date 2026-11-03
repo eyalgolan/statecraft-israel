@@ -198,6 +198,7 @@ public partial class DesignValuesTests
     [InlineData("reception.queue_cohesion_loss", "Default", "1", PostMvp, Nov1)]
     [InlineData("housing.max_deterioration", "Default", "10", "declined by the owner", Oct30)]
     [InlineData("housing.overflow_deterioration", "Agreed", "5", "\"Yes, 5 pp under GDD 0.3 (Recommended)\"", "2 November 2026")]
+    [InlineData("field.slots", "Agreed", "1", "\"One farmer per field (Recommended)\"", "3 November 2026")]
     public void Gdd03RowsFollowTheOwnersLaterRulings(string key, string basis, string values, string ruling, string date)
     {
         var row=ContentLoader.Load(RealContentTests.ContentRoot()).Gdd03Balance!.Values[key];

@@ -14,6 +14,14 @@ using Statecraft.Sim;
 //   reason naming the need and the stock"
 // - docs/rules/mvp.md:572 (R-POP-002): "distinct issued civilian/military equipment and paid facts. ... duplicate
 //   issued-item ownership are refused before mutation. ... Ledger changes never touch resources, causes, RNG or Attention."
+// Cancel (#1699 second slice), quoted at ca599e4b6:
+// - docs/GDD.md:372: "A cancelled or slot-losing course is cancelled like `CancelTraining`, people return as civilians, Money
+//   and tools are not refunded and Arms return to the pool (Q44, Q52, 27M-3, 27M-4)."
+// - docs/rules/mvp.md:169 (R-TRAIN-002): "`CancelTraining(cohort)` returns the cohort's people to its city as civilians without
+//   a job and refunds none of the Money paid (D-A3); a recruit cohort's Arms go back to the pool (R-ARMS-003). A cohort that
+//   does not exist, or has finished, is refused with the state unchanged."
+// - docs/rules/mvp.md:433 (R-ARMS-003): "The cohort keeps the Arms it took, and the state hash writes them with it; cancelling
+//   the cohort (R-TRAIN-002) returns them to the pool, up to the most the stock can hold, although the Money stays paid"
 public class Gdd03BasicTrainingFixtureTests
 {
     static readonly Lazy<Gdd03BalanceCatalogue> Real = new(() => ContentLoader.Load(RealContentTests.ContentRoot()).Gdd03Balance!);
@@ -361,5 +369,227 @@ public class Gdd03BasicTrainingFixtureTests
         Assert.Throws<ArgumentException>(() => new Gdd03BasicTrainingFixture(g, state, Camps().Concat(Camps()), 1, 1m));
         Assert.Throws<ArgumentException>(() => new Gdd03FixtureMilitaryCamp(" ", "north", true));
         Assert.Throws<ArgumentException>(() => new Gdd03FixtureMilitaryCamp(CampNorth, "", true));
+    }
+
+    // docs/GDD.md:372: "Arms return to the pool"; R-ARMS-003 (docs/rules/mvp.md:433): "cancelling the cohort (R-TRAIN-002)
+    // returns them to the pool". The cancelled record's issued item goes back to the spare Arms; another trainee keeps theirs.
+    [Fact] public void CancelReturnsTheIssuedArmsToTheSpareStock()
+    {
+        var c = Catalogue(); var s = State(c); var f = Fixture(c, s, spare: 5); var l = s.PopulationLedger;
+        f.Start(new[] { 0, 1 }, CampNorth, 0);
+        Assert.Equal(3, f.SpareArms);
+
+        f.Cancel(0);
+
+        Assert.Equal(4, f.SpareArms);
+        Assert.Null(l.Get(0).Equipment.MilitaryId); Assert.False(l.Get(0).Equipment.MilitaryPaid);
+        Assert.Equal(Gdd03BasicTrainingFixture.IssuedPrefix + "1", l.Get(1).Equipment.MilitaryId);
+        Assert.Equal(PopulationStatus.Trainee, l.Get(1).Status);
+        l.Reconcile();
+    }
+
+    // R-TRAIN-002 (docs/rules/mvp.md:169): "returns the cohort's people to its city as civilians without a job"; docs/GDD.md:374
+    // (27M-9): "After a cancellation or camp loss, people go to their city as civilians without a job"; docs/GDD.md:372: "Money
+    // and tools are not refunded" and "can be assigned from the next planning, or at once on cancellation" (Q43(b)). The same
+    // record stays in place with its tools, its course progress goes with the course, no person is created, and it can be
+    // given a job at once.
+    [Fact] public void CancelReleasesACivilianWithoutAJobInPlace()
+    {
+        var c = Catalogue(); var s = State(c); var f = Fixture(c, s); var l = s.PopulationLedger;
+        f.Start(new[] { 0, 2 }, CampNorth, 0);
+        f.Advance(2, 0);
+        Assert.Equal(1, l.Get(2).Assignment.ProgressTicks);
+        var before = l.Get(2); int count = l.Units.Count, next = l.NextPopulationId;
+
+        f.Cancel(2);
+
+        var p = l.Get(2);
+        Assert.Equal(PopulationStatus.FreeCivilian, p.Status);
+        Assert.Equal(PopulationAssignmentKind.Unassigned, p.Assignment.Kind);
+        Assert.Null(p.Assignment.Target); Assert.Equal(0, p.Assignment.ProgressTicks);
+        Assert.Same(before.Location, p.Location); Assert.Equal("", p.Qualification);
+        Assert.Equal("fixture-tools", p.Equipment.ToolsId); Assert.True(p.Equipment.ToolsPaid);
+        Assert.Equal(before.Profession, p.Profession); Assert.Equal(before.Tier, p.Tier); Assert.Equal(before.WorkXp, p.WorkXp);
+        Assert.Equal(before.CombatXp, p.CombatXp); Assert.Equal(before.ReceptionTicks, p.ReceptionTicks);
+        Assert.Equal(count, l.Units.Count); Assert.Equal(next, l.NextPopulationId);
+        l.Reconcile();
+
+        l.ChangeAssignment(2, new PopulationAssignment(PopulationAssignmentKind.Work, Field));
+        Assert.Equal(Field, l.Get(2).Assignment.Target);
+    }
+
+    // R-TRAIN-002 (docs/rules/mvp.md:169): "refunds none of the Money paid"; docs/GDD.md:372: "Money and tools are not
+    // refunded". Neither Money nor a borrowed shortfall is paid back.
+    [Fact] public void CancelRefundsNoMoney()
+    {
+        var c = Catalogue(); var s = State(c); var f = Fixture(c, s, money: 10m);
+        f.Start(new[] { 0, 1 }, CampNorth, 0);
+        Assert.Equal(9m, f.Money);
+        f.Cancel(0);
+        Assert.Equal(9m, f.Money); Assert.Equal(0m, f.Debt);
+
+        var s2 = State(c); var f2 = Fixture(c, s2, money: 0.25m);
+        f2.Start(new[] { 0 }, CampNorth, 0);
+        Assert.Equal(0m, f2.Money); Assert.Equal(0.25m, f2.Debt);
+        f2.Cancel(0);
+        Assert.Equal(0m, f2.Money); Assert.Equal(0.25m, f2.Debt);
+    }
+
+    // R-ARMS-003 (docs/rules/mvp.md:433): "The cohort keeps the Arms it took ... cancelling the cohort (R-TRAIN-002) returns
+    // them to the pool". A recruit who arrived equipped took no Arms, so the carried item stays on the record and the spare
+    // stock is unchanged. A record that arrived carrying an id with this fixture's own prefix is no exception: the refund
+    // follows what this fixture issued, not the item's name.
+    [Fact] public void AnEquippedRecruitKeepsTheirItemOnCancel()
+    {
+        var c = Catalogue(); var s = State(c); var f = Fixture(c, s, spare: 0);
+        f.Start(new[] { 3 }, CampNorth, 0);
+        f.Cancel(3);
+        var p = s.PopulationLedger.Get(3);
+        Assert.Equal(PopulationStatus.FreeCivilian, p.Status);
+        Assert.Equal(Carried, p.Equipment.MilitaryId); Assert.True(p.Equipment.MilitaryPaid);
+        Assert.Equal(0, f.SpareArms);
+
+        var own = Gdd03BasicTrainingFixture.IssuedPrefix + "9";
+        var s2 = State(c, Person(military: own)); var f2 = Fixture(c, s2, spare: 0);
+        f2.Start(new[] { 9 }, CampNorth, 0);
+        f2.Cancel(9);
+        Assert.Equal(own, s2.PopulationLedger.Get(9).Equipment.MilitaryId);
+        Assert.Equal(0, f2.SpareArms);
+        s2.PopulationLedger.Reconcile();
+    }
+
+    // R-TRAIN-002 (docs/rules/mvp.md:169): "A cohort that does not exist, or has finished, is refused with the state unchanged."
+    // A second cancel, an unknown id, a record never started, an active soldier and another fixture's trainee are refused,
+    // with nothing changed.
+    [Fact] public void CancellingTwiceOrAnUnknownIdChangesNothing()
+    {
+        var c = Catalogue(); var s = State(c); var f = Fixture(c, s);
+        f.Start(new[] { 0, 1 }, CampNorth, 0);
+        f.Cancel(0);
+        Unchanged(s, f, () => f.Cancel(0), typeof(ArgumentException));
+        Unchanged(s, f, () => f.Cancel(99), typeof(ArgumentException));
+        Unchanged(s, f, () => f.Cancel(5), typeof(ArgumentException));
+        Unchanged(s, f, () => f.Cancel(8), typeof(ArgumentException));
+
+        var g = Fixture(c, s); var first = Snapshot(s, f);
+        Unchanged(s, g, () => g.Cancel(1), typeof(ArgumentException));
+        Assert.Equal(first, Snapshot(s, f));
+        Assert.Equal(PopulationStatus.Trainee, s.PopulationLedger.Get(1).Status);
+    }
+
+    // #1699 comment of 28 October 2026: "Restarted courses begin at zero and require a fresh full course". After a cancel the
+    // old course cannot be advanced; enrolling again through Start issues a new item from a spare, pays the course again and
+    // starts from 0.
+    [Fact] public void CancelThenAdvanceIsRefusedAndReEnrolmentStartsAFreshCourse()
+    {
+        var c = Catalogue(); var s = State(c); var f = Fixture(c, s, spare: 5, money: 10m); var l = s.PopulationLedger;
+        f.Start(new[] { 0 }, CampNorth, 0);
+        f.Advance(0, 0);
+        f.Cancel(0);
+        Unchanged(s, f, () => f.Advance(0, 1), typeof(ArgumentException));
+        Assert.Equal(5, f.SpareArms); Assert.Equal(9.5m, f.Money);
+
+        f.Start(new[] { 0 }, CampNorth, 1);
+        Assert.Equal(4, f.SpareArms); Assert.Equal(9m, f.Money);
+        Assert.Equal(Gdd03BasicTrainingFixture.IssuedPrefix + "0", l.Get(0).Equipment.MilitaryId);
+        Assert.Equal(0, l.Get(0).Assignment.ProgressTicks);
+        f.Advance(0, 1);
+        Assert.Equal(1, l.Get(0).Assignment.ProgressTicks);
+    }
+
+    // #1699 Done when: "Draft, train, cancel and demobilise in any order never change total units or total Arms (spare +
+    // issued)" and "The conservation test runs on a fixture with no arrivals, combat losses, imports or workshop output",
+    // restricted to start, advance and cancel. Accepted and refused steps alike keep spare + issued and the record count
+    // constant, in en-US and he-IL.
+    [Theory, InlineData("en-US"), InlineData("he-IL")]
+    public void SpareAndIssuedArmsAreConservedThroughCancel(string culture)
+    {
+        var saved = CultureInfo.CurrentCulture;
+        try
+        {
+            CultureInfo.CurrentCulture = new CultureInfo(culture);
+            var c = Catalogue("military.camp_capacity", Agreed(3)); var s = State(c); var f = Fixture(c, s, spare: 3, money: 0.75m);
+            int total = f.SpareArms + Issued(s), units = s.PopulationLedger.Units.Count;
+            var steps = new Action[] {
+                () => f.Start(new[] { 0, 3 }, CampNorth, 0),       // one issue, one carried item
+                () => f.Start(new[] { 5 }, CampSouth, 0),          // one issue
+                () => f.Advance(0, 0),
+                () => f.Cancel(0),                                 // issued item back to the spare
+                () => f.Cancel(0),                                 // second cancel: refused
+                () => f.Cancel(3),                                 // carried item stays on the record
+                () => f.Cancel(99),                                // unknown id: refused
+                () => f.Cancel(1),                                 // never started: refused
+                () => f.Start(new[] { 0, 1, 2 }, CampNorth, 1),    // need 3, have 2: refused
+                () => f.Start(new[] { 0, 1 }, CampNorth, 1),       // re-enrol 0, two issues
+                () => f.Advance(0, 1),
+                () => f.Cancel(5),                                 // issued item back to the spare
+                () => f.Start(new[] { 2 }, CampNorth, 2),          // one issue, the last spare
+                () => f.Start(new[] { 3 }, CampNorth, 2),          // capacity 3: refused
+            };
+            int accepted = 0;
+            foreach (var step in steps)
+            {
+                try { step(); accepted++; } catch (ArgumentException) { } catch (NotSupportedException) { }
+                Assert.Equal(total, f.SpareArms + Issued(s));
+                Assert.Equal(units, s.PopulationLedger.Units.Count);
+                s.PopulationLedger.Reconcile();
+            }
+            Assert.Equal(9, accepted);
+            Assert.Equal(0, f.SpareArms);
+            Assert.Equal(Carried, s.PopulationLedger.Get(3).Equipment.MilitaryId);
+            Assert.Equal(0m, f.Money);
+            Assert.Equal(2.25m, f.Debt); // 6 courses x 0.5 = 3, of which 0.75 was in hand; cancels refund none
+        }
+        finally { CultureInfo.CurrentCulture = saved; }
+    }
+
+    // content/gdd03-balance.yaml `military.camp_capacity`, here a synthetic 2: a cancelled trainee no longer holds a place, so
+    // a camp that was full takes another recruit.
+    [Fact] public void CancelFreesCampCapacity()
+    {
+        var c = Catalogue("military.camp_capacity", Agreed(2)); var s = State(c); var f = Fixture(c, s);
+        f.Start(new[] { 0, 1 }, CampNorth, 0);
+        Unchanged(s, f, () => f.Start(new[] { 2 }, CampNorth, 0), typeof(ArgumentException));
+        f.Cancel(1);
+        f.Start(new[] { 2 }, CampNorth, 0);
+        Assert.Equal(PopulationStatus.Trainee, s.PopulationLedger.Get(2).Status);
+    }
+
+    static PopulationUnit WithMilitary(PopulationUnit p, string item) => new(p.Id, p.Status, p.ReceptionTicks, p.Location,
+        p.Assignment, p.Profession, p.Tier, p.WorkXp, p.Qualification, p.CombatXp,
+        new PopulationEquipment(p.Equipment.ToolsId, p.Equipment.ToolsPaid, item, true), p.Captor, p.Home);
+
+    // R-ARMS-003 (docs/rules/mvp.md:433): "cancelling the cohort (R-TRAIN-002) returns them to the pool", where "them" is
+    // "the Arms it took". If the issued item was swapped on the ledger after Start, the record no longer holds what this
+    // fixture issued: cancel throws and changes nothing, rather than returning to the spare an item it no longer finds.
+    [Fact] public void CancelIsRefusedWhenTheIssuedItemWasReplaced()
+    {
+        var c = Catalogue(); var s = State(c); var f = Fixture(c, s, spare: 5); var l = s.PopulationLedger;
+        f.Start(new[] { 0 }, CampNorth, 0);
+        l.Replace(WithMilitary(l.Get(0), "fixture-swapped-item"));
+        Unchanged(s, f, () => f.Cancel(0), typeof(InvalidOperationException));
+        Assert.Equal("fixture-swapped-item", l.Get(0).Equipment.MilitaryId);
+        Assert.Equal(4, f.SpareArms);
+    }
+
+    // R-ARMS-003 (docs/rules/mvp.md:433): "The cohort keeps the Arms it took". A cancel ends what this fixture issued for that
+    // course: if the same record later enrols carrying an item it got another way, it took no Arms, so cancelling that
+    // second course keeps the carried item and the spare stock unchanged.
+    [Fact] public void ACancelledRecruitWhoReEnrolsEquippedKeepsTheItemOnASecondCancel()
+    {
+        var c = Catalogue(); var s = State(c); var f = Fixture(c, s, spare: 5); var l = s.PopulationLedger;
+        f.Start(new[] { 0 }, CampNorth, 0);
+        f.Cancel(0);
+        Assert.Equal(5, f.SpareArms);
+        l.Replace(WithMilitary(l.Get(0), Carried + "-0"));
+        f.Start(new[] { 0 }, CampNorth, 1);
+        Assert.Equal(5, f.SpareArms);
+
+        f.Cancel(0);
+
+        Assert.Equal(PopulationStatus.FreeCivilian, l.Get(0).Status);
+        Assert.Equal(Carried + "-0", l.Get(0).Equipment.MilitaryId);
+        Assert.Equal(5, f.SpareArms);
+        l.Reconcile();
     }
 }

@@ -963,7 +963,9 @@ namespace Statecraft.Game.Map.Kits
                     if (white && !stepped && rnd.Chance(0.45f))
                     {
                         float rw = b.w * rnd.Range(0.16f, 0.24f), rd = b.d * rnd.Range(0.25f, 0.35f), a = yaw * Mathf.Deg2Rad;
-                        float u = (rnd.Chance(0.5f) ? 1f : -1f) * (0.5f * b.w - 0.6f * rw), v = rnd.Range(-0.2f, 0.2f) * b.d;
+                        // Keep the old 0.1 rw clearance, but measure it from the parapet's inner edge rather than the outer wall.
+                        float inset = parapet > 0f ? parapetT : 0f;
+                        float u = (rnd.Chance(0.5f) ? 1f : -1f) * (0.5f * b.w - inset - 0.6f * rw), v = rnd.Range(-0.2f, 0.2f) * b.d;
                         km.Box(p.x + u * Mathf.Cos(a) - v * Mathf.Sin(a), p.y + u * Mathf.Sin(a) + v * Mathf.Cos(a), yaw, rw, rd, top + b.h - 2f, top + b.h,
                             2.4f * m, wall, roof, Facade.Plain, m);
                     }

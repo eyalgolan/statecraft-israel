@@ -33,6 +33,15 @@ namespace Statecraft.Game.UI
             return new UiText(m, file);
         }
 
+        /// <summary>These strings with <paramref name="lines"/> (a translations/&lt;lang&gt;/ui.yaml, #1606) over them: a key the
+        /// translation has reads its text, every other key the text here, so a new language falls back to English per string.</summary>
+        public UiText Over(IEnumerable<KeyValuePair<string, string>> lines, string file)
+        {
+            var m = new Dictionary<string, string>(map);
+            foreach (var line in lines) m[line.Key] = line.Value;
+            return new UiText(m, file);
+        }
+
         /// <summary>True when the strings have <paramref name="key"/> (a lookup that must not throw, as GameStart's fallback).</summary>
         public bool Has(string key) => map.ContainsKey(key);
 

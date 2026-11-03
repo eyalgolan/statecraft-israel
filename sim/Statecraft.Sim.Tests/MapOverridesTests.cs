@@ -153,7 +153,7 @@ public class MapOverridesTests
         + "base_revision: fixture-only\nbase_digest: "
         + "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n"
         + "overlay: { terrain: [], control: [], locations: [] }\n"
-        + "workable: []\nregions: []\ninfrastructure: []\n";
+        + "workable: []\nregions: []\ninfrastructure: []\noffsets: []\n";
 
     [Fact]
     public void EditorEnvelopeRoundTripsWithoutEnteringTheLegacyParser()
@@ -180,6 +180,13 @@ public class MapOverridesTests
     [InlineData("workable: []", "workable: [{ hex: { q: 1 }, value: true }]", "MAPEDIT_SHAPE")]
     [InlineData("regions: []", "regions: [{ hex: { q: 1, r: 2 }, region_id: '' }]", "MAPEDIT_SHAPE")]
     [InlineData("infrastructure: []", "infrastructure: [{ id: fixture_only, hex: { q: 1, r: 2 }, kind: fixture_only, parent_id: fixture_only, capacity: 3 }]", "MAPEDIT_SHAPE")]
+    [InlineData("offsets: []\n", "", "MAPEDIT_SHAPE")]
+    [InlineData("offsets: []", "offsets: [{ id: town_a, kind: badge, hex: { q: 1, r: 2 }, east_m: 0, north_m: 0 }]", "MAPEDIT_SHAPE")]
+    [InlineData("offsets: []", "offsets: [{ id: Town, kind: label, hex: { q: 1, r: 2 }, east_m: 0, north_m: 0 }]", "MAPEDIT_SHAPE")]
+    [InlineData("offsets: []", "offsets: [{ id: town_a, kind: label, hex: { q: 1, r: 2 }, east_m: 0 }]", "MAPEDIT_SHAPE")]
+    [InlineData("offsets: []", "offsets: [{ id: town_a, kind: label, hex: { q: 1, r: 2 }, east_m: 1.5, north_m: 0 }]", "MAPEDIT_SHAPE")]
+    [InlineData("offsets: []", "offsets: [{ id: town_a, kind: label, hex: { q: 1 }, east_m: 0, north_m: 0 }]", "MAPEDIT_SHAPE")]
+    [InlineData("offsets: []", "offsets: [{ id: town_a, kind: label, hex: { q: 1, r: 2 }, east_m: 0, north_m: 0 }, { id: town_a, kind: label, hex: { q: 1, r: 2 }, east_m: 5, north_m: 5 }]", "MAPEDIT_DUPLICATE")]
     public void EditorShapeRefusalsHaveNamedErrors(string old, string replacement, string code)
     {
         var error = Assert.Throws<ContentException>(() =>
@@ -559,5 +566,71 @@ public class MapOverridesTests
         var c = DependencyFixture();
         c.Objectives.Add(new Objective { Id = "objective_c" });
         Assert.Empty(Broken(DependencyDiagnostics(c)));
+    }
+
+    // R-MEDIT-004, Q58/Q59 (#1721 slice B): a visual or label offset is the axial hex plus whole metres east and north of
+    // its centre, valid while the point stays inside that 4.4 km pointy-top hex. Leaving it only warns. SYNTHETIC fixtures.
+    static MapEditorOverlay WithOffsets(string offsets) => MapEditorOverlay.Parse(
+        EditorFixture.Replace("draft: true", "draft: false").Replace("offsets: []", "offsets: " + offsets), SaveGame.Gdd03Ruleset);
+
+    static List<MapEditorDiagnostic> OutsideHex(MapEditorOverlay value) => value.Diagnostics("fixture-only", new string('a', 64))
+        .Where(x => x.Code == "MAPEDIT_OFFSET_OUTSIDE_HEX").ToList();
+
+    [Theory]
+    [InlineData(0, 0)]
+    [InlineData(3810, 0)]       // just inside the flat east side (inradius 3810.5 m)
+    [InlineData(-3810, 0)]
+    [InlineData(0, 4400)]       // the north vertex
+    [InlineData(0, -4400)]
+    [InlineData(3000, 2000)]
+    public void AnOffsetInsideItsHexRoundTripsSaveAndReloadByteForByte(int east, int north)
+    {
+        var value = WithOffsets(System.FormattableString.Invariant(
+            $"[{{ id: town_b, kind: visual, hex: {{ q: 2, r: -1 }}, east_m: 7, north_m: -3 }}, {{ id: town_a, kind: label, hex: {{ q: 1, r: 2 }}, east_m: {east}, north_m: {north} }}]"));
+        Assert.Empty(OutsideHex(value));
+        var saved = MapEditorOverlay.Serialize(value);
+        Assert.Contains(System.FormattableString.Invariant(
+            $"offsets:\n  - {{ id: 'town_a', kind: 'label', hex: {{ q: 1, r: 2 }}, east_m: {east}, north_m: {north} }}\n  - {{ id: 'town_b', kind: 'visual', hex: {{ q: 2, r: -1 }}, east_m: 7, north_m: -3 }}\n"), saved);
+        Assert.Equal("town_b", value.Offsets[0].Id);   // the caller's list is not reordered
+        var reloaded = MapEditorOverlay.Parse(saved, SaveGame.Gdd03Ruleset);
+        Assert.Equal(System.Text.Encoding.UTF8.GetBytes(saved), System.Text.Encoding.UTF8.GetBytes(MapEditorOverlay.Serialize(reloaded)));
+        var back = reloaded.Offsets.Single(x => x.Id == "town_a");
+        Assert.Equal(new int?[] { 1, 2, east, north }, new[] { back.Hex.Q, back.Hex.R, back.EastM, back.NorthM });
+    }
+
+    [Theory]
+    [InlineData(3811, 0)]       // past the flat east side
+    [InlineData(-3811, 0)]
+    [InlineData(0, 4401)]       // past the north vertex
+    [InlineData(3000, 3000)]    // past a slanted side
+    [InlineData(-2000, -3500)]
+    public void AnOffsetOutsideItsHexWarnsAndDoesNotBlock(int east, int north)
+    {
+        var without = WithOffsets("[]").Diagnostics("fixture-only", new string('a', 64));
+        var value = WithOffsets(System.FormattableString.Invariant(
+            $"[{{ id: town_a, kind: label, hex: {{ q: 1, r: 2 }}, east_m: {east}, north_m: {north} }}]"));
+        var row = Assert.Single(OutsideHex(value));
+        Assert.Equal("offsets[town_a/label]", row.Field);
+        Assert.False(row.Blocking);
+        Assert.Contains(System.FormattableString.Invariant($"east_m={east} north_m={north}"), row.Message);
+        Assert.Contains("q=1 r=2", row.Message);
+        // The warning adds no blocking row: every other row is the same as for the overlay without the offset.
+        var rest = value.Diagnostics("fixture-only", new string('a', 64)).Where(x => x.Code != row.Code).ToList();
+        Assert.Equal(without.Select(x => (x.Code, x.Field, x.Blocking)), rest.Select(x => (x.Code, x.Field, x.Blocking)));
+        Assert.All(rest, x => Assert.True(x.Blocking));
+        // Nothing is repaired: the offset keeps its authored point.
+        Assert.Equal(new int?[] { east, north }, new[] { value.Offsets[0].EastM, value.Offsets[0].NorthM });
+        var back = MapEditorOverlay.Parse(MapEditorOverlay.Serialize(value), SaveGame.Gdd03Ruleset);
+        Assert.Equal(new int?[] { east, north }, new[] { back.Offsets[0].EastM, back.Offsets[0].NorthM });
+    }
+
+    // The offset check's hex is the map's hex: content/map/hexes.json gives the circumradius in km (pointy-top, #1796).
+    [Fact]
+    public void TheOffsetHexIsTheMapsHex()
+    {
+        var text = File.ReadAllText(Path.Combine(RealContentTests.ContentRoot(), "map", "hexes.json"));
+        var size = System.Text.RegularExpressions.Regex.Match(text, "\"hex_size_km\":([0-9.]+)").Groups[1].Value;
+        Assert.Equal(MapEditorOverlay.OffsetHexCircumradiusM, double.Parse(size, System.Globalization.CultureInfo.InvariantCulture) * 1000, 6);
+        Assert.Contains("\"layout\":\"pointy\"", text);
     }
 }
