@@ -22,25 +22,29 @@ namespace Statecraft.Sim
     }
 
     /// <summary>R-TRAIN-005 to R-TRAIN-008: gdd-0.3 farmer/pioneer course lifecycle over the #1689 population ledger,
-    /// synthetic fixtures only. No command, save, loader, resolver, Money, Food or UI caller. Graduation is not reachable:
-    /// #1668 Q43(a) is decided (GDD, 1 November 2026 answers: "A course occupies its people from its first turn"), but this
-    /// fixture has not built that answer, so no turn that would bring a course within one turn of its end is counted. Cases
-    /// this slice has not built (#1668 Q42, Q43 and Q44, decided in the GDD's 1 November 2026 answers, so these refusals are
-    /// implementation gaps, not open design answers; and the 27 Oct list Q9) are refused with a "Deferred:"
+    /// synthetic fixtures only. No command, save, loader, resolver, Money, Food or UI caller. GDD 0.3 (docs/GDD.md, 1 November
+    /// 2026 answers): "A course occupies its people from its first turn (Q43(a)); they are released in the turn its last
+    /// course turn counts and can be assigned from the next planning, or at once on cancellation, and work starts the turn
+    /// after (Q43(b), Q43(c))." So the enrolment month is course turn 1 and the last counted turn graduates. Cases this
+    /// slice has not built (#1668 Q42, the rest of Q43 and Q44, decided in the GDD's 1 November 2026 answers, so these
+    /// refusals are implementation gaps, not open design answers; and the 27 Oct list Q9) are refused with a "Deferred:"
     /// NotSupportedException.</summary>
     internal sealed class Gdd03TrainingCentreFixture
     {
+        readonly Content content;
         readonly GameState state;
         readonly SortedDictionary<string, Gdd03FixtureTrainingCentre> centres;
         readonly int courseTurns, pupilsPerTeacher, bedsPerCamp, receptionTurns;
-        // Per fixture instance only (not saved): month ordinals of each pupil's enrolment and last counted course turn.
+        // Per fixture instance only (not saved): month ordinals of each pupil's enrolment and last counted course turn
+        // (-1 before the first), and of the month in which a graduation released each person.
         readonly SortedDictionary<int, (int enrolment, int lastCounted)> months = new SortedDictionary<int, (int, int)>();
+        readonly SortedDictionary<int, int> graduated = new SortedDictionary<int, int>();
 
         internal Gdd03TrainingCentreFixture(Content content, GameState state, IEnumerable<Gdd03FixtureTrainingCentre> centres)
         {
             if (!content.UsesPopulationLedger || !state.UsesPopulationLedger || !state.PopulationLedger.IsInitialized)
                 throw new InvalidOperationException("Training centre courses require an initialized gdd-0.3 synthetic fixture.");
-            this.state = state;
+            this.content = content; this.state = state;
             courseTurns = content.RequirePopulationInteger("profession.course_turns");
             pupilsPerTeacher = content.RequirePopulationInteger("profession.trainees_per_teacher");
             bedsPerCamp = content.RequirePopulationInteger("reception.capacity");
@@ -60,7 +64,7 @@ namespace Statecraft.Sim
 
         static NotSupportedException Deferred(string question) => new NotSupportedException("Deferred: " + question);
         const string Q42 = "#1668 Q42 (teachers per centre and an idle centre's teacher housing).";
-        const string Q43 = "#1668 Q43 (course turn boundaries: whether the enrolment turn counts, and in which month's snapshot participants stop or resume other assignments).";
+        const string Q43 = "#1668 Q43 (course turn boundaries: in which month's snapshot participants stop or resume other assignments).";
         const string Q44 = "#1668 Q44 and the GDD novice lock-in decision (when a free entrant becomes a novice; profession change after a cancelled course).";
         const string Q9 = "#1668 27 Oct list Q9 (return after cancellation or camp loss).";
 
@@ -150,6 +154,11 @@ namespace Statecraft.Sim
             if (BedsTaken(centre) >= bedsPerCamp) throw new ArgumentException("No free reception bed in the centre's parent camp.");
 
             var traineeOpening = Opening(month, trainee.Id); var teacherOpening = Opening(month, teacher.Id);
+            // #1668 Q43(b) (#1697, 1 Nov 2026): "on graduation the people are released in the turn the last course turn
+            // counts and can be assigned from the next turn's planning", so neither starts a course in that month.
+            if (graduated.TryGetValue(trainee.Id, out var g) && month.MonthOrdinal <= g
+                || graduated.TryGetValue(teacher.Id, out g) && month.MonthOrdinal <= g)
+                throw new ArgumentException("A person released by a graduation can start a course from the next month.");
             // #1716 month snapshot (owner-relayed Q43(a) and Q34, 28 Oct 2026): a course occupies the pupil from the turn it
             // starts and a job change is immediate, so a pupil who worked at the opening and was released this turn may start,
             // and this month's work/course snapshot shows the course. #1716 Q43(b) release (owner-approved answer, 1 Nov 2026,
@@ -178,38 +187,52 @@ namespace Statecraft.Sim
             if (teachingHere) Commit(pupil);
             else Commit(teacher.WithPlacement(teacher.Status, teacher.Location,
                 new PopulationAssignment(PopulationAssignmentKind.Teaching, centre.Id), teacher.Captor, teacher.Home), pupil);
-            months[trainee.Id] = (month.MonthOrdinal, month.MonthOrdinal);
+            months[trainee.Id] = (month.MonthOrdinal, -1);
         }
 
-        /// <summary>R-TRAIN-006: count one completed course turn for a course already held at the month's opening, once per
-        /// month ordinal. #1668 Q43(a) is decided (GDD, 1 November 2026 answers: "A course occupies its people from its first
-        /// turn"), but this fixture has not built that answer, so the turn that would leave one turn or none to go is still
-        /// refused, an implementation gap, not an open design answer, and no trained tier is granted here.</summary>
+        /// <summary>R-TRAIN-006: count one completed course turn, once per month ordinal: in the enrolment month (Q43(a), "A
+        /// course occupies its people from its first turn"), or in a later month whose opening already holds the course with
+        /// the same teacher. The turn that reaches Agreed `profession.course_turns` graduates: the pupil takes the trained
+        /// tier (R-QUAL-008), and pupil and teacher are released in that turn as civilians without a job (Q43(b)).</summary>
         internal void Advance(int traineeId, Gdd03SyntheticMonthContext month)
         {
             ValidateInventory();
             var ledger = state.PopulationLedger; var trainee = ledger.Get(traineeId); var centre = CentreOf(trainee);
             if (!centre.ParentOperating || !centre.UpgradeComplete) throw Deferred(Q9);
             var opening = Opening(month, trainee.Id);
-            if (opening.Status != PopulationStatus.Trainee || opening.Assignment.Kind != PopulationAssignmentKind.Course
-                || !string.Equals(opening.Assignment.Target, centre.Id, StringComparison.Ordinal)
-                || opening.Assignment.TeacherId != trainee.Assignment.TeacherId)
-                throw Deferred(Q43);
             bool tracked = months.TryGetValue(trainee.Id, out var known);
-            if (tracked)
-            {
-                if (month.MonthOrdinal == known.enrolment) throw Deferred(Q43);
-                if (month.MonthOrdinal <= known.lastCounted) throw new ArgumentException("This month ordinal was already counted or is earlier.");
-            }
-            if (!month.CourseEligibleIds.Contains(trainee.Id)) throw Deferred(Q9);
-            if (trainee.Assignment.ProgressTicks != opening.Assignment.ProgressTicks)
+            // Q43(a): the enrolment month counts, though its opening snapshot was taken before the course started.
+            bool enrolmentMonth = tracked && month.MonthOrdinal == known.enrolment;
+            if (!enrolmentMonth && (opening.Status != PopulationStatus.Trainee || opening.Assignment.Kind != PopulationAssignmentKind.Course
+                || !string.Equals(opening.Assignment.Target, centre.Id, StringComparison.Ordinal)
+                || opening.Assignment.TeacherId != trainee.Assignment.TeacherId))
+                throw Deferred(Q43);
+            if (tracked && (month.MonthOrdinal < known.enrolment || month.MonthOrdinal <= known.lastCounted))
+                throw new ArgumentException("This month ordinal was already counted or is earlier.");
+            if (enrolmentMonth
+                    ? !month.Facilities.Any(f => string.Equals(f.Id, centre.Id, StringComparison.Ordinal) && f.AvailableAtMonthFreeze && f.OpeningCapacity > 0)
+                    : !month.CourseEligibleIds.Contains(trainee.Id))
+                throw Deferred(Q9);
+            if (!enrolmentMonth && trainee.Assignment.ProgressTicks != opening.Assignment.ProgressTicks)
                 throw new ArgumentException("This month's course turn was already counted.");
 
             int progress = checked(trainee.Assignment.ProgressTicks + 1);
-            if (progress > courseTurns - 2) throw Deferred(Q43);
-            Commit(trainee.WithPlacement(trainee.Status, trainee.Location, new PopulationAssignment(PopulationAssignmentKind.Course,
-                centre.Id, progress, trainee.Assignment.TeacherId), trainee.Captor, trainee.Home));
-            if (tracked) months[trainee.Id] = (known.enrolment, month.MonthOrdinal);
+            if (progress < courseTurns)
+            {
+                Commit(trainee.WithPlacement(trainee.Status, trainee.Location, new PopulationAssignment(PopulationAssignmentKind.Course,
+                    centre.Id, progress, trainee.Assignment.TeacherId), trainee.Captor, trainee.Home));
+                if (tracked) months[trainee.Id] = (known.enrolment, month.MonthOrdinal);
+                return;
+            }
+            // Graduation (Q43(b)): the trained tier from the pupil's pre-release course record, then pupil and teacher are
+            // released in one commit, so no teacher is left teaching with no pupil.
+            var graduate = Released(CivilianProfessionRules.AfterMatchingCourse(content, state, trainee.Id, trainee.Profession));
+            var teacher = ledger.Get(trainee.Assignment.TeacherId!.Value);
+            bool teacherReleased = Pupils(teacher.Id) == 1;
+            if (teacherReleased) Commit(graduate, Released(teacher)); else Commit(graduate);
+            months.Remove(trainee.Id);
+            graduated[trainee.Id] = month.MonthOrdinal;
+            if (teacherReleased) graduated[teacher.Id] = month.MonthOrdinal;
         }
 
         /// <summary>R-TRAIN-007: cancel keeps the id, profession, tier, tools and their payment fact and reception credit;
