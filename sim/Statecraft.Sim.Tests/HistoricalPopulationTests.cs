@@ -329,4 +329,60 @@ public class HistoricalPopulationTests
         e = Assert.Throws<InvalidOperationException>(() => HistoricalPopulation.LedgerFixture(c));
         Assert.Contains("units_1948/golani", e.Message);
     }
+
+    // R-POP-004, 27M-24 (#1717: "The starting formations carry issued equipment, recorded apart from the 12 spare Arms"):
+    // each starting soldier record carries one issued military item, id <source>/<ordinal>; census records carry none, and
+    // no record carries tools.
+    [Fact]
+    public void EveryStartingSoldierRecordCarriesOneIssuedItem()
+    {
+        var c = Real(true);
+        var inventory = HistoricalPopulation.Inventory(c);
+        var units = HistoricalPopulation.LedgerFixture(c).PopulationLedger.Units;
+        Assert.Contains(inventory, r => r.Status == PopulationStatus.ActiveSoldier);
+        for (int i = 0; i < inventory.Count; i++)
+        {
+            Assert.Null(units[i].Equipment.ToolsId);
+            if (inventory[i].Source.StartsWith(HistoricalPopulation.FormationPrefix, StringComparison.Ordinal))
+                Assert.Equal(inventory[i].Source + "/" + inventory[i].Ordinal, units[i].Equipment.MilitaryId);
+            else
+                Assert.Null(units[i].Equipment.MilitaryId);
+        }
+    }
+
+    // R-POP-004, 27M-24: the issued items are distinct, one per population unit of each own starting formation, so their
+    // count is the formations' total strength.
+    [Fact]
+    public void IssuedItemsAreDistinctAndCountTheFormationStrengths()
+    {
+        var c = Real(true);
+        var items = HistoricalPopulation.LedgerFixture(c).PopulationLedger.Units
+            .Select(u => u.Equipment.MilitaryId).Where(id => id != null).ToList();
+        var strength = c.StartingForces.Where(f => f.Side == Movement.PlayerSide && f.Arrives == null).Sum(f => f.Strength);
+        Assert.True(strength > 0);
+        Assert.Equal(strength, items.Count);
+        Assert.Equal(items.Count, items.Distinct(StringComparer.Ordinal).Count());
+    }
+
+    // R-ARMS-001, 27M-24: issued equipment is apart from the spare Arms. Building the fixture leaves the spare stock as a
+    // fresh state has it, and NewGame's arms_start (12) is not reduced by any issue.
+    [Fact]
+    public void IssuedItemsAreApartFromTheSpareArms()
+    {
+        var c = Real(true);
+        Assert.Equal(new GameState(c).Arms, HistoricalPopulation.LedgerFixture(c).Arms);
+        Assert.Equal(12, c.RulesAt(c.Rules.Start).Mvp!.ArmsStart);
+        Assert.Equal(12, Simulation.NewGame(c, 1, Mode.Historical).Arms);
+    }
+
+    // R-POP-004, 27M-24 (#1717: "Starting professions, tools and buildings are owned: turn 1 charges none of them"): the
+    // starting formations' issued items are owned, recorded as paid so they are not paid for again.
+    [Fact]
+    public void StartingEquipmentIsOwned()
+    {
+        var soldiers = HistoricalPopulation.LedgerFixture(Real(true)).PopulationLedger.Units
+            .Where(u => u.Status == PopulationStatus.ActiveSoldier).ToList();
+        Assert.NotEmpty(soldiers);
+        Assert.All(soldiers, u => Assert.True(u.Equipment.MilitaryPaid));
+    }
 }
