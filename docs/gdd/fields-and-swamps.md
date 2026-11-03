@@ -12,13 +12,14 @@ As a player of the MVP, I want to send a group of halutzim to plow the fields of
 - Plowing takes 3 turns, counting the turn of the order, and costs IL 0.5m. Both are design values the owner may override (`Q-FIELD-3` [S3]).
 - When the plowing finishes, the field site is plowed on the turn's end date and the unit is idle again (R-FIELD-001).
 - A plowed field needs no workers (`Q-FIELD-2` [S3]). Each turn, in the turn's sixth step, after the cities' production, it adds 1 unit of Food to the national stock, one population unit's food for a month (R-FIELD-002, `Q-FIELD-3` [S3]).
-  - Then changed (3 Nov 2026): that holds under `gdd-0.1`; under `gdd-0.3` a field takes one farmer and an unworked field produces nothing (R-FIELD-002; owner, 3 November 2026, #1694 [S5]).
 - The effect is small on purpose: the nation eats 650 to 1,400 units of Food a turn over the MVP, so one field is about 0.1% of a month's need (`Q-FIELD-3` [S3]). In a turn with imports the import only tops the stock up by less; the field shows in the stock when foreign currency is exhausted and nothing is imported.
 - The reference player of the goldens plows the lowest-id ready field once every yishuv site is taken, before any camp site (D-A7).
 - The MVP has one swamp site, the Hula, at the swamp hex `(14, 3)`, sourced to the `hula_drainage` event's sources; its name names only the drainage (`Q-SWAMP-1`, `Q-SWAMP-3`, "Allow as planned" [S4]). The Hula field site shares its hex. It is a design placement, not a historical field.
 - `PioneerWork(unit, dry_swamp, site)` sends an idle halutz unit to drain a swamp site, by the same build rules (R-SWAMP-001, R-SITE-001). Draining takes 12 turns, counting the turn of the order, and costs IL 4m, twice the yishuv build: design values the owner may override (`Q-SWAMP-1` [S3]).
 - Drained, the swamp site does nothing else; the Hula field site becomes ready to plow. Before that a plow order there is refused with the state unchanged (R-SWAMP-001).
 - `hula_drainage` (window 7 March to 18 May 1951) carries `site: hula`, so it fires only while the player's works at the Hula are in progress: with no works, or once the Hula is drained, it does not fire (R-SWAMP-002, `Q-SWAMP-2` [S3]). Its text, options and sources are unchanged. The reference player drains no swamp, so the card does not come in the goldens' run.
+
+Then changed (3 Nov 2026): a plowed field with no workers, as above, holds under `gdd-0.1`; under `gdd-0.3` a field takes one farmer and an unworked field produces nothing (R-FIELD-002; owner, 3 November 2026, #1694 [S5]).
 
 ## Data touched
 
