@@ -71,14 +71,14 @@ public class EventEffectTextTests
             // English data names are deliberate fallbacks: current indicator/city/policy rows have no Hebrew field.
             var expected = hebrew ? new[]
             {
-                "Social cohesion: שינוי +4.1%", "Money: שינוי IL -1.3m", "מזון +3 יחידות", "נשק -100 יחידות",
+                "Social cohesion: שינוי +4.1%", "Money: שינוי IL\u00A0-1.3m", "מזון +3 יחידות", "נשק -100 יחידות",
                 "חלוצים: 2, מיקום: " + Place, "מגויסים: 1, מיקום: " + Place,
                 "חלוצים ותיקים: 3, מיקום: " + Place, "יחידות: 4, מיקום: " + Place,
                 Place + ": קיבולת דיור, שינוי +3", Place + ": מקומות עבודה, שינוי -100", Place + ": מצב הדיור, שינוי +5.1%",
                 "Housing construction: ערך חדש 75%", "רמת הביטחון תיקבע ל־4", "חזרה למסלול ההיסטורי: " + title,
             } : new[]
             {
-                "Social cohesion +4.1%", "Money IL -1.3m", "Food +3 units", "Arms -100 units",
+                "Social cohesion +4.1%", "Money IL\u00A0-1.3m", "Food +3 units", "Arms -100 units",
                 "Halutzim: 2 at " + Place, "Recruits: 1 at " + Place,
                 "Veteran Halutzim: 3 at " + Place, "Units: 4 at " + Place,
                 Place + ": housing capacity +3", Place + ": job slots -100", Place + ": housing condition +5.1%",
@@ -114,7 +114,7 @@ public class EventEffectTextTests
         var mark = UiText.LeftToRightMark.ToString();
         StringAssert.Contains(mark + "-100" + mark, EventEffectText.Format(rows[3], Text(true)));
         StringAssert.Contains(mark + "+5.1%" + mark, EventEffectText.Format(rows[10], Text(true)));
-        StringAssert.Contains(mark + "IL -1.3m" + mark, EventEffectText.Format(rows[1], Text(true), "אוצר"));
+        Assert.That(EventEffectText.Format(rows[1], Text(true), "אוצר").IndexOf(mark + "IL\u00A0-1.3m" + mark, StringComparison.Ordinal) >= 0);
     }
 
     // A project unlock (R-EFX-008) is one of the helper's entries too, so it has a template; the Hebrew kind name comes

@@ -372,7 +372,7 @@ public class HebrewUiTests
     {
         foreach (var s in new[] { "תור 1", "5  מלחמה כוללת", "קואליציה: 30 מתוך 37", "‏…אנו", "العربية" })
             Assert.IsTrue(UiDirection.RightToLeft(s), s);
-        foreach (var s in new[] { "15 May 1948", "IL 20.0m", "+5%", "-5%", "30%", "", "David Ben-Gurion", "Mapai :מפלגה", "$40.0m", "1948" })
+        foreach (var s in new[] { "15 May 1948", "IL\u00A020.0m", "+5%", "-5%", "30%", "", "David Ben-Gurion", "Mapai :מפלגה", "$40.0m", "1948" })
             Assert.IsFalse(UiDirection.RightToLeft(s), s);
         Assert.IsFalse(UiDirection.RightToLeft(null));
     }

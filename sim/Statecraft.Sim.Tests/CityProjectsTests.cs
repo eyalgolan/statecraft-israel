@@ -30,7 +30,7 @@ public class CityProjectsTests
         var p = one.State.CityProjects.Values.Single();
         Assert.Equal(("housing", "town_a", 1, 1, 1, (DateTime?)null), (p.Kind, p.City, p.Q, p.R, p.TurnsLeft, p.BuiltOn));   // 2 turns, this one the first
         Assert.Equal(Step(c, s).State.Treasury - 3, one.State.Treasury, 9);   // paid in full at the start (Q-PROJ-1)
-        Assert.Contains(one.Why, x => x.System == "city" && x.Message == "Town A: a housing project began, cost IL 3.0m");
+        Assert.Contains(one.Why, x => x.System == "city" && x.Message == "Town A: a housing project began, cost IL\u00A03.0m");
         Assert.Equal(s.Cities["town_a"].HousingCapacity, one.State.Cities["town_a"].HousingCapacity);   // nothing yet
 
         var two = Step(c, one.State);
@@ -144,7 +144,7 @@ public class CityProjectsTests
         s.Treasury = 1;
         var r = Step(c, s, Housing());
         Assert.Empty(r.Rejected);
-        Assert.Contains(r.Why, x => x.System == "economy" && x.Message == "Borrowed IL 2.0m to build a housing project");
+        Assert.Contains(r.Why, x => x.System == "economy" && x.Message == "Borrowed IL\u00A02.0m to build a housing project");
     }
 
     // R-PROJ-001 (Q-HOUSE-3, D-D3): the transit camp keeps the ma'abarot policy gate, which carries its sourced date; with the

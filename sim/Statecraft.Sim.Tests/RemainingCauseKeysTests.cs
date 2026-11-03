@@ -374,7 +374,7 @@ public class RemainingCauseKeysTests
         Assert.Equal("Town A: 4 groups in work", workers.Message);
         var training = Assert.Single(result.Why, x => x.Key == "training_started");
         Assert.Equal(new[] { "3", "basic", "", "1.5" }, training.Args);
-        Assert.Equal("Town A: 3 groups began basic training, cost IL 1.5m", training.Message);
+        Assert.Equal("Town A: 3 groups began basic training, cost IL\u00A01.5m", training.Message);
     }
 
     [Theory]
