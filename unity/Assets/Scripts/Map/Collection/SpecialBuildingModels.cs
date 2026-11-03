@@ -578,14 +578,17 @@ namespace Statecraft.Game.Map.Collection
                 layer = go.AddComponent<SpecialBuildingModels>(); layer.map = map;
             }
             if (layer.residencyView == null) layer.ConfigureResidency(map.Residency.Special, null);
-            // GameRoot calls this on every refresh: rebuild only when the game date changes (the dated list and the dated
-            // tokens' clearance both follow it), the built arms workshops do (one completed, or one left the state), or, with
-            // workshops, the rural plan they keep clear of (RuralLife.VersionOf: HexPropModels rebuilds on it too, so the props
-            // keep clear of the b21 drawn).
-            int rural = workshops.Count == 0 ? 0 : RuralLife.VersionOf(map);
+            // GameRoot calls this on every refresh. The layer rebuilds on events only, never per frame: the game date changes
+            // (the dated list and the dated tokens' clearance both follow it), the built arms workshops change (one completed, or
+            // one left the state), or, while a wanted row keeps off the farm scenes (KeepsOffFarms: the workshops and Tal's four
+            // props, so every date the well stands), the farm scenes' plan does. Its version (RuralLife.VersionOf) moves only
+            // when RuralLife.Show is given other wants or other ground to keep clear of (the civilians follow the date, the
+            // placements, the settlements and the city projects); HexPropModels rebuilds on it too, so both stand on one plan.
+            var next = workshops.Count == 0 ? Placements(date) : Placements(date).Concat(workshops).ToList();
+            int rural = next.Any(KeepsOffFarms) ? RuralLife.VersionOf(map) : 0;
             if (layer.shown && layer.date == date && Same(layer.workshops, workshops) && layer.ruralVersion == rural) return layer;
             layer.shown = true; layer.date = date; layer.workshops = workshops; layer.ruralVersion = rural;
-            layer.Show(workshops.Count == 0 ? Placements(date) : Placements(date).Concat(workshops).ToList()); return layer;
+            layer.Show(next); return layer;
         }
 
         internal void ShowForTest(IReadOnlyList<Want> wants) => Show(wants);
