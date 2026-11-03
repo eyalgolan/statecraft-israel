@@ -1,3 +1,4 @@
+using System.Globalization;
 using Statecraft.Sim;
 
 /// <summary>#1689, the Historical start inventory under exact gdd-0.3 (R-POP-004): the real census cities and the real
@@ -344,7 +345,8 @@ public class HistoricalPopulationTests
         {
             Assert.Null(units[i].Equipment.ToolsId);
             if (inventory[i].Source.StartsWith(HistoricalPopulation.FormationPrefix, StringComparison.Ordinal))
-                Assert.Equal(inventory[i].Source + "/" + inventory[i].Ordinal, units[i].Equipment.MilitaryId);
+                Assert.Equal(inventory[i].Source + "/" + inventory[i].Ordinal.ToString(CultureInfo.InvariantCulture),
+                    units[i].Equipment.MilitaryId);
             else
                 Assert.Null(units[i].Equipment.MilitaryId);
         }
