@@ -11,10 +11,23 @@ checks this (see `CONTRIBUTING.md`).
 ## [0.3.4] - 2026-11-03
 
 ### Added
+- Under the gdd-0.3 rules only, units gain combat experience from the engagements they survive (Refs #1707): 1 for each
+  engagement, up to 5, for both sides and for artillery firing alone. A recruit with 5 becomes a veteran soldier, and
+  service time no longer promotes it. The game players play (gdd-0.1) is unchanged.
+- Map records for six named camps (#1719): Tzrifin, Tel Litvinsky, Schneller and Camp 80 as military camps, Atlit and
+  Beit Lid as reception camps, each an optional marker with sourced coordinates and an English and Hebrew name. They add
+  no city, site, capture target, people or capacity. Rosh HaAyin and Pardes Hanna wait for a sourced camp point.
+- Settings now offers the 125% and 150% UI scales on every window shape the layout tests cover, from 360x800 to
+  2560x1080; outside that range it still offers 100% only (#40).
+- Tiberias, Safed and Netanya now stand as Tal Heuberger's own whole-town models when the map is zoomed out (40 km and
+  more), instead of the generic code-built buildings (Refs #1288, #2085). Ramla stands as Tal's own Ramla model instead
+  of the generic stone village.
+- Tal Heuberger's papyrus and tamarisk (#2082), K98k, MG34 and Sten (#2083) and C06 point-fire export (#2084) are kept in
+  the repository as source files, credited and licensed (CC BY-NC-ND 4.0). They are not shown in the game yet.
 - Umm Rashrash (future Eilat) is on the map as an optional outpost, named in English and Hebrew (Refs #1007).
   It has no 1948 population and gives no bonus or points; the objective-1 bonus waits on #752. The row is a draft with agent-checked Hebrew.
 - Hebrew event cards: a native speaker read the 38 agent-checked cards (#1065). The four 1949 armistice cards and the
-  one-million and Altalena cards take his wording, and 32 cards lose their `text_he_review: agent-checked` flag.
+  one-million and Altalena cards take their wording, and 32 cards lose their `text_he_review: agent-checked` flag.
 - Hebrew event cards: the owner read the Hebrew of `altalena`, `first_new_yishuv`, `burma_road_complete` and
   `railway_complete` next to the English and approved all four as written (#1065), so they lose their
   `text_he_review: agent-checked` flag. No event card is flagged any more.
@@ -215,6 +228,13 @@ checks this (see `CONTRIBUTING.md`).
   move.
 
 ### Changed
+- Lit hexes are easier to see over towns and trees: each one now has a translucent ivory tint along its edge, fading
+  towards the middle, drawn over the buildings and trees. While a Move or Attack pick is open, the hex under the pointer
+  has a gold band with navy edges (#2201).
+- Each top-bar meter's tip now says what the meter is and what moves it, under its number in words (#2200): one
+  `hud.tip.<id>` string per meter in English and Hebrew. Money, Immigration, Social cohesion and International support
+  reuse sentences of their encyclopedia pages; Security, Public support and Foreign currency are written from the sim's
+  rules. The new Hebrew awaits a native read (#564).
 - Hebrew event cards: the reviewer comments on `railway_complete`, `jerusalem_demilitarisation_guard` and
   `rafah_force_pressure`, which still said their Hebrew had no native read, now cite the owner's read that cleared it
   (#2174 for `railway_complete`, #2145 for the other two). Comments only; no card text or data changes.
@@ -300,6 +320,14 @@ checks this (see `CONTRIBUTING.md`).
   view for loading; the order (nearest the screen centre first, then by id) is unchanged.
 
 ### Fixed
+- A debug or quality flag in the part of the page URL after the `#` no longer switches on; only the query counts (Fixes #2215).
+- The Egyptian Spitfire now reads as flying and as Egyptian (owner's report of 2 November 2026): a blurred propeller
+  turns at its nose, it banks into the turns at the ends of its loop, a soft shadow lies on the ground below it where
+  the map's sun casts it, and a small Egyptian flag, the same flag the Egyptian units on the map fly, floats just
+  above its tail (owner's ruling: "Smaller flag, no pole"). The map labels keep clear of the whole box it flies
+  through, banked or not and with its flag, also after another model is unloaded (which used to shrink that box to
+  one pose). Presentation only; screenshots and editor renders hold the loop's start. The sim goldens did not move
+  (Refs #2014, #2238).
 - Hebrew region details use sourced Gazette subdistrict/district names and the sourced armistice display fields where supplied (Refs #1219, item 4).
   The catalogue records a source URL, fresh check date and page/section for each of 61 fields: 59 await native review and 2 have the owner's approved wording.
   Eleven geographic captions remain explicitly NEEDS-RESEARCH with their existing English fallback. English text, borders and dates are unchanged.

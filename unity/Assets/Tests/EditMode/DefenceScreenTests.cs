@@ -64,7 +64,7 @@ public class DefenceScreenTests
             Assert.AreEqual(DisplayStyle.None, ui.Q<Label>("ceasefire").style.display.value);   // no clock in the GDD loop (R-WAR-003)
             Assert.AreEqual("Minister of Defense David Ben-Gurion · Chief of Staff Yaakov Dori", ui.Q<Label>("defence-command").text);
             Assert.AreEqual("80% of reserves called up (level 5 needs at least 80%)", ui.Q<Label>("mob-level").text);
-            Assert.AreEqual("Costs IL 48.0m a year in pay and lost work", ui.Q<Label>("mob-cost").text);
+            Assert.AreEqual("Costs IL\u00A048.0m a year in pay and lost work", ui.Q<Label>("mob-cost").text);
             Assert.IsFalse(ui.Q<Button>("escalate").enabledSelf);
         }
     }
@@ -116,7 +116,7 @@ public class DefenceScreenTests
             Assert.AreEqual(0.4, bridge.State.Mobilization, 1e-9);
             ui.Press("escalate");                                                          // back to full war needs 80% again
             StringAssert.StartsWith("80% of reserves called up (level 5 needs at least 80%)", ui.Q<Label>("mob-level").text);
-            Assert.AreEqual("Costs IL 48.0m a year in pay and lost work", ui.Q<Label>("mob-cost").text);
+            Assert.AreEqual("Costs IL\u00A048.0m a year in pay and lost work", ui.Q<Label>("mob-cost").text);
             bridge.EndTurn();
             Assert.AreEqual(0.8, bridge.State.Mobilization, 1e-9);
             Assert.AreEqual(5, bridge.State.Rung);

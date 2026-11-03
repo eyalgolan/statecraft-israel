@@ -28,6 +28,23 @@ hud.caption.standing: "תמיכה בינלאומית"
 hud.caption.fx: "מטבע חוץ"
 # hud.caption.cohesion: Social cohesion; the GDD's Hebrew, kept by the owner (Q-HUD-3, 15 October 2026, #375; #380).
 hud.caption.cohesion: "לכידות חברתית"
+# Each meter's tip (MeterTip, #2200), as hud.tip.* in strings.en.yaml. treasury, immigration, cohesion and standing are
+# sentences of the reviewed encyclopedia pages (advisor.page.money_debt, .immigration, .national_meters), split from them;
+# security, support and fx are new. Agent-drafted Hebrew, all seven: native-review-pending (#564).
+# native-review-pending
+hud.tip.treasury: "כסף נכנס ממסים ומכל משרה מאוישת, ויוצא על הוצאות הממשלה, על אחזקת העוצבות הצבאיות שלנו, על אימון ועל בנייה. כשעלות גבוהה ממה שיש לנו, היא משולמת בכל זאת: הכסף נעצר באפס והיתרה הופכת לחוב."
+# native-review-pending
+hud.tip.immigration: "העולים מגיעים לפי הנתונים ההיסטוריים, וכל עיר מקבלת חלק לפי מספר האנשים בה. הם ממתינים כפליטים, ובכל תור חלק מהם הופכים לאזרחים ללא עבודה; כמה מהם, תלוי בשר האחראי על העלייה."
+# native-review-pending
+hud.tip.security: "הביטחון זז בעקבות הבחירות בכרטיסי האירוע. יישובי הספר מוסיפים לו, ויותר מכך כששר החקלאות מוכשר ומשרדו מתוקצב היטב."
+# native-review-pending
+hud.tip.support: "התמיכה הציבורית היא ממוצע התמיכה של קבוצות הבוחרים, וכל קבוצה שוקלת שניים מבין הלכידות החברתית, הביטחון, הדיור והמזון. יציבות הקואליציה נעה לעברה בכל תור."
+# native-review-pending
+hud.tip.cohesion: "הלכידות החברתית עולה ויורדת עם הדיור, התעסוקה, המזון, הקיצוב והביטחון."
+# native-review-pending
+hud.tip.standing: "התמיכה הבינלאומית זזה בעקבות הבחירות בכרטיסי האירוע."
+# native-review-pending
+hud.tip.fx: "מטבע החוץ נכנס מיצוא, מתרומות ומהלוואות, ויוצא על יבוא שגדל עם האוכלוסייה ועל דולרים שמומרים לכסף במסך הביטחון בזמן המלחמה. כרטיסי האירוע יכולים להוסיף לו או לגרוע ממנו. כשהוא אוזל, יבוא המזון נעצר עד שהוא מתאושש."
 hud.nav.cabinet: "ממשלה"
 # The Cabinet disc's tip while a seat is vacant that the player can fill (#1109). For the native reviewer (#564).
 hud.nav.cabinet_vacant: "ממשלה: יש תפקיד פנוי. אפשר למנות אליו מישהו."
@@ -58,7 +75,7 @@ why.title: "למה זה קרה?"
 encyclopedia.title: "אנציקלופדיה"
 encyclopedia.back: "חזרה"
 encyclopedia.opening: "הצגת עצות הפתיחה שוב"
-# The encyclopedia's 25 pages (spec 10, plan Task 13). AI-drafted Hebrew; a page is he_review: pending in
+# The encyclopedia's 27 pages (spec 10, plan Task 13). AI-drafted Hebrew; a page is he_review: pending in
 # advisor-messages.yaml and does not show in Hebrew until a native reviewer approves it (OQ-4). The nine pages that replace
 # How to play were read by Beri on #2095 (each marked below); the owner, a native speaker, read the other 16 on
 # 1 November 2026: "all 16 pages look good". משושה became משבצת in projects, standing_orders, combat and
@@ -112,6 +129,15 @@ advisor.page.food.title: "מלאי המזון"
 advisor.page.food.text: "אני עוקבת אחרי המלאי הזה בכל חודש. המזון הוא מלאי לאומי אחד: בכל תור השדות החרושים מוסיפים את היבול שלהם, המדינה אוכלת את מה שהיא צריכה, ויבוא ממלא את המלאי מחדש, אלא אם מטבע החוץ שלנו אזל. מחסור מוריד את הלכידות החברתית, ומלאי ריק כשהחוב בתקרה מפעיל את מונה ההפסד."
 advisor.page.national_meters.title: "המדדים הלאומיים"
 advisor.page.national_meters.text: "הלכידות החברתית עולה ויורדת עם הדיור, התעסוקה, המזון, הקיצוב והביטחון. התמיכה הבינלאומית זזה בעקבות הבחירות בכרטיסי האירוע. אף אחת מהן אינה מסיימת את המשחק, אבל אירועים מסוימים מגיבים כשאחת מהן נמוכה, ודוח הסיום מציג את שתיהן. קרבות ותנועת יחידות אינם משנים אף אחת מהן."
+# security and public_support (#2223): agent-drafted Hebrew, he_review: pending (#564).
+# native-review-pending
+advisor.page.security.title: "ביטחון"
+# native-review-pending
+advisor.page.security.text: "יישובי הספר מוסיפים לביטחון במשך כמה תורות, ויותר מכך כששר החקלאות מוכשר ומשרדו מתוקצב היטב. הבחירות בכרטיסי האירוע יכולות להעלות אותו או להוריד אותו. הביטחון מחזק את הלכידות החברתית, ושתיים מארבע קבוצות הבוחרים שוקלות אותו, ולכן הוא משפיע גם על התמיכה הציבורית. הדרגה שליד שמו היא רמת הביטחון, מ־1, איום שגרתי, ועד 5, מלחמה כוללת: כרטיסי האירוע קובעים אותה, ורמה גבוהה יותר מגייסת יותר מילואים. קרבות ותנועות אינם משנים את המדד עצמו."
+# native-review-pending
+advisor.page.public_support.title: "תמיכה ציבורית"
+# native-review-pending
+advisor.page.public_support.text: "התמיכה הציבורית היא ממוצע התמיכה של ארבע קבוצות בוחרים, וכל קבוצה שוקלת שניים מבין הלכידות החברתית, הביטחון, הדיור והמזון: הלכידות החברתית נחשבת אצל שלוש מהקבוצות, הביטחון והדיור אצל שתיים כל אחד, והמזון אצל אחת. שום דבר אינו משנה אותה ישירות: היא נעה בעקבות ארבעתם. יציבות הקואליציה נעה לעברה בכל תור, וכשהיציבות נמוכה, הצבעה על התקציב עלולה להיות נגד הממשלה גם כשיש לקואליציה רוב. אף אחת מהן אינה מסיימת את המשחק."
 # advisor.page.units_movement: approved by Beri, a native speaker, on #2095 (1 Nov 2026): title and text as written.
 advisor.page.units_movement.title: "תנועת יחידות"
 advisor.page.units_movement.text: "יחידה נעה ברגע שנותנים לה את ההוראה, ואי אפשר לבטל תנועה. השטח קובע את העלות של כל משבצת, ויחידה שעוד לא זזה בתור הזה תמיד יכולה להיכנס למשבצת סמוכה אחת. יעד רחוק יותר הופך למסלול, וסיום התור ממשיך להוביל את היחידה לאורכו. שום יחידה אינה נכנסת למים או למשבצת שיש בה יחידת אויב."
@@ -167,6 +193,12 @@ settings.sound: "צליל"
 settings.sound.off: "כבוי"
 settings.sound.low: "חלש"
 settings.sound.high: "חזק"
+# The start menu's music volume (#39, MenuMusic), in the sound effects' three steps. The adjectives are feminine, agreeing
+# with "מוזיקה" (as the quality row's agree with "איכות"). Agent-drafted Hebrew; native review pending (#564).
+settings.music: "מוזיקה"
+settings.music.off: "כבויה"
+settings.music.low: "חלשה"
+settings.music.high: "חזקה"
 # The language choice (#1036); the languages' names are on their buttons, in themselves (SettingsPresenter). For the
 # native reviewer (#564).
 settings.language: "שפה"
@@ -440,6 +472,12 @@ why.cause.borrowed.project: "הלוואה של {0} לבניית {1}"
 why.cause.borrowed.deport: "הלוואה של {0} לגירוש ({1})"
 why.cause.borrowed.occupation: "הלוואה של {0} לעלות ההחזקה ({1})"
 why.cause.borrowed.event: "הלוואה של {0} עבור {1}"
+# The gdd-0.3 arms workshop's cycle (#1701, R-ARMS-006). Agent-drafted Hebrew; native review pending (#564).
+why.cause.borrowed.workshop: "הלוואה של {0} למחזור עבודה בסדנת נשק"
+# The gdd-0.3 housing surcharge (#1703, R-HOUSE-005), not part of #1642's owner review above. The word "היטל דיור" is the
+# owner's choice (2 Nov 2026: "היטל דיור (Recommended)"); the rest of the line is agent-drafted Hebrew, native review
+# pending (#564).
+why.cause.borrowed.housing_surcharge: "הלוואה של {0} להיטל הדיור"
 # #2199: the why.cause.paid.* lines below are agent-drafted Hebrew, not part of #1642's owner review above. Each reuses
 # its why.cause.borrowed.* purpose phrase, except paid.occupation, which is newly worded. Native review pending (#564).
 why.cause.paid.corridor: "{0}: שינוי {1} (לבניית קטע של כביש או מסילה)"
@@ -455,6 +493,8 @@ why.cause.paid.occupation: "{0}: שינוי {1} (לעלות ההחזקה של {2
 # A map action's cost (#2199); {2} is an info.map_action.* noun, as in why.cause.map_borrowed. Agent-drafted Hebrew;
 # native review pending (#564).
 why.cause.paid.map_action: "{0}: שינוי {1} (לבניית {2})"
+# The gdd-0.3 arms workshop's cycle (#1701, R-ARMS-006). Agent-drafted Hebrew; native review pending (#564).
+why.cause.paid.workshop: "{0}: שינוי {1} (למחזור עבודה בסדנת נשק)"
 # #2212: Money's Other line in the turn report and the meter tip, the causes left out after the two largest, summed.
 # Agent-drafted Hebrew, not part of #1642's owner review; native review pending (#564).
 why.cause.money_other: "{0}: שינוי {1} (סיבות אחרות)"
@@ -528,6 +568,16 @@ report.enemy_move: "{0} עבר לעמדה חדשה"
 report.enemy_attack: "{0} פתח בהתקפה על אחת היחידות שלכם"
 report.enemy_fortify: "{0} התבצר בעמדתו"
 report.unit: "כוח {0}"
+# The arms workshops' lines (#1701 A1), {0} the city's name, in brackets so no prefix joins a name that may fall back to
+# English (HE-07); the Arms count as "Label: N" (HE-04). Agent-drafted Hebrew; native review pending (#564).
+report.workshops: "סדנאות נשק"
+report.workshop_arms: "סדנת נשק ({0}): תוספת נשק: 1"
+report.workshop_paused_debt: "סדנת נשק ({0}) בהמתנה: תקרת החוב"
+# A city's workshop lines combined, for two or more ("Combine per city", #1701): {0} the city's name, {1} how many, in
+# brackets after the name as in the EN lines; the Arms count as "Label: N" (HE-04). Agent-drafted Hebrew; native review
+# pending (#564).
+report.workshop_arms_n: "סדנאות נשק ({0}) ({1}): תוספת נשק: {1}"
+report.workshop_paused_debt_n: "סדנאות נשק ({0}) ({1}) בהמתנה: תקרת החוב"
 # The end screen (#812; D-H4): the sim's end report, formatted only. For the native reviewer (#564).
 end.title: "המשחק הסתיים"
 end.outcome.mvp_ended: "המשחק הגיע לתורו האחרון."
@@ -849,6 +899,22 @@ city.project_reason.turn_cap: "אי אפשר להתחיל יותר מ־{0} מי�
 # The toggle that folds a city's own projects on a stacked bar or a short window (owner ruling on #1150), {0} the
 # number of kinds. For the native reviewer (#564).
 city.projects_toggle: "מיזמי העיר ({0})"
+# #1722 slice E (#1701; R-ARMS-005 to R-ARMS-007), gdd-0.3 only: a built arms workshop's part of the info panel, as in
+# strings.en.yaml. Counts as "Label: N" (HE-04); the refusals follow unit.reinforce_refused.idle. Agent-drafted Hebrew;
+# native review pending (#564).
+city.workshops_staffed: "סדנאות נשק מאוישות: {0} מתוך {1}"
+city.workshops_ordered: "סדנאות נשק מאוישות בסיום התור: {0} מתוך {1}"
+city.workshop_staffed: "הסדנה הזאת: מאוישת"
+city.workshop_unstaffed: "הסדנה הזאת: לא מאוישת, בהמתנה"
+city.workshop_cycle: "חודשים מאוישים במחזור: {0} מתוך {1} · שולם: {2}"
+city.workshop_next: "אין מחזור עבודה פעיל · עלות המחזור הבא: {0}"
+city.workshop_held: "בהמתנה: {0} בשליטת האויב"
+workshop.refused_built_one: "{0}: יש רק סדנת נשק אחת"
+workshop.refused_built: "{0}: סדנאות נשק בנויות: {1}"
+# A no-break space (U+00A0) joins "יש" to its count, so a narrow panel never wraps "(יש" and "0)" apart.
+# Agent-drafted Hebrew; native review pending (#564).
+workshop.refused_people: "{0}: אין די אזרחים ובעלי מלאכה (יש\u00A0{1})"
+workshop.refused_people_no_job: "{0}: אין די אזרחים ובעלי מלאכה ללא משרה (יש\u00A0{1})"
 site.available: "אתר ייעודי ליישוב חדש"
 site.group: "קבוצת חלוצים {0}"
 site.build: "הקמת יישוב עם {0}: {1}, {2}"
@@ -1017,6 +1083,11 @@ share.site_downloaded: "אפשר לצרף לפוסט את התמונה שהור�
 # Event/upkeep cause templates (#1680, #564), review state per key.
 # agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved recommendation).
 why.cause.military_upkeep: "{0}: שינוי {1} (תחזוקה צבאית)"
+# The gdd-0.3 housing surcharge and cohesion lines (#1703, R-HOUSE-005). Agent-drafted Hebrew; native review pending (#564).
+# The surcharge's word "היטל דיור" is the owner's choice (2 Nov 2026: "היטל דיור (Recommended)"), and "מצב הדיור" is
+# Q-UI-2's approved term for housing condition; the rest of each line awaits the native read.
+why.cause.housing_surcharge: "{0}: שינוי {1} (היטל דיור)"
+why.cause.housing_cohesion: "{0}: שינוי {1} (מצב הדיור)"
 # agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted).
 why.cause.event_new: "אירוע חדש: {0}"
 # agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted).
@@ -1159,6 +1230,11 @@ why.cause.project_started: "{0}: תחילת {1}, עלות {2}"
 why.cause.project_cancelled: "{0}: ביטול {1}; הכסף שהוצא לא יוחזר"
 why.cause.project_completed: "{0}: סיום {1}"
 why.cause.arms_bought: "נשק שנרכש: {0}, עלות {1}"
+# The gdd-0.3 arms workshops (#1701; R-ARMS-005, R-ARMS-006). Agent-drafted Hebrew; native review pending (#564).
+why.cause.workshop_workers: "{0}: סדנאות נשק מאוישות: {1}"
+why.cause.workshop_arms: "{0}: נשק שייצרה סדנת נשק: 1"
+why.cause.workshop_paused.no_worker: "{0}: לסדנת נשק אין החודש עובד ללא משרה"
+why.cause.workshop_paused.debt_ceiling: "{0}: המחזור הבא של סדנת נשק ממתין: תשלומו היה מעלה את החוב מעבר לתקרה"
 why.cause.food_harvest: "{0}: יחידות מזון שהניבה הקרקע החרושה: {1}"
 why.cause.food_shortage: "המזון אזל: מחסור של {0} מתוך {1} יחידות שנדרשו החודש"
 why.cause.food_without_imports: "לא יובא מזון (משבר מטבע חוץ): יחידות שנותרו במלאי: {0}"

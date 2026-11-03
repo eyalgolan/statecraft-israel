@@ -141,6 +141,13 @@ public partial class DesignValuesTests
         ("projects.yaml", "projects[winery].capacity"),
         ("projects.yaml", "projects[winery].condition"),
         ("projects.yaml", "projects[winery].job_slots"),
+        // The gdd-0.3 arms workshop (R-ARMS-004; #1701 OQ2, owner 2 November 2026: "IL 15m, 3 turns (Recommended)").
+        ("projects.yaml", "projects[arms_workshop].cost"),
+        ("projects.yaml", "projects[arms_workshop].turns"),
+        ("projects.yaml", "projects[arms_workshop].capacity"),
+        ("projects.yaml", "projects[arms_workshop].condition"),
+        ("projects.yaml", "projects[arms_workshop].job_slots"),
+        ("projects.yaml", "projects[arms_workshop].worker_slots"),
         // Movement (Phase 5 PR 5, #744; Q-MOVE-1, Q-MOVE-3): agent-proposed under "Take all recommendations" (#375).
         ("rules.yaml", "attention_cost.move"),
         ("rules.yaml", "mvp.move_cost.coastal_plain"),

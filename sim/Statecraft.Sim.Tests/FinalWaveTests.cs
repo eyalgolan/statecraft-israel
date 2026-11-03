@@ -143,7 +143,7 @@ public class FinalWaveTests
         Assert.Null(MapActions.Apply(c, s, MapActions.TransitCamp, ok.Q, ok.R, why));
         Assert.Equal("This hex already has a transit camp", MapActions.Check(c, s, MapActions.TransitCamp, ok.Q, ok.R));
         var built = Assert.Single(why, w => w.System == "map");
-        Assert.StartsWith("Built a transit camp: cost IL 1.5m", built.Message);
+        Assert.StartsWith("Built a transit camp: cost IL\u00A01.5m", built.Message, StringComparison.Ordinal);
         Assert.DoesNotMatch(@"\(-?\d+, -?\d+\)", built.Message);
     }
 

@@ -25,12 +25,12 @@ public class HudTests
     {
         var why = new List<Cause>
         {
-            new Cause("economy", "treasury", -0.4, "Money IL -0.4m (military upkeep)", key: CauseKeys.MilitaryUpkeep),
-            new Cause("city", "tel_aviv", 0.53, "Tel Aviv: jobs paid IL +0.5m", key: CauseKeys.WagesPaid),
-            new Cause("economy", "debt", 9, "Borrowed IL 9.0m to cover the deficit", key: CauseKeys.Borrowed, args: new[] { CauseKeys.Purpose.Deficit }),
+            new Cause("economy", "treasury", -0.4, "Money IL\u00A0-0.4m (military upkeep)", key: CauseKeys.MilitaryUpkeep),
+            new Cause("city", "tel_aviv", 0.53, "Tel Aviv: jobs paid IL\u00A0+0.5m", key: CauseKeys.WagesPaid),
+            new Cause("economy", "debt", 9, "Borrowed IL\u00A09.0m to cover the deficit", key: CauseKeys.Borrowed, args: new[] { CauseKeys.Purpose.Deficit }),
         };
         var turn = new StepResult(new GameState(), why, new Rejection[0]);
-        CollectionAssert.AreEqual(new[] { "Tel Aviv: jobs paid IL +0.5m", "Money IL -0.4m (military upkeep)" },
+        CollectionAssert.AreEqual(new[] { "Tel Aviv: jobs paid IL\u00A0+0.5m", "Money IL\u00A0-0.4m (military upkeep)" },
             HudModel.Causes(turn, "treasury", C, w => w.Message));
 
         var b = NewBridge();
@@ -45,18 +45,18 @@ public class HudTests
     public void MoneyShowsTheTwoLargestCausesAndOneOtherLineForTheRest()
     {
         Cause Money(double d, string what) => new Cause("economy", "treasury", d, PlayerText.Change(C, "treasury", d) + " (" + what + ")", key: CauseKeys.MilitaryUpkeep);
-        var borrowing = new Cause("economy", "debt", 9, "Borrowed IL 9.0m to cover the deficit", key: CauseKeys.Borrowed, args: new[] { CauseKeys.Purpose.Deficit });
+        var borrowing = new Cause("economy", "debt", 9, "Borrowed IL\u00A09.0m to cover the deficit", key: CauseKeys.Borrowed, args: new[] { CauseKeys.Purpose.Deficit });
         IReadOnlyList<string> Lines(string meter, params Cause[] why) =>
             HudModel.Causes(new StepResult(new GameState(), why.Append(borrowing).ToList(), new Rejection[0]), meter, C, w => w.Message);
 
         var a = Money(-3, "a"); var b = Money(2, "b");
-        CollectionAssert.AreEqual(new[] { "Money IL -3.0m (a)", "Money IL +2.0m (b)", "Money IL -0.3m (other causes)" },
+        CollectionAssert.AreEqual(new[] { "Money IL\u00A0-3.0m (a)", "Money IL\u00A0+2.0m (b)", "Money IL\u00A0-0.3m (other causes)" },
             Lines("treasury", Money(0.1, "d"), a, Money(-0.4, "c"), b), "three or more causes: the two largest, then the rest");
-        CollectionAssert.AreEqual(new[] { "Money IL -3.0m (a)", "Money IL +2.0m (b)" }, Lines("treasury", a, b), "two causes: no Other line");
-        CollectionAssert.AreEqual(new[] { "Money IL -3.0m (a)" }, Lines("treasury", a), "one cause: no Other line");
-        CollectionAssert.AreEqual(new[] { "Money IL -3.0m (a)", "Money IL +2.0m (b)" }, Lines("treasury", a, b, Money(0.04, "c")),
-            "the rest shows as IL 0.0m: no Other line");
-        CollectionAssert.AreEqual(new[] { "Money IL -3.0m (a)", "Money IL +2.0m (b)" }, Lines("treasury", a, b, Money(1, "c"), Money(-1, "d")),
+        CollectionAssert.AreEqual(new[] { "Money IL\u00A0-3.0m (a)", "Money IL\u00A0+2.0m (b)" }, Lines("treasury", a, b), "two causes: no Other line");
+        CollectionAssert.AreEqual(new[] { "Money IL\u00A0-3.0m (a)" }, Lines("treasury", a), "one cause: no Other line");
+        CollectionAssert.AreEqual(new[] { "Money IL\u00A0-3.0m (a)", "Money IL\u00A0+2.0m (b)" }, Lines("treasury", a, b, Money(0.04, "c")),
+            "the rest shows as IL\u00A00.0m: no Other line");
+        CollectionAssert.AreEqual(new[] { "Money IL\u00A0-3.0m (a)", "Money IL\u00A0+2.0m (b)" }, Lines("treasury", a, b, Money(1, "c"), Money(-1, "d")),
             "the rest cancels out: no Other line");
         Cause Security(double d) => new Cause("events", "security", d, PlayerText.Change(C, "security", d));
         Assert.AreEqual(HudModel.MaxCauses, Lines("security", Security(0.03), Security(0.02), Security(0.01)).Count, "only Money gets an Other line");
@@ -78,7 +78,7 @@ public class HudTests
         Assert.AreEqual("1948", m.Year);
         Assert.AreEqual("Turn 0", m.Turn);
         Assert.AreEqual("15 May 1948", m.Date);
-        Assert.AreEqual("IL 20.0m", m.Treasury.Value);          // Israeli pounds (playtest 1, item 7)
+        Assert.AreEqual("IL\u00A020.0m", m.Treasury.Value);          // Israeli pounds (playtest 1, item 7)
         Assert.AreEqual("$40.0m", m.Fx.Value);
         Assert.AreEqual("30%", m.Security.Value);                    // the 0-100 scale, with its unit (fix round 1, I2)
         Assert.AreEqual("50%", m.Standing.Value);
@@ -143,7 +143,7 @@ public class HudTests
         Assert.Greater(bridge.State.Debt, 0.0);
         var m = HudModel.From(bridge, Text);
         Assert.AreEqual(PlayerText.Money(C, "treasury", -bridge.State.Debt), m.Treasury.Value);
-        StringAssert.Contains("IL -", m.Treasury.Value);
+        Assert.That(m.Treasury.Value.IndexOf("IL\u00A0-", System.StringComparison.Ordinal) >= 0);
     }
 
     /// <summary>#681 (owner, 16 October 2026: "keep one top-bar figure and label it as net (cash minus debt)"): the Money
@@ -163,7 +163,7 @@ public class HudTests
         Assert.AreEqual(caption, meter.Q<Label>(className: "meter-name").text);
         StringAssert.StartsWith(caption + ":", meter.tooltip);
         Assert.AreEqual(PlayerText.Money(C, "treasury", bridge.State.Treasury - bridge.State.Debt), ui.Q<Label>("treasury-value").text);
-        StringAssert.Contains("IL -", ui.Q<Label>("treasury-value").text);
+        Assert.That(ui.Q<Label>("treasury-value").text.IndexOf("IL\u00A0-", System.StringComparison.Ordinal) >= 0);
     }
 
     // ---- The score (#380): only in the GDD loop, from GameState.Score ----
@@ -591,7 +591,7 @@ public class HudTests
         var now = bridge.State;
         prev.Treasury = now.Treasury - now.Debt + prev.Debt - 5;          // up by 5
         hud.Render();
-        Assert.AreEqual("IL +5.0m", ui.Q<Label>("treasury-delta").text);
+        Assert.AreEqual("IL\u00A0+5.0m", ui.Q<Label>("treasury-delta").text);
         Assert.IsTrue(ui.Q<Label>("treasury-delta").ClassListContains("delta-up"));
         Assert.IsFalse(ui.Q<Label>("treasury-delta").ClassListContains("delta-down"));
         prev.Treasury = now.Treasury - now.Debt + prev.Debt + 0.04;       // down by 0.04: rounds to zero, never "-0.0"
@@ -796,7 +796,7 @@ public class HudTests
         var m = HudModel.From(bridge, Text);
         Assert.AreEqual("$-2.0m", m.Fx.Delta);
         Assert.AreEqual("+5%", m.Security.Delta);
-        Assert.AreEqual("IL -3.0m", m.Treasury.Delta);
+        Assert.AreEqual("IL\u00A0-3.0m", m.Treasury.Delta);
     }
 
     /// <summary>Fix round 2 (N4, N5): no script rescales a sim number for display itself: 0..1 values go through
@@ -916,7 +916,7 @@ public class HudTests
         using var ui = new UiTestKit();
         var bridge = NewBridge();
         var hud = new HudPresenter(ui.Root, bridge, Text);
-        Assert.AreEqual("Money (net): IL 20.0 million", ui.Q<VisualElement>("meter-treasury").tooltip);           // turn 0: no change
+        Assert.AreEqual("Money (net): IL\u00A020.0 million", ui.Q<VisualElement>("meter-treasury").tooltip);           // turn 0: no change
         Assert.AreEqual("Foreign currency: $40.0 million", ui.Q<VisualElement>("meter-fx").tooltip);
         Assert.AreEqual("Security: 30%", ui.Q<VisualElement>("meter-security").tooltip);
         bridge.EndTurn();
@@ -928,7 +928,7 @@ public class HudTests
         hud.Render();
         var net = System.Math.Round(now.Treasury - now.Debt, 1, System.MidpointRounding.AwayFromZero);
         Assert.Greater(net, 0, "the test expects a positive net position after one turn");
-        Assert.AreEqual(Inv($"Money (net): IL {net:0.0} million, down IL 1.4 million since last turn"), ui.Q<VisualElement>("meter-treasury").tooltip);
+        Assert.AreEqual(Inv($"Money (net): IL\u00A0{net:0.0} million, down IL\u00A01.4 million since last turn"), ui.Q<VisualElement>("meter-treasury").tooltip);
         Assert.AreEqual(Inv($"Foreign currency: ${now.FxReserves:0.0} million, up $2.0 million since last turn"), ui.Q<VisualElement>("meter-fx").tooltip);
         Assert.AreEqual($"Security: {ui.Q<Label>("security-value").text}, up 5 points since last turn", ui.Q<VisualElement>("meter-security").tooltip);
         Assert.AreEqual($"International support: {ui.Q<Label>("standing-value").text}, down 1 point since last turn", ui.Q<VisualElement>("meter-standing").tooltip);
@@ -982,14 +982,14 @@ public class HudTests
         now.Debt = now.Treasury + 3;                                         // net -3.0
         prev.Debt = prev.Treasury - 1;                                       // net +1.0 before: down by 4
         m = HudModel.From(bridge, Text);
-        Assert.AreEqual("Money: IL -3.0 million, down IL 4.0 million since last turn", HudModel.Spoken(Text, "Money", m.Treasury));
+        Assert.AreEqual("Money: IL\u00A0-3.0 million, down IL\u00A04.0 million since last turn", HudModel.Spoken(Text, "Money", m.Treasury));
         using var ui = new UiTestKit();
         var he = He;
         new HudPresenter(ui.Root, bridge, he);
         var said = ui.Q<VisualElement>("meter-treasury").tooltip;
         // The values carry left-to-right marks (U+200E, #543), so the value stays one left-to-right run - "IL -3.0" with the minus next to the number - in a right-to-left line.
-        Assert.AreEqual("כסף (נטו): \u200EIL -\u200E\u200E3.0\u200E מיליון, קיטון של \u200EIL \u200E\u200E4.0\u200E מיליון מאז התור הקודם", said);
-        Assert.AreEqual("כסף (נטו): IL -3.0 מיליון, קיטון של IL 4.0 מיליון מאז התור הקודם", said.Replace("\u200E", ""));
+        Assert.AreEqual("כסף (נטו): \u200EIL\u00A0-\u200E\u200E3.0\u200E מיליון, קיטון של \u200EIL\u00A0\u200E\u200E4.0\u200E מיליון מאז התור הקודם", said);
+        Assert.AreEqual("כסף (נטו): IL\u00A0-3.0 מיליון, קיטון של IL\u00A04.0 מיליון מאז התור הקודם", said.Replace("\u200E", ""));
         foreach (var id in MeterIds)
         {
             var tip = ui.Q<VisualElement>("meter-" + id).tooltip;

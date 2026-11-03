@@ -739,6 +739,13 @@ namespace Statecraft.Sim
         public string Requires { get; set; } = "";
         /// <summary>Whether StartProject refuses this kind until an event option unlocks it (R-EFX-008). Default false.</summary>
         public bool Locked { get; set; }
+        /// <summary>R-ARMS-004: the workshop worker slots the kind gives when built, 0 or 1 (an arms workshop's one worker,
+        /// gdd03-balance.yaml `arms_workshop.parts.worker_slots`). Default 0.</summary>
+        public int WorkerSlots { get; set; }
+        /// <summary>R-ARMS-004: the rulesets (eras.yaml `systems.ruleset`) whose games have the kind; empty for every GDD
+        /// ruleset. The loader leaves a kind out of the other rulesets' <see cref="Content.ProjectKinds"/>.</summary>
+        public List<string> Rulesets { get => rulesets; set => rulesets = value ?? new List<string>(); }
+        List<string> rulesets = new List<string>();
     }
 
     /// <summary>A designated site (sites.yaml; docs/GDD.md "Pioneer work": building is allowed only at designated spots, and a
@@ -1425,8 +1432,12 @@ namespace Statecraft.Sim
         public Dictionary<(string Row, int Target), (int Q, int R, DateTime To)> UnitOrderTargets = new Dictionary<(string Row, int Target), (int Q, int R, DateTime To)>();
         /// <summary>The GDD designated sites (sites.yaml), in file order. Empty in the legacy loop.</summary>
         public List<Site> Sites = new List<Site>();
-        /// <summary>The GDD city project kinds (projects.yaml), in file order. Empty in the legacy loop.</summary>
+        /// <summary>The GDD city project kinds (projects.yaml) this game's ruleset has (R-ARMS-004: a row's `rulesets`), in file
+        /// order. Empty in the legacy loop.</summary>
         public List<ProjectKind> ProjectKinds = new List<ProjectKind>();
+        /// <summary>R-ARMS-004: the projects.yaml rows limited to other rulesets, in file order. Read and validated with the
+        /// rest, never startable or shown; kept so the Hebrew overlay (#1618) still names every row of the file.</summary>
+        public List<ProjectKind> ProjectKindsOfOtherRulesets = new List<ProjectKind>();
         /// <summary>The corridors (corridors.yaml), in file order; empty in the legacy loop.</summary>
         public List<CorridorDef> Corridors = new List<CorridorDef>();
         /// <summary>The objectives (objectives.yaml), ordered by id. Read in both loops, since their cards are events; only the

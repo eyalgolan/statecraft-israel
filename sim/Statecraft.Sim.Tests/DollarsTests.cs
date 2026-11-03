@@ -72,7 +72,7 @@ public class DollarsTests
         s.Treasury = 0;
         var none = Simulation.Step(c, s, Array.Empty<Command>()).State;
         var sold = Simulation.Step(c, s, new Command[] { new ConvertDollars(amount) }).State;
-        Assert.True(none.Debt > 0 && none.Debt < 0.5, $"the fixture's turn borrows under IL 0.5m ({none.Debt})");
+        Assert.True(none.Debt > 0 && none.Debt < 0.5, $"the fixture's turn borrows under IL\u00A00.5m ({none.Debt})");
         Assert.Equal((0.0, 0.0), (none.Treasury, sold.Debt));
         Assert.Equal(none.Treasury - none.Debt + amount * 0.5, sold.Treasury - sold.Debt, 9);
         Assert.Equal(none.FxReserves - amount, sold.FxReserves, 9);

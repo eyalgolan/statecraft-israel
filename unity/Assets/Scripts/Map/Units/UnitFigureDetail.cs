@@ -161,8 +161,25 @@ namespace Statecraft.Game.Map.Units
                 r.lightProbeUsage = LightProbeUsage.Off; r.reflectionProbeUsage = ReflectionProbeUsage.Off;
             }
             f.Animators = near.GetComponentsInChildren<Animator>(true);
+            if (f.Holder.parent != null)
+            {
+                UnitFigureWeapon.Refresh(f.Holder.parent);   // the near model holds the figure's weapon too (#2083)
+                UnitFigurePointFire.Refresh(f.Holder.parent);   // and takes a held point-fire aim (#2084)
+            }
             UnitFigures.GeometryChanged();
             if (!logged && Application.isPlaying) { logged = true; Debug.Log("UNITS figures: the skinned near figures streamed in (close zoom)"); }
+        }
+
+        /// <summary>Reads again the renderers of the figure <paramref name="holder"/> holds (a weapon joined its far or near
+        /// model, UnitFigureWeapon), and shows it as the zoom asks.</summary>
+        internal void Rescan(Transform holder)
+        {
+            var f = figures.Find(x => x.Holder == holder);
+            if (f == null) return;
+            if (f.Far != null) f.FarRenderers = f.Far.GetComponentsInChildren<Renderer>(true);
+            var near = holder.Find(NearName);
+            if (near != null && f.NearRenderers.Length > 0) f.NearRenderers = near.GetComponentsInChildren<Renderer>(true);
+            Show(f);
         }
 
         void Show(Figure f)

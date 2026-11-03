@@ -94,6 +94,9 @@ namespace Statecraft.Sim
         public SortedDictionary<string, SiteWork> Sites = new SortedDictionary<string, SiteWork>(StringComparer.Ordinal);
         /// <summary>The city projects being built or built, by id (R-PROJ-001). A cancelled project leaves.</summary>
         public SortedList<int, CityProject> CityProjects = new SortedList<int, CityProject>();
+        /// <summary>R-ARMS-005, R-ARMS-006 (gdd-0.3 only): the built arms workshops ever staffed, by their city project's id. A
+        /// workshop never staffed has no record; one unstaffed keeps its record, its paid cost and its progress.</summary>
+        public SortedList<int, Workshop> Workshops = new SortedList<int, Workshop>();
         /// <summary>The corridors with a segment being built or built, by corridor id (ordinal; R-COR-001). A corridor with no
         /// started segment has no record.</summary>
         public SortedDictionary<string, CorridorWork> Corridors = new SortedDictionary<string, CorridorWork>(StringComparer.Ordinal);
@@ -165,6 +168,7 @@ namespace Statecraft.Sim
             c.Cohorts = new SortedList<int, Cohort>(Cohorts);
             c.Sites = new SortedDictionary<string, SiteWork>(Sites, StringComparer.Ordinal);
             c.CityProjects = new SortedList<int, CityProject>(CityProjects);
+            c.Workshops = new SortedList<int, Workshop>(Workshops);
             c.Corridors = new SortedDictionary<string, CorridorWork>(Corridors, StringComparer.Ordinal);
             c.UnlockedProjects = new SortedSet<string>(UnlockedProjects, StringComparer.Ordinal);
             c.CardOrders = new SortedDictionary<int, DateTime>(CardOrders);
@@ -261,6 +265,7 @@ namespace Statecraft.Sim
             if (Cohorts.Count > 0) Section("train", '[', ']', Cohorts.Values.Select(x => x.Canonical()));
             if (Sites.Count > 0) Section("site", '{', '}', Sites.Values.Select(x => x.Canonical()));
             if (CityProjects.Count > 0) Section("cproj", '[', ']', CityProjects.Values.Select(x => x.Canonical()));
+            if (Workshops.Count > 0) Section("wshop", '[', ']', Workshops.Values.Select(x => x.Canonical()));   // R-ARMS-005, gdd-0.3 only
             if (Corridors.Count > 0) Section("corr", '{', '}', Corridors.Values.Select(x => x.Canonical()));
             if (UnlockedProjects.Count > 0) Section("unlocked", '[', ']', UnlockedProjects);
             if (CardOrders.Count > 0)   // R-ENEMY-005: only while a card's order stands, so a game with none hashes as before

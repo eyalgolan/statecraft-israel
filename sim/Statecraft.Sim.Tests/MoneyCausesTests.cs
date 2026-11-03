@@ -222,7 +222,7 @@ public class MoneyCausesTests
     public void NoOtherLineWhenNothingIsLeftOver(double[] deltas, bool expected)
     {
         var why = deltas.Select(d => new Cause("economy", "treasury", d, PlayerText.Change(Real, "treasury", d), key: CauseKeys.CivilianUpkeep))
-            .Append(new Cause("economy", "debt", 5, "borrowed IL 5.0m to cover the deficit", key: CauseKeys.Borrowed))   // not a Money cause
+            .Append(new Cause("economy", "debt", 5, "borrowed IL\u00A05.0m to cover the deficit", key: CauseKeys.Borrowed))   // not a Money cause
             .ToList();
         var largest = Largest(why, 2);
         var other = EconomySystem.OtherMoney(Real, why, largest);
