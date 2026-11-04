@@ -877,7 +877,28 @@ public class Gdd03TrainingCentreFixtureTests
         Assert.Equal(count, l.Units.Count); Assert.Equal(next, l.NextPopulationId);
     }
 
-    // R-TRAIN-007, R-TRAIN-008, the owner's answer "Cancel at once (Recommended)" (4 November 2026; the chosen option read: "Losing the centre cancels the course immediately"): a loss seen
+    // R-TRAIN-008 (review SHOULD): the loss is checked before the month's opening snapshot is read, so a month context that
+    // does not list the pupil (or their teacher) still cancels the course at a centre that stopped operating, instead of
+    // refusing the turn.
+    [Theory]
+    [InlineData(CivilianProfession.Farmer)]
+    [InlineData(CivilianProfession.Pioneer)]
+    public void ALostCentreCancelsEvenWhenTheMonthDoesNotListThePupil(CivilianProfession profession)
+    {
+        var c = Catalogue(); var s = State(c); var l = s.PopulationLedger; s.Treasury = 100; s.Arms = 7;
+        var f = new Gdd03TrainingCentreFixture(c, s, Centres());
+        var (teacher, trainee) = Pair(profession); var before = l.Get(trainee); var teacherBefore = l.Get(teacher);
+        f.Start(trainee, teacher, CentreA, Month(s, 0));
+        var without = Gdd03SyntheticMonthContext.CreateSynthetic(SaveGame.Gdd03Ruleset, 1,
+            l.Units.Where(p => p.Id != trainee && p.Id != teacher),
+            Facilities.Select(x => new Gdd03SyntheticFacilitySnapshot(x, true, 1)),
+            Array.Empty<int>(), Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
+        new Gdd03TrainingCentreFixture(c, s, Centres(operating: false)).Advance(trainee, without);
+        CancelledByTheLoss(s, before, teacherBefore, 100, 7);
+    }
+
+    // R-TRAIN-007, R-TRAIN-008, the owner's answer "Cancel at once (Recommended)" (4 November 2026; the chosen option
+    // read: "Losing the centre cancels the course immediately"): a loss seen
     // on the turn that would have graduated the course still cancels it. Our reading: the loss cancels the course before
     // that turn counts, so the pupil stays a novice and nobody graduates; graduation needs the last course turn to count.
     [Theory]
