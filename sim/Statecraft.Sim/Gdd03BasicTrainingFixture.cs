@@ -22,8 +22,11 @@ namespace Statecraft.Sim
     }
 
     /// <summary>A synthetic formation supplied by a test: an ActiveService target already bound in the ledger fixture, and its
-    /// region. A cohort graduates into the first free one in its camp's region (#1699; 53's maintainer call, not an owner
-    /// ruling, 3 November 2026: "pre-bound, empty ActiveService targets supplied by the tests; no ledger API change").</summary>
+    /// region. A cohort graduates into the first free one in its camp's region (owner ruling, 4 November 2026, Q25: "do the
+    /// recommended for all"; the chosen option read: "Allocate it to the first free pre-bound formation in deterministic
+    /// order"; https://github.com/eyalgolan/statecraft-israel/issues/1699#issuecomment-6623136049). The formations are
+    /// "pre-bound, empty ActiveService targets supplied by the tests; no ledger API change" (53's maintainer call,
+    /// 3 November 2026).</summary>
     internal sealed class Gdd03FixtureFormation
     {
         internal string Id { get; }
@@ -244,9 +247,9 @@ namespace Statecraft.Sim
         /// qualification"), so <see cref="Start"/> refuses it basic training again. Value: the course's unit class
         /// (unit_types.yaml); maintainer call on the source of the value, not an owner ruling. The cohort's first graduate
         /// claims the first free formation in the camp's region: supplied to this fixture, not claimed by another cohort,
-        /// and serving no one (53's maintainer call, not an owner ruling). A graduation in a month whose upkeep was already
-        /// paid is refused (53's maintainer call, not an owner ruling: Advance, then PayUpkeep, in a month), so a formation
-        /// always pays in its graduation month (27M-8).</summary>
+        /// and serving no one (owner ruling, 4 November 2026, Q25, #1699 comment 6623136049). A graduation in a month
+        /// whose upkeep was already paid is refused (53's maintainer call, not an owner ruling: Advance, then PayUpkeep, in a
+        /// month), so a formation always pays in its graduation month (27M-8).</summary>
         void Graduate(PopulationUnit trainee, Gdd03FixtureMilitaryCamp camp, int monthOrdinal)
         {
             if (lastPaidMonth is int paid && monthOrdinal <= paid)
