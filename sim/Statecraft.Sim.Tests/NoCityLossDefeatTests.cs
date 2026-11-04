@@ -206,4 +206,36 @@ public class NoCityLossDefeatTests
         Assert.True(Paid(result, "town_a"));
         Assert.Equal(2, result.State.CityProjects[10].TurnsLeft);
     }
+
+    static List<Cause> HeldLines(StepResult result) => result.Why.Where(w => w.Key == CauseKeys.CityHeld).ToList();
+
+    // R-CITY-010 (#1711): the turn report's line for a held city comes from the sim. Each turn the enemy holds Town A, one
+    // line names it with no change of its own; Town B, never held, gets none; once retaken, Town A gets none either.
+    [Fact]
+    public void Gdd03HeldCityGetsOneLineEachTurnUntilRetaken()
+    {
+        var c = Load(); var s = Simulation.NewGame(c, 1, Mode.Historical); Occupy(s);
+        for (int i = 0; i < 2; i++)
+        {
+            var result = Simulation.Step(c, s, Array.Empty<Command>());
+            var line = Assert.Single(HeldLines(result));
+            Assert.Equal("town_a", line.Target);
+            Assert.Equal(0.0, line.Delta);
+            Assert.Equal("Town A: held by the enemy; no job income or project work this turn", line.Message);
+            s = result.State;
+        }
+        s.Units.Remove(1);   // retaken
+        Assert.Empty(HeldLines(Simulation.Step(c, s, Array.Empty<Command>())));
+    }
+
+    // R-CITY-010: gdd-0.1 has no held city, so the same enemy unit gives no line; nor does a halutz under gdd-0.3.
+    [Theory]
+    [InlineData(SaveGame.GddRuleset, false)]
+    [InlineData(SaveGame.Gdd03Ruleset, true)]
+    public void OnlyAGdd03HeldCityGetsTheLine(string ruleset, bool halutz)
+    {
+        var c = Load(ruleset); var s = Simulation.NewGame(c, 1, Mode.Historical);
+        if (halutz) s.Units.Add(1, new Unit(1, "halutz", 1, 0)); else Occupy(s);
+        Assert.Empty(HeldLines(Simulation.Step(c, s, Array.Empty<Command>())));
+    }
 }
