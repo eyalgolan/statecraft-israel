@@ -105,7 +105,7 @@ namespace Statecraft.Game.Map
             if (!named && sources.Count > 0) throw new InvalidDataException($"{at} name_he is empty but name_he_sources is set");
             // Absent (a person has reviewed the name) or exactly agent-checked: a blank or null value is neither.
             if (s.NameHeReviewGiven && s.NameHeReview != "agent-checked")
-                throw new InvalidDataException($"{at} name_he_review '{s.NameHeReview}' is not agent-checked (delete the line once a person has reviewed the name)");
+                throw new InvalidDataException($"{at} name_he_review '{s.NameHeReview}' is not agent-checked (delete the line once a native speaker, or an AI-assisted contributor who discloses it, has reviewed the name, #564)");
             if (!named && s.NameHeReviewGiven) throw new InvalidDataException($"{at} name_he is empty but name_he_review is set");
             for (int i = 0; i < sources.Count; i++)
             {

@@ -84,7 +84,11 @@ same decoded text keeps the sign-off (owner, 25 October 2026, on #1618: "Yes, ca
 is read as the same decoded text: every character the same, direction marks, nikkud and maqaf included. `scripts/oss/reviewed_by_guard.py`
 holds the line. A commit with an AI co-author trailer may take a signed row's Hebrew lines out of `content/` when the
 row's Hebrew, read from both places, is the same before and after. Any other change to that Hebrew, in either place,
-is an edit of the signed row, and a person must sign the row again.
+is an edit of the signed row: a person must sign the row again, or an AI-assisted contributor may sign it again
+when the pull request's "AI assistance" section discloses the AI help, names the check and says which sources were
+opened and what was checked (owner, 4 November 2026: "Yes, it counts"); CI checks only that the section names a check,
+and the reviewer reads the rest (`docs/CONTENT_POLICY.md`). A commit with an AI co-author trailer never removes the
+sign-off.
 
 `tools/review_queue.py` lists an entry's `review: agent-checked` just as it lists the inline `*_he_review` flag, with
 the English record's row and sources (an event's `text_he_sources`, else its own `sources`).
