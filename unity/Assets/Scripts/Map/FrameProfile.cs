@@ -94,8 +94,8 @@ namespace Statecraft.Game.Map
             // meets the building models first.
             if (CloseRequested())
             {
-                poses.AddRange(PromoPose.CloseUps);
                 poses.Add(new PromoPose("opening", CameraRig.StartLon, CameraRig.StartLat, CameraRig.StartDistance, 0f));
+                poses.AddRange(PromoPose.CloseUps);
             }
             foreach (var pose in poses)
             {

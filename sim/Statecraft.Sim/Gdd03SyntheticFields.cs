@@ -24,7 +24,7 @@ namespace Statecraft.Sim
                 throw new ContentException(Gdd03BalanceCatalogue.FileName, "ruleset", "requires exact gdd-0.3 catalogue identity");
             var food = ReadIntegers(catalogue, "farmer.output", 3);
             var slots = ReadIntegers(catalogue, "field.slots", 1);
-            // This single-field contract represents the catalogued one farmer per field, not multi-worker scaling.
+            // Owner, 3 November 2026, #1694: "One farmer per field (Recommended)"; not multi-worker scaling.
             if (slots[0] != 1)
                 throw new ContentException(Gdd03BalanceCatalogue.FileName, "values.field.slots", "requires one farmer per field");
             return new Gdd03FieldRates(food[0], food[1], food[2], slots[0]);

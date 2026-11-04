@@ -5,10 +5,15 @@ using UnityEngine.Rendering;
 
 namespace Statecraft.Game.Map.Kits
 {
-    /// <summary>Original building meshes for admitted towns and villages, instanced per model/tile. At overview zoom
-    /// TownLandmarks owns the whole-town representation; close cameras own individual buildings. Tel Aviv, Jerusalem, Haifa
-    /// and Jaffa are the exception: their buildings are admitted at every zoom, by view as below (owner ruling, 2 November
-    /// 2026, "Yes, small buildings at every zoom": <see cref="TownModels.AtEveryZoom"/>). Under the production policy
+    /// <summary>Building meshes for admitted towns and villages, instanced per model/tile: Tal Heuberger's originals below the
+    /// close switch (<see cref="CloseEnterM"/>, #1273) and their lighter far-off copies beyond it, out to the far band
+    /// (<see cref="FarEnterM"/>; owner, 3 November 2026, #2378: "Ask Tal; allow them far off only", then "I have Tal's OK;
+    /// go ahead"). The far copies serve <see cref="Init"/>'s farTowns: the four cities and every settlement with a whole-town
+    /// model (the moshavot and towns, the kibbutzim, Nahalal and the Arab towns: Acre, Nazareth, Lod, Gaza, Beersheba), whose
+    /// whole-town model gives way to them within the far band (owner, 3 November 2026, "Cities/towns only (Recommended)");
+    /// the 271 1948 localities keep their kit blocks. Tel Aviv, Jerusalem, Haifa and Jaffa are admitted at every
+    /// zoom, by view as below (owner ruling, 2 November 2026, "Yes, small buildings at every zoom":
+    /// <see cref="TownModels.AtEveryZoom"/>), and draw their far copies beyond the far band too. Under the production policy
     /// (owner ruling, 31 Oct 2026, "Load all in view (Recommended)") a close camera admits every town and every merged village
     /// tile in its view (+<see cref="ViewMarginM"/>), nearest first, and they unload above <see cref="CloseExitM"/>. Each camera
     /// swaps only complete towns and complete village tiles; loading and failed places retain code-built fallback. Source
@@ -23,13 +28,17 @@ namespace Statecraft.Game.Map.Kits
         /// 10% of the distance), so a notch out and back never flips the towns twice. diorama02 (250 km) is far beyond it, the
         /// close checks (hero06, 6 km: CameraController.MinDistance) well inside.</summary>
         public const float CloseEnterM = 40000f, CloseExitM = 45000f;
+        /// <summary>The far band (m), this layer's alone (the seven other layers on the close switch keep 40/45 km): from
+        /// the close switch out to FarEnterM the four cities and every settlement with a whole-town model draw the far-off
+        /// copies of their building models instead of their kits; the kits come back above FarExitM. 100 km holds the 90 km opening and
+        /// the 60 km gameplay view and stays under the strategic cap (Collection.OriginalModelDistance, 120 km); a 204 m house is 3.5 px
+        /// there, where the kit's 100x houses read better as a mass, and the view's footprint (10,670 km2, about 170 places)
+        /// bounds the cost. The band (12%) is wider than one wheel notch.</summary>
+        public const float FarEnterM = 100000f, FarExitM = 112000f;
         /// <summary>Owner ruling, 31 Oct 2026, "Load all in view (Recommended)": a close camera admits a town or village tile
         /// whose building-model bounds, widened by ViewMarginM on every side, are in its view; an admitted one stays until it
         /// leaves the view widened by ViewKeepM, so a pan does not drop and reload a kind at the margin.</summary>
         public const float ViewMarginM = 3000f, ViewKeepM = 6000f;
-        /// <summary>Compatibility input for LodFor's projection helper; original shipping meshes have no generated LODs.</summary>
-        public const float FullDetailPx = 512f;
-
         sealed class Tile { public string town = ""; public TownModel model; public Bounds bounds; public float size; public Matrix4x4[] m = System.Array.Empty<Matrix4x4>(); }
 
         readonly List<Tile> tiles = new List<Tile>();
@@ -54,6 +63,9 @@ namespace Statecraft.Game.Map.Kits
         bool viewAdmission;
         /// <summary>The towns whose kit buildings never draw (<see cref="Suppress"/>), by settlement id.</summary>
         readonly HashSet<string> suppressed = new HashSet<string>(System.StringComparer.Ordinal);
+        /// <summary>The places that draw the far-off copies beyond the close switch (<see cref="Init"/>); null admits none
+        /// there (fail-closed, as the edge allowance).</summary>
+        HashSet<string>? farTowns;
         TownModelSet? set;
         bool streaming;
         // KitLayer installs the approved production admission policy before the first request.
@@ -106,7 +118,8 @@ namespace Statecraft.Game.Map.Kits
         {
             public Camera camera = null!;
             public int lastFrame;
-            public bool close;
+            /// <summary>Below the close switch (the originals); within the far band (the far copies, where admitted).</summary>
+            public bool close, far;
             public string? primary;
             public Vector3 focus;
             public bool hadFocus;
@@ -116,7 +129,7 @@ namespace Statecraft.Game.Map.Kits
             public readonly List<string> inView = new List<string>();
             public readonly HashSet<string> viewed = new HashSet<string>(System.StringComparer.Ordinal);
             public Matrix4x4 viewMatrix;
-            public bool viewValid, viewClose;
+            public bool viewValid, viewClose, viewFar;
         }
         sealed class Model
         {
@@ -127,10 +140,11 @@ namespace Statecraft.Game.Map.Kits
         }
         readonly List<(string id, Bounds bounds)> places = new List<(string, Bounds)>();
         readonly Dictionary<int, Choice> choices = new Dictionary<int, Choice>();
-        readonly Dictionary<TownModel, Model> models = new Dictionary<TownModel, Model>();
+        /// <summary>The streamed originals (Collection.CollectionDetail.Near) and the streamed far copies (Far), by kind.</summary>
+        readonly Dictionary<TownModel, Model> models = new Dictionary<TownModel, Model>(), farModels = new Dictionary<TownModel, Model>();
         readonly Dictionary<string, TownModel[]> required = new Dictionary<string, TownModel[]>(System.StringComparer.Ordinal);
         readonly List<int> deadCameras = new List<int>();
-        readonly HashSet<TownModel> warnedKinds = new HashSet<TownModel>();
+        readonly HashSet<string> warnedIds = new HashSet<string>(System.StringComparer.Ordinal);
         readonly List<System.IDisposable> retiring = new List<System.IDisposable>();
         readonly List<(Renderer renderer, bool off)> previousRenderers = new List<(Renderer, bool)>();
         bool reconcileDirty;
@@ -158,17 +172,17 @@ namespace Statecraft.Game.Map.Kits
         {
             var active = new HashSet<string>(System.StringComparer.Ordinal);
             foreach (var c in choices.Values) { foreach (var town in c.towns) active.Add(town); foreach (var id in c.viewed) active.Add(id); }
-            var ids = new List<string>(); int owners = 0, pending = 0, refs = 0, instances = 0, missing = 0;
-            foreach (var pair in models)
-            {
-                ids.Add(TownModels.Ids[(int)pair.Key]); if (pair.Value.lease != null) owners++;
-                if (!pair.Value.answered) pending++; else if (pair.Value.mesh == null || pair.Value.material == null) missing++;
-                if (pair.Value.mesh != null) refs++; if (pair.Value.material != null) refs++;
-            }
+            var ids = new List<string>(); var details = new List<string>(); int owners = 0, pending = 0, refs = 0, instances = 0, missing = 0;
+            foreach (var (streamed, detail) in new[] { (models, Collection.CollectionDetail.Near), (farModels, Collection.CollectionDetail.Far) })
+                foreach (var pair in streamed)
+                {
+                    ids.Add(StreamId(pair.Key, detail)); details.Add(StreamId(pair.Key, detail) + "|" + detail); if (pair.Value.lease != null) owners++;
+                    if (!pair.Value.answered) pending++; else if (pair.Value.mesh == null || pair.Value.material == null) missing++;
+                    if (pair.Value.mesh != null) refs++; if (pair.Value.material != null) refs++;
+                }
             foreach (var tile in tiles)
                 foreach (var c in choices.Values) if (ReadyForTown(tile.town, c.camera)) { instances += tile.m.Length; break; }
-            var row = Collection.CollectionResidencyMetrics.Row("town_buildings", active.Count, instances, ids, owners, pending, 0, 0, 0, missing,
-                System.Linq.Enumerable.Select(ids, id => id + "|Near"));
+            var row = Collection.CollectionResidencyMetrics.Row("town_buildings", active.Count, instances, ids, owners, pending, 0, 0, 0, missing, details);
             row.strongCacheRefs += refs; row.retiringLeases = retiring.Count; return row;
         }
 
@@ -272,11 +286,15 @@ namespace Statecraft.Game.Map.Kits
         /// <summary>Explicit town ids and renderer identities distinguish individual towns from mixed locality tiles
         /// (<paramref name="rendererTileIds"/>: each tile renderer's villages). A complete editor model set is optional in a
         /// player: acquired originals become ready independently per town, while incomplete/missing replies keep fallback. A
-        /// tile swaps only when every village in it is ready; no tile or unrelated town swaps on a partial global set.</summary>
+        /// tile swaps only when every village in it is ready; no tile or unrelated town swaps on a partial global set.
+        /// <paramref name="farTowns"/> names the places that draw the far-off copies beyond the close switch (the four cities
+        /// and every settlement with a whole-town model: KitLayer passes them); null, the default of the small test fixtures, admits
+        /// none there.</summary>
         public void Init(IReadOnlyList<SettlementKits.ModelInstance> instances, TownModelSet? models, IReadOnlyList<(Renderer kit, Renderer? close)> swaps, IReadOnlyCollection<string>? townIds = null, IReadOnlyDictionary<Renderer, string>? rendererTownIds = null,
-            IReadOnlyDictionary<Renderer, string[]>? rendererTileIds = null)
+            IReadOnlyDictionary<Renderer, string[]>? rendererTileIds = null, IReadOnlyCollection<string>? farTowns = null)
         {
             RestoreRenderers(); ReleaseModels(); choices.Clear(); places.Clear(); buildingPlaces.Clear();
+            this.farTowns = farTowns == null ? null : new HashSet<string>(farTowns, System.StringComparer.Ordinal);
             townFootprints.Clear(); configuredTownFootprints.Clear(); ignoredTownFootprintIds.Clear();
             admissionFootprintsById.Clear(); loggedDuplicateTownFootprintIds.Clear(); required.Clear();
             string? why = models == null ? "the map scene has no model list" : models.Missing();
@@ -390,7 +408,8 @@ namespace Statecraft.Game.Map.Kits
         /// <summary>The models placed for a town or locality (a test aid).</summary>
         public int CountFor(string id) => perPlace.TryGetValue(id, out var l) ? l.Count : 0;
 
-        /// <summary>The models placed for a town or locality, as placed (a test aid).</summary>
+        /// <summary>The models placed for a town or locality, as placed: a test aid, and the buildings the town-edge props keep
+        /// clear of (Collection.SpecialBuildingModels).</summary>
         public IReadOnlyList<SettlementKits.ModelInstance> InstancesOf(string id) =>
             perPlace.TryGetValue(id, out var l) ? l : (IReadOnlyList<SettlementKits.ModelInstance>)System.Array.Empty<SettlementKits.ModelInstance>();
 
@@ -407,17 +426,11 @@ namespace Statecraft.Game.Map.Kits
         public static bool CloseAt(float distanceM, bool? wasClose) =>
             wasClose == true ? distanceM <= CloseExitM : distanceM < CloseEnterM;
 
-        /// <summary>The level of detail for a building <paramref name="sizeM"/> across seen from <paramref name="distanceM"/>
-        /// with a vertical field of view <paramref name="fovDeg"/> on a screen <paramref name="screenPx"/> tall: level 0 at
-        /// <see cref="FullDetailPx"/> or more, one level more per halving, up to <paramref name="levels"/> - 1.</summary>
-        public static int LodFor(float sizeM, float distanceM, float fovDeg, float screenPx, int levels)
-        {
-            if (levels <= 1) return 0;
-            float px = sizeM / (Mathf.Max(distanceM, 1f) * 2f * Mathf.Tan(0.5f * fovDeg * Mathf.Deg2Rad)) * screenPx;
-            if (px >= FullDetailPx) return 0;
-            int lod = Mathf.FloorToInt(Mathf.Log(FullDetailPx / Mathf.Max(px, 1e-3f), 2f));
-            return Mathf.Clamp(lod, 0, levels - 1);
-        }
+        /// <summary>Whether a camera at <paramref name="distanceM"/> is within the far band (the far-off copies, beyond the
+        /// close switch), given its last choice (<paramref name="wasFar"/>, null for none): the same hysteresis as
+        /// <see cref="CloseAt"/>, on <see cref="FarEnterM"/> and <see cref="FarExitM"/>.</summary>
+        public static bool FarAt(float distanceM, bool? wasFar) =>
+            wasFar == true ? distanceM <= FarExitM : distanceM < FarEnterM;
 
         /// <summary>Every instance (model, world matrix): a test aid.</summary>
         public IEnumerable<(TownModel model, Matrix4x4 m)> Instances()
@@ -445,9 +458,10 @@ namespace Statecraft.Game.Map.Kits
             if (!choices.TryGetValue(key, out var choice))
             { choices[key] = choice = new Choice { camera = cam }; changed = true; }
             choice.lastFrame = Time.frameCount;
-            bool wasClose = choice.close;
+            bool wasClose = choice.close, wasFar = choice.far;
             choice.close = CloseAt(ViewDistance(cam), choice.close);
-            changed |= wasClose != choice.close;
+            choice.far = FarAt(ViewDistance(cam), choice.far);
+            changed |= wasClose != choice.close || wasFar != choice.far;
             string[] next = System.Array.Empty<string>();
             bool withinView = productionViewEnter.HasValue
                 ? ViewDistance(cam) <= (choice.hadFocus ? productionViewExit!.Value : productionViewEnter.Value)
@@ -520,8 +534,8 @@ namespace Statecraft.Game.Map.Kits
                 choice.inView.Clear(); choice.viewed.Clear(); return true;
             }
             var viewProjection = cam.projectionMatrix * cam.worldToCameraMatrix;
-            if (choice.viewValid && viewProjection == choice.viewMatrix && choice.viewClose == choice.close) return false;
-            choice.viewMatrix = viewProjection; choice.viewValid = true; choice.viewClose = choice.close;
+            if (choice.viewValid && viewProjection == choice.viewMatrix && choice.viewClose == choice.close && choice.viewFar == choice.far) return false;
+            choice.viewMatrix = viewProjection; choice.viewValid = true; choice.viewClose = choice.close; choice.viewFar = choice.far;
             GeometryUtility.CalculateFrustumPlanes(viewProjection, frustum);
             var from = choice.hadFocus ? choice.focus : cam.transform.position;
             viewScratch.Clear();
@@ -566,22 +580,30 @@ namespace Statecraft.Game.Map.Kits
             previousRenderers.Clear();
         }
 
-        /// <summary>Whether a camera's zoom admits a place's building models: every place below the close switch, beyond it
-        /// only the cities drawn at every zoom (owner ruling, 2 November 2026, "Yes, small buildings at every zoom").</summary>
-        static bool AtZoom(Choice c, string id) => c.close || TownModels.AtEveryZoom(id);
+        /// <summary>Whether a camera's zoom admits a place's building models: every place below the close switch (the
+        /// originals); within the far band the places that take the far-off copies (<see cref="farTowns"/>); beyond it only
+        /// the cities drawn at every zoom (owner ruling, 2 November 2026, "Yes, small buildings at every zoom").</summary>
+        bool AtZoom(Choice c, string id) => c.close || TownModels.AtEveryZoom(id) || (c.far && farTowns != null && farTowns.Contains(id));
         /// <summary>Whether the camera-focus selection holds this town at its zoom (the focused town and its edges).</summary>
         internal bool WantsTown(string id, Camera cam) => choices.TryGetValue(cam.GetInstanceID(), out var c) && AtZoom(c, id) && c.towns.Contains(id);
         /// <summary>Whether this camera admits the place's building models: the focus selection, or (production) its view.</summary>
         internal bool AdmitsTown(string id, Camera cam) =>
             choices.TryGetValue(cam.GetInstanceID(), out var c) && AtZoom(c, id) && (c.towns.Contains(id) || c.viewed.Contains(id));
+        /// <summary>Whether this camera's admitted place has every kind it needs at the camera's tier: the originals below the
+        /// close switch, the far-off copies beyond it.</summary>
         internal bool ReadyForTown(string id, Camera cam)
         {
             if (!Draw || !AdmitsTown(id, cam) || !required.TryGetValue(id, out var kinds) || kinds.Length == 0) return false;
             if (set != null) return true;
+            var streamed = choices[cam.GetInstanceID()].close ? models : farModels;
             foreach (var kind in kinds)
-                if (!models.TryGetValue(kind, out var model) || model.mesh == null || model.material == null) return false;
+                if (!streamed.TryGetValue(kind, out var model) || model.mesh == null || model.material == null) return false;
             return true;
         }
+
+        /// <summary>The streamed id of a kind at a detail: the original's id near, its far-off copy's far.</summary>
+        static string StreamId(TownModel kind, Collection.CollectionDetail detail) =>
+            detail == Collection.CollectionDetail.Near ? TownModels.Ids[(int)kind] : Collection.CollectionCatalog.FarCopy(TownModels.Ids[(int)kind]);
         static void BuildAdmissionFootprints(IReadOnlyList<(string id, Bounds bounds)> proposedPlaces,
             IReadOnlyList<(Vector2 centre, float radius, string id)> configured,
             HashSet<string> ignored, List<(Vector2 centre, float radius, string id)> partition,
@@ -701,26 +723,31 @@ namespace Statecraft.Game.Map.Kits
         void ReconcileModels()
         {
             if (!streaming || !isActiveAndEnabled) return;
-            var needed = new HashSet<TownModel>();
-            var ordered = new List<TownModel>();
-            void AddTown(string id)
+            // The kinds each tier needs: a close camera's admitted places need the originals, a far camera's the far copies.
+            var needed = new HashSet<TownModel>(); var ordered = new List<TownModel>();
+            var neededFar = new HashSet<TownModel>(); var orderedFar = new List<TownModel>();
+            void AddTown(Choice c, string id)
             {
-                if (required.TryGetValue(id, out var kinds)) foreach (var kind in kinds) if (needed.Add(kind)) ordered.Add(kind);
+                var (wanted, order) = c.close ? (needed, ordered) : (neededFar, orderedFar);
+                if (required.TryGetValue(id, out var kinds)) foreach (var kind in kinds) if (wanted.Add(kind)) order.Add(kind);
             }
             // A focused town loads before any edge town, even when its model's enum value is larger; each only at a zoom that
             // admits it (AtZoom).
-            foreach (var c in OrderedChoices()) if (c.primary != null && AtZoom(c, c.primary)) AddTown(c.primary);
-            foreach (var c in OrderedChoices()) foreach (string id in c.selected) if (id != c.primary && AtZoom(c, id)) AddTown(id);
+            foreach (var c in OrderedChoices()) if (c.primary != null && AtZoom(c, c.primary)) AddTown(c, c.primary);
+            foreach (var c in OrderedChoices()) foreach (string id in c.selected) if (id != c.primary && AtZoom(c, id)) AddTown(c, id);
             // Then every town and village in view, nearest first (owner ruling, 31 Oct 2026, "Load all in view"); AdmitInView
             // has already left out what this zoom does not admit.
-            foreach (var c in OrderedChoices()) foreach (string id in c.inView) AddTown(id);
-            var obsolete = new List<TownModel>();
-            foreach (var pair in models) if (!needed.Contains(pair.Key)) obsolete.Add(pair.Key);
-            foreach (var id in obsolete)
+            foreach (var c in OrderedChoices()) foreach (string id in c.inView) AddTown(c, id);
+            foreach (var (streamed, kept, detail) in new[] { (models, needed, Collection.CollectionDetail.Near), (farModels, neededFar, Collection.CollectionDetail.Far) })
             {
-                var old = models[id]; models.Remove(id); old.mesh = null; old.material = null;
-                if (old.lease != null) { retiring.Add(old.lease); retiringKeys.Add((TownModels.Ids[(int)id], Collection.CollectionDetail.Near)); }
-                old.lease = null;
+                var obsolete = new List<TownModel>();
+                foreach (var pair in streamed) if (!kept.Contains(pair.Key)) obsolete.Add(pair.Key);
+                foreach (var id in obsolete)
+                {
+                    var old = streamed[id]; streamed.Remove(id); old.mesh = null; old.material = null;
+                    if (old.lease != null) { retiring.Add(old.lease); retiringKeys.Add((StreamId(id, detail), detail)); }
+                    old.lease = null;
+                }
             }
             // No next batch is admitted while a previous frame/source is still retiring.
             if (retiring.Count > 0)
@@ -730,37 +757,47 @@ namespace Statecraft.Game.Map.Kits
                 return;
             }
             if (pendingRetirementLeases > 0) return;
+            Acquire(models, ordered, Collection.CollectionDetail.Near);
+            Acquire(farModels, orderedFar, Collection.CollectionDetail.Far);
+            Collection.CollectionResidencyMetrics.MarkDirty();
+            if (retiring.Count > 0 && !retirementScheduled && Application.isPlaying)
+            { retirementScheduled = true; StartCoroutine(RetireAfterFrame()); }
+        }
+
+        /// <summary>Asks the stream for each kind of <paramref name="ordered"/> that <paramref name="streamed"/> lacks, at
+        /// <paramref name="detail"/> (the original near, the far-off copy far).</summary>
+        void Acquire(Dictionary<TownModel, Model> streamed, List<TownModel> ordered, Collection.CollectionDetail detail)
+        {
             foreach (var id in ordered)
             {
                 if (!isActiveAndEnabled) break;
-                if (models.ContainsKey(id)) continue;
-                var model = new Model(); models[id] = model;
+                if (streamed.ContainsKey(id)) continue;
+                var model = new Model(); streamed[id] = model;
                 int generation = lifetimeGeneration;
-                var lease = ModelAcquire(TownModels.Ids[(int)id], Collection.CollectionDetail.Near, prefab =>
+                string streamId = StreamId(id, detail);
+                var lease = ModelAcquire(streamId, detail, prefab =>
                 {
-                    if (this == null || !isActiveAndEnabled || generation != lifetimeGeneration || !models.TryGetValue(id, out var current) || current != model) return;
+                    if (this == null || !isActiveAndEnabled || generation != lifetimeGeneration || !streamed.TryGetValue(id, out var current) || current != model) return;
                     model.answered = true; Collection.CollectionResidencyMetrics.MarkDirty();
                     var filter = prefab == null ? null : prefab.GetComponentInChildren<MeshFilter>(true);
                     var renderer = prefab == null ? null : prefab.GetComponentInChildren<MeshRenderer>(true);
                     if (filter == null || renderer == null || filter.sharedMesh == null || renderer.sharedMaterial == null)
                     {
-                        // Once per kind for this layer: its places keep their code-built kits (Tel Aviv, Jerusalem, Haifa and
-                        // Jaffa at every zoom: they have no whole-town model to fall back to).
-                        if (warnedKinds.Add(id)) Debug.LogWarning($"TOWN MODELS: {TownModels.Ids[(int)id]} did not stream; the places built from it keep their kits.");
+                        // Once per streamed id for this layer (an original and its far-off copy fail apart): its places keep their
+                        // code-built kits (Tel Aviv, Jerusalem, Haifa and Jaffa at every zoom: they have no whole-town model to
+                        // fall back to).
+                        if (warnedIds.Add(streamId)) Debug.LogWarning($"TOWN MODELS: {streamId} did not stream; the places built from it keep their kits.");
                         return;
                     }
                     model.mesh = filter.sharedMesh; model.material = renderer.sharedMaterial; Collection.CollectionResidencyMetrics.MarkDirty();
                 });
-                if (isActiveAndEnabled && generation == lifetimeGeneration && models.TryGetValue(id, out var live) && live == model) model.lease = lease;
+                if (isActiveAndEnabled && generation == lifetimeGeneration && streamed.TryGetValue(id, out var live) && live == model) model.lease = lease;
                 else
                 {
-                    retiring.Add(lease); retiringKeys.Add((TownModels.Ids[(int)id], Collection.CollectionDetail.Near));
+                    retiring.Add(lease); retiringKeys.Add((streamId, detail));
                     RetireReleasedModels();
                 }
             }
-            Collection.CollectionResidencyMetrics.MarkDirty();
-            if (retiring.Count > 0 && !retirementScheduled && Application.isPlaying)
-            { retirementScheduled = true; StartCoroutine(RetireAfterFrame()); }
         }
         System.Collections.IEnumerator RetireAfterFrame()
         {
@@ -782,13 +819,17 @@ namespace Statecraft.Game.Map.Kits
         void ReleaseModels()
         {
             lifetimeGeneration++;
-            foreach (var pair in models)
+            foreach (var (streamed, detail) in new[] { (models, Collection.CollectionDetail.Near), (farModels, Collection.CollectionDetail.Far) })
             {
-                var model = pair.Value; model.mesh = null; model.material = null;
-                if (model.lease != null) { retiring.Add(model.lease); retiringKeys.Add((TownModels.Ids[(int)pair.Key], Collection.CollectionDetail.Near)); }
-                model.lease = null;
+                foreach (var pair in streamed)
+                {
+                    var model = pair.Value; model.mesh = null; model.material = null;
+                    if (model.lease != null) { retiring.Add(model.lease); retiringKeys.Add((StreamId(pair.Key, detail), detail)); }
+                    model.lease = null;
+                }
+                streamed.Clear();
             }
-            models.Clear(); RetireReleasedModels(); Collection.CollectionResidencyMetrics.MarkDirty();
+            RetireReleasedModels(); Collection.CollectionResidencyMetrics.MarkDirty();
         }
         void LateUpdate() { if (PruneCameras()) reconcileDirty = true; if (reconcileDirty) { reconcileDirty = false; ReconcileModels(); } }
         void OnDestroy() { RestoreRenderers(); ReleaseModels(); }
@@ -818,7 +859,9 @@ namespace Statecraft.Game.Map.Kits
             // Owner ruling on #2267, 2 November 2026, "Shadows off far, then measure (Recommended)": beyond the close switch the
             // cities drawn at every zoom cast no shadows; below it every building casts.
             var shadows = close ? ShadowCastingMode.On : ShadowCastingMode.Off;
-            // Far off too: ReadyForTown admits the cities drawn at every zoom there (AtZoom), and nothing else.
+            // Beyond the close switch the far-off copies draw (#2378): for the places the far band admits and, at every zoom,
+            // the four cities (AtZoom); ReadyForTown admits nothing else there.
+            var streamed = close ? models : farModels;
             if (Draw)
             {
                 // Into the scratch array (no Plane[6] per camera per frame: this runs far off too, the common view).
@@ -831,8 +874,8 @@ namespace Statecraft.Game.Map.Kits
                     // The shadow pass sees casters outside the view too: cull on a widened box (as the trees).
                     var wide = t.bounds; wide.Expand(new Vector3(3000f, 0f, 3000f));
                     if (!GeometryUtility.TestPlanesAABB(frustum, wide)) continue;
-                    var mesh = set != null ? set.Mesh(t.model) : models[t.model].mesh!; // always the original mesh
-                    var rp = new RenderParams(set != null ? set.Material(t.model) : models[t.model].material!)
+                    var mesh = set != null ? (close ? set.Mesh(t.model) : set.FarMesh(t.model)) : streamed[t.model].mesh!;   // the original below the close switch
+                    var rp = new RenderParams(set != null ? (close ? set.Material(t.model) : set.FarMaterial(t.model)) : streamed[t.model].material!)
                     {
                         worldBounds = t.bounds, camera = cam, shadowCastingMode = shadows, receiveShadows = true,
                         layer = gameObject.layer,

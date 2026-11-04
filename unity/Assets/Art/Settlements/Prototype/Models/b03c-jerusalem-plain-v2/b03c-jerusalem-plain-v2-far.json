@@ -1,0 +1,15 @@
+{
+    "tool": "FarModelLevels",
+    "source": "Assets/Art/Settlements/Prototype/Models/b03c-jerusalem-plain-v2/b03c-jerusalem-plain-v2.fbx",
+    "source_sha256": "351312ed6fef2474ad0c34784352912349dbc73e61b19617459f7d63a5a1be6b",
+    "colour_map": "Assets/Art/Settlements/Prototype/Models/b03c-jerusalem-plain-v2/b03c-jerusalem-plain-v2_basecolor.jpg",
+    "colour_map_sha256": "d8ffabf10c002e11194cd9d4bbc65d540b69e5dc079e1ca84484210e27227d2e",
+    "source_triangles": 5999,
+    "triangles": 400,
+    "target_triangles": 400,
+    "cell_px": 8,
+    "supersample": 3,
+    "sample_px": 512,
+    "atlas_px": 256,
+    "provenance": "Derived from Tal Heuberger's original (the source FBX and colour map above) by FarModelLevels: a subset of the model's own vertices (exact positions, none added or moved) and a colour map baked from the original's. Same licence, CC BY-NC-ND 4.0, credit Tal Heuberger; lighter far-off derived copy; owner confirms Tal's permission, 3 Nov 2026 (#2378)."
+}

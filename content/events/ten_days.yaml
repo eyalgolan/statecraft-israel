@@ -36,6 +36,17 @@ options:
     set_rung: 5
     effects:
       - { target: security, delta: 0.025 }
+    # Unit orders (R-ENEMY-005; owner, 31 October 2026, #749: sourced anchors only). Dani (owner, 1 November 2026, #2087:
+    # "Kiryati to Ramle"): Kiryati to Ramle, 12-20 July 1948, map/units_1948.yaml line 372 (kiryati's order target "Ramle";
+    # the IDF account of Operation Danny, Jewish Virtual Library, and Ben-Gurion's diary of 12 July 1948); research_notes/M4 war mode/
+    # war-1948.md section 3, the Dani row (line 139). It replaces Yiftach's order to Lydda, which reached nobody: Yiftach has
+    # no unit on the board (no anchor on 15 May 1948, R-UNIT-006). Brosh, in the same Ten Days: Carmeli facing the Syrian
+    # bridgehead at Mishmar HaYarden, 9-19 July 1948, map/units_1948.yaml line 207 (carmeli's anchor); war-1948.md section 3,
+    # the Brosh row (line 141). The hexes are the target's and the anchor's own (map/unit_anchor_hexes.yaml); Kiryati's is
+    # Ramla's capture target (-3, 24), not the hex Ramla shares with Rehovot (owner, 2 November 2026, #2087).
+    unit_orders:
+      - { unit: kiryati, q: -3, r: 24 }
+      - { unit: carmeli, q: 14, r: 6 }
   - id: southern_front
     # Game assumption: a design alternative. The notes found no cabinet debate in July; Ben-Gurion's diary of 11 July
     # records Yadin asking where forces should go next [S].
@@ -51,6 +62,7 @@ options:
     set_rung: 5
     effects:
       - { target: security, delta: 0.015 }
+    # No unit orders: no source places a unit for this alternative (R-ENEMY-005, #749), until one is found.
 sources:
   - { url: "https://en.wikipedia.org/wiki/Operation_Danny", checked: 2026-10-10 }
   - { url: "https://en.wikipedia.org/wiki/1948_Arab–Israeli_War", checked: 2026-10-10 }

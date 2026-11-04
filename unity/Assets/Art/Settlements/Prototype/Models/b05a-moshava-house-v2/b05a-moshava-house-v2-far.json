@@ -1,0 +1,15 @@
+{
+    "tool": "FarModelLevels",
+    "source": "Assets/Art/Settlements/Prototype/Models/b05a-moshava-house-v2/b05a-moshava-house-v2.fbx",
+    "source_sha256": "28a24c80217d65f9547eeb2e9bc4d2d82f05372edc2e115b18adbc37f2834344",
+    "colour_map": "Assets/Art/Settlements/Prototype/Models/b05a-moshava-house-v2/b05a-moshava-house-v2_basecolor.jpg",
+    "colour_map_sha256": "f2de87f4e5c8cec1642c4e7cedcffbc6b2bd5d64f12989ff690e8cf4e812977d",
+    "source_triangles": 6000,
+    "triangles": 400,
+    "target_triangles": 400,
+    "cell_px": 8,
+    "supersample": 3,
+    "sample_px": 512,
+    "atlas_px": 256,
+    "provenance": "Derived from Tal Heuberger's original (the source FBX and colour map above) by FarModelLevels: a subset of the model's own vertices (exact positions, none added or moved) and a colour map baked from the original's. Same licence, CC BY-NC-ND 4.0, credit Tal Heuberger; lighter far-off derived copy; owner confirms Tal's permission, 3 Nov 2026 (#2378)."
+}

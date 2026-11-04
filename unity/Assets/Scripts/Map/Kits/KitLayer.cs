@@ -149,7 +149,14 @@ namespace Statecraft.Game.Map.Kits
             var towns = townGo.AddComponent<TownModelLayer>();
             if (residency == null) throw new System.ArgumentNullException(nameof(residency));
             towns.ConfigureProduction(residency.Towns);
-            towns.Init(built.Models, townModels, swaps, nearTowns, rendererTownIds, rendererTileIds);
+            // #2378: beyond the close switch the four cities and every settlement with a whole-town model (the moshavot and
+            // towns, the kibbutzim, Nahalal and the Arab towns: Acre, Nazareth, Lod, Gaza, Beersheba) draw the far-off copies
+            // of their building models, in place of the whole-town model within the far band (owner, 3 November 2026,
+            // "Cities/towns only (Recommended)"); the 271 1948 localities keep their kit blocks.
+            var farTowns = new List<string>();
+            foreach (var s in settlements)
+                if (TownModels.AtEveryZoom(s.Id) || Collection.TownLandmarks.ModelFor(s) != null) farTowns.Add(s.Id);
+            towns.Init(built.Models, townModels, swaps, nearTowns, rendererTownIds, rendererTileIds, farTowns);
             stats.LandmarkParts = parts;
             var landmarks = new List<SettlementKits.Placed>();
             foreach (var p in placed) if (p.Kind != "building" && p.Kind != "wing") landmarks.Add(p);

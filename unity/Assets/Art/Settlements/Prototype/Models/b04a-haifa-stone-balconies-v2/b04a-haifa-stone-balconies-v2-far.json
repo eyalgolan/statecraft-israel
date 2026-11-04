@@ -1,0 +1,15 @@
+{
+    "tool": "FarModelLevels",
+    "source": "Assets/Art/Settlements/Prototype/Models/b04a-haifa-stone-balconies-v2/b04a-haifa-stone-balconies-v2.fbx",
+    "source_sha256": "9eeb44fa69f860a92d45c2ac964fe8168d95e662a3e8a3fe3a58a644993bb067",
+    "colour_map": "Assets/Art/Settlements/Prototype/Models/b04a-haifa-stone-balconies-v2/b04a-haifa-stone-balconies-v2_basecolor.jpg",
+    "colour_map_sha256": "c737e7b3d01c866a0ab29179ff94da0ba3351b35532bce0b9c723ff8a8a76674",
+    "source_triangles": 6000,
+    "triangles": 400,
+    "target_triangles": 400,
+    "cell_px": 8,
+    "supersample": 3,
+    "sample_px": 512,
+    "atlas_px": 256,
+    "provenance": "Derived from Tal Heuberger's original (the source FBX and colour map above) by FarModelLevels: a subset of the model's own vertices (exact positions, none added or moved) and a colour map baked from the original's. Same licence, CC BY-NC-ND 4.0, credit Tal Heuberger; lighter far-off derived copy; owner confirms Tal's permission, 3 Nov 2026 (#2378)."
+}

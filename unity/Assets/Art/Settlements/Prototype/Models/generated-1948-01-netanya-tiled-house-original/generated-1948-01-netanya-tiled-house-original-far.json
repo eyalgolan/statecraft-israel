@@ -1,0 +1,15 @@
+{
+    "tool": "FarModelLevels",
+    "source": "Assets/Art/Settlements/Prototype/Models/generated-1948-01-netanya-tiled-house-original/generated-1948-01-netanya-tiled-house-original.fbx",
+    "source_sha256": "e51a8a4e0c65ea6fe7f752dbc81376622242697d2f5ea509690c7b71c6b2c355",
+    "colour_map": "Assets/Art/Settlements/Prototype/Models/generated-1948-01-netanya-tiled-house-original/generated-1948-01-netanya-tiled-house-original_basecolor.jpg",
+    "colour_map_sha256": "6629955da6740b2138ca0fd975dd33c9db681bbe266d218c8c86ffc0fc6da2b2",
+    "source_triangles": 9324,
+    "triangles": 400,
+    "target_triangles": 400,
+    "cell_px": 8,
+    "supersample": 3,
+    "sample_px": 512,
+    "atlas_px": 256,
+    "provenance": "Derived from Tal Heuberger's original (the source FBX and colour map above) by FarModelLevels: a subset of the model's own vertices (exact positions, none added or moved) and a colour map baked from the original's. Same licence, CC BY-NC-ND 4.0, credit Tal Heuberger; lighter far-off derived copy; owner confirms Tal's permission, 3 Nov 2026 (#2378)."
+}

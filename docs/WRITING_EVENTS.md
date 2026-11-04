@@ -243,6 +243,7 @@ Each option has:
 | `grant_units` | no | GDD loop only. A list of `{ type, n, at }`: see "grant_units and city_effects". |
 | `city_effects` | no | GDD loop only. A list of `{ city, field, delta }`: see "grant_units and city_effects". |
 | `unlock_projects` | no | GDD loop only. A list of `projects.yaml` ids: see "grant_units and city_effects". |
+| `unit_orders` | no | GDD loop only, applied under gdd-0.1 only. A list of `{ unit, q, r }`: see "unit_orders". |
 | `alternative` | on every option that did not happen, in an event with a historical option | Who put it forward, on what record. See below. |
 | `rejoin` | no | Consequence cards only. The id of the event whose road the card follows; choosing this option returns later cards to the recorded course (R-ALT-009). See "kind". |
 
@@ -311,6 +312,17 @@ These act on the GDD records, so only content whose `eras.yaml` sets `systems.lo
 
 An event with a sensitive tag may carry no grant, no positive `city_effects` delta and no unlock; a cut is allowed (R-EFX-005).
 
+### unit_orders
+
+- `unit_orders: [{ unit: golani, q: -7, r: 24 }]` gives the unit of a `map/units_1948.yaml` row a go-to order toward
+  hex (`q`, `r`) when the option is chosen or delegated (R-ENEMY-005). The hex must be one of that row's own anchor
+  hexes in `map/unit_anchor_hexes.yaml`, so a card never sends a unit where no source puts it; cite the anchor's line in
+  a comment. The order goes through the player's own go-to: one the player could not give changes nothing, and the
+  player is told so. The order ends on the anchor's `to` date (the loader refuses an anchor with none), and its march
+  goes round every enemy-held place but its hex.
+- It applies under gdd-0.1 only. Under gdd-0.3 the loader still checks it and the unit gets no order; the legacy loop
+  ignores it.
+
 ### sources
 
 ```yaml
@@ -339,7 +351,8 @@ If AI helped draft the text, you still check every claim yourself before using `
 
 Hebrew display names in the other content files (`name_he`, `title_he`, `title_he_f`, `body_he`) have a separate
 flag: `*_review: agent-checked` while only an AI agent has checked the name against its sources. A native speaker
-removes the line once they have reviewed the name (#564); a blank value is an error, not a review. It does not change
+removes the line once they have reviewed the name (#564), or an AI-assisted contributor does when the pull request
+discloses the AI help and names the strings read (asked whether an AI-assisted contributor's Hebrew read can clear an `agent-checked` string or still needs a native Hebrew speaker, the owner answered "AI-assisted can clear it" ([4 November 2026](https://github.com/eyalgolan/statecraft-israel/pull/2481#issuecomment-6623108295))); a blank value is an error, not a review. It does not change
 the row's `status`.
 
 ### reviewed_by and reviewed_on
@@ -347,8 +360,12 @@ the row's `status`.
 A person's sign-off beside `status`: `reviewed_by` is the reviewer's GitHub handle (never an email), `reviewed_on` the
 day, `YYYY-MM-DD`. Both or neither; the loader refuses a blank or malformed value. **Only the reviewer writes them**, in a
 commit of their own: never add, change or remove them yourself on someone's behalf, and an AI agent never does
-(`scripts/oss/reviewed_by_guard.py` fails such a pull request; owner, 15 October 2026, #375). An agent may not edit any
-field of a signed row either, until a person signs it again ("Block it in CI", owner, 15 October 2026). See
+(`scripts/oss/reviewed_by_guard.py` fails such a pull request; owner, 15 October 2026, #375), unless the pull request's
+"AI assistance" section discloses the AI help: then an AI-assisted contributor's check counts as
+the sign-off (it may add or change the two lines, never remove them), and the
+section should say which sources they opened and what they checked (asked whether an AI-assisted contributor's source check counts as the `reviewed_by` sign-off, the owner answered "Yes, it counts" ([4 November 2026](https://github.com/eyalgolan/statecraft-israel/pull/2481#issuecomment-6623108295))). CI checks only that the section exists, is not a "no" and names a check; the reviewer reads what was checked and how. An agent may not edit any
+field of a signed row either, until a person (or a disclosed AI-assisted contributor) signs it again ("Block it in CI",
+owner, 15 October 2026). See
 [HISTORIAN_REVIEW.md](HISTORIAN_REVIEW.md#sign-the-row-off).
 
 ## What the loader rejects

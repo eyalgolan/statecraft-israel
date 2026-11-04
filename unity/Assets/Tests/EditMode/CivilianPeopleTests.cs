@@ -502,12 +502,15 @@ public sealed class CivilianPeopleTests
         placed.UnionWith(CivilianPeople.Models);
         placed.UnionWith(RuralLife.Models);
         placed.UnionWith(new[] { WildlifeLayer.Ibex, WildlifeLayer.Hyena });
-        placed.UnionWith(new[] { SeaAirCollection.Altalena, SeaAirCollection.FishingBoat, SeaAirCollection.Steamer, SeaAirCollection.C54, SeaAirCollection.Spitfire });
+        placed.UnionWith(new[] { SeaAirCollection.Altalena, SeaAirCollection.FishingBoat, SeaAirCollection.Steamer, SeaAirCollection.C54, SeaAirCollection.Spitfire,
+            SeaAirCollection.Dakota });
         placed.UnionWith(new[] { Statecraft.Game.Map.Routes.ServiceTrain.ModelId, Statecraft.Game.Map.Routes.RoadVehicles.CitrusTruck,
             Statecraft.Game.Map.Routes.RoadVehicles.CanvasLorry, Statecraft.Game.Map.Routes.RoadVehicles.SandwichConvoy,
             Statecraft.Game.Map.Routes.RoadVehicles.IntercityBus });
         placed.Add(CampTentModels.Model); // the camp-tent layer requests this model for placed transit camps
-        placed.UnionWith(SpecialBuildingModels.Placements(DateTime.MaxValue).Select(w => w.Model)); // every dated single-building placement, the R35 among them
+        // Every dated single-building placement, the R35 and Tal Heuberger's four props among them (owner, 2 November 2026: "make
+        // sure all of tal's new models are used"); the sandbags, crates and wall end on their sourced dates, so all of them.
+        placed.UnionWith(SpecialBuildingModels.EveryPlacement.Select(w => w.Model));
         placed.UnionWith(TownLandmarks.ById.Values.Concat(TownLandmarks.ByType.Values).Concat(TownLandmarks.ByAction.Values.Select(v => v.Model))
 );
         var units = Statecraft.Game.Map.Units.UnitFigures.ByHeadgear.Values.Concat(Statecraft.Game.Map.Units.UnitFigures.ThirdFigure.Values)
@@ -520,9 +523,11 @@ public sealed class CivilianPeopleTests
         placed.UnionWith(Statecraft.Game.Map.Kits.TownModels.Ids); // #1273: 18 originals and five generated houses are catalogued and requested by TownModelLayer
         // Tel Aviv's, Jerusalem's and Haifa's whole towns stay catalogued but unused: the four cities draw their buildings at
         // every zoom (owner, 2 November 2026, "Yes, small buildings at every zoom").
-        CollectionAssert.AreEquivalent(new[] { SpecialBuildingModels.Workshop, TownLandmarks.Jerusalem, TownLandmarks.TelAviv, TownLandmarks.Jerusalem3D, TownLandmarks.Haifa },
+        // #336's soldier as delivered has no rig; the tokens draw his rigged copy in his place (#2384; owner, 3 November 2026:
+        // "rig Tal's later"), and the delivered file stays catalogued, unchanged and unplaced.
+        CollectionAssert.AreEquivalent(new[] { SpecialBuildingModels.Workshop, TownLandmarks.Jerusalem, TownLandmarks.TelAviv, TownLandmarks.Jerusalem3D, TownLandmarks.Haifa, "figure-soldier-1948-v1" },
             CollectionCatalog.Ids.Where(id => !placed.Contains(id)).ToList(),
-            "every catalogued model has a place but b21, the first Jerusalem and the three cities' whole towns, each held back by an owner ruling");
+            "every catalogued model has a place but b21, drawn only under gdd-0.3 on built arms workshops (#2281), and the first Jerusalem, the three cities' whole towns and the unrigged soldier, each held back by an owner ruling");
         CollectionAssert.IsSubsetOf(placed.ToList(), CollectionCatalog.Ids.ToList(), "every placed id is a catalogued model");
     }
 

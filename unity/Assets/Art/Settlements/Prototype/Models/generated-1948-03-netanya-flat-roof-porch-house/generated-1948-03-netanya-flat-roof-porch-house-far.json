@@ -1,0 +1,15 @@
+{
+    "tool": "FarModelLevels",
+    "source": "Assets/Art/Settlements/Prototype/Models/generated-1948-03-netanya-flat-roof-porch-house/generated-1948-03-netanya-flat-roof-porch-house.fbx",
+    "source_sha256": "27c837e0c8a884860799e6af6c78c4ed0312cecca1791ca200329c3525b2d753",
+    "colour_map": "Assets/Art/Settlements/Prototype/Models/generated-1948-03-netanya-flat-roof-porch-house/generated-1948-03-netanya-flat-roof-porch-house_basecolor.jpg",
+    "colour_map_sha256": "65f6b78ae3f1ecaf1d80460539f0fd472ae4e939a50f80637a34c97fc4bbc48c",
+    "source_triangles": 9261,
+    "triangles": 400,
+    "target_triangles": 400,
+    "cell_px": 8,
+    "supersample": 3,
+    "sample_px": 512,
+    "atlas_px": 256,
+    "provenance": "Derived from Tal Heuberger's original (the source FBX and colour map above) by FarModelLevels: a subset of the model's own vertices (exact positions, none added or moved) and a colour map baked from the original's. Same licence, CC BY-NC-ND 4.0, credit Tal Heuberger; lighter far-off derived copy; owner confirms Tal's permission, 3 Nov 2026 (#2378)."
+}

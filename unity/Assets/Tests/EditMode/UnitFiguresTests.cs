@@ -31,9 +31,9 @@ public class UnitFiguresTests
     static readonly DateTime May20 = new DateTime(1948, 5, 20), July12 = new DateTime(1948, 7, 12), LastArmistice = new DateTime(1949, 7, 20);
 
     /// <summary>The models on the existing war roster: the unit models of #665, #336's 1948 soldier (#708; owner, 21 October
-    /// 2026: "a third figure on some brigade unit tokens, next to C06 and C07"), H01, the sandwich armoured car on Givati's
-    /// token (#1536), and the Syrian and Iraqi figures. C09 retains its baseline ALA role; the new ALA candidate remains
-    /// review-only.</summary>
+    /// 2026: "a third figure on some brigade unit tokens, next to C06 and C07"), drawn as his rigged copy (#2384), H01, the
+    /// sandwich armoured car on Givati's token (#1536), and the Syrian and Iraqi figures. C09 retains its baseline ALA role;
+    /// the new ALA candidate remains review-only.</summary>
     static readonly string[] WarModels =
     {
         "figure-c04-sabra-pioneer-v3", "figure-c05-pioneer-veteran-v2", "figure-c06-young-recruit-v2", "figure-c07-veteran-fighter-v2",
@@ -42,7 +42,7 @@ public class UnitFiguresTests
         "figure-ala-infantry-1948-v1", "figure-lebanese-regular-1948-v1",
         "figure-vehicle-napoleonchik-65mm-1948-v2", "figure-vehicle-willys-jeep-1948-v2",
         "figure-vehicle-sandwich-convoy-1948-v2",
-        "figure-soldier-1948-v1",
+        "figure-soldier-1948-v1-rigged",
     };
 
     [Test]
@@ -257,7 +257,7 @@ public class UnitFiguresTests
     [Test]
     public void EveryFigureOnATokenStandsWithItsArmsDown()
     {
-        foreach (var id in WarModels.Where(i => i != UnitFigures.Soldier1948 && !i.StartsWith("figure-vehicle-", StringComparison.Ordinal)))
+        foreach (var id in WarModels.Where(i => !i.StartsWith("figure-vehicle-", StringComparison.Ordinal)))
         {
             var go = (GameObject)PrefabUtility.InstantiatePrefab(Prefab(id));
             try
@@ -280,6 +280,63 @@ public class UnitFiguresTests
             }
             finally { UnityEngine.Object.DestroyImmediate(go); }
         }
+    }
+
+    /// <summary>#2384: the 1948 soldier's rigged copy, the model Yiftach and Negev draw, shares C07's skeleton: the same 67
+    /// bones, names and parents, each at C07's rest orientation in the prefab's frame (so C07's takes, bone-local rotations,
+    /// play on it unchanged, and it stands and faces as C07 does), with its own idle, walk and fire takes on its controller's
+    /// idle, walk and attack states, each as long as C07's. Tal's delivered soldier, unrigged, stays catalogued.</summary>
+    [Test]
+    public void TheRiggedSoldierSharesC07sSkeletonAndTakes()
+    {
+        Assert.AreEqual(CollectionCatalog.Soldier1948Rigged, UnitFigures.Soldier1948);
+        CollectionAssert.Contains(CollectionCatalog.Animated.ToList(), UnitFigures.Soldier1948);
+        CollectionAssert.Contains(CollectionCatalog.Groups.Single(g => g.Bundle == CollectionCatalog.People).Ids, "figure-soldier-1948-v1");
+        CollectionAssert.Contains(CollectionCatalog.Groups.Single(g => g.Bundle == CollectionCatalog.People).Ids, UnitFigures.Soldier1948);
+        Assert.IsFalse(CollectionCatalog.Animated.Contains("figure-soldier-1948-v1"), "the delivered soldier has no rig");
+        var soldier = Prefab(UnitFigures.Soldier1948).GetComponentInChildren<SkinnedMeshRenderer>(true);
+        var c07 = Prefab(UnitFigures.VeteranFighter).GetComponentInChildren<SkinnedMeshRenderer>(true);
+        Assert.IsNotNull(soldier, "the rigged soldier is skinned");
+        Assert.AreEqual(67, c07.bones.Length);
+        Assert.AreEqual(67, soldier.bones.Length);
+        CollectionAssert.AreEquivalent(c07.bones.Select(b => b.name).ToList(), soldier.bones.Select(b => b.name).ToList());
+        foreach (var bone in soldier.bones)
+        {
+            var twin = c07.bones.Single(b => b.name == bone.name);
+            Assert.AreEqual(twin.parent.name, bone.parent.name, bone.name + ": parent");
+            Assert.Less(Quaternion.Angle(Rest(soldier, bone.name).rotation, Rest(c07, bone.name).rotation), 0.5f, bone.name + ": C07's rest orientation");
+            // No scale along the chain: a weapon parented under the hand bone (UnitWeapons) takes the bone's scale, and an
+            // export with its unit factor on the nodes instead of in the data put C07's socket a hundred times out.
+            Assert.That(bone.lossyScale.x / soldier.transform.root.lossyScale.x, Is.EqualTo(1f).Within(1e-3f), bone.name + ": at scale 1 under the root, as C07's bones are");
+            Assert.That(twin.lossyScale.x / c07.transform.root.lossyScale.x, Is.EqualTo(1f).Within(1e-3f), bone.name + ": C07");
+        }
+        Vector3 At(SkinnedMeshRenderer skin, string bone) => Rest(skin, bone).MultiplyPoint3x4(Vector3.zero);
+        Assert.Greater(Vector3.Dot((At(soldier, "Left_Toes") - At(soldier, "Left_Foot")).normalized, (At(c07, "Left_Toes") - At(c07, "Left_Foot")).normalized), 0.95f, "faces as C07 does");
+        Assert.Greater(Vector3.Dot((At(soldier, "Head") - At(soldier, "Hips")).normalized, (At(c07, "Head") - At(c07, "Hips")).normalized), 0.99f, "upright as C07 is");
+        var controller = AssetDatabase.LoadAssetAtPath<UnityEditor.Animations.AnimatorController>($"{CollectionCatalog.Folder}/{UnitFigures.Soldier1948}/{UnitFigures.Soldier1948}-near.controller");
+        Assert.IsNotNull(controller, "the rigged soldier's controller");
+        Assert.AreSame(controller, Prefab(UnitFigures.Soldier1948).GetComponent<Animator>().runtimeAnimatorController);
+        Dictionary<string, AnimationClip> States(string id) => AssetDatabase.LoadAssetAtPath<UnityEditor.Animations.AnimatorController>($"{CollectionCatalog.Folder}/{id}/{id}-near.controller")
+            .layers[0].stateMachine.states.ToDictionary(s => s.state.name, s => (AnimationClip)s.state.motion);
+        var states = States(UnitFigures.Soldier1948); var c07States = States(UnitFigures.VeteranFighter);
+        CollectionAssert.AreEquivalent(new[] { UnitFigureMotion.IdleState, UnitFigureMotion.WalkState, UnitFigureMotion.AttackState }, states.Keys.ToList());
+        foreach (var (state, take) in new[] { (UnitFigureMotion.IdleState, "idle"), (UnitFigureMotion.WalkState, "walk"), (UnitFigureMotion.AttackState, "fire") })
+        {
+            Assert.AreEqual("Armature|" + take, states[state].name, state);
+            Assert.AreEqual(CollectionCatalog.SourceModelPath(UnitFigures.Soldier1948), AssetDatabase.GetAssetPath(states[state]), state + ": the take is the copy's own");
+            Assert.AreEqual(c07States[state].length, states[state].length, 1e-3f, state + ": as long as C07's take");
+        }
+    }
+
+    /// <summary>A bone's bind pose in the prefab's frame (the mesh node's transforms up to and including the root, times the
+    /// inverse bind pose), so two models' rests compare as the token sees them.</summary>
+    static Matrix4x4 Rest(SkinnedMeshRenderer skin, string bone)
+    {
+        int i = Array.FindIndex(skin.bones, b => b.name == bone);
+        Assert.GreaterOrEqual(i, 0, bone);
+        var root = Matrix4x4.identity;
+        for (var at = skin.transform; at != null; at = at.parent) root = Matrix4x4.TRS(at.localPosition, at.localRotation, at.localScale) * root;
+        return root * skin.sharedMesh.bindposes[i].inverse;
     }
 
     /// <summary>The tokens are built with the code-built figures and ask for their models; nothing changes in the frame of
@@ -321,10 +378,7 @@ public class UnitFiguresTests
                 Assert.AreEqual(prefab.transform.localRotation, holder.GetChild(0).localRotation, $"{f.name}: the prefab keeps its own rotation (the FBX axis turn)");
                 var b = ModelBox(f); float want = f.GetComponent<MeshFilter>().sharedMesh.bounds.size.y;
                 Assert.AreEqual(want, b.size.y, 0.02f * want, $"{f.name}: as tall as the code-built figure");
-                // #336's soldier stands with his arms a little out from his sides (0.550 of his height across, measured):
-                // still far from a T-pose, which is about as wide as it is tall.
-                float arms = f.Find(UnitFigures.ModelName).GetChild(0).name.StartsWith(UnitFigures.Soldier1948, StringComparison.Ordinal) ? 0.56f : 0.55f;
-                Assert.Less(Mathf.Max(b.size.x, b.size.z), arms * b.size.y, $"{f.name}: standing upright, arms down");
+                Assert.Less(Mathf.Max(b.size.x, b.size.z), 0.55f * b.size.y, $"{f.name}: standing upright, arms down");
                 Assert.AreEqual(0f, b.min.y, 0.01f, $"{f.name}: feet on the figure's origin");
             }
             foreach (var v in vehicles)
@@ -427,7 +481,8 @@ public class UnitFiguresTests
 
     /// <summary>Close up, a near model that never comes (null: a missing or damaged bundle) leaves the far mesh drawing (fail
     /// open); and C05, the pioneer veteran, has no idle clip (walk and run only), so his near model is never asked for and he
-    /// keeps his still far model (owner, 18 October 2026, #665: "Keep its still model"), while the figures beside him swap.</summary>
+    /// keeps his still far model (owner, 18 October 2026, #665: "Keep its still model"), while the figures beside him swap.
+    /// Close up that still model breathes in code (UnitFigureIdle, #2374), and stands still again far off.</summary>
     [Test]
     public void AMissingNearModelKeepsTheFarMeshAndC05KeepsHisStillModel()
     {
@@ -453,6 +508,13 @@ public class UnitFiguresTests
             Assert.IsTrue(FarOf(c05).All(r => !r.forceRenderingOff), "C05 keeps his still far model close up");
             Assert.IsNotNull(NearOf(c06), "C06 swaps beside him");
             Assert.IsTrue(FarOf(c06).All(r => r.forceRenderingOff));
+            var idle = c05.Find(UnitFigures.ModelName).GetChild(0).GetComponent<UnitFigureIdle>();
+            Assert.IsNotNull(idle, "C05's held pose has its code-driven idle (#2374), on the model the token draws");
+            Assert.IsTrue(idle.enabled, "close up it breathes");
+            Assert.IsTrue(c05.GetComponentsInChildren<Animator>(true).All(a => !a.enabled), "with his Animator still off");
+            View(root.GetComponent<UnitFigureDetail>(), camera, TownModelLayer.CloseExitM + 1f);
+            Assert.IsFalse(idle.enabled, "far off he stands still again");
+            Assert.AreEqual(2, asked.Count(a => a.detail == CollectionDetail.Near), "and his near model was never asked for");
         }
         finally { UnityEngine.Object.DestroyImmediate(camera.gameObject); UnityEngine.Object.DestroyImmediate(root); }
     }
