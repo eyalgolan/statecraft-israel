@@ -12,7 +12,7 @@ The design of record is [the GDD](GDD.md), especially "MVP scope 1948 to 1951". 
 - [x] **Done: `docs/superpowers/plans/2026-10-15-gdd-phase-7.md`.** Q-DEF-4 and Q-OPEN-3 through Q-OPEN-5 are recorded with the other Phase 7 rulings (#1069).
 - [x] **Done: `docs/superpowers/plans/2026-10-15-gdd-phase-5.md`.** Q-ART-2 and its selected artillery and armoured-car models are recorded on `main`, and so is Q-ART-3, the owner as the unit-art reviewer, with Tal Heuberger's models counted as reviewed (#997).
 - [x] **Done: `ASSETS.yaml`.** The `first_new_yishuv` photograph's row is verified (CHANGELOG: "Its `ASSETS.yaml` row became `verified` in #913").
-- [x] **Done: #382 ([owner sign-off, 17 Oct](https://github.com/eyalgolan/statecraft-israel/issues/382#issuecomment-6231566027)).** The cutover reviews (the re-timed event windows and the `DesignValuesTests` list) are signed off.
+- [x] **Done: #382 sign-off ([owner sign-off, 17 Oct](https://github.com/eyalgolan/statecraft-israel/issues/382#issuecomment-6231566027)).** The cutover reviews (the re-timed event windows and the `DesignValuesTests` list) are signed off.
 - [x] **Done: `docs/rules/mvp.md`, R-MONEY-002.** Civilian places have no upkeep in the MVP and the per-head tax remains (#1044; fixes #884).
 - [x] **Done: the v0.1.0 and v0.1.1 GitHub pre-releases.** Both are published, web only (#969, #993); #879 is closed. The MVP remains WebGL only; desktop players and IL2CPP parity are after the MVP (#814, #905).
 - [x] **Done: #791 (owner, 18 Oct 2026, Q-CARD-1; [#791](https://github.com/eyalgolan/statecraft-israel/issues/791#issuecomment-6252484778)).** The Burma Road card's photograph: the 7 December 1948 Road of Valour opening frame (Rothenberg 997008137268105171) or the June-July 1948 track frame (Rothenberg 997008136513105171), and whether the card is flagged sensitive ([#791](https://github.com/eyalgolan/statecraft-israel/issues/791#issuecomment-6226235251)). The Burma Road card uses the Road of Valour opening frame of 7 December 1948 (Benno Rothenberg, Meitar Collection, CC BY 4.0, 997008137268105171), and the card is marked `sensitive`, because the opening was also a memorial for the fallen. It went through the owner's sensitivity review like every sensitive card: the owner approved the card's text on 21 Oct 2026, and `content/events/burma_road_complete.yaml` is `sensitivity-reviewed` (#1284).
@@ -121,20 +121,21 @@ PRs 1 to 12 have their owner answers recorded in the Phase 6 plan (#1060, #1069)
 
 ## GDD 0.3 (MVP part)
 
-The owner adopted GDD 0.3 on 26 October 2026 and set its MVP scope on 1 November 2026 ("30 Oct wins for the MVP (Recommended)"; #1725). It is built behind the separate gdd-0.3 ruleset, so the shipped game is unchanged until the switch-over (#1716). #1695, #1696 and #1705 are post-MVP in full; the other issues keep their post-MVP parts in their own sections. Checked against `main` at `1957078d3` and `gh`, 4 November 2026.
+The owner adopted GDD 0.3 on 26 October 2026 and set its MVP scope on 1 November 2026 ("30 Oct wins for the MVP (Recommended)"; #1725). It is built behind the separate gdd-0.3 ruleset, so the shipped game is unchanged until the switch-over (#1716). #1695, #1696 and #1705 are post-MVP in full; the other issues keep their post-MVP parts in their own sections. Checked against `main` at `fe007b186` and `gh`, 4 November 2026.
 
-- [x] **Done: #1688, #1690, #1702, #1707, #1708, #1712, #1718, #1911, #2112, #2114 and #2115.** No Attention under gdd-0.3 (#1747, #1750), regions in the sim (#1846, #2109, #2131), the Money ledger (#2272), combat experience (#2275), artillery movement (#2142), enemy towns (#2185, #2123), event content (#2226), the CLI course report (#2107), per-unit rates (#2159), the 1.5:1 attack ratio (#2141) and the catalogue rulings (#2158).
+- [x] **Done: #1688, #1690, #1702, #1707, #1708, #1712, #1718, #1911, #2112, #2114, #2115 and #2457.** No Attention under gdd-0.3 (#1747, #1750), regions in the sim (#1846, #2109, #2131), the Money ledger (#2272), combat experience (#2275), artillery movement (#2142), enemy towns (#2185, #2123), event content (#2226), the CLI course report (#2107), per-unit rates (#2159), the 1.5:1 attack ratio (#2141), the catalogue rulings (#2158) and `israel_bonds` adding equal Debt (#2487).
+- [ ] **Open: #2483 (pull request #2505).** Turning on austerity_1949, forex_crisis_1951, iraqi_exodus and maabarot_policy under gdd-0.3 with their Food-supply and housing effects.
 - [ ] **Open: #1687.** The ruleset, save schema and balance catalogue; parts 1 to 3 are on `main` (#1732, #1742, #1745).
 - [ ] **Open: #1689, #1691 and #1717.** The population ledger, the authored regions and prepared fields, and the Historical start.
-- [ ] **Open: #1692, #1693, #1694 and #1713.** Work by tier, professions, farming and pioneer work; #1693's fixture-only pioneer work-XP producer is on `main` (#2421).
-- [ ] **Open: #1697, #1698 and #1699.** Courses, the craftsman and basic training; a slice of each is on `main` (#2461, #2416 and #2439).
+- [ ] **Open: #1692, #1693, #1694 and #1713.** Work by tier, professions, farming and pioneer work; #1693's fixture-only pioneer work-XP producer is on `main` (#2421), and #1694's field fixture cites the farmer-only field ruling (#2509).
+- [ ] **Open: #1697, #1698 and #1699.** Courses, the craftsman and basic training; a slice of each is on `main` (#2461, #2416 and #2439), and the Hakhshara stays the gdd-0.3 pioneer path (#2507).
 - [x] **Done: #1703 and #1701.** Housing condition and repair (#2291, #2409, #2415) and arms workshops (#2270, #2289).
 - [ ] **Open: #1700.** City projects by builders; the housing-repair project is on `main` (#2409, #2415).
-- [ ] **Open: #1704, #1706, #1709 (pull request #2318), #1710 and #1711.** Food, combat, the enemy threshold and armistice offers, prisoners, and held cities (D6).
+- [ ] **Open: #1704, #1706, #1709, #1710 and #1711.** Food, combat, the enemy threshold and armistice offers, prisoners, and held cities (D6); #1709's slice A, per-front armistice quiet turns and unit removal, is on `main` (#2318).
 - [ ] **Open: #1714, #1715, #1912 and #2113.** The absorption objective, indicators and the ending, the three objective groups, and the D5 housing places.
 - [ ] **Open: #1719, #1720 and #1721.** Named camps on the map, the fixed camera and the map editor; the editor's slice C (search, selected revert and diff preview) is on `main` (#2443).
 - [ ] **Open: #1722, #1723, #1724 and #1913.** Unity: the city panel, the identity card, the military camp card and the turn walkthrough.
-- [ ] **Open: #2457, #2458 and #2459.** `israel_bonds` and Debt, course orders in Unity, and the advisor pages under gdd-0.3.
+- [ ] **Open: #2458 and #2459.** Course orders in Unity and the advisor pages under gdd-0.3.
 - [ ] **Open: #1716.** The month snapshots, the golden re-pin and the switch-over, last before #814.
 
 ## Player feedback on v0.1.1 (#1038)
