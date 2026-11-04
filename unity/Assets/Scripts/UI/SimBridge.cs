@@ -47,9 +47,10 @@ namespace Statecraft.Game.UI
         public event Action<IReadOnlyList<Rejection>>? TurnEnded;
         /// <summary>Raised after a move or unit order is committed, with the Why lines it added (an attack's result).</summary>
         public event Action<IReadOnlyList<Cause>>? Committed;
-        /// <summary>The engagements the player has just seen resolve, raised after <see cref="Changed"/> has redrawn the map
-        /// (UnitAttackPresenter plays them, #1867): an attack order's at once, and at End Turn only the turn's new ones, not
-        /// the open turn's attack orders, which the turn runs again first. Never on a load or a refused turn.</summary>
+        /// <summary>The engagements the player has just seen resolve, with the lines of the units they destroyed, raised after
+        /// <see cref="Changed"/> has redrawn the map (UnitAttackPresenter plays them, #1867): an attack order's at once, and at
+        /// End Turn only the turn's new ones, not the open turn's attack orders, which the turn runs again first. Never on a
+        /// load or a refused turn.</summary>
         public event Action<IReadOnlyList<Cause>>? CombatResolved;
         /// <summary>Raised when Queue refuses an order, with the player-facing reason.</summary>
         public event Action<string>? Refused;
@@ -303,7 +304,7 @@ namespace Statecraft.Game.UI
 
         string? Refuse(string reason) { reason = ReasonText(text, reason, Content, TownNamesHe); Refused?.Invoke(reason); return reason; }
 
-        static IReadOnlyList<Cause> Engagements(IEnumerable<Cause> why) => why.Where(x => x.Key == WhyKeys.Engagement).ToList();
+        static IReadOnlyList<Cause> Engagements(IEnumerable<Cause> why) => why.Where(x => x.Key == WhyKeys.Engagement || x.Key == WhyKeys.Destroyed).ToList();
 
         static void Notify(Action? handlers)
         {
