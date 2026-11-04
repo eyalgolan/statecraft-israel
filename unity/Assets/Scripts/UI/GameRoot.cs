@@ -304,7 +304,7 @@ namespace Statecraft.Game.UI
             var toast = Own(new ToastPresenter(root, bridge, text));
             unseenSkipped = () => toast.Show(text["toast.unit_unseen_skipped"]);
             var hudPresenter = Own(new HudPresenter(root, bridge, text, selectUnit: _ => FocusNextUnit()));
-            nav = Own(new ScreenNav(root));                                      // every screen starts hidden (USS); ScreenNav opens one at a time
+            nav = Own(new ScreenNav(root, text));                                // every screen starts hidden (USS); ScreenNav opens one at a time
             Own(new PointerBlur(root));                                    // a mouse click leaves no focus fill behind (keyboard keeps it)
             Own(new FocusScroll(root));                                    // keyboard focus scrolls its ScrollView to it (a11y H1)
             FocusScroll.NoScrollBarIsATabStop(root);                       // no scroll bar takes a Tab stop (#41 K3, widened from the Cabinet's two)

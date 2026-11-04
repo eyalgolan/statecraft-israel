@@ -61,6 +61,8 @@ hud.nav.why: "Why?"
 hud.nav.encyclopedia: "Encyclopedia"
 hud.nav.objectives: "Objectives"
 hud.nav.settings: "Settings"
+# An icon-only screen-header button: {0} is that screen's localized rail name (#2566).
+screen.close: "Close {0}"
 hud.new_game: "New game"
 hud.end_turn: "End turn"
 hud.end_turn_needs_orders: "A unit needs orders"
