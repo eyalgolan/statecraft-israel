@@ -29,7 +29,8 @@
 #                Antiquities Authority final report, and the last two - Ni'ilya (נעיליא) and Ghazawiya (אל-גזאוויה) -
 #                from the he.wiki subdistrict lists (2026-10-22). All thirteen villages now carry a sourced name_he.
 #                name_he_review: agent-checked on the rows with a sourced name_he: an AI agent checked the name against its sources and no
-#                person has read it yet (owner, 2026-10-15); a native speaker reviews it (#564) and removes the flag.
+#                person has read it yet (owner, 2026-10-15); a native speaker, or an AI-assisted contributor who discloses it,
+#                reviews it and removes the flag (#564; owner, 4 November 2026: "AI-assisted can clear it").
 #   reviewed_by/on  a person's sign-off beside status (a place or a camp row), their GitHub handle and the day, both or
 #                neither; only that person writes them (owner, 15 October 2026, #375; docs/HISTORIAN_REVIEW.md).
 #   kind/type    finer kind and the repo's settlement type; the kit archetype follows type (village and arab_town:

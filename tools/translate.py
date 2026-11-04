@@ -15,8 +15,9 @@ translations/<lang>/{events,ui,content}.yaml, which the game does not read yet. 
 (docs/WRITING_EVENTS.md; the sim's EventRules): an event is all or none, placeholders match the English with no stray
 '{' or '}', one line, no direction marks, and a Hebrew event field has Hebrew letters. Of tools/tests/test_hebrew_ui.py
 it applies only the general rules (every key has a value, the same format tokens, no direction marks), not its checks of
-particular keys' wording, so run the tests after saving. A translation is marked agent-checked until a native speaker
-has read it, and goes back to agent-checked when its text changes (#564). Every write is read back first, and nothing
+particular keys' wording, so run the tests after saving. A translation is marked agent-checked until a native speaker,
+or an AI-assisted contributor who discloses it, has read it, and goes back to agent-checked when its text changes
+(#564; owner, 4 November 2026: "AI-assisted can clear it"). Every write is read back first, and nothing
 is written when any edited string is refused. It never touches status,
 reviewed_by or reviewed_on, and it does not commit.
 """
@@ -372,7 +373,8 @@ def _dump(header: str, data: dict) -> str:
 TITLES = {"events": "Events", "ui": "UI strings", "content": "Content fields"}
 HEADER = """{name} ({lang}) for tools/translate.py. The English in content/ and unity/Assets/UI/ is the source of record.
 The game does not read this file yet. Same rules as the Hebrew (docs/WRITING_EVENTS.md): an event is all or none,
-placeholders match the English, one line each; review: agent-checked until a native speaker has read it (#564).
+placeholders match the English, one line each; review: agent-checked until a native speaker, or an AI-assisted
+contributor who discloses it, has read it (#564; owner, 4 November 2026: "AI-assisted can clear it").
 The tool rewrites this file: comments other than this header are not kept."""
 
 

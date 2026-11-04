@@ -240,7 +240,7 @@ namespace Statecraft.Sim
             var regionPending = field.StartsWith("map/region_names_he.yaml#names.", StringComparison.Ordinal)
                 && field.EndsWith(".name", StringComparison.Ordinal) && text == "native-review-pending";
             if (text != HebrewReview.AgentChecked && !regionPending)
-                throw new ContentException(file, field + ".review", $"must be {HebrewReview.AgentChecked} (or native-review-pending for the region-name catalogue), or left out once a native speaker has read the text (#564)");
+                throw new ContentException(file, field + ".review", $"must be {HebrewReview.AgentChecked} (until a native speaker, or an AI-assisted contributor who discloses it, has read the text, #564), or native-review-pending for the region-name catalogue, or left out once it has been read");
             return regionPending ? "native-review-pending" : HebrewReview.AgentChecked;
         }
 
