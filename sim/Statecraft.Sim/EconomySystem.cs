@@ -50,7 +50,8 @@ namespace Statecraft.Sim
         {
             if (w.Target != "debt" || w.Key != CauseKeys.EventAmount) return w;
             var delta = MoneyDelta(w);
-            return new Cause(w.System, "treasury", delta, $"{PlayerText.Change(c, "treasury", delta)} ({w.Args[0]})", key: w.Key, args: w.Args);
+            // "events" as a literal (every event_amount Debt line is EventSystem's), so WhyScreenTests' source scan sees it.
+            return new Cause("events", "treasury", delta, $"{PlayerText.Change(c, "treasury", delta)} ({w.Args[0]})", key: w.Key, args: w.Args);
         }
 
         /// <summary>#2212: the one Money line for the causes a list leaves out. The turn report and the meter tip show the
