@@ -1,6 +1,7 @@
 """scripts/oss/reviewed_by_guard.py (#375, "Yes, humans only"): no commit an AI agent co-wrote adds, changes or removes a
-`reviewed_by` / `reviewed_on` line in content/, and a person's `reviewed_on` is not after their commit. It fails closed.
-Runs on throwaway git repositories."""
+`reviewed_by` / `reviewed_on` line in content/, unless the pull request's "AI assistance" section discloses the AI help and
+names the check (owner, 4 November 2026, "Yes, it counts"; #2481), and even then it never removes one; a `reviewed_on` is
+not after its commit. It fails closed. Runs on throwaway git repositories."""
 import os
 import subprocess
 
