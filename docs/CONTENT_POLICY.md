@@ -47,7 +47,8 @@ These rules protect the game and the people in it. They are not a viewpoint:
    (`name_he`, `title_he`, `title_he_f`, `body_he`) that an AI agent checked against its sources, but no person has read
    yet, carries its own flag beside it, `*_review: agent-checked` (for example `name_he_review`), whatever the row's
    `status` says about its English facts (owner, 15 October 2026). A Hebrew name copied verbatim from a Wikidata label
-   or a Hebrew Wikipedia title (as the header of `content/map/localities_1948.yaml` describes) carries no such flag;
+   or a Hebrew Wikipedia title (maintainer reading, not part of the owner's option: dropping only a bracketed
+   disambiguation such as "(יפו)", direction marks or niqqud still counts as verbatim, as #2044 did) (as the header of `content/map/localities_1948.yaml` describes) carries no such flag;
    a name an agent wrote or adapted still does (the owner chose the option labelled "Exempt verbatim labels
    (Recommended)" (4 November 2026)). A native Hebrew speaker reviews these names (#564)
    and then removes the line, or an AI-assisted contributor does, when the pull request discloses the AI help and names
