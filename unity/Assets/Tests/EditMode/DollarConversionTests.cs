@@ -193,6 +193,11 @@ public class DollarConversionTests
         var refusals = typeof(EconomySystem).GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
             .Where(f => f.IsLiteral && f.Name.StartsWith("RefusedDollars")).Select(f => (string)f.GetRawConstantValue()).ToList();
         Assert.AreEqual(5, refusals.Count);
+        // The literal text, so a string that still typed "$1m" (Format ignores an unused argument) would fail.
+        Assert.AreEqual("Convert at least $1.0m", SimBridge.ReasonText(En, EconomySystem.RefusedDollarsMinimum, c));
+        StringAssert.Contains("$1.0m", SimBridge.ReasonText(He, EconomySystem.RefusedDollarsMinimum, c));
+        // Without content there is no money format to use, so the sim's own English is shown.
+        Assert.AreEqual(EconomySystem.RefusedDollarsMinimum, SimBridge.ReasonText(En, EconomySystem.RefusedDollarsMinimum));
         foreach (var reason in refusals)
         {
             var money = PlayerText.Money(c, "fx_reserves", 1);

@@ -1,4 +1,5 @@
 ### Changed
 
-- Bring share messages, the dollar conversion minimum, meter terminology, Hebrew controls and credits, and the Israel Bonds
-  donation option into line with the writing guides.
+- Bring share messages, the dollar conversion minimum, the Security meter's capitalisation, and Hebrew controls and
+  credits into line with the writing guides, and word the Israel Bonds donations-only option to match its effects (it adds
+  no Debt).
