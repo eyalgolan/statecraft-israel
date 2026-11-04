@@ -191,7 +191,7 @@ public class Gdd03CraftCourseFixtureTests
     // "#1698: what level does a craftsman hold when they take the craftsman course again?": "Keep their level
     // (Recommended)". An apprentice or expert craftsman starts the course again under the same id and keeps the tier on
     // the course and after graduating: the course never lowers a qualification. Keeping their work XP too is a maintainer
-    // reading, not the owner's: the question asked only about the level.
+    // reading, not the owner's: the recorded answer covers only the level.
     [Theory]
     [InlineData(Apprentice)]
     [InlineData(Expert)]
@@ -219,7 +219,7 @@ public class Gdd03CraftCourseFixtureTests
 
     // R-CRAFT-003, owner, 4 November 2026: "Keep their level (Recommended)". Cancelling a re-enrolled apprentice or expert
     // at any counted turn keeps the craftsman profession and tier; keeping their work XP too is a maintainer reading, not
-    // the owner's (the question asked only about the level). Only a novice's cancel makes an ordinary civilian.
+    // the owner's (the recorded answer covers only the level). Only a novice's cancel makes an ordinary civilian.
     [Theory]
     [InlineData(Apprentice, 0)]
     [InlineData(Apprentice, 2)]
