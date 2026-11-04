@@ -102,13 +102,27 @@ namespace Statecraft.Sim
             for (var h = (q, r); h != (u.Q, u.R); h = prev[h]) hexes.Add(h);
             hexes.Reverse();
             spent.TryGetValue(unitId, out var used);
-            int left = full - used, turn = 1, before = 0;
-            foreach (var h in hexes)
+            int left = full - used, turn = 1, before = 0, first = 0;
+            for (int i = 0; i < hexes.Count; i++)
             {
-                var step = dist[h] - before; before = dist[h];
-                if (step > left && !(left == full && step > full)) { turn++; left = full; }
+                var step = dist[hexes[i]] - before;
+                if (step > left && !(left == full && step > full))
+                {
+                    // R-MOVE-003, as Advance moves: a turn that would end on a hex full of the unit's side ends on the last
+                    // free hex of that turn instead, and the next turn starts from there (#2548). With none free, as before.
+                    var end = i - 1;
+                    while (end >= first && Full(c, s, u, hexes[end].Q, hexes[end].R) != null) end--;
+                    if (end >= first && end < i - 1)
+                    {
+                        result.RemoveRange(end + 1, result.Count - end - 1);
+                        i = end + 1;
+                        step = dist[hexes[i]] - dist[hexes[end]];
+                    }
+                    turn++; left = full; first = i;
+                }
+                before = dist[hexes[i]];
                 left = step > left ? 0 : left - step;
-                result.Add((h.Q, h.R, turn));
+                result.Add((hexes[i].Q, hexes[i].R, turn));
             }
             return result;
         }

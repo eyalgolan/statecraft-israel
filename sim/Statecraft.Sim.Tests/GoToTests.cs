@@ -113,6 +113,29 @@ public class GoToTests
         Assert.Equal((4, 1), (now.State.Units[1].Q, now.State.Units[1].R));
     }
 
+    // R-MOVE-002, R-MOVE-003 (#2548): a turn of the route that would end on a hex full of the unit's side ends on the last
+    // free hex before it, as the route step does, so the route shows the turn the unit really arrives on.
+    [Fact]
+    public void ARouteShowsTheTurnLostToAFullStackOnTheWay()
+    {
+        var c = Board();   // the fixture's stack limit is 2 a side (MovementTests' summary)
+        var s = CombatTests.With(c, new Unit(1, "gun", 0, 1, side: "israel", strength: 3), Soldier(2, 2, 1), Soldier(3, 2, 1));
+        var shown = Movement.Route(c, s, 1, 4, 1, None);
+        // The gun's 2 points would end turn 1 on 2,1, which is full: it stops on 1,1, and 4,1 is a turn later.
+        Assert.Equal(new[] { (1, 1, 1), (2, 1, 2), (3, 1, 2), (4, 1, 3) }, shown.Select(h => (h.Q, h.R, h.Turn)));
+        var state = Simulation.Step(c, s, new Command[] { new UnitOrder(1, Movement.GoTo, 4, 1) }).State;
+        var turn = 1;
+        while (true)
+        {
+            turn++;
+            var start = Simulation.Preview(c, state, new Command[0]).State;   // the route step has run
+            if ((start.Units[1].Q, start.Units[1].R) == (4, 1)) break;
+            Assert.True(turn < 5, "the gun never arrived");
+            state = Simulation.Step(c, state, new Command[0]).State;
+        }
+        Assert.Equal(shown.Last().Turn, turn);
+    }
+
     // R-SAVE-003: a go-to is a committed unit order with its hex.
     [Fact]
     public void AGoToIsSavedAsAUnitOrderWithAHex()
