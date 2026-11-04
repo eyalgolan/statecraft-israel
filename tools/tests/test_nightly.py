@@ -1803,6 +1803,63 @@ def test_the_stages_run_in_the_brief_order(night, env, stages, capsys):
     assert stages.gh.names().count("previous_build_tag") == 1   # once a night
 
 
+@pytest.mark.parametrize("failed_build", ["Web-gzip", "Web-pages"])
+def test_a_units_qa_failure_keeps_both_public_channels_on_latest(tmp_path, monkeypatch, failed_build):
+    from test_site_demo_selection import run as select_demo
+
+    sandbox = tmp_path / "night"
+    sandbox.mkdir()
+    env = Env(sandbox, monkeypatch)
+    gh = FakeGH()
+    previous = ns.Published(gh.latest, OLD, gh.latest.removeprefix("v"), {}, BOOT_MS)
+    state = ns.State(last_published=previous)
+    night = env.pre(state, gh)
+    night.run_dir.mkdir(parents=True)
+    night.manifest = MANIFEST
+    night.cfg = dataclasses.replace(night.cfg, itch_enabled=True, savetest_itch_target=TEST_TARGET,
+                                    itch_evidence=evidence_file(tmp_path, "PASS"))
+    assert nightly.itch_skip_reason(night.cfg) is None
+    itch = FakeItch(gh.calls)
+    builds = tuple(tmp_path / name for name in ("Web-gzip", "Web-pages"))
+    for build in builds:
+        build.mkdir()
+    zips = (zip_of(tmp_path / "web.zip", "tonight"), zip_of(tmp_path / "pages.zip", "tonight"))
+    gh.baseline = zip_of(tmp_path / "previous.zip", "previous")
+    runner = CheckRunner()
+    runner.add(["git", "-C", str(night.cfg.clone), "log"], out="QA fixture\n")
+
+    def units_result(_):
+        if str(tmp_path / failed_build) in runner.calls[-1]:
+            return 1, "FAIL: Israeli/enemy unit tokens missing on turns 1-2\n"
+        return 0, runner.ok
+
+    runner.answers["--startscreen"] = units_result
+    for name in ("run_gates", "run_editmode", "notify", "demo_serves"):
+        monkeypatch.setattr(nightly, name, lambda *a, **k: None)
+    monkeypatch.setattr(nightly, "_build_both", lambda *a, **k: builds)
+    monkeypatch.setattr(nightly, "package_zip", lambda n, r, b, pages: zips[pages])
+    monkeypatch.setattr(nightly, "check_sizes", lambda *a, **k: SIZES)
+    monkeypatch.setattr(nightly, "measure_boot", lambda *a, **k: BOOT_MS)
+
+    with pytest.raises(ns.Refused) as refused:
+        nightly.run_stages(night, state, runner, gh, itch, no_publish=False, no_steam=True)
+    assert refused.value.gate == "web-check" and failed_build in refused.value.detail
+    assert gh.latest == previous.tag and state.last_published == previous
+    assert not {"publish", "restore_latest", "dispatch_site", "itch.push"} & set(gh.names())
+
+    site = tmp_path / "site"
+    (site / "demo").mkdir(parents=True)
+    page = site / "demo/index.html"
+    page.write_text(previous.version)
+    result, calls = select_demo(site, gh.latest, [
+        {"tagName": night.tag, "isPrerelease": False},
+        {"tagName": previous.tag, "isPrerelease": False},
+    ])
+    assert f"release view {previous.tag}" in calls and f"release view {night.tag}" not in calls
+    assert result.returncode == 1 and f"Latest release ({previous.tag})" in result.stdout
+    assert page.read_text() == previous.version
+
+
 def test_no_publish_stops_before_any_store_call(night, env, stages, capsys):
     st = ns.State(last_published=last_published())
     assert nightly.run_stages(night, st, env.runner, stages.gh, None, no_publish=True,
