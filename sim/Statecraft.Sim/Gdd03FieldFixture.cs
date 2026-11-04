@@ -37,7 +37,7 @@ namespace Statecraft.Sim
     /// field takes one farmer; an unworked field produces nothing." Each authored field (Q36) is one Farm slot of
     /// `field.slots` (1) in the shared <see cref="Gdd03AssignmentFixture"/>, which stays the single writer and whose
     /// ledger refuses a farmer living outside the field's region (Q27). Loss and retake (27M-1), preparation (#1713),
-    /// XP and Food demand are not here.</summary>
+    /// and Food demand are not here; farmer work XP is <see cref="ResolveWorkXp"/> (#2468).</summary>
     internal sealed class Gdd03FieldFixture
     {
         readonly GameState state;
@@ -128,6 +128,42 @@ namespace Statecraft.Sim
                     ? rates.FoodPerTurn(farmer.Tier, rules) : 0);
             }
             return new Gdd03FieldYield(result);
+        }
+
+        /// <summary>#2468, R-VET-001 and R-VET-002: the farmer counterpart of <see cref="Gdd03PioneerWorkFixture"/>, on
+        /// initialized gdd-0.3 ledger fixtures only, with no game-loop caller. Each farmer the month's snapshot has working a
+        /// field that is still Israeli-held (the fields <see cref="Yield"/> pays) gives one staffed-farming receipt, and its
+        /// <see cref="CivilianProfessionRules.AfterWork"/> result is committed once into a copy, in ascending id. The
+        /// turn-start state is not changed, so the same snapshot resolved twice gives the same single tick. A farmer whose
+        /// turn-start record is no longer on that field, idle, travelling, teaching or in a course gets nothing.</summary>
+        internal static GameState ResolveWorkXp(Content content, GameState turnStart, Gdd03SyntheticMonthContext month,
+            IReadOnlyCollection<string> israeliHeldNow)
+        {
+            if (content == null) throw new ArgumentNullException(nameof(content));
+            if (turnStart == null) throw new ArgumentNullException(nameof(turnStart));
+            if (month == null) throw new ArgumentNullException(nameof(month));
+            if (israeliHeldNow == null) throw new ArgumentNullException(nameof(israeliHeldNow));
+            if (!content.UsesPopulationLedger || !turnStart.UsesPopulationLedger || !turnStart.PopulationLedger.IsInitialized)
+                throw new InvalidOperationException("Farmer work XP requires an initialized gdd-0.3 ledger fixture.");
+            var fields = new HashSet<string>(Fields(content).Select(f => f.Id), StringComparer.Ordinal);
+            var working = new HashSet<int>(month.WorkEligibleIds);
+            turnStart.PopulationLedger.Reconcile();
+
+            var candidate = turnStart.Clone();
+            foreach (var p in month.OpeningPeople)   // ascending id, one record per id
+            {
+                var field = p.Assignment.Target;
+                if (!working.Contains(p.Id) || p.Profession != CivilianProfession.Farmer || field == null
+                    || !fields.Contains(field) || !israeliHeldNow.Contains(field)) continue;
+                // R-VET-001: staffed farming counts regardless of output, so the receipt carries no amount.
+                var next = CivilianProfessionRules.AfterWork(content, turnStart, p.Id,
+                    new[] { new CivilianWorkEvidence(p.Id, field, CivilianWorkKind.StaffedFarming, 0m) });
+                // The same maintainer call as the pioneer producer's, not a rule: a veteran's work XP stops at promotion.
+                if (!ReferenceEquals(next, turnStart.PopulationLedger.Get(p.Id)) && turnStart.PopulationLedger.Get(p.Id).Tier != CivilianTier.Veteran)
+                    candidate.PopulationLedger.Replace(next);
+            }
+            candidate.PopulationLedger.Reconcile();
+            return candidate;
         }
     }
 }
