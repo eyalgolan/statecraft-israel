@@ -76,9 +76,9 @@ Both or neither: the loader (and the map's readers in Unity, and `tools/routes_1
 blank value, or a value of the wrong shape. **Only the reviewer writes these two lines, in a commit of their own.** An AI
 agent never does, not even to copy a sign-off it was told about: `scripts/oss/reviewed_by_guard.py` fails a pull request
 in which a commit with an AI co-author trailer adds, changes or removes either line, and it fails closed. The exception
-is a pull request whose "AI assistance" section discloses the AI help and names the check: then an AI-assisted contributor's check counts
-as the sign-off, under their own handle, and the section says which sources they opened and what they checked
-(asked whether an AI-assisted contributor's source check counts as the `reviewed_by` sign-off, the owner answered "Yes, it counts" ([4 November 2026](https://github.com/eyalgolan/statecraft-israel/pull/2481#issuecomment-6623108295))). Even then, such a commit never removes a sign-off. A row with a
+is a pull request whose "AI assistance" section discloses the AI help: then an AI-assisted contributor's check counts
+as the sign-off, under their own handle, and the section should say which sources they opened and what they checked
+(asked whether an AI-assisted contributor's source check counts as the `reviewed_by` sign-off, the owner answered "Yes, it counts" ([4 November 2026](https://github.com/eyalgolan/statecraft-israel/pull/2481#issuecomment-6623108295))). Even then, such a commit never removes a sign-off. CI checks only that the section exists, is not a "no" and names a check; the reviewer reads what was checked and how. A row with a
 whole sign-off leaves the review queue (`tools/review_queue.py`, `docs/review-queue.md`).
 
 **A signed row is closed to agents** (owner, 15 October 2026, on #629: "Block it in CI"). A sign-off vouches for the text

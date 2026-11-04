@@ -36,7 +36,8 @@ Disclosure (owner, 4 November 2026, asked whether an AI-assisted contributor's s
 sign-off: "Yes, it counts"): with --pr-event, the guard reads the pull request's description from the event file GitHub
 writes (GITHUB_EVENT_PATH), never from a shell argument. The pull request discloses the AI help when its "AI assistance"
 section (the template's heading, up to the next heading, HTML comments removed) does not start with no / none / not /
-n/a / nothing and names the check (a form of "check"). Then an AI-co-authored commit may add or change reviewed_by /
+n/a / nothing and names a check (one of a short list of verbs: check, verified, compared, opened, read and the like).
+CI checks only that much; the reviewer reads what was checked and how. Then an AI-co-authored commit may add or change reviewed_by /
 reviewed_on lines, but never remove one: every key it drops must come back in the same commit. (3) applies to it, and the
 sign-off lines it adds release a row under (2); its removals never release a row, and an edit to a signed row that the
 commit does not sign again still fails. Without --pr-event (local runs, check.sh), with an event that has no pull
@@ -70,7 +71,9 @@ HUNK = re.compile(r"^(@+) (.*?) @+")
 HEADING = re.compile(r"^ {0,3}#{1,6}(?:\s+(.*?))?\s*#*\s*$")
 NEGATIVE = {"no", "none", "not", "n/a", "na", "nothing"}
 FIRST_WORD = re.compile(r"[^\s.,;:!?*_`~>#()\[\]-]+")
-CHECK = re.compile(r"\bcheck(?:s|ed|ing)?\b", re.I)
+CHECK = re.compile(r"\b(?:check|checks|checked|checking|verify|verified|compared|opened|read)\b", re.I)
+LIST_MARK = re.compile(r"^\s*(?:(?:\d+[.)]|[-*+])\s+|\[[ xX]\]\s*)")
+FENCE = re.compile(r"^ {0,3}(```|~~~)")
 KEYS = ("reviewed_by", "reviewed_on")
 
 
@@ -118,10 +121,12 @@ def hunks(diff: str) -> list[Hunk]:
 
 def ai_assistance(body: str) -> str:
     """The text of the description's first "AI assistance" section, HTML comments removed ("" when there is none). An
-    unclosed comment hides the rest of the section."""
-    lines, found, out = (body or "").splitlines(), False, []
+    unclosed comment hides the rest of the section; a "#" line inside a ``` or ~~~ code fence is not a heading."""
+    lines, found, out, fence = (body or "").splitlines(), False, [], False
     for line in lines:
-        m = HEADING.match(line)
+        if FENCE.match(line):
+            fence = not fence     # a "#" line inside a code fence is not a heading
+        m = None if fence else HEADING.match(line)
         if m:
             if found:
                 break
@@ -134,10 +139,14 @@ def ai_assistance(body: str) -> str:
 
 
 def disclosed(body: str) -> bool:
-    """True when the "AI assistance" section discloses AI help and names the check: its first word (markdown punctuation
-    stripped) is not no / none / not / n/a / nothing, and it contains a form of "check" (check, checks, checked, checking).
-    An empty or template-only section, "None used." or "Claude Code drafted it." (no check named) is not a disclosure."""
+    """True when the "AI assistance" section exists, is not a "no" and names a check. Its first word, after list markers
+    ("1." "1)" "-" "*" "+" "[x]" "[ ]") and markdown punctuation are stripped, is not no / none / not / n/a / nothing, and it
+    contains one of check / checks / checked / checking / verify / verified / compared / opened / read as a whole word.
+    An empty or template-only section, "None used.", "- [x] None, I checked it" or "Claude Code drafted it." (no check
+    named) is not a disclosure. This is all CI can see: what was checked, and how, is for the reviewer to read."""
     text = ai_assistance(body)
+    while (stripped := LIST_MARK.sub("", text, count=1)) != text:
+        text = stripped
     first = FIRST_WORD.search(text)
     if first is None or first.group(0).lower() in NEGATIVE:
         return False
