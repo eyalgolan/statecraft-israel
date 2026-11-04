@@ -261,7 +261,8 @@ event.office: "{0}: {1}"
 event.more: "החלטות ממתינות נוספות: {0}"
 # Approved: owner, 25 Oct 2026 (recommendations page, item 4).
 event.more_one: "החלטה ממתינה נוספת: {0}"
-event.hide: "הסתר"
+# event.hide: HE-03 action noun; agent-checked, for the native reviewer (#564).
+event.hide: "הסתרה"
 event.reopen: "החלטה ממתינה"
 event.illustration: "איור"
 event.photo: "תצלום"
@@ -662,10 +663,11 @@ map.layer_with_armistice: "{0} · {1}: {2}"
 map.layer_front_no_data: " · {0}: נפות המנדט, אין נתוני קו שביתת נשק"
 map.layer_front_low: "{0} (דיוק נמוך)"
 map.layer_front_note: "{0} (וגם {1})"
-map.legend_held: "בשליטת ישראל: כחול · בשליטת כוחות ערביים: כתום-אדום · שטח שבמחלוקת או שטח הפקר: אפור, מקווקו"
-map.legend_armistice: "הצד הישראלי של קו שביתת הנשק: כחול · הצד הערבי: כתום-אדום · שטח הפקר או אזור מפורז: אפור, מקווקו"
+# These three HE-07 maqaf changes are agent-checked, for the native reviewer (#564).
+map.legend_held: "בשליטת ישראל: כחול · בשליטת כוחות ערביים: כתום־אדום · שטח שבמחלוקת או שטח הפקר: אפור, מקווקו"
+map.legend_armistice: "הצד הישראלי של קו שביתת הנשק: כחול · הצד הערבי: כתום־אדום · שטח הפקר או אזור מפורז: אפור, מקווקו"
 map.caption_held: "קווי החזית, {0}, בקירוב (ארכיון המדינה)"
-map.caption_adjusted: "קווי החזית של {0}, מותאמים (ארכיון המדינה; מפת ה-CIA מ-18 במאי 1948)"
+map.caption_adjusted: "קווי החזית של {0}, מותאמים (ארכיון המדינה; מפת ה־CIA מ־18 במאי 1948)"
 map.caption_mixed: "קווי שביתת הנשק: {0}; במקומות אחרים קווי החזית של {1}"
 map.front_egypt: "מצרים"
 map.front_lebanon: "לבנון"
@@ -720,7 +722,8 @@ map.mixed: "יישוב מעורב"
 # map.tier: the tooltip of the population-tier badge on a city's pill (#710): {0} its tier, {1} the number of tiers, {2} its
 # 1948 people. For the native reviewer (#564).
 # map.tier: native review: owner, 3 Nov 2026 (HE batch 3: "Approve all as they are").
-map.tier: "דרגת אוכלוסייה {0} מתוך {1}: {2} תושבים ב-1948"
+# The later HE-07 maqaf change is agent-checked, for the native reviewer (#564).
+map.tier: "דרגת אוכלוסייה {0} מתוך {1}: {2} תושבים ב־1948"
 # For the native reviewer (#564)
 minimap.overview: "התרחקות מרבית"
 minimap.labels: "הצגה או הסתרה של שמות היישובים"
@@ -1115,8 +1118,9 @@ advisor.media_label: "הנפשה וקול בבינה מלאכותית. דיאל�
 # Hebrew agent-drafted; native review: owner, 3 Nov 2026 (HE batch 5: "approve all"; recorded on #564,
 # issuecomment-6610635087).
 advisor.credit.ben_gurion: "צילום: דוד בן-גוריון, 16 באפריל 1951, לשכת העיתונות הממשלתית, אוסף התצלומים הלאומי D683-095, נחלת הכלל (PD-Israel). נצבע, הוצב על רקע משרד שנוצר בבינה מלאכותית, והונפש וסונכרן לקול בבינה מלאכותית (Kling 3.0 Pro, Sync 3)."
-advisor.credit.meyerson: "צילום: גולדה מאירסון (לימים מאיר) עם ילדי קיבוץ שפיים, 24 ביולי 1950, תאודור בראונר, לשכת העיתונות הממשלתית, אוסף התצלומים הלאומי D703-086, נחלת הכלל (PD-Israel). נצבע ב-Dreamina, נחתך, והונפש וסונכרן לקול בבינה מלאכותית (Kling 3.0 Pro, Sync 3); הבינה המלאכותית מניעה גם את האנשים סביבה ואת הדגל."
-advisor.credit.dayan: "צילום: משה דיין, 9 בדצמבר 1953, NLI 997008136641805171. Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection / CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). הוחזר לכיוונו הנכון, נצבע ב-Dreamina, נחתך, והונפש וסונכרן לקול בבינה מלאכותית (Kling 3.0 Pro, Sync 3)."
+# The HE-07 maqaf changes in the following two credits are agent-checked, for the native reviewer (#564).
+advisor.credit.meyerson: "צילום: גולדה מאירסון (לימים מאיר) עם ילדי קיבוץ שפיים, 24 ביולי 1950, תאודור בראונר, לשכת העיתונות הממשלתית, אוסף התצלומים הלאומי D703-086, נחלת הכלל (PD-Israel). נצבע ב־Dreamina, נחתך, והונפש וסונכרן לקול בבינה מלאכותית (Kling 3.0 Pro, Sync 3); הבינה המלאכותית מניעה גם את האנשים סביבה ואת הדגל."
+advisor.credit.dayan: "צילום: משה דיין, 9 בדצמבר 1953, NLI 997008136641805171. Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection / CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). הוחזר לכיוונו הנכון, נצבע ב־Dreamina, נחתך, והונפש וסונכרן לקול בבינה מלאכותית (Kling 3.0 Pro, Sync 3)."
 
 # Caption keys: same text as the C68 recorded opening lines. The lines with an English clip (S6b, Task 26) are cut at
 # the clip's sentence and clause pauses; their start times are the media rows' cues.
@@ -1451,7 +1455,8 @@ dollars.withdraw: "ביטול ההמרה"
 dollars.queued: "דולרים להמרה: {0}, בסיום התור"
 dollars.wartime_only: "המרת דולרים אפשרית רק בזמן מלחמה."
 dollars.no_attention: "אין די תשומת לב להמרה. יש לבטל הוראה אחרת או להמתין לתור הבא."
-dollars.refused_minimum: "יש להמיר לפחות מיליון דולר"
+# dollars.refused_minimum: the placeholder rewrite is agent-checked, for the native reviewer (#564).
+dollars.refused_minimum: "יש להמיר לפחות {0}"
 dollars.refused_not_at_war: "אפשר להמיר דולרים רק בזמן המלחמה"
 dollars.refused_monthly: "זה יותר מהסכום שמותר להמיר החודש"
 dollars.refused_total: "ההמרה תעבור את הסכום הכולל שמותר להמיר"
