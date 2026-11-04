@@ -229,7 +229,6 @@ public class Gdd03MovementFortTests
     [InlineData("military.move_road", "basis: Default, values: [0], note: fixture")]
     [InlineData("military.move_rail", "basis: Default, values: [1, 2], note: fixture")]
     [InlineData("military.fort_bonus", "basis: Default, values: [-1], note: fixture")]
-    [InlineData("military.fortify_turns", "basis: Default, values: [1], note: fixture")]   // R-ORDER-002, #2601: Agreed only
     public void LoaderRejectsInvalidConsumedScalar(string key, string row)
     {
         var f = Files();
@@ -258,6 +257,19 @@ public class Gdd03MovementFortTests
         Assert.Equal(Gdd03BalanceCatalogue.FileName, error.File);
         Assert.Equal("values." + key, error.Field);
         Assert.Contains("must be a whole number >= 0", error.Message);
+    }
+    // R-ORDER-002 (#2601): fortify_turns is Agreed; a Default row with the same value is refused, naming the exact file and field.
+    [Fact]
+    public void LoaderRejectsNonAgreedFortifyTurns()
+    {
+        const string key = "military.fortify_turns";
+        var f = Files();
+        f[Gdd03BalanceCatalogue.FileName] = System.Text.RegularExpressions.Regex.Replace(f[Gdd03BalanceCatalogue.FileName],
+            "(?m)^  \"" + System.Text.RegularExpressions.Regex.Escape(key) + "\":\\n(?:    .*\\n)*", "  \"" + key + "\": { basis: Default, values: [1], note: fixture }\n");
+        var error = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(f)));
+        Assert.Equal(Gdd03BalanceCatalogue.FileName, error.File);
+        Assert.Equal("values." + key, error.Field);
+        Assert.Contains("must be Agreed", error.Message);
     }
     // R-MOVE-007: both endpoints must belong to the same built segment for either corridor kind.
     [Theory]
