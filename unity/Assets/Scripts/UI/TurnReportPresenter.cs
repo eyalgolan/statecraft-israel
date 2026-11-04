@@ -192,10 +192,13 @@ namespace Statecraft.Game.UI
                 return text.Format("report.unit", id);
             }
             // An engagement (#1297) names its enemy attackers, one line each, and gives no line if it names none: its Target is
-            // a hex, not a unit. An order names its unit, Target.
+            // a hex, not a unit. An order names its unit, Target. A new attack order that engages the same turn names its unit
+            // on both causes (#2534): one line per order and unit, not two (#2538 review).
             return turn.Why.Where(w => w.EnemyOrder != "")
                 .SelectMany(w => (w.EnemyOrder == Combat.Attack ? w.EnemyAttackers : new[] { int.Parse(w.Target, CultureInfo.InvariantCulture) })
-                    .Select(id => text.Format("report.enemy_" + w.EnemyOrder, Name(w, id)))).ToList();
+                    .Select(id => (cause: w, id)))
+                .GroupBy(x => (x.cause.EnemyOrder, x.id))
+                .Select(g => text.Format("report.enemy_" + g.Key.EnemyOrder, Name(g.First().cause, g.Key.id))).ToList();
         }
 
         void Show()
