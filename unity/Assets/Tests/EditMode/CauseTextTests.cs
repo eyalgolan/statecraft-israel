@@ -88,6 +88,28 @@ public class CauseTextTests
         Assert.IsFalse(Regex.IsMatch(unmarked, "[A-Za-z]"));
     }
 
+    [Test]
+    public void PostponedAndLapsedOperationsNameTheUnitAndRegionsInBothLanguages()
+    {
+        var e = C.Events.Single(x => x.Id == "operation_horev");
+        var s = Simulation.NewGame(C, 23, Mode.Historical);
+        s.Date = e.From; s.PendingEvents.Clear(); s.PendingEvents.Add(e.Id);
+        var why = new List<Cause>(); EventSystem.Delegate(C, s, why);
+        var postponed = why.Single(x => x.Key == CauseKeys.OperationPostponed);
+        var rows = UnitData.Parse(System.IO.File.ReadAllText(System.IO.Path.Combine(Paths.Content, "map", UnitData.DefaultFileName)));
+        var en = CauseText.Line(postponed, C, rows, En);
+        StringAssert.Contains("Golani Brigade", en); StringAssert.Contains("Negev", en); StringAssert.Contains("Southern Coast", en);
+        StringAssert.DoesNotContain("golani", en); StringAssert.DoesNotContain("southern_coast", en);
+        var he = CauseText.Line(postponed, C, rows, He);
+        StringAssert.Contains("חטיבת גולני", he); StringAssert.Contains("הנגב", he); StringAssert.Contains("מישור החוף הדרומי", he);
+        Assert.IsFalse(Regex.IsMatch(he, "golani|southern_coast|negev"), he);
+
+        s.Date = e.To!.Value; why.Clear(); EventSystem.LapseExpiredOperations(C, s, why);
+        var lapsed = why.Single(x => x.Key == CauseKeys.OperationLapsed);
+        StringAssert.Contains("Golani Brigade", CauseText.Line(lapsed, C, rows, En));
+        StringAssert.Contains("חטיבת גולני", CauseText.Line(lapsed, C, rows, He));
+    }
+
     /// <summary>The keyed lines the seeded game does not reach: a call-up order, a situation that ends, civilian upkeep and
     /// its borrowing, the currency crisis on both sides, and the legacy loop's food cut and UN ceasefire.</summary>
     [Test]
@@ -546,6 +568,7 @@ public class CauseTextTests
             CauseKeys.CallUpSet, CauseKeys.CallUpRaised, CauseKeys.CallUpLowered, CauseKeys.Ceasefire,
             CauseKeys.EventAmount, CauseKeys.EventChosen, CauseKeys.EventCity, CauseKeys.EventDelegated,
             CauseKeys.EventDelegatedPartial, CauseKeys.EventGrant, CauseKeys.EventNew, CauseKeys.EventPolicy,
+            CauseKeys.OperationPostponed, CauseKeys.OperationLapsed,
             CauseKeys.EventRejoin, CauseKeys.EventSetRung, CauseKeys.EventStock, CauseKeys.EventUnlock,
             CauseKeys.MilitaryUpkeep, CauseKeys.HousingSurcharge, CauseKeys.HousingCohesion,
             CauseKeys.ObjectiveCompleted, CauseKeys.PrisonersReturned, CauseKeys.SoldiersReturned }), rows.Select(x => x.Key), "all remaining keys");

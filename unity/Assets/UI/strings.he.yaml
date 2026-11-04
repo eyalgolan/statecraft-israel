@@ -272,6 +272,16 @@ event.no_attention: "לא נשארה לך מספיק תשומת לב לענות 
 # Native review: owner, 3 Nov 2026 (HE batch 5: "approve all"; recorded on #564, issuecomment-6610635087).
 event.cabinet: "הממשלה"
 event.option_cost: "{0} (עולה {1:0.0} תשומת לב)"
+# Agent-drafted Hebrew; native review pending (#564). R-ENEMY-007 operation placement.
+event.operation_requirement: "נדרשת הצבת {0} ב{1}."
+event.operation_missing: "יש להעביר את {0} אל {1} לפני שאפשר לפתוח במבצע."
+event.operation_move: "להעביר את {0} אל {1}"
+event.operation_refused: "היחידות הנדרשות למבצע אינן במקומן"
+operation.region.galilee: "הגליל"
+operation.region.central_plain: "מישור החוף המרכזי"
+operation.region.jerusalem_hills: "הרי ירושלים"
+operation.region.southern_coast: "מישור החוף הדרומי"
+operation.region.negev: "הנגב"
 # The objective card's line (#380; the owner's wording, #379): early, on time, later.
 event.objective_early: "הושלם ב־{0}; בהיסטוריה ב־{1}; מוקדם ב־{2} חודשים."
 event.objective_early_one: "הושלם ב־{0}; בהיסטוריה ב־{1}; מוקדם בחודש אחד."
@@ -1185,6 +1195,9 @@ why.cause.event_chosen: "נבחרה אפשרות: {0}"
 why.cause.event_delegated: "ההכרעה הועברה אל {0}: {1}"
 # agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted).
 why.cause.event_delegated_partial: "ההכרעה הועברה אל {0}, עם ביצוע חלקי: {1}"
+# Agent-drafted Hebrew; native review pending (#564).
+why.cause.operation_postponed: "{0} נדחה. {1}."
+why.cause.operation_lapsed: "{0} ירד מן הפרק משום שהיחידות הנדרשות לא הגיעו לאזורי המבצע. {1}."
 # agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted).
 why.cause.cabinet: "הממשלה"
 # agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted).

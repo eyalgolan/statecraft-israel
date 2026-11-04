@@ -1,5 +1,7 @@
 #nullable enable
 using System.Linq;
+using System.Collections.Generic;
+using Statecraft.Game.Map.Units;
 using Statecraft.Sim;
 using UnityEngine.UIElements;
 
@@ -34,6 +36,11 @@ namespace Statecraft.Game.UI
         public const string RejoinClass = "event-rejoin";
         /// <summary>One line under an option for one of its effects, from the sim's preview (#1125, R-EVT-005; Statecraft.uss).</summary>
         public const string EffectClass = "event-effect";
+        public const string RequirementClass = "event-requirement";
+        public const string MissingRequirementClass = "event-requirement-unmet";
+
+        /// <summary>The map's sourced unit rows, supplied by GameRoot after map parsing, for operation requirement names.</summary>
+        public IReadOnlyList<UnitEntry> Units { get; set; } = System.Array.Empty<UnitEntry>();
 
         readonly VisualElement card; readonly SimBridge bridge; readonly UiText text; readonly PortraitCatalog? portraits;
         readonly EventImageCatalog? photos;
@@ -288,11 +295,24 @@ namespace Statecraft.Game.UI
             foreach (var o in e.Options)
             {
                 var option = o;
+                var requirement = EventSystem.OperationStatus(c, s, o);
                 var label = Local(Cabinet.Fill(c, s, o.Text, date), o.TextHe);
                 var b = new Button(() => Choose(e, option)) { name = "option-" + o.Id, text = price is double cost && cost > 0 ? text.Format("event.option_cost", label, cost) : label };
                 b.AddToClassList(OptionClass);
-                b.SetEnabled(!unpaid);
+                b.SetEnabled(!unpaid && requirement.Met);
                 options.Add(b);
+                foreach (var row in requirement.Required)
+                {
+                    var regions = string.Join(" / ", row.Regions.Select(id => text["operation.region." + id]));
+                    var required = new Label(text.Format("event.operation_requirement", OperationUnitName(row.Unit), regions));
+                    required.AddToClassList("muted"); required.AddToClassList(RequirementClass); options.Add(required);
+                }
+                foreach (var row in requirement.Missing)
+                {
+                    var regions = string.Join(" / ", row.Regions.Select(id => text["operation.region." + id]));
+                    var missing = new Label(text.Format("event.operation_missing", OperationUnitName(row.Unit), regions));
+                    missing.AddToClassList(MissingRequirementClass); options.Add(missing);
+                }
                 // What the option does, one line per effect, from the sim's preview (#1125, R-EVT-005): Unity only words it. Under
                 // the option like the rejoin line, so a Label takes no Tab stop. The rejoin effect has that line already, below.
                 foreach (var preview in EventSystem.OptionEffectPreviews(c, s, o))
@@ -312,6 +332,13 @@ namespace Statecraft.Game.UI
             card.Q<Label>("event-count").text = open.Count > 1 ? text.Format(open.Count == 2 ? "event.more_one" : "event.more", open.Count - 1) : "";
             if (shown && !photoWaits && layer.enabledInHierarchy && openedFor != e.Id) { openedFor = e.Id; Opened?.Invoke(e.Id); }
             if (shown && focusedFor != e.Id) FocusCard(e.Id, force: false);
+        }
+
+        string OperationUnitName(string row)
+        {
+            var unit = Units.FirstOrDefault(x => x.Id == row);
+            if (unit == null) return row;
+            return text["ui.lang"] == UiLanguage.Hebrew && !string.IsNullOrEmpty(unit.NameHe) ? unit.NameHe : unit.Name;
         }
 
         /// <summary>One option-effect row in the UI's language. An indicator, money or policy is named as the top bar and the Why

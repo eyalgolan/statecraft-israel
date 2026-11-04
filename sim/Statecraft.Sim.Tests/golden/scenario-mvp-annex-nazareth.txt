@@ -1,10 +1,10 @@
-1949-02-15;1663341875487339525;Historical;9;
+1949-02-15;11400714819323200433;Historical;9;
 ind{
   food_supply=0.4 [3FD999999999999A]
   housing=0.4144342978298799 [3FDA86176EE148A1]
-  intl_standing=0.6100000000000001 [3FE3851EB851EB86]
-  morale=0.7026567681936653 [3FE67C2A0BF68E18]
-  security=0.5146288293457033 [3FE077D6E0F3CB40]
+  intl_standing=0.53 [3FE0F5C28F5C28F6]
+  morale=0.7016567681936653 [3FE673F8E50D1543]
+  security=0.5046288293457033 [3FE025EB5BD512EE]
 pol{
   border_settlement=0.2 [3FC999999999999A]
   housing_construction=0.3 [3FD3333333333333]
@@ -14,14 +14,14 @@ eff{
   building_houses=0.07429382257461548 [3FB304EB8240B780]
   food_lifts_cohesion=0.03992187500000001 [3FA470A3D70A3D72]
   homes_lift_morale=0.06243079858799369 [3FAFF6EDFC65AE5C]
-  safety_lifts_morale=0.050239859619140646 [3FA9B909F40A287B]
+  safety_lifts_morale=0.049239859619140645 [3FA935F785729B2B]
   work_lifts_cohesion=0.04006423498653092 [3FA4834CA6034814]
 shift{
   food_supply=0 [0000000000000000]
   housing=0 [0000000000000000]
-  intl_standing=0.1100000000000001 [3FBC28F5C28F5C30]
+  intl_standing=0.030000000000000027 [3F9EB851EB851EC0]
   morale=-0.040000000000000036 [BFA47AE147AE1480]
-  security=0.18000000000000016 [3FC70A3D70A3D710]
+  security=0.17000000000000015 [3FC5C28F5C28F5C8]
 bud{
   agriculture_minister=0.07 [3FB1EB851EB851EC]
   defense_minister=0.45 [3FDCCCCCCCCCCCCD]
@@ -40,11 +40,11 @@ pop{
   veterans=657677.6664788157 [4124121B553CB61A]
 sit[
 treasury=0 [0000000000000000]
-debt=30.94210973710249 [403EF12E1A8E192E]
+debt=30.89210973710249 [403EE4614DC14C61]
 fx=84.39862659316444 [40551983191D3D42]
 rung=5;cf=0;
 mob=0.8 [3FE999999999999A]
-stab=0.626287693608005 [3FE40A8C7D3DE075]
+stab=0.6253724158302272 [3FE4030D0339F67C]
 att=4 [4010000000000000]
 fired[
   altalena
@@ -59,9 +59,7 @@ fired[
   operation_hiram
   operation_horev
   operation_yoav
-  rhodes_talks
   second_truce
-  sinai_withdrawal
   ten_days
 pending[
 chosen{
@@ -75,11 +73,8 @@ chosen{
   jerusalem_military_government=military_government
   latrun_proposal=accept_vote
   operation_hiram=stop_at_ceasefire
-  operation_horev=launch
   operation_yoav=stop_at_ceasefire
-  rhodes_talks=send_delegation
   second_truce=comply
-  sinai_withdrawal=withdraw
   ten_days=central_front
 appt{
 under=;
@@ -101,25 +96,26 @@ city{
   tiberias=6,2,6,2,1,c0.35 [3FD6666666666666]
   zikhron_yaakov=2,1,2,1,0,c0.35 [3FD6666666666666]
 units[
-  0:veteran_soldier@4,14|side=israel|strength=4|order=go_to|target=-8,28
-  1:veteran_soldier@13,6|side=israel|strength=2|order=go_to|target=15,3
+  0:veteran_soldier@8,11|side=israel|strength=4
+  1:veteran_soldier@13,4|side=israel|strength=2|order=go_to|target=15,3
   2:veteran_soldier@0,17|side=israel|strength=4
   3:veteran_soldier@-3,24|side=israel|strength=3
   4:veteran_soldier@-9,29|side=israel|strength=3
   5:veteran_soldier@0,26|side=israel|strength=3
   7:veteran_soldier@-10,35|side=israel|strength=1
   8:egyptian_army@-8,27|side=egypt|strength=10|order=fortify|target=-8,27
-  9:arab_legion@-3,25|side=jordan|strength=3
+  9:arab_legion@-3,25|side=jordan|strength=4|order=fortify|target=-3,25
   10:syrian_army@15,5|side=syria|strength=3|order=fortify|target=15,5
   11:iraqi_army@6,14|side=iraq|strength=3|order=fortify|target=6,14
   12:arab_liberation_army@14,4|side=ala|strength=4|order=fortify|target=14,4
+  13:veteran_soldier@8,8|side=israel|strength=2
 cardorders{
-  0=1949-02-24
   1=1949-03-23
 next=14
 ctrl{
+  acre=owner=israel,state=awaiting_choice,since=1948-06-15
   beersheba=owner=israel,state=awaiting_choice,since=1949-01-15,fled=1
   nazareth=owner=israel,state=annexed,since=1948-07-15
-  ramla=owner=israel,state=awaiting_choice,since=1948-09-15,fled=1
+  ramla=owner=israel,state=awaiting_choice,since=1948-08-15,fled=1
 food=2304,768,0
 arms=12

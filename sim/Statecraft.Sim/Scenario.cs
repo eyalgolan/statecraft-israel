@@ -136,10 +136,34 @@ namespace Statecraft.Sim
         {
             var s = Simulation.NewGame(c, Seed ?? GoldenRun.Seed, Mode.Historical);
             var pending = Steps.OrderBy(x => x.OnDate).ToList();
+            var scriptedThrough = Steps.SelectMany(step => step.Built.Select(command => (step.OnDate, Unit: command is Move m
+                    ? (int?)m.Unit : command is UnitOrder o ? o.Unit : null)))
+                .Where(x => x.Unit.HasValue).GroupBy(x => x.Unit!.Value)
+                .ToDictionary(g => g.Key, g => g.Max(x => x.OnDate).AddMonths(1));
             for (int turn = 0; turn < 1000 && s.Date < UntilDate && s.GameOver == null; turn++)
             {
-                var now = new List<Command>();
+                // The scenario is the player: stage the historical/recommended operation choice with ordinary go-to orders.
+                // Let an explicitly scripted movement and its following turn finish first, then return that unit to the
+                // automated plan. After this turn's scripted commands are appended, preview the combined player queue so an
+                // operation whose last unit arrives now is answered now rather than delegated.
+                var now = HistoricalAI.OperationMoves(c, s, e => e.Options.FirstOrDefault(o => o.Historical)
+                    ?? e.Options.FirstOrDefault(o => o.Recommended) ?? e.Options[0])
+                    .Where(x => x is not UnitOrder o || !scriptedThrough.TryGetValue(o.Unit, out var through) || s.Date > through).ToList();
                 while (pending.Count > 0 && pending[0].OnDate <= s.Date) { now.AddRange(pending[0].Built); pending.RemoveAt(0); }
+                var staged = Simulation.Preview(c, s, now).State;
+                var operationChoices = s.PendingEvents.Select(id => c.Events.First(e => e.Id == id))
+                    .Select(e => (Event: e, Option: e.Options.FirstOrDefault(o => o.Historical)
+                        ?? e.Options.FirstOrDefault(o => o.Recommended) ?? e.Options[0]))
+                    .Where(x => x.Option.RequiresUnitRegions.Count != 0 && EventSystem.OperationStatus(c, staged, x.Option).Met)
+                    .Select(x => (Command)new ChooseEventOption(x.Event.Id, x.Option.Id));
+                var attention = c.UsesAttention ? staged.Attention : double.PositiveInfinity;
+                foreach (var choice in operationChoices)
+                {
+                    var cost = c.UsesAttention ? AttentionSystem.Cost(c, s, choice.Kind) : 0;
+                    if (cost > attention + 1e-9) continue;
+                    attention -= cost;
+                    now.Add(choice);
+                }
                 var r = Simulation.Step(c, s, now);
                 if (r.Rejected.Any(j => !CardRefusal(j)))
                 {

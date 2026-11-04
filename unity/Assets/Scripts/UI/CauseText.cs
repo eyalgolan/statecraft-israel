@@ -72,6 +72,13 @@ namespace Statecraft.Game.UI
                 case CauseKeys.EventDelegatedPartial:
                     return text.Format(key, cause.Args[2] == "" ? text["why.cause.cabinet"] : Local(cause.Args[2], cause.Args[3], text),
                         Local(cause.Args[0], cause.Args[1], text));
+                case CauseKeys.OperationPostponed:
+                case CauseKeys.OperationLapsed:
+                    // CauseTextTests' sim-only English compatibility path has no presentation unit catalogue. The sim's
+                    // Message is still the exact pre-localization report in that case; GameRoot supplies rows and gets the
+                    // player-facing unit and region names below. Hebrew always uses the localized structured arguments.
+                    if (text["ui.lang"] == UiLanguage.English && rows.Count == 0) return cause.Message;
+                    return text.Format(key, Local(cause.Args[0], cause.Args[1], text), OperationMoves(cause, rows, text));
                 case CauseKeys.EventAmount:
                 case CauseKeys.EventStock:
                 case CauseKeys.EventGrant:
@@ -84,6 +91,20 @@ namespace Statecraft.Game.UI
                 default:
                     return UnitNames.Line(cause, c, rows, text, namesHe);
             }
+        }
+
+        static string OperationMoves(Cause cause, IReadOnlyList<UnitEntry> rows, UiText text)
+        {
+            var moves = new List<string>();
+            for (int i = 2; i + 1 < cause.Args.Count; i += 2)
+            {
+                var row = rows.FirstOrDefault(x => x.Id == cause.Args[i]);
+                var unit = row == null ? cause.Args[i]
+                    : text["ui.lang"] == UiLanguage.Hebrew && !string.IsNullOrEmpty(row.NameHe) ? row.NameHe : row.Name;
+                var regions = string.Join(" / ", cause.Args[i + 1].Split('|').Select(id => text["operation.region." + id]));
+                moves.Add(text.Format("event.operation_move", unit, regions));
+            }
+            return string.Join("; ", moves);
         }
 
         // #1682: these branches use captured ids, values and resident flags, never the live GameState.

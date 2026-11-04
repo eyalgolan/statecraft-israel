@@ -16,13 +16,13 @@ namespace Statecraft.Sim
         /// <summary>Final hash of Play(content, Until1950). Changing it is a deliberate rules or content change: the value
         /// is pinned in sim/Statecraft.Sim.Tests/golden/manifest.txt, and STATECRAFT_UPDATE_GOLDEN=1 dotnet test rewrites
         /// both (docs/determinism.md). Say why in the commit message.</summary>
-        public const string Hash1950 = "a08ff8504d862925563c8523a707b58ebe3bcaac0b504dc9ce7e028fc19eb0e4";
+        public const string Hash1950 = "066883944756c334b0462c4e60479bd49b6d864afb58c9d862c96e1af5f558bb";
 
         public static readonly DateTime Until1950 = new DateTime(1950, 1, 1);
 
         /// <summary>Final hash of Play(content, Until1952): the M3 content range (to 31 December 1951). The GDD game ends on
         /// 15 January 1952 (R-LOOP-004), the first turn on or after Until1952, so this is also the mvp-end run.</summary>
-        public const string Hash1952 = "5561fc51a03a25e7bad499bd2c9d8de156dea241118ac4c80bbf2e0fb50c97ef";
+        public const string Hash1952 = "e8077f9744fdfd164a265b9c13b9e388f631cd5352d795f179acaa6f2134f836";
 
         public static readonly DateTime Until1952 = new DateTime(1952, 1, 1);
 
@@ -67,16 +67,18 @@ namespace Statecraft.Sim
             return s;
         }
 
-        /// <summary>The smoke5 golden's orders for one turn, what the WebGL ?smoke run's GameRoot.Smoke does: each open event,
-        /// in the card's order, answered with its first option while the turn's Attention pays for an answer; the rest go
-        /// to their ministers at the turn's end (docs/determinism.md). SliceSmokeTests plays the same policy.</summary>
+        /// <summary>The smoke5 golden's orders for one turn, what the WebGL ?smoke run's GameRoot.Smoke does: ordinary go-to
+        /// orders stage the first options' required operation units, then each open event is answered with its first option
+        /// while the turn's Attention pays; the rest go to their ministers at turn end. SliceSmokeTests plays the same policy.</summary>
         public static List<Command> SmokeOrders(Content c, GameState s)
         {
             if (c == null) throw new ArgumentNullException(nameof(c));
             if (!c.UsesAttention) throw new NotSupportedException("Golden policies are not defined for gdd-0.3.");
-            var answers = new List<Command>();
+            var answers = HistoricalAI.OperationMoves(c, s, e => e.Options[0]).ToList();
+            var staged = Simulation.Preview(c, s, answers).State;
             var left = s.Attention;
-            foreach (var e in s.PendingEvents.Select(id => c.Events.First(x => x.Id == id)))
+            foreach (var e in s.PendingEvents.Select(id => c.Events.First(x => x.Id == id))
+                .Where(e => EventSystem.OperationStatus(c, staged, e.Options[0]).Met))
             {
                 var cmd = new ChooseEventOption(e.Id, e.Options[0].Id);
                 var price = AttentionSystem.Cost(c, s, cmd.Kind);

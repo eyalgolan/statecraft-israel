@@ -104,6 +104,18 @@ public class HebrewUiTests
         }
     }
 
+    // R-ENEMY-007: a player choice refused because its operation units are elsewhere reaches the common refusal toast.
+    [Test]
+    public void TheOperationPlacementRefusalHasAStringInBothLanguages()
+    {
+        var reason = Statecraft.Sim.EventSystem.RefusedOperationUnitsNotInPlace;
+        Assert.AreEqual(reason, SimBridge.ReasonText(En, reason));
+        var he = SimBridge.ReasonText(He, reason);
+        Assert.AreNotEqual(reason, he);
+        StringAssert.IsMatch("[\u05D0-\u05EA]", he);
+        Assert.IsFalse(Regex.IsMatch(he, "[A-Za-z]"), he);
+    }
+
     // #2198: the Arms purchase refused at the debt ceiling reaches the end-of-turn toast (ReasonText) in both languages.
     [Test]
     public void TheArmsDebtCeilingRefusalHasAStringInBothLanguages()

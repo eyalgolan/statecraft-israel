@@ -133,15 +133,35 @@ namespace Statecraft.Sim
 
         /// <summary>R-ENEMY-005 (Q-ENEMY-5): an option's go-to orders name a map/units_1948.yaml row and one of that row's own
         /// anchor or order target hexes, so a card never sends a unit to a position no source gives it (owner, 31 October 2026,
-        /// #749: sourced anchors only; 2 November 2026, #2087: order targets, option 1). They are checked under gdd-0.3 too, where EventSystem does not apply them. The legacy loop reads the
+        /// #749: sourced anchors only; 2 November 2026, #2087: order targets, option 1). They are checked and applied under
+        /// both GDD identities. R-ENEMY-007 also requires every operation option to author its allowed player regions. The legacy loop reads the
         /// same real cards but no units file, so it has nothing to check them against and no unit to order.</summary>
         static void CheckOrders(Content c, GameEvent e, EventOption o, Func<string, string> F)
         {
             if (!c.IsGdd) return;
+            var requirementField = F(FormattableString.Invariant($"options[{o.Id}].requires_unit_regions"));
+            if (o.UnitOrders.Count == 0)
+            {
+                if (o.RequiresUnitRegions.Count != 0)
+                    throw new ContentException(e.File, requirementField, "requires unit_orders on the same option");
+                return;
+            }
+            if (o.RequiresUnitRegions.Count == 0)
+                throw new ContentException(e.File, requirementField, "required for an option with unit_orders (R-ENEMY-007)");
+            var regions = new HashSet<string>(StringComparer.Ordinal);
+            for (int i = 0; i < o.RequiresUnitRegions.Count; i++)
+            {
+                var id = o.RequiresUnitRegions[i];
+                var at = requirementField + FormattableString.Invariant($"[{i}]");
+                if (!regions.Add(id)) throw new ContentException(e.File, at, "duplicate region id");
+                if (!c.PlayerRegions.Regions.ContainsKey(id)) throw new ContentException(e.File, at, $"unknown player region '{id}' ({PlayerRegionCatalogue.FileName})");
+            }
+            var rows = new HashSet<string>(StringComparer.Ordinal);
             for (int i = 0; i < o.UnitOrders.Count; i++)
             {
                 var x = o.UnitOrders[i];
                 var at = F(FormattableString.Invariant($"options[{o.Id}].unit_orders[{i}]"));
+                if (!rows.Add(x.Unit)) throw new ContentException(e.File, at + ".unit", "duplicate operation unit row");
                 if (!c.UnitAnchorHexes.Keys.Any(k => k.Row == x.Unit))
                     throw new ContentException(e.File, at + ".unit", $"unknown unit row '{x.Unit}' ({StartingForces.FileName})");
                 if (!c.UnitAnchorHexes.Any(k => k.Key.Row == x.Unit && k.Value == (x.Q, x.R))

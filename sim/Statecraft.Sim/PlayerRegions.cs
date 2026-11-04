@@ -69,7 +69,7 @@ namespace Statecraft.Sim
         }
     }
 
-    /// <summary>R-CITY-006. One validator and one immutable exact-identity geography index for all consumers.
+    /// <summary>R-CITY-006, R-ENEMY-007. One validator and one immutable GDD geography index for all consumers.
     /// A member place is a settlement, a named map location, a designated site (sites.yaml) or a locality placed by
     /// <see cref="LocalityHexesFileName"/> (owner, 2 November 2026: Q1 "Accept localities"; "Fix all, then ship
     /// (Recommended)": "Accept site ids too"). capital_location is the region's label place (Q3 "All nine drafts as
@@ -79,7 +79,7 @@ namespace Statecraft.Sim
     {
         public const string FileName = "regions.yaml";
         /// <summary>Each locality's hex, written by tools/locality_hexes.py with the map's projection and rounding, so the
-        /// sim needs no trigonometry (docs/determinism.md). Read only under exact gdd-0.3, with regions.yaml.</summary>
+        /// sim needs no trigonometry (docs/determinism.md). Read under either GDD identity, with regions.yaml.</summary>
         public const string LocalityHexesFileName = "map/locality_hexes.yaml";
         readonly SortedDictionary<string, PlayerRegionGeography> regions = new SortedDictionary<string, PlayerRegionGeography>(StringComparer.Ordinal);
         readonly Dictionary<string, string> places = new Dictionary<string, string>(StringComparer.Ordinal);

@@ -13,6 +13,11 @@ public class EnemyAITests
     const string Types = Fixture.GddUnitTypes
         + "  - { id: soldier, kind: unit, side: israel, class: infantry, movement_points: 3 }\n"
         + "  - { id: enemy, kind: unit, side: egypt, class: infantry, movement_points: 3 }\n";
+    const string OperationRegions = "player_regions:\n"
+        + "  - id: fixture_region\n    capital_location: town_a\n    member_hexes: [{ q: 0, r: 0 }, { q: 1, r: 0 }]\n"
+        + "    member_locations: [town_a]\n    design_note: 'Operation requirement test region'\n"
+        + "    sources: ['test fixture: no historical claim']\n    capital_approval: NEEDS-RESEARCH\n"
+        + "    binding_status: NEEDS-RESEARCH\n    opening_control: { status: NEEDS-RESEARCH, value: null }\n";
 
     static Content Load() => ContentLoader.Load(Fixture.Write(Fixture.Gdd(new Dictionary<string, string>
     {
@@ -443,15 +448,9 @@ public class EnemyAITests
             foreach (var u in s.Units.Values.Where(IsEnemy))
                 if ((u.Q, u.R) != start[u.Id]) Assert.DoesNotContain((u.Q, u.R), players);
         }
-        // No capture but the card orders' own targets: Horev's delegated go-to (R-ENEMY-005) takes Golani round Nazareth, an
-        // enemy-held place it was not sent to (the owner's answer 1 on #2087), while the delegated Yoav order sends the Negev
-        // Brigade to Beersheba, which a card's march may take, and the Dani order sends Kiryati to Ramla's capture target
-        // (-3, 24), not the (-4, 24) Ramla shares with Rehovot at 4.4 km (owner, 2 November 2026, #2087: "Send it to Ramla's
-        // target"; tools/unit_anchor_hexes.py). From Tel Aviv the march goes round Lod's (-3, 23), which the card did not send
-        // it to, so on 15 July 1948 Kiryati stops on (-4, 24), one hex short. The order runs to 16 August 1948 (owner,
-        // 2 November 2026, #2087: "Longer order: takes Ramla"), so on 15 August Kiryati takes Ramla; Lod is not taken by the card.
-        Assert.Equal(new[] { "beersheba", "ramla" }, s.Settlements.Keys.OrderBy(k => k, StringComparer.Ordinal));
-        Assert.All(s.Settlements.Values, x => Assert.Equal("israel", x.Owner));
+        // R-ENEMY-007: with no player moves, the delegated operations postpone before their card orders can capture
+        // Beersheba or Ramla. This test's enemy-movement assertion therefore leaves the player's settlement ledger empty.
+        Assert.Empty(s.Settlements);
     }
 
     // R-ENEMY-001: what the enemy does is named on its cause (Cause.EnemyOrder), for the turn report (#1293): a scripted
@@ -511,11 +510,12 @@ public class EnemyAITests
             + "  - { place: There, lon: 34.30, lat: 33.35, from: '1948-06-01', to: '1949-01-01' }\n";
         const string Hexes = "anchors:\n  - { id: brig, anchor: 0, q: 0, r: 0 }\n  - { id: brig, anchor: 1, q: 4, r: 0 }\n";
         static string Card(string order) => "id: probe\ntitle: Fixture\ntext: Fixture.\nfrom: 1948-05-15\noptions:\n"
-            + "  - id: ok\n    text: Accept\n    historical: true\n    unit_orders: [" + order + "]\n";
+            + "  - id: ok\n    text: Accept\n    historical: true\n    requires_unit_regions: [fixture_region]\n    unit_orders: [" + order + "]\n";
         static Dictionary<string, string> Files() => Fixture.Gdd(new Dictionary<string, string>
         {
             ["unit_types.yaml"] = Types, ["map/hexes.json"] = MovementTests.Board(), ["corridors.yaml"] = "corridors: []\n",
             ["map/units_1948.yaml"] = Rows, ["map/unit_anchor_hexes.yaml"] = Hexes,
+            ["regions.yaml"] = OperationRegions, ["map/locality_hexes.yaml"] = "localities: []\n",
         });
         static ContentException Refused(Dictionary<string, string> files, string order) =>
             Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(files, new() { ["probe.yaml"] = Card(order) })));
@@ -525,6 +525,16 @@ public class EnemyAITests
         var invented = Refused(Files(), "{ unit: brig, q: 3, r: 0 }");
         Assert.Equal("events[probe].options[ok].unit_orders[0]", invented.Field);
         Assert.Contains("not an anchor", invented.Message);
+        var missing = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(Files(), new()
+        {
+            ["probe.yaml"] = Card("{ unit: brig, q: 4, r: 0 }").Replace("    requires_unit_regions: [fixture_region]\n", "")
+        })));
+        Assert.Equal(("events/probe.yaml", "events[probe].options[ok].requires_unit_regions"), (missing.File, missing.Field));
+        var unknownRegion = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(Files(), new()
+        {
+            ["probe.yaml"] = Card("{ unit: brig, q: 4, r: 0 }").Replace("fixture_region]", "missing_region]")
+        })));
+        Assert.Equal("events[probe].options[ok].requires_unit_regions[0]", unknownRegion.Field);
         // The legacy loop reads the shared cards too: the order does not stop it loading, and it has no units to order.
         Assert.Empty(ContentLoader.Load(Fixture.Write(null, new() { ["probe.yaml"] = Card("{ unit: brig, q: 4, r: 0 }") })).StartingForces);
 
@@ -570,6 +580,107 @@ public class EnemyAITests
         }, orders.OrderBy(x => x.Item1, StringComparer.Ordinal));
     }
 
+    [Fact]
+    public void EveryMilitaryOperationOptionHasTheRecordedRegionRequirement()
+    {
+        var requirements = Real.Events.SelectMany(e => e.Options.Where(o => o.RequiresUnitRegions.Count != 0)
+            .Select(o => (Event: e.Id, Option: o.Id, Units: string.Join(",", o.UnitOrders.Select(x => x.Unit)), Regions: string.Join(",", o.RequiresUnitRegions))));
+        Assert.Equal(new[]
+        {
+            ("latrun_proposal", "press_offensive", "harel", "central_plain,jerusalem_hills"),
+            ("operation_hiram", "stop_at_ceasefire", "carmeli,brigade_7", "galilee"),
+            ("operation_horev", "launch", "golani", "southern_coast,negev"),
+            ("operation_yoav", "stop_at_ceasefire", "negev,givati", "southern_coast,negev"),
+            ("ten_days", "central_front", "kiryati,carmeli", "central_plain,jerusalem_hills,galilee"),
+        }, requirements.OrderBy(x => x.Event, StringComparer.Ordinal));
+    }
+
+    static Unit At(Unit u, int q, int r) => new Unit(u.Id, u.Type, q, r, u.Service, u.Side, u.Strength,
+        u.Order, u.OrderTarget, u.HomeCity, u.Full, u.CombatXp);
+
+    static void PutOperationInPlace(Content c, GameState s, EventOption option)
+    {
+        var at = c.PlayerRegions.Regions[option.RequiresUnitRegions[0]].MemberHexes[0];
+        foreach (var row in option.UnitOrders.Select(x => x.Unit).Distinct(StringComparer.Ordinal))
+        {
+            int id = c.StartingForces.FindIndex(x => x.Row == row);
+            var force = c.StartingForces[id];
+            var unit = s.Units.TryGetValue(id, out var existing) ? existing
+                : new Unit(id, force.Type, force.Q, force.R, side: force.Side, strength: force.Strength);
+            s.Units[id] = At(unit, at.Q, at.R);
+        }
+    }
+
+    // R-ENEMY-007: every one of the five operation options refuses before mutation if one ordered unit is outside every
+    // allowed region, and resolves once all ordered units are in any allowed region.
+    [Theory]
+    [InlineData("ten_days", "central_front")]
+    [InlineData("operation_yoav", "stop_at_ceasefire")]
+    [InlineData("operation_hiram", "stop_at_ceasefire")]
+    [InlineData("operation_horev", "launch")]
+    [InlineData("latrun_proposal", "press_offensive")]
+    public void AnOperationRefusesOutOfPlaceAndAcceptsAllInPlace(string card, string choice)
+    {
+        foreach (var c in new[] { Real, Gdd03EventRulesTests.Real(true) })
+        {
+            var e = c.Events.First(x => x.Id == card); var option = e.Options.First(x => x.Id == choice);
+            var s = Simulation.NewGame(c, 17, Mode.Historical);
+            s.PendingEvents.Clear(); s.PendingEvents.Add(card); PutOperationInPlace(c, s, option);
+            var outside = c.PlayerRegions.Regions.Values.SelectMany(x => x.MemberHexes)
+                .First(h => !option.RequiresUnitRegions.Contains(c.PlayerRegions.AtHex(h.Q, h.R)!.Id, StringComparer.Ordinal));
+            int first = c.StartingForces.FindIndex(x => x.Row == option.UnitOrders[0].Unit);
+            s.Units[first] = At(s.Units[first], outside.Q, outside.R);
+            var before = s.Hash(); var why = new List<Cause>();
+            Assert.Equal(EventSystem.RefusedOperationUnitsNotInPlace, EventSystem.Choose(c, s, card, choice, why));
+            Assert.Equal(before, s.Hash()); Assert.Empty(why); Assert.Contains(card, s.PendingEvents); Assert.False(s.ChosenOptions.ContainsKey(card));
+
+            PutOperationInPlace(c, s, option);
+            Assert.Null(EventSystem.Choose(c, s, card, choice, why));
+            Assert.Equal(choice, s.ChosenOptions[card]); Assert.DoesNotContain(card, s.PendingEvents);
+        }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ADelegatedOperationWithNoPlayerMovesPostponesThenLapsesWithoutAChoice(bool modern)
+    {
+        var c = modern ? Gdd03EventRulesTests.Real(true) : Real;
+        var e = c.Events.First(x => x.Id == "operation_horev");
+        var s = Simulation.NewGame(c, 23, Mode.Historical);
+        s.Date = e.From; s.PendingEvents.Clear(); s.PendingEvents.Add(e.Id);
+        var before = s.Hash(); var rng = s.RngState; var why = new List<Cause>();
+        EventSystem.Delegate(c, s, why);
+        Assert.Contains(e.Id, s.PendingEvents); Assert.False(s.ChosenOptions.ContainsKey(e.Id)); Assert.Equal(rng, s.RngState);
+        Assert.Equal(before, s.Hash());
+        var postponed = Assert.Single(why, x => x.Key == CauseKeys.OperationPostponed);
+        Assert.Equal(new[] { "golani", "negev|southern_coast" }, postponed.Args.Skip(2));
+        Assert.Contains("Golani Brigade", postponed.Message); Assert.Contains("Negev", postponed.Message);
+        Assert.DoesNotContain("golani", postponed.Message); Assert.DoesNotContain("southern_coast", postponed.Message);
+
+        s.Date = e.To!.Value; why.Clear(); EventSystem.LapseExpiredOperations(c, s, why);
+        Assert.DoesNotContain(e.Id, s.PendingEvents); Assert.False(s.ChosenOptions.ContainsKey(e.Id));
+        var lapsed = Assert.Single(why);
+        Assert.Equal(CauseKeys.OperationLapsed, lapsed.Key);
+        Assert.Contains("Golani Brigade", lapsed.Message); Assert.Contains("Southern Coast", lapsed.Message);
+    }
+
+    [Fact]
+    public void APostponedDelegationRollsBackItsDrawBeforeLaterCards()
+    {
+        var c = CardGame(4, 0, "1949-01-01", MovementTests.Board());
+        c.Events.Add(new GameEvent { Id = "later", Title = "Later", Text = "Later.", From = c.Rules.Start,
+            Options = { new EventOption { Id = "a", Text = "A" }, new EventOption { Id = "b", Text = "B" } } });
+        var postponed = Simulation.NewGame(c, 91, Mode.Historical); postponed.Mode = Mode.Open;
+        postponed.Units[0] = At(postponed.Units[0], 2, 0);   // outside fixture_region
+        postponed.PendingEvents.Clear(); postponed.PendingEvents.Add("probe"); postponed.PendingEvents.Add("later");
+        var control = postponed.Clone(); control.PendingEvents.Remove("probe");
+        EventSystem.Delegate(c, postponed, new List<Cause>()); EventSystem.Delegate(c, control, new List<Cause>());
+        Assert.Contains("probe", postponed.PendingEvents);
+        Assert.Equal(control.ChosenOptions["later"], postponed.ChosenOptions["later"]);
+        Assert.Equal(control.RngState, postponed.RngState);
+    }
+
     // R-ENEMY-005, the owner's rulings of 1 November 2026 on #2087: each operation card's option orders the named unit, on the
     // board, to the named hex, until its order target's `to`. The reference game (GoldenRun) is played to the card's turn; an enemy
     // unit standing on the hex is taken off first (the ALA on al-Malikiyya), as that refusal is pinned by
@@ -588,6 +699,7 @@ public class EnemyAITests
         Assert.Equal(Day(turn), s.Date);
         int id = Real.StartingForces.FindIndex(f => f.Row == row);
         Assert.True(s.Units.ContainsKey(id), row);
+        PutOperationInPlace(Real, s, Real.Events.First(e => e.Id == card).Options.First(o => o.Id == option));
         foreach (var held in s.Units.Values.Where(u => u.Side != Movement.PlayerSide && (u.Q, u.R) == (q, r)).Select(u => u.Id).ToList())
             s.Units.Remove(held);
         if (!s.PendingEvents.Contains(card)) s.PendingEvents.Add(card);
@@ -618,11 +730,12 @@ public class EnemyAITests
             + "  - { place: There, lon: 34.30, lat: 33.35, from: '1948-05-15', to: '" + to + "' }\n";
         var hexes = FormattableString.Invariant($"anchors:\n  - {{ id: brig, anchor: 0, q: 0, r: 0 }}\n  - {{ id: brig, anchor: 1, q: {q}, r: {r} }}\n");
         var card = "id: probe\ntitle: Fixture\ntext: Fixture.\nfrom: 1948-05-15\noptions:\n"
-            + FormattableString.Invariant($"  - id: ok\n    text: Accept\n    historical: true\n    unit_orders: [{{ unit: brig, q: {q}, r: {r} }}]\n");
+            + FormattableString.Invariant($"  - id: ok\n    text: Accept\n    historical: true\n    requires_unit_regions: [fixture_region]\n    unit_orders: [{{ unit: brig, q: {q}, r: {r} }}]\n");
         var files = Fixture.Gdd(new Dictionary<string, string>
         {
             ["unit_types.yaml"] = Types, ["map/hexes.json"] = board, ["corridors.yaml"] = "corridors: []\n",
             ["map/units_1948.yaml"] = rows, ["map/unit_anchor_hexes.yaml"] = hexes,
+            ["regions.yaml"] = OperationRegions, ["map/locality_hexes.yaml"] = "localities: []\n",
         });
         if (held)
         {
@@ -631,6 +744,25 @@ public class EnemyAITests
             files["map/settlements_1948.yaml"] = Fixture.Files["map/settlements_1948.yaml"].Replace("type: town", "type: arab_town");
         }
         return ContentLoader.Load(Fixture.Write(files, new() { ["probe.yaml"] = card }));
+    }
+
+    // R-ENEMY-007: HistoricalAI previews the ordinary staging go-to before deciding whether to answer the open operation.
+    // Red first: OperationStatus reads the turn-start hex (2,0), omits the choice, and end-turn delegation resolves it instead.
+    [Fact]
+    public void HistoricalAIAnswersAnOperationWhenThisTurnsStagingMovePlacesItsLastUnit()
+    {
+        var c = CardGame(4, 0, "1949-01-01", MovementTests.Board());
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        s.Units[0] = At(s.Units[0], 2, 0);   // outside fixture_region; this turn's staging reaches its (1,0) member
+
+        var commands = HistoricalAI.Commands(c, s);
+
+        Assert.Contains(commands, x => x is UnitOrder { Unit: 0, Order: Movement.GoTo });
+        Assert.Contains(commands, x => x is ChooseEventOption { EventId: "probe", OptionId: "ok" });
+        var r = Simulation.Step(c, s, commands);
+        Assert.Empty(r.Rejected);
+        Assert.Contains(r.Why, x => x.Key == CauseKeys.EventChosen && x.Target == "probe");
+        Assert.DoesNotContain(r.Why, x => x.Key == CauseKeys.EventDelegated && x.Target == "probe");
     }
 
     // (a) The order ends when its anchor's window ends (the anchor's `to`, sourced in units_1948.yaml), so the unit stops
@@ -667,11 +799,12 @@ public class EnemyAITests
             + "  order_targets:\n  - { place: There, lon: 34.30, lat: 33.35" + target + " }\n";
         const string Hexes = "anchors:\n  - { id: brig, anchor: 0, q: 0, r: 0 }\norder_targets:\n  - { id: brig, target: 0, q: 4, r: 0 }\n";
         const string Card = "id: probe\ntitle: Fixture\ntext: Fixture.\nfrom: 1948-05-15\noptions:\n"
-            + "  - id: ok\n    text: Accept\n    historical: true\n    unit_orders: [{ unit: brig, q: 4, r: 0 }]\n";
+            + "  - id: ok\n    text: Accept\n    historical: true\n    requires_unit_regions: [fixture_region]\n    unit_orders: [{ unit: brig, q: 4, r: 0 }]\n";
         var files = Fixture.Gdd(new Dictionary<string, string>
         {
             ["unit_types.yaml"] = Types, ["map/hexes.json"] = MovementTests.Board(), ["corridors.yaml"] = "corridors: []\n",
             ["map/units_1948.yaml"] = rows, ["map/unit_anchor_hexes.yaml"] = Hexes,
+            ["regions.yaml"] = OperationRegions, ["map/locality_hexes.yaml"] = "localities: []\n",
         });
         return ContentLoader.Load(Fixture.Write(files, new() { ["probe.yaml"] = Card }));
     }
@@ -751,45 +884,37 @@ public class EnemyAITests
         Assert.Equal((3, 0, Movement.GoTo), (r.State.Units[0].Q, r.State.Units[0].R, r.State.Units[0].Order));
     }
 
-    // R-ENEMY-005, R-CTRL-013 (owner, 2 November 2026, #2087: "Keep a garrison in Nazareth (Recommended)"; the option: "A
-    // delegated order never pulls the last unit out of an occupied town; Golani's order is skipped (or another unit goes) and
-    // the card says so"). mvp-occupy-cost's state on 15 December 1948: Golani (unit 0) alone on Nazareth, which awaits the end
-    // of its occupation, and Operation Horev pending. The turn delegates Horev's historical option (a hard anchor in
-    // Historical mode, no draw), whose order sends Golani to the Julis camp (-8, 28).
-    // Red without the rule: GiveGoTo gives Golani the go-to and Advance moves it off Nazareth at once, so the turn lists no
-    // refusal for unit 0 (Assert.Single fails), Golani is no longer on Nazareth's hex, and step 10 finds no unit there and
-    // ends the occupation as a Raid (R-CTRL-013), so Nazareth's record is gone (the last assert fails with a missing key).
+    // R-ENEMY-007 changed this interaction: Golani at Nazareth is outside Horev's allowed southern regions, so delegation
+    // postpones before R-ENEMY-005 can issue an order. The occupation and its last-garrison state remain untouched.
     [Fact]
-    public void HorevsOrderNeverTakesTheLastUnitOffNazareth()
+    public void HorevPostponesWhileGolaniIsTheLastUnitAtNazareth()
     {
         var s = AloneInNazareth("1948-12-15");
         Assert.Contains("operation_horev", s.PendingEvents);
-        var r = Simulation.Step(Real, s, Array.Empty<Command>());
-        var refused = Assert.Single(r.Rejected, j => j.Command is UnitOrder { Unit: 0 });
-        Assert.Equal(Orders.RefusedLastGarrison, refused.Reason);
-        var order = Assert.IsType<UnitOrder>(refused.Command);
-        Assert.Equal((Movement.GoTo, (int?)-8, (int?)28), (order.Order, order.Q, order.R));
-        var golani = r.State.Units[0];
+        var why = new List<Cause>(); var rejected = new List<Rejection>();
+        EventSystem.Delegate(Real, s, why, rejected: rejected);
+        Assert.Empty(rejected);
+        Assert.Contains(why, x => x.Key == CauseKeys.OperationPostponed && x.Message.Contains("Golani Brigade"));
+        Assert.Contains("operation_horev", s.PendingEvents);
+        var golani = s.Units[0];
         Assert.Equal((Nazareth.Q, Nazareth.R), (golani.Q, golani.R));
         Assert.NotEqual(Movement.GoTo, golani.Order);
-        Assert.False(r.State.CardOrders.ContainsKey(0));
-        Assert.Equal(SettlementControl.AwaitingEnd, r.State.Settlements["nazareth"].State);
+        Assert.False(s.CardOrders.ContainsKey(0));
+        Assert.Equal(SettlementControl.AwaitingEnd, s.Settlements["nazareth"].State);
     }
 
-    // The same turn with a second Israeli unit on Nazareth: Golani is not the last, so Horev's order goes ahead ("or another
-    // unit goes" is not built: the card orders the unit it names) and the second unit keeps the occupation. Green with or
-    // without the rule; it is red for a rule that is too wide, one that held back any unit on an occupied place.
+    // A second garrison does not satisfy R-ENEMY-007 either: the required Golani row itself must be in an allowed region.
     [Fact]
-    public void HorevsOrderGoesAheadWhenAnotherUnitHoldsNazareth()
+    public void ASecondNazarethGarrisonDoesNotBypassHorevsPlacementRequirement()
     {
         var s = AloneInNazareth("1948-12-15");
         var g = s.Units[0];
         var second = s.NextId++;
         s.Units.Add(second, new Unit(second, g.Type, g.Q, g.R, g.Service, g.Side, g.Strength, "", "", g.HomeCity, g.Full));
         var r = Simulation.Step(Real, s, Array.Empty<Command>());
-        Assert.DoesNotContain(r.Rejected, j => j.Command is UnitOrder { Unit: 0 });
-        Assert.Equal((Movement.GoTo, "-8,28"), (r.State.Units[0].Order, r.State.Units[0].OrderTarget));
-        Assert.NotEqual((Nazareth.Q, Nazareth.R), (r.State.Units[0].Q, r.State.Units[0].R));
+        Assert.Empty(r.Rejected);
+        Assert.Contains(r.Why, x => x.Key == CauseKeys.OperationPostponed);
+        Assert.Equal((Nazareth.Q, Nazareth.R, ""), (r.State.Units[0].Q, r.State.Units[0].R, r.State.Units[0].Order));
         Assert.Equal((Nazareth.Q, Nazareth.R), (r.State.Units[second].Q, r.State.Units[second].R));
         Assert.Equal(SettlementControl.AwaitingEnd, r.State.Settlements["nazareth"].State);
     }
@@ -854,8 +979,8 @@ public class EnemyAITests
     static SettlementTarget Nazareth =>Real.SettlementTargets.Single(t => t.Id == "nazareth");
 
     /// <summary>mvp-occupy-cost played to <paramref name="until"/> (its own steps, the run's end replaced): Golani (unit 0,
-    /// the first starting force) alone on Nazareth, which awaits the end of its occupation. The card orders apply under
-    /// gdd-0.1 only (EventSystem.Resolve), which the real content is.</summary>
+    /// the first starting force) alone on Nazareth, which awaits the end of its occupation. The scenario uses the real
+    /// gdd-0.1 content; operation placement and card-order handling are shared by both GDD ruleset identities.</summary>
     static GameState AloneInNazareth(string until)
     {
         Assert.NotEqual(SaveGame.Gdd03Ruleset, Real.Ruleset);

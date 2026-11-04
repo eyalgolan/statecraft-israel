@@ -243,7 +243,8 @@ Each option has:
 | `grant_units` | no | GDD loop only. A list of `{ type, n, at }`: see "grant_units and city_effects". |
 | `city_effects` | no | GDD loop only. A list of `{ city, field, delta }`: see "grant_units and city_effects". |
 | `unlock_projects` | no | GDD loop only. A list of `projects.yaml` ids: see "grant_units and city_effects". |
-| `unit_orders` | no | GDD loop only, applied under gdd-0.1 only. A list of `{ unit, q, r }`: see "unit_orders". |
+| `unit_orders` | no | GDD loop, both GDD identities. A list of `{ unit, q, r }`: see "unit_orders". |
+| `requires_unit_regions` | with `unit_orders` | A non-empty list of existing `regions.yaml` ids in any one of which every ordered unit must stand: see "unit_orders". |
 | `debt_dollars` | no | Applied under gdd-0.3 only. US$ millions, more than 0, that the option also adds to Debt, in IL at the `mvp.il_per_dollar` rate in force on the event's date (R-EFX-009). |
 | `alternative` | on every option that did not happen, in an event with a historical option | Who put it forward, on what record. See below. |
 | `rejoin` | no | Consequence cards only. The id of the event whose road the card follows; choosing this option returns later cards to the recorded course (R-ALT-009). See "kind". |
@@ -321,8 +322,12 @@ An event with a sensitive tag may carry no grant, no positive `city_effects` del
   a comment. The order goes through the player's own go-to: one the player could not give changes nothing, and the
   player is told so. The order ends on the anchor's `to` date (the loader refuses an anchor with none), and its march
   goes round every enemy-held place but its hex.
-- It applies under gdd-0.1 only. Under gdd-0.3 the loader still checks it and the unit gets no order; the legacy loop
-  ignores it.
+- Every option with `unit_orders` also has `requires_unit_regions`. The required units are exactly the distinct rows in
+  `unit_orders`; before the option resolves, each row's starting unit must be on the board and on a hex in any listed
+  region (R-ENEMY-007). Cite the operation objective or target supporting every region in the option's comment.
+- A direct choice with a missing unit is refused unchanged. Delegation postpones an unmet drawn operation, explains the
+  required moves, rolls back that draw and redraws on later consideration; a still-pending card lapses when its event
+  window closes. The orders and placement rule apply under gdd-0.1 and gdd-0.3; legacy ignores them.
 
 ### sources
 

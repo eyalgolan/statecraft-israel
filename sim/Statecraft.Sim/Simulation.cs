@@ -78,6 +78,7 @@ namespace Statecraft.Sim
                 why.Add(new Cause("era", s.GameOver, 0, PlayerText.GameOver(s.GameOver), key: CauseKeys.EraEnded));
             }
             ContentWindows.Update(c, s, turnStart);
+            EventSystem.LapseExpiredOperations(c, s, why);
             Cabinet.ExpireOnGovernmentChange(c, s, why);
             if (c.UsesAttention) AttentionSystem.Refill(c, s);
             if (s.GameOver == null) EventSystem.Trigger(c, s, why, turnStart);   // a game that just ended raises no new events

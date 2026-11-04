@@ -204,7 +204,7 @@ namespace Statecraft.Sim
         internal const string ObjectivesFileName = "objectives.yaml";
 
         /// <summary>R-CITY-006: the locality placements, with the settlement_hexes.yaml checks (unique ids, land hexes) and
-        /// q and r required. Only the exact gdd-0.3 regions path calls this.</summary>
+        /// q and r required. Both GDD identities' immutable geography path calls this.</summary>
         static List<SettlementHex>? LocalityHexes(Content c, LocalityHexesFile file)
         {
             const string f = PlayerRegionCatalogue.LocalityHexesFileName;
@@ -469,9 +469,10 @@ namespace Statecraft.Sim
                 // The sourced starting forces (Phase 5 PR 4, R-UNIT-006), once the types and people_per_unit are known valid.
                 c.StartingForces = StartingForces.Read(readFile, c);
             }
-            // R-CITY-006: no read or hash input in either old identity. Absence leaves the capability inactive. After the
-            // sites (a site id may be a member) and the effective map overrides; the locality hexes are read only with regions, and are required then (#2298).
-            if (c.Ruleset == SaveGame.Gdd03Ruleset)
+            // R-CITY-006 and R-ENEMY-007: authored geography is immutable lookup data in both GDD identities. Only exact
+            // gdd-0.3 initializes regional population/control state. After sites (a site id may be a member) and the effective
+            // map overrides; locality hexes are read only with regions, and are required then (#2298).
+            if (c.IsGdd)
             {
                 var regions = ReadOptional<PlayerRegionsFile>(readFile, PlayerRegionCatalogue.FileName);
                 if (regions != null)

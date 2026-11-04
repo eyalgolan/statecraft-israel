@@ -40,6 +40,9 @@ options:
     # to the Lebanon armistice, line 628 (brigade_7's order target; Dupuy p. 104); war-1948.md section 3, the Hiram row (line 145).
     # The hexes are the targets' own (map/unit_anchor_hexes.yaml). An enemy unit on al-Malikiyya's hex refuses the 7th
     # Brigade's order, as it would the player's, and the turn's refusals say so.
+    # R-ENEMY-007 operation-start region (#2543 table): galilee is the sourced Upper/whole Galilee objective
+    # R-ENEMY-007: (this card's sources; research_notes/M4 war mode/war-1948.md:145); both border target hexes are unassigned.
+    requires_unit_regions: [galilee]
     unit_orders:
       - { unit: carmeli, q: 15, r: 3 }
       - { unit: brigade_7, q: 14, r: 4 }

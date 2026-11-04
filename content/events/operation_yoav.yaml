@@ -33,6 +33,9 @@ options:
     # "Beersheba"); Givati to Huleiqat, 20 October to 1 November 1948, line 460 (givati's order target "Huleiqat"); both on the
     # IDF account of Yoav (Jewish Virtual Library, a source of this card); war-1948.md section 3, the Yoav row (line 143).
     # The hexes are the targets' own (map/unit_anchor_hexes.yaml).
+    # R-ENEMY-007 operation-start regions (#2543 table): southern_coast and negev cover the sourced coastal-force,
+    # R-ENEMY-007: Beersheba and Negev objectives (this card's sources; research_notes/M4 war mode/war-1948.md:143).
+    requires_unit_regions: [southern_coast, negev]
     unit_orders:
       - { unit: negev, q: -10, r: 35 }
       - { unit: givati, q: -9, r: 29 }

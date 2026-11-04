@@ -483,21 +483,22 @@ options:
     // IL converted is an IL not borrowed: the debt falls by exactly 44 * 0.333 = IL 14.652m. The foreign currency is the
     // prototype's, so the crisis still comes on 15 March 1951.
     // #813 measured on the 8.7 km hexes. On the 4.4 km hexes (#1183) the war's engagements fall elsewhere, so the formations
-    // lost and the turns they are lost on change, and with them mvp.military_upkeep_per_turn (IL 0.05m a formation a turn):
-    // the same run now ends at IL 40.54m on 15 April 1949 and IL 178.74m, the conversion at IL 25.89m and IL 164.09m. The
-    // crisis dates and the IL 14.652m are the same on both grids.
+    // lost and the turns they are lost on change, and with them mvp.military_upkeep_per_turn (IL 0.05m a formation a turn).
+    // R-ENEMY-007 changes this deliberately again: this no-orders run leaves required formations out of place, so its
+    // operations postpone and lapse. It now ends at IL 30.69m on 15 April 1949 and IL 170.54m; the conversion ends at
+    // IL 16.04m and IL 155.89m. The crisis dates and the IL 14.652m saved are unchanged.
     [Fact]
     public void TheWarOnlyRunReproducesThePrototypeAtTheSourcedRate()
     {
         var none = Prototype(0);
-        Assert.Equal((40.54, 178.74), (Math.Round(none.April1949, 2), Math.Round(none.End.Debt, 2)));
+        Assert.Equal((30.69, 170.54), (Math.Round(none.April1949, 2), Math.Round(none.End.Debt, 2)));
         Assert.Equal(new DateTime(1951, 12, 15), none.Crisis);
         var sold = Prototype(4);
         Assert.Equal(44, sold.Converted);
         var saved = 44 * 0.333;
         Assert.Equal(none.April1949 - saved, sold.April1949, 9);
         Assert.Equal(none.End.Debt - saved, sold.End.Debt, 9);
-        Assert.Equal((25.89, 164.09), (Math.Round(sold.April1949, 2), Math.Round(sold.End.Debt, 2)));
+        Assert.Equal((16.04, 155.89), (Math.Round(sold.April1949, 2), Math.Round(sold.End.Debt, 2)));
         Assert.Equal(new DateTime(1951, 3, 15), sold.Crisis);
     }
 }

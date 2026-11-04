@@ -44,6 +44,9 @@ options:
     # bridgehead at Mishmar HaYarden, 9-19 July 1948, map/units_1948.yaml line 207 (carmeli's anchor); war-1948.md section 3,
     # the Brosh row (line 141). The hexes are the target's and the anchor's own (map/unit_anchor_hexes.yaml); Kiryati's is
     # Ramla's capture target (-3, 24), not the hex Ramla shares with Rehovot (owner, 2 November 2026, #2087).
+    # R-ENEMY-007 operation-start regions (#2543 table): central_plain and jerusalem_hills cover Dani's sourced
+    # R-ENEMY-007: Lydda/Ramle and Jerusalem-road objectives; galilee covers Brosh's Mishmar HaYarden front (war-1948.md:139,141).
+    requires_unit_regions: [central_plain, jerusalem_hills, galilee]
     unit_orders:
       - { unit: kiryati, q: -3, r: 24 }
       - { unit: carmeli, q: 14, r: 6 }

@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using Statecraft.Game;
+using Statecraft.Game.Map.Units;
 using Statecraft.Game.UI;
 using Statecraft.Sim;
 using UnityEditor;
@@ -15,6 +16,46 @@ public class EventCardTests
     const string CatalogPath = "Assets/UI/Portraits/PortraitCatalog.asset";
     static readonly Content C = ContentLoader.Load(Paths.Content);
     static UiText Text => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
+
+    // R-ENEMY-007: every operation card names the sourced unit and allowed regions, disables only the operation option
+    // while a required unit is elsewhere, and enables it once all required units are in place. Both language catalogues
+    // use the same structured requirement rather than embedding prose in the event content.
+    [Test]
+    public void AnOperationCardExplainsAndEnforcesItsUnitPlacementInBothLanguages()
+    {
+        var unitRows = UnitData.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", UnitData.DefaultFileName)));
+        foreach (var local in new[] { Text, He })
+        {
+            var c = ContentLoader.Load(Paths.Content);
+            var e = c.Events.Single(x => x.Id == "operation_horev");
+            var option = e.Options.Single(x => x.Id == "launch");
+            var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
+            g.State.Date = e.From;
+            g.State.PendingEvents.Clear(); g.State.PendingEvents.Add(e.Id);
+            using var ui = new UiTestKit();
+            using var card = new EventCardPresenter(ui.Root, new SimBridge(g, local), local, null) { Units = unitRows };
+            card.Render();
+
+            Assert.IsFalse(ui.Q<Button>("option-launch").enabledSelf, "Golani begins outside Horev's regions");
+            Assert.IsTrue(ui.Q<Button>("option-hold").enabledSelf, "the non-operation option remains available");
+            var required = ui.Root.Query<Label>(className: EventCardPresenter.RequirementClass).ToList();
+            var missing = ui.Root.Query<Label>(className: EventCardPresenter.MissingRequirementClass).ToList();
+            Assert.AreEqual(1, required.Count); Assert.AreEqual(1, missing.Count);
+            StringAssert.Contains(local["ui.lang"] == UiLanguage.Hebrew ? "חטיבת גולני" : "Golani Brigade", required[0].text);
+            StringAssert.Contains(local["operation.region.negev"], required[0].text);
+            StringAssert.Contains(local["operation.region.southern_coast"], missing[0].text);
+
+            var id = c.StartingForces.FindIndex(x => x.Row == "golani");
+            var at = c.PlayerRegions.Regions[option.RequiresUnitRegions[0]].MemberHexes[0];
+            var unit = g.State.Units[id];
+            g.State.Units[id] = new Unit(unit.Id, unit.Type, at.Q, at.R, unit.Service, unit.Side, unit.Strength,
+                unit.Order, unit.OrderTarget, unit.HomeCity, unit.Full, unit.CombatXp);
+            card.Render();
+            Assert.IsTrue(ui.Q<Button>("option-launch").enabledSelf);
+            Assert.AreEqual(0, ui.Root.Query<Label>(className: EventCardPresenter.MissingRequirementClass).ToList().Count);
+            Assert.AreEqual(1, ui.Root.Query<Label>(className: EventCardPresenter.RequirementClass).ToList().Count);
+        }
+    }
 
     /// <summary>The historical game on the turn the Egyptian armistice first waits for a decision (February 1949).</summary>
     static SimBridge AtArmistice()

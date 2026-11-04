@@ -51,6 +51,9 @@ options:
     # police fort", the latrun_fort location's coordinates): the objective of Ben-Gurion's proposal of 26 September 1948,
     # this card's source, not a position the brigade held. The order ends with the Sha'ar HaGai window, on 22 December 1948.
     # An enemy unit on the fort's hex refuses it, as it would the player's, and the turn's refusals say so.
+    # R-ENEMY-007 operation-start regions (#2543 table): central_plain contains the fort target and
+    # R-ENEMY-007: jerusalem_hills covers the sourced Jerusalem-road objective (this card's sources; war-1948.md:137).
+    requires_unit_regions: [central_plain, jerusalem_hills]
     unit_orders:
       - { unit: harel, q: -3, r: 25 }
 sources:

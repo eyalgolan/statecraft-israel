@@ -161,7 +161,7 @@
           },
           "unit_orders": {
             "type": "array",
-            "description": "R-ENEMY-005 (GDD loop only, applied under gdd-0.1 only): go-to orders for the unit of a map/units_1948.yaml row, toward one of that row's anchor hexes in map/unit_anchor_hexes.yaml, through the player's own go-to.",
+            "description": "R-ENEMY-005 (GDD loop, both gdd-0.1 and gdd-0.3): go-to orders for the unit of a map/units_1948.yaml row, toward one of that row's anchor hexes in map/unit_anchor_hexes.yaml, through the player's own go-to.",
             "items": {
               "type": "object",
               "additionalProperties": false,
@@ -172,6 +172,13 @@
                 "r": { "type": "integer" }
               }
             }
+          },
+          "requires_unit_regions": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "description": "R-ENEMY-007: player-region ids. Every unit_orders row's starting unit must be in any one listed region before this military-operation option can resolve.",
+            "items": { "type": "string", "minLength": 1 }
           },
           "unlock_projects": {
             "type": "array",

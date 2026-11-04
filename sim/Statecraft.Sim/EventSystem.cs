@@ -4,9 +4,28 @@ using System.Linq;
 
 namespace Statecraft.Sim
 {
+    /// <summary>One R-ENEMY-007 operation-start row: the starting-force row and the allowed player regions, in ordinal order.</summary>
+    public sealed class OperationRequirementRow
+    {
+        public string Unit { get; }
+        public IReadOnlyList<string> Regions { get; }
+        internal OperationRequirementRow(string unit, IReadOnlyList<string> regions) { Unit = unit; Regions = regions; }
+    }
+
+    /// <summary>A pure snapshot of an operation option's authored requirements in the current state.</summary>
+    public sealed class OperationRequirementStatus
+    {
+        public IReadOnlyList<OperationRequirementRow> Required { get; }
+        public IReadOnlyList<OperationRequirementRow> Missing { get; }
+        public bool Met => Missing.Count == 0;
+        internal OperationRequirementStatus(IReadOnlyList<OperationRequirementRow> required, IReadOnlyList<OperationRequirementRow> missing)
+        { Required = required; Missing = missing; }
+    }
+
     public static class EventSystem
     {
         public const int MaxSoftEventsPerTurn = 3;
+        public const string RefusedOperationUnitsNotInPlace = "The operation's required units are not in place";
         /// <summary>The facility a grant with no `at` stands at (Q-HFX-2) and the city fields an option may change (R-EFX-004).</summary>
         public const string MilitaryCamp = "military_camp", HousingField = "housing_capacity", JobsField = "job_slots", ConditionField = "condition";
 
@@ -26,6 +45,8 @@ namespace Statecraft.Sim
             var start = turnStart ?? s.Date;
             var eligible = c.Events
                 .Where(e => !s.FiredEvents.Contains(e.Id) && e.From <= s.Date && (e.To == null || start < e.To.Value))
+                // R-ENEMY-007: unlike an ordinary late-fired card, an operation cannot first appear after it is no longer relevant.
+                .Where(e => !c.IsGdd || e.To == null || s.Date < e.To.Value || !e.Options.Any(o => o.RequiresUnitRegions.Count != 0))
                 .Where(e => Timeline.AllMet(c, s, e))
                 // R-OBJ-003: an objective's card waits for the objective. Only the GDD loop records one, so in the legacy loop it never fires.
                 .Where(e => e.Objective == "" || s.Objectives.ContainsKey(e.Objective))
@@ -78,6 +99,27 @@ namespace Statecraft.Sim
                 .Concat(c.UnitOrderTargets.Where(k => k.Key.Row == x.Unit && (k.Value.Q, k.Value.R) == (x.Q, x.R)).Select(k => (DateTime?)k.Value.To))
                 .Max();
 
+        /// <summary>R-ENEMY-007: every distinct unit_orders row must have its starting unit in any one of the option's
+        /// authored regions. Missing, destroyed or replaced starting units are not in place. Pure: no state or RNG change.</summary>
+        public static OperationRequirementStatus OperationStatus(Content c, GameState s, EventOption option)
+        {
+            if (!c.IsGdd)
+                return new OperationRequirementStatus(Array.Empty<OperationRequirementRow>(), Array.Empty<OperationRequirementRow>());
+            var regions = option.RequiresUnitRegions.OrderBy(x => x, StringComparer.Ordinal).ToArray();
+            var required = option.UnitOrders.Select(x => x.Unit).Distinct(StringComparer.Ordinal)
+                .OrderBy(x => x, StringComparer.Ordinal).Select(x => new OperationRequirementRow(x, regions)).ToArray();
+            var missing = required.Where(row =>
+            {
+                int id = c.StartingForces.FindIndex(f => f.Row == row.Unit);
+                if (id < 0 || !s.Units.TryGetValue(id, out var unit)) return true;
+                var force = c.StartingForces[id];
+                if (unit.Side != force.Side || unit.Type != force.Type) return true;
+                var region = c.PlayerRegions.AtHex(unit.Q, unit.R);
+                return region == null || !row.Regions.Contains(region.Id, StringComparer.Ordinal);
+            }).ToArray();
+            return new OperationRequirementStatus(required, missing);
+        }
+
         /// <summary>Returns null on success, or the reason the choice was rejected. <paramref name="spent"/> is the movement
         /// points the turn's orders have spent so far, which an option's unit orders share (R-ENEMY-005).
         /// A refused unit order goes into <paramref name="rejected"/>, as the player's refused orders do.</summary>
@@ -87,6 +129,7 @@ namespace Statecraft.Sim
             if (!s.PendingEvents.Contains(eventId)) return "That event is not waiting for a decision";
             var option = Get(c, eventId).Options.FirstOrDefault(o => o.Id == optionId);
             if (option == null) return "That event has no such option";
+            if (!OperationStatus(c, s, option).Met) return RefusedOperationUnitsNotInPlace;
             Resolve(c, s, eventId, option, "chosen", why, spent: spent, rejected: rejected);
             return null;
         }
@@ -186,21 +229,20 @@ namespace Statecraft.Sim
                 if (s.UnlockedProjects.Add(kind)) why.Add(new Cause("events", kind, 1, $"{Unlocked(c, kind)} ({title})", key: CauseKeys.EventUnlock, args: Context(title, localizedTitle)));
             // R-ENEMY-005 (Q-ENEMY-5): the option's go-to orders, through the player's own go-to and its checks, in list order.
             // A refused order changes nothing, as the player's does, and is reported as the player's are (Rejected); a row with
-            // no unit on the board orders nobody. gdd-0.1 only: under gdd-0.3 the operation cards stay effect-free for units
-            // (owner, 31 October 2026, #749). The owner's answer 1 on #2087: the order ends with the operation (OrderEnds), and
+            // no unit on the board orders nobody. R-ENEMY-007 applies the orders under both GDD identities once every required
+            // unit is in place. The owner's answer 1 on #2087: the order ends with the operation (OrderEnds), and
             // its march goes round every enemy-held place but the one it was sent to (Movement.Search). The owner's ruling of
             // 2 November 2026 on #2087 ("Keep a garrison in Nazareth (Recommended)"): the order never takes the last Israeli unit
             // off an occupied place (R-CTRL-013), so it is not given to that unit, and the refusal says why.
-            if (c.Ruleset != SaveGame.Gdd03Ruleset)
-                foreach (var x in o.UnitOrders)
-                {
-                    int id = c.StartingForces.FindIndex(f => f.Row == x.Unit);   // the unit with id i is the i-th force (R-UNIT-006)
-                    if (id < 0 || !s.Units.TryGetValue(id, out var u) || u.Side != c.StartingForces[id].Side || u.Type != c.StartingForces[id].Type) continue;
-                    var refused = SettlementControl.LastGarrison(c, s, u) ? Orders.RefusedLastGarrison
-                        : Movement.GiveGoTo(c, s, id, x.Q, x.R, spent ?? new Dictionary<int, int>(), why, OrderEnds(c, x)) != null ? Orders.RefusedCardOrder
-                        : null;
-                    if (refused != null) rejected?.Add(new Rejection(new UnitOrder(id, Movement.GoTo, x.Q, x.R), refused));
-                }
+            foreach (var x in o.UnitOrders)
+            {
+                int id = c.StartingForces.FindIndex(f => f.Row == x.Unit);   // the unit with id i is the i-th force (R-UNIT-006)
+                if (id < 0 || !s.Units.TryGetValue(id, out var u) || u.Side != c.StartingForces[id].Side || u.Type != c.StartingForces[id].Type) continue;
+                var refused = SettlementControl.LastGarrison(c, s, u) ? Orders.RefusedLastGarrison
+                    : Movement.GiveGoTo(c, s, id, x.Q, x.R, spent ?? new Dictionary<int, int>(), why, OrderEnds(c, x)) != null ? Orders.RefusedCardOrder
+                    : null;
+                if (refused != null) rejected?.Add(new Rejection(new UnitOrder(id, Movement.GoTo, x.Q, x.R), refused));
+            }
             foreach (var kv in o.SetPolicy.Where(k => s.Policies.ContainsKey(k.Key)).OrderBy(k => k.Key, StringComparer.Ordinal))
             {
                 s.Policies[kv.Key] = kv.Value;
@@ -371,12 +413,14 @@ namespace Statecraft.Sim
             foreach (var id in s.PendingEvents.ToList())
             {
                 var e = Get(c, id);
+                if (IsExpiredOperation(c, e, s.Date)) { Lapse(c, s, e, why); continue; }
                 var minister = DelegatedTo(c, s, e);
                 if (e.Objective != "" || e.Prisoners != "" || e.Deported != "")   // R-POW-004, R-EVT-007: an exchange card or a Deport card, like an objective's, has one option and draws nothing
                 {
                     Resolve(c, s, id, e.Options[0], $"delegated to {minister?.Name ?? "the cabinet"}", why, delegated: true, minister: minister, spent: spent, rejected: rejected);
                     continue;
                 }
+                var beforeDraw = rng.State;
                 var competence = (minister?.Competence ?? 5) / 10.0;
                 var anchored = s.Mode == Mode.Historical && e.Anchor == "hard" ? e.Options.FirstOrDefault(o => o.Historical) : null;
                 var option = anchored ?? (rng.NextDouble() < competence
@@ -385,10 +429,75 @@ namespace Statecraft.Sim
                 var share = anchored == null && mvp != null && minister != null && minister.Loyalty < mvp.DelegationLoyaltyFloor
                     ? mvp.DisloyalEffectShare!.Value : 1.0;
                 var how = $"delegated to {minister?.Name ?? "the cabinet"}" + (share < 1 ? ", carried out half-heartedly" : "");
+                var status = OperationStatus(c, s, option);
+                if (!status.Met)
+                {
+                    rng.State = beforeDraw;   // Q2: postponement consumes no draw; reconsideration redraws deterministically
+                    why.Add(OperationCause(c, s, e, status.Missing, CauseKeys.OperationPostponed));
+                    continue;
+                }
                 Resolve(c, s, id, option, how, why, share, delegated: true, minister: minister, spent: spent, rejected: rejected);
             }
             s.RngState = rng.State;
         }
+
+        /// <summary>R-ENEMY-007: once a pending operation card reaches its half-open window's end, it lapses without a choice
+        /// or effects. Stable pending-list order; no RNG draw.</summary>
+        public static void LapseExpiredOperations(Content c, GameState s, List<Cause> why)
+        {
+            foreach (var id in s.PendingEvents.ToList())
+            {
+                var e = Get(c, id);
+                if (IsExpiredOperation(c, e, s.Date)) Lapse(c, s, e, why);
+            }
+        }
+
+        static bool IsExpiredOperation(Content c, GameEvent e, DateTime date) =>
+            c.IsGdd && e.To.HasValue && e.To.Value <= date && e.Options.Any(o => o.RequiresUnitRegions.Count != 0);
+
+        static void Lapse(Content c, GameState s, GameEvent e, List<Cause> why)
+        {
+            var missing = e.Options.Where(o => o.RequiresUnitRegions.Count != 0)
+                .SelectMany(o => OperationStatus(c, s, o).Missing).GroupBy(x => x.Unit, StringComparer.Ordinal)
+                .Select(g => g.First()).OrderBy(x => x.Unit, StringComparer.Ordinal).ToArray();
+            s.PendingEvents.Remove(e.Id);
+            why.Add(OperationCause(c, s, e, missing, CauseKeys.OperationLapsed));
+        }
+
+        static Cause OperationCause(Content c, GameState s, GameEvent e, IReadOnlyList<OperationRequirementRow> rows, string key)
+        {
+            var title = Title(c, s, e); var titleHe = HebrewTitle(c, s, e);
+            var args = new List<string> { title, titleHe };
+            foreach (var row in rows.OrderBy(x => x.Unit, StringComparer.Ordinal))
+            {
+                args.Add(row.Unit);
+                args.Add(string.Join("|", row.Regions.OrderBy(x => x, StringComparer.Ordinal)));
+            }
+            var moves = string.Join("; ", rows.OrderBy(x => x.Unit, StringComparer.Ordinal)
+                .Select(x => OperationUnitName(c, x.Unit) + " to " + string.Join(" or ", x.Regions.OrderBy(r => r, StringComparer.Ordinal).Select(OperationRegionName))));
+            var message = key == CauseKeys.OperationLapsed
+                ? $"{title} lapsed because the required units never reached the operation regions" + (moves == "" ? "" : $": {moves}")
+                : $"{title} postponed; move {moves}";
+            return new Cause("events", e.Id, 0, message, key: key, args: args);
+        }
+
+        static string OperationUnitName(Content c, string row)
+        {
+            var force = c.StartingForces.FirstOrDefault(x => x.Row == row);
+            return force != null && force.Name != "" ? force.Name : row;
+        }
+
+        /// <summary>English display names paired with Unity's operation.region.* catalogue. These five authored regions
+        /// are the complete R-ENEMY-007 vocabulary; structured cause args retain the ids for EN/HE presentation lookup.</summary>
+        static string OperationRegionName(string id) => id switch
+        {
+            "central_plain" => "Central Plain",
+            "jerusalem_hills" => "Jerusalem Hills",
+            "galilee" => "Galilee",
+            "southern_coast" => "Southern Coast",
+            "negev" => "Negev",
+            _ => id,
+        };
 
         public static string Render(Content c, GameEvent e, DateTime date) => Offices.Fill(c, e.Text, FillDate(e, date));
 

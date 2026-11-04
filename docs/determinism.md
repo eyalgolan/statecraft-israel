@@ -61,9 +61,9 @@ final `GameState.Hash()` is pinned:
 
 | Run | Ends | Hash |
 |---|---|---|
-| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `a08ff8504d862925563c8523a707b58ebe3bcaac0b504dc9ce7e028fc19eb0e4` |
-| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `5561fc51a03a25e7bad499bd2c9d8de156dea241118ac4c80bbf2e0fb50c97ef` |
-| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `5561fc51a03a25e7bad499bd2c9d8de156dea241118ac4c80bbf2e0fb50c97ef` |
+| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `066883944756c334b0462c4e60479bd49b6d864afb58c9d862c96e1af5f558bb` |
+| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `e8077f9744fdfd164a265b9c13b9e388f631cd5352d795f179acaa6f2134f836` |
+| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `e8077f9744fdfd164a265b9c13b9e388f631cd5352d795f179acaa6f2134f836` |
 
 `hash1952` stops at the first turn on or after 1 January 1952, which is the game's last turn, so it is the same run as
 `mvp-end` (`DeterminismTests.TheWholeGameToItsEndIsFixed`). Both names are kept (spec 2026-10-12 section 3 step 6): a
@@ -72,7 +72,7 @@ player check enumerate the manifest, so it and every scenario are checked withou
 
 A further value is pinned for the browser smoke run (`?smoke=5`: the golden seed, five turns played through the UI's own
 buttons, answering each event with its first option while the turn's Attention pays for it, the rest left to their
-ministers): `SMOKE OK 5 turns 1948-10-15 d12c83ce94e3940f93ed21abe7c2c9957de099b2653961da90e87785e6405e79`.
+ministers): `SMOKE OK 5 turns 1948-10-15 6f54118bc0fb13b0c3bbaac49bb57dca5ed61e747cd7d351503bfba803e3d120`.
 It depends on the UI path as well as the sim (which option is first, the turn grid), so re-record it when either changes.
 Check every WebGL build with every manifest entry (plus the UI-path smoke line) with:
 
@@ -83,7 +83,7 @@ while read -r name hash; do
   golden_expect+=(--expect "GOLDEN OK $name $hash")
 done < sim/Statecraft.Sim.Tests/golden/manifest.txt
 uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5" "${golden_expect[@]}" \
-  --expect "SMOKE OK 5 turns 1948-10-15 d12c83ce94e3940f93ed21abe7c2c9957de099b2653961da90e87785e6405e79"
+  --expect "SMOKE OK 5 turns 1948-10-15 6f54118bc0fb13b0c3bbaac49bb57dca5ed61e747cd7d351503bfba803e3d120"
 ```
 
 `smoke-orders` (GDD Phase 5 PR 15, #754) is the same kind of browser run for the unit orders (`?smoke-orders`, desktop
@@ -510,3 +510,13 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | #1270 (S1), re-pinned on main after #2087: as above | scenario-mvp-defeat | `8c83f6e0` | as absorb-first (was `6782cce4`) |
 | #1270 (S1), re-pinned on main after #2087: as above | scenario-mvp-occupy-cost | `ad9af425` | the Syrian unit on (15, 5) is the only change (was `612e9feb`) |
 | #1270 (S1), re-pinned on main after #2087: as above | scenario-mvp-annex-nazareth | `e8a9dbf1` | the Syrian unit on (15, 5); unit 1, on its card order toward (15, 3), is on (13, 6) at the run's end instead of (15, 5) (was `c8195c09`). No other golden moves: smoke-orders does not reach 15 July 1948 |
+| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | hash1950 | `06688394` | the reference player stages Kiryati, Carmeli, the 7th Brigade and Golani before their operation cards; all four operations still take their historical options and Rhodes and Sinai still fire; Ramla falls a month earlier (15 August), and one Golani-Egypt engagement replaces an old Legion one (same draw count) (was `a08ff850`) |
+| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | hash1952 | `e8077f97` | carries hash1950's staged-operation state forward: same choices and follow-up cards, earlier Ramla capture, IL 0.1m less debt (was `5561fc51`) |
+| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | smoke5 | `6f54118b` | the five-turn first-option run now queues ordinary staging moves (Kiryati and Carmeli start for Ten Days); Ten Days is still chosen (was `d12c83ce`) |
+| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | mvp-end | `e8077f97` | the same 44-turn run as hash1952 (was `5561fc51`) |
+| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | scenario-reckless | `9935564a` | Hiram, Yoav and Horev still resolve historically; staging leaves Golani in the south and the 7th Brigade alive; one engagement instead of two (one draw fewer) (was `bed7eb74`) |
+| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | scenario-cautious | `d1d4c1f5` | as scenario-reckless: one engagement instead of two; Carmeli reaches its Hiram target, the 7th Brigade survives, Ramla falls a turn earlier (was `4f3a0556`) |
+| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | scenario-mvp-absorb-first | `f60b8c40` | operations still historical; staging sends Golani to the Egyptian front (three engagements instead of two, one draw more) and the 7th Brigade survives (was `f289f897`) |
+| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | scenario-mvp-defeat | `a68ceecf` | as above, Ramla a turn earlier; one draw more, so the delegated iraqi_exodus card now takes pace instead of airlift (was `8c83f6e0`) |
+| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | scenario-mvp-occupy-cost | `1ddf2774` | Ramla a turn earlier and Acre taken, the 7th Brigade survives, no combat draw; Golani stays Nazareth's last garrison (was `ad9af425`) |
+| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | scenario-mvp-annex-nazareth | `38c02bb7` | Golani is Nazareth's last garrison, so it is not staged and Horev postpones and lapses (the owner's rule): Rhodes Talks and Sinai Withdrawal never fire, and no combat draw (was `e8a9dbf1`) |

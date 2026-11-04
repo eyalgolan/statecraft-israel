@@ -80,7 +80,8 @@ namespace Statecraft.Sim
 
         // #1680: event context Args begin with the shown English and sourced Hebrew title (empty for a preview).
         public const string EventNew = "event_new", EventChosen = "event_chosen", EventDelegated = "event_delegated",
-            EventDelegatedPartial = "event_delegated_partial";
+            EventDelegatedPartial = "event_delegated_partial", OperationPostponed = "operation_postponed",
+            OperationLapsed = "operation_lapsed";
         // Chosen/delegated Args: filled English option, filled Hebrew option, English minister, Hebrew minister (empty: cabinet).
         public const string EventAmount = "event_amount", EventStock = "event_stock", EventGrant = "event_grant",
             EventCity = "event_city", EventUnlock = "event_unlock", EventPolicy = "event_policy",
@@ -268,7 +269,7 @@ namespace Statecraft.Sim
         {
             MoneyFlows, FxFlows, Borrowed, Paid, MoneyOther, CivilianUpkeep, FxCrisisBegan, FxCrisisEased, FxCrisisFood, Arrived, EffectChange,
             SituationBegan, SituationEnded, RungChanged, CallUpSet, CallUpRaised, CallUpLowered, Ceasefire,
-            EventNew, EventChosen, EventDelegated, EventDelegatedPartial, EventAmount, EventStock, EventGrant, EventCity,
+            EventNew, EventChosen, EventDelegated, EventDelegatedPartial, OperationPostponed, OperationLapsed, EventAmount, EventStock, EventGrant, EventCity,
             EventUnlock, EventPolicy, EventSetRung, EventRejoin, MilitaryUpkeep, HousingSurcharge, HousingCohesion,
             ObjectiveCompleted, PrisonersReturned, SoldiersReturned,
             WorkersAssigned, WagesPaid, ImmigrantsHoused, HousingShortage, ImmigrantsWaiting, RecruitsVeteran, CorridorStarted, CorridorCancelled, CorridorCompleted, PioneersVeteran, MapBorrowed, MapBuilt, LandWorkStarted, SiteStarted, SiteCancelled, SiteCompleted, ProjectStarted, ProjectCancelled, ProjectCompleted, ProjectBuilder, ProjectBuilderFreed, ProjectWaiting, ArmsBought, WorkshopWorkers, WorkshopArms, WorkshopPaused, DollarsConverted, FoodHarvest, FoodShortage, FoodWithoutImports, PrisonerFood, PrisonerFoodShortage, CraftsmenReturned, CraftsmenReassigned, PioneerReturned, PioneersReassigned, TrainingStarted, TrainingArms, TrainingCancelled, TrainingArmsReturned, ReplacementsStopped, ReplacementsJoined, MilitaryTrained, PioneersTrained, CraftsmenTrained, Appointed, Reshuffle, AppointmentsEnded, ApprovalStability, CoalitionCollapsed, LegislatureConvened, GovernmentTookOffice, CoalitionChanged, EraEnded, AdvisoryPolicyRejected, PolicyRejected, PolicySet, AdvisoryBudgetRejected, BudgetRejected, PlaceCaptured, EnemyRegained, PlaceAnnexed, PlaceWithdrawn, PlaceDeported, DeportEffect, DeportCost, OccupationStarted, PendingBecameRaid, OccupationLostUnit, OccupationCountdown, DepopulationSupport,

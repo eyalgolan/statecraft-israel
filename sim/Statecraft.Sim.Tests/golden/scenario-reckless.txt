@@ -1,4 +1,4 @@
-1949-04-15;1663341875487339525;Historical;11;
+1949-04-15;15755400384260045787;Historical;11;
 ind{
   food_supply=0.5700000000000001 [3FE23D70A3D70A3E]
   housing=0.38982590078831036 [3FD8F2E855C1400A]
@@ -43,7 +43,7 @@ pop{
   veterans=659531.4296791082 [41242096DBFEE66B]
 sit[
 treasury=0 [0000000000000000]
-debt=40.53793189372496 [404444DAF3C98314]
+debt=40.587931893724964 [40444B415A2FE97B]
 fx=90.22947100954694 [40568EAFA72C5897]
 rung=2;cf=0;
 mob=0.05 [3FA999999999999A]
@@ -107,22 +107,24 @@ city{
   tiberias=6,2,6,2,1,c0.35 [3FD6666666666666]
   zikhron_yaakov=2,1,2,1,0,c0.35 [3FD6666666666666]
 units[
-  0:veteran_soldier@4,14|side=israel|strength=4
-  1:veteran_soldier@13,3|side=israel|strength=2|order=go_to|target=15,3
+  0:veteran_soldier@-7,28|side=israel|strength=2|full=4
+  1:veteran_soldier@14,3|side=israel|strength=2|order=go_to|target=15,3
   2:veteran_soldier@0,17|side=israel|strength=4
-  3:veteran_soldier@-3,21|side=israel|strength=3
+  3:veteran_soldier@-4,23|side=israel|strength=3
   4:veteran_soldier@-9,29|side=israel|strength=3
   5:veteran_soldier@0,26|side=israel|strength=3
   7:veteran_soldier@-10,35|side=israel|strength=1
   8:egyptian_army@-8,27|side=egypt|strength=10|order=fortify|target=-8,27
-  9:arab_legion@-3,25|side=jordan|strength=3|order=fortify|target=-3,25
+  9:arab_legion@-3,25|side=jordan|strength=4|order=fortify|target=-3,25
   10:syrian_army@15,5|side=syria|strength=3|order=fortify|target=15,5
-  11:iraqi_army@6,14|side=iraq|strength=3|order=fortify|target=6,14
+  11:iraqi_army@7,14|side=iraq|strength=3|order=fortify|target=7,14
   12:arab_liberation_army@14,4|side=ala|strength=4|order=fortify|target=14,4
+  13:veteran_soldier@8,8|side=israel|strength=2
 cardorders{
   1=1949-03-23
 next=14
 ctrl{
+  acre=owner=israel,state=awaiting_choice,since=1948-06-15
   beersheba=owner=israel,state=awaiting_choice,since=1949-01-15,fled=1
 food=2427,809,0
 arms=12

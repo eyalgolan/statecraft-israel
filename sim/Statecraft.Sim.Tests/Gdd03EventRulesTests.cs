@@ -504,34 +504,30 @@ public class Gdd03EventRulesTests
         "sinai_withdrawal:4abcd39e509c3d404523f7a5609bdb8e1e5180c19524367790ba7adf0af9e06b", // re-pinned for #1065 (Beri's native Hebrew read)
         "ten_days:0be9dc54863d46b935428e7a6fd1c9d8fe21194960c976d3ed4283b9e1088962", // re-pinned for #1065 (Beri's native Hebrew read), then for #2087 (R-ENEMY-005 unit orders: Kiryati to Ramle replaces Yiftach to Lydda, sent to Ramla's capture target; owner rulings, 1 and 2 November 2026, order target; hexes re-derived on the 4.4 km grid by tools/unit_anchor_hexes.py and its units_1948.yaml line citations updated; card text, Hebrew and review status unchanged)
     };
-    // R-ENEMY-005 (owner, 31 October 2026, #749: "GDD 0.1 only"): the operation cards' unit orders apply under gdd-0.1; under
-    // gdd-0.3 the cards stay effect-free for units until a 0.3 accounting contract exists (R-EFX-001/005).
+    // R-ENEMY-005, R-ENEMY-007: operation orders apply under both GDD identities once the required unit is in place.
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void OperationCardOrdersApplyUnderGdd01Only(bool modern)
+    public void OperationCardOrdersApplyUnderBothRulesetsWhenUnitsAreInPlace(bool modern)
     {
         var c = Real(modern);
         var s = Simulation.NewGame(c, 1, Mode.Historical);
         Assert.Equal("golani", c.StartingForces[0].Row);
-        var before = s.Units[0];
+        var before = s.Units[0]; var option = c.Events.First(e => e.Id == "operation_horev").Options.First(o => o.Id == "launch");
+        var at = c.PlayerRegions.Regions[option.RequiresUnitRegions[0]].MemberHexes[0];
+        s.Units[0] = new Unit(before.Id, before.Type, at.Q, at.R, before.Service, before.Side, before.Strength,
+            before.Order, before.OrderTarget, before.HomeCity, before.Full, before.CombatXp);
         s.PendingEvents.Add("operation_horev");
         Assert.Null(EventSystem.Choose(c, s, "operation_horev", "launch", new List<Cause>()));
         var after = s.Units[0];
-        Assert.Equal(modern ? (before.Order, before.OrderTarget) : (Movement.GoTo, "-8,28"), (after.Order, after.OrderTarget));
+        Assert.Equal((Movement.GoTo, "-8,28"), (after.Order, after.OrderTarget));
     }
-    // R-ENEMY-005, R-CTRL-013 (owner, 2 November 2026, #2087: "Keep a garrison in Nazareth (Recommended)"; owner, 31 October
-    // 2026, #749: "GDD 0.1 only"): Golani alone on Nazareth in the `occupied` state, its timer still running (the EnemyAITests
-    // cases are all `awaiting_end`), and Horev launched. Under gdd-0.1 the order is held back with Orders.RefusedLastGarrison
-    // and Golani stays; under gdd-0.3 the card gives no unit order, so nothing is refused, RefusedLastGarrison never appears,
-    // and Golani is untouched.
-    // Red without the rule's `occupied` half (SettlementControl.LastGarrison reading only `awaiting_end`): under gdd-0.1 the
-    // order is given, or refused with another reason, so no RefusedLastGarrison names unit 0. Red for a check made outside
-    // the gdd-0.3 guard (EventSystem.Resolve): under gdd-0.3 a RefusedLastGarrison would appear.
+    // R-ENEMY-005, R-CTRL-013: once the placement precondition is isolated, Golani alone on occupied Nazareth is held back
+    // with RefusedLastGarrison under both GDD identities and the occupation continues.
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void TheLastGarrisonRuleHoldsForAnOccupiedPlaceUnderGdd01Only(bool modern)
+    public void TheLastGarrisonRuleHoldsForAnOccupiedPlaceUnderBothRulesets(bool modern)
     {
         var c = Real(modern);
         Assert.Equal(modern, c.Ruleset == SaveGame.Gdd03Ruleset);
@@ -542,12 +538,14 @@ public class Gdd03EventRulesTests
         s.Units[0] = new Unit(g.Id, g.Type, nazareth.Q, nazareth.R, g.Service, g.Side, g.Strength, "", "", g.HomeCity, g.Full, g.CombatXp);
         Assert.Equal(new[] { 0 }, s.Units.Values.Where(u => (u.Q, u.R) == (nazareth.Q, nazareth.R) && u.Side == Movement.PlayerSide).Select(u => u.Id));
         s.Settlements["nazareth"] = new SettlementControl(Movement.PlayerSide, SettlementControl.Occupied, s.Date, turns: 3);
+        var option = c.Events.First(e => e.Id == "operation_horev").Options.First(o => o.Id == "launch");
+        var nazarethRegion = c.PlayerRegions.AtHex(nazareth.Q, nazareth.R)!.Id;
+        if (!option.RequiresUnitRegions.Contains(nazarethRegion)) option.RequiresUnitRegions.Add(nazarethRegion);   // isolate R-CTRL-013
         s.PendingEvents.Add("operation_horev");
         var rejected = new List<Rejection>();
         Assert.Null(EventSystem.Choose(c, s, "operation_horev", "launch", new List<Cause>(), rejected: rejected));
-        Assert.Equal(modern ? Array.Empty<string>() : new[] { Orders.RefusedLastGarrison },
+        Assert.Equal(new[] { Orders.RefusedLastGarrison },
             rejected.Where(j => j.Command is UnitOrder { Unit: 0 }).Select(j => j.Reason));
-        if (modern) Assert.DoesNotContain(rejected, j => j.Reason == Orders.RefusedLastGarrison);
         Assert.Equal((nazareth.Q, nazareth.R, "", ""), (s.Units[0].Q, s.Units[0].R, s.Units[0].Order, s.Units[0].OrderTarget));
         Assert.False(s.CardOrders.ContainsKey(0));
         Assert.Equal(SettlementControl.Occupied, s.Settlements["nazareth"].State);
@@ -576,7 +574,11 @@ public class Gdd03EventRulesTests
         Assert.Equal(SourceBytes.Select(x => x.Split(':')[0]), files.Select(Path.GetFileNameWithoutExtension));
         for (int i = 0; i < files.Length; i++)
         {
-            var bytes = System.Text.Encoding.UTF8.GetBytes(File.ReadAllText(files[i]).Replace("\r\n", "\n"));
+            // #2543 adds sourced operation-region metadata without changing the historical prose or its review record.
+            // Preserve this byte pin over the pre-existing record by stripping only those rule-tagged lines.
+            var sourceRecord = string.Join("\n", File.ReadAllText(files[i]).Replace("\r\n", "\n").Split('\n')
+                .Where(line => !line.Contains("# R-ENEMY-007") && !line.TrimStart().StartsWith("requires_unit_regions:", StringComparison.Ordinal)));
+            var bytes = System.Text.Encoding.UTF8.GetBytes(sourceRecord);
             Assert.Equal(SourceBytes[i].Split(':')[1], Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant());
         }
     }

@@ -37,6 +37,9 @@ options:
     # "Julis camp", from December 1948; he.wiki, the end_note at line 129: in December 1948 the brigade moved to the Julis
     # camp). The hex is the anchor's own (map/unit_anchor_hexes.yaml). The order ends with that anchor's window, on
     # 24 February 1949 (the owner's answer 1 on #2087).
+    # R-ENEMY-007 operation-start regions (#2543 table): southern_coast covers Julis/Gaza and negev the sourced
+    # R-ENEMY-007: Beersheba-Auja/Sinai axis (war-1948.md:149; research_notes/GDD phase 4/corridors-1948-51.md:311-323).
+    requires_unit_regions: [southern_coast, negev]
     unit_orders:
       - { unit: golani, q: -8, r: 28 }
   - id: hold
