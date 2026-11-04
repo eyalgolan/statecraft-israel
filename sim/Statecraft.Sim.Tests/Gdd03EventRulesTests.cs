@@ -6,10 +6,13 @@ public class Gdd03EventRulesTests
 {
     const string Manifest = "gdd03-events.yaml";
     const string Empty = "ruleset: gdd-0.3\nexclusions: []\n";
-    static readonly string[] Excluded = { "austerity_1949", "forex_crisis_1951", "iraqi_exodus", "israel_bonds", "maabarot_policy" };
+    static readonly string[] Excluded = { "israel_bonds" };
     // #2224 (owner, 2 November 2026, "Bring back 3, design bonds (Recommended)"): D1/Q2 keep the foreign-currency ledger,
     // so these three cards, excluded by #1772 for want of a ledger mapping, are active again. israel_bonds stays excluded.
     static readonly string[] Restored = { "clothing_rationing_1950", "reparations_claim", "reparations_vote" };
+    // #2483 (owner, 4 November 2026): "allow cards to effect food supply and housing readout, get these cards into the game
+    // turned on". These four, excluded by #1772 for their Food supply, housing and policy writes, are active again.
+    static readonly string[] TurnedOn = { "austerity_1949", "forex_crisis_1951", "iraqi_exodus", "maabarot_policy" };
     static string Card(string id = "probe", string option = "") =>
         $"id: {id}\ntitle: Fixture\ntext: Fixture.\nfrom: 1948-05-15\noptions:\n  - id: ok\n    text: Accept\n    historical: true\n" + option;
     static Dictionary<string, string> Files(bool modern = true)
@@ -37,10 +40,31 @@ public class Gdd03EventRulesTests
         indicator ? f => f["model.yaml"] = Fixture.Files["model.yaml"].Replace("indicators:", $"indicators:\n  - {{ id: {target}, name: Fixture, base: 0.5 }}") : null);
 
     [Fact] public void Gdd03RejectsAttentionEffectEvenIfIndicatorExists() => Effect("attention", true);
-    [Fact] public void Gdd03RejectsFoodSupplyWrite() => Effect("food_supply");
-    [Fact] public void Gdd03RejectsHousingCompatibilityWrite() => Effect("housing");
-    [Fact] public void Gdd03RejectsRetiredRationingPolicy() => Reject("    set_policy: { rationing: 0.5 }\n", "set_policy.rationing");
-    [Fact] public void Gdd03RejectsRetiredMaabarotPolicy() => Reject("    set_policy: { maabarot: 0.5 }\n", "set_policy.maabarot");
+    // R-EFX-001, #2483 (owner, 4 November 2026): an event writes the Food supply and housing readouts under gdd-0.3, through
+    // the same clamped shift as gdd-0.1, so the cause names the applied amount.
+    [Fact] public void Gdd03AcceptsFoodSupplyWrite() => ReadoutWrite("food_supply");
+    [Fact] public void Gdd03AcceptsHousingWrite() => ReadoutWrite("housing");
+    static void ReadoutWrite(string target)
+    {
+        var c = Load(Files(), Card(option: $"    effects: [{{ target: {target}, delta: -0.1 }}, {{ target: {target}, delta: 0.3 }}]\n").Replace("from:", "anchor: hard\nfrom:"));
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        EffectsSystem.Shift(c, s, target, .05 - s.Indicators[target]);
+        var why = new List<Cause>();
+        Assert.Null(EventSystem.Choose(c, s, "probe", "ok", why));
+        // -0.1 from 0.05 clamps at 0 (applied -0.05), then +0.3 lands on 0.3.
+        Assert.Equal(.3, s.Indicators[target], 12);
+        Assert.Equal(new[] { -.05, .3 }, why.Where(w => w.Target == target).Select(w => Math.Round(w.Delta, 12)));
+    }
+    // R-EFX-001, #2483 (maintainer reading: "turned on" includes the cards' policy writes): rationing and maabarot load and
+    // apply under gdd-0.3.
+    [Theory] [InlineData("rationing")] [InlineData("maabarot")]
+    public void Gdd03AcceptsTheCardsPolicyWrites(string policy)
+    {
+        var c = Load(Files(), Card(option: $"    set_policy: {{ {policy}: 0.5 }}\n").Replace("from:", "anchor: hard\nfrom:"));
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        Assert.Null(EventSystem.Choose(c, s, "probe", "ok", new List<Cause>()));
+        Assert.Equal(.5, s.Policies[policy]);
+    }
     [Fact] public void Gdd03RejectsCityLossDefeatEffect() => Effect("city_loss_defeat", true);
     [Fact] public void Gdd03RejectsUnaccountedPopulationGrant() => Reject("    grant_units: [{ type: halutz, n: 1, at: town_a }]\n", "grant_units");
     [Fact] public void Gdd03RejectsUnaccountedFacilityEffect() => Reject("    city_effects: [{ city: town_a, field: housing_capacity, delta: 1 }]\n", "city_effects");
@@ -189,7 +213,7 @@ public class Gdd03EventRulesTests
         }, Directory.GetFiles(Path.Combine(root, "events"), "*.yaml").Select(p => "events/" + Path.GetFileName(p)));
     }
     [Fact]
-    public void RealCatalogueExcludesExactlyFiveWholeCardsAndKeepsOrder()
+    public void RealCatalogueExcludesExactlyOneWholeCardAndKeepsOrder()
     {
         var old = Real(false); var modern = Real(true);
         Assert.Equal(41, old.Events.Count);   // Deport's two cards (#801) are not excluded
@@ -334,7 +358,9 @@ public class Gdd03EventRulesTests
     [Fact]
     public void AllTwentyFourAffectedAssignmentsRetainTheirLegacyValues()
     {
-        Assert.Equal(Inventory.OrderBy(x => x, StringComparer.Ordinal), Rows(Real(false), Excluded).OrderBy(x => x, StringComparer.Ordinal));
+        // #2483: the four turned-on cards are read as active under gdd-0.3, with the same values; israel_bonds stays excluded.
+        Assert.Equal(Inventory.OrderBy(x => x, StringComparer.Ordinal),
+            Rows(Real(true), TurnedOn).Concat(Rows(Real(false), Excluded)).OrderBy(x => x, StringComparer.Ordinal));
         Assert.All(Real(false).Events, e => Assert.All(e.Options, o =>
         { Assert.Empty(o.GrantUnits); Assert.Empty(o.CityEffects); Assert.Empty(o.UnlockProjects); }));
     }
@@ -372,6 +398,23 @@ public class Gdd03EventRulesTests
         Assert.Equal(new DateTime(1951, 3, 15), CardDate("reparations_claim"));
         Assert.Equal(new DateTime(1951, 12, 15), CardDate("reparations_vote"));
         Assert.Null(CardDate("israel_bonds"));
+    }
+    // #2483: on the real content under gdd-0.3 the four cards are in the catalogue and reach the player on the turns
+    // EventRetimingTests.EachEventFiresOnItsTurn pins for them in the gdd-0.1 golden run (no orders, as above).
+    [Fact]
+    public void Gdd03FourCardsAreActive()
+    {
+        var c = Real(true);
+        Assert.All(TurnedOn, id => Assert.Contains(c.Events, e => e.Id == id));
+        var s = Simulation.NewGame(c, GoldenRun.Seed, Mode.Historical);
+        var run = new List<GameState> { s };
+        while (s.GameOver == null && run.Count < 1000) { s = Simulation.Step(c, s, Array.Empty<Command>()).State; run.Add(s); }
+        Assert.Equal(GameOverCodes.MvpEnded, s.GameOver);
+        DateTime? CardDate(string id) => run.FirstOrDefault(x => x.FiredEvents.Contains(id))?.Date;
+        Assert.Equal(new DateTime(1949, 5, 15), CardDate("austerity_1949"));
+        Assert.Equal(new DateTime(1950, 4, 15), CardDate("maabarot_policy"));
+        Assert.Equal(new DateTime(1951, 3, 15), CardDate("iraqi_exodus"));
+        Assert.Equal(new DateTime(1951, 11, 15), CardDate("forex_crisis_1951"));
     }
     static readonly string[] SourceBytes =
     {

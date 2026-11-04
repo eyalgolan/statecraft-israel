@@ -3,12 +3,6 @@
 # No replacement amounts, effects, review statuses or sign-offs are authored here.
 ruleset: gdd-0.3
 exclusions:
-  - id: austerity_1949
-    reason: Rationing policy, Food supply readout and foreign-currency effects need approved contracts.
-  - id: forex_crisis_1951
-    reason: Foreign-currency debit and aid, with Food supply effects, need authored ledger and stock contracts.
-  - id: iraqi_exodus
-    reason: National housing effects need regional population and facility accounting.
   - id: israel_bonds
     reason: >-
       Owner, 2 November 2026 (#2224, https://github.com/eyalgolan/statecraft-israel/issues/2224#issuecomment-6570025445):
@@ -18,5 +12,3 @@ exclusions:
       donations_only ($10m) adds no Debt.
       Blocked: Debt is not yet an event-effect target, and the IL Debt uses the dated mvp.il_per_dollar table from #2204.
       Do not restore the card as written: its launch option would add foreign currency with no Debt.
-  - id: maabarot_policy
-    reason: Maabarot policy and national housing effects need approved facility and population accounting.

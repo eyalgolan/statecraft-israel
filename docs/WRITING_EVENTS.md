@@ -555,14 +555,17 @@ the remaining catalogue receives the usual cross-reference, effect and sensitivi
 The approved first slice excludes exactly `austerity_1949`, `clothing_rationing_1950`, `forex_crisis_1951`,
 `iraqi_exodus`, `israel_bonds`, `maabarot_policy`, `reparations_claim` and `reparations_vote`, including all their
 options (`reparations_vote` joined with #1575, for the same reason as `reparations_claim`).
-Six of these are hard anchors: they are unavailable in 0.3. Shared records, Hebrew, tags, status and human
-sign-offs remain unchanged and available to review tools. Removing an exclusion requires a reviewed follow-up
+Six of these were hard anchors. Since then #2224 restored `clothing_rationing_1950`, `reparations_claim` and
+`reparations_vote`, and #2483 (owner, 4 November 2026) turned on `austerity_1949`, `forex_crisis_1951`,
+`iraqi_exodus` and `maabarot_policy`; `israel_bonds` is the one card still excluded and unavailable in 0.3.
+Shared records, Hebrew, tags, status and human sign-offs remain unchanged and available to review tools. Removing an exclusion requires a reviewed follow-up
 with approved accounting and authored values; it does not itself approve a replacement or transfer a sign-off.
 There is no automatic review promotion, and all existing release gates still apply.
 
-R-EFX-001 rejects 0.3 writes to `food_supply` and `housing`; `rationing`/`maabarot` policy assignments;
-and Attention and defeat commands even if authored as compatibility indicators. Reserved target spellings are
-`attention`/`attention_*`, `defeat`, `city_loss_defeat` and `any_city_loss`. Under D1 (owner, 1 November 2026)
+R-EFX-001 rejects 0.3 writes to Attention and defeat commands even if authored as compatibility indicators.
+Reserved target spellings are `attention`/`attention_*`, `defeat`, `city_loss_defeat` and `any_city_loss`. Since
+#2483 (owner, 4 November 2026) 0.3 events write `food_supply` and `housing`, and the `rationing`/`maabarot`
+policy, as in 0.1. Under D1 (owner, 1 November 2026)
 the passive budget, the monthly Food refill and foreign currency stay: `fx_reserves` and the `budget*`,
 `passive_budget*`, `food_refill` and `automatic_food_refill` spellings load in 0.3 as in 0.1. Other unknown
 targets remain errors. No new alias or conversion is provided.
