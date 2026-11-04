@@ -2,7 +2,7 @@ using System.Text.RegularExpressions;
 
 namespace Statecraft.Sim.Tests;
 
-/// <summary>#1682's 68 source producers, including rare branches. The pre-key constructor expressions are pinned to
+/// <summary>#1682's 68 source producers plus city_held (#1711), 69 in all, including rare branches. The pre-key constructor expressions are pinned to
 /// c7851de so Message, Target and Delta cannot drift while metadata is added. This is not runtime branch coverage.</summary>
 public class RemainingCauseKeysTests
 {
