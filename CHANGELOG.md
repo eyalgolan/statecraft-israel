@@ -8,6 +8,12 @@ checks this (see `CONTRIBUTING.md`).
 
 ## [Unreleased]
 
+### Changed
+
+- The gdd-0.3 basic training fixture's cancel: an Arms item a recruit already carried stays with them by our reading
+  of R-ARMS-003 ('the Arms it took'). A wording correction to the 0.3.5 entry; nothing changes in the game (Refs #1699,
+  #2438).
+
 ## [0.3.5] - 2026-11-04
 
 ### Added
@@ -37,8 +43,8 @@ checks this (see `CONTRIBUTING.md`).
   (Refs #1699). It is not in the game yet; the game players play (gdd-0.1) is unchanged.
 - In the same gdd-0.3 basic training test fixture, a recruit's course can be cancelled: the recruit returns as a free
   civilian with no job, an Arms item the course issued goes back to the spare stock, an item the recruit already
-  carried stays with them by our reading of R-ARMS-003 ('the Arms it took'), and no Money is refunded (Refs #1699). It
-  is not in the game yet; the game players play (gdd-0.1) is unchanged.
+  carried stays with them, and no Money is refunded (Refs #1699). It is not in the game yet; the game players play
+  (gdd-0.1) is unchanged.
 - GDD 0.3 builders on city projects in the sim (Refs #1700, slice A): under the gdd-0.3 ruleset only, a city project
   being built needs one builder, a person of its city without a job, to make progress, at the kind's existing turns.
   Starting a project takes a free person as its builder automatically when the city has one; otherwise the project waits
