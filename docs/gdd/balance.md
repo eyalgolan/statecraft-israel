@@ -130,7 +130,7 @@ The proposed immigration mix and ship schedule are non-operative [S1]. Retained 
 
 | Key | Value | Unit / meaning | Basis |
 | --- | --- | --- | --- |
-| `military.camp_capacity` | `5` | simultaneous trainees per camp | Owner, 1 November 2026, 27M-25 [S12]: every camp uses the same capacity, with no per-camp exception; main's `R-TRAIN-001` applies no separate simultaneous-trainee cap yet [S10]. The 5 is sized for 10,000 people a unit; at 1,000 people a unit it is 50 units (owner, 1 November 2026, "Main's base x 0.3's tiers (Recommended)") [S12] (unitless) |
+| `military.camp_capacity` | `50` | simultaneous trainees per camp | Owner, 1 November 2026, 27M-25 [S12]: every camp uses the same capacity, with no per-camp exception; main's `R-TRAIN-001` applies no separate simultaneous-trainee cap yet [S10]. #1668's 5 is sized for 10,000 people a unit; at 1,000 people a unit it is 50 units (owner, 1 November 2026, "Main's base x 0.3's tiers (Recommended)") [S12] (unitless) |
 | `military.basic_turns` | `3` | training turns | Agreed |
 | `military.issue_arms` | `1` | Arms consumed per recruit group when training starts | Retained `R-ARMS-003` value [S9] |
 | `military.draft_money` / `military.draft_wait` | non-operative proposed `0 / 0` | Money / waiting turns for immediate draft | The owner's 30 October 2026 conflict review did not rule on this [S11]; `content/gdd03-balance.yaml` lists them as `0 / 0` (basis Agreed, transcribed from #1668); retained `R-TRAIN-001` (`docs/rules/mvp.md`) uses a paid training course rather than immediate draft [S10] |
