@@ -8,7 +8,10 @@ title_he: שביתת הנשק עם מצרים
 text_he: 'השיחות ברודוס הניבו הסכם שביתת נשק עם מצרים. על {prime_minister} להחליט אם ישראל תחתום עליו.'
 anchor: hard
 office: prime_minister
-from: 1949-02-24
+# R-TURN-002 (#2551; the owner chose "Move them a turn earlier (Recommended)" on 4 November 2026): the window opens on
+# the 15th on or before the decision (signed 24 February 1949; it opened on 1949-02-24), so the card reaches the player
+# on the turn before it.
+from: 1949-02-15
 # Hard anchor: fires on the first turn on or after `from`. `to` (exclusive, end of 1949) only makes the window finite,
 # so the {prime_minister} placeholder needs a holder through 1949 and not past the holder's death (#1).
 to: 1950-01-01

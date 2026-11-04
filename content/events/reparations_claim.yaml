@@ -16,7 +16,10 @@ office: foreign_minister
 # immigrants from lands under Nazi rule, is in the note's text as Sharett read it to the Knesset; 3,000 dollars each is
 # JVL's figure (and the quotient). The government's earlier note of 16 January 1951 to the same four powers dealt with
 # compensation and the restitution of property owed to Jews under existing laws.
-from: 1951-03-01
+# R-TURN-002 (#2551; the owner chose "Move them a turn earlier (Recommended)" on 4 November 2026): the window opens on
+# the 15th on or before the decision (the note of 12 March 1951; it opened on 1951-03-01), so the card reaches the
+# player on the turn before it.
+from: 1951-02-15
 to: 1951-03-13
 options:
   - id: claim

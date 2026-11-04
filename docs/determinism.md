@@ -61,9 +61,9 @@ final `GameState.Hash()` is pinned:
 
 | Run | Ends | Hash |
 |---|---|---|
-| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `a08ff8504d862925563c8523a707b58ebe3bcaac0b504dc9ce7e028fc19eb0e4` |
-| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `5561fc51a03a25e7bad499bd2c9d8de156dea241118ac4c80bbf2e0fb50c97ef` |
-| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `5561fc51a03a25e7bad499bd2c9d8de156dea241118ac4c80bbf2e0fb50c97ef` |
+| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `d53edcd56e05f661e3617d680814913e2c42f05f18c6b4317875ea08213c1fa8` |
+| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `47595d002c637cf7b9e91ebff96d83df1b7a69847d1c7cf2f75a49824f7bc685` |
+| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `47595d002c637cf7b9e91ebff96d83df1b7a69847d1c7cf2f75a49824f7bc685` |
 
 `hash1952` stops at the first turn on or after 1 January 1952, which is the game's last turn, so it is the same run as
 `mvp-end` (`DeterminismTests.TheWholeGameToItsEndIsFixed`). Both names are kept (spec 2026-10-12 section 3 step 6): a
@@ -510,3 +510,11 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | #1270 (S1), re-pinned on main after #2087: as above | scenario-mvp-defeat | `8c83f6e0` | as absorb-first (was `6782cce4`) |
 | #1270 (S1), re-pinned on main after #2087: as above | scenario-mvp-occupy-cost | `ad9af425` | the Syrian unit on (15, 5) is the only change (was `612e9feb`) |
 | #1270 (S1), re-pinned on main after #2087: as above | scenario-mvp-annex-nazareth | `e8a9dbf1` | the Syrian unit on (15, 5); unit 1, on its card order toward (15, 3), is on (13, 6) at the run's end instead of (15, 5) (was `c8195c09`). No other golden moves: smoke-orders does not reach 15 July 1948 |
+| #2551 (R-TURN-002: eight decision cards a turn earlier) | 1950 | `d53edcd5` | `armistice_egypt` comes on 15 February 1949 and signing it sets rung 2 a turn earlier, so the war costs one turn less (debt IL 3.75m lower); `austerity_1949` is imposed on the 15 April 1949 turn, so rationing feeds one turn longer (food, morale and stability move). `israel_bonds` keeps its date (owner, 4 November 2026) (was `a08ff850`) |
+| #2551: as above | 1952 | `47595d00` | the same IL 3.75m lower debt, and the food, morale and stability drift of the earlier austerity (was `5561fc51`) |
+| #2551: as above | mvp-end | `47595d00` | the same run as 1952 (was `5561fc51`) |
+| #2551: as above | scenario-reckless | `068f30bb` | the run ends on 15 April 1949: Lebanon and Jordan now come on 15 March and are signed (international standing +0.10), `austerity_1949` is pending at the end, and the debt is IL 3.75m lower (was `bed7eb74`) |
+| #2551: as above | scenario-cautious | `64d1e66d` | as reckless (was `4f3a0556`) |
+| #2551: as above | scenario-mvp-absorb-first | `fb8bc980` | as 1950 (was `f289f897`) |
+| #2551: as above | scenario-mvp-defeat | `b74d6fef` | its answers to `austerity_1949` and `reparations_claim` move with the cards (15 April 1949, 15 February 1951); the debt is IL 3.75m lower and the run still ends in defeat (was `8c83f6e0`) |
+| #2551: as above | scenario-mvp-annex-nazareth | `b41d265b` | the run ends on 15 February 1949, the turn `armistice_egypt` now comes, so the card is fired and pending at the end (was `e8a9dbf1`). smoke5, smoke-orders and scenario-mvp-occupy-cost end before 15 February 1949 and do not move |
