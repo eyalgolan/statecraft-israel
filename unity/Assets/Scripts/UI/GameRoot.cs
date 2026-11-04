@@ -1200,8 +1200,7 @@ namespace Statecraft.Game.UI
                 for (int guard = 0; bridge.NeedsOrders.Count > 0; guard++)
                 {
                     if (guard >= 200) { log("SMOKE FAIL unit skip loop reached 200"); yield break; }
-                    if (!Press(root.Q<Button>("end-turn"), log)) yield break;
-                    if (!Press(root.Q<Button>("info-skip"), log)) yield break;
+                    if (!SkipOneUnit(root, bridge, log)) yield break;
                     yield return null;
                 }
                 int refused = 0;
@@ -1258,8 +1257,7 @@ namespace Statecraft.Game.UI
             for (int guard = 0; bridge.NeedsOrders.Count > 0; guard++)
             {
                 if (guard >= 200) { log("SMOKE FAIL unit skip loop reached 200"); yield break; }
-                if (!Press(root.Q<Button>("end-turn"), log)) yield break;
-                if (!Press(root.Q<Button>("info-skip"), log)) yield break;
+                if (!SkipOneUnit(root, bridge, log)) yield break;
                 yield return null;
             }
             if (!Press(root.Q<Button>("end-turn"), log)) yield break;
@@ -1272,9 +1270,24 @@ namespace Statecraft.Game.UI
             log(FormattableString.Invariant($"SMOKE ORDERS OK {bridge.TurnStart.Date:yyyy-MM-dd} {bridge.TurnStart.Hash()}"));
         }
 
+        /// <summary>One pass of the smoke runs' unit loop: End Turn selects a unit that needs orders, and the unit card's Skip
+        /// skips it. False, with "SMOKE FAIL info-skip did not skip unit &lt;id&gt;", when no unit left the cycle (the v0.3.5 smoke
+        /// spun 200 times behind a dialog, #2436); the id is the first unit that needed orders before the pass, still waiting.</summary>
+        static bool SkipOneUnit(VisualElement root, SimBridge bridge, Action<string> log)
+        {
+            var before = bridge.NeedsOrders;
+            if (!Press(root.Q<Button>("end-turn"), log) || !Press(root.Q<Button>("info-skip"), log)) return false;
+            if (bridge.NeedsOrders.Count < before.Count) return true;
+            log(FormattableString.Invariant($"SMOKE FAIL info-skip did not skip unit {before[0]}"));
+            return false;
+        }
+
+        /// <summary>Presses <paramref name="b"/> as keyboard Submit does. False, with a SMOKE FAIL line, when it is missing,
+        /// out of reach (disabled, or under a disabled parent: Skip behind the v0.3.5 dialog took no press), or its handler throws.</summary>
         static bool Press(Button? b, Action<string> log)
         {
             if (b == null) { log("SMOKE FAIL button missing"); return false; }
+            if (!b.enabledInHierarchy) { log("SMOKE FAIL " + b.name + " is not enabled"); return false; }
             try
             {
                 using (var e = NavigationSubmitEvent.GetPooled()) { e.target = b; b.SendEvent(e); }
