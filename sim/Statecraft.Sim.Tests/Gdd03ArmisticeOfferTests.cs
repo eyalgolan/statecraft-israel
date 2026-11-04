@@ -215,8 +215,10 @@ options:
         s.QuietTurns["egypt"] = 2;
         Assert.Equal(new[] { "armistice_egypt" }, Fire(c, s));
 
+        var rng = s.RngState;
         s = Turn(c, s);
         Assert.Equal("sign", s.ChosenOptions["armistice_egypt"]);
+        Assert.Equal(rng, s.RngState);   // the hard-anchor path: ordinary delegation would draw
     }
 
     static GameState Turn(Content c, GameState s, params Command[] orders)
