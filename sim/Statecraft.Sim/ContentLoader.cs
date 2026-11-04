@@ -264,7 +264,8 @@ namespace Statecraft.Sim
             // A mapping key's colon ends the line or is followed by a space; "https://x" is a scalar, not a key "https".
             if (colon <= 0 || (colon + 1 < source.Length && source[colon + 1] != ' ')) return null;
             var key = source.Substring(0, colon).Trim();
-            return key.Length > 0 && key.All(ch => char.IsLetterOrDigit(ch) || ch == '_' || ch == '-') ? key : null;
+            if (key.Length > 1 && (key[0] == '"' || key[0] == '\'') && key[key.Length - 1] == key[0]) key = key.Substring(1, key.Length - 2);   // "ruleset": in gdd03-balance.yaml
+            return key.Length > 0 && key.All(ch => char.IsLetterOrDigit(ch) || ch == '_' || ch == '-' || ch == '.') ? key : null;
         }
 
         /// <summary>A key written with no value (`tags:`) deserialises to null. Null lists and maps become load errors

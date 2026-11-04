@@ -291,6 +291,8 @@ status: draft
     [InlineData("  - https://example.org/a", null)]
     [InlineData("    url: https://example.org", "url")]
     [InlineData("    time: 10:30", "time")]
+    [InlineData("  \"campaign.play_minutes\":", "campaign.play_minutes")]
+    [InlineData("  \"basis\": \"Agreed\"", "basis")]
     public void AParseErrorNamesOnlyARealKey(string sourceLine, string? key)
     {
         Assert.Equal(key, ContentLoader.KeyOnLine("first: 1\n" + sourceLine + "\n", 2));
