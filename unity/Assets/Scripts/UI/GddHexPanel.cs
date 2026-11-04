@@ -138,10 +138,17 @@ namespace Statecraft.Game.UI
             var free = Training.Available(s, id, bridge.Queued);
             foreach (var type in c.UnitTypes.Where(t => t.Facility != "" && Training.HasFacility(c, s, id, t.Facility)))
             {
-                var ordered = (bridge.QueuedLike(new Train(id, type.Id, 1)) as Train)?.Count ?? 0;
+                var old = bridge.QueuedLike(new Train(id, type.Id, 1));
+                var ordered = (old as Train)?.Count ?? 0;
+                // #2573: the press queues Train(ordered + 1) where SimBridge.Queue puts it: in the old order's slot when there
+                // is one, else last. So the Arms it can take are those left by the orders before that slot (R-TURN-004: waiting
+                // orders run in queue order), and it needs the whole new count, the old order being replaced.
+                var before = old == null ? bridge.Queued : bridge.Queued.Take(bridge.Queued.ToList().IndexOf(old)).ToList();
+                var armsOk = Training.ArmsNeeded(c, s, type, ordered + 1) <= Training.ArmsAfter(c, s, before);
                 var row = Row(host, $"city-train-{type.Id}-row");
                 Button(row, "city-train-" + type.Id, text.Format("city.train_" + type.Id, PlayerText.Money(c, "treasury", type.TrainingCost), Turns(text, type.TrainingTurns)),
-                    () => bridge.Queue(new Train(id, type.Id, ordered + 1))).SetEnabled(free >= 1);
+                    () => bridge.Queue(new Train(id, type.Id, ordered + 1)))
+                    .SetEnabled(free >= 1 && armsOk);
                 if (ordered > 0) Line(row, $"city-train-{type.Id}-ordered", text.Format("city.train_ordered", ordered));
             }
 
@@ -294,13 +301,14 @@ namespace Statecraft.Game.UI
                 if (idle.Count == 0) Line(host, "corridor-no-halutz", text["site.no_halutz"]);
                 // One unit a segment (Q-COR-4): once a group is ordered here, the others' Build is off, as the sim would refuse it.
                 var taken = bridge.Queued.OfType<PioneerWork>().Any(w => w.Site == target);
+                var refusal = Corridors.CheckStart(c, s, action, d, index);
                 foreach (var u in idle)
                 {
                     var ordered = bridge.QueuedLike(new PioneerWork(u.Id, action, target)) is PioneerWork p && p.Site == target;
                     Button(host, $"corridor-build-{u.Id}", ordered ? text["site.ordered"]
                             : text.Format("corridor.build_" + d.Kind, Group(text, s, u.Id), PlayerText.Money(c, "treasury", terms.Cost),
                                 Turns(text, Corridors.TurnsToBuild(c, s, u.Id, terms.Turns, 0))),
-                        () => bridge.Queue(new PioneerWork(u.Id, action, target))).SetEnabled(!ordered && !taken);
+                        () => bridge.Queue(new PioneerWork(u.Id, action, target))).SetEnabled(refusal == null && !ordered && !taken);
                     PioneerReturn(host, bridge, text, u.Id);
                 }
             }
@@ -453,7 +461,8 @@ namespace Statecraft.Game.UI
         {
             switch (reason.Kind)
             {
-                case "maabarot_policy": case "not_land": return text["info.map_action_reason." + reason.Kind];
+                case "maabarot_policy": case "not_land": case "depopulated":
+                    return text["info.map_action_reason." + reason.Kind];
                 case "occupied": return text.Format("info.map_action_reason.occupied", text["info.map_action." + reason.Values[0]]);
                 case "no_resource": return text.Format("city.project_reason.no_resource", townName(reason.Values[0]), ResourceName(text, reason.Values[1]),
                     ContentNames.Of(text, c.ProjectKinds.First(x => x.Id == reason.Values[2])));

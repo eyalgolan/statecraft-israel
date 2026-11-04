@@ -756,6 +756,8 @@ info.map_action_reason.action_until: "אפשר היה להקים {0} עד {1}"
 info.map_action_reason.all_from: "אפשר להקים מעברות ומיזמי דיור החל מ־{0}"
 info.map_action_reason.maabarot_policy: "הקמת מעברות מחייבת את מדיניות המעברות"
 info.map_action_reason.not_land: "המשבצת הזאת אינה יבשה"
+# For the native reviewer (#564): agent-drafted, #2573
+info.map_action_reason.depopulated: "אי אפשר לבנות במקום מרוקן מתושביו"
 info.map_action_reason.too_far_one: "המשבצת הזאת נמצאת במרחק של יותר מ־{0} משבצת מיישוב"
 info.map_action_reason.too_far_many: "המשבצת הזאת נמצאת במרחק של יותר מ־{0} משבצות מיישוב"
 info.map_action_reason.occupied: "במשבצת הזאת כבר יש {0}"

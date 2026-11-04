@@ -370,6 +370,48 @@ public class TrainingTests
         Assert.DoesNotContain(back.Why, x => x.Target == "arms");
     }
 
+    // Red-first prediction at 085944e62: Training.ArmsAfter does not exist, so this contract does not compile.
+    [Fact]
+    public void ArmsAfterAnEmptyQueueIsTheCurrentStock()
+    {
+        var c = Town();
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        s.Arms = 7;
+        Assert.Equal(7L, Training.ArmsAfter(c, s, new Command[0]));
+    }
+
+    // Red-first prediction at 085944e62: no helper credits a queued purchase before Train is offered.
+    [Fact]
+    public void ArmsAfterCreditsAQueuedPurchaseThatCoversTheShortfall()
+    {
+        var c = Town();
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        s.Arms = 1;
+        Assert.Equal(2L, Training.ArmsAfter(c, s, new Command[] { new BuyArms(1) }));
+    }
+
+    // Red-first prediction at 085944e62: no helper reserves the Arms a queued Train will consume.
+    [Fact]
+    public void ArmsAfterDebitsAQueuedTrainThatConsumesTheLastArms()
+    {
+        var c = Town();
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        s.Arms = 2;
+        Assert.Equal(0L, Training.ArmsAfter(c, s, new Command[] { new Train("town_a", "recruit", 1) }));
+    }
+
+    // Red-first prediction at 085944e62: no helper credits the stored Arms returned by queued cancellation.
+    [Fact]
+    public void ArmsAfterCreditsAQueuedCancellation()
+    {
+        var c = Town();
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        s.Arms = 1;
+        var id = s.NextId++;
+        s.Cohorts.Add(id, new Cohort(id, "recruit", "town_a", 3, 2, arms: 6));
+        Assert.Equal(7L, Training.ArmsAfter(c, s, new Command[] { new CancelTraining(id) }));
+    }
+
     // R-ARMS-003: too few Arms refuses the training with a reason, the state as if the order had not been given (Attention
     // refunded too); a stock of exactly the need trains.
     [Fact]

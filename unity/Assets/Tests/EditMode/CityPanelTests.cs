@@ -286,6 +286,49 @@ public class CityPanelTests
         Assert.IsFalse(ui.Q<Button>("city-train-halutz").enabledSelf);
     }
 
+    // Red-first prediction at 085944e62: the recruit button is enabled because the panel checks free civilians only.
+    [Test]
+    public void RecruitTrainingIsDisabledWithNoArms()
+    {
+        using var ui = new UiTestKit();
+        var bridge = Bridge(En, s => s.Arms = 0);
+        using var panel = Panel(ui, bridge, En);
+        panel.Show(CityHex.q, CityHex.r);
+        Assert.IsFalse(ui.Q<Button>("city-train-recruit").enabledSelf,
+            "R-ARMS-003: the stock cannot cover one recruit group");
+    }
+
+    // Red-first prediction at 085944e62: queuing Buy Arms cannot change the civilian-only Train enablement calculation.
+    [Test]
+    public void RecruitTrainingIsEnabledWhenAQueuedPurchaseCoversIt()
+    {
+        var recruit = C.UnitTypes.Single(t => t.Id == "recruit");
+        using var ui = new UiTestKit();
+        var bridge = Bridge(En, s => s.Arms = (int)Training.ArmsNeeded(C, s, recruit, 1) - 1);
+        using var panel = Panel(ui, bridge, En);
+        panel.Show(CityHex.q, CityHex.r);
+        Assert.IsFalse(ui.Q<Button>("city-train-recruit").enabledSelf, "precondition: one Arms is missing");
+        Assert.IsNull(bridge.Queue(new BuyArms(1)), "precondition: the bridge accepts the purchase");
+        Assert.IsTrue(ui.Q<Button>("city-train-recruit").enabledSelf,
+            "the purchase runs before a newly appended Train order");
+    }
+
+    // #2573: pressing Train again replaces the queued Train in its own slot (SimBridge.Queue), so a purchase queued after
+    // it runs too late to pay for the extra group. Red-first at 085944e62: enabled, the panel checks free civilians only.
+    [Test]
+    public void ASecondRecruitGroupIsNotPaidByAPurchaseQueuedAfterTheFirst()
+    {
+        var recruit = C.UnitTypes.Single(t => t.Id == "recruit");
+        using var ui = new UiTestKit();
+        var bridge = Bridge(En, s => s.Arms = (int)Training.ArmsNeeded(C, s, recruit, 1));
+        using var panel = Panel(ui, bridge, En);
+        panel.Show(CityHex.q, CityHex.r);
+        Assert.IsNull(bridge.Queue(new Train(City, "recruit", 1)), "precondition: one group, the whole stock");
+        Assert.IsNull(bridge.Queue(new BuyArms((int)Training.ArmsNeeded(C, bridge.State, recruit, 1))), "precondition: a purchase after it");
+        Assert.IsFalse(ui.Q<Button>("city-train-recruit").enabledSelf,
+            "Train(2) would run in the first order's slot, before the purchase, with Arms for one group only");
+    }
+
     [Test]
     public void TrainingAcrossBothTracksStopsAtTheIdleCivilianLimit()
     {
@@ -897,6 +940,39 @@ public class CityPanelTests
         var result = bridge.EndTurn();
         Assert.IsEmpty(result.Rejected, "the sim takes the order");
         Assert.AreEqual(a, result.State.Corridors["burma_road"].Segments[0]?.Unit);
+    }
+
+    // Red-first prediction at 085944e62: the Build button is enabled because the panel does not ask the depopulation rule.
+    [Test]
+    public void ADepopulatedPlaceCrossingDisablesCorridorBuild()
+    {
+        var segment = C.Corridors.Single(x => x.Id == "burma_road").Segments[0];
+        var q = segment.Hexes[0][0];
+        var r = segment.Hexes[0][1];
+        var target = C.SettlementTargets.Single(x => x.Id == "jaffa");
+        var old = (target.Q, target.R);
+        try
+        {
+            target.Q = q;
+            target.R = r;
+            using var ui = new UiTestKit();
+            int pioneer = -1;
+            var bridge = Bridge(En, s =>
+            {
+                pioneer = AddHalutz(s);
+                s.Settlements["jaffa"] = new SettlementControl(depopulated: true);
+            });
+            using var panel = Panel(ui, bridge, En);
+            panel.Show(q, r);
+            var button = SegmentBox(ui, "burma_road", 1).Q<Button>($"corridor-build-{pioneer}");
+            Assert.IsFalse(button.enabledSelf,
+                "R-CTRL-020: the sim refuses a segment crossing a depopulated place");
+        }
+        finally
+        {
+            target.Q = old.Q;
+            target.R = old.R;
+        }
     }
 
     [Test]
