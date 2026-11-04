@@ -774,8 +774,9 @@ public class Gdd03BasicTrainingFixtureTests
     }
 
     // 53's maintainer call (not an owner ruling): formations are "pre-bound, empty ActiveService targets supplied by the
-    // tests". A cohort takes the first one in its camp's region that is neither claimed nor serving anyone; with none, the
-    // graduating month is refused with the state unchanged and the trainee keeps its course.
+    // tests". A cohort takes the first one in its camp's region that is neither claimed nor serving anyone (owner ruling,
+    // 4 November 2026, Q25, #1699 comment 6623136049); with none, the graduating month is refused with the state
+    // unchanged and the trainee keeps its course.
     [Fact] public void GraduationNeedsAFreeFormationInTheCampsRegion()
     {
         var c = Catalogue(); var s = State(c); var l = s.PopulationLedger;
