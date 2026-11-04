@@ -66,9 +66,10 @@ public class Gdd03CraftCourseFixtureTests
 
     const string GraduationMonth = Gdd03TrainingCentreFixture.GraduationMonthReason;
     const string CourseAtOpening = Gdd03CraftCourseFixture.CourseAtOpeningReason;
-    // The whole D3 reason is pinned: it must say the case is deferred and not ruled, and quote both sides unresolved.
-    const string QualifiedDeferred = "Deferred: #1668 D3 (deferred, not ruled: a trained or veteran farmer or pioneer starting the craftsman course. The #1698 body, agent-recorded scope, says \"The course cannot replace another trained profession\"; docs/GDD.md:349 (D3) says \"a Train order can take a qualified civilian, who then loses the qualification (R-QUAL-006)\"; R-QUAL-006 (docs/rules/mvp.md) says \"A Train order (R-TRAIN-001) takes the city's unqualified civilians first. A qualified civilian it has to take loses its qualification, in the order craftsmen, halutz groups with the least service, veterans (owner, 24 October 2026: \"Accept all as built\", https://github.com/eyalgolan/statecraft-israel/issues/1511#issuecomment-6375597377).\" No answer is chosen here.)";
-    const string CraftsmanDeferred = "Deferred: #1668 27M-5 (ruled: \"graduates may re-enrol at any time\", docs/gdd/training.md:66; not built here: no ruled text says which tier", SlotDeferred = "Deferred: #1668 Q52";
+    // A novice craftsman outside a course is not covered by the owner's 4 November 2026 answer, which names an apprentice
+    // or expert; the whole reason is pinned.
+    const string NoviceCraftsmanDeferred = "Deferred: #1698 (not ruled: a novice craftsman outside a course starting the craftsman course; the owner's 4 November 2026 answer, \"Keep their level (Recommended)\", covers an apprentice or expert craftsman).";
+    const string SlotDeferred = "Deferred: #1668 Q52";
 
     static void Unchanged(GameState s, Action act, Type expected, string? messagePrefix = null)
     {
@@ -135,31 +136,110 @@ public class Gdd03CraftCourseFixtureTests
         s2.PopulationLedger.Reconcile();
     }
 
-    // R-CRAFT-003: every other start is refused with the state unchanged. Plain refusals: a refugee, a free civilian not
-    // yet received, an unknown course, a course outside the person's region, a person already on a course. Deferred, not
-    // ruled (no answer chosen): a trained or veteran farmer or pioneer. The #1698 body (agent-recorded scope) says "The
-    // course cannot replace another trained profession"; docs/GDD.md:349 (D3) says "a Train order can take a qualified
-    // civilian, who then loses the qualification (R-QUAL-006)"; R-QUAL-006 says "A Train order (R-TRAIN-001) takes the city's
-    // unqualified civilians first. A qualified civilian it has to take loses its qualification, in the order craftsmen,
-    // halutz groups with the least service, veterans (owner, 24 October 2026: "Accept all as built",
-    // https://github.com/eyalgolan/statecraft-israel/issues/1511#issuecomment-6375597377)." Deferred too: any
-    // craftsman. Re-enrolment is ruled (docs/gdd/training.md:66, "graduates may re-enrol at any time"; 27M-5), but no ruled text says which tier a
-    // craftsman holds during and after a new craftsman course, so that part stays Deferred with that reason.
-    // R-CRAFT-003: every trained or veteran farmer or pioneer is refused with the pinned "deferred, not ruled" D3 reason and
-    // the state unchanged (see the comment above IneligibleStartsAreRefusedWithoutMutation for the three sources).
+    // R-CRAFT-003, R-QUAL-006, owner, 4 November 2026, on "#1698: may a trained or veteran farmer or pioneer start the
+    // craftsman course?": "Yes, lose old level (Recommended)". A trained or veteran farmer or pioneer starts the course as
+    // a novice craftsman under the same id and loses the farmer or pioneer level (D3, docs/GDD.md:349: "a Train order can
+    // take a qualified civilian, who then loses the qualification (`R-QUAL-006`)"). Work XP restarts at 0, as for a novice
+    // farmer; tools and their paid fact are kept. Cancelling leaves an ordinary civilian, not the old level, tools kept.
     [Theory]
     [InlineData(CivilianProfession.Farmer, CivilianTier.Trained)]
     [InlineData(CivilianProfession.Farmer, CivilianTier.Veteran)]
     [InlineData(CivilianProfession.Pioneer, CivilianTier.Trained)]
     [InlineData(CivilianProfession.Pioneer, CivilianTier.Veteran)]
-    public void QualifiedFarmersAndPioneersStayDeferredNotRuled(CivilianProfession profession, CivilianTier tier)
+    public void QualifiedFarmersAndPioneersStartAndLoseTheirLevel(CivilianProfession profession, CivilianTier tier)
     {
-        var c = Catalogue(); var s = State(c, Person(profession, tier, "tools-q"));
+        var c = Catalogue(); var s = State(c, Person(profession, tier, "tools-q")); var l = s.PopulationLedger;
         var f = new Gdd03CraftCourseFixture(c, s, Courses);
-        Unchanged(s, () => f.Start(12, CraftA, Month(s, 0)), typeof(NotSupportedException), QualifiedDeferred);
-        Assert.Equal(QualifiedDeferred, Assert.Throws<NotSupportedException>(() => f.Start(12, CraftA, Month(s, 0))).Message);
+        var before = l.Get(12); int count = l.Units.Count, next = l.NextPopulationId;
+        var m0 = Month(s, 0);
+        f.Start(12, CraftA, m0);
+        var p = l.Get(12);
+        Assert.Equal(PopulationStatus.Trainee, p.Status);
+        Assert.Equal(PopulationAssignmentKind.Course, p.Assignment.Kind); Assert.Equal(CraftA, p.Assignment.Target);
+        Assert.Equal(CivilianProfession.Craftsman, p.Profession); Assert.Equal(CivilianTier.Novice, p.Tier);
+        Assert.Equal(0, p.WorkXp);
+        AssertKept(before, p); Assert.Equal("tools-q", p.Equipment.ToolsId); Assert.True(p.Equipment.ToolsPaid);
+        f.Advance(12, m0);
+        f.Cancel(12);
+        var x = l.Get(12);
+        Assert.Equal(PopulationStatus.FreeCivilian, x.Status); Assert.Same(PopulationAssignment.Unassigned, x.Assignment);
+        Assert.Equal(CivilianProfession.None, x.Profession); Assert.Equal(CivilianTier.None, x.Tier); Assert.Equal(0, x.WorkXp);
+        AssertKept(before, x); Assert.Equal("tools-q", x.Equipment.ToolsId); Assert.True(x.Equipment.ToolsPaid);
+        Assert.Equal(count, l.Units.Count); Assert.Equal(next, l.NextPopulationId);
+        l.Reconcile();
     }
 
+    // R-CRAFT-003, R-QUAL-006, owner, 4 November 2026: "Yes, lose old level (Recommended)". The fixture's own trained
+    // farmer and veteran pioneer graduate as apprentice craftsmen, with tools kept.
+    [Theory]
+    [InlineData(TrainedFarmer)]
+    [InlineData(VeteranPioneer)]
+    public void AQualifiedFarmerOrPioneerGraduatesAsAnApprentice(int id)
+    {
+        var c = Catalogue(); var s = State(c); var l = s.PopulationLedger; var f = new Gdd03CraftCourseFixture(c, s, Courses);
+        var before = l.Get(id);
+        var m0 = Month(s, 0);
+        f.Start(id, CraftA, m0); f.Advance(id, m0); f.Advance(id, Month(s, 1)); f.Advance(id, Month(s, 2));
+        var g = l.Get(id);
+        Assert.Equal(PopulationStatus.FreeCivilian, g.Status); Assert.Same(PopulationAssignment.Unassigned, g.Assignment);
+        Assert.Equal(CivilianProfession.Craftsman, g.Profession); Assert.Equal(CivilianTier.Apprentice, g.Tier); Assert.Equal(0, g.WorkXp);
+        AssertKept(before, g); Assert.True(g.Equipment.ToolsPaid);
+        l.Reconcile();
+    }
+
+    // R-CRAFT-003, 27M-5 (docs/gdd/training.md:66, "graduates may re-enrol at any time") and owner, 4 November 2026, on
+    // "#1698: what level does a craftsman hold when they take the craftsman course again?": "Keep their level
+    // (Recommended)". An apprentice or expert craftsman starts the course again under the same id and keeps the tier and
+    // work XP on the course and after graduating: the course never lowers a qualification.
+    [Theory]
+    [InlineData(Apprentice)]
+    [InlineData(Expert)]
+    public void ReEnrolmentKeepsTheLevelDuringAndAfterTheCourse(int id)
+    {
+        var c = Catalogue(); var s = State(c); var l = s.PopulationLedger; var f = new Gdd03CraftCourseFixture(c, s, Courses);
+        var before = l.Get(id); int count = l.Units.Count, next = l.NextPopulationId;
+        var m0 = Month(s, 0);
+        f.Start(id, CraftA, m0);
+        var p = l.Get(id);
+        Assert.Equal(PopulationStatus.Trainee, p.Status);
+        Assert.Equal(PopulationAssignmentKind.Course, p.Assignment.Kind); Assert.Equal(CraftA, p.Assignment.Target);
+        Assert.Equal(CivilianProfession.Craftsman, p.Profession); Assert.Equal(before.Tier, p.Tier); Assert.Equal(before.WorkXp, p.WorkXp);
+        AssertKept(before, p);
+        f.Advance(id, m0); f.Advance(id, Month(s, 1));
+        Assert.Equal(before.Tier, l.Get(id).Tier); Assert.Equal(PopulationStatus.Trainee, l.Get(id).Status);
+        f.Advance(id, Month(s, 2));
+        var g = l.Get(id);
+        Assert.Equal(PopulationStatus.FreeCivilian, g.Status); Assert.Same(PopulationAssignment.Unassigned, g.Assignment);
+        Assert.Equal(CivilianProfession.Craftsman, g.Profession); Assert.Equal(before.Tier, g.Tier); Assert.Equal(before.WorkXp, g.WorkXp);
+        AssertKept(before, g);
+        Assert.Equal(count, l.Units.Count); Assert.Equal(next, l.NextPopulationId);
+        l.Reconcile();
+    }
+
+    // R-CRAFT-003, owner, 4 November 2026: "Keep their level (Recommended)". Cancelling a re-enrolled apprentice or expert
+    // at any counted turn keeps the craftsman profession, tier and work XP; only a novice's cancel makes an ordinary civilian.
+    [Theory]
+    [InlineData(Apprentice, 0)]
+    [InlineData(Apprentice, 2)]
+    [InlineData(Expert, 0)]
+    [InlineData(Expert, 1)]
+    public void CancellingAReEnrolmentKeepsTheLevel(int id, int counted)
+    {
+        var c = Catalogue(); var s = State(c); var l = s.PopulationLedger; var f = new Gdd03CraftCourseFixture(c, s, Courses);
+        var before = l.Get(id);
+        f.Start(id, CraftA, Month(s, 0));
+        for (int i = 0; i < counted; i++) f.Advance(id, Month(s, i));
+        f.Cancel(id);
+        var p = l.Get(id);
+        Assert.Equal(PopulationStatus.FreeCivilian, p.Status); Assert.Same(PopulationAssignment.Unassigned, p.Assignment);
+        Assert.Equal(CivilianProfession.Craftsman, p.Profession); Assert.Equal(before.Tier, p.Tier); Assert.Equal(before.WorkXp, p.WorkXp);
+        AssertKept(before, p);
+        l.Reconcile();
+    }
+
+    // R-CRAFT-003: every other start is refused with the state unchanged. Plain refusals: a refugee, a free civilian not
+    // yet received, an unknown course, a course outside the person's region, a person already on a course. Deferred: a
+    // novice craftsman outside a course, which the owner's 4 November 2026 answer (apprentice or expert) does not cover.
     [Fact] public void IneligibleStartsAreRefusedWithoutMutation()
     {
         var c = Catalogue(); var s = State(c); var f = new Gdd03CraftCourseFixture(c, s, Courses); var m = Month(s, 0);
@@ -171,11 +251,8 @@ public class Gdd03CraftCourseFixtureTests
         Unchanged(s, () => f.Start(SouthFree, CraftA, m), typeof(ArgumentException));
         Unchanged(s, () => f.Start(99, CraftA, m), typeof(ArgumentException));
         Unchanged(s, () => f.Start(Free, CraftA, null!), typeof(ArgumentNullException));
-        Unchanged(s, () => f.Start(TrainedFarmer, CraftA, m), typeof(NotSupportedException), QualifiedDeferred);
-        Unchanged(s, () => f.Start(VeteranPioneer, CraftA, m), typeof(NotSupportedException), QualifiedDeferred);
-        Unchanged(s, () => f.Start(Apprentice, CraftA, m), typeof(NotSupportedException), CraftsmanDeferred);
-        Unchanged(s, () => f.Start(Expert, CraftA, m), typeof(NotSupportedException), CraftsmanDeferred);
-        Unchanged(s, () => f.Start(NoviceCraftsman, CraftA, m), typeof(NotSupportedException), CraftsmanDeferred);
+        Unchanged(s, () => f.Start(NoviceCraftsman, CraftA, m), typeof(NotSupportedException), NoviceCraftsmanDeferred);
+        Assert.Equal(NoviceCraftsmanDeferred, Assert.Throws<NotSupportedException>(() => f.Start(NoviceCraftsman, CraftA, m)).Message);
         f.Start(Free, CraftA, m);
         Unchanged(s, () => f.Start(Free, CraftB, m), typeof(ArgumentException));
         Unchanged(s, () => f.Start(Free, CraftA, Month(s, 1)), typeof(ArgumentException));
@@ -211,8 +288,8 @@ public class Gdd03CraftCourseFixtureTests
     }
 
     // R-CRAFT-003, Q43(b) as in #2391 (Gdd03TrainingCentreFixture.GraduationMonthReason): a person released by a graduation
-    // cannot start a course in the graduation month, with any snapshot of it. From the next month an apprentice's
-    // re-enrolment is ruled (27M-5) but its tiers are not, so it stays Deferred.
+    // cannot start a course in the graduation month, with any snapshot of it. From the next month the apprentice may
+    // re-enrol (27M-5) and keeps the apprentice level (owner, 4 November 2026: "Keep their level (Recommended)").
     [Fact] public void AGraduateCannotStartACourseInTheGraduationMonth()
     {
         var c = Catalogue(); var s = State(c); var f = new Gdd03CraftCourseFixture(c, s, Courses);
@@ -223,7 +300,9 @@ public class Gdd03CraftCourseFixtureTests
         Unchanged(s, () => f.Start(Free, CraftB, graduation), typeof(ArgumentException), GraduationMonth);
         Unchanged(s, () => f.Start(Free, CraftA, Month(s, 2)), typeof(ArgumentException), GraduationMonth);
         Unchanged(s, () => f.Start(Free, CraftB, Month(s, 1)), typeof(ArgumentException), GraduationMonth);
-        Unchanged(s, () => f.Start(Free, CraftB, Month(s, 3)), typeof(NotSupportedException), CraftsmanDeferred);
+        f.Start(Free, CraftB, Month(s, 3));
+        Assert.Equal(CivilianProfession.Craftsman, s.PopulationLedger.Get(Free).Profession);
+        Assert.Equal(CivilianTier.Apprentice, s.PopulationLedger.Get(Free).Tier);
     }
 
     // R-CRAFT-003, #1698 follow-up ("On cancelling before qualifying they are an ordinary civilian again."), 27M-4 ("It is
@@ -368,8 +447,9 @@ public class Gdd03CraftCourseFixtureTests
         }
     }
 
-    // R-CRAFT-003: course ids are explicit and unique, and an inventory pupil at a craftsman course must be a novice
-    // craftsman with no teacher and an unfinished course.
+    // R-CRAFT-003: course ids are explicit and unique, and an inventory pupil at a craftsman course must be a craftsman
+    // (a novice, or a re-enrolled apprentice or expert: owner, 4 November 2026, "Keep their level (Recommended)") with no
+    // teacher and an unfinished course.
     [Fact] public void CourseInputsAreValidated()
     {
         var c = Catalogue(); var s = State(c);
@@ -388,5 +468,10 @@ public class Gdd03CraftCourseFixtureTests
         // An inventory pupil not started by this fixture counts a month whose opening holds the course.
         f.Advance(12, Month(good, 5));
         Assert.Equal(CivilianTier.Apprentice, good.PopulationLedger.Get(12).Tier);
+        var expertPupil = Person(CivilianProfession.Craftsman, CivilianTier.Expert, null, PopulationStatus.Trainee,
+            assignment: new PopulationAssignment(PopulationAssignmentKind.Course, CraftA, 2));
+        var expert = State(c, expertPupil); var fe = new Gdd03CraftCourseFixture(c, expert, Courses);
+        fe.Advance(12, Month(expert, 5));
+        Assert.Equal(CivilianTier.Expert, expert.PopulationLedger.Get(12).Tier);
     }
 }
