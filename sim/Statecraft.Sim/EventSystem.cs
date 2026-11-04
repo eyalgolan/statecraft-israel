@@ -51,7 +51,8 @@ namespace Statecraft.Sim
                 .ThenBy(e => e.Id, StringComparer.Ordinal)
                 .ToList();
             // R-OBJ-003, R-EVT-007: objective and Deport cards take no soft slot, so they fire however full the turn is.
-            var hardCount = eligible.Count(e => e.Anchor == "hard");
+            // A hard objective or Deport card takes no soft slot either, so it does not shrink the slots the others share.
+            var hardCount = eligible.Count(e => e.Anchor == "hard" && e.Objective == "" && e.Deported == "");
             bool TakesSoftSlot(GameEvent e) => e.Anchor != "hard" && e.Deported == "" && e.Objective == "";
             var chosen = new HashSet<string>(eligible.Where(e => !TakesSoftSlot(e))
                 .Concat(eligible.Where(TakesSoftSlot).Take(Math.Max(0, MaxSoftEventsPerTurn - hardCount))).Select(e => e.Id));

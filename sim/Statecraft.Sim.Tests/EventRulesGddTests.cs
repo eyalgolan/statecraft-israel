@@ -148,6 +148,25 @@ public class EventRulesGddTests
 
     // R-OBJ-003 (#2605): red before the fix because only the three ordinary soft events take the three slots and all
     // four same-turn objective cards are held back. Objective cards are ordered after the ordinary events as before.
+    // R-OBJ-003: a hard-anchored objective card takes no soft slot and leaves the three slots to the ordinary soft events.
+    [Fact]
+    public void AHardObjectiveCardLeavesAllThreeSoftSlots()
+    {
+        var c = ContentLoader.Load(Fixture.Write());
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        c.Objectives.Add(new Objective { Id = "objective_h", Card = "card_h" });
+        c.Events.Add(new GameEvent { Id = "card_h", Title = "objective_h", Text = "Done.", From = s.Date, Objective = "objective_h", Anchor = "hard",
+            Options = new List<EventOption> { new EventOption { Id = "ok", Text = "Continue", Historical = true } } });
+        s.Objectives["objective_h"] = s.Date;
+        for (int i = 0; i < 3; i++)
+            c.Events.Add(new GameEvent { Id = "soft_" + i, Title = "soft", Text = "Soft.", From = s.Date,
+                Options = new List<EventOption> { new EventOption { Id = "ok", Text = "Continue", Historical = true } } });
+
+        EventSystem.Trigger(c, s, new List<Cause>());
+
+        Assert.Equal(new[] { "soft_0", "soft_1", "soft_2", "card_h" }, s.PendingEvents.OrderBy(x => x == "card_h" ? 1 : 0).ToArray());
+        Assert.Empty(s.CappedEvents);
+    }
     [Fact]
     public void FourObjectiveCardsDoNotTakeTheThreeSoftSlots()
     {
