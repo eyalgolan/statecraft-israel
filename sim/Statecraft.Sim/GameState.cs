@@ -153,7 +153,10 @@ namespace Statecraft.Sim
         public int DisplacedByPlayer;
 
         public double TotalPopulation => PopulationLedger.IsInitialized
-            ? PopulationLedger.TotalPeople : Population.Values.Sum();
+            // Ordinal key order: floating-point addition is not associative, and Dictionary's insertion
+            // order is an implementation detail, so the sum must not depend on it (#2511).
+            ? PopulationLedger.TotalPeople
+            : Population.OrderBy(p => p.Key, StringComparer.Ordinal).Sum(p => p.Value);
 
         public GameState Clone()
         {
