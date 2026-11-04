@@ -96,7 +96,9 @@ namespace Statecraft.Game.Map.Collection
             var spin = Quaternion.AngleAxis(-(float)((double)seconds * SpitfireLoop.PropDegreesPerSecond % 360.0), Vector3.up);
             for (int i = 0; i < props.Length; i++) props[i].localRotation = spin;
             if (flag != null) flag.position = drawn - forward * half.x + Vector3.up * (SpitfireLoop.TopOver(half, bank) + FlagClearM + flagHalf);
-            if (shadow != null && ground != null) SpitfireLoop.LayShadow(shadow, ground, seaY, shadowHalf, drawn, forward, bank);
+            // Cut the sun's ray to convergence: the shadow falls up the rising ground east of Tel Aviv, where the Spitfire's two
+            // fixed-point steps miss by about 200 m (SpitfireLoop.LayShadow).
+            if (shadow != null && ground != null) SpitfireLoop.LayShadow(shadow, ground, seaY, shadowHalf, drawn, forward, bank, converge: true);
             bombs?.Sample(u);
         }
     }

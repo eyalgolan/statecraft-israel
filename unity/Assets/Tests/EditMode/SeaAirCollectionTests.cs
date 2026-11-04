@@ -689,7 +689,9 @@ public class SeaAirCollectionTests
                     var s = shadow.position; float g = Height(s);
                     Assert.That(s.y - g, Is.InRange(0f, SpitfireLoop.ShadowLiftM + 400f), $"on the ground under it at {t:0.0} s");
                     var cast = drawn + SpitfireLoop.SunRay * ((drawn.y - g) / -SpitfireLoop.SunRay.y);
-                    Assert.Less(Xz(s - cast).magnitude, 0.03f * (drawn.y - g), $"on the sun's ray through the aircraft at {t:0.0} s");
+                    float miss = Xz(s - cast).magnitude;
+                    Assert.Less(miss, 0.03f * (drawn.y - g), $"on the sun's ray through the aircraft at {t:0.0} s: ground {g:0} m under the shadow, "
+                        + $"{Height(drawn):0} m under the aircraft, {drawn.y:0} m aircraft, {miss:0} m off the ray");
                     var heading = SeaAirCollection.DakotaLoopHeading(u);
                     Assert.Greater(Vector3.Dot(shadow.forward, new Vector3(heading.x, 0f, heading.y)), 0.999f, "turned with its heading");
                     Assert.That(shadow.lossyScale.x / span, Is.InRange(0.4f, 0.6f), "half as wide, about (narrower in a bank)");
