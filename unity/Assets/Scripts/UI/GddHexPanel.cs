@@ -449,6 +449,7 @@ namespace Statecraft.Game.UI
                 case "no_resource": return text.Format("city.project_reason.no_resource", townName(reason.Values[0]), ResourceName(text, reason.Values[1]),
                     ContentNames.Of(text, c.ProjectKinds.First(x => x.Id == reason.Values[2])));
                 case "city_cap": return text.Format("city.project_reason.city_cap", townName(reason.Values[0]));   // R-PROJ-001, gdd-0.3 (#1700)
+                case "repair_city_hex": return text.Format("city.project_reason.repair_city_hex", townName(reason.Values[0]));   // R-HOUSE-006, gdd-0.3
                 case "turn_cap": return text.Format("city.project_reason.turn_cap", int.Parse(reason.Values[0], CultureInfo.InvariantCulture));
                 default: return reason.Text;
             }

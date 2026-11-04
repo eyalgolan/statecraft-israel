@@ -19,6 +19,14 @@
 #     arms_workshop cost 15 and work 3). Built, it gives one workshop worker slot (`worker_slots`, the catalogue's 1) and no
 #     housing, condition or job slots. Its cycle (R-ARMS-006) reads workshop.staffed_turns and workshop.cost there; the
 #     owner's rulings 27M-11 to 27M-14 and Q55 are in docs/rules/mvp.md R-ARMS-004 to R-ARMS-007.
+#   housing_repair: GDD 0.3 only (R-HOUSE-006, #1700, #1703): 0.5 Money and 1 work (maintainer call (not an owner ruling):
+#     1 work is one turn of work, as arms_workshop's work 3 is its 3 turns) for +10 percentage points of the city's
+#     housing condition (owner, 1 November 2026: "Fixed price 0.5 Money + 1 work"; docs/GDD.md "Housing repair price";
+#     gdd03-balance.yaml housing_repair cost 0.5, work 1, condition_pp 10, which the loader checks). No capacity or job
+#     slots. It is done on the city's own hex and takes no hex of its own, so it is left as no record once done (owner,
+#     3 November 2026: "No hex needed (Recommended)").
+#     Its name_he "שיפוץ דיור": native review: owner, 3 Nov 2026 ("Approve 'שיפוץ דיור'", recorded on #564,
+#     https://github.com/eyalgolan/statecraft-israel/issues/564#issuecomment-6611646005).
 # name: the phrase the player reads in a sentence ("a transit camp").
 # name_he: the Hebrew UI's noun for the kind (#1122, owner ruling 3), optional: without it the Hebrew UI shows `name`.
 #   Draft wording, not a native-language approval: name_he_review: agent-checked until a native speaker reviews it.
@@ -29,3 +37,4 @@ projects:
   - { id: industry, name: an industry project, name_he: מיזם תעשייה, name_he_review: agent-checked, cost: 2, turns: 6, capacity: 0, condition: 0, job_slots: 5 }        # DESIGN VALUE: owner-set balance, not a historical figure (D-C6, D-A3; Q-PROJ-1: job slots)
   - { id: winery, name: a winery, name_he: יקב, name_he_review: agent-checked, cost: 2, turns: 6, capacity: 0, condition: 0, job_slots: 10, requires: vineyards }   # DESIGN VALUE: owner-set balance, not a historical figure (D-D8, D-C6; Q-SPEC-2: the specialised industry)
   - { id: arms_workshop, name: an arms workshop, name_he: סדנת נשק, name_he_review: agent-checked, cost: 15, turns: 3, capacity: 0, condition: 0, job_slots: 0, worker_slots: 1, rulesets: [gdd-0.3] }   # DESIGN VALUE: owner-set balance, not a historical figure (D-G6, D-A3; #1701 OQ2, owner 2 November 2026: IL 15m and 3 turns, the recommended option)
+  - { id: housing_repair, name: a housing repair, name_he: שיפוץ דיור, name_he_review: agent-checked, cost: 0.5, turns: 1, capacity: 0, condition: 0.1, job_slots: 0, rulesets: [gdd-0.3] }   # DESIGN VALUE: owner-set balance, not a historical figure (D-D2, D-C6, D-A3; #1700, #1703; owner 1 November 2026: "Fixed price 0.5 Money + 1 work", docs/GDD.md "Housing repair price")

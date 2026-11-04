@@ -55,11 +55,14 @@ namespace Statecraft.Sim
             : "";
 
         /// <summary>The GDD minister system a city project's kind belongs to (R-MIN-001; Q-MIN-1): housing, a transit
-        /// camp included (Q-HOUSE-3's low-condition housing type), and industry construction are Labour's; a kind the map
-        /// does not name is "" (neutral).</summary>
+        /// camp included (Q-HOUSE-3's low-condition housing type) and a gdd-0.3 housing repair (R-HOUSE-006; maintainer call
+        /// (not an owner ruling): a repair counts as a Housing build, so housing construction's multiplier applies and with a
+        /// weak minister it can take more than one turn), and industry construction are Labour's; a kind the map does not
+        /// name is "" (neutral).</summary>
         public static string SystemOfKind(string kind) =>
             kind == "industry" ? EffectsSystem.IndustryConstructionSystem
-            : kind == "housing" || kind == "transit_camp" ? EffectsSystem.HousingConstructionSystem
+            // HousingRepair here is a maintainer call, not an owner ruling (R-HOUSE-006): see the summary above.
+            : kind == "housing" || kind == "transit_camp" || kind == HousingRepair ? EffectsSystem.HousingConstructionSystem
             : "";
 
         /// <summary>The turns, this one included, in which the unit completes the site's remaining whole work and
@@ -278,14 +281,25 @@ namespace Statecraft.Sim
         /// what a turn's Rejected list and a save carry; the UI words it in its language (SimBridge.ReasonText).</summary>
         public const string RefusedCityCap = "{0} has started a city project this turn";
 
-        /// <summary>The city project at hex (q, r), being built or built, or null (Q-PROJ-2: one project or placement a hex).</summary>
-        public static CityProject? CityProjectAt(GameState s, int q, int r) => s.CityProjects.Values.FirstOrDefault(p => p.Q == q && p.R == r);
+        /// <summary>R-HOUSE-006 (#1700, #1703), gdd-0.3 only (the loader keeps the row out of every other ruleset): the
+        /// projects.yaml id of the housing repair, a city project done on its city's own hex with no hex of its own (owner,
+        /// 3 November 2026: "No hex needed (Recommended)").</summary>
+        public const string HousingRepair = "housing_repair";
+
+        /// <summary>R-HOUSE-006: a housing repair's refusal on a hex other than its city's own, formatted with the settlement's
+        /// name ({0}).</summary>
+        public const string RefusedRepairCityHex = "A housing repair is done on {0}'s own hex";
+
+        /// <summary>The city project at hex (q, r), being built or built, or null (Q-PROJ-2: one project or placement a hex). A
+        /// housing repair has no hex of its own (R-HOUSE-006), so it is never the project at a hex.</summary>
+        public static CityProject? CityProjectAt(GameState s, int q, int r) => s.CityProjects.Values.FirstOrDefault(p => p.Q == q && p.R == r && p.Kind != HousingRepair);
 
         /// <summary>R-PROJ-001: null when city project <paramref name="kind"/> may be started for <paramref name="city"/> on hex
         /// (q, r) now, else the reason. Refused for an unknown kind or city; a kind whose resource the city lacks (R-PROJ-005); a
         /// transit camp without the ma'abarot policy (Q-HOUSE-3, D-D3: the policy carries its sourced date); a hex that is not
         /// land, is further than map_action_max_distance from the city's settlement hex, or holds a placement or another city
-        /// project (Q-PROJ-2); under gdd-0.3, once the city started <see cref="Gdd03CityStartsPerTurn"/> this turn; and once
+        /// project (Q-PROJ-2), except that a gdd-0.3 housing repair must be on the city's own hex and may be ordered whatever it
+        /// holds (R-HOUSE-006); under gdd-0.3, once the city started <see cref="Gdd03CityStartsPerTurn"/> this turn; and once
         /// map_actions_per_turn city projects were started this turn (Q-PROJ-4). A short Treasury is not a reason: it borrows
         /// (Q-MONEY-3). The reference player asks this before it orders.</summary>
         public static string? CheckCity(Content c, GameState s, string kind, string city, int q, int r) => CheckCityReason(c, s, kind, city, q, r)?.Text;
@@ -293,7 +307,8 @@ namespace Statecraft.Sim
         /// <summary><see cref="CheckCity"/>'s one validator (#1122, owner ruling 2): null when the project may be started, else a
         /// stable kind and invariant values for a UI to word in its language (the map actions' pattern), plus the English text.
         /// The kinds, in check order: unknown_kind, unknown_city, locked (kind), maabarot_policy, no_resource (city, resource, kind), not_land,
-        /// too_far (distance, city), occupied (the placement's action), occupied_project (the project's kind), city_cap (city;
+        /// too_far (distance, city), repair_city_hex (city; a housing repair off its city's own hex), occupied (the placement's
+        /// action), occupied_project (the project's kind), city_cap (city;
         /// gdd-0.3 only), turn_cap (cap).</summary>
         public static MapActionReason? CheckCityReason(Content c, GameState s, string kind, string city, int q, int r)
         {
@@ -316,9 +331,16 @@ namespace Statecraft.Sim
             if (!InReach(c, s, city, q, r))
                 return new MapActionReason("too_far", FormattableString.Invariant($"This hex is more than {max} {(max == 1 ? "hex" : "hexes")} from {name}"),
                     max.ToString(System.Globalization.CultureInfo.InvariantCulture), city);
-            if (MapActions.At(s, q, r) is Placement placed)
+            // R-HOUSE-006 (owner, 3 November 2026: "No hex needed (Recommended)"): a repair is done on the city itself, so it
+            // goes on the city's own hex whatever that hex holds, and takes none (Q-PROJ-2 is for the other kinds).
+            if (kind == HousingRepair)
+            {
+                if (Distance(c, city, q, r) != 0)
+                    return new MapActionReason("repair_city_hex", string.Format(System.Globalization.CultureInfo.InvariantCulture, RefusedRepairCityHex, name), city);
+            }
+            else if (MapActions.At(s, q, r) is Placement placed)
                 return new MapActionReason("occupied", $"This hex already has {PlayerText.MapAction(c, placed.Action)}", placed.Action);
-            if (CityProjectAt(s, q, r) is CityProject other)
+            else if (CityProjectAt(s, q, r) is CityProject other)
                 return new MapActionReason("occupied_project", $"This hex already has {c.ProjectKinds.First(x => x.Id == other.Kind).Name}", other.Kind);
             // R-PROJ-001 under gdd-0.3 (owner, 3 November 2026: "One per city, plus 2 nationally"): the city's own limit,
             // before the national one, so a player over both sees the city's reason.
@@ -442,7 +464,8 @@ namespace Statecraft.Sim
         /// <summary>R-PROJ-003, step 5 of the turn (D-A6), after the pioneer work: in ascending id, each city project being built
         /// has one turn less to go. One that reaches 0 is built on <paramref name="next"/>, the turn's end date, and adds its
         /// kind's housing capacity, condition (kept from 0 to 1) and job slots to its city, once: a built project is never
-        /// advanced again. R-CITY-010: a project in a city the enemy holds keeps its record as it is. R-CITY-011 (gdd-0.3 only):
+        /// advanced again, except a gdd-0.3 housing repair, whose record then leaves the state (R-HOUSE-006: it has no hex to
+        /// keep). R-CITY-010: a project in a city the enemy holds keeps its record as it is. R-CITY-011 (gdd-0.3 only):
         /// a project gains the turn's progress only when it has a builder and its city still has that person without a job
         /// (each project with a builder takes one, in ascending id); otherwise it waits with its record as it is, and the turn
         /// report says why. Money is never an input to progress.</summary>
@@ -474,7 +497,8 @@ namespace Statecraft.Sim
                 var whole = (int)Math.Floor(acc);
                 acc -= whole;
                 if (p.TurnsLeft > whole) { s.CityProjects[p.Id] = p.WithProgress(p.TurnsLeft - whole, acc); continue; }
-                s.CityProjects[p.Id] = p.Built(next);
+                if (p.Kind == HousingRepair) s.CityProjects.Remove(p.Id);   // R-HOUSE-006: no hex, so nothing is left
+                else s.CityProjects[p.Id] = p.Built(next);
                 var k = c.ProjectKinds.First(x => x.Id == p.Kind);
                 var city = s.Cities[p.City];
                 var condition = city.Condition is double now ? Math.Min(1.0, Math.Max(0.0, now + k.Condition)) : (double?)null;
