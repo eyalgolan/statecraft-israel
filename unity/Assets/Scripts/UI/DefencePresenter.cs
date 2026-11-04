@@ -152,9 +152,15 @@ namespace Statecraft.Game.UI
                 row.EnableInClassList("rung-current", rung == s.Rung);
                 row.EnableInClassList("rung-target", rung == target && target != s.Rung);   // the level an order will move to
             }
-            string NameOrVacant(Person? p) => p == null ? text["cabinet.vacant"] : ContentNames.Of(text, p);
+            // The header passes the office titles through ContentNames.Of, so a woman Defence Minister reads
+            // "שרת הביטחון" (offices.yaml title_he_f) like every other title path (#2533).
+            string TitleOrVacant(string office) {
+                var holder = Cabinet.Holder(c, s, office);
+                return holder == null ? text["cabinet.vacant"]
+                    : ContentNames.Of(text, c.Offices.First(o => o.Id == office), holder, s.Date);
+            }
             screen.Q<Label>("defence-command").text = text.Format("defence.command",
-                NameOrVacant(Cabinet.Holder(c, s, "defense_minister")), NameOrVacant(Cabinet.Holder(c, s, "chief_of_staff")));
+                TitleOrVacant("defense_minister"), TitleOrVacant("chief_of_staff"));
             // One card per person: a leader who holds several of these offices (Ben-Gurion, Prime Minister and Minister of
             // Defense) has one card listing them all; a vacancy keeps its own card.
             var lineup = Cabinet.Lineup(c, s);
