@@ -98,7 +98,11 @@ public class TopBarTests
             {
                 foreach (var (name, delta) in new[] { ("treasury", PlayerText.MoneyChange(C, "treasury", -12.4)), ("immigration", text.Format("hud.delta_people", 12345.0)),
                                                       ("security", "-10%"), ("support", "-10%"), ("cohesion", "-10%"), ("standing", "+10%"), ("fx", PlayerText.MoneyChange(C, "fx_reserves", 12.5)) })
-                    root.Q<Label>(name + "-delta").text = delta;
+                {
+                    var label = root.Q<Label>(name + "-delta"); label.text = delta;
+                    // The classes its sign gives (HudPresenter.Set), so the up or down mark's room is in the fit too (L1, #2340).
+                    label.EnableInClassList("delta-up", delta.Contains("+")); label.EnableInClassList("delta-down", delta.Contains("-"));
+                }
                 foreach (var (name, value) in new[] { ("treasury", PlayerText.Money(C, "treasury", -123.4)), ("immigration", text.Format("hud.people", 123456.0)),
                                                       ("fx", PlayerText.Money(C, "fx_reserves", 123.4)), ("security", "100%"), ("support", "100%"), ("cohesion", "100%"), ("standing", "100%") })
                     root.Q<Label>(name + "-value").text = value;
@@ -134,6 +138,53 @@ public class TopBarTests
         }
     }
 
+
+    /// <summary>L1 (#2340): every rise and fall in the bar carries a mark besides its green or red, which deuteranopia cannot
+    /// tell apart. In the room before the change (HudPresenter.ChangeMarkPadPx; its right side in the mirrored Hebrew bar) the
+    /// rendered bar has ink in the change's colour whose bottom row is at least twice as wide as its top row for a rise (a
+    /// triangle pointing up, its base below), and the other way round for a fall. With the widest values, which rise and
+    /// fall, at 1920x1080 and 1280x720.</summary>
+    [UnityTest]
+    public IEnumerator EveryRiseAndFallCarriesAnUpOrDownMark([Values(false, true)] bool hebrew, [Values(1920, 1280)] int w)
+    {
+        var problems = new List<string>(); int ups = 0, downs = 0;
+        yield return Rendered(w, w * 9 / 16, hebrew, (root, text) =>
+        {
+            var rt = ((IRuntimePanel)root.panel).panelSettings.targetTexture;
+            var tex = new Texture2D(rt.width, rt.height, TextureFormat.RGBA32, false);
+            RenderTexture.active = rt; tex.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0); tex.Apply(); RenderTexture.active = null;
+            try
+            {
+                float k = rt.width / root.panel.visualTree.layout.width;   // texture pixels per panel pixel
+                foreach (var id in HudModel.MeterIds)
+                {
+                    var d = root.Q<Label>(id + "-delta");
+                    bool up = d.ClassListContains("delta-up"), down = d.ClassListContains("delta-down");
+                    if (root.Q("meter-" + id).resolvedStyle.display == DisplayStyle.None || !up && !down) continue;
+                    if (up) ups++; else downs++;
+                    var b = d.worldBound; float x0 = hebrew ? b.xMax - HudPresenter.ChangeMarkPadPx : b.xMin;
+                    var rows = new List<int>();   // texture rows from the top, one entry per ink pixel
+                    for (int x = Mathf.FloorToInt(x0 * k); x < Mathf.CeilToInt((x0 + HudPresenter.ChangeMarkPadPx) * k); x++)
+                        for (int y = Mathf.FloorToInt(b.yMin * k); y < Mathf.CeilToInt(b.yMax * k); y++)
+                        {
+                            var c = tex.GetPixel(x, rt.height - 1 - y);   // ReadPixels row 0 is the bottom
+                            bool ink = up ? c.g - c.r > 0.15f && c.g - c.b > 0.15f : c.r - c.g > 0.25f && c.r - c.b > 0.25f;   // --up, --down
+                            if (ink) rows.Add(y);
+                        }
+                    // A triangle is widest at its base and one point at its tip: compare the ink in its first and last rows.
+                    int top = rows.Count == 0 ? 0 : rows.Min(), bottom = rows.Count == 0 ? 0 : rows.Max();
+                    int first = rows.Count(r => r == top), last = rows.Count(r => r == bottom);
+                    int toward = up ? last : first, away = up ? first : last;   // the base's row, the tip's row
+                    if (rows.Count < 8 || toward < 2 || toward < 2 * away)
+                        problems.Add($"{w} {(hebrew ? "he" : "en")} {id} ({(up ? "rise" : "fall")} \"{d.text}\"): {rows.Count} ink px, {first} in the top row, {last} in the bottom row");
+                }
+            }
+            finally { Object.DestroyImmediate(tex); }
+        });
+        Assert.That(ups, Is.GreaterThan(0), "precondition: a rise is shown");
+        Assert.That(downs, Is.GreaterThan(0), "precondition: a fall is shown");
+        Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
 
     [UnityTest]
     public IEnumerator LandscapeSafeInsetsKeepCaptionInkDisjoint()

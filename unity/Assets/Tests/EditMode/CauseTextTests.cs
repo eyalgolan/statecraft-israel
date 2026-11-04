@@ -251,6 +251,23 @@ public class CauseTextTests
         }
     }
 
+    /// <summary>R-EFX-009 (#2457): the Debt line an option's debt_dollars writes (an EventAmount cause on "debt") is worded
+    /// in both languages: English is the Message and starts "Debt"; Hebrew names חוב with the event's amount and title.</summary>
+    [Test]
+    public void TheEventDebtLineIsWordedInBothLanguages()
+    {
+        var debt = new Cause("events", "debt", 18.564, $"{PlayerText.Change(C, "debt", 18.564)} (Bonds)",
+            key: CauseKeys.EventAmount, args: new[] { "Bonds", "אג״ח ישראל" });
+        var en = CauseText.Line(debt, C, NoRows, En);
+        Assert.AreEqual(debt.Message, en);
+        StringAssert.StartsWith("Debt", en);
+        var he = CauseText.Line(debt, C, NoRows, He);
+        StringAssert.Contains("חוב", he);
+        StringAssert.Contains(PlayerText.MoneyChange(C, "debt", 18.564), he);
+        StringAssert.Contains("אג״ח ישראל", he);
+        AssertHebrew(he, debt.Key);
+    }
+
     [Test]
     public void AResolvedEventUsesItsHistoricalContentSnapshots()
     {

@@ -296,3 +296,37 @@ def test_advisors_and_encyclopedia_stay_english_or_hebrew(langs):
     key = next(r["key"] for r in translate.catalog() if r["key"].startswith("ui:encyclopedia."))
     with pytest.raises(translate.Refused, match="English or Hebrew only"):
         translate.save("fr", {key: "Comment jouer"}, {}, dry=True)
+
+
+FIXTURE = translate.ROOT / "sim/Statecraft.Sim.Tests/translations_fixture"
+
+
+def test_inline_hebrew_writes_the_shared_fixture_byte_for_byte():
+    # The sim's TranslationsTests checks Translations.InlineHebrew + Write against the same expected bodies (#1626).
+    got = translate.inline_hebrew(FIXTURE / "content", FIXTURE / "ui/strings.en.yaml", FIXTURE / "ui/strings.he.yaml")
+    for name, body in zip(("ui", "events", "content"), got):
+        assert body == (FIXTURE / f"expected/he/{name}.yaml").read_text(encoding="utf-8"), name
+
+
+def test_inline_hebrew_reads_back_as_the_real_hebrew():
+    ui, events, content = translate.inline_hebrew(translate.CONTENT, translate.UI_EN, translate.UI_HE)
+    texts, flagged = translate.load("he")
+    assert {f"ui:{k}": v for k, v in yaml12.load(ui).items()} == {k: v for k, v in texts.items() if k.startswith("ui:")}
+    back = {f"content:{k}": e["text"] for k, e in yaml12.load(content).items()}
+    assert back == {k: v for k, v in texts.items() if k.startswith("content:")}
+    assert {f"content:{k}" for k, e in yaml12.load(content).items() if e.get("review")} == \
+        {k for k in flagged if k.startswith("content:")}
+    assert {f"event:{k}" for k, e in yaml12.load(events).items() if e.get("review")} == \
+        {k for k in flagged if k.startswith("event:")}
+
+
+@pytest.mark.parametrize("key", ["1948", "null", "Null", "~", "true", "FALSE", "1e3", ".5", "-1", "0x1f", ".inf",
+                                 "on", "Off", "yes", "N", "y", "a b", "a:b", ""])
+def test_a_key_any_yaml_reader_would_type_or_split_is_quoted(key):
+    out = translate._dump("", {key: "x"})
+    assert out.startswith('"') and yaml12.load(out) == {key: "x"}
+
+
+@pytest.mark.parametrize("key", ["alpha", "a.one", "first_truce", "1948-05-15", "v1", "nully", "yes_vote"])
+def test_a_plain_key_stays_plain(key):
+    assert translate._yaml_key(key) == key

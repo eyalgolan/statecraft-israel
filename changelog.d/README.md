@@ -1,6 +1,6 @@
 # Changelog fragments
 
-A pull request that changes the game (`sim/`, `content/`, `unity/`) can add its changelog entry here as a new file
+A pull request that changes the game (`sim/`, `content/`, `translations/`, `unity/`) can add its changelog entry here as a new file
 instead of editing [CHANGELOG.md](../CHANGELOG.md). Two pull requests never add the same file, so they never conflict.
 
 - Name the file after the branch or the issue: `changelog.d/<branch-or-issue>.md`, for example `changelog.d/1116.md`.

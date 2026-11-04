@@ -18,8 +18,9 @@ public class NoAttentionTests
     {
         foreach (var r in c.EraRules.Values.Append(c.Rules)) { r.AttentionCost.Clear(); r.AttentionPerTurn=double.NaN; r.RungAttentionStep=double.NaN; }
     }
+    // R-WAR-005 (#1709): gdd-0.3's quiet-turn counts and the turn's engaged fronts are taken out with the ledger.
     internal static string WithoutLegacyAccounting(string canonical) =>
-        Regex.Replace(Regex.Replace(canonical, @"\npopulation-ledger\{(?:\n  [^\n]*)*", "").Replace("ruleset=gdd-0.3;", ""), @"\natt=[^\n]*", "");
+        Regex.Replace(Regex.Replace(canonical, @"\n(?:population-ledger|quiet)\{(?:\n  [^\n]*)*|\nengaged\[(?:\n  [^\n]*)*", "").Replace("ruleset=gdd-0.3;", ""), @"\natt=[^\n]*", "");
     static bool Unavailable(string kind) => kind is "map_action" or "set_mobilization" or "security_order";
     static (Content c,GameState s,Command valid,Command invalid) Case(string kind,bool modern)
     {

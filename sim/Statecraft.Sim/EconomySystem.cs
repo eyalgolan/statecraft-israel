@@ -35,8 +35,13 @@ namespace Statecraft.Sim
         /// Money, R-MONEY-001), its Delta that change: a Treasury line, and a city's job income (R-CITY-002), whose Target is the
         /// city. A borrowing line (Target debt) is not one: it moves the Treasury and the Debt by the same amount, and the cost it
         /// borrowed for has its own Treasury line. The turn's lines it picks add up to the change (MoneyCausesTests); the turn
-        /// report and the meter tip show the largest (HudModel.Causes).</summary>
-        public static bool MovesMoney(Cause w) => w.Target == "treasury" || w.Key == CauseKeys.WagesPaid;
+        /// report and the meter tip show the largest (HudModel.Causes). An event's Debt line (R-EFX-009, #2457) is one too: the
+        /// Debt it adds has no Treasury line, so it moves the Money (net) by <see cref="MoneyDelta"/>, its Delta negated.</summary>
+        public static bool MovesMoney(Cause w) => w.Target == "treasury" || w.Key == CauseKeys.WagesPaid
+            || (w.Target == "debt" && w.Key == CauseKeys.EventAmount);
+
+        /// <summary>The change a <see cref="MovesMoney"/> line makes to the Money (net): its Delta, negated for a Debt line.</summary>
+        public static double MoneyDelta(Cause w) => w.Target == "debt" ? -w.Delta : w.Delta;
 
         /// <summary>#2212: the one Money line for the causes a list leaves out. The turn report and the meter tip show the
         /// largest Money causes (HudModel.Causes, at most HudModel.MaxCauses); this is the sum of the turn's other lines
@@ -45,7 +50,7 @@ namespace Statecraft.Sim
         /// (PlayerText.MoneyChange's rounding). The line is the UI's, never one of the turn's (StepResult.Why).</summary>
         public static Cause? OtherMoney(Content c, IEnumerable<Cause> why, IReadOnlyCollection<Cause> shown)
         {
-            var rest = why.Where(w => MovesMoney(w) && !shown.Contains(w)).Sum(w => w.Delta);
+            var rest = why.Where(w => MovesMoney(w) && !shown.Contains(w)).Sum(MoneyDelta);
             if (PlayerText.MoneyChange(c, "treasury", rest) == PlayerText.MoneyChange(c, "treasury", 0)) return null;
             return new Cause("economy", "treasury", rest, $"{PlayerText.Change(c, "treasury", rest)} (other causes)", key: CauseKeys.MoneyOther);
         }

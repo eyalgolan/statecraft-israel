@@ -1,9 +1,12 @@
 # Camp 80, Tzrifin and the Hula site rows: source comparison (#785)
 
-**Research draft; AI reads only; a person's check pending.** Read on 2 November 2026 (UTC).
+**Research note.** Original comparison read on 2 November 2026 (UTC).
+The two Hula web sources were read again by the agent on 4 November 2026, as recorded below.
+**A person's check remains pending**, including the owner's clarification of the agent-only read's tag.
+Camp 80 and Tzrifin retain their pending checks.
 This is the four-row slice [approved by the owner](https://github.com/eyalgolan/statecraft-israel/issues/785#issuecomment-6584328372)
 and [claimed before work](https://github.com/eyalgolan/statecraft-israel/issues/785#issuecomment-6590819261).
-Refs #785 only. Its person's-check Done-when remains open.
+Refs #785 only. The pending check, remaining source gaps, historical-map clearance and sensitivity work keep the issue open.
 
 ## Scope and method
 
@@ -15,7 +18,8 @@ its earlier map reads are not new map verification here. The existing
 [seven-row note](sites-draft-rows-check-785.md) and [Kiryat Shmona / Beit Shemesh note](sites-ks-bs-check-785.md)
 cover other slices.
 
-Every finding below is **an agent read 2 November 2026; a person's check pending**. “Matches” means the identified
+The original findings below are **agent reads 2 November 2026; a person's check pending**,
+except for the claims explicitly rechecked in the 4 November Hula follow-up. “Matches” means the identified
 source prints the claim, not that a historian or sensitivity reviewer approved it. Wikipedia is secondary;
 its citation to another publication is not a read of that publication. The PDFs were searched through their
 text layers and the cited dates, coordinate line and map captions were checked against rendered pages.
@@ -27,8 +31,8 @@ No source image, traced boundary or dataset is added.
 |---|---|---|---|
 | `camp_80` | Gshur dates the move from Kfar Yona to Camp 80 near Pardes Hanna to 13 July 1948; Gshur and the Nahal Association both describe training there. | Gshur gives early October for the first course's end; the Association gives September. These are retained as different accounts. | A person's source check; exact course-end day and historical camp footprint remain gaps. |
 | `tzrifin` | The 2016 survey describes Compound 1, gives its point, and reproduces earlier plans/aerial imagery. Hebrew Wikipedia prints the row's capture dates and Bahad 4 start year. | A modern compound point and a planning boundary are not the whole 1948–51 camp. The Wikipedia-dependent days/year are not independently established by this survey. | A person's check of the underlying dated sources and historical camp location; the existing sensitivity review remains open. |
-| `hula` | FRUS distinguishes the northern swamp/lake drainage from preliminary Jordan works below the lake in the DMZ. JTA reports works resuming in March 1951. | JTA places swamp drainage inside the DMZ; FRUS places the swamp/lake drainage outside it. This source conflict remains unresolved. Neither report validates the row's rebaked swamp hex or clears it against historical villages/cadastral boundaries. | A person's source check and a separate historical-map overlay. |
-| `hula_field` | FRUS discusses future reclaimed farmland. | That is not evidence of a completed field at the game's chosen hex or on a specific completion day. | Preserve the row's explicit design-placement classification; no historical-field sign-off follows from this read. |
+| `hula` | Riley's account, relayed by Tyler in FRUS, distinguishes the northern swamp/lake drainage from preliminary Jordan works below the lake in the DMZ. JTA reports works resuming in March 1951. | JTA places swamp drainage inside the DMZ; Riley's account, relayed by Tyler, places the swamp/lake drainage outside it. This source conflict remains unresolved. Neither report validates the row's rebaked swamp hex or clears it against historical villages/cadastral boundaries. | The two web sources are rechecked below; the original JTA bulletin and a historical-map overlay remain unverified. |
+| `hula_field` | FRUS discusses future reclaimed farmland. | That is not evidence of a completed field at the game's chosen hex or on a specific completion day. | Design-row comparison rechecked below; no historical-field or completion-date sign-off follows. |
 
 ## Camp 80: the disagreement stays visible
 
@@ -70,11 +74,11 @@ The row's historical-location gap and sensitivity flag remain; this note supplie
 
 **Agent read 2 November 2026; a person's check pending.** [FRUS doc. 288][frus] is Tyler's telegram of 5 March 1951,
 relaying General Riley's account, including a Syrian complaint about works starting around 14 February.
-Its numbered points distinguish northern drainage outside the DMZ from preliminary Jordan work within it.
+Riley's numbered points, relayed by Tyler on printed p. 589, distinguish northern drainage outside the DMZ from preliminary Jordan work within it.
 This diplomatic report supplies no surveyed polygon.
 
 [JTA's 27 March 1951 report][jta] places the resumed swamp-drainage work inside the DMZ,
-while FRUS places the swamp/lake drainage outside it and the preliminary Jordan works within it.
+while Riley's account, relayed by Tyler, places the swamp/lake drainage outside it and the preliminary Jordan works within it.
 The sources conflict on where the swamp works were; this note does not resolve that conflict.
 JTA also describes activity along the Jordan and presents future farmland and completion as expectations.
 The reports concern different dates, and neither provides independent geographical clearance of the same boundary.
@@ -83,6 +87,32 @@ For `hula_field`, FRUS's projected farmland is not a field-completion record. Th
 makes the field a design placement at the swamp site, available after drainage. Its hex and project-state rule
 are not historical findings from either report. No rule, availability date, swamp boundary, historical village
 assessment or earlier map-research result changes here.
+
+## Hula source check, 4 November 2026
+
+**Agent read; a person's check pending.** This is the `hula` / `hula_field` slice
+[claimed before this check](https://github.com/eyalgolan/statecraft-israel/issues/785#issuecomment-6623967451).
+The [merged ruling in #2481](https://github.com/eyalgolan/statecraft-israel/pull/2481) permits disclosed AI-assisted checks.
+Whether this entirely agent-performed read counts under that rule is
+[awaiting the owner's answer](https://github.com/eyalgolan/statecraft-israel/issues/785#issuecomment-6624293342).
+Until then, it retains the pending tag; no separate human read is asserted.
+The baseline for this follow-up is main `9d03f7ea85c87a5e1838a5a471e6235e1a695639`.
+
+| Claim checked | Source actually opened on 4 November 2026 (UTC) | Result |
+|---|---|---|
+| Reported start and concession | [FRUS doc. 288][frus], dated 5 March 1951, printed p. 588 (complaint and approximate start), p. 589 (concession and company) | Matches as an attributed report: Tyler relays Riley's account of a Syrian complaint alleging work began about 14 February. It connects the project with the Hula concession and identifies the Palestine Land Development Company. The approximate start is a reported allegation, not an independently established exact day. |
+| Location of the works | [FRUS][frus], dated 5 March 1951, printed p. 589, Riley's numbered points (1) and (2) | Matches Riley's account, relayed by Tyler: Riley places northern swamp/lake drainage outside the DMZ and preliminary Jordan work inside it. The source distinguishes these projects rather than supplying a surveyed swamp boundary. |
+| Resumption and DMZ wording | [JTA archive article][jta], archive date 27 March 1951, first two paragraphs (unpaginated HTML); compared with [FRUS][frus], 5 March 1951, printed p. 589 | Matches JTA's account: resumed swamp drainage in the DMZ and tractors along the Jordan's western bank. Its wording conflicts with Riley's project distinction, relayed by Tyler. These are differently dated reports; this check does not resolve the geographical disagreement. |
+| Completed field | [FRUS][frus], dated 5 March 1951, printed pp. 589–590, paragraph after numbered points; [JTA][jta], archive date 27 March 1951, final paragraph (unpaginated HTML) | Unsupported as a completed field: both describe future reclamation. Neither establishes a completed field at the game's hex or a completion day. |
+| Field placement and shared source | [Pinned sites.yaml](https://github.com/eyalgolan/statecraft-israel/blob/9d03f7ea85c87a5e1838a5a471e6235e1a695639/content/sites.yaml), `hula` / `hula_field` | Matches the pinned file as design data: both rows use (16, 3); the field's FRUS source is also the parent's source. The row explicitly labels the field a design placement. This is a file comparison, not historical coordinate or map verification. |
+
+The [original JTA bulletin](https://pdfs.jta.org/1951/1951-03-27_060.pdf) was attempted but **not read**:
+the web reader timed out; direct HTTPS returned no bytes and a connection reset. No printed dateline,
+scan reading or correction of the archive transcript's apparent typo is asserted.
+
+The identified web passages have been compared, but this does not clear the pending check or promote either
+site. The original bulletin, historical boundaries and village/parcel overlay remain open. The camp rows,
+Hebrew-name review and sensitivity decisions are outside this follow-up.
 
 ## Source access and review hand-off
 
@@ -98,8 +128,9 @@ All reads in this table are **agent reads 2 November 2026; a person's check pend
 | [FRUS doc. 288][frus] | Web reader returned the telegram text and numbered project distinction. |
 | [JTA, 27 March 1951][jta] | Web reader returned the dated article body; the linked original daily-bulletin PDF was not opened. |
 
-A person still needs to open the cited passages, record their own findings and resolve the remaining
-source/date gaps before any factual promotion. Historical map clearance and sensitivity decisions remain
+Camp 80 and Tzrifin still need their cited passages checked. For Hula, the dated follow-up records the
+sources reopened and the limits that remain. Unopened sources and unresolved date/location gaps still prevent
+factual promotion; the disclosed check does not fill them. Historical map clearance and sensitivity decisions remain
 separate review work. This note neither closes #785 nor signs any row.
 
 ## AI assistance
@@ -108,6 +139,10 @@ OpenAI Codex reopened the public sources, compared them with the pinned rows and
 The source and diff review described here was performed by an AI agent, not an independent human reviewer.
 For the 3 November 2026 review follow-up, Codex reopened FRUS, the JTA archive article and the Nahal page;
 the other 2 November reads were not re-certified.
+For the 4 November 2026 follow-up, Codex opened and read the FRUS telegram and JTA archive article,
+compared their dated passages with the Hula claims, and compared the two design rows in the pinned YAML.
+For the PR review follow-up on 4 November 2026, Codex reopened the FRUS text and JTA HTML and read the official FRUS page scans, printed pp. 588–590, to verify page references and Riley's attribution.
+The original JTA bulletin could not be opened; no separate human read is claimed.
 
 [gshur]: https://www.maarachot.idf.il/media/qyen3yoj/%D7%9E%D7%9B%D7%95%D7%91%D7%A2-%D7%92%D7%A8%D7%91-%D7%9C%D7%9B%D7%95%D7%91%D7%A2-%D7%98%D7%9E%D7%91%D7%9C-%D7%94%D7%A0%D7%97%D7%9C-%D7%91%D7%A9%D7%A0%D7%AA%D7%95-%D7%94%D7%A8%D7%90%D7%A9%D7%95%D7%A0%D7%94.pdf
 [nahal]: https://www.nahal.co.il/%D7%9E%D7%92%D7%9C-%D7%95%D7%97%D7%A8%D7%91/

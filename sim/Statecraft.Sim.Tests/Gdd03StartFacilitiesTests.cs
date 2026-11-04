@@ -39,6 +39,41 @@ public class Gdd03StartFacilitiesTests
         Assert.True(Training.HasFacility(c, state, "jerusalem", "military_camp"));
     }
 
+    // #2484, owner, 4 November 2026: "Keep the Hakhshara". Under gdd-0.3 the Hakhshara stays the way civilians become
+    // halutzim, so on the shipped content Tel Aviv's Hakhshara trains a halutz group into a halutz unit (R-TRAIN-001, R-TRAIN-003).
+    [Fact]
+    public void Gdd03HakhsharaTrainsHalutz()
+    {
+        var c = LoadShipped(true, ShippedOverlay());
+        Assert.Equal(SaveGame.Gdd03Ruleset, c.Ruleset);
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var turns = c.UnitTypes.Single(t => t.Id == "halutz").TrainingTurns;
+        var r = Simulation.Step(c, s, new Command[] { new Train("tel_aviv", "halutz", 1) });
+        Assert.Empty(r.Rejected);
+        var cohort = Assert.Single(r.State.Cohorts.Values);
+        Assert.Equal(("halutz", "tel_aviv", 1), (cohort.Type, cohort.City, cohort.Count));
+        for (int turn = 1; turn < turns; turn++)
+        {
+            Assert.DoesNotContain(r.State.Units.Values, u => u.Type == "halutz");
+            r = Simulation.Step(c, r.State, new Command[0]);
+        }
+        Assert.Empty(r.State.Cohorts);
+        var unit = Assert.Single(r.State.Units.Values, u => u.Type == "halutz");   // one unit per group, at the city's hex
+        var home = c.SettlementHexes.First(h => h.Id == "tel_aviv");
+        Assert.Equal((home.Q, home.R), (unit.Q, unit.R));
+    }
+
+    // #2484, owner, 4 November 2026: "Keep the Hakhshara". Under gdd-0.3 the halutz still trains at a Hakhshara (Tel Aviv's
+    // own Hakhshara is pinned by ShippedGdd03StartHasTheCataloguedNumberOfCampCities above).
+    [Fact]
+    public void Gdd03TelAvivStartsWithHakhshara()
+    {
+        var c = LoadShipped(true, ShippedOverlay());
+        Assert.Equal(SaveGame.Gdd03Ruleset, c.Ruleset);
+        Assert.Equal("hakhshara", c.UnitTypes.Single(t => t.Id == "halutz").Facility);
+        Assert.True(Training.HasFacility(c, Simulation.NewGame(c, 1, Mode.Historical), "tel_aviv", "hakhshara"));
+    }
+
     [Fact]
     public void AbsentOverlayLeavesGdd03CitiesUnchanged()
     {
