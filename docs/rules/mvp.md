@@ -398,7 +398,7 @@ R-POW-004: An event with `prisoners: <front>` (egypt, jordan, lebanon or syria) 
 
 R-POW-005: A surrendered unit of the player's is added to `GameState.SoldiersHeld` under the side of the engagement's lowest-id attacker. In step 7, after the prisoners eat, the Treasury pays `mvp.held_soldier_cost_per_turn` (real value IL 0.005m) for each population unit held, borrowing what it lacks (R-MONEY-003; Q-POW-4). They come home when that side's front's exchange card resolves, with no score effect.
 
-Under gdd-0.3 (#1710), the prisoners in R-POW-004's pins come from a real surrender (R-POW-001). R-POW-002, R-POW-003 and R-POW-005 have no gdd-0.3 pin yet. The real per-front exchange cards wait on #751, so every R-POW rule that needs them (R-POW-004's returns, R-POW-005's homecoming) stays as written until they land.
+Under gdd-0.3 (#1710), the prisoners in these pins come from a real surrender (R-POW-001). `PrisonersGdd03Tests.PrisonersEatAndAFoodShortfallCostsCohesion` pins R-POW-002, `PrisonersGdd03Tests.PrisonersAreNeverAResource` pins R-POW-003, and `PrisonersGdd03Tests.OwnSoldiersAreCapturedCostMoneyAndComeHome` pins R-POW-005. The real per-front exchange cards wait on #751, so the return and homecoming pins use the synthetic card until those cards land.
 
 ## Objectives
 
