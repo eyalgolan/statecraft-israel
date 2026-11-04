@@ -225,8 +225,8 @@ options:
     }
 
     // R-WAR-007, Q-OBJ-4: signing armistice_jordan removes the Jordanian and the Iraqi units, leaves the Egyptian, ALA and
-    // local units and the prisoners held as they were; Send home follows R-UNIT-005 unchanged (unit 1's nearest front-bearing
-    // enemy was on the now signed front).
+    // local units and the prisoners held as they were. Send home after signing is covered by
+    // SendHomeAfterSigningLooksAtTheFrontsStillOnTheBoard.
     [Fact]
     public void SigningRemovesThatFrontsUnitsOnly()
     {
@@ -234,12 +234,25 @@ options:
         var s = With(c, Ours(1, 2, 1), Theirs(2, 3, 1, "jordan"), Theirs(3, 2, 2, "iraq"), Theirs(4, 5, 0, "egypt"),
             Theirs(5, 5, 2, "ala"), Theirs(6, 0, 0, "local"));
         s.PrisonersHeld["jordan"] = 3; s.SoldiersHeld["iraq"] = 1;
-        Assert.NotNull(Demobilization.Check(c, s, 1));
         s.PendingEvents.Add("armistice_jordan");
         var why = new List<Cause>();
         Assert.Null(EventSystem.Choose(c, s, "armistice_jordan", "sign", why));
         Assert.Equal(new[] { 1, 4, 5, 6 }, s.Units.Keys.ToArray());
         Assert.Equal((3, 1), (s.PrisonersHeld["jordan"], s.SoldiersHeld["iraq"]));
-        Assert.Null(Demobilization.Check(c, s, 1));
+    }
+
+    // R-WAR-007 with R-UNIT-005 unchanged: unit 1 borders Jordan's unit 2 and Egypt's unit 3, so its front is the lower id's,
+    // Jordan. Once Jordan's units leave on signing, the unit's nearest front-bearing enemy is Egypt's, and Send home waits for
+    // that armistice. Without the removal the front would still be Jordan, signed, and Send home would be open.
+    [Fact]
+    public void SendHomeAfterSigningLooksAtTheFrontsStillOnTheBoard()
+    {
+        var c = Load();
+        var s = With(c, Ours(1, 2, 1), Theirs(2, 3, 1, "jordan"), Theirs(3, 1, 1, "egypt"));
+        Assert.Equal("The armistice with Jordan is not signed", Demobilization.Check(c, s, 1));
+        s.PendingEvents.Add("armistice_jordan");
+        Assert.Null(EventSystem.Choose(c, s, "armistice_jordan", "sign", new List<Cause>()));
+        Assert.Equal(new[] { 1, 3 }, s.Units.Keys.ToArray());
+        Assert.Equal("The armistice with Egypt is not signed", Demobilization.Check(c, s, 1));
     }
 }
