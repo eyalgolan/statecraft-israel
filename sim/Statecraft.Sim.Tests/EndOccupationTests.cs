@@ -183,8 +183,8 @@ public class EndOccupationTests
     }
 
     // R-CITY-008, R-CTRL-016 (owner on #2608, 4 November 2026: "Yes, add them (Recommended)"): a stayed town's 60 approved
-    // people join GameState.Population in the annexed group, so the national record still holds every city's people. A fled
-    // town adds no one ("Territory only, no gain").
+    // people join GameState.Population (in the annexed group, our design), so the national record still holds every
+    // city's people. A fled town adds no one ("Territory only, no gain").
     [Fact]
     public void AnnexingAStayedPlaceAddsItsPeopleToThePopulationAndAFledOneAddsNone()
     {
@@ -202,6 +202,22 @@ public class EndOccupationTests
         var pop = new Dictionary<string, double>(f.Population);
         Assert.Null(SettlementControl.End(fled, f, "town_a", SettlementControl.Annex, new List<Cause>()));
         Assert.Equal(pop, f.Population);
+    }
+
+    // R-CITY-008 (#2620 review): an initialized gdd-0.3 ledger fixture keeps its own record of people (R-POP-001), so
+    // annexing a stayed real town there still adds its city but leaves GameState.Population as it was.
+    [Fact]
+    public void AnnexingIntoAnInitializedGdd03LedgerLeavesThePopulationAlone()
+    {
+        var c = PlayerRegionsContentTests.Load(File.ReadAllText(Path.Combine(RealContentTests.ContentRoot(), "regions.yaml")));
+        var s = PlayerRegions.CreateFixture(c,
+            c.PlayerRegions.Regions.Keys.Select(id => new PlayerRegionPool(id, 0, 0m, 0, 0, Array.Empty<PlayerRegionFacility>())),
+            Array.Empty<PopulationInventoryRow>(), Array.Empty<PopulationTarget>(), Array.Empty<string>(), Array.Empty<string>());
+        Assert.True(s.PopulationLedger.IsInitialized);
+        var pop = new Dictionary<string, double>(s.Population);
+        Assert.Null(Cities.Annex(c, s, c.SettlementTargets.Single(x => x.Id == "nazareth")));
+        Assert.Contains("nazareth", s.Cities.Keys);
+        Assert.Equal(pop, s.Population);
     }
 
     // R-CTRL-016: an id that is already a city is refused, the state unchanged (Cities.Annex adds one city, never two).

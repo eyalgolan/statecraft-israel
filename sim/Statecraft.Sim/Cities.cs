@@ -55,8 +55,9 @@ namespace Statecraft.Sim
             var units = StartUnits(people, r.PeoplePerUnit);
             var employed = NearestUnit(people * t.Annexation.EmployedShare!.Value, r.PeoplePerUnit);
             s.Cities[t.Id] = new City(t.Id, units, employed, units, employed, 0, 0, r.HousingStartCondition!.Value);
-            // R-CITY-008 (owner on #2608): the city's people are part of the nation's record, so its approved count joins it.
-            // An initialized gdd-0.3 ledger fixture keeps its own record of people (R-POP-001) and is left alone.
+            // R-CITY-008 (owner on #2608, "Yes, add them (Recommended)"): the city's people are part of the nation's record,
+            // so its approved count joins it. Our design, not the ruling: they get their own group, and an initialized gdd-0.3
+            // ledger fixture keeps its own record of people (R-POP-001) and is left alone.
             if (!s.PopulationLedger.IsInitialized)
                 s.Population[AnnexedGroup] = (s.Population.TryGetValue(AnnexedGroup, out var had) ? had : 0) + (double)people;
             return null;
