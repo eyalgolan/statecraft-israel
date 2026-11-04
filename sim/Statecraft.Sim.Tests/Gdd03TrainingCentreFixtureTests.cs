@@ -297,7 +297,7 @@ public class Gdd03TrainingCentreFixtureTests
         new object[] { "same person", 1, 1, CentreA, true },
         new object[] { "unknown centre", 0, 1, "fixture-unknown", true },
         new object[] { "centre not operating", 0, 1, CentreA, false },
-        // The teacher is housed in the centre's city (Q42) and, by our reading, the pupil trains there; the region stands
+        // The teacher is housed in the centre's city (Q42) and, by the owner's Q23 ruling (4 November 2026), the pupil trains there; the region stands
         // in for the city.
         new object[] { "other region", 0, 1, CentreSouth, true },
         new object[] { "trainee in another region", 0, 14, CentreA, true },
@@ -326,7 +326,7 @@ public class Gdd03TrainingCentreFixtureTests
     }
 
     // R-TRAIN-005, Q42 (docs/GDD.md:372: "the teacher housed in the centre's city"): a teacher outside the centre's region
-    // is refused with the Q42 reason; a pupil outside it with our reading's reason (Q42 rules only on the teacher). Both
+    // is refused with the Q42 reason; a pupil outside it with the Q23 ruling's reason (Q42 rules only on the teacher). Both
     // are refused before the ledger is asked, the state unchanged. The region stands in for the city.
     [Fact] public void ATeacherOrPupilOutsideTheHostRegionIsRefused()
     {
