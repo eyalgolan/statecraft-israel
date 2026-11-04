@@ -211,7 +211,9 @@ namespace Statecraft.Sim
                 var tierValid = p.Profession switch {
                     CivilianProfession.None => p.Tier == CivilianTier.None && p.WorkXp == 0,
                     CivilianProfession.Farmer or CivilianProfession.Pioneer => p.Tier == CivilianTier.Novice || p.Tier == CivilianTier.Trained || p.Tier == CivilianTier.Veteran,
-                    CivilianProfession.Craftsman => p.Tier == CivilianTier.Apprentice || p.Tier == CivilianTier.Expert,
+                    // R-CRAFT-003 (#1698 follow-up): a novice craftsman from the course start. Valid outside a course too,
+                    // a maintainer reading of Q55 ("workshop work by a novice craftsman"), not an owner ruling.
+                    CivilianProfession.Craftsman => p.Tier == CivilianTier.Novice || p.Tier == CivilianTier.Apprentice || p.Tier == CivilianTier.Expert,
                     _ => false };
                 if (!tierValid) throw new ArgumentException("Tier does not belong to the civilian profession.");
                 if (p.Home != null) bindings.ValidateLocation(p.Home);
