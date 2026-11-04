@@ -1034,8 +1034,8 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .lang-he .cabinet-side { margin-right: 0; margin-left: 14px; }
 .lang-he .pm-office { margin: 0 0 4px 6px; }
 .lang-he .hemicycle-box { margin-right: 0; margin-left: 18px; }
-.lang-he .party-chip { margin: 0 0 2px 12px; }
-.lang-he .party-group-heading { margin: 0 0 2px 10px; }
+.lang-he .party-chip { margin: 0 0 1px 12px; }   /* 1 px, as the English .party-chip (#2522) */
+.lang-he .party-group-heading { margin: 0 0 1px 10px; }
 .lang-he .party-swatch { margin-right: 0; margin-left: 5px; }
 .lang-he .rung { border-left-width: 0; border-right-width: 3px; }
 .lang-he .rung-target { border-left-width: 1px; border-right-width: 3px; }

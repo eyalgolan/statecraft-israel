@@ -274,9 +274,20 @@ namespace Statecraft.Game.UI
             foreach (var e in underBar) e.style.marginTop = StyleKeyword.Null;
             bar.style.height = StyleKeyword.Null;
             foreach (var l in plateText) { l.style.fontSize = StyleKeyword.Null; l.style.whiteSpace = StyleKeyword.Null; }
-            exhaustedSize = ExhaustedPx;   // so PadPlate below clears the plate's width
             if (exhaustedLine != null) { exhaustedLine.style.fontSize = StyleKeyword.Null; exhaustedLine.style.whiteSpace = StyleKeyword.Null; }
-            if (dateRow != null) { dateRow.style.flexDirection = StyleKeyword.Null; if (dateRow.parent != null) PadPlate(dateRow.parent, false); }
+            // Cleared here, not by PadPlate: it keeps the plate's width and padding while the exhausted line shows (#2522), and
+            // the line may still show when the presenter goes (review of #2607).
+            if (dateRow != null)
+            {
+                dateRow.style.flexDirection = StyleKeyword.Null;
+                var plate = dateRow.parent;
+                if (plate != null)
+                {
+                    plate.style.width = StyleKeyword.Null; plate.style.minWidth = StyleKeyword.Null;
+                    plate.style.paddingTop = StyleKeyword.Null; plate.style.paddingBottom = StyleKeyword.Null;
+                    plate.style.paddingLeft = StyleKeyword.Null; plate.style.paddingRight = StyleKeyword.Null;
+                }
+            }
             bridge.Changed -= Render; endTurn.clicked -= onEndTurn; endTurn.generateVisualContent -= PaintHourglass;
             foreach (var d in deltas) d.generateVisualContent -= PaintChange;
             bar.UnregisterCallback<GeometryChangedEvent>(OnBarGeometry);

@@ -268,4 +268,53 @@ public class TopBarScoreLayoutTests
         }
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
+
+    /// <summary>Review of #2607: since #2522 the plate sizes to the exhausted line whenever it shows (PadPlate), so a presenter
+    /// disposed while the line shows must still hand the plate back to the stylesheet: no inline width, minimum width or
+    /// padding (as AHiddenExhaustedLineLeavesThePlateAsItWas). At 1600x900, where the 15 px text is not raised, the line alone
+    /// sets them.</summary>
+    [UnityTest]
+    public IEnumerator DisposingWithTheExhaustedLineShownClearsThePlate()
+    {
+        var problems = new List<string>();
+        foreach (var (language, text, hebrew) in new[] { ("en", En, false), ("he", He, true) })
+        {
+            var rt = new RenderTexture(1600, 900, 0);
+            var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
+            ps.targetTexture = rt;
+            var go = new GameObject("DisposeExhaustedTest");
+            go.SetActive(false);
+            var doc = go.AddComponent<UIDocument>();
+            doc.panelSettings = ps;
+            doc.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml);
+            go.SetActive(true);
+            var root = doc.rootVisualElement;
+            root.Q("root").RemoveFromClassList("loading");
+            root.Q("root").EnableInClassList(UiLanguage.HebrewClass, hebrew);
+            var bridge = new SimBridge(GameSession.New(Gdd, GoldenRun.Seed, Mode.Historical), text);
+            bridge.State.ExhaustedTurns = 2;
+            var hud = new HudPresenter(root, bridge, text);
+            var disposed = false;
+            try
+            {
+                var exhausted = root.Q<Label>("exhausted");
+                for (int i = 0; i < 20 && float.IsNaN(exhausted.worldBound.width); i++) yield return null;
+                for (int i = 0; i < 3; i++) yield return null;
+                var plate = root.Q(className: "date-box");
+                Assert.AreEqual(DisplayStyle.Flex, exhausted.resolvedStyle.display, $"{language}: precondition: two exhausted turns show the line");
+                Assert.AreEqual(StyleKeyword.Auto, plate.style.width.keyword, $"{language}: precondition: the shown line sizes the plate");
+                hud.Dispose(); disposed = true;
+                var st = plate.style;
+                foreach (var (prop, keyword) in new[] { ("width", st.width.keyword), ("minWidth", st.minWidth.keyword), ("paddingTop", st.paddingTop.keyword),
+                    ("paddingBottom", st.paddingBottom.keyword), ("paddingLeft", st.paddingLeft.keyword), ("paddingRight", st.paddingRight.keyword) })
+                    if (keyword != StyleKeyword.Null) problems.Add($"{language}: after Dispose the plate's {prop} is still set inline ({keyword})");
+            }
+            finally
+            {
+                if (!disposed) hud.Dispose();
+                Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt);
+            }
+        }
+        Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
 }
