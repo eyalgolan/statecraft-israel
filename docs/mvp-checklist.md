@@ -1,6 +1,6 @@
 # MVP master checklist
 
-Current state on `main` at `599555e77`, 4 November 2026. Part of #374. A completed prerequisite does not complete its dependent task.
+Current state on `main` at `fa210cc55`, 4 November 2026. Part of #374. A completed prerequisite does not complete its dependent task.
 
 The design of record is [the GDD](GDD.md), especially "MVP scope 1948 to 1951". The implementation is split across the seven approved phase plans in `docs/superpowers/plans/`. **Done** means the requirement is on `main`; **open** cites its open issue, and an open pull request for it is named beside it; **blocked on owner decision** cites both the issue and the design question that prevents implementation.
 
@@ -54,7 +54,7 @@ The design of record is [the GDD](GDD.md), especially "MVP scope 1948 to 1951". 
 
 ## Phase 4: pioneers, sites and corridors
 
-- [ ] **Open: #785.** PR 1 designated sites. The four yishuv sites and their fields are on `main` (CHANGELOG, "The MVP has four designated yishuv sites"), and the two camp sites are on `main` (CHANGELOG, "Pioneers can build a training camp"); Kiryat Shmona and Beit Shemesh (#944) and the Hula (#968) are on `main` too, so all 16 site rows are; a person's check of the 15 `draft` rows remains in #785.
+- [ ] **Open: #785.** PR 1 designated sites. The four yishuv sites and their fields are on `main` (CHANGELOG, "The MVP has four designated yishuv sites"), and the two camp sites are on `main` (CHANGELOG, "Pioneers can build a training camp"); Kiryat Shmona and Beit Shemesh (#944) and the Hula (#968) are on `main` too, so all 16 site rows are; an agent's recheck of the Hula sources is on `main` (#2503); a person's check of the 15 `draft` rows remains in #785.
 - [x] **Done: `docs/rules/mvp.md`, R-COR-001 to R-COR-003.** PR 2 corridors: Burma Road, Haifa-Tel Aviv rail link and Tel Aviv-Netanya road, built segment by segment (#870; #786).
 - [x] **Done: CHANGELOG entry "Pioneers can build a training camp".** PR 3 build a camp or Hakhshara (#927; `docs/rules/mvp.md`, R-CAMP-001 and R-CAMP-002).
 - [x] **Done: CHANGELOG entry "every plowed field adds 1 unit of Food".** PR 4 plow fields (#871; `docs/rules/mvp.md`, R-FIELD-001 and R-FIELD-002).
@@ -115,23 +115,24 @@ PRs 1 to 12 have their owner answers recorded in the Phase 6 plan (#1060, #1069)
 - [ ] **Open: #812.** PR 9 Unity end screen. The end screen shows the end report (#1156), the war loss's line (`end.outcome.defeat_war`), the score's reference line (#1964, #1967) and the prisoners returned (#1969); the history notes remain (their code path is #1966). Q-END-3 and Q-DEF-4 are decided and recorded (#997, #1069); the Hebrew defeat text goes to native-speaker review.
 - [ ] **Open: #530.** PR 10 opening cutscene. Q-OPEN-3 through Q-OPEN-5 are decided and recorded (#1069).
 - [x] **Done: the first-turn guide.** PR 11 onboarding for the GDD loop: a five-step guide, skippable and re-openable (#1209; #42 closed), with follow-ups (#1225, #1234, #1286).
-- [ ] **Open: #813.** PR 12 balance pass; the target is a 60 to 90 minute session (below), and it also decides the IL 250m debt ceiling and the loyalty floor of 5 (owner, 18 Oct 2026).
+- [ ] **Open: #813.** PR 12 balance pass; the target is a 120-minute session since 30 October 2026, when the owner chose the option labelled "120 (data wins)" ([#1687](https://github.com/eyalgolan/statecraft-israel/issues/1687#issuecomment-6511461164); below), and it also decides the IL 250m debt ceiling and the loyalty floor of 5 (owner, 18 Oct 2026).
 - [ ] **Open: #814.** PR 13 MVP release: `mvp-end`, `smoke-mvp`, WebGL and GitHub pre-release. The MVP ships WebGL only; desktop players and IL2CPP parity move to #905 after the MVP.
 - [x] **Done: `docs/superpowers/plans/2026-10-15-gdd-phase-3.md`, `-phase-5.md` and `-phase-6.md`.** The plans contain the 17 October rulings (#918).
 
 ## GDD 0.3 (MVP part)
 
-The owner adopted GDD 0.3 on 26 October 2026 and set its MVP scope on 1 November 2026 ("30 Oct wins for the MVP (Recommended)"; #1725). It is built behind the separate gdd-0.3 ruleset, so the shipped game is unchanged until the switch-over (#1716). #1695, #1696 and #1705 are post-MVP in full; the other issues keep their post-MVP parts in their own sections. Checked against `main` at `04739eade` and `gh`, 4 November 2026.
+The owner adopted GDD 0.3 on 26 October 2026 and set its MVP scope on 1 November 2026 ("30 Oct wins for the MVP (Recommended)"; #1725). It is built behind the separate gdd-0.3 ruleset, so the shipped game is unchanged until the switch-over (#1716). #1695, #1696 and #1705 are post-MVP in full; the other issues keep their post-MVP parts in their own sections. Checked against `main` at `1957078d3` and `gh`, 4 November 2026.
 
 - [x] **Done: #1688, #1690, #1702, #1707, #1708, #1712, #1718, #1911, #2112, #2114 and #2115.** No Attention under gdd-0.3 (#1747, #1750), regions in the sim (#1846, #2109, #2131), the Money ledger (#2272), combat experience (#2275), artillery movement (#2142), enemy towns (#2185, #2123), event content (#2226), the CLI course report (#2107), per-unit rates (#2159), the 1.5:1 attack ratio (#2141) and the catalogue rulings (#2158).
 - [ ] **Open: #1687.** The ruleset, save schema and balance catalogue; parts 1 to 3 are on `main` (#1732, #1742, #1745).
 - [ ] **Open: #1689, #1691 and #1717.** The population ledger, the authored regions and prepared fields, and the Historical start.
-- [ ] **Open: #1692, #1693 (pull request #2421), #1694 and #1713.** Work by tier, professions, farming and pioneer work.
-- [ ] **Open: #1697 (pull request #2461), #1698 (pull request #2416) and #1699 (pull request #2439).** Courses, the craftsman and basic training.
-- [ ] **Open: #1700 and #1703 (pull requests #2409 and #2415) and #1701.** City projects by builders, housing repair and arms workshops.
+- [ ] **Open: #1692, #1693, #1694 and #1713.** Work by tier, professions, farming and pioneer work; #1693's fixture-only pioneer work-XP producer is on `main` (#2421).
+- [ ] **Open: #1697, #1698 and #1699.** Courses, the craftsman and basic training; a slice of each is on `main` (#2461, #2416 and #2439).
+- [x] **Done: #1703 and #1701.** Housing condition and repair (#2291, #2409, #2415) and arms workshops (#2270, #2289).
+- [ ] **Open: #1700.** City projects by builders; the housing-repair project is on `main` (#2409, #2415).
 - [ ] **Open: #1704, #1706, #1709 (pull request #2318), #1710 and #1711.** Food, combat, the enemy threshold and armistice offers, prisoners, and held cities (D6).
 - [ ] **Open: #1714, #1715, #1912 and #2113.** The absorption objective, indicators and the ending, the three objective groups, and the D5 housing places.
-- [ ] **Open: #1719, #1720 and #1721 (pull request #2443).** Named camps on the map, the fixed camera and the map editor.
+- [ ] **Open: #1719, #1720 and #1721.** Named camps on the map, the fixed camera and the map editor; the editor's slice C (search, selected revert and diff preview) is on `main` (#2443).
 - [ ] **Open: #1722, #1723, #1724 and #1913.** Unity: the city panel, the identity card, the military camp card and the turn walkthrough.
 - [ ] **Open: #2457, #2458 and #2459.** `israel_bonds` and Debt, course orders in Unity, and the advisor pages under gdd-0.3.
 - [ ] **Open: #1716.** The month snapshots, the golden re-pin and the switch-over, last before #814.
@@ -150,7 +151,7 @@ The first outside play-test (18 October). The plan of record for these is #1038.
 
 1. **Open: #731.** The Arms pool, five-resource effects and the Food and Arms display are done (#1047, #1790); the Phase 2 Roadmap row and #382 remain.
 2. **Done: Phase 3.** City projects, the winery and the city panel are done (#1255, #1198, #1294).
-3. **Open: #785.** Finish the site reviews, then #792; corridors and objective 3 are done (#870, #1226).
+3. **Open: #785.** Finish the site reviews (the Hula sources' agent recheck is on `main`, #2503), then #792; corridors and objective 3 are done (#870, #1226).
 4. **Open: #749, #751, #752 and #756, then #757.** Recruits, artillery acquisition, war state, unit orders and the Defence screen are done (#1130, #1346, #1148, #1310, #1277, #1493).
 5. **Open: #800, #802 and #803, then #804.** Capture, Raid, Occupy, annex or withdraw and the displacement cards are done (#1239, #1257, #1324, #1526, #2197); Deport, its activation and the phase close remain.
 6. **Open: #807 and #809.** Defeat, the event effects, ministers and simulation end report are done (#1246, #1072, #1147, #1149).
@@ -189,7 +190,7 @@ The owner approved these on 17 October on #856 (the location roster and the map 
 - [ ] **Open: #1006.** Nir Am's infrastructure-protection objective is decided: keep the Negev water line in Israeli hands until 24 February 1949, with a sourced card and balance-pass points. The research draft is on `main` (#1161); implementation remains, blocked by enemy captures (#1305).
 - [ ] **Open: #1007.** Umm Rashrash is decided as a bonus inside objective 1, with the Ink Flag card dated 10 March 1949 and balance-pass points. The research draft is on `main` (#1159); the map record is claimed, and the bonus waits on #752.
 - [ ] **Open: #1008.** The GDD v0.2 must-have location rows and English and Hebrew labels are on `main` (#1057), and so are agent-read source checks of all ten rows (#1775, #1827, #1924, #1926, #1979, #1980, #2002); the ten rows are still `draft`, and the open `[GAP]` rows and a person's source check remain.
-- [x] **Done: #1009.** The Unity editor-window design is decided. The override schema, loader and application order are on `main` as step 1 (#1099), and the editor window as step 2 (#1266); the visible-editor review is recorded (owner: "reviewed, approved", [#1721](https://github.com/eyalgolan/statecraft-israel/issues/1721#issuecomment-6470784895)), and #1009 is closed. The GDD 0.3 editor work is #1721, pull request #2443.
+- [x] **Done: #1009.** The Unity editor-window design is decided. The override schema, loader and application order are on `main` as step 1 (#1099), and the editor window as step 2 (#1266); the visible-editor review is recorded (owner: "reviewed, approved", [#1721](https://github.com/eyalgolan/statecraft-israel/issues/1721#issuecomment-6470784895)), and #1009 is closed. The GDD 0.3 editor work is #1721; its slice C is on `main` (#2443).
 
 ## After the MVP
 
