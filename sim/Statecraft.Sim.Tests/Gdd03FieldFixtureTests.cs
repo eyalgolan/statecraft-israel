@@ -300,6 +300,23 @@ public class Gdd03FieldFixtureTests
         Assert.Equal(5, f.Yield(r, WorkMonth(c, s, industry.Id), AllHeld(c)).Fields[V1]);
     }
 
+    // #2468 review: a snapshot with more working farmers on a field than its `field.slots` (1) is refused whole, as
+    // Yield refuses it, so no farmer is credited for a slot another farmer holds; the turn-start state is unchanged.
+    [Fact] public void AnOverOccupiedFieldMonthIsRefused()
+    {
+        var c = Real();
+        var industry = new Gdd03FixtureSlot("synthetic-industry", Gdd03FixtureWork.Industry, 1, "winery");
+        var s = WorkState(c, industry, Farmer(c, tools: 0), Farmer(c, tools: 1), Farmer(c, tools: 2));
+        var f = new Gdd03FieldFixture(c, s, new[] { industry });
+        f.Staff(0, V1, israeliHeld: true);
+        f.Staff(2, V2, israeliHeld: true);
+        // The fixture refuses a second farmer (ASecondFarmerOnAFieldIsRefused), so the over-occupied record is written
+        // straight to the ledger, as a malformed synthetic month would carry it.
+        s.PopulationLedger.ChangeAssignment(1, new PopulationAssignment(PopulationAssignmentKind.Work, V1));
+        var month = WorkMonth(c, s, industry.Id);
+        Refused(s, () => Gdd03FieldFixture.ResolveWorkXp(c, s, month, AllHeld(c)), "more than one farmer");
+    }
+
     // R-FIELD-002 under gdd-0.1 is unchanged: fields need no workers there, and this fixture refuses that ruleset.
     [Fact] public void Gdd01FieldsAreUnchanged()
     {

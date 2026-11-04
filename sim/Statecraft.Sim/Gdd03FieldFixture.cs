@@ -135,7 +135,8 @@ namespace Statecraft.Sim
         /// field that is still Israeli-held (the fields <see cref="Yield"/> pays) gives one staffed-farming receipt, and its
         /// <see cref="CivilianProfessionRules.AfterWork"/> result is committed once into a copy, in ascending id. The
         /// turn-start state is not changed, so the same snapshot resolved twice gives the same single tick. A farmer whose
-        /// turn-start record is no longer on that field, idle, travelling, teaching or in a course gets nothing.</summary>
+        /// turn-start record is no longer on that field, idle, travelling, teaching or in a course gets nothing. A snapshot
+        /// with more working people on a field than `field.slots` is refused unchanged.</summary>
         internal static GameState ResolveWorkXp(Content content, GameState turnStart, Gdd03SyntheticMonthContext month,
             IReadOnlyCollection<string> israeliHeldNow)
         {
@@ -147,6 +148,12 @@ namespace Statecraft.Sim
                 throw new InvalidOperationException("Farmer work XP requires an initialized gdd-0.3 ledger fixture.");
             var fields = new HashSet<string>(Fields(content).Select(f => f.Id), StringComparer.Ordinal);
             var working = new HashSet<int>(month.WorkEligibleIds);
+            // #2468 review: a field credits at most its `field.slots` (1) farmers, so an over-occupied snapshot is refused
+            // whole before any change, as Yield refuses it.
+            var slots = Gdd03FieldRates.FromCatalogue(content.Gdd03Balance!).SlotsPerField;
+            if (month.OpeningPeople.Where(p => working.Contains(p.Id) && p.Assignment.Target != null && fields.Contains(p.Assignment.Target))
+                    .GroupBy(p => p.Assignment.Target).Any(g => g.Count() > slots))
+                throw new ArgumentException("A field's snapshot holds more than one farmer.");
             turnStart.PopulationLedger.Reconcile();
 
             var candidate = turnStart.Clone();
