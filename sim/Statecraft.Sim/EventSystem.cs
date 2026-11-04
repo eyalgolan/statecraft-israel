@@ -14,9 +14,9 @@ namespace Statecraft.Sim
 
         /// <summary>Fires every unfired event whose `requires` (if any) is met, whose window [From, To) overlaps the turn just played,
         /// [<paramref name="turnStart"/>, s.Date), or contains s.Date; <paramref name="turnStart"/> defaults to s.Date
-        /// (game start). Every eligible hard anchor fires; MaxSoftEventsPerTurn caps only the non-hard events per turn,
-        /// which fill the slots that remain (max(0, cap - hard count)) in the usual order (consequence cards first, R-ALT-008, then From, objective cards last in objectives.yaml's order, R-OBJ-007, then id). The fired
-        /// events keep the usual order.
+        /// (game start). Every eligible hard anchor fires; MaxSoftEventsPerTurn caps the ordinary soft events per turn,
+        /// which fill the slots that remain (max(0, cap - hard count)) in the usual order (consequence cards first, R-ALT-008, then From, objective cards last in objectives.yaml's order, R-OBJ-007, then id). Objective and Deport cards take no soft slot. The fired
+        /// events keep the usual order. An eligible soft event left out by the cap waits past its window until it can fire.
         /// Late fire: an event whose window overlapped the turn just played can fire after its window has ended; its
         /// conditions are evaluated at the end of the turn, and its text is filled at the last in-window day
         /// (<see cref="FillDate"/>).</summary>
@@ -25,7 +25,8 @@ namespace Statecraft.Sim
             PopulationLedger.RefuseAggregate(s);
             var start = turnStart ?? s.Date;
             var eligible = c.Events
-                .Where(e => !s.FiredEvents.Contains(e.Id) && e.From <= s.Date && (e.To == null || start < e.To.Value))
+                .Where(e => !s.FiredEvents.Contains(e.Id) && e.From <= s.Date
+                            && (s.CappedEvents.Contains(e.Id) || e.To == null || start < e.To.Value))
                 .Where(e => Timeline.AllMet(c, s, e))
                 // R-OBJ-003: an objective's card waits for the objective. Only the GDD loop records one, so in the legacy loop it never fires.
                 .Where(e => e.Objective == "" || s.Objectives.ContainsKey(e.Objective))
@@ -49,12 +50,16 @@ namespace Statecraft.Sim
                 .ThenBy(e => e.Objective == "" ? -1 : c.Objectives.FindIndex(o => o.Id == e.Objective)).ThenBy(e => e.Order)
                 .ThenBy(e => e.Id, StringComparer.Ordinal)
                 .ToList();
-            // R-EVT-007: a Deport card takes no soft slot, so it fires on its Deport's turn however full that turn is.
+            // R-OBJ-003, R-EVT-007: objective and Deport cards take no soft slot, so they fire however full the turn is.
             var hardCount = eligible.Count(e => e.Anchor == "hard");
-            var chosen = new HashSet<string>(eligible.Where(e => e.Anchor == "hard" || e.Deported != "")
-                .Concat(eligible.Where(e => e.Anchor != "hard" && e.Deported == "").Take(Math.Max(0, MaxSoftEventsPerTurn - hardCount))).Select(e => e.Id));
+            bool TakesSoftSlot(GameEvent e) => e.Anchor != "hard" && e.Deported == "" && e.Objective == "";
+            var chosen = new HashSet<string>(eligible.Where(e => !TakesSoftSlot(e))
+                .Concat(eligible.Where(TakesSoftSlot).Take(Math.Max(0, MaxSoftEventsPerTurn - hardCount))).Select(e => e.Id));
+            // R-EVT-001: only events eligible now can newly enter the wait; every other gate is re-evaluated on later turns.
+            foreach (var e in eligible.Where(e => TakesSoftSlot(e) && !chosen.Contains(e.Id))) s.CappedEvents.Add(e.Id);
             foreach (var e in eligible.Where(e => chosen.Contains(e.Id)))
             {
+                s.CappedEvents.Remove(e.Id);
                 s.FiredEvents.Add(e.Id);
                 s.PendingEvents.Add(e.Id);
                 why.Add(new Cause("events", e.Id, 0, $"New: {Title(c, s, e)}", key: CauseKeys.EventNew, args: Context(Title(c, s, e), HebrewTitle(c, s, e))));
