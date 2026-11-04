@@ -75,8 +75,9 @@ namespace Statecraft.Sim
         /// the course as a novice craftsman (#1698 follow-up) under the same id. Work XP resets to 0 because the course
         /// replaces the novice profession (a maintainer call); tools and their paid fact are kept (27M-3, Q44). A trained or
         /// veteran farmer or pioneer starts the same way and loses that level (R-QUAL-006; owner, 4 November 2026: "Yes,
-        /// lose old level (Recommended)"). An apprentice or expert craftsman re-enrols (27M-5) keeping tier and work XP
-        /// (owner, 4 November 2026: "Keep their level (Recommended)"); a novice craftsman outside a course is Deferred. A job held
+        /// lose old level (Recommended)"). An apprentice or expert craftsman re-enrols (27M-5) keeping their tier (owner,
+        /// 4 November 2026: "Keep their level (Recommended)") and their work XP (a maintainer reading: the recorded answer
+        /// covers only the level); a novice craftsman outside a course is Deferred. A job held
         /// now is released in the same commit, and what the person held at the month's opening is no bar: a maintainer
         /// reading of docs/gdd/cities.md:42 ("Reassignment releases old capacity atomically.") with docs/GDD.md:372
         /// Q43(b)/(c), as #1697's second slice reads them, not an owner ruling. A person released by a graduation cannot
@@ -145,8 +146,9 @@ namespace Statecraft.Sim
 
         /// <summary>R-CRAFT-003: cancelling before qualifying makes an ordinary civilian again (#1698 follow-up): profession
         /// and tier none, work XP 0, released at once as a civilian without a job (Q43(b)). Same id; tools and their paid
-        /// fact are kept and nothing is refunded (27M-4, Q44). A re-enrolled apprentice or expert keeps the craftsman tier and
-        /// work XP (owner, 4 November 2026: "Keep their level (Recommended)").</summary>
+        /// fact are kept and nothing is refunded (27M-4, Q44). A re-enrolled apprentice or expert keeps the craftsman tier
+        /// (owner, 4 November 2026: "Keep their level (Recommended)") and work XP (a maintainer reading: the recorded answer
+        /// covers only the level).</summary>
         internal void Cancel(int traineeId)
         {
             ValidateInventory();
