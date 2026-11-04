@@ -102,7 +102,7 @@ city{
   zikhron_yaakov=2,1,2,1,0,c0.35 [3FD6666666666666]
 units[
   0:veteran_soldier@4,14|side=israel|strength=4|order=go_to|target=-8,28
-  1:veteran_soldier@15,5|side=israel|strength=2|order=go_to|target=15,3
+  1:veteran_soldier@13,6|side=israel|strength=2|order=go_to|target=15,3
   2:veteran_soldier@0,17|side=israel|strength=4
   3:veteran_soldier@-3,24|side=israel|strength=3
   4:veteran_soldier@-9,29|side=israel|strength=3
