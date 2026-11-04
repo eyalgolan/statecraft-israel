@@ -229,6 +229,7 @@ public class Gdd03MovementFortTests
     [InlineData("military.move_road", "basis: Default, values: [0], note: fixture")]
     [InlineData("military.move_rail", "basis: Default, values: [1, 2], note: fixture")]
     [InlineData("military.fort_bonus", "basis: Default, values: [-1], note: fixture")]
+    [InlineData("military.fortify_turns", "basis: Default, values: [1], note: fixture")]   // R-ORDER-002, #2601: Agreed only
     public void LoaderRejectsInvalidConsumedScalar(string key, string row)
     {
         var f = Files();
