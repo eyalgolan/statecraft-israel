@@ -754,6 +754,23 @@ public class SeaAirCollectionTests
         }
     }
 
+    /// <summary>#2482's margin at its edge (review of #2490): OnDakotaTarget refuses a point 1 m short of
+    /// DakotaBombMarginM inside Tel Aviv's hex and accepts one 1 m past it, so dropping its edge check turns this red.</summary>
+    [Test]
+    public void ABombPointOneMetreShortOfTheMarginIsOffTheTargetAndOneMetrePastItIsOn()
+    {
+        var map = OpenMap();
+        var ground = PlacementLayer.CampGround(map);
+        float size = ground.HexSizeM, inradius = 0.5f * Mathf.Sqrt(3f) * size;
+        var h = C.SettlementHexes.First(x => x.Id == SeaAirCollection.DakotaTown);
+        var centre = HexGrid.Centre(h.Q, h.R, size);
+        var targets = new List<Vector2> { Xz(HexGrid.ToWorld(centre, ground.TerrainOrigin, ground.Length)) };
+        // Due east of the centre the nearest side is the flat east side, so a point d metres east is inradius - d inside it.
+        Vector2 At(float inside) => Xz(HexGrid.ToWorld(centre + new Vector2(inradius - inside, 0f), ground.TerrainOrigin, ground.Length));
+        Assert.IsFalse(SeaAirCollection.OnDakotaTarget(ground, targets, At(SeaAirCollection.DakotaBombMarginM - 1f)), "1 m short of the margin");
+        Assert.IsTrue(SeaAirCollection.OnDakotaTarget(ground, targets, At(SeaAirCollection.DakotaBombMarginM + 1f)), "1 m past the margin");
+    }
+
     /// <summary>#2482's margin, checked on its own (review of #2490): every bomb's release point and impact point lies at
     /// least SeaAirCollection.DakotaBombMarginM inside the edge of one of Tel Aviv's hexes, so the smoke's drift stays on the
     /// hex. The distance is measured here from the hex's own six corners (pointy-top, circumradius the map's hex size, as
