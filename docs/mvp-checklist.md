@@ -1,6 +1,6 @@
 # MVP master checklist
 
-Current state on `main` at `767bfe93a`, 28 October 2026. Part of #374. A completed prerequisite does not complete its dependent task.
+Current state on `main` at `599555e77`, 4 November 2026. Part of #374. A completed prerequisite does not complete its dependent task.
 
 The design of record is [the GDD](GDD.md), especially "MVP scope 1948 to 1951". The implementation is split across the seven approved phase plans in `docs/superpowers/plans/`. **Done** means the requirement is on `main`; **open** cites its open issue, and an open pull request for it is named beside it; **blocked on owner decision** cites both the issue and the design question that prevents implementation.
 
@@ -38,7 +38,7 @@ The design of record is [the GDD](GDD.md), especially "MVP scope 1948 to 1951". 
 - [x] **Done: CHANGELOG entry "Social cohesion is now the `morale` indicator".** PR 4 Social cohesion and International Support (#857).
 - [x] **Done: `docs/rules/mvp.md`, R-EFX-001 and R-EFX-002.** PR 5 effects on all five resources; Arms joined the rule with the pool (#1047), and the authoring guidance followed in #1166.
 - [x] **Done: `docs/rules/mvp.md`, R-GOV-001 and R-GOV-002.** PR 6 cabinet, coalition and Attention (#830).
-- [ ] **Open: #731.** PR 7 HUD for the five resources; the Social cohesion meter is on `main` (CHANGELOG, "Social cohesion on the top bar"), and Food and Arms show in the turn report, Why and Defence, which queues Arms purchases (#1790; the owner kept them off the top bar). The Defence and Cabinet leftovers remain.
+- [ ] **Open: #731.** PR 7 HUD for the five resources; the Social cohesion meter is on `main` (CHANGELOG, "Social cohesion on the top bar"), and Food and Arms show in the turn report, Why and Defence, which queues Arms purchases (#1790; the owner kept them off the top bar). #731's 1 November status found no Defence or Cabinet task left in PR 7; the Phase 2 Roadmap row (`README.md:117`, `README.he.md:91`) and #382 remain.
 
 ## Phase 3: cities and absorption
 
@@ -74,7 +74,7 @@ The design of record is [the GDD](GDD.md), especially "MVP scope 1948 to 1951". 
 - [x] **Done: `docs/rules/mvp.md`, R-ORDER-001 to R-ORDER-003.** PR 7 fortify and hold (#1071; fixes #746).
 - [x] **Done: `docs/rules/mvp.md`, R-COMBAT-001 to R-COMBAT-006.** PR 8 combat, with its Arms cost (#1194; #747 closed).
 - [x] **Done: `docs/rules/mvp.md`, R-COMBAT-007, R-COMBAT-008 and R-UNIT-008.** PR 9 artillery and the armoured car: combat (#1245) and training at a military camp (#1346; #748 closed).
-- [ ] **Open: #749.** PR 10 enemy AI. Part 1, the scripted positions and the truce guard, is on `main` (#1263; R-ENEMY-001 to R-ENEMY-004 and R-ENEMY-006); part 2, R-ENEMY-005, the operation cards' orders, remains.
+- [ ] **Open: #749.** PR 10 enemy AI. Part 1, the scripted positions and the truce guard, is on `main` (#1263; R-ENEMY-001 to R-ENEMY-004 and R-ENEMY-006); part 2, R-ENEMY-005, the operation cards' orders under gdd-0.1, is on `main` too (#2087); the card-by-card orders remain in #2135.
 - [x] **Done: `docs/rules/mvp.md`, R-WAR-002 to R-WAR-004.** PR 11 war state, call-up retirement and truces (#1148, #1310, #1339 merged; #750 closed).
 - [ ] **Open: #751.** PR 12 prisoners. The mechanism is on `main` (#1264, #1271; R-POW-001 to R-POW-005); the four sourced exchange cards remain.
 - [ ] **Open: #752.** PR 13 objective 1, the war and its goldens.
@@ -112,7 +112,7 @@ PRs 1 to 12 have their owner answers recorded in the Phase 6 plan (#1060, #1069)
 - [ ] **Open: #809.** PR 6 every objective card. The objectives screen is in the side menu, with status and dates and no score (owner, 20 Oct 2026; #1202, #1189 closed).
 - [x] **Done: `docs/rules/mvp.md`, R-END-005 and R-END-006.** PR 7 the simulation end report (#1149; #810).
 - [ ] **Open: #811.** PR 8 Unity event-card effects.
-- [ ] **Open: #812.** PR 9 Unity end screen. The end screen shows the end report (#1156); the war loss's line and the history notes remain. Q-END-3 and Q-DEF-4 are decided and recorded (#997, #1069); the Hebrew defeat text goes to native-speaker review.
+- [ ] **Open: #812.** PR 9 Unity end screen. The end screen shows the end report (#1156), the war loss's line (`end.outcome.defeat_war`), the score's reference line (#1964, #1967) and the prisoners returned (#1969); the history notes remain (their code path is #1966). Q-END-3 and Q-DEF-4 are decided and recorded (#997, #1069); the Hebrew defeat text goes to native-speaker review.
 - [ ] **Open: #530.** PR 10 opening cutscene. Q-OPEN-3 through Q-OPEN-5 are decided and recorded (#1069).
 - [x] **Done: the first-turn guide.** PR 11 onboarding for the GDD loop: a five-step guide, skippable and re-openable (#1209; #42 closed), with follow-ups (#1225, #1234, #1286).
 - [ ] **Open: #813.** PR 12 balance pass; the target is a 60 to 90 minute session (below), and it also decides the IL 250m debt ceiling and the loyalty floor of 5 (owner, 18 Oct 2026).
@@ -148,7 +148,7 @@ The first outside play-test (18 October). The plan of record for these is #1038.
 
 ## Critical path
 
-1. **Open: #731.** The Arms pool, five-resource effects and the Food and Arms display are done (#1047, #1790); the Defence and Cabinet leftovers remain.
+1. **Open: #731.** The Arms pool, five-resource effects and the Food and Arms display are done (#1047, #1790); the Phase 2 Roadmap row and #382 remain.
 2. **Done: Phase 3.** City projects, the winery and the city panel are done (#1255, #1198, #1294).
 3. **Open: #785.** Finish the site reviews, then #792; corridors and objective 3 are done (#870, #1226).
 4. **Open: #749, #751, #752 and #756, then #757.** Recruits, artillery acquisition, war state, unit orders and the Defence screen are done (#1130, #1346, #1148, #1310, #1277, #1493).
@@ -165,10 +165,10 @@ The first outside play-test (18 October). The plan of record for these is #1038.
 The art and map issues under #18 remain a parallel track, not a substitute for the phase work above.
 
 - [ ] **Open: #1183.** Denser hexes: Tel Aviv to Jerusalem in 7 to 8 hexes. The measured plan is on `main` (#1185); the 4.4 km bake is on `main` (#1796, merged 2 November 2026). Left: the WebGL load-time gate on the merged bake.
-- [ ] **Open: #663, #707, #666 and #667.** Remaining model placement and art work. #659, #665, #708 and #886 are closed; the last Collection figures, including Tal Heuberger's Arab villager, are in play (#1321). #669, #670 and #725 are closed (#1086, #1022, #1028). The Burma Road vehicles' approximate end boundary (#1040) is implemented in [#1067](https://github.com/eyalgolan/statecraft-israel/pull/1067): the convoy truck and lorry from #1028 stop on 7 December 1948; both `burma_road` vehicle plans use that exclusive end date. `RoadVehiclesTests.BurmaRoadVehiclesStopOn7DecemberWhileOtherRoutesContinue` checks 6 and 7 December. The route itself has no new end date.
+- [ ] **Open: #663, #666 and #667.** Remaining model placement and art work. #659, #665, #707, #708 and #886 are closed (#707: b21 on built arms workshops under gdd-0.3, #2281); the last Collection figures, including Tal Heuberger's Arab villager, are in play (#1321). #669, #670 and #725 are closed (#1086, #1022, #1028). The Burma Road vehicles' approximate end boundary (#1040) is implemented in [#1067](https://github.com/eyalgolan/statecraft-israel/pull/1067): the convoy truck and lorry from #1028 stop on 7 December 1948; both `burma_road` vehicle plans use that exclusive end date. `RoadVehiclesTests.BurmaRoadVehiclesStopOn7DecemberWhileOtherRoutesContinue` checks 6 and 7 December. The route itself has no new end date.
 - [x] **Done: the CHANGELOG entry for the nine whole-town models (0.1.0).** The nine whole-town landmarks (#917). #885 is closed into #708.
 - [x] **Done: #1004.** The building models stood far bigger than the train, and Jaffa's over Tel Aviv's (v0.1.1). #1030 puts every building model at 24x real (owner: "Merge, then fix landmarks + grids"); the kit landmarks and plot grids followed in #1048 (#1032), and townspeople and wildlife at the same scale in #1050 (#1033).
-- [x] **Done: `NOTICE` and `ASSETS.yaml`.** The artist credit is present (`NOTICE:12`), and The 1948 Collection's `ASSETS.yaml` artist is Tal Heuberger (#895; the credit confirmed by the owner on 18 October in [#887](https://github.com/eyalgolan/statecraft-israel/issues/887#issuecomment-6249500690), the full name since #1078); #887 is closed.
+- [x] **Done: `NOTICE` and `ASSETS.yaml`.** The artist credit is present (`NOTICE:14-15`), and The 1948 Collection's `ASSETS.yaml` artist is Tal Heuberger (#895; the credit confirmed by the owner on 18 October in [#887](https://github.com/eyalgolan/statecraft-israel/issues/887#issuecomment-6249500690), the full name since #1078); #887 is closed.
 
 ## Follow-ups
 
@@ -188,7 +188,7 @@ The owner approved these on 17 October on #856 (the location roster and the map 
 
 - [ ] **Open: #1006.** Nir Am's infrastructure-protection objective is decided: keep the Negev water line in Israeli hands until 24 February 1949, with a sourced card and balance-pass points. The research draft is on `main` (#1161); implementation remains, blocked by enemy captures (#1305).
 - [ ] **Open: #1007.** Umm Rashrash is decided as a bonus inside objective 1, with the Ink Flag card dated 10 March 1949 and balance-pass points. The research draft is on `main` (#1159); the map record is claimed, and the bonus waits on #752.
-- [ ] **Open: #1008, pull requests #1924 and #1926.** The GDD v0.2 must-have location rows and English and Hebrew labels are on `main` (#1057); the remaining source checks and a person's factual review remain.
+- [ ] **Open: #1008.** The GDD v0.2 must-have location rows and English and Hebrew labels are on `main` (#1057), and so are agent-read source checks of all ten rows (#1775, #1827, #1924, #1926, #1979, #1980, #2002); the ten rows are still `draft`, and the open `[GAP]` rows and a person's source check remain.
 - [x] **Done: #1009.** The Unity editor-window design is decided. The override schema, loader and application order are on `main` as step 1 (#1099), and the editor window as step 2 (#1266); the visible-editor review is recorded (owner: "reviewed, approved", [#1721](https://github.com/eyalgolan/statecraft-israel/issues/1721#issuecomment-6470784895)), and #1009 is closed. The GDD 0.3 editor work is #1721, pull request #2443.
 
 ## After the MVP
