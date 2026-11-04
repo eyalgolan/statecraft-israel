@@ -159,7 +159,8 @@ public class InfoPanelLayoutTests
 
     /// <summary>#2039, owner ruling of 2 Nov 2026 ("Keep hexes, fix the panel"): the hex the game names Jerusalem also holds
     /// the Old City, so the control data puts it on the Arab side from 11 June 1948 and the map colours it so; its panel line
-    /// names West Jerusalem as Israeli-held instead, in English and Hebrew. The opening period keeps its no-man's land.</summary>
+    /// names West Jerusalem as Israeli-held instead, in English and Hebrew. From the start, 15 May 1948, too: the opening period's
+    /// no-man's land (data code m, to 10 June) names it so as well (owner, 3 November 2026: "Israeli-held from 15 May (Recommended)", #2039 issuecomment-6610644690).</summary>
     [UnityTest]
     public IEnumerator TheJerusalemPanelNamesWestJerusalemAsIsraeliHeld([Values(false, true)] bool hebrew)
     {
@@ -170,7 +171,8 @@ public class InfoPanelLayoutTests
         var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
         var expected = new[]
         {
-            (new System.DateTime(1948, 5, 15), hebrew ? "שטח הפקר" : "No-man's land"),
+            (new System.DateTime(1948, 5, 15), hebrew ? "בשליטת ישראל (מערב ירושלים)" : "Held by Israel (West Jerusalem)"),
+            (new System.DateTime(1948, 6, 10), hebrew ? "בשליטת ישראל (מערב ירושלים)" : "Held by Israel (West Jerusalem)"),
             (new System.DateTime(1948, 8, 1), hebrew ? "בשליטת ישראל (מערב ירושלים)" : "Held by Israel (West Jerusalem)"),
             (new System.DateTime(1949, 9, 1), hebrew ? "הצד הישראלי של קו שביתת הנשק (מערב ירושלים)" : "Israeli side of the armistice line (West Jerusalem)"),
         };

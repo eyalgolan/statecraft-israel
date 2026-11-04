@@ -233,6 +233,8 @@ deuteranopia the pair is ΔE 8 apart, which is close to indistinguishable. This 
 change carries its sign in the text ("+IL 5.0m", "-1.7%"; `HudTests.ChangesShowSignsAndZeroDeltasAreEmpty`). Each colour
 is above 4.5:1 on the bar (8.66 and 6.02). Proposed fix, if wanted: a small up or down mark next to the number.
 
+**Decided, 4 November 2026** (Q27): the coordinator asked: "Which accessibility package should apply to top-bar changes and arrow-key navigation?" The owner answered: "do the recommended for all". The chosen option read: "Add painted up/down triangles and let Up/Down move between rows only while a screen is open" ([recorded on #2340](https://github.com/eyalgolan/statecraft-israel/issues/2340#issuecomment-6623136558)).
+
 ### L2. Escape and the top bar's New Game
 
 On the start screen Escape withdraws an armed New Game (`StartScreenPresenter.Escape`). In the top bar it does not: the
@@ -250,6 +252,8 @@ when focused.
 By design (B6, `NavigationGuard.cs`) the arrows pan the camera and only Tab moves focus. That meets 2.1.1, but a list such
 as the Budget's 16 buttons or 50 candidates is Tab-only. Proposed fix: while a screen is open and the pointer is not
 panning, Up and Down move between rows. A design call; it touches the B6 ruling.
+
+**Decided, 4 November 2026** (Q27): the coordinator asked: "Which accessibility package should apply to top-bar changes and arrow-key navigation?" The owner answered: "do the recommended for all". The chosen option read: "Add painted up/down triangles and let Up/Down move between rows only while a screen is open" ([recorded on #2340](https://github.com/eyalgolan/statecraft-israel/issues/2340#issuecomment-6623136558)).
 
 ### L5. Start screen secondary lines over the painting
 

@@ -629,6 +629,69 @@ public class StartScreenTests
         }
     }
 
+    /// <summary>#2340 L5: the English lines and the source line stay at 4.5:1 or more over the brightest pixel of the panel
+    /// behind them, where the painting's lit hats show through, at the audit's 1568x752 window. One frame is rendered with
+    /// those lines' text hidden, so each line's rect holds only the panel over the painting; its brightest pixel is set
+    /// against the line's resolved colour (both sRGB: the target is an sRGB texture, read back encoded). The rect spans the
+    /// panel's width, wider than the glyphs, so this is the worst case on purpose.</summary>
+    [UnityTest]
+    public IEnumerator TheSecondaryLinesKeep4p5To1OverTheBrightestPaintingBehindThem()
+    {
+        const int W = 1568, H = 752;
+        using var ui = new RenderedUi(W, H);
+        var store = WithSave(TempStore(), 1);
+        var bridge = new SimBridge(GameStart.Begin(C, store, () => 4UL, new List<string>(), Text, out var resumed), Text);
+        var toast = new ToastPresenter(ui.Root, bridge, Text);
+        var newGame = new NewGamePresenter(ui.Root, bridge, store, toast, Text, () => 5UL);
+        var start = new StartScreenPresenter(ui.Root, newGame, resumed);
+        var tex = new Texture2D(W, H, TextureFormat.RGBA32, false);
+        try
+        {
+            ui.Root.Q("root").RemoveFromClassList("loading");
+            start.Show();
+            var lines = new[] { "start-en-proclamation", "start-en-date", "start-source" };
+            for (int i = 0; i < 20 && (float.IsNaN(ui.Root.Q("start-panel").worldBound.width) || ui.Root.Q("start-panel").worldBound.width <= 0); i++) yield return null;
+            for (int i = 0; i < 4; i++) yield return null;      // the band height is set from the first layout
+            var ink = lines.ToDictionary(n => n, n => ui.Q<Label>(n).resolvedStyle.color);
+            foreach (var n in lines) ui.Q<Label>(n).style.color = Color.clear;
+            for (int i = 0; i < 3; i++) yield return null;
+            RenderTexture.active = ui.Doc.panelSettings.targetTexture;
+            tex.ReadPixels(new Rect(0, 0, W, H), 0, 0); tex.Apply();
+            RenderTexture.active = null;
+
+            static float Lum(Color c)
+            {
+                static float Lin(float v) => v <= 0.04045f ? v / 12.92f : Mathf.Pow((v + 0.055f) / 1.055f, 2.4f);
+                return 0.2126f * Lin(c.r) + 0.7152f * Lin(c.g) + 0.0722f * Lin(c.b);
+            }
+            var window = ui.Root.panel.visualTree.worldBound;
+            float sx = W / window.width, sy = H / window.height;
+            var report = new List<string>();
+            float worst = float.MaxValue;
+            foreach (var n in lines)
+            {
+                var r = ui.Root.Q(n).worldBound;
+                Color brightest = Color.black;
+                for (int y = Mathf.FloorToInt(r.yMin * sy); y < Mathf.CeilToInt(r.yMax * sy); y++)
+                    for (int x = Mathf.FloorToInt(r.xMin * sx); x < Mathf.CeilToInt(r.xMax * sx); x++)
+                    {
+                        var p = tex.GetPixel(x, H - 1 - y);                     // ReadPixels row 0 is the bottom
+                        if (Lum(p) > Lum(brightest)) brightest = p;
+                    }
+                float ratio = (Lum(ink[n]) + 0.05f) / (Lum(brightest) + 0.05f);
+                worst = Mathf.Min(worst, ratio);
+                report.Add($"{n} {ratio:0.00}:1 over {(Color32)brightest}");
+            }
+            TestContext.Out.WriteLine(string.Join("; ", report));
+            // The fallback .start-screen background (--navy-deep, about 0.0045) must not pass for the painting, or the
+            // samples above are panel over navy and the ratios come out too easy: a lit painting pixel is well above 0.02.
+            var top = Lum(tex.GetPixel(W / 2, H - 20));
+            Assert.Greater(top, 0.02f, $"the painting was drawn at the top of the window (luminance {top:0.0000}; navy-deep alone is about 0.0045)");
+            Assert.GreaterOrEqual(worst, 4.5f, string.Join("; ", report));
+        }
+        finally { Object.DestroyImmediate(tex); start.Dispose(); newGame.Dispose(); toast.Dispose(); }
+    }
+
     /// <summary>#530: a player build shows "Replay the opening" in the start row between New game and Star on GitHub
     /// (GameRoot, whenever OpeningContent.MayPresent), a button the Rig and ItFitsEveryWindowSize keep hidden. Shown as
     /// GameRoot shows it, in English and Hebrew, with and without a save (Continue), at 1920x1080, 1366x768 and 390x844:
