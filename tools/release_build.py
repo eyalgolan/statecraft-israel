@@ -219,7 +219,10 @@ def git(*args: str) -> Result:
 
 
 def checked_git_output(*args: str) -> str:
-    result = git(*args)
+    try:
+        result = git(*args)
+    except OSError as e:
+        raise SafetyCheckFailed(f"`git {' '.join(args)}` could not start: {e}") from e
     if result.returncode != 0:
         raise SafetyCheckFailed(f"`git {' '.join(args)}` exited {result.returncode}")
     return result.stdout

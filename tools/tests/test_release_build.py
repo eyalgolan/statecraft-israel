@@ -387,6 +387,22 @@ def test_a_failed_initial_git_status_is_refused_before_build(repo, editor, monke
     assert "cannot prove the working tree is clean" in capsys.readouterr().err
 
 
+class GitWontStart(Fake):
+    def __call__(self, cmd, **kw):
+        if [str(c) for c in cmd][:2] == ["git", "status"]:
+            raise FileNotFoundError(2, "No such file or directory", "git")
+        return super().__call__(cmd, **kw)
+
+
+def test_a_git_that_cannot_start_is_refused_with_a_message(repo, editor, monkeypatch, tmp_path, capsys):
+    fake = GitWontStart()
+    assert run_main(["--platform", "mac", "--out", str(tmp_path / "out")],
+                    repo, editor, fake, monkeypatch) == 1
+    assert unity_calls(fake) == []
+    assert "cannot prove the working tree is clean: `git status --porcelain --untracked-files=normal` could not start" \
+        in capsys.readouterr().err
+
+
 def test_untracked_files_count_as_dirty(repo, editor, monkeypatch, tmp_path):
     fake = Fake(dirty="?? notes.txt\n")
     assert run_main(["--platform", "mac", "--out", str(tmp_path / "out")], repo, editor, fake, monkeypatch) == 1
