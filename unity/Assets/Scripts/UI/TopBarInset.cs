@@ -1,4 +1,5 @@
 #nullable enable
+using System.Collections.Generic;
 using Statecraft.Game.Map;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -12,13 +13,20 @@ namespace Statecraft.Game.UI
     public sealed class TopBarInset : System.IDisposable
     {
         readonly VisualElement root, bar; readonly CameraRig rig;
+        /// <summary>The bar and every element up to <see cref="root"/>: SafeAreaFit pads the root, which moves #root (and the
+        /// bar inside it) without changing the root's or the bar's own layout, so their events alone would miss it (#2572).</summary>
+        readonly List<VisualElement> watched = new List<VisualElement>();
 
         public TopBarInset(VisualElement root, CameraRig rig)
         {
             this.root = root; this.rig = rig;
             bar = root.Q<VisualElement>("top-bar");
-            bar.RegisterCallback<GeometryChangedEvent>(OnGeometry);
-            root.RegisterCallback<GeometryChangedEvent>(OnGeometry);
+            for (var e = bar; e != null; e = e.parent)
+            {
+                watched.Add(e);
+                if (e == root) break;
+            }
+            foreach (var e in watched) e.RegisterCallback<GeometryChangedEvent>(OnGeometry);
             Update();
         }
 
@@ -39,8 +47,8 @@ namespace Statecraft.Game.UI
 
         public void Dispose()
         {
-            bar.UnregisterCallback<GeometryChangedEvent>(OnGeometry);
-            root.UnregisterCallback<GeometryChangedEvent>(OnGeometry);
+            foreach (var e in watched) e.UnregisterCallback<GeometryChangedEvent>(OnGeometry);
+            watched.Clear();
             if (rig == null) return;
             rig.TopInset = 0f;
             rig.ApplyProjection();

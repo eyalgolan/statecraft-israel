@@ -578,14 +578,15 @@ public class MapLabelTests
     }
 
     /// <summary>#2572: the camera inset includes the safe area above the top bar, while a zero inset keeps the top bar's
-    /// old share of the window.</summary>
+    /// old share of the window. Built in GameRoot's order (TopBarInset, then SafeAreaFit) and never told to update: the
+    /// padding SafeAreaFit puts on the root must reach the camera through the layout's own events.</summary>
     [UnityTest]
     public IEnumerator TheCameraInsetIncludesTheSafeAreaAboveTheTopBar()
     {
         var hd = new HdPanel(cam);
         var safeInsets = (l: 0f, r: 0f, t: 0f, b: 0f);
-        var safeArea = new SafeAreaFit(hd.Root, () => safeInsets);
         var inset = new TopBarInset(hd.Root, rig);
+        var safeArea = new SafeAreaFit(hd.Root, () => safeInsets);
         try
         {
             var bar = hd.Root.Q<VisualElement>("top-bar");
@@ -593,24 +594,26 @@ public class MapLabelTests
             yield return null; yield return null;
             var panelBounds = hd.Root.panel.visualTree.worldBound;
             var window = panelBounds.height;
-            inset.Update();
             Assert.AreEqual(panelBounds.yMin, bar.worldBound.yMin, 1e-3f, "with no safe area the bar starts at the panel top");
             Assert.AreEqual(bar.worldBound.height / window, rig.TopInset, 1e-3f,
                 "with no safe-area inset the bar starts at the panel top, so its bottom edge is its height");
 
             const float safeTop = 47f;
-            safeInsets = (0f, 0f, safeTop, 0f);
-            safeArea.Apply(0f, 0f, safeTop, 0f);
-            for (int i = 0; i < 10 && bar.worldBound.yMin - panelBounds.yMin < safeTop - 1f; i++)
+            safeInsets = (0f, 0f, safeTop, 0f);   // what SafeAreaFit's per-frame poll reads next
+            safeArea.Apply(0f, 0f, safeTop, 0f);   // and what it then writes: the root's padding, as on a notched phone
+            var expected = 0f;
+            for (int i = 0; i < 20; i++)
             {
                 EditorApplication.QueuePlayerLoopUpdate();
                 yield return null;
+                expected = (bar.worldBound.yMax - panelBounds.yMin) / window;
+                if (bar.worldBound.yMin - panelBounds.yMin >= safeTop - 1f && Mathf.Abs(rig.TopInset - expected) < 1e-3f) break;
             }
-            inset.Update();
+            Assert.AreEqual(safeTop, bar.worldBound.yMin - panelBounds.yMin, 1f, "precondition: the padding moved the bar down");
             Assert.AreEqual((safeTop + bar.worldBound.height) / window, rig.TopInset, 1e-3f,
-                "the camera leaves room for the safe area and the top bar");
+                "the camera leaves room for the safe area and the top bar, with no call to Update");
         }
-        finally { inset.Dispose(); safeArea.Dispose(); hd.Dispose(); }
+        finally { safeArea.Dispose(); inset.Dispose(); hd.Dispose(); }
     }
 
     /// <summary>Independent of the presenter's own projection call: the Tel Aviv pill sits centred over its kit and just
