@@ -108,6 +108,44 @@ public class SaveGameTests
         Assert.Equal(played.Previous!.Hash(), loaded.Previous!.Hash());  // "since last turn" survives a load
     }
 
+    /// <summary>#2542: gdd-0.1 and gdd-0.3 saves replay the stayed lost marker. A same-content save made before the marker
+    /// existed is accepted only when removing that marker reproduces its saved hash.</summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void AStayedLostMarkerRoundTripsAndIsTheOnlyAcceptedOldHashDifference(bool gdd03)
+    {
+        var c = CaptureTests.Load(files =>
+        {
+            NoAttentionTests.Select(files, gdd03);
+            files["map/units_1948.yaml"] = "units:\n- id: starter\n  service: army\n  side: israel\n  status: draft\n  strength: { value: 20, as_of: '1948-05-15' }\n  anchors:\n  - { place: Here, lon: 34.29, lat: 33.35, from: '1948-05-15', to: '1949-01-01' }\n";
+            files["map/unit_anchor_hexes.yaml"] = "anchors:\n  - { id: starter, anchor: 0, q: 0, r: 1 }\n";
+        }, CaptureTests.AllTargets);
+        var played = GameSession.New(c, 1, Mode.Historical);
+        var result = played.Step(new Command[] { new Move(0, 1, 0), new ResolveCapture("town_a", SettlementControl.Raid) });
+        Assert.Empty(result.Rejected);
+        var lost = played.State.Settlements["town_a"];
+        Assert.Equal(("", "", false), (lost.Owner, lost.State, lost.Fled));
+        Assert.Equal(played.State.Date, lost.Since);
+        Assert.Equal(played.State.Hash(), GameSession.Load(c, played.Save.Write(), out var warnings).State.Hash());
+        Assert.Empty(warnings);
+
+        string WithEnd(string text, string hash)
+        {
+            var lines = text.Split('\n');
+            lines[lines.Length - 2] = "end " + hash;
+            return string.Join("\n", lines);
+        }
+        var beforeMarkers = played.State.Clone(); beforeMarkers.Settlements.Remove("town_a");
+        var accepted = GameSession.Load(c, WithEnd(played.Save.Write(), beforeMarkers.Hash()), out warnings);
+        Assert.Empty(warnings);
+        Assert.Equal(played.State.Hash(), accepted.State.Hash());
+
+        var other = beforeMarkers.Clone(); other.Treasury += 1;
+        var ex = Assert.Throws<SaveException>(() => GameSession.Load(c, WithEnd(played.Save.Write(), other.Hash()), out _));
+        Assert.Equal("The replay does not match the saved game: the save is damaged or was edited, or the game has a bug.", ex.Message);
+    }
+
     [Fact]
     // R-ALT-009
     public void ARejoinedRoadRoundTripsThroughASave()

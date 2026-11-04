@@ -100,7 +100,9 @@ namespace Statecraft.Sim
             try { foreach (var turn in saved.Turns) { session.Step(turn); turnNo++; } }
             catch (SaveException) { throw; }
             catch (Exception e) { throw new SaveException(FormattableString.Invariant($"turn {turnNo + 1}: {e.Message}"), e); }
-            if (session.State.Hash() != saved.FinalHash)
+            // #2542: a save made before stayed losses left a marker replays with only those markers added. It is the same
+            // game, so accept that exact same-content difference; every other replay mismatch keeps the existing handling.
+            if (session.State.Hash() != saved.FinalHash && !(sameContent && OnlyLostMarkersAdded(session.State, saved.FinalHash)))
             {
                 if (saved.Version < 3 && saved.Ruleset == SaveGame.GddRuleset)
                     throw new SaveException(0, "This save was made with an earlier version of the game's rules.", SaveException.OlderRules);
@@ -117,6 +119,21 @@ namespace Statecraft.Sim
             }
             warnings = list;
             return session;
+        }
+
+        /// <summary>#2542: whether a replay differs from its saved final state only by ownerless, inhabited, stayed markers
+        /// for places captured and later lost. Before this change those records were removed. Narrow by design: remove every
+        /// record having exactly the new lost-marker shape, then require the saved hash to match.</summary>
+        static bool OnlyLostMarkersAdded(GameState s, string savedHash)
+        {
+            var ids = s.Settlements.Where(kv => kv.Value.Owner == "" && kv.Value.State == ""
+                && kv.Value.Since != default && !kv.Value.Depopulated && !kv.Value.Fled
+                && kv.Value.Combatants == 0 && kv.Value.Buildings == "" && kv.Value.Turns == 0)
+                .Select(kv => kv.Key).ToList();
+            if (ids.Count == 0) return false;
+            var before = s.Clone();
+            foreach (var id in ids) before.Settlements.Remove(id);
+            return before.Hash() == savedHash;
         }
     }
 }

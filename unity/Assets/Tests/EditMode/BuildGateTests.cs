@@ -92,8 +92,8 @@ public class BuildGateTests
     public void TheShippedReviewManifestCoversTheWholeSettlementControlSurface() // R-GATE-002
     {
         var review = ParseSettlementReview(File.ReadAllText(UiPaths.SettlementControlStringsReview), UiPaths.SettlementControlStringsReview);
-        Assert.AreEqual("sensitivity-reviewed", SettlementReview.GetProperty("Status")!.GetValue(review),
-            "the owner signed off all 42 strings themselves (dbc70439, 26 October 2026); an AI-assisted change never sets this");
+        Assert.AreEqual("pending", SettlementReview.GetProperty("Status")!.GetValue(review),
+            "#2542 adds agent-drafted English and Hebrew control strings; native and sensitivity review are pending");
         var rows = ((System.Collections.IEnumerable)SettlementReview.GetProperty("Strings")!.GetValue(review)!).Cast<object>();
         var rowType = SettlementReview.GetNestedType("Row")!;
         var keys = rows.Select(x => (string)rowType.GetProperty("Key")!.GetValue(x)!).ToArray();
@@ -109,7 +109,9 @@ public class BuildGateTests
             "capture.refusal.no_one_to_deport", "capture.refusal.already_city", "capture.refusal.not_awaiting",
             "capture.refusal.unknown_outcome",
             "map.control.awaiting_choice", "map.control.occupied", "map.control.awaiting_end", "map.control.depopulated",
+            "map.control.annexed", "map.control.lost",
             "info.control.awaiting_choice", "info.control.occupied", "info.control.awaiting_end", "info.control.depopulated",
+            "info.control.annexed", "info.control.lost", "info.control.enemy_held",
             "hud.standing_displaced_places",
         }, keys);
         // A settlement-control key added to either strings file later (U6's dialog, #799's annex words) must join the manifest.

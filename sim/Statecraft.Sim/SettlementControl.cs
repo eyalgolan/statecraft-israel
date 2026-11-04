@@ -24,9 +24,9 @@ namespace Statecraft.Sim
             var enemyHeld = new HashSet<string>(c.RulesAt(s.Date).Mvp!.EnemyHeldLocalities, StringComparer.Ordinal);
             foreach (var t in c.SettlementTargets.Where(x => enemyHeld.Contains(x.Id)).OrderBy(x => x.Id, StringComparer.Ordinal))
             {
-                // An ownerless fled record (the place returned to enemy control) is no record here, so it can be taken again.
+                // An ownerless, non-depopulated record marks a place returned to enemy control and can be taken again.
                 if (Holder(s, t.Q, t.R) != Movement.PlayerSide
-                    || (s.Settlements.TryGetValue(t.Id, out var old) && !(old.Owner == "" && old.Fled && !old.Depopulated))) continue;
+                    || (s.Settlements.TryGetValue(t.Id, out var old) && !(old.Owner == "" && !old.Depopulated))) continue;
                 var fled = t.Residents == ContentLoader.Fled;
                 s.Settlements[t.Id] = new SettlementControl(Movement.PlayerSide, AwaitingChoice, fled: fled);
                 why.Add(new Cause("map", t.Id, 0, $"{c.SettlementNames[t.Id]} is captured: Israeli units hold it and no enemy unit is there. "
@@ -38,8 +38,7 @@ namespace Statecraft.Sim
         /// Deport keeps that date in its ownerless record (#1327); every other field is preserved.</summary>
         internal static void Stamp(GameState s, DateTime next)
         {
-            foreach (var id in s.Settlements.Where(x => x.Value.Since == default
-                && (x.Value.Owner == Movement.PlayerSide || x.Value.Depopulated || x.Value.Fled)).Select(x => x.Key).ToList())
+            foreach (var id in s.Settlements.Where(x => x.Value.Since == default).Select(x => x.Key).ToList())
             {
                 var x = s.Settlements[id];
                 s.Settlements[id] = new SettlementControl(x.Owner, x.State, next, x.Depopulated, x.Combatants, x.Buildings, x.Turns, x.Fled);
@@ -209,16 +208,16 @@ namespace Statecraft.Sim
         /// <summary>R-CTRL-010, Raid and withdraw (Q-RAID-1 (a)): the player's units on the place's hex, soldiers and halutzim
         /// alike, leave in id order, each to the first neighbouring hex in the fixed <see cref="Movement.Neighbours"/> order
         /// that is land, holds no enemy unit, is no enemy-held locality (R-MOVE-005) and has room for it (R-MOVE-003). Leaving
-        /// costs no movement points (the default proposed on #797). The record goes (a fled one stays ownerless, <see cref="Release"/>),
+        /// costs no movement points (the default proposed on #797). The record becomes the ownerless marker (<see cref="Release"/>),
         /// so the place is under enemy control again at once, and its residents are unchanged (or fled at capture). Refused, the state untouched, when a unit has nowhere to go, unless
-        /// <paramref name="atTheEnd"/>: then that unit stays, the others leave and the record still goes.</summary>
+        /// <paramref name="atTheEnd"/>: then that unit stays, the others leave and the ownerless marker remains.</summary>
         static CaptureRefusal? Withdraw(Content c, GameState s, string id, List<Cause> why, bool atTheEnd)
         {
             var t = c.SettlementTargets.First(x => x.Id == id);   // only a target gets a record (R-CTRL-004)
             var name = c.SettlementNames[id];
             var moved = new List<(Unit From, Unit To)>();
             if (MoveOut(c, s, t, name, atTheEnd, moved) is CaptureRefusal no) return no;
-            var residentsFled = s.Settlements[id].Fled; // snapshot before Release removes the record
+            var residentsFled = s.Settlements[id].Fled; // snapshot before Release replaces the record
             var residents = Residents(s.Settlements[id]);
             Release(s, id);
             Withdrew(id, name, moved, why);
@@ -235,13 +234,12 @@ namespace Statecraft.Sim
         /// <summary>What the player-facing lines say about the residents: unchanged for a stayed place, fled for a fled one.</summary>
         static string Residents(SettlementControl x) => x.Fled ? FledLine : "Its residents are unchanged";
 
-        /// <summary>R-CTRL-004, R-CTRL-010 (OWNER QUESTION 2 (b) on #799): a place returns to enemy control. A fled record stays
-        /// as an ownerless record with its capture date, the flight remembered; any other record goes.</summary>
+        /// <summary>R-CTRL-004, R-CTRL-010: a place returns to enemy control. Its record stays ownerless with its capture date
+        /// and the residents' flight state remembered, so a stayed loss remains distinguishable from a place never taken.</summary>
         static void Release(GameState s, string id)
         {
             var x = s.Settlements[id];
-            if (x.Fled) s.Settlements[id] = new SettlementControl(since: x.Since, fled: true);
-            else s.Settlements.Remove(id);
+            s.Settlements[id] = new SettlementControl(since: x.Since, fled: x.Fled);
         }
 
         /// <summary>R-CTRL-010's move: the units leave <paramref name="t"/>'s hex as <see cref="Withdraw"/> says, into
@@ -342,7 +340,7 @@ namespace Statecraft.Sim
 
         /// <summary>R-CTRL-008 (owner, 18 October 2026 on #797, "Counts as Raid"), where resolver step 10 sits on the turn that
         /// reaches the game's end: every capture still awaiting the choice, in ordinal id order, resolves as Raid. A unit with
-        /// nowhere to go stays while the others leave, and the record goes all the same, since the game is over. It runs before objectives and score
+        /// nowhere to go stays while the others leave, and the record becomes ownerless all the same, since the game is over. It runs before objectives and score
         /// (step 11) and changes neither, so it adds nothing to the score.</summary>
         internal static void EndPending(Content c, GameState s, List<Cause> why)
         {
@@ -355,7 +353,7 @@ namespace Statecraft.Sim
 
         /// <summary>Resolver step 10, the occupation timers, in ordinal id order (R-CTRL-011 to R-CTRL-013). An occupied place
         /// with no Israeli military unit left on its hex has been withdrawn from before the timer ended, which is a Raid
-        /// (Q-OCC-2 (a)): its record goes, so it is under enemy control again, its residents unchanged, and nothing is paid.
+        /// (Q-OCC-2 (a)): its record becomes ownerless, so it is under enemy control again, its residents unchanged, and nothing is paid.
         /// Every other occupation pays mvp.occupation_upkeep_per_turn (Q-OCC-1 (a)), the wait for EndOccupation included, and a
         /// running timer counts one turn down; at 0 the place awaits EndOccupation (Phase 6 PR 7). It draws nothing from the
         /// RNG.</summary>

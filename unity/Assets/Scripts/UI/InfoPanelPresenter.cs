@@ -676,7 +676,8 @@ namespace Statecraft.Game.UI
         /// <summary>The region lines for a hex on a date: its armistice zone (name, agreement, date) if one is in force, else
         /// its 1948 sub-district; then each armistice line in force through it. <paramref name="jerusalem"/>: the hex is the
         /// Jerusalem settlement's (see ControlText).</summary>
-        public static string RegionText(MapRegions regions, UiText text, int q, int r, System.DateTime date, bool jerusalem = false)
+        public static string RegionText(MapRegions regions, UiText text, int q, int r, System.DateTime date, bool jerusalem = false,
+            bool? livePlayerHolder = null)
         {
             // Isolate a Hebrew date from the surrounding English fallback names: otherwise the row's
             // LTR paragraph can place its day before its year/month (the mixed-language #558 browser regression).
@@ -687,9 +688,9 @@ namespace Statecraft.Game.UI
             }
             var parts = new List<string>();
             var zone = regions.ZoneAt(q, r, date);
-            var control = ControlText(regions, text, q, r, date, jerusalem);
+            var control = ControlText(regions, text, q, r, date, jerusalem, livePlayerHolder);
             // a demilitarized zone is named by its own line below; the control line would only repeat "Demilitarized zone"
-            if (control != "" && !(zone != null && regions.Control?.At(q, r, date).side == Control1948.Side.Dmz)) parts.Add(control);
+            if (control != "" && !(livePlayerHolder == null && zone != null && regions.Control?.At(q, r, date).side == Control1948.Side.Dmz)) parts.Add(control);
             // the sub-district only while the map draws the sub-district bands (before the first sourced line, or with no side data)
             var sub = regions.Subdistricts.ShowsOn(date) && regions.ControlPeriod(date) == null ? regions.Subdistricts.SubdistrictAt(q, r) : null;
             string N(string key, string english) => regions.Names.Pick(key, english, text["ui.lang"] == UiLanguage.Hebrew);
@@ -709,8 +710,10 @@ namespace Statecraft.Game.UI
         /// Jerusalem also holds the Old City, so the data puts it on the Arab side from 11 June 1948; its panel names the
         /// Israeli-held West Jerusalem instead, and the map keeps its colour (#2039, owner ruling 2 Nov 2026: "Keep hexes, fix
         /// the panel").</summary>
-        public static string ControlText(MapRegions regions, UiText text, int q, int r, System.DateTime date, bool jerusalem = false)
+        public static string ControlText(MapRegions regions, UiText text, int q, int r, System.DateTime date, bool jerusalem = false,
+            bool? livePlayerHolder = null)
         {
+            if (livePlayerHolder != null) return text[livePlayerHolder.Value ? "info.control_israel" : "info.control.enemy_held"];
             var p = regions.ControlPeriod(date);
             if (p == null || regions.Control == null) return "";
             var (side, holder) = regions.Control.At(q, r, date);
@@ -963,8 +966,15 @@ namespace Statecraft.Game.UI
             subtitle.text = hex == null ? "" : text.Format("info.hex", text["info.biome." + hex.Biome], hex.ElevM);   // no debug coordinates in player text (playtest 2, P2-6)
             // The armistice zone in force, else the sub-district on 15 May 1948, and any armistice line in force through the
             // hex, each with its agreement (true lines drawn to the nearest hex edge: the owner's ruling).
-            region.text = regions == null ? "" : RegionText(regions, text, q, r, s.Date, c.SettlementHexes.Any(x => x.Q == q && x.R == r && x.Id == "jerusalem"));
+            var live = c.SettlementHexes.Where(x => x.Q == q && x.R == r && s.Settlements.ContainsKey(x.Id))
+                .OrderBy(x => x.Id, StringComparer.Ordinal).Select(x => (hex: x, record: s.Settlements[x.Id])).ToList();
+            var liveHolder = live.Select(x => SettlementControlView.PlayerHolds(x.record)).FirstOrDefault(x => x != null);
+            region.text = regions == null ? "" : RegionText(regions, text, q, r, s.Date,
+                c.SettlementHexes.Any(x => x.Q == q && x.R == r && x.Id == "jerusalem"), liveHolder);
             settlements.text = owned.Count > 0 ? text.Format("info.owned", string.Join(", ", owned)) : "";
+            foreach (var x in live)
+                if (SettlementControlView.PanelText(text, TownName(x.hex.Id), x.record) is string detail)
+                    settlements.text += (settlements.text == "" ? "" : "\n") + detail;
             // A town in a water hex is drawn on its nearest land hex (Tiberias, in the lake, on the 70 m hex): one line says
             // so, so this hex's elevation does not read as the town's (#204).
             if (townHex != null)
