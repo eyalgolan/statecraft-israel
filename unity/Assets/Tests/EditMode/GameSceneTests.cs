@@ -1184,11 +1184,24 @@ public class GameRootEscapeTests : SharedCameraActionsFixture
         UiTestKit.Press(Ui.Q<Button>("new-game"));
         var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
         Assert.AreEqual(text["newgame.confirm"], Ui.Q<Label>("toast").text, "precondition: the top bar armed the request");
-        (Ui.focusController?.focusedElement as VisualElement)?.Blur();   // Escape with no focus, as after a mouse press
-        Press(keyboard.escapeKey);
-        Assert.IsTrue(keyboard.escapeKey.wasPressedThisFrame, "precondition: Escape went down this frame");
-        typeof(GameRoot).GetMethod("Update", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(root, null);
-        Release(keyboard.escapeKey);
+        var newGame = (NewGamePresenter)typeof(GameRoot).GetField("newGame", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(root)!;
+        void Escape()
+        {
+            (Ui.focusController?.focusedElement as VisualElement)?.Blur();   // Escape with no focus, as after a mouse press
+            Press(keyboard.escapeKey);
+            Assert.IsTrue(keyboard.escapeKey.wasPressedThisFrame, "precondition: Escape went down this frame");
+            typeof(GameRoot).GetMethod("Update", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(root, null);
+            Release(keyboard.escapeKey);
+        }
+        // The owner's order (#2549, comment 6636159055): the open screen closes first (nav.Close); only an Escape it
+        // declines withdraws the request.
+        UiTestKit.Press(Ui.Q<Button>("nav-budget"));
+        Assert.AreEqual(DisplayStyle.Flex, Ui.Q("screen-budget").style.display.value, "precondition: a screen is open");
+        Escape();
+        Assert.AreNotEqual(DisplayStyle.Flex, Ui.Q("screen-budget").style.display.value, "the first Escape closes the screen");
+        Assert.IsTrue(newGame.Armed, "the first Escape is the screen's: the request is still armed");
+        Escape();
+        Assert.IsFalse(newGame.Armed, "the next Escape withdraws the request");
         Assert.AreEqual("", Ui.Q<Label>("toast").text, "the prompt is off the toast");
         Assert.AreEqual((home.Q, home.R), info.Selected, "the Escape was used up: the map selection stays");
         var session = bridge.Session;
