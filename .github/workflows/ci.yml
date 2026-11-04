@@ -87,7 +87,8 @@ jobs:
     name: Changelog
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    # Was 5: the fetch-depth 0 checkout of the PR merge ref took up to the whole 5 minutes and the job was cancelled (#2409, #2417, #2398).
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
