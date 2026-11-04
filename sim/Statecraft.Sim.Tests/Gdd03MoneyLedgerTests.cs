@@ -34,7 +34,7 @@ public class Gdd03MoneyLedgerTests
     /// without a line; (c) the Treasury ends at 0 or more.</summary>
     internal static void AssertReconciles(GameState before, StepResult r, string what)
     {
-        var money = r.Why.Where(EconomySystem.MovesMoney).Sum(w => w.Delta);
+        var money = r.Why.Where(EconomySystem.MovesMoney).Sum(EconomySystem.MoneyDelta);
         var net = (r.State.Treasury - r.State.Debt) - (before.Treasury - before.Debt);
         Assert.True(Math.Abs(money - net) <= Tolerance, $"{what}: the Money causes add up to {N(money)}, Treasury minus Debt moved {N(net)}");
         var debt = r.Why.Where(w => w.Target == "debt").Sum(w => w.Delta);

@@ -168,17 +168,19 @@ public class Gdd03FieldFixtureTests
         Assert.Equal(0, f.Yield(Rules(c), Month(c, s, V1), AllHeld(c)).Fields[V1]);
     }
 
-    // Our reading, not an owner ruling: only a farmer holds a field (the rates exist only for farmer tiers, GDD.md:385;
-    // tools and the self-taught route are post-MVP, #1693; a course grants the qualification, training.md:48; starting
-    // farmers have the 1:2:1 tiers, GDD.md:389). A civilian with no profession, a pioneer and a craftsman are refused.
+    // R-FIELD-002: only a farmer holds a field. Owner ruling, 4 November 2026, #1694 (Q22), asked "May only a unit with
+    // the Farmer profession staff a field?", answered "yes" (issuecomment-6623124984). A civilian with no profession, a
+    // pioneer and a craftsman are refused with the state unchanged; a farmer then takes the same field.
     [Fact] public void OnlyAFarmerWorksAField()
     {
         var c = Real();
         var s = State(c, new[] { Person(InValleys, CivilianProfession.None, CivilianTier.None),
             Person(InValleys, CivilianProfession.Pioneer, CivilianTier.Veteran),
-            Person(InValleys, CivilianProfession.Craftsman, CivilianTier.Expert) });
+            Person(InValleys, CivilianProfession.Craftsman, CivilianTier.Expert), Person(InValleys) });
         var f = new Gdd03FieldFixture(c, s, Array.Empty<Gdd03FixtureSlot>());
         foreach (var id in new[] { 0, 1, 2 }) Refused(s, () => f.Staff(id, V1, israeliHeld: true), "Only a farmer");
+        Assert.Equal(Gdd03FixtureAssignmentResult.Applied, f.Staff(3, V1, israeliHeld: true));
+        Assert.Equal(V1, s.PopulationLedger.Get(3).Assignment.Target);
     }
 
     // 27M-2 ("Farming counts whole months from the month's snapshot") and R-VET-002 (the turn-start tier): a farmer

@@ -99,6 +99,9 @@ namespace Statecraft.Sim
                         if (sensitive && NoGainTargets.Contains(fx.Target) && fx.Delta > 0)
                             throw new ContentException(e.File, F($"options[{o.Id}].effects.{fx.Target}"), $"sensitive events cannot reward {fx.Target}");
                     }
+                    // R-EFX-009: checked in every ruleset, since every ruleset reads the same cards; only gdd-0.3 applies it.
+                    if (o.DebtDollars is double debt && !(double.IsFinite(debt) && debt > 0))
+                        throw new ContentException(e.File, F($"options[{o.Id}].debt_dollars"), "must be a finite number > 0 (US$ millions)");
                 }
             }
             CheckRequirementCycles(c);

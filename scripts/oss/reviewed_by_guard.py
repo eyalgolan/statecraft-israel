@@ -13,6 +13,14 @@ a person has signed off. For every commit in a pull request's range this fails w
    sign-off; a merge commit releases nothing);
 3. a person's added `reviewed_on` is after the day of their own commit.
 
+A signed row's Hebrew counts as part of the row wherever it lives (owner, 25 October 2026, on #1618: "Yes, carry them
+over"): inline (title_he, text_he, name_he_review ...) or as the row's entry in translations/he/events.yaml or
+content.yaml (docs/translations.md). An AI-co-authored commit that only removes Hebrew field lines from a signed row and
+leaves the row's Hebrew, read from both places, exactly as its parent had it (the same decoded text: the two places quote
+differently, so the YAML's bytes cannot match), has moved it, and the sign-off covers it. Any other change to that Hebrew, in either place (a moved value that differs, a lost review flag, a
+dropped option, an edit after the move), is an edit of the signed row under (2). The translation files are read whole
+with the game's YAML 1.2 core schema, not diffed; one that does not parse fails closed.
+
 "Co-wrote" is the trailer test of tools/review_queue.py (AI_MARK: "Co-Authored-By: Claude / Codex / Copilot / GPT ...",
 "Generated with [Claude Code]" or "Generated with Codex"), read from each commit's full message. For (1) any non-comment
 line that names either key counts, quoted or not, block or flow style. A row's span is its mapping's lines
@@ -59,6 +67,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tools"))
 import yaml  # noqa: E402
 from review_queue import AI_MARK, signed_rows  # noqa: E402  (one definition of the trailer test and of a signed row)
+import yaml12  # noqa: E402  (translations/ is read as the game reads it: the YAML 1.2 core schema)
 
 EMPTY_TREE = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 PATHSPEC = [":(glob)content/**/*.yaml", ":(glob)content/**/*.yml"]
@@ -75,6 +84,10 @@ CHECK = re.compile(r"\b(?:check|checks|checked|checking|verify|verified|compared
 LIST_MARK = re.compile(r"^\s*(?:(?:\d+[.)]|[-*+])\s+|\[[ xX]\]\s*)")
 FENCE = re.compile(r"^ {0,3}(```|~~~)")
 KEYS = ("reviewed_by", "reviewed_on")
+HE_EVENTS, HE_CONTENT = "translations/he/events.yaml", "translations/he/content.yaml"
+HE_FIELD = re.compile(r"^( *)[\"']?[a-z_]+_he(?:_f)?(?:_review)?[\"']?\s*:")
+HE_KEY = re.compile(r"(.+)_he(_f)?")
+HE_NAME = re.compile(r"[a-z_]+_he(?:_f)?(?:_review)?")   # a Hebrew field's key, as HE_FIELD reads it on a line
 
 
 class GuardError(Exception):
@@ -272,6 +285,9 @@ def check(repo: Path, base: str, head: str, ai_disclosed: bool = False) -> list[
         except (subprocess.CalledProcessError, ValueError) as e:
             raise GuardError(f"cannot read commit {sha[:10]}") from e
         agent = AI_MARK.search(message) is not None
+        moved: set[tuple[str, str, str, str]] = set()   # (file, row, parent, the file at the parent): its Hebrew moved or changed
+        if agent:
+            moved |= _translated_rows(repo, sha, parents)
         for ch in files:
             named = [(cols, text) for hk in ch.hunks for cols, text in hk.lines if _named(text)]
             if agent:
@@ -299,6 +315,9 @@ def check(repo: Path, base: str, head: str, ai_disclosed: bool = False) -> list[
                                 continue
                             inserted = [t for cols, t in hk.lines if "+" in cols]
                             if _touches(row, hk.old[p][0], hk.old[p][1], inserted):
+                                if len(parents) == 1 and _moves_hebrew_out(hk):
+                                    moved.add((ch.path, row.label, parent, old))   # judged by its Hebrew, below
+                                    continue
                                 edited.setdefault((ch.path, row.label), sha)
                                 break
                 if not ai_disclosed:
@@ -339,11 +358,179 @@ def check(repo: Path, base: str, head: str, ai_disclosed: bool = False) -> list[
                                  if any(row.first <= n <= row.last for n in removed)}
                 for label in released:
                     edited.pop((ch.path, label), None)
+        for path, label, parent, old in sorted(moved):
+            # Owner, 25 October 2026 (#1618): a sign-off covers its row's Hebrew moved into translations/he/ with the same
+            # decoded text;
+            # any other change to that Hebrew, inline or there, is an edit of the signed row.
+            before = _hebrew(repo, parent, old, label)
+            if before is not None and before != _hebrew(repo, sha, path, label):
+                edited.setdefault((path, label), sha)
     for (path, label), sha in edited.items():
         problems.append(f"{sha[:10]}: a commit with an AI co-author trailer edits {path} row {label!r}, which a person signed "
                         f"off (owner, 15 October 2026: \"Block it in CI\"). A person must read it again and sign it again "
                         f"(new reviewed_by / reviewed_on), or remove its sign-off, in a commit of their own.")
     return problems
+
+
+def _moves_hebrew_out(hk: Hunk) -> bool:
+    """True when a one-parent hunk only removes Hebrew text fields (title_he, text_he, name_he_review ...: a key with a
+    text value on its line, or a quoted or block scalar with its lines): the Hebrew may have moved into translations/he/,
+    which _hebrew judges. A key holding a list or a mapping (biography_sources.name_he, a source), an anchor or an alias
+    is not Hebrew text, and neither is _he_sources or the title's form and date window: removing one is an edit. A
+    flow-style row ({ ... } on one line) cannot lose a field without changing its line, so moving its Hebrew is an edit
+    too, and a person signs it again."""
+    indent = more = None
+    for cols, text in hk.lines:
+        if "+" in cols:
+            return False
+        m = HE_FIELD.match(text)
+        if m and not text.lstrip().startswith("#"):
+            value = text[m.end():].strip()
+            if not value or value[0] in "[{&*-":
+                return False
+            indent, more = len(m.group(1)), value[0] in ">|\"'"
+        elif indent is None or not more or (text.strip() and len(text) - len(text.lstrip(" ")) <= indent):
+            return False
+    return indent is not None
+
+
+def _records(node, ids: tuple = ()):
+    """Every mapping under node with its key path, as tools/translate.py keys content: a list item by its id, else by its
+    index."""
+    if isinstance(node, yaml.MappingNode):
+        yield ids, node
+        for k, v in node.value:
+            yield from _records(v, ids + (_scalar(k),))
+    elif isinstance(node, yaml.SequenceNode):
+        for i, item in enumerate(node.value):
+            ident = next((v.value for k, v in item.value if _scalar(k) == "id" and isinstance(v, yaml.ScalarNode)), None) \
+                if isinstance(item, yaml.MappingNode) else None
+            yield from _records(item, ids + (ident if ident is not None else str(i),))
+
+
+def _scalar(node) -> str:
+    return node.value if isinstance(node, yaml.ScalarNode) else ""
+
+
+def _translations(repo: Path, rev: str, rel: str) -> dict:
+    text = _show(repo, rev, rel)
+    if text is None:
+        return {}
+    try:
+        data = yaml12.load(text) or {}
+    except yaml.YAMLError as e:
+        raise GuardError(f"cannot parse {rel} at {rev[:10]}") from e
+    if not isinstance(data, dict):
+        raise GuardError(f"{rel} at {rev[:10]} is not a mapping")
+    return data
+
+
+def _hebrew(repo: Path, rev: str, path: str, label: str) -> dict[str, set] | None:
+    """The Hebrew a signed row carries at a revision, inline and in translations/he/, by the translation key: the value
+    (and its review flag) from each place that has one, as decoded text. Equal on both sides of a commit when it moved the
+    Hebrew with the same text; None when the row is not signed there. Every Hebrew field an event or one of its options
+    carries counts: one with no place in translations/he/ (title_he_f, an option's text_he_review) keeps its own key, so
+    removing it is an edit, never a move."""
+    text = _show(repo, rev, path)
+    row = next((r for r in (_signed(repo, rev, path, must_exist=False) if text is not None else []) if r.label == label), None)
+    if row is None:
+        return None
+    out: dict[str, set] = {}
+
+    def put(key: str, value) -> None:   # a value that is not text never equals the inline Hebrew: it fails closed
+        out.setdefault(key, set()).add(value if isinstance(value, str) else ("not text", repr(value)))
+
+    rel = path.removeprefix("content/")
+    root = yaml.compose(text)
+    if rel.startswith("events/"):
+        top = {_scalar(k): v for k, v in root.value} if isinstance(root, yaml.MappingNode) else {}
+        moved = {"title_he": "title", "text_he": "text", "text_he_review": "review"}
+        for field, node in top.items():
+            if HE_NAME.fullmatch(field):
+                put(moved.get(field, "inline:" + field), node.value if isinstance(node, yaml.ScalarNode) else repr(node))
+        for i, o in enumerate(top["options"].value if isinstance(top.get("options"), yaml.SequenceNode) else []):
+            kv = {_scalar(k): v for k, v in o.value} if isinstance(o, yaml.MappingNode) else {}
+            oid = kv["id"].value if isinstance(kv.get("id"), yaml.ScalarNode) else f"#{i}"
+            for field, node in kv.items():
+                if HE_NAME.fullmatch(field):
+                    value = node.value if isinstance(node, yaml.ScalarNode) else repr(node)
+                    put(f"option:{oid}" if field == "text_he" else f"option:{oid}:inline:{field}", value)
+        entry = _translations(repo, rev, HE_EVENTS).get(label)
+        if isinstance(entry, dict):
+            for key in ("title", "text", "review"):
+                if key in entry:
+                    put(key, entry[key])
+            options = entry.get("options")
+            for oid, value in (options if isinstance(options, dict) else {"(options)": options} if options else {}).items():
+                put(f"option:{oid}", value)
+        return out
+    inside = {".".join(ids): node for ids, node in _records(root) if row.first <= node.start_mark.line + 1 <= row.last}
+    for where, node in inside.items():
+        for k, v in node.value:
+            m = HE_KEY.fullmatch(_scalar(k).removesuffix("_review"))
+            if m and isinstance(v, yaml.ScalarNode):
+                field = f"{rel}#{where}.{m.group(1)}{'_f' if m.group(2) else ''}"
+                put(field + (":review" if _scalar(k).endswith("_review") else ""), v.value)
+    for key, entry in _translations(repo, rev, HE_CONTENT).items():
+        file, _, rest = str(key).partition("#")
+        if file == rel and rest.rpartition(".")[0] in inside and isinstance(entry, dict):
+            put(key, entry.get("text"))
+            if "review" in entry:
+                put(key + ":review", entry["review"])
+    return out
+
+
+def _translated_rows(repo: Path, sha: str, parents: list[str]) -> set[tuple[str, str, str, str]]:
+    """The signed rows whose entry in translations/he/events.yaml or content.yaml this commit changes against a parent
+    (a merge: against every parent), as (file, row, parent, file): the content file is named by the key."""
+    out = set()
+    for rel in (HE_EVENTS, HE_CONTENT):
+        now = _translations(repo, sha, rel)
+        befores = [(p, _translations(repo, p, rel)) for p in parents]
+        changed = {k for k in set(now).union(*(b for _, b in befores)) if all(now.get(k) != b.get(k) for _, b in befores)}
+        for parent, before in befores:
+            for key in sorted(changed, key=str):
+                if rel == HE_EVENTS:
+                    path = _event_file(repo, parent, str(key))
+                    label = str(key)
+                else:
+                    file, _, rest = str(key).partition("#")
+                    path, label = "content/" + file, _row_of(repo, parent, "content/" + file, rest.rpartition(".")[0])
+                if path and label:
+                    out.add((path, label, parent, path))
+    return out
+
+
+def _event_file(repo: Path, rev: str, eid: str) -> str | None:
+    """The content/events/ file whose id is eid at a revision (by name first, then by reading each)."""
+    guess = f"content/events/{eid}.yaml"
+    names = [n for n in _git(["ls-tree", "-r", "--name-only", rev, "--", "content/events/"], repo).splitlines()
+             if n.endswith((".yaml", ".yml"))]
+    for name in sorted(names, key=lambda n: n != guess):
+        text = _show(repo, rev, name)
+        try:
+            root = yaml.compose(text) if text else None
+        except yaml.YAMLError as e:
+            raise GuardError(f"cannot parse {name} at {rev[:10]}") from e
+        if isinstance(root, yaml.MappingNode) and any(_scalar(k) == "id" and _scalar(v) == eid for k, v in root.value):
+            return name
+    return None
+
+
+def _row_of(repo: Path, rev: str, path: str, where: str) -> str | None:
+    """The label of the signed row holding the record at this key path at a revision, if one does."""
+    text = _show(repo, rev, path)
+    if text is None:
+        return None
+    try:
+        record = next((n for ids, n in _records(yaml.compose(text)) if ".".join(ids) == where), None)
+    except yaml.YAMLError as e:
+        raise GuardError(f"cannot parse {path} at {rev[:10]}") from e
+    if record is None:
+        return None
+    line = record.start_mark.line + 1
+    rows = [r for r in _signed(repo, rev, path, must_exist=True) if r.first <= line <= r.last]
+    return min(rows, key=lambda r: r.last - r.first).label if rows else None
 
 
 def main(argv: list[str] | None = None) -> int:

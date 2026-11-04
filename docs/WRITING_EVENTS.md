@@ -244,6 +244,7 @@ Each option has:
 | `city_effects` | no | GDD loop only. A list of `{ city, field, delta }`: see "grant_units and city_effects". |
 | `unlock_projects` | no | GDD loop only. A list of `projects.yaml` ids: see "grant_units and city_effects". |
 | `unit_orders` | no | GDD loop only, applied under gdd-0.1 only. A list of `{ unit, q, r }`: see "unit_orders". |
+| `debt_dollars` | no | Applied under gdd-0.3 only. US$ millions, more than 0, that the option also adds to Debt, in IL at the `mvp.il_per_dollar` rate in force on the event's date (R-EFX-009). |
 | `alternative` | on every option that did not happen, in an event with a historical option | Who put it forward, on what record. See below. |
 | `rejoin` | no | Consequence cards only. The id of the event whose road the card follows; choosing this option returns later cards to the recorded course (R-ALT-009). See "kind". |
 
@@ -545,27 +546,31 @@ office, date)` are the only readers. Lines that change across an era boundary ar
 
 ## GDD 0.3 first-slice availability (#1718)
 
-Legacy and gdd-0.1 continue to load every shared event file, with their existing content identity and effects.
+Legacy and gdd-0.1 continue to load every shared event file, with their existing effects. Their content identity is
+unchanged except for `israel_bonds`, whose source pin changed when it gained `debt_dollars` (#2457); its effects
+outside gdd-0.3 did not change.
 Only the `gdd-0.3` identity reads and hashes `content/gdd03-events.yaml`. It must contain `ruleset: gdd-0.3`
 and an explicit `exclusions` list of `{ id, reason }` entries. Its schema is `content/schema/gdd03-events.schema.json`.
 Missing/null manifests, unknown/duplicate ids, blank reasons, and references from active requirements, variants,
 rejoin options or objective cards to excluded ids are content errors. Every source file still parses strictly;
 the remaining catalogue receives the usual cross-reference, effect and sensitivity validation.
 
-The approved first slice excludes exactly `austerity_1949`, `clothing_rationing_1950`, `forex_crisis_1951`,
+The approved first slice excluded exactly `austerity_1949`, `clothing_rationing_1950`, `forex_crisis_1951`,
 `iraqi_exodus`, `israel_bonds`, `maabarot_policy`, `reparations_claim` and `reparations_vote`, including all their
 options (`reparations_vote` joined with #1575, for the same reason as `reparations_claim`).
 Six of these were hard anchors. Since then #2224 restored `clothing_rationing_1950`, `reparations_claim` and
-`reparations_vote`, and #2483 (owner, 4 November 2026) turned on `austerity_1949`, `forex_crisis_1951`,
-`iraqi_exodus` and `maabarot_policy`; `israel_bonds` is the one card still excluded and unavailable in 0.3.
-Shared records, Hebrew, tags, status and human sign-offs remain unchanged and available to review tools. Removing an exclusion requires a reviewed follow-up
+`reparations_vote`, `israel_bonds` came back with its equal Debt (#2457, R-EFX-009), and #2483 (owner, 4 November 2026)
+turned on `austerity_1949`, `forex_crisis_1951`, `iraqi_exodus` and `maabarot_policy`; no card is excluded in 0.3.
+Shared records, Hebrew, tags, status and human sign-offs remain unchanged and available to review tools, except that
+`israel_bonds` gained `debt_dollars` (its source pin changed; its text, Hebrew, sources and status did not). Removing
+an exclusion requires a reviewed follow-up
 with approved accounting and authored values; it does not itself approve a replacement or transfer a sign-off.
 There is no automatic review promotion, and all existing release gates still apply.
 
 R-EFX-001 rejects 0.3 writes to Attention and defeat commands even if authored as compatibility indicators.
 Reserved target spellings are `attention`/`attention_*`, `defeat`, `city_loss_defeat` and `any_city_loss`. Since
 #2483 (owner, 4 November 2026) 0.3 events write `food_supply` and `housing`, and the `rationing`/`maabarot`
-policy, as in 0.1. Under D1 (owner, 1 November 2026)
+policy, as in 0.1 (maintainer reading: the policy writes come with the cards, #2483). Under D1 (owner, 1 November 2026)
 the passive budget, the monthly Food refill and foreign currency stay: `fx_reserves` and the `budget*`,
 `passive_budget*`, `food_refill` and `automatic_food_refill` spellings load in 0.3 as in 0.1. Other unknown
 targets remain errors. No new alias or conversion is provided.
