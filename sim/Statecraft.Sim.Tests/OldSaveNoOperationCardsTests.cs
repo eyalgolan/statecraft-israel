@@ -10,6 +10,10 @@ using Statecraft.Sim;
 /// </summary>
 public class OldSaveNoOperationCardsTests
 {
+    // GameState.Hash() of this save's replay after S1 (the Syrian army's 15 July 1948 step, #1270), reviewed and accepted by
+    // the owner's 4 Nov 2026 ruling "(a) Accept replay differs (Recommended)" on #2180.
+    private const string AcceptedReplayHashAfterS1 = "bec1464e1a0811554f8958e8d5a601807d887d3f18b6c88e90914292bc88a89d";
+
     [Fact]
     public void V034Gdd01SaveWithNoOperationCardLoadsAndReportsReplayDiffers()
     {
@@ -47,10 +51,12 @@ public class OldSaveNoOperationCardsTests
         // Then changed (4 Nov 2026, #2180, #1270; the lines above are the maintainers', unchanged): the Syrian script's S1
         // anchor (from 8 July 1948) steps the Syrian army onto it on the 15 July 1948 turn, inside this game. Asked whether
         // v0.3.4 gdd-0.1 saves reaching that day may replay differently, the owner chose "(a) Accept replay differs
-        // (Recommended)": "as for #2087's cards on 3 November, old saves load with the content and replay-changed notice,
-        // and the test is updated". So this save still loads, keeps its open order and warns content_changed plus
-        // replay_differs, nothing else.
-        Assert.NotEqual(saved.FinalHash, loaded.State.Hash());
+        // (Recommended)"; the chosen option read: "as for #2087's cards on 3 November, old saves load with the content and
+        // replay-changed notice, and the test is updated". So this save still loads, keeps its open order and warns
+        // content_changed plus replay_differs, nothing else.
+        // The accepted replay is pinned exactly: any further drift changes this hash and needs its own owner decision.
+        // Re-pin only for a reviewed change, with the ruling that accepts it.
+        Assert.Equal(AcceptedReplayHashAfterS1, loaded.State.Hash());
         var order = Assert.IsType<UnitOrder>(Assert.Single(loaded.Committed));
         Assert.Equal((3, Orders.Fortify), (order.Unit, order.Order));
 
