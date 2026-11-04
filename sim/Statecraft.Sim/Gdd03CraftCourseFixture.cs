@@ -10,7 +10,7 @@ namespace Statecraft.Sim
     /// turns follow Gdd03TrainingCentreFixture's Q43 timing (#2391; docs/GDD.md:372, from the 1 November 2026 answers the
     /// owner approved): the enrolment month is course turn 1, and the turn that reaches Agreed `craft.course_turns` makes
     /// an apprentice, released at once. No teacher is read or created ("The course adds no mentor population unit").
-    /// Cases not built here (decided or, for D3, not ruled) are refused with a "Deferred:" NotSupportedException.</summary>
+    /// Cases not built here (decided or not ruled) are refused with a "Deferred:" NotSupportedException.</summary>
     internal sealed class Gdd03CraftCourseFixture
     {
         readonly GameState state;
@@ -37,10 +37,8 @@ namespace Statecraft.Sim
         }
 
         static NotSupportedException Deferred(string question) => new NotSupportedException("Deferred: " + question);
-        // D3 is deferred, not ruled: the three sources below are quoted, not resolved, and no answer is built.
-        const string D3 = "#1668 D3 (deferred, not ruled: a trained or veteran farmer or pioneer starting the craftsman course. The #1698 body, agent-recorded scope, says \"The course cannot replace another trained profession\"; docs/GDD.md:349 (D3) says \"a Train order can take a qualified civilian, who then loses the qualification (R-QUAL-006)\"; R-QUAL-006 (docs/rules/mvp.md) says \"A Train order (R-TRAIN-001) takes the city's unqualified civilians first. A qualified civilian it has to take loses its qualification, in the order craftsmen, halutz groups with the least service, veterans (owner, 24 October 2026: \"Accept all as built\", https://github.com/eyalgolan/statecraft-israel/issues/1511#issuecomment-6375597377).\" No answer is chosen here.)";
-        // Re-enrolment is ruled; the tiers during and after a new course are not, so only that part stays Deferred.
-        const string Q27M5 = "#1668 27M-5 (ruled: \"graduates may re-enrol at any time\", docs/gdd/training.md:66; not built here: no ruled text says which tier a craftsman holds during and after a new craftsman course).";
+        // The owner's 4 November 2026 re-enrolment answer covers an apprentice or expert craftsman, not a novice outside a course.
+        const string NoviceCraftsman = "#1698 (not ruled: a novice craftsman outside a course starting the craftsman course; the owner's 4 November 2026 answer, \"Keep their level (Recommended)\", covers an apprentice or expert craftsman).";
         const string Q52 = "#1668 Q52 (decided, not built here: a course whose Industry slot is lost is cancelled like CancelTraining; the slot is #1692's).";
         internal const string CourseAtOpeningReason = "After the enrolment month, a course turn counts only when the month's opening holds the course (#1668 Q43(a), GDD 1 Nov 2026).";
 
@@ -52,8 +50,8 @@ namespace Statecraft.Sim
             state.PopulationLedger.Reconcile();
             foreach (var p in AtCourses())
                 if (p.Assignment.Kind != PopulationAssignmentKind.Course || p.Assignment.TeacherId != null
-                    || p.Profession != CivilianProfession.Craftsman || p.Tier != CivilianTier.Novice || p.Assignment.ProgressTicks >= courseTurns)
-                    throw new ArgumentException("A craftsman course holds only novice craftsmen, with no teacher and an unfinished course.");
+                    || p.Profession != CivilianProfession.Craftsman || p.Assignment.ProgressTicks >= courseTurns)
+                    throw new ArgumentException("A craftsman course holds only craftsmen, with no teacher and an unfinished course.");
         }
 
         string CourseOf(PopulationUnit pupil)
@@ -75,7 +73,10 @@ namespace Statecraft.Sim
 
         /// <summary>R-CRAFT-003: a received free civilian with no profession, or a novice farmer or pioneer (27M-3), starts
         /// the course as a novice craftsman (#1698 follow-up) under the same id. Work XP resets to 0 because the course
-        /// replaces the novice profession (a maintainer call); tools and their paid fact are kept (27M-3, Q44). A job held
+        /// replaces the novice profession (a maintainer call); tools and their paid fact are kept (27M-3, Q44). A trained or
+        /// veteran farmer or pioneer starts the same way and loses that level (R-QUAL-006; owner, 4 November 2026: "Yes,
+        /// lose old level (Recommended)"). An apprentice or expert craftsman re-enrols (27M-5) keeping tier and work XP
+        /// (owner, 4 November 2026: "Keep their level (Recommended)"); a novice craftsman outside a course is Deferred. A job held
         /// now is released in the same commit, and what the person held at the month's opening is no bar: a maintainer
         /// reading of docs/gdd/cities.md:42 ("Reassignment releases old capacity atomically.") with docs/GDD.md:372
         /// Q43(b)/(c), as #1697's second slice reads them, not an owner ruling. A person released by a graduation cannot
@@ -93,17 +94,20 @@ namespace Statecraft.Sim
             // A course or teaching would have to be cancelled by the new start (docs/gdd/training.md:66); not done here.
             if (p.Assignment.Kind != PopulationAssignmentKind.Unassigned && p.Assignment.Kind != PopulationAssignmentKind.Work)
                 throw new ArgumentException("Only a free civilian without a job or with a job can start the craftsman course.");
-            if (p.Profession == CivilianProfession.Craftsman) throw Deferred(Q27M5);
-            if (p.Profession != CivilianProfession.None && p.Tier != CivilianTier.Novice) throw Deferred(D3);
+            bool reEnrolment = p.Profession == CivilianProfession.Craftsman;
+            if (reEnrolment && p.Tier == CivilianTier.Novice) throw Deferred(NoviceCraftsman);
 
-            ledger.Replace(WithProfession(p, PopulationStatus.Trainee, new PopulationAssignment(PopulationAssignmentKind.Course, courseId),
-                CivilianProfession.Craftsman, CivilianTier.Novice, 0));
+            var course = new PopulationAssignment(PopulationAssignmentKind.Course, courseId);
+            ledger.Replace(reEnrolment
+                ? WithProfession(p, PopulationStatus.Trainee, course, CivilianProfession.Craftsman, p.Tier, p.WorkXp)
+                : WithProfession(p, PopulationStatus.Trainee, course, CivilianProfession.Craftsman, CivilianTier.Novice, 0));
             months[p.Id] = (month.MonthOrdinal, -1);
         }
 
         /// <summary>R-CRAFT-003: count one course turn, once per month ordinal: in the enrolment month (Q43(a)), or in a later
-        /// month whose opening already holds the course. The turn that reaches Agreed `craft.course_turns` makes an
-        /// apprentice craftsman, released in that turn as a civilian without a job (Q43(b)); work starts the next month.</summary>
+        /// month whose opening already holds the course. The turn that reaches Agreed `craft.course_turns` makes a novice an
+        /// apprentice craftsman (a re-enrolled apprentice or expert keeps the level: owner, 4 November 2026, "Keep their
+        /// level (Recommended)"), released in that turn as a civilian without a job (Q43(b)); work starts the next month.</summary>
         internal void Advance(int traineeId, Gdd03SyntheticMonthContext month)
         {
             ValidateInventory();
@@ -132,20 +136,22 @@ namespace Statecraft.Sim
                 return;
             }
             ledger.Replace(WithProfession(p, PopulationStatus.FreeCivilian, PopulationAssignment.Unassigned,
-                CivilianProfession.Craftsman, CivilianTier.Apprentice, p.WorkXp));
+                CivilianProfession.Craftsman, p.Tier == CivilianTier.Novice ? CivilianTier.Apprentice : p.Tier, p.WorkXp));
             months.Remove(p.Id);
             graduated[p.Id] = month.MonthOrdinal;
         }
 
         /// <summary>R-CRAFT-003: cancelling before qualifying makes an ordinary civilian again (#1698 follow-up): profession
         /// and tier none, work XP 0, released at once as a civilian without a job (Q43(b)). Same id; tools and their paid
-        /// fact are kept and nothing is refunded (27M-4, Q44).</summary>
+        /// fact are kept and nothing is refunded (27M-4, Q44). A re-enrolled apprentice or expert keeps the craftsman tier and
+        /// work XP (owner, 4 November 2026: "Keep their level (Recommended)").</summary>
         internal void Cancel(int traineeId)
         {
             ValidateInventory();
             var ledger = state.PopulationLedger; var p = ledger.Get(traineeId); CourseOf(p);
-            ledger.Replace(WithProfession(p, PopulationStatus.FreeCivilian, PopulationAssignment.Unassigned,
-                CivilianProfession.None, CivilianTier.None, 0));
+            ledger.Replace(p.Tier == CivilianTier.Novice
+                ? WithProfession(p, PopulationStatus.FreeCivilian, PopulationAssignment.Unassigned, CivilianProfession.None, CivilianTier.None, 0)
+                : WithProfession(p, PopulationStatus.FreeCivilian, PopulationAssignment.Unassigned, CivilianProfession.Craftsman, p.Tier, p.WorkXp));
             months.Remove(p.Id);
         }
     }
