@@ -89,7 +89,7 @@ public class Gdd03CraftCourseFixtureTests
 
     // R-CRAFT-003, #1698 follow-up ("When the craftsman course starts"), 27M-3 ("Can a not-yet-qualified farmer or pioneer
     // start a craftsman course? | Yes (two-way professions, D3). The course replaces the novice profession, and paid tools
-    // are not refunded."): a received free civilian, a novice farmer and a novice pioneer each start the course as a novice
+    // are not refunded."): a free civilian, a novice farmer and a novice pioneer each start the course as a novice
     // craftsman under the same population id. Work XP is reset to 0 (a maintainer call: the course replaces the novice
     // profession); tools and their paid fact are kept. No person is created.
     [Theory]

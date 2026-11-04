@@ -71,7 +71,7 @@ namespace Statecraft.Sim
             => new PopulationUnit(p.Id, status, p.ReceptionTicks, p.Location, assignment, profession, tier, workXp,
                 p.Qualification, p.CombatXp, p.Equipment, p.Captor, p.Home);
 
-        /// <summary>R-CRAFT-003: a received free civilian with no profession, or a novice farmer or pioneer (27M-3), starts
+        /// <summary>R-CRAFT-003: a free civilian with no profession, or a novice farmer or pioneer (27M-3), starts
         /// the course as a novice craftsman (#1698 follow-up) under the same id. Work XP resets to 0 because the course
         /// replaces the novice profession (a maintainer call); tools and their paid fact are kept (27M-3, Q44). A trained or
         /// veteran farmer or pioneer starts the same way and loses that level (R-QUAL-006; owner, 4 November 2026: "Yes,
@@ -89,8 +89,10 @@ namespace Statecraft.Sim
             Opening(month, p.Id); // the person must be in the month's opening snapshot, as in #2391
             if (graduated.TryGetValue(p.Id, out var g) && month.MonthOrdinal <= g)
                 throw new ArgumentException(Gdd03TrainingCentreFixture.GraduationMonthReason);
-            if (p.Status != PopulationStatus.FreeCivilian || p.ReceptionTicks != ledger.ReceptionLimit)
-                throw new ArgumentException("The pupil must be a received free civilian.");
+            // Any free civilian, whatever their reception progress, as the #2413 training-centre fixture (R-TRAIN-005;
+            // docs/GDD.md:374: "Refugees cannot train until they become civilians").
+            if (p.Status != PopulationStatus.FreeCivilian)
+                throw new ArgumentException("The pupil must be a free civilian.");
             // A course or teaching would have to be cancelled by the new start (docs/gdd/training.md:66); not done here.
             if (p.Assignment.Kind != PopulationAssignmentKind.Unassigned && p.Assignment.Kind != PopulationAssignmentKind.Work)
                 throw new ArgumentException("Only a free civilian without a job or with a job can start the craftsman course.");
