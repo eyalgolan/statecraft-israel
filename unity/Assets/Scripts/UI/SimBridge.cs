@@ -396,11 +396,11 @@ namespace Statecraft.Game.UI
             return r;
         }
 
-        /// <summary>Switches to another session (a loaded save), dropping queued orders.</summary>
+        /// <summary>Switches to another session (a loaded save), dropping queued orders and the last batch's metadata.</summary>
         public void Replace(GameSession session)
         {
             Session = session ?? throw new ArgumentNullException(nameof(session));
-            LastBatch = Array.Empty<Command>();
+            LastBatch = Array.Empty<Command>(); LastBatchDate = default(DateTime);
             deferred.Clear(); skipped.Clear();
             Notify(Changed);
         }
