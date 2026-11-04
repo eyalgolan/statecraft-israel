@@ -109,34 +109,37 @@ namespace Statecraft.Game.Map.Collection
             // The flag over the tail, its lower edge FlagClearM over the top of the aircraft's box at this bank: clear of the
             // airframe at every bank and heading.
             if (flag != null) flag.position = drawn - forward * half.x + Vector3.up * (TopOver(half, bank) + FlagClearM + flagHalf * flag.lossyScale.y);
-            if (shadow != null && ground != null) PlaceShadow(drawn, forward, bank);
+            if (shadow != null && ground != null) LayShadow(shadow, ground, seaY, shadowHalf, drawn, forward, bank);
         }
 
-        /// <summary>The scene sun's ray from <paramref name="drawn"/> to the ground (or the sea's surface), found in two steps (the ground's height where the
-        /// ray lands sets how far it travels); the disc flat, turned with the heading, narrowed across by the bank, lifted over
-        /// the highest ground under its middle and its four ends.</summary>
-        void PlaceShadow(Vector3 drawn, Vector3 forward, float bank)
+        /// <summary>Lays <paramref name="shadow"/> (half <paramref name="shadowHalf"/> across and along the heading) for an
+        /// aircraft drawn at <paramref name="drawn"/>, heading <paramref name="forward"/>, banked <paramref name="bank"/> degrees,
+        /// on <paramref name="ground"/> or the sea's surface <paramref name="seaY"/>: the scene sun's ray from the aircraft to the
+        /// ground, found in two steps (the ground's height where the ray lands sets how far it travels); the disc flat, turned
+        /// with the heading, narrowed across by the bank, lifted over the highest ground under its middle and its four ends. The
+        /// Spitfire's, and the Dakotas' (DakotaLoop, #2482).</summary>
+        internal static void LayShadow(Transform shadow, Terrain ground, float seaY, Vector2 shadowHalf, Vector3 drawn, Vector3 forward, float bank)
         {
             var ray = SunNow();
             var hit = drawn;
-            float floor = Surface(drawn);
+            float floor = Surface(ground, seaY, drawn);
             for (int i = 0; i < 2; i++)
             {
                 hit = drawn + ray * ((drawn.y - floor) / -ray.y);
-                floor = Surface(hit);
+                floor = Surface(ground, seaY, hit);
             }
             var across = new Vector3(forward.z, 0f, -forward.x);
             float half = shadowHalf.x * Mathf.Cos(bank * Mathf.Deg2Rad);
             float top = floor;
-            top = Mathf.Max(top, Surface(hit + across * half));
-            top = Mathf.Max(top, Surface(hit - across * half));
-            top = Mathf.Max(top, Surface(hit + forward * shadowHalf.y));
-            top = Mathf.Max(top, Surface(hit - forward * shadowHalf.y));
-            shadow!.SetPositionAndRotation(new Vector3(hit.x, top + ShadowLiftM, hit.z), Quaternion.LookRotation(forward, Vector3.up));
+            top = Mathf.Max(top, Surface(ground, seaY, hit + across * half));
+            top = Mathf.Max(top, Surface(ground, seaY, hit - across * half));
+            top = Mathf.Max(top, Surface(ground, seaY, hit + forward * shadowHalf.y));
+            top = Mathf.Max(top, Surface(ground, seaY, hit - forward * shadowHalf.y));
+            shadow.SetPositionAndRotation(new Vector3(hit.x, top + ShadowLiftM, hit.z), Quaternion.LookRotation(forward, Vector3.up));
             shadow.localScale = new Vector3(half, 1f, shadowHalf.y);
         }
 
         /// <summary>The ground's height under <paramref name="p"/>, or the sea's surface over the sea.</summary>
-        float Surface(Vector3 p) => Mathf.Max(ground!.SampleHeight(p) + ground.transform.position.y, seaY);
+        static float Surface(Terrain ground, float seaY, Vector3 p) => Mathf.Max(ground.SampleHeight(p) + ground.transform.position.y, seaY);
     }
 }

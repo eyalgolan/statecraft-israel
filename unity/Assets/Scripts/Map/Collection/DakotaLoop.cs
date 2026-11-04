@@ -1,35 +1,60 @@
 #nullable enable
+using System;
+using System.Collections.Generic;
+using Statecraft.Game.Map.Units;
+using Statecraft.HexTiles;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Statecraft.Game.Map.Collection
 {
-    /// <summary>Flies Tal Heuberger's Egyptian Dakota round its loop off Tel Aviv (SeaAirCollection.DakotaLoopOffset; owner, 2
-    /// November 2026: "A slow loop over Tel Aviv on those turns, like the Spitfire's loop, with the Egyptian flag; purely
-    /// visual"), level, nose along the path, Egypt's flag floating over its tail (owner on #2260, "Smaller flag, no pole").
-    /// Presentation only: it reads the map's animation clock (SpitfireLoop.Clock, Time.time), sets two transforms a frame and
-    /// allocates nothing. It lives on the aircraft's own object, so it stops when the layer drops the aircraft. Editor renders
-    /// and screenshots (`?shot` / `-shot`) hold the loop's start, as the train and the Spitfire do (RouteLayer.ModeFor).</summary>
+    /// <summary>Flies one of Tal Heuberger's two Egyptian Dakotas round their loop over Tel Aviv (SeaAirCollection.DakotaLoopOffset;
+    /// owner, 4 November 2026, #2482: "1 + make the visual 2 slightly smaller planes and not 0ne big one", option 1: "On the
+    /// bombing turns it flies over Tel Aviv (not just off the coast) and drops bombs with flashes and smoke on the city"), its
+    /// own clock <see cref="Lag"/> behind the loop's (the wing trails the lead), nose along the path, banked into the turns
+    /// (SeaAirCollection.DakotaBankDegrees), a propeller turning at each engine, its shadow on the ground, Egypt's flag
+    /// floating over its tail (owner on #2260, "Smaller flag, no pole") and its bombs falling on Tel Aviv
+    /// (<see cref="DakotaBombRun"/>), as the Spitfire flies (SpitfireLoop; owner, before the ruling: "it also doesnt look like
+    /// its flying"). Presentation only: it reads the map's animation clock (SpitfireLoop.Clock, Time.time), sets a few
+    /// transforms a frame and allocates nothing. It lives on the aircraft's own object, so it stops when the layer drops the
+    /// aircraft. Editor renders and screenshots (`?shot` / `-shot`) hold the loop's start, as the train and the Spitfire do
+    /// (RouteLayer.ModeFor).</summary>
     public sealed class DakotaLoop : MonoBehaviour
     {
         /// <summary>DESIGN VALUE: the gap (m) between the aircraft's box top and the flag's lower edge, as #2260's
         /// SpitfireLoop.FlagClearM.</summary>
         public const float FlagClearM = 150f;
 
-        Vector3 centre, offset, half; Quaternion level; bool still; Transform? flag; float flagHalf;
+        Vector3 centre, offset, half; Quaternion level; bool still; float lag;
+        Transform[] props = Array.Empty<Transform>(); Transform? shadow, flag; Terrain? ground; Vector2 shadowHalf; float flagHalf, seaY;
+        DakotaBombRun? bombs;
 
         /// <summary>True when the aircraft holds the loop's start (edit mode, screenshots).</summary>
         public bool Still => still;
 
+        /// <summary>How far (s) this aircraft's clock is behind the loop's: 0 for the lead, SeaAirCollection.DakotaTrailSeconds
+        /// for its wing.</summary>
+        public float Lag => lag;
+
         /// <summary>The flag that floats over the tail, or null.</summary>
         public Transform? Flag => flag;
 
+        /// <summary>The aircraft's bombs, or null.</summary>
+        internal DakotaBombRun? Bombs => bombs;
+
         /// <summary><paramref name="centre"/>: the loop's centre in the air. <paramref name="level"/>: the model's rotation with
         /// its nose east. <paramref name="offset"/>: its drawn centre from its pivot at that rotation. <paramref name="half"/>: half
-        /// its box at that rotation (half its length, height and span).</summary>
-        internal void Configure(Vector3 centre, Quaternion level, Vector3 offset, Vector3 half, Transform? flag, bool still)
+        /// its box at that rotation (half its length, height and span). <paramref name="lag"/>: its clock behind the loop's. The
+        /// propeller discs (children of its mesh), the shadow and the flag (beside it), the terrain the shadow lies on and the
+        /// shadow's half size across and along the heading, the sea's surface (world y), and its bombs.</summary>
+        internal void Configure(Vector3 centre, Quaternion level, Vector3 offset, Vector3 half, float lag, Transform[] props, Transform? shadow,
+            Transform? flag, Terrain? ground, Vector2 shadowHalf, float seaY, DakotaBombRun? bombs, bool still)
         {
-            this.centre = centre; this.level = level; this.offset = offset; this.half = half; this.flag = flag; this.still = still;
+            this.centre = centre; this.level = level; this.offset = offset; this.half = half; this.lag = lag; this.props = props;
+            this.shadow = shadow; this.flag = flag; this.ground = ground; this.shadowHalf = shadowHalf; this.seaY = seaY; this.bombs = bombs; this.still = still;
             flagHalf = flag != null ? flag.GetComponent<MeshFilter>().sharedMesh.bounds.extents.y * flag.localScale.y : 0f;
+            var cam = Camera.main;
+            if (cam != null) bombs?.Face(cam.transform.rotation);
             // Where the clock puts it now: a component added mid-frame gets no Update that frame.
             Place(still ? 0f : SpitfireLoop.Clock());
         }
@@ -39,18 +64,189 @@ namespace Statecraft.Game.Map.Collection
             if (!still) Place(SpitfireLoop.Clock());
         }
 
-        /// <summary>Puts the aircraft where it is <paramref name="seconds"/> into its loop: its drawn centre on the path, its nose
-        /// along the path's tangent; the flag over its tail, its lower edge <see cref="FlagClearM"/> over the aircraft's top.</summary>
+        void OnEnable() => RenderPipelineManager.beginCameraRendering += Face;
+        void OnDisable() => RenderPipelineManager.beginCameraRendering -= Face;
+
+        /// <summary>Turns the flashes and the smoke to the camera about to render, as UnitGunFire.Face does the gun's.</summary>
+        void Face(ScriptableRenderContext _, Camera cam)
+        {
+            if (cam.cameraType == CameraType.Preview || cam.cameraType == CameraType.Reflection) return;
+            bombs?.Face(cam.transform.rotation);
+        }
+
+        /// <summary>Puts the aircraft where it is <paramref name="seconds"/> into the loop's clock (its own, <see cref="Lag"/>
+        /// less): its drawn centre on the path, its nose along the path's tangent, rolled into the turn about that tangent; the
+        /// propellers at their angle then (by the loop's clock, so a held shot holds them); the flag over its tail, its lower edge
+        /// <see cref="FlagClearM"/> over the top of its box at this bank; the shadow where the sun's ray through it meets the
+        /// ground; and its bombs, flashes and smoke as they are then.</summary>
         public void Place(float seconds)
         {
-            var at = SeaAirCollection.DakotaLoopOffset(seconds); var heading = SeaAirCollection.DakotaLoopHeading(seconds);
+            float u = seconds - lag;
+            var at = SeaAirCollection.DakotaLoopOffset(u); var heading = SeaAirCollection.DakotaLoopHeading(u);
+            var forward = new Vector3(heading.x, 0f, heading.y);
             // A turn about the vertical from east (+x) to the heading; Unity's yaw turns +x toward -z.
             var yaw = Quaternion.Euler(0f, -Mathf.Atan2(heading.y, heading.x) * Mathf.Rad2Deg, 0f);
-            transform.localRotation = yaw * level;
+            // The loop turns left (anticlockwise seen from above): a positive turn about the heading lowers the left wing.
+            float bank = SeaAirCollection.DakotaBankDegrees(u);
+            var turn = Quaternion.AngleAxis(bank, forward) * yaw;
+            transform.localRotation = turn * level;
             var drawn = centre + new Vector3(at.x, 0f, at.y);
-            transform.position = drawn - yaw * offset;
-            if (flag != null)
-                flag.position = drawn - new Vector3(heading.x, 0f, heading.y) * half.x + Vector3.up * (half.y + FlagClearM + flagHalf);
+            transform.position = drawn - turn * offset;
+            // The angle in double, as the Spitfire's (review of #2260: a float product with the clock loses whole degrees).
+            var spin = Quaternion.AngleAxis(-(float)((double)seconds * SpitfireLoop.PropDegreesPerSecond % 360.0), Vector3.up);
+            for (int i = 0; i < props.Length; i++) props[i].localRotation = spin;
+            if (flag != null) flag.position = drawn - forward * half.x + Vector3.up * (SpitfireLoop.TopOver(half, bank) + FlagClearM + flagHalf);
+            if (shadow != null && ground != null) SpitfireLoop.LayShadow(shadow, ground, seaY, shadowHalf, drawn, forward, bank);
+            bombs?.Sample(u);
+        }
+    }
+
+    /// <summary>One Dakota's bombs on Tel Aviv (#2482, option 1: "drops bombs with flashes and smoke on the city. Looks only; no
+    /// change to the game's numbers."): its releases (<see cref="Drops"/>, found once by SeaAirCollection.DakotaBombs: every
+    /// SeaAirCollection.DakotaBombIntervalS of the loop whose release and impact are both on Tel Aviv's hex) and a small pool
+    /// of bombs, flashes and smoke puffs, as many as can show at once. The whole run is a pure function of the aircraft's loop
+    /// time (<see cref="Sample"/>), as UnitGunFire's shot is of its time, so a held shot repeats exactly; it reuses the gun's
+    /// look: its flash and puff curves (UnitGunFire.Flash, UnitGunFire.Puff), its flash texture, the under-attack look's puff
+    /// texture and materials (HexMaterials.AttackGlow, AttackSmoke) on camera-facing quads. A bomb falls under the aircraft's
+    /// track (its horizontal speed is the aircraft's), faster as it falls (its drop grows with the square of the time); at
+    /// the impact the flash burns, then the puffs rise and thin. Every renderer is made once, hidden until used, and its
+    /// materials are owned by the run's object, so they go with the aircraft; sampling allocates nothing.</summary>
+    internal sealed class DakotaBombRun
+    {
+        /// <summary>A release: <see cref="At"/> seconds into the aircraft's loop, from <see cref="From"/> (its belly) to
+        /// <see cref="To"/> (the ground).</summary>
+        internal readonly struct Drop
+        {
+            public readonly float At; public readonly Vector3 From, To;
+            public Drop(float at, Vector3 from, Vector3 to) { At = at; From = from; To = to; }
+        }
+
+        static readonly int BaseColor = Shader.PropertyToID("_BaseColor"), BaseMap = Shader.PropertyToID("_BaseMap"), Cull = Shader.PropertyToID("_Cull");
+        /// <summary>DESIGN VALUES: the flash the gun's colour; the smoke a darker, dustier grey than the gun's powder smoke (a
+        /// bomb's burst raises dust and rubble), thinning paler as it rises; the puffs drift a little east, each its own way.</summary>
+        static readonly Color FlashColour = new Color(1f, 0.85f, 0.5f), SmokeFresh = new Color(0.42f, 0.39f, 0.35f), SmokeThin = new Color(0.66f, 0.64f, 0.6f);
+        static readonly float[] PuffSide = { -0.07f, 0.03f, 0.08f }, PuffSpin = { 20f, 140f, 260f };
+
+        readonly List<Drop> drops;
+        readonly int[] entry;   // the drop at each release slot of the loop, or -1
+        readonly int slots;
+        readonly Transform[] bombT, flashT, puffT; readonly Renderer[] bomb, flash, puff; readonly Material[] flashMat, puffMat;
+        Quaternion view = Quaternion.identity;
+
+        /// <summary>The releases, in loop order.</summary>
+        internal IReadOnlyList<Drop> Drops => drops;
+        /// <summary>The pool's renderers (tests): the bombs, the flashes, and the smoke puffs.</summary>
+        internal IReadOnlyList<Renderer> Bombs => bomb;
+        internal IReadOnlyList<Renderer> Flashes => flash;
+        internal IReadOnlyList<Renderer> Smoke => puff;
+
+        /// <summary>The run of <paramref name="drops"/> among the loop's <paramref name="releases"/> release slots, drawn under
+        /// <paramref name="parent"/>: the bombs with <paramref name="bombMesh"/> and <paramref name="bombMaterial"/> (shared), the
+        /// flashes and puffs with their textures (shared) on materials of their own, owned by <paramref name="parent"/>.</summary>
+        internal DakotaBombRun(Transform parent, List<Drop> drops, int releases, Mesh bombMesh, Material bombMaterial, Texture2D flashTexture, Texture2D puffTexture)
+        {
+            this.drops = drops;
+            entry = new int[releases];
+            for (int i = 0; i < releases; i++) entry[i] = -1;
+            for (int k = 0; k < drops.Count; k++) entry[Mathf.RoundToInt(drops[k].At / SeaAirCollection.DakotaBombIntervalS) % releases] = k;
+            // Every release whose bomb, flash or smoke can still show: its fall, the last puff's start and life.
+            float life = SeaAirCollection.DakotaBombFallS + (SeaAirCollection.DakotaPuffs - 1) * SeaAirCollection.DakotaPuffGapS + SeaAirCollection.DakotaSmokeS;
+            slots = Mathf.CeilToInt(life / SeaAirCollection.DakotaBombIntervalS) + 1;
+            var owned = parent.GetComponent<MapRuntimeAssets>();   // not ??: a missing component is Unity's fake null in the editor
+            if (owned == null) owned = parent.gameObject.AddComponent<MapRuntimeAssets>();
+            var quad = Resources.GetBuiltinResource<Mesh>("Quad.fbx");
+            bombT = new Transform[slots]; bomb = new Renderer[slots]; flashT = new Transform[slots]; flash = new Renderer[slots]; flashMat = new Material[slots];
+            int puffs = slots * SeaAirCollection.DakotaPuffs;
+            puffT = new Transform[puffs]; puff = new Renderer[puffs]; puffMat = new Material[puffs];
+            for (int s = 0; s < slots; s++)
+            {
+                (bombT[s], bomb[s]) = Part(parent, "Bomb", bombMesh, bombMaterial);
+                bombT[s].localScale = SeaAirCollection.DakotaBombLengthM * Vector3.one;
+                var fm = flashMat[s] = owned.Own(HexMaterials.New(HexMaterials.AttackGlow)); fm.SetTexture(BaseMap, flashTexture);
+                (flashT[s], flash[s]) = Part(parent, "BombFlash", quad, fm);
+                for (int p = 0; p < SeaAirCollection.DakotaPuffs; p++)
+                {
+                    var m = puffMat[s * SeaAirCollection.DakotaPuffs + p] = owned.Own(HexMaterials.New(HexMaterials.AttackSmoke));
+                    m.SetTexture(BaseMap, puffTexture); m.SetFloat(Cull, (float)CullMode.Off);
+                    (puffT[s * SeaAirCollection.DakotaPuffs + p], puff[s * SeaAirCollection.DakotaPuffs + p]) = Part(parent, "BombSmoke", quad, m);
+                }
+            }
+        }
+
+        static (Transform, Renderer) Part(Transform parent, string name, Mesh mesh, Material material)
+        {
+            var go = new GameObject(name, typeof(MeshFilter), typeof(MeshRenderer));
+            go.transform.SetParent(parent, false);
+            go.GetComponent<MeshFilter>().sharedMesh = mesh;
+            var r = go.GetComponent<MeshRenderer>();
+            r.sharedMaterial = material; r.enabled = false;
+            r.shadowCastingMode = ShadowCastingMode.Off; r.receiveShadows = false;
+            r.lightProbeUsage = LightProbeUsage.Off; r.reflectionProbeUsage = ReflectionProbeUsage.Off;
+            return (go.transform, r);
+        }
+
+        static int Mod(int a, int n) { int m = a % n; return m < 0 ? m + n : m; }
+
+        /// <summary>The run as it is <paramref name="u"/> seconds into the aircraft's loop: each slot shows the latest release that
+        /// maps to it (release j at j x the interval, the loop's slot j mod its releases), if that slot drops a bomb. The same
+        /// time gives the same frame. No allocation.</summary>
+        internal void Sample(float u)
+        {
+            float every = SeaAirCollection.DakotaBombIntervalS;
+            int newest = (int)Math.Floor((double)u / every);
+            for (int k = 0; k < slots; k++)
+            {
+                int j = newest - k;
+                int d = entry[Mod(j, entry.Length)];
+                Show(Mod(j, slots), d < 0 ? (Drop?)null : drops[d], (float)((double)u - (double)j * every));
+            }
+        }
+
+        void Show(int s, Drop? drop, float age)
+        {
+            float fall = SeaAirCollection.DakotaBombFallS, after = age - fall;
+            bool falling = drop.HasValue && age >= 0f && age < fall;
+            bomb[s].enabled = falling;
+            if (falling)
+            {
+                var d = drop!.Value; float f = age / fall, drop2 = d.From.y - d.To.y;
+                var at = Vector3.Lerp(d.From, d.To, f); at.y = d.From.y - drop2 * f * f;
+                var velocity = new Vector3((d.To.x - d.From.x) / fall, -2f * drop2 * f / fall, (d.To.z - d.From.z) / fall);
+                bombT[s].SetPositionAndRotation(at, Quaternion.FromToRotation(Vector3.up, velocity));
+            }
+            bool flashing = drop.HasValue && after >= 0f && after < SeaAirCollection.DakotaFlashS;
+            flash[s].enabled = flashing;
+            if (flashing)
+            {
+                var d = drop!.Value;
+                float grow = 0.7f + 0.3f * Mathf.Clamp01(after / (0.25f * SeaAirCollection.DakotaFlashS));
+                flashT[s].SetPositionAndRotation(d.To + Vector3.up * (0.3f * SeaAirCollection.DakotaFlashM), view * Quaternion.Euler(0f, 0f, 37f));
+                flashT[s].localScale = Vector3.one * (SeaAirCollection.DakotaFlashM * grow);
+                var c = FlashColour; c.a = UnitGunFire.Flash(after * UnitGunFire.FlashS / SeaAirCollection.DakotaFlashS); flashMat[s].SetColor(BaseColor, c);
+            }
+            for (int p = 0; p < SeaAirCollection.DakotaPuffs; p++)
+            {
+                int i = s * SeaAirCollection.DakotaPuffs + p;
+                float v = (after - p * SeaAirCollection.DakotaPuffGapS) / SeaAirCollection.DakotaSmokeS;
+                bool on = drop.HasValue && v > 0f && v < 1f;
+                puff[i].enabled = on;
+                if (!on) continue;
+                UnitGunFire.Puff(v, out _, out float rise, out float radius, out float alpha);
+                float size = SeaAirCollection.DakotaSmokeM;
+                puffT[i].SetPositionAndRotation(drop!.Value.To + Vector3.up * (rise * size) + Vector3.right * (PuffSide[p] * v * size),
+                    view * Quaternion.Euler(0f, 0f, PuffSpin[p]));
+                puffT[i].localScale = Vector3.one * (2.6f * radius * size);
+                var c = Color.Lerp(SmokeFresh, SmokeThin, v); c.a = alpha; puffMat[i].SetColor(BaseColor, c);
+            }
+        }
+
+        /// <summary>Turns the flashes and puffs showing to a camera with rotation <paramref name="camera"/>, and keeps it for
+        /// the next samples (edit mode and shots face the main camera from the start).</summary>
+        internal void Face(Quaternion camera)
+        {
+            view = camera;
+            for (int s = 0; s < flash.Length; s++) if (flash[s].enabled) flashT[s].rotation = view * Quaternion.Euler(0f, 0f, 37f);
+            for (int i = 0; i < puff.Length; i++) if (puff[i].enabled) puffT[i].rotation = view * Quaternion.Euler(0f, 0f, PuffSpin[i % SeaAirCollection.DakotaPuffs]);
         }
     }
 }
