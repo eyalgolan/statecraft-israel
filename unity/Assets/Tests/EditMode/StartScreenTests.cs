@@ -683,7 +683,10 @@ public class StartScreenTests
                 report.Add($"{n} {ratio:0.00}:1 over {(Color32)brightest}");
             }
             TestContext.Out.WriteLine(string.Join("; ", report));
-            Assert.Greater(Lum(tex.GetPixel(W / 2, H - 20)), 0.002f, "the painting was drawn at the top of the window");
+            // The fallback .start-screen background (--navy-deep, about 0.0045) must not pass for the painting, or the
+            // samples above are panel over navy and the ratios come out too easy: a lit painting pixel is well above 0.02.
+            var top = Lum(tex.GetPixel(W / 2, H - 20));
+            Assert.Greater(top, 0.02f, $"the painting was drawn at the top of the window (luminance {top:0.0000}; navy-deep alone is about 0.0045)");
             Assert.GreaterOrEqual(worst, 4.5f, string.Join("; ", report));
         }
         finally { Object.DestroyImmediate(tex); start.Dispose(); newGame.Dispose(); toast.Dispose(); }
