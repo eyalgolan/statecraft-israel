@@ -150,6 +150,21 @@ public class Gdd03ProjectBuildFixtureTests
         Assert.Equal(4, f.Projects.Count);
     }
 
+    // A start the city's limit refuses uses neither the city's slot nor a national one (#1700 slice B review): after A,
+    // a refused second A, a start in a second city B is still accepted, and only then is the national 2 used up.
+    [Fact]
+    public void ARefusedSecondStartInOneCityLeavesTheNationalSlot()
+    {
+        var f = New(100m);
+        f.Start("industry", "town_a");
+        var e = Assert.Throws<System.InvalidOperationException>(() => f.Start("industry", "town_a"));
+        Assert.Equal("town_a has started a city project this turn", e.Message);
+        f.Start("industry", "town_b");
+        Assert.Equal((80m, 0m, 2), (f.Money, f.Debt, f.Projects.Count));
+        var national = Assert.Throws<System.InvalidOperationException>(() => f.Start("industry", "town_c"));
+        Assert.Equal("No more than 2 city starts are allowed a turn", national.Message);
+    }
+
     // The fixture's national 2 is the live game's map_actions_per_turn (content/rules.yaml), which the ruling keeps.
     [Fact]
     public void TheNationalTwoIsTheGamesMapActionsPerTurn()

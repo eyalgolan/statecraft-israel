@@ -6,21 +6,21 @@ using Statecraft.Sim;
 // - docs/GDD.md:375 (ARMS-1/ARMS-2): "Arms equip new soldiers in training and replacements; attacks and artillery spend
 //   none. A recruit course cannot start without its Arms, and all training stays in 0.3 (ARMS-1 to ARMS-3)."
 // - docs/GDD.md:374 (27M-7): "Training is ordered in the camp's city, with no travel (27M-7)."
-// - docs/rules/mvp.md:167 (R-TRAIN-001): "for the type's `training_turns`, counting the turn it was ordered in. The Treasury
+// - R-TRAIN-001 (docs/rules/mvp.md): "for the type's `training_turns`, counting the turn it was ordered in. The Treasury
 //   pays `n * training_cost` at once. When the Treasury holds less, the shortfall is borrowed, as for map actions: it is
 //   added to the debt and the Treasury stops at 0"
-// - docs/rules/mvp.md:433 (R-ARMS-003): "Recruit training (R-TRAIN-001) takes `arms_per_recruit_group` (1) Arms for each
+// - R-ARMS-003 (docs/rules/mvp.md): "Recruit training (R-TRAIN-001) takes `arms_per_recruit_group` (1) Arms for each
 //   group when it starts, after its other checks and before it pays. A stock short of that refuses the order with a
 //   reason naming the need and the stock"
-// - docs/rules/mvp.md:572 (R-POP-002): "distinct issued civilian/military equipment and paid facts. ... duplicate
+// - R-POP-002 (docs/rules/mvp.md): "distinct issued civilian/military equipment and paid facts. ... duplicate
 //   issued-item ownership are refused before mutation. ... Ledger changes never touch resources, causes, RNG or Attention."
 // Cancel (#1699 second slice), quoted at ca599e4b6:
 // - docs/GDD.md:372: "A cancelled or slot-losing course is cancelled like `CancelTraining`, people return as civilians, Money
 //   and tools are not refunded and Arms return to the pool (Q44, Q52, 27M-3, 27M-4)."
-// - docs/rules/mvp.md:169 (R-TRAIN-002): "`CancelTraining(cohort)` returns the cohort's people to its city as civilians without
+// - R-TRAIN-002 (docs/rules/mvp.md): "`CancelTraining(cohort)` returns the cohort's people to its city as civilians without
 //   a job and refunds none of the Money paid (D-A3); a recruit cohort's Arms go back to the pool (R-ARMS-003). A cohort that
 //   does not exist, or has finished, is refused with the state unchanged."
-// - docs/rules/mvp.md:433 (R-ARMS-003): "The cohort keeps the Arms it took, and the state hash writes them with it; cancelling
+// - R-ARMS-003 (docs/rules/mvp.md): "The cohort keeps the Arms it took, and the state hash writes them with it; cancelling
 //   the cohort (R-TRAIN-002) returns them to the pool, up to the most the stock can hold, although the Money stays paid"
 public class Gdd03BasicTrainingFixtureTests
 {
@@ -84,7 +84,7 @@ public class Gdd03BasicTrainingFixtureTests
         return ex;
     }
 
-    // ARMS-1 (docs/GDD.md:375, "Arms equip new soldiers in training"); R-ARMS-003 (docs/rules/mvp.md:433, "takes
+    // ARMS-1 (docs/GDD.md:375, "Arms equip new soldiers in training"); R-ARMS-003 (docs/rules/mvp.md, "takes
     // `arms_per_recruit_group` (1) Arms for each group when it starts"); content/gdd03-balance.yaml:315-318
     // `military.issue_arms` [1], "Arms issued once to an unequipped unit". Each unequipped record takes one distinct item
     // from the fixture's spare Arms; the same ids keep every other field; no person is created.
@@ -113,7 +113,7 @@ public class Gdd03BasicTrainingFixtureTests
         l.Reconcile();
     }
 
-    // ARMS-2 (docs/GDD.md:375): "A recruit course cannot start without its Arms"; R-ARMS-003 (docs/rules/mvp.md:433): "A
+    // ARMS-2 (docs/GDD.md:375): "A recruit course cannot start without its Arms"; R-ARMS-003 (docs/rules/mvp.md): "A
     // stock short of that refuses the order with a reason naming the need and the stock". The WHOLE order is refused, not
     // the part the stock covers; issuing the last spare then succeeds (#1699 comment of 28 October 2026: "Issue of the last
     // spare succeeds; a further unavailable issue refuses atomically").
@@ -186,7 +186,7 @@ public class Gdd03BasicTrainingFixtureTests
         Assert.Equal("south", s.PopulationLedger.Get(5).Location!.Region);
     }
 
-    // R-TRAIN-001 (docs/rules/mvp.md:167): takes "the city's civilians without a job"; docs/GDD.md:374: "Refugees cannot
+    // R-TRAIN-001 (docs/rules/mvp.md): takes "the city's civilians without a job"; docs/GDD.md:374: "Refugees cannot
     // train until they become civilians". A refugee or a worker refuses the whole order, as do a repeated id and an empty order.
     [Fact] public void RefugeesWorkersAndMalformedOrdersAreRefused()
     {
@@ -216,8 +216,8 @@ public class Gdd03BasicTrainingFixtureTests
 
     // content/gdd03-balance.yaml:347-350 `military.training_money` [0.5], "Money per basic course. Owner ruling, 30 October
     // 2026 ... "Keep the set values (Recommended)""; docs/gdd/training.md:15 "Basic military training costs 0.5 per course
-    // in Money". R-TRAIN-001 (docs/rules/mvp.md:167): "The Treasury pays `n * training_cost` at once. When the Treasury holds
-    // less, the shortfall is borrowed"; R-MONEY-003 (docs/rules/mvp.md:409): "the Treasury stops at 0". One record is one
+    // in Money". R-TRAIN-001 (docs/rules/mvp.md): "The Treasury pays `n * training_cost` at once. When the Treasury holds
+    // less, the shortfall is borrowed"; R-MONEY-003 (docs/rules/mvp.md): "the Treasury stops at 0". One record is one
     // course; an equipped record pays the course too. The fixture owns its Money and Debt, as Gdd03ProjectBuildFixture does,
     // because R-POP-002 says "Ledger changes never touch resources".
     [Fact] public void EachRecruitPaysTheCatalogueMoneyAndTheShortfallIsBorrowed()
@@ -236,7 +236,7 @@ public class Gdd03BasicTrainingFixtureTests
         Assert.Equal(6m, f3.Money);
     }
 
-    // R-TRAIN-001 (docs/rules/mvp.md:167): "counting the turn it was ordered in"; content/gdd03-balance.yaml:311-314
+    // R-TRAIN-001 (docs/rules/mvp.md): "counting the turn it was ordered in"; content/gdd03-balance.yaml:311-314
     // `military.basic_turns` [3]. The enrolment month is course turn 1, each month ordinal counts once, and the turn that
     // would complete the course is Deferred (completion into a formation is not in this slice). The issued item stays on the
     // record throughout.
@@ -270,7 +270,7 @@ public class Gdd03BasicTrainingFixtureTests
         Unchanged(s, f, () => f.Advance(0, turns - 1), typeof(NotSupportedException), "Deferred:");
     }
 
-    // R-MONEY-003 (docs/rules/mvp.md:409): "A shortfall changes nothing but the Treasury and the debt, and a refused order
+    // R-MONEY-003 (docs/rules/mvp.md): "A shortfall changes nothing but the Treasury and the debt, and a refused order
     // changes nothing". The order's Money is computed before anything is written, so a cost that
     // cannot be represented throws with the ledger, spare Arms, Money and Debt all unchanged, not a half-applied order.
     [Fact] public void ACostThatOverflowsChangesNothing()
@@ -371,7 +371,7 @@ public class Gdd03BasicTrainingFixtureTests
         Assert.Throws<ArgumentException>(() => new Gdd03FixtureMilitaryCamp(CampNorth, "", true));
     }
 
-    // docs/GDD.md:372: "Arms return to the pool"; R-ARMS-003 (docs/rules/mvp.md:433): "cancelling the cohort (R-TRAIN-002)
+    // docs/GDD.md:372: "Arms return to the pool"; R-ARMS-003 (docs/rules/mvp.md): "cancelling the cohort (R-TRAIN-002)
     // returns them to the pool". The cancelled record's issued item goes back to the spare Arms; another trainee keeps theirs.
     [Fact] public void CancelReturnsTheIssuedArmsToTheSpareStock()
     {
@@ -388,7 +388,7 @@ public class Gdd03BasicTrainingFixtureTests
         l.Reconcile();
     }
 
-    // R-TRAIN-002 (docs/rules/mvp.md:169): "returns the cohort's people to its city as civilians without a job"; docs/GDD.md:374
+    // R-TRAIN-002 (docs/rules/mvp.md): "returns the cohort's people to its city as civilians without a job"; docs/GDD.md:374
     // (27M-9): "After a cancellation or camp loss, people go to their city as civilians without a job"; docs/GDD.md:372: "Money
     // and tools are not refunded" and "can be assigned from the next planning, or at once on cancellation" (Q43(b)). The same
     // record stays in place with its tools, its course progress goes with the course, no person is created, and it can be
@@ -418,7 +418,7 @@ public class Gdd03BasicTrainingFixtureTests
         Assert.Equal(Field, l.Get(2).Assignment.Target);
     }
 
-    // R-TRAIN-002 (docs/rules/mvp.md:169): "refunds none of the Money paid"; docs/GDD.md:372: "Money and tools are not
+    // R-TRAIN-002 (docs/rules/mvp.md): "refunds none of the Money paid"; docs/GDD.md:372: "Money and tools are not
     // refunded". Neither Money nor a borrowed shortfall is paid back.
     [Fact] public void CancelRefundsNoMoney()
     {
@@ -435,10 +435,11 @@ public class Gdd03BasicTrainingFixtureTests
         Assert.Equal(0m, f2.Money); Assert.Equal(0.25m, f2.Debt);
     }
 
-    // R-ARMS-003 (docs/rules/mvp.md:433): "The cohort keeps the Arms it took ... cancelling the cohort (R-TRAIN-002) returns
+    // R-ARMS-003 (docs/rules/mvp.md): "The cohort keeps the Arms it took ... cancelling the cohort (R-TRAIN-002) returns
     // them to the pool". A recruit who arrived equipped took no Arms, so the carried item stays on the record and the spare
     // stock is unchanged. A record that arrived carrying an id with this fixture's own prefix is no exception: the refund
-    // follows what this fixture issued, not the item's name.
+    // follows what this fixture issued, not the item's name. The carried item stays by our reading of R-ARMS-003 ('the
+    // Arms it took').
     [Fact] public void AnEquippedRecruitKeepsTheirItemOnCancel()
     {
         var c = Catalogue(); var s = State(c); var f = Fixture(c, s, spare: 0);
@@ -458,7 +459,7 @@ public class Gdd03BasicTrainingFixtureTests
         s2.PopulationLedger.Reconcile();
     }
 
-    // R-TRAIN-002 (docs/rules/mvp.md:169): "A cohort that does not exist, or has finished, is refused with the state unchanged."
+    // R-TRAIN-002 (docs/rules/mvp.md): "A cohort that does not exist, or has finished, is refused with the state unchanged."
     // A second cancel, an unknown id, a record never started, an active soldier and another fixture's trainee are refused,
     // with nothing changed.
     [Fact] public void CancellingTwiceOrAnUnknownIdChangesNothing()
@@ -559,9 +560,10 @@ public class Gdd03BasicTrainingFixtureTests
         p.Assignment, p.Profession, p.Tier, p.WorkXp, p.Qualification, p.CombatXp,
         new PopulationEquipment(p.Equipment.ToolsId, p.Equipment.ToolsPaid, item, true), p.Captor, p.Home);
 
-    // R-ARMS-003 (docs/rules/mvp.md:433): "cancelling the cohort (R-TRAIN-002) returns them to the pool", where "them" is
+    // R-ARMS-003 (docs/rules/mvp.md): "cancelling the cohort (R-TRAIN-002) returns them to the pool", where "them" is
     // "the Arms it took". If the issued item was swapped on the ledger after Start, the record no longer holds what this
     // fixture issued: cancel throws and changes nothing, rather than returning to the spare an item it no longer finds.
+    // Maintainer call (not an owner ruling): no rule covers this state, and refusing neither duplicates nor loses an Arms.
     [Fact] public void CancelIsRefusedWhenTheIssuedItemWasReplaced()
     {
         var c = Catalogue(); var s = State(c); var f = Fixture(c, s, spare: 5); var l = s.PopulationLedger;
@@ -572,9 +574,10 @@ public class Gdd03BasicTrainingFixtureTests
         Assert.Equal(4, f.SpareArms);
     }
 
-    // R-ARMS-003 (docs/rules/mvp.md:433): "The cohort keeps the Arms it took". A cancel ends what this fixture issued for that
+    // R-ARMS-003 (docs/rules/mvp.md): "The cohort keeps the Arms it took". A cancel ends what this fixture issued for that
     // course: if the same record later enrols carrying an item it got another way, it took no Arms, so cancelling that
-    // second course keeps the carried item and the spare stock unchanged.
+    // second course keeps the carried item and the spare stock unchanged, by our reading of R-ARMS-003 ('the Arms it
+    // took').
     [Fact] public void ACancelledRecruitWhoReEnrolsEquippedKeepsTheItemOnASecondCancel()
     {
         var c = Catalogue(); var s = State(c); var f = Fixture(c, s, spare: 5); var l = s.PopulationLedger;
