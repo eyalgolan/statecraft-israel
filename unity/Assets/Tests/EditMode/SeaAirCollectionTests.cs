@@ -762,6 +762,8 @@ public class SeaAirCollectionTests
     [Test]
     public void EveryDakotaBombIsReleasedAndLandsAtLeastTheMarginInsideTelAvivsHex()
     {
+        // Pinned, so lowering the constant cannot weaken the code and this test together.
+        Assert.AreEqual(600f, SeaAirCollection.DakotaBombMarginM, "the bombs fall at least 600 m inside Tel Aviv's hex");
         var map = OpenMap();
         var (_, planes, loops, _) = DrawnDakotas(map);
         var ground = PlacementLayer.CampGround(map);
