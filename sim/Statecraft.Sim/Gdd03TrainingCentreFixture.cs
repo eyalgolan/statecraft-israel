@@ -199,8 +199,11 @@ namespace Statecraft.Sim
         {
             ValidateInventory();
             var ledger = state.PopulationLedger; var trainee = ledger.Get(traineeId); var centre = CentreOf(trainee);
-            var opening = Opening(month, trainee.Id);
+            if (month == null) throw new ArgumentNullException(nameof(month));
+            // The loss is checked before the month's snapshot is read: a lost centre cancels even when the month does not
+            // list the pupil (R-TRAIN-008).
             if (!centre.Operating) { Cancel(traineeId); return; }
+            var opening = Opening(month, trainee.Id);
             bool tracked = months.TryGetValue(trainee.Id, out var known);
             // Q43(a): the enrolment month counts, though its opening snapshot was taken before the course started.
             bool enrolmentMonth = tracked && month.MonthOrdinal == known.enrolment;
