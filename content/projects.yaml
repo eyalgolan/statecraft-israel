@@ -29,8 +29,8 @@
 #     https://github.com/eyalgolan/statecraft-israel/issues/564#issuecomment-6611646005).
 # name: the phrase the player reads in a sentence ("a transit camp").
 # name_he: the Hebrew UI's noun for the kind (#1122, owner ruling 3), optional: without it the Hebrew UI shows `name`.
-#   Draft wording, not a native-language approval: name_he_review: agent-checked until a native speaker reviews it.
-#   For the native reviewer (#564).
+#   Draft wording, not a native-language approval: name_he_review: agent-checked until a native speaker, or an AI-assisted
+#   contributor who discloses it, has read it (#564; owner, 4 November 2026: "AI-assisted can clear it").
 projects:
   - { id: housing, name: a housing project, name_he: מיזם דיור, name_he_review: agent-checked, cost: 6, turns: 6, capacity: 5, condition: 0.03, job_slots: 0 }        # DESIGN VALUE: owner-set balance, not a historical figure (D-C6, D-A3, D-D3; Q-PROJ-1, Q-HOUSE-3: permanent housing)
   - { id: transit_camp, name: a transit camp, name_he: מעברה, name_he_review: agent-checked, cost: 1.5, turns: 1, capacity: 5, condition: -0.02, job_slots: 0 }   # DESIGN VALUE: owner-set balance, not a historical figure (D-C6, D-A3, D-D3; Q-PROJ-1, Q-HOUSE-3: the low-condition type)

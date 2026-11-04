@@ -31,7 +31,7 @@ schema too, or that test fails. Keep the comment when you copy a file.
 | `id` | yes | Unique across all events. Lowercase letters, digits and underscores, starting with a letter. |
 | `title` | yes | The card title. May contain office placeholders. |
 | `text` | yes | The card body. May contain office placeholders. |
-| `title_he` | no | The title in Hebrew (#1064), shown in the Hebrew UI; the English shows where a Hebrew field is missing. An event has `title_he`, `text_he` and every option's `text_he`, or none, all in Hebrew letters, with the same placeholders as the English. Beside them `text_he_review: agent-checked` while no native speaker has read the Hebrew (#564); remove it once one has. |
+| `title_he` | no | The title in Hebrew (#1064), shown in the Hebrew UI; the English shows where a Hebrew field is missing. An event has `title_he`, `text_he` and every option's `text_he`, or none, all in Hebrew letters, with the same placeholders as the English. Beside them `text_he_review: agent-checked` until a native speaker, or an AI-assisted contributor who discloses it, has read the Hebrew; remove it once they have (#564; owner, 4 November 2026: "AI-assisted can clear it"). |
 | `text_he` | no | The body in Hebrew (#1064). See `title_he`. |
 | `anchor` | no (default `soft`) | `hard` or `soft`. See below. |
 | `tags` | no | A list of free-form labels. Five are sensitive. See below. |

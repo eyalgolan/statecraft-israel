@@ -321,7 +321,7 @@ namespace Statecraft.Sim
             // The flag is either absent (a person has reviewed the name) or exactly agent-checked; a blank or null value is
             // neither, so it is an error rather than a silent "reviewed".
             if (reviewGiven && review != HebrewReview.AgentChecked)
-                throw new ContentException(file, $"{at}.{key}_review", $"must be {HebrewReview.AgentChecked} (pending a native speaker's review, #564), or left out once a person has reviewed the name");
+                throw new ContentException(file, $"{at}.{key}_review", $"must be {HebrewReview.AgentChecked} (until a native speaker, or an AI-assisted contributor who discloses it, has read the name, #564), or left out once it has been read");
             if (value == "")
             {
                 if (sources.Count > 0) throw new ContentException(file, $"{at}.{key}", $"required: {key}_sources is set but the name is empty");
@@ -929,7 +929,7 @@ namespace Statecraft.Sim
             foreach (var p in c.People)
             {
                 if (p.NameHeReviewGiven && p.NameHeReview != HebrewReview.AgentChecked)
-                    throw new ContentException("people.yaml", $"people[{p.Id}].name_he_review", $"must be {HebrewReview.AgentChecked} (pending a native speaker's review, #564), or left out once a person has reviewed the name");
+                    throw new ContentException("people.yaml", $"people[{p.Id}].name_he_review", $"must be {HebrewReview.AgentChecked} (until a native speaker, or an AI-assisted contributor who discloses it, has read the name, #564), or left out once it has been read");
                 if (p.NameHeReviewGiven && p.NameHe == "") throw new ContentException("people.yaml", $"people[{p.Id}].name_he", "required: name_he_review is set but the name is empty");
             }
             foreach (var a in c.Money)
@@ -1631,9 +1631,11 @@ namespace Statecraft.Sim
                 if (x.Capacity < 0) throw new ContentException(pf, at + ".capacity", "must not be negative");
                 if (x.JobSlots < 0) throw new ContentException(pf, at + ".job_slots", "must not be negative");
                 if (!(x.Condition >= -1 && x.Condition <= 1)) throw new ContentException(pf, at + ".condition", "must be a number from -1 to 1");
-                // #1122 (owner ruling 3): a draft Hebrew name is marked pending a native speaker's review (#564).
+                // #1122 (owner ruling 3): a draft Hebrew name is marked agent-checked until a native speaker, or an
+                // AI-assisted contributor who discloses it, has read it (#564; owner, 4 November 2026:
+                // "AI-assisted can clear it").
                 if (x.NameHeReviewGiven && x.NameHeReview != HebrewReview.AgentChecked)
-                    throw new ContentException(pf, at + ".name_he_review", $"must be {HebrewReview.AgentChecked} (pending a native speaker's review, #564), or left out once a person has reviewed the name");
+                    throw new ContentException(pf, at + ".name_he_review", $"must be {HebrewReview.AgentChecked} (until a native speaker, or an AI-assisted contributor who discloses it, has read the name, #564), or left out once it has been read");
                 if (x.NameHeReviewGiven && string.IsNullOrWhiteSpace(x.NameHe)) throw new ContentException(pf, at + ".name_he", "required: name_he_review is set but the name is empty");
                 // R-PROJ-005: a kind whose resource no city has could never be built.
                 if (!string.IsNullOrEmpty(x.Requires) && !c.Cities.Any(k => k.Resources.Any(r => r.Id == x.Requires)))
