@@ -249,6 +249,6 @@ def test_a_moved_hebrew_flag_is_listed_with_its_english_records_row_and_sources(
     entries, _, _ = rq.queue(repo)
     moved = [(e.file, e.line, e.row, e.field, e.value, e.sources) for e in entries if e.file.startswith("translations/")]
     assert moved == [("translations/he/content.yaml", 3, "example", "name_he", "איש לדוגמה", ["https://example.org/hebrew-name"]),
-                     ("translations/he/events.yaml", 6, "truce", "text_he", "הפוגה.", [])]
+                     ("translations/he/events.yaml", 6, "truce", "text_he", "הפוגה.", ["https://example.org/truce"])]
     assert all(e.checked_by == "an AI agent (the `agent-checked` flag)" for e in entries if e.file.startswith("translations/"))
     assert "| example | name_he | איש לדוגמה | <https://example.org/hebrew-name> |" in rq.page(entries, 0, "0123456789abcdef")

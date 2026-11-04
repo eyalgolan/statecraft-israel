@@ -510,7 +510,7 @@ def move(root, en, he, rel, he_rel):
     edit(root, he, he_rel)
 
 
-def test_an_agent_may_move_a_signed_events_hebrew_byte_for_byte(tmp_path):
+def test_an_agent_may_move_a_signed_events_hebrew_with_the_same_decoded_text(tmp_path):
     root, base = event_repo(tmp_path)
     move(root, EVENT_EN, EVENT_HE, "content/events/vote.yaml", "translations/he/events.yaml")
     commit(root, "languages: move the events' Hebrew" + AI)
@@ -591,3 +591,57 @@ def test_removing_a_hebrew_names_source_is_not_a_move(tmp_path):
     edit(root2, PERSON)
     commit(root2, "content: drop a source" + AI)
     assert len(guard.check(root2, base2, "HEAD")) == 1
+
+
+# Owner review of #2501: moves that change where the text goes, or what it decodes to, are edits.
+
+@pytest.mark.parametrize("he", [
+    EVENT_HE.replace("vote:", "other:"),                                   # another event (row)
+    EVENT_HE.replace("yes_vote:", "no_vote:"),                             # another option
+    EVENT_HE.replace("  title: ", "  text_f: "),                           # another field
+    EVENT_HE.replace("עכשיו", "‎עכשיו"),                              # an added left-to-right mark
+    EVENT_HE.replace("עכשיו", "‏עכשיו"),                              # an added right-to-left mark
+    EVENT_HE.replace("להצביע עכשיו", "להצביע־עכשיו"),                      # a maqaf for the space
+    EVENT_HE.replace('"להצביע עכשיו?"', '"להצביע\\nעכשיו?"'),              # a quoting that keeps the line break
+])
+def test_a_move_to_another_place_or_to_other_decoded_text_is_an_edit(tmp_path, he):
+    root, base = event_repo(tmp_path)
+    move(root, EVENT_EN, he, "content/events/vote.yaml", "translations/he/events.yaml")
+    commit(root, "languages: move the events' Hebrew" + AI)
+    problems = guard.check(root, base, "HEAD")
+    assert len(problems) == 1 and "row 'vote'" in problems[0], problems
+
+
+def test_a_content_name_moved_to_another_record_is_an_edit(tmp_path):
+    two = PERSON + "  - id: b\n    name: B\n"
+    root, base = repo(tmp_path, two)
+    move(root, SIGNED + "  - id: b\n    name: B\n", PERSON_HE.replace("people.a.name", "people.b.name"),
+         "content/people.yaml", "translations/he/content.yaml")
+    commit(root, "languages: move the names" + AI)
+    problems = guard.check(root, base, "HEAD")
+    assert len(problems) == 1 and "row 'a'" in problems[0], problems
+
+
+def test_a_move_split_over_two_commits_is_an_edit(tmp_path):
+    """Removing the inline Hebrew in one commit and adding the same text to translations/he/ in the next: the first
+    commit drops the signed row's Hebrew, so it is an edit, whatever the next one does."""
+    root, base = event_repo(tmp_path)
+    edit(root, EVENT_EN, "content/events/vote.yaml")
+    first = commit(root, "languages: drop the Hebrew" + AI)
+    (root / "translations" / "he").mkdir(parents=True)
+    edit(root, EVENT_HE, "translations/he/events.yaml")
+    commit(root, "languages: add it back" + AI)
+    problems = guard.check(root, base, "HEAD")
+    assert len(problems) == 1 and first[:10] in problems[0], problems
+
+
+@pytest.mark.parametrize("extra", ['title_he_f: "ההצבעה"\n',            # no place in translations/he/
+                                   '    text_he_review: agent-checked\n'])   # an option's own flag
+def test_removing_a_hebrew_field_translations_cannot_hold_is_an_edit(tmp_path, extra):
+    anchor = '    text_he: "להצביע"\n' if extra.startswith("    ") else 'title_he: "ההצבעה"\n'
+    signed = EVENT.replace(anchor, anchor + extra)
+    root, base = event_repo(tmp_path, signed)
+    move(root, EVENT_EN, EVENT_HE, "content/events/vote.yaml", "translations/he/events.yaml")
+    commit(root, "languages: move the events' Hebrew" + AI)
+    problems = guard.check(root, base, "HEAD")
+    assert len(problems) == 1 and "row 'vote'" in problems[0], problems

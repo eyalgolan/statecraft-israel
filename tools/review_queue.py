@@ -250,18 +250,29 @@ HE_TRANSLATIONS = ("translations/he/content.yaml", "translations/he/events.yaml"
 
 def scan_translations(repo: Path, rel: str) -> list[Entry]:
     """The agent-checked flags of a translations/he/ file (#1618; docs/translations.md): each entry whose `review` is
-    agent-checked, listed as the inline flag it replaces. A content entry's row and sources come from its English record
-    (the sources stay there); an event's row is its id."""
+    agent-checked, listed as the inline flag it replaces, with the row and sources of its English record (the sources stay
+    there): a content entry's record by its key; an event's by its id, with its text_he_sources, else the event's own
+    sources."""
     root = yaml.compose((repo / rel).read_text(encoding="utf-8"))
     entries: list[Entry] = []
     parsed: dict[str, dict] = {}
+    events: dict[str, dict] | None = None
     for k, v in root.value if isinstance(root, yaml.MappingNode) else []:
         keys = {_scalar(a): b for a, b in v.value} if isinstance(v, yaml.MappingNode) else {}
         if _scalar(keys.get("review")) != FLAG:
             continue
         key, line = _scalar(k), keys["review"].start_mark.line + 1
         if rel.endswith("events.yaml"):
-            entries.append(Entry("flag", rel, line, key, "text_he", _scalar(keys.get("text"))))
+            if events is None:
+                events = {}
+                for path in sorted((repo / "content" / "events").glob("*.yaml")):
+                    tree = yaml.compose(path.read_text(encoding="utf-8"))
+                    top = {_scalar(a): b for a, b in tree.value} if isinstance(tree, yaml.MappingNode) else {}
+                    if "id" in top:
+                        events[_scalar(top["id"])] = top
+            event = events.get(key, {})
+            sources = _field_sources(event, "text_he") or (_urls(event["sources"]) if "sources" in event else [])
+            entries.append(Entry("flag", rel, line, key, "text_he", _scalar(keys.get("text")), sources))
             continue
         file, _, rest = key.partition("#")
         where, _, name = rest.rpartition(".")

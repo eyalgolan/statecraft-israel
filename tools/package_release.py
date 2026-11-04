@@ -92,7 +92,10 @@ def translation_refusal(build: Path):
                 f"StreamingAssets/translations holds {found}")
     if len(texts) != len(packed):
         return f"bundle.json packs {len(packed)} translation files but {len(texts)} texts"
-    changed = [f for f, text in zip(packed, texts) if (folder / f).read_text(encoding="utf-8") != text]
+    try:
+        changed = [f for f, text in zip(packed, texts) if (folder / f).read_text(encoding="utf-8") != text]
+    except (OSError, UnicodeDecodeError) as e:
+        return f"a file in StreamingAssets/translations cannot be read as UTF-8 text ({e})"
     if changed:
         return "bundle.json's text differs from StreamingAssets/translations for " + ", ".join(changed)
     return None

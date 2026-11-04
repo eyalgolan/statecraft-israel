@@ -74,14 +74,16 @@ owner's decision. `TranslationsTests` names both files, and fails if any other n
 ## Sign-offs and the review queue
 
 A signed row's sign-off (`reviewed_by`, `reviewed_on`) covers its Hebrew wherever it lives: inline, or as the row's
-entry in `he/events.yaml` (an event, by its id) or `he/content.yaml` (a record, by its keys). Hebrew moved byte for
-byte keeps the sign-off (owner, 25 October 2026, on #1618: "Yes, carry them over"). `scripts/oss/reviewed_by_guard.py`
+entry in `he/events.yaml` (an event, by its id) or `he/content.yaml` (a record, by its keys). Hebrew moved with the
+same decoded text keeps the sign-off (owner, 25 October 2026, on #1618: "Yes, carry them over"). The inline YAML and
+`translations/he/` quote differently (a folded `>-` scalar becomes a double-quoted one), so "byte-identical moved text"
+is read as the same decoded text: every character the same, direction marks, nikkud and maqaf included. `scripts/oss/reviewed_by_guard.py`
 holds the line. A commit with an AI co-author trailer may take a signed row's Hebrew lines out of `content/` when the
 row's Hebrew, read from both places, is the same before and after. Any other change to that Hebrew, in either place,
 is an edit of the signed row, and a person must sign the row again.
 
 `tools/review_queue.py` lists an entry's `review: agent-checked` just as it lists the inline `*_he_review` flag, with
-the English record's row and sources.
+the English record's row and sources (an event's `text_he_sources`, else its own `sources`).
 
 A change to `translations/` is a change players get, so it needs a changelog entry (`scripts/oss/changelog_check.py`;
 `translations/README.md` excepted). `tools/package_release.py` refuses a build whose `StreamingAssets/translations`
@@ -95,7 +97,9 @@ ordinal order) and then by their position in the file.
 
 The body (everything after the header comment) is fixed byte for byte: block mappings, two-space indents, every
 string double-quoted the way JSON writes it (`json.dumps(..., ensure_ascii=False)`), and a key plain only when it is
-letters, digits, `_`, `.` and `-`. The header comment belongs to the tool that writes the file.
+letters, digits, `_`, `.` and `-` and no YAML reader would type it: not a value the YAML 1.2 core schema reads as null, a
+boolean or a number (`null`, `~`, `true`, `1948`, `1e3`, `.inf`), and not a YAML 1.1 boolean (`y`, `yes`, `on`, `off` and
+their capitalised forms). Any other key is double-quoted (`Translations.Key()`, `tools/translate.py` `_yaml_key`). The header comment belongs to the tool that writes the file.
 
 ## What the parser checks, and what it leaves to the content rules
 

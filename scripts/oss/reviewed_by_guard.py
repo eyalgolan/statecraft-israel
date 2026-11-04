@@ -16,8 +16,8 @@ a person has signed off. For every commit in a pull request's range this fails w
 A signed row's Hebrew counts as part of the row wherever it lives (owner, 25 October 2026, on #1618: "Yes, carry them
 over"): inline (title_he, text_he, name_he_review ...) or as the row's entry in translations/he/events.yaml or
 content.yaml (docs/translations.md). An AI-co-authored commit that only removes Hebrew field lines from a signed row and
-leaves the row's Hebrew, read from both places, exactly as its parent had it, has moved the text byte for byte, and the
-sign-off covers it. Any other change to that Hebrew, in either place (a moved value that differs, a lost review flag, a
+leaves the row's Hebrew, read from both places, exactly as its parent had it (the same decoded text: the two places quote
+differently, so the YAML's bytes cannot match), has moved it, and the sign-off covers it. Any other change to that Hebrew, in either place (a moved value that differs, a lost review flag, a
 dropped option, an edit after the move), is an edit of the signed row under (2). The translation files are read whole
 with the game's YAML 1.2 core schema, not diffed; one that does not parse fails closed.
 
@@ -87,6 +87,7 @@ KEYS = ("reviewed_by", "reviewed_on")
 HE_EVENTS, HE_CONTENT = "translations/he/events.yaml", "translations/he/content.yaml"
 HE_FIELD = re.compile(r"^( *)[\"']?[a-z_]+_he(?:_f)?(?:_review)?[\"']?\s*:")
 HE_KEY = re.compile(r"(.+)_he(_f)?")
+HE_NAME = re.compile(r"[a-z_]+_he(?:_f)?(?:_review)?")   # a Hebrew field's key, as HE_FIELD reads it on a line
 
 
 class GuardError(Exception):
@@ -358,7 +359,8 @@ def check(repo: Path, base: str, head: str, ai_disclosed: bool = False) -> list[
                 for label in released:
                     edited.pop((ch.path, label), None)
         for path, label, parent, old in sorted(moved):
-            # Owner, 25 October 2026 (#1618): a sign-off covers its row's Hebrew moved byte for byte into translations/he/;
+            # Owner, 25 October 2026 (#1618): a sign-off covers its row's Hebrew moved into translations/he/ with the same
+            # decoded text;
             # any other change to that Hebrew, inline or there, is an edit of the signed row.
             before = _hebrew(repo, parent, old, label)
             if before is not None and before != _hebrew(repo, sha, path, label):
@@ -425,8 +427,10 @@ def _translations(repo: Path, rev: str, rel: str) -> dict:
 
 def _hebrew(repo: Path, rev: str, path: str, label: str) -> dict[str, set] | None:
     """The Hebrew a signed row carries at a revision, inline and in translations/he/, by the translation key: the value
-    (and its review flag) from each place that has one. Equal on both sides of a commit when it moved the Hebrew byte for
-    byte; None when the row is not signed there."""
+    (and its review flag) from each place that has one, as decoded text. Equal on both sides of a commit when it moved the
+    Hebrew with the same text; None when the row is not signed there. Every Hebrew field an event or one of its options
+    carries counts: one with no place in translations/he/ (title_he_f, an option's text_he_review) keeps its own key, so
+    removing it is an edit, never a move."""
     text = _show(repo, rev, path)
     row = next((r for r in (_signed(repo, rev, path, must_exist=False) if text is not None else []) if r.label == label), None)
     if row is None:
@@ -440,13 +444,17 @@ def _hebrew(repo: Path, rev: str, path: str, label: str) -> dict[str, set] | Non
     root = yaml.compose(text)
     if rel.startswith("events/"):
         top = {_scalar(k): v for k, v in root.value} if isinstance(root, yaml.MappingNode) else {}
-        for field, key in (("title_he", "title"), ("text_he", "text"), ("text_he_review", "review")):
-            if isinstance(top.get(field), yaml.ScalarNode):
-                put(key, top[field].value)
-        for o in top["options"].value if isinstance(top.get("options"), yaml.SequenceNode) else []:
+        moved = {"title_he": "title", "text_he": "text", "text_he_review": "review"}
+        for field, node in top.items():
+            if HE_NAME.fullmatch(field):
+                put(moved.get(field, "inline:" + field), node.value if isinstance(node, yaml.ScalarNode) else repr(node))
+        for i, o in enumerate(top["options"].value if isinstance(top.get("options"), yaml.SequenceNode) else []):
             kv = {_scalar(k): v for k, v in o.value} if isinstance(o, yaml.MappingNode) else {}
-            if isinstance(kv.get("id"), yaml.ScalarNode) and isinstance(kv.get("text_he"), yaml.ScalarNode):
-                put("option:" + kv["id"].value, kv["text_he"].value)
+            oid = kv["id"].value if isinstance(kv.get("id"), yaml.ScalarNode) else f"#{i}"
+            for field, node in kv.items():
+                if HE_NAME.fullmatch(field):
+                    value = node.value if isinstance(node, yaml.ScalarNode) else repr(node)
+                    put(f"option:{oid}" if field == "text_he" else f"option:{oid}:inline:{field}", value)
         entry = _translations(repo, rev, HE_EVENTS).get(label)
         if isinstance(entry, dict):
             for key in ("title", "text", "review"):

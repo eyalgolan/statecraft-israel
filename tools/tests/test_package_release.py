@@ -218,6 +218,10 @@ def test_a_lost_changed_or_unlisted_translation_is_refused(tmp_path, capsys):
     (folder / "ro" / "content.yaml").write_text("{}\n", encoding="utf-8")
     assert "do not match" in refused(build, tmp_path, capsys)
     (folder / "ro" / "content.yaml").unlink()
+    ship_translations(build)
+    (folder / "ro" / "ui.yaml").write_bytes(b"ui.lang: \"\xff\"\n")   # not UTF-8: a refusal, not a crash
+    assert "cannot be read as UTF-8 text" in refused(build, tmp_path, capsys)
+    ship_translations(build)
     (folder / ".DS_Store").write_text("x")              # hidden and top-level names are never translations
     (folder / "README.md").write_text("x")
     assert package_release.translation_refusal(build) is None
