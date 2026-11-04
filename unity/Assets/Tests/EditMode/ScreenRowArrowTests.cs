@@ -1,0 +1,181 @@
+#nullable enable
+using System;
+using System.Collections;
+using System.IO;
+using System.Linq;
+using NUnit.Framework;
+using Statecraft.Game;
+using Statecraft.Game.Map;
+using Statecraft.Game.UI;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.TestTools;
+using UnityEngine.UIElements;
+using Object = UnityEngine.Object;
+
+/// <summary>Accessibility audit L4, against integration bug B6: while a screen is open, Up and Down move the focus between
+/// its rows; Left and Right never move it, and with no screen open none of the four does. The owner's answer on #2340,
+/// Q27: "do the recommended for all" (https://github.com/eyalgolan/statecraft-israel/issues/2340#issuecomment-6623136558).
+/// Same harness as KeyboardTurnTests: Map.unity at 1280x720 with GameRoot's own NavigationGuard, a new GDD game, and the
+/// moves sent as the NavigationMoveEvent the UI provider raises (GameRoot hands the arrow keys to the same Step).</summary>
+public class ScreenRowArrowTests
+{
+    string saveDir = "";
+    RenderTexture? rt; PanelSettings? ps;
+    VisualElement ui = null!;
+    GameRoot root = null!;
+    int presses;
+
+    [SetUp] public void TempSaves() => saveDir = Path.Combine(Path.GetTempPath(), "statecraft-rows-" + Guid.NewGuid().ToString("N"));
+
+    [TearDown]
+    public void DiscardScene()
+    {
+        EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        if (ps != null) Object.DestroyImmediate(ps);
+        if (rt != null) { rt.Release(); Object.DestroyImmediate(rt); }
+        if (Directory.Exists(saveDir)) Directory.Delete(saveDir, true);
+    }
+
+    Focusable? Focused => ui.panel?.focusController?.focusedElement;
+    string FocusedName => (Focused as VisualElement)?.name is string n && n.Length > 0 ? n : Focused == null ? "none" : Focused.GetType().Name;
+    IEnumerator Frames(int n) { for (int i = 0; i < n; i++) yield return null; }
+
+    IEnumerator Move(NavigationMoveEvent.Direction d)
+    {
+        var at = Focused as VisualElement ?? ui;
+        using (var e = NavigationMoveEvent.GetPooled(d)) { e.target = at; at.SendEvent(e); }
+        yield return null;
+    }
+
+    IEnumerator Focus(string name)
+    {
+        var b = ui.Q<VisualElement>(name);
+        Assert.IsNotNull(b, name);
+        b.Focus();
+        for (int i = 0; i < 10 && Focused != b; i++) yield return null;
+        Assert.AreEqual(name, FocusedName, "precondition: focused");
+    }
+
+    /// <summary>Boots the game, answers the opening card from the keyboard (Tab, Enter) and counts every button press
+    /// from here on, so a move that presses anything shows.</summary>
+    IEnumerator Boot()
+    {
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        var doc = Object.FindFirstObjectByType<UIDocument>();
+        rt = new RenderTexture(1280, 720, 0);
+        ps = Object.Instantiate(doc.panelSettings);
+        ps.targetTexture = rt;
+        doc.panelSettings = ps;
+        Object.FindFirstObjectByType<MapScene>().Build(MapFocusTests.Inputs.Map);
+        root = Object.FindFirstObjectByType<GameRoot>();
+        root.Store = new SaveStore(saveDir);
+        root.Begin(MapFocusTests.Inputs, 0);
+        ui = doc.rootVisualElement;
+        for (int i = 0; i < 30 && !(ui.Q("top-bar").worldBound.height > 0); i++) yield return null;
+        yield return Frames(5);
+        yield return Move(NavigationMoveEvent.Direction.Next);
+        var at = (VisualElement)Focused!;
+        using (var k = KeyDownEvent.GetPooled('\n', KeyCode.Return, EventModifiers.None)) { k.target = at; at.SendEvent(k); }
+        using (var s = NavigationSubmitEvent.GetPooled()) { s.target = at; at.SendEvent(s); }
+        yield return Frames(3);
+        presses = 0;
+        foreach (var b in ui.Query<Button>().ToList()) b.clicked += () => presses++;
+    }
+
+    IEnumerator Open(string screen)
+    {
+        UiTestKit.Press(ui.Q<Button>("nav-" + screen));
+        presses = 0;   // the nav press itself
+        yield return Frames(5);
+        Assert.IsTrue(ui.Q("screen-" + screen).resolvedStyle.display == DisplayStyle.Flex, "precondition: " + screen + " is open");
+    }
+
+    /// <summary>The Settings row (.settings-row) the focus is in, as its index among the screen's rows, or -1.</summary>
+    int SettingsRow()
+    {
+        var rows = ui.Q("screen-settings").Query(className: "settings-row").ToList();
+        var at = Focused as VisualElement;
+        return rows.FindIndex(r => at != null && r.Contains(at));
+    }
+
+    /// <summary>L4 and B6, a multi-row screen: in Settings, Down walks the option rows one at a time, from a choice button to
+    /// the choice in the next row nearest below it, and Up walks back; Left and Right leave the focus where it is; the focus
+    /// never leaves the screen at either end, and no move presses anything.</summary>
+    [UnityTest]
+    public IEnumerator UpAndDownWalkTheSettingsRowsL4()
+    {
+        yield return Boot();
+        yield return Open("settings");
+        yield return Focus("settings-tiltshift");
+        Assert.AreEqual(0, SettingsRow());
+        // The rows with a control to take the focus: in this editor the companion's row shows none (WebCompanion.Available).
+        var reachable = ui.Q("screen-settings").Query(className: "settings-row").ToList()
+            .Select((r, i) => (r, i))
+            .Where(x => x.r.resolvedStyle.display == DisplayStyle.Flex && x.r.Query<Button>().ToList().Any(b =>
+                b.enabledInHierarchy && b.resolvedStyle.display == DisplayStyle.Flex && b.resolvedStyle.visibility == Visibility.Visible))
+            .Select(x => x.i).ToList();
+        Assert.GreaterOrEqual(reachable.Count, 6, "precondition: the option rows");
+        for (int k = 1; k < reachable.Count; k++)
+        {
+            yield return Move(NavigationMoveEvent.Direction.Down);
+            Assert.AreEqual(reachable[k], SettingsRow(), $"Down moves to row {reachable[k]}, at {FocusedName}");
+        }
+        for (int i = 0; i < 5; i++) yield return Move(NavigationMoveEvent.Direction.Down);
+        Assert.IsTrue(ui.Q("screen-settings").Contains((VisualElement)Focused!), "Down past the last row stays in the screen, at " + FocusedName);
+        yield return Focus("settings-sound-high");
+        yield return Move(NavigationMoveEvent.Direction.Up);
+        Assert.AreEqual("settings-quality-low", FocusedName, "Up goes to the choice straight above");
+        foreach (var d in new[] { NavigationMoveEvent.Direction.Left, NavigationMoveEvent.Direction.Right })
+        {
+            yield return Move(d);
+            Assert.AreEqual("settings-quality-low", FocusedName, d + " leaves the focus where it is");
+        }
+        for (int i = 0; i < 12; i++) yield return Move(NavigationMoveEvent.Direction.Up);
+        Assert.IsTrue(ui.Q("screen-settings").Contains((VisualElement)Focused!), "Up past the first row stays in the screen, at " + FocusedName);
+        Assert.AreEqual(DisplayStyle.Flex, ui.Q("screen-settings").resolvedStyle.display, "the screen is still open");
+        Assert.AreEqual(0, presses, "moving pressed nothing");
+    }
+
+    /// <summary>L4 and B6, a list: in the Budget, Down goes from a line's - to the next line's -, skipping a line whose
+    /// buttons are disabled and one that is hidden, and Up comes back the same way; nothing is pressed.</summary>
+    [UnityTest]
+    public IEnumerator UpAndDownWalkTheBudgetLinesSkippingHiddenAndDisabledL4()
+    {
+        yield return Boot();
+        yield return Open("budget");
+        var lines = ui.Q<ScrollView>("budget-rows").contentContainer.Children().Where(r => r.Q<Button>(r.name + "-down") != null).ToList();
+        Assert.GreaterOrEqual(lines.Count, 5, "precondition: the budget has its lines");
+        yield return Focus(lines[0].name + "-down");
+        yield return Move(NavigationMoveEvent.Direction.Down);
+        Assert.AreEqual(lines[1].name + "-down", FocusedName, "Down: the next line's -");
+        lines[2].Q<Button>(lines[2].name + "-down").SetEnabled(false);
+        lines[2].Q<Button>(lines[2].name + "-up").SetEnabled(false);
+        lines[3].style.display = DisplayStyle.None;
+        yield return Frames(3);
+        yield return Move(NavigationMoveEvent.Direction.Down);
+        Assert.AreEqual(lines[4].name + "-down", FocusedName, "a disabled line and a hidden one are skipped");
+        yield return Move(NavigationMoveEvent.Direction.Up);
+        Assert.AreEqual(lines[1].name + "-down", FocusedName, "and Up skips them too");
+        Assert.AreEqual(0, presses, "moving pressed nothing");
+    }
+
+    /// <summary>B6 with no screen open, through GameRoot's guard: none of the four directions moves the focus off a HUD
+    /// button or presses it.</summary>
+    [UnityTest]
+    public IEnumerator WithNoScreenOpenNoArrowMovesTheFocusB6()
+    {
+        yield return Boot();
+        Assert.IsFalse(ui.Q("root").ClassListContains(ScreenNav.ScreenOpenClass), "precondition: no screen is open");
+        foreach (var name in new[] { "nav-cabinet", "nav-budget", "end-turn" })
+        {
+            yield return Focus(name);
+            foreach (var d in new[] { NavigationMoveEvent.Direction.Up, NavigationMoveEvent.Direction.Down, NavigationMoveEvent.Direction.Left, NavigationMoveEvent.Direction.Right })
+            {
+                yield return Move(d);
+                Assert.AreEqual(name, FocusedName, $"{d} left the focus on {name}");
+            }
+        }
+        Assert.AreEqual(0, presses, "no arrow pressed a button");
+    }
+}
