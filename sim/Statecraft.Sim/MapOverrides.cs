@@ -495,7 +495,7 @@ namespace Statecraft.Sim
             {
                 if (!Land(f.Q, f.R))
                     Broken($"anchors[{f.Row}]", FormattableString.Invariant($"anchor {f.Anchor} hex q={f.Q} r={f.R} is not a land hex of the map"));
-                if (f.Script is (int sq, int sr) && !Land(sq, sr))
+                foreach (var (sq, sr, _) in f.Script.Where(x => !Land(x.Q, x.R)))
                     Broken($"anchors[{f.Row}]", FormattableString.Invariant($"scripted anchor hex q={sq} r={sr} is not a land hex of the map"));
             }
             foreach (var t in c.SettlementTargets)

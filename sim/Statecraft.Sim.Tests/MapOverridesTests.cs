@@ -454,7 +454,7 @@ public class MapOverridesTests
     public void ASeaScriptedAnchorBlocksWithItsIdAndExactHex()
     {
         var c = DependencyFixture();
-        c.StartingForces[0].Script = (3, 0);
+        c.StartingForces[0].Script.Add((3, 0, new DateTime(1948, 7, 8)));
         var row = Assert.Single(Broken(DependencyDiagnostics(c)));
         Assert.Equal("anchors[unit_a]", row.Field);
         Assert.Equal("scripted anchor hex q=3 r=0 is not a land hex of the map", row.Message);

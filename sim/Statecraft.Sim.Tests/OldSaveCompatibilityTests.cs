@@ -27,6 +27,8 @@ public class OldSaveCompatibilityTests
         // outcome: it still loads, keeps its open order and warns content_changed plus replay_differs, nothing else.
         // Then changed (3 Nov 2026, maintainer agent; the lines above are Beri's, unchanged): a v0.3.4 save that never
         // touches these cards now exists and still replays identically (OldSaveNoOperationCardsTests).
+        // Then changed (4 Nov 2026, #2180): that save reaches the Syrian S1 step of 15 July 1948 (#1270) and so replays
+        // differently too, by the owner's ruling of 4 Nov 2026 (OldSaveNoOperationCardsTests).
         var order = Assert.IsType<UnitOrder>(Assert.Single(loaded.Committed));
         Assert.Equal((3, Orders.Fortify), (order.Unit, order.Order));
 
