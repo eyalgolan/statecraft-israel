@@ -5,12 +5,14 @@
 """Lists the content that no named person has reviewed yet and that an AI agent may have checked (CONTENT_POLICY
 section 2, rule 6), so the owner can work through it: docs/review-queue.md.
 
-Read-only on content/: it parses the YAML and asks git, and writes only the Markdown page (or prints it).
+Read-only on content/ and translations/: it parses the YAML and asks git, and writes only the Markdown page (or prints it).
 
 Two kinds of entry:
 
 1. **Agent-checked Hebrew names**: every `*_review: agent-checked` flag (`name_he_review`, `title_he_review`,
-   `title_he_f_review`, `body_he_review`; #564). The flag itself says no person has read the name.
+   `title_he_f_review`, `body_he_review`; #564), and every `review: agent-checked` entry of translations/he/content.yaml
+   and events.yaml, where the Hebrew moves (#1618), listed with its English record's row and sources. The flag itself
+   says no person has read the name.
 2. **Reviewed statuses last written by a commit with an AI co-author trailer**: every row whose `status` is
    `fact-checked`, `historian-reviewed` or `sensitivity-reviewed`, where the line that holds that status was last
    written by such a commit.
@@ -209,18 +211,80 @@ def scan(text: str, rel: str) -> list[Entry]:
             m = FLAG_KEY.match(key)
             if m and _scalar(node) == FLAG:
                 name = m.group("field")
-                source_node = keys.get(name + "_sources")
-                # People keep a field's sources under biography_sources.<field> (content/people.yaml).
-                if source_node is None and isinstance(keys.get("biography_sources"), yaml.MappingNode):
-                    source_node = {_scalar(k): v for k, v in keys["biography_sources"].value}.get(name)
                 entries.append(Entry("flag", rel, node.start_mark.line + 1, label, name, _scalar(keys.get(name)) if name in keys else "",
-                                     _urls(source_node) if source_node is not None else []))
+                                     _field_sources(keys, name)))
         status = keys.get("status")
         if status is not None and _scalar(status) in STATUSES:
             # A whole sign-off by a person (#375) takes the row out of the queue; a malformed one does not (fail closed).
             signoff = {k: _value(keys[k]) for k in review_record.FIELDS if k in keys}
             entries.append(Entry("signed" if review_record.signed(signoff) else "status", rel, status.start_mark.line + 1, label,
                                  "status", _scalar(status), _urls(keys["sources"]) if "sources" in keys else []))
+    return entries
+
+
+def _field_sources(keys: dict, name: str) -> list[str]:
+    """The source URLs of a Hebrew field (name_he ...), kept on its English record: <field>_sources, or, for people,
+    biography_sources.<field> (content/people.yaml)."""
+    source_node = keys.get(name + "_sources")
+    if source_node is None and isinstance(keys.get("biography_sources"), yaml.MappingNode):
+        source_node = {_scalar(k): v for k, v in keys["biography_sources"].value}.get(name)
+    return _urls(source_node) if source_node is not None else []
+
+
+def _records(node, ids: tuple = ()):
+    """Every mapping under node with its key path, as tools/translate.py keys content: a list item by its id, else its
+    index."""
+    if isinstance(node, yaml.MappingNode):
+        yield ids, node
+        for k, v in node.value:
+            yield from _records(v, ids + (_scalar(k),))
+    elif isinstance(node, yaml.SequenceNode):
+        for i, item in enumerate(node.value):
+            ident = next((v.value for k, v in item.value if _scalar(k) == "id" and isinstance(v, yaml.ScalarNode)), None) \
+                if isinstance(item, yaml.MappingNode) else None
+            yield from _records(item, ids + (ident if ident is not None else str(i),))
+
+
+HE_TRANSLATIONS = ("translations/he/content.yaml", "translations/he/events.yaml")
+
+
+def scan_translations(repo: Path, rel: str) -> list[Entry]:
+    """The agent-checked flags of a translations/he/ file (#1618; docs/translations.md): each entry whose `review` is
+    agent-checked, listed as the inline flag it replaces, with the row and sources of its English record (the sources stay
+    there): a content entry's record by its key; an event's by its id, with its text_he_sources, else the event's own
+    sources."""
+    root = yaml.compose((repo / rel).read_text(encoding="utf-8"))
+    entries: list[Entry] = []
+    parsed: dict[str, dict] = {}
+    events: dict[str, dict] | None = None
+    for k, v in root.value if isinstance(root, yaml.MappingNode) else []:
+        keys = {_scalar(a): b for a, b in v.value} if isinstance(v, yaml.MappingNode) else {}
+        if _scalar(keys.get("review")) != FLAG:
+            continue
+        key, line = _scalar(k), keys["review"].start_mark.line + 1
+        if rel.endswith("events.yaml"):
+            if events is None:
+                events = {}
+                for path in sorted((repo / "content" / "events").glob("*.yaml")):
+                    tree = yaml.compose(path.read_text(encoding="utf-8"))
+                    top = {_scalar(a): b for a, b in tree.value} if isinstance(tree, yaml.MappingNode) else {}
+                    if "id" in top:
+                        events[_scalar(top["id"])] = top
+            event = events.get(key, {})
+            sources = _field_sources(event, "text_he") or (_urls(event["sources"]) if "sources" in event else [])
+            entries.append(Entry("flag", rel, line, key, "text_he", _scalar(keys.get("text")), sources))
+            continue
+        file, _, rest = key.partition("#")
+        where, _, name = rest.rpartition(".")
+        if file not in parsed:
+            path = repo / "content" / file
+            tree = yaml.compose(path.read_text(encoding="utf-8")) if path.is_file() else None
+            parsed[file] = {".".join(ids): n for ids, n in _records(tree)}
+        record = parsed[file].get(where)
+        fields = {_scalar(a): b for a, b in record.value} if record is not None else {}
+        he = name.removesuffix("_f") + "_he" + ("_f" if name.endswith("_f") else "")
+        label = _scalar(fields["id"]) if "id" in fields else where
+        entries.append(Entry("flag", rel, line, label, he, _scalar(keys.get("text")), _field_sources(fields, he)))
     return entries
 
 
@@ -300,6 +364,11 @@ def queue(repo: Path) -> tuple[list[Entry], int, int]:
                 entries.append(e)
             else:
                 human += 1
+    for rel in HE_TRANSLATIONS:
+        if (repo / rel).is_file():
+            for e in scan_translations(repo, rel):
+                e.checked_by = f"an AI agent (the `{FLAG}` flag)"
+                entries.append(e)
     return entries, human, signed
 
 
