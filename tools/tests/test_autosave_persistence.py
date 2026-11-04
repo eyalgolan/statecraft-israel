@@ -156,3 +156,31 @@ assert.deepEqual(logs, []);
 assert.deepEqual(errors, []);
 assert.deepEqual(messages, [["GameRoot", "OnSavePersistenceResult", "fail delete"]]);
 ''')
+
+
+def test_a_delete_before_the_flush_replaces_the_pending_save_and_only_the_delete_reports():
+    run(r'''
+save(one);
+request("delete", "GameRoot");  // New Game deletes the file before the queued flush starts
+flush();
+calls[0].callback(null);
+assert.deepEqual(logs, []);  // the save's bytes are gone, so its receipt must not be announced as durable
+assert.deepEqual(errors, []);
+assert.deepEqual(messages, [["GameRoot", "OnSavePersistenceResult", "ok delete"]]);
+''')
+
+
+def test_a_save_flush_failing_after_a_delete_request_still_reports_the_save_failure():
+    run(r'''
+save(one);
+flush();  // the save's snapshot is in flight
+request("delete", "GameRoot");
+const error = new Error("storage denied");
+calls[0].callback(error);
+assert.deepEqual(errors, ["AUTOSAVE FAIL " + one]);
+assert.deepEqual(messages, [["UI", "OnSavePersistenceResult", "fail save " + one]]);
+flush();
+calls[1].callback(null);
+assert.deepEqual(messages[1], ["GameRoot", "OnSavePersistenceResult", "ok delete"]);
+assert.deepEqual(logs, []);
+''')
