@@ -111,7 +111,8 @@ namespace Statecraft.Sim
                         why.Add(new Cause("map", w.Id, 1, $"{SegmentName(def, i)} built", key: CauseKeys.CorridorCompleted, args: new[] { def.Id, CauseKeys.Number(i + 1) }));
                     }
                     // R-VET-001: the segment progressed this turn, so a halutz serves a turn; a veteran counts no further.
-                    if (u.Type != "halutz") continue;
+                    // Legacy/gdd-0.1 only: under gdd-0.3 the profession tiers take over (#1689; #2528), so no promotion.
+                    if (u.Type != "halutz" || s.Ruleset == SaveGame.Gdd03Ruleset) continue;
                     var service = u.Service + 1;
                     var promoted = service >= r.VeteranHalutzService!.Value;
                     s.Units[u.Id] = new Unit(u.Id, promoted ? Projects.VeteranType : u.Type, u.Q, u.R, service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity, u.Full, u.CombatXp);
