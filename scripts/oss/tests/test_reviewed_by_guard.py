@@ -467,3 +467,127 @@ def test_a_heading_inside_a_code_fence_is_not_a_section():
     assert guard.ai_assistance(fenced) == "None" and not guard.disclosed(fenced)
     inside = TEMPLATE.format(ai="Claude Code drafted it; I checked each date:\n```\n# a shell comment\n```")
     assert "a shell comment" in guard.ai_assistance(inside) and guard.disclosed(inside)
+
+
+# ---- translations/he/ (owner, 25 October 2026, #1618: "Yes, carry them over") ----
+
+EVENT = """id: vote
+title: The vote
+title_he: "ההצבעה"
+text: Vote now?
+text_he: >-
+  להצביע
+  עכשיו?
+text_he_review: agent-checked
+options:
+  - id: yes_vote
+    text: Vote
+    text_he: "להצביע"
+status: fact-checked
+reviewed_by: eyalgolan
+reviewed_on: 2026-10-15
+"""
+EVENT_EN = EVENT.replace('title_he: "ההצבעה"\n', "").replace("text_he: >-\n  להצביע\n  עכשיו?\n", "") \
+    .replace("text_he_review: agent-checked\n", "").replace('    text_he: "להצביע"\n', "")
+EVENT_HE = 'vote:\n  title: "ההצבעה"\n  text: "להצביע עכשיו?"\n  options:\n    yes_vote: "להצביע"\n  review: "agent-checked"\n'
+PERSON = SIGNED.replace("    name: A\n", '    name: A\n    name_he: "א"\n    name_he_review: agent-checked\n')
+PERSON_HE = '"people.yaml#people.a.name":\n  text: "א"\n  review: "agent-checked"\n'
+
+
+def event_repo(tmp_path, text=EVENT, he=None):
+    root, base = repo(tmp_path)
+    (root / "content" / "events").mkdir()
+    edit(root, text, "content/events/vote.yaml")
+    if he is not None:
+        (root / "translations" / "he").mkdir(parents=True)
+        edit(root, he, "translations/he/events.yaml")
+    return root, commit(root, "content: the vote")
+
+
+def move(root, en, he, rel, he_rel):
+    edit(root, en, rel)
+    (root / "translations" / "he").mkdir(parents=True, exist_ok=True)
+    edit(root, he, he_rel)
+
+
+def test_an_agent_may_move_a_signed_events_hebrew_byte_for_byte(tmp_path):
+    root, base = event_repo(tmp_path)
+    move(root, EVENT_EN, EVENT_HE, "content/events/vote.yaml", "translations/he/events.yaml")
+    commit(root, "languages: move the events' Hebrew" + AI)
+    assert EVENT_EN.count("_he") == 0 and guard.check(root, base, "HEAD") == []
+
+
+@pytest.mark.parametrize("he", [EVENT_HE.replace("עכשיו", "כעת"), EVENT_HE.replace('  review: "agent-checked"\n', ""),
+                                EVENT_HE.replace('    yes_vote: "להצביע"\n', ""), ""])
+def test_a_move_that_changes_drops_or_loses_the_hebrew_is_an_edit(tmp_path, he):
+    root, base = event_repo(tmp_path)
+    move(root, EVENT_EN, he, "content/events/vote.yaml", "translations/he/events.yaml")
+    commit(root, "languages: move the events' Hebrew" + AI)
+    problems = guard.check(root, base, "HEAD")
+    assert len(problems) == 1 and "content/events/vote.yaml row 'vote'" in problems[0]
+
+
+def test_a_move_that_also_edits_the_english_is_an_edit(tmp_path):
+    root, base = event_repo(tmp_path)
+    move(root, EVENT_EN.replace("Vote now?", "Vote today?"), EVENT_HE, "content/events/vote.yaml", "translations/he/events.yaml")
+    commit(root, "languages: move the events' Hebrew" + AI)
+    assert len(guard.check(root, base, "HEAD")) == 1
+
+
+def test_an_agent_edit_of_a_moved_signed_translation_fails_until_a_person_signs_again(tmp_path):
+    root, base = event_repo(tmp_path, EVENT_EN, EVENT_HE)
+    edit(root, EVENT_HE.replace("עכשיו", "כעת"), "translations/he/events.yaml")
+    sha = commit(root, "languages: reword" + AI)
+    problems = guard.check(root, base, "HEAD")
+    assert len(problems) == 1 and sha[:10] in problems[0] and "row 'vote'" in problems[0]
+    edit(root, EVENT_EN.replace("2026-10-15", "2026-10-16"), "content/events/vote.yaml")
+    commit(root, "content: read the vote again", date="2026-10-16T12:00:00+00:00")
+    assert guard.check(root, base, "HEAD") == []
+
+
+def test_an_agent_may_translate_an_unsigned_event(tmp_path):
+    unsigned = EVENT_EN.replace("reviewed_by: eyalgolan\nreviewed_on: 2026-10-15\n", "")
+    root, base = event_repo(tmp_path, unsigned, EVENT_HE)
+    edit(root, EVENT_HE.replace("עכשיו", "כעת"), "translations/he/events.yaml")
+    commit(root, "languages: reword" + AI)
+    assert guard.check(root, base, "HEAD") == []
+
+
+def test_an_agent_may_move_a_signed_rows_content_hebrew_but_not_edit_it(tmp_path):
+    root, base = repo(tmp_path, PERSON)
+    move(root, SIGNED, PERSON_HE, "content/people.yaml", "translations/he/content.yaml")
+    commit(root, "languages: move the names" + AI)
+    assert guard.check(root, base, "HEAD") == []
+    edit(root, PERSON_HE.replace('"א"', '"אָ"'), "translations/he/content.yaml")
+    sha = commit(root, "languages: a vowel" + AI)
+    problems = guard.check(root, base, "HEAD")
+    assert len(problems) == 1 and sha[:10] in problems[0] and "content/people.yaml row 'a'" in problems[0]
+
+
+def test_dropping_a_signed_rows_hebrew_without_moving_it_is_an_edit(tmp_path):
+    root, base = repo(tmp_path, PERSON)
+    edit(root, SIGNED)
+    commit(root, "content: drop the name" + AI)
+    assert len(guard.check(root, base, "HEAD")) == 1
+
+
+def test_an_unreadable_translation_fails_closed(tmp_path):
+    root, base = event_repo(tmp_path)
+    move(root, EVENT_EN, "vote: [", "content/events/vote.yaml", "translations/he/events.yaml")
+    commit(root, "languages: move" + AI)
+    with pytest.raises(guard.GuardError, match="cannot parse translations/he/events.yaml"):
+        guard.check(root, base, "HEAD")
+
+
+def test_removing_a_hebrew_names_source_is_not_a_move(tmp_path):
+    """biography_sources.name_he holds a source, not Hebrew text: dropping it from a signed row is an edit."""
+    name = '      name_he: [{ url: "https://example.org/a", checked: 2026-10-14 }]\n'
+    sourced = PERSON + "    biography_sources:\n" + name + '      name: [{ url: "https://example.org/b", checked: 2026-10-14 }]\n'
+    root, base = repo(tmp_path, sourced)
+    edit(root, sourced.replace(name, ""))
+    commit(root, "content: drop a source" + AI)
+    assert len(guard.check(root, base, "HEAD")) == 1
+    root2, base2 = repo(tmp_path / "two", PERSON + "    name_he_sources:\n      - https://example.org/a\n")
+    edit(root2, PERSON)
+    commit(root2, "content: drop a source" + AI)
+    assert len(guard.check(root2, base2, "HEAD")) == 1
