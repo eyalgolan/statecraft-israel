@@ -2,11 +2,11 @@
 # requires-python = ">=3.11"
 # dependencies = ["pyyaml==6.0.3"]
 # ///
-"""Only a person signs a row off, and an agent may not edit a row a person has signed off. For every commit in a pull
-request's range this fails when:
+"""Only a person signs a row off, or an AI-assisted contributor who discloses the AI help, and an agent may not edit a row
+a person has signed off. For every commit in a pull request's range this fails when:
 
 1. a commit that an AI agent co-wrote adds, changes or removes a `reviewed_by` or `reviewed_on` line in a content/ YAML
-   file (owner, 15 October 2026, #375: "Yes, humans only");
+   file (owner, 15 October 2026, #375: "Yes, humans only"), unless the pull request discloses the AI help (see below);
 2. a commit that an AI agent co-wrote changes any line, the id included, of a row that carries a person's whole sign-off
    in that commit's parent (so on the base, or signed earlier in the same pull request) (owner, 15 October 2026, on #629: "Block it in CI"), unless a later commit of the same pull
    request with no AI trailer changes that row's own reviewed_by / reviewed_on lines (signs it again or removes its
@@ -32,11 +32,21 @@ It fails closed: a base or head that does not resolve, a range git cannot list, 
 diff or files cannot be read, a content YAML file that does not parse, and a path git had to quote are failures, never
 passes.
 
-Usage: uv run scripts/oss/reviewed_by_guard.py --base <base-sha> [--head HEAD] [--repo .]"""
+Disclosure (owner, 4 November 2026, asked whether an AI-assisted contributor's source check counts as the reviewed_by
+sign-off: "Yes, it counts"): with --pr-event, the guard reads the pull request's description from the event file GitHub
+writes (GITHUB_EVENT_PATH), never from a shell argument. The pull request discloses the AI help when its "AI assistance"
+section (the template's heading, up to the next heading, HTML comments removed) says something other than "None". Then an
+AI-co-authored commit is judged as a person's for (1) and (3), and its own sign-off lines release a row under (2); an edit
+to a signed row that the commit does not sign again still fails. Without --pr-event (local runs, check.sh), with an event
+that has no pull request, or with a missing, empty or "None" section, nothing is disclosed: the 15 October rule applies
+unchanged. An event file that cannot be read or parsed is a failure.
+
+Usage: uv run scripts/oss/reviewed_by_guard.py --base <base-sha> [--head HEAD] [--repo .] [--pr-event <event.json>]"""
 from __future__ import annotations
 
 import argparse
 import datetime
+import json
 import re
 import subprocess
 import sys
@@ -55,6 +65,8 @@ DIFF = ["--no-color", "--no-ext-diff", "--no-textconv", "--text", "--src-prefix=
 NAMES = re.compile(r"reviewed_(?:by|on)")
 ON_VALUE = re.compile(r"""["']?reviewed_on["']?\s*:\s*["']?([^,}\s#"']*)""")
 HUNK = re.compile(r"^(@+) (.*?) @+")
+HEADING = re.compile(r"^ {0,3}#{1,6}(?:\s+(.*?))?\s*#*\s*$")
+NOT_DISCLOSED = {"", "none", "n/a", "na", "no", "nothing", "-"}
 
 
 class GuardError(Exception):
@@ -97,6 +109,39 @@ def hunks(diff: str) -> list[Hunk]:
         if out and line[:cols].strip(" +-") == "" and len(line) >= cols and any(c in "+-" for c in line[:cols]):
             out[-1].lines.append((line[:cols], line[cols:]))
     return out
+
+
+def ai_assistance(body: str) -> str:
+    """The text of the description's first "AI assistance" section, HTML comments removed ("" when there is none). An
+    unclosed comment hides the rest of the section."""
+    lines, found, out = (body or "").splitlines(), False, []
+    for line in lines:
+        m = HEADING.match(line)
+        if m:
+            if found:
+                break
+            found = (m.group(1) or "").strip().lower() == "ai assistance"
+            continue
+        if found:
+            out.append(line)
+    text = re.sub(r"<!--.*?(?:-->|\Z)", "", "\n".join(out), flags=re.S)
+    return text.strip()
+
+
+def disclosed(body: str) -> bool:
+    """True when the "AI assistance" section says something other than "None" (or an empty or template-only section)."""
+    return ai_assistance(body).strip(" .`*_").lower() not in NOT_DISCLOSED
+
+
+def event_body(path: str) -> str:
+    """The pull request description in a GitHub event file; "" for an event with no pull request or no description."""
+    try:
+        event = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, ValueError) as e:
+        raise GuardError(f"cannot read the event file {path}") from e
+    pr = event.get("pull_request") if isinstance(event, dict) else None
+    body = pr.get("body") if isinstance(pr, dict) else None
+    return body if isinstance(body, str) else ""
 
 
 def _named(text: str) -> bool:
@@ -177,8 +222,9 @@ def changes(repo: Path, sha: str, parents: list[str]) -> list[Change]:
     return out
 
 
-def check(repo: Path, base: str, head: str) -> list[str]:
-    """The problems in base..head, one line each; raises GuardError for anything it cannot determine."""
+def check(repo: Path, base: str, head: str, ai_disclosed: bool = False) -> list[str]:
+    """The problems in base..head, one line each; raises GuardError for anything it cannot determine. ai_disclosed: the
+    pull request discloses the AI help (owner, 4 November 2026, "Yes, it counts")."""
     repo = Path(repo)
     try:
         if _git(["rev-parse", "--is-shallow-repository"], repo).strip() != "false":
@@ -204,9 +250,12 @@ def check(repo: Path, base: str, head: str) -> list[str]:
         for ch in files:
             named = [(cols, text) for hk in ch.hunks for cols, text in hk.lines if _named(text)]
             if agent:
-                if named:
+                if named and not ai_disclosed:
                     problems.append(f"{sha[:10]}: a commit with an AI co-author trailer changes a reviewed_by / reviewed_on line "
-                                    f"in {ch.path}; only a person signs a row off (#375). Remove those lines from this commit.")
+                                    f"in {ch.path}, and the pull request does not disclose AI assistance. Only a person signs a "
+                                    f"row off (#375), or an AI-assisted contributor who discloses it (owner, 4 November 2026, "
+                                    f"\"Yes, it counts\"): say in the \"AI assistance\" section what was checked and how, then "
+                                    f"push again so CI reads the new description; or remove those lines from this commit.")
                 for p, (parent, old) in enumerate(zip(parents or [EMPTY_TREE], ch.old_paths)):
                     if not old or parent == EMPTY_TREE:
                         continue
@@ -218,8 +267,10 @@ def check(repo: Path, base: str, head: str) -> list[str]:
                             if _touches(row, hk.old[p][0], hk.old[p][1], inserted):
                                 edited.setdefault((ch.path, row.label), sha)
                                 break
-                continue
-            # A person's commit: the sign-off's day, and re-signing (or unsigning) a row an agent edited.
+                if not ai_disclosed:
+                    continue
+            # A person's commit, or a disclosed AI-assisted one: the sign-off's day, and re-signing (or unsigning) a row an
+            # agent edited.
             for cols, text in named:
                 if "+" in cols:
                     m = ON_VALUE.search(text)
@@ -266,9 +317,12 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--base", required=True)
     ap.add_argument("--head", default="HEAD")
     ap.add_argument("--repo", default=".")
+    ap.add_argument("--pr-event", help="GitHub event file (GITHUB_EVENT_PATH) to read the PR's AI assistance section from")
     a = ap.parse_args(argv)
     try:
-        problems = check(Path(a.repo), a.base, a.head)
+        ai_disclosed = a.pr_event is not None and disclosed(event_body(a.pr_event))
+        print(f"reviewed_by guard: AI assistance {'disclosed' if ai_disclosed else 'not disclosed'} in the pull request.")
+        problems = check(Path(a.repo), a.base, a.head, ai_disclosed)
     except GuardError as e:
         print(f"reviewed_by guard: {e}. Failing closed.")
         return 1
@@ -276,7 +330,7 @@ def main(argv: list[str] | None = None) -> int:
         print(p)
     if problems:
         return 1
-    print("reviewed_by guard: no AI-co-authored commit touches a sign-off or a signed-off row.")
+    print("reviewed_by guard: no AI-co-authored commit signs a row off without disclosure or edits a signed-off row.")
     return 0
 
 
