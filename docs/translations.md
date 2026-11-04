@@ -73,8 +73,12 @@ owner's decision. `TranslationsTests` names both files, and fails if any other n
 
 ## Sign-offs and the review queue
 
-A signed row's sign-off (`reviewed_by`, `reviewed_on`) covers its Hebrew wherever it lives: inline, or as the row's
-entry in `he/events.yaml` (an event, by its id) or `he/content.yaml` (a record, by its keys). Hebrew moved with the
+A signed row's sign-off (`reviewed_by`, `reviewed_on`) protects the row's Hebrew from unsigned edits wherever it
+lives: inline, or as the row's entry in `he/events.yaml` (an event, by its id) or `he/content.yaml` (a record, by its
+keys). It does not clear a Hebrew `agent-checked` flag: the fact sign-off and the Hebrew read are separate checks, and
+the flag stays until a native Hebrew speaker, or an AI-assisted contributor who discloses the AI help, reads the Hebrew
+(#564; the owner chose the option labelled "No: separate checks (Recommended)" (4 November 2026)).
+`tools/review_queue.py` lists a flag on a signed row like any other (`scan`, lines 209-221; `queue`, lines 351-358). Hebrew moved with the
 same decoded text keeps the sign-off (owner, 25 October 2026, on #1618: "Yes, carry them over"). The inline YAML and
 `translations/he/` quote differently (a folded `>-` scalar becomes a double-quoted one), so "byte-identical moved text"
 is read as the same decoded text: every character the same, direction marks, nikkud and maqaf included. `scripts/oss/reviewed_by_guard.py`
