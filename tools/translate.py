@@ -380,7 +380,8 @@ The tool rewrites this file: comments other than this header are not kept."""
 
 def save(lang: str, edits: dict[str, str], native: dict[str, bool], dry: bool = False) -> dict:
     """Check every edited string, and write them all only when none is refused. native: event unit or content key ->
-    whether a native speaker has read it (a missing one keeps its state; a new translation starts agent-checked)."""
+    whether a native speaker, or an AI-assisted contributor who discloses it, has read it (a missing one keeps its
+    state; a new translation starts agent-checked)."""
     lang_code(lang, target=True)
     if not isinstance(edits, dict) or not isinstance(native, dict) or \
             not all(isinstance(v, str) for v in edits.values()) or not all(isinstance(v, bool) for v in native.values()):
