@@ -1271,14 +1271,16 @@ namespace Statecraft.Game.UI
         }
 
         /// <summary>One pass of the smoke runs' unit loop: End Turn selects a unit that needs orders, and the unit card's Skip
-        /// skips it. False, with "SMOKE FAIL info-skip did not skip unit &lt;id&gt;", when no unit left the cycle (the v0.3.5 smoke
-        /// spun 200 times behind a dialog, #2436); the id is the first unit that needed orders before the pass, still waiting.</summary>
+        /// skips it. False, with "SMOKE FAIL info-skip skipped no unit" plus the waiting ids and the unit card's title, when no
+        /// unit left the cycle (the v0.3.5 smoke spun 200 times behind a dialog, #2436).</summary>
         static bool SkipOneUnit(VisualElement root, SimBridge bridge, Action<string> log)
         {
             var before = bridge.NeedsOrders;
             if (!Press(root.Q<Button>("end-turn"), log) || !Press(root.Q<Button>("info-skip"), log)) return false;
             if (bridge.NeedsOrders.Count < before.Count) return true;
-            log(FormattableString.Invariant($"SMOKE FAIL info-skip did not skip unit {before[0]}"));
+            // Smoke has no unit layer, so it names the units still waiting and the unit card's own title (the unit it shows,
+            // which End Turn chose and may not be the first waiting).
+            log(FormattableString.Invariant($"SMOKE FAIL info-skip skipped no unit: waiting {string.Join(",", before)}; the unit card shows '{root.Q<Label>("info-title")?.text}'"));
             return false;
         }
 
