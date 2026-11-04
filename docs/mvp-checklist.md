@@ -146,7 +146,7 @@ The first outside play-test (18 October). The plan of record for these is #1038.
 
 The art and map issues under #18 remain a parallel track, not a substitute for the phase work above.
 
-- [ ] **Open: #1183, pull request #1796.** Denser hexes: Tel Aviv to Jerusalem in 7 to 8 hexes. The measured plan is on `main` (#1185); the 4.4 km bake is in the open pull request.
+- [ ] **Open: #1183.** Denser hexes: Tel Aviv to Jerusalem in 7 to 8 hexes. The measured plan is on `main` (#1185); the 4.4 km bake is on `main` (#1796, merged 2 November 2026). Left: the WebGL load-time gate on the merged bake.
 - [ ] **Open: #663, #707, #666 and #667.** Remaining model placement and art work. #659, #665, #708 and #886 are closed; the last Collection figures, including Tal Heuberger's Arab villager, are in play (#1321). #669, #670 and #725 are closed (#1086, #1022, #1028). The Burma Road vehicles' approximate end boundary (#1040) is implemented in [#1067](https://github.com/eyalgolan/statecraft-israel/pull/1067): the convoy truck and lorry from #1028 stop on 7 December 1948; both `burma_road` vehicle plans use that exclusive end date. `RoadVehiclesTests.BurmaRoadVehiclesStopOn7DecemberWhileOtherRoutesContinue` checks 6 and 7 December. The route itself has no new end date.
 - [x] **Done: the CHANGELOG entry for the nine whole-town models (0.1.0).** The nine whole-town landmarks (#917). #885 is closed into #708.
 - [x] **Done: #1004.** The building models stood far bigger than the train, and Jaffa's over Tel Aviv's (v0.1.1). #1030 puts every building model at 24x real (owner: "Merge, then fix landmarks + grids"); the kit landmarks and plot grids followed in #1048 (#1032), and townspeople and wildlife at the same scale in #1050 (#1033).
