@@ -93,7 +93,10 @@ def _parse(path: Path):
     stat = path.stat()
     stamp = (stat.st_mtime_ns, stat.st_size)
     if path not in _PARSED or _PARSED[path][0] != stamp:
-        _PARSED[path] = (stamp, yaml12.load(_read(path)))
+        try:
+            _PARSED[path] = (stamp, yaml12.load(_read(path)))
+        except Exception as e:
+            raise Refused(f"{path.name}: invalid YAML ({type(e).__name__})") from e
     return _PARSED[path][1]
 
 
