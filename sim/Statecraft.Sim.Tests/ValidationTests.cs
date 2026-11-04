@@ -289,6 +289,7 @@ status: draft
     [InlineData("  - { id: a }", null)]
     [InlineData("  - name: Beersheba", "name")]
     [InlineData("  - https://example.org/a", null)]
+    [InlineData("  - a:b", null)]
     [InlineData("    url: https://example.org", "url")]
     [InlineData("    time: 10:30", "time")]
     [InlineData("  \"campaign.play_minutes\":", "campaign.play_minutes")]
