@@ -40,7 +40,7 @@ public class Gdd03CraftCourseFixtureTests
 
     // Ids follow the row order.
     const int Free = 0, NoviceFarmer = 1, NovicePioneer = 2, TrainedFarmer = 3, VeteranPioneer = 4, Apprentice = 5,
-        Expert = 6, Worker = 7, RefugeeId = 8, NotReceived = 9, NoviceCraftsman = 10, SouthFree = 11;
+        Expert = 6, Worker = 7, RefugeeId = 8, NoviceCraftsman = 10, SouthFree = 11;
     static GameState State(Content c, params PopulationUnit[] extra)
     {
         var people = new List<PopulationUnit> {
@@ -53,7 +53,7 @@ public class Gdd03CraftCourseFixtureTests
             Person(CivilianProfession.Craftsman, CivilianTier.Expert, null),
             Person(CivilianProfession.None, CivilianTier.None, null, assignment: new PopulationAssignment(PopulationAssignmentKind.Work, Field)),
             Person(CivilianProfession.None, CivilianTier.None, null, PopulationStatus.Refugee, 2),
-            Person(CivilianProfession.None, CivilianTier.None, null, reception: 3),
+            Person(CivilianProfession.None, CivilianTier.None, null, reception: 3),   // id 9: keeps the later ids in row order
             Person(CivilianProfession.Craftsman, CivilianTier.Novice, null),
             Person(CivilianProfession.None, CivilianTier.None, null, region: "south") };
         people.AddRange(extra);
