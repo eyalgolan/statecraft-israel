@@ -1,0 +1,10 @@
+start 16:29 HEAD=7294073ac dirty=0
+warmup exit 0 ok=1
+before HEAD=1957078d34e7ae6771f8ae0ed91fab437e3c5d04 filter=E21Labels2490 16:29
+before exit 0 total="2" passed="2" failed="0" inconclusive="0" skipped="0"
+before lines        8
+after HEAD=7294073acf880654392ea86875c1f902aa21fd9a filter=E21Labels2490;E21Shadow2490 16:30
+after exit 0 total="3" passed="3" failed="0" inconclusive="0" skipped="0"
+after lines       12
+final HEAD=7294073ac porcelain=0
+DONE

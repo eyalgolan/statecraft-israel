@@ -1,0 +1,27 @@
+# PR #2490: map names shown on the 15 May 1948 turn, before (main 1957078d3) vs after (H6' tree 7294073ac = main + #2490 at 15e146332)
+# Key: S<i> = game settlement pill (settlements_1948.yaml order), L<i> = 1948 locality pill, M<i> = map location pill.
+# The labels also keep clear of unit tokens, which are the same on both trees, so the difference is the Dakota loop's keep-clear box.
+
+before meta: en meta date=1948-05-15 turn=0 dakotas=1 keepClear=5 boxes=(79345.47, 1520.94, 379691.00) (1920.00, 479.73, 358.94) | (44694.10, 1334.49, 288359.10) (240.00, 106.84, 88.50) | (77269.84, 1334.49, 383871.30) (240.00, 106.84, 88.50) | (30000.00, 6439.98, 185986.70) (16336.89, 6336.89, 12336.88) | (33110.02, 5855.11, 290799.10) (26128.97, 3813.93, 22128.94) boot lookAt=(56929.60, 0.00, 289262.20) d=31000 yaw=0.0
+before meta: he meta date=1948-05-15 turn=0 dakotas=1 keepClear=5 boxes=(79345.47, 1520.94, 379691.00) (1920.00, 479.73, 358.94) | (44694.10, 1334.49, 288359.10) (240.00, 106.84, 88.50) | (77269.84, 1334.49, 383871.30) (240.00, 106.84, 88.50) | (30000.00, 6439.98, 185986.70) (16336.89, 6336.89, 12336.88) | (33110.02, 5855.11, 290799.10) (26128.97, 3813.93, 22128.94) boot lookAt=(56929.60, 0.00, 289262.20) d=31000 yaw=0.0
+after meta: en meta date=1948-05-15 turn=0 dakotas=2 keepClear=6 boxes=(79345.47, 1520.94, 379691.00) (1920.00, 479.73, 358.94) | (44694.10, 1334.49, 288359.10) (240.00, 106.84, 88.50) | (77269.84, 1334.49, 383871.30) (240.00, 106.84, 88.50) | (30000.00, 6439.98, 185986.70) (16336.89, 6336.89, 12336.88) | (57157.68, 6426.03, 301623.00) (43134.37, 13134.37, 31134.38) | (57157.68, 6426.03, 301623.00) (43134.37, 13134.37, 31134.38) boot lookAt=(56929.60, 0.00, 289262.20) d=31000 yaw=0.0
+after meta: he meta date=1948-05-15 turn=0 dakotas=2 keepClear=6 boxes=(79345.47, 1520.94, 379691.00) (1920.00, 479.73, 358.94) | (44694.10, 1334.49, 288359.10) (240.00, 106.84, 88.50) | (77269.84, 1334.49, 383871.30) (240.00, 106.84, 88.50) | (30000.00, 6439.98, 185986.70) (16336.89, 6336.89, 12336.88) | (57157.68, 6426.03, 301623.00) (43134.37, 13134.37, 31134.38) | (57157.68, 6426.03, 301623.00) (43134.37, 13134.37, 31134.38) boot lookAt=(56929.60, 0.00, 289262.20) d=31000 yaw=0.0
+
+== en loop-60km  (before d=60000 lookAt=(33110.02, 0.00, 290799.10); after d=60000 lookAt=(57157.68, 0.00, 301623.00))  shown before 2, after 1
+   hidden after, shown before: S2:Jaffa
+   shown after, hidden before: (none)
+== en telaviv-60km  (before d=60000 lookAt=(57157.64, 0.00, 292623.50); after d=60000 lookAt=(57157.64, 0.00, 292623.50))  shown before 9, after 5
+   hidden after, shown before: M12:Tel Litvinsky ; M16:Beit Lid camp ; S12:Petah Tikva ; S2:Jaffa
+   shown after, hidden before: (none)
+== en turnmap  (before d=31000 lookAt=(56929.60, 0.00, 289262.20); after d=31000 lookAt=(56929.60, 0.00, 289262.20))  shown before 18, after 4
+   hidden after, shown before: L106:Bat Yam ; L112:Sheikh Muwannis ; L11:Givatayim ; L146:Fajja ; L171:Kheiriya ; L204:Magdiel ; L240:Saqiya ; L243:Jammasin el Gharbi ; L24:Herzliya ; L3:Ramat Gan ; L52:Kafr 'Ana ; L8:Salama ; S12:Petah Tikva ; S2:Jaffa
+   shown after, hidden before: (none)
+== he loop-60km  (before d=60000 lookAt=(33110.02, 0.00, 290799.10); after d=60000 lookAt=(57157.68, 0.00, 301623.00))  shown before 2, after 1
+   hidden after, shown before: S2:יפו
+   shown after, hidden before: (none)
+== he telaviv-60km  (before d=60000 lookAt=(57157.64, 0.00, 292623.50); after d=60000 lookAt=(57157.64, 0.00, 292623.50))  shown before 9, after 5
+   hidden after, shown before: M12:מחנה תל־ליטוינסקי ; M16:מחנה בית ליד ; S12:פתח תקווה ; S2:יפו
+   shown after, hidden before: (none)
+== he turnmap  (before d=31000 lookAt=(56929.60, 0.00, 289262.20); after d=31000 lookAt=(56929.60, 0.00, 289262.20))  shown before 20, after 5
+   hidden after, shown before: L106:בת ים ; L112:שייח' מוניס ; L116:אבו כישכ ; L11:גבעתיים ; L146:פג'ה ; L171:אל-ח'ירייה ; L204:מגדיאל ; L240:סאקיה ; L243:ג'מאסין אל ע'רבי ; L24:הרצליה ; L3:רמת גן ; L52:כפר עאנה ; L8:סלמה ; S12:פתח תקווה ; S2:יפו
+   shown after, hidden before: (none)
