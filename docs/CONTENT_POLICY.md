@@ -46,10 +46,11 @@ These rules protect the game and the people in it. They are not a viewpoint:
    before the entry is marked `fact-checked`; the maintainer applies this rule at review. A Hebrew display name
    (`name_he`, `title_he`, `title_he_f`, `body_he`) that an AI agent checked against its sources, but no person has read
    yet, carries its own flag beside it, `*_review: agent-checked` (for example `name_he_review`), whatever the row's
-   `status` says about its English facts (owner, 15 October 2026). A Hebrew name copied verbatim from a Wikidata label
-   or a Hebrew Wikipedia title (maintainer reading, not part of the owner's option: dropping only a bracketed
-   disambiguation such as "(יפו)", direction marks or niqqud still counts as verbatim, as #2044 did) (as the header of `content/map/localities_1948.yaml` describes) carries no such flag;
-   a name an agent wrote or adapted still does (the owner chose the option labelled "Exempt verbatim labels
+   `status` says about its English facts (owner, 15 October 2026). A map locality's `name_he` (and its today-name
+   tooltip) in `content/map/localities_1948.yaml` copied verbatim from a Wikidata label or a Hebrew Wikipedia title,
+   as that file's header describes, carries no such flag (maintainer reading, not part of the owner's option: dropping
+   only a bracketed disambiguation such as "(יפו)", direction marks or niqqud still counts as verbatim, as #2044 did);
+   a locality name an agent wrote or adapted still does, and so does every other Hebrew name (the owner chose the option labelled "Exempt verbatim labels
    (Recommended)" (4 November 2026)). A native Hebrew speaker reviews these names (#564)
    and then removes the line, or an AI-assisted contributor does, when the pull request discloses the AI help and names
    the strings read and the sources they were read against (asked whether an AI-assisted contributor's Hebrew read can clear an `agent-checked` string or still needs a native Hebrew speaker, the owner answered "AI-assisted can clear it" ([4 November 2026](https://github.com/eyalgolan/statecraft-israel/pull/2481#issuecomment-6623108295))); the loader accepts only `agent-checked` (a blank value is an error), and only next to a
