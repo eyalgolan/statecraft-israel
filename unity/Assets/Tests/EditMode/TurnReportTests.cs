@@ -168,7 +168,7 @@ public class TurnReportTests
             (He, "עלייה: שינוי של +20; עולים שהגיעו בתור הזה: 120", "הגעות עיקריות בתור הזה:", "עולים שהגיעו (אסיה): 120"),
         })
         {
-            var arrivals = new Queue<double>(new[] { 100d, 120d });
+            var arrivals = new Queue<double>(new[] { 100d, 120d, 100d });
             using var k = new Kit(text, (g, cmds) =>
             {
                 var result = g.EndTurn(cmds);
@@ -196,6 +196,12 @@ public class TurnReportTests
             var tipLines = tip.Lines(k.Q("meter-immigration"));
             Assert.AreEqual(causesHeading, tipLines.words.Split('\n').Last());
             CollectionAssert.AreEqual(reportCauses, tipLines.causes, "the report and MeterTip label the same current-turn arrivals");
+
+            // A fall: 120 then 100 reads as a change of -20 beside this turn's 100 arrivals.
+            k.Bridge.EndTurn();
+            var fell = text.Format("report.immigration_line", text["hud.caption.immigration"], text.Format("hud.delta_people", -20),
+                text.Format("hud.people", 100)).Replace(UiText.LeftToRightMark.ToString(), "");
+            Assert.AreEqual(fell, k.Ui.Q<Label>("turn-report-heading-immigration").text.Replace(UiText.LeftToRightMark.ToString(), ""));
         }
     }
 
