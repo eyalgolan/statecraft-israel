@@ -391,6 +391,96 @@ public class SeaAirCollectionTests
     /// <summary>World x, z.</summary>
     static Vector2 Xz(Vector3 v) => new Vector2(v.x, v.z);
 
+    /// <summary>The box the labels keep clear of for <paramref name="plane"/> now (SeaAirCollection.KeepClear, which moves it to
+    /// where its loop last placed it), or null when it has none. Found by object, through the layer's keepOf.</summary>
+    static Bounds? DakotaKeepOf(SeaAirCollection layer, GameObject plane)
+    {
+        var all = layer.KeepClear;   // first: it moves the Dakotas' boxes
+        var keepOf = (System.Collections.IDictionary)typeof(SeaAirCollection).GetField("keepOf", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(layer)!;
+        if (!keepOf.Contains(plane)) return null;
+        var boxes = (Bounds[])keepOf[plane]!;
+        Assert.IsTrue(all.Any(b => ReferenceEquals(b, boxes)), $"{plane.name}'s box is in the list the labels read");
+        return boxes[0];
+    }
+
+    /// <summary>A 1948 locality's point on the ground (world), from its row (content/map/localities_1948.yaml), as its label marks it.</summary>
+    static Vector3 LocalityAt(MapScene map, string id)
+    {
+        var place = map.Localities.FirstOrDefault(p => p.Settlement.Id == id);
+        Assert.IsNotNull(place, $"premise: {id} is a 1948 locality on the map");
+        return map.Frame.ToWorld(place!.Settlement.Lon, place.Settlement.Lat, 0);
+    }
+
+    /// <summary>How far (m) the ground point <paramref name="p"/> lies outside the box's footprint seen from above (0 inside it).</summary>
+    static float OutsideFootprint(Bounds box, Vector3 p) =>
+        new Vector2(Mathf.Max(0f, box.min.x - p.x, p.x - box.max.x), Mathf.Max(0f, box.min.z - p.z, p.z - box.max.z)).magnitude;
+
+    /// <summary>#2490, owner, 4 November 2026: "Shrink the keep-clear area (Recommended)". On the 15 May 1948 turn the names had
+    /// kept clear of each Dakota's whole loop, which hid 14 names round Tel Aviv (EN 18 to 4 shown, HE 20 to 5); now a name
+    /// keeps clear only of where an aircraft and its flag are. Ramat Gan (34.8235, 32.07) lies under the lead at the loop's
+    /// start (over Tel Aviv's hex), so its box covers it there; at the loop's half (60 s, the lead on the northern pass, the
+    /// wing in the eastern turn) neither box comes within 3 km of Ramat Gan or Herzliya (34.8422, 32.1556), both inside the
+    /// whole loop's box the names kept clear of before. A box always holds its own aircraft, and moves with it.</summary>
+    [Test]
+    public void TheNamesKeepClearOnlyOfWhereEachDakotaIsNow()
+    {
+        var map = OpenMap();
+        var (layer, planes, loops, at) = DrawnDakotas(map);
+        var ramatGan = LocalityAt(map, "ramat_gan"); var herzliya = LocalityAt(map, "herzliya");
+        // Premise: #2274's whole-loop box (the loop and the aircraft's reach) covered both, so both names were hidden.
+        var swept = SeaAirCollection.DakotaSweptHalf;
+        foreach (var (name, p) in new[] { ("Ramat Gan", ramatGan), ("Herzliya", herzliya) })
+            Assert.IsTrue(Mathf.Abs(p.x - at.x) < swept.x && Mathf.Abs(p.z - at.z) < swept.y, $"premise: {name} is inside the whole loop's box");
+
+        for (int p = 0; p < planes.Length; p++) loops[p].Place(0f);
+        var lead0 = DakotaKeepOf(layer, planes[0].gameObject)!.Value;
+        Assert.AreEqual(0f, OutsideFootprint(lead0, ramatGan), 1e-3f, "at the loop's start the lead is over Ramat Gan: its name keeps clear");
+        foreach (var plane in planes)
+        {
+            var pb = WorldBounds(plane.gameObject); var keep = DakotaKeepOf(layer, plane.gameObject)!.Value;
+            Assert.IsTrue(keep.Contains(pb.min) && keep.Contains(pb.max), $"{plane.name}'s box holds it at the loop's start");
+        }
+
+        float half = 0.5f * SeaAirCollection.DakotaLoopSeconds;
+        for (int p = 0; p < planes.Length; p++) loops[p].Place(half);
+        foreach (var plane in planes)
+        {
+            var keep = DakotaKeepOf(layer, plane.gameObject)!.Value; var pb = WorldBounds(plane.gameObject);
+            Assert.IsTrue(keep.Contains(pb.min) && keep.Contains(pb.max), $"{plane.name}'s box moved with it to {half:0} s");
+            TestContext.WriteLine($"{plane.name} at {half:0} s: Ramat Gan {OutsideFootprint(keep, ramatGan):0} m out, Herzliya {OutsideFootprint(keep, herzliya):0} m out");
+            Assert.Greater(OutsideFootprint(keep, ramatGan), 3000f, $"{plane.name} is far from Ramat Gan at {half:0} s: its name shows");
+            Assert.Greater(OutsideFootprint(keep, herzliya), 3000f, $"{plane.name} is far from Herzliya at {half:0} s: its name shows");
+        }
+        Assert.Less(DakotaKeepOf(layer, planes[0].gameObject)!.Value.size.x, 0.6f * 2f * swept.x, "much smaller than the whole loop's box");
+    }
+
+    /// <summary>#2490: the Dakotas' keep-clear boxes move a DakotaKeepStepS step at a time, so the labels (which re-place
+    /// themselves only on a new list) re-place at most once a step, never every frame: within one step KeepClear is the
+    /// same list, a step on it is a new one, and the box for a step covers the aircraft through the whole step.</summary>
+    [Test]
+    public void TheDakotasKeepClearMovesAStepAtATime()
+    {
+        var map = OpenMap();
+        var (layer, planes, loops, _) = DrawnDakotas(map);
+        float step = SeaAirCollection.DakotaKeepStepS;
+        Assert.That(step, Is.InRange(0.25f, 2f), "a short step: the box stays near the aircraft, the labels re-place a few times a second at most");
+        for (int p = 0; p < planes.Length; p++) loops[p].Place(10f * step);
+        var first = layer.KeepClear;
+        Assert.AreSame(first, layer.KeepClear, "no new list while nothing moves");
+        for (int p = 0; p < planes.Length; p++) loops[p].Place(10.5f * step);
+        Assert.AreSame(first, layer.KeepClear, "the same list within one step");
+        var box = DakotaKeepOf(layer, planes[0].gameObject)!.Value;
+        for (int i = 0; i <= 8; i++)
+        {
+            loops[0].Place((10f + i / 8f * 0.999f) * step);
+            var pb = WorldBounds(planes[0].gameObject);
+            Assert.IsTrue(box.Contains(pb.min) && box.Contains(pb.max), $"the step's box holds the lead through the step ({i}/8)");
+        }
+        for (int p = 0; p < planes.Length; p++) loops[p].Place(11.5f * step);
+        Assert.AreNotSame(first, layer.KeepClear, "a new list a step on, so the labels re-place");
+    }
+
+
     /// <summary>The world point is on one of Tel Aviv's hexes (content/map/settlement_hexes.yaml), by the map's own click
     /// picker (MapPointer.Pick: lon/lat and tools/hexgrid.py's rounding), a different route from the layer's own grid test.</summary>
     static bool OnTelAviv(MapScene map, Vector3 world)
@@ -430,7 +520,8 @@ public class SeaAirCollectionTests
     /// clearance of the aircraft at altitude stays. The loop's start (the screenshots' frame) is over Tel Aviv's hex, its path
     /// crosses the hex and runs out over the sea (in from the sea), the whole loop is over the board, the aircraft fly at the
     /// unit tokens' aircraft altitude, nose east and wingspan north-south at the start, and the labels keep clear of each
-    /// aircraft at every point of the loop (its keep-clear box, as the Spitfire's).</summary>
+    /// aircraft at every point of the loop. Changed for #2490 (owner, 4 November 2026: "Shrink the keep-clear area
+    /// (Recommended)"): the box is where the aircraft is now, read after each placing, not one box over its whole loop.</summary>
     [Test]
     public void TheDakotasLoopOverTelAvivAtAltitudeInsideTheBoard()
     {
@@ -463,8 +554,7 @@ public class SeaAirCollectionTests
         Assert.Greater(Vector3.Dot(planes[0].TransformDirection(Vector3.down), Vector3.right), 0.9f, "the nose (the mesh's -y) points east at the loop's start");
         Assert.Greater(b.min.y, floor, "in flight, never on the ground");
         foreach (var loop in loops) Assert.IsTrue(loop.Still, "edit mode holds the loop's start");
-        var keeps = layer.KeepClear.Where(k => k[0].Contains(at)).Select(k => k[0]).ToList();
-        Assert.AreEqual(2, keeps.Count, "one keep-clear box an aircraft");
+        Assert.AreEqual(2, planes.Count(p => DakotaKeepOf(layer, p.gameObject) != null), "one keep-clear box an aircraft");
         for (int i = 0; i < 60; i++)
         {
             float t = i * period / 60f;
@@ -472,7 +562,8 @@ public class SeaAirCollectionTests
             {
                 loops[p].Place(t);
                 var pb = WorldBounds(planes[p].gameObject);
-                foreach (var keep in keeps) Assert.IsTrue(keep.Contains(pb.min) && keep.Contains(pb.max), $"{planes[p].name} inside the box the labels keep clear of at {t:0.0} s");
+                var keep = DakotaKeepOf(layer, planes[p].gameObject)!.Value;   // the box follows it (#2490: "Shrink the keep-clear area")
+                Assert.IsTrue(keep.Contains(pb.min) && keep.Contains(pb.max), $"{planes[p].name} inside the box the labels keep clear of at {t:0.0} s");
                 Assert.IsTrue(Mathf.Abs(pb.center.x - centre.x) <= half.x && Mathf.Abs(pb.center.z - centre.y) <= half.y, $"{planes[p].name} inside its swept box at {t:0.0} s");
                 Assert.Greater(pb.min.y, floor, $"{planes[p].name} in flight at {t:0.0} s");
             }
@@ -884,7 +975,8 @@ public class SeaAirCollectionTests
                 var h = SeaAirCollection.DakotaLoopHeading(t - loop.Lag);
                 Assert.Greater(Vector3.Dot(flag.position - b.center, -new Vector3(h.x, 0f, h.y)), 0.3f * b.extents.x, $"over the tail, behind the centre, at {t:0.0} s");
             }
-            Assert.AreEqual(2, layer.KeepClear.Count(k => k[0].Contains(flag.GetComponent<MeshRenderer>().bounds.center)), "the labels keep clear of the flag too");
+            var fbNow = flag.GetComponent<MeshRenderer>().bounds; var keepNow = DakotaKeepOf(layer, plane.gameObject)!.Value;
+            Assert.IsTrue(keepNow.Contains(fbNow.min) && keepNow.Contains(fbNow.max), "the labels keep clear of the flag too, where it is now");
         }
         CollectionGeometryFixture.Craft(map, new DateTime(1948, 6, 15), Array.Empty<Placement>(), C);
         AnswerAll();

@@ -151,8 +151,9 @@ namespace Statecraft.Game.Map.Collection
         /// the lead there. #2274 searched instead for the nearest centre whose whole loop cleared every unit token, kit and map
         /// name, which put it 22 km out to sea (owner on #2274, 2 November 2026: "Off the coast is fine (Recommended)"); over the
         /// city no loop can clear Kiryati's token on Tel Aviv (content/map/units_1948.yaml), so those ground clearances go. The
-        /// clearance of the aircraft at altitude stays: the map names keep clear of each aircraft's whole loop
-        /// (<see cref="FlyDakota"/>), as of the Spitfire's, and the whole loop is over the board. Null when Tel Aviv has no hex
+        /// clearance of the aircraft at altitude stays: the map names keep clear of each aircraft where it is now
+        /// (<see cref="FlyDakota"/>, <see cref="DakotaKeepBox"/>; owner, 4 November 2026, on #2490, "Shrink the keep-clear area
+        /// (Recommended)", where they had kept clear of its whole loop as of the Spitfire's), and the whole loop is over the board. Null when Tel Aviv has no hex
         /// or the loop would leave the board.</summary>
         internal static Vector2? DakotaSpot(MapScene map, Statecraft.Sim.Content? content)
         {
@@ -203,7 +204,8 @@ namespace Statecraft.Game.Map.Collection
         /// at its map size, UnitShowcase.AltitudeM (4,200 m) above the highest ground under the loop, as the Spitfire (#2014).
         /// Its model's nose is its mesh's -y, as the Spitfire's, so the same yaw points it east. Beside it, in its marks object
         /// (they go with it when its dates end): Egypt's flag over its tail, its shadow and its bombs. A turning disc at each
-        /// engine. The labels keep clear of the whole box it and its flag fly through, banked or not.</summary>
+        /// engine. The labels keep clear of the box it and its flag fill now, banked or not (<see cref="DakotaKeepBox"/>), not of its
+        /// whole loop (owner, 4 November 2026, on #2490: "Shrink the keep-clear area (Recommended)").</summary>
         void FlyDakota(GameObject go, GameObject prefab, Vector2 at, KitGround ground, int plane)
         {
             var level = Quaternion.Euler(0f, SpitfireNoseEastYaw, 0f) * prefab.transform.localRotation;
@@ -236,10 +238,73 @@ namespace Statecraft.Game.Map.Collection
                 up = Mathf.Max(up, SpitfireLoop.TopOver(half, UnitShowcase.BankDegrees) + DakotaLoop.FlagClearM + 2f * f.extents.y * k + 1f);
                 round = Mathf.Max(round, half.x + new Vector2(f.extents.x, f.extents.z).magnitude * k + 1f);
             }
-            var keep = new Bounds();
-            keep.SetMinMax(centre - new Vector3(DakotaLoopHalfLengthM + round, reach, DakotaLoopHalfWidthM + round),
-                centre + new Vector3(DakotaLoopHalfLengthM + round, up, DakotaLoopHalfWidthM + round));
-            Keep(go, keep);
+            // The labels keep clear of where it is now, not of its whole loop (owner, 4 November 2026, on #2490: "Shrink the
+            // keep-clear area (Recommended)"): its box follows it a DakotaKeepStepS step of the loop at a time (FollowDakotas).
+            var follow = new DakotaKeep(go, loop, centre, reach, up, round);
+            dakotaKeeps.Add(follow);
+            follow.Step = DakotaKeepStep(loop.PlacedAt);
+            Keep(go, DakotaKeepBox(centre, loop.Lag, follow.Step, reach, up, round));
+        }
+
+        /// <summary>DESIGN VALUE: the labels' keep-clear box for a Dakota covers its flight over one step of this many seconds of
+        /// the loop's clock (about 650 m of map at its speed, against a 9.8 km aircraft), and moves on a step at a time: the
+        /// labels re-place themselves at most once a step while the Dakotas fly, not every frame.</summary>
+        public const float DakotaKeepStepS = 1f;
+
+        /// <summary>The step of the loop's clock that <paramref name="seconds"/> falls in (<see cref="DakotaKeepStepS"/>).</summary>
+        internal static long DakotaKeepStep(float seconds) => (long)Math.Floor((double)seconds / DakotaKeepStepS);
+
+        /// <summary>The box (world) the map names keep clear of for a Dakota whose loop is centred at <paramref name="centre"/> (in
+        /// the air), its clock <paramref name="lag"/> behind the loop's, through the loop's clock step <paramref name="step"/>
+        /// (<see cref="DakotaKeepStepS"/>): the aircraft at every heading and bank (<paramref name="reach"/> round its drawn
+        /// centre, <paramref name="round"/> across with its flag over the tail, <paramref name="up"/> above with its flag) at
+        /// every point of its path in that step, sampled finely enough that the path's bow between samples (under a metre on
+        /// this ellipse) is inside the pad. Owner, 4 November 2026, on #2490: "Shrink the keep-clear area (Recommended)": a name
+        /// hides only where an aircraft and its flag are, not over the whole loop as #2274's box did.</summary>
+        internal static Bounds DakotaKeepBox(Vector3 centre, float lag, long step, float reach, float up, float round)
+        {
+            const int Samples = 4; const float Pad = 10f;
+            var box = new Bounds();
+            for (int i = 0; i <= Samples; i++)
+            {
+                var o = DakotaLoopOffset((float)(step * (double)DakotaKeepStepS + i * (double)DakotaKeepStepS / Samples - lag));
+                var at = centre + new Vector3(o.x, 0f, o.y);
+                var b = new Bounds(); b.SetMinMax(at - new Vector3(round, reach, round), at + new Vector3(round, up, round));
+                if (i == 0) box = b; else box.Encapsulate(b);
+            }
+            box.Expand(2f * Pad);
+            return box;
+        }
+
+        /// <summary>A drawn Dakota whose keep-clear box follows it: its loop, its loop's centre in the air, the box's sizes
+        /// (<see cref="DakotaKeepBox"/>) and the clock step its box now covers.</summary>
+        sealed class DakotaKeep
+        {
+            public readonly GameObject Go; public readonly DakotaLoop Loop; public readonly Vector3 Centre; public readonly float Reach, Up, Round;
+            public long Step;
+            public DakotaKeep(GameObject go, DakotaLoop loop, Vector3 centre, float reach, float up, float round)
+            { Go = go; Loop = loop; Centre = centre; Reach = reach; Up = up; Round = round; }
+        }
+        readonly List<DakotaKeep> dakotaKeeps = new List<DakotaKeep>();
+
+        /// <summary>Moves each drawn Dakota's keep-clear box to the clock step where its loop last placed it
+        /// (DakotaLoop.PlacedAt); when one moves, <see cref="KeepClear"/> becomes a new list, so the labels re-place themselves
+        /// (MapLabelsPresenter re-reads a list only when it is a new one). A held loop (edit mode, shots) never moves. Cheap: a
+        /// comparison an aircraft a call, and a box and a list once a step.</summary>
+        void FollowDakotas()
+        {
+            bool moved = false;
+            for (int i = 0; i < dakotaKeeps.Count; i++)
+            {
+                var d = dakotaKeeps[i];
+                if (d.Go == null || d.Loop == null || !keepOf.ContainsKey(d.Go)) continue;
+                long step = DakotaKeepStep(d.Loop.PlacedAt);
+                if (step == d.Step) continue;
+                d.Step = step;
+                keepOf[d.Go] = new[] { DakotaKeepBox(d.Centre, d.Loop.Lag, step, d.Reach, d.Up, d.Round) };
+                moved = true;
+            }
+            if (moved) RebuildKeepAll();
         }
 
         /// <summary>The turning propellers on both engines (#2482: "turning propellers on both engines"; the model is one fused

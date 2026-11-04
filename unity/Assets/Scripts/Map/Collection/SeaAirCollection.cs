@@ -328,7 +328,7 @@ namespace Statecraft.Game.Map.Collection
             }
             // Each drawn craft's own keep-clear boxes (the Spitfire's cover its whole loop, its flag included); the Spitfire's
             // shadow and flag object has none.
-            keepAll = originals.Values.SelectMany(list => list).Where(go => go != null && keepOf.ContainsKey(go)).Select(go => keepOf[go]).ToList();
+            RebuildKeepAll();
             return removed;
         }
         IReadOnlyList<UnityEngine.Object> ClearForRetirement()
@@ -344,7 +344,7 @@ namespace Statecraft.Game.Map.Collection
                 var old = transform.GetChild(i).gameObject; if (residencyView != null) retired.Add(old);
                 if (Application.isPlaying) { if (gameObject.activeInHierarchy) old.transform.SetParent(null); Destroy(old); } else DestroyImmediate(old);
             }
-            Placed.Clear(); Missing.Clear(); keepAll = new List<Bounds[]>(); keepOf.Clear();
+            Placed.Clear(); Missing.Clear(); keepAll = new List<Bounds[]>(); keepOf.Clear(); dakotaKeeps.Clear();
             originals.Clear();
             if (map != null) Statecraft.Game.Map.Units.UnitShowcase.HideTrees(map, Name, Array.Empty<(Vector2, float)>());
         }
@@ -381,8 +381,20 @@ namespace Statecraft.Game.Map.Collection
 
         /// <summary>Every drawn craft's world box, for the map labels to keep clear of, as they do of the unit tokens
         /// (MapLabelsPresenter's keepClear, issue #197). A new list after every rebuild and the same list otherwise, so the
-        /// labels re-read it only when it changes.</summary>
-        public IReadOnlyList<Bounds[]> KeepClear => !isActiveAndEnabled ? (IReadOnlyList<Bounds[]>)Array.Empty<Bounds[]>() : keepAll;
+        /// labels re-read it only when it changes. The Dakotas' boxes follow them round their loop (FollowDakotas, #2490), so
+        /// while they fly it is a new list once a step (DakotaKeepStepS).</summary>
+        public IReadOnlyList<Bounds[]> KeepClear
+        {
+            get
+            {
+                if (!isActiveAndEnabled) return Array.Empty<Bounds[]>();
+                FollowDakotas();
+                return keepAll;
+            }
+        }
+        /// <summary>A new <see cref="KeepClear"/> list from every drawn craft's own boxes.</summary>
+        void RebuildKeepAll() =>
+            keepAll = originals.Values.SelectMany(list => list).Where(go => go != null && keepOf.ContainsKey(go)).Select(go => keepOf[go]).ToList();
         List<Bounds[]> keepAll = new List<Bounds[]>();
         readonly Dictionary<GameObject, Bounds[]> keepOf = new Dictionary<GameObject, Bounds[]>();
         void Keep(GameObject go, Bounds box) { var boxes = new[] { box }; keepAll.Add(boxes); keepOf[go] = boxes; }

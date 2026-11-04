@@ -36,6 +36,10 @@ namespace Statecraft.Game.Map.Collection
         /// for its wing.</summary>
         public float Lag => lag;
 
+        /// <summary>The loop clock's seconds where <see cref="Place"/> last put it (the labels' keep-clear box follows it,
+        /// SeaAirCollection.DakotaKeepBox).</summary>
+        public float PlacedAt { get; private set; }
+
         /// <summary>The flag that floats over the tail, or null.</summary>
         public Transform? Flag => flag;
 
@@ -81,6 +85,7 @@ namespace Statecraft.Game.Map.Collection
         /// ground; and its bombs, flashes and smoke as they are then.</summary>
         public void Place(float seconds)
         {
+            PlacedAt = seconds;
             float u = seconds - lag;
             var at = SeaAirCollection.DakotaLoopOffset(u); var heading = SeaAirCollection.DakotaLoopHeading(u);
             var forward = new Vector3(heading.x, 0f, heading.y);
