@@ -65,6 +65,8 @@ Under retained `R-UNIT-005`, Send home is the only way home: no automatic demobi
 
 Cancelled retained courses award no unfinished qualification. A course whose slot is lost, or whose people are reassigned, is cancelled like `CancelTraining`: people return at once as civilians without a job, Money and tools are not refunded, and Arms return to the pool; a novice may then take another profession, and graduates may re-enrol at any time (owner, 1 November 2026, Q44, Q52, 27M-3 to 27M-5) [S11]. The novice craftsman label starts with the craftsman course and ends on cancelling (#1698 follow-up) [S11]. Proposed reception credit and reusable-equipment cancellation rules are non-operative [S6]. [Resources](cutover-resource-layer.md) owns retained affordability rules. (unitless)
 
+On the `gdd-0.3` craftsman course (`R-CRAFT-003`), an apprentice or expert craftsman who takes it again keeps their level on the course and after it (owner, 4 November 2026: "Keep their level (Recommended)"), and a trained or veteran farmer or pioneer may start it and loses that level, as under `R-QUAL-006`; tools are kept, and cancelling leaves an ordinary civilian (owner, 4 November 2026: "Yes, lose old level (Recommended)") [S12].
+
 ## Data touched
 
 - `unit_types.yaml` (`recruit`, `halutz`: `facility`, `training_turns`, `training_cost`), `cities.yaml` (`facilities`), `rules.yaml` `attention_cost.train`, `cancel_training`, `mvp.build_camp_turns` and `mvp.build_camp_cost`: labelled design values in `content/` since the cutover (Q-CUT-1, R-LOOP-005), the overlay's placeholders before it (ruling 2 [S3]).
@@ -106,6 +108,7 @@ Camp growth into permanent towns, soldier training in civilian centres and unsou
 - [S9] Retained training and Send home rules, `docs/rules/mvp.md` (`R-TRAIN-001` and `R-UNIT-005`).
 - [S10] Owner's 30 October 2026 rulings, [GDD conflict decisions](../GDD.md#30-october-2026-conflict-decisions).
 - [S11] Owner's 1 November 2026 answers, [GDD 1 November 2026 answers](../GDD.md#1-november-2026-answers).
+- [S12] Owner's 4 November 2026 answers on the #1698 craftsman course (PR #2416), recorded in `docs/rules/mvp.md` (`R-CRAFT-003`).
 
 ## Open questions
 
