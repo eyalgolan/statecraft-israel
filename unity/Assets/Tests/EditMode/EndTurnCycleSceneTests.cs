@@ -73,12 +73,15 @@ public class EndTurnCycleSceneTests
         Assert.Greater(needs, 0, "precondition: units need orders");
         UiTestKit.Press(ui.Q<Button>("end-turn"));
         yield return null;
+        Assert.IsTrue(root.Capture!.Collapsed, "End turn hid the dialog");
+        Assert.IsFalse(ui.Q("root").ClassListContains(CaptureDialogPresenter.OpenClass), "the root no longer says the dialog is open");
         Assert.IsTrue(ui.Q("info-panel").enabledInHierarchy, "the selected unit's card takes orders");
         UiTestKit.Press(ui.Q<Button>("info-skip"));
         yield return null;
         Assert.AreEqual(needs - 1, bridge.NeedsOrders.Count, "Skip took the selected unit out of the cycle");
-        Assert.AreEqual("ramla", root.Capture!.Shown, "nothing was chosen: the capture still waits, behind Decision waiting");
+        Assert.AreEqual("ramla", root.Capture.Shown, "nothing was chosen: the capture still waits, behind Decision waiting");
     }
+
     [UnityTest]
     public IEnumerator BlockedEndTurnClosesDefenceAndShowsTheUnit() =>
         BlockedEndTurnRevealsTheUnit("defence", twoRows: false);
