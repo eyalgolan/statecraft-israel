@@ -398,4 +398,20 @@ public class QualificationTests
         Assert.Empty(halutz.Rejected);
         Assert.Equal(new[] { "1", "halutz" }, Assert.Single(halutz.Why, x => x.Key == "pioneers_reassigned").Args);
     }
+
+    // #2513: a clone shares its records, so a record's lists must not be arrays a cast could write through. Writing through
+    // whatever the list is backed by, on the clone, leaves the original's hash alone.
+    [Fact]
+    public void ACloneCannotWriteThroughTheListsItSharesWithTheOriginal()
+    {
+        var c = Town();
+        var s = WithCity(c, new City("town_a", 12, 8, 4, 0, 0, qualified: new Qualified(0, 0, new[] { 1, 2 })));
+        s.Corridors["road_a"] = new CorridorWork("road_a", new SegmentWork?[] { new SegmentWork(null, 6, new DateTime(1948, 5, 15)), null });
+        var before = s.Hash();
+        var clone = s.Clone();
+        if (clone.Cities["town_a"].Qualified.Halutzim is int[] halutzim) halutzim[0] = 9;
+        if (clone.Corridors["road_a"].Segments is SegmentWork?[] segments) segments[0] = null;
+        Assert.Equal(before, s.Hash());
+        Assert.Equal(before, clone.Hash());
+    }
 }
