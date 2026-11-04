@@ -174,9 +174,10 @@ public class ScreenRowArrowTests : SharedCameraActionsFixture
 
     /// <summary>L4 and B6 through GameRoot (#2549 review): the real Up and Down keys, read by GameRoot's own key poll in
     /// its frame, walk the Budget's lines, and the camera GameRoot wired (ScreenTakesUpDown) does not pan on them while
-    /// the screen is open; once it is closed, the same keys pan and leave the focus where it is.</summary>
+    /// the screen is open; once it is closed, the same keys pan and leave the focus where it is. In English and in Hebrew
+    /// (right to left), so the real key path is proven both ways (#2549 review).</summary>
     [UnityTest]
-    public IEnumerator TheArrowKeysThroughGameRootWalkTheRowsAndPanOnlyWithTheScreenClosedL4()
+    public IEnumerator TheArrowKeysThroughGameRootWalkTheRowsAndPanOnlyWithTheScreenClosedL4([Values(false, true)] bool hebrew)
     {
         // The keys as state events: the fixture's Press (Set) does not run in an edit-mode [UnityTest], and Boot needs frames.
         InputSystem.actions = AssetDatabase.LoadAssetAtPath<InputActionAsset>("Assets/InputSystem_Actions.inputactions");
@@ -184,7 +185,7 @@ public class ScreenRowArrowTests : SharedCameraActionsFixture
         // Warm both keys: ButtonControl.wasPressedThisFrame takes an old path on its first call ever and can miss a press
         // (as in MapPointerTickTests); in the game GameRoot asks every frame, so they are warm.
         _ = keyboard.upArrowKey.wasPressedThisFrame; _ = keyboard.downArrowKey.wasPressedThisFrame;
-        yield return Boot();
+        yield return Boot(hebrew);
         var cam = Object.FindFirstObjectByType<CameraController>();
         var rig = cam.GetComponent<CameraRig>();
         Send(cam, "Awake"); Send(cam, "OnEnable");
