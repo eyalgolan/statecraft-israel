@@ -257,6 +257,34 @@ public class MinimapReliefTests
         });
     }
 
+    /// <summary>#2583: every HoverTip group sharing a label is coordinated. A hover in one group wins over focus in
+    /// another; leaving or disposing that group restores the still-focused group's tip.</summary>
+    [UnityTest]
+    public IEnumerator SharedTipReturnsToTheFocusedGroupAfterHoverLeavesOrIsDisposed()
+    {
+        yield return Rendered(1920, 1080, false, (root, mini) =>
+        {
+            var tip = root.Q<Label>(HoverTip.TipName);
+            var a = root.Q<Button>("end-turn"); var b = root.Q<Button>("hud-star");
+            a.tooltip = "Focused A"; b.tooltip = "Hovered B";
+            using var aTips = new HoverTip(root, new[] { a }, () => HoverTip.Side.Left);
+            using var bTips = new HoverTip(root, new[] { b }, () => HoverTip.Side.Right);
+            void Enter(Button x) { using var e = PointerEnterEvent.GetPooled(new Event { type = EventType.MouseMove, mousePosition = x.worldBound.center }); e.target = x; x.SendEvent(e); }
+            void Leave(Button x) { using var e = PointerLeaveEvent.GetPooled(new Event { type = EventType.MouseMove, mousePosition = Vector2.zero }); e.target = x; x.SendEvent(e); }
+            string Shown() => tip.style.display.value == DisplayStyle.Flex ? tip.text : "";
+
+            a.Focus();
+            Assert.AreEqual(a.tooltip, Shown(), "group A's focused target shows first");
+            Enter(b);
+            Assert.AreEqual(b.tooltip, Shown(), "group B's hovered target wins over group A's focus");
+            Leave(b);
+            Assert.AreEqual(a.tooltip, Shown(), "leaving group B restores group A's still-focused target");
+            Enter(b);
+            bTips.Dispose();
+            Assert.AreEqual(a.tooltip, Shown(), "disposing group B while it shows restores group A's still-focused target");
+        });
+    }
+
     /// <summary>Review of #584: a switched-off layer's button dims, but its glyph keeps at least 3:1 against its disc
     /// (WCAG 1.4.11): the disc's opacity blends the gold line toward the navy behind it.</summary>
     [UnityTest]
