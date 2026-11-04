@@ -206,12 +206,17 @@ namespace Statecraft.Game.UI
 
         /// <summary>Hide: the dialog gives the map back and waits behind "Decision waiting: place", which takes the focus when
         /// Hide came from the keyboard. Nothing is chosen.</summary>
-        public void Collapse()
+        public void Collapse() => Collapse(takeFocus: true);
+
+        /// <summary>Hide; with <paramref name="takeFocus"/> false (End turn showing a unit, GameRoot.FocusNextUnit), "Decision
+        /// waiting: place" does not take the focus, as EventCardPresenter.Collapse(takeFocus).</summary>
+        public void Collapse(bool takeFocus)
         {
             if (Shown == null) return;
             collapsedFor = Shown;
             Render();
             if (hideByPointer) { hideByPointer = false; return; }
+            if (!takeFocus) return;
             reopen.Focus();
             // Tried again once styles resolve: the button was hidden a moment ago and may not take it yet.
             reopen.schedule.Execute(() => { if (Collapsed && reopen.focusController?.focusedElement != reopen) reopen.Focus(); });

@@ -51,6 +51,34 @@ public class EndTurnCycleSceneTests
         yield return null;
         Assert.AreEqual(needs - 1, bridge.NeedsOrders.Count, "Skip took the selected unit out of the cycle");
     }
+
+    // The capture dialog is modal like the event card (#802): End turn hides it too, nothing chosen, so the unit it selects
+    // can take an order. Found by the v0.3.5 WebGL smoke, stuck on 15 Aug 1948 behind Ramla's dialog (#2087's card order).
+    [UnityTest]
+    public IEnumerator BlockedEndTurnHidesAnOpenCaptureDialogSoTheUnitCanBeSkipped()
+    {
+        VisualElement ui = null!; GameRoot root = null!;
+        dir = Path.Combine(Path.GetTempPath(), "statecraft-endturn-capture-" + Guid.NewGuid().ToString("N"));
+        yield return CivMovementShots.Boot(false, dir, (t, p, u, g) => { rt = t; ps = p; ui = u; root = g; });
+        var bridge = root.Bridge!;
+        var g = Statecraft.Sim.GameSession.New(bridge.Content, Statecraft.Sim.GoldenRun.Seed, Statecraft.Sim.Mode.Historical);
+        g.State.PendingEvents.Clear();
+        g.State.Settlements["ramla"] = new Statecraft.Sim.SettlementControl(Statecraft.Sim.Movement.PlayerSide,
+            Statecraft.Sim.SettlementControl.AwaitingChoice, g.State.Date);
+        bridge.Replace(g);
+        for (int i = 0; i < 5; i++) yield return null;
+        Assert.IsTrue(ui.Q("root").ClassListContains(CaptureDialogPresenter.OpenClass), "precondition: Ramla's capture dialog is open");
+        Assert.IsFalse(ui.Q("info-panel").enabledInHierarchy, "precondition: the open dialog disables the unit card");
+        var needs = bridge.NeedsOrders.Count;
+        Assert.Greater(needs, 0, "precondition: units need orders");
+        UiTestKit.Press(ui.Q<Button>("end-turn"));
+        yield return null;
+        Assert.IsTrue(ui.Q("info-panel").enabledInHierarchy, "the selected unit's card takes orders");
+        UiTestKit.Press(ui.Q<Button>("info-skip"));
+        yield return null;
+        Assert.AreEqual(needs - 1, bridge.NeedsOrders.Count, "Skip took the selected unit out of the cycle");
+        Assert.AreEqual("ramla", root.Capture!.Shown, "nothing was chosen: the capture still waits, behind Decision waiting");
+    }
     [UnityTest]
     public IEnumerator BlockedEndTurnClosesDefenceAndShowsTheUnit() =>
         BlockedEndTurnRevealsTheUnit("defence", twoRows: false);

@@ -884,6 +884,8 @@ namespace Statecraft.Game.UI
             // An open event card is modal and disables the unit card (ScreenNav.DisableCovered), so the unit End turn selects
             // could take no order: the card waits behind "Decision waiting", as its Hide button does.
             card?.Collapse(takeFocus: false);
+            // The capture dialog is modal like the card (#802): End turn must show a unit that can take an order (#1680).
+            capture?.Collapse(takeFocus: false);
             // A side screen can still cover the card (#210). Reveal it through normal navigation, not by
             // bypassing Covered: End turn must show the unit whose orders it asks for (#1680).
             if (info?.Covered == true) nav?.Open(null);
