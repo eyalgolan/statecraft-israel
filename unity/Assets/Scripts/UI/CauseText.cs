@@ -100,6 +100,11 @@ namespace Statecraft.Game.UI
             string Site(string id) { var x = c.Sites.First(s => s.Id == id); return Pick(x.Name, x.NameHe); }
             string Groups(string count) => text["ui.lang"] == UiLanguage.Hebrew ? count
                 : count == "1" ? "1 group" : count + " groups";
+            // #2530: the same singular for the Food and occupation lines; the Hebrew names the count in a label, as for groups.
+            string Units(string count) => text["ui.lang"] == UiLanguage.Hebrew ? count
+                : count == "1" ? "1 unit" : count + " units";
+            string Turns(string count) => text["ui.lang"] == UiLanguage.Hebrew ? count
+                : count == "1" ? "1 turn" : count + " turns";
             string Course(string id) => text["why.cause.course." + id];
             string Residents(string fled) => text["why.cause.residents." + fled];
             string Parties(string ids) => string.Join(", ", ids.Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries)
@@ -115,15 +120,15 @@ namespace Statecraft.Game.UI
             switch (cause.Key)
             {
                 case CauseKeys.WorkersAssigned:
-                    return text.Format(key, Settlement(cause.Target), A(0));
+                    return text.Format(key, Settlement(cause.Target), Groups(A(0)));
                 case CauseKeys.WagesPaid:
                     return text.Format(key, Settlement(cause.Target), PlayerText.MoneyChange(c, "treasury", cause.Delta));
                 case CauseKeys.ImmigrantsHoused:
-                    return text.Format(key, Settlement(cause.Target), A(0));
+                    return text.Format(key, Settlement(cause.Target), Groups(A(0)));
                 case CauseKeys.HousingShortage:
-                    return text.Format(key, Settlement(cause.Target), A(0));
+                    return text.Format(key, Settlement(cause.Target), Groups(A(0)));
                 case CauseKeys.ImmigrantsWaiting:
-                    return text.Format(key, Settlement(cause.Target), A(0));
+                    return text.Format(key, Settlement(cause.Target), Groups(A(0)));
                 case CauseKeys.RecruitsVeteran:
                     return text.Format(key);
                 case CauseKeys.CorridorStarted:
@@ -168,7 +173,7 @@ namespace Statecraft.Game.UI
                 case CauseKeys.DollarsConverted:
                     return text.Format(key, Money(c, "fx_reserves", A(0)), PlayerText.MoneyChange(c, "treasury", cause.Delta));
                 case CauseKeys.FoodHarvest:
-                    return text.Format(key, Site(A(0)), cause.Delta);
+                    return text.Format(key, Site(A(0)), Units(cause.Delta.ToString(CultureInfo.InvariantCulture)));
                 case CauseKeys.FoodShortage:
                     return text.Format(key, -cause.Delta, A(0));
                 case CauseKeys.FoodWithoutImports:
@@ -253,7 +258,7 @@ namespace Statecraft.Game.UI
                     return text.Format(key, Settlement(cause.Target), Residents(A(0)));
                 case CauseKeys.OccupationCountdown:
                     if (cause.Delta == 0) return text.Format(key + "_ended", Settlement(cause.Target));
-                    return text.Format(key, Settlement(cause.Target), cause.Delta);
+                    return text.Format(key, Settlement(cause.Target), Turns(cause.Delta.ToString(CultureInfo.InvariantCulture)));
                 case CauseKeys.DepopulationSupport:
                     return text.Format(key, Name(text, cause.Target), Change(c, cause.Target, cause.Delta));
                 default: throw new InvalidOperationException("Unknown remaining Cause key: " + cause.Key);
