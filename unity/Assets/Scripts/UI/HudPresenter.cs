@@ -716,7 +716,8 @@ namespace Statecraft.Game.UI
         /// <summary>L1 (#2340): a change's direction is not told by green and red alone, which deuteranopia cannot tell apart. A
         /// small triangle in the change's own colour points up for a rise and down for a fall, in the room the stylesheet keeps
         /// before the change (ChangeMarkPadPx; the right side in the mirrored Hebrew bar). Painted, as the hourglass is, because
-        /// the Hebrew face (Frank Ruhl Libre) has no arrow glyph.</summary>
+        /// the Hebrew face (Frank Ruhl Libre) has no arrow glyph. Owner ruling Q27, 4 Nov 2026:
+        /// https://github.com/eyalgolan/statecraft-israel/issues/2340#issuecomment-6623136558</summary>
         static void PaintChange(MeshGenerationContext m)
         {
             var e = m.visualElement; bool up = e.ClassListContains("delta-up");
