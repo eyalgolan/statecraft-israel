@@ -364,6 +364,37 @@ public class HebrewUiTests
         Assert.AreEqual(DisplayStyle.None, toast.style.display.value, "and the toast is hidden");
     }
 
+    /// <summary>#2552, the player's route beside the test above: after New game replaces a warned-about saved session, a
+    /// language switch must not bring that session's save notice back. Both start-screen New Game presses, then Settings'
+    /// language choice after the start screen closes. It passes with or without the session check (a closed start screen
+    /// rebuilds with no notices), so it pins the visible behaviour, and the test above pins the check itself.</summary>
+    [Test]
+    public void ANewGameFromTheStartScreenShowsNoOldNoticeAfterALanguageSwitch()
+    {
+        Directory.CreateDirectory(saveDir);
+        var saved = Statecraft.Sim.GameSession.New(Inputs.Content, 9, Statecraft.Sim.Mode.Historical).Save.Write()
+            .Replace("content " + Inputs.Content.Hash, "content " + new string('0', Inputs.Content.Hash.Length));
+        new SaveStore(saveDir).WriteAutosave(saved);
+        LogAssert.Expect(LogType.Warning, "Autosave loaded with a warning: " + Statecraft.Sim.GameSession.ContentChanged);
+        var game = BootWithStartScreen(new SettingsStore(Path.Combine(saveDir, "settings")), UiLanguage.English);
+        var oldSession = game.Bridge!.Session;
+        var stale = En["save.warning." + Statecraft.Sim.GameSession.ContentChanged];
+        Assert.AreEqual(stale, Ui.Q<Label>("toast").text, "precondition: the first session raised the notice");
+
+        UiTestKit.Press(Ui.Q<Button>("start-new-game"));
+        Assert.AreEqual(En["newgame.confirm"], Ui.Q<Label>("toast").text, "the first press arms New Game");
+        UiTestKit.Press(Ui.Q<Button>("start-new-game"));
+        Assert.AreNotSame(oldSession, game.Bridge!.Session, "the second press started a new game");
+        Assert.IsFalse(StartOpen, "NewGamePresenter.Started closes the start screen");
+
+        UiTestKit.Press(Ui.Q<Button>("nav-settings"));
+        UiTestKit.Press(Ui.Q<Button>("settings-language-he"));
+
+        var toast = Ui.Q<Label>("toast");
+        Assert.AreEqual("", toast.text, "the new game shows no notice from the replaced saved session");
+        Assert.AreEqual(DisplayStyle.None, toast.style.display.value, "and the toast is hidden");
+    }
+
     /// <summary>A choice on the start screen goes through Settings' own switch: the UI changes at once over the same game,
     /// the start screen stays up (Continue still only with a save) with the focus on the choice, the choice is kept under
     /// Settings' key, and Settings shows it. The other way round, a choice in Settings is what the next start screen
