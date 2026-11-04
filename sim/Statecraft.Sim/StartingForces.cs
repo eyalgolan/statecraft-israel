@@ -149,15 +149,15 @@ namespace Statecraft.Sim
         public static void Arrive(Content c, GameState s, DateTime next)
         {
             PopulationLedger.RefuseAggregate(s);
+            bool Due(StartingForce f) => f.Arrives is DateTime day && s.Date < day && day <= next;
+            // Every due force is checked before any is added, so a refusal leaves the state unchanged.
+            foreach (var f in c.StartingForces)
+                if (Due(f) && f.Side != Movement.PlayerSide)
+                    throw new InvalidOperationException($"Enemy-side starting force '{f.Row}' may not arrive after the game starts (R-ENEMY-004)");
             for (int i = 0; i < c.StartingForces.Count; i++)
             {
                 var f = c.StartingForces[i];
-                if (f.Arrives is DateTime day && s.Date < day && day <= next)
-                {
-                    if (f.Side != Movement.PlayerSide)
-                        throw new InvalidOperationException($"Enemy-side starting force '{f.Row}' may not arrive after the game starts (R-ENEMY-004)");
-                    s.Units.Add(i, new Unit(i, f.Type, f.Q, f.R, side: f.Side, strength: f.Strength));
-                }
+                if (Due(f)) s.Units.Add(i, new Unit(i, f.Type, f.Q, f.R, side: f.Side, strength: f.Strength));
             }
         }
 
