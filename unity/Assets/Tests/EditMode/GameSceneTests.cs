@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using NUnit.Framework;
 using Statecraft.Game;
 using Statecraft.Game.Boot;
@@ -13,6 +14,7 @@ using Statecraft.Sim;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.TestTools;
 using UnityEngine.UIElements;
 using Object = UnityEngine.Object;
@@ -1146,4 +1148,51 @@ public class GameSceneTests
         Assert.IsNull(units.Selected);
     }
 
+}
+
+/// <summary>#2340 L2 (#2521): with the start screen closed, Escape withdraws a New Game request armed from the top bar, and
+/// the key is used up there, so the map selection under it stays. Drives GameRoot's own Escape poll (Update) with a key
+/// pressed through the Input System test fixture, which is what makes wasPressedThisFrame read true in an EditMode test.</summary>
+public class GameRootEscapeTests : SharedCameraActionsFixture
+{
+    string saveDir = "";
+    static VisualElement Ui => Object.FindFirstObjectByType<UIDocument>().rootVisualElement;
+
+    [TearDown]
+    public void DiscardScene()
+    {
+        EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        if (Directory.Exists(saveDir)) Directory.Delete(saveDir, true);
+    }
+
+    [Test]
+    public void EscapeWithdrawsANewGameRequestArmedFromTheTopBar()
+    {
+        saveDir = Path.Combine(Path.GetTempPath(), "statecraft-scene-" + Guid.NewGuid().ToString("N"));
+        var inputs = GameInputs.FromDisk(Paths.Content, Paths.StreamingMap);
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        Object.FindFirstObjectByType<MapScene>().Build(inputs.Map);
+        var root = Object.FindFirstObjectByType<GameRoot>();
+        root.Store = new SaveStore(saveDir);
+        root.Begin(inputs, 0);                                             // no start screen
+        GameSceneTests.HideTheOpeningCard(Ui);
+        var keyboard = InputSystem.AddDevice<Keyboard>();
+        var bridge = root.Bridge!;
+        var info = (InfoPanelPresenter)typeof(GameRoot).GetField("info", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(root)!;
+        var home = bridge.Content.SettlementHexes.First(x => x.Id == "tel_aviv");
+        info.Show(home.Q, home.R);
+        UiTestKit.Press(Ui.Q<Button>("new-game"));
+        var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
+        Assert.AreEqual(text["newgame.confirm"], Ui.Q<Label>("toast").text, "precondition: the top bar armed the request");
+        (Ui.focusController?.focusedElement as VisualElement)?.Blur();   // Escape with no focus, as after a mouse press
+        Press(keyboard.escapeKey);
+        Assert.IsTrue(keyboard.escapeKey.wasPressedThisFrame, "precondition: Escape went down this frame");
+        typeof(GameRoot).GetMethod("Update", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(root, null);
+        Release(keyboard.escapeKey);
+        Assert.AreEqual("", Ui.Q<Label>("toast").text, "the prompt is off the toast");
+        Assert.AreEqual((home.Q, home.R), info.Selected, "the Escape was used up: the map selection stays");
+        var session = bridge.Session;
+        UiTestKit.Press(Ui.Q<Button>("new-game"));
+        Assert.AreSame(session, bridge.Session, "withdrawn: the next press only arms the request again");
+    }
 }
