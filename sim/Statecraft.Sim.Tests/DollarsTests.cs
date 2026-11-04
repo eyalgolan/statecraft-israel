@@ -54,7 +54,7 @@ public class DollarsTests
         var fx = Assert.Single(r.Why, w => w.Key == CauseKeys.DollarsConvertedFx);
         Assert.Equal(("economy", -3.0), (fx.System, fx.Delta));
         Assert.Equal(new[] { "3" }, fx.Args);
-        Assert.Equal("Converted $3.0m of foreign currency into Money: " + PlayerText.MoneyChange(c, "fx_reserves", -3.0), fx.Message);
+        Assert.Equal("Foreign currency converted into Money: " + PlayerText.MoneyChange(c, "fx_reserves", -3.0), fx.Message);
     }
 
     // R-MONEY-004: the rate is the one in force on the turn's date (mvp.il_per_dollar, each rate from its day on).
