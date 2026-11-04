@@ -31,6 +31,9 @@ options:
     effects:
       - { target: fx_reserves, delta: 52 }
       - { target: intl_standing, delta: 0.02 }
+    # R-EFX-009 (#2457; owner, 2 November 2026, #2224: "Add equal Debt", "use 52"): the same $52m also goes onto Debt under
+    # gdd-0.3, at the mvp.il_per_dollar rate in force on the event's date. donations_only adds no Debt.
+    debt_dollars: 52
   - id: donations_only
     text: Rely on donations and loans
     text_he: להסתמך על תרומות והלוואות

@@ -1,5 +1,6 @@
 # yaml-language-server: $schema=./schema/gdd03-events.schema.json
-# R-EFX-001/002/005/007, #1718: availability only; shared reviewed event records stay byte-identical.
+# R-EFX-001/002/005/007, #1718: availability only; shared reviewed event records stay byte-identical, except that
+# israel_bonds' launch option gains debt_dollars (#2457, R-EFX-009).
 # No replacement amounts, effects, review statuses or sign-offs are authored here.
 ruleset: gdd-0.3
 exclusions:
@@ -9,14 +10,5 @@ exclusions:
     reason: Foreign-currency debit and aid, with Food supply effects, need authored ledger and stock contracts.
   - id: iraqi_exodus
     reason: National housing effects need regional population and facility accounting.
-  - id: israel_bonds
-    reason: >-
-      Owner, 2 November 2026 (#2224, https://github.com/eyalgolan/statecraft-israel/issues/2224#issuecomment-6570025445):
-      "Add equal Debt", "Rate in force on the date (Recommended)" and "No Debt for donations; use 52 (Recommended)".
-      In plain words: the launch option's $52m (fx_reserves +52) also goes onto Debt, converted to IL at the rate in force
-      on the event's date; "use 52" means the card's own 52, not the $54.1m received by the end of 1951; and
-      donations_only ($10m) adds no Debt.
-      Blocked: Debt is not yet an event-effect target, and the IL Debt uses the dated mvp.il_per_dollar table from #2204.
-      Do not restore the card as written: its launch option would add foreign currency with no Debt.
   - id: maabarot_policy
     reason: Maabarot policy and national housing effects need approved facility and population accounting.
