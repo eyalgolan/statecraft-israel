@@ -258,4 +258,73 @@ public class LastTurnObjectiveCardTests
         Assert.Equal(new[] { "railway_complete" }, last.State.FiredEvents.Except(before.FiredEvents));
         Assert.Equal(before.Score + Points(last, "railway"), last.State.Score);
     }
+
+    /// <summary>#2536: a one-turn game over fresh content that ends on its first turn's boundary with the railway recorded
+    /// then, so its card is the ending card. Returns the save as the new rules write it, and the same save with the final
+    /// hash the old rules wrote (the ending card neither fired nor pending).</summary>
+    static (Content c, string newSave, string oldSave) FinishedWithAnEndingCard()
+    {
+        var c = ContentLoader.Load(RealContentTests.ContentRoot());
+        var probe = Simulation.NewGame(c, GoldenRun.Seed, Mode.Historical);
+        c.Rules.Mvp!.End = Simulation.TurnEnd(c, probe);
+        var objective = c.Objectives.Single(o => o.Id == "railway");
+        objective.CompletesWhen = new ObjectiveCondition
+        {
+            Absorbed = new AbsorbCondition { PopulationAtLeast = 0, OverflowAtMost = 1m, EmployedAtLeast = 0m },
+        };
+        var card = c.Events.Single(e => e.Id == objective.Card);
+        card.From = probe.Date;
+        card.To = null;
+        card.Requires.Clear();
+        card.Conditions.Clear();
+
+        var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
+        g.Step(Array.Empty<Command>());
+        Assert.Equal(GameOverCodes.MvpEnded, g.State.GameOver);
+        Assert.Equal(new[] { "railway_complete" }, g.State.PendingEvents);
+        var old = g.State.Clone();
+        old.FiredEvents.Remove("railway_complete");
+        old.PendingEvents.Clear();
+        var newSave = g.Save.Write();
+        var endLine = "end " + g.State.Hash();
+        Assert.Contains(endLine + "\n", newSave);
+        return (c, newSave, newSave.Replace(endLine, "end " + old.Hash()));
+    }
+
+    // #2536: a game finished before the ending turn fired objective cards replays with its ending card added. That is the
+    // only difference, so it loads with no warning (no damaged-save error), over, with the card waiting to be shown.
+    [Fact]
+    public void AFinishedGameSavedBeforeTheChangeLoadsAndShowsItsEndingCard()
+    {
+        var (c, newSave, oldSave) = FinishedWithAnEndingCard();
+        Assert.NotEqual(newSave, oldSave);
+        var loaded = GameSession.Load(c, oldSave, out var warnings);
+        Assert.Empty(warnings);
+        Assert.Equal(GameOverCodes.MvpEnded, loaded.State.GameOver);
+        Assert.Equal(new[] { "railway_complete" }, loaded.State.PendingEvents);
+        Assert.Contains("railway_complete", loaded.State.FiredEvents);
+
+        GameSession.Load(c, newSave, out var current);   // and a save the new rules wrote loads as before
+        Assert.Empty(current);
+    }
+
+    // #2536: only that difference is accepted. Any other final hash with the same content is still the damaged-save error.
+    [Fact]
+    public void AnyOtherReplayDifferenceIsStillRefused()
+    {
+        var (c, newSave, oldSave) = FinishedWithAnEndingCard();
+        var wrong = newSave.Replace(newSave.Split('\n').Single(l => l.StartsWith("end ", StringComparison.Ordinal)), "end " + new string('b', 64));
+        Assert.NotEqual(newSave, wrong);
+        Assert.Throws<SaveException>(() => GameSession.Load(c, wrong, out _));
+    }
+
+    // #2536: with other content the same save gives only content_changed, not replay_differs.
+    [Fact]
+    public void WithOtherContentAFinishedOldSaveGivesOnlyContentChanged()
+    {
+        var (c, _, oldSave) = FinishedWithAnEndingCard();
+        c.Hash = new string('c', 64);
+        GameSession.Load(c, oldSave, out var warnings);
+        Assert.Equal(new[] { GameSession.ContentChanged }, warnings);
+    }
 }
