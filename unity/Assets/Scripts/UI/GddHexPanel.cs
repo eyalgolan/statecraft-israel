@@ -140,15 +140,18 @@ namespace Statecraft.Game.UI
             {
                 var old = bridge.QueuedLike(new Train(id, type.Id, 1));
                 var ordered = (old as Train)?.Count ?? 0;
-                // #2573: the press queues Train(ordered + 1) where SimBridge.Queue puts it: in the old order's slot when there
-                // is one, else last. So the Arms it can take are those left by the orders before that slot (R-TURN-004: waiting
-                // orders run in queue order), and it needs the whole new count, the old order being replaced.
-                var before = old == null ? bridge.Queued : bridge.Queued.Take(bridge.Queued.ToList().IndexOf(old)).ToList();
-                var armsOk = Training.ArmsNeeded(c, s, type, ordered + 1) <= Training.ArmsAfter(c, s, before);
+                // #2573: the press queues Train(ordered + 1) where SimBridge.Queue puts it (the old order's slot, else last), so
+                // the button asks End turn's own order runner (Simulation.Preview: queue order, conversions before Arms
+                // purchases) whether that exact order would be refused, for a short Arms stock (R-ARMS-003) or any other reason.
+                var press = new Train(id, type.Id, ordered + 1);
+                var queue = bridge.Queued.ToList();
+                var slot = old == null ? -1 : queue.IndexOf(old);
+                if (slot >= 0) queue[slot] = press; else queue.Add(press);
+                var accepted = !Simulation.Preview(c, s, queue).Rejected.Any(x => ReferenceEquals(x.Command, press));
                 var row = Row(host, $"city-train-{type.Id}-row");
                 Button(row, "city-train-" + type.Id, text.Format("city.train_" + type.Id, PlayerText.Money(c, "treasury", type.TrainingCost), Turns(text, type.TrainingTurns)),
                     () => bridge.Queue(new Train(id, type.Id, ordered + 1)))
-                    .SetEnabled(free >= 1 && armsOk);
+                    .SetEnabled(free >= 1 && accepted);
                 if (ordered > 0) Line(row, $"city-train-{type.Id}-ordered", text.Format("city.train_ordered", ordered));
             }
 

@@ -286,6 +286,9 @@ public class CityPanelTests
         Assert.IsFalse(ui.Q<Button>("city-train-halutz").enabledSelf);
     }
 
+    /// <summary>R-ARMS-003: the Arms one recruit group takes when its training starts (mvp.arms_per_recruit_group).</summary>
+    static int RecruitGroupArms(GameState s) => C.RulesAt(s.Date).Mvp!.ArmsPerRecruitGroup!.Value;
+
     // Red-first prediction at 085944e62: the recruit button is enabled because the panel checks free civilians only.
     [Test]
     public void RecruitTrainingIsDisabledWithNoArms()
@@ -298,13 +301,13 @@ public class CityPanelTests
             "R-ARMS-003: the stock cannot cover one recruit group");
     }
 
-    // Red-first prediction at 085944e62: queuing Buy Arms cannot change the civilian-only Train enablement calculation.
+    // Red-first prediction at 085944e62: the precondition fails, as the button is enabled on free civilians alone; with the
+    // fix, a queued purchase that covers the group turns it back on (buy, then train, in one turn: R-TURN-004's queue order).
     [Test]
     public void RecruitTrainingIsEnabledWhenAQueuedPurchaseCoversIt()
     {
-        var recruit = C.UnitTypes.Single(t => t.Id == "recruit");
         using var ui = new UiTestKit();
-        var bridge = Bridge(En, s => s.Arms = (int)Training.ArmsNeeded(C, s, recruit, 1) - 1);
+        var bridge = Bridge(En, s => s.Arms = RecruitGroupArms(s) - 1);
         using var panel = Panel(ui, bridge, En);
         panel.Show(CityHex.q, CityHex.r);
         Assert.IsFalse(ui.Q<Button>("city-train-recruit").enabledSelf, "precondition: one Arms is missing");
@@ -318,13 +321,12 @@ public class CityPanelTests
     [Test]
     public void ASecondRecruitGroupIsNotPaidByAPurchaseQueuedAfterTheFirst()
     {
-        var recruit = C.UnitTypes.Single(t => t.Id == "recruit");
         using var ui = new UiTestKit();
-        var bridge = Bridge(En, s => s.Arms = (int)Training.ArmsNeeded(C, s, recruit, 1));
+        var bridge = Bridge(En, s => s.Arms = RecruitGroupArms(s));
         using var panel = Panel(ui, bridge, En);
         panel.Show(CityHex.q, CityHex.r);
         Assert.IsNull(bridge.Queue(new Train(City, "recruit", 1)), "precondition: one group, the whole stock");
-        Assert.IsNull(bridge.Queue(new BuyArms((int)Training.ArmsNeeded(C, bridge.State, recruit, 1))), "precondition: a purchase after it");
+        Assert.IsNull(bridge.Queue(new BuyArms(RecruitGroupArms(bridge.State))), "precondition: a purchase after it");
         Assert.IsFalse(ui.Q<Button>("city-train-recruit").enabledSelf,
             "Train(2) would run in the first order's slot, before the purchase, with Arms for one group only");
     }

@@ -105,61 +105,6 @@ namespace Statecraft.Sim
             return Math.Max(0, Idle(x, Pending("job", x.Employed), Pending(Workshops.Role, Workshops.Staffed(s, city)) + Projects.Builders(s, city) + Projects.Starting(s, city, list)) - Ordered(city, list));
         }
 
-        /// <summary>R-ARMS-003: the Arms <paramref name="count"/> groups take when this course starts.</summary>
-        public static long ArmsNeeded(Content c, GameState s, UnitType type, int count) =>
-            type.Id == "recruit"
-                ? (long)count * c.RulesAt(s.Date).Mvp!.ArmsPerRecruitGroup!.Value
-                : (long)count * (type.TrainingArms ?? 0);
-
-        /// <summary>The conservative Arms stock after <paramref name="queued"/> has run, for deciding whether a new Train
-        /// appended after it can start. Changes neither the state nor the queue.</summary>
-        public static long ArmsAfter(Content c, GameState s, IReadOnlyList<Command> queued)
-        {
-            // Simulation.Preview is the pure, shared End-turn order runner: it resolves BuyArms' step price, validation and
-            // possible refusal, moves later ConvertDollars before the first purchase, applies CancelTraining's capped return,
-            // and does not mutate s. Thus a refused Buy or Cancel contributes nothing, conservatively. The remaining effects
-            // that cannot be promised before End turn are treated at their maximum cost below: a refused Train or Reinforce
-            // still reserves its whole course cost; a refused event choice ignores positive Arms and reserves every negative
-            // Arms effect; and a refused Attack (normally instant, not queued) reserves the whole remaining stock. Delegated
-            // event effects and workshop output happen after the order queue and are deliberately outside this helper.
-            var preview = Simulation.Preview(c, s, queued);
-            var arms = (long)preview.State.Arms;
-            foreach (var command in queued.Where(command => preview.Rejected.Any(x => ReferenceEquals(x.Command, command))))
-            {
-                switch (command)
-                {
-                    case Train train:
-                        var type = c.UnitTypes.FirstOrDefault(x => x.Id == train.Track && x.Facility != "");
-                        if (type != null && train.Count > 0) arms -= ArmsNeeded(c, s, type, train.Count);
-                        break;
-                    case Reinforce reinforce:
-                        if (s.Units.TryGetValue(reinforce.Unit, out var unit) && reinforce.Count > 0)
-                        {
-                            var course = ReinforcementCourse(c, unit);
-                            if (course != null) arms -= ArmsNeeded(c, s, course, reinforce.Count);
-                        }
-                        break;
-                    case ChooseEventOption choice:
-                        var option = c.Events.FirstOrDefault(x => x.Id == choice.EventId)?.Options.FirstOrDefault(x => x.Id == choice.OptionId);
-                        if (option != null)
-                            foreach (var effect in option.Effects.Where(x => x.Target == Pools.ArmsTarget && x.Delta < 0))
-                                arms += (long)Math.Round(effect.Delta, MidpointRounding.AwayFromZero);
-                        break;
-                    case UnitOrder order when order.Order == Combat.Attack:
-                        arms = 0;
-                        break;
-                }
-                arms = Math.Max(0, arms);
-            }
-            return arms;
-        }
-
-        static UnitType? ReinforcementCourse(Content c, Unit unit)
-        {
-            var type = c.UnitTypes.First(t => t.Id == unit.Type);
-            return c.UnitTypes.FirstOrDefault(t => t.Side == type.Side && t.Class == type.Class && t.Facility != "");
-        }
-
         /// <summary>R-TRAIN-001: <paramref name="count"/> of the city's civilians without work start training as
         /// <paramref name="track"/>, a unit type with a facility. The Treasury pays count * training_cost now and borrows what it
         /// lacks. The trainees leave the civilians at once, and the cohort takes the next id. Refused, state untouched, when the
@@ -183,7 +128,8 @@ namespace Statecraft.Sim
             if (!s.Cities.ContainsKey(city)) return RefusedNoCity;
             var hex = c.SettlementHexes.First(h => h.Id == city);
             if ((u.Q, u.R) != (hex.Q, hex.R)) return Refused(RefusedNotInCity, unit, PlayerText.Settlement(c, city));
-            var course = ReinforcementCourse(c, u);
+            var type = c.UnitTypes.First(t => t.Id == u.Type);
+            var course = c.UnitTypes.FirstOrDefault(t => t.Side == type.Side && t.Class == type.Class && t.Facility != "");
             if (course == null) return Refused(RefusedNoCourse, unit);
             var room = Room(s, u);
             if (room <= 0) return Refused(RefusedNoLosses, unit);
@@ -211,7 +157,7 @@ namespace Statecraft.Sim
             // R-ARMS-003 (D-G6, Q-UNIT-3): a recruit group takes arms_per_recruit_group Arms when its training starts, a gun or
             // armoured car crew its type's training_arms (R-UNIT-008, Q-ARTY-3); a short stock refuses the order. Pioneer
             // training takes none. The cohort keeps the count, and cancelling (R-TRAIN-002) returns it.
-            var arms = ArmsNeeded(c, s, type, count);
+            var arms = type.Id == "recruit" ? (long)count * c.RulesAt(s.Date).Mvp!.ArmsPerRecruitGroup!.Value : (long)count * (type.TrainingArms ?? 0);
             if (arms > s.Arms) return Refused(RefusedArms, name, Course(type), arms, s.Arms);
             var cost = count * type.TrainingCost;
             // Owner decision "Allow borrowing" (2026-10-15, #468 question 1): a short Treasury borrows, as map actions do.
