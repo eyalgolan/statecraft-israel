@@ -264,7 +264,9 @@ namespace Statecraft.Game.Map
         }
 
         /// <summary>The diff preview (#1721 slice C): every terrain hex, control hex and period, and location whose current
-        /// value differs from the saved override file, in the file's own order. Read-only; nothing is written.</summary>
+        /// value differs from the saved override file, sorted by row then column (control rows then by period, locations by
+        /// id). A saved override that is gone also counts when its value equals the generated map: Set* drops such an edit,
+        /// so only its presence changed, and the row lets the user see and revert it. Read-only; nothing is written.</summary>
         public IReadOnlyList<MapEditorChange> Changes()
         {
             var saved = MapOverrides.Parse(savedCanonical);
@@ -272,17 +274,18 @@ namespace Statecraft.Game.Map
             foreach (var (q, r) in saved.Terrain.Select(x => (x.Hex.Q, x.Hex.R)).Concat(terrain.Select(x => (x.q, x.r))).Distinct()
                          .OrderBy(x => x.Item2).ThenBy(x => x.Item1))
             {
-                var before = saved.Terrain.FirstOrDefault(x => x.Hex.Q == q && x.Hex.R == r)?.Value ?? baseHexes[(q, r)].Biome;
+                var savedEdit = saved.Terrain.FirstOrDefault(x => x.Hex.Q == q && x.Hex.R == r);
+                var before = savedEdit?.Value ?? baseHexes[(q, r)].Biome;
                 var now = TerrainAt(q, r);
-                if (before != now) result.Add(new MapEditorChange(MapEditorChange.Terrain, q, r, "", "", before, now));
+                if (before != now || (savedEdit != null) != terrain.Any(x => x.q == q && x.r == r)) result.Add(new MapEditorChange(MapEditorChange.Terrain, q, r, "", "", before, now));
             }
             foreach (var (q, r, period) in saved.Control.Select(x => (x.Hex.Q, x.Hex.R, x.Period)).Concat(control.Select(x => (x.q, x.r, x.period)))
                          .Distinct().OrderBy(x => x.Item2).ThenBy(x => x.Item1).ThenBy(x => x.Item3, StringComparer.Ordinal))
             {
-                var before = saved.Control.FirstOrDefault(x => x.Hex.Q == q && x.Hex.R == r && x.Period == period)?.Value
-                    ?? controlFile.EditorCodeAt(q, r, period);
+                var savedEdit = saved.Control.FirstOrDefault(x => x.Hex.Q == q && x.Hex.R == r && x.Period == period);
+                var before = savedEdit?.Value ?? controlFile.EditorCodeAt(q, r, period);
                 var now = ControlAt(q, r, period);
-                if (before != now) result.Add(new MapEditorChange(MapEditorChange.Control, q, r, period, "", before, now));
+                if (before != now || (savedEdit != null) != control.Any(x => x.q == q && x.r == r && x.period == period)) result.Add(new MapEditorChange(MapEditorChange.Control, q, r, period, "", before, now));
             }
             foreach (var id in saved.Locations.Select(x => x.Id).Concat(locations.Select(x => x.id)).Distinct().OrderBy(x => x, StringComparer.Ordinal))
             {
@@ -290,7 +293,7 @@ namespace Statecraft.Game.Map
                 var edit = saved.Locations.FirstOrDefault(x => x.Id == id);
                 var before = edit == null ? (item.BaseQ, item.BaseR) : (edit.Hex.Q, edit.Hex.R);
                 var now = LocationAt(id);
-                if (before != now)
+                if (before != now || (edit != null) != locations.Any(x => x.id == id))
                     result.Add(new MapEditorChange(MapEditorChange.Location, now.q, now.r, "", id,
                         FormattableString.Invariant($"q={before.Item1} r={before.Item2}"), FormattableString.Invariant($"q={now.q} r={now.r}")));
             }

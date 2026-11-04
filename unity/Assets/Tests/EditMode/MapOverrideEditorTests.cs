@@ -279,6 +279,45 @@ public sealed class MapOverrideEditorTests
         finally { UnityEngine.Object.DestroyImmediate(document); }
     }
 
+    // #1721 slice C review: a saved override equal to the generated map disappears when the user picks that same value, so the
+    // diff must still list the row, or it says nothing changed while the document has unsaved changes.
+    [Test]
+    public void TheDiffListsARemovedRedundantOverride()
+    {
+        var path = Path.Combine(temporary, MapOverrides.FileName);
+        var file = MapOverrides.Parse(File.Exists(path) ? File.ReadAllText(path) : "");
+        var probe = MapOverrideEditorDocument.Load(temporary);
+        var land = probe.Hexes.First(x => x.Land && probe.TerrainAt(x.Q, x.R) == x.Biome && file.Terrain.All(t => t.Hex.Q != x.Q || t.Hex.R != x.R));
+        var controlHex = Control1948.Parse(File.ReadAllText(Path.Combine(temporary, "map", Control1948.FileName))).EditorHexes
+            .First(x => file.Control.All(c => c.Hex.Q != x.q || c.Hex.R != x.r));
+        var period = probe.Periods[0].Id;
+        var generatedControl = probe.ControlAt(controlHex.q, controlHex.r, period);
+        UnityEngine.Object.DestroyImmediate(probe);
+        file.Terrain.Add(new TerrainOverride { Hex = new MapHexRef { Q = land.Q, R = land.R }, Value = land.Biome });
+        file.Control.Add(new ControlOverride { Hex = new MapHexRef { Q = controlHex.q, R = controlHex.r }, Period = period, Value = generatedControl });
+        File.WriteAllText(path, MapOverrides.Serialize(file));
+
+        var document = MapOverrideEditorDocument.Load(temporary);
+        try
+        {
+            Assert.IsFalse(document.HasUnsavedChanges);
+            Assert.IsEmpty(document.Changes());
+            document.SetTerrain(land.Q, land.R, land.Biome);
+            document.SetControl(controlHex.q, controlHex.r, period, generatedControl);
+            Assert.IsTrue(document.HasUnsavedChanges, "the redundant overrides are gone from the document");
+            var changes = document.Changes();
+            Assert.AreEqual(2, changes.Count, "each removed redundant override is a row: " + string.Join("\n", changes));
+            var t = changes.Single(x => x.Kind == MapEditorChange.Terrain);
+            Assert.AreEqual((land.Q, land.R, land.Biome, land.Biome), (t.Q, t.R, t.Saved, t.Current));
+
+            document.Revert(t);
+            document.Revert(changes.Single(x => x.Kind == MapEditorChange.Control));
+            Assert.IsFalse(document.HasUnsavedChanges, "reverting the rows brings the saved overrides back");
+            Assert.IsEmpty(document.Changes());
+        }
+        finally { UnityEngine.Object.DestroyImmediate(document); }
+    }
+
     // #1721 slice C: reverting one diff row restores only that row to the saved file, is undoable and writes nothing.
     [Test]
     public void RevertingOneRowRestoresOnlyThatRowAndUndoBringsItBack()

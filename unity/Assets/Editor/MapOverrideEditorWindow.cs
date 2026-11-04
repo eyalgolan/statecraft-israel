@@ -384,6 +384,9 @@ namespace Statecraft.Game.EditorTools
                 if (marker.location != null && Vector2.Distance(screen(centres[marker.at]), current.mousePosition) <= 9f)
                 {
                     selectedLocation = marker.location.Id;
+                    // A marker the search hides would leave the popup on its first hit and drop this location's inspector,
+                    // so the click clears the search; unfocusing the field lets it show the cleared text.
+                    if (document.SearchLocations(search).All(x => x.Id != selectedLocation)) { search = ""; GUI.FocusControl(null); }
                     draggingLocation = true;
                     dragTarget = marker.at;
                     SetCoordinateFields(marker.at);
