@@ -927,8 +927,11 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
     font-size: 34px; color: var(--ink); -unity-text-align: middle-center; white-space: normal; margin: 4px 0 0 0;
 }
 .start-he-date { font-size: 28px; margin-top: 12px; }
-.start-en { font-size: 18px; color: var(--ink-dim); letter-spacing: 1px; -unity-text-align: middle-center; white-space: normal; margin: 2px 0 0 0; }
-.start-source { font-size: 15px; color: var(--ink-dim); -unity-text-align: middle-center; white-space: normal; margin: 14px 0 0 0; }
+/* --ink, not --ink-dim (#2340 L5): the panel blends in linear light, so the lit hats behind it took --ink-dim down to
+   2.9:1 at 1568x752 (still 4.3:1 at 0.94 alpha); --ink holds 4.5:1 even where the painting is white. Their size keeps
+   them under the Hebrew. */
+.start-en { font-size: 18px; color: var(--ink); letter-spacing: 1px; -unity-text-align: middle-center; white-space: normal; margin: 2px 0 0 0; }
+.start-source { font-size: 15px; color: var(--ink); -unity-text-align: middle-center; white-space: normal; margin: 14px 0 0 0; }
 .start-actions { flex-direction: row; flex-wrap: wrap; justify-content: center; margin-top: 14px; }
 /* A whole-pixel height (#1168): with Star on GitHub wrapped under New game on a phone held upright, a fractional row
    height shifts the panel's lines off whole pixels and the band layout (StartScreenPresenter.Fit) then rounds the
