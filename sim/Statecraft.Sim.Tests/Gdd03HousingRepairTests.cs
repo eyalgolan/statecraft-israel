@@ -50,7 +50,8 @@ public class Gdd03HousingRepairTests
     public void TheRealRepairRowMatchesTheCatalogue()
     {
         var k = Load(true).ProjectKinds.Single(x => x.Id == Repair);
-        Assert.Equal(HebrewReview.AgentChecked, k.NameHeReview);
+        // The owner approved its Hebrew name on 3 November 2026 (#564), so the row has no name_he_review line.
+        Assert.Equal(("שיפוץ דיור", "", false), (k.NameHe, k.NameHeReview, k.NameHeReviewGiven));
         // The real game (gdd-0.1) has no repair.
         Assert.DoesNotContain(ContentLoader.Load(RealContentTests.ContentRoot()).ProjectKinds, x => x.Id == Repair);
         foreach (var (from, to, field, says) in new[]
