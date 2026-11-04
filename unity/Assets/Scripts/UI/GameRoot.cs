@@ -87,6 +87,7 @@ namespace Statecraft.Game.UI
         /// <summary>Set by SwitchLanguage for its Begin (#2054): whether the start screen it rebuilds offered Continue.</summary>
         bool keptResumed = true;
         AdvisorPresenter? advisor;
+        CabinetPresenter? cabinet;
         EncyclopediaPresenter? encyclopedia;
         /// <summary>Tests supply an in-memory approval copy for Hebrew layout; the shipped review fields are unchanged.</summary>
         internal AdvisorCatalog? AdvisorCatalogForTests { get; set; }
@@ -188,9 +189,17 @@ namespace Statecraft.Game.UI
             line.languageDirection = !hebrew ? LanguageDirection.Inherit : UiDirection.RightToLeft(words) ? LanguageDirection.RTL : LanguageDirection.LTR;
         }
 
-        /// <summary>The strings of the UI's language (UiLanguage): strings.he.yaml when Hebrew is asked for or chosen, else English.</summary>
-        UiText Strings() => (Language ?? UiLanguage.AtStart(SettingsFile()?.Read(SettingsPresenter.LanguageKey))) == UiLanguage.Hebrew
-            ? UiText.Parse(stringsHe.text, "strings.he.yaml") : UiText.Parse(strings.text);
+        /// <summary>The strings of the UI's language (UiLanguage): strings.he.yaml when Hebrew is asked for or chosen; a language
+        /// from translations/ (#1606) as its ui.yaml over the English, per string, once <paramref name="content"/> carries it
+        /// (before the content loads, the loading line is English); else English.</summary>
+        UiText Strings(Content? content = null)
+        {
+            var language = Language ?? UiLanguage.AtStart(SettingsFile()?.Read(SettingsPresenter.LanguageKey));
+            if (language == UiLanguage.Hebrew) return UiText.Parse(stringsHe.text, "strings.he.yaml");
+            var english = UiText.Parse(strings.text);
+            var set = language == UiLanguage.English ? null : content?.Translations.Find(t => t.Lang == language);
+            return set == null ? english : english.Over(set.Ui, $"translations/{language}/ui.yaml");
+        }
 
         void OnDisable()
         {
@@ -262,7 +271,7 @@ namespace Statecraft.Game.UI
             Shutdown(keepCompanionPage: companion != null && CompanionWanted());
             smokeRun = smoke > 0;
 
-            var text = Strings();
+            var text = Strings(inputs.Content);
             var store = Store ?? SaveStore.ForPlatform();
             var notes = new List<string>();
             // A smoke run is reproducible: a fresh game with the golden seed, never the player's autosave.
@@ -373,7 +382,7 @@ namespace Statecraft.Game.UI
             // "Report a bug or idea" (#1169), from Settings and the start screen: the version line names the content GameBoot logged.
             feedback = Own(new FeedbackPresenter(root, text, ReportLinks.Version(Application.version, inputs.Content.Hash)));
             var feedbackPanel = feedback;
-            Own(new CabinetPresenter(root, bridge, text, portraits));
+            cabinet = Own(new CabinetPresenter(root, bridge, text, portraits));
             // After End Turn, what changed in the top bar and the sim's causes (#1037); under an outcome clip, which plays first.
             report = Own(new TurnReportPresenter(root, bridge, text, nav!));
             // "Share" (#1170), from Settings and the turn report: the frame is captured at its end, before the panel shows.
@@ -381,7 +390,7 @@ namespace Statecraft.Game.UI
             // Star, Report and Share as round icons at the map screen's bottom left (#1236): the same actions as Settings' buttons.
             Own(new CommunityIconsPresenter(root, text, feedbackPanel, sharePanel));
             // Both panels in one hook: the same Escape never closes the screen under the panel too.
-            nav!.TakesEscape = () => feedbackPanel.Escape() || sharePanel.Escape() || advisor?.CloseOverlay() == true || advisor?.OverlayClosedThisFrame == true || advisor?.Escape() == true || this.info?.Escape() == true;   // the field: the panel is made below
+            nav!.TakesEscape = () => feedbackPanel.Escape() || sharePanel.Escape() || advisor?.CloseOverlay() == true || advisor?.OverlayClosedThisFrame == true || advisor?.Escape() == true || cabinet?.Escape() == true || this.info?.Escape() == true;   // the field: the panel is made below
             var names = map.SettlementsFor(inputs.Map.SettlementsYaml).ToDictionary(s => s.Id, s => s.Name);   // the map's parse (issue #321)
             // The capture dialog (GDD Phase 6 PR 10, #802): in the decision layer, after the card, which goes first; the
             // places' Hebrew names from the same parse.
@@ -876,6 +885,8 @@ namespace Statecraft.Game.UI
             // An open event card is modal and disables the unit card (ScreenNav.DisableCovered), so the unit End turn selects
             // could take no order: the card waits behind "Decision waiting", as its Hide button does.
             card?.Collapse(takeFocus: false);
+            // The capture dialog is modal like the card (#802): End turn must show a unit that can take an order (#1680).
+            capture?.Collapse(takeFocus: false);
             // A side screen can still cover the card (#210). Reveal it through normal navigation, not by
             // bypassing Covered: End turn must show the unit whose orders it asks for (#1680).
             if (info?.Covered == true) nav?.Open(null);
@@ -942,7 +953,7 @@ namespace Statecraft.Game.UI
             for (int i = owned.Count - 1; i >= 0; i--) owned[i].Dispose();
             owned.Clear();
             if (hoveredCity != null) { hoveredCity = null; HandCursor(false); }   // the next Begin's pills start unlit
-            companion = null; minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; opening = null; card = null; outcomes = null; report = null; end = null; advisor = null; encyclopedia = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
+            companion = null; minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; opening = null; card = null; outcomes = null; report = null; end = null; advisor = null; cabinet = null; encyclopedia = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
             // A ?profile run cut short (a stopped coroutine never reaches its restore line) must not leave the terrain at the
             // profile's pixel error (Task 24 review M1). Nothing else changes it, so restoring is always right.
             if (map != null && map.Terrain != null) map.Terrain.heightmapPixelError = MapBuilder.TerrainPixelError;
@@ -1142,7 +1153,8 @@ namespace Statecraft.Game.UI
                 if (!done) done = end?.Close() == true || end?.ClosedThisFrame == true;
                 if (!done) done = report?.Close() == true || report?.ClosedThisFrame == true;
                 done |= start?.Escape() == true;
-                done |= nav?.Close() == true;
+                // Escape in the Cabinet's candidate list goes back to the seat, not out of the screen (#2340 M2).
+                done |= cabinet?.Escape() == true || nav?.Close() == true;
                 // A screen/card that consumed this Cancel must not also dismiss the map selection in this frame.
                 if (!done && nav?.ClosedThisFrame != true && document.rootVisualElement.focusController?.focusedElement == null
                     && capture?.Escape() != true && card?.Escape() != true && card?.CollapsedThisFrame != true)

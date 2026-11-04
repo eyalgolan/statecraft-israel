@@ -1,0 +1,3 @@
+### Fixed
+- End turn, when a unit still needs orders, now hides an open capture dialog (nothing chosen; it waits behind
+  "Decision waiting") so the unit it selects can be given an order or skipped.

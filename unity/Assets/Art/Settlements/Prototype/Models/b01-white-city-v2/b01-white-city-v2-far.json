@@ -1,0 +1,15 @@
+{
+    "tool": "FarModelLevels",
+    "source": "Assets/Art/Settlements/Prototype/Models/b01-white-city-v2/b01-white-city-v2.fbx",
+    "source_sha256": "97358d8114dd0864a940b15b970ef52eb0fb3647f304779e1e7dbd06a58fc09a",
+    "colour_map": "Assets/Art/Settlements/Prototype/Models/b01-white-city-v2/b01-white-city-v2_basecolor.jpg",
+    "colour_map_sha256": "05c3847969936255e903361df85627b9d136dbbdabb052d9450453e2112df37d",
+    "source_triangles": 5999,
+    "triangles": 400,
+    "target_triangles": 400,
+    "cell_px": 8,
+    "supersample": 3,
+    "sample_px": 512,
+    "atlas_px": 256,
+    "provenance": "Derived from Tal Heuberger's original (the source FBX and colour map above) by FarModelLevels: a subset of the model's own vertices (exact positions, none added or moved) and a colour map baked from the original's. Same licence, CC BY-NC-ND 4.0, credit Tal Heuberger; lighter far-off derived copy; owner confirms Tal's permission, 3 Nov 2026 (#2378)."
+}

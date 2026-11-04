@@ -74,7 +74,7 @@ Cancelled retained courses award no unfinished qualification. A course whose slo
 - `sim/Statecraft.Sim.Tests/golden/manifest.txt`: `mvp-slice` moved (retired at the cutover); `scenario-mvp-absorb-first` did not. Phase 4 PR 3 moves `hash1950`, `hash1952` and `mvp-end`: the reference player builds the two camps once the yishuv sites are taken (docs/determinism.md).
 - Finished recruit cohorts become military units and never fill `City.Recruits` (`R-TRAIN-003`, `R-UNIT-003`); Amir's proposal to replace recruit counts during training is non-operative [S6].
 - Unit types, scenario inventory, facilities and training commands require coordinated migration.
-- **Amir's proposal [S6]:** reception beds, teacher housing and proposed military trainee slots would be distinct capacity fields; the owner's 30 October 2026 conflict review did not rule on this, and main has only inactive `gdd-0.3` fixtures for them (`docs/rules/mvp.md:107`, `R-TRAIN-005`). Reception beds are post-MVP, the teacher lives as an ordinary resident, and every military camp uses `military.camp_capacity` (owner, 1 November 2026, "Keep R-CITY-004 (Recommended)", Q42 and 27M-25) [S11].
+- **Amir's proposal [S6]:** reception beds, teacher housing and proposed military trainee slots would be distinct capacity fields; the owner's 30 October 2026 conflict review did not rule on this, and main has only an inactive `gdd-0.3` reception fixture (`docs/rules/mvp.md:107`). Reception beds are post-MVP, the teacher lives as an ordinary resident, and every military camp uses `military.camp_capacity` (owner, 1 November 2026, "Keep R-CITY-004 (Recommended)", Q42 and 27M-25) [S11].
 - Historical army size comes from the sourced `content/map/units_1948.yaml` seed (`Q-START-1`, decided 15 October 2026); only the non-Historical parameter `A` and real reception-facility availability stay deferred in the GDD (owner, 30 Oct 2026) [S6]; the starting centre and reception host is Kiryat Shmuel, Haifa (owner, 1 November 2026, O8 and 27M-25) [S11].
 
 ## Done when
@@ -91,7 +91,7 @@ Cancelled retained courses award no unfinished qualification. A course whose slo
 
 - The start camps of Jerusalem (Schneller) and Petah Tikva (Tel HaShomer), which the owner ruled the cities already have (#375); this PR keeps the start facilities as they are. Training capacity, recruits as units and combat (Phase 5), veterans, craftsmen (D-D4), and any display (PRs 7 and 8).
 Camp growth into permanent towns, soldier training in civilian centres and unsourced opening dates. The retained qualification rule permits switching back to qualified civilian roles without retraining.
-**Then decided (owner, 3 Nov 2026, #1719): "Tel Aviv's camp is Tel HaShomer; add Jerusalem" ([recorded on #1719](https://github.com/eyalgolan/statecraft-israel/issues/1719#issuecomment-6602125415)):** the start military camp in Tel Aviv stands for Tel HaShomer, and Jerusalem gets a start camp too. Not built yet: `content/cities.yaml` gives only Tel Aviv a start `military_camp`.
+**Then decided (owner, 3 Nov 2026, #1719): "Tel Aviv's camp is Tel HaShomer; add Jerusalem" ([recorded on #1719](https://github.com/eyalgolan/statecraft-israel/issues/1719#issuecomment-6602125415)):** the start military camp in Tel Aviv stands for Tel HaShomer, and Jerusalem gets a start camp too. Under `gdd-0.3` the optional `content/gdd03-start.yaml` adds Jerusalem's camp at `military_schneller` (R-CAMP-003); `gdd-0.1` keeps Tel Aviv's camp only.
 
 ## Sources
 

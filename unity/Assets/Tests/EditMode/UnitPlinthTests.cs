@@ -201,7 +201,9 @@ public class UnitPlinthTests
             Assert.IsNull(UnitFlags.Build(side), side);
             Assert.AreEqual(UnitFigures.SideFigure(side) != null, UnitFlags.HasPennant(side), $"{side}: the pennant only on a drawn force");
         }
-        CollectionAssert.AreEquivalent(new[] { "ala" }, UnitData.Sides.Where(UnitFlags.HasPennant), "only the ALA flies the pennant (never its dagger emblem: #226, ruling 8)");
+        // The ALA (never its dagger emblem: #226, ruling 8) and, once a row is sourced, the local forces, drawn with Tal Heuberger's
+        // irregular (owner, 2 November 2026: "Use it instead of C09"): no flag of theirs is sourced, so the neutral pennant.
+        CollectionAssert.AreEquivalent(new[] { "ala", "local_arab_forces" }, UnitData.Sides.Where(UnitFlags.HasPennant), "the pennant only on the drawn forces with no sourced flag");
         var pennant = UnitFlags.BuildPennant();
         var slots = pennant.uv.Select(u => Enumerable.Range(0, UnitPalette.Count).Single(s => Mathf.Abs(u.x - UnitPalette.U(s)) < 1e-4f)).Distinct();
         CollectionAssert.AreEquivalent(new[] { UnitPalette.RifleWood, UnitPalette.HullGrey }, slots, "a wooden pole and a plain grey cloth");

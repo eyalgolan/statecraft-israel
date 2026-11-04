@@ -35,6 +35,8 @@ altalena:
 
 `review` is `agent-checked` until a native speaker has read the text, and is left out after that (#564). It is the only
 value it may have.
+An AI-assisted contributor may also do that read and remove the line, when the pull request discloses the AI help and
+names the strings read (the owner, 4 November 2026: "AI-assisted can clear it"; [comment](https://github.com/eyalgolan/statecraft-israel/pull/2481#issuecomment-6623108295)).
 
 ## Content keys
 

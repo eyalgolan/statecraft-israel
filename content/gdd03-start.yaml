@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=./schema/gdd03-start.schema.json
+# R-CAMP-003.
+# Owner ruling, 3 November 2026: "Tel Aviv's camp is Tel HaShomer; add Jerusalem" (recorded on #1719, issuecomment-6602125415).
+# research_notes/gdd-phase-4-sourcing.md: Schneller, 17 March 1948: the British evacuated the camp and handed it to
+# the Etzioni Brigade, the Haganah's Jerusalem district force; it was then called "permanent camp no. 1" and served
+# as an army base. The source note separately records its training role.
+ruleset: gdd-0.3
+military_camps:
+  - { city: tel_aviv, location: military_tel_litvinsky } # Existing cities.yaml camp; the ruling names it Tel HaShomer.
+  - { city: jerusalem, location: military_schneller }

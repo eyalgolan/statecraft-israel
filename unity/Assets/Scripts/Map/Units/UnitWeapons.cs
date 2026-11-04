@@ -16,7 +16,8 @@ namespace Statecraft.Game.Map.Units
         /// <summary>The name of the weapon's object under the figure's hand bone (UnitFigures.BoxIn leaves it out, so a weapon
         /// never changes the figure's height or feet).</summary>
         public const string HeldName = "HeldWeapon";
-        /// <summary>The hand bone of Tal Heuberger's 67-bone figures (C04 to C07, C12F; C06's point-fire export binds its K98k to it).</summary>
+        /// <summary>The hand bone of Tal Heuberger's 67-bone figures (C04 to C07, C12F, and the 1948 soldier's rigged copy; C06's
+        /// point-fire export binds its K98k to it).</summary>
         public const string HandBone = "Right_Hand";
 
         /// <summary>One sourced row: which army carried the weapon, from when. The rows are agent-read: an AI agent read the
@@ -60,12 +61,14 @@ namespace Statecraft.Game.Map.Units
         };
 
         /// <summary>The weapon each Israeli token figure holds: the Palmach scout (C12F, a Palmach woman on Harel's token,
-        /// UnitFigures.ThirdFigure) the Palmach's Sten; the other riflemen with Tal's rig the K98k. No Arab force has a row: no
-        /// source found places a K98k, an MG34 or a Sten with one in 1948, and Tal made no Lee-Enfield or Bren ([GAP]).</summary>
+        /// UnitFigures.ThirdFigure) the Palmach's Sten; the other riflemen with Tal's rig the K98k, the 1948 soldier's rigged
+        /// copy among them (#2384: it has C07's 67 bones and hand). No Arab force has a row: no source found places a K98k, an
+        /// MG34 or a Sten with one in 1948, and Tal made no Lee-Enfield or Bren ([GAP]).</summary>
         public static readonly IReadOnlyDictionary<string, string> ByFigure = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             [UnitFigures.SabraPioneer] = CollectionCatalog.K98k, [UnitFigures.PioneerVeteran] = CollectionCatalog.K98k,
             [UnitFigures.YoungRecruit] = CollectionCatalog.K98k, [UnitFigures.VeteranFighter] = CollectionCatalog.K98k,
+            [UnitFigures.Soldier1948] = CollectionCatalog.K98k,
             [UnitFigures.PalmachScout] = CollectionCatalog.Sten,
         };
 

@@ -653,6 +653,31 @@ namespace Statecraft.Game.Tests
                 Assert.IsTrue(kept.Any(d => (d.centre - at).magnitude < 1f), $"the b21 at {at} is in the props' keep-clear ground");
         }
 
+        /// <summary>#2274's cap (SpecialBuildingModels.MaxPropOffset): a prop whose nearest clear spot is past it is not drawn, so the
+        /// hex props keep no ground for it. With the cap lowered to 1 m, none of the props of 15 May 1948 keeps a disc, and the
+        /// plan places none of them.</summary>
+        [Test]
+        public void HexPropsKeepNoGroundForAPropPastTheCap()
+        {
+            var map = OpenMap();
+            var layer = HexPropModels.ShowAt(map, Opening)!;
+            var uncapped = SpecialBuildingModels.Plan(map, Opening, SpecialBuildingModels.Placements(Opening), _ => true, log: false)
+                .Where(x => x.want.TownEdge).ToList();
+            Assert.AreEqual(3, uncapped.Count, "premise: the well, the crates and the wall on 15 May 1948");
+            var saved = SpecialBuildingModels.MaxPropOffset;
+            SpecialBuildingModels.MaxPropOffset = 1f;
+            try
+            {
+                var kept = layer.Others(map, Opening);
+                foreach (var (w, at) in uncapped)
+                    Assert.IsFalse(kept.Any(d => (d.centre - at).magnitude < 1f && Mathf.Abs(d.radius - SpecialBuildingModels.ClearanceOf(w)) < 0.01f),
+                        w.Key + ": no ground kept for a prop the cap leaves undrawn");
+                CollectionAssert.IsEmpty(SpecialBuildingModels.Plan(map, Opening, SpecialBuildingModels.Placements(Opening), _ => true, log: false)
+                    .Where(x => x.want.TownEdge).ToList(), "the plan places no prop past the cap");
+            }
+            finally { SpecialBuildingModels.MaxPropOffset = saved; }
+        }
+
         sealed class Lease : IDisposable { public void Dispose() { } }
 
         /// <summary>Review of #2266's delta, C1, on today's map: with one model withheld and the rest streamed in later, every

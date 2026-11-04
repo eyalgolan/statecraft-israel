@@ -1,0 +1,15 @@
+{
+    "tool": "FarModelLevels",
+    "source": "Assets/Art/Settlements/Prototype/Models/b13a-netanya-two-storey-v2/b13a-netanya-two-storey-v2.fbx",
+    "source_sha256": "d608b1803bb6f6661ea6ae918e0ac5ecbd9b4fb4b2221eec349fabef2a8f6cbe",
+    "colour_map": "Assets/Art/Settlements/Prototype/Models/b13a-netanya-two-storey-v2/b13a-netanya-two-storey-v2_basecolor.jpg",
+    "colour_map_sha256": "f2ae4805076411c8231a8a4bd949a5801e78481185ed996e981bc07530849408",
+    "source_triangles": 6000,
+    "triangles": 399,
+    "target_triangles": 400,
+    "cell_px": 8,
+    "supersample": 3,
+    "sample_px": 512,
+    "atlas_px": 256,
+    "provenance": "Derived from Tal Heuberger's original (the source FBX and colour map above) by FarModelLevels: a subset of the model's own vertices (exact positions, none added or moved) and a colour map baked from the original's. Same licence, CC BY-NC-ND 4.0, credit Tal Heuberger; lighter far-off derived copy; owner confirms Tal's permission, 3 Nov 2026 (#2378)."
+}

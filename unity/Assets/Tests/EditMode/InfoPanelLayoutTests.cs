@@ -40,7 +40,8 @@ public class InfoPanelLayoutTests
     static IEnumerator Rendered(int w, int h, GameSession g, System.Action<VisualElement, InfoPanelPresenter> act, System.Action<VisualElement> check,
                                 UiText? text = null, bool hebrew = false, System.Action<VisualElement>? settled = null,
                                 System.Func<Statecraft.Game.Map.Units.PlacedToken?>? unit = null, System.Func<int, string?>? unitName = null,
-                                System.Action<IReadOnlyCollection<(int q, int r)>>? showReachable = null, int uiScale = 100)
+                                System.Action<IReadOnlyCollection<(int q, int r)>>? showReachable = null, int uiScale = 100,
+                                MapRegions? regions = null)
     {
         var t = text ?? Text;
         var rt = new RenderTexture(w, h, 0);
@@ -59,7 +60,7 @@ public class InfoPanelLayoutTests
         var bridge = new SimBridge(g, t);
         var hud = new HudPresenter(root, bridge, t);
         var card = new EventCardPresenter(root, bridge, t, null);
-        var info = new InfoPanelPresenter(root, bridge, t, Names(), regions: Regions(), selectedUnit: unit, unitName: unitName, showReachable: showReachable);
+        var info = new InfoPanelPresenter(root, bridge, t, Names(), regions: regions ?? Regions(), selectedUnit: unit, unitName: unitName, showReachable: showReachable);
         try
         {
             act(root, info);
@@ -154,6 +155,34 @@ public class InfoPanelLayoutTests
                 }
             }, uiScale: uiScale);
         Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
+    /// <summary>#2039, owner ruling of 2 Nov 2026 ("Keep hexes, fix the panel"): the hex the game names Jerusalem also holds
+    /// the Old City, so the control data puts it on the Arab side from 11 June 1948 and the map colours it so; its panel line
+    /// names West Jerusalem as Israeli-held instead, in English and Hebrew. From the start, 15 May 1948, too: the opening period's
+    /// no-man's land (data code m, to 10 June) names it so as well (owner, 3 November 2026: "Israeli-held from 15 May (Recommended)", #2039 issuecomment-6610644690).</summary>
+    [UnityTest]
+    public IEnumerator TheJerusalemPanelNamesWestJerusalemAsIsraeliHeld([Values(false, true)] bool hebrew)
+    {
+        var t = hebrew ? UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml") : Text;
+        var regions = new MapRegions(Subdistricts1948.Parse(MapFile(Subdistricts1948.FileName)), Armistice1949.Parse(MapFile(Armistice1949.FileName)),
+            Control1948.Parse(MapFile(Control1948.FileName)));
+        var jerusalem = C.SettlementHexes.Single(s => s.Id == "jerusalem");
+        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        var expected = new[]
+        {
+            (new System.DateTime(1948, 5, 15), hebrew ? "בשליטת ישראל (מערב ירושלים)" : "Held by Israel (West Jerusalem)"),
+            (new System.DateTime(1948, 6, 10), hebrew ? "בשליטת ישראל (מערב ירושלים)" : "Held by Israel (West Jerusalem)"),
+            (new System.DateTime(1948, 8, 1), hebrew ? "בשליטת ישראל (מערב ירושלים)" : "Held by Israel (West Jerusalem)"),
+            (new System.DateTime(1949, 9, 1), hebrew ? "הצד הישראלי של קו שביתת הנשק (מערב ירושלים)" : "Israeli side of the armistice line (West Jerusalem)"),
+        };
+        foreach (var (date, line) in expected)
+        {
+            g.State.Date = date;
+            yield return Rendered(1920, 1080, g, (root, info) => info.Show(jerusalem.Q, jerusalem.R),
+                root => Assert.AreEqual(line, root.Q<Label>("info-region").text.Split('\n')[0], $"{date:yyyy-MM-dd}"),
+                text: t, hebrew: hebrew, regions: regions);
+        }
     }
 
     /// <summary>#40, owner decision of 22 Oct 2026 (a condition on #1135): the info panel is a ScrollView, whose rows the scroll

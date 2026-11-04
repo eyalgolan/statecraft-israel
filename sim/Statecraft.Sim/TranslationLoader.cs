@@ -17,8 +17,10 @@ namespace Statecraft.Sim
 
         static readonly string[] LanguageFiles = { Translations.UiFile, Translations.EventsFile, Translations.ContentFile };
 
-        /// <summary>UI keys only Hebrew may translate, for now (owner, 24 October 2026, #1604): the advisors and How to play.</summary>
-        public static readonly IReadOnlyList<string> HebrewOnlyUi = new[] { "advisor.", "how_to_play." };
+        /// <summary>UI keys only Hebrew may translate, for now (owner, 24 October 2026, #1604): the advisors and How to play, and
+        /// the encyclopedia that replaced How to play (#1606: once the game shows a translated ui.yaml, this is what keeps it
+        /// English or Hebrew, as translations/README.md and tools/translate.py already treat it).</summary>
+        public static readonly IReadOnlyList<string> HebrewOnlyUi = new[] { "advisor.", "how_to_play.", "encyclopedia." };
 
         /// <summary>translations/ beside a folder named content: the repository's beside content/, StreamingAssets/translations
         /// beside StreamingAssets/content. Null for a content folder with another name, such as a test fixture, so a fixture

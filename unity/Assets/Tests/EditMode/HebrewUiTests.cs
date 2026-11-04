@@ -884,6 +884,67 @@ public class HebrewUiTests
         finally { Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt); }
     }
 
+    // --- A language from translations/ (#1606) --------------------------------------------------------------------------
+
+    /// <summary>Romanian (translations/ro, from #1604) is not offered yet (owner, 3 Nov 2026: "Hide until more is
+    /// translated"): no button for it on the start screen or in Settings, and a stored "ro" reads as English at the next
+    /// start, since only a language the buttons offer is kept. A flag still wins.</summary>
+    [Test]
+    public void RomanianIsNotOfferedYet()
+    {
+        CollectionAssert.AreEqual(new[] { UiLanguage.English, UiLanguage.Hebrew }, LanguageButtons.All.Select(l => l.language).ToArray(),
+            "English and Hebrew only");
+        const string page = "http://localhost:8000/index.html";
+        var none = new string[0];
+        Assert.AreEqual(UiLanguage.English, UiLanguage.AtStart("ro", page, none, webgl: true), "a stored ro is not offered");
+        Assert.AreEqual(UiLanguage.English, UiLanguage.AtStart("ro", null, none, webgl: false));
+        Assert.AreEqual(UiLanguage.Hebrew, UiLanguage.AtStart("ro", page + "?lang=he", none, webgl: true), "a flag wins");
+
+        var settings = new SettingsStore(Path.Combine(saveDir, "settings"));
+        BootWithStartScreen(settings, null);
+        Assert.IsTrue(StartOpen, "precondition: the start screen shows");
+        Assert.IsNull(Ui.Q<Button>("start-language-ro"), "no Romanian on the start screen");
+        Assert.IsNull(Ui.Q<Button>("settings-language-ro"), "nor in Settings");
+    }
+
+    /// <summary>A new language's strings: each key its translations/&lt;lang&gt;/ui.yaml has reads the translation, every
+    /// other key the English (the per-string fallback of #1606).</summary>
+    [Test]
+    public void ANewLanguageFallsBackToTheEnglishPerString()
+    {
+        var text = En.Over(new[] { new KeyValuePair<string, string>("ui.lang", "xx"), new KeyValuePair<string, string>("start.new_game", "[xx] start.new_game") }, "translations/xx/ui.yaml");
+        Assert.AreEqual("xx", text["ui.lang"]);
+        Assert.AreEqual("[xx] start.new_game", text["start.new_game"], "a key the translation has");
+        Assert.AreEqual(En["hud.turn"], text["hud.turn"], "a key it lacks: the English");
+        Assert.AreEqual("en", En["ui.lang"], "the English strings are left as they were");
+    }
+
+    /// <summary>The way in for a language once it is offered: GameRoot builds the UI from its translations/&lt;lang&gt;/ui.yaml
+    /// (Content.Translations, #2124) over the English, left to right in the Latin face. A key the translation adds (a marker
+    /// here, not Romanian) shows; the rest is English.</summary>
+    [Test]
+    public void ATranslatedLanguagesStringsFallBackToEnglish()
+    {
+        var translations = Inputs.Content.Translations;
+        var i = translations.FindIndex(t => t.Lang == "ro");
+        Assert.GreaterOrEqual(i, 0, "precondition: translations/ro loads with the content");
+        var real = translations[i];
+        const string marker = "[ro] start.new_game";
+        translations[i] = new Statecraft.Sim.TranslationSet
+        {
+            Lang = real.Lang, Events = real.Events, Content = real.Content,
+            Ui = real.Ui.Append(new KeyValuePair<string, string>("start.new_game", marker)).ToList(),
+        };
+        try
+        {
+            var game = BootWithStartScreen(new SettingsStore(Path.Combine(saveDir, "settings")), "ro");
+            Assert.AreEqual(marker, Ui.Q<Button>("start-new-game").text, "a key translations/ro has");
+            Assert.AreEqual(En.Format("hud.turn", game.Bridge!.State.Turn), Ui.Q<Label>("turn").text, "a key it lacks: the English");
+            Assert.IsFalse(Ui.Q("root").ClassListContains(UiLanguage.HebrewClass), "left to right, the Latin face");
+        }
+        finally { translations[i] = real; }
+    }
+
     /// <summary>#1210: the one rule the event card and the outcome caption share. In Hebrew a text with a Hebrew form shows
     /// it, a text without one falls back to the English (fail open); in English the English always.</summary>
     [Test]
