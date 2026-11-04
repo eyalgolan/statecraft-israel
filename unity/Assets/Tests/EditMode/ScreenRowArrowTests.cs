@@ -7,8 +7,11 @@ using NUnit.Framework;
 using Statecraft.Game;
 using Statecraft.Game.Map;
 using Statecraft.Game.UI;
+using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.LowLevel;
 using UnityEngine.TestTools;
 using UnityEngine.UIElements;
 using Object = UnityEngine.Object;
@@ -17,8 +20,9 @@ using Object = UnityEngine.Object;
 /// its rows; Left and Right never move it, and with no screen open none of the four does. The owner's answer on #2340,
 /// Q27: "do the recommended for all" (https://github.com/eyalgolan/statecraft-israel/issues/2340#issuecomment-6623136558).
 /// Same harness as KeyboardTurnTests: Map.unity at 1280x720 with GameRoot's own NavigationGuard, a new GDD game, and the
-/// moves sent as the NavigationMoveEvent the UI provider raises (GameRoot hands the arrow keys to the same Step).</summary>
-public class ScreenRowArrowTests
+/// moves sent as the NavigationMoveEvent the UI provider raises; one test presses the real arrow keys through GameRoot's
+/// frame, on the camera tests' input fixture.</summary>
+public class ScreenRowArrowTests : SharedCameraActionsFixture
 {
     string saveDir = "";
     RenderTexture? rt; PanelSettings? ps;
@@ -58,8 +62,8 @@ public class ScreenRowArrowTests
     }
 
     /// <summary>Boots the game, answers the opening card from the keyboard (Tab, Enter) and counts every button press
-    /// from here on, so a move that presses anything shows.</summary>
-    IEnumerator Boot()
+    /// from here on, so a move that presses anything shows. <paramref name="hebrew"/> sets the UI's language before Begin.</summary>
+    IEnumerator Boot(bool hebrew = false)
     {
         EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
         var doc = Object.FindFirstObjectByType<UIDocument>();
@@ -70,6 +74,7 @@ public class ScreenRowArrowTests
         Object.FindFirstObjectByType<MapScene>().Build(MapFocusTests.Inputs.Map);
         root = Object.FindFirstObjectByType<GameRoot>();
         root.Store = new SaveStore(saveDir);
+        root.Language = hebrew ? UiLanguage.Hebrew : UiLanguage.English;
         root.Begin(MapFocusTests.Inputs, 0);
         ui = doc.rootVisualElement;
         for (int i = 0; i < 30 && !(ui.Q("top-bar").worldBound.height > 0); i++) yield return null;
@@ -101,11 +106,17 @@ public class ScreenRowArrowTests
 
     /// <summary>L4 and B6, a multi-row screen: in Settings, Down walks the option rows one at a time, from a choice button to
     /// the choice in the next row nearest below it, and Up walks back; Left and Right leave the focus where it is; the focus
-    /// never leaves the screen at either end, and no move presses anything.</summary>
-    [UnityTest]
-    public IEnumerator UpAndDownWalkTheSettingsRowsL4()
+    /// never leaves the screen at either end, nor reaches the header's X, which is no row (#2549 review), and no move
+    /// presses anything.</summary>
+    [UnityTest] public IEnumerator UpAndDownWalkTheSettingsRowsL4() => SettingsRows(false);
+
+    /// <summary>The same in the Hebrew UI (GameRoot.Language), right to left.</summary>
+    [UnityTest] public IEnumerator UpAndDownWalkTheSettingsRowsInHebrewL4() => SettingsRows(true);
+
+    IEnumerator SettingsRows(bool hebrew)
     {
-        yield return Boot();
+        yield return Boot(hebrew);
+        Assert.AreEqual(hebrew, ui.Q("root").ClassListContains(UiLanguage.HebrewClass), "precondition: the UI's language");
         yield return Open("settings");
         yield return Focus("settings-tiltshift");
         Assert.AreEqual(0, SettingsRow());
@@ -133,6 +144,7 @@ public class ScreenRowArrowTests
         }
         for (int i = 0; i < 12; i++) yield return Move(NavigationMoveEvent.Direction.Up);
         Assert.IsTrue(ui.Q("screen-settings").Contains((VisualElement)Focused!), "Up past the first row stays in the screen, at " + FocusedName);
+        Assert.AreEqual(reachable[0], SettingsRow(), "Up past the first row stays on it, not the header's X, at " + FocusedName);
         Assert.AreEqual(DisplayStyle.Flex, ui.Q("screen-settings").resolvedStyle.display, "the screen is still open");
         Assert.AreEqual(0, presses, "moving pressed nothing");
     }
@@ -159,6 +171,58 @@ public class ScreenRowArrowTests
         Assert.AreEqual(lines[1].name + "-down", FocusedName, "and Up skips them too");
         Assert.AreEqual(0, presses, "moving pressed nothing");
     }
+
+    /// <summary>L4 and B6 through GameRoot (#2549 review): the real Up and Down keys, read by GameRoot's own key poll in
+    /// its frame, walk the Budget's lines, and the camera GameRoot wired (ScreenTakesUpDown) does not pan on them while
+    /// the screen is open; once it is closed, the same keys pan and leave the focus where it is.</summary>
+    [UnityTest]
+    public IEnumerator TheArrowKeysThroughGameRootWalkTheRowsAndPanOnlyWithTheScreenClosedL4()
+    {
+        // The keys as state events: the fixture's Press (Set) does not run in an edit-mode [UnityTest], and Boot needs frames.
+        InputSystem.actions = AssetDatabase.LoadAssetAtPath<InputActionAsset>("Assets/InputSystem_Actions.inputactions");
+        var keyboard = InputSystem.AddDevice<Keyboard>();
+        // Warm both keys: ButtonControl.wasPressedThisFrame takes an old path on its first call ever and can miss a press
+        // (as in MapPointerTickTests); in the game GameRoot asks every frame, so they are warm.
+        _ = keyboard.upArrowKey.wasPressedThisFrame; _ = keyboard.downArrowKey.wasPressedThisFrame;
+        yield return Boot();
+        var cam = Object.FindFirstObjectByType<CameraController>();
+        var rig = cam.GetComponent<CameraRig>();
+        Send(cam, "Awake"); Send(cam, "OnEnable");
+        try
+        {
+            yield return Open("budget");
+            var lines = ui.Q<ScrollView>("budget-rows").contentContainer.Children().Where(r => r.Q<Button>(r.name + "-down") != null).ToList();
+            yield return Focus(lines[0].name + "-down");
+            // One frame with the key down: GameRoot's poll (Update) and the camera's (Tick) both read it.
+            Vector3 Hold(UnityEngine.InputSystem.Key k)
+            {
+                var from = rig.LookAt;
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(k)); InputSystem.Update();
+                Assert.IsTrue(keyboard[k].wasPressedThisFrame, "precondition: " + k + " went down this frame");
+                Send(root, "Update");
+                for (int i = 0; i < 5; i++) cam.Tick(0.1f);
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState()); InputSystem.Update();
+                cam.Tick(0.1f);
+                return rig.LookAt - from;
+            }
+            Assert.AreEqual(Vector3.zero, Hold(UnityEngine.InputSystem.Key.DownArrow), "screen open: Down does not pan");
+            Assert.AreEqual(lines[1].name + "-down", FocusedName, "Down: the next line's -");
+            Assert.AreEqual(Vector3.zero, Hold(UnityEngine.InputSystem.Key.UpArrow), "screen open: Up does not pan");
+            Assert.AreEqual(lines[0].name + "-down", FocusedName, "Up: back to the first line's -");
+            UiTestKit.Press(ui.Q<Button>("nav-budget"));
+            yield return Frames(5);
+            Assert.AreEqual(DisplayStyle.None, ui.Q("screen-budget").resolvedStyle.display, "precondition: the Budget is closed");
+            yield return Focus("nav-budget");
+            presses = 0;
+            Assert.Greater(Hold(UnityEngine.InputSystem.Key.UpArrow).magnitude + Hold(UnityEngine.InputSystem.Key.DownArrow).magnitude, 1f, "no screen open: Up and Down pan (B6)");
+            Assert.AreEqual("nav-budget", FocusedName, "no screen open: the focus stays (B6)");
+            Assert.AreEqual(0, presses, "no key pressed a button");
+        }
+        finally { Send(cam, "OnDisable"); }
+    }
+
+    static void Send(MonoBehaviour c, string message) =>
+        c.GetType().GetMethod(message, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.Invoke(c, null);
 
     /// <summary>B6 with no screen open, through GameRoot's guard: none of the four directions moves the focus off a HUD
     /// button or presses it.</summary>

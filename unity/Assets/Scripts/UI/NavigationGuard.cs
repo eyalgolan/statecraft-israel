@@ -49,7 +49,8 @@ namespace Statecraft.Game.UI
             var screen = name == null ? null : root.Q<VisualElement>("screen-" + name);
             if (screen == null) return false;
             var rows = new List<VisualElement>();
-            screen.Query<VisualElement>().ForEach(e => { if (Reachable(e, screen)) rows.Add(e); });
+            // The header's X (ScreenNav's .screen-close) is no row (#2549 review): Up from the first row stops there.
+            screen.Query<VisualElement>().ForEach(e => { if (Reachable(e, screen) && !e.ClassListContains("screen-close")) rows.Add(e); });
             if (rows.Count == 0) return false;
             var at = root.panel?.focusController?.focusedElement as VisualElement;
             var to = at == null || !rows.Contains(at) ? rows[up ? rows.Count - 1 : 0] : Beyond(rows, at.worldBound, up);
