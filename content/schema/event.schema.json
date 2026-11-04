@@ -178,6 +178,7 @@
             "description": "R-EFX-008 (GDD loop only): projects.yaml ids of locked kinds this option makes available to StartProject. A sensitive event may not unlock (R-EFX-005).",
             "items": { "type": "string", "minLength": 1 }
           },
+          "debt_dollars": { "type": "number", "minimum": 0, "description": "R-EFX-009 (applied under gdd-0.3 only): US$ millions, more than 0, this option also adds to Debt, in IL millions at the mvp.il_per_dollar rate in force on the event's date." },
           "alternative": { "$ref": "#/definitions/alternative" }
         }
       }

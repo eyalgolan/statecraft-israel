@@ -141,6 +141,13 @@ namespace Statecraft.Sim
                 why.Add(new Cause("events", fx.Target, change, $"{PlayerText.Change(c, fx.Target, change)} ({title})",
                     key: fx.Target == Pools.FoodTarget || fx.Target == Pools.ArmsTarget ? CauseKeys.EventStock : CauseKeys.EventAmount, args: Context(title, localizedTitle)));
             }
+            // R-EFX-009 (#2457): the bond's dollars also go onto Debt, at the event's date's rate, scaled like the numeric effects.
+            if (DebtFor(c, Get(c, eventId), o, s.Date) is double debt)
+            {
+                s.Debt += debt * share;
+                why.Add(new Cause("events", "debt", debt * share, $"{PlayerText.Change(c, "debt", debt * share)} ({title})",
+                    key: CauseKeys.EventAmount, args: Context(title, localizedTitle)));
+            }
             // R-EFX-006: the structured effects after the numeric ones, in list order. The loader has checked every target.
             foreach (var g in o.GrantUnits)
             {
@@ -203,6 +210,16 @@ namespace Statecraft.Sim
             if (o.SetRung.HasValue) SecuritySystem.SetRung(c, s, o.SetRung.Value, why);
             // R-POW-004: an exchange card returns its front's prisoners, whichever way it was resolved (it has one option).
             if (Get(c, eventId).Prisoners is var front && front != "") Prisoners.Return(c, s, front, why);
+        }
+
+        /// <summary>R-EFX-009 (owner, 2 November 2026, #2224: "Add equal Debt", "Rate in force on the date (Recommended)"): the
+        /// IL millions of Debt the option's debt_dollars adds under gdd-0.3, at the mvp.il_per_dollar rate in force on the
+        /// event's date (<see cref="FillDate"/>); null under any other ruleset or with no debt_dollars.</summary>
+        static double? DebtFor(Content c, GameEvent e, EventOption o, DateTime date)
+        {
+            if (c.Ruleset != SaveGame.Gdd03Ruleset || o.DebtDollars is not double dollars) return null;
+            var day = FillDate(e, date);
+            return dollars * c.RulesAt(day).Mvp!.IlPerDollarOn(day);
         }
 
         /// <summary>A late-fired event can be resolved after a dated record's window has ended (chapters design 3.2): an
@@ -281,6 +298,9 @@ namespace Statecraft.Sim
                 Add(stock ? OptionEffectPreviewKind.Stock : OptionEffectPreviewKind.Amount, fx.Target, fx.Delta,
                     PlayerText.Change(c, fx.Target, fx.Delta), fx.Target, name, amount);
             }
+            if (c.Events.FirstOrDefault(e => e.Options.Contains(o)) is GameEvent owner && DebtFor(c, owner, o, s.Date) is double debt)
+                Add(OptionEffectPreviewKind.Amount, "debt", debt, PlayerText.Change(c, "debt", debt), "debt", PlayerText.Target(c, "debt"),
+                    PlayerText.MoneyChange(c, "debt", debt));
             foreach (var g in o.GrantUnits)
             {
                 var place = GrantPlace(c, g).Name;

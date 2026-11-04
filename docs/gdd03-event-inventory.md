@@ -27,7 +27,7 @@ retire among the economy targets, `fx_reserves` stays the foreign-currency ledge
 stay readouts that an event cannot write (R-EFX-001). No shipped card targets Attention, the passive budget, the Food
 refill or a city-loss defeat. Treasury costs borrow their shortfall as under `gdd-0.1` (R-MONEY-003).
 
-**The excluded cards.** The second table probes each of the five excluded cards: it removes that one exclusion and
+**The excluded cards.** The second table probes each of the four excluded cards: it removes that one exclusion and
 reports what the `gdd-0.3` loader then says. It is a probe only. Returning a card to `gdd-0.3` still needs the
 reviewed follow-up that `docs/WRITING_EVENTS.md` ("GDD 0.3 first-slice availability") describes; this file changes no
 exclusion.
@@ -97,9 +97,10 @@ exclusion.
 | `iraqi_exodus` | `airlift` | `effects[1].morale` | 0.03 | legacy rulesets only (card excluded) | none (not in play) | no |
 | `iraqi_exodus` | `pace` | `effects[0].morale` | -0.05 | legacy rulesets only (card excluded) | none (not in play) | no |
 | `iraqi_exodus` | `pace` | `effects[1].intl_standing` | -0.02 | legacy rulesets only (card excluded) | none (not in play) | no |
-| `israel_bonds` | `launch` | `effects[0].fx_reserves` | 52 | legacy rulesets only (card excluded) | none (not in play) | no |
-| `israel_bonds` | `launch` | `effects[1].intl_standing` | 0.02 | legacy rulesets only (card excluded) | none (not in play) | no |
-| `israel_bonds` | `donations_only` | `effects[0].fx_reserves` | 10 | legacy rulesets only (card excluded) | none (not in play) | no |
+| `israel_bonds` | `launch` | `effects[0].fx_reserves` | 52 | `effects[0].fx_reserves` (same) | 52 | no |
+| `israel_bonds` | `launch` | `effects[1].intl_standing` | 0.02 | `effects[1].intl_standing` (same) | 0.02 | no |
+| `israel_bonds` | `launch` | `debt_dollars` | 52 (US$ m; Debt under gdd-0.3 only) | `debt_dollars` (same) | 52 (US$ m; Debt under gdd-0.3 only) | no |
+| `israel_bonds` | `donations_only` | `effects[0].fx_reserves` | 10 | `effects[0].fx_reserves` (same) | 10 | no |
 | `jerusalem_ceasefire` | `keep` | `effects[0].security` | 0.015 | `effects[0].security` (same) | 0.015 | no |
 | `jerusalem_ceasefire` | `hold_out` | `effects[0].security` | -0.015 | `effects[0].security` (same) | -0.015 | no |
 | `jerusalem_ceasefire` | `hold_out` | `effects[1].intl_standing` | -0.03 | `effects[1].intl_standing` (same) | -0.03 | no |
@@ -158,14 +159,13 @@ exclusion.
 | `ten_days` | `southern_front` | `set_rung` | set 5 | `set_rung` (same) | set 5 | no |
 | `ten_days` | `southern_front` | `effects[0].security` | 0.015 | `effects[0].security` (same) | 0.015 | no |
 
-121 rows: 41 cards under gdd-0.1, 36 under gdd-0.3.
+122 rows: 41 cards under gdd-0.1, 37 under gdd-0.3.
 
 | Excluded card | gdd-0.3 loader with only this exclusion removed |
 |---|---|
 | `austerity_1949` | refused at `events[austerity_1949].options[impose].set_policy.rationing`: retired policy write under gdd-0.3 (R-EFX-001) |
 | `forex_crisis_1951` | refused at `events[forex_crisis_1951].options[cut_imports].effects.food_supply`: unsupported event target under gdd-0.3 (R-EFX-001) |
 | `iraqi_exodus` | refused at `events[iraqi_exodus].options[airlift].effects.housing`: unsupported event target under gdd-0.3 (R-EFX-001) |
-| `israel_bonds` | loads: every field passes the gdd-0.3 checks |
 | `maabarot_policy` | refused at `events[maabarot_policy].options[maabarot].set_policy.maabarot`: retired policy write under gdd-0.3 (R-EFX-001) |
 
 <!-- inventory:end -->

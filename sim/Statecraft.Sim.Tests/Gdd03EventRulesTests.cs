@@ -6,9 +6,10 @@ public class Gdd03EventRulesTests
 {
     const string Manifest = "gdd03-events.yaml";
     const string Empty = "ruleset: gdd-0.3\nexclusions: []\n";
-    static readonly string[] Excluded = { "austerity_1949", "forex_crisis_1951", "iraqi_exodus", "israel_bonds", "maabarot_policy" };
+    static readonly string[] Excluded = { "austerity_1949", "forex_crisis_1951", "iraqi_exodus", "maabarot_policy" };
     // #2224 (owner, 2 November 2026, "Bring back 3, design bonds (Recommended)"): D1/Q2 keep the foreign-currency ledger,
-    // so these three cards, excluded by #1772 for want of a ledger mapping, are active again. israel_bonds stays excluded.
+    // so these three cards, excluded by #1772 for want of a ledger mapping, are active again. israel_bonds came back with
+    // its equal Debt (#2457, R-EFX-009; owner, 2 November 2026, #2224: "Add equal Debt").
     static readonly string[] Restored = { "clothing_rationing_1950", "reparations_claim", "reparations_vote" };
     static string Card(string id = "probe", string option = "") =>
         $"id: {id}\ntitle: Fixture\ntext: Fixture.\nfrom: 1948-05-15\noptions:\n  - id: ok\n    text: Accept\n    historical: true\n" + option;
@@ -189,7 +190,7 @@ public class Gdd03EventRulesTests
         }, Directory.GetFiles(Path.Combine(root, "events"), "*.yaml").Select(p => "events/" + Path.GetFileName(p)));
     }
     [Fact]
-    public void RealCatalogueExcludesExactlyFiveWholeCardsAndKeepsOrder()
+    public void RealCatalogueExcludesExactlyFourWholeCardsAndKeepsOrder()
     {
         var old = Real(false); var modern = Real(true);
         Assert.Equal(41, old.Events.Count);   // Deport's two cards (#801) are not excluded
@@ -334,7 +335,8 @@ public class Gdd03EventRulesTests
     [Fact]
     public void AllTwentyFourAffectedAssignmentsRetainTheirLegacyValues()
     {
-        Assert.Equal(Inventory.OrderBy(x => x, StringComparer.Ordinal), Rows(Real(false), Excluded).OrderBy(x => x, StringComparer.Ordinal));
+        // israel_bonds is no longer excluded (#2457), but its three rows keep the legacy values #1772 pinned.
+        Assert.Equal(Inventory.OrderBy(x => x, StringComparer.Ordinal), Rows(Real(false), Excluded.Append("israel_bonds")).OrderBy(x => x, StringComparer.Ordinal));
         Assert.All(Real(false).Events, e => Assert.All(e.Options, o =>
         { Assert.Empty(o.GrantUnits); Assert.Empty(o.CityEffects); Assert.Empty(o.UnlockProjects); }));
     }
@@ -371,7 +373,81 @@ public class Gdd03EventRulesTests
         Assert.Equal(new DateTime(1950, 7, 15), CardDate("clothing_rationing_1950"));
         Assert.Equal(new DateTime(1951, 3, 15), CardDate("reparations_claim"));
         Assert.Equal(new DateTime(1951, 12, 15), CardDate("reparations_vote"));
-        Assert.Null(CardDate("israel_bonds"));
+        // #2457: back under gdd-0.3 on the turn EventRetimingTests pins for it in the gdd-0.1 golden run. As a hard anchor
+        // left unanswered in Historical mode it takes launch, so the Debt it adds is the IL equivalent of the card's $52m.
+        Assert.Equal(new DateTime(1951, 5, 15), CardDate("israel_bonds"));
+        Assert.Equal("launch", s.ChosenOptions["israel_bonds"]);
+    }
+
+    // R-EFX-009 (#2457; owner, 2 November 2026, #2224: "Add equal Debt", "Rate in force on the date (Recommended)"): under
+    // gdd-0.3 an option's debt_dollars adds that many US$ millions to Debt in IL millions, at the mvp.il_per_dollar rate in
+    // force on the event's date. The fixture's rate is 0.5 from 15 May 1948 and 0.25 from 15 August: the card's window
+    // ends on 10 August and the turn is 15 August, so the event's date (9 August) gives 0.5, the turn's date would give 0.25.
+    // gdd-0.1 reads the field and leaves Debt alone. Red without the effect: Debt stays put under gdd-0.3 too.
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void DebtDollarsAddDebtAtTheEventsDateRateUnderGdd03Only(bool modern)
+    {
+        var card = Card(option: "    effects: [{ target: fx_reserves, delta: 52 }]\n    debt_dollars: 52\n").Replace("from: 1948-05-15", "from: 1948-08-01\nto: 1948-08-10");
+        var c = Load(Files(modern), card);
+        Assert.Equal(modern, c.Ruleset == SaveGame.Gdd03Ruleset);
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        s.Date = new DateTime(1948, 8, 15); s.PendingEvents.Add("probe");
+        var (fx, debt, treasury) = (s.FxReserves, s.Debt, s.Treasury);
+        var preview = EventSystem.OptionEffects(c, s, c.Events.Single(e => e.Id == "probe").Options[0]);
+        var why = new List<Cause>();
+        Assert.Null(EventSystem.Choose(c, s, "probe", "ok", why));
+        Assert.Equal(fx + 52, s.FxReserves);
+        Assert.Equal(treasury, s.Treasury);
+        Assert.Equal(debt + (modern ? 26 : 0), s.Debt, 9);
+        var lines = why.Where(x => x.Target == "debt").ToList();
+        var shown = preview.Where(x => x.Target == "debt").ToList();
+        if (!modern) { Assert.Empty(lines); Assert.Empty(shown); return; }
+        var line = Assert.Single(lines);
+        Assert.Equal((CauseKeys.EventAmount, 26.0), (line.Key, line.Delta));
+        Assert.StartsWith("Debt", line.Message);
+        Assert.EndsWith("(Fixture)", line.Message);
+        Assert.Equal((CauseKeys.EventAmount, 26.0), (Assert.Single(shown).Key, shown[0].Delta));
+    }
+    // R-EFX-009, R-EVT-003: a disloyal minister's half share halves the Debt with the foreign currency.
+    [Fact]
+    public void DelegatedHalfShareHalvesTheDebt()
+    {
+        var c = Load(Files(), Card(option: "    effects: [{ target: fx_reserves, delta: 4 }]\n    debt_dollars: 4\n") + "office: prime_minister\n");
+        foreach (var p in c.People) p.Loyalty = 0;
+        var s = Simulation.NewGame(c, 1, Mode.Historical); s.Debt = 0;
+        var fx = s.FxReserves;
+        EventSystem.Delegate(c, s, new List<Cause>());
+        Assert.Equal((fx + 2, 1.0), (s.FxReserves, s.Debt));
+    }
+    // R-EFX-009: the loader checks the field in every ruleset, since every ruleset reads the same cards.
+    [Theory]
+    [InlineData(true, "0")]
+    [InlineData(true, "-52")]
+    [InlineData(true, ".nan")]
+    [InlineData(false, ".inf")]
+    public void DebtDollarsMustBeAFinitePositiveAmount(bool modern, string value)
+    {
+        var ex = Assert.Throws<ContentException>(() => Load(Files(modern), Card(option: $"    debt_dollars: {value}\n")));
+        Assert.Equal(("events/probe.yaml", "events[probe].options[ok].debt_dollars"), (ex.File, ex.Field));
+    }
+    // R-EFX-009 (#2457): on the real card, launch adds the $52m and IL 18.564m of Debt (52 x 0.357, the rate in force on
+    // 10 May 1951); donations_only adds its $10m and no Debt (owner: "No Debt for donations; use 52 (Recommended)").
+    [Theory]
+    [InlineData("launch", 52, 18.564)]
+    [InlineData("donations_only", 10, 0)]
+    public void IsraelBondsLaunchAddsEqualDebtAndDonationsAddNone(string option, double dollars, double debt)
+    {
+        var c = Real(true);
+        var s = Simulation.NewGame(c, GoldenRun.Seed, Mode.Historical);
+        s.Date = new DateTime(1951, 5, 15); s.PendingEvents.Add("israel_bonds");
+        var (fx, before) = (s.FxReserves, s.Debt);
+        var why = new List<Cause>();
+        Assert.Null(EventSystem.Choose(c, s, "israel_bonds", option, why));
+        Assert.Equal(fx + dollars, s.FxReserves, 9);
+        Assert.Equal(before + debt, s.Debt, 9);
+        Assert.Equal(debt == 0 ? 0 : 1, why.Count(x => x.Target == "debt" && x.Key == CauseKeys.EventAmount));
     }
     static readonly string[] SourceBytes =
     {
@@ -397,7 +473,7 @@ public class Gdd03EventRulesTests
         "hula_drainage:b7ec7159b5cb6ecc009e1ff7e12a7f2426ee1c4b992b8c91c4675c8df3cc1bf5", // re-pinned for #1065 (Beri's native Hebrew read)
         "idf_founding:caad7affcf0309a41c56956c10dd15936ec319ac996ddff6f2cd85efbcebc51e", // re-pinned for #1065 (Beri's native Hebrew read)
         "iraqi_exodus:461dbb8a0685b7dceb6242d8e819635a27bb10033463e66d1a2e3ac68c9b8521", // re-pinned for #1065 (Beri's native Hebrew read)
-        "israel_bonds:9bb4e8f38b8c9dc41b339645457efe1ce8d74580c53556faf4c81df50f67a992", // re-pinned for #1065 (Beri's native Hebrew read)
+        "israel_bonds:e91587a9e0a9004c5549e1ce4babb6f6c564f4db0514acc98769e51605e05160", // re-pinned for #1065 (Beri's native Hebrew read), then for #2457 (R-EFX-009: launch's debt_dollars: 52 and its comment; owner, 2 November 2026, #2224, "Add equal Debt"; card text, Hebrew, sources, review status and the 52 unchanged)
         "jerusalem_ceasefire:b850682a7736dcf2870550322f32a2d5c30963a05529dc9162dd68c9234648d6", // re-pinned for #1065 (Beri's native Hebrew read)
         "jerusalem_demilitarisation_guard:a9693784deafaad901268afd8a0c47a2f5b7d5f75eba33d6180f94b62913fb53", // re-pinned for #1065 (owner's native read; flag removed in 05b5777d9), then for the stale reviewer comment (comment-only)
         "jerusalem_military_government:526dbc88eabe4691e3ee1f3ed2c5fdeb640f11ae0a7a632c63066175b9c18176", // re-pinned for #1065 (Beri's native Hebrew read)
