@@ -290,7 +290,7 @@ namespace Statecraft.Game.Map.Kits
                 if (p.NameHeSources.Count > 0 && string.IsNullOrWhiteSpace(p.NameHe)) throw new InvalidDataException($"{at} name_he_sources without a name_he");
                 // Absent (a person has reviewed the name) or exactly agent-checked: blank, null or a list is neither.
                 if (p.NameHeReviewGiven && p.NameHeReview != "agent-checked")
-                    throw new InvalidDataException($"{at} name_he_review '{p.NameHeReview}' is not agent-checked (delete the line once a person has reviewed the name)");
+                    throw new InvalidDataException($"{at} name_he_review '{p.NameHeReview}' is not agent-checked (delete the line once a native speaker, or an AI-assisted contributor who discloses it, has reviewed the name, #564)");
                 if (p.NameHeReviewGiven && string.IsNullOrWhiteSpace(p.NameHe)) throw new InvalidDataException($"{at} name_he_review without a name_he");
                 for (int i = 0; i < p.NameHeSources.Count; i++)
                     if (!p.NameHeSources[i].Url.StartsWith("https://") || string.IsNullOrWhiteSpace(p.NameHeSources[i].Checked))
