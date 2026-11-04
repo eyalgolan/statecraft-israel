@@ -10,8 +10,9 @@ namespace Statecraft.Game.Map.Routes
 {
     /// <summary>The steam train's exhaust (owner, 4 November 2026: "Train steam"): a short trail of smoke and steam from the
     /// locomotive's chimney while the train runs, drifting back along the track. Palestine Railways burned oil, not coal,
-    /// from 1942-43 (research_notes/Map/train-steam-oil-burning-2026-11-05.md), so the smoke leaves the chimney dark
-    /// grey-black and thins to grey, with white steam puffs among it.
+    /// from 1942-43 (research_notes/Map/train-steam-oil-burning-2026-11-05.md); the game assumes they still did in 1950
+    /// (unsourced). The smoke leaves the chimney dark grey-black and thins to grey, with white steam puffs among it; the
+    /// smoke colour is a design choice.
     /// Drawn as #2490's Dakota bombs are: Unity Labs' CC0 smoke flipbook (Flipbook) on unlit camera-facing quads, from
     /// <see cref="Puffs"/> slots made once. Each puff is a pure function of the clock: puff k leaves the chimney at
     /// k x <see cref="GapS"/> from where the chimney was then (RouteTrain.ChimneyAt), swells, rises, drifts back and fades
