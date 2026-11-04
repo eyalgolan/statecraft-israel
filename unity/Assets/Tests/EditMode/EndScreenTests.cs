@@ -90,6 +90,62 @@ public class EndScreenTests
         s.GameOver = GameOverCodes.MvpEnded;
     }
 
+    /// <summary>The state the turn that ends the game leaves when it completes an objective (#2536; the sim's
+    /// LastTurnObjectiveCardTests): on the last day, the railway recorded that day and its card waiting, nothing else waiting.</summary>
+    static void EndedWithACard(GameState s)
+    {
+        var r = C.RulesAt(s.Date).Mvp!;
+        s.PendingEvents.Clear();
+        s.Date = C.End;
+        Objectives.Record(C, s, r, "railway", s.Date, new List<Cause>());
+        s.FiredEvents.Add("railway_complete");
+        s.PendingEvents.Add("railway_complete");
+        s.GameOver = GameOverCodes.MvpEnded;
+    }
+
+    // R-OBJ-003, R-LOOP-004 (#2536; the owner's choice "Show the card (Recommended)", 4 November 2026): the card of an
+    // objective completed on the turn that ended the game shows before the end screen. Its one option is no order and changes
+    // nothing; answering it opens the end screen, and the card does not come back when the screens are built again.
+    [Test]
+    public void AnObjectiveCardOfTheEndingTurnShowsBeforeTheEndScreen()
+    {
+        using var k = new Kit(En, EndedWithACard);
+        using var card = new EventCardPresenter(k.Ui.Root, k.Bridge, En, null);
+        Assert.IsTrue(k.Bridge.EndingCardWaiting);
+        Assert.IsFalse(k.End.IsOpen, "the card comes first");
+        Assert.AreEqual("railway_complete", card.Shown?.Id);
+        var option = k.Ui.Q<Button>("option-continue");
+        Assert.IsTrue(option.enabledSelf, "its one option can be pressed");
+        Assert.AreEqual(C.Events.Single(e => e.Id == "railway_complete").Options.Single().Text, option.text, "with no Attention price");
+        var hash = k.Bridge.State.Hash(); var score = k.Bridge.State.Score;
+
+        UiTestKit.Press(option);
+        Assert.IsNull(card.Shown, "answered, the card goes");
+        Assert.IsFalse(k.Bridge.EndingCardWaiting);
+        Assert.IsTrue(k.End.IsOpen, "and the end screen follows");
+        Assert.IsEmpty(k.Bridge.Queued, "the answer is no order");
+        Assert.AreEqual(hash, k.Bridge.State.Hash(), "and changes nothing in the game");
+        Assert.AreEqual(score, k.Bridge.State.Score, "the score is the one the turn recorded");
+
+        k.Rebuild(He);   // the language switch: the same bridge, so the answered card stays answered
+        Assert.IsTrue(k.End.IsOpen);
+        card.Render();
+        Assert.IsNull(card.Shown);
+    }
+
+    // #2536: SeeEndingCard answers only a waiting card of the ending turn; any other event stays as it was.
+    [Test]
+    public void OnlyAnEndingTurnCardCanBeAnsweredThatWay()
+    {
+        using var k = new Kit(En, Ended);   // the absorb objective recorded a month early, not on the last day
+        var waiting = k.Bridge.State.PendingEvents.ToList();
+        Assert.IsFalse(k.Bridge.EndingCardWaiting);
+        Assert.IsTrue(k.End.IsOpen, "an ended game with no card of its ending turn opens on its end screen");
+        k.Bridge.SeeEndingCard("absorb_immigrants");
+        foreach (var id in waiting) k.Bridge.SeeEndingCard(id);
+        CollectionAssert.IsEmpty(k.Bridge.EndingCardsAnswered);
+    }
+
     [Test]
     public void OpensOnGameOverAndADefeatShowsItsCause()
     {

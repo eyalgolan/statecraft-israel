@@ -19,13 +19,17 @@ namespace Statecraft.Sim
         /// events keep the usual order.
         /// Late fire: an event whose window overlapped the turn just played can fire after its window has ended; its
         /// conditions are evaluated at the end of the turn, and its text is filled at the last in-window day
-        /// (<see cref="FillDate"/>).</summary>
-        public static void Trigger(Content c, GameState s, List<Cause> why, DateTime? turnStart = null)
+        /// (<see cref="FillDate"/>).
+        /// <para>With <paramref name="endingTurn"/> (the turn that ended the game, R-LOOP-004) only the cards of the objectives
+        /// that turn recorded fire, all of them, uncapped (R-OBJ-003; the owner's choice "Show the card (Recommended)",
+        /// 4 November 2026, #2536); no other event does.</para></summary>
+        public static void Trigger(Content c, GameState s, List<Cause> why, DateTime? turnStart = null, bool endingTurn = false)
         {
             PopulationLedger.RefuseAggregate(s);
             var start = turnStart ?? s.Date;
             var eligible = c.Events
                 .Where(e => !s.FiredEvents.Contains(e.Id) && e.From <= s.Date && (e.To == null || start < e.To.Value))
+                .Where(e => !endingTurn || EndingCard(s, e))
                 .Where(e => Timeline.AllMet(c, s, e))
                 // R-OBJ-003: an objective's card waits for the objective. Only the GDD loop records one, so in the legacy loop it never fires.
                 .Where(e => e.Objective == "" || s.Objectives.ContainsKey(e.Objective))
@@ -52,7 +56,7 @@ namespace Statecraft.Sim
             // R-EVT-007: a Deport card takes no soft slot, so it fires on its Deport's turn however full that turn is.
             var hardCount = eligible.Count(e => e.Anchor == "hard");
             var chosen = new HashSet<string>(eligible.Where(e => e.Anchor == "hard" || e.Deported != "")
-                .Concat(eligible.Where(e => e.Anchor != "hard" && e.Deported == "").Take(Math.Max(0, MaxSoftEventsPerTurn - hardCount))).Select(e => e.Id));
+                .Concat(eligible.Where(e => e.Anchor != "hard" && e.Deported == "").Take(endingTurn ? int.MaxValue : Math.Max(0, MaxSoftEventsPerTurn - hardCount))).Select(e => e.Id));
             foreach (var e in eligible.Where(e => chosen.Contains(e.Id)))
             {
                 s.FiredEvents.Add(e.Id);
@@ -60,6 +64,12 @@ namespace Statecraft.Sim
                 why.Add(new Cause("events", e.Id, 0, $"New: {Title(c, s, e)}", key: CauseKeys.EventNew, args: Context(Title(c, s, e), HebrewTitle(c, s, e))));
             }
         }
+
+        /// <summary>Whether <paramref name="e"/> is a card of the turn that ended the game: the card of an objective recorded on
+        /// that turn, in a game that is over (R-OBJ-003, R-LOOP-004; #2536). The only events that fire on that turn; Unity
+        /// shows them before the end screen.</summary>
+        public static bool EndingCard(GameState s, GameEvent e) =>
+            s.GameOver != null && e.Objective != "" && s.Objectives.TryGetValue(e.Objective, out var done) && done == s.Date;
 
         /// <summary>The date whose office holders an event's text names: the given date, or the last in-window day
         /// once the window has ended (load-time coverage guarantees a holder there).</summary>

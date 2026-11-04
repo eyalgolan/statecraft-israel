@@ -16,6 +16,7 @@ namespace Statecraft.Game.UI
     {
         readonly List<Command> deferred = new List<Command>();
         readonly HashSet<int> skipped = new HashSet<int>();
+        readonly HashSet<string> endingCardsSeen = new HashSet<string>(StringComparer.Ordinal);
 
         public GameSession Session { get; private set; }
         public Content Content => Session.Content;
@@ -55,6 +56,31 @@ namespace Statecraft.Game.UI
         public event Action<string>? Refused;
         /// <summary>A validated order was refused specifically for Attention; presentation-only advice signal.</summary>
         public event Action? RefusedForAttention;
+        /// <summary>Raised when the player has answered the last objective card of the turn that ended the game
+        /// (<see cref="SeeEndingCard"/>): the end screen shows then (#2536).</summary>
+        public event Action? EndingCardsSeen;
+
+        /// <summary>The cards of the turn that ended the game the player has answered (#2536): Settings' language switch carries
+        /// them to the rebuilt bridge, as it carries Skipped.</summary>
+        public IReadOnlyCollection<string> EndingCardsAnswered => endingCardsSeen;
+        /// <summary>True while a card of the turn that ended the game waits: the objective cards that turn raised (R-OBJ-003,
+        /// R-LOOP-004; the owner's choice "Show the card (Recommended)", 4 November 2026) show before the end screen.</summary>
+        public bool EndingCardWaiting => State.PendingEvents.Any(id => IsEndingCard(id) && !endingCardsSeen.Contains(id));
+        /// <summary>Whether the waiting event is a card of the turn that ended the game (EventSystem.EndingCard).</summary>
+        public bool IsEndingCard(string id) => EventSystem.EndingCard(State, Content.Events.First(e => e.Id == id));
+        /// <summary>Whether the player has answered this card of the turn that ended the game.</summary>
+        public bool EndingCardSeen(string id) => endingCardsSeen.Contains(id);
+
+        /// <summary>Answers a card of the turn that ended the game (#2536). An ended game runs no more turns, so the answer is
+        /// no order: the card is marked seen, and once none waits <see cref="EndingCardsSeen"/> is raised. An objective's card
+        /// has one option and its score is already counted (R-OBJ-003), so nothing in the state changes. Does nothing for
+        /// any other event, or one that is not waiting.</summary>
+        public void SeeEndingCard(string id)
+        {
+            if (!State.PendingEvents.Contains(id) || !IsEndingCard(id) || !endingCardsSeen.Add(id)) return;
+            Notify(Changed);
+            if (!EndingCardWaiting) Notify(EndingCardsSeen);
+        }
 
         readonly UiText text;
         readonly Func<GameSession, IReadOnlyList<Command>, StepResult> step;
@@ -401,7 +427,7 @@ namespace Statecraft.Game.UI
         {
             Session = session ?? throw new ArgumentNullException(nameof(session));
             LastBatch = Array.Empty<Command>();
-            deferred.Clear(); skipped.Clear();
+            deferred.Clear(); skipped.Clear(); endingCardsSeen.Clear();
             Notify(Changed);
         }
     }
