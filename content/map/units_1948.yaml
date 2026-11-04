@@ -78,7 +78,9 @@
 #   yet (above; #1240). fact-checked = a person has checked the row against its sources; every row a new game starts
 #   a unit from must be, before a shareable build (the release gate; Q-START-3). A comment above it links the check.
 # reviewed_by and reviewed_on (both or neither, beside status): a person's sign-off, their GitHub handle and the day; only
-# that person writes them (owner, 15 October 2026, #375; docs/HISTORIAN_REVIEW.md).
+# that person writes them (owner, 15 October 2026, #375; docs/HISTORIAN_REVIEW.md), or an AI-assisted contributor whose
+# pull request discloses the AI help and names the check, who may add or re-sign them but never remove them (owner,
+# 4 November 2026, #2481).
 units:
 # --- Army: the twelve brigades of 1948 -------------------------------------------------------------------------------
 - id: golani
