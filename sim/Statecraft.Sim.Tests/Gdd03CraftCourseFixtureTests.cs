@@ -237,14 +237,30 @@ public class Gdd03CraftCourseFixtureTests
         l.Reconcile();
     }
 
-    // R-CRAFT-003: every other start is refused with the state unchanged. Plain refusals: a refugee, a free civilian not
-    // yet received, an unknown course, a course outside the person's region, a person already on a course. Deferred: a
+    // R-CRAFT-003 with R-TRAIN-005 (docs/GDD.md:374: "Refugees cannot train until they become civilians"): any free
+    // civilian may enrol, whatever their reception progress, as the training-centre fixture admits them
+    // (Gdd03TrainingCentreFixture: "no reception progress is read here"). Reception progress is kept as it was.
+    [Theory]
+    [InlineData(0)]
+    [InlineData(3)]
+    public void AFreeCivilianEnrolsWhateverTheirReceptionProgress(int reception)
+    {
+        var c = Catalogue(); var s = State(c, Person(CivilianProfession.None, CivilianTier.None, null, reception: reception));
+        var l = s.PopulationLedger; var f = new Gdd03CraftCourseFixture(c, s, Courses);
+        f.Start(12, CraftA, Month(s, 0));
+        var p = l.Get(12);
+        Assert.Equal(PopulationStatus.Trainee, p.Status); Assert.Equal(PopulationAssignmentKind.Course, p.Assignment.Kind);
+        Assert.Equal(CivilianProfession.Craftsman, p.Profession); Assert.Equal(CivilianTier.Novice, p.Tier);
+        Assert.Equal(reception, p.ReceptionTicks);
+        l.Reconcile();
+    }
+
+    // R-CRAFT-003: every other start is refused with the state unchanged. Plain refusals: a refugee, an unknown course, a course outside the person's region, a person already on a course. Deferred: a
     // novice craftsman outside a course, which the owner's 4 November 2026 answer (apprentice or expert) does not cover.
     [Fact] public void IneligibleStartsAreRefusedWithoutMutation()
     {
         var c = Catalogue(); var s = State(c); var f = new Gdd03CraftCourseFixture(c, s, Courses); var m = Month(s, 0);
         Unchanged(s, () => f.Start(RefugeeId, CraftA, m), typeof(ArgumentException));
-        Unchanged(s, () => f.Start(NotReceived, CraftA, m), typeof(ArgumentException));
         Unchanged(s, () => f.Start(Free, "fixture-unknown", m), typeof(ArgumentException));
         Unchanged(s, () => f.Start(Free, Centre, m), typeof(ArgumentException));
         Unchanged(s, () => f.Start(Free, CraftSouth, m), typeof(ArgumentException));
