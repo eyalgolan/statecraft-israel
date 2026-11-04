@@ -342,7 +342,9 @@ public class HebrewUiTests
 
     /// <summary>#2552: a New game replaces the bridge's session without Begin, so the old session's save notice must not come
     /// back when a language switch then rebuilds the start screen over the new game (Begin with keep, as SwitchLanguage
-    /// calls it). Red-first: without the session check the old "could not be loaded" notice is shown again.</summary>
+    /// calls it). The UI can't reach this today (a New game closes the start screen, so a later switch rebuilds without it),
+    /// so the test drives the two steps directly to pin the invariant. Red-first: without the session check the old
+    /// "could not be loaded" notice is shown again.</summary>
     [Test]
     public void ANewGameDropsTheOldSessionsSaveNoticeOnALanguageSwitch()
     {
@@ -357,9 +359,9 @@ public class HebrewUiTests
         game.Language = UiLanguage.Hebrew;
         game.Begin(Inputs, 0, startScreen: true, keep: game.Bridge);
 
-        var staleHe = He.Format("save.unreadable", He["save.reason_other"]);
-        Assert.AreNotEqual(staleHe, Ui.Q<Label>("toast").text, "the new game's start screen shows no notice of the replaced session");
-        Assert.AreNotEqual(stale, Ui.Q<Label>("toast").text);
+        var toast = Ui.Q<Label>("toast");
+        Assert.AreEqual("", toast.text, "the new game's start screen shows no save notice at all");
+        Assert.AreEqual(DisplayStyle.None, toast.style.display.value, "and the toast is hidden");
     }
 
     /// <summary>A choice on the start screen goes through Settings' own switch: the UI changes at once over the same game,
