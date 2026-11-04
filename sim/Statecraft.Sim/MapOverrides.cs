@@ -10,8 +10,12 @@ namespace Statecraft.Sim
 {
     public sealed class MapHexRef
     {
-        public int Q { get; set; }
-        public int R { get; set; }
+        // Nullable behind the int so Parse can refuse a coordinate the file left out instead of reading it as 0 (#2512).
+        int? q, r;
+        public int Q { get => q ?? 0; set => q = value; }
+        public int R { get => r ?? 0; set => r = value; }
+        internal bool HasQ => q.HasValue;
+        internal bool HasR => r.HasValue;
     }
 
     public sealed class TerrainOverride
@@ -151,6 +155,8 @@ namespace Statecraft.Sim
         static void Required(string file, string at, MapHexRef? hex)
         {
             if (hex == null) throw new ContentException(file, at + ".hex", "required");
+            if (!hex.HasQ) throw new ContentException(file, at + ".hex.q", "required");
+            if (!hex.HasR) throw new ContentException(file, at + ".hex.r", "required");
         }
 
         /// <summary>Checks terrain and location overrides against the map: a terrain override names a land hex of
