@@ -297,8 +297,8 @@ public class Gdd03TrainingCentreFixtureTests
         new object[] { "same person", 1, 1, CentreA, true },
         new object[] { "unknown centre", 0, 1, "fixture-unknown", true },
         new object[] { "centre not operating", 0, 1, CentreA, false },
-        // The teacher is housed in the centre's city (Q42) and, by the owner's Q23 ruling (4 November 2026), the pupil trains there; the region stands
-        // in for the city.
+        // The teacher is housed in the centre's city (Q42), the pupil lives there (the owner's Q23 ruling, 4 November 2026)
+        // and, by our reading of 27M-7, trains there with no travel; the region stands in for the city.
         new object[] { "other region", 0, 1, CentreSouth, true },
         new object[] { "trainee in another region", 0, 14, CentreA, true },
         new object[] { "teacher in another region", 16, 1, CentreA, true },
