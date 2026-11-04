@@ -282,6 +282,19 @@ status: draft
         Assert.Equal(field, ex.Field);
     }
 
+
+    // A YAML parse error names the mapping key on its line, and never a scalar that merely contains a colon.
+    [Theory]
+    [InlineData("    seats:", "seats")]
+    [InlineData("  - { id: a }", null)]
+    [InlineData("  - name: Beersheba", "name")]
+    [InlineData("  - https://example.org/a", null)]
+    [InlineData("    url: https://example.org", "url")]
+    [InlineData("    time: 10:30", "time")]
+    public void AParseErrorNamesOnlyARealKey(string sourceLine, string? key)
+    {
+        Assert.Equal(key, ContentLoader.KeyOnLine("first: 1\n" + sourceLine + "\n", 2));
+    }
     [Fact]
     public void DuplicateKeyIsAContentError()
     {

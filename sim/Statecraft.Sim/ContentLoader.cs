@@ -253,7 +253,7 @@ namespace Statecraft.Sim
             return new ContentException(file, field, e.InnerException?.Message ?? e.Message);
         }
 
-        static string? KeyOnLine(string text, int line)
+        internal static string? KeyOnLine(string text, int line)
         {
             if (line < 1) return null;
             var lines = text.Replace("\r\n", "\n").Split('\n');
@@ -261,7 +261,8 @@ namespace Statecraft.Sim
             var source = lines[line - 1].TrimStart();
             if (source.StartsWith("- ", StringComparison.Ordinal)) source = source.Substring(2).TrimStart();
             var colon = source.IndexOf(':');
-            if (colon <= 0) return null;
+            // A mapping key's colon ends the line or is followed by a space; "https://x" is a scalar, not a key "https".
+            if (colon <= 0 || (colon + 1 < source.Length && source[colon + 1] != ' ')) return null;
             var key = source.Substring(0, colon).Trim();
             return key.Length > 0 && key.All(ch => char.IsLetterOrDigit(ch) || ch == '_' || ch == '-') ? key : null;
         }
