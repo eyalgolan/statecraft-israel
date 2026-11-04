@@ -148,9 +148,15 @@ namespace Statecraft.Sim
     {
         public override string Kind => Orders.Kind;
         public int Unit { get; } public string Order { get; }
-        /// <summary>The hex an attack names; null for fortify and hold.</summary>
+        /// <summary>The hex an attack names; null for fortify and hold. Both coordinates or neither: a half-given hex is
+        /// refused at construction, so a save cannot carry an order the live step would refuse (#2526).</summary>
         public int? Q { get; } public int? R { get; }
-        public UnitOrder(int unit, string order, int? q = null, int? r = null) { Unit = unit; Order = order; Q = q; R = r; }
+        public UnitOrder(int unit, string order, int? q = null, int? r = null)
+        {
+            if (q is null != (r is null))
+                throw new ArgumentException("a unit order names both hex coordinates or neither");
+            Unit = unit; Order = order; Q = q; R = r;
+        }
     }
 
     /// <summary>Starts city project <see cref="ProjectKind"/> (a projects.yaml id) for <see cref="City"/> on hex (<see cref="Q"/>,
