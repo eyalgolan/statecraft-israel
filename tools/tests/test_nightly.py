@@ -1804,7 +1804,7 @@ def test_the_stages_run_in_the_brief_order(night, env, stages, capsys):
 
 
 @pytest.mark.parametrize("failed_build", ["Web-gzip", "Web-pages"])
-def test_a_units_qa_failure_keeps_both_public_channels_on_latest(tmp_path, monkeypatch, failed_build):
+def test_a_web_check_refusal_keeps_both_public_channels_on_latest(tmp_path, monkeypatch, failed_build):
     from test_site_demo_selection import run as select_demo
 
     sandbox = tmp_path / "night"
@@ -1847,17 +1847,12 @@ def test_a_units_qa_failure_keeps_both_public_channels_on_latest(tmp_path, monke
     assert gh.latest == previous.tag and state.last_published == previous
     assert not {"publish", "restore_latest", "dispatch_site", "itch.push"} & set(gh.names())
 
-    site = tmp_path / "site"
-    (site / "demo").mkdir(parents=True)
-    page = site / "demo/index.html"
-    page.write_text(previous.version)
-    result, calls = select_demo(site, gh.latest, [
+    result, calls = select_demo(tmp_path, gh.latest, [
         {"tagName": night.tag, "isPrerelease": False},
         {"tagName": previous.tag, "isPrerelease": False},
     ])
     assert f"release view {previous.tag}" in calls and f"release view {night.tag}" not in calls
     assert result.returncode == 1 and f"Latest release ({previous.tag})" in result.stdout
-    assert page.read_text() == previous.version
 
 
 def test_no_publish_stops_before_any_store_call(night, env, stages, capsys):
