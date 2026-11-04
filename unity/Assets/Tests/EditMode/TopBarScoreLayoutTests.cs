@@ -128,13 +128,14 @@ public class TopBarScoreLayoutTests
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
 
-    /// <summary>#812 review: where only the 13 px exhausted line is raised (scale 0.8 to 0.92: 13 px is under the 12 px floor on
-    /// screen, 15 px is not), the plate still takes its frame clearance (PlateSidePx, PlateEdgePx). Inside(ContentBox) alone
+    /// <summary>#812 review: where the exhausted line widens the plate but the 15 px text is not raised (scale 0.8 to 0.92; the
+    /// line was 13 px and raised alone there, and since #2522 it is 15 px and wider than the plate unraised), the plate still
+    /// takes its frame clearance (PlateSidePx, PlateEdgePx). Inside(ContentBox) alone
     /// would not show it: it reads the plate's current padding, whatever that is. Run in English and Hebrew, at the normal tier
     /// (1600x900) and in the compact one (1400x1100, under CompactBelowPx), where the stylesheet's date box is 226 px: the plate
     /// must still keep the turn and the date on one row and clear of the meters.</summary>
     [UnityTest]
-    public IEnumerator TheExhaustedLineRaisedAloneKeepsThePlatesFrameClearance()
+    public IEnumerator TheExhaustedLineKeepsThePlatesFrameClearance()
     {
         var problems = new List<string>();
         foreach (var (language, text, hebrew) in new[] { ("en", En, false), ("he", He, true) })
@@ -165,7 +166,7 @@ public class TopBarScoreLayoutTests
                     for (int i = 0; i < 20 && float.IsNaN(exhausted.worldBound.width); i++) yield return null;
                     for (int i = 0; i < 3; i++) yield return null;
                     var scale = root.panel.scaledPixelsPerPoint;
-                    Assert.Greater(exhausted.resolvedStyle.fontSize, HudPresenter.ExhaustedPx, $"{at}: precondition: the exhausted line is raised (scale {scale:0.###})");
+                    Assert.AreEqual(HudPresenter.ExhaustedPx, exhausted.resolvedStyle.fontSize, 0.01f, $"{at}: precondition: the exhausted line is at its stylesheet size (scale {scale:0.###})");
                     Assert.AreEqual(HudPresenter.SmallTextPx, root.Q<Label>("date").resolvedStyle.fontSize, 0.01f, $"{at}: precondition: the 15 px text is not raised (scale {scale:0.###})");
                     Assert.AreEqual(compact, root.Q(className: HudPresenter.CompactClass) != null, $"{at}: precondition: the compact tier is {(compact ? "on" : "off")}");
                     var plate = root.Q(className: "date-box");
@@ -204,7 +205,7 @@ public class TopBarScoreLayoutTests
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
 
-    /// <summary>Review of #1961: at the scale where only the 13 px exhausted line is raised (1600x900, as above), a hidden line
+    /// <summary>Review of #1961: at the scale where the 15 px text is not raised (1600x900, as above), a hidden line
     /// (no exhausted turns) leaves the plate as the stylesheet has it: no inline width, minimum width or padding. Showing the
     /// line then gives the plate its clearance, and hiding it again takes the clearance back.</summary>
     [UnityTest]
@@ -235,7 +236,7 @@ public class TopBarScoreLayoutTests
                 for (int i = 0; i < 3; i++) yield return null;
                 var exhausted = root.Q<Label>("exhausted");
                 var plate = root.Q(className: "date-box");
-                Assert.Greater(exhausted.style.fontSize.value.value, HudPresenter.ExhaustedPx, $"{language}: precondition: the scale raises the exhausted line");
+                Assert.AreEqual(HudPresenter.ExhaustedPx, exhausted.resolvedStyle.fontSize, 0.01f, $"{language}: precondition: the exhausted line is at its stylesheet size");
                 Assert.AreEqual(HudPresenter.SmallTextPx, date.resolvedStyle.fontSize, 0.01f, $"{language}: precondition: the 15 px text is not raised");
                 void Expect(string state, bool clearance)
                 {
