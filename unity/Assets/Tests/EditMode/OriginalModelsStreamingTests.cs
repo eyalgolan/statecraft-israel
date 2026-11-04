@@ -14,7 +14,7 @@ public class OriginalModelsStreamingTests
     public void EveryOriginalHasItsOwnBundle()
     {
         var ids = CollectionCatalog.Ids.Where(id => !CollectionCatalog.IsGenerated(id) && !CollectionCatalog.IsGeneratedHouse(id)).ToArray();
-        Assert.AreEqual(73, ids.Length, "all 23 buildings and 50 collection models");
+        Assert.AreEqual(74, ids.Length, "all 23 buildings and 51 collection models (#2384 adds the rigged 1948 soldier)");
         Assert.AreEqual(ids.Length, ids.Select(CollectionCatalog.BundleOf).Distinct().Count(), "one model per bundle");
     }
 
@@ -138,19 +138,22 @@ public class OriginalModelsStreamingTests
             Assert.AreEqual(model.defaultClipAnimations.Length, clips, id);
             // A generated static prop, house or whole town keeps its delivered import untouched (curve resampling on): it has no
             // clips, so the setting changes nothing. Every model with clips imports with resampling off.
-            if (CollectionCatalog.IsGeneratedProp(id) || CollectionCatalog.IsGeneratedHouse(id) || CollectionCatalog.IsGeneratedTown(id)) { Assert.AreEqual(0, clips, id + " is static"); Assert.IsTrue(model.resampleCurves, id + " keeps its delivered import"); }
+            if (CollectionCatalog.IsGeneratedProp(id) || CollectionCatalog.IsGeneratedHouse(id) || CollectionCatalog.IsGeneratedTown(id) || CollectionCatalog.IsGeneratedWeapon(id)) { Assert.AreEqual(0, clips, id + " is static"); Assert.IsTrue(model.resampleCurves, id + " keeps its delivered import"); }
             else Assert.IsFalse(model.resampleCurves, id);
             var serialized = new SerializedObject(model);
             var lod = serialized.FindProperty("m_GenerateMeshLods") ?? serialized.FindProperty("generateMeshLods");
             Assert.IsNotNull(lod, "Unity's LOD setting must be verifiable");
             Assert.IsFalse(lod.boolValue, id);
+            if (CollectionCatalog.IsFigurePose(id)) continue;   // #2084's pose source streams only its clip: no colour map
             string dir = CollectionCatalog.IsBuilding(id) ? CollectionCatalog.BuildingsFolder : CollectionCatalog.Folder;
             var texture = (TextureImporter)AssetImporter.GetAtPath($"{dir}/{id}/{id}_basecolor.jpg");
             texture.GetSourceTextureWidthAndHeight(out int width, out int height);
             Assert.GreaterOrEqual(texture.maxTextureSize, Math.Max(width, height), id);
             Assert.IsFalse(texture.crunchedCompression, id);
             var web = texture.GetPlatformTextureSettings("WebGL");
-            Assert.GreaterOrEqual(web.maxTextureSize, Math.Max(width, height), id);
+            // The generated houses' colour maps (this importer, _basecolor only) import at 2048 on the web (owner, 2 November 2026);
+            // BuildingModelImportTests checks that cap.
+            if (!CollectionCatalog.IsGeneratedHouse(id)) Assert.GreaterOrEqual(web.maxTextureSize, Math.Max(width, height), id);
             Assert.IsFalse(web.crunchedCompression, id);
         }
     }

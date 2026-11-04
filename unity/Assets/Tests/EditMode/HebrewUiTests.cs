@@ -40,6 +40,21 @@ public class HebrewUiTests
 
     // --- The flag ---------------------------------------------------------------------------------------------------
 
+    // #2265: only the query is read; a flag in the fragment (after the first '#') is not a query parameter.
+    [Test]
+    public void ALanguageFlagAfterTheFragmentIsIgnored()
+    {
+        var none = new string[0];
+        foreach (var q in new[] { "?x=1#&lang=he", "#?lang=he" })
+            Assert.AreEqual(UiLanguage.English, UiLanguage.Requested("http://localhost:8000/index.html" + q, none, webgl: true), q);
+        // A fragment-only flag is no flag: the stored choice stands, in both directions.
+        Assert.AreEqual(UiLanguage.Hebrew, UiLanguage.AtStart(UiLanguage.Hebrew, "http://localhost:8000/index.html#&lang=en", none, webgl: true));
+        Assert.AreEqual(UiLanguage.English, UiLanguage.AtStart(null, "http://localhost:8000/index.html?x=1#?lang=he", none, webgl: true));
+        // The query still counts when a fragment follows.
+        Assert.AreEqual(UiLanguage.Hebrew, UiLanguage.Requested("http://localhost:8000/index.html?lang=he#x", none, webgl: true));
+        Assert.AreEqual(UiLanguage.English, UiLanguage.AtStart(UiLanguage.Hebrew, "http://localhost:8000/index.html?lang=en#x", none, webgl: true));
+    }
+
     [Test]
     public void HebrewIsOnlyAskedForByHand()
     {
@@ -357,7 +372,7 @@ public class HebrewUiTests
     {
         foreach (var s in new[] { "תור 1", "5  מלחמה כוללת", "קואליציה: 30 מתוך 37", "‏…אנו", "العربية" })
             Assert.IsTrue(UiDirection.RightToLeft(s), s);
-        foreach (var s in new[] { "15 May 1948", "IL 20.0m", "+5%", "-5%", "30%", "", "David Ben-Gurion", "Mapai :מפלגה", "$40.0m", "1948" })
+        foreach (var s in new[] { "15 May 1948", "IL\u00A020.0m", "+5%", "-5%", "30%", "", "David Ben-Gurion", "Mapai :מפלגה", "$40.0m", "1948" })
             Assert.IsFalse(UiDirection.RightToLeft(s), s);
         Assert.IsFalse(UiDirection.RightToLeft(null));
     }
@@ -510,6 +525,8 @@ public class HebrewUiTests
         ("settings-quality-high", "settings.quality.high"), ("settings-quality-low", "settings.quality.low"),
         ("settings-sound-label", "settings.sound"), ("settings-sound-off", "settings.sound.off"),
         ("settings-sound-low", "settings.sound.low"), ("settings-sound-high", "settings.sound.high"),
+        ("settings-music-label", "settings.music"), ("settings-music-off", "settings.music.off"),
+        ("settings-music-low", "settings.music.low"), ("settings-music-high", "settings.music.high"),
         ("settings-advisors-label", "settings.advisors"), ("settings-language-label", "settings.language"),
         ("settings-uiscale-label", "settings.uiscale"), ("settings-companion-label", "settings.companion"),   // #1119
         ("settings-community-label", "settings.community"), ("settings-star", "community.star"), ("start-star", "community.star"),
@@ -865,6 +882,67 @@ public class HebrewUiTests
             }
         }
         finally { Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt); }
+    }
+
+    // --- A language from translations/ (#1606) --------------------------------------------------------------------------
+
+    /// <summary>Romanian (translations/ro, from #1604) is not offered yet (owner, 3 Nov 2026: "Hide until more is
+    /// translated"): no button for it on the start screen or in Settings, and a stored "ro" reads as English at the next
+    /// start, since only a language the buttons offer is kept. A flag still wins.</summary>
+    [Test]
+    public void RomanianIsNotOfferedYet()
+    {
+        CollectionAssert.AreEqual(new[] { UiLanguage.English, UiLanguage.Hebrew }, LanguageButtons.All.Select(l => l.language).ToArray(),
+            "English and Hebrew only");
+        const string page = "http://localhost:8000/index.html";
+        var none = new string[0];
+        Assert.AreEqual(UiLanguage.English, UiLanguage.AtStart("ro", page, none, webgl: true), "a stored ro is not offered");
+        Assert.AreEqual(UiLanguage.English, UiLanguage.AtStart("ro", null, none, webgl: false));
+        Assert.AreEqual(UiLanguage.Hebrew, UiLanguage.AtStart("ro", page + "?lang=he", none, webgl: true), "a flag wins");
+
+        var settings = new SettingsStore(Path.Combine(saveDir, "settings"));
+        BootWithStartScreen(settings, null);
+        Assert.IsTrue(StartOpen, "precondition: the start screen shows");
+        Assert.IsNull(Ui.Q<Button>("start-language-ro"), "no Romanian on the start screen");
+        Assert.IsNull(Ui.Q<Button>("settings-language-ro"), "nor in Settings");
+    }
+
+    /// <summary>A new language's strings: each key its translations/&lt;lang&gt;/ui.yaml has reads the translation, every
+    /// other key the English (the per-string fallback of #1606).</summary>
+    [Test]
+    public void ANewLanguageFallsBackToTheEnglishPerString()
+    {
+        var text = En.Over(new[] { new KeyValuePair<string, string>("ui.lang", "xx"), new KeyValuePair<string, string>("start.new_game", "[xx] start.new_game") }, "translations/xx/ui.yaml");
+        Assert.AreEqual("xx", text["ui.lang"]);
+        Assert.AreEqual("[xx] start.new_game", text["start.new_game"], "a key the translation has");
+        Assert.AreEqual(En["hud.turn"], text["hud.turn"], "a key it lacks: the English");
+        Assert.AreEqual("en", En["ui.lang"], "the English strings are left as they were");
+    }
+
+    /// <summary>The way in for a language once it is offered: GameRoot builds the UI from its translations/&lt;lang&gt;/ui.yaml
+    /// (Content.Translations, #2124) over the English, left to right in the Latin face. A key the translation adds (a marker
+    /// here, not Romanian) shows; the rest is English.</summary>
+    [Test]
+    public void ATranslatedLanguagesStringsFallBackToEnglish()
+    {
+        var translations = Inputs.Content.Translations;
+        var i = translations.FindIndex(t => t.Lang == "ro");
+        Assert.GreaterOrEqual(i, 0, "precondition: translations/ro loads with the content");
+        var real = translations[i];
+        const string marker = "[ro] start.new_game";
+        translations[i] = new Statecraft.Sim.TranslationSet
+        {
+            Lang = real.Lang, Events = real.Events, Content = real.Content,
+            Ui = real.Ui.Append(new KeyValuePair<string, string>("start.new_game", marker)).ToList(),
+        };
+        try
+        {
+            var game = BootWithStartScreen(new SettingsStore(Path.Combine(saveDir, "settings")), "ro");
+            Assert.AreEqual(marker, Ui.Q<Button>("start-new-game").text, "a key translations/ro has");
+            Assert.AreEqual(En.Format("hud.turn", game.Bridge!.State.Turn), Ui.Q<Label>("turn").text, "a key it lacks: the English");
+            Assert.IsFalse(Ui.Q("root").ClassListContains(UiLanguage.HebrewClass), "left to right, the Latin face");
+        }
+        finally { translations[i] = real; }
     }
 
     /// <summary>#1210: the one rule the event card and the outcome caption share. In Hebrew a text with a Hebrew form shows

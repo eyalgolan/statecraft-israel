@@ -222,7 +222,7 @@ public class MoneyCausesTests
     public void NoOtherLineWhenNothingIsLeftOver(double[] deltas, bool expected)
     {
         var why = deltas.Select(d => new Cause("economy", "treasury", d, PlayerText.Change(Real, "treasury", d), key: CauseKeys.CivilianUpkeep))
-            .Append(new Cause("economy", "debt", 5, "borrowed IL 5.0m to cover the deficit", key: CauseKeys.Borrowed))   // not a Money cause
+            .Append(new Cause("economy", "debt", 5, "borrowed IL\u00A05.0m to cover the deficit", key: CauseKeys.Borrowed))   // not a Money cause
             .ToList();
         var largest = Largest(why, 2);
         var other = EconomySystem.OtherMoney(Real, why, largest);
@@ -312,7 +312,7 @@ public class MoneyCausesTests
         for (int t = 1; t < 1000 && s.GameOver == null; t++)
         {
             var r = Simulation.Step(Real, s, GoldenRun.Orders(Real, s));
-            Assert.Empty(r.Rejected);
+            Assert.DoesNotContain(r.Rejected, j => !WarEvents1948Tests.IsTheMalkiyaRefusal(j));   // R-ENEMY-005: Hiram's refused order, pinned there
             foreach (var w in r.Why)
             {
                 if (w.Key == CauseKeys.Paid) paid.Add(w.Args[0]);

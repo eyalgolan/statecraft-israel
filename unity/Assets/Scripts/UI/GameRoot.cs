@@ -122,6 +122,13 @@ namespace Statecraft.Game.UI
         /// <summary>The opening (#530) outside Play mode: off by default, so EditMode tests that press New Game meet the advisors
         /// as a player's first game does; the opening's own tests set it.</summary>
         internal bool OpeningInEditMode { get; set; }
+        /// <summary>The start menu's music (#39) outside Play mode: off by default, so EditMode tests stay silent and fetch
+        /// nothing; its wiring test sets it.</summary>
+        internal bool MenuMusicInEditMode { get; set; }
+        /// <summary>The start menu's music, kept for the page across Begins (a language switch); null until a start screen
+        /// shows in a player. Disposed with the component (OnDisable).</summary>
+        internal MenuMusic? Music => music;
+        MenuMusic? music;
 
         public void Configure(GameBoot boot, UIDocument document, TextAsset strings, TextAsset stringsHe, PortraitCatalog portraits,
             MapScene map, PlacementLayer placements, MapPointer pointer, CameraController cameraController)
@@ -181,14 +188,23 @@ namespace Statecraft.Game.UI
             line.languageDirection = !hebrew ? LanguageDirection.Inherit : UiDirection.RightToLeft(words) ? LanguageDirection.RTL : LanguageDirection.LTR;
         }
 
-        /// <summary>The strings of the UI's language (UiLanguage): strings.he.yaml when Hebrew is asked for or chosen, else English.</summary>
-        UiText Strings() => (Language ?? UiLanguage.AtStart(SettingsFile()?.Read(SettingsPresenter.LanguageKey))) == UiLanguage.Hebrew
-            ? UiText.Parse(stringsHe.text, "strings.he.yaml") : UiText.Parse(strings.text);
+        /// <summary>The strings of the UI's language (UiLanguage): strings.he.yaml when Hebrew is asked for or chosen; a language
+        /// from translations/ (#1606) as its ui.yaml over the English, per string, once <paramref name="content"/> carries it
+        /// (before the content loads, the loading line is English); else English.</summary>
+        UiText Strings(Content? content = null)
+        {
+            var language = Language ?? UiLanguage.AtStart(SettingsFile()?.Read(SettingsPresenter.LanguageKey));
+            if (language == UiLanguage.Hebrew) return UiText.Parse(stringsHe.text, "strings.he.yaml");
+            var english = UiText.Parse(strings.text);
+            var set = language == UiLanguage.English ? null : content?.Translations.Find(t => t.Lang == language);
+            return set == null ? english : english.Over(set.Ui, $"translations/{language}/ui.yaml");
+        }
 
         void OnDisable()
         {
             if (boot != null) { boot.Ready -= Begin; boot.Failed -= OnBootFailed; }
             Shutdown();
+            music?.Dispose(); music = null;   // the page's music goes with the component, not with a rebuild (Begin)
         }
 
         // "smoke" as a whole query parameter: bare ("?smoke", "&smoke=") or with a number; it ends at '&', '#' or the end, so
@@ -254,7 +270,7 @@ namespace Statecraft.Game.UI
             Shutdown(keepCompanionPage: companion != null && CompanionWanted());
             smokeRun = smoke > 0;
 
-            var text = Strings();
+            var text = Strings(inputs.Content);
             var store = Store ?? SaveStore.ForPlatform();
             var notes = new List<string>();
             // A smoke run is reproducible: a fresh game with the golden seed, never the player's autosave.
@@ -353,8 +369,15 @@ namespace Statecraft.Game.UI
                 setCompanion = set;
                 companionSwitch = (() => companion != null, on => { companionPicked = on; set(on); });
             }
+            // The start menu's music (#39): made where the start screen first shows, in a player only (in EditMode only where a
+            // test asks: MenuMusicInEditMode), and kept for the page: the rebuild a language switch makes goes on with the same
+            // theme, which turns back up from the old screen's closing instead of being cut and fetched again. Made before
+            // Settings, whose Music row sets its volume. Its duck is the new screen's recording, or none.
+            if (music == null && showsStart && (Application.isPlaying || MenuMusicInEditMode))
+                music = new MenuMusic(root, Application.platform == RuntimePlatform.WebGLPlayer);
+            if (music != null) music.Duck = null;
             Own(new SettingsPresenter(root, text, SettingsFile(), switchLanguage, panel: document.panelSettings, audio: audio, advisors: AdvisorSession.Settings,
-                companion: companionSwitch));
+                companion: companionSwitch, music: music));
             // "Report a bug or idea" (#1169), from Settings and the start screen: the version line names the content GameBoot logged.
             feedback = Own(new FeedbackPresenter(root, text, ReportLinks.Version(Application.version, inputs.Content.Hash)));
             var feedbackPanel = feedback;
@@ -516,19 +539,10 @@ namespace Statecraft.Game.UI
             labels = Own(new MapLabelsPresenter(root, map, labelCamera, null,
                 p => MapLabelsPresenter.TipOf(p, n => text.Format("map.today", n), text["map.mixed"], hebrew),
                 () =>   // the names keep clear of the unit tokens (issue #197), their badges and flags as this camera will draw them,
-                {       // and of the 1948 Collection's ships and C-54 (#669)
+                {       // of the 1948 Collection's ships and C-54 (#669), and of the arms workshops' b21 (#1701 slice F)
                     IReadOnlyList<Bounds[]>? tokens = null;
                     if (unitLayer != null) { unitLayer.FaceCamera(labelCamera); tokens = unitLayer.KeepClear; }
-                    var craft = seaAir != null ? seaAir.KeepClear : null;
-                    if (craft == null || craft.Count == 0) return tokens;
-                    if (tokens == null || tokens.Count == 0) return craft;
-                    // One merged list per pair of lists, so the labels see a new list only when either changes (they refresh then).
-                    if (!ReferenceEquals(tokens, keptTokens) || !ReferenceEquals(craft, keptCraft))
-                    {
-                        keptTokens = tokens; keptCraft = craft;
-                        var merged = new List<Bounds[]>(tokens); merged.AddRange(craft); keptBoth = merged;
-                    }
-                    return keptBoth;
+                    return keepClear.Merge(tokens, seaAir != null ? seaAir.KeepClear : null, special != null ? special.KeepClearFor(labelCamera) : null);
                 },
                 // Issue #710: the static 1948 tier from cities.yaml's people, not the sim's live count (owner, 15 October 2026).
                 bridge.Content.Cities.Where(c => c.People != null).ToDictionary(c => c.Id, c => c.People!.Value),
@@ -605,9 +619,11 @@ namespace Statecraft.Game.UI
             {
                 var cam = cameraController;
                 var recording = Own(new DeclarationRecording(root, text, toast.Show));   // never built in automated runs (Skipped)
+                if (music != null) music.Duck = () => recording.Playing;           // the theme drops low under Ben-Gurion's voice
                 start = Own(new StartScreenPresenter(root, newGame!, resumed, shown =>
                 {
                     if (cam != null) cam.enabled = !shown;
+                    music?.Show(shown);                                            // loops on the menu, fades out as a game starts
                     if (!shown) { if (start?.Resumed != false) advisor?.Resume(); else if (opening == null) advisor?.NewGame(); }
                 }, recording, text, SettingsFile(), switchLanguage));
                 start.Show();
@@ -868,6 +884,8 @@ namespace Statecraft.Game.UI
             // An open event card is modal and disables the unit card (ScreenNav.DisableCovered), so the unit End turn selects
             // could take no order: the card waits behind "Decision waiting", as its Hide button does.
             card?.Collapse(takeFocus: false);
+            // The capture dialog is modal like the card (#802): End turn must show a unit that can take an order (#1680).
+            capture?.Collapse(takeFocus: false);
             // A side screen can still cover the card (#210). Reveal it through normal navigation, not by
             // bypassing Covered: End turn must show the unit whose orders it asks for (#1680).
             if (info?.Covered == true) nav?.Open(null);
@@ -944,7 +962,33 @@ namespace Statecraft.Game.UI
         /// differs from what was drawn (every order and every turn raises Changed; rebuilding the markers each time would be
         /// wasted work). A project finishing redraws though State.Placements did not change.</summary>
         Statecraft.Game.Map.Collection.SeaAirCollection? seaAir;   // the 1948 Collection's craft (#669), for the labels to keep clear of
-        IReadOnlyList<Bounds[]>? keptTokens, keptCraft, keptBoth;
+        readonly KeepClearLists keepClear = new KeepClearLists();
+
+        /// <summary>The names' keep-clear boxes (MapLabelsPresenter's keepClear): the unit tokens', the 1948 Collection's craft
+        /// (#669) and the arms workshops' b21 (#1701 slice F). One list when only one has boxes; else one merged list, kept
+        /// until one of them is a new list, so the labels see a new list (and refresh) exactly when one changes. The layers
+        /// publish a new list on every change, never changing one already handed out.</summary>
+        internal sealed class KeepClearLists
+        {
+            IReadOnlyList<Bounds[]>? keptTokens, keptCraft, keptWorkshops, kept;
+
+            public IReadOnlyList<Bounds[]>? Merge(IReadOnlyList<Bounds[]>? tokens, IReadOnlyList<Bounds[]>? craft, IReadOnlyList<Bounds[]>? workshops)
+            {
+                bool t = tokens != null && tokens.Count > 0, c = craft != null && craft.Count > 0, w = workshops != null && workshops.Count > 0;
+                if ((t ? 1 : 0) + (c ? 1 : 0) + (w ? 1 : 0) <= 1) return c ? craft : w ? workshops : tokens;
+                if (kept == null || !ReferenceEquals(tokens, keptTokens) || !ReferenceEquals(craft, keptCraft) || !ReferenceEquals(workshops, keptWorkshops))
+                {
+                    keptTokens = tokens; keptCraft = craft; keptWorkshops = workshops;
+                    var merged = new List<Bounds[]>();
+                    if (t) merged.AddRange(tokens!);
+                    if (c) merged.AddRange(craft!);
+                    if (w) merged.AddRange(workshops!);
+                    kept = merged;
+                }
+                return kept;
+            }
+        }
+        Statecraft.Game.Map.Collection.SpecialBuildingModels? special;   // the arms workshops' b21, for the labels to keep clear of
 
         void RenderPlacementsIfChanged()
         {
@@ -960,14 +1004,25 @@ namespace Statecraft.Game.UI
                 PlacementLayer.Drawn(Bridge.State.Placements, Bridge.State.CityProjects.Values), Bridge.Content);
             // Tal Heuberger's ibex and striped hyena, sparse in their sourced terrain zones and visible only at close zoom (#670).
             Statecraft.Game.Map.Collection.WildlifeLayer.Show(map);
+            // Tal Heuberger's papyrus at the Hula swamp's sourced site, close up only, streamed on the first close view, gone
+            // once the swamp is drained (#2082; owner, 2 November 2026: "Hula + Arava, map and boards").
+            Statecraft.Game.Map.Collection.HulaPapyrusLayer.ShowAt(map, Bridge.Content,
+                Statecraft.Game.Map.Collection.HulaPapyrusLayer.Drained(Bridge.State));
             // Tal Heuberger's civilian figures at towns, villages, transit camps and building sites, ambience only and streamed
             // after the first frame (#666, #708, #886): the residents follow the settlement state, the builders the projects.
             Statecraft.Game.Map.Collection.CivilianPeople.ShowAt(map, Bridge.State.Date, Bridge.State.Placements, Bridge.Content,
                 Bridge.State.Settlements, Bridge.State.CityProjects.Values);
             // Tal Heuberger's period-generic farm and village scenery, streamed after the first frame (#667); never game units.
             Statecraft.Game.Map.Collection.RuralLife.Show(map);
-            // Tal Heuberger's Tegart fort, barracks and factory at their sourced places and dates, close up only, streamed (#707).
-            Statecraft.Game.Map.Collection.SpecialBuildingModels.ShowAt(map, Bridge.State.Date);
+            // Tal Heuberger's Tegart fort, barracks and factory at their sourced places and dates, close up only, streamed (#707);
+            // under gdd-0.3 their artisan workshop (b21) on each built arms workshop's hex (#1701 slice F).
+            var workshops = Statecraft.Game.Map.Collection.SpecialBuildingModels.ArmsWorkshops(Bridge.Content, Bridge.State.CityProjects.Values);
+            special = Statecraft.Game.Map.Collection.SpecialBuildingModels.ShowAt(map, Bridge.State.Date, workshops);
+            // Tal Heuberger's hex-tile props (owner, 27 October 2026: "2+3"; 2 November 2026: "Every zoom" for the landmarks): their
+            // minarets, belfries and Jaffa's clock tower in place of the kit's at every zoom, so the bundle streams after the first
+            // frame; the stations, camp tents, village hedges and hill scatter close up only, built at the first close camera.
+            // After the layers they keep clear of (the built arms workshops' b21 too, #1701 slice F).
+            Statecraft.Game.Map.Collection.HexPropModels.ShowAt(map, Bridge.State.Date, workshops);
             // Tal Heuberger's ships off Haifa, Jaffa, Acre and (on the Altalena's turn) Tel Aviv, and the C-54 at Lod, streamed after the first frame (#669).
             seaAir = Statecraft.Game.Map.Collection.SeaAirCollection.ShowAt(map, Bridge.State.Date, Bridge.State.Placements, Bridge.Content);
             RenderSitesIfChanged();

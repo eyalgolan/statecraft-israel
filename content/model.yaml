@@ -37,12 +37,13 @@ situations:
   # can read them through their indicator conditions (Q-NAT-3, decided 15 October 2026, #375; R-NAT-002, R-NAT-004).
   - { id: low_cohesion, indicator: morale, on_below: 0.30, off_above: 0.45, name: Low social cohesion }   # DESIGN VALUE: owner-set balance, not a historical figure (D-C1, Q-NAT-3)
   - { id: low_intl_support, indicator: intl_standing, on_below: 0.30, off_above: 0.45, name: Low international support }   # DESIGN VALUE: owner-set balance, not a historical figure (D-C1, Q-NAT-3)
-# Money the sim tracks (these three ids, in millions): the name and the currency prefix the player sees.
+# Money the sim tracks (these three ids, in millions): the name and the currency prefix the player sees. The IL prefixes end in a no-break space
+# (U+00A0), so a money value never wraps between the currency and the amount (#2293).
 # The treasury is the GDD's Money (R-MONEY-001; spec §1.2 "Treasury becomes Money", owner, 15 October 2026, Q-MONEY-4).
 # Debt and foreign currency stay internal, under Money (D-C3, Q-MONEY-1).
 money:
-  - { id: treasury, name: Money, prefix: 'IL ' }
-  - { id: debt, name: Debt, prefix: 'IL ' }
+  - { id: treasury, name: Money, prefix: 'IL ' }
+  - { id: debt, name: Debt, prefix: 'IL ' }
   - { id: fx_reserves, name: Foreign currency, prefix: '$' }
 voter_groups:
   - { id: veterans, weights: { morale: 0.6, security: 0.4 } }

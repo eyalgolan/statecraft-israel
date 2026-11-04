@@ -21,7 +21,10 @@ namespace Statecraft.Game.Map.Collection
     /// into Lydda on 24 September 1950 (<see cref="C54From"/>, <see cref="C54To"/>);</item>
     /// <item>the Egyptian Spitfire flying a slow loop near the western board edge (about 30 km in) toward el-Arish and back (<see cref="SpitfireLoop"/>),
     /// banked into its turns, its propeller turning, its shadow on the ground and a small Egyptian flag over its tail, from 15 May 1948 to 2 January 1949
-    /// (<see cref="SpitfireFrom"/>, <see cref="SpitfireTo"/>, #1932), never on a hex or an airfield.</item>
+    /// (<see cref="SpitfireFrom"/>, <see cref="SpitfireTo"/>, #1932), never on a hex or an airfield;</item>
+    /// <item>the Egyptian Dakota flying a slow loop just off Tel Aviv with Egypt's flag over its tail (<see cref="DakotaLoop"/>)
+    /// on the turns of the first bombing period, 15 May to 11 June 1948 (<see cref="DakotaFrom"/>, <see cref="DakotaTo"/>;
+    /// SeaAirCollection.Dakota.cs).</item>
     /// </list>
     /// The boats lie on the open sea past the surf, where SeaCraft's own boats sail (SeaCraft.OffshoreNearM to OffshoreM out
     /// from the same shore points), each hull clear of the harbour works, of SeaCraft's boats and of each other
@@ -33,7 +36,7 @@ namespace Statecraft.Game.Map.Collection
     /// <see cref="CollectionStream"/> when first wanted, so nothing is fetched before the first frame. It fails open: a model
     /// that does not stream logs one warning and is not drawn; the map plays on.</summary>
     [ExecuteAlways]
-    public sealed class SeaAirCollection : MonoBehaviour
+    public sealed partial class SeaAirCollection : MonoBehaviour
     {
         public const string Name = "SeaAirCollection";
         public const string Altalena = "vehicle-altalena-lst-1948-v2wl";
@@ -41,6 +44,7 @@ namespace Statecraft.Game.Map.Collection
         public const string Steamer = "vehicle-immigrant-steamer-1948-v2wl";
         public const string C54 = "figure-vehicle-c54-skymaster-1948-v2";
         public const string Spitfire = CollectionCatalog.EgyptianSpitfire;
+        public const string Dakota = CollectionCatalog.EgyptianDakota;
 
         /// <summary>The card whose window dates the Altalena (content/events/altalena.yaml).</summary>
         public const string AltalenaEvent = "altalena";
@@ -78,7 +82,7 @@ namespace Statecraft.Game.Map.Collection
         const float FootM = 0.3048f;
         public static float RealLengthM(string model) => model switch
         {
-            Altalena => 328f * FootM, C54 => 35.81f, Steamer => 80f, FishingBoat => 10f, Spitfire => 11.23f,
+            Altalena => 328f * FootM, C54 => 35.81f, Steamer => 80f, FishingBoat => 10f, Spitfire => 11.23f, Dakota => DakotaSpanM,
             _ => throw new ArgumentException($"'{model}' is not one of #669's models", nameof(model)),
         };
 
@@ -87,7 +91,7 @@ namespace Statecraft.Game.Map.Collection
         /// owner, 18 October 2026, #1033: "Train scale for all ambient life"). The Altalena is 2.4 km, the C-54 860 m across. The one exception is the
         /// Spitfire, drawn at the unit tokens' aircraft scale (UnitShowcase.AircraftScale, 420x: 4.7 km across), so it reads at strategic zoom (owner ruling, #2014).</summary>
         public static float SizeOf(string model) =>
-            RealLengthM(model) * (model == Spitfire ? Statecraft.Game.Map.Units.UnitShowcase.AircraftScale : SettlementKits.ModelScale);
+            RealLengthM(model) * (model == Spitfire || model == Dakota ? Statecraft.Game.Map.Units.UnitShowcase.AircraftScale : SettlementKits.ModelScale);
 
         /// <summary>DESIGN VALUE: every craft lies with its length east-west (SeaCraft heading 0), side-on to the gameplay
         /// camera looking north, as SeaCraft's boats lie. A model is turned 0 or 90 degrees about the vertical, on top of its
@@ -122,6 +126,7 @@ namespace Statecraft.Game.Map.Collection
                 wants.Add(new Want("tel-aviv-altalena", Altalena, "tel_aviv"));
             if (date >= C54From && date <= C54To) wants.Add(new Want("lod-c54", C54, "lod"));
             if (date >= SpitfireFrom && date <= SpitfireTo) wants.Add(new Want("el-arish-spitfire", Spitfire, "el_arish"));
+            if (date >= DakotaFrom && date <= DakotaTo) wants.Add(new Want(DakotaKey, Dakota, "tel_aviv"));
             return wants;
         }
 
@@ -267,16 +272,31 @@ namespace Statecraft.Game.Map.Collection
             var keys = residencyView?.Keys;
             return keys == null ? wants : wants.Where(w => keys.Contains(w.Key));
         }
-        IEnumerable<(string key, Vector3 at, float radius)> Anchors()
+        Action<List<(string key, Vector3 at, float radius)>>? fillResidencyAnchors;
+        void FillResidencyAnchors(List<(string key, Vector3 at, float radius)> anchors)
         {
-            if (map == null) yield break;
+            if (map == null) return;
             var edge = EdgeSpot(map.Frame);   // the Spitfire's anchor is on the ground under it; only its distance counts
-            foreach (var w in wants)
+            for (int i = 0; i < wants.Count; i++)
             {
-                var c = SeaCraft.Coasts.FirstOrDefault(x => x.place == w.Place);
-                yield return (w.Key, w.Model == C54 ? map.Frame.ToWorld(LodLon, LodLat, 0) : w.Model == Spitfire ? new Vector3(edge.x, 0, edge.y)
-                    : map.Frame.ToWorld(c.lon, c.lat, 0), SizeOf(w.Model));
+                var w = wants[i];
+                if (w.Model == Dakota)   // its anchor is on the ground under its loop's centre; only its distance counts
+                {
+                    if (DakotaCentre() is Vector2 d) anchors.Add((w.Key, new Vector3(d.x, 0f, d.y), SizeOf(Dakota)));
+                    continue;
+                }
+                var c = default((string place, double lon, double lat, Vector2 seaward, int boats));
+                for (int j = 0; j < SeaCraft.Coasts.Length; j++)
+                    if (SeaCraft.Coasts[j].place == w.Place) { c = SeaCraft.Coasts[j]; break; }
+                anchors.Add((w.Key, w.Model == C54 ? map.Frame.ToWorld(LodLon, LodLat, 0) : w.Model == Spitfire ? new Vector3(edge.x, 0, edge.y)
+                    : map.Frame.ToWorld(c.lon, c.lat, 0), SizeOf(w.Model)));
             }
+        }
+        static bool SameKeys(HashSet<string> before, HashSet<string> after)
+        {
+            if (before.Count != after.Count) return false;
+            foreach (string key in before) if (!after.Contains(key)) return false;
+            return true;
         }
         void RefreshResidency() => RefreshResidencyCore(true);
         void RefreshResidencyCore(bool redraw)
@@ -329,8 +349,8 @@ namespace Statecraft.Game.Map.Collection
         void ObserveResidency(Camera camera)
         {
             var before = residencyView!.Keys;
-            residencyView.Observe(camera, Anchors(), Time.frameCount);
-            if (!before.SetEquals(residencyView.Keys))
+            residencyView.Observe(camera, fillResidencyAnchors ??= FillResidencyAnchors, Time.frameCount);
+            if (!SameKeys(before, residencyView.Keys))
             { if (Application.isPlaying) residencyDirty = true; else RefreshResidencyCore(false); }
         }
         void LateUpdate()
@@ -411,14 +431,16 @@ namespace Statecraft.Game.Map.Collection
                 Vector2? at = null;
                 if (prefab != null)
                 {
-                    at = w.Model == C54 ? LandSpot(ground) : w.Model == Spitfire ? EdgeSpot(map.Frame) : SeaSpot(w, ground, works, boats);
-                    if (at != null && w.Model != C54 && w.Model != Spitfire) boats.Add(new SeaCraft.Craft(SeaCraft.Kind.Steamer, at.Value, Heading, SizeOf(w.Model), w.Place));
+                    at = w.Model == C54 ? LandSpot(ground) : w.Model == Spitfire ? EdgeSpot(map.Frame) : w.Model == Dakota ? DakotaCentre()
+                        : SeaSpot(w, ground, works, boats);
+                    if (at != null && w.Model != C54 && w.Model != Spitfire && w.Model != Dakota) boats.Add(new SeaCraft.Craft(SeaCraft.Kind.Steamer, at.Value, Heading, SizeOf(w.Model), w.Place));
                 }
                 if (at == null) { Missing.Add(w.Key); continue; }
                 var go = Instantiate(prefab!, transform, false); go.name = w.Key;
                 if (!originals.TryGetValue(w.Model, out var owned)) originals[w.Model] = owned = new List<GameObject>();
                 owned.Add(go);
                 if (w.Model == Spitfire) { Fly(go, prefab!, at.Value, ground); continue; }
+                if (w.Model == Dakota) { FlyDakota(go, prefab!, at.Value); continue; }
                 // The yaw goes on top of the prefab's own rotation: every Collection Far prefab's root carries the FBX axis
                 // conversion (-90 degrees about X), and setting the yaw alone lays a model on its side (#979).
                 go.transform.localRotation = prefab!.transform.localRotation;

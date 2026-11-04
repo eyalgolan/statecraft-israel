@@ -55,7 +55,9 @@ messages:
 # #2095 (1 Nov 2026); the other 16 were read by the owner, a native speaker, on 1 November 2026: "all 16 pages look
 # good". The same day the owner ruled "replace evey place that says משושה with משבצת throughout the game", which
 # changed the Hebrew of projects, standing_orders, combat and units_movement after those reads. The opening steps'
-# Tell me more opens the page of what each step points at (plan Task 13).
+# Tell me more opens the page of what each step points at (plan Task 13). Security and Public support (#2223) are pending:
+# agent-drafted Hebrew, not shown in Hebrew until a native read.
+# Then changed (3 Nov 2026): the owner read their Hebrew as a native speaker (HE batch 2): "approved", so both now show in Hebrew.
 pages:
   - { id: turns, advisor: ben_gurion, he_review: approved }
   - { id: attention, advisor: ben_gurion, show_me: attention, he_review: approved }
@@ -75,6 +77,8 @@ pages:
   - { id: cabinet, advisor: meyerson, show_me: nav_cabinet, he_review: approved }
   - { id: food, advisor: meyerson, he_review: approved }
   - { id: national_meters, advisor: meyerson, he_review: approved }
+  - { id: security, advisor: meyerson, he_review: approved }
+  - { id: public_support, advisor: meyerson, he_review: approved }
   - { id: units_movement, advisor: dayan, show_me: unit_move, he_review: approved }
   - { id: standing_orders, advisor: dayan, he_review: approved }
   - { id: combat, advisor: dayan, show_me: nav_defence, he_review: approved }

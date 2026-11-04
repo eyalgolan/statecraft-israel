@@ -31,6 +31,8 @@ namespace Statecraft.Game.Map.Collection
         readonly List<Renderer> models = new List<Renderer>();
         readonly List<GameObject> instances = new List<GameObject>();
         readonly Dictionary<int, bool> closeFor = new Dictionary<int, bool>();
+        readonly List<int> goneCameraIds = new List<int>();
+        readonly List<(string key, Vector3 at, float radius)> anchors = new List<(string, Vector3, float)>();
         IReadOnlyList<SettlementKits.KhakiTent> tents = Array.Empty<SettlementKits.KhakiTent>();
         Renderer? kit;
         CollectionResidencyView? view;
@@ -79,6 +81,8 @@ namespace Statecraft.Game.Map.Collection
                 layer.centre = new Vector3(c.x, 0f, c.y);
                 layer.extent = tents.Max(t => (t.C - c).magnitude + 0.5f * t.W);
             }
+            // The one anchor Choose observes every frame, as before even with no tents (centre and extent then stay zero).
+            layer.anchors.Add((Key, layer.centre, layer.extent));
             return layer;
         }
 
@@ -164,7 +168,13 @@ namespace Statecraft.Game.Map.Collection
         internal void AdvanceCameraFrame(int frame)
         {
             if (view != null && view.Prune(frame)) dirty = true;
-            foreach (int id in closeFor.Keys.Where(id => !view!.Observes(id)).ToArray()) closeFor.Remove(id);
+            goneCameraIds.Clear();
+            if (view != null)
+            {
+                foreach (var pair in closeFor)
+                    if (!view.Observes(pair.Key)) goneCameraIds.Add(pair.Key);
+                for (int i = 0; i < goneCameraIds.Count; i++) closeFor.Remove(goneCameraIds[i]);
+            }
             if (dirty) { dirty = false; Refresh(); }
         }
 
@@ -179,7 +189,7 @@ namespace Statecraft.Game.Map.Collection
         {
             if (cam.cameraType == CameraType.Preview || cam.cameraType == CameraType.Reflection || view == null) return;
             bool before = Demanded;
-            view.Observe(cam, new[] { (Key, centre, extent) }, Time.frameCount);
+            view.Observe(cam, anchors, Time.frameCount);
             if (before != Demanded)
             {
                 if (Application.isPlaying || inRender)

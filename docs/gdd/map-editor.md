@@ -19,7 +19,7 @@ A designer edits existing hex properties and moves locations, inspects affected 
 - Report validation failures against the affected hex, location or dependent record. A failed save must leave the last valid saved map intact [S1].
 - The host is a Unity editor window. It saves edits to one override file, `content/map/overrides.yaml`, which map generation applies last so regeneration keeps the edits. The editable properties are a hex's terrain and control and a location's position; a location's id and sources stay unchanged. **Then decided (owner, 18 Oct 2026, "Unity editor window"; [#1009](https://github.com/eyalgolan/statecraft-israel/issues/1009#issuecomment-6254354592))** [S4].
 
-*Considered and declined (owner, 30 Oct 2026; Regional pooling conflict, option A; [conflict decision](../GDD.md#30-october-2026-conflict-decisions)): Amir's #1668 proposed editing region membership. For Amir's workable-land flags and supported static infrastructure, the review did not rule; main's `R-MEDIT-001` to `R-MEDIT-003` (`docs/rules/mvp.md:558`) cover only the authoring envelope. On 1 November 2026 the owner made these fields post-MVP: regions come from sub-districts and fields are authored data (Q36).* [S1] [S9]
+*Considered and declined (owner, 30 Oct 2026; Regional pooling conflict, option A; [conflict decision](../GDD.md#30-october-2026-conflict-decisions)): Amir's #1668 proposed editing region membership. For Amir's workable-land flags and supported static infrastructure, the review did not rule; main's `R-MEDIT-001` to `R-MEDIT-003` (`docs/rules/mvp.md`) cover only the authoring envelope. On 1 November 2026 the owner made these fields post-MVP: regions come from sub-districts and fields are authored data (Q36).* [S1] [S9]
 
 The retained owner ruling keeps `content/map/overrides.yaml` as the override file [S4].
 ### Camera and editing surface
@@ -30,7 +30,7 @@ Use the existing internal map/Unity authoring workflow as the first host. This i
 
 ### Tile and location operations
 
-**Amir's proposal, declined by the owner on 30 October 2026 (Regional pooling conflict, option A) [S1]:** the editor would add region membership to the retained terrain/control/location-position fields. That addition is non-operative. Workable-land flags and static infrastructure were not ruled on by the 30 October 2026 conflict review; they are post-MVP (owner, 1 November 2026: "30 Oct wins for the MVP (Recommended)"), since starting fields are an authored list (Q36) and `R-MEDIT-001` (`docs/rules/mvp.md:558`) is the MVP envelope [S9].
+**Amir's proposal, declined by the owner on 30 October 2026 (Regional pooling conflict, option A) [S1]:** the editor would add region membership to the retained terrain/control/location-position fields. That addition is non-operative. Workable-land flags and static infrastructure were not ruled on by the 30 October 2026 conflict review; they are post-MVP (owner, 1 November 2026: "30 Oct wins for the MVP (Recommended)"), since starting fields are an authored list (Q36) and `R-MEDIT-001` (`docs/rules/mvp.md`) is the MVP envelope [S9].
 
 The [GDD](../GDD.md#terrain-type-tilehex-type-new-types-tbd) owns the deferred expanded catalogue; the editor cannot invent it.
 
@@ -48,7 +48,7 @@ Save atomically after validation; failure preserves the prior usable overlay. Su
 
 ### Dependency validation and review
 
-**Amir's proposal, declined by the owner on 30 October 2026 (Regional pooling conflict, option A) [S1]:** validation would include proposed region, prepared-field and regional-slot dependencies. Facility dependencies were not ruled on by the 30 October 2026 conflict review; `R-MEDIT-003` (`docs/rules/mvp.md:562`) names them as a missing adapter. They are post-MVP, because facilities are per city in the MVP (owner, 1 November 2026: "30 Oct wins for the MVP (Recommended)") [S9]. Retained editor validation remains limited to the approved editable fields and their existing dependencies.
+**Amir's proposal, declined by the owner on 30 October 2026 (Regional pooling conflict, option A) [S1]:** validation would include proposed region, prepared-field and regional-slot dependencies. Facility dependencies were not ruled on by the 30 October 2026 conflict review; `R-MEDIT-003` (`docs/rules/mvp.md`) names them as a missing adapter. They are post-MVP, because facilities are per city in the MVP (owner, 1 November 2026: "30 Oct wins for the MVP (Recommended)") [S9]. Retained editor validation remains limited to the approved editable fields and their existing dependencies.
 
 Validate bounds, land/passability, biome ids, duplicate identities and broken references. Inspect affected corridor geometry/endpoints, force anchors, targets, objectives, shared-hex markers and label offsets. Broken corridor endpoints, force anchors, target bindings and objective bindings block export, since the sim's loader would refuse them; visual and label offsets only warn (owner, 1 November 2026, Q58) [S9]. Offsets use the axial hex (q, r) for placement plus an offset in metres from the hex centre, valid while the point stays inside its own hex (Q59) [S9].
 

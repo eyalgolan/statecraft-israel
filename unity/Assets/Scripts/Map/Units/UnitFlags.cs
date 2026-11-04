@@ -161,6 +161,47 @@ namespace Statecraft.Game.Map.Units
             return Split(m.Build(MeshName(side!)), IsraelSlots);
         }
 
+        /// <summary><paramref name="side"/>'s flag cloth with no pole, for a flag that floats over an aircraft's tail (owner, 2 November
+        /// 2026, on #2260: "Smaller flag, no pole"): <see cref="Build"/>'s cloth submeshes (one per <see cref="Colours"/>, the
+        /// pole's submesh 0 left out) and only the vertices they use, moved so the cloth's middle is at the origin, so it turns in
+        /// place. Null when the side has no sourced flag. The same shape as #2260's ClothOnly for the Spitfire.</summary>
+        public static Mesh? BuildCloth(string? side)
+        {
+            var flag = Build(side);
+            if (flag == null) return null;
+            var verts = flag.vertices; var uv = flag.uv; var normals = flag.normals;
+            var keep = new Dictionary<int, int>();
+            var parts = new List<int[]>();
+            for (int k = 1; k < flag.subMeshCount; k++)
+            {
+                var tris = flag.GetTriangles(k);
+                for (int i = 0; i < tris.Length; i++)
+                {
+                    if (!keep.TryGetValue(tris[i], out int to)) keep[tris[i]] = to = keep.Count;
+                    tris[i] = to;
+                }
+                parts.Add(tris);
+            }
+            var at = new Vector3[keep.Count]; var uvs = new Vector2[keep.Count]; var ns = new Vector3[keep.Count];
+            foreach (var pair in keep)
+            {
+                at[pair.Value] = verts[pair.Key];
+                if (uv.Length > 0) uvs[pair.Value] = uv[pair.Key];
+                if (normals.Length > 0) ns[pair.Value] = normals[pair.Key];
+            }
+            var cloth = new Bounds(at[0], Vector3.zero);
+            foreach (var v in at) cloth.Encapsulate(v);
+            for (int i = 0; i < at.Length; i++) at[i] -= cloth.center;
+            var mesh = new Mesh { name = flag.name + "/cloth", vertices = at };
+            if (uv.Length > 0) mesh.uv = uvs;
+            if (normals.Length > 0) mesh.normals = ns;
+            mesh.subMeshCount = parts.Count;
+            for (int k = 0; k < parts.Count; k++) mesh.SetTriangles(parts[k], k);
+            mesh.RecalculateBounds();
+            if (Application.isPlaying) UnityEngine.Object.Destroy(flag); else UnityEngine.Object.DestroyImmediate(flag);
+            return mesh;
+        }
+
         /// <summary>Each flag's palette slots, one per cloth colour in <see cref="Colours"/>'s order: a slot only tags a plate's
         /// submesh (<see cref="Split"/>); the cloth's colour is the unlit material's.</summary>
         static readonly int[] IsraelSlots = { P.RoundelWhite, P.RoundelBlue }, TransjordanSlots = { P.PropBlack, P.CamoGreen, P.MarkingRed, P.RoundelWhite },

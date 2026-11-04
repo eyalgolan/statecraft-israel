@@ -5,7 +5,8 @@ using System.Linq;
 
 namespace Statecraft.Game.Map.Collection
 {
-    /// <summary>Requested placement detail; both requests resolve to the same full original prefab. No far mesh is generated.</summary>
+    /// <summary>Requested placement detail; both requests resolve to the same full original prefab. No far mesh is generated
+    /// from an original: the town models' far-off copies (#2378) are ids of their own (<see cref="CollectionCatalog.FarCopy"/>).</summary>
     public enum CollectionDetail { Far, Near }
 
     /// <summary>Tal Heuberger's 73 originals from #507 and #336, pinned by docs/original-models.json.
@@ -70,7 +71,11 @@ namespace Statecraft.Game.Map.Collection
             // Generated static props signed off the same day, each in a bundle of its own, "collection-" + id (a group name only).
             GeneratedProps = "collection-generated-props",
             // Tal Heuberger's generated whole towns (#2085, #1288), each in a bundle of its own, "collection-" + id (a group name only).
-            GeneratedTowns = "collection-generated-towns";
+            GeneratedTowns = "collection-generated-towns",
+            // Tal Heuberger's prepared weapons (#2083) held by the Israeli soldier figures (UnitWeapons), and their C06 point-fire
+            // pose source (#2084) for the attacking C06 figures (UnitFigurePointFire); each in a bundle of its own, "collection-" + id,
+            // opened after the people's (group names only).
+            GeneratedWeapons = "collection-generated-weapons", FigurePoses = "collection-figure-poses";
 
         /// <summary>Tal Heuberger's whole-town models of Tiberias, Safed, Netanya (#1288 asks for one each) and Ramla (#2085), Far
         /// landmarks on their towns (TownLandmarks). Their sources are asset-sources/prepared-towns-20261031/ (#2085); the Unity FBX
@@ -78,6 +83,17 @@ namespace Statecraft.Game.Map.Collection
         /// vehicles, and the colour map is Tal's delivered JPG byte for byte.</summary>
         public const string TiberiasTown = "tiberias-town-v1", SafedTown = "safed-town-v1", NetanyaTown = "netanya-town-v1",
             RamlaTown = "ramla-town-v1";
+
+        /// <summary>Tal Heuberger's K98k rifle and Sten submachine gun (#2083; owner, 2 November 2026: "Yes, on the soldier figures
+        /// (Recommended)"). Their sources are asset-sources/prepared-weapons-20261031/; the Unity FBX is a documented lossless
+        /// compatibility conversion of the textured GLB (tools/prepared_weapons.py), and the colour map is Tal's JPG byte for byte.</summary>
+        public const string K98k = "weapon-k98k-v1", Sten = "weapon-sten-v1";
+
+        /// <summary>Tal Heuberger's C06 point-fire export (#2084; owner, 2 November 2026: "Yes, for firing units (Recommended)"),
+        /// byte for byte from asset-sources/c06-point-fire-reference-20261031/. Its bundle carries only the pose source prefab
+        /// (the clip and the rig correction, UnitFigurePoseSource), not the export's mesh.</summary>
+        public const string C06PointFire = "c06-point-fire-v1";
+        public const string C06PointFireFile = "C06-POINT-FIRE-PROVISIONAL-PUBLIC.fbx";
 
         /// <summary>The Egyptian infantry, Tal Heuberger's figure for the Egyptian Expeditionary Force (owner, 27 October 2026,
         /// "Sign off all 19" and, for Egypt, "One token").</summary>
@@ -105,6 +121,28 @@ namespace Statecraft.Game.Map.Collection
         /// <summary>Tal Heuberger's khaki canvas tent, in place of a transit camp's khaki ridge tents up close (CampTentModels).</summary>
         public const string KhakiTent = "generated-1948-08-khaki-canvas-tent";
 
+        /// <summary>The rigged copy of #336's 1948 soldier (#2384; owner, 3 November 2026: "rig Tal's later"): Tal Heuberger's
+        /// static soldier skinned to the 67-bone skeleton their C06 and C07 share, with C07's idle, walk and fire takes
+        /// (tools/rig_soldier_1948.py; its provenance.json beside it). The original, figure-soldier-1948-v1, stays catalogued
+        /// and untouched; the Yiftach and Negev tokens draw this copy in its place (UnitFigures).</summary>
+        public const string Soldier1948Rigged = "figure-soldier-1948-v1-rigged";
+
+        /// <summary>Tal Heuberger's Egyptian Dakota C-47, flying a slow loop off Tel Aviv on the turns of the first Egyptian bombing
+        /// period, 15 May to 11 June 1948 (SeaAirCollection; owner, 2 November 2026: "Over Tel Aviv, 15 May-11 Jun
+        /// (Recommended)", and on #2274, "Off the coast is fine (Recommended)"). Like the R35, its source is the vehicle delivery's compatibility FBX (<see cref="SourceModelPath"/>).</summary>
+        public const string EgyptianDakota = "generated-1948-16-egyptian-dakota-c47";
+
+        /// <summary>Tal Heuberger's four props placed at sourced places and dates (SpecialBuildingModels; owner, 2 November 2026:
+        /// "Place all four now (Recommended)"): the well (09) at Abraham's Well, Beersheba; the sandbags (10) on the Tel Aviv shore
+        /// on the Altalena's turn; the crates (11) on the Haifa port quay in 1948; the low wall (12) by the Jaffa-Jerusalem road
+        /// near Abu Ghosh in 1948.</summary>
+        public const string StoneWell = "generated-1948-09-stone-village-well", Sandbags = "generated-1948-10-low-sandbag-position",
+            CrateStack = "generated-1948-11-supply-crate-stack", StoneWall = "generated-1948-12-low-stone-wall-module";
+
+        /// <summary>Tal Heuberger's local Arab irregular, the local forces' token figure once a local-forces row is sourced (owner, 2
+        /// November 2026: "Use it instead of C09"; Units.UnitFigures.BySide).</summary>
+        public const string LocalIrregular = "figure-local-arab-irregular-1948-v1";
+
         /// <summary>Every bundle, with its models in a fixed order.</summary>
         public static readonly IReadOnlyList<(string Bundle, string[] Ids)> Groups = new (string, string[])[]
         {
@@ -118,6 +156,8 @@ namespace Statecraft.Game.Map.Collection
                 "figure-arab-villager-v1", "figure-builder-1950-v1", "figure-elder-immigrant-v1", "figure-immigrant-child-v1",
                 "figure-immigrant-woman-v1", "figure-kibbutz-woman-v1", "figure-soldier-1948-v1", "figure-yemenite-immigrant-v1",
                 "figure-pioneer-farmer-v1-tpose",
+                // the soldier's rigged copy (#2384), the model the Yiftach and Negev tokens draw
+                Soldier1948Rigged,
             }),
             (Vehicles, new[]
             {
@@ -159,6 +199,7 @@ namespace Statecraft.Game.Map.Collection
                 "figure-ala-infantry-1948-v1",
                 "figure-bedouin-civilian-1948-v1",
                 "figure-lebanese-regular-1948-v1",
+                "figure-local-arab-irregular-1948-v1",
             }),
             (GeneratedProps, new[]
             {
@@ -166,6 +207,11 @@ namespace Statecraft.Game.Map.Collection
                 "generated-1948-13-egyptian-spitfire",
                 "generated-1948-14-syrian-renault-r35",
                 "generated-1948-08-khaki-canvas-tent",
+                "generated-1948-16-egyptian-dakota-c47",
+                "generated-1948-09-stone-village-well",
+                "generated-1948-10-low-sandbag-position",
+                "generated-1948-11-supply-crate-stack",
+                "generated-1948-12-low-stone-wall-module",
             }),
             (GeneratedTowns, new[]
             {
@@ -174,6 +220,8 @@ namespace Statecraft.Game.Map.Collection
                 "netanya-town-v1",
                 "ramla-town-v1",
             }),
+            (GeneratedWeapons, new[] { K98k, Sten }),
+            (FigurePoses, new[] { C06PointFire }),
         };
 
         /// <summary>A bundle that is opened only after another has settled (opened or failed) when both are asked for: the Arab
@@ -186,10 +234,15 @@ namespace Statecraft.Game.Map.Collection
             ["collection-" + AlaInfantry] = People,
             ["collection-" + BedouinCivilian] = People,
             ["collection-" + LebaneseRegular] = People,
+            ["collection-" + LocalIrregular] = People,
+            ["collection-" + K98k] = People,
+            ["collection-" + Sten] = People,
+            ["collection-" + C06PointFire] = People,
         };
 
         /// <summary>The models whose near prefab is skinned and plays its idle clip: every person but C05 (his only idle is
-        /// a walk; #507 has him stand still) and #336's soldier (no rig), the sheep and the draught horse.</summary>
+        /// a walk; #507 has him stand still) and #336's soldier as delivered (no rig; his rigged copy plays C07's), the sheep
+        /// and the draught horse.</summary>
         public static readonly IReadOnlyCollection<string> Animated = new HashSet<string>(StringComparer.Ordinal)
         {
             "figure-c01-arriving-man-v2", "figure-c02-townsman-v2", "figure-c03-smith-carpenter-v2", "figure-c04-sabra-pioneer-v3",
@@ -198,40 +251,63 @@ namespace Statecraft.Game.Map.Collection
             "figure-draught-horse-idle-1948-v2", "figure-sheep-idle-1948-v1",
             "figure-arab-villager-v1", "figure-builder-1950-v1", "figure-elder-immigrant-v1", "figure-immigrant-child-v1",
             "figure-immigrant-woman-v1", "figure-kibbutz-woman-v1", "figure-yemenite-immigrant-v1", "figure-pioneer-farmer-v1-tpose",
+            Soldier1948Rigged,
             "figure-syrian-infantry-1948-v1",
             "figure-iraqi-infantry-1948-v1",
             EgyptianInfantry,
             AlaInfantry,
             BedouinCivilian,
             LebaneseRegular,
+            LocalIrregular,
         };
 
         /// <summary>The generated figures (#1377 and later): full-quality rigs that keep playing their idle at every zoom, each
         /// with one prefab beside its FBX.</summary>
         public static bool IsFullQualityGeneratedInfantry(string id) =>
             id == "figure-syrian-infantry-1948-v1" || id == "figure-iraqi-infantry-1948-v1" || id == EgyptianInfantry || id == AlaInfantry
-            || id == BedouinCivilian || id == LebaneseRegular;
+            || id == BedouinCivilian || id == LebaneseRegular || id == LocalIrregular;
 
         /// <summary>The generated static props: full-quality originals with one prefab beside the FBX, like the generated figures.</summary>
-        public static bool IsGeneratedProp(string id) => id == BedouinTent || id == EgyptianSpitfire || id == SyrianR35 || id == KhakiTent;
+        public static bool IsGeneratedProp(string id) => id == BedouinTent || id == EgyptianSpitfire || id == SyrianR35 || id == KhakiTent
+            || id == EgyptianDakota || id == StoneWell || id == Sandbags || id == CrateStack || id == StoneWall;
 
         /// <summary>The generated whole towns (#2085): static full-quality originals with one prefab beside the FBX, like the
         /// generated props, drawn far off by TownLandmarks.</summary>
         public static bool IsGeneratedTown(string id) => id == TiberiasTown || id == SafedTown || id == NetanyaTown || id == RamlaTown;
 
+        /// <summary>Tal Heuberger's prepared weapons (#2083): static full-quality originals with one prefab beside the FBX, like the
+        /// generated towns, held by the token figures (UnitWeapons).</summary>
+        public static bool IsGeneratedWeapon(string id) => id == K98k || id == Sten;
+
+        /// <summary>Tal Heuberger's C06 point-fire pose source (#2084): a prefab with no mesh, only the clip it samples.</summary>
+        public static bool IsFigurePose(string id) => id == C06PointFire;
+
         /// <summary>The model file a catalogued id is imported from: <c>&lt;id&gt;.fbx</c> beside its prefab, except the vehicle
         /// delivery's documented <c>&lt;id&gt;-compatibility.fbx</c> (docs/vehicle-review-2026-10-22.md).</summary>
         public static string SourceModelPath(string id) =>
-            $"{(IsBuilding(id) ? BuildingsFolder : Folder)}/{id}/{id}{(id == SyrianR35 ? "-compatibility" : "")}.fbx";
+            id == C06PointFire ? $"{Folder}/{id}/{C06PointFireFile}" :
+            $"{(IsBuilding(id) ? BuildingsFolder : Folder)}/{id}/{id}{(id == SyrianR35 || id == EgyptianDakota ? "-compatibility" : "")}.fbx";
 
         /// <summary>Every generated model (figure, prop or whole town): imported by its own lossless importer, not the original Collection's.</summary>
-        public static bool IsGenerated(string id) => IsFullQualityGeneratedInfantry(id) || IsGeneratedProp(id) || IsGeneratedTown(id);
+        public static bool IsGenerated(string id) => IsFullQualityGeneratedInfantry(id) || IsGeneratedProp(id) || IsGeneratedTown(id)
+            || IsGeneratedWeapon(id) || IsFigurePose(id);
 
         // Categories describe placement; every model streams in a bundle of its own, except #1763's two figures, which share theirs.
         public static IEnumerable<string> Ids => Groups.SelectMany(b => b.Ids).Concat(Kits.TownModels.Ids);
+
+        /// <summary>The far-off copies of the 23 town building models (#2378; owner, 3 November 2026: "Ask Tal; allow them far
+        /// off only", then "I have Tal's OK; go ahead"): "&lt;id&gt;-far", each in a bundle of its own that carries only its
+        /// prefab (the derived mesh, baked colour map and material come in as dependencies, nothing of the original), made by
+        /// the editor's FarModelLevels beside the original. Not among <see cref="Ids"/>: those are Tal Heuberger's originals.
+        /// TownModelLayer asks for them beyond its close switch and for the originals below it.</summary>
+        public const string FarSuffix = Kits.TownModels.FarSuffix;
+        public static string FarCopy(string id) => id + FarSuffix;
+        public static bool IsFarCopy(string id) => id.EndsWith(FarSuffix, StringComparison.Ordinal)
+            && Kits.TownModels.Ids.Contains(id.Substring(0, id.Length - FarSuffix.Length));
         public static readonly IReadOnlyList<(string Bundle, string[] Ids)> Bundles =
             Ids.Where(id => !Groups.Single(g => g.Bundle == ArabArmies).Ids.Contains(id)).Select(id => ("collection-" + id, new[] { id }))
-                .Concat(Groups.Where(g => g.Bundle == ArabArmies)).ToArray();
+                .Concat(Groups.Where(g => g.Bundle == ArabArmies))
+                .Concat(Kits.TownModels.Ids.Select(id => ("collection-" + FarCopy(id), new[] { FarCopy(id) }))).ToArray();
         public static bool IsBuilding(string id) => Kits.TownModels.Ids.Contains(id)
             || Groups.Single(b => b.Bundle == Buildings).Ids.Contains(id);
 
@@ -253,6 +329,7 @@ namespace Statecraft.Game.Map.Collection
 
         /// <summary>The prefab's project path, which is also its name inside the bundle (lower case there).</summary>
         public static string PrefabPath(string id, CollectionDetail detail) =>
+            IsFarCopy(id) ? $"{BuildingsFolder}/{id.Substring(0, id.Length - FarSuffix.Length)}/{id}.prefab" :
             IsGenerated(id) ? $"{Folder}/{id}/{id}.prefab" :
             IsBuilding(id)
                 ? $"{BuildingsFolder}/{id}/{id}-stream.prefab"

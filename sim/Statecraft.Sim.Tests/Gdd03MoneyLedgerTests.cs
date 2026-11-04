@@ -206,7 +206,7 @@ public class Gdd03MoneyLedgerTests
             foreach (var w in a.Why.Where(w => w.Key == CauseKeys.Borrowed)) borrowedFor.Add(w.Args[0]);
             poor = a.State; rich = b.State;
         }
-        Assert.True(poor.Debt > 0 && rich.Debt == 0, $"the empty Treasury borrowed IL {N(poor.Debt)}m, the full one IL {N(rich.Debt)}m");
+        Assert.True(poor.Debt > 0 && rich.Debt == 0, $"the empty Treasury borrowed IL\u00A0{N(poor.Debt)}m, the full one IL\u00A0{N(rich.Debt)}m");
         Assert.Subset(borrowedFor, new HashSet<string> { CauseKeys.Purpose.Deficit, CauseKeys.Purpose.Training, CauseKeys.Purpose.Project, CauseKeys.Purpose.Arms });
     }
 

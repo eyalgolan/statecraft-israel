@@ -74,11 +74,11 @@ namespace Statecraft.Sim
         /// city's jobs first (R-CRAFT-002), so only the employed beyond its craftsmen are civilians in work.</summary>
         public static int Idle(City city) => city.Civilians - Math.Max(0, city.Employed - city.Craftsmen);
 
-        /// <summary>R-TRAIN-001 with R-ARMS-005: <see cref="Idle(City)"/>, less the city's staffed arms workshops' workers, who
-        /// hold no job but are not idle (each one is a craftsman without a job first, then a civilian), as
-        /// <see cref="Cities.MaxWorkers(GameState, City)"/> takes them off the jobs. The same number where no workshop is
-        /// staffed (always, outside gdd-0.3).</summary>
-        public static int Idle(GameState s, City city) => Idle(city, city.Employed, Workshops.Staffed(s, city.Id));
+        /// <summary>R-TRAIN-001 with R-ARMS-005 and R-CITY-011: <see cref="Idle(City)"/>, less the city's staffed arms
+        /// workshops' workers and its builders, who hold no job but are not idle (each one is a craftsman without a job first,
+        /// then a civilian), as <see cref="Cities.MaxWorkers(GameState, City)"/> takes them off the jobs. The same number where
+        /// no workshop is staffed and no project has a builder (always, outside gdd-0.3).</summary>
+        public static int Idle(GameState s, City city) => Idle(city, city.Employed, Workshops.Staffed(s, city.Id) + Projects.Builders(s, city.Id));
 
         static int Idle(City city, int employed, int staffed) =>
             Math.Max(0, Math.Min(city.Civilians - Math.Max(0, employed - city.Craftsmen), city.Civilians + city.Craftsmen - employed - staffed));
@@ -93,7 +93,8 @@ namespace Statecraft.Sim
         /// <summary>R-TRAIN-001 with R-CITY-001: the groups still free to train in <paramref name="city"/> once the orders in
         /// <paramref name="pending"/> (this turn's queue) have run: <see cref="Idle"/>, less every track's Train order there
         /// and every queued reassignment (R-QUAL-004, R-QUAL-005), less a pending "job" AssignWorkers' rise in jobs, and less
-        /// a pending "workshop" AssignWorkers' rise in staffed arms workshops (R-ARMS-005). A count up to
+        /// a pending "workshop" AssignWorkers' rise in staffed arms workshops (R-ARMS-005), and less the city's builders and
+        /// the builder each queued gdd-0.3 StartProject there may take (R-CITY-011). A count up to
         /// it keeps every one of those orders accepted, whatever order they run in. A pending CancelTraining is not counted, since it may run after the Train.</summary>
         public static int Available(GameState s, string city, IEnumerable<Command> pending)
         {
@@ -101,7 +102,7 @@ namespace Statecraft.Sim
             var list = pending as IReadOnlyCollection<Command> ?? pending.ToList();
             int Pending(string role, int now) =>
                 Math.Max(now, list.OfType<AssignWorkers>().Where(w => w.City == city && w.Role == role).Select(w => w.Count).DefaultIfEmpty(0).Max());
-            return Math.Max(0, Idle(x, Pending("job", x.Employed), Pending(Workshops.Role, Workshops.Staffed(s, city))) - Ordered(city, list));
+            return Math.Max(0, Idle(x, Pending("job", x.Employed), Pending(Workshops.Role, Workshops.Staffed(s, city)) + Projects.Builders(s, city) + Projects.Starting(s, city, list)) - Ordered(city, list));
         }
 
         /// <summary>R-TRAIN-001: <paramref name="count"/> of the city's civilians without work start training as

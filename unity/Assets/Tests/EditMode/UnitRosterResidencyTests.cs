@@ -20,7 +20,9 @@ using Object = UnityEngine.Object;
 /// controls Near only, so leaving the approved unit band retires close detail without leaving a drawn bare plinth.</summary>
 public class UnitRosterResidencyTests
 {
-    const float StartViewM = 90000f;
+    // A strategic view outside camera residency (ProductionResidency: in at 30 km, out at 40 km); the game opened here until
+    // the owner's 3 November 2026 ruling (CameraRig.StartDistance).
+    const float StrategicViewM = 90000f;
     const float DisplacedViewM = 11800f;
     const int DeferredRetirementSteps = 3;
     const int NoOwners = 0;
@@ -159,7 +161,7 @@ public class UnitRosterResidencyTests
             foreach (var holder in holders)
                 Assert.AreEqual(OneOwnerPerFarKey, holder.ResidencySnapshot().ownedLeases,
                     $"{holder.transform.parent.name}/{holder.name}: one owner for its one retained (model, Far) key");
-            // These holder-count equalities assume the fixture's 90 km start view, where no Near lease is requested.
+            // These holder-count equalities assume the fixture's 90 km view, where no Near lease is requested.
             Assert.AreEqual(holders.Length, UnitFigures.OwnedRefCount, "no extra model owner remains beside the drawn holders");
             Assert.AreEqual(holders.Length, UnitFigures.OwnedDetailRefCount, "no extra detail owner remains beside the drawn holders");
 
@@ -222,7 +224,7 @@ public class UnitRosterResidencyTests
     {
         var map = BuildMap();
         var pending = PendingSource();
-        var camera = TopDownCamera(StartViewM, Vector3.zero);
+        var camera = TopDownCamera(StrategicViewM, Vector3.zero);
         try
         {
             var rows = Rows;
@@ -238,7 +240,7 @@ public class UnitRosterResidencyTests
             var layer = UnitLayer.Create(map, rows, C.Hexes, still: true);
             layer.Show(C, state);
             foreach (var holder in layer.GetComponentsInChildren<UnitFigureResidency>(true)) holder.Choose(default, camera);
-            Assert.AreEqual(StartViewM, TownModelLayer.ViewDistance(camera), 1f, "the verified 90 km start view");
+            Assert.AreEqual(StrategicViewM, TownModelLayer.ViewDistance(camera), 1f, "the verified 90 km view");
 
             AnswerAll(pending);
 
@@ -364,7 +366,7 @@ public class UnitRosterResidencyTests
             Assert.IsNotNull(piece.transform.Find(UnitFigures.ModelName + "/" + UnitFigureDetail.NearName),
                 "enter creates the Near clone");
 
-            camera.transform.position = new Vector3(0f, StartViewM, 0f);
+            camera.transform.position = new Vector3(0f, StrategicViewM, 0f);
             owner.Choose(default, camera);
             detail.Choose(default, camera);
             Assert.IsNull(piece.transform.Find(UnitFigures.ModelName + "/" + UnitFigureDetail.NearName),
@@ -401,7 +403,7 @@ public class UnitRosterResidencyTests
         }
         var policy = ProductionResidency.Approved().Units;
         var close = TopDownCamera(DisplacedViewM, Vector3.zero);
-        var strategic = TopDownCamera(StartViewM, Vector3.zero);
+        var strategic = TopDownCamera(StrategicViewM, Vector3.zero);
         try
         {
             var owner = piece.AddComponent<UnitFigureResidency>();

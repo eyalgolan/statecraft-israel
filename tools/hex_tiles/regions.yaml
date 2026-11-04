@@ -61,6 +61,9 @@ defaults:
   # Roads follow the traced 1948 routes (content/map/route_paths_1948.tsv) of these kinds that the map draws before
   # this date.
   roads: {kinds: [road], before: '1948-05-15'}
+  # The railways' named stations (content/map/routes_1948.yaml: a rail route's `via` waypoint whose name says "station",
+  # on a route the map draws before this date): a free land hex holding one takes this tile (the railway halt, #1155).
+  stations: {prototype: railway_halt, before: '1948-05-15'}
   units:
     - {unit: palmach_squad, near: tel_aviv, facing: 40}
     - {unit: sandwich_truck, near: ramla, facing: 100}
@@ -117,7 +120,6 @@ regions:
     flora:
       density: 1.1
       flat:
-        - {model: 'tiles:hula_swamp/papyrus', shape: pine, weight: 0.55}
         - {model: 'sandbox:tabor_oak_lite', shape: tree, weight: 0.45}
       hills:
         - {model: 'sandbox:tabor_oak_lite', shape: tree, weight: 0.7}

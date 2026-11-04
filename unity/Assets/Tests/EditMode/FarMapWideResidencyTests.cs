@@ -313,7 +313,7 @@ public sealed class FarMapWideResidencyTests
             var towns = TownLandmarks.ShowAt(map, new DateTime(1949, 1, 1), Array.Empty<Placement>(), content)!;
             var mapped = towns.Wanted.Where(w => w.OnTown).ToList();
             CollectionAssert.AreEquivalent(mapped.Select(w => w.Model).Distinct().ToList(), requested,
-                "the 90 km start view requests every wanted whole-town Far model map-wide");
+                "the map's build requests every wanted whole-town Far model map-wide");
             CollectionAssert.AreEquivalent(mapped.Select(w => w.Key).ToList(), towns.Seats.Keys.ToList(),
                 "every mapped town draws even when towns share one requested model");
 
@@ -323,9 +323,15 @@ public sealed class FarMapWideResidencyTests
             camera.transform.SetPositionAndRotation(new Vector3(focus.At.x, 90000f, focus.At.y),
                 Quaternion.LookRotation(Vector3.down, Vector3.forward));
             towns.Choose(default, camera);
+            // #2378, owner, 3 November 2026, "Cities/towns only (Recommended)": within the far band a town in view whose
+            // far-off copies are ready draws them instead of its whole-town model; every other mapped town draws its whole town.
+            Assert.IsTrue(buildings.ReadyForTown(focus.Key, camera), focus.Key + " has its far-off copies ready at 90 km");
+            Assert.IsTrue(mapped.Any(w => !towns.transform.Find(w.Key).GetComponentsInChildren<Renderer>(true).All(r => r.forceRenderingOff)),
+                "at least one mapped town still draws its whole-town model at the 90 km view");
             foreach (var want in mapped)
-                Assert.IsFalse(towns.transform.Find(want.Key).GetComponentsInChildren<Renderer>(true).All(r => r.forceRenderingOff),
-                    want.Key + " draws at the 90 km start view");
+                Assert.AreEqual(buildings.ReadyForTown(want.Key, camera),
+                    towns.transform.Find(want.Key).GetComponentsInChildren<Renderer>(true).All(r => r.forceRenderingOff),
+                    want.Key + " at the 90 km view: its whole-town model unless its far-off copies are ready");
 
             camera.transform.position = new Vector3(focus.At.x, 10000f, focus.At.y);
             towns.Choose(default, camera);

@@ -39,7 +39,7 @@ public class ProjectsTests
         Assert.True(Projects.IsBusy(r.State, id));
         Assert.Equal(Step(c, s).State.Treasury - 1.5, r.State.Treasury, 9);   // paid in full at the start (question 12)
         Assert.Equal((1, 0), (r.State.Units[id].Q, r.State.Units[id].R));   // the unit works from where it stands (question 9)
-        Assert.Contains(r.Why, x => x.System == "map" && x.Message == "Site A: a group of halutzim began building a yishuv, cost IL 1.5m");
+        Assert.Contains(r.Why, x => x.System == "map" && x.Message == "Site A: a group of halutzim began building a yishuv, cost IL\u00A01.5m");
     }
 
     public static IEnumerable<object[]> Refusals() => new List<object[]>
@@ -99,7 +99,7 @@ public class ProjectsTests
         Assert.Equal(0, s.Treasury);
         Assert.Equal(3.1, s.Debt, 9);
         Assert.Single(s.Sites);
-        Assert.Contains(why, x => x.System == "economy" && x.Target == "debt" && x.Message == "Borrowed IL 0.1m to build a yishuv");
+        Assert.Contains(why, x => x.System == "economy" && x.Target == "debt" && x.Message == "Borrowed IL\u00A00.1m to build a yishuv");
 
         var exact = WithHalutz(c, out var other);
         exact.Treasury = 1.5;

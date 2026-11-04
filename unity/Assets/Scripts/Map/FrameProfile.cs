@@ -41,7 +41,8 @@ namespace Statecraft.Game.Map
             webgl ? UrlFlags.Has(url, "vmoving") : args.Contains("-vmoving");
 
         /// <summary>Issue #659: "vclose" with "vprofile" in the WebGL URL (or -vclose on desktop) also prices the close views
-        /// (PromoPose.CloseUps), where the towns are Tal Heuberger's building models; their lines carry those poses' names.</summary>
+        /// (PromoPose.CloseUps) and the game's opening view ("opening"), where the towns are Tal Heuberger's building models;
+        /// their lines carry those poses' names.</summary>
         public static bool CloseRequested() =>
             CloseRequested(Application.absoluteURL, Environment.GetCommandLineArgs(), Application.platform == RuntimePlatform.WebGLPlayer);
 
@@ -89,7 +90,13 @@ namespace Statecraft.Game.Map
             configs.Add(("none", "*"));
             bool first = true;
             var poses = new List<PromoPose>(PromoPose.All);
-            if (CloseRequested()) poses.AddRange(PromoPose.CloseUps);
+            // With vclose, also the game's own opening view (CameraRig's start; owner, 3 November 2026), where every player
+            // meets the building models first.
+            if (CloseRequested())
+            {
+                poses.Add(new PromoPose("opening", CameraRig.StartLon, CameraRig.StartLat, CameraRig.StartDistance, 0f));
+                poses.AddRange(PromoPose.CloseUps);
+            }
             foreach (var pose in poses)
             {
                 pose.Apply(rig, frame);

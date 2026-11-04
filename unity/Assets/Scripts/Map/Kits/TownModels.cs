@@ -57,6 +57,13 @@ namespace Statecraft.Game.Map.Kits
         public const string Folder = "Assets/Art/Settlements/Prototype/Models";
         /// <summary>The editor asset containing the town meshes and materials.</summary>
         public const string SetPath = "Assets/Art/Settlements/TownModels.asset";
+        /// <summary>The far-off copy of each model (#2378; owner, 3 November 2026: "Ask Tal; allow them far off only", "I have
+        /// Tal's OK; go ahead"), made by the editor's FarModelLevels beside the original: &lt;id&gt;-far.asset (a mesh of at most
+        /// <see cref="FarTriangles"/> triangles), -far.png (its baked colour map), -far.mat, -far.prefab and -far.json (the
+        /// record). TownModelLayer draws it beyond its close switch; the original keeps every view below (#1273).</summary>
+        public const string FarSuffix = "-far";
+        public const int FarTriangles = 400;
+        public static string FarStem(string id) => $"{Folder}/{id}/{id}{FarSuffix}";
 
         internal static readonly TownModel[] TelAviv = { TownModel.B01WhiteCity, TownModel.B01WhiteCity, TownModel.B02aCornerBlock, TownModel.B02bNarrowBlock };
         internal static readonly TownModel[] WhiteCity = { TownModel.B01WhiteCity, TownModel.B02aCornerBlock };
@@ -89,6 +96,13 @@ namespace Statecraft.Game.Map.Kits
         internal static readonly TownModel[] FarmShed = { TownModel.B24Barn };
         /// <summary>Haifa's German Colony: the Templers' stone houses with red roofs.</summary>
         internal static readonly TownModel[] Templer = { TownModel.B05aMoshavaHouse };
+
+        /// <summary>The cities drawn from their building models at every zoom, with no whole-town model (owner ruling, 2 November
+        /// 2026: "we had tal's smaller buildings alreaedy for tel aviv, jerusalem and haifa and jaffa - instead of the huge
+        /// buildings", confirmed as "Yes, small buildings at every zoom"). This replaces the 18 October 2026 "Whole model far,
+        /// buildings near" for these four: Collection.TownLandmarks.ModelFor gives them no whole-town model, and TownModelLayer
+        /// admits their buildings beyond its close switch too.</summary>
+        public static bool AtEveryZoom(string id) => id == "tel_aviv" || id == "jerusalem" || id == "haifa" || id == "jaffa";
 
         /// <summary>The wine moshavot (the Carmel wineries of Rishon LeZion, 1890, and Zikhron Ya'akov, 1892): their first
         /// house nearest the heart is the winery.</summary>

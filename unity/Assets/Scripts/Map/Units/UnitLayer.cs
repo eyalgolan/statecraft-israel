@@ -745,8 +745,10 @@ namespace Statecraft.Game.Map.Units
                                     paint, at, Quaternion.Euler(0, heading, 0), UnitShowcase.FigureScale, out _).transform;
                             }
                             else figure = EmptyPiece(go.transform, $"Figure{i}", at, heading);   // no code-built figure for another side (#740)
-                            UnitFigures.Dress(figure, UnitFigures.FigureFor(t.Unit, i, israel ? t.Headgear[i] : null),
-                                map.Residency.Units, retainFar: true);   // the Collection's figure, held while its roster token lives (#665)
+                            var model = UnitFigures.FigureFor(t.Unit, i, israel ? t.Headgear[i] : null);
+                            UnitFigures.Dress(figure, model, map.Residency.Units, retainFar: true);   // the Collection's figure, held while its roster token lives (#665)
+                            UnitFigureWeapon.Equip(figure, t.Unit.Side, model);   // its sourced weapon, if any (#2083)
+                            UnitFigurePointFire.Equip(figure, model);   // C06's point-fire aim when the token attacks (#2084)
                             figures[i] = (figure, new Vector3(offsets[i].x, 0, offsets[i].y) * k, heading);
                         }
                         for (int j = 0; j < vehicles; j++)
@@ -758,6 +760,7 @@ namespace Statecraft.Game.Map.Units
                             var vehicle = EmptyPiece(go.transform, $"Vehicle{j}", at, heading);
                             UnitFigures.Dress(vehicle, t.Vehicles[j], map.Residency.Units,
                                 retainFar: true);   // the gun or the jeep: held while its roster token lives (#665)
+                            UnitGunFire.Equip(vehicle, t.Vehicles[j]);   // the 65 mm gun fires when the token attacks (#2373)
                             figures[offsets.Length + j] = (vehicle, offset, heading);
                         }
                         foot.y = highest;
