@@ -1080,6 +1080,9 @@ namespace Statecraft.Sim
         public List<string> UnlockProjects { get; set; } = new List<string>();
         /// <summary>R-ENEMY-005: go-to orders this option gives to units of map/units_1948.yaml rows, in list order (Q-ENEMY-5).</summary>
         public List<UnitOrderEffect> UnitOrders { get; set; } = new List<UnitOrderEffect>();
+        /// <summary>R-EFX-009 (#2457): US$ millions this option also adds to Debt, under gdd-0.3 only, in IL millions at the
+        /// mvp.il_per_dollar rate in force on the event's date. Null when absent.</summary>
+        public double? DebtDollars { get; set; }
         /// <summary>Who put this non-historical option forward, and on what record (R-ALT-003). Null when absent.</summary>
         public OptionAlternative? Alternative { get; set; }
         /// <summary>The event whose historical course this consequence option rejoins (R-ALT-009), or empty.</summary>
