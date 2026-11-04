@@ -687,7 +687,16 @@ public class SeaAirCollectionTests
                     loops[p].Place(t);
                     var at = SeaAirCollection.DakotaLoopOffset(u); var drawn = centre + new Vector3(at.x, 0f, at.y);
                     var s = shadow.position; float g = Height(s);
-                    Assert.That(s.y - g, Is.InRange(0f, SpitfireLoop.ShadowLiftM + 400f), $"on the ground under it at {t:0.0} s");
+                    Assert.GreaterOrEqual(s.y - g, 0f, $"over the ground under it at {t:0.0} s");
+                    // The disc lies flat, lifted ShadowLiftM over the highest ground under its middle and its four ends
+                    // (SpitfireLoop.LayShadow). The Dakota's is km across, so on the rising ground east of Tel Aviv an end can
+                    // stand hundreds of metres over the middle: the rule, read off the shadow's own transform, not a fixed band.
+                    var fore = shadow.forward; var side = new Vector3(fore.z, 0f, -fore.x);
+                    float hMid = Height(s), hAcross1 = Height(s + side * shadow.localScale.x), hAcross2 = Height(s - side * shadow.localScale.x),
+                        hAlong1 = Height(s + fore * shadow.localScale.z), hAlong2 = Height(s - fore * shadow.localScale.z);
+                    float top = Mathf.Max(hMid, Mathf.Max(Mathf.Max(hAcross1, hAcross2), Mathf.Max(hAlong1, hAlong2)));
+                    Assert.AreEqual(top + SpitfireLoop.ShadowLiftM, s.y, 0.5f, $"lifted ShadowLiftM over the highest ground under it at {t:0.0} s: "
+                        + $"middle {hMid:0.0}, across {hAcross1:0.0} / {hAcross2:0.0}, along {hAlong1:0.0} / {hAlong2:0.0} m");
                     var cast = drawn + SpitfireLoop.SunRay * ((drawn.y - g) / -SpitfireLoop.SunRay.y);
                     float miss = Xz(s - cast).magnitude;
                     Assert.Less(miss, 0.03f * (drawn.y - g), $"on the sun's ray through the aircraft at {t:0.0} s: ground {g:0} m under the shadow, "
