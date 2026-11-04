@@ -75,6 +75,8 @@ public class Gdd03TrainingCentreFixtureTests
     const string PupilCity = Gdd03TrainingCentreFixture.PupilCityReason;
     const string GraduationMonth = Gdd03TrainingCentreFixture.GraduationMonthReason;
     const string CourseAtOpening = Gdd03TrainingCentreFixture.CourseAtOpeningReason;
+    // The one centre-loss case no ruling covers: a centre the month's #1716 facility freeze lists without a place.
+    const string MonthFreezeDeferred = "Deferred: #1716 month freeze";
 
     static void Unchanged(GameState s, Action act, Type expected, string? messagePrefix = null)
     {
@@ -295,8 +297,8 @@ public class Gdd03TrainingCentreFixtureTests
         new object[] { "same person", 1, 1, CentreA, true },
         new object[] { "unknown centre", 0, 1, "fixture-unknown", true },
         new object[] { "centre not operating", 0, 1, CentreA, false },
-        // The teacher is housed in the centre's city (Q42) and, by our reading, the pupil trains there; the region stands
-        // in for the city.
+        // The teacher is housed in the centre's city (Q42), the pupil lives there (the owner's Q23 ruling, 4 November 2026)
+        // and, by our reading of 27M-7, trains there with no travel; the region stands in for the city.
         new object[] { "other region", 0, 1, CentreSouth, true },
         new object[] { "trainee in another region", 0, 14, CentreA, true },
         new object[] { "teacher in another region", 16, 1, CentreA, true },
@@ -324,7 +326,7 @@ public class Gdd03TrainingCentreFixtureTests
     }
 
     // R-TRAIN-005, Q42 (docs/GDD.md:372: "the teacher housed in the centre's city"): a teacher outside the centre's region
-    // is refused with the Q42 reason; a pupil outside it with our reading's reason (Q42 rules only on the teacher). Both
+    // is refused with the Q42 reason; a pupil outside it with the Q23 ruling's reason (Q42 rules only on the teacher). Both
     // are refused before the ledger is asked, the state unchanged. The region stands in for the city.
     [Fact] public void ATeacherOrPupilOutsideTheHostRegionIsRefused()
     {
@@ -439,7 +441,9 @@ public class Gdd03TrainingCentreFixtureTests
 
     // R-TRAIN-006, R-TRAIN-008: #1668 Q43(a) (docs/GDD.md:372: "A course occupies its people from its first turn"). The
     // enrolment month counts once even though its opening snapshot predates the course, unless the centre was not
-    // available at that month's freeze (27 Oct list Q9 stays Deferred). Every later month still needs the course at its
+    // available at that month's freeze. When a centre loss inside a month takes effect against the #1716 freeze is
+    // unruled (the owner's 4 November 2026 ruling covers a centre that stops operating), so that case stays Deferred, as
+    // does a later month whose freeze lists the centre unavailable. Every later month still needs the course at its
     // opening: a month-1 snapshot taken before the course started is refused with the Q43(a) reason (a ruled rule).
     [Fact] public void TheEnrolmentMonthCountsAndLaterMonthsNeedTheCourseAtTheirOpening()
     {
@@ -447,17 +451,19 @@ public class Gdd03TrainingCentreFixtureTests
         var f = new Gdd03TrainingCentreFixture(c, s, Centres());
         var enrolment = Month(s, 0); var closedEnrolment = Month(s, 0, centresAvailable: false); var staleLater = Month(s, 1);
         f.Start(1, 0, CentreA, enrolment);
-        Unchanged(s, () => f.Advance(1, closedEnrolment), typeof(NotSupportedException), "Deferred: #1668 27 Oct list Q9");
+        Unchanged(s, () => f.Advance(1, closedEnrolment), typeof(NotSupportedException), MonthFreezeDeferred);
         Unchanged(s, () => f.Advance(1, staleLater), typeof(ArgumentException), CourseAtOpening);
         f.Advance(1, enrolment);
         Assert.Equal(1, s.PopulationLedger.Get(1).Assignment.ProgressTicks);
         Unchanged(s, () => f.Advance(1, enrolment), typeof(ArgumentException));
         Unchanged(s, () => f.Advance(1, staleLater), typeof(ArgumentException), CourseAtOpening);
+        Unchanged(s, () => f.Advance(1, Month(s, 1, centresAvailable: false)), typeof(NotSupportedException), MonthFreezeDeferred);
     }
 
-    // R-TRAIN-006, 27 Oct list Q9: in the enrolment month the centre's availability is read from the month's facility
-    // list (the opening may predate the course). A centre listed with no free place (opening capacity 0) at that month's
-    // freeze counts no course turn: refused Deferred, state unchanged; the next month with a place counts as before.
+    // R-TRAIN-006, R-TRAIN-008: in the enrolment month the centre's availability is read from the month's facility list
+    // (the opening may predate the course). A centre listed with no free place (opening capacity 0) at that month's
+    // freeze counts no course turn: refused Deferred (the timing of a loss inside a month against the #1716 freeze is
+    // unruled), state unchanged; the next month with a place counts as before.
     [Fact] public void TheEnrolmentMonthCountsNothingWhenTheCentreHasNoPlace()
     {
         var c = Catalogue(); var s = State(c); var f = new Gdd03TrainingCentreFixture(c, s, Centres());
@@ -465,7 +471,7 @@ public class Gdd03TrainingCentreFixtureTests
             Facilities.Select(id => new Gdd03SyntheticFacilitySnapshot(id, true, id == CentreA ? 0 : 1)),
             Array.Empty<int>(), Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
         f.Start(1, 0, CentreA, Month(s, 0));
-        Unchanged(s, () => f.Advance(1, noPlace), typeof(NotSupportedException), "Deferred: #1668 27 Oct list Q9");
+        Unchanged(s, () => f.Advance(1, noPlace), typeof(NotSupportedException), MonthFreezeDeferred);
         Assert.Equal(0, s.PopulationLedger.Get(1).Assignment.ProgressTicks);
         f.Advance(1, Month(s, 1));
         Assert.Equal(1, s.PopulationLedger.Get(1).Assignment.ProgressTicks);
@@ -842,17 +848,151 @@ public class Gdd03TrainingCentreFixtureTests
         Unchanged(s, () => f.Start(1, 2, CentreA, Month(s, 1)), typeof(NotSupportedException), "Deferred: #1668 Q44");
     }
 
-    // R-TRAIN-008: 27 Oct #1668 list question 9 stays open: no course turn or cancellation once the centre stops
-    // operating.
-    [Fact] public void CentreLossStaysDeferred()
+    // R-TRAIN-007, R-TRAIN-008, the owner's ruling (owner, 4 November 2026; "When a training centre stops operating,
+    // what happens to the course running there?" "Cancel at once (Recommended)"; the chosen option read: "Losing the centre cancels the course
+    // immediately, exactly like CancelTraining: people go home as jobless civilians, no Money refund, issued Arms go back
+    // to the pool."), with 27M-4 and 27M-9 ("To their city as a civilian without a job. Overflow rules apply, with no
+    // hard cap."). The fixture's centres are fixed records, so a centre that stops operating is a fixture built over the
+    // same ledger with `operating: false` (a maintainer reading). Its next course turn counts nothing and cancels the
+    // course as R-TRAIN-007 does: ids, profession, novice tier, the tools fields and reception progress kept; pupil and
+    // teacher civilians without a job where they are (already in the centre's city, so no one moves); no Money refunded
+    // and no Arms change (this fixture charges no Money and issues no Arms); no qualification; progress cleared.
+    [Theory]
+    [InlineData(CivilianProfession.Farmer, 0)]
+    [InlineData(CivilianProfession.Farmer, 1)]
+    [InlineData(CivilianProfession.Pioneer, 0)]
+    [InlineData(CivilianProfession.Pioneer, 1)]
+    public void ALostCentreCancelsItsCourseAtOnce(CivilianProfession profession, int counted)
     {
-        var c = Catalogue(); var s = State(c);
+        var c = Catalogue(); var s = State(c); var l = s.PopulationLedger; s.Treasury = 100; s.Arms = 7;
+        var f = new Gdd03TrainingCentreFixture(c, s, Centres());
+        var (teacher, trainee) = Pair(profession); var before = l.Get(trainee); var teacherBefore = l.Get(teacher);
+        int count = l.Units.Count, next = l.NextPopulationId;
+        f.Start(trainee, teacher, CentreA, Month(s, 0));
+        for (int m = 1; m <= counted; m++) f.Advance(trainee, Month(s, m));
+        Assert.Equal(counted, l.Get(trainee).Assignment.ProgressTicks);
+
+        new Gdd03TrainingCentreFixture(c, s, Centres(operating: false)).Advance(trainee, Month(s, counted + 1));
+        CancelledByTheLoss(s, before, teacherBefore, 100, 7);
+        Assert.Equal(count, l.Units.Count); Assert.Equal(next, l.NextPopulationId);
+    }
+
+    // R-TRAIN-008 (review SHOULD): the loss is checked before the month's opening snapshot is read, so a month context that
+    // does not list the pupil (or their teacher) still cancels the course at a centre that stopped operating, instead of
+    // refusing the turn.
+    [Theory]
+    [InlineData(CivilianProfession.Farmer)]
+    [InlineData(CivilianProfession.Pioneer)]
+    public void ALostCentreCancelsEvenWhenTheMonthDoesNotListThePupil(CivilianProfession profession)
+    {
+        var c = Catalogue(); var s = State(c); var l = s.PopulationLedger; s.Treasury = 100; s.Arms = 7;
+        var f = new Gdd03TrainingCentreFixture(c, s, Centres());
+        var (teacher, trainee) = Pair(profession); var before = l.Get(trainee); var teacherBefore = l.Get(teacher);
+        f.Start(trainee, teacher, CentreA, Month(s, 0));
+        var without = Gdd03SyntheticMonthContext.CreateSynthetic(SaveGame.Gdd03Ruleset, 1,
+            l.Units.Where(p => p.Id != trainee && p.Id != teacher),
+            Facilities.Select(x => new Gdd03SyntheticFacilitySnapshot(x, true, 1)),
+            Array.Empty<int>(), Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
+        new Gdd03TrainingCentreFixture(c, s, Centres(operating: false)).Advance(trainee, without);
+        CancelledByTheLoss(s, before, teacherBefore, 100, 7);
+    }
+
+    // R-TRAIN-007, R-TRAIN-008, the owner's answer "Cancel at once (Recommended)" (4 November 2026; the chosen option
+    // read: "Losing the centre cancels the course immediately"): a loss seen
+    // on the turn that would have graduated the course still cancels it. Our reading: the loss cancels the course before
+    // that turn counts, so the pupil stays a novice and nobody graduates; graduation needs the last course turn to count.
+    [Theory]
+    [InlineData(CivilianProfession.Farmer)]
+    [InlineData(CivilianProfession.Pioneer)]
+    public void ALossOnTheGraduationTurnCancelsAndNobodyGraduates(CivilianProfession profession)
+    {
+        var c = Catalogue(); var s = State(c); var l = s.PopulationLedger; s.Treasury = 100; s.Arms = 7;
+        var f = new Gdd03TrainingCentreFixture(c, s, Centres());
+        var (teacher, trainee) = Pair(profession); var before = l.Get(trainee); var teacherBefore = l.Get(teacher);
+        var enrolment = Month(s, 0);
+        f.Start(trainee, teacher, CentreA, enrolment); f.Advance(trainee, enrolment); f.Advance(trainee, Month(s, 1));
+        Assert.Equal(2, l.Get(trainee).Assignment.ProgressTicks); // the next counted turn is the third and would graduate
+
+        var lost = new Gdd03TrainingCentreFixture(c, s, Centres(operating: false));
+        lost.Advance(trainee, Month(s, 2));
+        CancelledByTheLoss(s, before, teacherBefore, 100, 7);
+        // Not a graduation: a cancel frees them at once (Q43(b)), so both may start a course in that same month.
+        f.Start(trainee, teacher, CentreB, Month(s, 2));
+        Assert.Equal(PopulationStatus.Trainee, l.Get(trainee).Status); Assert.Equal(CentreB, l.Get(trainee).Assignment.Target);
+    }
+
+    // R-TRAIN-007, R-TRAIN-008, the owner's answer "Cancel at once (Recommended)" (4 November 2026; the chosen option read: "exactly like CancelTraining"): an explicit cancel of a course
+    // whose centre stopped operating is an ordinary R-TRAIN-007 cancel.
+    [Fact] public void CancelAtALostCentreIsAnOrdinaryCancel()
+    {
+        var c = Catalogue(); var s = State(c); var l = s.PopulationLedger; s.Treasury = 100; s.Arms = 7;
+        var before = l.Get(1); var teacherBefore = l.Get(0);
+        var enrolment = Month(s, 0);
+        var f = new Gdd03TrainingCentreFixture(c, s, Centres());
+        f.Start(1, 0, CentreA, enrolment); f.Advance(1, enrolment);
+        new Gdd03TrainingCentreFixture(c, s, Centres(operating: false)).Cancel(1);
+        CancelledByTheLoss(s, before, teacherBefore, 100, 7);
+    }
+
+    // R-TRAIN-005, R-TRAIN-007, R-TRAIN-008, owner, 4 November 2026, with #1668 Q43(b) ("Cancellation: they are released
+    // at once"): after the loss, a second course turn or cancel of the old course is refused with nothing changed, the
+    // lost centre still refuses a start, and the released pair may start that month at another operating centre, whose
+    // enrolment month counts once as its first course turn.
+    [Fact] public void PeopleReleasedByALostCentreMayStartElsewhereThatMonth()
+    {
+        var c = Catalogue(); var s = State(c); var l = s.PopulationLedger;
         new Gdd03TrainingCentreFixture(c, s, Centres()).Start(1, 0, CentreA, Month(s, 0));
-        var closed = new Gdd03TrainingCentreFixture(c, s, Centres(operating: false));
-        Unchanged(s, () => closed.Advance(1, Month(s, 1)), typeof(NotSupportedException), "Deferred: #1668 27 Oct list Q9");
-        Unchanged(s, () => closed.Cancel(1), typeof(NotSupportedException), "Deferred: #1668 27 Oct list Q9");
-        var open = new Gdd03TrainingCentreFixture(c, s, Centres());
-        Unchanged(s, () => open.Advance(1, Month(s, 1, centresAvailable: false)), typeof(NotSupportedException), "Deferred: #1668 27 Oct list Q9");
+        var opening = Month(s, 1);
+        var lost = new Gdd03TrainingCentreFixture(c, s, Centres(operating: false));
+        lost.Advance(1, opening);
+        Assert.Equal(PopulationStatus.FreeCivilian, l.Get(1).Status); Assert.Same(PopulationAssignment.Unassigned, l.Get(0).Assignment);
+
+        Unchanged(s, () => lost.Advance(1, opening), typeof(ArgumentException));
+        Unchanged(s, () => lost.Cancel(1), typeof(ArgumentException));
+        Unchanged(s, () => lost.Start(1, 0, CentreA, opening), typeof(ArgumentException));
+        lost.Start(1, 0, CentreB, opening);
+        Assert.Equal(CentreB, l.Get(1).Assignment.Target); Assert.Equal(0, l.Get(1).Assignment.TeacherId);
+        lost.Advance(1, opening);
+        Assert.Equal(1, l.Get(1).Assignment.ProgressTicks);
+    }
+
+    // R-TRAIN-006, R-TRAIN-008, owner, 4 November 2026: only the course at the centre that stopped operating is
+    // cancelled. A course at another, operating centre keeps counting through the same fixture and graduates as before.
+    [Fact] public void ACourseAtAnOperatingCentreIsUnaffectedByAnotherCentresLoss()
+    {
+        var c = Catalogue(); var s = State(c); var l = s.PopulationLedger;
+        var f = new Gdd03TrainingCentreFixture(c, s, Centres()); var enrolment = Month(s, 0);
+        f.Start(1, 0, CentreA, enrolment); f.Start(3, 2, CentreB, enrolment);
+        f.Advance(1, enrolment); f.Advance(3, enrolment);
+
+        var lost = new Gdd03TrainingCentreFixture(c, s, Centres(operating: false));
+        var month1 = Month(s, 1);
+        lost.Advance(3, month1);
+        Assert.Equal(2, l.Get(3).Assignment.ProgressTicks); Assert.Equal(CentreB, l.Get(3).Assignment.Target);
+        lost.Advance(1, month1);
+        Assert.Same(PopulationAssignment.Unassigned, l.Get(1).Assignment); Assert.Equal(CivilianTier.Novice, l.Get(1).Tier);
+        Assert.Equal(2, l.Get(3).Assignment.ProgressTicks); Assert.Equal(PopulationAssignmentKind.Teaching, l.Get(2).Assignment.Kind);
+
+        lost.Advance(3, Month(s, 2));
+        Assert.Equal(CivilianTier.Trained, l.Get(3).Tier); Assert.Same(PopulationAssignment.Unassigned, l.Get(3).Assignment);
+        Assert.Same(PopulationAssignment.Unassigned, l.Get(2).Assignment);
+    }
+
+    // The R-TRAIN-007 cancel state after a centre loss: same ids and records, pupil and teacher civilians without a job
+    // in place, no trained tier, no Money refund and no Arms change.
+    static void CancelledByTheLoss(GameState s, PopulationUnit before, PopulationUnit teacherBefore, double treasury, int arms)
+    {
+        var l = s.PopulationLedger; var after = l.Get(before.Id); var teacher = l.Get(teacherBefore.Id);
+        Assert.Equal(PopulationStatus.FreeCivilian, after.Status); Assert.Same(PopulationAssignment.Unassigned, after.Assignment);
+        Assert.Equal(CivilianTier.Novice, after.Tier); Assert.Equal(before.Profession, after.Profession);
+        Assert.Same(before.Equipment, after.Equipment); Assert.True(after.Equipment.ToolsPaid);
+        Assert.Equal(before.ReceptionTicks, after.ReceptionTicks); Assert.Equal(before.WorkXp, after.WorkXp);
+        Assert.Equal(before.Qualification, after.Qualification); Assert.Same(before.Location, after.Location);
+        Assert.Equal(PopulationStatus.FreeCivilian, teacher.Status); Assert.Same(PopulationAssignment.Unassigned, teacher.Assignment);
+        Assert.Equal(CivilianTier.Veteran, teacher.Tier); Assert.Equal(teacherBefore.Equipment, teacher.Equipment);
+        Assert.Same(teacherBefore.Location, teacher.Location);
+        Assert.Equal(treasury, s.Treasury); Assert.Equal(arms, s.Arms);
+        l.Reconcile();
     }
 
     // R-TRAIN-005: exact gdd-0.3 only; legacy and gdd-0.1 states are refused and unchanged in the same run.
