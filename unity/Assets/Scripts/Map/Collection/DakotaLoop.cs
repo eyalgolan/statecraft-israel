@@ -157,7 +157,7 @@ namespace Statecraft.Game.Map.Collection
         internal static readonly Color ColumnFoot = new Color(0.30f, 0.26f, 0.22f), ColumnTop = new Color(1.55f, 1.53f, 1.50f);
         static readonly float[] PuffSide = { -0.07f, 0.03f, 0.08f }, PuffSpin = { 20f, 140f, 260f };
         /// <summary>DESIGN VALUES: a column puff's alpha at the foot and at the top of the column (#2604: "partly transparent
-        /// toward the top"). The puffs overlap more aloft, where they are wider, so the top's alpha is low: about five puffs
+        /// at the top"). The puffs overlap more aloft, where they are wider, so the top's alpha is low: about five puffs
         /// overlap there, which still leaves it about half see-through. A newborn puff fades in over the first
         /// <see cref="ColumnFadeInShare"/> of the column's height (40 m), and an old one fades out over its top
         /// <see cref="ColumnFadeOutShare"/>.</summary>
@@ -402,8 +402,8 @@ namespace Statecraft.Game.Map.Collection
 
         /// <summary>A column puff's width (m) at height share <paramref name="h"/> (<see cref="ColumnHeightShare"/>), before
         /// its own jitter: from SeaAirCollection.DakotaColumnFootM at the impact, widening steadily to
-        /// SeaAirCollection.DakotaColumnTopM at the top, as a plume spreads (#2604: "start thin at each bomb impact and widen as
-        /// they rise"). #2490 widened with the square root, so the column was nearly full width a quarter of the way up.</summary>
+        /// SeaAirCollection.DakotaColumnTopM at the top, as a plume spreads (#2604: "start thin at each
+        /// impact, widen as they rise"). #2490 widened with the square root, so the column was nearly full width a quarter of the way up.</summary>
         internal static float ColumnWidth(float h) => Mathf.Lerp(SeaAirCollection.DakotaColumnFootM, SeaAirCollection.DakotaColumnTopM, h);
 
         /// <summary>A column puff's alpha at height share <paramref name="h"/>: fading in over <see cref="ColumnFadeInShare"/>,
