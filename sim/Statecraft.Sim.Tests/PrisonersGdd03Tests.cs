@@ -7,8 +7,8 @@ using Statecraft.Sim;
 
 /// <summary>Prisoners under gdd-0.3 (#1710): R-POW-002 to R-POW-005 pinned under the gdd-0.3 identity. The exchange card is
 /// synthetic, built here: the real per-front cards wait on #751. Enemy-prisoner captures are real surrenders from a player's
-/// attack order, so a save, which is a command log, replays them. The held-soldier pin reverses the corner engagement: two
-/// Egyptian units attack an Israeli defender, whose surrender is resolved by the same combat path. The fixture starts four
+/// attack order, so a save, which is a command log, replays them. The held-soldier pin reverses the corner engagement: the
+/// Egyptian and Iraqi units attack an Israeli defender, whose surrender is resolved by the same combat path. The fixture starts four
 /// Israeli units of 6,000 people and two Egyptian units of 40, each Egyptian unit in a corner of the board with both its
 /// land neighbours held by Israeli units. One Israeli unit attacks (a gdd-0.3 attack commits one adjacent unit): far above
 /// 2:1, the defender loses one population unit and, with nowhere to retreat, surrenders with 3 (R-COMBAT-003). Neither
@@ -16,7 +16,8 @@ using Statecraft.Sim;
 public class PrisonersGdd03Tests
 {
     const string Types = Fixture.GddUnitTypes
-        + "  - { id: enemy, kind: unit, side: egypt, class: infantry, movement_points: 3 }\n";
+        + "  - { id: enemy, kind: unit, side: egypt, class: infantry, movement_points: 3 }\n"
+        + "  - { id: iraqi, kind: unit, side: iraq, class: infantry, movement_points: 3 }\n";
 
     /// <summary>The starting forces, by id: 0 and 1 hold the land around unit 2 in corner (0, 0), 3 and 4 the land around unit
     /// 5 in corner (5, 2). Units 0 and 3 attack.</summary>
@@ -159,7 +160,7 @@ options:
         s.Units.Clear();
         s.Units.Add(0, new Unit(0, "enemy", 1, 0, side: "egypt", strength: 4,
             order: Combat.Attack, orderTarget: "0,0"));
-        s.Units.Add(1, new Unit(1, "enemy", 0, 1, side: "egypt", strength: 4,
+        s.Units.Add(1, new Unit(1, "iraqi", 0, 1, side: "iraq", strength: 4,
             order: Combat.Attack, orderTarget: "0,0"));
         s.Units.Add(2, new Unit(2, "veteran_soldier", 0, 0, side: "israel", strength: 3));
 
