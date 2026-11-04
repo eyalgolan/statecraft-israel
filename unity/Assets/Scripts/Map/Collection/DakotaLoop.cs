@@ -43,6 +43,9 @@ namespace Statecraft.Game.Map.Collection
         /// <summary>The flag that floats over the tail, or null.</summary>
         public Transform? Flag => flag;
 
+        /// <summary>Half the flag's height (m), its centre's rise over its lower edge (0 without a flag).</summary>
+        public float FlagHalf => flagHalf;
+
         /// <summary>The aircraft's bombs, or null.</summary>
         internal DakotaBombRun? Bombs => bombs;
 
@@ -87,13 +90,8 @@ namespace Statecraft.Game.Map.Collection
         {
             PlacedAt = seconds;
             float u = seconds - lag;
-            var at = SeaAirCollection.DakotaLoopOffset(u); var heading = SeaAirCollection.DakotaLoopHeading(u);
-            var forward = new Vector3(heading.x, 0f, heading.y);
-            // A turn about the vertical from east (+x) to the heading; Unity's yaw turns +x toward -z.
-            var yaw = Quaternion.Euler(0f, -Mathf.Atan2(heading.y, heading.x) * Mathf.Rad2Deg, 0f);
-            // The loop turns left (anticlockwise seen from above): a positive turn about the heading lowers the left wing.
-            float bank = SeaAirCollection.DakotaBankDegrees(u);
-            var turn = Quaternion.AngleAxis(bank, forward) * yaw;
+            var at = SeaAirCollection.DakotaLoopOffset(u);
+            var turn = SeaAirCollection.DakotaTurn(u, out var forward, out float bank);
             transform.localRotation = turn * level;
             var drawn = centre + new Vector3(at.x, 0f, at.y);
             transform.position = drawn - turn * offset;
@@ -146,15 +144,24 @@ namespace Statecraft.Game.Map.Collection
         static readonly int BaseColor = Shader.PropertyToID("_BaseColor"), BaseMap = Shader.PropertyToID("_BaseMap"), Cull = Shader.PropertyToID("_Cull");
         /// <summary>DESIGN VALUES: the flash the gun's colour; the dust a dusty grey-brown (a bomb's burst raises dust and
         /// rubble), thinning paler as it rises; the puffs drift a little east, each its own way. The blast keeps the
-        /// flipbook's own fire and smoke colours, its smoke a touch warmer (dust). The columns are dark grey-brown at the foot,
-        /// paler grey aloft, as the under-attack look's smoke (HexUnderAttackLook: 0.13 to 0.40) but browner for the burning
-        /// city's dust. The smoke flipbook's grey averages 0.44 where it is opaque (measured on its pixels), so these tints
-        /// are about twice the shade drawn: the columns run from about 0.14 to 0.38, the dust from 0.27 to 0.42.</summary>
+        /// flipbook's own fire and smoke colours, its smoke a touch warmer (dust). The smoke flipbook's grey averages 0.44
+        /// where it is opaque (measured on its pixels), so a tint is about 2.3 times the shade drawn: the dust runs from
+        /// about 0.27 to 0.42.</summary>
         static readonly Color FlashColour = new Color(1f, 0.85f, 0.5f), SmokeFresh = new Color(0.62f, 0.56f, 0.48f), SmokeThin = new Color(0.95f, 0.92f, 0.86f);
-        static readonly Color BlastTint = new Color(1f, 0.95f, 0.88f), ColumnFoot = new Color(0.32f, 0.27f, 0.22f), ColumnTop = new Color(0.86f, 0.80f, 0.72f);
+        static readonly Color BlastTint = new Color(1f, 0.95f, 0.88f);
+        /// <summary>DESIGN VALUES (#2604, the columns read as "two flat, dark-brown blobs"): a column is near-black and
+        /// brownish at its foot (burning rubble, about 0.13 drawn) and light grey aloft (about 0.68 drawn), the shade
+        /// changing over the lower 70% of its height. The columns are drawn unlit, as the blast (the flipbook carries its own
+        /// light and shade; #2490's lit columns came out uniformly dark), so the tint times the flipbook's 0.44 is the shade
+        /// on screen; the top tint is over 1 for that reason (the shader multiplies, nothing clamps it before blending).</summary>
+        internal static readonly Color ColumnFoot = new Color(0.30f, 0.26f, 0.22f), ColumnTop = new Color(1.55f, 1.53f, 1.50f);
         static readonly float[] PuffSide = { -0.07f, 0.03f, 0.08f }, PuffSpin = { 20f, 140f, 260f };
-        /// <summary>DESIGN VALUE: a column puff's alpha at its densest.</summary>
-        const float ColumnAlpha = 0.95f;
+        /// <summary>DESIGN VALUES: a column puff's alpha at the foot and at the top of the column (#2604: "partly transparent
+        /// toward the top"). The puffs overlap more aloft, where they are wider, so the top's alpha is low: about five puffs
+        /// overlap there, which still leaves it about half see-through. A newborn puff fades in over the first
+        /// <see cref="ColumnFadeInShare"/> of the column's height (40 m), and an old one fades out over its top
+        /// <see cref="ColumnFadeOutShare"/>.</summary>
+        internal const float ColumnAlphaFoot = 0.95f, ColumnAlphaTop = 0.12f, ColumnFadeInShare = 0.01f, ColumnFadeOutShare = 0.3f;
 
         readonly List<Drop> drops;
         readonly int[] entry;   // the drop at each release slot of the loop, or -1
@@ -232,7 +239,8 @@ namespace Statecraft.Game.Map.Collection
             (columnAt, columnFrom) = ColumnSitesOf(drops, releases * SeaAirCollection.DakotaBombIntervalS, plane, planes);
             int n = columnAt.Length * SeaAirCollection.DakotaColumnPuffs;
             columnT = new Transform[n]; column = new Renderer[n]; columnF = new MeshFilter[n]; columnMat = new Material[n];
-            for (int i = 0; i < n; i++) (columnT[i], column[i], columnF[i]) = Part(parent, "BombColumn", smokeFrames[0], columnMat[i] = Mat(HexMaterials.AttackSmoke, looks.Smoke));
+            // The columns unlit, as the blast (ColumnFoot, ColumnTop): their shade is the tint times the flipbook's own.
+            for (int i = 0; i < n; i++) (columnT[i], column[i], columnF[i]) = Part(parent, "BombColumn", smokeFrames[0], columnMat[i] = Mat(HexMaterials.AttackBorder, looks.Smoke));
         }
 
         /// <summary>Aircraft <paramref name="plane"/>'s column sites among <paramref name="drops"/> on a loop of
@@ -388,11 +396,39 @@ namespace Statecraft.Game.Map.Collection
             return 1f - Mathf.SmoothStep(0f, 1f, (b - (1f - fade)) / fade);
         }
 
+        /// <summary>A column puff's height share (0 at the impact, 1 at the column's top) at <paramref name="v"/> of its life:
+        /// v to the power SeaAirCollection.DakotaColumnRisePower, so a puff leaves the impact slowly and speeds up as it rises.</summary>
+        internal static float ColumnHeightShare(float v) => Mathf.Pow(Mathf.Clamp01(v), SeaAirCollection.DakotaColumnRisePower);
+
+        /// <summary>A column puff's width (m) at height share <paramref name="h"/> (<see cref="ColumnHeightShare"/>), before
+        /// its own jitter: from SeaAirCollection.DakotaColumnFootM at the impact, widening steadily to
+        /// SeaAirCollection.DakotaColumnTopM at the top, as a plume spreads (#2604: "start thin at each bomb impact and widen as
+        /// they rise"). #2490 widened with the square root, so the column was nearly full width a quarter of the way up.</summary>
+        internal static float ColumnWidth(float h) => Mathf.Lerp(SeaAirCollection.DakotaColumnFootM, SeaAirCollection.DakotaColumnTopM, h);
+
+        /// <summary>A column puff's alpha at height share <paramref name="h"/>: fading in over <see cref="ColumnFadeInShare"/>,
+        /// then falling with height from <see cref="ColumnAlphaFoot"/> toward <see cref="ColumnAlphaTop"/> (fast at first: the
+        /// foot stays dense, the upper half thin), and fading out to nothing over the last <see cref="ColumnFadeOutShare"/>,
+        /// so the top dissolves. Above the fade-in it only falls.</summary>
+        internal static float ColumnAlphaAt(float h)
+        {
+            float fadeIn = Mathf.SmoothStep(0f, 1f, h / ColumnFadeInShare);
+            float fadeOut = 1f - Mathf.SmoothStep(0f, 1f, (h - (1f - ColumnFadeOutShare)) / ColumnFadeOutShare);
+            return fadeIn * Mathf.Lerp(ColumnAlphaFoot, ColumnAlphaTop, Mathf.Pow(Mathf.Clamp01(h), 0.6f)) * fadeOut;
+        }
+
+        /// <summary>A column puff's tint (alpha aside) at height share <paramref name="h"/>: <see cref="ColumnFoot"/> at the
+        /// impact to <see cref="ColumnTop"/> by 70% of the way up.</summary>
+        internal static Color ColumnTint(float h) => Color.Lerp(ColumnFoot, ColumnTop, Mathf.SmoothStep(0f, 1f, h / 0.7f));
+
         /// <summary>Column <paramref name="c"/>, <paramref name="age"/> seconds after its first hit (hidden before it): a stream
         /// of SeaAirCollection.DakotaColumnPuffs puffs, each born every SeaAirCollection.DakotaColumnLifeS, a puff's share of
         /// a life apart, and only those born since the first hit, so the column grows from the ground over its first life and
-        /// then stands. A puff rises SeaAirCollection.DakotaColumnM over its life, widening from the column's foot to its top
-        /// width, leaning downwind, darkest and densest low, thinning paler aloft, its smoke boiling through the flipbook.</summary>
+        /// then stands. A puff rises SeaAirCollection.DakotaColumnM over its life, slowly at first
+        /// (<see cref="ColumnHeightShare"/>: the puffs crowd at the foot, so the thin stem stands unbroken on the impact, and
+        /// spread aloft, where they are wide), widening (<see cref="ColumnWidth"/>), leaning downwind, its
+        /// shade (<see cref="ColumnTint"/>) and alpha (<see cref="ColumnAlphaAt"/>) going from dark and dense at the foot to
+        /// light grey and thin aloft, its smoke boiling through the flipbook.</summary>
         void ShowColumn(int c, double age)
         {
             int P = SeaAirCollection.DakotaColumnPuffs;
@@ -405,19 +441,19 @@ namespace Statecraft.Game.Map.Collection
                 bool on = age >= 0.0 && v * life <= age;
                 column[k].enabled = on;
                 if (!on) continue;
-                float own = Own(c * 7.31f + i * 1.93f + 0.5f);
-                float size = Mathf.Lerp(SeaAirCollection.DakotaColumnFootM, SeaAirCollection.DakotaColumnTopM, Mathf.Sqrt(v)) * (0.85f + 0.3f * own);
-                var wobble = new Vector3(Mathf.Sin(own * 19f + v * 5f), 0f, Mathf.Cos(own * 13f + v * 4f)) * (60f * Mathf.Sqrt(v));
-                // Its centre 0.45 of its size up: tilted to the board camera (50 degrees down), its lower edge stays over the ground.
-                var at = columnAt[c] + Vector3.up * (0.45f * size + v * SeaAirCollection.DakotaColumnM)
-                    + HexUnderAttack.Smoke.Wind * (SeaAirCollection.DakotaColumnLeanM * Mathf.Pow(v, 1.4f)) + wobble;
+                float own = Own(c * 7.31f + i * 1.93f + 0.5f), h = ColumnHeightShare(v);
+                float size = ColumnWidth(h) * (0.85f + 0.3f * own);
+                var wobble = new Vector3(Mathf.Sin(own * 19f + v * 5f), 0f, Mathf.Cos(own * 13f + v * 4f)) * (60f * Mathf.Sqrt(h));
+                // Its centre 0.45 of its size up: tilted to the board camera (50 degrees down), its lower edge stays over the
+                // ground, so the column's foot stands on the impact. It leans downwind more the higher it is.
+                var at = columnAt[c] + Vector3.up * (0.45f * size + h * SeaAirCollection.DakotaColumnM)
+                    + HexUnderAttack.Smoke.Wind * (SeaAirCollection.DakotaColumnLeanM * Mathf.Pow(h, 1.3f)) + wobble;
                 float spin = Spin(own);
                 columnT[k].SetPositionAndRotation(at, view * Quaternion.Euler(0f, 0f, spin));
                 columnT[k].localScale = Vector3.one * size;
                 int frames = smokeFrames.Length;
                 columnF[k].sharedMesh = smokeFrames[Mod((int)Math.Floor(((double)v * life * SeaAirCollection.DakotaColumnFps) + own * frames), frames)];
-                var colour = Color.Lerp(ColumnFoot, ColumnTop, Mathf.SmoothStep(0f, 1f, v / 0.8f));
-                colour.a = ColumnAlpha * Mathf.SmoothStep(0f, 1f, v / 0.06f) * (1f - Mathf.SmoothStep(0f, 1f, (v - 0.6f) / 0.4f));
+                var colour = ColumnTint(h); colour.a = ColumnAlphaAt(h);
                 columnMat[k].SetColor(BaseColor, colour);
             }
         }

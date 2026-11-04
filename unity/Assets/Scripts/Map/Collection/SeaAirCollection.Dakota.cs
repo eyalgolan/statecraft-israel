@@ -122,13 +122,19 @@ namespace Statecraft.Game.Map.Collection
         /// turns, so the pair lights at most 2 x <see cref="DakotaColumns"/> over Tel Aviv). From its first hit a column is a
         /// stream of <see cref="DakotaColumnPuffs"/> puffs of Unity Labs' CC0 smoke flipbook (<see cref="DakotaSmokeTexture"/>,
         /// 8 x 8 frames, boiling at <see cref="DakotaColumnFps"/>), each rising <see cref="DakotaColumnM"/> over
-        /// <see cref="DakotaColumnLifeS"/>, widening from <see cref="DakotaColumnFootM"/> to <see cref="DakotaColumnTopM"/>
-        /// across and leaning <see cref="DakotaColumnLeanM"/> downwind (east, a little north, as the under-attack look's smoke,
-        /// HexUnderAttack.Smoke.Wind), less than <see cref="DakotaBombMarginM"/>, so a column stays over Tel Aviv's hex. It
-        /// grows from the ground over its first <see cref="DakotaColumnLifeS"/> and then burns for as long as the Dakotas fly.</summary>
-        public const int DakotaColumns = 3, DakotaColumnPuffs = 10, DakotaSmokeGrid = 8;
-        public const float DakotaColumnLifeS = 14f, DakotaColumnM = 3600f, DakotaColumnFootM = 700f, DakotaColumnTopM = 2300f,
-            DakotaColumnLeanM = 450f, DakotaColumnFps = 6f;
+        /// <see cref="DakotaColumnLifeS"/> (slowly from the impact, faster aloft: its height share is its life's share to the
+        /// power <see cref="DakotaColumnRisePower"/>), widening steadily with height from <see cref="DakotaColumnFootM"/> to
+        /// <see cref="DakotaColumnTopM"/> across and leaning <see cref="DakotaColumnLeanM"/> downwind (east, a little north, as
+        /// the under-attack look's smoke, HexUnderAttack.Smoke.Wind), less than <see cref="DakotaBombMarginM"/>, so a column
+        /// stays over Tel Aviv's hex. It grows from the ground over its first <see cref="DakotaColumnLifeS"/> and then burns
+        /// for as long as the Dakotas fly. Reworked for #2604, where #2490's six columns (700 m wide at the foot, 2.3 km aloft,
+        /// ten puffs, dark all the way up) read in play as "two flat, dark-brown blobs" over the city that hid its feet and
+        /// its buildings: now four columns, each a thin foot (260 m, under a fifth of #2490's foot puff area) on its impact,
+        /// widening to 1.5 km at the top, 18 puffs crowding at the foot (three in its lowest 260 m) so the thin foot
+        /// is a continuous stem, and spreading to about 330 m apart at the top, where they are 1.5 km wide; dark at the foot and light grey, half see-through, aloft (DakotaBombRun.ColumnTint, ColumnAlphaAt).</summary>
+        public const int DakotaColumns = 2, DakotaColumnPuffs = 18, DakotaSmokeGrid = 8;
+        public const float DakotaColumnLifeS = 16f, DakotaColumnM = 4000f, DakotaColumnFootM = 260f, DakotaColumnTopM = 1500f,
+            DakotaColumnLeanM = 450f, DakotaColumnFps = 6f, DakotaColumnRisePower = 1.5f;
 
         /// <summary>The two Unity Labs flipbooks (Resources, "Free VFX image sequences and flipbooks", CC0; ASSETS.yaml).</summary>
         public const string DakotaBlastTexture = "Effects/Explosion01_5x5", DakotaSmokeTexture = "Effects/Cloud02_8x8";
@@ -146,6 +152,19 @@ namespace Statecraft.Game.Map.Collection
         {
             float a = DakotaLoopAngle(seconds);
             return new Vector2(DakotaLoopHalfLengthM * Mathf.Cos(a), DakotaLoopHalfWidthM * Mathf.Sin(a)).normalized;
+        }
+
+        /// <summary>A Dakota's turn <paramref name="seconds"/> into its own loop, over its model's nose-east rotation: a yaw
+        /// about the vertical from east (+x) to its heading (<paramref name="forward"/>; Unity's yaw turns +x toward -z), then
+        /// its <paramref name="bank"/> about the heading (the loop turns left, anticlockwise seen from above: a positive turn
+        /// lowers the left wing). DakotaLoop flies it; <see cref="DakotaKeepBox"/> keeps the names clear of it.</summary>
+        public static Quaternion DakotaTurn(float seconds, out Vector3 forward, out float bank)
+        {
+            var heading = DakotaLoopHeading(seconds);
+            forward = new Vector3(heading.x, 0f, heading.y);
+            var yaw = Quaternion.Euler(0f, -Mathf.Atan2(heading.y, heading.x) * Mathf.Rad2Deg, 0f);
+            bank = DakotaBankDegrees(seconds);
+            return Quaternion.AngleAxis(bank, forward) * yaw;
         }
 
         static float DakotaLoopAngle(float seconds) => 2f * Mathf.PI * Mathf.Repeat(seconds, DakotaLoopSeconds) / DakotaLoopSeconds;
@@ -255,21 +274,20 @@ namespace Statecraft.Game.Map.Collection
             var cam = Camera.main;
             if (flag != null && cam != null) UnitFlagFacing.Face(flag, cam.transform.position);
             Placed.Add((go.name, Dakota, centre));
-            // At any heading and bank the aircraft lies within half its box's diagonal of its centre; the flag floats over its
-            // tail, at most the steepest bank's box top over the centre (SpitfireLoop.TopOver), as the Spitfire's (Fly).
-            float reach = 0.5f * b.size.magnitude + 1f, up = reach, round = reach;
+            // The flag turns to the camera, so whatever its turn it lies within its mesh box's farthest corner from its pivot.
+            float flagUp = 0f, flagRadius = 0f;
             if (flag != null)
             {
-                var f = flag.GetComponent<MeshFilter>().sharedMesh.bounds; float k = flag.lossyScale.y;
-                up = Mathf.Max(up, SpitfireLoop.TopOver(half, UnitShowcase.BankDegrees) + DakotaLoop.FlagClearM + 2f * f.extents.y * k + 1f);
-                round = Mathf.Max(round, half.x + new Vector2(f.extents.x, f.extents.z).magnitude * k + 1f);
+                var f = flag.GetComponent<MeshFilter>().sharedMesh.bounds; var s = flag.lossyScale;
+                flagRadius = (f.center.magnitude + f.extents.magnitude) * Mathf.Max(s.x, Mathf.Max(s.y, s.z)) + 1f;
+                flagUp = DakotaLoop.FlagClearM + loop.FlagHalf;
             }
             // The labels keep clear of where it is now, not of its whole loop (owner, 4 November 2026, on #2490: "Shrink the
             // keep-clear area (Recommended)"): its box follows it a DakotaKeepStepS step of the loop at a time (FollowDakotas).
-            var follow = new DakotaKeep(go, loop, centre, reach, up, round);
+            var follow = new DakotaKeep(go, loop, centre, half, flagUp, flagRadius);
             dakotaKeeps.Add(follow);
             follow.Step = DakotaKeepStep(loop.PlacedAt);
-            Keep(go, DakotaKeepBox(centre, loop.Lag, follow.Step, reach, up, round));
+            Keep(go, DakotaKeepBox(centre, loop.Lag, follow.Step, half, flagUp, flagRadius));
         }
 
         /// <summary>DESIGN VALUE: the labels' keep-clear box for a Dakota covers its flight over one step of this many seconds of
@@ -282,34 +300,50 @@ namespace Statecraft.Game.Map.Collection
 
         /// <summary>The box (world) the map names keep clear of for a Dakota whose loop is centred at <paramref name="centre"/> (in
         /// the air), its clock <paramref name="lag"/> behind the loop's, through the loop's clock step <paramref name="step"/>
-        /// (<see cref="DakotaKeepStepS"/>): the aircraft at every heading and bank (<paramref name="reach"/> round its drawn
-        /// centre, <paramref name="round"/> across with its flag over the tail, <paramref name="up"/> above with its flag) at
-        /// every point of its path in that step, sampled finely enough that the path's bow between samples (under a metre on
-        /// this ellipse) is inside the pad. Owner, 4 November 2026, on #2490: "Shrink the keep-clear area (Recommended)": a name
-        /// hides only where an aircraft and its flag are, not over the whole loop as #2274's box did.</summary>
-        internal static Bounds DakotaKeepBox(Vector3 centre, float lag, long step, float reach, float up, float round)
+        /// (<see cref="DakotaKeepStepS"/>): the aircraft as DakotaLoop flies it at every point of its path in that step, its box
+        /// of half size <paramref name="half"/> (nose east, level) at that point's heading and bank (<see cref="DakotaTurn"/>),
+        /// and its flag over the tail there (DakotaLoop.Place: <paramref name="flagUp"/> over the banked box's top, within
+        /// <paramref name="flagRadius"/> of that point at any turn; no flag when 0). Sampled every eighth of the step, so the
+        /// path's and the wingtips' bow between samples (about a metre on this ellipse) is inside the pad. Owner, 4 November
+        /// 2026, on #2490: "Shrink the keep-clear area (Recommended)": a name hides only where an aircraft and its flag are.
+        /// #2604: #2490's box held the aircraft at every heading and bank at once (half its box's 3D diagonal, about 6 km, every
+        /// way, under it too), which reached about 3.7 km lower and up to 2.7 km wider than the aircraft ever is; seen from
+        /// the board camera, 50 degrees down, that hid names in frame while the aircraft itself was off the frame's top edge.</summary>
+        internal static Bounds DakotaKeepBox(Vector3 centre, float lag, long step, Vector3 half, float flagUp, float flagRadius)
         {
-            const int Samples = 4; const float Pad = 10f;
+            const int Samples = 8; const float Pad = 25f;
             var box = new Bounds();
             for (int i = 0; i <= Samples; i++)
             {
-                var o = DakotaLoopOffset((float)(step * (double)DakotaKeepStepS + i * (double)DakotaKeepStepS / Samples - lag));
+                float u = (float)(step * (double)DakotaKeepStepS + i * (double)DakotaKeepStepS / Samples - lag);
+                var o = DakotaLoopOffset(u);
+                var turn = DakotaTurn(u, out var forward, out float bank);
                 var at = centre + new Vector3(o.x, 0f, o.y);
-                var b = new Bounds(); b.SetMinMax(at - new Vector3(round, reach, round), at + new Vector3(round, up, round));
+                var b = new Bounds(at, 2f * Turned(turn, half));
+                if (flagRadius > 0f)
+                    b.Encapsulate(new Bounds(at - forward * half.x + Vector3.up * (SpitfireLoop.TopOver(half, bank) + flagUp), 2f * flagRadius * Vector3.one));
                 if (i == 0) box = b; else box.Encapsulate(b);
             }
             box.Expand(2f * Pad);
             return box;
         }
 
+        /// <summary>Half the world box of a box of half size <paramref name="half"/> turned by <paramref name="turn"/>, as a
+        /// renderer's bounds are: each axis the sum of the turned half sides' reach along it.</summary>
+        static Vector3 Turned(Quaternion turn, Vector3 half)
+        {
+            Vector3 x = turn * new Vector3(half.x, 0f, 0f), y = turn * new Vector3(0f, half.y, 0f), z = turn * new Vector3(0f, 0f, half.z);
+            return new Vector3(Mathf.Abs(x.x) + Mathf.Abs(y.x) + Mathf.Abs(z.x), Mathf.Abs(x.y) + Mathf.Abs(y.y) + Mathf.Abs(z.y), Mathf.Abs(x.z) + Mathf.Abs(y.z) + Mathf.Abs(z.z));
+        }
+
         /// <summary>A drawn Dakota whose keep-clear box follows it: its loop, its loop's centre in the air, the box's sizes
         /// (<see cref="DakotaKeepBox"/>) and the clock step its box now covers.</summary>
         sealed class DakotaKeep
         {
-            public readonly GameObject Go; public readonly DakotaLoop Loop; public readonly Vector3 Centre; public readonly float Reach, Up, Round;
+            public readonly GameObject Go; public readonly DakotaLoop Loop; public readonly Vector3 Centre, Half; public readonly float FlagUp, FlagRadius;
             public long Step;
-            public DakotaKeep(GameObject go, DakotaLoop loop, Vector3 centre, float reach, float up, float round)
-            { Go = go; Loop = loop; Centre = centre; Reach = reach; Up = up; Round = round; }
+            public DakotaKeep(GameObject go, DakotaLoop loop, Vector3 centre, Vector3 half, float flagUp, float flagRadius)
+            { Go = go; Loop = loop; Centre = centre; Half = half; FlagUp = flagUp; FlagRadius = flagRadius; }
         }
         readonly List<DakotaKeep> dakotaKeeps = new List<DakotaKeep>();
 
@@ -327,7 +361,7 @@ namespace Statecraft.Game.Map.Collection
                 long step = DakotaKeepStep(d.Loop.PlacedAt);
                 if (step == d.Step) continue;
                 d.Step = step;
-                keepOf[d.Go] = new[] { DakotaKeepBox(d.Centre, d.Loop.Lag, step, d.Reach, d.Up, d.Round) };
+                keepOf[d.Go] = new[] { DakotaKeepBox(d.Centre, d.Loop.Lag, step, d.Half, d.FlagUp, d.FlagRadius) };
                 moved = true;
             }
             if (moved) RebuildKeepAll();
