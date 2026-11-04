@@ -33,6 +33,7 @@ Before drafting, read these first:
 4. Draft only in the repo’s historical framing and event schema.
 5. Keep the text grounded, specific, and readable in a game UI.
 6. Leave `status: draft` on anything an AI drafted. Only a person who has checked every claim against its source sets `fact-checked`.
+   An AI-assisted contributor counts as that person, for `fact-checked` and for the `reviewed_by` sign-off, when the pull request's "AI assistance" section discloses the AI help and says which sources were opened and what was checked (the owner, 4 November 2026: "Yes, it counts"; https://github.com/eyalgolan/statecraft-israel/pull/2481#issuecomment-6623108295).
 7. Validate with `dotnet test sim/Statecraft.sln` when editing repo content.
 
 ## Historical writing standards

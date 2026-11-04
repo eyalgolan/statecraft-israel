@@ -47,15 +47,19 @@ These rules protect the game and the people in it. They are not a viewpoint:
    (`name_he`, `title_he`, `title_he_f`, `body_he`) that an AI agent checked against its sources, but no person has read
    yet, carries its own flag beside it, `*_review: agent-checked` (for example `name_he_review`), whatever the row's
    `status` says about its English facts (owner, 15 October 2026). A native Hebrew speaker reviews these names (#564)
-   and then removes the line; the loader accepts only `agent-checked` (a blank value is an error), and only next to a
+   and then removes the line, or an AI-assisted contributor does, when the pull request discloses the AI help and names
+   the strings read and the sources they were read against (asked whether an AI-assisted contributor's Hebrew read can clear an `agent-checked` string or still needs a native Hebrew speaker, the owner answered "AI-assisted can clear it" ([4 November 2026](https://github.com/eyalgolan/statecraft-israel/pull/2481#issuecomment-6623108295))); the loader accepts only `agent-checked` (a blank value is an error), and only next to a
    name.
 7. **A sign-off names a person.** A row a person has reviewed carries, beside its `status`, `reviewed_by` (the
    reviewer's GitHub handle, never an email) and `reviewed_on` (the day), both or neither (owner, 15 October 2026,
    #375: "Yes, humans only"). Only that person writes the two lines, in their own commit; an AI agent never adds, changes
    or removes them, and `scripts/oss/reviewed_by_guard.py` fails any pull request where a commit with an AI co-author
-   trailer does. A signed row is closed to agents too (owner, 15 October 2026, on #629: "Block it in CI"): the guard
+   trailer does, unless the pull request's "AI assistance" section discloses the AI help. Then the AI-assisted
+   contributor's check counts as the sign-off, under their own handle, and the section says which sources they opened
+   and what they checked (asked whether an AI-assisted contributor's source check counts as the `reviewed_by` sign-off, the owner answered "Yes, it counts" ([4 November 2026](https://github.com/eyalgolan/statecraft-israel/pull/2481#issuecomment-6623108295))). A signed row is closed to agents too (owner, 15 October 2026, on #629: "Block it in CI"): the guard
    fails a pull request where a commit with an AI co-author trailer changes any field of a signed row, the `id`
-   included, until a person signs the row again or removes its sign-off in a commit of their own. How to sign off:
+   included, until a person (or an AI-assisted contributor, disclosed as above) signs the row again or removes its
+   sign-off in a commit of their own. How to sign off:
    [HISTORIAN_REVIEW.md](HISTORIAN_REVIEW.md#sign-the-row-off). A row with a sign-off leaves the review queue
    ([review-queue.md](review-queue.md)).
 
