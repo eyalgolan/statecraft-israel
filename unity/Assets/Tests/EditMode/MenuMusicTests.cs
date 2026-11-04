@@ -618,6 +618,22 @@ public class MenuMusicTests
         UnityEngine.Object.DestroyImmediate(clip);
     }
 
+    /// <summary>The scene's teardown can destroy the music's GameObject before GameRoot.OnDisable disposes the music (the
+    /// order varies). Stop, Volume and Dispose on the game's own output then skip the destroyed AudioSources (Unity's null),
+    /// as before #2338, instead of throwing MissingReferenceException.</summary>
+    [Test]
+    public void ADestroyedMusicObjectStopsAndDisposesQuietly()
+    {
+        var output = new MenuMusic.SourceOutput();
+        var clip = AudioClip.Create("theme", 4410, 1, 44100, false);
+        output.Play(clip, new MenuMusic.LoopRegion(0, 4410, 44100));
+        var go = UnityEngine.Object.FindObjectsByType<AudioSource>(FindObjectsSortMode.None).First(s => s.clip == clip).gameObject;
+        UnityEngine.Object.DestroyImmediate(go);
+        Assert.DoesNotThrow(() => { output.Stop(); output.Volume = 0.5f; output.Dispose(); });
+        LogAssert.NoUnexpectedReceived();
+        UnityEngine.Object.DestroyImmediate(clip);
+    }
+
     const string Theme = "file: " + MenuMusic.File + "\n";
 
     /// <summary>No loop file, a broken one, one for another file, or a region that is empty, reversed or past the clip's end:

@@ -455,18 +455,20 @@ namespace Statecraft.Game.UI
             void Stop();
         }
 
+        /// <summary>Every call skips a destroyed AudioSource (Unity's null): a scene teardown can destroy the MenuMusic
+        /// GameObject before GameRoot.OnDisable disposes the music.</summary>
         sealed class UnitySource : ISource
         {
             readonly AudioSource s;
             public UnitySource(AudioSource s) { this.s = s; }
-            public AudioClip? Clip { set => s.clip = value; }
-            public float Volume { set => s.volume = value; }
-            public bool Loop { set => s.loop = value; }
-            public int TimeSamples { set => s.timeSamples = value; }
-            public void Play() => s.Play();
-            public void PlayScheduled(double at) => s.PlayScheduled(at);
-            public void SetScheduledEndTime(double at) => s.SetScheduledEndTime(at);
-            public void Stop() => s.Stop();
+            public AudioClip? Clip { set { if (s != null) s.clip = value; } }
+            public float Volume { set { if (s != null) s.volume = value; } }
+            public bool Loop { set { if (s != null) s.loop = value; } }
+            public int TimeSamples { set { if (s != null) s.timeSamples = value; } }
+            public void Play() { if (s != null) s.Play(); }
+            public void PlayScheduled(double at) { if (s != null) s.PlayScheduled(at); }
+            public void SetScheduledEndTime(double at) { if (s != null) s.SetScheduledEndTime(at); }
+            public void Stop() { if (s != null) s.Stop(); }
         }
     }
 }
