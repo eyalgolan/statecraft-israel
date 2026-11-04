@@ -9,9 +9,9 @@ public class Gdd03HousingFormulaTests
 
     static Gdd03HousingInput Input(int surcharge = 10, int beforeArrival = 10,
         int cohesion = 10, int population = 20, decimal capacity = 5m,
-        decimal condition = 0.40m, decimal due = 4m, decimal paid = 2m) =>
+        decimal condition = 0.40m) =>
         new Gdd03HousingInput(surcharge, beforeArrival, cohesion, population,
-            capacity, condition, due, paid);
+            capacity, condition);
 
     // Each fixture changes one coefficient before the existing reader validates/snapshots it.
     static Gdd03HousingFormula FormulaWithSyntheticScalar(string key, decimal value)
@@ -49,7 +49,7 @@ public class Gdd03HousingFormulaTests
         var f = FormulaWithSyntheticScalar("housing.cohesion_threshold", threshold);
         var expected = 2m * (5m / 20m) * Math.Max(0m, (threshold - 0.125m) / threshold);
         Assert.Equal(expected, f.Evaluate(Input(cohesion: 5, population: 20,
-            capacity: 10m, condition: 0.125m, due: 0m, paid: 0m)).CohesionLossPoints);
+            capacity: 10m, condition: 0.125m)).CohesionLossPoints);
     }
 
     [Fact] public void SyntheticMaximumCohesionLossComesFromSuppliedCatalogue()
@@ -59,7 +59,7 @@ public class Gdd03HousingFormulaTests
         var f = FormulaWithSyntheticScalar("housing.max_cohesion_loss", maximumLoss);
         var expected = maximumLoss * (5m / 20m) * Math.Max(0m, (0.25m - 0.125m) / 0.25m);
         Assert.Equal(expected, f.Evaluate(Input(cohesion: 5, population: 20,
-            capacity: 10m, condition: 0.125m, due: 0m, paid: 0m)).CohesionLossPoints);
+            capacity: 10m, condition: 0.125m)).CohesionLossPoints);
     }
 
     [Fact] public void SyntheticOverflowRateComesFromSuppliedCatalogue()
@@ -69,19 +69,8 @@ public class Gdd03HousingFormulaTests
         var f = FormulaWithSyntheticScalar("housing.overflow_deterioration", overflowPp);
         var expectedLoss = (overflowPp / 100m) * Math.Max(0m, 20m - 8m) / 20m;
         var r = f.Evaluate(Input(beforeArrival: 20, capacity: 8m,
-            condition: 0.40m, due: 4m, paid: 4m));
+            condition: 0.40m));
         Assert.Equal(expectedLoss, r.OverflowConditionLoss);
-        Assert.Equal(0.40m - expectedLoss, r.ConditionAfter);
-    }
-
-    [Fact] public void SyntheticUnpaidRateComesFromSuppliedCatalogue()
-    {
-        // R-HOUSE-002: catches unpaidPp replaced by the shipped literal 10m.
-        const decimal unpaidPp = 18m;
-        var f = FormulaWithSyntheticScalar("housing.max_deterioration", unpaidPp);
-        var expectedLoss = (unpaidPp / 100m) * ((10m - 2m) / 10m);
-        var r = f.Evaluate(Input(capacity: 10m, condition: 0.40m, due: 10m, paid: 2m));
-        Assert.Equal(expectedLoss, r.UnpaidConditionLoss);
         Assert.Equal(0.40m - expectedLoss, r.ConditionAfter);
     }
 
@@ -104,10 +93,9 @@ public class Gdd03HousingFormulaTests
         var r = Formula().Evaluate(Input());
         Assert.Equal(0.1m, r.SurchargeMoney);   // 10 x 0.10 x money_slope 0.1 (#1703: "Scale it to unit size (Recommended)", owner, 2 November 2026; was 1)
         Assert.Equal(0.025m, r.OverflowConditionLoss);
-        Assert.Equal(0.05m, r.UnpaidConditionLoss);
-        Assert.Equal(0.325m, r.ConditionAfter);
+        Assert.Equal(0.375m, r.ConditionAfter);
         Assert.Equal(0m, r.CohesionLossPoints);
-        Assert.Equal(7.5m, r.TotalConditionLossPp);
+        Assert.Equal(2.5m, r.TotalConditionLossPp);
     }
 
     [Theory]
@@ -125,7 +113,7 @@ public class Gdd03HousingFormulaTests
     {
         // R-HOUSE-002, R-HOUSE-003: does not select residents or settle timing.
         var r = Formula().Evaluate(Input(surcharge: 10, beforeArrival: 20,
-            cohesion: 5, population: 20, capacity: 15m, condition: 0.125m, due: 0m, paid: 0m));
+            cohesion: 5, population: 20, capacity: 15m, condition: 0.125m));
         Assert.Equal(0.375m, r.SurchargeMoney);   // 10 x 0.375 x money_slope 0.1 (#1703; was 3.75 at slope 1)
         Assert.Equal(0.0125m, r.OverflowConditionLoss);
         Assert.Equal(0.1125m, r.ConditionAfter);
@@ -136,12 +124,12 @@ public class Gdd03HousingFormulaTests
     {
         // R-HOUSE-002: no extra direct overflow penalty or indicator mutation.
         var f = Formula();
-        var r = f.Evaluate(Input(population: 10, condition: 0.26m, due: 0m, paid: 0m));
+        var r = f.Evaluate(Input(population: 10, condition: 0.26m));
         Assert.Equal(0.235m, r.ConditionAfter);
         Assert.Equal(0.12m, r.CohesionLossPoints);
-        var a = f.Evaluate(Input(condition: 0.125m, capacity: 10m, due: 0m, paid: 0m));
+        var a = f.Evaluate(Input(condition: 0.125m, capacity: 10m));
         var b = f.Evaluate(Input(surcharge: 5, beforeArrival: 5, cohesion: 5,
-            condition: 0m, capacity: 5m, due: 0m, paid: 0m));
+            condition: 0m, capacity: 5m));
         Assert.Equal(1m, a.CohesionLossPoints + b.CohesionLossPoints);
     }
 
@@ -149,13 +137,10 @@ public class Gdd03HousingFormulaTests
     {
         // R-HOUSE-002
         var r = Formula().Evaluate(Input(surcharge: 0, beforeArrival: 0, cohesion: 0,
-            population: 0, capacity: 0m, condition: 0m, due: 0m, paid: 0m));
+            population: 0, capacity: 0m, condition: 0m));
         Assert.Equal(0m, r.OverflowConditionLoss);
-        Assert.Equal(0m, r.UnpaidConditionLoss);
         Assert.Equal(0m, r.CohesionLossPoints);
         Assert.Equal(0m, r.SurchargeMoney);
-        Assert.Equal(0m, Formula().Evaluate(Input(due: 4m, paid: 4m)).UnpaidConditionLoss);
-        Assert.Equal(0.075m, Formula().Evaluate(Input(due: 4m, paid: 1m)).UnpaidConditionLoss);
         Assert.Equal(0m, Formula().Evaluate(Input(beforeArrival: 0, cohesion: 0, population: 0,
             condition: 0m)).CohesionLossPoints);
     }
@@ -164,7 +149,7 @@ public class Gdd03HousingFormulaTests
     {
         // R-HOUSE-001: arithmetic only, no project, payment or initial condition.
         var f = Formula();
-        Assert.Equal(0m, f.Evaluate(Input(condition: 0.01m, paid: 0m)).ConditionAfter);
+        Assert.Equal(0m, f.Evaluate(Input(condition: 0.01m)).ConditionAfter);
         Assert.Equal(1m, f.RepairCondition(0.95m));
         Assert.Equal(0m, f.ApplyConditionEffect(0.04m, -0.10m));
         Assert.Equal(0.90m, f.ApplyConditionEffect(f.RepairCondition(0.95m), -0.10m));
@@ -178,7 +163,7 @@ public class Gdd03HousingFormulaTests
     {
         // R-HOUSE-002: a region's ordinary residents are part of total own population.
         Assert.Throws<ArgumentOutOfRangeException>(() => Formula().Evaluate(
-            Input(cohesion: residents, population: population, condition: 0m, due: 0m, paid: 0m)));
+            Input(cohesion: residents, population: population, condition: 0m)));
     }
 
     [Fact] public void InvalidExplicitInputsAreRejectedWithoutState()
@@ -186,8 +171,7 @@ public class Gdd03HousingFormulaTests
         var f = Formula();
         foreach (var input in new[] { Input(surcharge: -1), Input(beforeArrival: -1),
             Input(cohesion: -1), Input(population: -1), Input(capacity: -1m),
-            Input(condition: -0.01m), Input(condition: 1.01m), Input(due: -1m),
-            Input(paid: -1m), Input(paid: 5m), Input(due: 0m, paid: 1m) })
+            Input(condition: -0.01m), Input(condition: 1.01m) })
             Assert.Throws<ArgumentOutOfRangeException>(() => f.Evaluate(input));
         Assert.Throws<ArgumentNullException>(() => f.Evaluate(null!));
         Assert.Equal(0.1m, f.Evaluate(Input()).SurchargeMoney);   // money_slope 0.1 (#1703; was 1)
@@ -203,7 +187,7 @@ public class Gdd03HousingFormulaTests
         {
             CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(culture);
             CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(culture);
-            Assert.Equal("0.325", Formula().Evaluate(Input()).ConditionAfter.ToString(CultureInfo.InvariantCulture));
+            Assert.Equal("0.375", Formula().Evaluate(Input()).ConditionAfter.ToString(CultureInfo.InvariantCulture));
         }
         finally { CultureInfo.CurrentCulture = old; CultureInfo.CurrentUICulture = oldUi; }
     }
@@ -265,7 +249,7 @@ public class Gdd03HousingFormulaTests
         foreach (var condition in conditions)
         {
             if (residents > population) continue;
-            var d = f.Evaluate(new Gdd03HousingInput(residents, residents, residents, population, capacity, condition, 0m, 0m));
+            var d = f.Evaluate(new Gdd03HousingInput(residents, residents, residents, population, capacity, condition));
             var live = f.EvaluateTurn(residents, population, capacity, (double)condition);
             var at = $"R={residents} P={population} cap={capacity} c={condition}";
             Assert.True(Math.Abs((double)d.SurchargeMoney - live.Surcharge) <= 1e-9, "surcharge " + at);
