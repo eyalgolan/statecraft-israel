@@ -216,6 +216,121 @@ public sealed class MapOverrideEditorTests
         }
     }
 
+    // #1721 slice C: search finds a location by any part of its id, in any letter case, and only by its id.
+    [Test]
+    public void SearchFindsALocationByPartOfItsIdInAnyCase()
+    {
+        var document = MapOverrideEditorDocument.Load(temporary);
+        try
+        {
+            var location = document.Locations.OrderBy(x => x.Id, StringComparer.Ordinal).First(x => x.Id.Length >= 4);
+            var query = location.Id.Substring(1, location.Id.Length - 2).ToUpperInvariant();
+            var found = document.SearchLocations(query);
+            CollectionAssert.Contains(found.Select(x => x.Id).ToList(), location.Id);
+            Assert.IsTrue(found.All(x => x.Id.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0), "every hit contains the query");
+            CollectionAssert.AreEqual(found.Select(x => x.Id).OrderBy(x => x, StringComparer.Ordinal).ToList(), found.Select(x => x.Id).ToList(),
+                "hits are ordered by id");
+            Assert.IsEmpty(document.SearchLocations("no_such_location_id_zz"));
+            Assert.AreEqual(document.Locations.Count, document.SearchLocations("  ").Count, "a blank query lists every location");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(document); }
+    }
+
+    // #1721 slice C: the diff preview lists each edited row against the saved override file, with both values.
+    [Test]
+    public void TheDiffListsEachEditedRowAgainstTheSavedFile()
+    {
+        var document = MapOverrideEditorDocument.Load(temporary);
+        try
+        {
+            Assert.IsEmpty(document.Changes(), "a freshly loaded map has no unsaved rows");
+            var hex = document.Hexes.First(x => x.Land);
+            var terrain = document.LandBiomes.First(x => x != hex.Biome);
+            var location = document.Locations.OrderBy(x => x.Id, StringComparer.Ordinal).First();
+            var before = document.LocationAt(location.Id);
+            var target = document.Hexes.First(x => x.Land && (x.Q != before.q || x.R != before.r));
+            var controlHex = Control1948.Parse(File.ReadAllText(Path.Combine(temporary, "map", Control1948.FileName))).EditorHexes.First();
+            var period = document.Periods[0].Id;
+            var controlBefore = document.ControlAt(controlHex.q, controlHex.r, period);
+            var control = document.ControlValues.First(x => x != controlBefore);
+            document.SetTerrain(hex.Q, hex.R, terrain);
+            document.SetControl(controlHex.q, controlHex.r, period, control);
+            document.SetLocation(location.Id, target.Q, target.R);
+
+            var changes = document.Changes();
+            Assert.AreEqual(3, changes.Count, string.Join("\n", changes));
+            var t = changes.Single(x => x.Kind == MapEditorChange.Terrain);
+            Assert.AreEqual((hex.Q, hex.R, hex.Biome, terrain), (t.Q, t.R, t.Saved, t.Current));
+            var c = changes.Single(x => x.Kind == MapEditorChange.Control);
+            Assert.AreEqual((controlHex.q, controlHex.r, period, controlBefore, control), (c.Q, c.R, c.Period, c.Saved, c.Current));
+            var l = changes.Single(x => x.Kind == MapEditorChange.Location);
+            Assert.AreEqual(location.Id, l.Id);
+            StringAssert.Contains(location.Id, l.ToString());
+            Assert.AreNotEqual(l.Saved, l.Current);
+
+            document.SetTerrain(hex.Q, hex.R, hex.Biome);
+            Assert.AreEqual(2, document.Changes().Count, "an edit set back to its saved value leaves the diff");
+            Assert.IsTrue(document.Save(out var error), error);
+            Assert.IsEmpty(document.Changes(), "after save nothing differs from the file");
+            document.SetLocation(location.Id, before.q, before.r);
+            var back = document.Changes().Single();
+            Assert.AreEqual(FormattableString.Invariant($"q={target.Q} r={target.R}"), back.Saved, "the saved side is the file, not the generated map");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(document); }
+    }
+
+    // #1721 slice C: reverting one diff row restores only that row to the saved file, is undoable and writes nothing.
+    [Test]
+    public void RevertingOneRowRestoresOnlyThatRowAndUndoBringsItBack()
+    {
+        var path = Path.Combine(temporary, MapOverrides.FileName);
+        var document = MapOverrideEditorDocument.Load(temporary);
+        try
+        {
+            var hex = document.Hexes.First(x => x.Land);
+            var savedTerrain = document.LandBiomes.First(x => x != hex.Biome);
+            var controlHex = Control1948.Parse(File.ReadAllText(Path.Combine(temporary, "map", Control1948.FileName))).EditorHexes.First();
+            var period = document.Periods[0].Id;
+            var savedControl = document.ControlValues.First(x => x != document.ControlAt(controlHex.q, controlHex.r, period));
+            document.SetTerrain(hex.Q, hex.R, savedTerrain);
+            document.SetControl(controlHex.q, controlHex.r, period, savedControl);
+            Assert.IsTrue(document.Save(out var error), error);
+            var bytes = File.ReadAllBytes(path);
+
+            var editedTerrain = document.LandBiomes.First(x => x != hex.Biome && x != savedTerrain);
+            var location = document.Locations.OrderBy(x => x.Id, StringComparer.Ordinal).First();
+            var before = document.LocationAt(location.Id);
+            var target = document.Hexes.First(x => x.Land && (x.Q != before.q || x.R != before.r));
+            document.SetTerrain(hex.Q, hex.R, editedTerrain);
+            document.SetLocation(location.Id, target.Q, target.R);
+
+            Undo.IncrementCurrentGroup();
+            Undo.RecordObject(document, "Revert one map override edit");
+            document.Revert(document.Changes().Single(x => x.Kind == MapEditorChange.Terrain));
+            Undo.FlushUndoRecordObjects();
+            Assert.AreEqual(savedTerrain, document.TerrainAt(hex.Q, hex.R), "revert goes back to the saved file, not the generated map");
+            Assert.AreEqual((target.Q, target.R), document.LocationAt(location.Id), "the other edit stays");
+            Assert.AreEqual(MapEditorChange.Location, document.Changes().Single().Kind);
+            CollectionAssert.AreEqual(bytes, File.ReadAllBytes(path), "revert does not write the file");
+
+            Undo.PerformUndo();
+            Assert.AreEqual(editedTerrain, document.TerrainAt(hex.Q, hex.R), "Undo brings the reverted edit back");
+            Assert.AreEqual(2, document.Changes().Count);
+
+            document.Revert(document.Changes().Single(x => x.Kind == MapEditorChange.Location));
+            Assert.AreEqual(before, document.LocationAt(location.Id));
+            document.SetControl(controlHex.q, controlHex.r, period, document.ControlValues.First(x => x != savedControl));
+            document.Revert(document.Changes().Single(x => x.Kind == MapEditorChange.Control));
+            Assert.AreEqual(savedControl, document.ControlAt(controlHex.q, controlHex.r, period), "a control row reverts to the saved file too");
+            Assert.Throws<ArgumentNullException>(() => document.Revert(null!));
+        }
+        finally
+        {
+            Undo.ClearUndo(document);
+            UnityEngine.Object.DestroyImmediate(document);
+        }
+    }
+
     Content LoadSavedContent() => ContentLoader.Load(relative =>
     {
         var file = Path.Combine(temporary, relative);
