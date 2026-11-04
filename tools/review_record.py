@@ -3,7 +3,8 @@ source check counts when the pull request discloses the AI help, owner, 4 Novemb
 6623108295): `reviewed_by`, the reviewer's GitHub handle, and `reviewed_on`, the day, both or neither. The Python side of
 Statecraft.Sim.ReviewRecord (the same rules): the tools that read status rows check it, and tools/review_queue.py leaves
 a signed-off row out of the queue. Only a person writes these keys, or an AI-assisted contributor whose pull request
-discloses the AI help; scripts/oss/reviewed_by_guard.py refuses any other AI-co-authored commit that touches them."""
+discloses the AI help and says what was checked, who may add or re-sign them but never remove them;
+scripts/oss/reviewed_by_guard.py refuses any other AI-co-authored commit that touches them."""
 from __future__ import annotations
 
 import datetime
