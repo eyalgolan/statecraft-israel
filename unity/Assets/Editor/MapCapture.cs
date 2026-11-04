@@ -349,7 +349,7 @@ public static class MapCapture
 
     /// <summary>The units in play as a new game starts (golden seed unless the trailer passes its -seed, historical mode): what
     /// the player draws on turn 1, or, with -unitsDate, on that day.</summary>
-    static void ShowStartUnits(MapScene map, ulong seed = Statecraft.Sim.GoldenRun.Seed)
+    static (Statecraft.Game.Map.Units.UnitLayer layer, Statecraft.Sim.GameState state) ShowStartUnits(MapScene map, ulong seed = Statecraft.Sim.GoldenRun.Seed)
     {
         var content = Statecraft.Sim.ContentLoader.Load(Paths.Content);
         var units = Statecraft.Game.Map.Units.UnitData.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", Statecraft.Game.Map.Units.UnitData.DefaultFileName)));
@@ -364,6 +364,118 @@ public static class MapCapture
             state.Date = Statecraft.Game.Map.Units.UnitData.Day(args[at + 1]);
         }
         layer.Show(content, state);
+        return (layer, state);
+    }
+
+    /// <summary>#2373 and #2374's evidence: Givati's token on -unitsDate (1948-07-11 or later: the day its 65 mm gun joins it;
+    /// its third figure is C05) at close zoom, with the game's camera on the WebGL tier, into -captureDir (default
+    /// captures/anim-gun-c05). Every model the token asks for is answered from the AssetDatabase, as the player's stream
+    /// would, and the renders warm up until the close-zoom switch has settled. Then, from the same camera and state: the
+    /// token and the gun at rest (before), the gun's shot at the flash, at the end of the recoil and with the smoke rolling
+    /// (UnitGunFire.Sample), and C05 at rest (before) and at the two far ends of its sway (UnitFigureIdle.Sample), with a
+    /// README of the camera. Nothing is saved to the scene or the content.</summary>
+    public static void GunAndC05()
+    {
+        var args = System.Environment.GetCommandLineArgs();
+        int at = System.Array.IndexOf(args, "-captureDir");
+        var dir = at >= 0 && at + 1 < args.Length ? args[at + 1] : Path.Combine(CaptureDir, "anim-gun-c05");
+        Directory.CreateDirectory(dir);
+        var pending = new List<(string id, System.Action<GameObject> done)>();
+        var weapons = new List<(string id, System.Action<GameObject> done)>();
+        Statecraft.Game.Map.Units.UnitFigures.Forget();
+        Statecraft.Game.Map.Units.UnitFigures.Source = (id, detail, done) => pending.Add((id, done));
+        Statecraft.Game.Map.Units.UnitWeapons.Source = (id, done) => weapons.Add((id, done));
+        int saved = QualitySettings.GetQualityLevel();
+        try
+        {
+            var map = OpenAndBuild();
+            var (layer, state) = ShowStartUnits(map);
+            void Answer()
+            {
+                for (int round = 0; round < 4 && (pending.Count > 0 || weapons.Count > 0); round++)
+                {
+                    var figures = pending.ToArray(); pending.Clear();
+                    foreach (var request in figures)
+                        request.done(AssetDatabase.LoadAssetAtPath<GameObject>(Statecraft.Game.Map.Collection.CollectionCatalog.PrefabPath(request.id, Statecraft.Game.Map.Collection.CollectionDetail.Far)));
+                    var held = weapons.ToArray(); weapons.Clear();
+                    foreach (var request in held)
+                        request.done(AssetDatabase.LoadAssetAtPath<GameObject>(Statecraft.Game.Map.Collection.CollectionCatalog.PrefabPath(request.id, Statecraft.Game.Map.Collection.CollectionDetail.Far)));
+                }
+            }
+            Answer();
+            QualitySettings.SetQualityLevel(0, true);   // the WebGL tier
+            var camera = Camera.main; var rig = camera.GetComponent<CameraRig>();
+            camera.aspect = 16f / 9f;
+            string day = state.Date.ToString("yyyy-MM-dd");
+            var token = layer.transform.Find("Tokens/givati");
+            if (token == null) throw new System.InvalidOperationException("no givati token on " + day);
+            // The gun's piece (Givati's second vehicle slot: its armoured car came on 12 June, its gun on 11 July).
+            var gun = token.GetComponentInChildren<Statecraft.Game.Map.Units.UnitGunFire>(true);
+            if (gun == null) throw new System.InvalidOperationException("givati has no 65 mm gun on " + day + " (pass -unitsDate 1948-07-11 or later)");
+            var gunPiece = gun.transform;
+            var c05Piece = token.Find("Rifleman2");
+            if (c05Piece == null) throw new System.InvalidOperationException("givati has no third figure on " + day);
+            float man = Statecraft.Game.Map.Units.UnitBadge.FigureHeightM * Statecraft.Game.Map.Units.UnitShowcase.FigureScale;
+            var records = new List<string>();
+            void View(string name, Vector3 lookAt, float distance)
+            {
+                rig.LookAt = lookAt; rig.Distance = distance; rig.Yaw = 0f; rig.TopInset = 0f; rig.Apply();
+                Statecraft.Game.Map.Units.UnitFlagFacing.FaceAll(camera.transform.position);
+                layer.FaceCamera(camera);
+                records.Add($"{name}: lookAt={lookAt}; distance={distance}; yaw=0; pitch={CameraRig.Pitch}; fov={camera.fieldOfView}; tier={QualitySettings.names[0]}");
+            }
+            void Shot(string name) => Save(camera, 1920, 1080, Path.Combine(dir, name + ".png"));
+            var tokenAt = token.Find(Statecraft.Game.Map.Units.UnitPlinth.PlinthName).position;
+            // Warm up: the first close render flips the zoom switch, which asks for the near models; answer them and render
+            // again, so every frame below shows the same settled token.
+            View("warmup", tokenAt + Vector3.up * (0.35f * man), 9000f);
+            for (int i = 0; i < 3; i++) { Shot("warmup"); Answer(); }
+            File.Delete(Path.Combine(dir, "warmup.png"));
+            records.Clear();
+
+            View("token", tokenAt + Vector3.up * (0.35f * man), 9000f);
+            Shot("token-before");
+            gun.Fire(); gun.Sample(0.08f);
+            Shot("token-after");
+            gun.Sample(Statecraft.Game.Map.Units.UnitGunFire.TotalS);
+
+            View("gun", gunPiece.position + gunPiece.forward * (0.15f * man) + Vector3.up * (0.3f * man), 3200f);   // a little towards the muzzle, where the smoke goes
+            Shot("gun-before");
+            gun.Fire(); gun.Sample(0.02f); Shot("gun-flash");
+            gun.Sample(0.08f); Shot("gun-recoil");
+            gun.Sample(0.5f); Shot("gun-smoke");
+            gun.Sample(Statecraft.Game.Map.Units.UnitGunFire.TotalS);
+
+            var idle = c05Piece.GetComponentInChildren<Statecraft.Game.Map.Units.UnitFigureIdle>(true);
+            if (idle == null) throw new System.InvalidOperationException("Rifleman2 has no code-driven idle (is it C05, with his bones?)");
+            if (!idle.enabled) throw new System.InvalidOperationException("the zoom switch did not turn C05's idle on at " + rig.Distance + " m");
+            View("c05", c05Piece.position + Vector3.up * (0.5f * man), 3200f);
+            Shot("c05-before");
+            // The far ends of the cycle: where the hips' lean and the chest's pitch are both largest, each way.
+            float tLeft = 0f, tRight = 0f, mostLeft = 0f, mostRight = 0f;
+            for (float t = 0f; t < 60f; t += 0.02f)
+            {
+                Statecraft.Game.Map.Units.UnitFigureIdle.Evaluate(t, idle.Offset, out float breath, out float sway);
+                if (sway + breath > mostRight) { mostRight = sway + breath; tRight = t; }
+                if (-(sway + breath) > mostLeft) { mostLeft = -(sway + breath); tLeft = t; }
+            }
+            idle.Sample(tLeft); Shot("c05-after-lean-a");
+            idle.Sample(tRight); Shot("c05-after-lean-b");
+            idle.enabled = false; idle.enabled = true;   // back at rest (OnDisable), still on
+            records.Add($"gun frames: flash at 0.02 s, recoil at 0.08 s, smoke at 0.5 s of the shot; C05 frames at {tLeft:F2} s and {tRight:F2} s of the session (offset {idle.Offset:F4})");
+            File.WriteAllText(Path.Combine(dir, "README.txt"),
+                $"Unity editor renders of Givati's token on {state.Date:yyyy-MM-dd} (historical start, golden seed, the units as on that day), 1920x1080, " +
+                "the game's camera, the WebGL quality tier, every model answered from the AssetDatabase. Same camera, state and lighting " +
+                "within each before/after set; the only change is the gun's shot (UnitGunFire.Sample) or C05's idle (UnitFigureIdle.Sample). " +
+                "No UI. Nothing in the scene or the content was modified.\n" + string.Join("\n", records) + "\n");
+        }
+        finally
+        {
+            QualitySettings.SetQualityLevel(saved, true);
+            Statecraft.Game.Map.Units.UnitFigures.Source = null;
+            Statecraft.Game.Map.Units.UnitWeapons.Source = null;
+            Statecraft.Game.Map.Units.UnitFigures.Forget();
+        }
     }
 
     /// <summary>PromoPose.All, plus any "-extraPose name:lon:lat:distanceM:yaw" given (close looks while tuning the art, for

@@ -38,7 +38,7 @@ As a player who picks an option that did not happen, I want the game to bring th
 ## Out of scope
 
 - A stored drift number, per-front drift, OR or NOT requirements, relative windows, delayed effects and procedural text.
-- Follow-up cards for the armistice refusals: a refused armistice returns under `R-WAR-006` (Phase 5).
+- Follow-up cards for the armistice refusals: a refused armistice returns (planned, Phase 5; no rule yet).
 - Any change to the effects of the Egypt armistice refusal (#937) or the reparations refusal (#938).
 
 ## Sources

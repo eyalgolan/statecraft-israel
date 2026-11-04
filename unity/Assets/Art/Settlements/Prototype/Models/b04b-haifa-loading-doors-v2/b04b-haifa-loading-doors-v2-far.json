@@ -1,0 +1,15 @@
+{
+    "tool": "FarModelLevels",
+    "source": "Assets/Art/Settlements/Prototype/Models/b04b-haifa-loading-doors-v2/b04b-haifa-loading-doors-v2.fbx",
+    "source_sha256": "fc365084332aac6a10559bd7221f06ea120083a3430c8cf18648fd8280711a98",
+    "colour_map": "Assets/Art/Settlements/Prototype/Models/b04b-haifa-loading-doors-v2/b04b-haifa-loading-doors-v2_basecolor.jpg",
+    "colour_map_sha256": "1f1a59748b67e0dfa5c22959cf70f5b73f9d4ad9bd4c5b2ddd5360c1644bcd83",
+    "source_triangles": 6000,
+    "triangles": 399,
+    "target_triangles": 400,
+    "cell_px": 8,
+    "supersample": 3,
+    "sample_px": 512,
+    "atlas_px": 256,
+    "provenance": "Derived from Tal Heuberger's original (the source FBX and colour map above) by FarModelLevels: a subset of the model's own vertices (exact positions, none added or moved) and a colour map baked from the original's. Same licence, CC BY-NC-ND 4.0, credit Tal Heuberger; lighter far-off derived copy; owner confirms Tal's permission, 3 Nov 2026 (#2378)."
+}

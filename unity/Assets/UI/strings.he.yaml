@@ -39,7 +39,7 @@ hud.tip.support: "התמיכה הציבורית היא ממוצע התמיכה �
 hud.tip.cohesion: "הלכידות החברתית עולה ויורדת עם הדיור, התעסוקה, המזון, הקיצוב והביטחון."
 hud.tip.standing: "התמיכה הבינלאומית זזה בעקבות הבחירות בכרטיסי האירוע."
 hud.tip.fx: "מטבע החוץ נכנס מיצוא, מתרומות ומהלוואות, ויוצא על יבוא שגדל עם האוכלוסייה ועל דולרים שמומרים לכסף במסך הביטחון בזמן המלחמה. כרטיסי האירוע יכולים להוסיף לו או לגרוע ממנו. כשהוא אוזל, יבוא המזון נעצר עד שהוא מתאושש."
-# native-review-pending
+# Native review: owner, 3 Nov 2026 (HE batch 5: "approve all"; recorded on #564, issuecomment-6610635087).
 hud.nav.cabinet: "ממשלה"
 # The Cabinet disc's tip while a seat is vacant that the player can fill (#1109). Native review: owner, 3 Nov 2026 (HE
 # batch 2: "approved").
@@ -172,6 +172,8 @@ advisor.got_it: "הבנתי"
 advisor.close: "X"
 advisor.count: "{0} מתוך {1}"
 # The Settings screen (#40). "On" / "Off" as a switch's state, not a command. For the native reviewer (#564).
+# The four Settings keys below: native review: owner, 3 Nov 2026 (HE batch 5: "approve all"; recorded on #564,
+# issuecomment-6610635087).
 settings.title: "הגדרות"
 settings.tiltshift: "טשטוש בחלק העליון ובחלק התחתון של המפה"
 settings.on: "מופעל"
@@ -267,7 +269,7 @@ event.ai_label: "איור שנוצר בבינה מלאכותית"
 # Too little Attention left to answer the card (#1034, #1043). "אפשר לסיים" and "לידי" keep the line free of the
 # player's and the minister's gender. Native review: owner, 3 Nov 2026 (HE batch 2: "approved").
 event.no_attention: "לא נשארה לך מספיק תשומת לב לענות בתור הזה. אפשר לסיים את התור, וההחלטה תעבור לידי {0}."
-# For the native reviewer (#564)
+# Native review: owner, 3 Nov 2026 (HE batch 5: "approve all"; recorded on #564, issuecomment-6610635087).
 event.cabinet: "הממשלה"
 event.option_cost: "{0} (עולה {1:0.0} תשומת לב)"
 # The objective card's line (#380; the owner's wording, #379): early, on time, later.
@@ -460,6 +462,9 @@ why.line.on_its_way: "{0} בדרך למשבצת {1}"
 why.line.stopped_no_route: "{0}: עצירה, כי אין מסלול שמגיע למשבצת {1}"
 why.line.stopped_full: "{0}: עצירה, כי משבצת {1} מלאה"
 why.line.arrived: "{0}: הגעה למשבצת {1}"
+# An operation card's order ended with its operation (R-ENEMY-005; the owner's answer 1 on #2087). Agent-drafted Hebrew;
+# native review pending (#564).
+why.line.card_order_ended: "{0}: עצירה, כי פקודת המבצע לנוע למשבצת {1} הסתיימה"
 # B1: the economy, population, effect and security Why lines (CauseKeys, CauseText). A change reads "{0}: שינוי {1}", as
 # event.effect.amount does, so the pattern has Hebrew and UiText marks the amount (#543). Counts as "Label: N" (HE-04);
 # no verb agrees with a placeholder (HE-15). Native review: owner, 25 Oct 2026 (recommendations page), for every
@@ -672,6 +677,12 @@ info.control_arab_by: "בשליטת כוחות ערביים ({0})"
 info.control_side_israel: "הצד הישראלי של קו שביתת הנשק"
 info.control_side_arab: "הצד הערבי של קו שביתת הנשק"
 info.control_side_arab_by: "הצד הערבי של קו שביתת הנשק ({0})"
+# The Jerusalem hex's control line (#2039): the hex also holds the Old City, and its panel names West Jerusalem.
+# Agent-drafted Hebrew, both: native-review-pending (#564).
+# native-review-pending
+info.control_israel_west_jerusalem: "בשליטת ישראל (מערב ירושלים)"
+# native-review-pending
+info.control_side_israel_west_jerusalem: "הצד הישראלי של קו שביתת הנשק (מערב ירושלים)"
 info.control_contested: "שטח שבמחלוקת"
 info.control_no_mans_land: "שטח הפקר"
 info.control_dmz: "אזור מפורז"
@@ -961,7 +972,7 @@ city.project_reason.repair_city_hex: "שיפוץ דיור נעשה רק במשב
 city.projects_toggle: "מיזמי העיר ({0})"
 # #1722 slice E (#1701; R-ARMS-005 to R-ARMS-007), gdd-0.3 only: a built arms workshop's part of the info panel, as in
 # strings.en.yaml. Counts as "Label: N" (HE-04); the refusals follow unit.reinforce_refused.idle. Agent-drafted Hebrew;
-# native review pending (#564).
+# native review: owner, 3 Nov 2026 (HE batch 5: "approve all"; recorded on #564, issuecomment-6610635087).
 city.workshops_staffed: "סדנאות נשק מאוישות: {0} מתוך {1}"
 city.workshops_ordered: "סדנאות נשק מאוישות בסיום התור: {0} מתוך {1}"
 city.workshop_staffed: "הסדנה הזאת: מאוישת"
@@ -972,9 +983,11 @@ city.workshop_held: "בהמתנה: {0} בשליטת האויב"
 workshop.refused_built_one: "{0}: יש רק סדנת נשק אחת"
 workshop.refused_built: "{0}: סדנאות נשק בנויות: {1}"
 # A no-break space (U+00A0) joins "יש" to its count, so a narrow panel never wraps "(יש" and "0)" apart.
-# Agent-drafted Hebrew; native review pending (#564).
+# Agent-drafted Hebrew; native review: owner, 3 Nov 2026 (HE batch 5: "approve all"; recorded on #564,
+# issuecomment-6610635087).
 workshop.refused_people: "{0}: אין די אזרחים ובעלי מלאכה (יש\u00A0{1})"
 workshop.refused_people_no_job: "{0}: אין די אזרחים ובעלי מלאכה ללא משרה (יש\u00A0{1})"
+# Agent-drafted Hebrew; native review pending (#564).
 site.available: "אתר ייעודי ליישוב חדש"
 site.group: "קבוצת חלוצים {0}"
 site.build: "הקמת יישוב עם {0}: {1}, {2}"
@@ -1011,24 +1024,30 @@ corridor.build_road: "סלילת כביש עם {0}: {1}, {2}"
 corridor.build_rail: "הנחת מסילה עם {0}: {1}, {2}"
 corridor.built: "נבנה ב־{0}"
 
-# Timeline screen (#955). Hebrew drafts: agent-checked, native review pending (#564), except nav.timeline: native
-# review: owner, 3 Nov 2026 (HE batch 1: "All fine as they are").
+# Timeline screen (#955). Hebrew drafts: agent-checked, native review pending (#564).
+# The five timeline keys below: native review: owner, 3 Nov 2026 (HE batch 5: "approve all"; recorded on #564,
+# issuecomment-6610635087).
 timeline.title: "הדרך שלך והרצף ההיסטורי"
 timeline.yours: "הדרך שלך"
 timeline.record: "הרצף ההיסטורי"
 timeline.no_record: "אין תשובה מתועדת אחת"
 timeline.rejoined: "חזרה לרצף ההיסטורי"
+# nav.timeline: native review: owner, 3 Nov 2026 (HE batch 1: "All fine as they are").
 nav.timeline: "ציר הזמן"
 
 # Q-ALT-7: after the choice only; GDD195 identifies design assumptions. Hebrew drafts: agent-checked; native review pending (#564).
+# The three alternative-history keys below: native review: owner, 3 Nov 2026 (HE batch 5: "approve all"; recorded on
+# #564, issuecomment-6610635087).
 timeline.alt_proposed: "לא אומץ. הוצע בידי {0}, {1}."
 timeline.alt_debated: "לא אומץ. נדון בידי {0}, {1}."
 timeline.alt_design: "הנחת תכנון."
 
 # #1125 independent option-effect formatter; no production card hookup yet.
-# Agent-checked draft wording only; native-speaker review remains pending (#564), except event.effect.amount:
-# native review: owner, 3 Nov 2026 (HE batch 1: "All fine as they are").
+# Agent-checked draft wording only; native-speaker review remains pending (#564).
+# event.effect.amount: native review: owner, 3 Nov 2026 (HE batch 1: "All fine as they are").
 event.effect.amount: "{0}: שינוי {1}"
+# The fourteen option-effect keys below: native review: owner, 3 Nov 2026 (HE batch 5: "approve all"; recorded on #564,
+# issuecomment-6610635087).
 event.effect.stock: "{0} {1} יחידות"
 event.effect.grant: "{0}: {1}, מיקום: {2}"
 event.effect.city: "{0}: {1}, שינוי {2}"
@@ -1093,7 +1112,8 @@ advisor.media_label: "הנפשה וקול בבינה מלאכותית. דיאל�
 
 # Each advisor clip's photograph credit (spec 11.4; CONTENT_POLICY's advisor exception): the photograph, its date,
 # photographer or agency, collection and id, licence, and the changes. Shown small beside the disclosure.
-# Hebrew agent-drafted, for the native reviewer (#564).
+# Hebrew agent-drafted; native review: owner, 3 Nov 2026 (HE batch 5: "approve all"; recorded on #564,
+# issuecomment-6610635087).
 advisor.credit.ben_gurion: "צילום: דוד בן-גוריון, 16 באפריל 1951, לשכת העיתונות הממשלתית, אוסף התצלומים הלאומי D683-095, נחלת הכלל (PD-Israel). נצבע, הוצב על רקע משרד שנוצר בבינה מלאכותית, והונפש וסונכרן לקול בבינה מלאכותית (Kling 3.0 Pro, Sync 3)."
 advisor.credit.meyerson: "צילום: גולדה מאירסון (לימים מאיר) עם ילדי קיבוץ שפיים, 24 ביולי 1950, תאודור בראונר, לשכת העיתונות הממשלתית, אוסף התצלומים הלאומי D703-086, נחלת הכלל (PD-Israel). נצבע ב-Dreamina, נחתך, והונפש וסונכרן לקול בבינה מלאכותית (Kling 3.0 Pro, Sync 3); הבינה המלאכותית מניעה גם את האנשים סביבה ואת הדגל."
 advisor.credit.dayan: "צילום: משה דיין, 9 בדצמבר 1953, NLI 997008136641805171. Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection / CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). הוחזר לכיוונו הנכון, נצבע ב-Dreamina, נחתך, והונפש וסונכרן לקול בבינה מלאכותית (Kling 3.0 Pro, Sync 3)."
@@ -1151,9 +1171,10 @@ share.site_downloaded: "אפשר לצרף לפוסט את התמונה שהור�
 # Event/upkeep cause templates (#1680, #564), review state per key.
 # agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved recommendation).
 why.cause.military_upkeep: "{0}: שינוי {1} (תחזוקה צבאית)"
-# The gdd-0.3 housing surcharge and cohesion lines (#1703, R-HOUSE-005). Agent-drafted Hebrew; native review pending (#564).
+# The gdd-0.3 housing surcharge and cohesion lines (#1703, R-HOUSE-005). Agent-drafted Hebrew; native review: owner,
+# 3 Nov 2026 (HE batch 5: "approve all"; recorded on #564, issuecomment-6610635087).
 # The surcharge's word "היטל דיור" is the owner's choice (2 Nov 2026: "היטל דיור (Recommended)"), and "מצב הדיור" is
-# Q-UI-2's approved term for housing condition; the rest of each line awaits the native read.
+# Q-UI-2's approved term for housing condition.
 why.cause.housing_surcharge: "{0}: שינוי {1} (היטל דיור)"
 why.cause.housing_cohesion: "{0}: שינוי {1} (מצב הדיור)"
 # agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted).
@@ -1214,10 +1235,12 @@ why.cause.prisoners_returned: "חילופי שבויים: {0:N0} שבויים ה
 # agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted).
 why.cause.soldiers_returned: "חילופי שבויים: {0:N0} מחיילינו חזרו הביתה מידי {1}"
 
-# Agent-drafted Hebrew; native-review-pending (#564), except hud.caption.food and hud.caption.arms:
+# Agent-drafted Hebrew; hud.caption.food and hud.caption.arms:
 # native review: owner, 3 Nov 2026 (HE batch 1: "All fine as they are").
 hud.caption.food: "מזון"
 hud.caption.arms: "נשק"
+# The eleven HUD stock and Arms purchase keys below: native review: owner, 3 Nov 2026 (HE batch 5: "approve all";
+# recorded on #564, issuecomment-6610635087).
 hud.stock: "{0:N0}"
 hud.delta_stock: "{0:+#,##0;-#,##0}"
 arms.count: "כמות נשק לרכישה"
@@ -1238,12 +1261,22 @@ report.stock_change: "{0} במלאי: {1} (שינוי של {2})"
 
 # #2045 standing-order refusals (Orders.Check), shown on the unit card.
 # For the native reviewer (#564).
+# unit.order_refused.unknown_order, unit.order_refused.no_unit, unit.order_refused.not_military and
+# unit.order_refused.not_yours: native review: owner, 3 Nov 2026 (HE batch 5: "approve all"; recorded on #564,
+# issuecomment-6610635087).
 unit.order_refused.unknown_order: "הפקודה אינה מוכרת"
 unit.order_refused.no_unit: "אין יחידה כזאת"
 unit.order_refused.not_military: "רק יחידה צבאית מקבלת פקודה זו"
 unit.order_refused.not_yours: "היחידה אינה שלך"
+# For the native reviewer (#564).
 unit.order_refused.artillery_hold: "ארטילריה אינה מחזיקה בשטח"
 unit.order_refused.already: "היחידה כבר קיבלה פקודה זו"
+# An operation card's refused go-to (R-ENEMY-005; the owner's answer 1 on #2087). Agent-drafted Hebrew; native review
+# pending (#564).
+unit.order_refused.card_order: "לא ניתן היה לבצע את פקודת המבצע ליחידה"
+# An operation card's go-to held back from the last Israeli unit on an occupied place (R-ENEMY-005, R-CTRL-013; #2087).
+# Agent-drafted Hebrew; native review pending (#564).
+unit.order_refused.last_garrison: "היחידה נשארת במקום: היא היחידה הישראלית האחרונה המחזיקה בו"
 
 # #2072 Attack and Reinforce refusals (Combat.Check, Training.Reinforce), shown on the unit card and in the toast. A
 # settlement in {0}/{1} opens the line as its label or follows a prefix, so no verb agrees with its gender (HE-15).

@@ -1,0 +1,159 @@
+{
+  "asset": "figure-soldier-1948-v1-rigged",
+  "creator_credit": "Tal Heuberger",
+  "licence": "CC-BY-NC-ND-4.0",
+  "what": "Tal Heuberger's figure-soldier-1948-v1 (#336, a static mesh) skinned to the 67-bone skeleton of their figure-c07-veteran-fighter-v2 (#507) and given its idle, walk and fire takes, by tools/rig_soldier_1948.py (Blender 5.2.2 LTS); the mesh is Tal's, re-posed into C07's rest pose; the colour map is Tal's byte for byte. Adapted version by the owner's report of Tal's OK (#2384, 3 November 2026). The originals are unchanged.",
+  "inputs": {
+    "figure-soldier-1948-v1.fbx": "f13635851969c1bb6e4c0babb5283685159805dfba4a2912bf2bc88813861782",
+    "figure-c07-veteran-fighter-v2.fbx": "7f839d2d37c6eff68e5dc3cb4f19f3bcb50a780ae9b31f90edda3e6f461b5ec3"
+  },
+  "files": {
+    "figure-soldier-1948-v1-rigged.fbx": "39545588027f0eb77462a955228dc5d813ff5ec4ed1a5d276d954d0212e9269d",
+    "figure-soldier-1948-v1-rigged_basecolor.jpg": "cb30823ff65a23c418986741e4ef88f680d6dd594909d4dd6b68d1ca412d6945"
+  },
+  "bones": 67,
+  "takes": {
+    "fire": [
+      1,
+      37
+    ],
+    "idle": [
+      1,
+      423
+    ],
+    "walk": [
+      1,
+      57
+    ]
+  },
+  "take_names": [
+    "Armature|Armature|fire",
+    "Armature|Armature|idle",
+    "Armature|Armature|walk"
+  ],
+  "fps": 24,
+  "vertices": 4187,
+  "triangles": 8054,
+  "height_m": 0.9605,
+  "unweighted_vertices": 0,
+  "max_influences": 4,
+  "bones_with_weight": 47,
+  "landmarks_m": {
+    "crotch": 0.445,
+    "fingertip": 0.425,
+    "armpit": 0.685,
+    "collar": 0.825,
+    "neck": 0.855
+  },
+  "donor_landmarks_m": {
+    "crotch": 0.435,
+    "fingertip": 0.545,
+    "armpit": 0.715,
+    "collar": 0.835,
+    "neck": 0.885
+  },
+  "joints_m": {
+    "Hips": [
+      0.0,
+      0.0005,
+      0.5529
+    ],
+    "Spine": [
+      0.0,
+      0.0143,
+      0.6048
+    ],
+    "Chest": [
+      0.0,
+      -0.0093,
+      0.6642
+    ],
+    "UpperChest": [
+      0.0,
+      0.0518,
+      0.7087
+    ],
+    "Neck": [
+      0.0,
+      0.0279,
+      0.8275
+    ],
+    "Head": [
+      0.0,
+      0.0212,
+      0.8582
+    ],
+    "HeadTop": [
+      0.0,
+      -0.0238,
+      0.9209
+    ],
+    "Left_Shoulder": [
+      0.0293,
+      0.0437,
+      0.7923
+    ],
+    "Left_UpperArm": [
+      0.1011,
+      0.0466,
+      0.7767
+    ],
+    "Left_LowerArm": [
+      0.1749,
+      0.0476,
+      0.6404
+    ],
+    "Left_Hand": [
+      0.2319,
+      0.0194,
+      0.5339
+    ],
+    "Fingertip": [
+      0.2573,
+      0.013,
+      0.425
+    ],
+    "DonorFingertip": [
+      0.3918,
+      -0.0756,
+      0.545
+    ],
+    "Left_UpperLeg": [
+      0.0481,
+      0.0331,
+      0.5412
+    ],
+    "Left_LowerLeg": [
+      0.0856,
+      0.0175,
+      0.3048
+    ],
+    "Left_Foot": [
+      0.098,
+      0.017,
+      0.0644
+    ]
+  },
+  "donor_self_check_m": {
+    "Hips": 0.002,
+    "Spine": 0.002,
+    "Chest": 0.002,
+    "UpperChest": 0.002,
+    "Neck": 0.002,
+    "Head": 0.002,
+    "Left_Shoulder": 0.0,
+    "Left_UpperArm": 0.0,
+    "Left_LowerArm": 0.0248,
+    "Left_Hand": 0.002,
+    "Left_UpperLeg": 0.0,
+    "Left_LowerLeg": 0.0,
+    "Left_Foot": 0.0
+  },
+  "hand_ratio": {
+    "Right": 0.9501577820046833,
+    "Left": 0.963339840214032
+  },
+  "unweighted_vertices_after_heat": 72,
+  "unweighted_filled_from_nearest_m": 0.0095,
+  "rest_orientation_error_deg": 0.0
+}

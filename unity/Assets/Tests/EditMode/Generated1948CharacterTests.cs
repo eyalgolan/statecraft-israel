@@ -156,12 +156,37 @@ public class Generated1948CharacterTests
     public void LegionAndAlaKeepTheirOriginalFiguresWithoutCreatingDeployments()
     {
         Assert.AreEqual("figure-c08-arab-legion-v2", UnitFigures.SideFigure("jordan"));
-        Assert.IsNull(UnitFigures.SideFigure("local_arab_forces"), "no undeployed alias masks loss of the original campaign role");
         Assert.AreEqual("figure-c09-irregular-v2", UnitFigures.SideFigure("ala"));
         var rows = Units;
         Assert.IsFalse(rows.Any(r => r.Side == "local_arab_forces"), "art does not author a local-force deployment");
         // The Lebanese row is a map-only token (LebanonIsAMapOnlyTokenAtAlMalikiyya): still no sim unit for it, nor for local forces.
         CollectionAssert.IsEmpty(C.StartingForces.Where(f => f.Side == "lebanon" || f.Side == "local_arab_forces"));
+    }
+
+    /// <summary>Owner, 2 November 2026: "Use it instead of C09". The local forces' token figure is Tal Heuberger's local Arab
+    /// irregular, in place of the 1 November 2026 ruling on #1243 ("Map figure: C09 after photo check (Recommended)"), and all
+    /// three figures of such a token are his. The 1 November ruling "Starting strength on 15 May: No row until sourced
+    /// (Recommended)" still stands: no local-forces row exists, so no token of that side is drawn and the figure is never asked
+    /// for. The figure streams in its own bundle after the people's, walks as the other token figures do, and C09 stays on
+    /// the ALA's tokens.</summary>
+    [Test]
+    public void TheLocalForcesFigureIsTalsIrregularAndStillNoRowExists()
+    {
+        const string id = "figure-local-arab-irregular-1948-v1";
+        Assert.AreEqual(id, UnitFigures.SideFigure("local_arab_forces"));
+        Assert.AreEqual(id, UnitFigures.LocalIrregular);
+        Assert.AreNotEqual(UnitFigures.Irregular, UnitFigures.SideFigure("local_arab_forces"), "not C09");
+        Assert.AreEqual(UnitFigures.Irregular, UnitFigures.SideFigure("ala"), "C09 stays on the ALA");
+        var row = new UnitEntry { Id = "local_test", Side = "local_arab_forces" };
+        CollectionAssert.AreEqual(new[] { id, id, id }, Enumerable.Range(0, 3).Select(i => UnitFigures.FigureFor(row, i, null)), "all three figures");
+        Assert.AreEqual("collection-" + id, CollectionCatalog.BundleOf(id), "its own bundle");
+        Assert.AreEqual(CollectionCatalog.People, CollectionCatalog.After["collection-" + id], "opened after the people's");
+        Assert.IsTrue(CollectionCatalog.IsFullQualityGeneratedInfantry(id));
+        CollectionAssert.Contains(CollectionCatalog.Animated, id);
+        Assert.IsFalse(Units.Any(r => r.Side == "local_arab_forces"), "no row until sourced (owner, 1 November 2026, #1243)");
+        CollectionAssert.IsEmpty(C.StartingForces.Where(f => f.Side == "local_arab_forces"));
+        var models = AssetDatabase.FindAssets(id).Select(AssetDatabase.GUIDToAssetPath).Where(p => p.EndsWith(".fbx", StringComparison.Ordinal)).ToArray();
+        CollectionAssert.AreEqual(new[] { $"{CollectionCatalog.Folder}/{id}/{id}.fbx" }, models, "moved to the Collection folder");
     }
 
     /// <summary>Owner, 27 October 2026: "Sign off all 19" and, for Egypt's forward and rear bases at the first truce, "One

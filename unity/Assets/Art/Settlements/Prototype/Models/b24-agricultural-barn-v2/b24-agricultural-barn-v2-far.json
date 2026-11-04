@@ -1,0 +1,15 @@
+{
+    "tool": "FarModelLevels",
+    "source": "Assets/Art/Settlements/Prototype/Models/b24-agricultural-barn-v2/b24-agricultural-barn-v2.fbx",
+    "source_sha256": "e7724f14452d1630cc50a55fc6fb9536ee43a10c9ca3e71b76e6bea2b4a1a64b",
+    "colour_map": "Assets/Art/Settlements/Prototype/Models/b24-agricultural-barn-v2/b24-agricultural-barn-v2_basecolor.jpg",
+    "colour_map_sha256": "1e623cc8aecaf0a5c095f23665c3db31f889e4b1759ae90eeb90460b5e65994f",
+    "source_triangles": 6000,
+    "triangles": 399,
+    "target_triangles": 400,
+    "cell_px": 8,
+    "supersample": 3,
+    "sample_px": 512,
+    "atlas_px": 256,
+    "provenance": "Derived from Tal Heuberger's original (the source FBX and colour map above) by FarModelLevels: a subset of the model's own vertices (exact positions, none added or moved) and a colour map baked from the original's. Same licence, CC BY-NC-ND 4.0, credit Tal Heuberger; lighter far-off derived copy; owner confirms Tal's permission, 3 Nov 2026 (#2378)."
+}

@@ -467,7 +467,7 @@ options:
         {
             var orders = perTurn > 0 && s.Rung >= 4 ? new Command[] { new ConvertDollars(perTurn) } : Array.Empty<Command>();
             var r = Simulation.Step(Real, s, orders);
-            Assert.Empty(r.Rejected);
+            Assert.DoesNotContain(r.Rejected, j => !WarEvents1948Tests.IsTheMalkiyaRefusal(j));   // R-ENEMY-005: Hiram's refused order, pinned there
             s = r.State;
             if (s.Date == new DateTime(1949, 4, 15)) april = s.Debt;
             if (crisis == null && s.ActiveSituations.Contains(EconomySystem.FxCrisis)) crisis = s.Date;

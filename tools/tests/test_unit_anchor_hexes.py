@@ -59,3 +59,11 @@ def test_a_hex_shared_by_a_player_locality_and_an_enemy_held_one_is_the_players_
 
     monkeypatch.setattr(uah.yaml12, "load", reversed_rows)
     assert (-4, 24) in uah.player_locality_hexes()
+
+
+def test_order_targets_get_their_own_rows():
+    # R-ENEMY-005 (owner, 2 November 2026, #2087, option 1): an order target is not an anchor, so it has no anchor row.
+    hexes = yaml12.load((MAP / "unit_anchor_hexes.yaml").read_text())
+    targets = {(r["id"], r["target"]): (r["q"], r["r"]) for r in hexes["order_targets"]}
+    assert targets[("kiryati", 0)] == (-3, 24)   # Ramle, the ten_days card's order: Ramla's capture target, not its shared (-4, 24) (owner, 2 Nov 2026)
+    assert not any(r["id"] == "kiryati" and r["anchor"] == 1 for r in hexes["anchors"])

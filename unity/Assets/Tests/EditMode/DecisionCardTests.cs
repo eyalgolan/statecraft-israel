@@ -584,6 +584,50 @@ public class DecisionCardTests
         Assert.LessOrEqual(r.Hide.worldBound.yMax, r.CardElement.worldBound.yMax + 0.5f, $"{where}: Hide stays inside the card");
     }
 
+    /// <summary>#2340 L3: the focused card's rim is 2 px, not the resting 1 px (the card's border and its trim overlay's,
+    /// Statecraft.uss .event-card:focus), and the focus coming or going moves nothing inside it, on the one-row HUD, the
+    /// two-row HUD and a tight window at 150%, whose paddings and pixel snapping differ.</summary>
+    [UnityTest]
+    public IEnumerator TheFocusedCardHasATwoPixelRimAndItsContentStaysPut()
+    {
+        foreach (var (w, h, scale) in new[] { (1920, 1080, 100), (960, 1080, 100), (1920, 900, 150) })
+        {
+            using var r = new Rig(w, h, "law_of_return", uiScale: scale);
+            yield return Frames(5);
+            var where = $"{w}x{h} at {scale}%";
+            if (scale == 150) Assert.IsTrue(r.Hud.ClassListContains(HudPresenter.TightClass) && r.Hud.ClassListContains(HudPresenter.Scale150Class), $"{where}: precondition, the tight 150% layout");
+            var card = r.CardElement;
+            var frame = card.Q<UiFrame>();
+            Assert.AreSame(card, frame.parent, $"{where}: precondition, the card's own trim overlay");
+            Assert.AreSame(card, r.Focused, $"{where}: precondition, the new card has the focus");
+            // In screen pixels: the panel scales its units to the window and snaps each border to whole pixels.
+            var screenPerUnit = w / r.Root.layout.width;
+            foreach (var (side, px) in Rim(card, frame))
+                Assert.GreaterOrEqual(px * screenPerUnit, 1.99f, $"{where}: the focused card's {side} rim ({px} panel units, {screenPerUnit} screen px each)");
+            var focusedOuter = card.layout; var focusedContent = card.contentRect; var focusedHead = card.Q(className: "event-head").worldBound;
+
+            r.FirstOption.Focus();
+            yield return Frames(3);
+            Assert.AreSame(r.FirstOption, r.Focused, $"{where}: precondition, the focus moved to an option");
+            Assert.AreEqual(0f, frame.resolvedStyle.borderTopWidth, $"{where}: the resting rim is the card's 1 px border alone");
+            Same(focusedOuter, card.layout, $"{where}: the card's outer box did not change");
+            Same(focusedContent, card.contentRect, $"{where}: the card's content box did not move or change size");
+            Same(focusedHead, card.Q(className: "event-head").worldBound, $"{where}: the card's head did not move");
+        }
+
+        // The rim on each side: the card's border and, just inside it, its trim overlay's.
+        static (string, float)[] Rim(VisualElement card, VisualElement frame)
+        {
+            IResolvedStyle c = card.resolvedStyle, f = frame.resolvedStyle;
+            return new[] { ("top", c.borderTopWidth + f.borderTopWidth), ("right", c.borderRightWidth + f.borderRightWidth),
+                           ("bottom", c.borderBottomWidth + f.borderBottomWidth), ("left", c.borderLeftWidth + f.borderLeftWidth) };
+        }
+
+        // Rects in panel units: the panel's pixel snapping leaves float noise far below a pixel.
+        static void Same(Rect a, Rect b, string what) => Assert.IsTrue(Mathf.Abs(a.x - b.x) < 0.01f && Mathf.Abs(a.y - b.y) < 0.01f
+            && Mathf.Abs(a.width - b.width) < 0.01f && Mathf.Abs(a.height - b.height) < 0.01f, $"{what}: {a} then {b}");
+    }
+
     /// <summary>#1853: a body scrolled down on one card does not carry over: the next card opens at the top of its text.</summary>
     [UnityTest]
     public IEnumerator TheNextCardOpensAtTheTopOfItsBody()

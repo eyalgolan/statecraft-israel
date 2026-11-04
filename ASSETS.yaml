@@ -1042,98 +1042,105 @@ rules:
     source: "Tripo Studio Smart Mesh P2.0, generated 22 October 2026 by Tal Heuberger. Exact provider GLB and embedded 4096px JPEG are retained byte-identical in asset-sources/generated-1948/<id>/. Unity FBX is a documented full-geometry compatibility export, not a provider FBX. Source rigged GLBs contain zero animation clips; both existing locally retargeted idle/walk actions are exported at every frame with no simplification. No decimated copy, texture resize, Crunch or Unity mesh/animation compression. Per-character provenance records source and export hashes."
     status: verified
     artist: "Tal Heuberger"
-    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. One review-only character is editor-only; the Syrian, Iraqi and Egyptian infantry stand on their own formations' tokens, the ALA infantry is the ALA token's third figure, the Lebanese regular stands on the Lebanese army's map-only token and the Bedouin civilian stands at the Bedouin camp areas (the owner signed off all 19 generated models on 27 October 2026, #756). No archival uniform-colour claim."
+    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. The local Arab irregular is the local forces' token figure (owner, 2 November 2026: \"Use it instead of C09\"), drawn only once a local-forces row is sourced; the Syrian, Iraqi and Egyptian infantry stand on their own formations' tokens, the ALA infantry is the ALA token's third figure, the Lebanese regular stands on the Lebanese army's map-only token and the Bedouin civilian stands at the Bedouin camp areas (the owner signed off all 19 generated models on 27 October 2026, #756). No archival uniform-colour claim."
   - glob: "unity/Assets/Art/Collection/figure-syrian-infantry-1948-v1/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     source: "Tripo Studio Smart Mesh P2.0, generated 22 October 2026 by Tal Heuberger. Exact provider GLB and embedded 4096px JPEG are retained byte-identical in asset-sources/generated-1948/<id>/. Unity FBX is a documented full-geometry compatibility export, not a provider FBX. Source rigged GLBs contain zero animation clips; both existing locally retargeted idle/walk actions are exported at every frame with no simplification. No decimated copy, texture resize, Crunch or Unity mesh/animation compression. Per-character provenance records source and export hashes."
     status: verified
     artist: "Tal Heuberger"
-    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. One review-only character is editor-only; the Syrian, Iraqi and Egyptian infantry stand on their own formations' tokens, the ALA infantry is the ALA token's third figure, the Lebanese regular stands on the Lebanese army's map-only token and the Bedouin civilian stands at the Bedouin camp areas (the owner signed off all 19 generated models on 27 October 2026, #756). No archival uniform-colour claim."
+    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. The local Arab irregular is the local forces' token figure (owner, 2 November 2026: \"Use it instead of C09\"), drawn only once a local-forces row is sourced; the Syrian, Iraqi and Egyptian infantry stand on their own formations' tokens, the ALA infantry is the ALA token's third figure, the Lebanese regular stands on the Lebanese army's map-only token and the Bedouin civilian stands at the Bedouin camp areas (the owner signed off all 19 generated models on 27 October 2026, #756). No archival uniform-colour claim."
   - glob: "unity/Assets/Art/Collection/figure-ala-infantry-1948-v1/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     source: "Tripo Studio Smart Mesh P2.0, generated 22 October 2026 by Tal Heuberger. Exact provider GLB and embedded 4096px JPEG are retained byte-identical in asset-sources/generated-1948/<id>/. Unity FBX is a documented full-geometry compatibility export, not a provider FBX. Source rigged GLBs contain zero animation clips; both existing locally retargeted idle/walk actions are exported at every frame with no simplification. No decimated copy, texture resize, Crunch or Unity mesh/animation compression. Per-character provenance records source and export hashes."
     status: verified
     artist: "Tal Heuberger"
-    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. One review-only character is editor-only; the Syrian, Iraqi and Egyptian infantry stand on their own formations' tokens, the ALA infantry is the ALA token's third figure, the Lebanese regular stands on the Lebanese army's map-only token and the Bedouin civilian stands at the Bedouin camp areas (the owner signed off all 19 generated models on 27 October 2026, #756). No archival uniform-colour claim."
+    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. The local Arab irregular is the local forces' token figure (owner, 2 November 2026: \"Use it instead of C09\"), drawn only once a local-forces row is sourced; the Syrian, Iraqi and Egyptian infantry stand on their own formations' tokens, the ALA infantry is the ALA token's third figure, the Lebanese regular stands on the Lebanese army's map-only token and the Bedouin civilian stands at the Bedouin camp areas (the owner signed off all 19 generated models on 27 October 2026, #756). No archival uniform-colour claim."
   - glob: "unity/Assets/Art/Collection/figure-ala-infantry-1948-v1/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     source: "Tripo Studio Smart Mesh P2.0, generated 22 October 2026 by Tal Heuberger. Exact provider GLB and embedded 4096px JPEG are retained byte-identical in asset-sources/generated-1948/<id>/. Unity FBX is a documented full-geometry compatibility export, not a provider FBX. Source rigged GLBs contain zero animation clips; both existing locally retargeted idle/walk actions are exported at every frame with no simplification. No decimated copy, texture resize, Crunch or Unity mesh/animation compression. Per-character provenance records source and export hashes."
     status: verified
     artist: "Tal Heuberger"
-    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. One review-only character is editor-only; the Syrian, Iraqi and Egyptian infantry stand on their own formations' tokens, the ALA infantry is the ALA token's third figure, the Lebanese regular stands on the Lebanese army's map-only token and the Bedouin civilian stands at the Bedouin camp areas (the owner signed off all 19 generated models on 27 October 2026, #756). No archival uniform-colour claim."
+    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. The local Arab irregular is the local forces' token figure (owner, 2 November 2026: \"Use it instead of C09\"), drawn only once a local-forces row is sourced; the Syrian, Iraqi and Egyptian infantry stand on their own formations' tokens, the ALA infantry is the ALA token's third figure, the Lebanese regular stands on the Lebanese army's map-only token and the Bedouin civilian stands at the Bedouin camp areas (the owner signed off all 19 generated models on 27 October 2026, #756). No archival uniform-colour claim."
   - glob: "unity/Assets/Art/Collection/figure-iraqi-infantry-1948-v1/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     source: "Tripo Studio Smart Mesh P2.0, generated 22 October 2026 by Tal Heuberger. Exact provider GLB and embedded 4096px JPEG are retained byte-identical in asset-sources/generated-1948/<id>/. Unity FBX is a documented full-geometry compatibility export, not a provider FBX. Source rigged GLBs contain zero animation clips; both existing locally retargeted idle/walk actions are exported at every frame with no simplification. No decimated copy, texture resize, Crunch or Unity mesh/animation compression. Per-character provenance records source and export hashes."
     status: verified
     artist: "Tal Heuberger"
-    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. One review-only character is editor-only; the Syrian, Iraqi and Egyptian infantry stand on their own formations' tokens, the ALA infantry is the ALA token's third figure, the Lebanese regular stands on the Lebanese army's map-only token and the Bedouin civilian stands at the Bedouin camp areas (the owner signed off all 19 generated models on 27 October 2026, #756). No archival uniform-colour claim."
+    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. The local Arab irregular is the local forces' token figure (owner, 2 November 2026: \"Use it instead of C09\"), drawn only once a local-forces row is sourced; the Syrian, Iraqi and Egyptian infantry stand on their own formations' tokens, the ALA infantry is the ALA token's third figure, the Lebanese regular stands on the Lebanese army's map-only token and the Bedouin civilian stands at the Bedouin camp areas (the owner signed off all 19 generated models on 27 October 2026, #756). No archival uniform-colour claim."
   - glob: "unity/Assets/Art/Collection/figure-iraqi-infantry-1948-v1/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     source: "Tripo Studio Smart Mesh P2.0, generated 22 October 2026 by Tal Heuberger. Exact provider GLB and embedded 4096px JPEG are retained byte-identical in asset-sources/generated-1948/<id>/. Unity FBX is a documented full-geometry compatibility export, not a provider FBX. Source rigged GLBs contain zero animation clips; both existing locally retargeted idle/walk actions are exported at every frame with no simplification. No decimated copy, texture resize, Crunch or Unity mesh/animation compression. Per-character provenance records source and export hashes."
     status: verified
     artist: "Tal Heuberger"
-    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. One review-only character is editor-only; the Syrian, Iraqi and Egyptian infantry stand on their own formations' tokens, the ALA infantry is the ALA token's third figure, the Lebanese regular stands on the Lebanese army's map-only token and the Bedouin civilian stands at the Bedouin camp areas (the owner signed off all 19 generated models on 27 October 2026, #756). No archival uniform-colour claim."
+    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. The local Arab irregular is the local forces' token figure (owner, 2 November 2026: \"Use it instead of C09\"), drawn only once a local-forces row is sourced; the Syrian, Iraqi and Egyptian infantry stand on their own formations' tokens, the ALA infantry is the ALA token's third figure, the Lebanese regular stands on the Lebanese army's map-only token and the Bedouin civilian stands at the Bedouin camp areas (the owner signed off all 19 generated models on 27 October 2026, #756). No archival uniform-colour claim."
   - glob: "unity/Assets/Art/Collection/figure-egyptian-infantry-1948-v1/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tripo Studio Smart Mesh P2.0, generated 22 October 2026 by Tal Heuberger. Exact provider GLB and embedded 4096px JPEG are retained byte-identical in asset-sources/generated-1948/<id>/. Unity FBX is a documented full-geometry compatibility export, not a provider FBX. Source rigged GLBs contain zero animation clips; both existing locally retargeted idle/walk actions are exported at every frame with no simplification. No decimated copy, texture resize, Crunch or Unity mesh/animation compression. Per-character provenance records source and export hashes."
     status: verified
-    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. One review-only character is editor-only; the Syrian, Iraqi and Egyptian infantry stand on their own formations' tokens, the ALA infantry is the ALA token's third figure, the Lebanese regular stands on the Lebanese army's map-only token and the Bedouin civilian stands at the Bedouin camp areas (the owner signed off all 19 generated models on 27 October 2026, #756). No archival uniform-colour claim."
+    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. The local Arab irregular is the local forces' token figure (owner, 2 November 2026: \"Use it instead of C09\"), drawn only once a local-forces row is sourced; the Syrian, Iraqi and Egyptian infantry stand on their own formations' tokens, the ALA infantry is the ALA token's third figure, the Lebanese regular stands on the Lebanese army's map-only token and the Bedouin civilian stands at the Bedouin camp areas (the owner signed off all 19 generated models on 27 October 2026, #756). No archival uniform-colour claim."
   - glob: "unity/Assets/Art/Collection/figure-egyptian-infantry-1948-v1/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tripo Studio Smart Mesh P2.0, generated 22 October 2026 by Tal Heuberger. Exact provider GLB and embedded 4096px JPEG are retained byte-identical in asset-sources/generated-1948/<id>/. Unity FBX is a documented full-geometry compatibility export, not a provider FBX. Source rigged GLBs contain zero animation clips; both existing locally retargeted idle/walk actions are exported at every frame with no simplification. No decimated copy, texture resize, Crunch or Unity mesh/animation compression. Per-character provenance records source and export hashes."
     status: verified
-    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. One review-only character is editor-only; the Syrian, Iraqi and Egyptian infantry stand on their own formations' tokens, the ALA infantry is the ALA token's third figure, the Lebanese regular stands on the Lebanese army's map-only token and the Bedouin civilian stands at the Bedouin camp areas (the owner signed off all 19 generated models on 27 October 2026, #756). No archival uniform-colour claim."
+    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. The local Arab irregular is the local forces' token figure (owner, 2 November 2026: \"Use it instead of C09\"), drawn only once a local-forces row is sourced; the Syrian, Iraqi and Egyptian infantry stand on their own formations' tokens, the ALA infantry is the ALA token's third figure, the Lebanese regular stands on the Lebanese army's map-only token and the Bedouin civilian stands at the Bedouin camp areas (the owner signed off all 19 generated models on 27 October 2026, #756). No archival uniform-colour claim."
   - glob: "unity/Assets/Art/Collection/figure-lebanese-regular-1948-v1/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tripo Studio Smart Mesh P2.0, generated 22 October 2026 by Tal Heuberger. Exact provider GLB and embedded 4096px JPEG are retained byte-identical in asset-sources/generated-1948/<id>/. Unity FBX is a documented full-geometry compatibility export, not a provider FBX. Source rigged GLBs contain zero animation clips; both existing locally retargeted idle/walk actions are exported at every frame with no simplification. No decimated copy, texture resize, Crunch or Unity mesh/animation compression. Per-character provenance records source and export hashes."
     status: verified
-    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. One review-only character is editor-only; the Syrian, Iraqi and Egyptian infantry stand on their own formations' tokens, the ALA infantry is the ALA token's third figure, the Lebanese regular stands on the Lebanese army's map-only token and the Bedouin civilian stands at the Bedouin camp areas (the owner signed off all 19 generated models on 27 October 2026, #756). No archival uniform-colour claim."
+    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. The local Arab irregular is the local forces' token figure (owner, 2 November 2026: \"Use it instead of C09\"), drawn only once a local-forces row is sourced; the Syrian, Iraqi and Egyptian infantry stand on their own formations' tokens, the ALA infantry is the ALA token's third figure, the Lebanese regular stands on the Lebanese army's map-only token and the Bedouin civilian stands at the Bedouin camp areas (the owner signed off all 19 generated models on 27 October 2026, #756). No archival uniform-colour claim."
   - glob: "unity/Assets/Art/Collection/figure-lebanese-regular-1948-v1/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tripo Studio Smart Mesh P2.0, generated 22 October 2026 by Tal Heuberger. Exact provider GLB and embedded 4096px JPEG are retained byte-identical in asset-sources/generated-1948/<id>/. Unity FBX is a documented full-geometry compatibility export, not a provider FBX. Source rigged GLBs contain zero animation clips; both existing locally retargeted idle/walk actions are exported at every frame with no simplification. No decimated copy, texture resize, Crunch or Unity mesh/animation compression. Per-character provenance records source and export hashes."
     status: verified
-    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. One review-only character is editor-only; the Syrian, Iraqi and Egyptian infantry stand on their own formations' tokens, the ALA infantry is the ALA token's third figure, the Lebanese regular stands on the Lebanese army's map-only token and the Bedouin civilian stands at the Bedouin camp areas (the owner signed off all 19 generated models on 27 October 2026, #756). No archival uniform-colour claim."
+    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. The local Arab irregular is the local forces' token figure (owner, 2 November 2026: \"Use it instead of C09\"), drawn only once a local-forces row is sourced; the Syrian, Iraqi and Egyptian infantry stand on their own formations' tokens, the ALA infantry is the ALA token's third figure, the Lebanese regular stands on the Lebanese army's map-only token and the Bedouin civilian stands at the Bedouin camp areas (the owner signed off all 19 generated models on 27 October 2026, #756). No archival uniform-colour claim."
+  - glob: "unity/Assets/Art/Collection/figure-c04-sabra-pioneer-v3/fire.anim"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    artist: "Tal Heuberger"
+    source: "Tal Heuberger's Armature|fire take inside unity/Assets/Art/Collection/figure-c07-veteran-fighter-v2/figure-c07-veteran-fighter-v2.fbx (PR #507), resampled per frame from that source take (tangents rebuilt, near-static bones dropped) into a clip beside C04's model on 3 November 2026; C04 and C07 share Tal's 67-bone Armature, so the source take binds C04's bones by path. Baked beside the figure because the stream loads each figure's bundle alone."
+    status: verified
+    note: "adapted version; owner confirms Tal's permission, 3 Nov 2026 (#2375). The clip is a derived asset made by unity/Assets/Editor/FireTakeRetarget.cs from a fire take in Tal Heuberger's own FBX in this repository; no FBX or colour map changed. Credit Tal Heuberger; CC BY-NC-ND 4.0, https://creativecommons.org/licenses/by-nc-nd/4.0/. Pinned by BorrowedFireTakeTests."
   - glob: "unity/Assets/Art/Collection/figure-bedouin-civilian-1948-v1/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tripo Studio Smart Mesh P2.0, generated 22 October 2026 by Tal Heuberger. Exact provider GLB and embedded 4096px JPEG are retained byte-identical in asset-sources/generated-1948/<id>/. Unity FBX is a documented full-geometry compatibility export, not a provider FBX. Source rigged GLBs contain zero animation clips; both existing locally retargeted idle/walk actions are exported at every frame with no simplification. No decimated copy, texture resize, Crunch or Unity mesh/animation compression. Per-character provenance records source and export hashes."
     status: verified
-    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. One review-only character is editor-only; the Syrian, Iraqi and Egyptian infantry stand on their own formations' tokens, the ALA infantry is the ALA token's third figure, the Lebanese regular stands on the Lebanese army's map-only token and the Bedouin civilian stands at the Bedouin camp areas (the owner signed off all 19 generated models on 27 October 2026, #756). No archival uniform-colour claim."
+    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. The local Arab irregular is the local forces' token figure (owner, 2 November 2026: \"Use it instead of C09\"), drawn only once a local-forces row is sourced; the Syrian, Iraqi and Egyptian infantry stand on their own formations' tokens, the ALA infantry is the ALA token's third figure, the Lebanese regular stands on the Lebanese army's map-only token and the Bedouin civilian stands at the Bedouin camp areas (the owner signed off all 19 generated models on 27 October 2026, #756). No archival uniform-colour claim."
   - glob: "unity/Assets/Art/Collection/figure-bedouin-civilian-1948-v1/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tripo Studio Smart Mesh P2.0, generated 22 October 2026 by Tal Heuberger. Exact provider GLB and embedded 4096px JPEG are retained byte-identical in asset-sources/generated-1948/<id>/. Unity FBX is a documented full-geometry compatibility export, not a provider FBX. Source rigged GLBs contain zero animation clips; both existing locally retargeted idle/walk actions are exported at every frame with no simplification. No decimated copy, texture resize, Crunch or Unity mesh/animation compression. Per-character provenance records source and export hashes."
     status: verified
-    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. One review-only character is editor-only; the Syrian, Iraqi and Egyptian infantry stand on their own formations' tokens, the ALA infantry is the ALA token's third figure, the Lebanese regular stands on the Lebanese army's map-only token and the Bedouin civilian stands at the Bedouin camp areas (the owner signed off all 19 generated models on 27 October 2026, #756). No archival uniform-colour claim."
-  - glob: "unity/Assets/Editor/Generated1948Review/figure-local-arab-irregular-1948-v1/*.fbx"
+    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. The local Arab irregular is the local forces' token figure (owner, 2 November 2026: \"Use it instead of C09\"), drawn only once a local-forces row is sourced; the Syrian, Iraqi and Egyptian infantry stand on their own formations' tokens, the ALA infantry is the ALA token's third figure, the Lebanese regular stands on the Lebanese army's map-only token and the Bedouin civilian stands at the Bedouin camp areas (the owner signed off all 19 generated models on 27 October 2026, #756). No archival uniform-colour claim."
+  - glob: "unity/Assets/Art/Collection/figure-local-arab-irregular-1948-v1/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tripo Studio Smart Mesh P2.0, generated 22 October 2026 by Tal Heuberger. Exact provider GLB and embedded 4096px JPEG are retained byte-identical in asset-sources/generated-1948/<id>/. Unity FBX is a documented full-geometry compatibility export, not a provider FBX. Source rigged GLBs contain zero animation clips; both existing locally retargeted idle/walk actions are exported at every frame with no simplification. No decimated copy, texture resize, Crunch or Unity mesh/animation compression. Per-character provenance records source and export hashes."
     status: verified
-    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. One review-only character is editor-only; the Syrian, Iraqi and Egyptian infantry stand on their own formations' tokens, the ALA infantry is the ALA token's third figure, the Lebanese regular stands on the Lebanese army's map-only token and the Bedouin civilian stands at the Bedouin camp areas (the owner signed off all 19 generated models on 27 October 2026, #756). No archival uniform-colour claim."
-  - glob: "unity/Assets/Editor/Generated1948Review/figure-local-arab-irregular-1948-v1/*_basecolor.jpg"
+    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. The local Arab irregular is the local forces' token figure (owner, 2 November 2026: \"Use it instead of C09\"), drawn only once a local-forces row is sourced; the Syrian, Iraqi and Egyptian infantry stand on their own formations' tokens, the ALA infantry is the ALA token's third figure, the Lebanese regular stands on the Lebanese army's map-only token and the Bedouin civilian stands at the Bedouin camp areas (the owner signed off all 19 generated models on 27 October 2026, #756). No archival uniform-colour claim."
+  - glob: "unity/Assets/Art/Collection/figure-local-arab-irregular-1948-v1/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tripo Studio Smart Mesh P2.0, generated 22 October 2026 by Tal Heuberger. Exact provider GLB and embedded 4096px JPEG are retained byte-identical in asset-sources/generated-1948/<id>/. Unity FBX is a documented full-geometry compatibility export, not a provider FBX. Source rigged GLBs contain zero animation clips; both existing locally retargeted idle/walk actions are exported at every frame with no simplification. No decimated copy, texture resize, Crunch or Unity mesh/animation compression. Per-character provenance records source and export hashes."
     status: verified
-    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. One review-only character is editor-only; the Syrian, Iraqi and Egyptian infantry stand on their own formations' tokens, the ALA infantry is the ALA token's third figure, the Lebanese regular stands on the Lebanese army's map-only token and the Bedouin civilian stands at the Bedouin camp areas (the owner signed off all 19 generated models on 27 October 2026, #756). No archival uniform-colour claim."
+    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. The local Arab irregular is the local forces' token figure (owner, 2 November 2026: \"Use it instead of C09\"), drawn only once a local-forces row is sourced; the Syrian, Iraqi and Egyptian infantry stand on their own formations' tokens, the ALA infantry is the ALA token's third figure, the Lebanese regular stands on the Lebanese army's map-only token and the Bedouin civilian stands at the Bedouin camp areas (the owner signed off all 19 generated models on 27 October 2026, #756). No archival uniform-colour claim."
   - glob: "asset-sources/generated-1948/figure-*/original.glb"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
@@ -1272,6 +1279,21 @@ rules:
     source: "Derived from Tal Heuberger's originals (the FBX files in the generated-1948-01 to 05 house folders, listed in the ASSETS.yaml rows for unity/Assets/Art/Settlements/Prototype/Models/generated-1948-0N-*/*.fbx) by unity/Assets/Editor/HexTiles/HexHouseLevels.cs: a quadric-error half-edge collapse that keeps a subset of their own vertices (exact positions, UVs and normals) and adds none. Each <id>-light.json beside the mesh records the source FBX path, its SHA-256, the settings and the triangle counts."
     status: verified
     note: "Same licence as the originals, CC BY-NC-ND 4.0, credit Tal Heuberger, with Tal's permission for these lighter derived meshes (30 October 2026, recorded by the owner in PR #1994). The prefabs and JSON records beside them retain the code-row terms. Drawn only in the editor, on the hex-tile boards (HexModels.HouseLevels); no streamed bundle carries them."
+  # Far-off copies of the 23 town building models (#2378): derived meshes and colour maps, made in the editor from the FBX and JPG rows above by unity/Assets/Editor/FarModelLevels.cs.
+  - glob: "unity/Assets/Art/Settlements/Prototype/Models/*/*-far.asset"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    artist: "Tal Heuberger"
+    source: "Derived from Tal Heuberger's originals (the FBX files of the 23 town models that unity/Assets/Scripts/Map/Kits/TownModels.cs lists, in the ASSETS.yaml rows for unity/Assets/Art/Settlements/Prototype/Models/<id>/<id>.fbx) by unity/Assets/Editor/FarModelLevels.cs: a quadric-error edge collapse to at most 400 triangles that keeps a subset of their own vertices (exact positions) and adds none. Each <id>-far.json beside the mesh records the source FBX and colour map paths, their SHA-256, the settings and the triangle counts."
+    status: verified
+    note: "lighter far-off derived copy; owner confirms Tal's permission, 3 Nov 2026 (#2378). Same licence as the originals, CC BY-NC-ND 4.0, credit Tal Heuberger. Drawn by TownModelLayer beyond its 40 km close switch only; below it the originals draw, unchanged (#1273). Streamed in a bundle of its own after the first frame. The prefab, material and JSON record beside it retain the code-row terms."
+  - glob: "unity/Assets/Art/Settlements/Prototype/Models/*/*-far.png"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    artist: "Tal Heuberger"
+    source: "Baked from Tal Heuberger's delivered colour maps (the <id>_basecolor.jpg files beside them, in the ASSETS.yaml rows above) by unity/Assets/Editor/FarModelLevels.cs: each far triangle's 8x8 texel cell of a 256 texel wide map samples the colour of the nearest point of the original surface. The <id>-far.json beside it records the source colour map's path and SHA-256."
+    status: verified
+    note: "lighter far-off derived copy; owner confirms Tal's permission, 3 Nov 2026 (#2378). Same licence as the originals, CC BY-NC-ND 4.0, credit Tal Heuberger. The colour map of the far mesh beside it, drawn beyond the 40 km close switch only."
   - glob: "unity/Assets/Art/Collection/generated-1948-06-bedouin-b-enclosed-striped-tent/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
@@ -1300,62 +1322,62 @@ rules:
     source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
     note: "Signed off by the owner on 27 October 2026 (#756) and placed in the game by #2046: in place of a transit camp's khaki ridge tents up close, streamed in its own bundle after the first frame. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
-  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-09-stone-village-well/*.fbx"
+  - glob: "unity/Assets/Art/Collection/generated-1948-09-stone-village-well/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
-  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-09-stone-village-well/*_basecolor.jpg"
+    note: "Signed off by the owner on 27 October 2026 (#756) and placed in the game (owner, 2 November 2026: \"Place all four now (Recommended)\"): Abraham's Well at Beersheba, at every date (SpecialBuildingModels; sources agent-read 2 November 2026, a person's check pending), streamed in its own bundle after the first frame. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
+  - glob: "unity/Assets/Art/Collection/generated-1948-09-stone-village-well/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
-  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-10-low-sandbag-position/*.fbx"
+    note: "Signed off by the owner on 27 October 2026 (#756) and placed in the game (owner, 2 November 2026: \"Place all four now (Recommended)\"): Abraham's Well at Beersheba, at every date (SpecialBuildingModels; sources agent-read 2 November 2026, a person's check pending), streamed in its own bundle after the first frame. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
+  - glob: "unity/Assets/Art/Collection/generated-1948-10-low-sandbag-position/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
-  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-10-low-sandbag-position/*_basecolor.jpg"
+    note: "Signed off by the owner on 27 October 2026 (#756) and placed in the game (owner, 2 November 2026: \"Place all four now (Recommended)\"): a sandbag post on the Tel Aviv shore on the Altalena card's turn only (15-23 June 1948) (SpecialBuildingModels; sources agent-read 2 November 2026, a person's check pending), streamed in its own bundle after the first frame. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
+  - glob: "unity/Assets/Art/Collection/generated-1948-10-low-sandbag-position/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
-  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-11-supply-crate-stack/*.fbx"
+    note: "Signed off by the owner on 27 October 2026 (#756) and placed in the game (owner, 2 November 2026: \"Place all four now (Recommended)\"): a sandbag post on the Tel Aviv shore on the Altalena card's turn only (15-23 June 1948) (SpecialBuildingModels; sources agent-read 2 November 2026, a person's check pending), streamed in its own bundle after the first frame. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
+  - glob: "unity/Assets/Art/Collection/generated-1948-11-supply-crate-stack/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
-  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-11-supply-crate-stack/*_basecolor.jpg"
+    note: "Signed off by the owner on 27 October 2026 (#756) and placed in the game (owner, 2 November 2026: \"Place all four now (Recommended)\"): a crate stack on the Haifa port quay on the 1948 turns (SpecialBuildingModels; sources agent-read 2 November 2026, a person's check pending), streamed in its own bundle after the first frame. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
+  - glob: "unity/Assets/Art/Collection/generated-1948-11-supply-crate-stack/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
-  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-12-low-stone-wall-module/*.fbx"
+    note: "Signed off by the owner on 27 October 2026 (#756) and placed in the game (owner, 2 November 2026: \"Place all four now (Recommended)\"): a crate stack on the Haifa port quay on the 1948 turns (SpecialBuildingModels; sources agent-read 2 November 2026, a person's check pending), streamed in its own bundle after the first frame. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
+  - glob: "unity/Assets/Art/Collection/generated-1948-12-low-stone-wall-module/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
-  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-12-low-stone-wall-module/*_basecolor.jpg"
+    note: "Signed off by the owner on 27 October 2026 (#756) and placed in the game (owner, 2 November 2026: \"Place all four now (Recommended)\"): a low wall beside the Jaffa-Jerusalem road near Abu Ghosh on the 1948 turns (SpecialBuildingModels; sources agent-read 2 November 2026, a person's check pending), streamed in its own bundle after the first frame. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
+  - glob: "unity/Assets/Art/Collection/generated-1948-12-low-stone-wall-module/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
+    note: "Signed off by the owner on 27 October 2026 (#756) and placed in the game (owner, 2 November 2026: \"Place all four now (Recommended)\"): a low wall beside the Jaffa-Jerusalem road near Abu Ghosh on the 1948 turns (SpecialBuildingModels; sources agent-read 2 November 2026, a person's check pending), streamed in its own bundle after the first frame. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
   - glob: "asset-sources/generated-1948/generated-1948-*/*.glb"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
@@ -1500,14 +1522,14 @@ rules:
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tripo Studio textured GLB delivered 22 October 2026, preserved byte-for-byte in asset-sources/generated-1948/vehicles/ original archives. sources.json and per-model provenance.json identify the archive/member SHA-256 and provider model ID. The Unity FBX is a documented full-geometry compatibility conversion, not a provider FBX. The 4096px colour map is extracted byte-for-byte; no LOD, decimation or texture re-encoding."
+    source: "Tripo Studio textured GLB delivered 22 October 2026, preserved byte-for-byte in asset-sources/generated-1948/vehicles/ original archives. sources.json and per-model provenance.json identify the archive/member SHA-256 and provider model ID. The Unity FBX is a documented full-geometry compatibility conversion, not a provider FBX. The 4096px colour-map source bytes are extracted without re-encoding; Unity separately imports them with configured GPU compression. No LOD or decimation."
     status: verified
     note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). Signed off by the owner on 27 October 2026 (#756, \"Sign off all 19\"); moved with git mv to the Collection folder, the FBX renamed to the Collection's id.fbx (same bytes), and streamed in a bundle of its own (collection-generated-1948-13-egyptian-spitfire) to be shown only in flight near the western board edge (30 km in) toward el-Arish (owner ruling of 30 October 2026, #1932: \"(c) In flight / board edge only\"). Paint, markings and exact subtype remain candidate art."
   - glob: "unity/Assets/Art/Collection/generated-1948-13-egyptian-spitfire/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tripo Studio textured GLB delivered 22 October 2026, preserved byte-for-byte in asset-sources/generated-1948/vehicles/ original archives. sources.json and per-model provenance.json identify the archive/member SHA-256 and provider model ID. The Unity FBX is a documented full-geometry compatibility conversion, not a provider FBX. The 4096px colour map is extracted byte-for-byte; no LOD, decimation or texture re-encoding."
+    source: "Tripo Studio textured GLB delivered 22 October 2026, preserved byte-for-byte in asset-sources/generated-1948/vehicles/ original archives. sources.json and per-model provenance.json identify the archive/member SHA-256 and provider model ID. The Unity FBX is a documented full-geometry compatibility conversion, not a provider FBX. The 4096px colour-map source bytes are extracted without re-encoding; Unity separately imports them with configured GPU compression. No LOD or decimation."
     status: verified
     note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). Signed off by the owner on 27 October 2026 (#756, \"Sign off all 19\"); moved with git mv to the Collection folder, the FBX renamed to the Collection's id.fbx (same bytes), and streamed in a bundle of its own (collection-generated-1948-13-egyptian-spitfire) to be shown only in flight near the western board edge (30 km in) toward el-Arish (owner ruling of 30 October 2026, #1932: \"(c) In flight / board edge only\"). Paint, markings and exact subtype remain candidate art."
   - glob: "unity/Assets/Art/Collection/generated-1948-14-syrian-renault-r35/*.fbx"
@@ -1524,20 +1546,20 @@ rules:
     source: "Tripo Studio textured GLB delivered 22 October 2026, preserved byte-for-byte in asset-sources/generated-1948/vehicles/ original archives. sources.json and per-model provenance.json identify the archive/member SHA-256 and provider model ID. The Unity FBX is a documented full-geometry compatibility conversion, not a provider FBX. The 4096px colour-map source bytes are extracted without re-encoding; Unity separately imports them with configured GPU compression. No LOD or decimation."
     status: verified
     note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). Signed off by the owner on 27 October 2026 (#756, Degania landmark) and placed in the game by #2046: the tank stopped at Degania Alef from 20 May 1948, streamed in its own bundle after the first frame. Paint, markings and exact subtype remain candidate art; historical art/sensitivity sign-off follows matched screenshots (#756)."
-  - glob: "unity/Assets/Editor/Generated1948VehicleReview/generated-1948-16-egyptian-dakota-c47/*.fbx"
+  - glob: "unity/Assets/Art/Collection/generated-1948-16-egyptian-dakota-c47/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tripo Studio textured GLB delivered 22 October 2026, preserved byte-for-byte in asset-sources/generated-1948/vehicles/ original archives. sources.json and per-model provenance.json identify the archive/member SHA-256 and provider model ID. The Unity FBX is a documented full-geometry compatibility conversion, not a provider FBX. The 4096px colour map is extracted byte-for-byte; no LOD, decimation or texture re-encoding."
+    source: "Tripo Studio textured GLB delivered 22 October 2026, preserved byte-for-byte in asset-sources/generated-1948/vehicles/ original archives. sources.json and per-model provenance.json identify the archive/member SHA-256 and provider model ID. The Unity FBX is a documented full-geometry compatibility conversion, not a provider FBX. The 4096px colour-map source bytes are extracted without re-encoding; Unity separately imports them with configured GPU compression. No LOD or decimation."
     status: verified
-    note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). Editor-only review art; no sourced deployment, player dependency, Resources catalog or streamed bundle. Paint, markings and exact subtype remain candidate art; historical art/sensitivity sign-off follows matched screenshots (#756)."
-  - glob: "unity/Assets/Editor/Generated1948VehicleReview/generated-1948-16-egyptian-dakota-c47/*_basecolor.jpg"
+    note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). Signed off by the owner on 27 October 2026 (#756) and placed in the game (owner, 2 November 2026: \"Over Tel Aviv, 15 May-11 Jun (Recommended)\"; on #2274, \"Off the coast is fine (Recommended)\"): in flight only, a slow loop just off Tel Aviv, over the sea, with Egypt's flag over its tail, on the 15 May 1948 turn (its window, 15 May to 11 June 1948, holds that one monthly turn; SeaAirCollection), streamed in its own bundle after the first frame; sources agent-read 2 November 2026, a person's check pending. Paint, markings and exact subtype remain candidate art; historical art/sensitivity sign-off follows matched screenshots (#756)."
+  - glob: "unity/Assets/Art/Collection/generated-1948-16-egyptian-dakota-c47/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tripo Studio textured GLB delivered 22 October 2026, preserved byte-for-byte in asset-sources/generated-1948/vehicles/ original archives. sources.json and per-model provenance.json identify the archive/member SHA-256 and provider model ID. The Unity FBX is a documented full-geometry compatibility conversion, not a provider FBX. The 4096px colour map is extracted byte-for-byte; no LOD, decimation or texture re-encoding."
+    source: "Tripo Studio textured GLB delivered 22 October 2026, preserved byte-for-byte in asset-sources/generated-1948/vehicles/ original archives. sources.json and per-model provenance.json identify the archive/member SHA-256 and provider model ID. The Unity FBX is a documented full-geometry compatibility conversion, not a provider FBX. The 4096px colour-map source bytes are extracted without re-encoding; Unity separately imports them with configured GPU compression. No LOD or decimation."
     status: verified
-    note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). Editor-only review art; no sourced deployment, player dependency, Resources catalog or streamed bundle. Paint, markings and exact subtype remain candidate art; historical art/sensitivity sign-off follows matched screenshots (#756)."
+    note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). Signed off by the owner on 27 October 2026 (#756) and placed in the game (owner, 2 November 2026: \"Over Tel Aviv, 15 May-11 Jun (Recommended)\"; on #2274, \"Off the coast is fine (Recommended)\"): in flight only, a slow loop just off Tel Aviv, over the sea, with Egypt's flag over its tail, on the 15 May 1948 turn (its window, 15 May to 11 June 1948, holds that one monthly turn; SeaAirCollection), streamed in its own bundle after the first frame; sources agent-read 2 November 2026, a person's check pending. Paint, markings and exact subtype remain candidate art; historical art/sensitivity sign-off follows matched screenshots (#756)."
   - glob: "asset-sources/generated-1948/vehicles/*.zip"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
@@ -3357,6 +3379,25 @@ rules:
     credit: "Tal Heuberger · CC BY-NC-ND 4.0"
     note: "Public derivative/export distribution authorized 31 October 2026; own paid generation account confirmed. In the game: one still frame (37 of 97) of its byte-identical Unity copy is held by an attacking token's C06 figures (UnitFigurePointFire; owner, 2 November 2026, #2084: \"Yes, for firing units (Recommended)\"); every other figure keeps its existing fire take, and C06 keeps it when the pose source does not arrive. This folder's README is Tal's as delivered on 31 October 2026 and describes the files before that. Cheek/sight/contact limitations remain. Provider/input restrictions remain. Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported)."
 
+  # The 1948 soldier's rigged copy (#2384): Tal Heuberger's #336 soldier skinned to the skeleton of their C07 with its takes,
+  # by tools/rig_soldier_1948.py; the colour map is Tal's byte for byte. Tal's delivered files in figure-soldier-1948-v1/ are
+  # unchanged (their rows above).
+  - glob: "unity/Assets/Art/Collection/figure-soldier-1948-v1-rigged/figure-soldier-1948-v1-rigged.fbx"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Rigged copy of Tal Heuberger's figure-soldier-1948-v1 (#336, a static mesh): Tal's mesh (4,187 vertices, 8,054 triangles, no decimation) re-posed into the rest pose of their figure-c07-veteran-fighter-v2 (#507) and skinned to C07's 67-bone skeleton with bone-heat weights, with C07's idle, walk and fire takes, every frame keyed, by tools/rig_soldier_1948.py (Blender 5.2.2). Input SHA-256 in this folder's provenance.json (tools/rig_soldier_1948.py --verify). SHA-256 39545588027f0eb77462a955228dc5d813ff5ec4ed1a5d276d954d0212e9269d."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Issue #2384 (owner, 3 November 2026: \"Ship C07 now, rig Tal's later\"; the owner confirmed Tal's OK for adapted versions the same day, as the issue records): the Yiftach and Negev tokens' third figure walks, idles and fires with this copy (UnitFigures, UnitWeapons). An adapted version of Tal's model under their permission as the owner reported it; no change to the delivered files' rows or to any other model's licence."
+  - glob: "unity/Assets/Art/Collection/figure-soldier-1948-v1-rigged/figure-soldier-1948-v1-rigged_basecolor.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Byte-for-byte copy of Tal Heuberger's figure-soldier-1948-v1_basecolor.jpg (#336; its row above), 2048x2048, beside the rigged copy so its bundle carries its own map. SHA-256 cb30823ff65a23c418986741e4ef88f680d6dd594909d4dd6b68d1ca412d6945."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Issue #2384 (owner, 3 November 2026: \"Ship C07 now, rig Tal's later\"): the same map Tal delivered, beside the rigged copy, under the same terms as its row above."
   # Tal Heuberger's #2083 weapons and #2084 C06 point-fire in the game's Collection: lossless FBX compatibility exports, the
   # delivered colour maps and the byte-for-byte point-fire export.
   - glob: "unity/Assets/Art/Collection/weapon-k98k-v1/weapon-k98k-v1.fbx"

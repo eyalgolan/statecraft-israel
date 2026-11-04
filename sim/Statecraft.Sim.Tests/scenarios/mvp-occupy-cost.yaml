@@ -3,12 +3,16 @@
 # R-MOVE-005; at 4.4 km hexes, #1183, it is 5 movement points away, so the first turn stops at (9, 11)) and captures it
 # when the move ends (R-CTRL-004). The next turn the scenario answers with Occupy (R-CTRL-011).
 # Step 10 charges the upkeep each turn and counts the timer down (R-CTRL-012), so the place waits for EndOccupation
-# (#799) when the run stops on 15 January 1949: the timer runs out after three turn resolutions from the choice, on
-# 15 October 1948 (owner, 27 October 2026, #1712), and the place waits from then on, still paying the upkeep. It
-# plays the real content, so it moves whenever a rule or value it reaches changes. The paired mvp-deport-cost is not
-# here: Deport is out of play in the real content (mvp.deport_in_play: false, #800).
+# (#799) when the run stops on 15 December 1948: the timer runs out after three turn resolutions from the choice, on
+# 15 October 1948 (owner, 27 October 2026, #1712), and the place waits from then on, still paying the upkeep. The run
+# stops before the 15 December turn resolves, the turn that delegates Operation Horev, so Horev's order is not in it.
+# Had it run that turn, the order would not take Golani away: Golani is the last Israeli unit on the occupied Nazareth,
+# so the order is held back and the occupation goes on (R-ENEMY-005, R-CTRL-013, #2087;
+# EnemyAITests.HorevsOrderNeverTakesTheLastUnitOffNazareth plays this run to that turn). It plays the real content, so
+# it moves whenever a rule or value it reaches changes. The paired mvp-deport-cost is not here: Deport is out of play in
+# the real content (mvp.deport_in_play: false, #800).
 name: mvp-occupy-cost
-until: 1949-01-15
+until: 1948-12-15
 steps:
   - on: 1948-05-15
     commands:

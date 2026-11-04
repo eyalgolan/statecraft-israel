@@ -33,6 +33,54 @@ public class OpeningTests
         saveDirectory = null;
     }
 
+    /// <summary>The map's real opening keeps both neighbouring cities at least 5% inside every supported phone and desktop
+    /// shape. The points come from the content MapScene just built, so this follows a sourced coordinate change.</summary>
+    [TestCase(390, 844)]
+    [TestCase(375, 667)]
+    [TestCase(900, 1600)]
+    [TestCase(1600, 900)]
+    [TestCase(2100, 900)]
+    public void TheOpeningKeepsTelAvivAndJaffaInsideTheScreen(int width, int height)
+    {
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        // A target of the screen's size gives the camera that pixel rect and aspect (pixelRect's setter divides by the editor's
+        // own screen size, which a batch run does not fix).
+        var camera = Camera.main; var target = new RenderTexture(width, height, 24);
+        try
+        {
+            camera.targetTexture = target; camera.aspect = (float)width / height;
+            var map = Object.FindFirstObjectByType<MapScene>(); map.Build(Inputs.Map);
+            const float margin = 0.05f;
+            foreach (var id in new[] { "tel_aviv", "jaffa" })
+            {
+                var place = map.Settlements.Single(s => s.Id == id);
+                var screen = camera.WorldToScreenPoint(map.Frame.ToWorld(place.Lon, place.Lat, 0f));
+                Assert.Greater(screen.z, 0f, $"{width}x{height}: {id} is in front of the camera");
+                Assert.That(screen.x, Is.InRange(width * margin, width * (1f - margin)), $"{width}x{height}: {id} x");
+                Assert.That(screen.y, Is.InRange(height * margin, height * (1f - margin)), $"{width}x{height}: {id} y");
+            }
+        }
+        finally { camera.targetTexture = null; target.Release(); Object.DestroyImmediate(target); }
+    }
+
+    /// <summary>A 0-size canvas (a WebGL page booted in a background tab) gives no usable aspect: the opening falls back to
+    /// today's 16:9 look-at, the reference point itself, instead of throwing and failing the map boot.</summary>
+    [TestCase(0f)]
+    [TestCase(-1f)]
+    [TestCase(float.NaN)]
+    [TestCase(float.PositiveInfinity)]
+    [TestCase(float.NegativeInfinity)]
+    public void AnUnusableAspectFallsBackToTheSixteenByNineOpening(float aspect)
+    {
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        var map = Object.FindFirstObjectByType<MapScene>(); map.Build(Inputs.Map);
+        var telAviv = map.Settlements.Single(s => s.Id == "tel_aviv");
+        var jaffa = map.Settlements.Single(s => s.Id == "jaffa");
+        Vector3 lookAt = default;
+        Assert.DoesNotThrow(() => lookAt = CameraRig.OpeningLookAt(map.Frame, aspect, telAviv, jaffa), $"aspect {aspect}");
+        Assert.AreEqual(map.Frame.ToWorld(CameraRig.StartLon, CameraRig.StartLat, 0f), lookAt, $"aspect {aspect}");
+    }
+
     [UnityTest]
     public IEnumerator CanBeSkippedAndReplayed()
     {

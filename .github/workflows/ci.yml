@@ -109,9 +109,14 @@ jobs:
           SKIP_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'no-changelog') }}
         run: uv run scripts/oss/changelog_check.py --base "$BASE_SHA" --head "$HEAD_SHA" --skip-label "$SKIP_LABEL"
       # Only a person signs a row off (#375): no commit with an AI co-author trailer may add, change or remove a reviewed_by
-      # or reviewed_on line in content/. It needs every commit of the PR (fetch-depth 0 above) and fails closed.
+      # or reviewed_on line in content/, unless the PR's "AI assistance" section discloses the AI help (owner, 4 November
+      # 2026: "Yes, it counts"); even then it may not remove one. CI checks only that the section exists, is not a "no"
+      # (no / none / not / n/a / nothing) and names a check; the reviewer reads what was checked and how. It needs every
+      # commit of the PR (fetch-depth 0 above) and fails closed. The description is read by the guard from the runner's
+      # event file ($GITHUB_EVENT_PATH), never put into this shell line or an env value. The job does not run on a
+      # description edit: push again after changing the "AI assistance" section.
       - name: Only a person signs a row off (reviewed_by and reviewed_on)
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: uv run scripts/oss/reviewed_by_guard.py --base "$BASE_SHA" --head "$HEAD_SHA"
+        run: uv run scripts/oss/reviewed_by_guard.py --base "$BASE_SHA" --head "$HEAD_SHA" --pr-event "$GITHUB_EVENT_PATH"

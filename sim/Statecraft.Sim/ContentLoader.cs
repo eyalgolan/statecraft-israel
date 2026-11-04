@@ -62,6 +62,16 @@ namespace Statecraft.Sim
             public string Ruleset { get; set; } = "";
             public List<EventExclusion>? Exclusions { get; set; }
         }
+        sealed class Gdd03StartFile
+        {
+            public string Ruleset { get; set; } = "";
+            public List<StartCampBinding>? MilitaryCamps { get; set; }
+        }
+        sealed class StartCampBinding
+        {
+            public string City { get; set; } = "";
+            public string Location { get; set; } = "";
+        }
         sealed class EventExclusion
         {
             public string Id { get; set; } = "";
@@ -405,7 +415,8 @@ namespace Statecraft.Sim
             //                              require itself and requirements cannot form a cycle (EventRules)
             //   options: [{ id, text, historical, recommended, effects: [{ target, delta }], set_rung, set_policy,
             //              grant_units: [{ type, n, at }], city_effects: [{ city, field, delta }],
-            //              unlock_projects: [<projects.yaml id of a locked kind>] }]
+            //              unlock_projects: [<projects.yaml id of a locked kind>],
+            //              unit_orders: [{ unit, q, r }] (R-ENEMY-005) }]
             //   sources: [{ url, checked }], status
             //   objective                  the objective (objectives.yaml) whose completion card this is: it fires only once
             //                              that objective is recorded, and has exactly one option
@@ -452,6 +463,7 @@ namespace Statecraft.Sim
                 c.ProjectKinds = kinds.Where(k => k.Rulesets.Count == 0 || k.Rulesets.Contains(c.Ruleset)).ToList();
                 c.ProjectKindsOfOtherRulesets = kinds.Except(c.ProjectKinds).ToList();
                 c.Corridors = Read<CorridorsFile>(readFile, "corridors.yaml").Corridors;   // sourced, hexes derived (Phase 4 PR 2)
+                if (c.Ruleset == SaveGame.Gdd03Ruleset) ApplyGdd03Start(readFile, c);
                 ValidateGdd(c, settlementIds);
                 Gdd03Military.Validate(c); // after effective map overrides and role validation, only exact gdd-0.3
                 // The sourced starting forces (Phase 5 PR 4, R-UNIT-006), once the types and people_per_unit are known valid.
@@ -471,6 +483,42 @@ namespace Statecraft.Sim
             c.Hash = HashOf(read);
             c.Translations = TranslationLoader.Load(allEvents, Unhashed, readTranslation, translationFiles);
             return c;
+        }
+
+        // R-CAMP-003: exact-gdd-0.3 start bindings add facilities to the shared city catalogue without changing gdd-0.1.
+        // The optional file keeps synthetic gdd-0.3 fixtures independent of the shipped map and city ids.
+        static void ApplyGdd03Start(Func<string, string?> readFile, Content c)
+        {
+            const string file = "gdd03-start.yaml";
+            var start = ReadOptional<Gdd03StartFile>(readFile, file);
+            if (start == null) return;
+            if (start.Ruleset != SaveGame.Gdd03Ruleset)
+                throw new ContentException(file, "ruleset", "must be gdd-0.3");
+            if (start.MilitaryCamps == null)
+                throw new ContentException(file, "military_camps", "required: an explicit list");
+
+            var cities = new HashSet<string>(StringComparer.Ordinal);
+            var locations = new HashSet<string>(StringComparer.Ordinal);
+            for (int i = 0; i < start.MilitaryCamps.Count; i++)
+            {
+                var row = start.MilitaryCamps[i];
+                var at = FormattableString.Invariant($"military_camps[{i}]");
+                var city = c.Cities.FirstOrDefault(x => x.Id == row.City);
+                if (city == null) throw new ContentException(file, at + ".city", "must name an existing city");
+                if (!cities.Add(row.City)) throw new ContentException(file, at + ".city", "duplicate city");
+                var location = c.MapLocations.FirstOrDefault(x => x.Id == row.Location);
+                if (location == null) throw new ContentException(file, at + ".location", "must name an existing map location");
+                if (location.Kind != "military_camp")
+                    throw new ContentException(file, at + ".location", "must name a military_camp map location");
+                if (!locations.Add(row.Location)) throw new ContentException(file, at + ".location", "duplicate location");
+                if (!city.Facilities.Contains("military_camp")) city.Facilities.Add("military_camp");
+            }
+
+            var actual = c.Cities.Count(x => x.Facilities.Contains("military_camp"));
+            var expected = Gdd03Military.Scalar(c, "start.military_camps");
+            if (actual != expected)
+                throw new ContentException(file, "military_camps",
+                    FormattableString.Invariant($"effective military-camp city count {actual} must equal start.military_camps {expected}"));
         }
 
         // R-EFX-001: this file is deliberately never read by legacy/gdd-0.1, including for hashing.
