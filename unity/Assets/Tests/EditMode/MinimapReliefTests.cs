@@ -38,7 +38,8 @@ public class MinimapReliefTests
 
     /// <summary>The real Game.uxml on the real PanelSettings at w x h, out of its loading state, in English or Hebrew, with the
     /// top bar, the info panel on Lydda's hex (its longest region line), the border layer's caption and the minimap.</summary>
-    static IEnumerator Rendered(int w, int h, bool hebrew, System.Action<VisualElement, MinimapPresenter> check, System.Action<VisualElement>? act = null)
+    static IEnumerator Rendered(int w, int h, bool hebrew, System.Action<VisualElement, MinimapPresenter> check,
+        System.Action<VisualElement>? act = null, bool checkDisposesMini = false)
     {
         var text = hebrew ? He : En;
         var rt = new RenderTexture(w, h, 0);
@@ -71,7 +72,8 @@ public class MinimapReliefTests
         }
         finally
         {
-            mini.Dispose(); info.Dispose(); hud.Dispose();
+            if (!checkDisposesMini) mini.Dispose();
+            info.Dispose(); hud.Dispose();
             Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt);
         }
     }
@@ -257,32 +259,43 @@ public class MinimapReliefTests
         });
     }
 
-    /// <summary>#2583: every HoverTip group sharing a label is coordinated. A hover in one group wins over focus in
-    /// another; leaving or disposing that group restores the still-focused group's tip.</summary>
+    /// <summary>#2583: the production HUD, minimap and community-icon HoverTip groups share the one hud-tip label. A
+    /// minimap hover wins over a focused rail button; leaving or disposing the minimap restores the rail tip.</summary>
     [UnityTest]
-    public IEnumerator SharedTipReturnsToTheFocusedGroupAfterHoverLeavesOrIsDisposed()
+    public IEnumerator ProductionPresentersShareTheTipAndRestoreTheFocusedRailButton()
     {
         yield return Rendered(1920, 1080, false, (root, mini) =>
         {
+            var text = En;
+            var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), text);
+            using var feedback = new FeedbackPresenter(root, text, "v-test");
+            using var share = new SharePresenter(root, bridge, text, done => done(new byte[] { 1 }));
+            using var community = new CommunityIconsPresenter(root, text, feedback, share);
             var tip = root.Q<Label>(HoverTip.TipName);
-            var a = root.Q<Button>("end-turn"); var b = root.Q<Button>("hud-star");
-            a.tooltip = "Focused A"; b.tooltip = "Hovered B";
-            using var aTips = new HoverTip(root, new[] { a }, () => HoverTip.Side.Left);
-            using var bTips = new HoverTip(root, new[] { b }, () => HoverTip.Side.Right);
+            var rail = root.Q<Button>("nav-cabinet");
+            var minimap = root.Q<Button>("minimap-overview");
             void Enter(Button x) { using var e = PointerEnterEvent.GetPooled(new Event { type = EventType.MouseMove, mousePosition = x.worldBound.center }); e.target = x; x.SendEvent(e); }
             void Leave(Button x) { using var e = PointerLeaveEvent.GetPooled(new Event { type = EventType.MouseMove, mousePosition = Vector2.zero }); e.target = x; x.SendEvent(e); }
-            string Shown() => tip.style.display.value == DisplayStyle.Flex ? tip.text : "";
+            void AssertShows(Button x, string because)
+            {
+                Assert.AreEqual(DisplayStyle.Flex, tip.style.display.value, because + ": the shared label is visible");
+                Assert.AreEqual(x.tooltip, tip.text, because + ": the shared label has the button's production tooltip");
+            }
 
-            a.Focus();
-            Assert.AreEqual(a.tooltip, Shown(), "group A's focused target shows first");
-            Enter(b);
-            Assert.AreEqual(b.tooltip, Shown(), "group B's hovered target wins over group A's focus");
-            Leave(b);
-            Assert.AreEqual(a.tooltip, Shown(), "leaving group B restores group A's still-focused target");
-            Enter(b);
-            bTips.Dispose();
-            Assert.AreEqual(a.tooltip, Shown(), "disposing group B while it shows restores group A's still-focused target");
-        });
+            try
+            {
+                rail.Focus();
+                AssertShows(rail, "focusing the real HUD rail button");
+                Enter(minimap);
+                AssertShows(minimap, "hovering the real minimap button");
+                Leave(minimap);
+                AssertShows(rail, "leaving the minimap restores the still-focused HUD rail button");
+                Enter(minimap);
+                AssertShows(minimap, "the minimap owns the shared tip before its presenter is disposed");
+            }
+            finally { mini.Dispose(); }
+            AssertShows(rail, "disposing the minimap presenter restores the still-focused HUD rail button");
+        }, checkDisposesMini: true);
     }
 
     /// <summary>Review of #584: a switched-off layer's button dims, but its glyph keeps at least 3:1 against its disc
