@@ -144,6 +144,11 @@ public class Gdd03HousingRepairTests
         Assert.Equal("Town A has started a city project this turn", refused.Reason);
         Assert.Single(both.Why, w => w.Key == CauseKeys.Paid && w.Args[0] == CauseKeys.Purpose.Project);
 
+        // The refused repair left the state exactly as the accepted start alone (CityStartCapTests style).
+        var only = Step(c, s, Start());
+        Assert.Equal(only.State.Hash(), both.State.Hash());
+        Assert.Equal((only.State.Treasury, only.State.CityProjects.Count), (both.State.Treasury, both.State.CityProjects.Count));
+
         var full = s.Clone();
         full.MapActionsTurnDate = full.Date; full.MapActionsThisTurn = c.RulesAt(full.Date).MapActionsPerTurn;
         Assert.Equal("turn_cap", Projects.CheckCityReason(c, full, Repair, "town_a", 1, 0)?.Kind);
