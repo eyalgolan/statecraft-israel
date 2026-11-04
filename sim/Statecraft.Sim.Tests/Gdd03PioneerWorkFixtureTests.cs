@@ -19,7 +19,7 @@ public class Gdd03PioneerWorkFixtureTests
     // A course-trained pioneer (answer 2) at work on a target, with reception done and an independent military history.
     static PopulationUnit Pioneer(string target, int xp = 0, CivilianTier tier = CivilianTier.Trained, int combatXp = 0)
         => new PopulationUnit(0, PopulationStatus.FreeCivilian, 6, Here, new PopulationAssignment(PopulationAssignmentKind.Work, target),
-            CivilianProfession.Pioneer, tier, xp, "recruit", combatXp, PopulationEquipment.None);
+            CivilianProfession.Pioneer, tier, xp, "infantry", combatXp, PopulationEquipment.None);
 
     // Record ids follow the row order: 0, 1, 2, ...
     static GameState State(Content c, params PopulationUnit[] people) => PopulationLedger.CreateFixture(c,
@@ -29,7 +29,7 @@ public class Gdd03PioneerWorkFixtureTests
                 new PopulationTarget("segment-b", PopulationAssignmentKind.Work, "fixture"),
                 new PopulationTarget("road-t", PopulationAssignmentKind.Travel, "fixture"),
                 new PopulationTarget("course-c", PopulationAssignmentKind.Course, "fixture", 3) },
-            Array.Empty<string>(), new[] { "recruit" }),
+            Array.Empty<string>(), new[] { "infantry" }),
         people.Select((p, i) => new PopulationInventoryRow("synthetic", i, p)));
 
     static PioneerWorkTurn Resolve(Content c, GameState s, params string[] advancing)
@@ -152,7 +152,7 @@ public class Gdd03PioneerWorkFixtureTests
         var c = Catalogue();
         var s = Resolve(c, State(c, Pioneer("site-a", 8, combatXp: 7)), "site-a").State;
         var vet = s.PopulationLedger.Get(0);
-        Assert.Equal(CivilianTier.Veteran, vet.Tier); Assert.Equal(7, vet.CombatXp); Assert.Equal("recruit", vet.Qualification);
+        Assert.Equal(CivilianTier.Veteran, vet.Tier); Assert.Equal(7, vet.CombatXp); Assert.Equal("infantry", vet.Qualification);
 
         var a = State(c, Pioneer("site-a", 3, combatXp: 0));
         var b = State(c, Pioneer("site-a", 3, combatXp: 12));
