@@ -432,7 +432,7 @@ public class Gdd03EventRulesTests
         var ex = Assert.Throws<ContentException>(() => Load(Files(modern), Card(option: $"    debt_dollars: {value}\n")));
         Assert.Equal(("events/probe.yaml", "events[probe].options[ok].debt_dollars"), (ex.File, ex.Field));
     }
-    // R-EFX-009 (owner's review on #2487): a value that is not a number is a content error in every ruleset, reported at
+    // R-EFX-009 (review on #2487): a value that is not a number is a content error in every ruleset, reported at
     // the card's file and the debt_dollars line (line 9 of the fixture), before any ruleset check runs.
     [Theory]
     [InlineData(true)]

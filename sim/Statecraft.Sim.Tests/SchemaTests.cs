@@ -335,7 +335,7 @@ people:
         Assert.Contains(Errors("event.schema.json", good.Replace("https://", "http://")), e => e.Contains("does not match"));
     }
 
-    // R-EFX-009 (owner's review on #2487): debt_dollars is "more than 0", as the loader checks.
+    // R-EFX-009 (review on #2487): debt_dollars is "more than 0", as the loader checks.
     [Fact]
     public void DebtDollarsMustBeMoreThanZero()
     {

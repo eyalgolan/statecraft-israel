@@ -541,7 +541,9 @@ office, date)` are the only readers. Lines that change across an era boundary ar
 
 ## GDD 0.3 first-slice availability (#1718)
 
-Legacy and gdd-0.1 continue to load every shared event file, with their existing content identity and effects.
+Legacy and gdd-0.1 continue to load every shared event file, with their existing effects. Their content identity is
+unchanged except for `israel_bonds`, whose source pin changed when it gained `debt_dollars` (#2457); its effects
+outside gdd-0.3 did not change.
 Only the `gdd-0.3` identity reads and hashes `content/gdd03-events.yaml`. It must contain `ruleset: gdd-0.3`
 and an explicit `exclusions` list of `{ id, reason }` entries. Its schema is `content/schema/gdd03-events.schema.json`.
 Missing/null manifests, unknown/duplicate ids, blank reasons, and references from active requirements, variants,
@@ -552,7 +554,8 @@ The approved first slice excludes exactly `austerity_1949`, `forex_crisis_1951`,
 `maabarot_policy`, including all their options. `clothing_rationing_1950`, `reparations_claim` and `reparations_vote`
 came back with #2224, and `israel_bonds` with its equal Debt (#2457, R-EFX-009).
 Two of these, `austerity_1949` and `maabarot_policy`, are hard anchors: they are unavailable in 0.3. Shared records, Hebrew, tags, status and human
-sign-offs remain unchanged and available to review tools. Removing an exclusion requires a reviewed follow-up
+sign-offs remain unchanged and available to review tools, except that `israel_bonds` gained `debt_dollars` (its source
+pin changed; its text, Hebrew, sources and status did not). Removing an exclusion requires a reviewed follow-up
 with approved accounting and authored values; it does not itself approve a replacement or transfer a sign-off.
 There is no automatic review promotion, and all existing release gates still apply.
 
