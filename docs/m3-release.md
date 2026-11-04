@@ -287,9 +287,9 @@ war-casualties). The owner's sign-off for all seven events below is recorded in 
   are not gated, because web_check and the golden checks need them.
 - **Alternate-timeline content (R-ALT-011, Q-ALT-9):** Unity player builds made with `-shareable` and
   `Statecraft.Cli --release-gate`, and therefore `tools/package_release.py` and `scripts/oss/release_gate.sh`, refuse
-  while any consequence card (`kind: consequence`) or any event with `variants` has no `reviewed_by`, naming them on a
-  `RELEASE GATE REFUSED` line
-  (`Statecraft.Sim.ReleaseGate.AlternateUnsigned`; the CLI also prints each as `unsigned alternate card: <id>`). The
+  while any consequence card (`kind: consequence`) or any event with `variants` has no `reviewed_by`, naming them
+  (`Statecraft.Sim.ReleaseGate.AlternateUnsigned`): Unity on its `BUILD REFUSED` line, the CLI on a `RELEASE GATE REFUSED`
+  line, and the CLI also prints each as `unsigned alternate card: <id>`. The
   sign-off is a person's `reviewed_by`, written only by that person.
 - **Pinned set:** `FinalWaveTests.TheSensitiveEventsArePinned` lists the twelve ids, and
   `TheOwnerTableListsEverySensitiveEvent` fails if a sensitive event is missing from this table, so a new one cannot
