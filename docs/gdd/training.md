@@ -108,7 +108,7 @@ Camp growth into permanent towns, soldier training in civilian centres and unsou
 - [S9] Retained training and Send home rules, `docs/rules/mvp.md` (`R-TRAIN-001` and `R-UNIT-005`).
 - [S10] Owner's 30 October 2026 rulings, [GDD conflict decisions](../GDD.md#30-october-2026-conflict-decisions).
 - [S11] Owner's 1 November 2026 answers, [GDD 1 November 2026 answers](../GDD.md#1-november-2026-answers).
-- [S12] Owner's 4 November 2026 answers on the #1698 craftsman course (PR #2416), recorded in `docs/rules/mvp.md` (`R-CRAFT-003`).
+- [S12] Owner's 4 November 2026 answers on the #1698 craftsman course (PR #2416), recorded in the #1698 issue body ("Update, 4 Nov 2026", https://github.com/eyalgolan/statecraft-israel/issues/1698) and in `docs/rules/mvp.md` (`R-CRAFT-003`).
 
 ## Open questions
 
