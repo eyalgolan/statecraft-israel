@@ -11,7 +11,7 @@ and checked" says exactly what that covers and what it does not.
 
 The owner's rule is that a farmer lives in the region the field is in (`docs/GDD.md:373`, Q27: "farmers live in the region they
 farm"). The Historical start's census units that are farmers are Deferred (`docs/rules/mvp.md`, R-POP-004 and the paragraph
-after it, lines 588-589), and the owner asked for "a source-backed city-by-field proposal for owner approval" (Q26, 4 November
+after it, lines 588-589), and the owner chose the recommended option ("do the recommended for all"), which reads: "a source-backed city-by-field proposal for owner approval" (Q26, 4 November
 2026, [recorded on #1717](https://github.com/eyalgolan/statecraft-israel/issues/1717#issuecomment-6623136302)). This note takes
 the 20 `field_hexes` of `content/regions.yaml` as they stand and proposes one of the 12 census cities of `content/cities.yaml`
 for each, from the cities whose `member_locations` sit in the field's own region (the same test R-POP-004 uses for a census
@@ -22,13 +22,12 @@ record's region).
 - **Two fields have no eligible census city at all.** Southern Coast (F19, Nir Am) and the Negev (F20, Mishmar HaNegev) hold none
   of the 12 census cities in `member_locations`, so the same-region rule cannot be met from the census cities. Both rows are
   [GAP] and the owner has to choose how (section "Decision A: the two regions with no census city").
-- **Four fields have a census city on the field itself** or a source that ties the city to the place: F02 (Rosh Pinna),
-  F09 (Hadera), F12 (Zikhron Ya'akov), F15 (Petah Tikva). Two more have a founding or administrative source: F10 (Binyamina to
+- **Three fields have a census city on the field itself** or a source that ties the city to the place: F09 (Hadera), F12 (Zikhron Ya'akov), F15 (Petah Tikva). Two more have a founding or administrative source: F10 (Binyamina to
   Zikhron Ya'akov) and F16 (Kfar Saba to Petah Tikva).
 - **Six Valleys fields (F03 to F08) have exactly one eligible city, Tiberias.** The choice is forced by the rule, not by evidence.
   Two of the six (F07 Ashdot Ya'akov, F08 Degania Alef) are at least in Tiberias's Mandate sub-district; the other four are not.
-- **Six fields have several eligible cities and no source that picks one**: F01, F11, F13, F14, F17, F18. Each is [GAP] and lists
-  the plausible choices. Where a default is offered (F01, F11, F18) it is labelled as a contributor inference, never as evidence; F13, F14 and F17 have none.
+- **Seven fields have several eligible cities and no source that picks one**: F01, F02, F11, F13, F14, F17, F18. Each is [GAP] and lists
+  the plausible choices. Where a default is offered (F01, F02, F11, F18) it is labelled as a contributor inference, never as evidence; F13, F14 and F17 have none.
 
 ## How to read this note
 
@@ -119,8 +118,8 @@ row from the table above). "W" codes are listed under Sources.
 
 | Field and hex | Region | Proposed census city | Source | Exact supporting quotation | Class | Tag | Reasoning |
 |---|---|---|---|---|---|---|---|
-| F01 (9,5), coastal plain, on Nahariya next to Hanita (`regions.yaml:65`) | Galilee | **Rosh Pinna** (a recommendation; Safed is the other eligible city) | W6 (Nahariya, Hanita); Hadawi pp. 40, 71, 120 | W6: "The city was founded in 1935 by Jewish refugees fleeing Nazi Germany." W7: "Located in the western Galilee approximately 15 kilometres northeast of Nahariya". Hadawi: Rosh Pinna Jewish cultivable 5,390; Safad (Rural) 19, Safad (Urban) blank | I | [GAP] | No source read ties Rosh Pinna or Safed to cultivation at Nahariya or Hanita. Hanita and Nahariya are listed in Acre Sub-District (p. 40, p. 41), and neither candidate is. The only evidence is regional: Rosh Pinna's Jewish farmland in 1945 is 5,390 dunums, Safad's 19. That is a reason to recommend Rosh Pinna, not a link to this place. Plausible same-region choices: Rosh Pinna, Safed. |
-| F02 (14,7), lowland, next to Rosh Pinna (`regions.yaml:66`) | Galilee | **Rosh Pinna** | W1; Hadawi pp. 71, 120 | W1: "Rosh Pinna was one of the first modern Jewish agricultural settlements in the history of the Land of Israel, then part of the Ottoman Empire (Turkey)." Hadawi p. 120: Rosh Pinna Jewish cultivable total 5,390 | H | [V] [S] | The hex note says "next to Rosh Pinna" (a map reading, not used here). The evidence is Rosh Pinna's own farming: an agricultural settlement founded 1878 and 1882, with 5,390 Jewish cultivable dunums on 1 April 1945 against 340 residents (p. 71). |
+| F01 (9,5), coastal plain, on Nahariya next to Hanita (`regions.yaml:65`) | Galilee | **Rosh Pinna** (a recommendation; Safed is the other eligible city) | W6 (Nahariya), W7 (Hanita); Hadawi pp. 40, 71, 120 | W6: "The city was founded in 1935 by Jewish refugees fleeing Nazi Germany." W7: "Located in the western Galilee approximately 15 kilometres northeast of Nahariya". Hadawi: Rosh Pinna Jewish cultivable 5,390; Safad (Rural) 19, Safad (Urban) blank | I | [GAP] | No source read ties Rosh Pinna or Safed to cultivation at Nahariya or Hanita. Hanita and Nahariya are listed in Acre Sub-District (p. 40, p. 41), and neither candidate is. The only evidence is regional: Rosh Pinna's Jewish farmland in 1945 is 5,390 dunums, Safad's 19. That is a reason to recommend Rosh Pinna, not a link to this place. Plausible same-region choices: Rosh Pinna, Safed. |
+| F02 (14,7), lowland, next to Rosh Pinna (`regions.yaml:66`) | Galilee | **Rosh Pinna** (a recommendation; Safed is the other eligible city) | W1; Hadawi pp. 71, 120 | W1: "Rosh Pinna was one of the first modern Jewish agricultural settlements in the history of the Land of Israel, then part of the Ottoman Empire (Turkey)." Hadawi p. 120: Rosh Pinna Jewish cultivable total 5,390 | I | [GAP] | No source read ties F02's farmers to Rosh Pinna. The hex note says "next to Rosh Pinna" (`regions.yaml:66`), a map reading, which is distance and is not used as evidence. What the sources show is Rosh Pinna's own farming (founded 1878 and 1882, 5,390 Jewish cultivable dunums on 1 April 1945 against 340 residents, p. 71), and that does not say who worked this field. The pick is a contributor inference, labelled I, as for F01. Plausible same-region choices: Rosh Pinna, Safed. |
 | F03 (7,11), coastal plain, on Nahalal (`regions.yaml:150`) | Valleys | **Tiberias** (the only eligible city) | `content/regions.yaml` member list | no source read links Tiberias to Nahalal: W8 says Nahalal "is a moshav in northern Israel" in the Jezreel Valley Regional Council | R | [GAP] | The rule forces Tiberias. Nahalal is listed under Nazareth Sub-District (p. 62), not Tiberias's. Tiberias itself has 5,172 Jewish cultivable dunums on the line it shares with Haz Zor'im (p. 123), so it is a farming town on paper, but nothing connects those dunums to Nahalal. |
 | F04 (7,12), lowland, next to Nahalal and Mishmar HaEmek (`regions.yaml:151`) | Valleys | **Tiberias** (only eligible) | as F03 | as F03 | R | [GAP] | As F03. Mishmar ha 'Emeq is printed under Haifa Sub-District (p. 48), so neither named place is in Tiberias's. |
 | F05 (8,13), lowland, on Ein Harod (`regions.yaml:152`) | Valleys | **Tiberias** (only eligible) | W9 (Ein Harod) | W9: "Ein Harod (Hebrew: עֵין חֲרוֹד) was a kibbutz in northern Israel near Mount Gilboa." | R | [GAP] | As F03. Ein Harod is printed under Beisan Sub-District (p. 43). Nothing read ties it to Tiberias. |
@@ -129,7 +128,7 @@ row from the table above). "W" codes are listed under Sources.
 | F08 (12,11), valley, on Degania Alef (`regions.yaml:155`) | Valleys | **Tiberias** | Hadawi p. 72; W10 | Hadawi p. 72: "Deganiya "A"" is a row of the "Tiberias Sub-District — Table I" page, population Jews 290, land Jews 1,118. W10: "The Jewish community (kvutza) was founded in 1910, making it the earliest Labor Zionist farming commune in Palestine." | A | [V] [S] | As F07: Degania Alef is in Tiberias Sub-District (administrative tie) and Tiberias is the only eligible city. |
 | F09 (1,15), coastal plain, on Hadera (`regions.yaml:234`) | Haifa and the Sharon | **Hadera** | W2; Hadawi pp. 90, 48 | W2: "Hadera was established in 1891 as a farming colony by members of the proto-Zionist group Hovevei Zion, from Lithuania and Latvia." Hadawi p. 90: Hadera (Rural) Jewish cultivable total 15,026 (citrus 7,150) | H | [V] [S] | The field is on Hadera, a farming colony, with 15,026 Jewish cultivable dunums in 1945, the most of the four eligible cities. |
 | F10 (2,14), coastal plain, on Binyamina (`regions.yaml:235`) | Haifa and the Sharon | **Zikhron Ya'akov** | W3 (Binyamina); Hadawi p. 89 | W3: "Binyamina was founded on PICA land by members of the Third Aliyah and people from the neighboring Zikhron Ya'akov." Hadawi p. 89: Binyamina Jewish cultivable total 8,903 | H | [S] [V] | One source names Zikhron Ya'akov as a source of Binyamina's settlers. It is one sentence in one secondary source (single-source). |
-| F11 (2,15), coastal plain, on Pardes Hanna (`regions.yaml:236`) | Haifa and the Sharon | **owner picks: Hadera or Zikhron Ya'akov; no source separates them** (if a default is wanted: Hadera) | W4 (Pardes Hanna-Karkur); Hadawi p. 91, 48 | W4: "Pardes Hanna was founded in 1929 by Palestine Jewish Colonisation Association, just east of Karkur." Hadawi p. 91: Pardes Hanna Jewish cultivable total 17,320 (citrus 5,288) | I | [GAP] | Pardes Hanna is farmland on paper (17,320 dunums), but nothing read ties it to Hadera, Zikhron Ya'akov, Haifa or Netanya. All of those towns except Netanya are in Haifa Sub-District with it. If the owner wants a default: Hadera, which has the larger Jewish cultivable total of the two (15,026 against 7,512). That is a size reading, labelled I. Plausible choices: Hadera, Zikhron Ya'akov. |
+| F11 (2,15), coastal plain, on Pardes Hanna (`regions.yaml:236`) | Haifa and the Sharon | **owner picks: Haifa, Hadera, Zikhron Ya'akov or Netanya; no source separates them** (if a default is wanted: Hadera) | W4 (Pardes Hanna-Karkur); Hadawi p. 91, 48 | W4: "Pardes Hanna was founded in 1929 by Palestine Jewish Colonisation Association, just east of Karkur." Hadawi p. 91: Pardes Hanna Jewish cultivable total 17,320 (citrus 5,288) | I | [GAP] | Pardes Hanna is farmland on paper (17,320 dunums), but nothing read ties it to Hadera, Zikhron Ya'akov, Haifa or Netanya. All of those towns except Netanya are in Haifa Sub-District with it. Haifa is not excluded: it is in the region's inventory, and no rule or source read rules it out (its Table II line is blank, so it has no size to compare). If the owner wants a default: Hadera, which has the larger Jewish cultivable total of Hadera and Zikhron Ya'akov (15,026 against 7,512), the two with a printed total; Netanya was not compared. That is a size reading, labelled I. Plausible choices: Haifa, Hadera, Zikhron Ya'akov, Netanya. |
 | F12 (3,13), coastal plain, on Zikhron Ya'akov (`regions.yaml:237`) | Haifa and the Sharon | **Zikhron Ya'akov** | W5; Hadawi p. 92 | W5: "Zikhron was one of the first Jewish agricultural towns to come under the wing of the Baron (along with Rishon LeZion and Rosh Pinna)". Hadawi p. 92: Zikhron Ya'aqov Jewish cultivable total 7,512 | H | [V] [S] | The field is on Zikhron Ya'akov, an agricultural moshava, with 7,512 Jewish cultivable dunums (plantations 3,906) in 1945. |
 | F13 (6,10), coastal plain, on Yagur (`regions.yaml:238`) | Haifa and the Sharon | **no default: owner picks** (Haifa, Hadera, Zikhron Ya'akov or Netanya) | W12 (Yagur); Hadawi pp. 48, 91 | W12: "Located on the northeastern slopes of Mount Carmel, about 9 km southeast of Haifa". Hadawi p. 91: Mesheq Yagur Jewish cultivable total 3,799 | D | [GAP] | The only link read is distance (D), which is not evidence. Yagur is in Haifa Sub-District, but so are Hadera and Zikhron Ya'akov, so that does not pick Haifa. No source says Yagur's farmers belonged to Haifa. No default is offered, because the only reading that points at Haifa is distance. Plausible choices: Haifa, Hadera, Zikhron Ya'akov, Netanya. Haifa has no cultivable land printed (Table II). |
 | F14 (6,12), coastal plain, on Mishmar HaEmek (`regions.yaml:239`) | Haifa and the Sharon | **no default: owner picks** (Haifa, Hadera, Zikhron Ya'akov or Netanya) | W13 (Mishmar HaEmek); Hadawi pp. 48, 91 | W13: "It was the first Jewish settlement in the southern part of the Jezreel Valley, built as part of Jewish National Fund efforts to settle the valley." Hadawi p. 91: Mishmar ha 'Emeq Jewish cultivable total 2,957 | I | [GAP] | Nothing read ties Mishmar HaEmek to any of the four cities. Its Sub-District is Haifa (shared with Hadera and Zikhron Ya'akov). No default is offered. The same limits as F13. Plausible choices: Haifa, Hadera, Zikhron Ya'akov, Netanya. |
@@ -140,9 +139,9 @@ row from the table above). "W" codes are listed under Sources.
 | F19 (-11,31), coastal plain, on Nir Am (`regions.yaml:705`) | Southern Coast | **none eligible** | `content/regions.yaml` member list; W18 (Nir Am) | W18: "Nir Am was established on 19 August 1943 by immigrants from Bessarabia who were members of the Gordonia youth movement" | R | [GAP] | Southern Coast holds none of the 12 census cities (see Decision A). Nir Am was a kibbutz founded 1943, and the owner already chose it as the region's D5 housing place (1 November 2026, #2113). It is not a census city. Options in Decision A. |
 | F20 (-10,33), lowland, on Mishmar HaNegev (`regions.yaml:998`) | Negev | **none eligible** | `content/regions.yaml` member list; W19 (Mishmar HaNegev) | W19: "Mishmar HaNegev was founded in 1946 as one of the 11 points in the Negev settlements." | R | [GAP] | The Negev holds none of the 12 census cities. The hex note says "hex by nearest centre, no roster record" (`regions.yaml:998`), so even the place the hex stands on is a map reading. Options in Decision A. |
 
-Counts: 20 rows. Proposed with evidence ([V] or [S], class H): F02, F09, F10, F12, F15, F16 (6). Proposed on an administrative tie
+Counts: 20 rows. Proposed with evidence ([V] or [S], class H): F09, F10, F12, F15, F16 (5). Proposed on an administrative tie
 only (class A): F07, F08 (2). Forced by the single eligible city (class R, [GAP] for the place): F03, F04, F05, F06 (4). Several
-eligible cities and no source: F01, F11, F13, F14, F17, F18 (6, [GAP]; a default only for F01, F11, F18, labelled I; none for F13, F14, F17).
+eligible cities and no source: F01, F02, F11, F13, F14, F17, F18 (7, [GAP]; a default only for F01, F02, F11, F18, labelled I; none for F13, F14, F17).
 No eligible city: F19, F20 (2, [GAP]).
 
 ## Decision A: the two regions with no census city
@@ -182,10 +181,10 @@ The owner's options, with a recommendation:
 
 - **The Israeli archives and the maps the issue lists** (State Archives, Haganah archive, settlement archives, CBS settlement
   histories, period maps) were not opened in this pass. The one printed primary source opened was the 1945 Government table.
-  The six "no source separates them" rows, and the place-specific links for F01 and F03 to F06, may be closable there: a
+  The seven "no source separates them" rows, and the place-specific links for F01, F02 and F03 to F06, may be closable there: a
   settlement history or a Mandate local-council record that says which town a kibbutz's or moshav's farmers traded, banked or
   were registered with. This note does not claim they cannot be closed.
-- **No source read for 15 May 1948 itself.** The 1945 table is 13 months before the opening date, and all "connection" quotations
+- **No source read for 15 May 1948 itself.** The 1945 table (1 April 1945) is about 37 months before the opening date, and all "connection" quotations
   are from Wikipedia, which cites sources this box did not open. Single-source rows are marked in the reasoning (F10, F16), and their ties are to the 1910s to 1920s (F16) and to Binyamina's founding in 1922 (F10), not to 1948.
 - **Wikipedia is a pointer, not the source.** Every [S] row should be read as "Wikipedia says", and the 1910s and 1920s ties for
   F16 say nothing about 1948.
@@ -202,7 +201,7 @@ is the class and tag from the rows above.
 | Field | Hex | Region | Proposed city | Evidence | Owner: approve / change |
 |---|---|---|---|---|---|
 | F01 | (9,5) | Galilee | owner picks: Rosh Pinna (recommended on regional evidence) or Safed | I, [GAP] | |
-| F02 | (14,7) | Galilee | Rosh Pinna | H, [V] [S] | |
+| F02 | (14,7) | Galilee | owner picks: Rosh Pinna (inference, no source ties it to the field) or Safed | I, [GAP] | |
 | F03 | (7,11) | Valleys | Tiberias (forced) | R, [GAP] | |
 | F04 | (7,12) | Valleys | Tiberias (forced) | R, [GAP] | |
 | F05 | (8,13) | Valleys | Tiberias (forced) | R, [GAP] | |
@@ -211,7 +210,7 @@ is the class and tag from the rows above.
 | F08 | (12,11) | Valleys | Tiberias | A, [V] [S] | |
 | F09 | (1,15) | Haifa and the Sharon | Hadera | H, [V] [S] | |
 | F10 | (2,14) | Haifa and the Sharon | Zikhron Ya'akov | H, [S] [V] | |
-| F11 | (2,15) | Haifa and the Sharon | owner picks: Hadera or Zikhron Ya'akov (default if wanted: Hadera) | I, [GAP] | |
+| F11 | (2,15) | Haifa and the Sharon | owner picks: Haifa, Hadera, Zikhron Ya'akov or Netanya (default if wanted: Hadera) | I, [GAP] | |
 | F12 | (3,13) | Haifa and the Sharon | Zikhron Ya'akov | H, [V] [S] | |
 | F13 | (6,10) | Haifa and the Sharon | owner picks: Haifa, Hadera, Zikhron Ya'akov or Netanya (no default) | D, [GAP] | |
 | F14 | (6,12) | Haifa and the Sharon | owner picks: Haifa, Hadera, Zikhron Ya'akov or Netanya (no default) | I, [GAP] | |
