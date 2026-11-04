@@ -754,6 +754,64 @@ public class SeaAirCollectionTests
         }
     }
 
+    /// <summary>#2482's margin, checked on its own (review of #2490): every bomb's release point and impact point lies at
+    /// least SeaAirCollection.DakotaBombMarginM inside the edge of one of Tel Aviv's hexes, so the smoke's drift stays on the
+    /// hex. The distance is measured here from the hex's own six corners (pointy-top, circumradius the map's hex size, as
+    /// tools/hexgrid.py lays them), as the point's distance to the nearest of the six sides, with the point inside all six;
+    /// it does not call the layer's own OnDakotaTarget.</summary>
+    [Test]
+    public void EveryDakotaBombIsReleasedAndLandsAtLeastTheMarginInsideTelAvivsHex()
+    {
+        var map = OpenMap();
+        var (_, planes, loops, _) = DrawnDakotas(map);
+        var ground = PlacementLayer.CampGround(map);
+        float size = ground.HexSizeM;
+        var hexes = new List<Vector2[]>();
+        foreach (var h in C.SettlementHexes.Where(x => x.Id == SeaAirCollection.DakotaTown))
+        {
+            var centre = HexGrid.Centre(h.Q, h.R, size);
+            var corners = new Vector2[6];
+            for (int k = 0; k < 6; k++)
+            {
+                float a = (60f * k - 30f) * Mathf.Deg2Rad;
+                corners[k] = Xz(HexGrid.ToWorld(centre + size * new Vector2(Mathf.Cos(a), Mathf.Sin(a)), ground.TerrainOrigin, ground.Length));
+            }
+            hexes.Add(corners);
+        }
+        Assert.Greater(hexes.Count, 0, "premise: Tel Aviv has its hex");
+        // Inside a convex polygon: on the same side of every side; then the distance to the nearest side. Negative outside.
+        float Inside(Vector2[] corners, Vector2 p)
+        {
+            float sign = 0f, nearest = float.MaxValue;
+            for (int k = 0; k < 6; k++)
+            {
+                Vector2 a = corners[k], b = corners[(k + 1) % 6], ab = b - a;
+                float cross = ab.x * (p.y - a.y) - ab.y * (p.x - a.x);
+                if (sign == 0f) sign = Mathf.Sign(cross);
+                else if (Mathf.Sign(cross) != sign) return -1f;
+                float t = Mathf.Clamp01(Vector2.Dot(p - a, ab) / ab.sqrMagnitude);
+                nearest = Mathf.Min(nearest, (p - (a + t * ab)).magnitude);
+            }
+            return nearest;
+        }
+        float closest = float.MaxValue; int points = 0;
+        for (int p = 0; p < planes.Length; p++)
+        {
+            var run = loops[p].Bombs;
+            Assert.IsNotNull(run, $"{planes[p].name} carries its bombs");
+            Assert.Greater(run!.Drops.Count, 0, $"{planes[p].name} drops bombs");
+            foreach (var d in run.Drops)
+                foreach (var (what, at) in new[] { ("release", d.From), ("impact", d.To) })
+                {
+                    float inside = hexes.Max(corners => Inside(corners, Xz(at)));
+                    Assert.GreaterOrEqual(inside, SeaAirCollection.DakotaBombMarginM,
+                        $"{planes[p].name}'s {what} at {d.At:0.0} s ({at}) is {inside:0} m inside Tel Aviv's hex edge");
+                    closest = Mathf.Min(closest, inside); points++;
+                }
+        }
+        TestContext.WriteLine($"{points} release and impact points; the nearest is {closest:0} m inside the hex's edge (margin {SeaAirCollection.DakotaBombMarginM:0} m)");
+    }
+
     /// <summary>Egypt's flag as the owner ruled for the Spitfire on #2260 ("Smaller flag, no pole"): on each Dakota the cloth alone,
     /// in Egypt's sourced colours, half the tokens' flag size, floating over the tail and clear above the aircraft at every
     /// point of its loop (banked or not), turned to the camera, and gone with the aircraft. Changed from #2274's test: both
