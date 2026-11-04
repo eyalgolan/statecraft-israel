@@ -34,6 +34,8 @@ The "absorb immigrants" objective completes when represented own population is a
 
 Amir's refugee-awaiting-legal-bed absorption predicate agrees with main's `gdd-0.3` rule (`R-OBJ-004`, inactive synthetic boundary at `docs/rules/mvp.md`); the 30 October 2026 review lists Absorption as not a conflict [S1]. For Amir's port/transit queue system, the review did not rule, and main has no live port queue; it is post-MVP (owner, 1 November 2026: "30 Oct wins for the MVP (Recommended)") [S19]. The overflow limit is national, the overflow summed over the cities divided by the housed summed, and employment counts at turn end as `R-CITY-005` counts it (owner, 1 November 2026, 27M-21 and 27M-22) [S19]. (unitless)
 
+Then changed (1 Nov 2026, [#1696](https://github.com/eyalgolan/statecraft-israel/issues/1696#issuecomment-6554002672)): the owner chose the option labelled "No reception-bed layer (Recommended)", so in the MVP neither waiting refugees nor the refugee-awaiting-legal-bed flag blocks completion, as the `Q-ABS-2` paragraph above says; main's live `R-OBJ-004` check does not read the flag, and the inactive synthetic boundary still does until #2514 [S19].
+
 War completes when the required armistices are accepted. Fronts are Egypt, Lebanon, Syria and Jordan including the Iraqi sector; ALA/local forces do not add a front [S13]. Reference is Syria's 20 July 1949 agreement [S13]. [Combat](military-combat.md#enemy-actions-and-truces) owns quiet-front/truce rules.
 
 ### Scoring and cards
@@ -61,7 +63,7 @@ Retain cleared imagery only with correct licence/attribution/caption scope. Gene
 - `hash1952` and `mvp-end` are re-pinned: the reference player completes the yishuvim part when Re'im, the last required site, is built on 15 July 1951. The old standalone objective's 100 points are removed; neither corridor completes, so the shared base is not paid. `hash1950`, `smoke5` and the scenarios do not move [S9].
 - Membership matches the latest owner ruling and unverified founding references remain gated.
 - Infrastructure has part cards/bonuses and only one base award.
-- Reception housing affects absorption through the refugee-awaiting-legal-bed flag of `R-OBJ-004`, as main and Amir's proposal agree [S1]; port-bed queues were not ruled on by the 30 October 2026 conflict review and are post-MVP (owner, 1 November 2026: "30 Oct wins for the MVP (Recommended)") [S19].
+- Reception housing affects absorption through the refugee-awaiting-legal-bed flag of `R-OBJ-004`, as main and Amir's proposal agree [S1]; port-bed queues were not ruled on by the 30 October 2026 conflict review and are post-MVP (owner, 1 November 2026: "30 Oct wins for the MVP (Recommended)") [S19]. Then changed (1 Nov 2026, [#1696](https://github.com/eyalgolan/statecraft-israel/issues/1696#issuecomment-6554002672)): in the MVP the flag never blocks it, as the `Q-ABS-2` paragraph above says.
 - Scoring/cards/save reload are deterministic and cannot double-pay.
 - Campaign ending remains possible with incomplete objectives.
 

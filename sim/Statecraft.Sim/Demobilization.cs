@@ -15,7 +15,7 @@ namespace Statecraft.Sim
 
         /// <summary>The armistice event that signs each front (content/events/armistice_<front>.yaml); the sign option is
         /// `sign` in all four.</summary>
-        static bool Signed(GameState s, string front) =>
+        internal static bool Signed(GameState s, string front) =>
             s.ChosenOptions.TryGetValue("armistice_" + front, out var o) && o == "sign";
 
         /// <summary>The front <paramref name="u"/> fights on (owner, 22 October 2026, #1309): of the enemy units it attacked

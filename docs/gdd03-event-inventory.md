@@ -12,13 +12,15 @@ and review the diff. Do not edit the table by hand.
 
 **How to read a row.**
 
-- **Old target** and **old delta**: the field as authored, which `legacy` and `gdd-0.1` apply (R-EFX-001). A
+- **Old target** and **old delta**: the field as authored, which `legacy` and `gdd-0.1` apply (R-EFX-001). The
+  exception is `debt_dollars`: those rulesets read it but only `gdd-0.3` applies it (R-EFX-009, #2457). A
   `set_policy` or `set_rung` field sets a level instead of adding a delta.
 - **gdd-0.3 target**: "same" when the card is in the `gdd-0.3` catalogue. The loader has then validated the field
   under `gdd-0.3` (R-EFX-001, R-EFX-002) and it applies with the same delta. "Legacy rulesets only" when
   `content/gdd03-events.yaml` excludes the whole card: none of its options is in play under `gdd-0.3`.
-- **Review reset**: "no" on every row. No card's source bytes change (`AllThirtyNineSourceRecordsIncludingReviewsAndHebrewAreUnchanged`),
-  and the test checks that a kept card keeps its status and human sign-off under `gdd-0.3`. An excluded card keeps
+- **Review reset**: "no" on every row. Only `israel_bonds` changes its source bytes: its `launch` option gains
+  `debt_dollars: 52` and a comment (#2457), with its text, Hebrew, sources and review status unchanged. Every card's
+  bytes are pinned (`AllFortyOneSourceRecordsIncludingReviewsAndHebrewAreUnchanged`), and the test checks that a kept card keeps its status and human sign-off under `gdd-0.3`. An excluded card keeps
   its record and review for the legacy rulesets.
 
 **What decides it.** Decision D1 and answers Q1 to Q4 (owner, 1 November 2026, "Approve all six (Recommended)" for
@@ -27,7 +29,7 @@ retire among the economy targets, `fx_reserves` stays the foreign-currency ledge
 stay readouts that an event cannot write (R-EFX-001). No shipped card targets Attention, the passive budget, the Food
 refill or a city-loss defeat. Treasury costs borrow their shortfall as under `gdd-0.1` (R-MONEY-003).
 
-**The excluded cards.** The second table probes each of the five excluded cards: it removes that one exclusion and
+**The excluded cards.** The second table probes each of the four excluded cards: it removes that one exclusion and
 reports what the `gdd-0.3` loader then says. It is a probe only. Returning a card to `gdd-0.3` still needs the
 reviewed follow-up that `docs/WRITING_EVENTS.md` ("GDD 0.3 first-slice availability") describes; this file changes no
 exclusion.
@@ -97,9 +99,10 @@ exclusion.
 | `iraqi_exodus` | `airlift` | `effects[1].morale` | 0.03 | legacy rulesets only (card excluded) | none (not in play) | no |
 | `iraqi_exodus` | `pace` | `effects[0].morale` | -0.05 | legacy rulesets only (card excluded) | none (not in play) | no |
 | `iraqi_exodus` | `pace` | `effects[1].intl_standing` | -0.02 | legacy rulesets only (card excluded) | none (not in play) | no |
-| `israel_bonds` | `launch` | `effects[0].fx_reserves` | 52 | legacy rulesets only (card excluded) | none (not in play) | no |
-| `israel_bonds` | `launch` | `effects[1].intl_standing` | 0.02 | legacy rulesets only (card excluded) | none (not in play) | no |
-| `israel_bonds` | `donations_only` | `effects[0].fx_reserves` | 10 | legacy rulesets only (card excluded) | none (not in play) | no |
+| `israel_bonds` | `launch` | `effects[0].fx_reserves` | 52 | `effects[0].fx_reserves` (same) | 52 | no |
+| `israel_bonds` | `launch` | `effects[1].intl_standing` | 0.02 | `effects[1].intl_standing` (same) | 0.02 | no |
+| `israel_bonds` | `launch` | `debt_dollars` | 52 (US$ m; Debt under gdd-0.3 only) | `debt_dollars` (same) | 52 (US$ m; Debt under gdd-0.3 only) | no |
+| `israel_bonds` | `donations_only` | `effects[0].fx_reserves` | 10 | `effects[0].fx_reserves` (same) | 10 | no |
 | `jerusalem_ceasefire` | `keep` | `effects[0].security` | 0.015 | `effects[0].security` (same) | 0.015 | no |
 | `jerusalem_ceasefire` | `hold_out` | `effects[0].security` | -0.015 | `effects[0].security` (same) | -0.015 | no |
 | `jerusalem_ceasefire` | `hold_out` | `effects[1].intl_standing` | -0.03 | `effects[1].intl_standing` (same) | -0.03 | no |
@@ -158,14 +161,13 @@ exclusion.
 | `ten_days` | `southern_front` | `set_rung` | set 5 | `set_rung` (same) | set 5 | no |
 | `ten_days` | `southern_front` | `effects[0].security` | 0.015 | `effects[0].security` (same) | 0.015 | no |
 
-121 rows: 41 cards under gdd-0.1, 36 under gdd-0.3.
+122 rows: 41 cards under gdd-0.1, 37 under gdd-0.3.
 
 | Excluded card | gdd-0.3 loader with only this exclusion removed |
 |---|---|
 | `austerity_1949` | refused at `events[austerity_1949].options[impose].set_policy.rationing`: retired policy write under gdd-0.3 (R-EFX-001) |
 | `forex_crisis_1951` | refused at `events[forex_crisis_1951].options[cut_imports].effects.food_supply`: unsupported event target under gdd-0.3 (R-EFX-001) |
 | `iraqi_exodus` | refused at `events[iraqi_exodus].options[airlift].effects.housing`: unsupported event target under gdd-0.3 (R-EFX-001) |
-| `israel_bonds` | loads: every field passes the gdd-0.3 checks |
 | `maabarot_policy` | refused at `events[maabarot_policy].options[maabarot].set_policy.maabarot`: retired policy write under gdd-0.3 (R-EFX-001) |
 
 <!-- inventory:end -->

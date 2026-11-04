@@ -23,8 +23,13 @@ def test_tests_docs_tools_and_ci_need_no_entry():
 
 def test_every_user_visible_root_is_named():
     for p in ("content/people.yaml", "sim/Statecraft.Sim/Rng.cs", "sim/Statecraft.Cli/Program.cs",
-              "unity/Assets/UI/Game.uxml", "unity/ProjectSettings/ProjectSettings.asset", "unity/Packages/manifest.json"):
+              "unity/Assets/UI/Game.uxml", "unity/ProjectSettings/ProjectSettings.asset", "unity/Packages/manifest.json",
+              "translations/he/events.yaml", "translations/ro/ui.yaml"):
         assert cc.user_visible([p]) == [p], p
+
+
+def test_the_translations_readme_is_not_a_language():
+    assert cc.user_visible(["translations/README.md"]) == []
 
 
 def test_an_added_fragment_satisfies_it_and_the_failure_names_that_way():
