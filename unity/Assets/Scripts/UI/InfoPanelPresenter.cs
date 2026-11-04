@@ -718,6 +718,15 @@ namespace Statecraft.Game.UI
             string By(string plain, string by) => holder == null ? text[plain] : text.Format(by, text["control.holder_" + holder]);
             if (jerusalem && side == Control1948.Side.Arab)
                 return text[armistice ? "info.control_side_israel_west_jerusalem" : "info.control_israel_west_jerusalem"];
+            // From the start, 15 May 1948 (owner, 3 November 2026, "Israeli-held from 15 May (Recommended)":
+            // https://github.com/eyalgolan/statecraft-israel/issues/2039#issuecomment-6610644690): before 11 June the data puts the hex in no-man's land
+            // (code m), and the panel still names West Jerusalem as Israeli-held. "On May 14, the British withdrew from the New
+            // City of Jerusalem as well, and Operation Pitchfork commenced. Haganah and Irgun forces seized the 'security zones'
+            // (most of them in Jewish-owned buildings) without a fight..." (Lapidot, Besiege, ch. "The Arab Legion attacks
+            // Jerusalem", https://www.daat.ac.il/DAAT/english/history/lapidot/30.htm, checked 2026-11-03).
+            // The hex is no-man's land only in the opening period (control_hexes_1948_49.yaml: legend adjusted, not armistice or mixed),
+            // so the armistice wording never applies here.
+            if (jerusalem && side == Control1948.Side.NoMansLand) return text["info.control_israel_west_jerusalem"];
             return side switch
             {
                 Control1948.Side.Israel => text[armistice ? "info.control_side_israel" : "info.control_israel"],

@@ -815,6 +815,9 @@ city.resource.vineyards: "vineyards"
 city.project_reason.turn_cap: "No more than {0} city projects in one turn"
 # #1700 slice B, gdd-0.3 only (R-PROJ-001; owner, 3 November 2026: "One per city, plus 2 nationally"): {0} the city.
 city.project_reason.city_cap: "{0} has started a city project this turn"
+# R-HOUSE-006, gdd-0.3 only (owner, 3 November 2026: "No hex needed (Recommended)"): a housing repair off its city's own
+# hex, {0} the city.
+city.project_reason.repair_city_hex: "A housing repair is done on {0}'s own hex"
 # The toggle that folds a city's own projects on a stacked bar or a short window (owner ruling on #1150).
 city.projects_toggle: "City projects ({0})"
 # #1722 slice E (#1701; R-ARMS-005 to R-ARMS-007), gdd-0.3 only: a built arms workshop's part of the info panel. The

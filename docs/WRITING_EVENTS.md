@@ -31,7 +31,7 @@ schema too, or that test fails. Keep the comment when you copy a file.
 | `id` | yes | Unique across all events. Lowercase letters, digits and underscores, starting with a letter. |
 | `title` | yes | The card title. May contain office placeholders. |
 | `text` | yes | The card body. May contain office placeholders. |
-| `title_he` | no | The title in Hebrew (#1064), shown in the Hebrew UI; the English shows where a Hebrew field is missing. An event has `title_he`, `text_he` and every option's `text_he`, or none, all in Hebrew letters, with the same placeholders as the English. Beside them `text_he_review: agent-checked` while no native speaker has read the Hebrew (#564); remove it once one has. |
+| `title_he` | no | The title in Hebrew (#1064), shown in the Hebrew UI; the English shows where a Hebrew field is missing. An event has `title_he`, `text_he` and every option's `text_he`, or none, all in Hebrew letters, with the same placeholders as the English. Beside them `text_he_review: agent-checked` until a native speaker, or an AI-assisted contributor who discloses it, has read the Hebrew; remove it once they have (#564; owner, 4 November 2026: "AI-assisted can clear it"). |
 | `text_he` | no | The body in Hebrew (#1064). See `title_he`. |
 | `anchor` | no (default `soft`) | `hard` or `soft`. See below. |
 | `tags` | no | A list of free-form labels. Five are sensitive. See below. |
@@ -351,7 +351,8 @@ If AI helped draft the text, you still check every claim yourself before using `
 
 Hebrew display names in the other content files (`name_he`, `title_he`, `title_he_f`, `body_he`) have a separate
 flag: `*_review: agent-checked` while only an AI agent has checked the name against its sources. A native speaker
-removes the line once they have reviewed the name (#564); a blank value is an error, not a review. It does not change
+removes the line once they have reviewed the name (#564), or an AI-assisted contributor does when the pull request
+discloses the AI help and names the strings read (asked whether an AI-assisted contributor's Hebrew read can clear an `agent-checked` string or still needs a native Hebrew speaker, the owner answered "AI-assisted can clear it" ([4 November 2026](https://github.com/eyalgolan/statecraft-israel/pull/2481#issuecomment-6623108295))); a blank value is an error, not a review. It does not change
 the row's `status`.
 
 ### reviewed_by and reviewed_on
@@ -359,8 +360,12 @@ the row's `status`.
 A person's sign-off beside `status`: `reviewed_by` is the reviewer's GitHub handle (never an email), `reviewed_on` the
 day, `YYYY-MM-DD`. Both or neither; the loader refuses a blank or malformed value. **Only the reviewer writes them**, in a
 commit of their own: never add, change or remove them yourself on someone's behalf, and an AI agent never does
-(`scripts/oss/reviewed_by_guard.py` fails such a pull request; owner, 15 October 2026, #375). An agent may not edit any
-field of a signed row either, until a person signs it again ("Block it in CI", owner, 15 October 2026). See
+(`scripts/oss/reviewed_by_guard.py` fails such a pull request; owner, 15 October 2026, #375), unless the pull request's
+"AI assistance" section discloses the AI help: then an AI-assisted contributor's check counts as
+the sign-off (it may add or change the two lines, never remove them), and the
+section should say which sources they opened and what they checked (asked whether an AI-assisted contributor's source check counts as the `reviewed_by` sign-off, the owner answered "Yes, it counts" ([4 November 2026](https://github.com/eyalgolan/statecraft-israel/pull/2481#issuecomment-6623108295))). CI checks only that the section exists, is not a "no" and names a check; the reviewer reads what was checked and how. An agent may not edit any
+field of a signed row either, until a person (or a disclosed AI-assisted contributor) signs it again ("Block it in CI",
+owner, 15 October 2026). See
 [HISTORIAN_REVIEW.md](HISTORIAN_REVIEW.md#sign-the-row-off).
 
 ## What the loader rejects

@@ -966,6 +966,8 @@ city.project_reason.turn_cap: "אי אפשר להתחיל יותר מ־{0} מי�
 # #1700 slice B, gdd-0.3 only (R-PROJ-001), {0} the city, as the workshop refusals ("{0}: ...").
 # Agent-drafted Hebrew; native review pending (#564). No verb agrees with {0} (HE-15).
 city.project_reason.city_cap: "{0}: כבר יש התחלת מיזם עירוני בתור הזה"
+# R-HOUSE-006, gdd-0.3 only, {0} the city. Agent-drafted Hebrew; native review pending (#564). No verb agrees with {0} (HE-15).
+city.project_reason.repair_city_hex: "שיפוץ דיור נעשה רק במשבצת של {0}"
 # The toggle that folds a city's own projects on a stacked bar or a short window (owner ruling on #1150), {0} the
 # number of kinds. For the native reviewer (#564).
 # city.projects_toggle: native review: owner, 3 Nov 2026 (HE batch 4: "Approve all as they are").

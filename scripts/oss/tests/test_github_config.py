@@ -238,6 +238,15 @@ def test_the_reviewed_by_guard_runs_on_the_pr_head_with_full_history():
     assert step["env"]["BASE_SHA"] == "${{ github.event.pull_request.base.sha }}"
 
 
+def test_the_reviewed_by_guard_reads_the_description_from_the_event_file_only():
+    """Owner, 4 November 2026 ("Yes, it counts"): the guard reads the PR's "AI assistance" section from the runner's event
+    file. The description is attacker-controlled text, so it never goes into a run line or an env value."""
+    job = next(j for j in ci()["jobs"].values() if j["name"] == "Changelog")
+    step = next(s for s in job["steps"] if "reviewed_by_guard.py" in s.get("run", ""))
+    assert '--pr-event "$GITHUB_EVENT_PATH"' in step["run"]
+    assert "github.event.pull_request.body" not in (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+
+
 STEAM = ROOT / ".github/workflows/steam-upload.yml"
 STEAM_SECRETS = {"STEAM_BUILDER_USERNAME", "STEAM_CONFIG_VDF"}
 STEAM_LOGIN_STEPS = {"Restore the builder login (owner's secret)", "Upload with steamcmd (owner's builder account)"}

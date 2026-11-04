@@ -4,7 +4,8 @@
 # name_he (#558): the place's 1948 Hebrew name, matching the English (owner, 2026-10-14), from the he.wiki article the
 # row's English source links to. Tel Aviv: the article is the merged city of 1950, "תל אביב-יפו"; its lead gives "תל אביב".
 # name_he_review: agent-checked marks a name an AI agent checked against its sources and no person has read yet
-# (CONTENT_POLICY section 2, rule 6; owner, 2026-10-15); a native speaker reviews it (#564) and then removes the flag.
+# (CONTENT_POLICY section 2, rule 6; owner, 2026-10-15); a native speaker, or an AI-assisted contributor who discloses it,
+# reviews it and then removes the flag (#564; owner, 4 November 2026: "AI-assisted can clear it").
 settlements:
 - id: jerusalem
   name: Jerusalem

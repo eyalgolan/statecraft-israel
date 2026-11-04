@@ -610,8 +610,10 @@ public class RealContentTests
         Assert.DoesNotContain("hula_drainage", s.FiredEvents);   // R-SWAMP-002: it waits for works at the Hula, and this run starts none
         Assert.Equal(1.0, s.Policies["maabarot"]);   // the historical choice opens transit camps
     }
-    /// <summary>#1187: every objective's player-facing name has its Hebrew (agent-checked until a native read, #564),
-    /// and the absorb-immigrants card - the last of the 33 without Hebrew - has its title, text and option in Hebrew.</summary>
+    /// <summary>#1187: every objective's player-facing name has its Hebrew (agent-checked until a native speaker, or an
+    /// AI-assisted contributor who discloses it, has read it; #564; owner, 4 November 2026:
+    /// "AI-assisted can clear it"), and the absorb-immigrants card - the last of the 33 without Hebrew - has its title,
+    /// text and option in Hebrew.</summary>
     [Fact]
     public void ObjectivesAndTheAbsorbCardHaveTheirHebrew()
     {

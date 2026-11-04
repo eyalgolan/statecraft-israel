@@ -2,8 +2,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Statecraft.Sim;
 
-/// <summary>Hebrew text on event cards (#1064, owner decision on #55): title_he, text_he and each option's text_he beside
-/// the English, all or none, with text_he_review: agent-checked until a native speaker has read them (#564).</summary>
+/// <summary>Hebrew text on event cards (#1064, owner decision on #55): title_he, text_he and each option's text_he
+/// beside the English, all or none, with text_he_review: agent-checked until a native speaker, or an AI-assisted
+/// contributor who discloses it, has read it (#564; owner, 4 November 2026: "AI-assisted can clear it").</summary>
 public class EventHebrewTests
 {
     const string Title = "title: Drought\n", Ration = "    text: Ration water\n", Wait = "    text: Wait for rain\n";

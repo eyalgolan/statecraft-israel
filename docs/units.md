@@ -483,6 +483,8 @@ and a unit the sim moves is placed without the control layer.
   date strings instead), and `number_he` on the row for the subtitle's number line (#1219 item 2), each with its
   `*_he_sources` (the sources of its proper names) and `*_he_review: agent-checked` until a native speaker has read it
   (#564). A field without one shows its English, independently of the others; the English card never changes.
+  An AI-assisted contributor may also do that read and remove the line, when the pull request discloses the AI help
+  (the owner, 4 November 2026: "AI-assisted can clear it"; `docs/CONTENT_POLICY.md`, section 2, rule 6).
   `UnitData.Parse` refuses a Hebrew text without its English (so a Hebrew commander never adds a line), a present but
   blank key, sources or a review flag without the text, and text without Hebrew letters; any other Hebrew key fails
   as every unknown key does. Their sources join the card's source hosts but, like `name_he_sources`,
