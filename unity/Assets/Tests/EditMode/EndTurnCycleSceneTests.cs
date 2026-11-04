@@ -22,6 +22,7 @@ public class EndTurnCycleSceneTests
     [TearDown]
     public void DiscardScene()
     {
+        CardVideo.ForceOffForTests = false;
         EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         if (ps != null) Object.DestroyImmediate(ps);
         if (rt != null) { rt.Release(); Object.DestroyImmediate(rt); }
@@ -73,12 +74,44 @@ public class EndTurnCycleSceneTests
         Assert.Greater(needs, 0, "precondition: units need orders");
         UiTestKit.Press(ui.Q<Button>("end-turn"));
         yield return null;
+        Assert.IsTrue(root.Capture!.Collapsed, "End turn hid the dialog");
+        Assert.IsFalse(ui.Q("root").ClassListContains(CaptureDialogPresenter.OpenClass), "the root no longer says the dialog is open");
         Assert.IsTrue(ui.Q("info-panel").enabledInHierarchy, "the selected unit's card takes orders");
         UiTestKit.Press(ui.Q<Button>("info-skip"));
         yield return null;
         Assert.AreEqual(needs - 1, bridge.NeedsOrders.Count, "Skip took the selected unit out of the cycle");
-        Assert.AreEqual("ramla", root.Capture!.Shown, "nothing was chosen: the capture still waits, behind Decision waiting");
+        Assert.AreEqual("ramla", root.Capture.Shown, "nothing was chosen: the capture still waits, behind Decision waiting");
     }
+
+    /// <summary>The 5-turn smoke as the WebGL "?golden&amp;smoke=5" run plays it (tools/nightly_checks.py smoke_expect): the
+    /// real scene on the golden seed, each unit skipped through End turn and the unit card, ending on the smoke5 hash the golden
+    /// manifest pins. That run has no video (CardVideo.ForcedOff), so no outcome clip; this test boots the same way through
+    /// CardVideo.ForceOffForTests, since an edit-mode run cannot set the URL.</summary>
+    [UnityTest]
+    public IEnumerator TheFiveTurnSmokeEndsOnTheManifestsSmoke5Hash()
+    {
+        dir = Path.Combine(Path.GetTempPath(), "statecraft-endturn-smoke5-" + Guid.NewGuid().ToString("N"));
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        var doc = Object.FindFirstObjectByType<UIDocument>();
+        rt = new RenderTexture(CivMovementShots.Width, CivMovementShots.Height, 24, RenderTextureFormat.ARGB32);
+        ps = Object.Instantiate(doc.panelSettings);
+        ps.targetTexture = rt;
+        doc.panelSettings = ps;
+        var inputs = MapFocusTests.Inputs;
+        Object.FindFirstObjectByType<Statecraft.Game.Map.MapScene>().Build(inputs.Map);
+        var root = Object.FindFirstObjectByType<GameRoot>();
+        root.Store = new SaveStore(dir);
+        LogAssert.Expect(LogType.Warning, "SMOKE FAIL the smoke run needs play mode or a player");
+        CardVideo.ForceOffForTests = true;   // as the WebGL smoke boots: no video, so no outcome clip (reset in DiscardScene)
+        root.Begin(inputs, 5);
+        var ui = doc.rootVisualElement;
+        for (int i = 0; i < 30 && !(ui.Q("top-bar").worldBound.height > 0); i++) yield return null;
+        var smoke5 = Statecraft.Game.Boot.GoldenData.Parse(inputs.Goldens.Manifest).Single(x => x.name == "smoke5").hash;
+        var log = new System.Collections.Generic.List<string>();
+        yield return GameRoot.Smoke(ui, root.Bridge!, root.Card!, 5, log.Add);
+        Assert.AreEqual("SMOKE OK 5 turns 1948-10-15 " + smoke5, log.Last(), string.Join("\n", log));
+    }
+
     [UnityTest]
     public IEnumerator BlockedEndTurnClosesDefenceAndShowsTheUnit() =>
         BlockedEndTurnRevealsTheUnit("defence", twoRows: false);
