@@ -22,6 +22,7 @@ public class EndTurnCycleSceneTests
     [TearDown]
     public void DiscardScene()
     {
+        CardVideo.ForceOffForTests = false;
         EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         if (ps != null) Object.DestroyImmediate(ps);
         if (rt != null) { rt.Release(); Object.DestroyImmediate(rt); }
@@ -84,8 +85,8 @@ public class EndTurnCycleSceneTests
 
     /// <summary>The 5-turn smoke as the WebGL "?golden&amp;smoke=5" run plays it (tools/nightly_checks.py smoke_expect): the
     /// real scene on the golden seed, each unit skipped through End turn and the unit card, ending on the smoke5 hash the golden
-    /// manifest pins. That run has no outcome clips (CardVideo.ForcedOff), and an edit-mode run has video, so the clips' presenter
-    /// is disposed here: an open clip would take the turn report's Close out of reach.</summary>
+    /// manifest pins. That run has no video (CardVideo.ForcedOff), so no outcome clip; this test boots the same way through
+    /// CardVideo.ForceOffForTests, since an edit-mode run cannot set the URL.</summary>
     [UnityTest]
     public IEnumerator TheFiveTurnSmokeEndsOnTheManifestsSmoke5Hash()
     {
@@ -101,11 +102,10 @@ public class EndTurnCycleSceneTests
         var root = Object.FindFirstObjectByType<GameRoot>();
         root.Store = new SaveStore(dir);
         LogAssert.Expect(LogType.Warning, "SMOKE FAIL the smoke run needs play mode or a player");
+        CardVideo.ForceOffForTests = true;   // as the WebGL smoke boots: no video, so no outcome clip (reset in DiscardScene)
         root.Begin(inputs, 5);
         var ui = doc.rootVisualElement;
         for (int i = 0; i < 30 && !(ui.Q("top-bar").worldBound.height > 0); i++) yield return null;
-        var outcomes = typeof(GameRoot).GetField("outcomes", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
-        (outcomes.GetValue(root) as IDisposable)?.Dispose();
         var smoke5 = Statecraft.Game.Boot.GoldenData.Parse(inputs.Goldens.Manifest).Single(x => x.name == "smoke5").hash;
         var log = new System.Collections.Generic.List<string>();
         yield return GameRoot.Smoke(ui, root.Bridge!, root.Card!, 5, log.Add);
