@@ -20,9 +20,9 @@ namespace Statecraft.Sim
         /// Late fire: an event whose window overlapped the turn just played can fire after its window has ended; its
         /// conditions are evaluated at the end of the turn, and its text is filled at the last in-window day
         /// (<see cref="FillDate"/>).
-        /// <para>With <paramref name="endingTurn"/> (the turn that ended the game, R-LOOP-004) only the cards of the objectives
-        /// that turn recorded fire, all of them, uncapped (R-OBJ-003; the owner's choice "Show the card (Recommended)",
-        /// 4 November 2026, #2536); no other event does.</para></summary>
+        /// <para>With <paramref name="endingTurn"/> (the turn that ended the game, R-LOOP-004) only the unfired cards of recorded
+        /// objectives fire (those that turn recorded, and any an earlier turn's soft-event cap held back), all of them, uncapped
+        /// (R-OBJ-003; the owner's choice "Show the card (Recommended)", 4 November 2026, #2536); no other event does.</para></summary>
         public static void Trigger(Content c, GameState s, List<Cause> why, DateTime? turnStart = null, bool endingTurn = false)
         {
             PopulationLedger.RefuseAggregate(s);
@@ -65,11 +65,12 @@ namespace Statecraft.Sim
             }
         }
 
-        /// <summary>Whether <paramref name="e"/> is a card of the turn that ended the game: the card of an objective recorded on
-        /// that turn, in a game that is over (R-OBJ-003, R-LOOP-004; #2536). The only events that fire on that turn; Unity
-        /// shows them before the end screen.</summary>
+        /// <summary>Whether <paramref name="e"/> is a card of the turn that ended the game: the card of a recorded objective, in a
+        /// game that is over (R-OBJ-003, R-LOOP-004; #2536). Not only the objectives that turn recorded: a card the soft-event
+        /// cap held back on an earlier turn (R-EVT-001) has no later turn to wait for. Unfired ones are the only events that
+        /// fire on that turn; Unity shows them before the end screen.</summary>
         public static bool EndingCard(GameState s, GameEvent e) =>
-            s.GameOver != null && e.Objective != "" && s.Objectives.TryGetValue(e.Objective, out var done) && done == s.Date;
+            s.GameOver != null && e.Objective != "" && s.Objectives.ContainsKey(e.Objective);
 
         /// <summary>The date whose office holders an event's text names: the given date, or the last in-window day
         /// once the window has ended (load-time coverage guarantees a holder there).</summary>

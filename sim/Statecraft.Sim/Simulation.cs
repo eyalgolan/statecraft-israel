@@ -80,8 +80,8 @@ namespace Statecraft.Sim
             ContentWindows.Update(c, s, turnStart);
             Cabinet.ExpireOnGovernmentChange(c, s, why);
             if (c.UsesAttention) AttentionSystem.Refill(c, s);
-            // A game that just ended raises no new events, but the cards of the objectives this turn recorded (R-LOOP-004,
-            // R-OBJ-003; the owner's choice "Show the card (Recommended)", 4 November 2026, #2536).
+            // A game that just ended raises no new events, but the unfired cards of recorded objectives (R-LOOP-004, R-OBJ-003;
+            // the owner's choice "Show the card (Recommended)", 4 November 2026, #2536).
             EventSystem.Trigger(c, s, why, turnStart, endingTurn: s.GameOver != null);
             return new StepResult(s, why, rejected);
         }

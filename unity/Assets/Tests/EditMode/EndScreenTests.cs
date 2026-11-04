@@ -133,6 +133,86 @@ public class EndScreenTests
         Assert.IsNull(card.Shown);
     }
 
+    // R-OBJ-003, R-LOOP-004 (#2536): the real autosave/load path replays an ending objective card into a new bridge.
+    // The loaded card still precedes the end screen and its UI answer opens the screen, in both shipped languages.
+    [TestCase(false, TestName = "AnEndingObjectiveCardSurvivesAutosaveAndLoad_English")]
+    [TestCase(true, TestName = "AnEndingObjectiveCardSurvivesAutosaveAndLoad_Hebrew")]
+    public void AnEndingObjectiveCardSurvivesAutosaveAndLoad(bool hebrew)
+    {
+        var text = hebrew ? He : En;
+        var c = ContentLoader.Load(Paths.Content);   // a fresh copy: the fixture below rewrites it in memory, never C
+
+        // A one-turn fixture over a fresh copy of the real content. The objective condition is already true, while its
+        // card cannot fire until step 11 records it; ending the game at that turn's boundary makes it an ending card.
+        var probe = Simulation.NewGame(c, GoldenRun.Seed, Mode.Historical);
+        c.Rules.Mvp!.End = Simulation.TurnEnd(c, probe);
+        var objective = c.Objectives.Single(o => o.Id == "railway");
+        objective.CompletesWhen = new ObjectiveCondition
+        {
+            Absorbed = new AbsorbCondition
+            {
+                PopulationAtLeast = 0,
+                OverflowAtMost = 1m,
+                EmployedAtLeast = 0m,
+            },
+        };
+        var objectiveCard = c.Events.Single(e => e.Id == objective.Card);
+        objectiveCard.From = probe.Date;
+        objectiveCard.To = null;
+        objectiveCard.Requires.Clear();
+        objectiveCard.Conditions.Clear();
+
+        var dir = Path.Combine(Path.GetTempPath(), "statecraft-ending-load-" + System.Guid.NewGuid().ToString("N"));
+        try
+        {
+            var store = new SaveStore(dir);
+            var firstBridge = new SimBridge(GameSession.New(c, GoldenRun.Seed, Mode.Historical), text);
+            using (GameStart.Autosave(firstBridge, store, text))
+            {
+                firstBridge.EndTurn();
+                Assert.AreEqual(GameOverCodes.MvpEnded, firstBridge.State.GameOver);
+                Assert.AreEqual(firstBridge.State.Date, firstBridge.State.Objectives[objective.Id],
+                    "step 11 recorded the objective on the ending date");
+                CollectionAssert.AreEqual(new[] { objectiveCard.Id }, firstBridge.State.PendingEvents,
+                    "the autosaved final state leaves its ending card pending");
+            }
+
+            var savedHash = firstBridge.State.Hash();
+            Assert.IsTrue(File.Exists(store.AutosavePath), "the real autosave path wrote the ending turn");
+
+            var notes = new List<string>();
+            var loadedSession = GameStart.Begin(c, store, () => 1UL, notes, text, out var resumed);
+            Assert.IsTrue(resumed, "launch resumed the autosave");
+            CollectionAssert.IsEmpty(notes);
+            Assert.AreEqual(savedHash, loadedSession.State.Hash(), "the command log replayed the saved final state");
+
+            var loadedBridge = new SimBridge(loadedSession, text);
+            using var ui = new UiTestKit();
+            using var card = new EventCardPresenter(ui.Root, loadedBridge, text, null);
+            using var end = new EndScreenPresenter(ui.Root, loadedBridge, text, null);
+
+            Assert.IsTrue(loadedBridge.EndingCardWaiting);
+            Assert.AreEqual(objectiveCard.Id, card.Shown?.Id);
+            Assert.IsFalse(end.IsOpen, "the loaded ending card comes before the end screen");
+
+            var option = ui.Q<Button>("option-" + objectiveCard.Options.Single().Id);
+            Assert.IsTrue(option.enabledSelf);
+            Assert.IsNotEmpty(option.text);
+            UiTestKit.Press(option);
+
+            Assert.IsNull(card.Shown);
+            Assert.IsFalse(loadedBridge.EndingCardWaiting);
+            Assert.IsTrue(end.IsOpen, "answering the loaded card through its UI button opens the end screen");
+            Assert.AreEqual(text["end.title"], ui.Q<Label>("end-screen-title").text);
+            Assert.AreEqual(savedHash, loadedBridge.State.Hash(), "seeing the card changes no saved simulation state");
+        }
+        finally
+        {
+            try { if (Directory.Exists(dir)) Directory.Delete(dir, true); }
+            catch (IOException) { }
+        }
+    }
+
     // #2536: SeeEndingCard answers only a waiting card of the ending turn; any other event stays as it was.
     [Test]
     public void OnlyAnEndingTurnCardCanBeAnsweredThatWay()

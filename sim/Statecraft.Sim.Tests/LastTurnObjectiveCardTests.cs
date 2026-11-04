@@ -11,17 +11,20 @@ public class LastTurnObjectiveCardTests
     static readonly Content Real = ContentLoader.Load(RealContentTests.ContentRoot());
 
     /// <summary>The mvp-end run's state one turn before the game's end (GoldenRun.Orders, seed 1948, Historical mode).</summary>
-    static GameState BeforeTheEnd()
+    static GameState BeforeTheEnd(Content c, int turnsBefore = 1)
     {
-        var s = Simulation.NewGame(Real, GoldenRun.Seed, Mode.Historical);
+        var run = new List<GameState> { Simulation.NewGame(c, GoldenRun.Seed, Mode.Historical) };
         for (var i = 0; i < 1000; i++)
         {
-            var next = Simulation.Step(Real, s, GoldenRun.Orders(Real, s)).State;
-            if (next.GameOver != null) return s;
-            s = next;
+            var s = run[run.Count - 1];
+            var next = Simulation.Step(c, s, GoldenRun.Orders(c, s)).State;
+            if (next.GameOver != null) return run[run.Count - turnsBefore];
+            run.Add(next);
         }
         throw new InvalidOperationException("the run never ended");
     }
+
+    static GameState BeforeTheEnd() => BeforeTheEnd(Real);
 
     /// <summary>Every segment of the Haifa to Tel Aviv rail link built, so step 11 records the railway objective (R-OBJ-005)
     /// at the end of the next turn. The mvp-end run builds none of it.</summary>
@@ -63,6 +66,159 @@ public class LastTurnObjectiveCardTests
         Assert.True(Points(last, "railway") > 0, "the objective scores");
         Assert.Equal(before.Score + Points(last, "railway"), s.Score);
         Assert.Equal(s.Score, EndReport.For(Real, s).Score);
+    }
+
+    // R-OBJ-003, R-LOOP-004: ending objective cards are not subject to the ordinary three-soft-card cap.
+    // Even otherwise eligible hard-anchor and Deport cards are excluded from the ending turn.
+    // The content is loaded fresh here (not Real), since this test rewrites objectives and events in memory.
+    [Fact]
+    public void TheEndingTurnFiresEveryObjectiveCardUncappedAndNoOtherCategory()
+    {
+        var c = ContentLoader.Load(RealContentTests.ContentRoot());
+        var before = BeforeTheEnd(c);
+        before.PendingEvents.Clear();
+
+        var cards = new List<GameEvent>();
+        foreach (var objective in c.Objectives)
+        {
+            // Make every real objective newly complete in step 11 of this final turn.
+            objective.CompletesWhen = new ObjectiveCondition
+            {
+                Absorbed = new AbsorbCondition
+                {
+                    PopulationAtLeast = 0,
+                    OverflowAtMost = 1m,
+                    EmployedAtLeast = 0m,
+                },
+            };
+            before.Objectives.Remove(objective.Id);
+
+            var card = c.Events.Single(e => e.Id == objective.Card);
+            card.From = before.Date;
+            card.To = null;
+            card.Anchor = "soft";
+            card.Requires.Clear();
+            card.Conditions.Clear();
+            before.FiredEvents.Remove(card.Id);
+            cards.Add(card);
+        }
+
+        Assert.True(cards.Count >= 4, "precondition: at least four soft objective cards exercise the normal cap");
+        Assert.All(cards, card => Assert.Equal("soft", card.Anchor));
+
+        var hard = new GameEvent
+        {
+            Id = "fixture_ending_hard",
+            Title = "Eligible hard fixture",
+            Anchor = "hard",
+            From = before.Date,
+            Options = new List<EventOption>
+            {
+                new EventOption { Id = "continue", Text = "Continue" },
+            },
+        };
+        var deport = new GameEvent
+        {
+            Id = "fixture_ending_deport",
+            Title = "Eligible Deport fixture",
+            From = before.Date,
+            Deported = "acre",
+            Tags = new List<string> { "displacement" },
+            Options = new List<EventOption>
+            {
+                new EventOption { Id = "continue", Text = "Continue" },
+            },
+        };
+        c.Events.Add(hard);
+        c.Events.Add(deport);
+        before.Settlements["acre"] = new SettlementControl(since: before.Date, depopulated: true);
+
+        // Prove both excluded cards satisfy the ordinary trigger, rather than merely asserting against ineligible fixtures.
+        var ordinary = before.Clone();
+        EventSystem.Trigger(c, ordinary, new List<Cause>(), before.Date);
+        Assert.Contains(hard.Id, ordinary.FiredEvents);
+        Assert.Contains(deport.Id, ordinary.FiredEvents);
+
+        var last = Simulation.Step(c, before, Array.Empty<Command>());
+        var s = last.State;
+        var expected = cards.Select(card => card.Id).ToArray();
+
+        Assert.Equal(GameOverCodes.MvpEnded, s.GameOver);
+        Assert.All(c.Objectives, objective => Assert.Equal(s.Date, s.Objectives[objective.Id]));
+        Assert.Equal(expected, s.PendingEvents);
+        Assert.Equal(
+            expected.OrderBy(id => id, StringComparer.Ordinal),
+            s.FiredEvents.Except(before.FiredEvents));
+        Assert.Equal(
+            expected,
+            last.Why.Where(w => w.Key == CauseKeys.EventNew).Select(w => w.Target));
+
+        Assert.DoesNotContain(hard.Id, s.FiredEvents);
+        Assert.DoesNotContain(hard.Id, s.PendingEvents);
+        Assert.DoesNotContain(deport.Id, s.FiredEvents);
+        Assert.DoesNotContain(deport.Id, s.PendingEvents);
+    }
+
+    // R-OBJ-003, R-EVT-001, R-LOOP-004: an objective recorded on the turn before the end whose card the soft-event cap held
+    // back (all objective cards are soft, and a hard card takes a slot) shows on the ending turn: there is no later turn for
+    // it to wait for. Only such cards fire then, uncapped. Fresh content: the test rewrites objectives and events in memory.
+    [Fact]
+    public void AnObjectiveCardTheCapHeldBackShowsOnTheEndingTurn()
+    {
+        var c = ContentLoader.Load(RealContentTests.ContentRoot());
+        var twoBefore = BeforeTheEnd(c, turnsBefore: 2);
+        twoBefore.PendingEvents.Clear();
+
+        var cards = new List<GameEvent>();
+        foreach (var objective in c.Objectives)
+        {
+            // Every real objective completes at step 11 of the turn before the end.
+            objective.CompletesWhen = new ObjectiveCondition
+            {
+                Absorbed = new AbsorbCondition { PopulationAtLeast = 0, OverflowAtMost = 1m, EmployedAtLeast = 0m },
+            };
+            twoBefore.Objectives.Remove(objective.Id);
+            var card = c.Events.Single(e => e.Id == objective.Card);
+            card.From = twoBefore.Date;
+            card.To = null;
+            card.Anchor = "soft";
+            card.Requires.Clear();
+            card.Conditions.Clear();
+            twoBefore.FiredEvents.Remove(card.Id);
+            cards.Add(card);
+        }
+        // A hard card on that turn takes one of the three soft slots, as reparations_vote does on the 15 December 1951 turn.
+        c.Events.Add(new GameEvent
+        {
+            Id = "fixture_penultimate_hard",
+            Title = "Hard fixture",
+            Anchor = "hard",
+            From = twoBefore.Date,
+            Options = new List<EventOption> { new EventOption { Id = "continue", Text = "Continue" } },
+        });
+
+        var penultimate = Simulation.Step(c, twoBefore, Array.Empty<Command>()).State;
+        Assert.Null(penultimate.GameOver);
+        Assert.Contains("fixture_penultimate_hard", penultimate.FiredEvents);
+        Assert.All(c.Objectives, objective => Assert.Equal(penultimate.Date, penultimate.Objectives[objective.Id]));
+        var heldBack = cards.Where(card => !penultimate.FiredEvents.Contains(card.Id)).Select(card => card.Id).ToArray();
+        Assert.True(heldBack.Length >= 2, "precondition: the cap held back at least two objective cards on the turn before the end");
+
+        // An event open on the last turn that nothing else holds back, made unfired so it would be eligible then.
+        var other = c.Events.First(e => e.Objective == "" && e.Site == "" && e.Prisoners == "" && e.Deported == ""
+            && e.Requires.Count == 0 && e.Conditions.Count == 0 && e.From <= penultimate.Date
+            && (e.To == null || e.To.Value > penultimate.Date));
+        penultimate.FiredEvents.Remove(other.Id);
+
+        var last = Simulation.Step(c, penultimate, Array.Empty<Command>());
+        var s = last.State;
+        Assert.Equal(GameOverCodes.MvpEnded, s.GameOver);
+        Assert.All(c.Objectives, objective => Assert.Equal(penultimate.Date, s.Objectives[objective.Id]));
+        Assert.Equal(heldBack, s.PendingEvents);
+        Assert.Equal(heldBack.OrderBy(id => id, StringComparer.Ordinal), s.FiredEvents.Except(penultimate.FiredEvents));
+        Assert.Equal(heldBack, last.Why.Where(w => w.Key == CauseKeys.EventNew).Select(w => w.Target));
+        Assert.DoesNotContain(other.Id, s.FiredEvents);
+        Assert.Equal(penultimate.Score, s.Score);
     }
 
     // R-LOOP-004: a game ending with no objective completed on its last turn still raises no event on that turn.
