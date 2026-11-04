@@ -107,6 +107,32 @@ namespace Statecraft.Game.Map.Collection
         public const float DakotaFlashS = 0.5f, DakotaFlashM = 1500f, DakotaSmokeS = 4f, DakotaPuffGapS = 0.25f, DakotaSmokeM = 1600f, DakotaBombLengthM = 400f;
         public const int DakotaPuffs = 3;
 
+        /// <summary>DESIGN VALUES for the blast (owner, 4 November 2026, on the 15 May captures: "the explosions look bad in
+        /// the screenshot and there is no smoke columns coming up", then "it needs to look top quality"): Unity Labs' CC0
+        /// explosion flipbook (<see cref="DakotaBlastTexture"/>, 5 x 5 frames: a fireball that burns out into black smoke) on a
+        /// camera-facing quad, played once over <see cref="DakotaBlastS"/> from the impact. It opens at
+        /// <see cref="DakotaBlastOpenShare"/> of <see cref="DakotaBlastM"/> across and swells to the full size in the first
+        /// quarter of its life, its foot on the ground; it fades over the last <see cref="DakotaBlastFadeShare"/> of it. The
+        /// gun's flash (<see cref="DakotaFlashM"/>) still marks the first instant.</summary>
+        public const float DakotaBlastS = 2.4f, DakotaBlastM = 2200f, DakotaBlastOpenShare = 0.45f, DakotaBlastFadeShare = 0.35f;
+        public const int DakotaBlastGrid = 5;
+
+        /// <summary>DESIGN VALUES for the smoke columns (owner, 4 November 2026: "there is no smoke columns coming up"): each
+        /// Dakota lights <see cref="DakotaColumns"/> columns, at evenly spaced impacts of its pass (the lead and its wing take
+        /// turns, so the pair lights at most 2 x <see cref="DakotaColumns"/> over Tel Aviv). From its first hit a column is a
+        /// stream of <see cref="DakotaColumnPuffs"/> puffs of Unity Labs' CC0 smoke flipbook (<see cref="DakotaSmokeTexture"/>,
+        /// 8 x 8 frames, boiling at <see cref="DakotaColumnFps"/>), each rising <see cref="DakotaColumnM"/> over
+        /// <see cref="DakotaColumnLifeS"/>, widening from <see cref="DakotaColumnFootM"/> to <see cref="DakotaColumnTopM"/>
+        /// across and leaning <see cref="DakotaColumnLeanM"/> downwind (east, a little north, as the under-attack look's smoke,
+        /// HexUnderAttack.Smoke.Wind), less than <see cref="DakotaBombMarginM"/>, so a column stays over Tel Aviv's hex. It
+        /// grows from the ground over its first <see cref="DakotaColumnLifeS"/> and then burns for as long as the Dakotas fly.</summary>
+        public const int DakotaColumns = 3, DakotaColumnPuffs = 10, DakotaSmokeGrid = 8;
+        public const float DakotaColumnLifeS = 14f, DakotaColumnM = 3600f, DakotaColumnFootM = 700f, DakotaColumnTopM = 2300f,
+            DakotaColumnLeanM = 450f, DakotaColumnFps = 6f;
+
+        /// <summary>The two Unity Labs flipbooks (Resources, "Free VFX image sequences and flipbooks", CC0; ASSETS.yaml).</summary>
+        public const string DakotaBlastTexture = "Effects/Explosion01_5x5", DakotaSmokeTexture = "Effects/Cloud02_8x8";
+
         /// <summary>Where a Dakota is from its loop's centre (world x, z, m), <paramref name="seconds"/> into its loop: at 0 due
         /// south of the centre flying east (over Tel Aviv, <see cref="DakotaSpot"/>), then anticlockwise seen from above.</summary>
         public static Vector2 DakotaLoopOffset(float seconds)
@@ -222,7 +248,7 @@ namespace Statecraft.Game.Map.Collection
             var flag = DakotaFlag(marks.transform);
             var half = 0.5f * b.size;   // nose east: half its length (x), its height and its span (z)
             var props = DakotaPropellers(go);
-            var bombs = DakotaBombs(marks.transform, centre, half, ground);
+            var bombs = DakotaBombs(marks.transform, centre, half, ground, plane);
             var loop = go.AddComponent<DakotaLoop>();
             loop.Configure(centre, level, b.center - go.transform.position, half, plane * DakotaTrailSeconds, props, Shadow(marks.transform), flag,
                 map!.Terrain, 0.5f * ShadowShare * new Vector2(size, b.size.x), ground.SeaLevelY, bombs, !Application.isPlaying || VisualShots.Requested());
@@ -340,7 +366,7 @@ namespace Statecraft.Game.Map.Collection
         /// aircraft) and impact point (the ground under it <see cref="DakotaBombFallS"/> later) are both on Tel Aviv's hex
         /// (<see cref="OnDakotaTarget"/>), a bomb from its belly. Its bombs, flashes and smoke are drawn under
         /// <paramref name="parent"/> (DakotaBombRun); the flash and puff textures and the bomb mesh are made once for the layer.</summary>
-        DakotaBombRun DakotaBombs(Transform parent, Vector3 centre, Vector3 half, KitGround ground)
+        DakotaBombRun DakotaBombs(Transform parent, Vector3 centre, Vector3 half, KitGround ground, int plane)
         {
             var targets = DakotaTargets(ground, content);
             var drops = new List<DakotaBombRun.Drop>();
@@ -356,7 +382,13 @@ namespace Statecraft.Game.Map.Collection
             if (flashTexture == null) flashTexture = Own(UnitGunFire.FlashTexture());
             if (puffTexture == null) puffTexture = Own(Statecraft.HexTiles.HexUnderAttackLook.PuffTexture());
             if (bombMesh == null) bombMesh = Own(BombMesh());
-            return new DakotaBombRun(parent, drops, n, bombMesh, Blur(), flashTexture, puffTexture);
+            // The flipbooks are assets (not owned: Resources keeps them); without them the blast and smoke fall back to the
+            // drawn flash and puff, one frame each.
+            var blast = Resources.Load<Texture2D>(DakotaBlastTexture); var smoke = Resources.Load<Texture2D>(DakotaSmokeTexture);
+            if (blast == null || smoke == null) Debug.LogWarning("SEA/AIR: the Dakotas' explosion or smoke flipbook is missing from Resources/Effects; drawn textures stand in.");
+            var looks = new DakotaBombRun.Looks(flashTexture, blast != null ? blast : flashTexture, blast != null ? DakotaBlastGrid : 1,
+                smoke != null ? smoke : puffTexture, smoke != null ? DakotaSmokeGrid : 1);
+            return new DakotaBombRun(parent, drops, n, bombMesh, Blur(), looks, plane, DakotaKeys.Length);
         }
 
         Texture2D? flashTexture, puffTexture; Mesh? bombMesh;

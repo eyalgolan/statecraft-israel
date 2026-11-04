@@ -13,6 +13,7 @@ required attribution texts are in [`NOTICE`](NOTICE).
 |---|---|---|---|
 | Copernicus DEM GLO-30 (derived heightmap, hex elevations) | `unity/Assets/StreamingAssets/map/`, `content/map/hexes.json` | Copernicus DEM licence | Keep the attribution text in `NOTICE` with the data and in any credits |
 | CHELSA V2.1 bio12 | `content/map/precip_bio12.*` | CC0 1.0 | None; the citation in `NOTICE` is requested |
+| Unity Labs VFX flipbooks ("Free VFX image sequences and flipbooks", 2016) | `unity/Assets/Resources/Effects/` (in every build) | CC0 1.0 | None; credited "Unity Technologies (Unity Labs), CC0" as a courtesy in `NOTICE` |
 | IMS rain-gauge normals (data.gov.il dataset 481) | `content/map/precip_stations.json` | "Other (Open)" (data.gov.il) | Attribution in `NOTICE`; terms under owner review (decision D6) |
 | Wikipedia text and coordinates | cited throughout `content/` | CC BY-SA 4.0 | Attribution (source URL per entry); share-alike, which is why `content/` is CC BY-SA 4.0 |
 | Portraits (Wikimedia Commons) | `promo/ref/people/`, `unity/Assets/UI/Portraits/` | Public domain, CC0, CC BY 4.0 or CC BY-SA 4.0, per file | Public domain and CC0: none legally. CC BY 4.0 and CC BY-SA 4.0: keep the credit (artist, licence, source) in `NOTICE`; a portrait cropped from a CC BY-SA 4.0 photograph is itself CC BY-SA 4.0. The per-file record in `ASSETS.portraits.yaml` is kept as provenance |

@@ -845,23 +845,158 @@ public class SeaAirCollectionTests
             Assert.IsTrue(run.Flashes.Any(r => r.enabled && Xz(r.transform.position - first.To).magnitude < 1f), "a flash at the impact");
             loop.Place(loop.Lag + first.At + fall + 1f);
             Assert.IsTrue(run.Smoke.Any(r => r.enabled && Xz(r.transform.position - first.To).magnitude < SeaAirCollection.DakotaBombMarginM), "smoke rising at the impact");
+            Assert.IsTrue(run.Blasts.Any(r => r.enabled && Xz(r.transform.position - first.To).magnitude < 1f), "the blast at the impact");
             loop.Place(loop.Lag + 0.5f * period);
-            Assert.IsFalse(run.Bombs.Concat(run.Flashes).Concat(run.Smoke).Any(r => r.enabled), "none on the pass back, away from Tel Aviv");
-            int bombs = 0, flashes = 0, smoke = 0;
+            Assert.IsFalse(run.Bombs.Concat(run.Flashes).Concat(run.Blasts).Concat(run.Smoke).Any(r => r.enabled), "no bomb, flash, blast or dust on the pass back, away from Tel Aviv");
+            Assert.IsTrue(run.Columns.Any(r => r.enabled), "the smoke columns still rising over Tel Aviv on the pass back (owner, 4 November 2026)");
+            int bombs = 0, flashes = 0, blasts = 0, smoke = 0, columns = 0;
             for (int i = 0; i < 2400; i++)
             {
                 float t = i * 2f * period / 2400f;
                 loop.Place(t);
-                foreach (var r in run.Bombs.Concat(run.Flashes).Concat(run.Smoke))
+                foreach (var r in run.Bombs.Concat(run.Flashes).Concat(run.Blasts).Concat(run.Smoke).Concat(run.Columns))
                 {
                     if (!r.enabled) continue;
                     Assert.IsTrue(OnTelAviv(map, r.transform.position), $"{r.name} over Tel Aviv at {t:0.00} s ({r.transform.position})");
-                    if (run.Bombs.Contains(r)) bombs++; else if (run.Flashes.Contains(r)) flashes++; else smoke++;
+                    if (run.Bombs.Contains(r)) bombs++; else if (run.Flashes.Contains(r)) flashes++; else if (run.Blasts.Contains(r)) blasts++;
+                    else if (run.Smoke.Contains(r)) smoke++; else columns++;
                 }
             }
-            TestContext.WriteLine($"{planes[p].name}: {run.Drops.Count} drops a loop; {bombs} bomb, {flashes} flash and {smoke} smoke frames over two loops");
-            Assert.Greater(bombs, 0); Assert.Greater(flashes, 0); Assert.Greater(smoke, 0);
+            TestContext.WriteLine($"{planes[p].name}: {run.Drops.Count} drops a loop; {bombs} bomb, {flashes} flash, {blasts} blast, {smoke} dust "
+                + $"and {columns} column-puff frames over two loops");
+            Assert.Greater(bombs, 0); Assert.Greater(flashes, 0); Assert.Greater(blasts, 0); Assert.Greater(smoke, 0); Assert.Greater(columns, 0);
         }
+    }
+
+    /// <summary>The owner, 4 November 2026, on the 15 May captures: "the explosions look bad in the screenshot and there is no
+    /// smoke columns coming up", then "it needs to look top quality" (Unity Labs' CC0 flipbooks approved). The blast plays
+    /// the explosion flipbook once over DakotaBlastS: it opens at DakotaBlastOpenShare of DakotaBlastM, swells to the full
+    /// size by a quarter of its life and on a little after, its frames run in order from the first to the last, and it fades
+    /// over its last DakotaBlastFadeShare to nothing; then it is gone.</summary>
+    [Test]
+    public void EachBlastPlaysTheExplosionFlipbookSwellingThenFading()
+    {
+        Assert.IsNotNull(Resources.Load<Texture2D>(SeaAirCollection.DakotaBlastTexture), "the explosion flipbook ships in Resources");
+        Assert.IsNotNull(Resources.Load<Texture2D>(SeaAirCollection.DakotaSmokeTexture), "the smoke flipbook ships in Resources");
+        Assert.AreEqual(SeaAirCollection.DakotaBlastOpenShare, DakotaBombRun.BlastSwell(0f), 1e-5f, "opens small");
+        Assert.AreEqual(1f, DakotaBombRun.BlastSwell(0.25f), 1e-5f, "full size by a quarter of its life");
+        for (float b = 0.01f; b <= 1f; b += 0.01f)
+            Assert.Greater(DakotaBombRun.BlastSwell(b), DakotaBombRun.BlastSwell(b - 0.01f) - 1e-6f, $"never shrinks ({b:0.00})");
+        Assert.AreEqual(1f, DakotaBombRun.BlastAlpha(1f - SeaAirCollection.DakotaBlastFadeShare - 0.01f), 1e-5f, "whole until its fade");
+        Assert.AreEqual(0f, DakotaBombRun.BlastAlpha(1f), 1e-5f, "gone at its end");
+
+        var map = OpenMap();
+        var (_, _, loops, _) = DrawnDakotas(map);
+        var loop = loops[0]; var run = loop.Bombs!; var first = run.Drops[0];
+        float impact = loop.Lag + first.At + SeaAirCollection.DakotaBombFallS, life = SeaAirCollection.DakotaBlastS;
+        int Here() { for (int s = 0; s < run.Blasts.Count; s++) if (run.Blasts[s].enabled && Xz(run.Blasts[s].transform.position - first.To).magnitude < 1f) return s; return -1; }
+        int lastFrame = -1; float lastSize = 0f;
+        foreach (float b in new[] { 0.02f, 0.15f, 0.3f, 0.6f, 0.9f, 0.99f })
+        {
+            loop.Place(impact + b * life);
+            int s = Here();
+            Assert.GreaterOrEqual(s, 0, $"the blast shows at the impact at {b:0.00} of its life");
+            var r = run.Blasts[s];
+            int frame = run.BlastFrame(s);
+            Assert.That(frame, Is.InRange(0, SeaAirCollection.DakotaBlastGrid * SeaAirCollection.DakotaBlastGrid - 1), "a frame of the flipbook");
+            Assert.Greater(frame, lastFrame, $"its frames run forward ({b:0.00})");
+            Assert.AreEqual(SeaAirCollection.DakotaBlastM * DakotaBombRun.BlastSwell(b), r.transform.localScale.x, 1f, $"its size at {b:0.00}");
+            Assert.GreaterOrEqual(r.transform.localScale.x, lastSize - 1e-3f, $"it never shrinks ({b:0.00})");
+            Assert.AreEqual(DakotaBombRun.BlastAlpha(b), DakotaBombRun.Colour(r).a, 1e-3f, $"its alpha at {b:0.00}");
+            Assert.Less(r.transform.position.y - 0.5f * r.transform.localScale.y, first.To.y + 1f, "its foot at or under the ground");
+            lastFrame = frame; lastSize = r.transform.localScale.x;
+        }
+        Assert.AreEqual(SeaAirCollection.DakotaBlastGrid * SeaAirCollection.DakotaBlastGrid - 1, lastFrame, "it ends on the flipbook's last frame");
+        loop.Place(impact + 0.02f * life); float early = DakotaBombRun.Colour(run.Blasts[Here()]).a;
+        loop.Place(impact + 0.99f * life); float late = DakotaBombRun.Colour(run.Blasts[Here()]).a;
+        Assert.Greater(early, 0.99f, "bright at the start"); Assert.Less(late, 0.05f, "all but gone at the end");
+        loop.Place(impact + life + 0.01f);
+        Assert.AreEqual(-1, Here(), "gone after its life");
+    }
+
+    /// <summary>The owner, 4 November 2026: "there is no smoke columns coming up". Each Dakota lights at most DakotaColumns
+    /// smoke columns over Tel Aviv, at impacts of its own (the pair at most twice that, never two on one spot), each made of
+    /// DakotaColumnPuffs puffs. A column shows nothing before its first hit; after it, it grows from the ground (its top
+    /// higher a few seconds later), and from one DakotaColumnLife on it stands whole: every puff showing, its top near
+    /// DakotaColumnM up, wider aloft than at its foot, leaning downwind (east) less than DakotaBombMarginM, so it stays over
+    /// Tel Aviv's hex. It stays through the pass back and the next loops (as long as the Dakotas fly). The same time draws
+    /// the same column.</summary>
+    [Test]
+    public void TheBombsLightSmokeColumnsThatGrowThenStandOverTelAviv()
+    {
+        var map = OpenMap();
+        var (_, planes, loops, _) = DrawnDakotas(map);
+        float period = SeaAirCollection.DakotaLoopSeconds, life = SeaAirCollection.DakotaColumnLifeS;
+        int P = SeaAirCollection.DakotaColumnPuffs;
+        var all = new List<Vector3>();
+        for (int p = 0; p < planes.Length; p++)
+        {
+            var loop = loops[p]; var run = loop.Bombs!;
+            int sites = run.ColumnSites.Count;
+            Assert.That(sites, Is.InRange(1, SeaAirCollection.DakotaColumns), $"{planes[p].name} lights one to {SeaAirCollection.DakotaColumns} columns");
+            Assert.AreEqual(sites * P, run.Columns.Count, "a pool of puffs for each column, no more");
+            foreach (var site in run.ColumnSites)
+            {
+                Assert.IsTrue(run.Drops.Any(d => (d.To - site).magnitude < 1e-3f), "each column stands where a bomb lands");
+                Assert.IsTrue(all.All(o => Xz(o - site).magnitude > 1f), "never two columns on one spot");
+                all.Add(site);
+            }
+            for (int c = 0; c < sites; c++)
+            {
+                var site = run.ColumnSites[c]; float from = (float)run.ColumnFrom(c);
+                IEnumerable<Renderer> Puffs() => run.Columns.Skip(c * P).Take(P);
+                float Top() => Puffs().Where(r => r.enabled).Select(r => r.transform.position.y - site.y).DefaultIfEmpty(0f).Max();
+                loop.Place(loop.Lag + from - 0.5f);
+                Assert.IsFalse(Puffs().Any(r => r.enabled), $"{planes[p].name} column {c}: nothing before its first hit");
+                loop.Place(loop.Lag + from + 2f); float young = Top();
+                Assert.IsTrue(Puffs().Any(r => r.enabled), "it rises from its first hit");
+                Assert.Less(young, 0.5f * SeaAirCollection.DakotaColumnM, "low at first");
+                loop.Place(loop.Lag + from + 8f); float older = Top();
+                Assert.Greater(older, young + 1000f, "it grows upward");
+                foreach (float later in new[] { 1.5f * life, 0.5f * period, period + 3f, 3f * period + 7.5f })
+                {
+                    loop.Place(loop.Lag + from + later);
+                    var on = Puffs().Where(r => r.enabled).ToList();
+                    Assert.AreEqual(P, on.Count, $"whole {later:0.0} s after its first hit");
+                    var top = on.OrderBy(r => r.transform.position.y).Last(); var foot = on.OrderBy(r => r.transform.position.y).First();
+                    Assert.Greater(top.transform.position.y - site.y, 0.7f * SeaAirCollection.DakotaColumnM, "standing tall");
+                    Assert.Greater(top.transform.localScale.x, foot.transform.localScale.x, "wider aloft");
+                    Assert.Greater(Vector3.Dot(top.transform.position - site, new Vector3(0.94f, 0f, 0.34f)), 100f, "its top leans downwind (east)");
+                    foreach (var r in on)
+                    {
+                        Assert.Less(Xz(r.transform.position - site).magnitude, SeaAirCollection.DakotaBombMarginM, "it leans less than the margin");
+                        Assert.IsTrue(OnTelAviv(map, r.transform.position), $"over Tel Aviv ({r.transform.position})");
+                        Assert.That(run.ColumnFrame(run.Columns.ToList().IndexOf(r)), Is.InRange(0, SeaAirCollection.DakotaSmokeGrid * SeaAirCollection.DakotaSmokeGrid - 1), "a smoke flipbook frame");
+                    }
+                }
+                // The same time draws the same column.
+                float t = loop.Lag + from + 41.3f;
+                loop.Place(t); var a = Puffs().Select(r => (r.transform.position, r.transform.localScale, DakotaBombRun.Colour(r))).ToList();
+                loop.Place(t + 17f); loop.Place(t); var b = Puffs().Select(r => (r.transform.position, r.transform.localScale, DakotaBombRun.Colour(r))).ToList();
+                CollectionAssert.AreEqual(a, b, "a pure function of the loop's clock");
+            }
+        }
+        Assert.LessOrEqual(all.Count, SeaAirCollection.DakotaColumns * planes.Length, "capped");
+        TestContext.WriteLine($"{all.Count} smoke columns over Tel Aviv");
+    }
+
+    /// <summary>Sampling the bombs, blasts, dust and columns, and turning them to a camera, allocates nothing (DakotaBombRun),
+    /// as the gun's shot (UnitGunFireTests).</summary>
+    [Test]
+    public void SamplingTheBombRunAllocatesNothing()
+    {
+        var map = OpenMap();
+        var (_, _, loops, _) = DrawnDakotas(map);
+        var run = loops[0].Bombs!; var view = Quaternion.Euler(50f, 0f, 0f);
+        float t = run.Drops[0].At;
+        TestDelegate frames = () => { for (int i = 0; i < 200; i++) { t += 0.05f; run.Sample(t); run.Face(view); } };
+        frames();   // Mono JIT-compiles the delegate on its first call (UnitGunFireTests)
+        t = run.Drops[0].At;
+        Assert.That(frames, UnityEngine.TestTools.Constraints.Is.Not.AllocatingGCMemory());
+        // The measured frames ran from the first release through ten seconds of the loop; half a second after the first
+        // impact, inside them, a blast, dust and a column were showing.
+        run.Sample(run.Drops[0].At + SeaAirCollection.DakotaBombFallS + 0.5f);
+        Assert.IsTrue(run.Blasts.Any(r => r.enabled) && run.Smoke.Any(r => r.enabled) && run.Columns.Any(r => r.enabled), "the measured frames drew blasts, dust and columns");
     }
 
     /// <summary>#2482's margin at its edge (review of #2490): OnDakotaTarget refuses a point 1 m short of
