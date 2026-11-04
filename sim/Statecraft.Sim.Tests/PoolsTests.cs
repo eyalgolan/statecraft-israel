@@ -62,18 +62,32 @@ public class PoolsTests
         Assert.Equal(0.4, next.Indicators["food_supply"]);
     }
 
-    // #2527: the import top-up adds its own Why line, and the Food row's lines add up to the stock's change.
+    // #2527: the month's eating and the import top-up add their own Why line, and the Food row's lines add up to the
+    // stock's change (the line nets the eating and the import, so it stays silent in a steady turn and matches the
+    // change when the stock starts under cover).
     [Fact]
-    public void TheImportAddsItsOwnWhyLineAndTheFoodLinesAddUp()
+    public void TheEatingAndImportAddTheirOwnWhyLineAndTheFoodLinesAddUp()
     {
         var c = Gdd();
         var s = Simulation.NewGame(c, 1, Mode.Historical);
-        var before = s.Food;
+        s.Food = 150;                   // under the 300 of cover, so the month's eating and import show a net +150
         var r = StepWithWhy(c, s);
-        var imported = Assert.Single(r.Why, w => w.Key == CauseKeys.FoodImported);
-        Assert.Equal(("economy", "food"), (imported.System, imported.Target));
-        Assert.Equal(r.State.Food, int.Parse(imported.Args[0]));
-        Assert.Equal(r.State.Food - before, r.Why.Where(w => w.System == "economy" && w.Target == "food").Sum(w => w.Delta));
+        Assert.Equal(300, r.State.Food);
+        var line = Assert.Single(r.Why, w => w.Key == CauseKeys.FoodImported);
+        Assert.Equal(("economy", "food", 150.0), (line.System, line.Target, line.Delta));
+        Assert.Equal(new[] { "300" }, line.Args);
+        Assert.Equal(r.State.Food - 150, r.Why.Where(w => w.System == "economy" && w.Target == "food").Sum(w => w.Delta));
+    }
+
+    // #2527: a steady turn (the stock already at its cover) nets to nothing, so no line is invented.
+    [Fact]
+    public void ASteadyTurnAddsNoImportLine()
+    {
+        var c = Gdd();
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var r = StepWithWhy(c, s);
+        Assert.Equal(300, r.State.Food);
+        Assert.DoesNotContain(r.Why, w => w.Key == CauseKeys.FoodImported);
     }
 
     // R-FOOD-002 (Q-POOL-4: the fx crisis cuts the imports, not food_supply directly)

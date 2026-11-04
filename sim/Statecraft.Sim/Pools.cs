@@ -122,9 +122,11 @@ namespace Statecraft.Sim
             var target = (long)r.CoverMonths!.Value * need;
             if (s.Food < target)
             {
-                var imported = target - s.Food;
+                var before = s.Food + eaten;    // the stock on entry: the line nets the eating and the import, so the Food row's lines add up to its change (#2527)
                 s.Food = (int)target;
-                why.Add(new Cause("economy", "food", imported, FormattableString.Invariant($"Food imported: the stock rose to {s.Food} units"), key: CauseKeys.FoodImported, args: new[] { CauseKeys.Number(s.Food) }));
+                var net = s.Food - before;
+                if (net != 0)
+                    why.Add(new Cause("economy", "food", net, FormattableString.Invariant($"The month's eating and Food imports brought the stock to {s.Food} units"), key: CauseKeys.FoodImported, args: new[] { CauseKeys.Number(s.Food) }));
             }
         }
 
