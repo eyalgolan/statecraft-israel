@@ -66,7 +66,9 @@ public class CauseKeysTests
     [Fact]
     public void TheValuesAreTheNumbersTheLineNames()
     {
-        foreach (var w in Run(Real, 1000).Where(w => w.Key != ""))
+        var keyed = Run(Real, 1000).Where(w => w.Key != "").ToList();
+        Assert.NotEmpty(keyed);   // the loop below must check something (#2593)
+        foreach (var w in keyed)
             switch (w.Key)
             {
                 case CauseKeys.MoneyFlows:

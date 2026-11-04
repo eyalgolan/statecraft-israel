@@ -645,7 +645,9 @@ variants:
     public void TheHistoricalRunShowsNoVariant()
     {
         var end = GoldenRun.PlayToEnd(Real);
-        foreach (var e in Real.Events.Where(x => x.Variants.Count > 0))
+        var withVariants = Real.Events.Where(x => x.Variants.Count > 0).ToList();
+        Assert.NotEmpty(withVariants);   // the loop below must check something (#2593)
+        foreach (var e in withVariants)
             Assert.Null(Timeline.Variant(Real, end, e));
     }
 
@@ -653,7 +655,9 @@ variants:
     [Fact]
     public void EveryVariantShowsWhenItsRoadIsTaken()
     {
-        foreach (var e in Real.Events.Where(x => x.Variants.Count > 0))
+        var withVariants = Real.Events.Where(x => x.Variants.Count > 0).ToList();
+        Assert.NotEmpty(withVariants);   // the loop below must check something (#2593)
+        foreach (var e in withVariants)
             for (int i = 0; i < e.Variants.Count; i++)
             {
                 var road = AltRun.RoadTo(Real, new GameEvent { Id = e.Id, Requires = e.Variants[i].When });
@@ -669,7 +673,9 @@ variants:
     [Fact]
     public void EveryConsequenceCardFiresWhenItsRoadIsTaken()
     {
-        foreach (var e in Real.Events.Where(x => x.Kind == EventKinds.Consequence))
+        var consequenceCards = Real.Events.Where(x => x.Kind == EventKinds.Consequence).ToList();
+        Assert.NotEmpty(consequenceCards);   // the loop below must check something (#2593)
+        foreach (var e in consequenceCards)
         {
             var forced = AltRun.RoadTo(Real, e);
             var run = AltRun.Play(Real, forced);

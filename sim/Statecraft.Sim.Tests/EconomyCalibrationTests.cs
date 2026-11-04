@@ -81,7 +81,9 @@ public class EconomyCalibrationTests
     [Fact]
     public void ExportsCoverUnderAThirdOfImportsIn1950And1951()
     {
-        foreach (var s in History.Where(s => s.Date.Year == 1950 || s.Date.Year == 1951))
+        var fifties = History.Where(s => s.Date.Year == 1950 || s.Date.Year == 1951).ToList();
+        Assert.NotEmpty(fifties);   // the reference run must actually reach 1950-51 for this check (#2593)
+        foreach (var s in fifties)
         {
             var ratio = C.Rules.ExportsPerYear / (C.Rules.ImportsPerCapitaPerYear * s.TotalPopulation);
             Assert.True(ratio < 1.0 / 3, $"[consistency: exports and imports were chosen to satisfy this] {s.Date:yyyy-MM-dd}: exports cover {ratio:P0} of imports");
