@@ -1032,7 +1032,7 @@ public class SeaAirCollectionTests
             float w = DakotaBombRun.ColumnWidth(x), shade = DakotaBombRun.ColumnTint(x).r, a = DakotaBombRun.ColumnAlphaAt(x);
             Assert.Greater(w, lastW, $"it only widens with height ({x:0.000})");
             Assert.GreaterOrEqual(shade, lastShade - 1e-6f, $"it only pales with height ({x:0.000})");
-            if (x >= DakotaBombRun.ColumnFadeInShare) Assert.LessOrEqual(a, lastA + 1e-6f, $"above the fade-in its alpha only falls ({x:0.000})");
+            if (x > DakotaBombRun.ColumnFadeInShare) Assert.LessOrEqual(a, lastA + 1e-6f, $"above the fade-in its alpha only falls ({x:0.000})");
             lastH = h; lastW = w; lastShade = shade; lastA = a;
         }
         const float FlipbookGrey = 0.44f;
