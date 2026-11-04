@@ -38,7 +38,7 @@ public class RemainingCauseKeysTests
         yield return new object[] { "Projects.cs", "ProjectCompleted", "new Cause(\"city\", p.City, 1, $\"{PlayerText.Settlement(c, p.City)}: {k.Name} was finished\"" };
         yield return new object[] { "Pools.cs", "ArmsBought", "new Cause(\"economy\", \"arms\", count, FormattableString.Invariant($\"Bought {count} Arms, cost {PlayerText.Money(c, \"treasury\", cost)}\")" };
         yield return new object[] { "Pools.cs", "FoodHarvest", "new Cause(\"economy\", \"food\", yield, FormattableString.Invariant($\"{f.Name}: the plowed land yielded {yield} units of Food\")" };
-        yield return new object[] { "Pools.cs", "FoodShortage", "new Cause(\"economy\", \"food\", -s.FoodUnmet, FormattableString.Invariant($\"Food ran out: {s.FoodUnmet} of {need} units of the month's need went unmet\")" };
+        yield return new object[] { "Pools.cs", "FoodShortage", "new Cause(\"economy\", \"food\", 0, FormattableString.Invariant($\"Food ran out: {s.FoodUnmet} of {need} units of the month's need went unmet\")" };
         yield return new object[] { "Pools.cs", "FoodWithoutImports", "new Cause(\"economy\", \"food\", -eaten, FormattableString.Invariant($\"No Food imported (foreign currency crisis): the stock fell to {s.Food} units\")" };
         yield return new object[] { "Prisoners.cs", "PrisonerFood", "new Cause(\"economy\", \"food\", -eaten, FormattableString.Invariant($\"The prisoners held ate {eaten} units of Food\")" };
         yield return new object[] { "Prisoners.cs", "PrisonerFoodShortage", "new Cause(\"economy\", \"morale\", change, FormattableString.Invariant($\"The prisoners held went short of {unfed} units of Food: {PlayerText.Change(c, \"morale\", change)}\")" };
