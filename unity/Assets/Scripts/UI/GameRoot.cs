@@ -1160,11 +1160,12 @@ namespace Statecraft.Game.UI
                     && capture?.Escape() != true && card?.Escape() != true && card?.CollapsedThisFrame != true)
                     info?.Escape();
             }
-            // PageUp, PageDown, Home and End, with no modifier, scroll the open screen or the open card's text, with or without
-            // focus (KeyScroll; accessibility audit H3), but not under an End Turn outcome clip, which covers them. The arrows
-            // stay with the camera (NavigationGuard, B6).
+            // PageUp, PageDown, Home and End, with no modifier, scroll the topmost open view (the ending, the turn report, a
+            // screen, the card's text, the capture dialog or the info panel), with or without focus (KeyScroll; accessibility
+            // audit H3, K6), but not under an End Turn outcome clip, which covers them. The arrows stay with the camera
+            // (NavigationGuard, B6).
             var keys = UnityEngine.InputSystem.Keyboard.current;
-            if (keys != null && outcomes?.Showing == null && report?.IsOpen != true && end?.IsOpen != true && !(keys.ctrlKey.isPressed || keys.altKey.isPressed || keys.shiftKey.isPressed || keys.leftMetaKey.isPressed || keys.rightMetaKey.isPressed))
+            if (keys != null && outcomes?.Showing == null && !(keys.ctrlKey.isPressed || keys.altKey.isPressed || keys.shiftKey.isPressed || keys.leftMetaKey.isPressed || keys.rightMetaKey.isPressed))
             {
                 KeyScroll.Key? page = keys.pageUpKey.wasPressedThisFrame ? KeyScroll.Key.PageUp : keys.pageDownKey.wasPressedThisFrame ? KeyScroll.Key.PageDown
                     : keys.homeKey.wasPressedThisFrame ? KeyScroll.Key.Home : keys.endKey.wasPressedThisFrame ? KeyScroll.Key.End : (KeyScroll.Key?)null;
