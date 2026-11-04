@@ -144,6 +144,9 @@ namespace Statecraft.Game.UI
         readonly Label? exhaustedLine;
         public const float ExhaustedPx = 13f;
         float exhaustedSize = ExhaustedPx;
+        /// <summary>The room before a change that its up or down mark takes (Statecraft.uss .meter-delta.delta-up, 9 px).</summary>
+        public const float ChangeMarkPadPx = 9f;
+        readonly List<Label> deltas = new List<Label>();
         /// <summary>The plate's padding while the floor raises its text (the stylesheet's is 2 px top and bottom, 10-12 at the
         /// sides): PlateSidePx at both sides keeps every line at least 0 px from the 18 px corner zones (TopBarTests), each the
         /// corner scrolls' reach (about 14 px in) plus 4, and PlateEdgePx at the top and bottom keeps it inside the frame's
@@ -232,6 +235,7 @@ namespace Statecraft.Game.UI
                 var meter = root.Q<VisualElement>("meter-" + id); var caption = text["hud.caption." + id];
                 meter.Q<Label>(className: "meter-name").text = caption;   // the bar shows the words its tooltip says
                 said[id] = (meter, caption);
+                var delta = root.Q<Label>(id + "-delta"); delta.generateVisualContent += PaintChange; deltas.Add(delta);
             }
             if (root.Q(MeterTip.TipName) != null) meterTip = new MeterTip(root, bridge, text, said.Values.Select(x => x.element));
             // The text floor: checked now and twice a second, since a window resized at the same shape changes the panel's
@@ -274,6 +278,7 @@ namespace Statecraft.Game.UI
             if (exhaustedLine != null) { exhaustedLine.style.fontSize = StyleKeyword.Null; exhaustedLine.style.whiteSpace = StyleKeyword.Null; }
             if (dateRow != null) { dateRow.style.flexDirection = StyleKeyword.Null; if (dateRow.parent != null) PadPlate(dateRow.parent, false); }
             bridge.Changed -= Render; endTurn.clicked -= onEndTurn; endTurn.generateVisualContent -= PaintHourglass;
+            foreach (var d in deltas) d.generateVisualContent -= PaintChange;
             bar.UnregisterCallback<GeometryChangedEvent>(OnBarGeometry);
             hudRoot.UnregisterCallback(onRootGeometry);
             root.Q(className: "hemicycle-box")?.UnregisterCallback<GeometryChangedEvent>(OnCabinetGeometry);
@@ -706,6 +711,24 @@ namespace Statecraft.Game.UI
             if (!m.visualElement.enabledInHierarchy) return;   // no bright sign on a disabled End Turn (game over)
             UiIcon.Paint(m, "hourglass", new UnityEngine.Rect(UiLanguage.Within(m.visualElement) ? m.visualElement.layout.width - 32f : 10f,
                 (m.visualElement.layout.height - 22f) / 2f, 22f, 22f), UiIcon.IsFocused(m.visualElement));   // the right side in Hebrew (#193)
+        }
+
+        /// <summary>L1 (#2340): a change's direction is not told by green and red alone, which deuteranopia cannot tell apart. A
+        /// small triangle in the change's own colour points up for a rise and down for a fall, in the room the stylesheet keeps
+        /// before the change (ChangeMarkPadPx; the right side in the mirrored Hebrew bar). Painted, as the hourglass is, because
+        /// the Hebrew face (Frank Ruhl Libre) has no arrow glyph.</summary>
+        static void PaintChange(MeshGenerationContext m)
+        {
+            var e = m.visualElement; bool up = e.ClassListContains("delta-up");
+            if (!up && !e.ClassListContains("delta-down")) return;
+            float w = UnityEngine.Mathf.Min(ChangeMarkPadPx - 2f, e.resolvedStyle.fontSize * 0.55f), h = w * 0.9f;
+            float cx = UiLanguage.Within(e) ? e.layout.width - 1f - w / 2f : 1f + w / 2f, cy = e.layout.height / 2f, tip = up ? -h / 2f : h / 2f;
+            var p = m.painter2D;   // tip: the point's offset from the middle line, up (negative) for a rise; the base is opposite
+            p.fillColor = e.resolvedStyle.color;
+            p.BeginPath();
+            p.MoveTo(new UnityEngine.Vector2(cx - w / 2f, cy - tip)); p.LineTo(new UnityEngine.Vector2(cx + w / 2f, cy - tip)); p.LineTo(new UnityEngine.Vector2(cx, cy + tip));
+            p.ClosePath();
+            p.Fill();
         }
 
         void Set(string name, string value) => root.Q<Label>(name).text = value;
