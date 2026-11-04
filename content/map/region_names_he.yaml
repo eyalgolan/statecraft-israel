@@ -492,3 +492,99 @@ names:
       - url: "https://content.ecf.org.il/files/M00209_ModusVivenditotheEgyptian-IsraeliGeneralArmistice-EnglishText_0.pdf"
         checked: 2026-10-27
         cite: "MV-EN, UN document S/1471, 17 March 1950, modus vivendi signed at El Auja on 22 February 1950 (ECF copy), Article I: Egypt-Israel General Armistice Agreement signed at Rhodes on 24 February 1949; supports the caption year 1949. Evidence (the URL above) checked by a coordinator agent, accessed 2026-10-27; not independently retrieved by the caption author. Owner approval recorded at https://github.com/eyalgolan/statecraft-israel/pull/1965#issuecomment-6535421241. Signed-map check approved by the owner, 31 October 2026; native Hebrew wording approved by the owner, 27 October 2026."
+  - key: zone.syria_dmz_north.name
+    name: "Demilitarized Zone (Syria-Israel), northern part: Banias and Tell el Qadi"
+    name_he: "אזור מפורז (סוריה-ישראל), החלק הצפוני: בניאס ותל אל־קדי"
+    name_he_review: agent-checked
+    name_he_sources:
+      - url: "https://www.gov.il/BlobFolder/dynamiccollectorresultitem/translation-of-international-treaties-db11/he/translation-of-international-treaties-db_%D7%9B%D7%A8%D7%9A%20%D7%90%27-%20%D7%94%D7%A1%D7%9B%D7%9D%20%D7%99%D7%A9%D7%A8%D7%90%D7%9C-%20%D7%A1%D7%95%D7%A8%D7%99%D7%94%20%D7%A2%D7%9C%20%D7%A9%D7%91%D7%99%D7%AA%D7%AA%20%D7%A0%D7%A9%D7%A7%20%D7%9B%D7%9C%D7%9C%D7%99%D7%AA.pdf"
+        checked: 2026-11-05
+        cite: "Hebrew Israel-Syria agreement (already cited in this file), Article V's demilitarized-zone wording; the sector noun phrases render the English caption's Banias/Tell el Qadi part designation. Agent-checked (AI-assisted contributor, #564 disclosure); pending a native reader."
+  - key: zone.syria_dmz_south.name
+    name: "Demilitarized Zone (Syria-Israel), southern part: Ein Gev and El Hamma"
+    name_he: "אזור מפורז (סוריה-ישראל), החלק הדרומי: עין גב ואל־חמה"
+    name_he_review: agent-checked
+    name_he_sources:
+      - url: "https://www.gov.il/BlobFolder/dynamiccollectorresultitem/translation-of-international-treaties-db11/he/translation-of-international-treaties-db_%D7%9B%D7%A8%D7%9A%20%D7%90%27-%20%D7%94%D7%A1%D7%9B%D7%9D%20%D7%99%D7%A9%D7%A8%D7%90%D7%9C-%20%D7%A1%D7%95%D7%A8%D7%99%D7%94%20%D7%A2%D7%9C%20%D7%A9%D7%91%D7%99%D7%AA%D7%AA%20%D7%A0%D7%A9%D7%A7%20%D7%9B%D7%9C%D7%9C%D7%99%D7%AA.pdf"
+        checked: 2026-11-05
+        cite: "Hebrew Israel-Syria agreement (already cited), Article V demilitarized-zone wording; Ein Gev and El Hamma are the southern sector's named sites. Agent-checked (AI-assisted contributor); pending a native reader."
+  - key: line.egypt_mv1950_demarcation.name
+    name: "Demarcation line as drawn on the signed 1950 modus vivendi map (Gaza-Rafah area)"
+    name_he: "קו ההיפרדות כפי שצויר במפת המודוס ויוונדי החתומה של 1950 (אזור עזה־רפיח)"
+    name_he_review: agent-checked
+    name_he_sources:
+      - url: "https://content.ecf.org.il/files/M00209_ModusVivenditotheEgyptian-IsraeliGeneralArmistice-EnglishText_0.pdf"
+        checked: 2026-11-05
+        cite: "MV-EN, UN S/1471 (already cited in this file) for the 1950 modus vivendi context; the caption is an editorial composition for the signed map's demarcation line, following the Hebrew treaty style of the neighbouring entries. Agent-checked (AI-assisted contributor); pending a native reader."
+  - key: line.egypt_mv1950_zone_lines.name
+    name: "Zone A and zone C lines of the 1950 modus vivendi (Gaza-Rafah area)"
+    name_he: "קווי אזור A ואזור C של המודוס ויוונדי של 1950 (אזור עזה־רפיח)"
+    name_he_review: agent-checked
+    name_he_sources:
+      - url: "https://content.ecf.org.il/files/M00209_ModusVivenditotheEgyptian-IsraeliGeneralArmistice-EnglishText_0.pdf"
+        checked: 2026-11-05
+        cite: "MV-EN, UN S/1471 (already cited): the modus vivendi defines zone A and zone C; the caption renders the two zone lines' designation. Agent-checked (AI-assisted contributor); pending a native reader."
+  - key: line.jordan_adl_iraqi_c_east.name
+    name: "Armistice Demarcation Line (Jordan-Israel), line A, Zubeiba to the Jordan (Art. VI.3(c), by 17 July 1949)"
+    name_he: "קו שביתת הנשק (ירדן-ישראל), קו א׳: מצובייבה עד הירדן"
+    name_he_review: agent-checked
+    name_he_sources:
+      - url: "https://content.ecf.org.il/files/M00204_TheArmisticeAgreementBetweenJordanandIsrael-HebrewText_0.pdf"
+        checked: 2026-11-05
+        cite: "Hebrew Jordan-Israel agreement (already cited in this file), Article VI's א״ת קו א׳ sector wording; the sector renders the English caption's Zubeiba-to-the-Jordan segment. Agent-checked (AI-assisted contributor); pending a native reader."
+  - key: line.jordan_adl_iraqi_b_wadi_ara.name
+    name: "Armistice Demarcation Line (Jordan-Israel), line A, Wadi Ara, Zubeiba to Baqa (Art. VI.3(b), by 22 May 1949)"
+    name_he: "קו שביתת הנשק (ירדן-ישראל), קו א׳: ואדי עארה, מצובייבה עד באקה"
+    name_he_review: agent-checked
+    name_he_sources:
+      - url: "https://content.ecf.org.il/files/M00204_TheArmisticeAgreementBetweenJordanandIsrael-HebrewText_0.pdf"
+        checked: 2026-11-05
+        cite: "Hebrew Jordan-Israel agreement (already cited), Article VI line-A sectors; Wadi Ara renders ואדי עארה. Agent-checked (AI-assisted contributor); pending a native reader."
+  - key: line.jordan_adl_iraqi_a_triangle.name
+    name: "Armistice Demarcation Line (Jordan-Israel), line A, Baqa to Kafr Qasim (Art. VI.3(a), by 8 May 1949)"
+    name_he: "קו שביתת הנשק (ירדן-ישראל), קו א׳: מבאקה עד כפר קאסם"
+    name_he_review: agent-checked
+    name_he_sources:
+      - url: "https://content.ecf.org.il/files/M00204_TheArmisticeAgreementBetweenJordanandIsrael-HebrewText_0.pdf"
+        checked: 2026-11-05
+        cite: "Hebrew Jordan-Israel agreement (already cited), Article VI line-A sectors; the triangle segment renders Baqa to Kafr Qasim. Agent-checked (AI-assisted contributor); pending a native reader."
+  - key: line.jordan_adl_iraqi_c_south.name
+    name: "Armistice Demarcation Line (Jordan-Israel), line A, Kafr Qasim to Kh Deir Arab (Art. VI.3(c), by 17 July 1949)"
+    name_he: "קו שביתת הנשק (ירדן-ישראל), קו א׳: מכפר קאסם עד ח׳ דיר ערב"
+    name_he_review: agent-checked
+    name_he_sources:
+      - url: "https://content.ecf.org.il/files/M00204_TheArmisticeAgreementBetweenJordanandIsrael-HebrewText_0.pdf"
+        checked: 2026-11-05
+        cite: "Hebrew Jordan-Israel agreement (already cited), Article VI line-A sectors; Kh Deir Arab renders ח׳ דיר ערב. Agent-checked (AI-assisted contributor); pending a native reader."
+  - key: line.jordan_adl_a_latrun.name
+    name: "Armistice Demarcation Line (Jordan-Israel), Kh Deir Arab to Jerusalem (Latrun)"
+    name_he: "קו שביתת הנשק (ירדן-ישראל): מח׳ דיר ערב עד ירושלים (לטרון)"
+    name_he_review: agent-checked
+    name_he_sources:
+      - url: "https://content.ecf.org.il/files/M00204_TheArmisticeAgreementBetweenJordanandIsrael-HebrewText_0.pdf"
+        checked: 2026-11-05
+        cite: "Hebrew Jordan-Israel agreement (already cited), Article VI; Latrun renders לטרון. Agent-checked (AI-assisted contributor); pending a native reader."
+  - key: line.jordan_adl_bc_south.name
+    name: "Armistice Demarcation Line (Jordan-Israel), Jerusalem to the Dead Sea (line B, Hebron-Dead Sea)"
+    name_he: "קו שביתת הנשק (ירדן-ישראל): מירושלים עד ים המלח (קו ב׳, חברון־ים המלח)"
+    name_he_review: agent-checked
+    name_he_sources:
+      - url: "https://content.ecf.org.il/files/M00204_TheArmisticeAgreementBetweenJordanandIsrael-HebrewText_0.pdf"
+        checked: 2026-11-05
+        cite: "Hebrew Jordan-Israel agreement (already cited), Article VI line-B sectors; Hebron-Dead Sea renders חברון־ים המלח. Agent-checked (AI-assisted contributor); pending a native reader."
+  - key: line.jordan_adl_d_arava.name
+    name: "Armistice Demarcation Line (Jordan-Israel), the Dead Sea to the Gulf of Aqaba"
+    name_he: "קו שביתת הנשק (ירדן-ישראל): מים המלח עד מפרץ אילת"
+    name_he_review: agent-checked
+    name_he_sources:
+      - url: "https://content.ecf.org.il/files/M00204_TheArmisticeAgreementBetweenJordanandIsrael-HebrewText_0.pdf"
+        checked: 2026-11-05
+        cite: "Hebrew Jordan-Israel agreement (already cited), Article VI; the Arava segment runs Dead Sea to the Gulf of Aqaba (מפרץ אילת, the modern Hebrew name). Agent-checked (AI-assisted contributor); pending a native reader."
+  - key: outside.name
+    name: "Outside Mandatory Palestine"
+    name_he: "מחוץ לפלשתינה (א״י)"
+    name_he_review: agent-checked
+    name_he_sources:
+      - url: "https://he.wikipedia.org/wiki/שביתת_הנשק_הכללית"
+        checked: 2026-11-05
+        cite: "The standard Hebrew short form for Mandatory Palestine, פלשתינה (א״י), with the typographic gershayim per HE-06. Agent-checked (AI-assisted contributor); pending a native reader."
