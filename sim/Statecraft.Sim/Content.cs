@@ -248,7 +248,9 @@ namespace Statecraft.Sim
         public List<OfficeTerm> Offices { get; set; } = new List<OfficeTerm>();
         public string Status { get; set; } = "draft";
         /// <summary>The person who signed this row off: a GitHub handle, written only by that person (owner, 15 October 2026,
-        /// #375: "Yes, humans only"; scripts/oss/reviewed_by_guard.py). Empty when no one has; with <see cref="ReviewedOn"/>.</summary>
+        /// #375: "Yes, humans only"); an AI-assisted contributor's source check counts when the pull request discloses the AI
+        /// help (owner, 4 November 2026: "Yes, it counts", #2481 comment 6623108295; scripts/oss/reviewed_by_guard.py). Empty
+        /// when no one has; with <see cref="ReviewedOn"/>.</summary>
         public string ReviewedBy { get => reviewedBy ?? ""; set => reviewedBy = value ?? ""; }
         /// <summary>True when the file has the key at all, even blank: a blank sign-off is an error.</summary>
         [YamlIgnore] public bool ReviewedByGiven => reviewedBy != null;
@@ -285,7 +287,9 @@ namespace Statecraft.Sim
         public List<Source> Sources { get; set; } = new List<Source>();
         public string Status { get; set; } = "draft";
         /// <summary>The person who signed this row off: a GitHub handle, written only by that person (owner, 15 October 2026,
-        /// #375: "Yes, humans only"; scripts/oss/reviewed_by_guard.py). Empty when no one has; with <see cref="ReviewedOn"/>.</summary>
+        /// #375: "Yes, humans only"); an AI-assisted contributor's source check counts when the pull request discloses the AI
+        /// help (owner, 4 November 2026: "Yes, it counts", #2481 comment 6623108295; scripts/oss/reviewed_by_guard.py). Empty
+        /// when no one has; with <see cref="ReviewedOn"/>.</summary>
         public string ReviewedBy { get => reviewedBy ?? ""; set => reviewedBy = value ?? ""; }
         /// <summary>True when the file has the key at all, even blank: a blank sign-off is an error.</summary>
         [YamlIgnore] public bool ReviewedByGiven => reviewedBy != null;
@@ -321,7 +325,9 @@ namespace Statecraft.Sim
         public List<Source> Sources { get; set; } = new List<Source>();
         public string Status { get; set; } = "draft";
         /// <summary>The person who signed this row off: a GitHub handle, written only by that person (owner, 15 October 2026,
-        /// #375: "Yes, humans only"; scripts/oss/reviewed_by_guard.py). Empty when no one has; with <see cref="ReviewedOn"/>.</summary>
+        /// #375: "Yes, humans only"); an AI-assisted contributor's source check counts when the pull request discloses the AI
+        /// help (owner, 4 November 2026: "Yes, it counts", #2481 comment 6623108295; scripts/oss/reviewed_by_guard.py). Empty
+        /// when no one has; with <see cref="ReviewedOn"/>.</summary>
         public string ReviewedBy { get => reviewedBy ?? ""; set => reviewedBy = value ?? ""; }
         /// <summary>True when the file has the key at all, even blank: a blank sign-off is an error.</summary>
         [YamlIgnore] public bool ReviewedByGiven => reviewedBy != null;
@@ -767,7 +773,9 @@ namespace Statecraft.Sim
         public List<Source> Sources { get; set; } = new List<Source>();
         public string Status { get; set; } = "";
         /// <summary>The person who signed this row off: a GitHub handle, written only by that person (owner, 15 October 2026,
-        /// #375: "Yes, humans only"; scripts/oss/reviewed_by_guard.py). Empty when no one has; with <see cref="ReviewedOn"/>.</summary>
+        /// #375: "Yes, humans only"); an AI-assisted contributor's source check counts when the pull request discloses the AI
+        /// help (owner, 4 November 2026: "Yes, it counts", #2481 comment 6623108295; scripts/oss/reviewed_by_guard.py). Empty
+        /// when no one has; with <see cref="ReviewedOn"/>.</summary>
         public string ReviewedBy { get => reviewedBy ?? ""; set => reviewedBy = value ?? ""; }
         /// <summary>True when the file has the key at all, even blank: a blank sign-off is an error.</summary>
         [YamlIgnore] public bool ReviewedByGiven => reviewedBy != null;
@@ -798,7 +806,9 @@ namespace Statecraft.Sim
         public List<Source> Sources { get; set; } = new List<Source>();
         public string Status { get; set; } = "";
         /// <summary>The person who signed this row off: a GitHub handle, written only by that person (owner, 15 October 2026,
-        /// #375: "Yes, humans only"; scripts/oss/reviewed_by_guard.py). Empty when no one has; with <see cref="ReviewedOn"/>.</summary>
+        /// #375: "Yes, humans only"); an AI-assisted contributor's source check counts when the pull request discloses the AI
+        /// help (owner, 4 November 2026: "Yes, it counts", #2481 comment 6623108295; scripts/oss/reviewed_by_guard.py). Empty
+        /// when no one has; with <see cref="ReviewedOn"/>.</summary>
         public string ReviewedBy { get => reviewedBy ?? ""; set => reviewedBy = value ?? ""; }
         /// <summary>True when the file has the key at all, even blank: a blank sign-off is an error.</summary>
         [YamlIgnore] public bool ReviewedByGiven => reviewedBy != null;
@@ -968,7 +978,9 @@ namespace Statecraft.Sim
         public List<Source> Sources { get; set; } = new List<Source>();
         public string Status { get; set; } = "draft";
         /// <summary>The person who signed this row off: a GitHub handle, written only by that person (owner, 15 October 2026,
-        /// #375: "Yes, humans only"; scripts/oss/reviewed_by_guard.py). Empty when no one has; with <see cref="ReviewedOn"/>.</summary>
+        /// #375: "Yes, humans only"); an AI-assisted contributor's source check counts when the pull request discloses the AI
+        /// help (owner, 4 November 2026: "Yes, it counts", #2481 comment 6623108295; scripts/oss/reviewed_by_guard.py). Empty
+        /// when no one has; with <see cref="ReviewedOn"/>.</summary>
         public string ReviewedBy { get => reviewedBy ?? ""; set => reviewedBy = value ?? ""; }
         /// <summary>True when the file has the key at all, even blank: a blank sign-off is an error.</summary>
         [YamlIgnore] public bool ReviewedByGiven => reviewedBy != null;
@@ -989,7 +1001,9 @@ namespace Statecraft.Sim
         public List<Source> Sources { get; set; } = new List<Source>();
         public string Status { get; set; } = "draft";
         /// <summary>The person who signed this row off: a GitHub handle, written only by that person (owner, 15 October 2026,
-        /// #375: "Yes, humans only"; scripts/oss/reviewed_by_guard.py). Empty when no one has; with <see cref="ReviewedOn"/>.</summary>
+        /// #375: "Yes, humans only"); an AI-assisted contributor's source check counts when the pull request discloses the AI
+        /// help (owner, 4 November 2026: "Yes, it counts", #2481 comment 6623108295; scripts/oss/reviewed_by_guard.py). Empty
+        /// when no one has; with <see cref="ReviewedOn"/>.</summary>
         public string ReviewedBy { get => reviewedBy ?? ""; set => reviewedBy = value ?? ""; }
         /// <summary>True when the file has the key at all, even blank: a blank sign-off is an error.</summary>
         [YamlIgnore] public bool ReviewedByGiven => reviewedBy != null;
@@ -1132,7 +1146,9 @@ namespace Statecraft.Sim
         public List<Source> Sources { get; set; } = new List<Source>();
         public string Status { get; set; } = "draft";
         /// <summary>The person who signed this row off: a GitHub handle, written only by that person (owner, 15 October 2026,
-        /// #375: "Yes, humans only"; scripts/oss/reviewed_by_guard.py). Empty when no one has; with <see cref="ReviewedOn"/>.</summary>
+        /// #375: "Yes, humans only"); an AI-assisted contributor's source check counts when the pull request discloses the AI
+        /// help (owner, 4 November 2026: "Yes, it counts", #2481 comment 6623108295; scripts/oss/reviewed_by_guard.py). Empty
+        /// when no one has; with <see cref="ReviewedOn"/>.</summary>
         public string ReviewedBy { get => reviewedBy ?? ""; set => reviewedBy = value ?? ""; }
         /// <summary>True when the file has the key at all, even blank: a blank sign-off is an error.</summary>
         [YamlIgnore] public bool ReviewedByGiven => reviewedBy != null;

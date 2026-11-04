@@ -1,7 +1,9 @@
-"""A person's sign-off beside a status (owner, 15 October 2026, #375: "Yes, humans only"): `reviewed_by`, the reviewer's
-GitHub handle, and `reviewed_on`, the day, both or neither. The Python side of Statecraft.Sim.ReviewRecord (the same
-rules): the tools that read status rows check it, and tools/review_queue.py leaves a signed-off row out of the queue.
-Only a person writes these keys; scripts/oss/reviewed_by_guard.py refuses an AI-co-authored commit that touches them."""
+"""A person's sign-off beside a status (owner, 15 October 2026, #375: "Yes, humans only"; an AI-assisted contributor's
+source check counts when the pull request discloses the AI help, owner, 4 November 2026: "Yes, it counts", #2481 comment
+6623108295): `reviewed_by`, the reviewer's GitHub handle, and `reviewed_on`, the day, both or neither. The Python side of
+Statecraft.Sim.ReviewRecord (the same rules): the tools that read status rows check it, and tools/review_queue.py leaves
+a signed-off row out of the queue. Only a person writes these keys, or an AI-assisted contributor whose pull request
+discloses the AI help; scripts/oss/reviewed_by_guard.py refuses any other AI-co-authored commit that touches them."""
 from __future__ import annotations
 
 import datetime
