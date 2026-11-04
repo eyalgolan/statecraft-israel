@@ -53,9 +53,11 @@ schema too, or that test fails. Keep the comment when you copy a file.
 
 ### id, title, text and placeholders
 
-Never type a real person's name into `title`, `text` or an option's `text`. Write an office id in braces, such as
-`{prime_minister}`, and the game replaces it with whoever holds that office on the day the event fires (and with the
-player's own appointment, if the player changed the cabinet). In the example, `{prime_minister} must decide.` becomes
+Never type the name of a game office's holder into `title`, `text` or an option's `text` — the player can appoint
+someone else. Write an office id in braces, such as `{prime_minister}`, and the game replaces it with whoever holds
+that office on the day the event fires (and with the player's own appointment, if the player changed the cabinet).
+Naming a historical figure who holds no game office during the card's window (e.g. Bernadotte, Begin) is fine: no
+placeholder can ever resolve to them. In the example, `{prime_minister} must decide.` becomes
 the name of the Prime Minister on the day. Office ids are in `content/offices.yaml`; who held them is in
 `content/people.yaml`.
 
