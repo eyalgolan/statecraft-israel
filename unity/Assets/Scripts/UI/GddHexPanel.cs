@@ -21,8 +21,8 @@ namespace Statecraft.Game.UI
     /// day it was finished (R-PROJ-001 to R-PROJ-003); under gdd-0.3, on a built arms workshop, its staffing and cycle (#1722,
     /// R-ARMS-005 to R-ARMS-007).</para>
     /// <para>Every number is the sim's, and every order goes through the bridge's queue: the sim rules on it when the turn
-    /// runs. No rule lives here: the limits are the sim's public helpers (Cities.MaxWorkers, Training.Available, Workshops.Check), asked with
-    /// the queue, and a button is disabled only where the sim would refuse that order, or another one in the queue, anyway.</para></summary>
+    /// runs. No rule lives here: the limits are the sim's public helpers (Cities.MaxWorkers, Training.Available, Workshops.Check) and
+    /// Simulation.Preview, asked with the queue; a button is disabled only where the sim would refuse that order, or another one in the queue, anyway.</para></summary>
     public static class GddHexPanel
     {
         public const string HostName = "info-gdd";
@@ -133,9 +133,8 @@ namespace Statecraft.Game.UI
                 : text.Format("city.workers_ordered", Groups(text, target)));
 
             // Train, for each facility the city has (Training.HasFacility: its own, D-D5, or a built camp site's, R-CAMP-001):
-            // each press orders one more group; R-TRAIN-001 takes only civilians without work, and the sim counts every track's
-            // order and the Assign order in the queue against them.
-            var free = Training.Available(s, id, bridge.Queued);
+            // each press orders one more group. The exact preview below applies R-TRAIN-001's idle-civilian limit after any
+            // earlier rejected, state-neutral orders, as End turn does; Training.Available counts every queued order instead.
             foreach (var type in c.UnitTypes.Where(t => t.Facility != "" && Training.HasFacility(c, s, id, t.Facility)))
             {
                 var old = bridge.QueuedLike(new Train(id, type.Id, 1));
@@ -154,7 +153,7 @@ namespace Statecraft.Game.UI
                 var row = Row(host, $"city-train-{type.Id}-row");
                 Button(row, "city-train-" + type.Id, text.Format("city.train_" + type.Id, PlayerText.Money(c, "treasury", type.TrainingCost), Turns(text, type.TrainingTurns)),
                     () => bridge.Queue(new Train(id, type.Id, ordered + 1)))
-                    .SetEnabled(free >= 1 && accepted);
+                    .SetEnabled(accepted);
                 if (ordered > 0) Line(row, $"city-train-{type.Id}-ordered", text.Format("city.train_ordered", ordered));
             }
 

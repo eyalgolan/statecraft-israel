@@ -290,7 +290,7 @@ public class CityProjectPanelTests
         finally { C.ProjectKinds.Remove(winery); }
     }
 
-    // Red-first prediction at 085944e62: ReasonText falls through to the sim's English sentence in the Hebrew panel.
+    // Red-first prediction at 085944e62: the first failure is the missing info.map_action_reason.depopulated text key.
     [Test]
     public void TheDepopulatedReasonShowsInThePanelsLanguage([Values] bool hebrew)
     {

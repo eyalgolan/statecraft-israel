@@ -289,6 +289,16 @@ public class CityPanelTests
     /// <summary>R-ARMS-003: the Arms one recruit group takes when its training starts (mvp.arms_per_recruit_group).</summary>
     static int RecruitGroupArms(GameState s) => C.RulesAt(s.Date).Mvp!.ArmsPerRecruitGroup!.Value;
 
+    static void NearDebtCeilingForArmsPurchase(GameState s, int purchaseArms)
+    {
+        var m = C.RulesAt(s.Date).Mvp!;
+        var convertedMoney = m.DollarsPerTurn!.Value * m.IlPerDollarOn(s.Date);
+        s.Arms = RecruitGroupArms(s) - 1;
+        s.Treasury = 0;
+        s.Debt = m.DebtCeiling!.Value - purchaseArms * m.ArmsPrice!.Value + convertedMoney / 2;
+        s.FxReserves = m.DollarsPerTurn.Value;
+    }
+
     // Red-first prediction at 085944e62: the recruit button is enabled because the panel checks free civilians only.
     [Test]
     public void RecruitTrainingIsDisabledWithNoArms()
@@ -316,6 +326,38 @@ public class CityPanelTests
             "the purchase runs before a newly appended Train order");
     }
 
+    // Training.Available counts every queued Train whether or not it will be accepted. Once the covering purchase is
+    // withdrawn, the rejected Recruit is state-neutral, so the exact preview still accepts a zero-Arms Halutz Train.
+    [Test]
+    public void HalutzTrainingIsEnabledWhenAnEarlierRecruitWillBeRejected()
+    {
+        using var ui = new UiTestKit();
+        var bridge = Bridge(En, s =>
+        {
+            Counts(50, 49)(s);
+            s.Arms = 0;
+        });
+        using var panel = Panel(ui, bridge, En);
+        panel.Show(CityHex.q, CityHex.r);
+        var purchase = new BuyArms(RecruitGroupArms(bridge.State));
+        var recruit = new Train(City, "recruit", 1);
+        Assert.IsNull(bridge.Queue(purchase), "precondition: the purchase covers the Recruit");
+        Assert.IsNull(bridge.Queue(recruit), "precondition: the Recruit follows its covering purchase");
+        bridge.Withdraw(purchase);
+
+        var halutz = new Train(City, "halutz", 1);
+        var preview = Simulation.Preview(C, bridge.TurnStart,
+            bridge.Session.Committed.Concat(bridge.Queued).Concat(new[] { halutz }).ToList());
+        Assert.IsTrue(preview.Rejected.Any(x => ReferenceEquals(x.Command, recruit)),
+            "precondition: without the purchase, the queued Recruit is rejected for its missing Arms");
+        Assert.IsFalse(preview.Rejected.Any(x => ReferenceEquals(x.Command, halutz)),
+            "precondition: the rejected Recruit leaves the one idle civilian for the zero-Arms Halutz course");
+        Assert.Zero(Training.Available(bridge.State, City, bridge.Queued),
+            "Training.Available deliberately counts the pending Recruit without previewing its refusal");
+        Assert.IsTrue(ui.Q<Button>("city-train-halutz").enabledSelf,
+            "the button follows the exact candidate preview, not the conservative queued-order count");
+    }
+
     // #2580 (R-ARMS-002, R-MONEY-004): let A be the Arms cost and M the Money from the turn's full dollar conversion.
     // Treasury = 0 and Debt = ceiling - A + M/2, so Buy alone ends at ceiling + M/2 (refused), while conversion first
     // leaves Debt at ceiling - A + M/2 + max(0, A - M), at or below the ceiling. FxReserves supplies the full conversion.
@@ -323,22 +365,10 @@ public class CityPanelTests
     [Test]
     public void RecruitTrainingFollowsDollarConversionsMovedBeforeArmsPurchases()
     {
-        void NearCeiling(GameState s)
-        {
-            var m = C.RulesAt(s.Date).Mvp!;
-            var dollars = m.DollarsPerTurn!.Value;
-            var armsCost = RecruitGroupArms(s) * m.ArmsPrice!.Value;
-            var convertedMoney = dollars * m.IlPerDollarOn(s.Date);
-            s.Arms = RecruitGroupArms(s) - 1;
-            s.Treasury = 0;
-            s.Debt = m.DebtCeiling!.Value - armsCost + convertedMoney / 2;
-            s.FxReserves = dollars;
-        }
-
         foreach (var convertAfterPurchase in new[] { true, false })
         {
             using var ui = new UiTestKit();
-            var bridge = Bridge(En, NearCeiling);
+            var bridge = Bridge(En, s => NearDebtCeilingForArmsPurchase(s, RecruitGroupArms(s)));
             using var panel = Panel(ui, bridge, En);
             panel.Show(CityHex.q, CityHex.r);
             var m = C.RulesAt(bridge.State.Date).Mvp!;
@@ -361,6 +391,50 @@ public class CityPanelTests
         }
     }
 
+    // Let G be one recruit group's Arms, P = (G + 1) * Arms price, and M the full conversion's Money. The stock starts
+    // at G - 1, so Buy(G + 1) leaves exactly 2G Arms. Debt starts at ceiling - P + M/2: Buy alone would end at ceiling
+    // + M/2 and be refused; moving Convert ahead of it ends at ceiling - P + M/2 + max(0, P - M), at most the ceiling.
+    [Test]
+    public void ReplacementRecruitTrainingFollowsAConversionQueuedAfterItsSlot()
+    {
+        var purchaseArms = 0;
+        using var ui = new UiTestKit();
+        var bridge = Bridge(En, s =>
+        {
+            purchaseArms = RecruitGroupArms(s) + 1;
+            NearDebtCeilingForArmsPurchase(s, purchaseArms);
+        });
+        using var panel = Panel(ui, bridge, En);
+        panel.Show(CityHex.q, CityHex.r);
+        var m = C.RulesAt(bridge.State.Date).Mvp!;
+        var dollars = m.DollarsPerTurn!.Value;
+        var purchaseCost = purchaseArms * m.ArmsPrice!.Value;
+        var convertedMoney = dollars * m.IlPerDollarOn(bridge.State.Date);
+        var buy = new BuyArms(purchaseArms);
+        var first = new Train(City, "recruit", 1);
+        var convert = new ConvertDollars(dollars);
+        Assert.Greater(bridge.State.Debt + purchaseCost, m.DebtCeiling!.Value,
+            "precondition: without the later conversion, BuyArms would be refused at the debt ceiling");
+        Assert.LessOrEqual(bridge.State.Debt + Math.Max(0, purchaseCost - convertedMoney), m.DebtCeiling.Value,
+            "precondition: conversion before the purchase keeps it within the debt ceiling");
+        Assert.IsNull(bridge.Queue(buy));
+        Assert.IsNull(bridge.Queue(first));
+        Assert.IsFalse(ui.Q<Button>("city-train-recruit").enabledSelf,
+            "precondition: before the conversion, replacing Train(1) with Train(2) cannot use the refused purchase");
+        Assert.IsNull(bridge.Queue(convert));
+        CollectionAssert.AreEqual(new Command[] { buy, first, convert }, bridge.Queued,
+            "precondition: the conversion was queued after the Train slot it will fund");
+
+        var press = new Train(City, "recruit", 2);
+        var preview = Simulation.Preview(C, bridge.TurnStart,
+            bridge.Session.Committed.Concat(new Command[] { buy, press, convert }).ToList());
+        var accepted = !preview.Rejected.Any(x => ReferenceEquals(x.Command, press));
+        Assert.IsTrue(accepted,
+            "End turn moves Convert before BuyArms; the accepted purchase leaves exactly two groups' Arms");
+        Assert.AreEqual(accepted, ui.Q<Button>("city-train-recruit").enabledSelf,
+            "the repeat press previews [BuyArms, Train(2), ConvertDollars] with Train replaced in its original slot");
+    }
+
     // #2573: pressing Train again replaces the queued Train in its own slot (SimBridge.Queue), so a purchase queued after
     // it runs too late to pay for the extra group. Red-first at 085944e62: enabled, the panel checks free civilians only.
     [Test]
@@ -379,7 +453,7 @@ public class CityPanelTests
     [Test]
     public void TrainingAcrossBothTracksStopsAtTheIdleCivilianLimit()
     {
-        // One civilian without work: once recruits take it, halutzim cannot (Training.Available counts every track).
+        // One civilian without work: once recruits take it, the exact Halutz preview refuses the other track.
         using var ui = new UiTestKit();
         var bridge = Bridge(En, Counts(50, 49));
         using var panel = Panel(ui, bridge, En);
@@ -1218,8 +1292,8 @@ public class CityPanelTests
     [Test]
     public void AQueuedReassignmentIsCountedOnceAgainstTheCiviliansWithoutWork()
     {
-        // #1552: Training.Available already takes a queued reassignment off the idle civilians, so the panel must not take it
-        // off again. Two civilians without work: one craftsman group ordered leaves one for the halutz group and for a Train.
+        // #1552: Training.Available (for Reassign) and the exact preview (for Train) each take a queued reassignment off the
+        // idle civilians once. Two without work: one craftsman group ordered leaves one for the halutz group and for a Train.
         using var ui = new UiTestKit();
         var bridge = Bridge(En, s => { Counts(50, 48)(s); Qualify(2, 0, 3)(s); });
         using var panel = Panel(ui, bridge, En);
