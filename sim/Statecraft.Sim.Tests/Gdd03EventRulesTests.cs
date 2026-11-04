@@ -432,6 +432,17 @@ public class Gdd03EventRulesTests
         var ex = Assert.Throws<ContentException>(() => Load(Files(modern), Card(option: $"    debt_dollars: {value}\n")));
         Assert.Equal(("events/probe.yaml", "events[probe].options[ok].debt_dollars"), (ex.File, ex.Field));
     }
+    // R-EFX-009 (owner's review on #2487): a value that is not a number is a content error in every ruleset, reported at
+    // the card's file and the debt_dollars line (line 9 of the fixture), before any ruleset check runs.
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void DebtDollarsThatIsNotANumberIsRefused(bool modern)
+    {
+        var ex = Assert.Throws<ContentException>(() => Load(Files(modern), Card(option: "    debt_dollars: nope\n")));
+        Assert.Equal(("events/probe.yaml", "line 9"), (ex.File, ex.Field));
+        Assert.Contains("nope", ex.Message);
+    }
     // R-EFX-009 (#2457): on the real card, launch adds the $52m and IL 18.564m of Debt (52 x 0.357, the rate in force on
     // 10 May 1951); donations_only adds its $10m and no Debt (owner: "No Debt for donations; use 52 (Recommended)").
     [Theory]

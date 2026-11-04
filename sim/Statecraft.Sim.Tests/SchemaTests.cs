@@ -29,7 +29,7 @@ public class SchemaTests
     static readonly HashSet<string> Supported = new HashSet<string>
     {
         "$schema", "$ref", "title", "description", "definitions", "type", "properties", "additionalProperties", "required",
-        "items", "minItems", "minLength", "pattern", "minimum", "maximum", "enum",
+        "items", "minItems", "minLength", "pattern", "minimum", "exclusiveMinimum", "maximum", "enum",
     };
 
     static void Check(JsonElement schema, JsonElement root, JsonNode? value, string path, List<string> errors)
@@ -58,6 +58,7 @@ public class SchemaTests
             else if (val.TryGetValue<double>(out var num) || (val.TryGetValue<long>(out var whole) && (num = whole) == whole))
             {
                 if (schema.TryGetProperty("minimum", out var mn) && num < mn.GetDouble()) errors.Add($"{path}: must be at least {mn.GetDouble()}");
+                if (schema.TryGetProperty("exclusiveMinimum", out var xm) && num <= xm.GetDouble()) errors.Add($"{path}: must be more than {xm.GetDouble()}");
                 if (schema.TryGetProperty("maximum", out var mx) && num > mx.GetDouble()) errors.Add($"{path}: must be at most {mx.GetDouble()}");
             }
         }
@@ -332,6 +333,15 @@ people:
         Assert.Contains(Errors("event.schema.json", good.Replace("title:", "titel:")), e => e.Contains("titel"));
         Assert.Contains(Errors("event.schema.json", good.Replace("A }", "A, historcal: true }")), e => e.Contains("historcal"));
         Assert.Contains(Errors("event.schema.json", good.Replace("https://", "http://")), e => e.Contains("does not match"));
+    }
+
+    // R-EFX-009 (owner's review on #2487): debt_dollars is "more than 0", as the loader checks.
+    [Fact]
+    public void DebtDollarsMustBeMoreThanZero()
+    {
+        var card = "id: e\ntitle: T\ntext: X\nfrom: 1950-01-01\noptions:\n  - { id: a, text: A, debt_dollars: AMOUNT }\nsources: [{ url: \"https://example.org\", checked: 2026-10-09 }]\n";
+        Assert.Empty(Errors("event.schema.json", card.Replace("AMOUNT", "52")));
+        Assert.Contains(Errors("event.schema.json", card.Replace("AMOUNT", "0")), e => e.Contains("debt_dollars: must be more than 0"));
     }
 
     [Fact]

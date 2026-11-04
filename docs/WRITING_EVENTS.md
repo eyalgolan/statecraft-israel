@@ -548,10 +548,10 @@ Missing/null manifests, unknown/duplicate ids, blank reasons, and references fro
 rejoin options or objective cards to excluded ids are content errors. Every source file still parses strictly;
 the remaining catalogue receives the usual cross-reference, effect and sensitivity validation.
 
-The approved first slice excludes exactly `austerity_1949`, `clothing_rationing_1950`, `forex_crisis_1951`,
-`iraqi_exodus`, `israel_bonds`, `maabarot_policy`, `reparations_claim` and `reparations_vote`, including all their
-options (`reparations_vote` joined with #1575, for the same reason as `reparations_claim`).
-Six of these are hard anchors: they are unavailable in 0.3. Shared records, Hebrew, tags, status and human
+The approved first slice excludes exactly `austerity_1949`, `forex_crisis_1951`, `iraqi_exodus` and
+`maabarot_policy`, including all their options. `clothing_rationing_1950`, `reparations_claim` and `reparations_vote`
+came back with #2224, and `israel_bonds` with its equal Debt (#2457, R-EFX-009).
+Two of these, `austerity_1949` and `maabarot_policy`, are hard anchors: they are unavailable in 0.3. Shared records, Hebrew, tags, status and human
 sign-offs remain unchanged and available to review tools. Removing an exclusion requires a reviewed follow-up
 with approved accounting and authored values; it does not itself approve a replacement or transfer a sign-off.
 There is no automatic review promotion, and all existing release gates still apply.

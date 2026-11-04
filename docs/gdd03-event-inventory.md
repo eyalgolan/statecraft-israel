@@ -12,13 +12,15 @@ and review the diff. Do not edit the table by hand.
 
 **How to read a row.**
 
-- **Old target** and **old delta**: the field as authored, which `legacy` and `gdd-0.1` apply (R-EFX-001). A
+- **Old target** and **old delta**: the field as authored, which `legacy` and `gdd-0.1` apply (R-EFX-001). The
+  exception is `debt_dollars`: those rulesets read it but only `gdd-0.3` applies it (R-EFX-009, #2457). A
   `set_policy` or `set_rung` field sets a level instead of adding a delta.
 - **gdd-0.3 target**: "same" when the card is in the `gdd-0.3` catalogue. The loader has then validated the field
   under `gdd-0.3` (R-EFX-001, R-EFX-002) and it applies with the same delta. "Legacy rulesets only" when
   `content/gdd03-events.yaml` excludes the whole card: none of its options is in play under `gdd-0.3`.
-- **Review reset**: "no" on every row. No card's source bytes change (`AllThirtyNineSourceRecordsIncludingReviewsAndHebrewAreUnchanged`),
-  and the test checks that a kept card keeps its status and human sign-off under `gdd-0.3`. An excluded card keeps
+- **Review reset**: "no" on every row. Only `israel_bonds` changes its source bytes: its `launch` option gains
+  `debt_dollars: 52` and a comment (#2457), with its text, Hebrew, sources and review status unchanged. Every card's
+  bytes are pinned (`AllFortyOneSourceRecordsIncludingReviewsAndHebrewAreUnchanged`), and the test checks that a kept card keeps its status and human sign-off under `gdd-0.3`. An excluded card keeps
   its record and review for the legacy rulesets.
 
 **What decides it.** Decision D1 and answers Q1 to Q4 (owner, 1 November 2026, "Approve all six (Recommended)" for

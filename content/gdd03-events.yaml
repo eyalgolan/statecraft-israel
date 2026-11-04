@@ -1,5 +1,6 @@
 # yaml-language-server: $schema=./schema/gdd03-events.schema.json
-# R-EFX-001/002/005/007, #1718: availability only; shared reviewed event records stay byte-identical.
+# R-EFX-001/002/005/007, #1718: availability only; shared reviewed event records stay byte-identical, except that
+# israel_bonds' launch option gains debt_dollars (#2457, R-EFX-009).
 # No replacement amounts, effects, review statuses or sign-offs are authored here.
 ruleset: gdd-0.3
 exclusions:
