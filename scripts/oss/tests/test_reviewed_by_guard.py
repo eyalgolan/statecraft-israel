@@ -435,3 +435,35 @@ def test_a_disclosed_ai_add_or_re_sign_passes_and_an_undisclosed_add_fails(tmp_p
     edit(root2, SIGNED.replace("reviewed_by: eyalgolan", "reviewed_by: someone-else").replace("2026-10-15", "2026-10-16"))
     commit(root2, "content: re-sign A" + AI, date="2026-10-16T12:00:00+00:00")
     assert guard.check(root2, base2, "HEAD", ai_disclosed=True) == []
+
+
+# ---- second review of #2481: the check verbs, list markers and code fences ----------------------------------------------
+
+def test_a_short_list_of_check_verbs_names_the_check():
+    for ai in ("Claude drafted it; I verified every date against the cited source.", "Codex drafted it; I verify each date.",
+               "Claude drafted it; I compared each name with the scan.", "Claude found the pages; I opened each one.",
+               "Claude found the page; I read it in full."):
+        assert guard.disclosed(TEMPLATE.format(ai=ai)), ai
+
+
+def test_a_section_with_none_of_the_verbs_does_not_name_the_check():
+    for ai in ("Claude drafted it; the dates were already there.", "Copilot suggested the bread-and-butter wording.",
+               "Claude Code wrote the YAML and the tests."):
+        assert not guard.disclosed(TEMPLATE.format(ai=ai)), ai
+
+
+def test_list_markers_are_stripped_before_the_first_word():
+    for ai in ("1. None, I checked it", "1) None, I checked it", "- [x] None, I checked it", "* [ ] No AI, checked by hand",
+               "+ [X] Not used; I checked it"):
+        assert not guard.disclosed(TEMPLATE.format(ai=ai)), ai
+    for ai in ("- Claude Code drafted the test; I checked each fact against its source.",
+               "1. Claude Code drafted the test; I checked each fact against its source.",
+               "- [x] Claude Code drafted the test; I checked each fact against its source."):
+        assert guard.disclosed(TEMPLATE.format(ai=ai)), ai
+
+
+def test_a_heading_inside_a_code_fence_is_not_a_section():
+    fenced = "## What this changes\n\n```\n## AI assistance\nClaude Code; I checked it.\n```\n\n## AI assistance\n\nNone\n"
+    assert guard.ai_assistance(fenced) == "None" and not guard.disclosed(fenced)
+    inside = TEMPLATE.format(ai="Claude Code drafted it; I checked each date:\n```\n# a shell comment\n```")
+    assert "a shell comment" in guard.ai_assistance(inside) and guard.disclosed(inside)
