@@ -340,6 +340,28 @@ public class HebrewUiTests
             "the retained key is rendered in the new language, not kept as already-rendered text");
     }
 
+    /// <summary>#2552: a New game replaces the bridge's session without Begin, so the old session's save notice must not come
+    /// back when a language switch then rebuilds the start screen over the new game (Begin with keep, as SwitchLanguage
+    /// calls it). Red-first: without the session check the old "could not be loaded" notice is shown again.</summary>
+    [Test]
+    public void ANewGameDropsTheOldSessionsSaveNoticeOnALanguageSwitch()
+    {
+        Directory.CreateDirectory(saveDir);
+        File.WriteAllText(Path.Combine(saveDir, SaveStore.AutosaveName), "not a save");
+        LogAssert.Expect(LogType.Warning, new Regex("Autosave (rejected|could not be loaded)"));
+        var game = BootWithStartScreen(new SettingsStore(Path.Combine(saveDir, "settings")), UiLanguage.English);
+        var stale = En.Format("save.unreadable", En["save.reason_other"]);
+        Assert.AreEqual(stale, Ui.Q<Label>("toast").text, "precondition: the first session raised the notice");
+
+        game.Bridge!.Replace(Statecraft.Sim.GameSession.New(Inputs.Content, 1, Statecraft.Sim.Mode.Historical));   // as NewGamePresenter.Press
+        game.Language = UiLanguage.Hebrew;
+        game.Begin(Inputs, 0, startScreen: true, keep: game.Bridge);
+
+        var staleHe = He.Format("save.unreadable", He["save.reason_other"]);
+        Assert.AreNotEqual(staleHe, Ui.Q<Label>("toast").text, "the new game's start screen shows no notice of the replaced session");
+        Assert.AreNotEqual(stale, Ui.Q<Label>("toast").text);
+    }
+
     /// <summary>A choice on the start screen goes through Settings' own switch: the UI changes at once over the same game,
     /// the start screen stays up (Continue still only with a save) with the focus on the choice, the choice is kept under
     /// Settings' key, and Settings shows it. The other way round, a choice in Settings is what the next start screen

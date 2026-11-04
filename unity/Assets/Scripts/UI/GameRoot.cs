@@ -86,8 +86,11 @@ namespace Statecraft.Game.UI
         bool endClosed;
         /// <summary>Set by SwitchLanguage for its Begin (#2054): whether the start screen it rebuilds offered Continue.</summary>
         bool keptResumed = true;
-        /// <summary>The current session's save notices as language-independent keys, retained while its start screen is rebuilt.</summary>
+        /// <summary>The save notices of <see cref="saveNoticeSession"/>, the session Begin last started, as language-independent
+        /// keys, so a language switch can say them again in the new language (#2552). A New game replaces the bridge's session
+        /// without Begin, so the keys are said only while the kept session is still the one that raised them.</summary>
         readonly List<string> saveNoticeKeys = new List<string>();
+        GameSession? saveNoticeSession;
         AdvisorPresenter? advisor;
         CabinetPresenter? cabinet;
         EncyclopediaPresenter? encyclopedia;
@@ -276,7 +279,7 @@ namespace Statecraft.Game.UI
             var text = Strings(inputs.Content);
             var store = Store ?? SaveStore.ForPlatform();
             if (keep == null) saveNoticeKeys.Clear();
-            var notes = keep != null && startScreen
+            var notes = keep != null && startScreen && ReferenceEquals(keep.Session, saveNoticeSession)
                 ? saveNoticeKeys.Select(key => GameStart.NoticeText(text, key)).ToList()
                 : new List<string>();
             // A smoke run is reproducible: a fresh game with the golden seed, never the player's autosave.
@@ -287,6 +290,7 @@ namespace Statecraft.Game.UI
                     fresh: true, noticeKeys: saveNoticeKeys)
                 : GameStart.Begin(inputs.Content, store, GameStart.NewSeed, notes, text, out resumed,
                     noticeKeys: saveNoticeKeys));
+            if (keep == null) saveNoticeSession = session;
             DiagLog.BootPhase($"session started (turn {session.State.Turn}, replayed)");
             var bridge = Bridge = new SimBridge(session, text);
             var oldFixedNorth = cameraController.FixedNorth;
