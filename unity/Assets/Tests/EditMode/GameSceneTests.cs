@@ -541,6 +541,13 @@ public class GameSceneTests
             root.Labels.Refresh(force: true); yield return null;
             Assert.AreEqual(Visibility.Visible, label.parent.style.visibility.value, "precondition: Tel Aviv is named");
 
+            int hoverPicks = 0; var realPillHex = pointer.PillHex;
+            pointer.PillHex = p => { hoverPicks++; return realPillHex?.Invoke(p); };
+            root.UpdateMapHover(onHex);
+            Assert.AreEqual(1, hoverPicks, "city, route and hex hover share one map pick");
+            Assert.IsTrue(label.ClassListContains(MapLabelsPresenter.HoverClass), "the shared pick still lights the city pill");
+            pointer.PillHex = realPillHex;
+
             // The land under a screen point (camera pixels), asked of the terrain alone, as a click without the pills would be.
             (int q, int r)? Land(Vector2 px) =>
                 map.Terrain.GetComponent<TerrainCollider>().Raycast(cam.ScreenPointToRay(px), out var hit, 1_000_000f) ? MapPointer.Pick(map, hit.point) : ((int, int)?)null;

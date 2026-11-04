@@ -79,6 +79,7 @@ namespace Statecraft.Game.UI
         /// <summary>Tests: the minimap of the last Begin.</summary>
         internal MinimapPresenter? Minimap => minimap;
         string? hoveredCity;   // the city HoverCity lit (#1063)
+        readonly Dictionary<(int q, int r), List<string>> citiesByHex = new Dictionary<(int, int), List<string>>();
         OutcomePresenter? outcomes;
         TurnReportPresenter? report;
         EndScreenPresenter? end;
@@ -500,6 +501,14 @@ namespace Statecraft.Game.UI
             cameraController.Ground = CameraController.GroundOf(terrain);
             cameraController.GroundTop = CameraController.GroundTopOf(terrain);
             pointer.Map = map;
+            pointer.InvalidateSceneCache();
+            pointer.View = cameraController.GetComponent<Camera>();
+            citiesByHex.Clear();
+            foreach (var h in bridge.Content.SettlementHexes)
+            {
+                if (!citiesByHex.TryGetValue((h.Q, h.R), out var ids)) citiesByHex[(h.Q, h.R)] = ids = new List<string>();
+                ids.Add(h.Id);   // preserve content order where settlement rows share a hex
+            }
             // #1617: the lit hexes of a Move or Attack pick show through the unit card, so the map pointer also takes a click
             // on the card's text over one of them (InfoPanelPresenter.TakesClickThrough). The camera does not: no drag or wheel
             // through the card.
@@ -578,7 +587,7 @@ namespace Statecraft.Game.UI
                 if (cameraController.IsOverUi == overUi) cameraController.IsOverUi = null;
                 if (cameraController.HoldsMouseDrag == holdsMouseDrag) cameraController.HoldsMouseDrag = null;
                 if (cameraController.HoldsTouchDrag == holdsTouchDrag) cameraController.HoldsTouchDrag = null;
-                if (pointer.Map == map) pointer.Map = null;
+                if (pointer.Map == map) { pointer.Map = null; pointer.View = null; }
                 cameraController.Bounds = oldBounds;
                 cameraController.Ground = oldGround; cameraController.GroundTop = oldTop;
             }));
@@ -910,12 +919,30 @@ namespace Statecraft.Game.UI
         /// pointer (a touchscreen). Returns that city's id; called each frame (LateUpdate), it changes the UI only when the city does.</summary>
         internal string? HoverCity(Vector2? screenYUp)
         {
-            var city = screenYUp is Vector2 p && Bridge != null && pointer.HexAt(p) is (int q, int r) ? CityAt(Bridge.Content, Bridge.State, q, r) : null;
+            var under = screenYUp is Vector2 p ? pointer.HexAt(p) : null;
+            return HoverCity(screenYUp, under);
+        }
+
+        internal string? HoverCity(Vector2? screenYUp, (int q, int r)? under)
+        {
+            string? city = null;
+            if (screenYUp.HasValue && under is (int q, int r) && Bridge != null && citiesByHex.TryGetValue((q, r), out var ids))
+                foreach (var id in ids) if (Bridge.State.Cities.ContainsKey(id)) { city = id; break; }
             if (city == hoveredCity) return city;
             hoveredCity = city;
             labels?.Highlight(city);
             HandCursor(city != null);
             return city;
+        }
+
+        internal void UpdateMapHover(Vector2? hover)
+        {
+            labels?.Hover(hover);
+            var under = hover is Vector2 at ? pointer.HexAt(at) : null;
+            HoverCity(hover, under);
+            if (under is (int q, int r)) info?.ShowRouteTo(q, r);
+            else if (UnityEngine.InputSystem.Pointer.current is UnityEngine.InputSystem.Mouse) info?.HideRoute();
+            MarkHover(map, info, under, rig != null ? rig.Distance : float.PositiveInfinity);
         }
 
         /// <summary>The city with a settlement hex at (q, r): one in State.Cities, whose hex opens the city panel (GddHexPanel); or null.</summary>
@@ -1122,12 +1149,7 @@ namespace Statecraft.Game.UI
             // Today's name under a 1948 locality's pill: while a mouse (or pen) is over it (owner ruling 2026-10-11), or after a
             // tap on it (#245). A touchscreen has no hover: its last touch position stays after the finger lifts.
             var hover = MapLabelsPresenter.HoverPosition(UnityEngine.InputSystem.Pointer.current);
-            labels.Hover(hover);
-            HoverCity(hover);
-            var under = hover is Vector2 at ? pointer.HexAt(at) : null;
-            if (under is (int q, int r)) info?.ShowRouteTo(q, r);
-            else if (UnityEngine.InputSystem.Pointer.current is UnityEngine.InputSystem.Mouse) info?.HideRoute();
-            MarkHover(map, info, under, rig != null ? rig.Distance : float.PositiveInfinity);
+            UpdateMapHover(hover);
             var touch = UnityEngine.InputSystem.Touchscreen.current;
             if (touch != null && touch.primaryTouch.press.wasPressedThisFrame) labels.Tap(touch.primaryTouch.position.ReadValue());
         }

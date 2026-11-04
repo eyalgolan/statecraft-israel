@@ -40,6 +40,7 @@ public class HexBoardPickingTests
         Assert.AreNotSame(map.Terrain, board);
         pointer = map.gameObject.AddComponent<MapPointer>();
         pointer.Map = map;
+        pointer.View = cam;
         pointer.IsOverUi = _ => false;
         pointer.HexClicked += (q, r, cityPill) => clicked.Add((q, r));
         Physics.SyncTransforms();
@@ -152,6 +153,13 @@ public class HexBoardPickingTests
         var point = new Vector3(0, 0, map.Frame.LengthM) + HexGeometry.Centre(1, 15, HexScale.HexM);
         try
         {
+            point.y = board.transform.position.y + board.SampleHeight(point);
+            rig.LookAt = point; rig.Distance = 20000f; rig.Yaw = 90f; rig.TopInset = 0f; rig.Apply();
+            var unchanged = cam.WorldToScreenPoint(point);
+            pointer.HexAt(unchanged); long initialBuilds = pointer.TerrainCacheBuildsForTests;
+            pointer.HexAt(unchanged);
+            Assert.AreEqual(initialBuilds, pointer.TerrainCacheBuildsForTests, "unchanged picks reuse terrain and collider discovery");
+
             HexTilesLook.Apply(map, false);
             Physics.SyncTransforms();
             point.y = map.Terrain.transform.position.y + map.Terrain.SampleHeight(point);
@@ -160,6 +168,7 @@ public class HexBoardPickingTests
             Assert.IsTrue(map.Terrain.GetComponent<TerrainCollider>().Raycast(cam.ScreenPointToRay(screen), out var real, 1000000f));
             clicked.Clear(); Assert.IsTrue(pointer.HandleClick(screen));
             CollectionAssert.AreEqual(new[] { MapPointer.Pick(map, real.point) }, clicked);
+            Assert.AreEqual(initialBuilds + 1, pointer.TerrainCacheBuildsForTests, "removing the displayed board invalidates discovery");
             HexTilesLook.Apply(map, true);
             HexTilesLook.Apply(map, true);
             board = map.transform.Find(HexTilesLook.RootName).GetComponentsInChildren<Terrain>().Single();
@@ -169,6 +178,7 @@ public class HexBoardPickingTests
             Assert.IsTrue(board.GetComponent<TerrainCollider>().Raycast(cam.ScreenPointToRay(screen), out var visible, 1000000f));
             clicked.Clear(); Assert.IsTrue(pointer.HandleClick(screen));
             CollectionAssert.AreEqual(new[] { MapPointer.Pick(map, visible.point) }, clicked);
+            Assert.AreEqual(initialBuilds + 2, pointer.TerrainCacheBuildsForTests, "recreating the displayed board invalidates discovery again");
         }
         finally
         {
