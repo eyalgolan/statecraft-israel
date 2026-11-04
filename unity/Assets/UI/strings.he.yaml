@@ -1459,6 +1459,8 @@ dollars.refused_monthly: "זה יותר מהסכום שמותר להמיר הח�
 dollars.refused_total: "ההמרה תעבור את הסכום הכולל שמותר להמיר"
 dollars.refused_reserves: "אין די דולרים ביתרות מטבע החוץ"
 why.cause.dollars_converted: "המרת מטבע חוץ לכסף: {0}; כסף: שינוי {1}"
+# For the native reviewer (#564): agent-drafted Hebrew.
+why.cause.dollars_converted_fx: "מטבע חוץ שהומר לכסף: {1}"
 
 # Read-only WebGL companion (#1119); Hebrew additions await native review.
 companion.title: "מלווה למשחק"

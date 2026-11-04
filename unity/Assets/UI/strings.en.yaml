@@ -1229,6 +1229,7 @@ dollars.refused_monthly: "That is more dollars than may be converted this month"
 dollars.refused_total: "That would pass the total of dollars that may be converted"
 dollars.refused_reserves: "There are not enough dollars in the reserves"
 why.cause.dollars_converted: "Converted {0} of foreign currency into Money: {1}"
+why.cause.dollars_converted_fx: "Foreign currency converted into Money: {1}"
 
 # Read-only WebGL companion (#1119); Hebrew additions await native review.
 companion.title: "Game companion"

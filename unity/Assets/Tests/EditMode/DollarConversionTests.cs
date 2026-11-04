@@ -219,4 +219,19 @@ public class DollarConversionTests
         Assert.GreaterOrEqual(at, 0, he); Assert.Greater(il, at, he);
         StringAssert.DoesNotMatch("[A-Za-z]", he.Replace(dollars, "").Replace(money, ""), he);
     }
+
+    // #2527: the reserves side of the conversion has its own key, worded as foreign currency, in both languages.
+    [Test]
+    public void TheReservesLineIsWordedAsForeignCurrencyInBothLanguages()
+    {
+        var b = Bridge(false, false);
+        var line = Simulation.Step(b.Content, b.State, new Command[] { new ConvertDollars(4) }).Why.Single(w => w.Key == CauseKeys.DollarsConvertedFx);
+        Assert.AreEqual("fx_reserves", line.Target);
+        Assert.AreEqual(line.Message, CauseText.Line(line, b.Content, System.Array.Empty<Statecraft.Game.Map.Units.UnitEntry>(), En));
+        var he = CauseText.Line(line, b.Content, System.Array.Empty<Statecraft.Game.Map.Units.UnitEntry>(), He);
+        StringAssert.IsMatch("[\u05D0-\u05EA]", he);
+        var drop = PlayerText.MoneyChange(b.Content, "fx_reserves", -4);
+        StringAssert.Contains(drop, he);
+        StringAssert.DoesNotMatch("[A-Za-z]", he.Replace(drop, ""), he);
+    }
 }

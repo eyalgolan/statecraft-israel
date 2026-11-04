@@ -51,7 +51,7 @@ public class DollarsTests
         var s = War(c);
         var r = Orders(c, s, new ConvertDollars(3));
         Assert.Empty(r.Rejected);
-        var fx = Assert.Single(r.Why, w => w.Key == CauseKeys.DollarsConverted && w.Target == "fx_reserves");
+        var fx = Assert.Single(r.Why, w => w.Key == CauseKeys.DollarsConvertedFx);
         Assert.Equal(("economy", -3.0), (fx.System, fx.Delta));
         Assert.Equal(new[] { "3" }, fx.Args);
         Assert.Equal("Converted $3.0m of foreign currency into Money: " + PlayerText.MoneyChange(c, "fx_reserves", -3.0), fx.Message);

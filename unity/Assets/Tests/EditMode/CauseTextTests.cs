@@ -462,6 +462,7 @@ public class CauseTextTests
             new Cause("draft", "town", 1, "Town: an arms workshop made 1 Arms", key: CauseKeys.WorkshopArms),
             new Cause("draft", "town", 0, "Town: an arms workshop has no worker without a job this month", key: CauseKeys.WorkshopPaused, args: new[] { Workshops.NoWorker }),
             new Cause("draft", "treasury", 1.44, "Converted $4.0m of foreign currency into Money: IL\u00A0+1.4m", key: CauseKeys.DollarsConverted, args: new[] { "4" }),
+            new Cause("draft", "fx_reserves", -4, "Foreign currency converted into Money: $-4.0m", key: CauseKeys.DollarsConvertedFx, args: new[] { "4" }),   // #2527
             new Cause("draft", "food", 2000000000, "Site: the plowed land yielded 2000000000 units of Food", key: CauseKeys.FoodHarvest, args: new[] { "site" }),
             new Cause("draft", "food", -2000000000, "Food ran out: 2000000000 of 2000000001 units of the month's need went unmet", key: CauseKeys.FoodShortage, args: new[] { "2000000001" }),
             new Cause("draft", "food", -1, "No Food imported (foreign currency crisis): the stock fell to 2000000000 units", key: CauseKeys.FoodWithoutImports, args: new[] { "2000000000" }),
