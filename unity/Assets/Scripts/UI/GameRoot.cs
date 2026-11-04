@@ -1159,8 +1159,14 @@ namespace Statecraft.Game.UI
                 // Escape in the Cabinet's candidate list goes back to the seat, not out of the screen (#2340 M2).
                 done |= cabinet?.Escape() == true || nav?.Close() == true;
                 // With nothing above it to close, Escape withdraws a New Game request armed from the top bar too, the start
-                // screen closed (#2340 L2, #2521), and is used up there, so it does not also clear the map selection.
-                if (!done && newGame?.Armed == true) { newGame.Cancel(); done = true; }
+                // screen closed (#2340 L2, #2521), and is used up there, so it does not also clear the map selection. A
+                // decision card or capture dialog open over it is above it (the top bar stays usable under them): that
+                // Escape hides the card or dialog and the request stays armed (#2595 review).
+                if (!done && newGame?.Armed == true)
+                {
+                    done = capture?.Escape() == true || card?.Escape() == true || card?.CollapsedThisFrame == true;
+                    if (!done) { newGame.Cancel(); done = true; }
+                }
                 // A screen/card that consumed this Cancel must not also dismiss the map selection in this frame.
                 if (!done && nav?.ClosedThisFrame != true && document.rootVisualElement.focusController?.focusedElement == null
                     && capture?.Escape() != true && card?.Escape() != true && card?.CollapsedThisFrame != true)
