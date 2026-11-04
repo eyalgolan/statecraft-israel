@@ -126,6 +126,15 @@ def test_hebrew_acronyms_use_the_gershayim_character():
         assert values, file
         for value in values:
             assert not HEBREW_ACRONYM_STRAIGHT_QUOTE.search(value), (file, value)
+    # Event Hebrew fields too (#2537): title/text and option labels, values only — comments may quote a source verbatim.
+    for file in sorted((content / 'events').glob('*.yaml')):
+        rows = yaml12.load(file.read_text(encoding='utf-8'))['events']
+        for row in rows:
+            values = [row[f] for f in ('title_he', 'text_he', 'text_he_f') if row.get(f)]
+            for option in row.get('options') or []:
+                values += [option[k] for k in option if (k.endswith('_he') or k.endswith('_he_f')) and option.get(k)]
+            for value in values:
+                assert not HEBREW_ACRONYM_STRAIGHT_QUOTE.search(value), (file.name, value)
 
 
 def test_every_cabinet_refusal_has_both_strings_and_the_english_is_the_sims_wording():
