@@ -79,9 +79,10 @@ namespace Statecraft.Sim
         }
     }
 
-    /// <summary>The review flag of a Hebrew display name (`*_he_review`, CONTENT_POLICY section 2, rule 6). A name an AI agent
-    /// checked against its sources, but no person has read yet, carries <see cref="AgentChecked"/>; the row's own `status`
-    /// stays what it is for the English facts. A native speaker's review clears the flag (the key is removed).</summary>
+    /// <summary>The review flag of a Hebrew display name (`*_he_review`, CONTENT_POLICY section 2, rule 6). A name an AI
+    /// agent checked against its sources carries <see cref="AgentChecked"/> until a native speaker, or an AI-assisted
+    /// contributor who discloses it, has read it (#564; owner, 4 November 2026: "AI-assisted can clear it"). The row's own
+    /// `status` stays what it is for the English facts; the key is removed once reviewed.</summary>
     public static class HebrewReview
     {
         public const string AgentChecked = "agent-checked";
@@ -95,8 +96,9 @@ namespace Statecraft.Sim
         /// keeps the English).</summary>
         public string TitleHe { get; set; } = "";
         public List<Source> TitleHeSources { get; set; } = new List<Source>();
-        /// <summary>"agent-checked" while <see cref="TitleHe"/> waits for a native speaker's review (#564); empty once a
-        /// person has reviewed it (<see cref="HebrewReview"/>).</summary>
+        /// <summary><see cref="TitleHe"/> is "agent-checked" until a native speaker, or an AI-assisted contributor who
+        /// discloses it, has read it (#564; owner, 4 November 2026: "AI-assisted can clear it"); empty once reviewed
+        /// (<see cref="HebrewReview"/>).</summary>
         public string TitleHeReview { get => titleHeReview ?? ""; set => titleHeReview = value ?? ""; }
         /// <summary>True when the file has the key at all, even blank: a blank flag is an error, not a review.</summary>
         [YamlIgnore] public bool TitleHeReviewGiven => titleHeReview != null;
@@ -183,7 +185,9 @@ namespace Statecraft.Sim
         /// <summary>The Hebrew name (#558), sourced in <see cref="NameHeSources"/>; empty when no source gives one.</summary>
         public string NameHe { get; set; } = "";
         public List<Source> NameHeSources { get; set; } = new List<Source>();
-        /// <summary>"agent-checked" while <see cref="NameHe"/> waits for a native speaker's review (#564); empty once reviewed.</summary>
+        /// <summary><see cref="NameHe"/> is "agent-checked" until a native speaker, or an AI-assisted contributor who
+        /// discloses it, has read it (#564; owner, 4 November 2026: "AI-assisted can clear it"); empty once
+        /// reviewed.</summary>
         public string NameHeReview { get => nameHeReview ?? ""; set => nameHeReview = value ?? ""; }
         /// <summary>True when the file has the key at all, even blank: a blank flag is an error, not a review.</summary>
         [YamlIgnore] public bool NameHeReviewGiven => nameHeReview != null;
@@ -220,8 +224,9 @@ namespace Statecraft.Sim
         public string Id { get; set; } = "";
         public string Name { get; set; } = "";
         public string NameHe { get; set; } = "";
-        /// <summary>"agent-checked" while <see cref="NameHe"/> waits for a native speaker's review (#564, #862); empty once
-        /// reviewed. Its sources are biography_sources.name_he.</summary>
+        /// <summary><see cref="NameHe"/> is "agent-checked" until a native speaker, or an AI-assisted contributor who
+        /// discloses it, has read it (#564, #862; owner, 4 November 2026: "AI-assisted can clear it"); empty once reviewed.
+        /// Its sources are biography_sources.name_he.</summary>
         public string NameHeReview { get => nameHeReview ?? ""; set => nameHeReview = value ?? ""; }
         /// <summary>True when the file has the key at all, even blank: a blank flag is an error, not a review.</summary>
         [YamlIgnore] public bool NameHeReviewGiven => nameHeReview != null;
@@ -269,7 +274,9 @@ namespace Statecraft.Sim
         /// <summary>The Hebrew name of the body (#558), sourced in <see cref="BodyHeSources"/>; empty when no source gives one.</summary>
         public string BodyHe { get; set; } = "";
         public List<Source> BodyHeSources { get; set; } = new List<Source>();
-        /// <summary>"agent-checked" while <see cref="BodyHe"/> waits for a native speaker's review (#564); empty once reviewed.</summary>
+        /// <summary><see cref="BodyHe"/> is "agent-checked" until a native speaker, or an AI-assisted contributor who
+        /// discloses it, has read it (#564; owner, 4 November 2026: "AI-assisted can clear it"); empty once
+        /// reviewed.</summary>
         public string BodyHeReview { get => bodyHeReview ?? ""; set => bodyHeReview = value ?? ""; }
         /// <summary>True when the file has the key at all, even blank: a blank flag is an error, not a review.</summary>
         [YamlIgnore] public bool BodyHeReviewGiven => bodyHeReview != null;
@@ -306,7 +313,9 @@ namespace Statecraft.Sim
         /// <summary>The Hebrew name (#558), sourced in <see cref="NameHeSources"/>; empty when no source gives one.</summary>
         public string NameHe { get; set; } = "";
         public List<Source> NameHeSources { get; set; } = new List<Source>();
-        /// <summary>"agent-checked" while <see cref="NameHe"/> waits for a native speaker's review (#564); empty once reviewed.</summary>
+        /// <summary><see cref="NameHe"/> is "agent-checked" until a native speaker, or an AI-assisted contributor who
+        /// discloses it, has read it (#564; owner, 4 November 2026: "AI-assisted can clear it"); empty once
+        /// reviewed.</summary>
         public string NameHeReview { get => nameHeReview ?? ""; set => nameHeReview = value ?? ""; }
         /// <summary>True when the file has the key at all, even blank: a blank flag is an error, not a review.</summary>
         [YamlIgnore] public bool NameHeReviewGiven => nameHeReview != null;
@@ -716,10 +725,13 @@ namespace Statecraft.Sim
         public string Id { get; set; } = "";
         /// <summary>The phrase the player reads in a sentence ("a transit camp").</summary>
         public string Name { get; set; } = "";
-        /// <summary>The Hebrew UI's name for the kind, a noun ("מעברה"), or "" for none: the UI then shows <see cref="Name"/>
-        /// (#1122, owner ruling 3). A draft until a native speaker reviews it (#564).</summary>
+        /// <summary>The Hebrew UI's name for the kind, a noun ("מעברה"), or "" for none: the UI then shows
+        /// <see cref="Name"/> (#1122, owner ruling 3). A draft until a native speaker, or an AI-assisted contributor who
+        /// discloses it, has read it (#564; owner, 4 November 2026: "AI-assisted can clear it").</summary>
         public string NameHe { get; set; } = "";
-        /// <summary>"agent-checked" while <see cref="NameHe"/> waits for a native speaker's review (#564); "" once reviewed.</summary>
+        /// <summary><see cref="NameHe"/> is "agent-checked" until a native speaker, or an AI-assisted contributor who
+        /// discloses it, has read it (#564; owner, 4 November 2026: "AI-assisted can clear it"); "" once
+        /// reviewed.</summary>
         public string NameHeReview { get => nameHeReview ?? ""; set => nameHeReview = value ?? ""; }
         /// <summary>Whether the row sets name_he_review at all, so a blank flag is refused rather than read as "reviewed".</summary>
         [YamlIgnore] public bool NameHeReviewGiven => nameHeReview != null;
@@ -1114,7 +1126,9 @@ namespace Statecraft.Sim
         /// the English wherever one is empty.</summary>
         public string TitleHe { get; set; } = "";
         public string TextHe { get; set; } = "";
-        /// <summary>"agent-checked" while the Hebrew text waits for a native speaker's review (#564); empty once reviewed.</summary>
+        /// <summary>The Hebrew text is "agent-checked" until a native speaker, or an AI-assisted contributor who discloses
+        /// it, has read it (#564; owner, 4 November 2026: "AI-assisted can clear it"); empty once
+        /// reviewed.</summary>
         public string TextHeReview { get => textHeReview ?? ""; set => textHeReview = value ?? ""; }
         /// <summary>True when the file has the key at all, even blank: a blank flag is an error, not a review.</summary>
         [YamlIgnore] public bool TextHeReviewGiven => textHeReview != null;
@@ -1178,10 +1192,13 @@ namespace Statecraft.Sim
         public string PartOf { get; set; } = "";
         /// <summary>The name the player reads (in the Why list).</summary>
         public string Name { get; set; } = "";
-        /// <summary>The Hebrew name (#1187), an agent translation of <see cref="Name"/> while it waits for a native
-        /// speaker's review (#564); empty means none yet (the UI keeps the English).</summary>
+        /// <summary>The Hebrew name (#1187), an agent translation of <see cref="Name"/> until a native speaker, or an
+        /// AI-assisted contributor who discloses it, has read it (#564; owner, 4 November 2026:
+        /// "AI-assisted can clear it"); empty means none yet (the UI keeps the English).</summary>
         public string NameHe { get; set; } = "";
-        /// <summary>"agent-checked" while <see cref="NameHe"/> waits for a native speaker's review (#564); empty once reviewed.</summary>
+        /// <summary><see cref="NameHe"/> is "agent-checked" until a native speaker, or an AI-assisted contributor who
+        /// discloses it, has read it (#564; owner, 4 November 2026: "AI-assisted can clear it"); empty once
+        /// reviewed.</summary>
         public string NameHeReview { get => nameHeReview ?? ""; set => nameHeReview = value ?? ""; }
         /// <summary>True when the file has the key at all, even blank: a blank flag is an error, not a review.</summary>
         [YamlIgnore] public bool NameHeReviewGiven => nameHeReview != null;

@@ -352,8 +352,9 @@ public class CityProjectsTests
         Assert.Null(Projects.CheckCityReason(c, New(c), "housing", "town_a", 1, 1));
     }
 
-    // #1122 (owner ruling 3): a kind may carry a draft Hebrew name pending a native speaker's review (#564); a review flag
-    // other than agent-checked, or one without a name, is refused; a kind without Hebrew still loads.
+    // #1122 (owner ruling 3): a kind may carry a draft Hebrew name until a native speaker, or an AI-assisted contributor
+    // who discloses it, has read it (#564; owner, 4 November 2026: "AI-assisted can clear it"); a review flag other than
+    // agent-checked, or one without a name, is refused; a kind without Hebrew still loads.
     [Fact]
     public void AKindMayCarryADraftHebrewName()
     {

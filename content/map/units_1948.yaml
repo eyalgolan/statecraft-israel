@@ -31,12 +31,15 @@
 #   next to the anchor on that side ([q, r] in content/map/hexes.json); the token stands in that hex, nearest the place.
 # Coordinates: the place's Wikipedia article (Wikipedia API prop=coordinates), or Wikidata (CC0) where it has none.
 # name_he, name_he_sources, name_he_review: the unit's Hebrew name, as an accepted source writes it, its sources (a comment
-#   above them quotes the line), and `agent-checked` until a native speaker reads it (#564; CONTENT_POLICY section 2,
-#   rule 6). A name's source does not check the row's facts, so it does not count for wikipedia_only (#902).
+#   above them quotes the line), and `agent-checked` until a native speaker, or an AI-assisted contributor who discloses it,
+#   has read it (#564; owner, 4 November 2026: "AI-assisted can clear it"; CONTENT_POLICY section 2, rule 6). A name's source
+#   does not check the row's facts, so it does not count for wikipedia_only (#902).
 # number_he, place_he, since_he, formed_he, first_commander_he, sector_he (each with *_he_sources and *_he_review): the card's
 #   text in Hebrew, shown only in the Hebrew UI, each field falling back to its English alone (#558, #1292; number_he is the
 #   subtitle's number, #1219 item 2). An AI agent drafted
-#   them against the he.wiki article of each proper name (the sources); `agent-checked` until a native speaker reads them (#564).
+#   them against the he.wiki article of each proper name (the sources); each remains `agent-checked` until a native speaker,
+#   or an AI-assisted contributor who discloses it, has read it (#564; owner, 4 November 2026:
+#   "AI-assisted can clear it").
 # wikipedia_only: true when every source of the row is a Wikipedia article (English or Hebrew) or a Wikidata item (for
 #   coordinates only). Such a row is a draft until checked against a published history (Netanel Lorch, The Edge of the
 #   Sword, 1961) or the IDF and Defense Establishment Archives. The card computes the same note per anchor.
