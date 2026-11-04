@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-04 19:20:49Z" end-time="2026-11-04 19:22:55Z" duration="126.1683965">
+  <test-suite type="TestSuite" id="1000" name="Statecraft Israel" fullname="Statecraft Israel" runstate="Runnable" testcasecount="4496" result="Passed" start-time="2026-11-04 19:20:49Z" end-time="2026-11-04 19:22:55Z" duration="126.168397" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="6095" name="Statecraft.Tests.EditMode.dll" fullname="/Users/eyalgolan/israel-game-wt/e21-dakota3/unity/Library/ScriptAssemblies/Statecraft.Tests.EditMode.dll" runstate="Runnable" testcasecount="3819" result="Passed" start-time="2026-11-04 19:20:49Z" end-time="2026-11-04 19:22:55Z" duration="126.134300" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="44456" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestFixture" id="2728" name="E21Play2490" fullname="E21Play2490" classname="E21Play2490" runstate="Explicit" testcasecount="4" result="Passed" start-time="2026-11-04 19:20:49Z" end-time="2026-11-04 19:22:55Z" duration="126.091399" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties>
+          <property name="_SKIPREASON" value="throwaway stills" />
+        </properties>
+        <test-case id="2731" name="EnglishSeq" fullname="E21Play2490.EnglishSeq" methodname="EnglishSeq" classname="E21Play2490" runstate="Runnable" seed="800417878" result="Passed" start-time="2026-11-04 19:20:43Z" end-time="2026-11-04 19:22:55Z" duration="131.916734" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="Timeout" value="1800000" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[KITS ground_tint_ms=3.0 places=296
+KITS buildings=2997 vertices=196678 triangles=102766 trees=14253 route_segments=1492 build_ms=271 plant_ms=64 localities=271 locality_buildings=2423 camps=64 tents=171 boats=17 draws=65 models=21266 close_vertices=59866
+PEOPLE: 0 civilian figures placed, 0 not drawn
+RURAL: 0 rural scenes placed (0 models); 0 models short of 3 scenes
+GAME OK 1948-05-15 turn 0 hash 7c6a1bff4afa520028aeb93656216236f9183f7c8ac3dd62861559a8791d698f
+PEOPLE: 0 civilian figures placed, 0 not drawn
+PEOPLE: 0 civilian figures placed, 0 not drawn
+RURAL: 0 rural scenes placed (0 models); 0 models short of 3 scenes
+SEA/AIR: 1 collection craft placed, 0 not drawn
+SEA/AIR: 3 collection craft placed, 0 not drawn
+SEA/AIR: 5 collection craft placed, 0 not drawn
+SEA/AIR: 6 collection craft placed, 0 not drawn
+SEA/AIR: 6 collection craft placed, 0 not drawn
+E21PLAY en begun t=0.1 boot lookAt=(56929.60, 0.00, 289262.20) d=31000 yaw=0.0 date=1948-05-15 turn=0
+E21PLAY en dakotas=2 appear t=0.79 still=False,False
+HEXPROPS: no clear ground near station:Jaffa railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: no clear ground near station:Jerusalem (Khan) railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: no clear ground near station:Haifa East railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: 15 hex props placed for 1321 wants in 34 ms (keep-clear ground 22 ms, search 9 ms, instances 2 ms with 0 kept, trees 1 ms) (station 15, tent 0, prickly_pear 0, garrigue 0, scrub 0)
+HEXPROPS: no clear ground near station:Jaffa railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: no clear ground near station:Jerusalem (Khan) railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: no clear ground near station:Haifa East railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: 79 hex props placed for 1321 wants in 30 ms (keep-clear ground 14 ms, search 9 ms, instances 1 ms with 15 kept, trees 6 ms) (station 15, tent 64, prickly_pear 0, garrigue 0, scrub 0)
+HEXPROPS: no clear ground near station:Jaffa railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: no clear ground near station:Jerusalem (Khan) railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: no clear ground near station:Haifa East railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: no clear ground near abu_dis; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near al_eizariya; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near al_jammasin_al_gharbi; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near al_khader; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near al_shaykh_muwannis; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near at_tur; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near bayt_dajan_jaffa; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near beit_safafa; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near lifta; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near malha; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near silwan; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near sur_bahir; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: 944 hex props placed for 1321 wants in 92 ms (keep-clear ground 14 ms, search 10 ms, instances 4 ms with 79 kept, trees 64 ms) (station 15, tent 64, prickly_pear 865, garrigue 0, scrub 0)
+HEXPROPS: no clear ground near station:Jaffa railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: no clear ground near station:Jerusalem (Khan) railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: no clear ground near station:Haifa East railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: no clear ground near abu_dis; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near al_eizariya; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near al_jammasin_al_gharbi; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near al_khader; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near al_shaykh_muwannis; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near at_tur; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near bayt_dajan_jaffa; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near beit_safafa; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near lifta; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near malha; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near silwan; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near sur_bahir; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: 1420 hex props placed for 1321 wants in 159 ms (keep-clear ground 14 ms, search 10 ms, instances 3 ms with 944 kept, trees 132 ms) (station 15, tent 64, prickly_pear 865, garrigue 476, scrub 0)
+HEXPROPS: no clear ground near station:Jaffa railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: no clear ground near station:Jerusalem (Khan) railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: no clear ground near station:Haifa East railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: no clear ground near abu_dis; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near al_eizariya; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near al_jammasin_al_gharbi; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near al_khader; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near al_shaykh_muwannis; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near at_tur; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near bayt_dajan_jaffa; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near beit_safafa; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near lifta; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near malha; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near silwan; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near sur_bahir; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: 1898 hex props placed for 1321 wants in 199 ms (keep-clear ground 14 ms, search 10 ms, instances 3 ms with 1420 kept, trees 172 ms) (station 15, tent 64, prickly_pear 865, garrigue 476, scrub 478)
+HEXPROPS: 392 landmark models stand in for the kit's parts of 27 kit meshes (minaret 196, belfry 0, clock_tower 0)
+LANDMARKS: 5 town landmarks placed, 0 not drawn
+HEXPROPS: 508 landmark models stand in for the kit's parts of 31 kit meshes (minaret 243, belfry 11, clock_tower 0)
+HEXPROPS: 514 landmark models stand in for the kit's parts of 32 kit meshes (minaret 244, belfry 12, clock_tower 1)
+LANDMARKS: 6 town landmarks placed, 0 not drawn
+LANDMARKS: 7 town landmarks placed, 0 not drawn
+LANDMARKS: 8 town landmarks placed, 0 not drawn
+LANDMARKS: 14 town landmarks placed, 0 not drawn
+LANDMARKS: 15 town landmarks placed, 0 not drawn
+LANDMARKS: 20 town landmarks placed, 0 not drawn
+LANDMARKS: 21 town landmarks placed, 0 not drawn
+BUILDINGS: 1 of 4 special buildings placed (latrun_tegart)
+PEOPLE: 12 civilian figures placed, 0 not drawn
+PEOPLE: 30 civilian figures placed, 0 not drawn
+PEOPLE: 48 civilian figures placed, 0 not drawn
+PEOPLE: 66 civilian figures placed, 0 not drawn
+PEOPLE: 71 civilian figures placed, 0 not drawn
+PEOPLE: 75 civilian figures placed, 0 not drawn
+RURAL: 3 rural scenes placed (3 models); 0 models short of 3 scenes
+RURAL: 6 rural scenes placed (6 models); 0 models short of 3 scenes
+RURAL: 9 rural scenes placed (9 models); 0 models short of 3 scenes
+RURAL: 12 rural scenes placed (24 models); 0 models short of 3 scenes
+RURAL: 15 rural scenes placed (27 models); 0 models short of 3 scenes
+RURAL: 18 rural scenes placed (30 models); 0 models short of 3 scenes
+RURAL: 21 rural scenes placed (33 models); 0 models short of 3 scenes
+PEOPLE: 78 civilian figures placed, 0 not drawn
+Can't call Animator.Update on inactive object
+Can't call Animator.Update on inactive object
+Can't call Animator.Update on inactive object
+UNITS figures: the skinned near figures streamed in (close zoom)
+E21PLAY en telaviv=(57157.64, 1305.17, 292623.50)
+E21PLAY en SEQ2 consts fall=2 flash=0.5 blast=2.4 interval=1 loop=120
+E21PLAY en SEQ2 sites=(55589.75, 1292.52, 292672.30) (57157.68, 1305.16, 292623.00) (59504.19, 1315.25, 292733.80) (56372.64, 1306.04, 292635.30) (58725.60, 1312.45, 292672.30) (60276.35, 1331.97, 292819.70) drops=7 pick At=0.00 clearM=0 release u=120.00 impact u=122.00 from=(57157.68, 5200.49, 292623.00) to=(58725.60, 1312.45, 292672.30) wait=57.2s
+E21PLAY en SEQ2 s2-1-midfall-12km u=121.013 release+1.013s lead@(57953.27, 5200.49, 292635.20) expectedBomb=(57952.17, 4202.18, 292648.00) bomb=(57952.17, 4202.18, 292648.00) off=0m dxzImpact=774m vp=(0.501,0.930,8781) n=2 flash=(57942.71, 1751.75, 292635.30) off=898m dxzImpact=784m vp=(0.500,0.609,10650) n=1 blast=(57942.71, 1719.18, 292635.30) off=883m dxzImpact=784m vp=(0.500,0.605,10675) n=3
+E21PLAY en SHOT s2-1-midfall-12km d=12000 lookAt=(57941.64, 0.00, 292647.70) t=121.01 sinceDakotas=120.22 planes=tel-aviv-dakota-lead@(57953.27, 5200.49, 292635.20) | tel-aviv-dakota-wing@(42147.14, 5299.33, 299286.90)
+SHOT ../e21-play-2490/s2-1-midfall-12km-en
+E21PLAY en SEQ2 s2-1-midfall-20km u=121.013 release+1.013s lead@(57953.27, 5200.49, 292635.20) expectedBomb=(57952.17, 4202.18, 292648.00) bomb=(57952.17, 4202.18, 292648.00) off=0m dxzImpact=774m vp=(0.501,0.698,16781) n=2 flash=(57942.71, 1751.75, 292635.30) off=898m dxzImpact=784m vp=(0.500,0.537,18650) n=1 blast=(57942.71, 1719.18, 292635.30) off=883m dxzImpact=784m vp=(0.500,0.535,18675) n=3
+E21PLAY en SHOT s2-1-midfall-20km d=20000 lookAt=(57941.64, 0.00, 292647.70) t=121.01 sinceDakotas=120.22 planes=tel-aviv-dakota-lead@(57953.27, 5200.49, 292635.20) | tel-aviv-dakota-wing@(42147.14, 5299.33, 299286.90)
+SHOT ../e21-play-2490/s2-1-midfall-20km-en
+E21PLAY en s2-wide-31km d=31000 lookAt=(57157.64, 0.00, 292623.50) t=121.01 sinceDakotas=120.22 keepClear=6 boxes=(79345.47, 1520.94, 379691.00) (1920.00, 479.73, 358.94) | (44694.10, 1334.49, 288359.10) (240.00, 106.84, 88.50) | (77269.84, 1334.49, 383871.30) (240.00, 106.84, 88.50) | (30000.00, 6439.98, 185986.70) (16336.89, 6336.89, 12336.88) | (58334.16, 6426.03, 292653.80) (13937.25, 13154.37, 13191.31) | (42694.27, 6426.03, 299248.90) (13361.59, 13154.37, 13608.88) shown=[S1:Tel Aviv ; L29:Yazur ; L46:Holon ; L171:Kheiriya]
+E21PLAY en SHOT s2-wide-31km d=31000 lookAt=(57157.64, 0.00, 292623.50) t=121.01 sinceDakotas=120.22 planes=tel-aviv-dakota-lead@(57953.27, 5200.49, 292635.20) | tel-aviv-dakota-wing@(42147.14, 5299.33, 299286.90)
+SHOT ../e21-play-2490/s2-wide-31km-en
+E21PLAY en s2-close-20km d=20000 lookAt=(57157.64, 0.00, 292623.50) t=121.01 sinceDakotas=120.22 keepClear=6 boxes=(79345.47, 1520.94, 379691.00) (1920.00, 479.73, 358.94) | (44694.10, 1334.49, 288359.10) (240.00, 106.84, 88.50) | (77269.84, 1334.49, 383871.30) (240.00, 106.84, 88.50) | (30000.00, 6439.98, 185986.70) (16336.89, 6336.89, 12336.88) | (58334.16, 6426.03, 292653.80) (13937.25, 13154.37, 13191.31) | (42694.27, 6426.03, 299248.90) (13361.59, 13154.37, 13608.88) shown=[S1:Tel Aviv]
+E21PLAY en SHOT s2-close-20km d=20000 lookAt=(57157.64, 0.00, 292623.50) t=121.01 sinceDakotas=120.22 planes=tel-aviv-dakota-lead@(57953.27, 5200.49, 292635.20) | tel-aviv-dakota-wing@(42147.14, 5299.33, 299286.90)
+SHOT ../e21-play-2490/s2-close-20km-en
+E21PLAY en SEQ2 s2-2-impact-12km u=122.106 release+2.106s lead@(58808.16, 5200.49, 292675.70) expectedBomb=(58725.60, 1312.45, 292672.30) bomb=(58805.87, 4013.29, 292689.80) off=2702m dxzImpact=82m vp=(0.615,0.905,8953) n=2 flash=(58725.60, 1762.45, 292672.30) off=450m dxzImpact=0m vp=(0.587,0.614,10666) n=1 blast=(58725.60, 1863.77, 292672.30) off=551m dxzImpact=0m vp=(0.588,0.625,10588) n=3
+E21PLAY en SHOT s2-2-impact-12km d=12000 lookAt=(57941.64, 0.00, 292647.70) t=122.11 sinceDakotas=121.31 planes=tel-aviv-dakota-lead@(58808.16, 5200.49, 292675.70) | tel-aviv-dakota-wing@(42429.64, 5282.62, 298772.70)
+SHOT ../e21-play-2490/s2-2-impact-12km-en
+E21PLAY en SEQ2 s2-2-impact-20km u=122.106 release+2.106s lead@(58808.16, 5200.49, 292675.70) expectedBomb=(58725.60, 1312.45, 292672.30) bomb=(58805.87, 4013.29, 292689.80) off=2702m dxzImpact=82m vp=(0.561,0.687,16953) n=2 flash=(58725.60, 1762.45, 292672.30) off=450m dxzImpact=0m vp=(0.550,0.540,18666) n=1 blast=(58725.60, 1863.77, 292672.30) off=551m dxzImpact=0m vp=(0.550,0.546,18588) n=3
+E21PLAY en SHOT s2-2-impact-20km d=20000 lookAt=(57941.64, 0.00, 292647.70) t=122.11 sinceDakotas=121.31 planes=tel-aviv-dakota-lead@(58808.16, 5200.49, 292675.70) | tel-aviv-dakota-wing@(42429.64, 5282.62, 298772.70)
+SHOT ../e21-play-2490/s2-2-impact-20km-en
+E21PLAY en SEQ2 s2-3-fireball-12km u=123.032 release+3.032s lead@(59529.11, 5200.50, 292732.10) expectedBomb=(58725.60, 1312.45, 292672.30) bomb=(59525.50, 4171.22, 292748.30) off=2970m dxzImpact=803m vp=(0.712,0.936,8869) n=1 flash=(59504.19, 1765.25, 292733.80) off=903m dxzImpact=781m vp=(0.674,0.620,10703) n=1 blast=(59504.19, 1760.92, 292733.80) off=901m dxzImpact=781m vp=(0.674,0.620,10706) n=3
+E21PLAY en SHOT s2-3-fireball-12km d=12000 lookAt=(57941.64, 0.00, 292647.70) t=123.03 sinceDakotas=122.24 planes=tel-aviv-dakota-lead@(59529.11, 5200.50, 292732.10) | tel-aviv-dakota-wing@(42706.80, 5269.06, 298351.60)
+SHOT ../e21-play-2490/s2-3-fireball-12km-en
+E21PLAY en SEQ2 s2-3-fireball-20km u=123.032 release+3.032s lead@(59529.11, 5200.50, 292732.10) expectedBomb=(58725.60, 1312.45, 292672.30) bomb=(59525.50, 4171.22, 292748.30) off=2970m dxzImpact=803m vp=(0.612,0.702,16869) n=1 flash=(59504.19, 1765.25, 292733.80) off=903m dxzImpact=781m vp=(0.599,0.544,18703) n=1 blast=(59504.19, 1760.92, 292733.80) off=901m dxzImpact=781m vp=(0.599,0.544,18706) n=3
+E21PLAY en SHOT s2-3-fireball-20km d=20000 lookAt=(57941.64, 0.00, 292647.70) t=123.03 sinceDakotas=122.24 planes=tel-aviv-dakota-lead@(59529.11, 5200.50, 292732.10) | tel-aviv-dakota-wing@(42706.80, 5269.06, 298351.60)
+SHOT ../e21-play-2490/s2-3-fireball-20km-en
+<color=#ffaa00>warn:</color> [21:22:54:6485] <color=#B4FF32>[AI]</color> <color=#85C1E2><b>BufferedFileLogStorage</b></color> Flush called but already disposed, ignored.
+Saving results to: /Users/eyalgolan/Library/Application Support/Statecraft/Statecraft Israel/TestResults.xml
+]]></output>
+        </test-case>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

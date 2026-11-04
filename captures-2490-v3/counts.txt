@@ -1,0 +1,2 @@
+EN labels-turnmap: before 18, after 15
+HE labels-turnmap: before 20, after 16

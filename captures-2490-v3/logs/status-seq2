@@ -1,0 +1,4 @@
+start 21:20:27 HEAD=2c24e804d227d6d5474742c85d8e82b08c452be2 dirty=0
+seq2 exit 0 total="1" passed="1" failed="0" inconclusive="0" skipped="0" 21:22:56
+final HEAD=2c24e804d porcelain=0
+DONE

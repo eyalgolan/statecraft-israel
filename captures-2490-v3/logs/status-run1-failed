@@ -1,0 +1,14 @@
+start 20:54:51 HEAD=5ca573246 dirty=0
+before HEAD=085944e62d9c25710d70ef654ca1c242d6ee3c29 filter=^E21Play2490\.English$;^E21Play2490\.Hebrew$ 20:54:53
+before build-sim exit 0
+warmup exit 0 ok=1
+before exit 2 total="2" passed="0" failed="2" inconclusive="0" skipped="0" 21:01:45
+before lines       68
+before porcelain=0 
+after HEAD=2c24e804d227d6d5474742c85d8e82b08c452be2 filter=^E21Play2490\.Hebrew$;^E21Play2490\.EnglishFull$ 21:01:46
+after build-sim exit 0
+after exit 2 total="2" passed="0" failed="2" inconclusive="0" skipped="0" 21:08:10
+after lines       44
+after porcelain=0 
+final HEAD=2c24e804d porcelain=0
+DONE

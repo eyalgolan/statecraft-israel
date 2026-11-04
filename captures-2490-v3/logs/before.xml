@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="2" result="Passed" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-04 19:10:52Z" end-time="2026-11-04 19:11:58Z" duration="66.044859">
+  <test-suite type="TestSuite" id="1000" name="Statecraft Israel" fullname="Statecraft Israel" runstate="Runnable" testcasecount="4482" result="Passed" start-time="2026-11-04 19:10:52Z" end-time="2026-11-04 19:11:58Z" duration="66.044859" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="6081" name="Statecraft.Tests.EditMode.dll" fullname="/Users/eyalgolan/israel-game-wt/e21-dakota3/unity/Library/ScriptAssemblies/Statecraft.Tests.EditMode.dll" runstate="Runnable" testcasecount="3805" result="Passed" start-time="2026-11-04 19:10:52Z" end-time="2026-11-04 19:11:58Z" duration="66.007047" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="2090" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestFixture" id="2728" name="E21Play2490" fullname="E21Play2490" classname="E21Play2490" runstate="Explicit" testcasecount="3" result="Passed" start-time="2026-11-04 19:10:52Z" end-time="2026-11-04 19:11:58Z" duration="65.963827" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties>
+          <property name="_SKIPREASON" value="throwaway stills" />
+        </properties>
+        <test-case id="2729" name="English" fullname="E21Play2490.English" methodname="English" classname="E21Play2490" runstate="Runnable" seed="1300693776" result="Passed" start-time="2026-11-04 19:09:38Z" end-time="2026-11-04 19:10:48Z" duration="69.608110" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="Timeout" value="1200000" />
+          </properties>
+          <output><![CDATA[KITS ground_tint_ms=2.9 places=296
+KITS buildings=2997 vertices=196678 triangles=102766 trees=14253 route_segments=1492 build_ms=252 plant_ms=64 localities=271 locality_buildings=2423 camps=64 tents=171 boats=17 draws=65 models=21266 close_vertices=59866
+PEOPLE: 0 civilian figures placed, 0 not drawn
+RURAL: 0 rural scenes placed (0 models); 0 models short of 3 scenes
+GAME OK 1948-05-15 turn 0 hash 5c725be6a673f5cba51aa2713b691bc505cd8b68dda77397c134118901539378
+PEOPLE: 0 civilian figures placed, 0 not drawn
+PEOPLE: 0 civilian figures placed, 0 not drawn
+RURAL: 0 rural scenes placed (0 models); 0 models short of 3 scenes
+SEA/AIR: 1 collection craft placed, 0 not drawn
+SEA/AIR: 2 collection craft placed, 0 not drawn
+SEA/AIR: 4 collection craft placed, 0 not drawn
+SEA/AIR: 5 collection craft placed, 0 not drawn
+SEA/AIR: 5 collection craft placed, 0 not drawn
+E21PLAY en begun t=0.1 boot lookAt=(56929.60, 0.00, 289262.20) d=31000 yaw=0.0 date=1948-05-15 turn=0
+E21PLAY en dakotas=1 appear t=0.78 still=False
+HEXPROPS: no clear ground near station:Jaffa railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: no clear ground near station:Jerusalem (Khan) railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: no clear ground near station:Haifa East railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: 15 hex props placed for 1321 wants in 35 ms (keep-clear ground 22 ms, search 10 ms, instances 2 ms with 0 kept, trees 1 ms) (station 15, tent 0, prickly_pear 0, garrigue 0, scrub 0)
+HEXPROPS: no clear ground near station:Jaffa railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: no clear ground near station:Jerusalem (Khan) railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: no clear ground near station:Haifa East railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: 79 hex props placed for 1321 wants in 30 ms (keep-clear ground 15 ms, search 9 ms, instances 0 ms with 15 kept, trees 6 ms) (station 15, tent 64, prickly_pear 0, garrigue 0, scrub 0)
+HEXPROPS: no clear ground near station:Jaffa railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: no clear ground near station:Jerusalem (Khan) railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: no clear ground near station:Haifa East railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: no clear ground near abu_dis; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near al_eizariya; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near al_jammasin_al_gharbi; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near al_khader; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near al_shaykh_muwannis; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near at_tur; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near bayt_dajan_jaffa; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near beit_safafa; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near lifta; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near malha; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near silwan; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near sur_bahir; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: 944 hex props placed for 1321 wants in 98 ms (keep-clear ground 14 ms, search 10 ms, instances 5 ms with 79 kept, trees 69 ms) (station 15, tent 64, prickly_pear 865, garrigue 0, scrub 0)
+HEXPROPS: no clear ground near station:Jaffa railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: no clear ground near station:Jerusalem (Khan) railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: no clear ground near station:Haifa East railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: no clear ground near abu_dis; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near al_eizariya; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near al_jammasin_al_gharbi; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near al_khader; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near al_shaykh_muwannis; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near at_tur; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near bayt_dajan_jaffa; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near beit_safafa; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near lifta; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near malha; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near silwan; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near sur_bahir; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: 1420 hex props placed for 1321 wants in 184 ms (keep-clear ground 39 ms, search 9 ms, instances 4 ms with 944 kept, trees 132 ms) (station 15, tent 64, prickly_pear 865, garrigue 476, scrub 0)
+HEXPROPS: no clear ground near station:Jaffa railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: no clear ground near station:Jerusalem (Khan) railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: no clear ground near station:Haifa East railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: no clear ground near abu_dis; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near al_eizariya; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near al_jammasin_al_gharbi; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near al_khader; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near al_shaykh_muwannis; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near at_tur; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near bayt_dajan_jaffa; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near beit_safafa; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near lifta; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near malha; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near silwan; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near sur_bahir; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: 1898 hex props placed for 1321 wants in 199 ms (keep-clear ground 15 ms, search 9 ms, instances 4 ms with 1420 kept, trees 171 ms) (station 15, tent 64, prickly_pear 865, garrigue 476, scrub 478)
+HEXPROPS: 392 landmark models stand in for the kit's parts of 27 kit meshes (minaret 196, belfry 0, clock_tower 0)
+LANDMARKS: 5 town landmarks placed, 0 not drawn
+HEXPROPS: 508 landmark models stand in for the kit's parts of 31 kit meshes (minaret 243, belfry 11, clock_tower 0)
+HEXPROPS: 514 landmark models stand in for the kit's parts of 32 kit meshes (minaret 244, belfry 12, clock_tower 1)
+LANDMARKS: 6 town landmarks placed, 0 not drawn
+LANDMARKS: 7 town landmarks placed, 0 not drawn
+LANDMARKS: 8 town landmarks placed, 0 not drawn
+LANDMARKS: 14 town landmarks placed, 0 not drawn
+LANDMARKS: 15 town landmarks placed, 0 not drawn
+LANDMARKS: 20 town landmarks placed, 0 not drawn
+LANDMARKS: 21 town landmarks placed, 0 not drawn
+BUILDINGS: 1 of 4 special buildings placed (latrun_tegart)
+PEOPLE: 12 civilian figures placed, 0 not drawn
+PEOPLE: 30 civilian figures placed, 0 not drawn
+PEOPLE: 48 civilian figures placed, 0 not drawn
+PEOPLE: 66 civilian figures placed, 0 not drawn
+PEOPLE: 71 civilian figures placed, 0 not drawn
+PEOPLE: 75 civilian figures placed, 0 not drawn
+RURAL: 3 rural scenes placed (3 models); 0 models short of 3 scenes
+RURAL: 6 rural scenes placed (6 models); 0 models short of 3 scenes
+RURAL: 9 rural scenes placed (9 models); 0 models short of 3 scenes
+RURAL: 12 rural scenes placed (24 models); 0 models short of 3 scenes
+RURAL: 15 rural scenes placed (27 models); 0 models short of 3 scenes
+RURAL: 18 rural scenes placed (30 models); 0 models short of 3 scenes
+RURAL: 21 rural scenes placed (33 models); 0 models short of 3 scenes
+PEOPLE: 78 civilian figures placed, 0 not drawn
+Can't call Animator.Update on inactive object
+Can't call Animator.Update on inactive object
+Can't call Animator.Update on inactive object
+UNITS figures: the skinned near figures streamed in (close zoom)
+E21PLAY en telaviv=(57157.64, 1305.17, 292623.50)
+E21PLAY en labels-turnmap d=31000 lookAt=(56929.60, 0.00, 289262.20) t=62.89 sinceDakotas=62.12 keepClear=5 boxes=(79345.47, 1520.94, 379691.00) (1920.00, 479.73, 358.94) | (44694.10, 1334.49, 288359.10) (240.00, 106.84, 88.50) | (77269.84, 1334.49, 383871.30) (240.00, 106.84, 88.50) | (30000.00, 6439.98, 185986.70) (16336.89, 6336.89, 12336.88) | (33110.02, 5855.11, 290799.10) (26128.97, 3813.93, 22128.94) shown=[S1:Tel Aviv ; S2:Jaffa ; S12:Petah Tikva ; L3:Ramat Gan ; L8:Salama ; L11:Givatayim ; L24:Herzliya ; L29:Yazur ; L31:Beit Dajan ; L46:Holon ; L52:Kafr 'Ana ; L106:Bat Yam ; L112:Sheikh Muwannis ; L146:Fajja ; L171:Kheiriya ; L204:Magdiel ; L240:Saqiya ; L243:Jammasin el Gharbi]
+E21PLAY en SHOT labels-turnmap d=31000 lookAt=(56929.60, 0.00, 289262.20) t=62.89 sinceDakotas=62.12 planes=tel-aviv-dakota@(34601.66, 3949.15, 287935.70)
+SHOT ../e21-play-2490/labels-turnmap-en
+<color=#ffaa00>warn:</color> [21:10:47:8640] <color=#B4FF32>[AI]</color> <color=#85C1E2><b>BufferedFileLogStorage</b></color> Flush called but already disposed, ignored.
+]]></output>
+        </test-case>
+        <test-case id="2730" name="Hebrew" fullname="E21Play2490.Hebrew" methodname="Hebrew" classname="E21Play2490" runstate="Runnable" seed="1296130649" result="Passed" start-time="2026-11-04 19:10:48Z" end-time="2026-11-04 19:11:58Z" duration="69.619393" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="Timeout" value="1200000" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[KITS ground_tint_ms=2.9 places=296
+KITS buildings=2997 vertices=196678 triangles=102766 trees=14253 route_segments=1492 build_ms=260 plant_ms=68 localities=271 locality_buildings=2423 camps=64 tents=171 boats=17 draws=65 models=21266 close_vertices=59866
+PEOPLE: 0 civilian figures placed, 0 not drawn
+RURAL: 0 rural scenes placed (0 models); 0 models short of 3 scenes
+GAME OK 1948-05-15 turn 0 hash b316cd272ab84978896d2a4e6ee50ec277dae46651d6bc089d980476e70db447
+PEOPLE: 0 civilian figures placed, 0 not drawn
+PEOPLE: 0 civilian figures placed, 0 not drawn
+RURAL: 0 rural scenes placed (0 models); 0 models short of 3 scenes
+SEA/AIR: 1 collection craft placed, 0 not drawn
+SEA/AIR: 2 collection craft placed, 0 not drawn
+SEA/AIR: 4 collection craft placed, 0 not drawn
+SEA/AIR: 5 collection craft placed, 0 not drawn
+SEA/AIR: 5 collection craft placed, 0 not drawn
+E21PLAY he begun t=0.1 boot lookAt=(56929.60, 0.00, 289262.20) d=31000 yaw=0.0 date=1948-05-15 turn=0
+E21PLAY he dakotas=1 appear t=0.77 still=False
+HEXPROPS: no clear ground near station:Jaffa railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: no clear ground near station:Jerusalem (Khan) railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: no clear ground near station:Haifa East railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: 15 hex props placed for 1321 wants in 36 ms (keep-clear ground 23 ms, search 9 ms, instances 2 ms with 0 kept, trees 2 ms) (station 15, tent 0, prickly_pear 0, garrigue 0, scrub 0)
+HEXPROPS: no clear ground near station:Jaffa railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: no clear ground near station:Jerusalem (Khan) railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: no clear ground near station:Haifa East railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: 79 hex props placed for 1321 wants in 30 ms (keep-clear ground 15 ms, search 9 ms, instances 1 ms with 15 kept, trees 5 ms) (station 15, tent 64, prickly_pear 0, garrigue 0, scrub 0)
+HEXPROPS: no clear ground near station:Jaffa railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: no clear ground near station:Jerusalem (Khan) railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: no clear ground near station:Haifa East railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: no clear ground near abu_dis; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near al_eizariya; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near al_jammasin_al_gharbi; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near al_khader; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near al_shaykh_muwannis; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near at_tur; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near bayt_dajan_jaffa; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near beit_safafa; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near lifta; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near malha; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near silwan; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near sur_bahir; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: 944 hex props placed for 1321 wants in 96 ms (keep-clear ground 15 ms, search 10 ms, instances 5 ms with 79 kept, trees 66 ms) (station 15, tent 64, prickly_pear 865, garrigue 0, scrub 0)
+HEXPROPS: no clear ground near station:Jaffa railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: no clear ground near station:Jerusalem (Khan) railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: no clear ground near station:Haifa East railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: no clear ground near abu_dis; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near al_eizariya; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near al_jammasin_al_gharbi; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near al_khader; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near al_shaykh_muwannis; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near at_tur; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near bayt_dajan_jaffa; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near beit_safafa; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near lifta; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near malha; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near silwan; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near sur_bahir; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: 1420 hex props placed for 1321 wants in 191 ms (keep-clear ground 19 ms, search 17 ms, instances 7 ms with 944 kept, trees 148 ms) (station 15, tent 64, prickly_pear 865, garrigue 476, scrub 0)
+HEXPROPS: no clear ground near station:Jaffa railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: no clear ground near station:Jerusalem (Khan) railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: no clear ground near station:Haifa East railway station; its tiles:railway_halt/station is not drawn.
+HEXPROPS: no clear ground near abu_dis; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near al_eizariya; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near al_jammasin_al_gharbi; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near al_khader; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near al_shaykh_muwannis; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near at_tur; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near bayt_dajan_jaffa; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near beit_safafa; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near lifta; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near malha; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near silwan; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: no clear ground near sur_bahir; its tiles:arab_village/prickly_pear is not drawn.
+HEXPROPS: 1898 hex props placed for 1321 wants in 201 ms (keep-clear ground 15 ms, search 10 ms, instances 5 ms with 1420 kept, trees 171 ms) (station 15, tent 64, prickly_pear 865, garrigue 476, scrub 478)
+HEXPROPS: 392 landmark models stand in for the kit's parts of 27 kit meshes (minaret 196, belfry 0, clock_tower 0)
+LANDMARKS: 5 town landmarks placed, 0 not drawn
+HEXPROPS: 508 landmark models stand in for the kit's parts of 31 kit meshes (minaret 243, belfry 11, clock_tower 0)
+HEXPROPS: 514 landmark models stand in for the kit's parts of 32 kit meshes (minaret 244, belfry 12, clock_tower 1)
+LANDMARKS: 6 town landmarks placed, 0 not drawn
+LANDMARKS: 7 town landmarks placed, 0 not drawn
+LANDMARKS: 8 town landmarks placed, 0 not drawn
+LANDMARKS: 14 town landmarks placed, 0 not drawn
+LANDMARKS: 15 town landmarks placed, 0 not drawn
+LANDMARKS: 20 town landmarks placed, 0 not drawn
+LANDMARKS: 21 town landmarks placed, 0 not drawn
+BUILDINGS: 1 of 4 special buildings placed (latrun_tegart)
+PEOPLE: 12 civilian figures placed, 0 not drawn
+PEOPLE: 30 civilian figures placed, 0 not drawn
+PEOPLE: 48 civilian figures placed, 0 not drawn
+PEOPLE: 66 civilian figures placed, 0 not drawn
+PEOPLE: 71 civilian figures placed, 0 not drawn
+PEOPLE: 75 civilian figures placed, 0 not drawn
+RURAL: 3 rural scenes placed (3 models); 0 models short of 3 scenes
+RURAL: 6 rural scenes placed (6 models); 0 models short of 3 scenes
+RURAL: 9 rural scenes placed (9 models); 0 models short of 3 scenes
+RURAL: 12 rural scenes placed (24 models); 0 models short of 3 scenes
+RURAL: 15 rural scenes placed (27 models); 0 models short of 3 scenes
+RURAL: 18 rural scenes placed (30 models); 0 models short of 3 scenes
+RURAL: 21 rural scenes placed (33 models); 0 models short of 3 scenes
+PEOPLE: 78 civilian figures placed, 0 not drawn
+Can't call Animator.Update on inactive object
+Can't call Animator.Update on inactive object
+Can't call Animator.Update on inactive object
+UNITS figures: the skinned near figures streamed in (close zoom)
+E21PLAY he telaviv=(57157.64, 1305.17, 292623.50)
+E21PLAY he labels-turnmap d=31000 lookAt=(56929.60, 0.00, 289262.20) t=62.94 sinceDakotas=62.16 keepClear=5 boxes=(79345.47, 1520.94, 379691.00) (1920.00, 479.73, 358.94) | (44694.10, 1334.49, 288359.10) (240.00, 106.84, 88.50) | (77269.84, 1334.49, 383871.30) (240.00, 106.84, 88.50) | (30000.00, 6439.98, 185986.70) (16336.89, 6336.89, 12336.88) | (33110.02, 5855.11, 290799.10) (26128.97, 3813.93, 22128.94) shown=[S1:תל אביב ; S2:יפו ; S12:פתח תקווה ; L3:רמת גן ; L8:סלמה ; L11:גבעתיים ; L24:הרצליה ; L29:יאזור ; L31:בית דג'ן ; L46:חולון ; L51:סאפריה ; L52:כפר עאנה ; L106:בת ים ; L112:שייח' מוניס ; L116:אבו כישכ ; L146:פג'ה ; L171:אל-ח'ירייה ; L204:מגדיאל ; L240:סאקיה ; L243:ג'מאסין אל ע'רבי]
+E21PLAY he SHOT labels-turnmap d=31000 lookAt=(56929.60, 0.00, 289262.20) t=62.94 sinceDakotas=62.16 planes=tel-aviv-dakota@(34625.02, 3949.15, 287940.10)
+SHOT ../e21-play-2490/labels-turnmap-he
+<color=#ffaa00>warn:</color> [21:11:57:4710] <color=#B4FF32>[AI]</color> <color=#85C1E2><b>BufferedFileLogStorage</b></color> Flush called but already disposed, ignored.
+Saving results to: /Users/eyalgolan/Library/Application Support/Statecraft/Statecraft Israel/TestResults.xml
+]]></output>
+        </test-case>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

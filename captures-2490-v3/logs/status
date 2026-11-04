@@ -1,0 +1,14 @@
+start 21:08:55 HEAD=2c24e804d dirty=0
+before HEAD=085944e62d9c25710d70ef654ca1c242d6ee3c29 filter=^E21Play2490\.English$;^E21Play2490\.Hebrew$ 21:08:55
+before build-sim exit 0
+warmup exit 0 ok=1
+before exit 0 total="2" passed="2" failed="0" inconclusive="0" skipped="0" 21:11:59
+before lines       71
+before porcelain=1  M unity/Assets/Art/HexTiles/Props/desert_edge_tent/tent-rock.mat 
+after HEAD=2c24e804d227d6d5474742c85d8e82b08c452be2 filter=^E21Play2490\.Hebrew$;^E21Play2490\.EnglishFull$ 21:11:59
+after build-sim exit 0
+after exit 0 total="2" passed="2" failed="0" inconclusive="0" skipped="0" 21:17:39
+after lines       78
+after porcelain=1  M unity/Assets/Art/HexTiles/Props/desert_edge_tent/tent-rock.mat 
+final HEAD=2c24e804d porcelain=1
+DONE

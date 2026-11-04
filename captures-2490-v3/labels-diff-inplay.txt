@@ -1,0 +1,38 @@
+# PR #2490 captures v3 (IN PLAY): names shown on the 15 May 1948 turn, opening view d=31000 lookAt (56929.60, 0, 289262.20)
+# before = main 085944e62d9c25710d70ef654ca1c242d6ee3c29; after = 2c24e804d227d6d5474742c85d8e82b08c452be2 (main + #2490 at 5ca573246)
+# Key: S<i> = settlement pill, L<i> = 1948 locality pill, M<i> = map location pill. Taken >= 62 s of play after the Dakotas appeared.
+
+before meta: E21PLAY en begun t=0.1 boot lookAt=(56929.60, 0.00, 289262.20) d=31000 yaw=0.0 date=1948-05-15 turn=0
+before meta: E21PLAY en dakotas=1 appear t=0.78 still=False
+before meta: E21PLAY en telaviv=(57157.64, 1305.17, 292623.50)
+before meta: E21PLAY he begun t=0.1 boot lookAt=(56929.60, 0.00, 289262.20) d=31000 yaw=0.0 date=1948-05-15 turn=0
+before meta: E21PLAY he dakotas=1 appear t=0.77 still=False
+before meta: E21PLAY he telaviv=(57157.64, 1305.17, 292623.50)
+after meta: E21PLAY en begun t=0.1 boot lookAt=(56929.60, 0.00, 289262.20) d=31000 yaw=0.0 date=1948-05-15 turn=0
+after meta: E21PLAY en dakotas=2 appear t=0.78 still=False,False
+after meta: E21PLAY en telaviv=(57157.64, 1305.17, 292623.50)
+after meta: E21PLAY en bomb runs=2
+after meta: E21PLAY en blast frame=4 at=(55589.75, 2118.75, 292672.30) scale=2066
+after meta: E21PLAY en blast frame=7 at=(55589.75, 2178.94, 292672.30) scale=2216
+after meta: E21PLAY en blast frame=10 at=(55589.75, 2197.11, 292672.30) scale=2261
+after meta: E21PLAY en blast shots=3
+after meta: E21PLAY he begun t=0.1 boot lookAt=(56929.60, 0.00, 289262.20) d=31000 yaw=0.0 date=1948-05-15 turn=0
+after meta: E21PLAY he dakotas=2 appear t=0.77 still=False,False
+after meta: E21PLAY he telaviv=(57157.64, 1305.17, 292623.50)
+
+== en labels-turnmap  before d=31000 t=62.9s (62.1s after Dakotas) keepClear=5; after d=31000 t=62.9s (62.1s after Dakotas) keepClear=6.  shown before 18, after 15
+   before boxes: (79345.47, 1520.94, 379691.00) (1920.00, 479.73, 358.94) | (44694.10, 1334.49, 288359.10) (240.00, 106.84, 88.50) | (77269.84, 1334.49, 383871.30) (240.00, 106.84, 88.50) | (30000.00, 6439.98, 185986.70) (16336.89, 6336.89, 12336.88) | (33110.02, 5855.11, 290799.10) (26128.97, 3813.93, 22128.94)
+   after boxes: (79345.47, 1520.94, 379691.00) (1920.00, 479.73, 358.94) | (44694.10, 1334.49, 288359.10) (240.00, 106.84, 88.50) | (77269.84, 1334.49, 383871.30) (240.00, 106.84, 88.50) | (30000.00, 6439.98, 185986.70) (16336.89, 6336.89, 12336.88) | (55200.45, 6426.03, 310542.90) (13932.95, 13154.37, 13215.88) | (71394.18, 6426.03, 304448.00) (13400.95, 13154.37, 13601.72)
+   shown before: L106:Bat Yam ; L112:Sheikh Muwannis ; L11:Givatayim ; L146:Fajja ; L171:Kheiriya ; L204:Magdiel ; L240:Saqiya ; L243:Jammasin el Gharbi ; L24:Herzliya ; L29:Yazur ; L31:Beit Dajan ; L3:Ramat Gan ; L46:Holon ; L52:Kafr 'Ana ; L8:Salama ; S12:Petah Tikva ; S1:Tel Aviv ; S2:Jaffa
+   shown after: L106:Bat Yam ; L112:Sheikh Muwannis ; L11:Givatayim ; L146:Fajja ; L171:Kheiriya ; L240:Saqiya ; L243:Jammasin el Gharbi ; L29:Yazur ; L31:Beit Dajan ; L3:Ramat Gan ; L46:Holon ; L52:Kafr 'Ana ; L8:Salama ; S1:Tel Aviv ; S2:Jaffa
+   hidden after, shown before: L204:Magdiel ; L24:Herzliya ; S12:Petah Tikva
+   shown after, hidden before: (none)
+== en wide-31km (after only) d=31000 t=63.1s keepClear=6 shown 15: S1:Tel Aviv ; S2:Jaffa ; S12:Petah Tikva ; L3:Ramat Gan ; L8:Salama ; L11:Givatayim ; L29:Yazur ; L46:Holon ; L52:Kafr 'Ana ; L106:Bat Yam ; L112:Sheikh Muwannis ; L146:Fajja ; L171:Kheiriya ; L240:Saqiya ; L243:Jammasin el Gharbi
+== en close-20km (after only) d=20000 t=63.4s keepClear=6 shown 9: S1:Tel Aviv ; S2:Jaffa ; L3:Ramat Gan ; L8:Salama ; L11:Givatayim ; L12:Bnei Brak ; L112:Sheikh Muwannis ; L171:Kheiriya ; L243:Jammasin el Gharbi
+== he labels-turnmap  before d=31000 t=62.9s (62.2s after Dakotas) keepClear=5; after d=31000 t=62.9s (62.1s after Dakotas) keepClear=6.  shown before 20, after 16
+   before boxes: (79345.47, 1520.94, 379691.00) (1920.00, 479.73, 358.94) | (44694.10, 1334.49, 288359.10) (240.00, 106.84, 88.50) | (77269.84, 1334.49, 383871.30) (240.00, 106.84, 88.50) | (30000.00, 6439.98, 185986.70) (16336.89, 6336.89, 12336.88) | (33110.02, 5855.11, 290799.10) (26128.97, 3813.93, 22128.94)
+   after boxes: (79345.47, 1520.94, 379691.00) (1920.00, 479.73, 358.94) | (44694.10, 1334.49, 288359.10) (240.00, 106.84, 88.50) | (77269.84, 1334.49, 383871.30) (240.00, 106.84, 88.50) | (30000.00, 6439.98, 185986.70) (16336.89, 6336.89, 12336.88) | (55200.45, 6426.03, 310542.90) (13932.95, 13154.37, 13215.88) | (71394.18, 6426.03, 304448.00) (13400.95, 13154.37, 13601.72)
+   shown before: L106:בת ים ; L112:שייח' מוניס ; L116:אבו כישכ ; L11:גבעתיים ; L146:פג'ה ; L171:אל-ח'ירייה ; L204:מגדיאל ; L240:סאקיה ; L243:ג'מאסין אל ע'רבי ; L24:הרצליה ; L29:יאזור ; L31:בית דג'ן ; L3:רמת גן ; L46:חולון ; L51:סאפריה ; L52:כפר עאנה ; L8:סלמה ; S12:פתח תקווה ; S1:תל אביב ; S2:יפו
+   shown after: L106:בת ים ; L112:שייח' מוניס ; L11:גבעתיים ; L146:פג'ה ; L171:אל-ח'ירייה ; L240:סאקיה ; L243:ג'מאסין אל ע'רבי ; L29:יאזור ; L31:בית דג'ן ; L3:רמת גן ; L46:חולון ; L51:סאפריה ; L52:כפר עאנה ; L8:סלמה ; S1:תל אביב ; S2:יפו
+   hidden after, shown before: L116:אבו כישכ ; L204:מגדיאל ; L24:הרצליה ; S12:פתח תקווה
+   shown after, hidden before: (none)
