@@ -417,6 +417,8 @@ namespace Statecraft.Sim
             //   deported                   a settlement target whose Deport the card follows: it fires only once the
             //                              player's Deport has depopulated that place, carries the displacement tag and
             //                              has exactly one option (R-EVT-007)
+            //   front_quiet                the front (Prisoners.Fronts) of an armistice_<front> card: under gdd-0.3 it may also
+            //                              come early, and again after a refusal, once that front is quiet (R-WAR-008)
             foreach (var rel in eventFiles.OrderBy(p => p, StringComparer.Ordinal))
             {
                 var e = Read<GameEvent>(readFile, rel);
@@ -1501,6 +1503,7 @@ namespace Statecraft.Sim
             ValidateObjectiveConditions(c);
             ValidateEventSites(c);
             ValidateEventPrisoners(c);
+            ValidateEventFrontQuiet(c);
             ValidateEventDeported(c);
             ValidateProjects(c);
             ValidateCorridors(c);
@@ -1515,6 +1518,19 @@ namespace Statecraft.Sim
                     throw new ContentException(e.File, $"events[{e.Id}].prisoners", $"unknown front '{e.Prisoners}' (one of {string.Join(", ", Prisoners.Fronts)})");
                 if (e.Options.Count != 1)
                     throw new ContentException(e.File, $"events[{e.Id}].options", "an exchange card has exactly one option");
+            }
+        }
+
+        /// <summary>An armistice card's front (R-WAR-008): a known front, on that front's own card, since Armistice.Resolved
+        /// reads the refused front from the id (R-WAR-006).</summary>
+        static void ValidateEventFrontQuiet(Content c)
+        {
+            foreach (var e in c.Events.Where(e => e.FrontQuiet != ""))
+            {
+                if (!Prisoners.Fronts.Contains(e.FrontQuiet))
+                    throw new ContentException(e.File, $"events[{e.Id}].front_quiet", $"unknown front '{e.FrontQuiet}' (one of {string.Join(", ", Prisoners.Fronts)})");
+                if (e.Id != "armistice_" + e.FrontQuiet)
+                    throw new ContentException(e.File, $"events[{e.Id}].front_quiet", $"'{e.FrontQuiet}' goes only on its own card, armistice_{e.FrontQuiet}");
             }
         }
 
