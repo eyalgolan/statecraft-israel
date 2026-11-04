@@ -37,3 +37,5 @@ What to do, in this order:
 ## Disclose how you worked
 
 If an AI assistant helped, say so under "AI assistance" in the PR (`CONTRIBUTING.md`) and say which claims you checked yourself against which pages.
+
+A note tagged "a person's check pending" is done when you, AI-assisted or not, do that check and report it: asked whether an item tagged "a person's check pending" counts as done once an AI-assisted contributor does and reports that check, the owner answered "Done if disclosed (Recommended)" ([4 November 2026](https://github.com/eyalgolan/statecraft-israel/pull/2481#issuecomment-6623108295)); the chosen option read: "Yes, when the PR discloses the AI help and says exactly what was opened and checked; the tag becomes 'checked by <contributor>, AI-assisted'." Say in the PR which page you opened for each claim and what you checked there.
