@@ -509,6 +509,7 @@ public class CityBuildersTests
     public void Gdd01StartOrderLeavesTheHashUnchanged()
     {
         var (c, s) = Game(civilians: 10, employed: 9, jobs: 10, gdd03: false);   // one person without a job
+        s.Attention = 10;   // gdd-0.1 charges Attention for both orders: enough for the two in one turn
         var jobFirst = Step(c, s, new AssignWorkers("town_a", "job", 10), Housing());
         var startFirst = Step(c, s, Housing(), new AssignWorkers("town_a", "job", 10));
         Assert.Empty(jobFirst.Rejected);
