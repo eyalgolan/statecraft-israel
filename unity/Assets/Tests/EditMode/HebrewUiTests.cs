@@ -104,16 +104,22 @@ public class HebrewUiTests
         }
     }
 
-    // #2198: the Arms purchase refused at the debt ceiling reaches the end-of-turn toast (ReasonText) in both languages.
+    // #2198, #2590: every localized Arms-purchase refusal reaches the end-of-turn toast (ReasonText) in both languages.
     [Test]
-    public void TheArmsDebtCeilingRefusalHasAStringInBothLanguages()
+    public void EveryArmsPurchaseRefusalHasAStringInBothLanguages()
     {
-        var reason = Statecraft.Sim.Pools.RefusedDebtCeiling;
-        Assert.AreEqual(reason, SimBridge.ReasonText(En, reason), "the English string is the sim's own");
-        var he = SimBridge.ReasonText(He, reason);
-        Assert.AreNotEqual(reason, he, "no Hebrew string for: " + reason);
-        StringAssert.IsMatch("[א-ת]", he, reason);
-        StringAssert.DoesNotMatch("[A-Za-z]", he, reason);
+        foreach (var reason in new[]
+        {
+            Statecraft.Sim.Pools.RefusedDebtCeiling,
+            Statecraft.Sim.Pools.RefusedStockCapacity,
+        })
+        {
+            Assert.AreEqual(reason, SimBridge.ReasonText(En, reason), "the English string is the sim's own");
+            var he = SimBridge.ReasonText(He, reason);
+            Assert.AreNotEqual(reason, he, "no Hebrew string for: " + reason);
+            StringAssert.IsMatch("[א-ת]", he, reason);
+            StringAssert.DoesNotMatch("[A-Za-z]", he, reason);
+        }
     }
 
     // #2072: every Combat.Check and Training.Reinforce refusal (their Refused* constants) has a string in both files. Each

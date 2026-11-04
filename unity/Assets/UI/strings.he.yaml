@@ -1254,6 +1254,8 @@ arms.minimum: "יש לרכוש לפחות יחידת נשק אחת. יש להז�
 arms.no_attention: "אין די תשומת לב לרכישה. יש לבטל הוראה אחרת או להמתין לתור הבא."
 # #2198: agent-drafted Hebrew; native review: owner, 2 Nov 2026, "Hebrew is right (Recommended)".
 arms.refused_debt_ceiling: "רכישת כמות כזאת של נשק תעלה את החוב מעל התקרה"
+# Agent-drafted Hebrew; for the native read in #564.
+arms.refused_stock_capacity: "כמות זו של נשק גדולה מכפי שהמלאי יכול להכיל"
 
 # #731 stock summaries in the report and Why. Native review: owner, 3 Nov 2026 (HE batch 1: "All fine as they are").
 report.stock_line: "{0} במלאי: {1}"

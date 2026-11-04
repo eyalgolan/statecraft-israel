@@ -205,7 +205,7 @@ namespace Statecraft.Game.UI
                     return Unknown("city_project", p.ProjectKind, Content.ProjectKinds.Select(x => x.Id)) ?? Unknown("city", p.City, Content.Cities.Select(x => x.Id));
                 case CancelProject x:
                     return Unknown("city_project", x.Project.ToString(System.Globalization.CultureInfo.InvariantCulture), State.CityProjects.Keys.Select(k => k.ToString(System.Globalization.CultureInfo.InvariantCulture)));
-                // Buying Arms (#781): no ids; the sim refuses a count below one, and borrowing past the debt ceiling (#2198), itself.
+                // Buying Arms (#781): no ids; the sim refuses the count, stock capacity and debt ceiling itself.
                 case BuyArms _: return null;
                 // Answering a capture (#797): the sim refuses a place not awaiting the choice, or an outcome not built yet, with
                 // its own reason and never throws on the id. The capture dialog is PR 10.
@@ -218,7 +218,8 @@ namespace Statecraft.Game.UI
             }
         }
 
-        /// <summary>The sim's English refusals that have a UI string: Orders.Check's (#2045) and the Arms purchase refused at the debt ceiling (#2198).
+        /// <summary>The sim's English refusals that have a UI string: Orders.Check's (#2045) and the Arms-purchase refusals
+        /// (#2198, #2590).
         /// Keyed on the English, so the same words from another check (Movement, Combat, Training, Demobilization give "That
         /// unit is not yours", "There is no such unit" too) read in the UI's language as well.</summary>
         static readonly Dictionary<string, string> ReasonKeys = new Dictionary<string, string>
@@ -245,6 +246,7 @@ namespace Statecraft.Game.UI
             [Training.RefusedNoTraining] = "unit.reinforce_refused.no_training",
             [Training.RefusedCount] = "unit.reinforce_refused.count",
             [Pools.RefusedDebtCeiling] = "arms.refused_debt_ceiling",
+            [Pools.RefusedStockCapacity] = "arms.refused_stock_capacity",
             [Orders.RefusedCardOrder] = "unit.order_refused.card_order",   // R-ENEMY-005: an operation card's refused go-to
             [Orders.RefusedLastGarrison] = "unit.order_refused.last_garrison",   // R-CTRL-013: a card's go-to held back
         };
