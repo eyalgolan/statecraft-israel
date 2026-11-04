@@ -91,13 +91,9 @@ namespace Statecraft.Sim
             // Q37 (docs/GDD.md:373): "Only an Israeli-held hex can be farmed". The sim has no hex control yet, so the
             // caller states it.
             if (!israeliHeld) throw new ArgumentException("Only an Israeli-held field can be farmed (Q37).");
-            // Our reading, not an owner ruling: only a farmer holds a field. Its basis:
-            // - #1693, owner, 3 November 2026 (issuecomment-6606032643): "Tools in the MVP: no" and "Self-taught
-            //   pioneers: not reachable in the MVP", so there is no self-taught route to a profession;
-            // - docs/gdd/training.md:48: "Completion grants the retained qualification";
-            // - docs/GDD.md:389: "Each census city's starting farmers are a quarter novice, half trained and a quarter
-            //   veteran" ("Amir's 1:2:1 ratio per city (Recommended)").
-            // The farmer tiers are also the only field rates (docs/GDD.md:385). The ledger ties a Farmer to those tiers.
+            // R-FIELD-002: only a farmer holds a field. Owner ruling, 4 November 2026, #1694 (Q22), asked "May only a
+            // unit with the Farmer profession staff a field?", answered "yes":
+            // https://github.com/eyalgolan/statecraft-israel/issues/1694#issuecomment-6623124984
             if (state.PopulationLedger.Get(id).Profession != CivilianProfession.Farmer)
                 throw new ArgumentException("Only a farmer can work a field.");
             return work.Assign(id, field);
