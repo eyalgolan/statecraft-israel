@@ -225,7 +225,7 @@ public class ContentWindowsTests
         Refused(m.Replace("  - id: rationing_food\n    from: 1948-07-01\n    to: 1949-01-01", "  - id: rationing_food\n    from: 1948-07-01\n    to: 1949-01-02"), "source 'rationing' is not active");
     }
 
-    const string Event = "id: probe\ntitle: Probe\ntext: A probe.\nanchor: soft\nfrom: 1948-06-01\nto: 1948-12-01\n{0}options:\n  - id: a\n    text: Do a\n{1}";
+    const string Event = "id: probe\ntitle: Probe\ntext: A probe.\nanchor: soft\nfrom: 1948-06-01\nto: 1948-12-01\n{0}options:\n  - id: a\n    text: Do a\n{1}sources: [{{ url: \"https://example.org/event\", checked: 2026-10-18 }}]\n";
 
     [Fact]
     public void AnEventConditionOnAnIndicatorThatBeginsInsideItsWindowIsRefused() =>
@@ -248,7 +248,7 @@ public class ContentWindowsTests
     // on 12 September, after shelter (and maabarot) have left the state on 1 July.
     static Content LateFire(string conditions, string option) => Load(
         Model(m => Window(Window(m, "  - id: shelter\n    base: 0.3", "to: 1948-07-01"), "  - id: maabarot\n    default: 0.0", "to: 1948-07-01")),
-        events: new Dictionary<string, string> { ["probe.yaml"] = "id: probe\ntitle: Probe\ntext: A probe.\nanchor: soft\nfrom: 1948-06-20\nto: 1948-07-01\n" + conditions + "options:\n  - id: a\n    text: Do a\n" + option });
+        events: new Dictionary<string, string> { ["probe.yaml"] = "id: probe\ntitle: Probe\ntext: A probe.\nanchor: soft\nfrom: 1948-06-20\nto: 1948-07-01\n" + conditions + "options:\n  - id: a\n    text: Do a\n" + option + "sources: [{ url: \"https://example.org/event\", checked: 2026-10-18 }]\n" });
 
     [Fact]
     public void ALateFireDoesNotReadAnIndicatorWhoseWindowHasEnded()

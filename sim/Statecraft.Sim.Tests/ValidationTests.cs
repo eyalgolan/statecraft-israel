@@ -27,6 +27,7 @@ options:
   - id: wait
     text: Wait for rain
     alternative: { basis: design }
+sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
 status: draft
 ";
 
@@ -47,12 +48,39 @@ status: draft
     public void FixtureWithTheTestEventLoads() =>
         ContentLoader.Load(Fixture.Write(events: new Dictionary<string, string> { ["drought.yaml"] = Event }));
 
+    [Theory]
+    [InlineData("title: Drought\n", "", "events[drought].title")]
+    [InlineData("title: Drought", "title: ' '", "events[drought].title")]
+    [InlineData("text: '{finance_minister} reports a drought.'\n", "", "events[drought].text")]
+    [InlineData("text: '{finance_minister} reports a drought.'", "text: ' '", "events[drought].text")]
+    [InlineData("    text: Ration water\n", "", "events[drought].options[ration].text")]
+    [InlineData("    text: Ration water", "    text: ' '", "events[drought].options[ration].text")]
+    public void EventDisplayTextIsRequired(string from, string to, string field)
+    {
+        var ex = Bad("events/drought.yaml", from, to);
+        Assert.Equal("events/drought.yaml", ex.File);
+        Assert.Equal(field, ex.Field);
+        Assert.Contains("text shown to the player", ex.Message);
+    }
+
+    [Theory]
+    [InlineData("sources: [{ url: https://example.org/event, checked: 2026-10-18 }]\n", "", "events[drought].sources")]
+    [InlineData("sources: [{ url: https://example.org/event, checked: 2026-10-18 }]", "sources: []", "events[drought].sources")]
+    [InlineData("https://example.org/event", "http://example.org/event", "events[drought].sources[0]")]
+    [InlineData(", checked: 2026-10-18", "", "events[drought].sources[0]")]
+    public void EventSourcesAreRequiredAndComplete(string from, string to, string field)
+    {
+        var ex = Bad("events/drought.yaml", from, to);
+        Assert.Equal("events/drought.yaml", ex.File);
+        Assert.Equal(field, ex.Field);
+    }
+
     // I1: a key written with no value deserialises to null.
     [Theory]
     [InlineData("events/drought.yaml", "tags: [economy]", "tags:", "events[drought].tags", "must be a list")]
     [InlineData("events/drought.yaml", "options:\n  - id: ration\n    text: Ration water\n    historical: true\n    effects:\n      - target: food_supply\n        delta: 0.1\n  - id: wait\n    text: Wait for rain\n    alternative: { basis: design }\n", "options:\n", "events[drought].options", "must be a list")]
     [InlineData("events/drought.yaml", "    effects:\n      - target: food_supply\n        delta: 0.1\n", "    effects:\n", "events[drought].options[ration].effects", "must be a list")]
-    [InlineData("people.yaml", "    offices:\n      - office: defense_minister\n        from: 1949-01-01\n      - office: finance_minister\n        from: 1948-05-14\n", "    offices:\n", "people[def_two].offices", "must be a list")]
+    [InlineData("people.yaml", "    offices:\n      - office: defense_minister\n        from: 1949-01-01\n        sources: *fixture_term_sources\n      - office: finance_minister\n        from: 1948-05-14\n        sources: *fixture_term_sources\n", "    offices:\n", "people[def_two].offices", "must be a list")]
     [InlineData("legislatures.yaml", "seats: { alpha: 4, beta: 6 }", "seats:", "legislatures[house].seats", "must be a map")]
     [InlineData("rules.yaml", "budget_start: { finance_minister: 1.0 }", "budget_start:", "budget_start", "must be a map")]
     [InlineData("parties.yaml", "parties:\n  - id: alpha\n    name: Alpha\n  - id: beta\n    name: Beta\n", "parties:\n", "parties", "must be a list")]
@@ -260,6 +288,6 @@ status: draft
         // YamlDotNet keeps the last of two equal keys by default, which would silently drop the first value.
         var ex = Bad("legislatures.yaml", "    size: 10\n", "    size: 10\n    seats:\n");
         Assert.Equal("legislatures.yaml", ex.File);
-        Assert.StartsWith("line ", ex.Field);
+        Assert.Equal("seats (line 16)", ex.Field);
     }
 }

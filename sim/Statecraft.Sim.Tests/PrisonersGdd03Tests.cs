@@ -38,6 +38,7 @@ options:
   - id: continue
     text: Continue
     historical: true
+sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
 ";
 
     /// <summary>The fixture under the gdd-0.3 identity, with the real content's points_per_prisoner_unit_returned line in

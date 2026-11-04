@@ -32,6 +32,7 @@ options:
     text: Blame the border
     alternative: { basis: design }
     set_rung: 3
+sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
 ";
 
     static Content Load(Dictionary<string, string> events) => ContentLoader.Load(Fixture.Write(events: events));
@@ -217,6 +218,7 @@ options:
     effects:
       - target: morale
         delta: 0.1
+sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
 ";
 
     /// <summary>Morale (base 0.5, no effect contributions) set to level via its shift, then each option chosen in turn.</summary>
@@ -636,7 +638,7 @@ options:
     static string Simple(string id, string anchor, string from, string? to = null) =>
         $"id: {id}\ntitle: '{id} for {{defense_minister}}'\ntext: Something happens.\nanchor: {anchor}\nfrom: {from}\n" +
         (to == null ? "" : $"to: {to}\n") +
-        "options:\n  - id: ok\n    text: Accept\n    historical: true\n";
+        "options:\n  - id: ok\n    text: Accept\n    historical: true\nsources: [{ url: \"https://example.org/event\", checked: 2026-10-18 }]\n";
 
     [Fact]
     public void ShortWindowInsideAQuarterTurnStillFires()

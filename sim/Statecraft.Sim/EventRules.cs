@@ -23,6 +23,9 @@ namespace Statecraft.Sim
             foreach (var e in c.Events)
             {
                 string F(string field) => $"events[{e.Id}].{field}";
+                ContentLoader.RequiredText(e.File, F("title"), e.Title);
+                ContentLoader.RequiredText(e.File, F("text"), e.Text);
+                ContentLoader.RequiredSources(e.File, F("sources"), e.Sources);
                 if (!Offices.OfficeId.IsMatch(e.Id)) throw new ContentException(e.File, F("id"), ContentLoader.IdRule);
                 if (!ids.Add(e.Id)) throw new ContentException(e.File, F("id"), "duplicate event id");
                 if (e.Anchor != "hard" && e.Anchor != "soft") throw new ContentException(e.File, F("anchor"), $"unknown anchor '{e.Anchor}' (must be hard or soft)");
@@ -71,6 +74,7 @@ namespace Statecraft.Sim
                 var optionIds = new HashSet<string>();
                 foreach (var o in e.Options)
                 {
+                    ContentLoader.RequiredText(e.File, F($"options[{o.Id}].text"), o.Text);
                     if (!Offices.OfficeId.IsMatch(o.Id)) throw new ContentException(e.File, F($"options[{o.Id}].id"), ContentLoader.IdRule);
                     if (!optionIds.Add(o.Id)) throw new ContentException(e.File, F($"options[{o.Id}].id"), "duplicate option id");
                     CheckPlaceholders(c, e, F($"options[{o.Id}].text"), o.Text, offices);
@@ -137,6 +141,13 @@ namespace Statecraft.Sim
         /// same real cards but no units file, so it has nothing to check them against and no unit to order.</summary>
         static void CheckOrders(Content c, GameEvent e, EventOption o, Func<string, string> F)
         {
+            for (int i = 0; i < o.UnitOrders.Count; i++)
+            {
+                var x = o.UnitOrders[i];
+                var at = F(FormattableString.Invariant($"options[{o.Id}].unit_orders[{i}]"));
+                if (!x.QGiven) throw new ContentException(e.File, at + ".q", "required");
+                if (!x.RGiven) throw new ContentException(e.File, at + ".r", "required");
+            }
             if (!c.IsGdd) return;
             for (int i = 0; i < o.UnitOrders.Count; i++)
             {
@@ -351,7 +362,7 @@ namespace Statecraft.Sim
                     if (!v.When.Any(r => IsAlternativeRoad(c, r)))
                         throw new ContentException(e.File, F($"{at}.when"), "a variant follows a road not taken: at least one entry names an option that did not happen, or diverged: true");
                     if (v.Text.Trim() == "") throw new ContentException(e.File, F($"{at}.text"), "a variant has text");
-                    if (v.Sources.Count == 0) throw new ContentException(e.File, F($"{at}.sources"), "needs at least one source");
+                    ContentLoader.RequiredSources(e.File, F($"{at}.sources"), v.Sources);
                     if (v.Title != "") CheckPlaceholders(c, e, F($"{at}.title"), v.Title, offices);
                     CheckPlaceholders(c, e, F($"{at}.text"), v.Text, offices);
                 }

@@ -16,6 +16,7 @@ public class SeveralHoldersTests
       - office: defense_minister
         from: 1949-01-01
         to: 1949-06-01
+        sources: [{ url: https://example.org/term, checked: 2026-10-18 }]
 ";
 
     static Dictionary<string, string> Files(bool several) => new Dictionary<string, string>
@@ -87,7 +88,7 @@ public class SeveralHoldersTests
     [Fact]
     public void AnEventPlaceholderForSuchAnOfficeFailsToLoad()
     {
-        var ev = "id: shortage\ntitle: Bread lines\ntext: '{defense_minister} reports shortages.'\nfrom: 1948-06-01\noptions:\n  - id: a\n    text: Ration food\n    effects:\n      - target: food_supply\n        delta: 0.2\n";
+        var ev = "id: shortage\ntitle: Bread lines\ntext: '{defense_minister} reports shortages.'\nfrom: 1948-06-01\noptions:\n  - id: a\n    text: Ration food\n    effects:\n      - target: food_supply\n        delta: 0.2\nsources: [{ url: \"https://example.org/event\", checked: 2026-10-18 }]\n";
         var ex = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(Files(true), new Dictionary<string, string> { ["shortage.yaml"] = ev })));
         Assert.Contains("several holders", ex.Message);
     }

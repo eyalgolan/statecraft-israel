@@ -60,7 +60,7 @@ public class EventRulesGddTests
     }
 
     static string Soft(string id, string from) =>
-        $"id: {id}\ntitle: '{id}'\ntext: Something happens.\nfrom: {from}\noptions:\n  - id: ok\n    text: Accept\n    historical: true\n";
+        $"id: {id}\ntitle: '{id}'\ntext: Something happens.\nfrom: {from}\noptions:\n  - id: ok\n    text: Accept\n    historical: true\nsources: [{{ url: \"https://example.org/event\", checked: 2026-10-18 }}]\n";
 
     // R-EVT-001: the soft events take only the slots the hard anchors leave. With 1 hard anchor and 3 soft events
     // eligible on one turn, exactly 2 soft events fire (the mvp-end run has no such turn, so a fixture pins it).
@@ -148,6 +148,7 @@ options:
     set_policy:
       rationing: 0.4
     set_rung: 3
+sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
 ";
 
     static Content ChoiceContent(string anchor) =>

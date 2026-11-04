@@ -37,6 +37,7 @@ offices:
     offices:
       - office: agriculture_minister
         from: 1948-05-14
+        sources: [{ url: https://example.org/term, checked: 2026-10-18 }]
 ";
     static readonly string Lazy = @"
   - id: lazy_agri
@@ -47,6 +48,7 @@ offices:
     offices:
       - office: agriculture_minister
         from: 1948-05-14
+        sources: [{ url: https://example.org/term, checked: 2026-10-18 }]
 ";
 
     static readonly string AbleLabour = @"
@@ -58,6 +60,7 @@ offices:
     offices:
       - office: labour_minister
         from: 1948-05-14
+        sources: [{ url: https://example.org/term, checked: 2026-10-18 }]
 ";
 
     static readonly string Map = @"
@@ -284,7 +287,7 @@ offices:
     [Fact]
     public void AChangedMinisterUpdatesTheRemainingForecastWithoutLosingCarry()
     {
-        var candidate = Lazy.Replace("    offices:\n      - office: agriculture_minister\n        from: 1948-05-14\n", "");
+        var candidate = Lazy.Replace("    offices:\n      - office: agriculture_minister\n        from: 1948-05-14\n        sources: [{ url: https://example.org/term, checked: 2026-10-18 }]\n", "");
         var c = Town(Able + candidate);
         var s = WithHalutz(c, out var id);
         var site = c.Sites.Single(x => x.Id == "site_a");
