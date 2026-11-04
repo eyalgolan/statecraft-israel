@@ -310,7 +310,8 @@ namespace Statecraft.Sim
         }
 
         /// <summary>R-ENEMY-002: the furthest hex the unit can reach this turn on its cheapest path to (<paramref name="q"/>,
-        /// <paramref name="r"/>), by the same search as Move, or null when no path leads there or its first step is out of reach.</summary>
+        /// <paramref name="r"/>), by the same search as Move, including R-MOVE-001's full-points first-step exception; null
+        /// when no path leads there or the unit is already there.</summary>
         internal static (int Q, int R)? Toward(Content c, GameState s, Unit u, int q, int r)
         {
             var points = Points(c, u);
@@ -319,7 +320,6 @@ namespace Statecraft.Sim
             if (!dist.ContainsKey((q, r)) || (u.Q, u.R) == (q, r)) return null;
             var h = (q, r);
             while (dist[h] > points && prev[h] != (u.Q, u.R)) h = prev[h];
-            if (dist[h] > points && !Gdd03Military.Applies(c)) h = prev[h];
             return h == (u.Q, u.R) ? ((int, int)?)null : h;
         }
 

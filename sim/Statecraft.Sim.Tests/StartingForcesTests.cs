@@ -193,6 +193,33 @@ public class StartingForcesTests
         Assert.False(s.Units.ContainsKey(1));
     }
 
+    // R-ENEMY-004: no enemy-side starting force may be authored to arrive after the game starts. The loader names the
+    // units_1948.yaml row and field, before a turn can add the unit.
+    [Fact]
+    public void AnEnemyRowDatedAfterTheStartIsRefused()
+    {
+        var ex = Assert.Throws<ContentException>(() =>
+            Load(Row("late_enemy", "egypt", 20, from: "1948-06-20", asOf: "1948-06-20")));
+        Assert.Equal("map/units_1948.yaml", ex.File);
+        Assert.Equal("units[late_enemy].strength.as_of", ex.Field);
+        Assert.Contains("enemy-side force may not arrive after the game starts", ex.Message);
+    }
+
+    // R-ENEMY-004: Arrive is a second boundary for in-memory or otherwise unvalidated content, and never adds the enemy.
+    [Fact]
+    public void ArriveRefusesAnEnemyForceThatBypassedTheLoader()
+    {
+        var c = Load(Row("first", "israel", 20));
+        c.StartingForces.Add(new StartingForce
+        {
+            Row = "late_enemy", Type = "egyptian_army", Side = "egypt", Strength = 2, Q = 2, R = 0,
+            Arrives = new DateTime(1948, 6, 15),
+        });
+        var s = Simulation.NewGame(c, GoldenRun.Seed, Mode.Historical);
+        Assert.Throws<InvalidOperationException>(() => StartingForces.Arrive(c, s, new DateTime(1948, 6, 15)));
+        Assert.DoesNotContain(1, s.Units.Keys);
+    }
+
     // R-UNIT-009: a strength's as_of that is not a 'YYYY-MM-DD' date is a load error naming the file and the row.
     [Fact]
     public void AStrengthDateMustBeADate()
