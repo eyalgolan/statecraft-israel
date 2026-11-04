@@ -155,12 +155,12 @@ public class EncyclopediaScreenTests
             StringAssert.Contains(phrase, line);
     }
 
-    // R-CITY-010: only gdd-0.3 withholds the job income of a city the enemy holds.
+    // R-CITY-010: only gdd-0.3 withholds the job income of a city with an enemy military unit on it; gdd-0.1 and legacy keep the base text.
     [Test]
     public void Gdd03HeldCityJobIncomeUsesRulesetTextInBothLanguages()
     {
         var texts = new[] { En, He };
-        var heldClauses = new[] { "a city the enemy holds earns no job income that turn", "משרות בעיר שהאויב מחזיק בה אינן מכניסות כסף באותו תור" };
+        var heldClauses = new[] { "a city with an enemy military unit on it earns no job income that turn", "משרות בעיר שיש בה יחידה צבאית של האויב אינן מכניסות כסף באותו תור" };
         for (var language = 0; language < texts.Length; language++)
         {
             var text = texts[language];
@@ -171,7 +171,7 @@ public class EncyclopediaScreenTests
                 Assert.IsTrue(text.Has(variantKey), variantKey + " exists");
                 StringAssert.Contains(heldClauses[language], text[variantKey]);
                 StringAssert.DoesNotContain(heldClauses[language], text[baseKey]);
-                foreach (var ruleset in new[] { SaveGame.Gdd03Ruleset, SaveGame.GddRuleset })
+                foreach (var ruleset in new[] { SaveGame.Gdd03Ruleset, SaveGame.GddRuleset, SaveGame.LegacyRuleset })
                 {
                     var key = "advisor.page." + page + (ruleset == SaveGame.Gdd03Ruleset ? ".gdd03.text" : ".text");
                     Assert.IsTrue(text.Has(key), key + " exists");
