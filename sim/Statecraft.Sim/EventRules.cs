@@ -223,10 +223,11 @@ namespace Statecraft.Sim
                 if (!Offices.OfficeId.IsMatch(o.Id)) throw new ContentException(file, F("id"), ContentLoader.IdRule);
                 if (!seen.Add(o.Id)) throw new ContentException(file, F("id"), "duplicate id");
                 ContentLoader.Named(file, F("name"), o.Name);
-                // The Hebrew name (#1187): an agent translation of the English until a native speaker reads it (#564),
-                // so it needs no sources of its own; the flag is agent-checked or absent, and the name is Hebrew letters.
+                // The Hebrew name (#1187): an agent translation of the English until a native speaker, or an AI-assisted
+                // contributor who discloses it, has read it (#564; owner, 4 November 2026: "AI-assisted can clear it"), so
+                // it needs no sources of its own; the flag is agent-checked or absent, and the name is Hebrew letters.
                 if (o.NameHeReviewGiven && o.NameHeReview != HebrewReview.AgentChecked)
-                    throw new ContentException(file, F("name_he_review"), $"must be {HebrewReview.AgentChecked} (pending a native speaker's review, #564), or left out once a person has reviewed the name");
+                    throw new ContentException(file, F("name_he_review"), $"must be {HebrewReview.AgentChecked} (until a native speaker, or an AI-assisted contributor who discloses it, has read the name, #564), or left out once it has been read");
                 if (o.NameHe == "")
                 {
                     if (o.NameHeReviewGiven) throw new ContentException(file, F("name_he"), "required: name_he_review is set but the name is empty");
@@ -460,12 +461,13 @@ namespace Statecraft.Sim
 
         /// <summary>An event's Hebrew text (#1064): title_he, text_he and every option's text_he, all or none (a card half in
         /// Hebrew would mix the languages), in Hebrew letters, with placeholders that resolve as the English ones must.
-        /// text_he_review is agent-checked until a native speaker has read the text (#564), and needs the text.</summary>
+        /// text_he_review is agent-checked until a native speaker, or an AI-assisted contributor who discloses it, has read
+        /// it (#564; owner, 4 November 2026: "AI-assisted can clear it"), and needs the text.</summary>
         static void CheckHebrew(Content c, GameEvent e, HashSet<string> offices)
         {
             string F(string field) => $"events[{e.Id}].{field}";
             if (e.TextHeReviewGiven && e.TextHeReview != HebrewReview.AgentChecked)
-                throw new ContentException(e.File, F("text_he_review"), $"must be {HebrewReview.AgentChecked} (pending a native speaker's review, #564), or left out once a person has reviewed the text");
+                throw new ContentException(e.File, F("text_he_review"), $"must be {HebrewReview.AgentChecked} (until a native speaker, or an AI-assisted contributor who discloses it, has read the text, #564), or left out once it has been read");
             var fields = new List<(string Field, string Value)> { ("title_he", e.TitleHe), ("text_he", e.TextHe) };
             fields.AddRange(e.Options.Select(o => ($"options[{o.Id}].text_he", o.TextHe)));
             if (fields.All(x => x.Value == ""))

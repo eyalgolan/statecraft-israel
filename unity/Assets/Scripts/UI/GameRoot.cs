@@ -87,6 +87,7 @@ namespace Statecraft.Game.UI
         /// <summary>Set by SwitchLanguage for its Begin (#2054): whether the start screen it rebuilds offered Continue.</summary>
         bool keptResumed = true;
         AdvisorPresenter? advisor;
+        CabinetPresenter? cabinet;
         EncyclopediaPresenter? encyclopedia;
         /// <summary>Tests supply an in-memory approval copy for Hebrew layout; the shipped review fields are unchanged.</summary>
         internal AdvisorCatalog? AdvisorCatalogForTests { get; set; }
@@ -381,7 +382,7 @@ namespace Statecraft.Game.UI
             // "Report a bug or idea" (#1169), from Settings and the start screen: the version line names the content GameBoot logged.
             feedback = Own(new FeedbackPresenter(root, text, ReportLinks.Version(Application.version, inputs.Content.Hash)));
             var feedbackPanel = feedback;
-            Own(new CabinetPresenter(root, bridge, text, portraits));
+            cabinet = Own(new CabinetPresenter(root, bridge, text, portraits));
             // After End Turn, what changed in the top bar and the sim's causes (#1037); under an outcome clip, which plays first.
             report = Own(new TurnReportPresenter(root, bridge, text, nav!));
             // "Share" (#1170), from Settings and the turn report: the frame is captured at its end, before the panel shows.
@@ -389,7 +390,7 @@ namespace Statecraft.Game.UI
             // Star, Report and Share as round icons at the map screen's bottom left (#1236): the same actions as Settings' buttons.
             Own(new CommunityIconsPresenter(root, text, feedbackPanel, sharePanel));
             // Both panels in one hook: the same Escape never closes the screen under the panel too.
-            nav!.TakesEscape = () => feedbackPanel.Escape() || sharePanel.Escape() || advisor?.CloseOverlay() == true || advisor?.OverlayClosedThisFrame == true || advisor?.Escape() == true || this.info?.Escape() == true;   // the field: the panel is made below
+            nav!.TakesEscape = () => feedbackPanel.Escape() || sharePanel.Escape() || advisor?.CloseOverlay() == true || advisor?.OverlayClosedThisFrame == true || advisor?.Escape() == true || cabinet?.Escape() == true || this.info?.Escape() == true;   // the field: the panel is made below
             var names = map.SettlementsFor(inputs.Map.SettlementsYaml).ToDictionary(s => s.Id, s => s.Name);   // the map's parse (issue #321)
             // The capture dialog (GDD Phase 6 PR 10, #802): in the decision layer, after the card, which goes first; the
             // places' Hebrew names from the same parse.
@@ -952,7 +953,7 @@ namespace Statecraft.Game.UI
             for (int i = owned.Count - 1; i >= 0; i--) owned[i].Dispose();
             owned.Clear();
             if (hoveredCity != null) { hoveredCity = null; HandCursor(false); }   // the next Begin's pills start unlit
-            companion = null; minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; opening = null; card = null; outcomes = null; report = null; end = null; advisor = null; encyclopedia = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
+            companion = null; minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; opening = null; card = null; outcomes = null; report = null; end = null; advisor = null; cabinet = null; encyclopedia = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
             // A ?profile run cut short (a stopped coroutine never reaches its restore line) must not leave the terrain at the
             // profile's pixel error (Task 24 review M1). Nothing else changes it, so restoring is always right.
             if (map != null && map.Terrain != null) map.Terrain.heightmapPixelError = MapBuilder.TerrainPixelError;
@@ -1152,7 +1153,8 @@ namespace Statecraft.Game.UI
                 if (!done) done = end?.Close() == true || end?.ClosedThisFrame == true;
                 if (!done) done = report?.Close() == true || report?.ClosedThisFrame == true;
                 done |= start?.Escape() == true;
-                done |= nav?.Close() == true;
+                // Escape in the Cabinet's candidate list goes back to the seat, not out of the screen (#2340 M2).
+                done |= cabinet?.Escape() == true || nav?.Close() == true;
                 // A screen/card that consumed this Cancel must not also dismiss the map selection in this frame.
                 if (!done && nav?.ClosedThisFrame != true && document.rootVisualElement.focusController?.focusedElement == null
                     && capture?.Escape() != true && card?.Escape() != true && card?.CollapsedThisFrame != true)
@@ -1200,8 +1202,7 @@ namespace Statecraft.Game.UI
                 for (int guard = 0; bridge.NeedsOrders.Count > 0; guard++)
                 {
                     if (guard >= 200) { log("SMOKE FAIL unit skip loop reached 200"); yield break; }
-                    if (!Press(root.Q<Button>("end-turn"), log)) yield break;
-                    if (!Press(root.Q<Button>("info-skip"), log)) yield break;
+                    if (!SkipOneUnit(root, bridge, log)) yield break;
                     yield return null;
                 }
                 int refused = 0;
@@ -1258,8 +1259,7 @@ namespace Statecraft.Game.UI
             for (int guard = 0; bridge.NeedsOrders.Count > 0; guard++)
             {
                 if (guard >= 200) { log("SMOKE FAIL unit skip loop reached 200"); yield break; }
-                if (!Press(root.Q<Button>("end-turn"), log)) yield break;
-                if (!Press(root.Q<Button>("info-skip"), log)) yield break;
+                if (!SkipOneUnit(root, bridge, log)) yield break;
                 yield return null;
             }
             if (!Press(root.Q<Button>("end-turn"), log)) yield break;
@@ -1272,9 +1272,26 @@ namespace Statecraft.Game.UI
             log(FormattableString.Invariant($"SMOKE ORDERS OK {bridge.TurnStart.Date:yyyy-MM-dd} {bridge.TurnStart.Hash()}"));
         }
 
+        /// <summary>One pass of the smoke runs' unit loop: End Turn selects a unit that needs orders, and the unit card's Skip
+        /// skips it. False, with "SMOKE FAIL info-skip skipped no unit" plus the waiting ids and the unit card's title, when no
+        /// unit left the cycle (the v0.3.5 smoke spun 200 times behind a dialog, #2436).</summary>
+        static bool SkipOneUnit(VisualElement root, SimBridge bridge, Action<string> log)
+        {
+            var before = bridge.NeedsOrders;
+            if (!Press(root.Q<Button>("end-turn"), log) || !Press(root.Q<Button>("info-skip"), log)) return false;
+            if (bridge.NeedsOrders.Count < before.Count) return true;
+            // Smoke has no unit layer, so it names the units still waiting and the unit card's own title (the unit it shows,
+            // which End Turn chose and may not be the first waiting).
+            log(FormattableString.Invariant($"SMOKE FAIL info-skip skipped no unit: waiting {string.Join(",", before)}; the unit card shows '{root.Q<Label>("info-title")?.text}'"));
+            return false;
+        }
+
+        /// <summary>Presses <paramref name="b"/> as keyboard Submit does. False, with a SMOKE FAIL line, when it is missing,
+        /// out of reach (disabled, or under a disabled parent: Skip behind the v0.3.5 dialog took no press), or its handler throws.</summary>
         static bool Press(Button? b, Action<string> log)
         {
             if (b == null) { log("SMOKE FAIL button missing"); return false; }
+            if (!b.enabledInHierarchy) { log("SMOKE FAIL " + b.name + " is not enabled"); return false; }
             try
             {
                 using (var e = NavigationSubmitEvent.GetPooled()) { e.target = b; b.SendEvent(e); }

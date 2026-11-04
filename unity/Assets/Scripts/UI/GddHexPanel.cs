@@ -316,7 +316,8 @@ namespace Statecraft.Game.UI
         }
 
         /// <summary>The city projects of hex (q, r) (#1122). A project there shows its state and, while it is built, Cancel
-        /// (R-PROJ-002). Else, for the cities in reach (Projects.CitiesFor; none: nothing shows), the city that builds: the one
+        /// (R-PROJ-002); on a city's own hex the list below then holds only the gdd-0.3 housing repair (R-HOUSE-006, #1700),
+        /// which the sim takes there whatever the hex holds. Else, for the cities in reach (Projects.CitiesFor; none: nothing shows), the city that builds: the one
         /// the player picked on this hex, else the queued order's, else the nearest. Build for each kind queues StartProject for
         /// that city and hex, one order a hex (SimBridge's key, so another kind or city replaces it); the Attention is the
         /// bridge's, which refuses an order it cannot pay for as for every order. On a city's own hex (<paramref name="cityHere"/>)
@@ -326,22 +327,29 @@ namespace Statecraft.Game.UI
         {
             var c = bridge.Content; var s = bridge.State;
             string Kind(string id) => PlayerText.Capitalised(ContentNames.Of(text, c.ProjectKinds.First(x => x.Id == id)));
+            var kinds = c.ProjectKinds;
             if (Projects.CityProjectAt(s, q, r) is CityProject project)
             {
                 if (project.BuiltOn is DateTime built)
                 {
                     Line(host, "city-project-state", text.Format("city.project_built", Kind(project.Kind), townName(project.City), Date(text, built)));
                     WorkshopPart(host, bridge, text, project, townName);
-                    return;
                 }
-                Line(host, "city-project-state", text.Format("city.project_building", Kind(project.Kind), townName(project.City), Turns(text, Projects.CityTurnsToBuild(c, s, project.Kind, project.TurnsLeft, project.Progress))));
-                var cancelled = bridge.QueuedLike(new CancelProject(project.Id)) != null;
-                Button(host, "city-project-cancel", text[cancelled ? "city.cancel_ordered" : "city.cancel"],
-                    () => bridge.Queue(new CancelProject(project.Id))).SetEnabled(!cancelled);
-                return;
+                else
+                {
+                    Line(host, "city-project-state", text.Format("city.project_building", Kind(project.Kind), townName(project.City), Turns(text, Projects.CityTurnsToBuild(c, s, project.Kind, project.TurnsLeft, project.Progress))));
+                    var cancelled = bridge.QueuedLike(new CancelProject(project.Id)) != null;
+                    Button(host, "city-project-cancel", text[cancelled ? "city.cancel_ordered" : "city.cancel"],
+                        () => bridge.Queue(new CancelProject(project.Id))).SetEnabled(!cancelled);
+                }
+                // R-HOUSE-006 (#1700): the sim takes a gdd-0.3 housing repair on its city's own hex whatever that hex holds
+                // (Projects.CheckCityReason), so on a city's own hex the repair is still offered under the project; every other
+                // kind is refused for the project the line above names. No other ruleset loads the kind: nothing more shows.
+                if (!cityHere) return;
+                kinds = c.ProjectKinds.Where(k => k.Id == Projects.HousingRepair).ToList();
             }
             var cities = Projects.CitiesFor(c, s, q, r);
-            if (cities.Count == 0 || c.ProjectKinds.Count == 0) return;
+            if (cities.Count == 0 || kinds.Count == 0) return;
             var queued = bridge.QueuedLike(new StartProject("", "", q, r)) as StartProject;
             // Owner ruling on #1150 (21 Oct 2026): under the city's own part the full list ran into the left column on a stacked
             // bar or a short window, so there it folds behind one toggle; a refusal is then one tap away. The open state is the
@@ -349,7 +357,7 @@ namespace Statecraft.Game.UI
             var list = host;
             if (cityHere)
             {
-                Button(host, ToggleName, text.Format("city.projects_toggle", c.ProjectKinds.Count), () => host.ToggleInClassList(OpenClass));
+                Button(host, ToggleName, text.Format("city.projects_toggle", kinds.Count), () => host.ToggleInClassList(OpenClass));
                 list = new VisualElement { name = ListName };
                 list.AddToClassList(ListName);
                 host.Add(list);
@@ -373,17 +381,18 @@ namespace Statecraft.Game.UI
                         host.Q("city-project-cities")?.Query<Button>().Where(b => b.enabledSelf).First()?.Focus();
                     }).SetEnabled(id != city);
             }
-            var refusals = c.ProjectKinds.Select(k => Projects.CheckCityReason(c, s, k.Id, city, q, r)).ToList();
+            var refusals = kinds.Select(k => Projects.CheckCityReason(c, s, k.Id, city, q, r)).ToList();
             var words = refusals.Select(x => x == null ? null : ReasonText(x, text, c, townName)).ToList();
             // Every kind refused for one reason (not land, a placement there, the turn's limit): said once, with no buttons,
             // as the map actions do (#398). A kind this city lacks the resource for (R-PROJ-005: the winery outside Rishon
-            // LeZion) does not split that line into one per kind.
-            var shared = words.Where((x, i) => refusals[i]?.Kind != "no_resource").ToList();
+            // LeZion) does not split that line into one per kind, nor does the gdd-0.3 housing repair off its city's own hex
+            // (R-HOUSE-006: repair_city_hex comes before the shared reasons, so it would hide them on every other hex).
+            var shared = words.Where((x, i) => refusals[i]?.Kind != "no_resource" && refusals[i]?.Kind != "repair_city_hex").ToList();
             if (words.All(x => x != null) && shared.Count > 0 && shared.Distinct().Count() == 1) { Line(list, "city-project-reason", shared[0]!); return; }
             // A kind the sim refuses shows its reason alone, which names the kind (no disabled Build above it: one line, not two).
-            for (int i = 0; i < c.ProjectKinds.Count; i++)
+            for (int i = 0; i < kinds.Count; i++)
             {
-                var k = c.ProjectKinds[i];
+                var k = kinds[i];
                 if (words[i] != null) { Line(list, $"city-project-{k.Id}-reason", words[i]!); continue; }
                 var ordered = queued != null && queued.ProjectKind == k.Id && queued.City == city;
                 Button(list, "city-project-" + k.Id, ordered ? text.Format("city.project_ordered", ContentNames.Of(text, k))
@@ -449,6 +458,7 @@ namespace Statecraft.Game.UI
                 case "no_resource": return text.Format("city.project_reason.no_resource", townName(reason.Values[0]), ResourceName(text, reason.Values[1]),
                     ContentNames.Of(text, c.ProjectKinds.First(x => x.Id == reason.Values[2])));
                 case "city_cap": return text.Format("city.project_reason.city_cap", townName(reason.Values[0]));   // R-PROJ-001, gdd-0.3 (#1700)
+                case "repair_city_hex": return text.Format("city.project_reason.repair_city_hex", townName(reason.Values[0]));   // R-HOUSE-006, gdd-0.3
                 case "turn_cap": return text.Format("city.project_reason.turn_cap", int.Parse(reason.Values[0], CultureInfo.InvariantCulture));
                 default: return reason.Text;
             }

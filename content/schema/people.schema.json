@@ -32,7 +32,7 @@
         "id": { "$ref": "#/definitions/id", "description": "Unique across people." },
         "name": { "type": "string", "minLength": 1 },
         "name_he": { "type": "string" },
-        "name_he_review": { "type": "string", "enum": ["agent-checked"], "description": "Review flag of name_he. agent-checked: an AI agent checked the name against its sources and no person has read it yet (CONTENT_POLICY section 2, rule 6; review in #564). Leave out once a native speaker has reviewed it." },
+        "name_he_review": { "type": "string", "enum": ["agent-checked"], "description": "Review flag of name_he. agent-checked: an AI agent checked the name against its sources and no person has read it yet (CONTENT_POLICY section 2, rule 6). Leave out once a native speaker, or an AI-assisted contributor who discloses it, has reviewed it (#564; owner, 4 November 2026: \"AI-assisted can clear it\")." },
         "title_he_form": { "enum": ["feminine"], "description": "feminine: the person's Hebrew office titles take the offices' title_he_f (שרת העבודה). Leave out for the masculine title_he. Source it in biography_sources.title_he_form." },
         "born": { "$ref": "#/definitions/date" },
         "died": { "$ref": "#/definitions/date", "description": "Every office term must end by this day." },
@@ -78,7 +78,7 @@
           }
         },
         "status": { "enum": ["draft", "fact-checked", "historian-reviewed", "sensitivity-reviewed"] },
-        "reviewed_by": { "type": "string", "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}$", "description": "The GitHub handle of the person who signed this row off (#375): written only by that person, never by an AI agent (scripts/oss/reviewed_by_guard.py); never an email. Needs reviewed_on." },
+        "reviewed_by": { "type": "string", "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}$", "description": "The GitHub handle of the person who signed this row off (#375): written only by that person, never by an AI agent on its own; an AI-assisted contributor's source check counts when the pull request discloses the AI help and says what was checked; an AI-co-authored commit never removes it (owner, 4 November 2026: \"Yes, it counts\", #2481 comment 6623108295; scripts/oss/reviewed_by_guard.py); never an email. Needs reviewed_on." },
         "reviewed_on": { "$ref": "#/definitions/date", "description": "The day of that sign-off. Needs reviewed_by." }
       }
     }

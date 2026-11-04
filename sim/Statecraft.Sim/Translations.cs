@@ -51,7 +51,9 @@ namespace Statecraft.Sim
         public string Text { get; set; } = "";
         /// <summary>Option id and text, in the event file's order.</summary>
         public List<KeyValuePair<string, string>> Options { get; set; } = new List<KeyValuePair<string, string>>();
-        /// <summary><see cref="HebrewReview.AgentChecked"/> until a native speaker has read the text, else "".</summary>
+        /// <summary><see cref="HebrewReview.AgentChecked"/> until a native speaker, or an AI-assisted contributor who
+        /// discloses it, has read it (#564; owner, 4 November 2026: "AI-assisted can clear it"); else
+        /// "".</summary>
         public string Review { get; set; } = "";
     }
 
@@ -238,7 +240,7 @@ namespace Statecraft.Sim
             var regionPending = field.StartsWith("map/region_names_he.yaml#names.", StringComparison.Ordinal)
                 && field.EndsWith(".name", StringComparison.Ordinal) && text == "native-review-pending";
             if (text != HebrewReview.AgentChecked && !regionPending)
-                throw new ContentException(file, field + ".review", $"must be {HebrewReview.AgentChecked} (or native-review-pending for the region-name catalogue), or left out once a native speaker has read the text (#564)");
+                throw new ContentException(file, field + ".review", $"must be {HebrewReview.AgentChecked} (until a native speaker, or an AI-assisted contributor who discloses it, has read the text, #564), or native-review-pending for the region-name catalogue, or left out once it has been read");
             return regionPending ? "native-review-pending" : HebrewReview.AgentChecked;
         }
 
