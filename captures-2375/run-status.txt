@@ -1,0 +1,25 @@
+start 12:22 HEAD=20883d1b9 dirty=0
+before HEAD=b2269c3d746798f742e1d41ae7294d3e4849c7ab 12:22 porcelain=?? unity/Assets/Tests/EditMode/FireTakeRetargetShots.cs 
+before build-sim exit 0
+before warmup exit 0 ok=1
+before en_US exit 0 total="1" passed="1" failed="0" inconclusive="0" skipped="0"
+israel-c04: token alexandroni (figure-c04-sabra-pioneer-v3/figure-c06-young-recruit-v2/figure-c05-pioneer-veteran-v2) on 1948-05-20; live Animators 2 of 5; aim (60967.84, 2594.82, 312423.30); distance 7500 m
+israel-c04 israel-c04-1-standing: Animators idle/idle; a right hand moved 0 m from standing
+israel-c04 israel-c04-2-moving: Animators walk/walk; a right hand moved 1347 m from standing
+israel-c04: attack played=True, take 1.500 s
+israel-c04 israel-c04-3-firing-25: Animators idle/attack; a right hand moved 605 m from standing
+israel-c04 israel-c04-3-firing-50: Animators idle/attack; a right hand moved 589 m from standing
+israel-c04 israel-c04-3-firing-75: Animators idle/attack; a right hand moved 602 m from standing
+after HEAD=20883d1b92d3dfc58535b4a3e75ad21daf4fdc2f 12:22 porcelain=
+after build-sim exit 0
+after warmup exit 0 ok=1
+after en_US exit 0 total="1" passed="1" failed="0" inconclusive="0" skipped="0"
+israel-c04: token alexandroni (figure-c04-sabra-pioneer-v3/figure-c06-young-recruit-v2/figure-c05-pioneer-veteran-v2) on 1948-05-20; live Animators 2 of 5; aim (60967.84, 2594.82, 312423.30); distance 7500 m
+israel-c04 israel-c04-1-standing: Animators idle/idle; a right hand moved 0 m from standing
+israel-c04 israel-c04-2-moving: Animators walk/walk; a right hand moved 1347 m from standing
+israel-c04: attack played=True, take 1.500 s
+israel-c04 israel-c04-3-firing-25: Animators attack/attack; a right hand moved 605 m from standing
+israel-c04 israel-c04-3-firing-50: Animators attack/attack; a right hand moved 589 m from standing
+israel-c04 israel-c04-3-firing-75: Animators attack/attack; a right hand moved 602 m from standing
+final HEAD=20883d1b9 porcelain=0
+DONE
