@@ -208,7 +208,7 @@ public class DollarConversionTests
     public void TheCauseLineIsWordedInBothLanguages()
     {
         var b = Bridge(false, false);
-        var line = Simulation.Step(b.Content, b.State, new Command[] { new ConvertDollars(4) }).Why.Single(w => w.Key == CauseKeys.DollarsConverted);
+        var line = Simulation.Step(b.Content, b.State, new Command[] { new ConvertDollars(4) }).Why.Single(w => w.Key == CauseKeys.DollarsConverted && w.Target == "treasury");
         Assert.AreEqual(line.Message, CauseText.Line(line, b.Content, System.Array.Empty<Statecraft.Game.Map.Units.UnitEntry>(), En));
         var he = CauseText.Line(line, b.Content, System.Array.Empty<Statecraft.Game.Map.Units.UnitEntry>(), He);
         StringAssert.IsMatch("[א-ת]", he);

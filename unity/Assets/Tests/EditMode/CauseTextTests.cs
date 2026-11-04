@@ -465,6 +465,7 @@ public class CauseTextTests
             new Cause("draft", "food", 2000000000, "Site: the plowed land yielded 2000000000 units of Food", key: CauseKeys.FoodHarvest, args: new[] { "site" }),
             new Cause("draft", "food", -2000000000, "Food ran out: 2000000000 of 2000000001 units of the month's need went unmet", key: CauseKeys.FoodShortage, args: new[] { "2000000001" }),
             new Cause("draft", "food", -1, "No Food imported (foreign currency crisis): the stock fell to 2000000000 units", key: CauseKeys.FoodWithoutImports, args: new[] { "2000000000" }),
+            new Cause("draft", "food", 150, "The month's eating and Food imports brought the stock to 2000000000 units", key: CauseKeys.FoodImported, args: new[] { "2000000000" }),   // #2527
             new Cause("draft", "food", -2000000000, "The prisoners held ate 2000000000 units of Food", key: CauseKeys.PrisonerFood),
             new Cause("draft", "morale", -0.025, "The prisoners held went short of 2000000000 units of Food: Social cohesion -2.5%", key: CauseKeys.PrisonerFoodShortage, args: new[] { "2000000000" }),
             new Cause("draft", "town", 1, "Town: 1 group of craftsmen returned to civilian life and keep their training", key: CauseKeys.CraftsmenReturned, args: new[] { "1" }),
