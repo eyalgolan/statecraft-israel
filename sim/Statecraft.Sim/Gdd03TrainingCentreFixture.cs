@@ -29,8 +29,8 @@ namespace Statecraft.Sim
     /// 2026 answers): "A course occupies its people from its first turn (Q43(a)); they are released in the turn its last
     /// course turn counts and can be assigned from the next planning, or at once on cancellation, and work starts the turn
     /// after (Q43(b), Q43(c))." So the enrolment month is course turn 1 and the last counted turn graduates. A centre that
-    /// stops operating cancels its course at once (owner, 4 November 2026: "Losing the centre cancels the course
-    /// immediately, exactly like CancelTraining"). Cases this slice has not built (Q44, decided in the GDD's 1 November 2026
+    /// stops operating cancels its course at once (the owner's answer "Cancel at once (Recommended)", 4 November 2026, #1697 comment
+    /// 6622207214; the chosen option read: "Losing the centre cancels the course immediately, exactly like CancelTraining"). Cases this slice has not built (Q44, decided in the GDD's 1 November 2026
     /// answers, so the refusal is an implementation gap, not an open design answer; and a centre the month's #1716 facility
     /// freeze lists without a place, whose timing no ruling covers) are refused with a "Deferred:" NotSupportedException.</summary>
     internal sealed class Gdd03TrainingCentreFixture
@@ -193,8 +193,8 @@ namespace Statecraft.Sim
         /// the same teacher. The turn that reaches Agreed `profession.course_turns` graduates: the pupil takes the trained
         /// tier (R-QUAL-008), and pupil and teacher are released in that turn as civilians without a job (Q43(b)). At a
         /// centre that stops operating, the turn counts nothing and cancels the course as `Cancel` does, the would-be
-        /// graduation turn included (R-TRAIN-008; owner, 4 November 2026: "Losing the centre cancels the course immediately,
-        /// exactly like CancelTraining").</summary>
+        /// graduation turn included (R-TRAIN-008; the owner's answer "Cancel at once (Recommended)", 4 November 2026, #1697 comment 6622207214; the chosen
+        /// option read: "Losing the centre cancels the course immediately, exactly like CancelTraining").</summary>
         internal void Advance(int traineeId, Gdd03SyntheticMonthContext month)
         {
             ValidateInventory();
@@ -239,7 +239,7 @@ namespace Statecraft.Sim
         /// it clears the unfinished course and releases the teacher and the centre's place. Nothing is refunded or granted
         /// and no one moves. The released people, and the centre, can take another assignment at once, in this month's
         /// snapshot (#1716, #1668 Q43(b), answered 1 Nov 2026). A centre that stopped operating is no bar: this is the
-        /// cancel its loss makes (owner, 4 November 2026: "exactly like CancelTraining").</summary>
+        /// cancel its loss makes (the owner's answer "Cancel at once (Recommended)", 4 November 2026; the chosen option read: "exactly like CancelTraining").</summary>
         internal void Cancel(int traineeId)
         {
             ValidateInventory();

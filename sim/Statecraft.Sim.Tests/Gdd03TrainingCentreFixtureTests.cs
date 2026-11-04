@@ -849,7 +849,7 @@ public class Gdd03TrainingCentreFixtureTests
     }
 
     // R-TRAIN-007, R-TRAIN-008, the owner's ruling (owner, 4 November 2026; "When a training centre stops operating,
-    // what happens to the course running there?" "Cancel at once (Recommended)": "Losing the centre cancels the course
+    // what happens to the course running there?" "Cancel at once (Recommended)"; the chosen option read: "Losing the centre cancels the course
     // immediately, exactly like CancelTraining: people go home as jobless civilians, no Money refund, issued Arms go back
     // to the pool."), with 27M-4 and 27M-9 ("To their city as a civilian without a job. Overflow rules apply, with no
     // hard cap."). The fixture's centres are fixed records, so a centre that stops operating is a fixture built over the
@@ -877,7 +877,7 @@ public class Gdd03TrainingCentreFixtureTests
         Assert.Equal(count, l.Units.Count); Assert.Equal(next, l.NextPopulationId);
     }
 
-    // R-TRAIN-007, R-TRAIN-008, owner, 4 November 2026 ("Losing the centre cancels the course immediately"): a loss seen
+    // R-TRAIN-007, R-TRAIN-008, the owner's answer "Cancel at once (Recommended)" (4 November 2026; the chosen option read: "Losing the centre cancels the course immediately"): a loss seen
     // on the turn that would have graduated the course still cancels it. Our reading: the loss cancels the course before
     // that turn counts, so the pupil stays a novice and nobody graduates; graduation needs the last course turn to count.
     [Theory]
@@ -900,7 +900,7 @@ public class Gdd03TrainingCentreFixtureTests
         Assert.Equal(PopulationStatus.Trainee, l.Get(trainee).Status); Assert.Equal(CentreB, l.Get(trainee).Assignment.Target);
     }
 
-    // R-TRAIN-007, R-TRAIN-008, owner, 4 November 2026 ("exactly like CancelTraining"): an explicit cancel of a course
+    // R-TRAIN-007, R-TRAIN-008, the owner's answer "Cancel at once (Recommended)" (4 November 2026; the chosen option read: "exactly like CancelTraining"): an explicit cancel of a course
     // whose centre stopped operating is an ordinary R-TRAIN-007 cancel.
     [Fact] public void CancelAtALostCentreIsAnOrdinaryCancel()
     {
