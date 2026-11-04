@@ -316,6 +316,30 @@ public class HebrewUiTests
         Assert.IsFalse(Marked("start-language-en"));
     }
 
+    /// <summary>#2552: a save notice belongs to the session as a language-independent key. Rebuilding the open start
+    /// screen through its language choice keeps the notice and renders it in the newly selected language.</summary>
+    [TestCase(UiLanguage.English, UiLanguage.Hebrew)]
+    [TestCase(UiLanguage.Hebrew, UiLanguage.English)]
+    public void AStartScreenSaveNoticeSurvivesALanguageSwitchInTheNewLanguage(string from, string to)
+    {
+        Directory.CreateDirectory(saveDir);
+        File.WriteAllText(Path.Combine(saveDir, SaveStore.AutosaveName), "not a save");
+        LogAssert.Expect(LogType.Warning, new Regex("Autosave (rejected|could not be loaded)"));   // either path gives save.unreadable
+        var game = BootWithStartScreen(new SettingsStore(Path.Combine(saveDir, "settings")), from);
+        var session = game.Bridge!.Session;
+        var fromText = from == UiLanguage.Hebrew ? He : En;
+        var toText = to == UiLanguage.Hebrew ? He : En;
+        Assert.AreEqual(fromText.Format("save.unreadable", fromText["save.reason_other"]), Ui.Q<Label>("toast").text,
+            "the notice is raised in the starting language");
+
+        UiTestKit.Press(Ui.Q<Button>("start-language-" + to));
+
+        Assert.AreSame(session, game.Bridge!.Session, "the language switch keeps the session that owns the notice");
+        Assert.IsTrue(StartOpen, "the language switch rebuilds the open start screen");
+        Assert.AreEqual(toText.Format("save.unreadable", toText["save.reason_other"]), Ui.Q<Label>("toast").text,
+            "the retained key is rendered in the new language, not kept as already-rendered text");
+    }
+
     /// <summary>A choice on the start screen goes through Settings' own switch: the UI changes at once over the same game,
     /// the start screen stays up (Continue still only with a save) with the focus on the choice, the choice is kept under
     /// Settings' key, and Settings shows it. The other way round, a choice in Settings is what the next start screen
