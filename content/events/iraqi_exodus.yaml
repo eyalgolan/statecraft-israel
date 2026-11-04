@@ -14,16 +14,16 @@ from: 1951-03-10
 to: 1951-07-01
 options:
   - id: airlift
-    text: Bring everyone as fast as aircraft allow
-    text_he: להביא את כולם מהר ככל שמאפשרים המטוסים
+    text: Bring everyone as fast as aircraft allow, and crowd the transit camps
+    text_he: להביא את כולם מהר ככל שמאפשרים המטוסים, ולדחוק את המעברות
     historical: true
     recommended: true
     effects:
       - { target: housing, delta: -0.04 }
       - { target: morale, delta: 0.03 }
   - id: pace
-    text: Pace arrivals to the places in the camps
-    text_he: להתאים את קצב ההגעה למקומות הפנויים במעברות
+    text: Pace arrivals to spare the camps, at the cost of waiting
+    text_he: לפזר את קצב ההגעה כדי להקל על המעברות, במחיר של המתנה
     alternative: { basis: design }
     effects:
       - { target: morale, delta: -0.05 }
