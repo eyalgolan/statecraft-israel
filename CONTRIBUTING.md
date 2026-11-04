@@ -18,7 +18,7 @@ If you're unsure where to start, open an issue first and describe what you want 
 - **`help wanted` means nobody holds the issue.** The label comes off while someone has an active claim (activity in the last 7 days, or an open pull request for it) and goes back on when the claim ends. A maintainer comment that says a part is free ("Free now", "Open to anyone") is current, even below an older claim.
 - **At most 10 claims without a pull request.** You can hold up to 10 claimed issues for which you haven't opened a pull request yet. Issues where you have opened a pull request for the issue don't count toward the 10, and there's no limit on those.
 - **7 days.** A claim with no activity from its claimant on the issue or its pull request for 7 days is freed with a comment, and the issue is open to anyone again.
-- Issues paused until after the MVP, or waiting on an owner ruling, say so in the issue; start only the part a maintainer comment opens (for example the research part). Some research issues ask for "a person's check": a person, not an AI agent, opens each source.
+- Issues paused until after the MVP, or waiting on an owner ruling, say so in the issue; start only the part a maintainer comment opens (for example the research part). Some research issues ask for "a person's check": a person opens each source. AI-assisted contributors may do these person-only steps too, such as source checks, device checks and native Hebrew reads (the owner, 4 November 2026: "allow ai assisted contributers"). Disclose the AI assistance in the pull request's "AI assistance" section, say what you checked and how (which source, which device, which strings), and you stay responsible for the check.
 
 ## Licence of your contribution
 
