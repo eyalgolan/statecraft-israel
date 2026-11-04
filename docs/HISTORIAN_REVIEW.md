@@ -76,16 +76,17 @@ Both or neither: the loader (and the map's readers in Unity, and `tools/routes_1
 blank value, or a value of the wrong shape. **Only the reviewer writes these two lines, in a commit of their own.** An AI
 agent never does, not even to copy a sign-off it was told about: `scripts/oss/reviewed_by_guard.py` fails a pull request
 in which a commit with an AI co-author trailer adds, changes or removes either line, and it fails closed. The exception
-is a pull request whose "AI assistance" section discloses the AI help: then an AI-assisted contributor's check counts
+is a pull request whose "AI assistance" section discloses the AI help and names the check: then an AI-assisted contributor's check counts
 as the sign-off, under their own handle, and the section says which sources they opened and what they checked
-(asked whether an AI-assisted contributor's source check counts as the `reviewed_by` sign-off, the owner answered "Yes, it counts" ([4 November 2026](https://github.com/eyalgolan/statecraft-israel/pull/2481#issuecomment-6623108295))). A row with a
+(asked whether an AI-assisted contributor's source check counts as the `reviewed_by` sign-off, the owner answered "Yes, it counts" ([4 November 2026](https://github.com/eyalgolan/statecraft-israel/pull/2481#issuecomment-6623108295))). Even then, such a commit never removes a sign-off. A row with a
 whole sign-off leaves the review queue (`tools/review_queue.py`, `docs/review-queue.md`).
 
 **A signed row is closed to agents** (owner, 15 October 2026, on #629: "Block it in CI"). A sign-off vouches for the text
 the reviewer read, so the same guard also fails a pull request in which a commit with an AI co-author trailer changes any
 line of a row that carries a whole sign-off, any field, the `id` included, or adds a key inside it. It stays failed until
-a person (or an AI-assisted contributor, disclosed as above), in a later commit of their own in the same pull request, reads the row again and signs it again (a new
-`reviewed_by` / `reviewed_on`) or removes its sign-off. Only the row whose own sign-off lines that commit changes is
+a person, in a later commit of their own in the same pull request, reads the row again and signs it again (a new
+`reviewed_by` / `reviewed_on`) or removes its sign-off. An AI-assisted contributor, disclosed as above, may sign it
+again but not remove the sign-off. Only the row whose own sign-off lines that commit changes is
 released, and a merge commit releases nothing. Any change to the row's `reviewed_by` or `reviewed_on` line counts, even
 a comment added to it, so change those lines only after reading the row again. A row also covers what it pulls in from
 elsewhere through a YAML alias or merge key (`*gov1_k`, `<<: *d`): an agent editing the anchor edits the row. An agent that needs to change a signed row proposes the change

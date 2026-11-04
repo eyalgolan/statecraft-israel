@@ -383,3 +383,55 @@ def test_disclosure_does_not_let_an_ai_commit_edit_a_signed_row_without_signing_
     commit(root, "content: re-read A and sign again" + AI, date="2026-10-16T12:00:00+00:00")
     assert guard.check(root, base, "HEAD", ai_disclosed=True) == []
     assert len(guard.check(root, base, "HEAD")) == 2   # undisclosed: the re-sign is refused and A stays edited
+
+
+# ---- review of #2481: a "no AI" statement is not a disclosure, and disclosure never lets an AI commit remove a sign-off --
+
+def test_a_statement_that_no_ai_was_used_is_not_a_disclosure():
+    for ai in ("None used.", "No AI was used", "Not used", "**None**, I checked it myself", "N/A: checked by hand",
+               "Nothing; I checked each fact", "_No._ Checked by hand."):
+        assert not guard.disclosed(TEMPLATE.format(ai=ai)), ai
+
+
+def test_naming_a_tool_without_the_check_is_not_a_disclosure():
+    for ai in ("Claude Code drafted the test.", "Copilot wrote the YAML.", "Claude Code helped (checklist in the PR)"):
+        assert not guard.disclosed(TEMPLATE.format(ai=ai)), ai
+
+
+def test_the_template_example_is_a_disclosure():
+    assert guard.disclosed(TEMPLATE.format(ai="Claude Code drafted the test; I checked each fact against its source."))
+    assert guard.disclosed(TEMPLATE.format(ai="Codex read the scans; I am checking the dates against page 4."))
+
+
+def test_a_disclosed_ai_commit_may_not_remove_a_sign_off(tmp_path):
+    for i, after in enumerate([ROW,                                                      # both keys gone
+                               ROW + "    reviewed_by: eyalgolan\n",                   # one key gone
+                               ROW + "    # reviewed_by: eyalgolan\n    # reviewed_on: 2026-10-15\n"]):   # commented out
+        root, base = repo(tmp_path / str(i), SIGNED)
+        edit(root, after)
+        commit(root, "content: drop the sign-off" + AI)
+        problems = guard.check(root, base, "HEAD", ai_disclosed=True)
+        assert any("removes a" in p for p in problems), (i, problems)
+
+
+def test_a_disclosed_ai_removal_does_not_release_an_edited_row(tmp_path):
+    """Rule 2: an AI commit edits signed row A, then a disclosed AI commit removes A's sign-off. A stays edited."""
+    root, base = repo(tmp_path, TWO)
+    edit(root, TWO.replace("name: A", "name: A2"))
+    commit(root, "content: edit A" + AI)
+    edit(root, TWO.replace("name: A", "name: A2").replace("    reviewed_by: eyalgolan\n    reviewed_on: 2026-10-15\n", ""))
+    commit(root, "content: unsign A" + AI)
+    problems = guard.check(root, base, "HEAD", ai_disclosed=True)
+    assert any("removes a" in p for p in problems) and any("signed off" in p and "'a'" in p for p in problems), problems
+
+
+def test_a_disclosed_ai_add_or_re_sign_passes_and_an_undisclosed_add_fails(tmp_path):
+    root, base = repo(tmp_path)
+    edit(root, SIGNED)
+    commit(root, "content: sign off A" + AI)
+    assert guard.check(root, base, "HEAD", ai_disclosed=True) == []
+    assert len(guard.check(root, base, "HEAD")) == 1
+    root2, base2 = repo(tmp_path / "re", SIGNED)
+    edit(root2, SIGNED.replace("reviewed_by: eyalgolan", "reviewed_by: someone-else").replace("2026-10-15", "2026-10-16"))
+    commit(root2, "content: re-sign A" + AI, date="2026-10-16T12:00:00+00:00")
+    assert guard.check(root2, base2, "HEAD", ai_disclosed=True) == []
