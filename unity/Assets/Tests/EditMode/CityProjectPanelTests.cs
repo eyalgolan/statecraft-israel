@@ -198,6 +198,47 @@ public class CityProjectPanelTests
         Assert.IsNull(ui.Root.Q("city-project-cancel"));
     }
 
+    // R-HOUSE-006 (#1700): the sim takes a gdd-0.3 housing repair on its city's own hex whatever that hex holds
+    // (Projects.CheckCityReason), so with a project there the panel shows that project's state and still offers the repair,
+    // and no other kind (each is refused for the project, which the state line already says). gdd-0.1 has no repair kind,
+    // so there the project's state is all, as before.
+    [Test]
+    public void ACitysOwnHexWithAProjectStillOffersTheRepair([Values] bool hebrew)
+    {
+        var t = hebrew ? He : En;
+        foreach (var c in new[] { WorkshopPanelTests.Load03(), C })
+        {
+            var (q, r) = c.SettlementHexes.Where(x => x.Id == City).Select(x => (x.Q, x.R)).Single();
+            var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
+            var id = g.State.NextId++;
+            g.State.CityProjects.Add(id, new CityProject(id, "housing", City, q, r, 0).Built(g.State.Date));
+            var bridge = new SimBridge(g, t);
+            Assert.AreEqual(City, Projects.CitiesFor(c, bridge.State, q, r)[0], $"{c.Ruleset}: precondition, Haifa's own hex");
+            using var ui = new UiTestKit();
+            using var panel = Panel(ui, bridge, t);
+            panel.Show(q, r);
+            Assert.IsNotNull(ui.Root.Q("city-project-state"), $"{c.Ruleset}: the project's state shows");
+            Assert.IsNull(ui.Root.Q("city-project-housing"), $"{c.Ruleset}: the hex is taken for every other kind");
+            Assert.IsNull(ui.Root.Q("city-project-housing-reason"), $"{c.Ruleset}: not said twice");
+            var repair = c.ProjectKinds.SingleOrDefault(k => k.Id == Projects.HousingRepair);
+            if (c.Ruleset != SaveGame.Gdd03Ruleset)
+            {
+                Assert.IsNull(repair, "precondition: gdd-0.1 has no repair kind");
+                Assert.IsNull(ui.Root.Q(GddHexPanel.ListName), "gdd-0.1: no list under the project");
+                continue;
+            }
+            Assert.IsNull(Projects.CheckCityReason(c, bridge.State, Projects.HousingRepair, City, q, r), "precondition: the sim accepts the repair here");
+            var button = ui.Q<Button>("city-project-" + Projects.HousingRepair);
+            Assert.AreEqual(t.Format("city.project_start", ContentNames.Of(t, repair!), PlayerText.Money(c, "treasury", repair!.Cost),
+                GddHexPanel.Turns(t, Projects.CityTurnsToBuild(c, bridge.State, repair.Id, repair.Turns, 0))), button.text);
+            Assert.IsTrue(button.enabledSelf);
+            ui.Press("city-project-" + Projects.HousingRepair);
+            var order = (StartProject)bridge.Queued.Single();
+            Assert.AreEqual((Projects.HousingRepair, City, q, r), (order.ProjectKind, order.City, order.Q, order.R));
+            Assert.IsFalse(bridge.EndTurn().Rejected.Any(x => x.Command is StartProject), "the sim accepts the order the panel queued");
+        }
+    }
+
     /// <summary>Each refusal the panel can meet, from the sim's validator, worded in the UI's language: one kind refused (the
     /// policy, a resource) under its own button; every kind refused for one reason (not land, a placement, the turn's limit)
     /// said once with no buttons.</summary>
@@ -316,7 +357,7 @@ public class WorkshopPanelTests
     const string City = "haifa";
 
     /// <summary>The real content under gdd-0.3, as NoAttentionPresentationTests loads it.</summary>
-    static Content Load03()
+    internal static Content Load03()
     {
         var dir = Paths.Content;
         return ContentLoader.Load(rel =>
@@ -545,6 +586,39 @@ public class WorkshopPanelTests
         panel.Show(q, r);
         Assert.AreEqual(expected, ui.Q<Label>("city-project-reason").text);
         Assert.IsNull(ui.Root.Q("city-project-housing"), "refused for all alike: no buttons");
+    }
+
+    // R-HOUSE-006 (#2409): off its city's own hex a housing repair is refused as repair_city_hex, a check that comes before
+    // the placement and both turn limits. So on a hex where every other kind is refused for one of those reasons (the
+    // winery's missing vineyards aside), the repair's own reason must not split the line: the shared reason is said once,
+    // with no buttons and no line for the repair. gdd-0.1 (CityProjectPanelTests) has no repair kind, so this runs gdd-0.3.
+    [Test]
+    public void ARepairOffItsCitysHexDoesNotSplitTheSharedRefusal([Values] bool hebrew, [Values("placement", "turn_cap")] string why)
+    {
+        var t = hebrew ? He : En;
+        var (q, r) = Hex(C03);
+        var g = GameSession.New(C03, GoldenRun.Seed, Mode.Historical);
+        g.State.Policies[MapActions.MaabarotPolicy] = 1;   // so the transit camp is refused for the shared reason too
+        if (why == "placement") g.State.Placements.Add(new Placement(MapActions.Housing, q, r, g.State.Date));
+        else { g.State.MapActionsTurnDate = g.State.Date; g.State.MapActionsThisTurn = C03.RulesAt(g.State.Date).MapActionsPerTurn; }
+        var bridge = new SimBridge(g, t) { TownNamesHe = TownsHe };
+        var s0 = bridge.State;
+        Assert.IsTrue(C03.ProjectKinds.Any(k => k.Id == Projects.HousingRepair), "precondition: gdd-0.3 has the housing repair kind");
+        Assert.AreEqual("repair_city_hex", Projects.CheckCityReason(C03, s0, Projects.HousingRepair, City, q, r)?.Kind,
+            "precondition: the sim refuses the repair off Haifa's own hex");
+        Assert.AreEqual(why == "placement" ? "occupied" : "turn_cap", Projects.CheckCityReason(C03, s0, "housing", City, q, r)?.Kind,
+            "precondition: the sim refuses the other kinds for the shared reason");
+        var expected = why == "placement"
+            ? t.Format("info.map_action_reason.occupied", t["info.map_action.housing"])
+            : t.Format("city.project_reason.turn_cap", C03.RulesAt(s0.Date).MapActionsPerTurn);
+        using var ui = new UiTestKit();
+        using var panel = Panel(ui, bridge, t);
+        panel.Show(q, r);
+        Assert.AreEqual(expected, ui.Q<Label>("city-project-reason").text, "the shared reason, said once");
+        Assert.IsNull(ui.Root.Q("city-project-" + Projects.HousingRepair + "-reason"), "the repair's own reason does not split the line");
+        Assert.IsNull(ui.Root.Q("city-project-housing-reason"));
+        Assert.IsNull(ui.Root.Q("city-project-housing"), "refused for all alike: no buttons");
+        if (!hebrew) Assert.AreEqual(Projects.CheckCity(C03, s0, "housing", City, q, r), expected, "the English is the sim's own sentence");
     }
 
     // R-ARMS-006, R-ARMS-007, R-CITY-010: a staffed workshop's cycle under way (staffed months of workshop.staffed_turns and

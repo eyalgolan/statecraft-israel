@@ -28,9 +28,11 @@ namespace Statecraft.Sim
     /// synthetic fixtures only. No command, save, loader, resolver, Money, Food or UI caller. GDD 0.3 (docs/GDD.md, 1 November
     /// 2026 answers): "A course occupies its people from its first turn (Q43(a)); they are released in the turn its last
     /// course turn counts and can be assigned from the next planning, or at once on cancellation, and work starts the turn
-    /// after (Q43(b), Q43(c))." So the enrolment month is course turn 1 and the last counted turn graduates. Cases this
-    /// slice has not built (Q44, decided in the GDD's 1 November 2026 answers, so the refusal is an implementation gap, not
-    /// an open design answer; and the 27 Oct list Q9) are refused with a "Deferred:" NotSupportedException.</summary>
+    /// after (Q43(b), Q43(c))." So the enrolment month is course turn 1 and the last counted turn graduates. A centre that
+    /// stops operating cancels its course at once (the owner's answer "Cancel at once (Recommended)", 4 November 2026, #1697 comment
+    /// 6622207214; the chosen option read: "Losing the centre cancels the course immediately, exactly like CancelTraining"). Cases this slice has not built (Q44, decided in the GDD's 1 November 2026
+    /// answers, so the refusal is an implementation gap, not an open design answer; and a centre the month's #1716 facility
+    /// freeze lists without a place, whose timing no ruling covers) are refused with a "Deferred:" NotSupportedException.</summary>
     internal sealed class Gdd03TrainingCentreFixture
     {
         readonly Content content;
@@ -61,14 +63,18 @@ namespace Statecraft.Sim
         internal const string OneTeacherOnePupilReason = "A centre has one veteran teacher and one pupil (#1668 Q42, GDD 1 Nov 2026).";
         internal const string TeacherNeedsAPupilReason = "A centre's teacher teaches its pupil: a teaching record with no pupil is invalid (#1668 Q42, GDD 1 Nov 2026).";
         internal const string TeacherCityReason = "The teacher is housed in the centre's city (#1668 Q42, GDD 1 Nov 2026); this fixture checks the centre's region as an approximation of the city.";
-        // Q42 rules only on the teacher. That the pupil is in the centre's city too is our reading, pending maintainer
-        // confirmation: #1697's body says "the teacher and the trainee are housed there as ordinary residents", and
-        // docs/GDD.md:374 says "Training is ordered in the camp's city, with no travel (27M-7)."
-        internal const string PupilCityReason = "The pupil trains in the centre's city, with no travel (a reading of #1697 and 27M-7, pending maintainer confirmation); this fixture checks the centre's region as an approximation of the city.";
+        // Q42 rules only on the teacher. The pupil lives in the centre's host city too: the owner's Q23 ruling of 4 November
+        // 2026 (asked "Must a farmer-course or pioneer-course pupil live in the training centre's host city?", answered
+        // "yes", https://github.com/eyalgolan/statecraft-israel/issues/1697#issuecomment-6623127820). That the pupil trains
+        // there with no travel is our reading of docs/GDD.md:374, "Training is ordered in the camp's city, with no travel
+        // (27M-7).", not part of the Q23 ruling.
+        internal const string PupilCityReason = "The pupil lives in the centre's host city (owner ruling Q23, 4 November 2026, #1697) and trains there with no travel (a reading of 27M-7); this fixture checks the centre's region as an approximation of the city.";
         internal const string GraduationMonthReason = "A person released by a graduation can start a course from the next month (#1668 Q43(b), GDD 1 Nov 2026).";
         internal const string CourseAtOpeningReason = "After the enrolment month, a course turn counts only when the month's opening holds the course with the same teacher (#1668 Q43(a), GDD 1 Nov 2026).";
         const string Q44 = "#1668 Q44 and the GDD novice lock-in decision (when a free entrant becomes a novice; profession change after a cancelled course).";
-        const string Q9 = "#1668 27 Oct list Q9 (return after cancellation or camp loss).";
+        // The owner's 4 November 2026 ruling covers a centre that stops operating (Operating false). When a loss inside a
+        // month takes effect against the #1716 month freeze, which lists the centre unavailable or without a place, is unruled.
+        const string MonthFreeze = "#1716 month freeze: when a centre loss inside a month takes effect is unruled (a centre that stops operating is cancelled, owner 4 Nov 2026).";
 
         // GDD 1 November 2026 answers (docs/GDD.md:374): "Refugees cannot train until they become civilians". In the MVP a
         // refugee becomes a civilian on the housing step (R-CITY-004), so no reception progress is read here.
@@ -130,7 +136,7 @@ namespace Statecraft.Sim
             => p.WithPlacement(PopulationStatus.FreeCivilian, p.Location, PopulationAssignment.Unassigned, p.Captor, p.Home);
 
         /// <summary>R-TRAIN-005: enrol a matching novice with a matching veteran teacher at an operating centre, both in the
-        /// centre's region (Q42 for the teacher, our reading for the pupil), and only into an empty
+        /// centre's region (Q42 for the teacher, the owner's Q23 ruling for the pupil), and only into an empty
         /// centre: one teacher and one pupil (Q42). Either may leave a job to do so, released in the same commit. No payment, and no tools:
         /// tools are post-MVP (#1693, owner answers of 3 November 2026, answer 1).</summary>
         internal void Start(int traineeId, int teacherId, string centreId, Gdd03SyntheticMonthContext month)
@@ -187,12 +193,18 @@ namespace Statecraft.Sim
         /// <summary>R-TRAIN-006: count one completed course turn, once per month ordinal: in the enrolment month (Q43(a), "A
         /// course occupies its people from its first turn"), or in a later month whose opening already holds the course with
         /// the same teacher. The turn that reaches Agreed `profession.course_turns` graduates: the pupil takes the trained
-        /// tier (R-QUAL-008), and pupil and teacher are released in that turn as civilians without a job (Q43(b)).</summary>
+        /// tier (R-QUAL-008), and pupil and teacher are released in that turn as civilians without a job (Q43(b)). At a
+        /// centre that stops operating, the turn counts nothing and cancels the course as `Cancel` does, the would-be
+        /// graduation turn included (R-TRAIN-008; the owner's answer "Cancel at once (Recommended)", 4 November 2026, #1697 comment 6622207214; the chosen
+        /// option read: "Losing the centre cancels the course immediately, exactly like CancelTraining").</summary>
         internal void Advance(int traineeId, Gdd03SyntheticMonthContext month)
         {
             ValidateInventory();
             var ledger = state.PopulationLedger; var trainee = ledger.Get(traineeId); var centre = CentreOf(trainee);
-            if (!centre.Operating) throw Deferred(Q9);
+            if (month == null) throw new ArgumentNullException(nameof(month));
+            // The loss is checked before the month's snapshot is read: a lost centre cancels even when the month does not
+            // list the pupil (R-TRAIN-008).
+            if (!centre.Operating) { Cancel(traineeId); return; }
             var opening = Opening(month, trainee.Id);
             bool tracked = months.TryGetValue(trainee.Id, out var known);
             // Q43(a): the enrolment month counts, though its opening snapshot was taken before the course started.
@@ -206,7 +218,7 @@ namespace Statecraft.Sim
             if (enrolmentMonth
                     ? !month.Facilities.Any(f => string.Equals(f.Id, centre.Id, StringComparison.Ordinal) && f.AvailableAtMonthFreeze && f.OpeningCapacity > 0)
                     : !month.CourseEligibleIds.Contains(trainee.Id))
-                throw Deferred(Q9);
+                throw Deferred(MonthFreeze);
             if (!enrolmentMonth && trainee.Assignment.ProgressTicks != opening.Assignment.ProgressTicks)
                 throw new ArgumentException("This month's course turn was already counted.");
 
@@ -231,12 +243,12 @@ namespace Statecraft.Sim
         /// <summary>R-TRAIN-007: cancel keeps the id, profession, tier, the record's tools fields and its reception progress;
         /// it clears the unfinished course and releases the teacher and the centre's place. Nothing is refunded or granted
         /// and no one moves. The released people, and the centre, can take another assignment at once, in this month's
-        /// snapshot (#1716, #1668 Q43(b), answered 1 Nov 2026).</summary>
+        /// snapshot (#1716, #1668 Q43(b), answered 1 Nov 2026). A centre that stopped operating is no bar: this is the
+        /// cancel its loss makes (the owner's answer "Cancel at once (Recommended)", 4 November 2026; the chosen option read: "exactly like CancelTraining").</summary>
         internal void Cancel(int traineeId)
         {
             ValidateInventory();
-            var ledger = state.PopulationLedger; var trainee = ledger.Get(traineeId); var centre = CentreOf(trainee);
-            if (!centre.Operating) throw Deferred(Q9);
+            var ledger = state.PopulationLedger; var trainee = ledger.Get(traineeId); _ = CentreOf(trainee); // refuses a record that is not a pupil here
             var teacher = ledger.Get(trainee.Assignment.TeacherId!.Value);
             Commit(Released(trainee), Released(teacher)); // the centre's one pupil (Q42), so its teacher is released too
             months.Remove(trainee.Id);

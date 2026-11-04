@@ -6,7 +6,8 @@ parties:
   # the URL). `independent` has no list name to source and stays English. Hatzohar is the exception: the owner chose
   # "התנועה הרוויזיוניסטית" (18 Oct 2026, #875), the form its he.wiki article uses in its text, over the acronym הצה״ר.
   # name_he_review: agent-checked marks a name an AI agent checked against its sources and no person has read yet
-  # (CONTENT_POLICY section 2, rule 6; owner, 2026-10-15); a native speaker reviews it (#564) and then removes the flag.
+  # (CONTENT_POLICY section 2, rule 6; owner, 2026-10-15); a native speaker, or an AI-assisted contributor who discloses it,
+  # reviews it and then removes the flag (#564; owner, 4 November 2026: "AI-assisted can clear it").
   - { id: mapai, name: Mapai, name_he: 'מפא״י', name_he_review: agent-checked, name_he_sources: [{ url: "https://he.wikipedia.org/wiki/מפא%22י", checked: 2026-10-14 }] }
   - { id: mapam, name: Mapam, name_he: 'מפ״ם', name_he_review: agent-checked, name_he_sources: [{ url: "https://he.wikipedia.org/wiki/מפ%22ם", checked: 2026-10-14 }] }
   - { id: general_zionists, name: General Zionists, name_he: "הציונים הכלליים", name_he_review: agent-checked, name_he_sources: [{ url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_Faction?$filter=KnessetNum%20eq%200", checked: 2026-10-14 }, { url: "https://he.wikipedia.org/wiki/הציונים_הכלליים", checked: 2026-10-14 }] }

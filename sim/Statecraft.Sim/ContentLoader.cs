@@ -321,7 +321,7 @@ namespace Statecraft.Sim
             // The flag is either absent (a person has reviewed the name) or exactly agent-checked; a blank or null value is
             // neither, so it is an error rather than a silent "reviewed".
             if (reviewGiven && review != HebrewReview.AgentChecked)
-                throw new ContentException(file, $"{at}.{key}_review", $"must be {HebrewReview.AgentChecked} (pending a native speaker's review, #564), or left out once a person has reviewed the name");
+                throw new ContentException(file, $"{at}.{key}_review", $"must be {HebrewReview.AgentChecked} (until a native speaker, or an AI-assisted contributor who discloses it, has read the name, #564), or left out once it has been read");
             if (value == "")
             {
                 if (sources.Count > 0) throw new ContentException(file, $"{at}.{key}", $"required: {key}_sources is set but the name is empty");
@@ -929,7 +929,7 @@ namespace Statecraft.Sim
             foreach (var p in c.People)
             {
                 if (p.NameHeReviewGiven && p.NameHeReview != HebrewReview.AgentChecked)
-                    throw new ContentException("people.yaml", $"people[{p.Id}].name_he_review", $"must be {HebrewReview.AgentChecked} (pending a native speaker's review, #564), or left out once a person has reviewed the name");
+                    throw new ContentException("people.yaml", $"people[{p.Id}].name_he_review", $"must be {HebrewReview.AgentChecked} (until a native speaker, or an AI-assisted contributor who discloses it, has read the name, #564), or left out once it has been read");
                 if (p.NameHeReviewGiven && p.NameHe == "") throw new ContentException("people.yaml", $"people[{p.Id}].name_he", "required: name_he_review is set but the name is empty");
             }
             foreach (var a in c.Money)
@@ -1631,15 +1631,46 @@ namespace Statecraft.Sim
                 if (x.Capacity < 0) throw new ContentException(pf, at + ".capacity", "must not be negative");
                 if (x.JobSlots < 0) throw new ContentException(pf, at + ".job_slots", "must not be negative");
                 if (!(x.Condition >= -1 && x.Condition <= 1)) throw new ContentException(pf, at + ".condition", "must be a number from -1 to 1");
-                // #1122 (owner ruling 3): a draft Hebrew name is marked pending a native speaker's review (#564).
+                // #1122 (owner ruling 3): a draft Hebrew name is marked agent-checked until a native speaker, or an
+                // AI-assisted contributor who discloses it, has read it (#564; owner, 4 November 2026:
+                // "AI-assisted can clear it").
                 if (x.NameHeReviewGiven && x.NameHeReview != HebrewReview.AgentChecked)
-                    throw new ContentException(pf, at + ".name_he_review", $"must be {HebrewReview.AgentChecked} (pending a native speaker's review, #564), or left out once a person has reviewed the name");
+                    throw new ContentException(pf, at + ".name_he_review", $"must be {HebrewReview.AgentChecked} (until a native speaker, or an AI-assisted contributor who discloses it, has read the name, #564), or left out once it has been read");
                 if (x.NameHeReviewGiven && string.IsNullOrWhiteSpace(x.NameHe)) throw new ContentException(pf, at + ".name_he", "required: name_he_review is set but the name is empty");
                 // R-PROJ-005: a kind whose resource no city has could never be built.
                 if (!string.IsNullOrEmpty(x.Requires) && !c.Cities.Any(k => k.Resources.Any(r => r.Id == x.Requires)))
                     throw new ContentException(pf, at + ".requires", $"no city in cities.yaml has the resource '{x.Requires}'");
                 ValidateWorkshopKind(c, x, pf, at);
+                ValidateRepairKind(c, x, pf, at);
             }
+        }
+
+        /// <summary>R-HOUSE-006: the housing_repair row exists under gdd-0.3 only and adds no capacity or job slots, and under
+        /// gdd-0.3 it has the balance catalogue's housing_repair price and effect: its cost, its work as turns (maintainer call
+        /// (not an owner ruling): 1 work is one turn, as arms_workshop's work 3 is its 3 turns) and its condition_pp as a change
+        /// of the 0 to 1 condition (owner, 1 November 2026: "Fixed price 0.5 Money + 1 work").</summary>
+        static void ValidateRepairKind(Content c, ProjectKind x, string pf, string at)
+        {
+            if (x.Id != Projects.HousingRepair) return;
+            if (!(x.Rulesets.Count == 1 && x.Rulesets[0] == SaveGame.Gdd03Ruleset))
+                throw new ContentException(pf, at + ".rulesets", $"a housing repair exists under {SaveGame.Gdd03Ruleset} only: rulesets: [{SaveGame.Gdd03Ruleset}]");
+            if (x.Capacity != 0) throw new ContentException(pf, at + ".capacity", "must be 0: a housing repair adds no capacity");
+            if (x.JobSlots != 0) throw new ContentException(pf, at + ".job_slots", "must be 0: a housing repair adds no job slots");
+            if (c.Ruleset != SaveGame.Gdd03Ruleset) return;
+            const string key = "housing_repair";
+            if (!c.Gdd03Balance!.Values.TryGetValue(key, out var row) || row?.Parts == null)
+                throw new ContentException(pf, at, $"the gdd-0.3 balance catalogue has no {key} row");
+            decimal Part(string part) => row.Parts.TryGetValue(part, out var v) && v?.Values?.Count == 1 ? v.Values[0]
+                : throw new ContentException(pf, at, $"the gdd-0.3 balance catalogue's {key} has no single {part} value");
+            void Match(string field, decimal actual, decimal expected, string part)
+            {
+                if (actual != expected)
+                    throw new ContentException(pf, at + "." + field, FormattableString.Invariant($"must be {expected}, the gdd-0.3 balance catalogue's {key} {part}"));
+            }
+            Match("cost", (decimal)x.Cost, Part("cost"), "cost");
+            // Maintainer call (not an owner ruling): work is matched as turns, 1 work = 1 turn (the arms_workshop precedent).
+            Match("turns", x.Turns, Part("work"), "work");
+            Match("condition", (decimal)x.Condition, Part("condition_pp") / 100m, "condition_pp / 100");
         }
 
         /// <summary>R-ARMS-004: a kind's `rulesets` names GDD rulesets only, and `worker_slots` is 0 or 1. A kind with a worker

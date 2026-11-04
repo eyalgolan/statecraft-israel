@@ -827,7 +827,9 @@ eras:
         Assert.All(after.Skip(1), o => { Assert.False(o.Done); Assert.Null(o.Completed); });
     }
 
-    /// <summary>#1187: an objective's Hebrew name loads beside the English, agent-checked until a native read (#564).</summary>
+    /// <summary>#1187: an objective's Hebrew name loads beside the English, agent-checked until a native speaker, or an
+    /// AI-assisted contributor who discloses it, has read it (#564; owner, 4 November 2026:
+    /// "AI-assisted can clear it").</summary>
     [Fact]
     public void TheHebrewNameLoadsBesideTheEnglish()
     {

@@ -148,6 +148,12 @@ public partial class DesignValuesTests
         ("projects.yaml", "projects[arms_workshop].condition"),
         ("projects.yaml", "projects[arms_workshop].job_slots"),
         ("projects.yaml", "projects[arms_workshop].worker_slots"),
+        // R-HOUSE-006 (#1700, #1703; owner, 1 November 2026: "Fixed price 0.5 Money + 1 work"): gdd-0.3 only.
+        ("projects.yaml", "projects[housing_repair].cost"),
+        ("projects.yaml", "projects[housing_repair].turns"),
+        ("projects.yaml", "projects[housing_repair].capacity"),
+        ("projects.yaml", "projects[housing_repair].condition"),
+        ("projects.yaml", "projects[housing_repair].job_slots"),
         // Movement (Phase 5 PR 5, #744; Q-MOVE-1, Q-MOVE-3): agent-proposed under "Take all recommendations" (#375).
         ("rules.yaml", "attention_cost.move"),
         ("rules.yaml", "mvp.move_cost.coastal_plain"),

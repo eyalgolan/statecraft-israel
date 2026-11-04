@@ -527,7 +527,7 @@ public sealed class CivilianPeopleTests
         // "rig Tal's later"), and the delivered file stays catalogued, unchanged and unplaced.
         CollectionAssert.AreEquivalent(new[] { SpecialBuildingModels.Workshop, TownLandmarks.Jerusalem, TownLandmarks.TelAviv, TownLandmarks.Jerusalem3D, TownLandmarks.Haifa, "figure-soldier-1948-v1" },
             CollectionCatalog.Ids.Where(id => !placed.Contains(id)).ToList(),
-            "every catalogued model has a place but b21, the first Jerusalem, the three cities' whole towns and the unrigged soldier, each held back by an owner ruling");
+            "every catalogued model has a place but b21, drawn only under gdd-0.3 on built arms workshops (#2281), and the first Jerusalem, the three cities' whole towns and the unrigged soldier, each held back by an owner ruling");
         CollectionAssert.IsSubsetOf(placed.ToList(), CollectionCatalog.Ids.ToList(), "every placed id is a catalogued model");
     }
 

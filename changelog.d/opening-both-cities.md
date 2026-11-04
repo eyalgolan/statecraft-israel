@@ -1,1 +1,0 @@
-- On a phone held upright, the opening view now shows Jaffa as well as Tel Aviv (Refs #2370).

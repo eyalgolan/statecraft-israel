@@ -51,6 +51,26 @@ namespace Statecraft.Game.Map
         }
     }
 
+    /// <summary>One row of the diff preview (#1721 slice C): a terrain hex, a control hex in one period, or a location id
+    /// whose current value differs from the saved override file. Values are what the map shows: the saved file's
+    /// override, or the generated value when the file has none.</summary>
+    public sealed class MapEditorChange
+    {
+        public const string Terrain = "terrain", Control = "control", Location = "location";
+        public readonly string Kind, Period, Id, Saved, Current;
+        public readonly int Q, R;
+
+        public MapEditorChange(string kind, int q, int r, string period, string id, string saved, string current)
+        { Kind = kind; Q = q; R = r; Period = period; Id = id; Saved = saved; Current = current; }
+
+        public override string ToString() => Kind switch
+        {
+            Terrain => FormattableString.Invariant($"terrain q={Q} r={R}: {Saved} -> {Current}"),
+            Control => FormattableString.Invariant($"control q={Q} r={R} {Period}: {Saved} -> {Current}"),
+            _ => $"location '{Id}': {Saved} -> {Current}",
+        };
+    }
+
     /// <summary>The undoable data behind the Unity map editor. It edits only content/map/overrides.yaml; generated map
     /// inputs and historical evidence stay read-only. Unity serializes the three edit lists, so Undo restores every
     /// terrain, one-period control and location-position edit. The content root is serialized too, so after a domain
@@ -231,6 +251,79 @@ namespace Statecraft.Game.Map
             {
                 error = exception.Message;
                 return false;
+            }
+        }
+
+        /// <summary>The locations whose id contains <paramref name="query"/>, ignoring letter case, ordered by id
+        /// (#1721 slice C). Ordinal matching keeps the result the same in every editor language. A blank query lists all.</summary>
+        public IReadOnlyList<MapEditorLocation> SearchLocations(string query)
+        {
+            var text = (query ?? "").Trim();
+            return baseLocations.Values.Where(x => text.Length == 0 || x.Id.IndexOf(text, StringComparison.OrdinalIgnoreCase) >= 0)
+                .OrderBy(x => x.Id, StringComparer.Ordinal).ToList();
+        }
+
+        /// <summary>The diff preview (#1721 slice C): every terrain hex, control hex and period, and location whose current
+        /// value differs from the saved override file, sorted by row then column (control rows then by period, locations by
+        /// id). A saved override that is gone also counts when its value equals the generated map: Set* drops such an edit,
+        /// so only its presence changed, and the row lets the user see and revert it. Read-only; nothing is written.</summary>
+        public IReadOnlyList<MapEditorChange> Changes()
+        {
+            var saved = MapOverrides.Parse(savedCanonical);
+            var result = new List<MapEditorChange>();
+            foreach (var (q, r) in saved.Terrain.Select(x => (x.Hex.Q, x.Hex.R)).Concat(terrain.Select(x => (x.q, x.r))).Distinct()
+                         .OrderBy(x => x.Item2).ThenBy(x => x.Item1))
+            {
+                var savedEdit = saved.Terrain.FirstOrDefault(x => x.Hex.Q == q && x.Hex.R == r);
+                var before = savedEdit?.Value ?? baseHexes[(q, r)].Biome;
+                var now = TerrainAt(q, r);
+                if (before != now || (savedEdit != null) != terrain.Any(x => x.q == q && x.r == r)) result.Add(new MapEditorChange(MapEditorChange.Terrain, q, r, "", "", before, now));
+            }
+            foreach (var (q, r, period) in saved.Control.Select(x => (x.Hex.Q, x.Hex.R, x.Period)).Concat(control.Select(x => (x.q, x.r, x.period)))
+                         .Distinct().OrderBy(x => x.Item2).ThenBy(x => x.Item1).ThenBy(x => x.Item3, StringComparer.Ordinal))
+            {
+                var savedEdit = saved.Control.FirstOrDefault(x => x.Hex.Q == q && x.Hex.R == r && x.Period == period);
+                var before = savedEdit?.Value ?? controlFile.EditorCodeAt(q, r, period);
+                var now = ControlAt(q, r, period);
+                if (before != now || (savedEdit != null) != control.Any(x => x.q == q && x.r == r && x.period == period)) result.Add(new MapEditorChange(MapEditorChange.Control, q, r, period, "", before, now));
+            }
+            foreach (var id in saved.Locations.Select(x => x.Id).Concat(locations.Select(x => x.id)).Distinct().OrderBy(x => x, StringComparer.Ordinal))
+            {
+                var item = baseLocations[id];
+                var edit = saved.Locations.FirstOrDefault(x => x.Id == id);
+                var before = edit == null ? (item.BaseQ, item.BaseR) : (edit.Hex.Q, edit.Hex.R);
+                var now = LocationAt(id);
+                if (before != now || (edit != null) != locations.Any(x => x.id == id))
+                    result.Add(new MapEditorChange(MapEditorChange.Location, now.q, now.r, "", id,
+                        FormattableString.Invariant($"q={before.Item1} r={before.Item2}"), FormattableString.Invariant($"q={now.q} r={now.r}")));
+            }
+            return result;
+        }
+
+        /// <summary>Selected revert (#1721 slice C): puts one diff row back to its saved value and leaves every other edit as
+        /// it is. The caller owns the Undo record; nothing is written to disk.</summary>
+        public void Revert(MapEditorChange change)
+        {
+            if (change == null) throw new ArgumentNullException(nameof(change));
+            var saved = MapOverrides.Parse(savedCanonical);
+            switch (change.Kind)
+            {
+                case MapEditorChange.Terrain:
+                    terrain.RemoveAll(x => x.q == change.Q && x.r == change.R);
+                    terrain.AddRange(saved.Terrain.Where(x => x.Hex.Q == change.Q && x.Hex.R == change.R)
+                        .Select(x => new MapEditorTerrainEdit { q = x.Hex.Q, r = x.Hex.R, value = x.Value }));
+                    break;
+                case MapEditorChange.Control:
+                    control.RemoveAll(x => x.q == change.Q && x.r == change.R && x.period == change.Period);
+                    control.AddRange(saved.Control.Where(x => x.Hex.Q == change.Q && x.Hex.R == change.R && x.Period == change.Period)
+                        .Select(x => new MapEditorControlEdit { q = x.Hex.Q, r = x.Hex.R, period = x.Period, value = x.Value }));
+                    break;
+                case MapEditorChange.Location:
+                    locations.RemoveAll(x => x.id == change.Id);
+                    locations.AddRange(saved.Locations.Where(x => x.Id == change.Id)
+                        .Select(x => new MapEditorLocationEdit { id = x.Id, q = x.Hex.Q, r = x.Hex.R }));
+                    break;
+                default: throw new ArgumentException($"unknown change kind '{change.Kind}'", nameof(change));
             }
         }
 
