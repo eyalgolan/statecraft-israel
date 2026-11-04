@@ -409,8 +409,8 @@ public class QualificationTests
         s.Corridors["road_a"] = new CorridorWork("road_a", new SegmentWork?[] { new SegmentWork(null, 6, new DateTime(1948, 5, 15)), null });
         var before = s.Hash();
         var clone = s.Clone();
-        if (clone.Cities["town_a"].Qualified.Halutzim is int[] halutzim) halutzim[0] = 9;
-        if (clone.Corridors["road_a"].Segments is SegmentWork?[] segments) segments[0] = null;
+        Assert.Throws<NotSupportedException>(() => ((IList<int>)clone.Cities["town_a"].Qualified.Halutzim)[0] = 9);
+        Assert.Throws<NotSupportedException>(() => ((IList<SegmentWork?>)clone.Corridors["road_a"].Segments)[0] = null);
         Assert.Equal(before, s.Hash());
         Assert.Equal(before, clone.Hash());
     }
