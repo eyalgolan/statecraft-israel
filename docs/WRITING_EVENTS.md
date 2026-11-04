@@ -361,7 +361,8 @@ A person's sign-off beside `status`: `reviewed_by` is the reviewer's GitHub hand
 day, `YYYY-MM-DD`. Both or neither; the loader refuses a blank or malformed value. **Only the reviewer writes them**, in a
 commit of their own: never add, change or remove them yourself on someone's behalf, and an AI agent never does
 (`scripts/oss/reviewed_by_guard.py` fails such a pull request; owner, 15 October 2026, #375), unless the pull request's
-"AI assistance" section discloses the AI help: then an AI-assisted contributor's check counts as the sign-off, and the
+"AI assistance" section discloses the AI help and names the check: then an AI-assisted contributor's check counts as
+the sign-off (it may add or change the two lines, never remove them), and the
 section says which sources they opened and what they checked (asked whether an AI-assisted contributor's source check counts as the `reviewed_by` sign-off, the owner answered "Yes, it counts" ([4 November 2026](https://github.com/eyalgolan/statecraft-israel/pull/2481#issuecomment-6623108295))). An agent may not edit any
 field of a signed row either, until a person (or a disclosed AI-assisted contributor) signs it again ("Block it in CI",
 owner, 15 October 2026). See

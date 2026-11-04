@@ -35,10 +35,12 @@ passes.
 Disclosure (owner, 4 November 2026, asked whether an AI-assisted contributor's source check counts as the reviewed_by
 sign-off: "Yes, it counts"): with --pr-event, the guard reads the pull request's description from the event file GitHub
 writes (GITHUB_EVENT_PATH), never from a shell argument. The pull request discloses the AI help when its "AI assistance"
-section (the template's heading, up to the next heading, HTML comments removed) says something other than "None". Then an
-AI-co-authored commit is judged as a person's for (1) and (3), and its own sign-off lines release a row under (2); an edit
-to a signed row that the commit does not sign again still fails. Without --pr-event (local runs, check.sh), with an event
-that has no pull request, or with a missing, empty or "None" section, nothing is disclosed: the 15 October rule applies
+section (the template's heading, up to the next heading, HTML comments removed) does not start with no / none / not /
+n/a / nothing and names the check (a form of "check"). Then an AI-co-authored commit may add or change reviewed_by /
+reviewed_on lines, but never remove one: every key it drops must come back in the same commit. (3) applies to it, and the
+sign-off lines it adds release a row under (2); its removals never release a row, and an edit to a signed row that the
+commit does not sign again still fails. Without --pr-event (local runs, check.sh), with an event that has no pull
+request, or with a missing, empty, negative or check-less section, nothing is disclosed: the 15 October rule applies
 unchanged. An event file that cannot be read or parsed is a failure.
 
 Usage: uv run scripts/oss/reviewed_by_guard.py --base <base-sha> [--head HEAD] [--repo .] [--pr-event <event.json>]"""
@@ -66,7 +68,10 @@ NAMES = re.compile(r"reviewed_(?:by|on)")
 ON_VALUE = re.compile(r"""["']?reviewed_on["']?\s*:\s*["']?([^,}\s#"']*)""")
 HUNK = re.compile(r"^(@+) (.*?) @+")
 HEADING = re.compile(r"^ {0,3}#{1,6}(?:\s+(.*?))?\s*#*\s*$")
-NOT_DISCLOSED = {"", "none", "n/a", "na", "no", "nothing", "-"}
+NEGATIVE = {"no", "none", "not", "n/a", "na", "nothing"}
+FIRST_WORD = re.compile(r"[^\s.,;:!?*_`~>#()\[\]-]+")
+CHECK = re.compile(r"\bcheck(?:s|ed|ing)?\b", re.I)
+KEYS = ("reviewed_by", "reviewed_on")
 
 
 class GuardError(Exception):
@@ -129,8 +134,19 @@ def ai_assistance(body: str) -> str:
 
 
 def disclosed(body: str) -> bool:
-    """True when the "AI assistance" section says something other than "None" (or an empty or template-only section)."""
-    return ai_assistance(body).strip(" .`*_").lower() not in NOT_DISCLOSED
+    """True when the "AI assistance" section discloses AI help and names the check: its first word (markdown punctuation
+    stripped) is not no / none / not / n/a / nothing, and it contains a form of "check" (check, checks, checked, checking).
+    An empty or template-only section, "None used." or "Claude Code drafted it." (no check named) is not a disclosure."""
+    text = ai_assistance(body)
+    first = FIRST_WORD.search(text)
+    if first is None or first.group(0).lower() in NEGATIVE:
+        return False
+    return CHECK.search(text) is not None
+
+
+def _key_count(lines: list[tuple[str, str]], sign: str, key: str) -> int:
+    """How many times the key is named on the diff lines with this sign (comments excluded)."""
+    return sum(len(re.findall(rf"[\"']?{key}[\"']?\s*:", t)) for cols, t in lines if sign in cols and _named(t))
 
 
 def event_body(path: str) -> str:
@@ -250,6 +266,15 @@ def check(repo: Path, base: str, head: str, ai_disclosed: bool = False) -> list[
         for ch in files:
             named = [(cols, text) for hk in ch.hunks for cols, text in hk.lines if _named(text)]
             if agent:
+                if named and ai_disclosed:
+                    # Disclosed (owner, 4 November 2026, "Yes, it counts"): an AI-assisted check may add or change a sign-off,
+                    # never remove one. Every key a commit drops must come back in the same commit.
+                    lost = [k for k in KEYS if _key_count(named, "-", k) > _key_count(named, "+", k)]
+                    if lost:
+                        problems.append(f"{sha[:10]}: a commit with an AI co-author trailer removes a {' / '.join(lost)} line in "
+                                        f"{ch.path}. Disclosed AI assistance lets a check count as a sign-off (owner, 4 November "
+                                        f"2026, \"Yes, it counts\"); it does not let an AI-co-authored commit remove one. A "
+                                        f"person removes a sign-off in a commit of their own.")
                 if named and not ai_disclosed:
                     problems.append(f"{sha[:10]}: a commit with an AI co-author trailer changes a reviewed_by / reviewed_on line "
                                     f"in {ch.path}, and the pull request does not disclose AI assistance. Only a person signs a "
@@ -300,7 +325,7 @@ def check(repo: Path, base: str, head: str, ai_disclosed: bool = False) -> list[
                 released = {row.label for row in _signed(repo, sha, ch.path, must_exist=False)
                             if any(row.first <= n <= row.last for n in added)}
                 old = ch.old_paths[0] if ch.old_paths else ""
-                if old and parents:
+                if old and parents and not agent:   # an AI-co-authored commit's removal never releases a row
                     released |= {row.label for row in _signed(repo, parents[0], old, must_exist=True)
                                  if any(row.first <= n <= row.last for n in removed)}
                 for label in released:
