@@ -281,11 +281,13 @@ namespace Statecraft.Sim
         }
 
         /// <summary>One engagement (<see cref="Fight"/>), then, under exact gdd-0.3, its survivors' combat experience
-        /// (R-UNIT-011). Every engagement, the player's instant attack and step 2's alike, runs through here.</summary>
+        /// (R-UNIT-011) and its fronts' quiet-turn counts broken (R-WAR-005). Every engagement, the player's instant attack and
+        /// step 2's alike, runs through here.</summary>
         static void Engage(Content c, GameState s, MvpRules mvp, List<Unit> attackers, List<Unit> defenders, int q, int r, List<Cause> why)
         {
             Fight(c, s, mvp, attackers, defenders, q, r, why);
             if (Gdd03Military.Applies(c)) Experience(c, s, attackers, defenders, why);
+            Armistice.Engaged(c, s, attackers.Concat(defenders));   // R-WAR-005: gdd-0.3 only
         }
 
         /// <summary>R-UNIT-011 (owner, 1 November 2026, #1668 Q14 to Q16): after the engagement's one draw, its losses, retreats
