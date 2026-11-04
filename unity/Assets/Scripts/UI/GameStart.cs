@@ -61,8 +61,10 @@ namespace Statecraft.Game.UI
         }
 
         /// <summary>Writes the save after every committed order and every turn. A write that fails (a full or read-only disk) never stops the game:
-        /// the reason goes to <paramref name="onError"/>. Dispose the result to stop autosaving.</summary>
-        public static IDisposable Autosave(SimBridge bridge, SaveStore store, UiText text, Action<string>? onError = null)
+        /// the reason goes to <paramref name="onError"/>. On WebGL <paramref name="persistenceTarget"/> receives the
+        /// asynchronous IndexedDB result. Dispose the result to stop autosaving.</summary>
+        public static IDisposable Autosave(SimBridge bridge, SaveStore store, UiText text, Action<string>? onError = null,
+            string? persistenceTarget = null)
         {
             void Save(IReadOnlyList<Rejection> _)
             {
@@ -75,7 +77,7 @@ namespace Statecraft.Game.UI
                     var receipt = FormattableString.Invariant($"{generation} {state.Date:yyyy-MM-dd} turn {state.Turn} hash {state.Hash()}");
                     UnityEngine.Debug.Log("AUTOSAVE PENDING " + receipt);
 #if UNITY_WEBGL && !UNITY_EDITOR
-                    StatecraftPersistAutosave(receipt);
+                    StatecraftPersistAutosave("save " + receipt, persistenceTarget ?? "");
 #else
                     UnityEngine.Debug.Log("AUTOSAVE OK " + receipt);
 #endif
@@ -92,9 +94,16 @@ namespace Statecraft.Game.UI
             return new Unsubscribe(() => { bridge.Committed -= onCommit; bridge.TurnEnded -= Save; });
         }
 
+        internal static void PersistDelete(string? persistenceTarget)
+        {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            StatecraftPersistAutosave("delete", persistenceTarget ?? "");
+#endif
+        }
+
 #if UNITY_WEBGL && !UNITY_EDITOR
         [System.Runtime.InteropServices.DllImport("__Internal")]
-        static extern void StatecraftPersistAutosave(string receipt);
+        static extern void StatecraftPersistAutosave(string request, string target);
 #endif
 
         sealed class Unsubscribe : IDisposable

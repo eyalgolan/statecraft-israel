@@ -882,10 +882,20 @@ def test_a_commit_timeout_fails_even_without_any_further_console_line():
         _ = check.done
 
 
-def test_an_indexeddb_failure_fails_the_driver_loudly():
+def test_an_indexeddb_failure_without_the_player_message_fails_after_the_toast_deadline():
+    clock = [0.0]
+    check = wc.PersistenceCheck(*_quiet(), lambda seconds: None, now=lambda: clock[0], save_timeout=5)
+    check.feed("AUTOSAVE FAIL 1 1948-06-15 turn 1 hash bb")
+    clock[0] = 5
+    with pytest.raises(ValueError, match="save.write_failed was not shown to the player"):
+        _ = check.done
+
+
+def test_an_indexeddb_failure_with_the_player_message_still_fails_but_records_coverage():
     check = wc.PersistenceCheck(*_quiet(), lambda seconds: None)
-    with pytest.raises(ValueError, match="IndexedDB autosave failed"):
-        check.feed("AUTOSAVE FAIL 1 1948-06-15 turn 1 hash bb")
+    check.feed("AUTOSAVE FAIL 1 1948-06-15 turn 1 hash bb")
+    with pytest.raises(ValueError, match="save.write_failed was shown to the player"):
+        check.feed("SAVE FAILURE SHOWN save.write_failed")
 
 
 def test_commit_ack_before_turn_diagnostic_is_not_lost():

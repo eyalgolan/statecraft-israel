@@ -26,6 +26,12 @@ namespace Statecraft.Game.UI
     [ExecuteAlways]
     public sealed class GameRoot : MonoBehaviour
     {
+        Action<string>? savePersistenceResult;
+
+        /// <summary>Unity WebGL SendMessage entry point for IndexedDB save/delete results.</summary>
+        [UnityEngine.Scripting.Preserve]
+        public void OnSavePersistenceResult(string result) => savePersistenceResult?.Invoke(result);
+
         /// <summary>Turns a bare smoke flag ("?smoke", "-smoke") plays.</summary>
         internal const int DefaultSmokeTurns = 5;
         /// <summary>Maximum time after closing the start screen for the normal-media browser check's first card to become usable.
@@ -302,6 +308,19 @@ namespace Statecraft.Game.UI
 
             // The toast first: the autosave (below) must report a failed write after the toast has shown the turn's refusals.
             var toast = Own(new ToastPresenter(root, bridge, text));
+            savePersistenceResult = result =>
+            {
+                if (result == "fail delete")
+                {
+                    toast.Show(text["newgame.delete_failed"]);
+                    Debug.Log("SAVE FAILURE SHOWN newgame.delete_failed");
+                }
+                else if (result.StartsWith("fail save ", StringComparison.Ordinal))
+                {
+                    toast.Append(text["save.write_failed"]);
+                    Debug.Log("SAVE FAILURE SHOWN save.write_failed");
+                }
+            };
             unseenSkipped = () => toast.Show(text["toast.unit_unseen_skipped"]);
             var hudPresenter = Own(new HudPresenter(root, bridge, text, selectUnit: _ => FocusNextUnit()));
             nav = Own(new ScreenNav(root));                                      // every screen starts hidden (USS); ScreenNav opens one at a time
@@ -478,8 +497,8 @@ namespace Statecraft.Game.UI
             NewGamePresenter? newGame = null;
             if (smoke == 0)
             {
-                newGame = Own(new NewGamePresenter(root, bridge, store, toast, text, GameStart.NewSeed));
-                Own(GameStart.Autosave(bridge, store, text, toast.Append));   // appends: the turn's refusals stay visible
+                newGame = Own(new NewGamePresenter(root, bridge, store, toast, text, GameStart.NewSeed, gameObject.name));
+                Own(GameStart.Autosave(bridge, store, text, toast.Append, gameObject.name));   // appends: the turn's refusals stay visible
             }
             // Once the game is over, the sim's end report (#812); after the autosave, so the last turn is saved first. New Game
             // is its two presses; a smoke run has none.
@@ -952,6 +971,7 @@ namespace Statecraft.Game.UI
             if (keepCompanionPage && companion != null) { owned.Remove(companion); companion.Dispose(clearPage: false); }
             for (int i = owned.Count - 1; i >= 0; i--) owned[i].Dispose();
             owned.Clear();
+            savePersistenceResult = null;
             if (hoveredCity != null) { hoveredCity = null; HandCursor(false); }   // the next Begin's pills start unlit
             companion = null; minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; opening = null; card = null; outcomes = null; report = null; end = null; advisor = null; cabinet = null; encyclopedia = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
             // A ?profile run cut short (a stopped coroutine never reaches its restore line) must not leave the terrain at the

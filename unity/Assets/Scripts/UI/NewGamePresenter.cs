@@ -6,15 +6,20 @@ using UnityEngine.UIElements;
 namespace Statecraft.Game.UI
 {
     /// <summary>New Game asks for a second press (no browser confirm dialogs in WebGL), then deletes the autosave and
-    /// starts a new Historical game. Ending a turn in between cancels the request. The start screen's New Game goes through
+    /// starts a new Historical game. WebGL also reports the asynchronous IndexedDB deletion result. Ending a turn in between
+    /// cancels the request. The start screen's New Game goes through
     /// the same two presses (Press), so neither button can wipe the save with one stray press (#175, B6).</summary>
     public sealed class NewGamePresenter : IDisposable
     {
-        readonly VisualElement root; readonly SimBridge bridge; readonly SaveStore store; readonly ToastPresenter toast; readonly UiText text; readonly Func<ulong> seed;
+        readonly VisualElement root; readonly SimBridge bridge; readonly SaveStore store;
+        readonly ToastPresenter toast; readonly UiText text; readonly Func<ulong> seed;
+        readonly string? persistenceTarget;
 
-        public NewGamePresenter(VisualElement root, SimBridge bridge, SaveStore store, ToastPresenter toast, UiText text, Func<ulong> seed)
+        public NewGamePresenter(VisualElement root, SimBridge bridge, SaveStore store, ToastPresenter toast, UiText text,
+            Func<ulong> seed, string? persistenceTarget = null)
         {
             this.root = root; this.bridge = bridge; this.store = store; this.toast = toast; this.text = text; this.seed = seed;
+            this.persistenceTarget = persistenceTarget;
             button = root.Q<Button>("new-game");
             button.clicked += Press;
             bridge.Changed += Disarm;
@@ -49,7 +54,12 @@ namespace Statecraft.Game.UI
             Armed = false;
             bool deleted = true;
             // An old autosave that cannot be deleted is overwritten by the next turn's autosave anyway, so the new game still starts.
-            try { store.DeleteAutosave(); } catch (Exception e) { deleted = false; UnityEngine.Debug.LogWarning("Autosave could not be deleted: " + e); }
+            try
+            {
+                store.DeleteAutosave();
+                GameStart.PersistDelete(persistenceTarget);
+            }
+            catch (Exception e) { deleted = false; UnityEngine.Debug.LogWarning("Autosave could not be deleted: " + e); }
             bridge.Replace(GameSession.New(bridge.Content, seed(), Mode.Historical));
             if (deleted) toast.Clear(); else toast.Show(text["newgame.delete_failed"]);
             Started?.Invoke();
