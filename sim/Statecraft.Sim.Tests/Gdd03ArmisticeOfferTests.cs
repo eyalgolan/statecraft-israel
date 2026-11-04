@@ -203,6 +203,22 @@ options:
         Assert.Equal(new[] { "armistice_jordan" }, Fire(c, s));
     }
 
+    // R-WAR-008, R-EVT-003 (owner, 4 November 2026, #2508, option A, "keep early signing"): in Historical mode an early card
+    // left unanswered is still a hard anchor for delegation, so it signs on the 15 December 1948 turn, long before its date.
+    [Fact]
+    public void R_EVT_003_HistoricalModeSignsAnUnansweredEarlyCard()
+    {
+        var c = Load(others: false);
+        var s = CombatTests.With(c, new Unit(1, "recruit", 0, 1, side: "israel", strength: 6));
+        s.Mode = Mode.Historical;
+        s.Date = December15;
+        s.QuietTurns["egypt"] = 2;
+        Assert.Equal(new[] { "armistice_egypt" }, Fire(c, s));
+
+        s = Turn(c, s);
+        Assert.Equal("sign", s.ChosenOptions["armistice_egypt"]);
+    }
+
     static GameState Turn(Content c, GameState s, params Command[] orders)
     {
         var r = Simulation.Step(c, s, orders);
