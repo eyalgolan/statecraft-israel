@@ -31,7 +31,7 @@ No source image, traced boundary or dataset is added.
 |---|---|---|---|
 | `camp_80` | Gshur dates the move from Kfar Yona to Camp 80 near Pardes Hanna to 13 July 1948; Gshur and the Nahal Association both describe training there. | Gshur gives early October for the first course's end; the Association gives September. These are retained as different accounts. | A person's source check; exact course-end day and historical camp footprint remain gaps. |
 | `tzrifin` | The 2016 survey describes Compound 1, gives its point, and reproduces earlier plans/aerial imagery. Hebrew Wikipedia prints the row's capture dates and Bahad 4 start year. | A modern compound point and a planning boundary are not the whole 1948–51 camp. The Wikipedia-dependent days/year are not independently established by this survey. | A person's check of the underlying dated sources and historical camp location; the existing sensitivity review remains open. |
-| `hula` | FRUS distinguishes the northern swamp/lake drainage from preliminary Jordan works below the lake in the DMZ. JTA reports works resuming in March 1951. | JTA places swamp drainage inside the DMZ; FRUS places the swamp/lake drainage outside it. This source conflict remains unresolved. Neither report validates the row's rebaked swamp hex or clears it against historical villages/cadastral boundaries. | The two web sources are rechecked below; the original JTA bulletin and a historical-map overlay remain unverified. |
+| `hula` | Riley's account, relayed by Tyler in FRUS, distinguishes the northern swamp/lake drainage from preliminary Jordan works below the lake in the DMZ. JTA reports works resuming in March 1951. | JTA places swamp drainage inside the DMZ; Riley's account, relayed by Tyler, places the swamp/lake drainage outside it. This source conflict remains unresolved. Neither report validates the row's rebaked swamp hex or clears it against historical villages/cadastral boundaries. | The two web sources are rechecked below; the original JTA bulletin and a historical-map overlay remain unverified. |
 | `hula_field` | FRUS discusses future reclaimed farmland. | That is not evidence of a completed field at the game's chosen hex or on a specific completion day. | Design-row comparison rechecked below; no historical-field or completion-date sign-off follows. |
 
 ## Camp 80: the disagreement stays visible
@@ -74,11 +74,11 @@ The row's historical-location gap and sensitivity flag remain; this note supplie
 
 **Agent read 2 November 2026; a person's check pending.** [FRUS doc. 288][frus] is Tyler's telegram of 5 March 1951,
 relaying General Riley's account, including a Syrian complaint about works starting around 14 February.
-Its numbered points distinguish northern drainage outside the DMZ from preliminary Jordan work within it.
+Riley's numbered points, relayed by Tyler on printed p. 589, distinguish northern drainage outside the DMZ from preliminary Jordan work within it.
 This diplomatic report supplies no surveyed polygon.
 
 [JTA's 27 March 1951 report][jta] places the resumed swamp-drainage work inside the DMZ,
-while FRUS places the swamp/lake drainage outside it and the preliminary Jordan works within it.
+while Riley's account, relayed by Tyler, places the swamp/lake drainage outside it and the preliminary Jordan works within it.
 The sources conflict on where the swamp works were; this note does not resolve that conflict.
 JTA also describes activity along the Jordan and presents future farmland and completion as expectations.
 The reports concern different dates, and neither provides independent geographical clearance of the same boundary.
@@ -100,10 +100,10 @@ The baseline for this follow-up is main `9d03f7ea85c87a5e1838a5a471e6235e1a69563
 
 | Claim checked | Source actually opened on 4 November 2026 (UTC) | Result |
 |---|---|---|
-| Reported start and concession | [FRUS doc. 288][frus], dated 5 March 1951, opening paragraphs | Matches as an attributed report: Tyler relays Riley's account of a Syrian complaint alleging work began about 14 February. It connects the project with the Hula concession and identifies the Palestine Land Development Company. The approximate start is a reported allegation, not an independently established exact day. |
-| Location of the works | [FRUS][frus], numbered points (1) and (2) | Matches FRUS's distinction: northern swamp/lake drainage is placed outside the DMZ; preliminary Jordan work is placed inside it. The source distinguishes these projects rather than supplying a surveyed swamp boundary. |
-| Resumption and DMZ wording | [JTA archive article][jta], archive date 27 March 1951, first two paragraphs | Matches JTA's account: resumed swamp drainage in the DMZ and tractors along the Jordan's western bank. Its wording conflicts with FRUS's project distinction. These are differently dated reports; this check does not resolve the geographical disagreement. |
-| Completed field | [FRUS][frus], paragraph after numbered points; [JTA][jta], final paragraph | Unsupported as a completed field: both describe future reclamation. Neither establishes a completed field at the game's hex or a completion day. |
+| Reported start and concession | [FRUS doc. 288][frus], dated 5 March 1951, printed p. 588 (complaint and approximate start), p. 589 (concession and company) | Matches as an attributed report: Tyler relays Riley's account of a Syrian complaint alleging work began about 14 February. It connects the project with the Hula concession and identifies the Palestine Land Development Company. The approximate start is a reported allegation, not an independently established exact day. |
+| Location of the works | [FRUS][frus], dated 5 March 1951, printed p. 589, Riley's numbered points (1) and (2) | Matches Riley's account, relayed by Tyler: Riley places northern swamp/lake drainage outside the DMZ and preliminary Jordan work inside it. The source distinguishes these projects rather than supplying a surveyed swamp boundary. |
+| Resumption and DMZ wording | [JTA archive article][jta], archive date 27 March 1951, first two paragraphs (unpaginated HTML); compared with [FRUS][frus], 5 March 1951, printed p. 589 | Matches JTA's account: resumed swamp drainage in the DMZ and tractors along the Jordan's western bank. Its wording conflicts with Riley's project distinction, relayed by Tyler. These are differently dated reports; this check does not resolve the geographical disagreement. |
+| Completed field | [FRUS][frus], dated 5 March 1951, printed pp. 589–590, paragraph after numbered points; [JTA][jta], archive date 27 March 1951, final paragraph (unpaginated HTML) | Unsupported as a completed field: both describe future reclamation. Neither establishes a completed field at the game's hex or a completion day. |
 | Field placement and shared source | [Pinned sites.yaml](https://github.com/eyalgolan/statecraft-israel/blob/9d03f7ea85c87a5e1838a5a471e6235e1a695639/content/sites.yaml), `hula` / `hula_field` | Matches the pinned file as design data: both rows use (16, 3); the field's FRUS source is also the parent's source. The row explicitly labels the field a design placement. This is a file comparison, not historical coordinate or map verification. |
 
 The [original JTA bulletin](https://pdfs.jta.org/1951/1951-03-27_060.pdf) was attempted but **not read**:
@@ -141,6 +141,7 @@ For the 3 November 2026 review follow-up, Codex reopened FRUS, the JTA archive a
 the other 2 November reads were not re-certified.
 For the 4 November 2026 follow-up, Codex opened and read the FRUS telegram and JTA archive article,
 compared their dated passages with the Hula claims, and compared the two design rows in the pinned YAML.
+For the PR review follow-up on 4 November 2026, Codex reopened the FRUS text and JTA HTML and read the official FRUS page scans, printed pp. 588–590, to verify page references and Riley's attribution.
 The original JTA bulletin could not be opened; no separate human read is claimed.
 
 [gshur]: https://www.maarachot.idf.il/media/qyen3yoj/%D7%9E%D7%9B%D7%95%D7%91%D7%A2-%D7%92%D7%A8%D7%91-%D7%9C%D7%9B%D7%95%D7%91%D7%A2-%D7%98%D7%9E%D7%91%D7%9C-%D7%94%D7%A0%D7%97%D7%9C-%D7%91%D7%A9%D7%A0%D7%AA%D7%95-%D7%94%D7%A8%D7%90%D7%A9%D7%95%D7%A0%D7%94.pdf
