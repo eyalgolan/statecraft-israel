@@ -17,7 +17,6 @@ namespace Statecraft.Game.UI
     public sealed class HoverTip : IDisposable
     {
         public const string TipName = "hud-tip";
-        static readonly Dictionary<Label, Coordinator> Coordinators = new Dictionary<Label, Coordinator>();
         /// <summary>Which side of its button the tip sits on.</summary>
         public enum Side { Left, Right }
 
@@ -27,6 +26,7 @@ namespace Statecraft.Game.UI
         readonly EventCallback<PointerEnterEvent> onEnter; readonly EventCallback<PointerLeaveEvent> onLeave;
         readonly EventCallback<FocusInEvent> onFocus; readonly EventCallback<FocusOutEvent> onBlur;
         readonly EventCallback<ClickEvent> onClick; readonly EventCallback<NavigationSubmitEvent> onSubmit;
+        readonly EventCallback<DetachFromPanelEvent> onDetach;
         VisualElement? hovered, focused, pressed, shownFor;
         long hoveredAt, focusedAt;
         bool disposed;
@@ -36,7 +36,9 @@ namespace Statecraft.Game.UI
         public HoverTip(VisualElement root, IEnumerable<VisualElement> buttons, Func<Side> side)
         {
             tip = root.Q<Label>(TipName); layer = tip.parent; this.side = side;
-            if (!Coordinators.TryGetValue(tip, out var shared)) Coordinators.Add(tip, shared = new Coordinator(tip));
+            // The coordinator lives on the label (userData), so it goes with the UI that holds it, even if an instance is never
+            // disposed (a test that drops its presenter): no static state outlives a panel (#2583).
+            if (!(tip.userData is Coordinator shared)) tip.userData = shared = new Coordinator(tip);
             coordinator = shared;
             onEnter = e => { hovered = (VisualElement)e.currentTarget; hoveredAt = coordinator.Next(); pressed = null; coordinator.Refresh(); };
             onLeave = e => { if (hovered == e.currentTarget) { hovered = null; hoveredAt = 0; } coordinator.Refresh(); };
@@ -44,11 +46,13 @@ namespace Statecraft.Game.UI
             onBlur = e => { if (focused == e.currentTarget) { focused = null; focusedAt = 0; } coordinator.Refresh(); };
             onClick = e => { pressed = (VisualElement)e.currentTarget; coordinator.Refresh(); };
             onSubmit = e => { pressed = (VisualElement)e.currentTarget; coordinator.Refresh(); };
+            // A target taken out of the panel while hovered or focused can no longer hold the tip.
+            onDetach = e => { var x = (VisualElement)e.currentTarget; if (hovered == x) { hovered = null; hoveredAt = 0; } if (focused == x) { focused = null; focusedAt = 0; } if (pressed == x) pressed = null; coordinator.Refresh(); };
             foreach (var b in buttons)
             {
                 targets.Add(b);
                 b.RegisterCallback(onEnter); b.RegisterCallback(onLeave); b.RegisterCallback(onFocus); b.RegisterCallback(onBlur);
-                b.RegisterCallback(onClick); b.RegisterCallback(onSubmit);
+                b.RegisterCallback(onClick); b.RegisterCallback(onSubmit); b.RegisterCallback(onDetach);
             }
             coordinator.Add(this);
         }
@@ -105,7 +109,7 @@ namespace Statecraft.Game.UI
                 members.Remove(member);
                 member.shownFor = null;
                 Refresh();
-                if (members.Count == 0) Coordinators.Remove(tip);
+                if (members.Count == 0 && tip.userData == (object)this) tip.userData = null;
             }
         }
 
@@ -116,7 +120,7 @@ namespace Statecraft.Game.UI
             foreach (var b in targets)
             {
                 b.UnregisterCallback(onEnter); b.UnregisterCallback(onLeave); b.UnregisterCallback(onFocus); b.UnregisterCallback(onBlur);
-                b.UnregisterCallback(onClick); b.UnregisterCallback(onSubmit);
+                b.UnregisterCallback(onClick); b.UnregisterCallback(onSubmit); b.UnregisterCallback(onDetach);
             }
             hovered = focused = pressed = null;
             hoveredAt = focusedAt = 0;
