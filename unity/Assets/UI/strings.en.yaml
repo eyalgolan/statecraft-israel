@@ -23,6 +23,7 @@ hud.say_million: "{0}{1} million"
 hud.say_point: "{0:0} point"
 hud.say_points: "{0:0} points"
 hud.causes: "Main causes this turn:"
+hud.arrivals_this_turn: "Main arrivals this turn:"
 # The top-bar captions, as Game.uxml shows them (HudTests.TheSpokenCaptionsAreTheBarsCaptions), for the words above.
 hud.caption.treasury: "Money (net)"
 hud.caption.immigration: "Immigration"
@@ -497,10 +498,12 @@ why.hex.south: "south"
 why.hex.south_west: "south-west"
 why.hex.west: "west"
 why.hex.north_west: "north-west"
-# The turn report (#1037, TurnReportPresenter): a line is a top-bar caption and the change the bar shows.
+# The turn report (#1037, TurnReportPresenter): a line is a top-bar caption and the change the bar shows; Immigration also
+# labels the current turn's arrivals, whose lines follow it.
 report.title: "What happened this turn"
 report.intro: "What changed in the top bar, and the main causes:"
 report.line: "{0}: {1}"
+report.immigration_line: "{0}: change {1}; arrivals this turn: {2}"
 report.all: "See all in Why?"
 report.close: "Close"
 # The enemy's orders this turn (#1293): one line per order the enemy AI gave (R-ENEMY-001), and one per enemy unit in

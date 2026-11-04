@@ -18,6 +18,8 @@ hud.say_million: "{0}{1} מיליון"
 hud.say_point: "{0:0} נקודה"
 hud.say_points: "{0:0} נקודות"
 hud.causes: "הסיבות העיקריות בתור הזה:"
+# For the native reviewer (#564): agent-drafted, #2576
+hud.arrivals_this_turn: "הגעות עיקריות בתור הזה:"
 # hud.caption.treasury: Money (R-MONEY-001, Q-MONEY-4); the owner's Hebrew word for it, כסף (Q-HUD-3, 15 October 2026, #375).
 hud.caption.treasury: "כסף (נטו)"
 hud.caption.immigration: "עלייה"
@@ -574,10 +576,13 @@ why.hex.south: "מדרום"
 why.hex.south_west: "מדרום־מערב"
 why.hex.west: "ממערב"
 why.hex.north_west: "מצפון־מערב"
-# The turn report (#1037, TurnReportPresenter): a line is a top-bar caption and the change the bar shows.
+# The turn report (#1037, TurnReportPresenter): a line is a top-bar caption and the change the bar shows; Immigration also
+# labels the current turn's arrivals, whose lines follow it.
 report.title: "מה קרה בתור הזה"
 report.intro: "מה השתנה בסרגל העליון, ומה הסיבות העיקריות:"
 report.line: "{0}: שינוי של {1}"
+# For the native reviewer (#564): agent-drafted, #2576
+report.immigration_line: "{0}: שינוי של {1}; עולים שהגיעו בתור הזה: {2}"
 # The Why screen named in a sentence goes in gershayim: owner, 25 Oct 2026.
 report.all: "הכול במסך ״למה?״"
 report.close: "סגירה"
