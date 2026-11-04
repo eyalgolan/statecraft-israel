@@ -43,6 +43,16 @@ namespace Statecraft.Sim
         /// <summary>The change a <see cref="MovesMoney"/> line makes to the Money (net): its Delta, negated for a Debt line.</summary>
         public static double MoneyDelta(Cause w) => w.Target == "debt" ? -w.Delta : w.Delta;
 
+        /// <summary>#2558: <paramref name="w"/> as the Money row (HudModel.Causes) words it. An event's Debt line becomes a
+        /// Money line of its <see cref="MoneyDelta"/> with the same key and Args (the event's title), so it reads "Money IL
+        /// -18.6m (Israel Bonds)" and not as a Debt gain beside the Money lines; any other line is returned as it is.</summary>
+        public static Cause MoneyLine(Content c, Cause w)
+        {
+            if (w.Target != "debt" || w.Key != CauseKeys.EventAmount) return w;
+            var delta = MoneyDelta(w);
+            return new Cause(w.System, "treasury", delta, $"{PlayerText.Change(c, "treasury", delta)} ({w.Args[0]})", key: w.Key, args: w.Args);
+        }
+
         /// <summary>#2212: the one Money line for the causes a list leaves out. The turn report and the meter tip show the
         /// largest Money causes (HudModel.Causes, at most HudModel.MaxCauses); this is the sum of the turn's other lines
         /// <see cref="MovesMoney"/> picks (<paramref name="why"/> minus <paramref name="shown"/>, by reference), so the lines
