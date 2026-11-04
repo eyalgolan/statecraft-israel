@@ -138,7 +138,8 @@ public class CityBuildersTests
         Assert.Equal((built.HousingCapacity, built.JobSlots), (later.HousingCapacity, later.JobSlots));
         // The condition, against the same run with the kinds' condition at 0: the gdd-0.3 housing step (R-HOUSE-002) moves
         // both runs alike, so the difference is the kind's condition, on the turn it is built and, added once, after it.
-        var (_, plain, plainLater, _) = Run(Fixture.GddProjects.Replace("condition: -0.1", "condition: 0") + ArmsWorkshopTests.Row);
+        var (_, plain, plainLater, zeroed) = Run(Fixture.GddProjects.Replace("condition: -0.1", "condition: 0") + ArmsWorkshopTests.Row);
+        Assert.Equal(0.0, zeroed.Condition);   // the comparison run's kind has no condition change, so the difference is k's
         Assert.Equal(plain.Condition!.Value + k.Condition, built.Condition!.Value, 9);
         Assert.Equal(plainLater.Condition!.Value + k.Condition, later.Condition!.Value, 9);
     }
