@@ -115,7 +115,7 @@ namespace Statecraft.Game.Map.Collection
         /// <summary>Lays <paramref name="shadow"/> (half <paramref name="shadowHalf"/> across and along the heading) for an
         /// aircraft drawn at <paramref name="drawn"/>, heading <paramref name="forward"/>, banked <paramref name="bank"/> degrees,
         /// on <paramref name="ground"/> or the sea's surface <paramref name="seaY"/>: the scene sun's ray from the aircraft to the
-        /// ground, found in two steps (the ground's height where the ray lands sets how far it travels); the disc flat, turned
+        /// ground (by default in two steps, the ground's height where the ray lands setting how far it travels); the disc flat, turned
         /// with the heading, narrowed across by the bank, lifted over the highest ground under its middle and its four ends. The
         /// Spitfire's, and the Dakotas' (DakotaLoop, #2482).
         ///
@@ -127,7 +127,8 @@ namespace Statecraft.Game.Map.Collection
         /// rising ground toward the hills, where two steps left it about 200 m off the ray (gate H4 on #2490). With
         /// <paramref name="converge"/> the ray is cut instead by halving: between the aircraft (above the ground) and the point
         /// where the ray falls to the lowest surface there can be (the sea's, or the terrain's base), so the ground is crossed
-        /// between them whatever its slope or the sun's height, and each halving halves that bracket, to under
+        /// between them whatever its slope or the sun's height; a march in <see cref="ShadowMarchM"/> steps finds the first
+        /// crossing, and each halving halves that step, to under
         /// <see cref="ShadowConvergeM"/> along the ray, at most <see cref="ShadowConvergeSteps"/> halvings.</summary>
         internal static void LayShadow(Transform shadow, Terrain ground, float seaY, Vector2 shadowHalf, Vector3 drawn, Vector3 forward, float bank,
             bool converge = false)
@@ -140,6 +141,13 @@ namespace Statecraft.Game.Map.Collection
                 // At s = 0 the ray is at the aircraft, over the ground; at hi it is at the lowest surface there can be, at or
                 // under the ground (Surface is never below the sea's surface or the terrain's base).
                 float lo = 0f, hi = (drawn.y - Mathf.Max(seaY, ground.transform.position.y)) / -ray.y;
+                // The first crossing, not any: march out in ShadowMarchM steps until the ray is at or under the ground, so a
+                // ridge the ray clips puts the shadow on the ridge, not in the valley beyond it (review of #2490).
+                for (float s = ShadowMarchM; s < hi; s += ShadowMarchM)
+                {
+                    var q = drawn + ray * s;
+                    if (q.y > Surface(ground, seaY, q)) lo = s; else { hi = s; break; }
+                }
                 for (int i = 0; i < ShadowConvergeSteps && hi - lo > ShadowConvergeM; i++)
                 {
                     float mid = 0.5f * (lo + hi);
@@ -171,8 +179,8 @@ namespace Statecraft.Game.Map.Collection
 
         /// <summary>The converging shadow's halvings (<see cref="LayShadow"/>): stop once the bracket along the ray is under
         /// <see cref="ShadowConvergeM"/> (m), and after <see cref="ShadowConvergeSteps"/> at most. From 4,200 m at a 30 degree
-        /// sun the bracket starts under 10 km, so about 14 halvings; 24 allows a sun as low as the dusk preset's 14 degrees.</summary>
-        internal const float ShadowConvergeM = 1f;
+        /// sun the bracket starts under 10 km; the march (<see cref="ShadowMarchM"/>) leaves one step of it, so about 8 halvings.</summary>
+        internal const float ShadowConvergeM = 1f, ShadowMarchM = 200f;
         internal const int ShadowConvergeSteps = 24;
 
         /// <summary>The ground's height under <paramref name="p"/>, or the sea's surface over the sea.</summary>

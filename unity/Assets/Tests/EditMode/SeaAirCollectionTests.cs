@@ -692,6 +692,14 @@ public class SeaAirCollectionTests
                     float miss = Xz(s - cast).magnitude;
                     Assert.Less(miss, 0.03f * (drawn.y - g), $"on the sun's ray through the aircraft at {t:0.0} s: ground {g:0} m under the shadow, "
                         + $"{Height(drawn):0} m under the aircraft, {drawn.y:0} m aircraft, {miss:0} m off the ray");
+                    // The ray's first crossing (review of #2490): from the aircraft to the shadow the ray is over the ground at
+                    // every 100 m, but for the last metre, so no ridge it clips before the shadow is passed over.
+                    float reach = Xz(s - drawn).magnitude / Xz(SpitfireLoop.SunRay).magnitude;
+                    for (float along = 0f; along < reach - 1f; along += 100f)
+                    {
+                        var q = drawn + SpitfireLoop.SunRay * along;
+                        Assert.Greater(q.y, Height(q), $"the ray over the ground before its shadow at {t:0.0} s: under it at s = {along:0} m of {reach:0} m");
+                    }
                     var heading = SeaAirCollection.DakotaLoopHeading(u);
                     Assert.Greater(Vector3.Dot(shadow.forward, new Vector3(heading.x, 0f, heading.y)), 0.999f, "turned with its heading");
                     Assert.That(shadow.lossyScale.x / span, Is.InRange(0.4f, 0.6f), "half as wide, about (narrower in a bank)");
