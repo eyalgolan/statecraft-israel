@@ -15,7 +15,7 @@ using UnityEngine.UIElements;
 public class EventScrollLifecycleReleaseTests
 {
     static readonly Content C = ContentLoader.Load(Paths.Content);
-    static UiText Text(bool hebrew) => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(hebrew ? UiPaths.StringsHebrew : UiPaths.Strings).text, hebrew ? "strings.he.yaml" : "strings.en.yaml");
+    static UiText Text(bool hebrew) => UiText.Parse(UiPaths.StringsText(hebrew), hebrew ? "strings.he.yaml" : "strings.en.yaml");
 
     const string First = "armistice_egypt", Second = "armistice_lebanon";
     const float Offset = 250f;

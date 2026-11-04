@@ -79,7 +79,7 @@ public class AdvisorPopupLayoutTests
         bool placeByHand = true, bool justShown = false)
     {
         var text = hebrew
-            ? UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text + "\nadvisor.t.teach.text: \"משפט ראשון ארוך למדי כדי לבדוק גלישה. ומשפט שני.\"\n", "strings.he.yaml")
+            ? UiText.Parse(UiPaths.HebrewText() + "\nadvisor.t.teach.text: \"משפט ראשון ארוך למדי כדי לבדוק גלישה. ומשפט שני.\"\n", "strings.he.yaml")
             : UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text + "\nadvisor.t.teach.text: \"A first sentence long enough to wrap. And a second one.\"\n");
         var rt = new RenderTexture(w, h, 0);
         var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));

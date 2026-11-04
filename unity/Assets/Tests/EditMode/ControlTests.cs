@@ -31,7 +31,7 @@ public class ControlTests
     static string SubText => File.ReadAllText(Path.Combine(Paths.Content, "map", Subdistricts1948.FileName));
     static string ArmText => File.ReadAllText(Path.Combine(Paths.Content, "map", Armistice1949.FileName));
     static UiText En => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
-    static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Folder + "/strings.he.yaml").text);
+    static UiText He => UiText.Parse(UiPaths.HebrewText());
     static MapRegions Regions() => new MapRegions(Subdistricts1948.Parse(SubText), Armistice1949.Parse(ArmText), Control1948.Parse(ControlText));
     static readonly DateTime Start = new DateTime(1948, 5, 15), Truce1 = new DateTime(1948, 6, 20), TenDays = new DateTime(1948, 7, 12),
         Truce2 = new DateTime(1948, 8, 1), October = new DateTime(1948, 11, 10), Mixed = new DateTime(1949, 4, 20), After = new DateTime(1949, 9, 1);

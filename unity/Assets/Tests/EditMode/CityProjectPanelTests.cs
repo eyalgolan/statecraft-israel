@@ -23,7 +23,7 @@ public class CityProjectPanelTests
     static readonly Dictionary<string, string> Towns =
         SettlementPlacer.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", SettlementPlacer.DefaultFileName))).ToDictionary(t => t.Id, t => t.Name);
     static UiText En => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
-    static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+    static UiText He => UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
     // Haifa has hexes no other city reaches; Tel Aviv's own hex is also in Petah Tikva's reach.
     const string City = "haifa", TelAviv = "tel_aviv", Neighbour = "petah_tikva";
 
@@ -431,7 +431,7 @@ public class WorkshopPanelTests
     static readonly Dictionary<string, string> TownsHe =
         SettlementPlacer.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", SettlementPlacer.DefaultFileName))).ToDictionary(t => t.Id, t => t.NameHe);
     static UiText En => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
-    static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+    static UiText He => UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
     const string City = "haifa";
 
     /// <summary>The real content under gdd-0.3, as NoAttentionPresentationTests loads it.</summary>

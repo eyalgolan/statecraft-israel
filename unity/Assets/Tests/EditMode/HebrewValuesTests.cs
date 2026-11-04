@@ -20,7 +20,7 @@ using Object = UnityEngine.Object;
 public class HebrewValuesTests
 {
     const string Lrm = "‎";
-    static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+    static UiText He => UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
     static UiText En => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
 
     /// <summary>What Format gave before #543: string.Format over the pattern, nothing added.</summary>
@@ -172,7 +172,7 @@ public class HebrewValuesTests
 
     static List<string> Keys(string path) =>
         new YamlDotNet.Serialization.DeserializerBuilder().Build()
-            .Deserialize<Dictionary<string, string>>(AssetDatabase.LoadAssetAtPath<TextAsset>(path).text).Keys.ToList();
+            .Deserialize<Dictionary<string, string>>(System.IO.File.ReadAllText(path)).Keys.ToList();
 
     // --- Rendered ------------------------------------------------------------------------------------------------------
 

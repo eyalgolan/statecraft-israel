@@ -14,8 +14,7 @@ using UnityEngine;
 public class EventEffectTextTests
 {
     static readonly Content C = ContentLoader.Load(Paths.Content);
-    static UiText Text(bool hebrew) => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(
-        hebrew ? UiPaths.StringsHebrew : UiPaths.Strings).text);
+    static UiText Text(bool hebrew) => UiText.Parse(UiPaths.StringsText(hebrew));
     static string Plain(string value) => value.Replace(UiText.LeftToRightMark.ToString(), "");
     static readonly string City = C.Cities.First().Id;
     static readonly string Place = PlayerText.Settlement(C, City);

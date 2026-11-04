@@ -19,7 +19,7 @@ Revision 21 October 2026, localisation follow-up: event/unit field fallbacks and
 - A native reviewer works through the "For the native reviewer" lists, decides each open point, and signs off by name and date (HE-14).
 - An AI agent reads the agent brief first. It must never finalise Hebrew and must flag every Hebrew string for native review.
 - An AI-assisted contributor may do the native read and clear an `agent-checked` flag, when the pull request's "AI assistance" section discloses the AI help and lists the strings read (the owner, 4 November 2026: "AI-assisted can clear it"; https://github.com/eyalgolan/statecraft-israel/pull/2481#issuecomment-6623108295).
-- Every quoted string is a real string from `strings.he.yaml` or `strings.en.yaml`, or a real line from the sources named. Rewrites are labelled "candidate".
+- Every quoted string is a real string from `translations/he/ui.yaml` (until #1618 step 4, `unity/Assets/UI/strings.he.yaml`) or `strings.en.yaml`, or a real line from the sources named. Rewrites are labelled "candidate".
 
 Rule status legend: **observed** (already the practice), **proposed** (new), **maintainer** (needs Eyal's decision), **native** (needs a native Hebrew reviewer), **code** (needs a code change).
 

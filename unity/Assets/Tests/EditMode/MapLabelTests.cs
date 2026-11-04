@@ -678,7 +678,7 @@ public class MapLabelTests
     {
         // The game's tooltip comes from map.tier (GameRoot); both languages format it with the tier, the count and the people.
         var en = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         Assert.AreEqual(MapLabelsPresenter.DefaultTierTip(8, 98618m), en.Format("map.tier", 8, MapLabelsPresenter.TierCount, "98,618"));
         var heTip = he.Format("map.tier", 8, MapLabelsPresenter.TierCount, "98,618");
         StringAssert.Contains("98,618", heTip); StringAssert.Contains("8", heTip); StringAssert.Contains("9", heTip);

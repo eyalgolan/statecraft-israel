@@ -303,7 +303,7 @@ public class SaveUiTests
         StringAssert.Contains("\nruleset gdd-0.1\n", good);
         foreach (var path in new[] { UiPaths.Strings, UiPaths.StringsHebrew })
         {
-            var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(path).text);
+            var text = UiText.Parse(System.IO.File.ReadAllText(path));
             var store = TempStore();
             store.WriteAutosave(good.Replace("ruleset gdd-0.1", ruleset));
             var notes = new List<string>();

@@ -14,7 +14,10 @@ using YamlDotNet.Serialization;
 public class TranslationsTests
 {
     static string Repo => Path.GetDirectoryName(RealContentTests.ContentRoot())!;
-    static string Ui(string lang) => Path.Combine(Repo, "unity", "Assets", "UI", $"strings.{lang}.yaml");
+    // The English UI strings live with the scene; the Hebrew moved to translations/he/ui.yaml (#1618, step 4).
+    static string Ui(string lang) => lang == Translations.Hebrew
+        ? Path.Combine(Repo, "translations", "he", Translations.UiFile)
+        : Path.Combine(Repo, "unity", "Assets", "UI", $"strings.{lang}.yaml");
     static string FixtureDir => Path.Combine(Repo, "sim", "Statecraft.Sim.Tests", "translations_fixture");
 
     /// <summary>Content files with Hebrew the contract does not key, pending the owner's decision on #1618: map labels

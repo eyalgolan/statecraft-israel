@@ -21,7 +21,7 @@ public class TurnReportTests
 {
     static readonly Content C = ContentLoader.Load(Paths.Content);
     static UiText En => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
-    static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+    static UiText He => UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
 
     /// <summary>The HUD, the screens' navigation, the Why screen, the decision card and the report on Game.uxml.</summary>
     sealed class Kit : System.IDisposable

@@ -129,7 +129,7 @@ public class DecisionCardTests
     [UnityTest]
     public IEnumerator AnsweringInHebrewLeavesTheInfoPanelClickable()
     {
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         foreach (var (w, h) in new[] { (1920, 1080), (960, 1080) })
         {
             using var r = new Rig(w, h, "law_of_return", text: he);
@@ -161,7 +161,7 @@ public class DecisionCardTests
     [UnityTest]
     public IEnumerator AnsweringTwoCardsInHebrewLeavesTheInfoPanelClickable()
     {
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         using var r = new Rig(1920, 1080, "law_of_return", text: he, second: "first_truce");
         yield return Frames(4);
         Assert.IsTrue(r.Shows("event-scrim"), "precondition: the first card's backdrop shows");
@@ -488,7 +488,7 @@ public class DecisionCardTests
     [UnityTest]
     public IEnumerator TheLegendIsHiddenWhileTheCardIsOpen()
     {
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         var problems = new List<string>();
         foreach (var t in new[] { Text, he })
         foreach (var (w, h) in new[] { (1920, 1080), (1680, 1050), (1280, 720), (1531, 784), (1366, 657), (2560, 1080), (1920, 900), (1280, 1024),
@@ -526,7 +526,7 @@ public class DecisionCardTests
     // (26 Oct): the card's body (its text and its options with their effect lines) is one ScrollView between the pinned
     // head and the pinned foot with Hide, and it scrolls only when the body overflows the card's height cap.
 
-    static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+    static UiText He => UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
 
     static bool InView(VisualElement e, ScrollView view)
     {

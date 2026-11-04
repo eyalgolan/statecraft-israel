@@ -15,7 +15,7 @@ using UnityEngine;
 
 public class RegionNamesTests
 {
-    static UiText Text(bool he) => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(he ? UiPaths.StringsHebrew : UiPaths.Strings).text);
+    static UiText Text(bool he) => UiText.Parse((he ? UiPaths.HebrewText() : AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text));
     static MapInputs Inputs => GameInputs.MapFromDisk(Paths.Content, Paths.StreamingMap);
     static MapRegions Regions(MapInputs m) => new MapRegions(Subdistricts1948.Parse(m.RegionsYaml),
         Armistice1949.Parse(m.ArmisticeYaml), names: MapRegionNames.Parse(m.RegionNamesYaml));

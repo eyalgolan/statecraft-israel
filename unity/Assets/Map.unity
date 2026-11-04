@@ -436,7 +436,6 @@ MonoBehaviour:
   boot: {fileID: 309119767}
   document: {fileID: 1912926282}
   strings: {fileID: 4900000, guid: 1c2724b5422584e3dbeef4ab44d2e9da, type: 3}
-  stringsHe: {fileID: 4900000, guid: 27f3faa05a8e4dbab9c8563cd9461548, type: 3}
   portraits: {fileID: 11400000, guid: 57539449dae8640c6b6848f8c1e433ff, type: 2}
   map: {fileID: 1195372452}
   placements: {fileID: 1128708372}

@@ -33,7 +33,7 @@ public class AdvisorOpeningParityTests
     }
     static readonly Content C = ContentLoader.Load(Paths.Content);
     static UiText En => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
-    static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+    static UiText He => UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
     /// <summary>The settlements' names for the info panel's title (InfoPanelLayoutTests' list).</summary>
     static Dictionary<string, string> Names() => SettlementPlacer.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", SettlementPlacer.DefaultFileName)))
         .ToDictionary(t => t.Id, t => t.Name);

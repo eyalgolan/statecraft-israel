@@ -353,7 +353,7 @@ public class UnitOrdersTests
     [Test]
     public void SendHomeAppearsAfterTheFrontsArmisticeAndQueuesTheSimsOrder()
     {
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         foreach (var (t, label) in new[] { (Text, "Send home"), (he, "שליחה הביתה") })
         {
             using var ui = new UiTestKit();
@@ -394,7 +394,7 @@ public class UnitOrdersTests
     [Test]
     public void ReinforceQueuesTheMissingStrengthFromTheCityTheUnitStandsIn()
     {
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         foreach (var (t, label, arms) in new[] { (Text, "Reinforce +", "not enough Arms"), (he, "תגבור +", "אין די כלי נשק") })
         {
             using var ui = new UiTestKit();
@@ -466,7 +466,7 @@ public class UnitOrdersTests
     [Test]
     public void AReinforceRefusedThroughTheBridgeReadsInHebrewWhole()
     {
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         var namesHe = SettlementPlacer.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", SettlementPlacer.DefaultFileName))).ToDictionary(t => t.Id, t => t.NameHe);
         using var ui = new UiTestKit();
         var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
@@ -975,7 +975,7 @@ public class UnitOrdersTests
     [TestCase(false)] [TestCase(true)]
     public void EscapeClearsTheUnitOrHexWithoutGivingAnOrder(bool hebrew)
     {
-        var text = hebrew ? UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml") : Text;
+        var text = hebrew ? UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml") : Text;
         using var ui = new UiTestKit();
         var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical); var bridge = new SimBridge(g, text);
         var golani = UnitRoster.FromState(Units, C, g.State, _ => true, (row, a, q, r) => a).Single(t => t.Unit.Id == "golani");

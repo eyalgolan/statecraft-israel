@@ -37,7 +37,7 @@ public class RegionNamesVisualTests
             (key:"armistice",q:zh.q,r:zh.r,date:new DateTime(1950,3,1),expected:"שטח הכפר אל־עוג'ה וסביבתו")})
         foreach (var after in new[] {false,true})
         {
-            var t=UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(he?UiPaths.StringsHebrew:UiPaths.Strings).text);
+            var t=UiText.Parse(UiPaths.StringsText(he));
             var regions=new MapRegions(sub,arm,names:after?names:null);
             var session=GameSession.New(content,GoldenRun.Seed,Mode.Historical); session.State.Date=scenario.date;
             RenderTexture? rt=null; PanelSettings? ps=null; GameObject? go=null; HudPresenter? hud=null; InfoPanelPresenter? info=null;

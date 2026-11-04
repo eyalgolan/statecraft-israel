@@ -18,13 +18,13 @@ using UnityEngine.UIElements;
 using Object = UnityEngine.Object;
 
 /// <summary>The Hebrew UI (#193): asked for by hand only ("?lang=he", "-lang he"), English otherwise; when asked, GameRoot
-/// loads strings.he.yaml and marks the root, and every text is set in the Hebrew face through the advanced text
+/// loads translations/he/ui.yaml (#1618, step 4) and marks the root, and every text is set in the Hebrew face through the advanced text
 /// generator.</summary>
 public class HebrewUiTests
 {
     static GameInputs? inputs;
     static GameInputs Inputs => inputs ??= GameInputs.FromDisk(Paths.Content, Paths.StreamingMap);
-    static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+    static UiText He => UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
     static UiText En => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
 
     string saveDir = "";
@@ -1028,6 +1028,21 @@ public class HebrewUiTests
             Assert.AreEqual(locations.TryGetValue(s.Id, out var named) ? named.Name : s.Name, Ui.Q<Label>("label-" + s.Id).text, $"after an English restart: {s.Id}");
         foreach (var l in locations.Values) Assert.AreEqual(l.Name, Ui.Q<Label>("label-" + l.Id).text, $"after an English restart: {l.Id}");
         foreach (var p in map.Localities) Assert.AreEqual(p.Settlement.Name, Ui.Q<Label>("label-" + p.Settlement.Id).text, $"after an English restart: {p.Settlement.Id}");
+    }
+
+    /// <summary>#1618 step 4: the Hebrew UI is translations/he/ui.yaml as the content carries it (the disk path, and the web
+    /// bundle through GameInputs), the same strings the early copy reads from the file, and no copy is left in Assets/.</summary>
+    [Test]
+    public void TheHebrewUiIsTranslationsHeUiYamlAsTheContentCarriesIt()
+    {
+        var set = Inputs.Content.Translations.Single(t => t.Lang == Statecraft.Sim.Translations.Hebrew);
+        var carried = UiText.Of(set.Ui, "translations/he/ui.yaml");
+        var file = new YamlDotNet.Serialization.DeserializerBuilder().Build().Deserialize<Dictionary<string, string>>(UiPaths.HebrewText());
+        Assert.AreEqual(file.Count, set.Ui.Count);
+        foreach (var kv in file) Assert.AreEqual(kv.Value, carried[kv.Key], kv.Key);
+        Assert.AreEqual(UiLanguage.Hebrew, carried["ui.lang"]);
+        Assert.IsEmpty(AssetDatabase.FindAssets("strings.he"), "no Hebrew strings asset is left for a scene to hold");
+        Assert.Throws<InvalidOperationException>(() => UiText.Of(new KeyValuePair<string, string>[0], "translations/he/ui.yaml"));
     }
 
     /// <summary>The loading line is in the UI's language from the first frame, before Begin, in the Hebrew face and right to

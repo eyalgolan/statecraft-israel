@@ -285,7 +285,7 @@ public class AdvisorPopupTests
     [TestCase("approved", true)]
     public void InHebrewOnlyAnApprovedMessageShows(string review, bool shows)
     {
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text +
+        var he = UiText.Parse(UiPaths.HebrewText() +
             "\nadvisor.t.teach.text: \"Teach.\"\nadvisor.t.warn.text: \"Warn.\"\nadvisor.t.crit.text: \"Critical.\"\n", "strings.he.yaml");
         using var rig = new Rig(catalog: Fixture.Replace("level: new,", $"level: new, he_review: {review},"), text: he);
         rig.Advisor.NewGame();

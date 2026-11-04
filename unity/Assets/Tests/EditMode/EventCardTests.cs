@@ -242,7 +242,7 @@ public class EventCardTests
     [Test]
     public void InHebrewTheOfficeLineUsesTheFeminineTitleAndHebrewName()
     {
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         var c = ContentLoader.Load(Paths.Content);
         var e = c.Events.First(x => x.Id == "armistice_egypt");
         e.Office = "labour_minister";
@@ -575,7 +575,7 @@ public class EventCardTests
 
     // ---- The objective card (#380): its line and its photograph ----
 
-    static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+    static UiText He => UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
 
     /// <summary>The first new yishuv's card, recorded as completed on <paramref name="done"/> (R-OBJ-001), pending.</summary>
     static SimBridge ObjectiveDone(System.DateTime done, UiText text)
@@ -969,7 +969,7 @@ sources: [{ url: ""https://example.org/record"", checked: 2026-10-17 }]
     [TestCase(false, 1)] [TestCase(false, 2)] [TestCase(true, 1)] [TestCase(true, 2)]
     public void MoreDecisionsUseARealPlural(bool hebrew, int remaining)
     {
-        var text = hebrew ? UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml") : Text;
+        var text = hebrew ? UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml") : Text;
         var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
         g.State.Date = new System.DateTime(1948, 6, 15);
         g.State.PendingEvents.Clear();

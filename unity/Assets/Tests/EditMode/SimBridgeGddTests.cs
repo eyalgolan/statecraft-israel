@@ -252,7 +252,7 @@ public class NoAttentionPresentationTests
             return modern && rel == "eras.yaml" ? value.Replace("loop: gdd", "loop: gdd, ruleset: gdd-0.3") : value;
         }, System.IO.Directory.GetFiles(System.IO.Path.Combine(dir, "events"), "*.yaml").Select(f => "events/" + System.IO.Path.GetFileName(f)));
     }
-    static UiText Text(bool he) => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(he ? UiPaths.StringsHebrew : UiPaths.Strings).text);
+    static UiText Text(bool he) => UiText.Parse((he ? UiPaths.HebrewText() : AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text));
     static SimBridge Bridge(bool modern, bool he = false)
     {
         var c = Load(modern);

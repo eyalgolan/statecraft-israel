@@ -156,7 +156,7 @@ public class ArmisticeTests
         StringAssert.Contains("Jordan: Mandate sub-districts, no armistice line data", L(noJordan, new DateTime(1949, 8, 1)));
     }
 
-    static UiText HeText => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+    static UiText HeText => UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
 
     static string LHe(MapRegions m, DateTime d)
     {

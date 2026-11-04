@@ -9,7 +9,7 @@ the translation on the right.
 Usage: uv run tools/translate.py [--port 8765] [--no-open]   (serves http://127.0.0.1:PORT; Ctrl+C stops it)
 
 Hebrew is written where the game reads it: the events' title_he / text_he / late_text_he / options' text_he (#1064) and
-unity/Assets/UI/strings.he.yaml (#12), changing only the edited lines so comments and layout stay. Hebrew content names
+translations/he/ui.yaml (#12; moved there by #1618, step 4), changing only the edited lines so comments and layout stay. Hebrew content names
 are shown but not edited here: they carry their own sources. Any other language is written to
 translations/<lang>/{events,ui,content}.yaml, which the game does not read yet. Every language keeps the Hebrew rules
 (docs/WRITING_EVENTS.md; the sim's EventRules): an event is all or none, placeholders match the English with no stray
@@ -41,7 +41,7 @@ import yaml12  # noqa: E402
 ROOT = Path(__file__).resolve().parents[1]
 EVENTS = ROOT / "content/events"
 UI_EN = ROOT / "unity/Assets/UI/strings.en.yaml"
-UI_HE = ROOT / "unity/Assets/UI/strings.he.yaml"
+UI_HE = ROOT / "translations/he/ui.yaml"   # the Hebrew UI strings (#1618, step 4); the events' and content's Hebrew stay inline
 CONTENT = ROOT / "content"
 TRANSLATIONS = ROOT / "translations"
 HE_KEY = re.compile(r"(.+)_he(_f)?$")       # name_he, title_he_f, sector_he ...: a content field's Hebrew form

@@ -33,6 +33,16 @@ namespace Statecraft.Game.UI
             return new UiText(m, file);
         }
 
+        /// <summary>The strings <paramref name="lines"/> hold, and no others (translations/he/ui.yaml as the content carries
+        /// it, #1618 step 4). Throws InvalidOperationException naming the file when there are none.</summary>
+        public static UiText Of(IEnumerable<KeyValuePair<string, string>> lines, string file)
+        {
+            var m = new Dictionary<string, string>();
+            foreach (var line in lines) m[line.Key] = line.Value;
+            if (m.Count == 0) throw new InvalidOperationException($"{file}: no strings");
+            return new UiText(m, file);
+        }
+
         /// <summary>These strings with <paramref name="lines"/> (a translations/&lt;lang&gt;/ui.yaml, #1606) over them: a key the
         /// translation has reads its text, every other key the text here, so a new language falls back to English per string.</summary>
         public UiText Over(IEnumerable<KeyValuePair<string, string>> lines, string file)

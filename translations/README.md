@@ -1,9 +1,11 @@
 # translations/
 
-Translations into languages other than English and Hebrew, written by `tools/translate.py` ([tools/README.md](../tools/README.md)).
-The game loads and checks these files with the content ([docs/translations.md](../docs/translations.md), "Loading"),
-but does not show them yet: a language is offered to players through the start-of-game language picker and the Settings
-menu (#1606). English and Hebrew stay where they are, in `content/` and `unity/Assets/UI/`.
+Translations of the game, written by `tools/translate.py` ([tools/README.md](../tools/README.md)). The game loads and
+checks these files with the content ([docs/translations.md](../docs/translations.md), "Loading"); a language is offered
+to players through the start-of-game language picker and the Settings menu (#1606). English stays in `content/` and
+`unity/Assets/UI/`. Hebrew is moving here one file at a time (#1618): `he/ui.yaml` holds the Hebrew UI strings (step 4),
+and the events' and content's Hebrew stay inline in `content/` until steps 5 and 6. `he/ui.yaml` keeps its comments (the
+native reads and rulings), so the tool edits it line by line rather than rewriting it.
 
 Each language has a folder named by its code (`ro`, `fr`, `pt-BR`), with up to three files:
 

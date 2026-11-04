@@ -108,17 +108,17 @@ concepts:
     avoid: []
     in_use:
     - form: דרגה {0} מתוך 5
-      where: strings.he.yaml hud.level
+      where: translations/he/ui.yaml hud.level
     - form: המצב הביטחוני
-      where: strings.he.yaml defence.section_ladder
+      where: translations/he/ui.yaml defence.section_ladder
     - form: הורדת הדרגה
-      where: strings.he.yaml defence.lower
+      where: translations/he/ui.yaml defence.lower
     - form: העלאת הדרגה
-      where: strings.he.yaml defence.raise
+      where: translations/he/ui.yaml defence.raise
     - form: רמת ביטחון {1} מתוך 5
-      where: strings.he.yaml unit.national
+      where: translations/he/ui.yaml unit.national
     - form: מדרגה {0} לדרגה {1}
-      where: strings.he.yaml defence.order
+      where: translations/he/ui.yaml defence.order
     - form: סולם הסלמה
       where: README.he.md
     options:
@@ -167,9 +167,9 @@ concepts:
     avoid: []
     in_use:
     - form: תשומת לב {0:0.0} מתוך {1:0.0}
-      where: strings.he.yaml hud.attention
+      where: translations/he/ui.yaml hud.attention
     - form: אין מספיק תשומת לב
-      where: strings.he.yaml order.no_attention
+      where: translations/he/ui.yaml order.no_attention
   recommendation:
     en: Keep sentence case everywhere, in prose as well as in the UI, so one rule covers both, and define the term once at
       first use in each document. The alternative, a capital for the named resource in prose only, would split the rule between
@@ -208,11 +208,11 @@ concepts:
     avoid: []
     in_use:
     - form: תור {0}
-      where: strings.he.yaml hud.turn
+      where: translations/he/ui.yaml hud.turn
     - form: תורות של רבעון / חודש / שבוע
-      where: strings.he.yaml defence.turn_*
+      where: translations/he/ui.yaml defence.turn_*
     - form: '{0} תורות'
-      where: strings.he.yaml city.turns (#869)
+      where: translations/he/ui.yaml city.turns (#869)
   recommendation:
     en: Use turn. When duration matters, say one month for the current MVP. Do not infer a quarter or week from unused legacy
       strings.
@@ -239,7 +239,7 @@ concepts:
     avoid: []
     in_use:
     - form: 'נקודות תנועה: {0} מתוך {1}'
-      where: strings.he.yaml unit.points
+      where: translations/he/ui.yaml unit.points
   recommendation:
     en: Use movement points in the card and rules.
     he: The candidate נקודות תנועה needs a native review.
@@ -268,11 +268,11 @@ concepts:
     avoid: []
     in_use:
     - form: סיום התור
-      where: strings.he.yaml hud.end_turn
+      where: translations/he/ui.yaml hud.end_turn
     - form: ייכנס לתוקף בסיום התור
-      where: strings.he.yaml budget.queued
+      where: translations/he/ui.yaml budget.queued
     - form: יש לסיים את התור כדי לראות את הסיבות
-      where: strings.he.yaml why.empty
+      where: translations/he/ui.yaml why.empty
   recommendation:
     en: 'Keep the pattern: capitalised for the button, lowercase for the action. Record it as the rule (conventions: button-names).'
     he: 'The button label ''סיום התור'' (added in #550) and the sentences already use the same words. The reviewer confirms.'
@@ -302,9 +302,9 @@ concepts:
     avoid: []
     in_use:
     - form: החלטה ממתינה
-      where: strings.he.yaml event.reopen
+      where: translations/he/ui.yaml event.reopen
     - form: 'החלטות ממתינות נוספות: {0}'
-      where: strings.he.yaml event.more
+      where: translations/he/ui.yaml event.more
     - form: מכריעים בהחלטות אמיתיות
       where: README.he.md
   recommendation:
@@ -337,7 +337,7 @@ concepts:
     avoid: []
     in_use:
     - form: אירועים
-      where: strings.he.yaml why.events
+      where: translations/he/ui.yaml why.events
   recommendation:
     en: Use 'event' for the historical happening and the data, 'decision' for what the player answers.
     he: No change proposed.
@@ -370,9 +370,9 @@ concepts:
     avoid: []
     in_use:
     - form: למה?
-      where: strings.he.yaml hud.nav.why
+      where: translations/he/ui.yaml hud.nav.why
     - form: למה זה קרה?
-      where: strings.he.yaml why.title
+      where: translations/he/ui.yaml why.title
     - form: לוח 'למה זה קרה?'
       where: README.he.md
   recommendation:
@@ -404,7 +404,7 @@ concepts:
     avoid: []
     in_use:
     - form: 'קואליציה: {0} מתוך {1} {3} · יציבות {2}'
-      where: strings.he.yaml cabinet.coalition
+      where: translations/he/ui.yaml cabinet.coalition
     - form: בתוך קואליציה אמיתית
       where: README.he.md
   recommendation:
@@ -440,11 +440,11 @@ concepts:
     avoid: []
     in_use:
     - form: מנדטים
-      where: strings.he.yaml cabinet.seats
+      where: translations/he/ui.yaml cabinet.seats
     - form: חברים
-      where: strings.he.yaml cabinet.seats_appointed
+      where: translations/he/ui.yaml cabinet.seats_appointed
     - form: חברים
-      where: strings.he.yaml cabinet.legislature, cabinet.members_unit
+      where: translations/he/ui.yaml cabinet.legislature, cabinet.members_unit
   recommendation:
     en: No change; 'seats' and 'members' already work for both bodies.
     he: 'Closed in #550: the unit is its own string (''cabinet.seats'' or ''cabinet.seats_appointed''), chosen by whether
@@ -507,11 +507,11 @@ concepts:
     - 'כשירות (replaced in #550; reads as fitness or qualification, Eyal on #193)'
     in_use:
     - form: כישורים
-      where: strings.he.yaml card.competence
+      where: translations/he/ui.yaml card.competence
     - form: כישורים {2}, נאמנות {3}
-      where: strings.he.yaml cabinet.person
+      where: translations/he/ui.yaml cabinet.person
     - form: נאמנות
-      where: strings.he.yaml card.loyalty
+      where: translations/he/ui.yaml card.loyalty
     options:
     - יכולת (the other candidate Eyal named)
   recommendation:
@@ -544,7 +544,7 @@ concepts:
     avoid: []
     in_use:
     - form: הפסקת אש של האו״ם
-      where: strings.he.yaml defence.ceasefire_starts
+      where: translations/he/ui.yaml defence.ceasefire_starts
   recommendation:
     en: Use 'ceasefire' as one word in UI and prose. An event title that follows a source's own spelling keeps it, so decide
       whether 'Cease-fire in Jerusalem' follows a source or should be aligned.
@@ -604,7 +604,7 @@ concepts:
     avoid: []
     in_use:
     - form: קו שביתת נשק
-      where: strings.he.yaml map.layer_front_no_data
+      where: translations/he/ui.yaml map.layer_front_no_data
   recommendation:
     en: No change.
     he: No change proposed.
@@ -632,7 +632,7 @@ concepts:
     avoid: []
     in_use:
     - form: גיוס מילואים
-      where: strings.he.yaml defence.section_callup, unit.national
+      where: translations/he/ui.yaml defence.section_callup, unit.national
   recommendation:
     en: No change.
     he: No change proposed.
@@ -659,7 +659,7 @@ concepts:
     avoid: []
     in_use:
     - form: הקמת מעברה ({0})
-      where: strings.he.yaml info.build_camp
+      where: translations/he/ui.yaml info.build_camp
   recommendation:
     en: 'UI says ''transit camp''. Prose says ''the ma''abarot (transit camps)'' the first time, then either word. The
       spelling is settled (conventions: transliteration; owner, 26 October 2026, #1760).'
@@ -685,7 +685,7 @@ concepts:
     avoid: []
     in_use:
     - form: 'יישובים: {0}'
-      where: strings.he.yaml info.owned
+      where: translations/he/ui.yaml info.owned
   recommendation:
     en: No change.
     he: 'Check with the reviewer: the Hebrew uses the same word for ''settlement'' and for ''1948 locality'' (see ''locality'').'
@@ -712,9 +712,9 @@ concepts:
     avoid: []
     in_use:
     - form: 'יישובים ב-1948: {0}'
-      where: strings.he.yaml info.localities
+      where: translations/he/ui.yaml info.localities
     - form: יישוב מעורב
-      where: strings.he.yaml map.mixed
+      where: translations/he/ui.yaml map.mixed
   recommendation:
     en: No change.
     he: 'Same point as ''settlement'': one Hebrew word covers two English concepts. Also see the maqaf point on ''ב-1948''
@@ -777,7 +777,7 @@ concepts:
     - 'משושה (replaced by the owner on 1 November 2026: "replace evey place that says משושה with משבצת throughout the game")'
     in_use:
     - form: "יש ללחוץ על המפה, או לעבור אליה ב־Tab וללחוץ Enter, כדי לבדוק משבצת; גרירה בלחצן הימני מזיזה את המפה"
-      where: strings.he.yaml info.hint
+      where: translations/he/ui.yaml info.hint
   recommendation:
     en: Keep, but write the first mention so a player who has never met a hex map understands it.
     he: משבצת, as the owner ruled on 1 November 2026.
@@ -837,9 +837,9 @@ concepts:
     avoid: []
     in_use:
     - form: 'טיוטה: טרם נבדק בידי היסטוריון'
-      where: strings.he.yaml unit.draft
+      where: translations/he/ui.yaml unit.draft
     - form: טיוטה
-      where: strings.he.yaml event.draft
+      where: translations/he/ui.yaml event.draft
   recommendation:
     en: 'No change to the word. Two writings are live: ''Draft:'' with a reason on a unit card, and ''DRAFT'' in capitals
       as the mark on a decision card (the Hebrew uses one writing for both). Decide whether the capitals are a deliberate
@@ -880,7 +880,7 @@ concepts:
     avoid: []
     in_use:
     - form: איור שנוצר בבינה מלאכותית
-      where: strings.he.yaml event.ai_label
+      where: translations/he/ui.yaml event.ai_label
   recommendation:
     en: 'Keep the label wording. The statements now agree: on 14 October the owner removed the caption burned into the clips,
       and the store-page draft says so while saying the game''s UI labels each clip ''AI-generated illustration'' while it
@@ -928,9 +928,9 @@ concepts:
     avoid: []
     in_use:
     - form: ביטחון
-      where: strings.he.yaml hud.nav.defence
+      where: translations/he/ui.yaml hud.nav.defence
     - form: שר הביטחון {0} · הרמטכ״ל {1}
-      where: strings.he.yaml defence.command
+      where: translations/he/ui.yaml defence.command
   recommendation:
     en: 'The rule is already the owner''s and the strings follow it. Write it down outside a YAML comment (conventions: spelling),
       and decide what the GDD, which mixes both spellings, follows. A placeholder such as {defense_minister} is an office
@@ -1002,7 +1002,7 @@ concepts:
     avoid: []
     in_use:
     - form: תמיכה בינלאומית
-      where: strings.he.yaml hud.caption.standing
+      where: translations/he/ui.yaml hud.caption.standing
     - form: The Hebrew words are כסף, מזון, נשק and תמיכה בינלאומית, with Social cohesion staying לכידות חברתית
       where: docs/gdd/cutover-resource-layer.md
   recommendation:
@@ -1044,13 +1044,13 @@ concepts:
     avoid: []
     in_use:
     - form: 'הכשרת חלוצים: קבוצה אחת, {0}, {1}'
-      where: strings.he.yaml city.train_halutz (#869)
+      where: translations/he/ui.yaml city.train_halutz (#869)
     - form: חלוצים
-      where: strings.he.yaml city.track_halutz (#869)
+      where: translations/he/ui.yaml city.track_halutz (#869)
     - form: קבוצת חלוצים {0}
-      where: strings.he.yaml site.group (#869)
+      where: translations/he/ui.yaml site.group (#869)
     - form: אין קבוצת חלוצים פנויה. אפשר להכשיר קבוצה בעיר שיש בה הכשרה.
-      where: strings.he.yaml site.no_halutz (#869)
+      where: translations/he/ui.yaml site.no_halutz (#869)
   recommendation:
     en: 'The UI says ''halutz'' / ''halutzim'' and ''Hakhshara'' (#869), as the GDD does. Proposal for the owner: define each
       once at first use (for example in a tooltip), or switch the UI to ''pioneer'' / ''pioneer training''. Either way it
@@ -1082,7 +1082,7 @@ concepts:
     - form: Hakhshara (הכשרה)
       where: docs/GDD.md
     - form: אין קבוצת חלוצים פנויה. אפשר להכשיר קבוצה בעיר שיש בה הכשרה.
-      where: strings.he.yaml site.no_halutz (#869)
+      where: translations/he/ui.yaml site.no_halutz (#869)
   recommendation:
     en: 'The UI says ''halutz'' / ''halutzim'' and ''Hakhshara'' (#869), as the GDD does. Proposal for the owner: define each
       once at first use (for example in a tooltip), or switch the UI to ''pioneer'' / ''pioneer training''. Either way it
@@ -1137,17 +1137,17 @@ concepts:
     avoid: []
     in_use:
     - form: כסף (נטו)
-      where: strings.he.yaml hud.caption.treasury
+      where: translations/he/ui.yaml hud.caption.treasury
     - form: עלייה
-      where: strings.he.yaml hud.caption.immigration
+      where: translations/he/ui.yaml hud.caption.immigration
     - form: ביטחון
-      where: strings.he.yaml hud.caption.security
+      where: translations/he/ui.yaml hud.caption.security
     - form: תמיכה ציבורית
-      where: strings.he.yaml hud.caption.support
+      where: translations/he/ui.yaml hud.caption.support
     - form: תמיכה בינלאומית
-      where: strings.he.yaml hud.caption.standing
+      where: translations/he/ui.yaml hud.caption.standing
     - form: מטבע חוץ
-      where: strings.he.yaml hud.caption.fx
+      where: translations/he/ui.yaml hud.caption.fx
     - form: The Hebrew words are כסף, מזון, נשק and תמיכה בינלאומית, with Social cohesion staying לכידות חברתית
       where: docs/gdd/cutover-resource-layer.md
   recommendation:
@@ -1192,7 +1192,7 @@ concepts:
     avoid: []
     in_use:
     - form: כסף {0} · חוב {1} · מטבע חוץ {2}
-      where: strings.he.yaml budget.money
+      where: translations/he/ui.yaml budget.money
     - form: The Hebrew words are כסף, מזון, נשק and תמיכה בינלאומית, with Social cohesion staying לכידות חברתית
       where: docs/gdd/cutover-resource-layer.md
   recommendation:
@@ -1236,9 +1236,9 @@ concepts:
     avoid: []
     in_use:
     - form: מטבע חוץ
-      where: strings.he.yaml hud.caption.fx
+      where: translations/he/ui.yaml hud.caption.fx
     - form: מטבע חוץ {2}
-      where: strings.he.yaml budget.money
+      where: translations/he/ui.yaml budget.money
   recommendation:
     en: 'Say ''foreign currency'' in player text. Capitalisation follows the label rule (conventions: label-capitalisation):
       the caption and the content name are both ''Foreign currency''. The owner decided on 15 October that debt and foreign
@@ -1281,11 +1281,11 @@ concepts:
     avoid: []
     in_use:
     - form: גיוס מילואים
-      where: strings.he.yaml defence.section_callup
+      where: translations/he/ui.yaml defence.section_callup
     - form: יתרות מטבע החוץ אזלו
-      where: strings.he.yaml why.cause.fx_crisis_began
+      where: translations/he/ui.yaml why.cause.fx_crisis_began
     - form: אין די דולרים ביתרות מטבע החוץ
-      where: strings.he.yaml dollars.refused_reserves
+      where: translations/he/ui.yaml dollars.refused_reserves
   recommendation:
     en: 'Decided (owner, 5 November 2026, "Allow both", recorded on #2779 by an agent): ''reserves'' for the military
       reserve, and ''foreign currency reserves'' for the money, with the qualifier. The ids and comments can keep ''reserves''
@@ -1328,13 +1328,13 @@ concepts:
     avoid: []
     in_use:
     - form: תקציב
-      where: strings.he.yaml budget.title
+      where: translations/he/ui.yaml budget.title
     - form: הגשת התקציב
-      where: strings.he.yaml budget.submit
+      where: translations/he/ui.yaml budget.submit
     - form: מסים {0}, הוצאות {1} וגיוס מילואים {2} בשנה
-      where: strings.he.yaml budget.flow
+      where: translations/he/ui.yaml budget.flow
     - form: אין בתקציב סעיף ביטחון
-      where: strings.he.yaml defence.budget_none
+      where: translations/he/ui.yaml defence.budget_none
   recommendation:
     en: 'No change. One note for later: the budget says ''Submitted'', and the other player orders say ''Ordered'' (see ''order'').
       That may be deliberate, because a budget can go to a vote.'
@@ -1376,15 +1376,15 @@ concepts:
     avoid: []
     in_use:
     - form: 'נדרש אישור של {0}: לקואליציה יש {1} מתוך {2} {3}'
-      where: strings.he.yaml budget.vote_needed
+      where: translations/he/ui.yaml budget.vote_needed
     - form: '{0} מצביעה על התקציב, אך ההצבעה אינה מחייבת: לקואליציה יש {1} מתוך {2} {3}'
-      where: strings.he.yaml budget.vote_advisory
+      where: translations/he/ui.yaml budget.vote_advisory
     - form: "{0} אינה מצביעה על התקציב"
-      where: strings.he.yaml budget.no_vote
+      where: translations/he/ui.yaml budget.no_vote
     - form: אחראית בפני {0} · {1} חברים
-      where: strings.he.yaml cabinet.legislature
+      where: translations/he/ui.yaml cabinet.legislature
     - form: מתייעצת עם {0} · {1} חברים · ההצבעות אינן מחייבות
-      where: strings.he.yaml cabinet.legislature_advisory
+      where: translations/he/ui.yaml cabinet.legislature_advisory
     - form: 'body_he: "מועצת המדינה הזמנית"'
       where: content/legislatures.yaml
     - form: 'body_he: "הכנסת השנייה"'
@@ -1459,9 +1459,9 @@ concepts:
     avoid: []
     in_use:
     - form: 'רוב: {0} {1}'
-      where: strings.he.yaml cabinet.majority
+      where: translations/he/ui.yaml cabinet.majority
     - form: 'אופוזיציה: {0} {1}'
-      where: strings.he.yaml cabinet.opposition
+      where: translations/he/ui.yaml cabinet.opposition
   recommendation:
     en: '''Majority: {0} {1}'' reads as a holding, but it is the threshold. A drop-in with the same two placeholders is ''Needed
       for a majority: {0} {1}''. Optional, and the first thing to take to a cold-read test.'
@@ -1498,7 +1498,7 @@ concepts:
     avoid: []
     in_use:
     - form: ממשלה
-      where: strings.he.yaml hud.nav.cabinet, why.cabinet
+      where: translations/he/ui.yaml hud.nav.cabinet, why.cabinet
     - form: 'name_he: "הממשלה הזמנית"'
       where: content/governments.yaml
     - form: 'name_he: "ממשלת ישראל הראשונה"'
@@ -1546,19 +1546,19 @@ concepts:
     avoid: []
     in_use:
     - form: מינוי לתפקיד {0}
-      where: strings.he.yaml cabinet.pick
+      where: translations/he/ui.yaml cabinet.pick
     - form: אין משרד עד {0}
-      where: strings.he.yaml budget.not_established
+      where: translations/he/ui.yaml budget.not_established
     - form: פנוי
-      where: strings.he.yaml budget.vacant
+      where: translations/he/ui.yaml budget.vacant
     - form: '{0} (מינוי שלך)'
-      where: strings.he.yaml card.appointed_name
+      where: translations/he/ui.yaml card.appointed_name
     - form: 'title_he: "שר הפנים"'
       where: content/offices.yaml
     - form: 'title_he_f: "שרת החוץ"'
       where: content/offices.yaml
     - form: המשרה {0} בוטלה ב־{1}
-      where: strings.he.yaml cabinet.reason.abolished
+      where: translations/he/ui.yaml cabinet.reason.abolished
   recommendation:
     en: Use 'office' for the post and 'ministry' for the department. Hebrew uses תפקיד and משרד in the earlier strings, and
       the Cabinet refusal reasons also use משרה (#985); a native reader should assess the variants.
@@ -1591,7 +1591,7 @@ concepts:
     avoid: []
     in_use:
     - form: שר הביטחון {0} · הרמטכ״ל {1}
-      where: strings.he.yaml defence.command
+      where: translations/he/ui.yaml defence.command
     - form: 'title_he: "ראש המטה הכללי"'
       where: content/offices.yaml
     - form: 'title_he: ''רמטכ״ל ההגנה'''
@@ -1635,7 +1635,7 @@ concepts:
     avoid: []
     in_use:
     - form: תמיכה ציבורית
-      where: strings.he.yaml hud.caption.support
+      where: translations/he/ui.yaml hud.caption.support
   recommendation:
     en: 'Use ''Public support'' for the meter and approval for the code concept. The top-bar caption is already sentence case,
       as adopted in #630.'
@@ -1677,17 +1677,17 @@ concepts:
     avoid: []
     in_use:
     - form: 'ניתנה פקודה: {0}, בסיום התור'
-      where: strings.he.yaml info.queued
+      where: translations/he/ui.yaml info.queued
     - form: 'הפקודה שלך: {0}'
-      where: strings.he.yaml outcome.order
+      where: translations/he/ui.yaml outcome.order
     - form: הפקודה אינה תקפה
-      where: strings.he.yaml order.invalid
+      where: translations/he/ui.yaml order.invalid
     - form: 'הוגש: ייכנס לתוקף בסיום התור'
-      where: strings.he.yaml budget.queued
+      where: translations/he/ui.yaml budget.queued
     - form: הוזמנו {0}
-      where: strings.he.yaml city.train_ordered (#869)
+      where: translations/he/ui.yaml city.train_ordered (#869)
     - form: הוזמן
-      where: strings.he.yaml site.ordered (#869)
+      where: translations/he/ui.yaml site.ordered (#869)
   recommendation:
     en: Use 'order' for the player's actions and say what was ordered. The budget says 'Submitted' for the same kind of step;
       that can stay if the vote is the reason (see 'budget').
@@ -1725,7 +1725,7 @@ concepts:
     avoid: []
     in_use:
     - form: פרק
-      where: strings.he.yaml why.era
+      where: translations/he/ui.yaml why.era
     - form: תקופות מאוחרות
       where: README.he.md (roadmap)
   recommendation:
@@ -1761,7 +1761,7 @@ concepts:
     avoid: []
     in_use:
     - form: מדיניות
-      where: strings.he.yaml why.policy
+      where: translations/he/ui.yaml why.policy
   recommendation:
     en: 'No change. One finding for the transliteration convention: the content name is ''Transit camps (ma''abarot)'', which
       gives the Hebrew word in brackets, while the strings say ''transit camp''.'
@@ -1795,9 +1795,9 @@ concepts:
     avoid: []
     in_use:
     - form: השפעות מתמשכות
-      where: strings.he.yaml why.effects
+      where: translations/he/ui.yaml why.effects
     - form: מצבים
-      where: strings.he.yaml why.situations
+      where: translations/he/ui.yaml why.situations
   recommendation:
     en: The two labels are generic. 'Situations' in particular could mean any state of the game. Add one line under each heading,
       or test a plainer word such as 'Crises' only if every situation is a crisis, which the files read here do not show.
@@ -1836,9 +1836,9 @@ concepts:
     avoid: []
     in_use:
     - form: עלייה
-      where: strings.he.yaml hud.caption.immigration
+      where: translations/he/ui.yaml hud.caption.immigration
     - form: עלייה ואוכלוסייה
-      where: strings.he.yaml why.population
+      where: translations/he/ui.yaml why.population
     - form: 'title_he: "שר העלייה"'
       where: content/offices.yaml
   recommendation:
@@ -1870,7 +1870,7 @@ concepts:
     avoid: []
     in_use:
     - form: נפות המנדט
-      where: strings.he.yaml info.region, map.layer_front_no_data
+      where: translations/he/ui.yaml info.region, map.layer_front_no_data
   recommendation:
     en: No change. Spell 'sub-district' with a hyphen everywhere.
     he: The reviewer confirms 'נפות' as the term.
@@ -1899,9 +1899,9 @@ concepts:
     avoid: []
     in_use:
     - form: בקע
-      where: strings.he.yaml info.biome.valley
+      where: translations/he/ui.yaml info.biome.valley
     - form: עמק
-      where: strings.he.yaml info.biome.lowland
+      where: translations/he/ui.yaml info.biome.lowland
   recommendation:
     en: No change. Keep 'biome' as the code word only.
     he: 'Question for the reviewer: ''Valley'' is ''בקע'' and ''Inland lowland'' is ''עמק''. ''עמק'' appears to be the usual
@@ -1938,13 +1938,13 @@ concepts:
     avoid: []
     in_use:
     - form: בשליטת ישראל
-      where: strings.he.yaml info.control_israel
+      where: translations/he/ui.yaml info.control_israel
     - form: בשליטת כוחות ערביים
-      where: strings.he.yaml info.control_arab
+      where: translations/he/ui.yaml info.control_arab
     - form: צבא ההצלה
-      where: strings.he.yaml control.holder_ala
+      where: translations/he/ui.yaml control.holder_ala
     - form: אזור מפורז
-      where: strings.he.yaml info.control_dmz
+      where: translations/he/ui.yaml info.control_dmz
   recommendation:
     en: No change. The captions follow the project's framing (docs/CONTENT_POLICY.md, section 1) and cite their source. Keep
       it that way, and send any new label for a side or a holder through the content review, as the policy requires for sensitive
@@ -1977,7 +1977,7 @@ concepts:
     avoid: []
     in_use:
     - form: ערים
-      where: strings.he.yaml why.city
+      where: translations/he/ui.yaml why.city
   recommendation:
     en: Keep 'city' for the places modeled in detail. The GDD and site UI call a new place the player founds a 'yishuv'; see
       that entry before proposing a different term.

@@ -14,7 +14,7 @@ using Object = UnityEngine.Object;
 
 public class FoodArmsHudTests
 {
-    static UiText Text(bool he) => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(he ? UiPaths.StringsHebrew : UiPaths.Strings).text);
+    static UiText Text(bool he) => UiText.Parse((he ? UiPaths.HebrewText() : AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text));
     static SimBridge Bridge(bool modern, bool he)
     {
         var dir = Paths.Content;

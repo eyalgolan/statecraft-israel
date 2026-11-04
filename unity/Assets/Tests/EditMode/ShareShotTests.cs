@@ -20,7 +20,7 @@ public class ShareShotTests
 {
     static readonly Content C = ContentLoader.Load(Paths.Content);
     static UiText En => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
-    static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+    static UiText He => UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
 
     /// <summary>The post carries the itch page and the GitHub repository (owner, 24 Oct 2026: "when a user shares a post it
     /// will include a link to the game on itch and to the github repo").</summary>

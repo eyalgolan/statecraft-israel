@@ -88,7 +88,7 @@ public class GameSceneTests
         var root = Object.FindFirstObjectByType<GameRoot>();
         Assert.IsNotNull(root, "GameRoot");
         var so = new SerializedObject(root);
-        foreach (var field in new[] { "boot", "document", "strings", "stringsHe", "portraits", "map", "placements", "pointer", "cameraController" })
+        foreach (var field in new[] { "boot", "document", "strings", "portraits", "map", "placements", "pointer", "cameraController" })
             Assert.IsNotNull(so.FindProperty(field).objectReferenceValue, field);
         var boot = Object.FindFirstObjectByType<GameBoot>();
         Assert.IsNotNull(boot);
@@ -894,7 +894,7 @@ public class GameSceneTests
         Assert.AreEqual(1, Listeners(old), "subscribed while enabled");
         var so = new SerializedObject(root);
         Object R(string f) => so.FindProperty(f).objectReferenceValue;
-        root.Configure(other, (UIDocument)R("document"), (TextAsset)R("strings"), (TextAsset)R("stringsHe"), (PortraitCatalog)R("portraits"),
+        root.Configure(other, (UIDocument)R("document"), (TextAsset)R("strings"), (PortraitCatalog)R("portraits"),
             (MapScene)R("map"), (PlacementLayer)R("placements"), (MapPointer)R("pointer"), (CameraController)R("cameraController"));
         Assert.AreEqual(0, Listeners(old));
         Assert.AreEqual(1, Listeners(other));

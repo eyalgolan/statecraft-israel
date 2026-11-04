@@ -77,7 +77,7 @@ public class CaptureDialogTests
 
     static readonly Content C = Targets();
     static UiText En => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
-    static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+    static UiText He => UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
 
     /// <summary>A new game with no event pending and each of <paramref name="places"/> captured and awaiting the choice.</summary>
     static GameSession Awaiting(Content c, params string[] places)

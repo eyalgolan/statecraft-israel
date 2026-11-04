@@ -176,7 +176,7 @@ public class UiFoundationTests
             if (hebrew) Root.Q("root").AddToClassList(UiLanguage.HebrewClass);
             // The narrow-window classes (hud-narrow/-two-row/-three-row) only come from a live HudPresenter; without
             // one a small window keeps the desktop .screen insets and the screens' widths go negative.
-            var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(hebrew ? UiPaths.StringsHebrew : UiPaths.Strings).text);
+            var text = UiText.Parse(UiPaths.StringsText(hebrew));
             hud = new HudPresenter(Root, new SimBridge(Statecraft.Sim.GameSession.New(Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content),
                 Statecraft.Sim.GoldenRun.Seed, Statecraft.Sim.Mode.Historical), text), text);
             Nav = new ScreenNav(Root);

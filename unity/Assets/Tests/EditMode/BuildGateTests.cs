@@ -25,7 +25,7 @@ public class BuildGateTests
         var review = ParseSettlementReview(File.ReadAllText(UiPaths.SettlementControlStringsReview), UiPaths.SettlementControlStringsReview);
         SettlementReview.GetProperty("Status")!.SetValue(review, ReleaseGate.ReviewedStatus);
         var en = UiText.Parse(File.ReadAllText(UiPaths.Strings), "strings.en.yaml");
-        var he = UiText.Parse(File.ReadAllText(UiPaths.StringsHebrew), "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         return SettlementReviewRefusal(review, en, he);
     }
 

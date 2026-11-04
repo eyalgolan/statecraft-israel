@@ -175,7 +175,7 @@ public class WhyScreenTests
     [Test]
     public void InHebrewTheTurnsSpanIsAHebrewDate()
     {
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         using var ui = new UiTestKit();
         var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), he);
         new WhyPresenter(ui.Root, bridge, he);

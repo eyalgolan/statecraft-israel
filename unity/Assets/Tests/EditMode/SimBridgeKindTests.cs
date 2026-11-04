@@ -16,7 +16,7 @@ public class SimBridgeKindTests
 {
     static readonly Content C = ContentLoader.Load(Paths.Content);
     static UiText En => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
-    static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+    static UiText He => UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
     static readonly Regex Latin = new Regex("[A-Za-z]");
 
     /// <summary>The kinds SimBridge.Validate can name: every Unknown("kind", …) call in its source. A call whose kind is

@@ -186,7 +186,7 @@ public sealed class WebCompanionTests
         Assert.AreEqual(before, Handlers(bridge, "Changed"));
     }
 
-    static UiText Locale(bool he) => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(he ? UiPaths.StringsHebrew : UiPaths.Strings).text, he ? "strings.he.yaml" : "strings.en.yaml");
+    static UiText Locale(bool he) => UiText.Parse((he ? UiPaths.HebrewText() : AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text), he ? "strings.he.yaml" : "strings.en.yaml");
 
     [TestCase(false, "Map")]
     [TestCase(true, "מפה")]
@@ -319,7 +319,7 @@ public sealed class WebCompanionTests
     [Test]
     public void TheSettingsRowShowsOnlyWhereAPageCanShowTheCompanionAndSaysWhatIsSet([Values(false, true)] bool hebrew)
     {
-        var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(hebrew ? UiPaths.StringsHebrew : UiPaths.Strings).text,
+        var text = UiText.Parse(UiPaths.StringsText(hebrew),
             hebrew ? "strings.he.yaml" : "strings.en.yaml");
         var dir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "statecraft-companion-" + System.Guid.NewGuid().ToString("N"));
         try
