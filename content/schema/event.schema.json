@@ -74,7 +74,7 @@
     "text": { "type": "string", "minLength": 1, "description": "May contain office placeholders. No invented quotes." },
     "title_he": { "type": "string", "minLength": 1, "description": "The title in Hebrew (#1064). An event with Hebrew text has title_he, text_he and every option's text_he, or none of them (the UI keeps the English). Same placeholders as the English." },
     "text_he": { "type": "string", "minLength": 1, "description": "The text in Hebrew (#1064): the English meaning, no added facts. Same placeholders as the English." },
-    "text_he_review": { "type": "string", "enum": ["agent-checked"], "description": "Review flag of the event's Hebrew text (title_he, text_he and the options' text_he). agent-checked: an AI agent wrote or checked the text and no person has read it yet (CONTENT_POLICY section 2, rule 6; review in #564). Leave out once a native speaker has reviewed it." },
+    "text_he_review": { "type": "string", "enum": ["agent-checked"], "description": "Review flag of the event's Hebrew text (title_he, text_he and the options' text_he). agent-checked: an AI agent wrote or checked the text and no person has read it yet (CONTENT_POLICY section 2, rule 6). Leave out once a native speaker, or an AI-assisted contributor who discloses it, has reviewed it (#564; owner, 4 November 2026: \"AI-assisted can clear it\")." },
     "tags": { "type": "array", "items": { "type": "string" }, "description": "holocaust, terror, massacre, war-casualties and displacement are sensitive. A displacement option cannot raise Money, Food, Arms, Social cohesion, International Support or score (R-EFX-007), and the event must be sensitivity-reviewed before release (R-GATE-001)." },
     "anchor": { "enum": ["hard", "soft"], "description": "Default soft. A hard anchor needs a historical option." },
     "office": { "$ref": "#/definitions/id", "description": "The office the event goes to when the player does not answer." },
@@ -160,11 +160,26 @@
               "else": { "properties": { "delta": { "type": "integer", "minimum": -2147483647, "maximum": 2147483647 } } }
             }
           },
+          "unit_orders": {
+            "type": "array",
+            "description": "R-ENEMY-005 (GDD loop only, applied under gdd-0.1 only): go-to orders for the unit of a map/units_1948.yaml row, toward one of that row's anchor hexes in map/unit_anchor_hexes.yaml, through the player's own go-to.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["unit", "q", "r"],
+              "properties": {
+                "unit": { "type": "string", "minLength": 1 },
+                "q": { "type": "integer" },
+                "r": { "type": "integer" }
+              }
+            }
+          },
           "unlock_projects": {
             "type": "array",
             "description": "R-EFX-008 (GDD loop only): projects.yaml ids of locked kinds this option makes available to StartProject. A sensitive event may not unlock (R-EFX-005).",
             "items": { "type": "string", "minLength": 1 }
           },
+          "debt_dollars": { "type": "number", "exclusiveMinimum": 0, "description": "R-EFX-009 (applied under gdd-0.3 only): US$ millions, more than 0, this option also adds to Debt, in IL millions at the mvp.il_per_dollar rate in force on the event's date." },
           "alternative": { "$ref": "#/definitions/alternative" }
         }
       }
@@ -183,7 +198,7 @@
       }
     },
     "status": { "enum": ["draft", "fact-checked", "historian-reviewed", "sensitivity-reviewed"], "description": "The review status. Default draft." },
-    "reviewed_by": { "type": "string", "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}$", "description": "The GitHub handle of the person who signed this row off (#375): written only by that person, never by an AI agent (scripts/oss/reviewed_by_guard.py); never an email. Needs reviewed_on." },
+    "reviewed_by": { "type": "string", "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}$", "description": "The GitHub handle of the person who signed this row off (#375): written only by that person, never by an AI agent on its own; an AI-assisted contributor's source check counts when the pull request discloses the AI help and says what was checked; an AI-co-authored commit never removes it (owner, 4 November 2026: \"Yes, it counts\", #2481 comment 6623108295; scripts/oss/reviewed_by_guard.py); never an email. Needs reviewed_on." },
     "reviewed_on": { "$ref": "#/definitions/date", "description": "The day of that sign-off. Needs reviewed_by." }
   }
 }

@@ -46,16 +46,25 @@ These rules protect the game and the people in it. They are not a viewpoint:
    before the entry is marked `fact-checked`; the maintainer applies this rule at review. A Hebrew display name
    (`name_he`, `title_he`, `title_he_f`, `body_he`) that an AI agent checked against its sources, but no person has read
    yet, carries its own flag beside it, `*_review: agent-checked` (for example `name_he_review`), whatever the row's
-   `status` says about its English facts (owner, 15 October 2026). A native Hebrew speaker reviews these names (#564)
-   and then removes the line; the loader accepts only `agent-checked` (a blank value is an error), and only next to a
+   `status` says about its English facts (owner, 15 October 2026). A map locality's `name_he` (and its today-name
+   tooltip) in `content/map/localities_1948.yaml` copied verbatim from a Wikidata label or a Hebrew Wikipedia title,
+   as that file's header describes, carries no such flag (maintainer reading, not part of the owner's option: dropping
+   only a bracketed disambiguation such as "(יפו)", direction marks or niqqud still counts as verbatim, as #2044 did);
+   a locality name an agent wrote or adapted still does, and so does every other Hebrew name (the owner chose the option labelled "Exempt verbatim labels
+   (Recommended)" (4 November 2026)). A native Hebrew speaker reviews these names (#564)
+   and then removes the line, or an AI-assisted contributor does, when the pull request discloses the AI help and names
+   the strings read and the sources they were read against (asked whether an AI-assisted contributor's Hebrew read can clear an `agent-checked` string or still needs a native Hebrew speaker, the owner answered "AI-assisted can clear it" ([4 November 2026](https://github.com/eyalgolan/statecraft-israel/pull/2481#issuecomment-6623108295))); the loader accepts only `agent-checked` (a blank value is an error), and only next to a
    name.
 7. **A sign-off names a person.** A row a person has reviewed carries, beside its `status`, `reviewed_by` (the
    reviewer's GitHub handle, never an email) and `reviewed_on` (the day), both or neither (owner, 15 October 2026,
    #375: "Yes, humans only"). Only that person writes the two lines, in their own commit; an AI agent never adds, changes
    or removes them, and `scripts/oss/reviewed_by_guard.py` fails any pull request where a commit with an AI co-author
-   trailer does. A signed row is closed to agents too (owner, 15 October 2026, on #629: "Block it in CI"): the guard
+   trailer does, unless the pull request's "AI assistance" section discloses the AI help. Then the AI-assisted
+   contributor's check counts as the sign-off, under their own handle, and the section should say which sources they
+   opened and what they checked (asked whether an AI-assisted contributor's source check counts as the `reviewed_by` sign-off, the owner answered "Yes, it counts" ([4 November 2026](https://github.com/eyalgolan/statecraft-israel/pull/2481#issuecomment-6623108295))). Even then, such a commit never removes a sign-off. CI checks only that the section exists, is not a "no" and names a check; the reviewer reads what was checked and how. A signed row is closed to agents too (owner, 15 October 2026, on #629: "Block it in CI"): the guard
    fails a pull request where a commit with an AI co-author trailer changes any field of a signed row, the `id`
-   included, until a person signs the row again or removes its sign-off in a commit of their own. How to sign off:
+   included, until a person signs the row again or removes its sign-off in a commit of their own (an AI-assisted
+   contributor, disclosed as above, may sign it again but not remove the sign-off). How to sign off:
    [HISTORIAN_REVIEW.md](HISTORIAN_REVIEW.md#sign-the-row-off). A row with a sign-off leaves the review queue
    ([review-queue.md](review-queue.md)).
 
@@ -112,7 +121,11 @@ Facts are open to correction. The framing (section 1) is not.
   lip-synced to a synthetic voice made as close to the real person's as possible, with third-party services. No written
   consent from their estates is needed first. This exception covers those photographs even where the event-photograph
   terms above would refuse them (a Government Press Office photograph, AI colourising); nothing else the photograph
-  shows is changed, and bystanders are never animated or altered. Each clip speaks only owner-approved game dialogue,
+  shows is changed, and bystanders are never animated or altered. One exception is recorded: the four Golda Meyerson
+  clips `opening.city`, `opening.training`, `meyerson.exhausted` and `meyerson.debt_ceiling`, made by the recipe the
+  owner approved as 'A, raw' on 24 October 2026, animate the whole frame, so the people around her change expression
+  (`ASSETS.yaml`); the owner chose the option labelled "Record the exception (Recommended)" (4 November 2026). Any new
+  clip follows the rule. Each clip speaks only owner-approved game dialogue,
   never a quote, is never presented as real footage, is labelled "AI animation and voice. Fictional dialogue.", and is
   reviewed by the owner before it ships. Every such output is recorded in `ASSETS.yaml` as AI-generated
   (`docs/superpowers/specs/2026-10-23-advisors-design.md`, sections 11 to 13).

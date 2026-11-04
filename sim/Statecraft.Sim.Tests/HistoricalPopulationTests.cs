@@ -1,3 +1,4 @@
+using System.Globalization;
 using Statecraft.Sim;
 
 /// <summary>#1689, the Historical start inventory under exact gdd-0.3 (R-POP-004): the real census cities and the real
@@ -5,7 +6,7 @@ using Statecraft.Sim;
 /// The inventory is not yet wired into Simulation.NewGame (see R-POP-004 and docs/population-ledger.md).</summary>
 public class HistoricalPopulationTests
 {
-    static Content Real(bool modern)
+    internal static Content Real(bool modern)
     {
         var root = RealContentTests.ContentRoot();
         return ContentLoader.Load(rel =>
@@ -230,5 +231,160 @@ public class HistoricalPopulationTests
     public void NewGameDoesNotInitializeTheLedgerYet()
     {
         Assert.False(Simulation.NewGame(Real(true), 1, Mode.Historical).PopulationLedger.IsInitialized);
+    }
+
+    // R-POP-003, R-POP-004 (#1689 region slice): the region-bound fixture builder adds no NewGame path. gdd-0.1 and legacy
+    // games still have no ledger and write no ledger section, so their hashes stay; gdd-0.1 content refuses the builder.
+    [Fact]
+    public void NewGameStillHasNoLedger()
+    {
+        foreach (var (content, ruleset) in new[] { (Real(false), SaveGame.GddRuleset), (RealContentTests.Legacy(), SaveGame.LegacyRuleset) })
+        {
+            Assert.Equal(ruleset, content.Ruleset);
+            var s = Simulation.NewGame(content, 1, Mode.Historical);
+            Assert.False(s.PopulationLedger.IsInitialized);
+            Assert.DoesNotContain("population-ledger", s.Describe());
+        }
+        Assert.Throws<InvalidOperationException>(() => HistoricalPopulation.LedgerFixture(Real(false)));
+    }
+
+    // R-POP-004 (#1689 region slice): the Historical ledger fixture holds the inventory, no more and no less: per source, as
+    // many records as Inventory lists, census records free civilians and formation records active soldiers.
+    [Fact]
+    public void HistoricalFixtureHoldsTheInventoryNoMoreNoLess()
+    {
+        var c = Real(true);
+        var inventory = HistoricalPopulation.Inventory(c);
+        var units = HistoricalPopulation.LedgerFixture(c).PopulationLedger.Units;
+        Assert.Equal(inventory.Count, units.Count);
+        Assert.Equal(inventory.Select(r => r.Status), units.Select(u => u.Status));
+        Assert.Equal(inventory.Count(r => r.Status == PopulationStatus.FreeCivilian), units.Count(u => u.Status == PopulationStatus.FreeCivilian));
+        Assert.Equal(inventory.Count(r => r.Status == PopulationStatus.ActiveSoldier), units.Count(u => u.Status == PopulationStatus.ActiveSoldier));
+    }
+
+    // R-POP-001, R-POP-004, D2: the builder goes through #2299's Historical path, so its records count at 1,000 people.
+    [Fact]
+    public void HistoricalFixtureCountsAtTheRulesScale()
+    {
+        var c = Real(true);
+        var s = HistoricalPopulation.LedgerFixture(c);
+        Assert.Equal(Mode.Historical, s.Mode);
+        Assert.Equal((double)s.PopulationLedger.Units.Count * 1000, s.PopulationLedger.TotalPeople);
+    }
+
+    // R-POP-002, R-POP-004 (#1691 regions): each census record carries the content/regions.yaml region that lists its city
+    // (census/tel_aviv is tel_aviv_jaffa; Jaffa gets no records of its own), and no record has an empty or unknown region.
+    [Fact]
+    public void EveryCensusRecordCarriesItsCitysRegion()
+    {
+        var c = Real(true);
+        var inventory = HistoricalPopulation.Inventory(c);
+        var units = HistoricalPopulation.LedgerFixture(c).PopulationLedger.Units;
+        for (int i = 0; i < inventory.Count; i++)
+        {
+            Assert.Contains(units[i].Location!.Region, c.PlayerRegions.Regions.Keys);
+            if (inventory[i].Source.StartsWith(HistoricalPopulation.CensusPrefix, StringComparison.Ordinal))
+                Assert.Equal(c.PlayerRegions.AtLocation(inventory[i].Source.Substring(HistoricalPopulation.CensusPrefix.Length))!.Id,
+                    units[i].Location!.Region);
+        }
+        var telAviv = inventory.Select((r, i) => (r, i)).Where(x => x.r.Source == HistoricalPopulation.CensusPrefix + "tel_aviv").ToList();
+        Assert.NotEmpty(telAviv);
+        Assert.All(telAviv, x => Assert.Equal("tel_aviv_jaffa", units[x.i].Location!.Region));
+        Assert.DoesNotContain(inventory, r => r.Source == HistoricalPopulation.CensusPrefix + "jaffa");
+    }
+
+    // R-POP-001, R-POP-004, Q10: ids run from 0 with no gaps in the inventory's order (source key by ordinal string compare,
+    // then ordinal), and two builds are identical.
+    [Fact]
+    public void IdsAscendBySourceKeyThenOrdinal()
+    {
+        var c = Real(true);
+        var s = HistoricalPopulation.LedgerFixture(c);
+        var units = s.PopulationLedger.Units;
+        Assert.Equal(Enumerable.Range(0, units.Count), units.Select(u => u.Id));
+        Assert.Equal(units.Count, s.PopulationLedger.NextPopulationId);
+        Assert.Equal(s.Hash(), HistoricalPopulation.LedgerFixture(Real(true)).Hash());
+    }
+
+    // R-POP-001: the fixture reconciles; the created ids are exactly the living ones.
+    [Fact]
+    public void HistoricalFixtureReconciles()
+    {
+        var l = HistoricalPopulation.LedgerFixture(Real(true)).PopulationLedger;
+        Assert.True(l.IsInitialized);
+        l.Reconcile();
+    }
+
+    // R-POP-004: a record whose city or formation has no region in regions.yaml is refused; no region is invented.
+    [Fact]
+    public void ARecordWithNoRegionIsRefused()
+    {
+        var c = Real(true);
+        c.Cities.First(x => x.Id == "rosh_pinna").Id = "nowhere";
+        var e = Assert.Throws<InvalidOperationException>(() => HistoricalPopulation.LedgerFixture(c));
+        Assert.Contains("census/nowhere", e.Message);
+
+        c = Real(true);
+        var golani = c.StartingForces.First(f => f.Row == "golani");
+        (golani.Q, golani.R) = (1000, 1000);
+        e = Assert.Throws<InvalidOperationException>(() => HistoricalPopulation.LedgerFixture(c));
+        Assert.Contains("units_1948/golani", e.Message);
+    }
+
+    // R-POP-004, 27M-24 (#1717: "The starting formations carry issued equipment, recorded apart from the 12 spare Arms"):
+    // each starting soldier record carries one issued military item, id <source>/<ordinal>; census records carry none, and
+    // no record carries tools.
+    [Fact]
+    public void EveryStartingSoldierRecordCarriesOneIssuedItem()
+    {
+        var c = Real(true);
+        var inventory = HistoricalPopulation.Inventory(c);
+        var units = HistoricalPopulation.LedgerFixture(c).PopulationLedger.Units;
+        Assert.Contains(inventory, r => r.Status == PopulationStatus.ActiveSoldier);
+        for (int i = 0; i < inventory.Count; i++)
+        {
+            Assert.Null(units[i].Equipment.ToolsId);
+            if (inventory[i].Source.StartsWith(HistoricalPopulation.FormationPrefix, StringComparison.Ordinal))
+                Assert.Equal(inventory[i].Source + "/" + inventory[i].Ordinal.ToString(CultureInfo.InvariantCulture),
+                    units[i].Equipment.MilitaryId);
+            else
+                Assert.Null(units[i].Equipment.MilitaryId);
+        }
+    }
+
+    // R-POP-004, 27M-24: the issued items are distinct, one per population unit of each own starting formation, so their
+    // count is the formations' total strength.
+    [Fact]
+    public void IssuedItemsAreDistinctAndCountTheFormationStrengths()
+    {
+        var c = Real(true);
+        var items = HistoricalPopulation.LedgerFixture(c).PopulationLedger.Units
+            .Select(u => u.Equipment.MilitaryId).Where(id => id != null).ToList();
+        var strength = c.StartingForces.Where(f => f.Side == Movement.PlayerSide && f.Arrives == null).Sum(f => f.Strength);
+        Assert.True(strength > 0);
+        Assert.Equal(strength, items.Count);
+        Assert.Equal(items.Count, items.Distinct(StringComparer.Ordinal).Count());
+    }
+
+    // R-ARMS-001, 27M-24: issued equipment is apart from the spare Arms. Building the fixture leaves the spare stock as a
+    // fresh state has it, and NewGame's arms_start (12) is not reduced by any issue.
+    [Fact]
+    public void IssuedItemsAreApartFromTheSpareArms()
+    {
+        var c = Real(true);
+        Assert.Equal(new GameState(c).Arms, HistoricalPopulation.LedgerFixture(c).Arms);
+        Assert.Equal(12, c.RulesAt(c.Rules.Start).Mvp!.ArmsStart);
+        Assert.Equal(12, Simulation.NewGame(c, 1, Mode.Historical).Arms);
+    }
+
+    // R-POP-004, 27M-24 (#1717: "Starting professions, tools and buildings are owned: turn 1 charges none of them"): the
+    // starting formations' issued items are owned, recorded as paid so they are not paid for again.
+    [Fact]
+    public void StartingEquipmentIsOwned()
+    {
+        var soldiers = HistoricalPopulation.LedgerFixture(Real(true)).PopulationLedger.Units
+            .Where(u => u.Status == PopulationStatus.ActiveSoldier).ToList();
+        Assert.NotEmpty(soldiers);
+        Assert.All(soldiers, u => Assert.True(u.Equipment.MilitaryPaid));
     }
 }

@@ -15,8 +15,9 @@ offices:
   # title_he_from/title_he_until, see its row). Open owner questions: the Trade (order, and the Knesset's "התעשיה") and War Victims
   # wordings, and whether the Chief of Staff adds "של צה״ל" (PR #558 body).
   # title_he_review / title_he_f_review: agent-checked marks a title an AI agent checked against its sources and no
-  # person has read yet (CONTENT_POLICY section 2, rule 6; owner, 2026-10-15). A native speaker reviews it (#564) and
-  # then removes the flag; the row's own status covers the English facts.
+  # person has read yet (CONTENT_POLICY section 2, rule 6; owner, 2026-10-15). A native speaker, or an AI-assisted
+  # contributor who discloses it, reviews it and then removes the flag (#564; owner, 4 November 2026: "AI-assisted can
+  # clear it"); the row's own status covers the English facts.
   # `from: 1948-05-14` is the state's founding (issue #80). For the deputy titles and any post created later (some date from
   # 1951) it is a design floor, not the day the post was created.
   - { id: prime_minister, title: Prime Minister, title_he: "ראש הממשלה", title_he_sources: [&he_gov1 { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=GovernmentNum%20eq%201", checked: 2026-10-14 }], title_he_f: "ראש הממשלה", title_he_f_review: agent-checked, title_he_f_sources: [&he_f_golda { url: "https://he.wikipedia.org/wiki/גולדה_מאיר", checked: 2026-10-17 }], from: 1948-05-14 }

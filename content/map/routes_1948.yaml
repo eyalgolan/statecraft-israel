@@ -15,7 +15,9 @@
 # line on the 1946 map, so they trace as `track`).
 # status: draft = traced and checked by eye against the 1946 map (route previews), not yet by a historian.
 # reviewed_by and reviewed_on (both or neither, beside status): a person's sign-off, their GitHub handle and the day; only
-# that person writes them (owner, 15 October 2026, #375; docs/HISTORIAN_REVIEW.md). tools/routes_1948.py checks them; the
+# that person writes them (owner, 15 October 2026, #375; docs/HISTORIAN_REVIEW.md), or an AI-assisted contributor whose
+# pull request discloses the AI help and names the check, who may add or re-sign them but never remove them (owner,
+# 4 November 2026, #2481). tools/routes_1948.py checks them; the
 # traced route_paths_1948.yaml does not carry them.
 # to_verify: what the sources leave open; a route with a to_verify line is not to be relied on beyond it.
 # opened: the year a cited source gives for the route's opening; left out where no source states it. Every route

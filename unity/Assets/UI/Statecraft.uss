@@ -119,6 +119,9 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .meter-row { flex-direction: row; align-items: flex-end; }
 .meter-value { font-size: 21px; color: var(--ink); }
 .meter-delta { font-size: 16px; margin-left: 7px; }
+/* Room before a rise or a fall for its up or down mark, so the change is not told by colour alone (L1, #2340; painted by
+   HudPresenter.PaintChange, 9 px = its ChangeMarkPadPx). */
+.meter-delta.delta-up, .meter-delta.delta-down { padding-left: 9px; }
 /* The screen buttons: a round, gold-rimmed icon with its name under it (the name keeps them legible without tooltips). */
 .nav { flex-direction: row; flex-shrink: 0; align-items: center; }
 .nav-button {
@@ -292,8 +295,13 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
    the options scroll together (event-scroll, #1853), while the head and the foot with Hide stay in the card. */
 .event-card { width: 1040px; max-width: 100%; max-height: 100%; flex-shrink: 1; min-height: 0; overflow: hidden; padding: 16px 40px 10px 40px; }
 .hud-two-row .event-card { padding-left: 16px; padding-right: 16px; }
-/* The card takes the keyboard focus when an event opens (EventCardPresenter.FocusCard): a lighter gold edge says so. */
+/* The card takes the keyboard focus when an event opens (EventCardPresenter.FocusCard): a lighter gold edge says so.
+   #2340 L3: the edge is 2 px when focused, the card's own 1 px border and 1 px more on its trim overlay just inside it.
+   The overlay lays nothing out (.ui-frame), so nothing in the card moves when the focus comes or goes; a 2 px border on
+   the card itself would take a pixel from its content box, and at 150% UI scale the panel's pixel snapping keeps 1 px
+   less padding from giving it back exactly (measured: the content moved by one screen pixel). */
 .event-card:focus { border-color: var(--gold-light); }
+.event-card:focus > .ui-frame { border-width: 1px; border-color: var(--gold-light); }
 .event-card > * { flex-shrink: 0; }
 .event-card > .event-scroll { flex-shrink: 1; min-height: 48px; }
 #event-options { flex-shrink: 0; }
@@ -927,8 +935,11 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
     font-size: 34px; color: var(--ink); -unity-text-align: middle-center; white-space: normal; margin: 4px 0 0 0;
 }
 .start-he-date { font-size: 28px; margin-top: 12px; }
-.start-en { font-size: 18px; color: var(--ink-dim); letter-spacing: 1px; -unity-text-align: middle-center; white-space: normal; margin: 2px 0 0 0; }
-.start-source { font-size: 15px; color: var(--ink-dim); -unity-text-align: middle-center; white-space: normal; margin: 14px 0 0 0; }
+/* --ink, not --ink-dim (#2340 L5): the panel blends in linear light, so the lit hats behind it took --ink-dim down to
+   2.9:1 at 1568x752 (still 4.3:1 at 0.94 alpha); --ink holds 4.5:1 even where the painting is white. Their size keeps
+   them under the Hebrew. */
+.start-en { font-size: 18px; color: var(--ink); letter-spacing: 1px; -unity-text-align: middle-center; white-space: normal; margin: 2px 0 0 0; }
+.start-source { font-size: 15px; color: var(--ink); -unity-text-align: middle-center; white-space: normal; margin: 14px 0 0 0; }
 .start-actions { flex-direction: row; flex-wrap: wrap; justify-content: center; margin-top: 14px; }
 /* A whole-pixel height (#1168): with Star on GitHub wrapped under New game on a phone held upright, a fractional row
    height shifts the panel's lines off whole pixels and the band layout (StartScreenPresenter.Fit) then rounds the
@@ -1012,6 +1023,7 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .lang-he .meter-icon { margin-right: 0; margin-left: 5px; }
 .lang-he .meter-delta { margin-left: 0; margin-right: 7px; }
 .lang-he.hud-narrow .meter-delta { margin-right: 0; }
+.lang-he .meter-delta.delta-up, .lang-he .meter-delta.delta-down { padding-left: 0; padding-right: 9px; }
 .lang-he .event-hide { margin: 2px 12px 0 0; }
 .lang-he .event-image { margin-right: 0; margin-left: 12px; }
 .lang-he .info-thumb { margin-right: 0; margin-left: 14px; }

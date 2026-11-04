@@ -22,7 +22,7 @@ public class MoneyCausesTests
     static void AssertAddsUp(GameState before, StepResult r, string what)
     {
         var lines = r.Why.Where(EconomySystem.MovesMoney).ToList();
-        var sum = lines.Sum(w => w.Delta);
+        var sum = lines.Sum(EconomySystem.MoneyDelta);
         var change = (r.State.Treasury - r.State.Debt) - (before.Treasury - before.Debt);
         string N(double v) => v.ToString("0.000###", CultureInfo.InvariantCulture);
         Assert.True(Math.Abs(sum - change) <= Tolerance,
@@ -200,12 +200,12 @@ public class MoneyCausesTests
         var largest = Largest(r.Why, 2);
         var other = EconomySystem.OtherMoney(Real, r.Why, largest);
         Assert.NotNull(other);
-        var rest = r.Why.Where(w => EconomySystem.MovesMoney(w) && !largest.Contains(w)).Sum(w => w.Delta);
+        var rest = r.Why.Where(w => EconomySystem.MovesMoney(w) && !largest.Contains(w)).Sum(EconomySystem.MoneyDelta);
         Assert.Equal(("economy", "treasury", CauseKeys.MoneyOther, rest), (other!.System, other.Target, other.Key, other.Delta));
         Assert.Equal($"{PlayerText.Change(Real, "treasury", rest)} (other causes)", other.Message);
         Assert.DoesNotContain(other, r.Why);   // the UI's line, never a line of the turn
         var change = (r.State.Treasury - r.State.Debt) - (s.Treasury - s.Debt);
-        Assert.True(Math.Abs(largest.Sum(w => w.Delta) + other.Delta - change) <= Tolerance, "the two lines and Other add up to the change");
+        Assert.True(Math.Abs(largest.Sum(EconomySystem.MoneyDelta) + other.Delta - change) <= Tolerance, "the two lines and Other add up to the change");
     }
 
     // #2212: no Other line when every Money cause is shown (two or fewer), or when the rest rounds to IL 0.0m as shown.
@@ -222,7 +222,7 @@ public class MoneyCausesTests
     public void NoOtherLineWhenNothingIsLeftOver(double[] deltas, bool expected)
     {
         var why = deltas.Select(d => new Cause("economy", "treasury", d, PlayerText.Change(Real, "treasury", d), key: CauseKeys.CivilianUpkeep))
-            .Append(new Cause("economy", "debt", 5, "borrowed IL 5.0m to cover the deficit", key: CauseKeys.Borrowed))   // not a Money cause
+            .Append(new Cause("economy", "debt", 5, "borrowed IL\u00A05.0m to cover the deficit", key: CauseKeys.Borrowed))   // not a Money cause
             .ToList();
         var largest = Largest(why, 2);
         var other = EconomySystem.OtherMoney(Real, why, largest);
@@ -312,7 +312,7 @@ public class MoneyCausesTests
         for (int t = 1; t < 1000 && s.GameOver == null; t++)
         {
             var r = Simulation.Step(Real, s, GoldenRun.Orders(Real, s));
-            Assert.Empty(r.Rejected);
+            Assert.DoesNotContain(r.Rejected, j => !WarEvents1948Tests.IsTheMalkiyaRefusal(j));   // R-ENEMY-005: Hiram's refused order, pinned there
             foreach (var w in r.Why)
             {
                 if (w.Key == CauseKeys.Paid) paid.Add(w.Args[0]);

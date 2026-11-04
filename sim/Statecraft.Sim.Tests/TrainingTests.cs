@@ -44,7 +44,7 @@ public class TrainingTests
         Assert.Equal((id, "recruit", "town_a", 3, 1), (k.Id, k.Type, k.City, k.Count, k.TurnsLeft));   // 2 turns, one of them this one
         Assert.Equal(id + 1, r.State.NextId);
         Assert.Equal(Step(c, s).State.Treasury - 1.5, r.State.Treasury, 9);
-        Assert.Contains(r.Why, x => x.System == "city" && x.Message == "Town A: 3 groups began basic training, cost IL 1.5m");
+        Assert.Contains(r.Why, x => x.System == "city" && x.Message == "Town A: 3 groups began basic training, cost IL\u00A01.5m");
     }
 
     // R-TRAIN-001
@@ -127,7 +127,7 @@ public class TrainingTests
         Assert.Equal(0, after.Treasury);
         Assert.Equal(3.1, after.Debt, 9);   // the IL 0.1m the Treasury lacked
         Assert.Single(after.Cohorts);
-        var borrowed = Assert.Single(why, x => x.System == "economy" && x.Target == "debt" && x.Message == "Borrowed IL 0.1m for training");
+        var borrowed = Assert.Single(why, x => x.System == "economy" && x.Target == "debt" && x.Message == "Borrowed IL\u00A00.1m for training");
         Assert.Equal((CauseKeys.Borrowed, CauseKeys.Purpose.Training), (borrowed.Key, Assert.Single(borrowed.Args)));   // B1: worded in Hebrew too
         var none = s.Clone();
         none.Treasury = 0;

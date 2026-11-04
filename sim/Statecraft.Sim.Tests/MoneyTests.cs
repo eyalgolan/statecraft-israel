@@ -14,7 +14,7 @@ public class MoneyTests
     public void TheTreasuryIsShownAsMoney()
     {
         Assert.Equal("Money", PlayerText.Target(C, "treasury"));
-        Assert.Equal("IL 2.0m", PlayerText.Money(C, "treasury", 2));
+        Assert.Equal("IL\u00A02.0m", PlayerText.Money(C, "treasury", 2));
         Assert.Equal(new[] { "treasury", "debt", "fx_reserves" }, C.Money.Select(m => m.Id));
         Assert.Equal("Debt", PlayerText.Target(C, "debt"));
         Assert.Equal("Foreign currency", PlayerText.Target(C, "fx_reserves"));

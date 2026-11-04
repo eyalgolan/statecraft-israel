@@ -1,0 +1,15 @@
+{
+    "tool": "FarModelLevels",
+    "source": "Assets/Art/Settlements/Prototype/Models/b32-port-cargo-shed-v2/b32-port-cargo-shed-v2.fbx",
+    "source_sha256": "83d5af0caf45f01fe58dfb2a6a90d12adff3b09cb76ac30f89bdd9daa0f05fe9",
+    "colour_map": "Assets/Art/Settlements/Prototype/Models/b32-port-cargo-shed-v2/b32-port-cargo-shed-v2_basecolor.jpg",
+    "colour_map_sha256": "d05a1ae8b745eadc7204de77c5abd780a8cbc4b8451b8197dd7b5f75bde1ecb9",
+    "source_triangles": 5999,
+    "triangles": 400,
+    "target_triangles": 400,
+    "cell_px": 8,
+    "supersample": 3,
+    "sample_px": 512,
+    "atlas_px": 256,
+    "provenance": "Derived from Tal Heuberger's original (the source FBX and colour map above) by FarModelLevels: a subset of the model's own vertices (exact positions, none added or moved) and a colour map baked from the original's. Same licence, CC BY-NC-ND 4.0, credit Tal Heuberger; lighter far-off derived copy; owner confirms Tal's permission, 3 Nov 2026 (#2378)."
+}

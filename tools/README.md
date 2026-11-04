@@ -68,7 +68,8 @@ Offline data tools (uv inline-script Python). Run from the repo root.
   `translations/<lang>/{events,ui,content}.yaml`, which the game does not read yet, and leaves out the advisors
   (`advisor.*`) and their encyclopedia (`encyclopedia.*`, which replaced How to play), which stay English or Hebrew only for now (owner, #1604). Every language keeps the Hebrew
   rules (all or none per event, placeholders as in the English, one line, no direction marks; `agent-checked` until a
-  native speaker has read it, #564), and nothing is written while any edited string is refused. It never commits or
+  native speaker, or an AI-assisted contributor who discloses it, has read it, #564; owner, 4 November 2026:
+  "AI-assisted can clear it"), and nothing is written while any edited string is refused. It never commits or
   touches `status` / `reviewed_by`; a saved Hebrew edit is a `content/` or `unity/` change, so it needs a changelog
   fragment.
 - `terrain_bake.py` writes `unity/Assets/Textures/Map/terrain_bake.png` (AO, curvature, sky-view), `ao.png` (the AO

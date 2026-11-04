@@ -14,9 +14,10 @@ import subprocess
 import sys
 from collections.abc import Sequence
 
-USER_VISIBLE = ("content/", "sim/Statecraft.Sim/", "sim/Statecraft.Cli/", "unity/Assets/", "unity/ProjectSettings/",
-                "unity/Packages/")
-NOT_USER_VISIBLE = ("unity/Assets/Tests/",)
+# translations/ ships beside the content to every player (#1618, step 2); its README.md is not a language (TranslationLoader).
+USER_VISIBLE = ("content/", "translations/", "sim/Statecraft.Sim/", "sim/Statecraft.Cli/", "unity/Assets/",
+                "unity/ProjectSettings/", "unity/Packages/")
+NOT_USER_VISIBLE = ("unity/Assets/Tests/", "translations/README.md")
 FRAGMENTS = "changelog.d/"
 
 

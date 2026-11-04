@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 namespace Statecraft.Sim
@@ -46,6 +47,40 @@ namespace Statecraft.Sim
             foreach (var (source, units, status) in counts.OrderBy(x => x.Source, StringComparer.Ordinal))
                 for (int i = 0; i < units; i++) rows.Add(new HistoricalPopulationRow(source, i, status));
             return rows.AsReadOnly();
+        }
+
+        /// <summary>R-POP-004 (#1689 region slice): the Inventory as an initialized Historical ledger fixture, each record in
+        /// its real region of regions.yaml. A census record takes the region that lists its city (AtLocation). A formation
+        /// record takes the region of its starting anchor hex (AtHex): the owner's ruling on #1689's open question 1
+        /// (3 November 2026: "Its anchor hex's region (Recommended)"). A source with no region is refused; no region is invented. Records
+        /// are free civilians with no assignment and soldiers serving in their own formation, with no profession, tier or
+        /// qualification (#1717 and #1692 add those). Each soldier carries one issued military item, id
+        /// <c>units_1948/&lt;row&gt;/&lt;ordinal&gt;</c>, owned and recorded as paid, apart from the spare Arms (#1717, 27M-24).
+        /// mode Historical gives #2299's 1,000-a-record scale (D2). Fixture-only: NewGame does not call it (R-POP-002).</summary>
+        internal static GameState LedgerFixture(Content c)
+        {
+            var inventory = Inventory(c);
+            var sources = new HashSet<string>(inventory.Select(r => r.Source), StringComparer.Ordinal);   // only sources with records
+            var regions = new SortedDictionary<string, string>(StringComparer.Ordinal);
+            foreach (var city in c.Cities)
+                if (sources.Contains(CensusPrefix + city.Id)) regions[CensusPrefix + city.Id] = c.PlayerRegions.AtLocation(city.Id)?.Id ?? "";
+            foreach (var f in c.StartingForces)
+                if (sources.Contains(FormationPrefix + f.Row)) regions[FormationPrefix + f.Row] = c.PlayerRegions.AtHex(f.Q, f.R)?.Id ?? "";
+            var missing = regions.Where(x => x.Value == "").Select(x => x.Key).ToList();
+            if (missing.Count > 0)
+                throw new InvalidOperationException("No region in regions.yaml for " + string.Join(", ", missing) + " (R-POP-004).");
+            var locations = regions.Values.Distinct(StringComparer.Ordinal).ToDictionary(r => r, r => new PopulationLocation(r), StringComparer.Ordinal);
+            // A formation is its soldiers' ActiveService target, in the formation's region.
+            var targets = regions.Where(x => x.Key.StartsWith(FormationPrefix, StringComparison.Ordinal))
+                .Select(x => new PopulationTarget(x.Key, PopulationAssignmentKind.ActiveService, x.Value));
+            var bindings = new PopulationBindings(locations.Values, targets, Array.Empty<string>(), Array.Empty<string>());
+            var rows = inventory.Select(r => new PopulationInventoryRow(r.Source, r.Ordinal, new PopulationUnit(0, r.Status, 0,
+                locations[regions[r.Source]], r.Status == PopulationStatus.ActiveSoldier
+                    ? new PopulationAssignment(PopulationAssignmentKind.ActiveService, r.Source) : PopulationAssignment.Unassigned,
+                CivilianProfession.None, CivilianTier.None, 0, "", 0, r.Status == PopulationStatus.ActiveSoldier
+                    ? new PopulationEquipment(militaryId: r.Source + "/" + r.Ordinal.ToString(CultureInfo.InvariantCulture), militaryPaid: true)
+                    : PopulationEquipment.None)));
+            return PopulationLedger.CreateFixture(c, bindings, rows, mode: Mode.Historical);
         }
     }
 }

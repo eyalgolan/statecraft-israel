@@ -262,8 +262,8 @@ namespace Statecraft.HexTiles
         }
 
         /// <summary>A soft, slightly lumpy puff (white, alpha falling to the rim; a little darker below, as smoke
-        /// shades itself). Pure arithmetic, so every look draws the same texture.</summary>
-        static Texture2D PuffTexture()
+        /// shades itself). Pure arithmetic, so every look draws the same texture. The gun's muzzle smoke draws it too (UnitGunFire).</summary>
+        internal static Texture2D PuffTexture()
         {
             const int N = 64;
             var t = new Texture2D(N, N, TextureFormat.RGBA32, true) { name = "under-attack-puff", wrapMode = TextureWrapMode.Clamp };

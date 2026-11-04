@@ -1,7 +1,11 @@
 import json
+import os
 import re
+import shutil
+import subprocess
 from pathlib import Path
 
+import pytest
 import yaml
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -143,9 +147,39 @@ def test_merge_workflow_never_touches_pull_request_code():
     assert wf["permissions"] == {"contents": "write", "pull-requests": "write"}
     script = "\n".join(s.get("run", "") for s in steps(wf))
     assert not any("uses" in s for s in steps(wf)) and "checkout" not in script
-    for field in ("title", "body", "headRefName"):
+    for field in ("title", "headRefName"):
         assert field not in script, field
+    # The body is read only by jq for the licence tick; jq prints a SHA or "no", so no body text reaches the shell.
+    assert script.count("body") == 2 and ',body,' in script and '($p.body // "" | test(' in script
     assert "--match-head-commit" in script and "$r.commit.oid == $p.headRefOid" in script
+
+
+def merge_filter(pr: dict) -> str:
+    # Runs the workflow's own jq program on one `gh pr view --json` object, as gh --jq does.
+    wf = yaml.safe_load(MERGE.read_text(encoding="utf-8"))
+    script = "\n".join(s.get("run", "") for s in steps(wf))
+    program = script.split("statusCheckRollup --jq '", 1)[1].split("')", 1)[0]
+    env = {**os.environ, **{k: wf["jobs"]["merge"]["env"][k] for k in ("MAINTAINER", "REQUIRED_CHECKS")}}
+    return subprocess.run(["jq", "-r", program], input=json.dumps(pr), env=env, capture_output=True, text=True,
+                          check=True).stdout.strip()
+
+
+@pytest.mark.parametrize("author, body, merges", [
+    ("contributor", "- [ ] I contribute this under the terms in `CONTRIBUTING.md`", False),
+    ("contributor", "- [x] I contribute this under the terms in `CONTRIBUTING.md`", True),
+    ("contributor", "- [X] I contribute this under the terms in `CONTRIBUTING.md`", True),
+    ("contributor", "- [x] I contribute this under the repository's licences", False),   # the pre-#1371 line
+    ("contributor", None, False),
+    ("eyalgolan", "- [ ] I contribute this under the terms in `CONTRIBUTING.md`", True),   # agents never tick it
+])
+def test_merge_workflow_needs_the_licence_tick_from_outside_authors(author, body, merges):
+    if shutil.which("jq") is None:
+        assert not os.environ.get("CI"), "jq is on GitHub's ubuntu runners"
+        pytest.skip("jq not installed")
+    pr = {"author": {"login": author}, "body": body, "isDraft": False, "mergeable": "MERGEABLE", "headRefOid": "abc",
+          "reviews": [{"author": {"login": "eyalgolan"}, "state": "APPROVED", "commit": {"oid": "abc"}}],
+          "statusCheckRollup": [{"name": n, "conclusion": "SUCCESS"} for n in sorted(EXPECTED_JOBS)]}
+    assert merge_filter(pr) == ("abc" if merges else "no")
 
 
 def test_merge_workflow_waits_for_every_required_check():
@@ -202,6 +236,15 @@ def test_the_reviewed_by_guard_runs_on_the_pr_head_with_full_history():
     assert '--base "$BASE_SHA"' in step["run"] and '--head "$HEAD_SHA"' in step["run"]
     assert step["env"]["HEAD_SHA"] == "${{ github.event.pull_request.head.sha }}"
     assert step["env"]["BASE_SHA"] == "${{ github.event.pull_request.base.sha }}"
+
+
+def test_the_reviewed_by_guard_reads_the_description_from_the_event_file_only():
+    """Owner, 4 November 2026 ("Yes, it counts"): the guard reads the PR's "AI assistance" section from the runner's event
+    file. The description is attacker-controlled text, so it never goes into a run line or an env value."""
+    job = next(j for j in ci()["jobs"].values() if j["name"] == "Changelog")
+    step = next(s for s in job["steps"] if "reviewed_by_guard.py" in s.get("run", ""))
+    assert '--pr-event "$GITHUB_EVENT_PATH"' in step["run"]
+    assert "github.event.pull_request.body" not in (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
 
 
 STEAM = ROOT / ".github/workflows/steam-upload.yml"

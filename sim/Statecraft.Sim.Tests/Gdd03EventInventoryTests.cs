@@ -18,7 +18,8 @@ public class Gdd03EventInventoryTests
     static string Num(double v) => v.ToString("G", CultureInfo.InvariantCulture);
 
     /// <summary>Every effect field of every option, in the card's own order: set_policy (by key), set_rung, effects, then
-    /// the structured grant_units, city_effects and unlock_projects. Same-target effects keep their list index.</summary>
+    /// the structured grant_units, city_effects and unlock_projects, then debt_dollars (R-EFX-009, applied under gdd-0.3
+    /// only). Same-target effects keep their list index.</summary>
     static IEnumerable<(string Field, string Change)> Fields(EventOption o)
     {
         foreach (var kv in o.SetPolicy.OrderBy(kv => kv.Key, StringComparer.Ordinal))
@@ -32,6 +33,7 @@ public class Gdd03EventInventoryTests
             yield return ($"city_effects[{i}].{o.CityEffects[i].City}.{o.CityEffects[i].Field}", Num(o.CityEffects[i].Delta));
         for (int i = 0; i < o.UnlockProjects.Count; i++)
             yield return ($"unlock_projects[{i}]", o.UnlockProjects[i]);
+        if (o.DebtDollars is double debt) yield return ("debt_dollars", Num(debt) + " (US$ m; Debt under gdd-0.3 only)");
     }
 
     static string Render()

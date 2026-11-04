@@ -244,6 +244,20 @@ public class Gdd03MovementFortTests
         // Catalogue structural validation still applies, but none of these valid catalogue rows is a consumed old-rule requirement.
         Assert.NotNull(ContentLoader.Load(Fixture.Write(f)));
     }
+
+    [Theory]
+    [InlineData("military.move_armoured", "basis: Default, values: [1.5], note: fixture")]
+    [InlineData("military.fort_bonus", "basis: Default, values: [-1], note: fixture")]
+    public void Gdd03NumberRulesRejectInvalidConsumedScalars(string key, string row)
+    {
+        var f = Files();
+        f[Gdd03BalanceCatalogue.FileName] = System.Text.RegularExpressions.Regex.Replace(f[Gdd03BalanceCatalogue.FileName],
+            "(?m)^  \"" + System.Text.RegularExpressions.Regex.Escape(key) + "\":\\n(?:    .*\\n)*", "  \"" + key + "\": { " + row + " }\n");
+        var error = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(f)));
+        Assert.Equal(Gdd03BalanceCatalogue.FileName, error.File);
+        Assert.Equal("values." + key, error.Field);
+        Assert.Contains("must be a whole number >= 0", error.Message);
+    }
     // R-MOVE-007: both endpoints must belong to the same built segment for either corridor kind.
     [Theory]
     [InlineData("road")]

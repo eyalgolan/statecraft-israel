@@ -10,7 +10,7 @@ I plan standing orders, resolve the month predictably and reload under the rules
 - `systems.loop` in eras.yaml is `legacy` or `gdd`, the same in every era; absent means legacy (R-LOOP-001).
 - The GDD state (cities, units, the next unit id, completed objectives, the score) is hashed only when it is set, so the legacy hash text is unchanged (R-LOOP-002).
 - Until the cutover, `MvpSlice.Overlay` gave the real content with the switch on and monthly turns. The cutover turned the switch on in the real content and retired the overlay with its rule ID.
-- A save names its ruleset, `legacy` or `gdd-0.1`; a game refuses a save from another ruleset (R-SAVE-001, decision D-E4 [S2]), and a save from a ruleset it does not know as made by a newer version (R-SAVE-002).
+- A save names its ruleset, `legacy`, `gdd-0.1` or `gdd-0.3`, the last saved as save schema four and selected by no content yet; a game refuses a save from another ruleset (R-SAVE-001, decision D-E4 [S2]), and a save from a ruleset it does not know as made by a newer version (R-SAVE-002).
 - Before the cutover, balance values the owner had not set lived only in the overlay or in test fixtures [S3]; since it they are labelled design values in `content/` (R-LOOP-005).
 ### Ruleset boundary
 
@@ -37,7 +37,7 @@ Resolve in stable-id order:
 11. Advance retained occupation timers.
 12. Evaluate objectives/cards/score, finalise end date and apply campaign boundary.
 
-**Amir's proposal, declined by the owner on 30 October 2026 [S4] ([conflict decision](../GDD.md#30-october-2026-conflict-decisions)):** resolver steps would add staffed regional/city/pioneer work, manifests, transit charges, housing-only shortfall effects and garrison-dependent occupation. These additions are non-operative. Actual-work XP agrees with main's `gdd-0.3` rule (`R-VET-001`) and was not a 30 October 2026 conflict. For a reception step, the owner's 30 October 2026 conflict review did not rule on this; on 1 November 2026 the owner kept `R-CITY-004` (`docs/rules/mvp.md:105`) with "Keep R-CITY-004 (Recommended)", so the reception step is post-MVP; main has an inactive `gdd-0.3` reception fixture (`docs/rules/mvp.md:107`) [S7].
+**Amir's proposal, declined by the owner on 30 October 2026 [S4] ([conflict decision](../GDD.md#30-october-2026-conflict-decisions)):** resolver steps would add staffed regional/city/pioneer work, manifests, transit charges, housing-only shortfall effects and garrison-dependent occupation. These additions are non-operative. Actual-work XP agrees with main's `gdd-0.3` rule (`R-VET-001`) and was not a 30 October 2026 conflict. For a reception step, the owner's 30 October 2026 conflict review did not rule on this; on 1 November 2026 the owner kept `R-CITY-004` (`docs/rules/mvp.md`) with "Keep R-CITY-004 (Recommended)", so the reception step is post-MVP; main has an inactive `gdd-0.3` reception fixture (`docs/rules/mvp.md:107`) [S7].
 
 Commit retained indicator changes in one bounded final update. Preserve historical hard/soft event windows and established delegation; explicit event resource grants apply once.
 

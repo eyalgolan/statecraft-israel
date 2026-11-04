@@ -30,7 +30,7 @@ public class CityProjectsTests
         var p = one.State.CityProjects.Values.Single();
         Assert.Equal(("housing", "town_a", 1, 1, 1, (DateTime?)null), (p.Kind, p.City, p.Q, p.R, p.TurnsLeft, p.BuiltOn));   // 2 turns, this one the first
         Assert.Equal(Step(c, s).State.Treasury - 3, one.State.Treasury, 9);   // paid in full at the start (Q-PROJ-1)
-        Assert.Contains(one.Why, x => x.System == "city" && x.Message == "Town A: a housing project began, cost IL 3.0m");
+        Assert.Contains(one.Why, x => x.System == "city" && x.Message == "Town A: a housing project began, cost IL\u00A03.0m");
         Assert.Equal(s.Cities["town_a"].HousingCapacity, one.State.Cities["town_a"].HousingCapacity);   // nothing yet
 
         var two = Step(c, one.State);
@@ -144,7 +144,7 @@ public class CityProjectsTests
         s.Treasury = 1;
         var r = Step(c, s, Housing());
         Assert.Empty(r.Rejected);
-        Assert.Contains(r.Why, x => x.System == "economy" && x.Message == "Borrowed IL 2.0m to build a housing project");
+        Assert.Contains(r.Why, x => x.System == "economy" && x.Message == "Borrowed IL\u00A02.0m to build a housing project");
     }
 
     // R-PROJ-001 (Q-HOUSE-3, D-D3): the transit camp keeps the ma'abarot policy gate, which carries its sourced date; with the
@@ -352,8 +352,9 @@ public class CityProjectsTests
         Assert.Null(Projects.CheckCityReason(c, New(c), "housing", "town_a", 1, 1));
     }
 
-    // #1122 (owner ruling 3): a kind may carry a draft Hebrew name pending a native speaker's review (#564); a review flag
-    // other than agent-checked, or one without a name, is refused; a kind without Hebrew still loads.
+    // #1122 (owner ruling 3): a kind may carry a draft Hebrew name until a native speaker, or an AI-assisted contributor
+    // who discloses it, has read it (#564; owner, 4 November 2026: "AI-assisted can clear it"); a review flag other than
+    // agent-checked, or one without a name, is refused; a kind without Hebrew still loads.
     [Fact]
     public void AKindMayCarryADraftHebrewName()
     {

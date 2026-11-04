@@ -53,7 +53,21 @@ def fake_build(tmp_path, reviewed, photos_reviewed=True, forces_checked=True, al
                      "reviewed_by: package-fixture-reviewer\nreviewed_on: 2026-10-24\n")
         f.write_text(text, encoding="utf-8")
     photo_manifest(build, reviewed=photos_reviewed)
+    ship_translations(build)
     return build
+
+
+def ship_translations(build):
+    """The translations as ContentSync ships them: the files beside the content, listed in manifest.json and packed into
+    bundle.json (only the fields package_release reads)."""
+    folder = build / "StreamingAssets" / "translations"
+    shutil.copytree(REPO / "translations", folder, dirs_exist_ok=True)
+    files = package_release._shipped_translations(folder)
+    content = build / "StreamingAssets" / "content"
+    (content / "manifest.json").write_text(json.dumps({"files": [], "translations": files}))
+    (content / "bundle.json").write_text(json.dumps(
+        {"translations": files, "translationTexts": [(folder / f).read_text(encoding="utf-8") for f in files]}, ensure_ascii=False))
+    return files
 
 
 def test_packaging_is_refused_until_every_sensitive_event_is_reviewed(tmp_path, capsys):
@@ -181,3 +195,35 @@ def test_a_build_missing_a_file_index_html_names_is_refused(tmp_path, capsys):
     build = hashed_build(tmp_path)
     (build / "Build" / HASHED[3]).unlink()
     assert "Build/" + HASHED[3] in refused(build, tmp_path, capsys)
+
+
+def test_the_zip_carries_the_translations_the_web_bundle_packs(tmp_path, capsys):
+    build, zip_path = fake_build(tmp_path, reviewed=True), tmp_path / "out.zip"
+    assert package_release.translation_refusal(build) is None
+    assert package_release.main(["--build", str(build), "--zip", str(zip_path)]) == 0
+    with zipfile.ZipFile(zip_path) as z:
+        assert "StreamingAssets/translations/ro/events.yaml" in z.namelist()
+
+
+def test_a_lost_changed_or_unlisted_translation_is_refused(tmp_path, capsys):
+    """#1618: the gate reads StreamingAssets/translations and the web player bundle.json; they must be one set."""
+    build = fake_build(tmp_path, reviewed=True)
+    folder = build / "StreamingAssets" / "translations"
+    (folder / "ro" / "ui.yaml").unlink()
+    assert "do not match" in refused(build, tmp_path, capsys)
+    ship_translations(build)
+    (folder / "ro" / "ui.yaml").write_text("ui.lang: \"xx\"\n", encoding="utf-8")
+    assert "differs from StreamingAssets/translations for ro/ui.yaml" in refused(build, tmp_path, capsys)
+    ship_translations(build)
+    (folder / "ro" / "content.yaml").write_text("{}\n", encoding="utf-8")
+    assert "do not match" in refused(build, tmp_path, capsys)
+    (folder / "ro" / "content.yaml").unlink()
+    ship_translations(build)
+    (folder / "ro" / "ui.yaml").write_bytes(b"ui.lang: \"\xff\"\n")   # not UTF-8: a refusal, not a crash
+    assert "cannot be read as UTF-8 text" in refused(build, tmp_path, capsys)
+    ship_translations(build)
+    (folder / ".DS_Store").write_text("x")              # hidden and top-level names are never translations
+    (folder / "README.md").write_text("x")
+    assert package_release.translation_refusal(build) is None
+    (build / "StreamingAssets" / "content" / "bundle.json").unlink()
+    assert "no readable manifest.json and bundle.json" in refused(build, tmp_path, capsys)

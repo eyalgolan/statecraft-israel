@@ -6,9 +6,10 @@ public class Gdd03EventRulesTests
 {
     const string Manifest = "gdd03-events.yaml";
     const string Empty = "ruleset: gdd-0.3\nexclusions: []\n";
-    static readonly string[] Excluded = { "austerity_1949", "forex_crisis_1951", "iraqi_exodus", "israel_bonds", "maabarot_policy" };
+    static readonly string[] Excluded = { "austerity_1949", "forex_crisis_1951", "iraqi_exodus", "maabarot_policy" };
     // #2224 (owner, 2 November 2026, "Bring back 3, design bonds (Recommended)"): D1/Q2 keep the foreign-currency ledger,
-    // so these three cards, excluded by #1772 for want of a ledger mapping, are active again. israel_bonds stays excluded.
+    // so these three cards, excluded by #1772 for want of a ledger mapping, are active again. israel_bonds came back with
+    // its equal Debt (#2457, R-EFX-009; owner, 2 November 2026, #2224: "Add equal Debt").
     static readonly string[] Restored = { "clothing_rationing_1950", "reparations_claim", "reparations_vote" };
     static string Card(string id = "probe", string option = "") =>
         $"id: {id}\ntitle: Fixture\ntext: Fixture.\nfrom: 1948-05-15\noptions:\n  - id: ok\n    text: Accept\n    historical: true\n" + option;
@@ -189,10 +190,11 @@ public class Gdd03EventRulesTests
         }, Directory.GetFiles(Path.Combine(root, "events"), "*.yaml").Select(p => "events/" + Path.GetFileName(p)));
     }
     [Fact]
-    public void RealCatalogueExcludesExactlyFiveWholeCardsAndKeepsOrder()
+    public void RealCatalogueExcludesExactlyFourWholeCardsAndKeepsOrder()
     {
         var old = Real(false); var modern = Real(true);
-        Assert.Equal(41, old.Events.Count); Assert.Equal(36, modern.Events.Count);   // Deport's two cards (#801) are not excluded
+        Assert.Equal(41, old.Events.Count);   // Deport's two cards (#801) are not excluded
+        Assert.Equal(old.Events.Count - Excluded.Length, modern.Events.Count);
         Assert.Equal(Excluded, old.Events.Select(e => e.Id).Except(modern.Events.Select(e => e.Id)).OrderBy(x => x, StringComparer.Ordinal));
         Assert.Equal(old.Events.Where(e => !Excluded.Contains(e.Id)).Select(e => e.Id), modern.Events.Select(e => e.Id));
         Assert.NotEqual(old.Hash, modern.Hash);
@@ -333,7 +335,8 @@ public class Gdd03EventRulesTests
     [Fact]
     public void AllTwentyFourAffectedAssignmentsRetainTheirLegacyValues()
     {
-        Assert.Equal(Inventory.OrderBy(x => x, StringComparer.Ordinal), Rows(Real(false), Excluded).OrderBy(x => x, StringComparer.Ordinal));
+        // israel_bonds is no longer excluded (#2457), but its three rows keep the legacy values #1772 pinned.
+        Assert.Equal(Inventory.OrderBy(x => x, StringComparer.Ordinal), Rows(Real(false), Excluded.Append("israel_bonds")).OrderBy(x => x, StringComparer.Ordinal));
         Assert.All(Real(false).Events, e => Assert.All(e.Options, o =>
         { Assert.Empty(o.GrantUnits); Assert.Empty(o.CityEffects); Assert.Empty(o.UnlockProjects); }));
     }
@@ -370,7 +373,92 @@ public class Gdd03EventRulesTests
         Assert.Equal(new DateTime(1950, 7, 15), CardDate("clothing_rationing_1950"));
         Assert.Equal(new DateTime(1951, 3, 15), CardDate("reparations_claim"));
         Assert.Equal(new DateTime(1951, 12, 15), CardDate("reparations_vote"));
-        Assert.Null(CardDate("israel_bonds"));
+        // #2457: back under gdd-0.3 on the turn EventRetimingTests pins for it in the gdd-0.1 golden run. As a hard anchor
+        // left unanswered in Historical mode it takes launch, so the Debt it adds is the IL equivalent of the card's $52m.
+        Assert.Equal(new DateTime(1951, 5, 15), CardDate("israel_bonds"));
+        Assert.Equal("launch", s.ChosenOptions["israel_bonds"]);
+    }
+
+    // R-EFX-009 (#2457; owner, 2 November 2026, #2224: "Add equal Debt", "Rate in force on the date (Recommended)"): under
+    // gdd-0.3 an option's debt_dollars adds that many US$ millions to Debt in IL millions, at the mvp.il_per_dollar rate in
+    // force on the event's date. The fixture's rate is 0.5 from 15 May 1948 and 0.25 from 15 August: the card's window
+    // ends on 10 August and the turn is 15 August, so the event's date (9 August) gives 0.5, the turn's date would give 0.25.
+    // gdd-0.1 reads the field and leaves Debt alone. Red without the effect: Debt stays put under gdd-0.3 too.
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void DebtDollarsAddDebtAtTheEventsDateRateUnderGdd03Only(bool modern)
+    {
+        var card = Card(option: "    effects: [{ target: fx_reserves, delta: 52 }]\n    debt_dollars: 52\n").Replace("from: 1948-05-15", "from: 1948-08-01\nto: 1948-08-10");
+        var c = Load(Files(modern), card);
+        Assert.Equal(modern, c.Ruleset == SaveGame.Gdd03Ruleset);
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        s.Date = new DateTime(1948, 8, 15); s.PendingEvents.Add("probe");
+        var (fx, debt, treasury) = (s.FxReserves, s.Debt, s.Treasury);
+        var preview = EventSystem.OptionEffects(c, s, c.Events.Single(e => e.Id == "probe").Options[0]);
+        var why = new List<Cause>();
+        Assert.Null(EventSystem.Choose(c, s, "probe", "ok", why));
+        Assert.Equal(fx + 52, s.FxReserves);
+        Assert.Equal(treasury, s.Treasury);
+        Assert.Equal(debt + (modern ? 26 : 0), s.Debt, 9);
+        var lines = why.Where(x => x.Target == "debt").ToList();
+        var shown = preview.Where(x => x.Target == "debt").ToList();
+        if (!modern) { Assert.Empty(lines); Assert.Empty(shown); return; }
+        var line = Assert.Single(lines);
+        Assert.Equal((CauseKeys.EventAmount, 26.0), (line.Key, line.Delta));
+        Assert.StartsWith("Debt", line.Message);
+        Assert.EndsWith("(Fixture)", line.Message);
+        Assert.Equal((CauseKeys.EventAmount, 26.0), (Assert.Single(shown).Key, shown[0].Delta));
+    }
+    // R-EFX-009, R-EVT-003: a disloyal minister's half share halves the Debt with the foreign currency.
+    [Fact]
+    public void DelegatedHalfShareHalvesTheDebt()
+    {
+        var c = Load(Files(), Card(option: "    effects: [{ target: fx_reserves, delta: 4 }]\n    debt_dollars: 4\n") + "office: prime_minister\n");
+        foreach (var p in c.People) p.Loyalty = 0;
+        var s = Simulation.NewGame(c, 1, Mode.Historical); s.Debt = 0;
+        var fx = s.FxReserves;
+        EventSystem.Delegate(c, s, new List<Cause>());
+        Assert.Equal((fx + 2, 1.0), (s.FxReserves, s.Debt));
+    }
+    // R-EFX-009: the loader checks the field in every ruleset, since every ruleset reads the same cards.
+    [Theory]
+    [InlineData(true, "0")]
+    [InlineData(true, "-52")]
+    [InlineData(true, ".nan")]
+    [InlineData(false, ".inf")]
+    public void DebtDollarsMustBeAFinitePositiveAmount(bool modern, string value)
+    {
+        var ex = Assert.Throws<ContentException>(() => Load(Files(modern), Card(option: $"    debt_dollars: {value}\n")));
+        Assert.Equal(("events/probe.yaml", "events[probe].options[ok].debt_dollars"), (ex.File, ex.Field));
+    }
+    // R-EFX-009 (review on #2487): a value that is not a number is a content error in every ruleset, reported at
+    // the card's file and the debt_dollars line (line 9 of the fixture), before any ruleset check runs.
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void DebtDollarsThatIsNotANumberIsRefused(bool modern)
+    {
+        var ex = Assert.Throws<ContentException>(() => Load(Files(modern), Card(option: "    debt_dollars: nope\n")));
+        Assert.Equal(("events/probe.yaml", "line 9"), (ex.File, ex.Field));
+        Assert.Contains("nope", ex.Message);
+    }
+    // R-EFX-009 (#2457): on the real card, launch adds the $52m and IL 18.564m of Debt (52 x 0.357, the rate in force on
+    // 10 May 1951); donations_only adds its $10m and no Debt (owner: "No Debt for donations; use 52 (Recommended)").
+    [Theory]
+    [InlineData("launch", 52, 18.564)]
+    [InlineData("donations_only", 10, 0)]
+    public void IsraelBondsLaunchAddsEqualDebtAndDonationsAddNone(string option, double dollars, double debt)
+    {
+        var c = Real(true);
+        var s = Simulation.NewGame(c, GoldenRun.Seed, Mode.Historical);
+        s.Date = new DateTime(1951, 5, 15); s.PendingEvents.Add("israel_bonds");
+        var (fx, before) = (s.FxReserves, s.Debt);
+        var why = new List<Cause>();
+        Assert.Null(EventSystem.Choose(c, s, "israel_bonds", option, why));
+        Assert.Equal(fx + dollars, s.FxReserves, 9);
+        Assert.Equal(before + debt, s.Debt, 9);
+        Assert.Equal(debt == 0 ? 0 : 1, why.Count(x => x.Target == "debt" && x.Key == CauseKeys.EventAmount));
     }
     static readonly string[] SourceBytes =
     {
@@ -386,7 +474,7 @@ public class Gdd03EventRulesTests
         "clothing_rationing_1950:ce2d24a8a98ad86a1670e62094d18fca9da71b5cd11f437cd5314a09f4a1d562", // re-pinned for #1065 (Beri's native Hebrew read)
         "degania_defence:f915a42f050777ddffd7e7e26090b51c6cf922dade41a98fe7174b1c50a62c6e", // re-pinned for #2020 (owner-approved Hebrew wording, 30 October 2026), then for #1065 (Beri's native Hebrew read)
         "deport_acre:950dfb6a76dd47d1b2c132cac22ee67c6db956dff16592fe8036f3b43010414f", // added for #801 (Deport's follow-up cards), re-pinned for #2197 review round 2 (comments say "adapted") and the owner's sign-off (status sensitivity-reviewed, 2 Nov 2026), then for the stale DRAFT note (comment-only cleanup) and the owner's Hebrew read (flag removed), both #2292
-        "deport_nazareth:37165228a386dc01ad46b3405304605e1959f265d458ab312cc68e38c3afa165", // added for #801 (Deport's follow-up cards), re-pinned for #2197 ("near the town", source packet N5; review round 2 comments) and the owner's sign-off (status sensitivity-reviewed, 2 Nov 2026), then for the stale DRAFT note (comment-only cleanup) and the owner's Hebrew read (flag removed), both #2292
+        "deport_nazareth:033bc3da1cd0bc93263a69c9e537ee48556eb962d416812fbba3d577475fe9cd", // added for #801 (Deport's follow-up cards), re-pinned for #2197 ("near the town", source packet N5; review round 2 comments) and the owner's sign-off (status sensitivity-reviewed, 2 Nov 2026), then for the stale DRAFT note (comment-only cleanup) and the owner's Hebrew read (flag removed), both #2292, then for two citation comments that now point inside the repo (comment-only)
         "education_registration_1951:1d5cb0e4062dc61b787a7e1b375b3c85c9a1663bd4c3c73f3c9c6f9ee5ac4da3", // re-pinned for #1065 (Beri's native Hebrew read)
         "elections_1949:962bd8064e8b98d4919be9b4ff4fab68cb9bd3d15213ea43917caa4432f42116", // re-pinned for #1065 (Beri's native Hebrew read)
         "first_new_yishuv:0c75e086931ddbd0d356b8691afffb914ba1e657475d9295375baa3ee32c66b9", // re-pinned for #1065 (owner's native read; flag removed in 8fbcb2aff), then for the stale reviewer comment (comment-only)
@@ -396,17 +484,17 @@ public class Gdd03EventRulesTests
         "hula_drainage:b7ec7159b5cb6ecc009e1ff7e12a7f2426ee1c4b992b8c91c4675c8df3cc1bf5", // re-pinned for #1065 (Beri's native Hebrew read)
         "idf_founding:caad7affcf0309a41c56956c10dd15936ec319ac996ddff6f2cd85efbcebc51e", // re-pinned for #1065 (Beri's native Hebrew read)
         "iraqi_exodus:461dbb8a0685b7dceb6242d8e819635a27bb10033463e66d1a2e3ac68c9b8521", // re-pinned for #1065 (Beri's native Hebrew read)
-        "israel_bonds:9bb4e8f38b8c9dc41b339645457efe1ce8d74580c53556faf4c81df50f67a992", // re-pinned for #1065 (Beri's native Hebrew read)
+        "israel_bonds:e91587a9e0a9004c5549e1ce4babb6f6c564f4db0514acc98769e51605e05160", // re-pinned for #1065 (Beri's native Hebrew read), then for #2457 (R-EFX-009: launch's debt_dollars: 52 and its comment; owner, 2 November 2026, #2224, "Add equal Debt"; card text, Hebrew, sources, review status and the 52 unchanged)
         "jerusalem_ceasefire:b850682a7736dcf2870550322f32a2d5c30963a05529dc9162dd68c9234648d6", // re-pinned for #1065 (Beri's native Hebrew read)
         "jerusalem_demilitarisation_guard:a9693784deafaad901268afd8a0c47a2f5b7d5f75eba33d6180f94b62913fb53", // re-pinned for #1065 (owner's native read; flag removed in 05b5777d9), then for the stale reviewer comment (comment-only)
         "jerusalem_military_government:526dbc88eabe4691e3ee1f3ed2c5fdeb640f11ae0a7a632c63066175b9c18176", // re-pinned for #1065 (Beri's native Hebrew read)
-        "latrun_proposal:169933e28b8fc3085c5e74176a731d83f1e1955ed0ffac9a706029f738353bf5", // re-pinned for #1065 (Beri's native Hebrew read)
+        "latrun_proposal:c35f17ffa48d949b432ce9205a245048bd50bf660940206245e8f0d6f5b62916", // re-pinned for #1065 (Beri's native Hebrew read), then for #2087 (R-ENEMY-005 unit order: Harel toward Latrun; owner rulings, 1 and 2 November 2026, order targets; hex re-derived on the 4.4 km grid by tools/unit_anchor_hexes.py and its units_1948.yaml line citations updated; card text, Hebrew and review status unchanged)
         "law_of_return:d04bb849bbb6fa089afc6e1123f8335aa1b03f49bc025f9d1c6746c48d27b398", // re-pinned for #1065 (Beri's native Hebrew read)
         "maabarot_policy:12e53e14fe3b045f7c18b75ac7af68acf079c17968baf6c82df2435675eb0884", // re-pinned for #1065 (Beri's native Hebrew read)
         "ministry_supply_crisis:2de253de7bafb65f0168bdc151dc0b47fec94843ad6f13bf3ac092d7015b55f9", // re-pinned for #1065 (Beri's native Hebrew read)
-        "operation_hiram:c8db23f9a331b0cf517e4762fe8f71dc286548ada77115b9500a93bce6ba740e", // re-pinned for #1065 (Beri's native Hebrew read)
-        "operation_horev:6e018d54d46b46676d5ab56bc2fcedbeffab23a00334f75b415aec1713507f51", // re-pinned for #1065 (Beri's native Hebrew read)
-        "operation_yoav:3d2e9a9a4416a4277e4c17da1e442895bda562c238e6f459c45b6ab89a9133fe", // re-pinned for #1065 (Beri's native Hebrew read)
+        "operation_hiram:e7c661e53f93576d8a135008e0d1e623430967a36729b58b67a4af195165bccf", // re-pinned for #1065 (Beri's native Hebrew read), then for #2087 (R-ENEMY-005 unit orders: Carmeli to Manara, the 7th Brigade to al-Malikiyya; owner rulings, 1 and 2 November 2026, order targets; hexes re-derived on the 4.4 km grid by tools/unit_anchor_hexes.py and its units_1948.yaml line citations updated; card text, Hebrew and review status unchanged)
+        "operation_horev:373bf144ad21c326eed5895d7bf57b2d73e922c8589bab47da812e2f96f5fb45", // re-pinned for #1065 (Beri's native Hebrew read), then for #2087 (R-ENEMY-005 unit orders; owner ruling, 31 October 2026; hex re-derived on the 4.4 km grid by tools/unit_anchor_hexes.py; review status unchanged), then re-pinned for the Horev garrison line (owner, 2 November 2026, "Add the line (Recommended)", #2087)
+        "operation_yoav:c4af1976488006f26f06cddaa6a9e3379d0193f5c5c22c8e789ccff64dabfefc", // re-pinned for #1065 (Beri's native Hebrew read), then for #2087 (R-ENEMY-005 unit orders: Negev to Beersheba, Givati to Huleiqat; owner rulings, 1 and 2 November 2026, order targets; hexes re-derived on the 4.4 km grid by tools/unit_anchor_hexes.py and its units_1948.yaml line citations updated; card text, Hebrew and review status unchanged)
         "rafah_force_pressure:37ca577e1b93f241035d8bf322810f311a084427307c5722f4122238aa9ec6b8", // re-pinned for #1065 (owner's native read; flag removed in 05b5777d9), then for the stale reviewer comment (comment-only)
         "railway_complete:98d06d62c88d889e3e4a98f954fb04727695c37f58c6ccef94449fc16e88bd04", // re-pinned for #1065 (owner's native read; flag removed in 8fbcb2aff), then for the stale reviewer comment (comment-only)
         "reparations_claim:5412e71f4f5a90a92bd86622eb1a169feee45f0ba2fe82c5ab40bd8f3d43cafd", // re-pinned for #1065 (Beri's native Hebrew read)
@@ -414,8 +502,72 @@ public class Gdd03EventRulesTests
         "rhodes_talks:c5c9cdf906f75e2672e5eedaeadab7f224df96f666a3097813903b81ec06f4f6", // re-pinned for #1065 (Beri's native Hebrew read)
         "second_truce:22eeb171849bac248d58cec944c03bac6aee56c96a192aabf0aba2b7e02b19f6", // re-pinned for #1065 (Beri's native Hebrew read)
         "sinai_withdrawal:4abcd39e509c3d404523f7a5609bdb8e1e5180c19524367790ba7adf0af9e06b", // re-pinned for #1065 (Beri's native Hebrew read)
-        "ten_days:7fece9c0eb4f56ece79a7247e430fb679d3d4d826165e598fd0bd982099a412a", // re-pinned for #1065 (Beri's native Hebrew read)
+        "ten_days:0be9dc54863d46b935428e7a6fd1c9d8fe21194960c976d3ed4283b9e1088962", // re-pinned for #1065 (Beri's native Hebrew read), then for #2087 (R-ENEMY-005 unit orders: Kiryati to Ramle replaces Yiftach to Lydda, sent to Ramla's capture target; owner rulings, 1 and 2 November 2026, order target; hexes re-derived on the 4.4 km grid by tools/unit_anchor_hexes.py and its units_1948.yaml line citations updated; card text, Hebrew and review status unchanged)
     };
+    // R-ENEMY-005 (owner, 31 October 2026, #749: "GDD 0.1 only"): the operation cards' unit orders apply under gdd-0.1; under
+    // gdd-0.3 the cards stay effect-free for units until a 0.3 accounting contract exists (R-EFX-001/005).
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void OperationCardOrdersApplyUnderGdd01Only(bool modern)
+    {
+        var c = Real(modern);
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        Assert.Equal("golani", c.StartingForces[0].Row);
+        var before = s.Units[0];
+        s.PendingEvents.Add("operation_horev");
+        Assert.Null(EventSystem.Choose(c, s, "operation_horev", "launch", new List<Cause>()));
+        var after = s.Units[0];
+        Assert.Equal(modern ? (before.Order, before.OrderTarget) : (Movement.GoTo, "-8,28"), (after.Order, after.OrderTarget));
+    }
+    // R-ENEMY-005, R-CTRL-013 (owner, 2 November 2026, #2087: "Keep a garrison in Nazareth (Recommended)"; owner, 31 October
+    // 2026, #749: "GDD 0.1 only"): Golani alone on Nazareth in the `occupied` state, its timer still running (the EnemyAITests
+    // cases are all `awaiting_end`), and Horev launched. Under gdd-0.1 the order is held back with Orders.RefusedLastGarrison
+    // and Golani stays; under gdd-0.3 the card gives no unit order, so nothing is refused, RefusedLastGarrison never appears,
+    // and Golani is untouched.
+    // Red without the rule's `occupied` half (SettlementControl.LastGarrison reading only `awaiting_end`): under gdd-0.1 the
+    // order is given, or refused with another reason, so no RefusedLastGarrison names unit 0. Red for a check made outside
+    // the gdd-0.3 guard (EventSystem.Resolve): under gdd-0.3 a RefusedLastGarrison would appear.
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void TheLastGarrisonRuleHoldsForAnOccupiedPlaceUnderGdd01Only(bool modern)
+    {
+        var c = Real(modern);
+        Assert.Equal(modern, c.Ruleset == SaveGame.Gdd03Ruleset);
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        Assert.Equal("golani", c.StartingForces[0].Row);
+        var nazareth = c.SettlementTargets.Single(t => t.Id == "nazareth");
+        var g = s.Units[0];
+        s.Units[0] = new Unit(g.Id, g.Type, nazareth.Q, nazareth.R, g.Service, g.Side, g.Strength, "", "", g.HomeCity, g.Full, g.CombatXp);
+        Assert.Equal(new[] { 0 }, s.Units.Values.Where(u => (u.Q, u.R) == (nazareth.Q, nazareth.R) && u.Side == Movement.PlayerSide).Select(u => u.Id));
+        s.Settlements["nazareth"] = new SettlementControl(Movement.PlayerSide, SettlementControl.Occupied, s.Date, turns: 3);
+        s.PendingEvents.Add("operation_horev");
+        var rejected = new List<Rejection>();
+        Assert.Null(EventSystem.Choose(c, s, "operation_horev", "launch", new List<Cause>(), rejected: rejected));
+        Assert.Equal(modern ? Array.Empty<string>() : new[] { Orders.RefusedLastGarrison },
+            rejected.Where(j => j.Command is UnitOrder { Unit: 0 }).Select(j => j.Reason));
+        if (modern) Assert.DoesNotContain(rejected, j => j.Reason == Orders.RefusedLastGarrison);
+        Assert.Equal((nazareth.Q, nazareth.R, "", ""), (s.Units[0].Q, s.Units[0].R, s.Units[0].Order, s.Units[0].OrderTarget));
+        Assert.False(s.CardOrders.ContainsKey(0));
+        Assert.Equal(SettlementControl.Occupied, s.Settlements["nazareth"].State);
+    }
+    // Review of #2087, optional 2: under gdd-0.3 the loader still checks the cards' orders (owner, 31 October 2026, #749), so
+    // a Horev order to a hex that is not one of golani's anchors is refused there too.
+    [Fact]
+    public void Gdd03StillRefusesACardOrderToAHexNoAnchorHas()
+    {
+        var root = RealContentTests.ContentRoot();
+        var e = Assert.Throws<ContentException>(() => ContentLoader.Load(rel =>
+        {
+            var path = Path.Combine(root, rel);
+            var text = File.Exists(path) ? File.ReadAllText(path) : null;
+            if (rel == "eras.yaml") return text!.Replace("loop: gdd", "loop: gdd, ruleset: gdd-0.3");
+            return rel == "events/operation_horev.yaml" ? text!.Replace("{ unit: golani, q: -8, r: 28 }", "{ unit: golani, q: -8, r: 27 }") : text;
+        }, Directory.GetFiles(Path.Combine(root, "events"), "*.yaml").Select(p => "events/" + Path.GetFileName(p))));
+        Assert.Equal(("events/operation_horev.yaml", "events[operation_horev].options[launch].unit_orders[0]"), (e.File, e.Field));
+        Assert.Contains("not an anchor", e.Message);
+    }
     [Fact]
     public void AllFortyOneSourceRecordsIncludingReviewsAndHebrewAreUnchanged()
     {

@@ -61,7 +61,8 @@ namespace Statecraft.Sim
     }
 
     /// <summary>R-CITY-001/002: frozen synthetic capacity overlay, never a second population ledger.
-    /// Only explicit reception-complete free civilians moving among generic Work targets are supported.
+    /// Only explicit free civilians moving among generic Work targets are supported. The MVP has no reception-bed layer
+    /// (owner, 1 November 2026, "No reception-bed layer (Recommended)", docs/GDD.md:386), so reception progress is not checked.
     /// Feature-owned course/teaching/service transitions remain outside this fixture. Reassigning the same Work slot is a no-op.
     /// Single-threaded like the ledger; callers cannot reuse this overlay as a production authority.</summary>
     internal sealed class Gdd03AssignmentFixture
@@ -69,14 +70,13 @@ namespace Statecraft.Sim
         readonly GameState state;
         readonly SortedDictionary<string, Gdd03FixtureSlot> slots;
         readonly Gdd03IndustryRates rates;
-        readonly int receptionTurns;
         internal Gdd03AssignmentFixture(Content content, GameState state, IEnumerable<Gdd03FixtureSlot> inventory)
         {
             if (!content.UsesPopulationLedger || !state.UsesPopulationLedger || !state.PopulationLedger.IsInitialized)
                 throw new InvalidOperationException("Assignments require an initialized gdd-0.3 synthetic fixture.");
             this.state = state;
             rates = Gdd03IndustryRates.Read(content);
-            receptionTurns = content.RequirePopulationInteger("reception.turns");
+            var receptionTurns = content.RequirePopulationInteger("reception.turns");
             if (receptionTurns != state.PopulationLedger.ReceptionLimit)
                 throw new ContentException(Gdd03BalanceCatalogue.FileName, "values.reception.turns",
                     "must match the initialized population ledger");
@@ -105,13 +105,13 @@ namespace Statecraft.Sim
                 if (group.Count() > capacity) throw new ArgumentException("Fixture regional job occupancy is over capacity.");
             }
         }
-        bool Eligible(PopulationUnit p) => p.Status == PopulationStatus.FreeCivilian && p.ReceptionTicks == receptionTurns;
+        static bool Eligible(PopulationUnit p) => p.Status == PopulationStatus.FreeCivilian;
         internal Gdd03FixtureAssignmentResult Assign(int id, string? target)
         {
             ValidateInventory();
             var ledger = state.PopulationLedger; var person = ledger.Get(id);
             if (!Eligible(person) || (person.Assignment.Kind != PopulationAssignmentKind.Unassigned && person.Assignment.Kind != PopulationAssignmentKind.Work))
-                throw new ArgumentException("Only reception-complete free civilian work transitions are in this fixture.");
+                throw new ArgumentException("Only free civilian work transitions are in this fixture.");
             if (target != null)
             {
                 if (!slots.TryGetValue(target, out var slot)) throw new ArgumentException("Unknown fixture slot.");

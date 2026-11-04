@@ -153,7 +153,7 @@ public class MapOverridesTests
         + "base_revision: fixture-only\nbase_digest: "
         + "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n"
         + "overlay: { terrain: [], control: [], locations: [] }\n"
-        + "workable: []\nregions: []\ninfrastructure: []\n";
+        + "workable: []\nregions: []\ninfrastructure: []\noffsets: []\n";
 
     [Fact]
     public void EditorEnvelopeRoundTripsWithoutEnteringTheLegacyParser()
@@ -180,6 +180,13 @@ public class MapOverridesTests
     [InlineData("workable: []", "workable: [{ hex: { q: 1 }, value: true }]", "MAPEDIT_SHAPE")]
     [InlineData("regions: []", "regions: [{ hex: { q: 1, r: 2 }, region_id: '' }]", "MAPEDIT_SHAPE")]
     [InlineData("infrastructure: []", "infrastructure: [{ id: fixture_only, hex: { q: 1, r: 2 }, kind: fixture_only, parent_id: fixture_only, capacity: 3 }]", "MAPEDIT_SHAPE")]
+    [InlineData("offsets: []\n", "", "MAPEDIT_SHAPE")]
+    [InlineData("offsets: []", "offsets: [{ id: town_a, kind: badge, hex: { q: 1, r: 2 }, east_m: 0, north_m: 0 }]", "MAPEDIT_SHAPE")]
+    [InlineData("offsets: []", "offsets: [{ id: Town, kind: label, hex: { q: 1, r: 2 }, east_m: 0, north_m: 0 }]", "MAPEDIT_SHAPE")]
+    [InlineData("offsets: []", "offsets: [{ id: town_a, kind: label, hex: { q: 1, r: 2 }, east_m: 0 }]", "MAPEDIT_SHAPE")]
+    [InlineData("offsets: []", "offsets: [{ id: town_a, kind: label, hex: { q: 1, r: 2 }, east_m: 1.5, north_m: 0 }]", "MAPEDIT_SHAPE")]
+    [InlineData("offsets: []", "offsets: [{ id: town_a, kind: label, hex: { q: 1 }, east_m: 0, north_m: 0 }]", "MAPEDIT_SHAPE")]
+    [InlineData("offsets: []", "offsets: [{ id: town_a, kind: label, hex: { q: 1, r: 2 }, east_m: 0, north_m: 0 }, { id: town_a, kind: label, hex: { q: 1, r: 2 }, east_m: 5, north_m: 5 }]", "MAPEDIT_DUPLICATE")]
     public void EditorShapeRefusalsHaveNamedErrors(string old, string replacement, string code)
     {
         var error = Assert.Throws<ContentException>(() =>
@@ -355,4 +362,275 @@ public class MapOverridesTests
         Assert.Equal(MapOverrides.FileName, written.File);
     }
 
+    // R-MEDIT-003, Q58 (#1721 slice A): with the loaded content the corridor, force-anchor, target and objective adapters run
+    // against the base map plus this overlay's location moves. A broken binding is a blocking row that names its record;
+    // nothing is repaired. All records below are SYNTHETIC fixtures, not historical data.
+    static Content DependencyFixture()
+    {
+        var c = new Content
+        {
+            Hexes = new List<MapHex>
+            {
+                new MapHex { Q = 0, R = 0, Land = true, Biome = "hills" }, new MapHex { Q = 1, R = 0, Land = true, Biome = "hills" },
+                new MapHex { Q = 2, R = 0, Land = true, Biome = "hills" }, new MapHex { Q = 3, R = 0, Land = false, Biome = "sea" },
+            },
+        };
+        c.SettlementHexes.Add(new SettlementHex { Id = "town_a", Q = 0, R = 0 });
+        c.SettlementTargets.Add(new SettlementTarget { Id = "town_a", Q = 0, R = 0 });
+        c.Sites.Add(new Site { Id = "site_a", Q = 2, R = 0, Kinds = new List<string> { Projects.YishuvKind } });
+        c.Corridors.Add(new CorridorDef { Id = "corridor_a", Kind = Corridors.Rail, Segments = new List<SegmentDef>
+        {
+            new SegmentDef { To = "fixture_one", Hexes = new List<List<int>> { new List<int> { 0, 0 }, new List<int> { 1, 0 } } },
+            new SegmentDef { To = "fixture_two", Hexes = new List<List<int>> { new List<int> { 2, 0 } } },
+        } });
+        c.StartingForces.Add(new StartingForce { Row = "unit_a", Anchor = "fixture_place", Q = 1, R = 0 });
+        c.Objectives.Add(new Objective { Id = "objective_a", CompletesWhen = new ObjectiveCondition { CorridorComplete = "corridor_a" } });
+        c.Objectives.Add(new Objective { Id = "objective_b", CompletesWhen = new ObjectiveCondition { SiteBuilt = "site_a" } });
+        return c;
+    }
+
+    static readonly string[] AdaptedKinds = { "corridors", "anchors", "targets", "objectives" };
+
+    static List<MapEditorDiagnostic> Broken(IEnumerable<MapEditorDiagnostic> rows) =>
+        rows.Where(x => x.Code == "MAPEDIT_DEPENDENCY_BROKEN").ToList();
+
+    static IReadOnlyList<MapEditorDiagnostic> DependencyDiagnostics(Content c, string locations = "[]")
+    {
+        var value = MapEditorOverlay.Parse(EditorFixture.Replace("draft: true", "draft: false")
+            .Replace("locations: [] }", "locations: " + locations + " }"), SaveGame.Gdd03Ruleset);
+        return value.Diagnostics("fixture-only", new string('a', 64), c);
+    }
+
+    [Fact]
+    public void AValidOverlayHasRealAdaptersForCorridorsAnchorsTargetsAndObjectives()
+    {
+        var diagnostics = DependencyDiagnostics(DependencyFixture());
+        Assert.DoesNotContain(diagnostics, x => AdaptedKinds.Contains(x.Field));
+        Assert.Empty(Broken(diagnostics));
+        // Post-MVP adapters and the base manifest stay unavailable, so export stays refused.
+        foreach (var field in new[] { "regions", "fields", "facilities", "base_manifest" })
+            Assert.Contains(diagnostics, x => x.Code == "MAPEDIT_DEPENDENCY_UNAVAILABLE" && x.Field == field);
+        // Without the content there is nothing to check against: the four rows stay unavailable, as before.
+        var bare = MapEditorOverlay.Parse(EditorFixture, SaveGame.Gdd03Ruleset).Diagnostics("fixture-only", new string('a', 64));
+        foreach (var field in AdaptedKinds) Assert.Contains(bare, x => x.Code == "MAPEDIT_DEPENDENCY_UNAVAILABLE" && x.Field == field);
+    }
+
+    [Fact]
+    public void ABrokenCorridorEndpointBlocksWithItsIdAndTheGeometryIsUnchanged()
+    {
+        var c = DependencyFixture();
+        c.Corridors[0].Segments[1].Hexes[0] = new List<int> { 3, 0 };   // the last segment now ends on a sea hex
+        var before = c.Corridors[0].Segments.Select(x => (x.To, string.Join(";", x.Hexes.Select(h => string.Join(",", h))))).ToList();
+        var row = Assert.Single(Broken(DependencyDiagnostics(c)));
+        Assert.Equal("corridors[corridor_a]", row.Field);
+        Assert.Contains("segment 2", row.Message);
+        Assert.Equal(before, c.Corridors[0].Segments.Select(x => (x.To, string.Join(";", x.Hexes.Select(h => string.Join(",", h))))).ToList());
+        Assert.Equal(MapOverrides.FileName, row.File);
+        Assert.NotEmpty(row.Action);
+    }
+
+    [Fact]
+    public void ACorridorHexNotNextToThePreviousOneBlocks()
+    {
+        var c = DependencyFixture();
+        c.Corridors[0].Segments[0].Hexes[1] = new List<int> { 2, 0 };   // skips q=1: a land hex, but two steps from q=0
+        var row = Assert.Single(Broken(DependencyDiagnostics(c)));
+        Assert.Equal("corridors[corridor_a]", row.Field);
+        Assert.Contains("is not next to q=0 r=0", row.Message);
+    }
+
+    [Fact]
+    public void ABrokenForceAnchorBlocksWithItsId()
+    {
+        var c = DependencyFixture();
+        c.StartingForces[0].Q = 9;   // off the map
+        var row = Assert.Single(Broken(DependencyDiagnostics(c)));
+        Assert.Equal("anchors[unit_a]", row.Field);
+        Assert.Equal(9, c.StartingForces[0].Q);
+    }
+
+    // R-MEDIT-003 (#2309): the force-anchor adapter blocks a scripted anchor hex that is not land, naming its row and hex.
+    [Fact]
+    public void ASeaScriptedAnchorBlocksWithItsIdAndExactHex()
+    {
+        var c = DependencyFixture();
+        c.StartingForces[0].Script.Add((3, 0, new DateTime(1948, 7, 8)));
+        var row = Assert.Single(Broken(DependencyDiagnostics(c)));
+        Assert.Equal("anchors[unit_a]", row.Field);
+        Assert.Equal("scripted anchor hex q=3 r=0 is not a land hex of the map", row.Message);
+    }
+
+    [Fact]
+    public void ABrokenTargetBindingBlocksWithItsId()
+    {
+        var c = DependencyFixture();
+        // Moving the target's settlement leaves the target on the old hex: its binding breaks, the target does not move.
+        var value = MapEditorOverlay.Parse(EditorFixture.Replace("draft: true", "draft: false")
+            .Replace("locations: [] }", "locations: [{ id: town_a, hex: { q: 1, r: 0 } }] }"), SaveGame.Gdd03Ruleset);
+        var row = Assert.Single(Broken(value.Diagnostics("fixture-only", new string('a', 64), c)));
+        Assert.Equal("targets[town_a]", row.Field);
+        Assert.False(value.CanExport);
+        Assert.Equal((0, 0), (c.SettlementTargets[0].Q, c.SettlementTargets[0].R));
+    }
+
+    // R-MEDIT-003 (#2309): the target adapter blocks a target hex that is not land, even while it still matches its settlement.
+    [Fact]
+    public void ASeaTargetBlocksWithItsIdAndExactHex()
+    {
+        var c = DependencyFixture();
+        c.SettlementHexes.Add(new SettlementHex { Id = "town_b", Q = 3, R = 0 });
+        c.SettlementTargets.Add(new SettlementTarget { Id = "town_b", Q = 3, R = 0 });
+        var row = Assert.Single(Broken(DependencyDiagnostics(c)));
+        Assert.Equal("targets[town_b]", row.Field);
+        Assert.Equal("target hex q=3 r=0 is not a land hex of the map", row.Message);
+    }
+
+    // R-MEDIT-003 (#2309): a target with no settlement hex gets that one row, and no "no longer matches" row after it.
+    [Fact]
+    public void ATargetWithoutASettlementHexProducesOnlyItsExactDiagnostic()
+    {
+        var c = DependencyFixture();
+        c.SettlementTargets.Add(new SettlementTarget { Id = "ghost", Q = 1, R = 0 });
+        var row = Assert.Single(Broken(DependencyDiagnostics(c)));
+        Assert.Equal("targets[ghost]", row.Field);
+        Assert.Equal("settlement 'ghost' has no hex", row.Message);
+    }
+
+    [Fact]
+    public void RamlasTargetIsBoundToANeighbourOfItsSettlement()
+    {
+        // The loader's one exception (TargetOnANeighbour): the target sits next to the settlement, not on it.
+        var c = DependencyFixture();
+        c.Hexes.Add(new MapHex { Q = 1, R = 1, Land = true, Biome = "hills" });
+        c.SettlementHexes.Add(new SettlementHex { Id = "ramla", Q = 1, R = 0 });
+        c.SettlementTargets.Add(new SettlementTarget { Id = "ramla", Q = 0, R = 0 });
+        Assert.Empty(Broken(DependencyDiagnostics(c)));
+        // Moved two steps away, the settlement is no longer next to its target: the binding breaks, the target stays.
+        var row = Assert.Single(Broken(DependencyDiagnostics(c, "[{ id: ramla, hex: { q: 1, r: 1 } }]")));
+        Assert.Equal("targets[ramla]", row.Field);
+        Assert.Equal((0, 0), (c.SettlementTargets[1].Q, c.SettlementTargets[1].R));
+    }
+
+    [Fact]
+    public void ABrokenObjectiveBindingBlocksWithItsId()
+    {
+        var c = DependencyFixture();
+        c.Objectives[0].CompletesWhen!.CorridorComplete = "unknown_corridor";
+        var row = Assert.Single(Broken(DependencyDiagnostics(c)));
+        Assert.Equal("objectives[objective_a]", row.Field);
+        Assert.Contains("unknown_corridor", row.Message);
+        // A settlement moved onto the objective's yishuv site breaks that objective's site binding as well.
+        var moved = Broken(DependencyDiagnostics(DependencyFixture(), "[{ id: town_a, hex: { q: 2, r: 0 } }]"));
+        Assert.Contains(moved, x => x.Field == "objectives[objective_b]" && x.Message.Contains("site_a"));
+    }
+
+    // #2309: MapOverrides' objective dependency diagnostics inspect every SitesBuilt entry, not only SiteBuilt.
+    [Fact]
+    public void APluralSiteObjectiveBindingBlocksWithItsId()
+    {
+        var c = DependencyFixture();
+        c.Objectives[1].CompletesWhen = new ObjectiveCondition { SitesBuilt = new List<string> { "site_a" } };
+        c.SettlementTargets.Clear();   // isolate the objective adapter from the target moved by this overlay
+        var row = Assert.Single(Broken(DependencyDiagnostics(c, "[{ id: town_a, hex: { q: 2, r: 0 } }]")));
+        Assert.Equal("objectives[objective_b]", row.Field);
+        Assert.Equal("site 'site_a' hex q=2 r=0 now holds the settlement town_a", row.Message);
+    }
+
+    // #2309: in the objective dependency diagnostics, an unknown objective site produces one diagnostic and is not dereferenced.
+    [Fact]
+    public void AnUnknownObjectiveSiteBlocksOnceWithItsId()
+    {
+        var c = DependencyFixture();
+        c.Objectives[1].CompletesWhen = new ObjectiveCondition { SiteBuilt = "no_site" };
+        var row = Assert.Single(Broken(DependencyDiagnostics(c)));
+        Assert.Equal("objectives[objective_b]", row.Field);
+        Assert.Equal("unknown site 'no_site'", row.Message);
+    }
+
+    // #2309: in the objective dependency diagnostics, an objective site without the yishuv kind is diagnosed.
+    [Fact]
+    public void ANonYishuvObjectiveSiteBlocksWithItsId()
+    {
+        var c = DependencyFixture();
+        c.Sites.Add(new Site { Id = "site_b", Q = 1, R = 0, Kinds = new List<string> { "industry" } });
+        c.Objectives[1].CompletesWhen = new ObjectiveCondition { SiteBuilt = "site_b" };
+        var row = Assert.Single(Broken(DependencyDiagnostics(c)));
+        Assert.Equal("objectives[objective_b]", row.Field);
+        Assert.Equal("site 'site_b' cannot be built as a yishuv", row.Message);
+    }
+
+    // R-MEDIT-003 (#2309): the objective adapter skips an objective with no completion condition (no row, no exception).
+    [Fact]
+    public void AnObjectiveWithoutACompletionConditionNeedsNoDependencyDiagnostic()
+    {
+        var c = DependencyFixture();
+        c.Objectives.Add(new Objective { Id = "objective_c" });
+        Assert.Empty(Broken(DependencyDiagnostics(c)));
+    }
+
+    // R-MEDIT-004, Q58/Q59 (#1721 slice B): a visual or label offset is the axial hex plus whole metres east and north of
+    // its centre, valid while the point stays inside that 4.4 km pointy-top hex. Leaving it only warns. SYNTHETIC fixtures.
+    static MapEditorOverlay WithOffsets(string offsets) => MapEditorOverlay.Parse(
+        EditorFixture.Replace("draft: true", "draft: false").Replace("offsets: []", "offsets: " + offsets), SaveGame.Gdd03Ruleset);
+
+    static List<MapEditorDiagnostic> OutsideHex(MapEditorOverlay value) => value.Diagnostics("fixture-only", new string('a', 64))
+        .Where(x => x.Code == "MAPEDIT_OFFSET_OUTSIDE_HEX").ToList();
+
+    [Theory]
+    [InlineData(0, 0)]
+    [InlineData(3810, 0)]       // just inside the flat east side (inradius 3810.5 m)
+    [InlineData(-3810, 0)]
+    [InlineData(0, 4400)]       // the north vertex
+    [InlineData(0, -4400)]
+    [InlineData(3000, 2000)]
+    public void AnOffsetInsideItsHexRoundTripsSaveAndReloadByteForByte(int east, int north)
+    {
+        var value = WithOffsets(System.FormattableString.Invariant(
+            $"[{{ id: town_b, kind: visual, hex: {{ q: 2, r: -1 }}, east_m: 7, north_m: -3 }}, {{ id: town_a, kind: label, hex: {{ q: 1, r: 2 }}, east_m: {east}, north_m: {north} }}]"));
+        Assert.Empty(OutsideHex(value));
+        var saved = MapEditorOverlay.Serialize(value);
+        Assert.Contains(System.FormattableString.Invariant(
+            $"offsets:\n  - {{ id: 'town_a', kind: 'label', hex: {{ q: 1, r: 2 }}, east_m: {east}, north_m: {north} }}\n  - {{ id: 'town_b', kind: 'visual', hex: {{ q: 2, r: -1 }}, east_m: 7, north_m: -3 }}\n"), saved);
+        Assert.Equal("town_b", value.Offsets[0].Id);   // the caller's list is not reordered
+        var reloaded = MapEditorOverlay.Parse(saved, SaveGame.Gdd03Ruleset);
+        Assert.Equal(System.Text.Encoding.UTF8.GetBytes(saved), System.Text.Encoding.UTF8.GetBytes(MapEditorOverlay.Serialize(reloaded)));
+        var back = reloaded.Offsets.Single(x => x.Id == "town_a");
+        Assert.Equal(new int?[] { 1, 2, east, north }, new[] { back.Hex.Q, back.Hex.R, back.EastM, back.NorthM });
+    }
+
+    [Theory]
+    [InlineData(3811, 0)]       // past the flat east side
+    [InlineData(-3811, 0)]
+    [InlineData(0, 4401)]       // past the north vertex
+    [InlineData(3000, 3000)]    // past a slanted side
+    [InlineData(-2000, -3500)]
+    public void AnOffsetOutsideItsHexWarnsAndDoesNotBlock(int east, int north)
+    {
+        var without = WithOffsets("[]").Diagnostics("fixture-only", new string('a', 64));
+        var value = WithOffsets(System.FormattableString.Invariant(
+            $"[{{ id: town_a, kind: label, hex: {{ q: 1, r: 2 }}, east_m: {east}, north_m: {north} }}]"));
+        var row = Assert.Single(OutsideHex(value));
+        Assert.Equal("offsets[town_a/label]", row.Field);
+        Assert.False(row.Blocking);
+        Assert.Contains(System.FormattableString.Invariant($"east_m={east} north_m={north}"), row.Message);
+        Assert.Contains("q=1 r=2", row.Message);
+        // The warning adds no blocking row: every other row is the same as for the overlay without the offset.
+        var rest = value.Diagnostics("fixture-only", new string('a', 64)).Where(x => x.Code != row.Code).ToList();
+        Assert.Equal(without.Select(x => (x.Code, x.Field, x.Blocking)), rest.Select(x => (x.Code, x.Field, x.Blocking)));
+        Assert.All(rest, x => Assert.True(x.Blocking));
+        // Nothing is repaired: the offset keeps its authored point.
+        Assert.Equal(new int?[] { east, north }, new[] { value.Offsets[0].EastM, value.Offsets[0].NorthM });
+        var back = MapEditorOverlay.Parse(MapEditorOverlay.Serialize(value), SaveGame.Gdd03Ruleset);
+        Assert.Equal(new int?[] { east, north }, new[] { back.Offsets[0].EastM, back.Offsets[0].NorthM });
+    }
+
+    // The offset check's hex is the map's hex: content/map/hexes.json gives the circumradius in km (pointy-top, #1796).
+    [Fact]
+    public void TheOffsetHexIsTheMapsHex()
+    {
+        var text = File.ReadAllText(Path.Combine(RealContentTests.ContentRoot(), "map", "hexes.json"));
+        var size = System.Text.RegularExpressions.Regex.Match(text, "\"hex_size_km\":([0-9.]+)").Groups[1].Value;
+        Assert.Equal(MapEditorOverlay.OffsetHexCircumradiusM, double.Parse(size, System.Globalization.CultureInfo.InvariantCulture) * 1000, 6);
+        Assert.Contains("\"layout\":\"pointy\"", text);
+    }
 }

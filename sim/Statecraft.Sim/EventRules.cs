@@ -101,6 +101,9 @@ namespace Statecraft.Sim
                         if (sensitive && NoGainTargets.Contains(fx.Target) && fx.Delta > 0)
                             throw new ContentException(e.File, F($"options[{o.Id}].effects.{fx.Target}"), $"sensitive events cannot reward {fx.Target}");
                     }
+                    // R-EFX-009: checked in every ruleset, since every ruleset reads the same cards; only gdd-0.3 applies it.
+                    if (o.DebtDollars is double debt && !(double.IsFinite(debt) && debt > 0))
+                        throw new ContentException(e.File, F($"options[{o.Id}].debt_dollars"), "must be a finite number > 0 (US$ millions)");
                 }
             }
             CheckRequirementCycles(c);
@@ -122,7 +125,32 @@ namespace Statecraft.Sim
         {
             foreach (var e in c.Events)
                 foreach (var o in e.Options)
+                {
                     CheckStructured(c, e, o, e.Tags.Any(SensitiveTags.Contains), field => $"events[{e.Id}].{field}");
+                    CheckOrders(c, e, o, field => $"events[{e.Id}].{field}");
+                }
+        }
+
+        /// <summary>R-ENEMY-005 (Q-ENEMY-5): an option's go-to orders name a map/units_1948.yaml row and one of that row's own
+        /// anchor or order target hexes, so a card never sends a unit to a position no source gives it (owner, 31 October 2026,
+        /// #749: sourced anchors only; 2 November 2026, #2087: order targets, option 1). They are checked under gdd-0.3 too, where EventSystem does not apply them. The legacy loop reads the
+        /// same real cards but no units file, so it has nothing to check them against and no unit to order.</summary>
+        static void CheckOrders(Content c, GameEvent e, EventOption o, Func<string, string> F)
+        {
+            if (!c.IsGdd) return;
+            for (int i = 0; i < o.UnitOrders.Count; i++)
+            {
+                var x = o.UnitOrders[i];
+                var at = F(FormattableString.Invariant($"options[{o.Id}].unit_orders[{i}]"));
+                if (!c.UnitAnchorHexes.Keys.Any(k => k.Row == x.Unit))
+                    throw new ContentException(e.File, at + ".unit", $"unknown unit row '{x.Unit}' ({StartingForces.FileName})");
+                if (!c.UnitAnchorHexes.Any(k => k.Key.Row == x.Unit && k.Value == (x.Q, x.R))
+                    && !c.UnitOrderTargets.Any(k => k.Key.Row == x.Unit && (k.Value.Q, k.Value.R) == (x.Q, x.R)))
+                    throw new ContentException(e.File, at, FormattableString.Invariant($"hex q={x.Q} r={x.R} is not an anchor or an order target of '{x.Unit}' in {StartingForces.HexesFileName}"));
+                // The order ends with its anchor's window (the owner's answer 1 on #2087), so the anchor needs an end.
+                if (EventSystem.OrderEnds(c, x) == null)
+                    throw new ContentException(e.File, at, FormattableString.Invariant($"the anchor of '{x.Unit}' on hex q={x.Q} r={x.R} has no 'to' date in {StartingForces.FileName}"));
+            }
         }
 
         static void CheckStructured(Content c, GameEvent e, EventOption o, bool sensitive, Func<string, string> F)
@@ -198,10 +226,11 @@ namespace Statecraft.Sim
                 if (!Offices.OfficeId.IsMatch(o.Id)) throw new ContentException(file, F("id"), ContentLoader.IdRule);
                 if (!seen.Add(o.Id)) throw new ContentException(file, F("id"), "duplicate id");
                 ContentLoader.Named(file, F("name"), o.Name);
-                // The Hebrew name (#1187): an agent translation of the English until a native speaker reads it (#564),
-                // so it needs no sources of its own; the flag is agent-checked or absent, and the name is Hebrew letters.
+                // The Hebrew name (#1187): an agent translation of the English until a native speaker, or an AI-assisted
+                // contributor who discloses it, has read it (#564; owner, 4 November 2026: "AI-assisted can clear it"), so
+                // it needs no sources of its own; the flag is agent-checked or absent, and the name is Hebrew letters.
                 if (o.NameHeReviewGiven && o.NameHeReview != HebrewReview.AgentChecked)
-                    throw new ContentException(file, F("name_he_review"), $"must be {HebrewReview.AgentChecked} (pending a native speaker's review, #564), or left out once a person has reviewed the name");
+                    throw new ContentException(file, F("name_he_review"), $"must be {HebrewReview.AgentChecked} (until a native speaker, or an AI-assisted contributor who discloses it, has read the name, #564), or left out once it has been read");
                 if (o.NameHe == "")
                 {
                     if (o.NameHeReviewGiven) throw new ContentException(file, F("name_he"), "required: name_he_review is set but the name is empty");
@@ -435,12 +464,13 @@ namespace Statecraft.Sim
 
         /// <summary>An event's Hebrew text (#1064): title_he, text_he and every option's text_he, all or none (a card half in
         /// Hebrew would mix the languages), in Hebrew letters, with placeholders that resolve as the English ones must.
-        /// text_he_review is agent-checked until a native speaker has read the text (#564), and needs the text.</summary>
+        /// text_he_review is agent-checked until a native speaker, or an AI-assisted contributor who discloses it, has read
+        /// it (#564; owner, 4 November 2026: "AI-assisted can clear it"), and needs the text.</summary>
         static void CheckHebrew(Content c, GameEvent e, HashSet<string> offices)
         {
             string F(string field) => $"events[{e.Id}].{field}";
             if (e.TextHeReviewGiven && e.TextHeReview != HebrewReview.AgentChecked)
-                throw new ContentException(e.File, F("text_he_review"), $"must be {HebrewReview.AgentChecked} (pending a native speaker's review, #564), or left out once a person has reviewed the text");
+                throw new ContentException(e.File, F("text_he_review"), $"must be {HebrewReview.AgentChecked} (until a native speaker, or an AI-assisted contributor who discloses it, has read the text, #564), or left out once it has been read");
             var fields = new List<(string Field, string Value)> { ("title_he", e.TitleHe), ("text_he", e.TextHe) };
             fields.AddRange(e.Options.Select(o => ($"options[{o.Id}].text_he", o.TextHe)));
             if (fields.All(x => x.Value == ""))

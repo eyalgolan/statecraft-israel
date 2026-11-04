@@ -17,7 +17,8 @@ namespace Statecraft.Game.UI
         public static string Of(UiText text, Government g) => Pick(text, g.Name, g.NameHe);
         public static string Of(UiText text, Objective o) => Pick(text, o.Name, o.NameHe);
         public static string Of(UiText text, Legislature l) => Pick(text, l.Body, l.BodyHe);
-        /// <summary>A city project kind's name: its draft name_he, pending a native speaker's review (#564, #1122).</summary>
+        /// <summary>A city project kind's name: its draft name_he, pending review by a native speaker, or an AI-assisted
+        /// contributor who discloses it (#564, #1122; owner, 4 November 2026: "AI-assisted can clear it").</summary>
         public static string Of(UiText text, ProjectKind k) => Pick(text, k.Name, k.NameHe);
         /// <summary>A settlement's name (map/settlements_1948.yaml): its name_he from <paramref name="namesHe"/>, by id (the
         /// map's parse, as the info panel gets it; null: none), and the sim's English name (PlayerText.Settlement) where it

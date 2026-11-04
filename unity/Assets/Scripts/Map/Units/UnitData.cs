@@ -18,8 +18,9 @@ namespace Statecraft.Game.Map.Units
     }
 
     /// <summary>The optional Hebrew counterpart of one English card text (#558): the Hebrew, the sources of its proper
-    /// names, and "agent-checked" until a native Hebrew speaker reviews it (#564). Each key records that it was given, so
-    /// a present-but-blank key is an error rather than read as left out (<see cref="UnitData.Parse"/>).</summary>
+    /// names, and "agent-checked" until a native speaker, or an AI-assisted contributor who discloses it, has read it
+    /// (#564; owner, 4 November 2026: "AI-assisted can clear it"). Each key records that it was given, so a present-but-blank
+    /// key is an error rather than read as left out (<see cref="UnitData.Parse"/>).</summary>
     public sealed class UnitHebrewText
     {
         public string? Text { get => text; set { text = value; TextGiven = true; } }
@@ -127,14 +128,16 @@ namespace Statecraft.Game.Map.Units
         /// <summary>The sourced Hebrew name; empty when no accepted source gives one.</summary>
         public string NameHe { get; set; } = "";
         public List<UnitSource> NameHeSources { get; set; } = new List<UnitSource>();
-        /// <summary>"agent-checked" until a native Hebrew speaker reviews the name (#564).</summary>
+        /// <summary>"agent-checked" until a native speaker, or an AI-assisted contributor who discloses it, has read the
+        /// name (#564; owner, 4 November 2026: "AI-assisted can clear it").</summary>
         public string? NameHeReview { get => nameHeReview; set { nameHeReview = value; NameHeReviewGiven = true; } }
         [YamlIgnore] public bool NameHeReviewGiven { get; private set; }
         string? nameHeReview;
         public string Number { get; set; } = "";
         /// <summary>The number in Hebrew (#1219 item 2), shown only in the Hebrew card's subtitle; the English
-        /// <see cref="Number"/> where absent. Sourced and agent-checked until the native read (#564), as the other
-        /// Hebrew card texts (#558, #1292).</summary>
+        /// <see cref="Number"/> where absent. Sourced and agent-checked until a native speaker, or an AI-assisted
+        /// contributor who discloses it, has read the text (#564; owner, 4 November 2026: "AI-assisted can clear it"), as
+        /// with the other Hebrew card texts (#558, #1292).</summary>
         [YamlIgnore] public UnitHebrewText NumberHebrew { get; } = new UnitHebrewText();
         public string? NumberHe { get => NumberHebrew.Text; set => NumberHebrew.Text = value; }
         public List<UnitSource>? NumberHeSources { get => NumberHebrew.Sources; set => NumberHebrew.Sources = value; }
@@ -185,6 +188,10 @@ namespace Statecraft.Game.Map.Units
         public List<UnitVehicle>? Vehicles { get; set; }
         public UnitDisbanded? Disbanded { get; set; }
         public List<UnitAnchor> Anchors { get; set; } = new List<UnitAnchor>();
+        /// <summary>Where an operation card sends the unit (R-ENEMY-005; owner, 2 November 2026, #2087, option 1). Read only so
+        /// the file parses: the map never draws them and the card never shows them (the sim and tools/unit_anchor_hexes.py
+        /// read them).</summary>
+        public List<UnitAnchor>? OrderTargets { get; set; }
         public List<UnitAircraft>? Aircraft { get; set; }
         public List<UnitSource>? Sources { get; set; }
 

@@ -7,7 +7,7 @@ public class Gdd03CraftArithmeticTests
     static Gdd03BalanceCatalogue Catalogue() => ContentLoader.Load(RealContentTests.ContentRoot()).Gdd03Balance!;
     static Gdd03CraftArithmetic Arithmetic() => Gdd03CraftArithmetic.Read(Catalogue());
 
-    // R-CRAFT-001/002: expected values independently transcribed from gdd03-balance.yaml:138-185,190-193. The course is
+    // R-CRAFT-001/002: expected values independently transcribed from gdd03-balance.yaml `industry.income`, `farmer.output`, `profession.*`, `pioneer.work_rate`, `craft.*` and `builder.work_rate`. The course is
     // 0.5 Money and 3 turns (owner ruling, 30 October 2026: "Keep the set values (Recommended)"; #2115), not Amir's 5 / 6.
     [Theory]
     [InlineData("he-IL")]

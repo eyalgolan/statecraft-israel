@@ -75,9 +75,9 @@ namespace Statecraft.Game.Map.Collection
 
         public readonly struct Want : IEquatable<Want>
         {
-            public readonly string Key, Model; public readonly Vector2 Anchor; public readonly float AnchorRadius;
+            public readonly string Key, Model, ResidencyKey; public readonly Vector2 Anchor; public readonly float AnchorRadius;
             public Want(string key, string model, Vector2 anchor, float anchorRadius)
-            { Key = key; Model = model; Anchor = anchor; AnchorRadius = anchorRadius; }
+            { Key = key; Model = model; ResidencyKey = key + "|" + model; Anchor = anchor; AnchorRadius = anchorRadius; }
             public bool Equals(Want other) => Key == other.Key && Model == other.Model && Anchor == other.Anchor && AnchorRadius == other.AnchorRadius;
             public override bool Equals(object? obj) => obj is Want other && Equals(other);
             public override int GetHashCode() => (Key, Model, Anchor, AnchorRadius).GetHashCode();
@@ -192,7 +192,7 @@ namespace Statecraft.Game.Map.Collection
             // but gates Near to the successfully placed v0.3.1 pairings (Scenes), never unplaced/failed/capped wants.
             var far = wants.Select(w => (w.Model, CollectionDetail.Far));
             var keys = residencyView?.Keys;
-            var near = Scenes.Where(w => keys == null || keys.Contains(w.Key + "|" + w.Model))
+            var near = Scenes.Where(w => keys == null || keys.Contains(w.ResidencyKey))
                 .Select(w => (w.Model, CollectionDetail.Near));
             return far.Concat(near);
         }
@@ -242,7 +242,7 @@ namespace Statecraft.Game.Map.Collection
         IEnumerable<Want> Admitted()
         {
             var keys = residencyView?.Keys;
-            return keys == null ? wants : wants.Where(w => keys.Contains(w.Key + "|" + w.Model));
+            return keys == null ? wants : wants.Where(w => keys.Contains(w.ResidencyKey));
         }
         void ClearVisuals()
         {
@@ -258,6 +258,8 @@ namespace Statecraft.Game.Map.Collection
         readonly Dictionary<int, bool> closeFor = new Dictionary<int, bool>();
         readonly List<(Renderer Renderer, CollectionDetail Detail, string Instance)> renderers = new List<(Renderer, CollectionDetail, string)>();
         readonly List<(Animator Animator, CollectionDetail Detail)> animators = new List<(Animator, CollectionDetail)>();
+        Action<List<(string key, Vector3 at, float radius)>>? fillResidencyAnchors;
+        readonly HashSet<string> nearInstances = new HashSet<string>(StringComparer.Ordinal);
         readonly Dictionary<(string Model, CollectionDetail Detail), List<GameObject>> originals =
             new Dictionary<(string, CollectionDetail), List<GameObject>>();
         List<Want> wants = new List<Want>();
@@ -268,6 +270,8 @@ namespace Statecraft.Game.Map.Collection
         public readonly List<Want> Scenes = new List<Want>();
         public readonly List<string> Missing = new List<string>();
         public IReadOnlyList<Want> Wanted => wants;
+        /// <summary>The other layers' ground this layer keeps clear of (its Plan's input), as last shown.</summary>
+        internal List<(Vector2 centre, float radius)> OthersShown => others;
         public bool LastClose { get; private set; }
 
         /// <summary>The ground the other Collection layers hold (centre, radius m): the civilian figures CivilianPeople wants
@@ -299,11 +303,44 @@ namespace Statecraft.Game.Map.Collection
         }
 
         List<(Vector2 centre, float radius)> others = new List<(Vector2, float)>();
+        System.Collections.ObjectModel.ReadOnlyCollection<(Want want, Vector2 spot)>? fullPlan;
+        bool everShown;
+        int planVersion;
+
+        /// <summary>#1701 slice F with #2266: the scenes' full plan (every model available) for what this layer was last shown,
+        /// computed once per change of its wants or the ground it keeps clear of, read-only. It plans against exactly the
+        /// layer's own inputs (<see cref="OthersShown"/>, never the map's current ground), the ones its own Rebuild plans
+        /// against, so the scenes drawn and the ground the others keep clear of are one plan. Plan reads nothing else that
+        /// changes on a map (its ground, routes and tokens are the map's build; no date). The other layers that keep clear of
+        /// the scenes read it through <see cref="PlanOf"/> and rebuild when <see cref="VersionOf"/> moves.</summary>
+        internal IReadOnlyList<(Want want, Vector2 spot)> FullPlan => fullPlan ??= Plan(map!, wants, others, _ => true).AsReadOnly();
+
+        /// <summary>The rural plan the other layers keep clear of: the shown layer's <see cref="FullPlan"/>. Before a rural layer
+        /// is shown (tests and editor tools; GameRoot shows it first), it is computed from the map's own wants and the other
+        /// layers' current ground on each call: deterministic, not cached, and its version is 0.</summary>
+        internal static IReadOnlyList<(Want want, Vector2 spot)> PlanOf(MapScene map)
+        {
+            var layer = Shown(map);
+            return layer != null ? layer.FullPlan : Plan(map, Wants(map), OtherProps(map), _ => true);
+        }
+
+        /// <summary>A stamp of the plan <see cref="PlanOf"/> returns: it moves each time the shown layer's inputs change, so the
+        /// layers built on the plan (SpecialBuildingModels' workshops, HexPropModels) rebuild together onto the new one.</summary>
+        internal static int VersionOf(MapScene map) => Shown(map)?.planVersion ?? 0;
+
+        static RuralLife? Shown(MapScene map)
+        {
+            var layer = map.Terrain != null ? map.Terrain.transform.Find(Name)?.GetComponent<RuralLife>() : null;
+            return layer != null && layer.map != null && layer.everShown ? layer : null;
+        }
+
+        /// <summary>Shows exactly these wants and other layers' ground (a test seam, as Show(map) does with the map's own).</summary>
+        internal void ShowForTest(List<Want> next, List<(Vector2 centre, float radius)> nextOthers) => Show(next, nextOthers);
 
         void Show(List<Want> next, List<(Vector2 centre, float radius)> nextOthers)
         {
-            if (next.SequenceEqual(wants) && nextOthers.SequenceEqual(others)) return;
-            wants = next; others = nextOthers;
+            if (everShown && next.SequenceEqual(wants) && nextOthers.SequenceEqual(others)) return;
+            wants = next; others = nextOthers; fullPlan = null; everShown = true; planVersion++;
             OriginalModelRequests.WhenVisible(this, () =>
             {
                 desiredDetails.Add(CollectionDetail.Far); desiredDetails.Add(CollectionDetail.Near);
@@ -357,11 +394,14 @@ namespace Statecraft.Game.Map.Collection
             }
         }
 
-        void Rebuild()
+        /// <summary>Where the scenes stand: each want in order, the first MaxAnchorsPerModel of each model with clear ground (Spot),
+        /// clear of <paramref name="others"/> and of each other, every one taking its ground; those whose model
+        /// <paramref name="available"/> holds are listed. It reads only
+        /// the map, the wants and the other layers' ground, never what has streamed, so with every model available it is the
+        /// plan the layer draws once everything has arrived (HexPropModels keeps clear of it, #2266).</summary>
+        internal static List<(Want want, Vector2 spot)> Plan(MapScene map, IReadOnlyList<Want> wants, List<(Vector2 centre, float radius)> others,
+            Func<string, bool> available)
         {
-            CollectionResidencyMetrics.MarkDirty();
-            if (map == null || map.Terrain == null) return;
-            ClearVisuals();
             var ground = PlacementLayer.CampGround(map);
             var footprints = map.KitFootprints.Select(f => (f.centre, f.radius)).ToList();
             var taken = new List<(Vector2 centre, float radius)>();
@@ -377,22 +417,41 @@ namespace Statecraft.Game.Map.Collection
                 return !ground.OnRoute(p, radius) && !ground.OnToken(p, radius);
             }
             var used = new Dictionary<string, int>(StringComparer.Ordinal);
-            var holes = new List<(Vector2 centre, float radius)>();
-            var nearKeys = residencyView?.Keys;
+            var plan = new List<(Want, Vector2)>();
             foreach (var want in wants)
             {
-                bool hasFar = prefabs.TryGetValue((want.Model, CollectionDetail.Far), out var farPrefab) && farPrefab != null;
-                bool hasNear = prefabs.TryGetValue((want.Model, CollectionDetail.Near), out var nearPrefab) && nearPrefab != null;
-                // A streamed representation is what makes this a real scene. Until then it owns no anchor, clearance,
-                // tree hole or Near demand; a failed Far answer therefore cannot leave an empty permanent clearing.
-                if (!hasFar && !hasNear) continue;
+                // Every want takes its ground whether or not its model has streamed (only the plan's output is filtered), so a
+                // later scene's spot never depends on what streamed first (#2266 review; the same shape as #2281's).
                 used.TryGetValue(want.Model, out int n);
                 if (n >= MaxAnchorsPerModel) continue;
                 var at = Spot(want, Free);
                 if (at == null) continue;
                 used[want.Model] = n + 1;
-                Scenes.Add(want);
                 taken.Add((at.Value, ClearanceRadiusM));
+                if (available(want.Model)) plan.Add((want, at.Value));
+            }
+            return plan;
+        }
+
+        void Rebuild()
+        {
+            CollectionResidencyMetrics.MarkDirty();
+            if (map == null || map.Terrain == null) return;
+            ClearVisuals();
+            var ground = PlacementLayer.CampGround(map);
+            // A streamed representation is what makes this a real scene. Until then it draws nothing, owns no tree hole and
+            // asks for no Near; but every scene stands at its spot in the plan with every model available, so a scene that
+            // streams in later lands where the plan put it, which the hex props keep clear of (HexPropModels, #2266 review).
+            bool Streamed(string model) => (prefabs.TryGetValue((model, CollectionDetail.Far), out var f) && f != null)
+                || (prefabs.TryGetValue((model, CollectionDetail.Near), out var nr) && nr != null);
+            var used = new Dictionary<string, int>(StringComparer.Ordinal);
+            var holes = new List<(Vector2 centre, float radius)>();
+            var nearKeys = residencyView?.Keys;
+            foreach (var (want, spot) in Plan(map, wants, others, Streamed))
+            {
+                used.TryGetValue(want.Model, out int n); used[want.Model] = n + 1;
+                Vector2? at = spot;
+                Scenes.Add(want);
                 holes.Add((at.Value, SceneRadiusM(want.Model)));
                 bool nearAvailable = (nearKeys == null || nearKeys.Contains(want.Key + "|" + want.Model))
                     && prefabs.TryGetValue((want.Model, CollectionDetail.Near), out var admittedNear) && admittedNear != null;
@@ -469,25 +528,41 @@ namespace Statecraft.Game.Map.Collection
         void OnDisable() { RenderPipelineManager.beginCameraRendering -= Choose; ReleaseResidency(); }
         void OnDestroy() { residency?.Dispose(); residency = null; }
 
+        void FillResidencyAnchors(List<(string key, Vector3 at, float radius)> anchors)
+        {
+            for (int i = 0; i < wants.Count; i++)
+            {
+                var w = wants[i];
+                anchors.Add((w.ResidencyKey, new Vector3(w.Anchor.x, 0, w.Anchor.y), w.AnchorRadius));
+            }
+        }
         internal void Choose(ScriptableRenderContext context, Camera camera)
         {
             if (camera.cameraType == CameraType.Preview || camera.cameraType == CameraType.Reflection) return;
             if (residencyView != null)
             {
                 var previousDemand = residencyView.Keys;
-                residencyView.Observe(camera, wants.Select(w => (w.Key + "|" + w.Model,
-                    new Vector3(w.Anchor.x, 0, w.Anchor.y), w.AnchorRadius)), Time.frameCount);
-                if (!previousDemand.SetEquals(residencyView.Keys)) { RefreshResidencyCore(false); SyncNearVisuals(); }
+                residencyView.Observe(camera, fillResidencyAnchors ??= FillResidencyAnchors, Time.frameCount);
+                bool same = previousDemand.Count == residencyView.Keys.Count;
+                foreach (string key in previousDemand) if (!residencyView.Keys.Contains(key)) { same = false; break; }
+                if (!same) { RefreshResidencyCore(false); SyncNearVisuals(); }
             }
             int id = camera.GetInstanceID();
             bool close = CloseAt(TownLandmarks.ViewDistance(camera), closeFor.TryGetValue(id, out var was) ? was : (bool?)null);
             closeFor[id] = close; LastClose = close;
-            var nearInstances = new HashSet<string>(renderers.Where(p => p.Renderer != null && p.Detail == CollectionDetail.Near)
-                .Select(p => p.Instance), StringComparer.Ordinal);
-            foreach (var (renderer, detail, instance) in renderers)
+            nearInstances.Clear();
+            for (int i = 0; i < renderers.Count; i++)
+                if (renderers[i].Renderer != null && renderers[i].Detail == CollectionDetail.Near) nearInstances.Add(renderers[i].Instance);
+            for (int i = 0; i < renderers.Count; i++)
+            {
+                var (renderer, detail, instance) = renderers[i];
                 if (renderer != null) renderer.forceRenderingOff = detail == CollectionDetail.Near ? !close : close && nearInstances.Contains(instance);
-            foreach (var (animator, detail) in animators)
+            }
+            for (int i = 0; i < animators.Count; i++)
+            {
+                var (animator, detail) = animators[i];
                 if (animator != null) animator.enabled = detail == CollectionDetail.Near && close;
+            }
         }
     }
 }

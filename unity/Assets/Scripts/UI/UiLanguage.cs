@@ -7,7 +7,9 @@ namespace Statecraft.Game.UI
 {
     /// <summary>The UI's language (#193): English unless Hebrew is asked for, "?lang=he" in the page URL on WebGL or
     /// "-lang he" on the desktop command line, or chosen in Settings (#1036, kept in settings.txt). The content text
-    /// (events, names) is English only until #55. Any other value, or a bare flag, is English.</summary>
+    /// (events, names) is English only until #55. Any other value, or a bare flag, is English. A language from translations/
+    /// (#1606) is kept like the others once the language buttons offer it (LanguageButtons.All); its UI strings come from
+    /// its translations/&lt;lang&gt;/ui.yaml over the English, per string (GameRoot.Strings).</summary>
     public static class UiLanguage
     {
         public const string Flag = "lang";
@@ -23,16 +25,17 @@ namespace Statecraft.Game.UI
         static readonly Regex AnyQuery = new Regex(@"[?&]" + Flag + @"(?:=[^&#]*)?(?=&|#|$)", RegexOptions.CultureInvariant);
 
         /// <summary>The language at start (#1036): a flag in the address or on the command line (the store page's "?lang=he"
-        /// link) holds for that visit, over the choice <paramref name="stored"/> in Settings; with neither, English.</summary>
+        /// link) holds for that visit, over the choice <paramref name="stored"/> in Settings; with neither, English. A stored
+        /// value the language buttons do not offer is English too.</summary>
         public static string AtStart(string? stored, string? url, string[] args, bool webgl)
         {
-            bool flag = webgl ? AnyQuery.IsMatch(url ?? "") : Array.IndexOf(args, "-" + Flag) >= 0;
-            return flag ? Requested(url, args, webgl) : stored == Hebrew ? Hebrew : English;
+            bool flag = webgl ? AnyQuery.IsMatch(Boot.UrlFlags.BeforeFragment(url)) : Array.IndexOf(args, "-" + Flag) >= 0;
+            return flag ? Requested(url, args, webgl) : Array.Exists(LanguageButtons.All, l => l.language == stored) ? stored! : English;
         }
 
         public static string Requested(string? url, string[] args, bool webgl)
         {
-            if (webgl) return HebrewQuery.IsMatch(url ?? "") ? Hebrew : English;
+            if (webgl) return HebrewQuery.IsMatch(Boot.UrlFlags.BeforeFragment(url)) ? Hebrew : English;
             var i = Array.IndexOf(args, "-" + Flag);
             return i >= 0 && i + 1 < args.Length && args[i + 1] == Hebrew ? Hebrew : English;
         }

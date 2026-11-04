@@ -29,13 +29,14 @@ namespace Statecraft.Game.Map.Units
 
         public const string SabraPioneer = "figure-c04-sabra-pioneer-v3", PioneerVeteran = "figure-c05-pioneer-veteran-v2",
             YoungRecruit = "figure-c06-young-recruit-v2", VeteranFighter = "figure-c07-veteran-fighter-v2",
-            PalmachScout = "figure-c12f-palmach-scout-v2", Soldier1948 = "figure-soldier-1948-v1", ArabLegion = "figure-c08-arab-legion-v2", Irregular = "figure-c09-irregular-v2",
+            PalmachScout = "figure-c12f-palmach-scout-v2", Soldier1948 = CollectionCatalog.Soldier1948Rigged, ArabLegion = "figure-c08-arab-legion-v2", Irregular = "figure-c09-irregular-v2",
             Napoleonchik = "figure-vehicle-napoleonchik-65mm-1948-v2", WillysJeep = "figure-vehicle-willys-jeep-1948-v2",
             SandwichArmouredCar = "figure-vehicle-sandwich-convoy-1948-v2";
 
         public const string SyrianInfantry = "figure-syrian-infantry-1948-v1",
             AlaInfantry = CollectionCatalog.AlaInfantry, IraqiInfantry = "figure-iraqi-infantry-1948-v1",
-            EgyptianInfantry = CollectionCatalog.EgyptianInfantry, LebaneseRegular = CollectionCatalog.LebaneseRegular;
+            EgyptianInfantry = CollectionCatalog.EgyptianInfantry, LebaneseRegular = CollectionCatalog.LebaneseRegular,
+            LocalIrregular = CollectionCatalog.LocalIrregular;
 
         /// <summary>An Israeli rifleman's figure by his headgear (the sourced <see cref="UnitEntry.Headgear"/>, or the uniform
         /// default), as Tal Heuberger's figures wear them and #507 paired them: the bush (slouch) hat is the sabra pioneer (C04), the
@@ -56,7 +57,9 @@ namespace Statecraft.Game.Map.Units
         /// figure on some brigade unit tokens, next to C06 and C07"): a rifleman in khaki wearing the knitted stocking cap, the
         /// Palmach's (as C07 wears it), so he stands third on the other two Palmach brigades, the 11th and 12th (their rows'
         /// numbers, palmach.org.il). On Negev's token he takes the third figure's sourced cap from C07
-        /// (<see cref="ThirdOverHeadgear"/>), so it shows C07, C06 and the soldier.</summary>
+        /// (<see cref="ThirdOverHeadgear"/>), so it shows C07, C06 and the soldier. He is drawn as his rigged copy
+        /// (<see cref="CollectionCatalog.Soldier1948Rigged"/>, #2384), which walks, idles and fires with C07's takes and
+        /// holds the K98k (UnitWeapons); Tal's delivered file, with no rig, stays catalogued and is drawn nowhere.</summary>
         public static readonly IReadOnlyDictionary<string, string> ThirdFigure = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["harel"] = PalmachScout, ["yiftach"] = Soldier1948, ["negev"] = Soldier1948,
@@ -71,7 +74,12 @@ namespace Statecraft.Game.Map.Units
 
         /// <summary>An Arab force's own figure, by side. The generated 1948 infantry have separate Syrian, Egyptian, ALA and
         /// Iraqi identities; C08 stays with Jordan and C09 stays on the existing ALA tokens, with the new ALA infantry as their third figure
-        /// (<see cref="ThirdBySide"/>). No local-force row is authored here. Lebanon's army is drawn with Tal Heuberger's Lebanese
+        /// (<see cref="ThirdBySide"/>). The local forces' figure is Tal Heuberger's local Arab irregular (<see cref="LocalIrregular"/>;
+        /// owner, 2 November 2026: "Use it instead of C09"), which replaces the owner's 1 November 2026 ruling on #1243 ("Map
+        /// figure: C09 after photo check (Recommended)"; C09 was never mapped to that side in code). No local-force row is
+        /// authored here, and none may be: the 1 November 2026 ruling on #1243, "Starting strength on 15 May: No row until
+        /// sourced (Recommended)", still stands, and its "Sensitivity review: Once rows exist (Recommended)" runs on the rows
+        /// when they are written. Until then no token of that side exists, so the figure is never asked for. Lebanon's army is drawn with Tal Heuberger's Lebanese
         /// regular as a map-only token at al-Malikiyya from 6 June to 8 July 1948 (owner, 27 October 2026: "Map-only token
         /// (Recommended)"; 28 October 2026: "6 Jun to 8 Jul (Recommended)"); it has no sim unit (<see cref="UnitRoster.MapOnly"/>).
         /// Egypt is drawn as one token (owner, 27 October 2026: "One token"): in the GDD loop the one sim unit of its row,
@@ -83,6 +91,7 @@ namespace Statecraft.Game.Map.Units
         {
             ["jordan"] = ArabLegion, ["ala"] = Irregular,
             ["syria"] = SyrianInfantry, ["iraq"] = IraqiInfantry, ["egypt"] = EgyptianInfantry, ["lebanon"] = LebaneseRegular,
+            ["local_arab_forces"] = LocalIrregular,
         };
 
         /// <summary>The third figure of an Arab force's token, by side, in place of its side figure: the ALA's is Tal Heuberger's ALA
@@ -392,7 +401,12 @@ namespace Statecraft.Game.Map.Units
                 r.lightProbeUsage = LightProbeUsage.Off; r.reflectionProbeUsage = ReflectionProbeUsage.Off;
             }
             if (code != null) code.enabled = false;
-            if (CollectionCatalog.Animated.Contains(id) && !CollectionCatalog.IsFullQualityGeneratedInfantry(id)) UnitFigureDetail.Of(piece).Add(holder, id);   // C05 has no idle: he stays far
+            UnitFigureWeapon.Refresh(piece);   // its sourced weapon in the hand (#2083), before the detail switch reads the renderers
+            UnitFigurePointFire.Refresh(piece);   // a held point-fire aim takes the new model too (#2084)
+            // C05 has no idle clip: he stays far, and close up his held pose breathes in code instead (#2374). The switch is told
+            // only once the idle took (fail open: a model without the bones stands still, and no near model is asked for).
+            if (UnitFigureIdle.Wanted(id)) { if (UnitFigureIdle.Equip(model.transform, UnitFigureIdle.KeyOf(piece)) != null) UnitFigureDetail.Of(piece).Add(holder, id); }
+            else if (CollectionCatalog.Animated.Contains(id) && !CollectionCatalog.IsFullQualityGeneratedInfantry(id)) UnitFigureDetail.Of(piece).Add(holder, id);
             // A model that arrives mid-move walks with its token at once (#1866).
             var motion = piece.GetComponentInParent<UnitTokenMotion>();
             if (motion != null && (motion.Moving || motion.Attacking)) motion.RefreshPose();
@@ -401,7 +415,8 @@ namespace Statecraft.Game.Map.Units
 
         /// <summary>The box of <paramref name="model"/>'s meshes in <paramref name="frame"/>'s space, from each mesh's own
         /// bounds (Renderer.bounds is empty while the layer is off). Skin bounds come from the actual posed vertices,
-        /// not the imported whole-animation culling envelope. No rendered mesh or source asset is replaced. Null with no mesh.</summary>
+        /// not the imported whole-animation culling envelope. No rendered mesh or source asset is replaced. A held weapon
+        /// (UnitWeapons) is left out, so it never changes a figure's height or feet. Null with no mesh.</summary>
         internal static Bounds? BoxIn(Transform frame, Transform model)
         {
             var inv = frame.worldToLocalMatrix;
@@ -415,10 +430,11 @@ namespace Statecraft.Game.Map.Units
                     if (box is Bounds bb) { bb.Encapsulate(p); box = bb; } else box = new Bounds(p, Vector3.zero);
                 }
             }
-            foreach (var f in model.GetComponentsInChildren<MeshFilter>(true)) if (f.sharedMesh != null) Add(f.sharedMesh.bounds, f.transform);
+            foreach (var f in model.GetComponentsInChildren<MeshFilter>(true))
+                if (f.sharedMesh != null && !UnitWeapons.IsHeld(f.transform, model)) Add(f.sharedMesh.bounds, f.transform);
             foreach (var skin in model.GetComponentsInChildren<SkinnedMeshRenderer>(true))
             {
-                if (skin.sharedMesh == null) continue;
+                if (skin.sharedMesh == null || UnitWeapons.IsHeld(skin.transform, model)) continue;
                 var posed = new Mesh();
                 try
                 {

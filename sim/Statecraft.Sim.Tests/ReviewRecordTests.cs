@@ -6,8 +6,9 @@ using Statecraft.Sim;
 using YamlDotNet.RepresentationModel;
 
 /// <summary>A person's sign-off beside a status (owner, 15 October 2026, #375: "Yes, humans only"): `reviewed_by` (a GitHub
-/// handle) and `reviewed_on` (the day), both or neither. Only a person writes them; scripts/oss/reviewed_by_guard.py
-/// refuses an AI-co-authored commit that touches them.</summary>
+/// handle) and `reviewed_on` (the day), both or neither. Only a person writes them, or an AI-assisted contributor whose
+/// pull request discloses the AI help and names the check (owner, 4 November 2026, #2481); scripts/oss/reviewed_by_guard.py
+/// refuses any other AI-co-authored commit that touches them, and any AI-co-authored commit that removes them.</summary>
 public class ReviewRecordTests
 {
     const string Signed = "reviewed_by: eyalgolan\nreviewed_on: 2026-10-15\n";

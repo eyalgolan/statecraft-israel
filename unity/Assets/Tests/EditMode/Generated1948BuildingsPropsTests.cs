@@ -52,7 +52,7 @@ public class Generated1948BuildingsPropsTests
             .GetField("Ids")!.GetValue(null)!;
         var placed = ids.Where(id => System.Array.IndexOf(Statecraft.Game.Map.Kits.TownModels.Ids, id) >= 0
             || Statecraft.Game.Map.Collection.CollectionCatalog.IsGeneratedProp(id)).ToArray();
-        Assert.AreEqual(7, placed.Length, "five houses, the Bedouin tent and the khaki tent are placed");
+        Assert.AreEqual(11, placed.Length, "five houses, the Bedouin tent, the khaki tent and the four props (09-12) are placed");
         var shipped = placed.Select(Generated1948BuildingsPropsReview.PrefabOf).ToArray();
         var before = new[] { Generated1948BuildingsPropsReview.AssetFolder }.Concat(ids.Select(Generated1948BuildingsPropsReview.DirOf))
             .Concat(shipped.Select(p => System.IO.Path.GetDirectoryName(p)!)).Distinct()

@@ -41,6 +41,10 @@ namespace Statecraft.Game.UI
         readonly Dictionary<string, (Button appoint, Label reason)> rows = new Dictionary<string, (Button, Label)>();
         string? pickFor; string chipsFor = "";
         bool dirty;
+        /// <summary>The seat button last pressed (#2340 M2): Escape from the candidate list gives it the focus back.</summary>
+        string? pressedSeat;
+        readonly PressSource presses;
+        int escapedAt = -1;
 
         public CabinetPresenter(VisualElement root, SimBridge bridge, UiText text, PortraitCatalog? portraits)
         {
@@ -52,7 +56,8 @@ namespace Statecraft.Game.UI
             pmOffices = screen.Q<VisualElement>("cabinet-pm-offices"); chips = screen.Q<VisualElement>("cabinet-parties");
             hemicycle = screen.Q<Hemicycle>("cabinet-hemicycle");
             hemicycle.Mirrored = text["ui.lang"] == UiLanguage.Hebrew;   // the coalition from the right in a right-to-left UI
-            onPm = () => Select(PrimeMinister);
+            presses = new PressSource(screen);
+            onPm = () => Press(PrimeMinister, pmCard.name);
             pmCard.clicked += onPm;
             onPmGeometry = _ => FramePm();
             screen.Q<Label>("cabinet-house-unit").text = text["cabinet.members_unit"];
@@ -69,6 +74,7 @@ namespace Statecraft.Game.UI
         {
             bridge.Changed -= OnChanged;
             pmCard.clicked -= onPm;
+            presses.Dispose();
             pmPortrait?.UnregisterCallback(onPmGeometry); pmPortrait = null;
             foreach (var e in new[] { side, pmOffices, status }) e.UnregisterCallback(onSideGeometry);
             if (screen.userData is System.Action) screen.userData = null;
@@ -86,6 +92,36 @@ namespace Statecraft.Game.UI
         public int Renders { get; private set; }
 
         public void Select(string? office) { Selected = office; Render(); }
+
+        /// <summary>A seat's button (#2340 M2): selects its office, and from the keyboard hands the focus to the first candidate
+        /// that can be appointed. The list comes before the cards in the Tab order, so that candidate was up to 60 Tabs
+        /// away. A pointer press moves no focus (PointerBlur's rule). None can be appointed: the focus stays on the seat.</summary>
+        void Press(string office, string seat)
+        {
+            pressedSeat = seat;
+            Select(office);
+            if (!presses.ByKeyboard) return;
+            var first = candidates.Query<Button>().Where(b => b.enabledInHierarchy).First();
+            if (first == null) return;
+            first.Focus();
+            // The list was hidden until this press, so it may not take the focus before its styles resolve.
+            first.schedule.Execute(() => { if (first.panel != null && first.focusController?.focusedElement is VisualElement v && v.name == seat) first.Focus(); });
+        }
+
+        /// <summary>Escape with the focus in the candidate list (#2340 M2): gives the focus back to the seat that listed them,
+        /// and the Cabinet stays open. True when it did, and also in the frame ScreenNav's Cancel already did it, so
+        /// GameRoot's poll does not close the screen in the same press (AdvisorPresenter.Escape's pattern).</summary>
+        public bool Escape()
+        {
+            if (escapedAt == Time.frameCount) return true;
+            var focused = screen.focusController?.focusedElement as VisualElement;
+            if (focused == null || !candidates.Contains(focused)) return false;
+            var seat = (pressedSeat == null ? null : screen.Q<Button>(pressedSeat)) ?? screen.Q<Button>("seat-" + Selected);
+            if (seat == null) return false;
+            escapedAt = Time.frameCount;
+            FocusReturn.To(seat);
+            return true;
+        }
 
         void OnChanged() { if (ScreenNav.IsOpen(screen)) Render(); else dirty = true; }
 
@@ -154,7 +190,7 @@ namespace Statecraft.Game.UI
                 foreach (var seat in pmHeld)
                 {
                     var office = seat.Office.Id;
-                    var b = new Button(() => Select(office)) { name = "seat-" + office, text = text.Format("cabinet.select_office", ContentNames.Of(text, seat.Office, pm, s.Date)) };
+                    var b = new Button(() => Press(office, "seat-" + office)) { name = "seat-" + office, text = text.Format("cabinet.select_office", ContentNames.Of(text, seat.Office, pm, s.Date)) };
                     b.AddToClassList("pm-office");
                     pmOffices.Add(b);
                 }
@@ -172,7 +208,7 @@ namespace Statecraft.Game.UI
                 foreach (var (key, seat, _) in grid)
                 {
                     var office = seat.Office.Id;
-                    var card = new Button(() => Select(office)) { name = "seat-" + key };
+                    var card = new Button(() => Press(office, "seat-" + key)) { name = "seat-" + key };
                     card.AddToClassList("seat");
                     PersonCard.Build(card, "seat-" + key, text);
                     cards[key] = card;

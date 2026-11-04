@@ -79,9 +79,10 @@ namespace Statecraft.Sim
         }
     }
 
-    /// <summary>The review flag of a Hebrew display name (`*_he_review`, CONTENT_POLICY section 2, rule 6). A name an AI agent
-    /// checked against its sources, but no person has read yet, carries <see cref="AgentChecked"/>; the row's own `status`
-    /// stays what it is for the English facts. A native speaker's review clears the flag (the key is removed).</summary>
+    /// <summary>The review flag of a Hebrew display name (`*_he_review`, CONTENT_POLICY section 2, rule 6). A name an AI
+    /// agent checked against its sources carries <see cref="AgentChecked"/> until a native speaker, or an AI-assisted
+    /// contributor who discloses it, has read it (#564; owner, 4 November 2026: "AI-assisted can clear it"). The row's own
+    /// `status` stays what it is for the English facts; the key is removed once reviewed.</summary>
     public static class HebrewReview
     {
         public const string AgentChecked = "agent-checked";
@@ -95,8 +96,9 @@ namespace Statecraft.Sim
         /// keeps the English).</summary>
         public string TitleHe { get; set; } = "";
         public List<Source> TitleHeSources { get; set; } = new List<Source>();
-        /// <summary>"agent-checked" while <see cref="TitleHe"/> waits for a native speaker's review (#564); empty once a
-        /// person has reviewed it (<see cref="HebrewReview"/>).</summary>
+        /// <summary><see cref="TitleHe"/> is "agent-checked" until a native speaker, or an AI-assisted contributor who
+        /// discloses it, has read it (#564; owner, 4 November 2026: "AI-assisted can clear it"); empty once reviewed
+        /// (<see cref="HebrewReview"/>).</summary>
         public string TitleHeReview { get => titleHeReview ?? ""; set => titleHeReview = value ?? ""; }
         /// <summary>True when the file has the key at all, even blank: a blank flag is an error, not a review.</summary>
         [YamlIgnore] public bool TitleHeReviewGiven => titleHeReview != null;
@@ -183,7 +185,9 @@ namespace Statecraft.Sim
         /// <summary>The Hebrew name (#558), sourced in <see cref="NameHeSources"/>; empty when no source gives one.</summary>
         public string NameHe { get; set; } = "";
         public List<Source> NameHeSources { get; set; } = new List<Source>();
-        /// <summary>"agent-checked" while <see cref="NameHe"/> waits for a native speaker's review (#564); empty once reviewed.</summary>
+        /// <summary><see cref="NameHe"/> is "agent-checked" until a native speaker, or an AI-assisted contributor who
+        /// discloses it, has read it (#564; owner, 4 November 2026: "AI-assisted can clear it"); empty once
+        /// reviewed.</summary>
         public string NameHeReview { get => nameHeReview ?? ""; set => nameHeReview = value ?? ""; }
         /// <summary>True when the file has the key at all, even blank: a blank flag is an error, not a review.</summary>
         [YamlIgnore] public bool NameHeReviewGiven => nameHeReview != null;
@@ -220,8 +224,9 @@ namespace Statecraft.Sim
         public string Id { get; set; } = "";
         public string Name { get; set; } = "";
         public string NameHe { get; set; } = "";
-        /// <summary>"agent-checked" while <see cref="NameHe"/> waits for a native speaker's review (#564, #862); empty once
-        /// reviewed. Its sources are biography_sources.name_he.</summary>
+        /// <summary><see cref="NameHe"/> is "agent-checked" until a native speaker, or an AI-assisted contributor who
+        /// discloses it, has read it (#564, #862; owner, 4 November 2026: "AI-assisted can clear it"); empty once reviewed.
+        /// Its sources are biography_sources.name_he.</summary>
         public string NameHeReview { get => nameHeReview ?? ""; set => nameHeReview = value ?? ""; }
         /// <summary>True when the file has the key at all, even blank: a blank flag is an error, not a review.</summary>
         [YamlIgnore] public bool NameHeReviewGiven => nameHeReview != null;
@@ -248,7 +253,10 @@ namespace Statecraft.Sim
         public List<OfficeTerm> Offices { get; set; } = new List<OfficeTerm>();
         public string Status { get; set; } = "draft";
         /// <summary>The person who signed this row off: a GitHub handle, written only by that person (owner, 15 October 2026,
-        /// #375: "Yes, humans only"; scripts/oss/reviewed_by_guard.py). Empty when no one has; with <see cref="ReviewedOn"/>.</summary>
+        /// #375: "Yes, humans only"); an AI-assisted contributor's source check counts when the pull request discloses the AI
+        /// help and says what was checked (owner, 4 November 2026: "Yes, it counts", #2481 comment 6623108295), and an
+        /// AI-co-authored commit never removes it (scripts/oss/reviewed_by_guard.py). Empty when no one has; with
+        /// <see cref="ReviewedOn"/>.</summary>
         public string ReviewedBy { get => reviewedBy ?? ""; set => reviewedBy = value ?? ""; }
         /// <summary>True when the file has the key at all, even blank: a blank sign-off is an error.</summary>
         [YamlIgnore] public bool ReviewedByGiven => reviewedBy != null;
@@ -269,7 +277,9 @@ namespace Statecraft.Sim
         /// <summary>The Hebrew name of the body (#558), sourced in <see cref="BodyHeSources"/>; empty when no source gives one.</summary>
         public string BodyHe { get; set; } = "";
         public List<Source> BodyHeSources { get; set; } = new List<Source>();
-        /// <summary>"agent-checked" while <see cref="BodyHe"/> waits for a native speaker's review (#564); empty once reviewed.</summary>
+        /// <summary><see cref="BodyHe"/> is "agent-checked" until a native speaker, or an AI-assisted contributor who
+        /// discloses it, has read it (#564; owner, 4 November 2026: "AI-assisted can clear it"); empty once
+        /// reviewed.</summary>
         public string BodyHeReview { get => bodyHeReview ?? ""; set => bodyHeReview = value ?? ""; }
         /// <summary>True when the file has the key at all, even blank: a blank flag is an error, not a review.</summary>
         [YamlIgnore] public bool BodyHeReviewGiven => bodyHeReview != null;
@@ -285,7 +295,10 @@ namespace Statecraft.Sim
         public List<Source> Sources { get; set; } = new List<Source>();
         public string Status { get; set; } = "draft";
         /// <summary>The person who signed this row off: a GitHub handle, written only by that person (owner, 15 October 2026,
-        /// #375: "Yes, humans only"; scripts/oss/reviewed_by_guard.py). Empty when no one has; with <see cref="ReviewedOn"/>.</summary>
+        /// #375: "Yes, humans only"); an AI-assisted contributor's source check counts when the pull request discloses the AI
+        /// help and says what was checked (owner, 4 November 2026: "Yes, it counts", #2481 comment 6623108295), and an
+        /// AI-co-authored commit never removes it (scripts/oss/reviewed_by_guard.py). Empty when no one has; with
+        /// <see cref="ReviewedOn"/>.</summary>
         public string ReviewedBy { get => reviewedBy ?? ""; set => reviewedBy = value ?? ""; }
         /// <summary>True when the file has the key at all, even blank: a blank sign-off is an error.</summary>
         [YamlIgnore] public bool ReviewedByGiven => reviewedBy != null;
@@ -306,7 +319,9 @@ namespace Statecraft.Sim
         /// <summary>The Hebrew name (#558), sourced in <see cref="NameHeSources"/>; empty when no source gives one.</summary>
         public string NameHe { get; set; } = "";
         public List<Source> NameHeSources { get; set; } = new List<Source>();
-        /// <summary>"agent-checked" while <see cref="NameHe"/> waits for a native speaker's review (#564); empty once reviewed.</summary>
+        /// <summary><see cref="NameHe"/> is "agent-checked" until a native speaker, or an AI-assisted contributor who
+        /// discloses it, has read it (#564; owner, 4 November 2026: "AI-assisted can clear it"); empty once
+        /// reviewed.</summary>
         public string NameHeReview { get => nameHeReview ?? ""; set => nameHeReview = value ?? ""; }
         /// <summary>True when the file has the key at all, even blank: a blank flag is an error, not a review.</summary>
         [YamlIgnore] public bool NameHeReviewGiven => nameHeReview != null;
@@ -321,7 +336,10 @@ namespace Statecraft.Sim
         public List<Source> Sources { get; set; } = new List<Source>();
         public string Status { get; set; } = "draft";
         /// <summary>The person who signed this row off: a GitHub handle, written only by that person (owner, 15 October 2026,
-        /// #375: "Yes, humans only"; scripts/oss/reviewed_by_guard.py). Empty when no one has; with <see cref="ReviewedOn"/>.</summary>
+        /// #375: "Yes, humans only"); an AI-assisted contributor's source check counts when the pull request discloses the AI
+        /// help and says what was checked (owner, 4 November 2026: "Yes, it counts", #2481 comment 6623108295), and an
+        /// AI-co-authored commit never removes it (scripts/oss/reviewed_by_guard.py). Empty when no one has; with
+        /// <see cref="ReviewedOn"/>.</summary>
         public string ReviewedBy { get => reviewedBy ?? ""; set => reviewedBy = value ?? ""; }
         /// <summary>True when the file has the key at all, even blank: a blank sign-off is an error.</summary>
         [YamlIgnore] public bool ReviewedByGiven => reviewedBy != null;
@@ -716,10 +734,13 @@ namespace Statecraft.Sim
         public string Id { get; set; } = "";
         /// <summary>The phrase the player reads in a sentence ("a transit camp").</summary>
         public string Name { get; set; } = "";
-        /// <summary>The Hebrew UI's name for the kind, a noun ("מעברה"), or "" for none: the UI then shows <see cref="Name"/>
-        /// (#1122, owner ruling 3). A draft until a native speaker reviews it (#564).</summary>
+        /// <summary>The Hebrew UI's name for the kind, a noun ("מעברה"), or "" for none: the UI then shows
+        /// <see cref="Name"/> (#1122, owner ruling 3). A draft until a native speaker, or an AI-assisted contributor who
+        /// discloses it, has read it (#564; owner, 4 November 2026: "AI-assisted can clear it").</summary>
         public string NameHe { get; set; } = "";
-        /// <summary>"agent-checked" while <see cref="NameHe"/> waits for a native speaker's review (#564); "" once reviewed.</summary>
+        /// <summary><see cref="NameHe"/> is "agent-checked" until a native speaker, or an AI-assisted contributor who
+        /// discloses it, has read it (#564; owner, 4 November 2026: "AI-assisted can clear it"); "" once
+        /// reviewed.</summary>
         public string NameHeReview { get => nameHeReview ?? ""; set => nameHeReview = value ?? ""; }
         /// <summary>Whether the row sets name_he_review at all, so a blank flag is refused rather than read as "reviewed".</summary>
         [YamlIgnore] public bool NameHeReviewGiven => nameHeReview != null;
@@ -767,7 +788,10 @@ namespace Statecraft.Sim
         public List<Source> Sources { get; set; } = new List<Source>();
         public string Status { get; set; } = "";
         /// <summary>The person who signed this row off: a GitHub handle, written only by that person (owner, 15 October 2026,
-        /// #375: "Yes, humans only"; scripts/oss/reviewed_by_guard.py). Empty when no one has; with <see cref="ReviewedOn"/>.</summary>
+        /// #375: "Yes, humans only"); an AI-assisted contributor's source check counts when the pull request discloses the AI
+        /// help and says what was checked (owner, 4 November 2026: "Yes, it counts", #2481 comment 6623108295), and an
+        /// AI-co-authored commit never removes it (scripts/oss/reviewed_by_guard.py). Empty when no one has; with
+        /// <see cref="ReviewedOn"/>.</summary>
         public string ReviewedBy { get => reviewedBy ?? ""; set => reviewedBy = value ?? ""; }
         /// <summary>True when the file has the key at all, even blank: a blank sign-off is an error.</summary>
         [YamlIgnore] public bool ReviewedByGiven => reviewedBy != null;
@@ -798,7 +822,10 @@ namespace Statecraft.Sim
         public List<Source> Sources { get; set; } = new List<Source>();
         public string Status { get; set; } = "";
         /// <summary>The person who signed this row off: a GitHub handle, written only by that person (owner, 15 October 2026,
-        /// #375: "Yes, humans only"; scripts/oss/reviewed_by_guard.py). Empty when no one has; with <see cref="ReviewedOn"/>.</summary>
+        /// #375: "Yes, humans only"); an AI-assisted contributor's source check counts when the pull request discloses the AI
+        /// help and says what was checked (owner, 4 November 2026: "Yes, it counts", #2481 comment 6623108295), and an
+        /// AI-co-authored commit never removes it (scripts/oss/reviewed_by_guard.py). Empty when no one has; with
+        /// <see cref="ReviewedOn"/>.</summary>
         public string ReviewedBy { get => reviewedBy ?? ""; set => reviewedBy = value ?? ""; }
         /// <summary>True when the file has the key at all, even blank: a blank sign-off is an error.</summary>
         [YamlIgnore] public bool ReviewedByGiven => reviewedBy != null;
@@ -968,7 +995,10 @@ namespace Statecraft.Sim
         public List<Source> Sources { get; set; } = new List<Source>();
         public string Status { get; set; } = "draft";
         /// <summary>The person who signed this row off: a GitHub handle, written only by that person (owner, 15 October 2026,
-        /// #375: "Yes, humans only"; scripts/oss/reviewed_by_guard.py). Empty when no one has; with <see cref="ReviewedOn"/>.</summary>
+        /// #375: "Yes, humans only"); an AI-assisted contributor's source check counts when the pull request discloses the AI
+        /// help and says what was checked (owner, 4 November 2026: "Yes, it counts", #2481 comment 6623108295), and an
+        /// AI-co-authored commit never removes it (scripts/oss/reviewed_by_guard.py). Empty when no one has; with
+        /// <see cref="ReviewedOn"/>.</summary>
         public string ReviewedBy { get => reviewedBy ?? ""; set => reviewedBy = value ?? ""; }
         /// <summary>True when the file has the key at all, even blank: a blank sign-off is an error.</summary>
         [YamlIgnore] public bool ReviewedByGiven => reviewedBy != null;
@@ -989,7 +1019,10 @@ namespace Statecraft.Sim
         public List<Source> Sources { get; set; } = new List<Source>();
         public string Status { get; set; } = "draft";
         /// <summary>The person who signed this row off: a GitHub handle, written only by that person (owner, 15 October 2026,
-        /// #375: "Yes, humans only"; scripts/oss/reviewed_by_guard.py). Empty when no one has; with <see cref="ReviewedOn"/>.</summary>
+        /// #375: "Yes, humans only"); an AI-assisted contributor's source check counts when the pull request discloses the AI
+        /// help and says what was checked (owner, 4 November 2026: "Yes, it counts", #2481 comment 6623108295), and an
+        /// AI-co-authored commit never removes it (scripts/oss/reviewed_by_guard.py). Empty when no one has; with
+        /// <see cref="ReviewedOn"/>.</summary>
         public string ReviewedBy { get => reviewedBy ?? ""; set => reviewedBy = value ?? ""; }
         /// <summary>True when the file has the key at all, even blank: a blank sign-off is an error.</summary>
         [YamlIgnore] public bool ReviewedByGiven => reviewedBy != null;
@@ -1045,6 +1078,11 @@ namespace Statecraft.Sim
         public List<CityEffect> CityEffects { get; set; } = new List<CityEffect>();
         /// <summary>R-EFX-008: locked projects.yaml kinds this option makes available, in list order (D-H2, Q-HFX-1).</summary>
         public List<string> UnlockProjects { get; set; } = new List<string>();
+        /// <summary>R-ENEMY-005: go-to orders this option gives to units of map/units_1948.yaml rows, in list order (Q-ENEMY-5).</summary>
+        public List<UnitOrderEffect> UnitOrders { get; set; } = new List<UnitOrderEffect>();
+        /// <summary>R-EFX-009 (#2457): US$ millions this option also adds to Debt, under gdd-0.3 only, in IL millions at the
+        /// mvp.il_per_dollar rate in force on the event's date. Null when absent.</summary>
+        public double? DebtDollars { get; set; }
         /// <summary>Who put this non-historical option forward, and on what record (R-ALT-003). Null when absent.</summary>
         public OptionAlternative? Alternative { get; set; }
         /// <summary>The event whose historical course this consequence option rejoins (R-ALT-009), or empty.</summary>
@@ -1059,6 +1097,15 @@ namespace Statecraft.Sim
         public string Type { get; set; } = "";
         public int N { get; set; }
         public string At { get; set; } = "";
+    }
+
+    /// <summary>An option's go-to order (R-ENEMY-005) for the unit of the map/units_1948.yaml row <see cref="Unit"/>, toward
+    /// hex (<see cref="Q"/>, <see cref="R"/>), which must be one of that row's anchor or order target hexes (map/unit_anchor_hexes.yaml).</summary>
+    public sealed class UnitOrderEffect
+    {
+        public string Unit { get; set; } = "";
+        public int Q { get; set; }
+        public int R { get; set; }
     }
 
     /// <summary>An option's change to one field of a city (R-EFX-004): housing_capacity or job_slots by whole units, or the
@@ -1103,7 +1150,9 @@ namespace Statecraft.Sim
         /// the English wherever one is empty.</summary>
         public string TitleHe { get; set; } = "";
         public string TextHe { get; set; } = "";
-        /// <summary>"agent-checked" while the Hebrew text waits for a native speaker's review (#564); empty once reviewed.</summary>
+        /// <summary>The Hebrew text is "agent-checked" until a native speaker, or an AI-assisted contributor who discloses
+        /// it, has read it (#564; owner, 4 November 2026: "AI-assisted can clear it"); empty once
+        /// reviewed.</summary>
         public string TextHeReview { get => textHeReview ?? ""; set => textHeReview = value ?? ""; }
         /// <summary>True when the file has the key at all, even blank: a blank flag is an error, not a review.</summary>
         [YamlIgnore] public bool TextHeReviewGiven => textHeReview != null;
@@ -1121,7 +1170,10 @@ namespace Statecraft.Sim
         public List<Source> Sources { get; set; } = new List<Source>();
         public string Status { get; set; } = "draft";
         /// <summary>The person who signed this row off: a GitHub handle, written only by that person (owner, 15 October 2026,
-        /// #375: "Yes, humans only"; scripts/oss/reviewed_by_guard.py). Empty when no one has; with <see cref="ReviewedOn"/>.</summary>
+        /// #375: "Yes, humans only"); an AI-assisted contributor's source check counts when the pull request discloses the AI
+        /// help and says what was checked (owner, 4 November 2026: "Yes, it counts", #2481 comment 6623108295), and an
+        /// AI-co-authored commit never removes it (scripts/oss/reviewed_by_guard.py). Empty when no one has; with
+        /// <see cref="ReviewedOn"/>.</summary>
         public string ReviewedBy { get => reviewedBy ?? ""; set => reviewedBy = value ?? ""; }
         /// <summary>True when the file has the key at all, even blank: a blank sign-off is an error.</summary>
         [YamlIgnore] public bool ReviewedByGiven => reviewedBy != null;
@@ -1172,10 +1224,13 @@ namespace Statecraft.Sim
         public string PartOf { get; set; } = "";
         /// <summary>The name the player reads (in the Why list).</summary>
         public string Name { get; set; } = "";
-        /// <summary>The Hebrew name (#1187), an agent translation of <see cref="Name"/> while it waits for a native
-        /// speaker's review (#564); empty means none yet (the UI keeps the English).</summary>
+        /// <summary>The Hebrew name (#1187), an agent translation of <see cref="Name"/> until a native speaker, or an
+        /// AI-assisted contributor who discloses it, has read it (#564; owner, 4 November 2026:
+        /// "AI-assisted can clear it"); empty means none yet (the UI keeps the English).</summary>
         public string NameHe { get; set; } = "";
-        /// <summary>"agent-checked" while <see cref="NameHe"/> waits for a native speaker's review (#564); empty once reviewed.</summary>
+        /// <summary><see cref="NameHe"/> is "agent-checked" until a native speaker, or an AI-assisted contributor who
+        /// discloses it, has read it (#564; owner, 4 November 2026: "AI-assisted can clear it"); empty once
+        /// reviewed.</summary>
         public string NameHeReview { get => nameHeReview ?? ""; set => nameHeReview = value ?? ""; }
         /// <summary>True when the file has the key at all, even blank: a blank flag is an error, not a review.</summary>
         [YamlIgnore] public bool NameHeReviewGiven => nameHeReview != null;
@@ -1414,6 +1469,16 @@ namespace Statecraft.Sim
         /// <summary>The forces a Historical game starts with (map/units_1948.yaml; R-UNIT-006), in file order: the unit with id i
         /// of a new game is the i-th. Empty in the legacy loop.</summary>
         public List<StartingForce> StartingForces = new List<StartingForce>();
+        /// <summary>Every anchor's hex of map/unit_anchor_hexes.yaml by (row id, anchor index), the only hexes an operation
+        /// card may order a row's unit to (R-ENEMY-005). Empty in the legacy loop.</summary>
+        public Dictionary<(string Row, int Anchor), (int Q, int R)> UnitAnchorHexes = new Dictionary<(string Row, int Anchor), (int Q, int R)>();
+        /// <summary>The end of each anchor's window (its `to` in map/units_1948.yaml) by (row id, anchor index): a card's order to
+        /// the anchor's hex ends on that day (R-ENEMY-005; the owner's answer 1 on #2087). Empty in the legacy loop.</summary>
+        public Dictionary<(string Row, int Anchor), DateTime> UnitAnchorEnds = new Dictionary<(string Row, int Anchor), DateTime>();
+        /// <summary>Each row's order targets (map/units_1948.yaml `order_targets`; owner, 2 November 2026, #2087, option 1) by
+        /// (row id, index): the hex unit_anchor_hexes.yaml gives it and its `to`, the day a card's order to it ends. An operation
+        /// card may order the row's unit there as to an anchor (R-ENEMY-005). Empty in the legacy loop.</summary>
+        public Dictionary<(string Row, int Target), (int Q, int R, DateTime To)> UnitOrderTargets = new Dictionary<(string Row, int Target), (int Q, int R, DateTime To)>();
         /// <summary>The GDD designated sites (sites.yaml), in file order. Empty in the legacy loop.</summary>
         public List<Site> Sites = new List<Site>();
         /// <summary>The GDD city project kinds (projects.yaml) this game's ruleset has (R-ARMS-004: a row's `rulesets`), in file

@@ -18,7 +18,7 @@ namespace Statecraft.Game.EditorTools
         Vector2 inspectorScroll, pan;
         float zoom = 1f;
         (int q, int r)? selectedHex;
-        string selectedLocation = "";
+        string selectedLocation = "", search = "";
         int coordinateQ, coordinateR, periodIndex;
         bool draggingLocation, panning;
         (int q, int r)? dragTarget;
@@ -190,7 +190,16 @@ namespace Statecraft.Game.EditorTools
 
             EditorGUILayout.Space(12);
             EditorGUILayout.LabelField("Location", EditorStyles.boldLabel);
-            var choices = document.Locations.OrderBy(x => x.Id, StringComparer.Ordinal).ToList();
+            EditorGUI.BeginChangeCheck();
+            search = EditorGUILayout.TextField("Search id", search);
+            var choices = document.SearchLocations(search).ToList();
+            // A new search that hides the selected location selects its first hit, so the inspector follows the search.
+            if (EditorGUI.EndChangeCheck() && choices.Count > 0 && choices.All(x => x.Id != selectedLocation))
+            {
+                selectedLocation = choices[0].Id;
+                SyncCoordinateFields();
+            }
+            if (choices.Count == 0) EditorGUILayout.HelpBox($"No location id contains '{search.Trim()}'.", MessageType.Info);
             var selected = Math.Max(0, choices.FindIndex(x => x.Id == selectedLocation));
             EditorGUI.BeginChangeCheck();
             selected = EditorGUILayout.Popup("Location", selected, choices.Select(x => x.Name + " (" + x.Id + ")").ToArray());
@@ -212,6 +221,25 @@ namespace Statecraft.Game.EditorTools
                     Mutate("Move map location", () => document.SetLocation(location.Id, coordinateQ, coordinateR));
                 DrawDependencies(location.Id);
             }
+            DrawChanges();
+        }
+
+        /// <summary>Diff preview with selected revert (#1721 slice C): each row differs from the saved override file, and its
+        /// Revert button puts only that row back, as one Undo step.</summary>
+        void DrawChanges()
+        {
+            if (document == null) return;
+            EditorGUILayout.Space(12);
+            EditorGUILayout.LabelField("Changes since save", EditorStyles.boldLabel);
+            var changes = document.Changes();
+            if (changes.Count == 0) { EditorGUILayout.LabelField("None", EditorStyles.wordWrappedMiniLabel); return; }
+            foreach (var change in changes)
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    EditorGUILayout.LabelField(change.ToString(), EditorStyles.wordWrappedMiniLabel);
+                    if (GUILayout.Button("Revert", GUILayout.Width(56)))
+                        Mutate("Revert one map override edit", () => document.Revert(change));
+                }
         }
 
         void DrawControl(int q, int r)
@@ -356,6 +384,9 @@ namespace Statecraft.Game.EditorTools
                 if (marker.location != null && Vector2.Distance(screen(centres[marker.at]), current.mousePosition) <= 9f)
                 {
                     selectedLocation = marker.location.Id;
+                    // A marker the search hides would leave the popup on its first hit and drop this location's inspector,
+                    // so the click clears the search; unfocusing the field lets it show the cleared text.
+                    if (document.SearchLocations(search).All(x => x.Id != selectedLocation)) { search = ""; GUI.FocusControl(null); }
                     draggingLocation = true;
                     dragTarget = marker.at;
                     SetCoordinateFields(marker.at);

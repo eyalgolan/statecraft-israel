@@ -279,8 +279,8 @@ real-build rule"), so no AI trailer goes on the page.
   (`unity/Assets/WebGLTemplates/Statecraft/favicon.ico`, AI-assisted drawing) is not in a desktop build; `promo/` is not in any
   build.
 - An `owner-verify` row is not cleared by appearing here. Today no row in `docs/ai-disclosure.md` is `owner-verify`.
-- README.md's "AI use" still says "Sound: no AI sound" (README.md:179). The three sound effects make that line out of
-  date; it should change before the page goes up.
+- README.md's "AI use" says "the game's three short sound effects (turn ended, refused order, event card) were made
+  with ElevenLabs" (README.md:187), matching this disclosure.
 - The Hebrew UI strings (a hand-asked preview, #193): the repository does not record whether they were translated with
   AI. If the owner lists Hebrew, settle this first **[confirm]**.
 - The store text itself was drafted by an AI agent for the owner to edit (store-page-draft.md, To confirm 13).

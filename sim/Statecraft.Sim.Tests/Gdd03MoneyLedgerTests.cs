@@ -34,7 +34,7 @@ public class Gdd03MoneyLedgerTests
     /// without a line; (c) the Treasury ends at 0 or more.</summary>
     internal static void AssertReconciles(GameState before, StepResult r, string what)
     {
-        var money = r.Why.Where(EconomySystem.MovesMoney).Sum(w => w.Delta);
+        var money = r.Why.Where(EconomySystem.MovesMoney).Sum(EconomySystem.MoneyDelta);
         var net = (r.State.Treasury - r.State.Debt) - (before.Treasury - before.Debt);
         Assert.True(Math.Abs(money - net) <= Tolerance, $"{what}: the Money causes add up to {N(money)}, Treasury minus Debt moved {N(net)}");
         var debt = r.Why.Where(w => w.Target == "debt").Sum(w => w.Delta);
@@ -206,7 +206,7 @@ public class Gdd03MoneyLedgerTests
             foreach (var w in a.Why.Where(w => w.Key == CauseKeys.Borrowed)) borrowedFor.Add(w.Args[0]);
             poor = a.State; rich = b.State;
         }
-        Assert.True(poor.Debt > 0 && rich.Debt == 0, $"the empty Treasury borrowed IL {N(poor.Debt)}m, the full one IL {N(rich.Debt)}m");
+        Assert.True(poor.Debt > 0 && rich.Debt == 0, $"the empty Treasury borrowed IL\u00A0{N(poor.Debt)}m, the full one IL\u00A0{N(rich.Debt)}m");
         Assert.Subset(borrowedFor, new HashSet<string> { CauseKeys.Purpose.Deficit, CauseKeys.Purpose.Training, CauseKeys.Purpose.Project, CauseKeys.Purpose.Arms });
     }
 

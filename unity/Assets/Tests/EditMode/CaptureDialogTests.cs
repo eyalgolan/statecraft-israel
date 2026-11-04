@@ -996,4 +996,44 @@ public class CaptureDialogTests
         CollectionAssert.AreEquivalent(new[] { "scale", "opacity" },
             card.resolvedStyle.transitionProperty.Select(x => x.ToString()), "a scale-up and a fade-in");
     }
+
+    /// <summary>The smoke run (GameRoot.Smoke) fails on its first pass, naming the cause, when a dialog that End turn does not
+    /// hide keeps the unit card out of reach. The v0.3.5 WebGL smoke pressed the disabled Skip 200 times behind Ramla's dialog
+    /// before it failed (#2436). This rig's End turn selects no unit and hides nothing, as End turn did before #2436.</summary>
+    [UnityTest]
+    public IEnumerator TheSmokeFailsAtOnceWhenTheDialogKeepsTheUnitCardOutOfReach()
+    {
+        using (var r = new Rig(Awaiting(C, "lod")))
+        {
+            yield return Frames(4);
+            Assert.IsTrue(r.Hud.ClassListContains(CaptureDialogPresenter.OpenClass), "precondition: the dialog is open");
+            Assert.IsFalse(r.Root.Q<Button>("info-skip").enabledInHierarchy, "precondition: the dialog takes Skip out of reach");
+            Assert.Greater(r.Bridge.NeedsOrders.Count, 0, "precondition: units need orders");
+            var log = new List<string>();
+            var run = GameRoot.Smoke(r.Root, r.Bridge, r.Card, 1, log.Add);
+            while (run.MoveNext()) { }
+            Assert.AreEqual("SMOKE FAIL info-skip is not enabled", log.Last(), string.Join("\n", log));
+        }
+    }
+
+    /// <summary>A Skip that is in reach but skips nothing (the unit card shows no unit, InfoPanelPresenter.OrderUnit) fails the
+    /// smoke run on its first pass too, instead of after 200.</summary>
+    [UnityTest]
+    public IEnumerator TheSmokeFailsAtOnceWhenSkipSkipsNoUnit()
+    {
+        using (var r = new Rig(Awaiting(C, "lod")))
+        {
+            yield return Frames(4);
+            Press(r.Hide);
+            yield return Frames(2);
+            Assert.IsTrue(r.Dialog.Collapsed, "precondition: the dialog is hidden");
+            Assert.IsTrue(r.Root.Q<Button>("info-skip").enabledInHierarchy, "precondition: Skip is in reach");
+            Assert.Greater(r.Bridge.NeedsOrders.Count, 0, "precondition: units need orders");
+            var waiting = r.Bridge.NeedsOrders.ToList();
+            var log = new List<string>();
+            var run = GameRoot.Smoke(r.Root, r.Bridge, r.Card, 1, log.Add);
+            while (run.MoveNext()) { }
+            StringAssert.StartsWith("SMOKE FAIL info-skip skipped no unit: waiting " + string.Join(",", waiting) + ";", log.Last(), string.Join("\n", log));
+        }
+    }
 }

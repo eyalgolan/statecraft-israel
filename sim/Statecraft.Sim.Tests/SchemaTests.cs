@@ -29,7 +29,7 @@ public class SchemaTests
     static readonly HashSet<string> Supported = new HashSet<string>
     {
         "$schema", "$ref", "title", "description", "definitions", "type", "properties", "additionalProperties", "required",
-        "items", "minItems", "minLength", "pattern", "minimum", "maximum", "enum",
+        "items", "minItems", "minLength", "pattern", "minimum", "exclusiveMinimum", "maximum", "enum",
     };
 
     static void Check(JsonElement schema, JsonElement root, JsonNode? value, string path, List<string> errors)
@@ -58,6 +58,7 @@ public class SchemaTests
             else if (val.TryGetValue<double>(out var num) || (val.TryGetValue<long>(out var whole) && (num = whole) == whole))
             {
                 if (schema.TryGetProperty("minimum", out var mn) && num < mn.GetDouble()) errors.Add($"{path}: must be at least {mn.GetDouble()}");
+                if (schema.TryGetProperty("exclusiveMinimum", out var xm) && num <= xm.GetDouble()) errors.Add($"{path}: must be more than {xm.GetDouble()}");
                 if (schema.TryGetProperty("maximum", out var mx) && num > mx.GetDouble()) errors.Add($"{path}: must be at most {mx.GetDouble()}");
             }
         }
@@ -143,6 +144,7 @@ public class SchemaTests
     public static IEnumerable<object[]> RealFiles()
     {
         yield return new object[] { "gdd03-events.yaml", "gdd03-events.schema.json" };
+        yield return new object[] { "gdd03-start.yaml", "gdd03-start.schema.json" };
         yield return new object[] { "people.yaml", "people.schema.json" };
         yield return new object[] { "offices.yaml", "offices.schema.json" };
         yield return new object[] { "parties.yaml", "parties.schema.json" };
@@ -198,6 +200,8 @@ public class SchemaTests
         yield return new object[] { "map-overrides.schema.json", "/properties/locations/items", typeof(LocationOverride) };
         yield return new object[] { "gdd03-events.schema.json", "", typeof(ContentLoader).GetNestedType("Gdd03EventsFile", BindingFlags.NonPublic)! };
         yield return new object[] { "gdd03-events.schema.json", "/properties/exclusions/items", typeof(ContentLoader).GetNestedType("EventExclusion", BindingFlags.NonPublic)! };
+        yield return new object[] { "gdd03-start.schema.json", "", typeof(ContentLoader).GetNestedType("Gdd03StartFile", BindingFlags.NonPublic)! };
+        yield return new object[] { "gdd03-start.schema.json", "/properties/military_camps/items", typeof(ContentLoader).GetNestedType("StartCampBinding", BindingFlags.NonPublic)! };
         yield return new object[] { "event.schema.json", "", typeof(GameEvent) };
         yield return new object[] { "event.schema.json", "/properties/conditions/items", typeof(EventCondition) };
         yield return new object[] { "event.schema.json", "/definitions/requirement", typeof(EventRequirement) };
@@ -331,6 +335,15 @@ people:
         Assert.Contains(Errors("event.schema.json", good.Replace("https://", "http://")), e => e.Contains("does not match"));
     }
 
+    // R-EFX-009 (review on #2487): debt_dollars is "more than 0", as the loader checks.
+    [Fact]
+    public void DebtDollarsMustBeMoreThanZero()
+    {
+        var card = "id: e\ntitle: T\ntext: X\nfrom: 1950-01-01\noptions:\n  - { id: a, text: A, debt_dollars: AMOUNT }\nsources: [{ url: \"https://example.org\", checked: 2026-10-09 }]\n";
+        Assert.Empty(Errors("event.schema.json", card.Replace("AMOUNT", "52")));
+        Assert.Contains(Errors("event.schema.json", card.Replace("AMOUNT", "0")), e => e.Contains("debt_dollars: must be more than 0"));
+    }
+
     [Fact]
     public void ThePartiesSchemaRejectsATypo() =>
         Assert.Contains(Errors("parties.schema.json", "parties:\n  - { id: mapai, nmae: Mapai }\n"), e => e.Contains("nmae"));
@@ -351,7 +364,9 @@ people:
             Regions = new List<MapEditorRegion> { new MapEditorRegion {
                 Hex = new MapEditorHex { Q = 1, R = -2 }, RegionId = "fixture'only" } },
             Infrastructure = new List<MapEditorInfrastructure> { new MapEditorInfrastructure {
-                Hex = new MapEditorHex { Q = 1, R = -2 }, Id = "fixture'only", Kind = "fixture'only", ParentId = "fixture'only" } }
+                Hex = new MapEditorHex { Q = 1, R = -2 }, Id = "fixture'only", Kind = "fixture'only", ParentId = "fixture'only" } },
+            Offsets = new List<MapEditorOffset> { new MapEditorOffset {
+                Id = "fixture_only", Kind = "label", Hex = new MapEditorHex { Q = 1, R = -2 }, EastM = 120, NorthM = -40 } }
         };
         value.Overlay = MapOverrides.Parse("terrain: [{ hex: { q: 1, r: -2 }, value: hills }]\n"
             + "control: [{ hex: { q: 1, r: -2 }, period: fixture_only, value: I }]\n"
@@ -390,6 +405,8 @@ people:
     [InlineData("version: 'map-editor-0.3'", "version: future")]
     [InlineData("ruleset: 'gdd-0.3'", "ruleset: legacy")]
     [InlineData("draft: true", "unknown: true")]
+    [InlineData("kind: 'label'", "kind: 'badge'")]
+    [InlineData("north_m: -40", "north_m: -40.5")]
     public void AuthoringSchemaRejectsWrongVersionRulesetAndMissingFields(string old, string replacement) =>
         Assert.NotEmpty(Errors("map-editor-overlay.schema.json", SyntheticEditorEnvelope().Replace(old, replacement)));
 

@@ -25,7 +25,13 @@ public class UnitRosterFallbackTests
 {
     static readonly Content C = ContentLoader.Load(Paths.Content);
     static List<UnitEntry> Rows => UnitData.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", UnitData.DefaultFileName)));
-    static readonly HashSet<string> SideFigures = new HashSet<string>(UnitFigures.BySide.Values, StringComparer.Ordinal);
+    // #2274 maps local_arab_forces to Tal Heuberger's local irregular in BySide, but units_1948.yaml has no local_arab_forces
+    // row yet, so that side draws no token and its figure is never asked for. These tests cover the sides with authored rows.
+    static readonly HashSet<string> RowSides = new HashSet<string>(Rows.Select(r => r.Side), StringComparer.Ordinal);
+    static IEnumerable<string> TokenSides => UnitFigures.BySide.Keys.Where(RowSides.Contains);
+    static readonly HashSet<string> SideFigures = new HashSet<string>(UnitFigures.BySide.Where(kv => RowSides.Contains(kv.Key)).Select(kv => kv.Value), StringComparer.Ordinal);
+    const string LocalForces = "local_arab_forces";
+    static readonly HashSet<string> Asked = new HashSet<string>(StringComparer.Ordinal);   // every figure id requested, answered or not
 
     [SetUp]
     public void Fresh()
@@ -33,6 +39,7 @@ public class UnitRosterFallbackTests
         EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
         UnitFigures.Source = null;
         UnitFigures.Forget();
+        Asked.Clear();
     }
 
     [TearDown]
@@ -75,8 +82,9 @@ public class UnitRosterFallbackTests
         var pending = new Dictionary<string, Action<GameObject?>>(StringComparer.Ordinal);
         UnitFigures.Source = (id, detail, done) =>
         {
-            Assert.AreEqual(CollectionDetail.Far, detail, "no Near request at the start view");
+            Assert.AreEqual(CollectionDetail.Far, detail, "no Near request at the 90 km view");
             pending[id] = done;
+            Asked.Add(id);
         };
         return pending;
     }
@@ -114,8 +122,11 @@ public class UnitRosterFallbackTests
     public void FixtureDateHoldsATokenForEverySideInBySide()
     {
         var sides = EnemyCandidates(Rows, JuneState()).Values.Select(t => t.Unit.Side).Distinct().OrderBy(s => s, StringComparer.Ordinal);
-        CollectionAssert.AreEqual(UnitFigures.BySide.Keys.OrderBy(s => s, StringComparer.Ordinal), sides,
-            "15 June 1948 draws every side with a figure, Egypt and Lebanon included");
+        CollectionAssert.AreEqual(TokenSides.OrderBy(s => s, StringComparer.Ordinal), sides,
+            "15 June 1948 draws every side with a figure and authored rows, Egypt and Lebanon included");
+        Assert.IsTrue(UnitFigures.BySide.ContainsKey(LocalForces), "the local forces have a figure (#2274)");
+        Assert.IsFalse(RowSides.Contains(LocalForces), "but no authored local-forces row yet");
+        CollectionAssert.DoesNotContain(sides, LocalForces, "so no local-forces token on 15 June 1948");
     }
 
     [Test]
@@ -141,7 +152,8 @@ public class UnitRosterFallbackTests
             layer.FaceCamera(camera);   // the next render draws again
             Answer(pending, failSides);   // the drawn tokens' own holders ask again and fail again: no second warning
             Application.logMessageReceived -= Capture;
-            ExpectOneWarningPerSide(warned, UnitFigures.BySide.Keys);
+            ExpectOneWarningPerSide(warned, TokenSides);
+            Assert.IsFalse(Asked.Contains(UnitFigures.BySide[LocalForces]), "the local irregular is never asked for: no local-forces token");
             layer.FlushPrefetchRetirement();
             Assert.IsFalse(layer.Show(C, state), "the failed roster is stable");
             LogAssert.NoUnexpectedReceived();
@@ -202,6 +214,7 @@ public class UnitRosterFallbackTests
             Assert.IsNotEmpty(layer.Tokens.Where(t => t.Token.Unit.Side == UnitData.Israel), "fixture draws Israel");
             Assert.IsEmpty(layer.Tokens.Where(t => t.Token.Unit.Side != UnitData.Israel), "a loading figure draws no placeholder");
             Assert.IsTrue(SideFigures.All(pending.ContainsKey), "every side figure is still asked for");
+            Assert.IsFalse(Asked.Contains(UnitFigures.BySide[LocalForces]), "the local irregular is never asked for: no local-forces token");
             foreach (var id in SideFigures) Assert.IsFalse(UnitFigures.Failed(id), $"{id}: loading is not failed");
             LogAssert.NoUnexpectedReceived();
         }

@@ -257,6 +257,11 @@ namespace Statecraft.Sim
         public List<MapEditorWorkable> Workable { get; set; } = null!;
         public List<MapEditorRegion> Regions { get; set; } = null!;
         public List<MapEditorInfrastructure> Infrastructure { get; set; } = null!;
+        public List<MapEditorOffset> Offsets { get; set; } = null!;
+
+        /// <summary>The hex an offset must stay inside: content/map/hexes.json's pointy-top hex, whose `hex_size_km` (4.4,
+        /// since #1796) is the circumradius, centre to corner. A test pins this to that file.</summary>
+        public const double OffsetHexCircumradiusM = 4400;
 
         // R-MEDIT-003: no receipt or export until accepted dependency adapters and base-manifest contract exist.
         [YamlIgnore] public bool CanExport => false;
@@ -319,7 +324,8 @@ namespace Statecraft.Sim
             if (!IsToken(value.BaseRevision) || value.BaseDigest == null
                 || value.BaseDigest.Length != 64 || value.BaseDigest.Any(c => !(c >= '0' && c <= '9') && !(c >= 'a' && c <= 'f')))
                 throw Error("MAPEDIT_BASE", "base", "a single-line revision token and lowercase SHA-256 base-input digest are required");
-            if (value.Overlay == null || value.Workable == null || value.Regions == null || value.Infrastructure == null)
+            if (value.Overlay == null || value.Workable == null || value.Regions == null || value.Infrastructure == null
+                || value.Offsets == null)
                 throw Error("MAPEDIT_SHAPE", "(file)", "overlay and all edit lists are required");
             // Reuse legacy duplicate/shape checks without changing their behavior or serialization.
             try { MapOverrides.Serialize(value.Overlay); }
@@ -340,6 +346,16 @@ namespace Statecraft.Sim
             {
                 Token(row.Id, "infrastructure.id"); Token(row.Kind, "infrastructure.kind");
                 Token(row.ParentId, "infrastructure.parent_id");
+            }
+            CheckRows(value.Offsets, "offsets", x => x.Id + "/" + x.Kind);
+            foreach (var row in value.Offsets)
+            {
+                if (row.Id == null || !System.Text.RegularExpressions.Regex.IsMatch(row.Id, "^[a-z][a-z0-9_]*$"))
+                    throw Error("MAPEDIT_SHAPE", "offsets.id", "a stable location id is required");
+                if (row.Kind != "visual" && row.Kind != "label")
+                    throw Error("MAPEDIT_SHAPE", "offsets.kind", "visual or label is required");
+                if (row.EastM == null || row.NorthM == null)
+                    throw Error("MAPEDIT_SHAPE", "offsets", "whole metres east_m and north_m are required");
             }
         }
 
@@ -403,12 +419,21 @@ namespace Statecraft.Sim
                 x => "{ hex: " + Hex(x.Hex) + ", region_id: " + Quote(x.RegionId) + " }");
             Rows(text, "infrastructure", copy.Infrastructure.OrderBy(x => x.Id, StringComparer.Ordinal),
                 x => "{ id: " + Quote(x.Id) + ", hex: " + Hex(x.Hex) + ", kind: " + Quote(x.Kind) + ", parent_id: " + Quote(x.ParentId) + " }");
+            Rows(text, "offsets", copy.Offsets.OrderBy(x => x.Id, StringComparer.Ordinal).ThenBy(x => x.Kind, StringComparer.Ordinal),
+                x => "{ id: " + Quote(x.Id) + ", kind: " + Quote(x.Kind) + ", hex: " + Hex(x.Hex)
+                    + FormattableString.Invariant($", east_m: {x.EastM}, north_m: {x.NorthM} }}"));
             return text.ToString();
         }
 
-        /// <summary>Infrastructure diagnostics only. Caller supplies current base identity; this is not Content.Hash.
-        /// Missing domain adapters are explicit errors, even on an empty candidate. No automatic repair is performed.</summary>
-        public IReadOnlyList<MapEditorDiagnostic> Diagnostics(string currentRevision, string currentDigest)
+        /// <summary>Infrastructure diagnostics. Caller supplies current base identity; this is not Content.Hash.
+        /// Missing domain adapters are explicit errors, even on an empty candidate. With the loaded <paramref name="content"/>
+        /// the corridor, force-anchor, target and objective bindings are checked, and each broken one is a blocking row naming
+        /// its record (Q58, #1721 slice A). This overlay's location moves apply to the target and objective-site checks only;
+        /// corridors and anchors are checked against the map alone, since no overlay edit changes them. No automatic repair is
+        /// performed: no corridor, anchor, target or site is moved or rerouted.</summary>
+        /// <param name="content">The base content loaded with no editor overlay applied. Omitted, the four adapters stay
+        /// unavailable.</param>
+        public IReadOnlyList<MapEditorDiagnostic> Diagnostics(string currentRevision, string currentDigest, Content? content = null)
         {
             var result = new List<MapEditorDiagnostic>();
             if (BaseRevision != currentRevision || BaseDigest != currentDigest)
@@ -418,10 +443,88 @@ namespace Statecraft.Sim
             if (Draft == true)
                 result.Add(new MapEditorDiagnostic("MAPEDIT_DRAFT", "draft", "draft input cannot be canonical content",
                     "Resolve all diagnostics before requesting canonical export."));
-            foreach (var field in new[] { "regions", "fields", "facilities", "corridors", "anchors", "targets", "objectives", "base_manifest" })
+            var unavailable = content == null
+                ? new[] { "regions", "fields", "facilities", "corridors", "anchors", "targets", "objectives", "base_manifest" }
+                : new[] { "regions", "fields", "facilities", "base_manifest" };   // post-MVP adapters and the manifest contract
+            if (content != null) Dependencies(content, result);
+            // Q58/Q59: an offset that leaves its own hex only warns; the authored point is kept as written.
+            foreach (var o in Offsets.Where(o => !InsideHex(o.EastM!.Value, o.NorthM!.Value)))
+                result.Add(new MapEditorDiagnostic("MAPEDIT_OFFSET_OUTSIDE_HEX", $"offsets[{o.Id}/{o.Kind}]",
+                    FormattableString.Invariant($"{o.Kind} offset east_m={o.EastM} north_m={o.NorthM} leaves its hex q={o.Hex.Q} r={o.Hex.R}"),
+                    "Bring the offset back inside its hex; the location and its sourced point stay where they are.", blocking: false));
+            foreach (var field in unavailable)
                 result.Add(new MapEditorDiagnostic("MAPEDIT_DEPENDENCY_UNAVAILABLE", field, "accepted validation adapter is not installed",
                     "Integrate the owning contract before canonical save or export."));
             return result.OrderBy(x => x.Field, StringComparer.Ordinal).ThenBy(x => x.Code, StringComparer.Ordinal).ToList().AsReadOnly();
+        }
+
+        /// <summary>Pointy-top hex centred on the origin, north along a vertex: inside when within the flat east/west sides
+        /// (the inradius) and the four slanted sides. The boundary counts as inside.</summary>
+        static bool InsideHex(double east, double north)
+        {
+            double inradius = Math.Sqrt(3) / 2 * OffsetHexCircumradiusM, x = Math.Abs(east), y = Math.Abs(north);
+            return x <= inradius && x / 2 + y * Math.Sqrt(3) / 2 <= inradius;
+        }
+
+        /// <summary>The bindings the sim's loader would refuse (ContentLoader ValidateCorridors, StartingForces.Read,
+        /// ValidateSettlementTargets, ValidateObjectiveConditions and ValidateSites' settlement rule), re-checked with this
+        /// overlay's location moves applied to the settlements. Reads <paramref name="c"/> only.</summary>
+        void Dependencies(Content c, List<MapEditorDiagnostic> result)
+        {
+            void Broken(string field, string message) => result.Add(new MapEditorDiagnostic("MAPEDIT_DEPENDENCY_BROKEN", field, message,
+                "Resolve the binding explicitly; the editor never reroutes a sourced line or moves an anchor, target or site."));
+            bool Land(int q, int r) => c.HexAt(q, r)?.Land == true;
+            var settlement = new Dictionary<string, (int Q, int R)>(StringComparer.Ordinal);
+            foreach (var h in c.SettlementHexes)
+                settlement[h.Id] = Overlay.TryLocation(h.Id, out var q, out var r) ? (q, r) : (h.Q, h.R);
+
+            foreach (var x in c.Corridors)
+            {
+                List<int>? prev = null;
+                for (int i = 0; i < x.Segments.Count; i++)
+                    foreach (var h in x.Segments[i].Hexes)
+                    {
+                        var at = FormattableString.Invariant($"segment {i + 1} (to {x.Segments[i].To}) hex q={h[0]} r={h[1]}");
+                        if (!Land(h[0], h[1])) Broken($"corridors[{x.Id}]", at + " is not a land hex of the map");
+                        else if (prev != null && MapActions.Distance(prev[0], prev[1], h[0], h[1]) > 1)
+                            Broken($"corridors[{x.Id}]", at + FormattableString.Invariant($" is not next to q={prev[0]} r={prev[1]}"));
+                        prev = h;
+                    }
+            }
+            foreach (var f in c.StartingForces)
+            {
+                if (!Land(f.Q, f.R))
+                    Broken($"anchors[{f.Row}]", FormattableString.Invariant($"anchor {f.Anchor} hex q={f.Q} r={f.R} is not a land hex of the map"));
+                foreach (var (sq, sr, _) in f.Script.Where(x => !Land(x.Q, x.R)))
+                    Broken($"anchors[{f.Row}]", FormattableString.Invariant($"scripted anchor hex q={sq} r={sr} is not a land hex of the map"));
+            }
+            foreach (var t in c.SettlementTargets)
+            {
+                var at = $"targets[{t.Id}]";
+                if (!Land(t.Q, t.R)) Broken(at, FormattableString.Invariant($"target hex q={t.Q} r={t.R} is not a land hex of the map"));
+                if (!settlement.TryGetValue(t.Id, out var s)) { Broken(at, $"settlement '{t.Id}' has no hex"); continue; }
+                var bound = ContentLoader.TargetOnANeighbour.Contains(t.Id)
+                    ? Movement.Neighbours.Any(d => s.Q + d.Q == t.Q && s.R + d.R == t.R)
+                    : s.Q == t.Q && s.R == t.R;
+                if (!bound)
+                    Broken(at, FormattableString.Invariant($"target hex q={t.Q} r={t.R} no longer matches settlement {t.Id} at q={s.Q} r={s.R}"));
+            }
+            foreach (var o in c.Objectives)
+            {
+                var w = o.CompletesWhen;
+                if (w == null) continue;
+                var at = $"objectives[{o.Id}]";
+                if (w.CorridorComplete != "" && c.Corridors.All(x => x.Id != w.CorridorComplete))
+                    Broken(at, $"unknown corridor '{w.CorridorComplete}'");
+                foreach (var id in w.SitesBuilt.Prepend(w.SiteBuilt).Where(x => x != ""))
+                {
+                    var site = c.Sites.FirstOrDefault(x => x.Id == id);
+                    if (site == null) { Broken(at, $"unknown site '{id}'"); continue; }
+                    if (!Projects.IsYishuvSite(site)) Broken(at, $"site '{id}' cannot be built as a yishuv");
+                    foreach (var kv in settlement.Where(kv => kv.Value == (site.Q, site.R)).OrderBy(kv => kv.Key, StringComparer.Ordinal))
+                        Broken(at, FormattableString.Invariant($"site '{id}' hex q={site.Q} r={site.R} now holds the settlement {kv.Key}"));
+                }
+            }
         }
     }
 
@@ -448,6 +551,14 @@ namespace Statecraft.Sim
         public string Kind { get; set; } = "";
         public string ParentId { get; set; } = "";
     }
+    /// <summary>A visual or label offset (Q59): the location's axial hex plus whole metres east and north of its centre.</summary>
+    public sealed class MapEditorOffset : MapEditorHexEdit
+    {
+        public string Id { get; set; } = "";
+        public string Kind { get; set; } = "";
+        public int? EastM { get; set; }
+        public int? NorthM { get; set; }
+    }
     public sealed class MapEditorDiagnostic
     {
         public string Code { get; }
@@ -455,8 +566,10 @@ namespace Statecraft.Sim
         public string Field { get; }
         public string Message { get; }
         public string Action { get; }
-        public MapEditorDiagnostic(string code, string field, string message, string action)
-        { Code = code; Field = field; Message = message; Action = action; }
+        /// <summary>False only for a warning, which does not block export (Q58: visual and label offsets only warn).</summary>
+        public bool Blocking { get; }
+        public MapEditorDiagnostic(string code, string field, string message, string action, bool blocking = true)
+        { Code = code; Field = field; Message = message; Action = action; Blocking = blocking; }
     }
 
 }

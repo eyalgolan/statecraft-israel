@@ -146,17 +146,57 @@ def test_tal_original_licensing_matches_manifest_exactly():
     }
     towns = {f"unity/Assets/Art/Collection/{t}-town-v1/{t}-town-v1{x}"
              for t in ("tiberias", "safed", "netanya", "ramla") for x in (".fbx", "_basecolor.jpg")}
-    added = sources | towns
-    assert len(sources) == 24 and len(towns) == 8
+    # #2082's papyrus and tamarisk in the game (owner, 2 November 2026: "Hula + Arava, map and boards (Recommended)"): the
+    # byte-identical Unity copies of the six recovered sources.
+    plants = {f"unity/Assets/Art/HexTiles/Props/{d}/{f}" for d in ("hula_swamp_papyrus", "arava_oasis_tamarisk")
+              for f in (d + ".obj", "albedo.jpg", "normal.jpg")}
+    # #2083 and #2084 in the game (owner, 2 November 2026): the K98k's and the Sten's compatibility FBX and colour map, and
+    # the C06 point-fire export byte for byte.
+    weapons = {f"unity/Assets/Art/Collection/weapon-{w}-v1/weapon-{w}-v1{x}" for w in ("k98k", "sten") for x in (".fbx", "_basecolor.jpg")} | {
+        "unity/Assets/Art/Collection/c06-point-fire-v1/C06-POINT-FIRE-PROVISIONAL-PUBLIC.fbx"}
+    # #2384 in the game (owner, 3 November 2026): the 1948 soldier's rigged copy, Tal's #336 mesh on their C07's skeleton, and
+    # its colour map, Tal's byte for byte.
+    rigged = {f"unity/Assets/Art/Collection/figure-soldier-1948-v1-rigged/figure-soldier-1948-v1-rigged{x}" for x in (".fbx", "_basecolor.jpg")}
+    added = sources | towns | plants | weapons | rigged
+    assert len(sources) == 24 and len(towns) == 8 and len(plants) == 6 and len(weapons) == 5 and len(rigged) == 2
     added_rows = [r for r in independent if r["glob"] in added]
-    assert {r["glob"] for r in added_rows} == added and len(added_rows) == 32
+    assert {r["glob"] for r in added_rows} == added and len(added_rows) == 45
+    assert all("Hula + Arava, map and boards" in r["note"] for r in added_rows if r["glob"] in plants)
     assert all(r["artist"] == "Tal Heuberger" and r["ai_generated"] is True for r in added_rows)
-    assert all("#1177" in r["note"] and "2 November 2026" in r["note"] for r in added_rows)
+    assert all("#1177" in r["note"] and "2 November 2026" in r["note"] for r in added_rows if r["glob"] not in rigged)
+    assert all("#2384" in r["note"] and "3 November 2026" in r["note"] for r in added_rows if r["glob"] in rigged)
     import hashlib
     for r in added_rows:  # each row records its file's SHA-256
         assert hashlib.sha256((ROOT / r["glob"]).read_bytes()).hexdigest() in r["source"], r["glob"]
-    assert len([r for r in independent if r["glob"] not in added]) == 50  # the hex-tile props row and the #1901 -light meshes among them
-    assert len(independent) == 82  # 146 originals + 82 independent grants = 228 total
+    # Afik Faerman's main theme (#39, #2240; owner, 2 November 2026: CC BY-NC-ND 4.0, credited to Afik): one exact-file row.
+    music = [r for r in independent if r["glob"] == "unity/Assets/StreamingAssets/audio/music/Main_1.3.ogg"]
+    assert len(music) == 1 and music[0]["artist"] == "Afik Faerman" and music[0]["ai_generated"] is False
+    # The fire take baked for C04, which has none of its own (#2375; owner, 3 November 2026: Tal Heuberger's permission for
+    # this adapted version): one exact-file row, a derived clip of a take inside Tal's own FBX. The enemy infantry get none
+    # yet (owner, 3 November 2026: "C04 only; enemies wait (Recommended)"; #2399).
+    fire = {"unity/Assets/Art/Collection/figure-c04-sabra-pioneer-v3/fire.anim"}
+    fire_rows = [r for r in independent if r["glob"] in fire]
+    assert {r["glob"] for r in fire_rows} == fire and len(fire_rows) == 1
+    assert all(r["artist"] == "Tal Heuberger" and r["ai_generated"] is True for r in fire_rows)
+    assert all("owner confirms Tal's permission, 3 Nov 2026 (#2375)" in r["note"] and "FireTakeRetarget" in r["note"] for r in fire_rows)
+    assert all((ROOT / r["glob"]).is_file() for r in fire_rows)
+    assert not [r["glob"] for r in rules if r["glob"].endswith("/fire.anim") and r["glob"] not in fire]  # no enemy fire take yet (#2399)
+    far_globs = {
+        "unity/Assets/Art/Settlements/Prototype/Models/*/*-far.asset",
+        "unity/Assets/Art/Settlements/Prototype/Models/*/*-far.png",
+    }
+    far_rows = [r for r in independent if r["glob"] in far_globs]
+    assert len(far_rows) == 2 and {r["glob"] for r in far_rows} == far_globs
+    assert all(r["licence"] == "CC-BY-NC-ND-4.0" and r["artist"] == "Tal Heuberger" for r in far_rows)
+    licensing = (ROOT / "LICENSING.md").read_text(encoding="utf-8")
+    far_licensing_rows = [next(line for line in licensing.splitlines() if line.startswith(prefix)) for prefix in (
+        "| New 22 October buildings, tents and props ", "| Original 3D model files by Tal Heuberger |")]
+    assert all("`*-far.asset`" in row and "`*-far.png`" in row for row in far_licensing_rows)
+    assert all("[CC BY-NC-ND 4.0]" in row and "Tal Heuberger" in row for row in far_licensing_rows)
+    # The hex-tile props row, the #1901 -light meshes and the two #2378 far-off copy rows (*-far.asset, *-far.png; owner,
+    # 3 November 2026, confirms Tal's permission) among them.
+    assert len([r for r in independent if r["glob"] not in added and r not in music and r["glob"] not in fire]) == 52
+    assert len(independent) == 99  # 146 originals + 99 independent grants = 245 total
     for row in selected:
         assert row["licence"] == "CC-BY-NC-ND-4.0"
         assert row["artist"] == "Tal Heuberger"
@@ -175,6 +215,17 @@ def test_no_asset_licence_rule_matches_generated_manifest_paths():
     captured = [(r["glob"], p) for r in rules for p in sorted(generated)
                 if fnmatch.fnmatch(p, r["glob"])]
     assert captured == [], f"Asset-licence rows capture generated paths: {captured}"
+
+
+def test_borrowed_fire_clip_resolves_to_explicit_cc_by_nc_nd_row():
+    """C04's derived clip has an exact LICENSING.md row and does not fall back to the PolyForm code row."""
+    import re
+    text = (ROOT / "LICENSING.md").read_text(encoding="utf-8")
+    row = next(l for l in text.splitlines() if l.startswith("| Derived borrowed fire clip by Tal Heuberger |"))
+    fire = {"unity/Assets/Art/Collection/figure-c04-sabra-pioneer-v3/fire.anim"}
+    assert set(re.findall(r"`(unity/Assets/Art/Collection/[^`]+/fire\.anim)`", row)) == fire
+    assert "[CC BY-NC-ND 4.0](LICENSES/CC-BY-NC-ND-4.0.txt)" in row
+    assert "PolyForm" not in row
 
 
 def test_tal_history_excludes_current_originals_and_keeps_generated_code_terms():
