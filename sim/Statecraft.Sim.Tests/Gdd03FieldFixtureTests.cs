@@ -35,7 +35,7 @@ public class Gdd03FieldFixtureTests
     static Gdd03SyntheticMonthContext Month(Content c, GameState s, params string[] notHeldAtFreeze) =>
         Gdd03SyntheticMonthContext.CreateSynthetic(SaveGame.Gdd03Ruleset, 0, s.PopulationLedger.Units,
             Gdd03FieldFixture.Fields(c).Select(f => new Gdd03SyntheticFacilitySnapshot(f.Id, !notHeldAtFreeze.Contains(f.Id), 1)),
-            Array.Empty<int>(), Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
+            Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
     static HashSet<string> AllHeld(Content c) => Gdd03FieldFixture.Fields(c).Select(f => f.Id).ToHashSet(StringComparer.Ordinal);
     static void Refused(GameState s, Action a, string? message = null)
     {
