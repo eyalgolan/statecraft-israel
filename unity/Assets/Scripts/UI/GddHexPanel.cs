@@ -147,7 +147,10 @@ namespace Statecraft.Game.UI
                 var queue = bridge.Queued.ToList();
                 var slot = old == null ? -1 : queue.IndexOf(old);
                 if (slot >= 0) queue[slot] = press; else queue.Add(press);
-                var accepted = !Simulation.Preview(c, s, queue).Rejected.Any(x => ReferenceEquals(x.Command, press));
+                // As End turn runs it (GameSession.EndTurn: Step from the turn's start over the committed orders, then the
+                // queue) and as ArmsPurchasePresenter asks it.
+                var accepted = !Simulation.Preview(c, bridge.TurnStart, bridge.Session.Committed.Concat(queue).ToList())
+                    .Rejected.Any(x => ReferenceEquals(x.Command, press));
                 var row = Row(host, $"city-train-{type.Id}-row");
                 Button(row, "city-train-" + type.Id, text.Format("city.train_" + type.Id, PlayerText.Money(c, "treasury", type.TrainingCost), Turns(text, type.TrainingTurns)),
                     () => bridge.Queue(new Train(id, type.Id, ordered + 1)))

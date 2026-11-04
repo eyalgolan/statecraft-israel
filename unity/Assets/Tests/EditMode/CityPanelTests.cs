@@ -316,6 +316,51 @@ public class CityPanelTests
             "the purchase runs before a newly appended Train order");
     }
 
+    // #2580 (R-ARMS-002, R-MONEY-004): let A be the Arms cost and M the Money from the turn's full dollar conversion.
+    // Treasury = 0 and Debt = ceiling - A + M/2, so Buy alone ends at ceiling + M/2 (refused), while conversion first
+    // leaves Debt at ceiling - A + M/2 + max(0, A - M), at or below the ceiling. FxReserves supplies the full conversion.
+    // Red-first at 085944e62: the enabled case passes for the wrong reason (free civilians only); the disabled control fails.
+    [Test]
+    public void RecruitTrainingFollowsDollarConversionsMovedBeforeArmsPurchases()
+    {
+        void NearCeiling(GameState s)
+        {
+            var m = C.RulesAt(s.Date).Mvp!;
+            var dollars = m.DollarsPerTurn!.Value;
+            var armsCost = RecruitGroupArms(s) * m.ArmsPrice!.Value;
+            var convertedMoney = dollars * m.IlPerDollarOn(s.Date);
+            s.Arms = RecruitGroupArms(s) - 1;
+            s.Treasury = 0;
+            s.Debt = m.DebtCeiling!.Value - armsCost + convertedMoney / 2;
+            s.FxReserves = dollars;
+        }
+
+        foreach (var convertAfterPurchase in new[] { true, false })
+        {
+            using var ui = new UiTestKit();
+            var bridge = Bridge(En, NearCeiling);
+            using var panel = Panel(ui, bridge, En);
+            panel.Show(CityHex.q, CityHex.r);
+            var m = C.RulesAt(bridge.State.Date).Mvp!;
+            var dollars = m.DollarsPerTurn!.Value;
+            var armsCost = RecruitGroupArms(bridge.State) * m.ArmsPrice!.Value;
+            var convertedMoney = dollars * m.IlPerDollarOn(bridge.State.Date);
+            Assert.Greater(bridge.State.Debt + armsCost, m.DebtCeiling!.Value,
+                "precondition: BuyArms alone would borrow past the ceiling");
+            Assert.LessOrEqual(bridge.State.Debt + Math.Max(0, armsCost - convertedMoney), m.DebtCeiling.Value,
+                "precondition: converting first leaves the purchase within the ceiling");
+            Assert.IsNull(bridge.Queue(new BuyArms(RecruitGroupArms(bridge.State))),
+                "precondition: the bridge accepts BuyArms first");
+            if (convertAfterPurchase)
+                Assert.IsNull(bridge.Queue(new ConvertDollars(dollars)),
+                    "precondition: the bridge accepts ConvertDollars after BuyArms");
+            Assert.AreEqual(convertAfterPurchase, ui.Q<Button>("city-train-recruit").enabledSelf,
+                convertAfterPurchase
+                    ? "End turn moves the conversion before BuyArms, so the purchase stays within the ceiling"
+                    : "without the conversion, BuyArms would borrow past the ceiling and Train is refused");
+        }
+    }
+
     // #2573: pressing Train again replaces the queued Train in its own slot (SimBridge.Queue), so a purchase queued after
     // it runs too late to pay for the extra group. Red-first at 085944e62: enabled, the panel checks free civilians only.
     [Test]
