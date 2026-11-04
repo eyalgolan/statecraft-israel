@@ -156,6 +156,8 @@ namespace Statecraft.Sim
         public const string FoodShortage = "food_shortage";
         /// <summary>Args: CauseKeys.Number(s.Food).</summary>
         public const string FoodWithoutImports = "food_without_imports";
+        /// <summary>R-FOOD-002's import top-up. Args: CauseKeys.Number(s.Food), the stock the import brought it to.</summary>
+        public const string FoodImported = "food_imported";
         /// <summary>Args: none.</summary>
         public const string PrisonerFood = "prisoner_food";
         /// <summary>Args: CauseKeys.Number(unfed).</summary>
@@ -271,7 +273,7 @@ namespace Statecraft.Sim
             EventNew, EventChosen, EventDelegated, EventDelegatedPartial, EventAmount, EventStock, EventGrant, EventCity,
             EventUnlock, EventPolicy, EventSetRung, EventRejoin, MilitaryUpkeep, HousingSurcharge, HousingCohesion,
             ObjectiveCompleted, PrisonersReturned, SoldiersReturned,
-            WorkersAssigned, WagesPaid, ImmigrantsHoused, HousingShortage, ImmigrantsWaiting, RecruitsVeteran, CorridorStarted, CorridorCancelled, CorridorCompleted, PioneersVeteran, MapBorrowed, MapBuilt, LandWorkStarted, SiteStarted, SiteCancelled, SiteCompleted, ProjectStarted, ProjectCancelled, ProjectCompleted, ProjectBuilder, ProjectBuilderFreed, ProjectWaiting, ArmsBought, WorkshopWorkers, WorkshopArms, WorkshopPaused, DollarsConverted, FoodHarvest, FoodShortage, FoodWithoutImports, PrisonerFood, PrisonerFoodShortage, CraftsmenReturned, CraftsmenReassigned, PioneerReturned, PioneersReassigned, TrainingStarted, TrainingArms, TrainingCancelled, TrainingArmsReturned, ReplacementsStopped, ReplacementsJoined, MilitaryTrained, PioneersTrained, CraftsmenTrained, Appointed, Reshuffle, AppointmentsEnded, ApprovalStability, CoalitionCollapsed, LegislatureConvened, GovernmentTookOffice, CoalitionChanged, EraEnded, AdvisoryPolicyRejected, PolicyRejected, PolicySet, AdvisoryBudgetRejected, BudgetRejected, PlaceCaptured, EnemyRegained, PlaceAnnexed, PlaceWithdrawn, PlaceDeported, DeportEffect, DeportCost, OccupationStarted, PendingBecameRaid, OccupationLostUnit, OccupationCountdown, DepopulationSupport,
+            WorkersAssigned, WagesPaid, ImmigrantsHoused, HousingShortage, ImmigrantsWaiting, RecruitsVeteran, CorridorStarted, CorridorCancelled, CorridorCompleted, PioneersVeteran, MapBorrowed, MapBuilt, LandWorkStarted, SiteStarted, SiteCancelled, SiteCompleted, ProjectStarted, ProjectCancelled, ProjectCompleted, ProjectBuilder, ProjectBuilderFreed, ProjectWaiting, ArmsBought, WorkshopWorkers, WorkshopArms, WorkshopPaused, DollarsConverted, FoodHarvest, FoodShortage, FoodWithoutImports, FoodImported, PrisonerFood, PrisonerFoodShortage, CraftsmenReturned, CraftsmenReassigned, PioneerReturned, PioneersReassigned, TrainingStarted, TrainingArms, TrainingCancelled, TrainingArmsReturned, ReplacementsStopped, ReplacementsJoined, MilitaryTrained, PioneersTrained, CraftsmenTrained, Appointed, Reshuffle, AppointmentsEnded, ApprovalStability, CoalitionCollapsed, LegislatureConvened, GovernmentTookOffice, CoalitionChanged, EraEnded, AdvisoryPolicyRejected, PolicyRejected, PolicySet, AdvisoryBudgetRejected, BudgetRejected, PlaceCaptured, EnemyRegained, PlaceAnnexed, PlaceWithdrawn, PlaceDeported, DeportEffect, DeportCost, OccupationStarted, PendingBecameRaid, OccupationLostUnit, OccupationCountdown, DepopulationSupport,
         };
 
         /// <summary>A number as an Arg: invariant and round-trip, so the UI rounds exactly the value Message rounded.</summary>

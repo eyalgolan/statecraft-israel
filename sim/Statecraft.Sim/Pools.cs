@@ -120,7 +120,12 @@ namespace Statecraft.Sim
                 return;
             }
             var target = (long)r.CoverMonths!.Value * need;
-            if (s.Food < target) s.Food = (int)target;
+            if (s.Food < target)
+            {
+                var imported = target - s.Food;
+                s.Food = (int)target;
+                why.Add(new Cause("economy", "food", imported, FormattableString.Invariant($"Food imported: the stock rose to {s.Food} units"), key: CauseKeys.FoodImported, args: new[] { CauseKeys.Number(s.Food) }));
+            }
         }
 
         /// <summary>R-FOOD-003: food_supply's stock term, k_food * (stock - full) / full - unmet / need, where full is

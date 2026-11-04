@@ -62,6 +62,20 @@ public class PoolsTests
         Assert.Equal(0.4, next.Indicators["food_supply"]);
     }
 
+    // #2527: the import top-up adds its own Why line, and the Food row's lines add up to the stock's change.
+    [Fact]
+    public void TheImportAddsItsOwnWhyLineAndTheFoodLinesAddUp()
+    {
+        var c = Gdd();
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var before = s.Food;
+        var r = StepWithWhy(c, s);
+        var imported = Assert.Single(r.Why, w => w.Key == CauseKeys.FoodImported);
+        Assert.Equal(("economy", "food"), (imported.System, imported.Target));
+        Assert.Equal(r.State.Food, int.Parse(imported.Args[0]));
+        Assert.Equal(r.State.Food - before, r.Why.Where(w => w.System == "economy" && w.Target == "food").Sum(w => w.Delta));
+    }
+
     // R-FOOD-002 (Q-POOL-4: the fx crisis cuts the imports, not food_supply directly)
     [Fact]
     public void ACurrencyCrisisCutsTheImportsSoTheStockFalls()

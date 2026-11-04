@@ -1342,6 +1342,8 @@ why.cause.workshop_paused.debt_ceiling: "{0}: המחזור הבא של סדנת 
 why.cause.food_harvest: "{0}: יחידות מזון שהניבה הקרקע החרושה: {1}"
 why.cause.food_shortage: "המזון אזל: מחסור של {0} מתוך {1} יחידות שנדרשו החודש"
 why.cause.food_without_imports: "לא יובא מזון (משבר מטבע חוץ): יחידות שנותרו במלאי: {0}"
+# For the native reviewer (#564): agent-drafted Hebrew.
+why.cause.food_imported: "יובא מזון: המלאי עלה ל-{0} יחידות"
 why.cause.prisoner_food: "יחידות מזון שאכלו השבויים המוחזקים: {0}"
 why.cause.prisoner_food_shortage: "לשבויים המוחזקים חסרו {0} יחידות מזון: {1}: שינוי {2}"
 why.cause.craftsmen_returned: "{0}: חזרה לחיים אזרחיים תוך שמירת ההכשרה, בעלי מלאכה: {1}"

@@ -35,11 +35,26 @@ public class DollarsTests
         var r = Orders(c, s, new ConvertDollars(3));
         Assert.Empty(r.Rejected);
         Assert.Equal((2.5, 0.0, 47.0, 3), (r.State.Treasury, r.State.Debt, r.State.FxReserves, r.State.DollarsConverted));
-        var line = Assert.Single(r.Why, w => w.Key == CauseKeys.DollarsConverted);
+        var line = Assert.Single(r.Why, w => w.Key == CauseKeys.DollarsConverted && w.Target == "treasury");
         Assert.Equal(("economy", "treasury", 1.5), (line.System, line.Target, line.Delta));
         Assert.Equal(new[] { "3" }, line.Args);
         Assert.Contains(CauseKeys.DollarsConverted, CauseKeys.All);   // so the UI words it (CauseText)
         Assert.Equal("Converted $3.0m of foreign currency into Money: " + PlayerText.MoneyChange(c, "treasury", 1.5), line.Message);
+    }
+
+    // #2527: the same conversion also explains the reserves' drop, so the HUD's foreign-currency meter (which lists the
+    // causes aimed at fx_reserves, HudModel.cs) shows its reason.
+    [Fact]
+    public void TheConversionAlsoExplainsTheReservesDrop()
+    {
+        var c = Gdd();
+        var s = War(c);
+        var r = Orders(c, s, new ConvertDollars(3));
+        Assert.Empty(r.Rejected);
+        var fx = Assert.Single(r.Why, w => w.Key == CauseKeys.DollarsConverted && w.Target == "fx_reserves");
+        Assert.Equal(("economy", -3.0), (fx.System, fx.Delta));
+        Assert.Equal(new[] { "3" }, fx.Args);
+        Assert.Equal("Converted $3.0m of foreign currency into Money: " + PlayerText.MoneyChange(c, "fx_reserves", -3.0), fx.Message);
     }
 
     // R-MONEY-004: the rate is the one in force on the turn's date (mvp.il_per_dollar, each rate from its day on).
