@@ -1029,11 +1029,11 @@ public class CaptureDialogTests
             Assert.IsTrue(r.Dialog.Collapsed, "precondition: the dialog is hidden");
             Assert.IsTrue(r.Root.Q<Button>("info-skip").enabledInHierarchy, "precondition: Skip is in reach");
             Assert.Greater(r.Bridge.NeedsOrders.Count, 0, "precondition: units need orders");
-            var first = r.Bridge.NeedsOrders[0];
+            var waiting = r.Bridge.NeedsOrders.ToList();
             var log = new List<string>();
             var run = GameRoot.Smoke(r.Root, r.Bridge, r.Card, 1, log.Add);
             while (run.MoveNext()) { }
-            Assert.AreEqual(System.FormattableString.Invariant($"SMOKE FAIL info-skip did not skip unit {first}"), log.Last(), string.Join("\n", log));
+            StringAssert.StartsWith("SMOKE FAIL info-skip skipped no unit: waiting " + string.Join(",", waiting) + ";", log.Last(), string.Join("\n", log));
         }
     }
 }
