@@ -129,8 +129,9 @@ namespace Statecraft.Sim
             s.Units[unitId] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, Attack, target, u.HomeCity, u.Full, u.CombatXp);
             var line = UnitLines.Line(WhyKeys.AttackOrdered, $"Unit {unitId} will attack hex {target}", new[] { u }, target);
             // #2534: the enemy's attack order names itself for the turn report's enemy-orders row, as an engagement's does (#1297).
+            // UnitLines.Line's system is always "map" (UnitLines.cs); name it as a literal so the Why-screen scan sees it.
             why.Add(enemy
-                ? new Cause(line.System, line.Target, line.Delta, line.Message, enemyOrder: Attack, enemyAttackers: new[] { unitId },
+                ? new Cause("map", line.Target, line.Delta, line.Message, enemyOrder: Attack, enemyAttackers: new[] { unitId },
                     key: line.Key, units: line.Units, args: line.Args)
                 : line);
             return null;
