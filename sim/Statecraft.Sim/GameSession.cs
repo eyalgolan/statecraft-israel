@@ -105,8 +105,10 @@ namespace Statecraft.Sim
             // them: the same game, so it loads as saved, with no warning, and shows its ending card(s).
             // #2542: a save made before stayed losses left a marker replays with only those markers added. It is the same
             // game, so accept that exact same-content difference; every other replay mismatch keeps the existing handling.
+            // Only an older save can be from before the markers: a current-schema save always has them, so one without them
+            // was edited (Codex review of 47da9b207).
             if (session.State.Hash() != saved.FinalHash && !OnlyEndingCardsAdded(c, session.State, saved.FinalHash)
-                && !(sameContent && OnlyLostMarkersAdded(session.State, saved.FinalHash)))
+                && !(saved.Version < SaveGame.SchemaVersion && sameContent && OnlyLostMarkersAdded(session.State, saved.FinalHash)))
             {
                 if (saved.Version < 3 && saved.Ruleset == SaveGame.GddRuleset)
                     throw new SaveException(0, "This save was made with an earlier version of the game's rules.", SaveException.OlderRules);
