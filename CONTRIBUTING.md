@@ -64,8 +64,8 @@ Follow [docs/dev-setup.md](docs/dev-setup.md). In short:
 4. **Text the player sees** has no internal ids, gives dates as "15 May 1948", and shows money as "IL 1.2m" or "$1.2m". The tests enforce this.
 5. **Keep the pull request focused:** one change per PR, and no unrelated refactors.
 6. **Changelog.** If you change `sim/`, `content/`, `translations/` or `unity/` (tests excepted), add a new file `changelog.d/<branch-or-issue>.md` with your entry as a bullet ([changelog.d/README.md](changelog.d/README.md)); fragments never conflict with other pull requests. A line under `## [Unreleased]` in [CHANGELOG.md](CHANGELOG.md) still works. CI's `Changelog` job checks it; the maintainer can add the `no-changelog` label to a change no player would notice.
-7. **Rule IDs.** A rule that has an ID (`R-ECON-014`, defined in `docs/rules/`, see [docs/rules/README.md](docs/rules/README.md)) is cited by that ID in the test that checks it (`// R-ECON-014`), in YAML comments that depend on it, and in the PR body ("implements R-ECON-014"). `uv run scripts/oss/rule_ids.py` fails on a rule with no citing test and on a citation of an ID that does not exist.
-8. **Provenance.** Every new image, video, font, audio, 3D-model or map-data file gets a row in [ASSETS.yaml](ASSETS.yaml) with its source, licence and status. CI's `Repo policy` job fails on a file with no row.
+7. **Rule IDs.** A rule that has an ID (`R-ECON-014`, defined in `docs/rules/`, see [docs/rules/README.md](docs/rules/README.md)) is cited by that ID in the test that checks it (`// R-ECON-014`), in YAML comments that depend on it, and in the PR body ("implements R-ECON-014"). `uv run scripts/oss/rule_ids.py` fails on a rule with no citing test and on a citation of an ID that does not exist. It reads repository files only, so it cannot check the PR body.
+8. **Provenance.** Every new image, video, font, audio, 3D-model, map-data, PDF or Unity-package file, and every file Git treats as binary, must be covered by a matching glob rule in [ASSETS.yaml](ASSETS.yaml) or, for generated portrait records, [ASSETS.portraits.yaml](ASSETS.portraits.yaml). CI's `Repo policy` job fails on a file with no matching rule.
 9. **Roadmap status.** If your PR finishes a Phase 1 PR or a whole phase of [#374](https://github.com/eyalgolan/statecraft-israel/issues/374), update the Roadmap table in [README.md](README.md#roadmap) and the same table in [README.he.md](README.he.md), and tick the item in #374 if you can (otherwise ask the maintainer in the PR). The Phase 1 count must match in both files; `test_readme.py` checks it.
 
 ## History and content rules
@@ -110,6 +110,17 @@ AI-assisted work is welcome. Say so in the pull request: which parts, and how yo
 ## What CI runs
 
 Every pull request and every push to `main` runs `Sim (dotnet test)`, `Tools (pytest)`, `Repo policy`, and, on pull requests, `Changelog`. The `Changelog` job also runs `scripts/oss/reviewed_by_guard.py`: a commit with an AI co-author trailer may not remove a `reviewed_by` or `reviewed_on` line in `content/`, and may add or change one only when the pull request's "AI assistance" section discloses the AI help and names the check (a person signs a row off, #375; asked whether an AI-assisted contributor's source check counts as the `reviewed_by` sign-off, the owner answered "Yes, it counts" ([4 November 2026](https://github.com/eyalgolan/statecraft-israel/pull/2481#issuecomment-6623108295))). The guard reads that section from the event that started the run, so push again after you edit it. The jobs use no secrets, call no paid API, run no AI agent and push nothing.
+
+The policy checks also refuse:
+
+- a `docs/gdd/*.md` feature file other than `TEMPLATE.md` or `README.md` that does not follow [the template](docs/gdd/TEMPLATE.md): all seven sections must be present and non-empty, `Done when` needs a bullet, and placeholders and unfinished markers are forbidden. Numbers in `Rules` and `Done when` need a recognised unit or `(unitless)`; years and dates in `Player story`, `Rules`, `Data touched` and `Done when` need a defined `[S<n>]` source on the same line, and linked source entries need a checked date;
+- any tracked file larger than 10 MiB;
+- an absolute user-home path in text, or a user-home, temporary or agent-session path embedded in a binary;
+- a `secrets.*` reference in a `.github/workflows/*.yml` file other than `steam-upload.yml`;
+- an action reference in `.github/workflows/*.yml` that is not pinned to a full commit SHA; action pins in `ci.yml` also need an exact `# vX.Y.Z` comment;
+- a tracked file stored with CRLF instead of LF;
+- a broken relative link in a Markdown file; or
+- an absolute symlink or a relative symlink that resolves outside the repository.
 
 **Unity EditMode tests are not in CI.** Running Unity in CI needs the maintainer's Unity account credentials stored as repository secrets. GitHub never gives secrets to pull requests from forks, so the job could not run on the pull requests that most need it, and those credentials would sit on machines that run outside code. So the Unity tests are a local gate: paste their result in your PR, and the maintainer re-runs them before merging any change under `unity/`. A future Unity job must run Unity with `-CI false -GITHUB_ACTIONS false -TF_BUILD false` (runners set `CI=true`, and GitHub Actions and Azure Pipelines also set `GITHUB_ACTIONS=true` or `TF_BUILD=true`; the Unity-MCP plugin treats any of them as CI, then skips its NuGet download and fails to compile), or commit the plugin's DLLs.
 
