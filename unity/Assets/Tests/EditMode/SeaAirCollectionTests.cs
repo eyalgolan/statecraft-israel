@@ -1411,13 +1411,19 @@ public class SeaAirCollectionTests
             // The tail: the airframe behind 0.3 of the span back from its middle (the wing's root is well forward of it).
             float tailTop = verts.Where(v => Vector3.Dot(v - drawn, forward) < -0.3f * span).Max(v => v.y);
             Assert.Less(Vector3.Dot(flag.position - drawn, forward), -0.3f * span, $"over the tail, behind the aircraft's middle, at {t:0.0} s");
+            // Clear above every part of the airframe the cloth could be over, whichever way it turns: every vertex within the
+            // cloth's whole reach about its middle (it turns about its vertical) and a margin of a tenth of the span, which is
+            // wider than the airframe's triangles there, lies under the cloth's lower edge.
+            var clothMesh = flag.GetComponent<MeshFilter>().sharedMesh.bounds;
+            float reach = new Vector2(clothMesh.extents.x, clothMesh.extents.z).magnitude * flag.lossyScale.x + 0.1f * span;
+            float lower = flag.position.y - clothMesh.extents.y * flag.lossyScale.y;
+            var near = verts.Where(v => new Vector2(v.x - flag.position.x, v.z - flag.position.z).magnitude < reach).ToArray();
+            if (near.Length > 0) Assert.Greater(lower, near.Max(v => v.y), $"clear above every part of the airframe the cloth could be over at {t:0.0} s");
             foreach (var look in new[] { Vector3.forward, Vector3.back, Vector3.left, Vector3.right, new Vector3(1f, 0f, 1f).normalized })
             {
                 Statecraft.Game.Map.Units.UnitFlagFacing.Face(flag, flag.position + look * 50000f);
                 Assert.Greater(Vector3.Dot(flag.up, Vector3.up), 0.999f, $"upright at {t:0.0} s");
                 var fb = flag.GetComponent<Renderer>().bounds;
-                var under = verts.Where(v => v.x >= fb.min.x && v.x <= fb.max.x && v.z >= fb.min.z && v.z <= fb.max.z).ToArray();
-                if (under.Length > 0) Assert.Greater(fb.min.y, under.Max(v => v.y), $"clear above the airframe under it at {t:0.0} s");
                 Assert.Greater(fb.min.y, tailTop, $"above the tail at {t:0.0} s");
                 Assert.Less(fb.min.y - tailTop, 0.2f * span, $"just above the tail, not up at the raised wingtip's height, at {t:0.0} s");
                 Assert.IsTrue(keep.Contains(fb.min) && keep.Contains(fb.max), $"inside the labels' keep-clear box at {t:0.0} s");

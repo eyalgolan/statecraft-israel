@@ -342,6 +342,20 @@ public class UnitShowcaseTests
             Assert.That(max, Is.InRange(0.3f, 0.6f), "see-through");
             Assert.AreEqual(0, colours.Min(c => c.a), "clear at its rim");
             Assert.Greater(max - colours.Where(c => c.a > 0).Min(c => c.a) / 255f, 0.15f, "brighter at the blades: streaked, not a flat disc");
+            // The streaks sit at the four rods (UnitModels.SpitfirePropeller: up turned 90 b + 20 degrees about +z, so at 110 +
+            // 90 b from +x) and trail them: the propeller turns clockwise seen from behind (ShowcaseFlight, -z), so just behind a
+            // rod is a little more angle. Read in the propeller's own frame.
+            var verts = blur.GetComponent<MeshFilter>().sharedMesh.vertices;
+            float near = 0f, far = 0f; int nearN = 0, farN = 0;
+            for (int i = 0; i < verts.Length; i++)
+            {
+                var p = prop.InverseTransformPoint(blur.TransformPoint(verts[i]));
+                if (new Vector2(p.x, p.y).magnitude < 0.5f * UnitShowcase.PropellerBlurRadius || colours[i].a == 0) continue;   // the outer rings
+                float behind = Mathf.Repeat(Mathf.Atan2(p.y, p.x) * Mathf.Rad2Deg - 110f, 90f);
+                if (behind < 15f) { near += colours[i].a; nearN++; } else if (behind > 45f && behind < 75f) { far += colours[i].a; farN++; }
+            }
+            Assert.Greater(nearN, 0); Assert.Greater(farN, 0);
+            Assert.Greater(near / nearN - far / farN, 0.1f * 255f, "brighter just behind each of the four rods than between them");
         }
         finally { UnitPlinth.KeepMeshesReadable = readable; Object.DestroyImmediate(map.gameObject); }
     }
