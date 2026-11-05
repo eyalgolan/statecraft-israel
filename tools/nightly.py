@@ -223,6 +223,9 @@ def preflight(cfg: Config, state: State, runner: Runner, gh: GitHub, *, job: Pat
 # --- gates, Unity and the full EditMode run ---------------------------------------------------------------------
 
 WARM_UP_OK = "UnityMcpGuard warm-up: gate defines in place"
+# The EditMode tests that compare against gitignored local art (Category in HexModelMeshTests/HexUnitTests): a clean
+# clone always ignores them, so the nightly leaves them out and its skip count is only the [Explicit] tests (#2655).
+LOCAL_ONLY = "LocalOnly"
 
 
 def _limit(night: Night, minutes: float) -> float:
@@ -380,7 +383,8 @@ def run_editmode(night: Night, runner: Runner) -> None:
             raise Refused("editmode", f"the Unity warm-up failed or did not confirm (exit {warm_code})", log=warm_out)
         check_window(night)
         argv = unity_argv(night, ["-buildTarget", "OSXUniversal", "-runTests", "-testPlatform", "EditMode",
-                                  "-testResults", str(xml), "-logFile", str(night.run_dir / "editmode.log")],
+                                  "-testCategory", "!" + LOCAL_ONLY, "-testResults", str(xml),
+                                  "-logFile", str(night.run_dir / "editmode.log")],
                           webgl=False)
         edit_out = night.run_dir / "editmode.out"
         try:
