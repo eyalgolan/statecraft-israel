@@ -51,3 +51,28 @@ def test_main_pins_yaml_workflows(tmp_path, monkeypatch):
 def test_a_quoted_uses_key_is_pinned():
     text = '  - "uses": actions/checkout@v4\n'
     assert pin_actions.pin_text(text, lambda repo, ref: SHA) == f'  - "uses": actions/checkout@{SHA} # v4\n'
+
+
+def test_quoted_uses_keys_allow_separation_before_the_colon():
+    for quote in ('"', "'"):
+        text = f"  - {quote}uses{quote} : actions/checkout@v4\n"
+        expected = f"  - {quote}uses{quote} : actions/checkout@{SHA} # v4\n"
+        assert pin_actions.pin_text(text, lambda repo, ref: SHA) == expected
+
+
+def test_block_scalar_uses_text_is_not_pinned_or_resolved():
+    text = ("steps:\n"
+            "  - uses: actions/checkout@v4\n"
+            "  - run: |\n"
+            "      cat <<'YAML'\n"
+            "      uses: actions/checkout@v4\n"
+            "      YAML\n")
+    resolved = []
+
+    def resolve(repo, ref):
+        resolved.append((repo, ref))
+        return SHA
+
+    assert pin_actions.pin_text(text, resolve) == text.replace(
+        "  - uses: actions/checkout@v4\n", f"  - uses: actions/checkout@{SHA} # v4\n")
+    assert resolved == [("actions/checkout", "v4")]
