@@ -83,10 +83,21 @@ public class EventVideoTests
         Assert.IsTrue(problems.Any(p => p.Contains("no archival photograph")), "no photograph");
         Assert.IsTrue(problems.Any(p => p.Contains("ai_generated must be true")), "not marked AI");
         Assert.IsTrue(problems.Any(p => p.Contains("alt text")), "no proper alt text");
-        var partial = Rows.First(r => r.Event == "law_of_return");
-        partial.AltHeReview = "";
-        problems = EventVideoMapping.Problems(new[] { partial }, C, _ => true, _ => true);
-        Assert.IsTrue(problems.Any(p => p.Contains("must appear together")), "Hebrew alt and review stay paired");
+        var cleared = Rows.First(r => r.Event == "law_of_return");
+        cleared.AltHeReview = "";
+        problems = EventVideoMapping.Problems(new[] { cleared }, C, _ => true, _ => true);
+        Assert.IsFalse(problems.Any(p => p.Contains("alt_he")), "a reviewed Hebrew alt keeps no marker");
+    }
+
+    [Test]
+    public void ParseEnforcesTheHebrewReviewLifecycleForBothLists()
+    {
+        const string cleared = "clips:\n  - event: example\n    alt_he: תיאור בעברית\n";
+        Assert.DoesNotThrow(() => EventVideoMapping.Parse(cleared));
+        Assert.Throws<InvalidOperationException>(() => EventVideoMapping.Parse(
+            "clips:\n  - event: example\n    alt_he_review: agent-checked\n"));
+        Assert.Throws<InvalidOperationException>(() => EventVideoMapping.ParseOutcomes(
+            "outcomes:\n  - event: example\n    alt_he: תיאור בעברית\n    alt_he_review: pending\n"));
     }
 
     [Test]

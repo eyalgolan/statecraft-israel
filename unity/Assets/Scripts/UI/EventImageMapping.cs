@@ -56,7 +56,11 @@ namespace Statecraft.Game.UI
             {
                 var doc = new DeserializerBuilder().WithNamingConvention(UnderscoredNamingConvention.Instance)
                     .WithDuplicateKeyChecking().Build().Deserialize<Doc>(yaml ?? "");
-                return doc?.Images ?? new List<Row>();
+                var rows = doc?.Images ?? new List<Row>();
+                foreach (var row in rows)
+                    if (AltHebrewProblem(row.AltHe, row.AltHeReview) is string problem)
+                        throw new InvalidOperationException($"{Path}: {row.Event}: {problem}");
+                return rows;
             }
             catch (YamlDotNet.Core.YamlException e) { throw new InvalidOperationException($"{Path}: {e.Message}", e); }
         }
@@ -93,7 +97,7 @@ namespace Statecraft.Game.UI
         static string? AltHebrewProblem(string? altHe, string? review)
         {
             bool hasAlt = !string.IsNullOrWhiteSpace(altHe), hasReview = !string.IsNullOrWhiteSpace(review);
-            if (hasAlt != hasReview) return "alt_he and alt_he_review must appear together";
+            if (hasReview && !hasAlt) return "alt_he_review requires alt_he";
             if (hasReview && review != "agent-checked") return "alt_he_review must be agent-checked";
             return null;
         }

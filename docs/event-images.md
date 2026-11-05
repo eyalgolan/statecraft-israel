@@ -53,7 +53,7 @@ small italic caption strip along the picture's bottom edge, so the credit is alw
 height. The minister's portrait is hidden, and the office line still names the minister. The alt text is the picture's
 `tooltip`, and `EventCardPresenter.PhotoAlt` exposes the value actually shown. In Hebrew, `alt_he` is used when present;
 otherwise that field falls back to English. An agent-drafted `alt_he` carries `alt_he_review: agent-checked` until the
-native read in #564.
+native read in #564; the reviewer then removes `alt_he_review`, while the cleared `alt_he` remains.
 
 The header is 16:9 whenever the card has the height for it. The photograph needs a band at least as tall as its credit line plus 48 px of picture
 (`EventCardPresenter.MinPhotoHeight`). The credit strip never shrinks (`flex-shrink: 0`), so the credit that CC BY 4.0
@@ -84,7 +84,8 @@ cover this. The decision layer under the top bar bounds the card's height.
    - The credit ends with " · CC BY 4.0 · graded and cropped" (or "CC0" / "public domain").
    - The alt text says what the picture shows. A date in it is the event's own date, or only a month or a year:
      library dates are sometimes wrong (the NLI dates the Altalena shelling 20 June; it was 22 June).
-   - Add `alt_he` with the same factual scope and `alt_he_review: agent-checked`; both fields are optional only as a pair.
+   - Add `alt_he` with the same factual scope and `alt_he_review: agent-checked`. The review marker requires `alt_he` and
+     is removed once the description has been read; a cleared `alt_he` therefore stands alone.
    - Set `sensitive: true` for an event with a sensitive tag, or for any picture the owner must see before release.
 5. Make the JPG with `uv run --with pillow==12.3.0 --with pyyaml==6.0.3 python -I tools/event_images.py --originals DIR
    --only <event>`. It refuses a file whose SHA-1 does not match the row.

@@ -12,7 +12,8 @@ moments.md`, the "Full plan"; plan: `docs/superpowers/plans/2026-10-13-decision-
 - **The clip is labelled in the card, not in the file.**
   - While it plays, "AI-generated illustration" replaces the photograph's credit, and the clip's own alt text becomes
     the header's tooltip. Hebrew uses `alt_he` when present and otherwise falls back to English; an agent-drafted value
-    carries `alt_he_review: agent-checked` until #564's native read.
+    carries `alt_he_review: agent-checked` until #564's native read. The reviewer then removes the marker while the
+    cleared `alt_he` remains; `alt_he_review` is invalid without `alt_he`.
   - The files carry **no burned-in caption**. Owner ruling of 14 October 2026, relayed by the coordinator, after
     watching the three sensitive clips: "the 3 ilustration clips are great but no need to say there were created by
     ai". Until then each file carried a small "AI-generated · נוצר בבינה מלאכותית" label; every clip was re-encoded

@@ -61,7 +61,8 @@ public class OutcomeClipTests
         public int Closed;
         readonly GameObject go; readonly PanelSettings ps; readonly RenderTexture rt; readonly List<IDisposable> owned = new List<IDisposable>();
 
-        public Rig(string[] events, Func<GameSession, IReadOnlyList<Command>, StepResult>? step = null, UiText? text = null, Content? content = null)
+        public Rig(string[] events, Func<GameSession, IReadOnlyList<Command>, StepResult>? step = null, UiText? text = null,
+            Content? content = null, IReadOnlyList<EventVideoMapping.Row>? outcomes = null)
         {
             var t = text ?? Text; var c = content ?? C;
             rt = new RenderTexture(1920, 1080, 0);
@@ -84,7 +85,7 @@ public class OutcomeClipTests
             owned.Add(new HudPresenter(Root, Bridge, t));
             Nav = new ScreenNav(Root); owned.Add(Nav);
             Card = new EventCardPresenter(Root, Bridge, t, null, null, CardPlayer, _ => null); owned.Add(Card);
-            Outcomes = new OutcomePresenter(Root, Bridge, t, OutcomePlayer, EventVideoMapping.ParseOutcomes(Yaml), () => Closed++, () => Nav.Close());
+            Outcomes = new OutcomePresenter(Root, Bridge, t, OutcomePlayer, outcomes ?? EventVideoMapping.ParseOutcomes(Yaml), () => Closed++, () => Nav.Close());
             owned.Add(Outcomes);
             owned.Add(CardPlayer); owned.Add(OutcomePlayer);
         }
@@ -148,6 +149,18 @@ public class OutcomeClipTests
             r.Bridge.EndTurn();
             Assert.AreEqual(he.Format("outcome.order", option.Text), r.Outcomes.Caption, "no text_he: the English");
         }
+    }
+
+    [Test]
+    public void InHebrewABlankOutcomeMediaAltFallsBackToEnglish()
+    {
+        LogAssert.ignoreFailingMessages = true;
+        var source = EventVideoMapping.ParseOutcomes(Yaml).First(r => r.Event == "maabarot_policy");
+        source.AltHe = "  ";
+        using var r = new Rig(new[] { source.Event }, text: He, outcomes: new[] { source });
+        r.Order(source.Event, source.Option);
+        r.Bridge.EndTurn();
+        Assert.AreEqual(source.Alt, r.Root.Q("outcome-media").tooltip);
     }
 
     /// <summary>Scenario A of the review: a screen is open at End Turn. The clip closes it and is drawn over the screens

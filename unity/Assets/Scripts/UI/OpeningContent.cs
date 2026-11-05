@@ -189,7 +189,7 @@ namespace Statecraft.Game.UI
         static string? AltHebrewProblem(string? altHe, string? review)
         {
             bool hasAlt = !string.IsNullOrWhiteSpace(altHe), hasReview = !string.IsNullOrWhiteSpace(review);
-            if (hasAlt != hasReview) return "alt_he and alt_he_review must appear together";
+            if (hasReview && !hasAlt) return "alt_he_review requires alt_he";
             if (hasReview && review != "agent-checked") return "alt_he_review must be agent-checked";
             return null;
         }

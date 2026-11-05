@@ -247,7 +247,7 @@ public class OpeningClipTests
         TestName = "ACaptionHeReviewIsPendingOrApproved")]
     [TestCase("alt: \"Illustration: an immigrant ship", "alt: \"An immigrant ship", TestName = "ClipAltMustStartIllustration")]
     [TestCase("      alt_he_review: agent-checked\n      ai_generated: true", "      alt_he_review: pending\n      ai_generated: true", TestName = "ClipAltHeReviewMustBeAgentChecked")]
-    [TestCase("      alt_he_review: agent-checked\n      crop:", "      alt_he_review: \"\"\n      crop:", TestName = "PhotoAltHeNeedsItsReview")]
+    [TestCase("      alt_he: \"עצירים יהודים עם צרורותיהם וארגזיהם לפני צריפי מחנה מעצר בקפריסין, פברואר 1949.\"\n", "", TestName = "PhotoAltHeReviewNeedsItsAlt")]
     [TestCase("      shot: K04a\n", "      shot: K04a\n      colour: sepia\n", TestName = "ClipUnknownFieldFailsClosed")]
     public void AMalformedClipRowFailsTheLoad(string from, string to)
     {
@@ -255,5 +255,12 @@ public class OpeningClipTests
         StringAssert.Contains(from, yaml, "precondition: the shipped row");
         Assert.DoesNotThrow(() => OpeningContent.Parse(yaml));
         Assert.Throws<InvalidOperationException>(() => OpeningContent.Parse(yaml.Replace(from, to)));
+    }
+
+    [Test]
+    public void AReviewedMediaAltLoadsWithoutTheAgentMarker()
+    {
+        var yaml = Asset.source.text;
+        Assert.DoesNotThrow(() => OpeningContent.Parse(yaml.Replace("      alt_he_review: agent-checked\n", "")));
     }
 }
