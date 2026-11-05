@@ -404,8 +404,8 @@ The candidates are tried in four rounds:
    round-4 spot holds its hex like any other; measured on the game map, no other anchor and no camp moved).
 
 A spot is clear when:
-- the ring's disc stays off every settlement footprint (the kits' discs, times 1.1); for an air anchor the full
-  4.7 km parked-aircraft span is used instead, without compact scaling or the in-town exception;
+- the ring's disc stays off every settlement footprint (the kits' discs, times 1.1); for an air anchor the disc is the
+  larger of that ring and the parked aircraft's span (4.7 km across, which does not compact), with no in-town exception;
 - an army token's three figure spots (always three, so the spot does not change with the call-up), or a parked
   aircraft's centre, are on land and at least 700 m beyond every railway and road corridor drawn while a token
   stands (a route opened after the last anchor's window, the 1949 rail link or the 1950 Tel Aviv–Netanya road, takes no

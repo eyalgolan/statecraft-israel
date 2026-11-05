@@ -51,8 +51,11 @@ namespace Statecraft.Game.Map.Units
         /// air anchor, and the existing compact ring for every other service.</summary>
         public float ClearingRadius(string service) => service == UnitData.Air ? ParkedAircraftClearanceM : RingRadius(compact: true);
 
-        /// <summary>The footprint placement keeps clear of towns: a parked fighter's span does not compact.</summary>
-        public float ClearanceRadius(string service, bool compact) => service == UnitData.Air ? ParkedAircraftClearanceM : RingRadius(compact);
+        /// <summary>The footprint placement keeps clear of towns: an air token keeps clear by the larger of its ring and the
+        /// parked fighter's span (the span does not compact; the full ring stays where it is wider), every other service by
+        /// its ring.</summary>
+        public float ClearanceRadius(string service, bool compact) =>
+            service == UnitData.Air ? Math.Max(ParkedAircraftClearanceM, RingRadius(compact)) : RingRadius(compact);
 
         /// <summary>The figures' ground points of an army token standing at <paramref name="centre"/>: always the full trio,
         /// so a spot does not change with the call-up.</summary>
