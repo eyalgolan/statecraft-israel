@@ -80,7 +80,9 @@ namespace Statecraft.Sim
             ContentWindows.Update(c, s, turnStart);
             Cabinet.ExpireOnGovernmentChange(c, s, why);
             if (c.UsesAttention) AttentionSystem.Refill(c, s);
-            if (s.GameOver == null) EventSystem.Trigger(c, s, why, turnStart);   // a game that just ended raises no new events
+            // A game that just ended raises no new events, but the unfired cards of recorded objectives (R-LOOP-004, R-OBJ-003;
+            // the owner's choice "Show the card (Recommended)", 4 November 2026, #2536).
+            EventSystem.Trigger(c, s, why, turnStart, endingTurn: s.GameOver != null);
             return new StepResult(s, why, rejected);
         }
 

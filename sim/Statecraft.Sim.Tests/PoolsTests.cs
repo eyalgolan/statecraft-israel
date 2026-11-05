@@ -285,7 +285,8 @@ public class PoolsTests
         var c = Gdd();
         var s = Simulation.NewGame(c, 1, Mode.Historical);
         var after = s.Clone();
-        Assert.Equal("That is more Arms than the stock can hold", Pools.BuyArms(c, after, int.MaxValue, new List<Cause>()));
+        Assert.Equal(Pools.RefusedStockCapacity, Pools.BuyArms(c, after, int.MaxValue, new List<Cause>()));
+        Assert.Equal(Pools.RefusedStockCapacity, Pools.BuyArmsRefusal(c, s, Array.Empty<Command>(), int.MaxValue));
         Assert.Equal(s.Hash(), after.Hash());
     }
 

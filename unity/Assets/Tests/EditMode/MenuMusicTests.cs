@@ -47,12 +47,16 @@ public class MenuMusicTests
     sealed class FakeOutput : MenuMusic.IOutput
     {
         public readonly List<AudioClip> Played = new List<AudioClip>();
+        /// <summary>The loop region of each play.</summary>
+        public readonly List<MenuMusic.LoopRegion> Loops = new List<MenuMusic.LoopRegion>();
+        public int Watches;
         public bool IsPlaying { get; private set; }
         public float Volume { get; set; } = -1f;
         public bool? Decoded = true;
         public int Stops;
         public bool? Ready(AudioClip clip) => Decoded;
-        public void Play(AudioClip clip) { Played.Add(clip); IsPlaying = true; }
+        public void Play(AudioClip clip, MenuMusic.LoopRegion loop) { Played.Add(clip); Loops.Add(loop); IsPlaying = true; }
+        public void Watch() => Watches++;
         public void Stop() { Stops++; IsPlaying = false; }
         public void Dispose() { }
     }
@@ -66,10 +70,12 @@ public class MenuMusicTests
         public bool Ducked;
         /// <summary>The fake clock, in milliseconds.</summary>
         public double Clock;
-        public Rig(bool web, string? url = null)
+        /// <summary>A loop file that fits Answer's 0.1 s clip: samples 441 to 3,969 of 4,410.</summary>
+        public const string FittingLoop = Theme + "loop_start_s: 0.01\nloop_end_s: 0.09\n";
+        public Rig(bool web, string? url = null, string? loop = FittingLoop)
         {
             Music = new MenuMusic(Ui.Root, web, url ?? "https://example.invalid/StreamingAssets/" + MenuMusic.File, Fetch.Start, Out,
-                () => Clock / 1000.0);
+                () => Clock / 1000.0, loop);
             Music.Duck = () => Ducked;
         }
         public AudioClip Answer()
@@ -497,5 +503,153 @@ public class MenuMusicTests
         Assert.AreEqual("כבויה", He["settings.music.off"]);
         Assert.AreEqual("חלשה", He["settings.music.low"]);
         Assert.AreEqual("חזקה", He["settings.music.high"]);
+    }
+
+    /// <summary>The shipped theme's loop region (#2338): Afik's proposed loop points, 00:10 to 04:03 (ASSETS.yaml), read from
+    /// Resources/Music/menu-music.yaml: samples 441,000 to 10,716,300 at the file's 44,100 Hz, both inside the clip. The
+    /// rate and the length come from the committed OGG itself (its Vorbis header and its last page's granule position).</summary>
+    [Test]
+    public void TheThemeLoopsBetweenAfiksLoopPoints()
+    {
+        var ogg = File.ReadAllBytes(Path.Combine(Application.streamingAssetsPath, MenuMusic.File));
+        int rate = BitConverter.ToInt32(ogg, 28 + 12);   // first page header (28 bytes with one segment), then "\x01vorbis", version, channels
+        int last = -1;
+        for (int i = ogg.Length - 4; i >= 0 && last < 0; i--)
+            if (ogg[i] == 'O' && ogg[i + 1] == 'g' && ogg[i + 2] == 'g' && ogg[i + 3] == 'S') last = i;
+        int samples = (int)BitConverter.ToInt64(ogg, last + 6);
+        Assert.AreEqual(44100, rate);
+        Assert.AreEqual(11037601, samples, "ffprobe's duration_ts for the file (#2338)");
+        var yaml = Resources.Load<TextAsset>(MenuMusic.LoopResource)?.text;
+        Assert.IsNotNull(yaml, "Assets/Resources/" + MenuMusic.LoopResource + ".yaml is shipped");
+        var loop = MenuMusic.Loop(yaml, samples, rate, out var why);
+        Assert.IsNull(why);
+        Assert.AreEqual(441000, loop.Start, "00:10");
+        Assert.AreEqual(10716300, loop.End, "04:03");
+        Assert.Less(loop.End, samples, "inside the clip");
+    }
+
+    /// <summary>The schedule the output plays (LoopRegion, which SourceOutput's handover follows): the first play starts at
+    /// the top (sample 0, not the loop start) and runs to the loop end; from there playback goes on at the loop start, and
+    /// again at every later seam, with no sample left out or played twice. MenuMusic hands the output the region and
+    /// watches it every tick. (SourceOutput's scheduling calls: TheTwoSourcesHandOverAtEachSeamOnTheAudioClock.)</summary>
+    [Test]
+    public void ItPlaysFromTheTopThenLoopsTheRegion()
+    {
+        var loop = new MenuMusic.LoopRegion(441000, 10716300, 44100);
+        Assert.AreEqual(0, loop.SampleAt(0), "the first play starts at 0:00");
+        Assert.AreEqual(441000, loop.SampleAt(441000), "the intro plays once, straight through");
+        Assert.AreEqual(10716299, loop.SampleAt(10716299), "the last sample before the loop end");
+        Assert.AreEqual(10716300, loop.SeamAt(0), "the first seam is at 04:03");
+        Assert.AreEqual(441000, loop.SampleAt(loop.SeamAt(0)), "at the loop end it continues at the loop start");
+        Assert.AreEqual(441001, loop.SampleAt(loop.SeamAt(0) + 1));
+        Assert.AreEqual(10716300 + 10275300, loop.SeamAt(1), "the next seam, one region (3:53) later");
+        Assert.AreEqual(10716299, loop.SampleAt(loop.SeamAt(1) - 1));
+        Assert.AreEqual(441000, loop.SampleAt(loop.SeamAt(1)));
+        using var rig = new Rig(web: true);
+        rig.Music.Show(true); rig.Click();
+        var clip = rig.Answer();
+        Assert.AreEqual(new MenuMusic.LoopRegion(441, 3969, 44100), rig.Out.Loops.Single(), "the output gets the region");
+        rig.Pass(MenuMusic.WatchMs * 3);
+        Assert.AreEqual(3, rig.Out.Watches, "the output is watched every tick, to schedule its next seam");
+        UnityEngine.Object.DestroyImmediate(clip);
+    }
+
+    /// <summary>One of SourceOutput's two sources: it records every call, with the value, in order, in a shared log.</summary>
+    sealed class RecordingSource : MenuMusic.ISource
+    {
+        readonly string name; readonly List<string> log;
+        public RecordingSource(string name, List<string> log) { this.name = name; this.log = log; }
+        public AudioClip? Clip { set => log.Add(name + ".Clip " + (value == null ? "null" : value.name)); }
+        public float Volume { set => log.Add(name + ".Volume " + value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)); }
+        public bool Loop { set => log.Add(name + ".Loop " + value); }
+        public int TimeSamples { set => log.Add(name + ".TimeSamples " + value); }
+        public void Play() => log.Add(name + ".Play");
+        public void PlayScheduled(double at) => log.Add(name + ".PlayScheduled " + Ms(at));
+        public void SetScheduledEndTime(double at) => log.Add(name + ".SetScheduledEndTime " + Ms(at));
+        public void Stop() => log.Add(name + ".Stop");
+        /// <summary>The audio clock in whole milliseconds, so seams counted in samples compare exactly.</summary>
+        static string Ms(double s) => Math.Round(s * 1000.0).ToString(System.Globalization.CultureInfo.InvariantCulture) + " ms";
+    }
+
+    /// <summary>The game's output (SourceOutput) hands over between its two sources on the audio clock (#2338). With a
+    /// recorded pair of sources and a fake dspTime: the first source starts at sample 0 and its scheduled end is the first
+    /// seam; the second starts at the loop start at that same dspTime. After the seam the roles swap and the next seam is
+    /// one region later. A watch stalled past the next seam (a hidden tab) starts the loop again at its start, with the
+    /// following seam one region after that. This drives the scheduling calls, not Unity's audio: whether the two halves
+    /// meet without a gap or a click in a real browser is the listening check in #2338.</summary>
+    [Test]
+    public void TheTwoSourcesHandOverAtEachSeamOnTheAudioClock()
+    {
+        var log = new List<string>();
+        double dsp = 10.0;
+        var made = 0;
+        using var output = new MenuMusic.SourceOutput(() => dsp, () => new RecordingSource(made++ == 0 ? "A" : "B", log));
+        // A 10 s clip looping 1 s to 8 s: one region (7 s) is longer than Lead, as the theme's 3:53 is.
+        var clip = AudioClip.Create("theme", 441000, 1, 44100, false);
+        output.Play(clip, new MenuMusic.LoopRegion(44100, 352800, 44100));
+        // Starts at 10 s + Lead (100 ms) = 10,100 ms; the first seam is 8 s of clip later.
+        CollectionAssert.AreEqual(new[] {
+            "A.Stop", "A.Clip null", "B.Stop", "B.Clip null",
+            "B.Clip theme", "A.Clip theme", "B.Volume 0.35", "A.Volume 0.35", "A.Loop False", "A.TimeSamples 0",
+            "A.PlayScheduled 10100 ms",
+            "A.SetScheduledEndTime 18100 ms", "B.TimeSamples 44100", "B.PlayScheduled 18100 ms",
+        }, log, "the first source plays from the top; its end and the second's start at the loop start share the seam's dspTime");
+        log.Clear();
+        dsp = 18.0; output.Watch();
+        CollectionAssert.IsEmpty(log, "nothing to do before the seam");
+        dsp = 18.2; output.Watch();
+        CollectionAssert.AreEqual(new[] { "B.SetScheduledEndTime 25100 ms", "A.TimeSamples 44100", "A.PlayScheduled 25100 ms" }, log,
+            "after the seam the second plays on and the first is scheduled for the next seam, one region (7 s) later");
+        log.Clear();
+        dsp = 40.0; output.Watch();   // stalled: the seams at 25.1 s and 32.1 s passed unwatched
+        CollectionAssert.AreEqual(new[] {
+            "A.TimeSamples 44100", "A.PlayScheduled 40100 ms",
+            "A.SetScheduledEndTime 47100 ms", "B.TimeSamples 44100", "B.PlayScheduled 47100 ms",
+        }, log, "a stalled watch starts the loop again at its start (now + Lead), not once per missed seam");
+        log.Clear();
+        output.Play(clip, new MenuMusic.LoopRegion(0, 441000, 44100));
+        CollectionAssert.AreEqual(new[] {
+            "A.Stop", "A.Clip null", "B.Stop", "B.Clip null",
+            "B.Clip theme", "A.Clip theme", "B.Volume 0.35", "A.Volume 0.35", "A.Loop True", "A.TimeSamples 0", "A.Play",
+        }, log, "the whole clip (no region) loops on one source, with nothing scheduled");
+        log.Clear();
+        dsp = 60.0; output.Watch();
+        CollectionAssert.IsEmpty(log, "and the watch leaves it alone");
+        UnityEngine.Object.DestroyImmediate(clip);
+    }
+
+    /// <summary>The scene's teardown can destroy the music's GameObject before GameRoot.OnDisable disposes the music (the
+    /// order varies). Stop, Volume and Dispose on the game's own output then skip the destroyed AudioSources (Unity's null),
+    /// as before #2338, instead of throwing MissingReferenceException.</summary>
+    [Test]
+    public void ADestroyedMusicObjectStopsAndDisposesQuietly()
+    {
+        var output = new MenuMusic.SourceOutput();
+        var clip = AudioClip.Create("theme", 4410, 1, 44100, false);
+        output.Play(clip, new MenuMusic.LoopRegion(0, 4410, 44100));
+        var go = UnityEngine.Object.FindObjectsByType<AudioSource>(FindObjectsSortMode.None).First(s => s.clip == clip).gameObject;
+        UnityEngine.Object.DestroyImmediate(go);
+        Assert.DoesNotThrow(() => { output.Stop(); output.Volume = 0.5f; output.Dispose(); });
+        LogAssert.NoUnexpectedReceived();
+        UnityEngine.Object.DestroyImmediate(clip);
+    }
+
+    const string Theme = "file: " + MenuMusic.File + "\n";
+
+    /// <summary>No loop file, a broken one, one for another file, or a region that is empty, reversed or past the clip's end:
+    /// the whole clip loops (as before #2338), with one plain log line, no warning and no error.</summary>
+    [Test]
+    public void AMissingOrInvalidLoopRegionLoopsTheWholeClip([Values("", "loop_start_s: [", "file: audio/music/Other.ogg\nloop_start_s: 0.01\nloop_end_s: 0.09\n",
+        Theme + "loop_start_s: 0.09\nloop_end_s: 0.01\n", Theme + "loop_start_s: 0.05\nloop_end_s: 0.05\n", Theme + "loop_start_s: 0.01\nloop_end_s: 0.2\n",
+        Theme + "loop_start_s: -0.01\nloop_end_s: 0.09\n")] string loop)
+    {
+        using var rig = new Rig(web: true, loop: loop);
+        rig.Music.Show(true); rig.Click();
+        LogAssert.Expect(LogType.Log, new System.Text.RegularExpressions.Regex("^MUSIC no loop region for " + System.Text.RegularExpressions.Regex.Escape(MenuMusic.File) + ": the whole clip loops \\([\\s\\S]+\\)$"));
+        var clip = rig.Answer();
+        rig.Pass(MenuMusic.WatchMs * 3);
+        LogAssert.NoUnexpectedReceived();
+        Assert.AreEqual(new MenuMusic.LoopRegion(0, 4410, 44100), rig.Out.Loops.Single(), "the whole clip");
+        UnityEngine.Object.DestroyImmediate(clip);
     }
 }
