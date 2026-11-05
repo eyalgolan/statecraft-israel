@@ -1036,7 +1036,7 @@ Category: game-system. Scope: ui, events, code.
 **Definition.** The state's stock of foreign currency, held in US dollar millions. When it is exhausted, food imports are cut and the food supply falls.
 
 **English.** Preferred: foreign currency.
-Avoid: fx and forex in player text; reserves for this meaning (see 'reserves').
+Avoid: fx and forex in player text; a bare "reserves" for this meaning in player text (see 'reserves'; "foreign currency reserves" is allowed).
 
 | In use | Where |
 |---|---|
@@ -1067,7 +1067,7 @@ Category: game-system. Scope: ui, code, docs.
 
 **Definition.** A word with two meanings in the project: the military reserve the player calls up, and the foreign-currency stock.
 
-**English.** Preferred: reserves, for the military reserve; for the money, "foreign currency reserves", always with the qualifier (owner, 5 November 2026: "Allow both").
+**English.** Preferred: reserves, for the military reserve; for the money, "foreign currency reserves", always with the qualifier, or with the currency named in the same phrase ("dollars in the reserves") (owner, 5 November 2026: "Allow both").
 Avoid: a bare "reserves" for the money in player text, where it could be read as the military reserve.
 
 | In use | Where |
@@ -1079,7 +1079,7 @@ Avoid: a bare "reserves" for the money in player text, where it could be read as
 | id: fx_reserves | content/model.yaml |
 | set so reserves run out in the last quarter of 1951 | content/rules.yaml comment |
 
-**Hebrew.** Preferred: מילואים, for the military reserve.
+**Hebrew.** Preferred: מילואים, for the military reserve; יתרות מטבע החוץ for the money.
 
 | In use | Where |
 |---|---|

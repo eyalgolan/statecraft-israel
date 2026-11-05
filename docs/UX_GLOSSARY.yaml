@@ -1217,7 +1217,7 @@ concepts:
     preferred: foreign currency
     avoid:
     - fx and forex in player text
-    - reserves for this meaning (see 'reserves')
+    - a bare "reserves" for this meaning in player text (see 'reserves'; "foreign currency reserves" is allowed)
     in_use:
     - form: Foreign currency
       where: strings.en.yaml hud.caption.fx
@@ -1259,8 +1259,8 @@ concepts:
   - code
   - docs
   en:
-    preferred: 'reserves, for the military reserve; for the money, "foreign currency reserves", always with the qualifier
-      (owner, 5 November 2026: "Allow both")'
+    preferred: 'reserves, for the military reserve; for the money, "foreign currency reserves", always with the qualifier,
+      or with the currency named in the same phrase ("dollars in the reserves") (owner, 5 November 2026: "Allow both")'
     avoid:
     - a bare "reserves" for the money in player text, where it could be read as the military reserve
     in_use:
