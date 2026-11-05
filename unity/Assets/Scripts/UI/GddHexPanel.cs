@@ -21,8 +21,9 @@ namespace Statecraft.Game.UI
     /// day it was finished (R-PROJ-001 to R-PROJ-003); under gdd-0.3, on a built arms workshop, its staffing and cycle (#1722,
     /// R-ARMS-005 to R-ARMS-007).</para>
     /// <para>Every number is the sim's, and every order goes through the bridge's queue: the sim rules on it when the turn
-    /// runs. No rule lives here: the limits are the sim's public helpers (Cities.MaxWorkers, Training.Available, Workshops.Check), asked with
-    /// the queue, and a button is disabled only where the sim would refuse that order, or another one in the queue, anyway.</para></summary>
+    /// runs. No rule lives here: the limits are the sim's public helpers (Cities.MaxWorkers, Training.Available, Workshops.Check) and
+    /// Simulation.Preview, asked with the exact queue a press would leave; a button is disabled only where the sim would refuse that
+    /// order, or another one in the queue, anyway.</para></summary>
     public static class GddHexPanel
     {
         public const string HostName = "info-gdd";
@@ -351,6 +352,29 @@ namespace Statecraft.Game.UI
             var cities = Projects.CitiesFor(c, s, q, r);
             if (cities.Count == 0 || kinds.Count == 0) return;
             var queued = bridge.QueuedLike(new StartProject("", "", q, r)) as StartProject;
+
+            // Ask the sim about the exact queue a press would leave: replace this hex's order in its current slot, or append it,
+            // after the committed orders. The initial helper check avoids a preview for a kind that is already refused; this code
+            // runs only when the panel renders, not each frame.
+            (string? kind, string? words) Refusal(ProjectKind k, string city)
+            {
+                var reason = Projects.CheckCityReason(c, s, k.Id, city, q, r);
+                if (reason != null) return (reason.Kind, ReasonText(reason, text, c, townName));
+
+                var press = new StartProject(k.Id, city, q, r);
+                var old = bridge.QueuedLike(press);
+                var queue = bridge.Queued.ToList();
+                var slot = old == null ? -1 : queue.IndexOf(old);
+                if (slot >= 0) queue[slot] = press; else queue.Add(press);
+                var preview = Simulation.Preview(c, bridge.TurnStart, bridge.Session.Committed.Concat(queue).ToList());
+                var rejected = preview.Rejected.FirstOrDefault(x => ReferenceEquals(x.Command, press));
+                if (rejected == null) return (null, null);
+
+                var exact = Projects.CheckCityReason(c, preview.State, k.Id, city, q, r);
+                return exact != null
+                    ? (exact.Kind, ReasonText(exact, text, c, townName))
+                    : (null, SimBridge.ReasonText(text, rejected.Reason, c, bridge.TownNamesHe));
+            }
             // Owner ruling on #1150 (21 Oct 2026): under the city's own part the full list ran into the left column on a stacked
             // bar or a short window, so there it folds behind one toggle; a refusal is then one tap away. The open state is the
             // host's class, kept across renders (InfoPanelPresenter.Show closes it for a newly chosen hex).
@@ -381,13 +405,13 @@ namespace Statecraft.Game.UI
                         host.Q("city-project-cities")?.Query<Button>().Where(b => b.enabledSelf).First()?.Focus();
                     }).SetEnabled(id != city);
             }
-            var refusals = kinds.Select(k => Projects.CheckCityReason(c, s, k.Id, city, q, r)).ToList();
-            var words = refusals.Select(x => x == null ? null : ReasonText(x, text, c, townName)).ToList();
+            var refusals = kinds.Select(k => Refusal(k, city)).ToList();
+            var words = refusals.Select(x => x.words).ToList();
             // Every kind refused for one reason (not land, a placement there, the turn's limit): said once, with no buttons,
             // as the map actions do (#398). A kind this city lacks the resource for (R-PROJ-005: the winery outside Rishon
             // LeZion) does not split that line into one per kind, nor does the gdd-0.3 housing repair off its city's own hex
             // (R-HOUSE-006: repair_city_hex comes before the shared reasons, so it would hide them on every other hex).
-            var shared = words.Where((x, i) => refusals[i]?.Kind != "no_resource" && refusals[i]?.Kind != "repair_city_hex").ToList();
+            var shared = words.Where((x, i) => refusals[i].kind != "no_resource" && refusals[i].kind != "repair_city_hex").ToList();
             if (words.All(x => x != null) && shared.Count > 0 && shared.Distinct().Count() == 1) { Line(list, "city-project-reason", shared[0]!); return; }
             // A kind the sim refuses shows its reason alone, which names the kind (no disabled Build above it: one line, not two).
             for (int i = 0; i < kinds.Count; i++)

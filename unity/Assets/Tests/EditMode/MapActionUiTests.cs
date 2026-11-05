@@ -243,19 +243,30 @@ public class MapActionUiTests
         foreach (var word in new[] { "yield", "food", "production", "gold", "income" }) StringAssert.DoesNotContain(word, shown);
     }
 
+    // Red first on origin/main 0c976fb21: the third hex's buttons remain enabled because the panel checks the turn-start state,
+    // so a third press enters the queue and is refused only at End turn.
     [Test]
-    public void ThePerTurnCapAndRefusalsComeFromTheSim()
+    public void ThePerTurnCapIncludesActionsAlreadyQueuedThisTurn()
     {
         using var ui = new UiTestKit();
         var bridge = At(new DateTime(1950, 8, 1));
-        new ToastPresenter(ui.Root, bridge, Text);
-        var info = Panel(ui, bridge);
-        var hexes = C.SettlementHexes.Select(h => (h.Q, h.R)).Distinct().Take(3).ToList();
-        foreach (var (q, r) in hexes) { info.Show(q, r); ui.Press("build-housing"); }
-        Assert.AreEqual(3, bridge.Queued.OfType<MapAction>().Count());      // the sim, not the UI, enforces the cap at End Turn
-        bridge.EndTurn();
-        Assert.AreEqual(1, bridge.Session.Last!.Rejected.Count);
-        StringAssert.Contains($"No more than {C.Rules.MapActionsPerTurn} map actions in one turn", ui.Q<Label>("toast").text);
+        using var info = Panel(ui, bridge);
+        var cap = C.RulesAt(bridge.State.Date).MapActionsPerTurn;
+        Assert.AreEqual(2, cap, "precondition: the legacy map-action cap");
+        var hexes = C.SettlementHexes.Select(h => (h.Q, h.R)).Distinct().Take(cap + 1).ToList();
+        Assert.AreEqual(cap + 1, hexes.Count, "precondition: one distinct target beyond the cap");
+        foreach (var (q, r) in hexes.Take(cap)) { info.Show(q, r); ui.Press("build-housing"); }
+        Assert.AreEqual(cap, bridge.Queued.OfType<MapAction>().Count());
+
+        info.Show(hexes[cap].Q, hexes[cap].R);
+        Assert.AreEqual(Text.Format("info.map_action_reason.turn_cap", cap), ui.Q<Label>("info-reason").text);
+        foreach (var name in new[] { "build-camp", "build-housing" })
+        {
+            Assert.AreEqual(DisplayStyle.None, ui.Q<Button>(name).style.display.value, name + ": shared refusal hides the button");
+            Assert.IsFalse(ui.Q<Button>(name).enabledSelf, name + ": shared refusal disables the button");
+        }
+        Assert.AreEqual(cap, bridge.Queued.OfType<MapAction>().Count(), "the unavailable third action was not queued");
+        Assert.IsEmpty(bridge.EndTurn().Rejected);
     }
 
     [Test]

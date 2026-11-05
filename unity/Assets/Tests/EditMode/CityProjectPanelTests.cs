@@ -411,6 +411,34 @@ public class WorkshopPanelTests
 
     static AssignWorkers? Queued(SimBridge b) => b.QueuedLike(new AssignWorkers(City, Workshops.Role, 0)) as AssignWorkers;
 
+    // Red first on origin/main 0c976fb21: after the first press, the second hex still offers enabled Build buttons because the
+    // panel checks the turn-start state without previewing the queued start. Both hexes have exactly Haifa as their first (and
+    // only) Projects.CitiesFor result, so the two UI positions exercise the same city's per-turn cap.
+    [Test]
+    public void AQueuedStartDisablesASecondStartForTheSameCityOnAnotherHex()
+    {
+        var g = GameSession.New(C03, GoldenRun.Seed, Mode.Historical);
+        g.State.Policies[MapActions.MaabarotPolicy] = 1;
+        var hexes = C03.Hexes.Where(h => h.Land
+            && Projects.CitiesFor(C03, g.State, h.Q, h.R).SequenceEqual(new[] { City })
+            && Projects.CheckCityReason(C03, g.State, "industry", City, h.Q, h.R) == null).Take(2).ToList();
+        Assert.AreEqual(2, hexes.Count, "precondition: two hexes whose first city is Haifa");
+
+        var bridge = new SimBridge(g, En) { TownNamesHe = TownsHe };
+        using var ui = new UiTestKit();
+        using var panel = Panel(ui, bridge, En);
+        panel.Show(hexes[0].Q, hexes[0].R);
+        ui.Press("city-project-industry");
+        Assert.AreEqual(City, bridge.Queued.OfType<StartProject>().Single().City,
+            "the first UI press queues Haifa's start");
+        Assert.IsNull(Projects.CheckCityReason(C03, bridge.State, "housing", City, hexes[1].Q, hexes[1].R),
+            "the pre-queue state alone still permits a second start");
+
+        panel.Show(hexes[1].Q, hexes[1].R);
+        Assert.AreEqual(En.Format("city.project_reason.city_cap", Towns[City]), ui.Q<Label>("city-project-reason").text);
+        Assert.IsNull(ui.Root.Q("city-project-housing"), "shared refusal: one reason and no generated Build buttons");
+    }
+
     // R-ARMS-005: the control shows on a built arms workshop under gdd-0.3, and nowhere else: not on a workshop being
     // built, and not on another built kind. The gdd-0.1 row shows that no gdd-0.1 kind shows it: the loader keeps every
     // kind with a worker slot out of gdd-0.1 (R-ARMS-004), so its industry has none. It does not prove WorkshopPart's
