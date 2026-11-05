@@ -1211,7 +1211,7 @@ namespace Statecraft.Game.UI
         }
 
         /// <summary>Plays turns the way a player does: answers each open event by pressing the card's first option button
-        /// while the turn's Attention pays for an answer, then presses End Turn and closes the turn report it brings (#1037); a card left unanswered goes to its minister
+        /// while the turn's Attention pays for an answer and that option's operation units are in place (R-ENEMY-007), then presses End Turn and closes the turn report it brings (#1037); a card left unanswered goes to its minister
         /// (since the GDD cutover, 15 July 1948 brings three cards at full war, where an answer costs 2 of the 4). Logs "SMOKE turn &lt;n&gt; &lt;date&gt; refused &lt;k&gt;" per turn through <paramref name="log"/>,
         /// then "SMOKE OK &lt;n&gt; turns &lt;date&gt; &lt;hash&gt;", or "SMOKE FAIL &lt;reason&gt;" when a press does not take effect.
         /// Static, so an edit-mode test can drive it step by step.</summary>
@@ -1226,6 +1226,9 @@ namespace Statecraft.Game.UI
                     // Rulesets with Attention keep the smoke's own pool check unchanged; gdd-0.3 has no pool to run out of (#1688).
                     if (bridge.Content.UsesAttention
                         && bridge.AttentionLeft!.Value + 1e-9 < AttentionSystem.Cost(bridge.Content, bridge.State, new ChooseEventOption(shown.Id, "").Kind)) break;
+                    // R-ENEMY-007 (#2621): a first option whose operation units are not in place is disabled, and the smoke gives no
+                    // unit orders, so the card goes to its minister as an unpaid one does (GoldenRun.SmokeOrders plays the same).
+                    if (!EventSystem.OperationStatus(bridge.Content, bridge.State, shown.Options[0]).Met) break;
                     var option = root.Q<VisualElement>("event-options")?.Q<Button>();
                     if (option == null || guard >= 50) { log(FormattableString.Invariant($"SMOKE FAIL event {shown.Id} has no option to press")); yield break; }
                     if (!Press(option, log)) yield break;

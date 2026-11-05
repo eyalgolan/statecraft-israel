@@ -73,8 +73,8 @@ later end date moves only `mvp-end`. `mvp-end` is pinned in the manifest and its
 player check enumerate the manifest, so it and every scenario are checked without another hand-written list.
 
 A further value is pinned for the browser smoke run (`?smoke=5`: the golden seed, five turns played through the UI's own
-buttons, answering each event with its first option while the turn's Attention pays for it, the rest left to their
-ministers): `SMOKE OK 5 turns 1948-10-15 6f54118bc0fb13b0c3bbaac49bb57dca5ed61e747cd7d351503bfba803e3d120`.
+buttons, answering each event with its first option while the turn's Attention pays for it and that option's operation
+units are in place at the turn's start (R-ENEMY-007; the smoke gives no unit orders), the rest left to their ministers): `SMOKE OK 5 turns 1948-10-15 6f54118bc0fb13b0c3bbaac49bb57dca5ed61e747cd7d351503bfba803e3d120`.
 It depends on the UI path as well as the sim (which option is first, the turn grid), so re-record it when either changes.
 Check every WebGL build with every manifest entry (plus the UI-path smoke line) with:
 

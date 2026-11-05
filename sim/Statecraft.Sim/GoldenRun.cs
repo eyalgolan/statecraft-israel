@@ -67,22 +67,23 @@ namespace Statecraft.Sim
             return s;
         }
 
-        /// <summary>The smoke5 golden's orders for one turn, what the WebGL ?smoke run's GameRoot.Smoke does: ordinary go-to
-        /// orders stage the first options' required operation units, then each open event is answered with its first option
-        /// while the turn's Attention pays; the rest go to their ministers at turn end. SliceSmokeTests plays the same policy.</summary>
+        /// <summary>The smoke5 golden's orders for one turn, what the WebGL ?smoke run's GameRoot.Smoke does: each open event is
+        /// answered with its first option while the turn's Attention pays and while that option's operation units are in
+        /// place at the turn's start (R-ENEMY-007; the card enables an option from the turn-start state, and the smoke gives no
+        /// unit orders); at the first event that fails either, the rest go to their ministers at turn end. SliceSmokeTests
+        /// plays the same policy.</summary>
         public static List<Command> SmokeOrders(Content c, GameState s)
         {
             if (c == null) throw new ArgumentNullException(nameof(c));
             if (!c.UsesAttention) throw new NotSupportedException("Golden policies are not defined for gdd-0.3.");
-            var answers = HistoricalAI.OperationMoves(c, s, e => e.Options[0]).ToList();
-            var staged = Simulation.Preview(c, s, answers).State;
+            var answers = new List<Command>();
             var left = s.Attention;
-            foreach (var e in s.PendingEvents.Select(id => c.Events.First(x => x.Id == id))
-                .Where(e => EventSystem.OperationStatus(c, staged, e.Options[0]).Met))
+            foreach (var e in s.PendingEvents.Select(id => c.Events.First(x => x.Id == id)))
             {
                 var cmd = new ChooseEventOption(e.Id, e.Options[0].Id);
                 var price = AttentionSystem.Cost(c, s, cmd.Kind);
                 if (price > left + 1e-9) break;
+                if (!EventSystem.OperationStatus(c, s, e.Options[0]).Met) break;
                 left -= price;
                 answers.Add(cmd);
             }

@@ -33,7 +33,8 @@ public class SliceSmokeTests
 
     delegate List<Command> Policy(Content c, GameState s, int turn);
 
-    /// <summary>What GameRoot.Smoke does (GoldenRun.SmokeOrders, shared with Unity's golden check).</summary>
+    /// <summary>What GameRoot.Smoke does (GoldenRun.SmokeOrders, shared with Unity's golden check): first options only, while
+    /// the Attention pays and their operation units are in place at the turn's start.</summary>
     static List<Command> FirstOption(Content c, GameState s, int turn) => GoldenRun.SmokeOrders(c, s);
 
     /// <summary>The golden runs' player (GoldenRun.Orders): HistoricalAI's orders, then the reference player's GDD orders.</summary>
