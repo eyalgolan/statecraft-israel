@@ -16,6 +16,7 @@ import math
 import os
 import re
 import subprocess
+import sys
 from dataclasses import asdict, dataclass, field, fields
 from datetime import date, datetime, time, timedelta
 from pathlib import Path
@@ -30,20 +31,21 @@ SHA_SHOWN = 12
 
 
 class Stop(Exception):
-    """A night that ends without publishing. `outcome` is REFUSED, SKIPPED or MISSED."""
+    """A night that ends without publishing. A refusal may carry its exact evidence log."""
     outcome = "REFUSED"
 
-    def __init__(self, gate: str, detail: str):
+    def __init__(self, gate: str, detail: str, *, log: Path | None = None):
         super().__init__(f"{gate}: {detail}")
         self.gate = gate
         self.detail = detail
+        self.log = Path(log) if log is not None else None
 
 
 class Refused(Stop):
     outcome = "REFUSED"
 
-    def __init__(self, gate: str, detail: str):
-        super().__init__(gate, detail)
+    def __init__(self, gate: str, detail: str, *, log: Path | None = None):
+        super().__init__(gate, detail, log=log)
 
 
 class Skipped(Stop):
@@ -69,6 +71,16 @@ class Runner(Protocol):
             stop_on_interrupt: bool = False) -> int: ...
 
     def capture(self, cmd: list[str], *, cwd: Path, timeout: float = 300) -> str: ...
+
+
+def write_refusal_log(run_dir: Path, gate: str, detail: str, source: Path | None = None) -> Path:
+    """Append the terminal cause to a command log, or create a refusal evidence file in the timestamped run folder."""
+    safe_gate = re.sub(r"[^A-Za-z0-9_.-]+", "-", gate)
+    log = Path(source) if source is not None else Path(run_dir) / f"refused-{safe_gate}.log"
+    log.parent.mkdir(parents=True, exist_ok=True)
+    with log.open("a", encoding="utf-8") as out:
+        out.write(f"\nNIGHTLY REFUSED gate={gate}\n{detail}\n")
+    return log
 
 
 # --- config -----------------------------------------------------------------------------------------------------
@@ -345,25 +357,63 @@ def notify(title: str, message: str, run=None) -> None:
 @contextlib.contextmanager
 def _run_lock(job: Path, name: str = "run.lock") -> Iterator[bool]:
     import fcntl   # POSIX only; imported here so the shared types load anywhere
-    job.mkdir(parents=True, exist_ok=True)
-    with (job / name).open("a") as fh:
+    path = job / name
+    try:
+        job.mkdir(parents=True, exist_ok=True)
+    except OSError as e:
+        raise Refused("lock", f"cannot create lock directory {job}: {e}") from e
+    try:
+        fh = path.open("a")
+    except OSError as e:
+        raise Refused("lock", f"cannot open {path}: {e}") from e
+    locked = False
+    primary: BaseException | None = None
+    try:
         try:
             fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except OSError:
+        except BlockingIOError:
             yield False
             return
+        except OSError as e:
+            raise Refused("lock", f"cannot take {path}: {e}") from e
+        locked = True
+        yield True
+    except BaseException as e:
+        primary = e
+        raise
+    finally:
+        teardown: list[Refused] = []
+        if locked:
+            try:
+                fcntl.flock(fh, fcntl.LOCK_UN)
+            except OSError as e:
+                failure = Refused("lock", f"cannot release {path}: {e}")
+                failure.__cause__ = e
+                teardown.append(failure)
         try:
-            yield True
-        finally:
-            fcntl.flock(fh, fcntl.LOCK_UN)
+            fh.close()
+        except OSError as e:
+            failure = Refused("lock", f"cannot close {path}: {e}")
+            failure.__cause__ = e
+            teardown.append(failure)
+        if teardown:
+            if primary is not None:
+                for failure in teardown:
+                    print(f"{failure}; preserving {type(primary).__name__}: {primary}", file=sys.stderr)
+            else:
+                for failure in teardown[1:]:
+                    print(f"{failure}; preserving {teardown[0]}", file=sys.stderr)
+                raise teardown[0]
 
 
 def run_lock(job: Path) -> ContextManager[bool]:
-    """Yields True when this process holds <job>/run.lock, False when another run already does."""
+    """Yields True when this process holds <job>/run.lock, False only when another run already does.
+    A lock-system failure raises Refused."""
     return _run_lock(job)
 
 
 def savetest_lock(job: Path) -> ContextManager[bool]:
-    """Yields True when this process holds <job>/savetest.lock, False when another save test already does: agents
-    may start the save test too (owner, 2 Nov 2026, "2 (a)"), and two runs must not push to the test page at once."""
+    """Yields True when this process holds <job>/savetest.lock, False only when another save test already does.
+    A lock-system failure raises Refused. Agents may start the save test too (owner, 2 Nov 2026, "2 (a)"), and two
+    runs must not push to the test page at once."""
     return _run_lock(job, "savetest.lock")

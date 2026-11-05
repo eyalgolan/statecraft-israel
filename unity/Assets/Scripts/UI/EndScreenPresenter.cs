@@ -25,7 +25,7 @@ namespace Statecraft.Game.UI
 
         readonly VisualElement hudRoot, screen; readonly ScrollView rows; readonly SimBridge bridge; readonly UiText text;
         readonly Button close, newGame; readonly Action? pressNewGame;
-        readonly Action<IReadOnlyList<Rejection>> onTurn; readonly Action onChanged;
+        readonly Action<IReadOnlyList<Rejection>> onTurn; readonly Action onChanged, onCardsSeen;
         readonly EventCallback<NavigationCancelEvent> onCancel;
         int closedAt = -1;
 
@@ -54,13 +54,21 @@ namespace Statecraft.Game.UI
             // Guarded as TurnReportPresenter's handler is: TurnEnded's later handlers include the turn's autosave.
             onTurn = _ =>
             {
-                try { if (bridge.State.GameOver != null) Show(); }
+                // #2536: an objective's card raised on the ending turn shows first; the screen follows its answer.
+                try { if (bridge.State.GameOver != null && !bridge.EndingCardWaiting) Show(); }
                 catch (Exception e) { UnityEngine.Debug.LogException(e); Hide(); }
             };
             bridge.TurnEnded += onTurn;
+            onCardsSeen = () =>
+            {
+                try { Show(); }
+                catch (Exception e) { UnityEngine.Debug.LogException(e); Hide(); }
+            };
+            bridge.EndingCardsSeen += onCardsSeen;
             onChanged = () => { if (bridge.State.GameOver == null) Hide(); };   // a new game (New Game's second press) is not over
             bridge.Changed += onChanged;
-            if (bridge.State.GameOver != null && show) Show(); else Hide();   // a loaded or rebuilt ended game opens on its end screen
+            // A loaded or rebuilt ended game opens on its end screen, after any card of its ending turn still waiting (#2536).
+            if (bridge.State.GameOver != null && show && !bridge.EndingCardWaiting) Show(); else Hide();
         }
 
         /// <summary>True while the end screen shows.</summary>
@@ -164,6 +172,7 @@ namespace Statecraft.Game.UI
         public void Dispose()
         {
             bridge.TurnEnded -= onTurn;
+            bridge.EndingCardsSeen -= onCardsSeen;
             bridge.Changed -= onChanged;
             close.clicked -= OnClose;
             newGame.clicked -= OnNewGame;

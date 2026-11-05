@@ -100,7 +100,7 @@ namespace Statecraft.Game.UI
             var refused = s.GameOver != null ? null : EconomySystem.DollarsRefusal(c, s, amount.value);
             panel.Q<Label>("dollars-refusal").text = s.GameOver != null ? text["order.game_over"]
                 : !war ? text["dollars.wartime_only"]
-                : refused != null ? SimBridge.ReasonText(text, refused)
+                : refused != null ? SimBridge.ReasonText(text, refused, c)
                 : !bridge.CanPay(order) ? text["dollars.no_attention"] : "";
         }
 

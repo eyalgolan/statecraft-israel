@@ -7,6 +7,7 @@ text: 'Talks in Rhodes have produced an armistice agreement with Egypt. {prime_m
 title_he: שביתת הנשק עם מצרים
 text_he: 'השיחות ברודוס הניבו הסכם שביתת נשק עם מצרים. על {prime_minister} להחליט אם ישראל תחתום עליו.'
 anchor: hard
+front_quiet: egypt
 office: prime_minister
 from: 1949-02-24
 # Hard anchor: fires on the first turn on or after `from`. `to` (exclusive, end of 1949) only makes the window finite,

@@ -20,7 +20,7 @@ namespace Statecraft.Sim
 
         public Qualified(int craftsmen, int veterans, IReadOnlyList<int> halutzim)
         {
-            Craftsmen = craftsmen; Veterans = veterans; Halutzim = halutzim.OrderBy(x => x).ToArray();
+            Craftsmen = craftsmen; Veterans = veterans; Halutzim = Array.AsReadOnly(halutzim.OrderBy(x => x).ToArray());
         }
 
         public int Total => Craftsmen + Veterans + Halutzim.Count;
