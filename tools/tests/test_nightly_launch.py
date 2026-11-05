@@ -145,6 +145,38 @@ def test_a_run_lock_open_failure_is_recorded_as_refused(tmp_path, monkeypatch, c
     assert "lock:" in err and "cannot open" in err and str(home / "run.lock") in err
 
 
+def test_a_clone_refusal_survives_a_run_lock_release_failure(tmp_path, monkeypatch, capsys):
+    home = tmp_path / "job"
+    cfg = cfg_for(tmp_path, clone=False)
+    write_config(home, cfg)
+    monkeypatch.setattr(nl, "notify", lambda *a, **k: None)
+    calls = 0
+
+    def fail_release(*args):
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise PermissionError("unlock denied")
+
+    monkeypatch.setattr(fcntl, "flock", fail_release)
+    assert nl.main(["--uv", "/opt/uv", "--home", str(home)], now=NOW) == 1
+    log = (home / "LOG.md").read_text()
+    assert log.count("REFUSED") == 1 and "gate=clone" in log and "gate=lock" not in log
+    err = capsys.readouterr().err
+    assert "cannot release" in err and "preserving Refused: clone:" in err
+
+
+def test_a_job_directory_setup_failure_is_a_refusal_not_a_traceback(tmp_path, monkeypatch, capsys):
+    parent = tmp_path / "not-a-directory"
+    parent.write_text("file")
+    home = parent / "job"
+    monkeypatch.setattr(nl, "notify", lambda *a, **k: None)
+    assert nl.main(["--uv", "/opt/uv", "--home", str(home)], now=NOW) == 1
+    err = capsys.readouterr().err
+    assert "lock: cannot create lock directory" in err and str(home) in err
+    assert "could not record refusal" in err
+
+
 def test_a_prepared_clone_runs_the_clones_own_nightly_script_with_the_lock_free(tmp_path):
     home = tmp_path / "job"
     cfg = cfg_for(tmp_path)

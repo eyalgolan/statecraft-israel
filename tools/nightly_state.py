@@ -16,6 +16,7 @@ import math
 import os
 import re
 import subprocess
+import sys
 from dataclasses import asdict, dataclass, field, fields
 from datetime import date, datetime, time, timedelta
 from pathlib import Path
@@ -354,7 +355,9 @@ def _run_lock(job: Path, name: str = "run.lock") -> Iterator[bool]:
         fh = path.open("a")
     except OSError as e:
         raise Refused("lock", f"cannot open {path}: {e}") from e
-    with fh:
+    locked = False
+    primary: BaseException | None = None
+    try:
         try:
             fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
@@ -362,13 +365,34 @@ def _run_lock(job: Path, name: str = "run.lock") -> Iterator[bool]:
             return
         except OSError as e:
             raise Refused("lock", f"cannot take {path}: {e}") from e
-        try:
-            yield True
-        finally:
+        locked = True
+        yield True
+    except BaseException as e:
+        primary = e
+        raise
+    finally:
+        teardown: list[Refused] = []
+        if locked:
             try:
                 fcntl.flock(fh, fcntl.LOCK_UN)
             except OSError as e:
-                raise Refused("lock", f"cannot release {path}: {e}") from e
+                failure = Refused("lock", f"cannot release {path}: {e}")
+                failure.__cause__ = e
+                teardown.append(failure)
+        try:
+            fh.close()
+        except OSError as e:
+            failure = Refused("lock", f"cannot close {path}: {e}")
+            failure.__cause__ = e
+            teardown.append(failure)
+        if teardown:
+            if primary is not None:
+                for failure in teardown:
+                    print(f"{failure}; preserving {type(primary).__name__}: {primary}", file=sys.stderr)
+            else:
+                for failure in teardown[1:]:
+                    print(f"{failure}; preserving {teardown[0]}", file=sys.stderr)
+                raise teardown[0]
 
 
 def run_lock(job: Path) -> ContextManager[bool]:

@@ -187,6 +187,39 @@ def test_a_lock_release_failure_is_refused(tmp_path, monkeypatch):
     assert isinstance(e.value.__cause__, PermissionError)
 
 
+def test_a_lock_release_failure_does_not_replace_the_protected_exception(tmp_path, monkeypatch, capsys):
+    calls = 0
+
+    def fail_release(*args):
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise PermissionError("unlock denied")
+
+    monkeypatch.setattr(fcntl, "flock", fail_release)
+    original = RuntimeError("clone failed")
+    with pytest.raises(RuntimeError) as e:
+        with ns.run_lock(tmp_path):
+            raise original
+    assert e.value is original
+    err = capsys.readouterr().err
+    assert "cannot release" in err and "preserving RuntimeError: clone failed" in err
+
+
+def test_a_lock_file_close_failure_is_refused(tmp_path, monkeypatch):
+    class CannotClose:
+        def close(self):
+            raise OSError("close denied")
+
+    monkeypatch.setattr(Path, "open", lambda *a, **k: CannotClose())
+    monkeypatch.setattr(fcntl, "flock", lambda *a: None)
+    with pytest.raises(ns.Refused) as e:
+        with ns.run_lock(tmp_path) as held:
+            assert held is True
+    assert e.value.gate == "lock" and "cannot close" in e.value.detail and "close denied" in e.value.detail
+    assert isinstance(e.value.__cause__, OSError)
+
+
 def test_stops_carry_outcome_gate_and_detail():
     r = ns.Refused("editmode", "3 failed")
     assert (r.outcome, r.gate, r.detail) == ("REFUSED", "editmode", "3 failed")

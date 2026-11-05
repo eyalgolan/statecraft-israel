@@ -1240,28 +1240,45 @@ def main(argv: list[str] | None = None) -> int:
             notify("Nightly refused", str(e)[:200])
         print(e, file=sys.stderr)
         return 1
-    # #2644: run_lock raises Refused on a lock-system failure (not contention); that is a recorded REFUSED night.
+    # #2644: run_lock raises Refused on a lock-system failure (not contention). Before the operation starts that is
+    # a recorded REFUSED night; after it records its own result, a teardown failure is only an stderr note.
+    operation_finished = False
+    savetest_code: int | None = None
+    outcome: str | None = None
     try:
         with run_lock(job) as held:
             if not held:
                 print("another nightly run holds run.lock", file=sys.stderr)
                 return 1
             if args.command == "savetest":
-                return run_savetest(cfg, job, args.tag)
-            client_error = None
-            try:
-                gh, itch = _clients(cfg)
-            except Refused as e:   # run_night records the unusable client as a REFUSED night
-                gh = itch = None
-                client_error = e
-            outcome = run_night(cfg, job / "state.json", job, ProcRunner(), gh, itch, now=now, manual=args.manual,
-                                no_publish=args.no_publish, client_error=client_error, no_steam=args.no_steam)
+                savetest_code = run_savetest(cfg, job, args.tag)
+            else:
+                client_error = None
+                try:
+                    gh, itch = _clients(cfg)
+                except Refused as e:   # run_night records the unusable client as a REFUSED night
+                    gh = itch = None
+                    client_error = e
+                outcome = run_night(cfg, job / "state.json", job, ProcRunner(), gh, itch, now=now,
+                                    manual=args.manual, no_publish=args.no_publish, client_error=client_error,
+                                    no_steam=args.no_steam)
+            operation_finished = True
     except Refused as e:
+        if operation_finished:
+            print(f"{e}; the completed operation's existing record is unchanged", file=sys.stderr)
+            if savetest_code is not None:
+                return savetest_code
+            assert outcome is not None
+            print(outcome)
+            return 1 if outcome == "REFUSED" else 0
         line = log_line(now, "REFUSED", tag=None, sha=None, gate=e.gate, log=None)
         record(job / "LOG.md", cfg.handoff, f"{line} {e.detail}")
         notify("Nightly refused", str(e)[:200])
         print(e, file=sys.stderr)
         return 1
+    if savetest_code is not None:
+        return savetest_code
+    assert outcome is not None
     print(outcome)
     return 1 if outcome == "REFUSED" else 0
 

@@ -3203,13 +3203,45 @@ def test_a_run_lock_open_failure_in_main_is_a_recorded_refusal(tmp_path, monkeyp
     assert "cannot open" in capsys.readouterr().err
 
 
-def test_a_run_lock_release_failure_in_main_is_a_recorded_refusal(tmp_path, monkeypatch, capsys):
+def test_a_run_lock_release_failure_does_not_add_a_second_savetest_record(tmp_path, monkeypatch, capsys):
     job = tmp_path / "job"
     job.mkdir()
+    butler = tmp_path / "butler"
+    butler.write_text("")
+    cfg = dataclasses.replace(ns.Config(), butler=butler, handoff=tmp_path / "HANDOFF.md",
+                              itch_page_url="https://eyalgolan.itch.io/statecraft-israel",
+                              savetest_itch_target=TEST_TARGET)
     monkeypatch.setattr(nightly, "JOB", job)
-    monkeypatch.setattr(nightly, "load_config", lambda p: ns.Config(handoff=tmp_path / "HANDOFF.md"))
+    monkeypatch.setattr(nightly, "load_config", lambda p: cfg)
     monkeypatch.setattr(nightly, "notify", lambda *a, **k: None)
-    monkeypatch.setattr(nightly, "run_savetest", lambda *a, **k: 0)
+    monkeypatch.setattr(nightly.shutil, "which", lambda name: "/usr/bin/" + name)
+    monkeypatch.setattr(nightly, "_savetest", lambda *a, **k: ("PASS", "completed"))
+    unlocks = 0
+
+    def fail_outer_release(fh, operation):
+        nonlocal unlocks
+        if operation == fcntl.LOCK_UN:
+            unlocks += 1
+        if unlocks == 2:
+            raise PermissionError("denied")
+
+    monkeypatch.setattr(fcntl, "flock", fail_outer_release)
+    assert nightly.main(["savetest", "--tag", TAG]) == 0
+    log = (job / "LOG.md").read_text()
+    assert log.count("SAVETEST PASS") == 1 and "REFUSED" not in log and "gate=lock" not in log
+    assert (tmp_path / "HANDOFF.md").read_text().count("SAVETEST PASS") == 1
+    err = capsys.readouterr().err
+    assert "cannot release" in err and "existing record is unchanged" in err
+
+
+def test_a_run_lock_release_failure_does_not_replace_run_nights_record(tmp_path, monkeypatch, capsys):
+    job = tmp_path / "job"
+    job.mkdir()
+    cfg = ns.Config(handoff=tmp_path / "HANDOFF.md")
+    monkeypatch.setattr(nightly, "JOB", job)
+    monkeypatch.setattr(nightly, "load_config", lambda p: cfg)
+    monkeypatch.setattr(nightly, "notify", lambda *a, **k: None)
+    monkeypatch.setattr(nightly, "_clients", lambda cfg: (_ for _ in ()).throw(ns.Refused("github-client", "offline")))
     calls = 0
 
     def fail_release(*args):
@@ -3219,7 +3251,8 @@ def test_a_run_lock_release_failure_in_main_is_a_recorded_refusal(tmp_path, monk
             raise PermissionError("denied")
 
     monkeypatch.setattr(fcntl, "flock", fail_release)
-    assert nightly.main(["savetest", "--tag", TAG]) == 1
-    assert "REFUSED" in (job / "LOG.md").read_text() and "gate=lock" in (job / "LOG.md").read_text()
-    assert "REFUSED" in (tmp_path / "HANDOFF.md").read_text()
-    assert "cannot release" in capsys.readouterr().err
+    assert nightly.main(["run"]) == 1
+    log = (job / "LOG.md").read_text()
+    assert log.count("REFUSED") == 1 and "gate=github-client" in log and "gate=lock" not in log
+    err = capsys.readouterr().err
+    assert "cannot release" in err and "existing record is unchanged" in err
