@@ -258,7 +258,46 @@ public class ScreenRowArrowTests : SharedCameraActionsFixture
         yield return Frames(5);
         Assert.IsTrue(ui.Q("root").ClassListContains(TurnReportPresenter.OpenClass), "precondition: the report is still open");
         Assert.AreEqual("budget", nav.Current, "precondition: the Budget is open under the report");
+        Assert.AreEqual(DisplayStyle.Flex, ui.Q("screen-budget").resolvedStyle.display, "precondition: the Budget's rows show, so Step could reach them");
         Keys("with the Budget under the report");
+        Assert.AreEqual(0, presses, "no key pressed a button");
+    }
+
+    /// <summary>L4 under the ending (#2651 review): the end screen closes no screen (EndScreenPresenter.Show), so a screen
+    /// can be open under it, yet the real Up and Down keys, read by GameRoot's poll, leave the focus where the ending put it.
+    /// The game ends through the bridge; the turn report that opens with it (and closes the Budget) is closed, so only the
+    /// ending is over the Budget, opened again under it.</summary>
+    [UnityTest]
+    public IEnumerator UpAndDownMoveNothingUnderTheEndingL4()
+    {
+        InputSystem.actions = AssetDatabase.LoadAssetAtPath<InputActionAsset>("Assets/InputSystem_Actions.inputactions");
+        var keyboard = InputSystem.AddDevice<Keyboard>();
+        _ = keyboard.upArrowKey.wasPressedThisFrame; _ = keyboard.downArrowKey.wasPressedThisFrame;   // warm, as above
+        yield return Boot();
+        var bridge = root.Bridge!;
+        bridge.State.Date = bridge.Content.End; bridge.State.GameOver = Statecraft.Sim.GameOverCodes.MvpEnded;   // as EndScreenTests.Ended
+        bridge.EndTurn();
+        yield return Frames(5);
+        var hud = ui.Q("root");
+        Assert.IsTrue(hud.ClassListContains(EndScreenPresenter.OpenClass), "precondition: the end screen is open");
+        const System.Reflection.BindingFlags Private = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+        ((TurnReportPresenter?)typeof(GameRoot).GetField("report", Private)!.GetValue(root))?.Close();
+        ((ScreenNav)typeof(GameRoot).GetField("nav", Private)!.GetValue(root)!).Open("budget");
+        yield return Frames(5);
+        Assert.IsTrue(hud.ClassListContains(EndScreenPresenter.OpenClass), "precondition: the end screen is still open");
+        Assert.IsFalse(hud.ClassListContains(TurnReportPresenter.OpenClass), "precondition: no turn report, so only the ending guards");
+        Assert.IsFalse(hud.ClassListContains(OutcomePresenter.OpenClass), "precondition: no outcome clip, which skips the whole poll");
+        Assert.IsTrue(hud.ClassListContains(ScreenNav.ScreenOpenClass), "precondition: the Budget is still open under the ending");
+        Assert.AreEqual(DisplayStyle.Flex, ui.Q("screen-budget").resolvedStyle.display, "precondition: the Budget's rows show, so Step could reach them");
+        var at = FocusedName;
+        foreach (var k in new[] { UnityEngine.InputSystem.Key.DownArrow, UnityEngine.InputSystem.Key.UpArrow, UnityEngine.InputSystem.Key.DownArrow })
+        {
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState(k)); InputSystem.Update();
+            Assert.IsTrue(keyboard[k].wasPressedThisFrame, "precondition: " + k + " went down this frame");
+            Send(root, "Update");
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState()); InputSystem.Update();
+            Assert.AreEqual(at, FocusedName, k + " under the ending left the focus where it was");
+        }
         Assert.AreEqual(0, presses, "no key pressed a button");
     }
 
