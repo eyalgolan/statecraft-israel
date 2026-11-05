@@ -30,12 +30,37 @@ public class SchemaTests
     {
         "$schema", "$ref", "title", "description", "definitions", "type", "properties", "additionalProperties", "required",
         "items", "minItems", "minLength", "pattern", "minimum", "exclusiveMinimum", "maximum", "enum",
+        "allOf", "oneOf", "not", "const",
     };
 
     static void Check(JsonElement schema, JsonElement root, JsonNode? value, string path, List<string> errors)
     {
         foreach (var k in schema.EnumerateObject())
             if (!Supported.Contains(k.Name)) throw new InvalidOperationException($"schema keyword '{k.Name}' at {path} is not supported by this test's validator");
+
+        if (schema.TryGetProperty("allOf", out var allOf))
+            foreach (var branch in allOf.EnumerateArray())
+                Check(branch, root, value, path, errors);
+        if (schema.TryGetProperty("oneOf", out var oneOf))
+        {
+            var matches = 0;
+            foreach (var branch in oneOf.EnumerateArray())
+            {
+                var branchErrors = new List<string>();
+                Check(branch, root, value, path, branchErrors);
+                if (branchErrors.Count == 0) matches++;
+            }
+            if (matches != 1) errors.Add($"{path}: must match exactly one allowed shape");
+        }
+        if (schema.TryGetProperty("not", out var not))
+        {
+            var forbiddenErrors = new List<string>();
+            Check(not, root, value, path, forbiddenErrors);
+            if (forbiddenErrors.Count == 0) errors.Add($"{path}: matches a forbidden shape");
+        }
+        if (schema.TryGetProperty("const", out var constant)
+            && !JsonNode.DeepEquals(value, JsonNode.Parse(constant.GetRawText())))
+            errors.Add($"{path}: must equal {constant.GetRawText()}");
 
         if (schema.TryGetProperty("$ref", out var r))
         {
@@ -350,7 +375,71 @@ people:
 
     [Fact]
     public void AnUnsupportedKeywordIsRefusedNotIgnored() =>
-        Assert.Throws<InvalidOperationException>(() => Check(JsonDocument.Parse("{\"oneOf\": []}").RootElement, default, JsonValue.Create("x"), "$", new List<string>()));
+        Assert.Throws<InvalidOperationException>(() => Check(JsonDocument.Parse("{\"dependentRequired\": {}}").RootElement, default, JsonValue.Create("x"), "$", new List<string>()));
+
+    [Fact]
+    public void OneOfRequiresExactlyOneMatchingBranch()
+    {
+        var oneMatch = JsonDocument.Parse("{\"oneOf\": [{\"type\": \"string\"}, {\"type\": \"integer\"}]}").RootElement;
+        var twoMatches = JsonDocument.Parse("{\"oneOf\": [{\"type\": \"string\"}, {\"type\": \"string\"}]}").RootElement;
+        var errors = new List<string>();
+        Check(oneMatch, default, JsonValue.Create("x"), "$", errors);
+        Assert.Empty(errors);
+        Check(twoMatches, default, JsonValue.Create("x"), "$", errors);
+        Assert.NotEmpty(errors);
+    }
+
+    [Fact]
+    public void ARequirementSelectsAnOptionOrTrueDivergence()
+    {
+        const string card = "id: e\ntitle: T\ntext: X\nfrom: 1950-01-01\nREQUIRESoptions:\n  - { id: a, text: A }\nsources: [{ url: \"https://example.org\", checked: 2026-10-09 }]\n";
+        Assert.Empty(Errors("event.schema.json", card.Replace("REQUIRES", "requires: [{ event: parent, option: path }]\n")));
+        Assert.Empty(Errors("event.schema.json", card.Replace("REQUIRES", "requires: [{ event: parent, option: path, diverged: false }]\n")));
+        Assert.Empty(Errors("event.schema.json", card.Replace("REQUIRES", "requires: [{ event: parent, diverged: true }]\n")));
+        Assert.NotEmpty(Errors("event.schema.json", card.Replace("REQUIRES", "requires: [{ event: parent }]\n")));
+        Assert.NotEmpty(Errors("event.schema.json", card.Replace("REQUIRES", "requires: [{ event: parent, diverged: false }]\n")));
+        Assert.NotEmpty(Errors("event.schema.json", card.Replace("REQUIRES", "requires: [{ event: parent, option: path, diverged: true }]\n")));
+    }
+
+    [Fact]
+    public void ConsideredAlternativesNeedWhoWhenAndSources()
+    {
+        const string card = "id: e\ntitle: T\ntext: X\nfrom: 1950-01-01\noptions:\n  - { id: a, text: A, alternative: ALTERNATIVE }\nsources: [{ url: \"https://example.org\", checked: 2026-10-09 }]\n";
+        const string source = "[{ url: \"https://example.org\", checked: 2026-10-09 }]";
+        Assert.Empty(Errors("event.schema.json", card.Replace("ALTERNATIVE", "{ basis: proposed, by: the cabinet, date: 1950-01-01, sources: " + source + " }")));
+        Assert.NotEmpty(Errors("event.schema.json", card.Replace("ALTERNATIVE", "{ basis: proposed, date: 1950-01-01, sources: " + source + " }")));
+        Assert.NotEmpty(Errors("event.schema.json", card.Replace("ALTERNATIVE", "{ basis: proposed, by: '', date: 1950-01-01, sources: " + source + " }")));
+        Assert.NotEmpty(Errors("event.schema.json", card.Replace("ALTERNATIVE", "{ basis: debated, by: '   ', date: 1950-01-01, sources: " + source + " }")));
+        Assert.NotEmpty(Errors("event.schema.json", card.Replace("ALTERNATIVE", "{ basis: proposed, by: '{prime_minister}', date: 1950-01-01, sources: " + source + " }")));
+        Assert.NotEmpty(Errors("event.schema.json", card.Replace("ALTERNATIVE", "{ basis: debated, by: the cabinet, sources: " + source + " }")));
+        Assert.NotEmpty(Errors("event.schema.json", card.Replace("ALTERNATIVE", "{ basis: proposed, by: the cabinet, date: 1950-01-01, sources: [] }")));
+        Assert.Empty(Errors("event.schema.json", card.Replace("ALTERNATIVE", "{ basis: design }")));
+        Assert.NotEmpty(Errors("event.schema.json", card.Replace("ALTERNATIVE", "{ basis: design, date: 1950-01-01 }")));
+        Assert.NotEmpty(Errors("event.schema.json", card.Replace("ALTERNATIVE", "{ basis: design, by: the cabinet }")));
+    }
+
+    [Theory]
+    [InlineData(1, true)]
+    [InlineData(5, true)]
+    [InlineData(0, false)]
+    [InlineData(6, false)]
+    public void SetRungIsOneToFive(int rung, bool valid)
+    {
+        var card = $"id: e\ntitle: T\ntext: X\nfrom: 1950-01-01\noptions:\n  - {{ id: a, text: A, set_rung: {rung} }}\nsources: [{{ url: \"https://example.org\", checked: 2026-10-09 }}]\n";
+        Assert.Equal(valid, Errors("event.schema.json", card).Count == 0);
+    }
+
+    [Fact]
+    public void EventHebrewIsAllOrNone()
+    {
+        const string plain = "id: e\ntitle: T\ntext: X\nfrom: 1950-01-01\nTOPoptions:\n  - { id: a, text: AOPTION }\nsources: [{ url: \"https://example.org\", checked: 2026-10-09 }]\n";
+        Assert.Empty(Errors("event.schema.json", plain.Replace("TOP", "").Replace("OPTION", "")));
+        Assert.Empty(Errors("event.schema.json", plain.Replace("TOP", "title_he: כותרת\ntext_he: טקסט\n").Replace("OPTION", ", text_he: בחירה")));
+        Assert.NotEmpty(Errors("event.schema.json", plain.Replace("TOP", "title_he: כותרת\n").Replace("OPTION", "")));
+        Assert.NotEmpty(Errors("event.schema.json", plain.Replace("TOP", "title_he: כותרת\ntext_he: טקסט\n").Replace("OPTION", "")));
+        Assert.NotEmpty(Errors("event.schema.json", plain.Replace("TOP", "").Replace("OPTION", ", text_he: בחירה")));
+        Assert.NotEmpty(Errors("event.schema.json", plain.Replace("TOP", "text_he_review: agent-checked\n").Replace("OPTION", "")));
+    }
 
     // R-MEDIT-001/002/003: synthetic authoring shape, never runtime content.
     static string SyntheticEditorEnvelope()
