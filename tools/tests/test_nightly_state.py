@@ -146,6 +146,20 @@ def test_the_run_lock_is_exclusive(tmp_path):
         assert again is True
 
 
+def test_lock_contention_is_the_only_lock_failure_reported_as_held(tmp_path, monkeypatch):
+    monkeypatch.setattr(fcntl, "flock", lambda *a: (_ for _ in ()).throw(BlockingIOError("held")))
+    with ns.run_lock(tmp_path) as held:
+        assert held is False
+
+
+def test_a_lock_system_failure_is_refused(tmp_path, monkeypatch):
+    monkeypatch.setattr(fcntl, "flock", lambda *a: (_ for _ in ()).throw(PermissionError("denied")))
+    with pytest.raises(ns.Refused) as e:
+        with ns.savetest_lock(tmp_path):
+            pass
+    assert e.value.gate == "lock" and str(tmp_path / "savetest.lock") in e.value.detail and "denied" in e.value.detail
+
+
 def test_stops_carry_outcome_gate_and_detail():
     r = ns.Refused("editmode", "3 failed")
     assert (r.outcome, r.gate, r.detail) == ("REFUSED", "editmode", "3 failed")

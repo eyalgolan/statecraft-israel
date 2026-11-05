@@ -79,15 +79,15 @@ def main(argv: list[str] | None = None, *, git: Callable[..., str] = _git,
     except Refused as e:   # a corrupt config is a recorded REFUSED night, not a night on defaults
         _refuse(Config(), a.home, e, now)
         return 1
-    with run_lock(a.home) as held:
-        if not held:
-            print("nightly_launch: a run is in progress")
-            return 0
-        try:
+    try:
+        with run_lock(a.home) as held:
+            if not held:
+                print("nightly_launch: a run is in progress")
+                return 0
             prepare_clone(cfg, git, copy)
-        except Refused as e:
-            _refuse(cfg, a.home, e, now)
-            return 1
+    except Refused as e:
+        _refuse(cfg, a.home, e, now)
+        return 1
     return call([a.uv, "run", str(cfg.clone / "tools" / "nightly.py"), "run"])
 
 

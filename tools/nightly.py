@@ -1053,16 +1053,18 @@ def savetest(cfg: Config, config_path: Path, job: Path, runner: Runner, gh: GitH
     work = Path(job) / "savetest" / stamp
     evidence: dict = {"tag": tag, "target": cfg.savetest_itch_target}
     result, detail = "INCONCLUSIVE", ""
-    with savetest_lock(Path(job)) as held:
-        if not held:
-            detail = "another save test is running on this job (savetest.lock); nothing was pushed"
-        else:
-            try:
+    try:
+        with savetest_lock(Path(job)) as held:
+            if not held:
+                detail = "another save test is running on this job (savetest.lock); nothing was pushed"
+            else:
                 result, detail = _savetest(cfg, work, runner, gh, itch, tag, evidence, fetch, sleep)
-            except Stop as e:
-                detail = f"{e.gate}: {e.detail}"
-            except (OSError, SystemExit) as e:   # find_chrome exits when there is no Chrome
-                detail = f"{type(e).__name__}: {e}"
+    except Stop as e:
+        result = "INCONCLUSIVE"
+        detail = f"{e.gate}: {e.detail}"
+    except (OSError, SystemExit) as e:   # find_chrome exits when there is no Chrome
+        result = "INCONCLUSIVE"
+        detail = f"{type(e).__name__}: {e}"
     evidence.update(result=result, detail=detail)
     if work.is_dir():
         (work / "evidence.json").write_text(json.dumps(evidence, indent=2, sort_keys=True) + "\n", encoding="utf-8")

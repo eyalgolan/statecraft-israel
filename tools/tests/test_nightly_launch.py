@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 # nightly_launch locks with flock (through nightly_state); fcntl does not exist on Windows.
-pytest.importorskip("fcntl", reason="fcntl is POSIX-only (nightly_state uses flock); not on Windows")
+fcntl = pytest.importorskip("fcntl", reason="fcntl is POSIX-only (nightly_state uses flock); not on Windows")
 
 import nightly_launch as nl  # noqa: E402
 import nightly_state as ns  # noqa: E402
@@ -127,6 +127,22 @@ def test_a_run_in_progress_exits_0_and_touches_nothing(tmp_path, capsys):
     assert code == 0 and rec.calls == [] and ran == []
     assert "a run is in progress" in capsys.readouterr().out
     assert not (home / "LOG.md").exists()
+
+
+def test_a_broken_run_lock_is_recorded_as_refused(tmp_path, monkeypatch, capsys):
+    home = tmp_path / "job"
+    cfg = cfg_for(tmp_path)
+    write_config(home, cfg)
+    monkeypatch.setattr(fcntl, "flock", lambda *a: (_ for _ in ()).throw(PermissionError("denied")))
+    monkeypatch.setattr(nl, "notify", lambda *a, **k: None)
+    rec, ran = Recorder(), []
+    code = nl.main(["--uv", "/opt/uv", "--home", str(home)], git=rec.git, copy=rec.copy,
+                   call=ran.append, now=NOW)
+    assert code == 1 and rec.calls == [] and ran == []
+    assert "REFUSED" in (home / "LOG.md").read_text() and "gate=lock" in (home / "LOG.md").read_text()
+    assert "gate=lock" in cfg.handoff.read_text()
+    err = capsys.readouterr().err
+    assert "lock:" in err and "denied" in err
 
 
 def test_a_prepared_clone_runs_the_clones_own_nightly_script_with_the_lock_free(tmp_path):

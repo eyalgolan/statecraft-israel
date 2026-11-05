@@ -2299,6 +2299,29 @@ def test_the_savetest_command_builds_its_itch_client_on_the_test_target(tmp_path
     assert nightly.run_savetest(cfg, tmp_path, TAG) == 0 and built == [TEST_TARGET]
 
 
+def test_a_broken_savetest_lock_is_recorded_inconclusive(tmp_path, monkeypatch, no_processes, capsys):
+    butler = tmp_path / "butler"
+    butler.write_text("")
+    monkeypatch.setattr(nightly.shutil, "which", lambda name: "/usr/bin/" + name)
+    stages = []
+    monkeypatch.setattr(nightly, "_savetest", lambda *a, **k: stages.append((a, k)))
+
+    @contextmanager
+    def broken_lock(job):
+        raise ns.Refused("lock", f"cannot take {job / 'savetest.lock'}: denied")
+        yield True
+
+    monkeypatch.setattr(nightly, "savetest_lock", broken_lock)
+    cfg = dataclasses.replace(ns.Config(), butler=butler, handoff=tmp_path / "HANDOFF.md",
+                              itch_page_url="https://eyalgolan.itch.io/statecraft-israel",
+                              savetest_itch_target=TEST_TARGET)
+    assert nightly.run_savetest(cfg, tmp_path, TAG) == 1 and stages == []
+    assert "INCONCLUSIVE" in capsys.readouterr().out
+    log = (tmp_path / "LOG.md").read_text()
+    assert "SAVETEST INCONCLUSIVE" in log and "lock: cannot take" in log and "denied" in log
+    assert "SAVETEST INCONCLUSIVE" in cfg.handoff.read_text()
+
+
 def too_many_requests(retry_after=None):
     return http_error(frame_of(101), 429, retry_after)
 

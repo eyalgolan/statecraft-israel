@@ -349,9 +349,11 @@ def _run_lock(job: Path, name: str = "run.lock") -> Iterator[bool]:
     with (job / name).open("a") as fh:
         try:
             fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except OSError:
+        except BlockingIOError:
             yield False
             return
+        except OSError as e:
+            raise Refused("lock", f"cannot take {job / name}: {e}") from e
         try:
             yield True
         finally:
@@ -359,11 +361,13 @@ def _run_lock(job: Path, name: str = "run.lock") -> Iterator[bool]:
 
 
 def run_lock(job: Path) -> ContextManager[bool]:
-    """Yields True when this process holds <job>/run.lock, False when another run already does."""
+    """Yields True when this process holds <job>/run.lock, False only when another run already does.
+    A lock-system failure raises Refused."""
     return _run_lock(job)
 
 
 def savetest_lock(job: Path) -> ContextManager[bool]:
-    """Yields True when this process holds <job>/savetest.lock, False when another save test already does: agents
-    may start the save test too (owner, 2 Nov 2026, "2 (a)"), and two runs must not push to the test page at once."""
+    """Yields True when this process holds <job>/savetest.lock, False only when another save test already does.
+    A lock-system failure raises Refused. Agents may start the save test too (owner, 2 Nov 2026, "2 (a)"), and two
+    runs must not push to the test page at once."""
     return _run_lock(job, "savetest.lock")
