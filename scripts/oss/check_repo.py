@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import fnmatch
+import hashlib
 import os
 import subprocess
 import sys
@@ -100,11 +101,34 @@ def check_home_paths(root: Path, files: list[str], release: bool) -> list[Findin
     return found
 
 
+def _sha256(p: Path) -> str:
+    h = hashlib.sha256()
+    with p.open("rb") as f:
+        for block in iter(lambda: f.read(1 << 20), b""):
+            h.update(block)
+    return h.hexdigest()
+
+
 def check_sizes(root: Path, files: list[str], release: bool) -> list[Finding]:
-    return [Finding("sizes", rel, 0, "over-size-limit") for rel in files
-            if (root / rel).is_file() and not (root / rel).is_symlink()
-            and (size := (root / rel).stat().st_size) > P.MAX_FILE_BYTES
-            and P.OVERSIZE_ALLOWED.get(rel) != size]
+    """A tracked file over MAX_FILE_BYTES is a finding unless P.OVERSIZE_ALLOWED records that path with its exact size and
+    SHA-256 (hashed only when the size matches). A listed file that is not the recorded one is reported too: over the
+    limit as over-size-limit, under it (a re-export) as stale-oversize-allow, so an entry cannot outlive the bytes it was
+    granted for. A listed path with no file is not reported: the entries arrive before the files they cover (#2253 is
+    held until the contributor's four originals are added in the same PR)."""
+    found = []
+    for rel in files:
+        p = root / rel
+        if not p.is_file() or p.is_symlink():
+            continue
+        size = p.stat().st_size
+        allowed = P.OVERSIZE_ALLOWED.get(rel)
+        if allowed is not None and size == allowed[0] and _sha256(p) == allowed[1]:
+            continue
+        if size > P.MAX_FILE_BYTES:
+            found.append(Finding("sizes", rel, 0, "over-size-limit"))
+        elif allowed is not None:
+            found.append(Finding("sizes", rel, 0, "stale-oversize-allow"))
+    return found
 
 
 def check_symlinks(root: Path, files: list[str], release: bool) -> list[Finding]:

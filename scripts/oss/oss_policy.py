@@ -46,14 +46,19 @@ CONFLICT_MARKER = re.compile(r"^(<{7}|\|{7}|>{7}) ")
 
 MAX_FILE_BYTES = 10 * 1024 * 1024
 # Owner ruling, 2 Nov 2026, verbatim: "Keep in the repo". It covers Tal's four high-detail originals over 10 MiB
-# (refs #2080, #2083, #2085; byte counts and SHA-256 in docs/art/recovered-asset-audit-2007.md). Path -> exact byte
-# count: only that file at that size passes the size check, and any other file over MAX_FILE_BYTES still fails. All four
-# are over the 50 MiB at which GitHub warns on push and under the 100 MiB at which it refuses one.
-OVERSIZE_ALLOWED: dict[str, int] = {
-    "asset-sources/prepared-towns-20261031/netanya/statecraft-netanya-original-76df2d06.glb": 60_575_748,
-    "asset-sources/prepared-towns-20261031/safed/statecraft-safed-original-6707144a.glb": 59_382_140,
-    "asset-sources/prepared-towns-20261031/tiberias/statecraft-tiberias-original-d6c8293a.glb": 59_533_508,
-    "asset-sources/prepared-weapons-20261031/k98k/statecraft-k98k-original-64e8aded.glb": 63_014_240,
+# (refs #2080, #2083, #2085; byte counts and SHA-256 in docs/art/recovered-asset-audit-2007.md). Path -> (exact byte
+# count, SHA-256): only that file, at that size and with those bytes, passes the size check, and any other file over
+# MAX_FILE_BYTES still fails. All four are over the 50 MiB at which GitHub warns on push and under the 100 MiB at which
+# it refuses one.
+OVERSIZE_ALLOWED: dict[str, tuple[int, str]] = {
+    "asset-sources/prepared-towns-20261031/netanya/statecraft-netanya-original-76df2d06.glb":
+        (60_575_748, "801ffc2d15b782671c4eaa180a9938063a37efba22f04de85e0f9516a950efd5"),
+    "asset-sources/prepared-towns-20261031/safed/statecraft-safed-original-6707144a.glb":
+        (59_382_140, "4f389ce9fbff53fd577074804954581434aee0ae12a06d84df99168677535303"),
+    "asset-sources/prepared-towns-20261031/tiberias/statecraft-tiberias-original-d6c8293a.glb":
+        (59_533_508, "3d5227a620198c50a134f1e9174e37cdc2d99f6bb57c2a2df4c462efc711de87"),
+    "asset-sources/prepared-weapons-20261031/k98k/statecraft-k98k-original-64e8aded.glb":
+        (63_014_240, "320fd59ec86068936dc3cfd9c23e3549ca7926facdf357ea24c40b08360cffc8"),
 }
 
 REQUIRED_FILES: tuple[str, ...] = (
