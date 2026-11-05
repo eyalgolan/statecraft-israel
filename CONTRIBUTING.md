@@ -65,7 +65,7 @@ Follow [docs/dev-setup.md](docs/dev-setup.md). In short:
 5. **Keep the pull request focused:** one change per PR, and no unrelated refactors.
 6. **Changelog.** If you change `sim/`, `content/`, `translations/` or `unity/` (tests excepted), add a new file `changelog.d/<branch-or-issue>.md` with your entry as a bullet ([changelog.d/README.md](changelog.d/README.md)); fragments never conflict with other pull requests. A line under `## [Unreleased]` in [CHANGELOG.md](CHANGELOG.md) still works. CI's `Changelog` job checks it; the maintainer can add the `no-changelog` label to a change no player would notice.
 7. **Rule IDs.** A rule that has an ID (`R-ECON-014`, defined in `docs/rules/`, see [docs/rules/README.md](docs/rules/README.md)) is cited by that ID in the test that checks it (`// R-ECON-014`), in YAML comments that depend on it, and in the PR body ("implements R-ECON-014"). `uv run scripts/oss/rule_ids.py` fails on a rule with no citing test and on a citation of an ID that does not exist. It reads repository files only, so it cannot check the PR body.
-8. **Provenance.** Every new image, video, font, audio, 3D-model, map-data, PDF or Unity-package file, and every file Git treats as binary, must be covered by a matching glob rule in [ASSETS.yaml](ASSETS.yaml) or, for generated portrait records, [ASSETS.portraits.yaml](ASSETS.portraits.yaml). CI's `Repo policy` job fails on a file with no matching rule.
+8. **Provenance.** Every new image, video, font, audio, 3D-model, map-data, PDF or Unity-package file, and every file Git treats as binary, must be covered by a matching glob rule in [ASSETS.yaml](ASSETS.yaml) or [ASSETS.portraits.yaml](ASSETS.portraits.yaml) (the generated portrait records; the check reads the rules of both files together). CI's `Repo policy` job fails on a file with no matching rule.
 9. **Roadmap status.** If your PR finishes a Phase 1 PR or a whole phase of [#374](https://github.com/eyalgolan/statecraft-israel/issues/374), update the Roadmap table in [README.md](README.md#roadmap) and the same table in [README.he.md](README.he.md), and tick the item in #374 if you can (otherwise ask the maintainer in the PR). The Phase 1 count must match in both files; `test_readme.py` checks it.
 
 ## History and content rules
@@ -117,7 +117,7 @@ The policy checks also refuse:
 - any tracked file larger than 10 MiB;
 - an absolute user-home path in text, or a user-home, temporary or agent-session path embedded in a binary;
 - a `secrets.*` reference in a `.github/workflows/*.yml` file other than `steam-upload.yml`;
-- an action reference in `.github/workflows/*.yml` that is not pinned to a full commit SHA; action pins in `ci.yml` also need an exact `# vX.Y.Z` comment;
+- an `owner/repo@ref` action reference in `.github/workflows/*.yml` that is not pinned to a full commit SHA (local `./` and `docker://` actions are not checked); action pins in `ci.yml` also need an exact `# vX.Y.Z` comment;
 - a tracked file stored with CRLF instead of LF;
 - a broken relative link in a Markdown file; or
 - an absolute symlink or a relative symlink that resolves outside the repository.
