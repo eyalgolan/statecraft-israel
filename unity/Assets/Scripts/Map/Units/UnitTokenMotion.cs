@@ -144,6 +144,22 @@ namespace Statecraft.Game.Map.Units
             return true;
         }
 
+        /// <summary>The hit the token shows or waits to show: the shake's time left and the delay before it lands (both 0 when
+        /// none). A rebuild hands it to the unit's new token (<see cref="ContinueHit"/>).</summary>
+        internal (float left, float delay) HitState => (hitLeft, hitDelay);
+
+        /// <summary>Goes on with the hit the unit's previous token was showing (<paramref name="left"/> of its shake) or
+        /// waiting for (<paramref name="delay"/> until it lands), so a rebuild for another unit's loss cuts neither short.</summary>
+        internal void ContinueHit(float left, float delay)
+        {
+            if (!gameObject.activeInHierarchy || (left <= 0f && delay <= 0f)) return;
+            enabled = true;
+            if (delay > 0f) { hitDelay = delay; return; }
+            hitLeft = Mathf.Min(left, HitDurationS);
+            ApplyPosition();
+            Changed?.Invoke();
+        }
+
         void StartHit(float late)
         {
             hitDelay = 0f;
