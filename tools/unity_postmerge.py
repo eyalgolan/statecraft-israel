@@ -148,7 +148,7 @@ def parse_results(path: Path) -> Results:
         return Results(broken=f"no result file was written ({path.name}): Unity did not run the tests")
     try:
         root = ET.parse(path).getroot()
-    except ET.ParseError as e:
+    except (ET.ParseError, OSError) as e:
         return Results(broken=f"the result file could not be read: {e}")
     r = Results(total=int(root.get("total", 0)), passed=int(root.get("passed", 0)), failed=int(root.get("failed", 0)))
     for case in root.iter("test-case"):

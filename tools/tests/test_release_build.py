@@ -67,7 +67,8 @@ class Fake:
 
     def __init__(self, dirty="", golden_ok=True, build_ok=True, branch="main", tags=("v0.1.0",), worktrees=None,
                  build_raises=None, dirty_after="", on_origin_main=True, fail_status=False,
-                 fail_status_after=False, fail_worktree_list=False, sim_ok=True, sim_output=""):
+                 fail_status_after=False, fail_worktree_list=False, sim_ok=True, sim_output="", fail_checkout=False,
+                 lipo_code=0, lipo_out="x86_64 arm64\n"):
         self.calls: list[list[str]] = []
         self.dirty, self.golden_ok, self.build_ok = dirty, golden_ok, build_ok
         self.branch, self.tags, self.worktrees = branch, tags, worktrees
@@ -77,6 +78,9 @@ class Fake:
         self.fail_status_after = fail_status_after
         self.fail_worktree_list = fail_worktree_list
         self.sim_ok, self.sim_output = sim_ok, sim_output
+        self.fail_checkout = fail_checkout
+        self.lipo_code = lipo_code
+        self.lipo_out = lipo_out
 
     def __call__(self, cmd, **kw):
         cmd = [str(c) for c in cmd]
@@ -107,6 +111,8 @@ class Fake:
             out = "v0.1.0-5-g1b7a36cb\n"
         elif cmd[:2] == ["git", "check-ignore"]:
             code = 0   # as if git ignored every path: being ignored must not make a folder in a checkout acceptable
+        elif cmd[:3] == ["git", "checkout", "--"]:
+            code = 1 if self.fail_checkout else 0
         elif "-executeMethod" in cmd:
             self.built = True
             if self.build_raises:
@@ -148,7 +154,8 @@ class Fake:
                     if p.is_file():
                         z.write(p, (Path(src.name) / p.relative_to(src)).as_posix())
         elif cmd[0] == "lipo":
-            out = "x86_64 arm64\n"
+            out = self.lipo_out
+            code = self.lipo_code
         return rb.Result(code, out)
 
 
@@ -326,6 +333,38 @@ def test_the_settings_are_restored_when_the_build_call_raises(repo, editor, monk
     assert [c for c in fake.calls[build + 1:] if c[:3] == ["git", "checkout", "--"]]
 
 
+def test_a_failed_settings_restore_stops_before_goldens_or_records(repo, editor, monkeypatch, tmp_path, capsys):
+    fake = Fake(fail_checkout=True)
+    out = tmp_path / "o"
+    assert run_main(["--platform", "mac", "--out", str(out)], repo, editor, fake, monkeypatch) == 1
+    assert [c for c in fake.calls if c[:3] == ["git", "checkout", "--"]]
+    assert not [c for c in fake.calls if "-golden" in c]
+    assert not (out / "build-record.json").exists()
+    assert "restoring Unity settings" in capsys.readouterr().err
+
+
+def test_a_failed_lipo_with_plausible_output_stops_before_goldens_or_records(repo, editor, monkeypatch, tmp_path, capsys):
+    fake = Fake(lipo_code=1)
+    out = tmp_path / "o"
+    assert run_main(["--platform", "mac", "--out", str(out)], repo, editor, fake, monkeypatch) == 1
+    lipo = [c for c in fake.calls if c[0] == "lipo"]
+    assert len(lipo) == 1 and lipo[0][1] == "-archs"
+    assert not [c for c in fake.calls if "-golden" in c]
+    assert not (out / "build-record.json").exists()
+    assert "lipo could not inspect" in capsys.readouterr().err
+
+
+def test_a_silent_lipo_that_exits_zero_stops_before_goldens_or_records(repo, editor, monkeypatch, tmp_path, capsys):
+    """#2690 review: an empty architecture list is as unknown as a failed lipo."""
+    fake = Fake(lipo_out="")
+    out = tmp_path / "o"
+    assert run_main(["--platform", "mac", "--out", str(out)], repo, editor, fake, monkeypatch) == 1
+    assert [c for c in fake.calls if c[0] == "lipo"]
+    assert not [c for c in fake.calls if "-golden" in c]
+    assert not (out / "build-record.json").exists()
+    assert "lipo could not inspect" in capsys.readouterr().err
+
+
 def test_a_failed_unity_exit_fails_even_when_a_player_is_left_behind(repo, editor, monkeypatch, tmp_path):
     """Mutation M1: Unity's exit code counts, not only whether the target exists."""
     fake = Fake(build_ok=False)
@@ -342,16 +381,16 @@ def test_an_empty_or_malformed_manifest_never_passes():
 
 # --- the record's tree state ------------------------------------------------------------------------------------------
 
-def test_the_record_says_whether_the_tree_stayed_clean(repo, editor, monkeypatch, tmp_path):
-    fake = Fake(dirty_after=" M unity/Packages/packages-lock.json\n")
+def test_a_dirty_tree_after_the_build_is_named_and_writes_no_record(repo, editor, monkeypatch, tmp_path, capsys):
+    dirty = "M unity/Packages/packages-lock.json"
+    fake = Fake(dirty_after=f" {dirty}\n")
     out = tmp_path / "o"
-    assert run_main(["--platform", "mac", "--out", str(out)], repo, editor, fake, monkeypatch) == 0
-    record = json.loads((out / "build-record.json").read_text())
-    assert record["tree_clean"] is True, "checked before the builds"
-    assert record["tree_clean_after_builds"] is False
-    assert record["dirty_after_builds"] == ["M unity/Packages/packages-lock.json"]
+    assert run_main(["--platform", "mac", "--out", str(out)], repo, editor, fake, monkeypatch) == 1
+    assert not (out / "build-record.json").exists()
     describe = next(i for i, c in enumerate(fake.calls) if c[:2] == ["git", "describe"])
     assert describe < next(i for i, c in enumerate(fake.calls) if "-executeMethod" in c), "describe is taken before"
+    err = capsys.readouterr().err
+    assert "working tree is dirty after the builds" in err and dirty in err
 
 
 def test_a_failed_postbuild_git_status_writes_no_clean_record(repo, editor, monkeypatch, tmp_path, capsys):

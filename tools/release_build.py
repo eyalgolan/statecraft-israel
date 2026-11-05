@@ -640,7 +640,11 @@ def main(argv: list[str] | None = None) -> int:
                 stamp(nightly)   # restored by the checkout below, so each build stamps again
             code = run(build_command(unity, p, target, log, shareable, a.steam), cwd=REPO).returncode
         finally:
-            run(["git", "checkout", "--", "unity/ProjectSettings", "unity/Assets/Settings"], cwd=REPO)
+            restore = run(["git", "checkout", "--", "unity/ProjectSettings", "unity/Assets/Settings"], cwd=REPO)
+        if restore.returncode != 0:
+            print(f"FAILED: restoring Unity settings after the {p.name} build exited {restore.returncode}; "
+                  "no build record was written.", file=sys.stderr)
+            return 1
         wall = round(time.monotonic() - t0)
         log_text = log.read_text(errors="replace") if log.exists() else ""
         if code != 0 or not target.exists():
@@ -674,7 +678,12 @@ def main(argv: list[str] | None = None) -> int:
                 return 1
         arch = None
         if p.name == "mac":
-            arch = run(["lipo", "-archs", str(mac_executable(target))], capture=True).stdout.strip() or None
+            inspected = run(["lipo", "-archs", str(mac_executable(target))], capture=True)
+            arch = inspected.stdout.strip()
+            if inspected.returncode != 0 or not arch:
+                print(f"FAILED: lipo could not inspect the macOS player architecture (exit {inspected.returncode}"
+                      f"{', no output' if not arch else ''}); no build record was written.", file=sys.stderr)
+                return 1
         golden = {"status": "unchecked", "exit_code": None, "lines": [],
                   "note": "this player cannot run on the Mac; the CI player golden check runs it (spec 6.3)"}
         if p.runs_here:
@@ -701,6 +710,10 @@ def main(argv: list[str] | None = None) -> int:
     except SafetyCheckFailed as e:
         print(f"FAILED: cannot prove the working tree remained clean after the builds: {e}; "
               "no build record was written.", file=sys.stderr)
+        return 1
+    if dirty_after:
+        print("FAILED: the working tree is dirty after the builds: " + ", ".join(dirty_after) +
+              "; no build record was written.", file=sys.stderr)
         return 1
     record = {"schema": 1, "tool": "tools/release_build.py", "commit": commit,
               "describe": describe, "branch": branch, "release": release,
