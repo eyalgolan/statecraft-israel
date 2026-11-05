@@ -63,7 +63,7 @@ namespace Statecraft.Game.Map
         /// that reaches this step still opens at 30 km, with the far copies; a capable one never reaches it.</summary>
         public static readonly IReadOnlyList<Step> Steps = new[]
         {
-            new Step(1f, true), new Step(0.9f, true), new Step(0.8f, true), new Step(0.8f, false),
+            new Step(1f, true), new Step(0.9f, true), new Step(0.8f, true), new Step(0.8f, false), new Step(0.8f, false, townModelsFar: true),
         };
 
         public const float FloorMs = 33f, OverMs = 34f, RecoverMs = 20f, WindowSeconds = 3f, SettleSeconds = 0.5f, StartupSeconds = 3f, PauseMs = 1000f, ResumeSettleSeconds = 1f;
@@ -167,6 +167,7 @@ namespace Statecraft.Game.Map
                 GraphicsQuality.Changed -= restart;
                 if (asset != null) asset.renderScale = tierScale;
                 TiltShift.FallbackOff = false;
+                Kits.TownModelLayer.LowTier = false;
                 if (driver != null) { if (Application.isPlaying) Destroy(driver); else DestroyImmediate(driver); }
             };
         }
@@ -180,6 +181,7 @@ namespace Statecraft.Game.Map
             var step = Controller.Current;
             setScale(Mathf.Min(tierScale, step.RenderScale));
             TiltShift.FallbackOff = !step.TiltShift;
+            Kits.TownModelLayer.LowTier = step.TownModelsFar;
             Debug.Log(Controller.Line());
         }
 

@@ -465,7 +465,7 @@ namespace Statecraft.Game.Map.Kits
             { choices[key] = choice = new Choice { camera = cam }; changed = true; }
             choice.lastFrame = Time.frameCount;
             bool wasClose = choice.close, wasFar = choice.far;
-            choice.close = CloseAt(ViewDistance(cam), choice.close);
+            choice.close = !LowTier && CloseAt(ViewDistance(cam), choice.close);
             choice.far = FarAt(ViewDistance(cam), choice.far);
             changed |= wasClose != choice.close || wasFar != choice.far;
             string[] next = System.Array.Empty<string>();
