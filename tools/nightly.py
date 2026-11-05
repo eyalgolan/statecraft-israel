@@ -1271,9 +1271,10 @@ def main(argv: list[str] | None = None) -> int:
             assert outcome is not None
             print(outcome)
             return 1 if outcome == "REFUSED" else 0
-        line = log_line(now, "REFUSED", tag=None, sha=None, gate=e.gate, log=None)
-        record(job / "LOG.md", cfg.handoff, f"{line} {e.detail}")
-        notify("Nightly refused", str(e)[:200])
+        if not getattr(args, "no_publish", False):   # a by-hand --no-publish run writes no record (tools/README.md)
+            line = log_line(now, "REFUSED", tag=None, sha=None, gate=e.gate, log=None)
+            record(job / "LOG.md", cfg.handoff, f"{line} {e.detail}")
+            notify("Nightly refused", str(e)[:200])
         print(e, file=sys.stderr)
         return 1
     if savetest_code is not None:

@@ -3197,9 +3197,23 @@ def test_a_run_lock_open_failure_in_main_is_a_recorded_refusal(tmp_path, monkeyp
     monkeypatch.setattr(nightly, "JOB", job)
     monkeypatch.setattr(nightly, "load_config", lambda p: ns.Config(handoff=tmp_path / "HANDOFF.md"))
     monkeypatch.setattr(nightly, "notify", lambda *a, **k: None)
-    assert nightly.main(["run", "--no-publish"]) == 1
+    assert nightly.main(["run"]) == 1
     assert "gate=lock" in (job / "LOG.md").read_text()
     assert "REFUSED" in (tmp_path / "HANDOFF.md").read_text()
+    assert "cannot open" in capsys.readouterr().err
+
+
+def test_a_run_lock_open_failure_in_a_no_publish_run_writes_no_record(tmp_path, monkeypatch, capsys):
+    """#2670 review: a by-hand --no-publish run writes nothing to LOG.md or the handoff, a lock failure included."""
+    job = tmp_path / "job"
+    job.mkdir()
+    (job / "run.lock").mkdir()
+    monkeypatch.setattr(nightly, "JOB", job)
+    monkeypatch.setattr(nightly, "load_config", lambda p: ns.Config(handoff=tmp_path / "HANDOFF.md"))
+    sent = []
+    monkeypatch.setattr(nightly, "notify", lambda *a, **k: sent.append(a))
+    assert nightly.main(["run", "--no-publish"]) == 1
+    assert not (job / "LOG.md").exists() and not (tmp_path / "HANDOFF.md").exists() and not sent
     assert "cannot open" in capsys.readouterr().err
 
 
