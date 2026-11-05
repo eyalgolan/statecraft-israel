@@ -330,6 +330,23 @@ public class BuildGateTests
         finally { UnityEngine.Object.DestroyImmediate(photos); }
     }
 
+    [Test]
+    public void TheGateRefusesAStaleHebrewAltInTheCatalog()
+    {
+        var photos = ShippedPhotos();
+        try
+        {
+            var j = photos.entries.FindIndex(e => e.eventId == "maabarot_policy");
+            Assert.GreaterOrEqual(j, 0, "fixture photograph");
+            var entry = photos.entries[j]; entry.altHe += " ישן"; photos.entries[j] = entry;
+            var refusal = (string?)Gate.Invoke(null, new object?[] { Shareable, ReviewedContent(), photos, true, Mapping, null, ReviewedSettlementControlStrings() });
+            Assert.IsNotNull(refusal);
+            StringAssert.Contains("does not match", refusal);
+            StringAssert.Contains("maabarot_policy", refusal);
+        }
+        finally { UnityEngine.Object.DestroyImmediate(photos); }
+    }
+
     /// <summary>Review I1: every build writes event-photos.json beside its output, which tools/package_release.py reads
     /// (the pictures are packed into the data files, where the packager cannot see them).</summary>
     [Test]

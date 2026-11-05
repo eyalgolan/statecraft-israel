@@ -68,6 +68,7 @@ public class EventImageMappingTests
         CollectionAssert.IsEmpty(EventImageMapping.Problems(new[] { cleared }, C), "a reviewed Hebrew alt keeps no marker");
         Bad(r => r.AltHeReview = "agent-checked", "requires alt_he");
         Bad(r => { r.AltHe = "תיאור בעברית"; r.AltHeReview = "pending"; }, "must be agent-checked");
+        Bad(r => { r.AltHe = "תיאור בעברית"; r.AltHeReview = "   "; }, "must be agent-checked");
         Bad(r => r.Event = "no_such_event", "no such event");
         Bad(r => { r.Event = "altalena"; r.File = "altalena.jpg"; }, "must be sensitive: true");   // tagged war-casualties
         var twice = EventImageMapping.Problems(new[] { Good(), Good() }, C);
@@ -83,6 +84,15 @@ public class EventImageMappingTests
             "images:\n  - event: example\n    alt_he_review: agent-checked\n"));
         Assert.Throws<InvalidOperationException>(() => EventImageMapping.Parse(
             "images:\n  - event: example\n    alt_he: תיאור בעברית\n    alt_he_review: pending\n"));
+    }
+
+    [TestCase("")]
+    [TestCase("\"\"")]
+    [TestCase("'   '")]
+    public void ParseRefusesAPresentBlankHebrewReview(string blank)
+    {
+        Assert.Throws<InvalidOperationException>(() => EventImageMapping.Parse(
+            "images:\n  - event: example\n    alt_he: תיאור בעברית\n    alt_he_review: " + blank + "\n"));
     }
 
     /// <summary>The pictures live outside content/ and nothing in content/ names them, so the content hash, the goldens and

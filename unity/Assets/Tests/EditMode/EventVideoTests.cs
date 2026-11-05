@@ -83,10 +83,10 @@ public class EventVideoTests
         Assert.IsTrue(problems.Any(p => p.Contains("no archival photograph")), "no photograph");
         Assert.IsTrue(problems.Any(p => p.Contains("ai_generated must be true")), "not marked AI");
         Assert.IsTrue(problems.Any(p => p.Contains("alt text")), "no proper alt text");
-        var cleared = Rows.First(r => r.Event == "law_of_return");
-        cleared.AltHeReview = "";
-        problems = EventVideoMapping.Problems(new[] { cleared }, C, _ => true, _ => true);
-        Assert.IsFalse(problems.Any(p => p.Contains("alt_he")), "a reviewed Hebrew alt keeps no marker");
+        var blankReview = Rows.First(r => r.Event == "law_of_return");
+        blankReview.AltHeReview = "";
+        problems = EventVideoMapping.Problems(new[] { blankReview }, C, _ => true, _ => true);
+        Assert.IsTrue(problems.Any(p => p.Contains("alt_he_review must be agent-checked")), "a present blank marker is invalid; remove the key after review");
     }
 
     [Test]
@@ -98,6 +98,17 @@ public class EventVideoTests
             "clips:\n  - event: example\n    alt_he_review: agent-checked\n"));
         Assert.Throws<InvalidOperationException>(() => EventVideoMapping.ParseOutcomes(
             "outcomes:\n  - event: example\n    alt_he: תיאור בעברית\n    alt_he_review: pending\n"));
+    }
+
+    [TestCase("")]
+    [TestCase("\"\"")]
+    [TestCase("'   '")]
+    public void BothParsePathsRefuseAPresentBlankHebrewReview(string blank)
+    {
+        Assert.Throws<InvalidOperationException>(() => EventVideoMapping.Parse(
+            "clips:\n  - event: example\n    alt_he: תיאור בעברית\n    alt_he_review: " + blank + "\n"));
+        Assert.Throws<InvalidOperationException>(() => EventVideoMapping.ParseOutcomes(
+            "outcomes:\n  - event: example\n    alt_he: תיאור בעברית\n    alt_he_review: " + blank + "\n"));
     }
 
     [Test]

@@ -30,7 +30,14 @@ namespace Statecraft.Game.UI
             public string Generated { get; set; } = "";
             public string Alt { get; set; } = "";
             public string AltHe { get; set; } = "";
-            public string AltHeReview { get; set; } = "";
+            // The setter records even an explicit YAML null, which must differ from an omitted post-review marker.
+            string? altHeReview;
+            public string? AltHeReview
+            {
+                get => altHeReview;
+                set { altHeReview = value; AltHeReviewPresent = true; }
+            }
+            [YamlIgnore] public bool AltHeReviewPresent { get; private set; }
             public bool AiGenerated { get; set; }
             public bool Sensitive { get; set; }
             public bool SensitivityReviewed { get; set; }
@@ -62,7 +69,7 @@ namespace Statecraft.Game.UI
                 var doc = new DeserializerBuilder().WithNamingConvention(UnderscoredNamingConvention.Instance)
                     .WithDuplicateKeyChecking().Build().Deserialize<Doc>(yaml ?? "") ?? new Doc();
                 foreach (var row in doc.Clips.Concat(doc.Outcomes))
-                    if (AltHebrewProblem(row.AltHe, row.AltHeReview) is string problem)
+                    if (AltHebrewProblem(row.AltHe, row.AltHeReview, row.AltHeReviewPresent) is string problem)
                         throw new InvalidOperationException($"{Path}: {row.Event}: {problem}");
                 return doc;
             }
@@ -113,7 +120,7 @@ namespace Statecraft.Game.UI
                 if (!r.Source.StartsWith("promo/", StringComparison.Ordinal) || r.SourceSha256.Length != 64) problems.Add($"{r.Event}: source and its sha256 needed");
                 if (r.Generator.Trim() == "" || r.Generated.Trim() == "") problems.Add($"{r.Event}: generator or date missing");
                 if (!r.Alt.StartsWith("Illustration: ", StringComparison.Ordinal) || r.Alt.Length < 30) problems.Add($"{r.Event}: alt text must start 'Illustration: ' and say what it shows");
-                if (AltHebrewProblem(r.AltHe, r.AltHeReview) is string altProblem) problems.Add($"{r.Event}: {altProblem}");
+                if (AltHebrewProblem(r.AltHe, r.AltHeReview, r.AltHeReviewPresent) is string altProblem) problems.Add($"{r.Event}: {altProblem}");
                 if (sensitiveEvents.Contains(ev.Id) && !r.Sensitive) problems.Add($"{r.Event}: the event has a sensitive tag, so its clip must be sensitive: true");
                 if (r.SensitivityReviewed && !r.Sensitive) problems.Add($"{r.Event}: sensitivity_reviewed without sensitive");
             }
@@ -144,18 +151,17 @@ namespace Statecraft.Game.UI
                 if (r.SourceSha256.Length != 64) problems.Add($"{r.Event}: source_sha256 missing");
                 if (r.Generator.Trim() == "" || r.Generated.Trim() == "") problems.Add($"{r.Event}: generator or date missing");
                 if (!r.Alt.StartsWith("Illustration: ", StringComparison.Ordinal) || r.Alt.Length < 30) problems.Add($"{r.Event}: alt text must start 'Illustration: ' and say what it shows");
-                if (AltHebrewProblem(r.AltHe, r.AltHeReview) is string altProblem) problems.Add($"{r.Event}: {altProblem}");
+                if (AltHebrewProblem(r.AltHe, r.AltHeReview, r.AltHeReviewPresent) is string altProblem) problems.Add($"{r.Event}: {altProblem}");
                 if (sensitiveEvents.Contains(ev.Id) && !r.Sensitive) problems.Add($"{r.Event}: the event has a sensitive tag, so its clip must be sensitive: true");
                 if (r.SensitivityReviewed && !r.Sensitive) problems.Add($"{r.Event}: sensitivity_reviewed without sensitive");
             }
             return problems;
         }
 
-        static string? AltHebrewProblem(string? altHe, string? review)
+        static string? AltHebrewProblem(string? altHe, string? review, bool reviewPresent)
         {
-            bool hasAlt = !string.IsNullOrWhiteSpace(altHe), hasReview = !string.IsNullOrWhiteSpace(review);
-            if (hasReview && !hasAlt) return "alt_he_review requires alt_he";
-            if (hasReview && review != "agent-checked") return "alt_he_review must be agent-checked";
+            if (reviewPresent && string.IsNullOrWhiteSpace(altHe)) return "alt_he_review requires alt_he";
+            if (reviewPresent && review != "agent-checked") return "alt_he_review must be agent-checked";
             return null;
         }
 

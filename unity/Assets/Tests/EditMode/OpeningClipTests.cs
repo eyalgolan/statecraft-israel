@@ -263,4 +263,26 @@ public class OpeningClipTests
         var yaml = Asset.source.text;
         Assert.DoesNotThrow(() => OpeningContent.Parse(yaml.Replace("      alt_he_review: agent-checked\n", "")));
     }
+
+    [TestCase("")]
+    [TestCase("\"\"")]
+    [TestCase("'   '")]
+    public void PresentBlankClipAltReviewFailsTheLoad(string blank)
+    {
+        var yaml = Asset.source.text;
+        Assert.Throws<InvalidOperationException>(() => OpeningContent.Parse(yaml.Replace(
+            "      alt_he_review: agent-checked\n      ai_generated: true",
+            "      alt_he_review: " + blank + "\n      ai_generated: true")), "clip");
+    }
+
+    [TestCase("")]
+    [TestCase("\"\"")]
+    [TestCase("'   '")]
+    public void PresentBlankPhotographAltReviewFailsTheLoad(string blank)
+    {
+        var yaml = Asset.source.text;
+        Assert.Throws<InvalidOperationException>(() => OpeningContent.Parse(yaml.Replace(
+            "      alt_he_review: agent-checked\n      crop:",
+            "      alt_he_review: " + blank + "\n      crop:")), "photograph");
+    }
 }

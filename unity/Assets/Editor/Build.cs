@@ -109,8 +109,8 @@ namespace Statecraft.Game.EditorTools
             return reasons.Count == 0 ? null : string.Join("; ", reasons);
         }
 
-        /// <summary>The events whose catalog entry and mapping row disagree (one is missing, or the credit, the alt text or a
-        /// sensitivity flag differs), in id order.</summary>
+        /// <summary>The events whose catalog entry and mapping row disagree (one is missing, or the credit, English or Hebrew
+        /// alt text, or a sensitivity flag differs), in id order.</summary>
         public static List<string> CatalogMismatches(EventImageCatalog photos, IReadOnlyList<EventImageMapping.Row> mapping)
         {
             var rows = mapping.GroupBy(r => r.Event).ToDictionary(g => g.Key, g => g.First());
@@ -119,7 +119,8 @@ namespace Statecraft.Game.EditorTools
             foreach (var id in rows.Keys.Union(entries.Keys))
             {
                 if (!rows.TryGetValue(id, out var r) || !entries.TryGetValue(id, out var e) || e.image == null) { bad.Add(id); continue; }
-                if (e.credit != r.Credit || e.alt != r.Alt || e.sensitive != r.Sensitive || e.sensitivityReviewed != r.SensitivityReviewed) bad.Add(id);
+                if (e.credit != r.Credit || e.alt != r.Alt || e.altHe != r.AltHe
+                    || e.sensitive != r.Sensitive || e.sensitivityReviewed != r.SensitivityReviewed) bad.Add(id);
             }
             if (photos.entries.Count != entries.Count || mapping.Count != rows.Count) bad.Add("(repeated rows)");
             return bad.ToList();
