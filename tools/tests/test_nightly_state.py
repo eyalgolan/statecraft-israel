@@ -160,6 +160,33 @@ def test_a_lock_system_failure_is_refused(tmp_path, monkeypatch):
     assert e.value.gate == "lock" and str(tmp_path / "savetest.lock") in e.value.detail and "denied" in e.value.detail
 
 
+def test_a_lock_directory_failure_is_refused(tmp_path):
+    parent = tmp_path / "not-a-directory"
+    parent.write_text("file")
+    with pytest.raises(ns.Refused) as e:
+        with ns.run_lock(parent / "job"):
+            pass
+    assert e.value.gate == "lock" and str(parent / "job") in e.value.detail
+    assert isinstance(e.value.__cause__, OSError)
+
+
+def test_a_lock_release_failure_is_refused(tmp_path, monkeypatch):
+    calls = 0
+
+    def fail_release(*args):
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise PermissionError("denied")
+
+    monkeypatch.setattr(fcntl, "flock", fail_release)
+    with pytest.raises(ns.Refused) as e:
+        with ns.run_lock(tmp_path) as held:
+            assert held is True
+    assert e.value.gate == "lock" and "cannot release" in e.value.detail and "denied" in e.value.detail
+    assert isinstance(e.value.__cause__, PermissionError)
+
+
 def test_stops_carry_outcome_gate_and_detail():
     r = ns.Refused("editmode", "3 failed")
     assert (r.outcome, r.gate, r.detail) == ("REFUSED", "editmode", "3 failed")

@@ -14,7 +14,7 @@ from types import SimpleNamespace
 
 import pytest
 
-pytest.importorskip("fcntl")   # nightly imports unity_postmerge, which locks with flock
+fcntl = pytest.importorskip("fcntl")   # nightly imports unity_postmerge, which locks with flock
 
 import nightly
 import nightly_state as ns
@@ -3189,21 +3189,37 @@ def test_the_steam_content_is_removed_after_the_stage(night, env):
     assert (out / "build-record.json").is_file()
 
 
-def test_a_lock_system_failure_in_main_is_a_recorded_refusal(tmp_path, monkeypatch, capsys):
-    """#2644 review: nightly.main's own run_lock can raise Refused (not contention); it is recorded, not a traceback."""
+def test_a_run_lock_open_failure_in_main_is_a_recorded_refusal(tmp_path, monkeypatch, capsys):
+    """#2644 review: a real run.lock open failure is recorded by nightly.main, not raised as a traceback."""
+    job = tmp_path / "job"
+    job.mkdir()
+    (job / "run.lock").mkdir()
+    monkeypatch.setattr(nightly, "JOB", job)
+    monkeypatch.setattr(nightly, "load_config", lambda p: ns.Config(handoff=tmp_path / "HANDOFF.md"))
+    monkeypatch.setattr(nightly, "notify", lambda *a, **k: None)
+    assert nightly.main(["run", "--no-publish"]) == 1
+    assert "gate=lock" in (job / "LOG.md").read_text()
+    assert "REFUSED" in (tmp_path / "HANDOFF.md").read_text()
+    assert "cannot open" in capsys.readouterr().err
+
+
+def test_a_run_lock_release_failure_in_main_is_a_recorded_refusal(tmp_path, monkeypatch, capsys):
     job = tmp_path / "job"
     job.mkdir()
     monkeypatch.setattr(nightly, "JOB", job)
     monkeypatch.setattr(nightly, "load_config", lambda p: ns.Config(handoff=tmp_path / "HANDOFF.md"))
     monkeypatch.setattr(nightly, "notify", lambda *a, **k: None)
+    monkeypatch.setattr(nightly, "run_savetest", lambda *a, **k: 0)
+    calls = 0
 
-    @contextmanager
-    def broken(_job, *a, **k):
-        raise ns.Refused("lock", "cannot take run.lock: denied")
-        yield True
+    def fail_release(*args):
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise PermissionError("denied")
 
-    monkeypatch.setattr(nightly, "run_lock", broken)
-    assert nightly.main(["run", "--no-publish"]) == 1
-    assert "gate=lock" in (job / "LOG.md").read_text()
+    monkeypatch.setattr(fcntl, "flock", fail_release)
+    assert nightly.main(["savetest", "--tag", TAG]) == 1
+    assert "REFUSED" in (job / "LOG.md").read_text() and "gate=lock" in (job / "LOG.md").read_text()
     assert "REFUSED" in (tmp_path / "HANDOFF.md").read_text()
-    assert "cannot take run.lock" in capsys.readouterr().err
+    assert "cannot release" in capsys.readouterr().err

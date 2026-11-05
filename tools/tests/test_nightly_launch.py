@@ -129,11 +129,11 @@ def test_a_run_in_progress_exits_0_and_touches_nothing(tmp_path, capsys):
     assert not (home / "LOG.md").exists()
 
 
-def test_a_broken_run_lock_is_recorded_as_refused(tmp_path, monkeypatch, capsys):
+def test_a_run_lock_open_failure_is_recorded_as_refused(tmp_path, monkeypatch, capsys):
     home = tmp_path / "job"
     cfg = cfg_for(tmp_path)
     write_config(home, cfg)
-    monkeypatch.setattr(fcntl, "flock", lambda *a: (_ for _ in ()).throw(PermissionError("denied")))
+    (home / "run.lock").mkdir()
     monkeypatch.setattr(nl, "notify", lambda *a, **k: None)
     rec, ran = Recorder(), []
     code = nl.main(["--uv", "/opt/uv", "--home", str(home)], git=rec.git, copy=rec.copy,
@@ -142,7 +142,7 @@ def test_a_broken_run_lock_is_recorded_as_refused(tmp_path, monkeypatch, capsys)
     assert "REFUSED" in (home / "LOG.md").read_text() and "gate=lock" in (home / "LOG.md").read_text()
     assert "gate=lock" in cfg.handoff.read_text()
     err = capsys.readouterr().err
-    assert "lock:" in err and "denied" in err
+    assert "lock:" in err and "cannot open" in err and str(home / "run.lock") in err
 
 
 def test_a_prepared_clone_runs_the_clones_own_nightly_script_with_the_lock_free(tmp_path):

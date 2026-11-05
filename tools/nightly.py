@@ -10,7 +10,6 @@ each one, and any unexpected failure, into one line of record, so no night leave
 from __future__ import annotations
 
 import argparse
-import contextlib
 import json
 import os
 import re
@@ -1242,29 +1241,27 @@ def main(argv: list[str] | None = None) -> int:
         print(e, file=sys.stderr)
         return 1
     # #2644: run_lock raises Refused on a lock-system failure (not contention); that is a recorded REFUSED night.
-    lock = contextlib.ExitStack()
     try:
-        held = lock.enter_context(run_lock(job))
+        with run_lock(job) as held:
+            if not held:
+                print("another nightly run holds run.lock", file=sys.stderr)
+                return 1
+            if args.command == "savetest":
+                return run_savetest(cfg, job, args.tag)
+            client_error = None
+            try:
+                gh, itch = _clients(cfg)
+            except Refused as e:   # run_night records the unusable client as a REFUSED night
+                gh = itch = None
+                client_error = e
+            outcome = run_night(cfg, job / "state.json", job, ProcRunner(), gh, itch, now=now, manual=args.manual,
+                                no_publish=args.no_publish, client_error=client_error, no_steam=args.no_steam)
     except Refused as e:
         line = log_line(now, "REFUSED", tag=None, sha=None, gate=e.gate, log=None)
         record(job / "LOG.md", cfg.handoff, f"{line} {e.detail}")
         notify("Nightly refused", str(e)[:200])
         print(e, file=sys.stderr)
         return 1
-    with lock:
-        if not held:
-            print("another nightly run holds run.lock", file=sys.stderr)
-            return 1
-        if args.command == "savetest":
-            return run_savetest(cfg, job, args.tag)
-        client_error = None
-        try:
-            gh, itch = _clients(cfg)
-        except Refused as e:   # run_night records the unusable client as a REFUSED night
-            gh = itch = None
-            client_error = e
-        outcome = run_night(cfg, job / "state.json", job, ProcRunner(), gh, itch, now=now, manual=args.manual,
-                            no_publish=args.no_publish, client_error=client_error, no_steam=args.no_steam)
     print(outcome)
     return 1 if outcome == "REFUSED" else 0
 

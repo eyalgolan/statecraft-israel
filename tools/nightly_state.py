@@ -345,19 +345,30 @@ def notify(title: str, message: str, run=None) -> None:
 @contextlib.contextmanager
 def _run_lock(job: Path, name: str = "run.lock") -> Iterator[bool]:
     import fcntl   # POSIX only; imported here so the shared types load anywhere
-    job.mkdir(parents=True, exist_ok=True)
-    with (job / name).open("a") as fh:
+    path = job / name
+    try:
+        job.mkdir(parents=True, exist_ok=True)
+    except OSError as e:
+        raise Refused("lock", f"cannot create lock directory {job}: {e}") from e
+    try:
+        fh = path.open("a")
+    except OSError as e:
+        raise Refused("lock", f"cannot open {path}: {e}") from e
+    with fh:
         try:
             fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
             yield False
             return
         except OSError as e:
-            raise Refused("lock", f"cannot take {job / name}: {e}") from e
+            raise Refused("lock", f"cannot take {path}: {e}") from e
         try:
             yield True
         finally:
-            fcntl.flock(fh, fcntl.LOCK_UN)
+            try:
+                fcntl.flock(fh, fcntl.LOCK_UN)
+            except OSError as e:
+                raise Refused("lock", f"cannot release {path}: {e}") from e
 
 
 def run_lock(job: Path) -> ContextManager[bool]:
