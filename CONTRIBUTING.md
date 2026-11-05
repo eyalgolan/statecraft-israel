@@ -115,9 +115,9 @@ The policy checks also refuse:
 
 - a `docs/gdd/*.md` feature file other than `TEMPLATE.md` or `README.md` that does not follow [the template](docs/gdd/TEMPLATE.md): all seven sections must be present and non-empty, `Done when` needs a bullet, and placeholders and unfinished markers are forbidden. Numbers in `Rules` and `Done when` need a recognised unit or `(unitless)`; years and dates in `Player story`, `Rules`, `Data touched` and `Done when` need a defined `[S<n>]` source on the same line, and linked source entries need a checked date;
 - any tracked file larger than 10 MiB;
-- an absolute user-home path in text, or a user-home, temporary or agent-session path embedded in a binary;
+- an absolute user-home path in text, or a user-home, temporary or agent-session path embedded in a binary, unless a reviewed row in `scripts/oss/allow.yaml` exempts it;
 - a `secrets.*` reference in a `.github/workflows/*.yml` file other than `steam-upload.yml`;
-- an `owner/repo@ref` action reference in `.github/workflows/*.yml` that is not pinned to a full commit SHA (local `./` and `docker://` actions are not checked); action pins in `ci.yml` also need an exact `# vX.Y.Z` comment;
+- an `owner/repo@ref` action reference in `.github/workflows/*.yml` that is not pinned to a full commit SHA (local `./` and `docker://` actions are not checked); action pins in `ci.yml`, `player-golden.yml` and `steam-upload.yml` also need an exact `# vX.Y.Z` comment;
 - a tracked file stored with CRLF instead of LF;
 - a broken relative link in a Markdown file; or
 - an absolute symlink or a relative symlink that resolves outside the repository.
