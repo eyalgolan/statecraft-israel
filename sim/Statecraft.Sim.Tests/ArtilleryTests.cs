@@ -236,6 +236,9 @@ public class ArtilleryTests
     [InlineData("  - { id: g, kind: unit, side: israel, class: armour, movement_points: 2, facility: military_camp, training_turns: 2, training_cost: 1.0, training_arms: 0 }\n", "types[g].training_arms", "required for a trained military type, at least 1")]
     [InlineData("  - { id: g, kind: unit, side: israel, class: armour, movement_points: 2, training_arms: 2 }\n", "types[g].training_arms", "only a type with a facility trains")]
     [InlineData("  - { id: g, kind: unit, facility: hakhshara, training_turns: 2, training_cost: 1.0, training_arms: 2 }\n", "types[g].training_arms", "only a trained military type other than the recruit")]
+    // #2601: artillery and armour train at a military camp only.
+    [InlineData("  - { id: g, kind: unit, side: israel, class: armour, movement_points: 2, facility: hakhshara, training_turns: 2, training_cost: 1.0, training_arms: 2 }\n", "types[g].facility", "an artillery or armour type trains at a military camp (R-UNIT-008)")]
+    [InlineData("  - { id: g, kind: unit, side: israel, class: artillery, movement_points: 1, range: 2, arms_per_fire: 1, facility: industry, training_turns: 2, training_cost: 1.0, training_arms: 2 }\n", "types[g].facility", "an artillery or armour type trains at a military camp (R-UNIT-008)")]
     public void TheTrainingArmsAreValidated(string row, string field, string message)
     {
         var ex = Assert.Throws<ContentException>(() => Load(Fixture.GddUnitTypes + row));

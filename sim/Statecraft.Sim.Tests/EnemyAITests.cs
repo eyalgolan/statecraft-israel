@@ -91,7 +91,7 @@ public class EnemyAITests
     }
 
     // R-ENEMY-003: with no script, the unit attacks the first adjacent hex with a player unit, in the fixed neighbour order,
-    // where Combat.Preview's ratio reaches mvp.enemy_attack_ratio_percent; otherwise it fortifies its hex.
+    // where Combat.EnemyPreview's ratio reaches mvp.enemy_attack_ratio_percent; otherwise it fortifies its hex.
     [Theory]
     [InlineData(10, Combat.Attack, "3,0")]    // 10 against 5: 200%, the threshold
     [InlineData(9, Orders.Fortifying, "2,0")]   // 180%: below it
@@ -101,6 +101,33 @@ public class EnemyAITests
         var s = CombatTests.With(c, Soldier(1, 3, 0, 5), Enemy(2, 2, 0, strength));
         EnemyAI.Order(c, s, new List<Cause>());
         Assert.Equal((order, target), (s.Units[2].Order, s.Units[2].OrderTarget));
+    }
+
+    // R-ENEMY-003: each enemy is only 1:1 against the player unit, but an attack already standing on the target makes the
+    // joining unit's preview 2:1. Step 2 will group those same-target attacks into one engagement.
+    [Fact]
+    public void AUnitJoinsAnAlreadyOrderedAttackWhenTogetherTheyReachTheThreshold()
+    {
+        var c = Load();
+        var s = CombatTests.With(c, Soldier(1, 3, 0, 5), Enemy(2, 3, 1, 5), Enemy(3, 2, 0, 5));
+        Assert.Null(Combat.Give(c, s, 3, 3, 0, new List<Cause>(), enemy: true));
+
+        EnemyAI.Order(c, s, new List<Cause>());
+
+        Assert.Equal((Combat.Attack, "3,0"), (s.Units[2].Order, s.Units[2].OrderTarget));
+        Assert.Equal((Combat.Attack, "3,0"), (s.Units[3].Order, s.Units[3].OrderTarget));
+    }
+
+    // R-ENEMY-003: the same 1:1 unit has no qualifying attack without a same-target standing attacker, so it fortifies.
+    [Fact]
+    public void AUnitAloneBelowTheAttackThresholdFortifies()
+    {
+        var c = Load();
+        var s = CombatTests.With(c, Soldier(1, 3, 0, 5), Enemy(2, 3, 1, 5));
+
+        EnemyAI.Order(c, s, new List<Cause>());
+
+        Assert.Equal((Orders.Fortifying, "3,1"), (s.Units[2].Order, s.Units[2].OrderTarget));
     }
 
     // R-ENEMY-003: the attack resolves in the same turn's step 2, and a unit already fortified keeps its order quietly.
@@ -215,6 +242,33 @@ public class EnemyAITests
         })));
         var f = Assert.Single(c.StartingForces);
         Assert.Equal(scripted ? new[] { (3, 2, new DateTime(1948, 7, 8)) } : Array.Empty<(int, int, DateTime)>(), f.Script);
+    }
+
+    // R-ENEMY-002, R-MOVE-001: under gdd-0.1 too, a scripted unit that has not moved this turn may enter one neighbouring
+    // land hex whose cost exceeds its full allowance, spending all its points. Fixture: two points, adjacent desert costs 3.
+    [Fact]
+    public void AScriptedFirstStepMayCostMoreThanTheUnitsFullPoints()
+    {
+        const string SlowTypes = Fixture.GddUnitTypes
+            + "  - { id: soldier, kind: unit, side: israel, class: infantry, movement_points: 3 }\n"
+            + "  - { id: enemy, kind: unit, side: egypt, class: infantry, movement_points: 2 }\n";
+        const string Two = "[{ url: 'https://example.org/a', checked: '2026-10-13' }, { url: 'https://example.org/b', checked: '2026-10-13' }]";
+        var row = "- id: force\n  service: army\n  side: egypt\n  status: draft\n  strength: { value: 30, as_of: '1948-05-15' }\n  anchors:\n"
+            + "  - { place: Start, lon: 34.29, lat: 33.35, from: '1948-05-15', to: '1948-06-11' }\n"
+            + "  - { place: June, lon: 34.29, lat: 33.35, from: '1948-06-11', to: '1948-07-08', sources: " + Two + " }\n";
+        var c = ContentLoader.Load(Fixture.Write(Fixture.Gdd(new Dictionary<string, string>
+        {
+            ["unit_types.yaml"] = SlowTypes,
+            ["map/hexes.json"] = MovementTests.Board((3, 1, "desert")),
+            ["corridors.yaml"] = "corridors: []\n",
+            ["map/units_1948.yaml"] = "units:\n" + row,
+            ["map/unit_anchor_hexes.yaml"] = "anchors:\n  - { id: force, anchor: 0, q: 2, r: 1 }\n  - { id: force, anchor: 1, q: 3, r: 1 }\n",
+        })));
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var why = new List<Cause>();
+        EnemyAI.Order(c, s, why);
+        Assert.Equal((3, 1), (s.Units[0].Q, s.Units[0].R));
+        Assert.Contains(why, x => x.Message == "Unit 0 moved to hex 3,1 for 2 movement points");
     }
 
     // R-ENEMY-002 past the first truce (#1270; owner, 31 October 2026, ruling a: "First listed (as today)"): the script is
@@ -421,7 +475,7 @@ public class EnemyAITests
         for (int i = 0; i < 8 && s.GameOver == null; i++)
         {
             s = Simulation.Step(Real, s, Array.Empty<Command>()).State;
-            Assert.Subset(ids, s.Units.Values.Where(IsEnemy).Select(u => u.Id).ToHashSet());
+            Assert.Subset(ids, s.Units.Values.Where(IsEnemy).Select(u => u.Id).ToHashSet());   // xUnit: every id now is a starting one (B ⊆ A), so none arrived
         }
     }
 

@@ -449,7 +449,9 @@ public class SaveUiTests
         ui.Press("new-game");
         Assert.DoesNotThrow(() => ui.Press("new-game"));
         Assert.AreEqual(0, bridge.State.Turn);
-        StringAssert.StartsWith("The old saved game could not be removed", ui.Q<Label>("toast").text);
+        Assert.AreEqual("The old saved game could not be removed; it will be replaced the next time the game saves.",
+            ui.Q<Label>("toast").text,
+            "was 'The old saved game could not be removed; it will be replaced after your next turn.'; autosave also runs after committed orders");
     }
 
     sealed class DeleteFailsStore : SaveStore
