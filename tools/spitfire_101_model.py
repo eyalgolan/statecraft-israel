@@ -19,7 +19,7 @@ How:
      roundels, rudder stripes, panel lines, exhaust soot. So each roundel lies on the skin wherever its island is.
   3. Exported as one FBX (two top-level nodes, "Body" and "Propeller", the axis conversion baked into the vertices so
      both nodes have identity rotation and scale) with no texture inside; the colour map is a PNG beside it, and the
-     prefab in Resources draws with the .mat beside the model (see the PR / docs for the Unity side).
+     FBX itself sits in Resources (FBX_DIR), its importer remapping the material to the .mat beside the colour map.
 
     uv run --no-project --python 3.13 --with bpy==5.2.2 python -I tools/spitfire_101_model.py --build     # FBX + PNG
     uv run --no-project --python 3.13 --with bpy==5.2.2 python -I tools/spitfire_101_model.py --check --stills DIR
@@ -58,8 +58,9 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 
 TYPE = "spitfire-mk9e-101sqn-1948"                       # UnitShowcase.SpitfireType
-MODEL_DIR = Path("unity/Assets/Art/Units") / TYPE         # the FBX, the colour map, the material, provenance.json
-PREFAB = Path("unity/Assets/Resources/Units/Authored") / f"{TYPE}.prefab"
+MODEL_DIR = Path("unity/Assets/Art/Units") / TYPE         # the colour map, the material, provenance.json
+# The FBX itself is what UnitShowcase.AuthoredModel loads (Resources.Load of AuthoredFolder + the type): no prefab variant.
+FBX_DIR = Path("unity/Assets/Resources/Units/Authored")
 FBX = f"{TYPE}.fbx"
 PNG = f"{TYPE}_basecolor.png"
 MATERIAL_NAME = f"{TYPE}-paint"                           # the FBX's material name, remapped to the .mat by the .fbx.meta
@@ -705,7 +706,8 @@ def build(repo: Path, out: Path | None) -> dict:
     bpy.ops.object.select_all(action="DESELECT")
     for ob in (body, prop):
         ob.select_set(True)
-    fbx = dest / FBX
+    fbx = (out or repo / FBX_DIR) / FBX
+    fbx.parent.mkdir(parents=True, exist_ok=True)
     bpy.ops.export_scene.fbx(
         filepath=str(fbx), use_selection=True, object_types={"MESH"}, axis_forward="-Z", axis_up="Y",
         bake_space_transform=True, apply_scale_options="FBX_SCALE_ALL", mesh_smooth_type="OFF", use_mesh_modifiers=False,
@@ -812,12 +814,12 @@ def blade_angles(path: Path) -> list[float]:
 
 # ---- check (fresh process): re-import, measure, stills ----
 
-def inspect(repo: Path, folder: Path, stills: Path | None) -> dict:
+def inspect(repo: Path, folder: Path, fbx_file: Path, stills: Path | None) -> dict:
     import bpy
     from mathutils import Vector
 
     bpy.ops.wm.read_factory_settings(use_empty=True)
-    bpy.ops.import_scene.fbx(filepath=str(folder / FBX))
+    bpy.ops.import_scene.fbx(filepath=str(fbx_file))
     obs = {o.name: o for o in bpy.data.objects if o.type == "MESH"}
     check(set(obs) == {"Body", "Propeller"}, f"objects: {sorted(obs)}")
     for o in obs.values():
@@ -914,7 +916,7 @@ def render_stills(bpy, obs, png: Path, stills: Path) -> None:
 
 def meta_record(repo: Path) -> dict:
     files = {}
-    for rel in (MODEL_DIR / FBX, MODEL_DIR / PNG, MODEL_DIR / f"{TYPE}.mat", PREFAB):
+    for rel in (FBX_DIR / FBX, MODEL_DIR / PNG, MODEL_DIR / f"{TYPE}.mat"):
         files[str(rel)] = sha((repo / rel).read_bytes())
     return files
 
@@ -969,8 +971,9 @@ def main(argv=None) -> int:
         build(repo, a.out)
     elif a.check:
         folder = a.out or repo / MODEL_DIR
-        report = inspect(repo, folder, a.stills)
-        report["fbx"] = fbx = fbx_summary(folder / FBX)
+        fbx_file = (a.out or repo / FBX_DIR) / FBX
+        report = inspect(repo, folder, fbx_file, a.stills)
+        report["fbx"] = fbx = fbx_summary(fbx_file)
         print(json.dumps(report, indent=1))
         check(set(fbx["models"]) == {"Body", "Propeller"}, f"FBX models: {sorted(fbx['models'])}")
         check((fbx["UpAxis"], fbx["UpAxisSign"], fbx["FrontAxis"], fbx["CoordAxis"], fbx["UnitScaleFactor"]) == ([1], [1], [2], [0], [100.0]),
@@ -981,7 +984,7 @@ def main(argv=None) -> int:
         check(fbx["models"]["Body"]["Lcl Translation"] == [0, 0, 0], "Body is not at the origin")
         # The file is right-handed; Unity mirrors x, so (x, y, z) here is (-x, y, z) there: the hub is on the centre line.
         check(fbx["models"]["Propeller"]["Lcl Translation"] == [round(-HUB[0], 6), HUB[1], HUB[2]], "the propeller's pivot is not the hub")
-        report["blade_tip_angles_deg"] = tips = blade_angles(folder / FBX)
+        report["blade_tip_angles_deg"] = tips = blade_angles(fbx_file)
         check(tips == sorted(a % 360.0 for a in BLADE_ANGLES), f"blade tips at {tips}, expected {BLADE_ANGLES}")
         box = fbx["geometry_boxes"]["Body"]
         check(box[1][2] > 3.0 and box[0][2] < -5.5, "the nose is not toward +z")

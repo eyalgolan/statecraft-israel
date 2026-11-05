@@ -33,10 +33,10 @@ def test_verify_passes_on_the_shipped_files():
 
 def test_the_fbx_is_in_the_frame_the_art_hook_expects():
     mod = tool()
-    fbx = ROOT / mod.MODEL_DIR / mod.FBX
+    fbx = ROOT / mod.FBX_DIR / mod.FBX
     s = mod.fbx_summary(fbx)
     assert (s["UpAxis"], s["UpAxisSign"], s["FrontAxis"], s["CoordAxis"], s["UnitScaleFactor"]) == ([1], [1], [2], [0], [100.0])
-    assert set(s["models"]) == {"Body", "Propeller"}, "two top-level nodes: the prefab root's direct children"
+    assert set(s["models"]) == {"Body", "Propeller"}, "two top-level nodes: the model root's direct children"
     for m in s["models"].values():
         assert m["Lcl Rotation"] == [0, 0, 0] and m["PreRotation"] == [0, 0, 0] and m["Lcl Scaling"] == [1, 1, 1]
     assert s["models"]["Body"]["Lcl Translation"] == [0, 0, 0]
@@ -99,16 +99,16 @@ def test_the_markings_are_painted_where_the_sources_put_them():
 def test_the_unity_files_point_at_each_other_with_unique_guids():
     mod = tool()
     d = ROOT / mod.MODEL_DIR
-    fbx_meta, png_meta, mat_meta = (d / f"{mod.FBX}.meta", d / f"{mod.PNG}.meta", d / f"{mod.TYPE}.mat.meta")
-    prefab = ROOT / mod.PREFAB
-    fbx_g, png_g, mat_g, prefab_g = guid(fbx_meta), guid(png_meta), guid(mat_meta), guid(Path(f"{prefab}.meta"))
+    fbx_meta, png_meta, mat_meta = (ROOT / mod.FBX_DIR / f"{mod.FBX}.meta", d / f"{mod.PNG}.meta", d / f"{mod.TYPE}.mat.meta")
+    fbx_g, png_g, mat_g = guid(fbx_meta), guid(png_meta), guid(mat_meta)
     meta = fbx_meta.read_text(encoding="utf-8")
     assert f"name: {mod.MATERIAL_NAME}\n    second: {{fileID: 2100000, guid: {mat_g}, type: 2}}" in meta, "the FBX's material is remapped to the .mat"
     mat = (d / f"{mod.TYPE}.mat").read_text(encoding="utf-8")
     assert mat.count(f"guid: {png_g}") == 2 and "guid: 933532a4fcc9baf4fa0491de14d08ed7" in mat, "URP Lit with the colour map"
     assert "- _Smoothness: 0.5\n" in mat and "- _Metallic: 0\n" in mat
-    assert f"m_SourcePrefab: {{fileID: 100100000, guid: {fbx_g}, type: 3}}" in prefab.read_text(encoding="utf-8")
-    assert prefab.name == "spitfire-mk9e-101sqn-1948.prefab", "Resources/Units/Authored/ + UnitShowcase.SpitfireType"
-    for g in (fbx_g, png_g, mat_g, prefab_g):
+    # The model itself is the authored asset UnitShowcase loads: Resources/Units/Authored/ + UnitShowcase.SpitfireType.
+    assert mod.FBX_DIR == Path("unity/Assets/Resources/Units/Authored") and mod.FBX == "spitfire-mk9e-101sqn-1948.fbx"
+    assert not list((ROOT / mod.FBX_DIR).glob(f"{mod.TYPE}.prefab*")), "no prefab variant beside it"
+    for g in (fbx_g, png_g, mat_g):
         hits = subprocess.run(["git", "grep", "-l", "-e", f"^guid: {g}$", "--", "*.meta"], cwd=ROOT, capture_output=True, text=True).stdout.split()
         assert len(hits) <= 1, f"{g} is the guid of more than one asset: {hits}"

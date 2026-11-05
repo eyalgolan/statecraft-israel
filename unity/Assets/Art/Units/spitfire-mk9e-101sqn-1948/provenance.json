@@ -13,10 +13,9 @@
   },
   "design_values": "fuselage sections, canopy, radiators, intake, exhausts, tailplane and fin sizes, hub position, propeller diameter and blade shape, roundel sizes and places, wing-roundel star orientation, rudder stripe angle and width, camouflage pattern, demarcation line, panel lines",
   "files": {
-    "unity/Assets/Art/Units/spitfire-mk9e-101sqn-1948/spitfire-mk9e-101sqn-1948.fbx": "e59361bf4cbc1b2966d4c02e5700230eacfc1e14c09ba66449bca3c3d609159b",
+    "unity/Assets/Resources/Units/Authored/spitfire-mk9e-101sqn-1948.fbx": "e59361bf4cbc1b2966d4c02e5700230eacfc1e14c09ba66449bca3c3d609159b",
     "unity/Assets/Art/Units/spitfire-mk9e-101sqn-1948/spitfire-mk9e-101sqn-1948_basecolor.png": "397dda00d3de72e1a03c909bd29c08faad324dd4820f26eb3fdd86a073465ed2",
-    "unity/Assets/Art/Units/spitfire-mk9e-101sqn-1948/spitfire-mk9e-101sqn-1948.mat": "739b60772288946cdbfe8b5b871f450bc66fdda87ce224600bcc2cf05f600dee",
-    "unity/Assets/Resources/Units/Authored/spitfire-mk9e-101sqn-1948.prefab": "58a089faf568d328bc1af42813eb2df4519b7f4ff2a82a04b72cafea020e0b0a"
+    "unity/Assets/Art/Units/spitfire-mk9e-101sqn-1948/spitfire-mk9e-101sqn-1948.mat": "739b60772288946cdbfe8b5b871f450bc66fdda87ce224600bcc2cf05f600dee"
   },
   "triangles": 7696,
   "triangles_by_object": {
