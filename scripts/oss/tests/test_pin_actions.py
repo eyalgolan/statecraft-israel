@@ -28,3 +28,21 @@ def test_trailing_whitespace_after_the_ref_does_not_become_a_comment():
     text = "  - uses: actions/checkout@v4   \n"
     out = pin_actions.pin_text(text, lambda repo, ref: SHA)
     assert out == f"  - uses: actions/checkout@{SHA} # v4\n"
+
+
+def test_quoted_uses_are_pinned_and_keep_their_quotes():
+    for quote in ('"', "'"):
+        text = f"  - uses: {quote}actions/checkout@v4{quote}\n"
+        out = pin_actions.pin_text(text, lambda repo, ref: SHA)
+        assert out == f"  - uses: {quote}actions/checkout@{SHA}{quote} # v4\n"
+
+
+def test_main_pins_yaml_workflows(tmp_path, monkeypatch):
+    workflow = tmp_path / ".github/workflows/check.yaml"
+    workflow.parent.mkdir(parents=True)
+    workflow.write_text("steps:\n  - uses: actions/checkout@v4\n", encoding="utf-8")
+    monkeypatch.setattr(pin_actions, "ROOT", tmp_path)
+    monkeypatch.setattr(pin_actions, "gh_resolve", lambda repo, ref: SHA)
+
+    assert pin_actions.main() == 0
+    assert workflow.read_text(encoding="utf-8") == f"steps:\n  - uses: actions/checkout@{SHA} # v4\n"
