@@ -361,6 +361,10 @@ namespace Statecraft.Game.UI
             // on each frame; an earlier order can make a kind that the current state refuses valid.
             (string? kind, string? words) Refusal(ProjectKind k, string city)
             {
+                // #2669 with #2679: a finished game's preview refuses every order, which would replace the buttons with that
+                // refusal; under gdd-0.3 the panel keeps them, disabled by OrderButton (its same rule), so the ended game stays
+                // inspectable. Under the other rules OrderButton does not disable them, so the refusal lines stay.
+                if (s.GameOver != null && c.Ruleset == SaveGame.Gdd03Ruleset) return (null, null);
                 var press = new StartProject(k.Id, city, q, r);
                 var old = bridge.QueuedLike(press);
                 var queue = bridge.Queued.ToList();
