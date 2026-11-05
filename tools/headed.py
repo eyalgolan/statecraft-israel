@@ -383,7 +383,10 @@ async def loadshot(args):
     async with Browser(args.build) as b:
         sid = await b.open("bootlog", args.cpu)
         line = await b.wait_for(sid, r"BOOT phase=player started|BOOT FAIL")
-        if "BOOT FAIL" in line:   # #2697: a failed boot is a failed run, not a capture
+        # #2697: a failed boot is a failed run, not a capture. wait_for returns the first match in console order, so a
+        # BOOT FAIL already logged after "player started" is looked for too, before the loading screenshot.
+        line = next((t for t in b.lines(sid) if "BOOT FAIL" in t), line)
+        if "BOOT FAIL" in line:
             print(f"FAIL: {line}")
             return 1
         print(await b.shot(sid, args.out + "-loading.png"))
