@@ -212,6 +212,11 @@ public class EncyclopediaScreenTests
         {
             ["projects"] = new[] { "needs no workers", "אינו דורש עובדים" },
         };
+        // The base page's sentences each variant keeps word for word (0-based, split at ". ").
+        var kept = new System.Collections.Generic.Dictionary<string, int[]>
+        {
+            ["projects"] = new[] { 2, 3 }, ["cities"] = new[] { 0, 2, 3 }, ["money_debt"] = new[] { 1, 2, 3 },
+        };
         var texts = new[] { En, He };
         for (var language = 0; language < texts.Length; language++)
         {
@@ -225,7 +230,11 @@ public class EncyclopediaScreenTests
                 StringAssert.DoesNotContain(phrase, text[baseKey], baseKey + " is unchanged");
             }
             if (unsaid.TryGetValue(page, out var gone)) StringAssert.DoesNotContain(gone[language], text[variantKey]);
-            // Each page changes at most its first two sentences (money_debt adds a sentence after them); the rest is approved text.
+            // Each page changes at most its first two sentences (money_debt adds a sentence after them); every other base sentence
+            // is approved text, kept word for word, and the tail after the second sentence stays the variant's end.
+            var sentences = text[baseKey].Split(new[] { ". " }, System.StringSplitOptions.None);
+            Assert.AreEqual(4, sentences.Length, baseKey + " has four sentences");
+            foreach (var i in kept[page]) StringAssert.Contains(sentences[i], text[variantKey], variantKey + " keeps sentence " + i);
             var approvedTail = text[baseKey].Substring(text[baseKey].IndexOf(". ", text[baseKey].IndexOf(". ") + 1));
             StringAssert.EndsWith(approvedTail, text[variantKey], "the approved tail is kept word for word");
 
