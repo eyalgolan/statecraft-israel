@@ -236,7 +236,8 @@ public class TalModelsShots
             SeaAirCollection.Request = Answer(Array.Empty<string>());
             Drop(map, SeaAirCollection.Name);
             var layer = CollectionGeometryFixture.Craft(map, state.Date, state.Placements, content)!;
-            var plane = layer.Placed.Single(p => p.Model == SeaAirCollection.Dakota);
+            // #2482: two Dakotas fly one loop, so both carry its centre; the lead's is the one to aim at.
+            var plane = layer.Placed.First(p => p.Model == SeaAirCollection.Dakota);
             if (!after)
             {
                 SeaAirCollection.Request = Answer(new[] { SeaAirCollection.Dakota });

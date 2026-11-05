@@ -22,7 +22,8 @@ localities (content/map/localities_1948.tsv), and the roads follow the traced 19
 Hand edits that must survive regeneration go in the sibling <id>.overrides.json (the Hex Painter writes it), applied
 last. It has the shape of the map editor's content/map/overrides.yaml (#1099): one list per field (prototype, ground,
 unit, facing, region) of {hex: {q, r}, value}. It is presentation only and stays out of content/, so painting a hex never
-moves the content hash. The map editor's own terrain and location overrides are read too, so boards follow the map.
+moves the content hash. Regeneration refuses to write if an override names a hex the board does not have (#2652).
+The map editor's own terrain and location overrides are read too, so boards follow the map.
 
     python3 tools/hex_tiles/make_board.py [--id central_israel] [--lat 31.62 32.48] [--lon 34.4 35.42]
 """
@@ -280,7 +281,7 @@ def overrides_path(board_path):
 def apply_overrides(board, overrides):
     """A board's hand edits, in the shape of content/map/overrides.yaml (#1099): one list per field (prototype, ground,
     unit, facing, region) of {hex: {q, r}, value}, no hex twice in a list; facing is degrees as a string. Returns the
-    edits whose hex the board does not have (reported, not applied)."""
+    edits whose hex the board does not have (not applied; main refuses to write the board)."""
     at = {(e['q'], e['r']): e for e in board['hexes']}
     unknown = [k for k in overrides if k != 'board' and k not in OVERRIDE_FIELDS]
     if unknown: raise ValueError(f"override list '{unknown[0]}' is not one of {OVERRIDE_FIELDS}")
@@ -560,7 +561,11 @@ def main(argv=None):
     ov = overrides_path(dst)
     if os.path.exists(ov):
         with open(ov, encoding='utf-8') as f: missing = apply_overrides(board, json.load(f))
-        for field, ed in missing: print(f' {field} override of ({ed["hex"]["q"]},{ed["hex"]["r"]}): no such hex on this board, not applied')
+        for field, ed in missing:
+            print(f'REFUSED: {field} override of ({ed["hex"]["q"]},{ed["hex"]["r"]}): no such hex on this board', file=sys.stderr)
+        if missing:
+            print(f'REFUSED: {ov} names {len(missing)} hex(es) this board does not have; {dst} was not written', file=sys.stderr)
+            return 1
     with open(dst, 'w') as f: json.dump(board, f, indent=1)
     from collections import Counter
     out, roads = board['hexes'], board['roads']

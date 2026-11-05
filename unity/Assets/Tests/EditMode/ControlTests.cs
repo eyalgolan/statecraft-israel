@@ -258,7 +258,7 @@ public class ControlTests
         StringAssert.DoesNotContain("not held", en, "nothing is ever drawn grey for land held by no one");
         StringAssert.Contains("18 July 1948", en);
         StringAssert.Contains("Israel State Archives", en);
-        StringAssert.StartsWith("בשליטת ישראל: כחול · בשליטת כוחות ערביים: כתום-אדום · שטח שבמחלוקת או שטח הפקר: אפור, מקווקו", he);
+        StringAssert.StartsWith("בשליטת ישראל: כחול · בשליטת כוחות ערביים: כתום־אדום · שטח שבמחלוקת או שטח הפקר: אפור, מקווקו", he);
         StringAssert.Contains("18 ביולי 1948", he, "the date in Hebrew month names (review S5)");
         StringAssert.DoesNotContain("July", he);
         StringAssert.Contains("ארכיון המדינה", he);
@@ -277,7 +277,7 @@ public class ControlTests
         var after = m.ControlLabel(After, k => En[k])!;
         StringAssert.StartsWith("Israeli side of the armistice line: blue · Arab side: orange-red · No-man's land or demilitarized zone: grey, dashed", after);
         StringAssert.Contains("Jordan (low accuracy)", after, "D-A ruling 2: the Jordan line is labelled low-accuracy on the map");
-        StringAssert.StartsWith("הצד הישראלי של קו שביתת הנשק: כחול · הצד הערבי: כתום-אדום · שטח הפקר או אזור מפורז: אפור, מקווקו", m.ControlLabel(After, k => He[k]));
+        StringAssert.StartsWith("הצד הישראלי של קו שביתת הנשק: כחול · הצד הערבי: כתום־אדום · שטח הפקר או אזור מפורז: אפור, מקווקו", m.ControlLabel(After, k => He[k]));
         var mixed = m.ControlLabel(Mixed, k => En[k])!;
         StringAssert.StartsWith("Israeli side of the armistice line", mixed);
         StringAssert.Contains("Egypt, Jordan (low accuracy), Lebanon", mixed);

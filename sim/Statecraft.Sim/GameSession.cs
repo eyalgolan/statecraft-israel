@@ -82,7 +82,8 @@ namespace Statecraft.Sim
         /// same but the replay ends on a different hash (a determinism bug). Content made with other content loads with a
         /// warning (spec section 7), and a second warning if the replay then differs from the saved game. The warnings are
         /// kinds (<see cref="ContentChanged"/>, <see cref="ReplayDiffers"/>), not display text: the UI says each in the
-        /// player's language, as it does SaveException.Code (#637).</summary>
+        /// player's language, as it does SaveException.Code (#637). A finished game whose replay differs only by the ending
+        /// turn's objective cards (#2536) is not a difference: it loads with no warning.</summary>
         public static GameSession Load(Content c, string saveText, out IReadOnlyList<string> warnings)
         {
             if (c == null) throw new ArgumentNullException(nameof(c));
@@ -100,9 +101,12 @@ namespace Statecraft.Sim
             try { foreach (var turn in saved.Turns) { session.Step(turn); turnNo++; } }
             catch (SaveException) { throw; }
             catch (Exception e) { throw new SaveException(FormattableString.Invariant($"turn {turnNo + 1}: {e.Message}"), e); }
+            // #2536: a game finished before the ending turn fired objective cards replays with those cards added, and only
+            // them: the same game, so it loads as saved, with no warning, and shows its ending card(s).
             // #2542: a save made before stayed losses left a marker replays with only those markers added. It is the same
             // game, so accept that exact same-content difference; every other replay mismatch keeps the existing handling.
-            if (session.State.Hash() != saved.FinalHash && !(sameContent && OnlyLostMarkersAdded(session.State, saved.FinalHash)))
+            if (session.State.Hash() != saved.FinalHash && !OnlyEndingCardsAdded(c, session.State, saved.FinalHash)
+                && !(sameContent && OnlyLostMarkersAdded(session.State, saved.FinalHash)))
             {
                 if (saved.Version < 3 && saved.Ruleset == SaveGame.GddRuleset)
                     throw new SaveException(0, "This save was made with an earlier version of the game's rules.", SaveException.OlderRules);
@@ -119,6 +123,22 @@ namespace Statecraft.Sim
             }
             warnings = list;
             return session;
+        }
+
+        /// <summary>#2536: whether <paramref name="s"/>, a replayed game, differs from the saved final state only by the ending
+        /// turn's objective cards (EventSystem.EndingCard), which games finished before that change never fired. Before it,
+        /// a finished game had nothing pending (Delegate resolves every card before a turn, and an ended game raised no
+        /// event), so taking exactly the pending cards out of both the fired and the pending lists must give the saved hash.
+        /// Narrow by design: the game is over, every pending event is an ending card, and the hash matches exactly.</summary>
+        static bool OnlyEndingCardsAdded(Content c, GameState s, string savedHash)
+        {
+            if (s.GameOver == null || s.PendingEvents.Count == 0) return false;
+            if (!s.PendingEvents.All(id => c.Events.FirstOrDefault(e => e.Id == id) is GameEvent e && EventSystem.EndingCard(s, e)))
+                return false;
+            var before = s.Clone();
+            foreach (var id in s.PendingEvents) before.FiredEvents.Remove(id);
+            before.PendingEvents.Clear();
+            return before.Hash() == savedHash;
         }
 
         /// <summary>#2542: whether a replay differs from its saved final state only by ownerless, inhabited, stayed markers
