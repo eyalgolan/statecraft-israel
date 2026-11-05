@@ -98,8 +98,8 @@ if (Array.IndexOf(args, "--release-gate") >= 0)
             + " (see docs/m3-release.md)");
     foreach (var id in unsigned) Console.WriteLine("  unsigned alternate card: " + id);
     if (forces.Count > 0)
-        Console.WriteLine("RELEASE GATE REFUSED: these starting forces' rows are not fact-checked: " + string.Join(", ", forces)
-            + " (status: fact-checked in content/map/units_1948.yaml; Q-START-3, #743)");
+        Console.WriteLine("RELEASE GATE REFUSED: these starting forces' rows are not fact-checked, or have a field sourced after their checked_on: "
+            + string.Join(", ", forces) + " (status: fact-checked and checked_on in content/map/units_1948.yaml; Q-START-3, #743, #2722)");
     if (targets.Count > 0)
         Console.WriteLine("RELEASE GATE REFUSED: these settlement targets are not sensitivity-reviewed: " + string.Join(", ", targets)
             + " (status: sensitivity-reviewed in content/settlement_targets.yaml; Q-TGT-3, #783)");

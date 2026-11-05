@@ -77,8 +77,8 @@ namespace Statecraft.Game.EditorTools
                     + string.Join(", ", unsigned) + " (see docs/m3-release.md)");
             // R-UNIT-006, Q-START-3 (#743): the rows a new game starts a unit from are game state, so a person checks them first.
             if (Statecraft.Sim.ReleaseGate.StartingForcesUnchecked(c) is { Count: > 0 } forces)
-                reasons.Add("a shareable build needs these starting forces' rows fact-checked: " + string.Join(", ", forces)
-                    + " (status: fact-checked in content/map/units_1948.yaml; see docs/units.md)");
+                reasons.Add("a shareable build needs these starting forces' rows fact-checked, and their fields sourced after checked_on checked: "
+                    + string.Join(", ", forces) + " (status: fact-checked and checked_on in content/map/units_1948.yaml; see docs/units.md)");
             // Q-TGT-3 (b) (#783): a settlement target row ships only after a person's sensitivity review.
             if (Statecraft.Sim.ReleaseGate.SettlementTargetsUnchecked(c) is { Count: > 0 } targets)
                 reasons.Add("a shareable build needs these settlement targets sensitivity-reviewed: " + string.Join(", ", targets)

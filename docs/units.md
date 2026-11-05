@@ -229,8 +229,10 @@ defaults"). The unit stands on the hex holding the anchor's coordinates, by the 
   Hulda from the 15 June 1948 turn.
 - **Release gate:** every row the sim starts a unit from must be `fact-checked` before a shareable build carries it
   (Q-START-3). `Statecraft.Cli --release-gate`, `Build -shareable` and `tools/package_release.py` refuse until then, and
-  name the rows; today that is Etzioni and the 7th (#1241), since the owner checked the other twelve on 21 October 2026
-  (#1240).
+  name the rows. A `fact-checked` row records the day of its person check in `checked_on`; a field whose sources were
+  checked after that day (the strength, an anchor or an order target) counts as unchecked, and the gate names the row
+  and the field (#2722). Today that is the order targets of Carmeli, Kiryati, Givati, the 7th, Harel and Negev (#2135),
+  sourced on 1 November 2026, after the owner's checks of 21 October (#1240) and 22 October 2026 (#1241).
 - Tests: `StartingForcesTests` (dotnet) and `UnitsInPlayTests.TheStartMatchesTheMap` (EditMode).
 
 ### Tokens from the state (Phase 5 PR 14, #753)
