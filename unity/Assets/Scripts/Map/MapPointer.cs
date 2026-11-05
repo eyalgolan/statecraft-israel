@@ -327,7 +327,9 @@ namespace Statecraft.Game.Map
         void RefreshSceneCache(MapScene map)
         {
             int hierarchy = map.transform.hierarchyCount;
-            if (cachedTerrainRoot == map.Terrain && cachedHierarchyCount == hierarchy) return;
+            // A board replaced by one of the same shape (HexTilesLook.Apply) keeps the count but destroys the cached
+            // terrains: a destroyed one (Unity's null) rebuilds the cache too (Codex review of 981951be0).
+            if (cachedTerrainRoot == map.Terrain && cachedHierarchyCount == hierarchy && GroundsAlive()) return;
             cachedTerrainRoot = map.Terrain;
             cachedHierarchyCount = hierarchy;
             var found = map.GetComponentsInChildren<Terrain>(true);
@@ -339,6 +341,14 @@ namespace Statecraft.Game.Map
 #if UNITY_EDITOR
             TerrainCacheBuildsForTests++;
 #endif
+        }
+
+        bool GroundsAlive()
+        {
+            foreach (var (terrain, collider) in grounds)
+                // A terrain with no collider is cached as a real null; one destroyed since is Unity's null.
+                if (terrain == null || (!ReferenceEquals(collider, null) && collider == null)) return false;
+            return true;
         }
 
         /// <summary>For a rebuilt scene whose replacement children happen to have the same hierarchy count.</summary>

@@ -179,6 +179,18 @@ public class HexBoardPickingTests
             clicked.Clear(); Assert.IsTrue(pointer.HandleClick(screen));
             CollectionAssert.AreEqual(new[] { MapPointer.Pick(map, visible.point) }, clicked);
             Assert.AreEqual(initialBuilds + 2, pointer.TerrainCacheBuildsForTests, "recreating the displayed board invalidates discovery again");
+
+            // Codex review of 981951be0: the board replaced directly by one of the same shape, after a pick on it, keeps the
+            // hierarchy count; the destroyed board's cached terrain must not be used.
+            var replaced = board;
+            HexTilesLook.Apply(map, true);
+            board = map.transform.Find(HexTilesLook.RootName).GetComponentsInChildren<Terrain>().Single();
+            Assert.AreNotSame(replaced, board, "fixture: a new board");
+            Physics.SyncTransforms();
+            Assert.IsTrue(board.GetComponent<TerrainCollider>().Raycast(cam.ScreenPointToRay(screen), out var again, 1000000f));
+            clicked.Clear(); Assert.IsTrue(pointer.HandleClick(screen));
+            CollectionAssert.AreEqual(new[] { MapPointer.Pick(map, again.point) }, clicked, "the new board's hex, not a stale surface");
+            Assert.AreEqual(initialBuilds + 3, pointer.TerrainCacheBuildsForTests, "a same-shape replacement invalidates discovery too");
         }
         finally
         {
