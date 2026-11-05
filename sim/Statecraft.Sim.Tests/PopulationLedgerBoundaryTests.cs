@@ -5,7 +5,7 @@ public class PopulationLedgerBoundaryTests
 {
     [Theory]
     [InlineData("population.init")] [InlineData("population.apply")]
-    [InlineData("pools.init")] [InlineData("pools.harvest")]   // pools.consume eats from the ledger (#2470, PoolsTests)
+    [InlineData("pools.init")] [InlineData("pools.consume")] [InlineData("pools.harvest")]
     [InlineData("pools.buy")] [InlineData("pools.term")]
     [InlineData("cities.init")] [InlineData("cities.assign")] [InlineData("cities.produce")]
     [InlineData("cities.house")] [InlineData("cities.condition")] [InlineData("cities.arrive")] [InlineData("cities.upkeep")]
@@ -33,6 +33,7 @@ public class PopulationLedgerBoundaryTests
                 case "population.init": PopulationSystem.Init(c,s); break;
                 case "population.apply": PopulationSystem.Apply(c,s,s.Date.AddMonths(1),.1,why); break;
                 case "pools.init": Pools.Init(c,s); break;
+                case "pools.consume": Pools.Consume(c,s,rules,why); break;
                 case "pools.harvest": Pools.Harvest(c,s,rules,why); break;
                 case "pools.buy": Pools.BuyArms(c,s,1,why); break;
                 case "pools.term": Pools.FoodTerm(c,s); break;

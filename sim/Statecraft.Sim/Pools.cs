@@ -115,15 +115,21 @@ namespace Statecraft.Sim
 
         /// <summary>R-FOOD-002, step 7: the nation eats the turn's need from the stock, as far as the stock goes (it stops at
         /// 0, and the rest is unmet), then the import brings the stock back to cover_months of the need, unless foreign
-        /// currency is exhausted (the fx_crisis situation at the turn's start), when no Food is imported. Under gdd-0.3 with
-        /// an initialized population ledger the need is <see cref="Rations"/> of the ledger's records, checked first
-        /// (<see cref="PopulationLedger.Reconcile"/>) so a bad ledger moves no Food (#2470); otherwise the aggregate head count.</summary>
-        public static void Consume(Content c, GameState s, MvpRules r, List<Cause> why)
+        /// currency is exhausted (the fx_crisis situation at the turn's start), when no Food is imported. The need is the
+        /// aggregate head count; a state with an initialized population ledger is refused here (R-POP-002).</summary>
+        public static void Consume(Content c, GameState s, MvpRules r, List<Cause> why) => Consume(c, s, r, null, why);
+
+        /// <summary>R-FOOD-002 under gdd-0.3 (#2470): with a <paramref name="month"/> context the need is <see cref="Rations"/>
+        /// of the month's frozen opening snapshot (<see cref="Gdd03SyntheticMonthContext.OpeningPeople"/>), not the live
+        /// ledger, so a ledger change before step 7 does not move the month's need. The live ledger is checked first
+        /// (<see cref="PopulationLedger.Reconcile"/>) so a bad ledger moves no Food. Without a month it is the aggregate need.</summary>
+        internal static void Consume(Content c, GameState s, MvpRules r, Gdd03SyntheticMonthContext? month, List<Cause> why)
         {
-            var ledger = c.UsesPopulationLedger && s.PopulationLedger.IsInitialized;
-            if (!ledger) PopulationLedger.RefuseAggregate(s);
+            if (month == null) PopulationLedger.RefuseAggregate(s);
+            else if (!c.UsesPopulationLedger || !s.PopulationLedger.IsInitialized)
+                throw new NotSupportedException("A monthly Food snapshot needs an initialized gdd-0.3 population ledger.");
             else s.PopulationLedger.Reconcile();
-            var need = ledger ? Rations(s.PopulationLedger.Units) : Need(s, r);
+            var need = month != null ? Rations(month.OpeningPeople) : Need(s, r);
             var eaten = Math.Min(need, s.Food);
             s.Food -= eaten;
             s.FoodNeed = need;
