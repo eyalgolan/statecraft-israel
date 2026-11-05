@@ -285,7 +285,7 @@ none crosses the real walled city, but near the city they fall inside the drawn 
   - before that date there is no train and nothing is fetched (the model is asked for when the game date first reaches it);
   - it is a locomotive and tender streamed from The 1948 Collection (`vehicle-steam-locomotive-1948-v2`, H09), the far
     mesh at every zoom, with three coaches built in code as the showcase's are (`TrainModels.Coach`): four articulated
-    cars, 0.4 of the showcase's length. If the model does not stream, there is one warning and no train;
+    cars, together 0.4 of the showcase's locomotive and tender (about 816 m). If the model does not stream, there is one warning and no train;
   - it runs on the real clock, as ambience, not a timetable.
 - **Normal play has no train in 1948**, for two reasons:
   - By the British withdrawal in May 1948, railway operations had effectively ceased. For the rest of 1948, Israel's
@@ -427,12 +427,14 @@ The train is about 1,100 triangles; that figure is counted from the builders, no
 - the Burma Road, hidden at 15 May 1948 and shown from 14 June 1948 (and hidden again for an earlier date);
 - the window bounds;
 - a missing or malformed route file, which gives no routes, a warning and a map that still builds;
-- the train modes: still for `?shot` and editor renders, moving for `?train` and `?units`, the service train from its date in normal play;
+- the train modes: still for `?shot` and editor renders, moving for `?train` and `?units`, the service train in normal play;
 - the still train's place and heading, on the ribbon's own height;
 - the shuttle's motion;
 - the train models;
 - GLES3 for the shader's two passes, and the materials' order;
 - the look at gameplay03.
+
+`ServiceTrainTests` pins the service train: normal play asks for the model only from its date (2 March 1950).
 
 `tools/tests/test_routes_1948.py` checks the data against its sources, the windows (the Burma Road from 1948-06-14), the trace
 quality guards (`on_symbol`, `max_gap_m`), the validator (dates, a boolean `opened`), the tracer's pure parts, and a
