@@ -14,7 +14,8 @@ namespace Statecraft.Sim
 
         /// <summary>Fires every unfired event whose `requires` (if any) is met, whose window [From, To) overlaps the turn just played,
         /// [<paramref name="turnStart"/>, s.Date), or contains s.Date; <paramref name="turnStart"/> defaults to s.Date
-        /// (game start). Every eligible hard anchor fires; MaxSoftEventsPerTurn caps only the non-hard events per turn,
+        /// (game start). A quiet armistice card (R-WAR-008, gdd-0.3) is the exception: it can fire before its From and after its To.
+        /// Every eligible hard anchor fires; MaxSoftEventsPerTurn caps only the non-hard events per turn,
         /// which fill the slots that remain (max(0, cap - hard count)) in the usual order (an early armistice first, R-WAR-008, then consequence cards, R-ALT-008, then From, objective cards last in objectives.yaml's order, R-OBJ-007, then id). Objective and Deport cards take no soft slot. The fired
         /// events keep the usual order. An eligible soft event left out by the cap waits past its window until it can fire.
         /// Late fire: an event whose window overlapped the turn just played can fire after its window has ended; its

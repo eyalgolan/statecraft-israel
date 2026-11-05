@@ -239,7 +239,8 @@ options:
     }
 
     // R-WAR-008 (#2813): the rule gives a refused card's return no end date, so a quiet front brings it back after its `to`
-    // as well. The real cards all end `to: 1950-01-01`; Syria's (from 1949-07-20) refused on 15 December 1949 must still come.
+    // as well. The real cards all end `to: 1950-01-01`; here Jordan's card (from 1949-07-20), refused,
+    // must still come on the 15 February 1950 turn once its front has been quiet for two turns.
     [Fact]
     public void R_EVT_002_ARefusedCardReturnsAfterItsTo()
     {
