@@ -1150,11 +1150,14 @@ namespace Statecraft.Game.UI
             {
                 bool done = outcomes?.SkipAll() == true || outcomes?.ClosedThisFrame == true;
                 if (!done) done = advisor?.CloseOverlay() == true || advisor?.OverlayClosedThisFrame == true;
+                // One press closes one layer, the topmost (#2609): each step below runs only while nothing above took it. The
+                // start screen covers an ended save's end screen and everything else under it: open, it takes the press,
+                // withdrawing an armed New Game or doing nothing.
+                if (!done && start?.IsOpen == true) { start.Escape(); done = true; }
                 if (!done) done = end?.Close() == true || end?.ClosedThisFrame == true;
                 if (!done) done = report?.Close() == true || report?.ClosedThisFrame == true;
-                done |= start?.Escape() == true;
                 // Escape in the Cabinet's candidate list goes back to the seat, not out of the screen (#2340 M2).
-                done |= cabinet?.Escape() == true || nav?.Close() == true;
+                if (!done) done = cabinet?.Escape() == true || nav?.Close() == true;
                 // A screen/card that consumed this Cancel must not also dismiss the map selection in this frame.
                 if (!done && nav?.ClosedThisFrame != true && document.rootVisualElement.focusController?.focusedElement == null
                     && capture?.Escape() != true && card?.Escape() != true && card?.CollapsedThisFrame != true)
