@@ -1260,6 +1260,8 @@ def run_savetest(cfg: Config, job: Path, tag: str) -> int:
         runner = ProcRunner()
         gh, itch = GitHub(runner, cfg.repo_slug, cfg.clone), Itch(runner, cfg.butler, cfg.savetest_itch_target)
     except Refused as e:
+        record(Path(job) / "LOG.md", cfg.handoff,
+               f"SAVETEST INCONCLUSIVE tag={tag} {e.gate}: {e.detail}")
         print(e, file=sys.stderr)
         return 1
     result = savetest(cfg, job / "config.json", job, runner, gh, itch, tag=tag)

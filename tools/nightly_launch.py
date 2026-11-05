@@ -56,6 +56,8 @@ def prepare_clone(cfg: Config, git: Callable[..., str] = _git,
     except subprocess.CalledProcessError as e:
         tail = (e.stderr or "").strip()[-300:]
         raise Refused("clone", f"{' '.join(str(a) for a in e.cmd[:3])} failed: {tail}") from e
+    except OSError as e:
+        raise Refused("clone", f"could not prepare the clone: {type(e).__name__}: {e}") from e
 
 
 def _refuse(cfg: Config, home: Path, e: Refused, now: datetime) -> None:
@@ -95,7 +97,12 @@ def main(argv: list[str] | None = None, *, git: Callable[..., str] = _git,
         except Refused as e:
             _refuse(cfg, a.home, e, now)
             return 1
-    return call([a.uv, "run", str(cfg.clone / "tools" / "nightly.py"), "run"])
+    try:
+        return call([a.uv, "run", str(cfg.clone / "tools" / "nightly.py"), "run"])
+    except OSError as e:
+        refusal = Refused("launch", f"could not start {a.uv}: {type(e).__name__}: {e}")
+        _refuse(cfg, a.home, refusal, now)
+        return 1
 
 
 if __name__ == "__main__":

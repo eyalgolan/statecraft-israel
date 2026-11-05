@@ -1904,6 +1904,14 @@ def test_a_failed_build_without_a_unity_log_says_so(night, env):
     assert "no Unity log" in e.value.detail
 
 
+def test_the_release_runbook_names_each_web_and_package_gate():
+    text = (Path(__file__).resolve().parents[2] / "docs/RELEASING.md").read_text()
+    gates = text.split("The gates, in order.", 1)[1].split("**Size budget.**", 1)[0]
+    for gate in ("build-web-gz", "build-web-pages", "package-gz", "package-pages"):
+        assert f"`{gate}`" in gates
+    assert "`build-web`" not in gates and "`package`" not in gates
+
+
 # --- the clients ----------------------------------------------------------------------------------------------------------
 
 def test_clients_are_a_github_for_the_configured_repo_and_no_itch(env, monkeypatch):
@@ -2319,6 +2327,26 @@ def test_the_savetest_command_refuses_before_any_client_without_a_test_target(tm
     cfg = dataclasses.replace(ns.Config(), butler=butler, handoff=tmp_path / "HANDOFF.md")
     assert nightly.run_savetest(cfg, tmp_path, TAG) == 1
     assert built == [] and "savetest_itch_target" in capsys.readouterr().err
+    assert f"SAVETEST INCONCLUSIVE tag={TAG}" in (tmp_path / "LOG.md").read_text()
+    assert "savetest_itch_target" in (tmp_path / "LOG.md").read_text()
+
+
+@pytest.mark.parametrize("missing,gate", [("gh", "github-client"), ("butler", "itch-client")])
+def test_the_savetest_command_records_a_missing_client(tmp_path, monkeypatch, missing, gate):
+    job = tmp_path / "job"
+    job.mkdir()
+    butler = tmp_path / "butler"
+    if missing != "butler":
+        butler.write_text("")
+    handoff = tmp_path / "HANDOFF.md"
+    (job / "config.json").write_text(json.dumps({"butler": str(butler), "handoff": str(handoff),
+                                                  "savetest_itch_target": TEST_TARGET}))
+    monkeypatch.setattr(nightly, "JOB", job)
+    monkeypatch.setattr(nightly.shutil, "which", lambda name: None if missing == "gh" else "/usr/bin/" + name)
+    assert nightly.main(["savetest", "--tag", TAG]) == 1
+    line = (job / "LOG.md").read_text()
+    assert f"SAVETEST INCONCLUSIVE tag={TAG} {gate}:" in line
+    assert f"SAVETEST INCONCLUSIVE tag={TAG} {gate}:" in handoff.read_text()
 
 
 def test_the_savetest_command_builds_its_itch_client_on_the_test_target(tmp_path, monkeypatch):

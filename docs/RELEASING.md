@@ -226,8 +226,9 @@ The gates, in order. The first one that fails ends the night as REFUSED, and not
    same bar as a release.
 3. The sim tests under `he_IL` and `en_US` (`sim-he_IL`, `sim-en_US`).
 4. The Unity warm-up and the full EditMode run (`editmode`), with at least one test and no failure.
-5. The two WebGL builds, the gzip one and the Pages one (`build-web`), with the nightly version stamped in after the
-   gates; the tree must be clean afterwards, and the stamp is never committed. Then both zips (`package`).
+5. The two WebGL builds, the gzip one (`build-web-gz`) and the Pages one (`build-web-pages`), with the nightly version
+   stamped in after the gates; the tree must be clean afterwards, and the stamp is never committed. Then the gzip
+   zip (`package-gz`) and the Pages zip (`package-pages`).
 6. `web_check.py` on both builds (`web-check`).
 7. Download size (`sizes`): compare the combined total of the data, wasm and framework files with this job's last
    published night (`state.json`'s `last_published`), even if that release is now a draft. On a first night with no
