@@ -159,15 +159,20 @@ public class LastTurnObjectiveCardTests
         Assert.DoesNotContain(deport.Id, s.PendingEvents);
     }
 
-    // R-OBJ-003, R-EVT-001, R-LOOP-004: an objective recorded on the turn before the end whose card the soft-event cap held
-    // back (all objective cards are soft, and a hard card takes a slot) shows on the ending turn: there is no later turn for
-    // it to wait for. Only such cards fire then, uncapped. Fresh content: the test rewrites objectives and events in memory.
+    // R-OBJ-003, R-EVT-001, R-LOOP-004: an objective recorded on the turn before the end whose card has not fired yet shows
+    // on the ending turn: there is no later turn for it to wait for. Only such cards fire then, uncapped. Objective cards take
+    // no soft slot (#2605), so the cap cannot hold one back: here the window does (a `from` the day after that turn's
+    // trigger date), and the other objective cards fire on that turn although a hard card takes a slot. Fresh content: the
+    // test rewrites objectives and events in memory.
     [Fact]
-    public void AnObjectiveCardTheCapHeldBackShowsOnTheEndingTurn()
+    public void AnObjectiveCardNotYetFiredShowsOnTheEndingTurn()
     {
         var c = ContentLoader.Load(RealContentTests.ContentRoot());
         var twoBefore = BeforeTheEnd(c, turnsBefore: 2);
         twoBefore.PendingEvents.Clear();
+        // The turn before the end triggers its events on this date (Simulation.Step moves the date, then triggers).
+        var penultimateDate = Simulation.Step(c, twoBefore, Array.Empty<Command>()).State.Date;
+        Assert.True(c.Objectives.Count >= 3, "precondition: at least three objectives, so two can be held back and one fire");
 
         var cards = new List<GameEvent>();
         foreach (var objective in c.Objectives)
@@ -179,7 +184,8 @@ public class LastTurnObjectiveCardTests
             };
             twoBefore.Objectives.Remove(objective.Id);
             var card = c.Events.Single(e => e.Id == objective.Card);
-            card.From = twoBefore.Date;
+            // The first two objectives' cards open the day after the turn before the end triggers; the rest open now.
+            card.From = cards.Count < 2 ? penultimateDate.AddDays(1) : twoBefore.Date;
             card.To = null;
             card.Anchor = "soft";
             card.Requires.Clear();
@@ -202,7 +208,9 @@ public class LastTurnObjectiveCardTests
         Assert.Contains("fixture_penultimate_hard", penultimate.FiredEvents);
         Assert.All(c.Objectives, objective => Assert.Equal(penultimate.Date, penultimate.Objectives[objective.Id]));
         var heldBack = cards.Where(card => !penultimate.FiredEvents.Contains(card.Id)).Select(card => card.Id).ToArray();
-        Assert.True(heldBack.Length >= 2, "precondition: the cap held back at least two objective cards on the turn before the end");
+        Assert.Equal(cards.Take(2).Select(card => card.Id).OrderBy(id => id, StringComparer.Ordinal),
+            heldBack.OrderBy(id => id, StringComparer.Ordinal));
+        Assert.Empty(penultimate.CappedEvents.Intersect(cards.Select(card => card.Id)));
 
         // An event open on the last turn that nothing else holds back, made unfired so it would be eligible then.
         var other = c.Events.First(e => e.Objective == "" && e.Site == "" && e.Prisoners == "" && e.Deported == ""
