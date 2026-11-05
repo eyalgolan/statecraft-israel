@@ -148,7 +148,11 @@ separate call, made where a language is adopted.
   are not languages, and hidden names (`.DS_Store`) are ignored.
 - **The checks:** each language is parsed, must name itself (`CheckDeclaredLanguage`), may not translate the advisors or
   How to play unless it is Hebrew, translates only events that exist (an event a ruleset leaves out counts) and every
-  option of each, and keys only fields that `Fields` offers. A read failure is reported with its file.
+  option of each, and keys only fields that `Fields` offers. A read failure is reported with its file. Where the content
+  is a checkout's (`unity/Assets/UI/strings.en.yaml` beside the content folder: the editor, the CLI, the tests and
+  `ContentSync`'s load of the source before every player build), a `ui.yaml` other than Hebrew may key only strings that
+  `strings.en.yaml` has, each with the English one's placeholders, the rule `tools/translate.py` applies to an editor
+  save (#2598). A player has no English table beside its copy, so the build is where it is caught.
 - **A stale translation:** when an event or a record changes so that a translation no longer matches it, the load is
   refused (owner, 1 November 2026: "Refuse + say how to fix (Recommended)"), so nothing stale ships. The error says how to
   unblock without a translator: update the entry, or delete it from the language's file, and that text shows in English.

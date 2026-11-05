@@ -615,6 +615,11 @@ namespace Statecraft.Sim
                 var path = Path.Combine(translationsRoot!, rel);   // only called for a file Collect found there
                 return File.Exists(path) ? File.ReadAllText(path) : null;
             }, TranslationLoader.Collect(translationsRoot));
+            // #2598: a checkout has the English UI table beside its content, so the editor, the CLI, the tests and ContentSync's
+            // load of the source before every player build hold each ui.yaml to it. A player has none beside its copy.
+            if (content.Translations.Any(t => t.Lang != Translations.Hebrew && t.Ui.Count > 0)
+                && TranslationLoader.EnglishUi(contentRoot) is string english)
+                TranslationLoader.CheckUiAgainstEnglish(content.Translations, english);
             // Only this overload can list the directory. The readFile overload (WebGL) cannot, so a misnamed file is caught
             // here and by RealContentTests before anything ships.
             var rulesDir = Path.Combine(contentRoot, "rules");
