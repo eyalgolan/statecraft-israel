@@ -38,7 +38,7 @@ schema too, or that test fails. Keep the comment when you copy a file.
 | `office` | no | The office id of the minister the event goes to when the player does not answer it. |
 | `from` | yes | First day of the window, `YYYY-MM-DD`. |
 | `to` | no | Day the window ends (exclusive). Must be after `from`. Leave it out for an open window. |
-| `order` | no (default `0`) | A whole number. Among the cards that fire on the same turn with the same `from`, a lower `order` comes first, then the id (R-EVT-006). Leave it out unless one card must come after another: `degania_defence` has `order: 1`, so One Army opens the game (owner, 24 October 2026, #1568). |
+| `order` | no (default `0`) | A whole number. Cards that fire on the same turn come in this order: an early armistice card, then the consequence cards, then `from`, then the card's objective by its position in `objectives.yaml` (cards with no objective first), then `order` (a lower one first), then the id (R-EVT-006; `EventSystem.Trigger`). Leave it out unless one card must come after another: `degania_defence` has `order: 1`, so One Army opens the game (owner, 24 October 2026, #1568). |
 | `conditions` | no | Indicator bounds that must hold when it fires. See below. |
 | `kind` | no (default `historical`) | `consequence` for a card that exists only on a road not taken; `reconvergence` for an outside event with course-specific text. See below. |
 | `requires` | no | Fires only after every listed requirement holds. See below. |
@@ -203,7 +203,7 @@ tags: [displacement]
 Deport's follow-up card for a settlement target (`settlement_targets.yaml`, GDD Phase 6 PR 9, #801). It fires only once
 the player's Deport has depopulated that place, at the event step of that turn, and never after Raid or Occupy
 (R-EVT-007). It takes no soft slot, so a full turn does not delay it; a Deport on the turn that ends the game raises no
-card, since no event fires then, so the end screen shows that card instead (owner, 2 November 2026, #2197). The loader refuses a card whose target is unknown or whose residents fled (Deport is
+card, since on that turn only the unfired cards of recorded objectives fire (`endingTurn`), and a Deport card is not one, so the end screen shows that card instead (owner, 2 November 2026, #2197). The loader refuses a card whose target is unknown or whose residents fled (Deport is
 refused there, so the card could never fire), one without the `displacement` tag, one with more than one option, and
 one with `to` or `prisoners`, one that is not `soft` or opens after the game's start, one with `conditions`,
 `requires`, `site`, `objective`, another `kind` or `variants`, and a second card for the same place. Leave out `to`. Left unanswered, it resolves to its one option without a draw. State the in-game consequence and one sourced line of the place's history
@@ -296,11 +296,12 @@ use `set_policy` for those.
 
 ### grant_units and city_effects
 
-These act on the GDD records, so only content whose `eras.yaml` sets `systems.loop: gdd` may use them. They apply after
+These act on the GDD records, so only content whose `eras.yaml` sets `systems.loop: gdd` may use them. Under gdd-0.3 the
+loader refuses `grant_units`, `city_effects` and `unlock_projects` altogether. They apply after
 `effects`: grants, then city effects, then project unlocks, each list in its own order (R-EFX-006).
 
-- `grant_units: [{ type: halutz, n: 2, at: tel_aviv }]` adds `n` units of a `unit_types.yaml` type of kind `unit`. A
-  grant is free: put what the deal cost in `effects`. Leave out `at` and the units stand at the city with the military
+- `grant_units: [{ type: halutz, n: 2, at: tel_aviv }]` adds `n` units of a `unit_types.yaml` type of kind `unit` whose `side` is empty (the loader refuses a type with a
+  `side` and says to use recruit training instead). A grant is free: put what the deal cost in `effects`. Leave out `at` and the units stand at the city with the military
   camp; set it to a `cities.yaml` id to place them there (R-EFX-003). A `sites.yaml` id is refused until sites carry a
   date, because a target must exist on the event's date (R-EFX-006).
 - `city_effects: [{ city: haifa, field: housing_capacity, delta: 5 }]` changes one city's `housing_capacity` or
@@ -318,9 +319,9 @@ An event with a sensitive tag may carry no grant, no positive `city_effects` del
 
 - `unit_orders: [{ unit: golani, q: -7, r: 24 }]` gives the unit of a `map/units_1948.yaml` row a go-to order toward
   hex (`q`, `r`) when the option is chosen or delegated (R-ENEMY-005). The hex must be one of that row's own anchor
-  hexes in `map/unit_anchor_hexes.yaml`, so a card never sends a unit where no source puts it; cite the anchor's line in
+  hexes or order targets (`order_targets` in `map/units_1948.yaml`, hexes in `map/unit_anchor_hexes.yaml`), so a card never sends a unit where no source puts it; cite the anchor's line in
   a comment. The order goes through the player's own go-to: one the player could not give changes nothing, and the
-  player is told so. The order ends on the anchor's `to` date (the loader refuses an anchor with none), and its march
+  player is told so. The order ends on the `to` date of the anchor, or of the order target (the loader refuses a hex with none), and its march
   goes round every enemy-held place but its hex.
 - It applies under gdd-0.1 only. Under gdd-0.3 the loader still checks it and the unit gets no order; the legacy loop
   ignores it.
@@ -343,7 +344,8 @@ One of `draft`, `fact-checked`, `historian-reviewed`, `sensitivity-reviewed`; an
 
 - `draft`: a work in progress. A pull request for `content/` should not stay at this.
 - `fact-checked`: a person checked every claim against its sources. This is what you submit. The content tests
-  require `fact-checked` on every non-sensitive event in `content/`.
+  require `fact-checked` on every non-sensitive event in `content/`, except three that stay `draft` by name:
+  `first_new_yishuv`, `jerusalem_demilitarisation_guard` and `rafah_force_pressure`.
 - `historian-reviewed`: planned for M4, not a gate yet. How a review is done and recorded until then:
   [HISTORIAN_REVIEW.md](HISTORIAN_REVIEW.md).
 - `sensitivity-reviewed`: set by the maintainer for events with a sensitive tag (see above).
