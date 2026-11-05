@@ -331,7 +331,7 @@ namespace Statecraft.Game.UI
             float left = meters.Min(m => m.worldBound.xMin), right = meters.Max(m => m.worldBound.xMax);
             var rtl = UiLanguage.Within(bar);
             var limit = rtl ? nav.worldBound.xMax : nav.worldBound.xMin;
-            if (!oneRow || float.IsNaN(left) || float.IsNaN(limit)) { bar.RemoveFromClassList(RoomyClass); return; }
+            if (!oneRow || float.IsNaN(left) || float.IsNaN(right) || float.IsNaN(limit)) { bar.RemoveFromClassList(RoomyClass); return; }
             var used = right - left; var spare = rtl ? left - limit : limit - right;
             if (bar.ClassListContains(RoomyClass))
             {
