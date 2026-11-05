@@ -235,6 +235,45 @@ public class CabinetScreenTests
     }
 
     [Test]
+    public void AQueuedChiefOfStaffAppointmentDisablesThatPersonsMinisterButton()
+    {
+        // Red-first prediction at ae4bfdaab: the button stays enabled because the candidate list ignores queued appointments.
+        using var ui = Shown();
+        var bridge = In1950();
+        using var cabinet = new CabinetPresenter(ui.Root, bridge, Text, null);
+        Assert.IsNull(bridge.Queue(new Appoint("chief_of_staff", "maklef")));
+
+        cabinet.Select("finance_minister");
+
+        Assert.IsFalse(ui.Q<Button>("appoint-maklef").enabledSelf);
+        var preview = Simulation.Preview(C, bridge.TurnStart, bridge.Session.Committed.Concat(bridge.Queued).ToList());
+        Assert.AreEqual(Cabinet.Check(C, preview.State, "finance_minister", "maklef"), ui.Q<Label>("cand-maklef-reason").text);
+    }
+
+    [Test]
+    public void ReplacingAChiefOfStaffOrderCannotNewlyBreakALaterAppointment()
+    {
+        // Red-first prediction at ae4bfdaab: the button stays enabled because the replacement's effect on the later order is ignored.
+        using var ui = Shown();
+        var bridge = In1950();
+        using var cabinet = new CabinetPresenter(ui.Root, bridge, Text, null);
+        Assert.IsNull(bridge.Queue(new Appoint("chief_of_staff", "dayan")));
+        Assert.IsNull(bridge.Queue(new Appoint("finance_minister", "maklef")));
+        var later = bridge.Queued[1];
+        var current = Simulation.Preview(C, bridge.TurnStart, bridge.Session.Committed.Concat(bridge.Queued).ToList());
+        Assert.IsFalse(current.Rejected.Any(x => ReferenceEquals(x.Command, later)), "the current queue accepts the later appointment");
+
+        cabinet.Select("chief_of_staff");
+
+        Assert.IsFalse(ui.Q<Button>("appoint-maklef").enabledSelf);
+        var replacement = new Appoint("chief_of_staff", "maklef");
+        var hypothetical = Simulation.Preview(C, bridge.TurnStart,
+            bridge.Session.Committed.Concat(new Command[] { replacement, later }).ToList());
+        var rejection = hypothetical.Rejected.Single(x => ReferenceEquals(x.Command, later));
+        Assert.AreEqual(rejection.Reason, ui.Q<Label>("cand-maklef-reason").text);
+    }
+
+    [Test]
     public void SelectingNothingClosesTheListAndADisposedScreenHearsNothing()
     {
         using var ui = Shown();
