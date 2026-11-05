@@ -39,6 +39,9 @@ namespace Statecraft.Sim
         /// <summary>R-ARMS-002's refusal at the debt ceiling (#2198); SimBridge.ReasonKeys gives it the UI's words.</summary>
         public const string RefusedDebtCeiling = "Buying that many Arms would take the debt past its ceiling";
 
+        /// <summary>R-ARMS-002's refusal when a purchase would overflow the Arms stock.</summary>
+        public const string RefusedStockCapacity = "That is more Arms than the stock can hold";
+
         /// <summary>R-ARMS-002 (D-G6): <paramref name="count"/> Arms join the stock at once, and the Treasury pays
         /// count * arms_price, borrowing what it lacks (R-MONEY-003). Refused, state untouched, for fewer than one unit, a
         /// stock that would pass a whole number's range, or borrowing that would take the debt past mvp.debt_ceiling (#2198,
@@ -49,7 +52,7 @@ namespace Statecraft.Sim
         {
             PopulationLedger.RefuseAggregate(s);
             if (count < 1) return "Buy at least 1 Arms";
-            if ((long)s.Arms + count > int.MaxValue) return "That is more Arms than the stock can hold";
+            if ((long)s.Arms + count > int.MaxValue) return RefusedStockCapacity;
             if (BorrowsPastDebtCeiling(c, s, count)) return RefusedDebtCeiling;
             var cost = count * c.RulesAt(s.Date).Mvp!.ArmsPrice!.Value;
             EconomySystem.PayOrBorrow(c, s, cost, "for Arms", why, CauseKeys.Purpose.Arms);
@@ -68,19 +71,23 @@ namespace Statecraft.Sim
             return left < 0 && s.Debt - left > r.DebtCeiling!.Value;   // the loader requires both in the GDD loop
         }
 
-        /// <summary>#2206: whether End turn would refuse <paramref name="count"/> Arms for the ceiling (BuyArms, the check above)
-        /// if it ran <paramref name="orders"/>, the turn's orders, from <paramref name="turnStart"/>, after Buy queued them: the
-        /// purchase takes a queued purchase's slot, else goes last (SimBridge.Queue). The orders run on a copy through
-        /// Simulation.Preview, End turn's own order phase (RunOrders: conversions before the purchase, Attention, refusals),
-        /// so everything queued before the purchase counts as End turn counts it. The Defence screen's warning.</summary>
-        public static bool BorrowsPastDebtCeiling(Content c, GameState turnStart, IReadOnlyList<Command> orders, int count)
+        /// <summary>Returns the reason End turn would refuse <paramref name="count"/> Arms if it ran
+        /// <paramref name="orders"/>, the turn's orders, from <paramref name="turnStart"/>, after Buy queued them. The purchase
+        /// takes a queued purchase's slot, else goes last (SimBridge.Queue). The orders run on a copy through Simulation.Preview,
+        /// End turn's own order phase (RunOrders: conversions before the purchase, Attention, refusals), so everything queued
+        /// before the purchase counts as End turn counts it. The Defence screen's warning and press guard.</summary>
+        public static string? BuyArmsRefusal(Content c, GameState turnStart, IReadOnlyList<Command> orders, int count)
         {
             var buy = new BuyArms(count);
             var batch = orders.ToList();
             var slot = batch.FindIndex(x => x is BuyArms);
             if (slot >= 0) batch[slot] = buy; else batch.Add(buy);
-            return Simulation.Preview(c, turnStart, batch).Rejected.Any(r => ReferenceEquals(r.Command, buy) && r.Reason == RefusedDebtCeiling);
+            return Simulation.Preview(c, turnStart, batch).Rejected.FirstOrDefault(r => ReferenceEquals(r.Command, buy))?.Reason;
         }
+
+        /// <summary>#2206: whether End turn would refuse the replacement Arms purchase for the debt ceiling.</summary>
+        public static bool BorrowsPastDebtCeiling(Content c, GameState turnStart, IReadOnlyList<Command> orders, int count)
+            => BuyArmsRefusal(c, turnStart, orders, count) == RefusedDebtCeiling;
 
         /// <summary>The nation's need for one turn: its head count in population units, rounded half away from zero.</summary>
         static int Need(GameState s, MvpRules r) => (int)Math.Round(s.TotalPopulation / r.PeoplePerUnit, MidpointRounding.AwayFromZero);
@@ -113,14 +120,23 @@ namespace Statecraft.Sim
             s.FoodNeed = need;
             s.FoodUnmet = need - eaten;
             if (s.FoodUnmet > 0)
-                why.Add(new Cause("economy", "food", -s.FoodUnmet, FormattableString.Invariant($"Food ran out: {s.FoodUnmet} of {need} units of the month's need went unmet"), key: CauseKeys.FoodShortage, args: new[] { CauseKeys.Number(need) }));
+                // #2527 review: informational - the unmet count lives in the line and its args, not the delta, so the Food
+                // row's lines add up to the stock's change on a turn that starts below the need.
+                why.Add(new Cause("economy", "food", 0, FormattableString.Invariant($"Food ran out: {s.FoodUnmet} of {need} units of the month's need went unmet"), key: CauseKeys.FoodShortage, args: new[] { CauseKeys.Number(s.FoodUnmet), CauseKeys.Number(need) }));
             if (s.ActiveSituations.Contains(EconomySystem.FxCrisis))
             {
                 why.Add(new Cause("economy", "food", -eaten, FormattableString.Invariant($"No Food imported (foreign currency crisis): the stock fell to {s.Food} units"), key: CauseKeys.FoodWithoutImports, args: new[] { CauseKeys.Number(s.Food) }));
                 return;
             }
             var target = (long)r.CoverMonths!.Value * need;
-            if (s.Food < target) s.Food = (int)target;
+            if (s.Food < target)
+            {
+                var before = s.Food + eaten;    // the stock on entry: the line nets the eating and the import, so the Food row's lines add up to its change (#2527)
+                s.Food = (int)target;
+                var net = s.Food - before;
+                if (net != 0)
+                    why.Add(new Cause("economy", "food", net, FormattableString.Invariant($"The month's eating and Food imports brought the stock to {s.Food} units"), key: CauseKeys.FoodImported, args: new[] { CauseKeys.Number(s.Food) }));
+            }
         }
 
         /// <summary>R-FOOD-003: food_supply's stock term, k_food * (stock - full) / full - unmet / need, where full is

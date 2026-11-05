@@ -7,8 +7,8 @@ namespace Statecraft.Game.UI
 {
     /// <summary>PageUp, PageDown, Home and End scroll the open screen, or the open decision card's text, from the keyboard
     /// (accessibility audit H3, #41). The Why list, the event text and the Defence body hold labels only, so Tab never
-    /// reaches into them, and the arrows pan the camera and never move focus (NavigationGuard, ruling B6). GameRoot polls
-    /// the keys beside its Escape poll, so they work with or without focus.</summary>
+    /// reaches into them, and the arrows pan the camera (NavigationGuard, ruling B6; Up and Down reach only an open screen's
+    /// controls, audit L4). GameRoot polls the keys beside its Escape poll, so they work with or without focus.</summary>
     public static class KeyScroll
     {
         public enum Key { PageUp, PageDown, Home, End }

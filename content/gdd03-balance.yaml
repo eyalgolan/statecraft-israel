@@ -121,7 +121,7 @@
     "values": [72]
   "start.housing_condition":
     "basis": "Agreed"
-    "note": "Population and starting state: unitless housing condition fraction, one start for every city. Owner, 1 November 2026, 27M-16: \"0.35, your 15 Oct value (Recommended)\"; main's mvp.housing_start_condition (R-HOUSE-001). Replaces the Default 70 percentage points per region. Source: #1668 balance.md at 605277df."
+    "note": "Population and starting state: unitless housing condition fraction, one start for every city. Documentation only; the current simulation reads rules.yaml mvp.housing_start_condition (R-HOUSE-001). Owner, 1 November 2026, 27M-16: \"0.35, your 15 Oct value (Recommended)\". Replaces the Default 70 percentage points per region. Source: #1668 balance.md at 605277df."
     "values": [0.35]
   "start.food_production":
     "basis": "Default"
@@ -133,7 +133,7 @@
     "values": [65]
   "population.food_per_turn":
     "basis": "Agreed"
-    "note": "Work, professions and training: Food per own population unit, every status; Agreed. Source: #1668 balance.md at 605277df."
+    "note": "Work, professions and training: Food per own population unit, every status; Agreed. Documentation only; the current simulation derives one turn's need from population divided by rules.yaml mvp.people_per_unit instead of reading this row. Source: #1668 balance.md at 605277df."
     "values": [1]
   "industry.income":
     "basis": "Agreed"
@@ -266,11 +266,11 @@
         "note": "Per-turn, non-stacking cadence Default; post-MVP like its row."
   "food.shortage_cohesion_max":
     "basis": "Agreed"
-    "note": "Reception, housing and shortages: national points per turn multiplied by unmet share; Agreed. Source: #1668 balance.md at 605277df."
+    "note": "Reception, housing and shortages: national points per turn multiplied by unmet share; Agreed. Documentation only; undecided (docs/gdd/balance.md). The current simulation's food_supply calculation reads rules.yaml mvp.k_food and the unmet share, with no matching maximum. Source: #1668 balance.md at 605277df."
     "values": [10]
   "food.shortage_combat_slope":
     "basis": "Agreed"
-    "note": "Reception, housing and shortages: next-turn own strength reduction multiplied by unmet share; Agreed. Source: #1668 balance.md at 605277df."
+    "note": "Reception, housing and shortages: next-turn own strength reduction multiplied by unmet share; Agreed. Documentation only; undecided (docs/gdd/balance.md). The current simulation has no shortage-to-combat-strength term. Source: #1668 balance.md at 605277df."
     "values": [1]
   "import.arms_price":
     "basis": "Agreed"
@@ -342,7 +342,7 @@
     "values": [0]
   "military.combat_arms":
     "basis": "Agreed"
-    "note": "Military and control: additional Arms for equipped unit / Arms per attack or artillery firing; Agreed. Source: #1668 balance.md at 605277df. owner ruling, 25 Oct 2026, on #1668; no Arms per attack/artillery fire (#1706 implementation separate)."
+    "note": "Military and control: additional Arms for equipped unit / Arms per attack or artillery firing; Agreed. Documentation only; gdd-0.3 spends no Arms on attacks or artillery fire. In older rules, the player's non-artillery attacks read rules.yaml mvp.arms_per_attack and the player's artillery reads the unit type's arms_per_fire; enemy attacks spend no Arms. Source: #1668 balance.md at 605277df. owner ruling, 25 Oct 2026, on #1668; no Arms per attack/artillery fire (#1706 implementation separate)."
     "values": [0]
   "military.training_money":
     "basis": "Agreed"
@@ -354,7 +354,7 @@
     "values": [0.05]
   "military.strength":
     "basis": "Agreed"
-    "note": "Military and control: strength units: untrained / trained / veteran; Agreed. Source: #1668 balance.md at 605277df."
+    "note": "Military and control: strength units: untrained / trained / veteran; Agreed. Documentation only; undecided (docs/gdd/balance.md). Combat currently reads each unit's stored Strength, with no matching MVP scalar. Source: #1668 balance.md at 605277df."
     "values": [1, 2, 3]
   "military.combat_xp_gain":
     "basis": "Agreed"
@@ -366,7 +366,7 @@
     "values": [5]
   "military.refugee_multiplier":
     "basis": "Agreed"
-    "note": "Military and control: unitless strength multiplier until reception complete; Agreed. Source: #1668 balance.md at 605277df."
+    "note": "Military and control: unitless strength multiplier until reception complete; Agreed. Documentation only; undecided (docs/gdd/balance.md). The current simulation applies no refugee strength multiplier. Source: #1668 balance.md at 605277df."
     "values": [0.75]
   "military.fort_bonus":
     "basis": "Default"
@@ -438,11 +438,11 @@
     "values": [0]
   "prisoner.food":
     "basis": "Default"
-    "note": "Military and control: Food per held enemy combatant cohort per turn / points per returned cohort; Default; return-only scoring retained. Source: #1668 balance.md at 605277df."
+    "note": "Military and control: Food per held enemy combatant cohort per turn / points per returned cohort; Default; return-only scoring retained. Documentation only; the current simulation reads rules.yaml mvp.food_per_prisoner_unit. Source: #1668 balance.md at 605277df."
     "values": [1]
   "prisoner.return_points":
     "basis": "Agreed"
-    "note": "Military and control: points per returned enemy population unit; return-only scoring retained. Owner, 1 November 2026, O7: \"10 per unit, main (Recommended)\"; main's R-POW-004 value, not Amir's 5 a cohort. Source: #1668 balance.md at 605277df."
+    "note": "Military and control: points per returned enemy population unit; return-only scoring retained. Documentation only; the current simulation reads rules.yaml mvp.points_per_prisoner_unit_returned. Owner, 1 November 2026, O7: \"10 per unit, main (Recommended)\"; main's R-POW-004 value, not Amir's 5 a cohort. Source: #1668 balance.md at 605277df."
     "values": [10]
   "combat.draw_count":
     "basis": "Agreed"
@@ -499,15 +499,15 @@
     "values": [1]
   "objective.base_points":
     "basis": "Agreed"
-    "note": "Objectives: points per completed core objective group; Retained approved baseline. Source: #1668 balance.md at 605277df."
+    "note": "Objectives: points per completed core objective group; Retained approved baseline. Documentation only; the current simulation reads rules.yaml mvp.objective_points. Source: #1668 balance.md at 605277df."
     "values": [100]
   "objective.early_per_month":
     "basis": "Agreed"
-    "note": "Objectives: points per calendar month early / maximum per dated group or part; Retained approved baseline. Source: #1668 balance.md at 605277df."
+    "note": "Objectives: points per calendar month early / maximum per dated group or part; Retained approved baseline. Documentation only; the current simulation reads rules.yaml mvp.objective_bonus_per_month. Source: #1668 balance.md at 605277df."
     "values": [5]
   "objective.early_cap":
     "basis": "Agreed"
-    "note": "Objectives: points per calendar month early / maximum per dated group or part; Retained approved baseline. Source: #1668 balance.md at 605277df."
+    "note": "Objectives: points per calendar month early / maximum per dated group or part; Retained approved baseline. Documentation only; the current simulation reads rules.yaml mvp.objective_bonus_cap. Source: #1668 balance.md at 605277df."
     "values": [60]
   "absorption.population_target":
     "basis": "Agreed"

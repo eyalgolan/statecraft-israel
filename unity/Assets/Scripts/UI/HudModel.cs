@@ -53,9 +53,10 @@ namespace Statecraft.Game.UI
             _ => throw new ArgumentOutOfRangeException(nameof(id), id, "not a top-bar meter"),
         };
 
-        /// <summary>The main causes of a meter's change in <paramref name="turn"/> (#1037): the sim's own causes
-        /// (StepResult.Why) for the quantity the meter shows, each worded by <paramref name="line"/> (CauseText.Line: the
-        /// player's language, B1), the largest change first (each meter's causes share its unit),
+        /// <summary>The main causes behind a meter in <paramref name="turn"/> (#1037): the sim's own causes
+        /// (StepResult.Why) for the quantity the meter shows. Immigration's causes are this turn's arrivals, not causes of
+        /// the difference from the preceding turn. Each is worded by <paramref name="line"/> (CauseText.Line: the player's
+        /// language, B1), the largest change first (each meter's causes share its unit),
         /// the sim's order breaking a tie, at most <see cref="MaxCauses"/>. Nothing is computed or reworded here: a cause is
         /// matched by its target, as <see cref="From"/> reads the state (Money: the sim's EconomySystem.MovesMoney, the lines
         /// that add up to the change in Treasury minus Debt, job income included and borrowing not, #2199; Immigration: the

@@ -59,6 +59,16 @@ public class ScenarioTests
     }
 
     [Fact]
+    public void InstantCommandsRunBeforeDeferredCommandsAsInLivePlay()
+    {
+        var sc = Scenario.Parse(Head
+            + "      - { kind: set_policy, policy: no_such_policy, level: 1.0 }\n"
+            + "      - { kind: move, unit: 999, q: 0, r: 0 }\n");
+        var e = Assert.Throws<InvalidOperationException>(() => sc.Play(C));
+        Assert.Contains("rejected move", e.Message);
+    }
+
+    [Fact]
     public void AStepAfterTheRunEndsFailsInsteadOfBeingSkipped()
     {
         var sc = Scenario.Parse("name: t\nuntil: 1948-06-01\nsteps:\n  - on: 1949-01-01\n    commands:\n      - { kind: set_mobilization, level: 0.5 }\n");

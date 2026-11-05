@@ -3,13 +3,19 @@ using Statecraft.Sim;
 
 /// <summary>
 /// The fixture is a real gdd-0.1 save written by v0.3.4, from a game in which no operation card ever fires, so the
-/// operation cards' unit orders (#2087) cannot change its replay. Replay drift under gdd-0.1 means a v0.3.4 player's save
-/// no longer loads identically; that is a release blocker, not a fixture to regenerate.
+/// operation cards' unit orders (#2087) cannot change its replay. It runs to 15 September 1948, past the Syrian army's
+/// 15 July 1948 step onto its bridgehead anchor (#1270, S1), so it replays differently by design (owner, 4 Nov 2026, on
+/// #2180) and loads with replay_differs. Any other replay change still needs an owner decision, not a fixture to
+/// regenerate.
 /// </summary>
 public class OldSaveNoOperationCardsTests
 {
+    // GameState.Hash() of this save's replay after S1 (the Syrian army's 15 July 1948 step, #1270), reviewed and accepted by
+    // the owner's 4 Nov 2026 ruling "(a) Accept replay differs (Recommended)" on #2180.
+    private const string AcceptedReplayHashAfterS1 = "bec1464e1a0811554f8958e8d5a601807d887d3f18b6c88e90914292bc88a89d";
+
     [Fact]
-    public void V034Gdd01SaveWithNoOperationCardStillLoadsIdentically()
+    public void V034Gdd01SaveWithNoOperationCardLoadsAndReportsReplayDiffers()
     {
         var content = ContentLoader.Load(RealContentTests.ContentRoot());
         var repo = Directory.GetParent(RealContentTests.ContentRoot())!.FullName;
@@ -42,10 +48,18 @@ public class OldSaveNoOperationCardsTests
         // v0.3.4 players' saves no longer replay identically: they load with replay_differs (GameSession.Load). That needs an
         // owner decision, not a fixture update or deleting this test. The operation cards' unit orders (#2087) were such a
         // decision for saves that reach those cards; this save never does, so it must still replay identically.
-        Assert.Equal(saved.FinalHash, loaded.State.Hash());
+        // Then changed (4 Nov 2026, #2180, #1270; the lines above are the maintainers', unchanged): the Syrian script's S1
+        // anchor (from 8 July 1948) steps the Syrian army onto it on the 15 July 1948 turn, inside this game. Asked whether
+        // v0.3.4 gdd-0.1 saves reaching that day may replay differently, the owner chose "(a) Accept replay differs
+        // (Recommended)"; the chosen option read: "as for #2087's cards on 3 November, old saves load with the content and
+        // replay-changed notice, and the test is updated". So this save still loads, keeps its open order and warns
+        // content_changed plus replay_differs, nothing else.
+        // The accepted replay is pinned exactly: any further drift changes this hash and needs its own owner decision.
+        // Re-pin only for a reviewed change, with the ruling that accepts it.
+        Assert.Equal(AcceptedReplayHashAfterS1, loaded.State.Hash());
         var order = Assert.IsType<UnitOrder>(Assert.Single(loaded.Committed));
         Assert.Equal((3, Orders.Fortify), (order.Unit, order.Order));
 
-        Assert.Equal(new[] { GameSession.ContentChanged }, warnings);
+        Assert.Equal(new[] { GameSession.ContentChanged, GameSession.ReplayDiffers }, warnings);
     }
 }

@@ -35,18 +35,42 @@ public static class RouteCapture
         EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
         var map = MapCapture.RequireMapScene(); map.Build();
         var rig = Camera.main.GetComponent<CameraRig>();
-        int saved = QualitySettings.GetQualityLevel();
-        try
+        WithCaptureSettings(() =>
         {
-            QualitySettings.SetQualityLevel(0, true);
-            if (System.Linq.Enumerable.Contains(VisualToggles.Names, "tiltshift")) VisualToggles.Set("tiltshift", false);
             foreach (var v in Views)
             {
                 rig.LookAt = map.Frame.ToWorld(v.lon, v.lat, 0); rig.Distance = v.distance; rig.Yaw = v.yaw; rig.TopInset = 0; rig.Apply();
                 Save(Camera.main, 1920, 1080, Path.Combine(dir, $"routes-{v.name}.png"));
             }
+        });
+    }
+
+    /// <summary>Runs a route capture at the Web quality tier with tilt-shift off, then restores both incoming settings.</summary>
+    static void WithCaptureSettings(System.Action capture)
+    {
+        int savedQuality = QualitySettings.GetQualityLevel();
+        bool hasTiltShift = System.Linq.Enumerable.Contains(VisualToggles.Names, "tiltshift");
+        bool savedTiltShift = TiltShift.Enabled;
+        try
+        {
+            QualitySettings.SetQualityLevel(0, true);
+            if (hasTiltShift) VisualToggles.Set("tiltshift", false);
+            capture();
         }
-        finally { VisualToggles.SetAll(true); QualitySettings.SetQualityLevel(saved, true); }
+        finally
+        {
+            try
+            {
+                if (hasTiltShift)
+                {
+                    if (System.Linq.Enumerable.Contains(VisualToggles.Names, "tiltshift"))
+                        VisualToggles.Set("tiltshift", savedTiltShift);
+                    else
+                        TiltShift.Enabled = savedTiltShift;
+                }
+            }
+            finally { QualitySettings.SetQualityLevel(savedQuality, true); }
+        }
     }
 
     static void Save(Camera cam, int w, int h, string path)

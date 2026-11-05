@@ -56,7 +56,15 @@ public class FoodArmsReviewTests
             .OrderByDescending(w => Math.Abs(w.Delta)).Take(HudModel.MaxCauses)
             .Select(w => CauseText.Line(w, b.Content, Array.Empty<Statecraft.Game.Map.Units.UnitEntry>(), t)).ToArray();
         if (crisis) { Assert.IsNotEmpty(expected); StringAssert.Contains("No Food imported", b.Session.Last.Why.Single(w => w.Target == Pools.FoodTarget && w.Message.Contains("No Food imported")).Message); }
-        else Assert.IsEmpty(expected, "do not invent causes for normal automatic imports");
+        else
+        {
+            // #2527/#2529 (R-FOOD-002): the sim's own import line is the one cause of a normal month and carries the whole real
+            // change; the UI still invents none (#1790): the rows below must equal the sim's lines exactly.
+            var food = b.Session.Last.Why.Where(w => w.Target == Pools.FoodTarget && w.Delta != 0).ToList();
+            Assert.AreEqual(1, food.Count, "only the sim's import line explains a normal month");
+            Assert.AreEqual(CauseKeys.FoodImported, food[0].Key);
+            Assert.AreEqual((double)delta, food[0].Delta, "the import line nets the eating and the top-up into the stock's change");
+        }
         using var why = new WhyPresenter(ui.Root, b, t);
         StringAssert.Contains(t.Format("hud.stock", b.State.Food), ui.Q<Label>("why-stock-food").text);
         var row = TurnReportPresenter.Lines(b, t).Single(x => x.Meter == "food");

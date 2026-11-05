@@ -109,34 +109,81 @@ namespace Statecraft.Game.Map.Collection
             // The flag over the tail, its lower edge FlagClearM over the top of the aircraft's box at this bank: clear of the
             // airframe at every bank and heading.
             if (flag != null) flag.position = drawn - forward * half.x + Vector3.up * (TopOver(half, bank) + FlagClearM + flagHalf * flag.lossyScale.y);
-            if (shadow != null && ground != null) PlaceShadow(drawn, forward, bank);
+            if (shadow != null && ground != null) LayShadow(shadow, ground, seaY, shadowHalf, drawn, forward, bank);
         }
 
-        /// <summary>The scene sun's ray from <paramref name="drawn"/> to the ground (or the sea's surface), found in two steps (the ground's height where the
-        /// ray lands sets how far it travels); the disc flat, turned with the heading, narrowed across by the bank, lifted over
-        /// the highest ground under its middle and its four ends.</summary>
-        void PlaceShadow(Vector3 drawn, Vector3 forward, float bank)
+        /// <summary>Lays <paramref name="shadow"/> (half <paramref name="shadowHalf"/> across and along the heading) for an
+        /// aircraft drawn at <paramref name="drawn"/>, heading <paramref name="forward"/>, banked <paramref name="bank"/> degrees,
+        /// on <paramref name="ground"/> or the sea's surface <paramref name="seaY"/>: the scene sun's ray from the aircraft to the
+        /// ground (by default in two steps, the ground's height where the ray lands setting how far it travels); the disc flat, turned
+        /// with the heading, narrowed across by the bank, lifted over the highest ground under its middle and its four ends. The
+        /// Spitfire's, and the Dakotas' (DakotaLoop, #2482).
+        ///
+        /// The two steps are a fixed-point guess: each takes the ground's height where the last ray landed. Their miss is the
+        /// height left between the last two guesses times the ray's run per metre of fall (cot of the sun's elevation, 1.73 at
+        /// MapLighting's 30 degrees), and the guess only closes in where the ground under the ray rises more slowly than the ray
+        /// falls (slope x cot(elevation) under 1). That holds on the flat coast by el-Arish where the Spitfire flies, so its
+        /// shadow keeps the two steps (the default). The Dakotas over Tel Aviv cast theirs about 8 km east-south-east, up the
+        /// rising ground toward the hills, where two steps left it about 200 m off the ray (gate H4 on #2490). With
+        /// <paramref name="converge"/> the ray is cut instead by halving: between the aircraft (above the ground) and the point
+        /// where the ray falls to the lowest surface there can be (the sea's, or the terrain's base), so the ground is crossed
+        /// between them whatever its slope or the sun's height; a march in <see cref="ShadowMarchM"/> steps finds the first
+        /// crossing, and each halving halves that step, to under
+        /// <see cref="ShadowConvergeM"/> along the ray, at most <see cref="ShadowConvergeSteps"/> halvings.</summary>
+        internal static void LayShadow(Transform shadow, Terrain ground, float seaY, Vector2 shadowHalf, Vector3 drawn, Vector3 forward, float bank,
+            bool converge = false)
         {
             var ray = SunNow();
             var hit = drawn;
-            float floor = Surface(drawn);
-            for (int i = 0; i < 2; i++)
+            float floor;
+            if (converge)
             {
-                hit = drawn + ray * ((drawn.y - floor) / -ray.y);
-                floor = Surface(hit);
+                // At s = 0 the ray is at the aircraft, over the ground; at hi it is at the lowest surface there can be, at or
+                // under the ground (Surface is never below the sea's surface or the terrain's base).
+                float lo = 0f, hi = (drawn.y - Mathf.Max(seaY, ground.transform.position.y)) / -ray.y;
+                // The first crossing, not any: march out in ShadowMarchM steps until the ray is at or under the ground, so a
+                // ridge the ray clips puts the shadow on the ridge, not in the valley beyond it (review of #2490).
+                for (float s = ShadowMarchM; s < hi; s += ShadowMarchM)
+                {
+                    var q = drawn + ray * s;
+                    if (q.y > Surface(ground, seaY, q)) lo = s; else { hi = s; break; }
+                }
+                for (int i = 0; i < ShadowConvergeSteps && hi - lo > ShadowConvergeM; i++)
+                {
+                    float mid = 0.5f * (lo + hi);
+                    var q = drawn + ray * mid;
+                    if (q.y > Surface(ground, seaY, q)) lo = mid; else hi = mid;
+                }
+                hit = drawn + ray * hi;
+                floor = Surface(ground, seaY, hit);
+            }
+            else
+            {
+                floor = Surface(ground, seaY, drawn);
+                for (int i = 0; i < 2; i++)
+                {
+                    hit = drawn + ray * ((drawn.y - floor) / -ray.y);
+                    floor = Surface(ground, seaY, hit);
+                }
             }
             var across = new Vector3(forward.z, 0f, -forward.x);
             float half = shadowHalf.x * Mathf.Cos(bank * Mathf.Deg2Rad);
             float top = floor;
-            top = Mathf.Max(top, Surface(hit + across * half));
-            top = Mathf.Max(top, Surface(hit - across * half));
-            top = Mathf.Max(top, Surface(hit + forward * shadowHalf.y));
-            top = Mathf.Max(top, Surface(hit - forward * shadowHalf.y));
-            shadow!.SetPositionAndRotation(new Vector3(hit.x, top + ShadowLiftM, hit.z), Quaternion.LookRotation(forward, Vector3.up));
+            top = Mathf.Max(top, Surface(ground, seaY, hit + across * half));
+            top = Mathf.Max(top, Surface(ground, seaY, hit - across * half));
+            top = Mathf.Max(top, Surface(ground, seaY, hit + forward * shadowHalf.y));
+            top = Mathf.Max(top, Surface(ground, seaY, hit - forward * shadowHalf.y));
+            shadow.SetPositionAndRotation(new Vector3(hit.x, top + ShadowLiftM, hit.z), Quaternion.LookRotation(forward, Vector3.up));
             shadow.localScale = new Vector3(half, 1f, shadowHalf.y);
         }
 
+        /// <summary>The converging shadow's halvings (<see cref="LayShadow"/>): stop once the bracket along the ray is under
+        /// <see cref="ShadowConvergeM"/> (m), and after <see cref="ShadowConvergeSteps"/> at most. From 4,200 m at a 30 degree
+        /// sun the bracket starts under 10 km; the march (<see cref="ShadowMarchM"/>) leaves one step of it, so about 8 halvings.</summary>
+        internal const float ShadowConvergeM = 1f, ShadowMarchM = 200f;
+        internal const int ShadowConvergeSteps = 24;
+
         /// <summary>The ground's height under <paramref name="p"/>, or the sea's surface over the sea.</summary>
-        float Surface(Vector3 p) => Mathf.Max(ground!.SampleHeight(p) + ground.transform.position.y, seaY);
+        static float Surface(Terrain ground, float seaY, Vector3 p) => Mathf.Max(ground.SampleHeight(p) + ground.transform.position.y, seaY);
     }
 }

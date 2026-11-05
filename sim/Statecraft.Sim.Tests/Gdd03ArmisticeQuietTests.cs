@@ -67,6 +67,23 @@ options:
         Assert.Equal(new[] { 2, 2, 2, 2 }, Counts(s));
     }
 
+    // R-WAR-005 (#2646): counting quiet turns and marking an engagement only update the counts; neither draws a random
+    // number, so the count can never change a later combat's draw.
+    [Fact]
+    public void CountingQuietTurnsDrawsNoRandomNumber()
+    {
+        var c = Load();
+        var s = With(c, Ours(1, 0, 1), Theirs(2, 5, 1, "egypt"));
+        var rng = s.RngState;
+        Armistice.CountQuietTurns(c, s);                            // a quiet turn end
+        Assert.Equal(new[] { 1, 1, 1, 1 }, Counts(s));
+        Assert.Equal(rng, s.RngState);
+        Armistice.Engaged(c, s, s.Units.Values);                    // an engagement on the Egyptian front, then its turn end
+        Armistice.CountQuietTurns(c, s);
+        Assert.Equal(new[] { 0, 2, 2, 2 }, Counts(s));
+        Assert.Equal(rng, s.RngState);
+    }
+
     // R-WAR-005, Q48: an engagement with an Egyptian unit resets Egypt only; an Iraqi unit resets Jordan (the Jordan agreement
     // took over the Iraqi sector); an ALA or local unit belongs to no front and resets none.
     [Theory]

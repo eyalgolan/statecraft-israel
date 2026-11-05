@@ -219,7 +219,7 @@ def edit(q, r, value):
     return {"hex": {"q": q, "r": r}, "value": value}
 
 
-def test_overrides_are_applied_last_and_survive_regeneration(tmp_path, capsys):
+def test_overrides_are_applied_last_and_survive_regeneration(tmp_path):
     out = tmp_path / "israel.json"
     mb.main(COUNTRY + ["--out", str(out)])
     first = json.loads(out.read_text())
@@ -230,14 +230,13 @@ def test_overrides_are_applied_last_and_survive_regeneration(tmp_path, capsys):
     # The shape of content/map/overrides.yaml (#1099): one list per field of {hex: {q, r}, value}.
     (tmp_path / "israel.overrides.json").write_text(json.dumps({
         "board": "israel",
-        "prototype": [edit(*ta, "kibbutz"), edit(999, 999, "kibbutz")],
+        "prototype": [edit(*ta, "kibbutz")],
         "ground": [edit(*ta, "plains")],
         "unit": [edit(*sq, "")],
         "facing": [edit(*sq, "0")],
         "region": [edit(ring["q"], ring["r"], "upper_galilee")],
     }))
     mb.main(COUNTRY + ["--out", str(out)])
-    assert "(999,999)" in capsys.readouterr().out
     after = {(h["q"], h["r"]): h for h in json.loads(out.read_text())["hexes"]}
     assert (after[ta]["prototype"], after[ta]["ground"]) == ("kibbutz", "plains")
     assert (after[sq]["unit"], after[sq]["facing"]) == ("", 0.0)
@@ -246,6 +245,16 @@ def test_overrides_are_applied_last_and_survive_regeneration(tmp_path, capsys):
     assert after[ta]["terrain"] == tel_aviv["terrain"] and after[sq]["prototype"] == squad["prototype"]
     edited = {ta, sq, (ring["q"], ring["r"])}
     assert all(after[(h["q"], h["r"])] == h for h in first["hexes"] if (h["q"], h["r"]) not in edited)
+
+
+def test_an_override_for_a_missing_hex_refuses_and_leaves_the_board_unwritten(tmp_path, capsys):
+    """#2652: a hand edit the regenerated board cannot hold must not be dropped silently."""
+    out = tmp_path / "israel.json"
+    out.write_text("previous board")   # a sentinel, so an identical regeneration cannot pass for "not written"
+    (tmp_path / "israel.overrides.json").write_text(json.dumps({"board": "israel", "prototype": [edit(999, 999, "kibbutz")]}))
+    assert mb.main(COUNTRY + ["--out", str(out)]) == 1
+    assert out.read_text() == "previous board"
+    assert "(999,999)" in capsys.readouterr().err
 
 
 def test_an_override_of_an_unknown_field_or_a_hex_twice_fails():

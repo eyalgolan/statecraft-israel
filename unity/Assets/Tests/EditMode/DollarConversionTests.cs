@@ -96,7 +96,7 @@ public class DollarConversionTests
     [TestCase(false)] [TestCase(true)]
     public void TheSimsRefusalIsShownBeforeEndTurn(bool he)
     {
-        var b = Bridge(false, he); var t = Text(he);
+        var b = Bridge(false, he); var t = Text(he); var c = b.Content;
         using var ui = new UiTestKit();
         using var defence = new DefencePresenter(ui.Root, b, t);
         var amount = ui.Q<IntegerField>("dollars-amount");
@@ -106,7 +106,7 @@ public class DollarConversionTests
         amount.value = 5;
         Assert.AreEqual(t["dollars.refused_monthly"], refusal.text);
         amount.value = 0;
-        Assert.AreEqual(t["dollars.refused_minimum"], refusal.text);
+        Assert.AreEqual(t.Format("dollars.refused_minimum", PlayerText.Money(c, "fx_reserves", 1)), refusal.text);
         Assert.IsFalse(ui.Q<Button>("convert-dollars").enabledSelf);
         b.State.DollarsConverted = 98;
         amount.value = 3;
@@ -184,21 +184,31 @@ public class DollarConversionTests
         Assert.AreEqual(DisplayStyle.None, ui.Q<VisualElement>("defence-dollars").style.display.value);
     }
 
-    // R-MONEY-004: every refusal reaches the end-of-turn toast (SimBridge.ReasonText) as the sim's English, and in Hebrew
-    // with no Latin letters.
+    // R-MONEY-004: every refusal reaches the end-of-turn toast (SimBridge.ReasonText) as the sim's English, and in Hebrew.
+    // The minimum uses the content's money format in both languages; the other Hebrew refusals have no Latin letters.
     [Test]
     public void EveryRefusalHasAStringInBothLanguages()
     {
+        var c = Bridge(false, false).Content;
         var refusals = typeof(EconomySystem).GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
             .Where(f => f.IsLiteral && f.Name.StartsWith("RefusedDollars")).Select(f => (string)f.GetRawConstantValue()).ToList();
         Assert.AreEqual(5, refusals.Count);
+        // The literal text, so a string that still typed "$1m" (Format ignores an unused argument) would fail.
+        Assert.AreEqual("Convert at least $1.0m", SimBridge.ReasonText(En, EconomySystem.RefusedDollarsMinimum, c));
+        StringAssert.Contains("$1.0m", SimBridge.ReasonText(He, EconomySystem.RefusedDollarsMinimum, c));
+        // Without content there is no money format to use, so the sim's own English is shown.
+        Assert.AreEqual(EconomySystem.RefusedDollarsMinimum, SimBridge.ReasonText(En, EconomySystem.RefusedDollarsMinimum));
         foreach (var reason in refusals)
         {
-            Assert.AreEqual(reason, SimBridge.ReasonText(En, reason), "the English string is the sim's own");
-            var he = SimBridge.ReasonText(He, reason);
+            var money = PlayerText.Money(c, "fx_reserves", 1);
+            var expected = reason == EconomySystem.RefusedDollarsMinimum ? En.Format("dollars.refused_minimum", money) : reason;
+            Assert.AreEqual(expected, SimBridge.ReasonText(En, reason, c), "the English string uses the sim's words and formatted money");
+            var he = SimBridge.ReasonText(He, reason, c);
             Assert.AreNotEqual(reason, he, "no Hebrew string for: " + reason);
             StringAssert.IsMatch("[א-ת]", he, reason);
-            StringAssert.DoesNotMatch("[A-Za-z]", he, reason);
+            if (reason == EconomySystem.RefusedDollarsMinimum)
+                Assert.AreEqual(He.Format("dollars.refused_minimum", money), he);
+            else StringAssert.DoesNotMatch("[A-Za-z]", he, reason);
         }
     }
 
@@ -208,7 +218,7 @@ public class DollarConversionTests
     public void TheCauseLineIsWordedInBothLanguages()
     {
         var b = Bridge(false, false);
-        var line = Simulation.Step(b.Content, b.State, new Command[] { new ConvertDollars(4) }).Why.Single(w => w.Key == CauseKeys.DollarsConverted);
+        var line = Simulation.Step(b.Content, b.State, new Command[] { new ConvertDollars(4) }).Why.Single(w => w.Key == CauseKeys.DollarsConverted && w.Target == "treasury");
         Assert.AreEqual(line.Message, CauseText.Line(line, b.Content, System.Array.Empty<Statecraft.Game.Map.Units.UnitEntry>(), En));
         var he = CauseText.Line(line, b.Content, System.Array.Empty<Statecraft.Game.Map.Units.UnitEntry>(), He);
         StringAssert.IsMatch("[א-ת]", he);
@@ -218,5 +228,20 @@ public class DollarConversionTests
         int at = he.IndexOf(dollars, System.StringComparison.Ordinal), il = he.IndexOf(money, System.StringComparison.Ordinal);
         Assert.GreaterOrEqual(at, 0, he); Assert.Greater(il, at, he);
         StringAssert.DoesNotMatch("[A-Za-z]", he.Replace(dollars, "").Replace(money, ""), he);
+    }
+
+    // #2527: the reserves side of the conversion has its own key, worded as foreign currency, in both languages.
+    [Test]
+    public void TheReservesLineIsWordedAsForeignCurrencyInBothLanguages()
+    {
+        var b = Bridge(false, false);
+        var line = Simulation.Step(b.Content, b.State, new Command[] { new ConvertDollars(4) }).Why.Single(w => w.Key == CauseKeys.DollarsConvertedFx);
+        Assert.AreEqual("fx_reserves", line.Target);
+        Assert.AreEqual(line.Message, CauseText.Line(line, b.Content, System.Array.Empty<Statecraft.Game.Map.Units.UnitEntry>(), En));
+        var he = CauseText.Line(line, b.Content, System.Array.Empty<Statecraft.Game.Map.Units.UnitEntry>(), He);
+        StringAssert.IsMatch("[\u05D0-\u05EA]", he);
+        var drop = PlayerText.MoneyChange(b.Content, "fx_reserves", -4);
+        StringAssert.Contains(drop, he);
+        StringAssert.DoesNotMatch("[A-Za-z]", he.Replace(drop, ""), he);
     }
 }

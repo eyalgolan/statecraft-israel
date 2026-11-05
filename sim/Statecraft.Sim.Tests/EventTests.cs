@@ -172,6 +172,18 @@ options:
         Assert.Contains("unknown target", ex.Message);
     }
 
+    /// <summary>#2512: the schema requires an effect's delta; a missing one is a load error naming file and field, not a
+    /// change of 0.</summary>
+    [Fact]
+    public void AMissingDeltaIsALoadError()
+    {
+        var ev = Shortage.Replace("target: fx_reserves\n        delta: -10", "target: fx_reserves");
+        var ex = Assert.Throws<ContentException>(() => Load(new Dictionary<string, string> { ["shortage.yaml"] = ev }));
+        Assert.Equal("events/shortage.yaml", ex.File);
+        Assert.Equal("events[shortage].options[import].effects.fx_reserves.delta", ex.Field);
+        Assert.Contains("required", ex.Message);
+    }
+
     [Fact]
     public void EventIndicatorEffectPersistsThroughEffectsRebuilds()
     {

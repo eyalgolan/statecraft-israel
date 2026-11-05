@@ -73,21 +73,31 @@ owner's decision. `TranslationsTests` names both files, and fails if any other n
 
 ## Sign-offs and the review queue
 
-A signed row's sign-off (`reviewed_by`, `reviewed_on`) covers its Hebrew wherever it lives: inline, or as the row's
-entry in `he/events.yaml` (an event, by its id) or `he/content.yaml` (a record, by its keys). Hebrew moved with the
+A signed row's sign-off (`reviewed_by`, `reviewed_on`) protects the row's Hebrew from unsigned edits wherever it
+lives: inline, or as the row's entry in `he/events.yaml` (an event, by its id) or `he/content.yaml` (a record, by its
+keys). It does not clear a Hebrew `agent-checked` flag: the fact sign-off and the Hebrew read are separate checks, and
+the flag stays until a native Hebrew speaker, or an AI-assisted contributor who discloses the AI help, reads the Hebrew
+(#564; the owner chose the option labelled "No: separate checks (Recommended)" (4 November 2026)).
+`tools/review_queue.py` lists a flag on a signed row like any other (`scan`, lines 209-221; `queue`, lines 351-358). Hebrew moved with the
 same decoded text keeps the sign-off (owner, 25 October 2026, on #1618: "Yes, carry them over"). The inline YAML and
 `translations/he/` quote differently (a folded `>-` scalar becomes a double-quoted one), so "byte-identical moved text"
 is read as the same decoded text: every character the same, direction marks, nikkud and maqaf included. `scripts/oss/reviewed_by_guard.py`
 holds the line. A commit with an AI co-author trailer may take a signed row's Hebrew lines out of `content/` when the
 row's Hebrew, read from both places, is the same before and after. Any other change to that Hebrew, in either place,
-is an edit of the signed row, and a person must sign the row again.
+is an edit of the signed row: a person must sign the row again, or an AI-assisted contributor may sign it again
+when the pull request's "AI assistance" section discloses the AI help, names the check and says which sources were
+opened and what was checked (owner, 4 November 2026: "Yes, it counts"); CI checks only that the section names a check,
+and the reviewer reads the rest (`docs/CONTENT_POLICY.md`). A commit with an AI co-author trailer never removes the
+sign-off.
 
 `tools/review_queue.py` lists an entry's `review: agent-checked` just as it lists the inline `*_he_review` flag, with
 the English record's row and sources (an event's `text_he_sources`, else its own `sources`).
 
 A change to `translations/` is a change players get, so it needs a changelog entry (`scripts/oss/changelog_check.py`;
-`translations/README.md` excepted). `tools/package_release.py` refuses a build whose `StreamingAssets/translations`
-files and `bundle.json`'s packed texts differ, so the release gate checks the same translations every player reads.
+`translations/README.md` excepted). `tools/package_release.py` refuses a build unless the repository's `translations/`,
+the build's `manifest.json` and `bundle.json` lists and its `StreamingAssets/translations` files name the same files and
+each packed text matches its file, so the release gate checks the same translations every player reads, and a build that
+lost all of them is refused too (#2641).
 
 ## Order and format
 
@@ -140,7 +150,11 @@ separate call, made where a language is adopted.
   are not languages, and hidden names (`.DS_Store`) are ignored.
 - **The checks:** each language is parsed, must name itself (`CheckDeclaredLanguage`), may not translate the advisors or
   How to play unless it is Hebrew, translates only events that exist (an event a ruleset leaves out counts) and every
-  option of each, and keys only fields that `Fields` offers. A read failure is reported with its file.
+  option of each, and keys only fields that `Fields` offers. A read failure is reported with its file. Where the content
+  is a checkout's (`unity/Assets/UI/strings.en.yaml` beside the content folder: the editor, the CLI, the tests and
+  `ContentSync`'s load of the source before every player build), a `ui.yaml` other than Hebrew may key only strings that
+  `strings.en.yaml` has, each with the English one's placeholders, the rule `tools/translate.py` applies to an editor
+  save (#2598). A player has no English table beside its copy, so the build is where it is caught.
 - **A stale translation:** when an event or a record changes so that a translation no longer matches it, the load is
   refused (owner, 1 November 2026: "Refuse + say how to fix (Recommended)"), so nothing stale ships. The error says how to
   unblock without a translator: update the entry, or delete it from the language's file, and that text shows in English.

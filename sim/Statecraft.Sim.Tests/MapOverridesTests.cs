@@ -127,6 +127,22 @@ public class MapOverridesTests
         Assert.Equal((1, 0), (s.Q, s.R));
     }
 
+    // #2512: a hex left without q or r is refused, not read as coordinate 0.
+    [Theory]
+    [InlineData("terrain:\n  - { hex: { r: 1 }, value: hills }\ncontrol: []\nlocations: []\n", "terrain[0].hex.q")]
+    [InlineData("terrain: []\ncontrol:\n  - { hex: { q: 1 }, period: opening, value: I }\nlocations: []\n", "control[0].hex.r")]
+    [InlineData("terrain: []\ncontrol: []\nlocations:\n  - { id: town_a, hex: { q: 2 } }\n", "locations[0].hex.r")]
+    public void TheLoaderRefusesAMissingCoordinate(string yaml, string field)
+    {
+        var ex = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(new Dictionary<string, string>
+        {
+            [MapOverrides.FileName] = yaml,
+        })));
+        Assert.Equal(MapOverrides.FileName, ex.File);
+        Assert.Equal(field, ex.Field);
+        Assert.Contains("required", ex.Message);
+    }
+
     [Fact]
     public void TheLoaderRejectsAnUnknownLocationNamingTheOverrideFile()
     {
@@ -454,7 +470,7 @@ public class MapOverridesTests
     public void ASeaScriptedAnchorBlocksWithItsIdAndExactHex()
     {
         var c = DependencyFixture();
-        c.StartingForces[0].Script = (3, 0);
+        c.StartingForces[0].Script.Add((3, 0, new DateTime(1948, 7, 8)));
         var row = Assert.Single(Broken(DependencyDiagnostics(c)));
         Assert.Equal("anchors[unit_a]", row.Field);
         Assert.Equal("scripted anchor hex q=3 r=0 is not a land hex of the map", row.Message);
