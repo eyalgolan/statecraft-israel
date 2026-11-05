@@ -94,6 +94,8 @@ namespace Statecraft.Game.UI
         GameSession? saveNoticeSession;
         AdvisorPresenter? advisor;
         CabinetPresenter? cabinet;
+        /// <summary>The top bar's New Game (none in a smoke run), for Escape's withdrawal of its open request (#2340 L2).</summary>
+        NewGamePresenter? newGame;
         EncyclopediaPresenter? encyclopedia;
         /// <summary>Tests supply an in-memory approval copy for Hebrew layout; the shipped review fields are unchanged.</summary>
         internal AdvisorCatalog? AdvisorCatalogForTests { get; set; }
@@ -491,6 +493,7 @@ namespace Statecraft.Game.UI
             if (smoke == 0)
             {
                 newGame = Own(new NewGamePresenter(root, bridge, store, toast, text, GameStart.NewSeed));
+                this.newGame = newGame;
                 Own(GameStart.Autosave(bridge, store, text, toast.Append));   // appends: the turn's refusals stay visible
             }
             // Once the game is over, the sim's end report (#812); after the autosave, so the last turn is saved first. New Game
@@ -969,7 +972,7 @@ namespace Statecraft.Game.UI
             for (int i = owned.Count - 1; i >= 0; i--) owned[i].Dispose();
             owned.Clear();
             if (hoveredCity != null) { hoveredCity = null; HandCursor(false); }   // the next Begin's pills start unlit
-            companion = null; minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; opening = null; card = null; outcomes = null; report = null; end = null; advisor = null; cabinet = null; encyclopedia = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
+            companion = null; minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; opening = null; card = null; outcomes = null; report = null; end = null; advisor = null; cabinet = null; newGame = null; encyclopedia = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
             // A ?profile run cut short (a stopped coroutine never reaches its restore line) must not leave the terrain at the
             // profile's pixel error (Task 24 review M1). Nothing else changes it, so restoring is always right.
             if (map != null && map.Terrain != null) map.Terrain.heightmapPixelError = MapBuilder.TerrainPixelError;
@@ -1171,6 +1174,15 @@ namespace Statecraft.Game.UI
                 done |= start?.Escape() == true;
                 // Escape in the Cabinet's candidate list goes back to the seat, not out of the screen (#2340 M2).
                 done |= cabinet?.Escape() == true || nav?.Close() == true;
+                // With nothing above it to close, Escape withdraws a New Game request armed from the top bar too, the start
+                // screen closed (#2340 L2, #2521), and is used up there, so it does not also clear the map selection. A
+                // decision card or capture dialog open over it is above it (the top bar stays usable under them): that
+                // Escape hides the card or dialog and the request stays armed (#2595 review).
+                if (!done && newGame?.Armed == true)
+                {
+                    done = capture?.Escape() == true || card?.Escape() == true || card?.CollapsedThisFrame == true;
+                    if (!done) { newGame.Cancel(); done = true; }
+                }
                 // A screen/card that consumed this Cancel must not also dismiss the map selection in this frame.
                 if (!done && nav?.ClosedThisFrame != true && document.rootVisualElement.focusController?.focusedElement == null
                     && capture?.Escape() != true && card?.Escape() != true && card?.CollapsedThisFrame != true)
