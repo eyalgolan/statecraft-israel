@@ -483,6 +483,18 @@ public class UnitShowcaseTests
             Assert.AreSame(spawned, typeof(ShowcaseFlight).GetField("propeller", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(flight));
             Assert.IsNotNull(spawned.Find(UnitShowcase.PropellerBlurName), "the blur on it");
             Assert.IsNotNull(flight.transform.Find(UnitShowcase.ShadowName), "the soft shadow");
+            // And the flight really turns it about its local +z, 1500 degrees a second, once it flies (not held still).
+            typeof(ShowcaseFlight).GetField("still", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.SetValue(flight, null);
+            var update = typeof(ShowcaseFlight).GetMethod("Update", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+            var clock = ShowcaseFlight.Clock;
+            try
+            {
+                ShowcaseFlight.Clock = () => 0f; update.Invoke(flight, null); var q0 = spawned.localRotation;
+                ShowcaseFlight.Clock = () => 0.01f; update.Invoke(flight, null);
+                Assert.AreEqual(15f, Quaternion.Angle(q0, spawned.localRotation), 0.1f, "15 degrees in a hundredth of a second");
+                Assert.Greater(Mathf.Abs(Vector3.Dot(spawned.localRotation * Vector3.forward, Vector3.forward)), 0.999f, "about its local +z");
+            }
+            finally { ShowcaseFlight.Clock = clock; }
         }
         finally { Object.DestroyImmediate(map.gameObject); }
     }

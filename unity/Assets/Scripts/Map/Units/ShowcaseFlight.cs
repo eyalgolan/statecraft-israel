@@ -25,11 +25,15 @@ namespace Statecraft.Game.Map.Units
 
         public float? StillPhase => still;
 
+        /// <summary>The animation clock, Time.time. Test seam, as SpitfireLoop.Clock: an EditMode test has no frame clock.</summary>
+        internal static System.Func<float> Clock = () => Time.time;
+
         void Update()
         {
             if (still.HasValue) return;
-            Place(Time.time / seconds % 1f);
-            if (propeller != null) propeller.localRotation = Quaternion.Euler(0, 0, -Mathf.Repeat(Time.time * 1500f, 360f));
+            float now = Clock();
+            Place(now / seconds % 1f);
+            if (propeller != null) propeller.localRotation = Quaternion.Euler(0, 0, -Mathf.Repeat(now * 1500f, 360f));
         }
 
         /// <summary>Puts the aircraft at phase <paramref name="t"/> (0..1) of the loop, flying anticlockwise seen from above.</summary>
