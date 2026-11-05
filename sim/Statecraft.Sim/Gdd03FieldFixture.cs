@@ -44,6 +44,7 @@ namespace Statecraft.Sim
         readonly Gdd03AssignmentFixture work;
         readonly Gdd03FieldRates rates;
         readonly SortedDictionary<string, Gdd03Field> fields;
+        readonly HashSet<int> settledMonths = new HashSet<int>(); // R-CITY-010: one settlement per month, per fixture
 
         internal static IReadOnlyList<Gdd03Field> Fields(Content content)
         {
@@ -134,16 +135,19 @@ namespace Statecraft.Sim
         /// Food stock, each field's once, in ordinal field-id order, with one cause per field that yields. Control is the
         /// caller's <paramref name="israeliHeldNow"/> at settlement, besides the snapshot's freeze: a field lost by either
         /// adds nothing, and its farmer, tier and assignment stay as they are (D6: "its people stay"), so the next snapshot
-        /// after retaking yields again with no new assignment. The sum is checked before the stock changes.</summary>
+        /// after retaking yields again with no new assignment. A month already settled by this fixture is refused unchanged
+        /// (<see cref="ArgumentException"/>), so the stock cannot be credited twice for one month. The sum is checked before the stock changes.</summary>
         internal Gdd03FieldYield Settle(MvpRules rules, Gdd03SyntheticMonthContext month, IReadOnlyCollection<string> israeliHeldNow, List<Cause> why)
         {
             if (why == null) throw new ArgumentNullException(nameof(why));
             var y = Yield(rules, month, israeliHeldNow);
+            if (settledMonths.Contains(month.MonthOrdinal)) throw new ArgumentException("This month is already settled.");
             var food = checked(state.Food + y.Food);
-            foreach (var field in y.Fields.Where(x => x.Value > 0)) // a SortedDictionary (ordinal): field-id order
+            foreach (var field in y.Fields.Where(x => x.Value > 0).OrderBy(x => x.Key, StringComparer.Ordinal)) // field-id order, stated here so it does not rest on the yield's dictionary type
                 why.Add(new Cause("economy", "food", field.Value,
                     FormattableString.Invariant($"{field.Key}: its farmer yielded {field.Value} units of Food"), key: CauseKeys.FieldFood, args: new[] { field.Key }));
             state.Food = food;
+            settledMonths.Add(month.MonthOrdinal);
             return y;
         }
     }
