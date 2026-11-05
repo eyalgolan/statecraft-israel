@@ -1,0 +1,34 @@
+{
+  "asset": "spitfire-mk9e-101sqn-1948",
+  "what": "The 101 Squadron IAF Supermarine Spitfire LF Mk IXe as flown from October 1948, built from primitives (lofted sections, a NACA 22xx wing on an elliptical clipped planform) by tools/spitfire_101_model.py in Blender 5.2.2 LTS (pip bpy); markings painted into the colour map by a colour function of each texel's 3D point. No third-party model, image or scan; no AI.",
+  "licence": "CC-BY-4.0",
+  "credit": "Statecraft: Israel contributors",
+  "build": "uv run --no-project --python 3.13 --with bpy==5.2.2 python -I tools/spitfire_101_model.py --build",
+  "sources": {
+    "length_9.47_m": "en.wikipedia 'Supermarine Spitfire variants: specifications, performance and armament', LF Mk IXe, read 2026-11-05",
+    "span_11.23_m_minus_clip_1.07_m": "en.wikipedia 'Supermarine Spitfire', read 2026-11-05 (span, clipped tips, dihedral 6 deg, NACA 2213/2209.4, incidence +2/-0.5 deg)",
+    "markings": "Yoav Efrati, Colors & Markings of the Israeli Air Force (IAF, 2005) pp. 6, 12, 14, as cited in UnitModels.Spitfire and docs/units.md",
+    "colours": "UnitPalette.Base (sRGB), the code-built model's",
+    "four_blades": "docs/units.md (IAF Museum Mk IX, Hatzerim, Commons CC BY 2.5)"
+  },
+  "design_values": "fuselage sections, canopy, radiators, intake, exhausts, tailplane and fin sizes, hub position, propeller diameter and blade shape, roundel sizes and places, wing-roundel star orientation, rudder stripe angle and width, camouflage pattern, demarcation line, panel lines",
+  "files": {
+    "unity/Assets/Art/Units/spitfire-mk9e-101sqn-1948/spitfire-mk9e-101sqn-1948.fbx": "e59361bf4cbc1b2966d4c02e5700230eacfc1e14c09ba66449bca3c3d609159b",
+    "unity/Assets/Art/Units/spitfire-mk9e-101sqn-1948/spitfire-mk9e-101sqn-1948_basecolor.png": "397dda00d3de72e1a03c909bd29c08faad324dd4820f26eb3fdd86a073465ed2",
+    "unity/Assets/Art/Units/spitfire-mk9e-101sqn-1948/spitfire-mk9e-101sqn-1948.mat": "739b60772288946cdbfe8b5b871f450bc66fdda87ce224600bcc2cf05f600dee",
+    "unity/Assets/Resources/Units/Authored/spitfire-mk9e-101sqn-1948.prefab": "58a089faf568d328bc1af42813eb2df4519b7f4ff2a82a04b72cafea020e0b0a"
+  },
+  "triangles": 7696,
+  "triangles_by_object": {
+    "Body": 6272,
+    "Propeller": 1424
+  },
+  "span_m": 10.16,
+  "length_m": 9.47,
+  "hub_game_m": [
+    0.0,
+    0.02,
+    3.3
+  ],
+  "texture_px": 1024
+}
