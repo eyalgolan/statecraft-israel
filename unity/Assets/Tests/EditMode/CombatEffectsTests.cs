@@ -425,4 +425,43 @@ public class CombatEffectsTests
         }
         finally { Object.DestroyImmediate(map.gameObject); }
     }
+
+    /// <summary>A rebuild while a defender shakes from a hit (another unit destroyed by the same attack) hands the shake to
+    /// the defender's new token, as an attack is handed on (ContinueAttack): the survivor never moved, so it does not slide
+    /// from where the shake had put it and raises no march dust, and the shake plays on to its end. A hit still on its way
+    /// (HitPending) is handed on too.</summary>
+    [Test]
+    public void ARebuildMidShakeKeepsTheShakeAndSlidesNothing()
+    {
+        var map = BuildMap();
+        try
+        {
+            var s = Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical).Clone();
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.AnimateMoves = true;
+            layer.Show(C, s);
+            var drawn = s.Units.Values.Where(u => u.Side == Movement.PlayerSide && layer.Tokens.Any(t => t.Token.StateUnit?.Id == u.Id)).Take(3).ToArray();
+            Assert.AreEqual(3, drawn.Length, "fixture: three player units are drawn");
+            UnitTokenMotion MotionOf(Unit u) => layer.GetComponentsInChildren<UnitTokenMotion>().Single(m => m.SimId == u.Id);
+            var (shaking, waiting, lost) = (drawn[0], drawn[1], drawn[2]);
+            Assert.IsTrue(layer.PlayDefenderHit(new CombatHit(shaking.Q, shaking.R, false, true, 1, new[] { shaking.Id, waiting.Id })));
+            MotionOf(shaking).Tick(CombatBursts.VolleyS + 0.01f);   // the hit lands on the first: it shakes, ~70 m off its spot
+            Assert.IsTrue(MotionOf(shaking).Reacting, "fixture: the first defender shakes");
+            Assert.Greater(MotionOf(shaking).transform.position.magnitude, UnitTokenMotion.MinMoveM, "fixture: off its spot");
+            Assert.IsTrue(MotionOf(waiting).HitPending, "fixture: the second still waits for the hit");
+
+            s.Units.Remove(lost.Id);
+            Assert.IsTrue(layer.Show(C, s), "fixture: the roster changed, so the tokens are rebuilt");
+            var after = MotionOf(shaking);
+            Assert.IsFalse(after.Moving, "the shaking defender never moved, so its new token does not slide");
+            Assert.IsTrue(after.Reacting, "its shake goes on in the new token");
+            Assert.IsTrue(MotionOf(waiting).HitPending, "and the hit still on its way to the second lands on its new token");
+            int dust = layer.Combat!.MoveDust!.Busy;
+            for (int i = 0; i < 30; i++) { after.Tick(0.05f); MotionOf(waiting).Tick(0.05f); }
+            Assert.AreEqual(dust, layer.Combat.MoveDust.Busy, "no march dust from a unit that did not march");
+            Assert.IsFalse(after.Reacting, "the shake ends");
+            Assert.AreEqual(Vector3.zero, after.transform.position, "back on its spot");
+        }
+        finally { Object.DestroyImmediate(map.gameObject); }
+    }
 }
