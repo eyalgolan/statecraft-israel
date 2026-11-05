@@ -17,7 +17,9 @@ namespace Statecraft.Game.UI
     /// <para>While it shows, the root has <see cref="OpenClass"/>: ScreenNav.DisableCovered disables the top bar, the panels
     /// and the decision layer under it, as under an End Turn outcome clip, which is drawn over the report (Game.uxml order)
     /// and disables it in turn; the report takes the keyboard focus when it is uncovered. A turn the sim refused outright
-    /// (SimBridge.EndTurn's failure: Session.Last does not move) shows no report; a turn with a refused order does.</para></summary>
+    /// (SimBridge.EndTurn's failure: Session.Last does not move) shows no report; a turn with a refused order does. The
+    /// session replaced for New Game or a load closes the old game's report. Other bridge changes leave it open (End Turn
+    /// opens its new report from TurnEnded; answering the ending turn's card keeps it under the end screen).</para></summary>
     public sealed class TurnReportPresenter : IDisposable
     {
         /// <summary>On the "root" element while the report shows.</summary>
@@ -37,6 +39,8 @@ namespace Statecraft.Game.UI
         readonly VisualElement hudRoot, report; readonly ScrollView rows; readonly SimBridge bridge; readonly UiText text;
         readonly ScreenNav nav; readonly Button close, all;
         readonly Action<IReadOnlyList<Rejection>> onTurn;
+        readonly Action onChanged;
+        GameSession session;   // the session the open report belongs to
         readonly EventCallback<NavigationCancelEvent> onCancel;
         /// <summary>The turn last reported (or the session's last turn when this was made: a loaded game reports nothing).</summary>
         StepResult? seen;
@@ -78,6 +82,11 @@ namespace Statecraft.Game.UI
                 catch (Exception e) { UnityEngine.Debug.LogException(e); Hide(); }
             };
             bridge.TurnEnded += onTurn;
+            // Only a replaced session (New Game, a load: SimBridge.Replace) makes the report stale. Other changes keep it:
+            // answering the ending turn's card (SimBridge.SeeEndingCard) changes nothing and leaves it under the end screen.
+            session = bridge.Session;
+            onChanged = () => { if (ReferenceEquals(bridge.Session, session)) return; session = bridge.Session; Hide(); };
+            bridge.Changed += onChanged;
             Hide();
         }
 
@@ -148,12 +157,17 @@ namespace Statecraft.Game.UI
             return lines;
         }
 
-        /// <summary>The same largest-two and stable tie order as the report's indicators, matched to stock targets.</summary>
-        public static IReadOnlyList<string> StockCauses(StepResult? turn, string target, Func<Cause, string> line) =>
-            turn == null ? Array.Empty<string>() : turn.Why.Select((w, i) => (w, i))
-                .Where(x => x.w.Target == target && x.w.Delta != 0)
-                .OrderByDescending(x => Math.Abs(x.w.Delta)).ThenBy(x => x.i)
-                .Take(HudModel.MaxCauses).Select(x => line(x.w)).ToList();
+        /// <summary>The same largest-two and stable tie order as the report's indicators, matched to stock targets. The
+        /// Food shortage's line is informational (delta 0, #2527) but still shows, after the lines that have one.</summary>
+        public static IReadOnlyList<string> StockCauses(StepResult? turn, string target, Func<Cause, string> line)
+        {
+            if (turn == null) return Array.Empty<string>();
+            var rows = turn.Why.Select((w, i) => (w, i)).Where(x => x.w.Target == target).ToList();
+            return rows.Where(x => x.w.Delta != 0).OrderByDescending(x => Math.Abs(x.w.Delta)).ThenBy(x => x.i)
+                .Take(HudModel.MaxCauses)
+                .Concat(rows.Where(x => x.w.Delta == 0 && x.w.Key == CauseKeys.FoodShortage).OrderBy(x => x.i))
+                .Select(x => line(x.w)).ToList();
+        }
 
         /// <summary>#1701 A1 (owner, 2 November 2026: "Yes, in the panel (Recommended)"): the arms workshops that made Arms and
         /// those whose next cycle waits at the debt ceiling this turn, as the sim's causes say (CauseKeys.WorkshopArms;
@@ -264,6 +278,7 @@ namespace Statecraft.Game.UI
 
         public void Dispose()
         {
+            bridge.Changed -= onChanged;
             bridge.TurnEnded -= onTurn;
             close.clicked -= OnClose;
             all.clicked -= SeeAll;

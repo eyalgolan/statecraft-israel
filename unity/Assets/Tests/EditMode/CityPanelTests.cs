@@ -60,6 +60,36 @@ public class CityPanelTests
 
     static VisualElement Host(UiTestKit ui) => ui.Q<VisualElement>(GddHexPanel.HostName);
 
+    /// <summary>#2669: the finished game stays inspectable, but its GDD hex panel cannot offer orders. Red first: these
+    /// controls previously used only their local prerequisites and remained enabled after GameOver.</summary>
+    [Test]
+    public void GameOverDisablesTheHexPanelsOrderControlsButNotItsDisclosure()
+    {
+        using var ui = new UiTestKit();
+        var c = Gdd03Content();   // the shipped eras run gdd-0.1; the read-only rule is gdd-0.3's (OrderButton)
+        Assert.AreEqual(SaveGame.Gdd03Ruleset, c.Ruleset, "precondition: the content under test runs gdd-0.3");
+        var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
+        g.State.GameOver = GameOverCodes.MvpEnded; g.State.Policies[MapActions.MaabarotPolicy] = 1;
+        var bridge = new SimBridge(g, En);
+        using var panel = Panel(ui, bridge, En);
+        using var end = new EndScreenPresenter(ui.Root, bridge, En, null);
+        Assert.IsTrue(end.IsOpen, "precondition: the ended game opens its end screen");
+        UiTestKit.Press(ui.Q<Button>("end-screen-close"));
+        Assert.IsFalse(end.IsOpen, "the player has closed the end screen to inspect the map");
+        panel.Show(CityHex.q, CityHex.r);
+
+        var orders = Host(ui).Query<Button>().ToList().Concat(ui.Q<VisualElement>(GddHexPanel.ProjectsHostName).Query<Button>().ToList())
+            .Where(b => b.name != GddHexPanel.ToggleName
+                && !b.name.StartsWith("city-project-city-", StringComparison.Ordinal)
+                && !b.name.StartsWith("pioneer-project-", StringComparison.Ordinal)).ToList();
+        Assert.GreaterOrEqual(orders.Count, 3, "precondition: the city offers Assign, Train, and project controls");
+        Assert.IsTrue(orders.Any(b => b.name.StartsWith("city-workers-", StringComparison.Ordinal)), "the Assign stepper is covered");
+        Assert.IsTrue(orders.Any(b => b.name.StartsWith("city-train-", StringComparison.Ordinal)), "Train is covered");
+        Assert.IsTrue(orders.Any(b => b.name.StartsWith("city-project-", StringComparison.Ordinal)), "city projects are covered");
+        Assert.IsTrue(orders.All(b => !b.enabledSelf), "every order-producing control is disabled after GameOver");
+        Assert.IsTrue(ui.Q<Button>(GddHexPanel.ToggleName).enabledSelf, "the project disclosure remains available for inspection");
+    }
+
     [Test]
     public void TheCityHexShowsItsCountsFromTheSim()
     {

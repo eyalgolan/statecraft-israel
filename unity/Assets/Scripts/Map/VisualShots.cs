@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Security.Cryptography;
 using Statecraft.Game.Boot;
@@ -29,10 +30,12 @@ namespace Statecraft.Game.Map
             var b64 = Convert.ToBase64String(png);
             int n = Math.Max(1, (b64.Length + ChunkChars - 1) / ChunkChars);
             string hash;
-            using (var sha = SHA256.Create()) hash = string.Concat(sha.ComputeHash(png).Select(b => b.ToString("x2")));
-            yield return $"SHOT {name} begin {n} {hash}";
+            using (var sha = SHA256.Create())
+                hash = string.Concat(sha.ComputeHash(png).Select(b => b.ToString("x2", CultureInfo.InvariantCulture)));
+            yield return FormattableString.Invariant($"SHOT {name} begin {n} {hash}");
             for (int i = 0; i < n; i++)
-                yield return $"SHOT {name} {i + 1}/{n} {b64.Substring(i * ChunkChars, Math.Min(ChunkChars, b64.Length - i * ChunkChars))}";
+                yield return FormattableString.Invariant(
+                    $"SHOT {name} {i + 1}/{n} {b64.Substring(i * ChunkChars, Math.Min(ChunkChars, b64.Length - i * ChunkChars))}");
         }
 
         /// <summary>The visual toggles that are off for the close checks, which look at the ground itself (the baked

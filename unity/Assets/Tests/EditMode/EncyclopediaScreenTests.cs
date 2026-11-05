@@ -185,6 +185,50 @@ public class EncyclopediaScreenTests
         }
     }
 
+    // R-PROJ-003, R-ARMS-004, R-HOUSE-006: gdd-0.3 names its extra city-project kinds; older rulesets keep the base text.
+    // R-PROJ-003, R-CITY-011: under gdd-0.3 a project moves only with a builder, so the variant does not say it needs no workers.
+    [Test]
+    public void Gdd03ProjectsPageNamesItsExtraKindsInBothLanguages()
+    {
+        var catalog = AdvisorCatalog.Load();
+        var texts = new[] { En, He };
+        var gdd03Kinds = new[]
+        {
+            new[] { "housing", "industry", "arms workshop", "housing repair" },
+            new[] { "דיור", "תעשייה", "סדנת נשק", "שיפוץ דיור" },
+        };
+        for (var language = 0; language < texts.Length; language++)
+        {
+            var text = texts[language];
+            const string baseKey = "advisor.page.projects.text";
+            const string variantKey = "advisor.page.projects.gdd03.text";
+            Assert.IsTrue(text.Has(variantKey), variantKey + " exists");
+            foreach (var kind in gdd03Kinds[language])
+                StringAssert.Contains(kind, text[variantKey]);
+            StringAssert.DoesNotContain(gdd03Kinds[language][2], text[baseKey]);
+            StringAssert.DoesNotContain(gdd03Kinds[language][3], text[baseKey]);
+            var builder = language == 0 ? new[] { "builder", "without one it waits" } : new[] { "יש לו בונה", "בלי בונה הוא ממתין" };
+            foreach (var phrase in builder)
+            {
+                StringAssert.Contains(phrase, text[variantKey]);
+                StringAssert.DoesNotContain(phrase, text[baseKey]);
+            }
+            StringAssert.DoesNotContain(language == 0 ? "needs no workers" : "אינו דורש עובדים", text[variantKey]);
+            var approvedTail = text[baseKey].Substring(text[baseKey].IndexOf(". ", text[baseKey].IndexOf(". ") + 1));
+            StringAssert.EndsWith(approvedTail, text[variantKey], "only the first two sentences change");
+
+            foreach (var ruleset in new[] { SaveGame.Gdd03Ruleset, SaveGame.GddRuleset, SaveGame.LegacyRuleset })
+            {
+                var key = ruleset == SaveGame.Gdd03Ruleset ? variantKey : baseKey;
+                using var ui = new UiTestKit();
+                using var nav = new ScreenNav(ui.Root);
+                using var pedia = new EncyclopediaPresenter(ui.Root, text, catalog, nav, null, ruleset);
+                pedia.Open("projects");
+                Assert.AreEqual(text[key], ui.Q<Label>("encyclopedia-page-text").text, key);
+            }
+        }
+    }
+
     // R-TURN-004: withdrawal is promised only where the panel offers it.
     [Test]
     public void TurnsPageDoesNotPromiseEveryWaitingOrderCanBeWithdrawn()

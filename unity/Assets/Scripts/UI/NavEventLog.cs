@@ -80,7 +80,8 @@ namespace Statecraft.Game.UI
 
         void OnDown(PointerDownEvent e) => DiagLog.NavLine(FormattableString.Invariant($"ui pointerdown id={e.pointerId} at ({e.position.x:0}, {e.position.y:0}) target={Name(e.target)} path={Path(e.target)} modals={Modals()}"));
         void OnUp(PointerUpEvent e) => DiagLog.NavLine(FormattableString.Invariant($"ui pointerup id={e.pointerId} at ({e.position.x:0}, {e.position.y:0}) target={Name(e.target)}"));
-        void OnClick(ClickEvent e) => DiagLog.NavLine($"ui click count={e.clickCount} target={Name(e.target)}");
+        void OnClick(ClickEvent e) => DiagLog.NavLine(
+            FormattableString.Invariant($"ui click count={e.clickCount} target={Name(e.target)}"));
         void OnButtonUp(PointerUpEvent e) => DiagLog.NavLine(FormattableString.Invariant($"button pointerup at ({e.position.x:0}, {e.position.y:0}) on={Name(e.currentTarget)} inside={((VisualElement)e.currentTarget).worldBound.Contains(e.position)}"));
         void OnCaptureOut(PointerCaptureOutEvent e) => DiagLog.NavLine($"button capture out on={Name(e.currentTarget)}");
 
