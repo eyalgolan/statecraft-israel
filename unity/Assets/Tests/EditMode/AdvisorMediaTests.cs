@@ -188,7 +188,7 @@ public class AdvisorMediaTests
     }
 
     [Test]
-    public void TheOverlayClosesWithItsXOrEscapeAndStopsBoth()
+    public void AnInjectedEscapeChainClosesTheOverlayAndStopsBoth()
     {
         using var rig = new AdvisorPopupTests.Rig(text: Text);
         var pic = new FakePicture { Ready = true }; var output = new FakeOutput();
@@ -196,7 +196,7 @@ public class AdvisorMediaTests
         rig.Advisor.ForceInline = false;
         rig.Advisor.NewGame();
         // ScreenNav's Cancel trickles down from the root and closes the open screen unless a layer takes it first: GameRoot
-        // gives the overlay that turn through TakesEscape (GameRoot.cs, nav!.TakesEscape), wired here the same way.
+        // gives the overlay that turn through TakesEscape (GameRoot.cs, nav!.TakesEscape); this unit fixture injects that ordering.
         rig.Nav.TakesEscape = () => rig.Advisor.CloseOverlay() || rig.Advisor.OverlayClosedThisFrame || rig.Advisor.Escape();
         rig.Ui.Press("nav-budget");                                       // a screen under the overlay
         Assert.AreEqual("budget", rig.Nav.Current, "precondition");

@@ -7,9 +7,12 @@ using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
 using Statecraft.Game;
+using Statecraft.Game.Boot;
+using Statecraft.Game.Map;
 using Statecraft.Game.UI;
 using Statecraft.Sim;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.TestTools;
 using UnityEngine.UIElements;
@@ -260,8 +263,8 @@ public class OutcomeClipTests
         }
     }
 
-    /// <summary>The outcome code subscribes to TurnEnded before the autosave (as in GameRoot). A throw anywhere in it is
-    /// caught there, so the turn is still saved.</summary>
+    /// <summary>GameRoot subscribes the outcome handler before autosave. SimBridge independently isolates TurnEnded handlers,
+    /// so this observes production order and final saving without attributing autosave survival only to the outcome catch.</summary>
     [Test]
     public void AThrowInTheOutcomeCodeNeverSkipsTheAutosave()
     {
@@ -269,18 +272,35 @@ public class OutcomeClipTests
         try
         {
             var store = new SaveStore(dir);
-            using var r = new Rig(new[] { "maabarot_policy" });
-            using var save = GameStart.Autosave(r.Bridge, store, Text);
-            r.Outcomes.BeforeTurn = () => throw new InvalidOperationException("outcome failure");
-            r.Order("maabarot_policy", "maabarot");
+            Assert.IsFalse(CardVideo.ForcedOff(), "precondition: GameRoot constructs outcomes");
+            EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+            var inputs = GameInputs.FromDisk(Paths.Content, Paths.StreamingMap);
+            Object.FindFirstObjectByType<MapScene>().Build(inputs.Map);
+            var game = Object.FindFirstObjectByType<GameRoot>();
+            game.Store = store;
+            game.Begin(inputs, 0);
+            var outcomes = (OutcomePresenter?)typeof(GameRoot)
+                .GetField("outcomes", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(game);
+            Assert.IsNotNull(outcomes, "production OutcomePresenter was constructed");
+            Assert.IsFalse(File.Exists(store.AutosavePath), "precondition: no turn has been saved");
+            bool savedBeforeOutcome = false;
+            outcomes!.BeforeTurn = () =>
+            {
+                savedBeforeOutcome = File.Exists(store.AutosavePath);
+                throw new InvalidOperationException("outcome failure");
+            };
             LogAssert.Expect(LogType.Exception, new System.Text.RegularExpressions.Regex("outcome failure"));
-            r.Bridge.EndTurn();
+            game.Bridge!.EndTurn();
+            Assert.IsFalse(savedBeforeOutcome, "GameRoot subscribes the outcome before autosave");
             Assert.IsTrue(File.Exists(store.AutosavePath), "the turn was saved");
             Assert.IsNotEmpty(File.ReadAllText(store.AutosavePath));
-            Assert.IsNull(r.Outcomes.Showing);
-            Assert.IsFalse(r.Open, "nothing is left half open");
+            Assert.IsNull(outcomes.Showing);
         }
-        finally { if (Directory.Exists(dir)) Directory.Delete(dir, true); }
+        finally
+        {
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            if (Directory.Exists(dir)) Directory.Delete(dir, true);
+        }
     }
 
     /// <summary>The build gate reads the outcome clips from the mapping (Build.GatedClips, used by RefuseUnlessShareable):

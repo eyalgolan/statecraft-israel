@@ -849,11 +849,10 @@ public class KitTests
         }
     }
 
-    /// <summary>A real render callback in edit mode (a Scene or Game view camera) never instantiates or destroys the khaki tent
-    /// models mid-render: coming close or leaving only marks the camp, and the models come and go at the next LateUpdate
-    /// (AdvanceCameraFrame), as in play mode.</summary>
+    /// <summary>The render-mode branch never instantiates or destroys the khaki tent models mid-render: coming close or leaving
+    /// only marks the camp, and AdvanceCameraFrame applies the change afterward.</summary>
     [Test]
-    public void AnEditModeRenderCallbackDefersTheTentModelsToLateUpdate()
+    public void RenderModeDefersTentModelsUntilAdvanceCameraFrame()
     {
         var saved = Statecraft.Game.Map.Collection.CampTentModels.Acquire;
         var root = new GameObject("deferred tent fixture");
