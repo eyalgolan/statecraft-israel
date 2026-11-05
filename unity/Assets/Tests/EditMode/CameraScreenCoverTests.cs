@@ -74,7 +74,7 @@ public class CameraScreenCoverTests : SharedCameraActionsFixture
         var cam = Object.FindFirstObjectByType<CameraController>();
         var rig = cam.GetComponent<CameraRig>();
         Send(cam, "Awake"); Send(cam, "OnEnable");
-        cam.SetFixedNorth(false);   // the game ruleset holds north, which zeroes Q/E anyway; free it so the orbit gate is what is seen
+        cam.SetFixedNorth(false);   // a gdd-0.3 game holds north (R-CAMERA-001), which zeroes Q/E anyway; free it so the orbit gate is what is seen
         try
         {
             (Vector3 moved, float zoomed, float turned) Hold(Key k)
