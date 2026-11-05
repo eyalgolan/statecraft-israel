@@ -92,7 +92,8 @@ namespace Statecraft.Game.UI
         /// key already closed the report through the Cancel event), as for OutcomePresenter.ClosedThisFrame.</summary>
         public bool ClosedThisFrame => closedAt == UnityEngine.Time.frameCount;
 
-        /// <summary>One line of the report: the meter's id, its caption with the change the bar shows, and its main causes.</summary>
+        /// <summary>One line of the report: the meter's id, its caption with the change the bar shows (and Immigration's
+        /// arrivals this turn), and its main causes.</summary>
         public readonly struct Line
         {
             public readonly string Meter, Heading; public readonly IReadOnlyList<string> Causes;
@@ -111,7 +112,10 @@ namespace Statecraft.Game.UI
                 if (id == "cohesion" && !m.ShowsCohesion) continue;
                 var meter = m.For(id);
                 if (meter.Delta.Length == 0) continue;
-                lines.Add(new Line(id, text.Format("report.line", text["hud.caption." + id], meter.Delta), HudModel.Causes(bridge.Session.Last, id, bridge.Content,
+                var heading = id == "immigration"
+                    ? text.Format("report.immigration_line", text["hud.caption.immigration"], meter.Delta, meter.Value)
+                    : text.Format("report.line", text["hud.caption." + id], meter.Delta);
+                lines.Add(new Line(id, heading, HudModel.Causes(bridge.Session.Last, id, bridge.Content,
                     w => CauseText.Line(w, bridge.Content, units ?? Array.Empty<UnitEntry>(), text, townNamesHe))));
             }
             lines.AddRange(StockLines(bridge, text, units, townNamesHe));

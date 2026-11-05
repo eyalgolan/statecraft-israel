@@ -55,7 +55,8 @@ namespace Statecraft.Game.EditorTools
         };
 
         /// <summary>Why a shareable build may not be made, or null: every event with a sensitive tag needs the owner's
-        /// sensitivity review first (status sensitivity-reviewed; docs/m3-release.md, M3 final review I4), every row the
+        /// sensitivity review first (status sensitivity-reviewed; docs/m3-release.md, M3 final review I4), every consequence
+        /// card and event with variants needs a person's reviewed_by (ReleaseGate.AlternateUnsigned; R-ALT-011), every row the
         /// starting forces come from must be fact-checked (ReleaseGate.StartingForcesUnchecked; R-UNIT-006), every settlement
         /// target row sensitivity-reviewed (ReleaseGate.SettlementTargetsUnchecked; Q-TGT-3 (b)), and so does every
         /// sensitive event photograph the build would carry (EventImageCatalog; docs/event-images.md), and every sensitive
@@ -70,6 +71,10 @@ namespace Statecraft.Game.EditorTools
             var reasons = new List<string>();
             if (open.Count > 0)
                 reasons.Add("a shareable build needs the owner's sensitivity review of: " + string.Join(", ", open) + " (set status: sensitivity-reviewed; see docs/m3-release.md)");
+            // R-ALT-011, Q-ALT-9: every alternate card needs a person's sign-off before it may be shared.
+            if (Statecraft.Sim.ReleaseGate.AlternateUnsigned(c) is { Count: > 0 } unsigned)
+                reasons.Add("a shareable build needs a person's reviewed_by for these alternate cards: "
+                    + string.Join(", ", unsigned) + " (see docs/m3-release.md)");
             // R-UNIT-006, Q-START-3 (#743): the rows a new game starts a unit from are game state, so a person checks them first.
             if (Statecraft.Sim.ReleaseGate.StartingForcesUnchecked(c) is { Count: > 0 } forces)
                 reasons.Add("a shareable build needs these starting forces' rows fact-checked: " + string.Join(", ", forces)

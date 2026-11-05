@@ -143,6 +143,8 @@ public class Gdd03HousingRepairTests
         Assert.Equal(Repair, ((StartProject)refused.Command).ProjectKind);
         Assert.Equal("Town A has started a city project this turn", refused.Reason);
         Assert.Single(both.Why, w => w.Key == CauseKeys.Paid && w.Args[0] == CauseKeys.Purpose.Project);
+        // The refused repair changed nothing: the state is as after the first start alone (as CityStartCapTests does for R-PROJ-001).
+        Assert.Equal(Step(c, s, new StartProject("housing", "town_a", 1, 1)).State.Hash(), both.State.Hash());
 
         var full = s.Clone();
         full.MapActionsTurnDate = full.Date; full.MapActionsThisTurn = c.RulesAt(full.Date).MapActionsPerTurn;
