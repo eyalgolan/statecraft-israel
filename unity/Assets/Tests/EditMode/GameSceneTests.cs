@@ -1253,6 +1253,10 @@ public class GameRootEscapeTests : SharedCameraActionsFixture
         Escape();
         Assert.AreNotEqual(DisplayStyle.Flex, Ui.Q("screen-budget").style.display.value, "the first Escape closes the screen");
         Assert.IsTrue(newGame.Armed, "the first Escape is the screen's: the request is still armed");
+        // The next key press is a later frame: the screen closed on the first press, and ScreenNav.ClosedThisFrame
+        // would still claim this one in the single EditMode frame (#2609).
+        var nav = typeof(GameRoot).GetField("nav", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(root)!;
+        typeof(ScreenNav).GetField("closedFrame", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(nav, -1);
         Escape();
         Assert.IsFalse(newGame.Armed, "the next Escape withdraws the request");
         Assert.AreEqual("", Ui.Q<Label>("toast").text, "the prompt is off the toast");
