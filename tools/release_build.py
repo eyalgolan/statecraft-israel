@@ -137,6 +137,10 @@ class Result:
     stdout: str = ""
 
 
+class SafetyCheckFailed(RuntimeError):
+    """A release-safety command failed, so its output cannot be treated as an all-clear."""
+
+
 def run(cmd: list, **kw) -> Result:
     """The one place a process is started (tests replace it). Output is captured only when asked for."""
     capture = kw.pop("capture", False)
@@ -214,8 +218,19 @@ def git(*args: str) -> Result:
     return run(["git", *args], cwd=REPO, capture=True)
 
 
+def checked_git_output(*args: str) -> str:
+    try:
+        result = git(*args)
+    except OSError as e:
+        raise SafetyCheckFailed(f"`git {' '.join(args)}` could not start: {e}") from e
+    if result.returncode != 0:
+        raise SafetyCheckFailed(f"`git {' '.join(args)}` exited {result.returncode}")
+    return result.stdout
+
+
 def dirty_lines() -> list[str]:
-    return [l for l in git("status", "--porcelain", "--untracked-files=normal").stdout.splitlines() if l.strip()]
+    text = checked_git_output("status", "--porcelain", "--untracked-files=normal")
+    return [line for line in text.splitlines() if line.strip()]
 
 
 def missing_modules(names: list[str], editor_root: Path) -> list[Platform]:
@@ -233,7 +248,7 @@ def modules_message(missing: list[Platform], version: str) -> str:
 
 def checkouts() -> list[Path]:
     """This checkout, the main one and every worktree of the repository."""
-    listed = git("worktree", "list", "--porcelain").stdout.splitlines()
+    listed = checked_git_output("worktree", "list", "--porcelain").splitlines()
     return [REPO, *(Path(l[len("worktree "):]) for l in listed if l.startswith("worktree "))]
 
 
@@ -519,7 +534,11 @@ def main(argv: list[str] | None = None) -> int:
     if missing:
         print(modules_message(missing, version), file=sys.stderr)
         return 2
-    dirty = dirty_lines()
+    try:
+        dirty = dirty_lines()
+    except SafetyCheckFailed as e:
+        print(f"REFUSED: cannot prove the working tree is clean: {e}. Nothing was built.", file=sys.stderr)
+        return 1
     if nightly is not None and (problem := stamp_problem(dirty, nightly)):
         print(f"REFUSED: {problem}", file=sys.stderr)
         return 1
@@ -573,7 +592,13 @@ def main(argv: list[str] | None = None) -> int:
             return 1
         tag = f"v{vers['bundle_version']}-dev.{commit[:8]}"
     out = (a.out or default_out(commit, vers["bundle_version"] or "0", started.strftime("%Y%m%dT%H%M%SZ"))).absolute()
-    if (root := inside_a_checkout(out)) is not None:
+    try:
+        root = inside_a_checkout(out)
+    except SafetyCheckFailed as e:
+        print(f"REFUSED: cannot enumerate every checkout before accepting --out: {e}. Nothing was built.",
+              file=sys.stderr)
+        return 1
+    if root is not None:
         print(f"REFUSED: {out} is inside the checkout {root}; choose a folder outside every checkout of the repository "
               "(the default is ~/statecraft-release/).", file=sys.stderr)
         return 1
@@ -599,8 +624,11 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     (out / "logs").mkdir(parents=True, exist_ok=True)
-    if run(sim, cwd=REPO).returncode != 0:
-        print("FAILED: tools/build_sim_for_unity.py", file=sys.stderr)
+    sim_log = out / "logs/build-sim.log"
+    with sim_log.open("w", encoding="utf-8") as log:
+        sim_result = run(sim, cwd=REPO, stdout=log, stderr=subprocess.STDOUT)
+    if sim_result.returncode != 0:
+        print(f"FAILED: tools/build_sim_for_unity.py; see {sim_log}", file=sys.stderr)
         return 1
     expected = expected_goldens()
     artifacts, all_ok = [], True
@@ -612,13 +640,20 @@ def main(argv: list[str] | None = None) -> int:
                 stamp(nightly)   # restored by the checkout below, so each build stamps again
             code = run(build_command(unity, p, target, log, shareable, a.steam), cwd=REPO).returncode
         finally:
-            run(["git", "checkout", "--", "unity/ProjectSettings", "unity/Assets/Settings"], cwd=REPO)
+            restore = run(["git", "checkout", "--", "unity/ProjectSettings", "unity/Assets/Settings"], cwd=REPO)
+        if restore.returncode != 0:
+            print(f"FAILED: restoring Unity settings after the {p.name} build exited {restore.returncode}; "
+                  "no build record was written.", file=sys.stderr)
+            return 1
         wall = round(time.monotonic() - t0)
         log_text = log.read_text(errors="replace") if log.exists() else ""
         if code != 0 or not target.exists():
             print(f"FAILED: the {p.name} build (exit {code}); see {log}", file=sys.stderr)
             return 1
         folder = target.parent
+        if not (folder / PHOTOS).is_file():
+            print(f"FAILED: the {p.name} build has no {PHOTOS}", file=sys.stderr)
+            return 1
         if a.steam and (problem := steam_folder_problem(folder, p.name)):
             print(f"FAILED: {problem}", file=sys.stderr)
             return 1
@@ -626,11 +661,9 @@ def main(argv: list[str] | None = None) -> int:
         text, files, size = tree_manifest(folder, mac=p.name == "mac")
         listing = out / f"files-{p.name}.sha256"
         listing.write_text(text)
-        photos = None
-        if (folder / PHOTOS).is_file():
-            copy = out / f"event-photos-{p.name}.json"
-            copy.write_bytes((folder / PHOTOS).read_bytes())
-            photos = {"file": copy.name, "sha256": file_sha256(copy)}
+        copy = out / f"event-photos-{p.name}.json"
+        copy.write_bytes((folder / PHOTOS).read_bytes())
+        photos = {"file": copy.name, "sha256": file_sha256(copy)}
         if problem := player_problem(p, folder):
             print(f"FAILED: {problem}", file=sys.stderr)
             return 1
@@ -646,7 +679,12 @@ def main(argv: list[str] | None = None) -> int:
                 return 1
         arch = None
         if p.name == "mac":
-            arch = run(["lipo", "-archs", str(mac_executable(target))], capture=True).stdout.strip() or None
+            inspected = run(["lipo", "-archs", str(mac_executable(target))], capture=True)
+            arch = inspected.stdout.strip()
+            if inspected.returncode != 0 or not arch:
+                print(f"FAILED: lipo could not inspect the macOS player architecture (exit {inspected.returncode}"
+                      f"{', no output' if not arch else ''}); no build record was written.", file=sys.stderr)
+                return 1
         golden = {"status": "unchecked", "exit_code": None, "lines": [],
                   "note": "this player cannot run on the Mac; the CI player golden check runs it (spec 6.3)"}
         if p.runs_here:
@@ -668,7 +706,16 @@ def main(argv: list[str] | None = None) -> int:
                           "unity_build_seconds": unity_seconds(log_text), "wall_seconds_with_lock_wait": wall,
                           "unity_log": str(log.relative_to(out)), "golden": golden})
 
-    dirty_after = [l.strip() for l in dirty_lines()]
+    try:
+        dirty_after = [line.strip() for line in dirty_lines()]
+    except SafetyCheckFailed as e:
+        print(f"FAILED: cannot prove the working tree remained clean after the builds: {e}; "
+              "no build record was written.", file=sys.stderr)
+        return 1
+    if dirty_after:
+        print("FAILED: the working tree is dirty after the builds: " + ", ".join(dirty_after) +
+              "; no build record was written.", file=sys.stderr)
+        return 1
     record = {"schema": 1, "tool": "tools/release_build.py", "commit": commit,
               "describe": describe, "branch": branch, "release": release,
               # checked before the builds: a dirty tree is refused (a nightly may carry only its own bundleVersion stamp)

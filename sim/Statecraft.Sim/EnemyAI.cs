@@ -91,7 +91,7 @@ namespace Statecraft.Sim
             foreach (var (dq, dr) in truce ? Array.Empty<(int Q, int R)>() : Movement.Neighbours)   // a truce: straight to fortify
             {
                 int q = u.Q + dq, r = u.R + dr;
-                if (!(Combat.Preview(c, s, u.Id, q, r) is (int ratio, _)) || ratio < threshold) continue;
+                if (!(Combat.EnemyPreview(c, s, u.Id, q, r) is (int ratio, _)) || ratio < threshold) continue;
                 var target = string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0},{1}", q, r);
                 if (u.Order == Combat.Attack && u.OrderTarget == target) return;
                 if (Combat.Give(c, s, u.Id, q, r, why, enemy: true) == null) return;

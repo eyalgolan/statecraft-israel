@@ -206,6 +206,8 @@ public class SitesContentTests
         new object[] { Second("[hakhshara]", "    city: nowhere\n"), "sites[site_b].city", "unknown city 'nowhere'" },
         new object[] { Second("[field]", "    city: town_a\n"), "sites[site_b].city", "only a camp site has a city" },
         new object[] { Second("[field]", "    founded: 1949-06-12\n"), "sites[site_b].founded", "only a yishuv site has a founding date" },
+        new object[] { Site("kinds: [yishuv]\n    founded: 1949-06-12\n", "kinds: [yishuv, military_camp]\n    founded: 1949-06-12\n    city: town_a\n"), "sites[site_a].kinds", "a yishuv site cannot also be a military_camp site (its built record is its built camp)" },
+        new object[] { Site("kinds: [yishuv]\n    founded: 1949-06-12\n", "kinds: [hakhshara, yishuv]\n    founded: 1949-06-12\n    city: town_a\n"), "sites[site_a].kinds", "a yishuv site cannot also be a hakhshara site (its built record is its built camp)" },
     };
 
     [Theory]

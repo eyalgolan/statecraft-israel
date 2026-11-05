@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using NUnit.Framework;
 using Statecraft.Game;
 using Statecraft.Game.Boot;
@@ -13,6 +14,7 @@ using Statecraft.Sim;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.TestTools;
 using UnityEngine.UIElements;
 using Object = UnityEngine.Object;
@@ -1146,4 +1148,106 @@ public class GameSceneTests
         Assert.IsNull(units.Selected);
     }
 
+}
+
+/// <summary>#2340 L2 (#2521): with the start screen closed, Escape withdraws a New Game request armed from the top bar, and
+/// the key is used up there, so the map selection under it stays. Drives GameRoot's own Escape poll (Update) with a key
+/// pressed through the Input System test fixture, which is what makes wasPressedThisFrame read true in an EditMode test.</summary>
+public class GameRootEscapeTests : SharedCameraActionsFixture
+{
+    string saveDir = "";
+    static VisualElement Ui => Object.FindFirstObjectByType<UIDocument>().rootVisualElement;
+
+    [TearDown]
+    public void DiscardScene()
+    {
+        EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        if (Directory.Exists(saveDir)) Directory.Delete(saveDir, true);
+    }
+
+    /// <summary>Stands for a later frame: the card's Hide counts as an Escape's own only in the frame it happened
+    /// (EventCardPresenter.CollapsedThisFrame), and the Input System fixture cannot press keys in a [UnityTest] that
+    /// runs frames in edit mode.</summary>
+    static void LaterFrame(GameRoot root) =>
+        typeof(EventCardPresenter).GetField("collapsedAt", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(root.Card, -1);
+
+    [Test]
+    public void EscapeWithdrawsANewGameRequestArmedFromTheTopBar()
+    {
+        saveDir = Path.Combine(Path.GetTempPath(), "statecraft-scene-" + Guid.NewGuid().ToString("N"));
+        var inputs = GameInputs.FromDisk(Paths.Content, Paths.StreamingMap);
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        Object.FindFirstObjectByType<MapScene>().Build(inputs.Map);
+        var root = Object.FindFirstObjectByType<GameRoot>();
+        root.Store = new SaveStore(saveDir);
+        root.Begin(inputs, 0);                                             // no start screen
+        GameSceneTests.HideTheOpeningCard(Ui);
+        LaterFrame(root);                                                  // the Hide is not an Escape's
+        var keyboard = InputSystem.AddDevice<Keyboard>();
+        var bridge = root.Bridge!;
+        var info = (InfoPanelPresenter)typeof(GameRoot).GetField("info", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(root)!;
+        var home = bridge.Content.SettlementHexes.First(x => x.Id == "tel_aviv");
+        info.Show(home.Q, home.R);
+        UiTestKit.Press(Ui.Q<Button>("new-game"));
+        var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
+        Assert.AreEqual(text["newgame.confirm"], Ui.Q<Label>("toast").text, "precondition: the top bar armed the request");
+        var newGame = (NewGamePresenter)typeof(GameRoot).GetField("newGame", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(root)!;
+        void Escape()
+        {
+            (Ui.focusController?.focusedElement as VisualElement)?.Blur();   // Escape with no focus, as after a mouse press
+            Press(keyboard.escapeKey);
+            Assert.IsTrue(keyboard.escapeKey.wasPressedThisFrame, "precondition: Escape went down this frame");
+            typeof(GameRoot).GetMethod("Update", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(root, null);
+            Release(keyboard.escapeKey);
+        }
+        // The #2549 review note (comment 6636159055, an agent review): the open screen closes first (nav.Close); only
+        // an Escape it declines withdraws the request.
+        UiTestKit.Press(Ui.Q<Button>("nav-budget"));
+        Assert.AreEqual(DisplayStyle.Flex, Ui.Q("screen-budget").style.display.value, "precondition: a screen is open");
+        Escape();
+        Assert.AreNotEqual(DisplayStyle.Flex, Ui.Q("screen-budget").style.display.value, "the first Escape closes the screen");
+        Assert.IsTrue(newGame.Armed, "the first Escape is the screen's: the request is still armed");
+        Escape();
+        Assert.IsFalse(newGame.Armed, "the next Escape withdraws the request");
+        Assert.AreEqual("", Ui.Q<Label>("toast").text, "the prompt is off the toast");
+        Assert.AreEqual((home.Q, home.R), info.Selected, "the Escape was used up: the map selection stays");
+        var session = bridge.Session;
+        UiTestKit.Press(Ui.Q<Button>("new-game"));
+        Assert.AreSame(session, bridge.Session, "withdrawn: the next press only arms the request again");
+    }
+
+    // The #2595 review: a decision card over an armed New Game is the top thing (the top bar stays usable under it), so
+    // the first Escape hides the card and only the next one withdraws the request.
+    [Test]
+    public void EscapeHidesAnOpenDecisionCardBeforeItWithdrawsAnArmedNewGame()
+    {
+        saveDir = Path.Combine(Path.GetTempPath(), "statecraft-scene-" + Guid.NewGuid().ToString("N"));
+        var inputs = GameInputs.FromDisk(Paths.Content, Paths.StreamingMap);
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        Object.FindFirstObjectByType<MapScene>().Build(inputs.Map);
+        var root = Object.FindFirstObjectByType<GameRoot>();
+        root.Store = new SaveStore(saveDir);
+        root.Begin(inputs, 0);                                             // no start screen; the game opens on a card
+        GameSceneTests.HideTheOpeningCard(Ui);
+        var keyboard = InputSystem.AddDevice<Keyboard>();
+        UiTestKit.Press(Ui.Q<Button>("event-reopen"));
+        Assert.AreEqual(DisplayStyle.Flex, Ui.Q("event-card").style.display.value, "precondition: the decision card is open");
+        UiTestKit.Press(Ui.Q<Button>("new-game"));
+        var newGame = (NewGamePresenter)typeof(GameRoot).GetField("newGame", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(root)!;
+        Assert.IsTrue(newGame.Armed, "precondition: the top bar armed the request under the card");
+        void Escape()
+        {
+            (Ui.focusController?.focusedElement as VisualElement)?.Blur();   // Escape with no focus, as after a mouse press
+            Press(keyboard.escapeKey);
+            Assert.IsTrue(keyboard.escapeKey.wasPressedThisFrame, "precondition: Escape went down this frame");
+            typeof(GameRoot).GetMethod("Update", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(root, null);
+            Release(keyboard.escapeKey);
+        }
+        Escape();
+        Assert.AreNotEqual(DisplayStyle.Flex, Ui.Q("event-card").style.display.value, "the first Escape hides the card");
+        Assert.IsTrue(newGame.Armed, "the first Escape is the card's: the request is still armed");
+        LaterFrame(root);                                                  // the next key press
+        Escape();
+        Assert.IsFalse(newGame.Armed, "the next Escape withdraws the request");
+    }
 }

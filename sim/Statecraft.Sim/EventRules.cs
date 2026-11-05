@@ -80,8 +80,6 @@ namespace Statecraft.Sim
                         throw new ContentException(e.File, F($"options[{o.Id}].alternative"), "an option that did not happen says who proposed it, or basis: design");
                     foreach (var kv in o.SetPolicy)
                     {
-                        if (c.Ruleset == SaveGame.Gdd03Ruleset && (kv.Key == "rationing" || kv.Key == "maabarot"))
-                            throw new ContentException(e.File, F($"options[{o.Id}].set_policy.{kv.Key}"), "retired policy write under gdd-0.3 (R-EFX-001)");
                         if (c.Policies.All(p => p.Id != kv.Key)) throw new ContentException(e.File, F($"options[{o.Id}].set_policy.{kv.Key}"), "unknown policy");
                         ContentLoader.Unit(e.File, F($"options[{o.Id}].set_policy.{kv.Key}"), kv.Value);
                         Active(F($"options[{o.Id}].set_policy.{kv.Key}"), kv.Key);
@@ -95,6 +93,7 @@ namespace Statecraft.Sim
                         if (!indicators.Contains(fx.Target) && !SpecialTargets.Contains(fx.Target))
                             throw new ContentException(e.File, F($"options[{o.Id}].effects.{fx.Target}"), "unknown target");
                         Active(F($"options[{o.Id}].effects.{fx.Target}"), fx.Target);
+                        if (!fx.HasDelta) throw new ContentException(e.File, F($"options[{o.Id}].effects.{fx.Target}.delta"), "required");
                         ContentLoader.Finite(e.File, F($"options[{o.Id}].effects.{fx.Target}.delta"), fx.Delta);
                         if ((fx.Target == Pools.FoodTarget || fx.Target == Pools.ArmsTarget) && Math.Abs(fx.Delta) > int.MaxValue)
                             throw new ContentException(e.File, F($"options[{o.Id}].effects.{fx.Target}"), $"{fx.Target} delta out of range");
@@ -113,8 +112,8 @@ namespace Statecraft.Sim
 
         // #1718 D1/Q1/Q2 (owner, 1 November 2026): the passive budget, the monthly Food refill and the foreign-currency
         // ledger stay, so their targets load as under gdd-0.1; of the economy's command targets only Attention retires.
+        // #2483 (owner, 4 November 2026): events write the food_supply and housing readouts again, as under gdd-0.1.
         static bool RetiredGdd03Target(string target) =>
-            target == "food_supply" || target == "housing" ||
             target == "attention" || target.StartsWith("attention_", StringComparison.Ordinal) ||
             target == "defeat" || target == "city_loss_defeat" || target == "any_city_loss";
 

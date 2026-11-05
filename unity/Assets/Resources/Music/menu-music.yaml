@@ -1,0 +1,6 @@
+# The start menu theme's loop points (#2338): MenuMusic plays the file from 0:00 once, then loops loop_start_s to
+# loop_end_s (seconds from the top of the file). Afik Faerman's proposed loop points for Main_1.3.ogg, as recorded on its
+# ASSETS.yaml row: 00:10 to 04:03. The OGG itself is not cut or tagged. A missing or invalid region loops the whole clip.
+file: audio/music/Main_1.3.ogg
+loop_start_s: 10
+loop_end_s: 243
