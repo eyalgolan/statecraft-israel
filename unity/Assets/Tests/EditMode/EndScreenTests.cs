@@ -232,6 +232,26 @@ public class EndScreenTests
         Assert.IsFalse(File.Exists(k.Store.AutosavePath), "New Game removes the old save, as it always has");
     }
 
+    /// <summary>#2669: the end screen can start New Game while the final turn's report waits underneath it. Red first:
+    /// before TurnReportPresenter listened to Changed, the second press replaced the session but left that report open.</summary>
+    [Test]
+    public void NewGameFromTheEndScreenClosesTheLastTurnsReport()
+    {
+        using var k = new Kit(En, Exhausted);
+        for (int turn = 0; turn < 3 && k.Bridge.State.GameOver == null; turn++) k.Bridge.EndTurn();
+        Assert.IsTrue(k.End.IsOpen && k.Report.IsOpen, "precondition: the end screen covers the final turn's report");
+
+        UiTestKit.Press(k.Ui.Q<Button>("end-screen-new-game"));
+        Assert.IsTrue(k.NewGame.Armed);
+        Assert.IsTrue(k.End.IsOpen && k.Report.IsOpen, "the confirmation press changes no session");
+
+        UiTestKit.Press(k.Ui.Q<Button>("end-screen-new-game"));
+        Assert.IsNull(k.Bridge.State.GameOver, "the second press starts the new game");
+        Assert.IsFalse(k.End.IsOpen);
+        Assert.IsFalse(k.Report.IsOpen, "the old game's report is closed");
+        Assert.IsTrue(k.Q("top-bar").enabledSelf, "the old report does not cover the new game");
+    }
+
     [Test]
     public void CancelClosesItAndClosedItTakesNoInput()
     {

@@ -17,7 +17,9 @@ namespace Statecraft.Game.UI
     /// <para>While it shows, the root has <see cref="OpenClass"/>: ScreenNav.DisableCovered disables the top bar, the panels
     /// and the decision layer under it, as under an End Turn outcome clip, which is drawn over the report (Game.uxml order)
     /// and disables it in turn; the report takes the keyboard focus when it is uncovered. A turn the sim refused outright
-    /// (SimBridge.EndTurn's failure: Session.Last does not move) shows no report; a turn with a refused order does.</para></summary>
+    /// (SimBridge.EndTurn's failure: Session.Last does not move) shows no report; a turn with a refused order does. Any bridge
+    /// change closes a report that may now be stale; End Turn then opens its new report from TurnEnded, while replacing the
+    /// session for New Game leaves the old report closed.</para></summary>
     public sealed class TurnReportPresenter : IDisposable
     {
         /// <summary>On the "root" element while the report shows.</summary>
@@ -78,6 +80,7 @@ namespace Statecraft.Game.UI
                 catch (Exception e) { UnityEngine.Debug.LogException(e); Hide(); }
             };
             bridge.TurnEnded += onTurn;
+            bridge.Changed += Hide;
             Hide();
         }
 
@@ -260,6 +263,7 @@ namespace Statecraft.Game.UI
 
         public void Dispose()
         {
+            bridge.Changed -= Hide;
             bridge.TurnEnded -= onTurn;
             close.clicked -= OnClose;
             all.clicked -= SeeAll;
