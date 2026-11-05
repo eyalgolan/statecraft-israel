@@ -376,6 +376,7 @@ namespace Statecraft.Game.Map.Collection
         List<(Vector2 centre, float radius)> taken = new List<(Vector2, float)>();
         List<WildlifeLayer.Want>? wildlife;
         DateTime date;
+        bool airDefenceShown;   // AirDefenceWanted at the last rebuild: 15 May and 15 July want the same craft, so the date alone must rebuild (#2649)
 
         /// <summary>The craft drawn (key, model, spot at the water's or ground's height; the centre of the Spitfire's loop, in the air): a test aid.</summary>
         public readonly List<(string Key, string Model, Vector3 At)> Placed = new List<(string, string, Vector3)>();
@@ -423,8 +424,9 @@ namespace Statecraft.Game.Map.Collection
         {
             date = at;
             var others = next.Any(w => w.Model == C54) ? Taken() : new List<(Vector2, float)>();
-            if (next.SequenceEqual(wants) && placed.SequenceEqual(placements) && others.SequenceEqual(taken)) return;
-            wants = next; placements = placed; taken = others;
+            bool defence = AirDefenceWanted(at);
+            if (next.SequenceEqual(wants) && placed.SequenceEqual(placements) && others.SequenceEqual(taken) && defence == airDefenceShown) return;
+            wants = next; placements = placed; taken = others; airDefenceShown = defence;
             OriginalModelRequests.WhenVisible(this, () => RefreshResidency());
         }
 

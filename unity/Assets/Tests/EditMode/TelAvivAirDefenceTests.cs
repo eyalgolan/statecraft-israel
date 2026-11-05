@@ -119,6 +119,23 @@ public class TelAvivAirDefenceTests
         Assert.AreEqual(0, Object.FindObjectsByType<TelAvivAirDefence>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length, "no fighters anywhere on 15 May");
     }
 
+    /// <summary>#2649 review: 15 May and 15 July want the same two Dakotas, so a direct change between them must still add or
+    /// remove the air defence on the same layer (ShowAt reuses it), in both directions.</summary>
+    [Test]
+    public void ADirectChangeBetweenMayAndJulyAddsAndRemovesTheAirDefence()
+    {
+        var map = OpenMap();
+        var may = Drawn(map, May15);
+        Assert.IsNull(may.AirDefence, "no air defence on 15 May");
+        var july = Drawn(map, July15);
+        Assert.AreSame(may, july, "the same layer, reused");
+        Assert.IsNotNull(july.AirDefence, "15 May -> 15 July adds the air defence");
+        Assert.AreEqual(2, july.AirDefence!.FighterPlanes.Length, "with its two fighters");
+        var back = Drawn(map, May15);
+        Assert.IsNull(back.AirDefence, "15 July -> 15 May removes it");
+        Assert.IsNull(back.transform.Find(SeaAirCollection.AirDefenceKey), "and its object");
+    }
+
     /// <summary>The fighters stay in their sector: at every point of the loop each fighter, at every heading, bank and pitch,
     /// is inside the box the Dakotas fly through (SeaAirCollection.DakotaSweptHalf about their loop centre, which DakotaSpot
     /// keeps on the board), above the Dakotas, never in a Dakota's box, and inside the box the names keep clear of for it.</summary>
