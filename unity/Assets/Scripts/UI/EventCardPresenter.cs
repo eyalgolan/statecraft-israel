@@ -301,16 +301,16 @@ namespace Statecraft.Game.UI
                 b.AddToClassList(OptionClass);
                 b.SetEnabled(!unpaid && requirement.Met);
                 options.Add(b);
-                foreach (var row in requirement.Required)
+                foreach (var need in requirement.Required)
                 {
-                    var regions = string.Join(" / ", row.Regions.Select(id => text["operation.region." + id]));
-                    var required = new Label(text.Format("event.operation_requirement", OperationUnitName(row.Unit), regions));
+                    var regions = string.Join(" / ", need.Regions.Select(id => text["operation.region." + id]));
+                    var required = new Label(text.Format("event.operation_requirement", OperationUnitName(need.Unit), regions));
                     required.AddToClassList("muted"); required.AddToClassList(RequirementClass); options.Add(required);
                 }
-                foreach (var row in requirement.Missing)
+                foreach (var need in requirement.Missing)
                 {
-                    var regions = string.Join(" / ", row.Regions.Select(id => text["operation.region." + id]));
-                    var missing = new Label(text.Format("event.operation_missing", OperationUnitName(row.Unit), regions));
+                    var regions = string.Join(" / ", need.Regions.Select(id => text["operation.region." + id]));
+                    var missing = new Label(text.Format("event.operation_missing", OperationUnitName(need.Unit), regions));
                     missing.AddToClassList(MissingRequirementClass); options.Add(missing);
                 }
                 // What the option does, one line per effect, from the sim's preview (#1125, R-EVT-005): Unity only words it. Under

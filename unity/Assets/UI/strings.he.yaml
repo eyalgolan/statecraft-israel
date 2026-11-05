@@ -273,7 +273,7 @@ event.no_attention: "לא נשארה לך מספיק תשומת לב לענות 
 event.cabinet: "הממשלה"
 event.option_cost: "{0} (עולה {1:0.0} תשומת לב)"
 # Agent-drafted Hebrew; native review pending (#564). R-ENEMY-007 operation placement.
-event.operation_requirement: "נדרשת הצבת {0} ב{1}."
+event.operation_requirement: "נדרשת הצבת {0} באזור {1}."
 event.operation_missing: "יש להעביר את {0} אל {1} לפני שאפשר לפתוח במבצע."
 event.operation_move: "להעביר את {0} אל {1}"
 event.operation_refused: "היחידות הנדרשות למבצע אינן במקומן"
