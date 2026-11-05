@@ -35,7 +35,9 @@ def no_steamcmd(monkeypatch):
 def record(**over):
     r = {"schema": 1, "commit": SHA, "tag": "v0.3.2", "release": True, "tree_clean": True,
          "tree_clean_after_builds": True, "steam": True, "channel": "nightly", "dev": False,
-         "artifacts": [{"platform": p, "steam_folder": f"steam/{p}", "archive": None} for p in su.PLATFORMS]}
+         "artifacts": [{"platform": p, "steam_folder": f"steam/{p}", "archive": None,
+                        "golden": {"status": "pass" if rb.PLATFORMS[p].runs_here else "unchecked"}}
+                       for p in su.PLATFORMS]}
     r.update(over)
     return r
 
@@ -115,6 +117,19 @@ def test_null_ids_refuse_by_name():
         assert name in problem
     assert "depots.windows" not in problem
     assert su.refuse(IDS) is None
+
+
+@pytest.mark.parametrize(("config", "field"), [
+    ({**IDS, "app_id": False}, "app_id"),
+    ({**IDS, "app_id": "1000"}, "app_id"),
+    ({**IDS, "depots": {**IDS["depots"], "windows": 0}}, "depots.windows"),
+    ({**IDS, "depots": {**IDS["depots"], "mac": -1}}, "depots.mac"),
+    ({**IDS, "depots": {**IDS["depots"], "linux": True}}, "depots.linux"),
+    ({**IDS, "depots": {**IDS["depots"], "mac": IDS["depots"]["windows"]}}, "depots.mac"),
+])
+def test_invalid_or_duplicate_ids_refuse_by_field_name(config, field):
+    problem = su.refuse(config)
+    assert problem is not None and field in problem
 
 
 def test_the_game_app_id_matches_steam_json():
@@ -235,6 +250,29 @@ def test_stage_refuses_null_ids_before_any_gh_call(tmp_path):
     gh = FakeGh()
     with pytest.raises(SystemExit, match="app_id"):
         stage(tmp_path, gh, config={**IDS, "app_id": None})
+    assert gh.calls == []
+
+
+@pytest.mark.parametrize(("config", "field"), [
+    ({**IDS, "app_id": False}, "app_id"),
+    ({**IDS, "depots": {**IDS["depots"], "windows": 0}}, "depots.windows"),
+    ({**IDS, "depots": {**IDS["depots"], "mac": IDS["depots"]["windows"]}}, "depots.mac"),
+])
+def test_stage_refuses_invalid_or_duplicate_ids_before_any_gh_call(tmp_path, config, field):
+    gh = FakeGh()
+    with pytest.raises(SystemExit, match=field.replace(".", r"\.")):
+        stage(tmp_path, gh, config=config)
+    assert gh.calls == []
+
+
+@pytest.mark.parametrize("status", ["fail", "unchecked", "passed", None])
+def test_stage_refuses_a_nonpassing_local_golden_before_any_gh_call(tmp_path, status):
+    artifacts = record()["artifacts"]
+    mac = next(a for a in artifacts if a["platform"] == "mac")
+    mac["golden"] = {} if status is None else {"status": status}
+    gh = FakeGh()
+    with pytest.raises(SystemExit, match=rf"mac golden status .*{status!r}.*not 'pass'"):
+        stage(tmp_path, gh, artifacts=artifacts)
     assert gh.calls == []
 
 
