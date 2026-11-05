@@ -586,7 +586,7 @@ public class UnitOrdersTests
             string Odds(int q, int r)
             {
                 var p = Combat.Preview(C, bridge.State, id, q, r)!.Value;
-                var bands = Combat.Outcomes(C, bridge.State, p.Row).Select(b => Text.Format(b.Retreat ? "unit.attack_band_retreat" : "unit.attack_band",
+                var bands = Combat.Outcomes(C, bridge.State, p.Row, id, q, r).Select(b => Text.Format(b.Retreat ? "unit.attack_band_retreat" : "unit.attack_band",
                     b.Faces, b.Of, b.AttackersLose, b.DefendersLose));
                 var names = string.Join(", ", bridge.State.Units.Values.Where(u => (u.Q, u.R) == (q, r)).Where(u => u.Side != "" && u.Side != Movement.PlayerSide).Select(u => "Unit-" + u.Id));
                 return Text.Format("unit.attack_odds", names, p.RatioPercent) + "\n" + string.Join("\n", bands);   // one band a line
