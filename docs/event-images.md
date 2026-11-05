@@ -1,7 +1,7 @@
 # Event-card photographs
 
 The event card's header picture, as in the promo (`promo/final/03-gameplay-1936.png`, `05-event-transit-camps.png`), is a
-real archival photograph of the event, never an AI image. 29 of the 39 events in `content/events/` have one. Seven
+real archival photograph of the event, never an AI image. 29 of the 41 events in `content/events/` have one. Seven
 others show the responsible minister's portrait in the card's head, as before: `rhodes_talks`, `armistice_lebanon`,
 `armistice_syria`, `sinai_withdrawal`, `education_registration_1951`, `reparations_claim` and `forex_crisis_1951`. No
 free photograph that fits them was found (for `sinai_withdrawal`, see the decisions below). The objective card
@@ -11,7 +11,8 @@ the card's own event was found (Q-ABS-3, #1039). The GDD objective card `first_n
 (Boris Carmi, June 1949, CC BY 4.0; #380).
 
 The `railway_complete` card and #939's alternate follow-up cards, `jerusalem_demilitarisation_guard` and
-`rafah_force_pressure`, have no photograph wired yet.
+`rafah_force_pressure`, have no photograph wired yet. The two Deport follow-up cards, `deport_acre` and
+`deport_nazareth`, have none by design (Q-CARD-3 (a), "no image", in each card's header comment).
 
 Owner ruling 2026-10-11 (summarised; recorded in `docs/CONTENT_POLICY.md` section 4):
 - Images of real people stay public domain or CC0, with one narrow exception: archival event photographs (not
@@ -100,7 +101,8 @@ cover this. The decision layer under the top bar bounds the card's height.
   `reparations_vote`. The sign-offs below cover the original six; the owner approved `burma_road_complete` on 21 October
   2026 (#1226, #791); the owner approved `degania_defence` on 24 October 2026 (#1568, #1565); the owner approved
   `reparations_vote` and its photograph on 25 October 2026 (#1575, #1564).
-  - A `-shareable` build (`Build.Web`/`Build.Mac`, the release flow in `docs/RELEASING.md`) refuses until each one is
+  - A `-shareable` build (`Build.Web`, `Build.Mac`, and the standalone `Build.LinuxMono`/`Build.WindowsMono`, which run
+    the same `RefuseUnlessShareable` gate in `StandaloneMono`; the release flow is in `docs/RELEASING.md`) refuses until each one is
     `sensitivity_reviewed: true` and `EventImageImport.Run` has rebuilt the catalog.
   - The gate fails closed: a catalog that exists but does not load is a refusal, and the gate also reads
     `event-images.yaml` and refuses when it lists an unreviewed sensitive picture or does not match the catalog.
@@ -137,9 +139,9 @@ cover this. The decision layer under the top bar bounds the card's height.
     1949, and no free photograph of the event from that window was found. The Meitar pictures of the RAF wreck are from
     7 January. The Sinai and El-Arish frames on Commons are GPO or PD-Israel. The NLI Bitmuna "Operation Horev" scans
     are tagged only `PD-old`, with no author and no US basis.
-- **Provenance.** The licence review re-read all 25 original rows through the Commons API (SHA-1, licence, credit), and
-  the three new rows were checked the same way. With the owner's sign-off of 2026-10-11, all 24 rows say
-  `status: verified`. A new or replaced picture starts again at `owner-verify`, which `check_repo.py --release` refuses.
+- **Provenance.** The licence review re-read the original rows through the Commons API (SHA-1, licence, credit), and
+  the three new rows were checked the same way. With the owner's sign-off of 2026-10-11, those rows said
+  `status: verified`; all 29 rows in `ASSETS.yaml` now do. A new or replaced picture starts again at `owner-verify`, which `check_repo.py --release` refuses.
 
 ## Merge notes
 

@@ -134,15 +134,35 @@ namespace Statecraft.Game.UI
                 : text.Format("city.workers_ordered", Groups(text, target)));
 
             // Train, for each facility the city has (Training.HasFacility: its own, D-D5, or a built camp site's, R-CAMP-001):
-            // each press orders one more group; R-TRAIN-001 takes only civilians without work, and the sim counts every track's
-            // order and the Assign order in the queue against them.
-            var free = Training.Available(s, id, bridge.Queued);
+            // each press orders one more group. The exact preview below asks whether End turn would refuse that order, and
+            // R-TRAIN-001's idle-civilian limit is Training.Available's, over the queue less the orders End turn refuses anyway.
+            // #1548 (owner, 24 October 2026: "Yes, count them"): every queued Train, Reinforce and reassignment still takes
+            // its groups from the civilians without work, as Training.Available counts them (the sim does not take a
+            // reassigned craftsman off them). "Refused anyway" is the current queue's preview, without the press: an order
+            // the press itself would make End turn refuse (a reassignment queued after a Train that takes its civilian) still
+            // counts. The old order's own count is in the queue, so one more group needs one free.
+            var current = Simulation.Preview(c, bridge.TurnStart, bridge.Session.Committed.Concat(bridge.Queued).ToList());
+            var free = Training.Available(s, id, bridge.Queued.Where(x => !current.Rejected.Any(r => ReferenceEquals(r.Command, x))));
             foreach (var type in c.UnitTypes.Where(t => t.Facility != "" && Training.HasFacility(c, s, id, t.Facility)))
             {
-                var ordered = (bridge.QueuedLike(new Train(id, type.Id, 1)) as Train)?.Count ?? 0;
+                var old = bridge.QueuedLike(new Train(id, type.Id, 1));
+                var ordered = (old as Train)?.Count ?? 0;
+                // #2573: the press queues Train(ordered + 1) where SimBridge.Queue puts it (the old order's slot, else last), so
+                // the button asks End turn's own order runner (Simulation.Preview: queue order, conversions before Arms
+                // purchases) whether that exact order would be refused, for a short Arms stock (R-ARMS-003) or any other reason.
+                var press = new Train(id, type.Id, ordered + 1);
+                var queue = bridge.Queued.ToList();
+                var slot = old == null ? -1 : queue.IndexOf(old);
+                if (slot >= 0) queue[slot] = press; else queue.Add(press);
+                // As End turn runs it (GameSession.EndTurn: Step from the turn's start over the committed orders, then the
+                // queue) and as ArmsPurchasePresenter asks it.
+                var preview = Simulation.Preview(c, bridge.TurnStart, bridge.Session.Committed.Concat(queue).ToList());
+                var accepted = !preview.Rejected.Any(x => ReferenceEquals(x.Command, press));
+                // Nor may the press make End turn refuse a queued order it accepts now (its civilians, Arms or anything else).
+                var causesNoNewRefusal = !bridge.Queued.Any(x => preview.Rejected.Any(r => ReferenceEquals(r.Command, x)) && !current.Rejected.Any(r => ReferenceEquals(r.Command, x)));
                 var row = Row(host, $"city-train-{type.Id}-row");
                 OrderButton(row, bridge, "city-train-" + type.Id, text.Format("city.train_" + type.Id, PlayerText.Money(c, "treasury", type.TrainingCost), Turns(text, type.TrainingTurns)),
-                    free >= 1, () => bridge.Queue(new Train(id, type.Id, ordered + 1)));
+                    accepted && causesNoNewRefusal && free >= 1, () => bridge.Queue(new Train(id, type.Id, ordered + 1)));
                 if (ordered > 0) Line(row, $"city-train-{type.Id}-ordered", text.Format("city.train_ordered", ordered));
             }
 
@@ -297,13 +317,14 @@ namespace Statecraft.Game.UI
                 if (idle.Count == 0) Line(host, "corridor-no-halutz", text["site.no_halutz"]);
                 // One unit a segment (Q-COR-4): once a group is ordered here, the others' Build is off, as the sim would refuse it.
                 var taken = bridge.Queued.OfType<PioneerWork>().Any(w => w.Site == target);
+                var refusal = Corridors.CheckStart(c, s, action, d, index);
                 foreach (var u in idle)
                 {
                     var ordered = bridge.QueuedLike(new PioneerWork(u.Id, action, target)) is PioneerWork p && p.Site == target;
                     OrderButton(host, bridge, $"corridor-build-{u.Id}", ordered ? text["site.ordered"]
                             : text.Format("corridor.build_" + d.Kind, Group(text, s, u.Id), PlayerText.Money(c, "treasury", terms.Cost),
                                 Turns(text, Corridors.TurnsToBuild(c, s, u.Id, terms.Turns, 0))),
-                        !ordered && !taken, () => bridge.Queue(new PioneerWork(u.Id, action, target)));
+                        refusal == null && !ordered && !taken, () => bridge.Queue(new PioneerWork(u.Id, action, target)));
                     PioneerReturn(host, bridge, text, u.Id);
                 }
             }
@@ -491,7 +512,8 @@ namespace Statecraft.Game.UI
         {
             switch (reason.Kind)
             {
-                case "maabarot_policy": case "not_land": return text["info.map_action_reason." + reason.Kind];
+                case "maabarot_policy": case "not_land": case "depopulated":
+                    return text["info.map_action_reason." + reason.Kind];
                 case "occupied": return text.Format("info.map_action_reason.occupied", text["info.map_action." + reason.Values[0]]);
                 case "no_resource": return text.Format("city.project_reason.no_resource", townName(reason.Values[0]), ResourceName(text, reason.Values[1]),
                     ContentNames.Of(text, c.ProjectKinds.First(x => x.Id == reason.Values[2])));
