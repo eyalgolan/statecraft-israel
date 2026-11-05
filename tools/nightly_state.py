@@ -16,6 +16,7 @@ import math
 import os
 import re
 import subprocess
+import sys
 from dataclasses import asdict, dataclass, field, fields
 from datetime import date, datetime, time, timedelta
 from pathlib import Path
@@ -356,25 +357,63 @@ def notify(title: str, message: str, run=None) -> None:
 @contextlib.contextmanager
 def _run_lock(job: Path, name: str = "run.lock") -> Iterator[bool]:
     import fcntl   # POSIX only; imported here so the shared types load anywhere
-    job.mkdir(parents=True, exist_ok=True)
-    with (job / name).open("a") as fh:
+    path = job / name
+    try:
+        job.mkdir(parents=True, exist_ok=True)
+    except OSError as e:
+        raise Refused("lock", f"cannot create lock directory {job}: {e}") from e
+    try:
+        fh = path.open("a")
+    except OSError as e:
+        raise Refused("lock", f"cannot open {path}: {e}") from e
+    locked = False
+    primary: BaseException | None = None
+    try:
         try:
             fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except OSError:
+        except BlockingIOError:
             yield False
             return
+        except OSError as e:
+            raise Refused("lock", f"cannot take {path}: {e}") from e
+        locked = True
+        yield True
+    except BaseException as e:
+        primary = e
+        raise
+    finally:
+        teardown: list[Refused] = []
+        if locked:
+            try:
+                fcntl.flock(fh, fcntl.LOCK_UN)
+            except OSError as e:
+                failure = Refused("lock", f"cannot release {path}: {e}")
+                failure.__cause__ = e
+                teardown.append(failure)
         try:
-            yield True
-        finally:
-            fcntl.flock(fh, fcntl.LOCK_UN)
+            fh.close()
+        except OSError as e:
+            failure = Refused("lock", f"cannot close {path}: {e}")
+            failure.__cause__ = e
+            teardown.append(failure)
+        if teardown:
+            if primary is not None:
+                for failure in teardown:
+                    print(f"{failure}; preserving {type(primary).__name__}: {primary}", file=sys.stderr)
+            else:
+                for failure in teardown[1:]:
+                    print(f"{failure}; preserving {teardown[0]}", file=sys.stderr)
+                raise teardown[0]
 
 
 def run_lock(job: Path) -> ContextManager[bool]:
-    """Yields True when this process holds <job>/run.lock, False when another run already does."""
+    """Yields True when this process holds <job>/run.lock, False only when another run already does.
+    A lock-system failure raises Refused."""
     return _run_lock(job)
 
 
 def savetest_lock(job: Path) -> ContextManager[bool]:
-    """Yields True when this process holds <job>/savetest.lock, False when another save test already does: agents
-    may start the save test too (owner, 2 Nov 2026, "2 (a)"), and two runs must not push to the test page at once."""
+    """Yields True when this process holds <job>/savetest.lock, False only when another save test already does.
+    A lock-system failure raises Refused. Agents may start the save test too (owner, 2 Nov 2026, "2 (a)"), and two
+    runs must not push to the test page at once."""
     return _run_lock(job, "savetest.lock")

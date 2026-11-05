@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 # nightly_launch locks with flock (through nightly_state); fcntl does not exist on Windows.
-pytest.importorskip("fcntl", reason="fcntl is POSIX-only (nightly_state uses flock); not on Windows")
+fcntl = pytest.importorskip("fcntl", reason="fcntl is POSIX-only (nightly_state uses flock); not on Windows")
 
 import nightly_launch as nl  # noqa: E402
 import nightly_state as ns  # noqa: E402
@@ -164,6 +164,54 @@ def test_a_run_in_progress_exits_0_and_touches_nothing(tmp_path, capsys):
     assert code == 0 and rec.calls == [] and ran == []
     assert "a run is in progress" in capsys.readouterr().out
     assert not (home / "LOG.md").exists()
+
+
+def test_a_run_lock_open_failure_is_recorded_as_refused(tmp_path, monkeypatch, capsys):
+    home = tmp_path / "job"
+    cfg = cfg_for(tmp_path)
+    write_config(home, cfg)
+    (home / "run.lock").mkdir()
+    monkeypatch.setattr(nl, "notify", lambda *a, **k: None)
+    rec, ran = Recorder(), []
+    code = nl.main(["--uv", "/opt/uv", "--home", str(home)], git=rec.git, copy=rec.copy,
+                   call=ran.append, now=NOW)
+    assert code == 1 and rec.calls == [] and ran == []
+    assert "REFUSED" in (home / "LOG.md").read_text() and "gate=lock" in (home / "LOG.md").read_text()
+    assert "gate=lock" in cfg.handoff.read_text()
+    err = capsys.readouterr().err
+    assert "lock:" in err and "cannot open" in err and str(home / "run.lock") in err
+
+
+def test_a_clone_refusal_survives_a_run_lock_release_failure(tmp_path, monkeypatch, capsys):
+    home = tmp_path / "job"
+    cfg = cfg_for(tmp_path, clone=False)
+    write_config(home, cfg)
+    monkeypatch.setattr(nl, "notify", lambda *a, **k: None)
+    calls = 0
+
+    def fail_release(*args):
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise PermissionError("unlock denied")
+
+    monkeypatch.setattr(fcntl, "flock", fail_release)
+    assert nl.main(["--uv", "/opt/uv", "--home", str(home)], now=NOW) == 1
+    log = (home / "LOG.md").read_text()
+    assert log.count("REFUSED") == 1 and "gate=clone" in log and "gate=lock" not in log
+    err = capsys.readouterr().err
+    assert "cannot release" in err and "preserving Refused: clone:" in err
+
+
+def test_a_job_directory_setup_failure_is_a_refusal_not_a_traceback(tmp_path, monkeypatch, capsys):
+    parent = tmp_path / "not-a-directory"
+    parent.write_text("file")
+    home = parent / "job"
+    monkeypatch.setattr(nl, "notify", lambda *a, **k: None)
+    assert nl.main(["--uv", "/opt/uv", "--home", str(home)], now=NOW) == 1
+    err = capsys.readouterr().err
+    assert "lock: cannot create lock directory" in err and str(home) in err
+    assert "could not record refusal" in err
 
 
 def test_a_prepared_clone_runs_the_clones_own_nightly_script_with_the_lock_free(tmp_path):

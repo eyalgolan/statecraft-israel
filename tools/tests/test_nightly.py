@@ -14,7 +14,7 @@ from types import SimpleNamespace
 
 import pytest
 
-pytest.importorskip("fcntl")   # nightly imports unity_postmerge, which locks with flock
+fcntl = pytest.importorskip("fcntl")   # nightly imports unity_postmerge, which locks with flock
 
 import nightly
 import nightly_state as ns
@@ -2402,6 +2402,29 @@ def test_the_savetest_command_builds_its_itch_client_on_the_test_target(tmp_path
     assert nightly.run_savetest(cfg, tmp_path, TAG) == 0 and built == [TEST_TARGET]
 
 
+def test_a_broken_savetest_lock_is_recorded_inconclusive(tmp_path, monkeypatch, no_processes, capsys):
+    butler = tmp_path / "butler"
+    butler.write_text("")
+    monkeypatch.setattr(nightly.shutil, "which", lambda name: "/usr/bin/" + name)
+    stages = []
+    monkeypatch.setattr(nightly, "_savetest", lambda *a, **k: stages.append((a, k)))
+
+    @contextmanager
+    def broken_lock(job):
+        raise ns.Refused("lock", f"cannot take {job / 'savetest.lock'}: denied")
+        yield True
+
+    monkeypatch.setattr(nightly, "savetest_lock", broken_lock)
+    cfg = dataclasses.replace(ns.Config(), butler=butler, handoff=tmp_path / "HANDOFF.md",
+                              itch_page_url="https://eyalgolan.itch.io/statecraft-israel",
+                              savetest_itch_target=TEST_TARGET)
+    assert nightly.run_savetest(cfg, tmp_path, TAG) == 1 and stages == []
+    assert "INCONCLUSIVE" in capsys.readouterr().out
+    log = (tmp_path / "LOG.md").read_text()
+    assert "SAVETEST INCONCLUSIVE" in log and "lock: cannot take" in log and "denied" in log
+    assert "SAVETEST INCONCLUSIVE" in cfg.handoff.read_text()
+
+
 def too_many_requests(retry_after=None):
     return http_error(frame_of(101), 429, retry_after)
 
@@ -3284,3 +3307,86 @@ def test_the_steam_content_is_removed_after_the_stage(night, env):
     nightly.run_steam(night, env.runner)
     assert not (out / "steam").exists() and not list(out.glob("*.zip"))
     assert (out / "build-record.json").is_file()
+
+
+def test_a_run_lock_open_failure_in_main_is_a_recorded_refusal(tmp_path, monkeypatch, capsys):
+    """#2644 review: a real run.lock open failure is recorded by nightly.main, not raised as a traceback."""
+    job = tmp_path / "job"
+    job.mkdir()
+    (job / "run.lock").mkdir()
+    monkeypatch.setattr(nightly, "JOB", job)
+    monkeypatch.setattr(nightly, "load_config", lambda p: ns.Config(handoff=tmp_path / "HANDOFF.md"))
+    monkeypatch.setattr(nightly, "notify", lambda *a, **k: None)
+    assert nightly.main(["run"]) == 1
+    assert "gate=lock" in (job / "LOG.md").read_text()
+    assert "REFUSED" in (tmp_path / "HANDOFF.md").read_text()
+    assert "cannot open" in capsys.readouterr().err
+
+
+def test_a_run_lock_open_failure_in_a_no_publish_run_writes_no_record(tmp_path, monkeypatch, capsys):
+    """#2670 review: a by-hand --no-publish run writes nothing to LOG.md or the handoff, a lock failure included."""
+    job = tmp_path / "job"
+    job.mkdir()
+    (job / "run.lock").mkdir()
+    monkeypatch.setattr(nightly, "JOB", job)
+    monkeypatch.setattr(nightly, "load_config", lambda p: ns.Config(handoff=tmp_path / "HANDOFF.md"))
+    sent = []
+    monkeypatch.setattr(nightly, "notify", lambda *a, **k: sent.append(a))
+    assert nightly.main(["run", "--no-publish"]) == 1
+    assert not (job / "LOG.md").exists() and not (tmp_path / "HANDOFF.md").exists() and not sent
+    assert "cannot open" in capsys.readouterr().err
+
+
+def test_a_run_lock_release_failure_does_not_add_a_second_savetest_record(tmp_path, monkeypatch, capsys):
+    job = tmp_path / "job"
+    job.mkdir()
+    butler = tmp_path / "butler"
+    butler.write_text("")
+    cfg = dataclasses.replace(ns.Config(), butler=butler, handoff=tmp_path / "HANDOFF.md",
+                              itch_page_url="https://eyalgolan.itch.io/statecraft-israel",
+                              savetest_itch_target=TEST_TARGET)
+    monkeypatch.setattr(nightly, "JOB", job)
+    monkeypatch.setattr(nightly, "load_config", lambda p: cfg)
+    monkeypatch.setattr(nightly, "notify", lambda *a, **k: None)
+    monkeypatch.setattr(nightly.shutil, "which", lambda name: "/usr/bin/" + name)
+    monkeypatch.setattr(nightly, "_savetest", lambda *a, **k: ("PASS", "completed"))
+    unlocks = 0
+
+    def fail_outer_release(fh, operation):
+        nonlocal unlocks
+        if operation == fcntl.LOCK_UN:
+            unlocks += 1
+        if unlocks == 2:
+            raise PermissionError("denied")
+
+    monkeypatch.setattr(fcntl, "flock", fail_outer_release)
+    assert nightly.main(["savetest", "--tag", TAG]) == 0
+    log = (job / "LOG.md").read_text()
+    assert log.count("SAVETEST PASS") == 1 and "REFUSED" not in log and "gate=lock" not in log
+    assert (tmp_path / "HANDOFF.md").read_text().count("SAVETEST PASS") == 1
+    err = capsys.readouterr().err
+    assert "cannot release" in err and "existing record is unchanged" in err
+
+
+def test_a_run_lock_release_failure_does_not_replace_run_nights_record(tmp_path, monkeypatch, capsys):
+    job = tmp_path / "job"
+    job.mkdir()
+    cfg = ns.Config(handoff=tmp_path / "HANDOFF.md")
+    monkeypatch.setattr(nightly, "JOB", job)
+    monkeypatch.setattr(nightly, "load_config", lambda p: cfg)
+    monkeypatch.setattr(nightly, "notify", lambda *a, **k: None)
+    monkeypatch.setattr(nightly, "_clients", lambda cfg: (_ for _ in ()).throw(ns.Refused("github-client", "offline")))
+    calls = 0
+
+    def fail_release(*args):
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise PermissionError("denied")
+
+    monkeypatch.setattr(fcntl, "flock", fail_release)
+    assert nightly.main(["run"]) == 1
+    log = (job / "LOG.md").read_text()
+    assert log.count("REFUSED") == 1 and "gate=github-client" in log and "gate=lock" not in log
+    err = capsys.readouterr().err
+    assert "cannot release" in err and "existing record is unchanged" in err

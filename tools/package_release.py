@@ -14,8 +14,8 @@ sensitivity-reviewed (docs/event-images.md).
 
 Build.Web names the files under Build/ by their content hash (issue #437), so their names change from build to build and
 index.html is what says which ones belong to this build. The zip carries exactly the Build/ files index.html names: it
-is refused when one is missing, and a file it does not name (an earlier build's, left in the folder) is left out with a
-"LEFT OUT Build/<name>" line.
+is refused when it names none or when one is missing, and a file it does not name (an earlier build's, left in the
+folder) is left out with a "LEFT OUT Build/<name>" line.
 
 The translations ship twice (#1618, step 2): as files in StreamingAssets/translations, which desktop players and the gate
 read, and as texts packed into StreamingAssets/content/bundle.json, which the web player reads. The zip is refused unless
@@ -121,6 +121,9 @@ def package(build: Path, zip_path: Path) -> int:
         print(f"PACKAGE REFUSED: {build} has no StreamingAssets/content")
         return 1
     named = build_files(build)
+    if not named:
+        print("PACKAGE REFUSED: index.html names no Build/ files (not a usable WebGL build)")
+        return 1
     if missing := [n for n in named if not (build / "Build" / n).is_file()]:
         print("PACKAGE REFUSED: index.html names files that are not in the build: " + ", ".join("Build/" + n for n in missing))
         return 1

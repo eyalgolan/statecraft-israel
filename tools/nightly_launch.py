@@ -69,7 +69,10 @@ def _refuse(cfg: Config, home: Path, e: Refused, now: datetime) -> None:
         evidence = None
         detail = f"{detail}; could not write refusal log: {error}"
     line = log_line(now, "REFUSED", tag=None, sha=None, gate=e.gate, log=evidence)
-    record(home / "LOG.md", cfg.handoff, f"{line} {detail}")
+    try:
+        record(home / "LOG.md", cfg.handoff, f"{line} {detail}")
+    except OSError as record_error:
+        print(f"could not record refusal: {record_error}", file=sys.stderr)
     notify("Nightly refused", str(e)[:200])
     print(e, file=sys.stderr)
 
@@ -82,21 +85,20 @@ def main(argv: list[str] | None = None, *, git: Callable[..., str] = _git,
     ap.add_argument("--home", type=Path, required=True)
     a = ap.parse_args(argv)
     now = now or datetime.now(TZ)
-    a.home.mkdir(parents=True, exist_ok=True)
     try:
         cfg = load_config(a.home / "config.json")
     except Refused as e:   # a corrupt config is a recorded REFUSED night, not a night on defaults
         _refuse(Config(), a.home, e, now)
         return 1
-    with run_lock(a.home) as held:
-        if not held:
-            print("nightly_launch: a run is in progress")
-            return 0
-        try:
+    try:
+        with run_lock(a.home) as held:
+            if not held:
+                print("nightly_launch: a run is in progress")
+                return 0
             prepare_clone(cfg, git, copy)
-        except Refused as e:
-            _refuse(cfg, a.home, e, now)
-            return 1
+    except Refused as e:
+        _refuse(cfg, a.home, e, now)
+        return 1
     try:
         return call([a.uv, "run", str(cfg.clone / "tools" / "nightly.py"), "run"])
     except OSError as e:
