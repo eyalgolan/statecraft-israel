@@ -675,6 +675,20 @@ def test_editmode_failure_or_missing_results_or_timeout_refuses(night, env):
         assert e.value.gate == "editmode"
 
 
+def test_editmode_unreadable_results_refuse_and_still_restore_settings(night, env, monkeypatch):
+    r = editmode_runner(night)
+
+    def unreadable(path):
+        assert Path(path).name == "editmode.xml"
+        raise OSError("permission denied")
+
+    monkeypatch.setattr(nightly.unity_postmerge.ET, "parse", unreadable)
+    with pytest.raises(Refused) as e:
+        nightly.run_editmode(night, r)
+    assert e.value.gate == "editmode" and "result file could not be read: permission denied" in e.value.detail
+    assert r.envs[-1][0] == nightly.RESTORE_ARGV
+
+
 def test_settings_are_restored_when_the_runner_raises(night, env):
     r = editmode_runner(night)
     real = r.run
