@@ -54,7 +54,7 @@ public class Gdd03SaveTests
         Assert.StartsWith("statecraft-save 5\n", save.Write());
     }
 
-    // #2605: the earlier schema of each ruleset still reads, keeps its version, and is written back as schema 5.
+    // R-SAVE-005 (#2605): the earlier schema of each ruleset still reads, keeps its version, and is written back as schema 5.
     [Theory]
     [InlineData(3, "legacy")]
     [InlineData(3, "gdd-0.1")]
