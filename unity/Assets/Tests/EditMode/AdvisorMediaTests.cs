@@ -44,12 +44,15 @@ public class AdvisorMediaTests
 
     static readonly AdvisorCatalog.Media Row = new AdvisorCatalog.Media
     {
-        Picture = "x.mp4", Narration = new Dictionary<string, string> { ["en"] = "x.en.wav" },
-        Cues = new Dictionary<string, List<double>> { ["en"] = new List<double> { 0.0, 2.5 } }, Label = "lab",
+        Picture = "x.mp4", Narration = new Dictionary<string, string> { ["en"] = "x.en.wav", ["he"] = "x.he.wav" },
+        Cues = new Dictionary<string, List<double>> { ["en"] = new List<double> { 0.0, 2.5 }, ["he"] = new List<double> { 0.0, 2.5 } }, Label = "lab",
     };
     static UiText Text => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text +
         "\nadvisor.t.teach.text: \"Teach.\"\nadvisor.t.warn.text: \"Warn.\"\nadvisor.t.crit.text: \"Critical.\"\nadvisor.x.cue.1: \"First.\"\nadvisor.x.cue.2: \"Second.\"\nlab: \"Label.\"\n" +
         "advisor.t.teach.cue.1: \"Teach one.\"\nadvisor.t.teach.cue.2: \"Teach two.\"\n");
+    static UiText HebrewText => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text +
+        "\nadvisor.t.teach.text: \"לימוד.\"\nadvisor.t.warn.text: \"אזהרה.\"\nadvisor.t.crit.text: \"קריטי.\"\nadvisor.x.cue.1: \"ראשון.\"\nadvisor.x.cue.2: \"שני.\"\nlab: \"תווית.\"\n" +
+        "advisor.t.teach.cue.1: \"לימוד ראשון.\"\nadvisor.t.teach.cue.2: \"לימוד שני.\"\n", "strings.he.yaml");
 
     readonly List<AdvisorMedia> owned = new List<AdvisorMedia>();
     [TearDown] public void Clean() { foreach (var media in owned) media.Dispose(); owned.Clear(); }
@@ -291,42 +294,57 @@ public class AdvisorMediaTests
     [UnityTest]
     public System.Collections.IEnumerator InlineKeepsItsXAndAPhoneStopsItBeforeUsingTheOverlay()
     {
-        var wide = new RenderTexture(1280, 720, 0);
-        var panel = UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel)); panel.targetTexture = wide;
-        var go = new GameObject("AdvisorMediaGeometry"); go.SetActive(false);
-        var doc = go.AddComponent<UIDocument>(); doc.panelSettings = panel;
-        doc.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml); go.SetActive(true);
-        var root = doc.rootVisualElement; var hudRoot = root.Q("root"); hudRoot.RemoveFromClassList("loading");
-        var bridge = new SimBridge(GameSession.New(ContentLoader.Load(Paths.Content), GoldenRun.Seed, Mode.Historical), Text);
-        var hud = new HudPresenter(root, bridge, Text); var nav = new ScreenNav(root);
-        var card = new EventCardPresenter(root, bridge, Text, null); card.Collapse(takeFocus: false);
-        var session = new AdvisorSession(AdvisorCatalog.Parse(AdvisorPopupTests.Fixture), new AdvisorSettings(null), true);
-        var advisor = new AdvisorPresenter(root, bridge, Text, session, hooks: new AdvisorHooks { Card = card });
-        var pic = new FakePicture { Ready = true }; var output = new FakeOutput();
-        advisor.Media = new AdvisorMedia(Text, pic, null, Immediate, output);
-        try
+        foreach (var hebrew in new[] { false, true })
         {
-            advisor.NewGame(); for (int i = 0; i < 6; i++) yield return null;
-            advisor.ForceInline = true; advisor.Watch(Row, "advisor.x"); advisor.Media.Tick(); output.Position = 0.1f;
-            for (int i = 0; i < 4; i++) yield return null;
-            Assert.IsTrue(AdvisorTargets.Shown(root.Q("advisor-close")), "inline keeps X usable");
-            // A runtime targetTexture swap does not resize an EditMode panel (it stayed 1920x1080 panel px for 30 frames), so the
-            // HUD root takes an upright phone's size in panel px (390x844 at the 1280x720 panel's 1.5 panel px per pixel).
-            advisor.ForceInline = null; hudRoot.style.width = 585; hudRoot.style.height = 1266;
-            for (int i = 0; i < 6; i++) yield return null;
-            Assert.IsTrue(hudRoot.ClassListContains(HudPresenter.ThreeRowClass));
-            Assert.IsFalse(advisor.Media.Playing, "inline stops when the new tier has no room; no automatic replay");
-            advisor.ForceInline = false; advisor.Watch(Row, "advisor.x"); advisor.Media.Tick(); output.Position = 0.1f;
-            for (int i = 0; i < 6; i++) yield return null;
-            var picture = root.Q("advisor-overlay-media").worldBound;
-            Assert.Greater(picture.height, 0); Assert.AreEqual(EventCardPresenter.MediaAspect, picture.width / picture.height, 0.02f);
-            Assert.GreaterOrEqual(root.Q("advisor-overlay-caption").resolvedStyle.fontSize * root.panel.scaledPixelsPerPoint, HudPresenter.TextFloorPx - 0.01f);
-        }
-        finally
-        {
-            advisor.Dispose(); card.Dispose(); nav.Dispose(); hud.Dispose();
-            UnityEngine.Object.DestroyImmediate(go); UnityEngine.Object.DestroyImmediate(panel);
-            wide.Release(); UnityEngine.Object.DestroyImmediate(wide);
+            var text = hebrew ? HebrewText : Text;
+            var wide = new RenderTexture(1280, 720, 0);
+            var panel = UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel)); panel.targetTexture = wide;
+            var go = new GameObject("AdvisorMediaGeometry"); go.SetActive(false);
+            var doc = go.AddComponent<UIDocument>(); doc.panelSettings = panel;
+            doc.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml); go.SetActive(true);
+            var root = doc.rootVisualElement; var hudRoot = root.Q("root"); hudRoot.RemoveFromClassList("loading");
+            hudRoot.EnableInClassList(UiLanguage.HebrewClass, text["ui.lang"] == UiLanguage.Hebrew);   // as GameRoot
+            var bridge = new SimBridge(GameSession.New(ContentLoader.Load(Paths.Content), GoldenRun.Seed, Mode.Historical), text);
+            var hud = new HudPresenter(root, bridge, text); var nav = new ScreenNav(root);
+            var card = new EventCardPresenter(root, bridge, text, null); card.Collapse(takeFocus: false);
+            var session = new AdvisorSession(AdvisorCatalog.Parse(AdvisorPopupTests.Fixture), new AdvisorSettings(null), true);
+            var advisor = new AdvisorPresenter(root, bridge, text, session, hooks: new AdvisorHooks { Card = card });
+            var direction = hebrew ? new UiDirection(root, bridge) : null;
+            var pic = new FakePicture { Ready = true }; var output = new FakeOutput();
+            advisor.Media = new AdvisorMedia(text, pic, null, Immediate, output);
+            try
+            {
+                advisor.NewGame(); for (int i = 0; i < 6; i++) yield return null;
+                var popupBounds = root.Q("advisor-popup").worldBound; var closeBounds = root.Q("advisor-close").worldBound;
+                float beforeLeft = closeBounds.xMin - popupBounds.xMin, beforeRight = popupBounds.xMax - closeBounds.xMax;
+                if (hebrew) Assert.Less(beforeLeft, beforeRight, "Hebrew: X starts at the left corner");
+                else Assert.Less(beforeRight, beforeLeft, "English: X starts at the right corner");
+                advisor.ForceInline = true; advisor.Watch(Row, "advisor.x"); advisor.Media.Tick(); output.Position = 0.1f;
+                for (int i = 0; i < 4; i++) yield return null;
+                Assert.IsTrue(AdvisorTargets.Shown(root.Q("advisor-close")), "inline keeps X usable");
+                Assert.IsTrue(root.Q("advisor-popup").ClassListContains(AdvisorPresenter.WatchingClass), "precondition: inline picture playback");
+                popupBounds = root.Q("advisor-popup").worldBound; closeBounds = root.Q("advisor-close").worldBound;
+                float leftGap = closeBounds.xMin - popupBounds.xMin, rightGap = popupBounds.xMax - closeBounds.xMax;
+                if (hebrew) Assert.Less(leftGap, rightGap, "Hebrew: inline X stays at the left corner");
+                else Assert.Less(rightGap, leftGap, "English: inline X stays at the right corner");
+                // A runtime targetTexture swap does not resize an EditMode panel (it stayed 1920x1080 panel px for 30 frames), so the
+                // HUD root takes an upright phone's size in panel px (390x844 at the 1280x720 panel's 1.5 panel px per pixel).
+                advisor.ForceInline = null; hudRoot.style.width = 585; hudRoot.style.height = 1266;
+                for (int i = 0; i < 6; i++) yield return null;
+                Assert.IsTrue(hudRoot.ClassListContains(HudPresenter.ThreeRowClass));
+                Assert.IsFalse(advisor.Media.Playing, "inline stops when the new tier has no room; no automatic replay");
+                advisor.ForceInline = false; advisor.Watch(Row, "advisor.x"); advisor.Media.Tick(); output.Position = 0.1f;
+                for (int i = 0; i < 6; i++) yield return null;
+                var picture = root.Q("advisor-overlay-media").worldBound;
+                Assert.Greater(picture.height, 0); Assert.AreEqual(EventCardPresenter.MediaAspect, picture.width / picture.height, 0.02f);
+                Assert.GreaterOrEqual(root.Q("advisor-overlay-caption").resolvedStyle.fontSize * root.panel.scaledPixelsPerPoint, HudPresenter.TextFloorPx - 0.01f);
+            }
+            finally
+            {
+                direction?.Dispose(); advisor.Dispose(); card.Dispose(); nav.Dispose(); hud.Dispose();
+                UnityEngine.Object.DestroyImmediate(go); UnityEngine.Object.DestroyImmediate(panel);
+                wide.Release(); UnityEngine.Object.DestroyImmediate(wide);
+            }
         }
     }
 

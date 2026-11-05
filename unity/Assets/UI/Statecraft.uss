@@ -194,7 +194,7 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 /* In Hebrew each caption, and Security's wrapped caption row, ends at the text column's right edge (review of #859: the
    wrapped row had moved to the column's left). */
 .lang-he.hud-three-row .meter-body { align-items: flex-end; }
-.lang-he.hud-three-row .meter-caption-row { justify-content: flex-end; }
+.lang-he.hud-three-row .meter-caption-row { justify-content: flex-start; }
 .hud-three-row .right-column, .hud-three-row .left-column, .hud-three-row .event-gutter, .hud-three-row .event-layer, .hud-three-row .screen, .hud-three-row .toast { top: 456px; }
 /* The owner's ruling on #859 (17 October 2026): on a phone no rail button sits under the decision card, Why? and Settings
    included. The card starts right of the column (the layer's left padding, from its 16 px: the column's 60 px and a 12 px gap; padding, so
@@ -1009,7 +1009,7 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 /* The Hebrew plate shows the first name's initial and the surname ("י. ידין", PersonCard.InitialAndSurname), not two
    letters: at 36 px the longest, "פ. ברנשטיין", fits the narrowest plate (measured by PromoScreensTests). */
 .lang-he .card-initials { font-size: 36px; }
-.lang-he .top-bar, .lang-he .year-row, .lang-he .date-row, .lang-he .meters, .lang-he .meter, .lang-he .meter-row, .lang-he .nav, .lang-he .row,
+.lang-he .top-bar, .lang-he .year-row, .lang-he .date-row, .lang-he .meters, .lang-he .meter, .lang-he .meter-caption-row, .lang-he .meter-row, .lang-he .nav, .lang-he .row,
 .lang-he .event-foot, .lang-he .event-head, .lang-he .info-panel, .lang-he .info-row, .lang-he .card-stat, .lang-he .pm-offices,
 .lang-he .cabinet-house, .lang-he .party-group, .lang-he .party-chip, .lang-he .defence-row, .lang-he .leaders, .lang-he .rung,
 .lang-he .defence-budget, .lang-he #cabinet-seats .unity-scroll-view__content-container, .lang-he .start-recording,
@@ -1021,6 +1021,7 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .lang-he .date-row Label { margin-right: 0; margin-left: 8px; }
 .lang-he .meter { border-right-width: 0; border-left-width: 1px; padding: 0 3px 0 4px; }
 .lang-he .meter-icon { margin-right: 0; margin-left: 5px; }
+.lang-he #security-level { margin-left: 0; margin-right: 6px; }
 .lang-he .meter-delta { margin-left: 0; margin-right: 7px; }
 .lang-he.hud-narrow .meter-delta { margin-right: 0; }
 .lang-he .meter-delta.delta-up, .lang-he .meter-delta.delta-down { padding-left: 0; padding-right: 9px; }
@@ -1030,6 +1031,7 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .lang-he .info-row-sign { margin: 3px 0 0 10px; }
 .lang-he .info-body > .row Button { margin-right: 0; margin-left: 6px; }
 .lang-he .why-line { padding-left: 0; padding-right: 12px; }
+.lang-he .turn-report-causes { padding: 4px 14px 4px 2px; }
 .lang-he .section-title { margin: 0 2px 8px 0; }
 .lang-he .cabinet-side { margin-right: 0; margin-left: 14px; }
 .lang-he .pm-office { margin: 0 0 4px 6px; }
@@ -1210,6 +1212,7 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .advisor-overlay-words { flex-shrink: 1; min-height: 0; }
 
 .advisor-watching .advisor-head { position: absolute; right: 8px; top: 8px; margin: 0; }
+.lang-he .advisor-watching .advisor-head { right: auto; left: 8px; }
 .advisor-no-portrait.advisor-has-media .advisor-portrait { display: flex; }
 
 .advisor-watching .advisor-head > .advisor-portrait, .advisor-watching .advisor-head > .advisor-names { display: none; }
