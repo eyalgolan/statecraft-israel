@@ -108,26 +108,57 @@ namespace Statecraft.Sim
             }
         }
 
+        /// <summary>R-FOOD-001 under gdd-0.3 (#2470): the month's need of a population ledger, one ration (one population
+        /// unit's food) for each living own population id in <paramref name="snapshot"/>, whatever its status or
+        /// assignment. The order of the snapshot does not matter; a repeated id or a missing record is refused.</summary>
+        internal static int Rations(IEnumerable<PopulationUnit> snapshot)
+        {
+            if (snapshot == null) throw new ArgumentNullException(nameof(snapshot));
+            var ids = new HashSet<int>();
+            foreach (var p in snapshot)
+                if (p == null || !ids.Add(p.Id)) throw new ArgumentException("A Food snapshot holds each population id once.", nameof(snapshot));
+            return ids.Count;
+        }
+
         /// <summary>R-FOOD-002, step 7: the nation eats the turn's need from the stock, as far as the stock goes (it stops at
         /// 0, and the rest is unmet), then the import brings the stock back to cover_months of the need, unless foreign
-        /// currency is exhausted (the fx_crisis situation at the turn's start), when no Food is imported.</summary>
-        public static void Consume(Content c, GameState s, MvpRules r, List<Cause> why)
+        /// currency is exhausted (the fx_crisis situation at the turn's start), when no Food is imported. The need is the
+        /// aggregate head count; a state with an initialized population ledger is refused here (R-POP-002).</summary>
+        public static void Consume(Content c, GameState s, MvpRules r, List<Cause> why) => Consume(c, s, r, null, why);
+
+        /// <summary>R-FOOD-002 under gdd-0.3 (#2470): with a <paramref name="month"/> context the need is <see cref="Rations"/>
+        /// of the month's frozen opening snapshot (<see cref="Gdd03SyntheticMonthContext.OpeningPeople"/>), not the live
+        /// ledger, so a ledger change before step 7 does not move the month's need. The live ledger is checked first
+        /// (<see cref="PopulationLedger.Reconcile"/>) so a bad ledger moves no Food. Without a month it is the aggregate need.</summary>
+        internal static void Consume(Content c, GameState s, MvpRules r, Gdd03SyntheticMonthContext? month, List<Cause> why)
         {
-            PopulationLedger.RefuseAggregate(s);
-            var need = Need(s, r);
+            if (month == null) PopulationLedger.RefuseAggregate(s);
+            else if (!c.UsesPopulationLedger || !s.PopulationLedger.IsInitialized)
+                throw new NotSupportedException("A monthly Food snapshot needs an initialized gdd-0.3 population ledger.");
+            else s.PopulationLedger.Reconcile();
+            var need = month != null ? Rations(month.OpeningPeople) : Need(s, r);
             var eaten = Math.Min(need, s.Food);
             s.Food -= eaten;
             s.FoodNeed = need;
             s.FoodUnmet = need - eaten;
             if (s.FoodUnmet > 0)
-                why.Add(new Cause("economy", "food", -s.FoodUnmet, FormattableString.Invariant($"Food ran out: {s.FoodUnmet} of {need} units of the month's need went unmet"), key: CauseKeys.FoodShortage, args: new[] { CauseKeys.Number(need) }));
+                // #2527 review: informational - the unmet count lives in the line and its args, not the delta, so the Food
+                // row's lines add up to the stock's change on a turn that starts below the need.
+                why.Add(new Cause("economy", "food", 0, FormattableString.Invariant($"Food ran out: {s.FoodUnmet} of {need} units of the month's need went unmet"), key: CauseKeys.FoodShortage, args: new[] { CauseKeys.Number(s.FoodUnmet), CauseKeys.Number(need) }));
             if (s.ActiveSituations.Contains(EconomySystem.FxCrisis))
             {
                 why.Add(new Cause("economy", "food", -eaten, FormattableString.Invariant($"No Food imported (foreign currency crisis): the stock fell to {s.Food} units"), key: CauseKeys.FoodWithoutImports, args: new[] { CauseKeys.Number(s.Food) }));
                 return;
             }
             var target = (long)r.CoverMonths!.Value * need;
-            if (s.Food < target) s.Food = (int)target;
+            if (s.Food < target)
+            {
+                var before = s.Food + eaten;    // the stock on entry: the line nets the eating and the import, so the Food row's lines add up to its change (#2527)
+                s.Food = (int)target;
+                var net = s.Food - before;
+                if (net != 0)
+                    why.Add(new Cause("economy", "food", net, FormattableString.Invariant($"The month's eating and Food imports brought the stock to {s.Food} units"), key: CauseKeys.FoodImported, args: new[] { CauseKeys.Number(s.Food) }));
+            }
         }
 
         /// <summary>R-FOOD-003: food_supply's stock term, k_food * (stock - full) / full - unmet / need, where full is

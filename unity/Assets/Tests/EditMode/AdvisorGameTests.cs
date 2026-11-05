@@ -72,6 +72,28 @@ public class AdvisorGameTests
         Assert.IsTrue(game.AdvisorSession!.AutoShow);
     }
 
+    /// <summary>GameRoot's ordered Escape hook gives the advisor the key before ScreenNav closes the screen underneath it.</summary>
+    [Test]
+    public void GameRootEscapeHookClosesTheAdvisorBeforeTheOpenScreen()
+    {
+        var store = new SaveStore(TempDir());
+        store.WriteAutosave(GameSession.New(Inputs.Content, 9, Mode.Historical).Save.Write());
+        var game = OpenScene(store, new SettingsStore(TempDir()));
+        game.Begin(Inputs, 0, startScreen: true);
+        Assert.IsTrue(game.AdvisorSession!.AutoShow, "precondition: a player boot offers advisor signals");
+        UiTestKit.Press(Ui.Q<Button>("start-continue"));
+        game.Card!.Collapse(takeFocus: false);
+        UiTestKit.Press(Ui.Q<Button>("nav-budget"));
+        game.Advisor!.Notice(AdvisorSignals.BudgetUnsubmitted);
+        Assert.IsTrue(game.Advisor.IsOpen, "precondition: the advisor is open over Budget");
+        var gotIt = Ui.Q<Button>("advisor-got-it");
+        gotIt.Focus();
+        using (var esc = NavigationCancelEvent.GetPooled()) { esc.target = gotIt; gotIt.SendEvent(esc); }
+        Assert.IsFalse(game.Advisor.IsOpen, "Escape closes the advisor");
+        Assert.AreEqual(DisplayStyle.Flex, Ui.Q("screen-budget").style.display.value,
+            "GameRoot's TakesEscape hook consumed the key before ScreenNav");
+    }
+
     [Test]
     public void TheLanguageSwitchKeepsTheAdvisorsSession()
     {

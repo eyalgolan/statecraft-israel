@@ -5,7 +5,8 @@
 # hash and save compatibility, and this file must never move there (EventVideoMappingTests).
 # Each row: the event id; the shipped file (unity/Assets/StreamingAssets/video/); the promo shot it is made from (a path
 # under promo/, which is not in the repository) and its SHA-256; the generator; the date the shot was made (its file date);
-# what it shows (the alt text, the switch's tooltip); and the sensitivity flags.
+# what it shows (English alt and optional alt_he tooltip descriptions; Hebrew falls back to English when absent),
+# alt_he_review: agent-checked beside every agent-drafted Hebrew description; and the sensitivity flags.
 # sensitive: true rows may not ship in a -shareable build until sensitivity_reviewed: true (an OWNER step; Build.cs).
 # Owner ruling of 2026-10-14, relayed by the coordinator, after watching the three sensitive clips (operation_yoav,
 # ten_days and the operation_horev outcome): "the 3 ilustration clips are great but no need to say there were created by
@@ -39,6 +40,8 @@ clips:
     generator: "Veo 3.1 (ElevenLabs), from a GPT Image 2.5 still"
     generated: 2026-10-12
     alt: "Illustration: the police fort at Latrun on its hill above the road, smoke drifting across."
+    alt_he: "המחשה: מצודת המשטרה בלטרון על הגבעה שמעל לכביש, ועשן נסחף לרוחב התמונה."
+    alt_he_review: agent-checked
     ai_generated: true
     sensitive: false
     sensitivity_reviewed: false
@@ -50,6 +53,8 @@ clips:
     generator: "Veo 3.1 Fast (ElevenLabs)"
     generated: 2026-10-12
     alt: "Illustration: besieged Jerusalem, a water cart and a queue of people seen from behind."
+    alt_he: "המחשה: ירושלים הנצורה, עגלת מים ותור של אנשים הנראים מאחור."
+    alt_he_review: agent-checked
     ai_generated: true
     sensitive: false
     sensitivity_reviewed: false
@@ -61,6 +66,8 @@ clips:
     generator: "Veo 3.1 Fast (ElevenLabs)"
     generated: 2026-10-12
     alt: "Illustration: a ration of water drawn from a cart's tap into a tin in a Jerusalem street."
+    alt_he: "המחשה: מנת מים נמזגת מברז של עגלה לתוך פח ברחוב בירושלים."
+    alt_he_review: agent-checked
     ai_generated: true
     sensitive: false
     sensitivity_reviewed: false
@@ -72,6 +79,8 @@ clips:
     generator: "Veo 3.1 Fast (ElevenLabs)"
     generated: 2026-10-12
     alt: "Illustration: a shell-holed water tower over a Negev kibbutz, smoke on the horizon."
+    alt_he: "המחשה: מגדל מים מנוקב מפגזים מעל קיבוץ בנגב, ועשן באופק."
+    alt_he_review: agent-checked
     ai_generated: true
     sensitive: true
     sensitivity_reviewed: true   # the owner, 2026-10-14 (relayed by the coordinator)
@@ -83,6 +92,8 @@ clips:
     generator: "Veo 3.1 Fast (ElevenLabs)"
     generated: 2026-10-12
     alt: "Illustration: a transit camp in the rain, a queue at the tap seen from behind."
+    alt_he: "המחשה: מחנה מעבר בגשם, ותור ליד הברז הנראה מאחור."
+    alt_he_review: agent-checked
     ai_generated: true
     sensitive: false
     sensitivity_reviewed: false
@@ -94,6 +105,8 @@ clips:
     generator: "Veo 3.1 Fast (ElevenLabs)"
     generated: 2026-10-12
     alt: "Illustration: a jerrycan filled at a tap in a muddy transit camp, tents behind."
+    alt_he: "המחשה: מכל מתמלא בברז במחנה מעבר בוצי, ואוהלים מאחור."
+    alt_he_review: agent-checked
     ai_generated: true
     sensitive: false
     sensitivity_reviewed: false
@@ -105,6 +118,8 @@ clips:
     generator: "Veo 3.1 Fast (ElevenLabs)"
     generated: 2026-10-12
     alt: "Illustration: an immigrant ship crowded with passengers entering Haifa bay."
+    alt_he: "המחשה: אוניית עולים עמוסה בנוסעים נכנסת למפרץ חיפה."
+    alt_he_review: agent-checked
     ai_generated: true
     sensitive: false
     sensitivity_reviewed: false
@@ -116,6 +131,8 @@ clips:
     generator: "Veo 3.1 Fast (ElevenLabs)"
     generated: 2026-10-12
     alt: "Illustration: the Hula marsh at dawn, a dragline cutting a new channel."
+    alt_he: "המחשה: ביצת החולה עם שחר, ומחפר כבלים חופר תעלה חדשה."
+    alt_he_review: agent-checked
     ai_generated: true
     sensitive: false
     sensitivity_reviewed: false
@@ -127,6 +144,8 @@ clips:
     generator: "Seedance 2.0 (Dreamina); the Dreamina AI badge is kept"
     generated: 2026-10-12
     alt: "Illustration: a queue at a grocer's in a seaside town, as under rationing."
+    alt_he: "המחשה: תור ליד מכולת בעיר חוף, כמו בתקופת הקיצוב."
+    alt_he_review: agent-checked
     ai_generated: true
     sensitive: false
     sensitivity_reviewed: false
@@ -138,6 +157,8 @@ clips:
     generator: "Seedance 2.0 (Dreamina); the Dreamina AI badge is kept"
     generated: 2026-10-12
     alt: "Illustration: an airliner on the apron at Lydda at dusk, families coming down the steps with suitcases."
+    alt_he: "המחשה: מטוס נוסעים ברחבת שדה התעופה בלוד בשעת בין ערביים, ומשפחות יורדות במדרגות עם מזוודות."
+    alt_he_review: agent-checked
     ai_generated: true
     sensitive: false
     sensitivity_reviewed: false
@@ -149,6 +170,8 @@ clips:
     generator: "Veo 3.1 (ElevenLabs), from a GPT Image 2.5 still"
     generated: 2026-10-13
     alt: "Illustration: armoured cars of the Arab Legion climbing a road in the hills."
+    alt_he: "המחשה: משוריינים של הלגיון הערבי עולים בדרך בין הגבעות."
+    alt_he_review: agent-checked
     ai_generated: true
     sensitive: true
     sensitivity_reviewed: true   # the owner, 2026-10-14 (relayed by the coordinator)
@@ -160,6 +183,8 @@ clips:
     generator: "Veo 3.1 (ElevenLabs), from a GPT Image 2.5 still"
     generated: 2026-10-13
     alt: "Illustration: a ship burning off the Tel Aviv shore, smoke rising, small figures on the promenade seen from behind."
+    alt_he: "המחשה: אונייה בוערת מול חוף תל אביב, עשן עולה ודמויות קטנות נראות מאחור על הטיילת."
+    alt_he_review: agent-checked
     ai_generated: true
     sensitive: true
     sensitivity_reviewed: true   # the owner, 2026-10-20 (#1102: watched the clip, "looks good")
@@ -171,6 +196,8 @@ clips:
     generator: "Seedance 2.0 (Dreamina); the Dreamina AI badge is kept"
     generated: 2026-10-12
     alt: "Illustration: a column of jeeps and armoured carriers crossing the Negev dunes at dawn."
+    alt_he: "המחשה: שיירת ג׳יפים ונגמ״שים חוצה את דיונות הנגב עם שחר."
+    alt_he_review: agent-checked
     ai_generated: true
     sensitive: true
     sensitivity_reviewed: true   # the owner, 2026-10-20 (#1102: watched the clip, "looks good")
@@ -182,6 +209,8 @@ clips:
     generator: "Seedance 2.0 (Dreamina); the Dreamina AI badge is kept"
     generated: 2026-10-12
     alt: "Illustration: a model of a new Negev settlement, its tents and stockade giving way to huts, a water tower and fields."
+    alt_he: "המחשה: דגם של יישוב חדש בנגב, שבו אוהלים וחומה מתחלפים בצריפים, במגדל מים ובשדות."
+    alt_he_review: agent-checked
     ai_generated: true
     sensitive: false
     sensitivity_reviewed: false
@@ -193,6 +222,8 @@ clips:
     generator: "Veo 3.1 Fast (ElevenLabs)"
     generated: 2026-10-17
     alt: "Illustration: immigrants at a ship's rail seen from behind, a child on a man's shoulders pointing at a harbour town on the hills."
+    alt_he: "המחשה: עולים ליד מעקה אונייה נראים מאחור, וילד על כתפי גבר מצביע לעבר עיר נמל על הגבעות."
+    alt_he_review: agent-checked
     ai_generated: true
     sensitive: false
     sensitivity_reviewed: false
@@ -204,6 +235,8 @@ clips:
     generator: "Veo 3.1 (ElevenLabs), from a GPT Image 2.5 still made in Dreamina; the still's faint AI badge outline is kept"
     generated: 2026-10-12
     alt: "Illustration: a small tank halted and smoking just inside a kibbutz gate among eucalyptus trees, defenders in a sandbagged trench seen from behind."
+    alt_he: "המחשה: טנק קטן עומד ומעלה עשן בתוך שער קיבוץ בין עצי אקליפטוס, ומגינים נראים מאחור בתעלה מבוצרת בשקי חול."
+    alt_he_review: agent-checked
     ai_generated: true
     sensitive: true
     sensitivity_reviewed: true   # the owner, 2026-10-31 (#1565: "Ship both clips")
@@ -215,6 +248,8 @@ clips:
     generator: "Seedance 2.0 (Dreamina); the Dreamina AI badge is kept"
     generated: 2026-10-12
     alt: "Illustration: a crowd with umbrellas held back by a line of police on a wet street, before a stone building in Jerusalem at night."
+    alt_he: "המחשה: קהל עם מטריות נבלם בידי שורת שוטרים ברחוב רטוב, לפני בניין אבן בירושלים בלילה."
+    alt_he_review: agent-checked
     ai_generated: true
     sensitive: true
     sensitivity_reviewed: true   # the owner, 2026-10-31 (#1564: "Ship both clips")
@@ -237,6 +272,8 @@ outcomes:
     start_frame: 2
     frames: 84
     alt: "Illustration: a transit camp of tents and huts after rain, a water tanker, families walking."
+    alt_he: "המחשה: מחנה מעבר של אוהלים וצריפים אחרי הגשם, מכלית מים ומשפחות הולכות."
+    alt_he_review: agent-checked
     ai_generated: true
     sensitive: false
     sensitivity_reviewed: false
@@ -251,6 +288,8 @@ outcomes:
     start_frame: 12
     frames: 84
     alt: "Illustration: the drained valley, a dragline at work, new fields and channels."
+    alt_he: "המחשה: העמק המנוקז, מחפר כבלים בעבודה, שדות ותעלות חדשים."
+    alt_he_review: agent-checked
     ai_generated: true
     sensitive: false
     sensitivity_reviewed: false
@@ -266,6 +305,8 @@ outcomes:
     start_frame: 2
     frames: 84
     alt: "Illustration: jeeps and an armoured carrier crossing the Negev."
+    alt_he: "המחשה: ג׳יפים ונגמ״ש חוצים את הנגב."
+    alt_he_review: agent-checked
     ai_generated: true
     sensitive: true
     sensitivity_reviewed: true   # the owner, 2026-10-14 (relayed by the coordinator)
@@ -280,6 +321,8 @@ outcomes:
     start_frame: 12
     frames: 84
     alt: "Illustration: a ship burning off the Tel Aviv shore, smoke rising, small figures on the promenade seen from behind."
+    alt_he: "המחשה: אונייה בוערת מול חוף תל אביב, עשן עולה ודמויות קטנות נראות מאחור על הטיילת."
+    alt_he_review: agent-checked
     ai_generated: true
     sensitive: true
     sensitivity_reviewed: true   # the owner, 2026-10-20 (#1102: watched the clip, "looks good")
@@ -295,6 +338,8 @@ outcomes:
     start_frame: 37
     frames: 84
     alt: "Illustration: a model of a new Negev settlement growing, huts, a water tower, a pipeline and its first fields."
+    alt_he: "המחשה: דגם של יישוב חדש בנגב המתפתח עם צריפים, מגדל מים, צינור והשדות הראשונים שלו."
+    alt_he_review: agent-checked
     ai_generated: true
     sensitive: false
     sensitivity_reviewed: false
@@ -310,6 +355,8 @@ outcomes:
     start_frame: 34
     frames: 84
     alt: "Illustration: families arriving by air at Lydda, coming down an airliner's steps with suitcases at dusk."
+    alt_he: "המחשה: משפחות מגיעות בטיסה ללוד ויורדות במדרגות מטוס נוסעים עם מזוודות בשעת בין ערביים."
+    alt_he_review: agent-checked
     ai_generated: true
     sensitive: false
     sensitivity_reviewed: false
@@ -325,6 +372,8 @@ outcomes:
     start_frame: 10
     frames: 84
     alt: "Illustration: a queue with ration books outside a grocer's in a seaside town."
+    alt_he: "המחשה: תור עם פנקסי קיצוב מחוץ למכולת בעיר חוף."
+    alt_he_review: agent-checked
     ai_generated: true
     sensitive: false
     sensitivity_reviewed: false
@@ -339,6 +388,8 @@ outcomes:
     start_frame: 11
     frames: 84
     alt: "Illustration: a child on a man's shoulders at a ship's rail, seen from behind, pointing at a harbour town on the hills."
+    alt_he: "המחשה: ילד על כתפי גבר ליד מעקה אונייה, נראה מאחור ומצביע לעבר עיר נמל על הגבעות."
+    alt_he_review: agent-checked
     ai_generated: true
     sensitive: false
     sensitivity_reviewed: false

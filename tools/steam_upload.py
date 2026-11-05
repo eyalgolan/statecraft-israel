@@ -13,8 +13,9 @@ Usage:
   uv run tools/steam_upload.py verify --dir <draft> --tag vX.Y.Z --branch beta|nightly --record-sha256 <sha>  (CI)
 
 - stage reads the folder tools/release_build.py --steam wrote (build-record.json and steam/<platform>/), refuses a
-  record that is not a clean, non-dev Steam build of that tag for `beta` or `nightly`, steam/steam.json while any
-  ID is null, and a folder that no longer matches the file list the build recorded. It zips the files of that list to steam-<tag>-<platform>.zip (keeping the executable bits and symlinks:
+  record that is not a clean, non-dev Steam build of that tag for `beta` or `nightly`, whose locally runnable golden
+  did not pass, steam/steam.json while any ID is invalid or depot IDs repeat, and a folder that no longer matches the
+  file list the build recorded. It zips the files of that list to steam-<tag>-<platform>.zip (keeping the executable bits and symlinks:
   steamcmd uploads from a Linux machine), writes steam-record.json (tag, commit, branch, each zip's SHA-256 and size),
   attaches them to a DRAFT release steam-<tag> (never published; an existing release of that name is replaced only if
   it is a draft) and runs `gh workflow run steam-upload.yml --ref main -f tag=<tag> -f branch=<branch>`.
@@ -71,14 +72,31 @@ def load_config(path: Path = CONFIG) -> dict:
 
 
 def refuse(config: dict, record: dict | None = None) -> str | None:
-    """Why nothing may be uploaded, or None: every null ID by name; with a record, a build that is not a clean,
-    non-dev Steam build for one of the configured branches."""
+    """Why nothing may be uploaded, or None: valid distinct IDs; with a record, a clean, non-dev Steam build for a
+    configured branch whose golden checks that ran on this machine passed."""
     problems = []
-    depots = config.get("depots") or {}
-    nulls = [n for n, v in [("app_id", config.get("app_id")), *((f"depots.{p}", depots.get(p)) for p in PLATFORMS)]
-             if v is None]
+    raw_depots = config.get("depots")
+    depots = raw_depots if isinstance(raw_depots, dict) else {}
+    ids = [("app_id", config.get("app_id"))]
+    if raw_depots is None or isinstance(raw_depots, dict):
+        ids += [(f"depots.{p}", depots.get(p)) for p in PLATFORMS]
+    else:   # not the owner's missing step: the file itself is malformed
+        problems.append(f"steam/steam.json field depots must be an object of platform IDs, not {raw_depots!r}")
+    nulls = [name for name, value in ids if value is None]
     if nulls:
         problems.append("steam/steam.json has no " + ", ".join(nulls) + " yet (the owner's step, #2151)")
+    for name, value in ids:
+        if value is not None and (isinstance(value, bool) or not isinstance(value, int) or value <= 0):
+            problems.append(f"steam/steam.json field {name} must be a positive integer, not {value!r}")
+    seen_depots = {}
+    for platform in PLATFORMS:
+        value = depots.get(platform)
+        if isinstance(value, int) and not isinstance(value, bool) and value > 0:
+            if value in seen_depots:
+                problems.append(f"steam/steam.json field depots.{platform} duplicates "
+                                f"depots.{seen_depots[value]} ({value})")
+            else:
+                seen_depots[value] = platform
     if record is not None:
         if record.get("steam") is not True:
             problems.append("the record is not a Steam build (tools/release_build.py --steam)")
@@ -89,6 +107,14 @@ def refuse(config: dict, record: dict | None = None) -> str | None:
         channel = record.get("channel")
         if channel == NEVER or channel not in config.get("branches", []):
             problems.append(f"the record's channel {channel!r} is not one of {config.get('branches')}")
+        runs_here = {name for name, platform in rb.PLATFORMS.items() if platform.runs_here}
+        for artifact in record.get("artifacts", []):
+            platform = artifact.get("platform")
+            if platform in runs_here:
+                golden = artifact.get("golden")
+                status = golden.get("status") if isinstance(golden, dict) else None
+                if status != "pass":
+                    problems.append(f"the record's {platform} golden status {status!r} is not 'pass'")
     return "; ".join(problems) or None
 
 

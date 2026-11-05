@@ -81,7 +81,10 @@ ceremony of 14 May 1948. The owner asked for it; the rights basis and its open q
 - **When it plays:**
   - It never plays by itself, and never on Continue or New Game.
   - It stops when the start screen closes.
-  - It plays over the still painting only.
+  - It plays over the still painting only, except that Replay Opening does not stop it. Replay Opening shows the
+    opening while the start screen stays open, and hides the start screen (`.opening-open .start-screen`), so the
+    recording, if it was playing, keeps playing while its button and captions are out of sight until the opening is
+    closed. The opening does not stop it; the start screen closing, the clip's end or the button does.
 - **Captions.** The sentence shows in a dark strip above the panel, as the declaration's own texts in
   `docs/sources/declaration-1948`. The leading ellipsis marks a sentence quoted from its middle.
   - In Hebrew, in Frank Ruhl Libre, right to left: «…אנו מכריזים בזאת על הקמת מדינה יהודית בארץ־ישראל, היא מדינת

@@ -121,6 +121,7 @@ public class CabinetTests
     offices:
       - office: president
         from: 1948-05-14
+        sources: [{ url: https://example.org/term, checked: 2026-10-18 }]
   - id: cos
     name: Cos One
     living: false
@@ -129,6 +130,7 @@ public class CabinetTests
     offices:
       - office: chief_of_staff
         from: 1948-05-14
+        sources: [{ url: https://example.org/term, checked: 2026-10-18 }]
 ";
     static readonly Content Rich = ContentLoader.Load(Fixture.Write(new Dictionary<string, string>
     {

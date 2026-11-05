@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using NUnit.Framework;
 using Statecraft.Game.Map.Collection;
@@ -59,6 +60,26 @@ public class CollectionImportTests
             Assert.AreEqual(CollectionCatalog.Sha256(file), check.Sha256, bundle);
             Assert.IsFalse(System.IO.File.Exists(file + ".manifest"), "the build ships no .manifest files");
         }
+    }
+
+    [Test]
+    public void ChecksUseUnsignedInvariantMachineFields()
+    {
+        var previous = CultureInfo.CurrentCulture;
+        try
+        {
+            var culture = (CultureInfo)CultureInfo.InvariantCulture.Clone();
+            culture.NumberFormat.PositiveSign = "plus";
+            culture.NumberFormat.NegativeSign = "minus";
+            CultureInfo.CurrentCulture = culture;
+            var hash = new string('a', 64);
+
+            Assert.IsNull(CollectionCatalog.ParseChecks($"bundle plus1 2 {hash}\n"),
+                "the checks format accepts digits only");
+            Assert.AreEqual($"1 -2 {hash}",
+                new CollectionCatalog.BundleCheck(1, -2, hash).ToString());
+        }
+        finally { CultureInfo.CurrentCulture = previous; }
     }
 
     [Test]

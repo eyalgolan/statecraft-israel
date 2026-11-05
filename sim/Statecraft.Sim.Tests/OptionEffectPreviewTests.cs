@@ -21,7 +21,7 @@ public class OptionEffectPreviewTests
             ["cities.yaml"] = "cities:\n" + Fixture.City("town_a", 12, 8, 10, 6, "[military_camp, hakhshara]") + Fixture.City("town_b", 5, 2, 2, 1),
         }), new Dictionary<string, string>
         {
-            ["preview_record.yaml"] = "id: preview_record\ntitle: Recorded {prime_minister}\ntext: A fictional fixture record.\nfrom: 1950-01-01\noptions:\n  - { id: keep, text: Keep, historical: true }\n",
+            ["preview_record.yaml"] = "id: preview_record\ntitle: Recorded {prime_minister}\ntext: A fictional fixture record.\nfrom: 1950-01-01\noptions:\n  - { id: keep, text: Keep, historical: true }\nsources: [{ url: \"https://example.org/event\", checked: 2026-10-18 }]\n",
         }));
     }
 

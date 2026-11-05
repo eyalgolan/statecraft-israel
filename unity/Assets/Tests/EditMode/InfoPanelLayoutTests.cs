@@ -575,6 +575,39 @@ public class InfoPanelLayoutTests
         }
     }
 
+    [Test]
+    public void ASelectedSettlementShowsTheLiveHolderThenEveryStateDetailInEnglishAndHebrew()
+    {
+        var names = Names();
+        var namesHe = SettlementPlacer.Parse(MapFile(SettlementPlacer.DefaultFileName)).ToDictionary(t => t.Id, t => t.NameHe);
+        var acre = C.SettlementHexes.Single(s => s.Id == "acre");
+        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var states = new[]
+        {
+            new SettlementControl(Movement.PlayerSide, SettlementControl.AwaitingChoice, new System.DateTime(1948, 5, 20)),
+            new SettlementControl(Movement.PlayerSide, SettlementControl.Occupied, new System.DateTime(1948, 5, 20), turns: 2),
+            new SettlementControl(Movement.PlayerSide, SettlementControl.AwaitingEnd, new System.DateTime(1948, 5, 20)),
+            new SettlementControl(Movement.PlayerSide, SettlementControl.Annexed, new System.DateTime(1948, 5, 20)),
+            new SettlementControl(since: new System.DateTime(1948, 5, 20), depopulated: true),
+            new SettlementControl(since: new System.DateTime(1948, 5, 20)),
+        };
+        foreach (var text in new[] { Text, he })
+            foreach (var record in states)
+            {
+                using var ui = new UiTestKit();
+                var game = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+                game.State.Settlements["acre"] = record;
+                var info = new InfoPanelPresenter(ui.Root, new SimBridge(game, text), text, names, regions: Regions(), townNamesHe: namesHe);
+                info.Show(acre.Q, acre.R);
+                var holder = SettlementControlView.PlayerHolds(record) == true ? text["info.control_israel"] : text["info.control.enemy_held"];
+                Assert.AreEqual(holder, ui.Q<Label>("info-region").text.Split('\n')[0], text["ui.lang"] + ": live holder first");
+                var place = text["ui.lang"] == UiLanguage.Hebrew ? namesHe["acre"]! : names["acre"];
+                StringAssert.Contains(SettlementControlView.PanelText(text, place, record)!, ui.Q<Label>("info-settlements").text,
+                    text["ui.lang"] + ": state detail");
+                info.Dispose();
+            }
+    }
+
     /// <summary>#204 drift guard: the note says "water hex" because a town's own hex (TownHex) differs from its drawn hex
     /// only where hexgrid.settlement_hex moved it off a water hex. Every such town's own hex is on the map and not land, and
     /// there is at least one (Tiberias), so the guard cannot pass on an empty list.</summary>

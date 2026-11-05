@@ -30,6 +30,7 @@ options:
   - id: continue
     text: Continue
     historical: true
+sources: [{{ url: https://example.org/event, checked: 2026-10-18 }}]
 ";
 
     static readonly Dictionary<string, string> Cards = new Dictionary<string, string>
@@ -135,7 +136,7 @@ options:
     public void NoEventEffectTargetsThePrisoners(string target)
     {
         Assert.DoesNotContain(target, EventRules.SpecialTargets);
-        var card = $"id: deal\ntitle: A deal\ntext: A deal.\nfrom: 1948-05-15\noptions:\n  - {{ id: a, text: A, effects: [{{ target: {target}, delta: 1 }}] }}\n";
+        var card = $"id: deal\ntitle: A deal\ntext: A deal.\nfrom: 1948-05-15\noptions:\n  - {{ id: a, text: A, effects: [{{ target: {target}, delta: 1 }}] }}\nsources: [{{ url: \"https://example.org/event\", checked: 2026-10-18 }}]\n";
         var ex = Assert.Throws<ContentException>(() => Load(new Dictionary<string, string> { ["deal.yaml"] = card }));
         Assert.Equal($"options[a].effects.{target}", ex.Field.Substring(ex.Field.IndexOf("options", StringComparison.Ordinal)));
         Assert.Contains("unknown target", ex.Message);

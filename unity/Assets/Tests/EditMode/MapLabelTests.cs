@@ -1585,6 +1585,74 @@ public class MapLabelTests
         finally { labels.Dispose(); hd.Dispose(); }
     }
 
+    [UnityTest]
+    public IEnumerator ASettledRefreshDoesNotReadEveryLabelSize()
+    {
+        var hd = new HdPanel(cam); var labels = new MapLabelsPresenter(hd.Root, map, cam);
+        try
+        {
+            yield return Settle(labels);
+            long reads = labels.LabelSizeReadsForTests, placements = labels.PlacementVisitsForTests;
+            // This fixture owns a bare presenter, not a GameRoot component; Refresh is the production operation that
+            // GameRoot.LateUpdate calls, without booting an unrelated scene-wide presenter into these counters.
+            for (int i = 0; i < 5; i++) labels.Refresh();
+            Assert.AreEqual(reads, labels.LabelSizeReadsForTests, "settled refreshes do not poll every label's resolved size");
+            Assert.AreEqual(placements, labels.PlacementVisitsForTests, "settled refreshes do no placement work");
+
+            labels.Labels[0].text += " wider";
+            yield return null;   // UI Toolkit delivers the label's real GeometryChangedEvent.
+            labels.Refresh();
+            Assert.Greater(labels.PlacementVisitsForTests, placements, "changed text invalidates real placement");
+            Assert.Greater(labels.LabelSizeReadsForTests, reads, "sizes are read while that placement work runs");
+        }
+        finally { labels.Dispose(); hd.Dispose(); }
+    }
+
+    [UnityTest]
+    public IEnumerator HoverAndPillHitsAreCachedUntilPointerOrPlacementChanges()
+    {
+        var hd = new HdPanel(cam); var labels = new MapLabelsPresenter(hd.Root, map, cam);
+        try
+        {
+            Pose(35.50, 32.49, 30000f); yield return Settle(labels);
+            var origin = hd.Root.Q<VisualElement>(MapLabelsPresenter.ContainerName).worldBound.position;
+            var locality = labels.LocalitySlots.Single(x => x.name == "slot-beit_shean");
+            var hover = locality.Q<Label>().worldBound.center - origin;
+            var city = labels.Slots.First(Shown).Q<Label>().worldBound.center - origin;
+            var panel = hd.Root.panel;
+            Assert.IsNotNull(panel, "the labels have a live panel");
+            Vector2 panelZero = UiPointer.ToPanel(panel, Vector2.zero, Screen.height);
+            Vector2 panelX = UiPointer.ToPanel(panel, Vector2.right * 100f, Screen.height) - panelZero;
+            Vector2 panelY = UiPointer.ToPanel(panel, Vector2.up * 100f, Screen.height) - panelZero;
+            Vector2 ScreenPoint(Vector2 layerPoint)
+            {
+                var wanted = layerPoint + origin - panelZero;
+                return new Vector2(wanted.x / panelX.x * 100f, wanted.y / panelY.y * 100f);
+            }
+            var hoverScreen = ScreenPoint(hover); var cityScreen = ScreenPoint(city);
+
+            labels.Hover(hoverScreen); long hoverVisits = labels.HoverVisitsForTests;
+            labels.Hover(hoverScreen);
+            Assert.AreEqual(hoverVisits, labels.HoverVisitsForTests, "the unchanged hover reuses its hit");
+            labels.Hover(ScreenPoint(hover + Vector2.right));
+            Assert.Greater(labels.HoverVisitsForTests, hoverVisits, "a moved hover recomputes");
+
+            labels.PillAt(cityScreen); long pillVisits = labels.PillVisitsForTests;
+            labels.PillAt(cityScreen);
+            Assert.AreEqual(pillVisits, labels.PillVisitsForTests, "the unchanged city-pill hit is reused");
+            labels.PillAt(ScreenPoint(city + Vector2.right));
+            Assert.Greater(labels.PillVisitsForTests, pillVisits, "a moved pill probe recomputes");
+
+            // As above, the bare presenter has no player-loop method of its own; GameRoot owns this Refresh call in play.
+            labels.Refresh(force: true);
+            hoverVisits = labels.HoverVisitsForTests; pillVisits = labels.PillVisitsForTests;
+            labels.Hover(hoverScreen); labels.PillAt(cityScreen);
+            Assert.Greater(labels.HoverVisitsForTests, hoverVisits, "new placement invalidates hover hits");
+            Assert.Greater(labels.PillVisitsForTests, pillVisits, "new placement invalidates pill hits");
+        }
+        finally { labels.Dispose(); hd.Dispose(); }
+    }
+
     /// <summary>Keeping clear of the unit tokens (#197) costs little next to placing the pills: one presenter, whose
     /// keep-clear list is switched between the units in play and none, runs interleaved sweeps (off, on, off, on, ...) of
     /// 240 refreshes along the same camera path; the median refresh with the units is at most 1.25 times the median without,

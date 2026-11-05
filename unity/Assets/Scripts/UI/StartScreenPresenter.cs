@@ -218,13 +218,13 @@ namespace Statecraft.Game.UI
         void NewGame()
         {
             if (!IsOpen) return;
-            if (!Resumed) { Close(); FreshGameOpened?.Invoke(); return; }   // nothing to wipe: the session is already a new game
+            if (!Resumed) { Close(); FreshGameOpened?.Invoke(); return; }   // nothing to replace: the session is already a new game
             newGame.Press();                      // arms on the first press; the second starts the new game (Started closes)
         }
 
         void Started()
         {
-            Resumed = false;                      // the save is gone (or will be replaced): nothing to continue any more
+            Resumed = false;                      // the replacement is the current game: nothing older to continue any more
             Close();
         }
 

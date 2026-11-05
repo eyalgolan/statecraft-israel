@@ -591,6 +591,7 @@ public class KitTests
         Bad("places:\n" + Place("a").Replace("population: 1200", "population: 0"), "population");
         Bad("places:\n" + Place("a").Replace("status: draft", "status: guess"), "status");
         Bad("places:\n" + Place("a").Replace("https://example.org/x", "example.org/x"), "URL");
+        Bad("places:\n" + Place("a").Replace("https://example.org/x", "https:\u00ad//example.org/x"), "URL");
         Bad("places:\n" + Place("a", "  fate: x\n"), "fate");
         Bad("places:\n" + Place("a", "  today:\n    name: Y\n") , "today");
         // A person's sign-off (#375): both or neither, a GitHub handle (never an email), a day; on a place or a camp row.
@@ -604,6 +605,9 @@ public class KitTests
         // #558: name_he_sources need the name, and each source an https url and a checked date.
         Bad("places:\n" + Place("a", "  name_he_sources:\n  - {url: 'https://he.wikipedia.org/x', checked: '2026-10-14'}\n"), "name_he_sources without a name_he");
         Bad("places:\n" + Place("a", "  name_he: \"\\u05D0\"\n  name_he_sources:\n  - {url: 'https://he.wikipedia.org/x'}\n"), "name_he_sources[0]");
+        Bad("places:\n" + Place("a",
+            "  name_he: \"\\u05D0\"\n  name_he_sources:\n  - {url: 'https:\u00ad//he.wikipedia.org/x', checked: '2026-10-14'}\n"),
+            "name_he_sources[0]");
         Bad("places:\n" + Place("a", "  name_he: \"\\u05D0\"\n  name_he_sources:\n  - {url: 'https://x', when: y}\n"), "unknown key 'when'");
         // The review flag (#564): agent-checked on a named row only, any other value refused.
         Bad("places:\n" + Place("a", "  name_he_review: agent-checked\n"), "name_he_review without a name_he");
@@ -845,11 +849,10 @@ public class KitTests
         }
     }
 
-    /// <summary>A real render callback in edit mode (a Scene or Game view camera) never instantiates or destroys the khaki tent
-    /// models mid-render: coming close or leaving only marks the camp, and the models come and go at the next LateUpdate
-    /// (AdvanceCameraFrame), as in play mode.</summary>
+    /// <summary>The render-mode branch never instantiates or destroys the khaki tent models mid-render: coming close or leaving
+    /// only marks the camp, and AdvanceCameraFrame applies the change afterward.</summary>
     [Test]
-    public void AnEditModeRenderCallbackDefersTheTentModelsToLateUpdate()
+    public void RenderModeDefersTentModelsUntilAdvanceCameraFrame()
     {
         var saved = Statecraft.Game.Map.Collection.CampTentModels.Acquire;
         var root = new GameObject("deferred tent fixture");

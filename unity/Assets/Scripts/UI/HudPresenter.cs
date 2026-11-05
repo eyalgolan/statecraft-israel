@@ -339,9 +339,11 @@ namespace Statecraft.Game.UI
             if (meters.Count == 0) return;
             var oneRow = !hudRoot.ClassListContains(NarrowClass) && !bar.ClassListContains(CompactClass);
             // Panel coordinates (logical px), so the meters and the screen buttons compare directly.
-            float first = meters[0].worldBound.xMin, last = meters[meters.Count - 1].worldBound.xMax, limit = nav.worldBound.xMin;
-            if (!oneRow || float.IsNaN(first) || float.IsNaN(limit)) { bar.RemoveFromClassList(RoomyClass); return; }
-            var used = last - first; var spare = limit - last;
+            float left = meters.Min(m => m.worldBound.xMin), right = meters.Max(m => m.worldBound.xMax);
+            var rtl = UiLanguage.Within(bar);
+            var limit = rtl ? nav.worldBound.xMax : nav.worldBound.xMin;
+            if (!oneRow || float.IsNaN(left) || float.IsNaN(right) || float.IsNaN(limit)) { bar.RemoveFromClassList(RoomyClass); return; }
+            var used = right - left; var spare = rtl ? left - limit : limit - right;
             if (bar.ClassListContains(RoomyClass))
             {
                 if (spare < SpareShare * used) bar.RemoveFromClassList(RoomyClass);

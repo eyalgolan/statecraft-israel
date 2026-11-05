@@ -46,6 +46,15 @@ namespace Statecraft.Game.UI
             public string Artist { get; set; } = "";
             public string Credit { get; set; } = "";
             public string Alt { get; set; } = "";
+            public string AltHe { get; set; } = "";
+            // The setter records even an explicit YAML null, which must differ from an omitted post-review marker.
+            string? altHeReview;
+            public string? AltHeReview
+            {
+                get => altHeReview;
+                set { altHeReview = value; AltHeReviewPresent = true; }
+            }
+            [YamlIgnore] public bool AltHeReviewPresent { get; private set; }
             public List<double> Crop { get; set; } = new List<double>();
             public bool Sensitive { get; set; }
             public bool SensitivityReviewed { get; set; }
@@ -60,6 +69,15 @@ namespace Statecraft.Game.UI
             public string File { get; set; } = "";
             public string Shot { get; set; } = "";
             public string Alt { get; set; } = "";
+            public string AltHe { get; set; } = "";
+            // The setter records even an explicit YAML null, which must differ from an omitted post-review marker.
+            string? altHeReview;
+            public string? AltHeReview
+            {
+                get => altHeReview;
+                set { altHeReview = value; AltHeReviewPresent = true; }
+            }
+            [YamlIgnore] public bool AltHeReviewPresent { get; private set; }
             public bool AiGenerated { get; set; }
             public bool Sensitive { get; set; }
             public bool SensitivityReviewed { get; set; }
@@ -144,9 +162,13 @@ namespace Statecraft.Game.UI
                             + HePending + " or " + HeApproved);
                 }
                 foreach (var p in doc.Panels)
+                {
                     if (p.Image.File != "opening_" + p.Id + ".jpg" || string.IsNullOrWhiteSpace(p.Image.Credit)
                         || string.IsNullOrWhiteSpace(p.Image.Alt))
                         throw new InvalidOperationException(SourcePath + ": photograph or credit missing for " + p.Id);
+                    if (AltHebrewProblem(p.Image.AltHe, p.Image.AltHeReview, p.Image.AltHeReviewPresent) is string problem)
+                        throw new InvalidOperationException(SourcePath + ": " + p.Id + "'s photograph: " + problem);
+                }
                 foreach (var p in doc.Panels.Where(p => p.Clip != null))
                     if (ClipProblem(p) is string problem) throw new InvalidOperationException(SourcePath + ": " + p.Id + "'s clip: " + problem);
                 foreach (var p in doc.Panels.Where(p => p.Caption != null))
@@ -171,9 +193,17 @@ namespace Statecraft.Game.UI
             if (string.IsNullOrWhiteSpace(clip.Shot)) return "shot missing";
             if (clip.Alt == null || !clip.Alt.StartsWith("Illustration: ", StringComparison.Ordinal) || clip.Alt.Length < 30)
                 return "alt text must start 'Illustration: ' and say what it shows";
+            if (AltHebrewProblem(clip.AltHe, clip.AltHeReview, clip.AltHeReviewPresent) is string altProblem) return altProblem;
             if (!clip.AiGenerated) return "ai_generated must be true";
             if (p.Image.Sensitive && !clip.Sensitive) return "the photograph is sensitive, so its clip must be sensitive: true";
             if (clip.SensitivityReviewed && !clip.Sensitive) return "sensitivity_reviewed without sensitive";
+            return null;
+        }
+
+        static string? AltHebrewProblem(string? altHe, string? review, bool reviewPresent)
+        {
+            if (reviewPresent && string.IsNullOrWhiteSpace(altHe)) return "alt_he_review requires alt_he";
+            if (reviewPresent && review != "agent-checked") return "alt_he_review must be agent-checked";
             return null;
         }
 
