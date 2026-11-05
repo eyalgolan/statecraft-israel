@@ -104,7 +104,7 @@ def translation_refusal(build: Path):
     return None
 
 
-BUILD_FILE = re.compile(r'"Build/([^"/]+)"')   # as the WebGL template writes them (src="Build/..", dataUrl: "Build/..")
+BUILD_FILE = re.compile(r'"Build/([^"]+)"')   # as the WebGL template writes them (src="Build/..", dataUrl: "Build/..")
 
 
 def build_files(build: Path) -> list[str]:
@@ -120,14 +120,20 @@ def package(build: Path, zip_path: Path) -> int:
     if not content.is_dir():
         print(f"PACKAGE REFUSED: {build} has no StreamingAssets/content")
         return 1
-    named = build_files(build)
+    try:
+        named = build_files(build)
+    except (OSError, UnicodeDecodeError) as e:
+        print(f"PACKAGE REFUSED: {build / 'index.html'} cannot be read as UTF-8 ({e})")
+        return 1
     if not named:
         print("PACKAGE REFUSED: index.html names no Build/ files (not a usable WebGL build)")
         return 1
     if missing := [n for n in named if not (build / "Build" / n).is_file()]:
         print("PACKAGE REFUSED: index.html names files that are not in the build: " + ", ".join("Build/" + n for n in missing))
         return 1
-    stale = {p for p in (build / "Build").glob("*") if p.is_file() and p.name not in named}
+    build_dir = build / "Build"
+    stale = {p for p in build_dir.rglob("*")
+             if p.is_file() and p.relative_to(build_dir).as_posix() not in named}
     if (photos := photo_refusal(build)) is not None:
         print(f"PACKAGE REFUSED: {photos}")
         return 1
@@ -144,7 +150,8 @@ def package(build: Path, zip_path: Path) -> int:
         for f in sorted(p for p in build.rglob("*") if p.is_file() and p not in stale):
             z.write(f, f.relative_to(build).as_posix())
     for f in sorted(stale):
-        print(f"LEFT OUT Build/{f.name} (index.html does not name it: a file of an earlier build)")
+        print(f"LEFT OUT Build/{f.relative_to(build_dir).as_posix()} "
+              "(index.html does not name it: a file of an earlier build)")
     print(f"PACKAGED {zip_path} {zip_path.stat().st_size} bytes")
     return 0
 

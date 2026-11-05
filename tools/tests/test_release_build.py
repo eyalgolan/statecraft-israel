@@ -68,7 +68,7 @@ class Fake:
     def __init__(self, dirty="", golden_ok=True, build_ok=True, branch="main", tags=("v0.1.0",), worktrees=None,
                  build_raises=None, dirty_after="", on_origin_main=True, fail_status=False,
                  fail_status_after=False, fail_worktree_list=False, sim_ok=True, sim_output="", fail_checkout=False,
-                 lipo_code=0, lipo_out="x86_64 arm64\n"):
+                 lipo_code=0, lipo_out="x86_64 arm64\n", photo_manifest=True):
         self.calls: list[list[str]] = []
         self.dirty, self.golden_ok, self.build_ok = dirty, golden_ok, build_ok
         self.branch, self.tags, self.worktrees = branch, tags, worktrees
@@ -81,6 +81,7 @@ class Fake:
         self.fail_checkout = fail_checkout
         self.lipo_code = lipo_code
         self.lipo_out = lipo_out
+        self.photo_manifest = photo_manifest
 
     def __call__(self, cmd, **kw):
         cmd = [str(c) for c in cmd]
@@ -128,7 +129,8 @@ class Fake:
             else:
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes(b"player " + target.name.encode())
-            (target.parent / "event-photos.json").write_text("{}\n")
+            if self.photo_manifest:
+                (target.parent / "event-photos.json").write_text("{}\n")
             if "-steam" in cmd and self.steam_library:   # #2154's Build.cs ships Valve's plugin only in -steam builds
                 lib = {".app": "Contents/PlugIns/steam_api.bundle/Contents/MacOS/libsteam_api.dylib",
                        ".exe": "../Statecraft_Data/Plugins/x86_64/steam_api64.dll",
@@ -578,6 +580,19 @@ def test_a_failed_build_stops_with_no_record(repo, editor, monkeypatch, tmp_path
     assert run_main(["--platform", "mac", "--out", str(tmp_path / "out")], repo, editor, fake, monkeypatch) == 1
     assert not (tmp_path / "out/build-record.json").exists()
     assert [c for c in fake.calls if c[:2] == ["git", "checkout"]], "the settings are restored even after a failure"
+
+
+def test_a_build_without_its_photo_manifest_stops_before_archive_and_record(repo, editor, monkeypatch, tmp_path, capsys):
+    fake = Fake(photo_manifest=False)
+    out = tmp_path / "out"
+    assert run_main(["--platform", "mac", "--out", str(out)], repo, editor, fake, monkeypatch) == 1
+    assert not (out / "players/mac/LICENSE").exists()
+    assert not (out / "event-photos-mac.json").exists()
+    assert not (out / "files-mac.sha256").exists()
+    assert not (out / "statecraft-israel-v0.1.0-macos-universal.zip").exists()
+    assert not (out / "build-record.json").exists()
+    err = capsys.readouterr().err
+    assert "FAILED" in err and "mac" in err and "event-photos.json" in err
 
 
 # --- the record ----------------------------------------------------------------------------------------------------------

@@ -1365,6 +1365,26 @@ def test_a_site_failure_after_publish_retries_once_then_refuses_and_marks_site_p
     assert "restored previous Latest v0.3.1" in e.value.detail
 
 
+def test_a_site_refusal_does_not_enter_the_boot_baseline_through_run_night(env, pub, monkeypatch):
+    err = ns.Refused("site", "run failed")
+    gh = FakeGH(fail={"dispatch_site": [err, err]})
+    baseline = [8000.0, 8100.0]
+    state = ns.State(last_published=last_published(), boot_baseline=list(baseline))
+    monkeypatch.setattr(nightly, "run_gates", lambda night, runner: None)
+    monkeypatch.setattr(nightly, "run_editmode", lambda night, runner: None)
+    monkeypatch.setattr(nightly, "_build_both", lambda night, runner, free_gb: pub)
+    monkeypatch.setattr(nightly, "package_zip", lambda night, runner, build, pages: pub[1 if pages else 0])
+    monkeypatch.setattr(nightly, "run_web_checks", lambda night, runner, build: None)
+    monkeypatch.setattr(nightly, "previous_build", lambda night, state, client, runner: PREVIOUS)
+    monkeypatch.setattr(nightly, "check_sizes", lambda *args, **kwargs: SIZES)
+    monkeypatch.setattr(nightly, "measure_boot", lambda night, runner, build: BOOT_MS)
+    monkeypatch.setattr(nightly, "run_steam", lambda night, runner: None)
+    assert env.night(state, gh) == "REFUSED"
+    saved = ns.load_state(env.state_path)
+    assert saved.boot_baseline == baseline
+    assert "REFUSED" in env.log()
+
+
 def test_a_site_refusal_records_the_restored_latest_in_the_nightly_log(env, pub, served, monkeypatch):
     err = ns.Refused("site", "run failed")
     gh = FakeGH(fail={"dispatch_site": [err, err]})
