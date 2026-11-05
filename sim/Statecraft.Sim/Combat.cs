@@ -168,6 +168,25 @@ namespace Statecraft.Sim
             return (ratio, Row(mvp, ratio));
         }
 
+        /// <summary>R-ENEMY-003: the enemy AI's attack preview. Unlike the player's <see cref="Preview"/>, it counts the
+        /// unit plus every other unit on its team that already has a standing attack on this hex and can still reach it, as
+        /// resolver step 2 groups them into the same engagement (the preview before #1454).</summary>
+        internal static (int RatioPercent, int Row)? EnemyPreview(Content c, GameState s, int unitId, int q, int r)
+        {
+            if (!s.Units.TryGetValue(unitId, out var u) || !Military(u) || Player(u) || !InReach(c, u, q, r)) return null;
+            var defenders = Defenders(s, u, q, r);
+            if (defenders.Count == 0) return null;
+            var target = Hex(q, r);
+            var attackers = new List<Unit> { u };
+            attackers.AddRange(s.Units.Values
+                .Where(x => x.Id != unitId && x.Order == Attack && x.OrderTarget == target &&
+                    Player(x) == Player(u) && Military(x) && InReach(c, x, q, r))
+                .OrderBy(x => x.Id));
+            var mvp = c.RulesAt(s.Date).Mvp!;
+            var ratio = Ratio(c, mvp, attackers, defenders, q, r);
+            return (ratio, Row(mvp, ratio));
+        }
+
         /// <summary>The outcome bands of combat_table row <paramref name="row"/> (Q-UI-1: the card shows them beside Preview's
         /// ratio): the row's faces with the same outcome taken together, in the order each first appears, each with how many
         /// faces of <c>Of</c> give it, the people the attackers and the defenders lose (population units times

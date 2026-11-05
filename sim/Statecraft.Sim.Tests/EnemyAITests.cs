@@ -91,7 +91,7 @@ public class EnemyAITests
     }
 
     // R-ENEMY-003: with no script, the unit attacks the first adjacent hex with a player unit, in the fixed neighbour order,
-    // where Combat.Preview's ratio reaches mvp.enemy_attack_ratio_percent; otherwise it fortifies its hex.
+    // where Combat.EnemyPreview's ratio reaches mvp.enemy_attack_ratio_percent; otherwise it fortifies its hex.
     [Theory]
     [InlineData(10, Combat.Attack, "3,0")]    // 10 against 5: 200%, the threshold
     [InlineData(9, Orders.Fortifying, "2,0")]   // 180%: below it
@@ -101,6 +101,33 @@ public class EnemyAITests
         var s = CombatTests.With(c, Soldier(1, 3, 0, 5), Enemy(2, 2, 0, strength));
         EnemyAI.Order(c, s, new List<Cause>());
         Assert.Equal((order, target), (s.Units[2].Order, s.Units[2].OrderTarget));
+    }
+
+    // R-ENEMY-003: each enemy is only 1:1 against the player unit, but an attack already standing on the target makes the
+    // joining unit's preview 2:1. Step 2 will group those same-target attacks into one engagement.
+    [Fact]
+    public void AUnitJoinsAnAlreadyOrderedAttackWhenTogetherTheyReachTheThreshold()
+    {
+        var c = Load();
+        var s = CombatTests.With(c, Soldier(1, 3, 0, 5), Enemy(2, 3, 1, 5), Enemy(3, 2, 0, 5));
+        Assert.Null(Combat.Give(c, s, 3, 3, 0, new List<Cause>(), enemy: true));
+
+        EnemyAI.Order(c, s, new List<Cause>());
+
+        Assert.Equal((Combat.Attack, "3,0"), (s.Units[2].Order, s.Units[2].OrderTarget));
+        Assert.Equal((Combat.Attack, "3,0"), (s.Units[3].Order, s.Units[3].OrderTarget));
+    }
+
+    // R-ENEMY-003: the same 1:1 unit has no qualifying attack without a same-target standing attacker, so it fortifies.
+    [Fact]
+    public void AUnitAloneBelowTheAttackThresholdFortifies()
+    {
+        var c = Load();
+        var s = CombatTests.With(c, Soldier(1, 3, 0, 5), Enemy(2, 3, 1, 5));
+
+        EnemyAI.Order(c, s, new List<Cause>());
+
+        Assert.Equal((Orders.Fortifying, "3,1"), (s.Units[2].Order, s.Units[2].OrderTarget));
     }
 
     // R-ENEMY-003: the attack resolves in the same turn's step 2, and a unit already fortified keeps its order quietly.
