@@ -60,6 +60,36 @@ public class CityPanelTests
 
     static VisualElement Host(UiTestKit ui) => ui.Q<VisualElement>(GddHexPanel.HostName);
 
+    /// <summary>#2669: the finished game stays inspectable, but its GDD hex panel cannot offer orders. Red first: these
+    /// controls previously used only their local prerequisites and remained enabled after GameOver.</summary>
+    [Test]
+    public void GameOverDisablesTheHexPanelsOrderControlsButNotItsDisclosure()
+    {
+        using var ui = new UiTestKit();
+        var c = Gdd03Content();   // the shipped eras run gdd-0.1; the read-only rule is gdd-0.3's (OrderButton)
+        Assert.AreEqual(SaveGame.Gdd03Ruleset, c.Ruleset, "precondition: the content under test runs gdd-0.3");
+        var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
+        g.State.GameOver = GameOverCodes.MvpEnded; g.State.Policies[MapActions.MaabarotPolicy] = 1;
+        var bridge = new SimBridge(g, En);
+        using var panel = Panel(ui, bridge, En);
+        using var end = new EndScreenPresenter(ui.Root, bridge, En, null);
+        Assert.IsTrue(end.IsOpen, "precondition: the ended game opens its end screen");
+        UiTestKit.Press(ui.Q<Button>("end-screen-close"));
+        Assert.IsFalse(end.IsOpen, "the player has closed the end screen to inspect the map");
+        panel.Show(CityHex.q, CityHex.r);
+
+        var orders = Host(ui).Query<Button>().ToList().Concat(ui.Q<VisualElement>(GddHexPanel.ProjectsHostName).Query<Button>().ToList())
+            .Where(b => b.name != GddHexPanel.ToggleName
+                && !b.name.StartsWith("city-project-city-", StringComparison.Ordinal)
+                && !b.name.StartsWith("pioneer-project-", StringComparison.Ordinal)).ToList();
+        Assert.GreaterOrEqual(orders.Count, 3, "precondition: the city offers Assign, Train, and project controls");
+        Assert.IsTrue(orders.Any(b => b.name.StartsWith("city-workers-", StringComparison.Ordinal)), "the Assign stepper is covered");
+        Assert.IsTrue(orders.Any(b => b.name.StartsWith("city-train-", StringComparison.Ordinal)), "Train is covered");
+        Assert.IsTrue(orders.Any(b => b.name.StartsWith("city-project-", StringComparison.Ordinal)), "city projects are covered");
+        Assert.IsTrue(orders.All(b => !b.enabledSelf), "every order-producing control is disabled after GameOver");
+        Assert.IsTrue(ui.Q<Button>(GddHexPanel.ToggleName).enabledSelf, "the project disclosure remains available for inspection");
+    }
+
     [Test]
     public void TheCityHexShowsItsCountsFromTheSim()
     {
@@ -284,6 +314,229 @@ public class CityPanelTests
         panel.Show(CityHex.q, CityHex.r);
         Assert.IsFalse(ui.Q<Button>("city-train-recruit").enabledSelf, "R-TRAIN-001: every civilian is in work");
         Assert.IsFalse(ui.Q<Button>("city-train-halutz").enabledSelf);
+    }
+
+    /// <summary>R-ARMS-003: the Arms one recruit group takes when its training starts (mvp.arms_per_recruit_group).</summary>
+    static int RecruitGroupArms(GameState s) => C.RulesAt(s.Date).Mvp!.ArmsPerRecruitGroup!.Value;
+
+    static void NearDebtCeilingForArmsPurchase(GameState s, int purchaseArms)
+    {
+        var m = C.RulesAt(s.Date).Mvp!;
+        var convertedMoney = m.DollarsPerTurn!.Value * m.IlPerDollarOn(s.Date);
+        s.Arms = RecruitGroupArms(s) - 1;
+        s.Treasury = 0;
+        s.Debt = m.DebtCeiling!.Value - purchaseArms * m.ArmsPrice!.Value + convertedMoney / 2;
+        s.FxReserves = m.DollarsPerTurn.Value;
+    }
+
+    // Red-first prediction at 085944e62: the recruit button is enabled because the panel checks free civilians only.
+    [Test]
+    public void RecruitTrainingIsDisabledWithNoArms()
+    {
+        using var ui = new UiTestKit();
+        var bridge = Bridge(En, s => s.Arms = 0);
+        using var panel = Panel(ui, bridge, En);
+        panel.Show(CityHex.q, CityHex.r);
+        Assert.IsFalse(ui.Q<Button>("city-train-recruit").enabledSelf,
+            "R-ARMS-003: the stock cannot cover one recruit group");
+    }
+
+    // Red-first prediction at 085944e62: the precondition fails, as the button is enabled on free civilians alone; with the
+    // fix, a queued purchase that covers the group turns it back on (buy, then train, in one turn: R-TURN-004's queue order).
+    [Test]
+    public void RecruitTrainingIsEnabledWhenAQueuedPurchaseCoversIt()
+    {
+        using var ui = new UiTestKit();
+        var bridge = Bridge(En, s => s.Arms = RecruitGroupArms(s) - 1);
+        using var panel = Panel(ui, bridge, En);
+        panel.Show(CityHex.q, CityHex.r);
+        Assert.IsFalse(ui.Q<Button>("city-train-recruit").enabledSelf, "precondition: one Arms is missing");
+        Assert.IsNull(bridge.Queue(new BuyArms(1)), "precondition: the bridge accepts the purchase");
+        Assert.IsTrue(ui.Q<Button>("city-train-recruit").enabledSelf,
+            "the purchase runs before a newly appended Train order");
+    }
+
+    // Training.Available counts every queued Train whether or not it will be accepted. Once the covering purchase is
+    // withdrawn, the rejected Recruit is state-neutral, so the exact preview still accepts a zero-Arms Halutz Train.
+    [Test]
+    public void HalutzTrainingIsEnabledWhenAnEarlierRecruitWillBeRejected()
+    {
+        using var ui = new UiTestKit();
+        var bridge = Bridge(En, s =>
+        {
+            Counts(50, 49)(s);
+            s.Arms = 0;
+        });
+        using var panel = Panel(ui, bridge, En);
+        panel.Show(CityHex.q, CityHex.r);
+        var purchase = new BuyArms(RecruitGroupArms(bridge.State));
+        var recruit = new Train(City, "recruit", 1);
+        Assert.IsNull(bridge.Queue(purchase), "precondition: the purchase covers the Recruit");
+        Assert.IsNull(bridge.Queue(recruit), "precondition: the Recruit follows its covering purchase");
+        bridge.Withdraw(purchase);
+
+        var halutz = new Train(City, "halutz", 1);
+        var preview = Simulation.Preview(C, bridge.TurnStart,
+            bridge.Session.Committed.Concat(bridge.Queued).Concat(new[] { halutz }).ToList());
+        Assert.IsTrue(preview.Rejected.Any(x => ReferenceEquals(x.Command, recruit)),
+            "precondition: without the purchase, the queued Recruit is rejected for its missing Arms");
+        Assert.IsFalse(preview.Rejected.Any(x => ReferenceEquals(x.Command, halutz)),
+            "precondition: the rejected Recruit leaves the one idle civilian for the zero-Arms Halutz course");
+        Assert.Zero(Training.Available(bridge.State, City, bridge.Queued),
+            "Training.Available deliberately counts the pending Recruit without previewing its refusal");
+        Assert.IsTrue(ui.Q<Button>("city-train-halutz").enabledSelf,
+            "the button follows the exact candidate preview, not the conservative queued-order count");
+    }
+
+    // #2580 (R-ARMS-002, R-MONEY-004): let A be the Arms cost and M the Money from the turn's full dollar conversion.
+    // Treasury = 0 and Debt = ceiling - A + M/2, so Buy alone ends at ceiling + M/2 (refused), while conversion first
+    // leaves Debt at ceiling - A + M/2 + max(0, A - M), at or below the ceiling. FxReserves supplies the full conversion.
+    // Red-first at 085944e62: the enabled case passes for the wrong reason (free civilians only); the disabled control fails.
+    [Test]
+    public void RecruitTrainingFollowsDollarConversionsMovedBeforeArmsPurchases()
+    {
+        foreach (var convertAfterPurchase in new[] { true, false })
+        {
+            using var ui = new UiTestKit();
+            var bridge = Bridge(En, s => NearDebtCeilingForArmsPurchase(s, RecruitGroupArms(s)));
+            using var panel = Panel(ui, bridge, En);
+            panel.Show(CityHex.q, CityHex.r);
+            var m = C.RulesAt(bridge.State.Date).Mvp!;
+            var dollars = m.DollarsPerTurn!.Value;
+            var armsCost = RecruitGroupArms(bridge.State) * m.ArmsPrice!.Value;
+            var convertedMoney = dollars * m.IlPerDollarOn(bridge.State.Date);
+            Assert.Greater(bridge.State.Debt + armsCost, m.DebtCeiling!.Value,
+                "precondition: BuyArms alone would borrow past the ceiling");
+            Assert.LessOrEqual(bridge.State.Debt + Math.Max(0, armsCost - convertedMoney), m.DebtCeiling.Value,
+                "precondition: converting first leaves the purchase within the ceiling");
+            Assert.IsNull(bridge.Queue(new BuyArms(RecruitGroupArms(bridge.State))),
+                "precondition: the bridge accepts BuyArms first");
+            if (convertAfterPurchase)
+                Assert.IsNull(bridge.Queue(new ConvertDollars(dollars)),
+                    "precondition: the bridge accepts ConvertDollars after BuyArms");
+            Assert.AreEqual(convertAfterPurchase, ui.Q<Button>("city-train-recruit").enabledSelf,
+                convertAfterPurchase
+                    ? "End turn moves the conversion before BuyArms, so the purchase stays within the ceiling"
+                    : "without the conversion, BuyArms would borrow past the ceiling and Train is refused");
+        }
+    }
+
+    // Let G be one recruit group's Arms, P = (G + 1) * Arms price, and M the full conversion's Money. The stock starts
+    // at G - 1, so Buy(G + 1) leaves exactly 2G Arms. Debt starts at ceiling - P + M/2: Buy alone would end at ceiling
+    // + M/2 and be refused; moving Convert ahead of it ends at ceiling - P + M/2 + max(0, P - M), at most the ceiling.
+    [Test]
+    public void ReplacementRecruitTrainingFollowsAConversionQueuedAfterItsSlot()
+    {
+        var purchaseArms = 0;
+        using var ui = new UiTestKit();
+        var bridge = Bridge(En, s =>
+        {
+            purchaseArms = RecruitGroupArms(s) + 1;
+            NearDebtCeilingForArmsPurchase(s, purchaseArms);
+        });
+        using var panel = Panel(ui, bridge, En);
+        panel.Show(CityHex.q, CityHex.r);
+        var m = C.RulesAt(bridge.State.Date).Mvp!;
+        var dollars = m.DollarsPerTurn!.Value;
+        var purchaseCost = purchaseArms * m.ArmsPrice!.Value;
+        var convertedMoney = dollars * m.IlPerDollarOn(bridge.State.Date);
+        var buy = new BuyArms(purchaseArms);
+        var first = new Train(City, "recruit", 1);
+        var convert = new ConvertDollars(dollars);
+        Assert.Greater(bridge.State.Debt + purchaseCost, m.DebtCeiling!.Value,
+            "precondition: without the later conversion, BuyArms would be refused at the debt ceiling");
+        Assert.LessOrEqual(bridge.State.Debt + Math.Max(0, purchaseCost - convertedMoney), m.DebtCeiling.Value,
+            "precondition: conversion before the purchase keeps it within the debt ceiling");
+        Assert.IsNull(bridge.Queue(buy));
+        Assert.IsNull(bridge.Queue(first));
+        Assert.IsFalse(ui.Q<Button>("city-train-recruit").enabledSelf,
+            "precondition: before the conversion, replacing Train(1) with Train(2) cannot use the refused purchase");
+        Assert.IsNull(bridge.Queue(convert));
+        CollectionAssert.AreEqual(new Command[] { buy, first, convert }, bridge.Queued,
+            "precondition: the conversion was queued after the Train slot it will fund");
+
+        var press = new Train(City, "recruit", 2);
+        var preview = Simulation.Preview(C, bridge.TurnStart,
+            bridge.Session.Committed.Concat(new Command[] { buy, press, convert }).ToList());
+        var accepted = !preview.Rejected.Any(x => ReferenceEquals(x.Command, press));
+        Assert.IsTrue(accepted,
+            "End turn moves Convert before BuyArms; the accepted purchase leaves exactly two groups' Arms");
+        Assert.AreEqual(accepted, ui.Q<Button>("city-train-recruit").enabledSelf,
+            "the repeat press previews [BuyArms, Train(2), ConvertDollars] with Train replaced in its original slot");
+    }
+
+    // #2573: pressing Train again replaces the queued Train in its own slot (SimBridge.Queue), so a purchase queued after
+    // it runs too late to pay for the extra group. Red-first at 085944e62: enabled, the panel checks free civilians only.
+    [Test]
+    public void ASecondRecruitGroupIsNotPaidByAPurchaseQueuedAfterTheFirst()
+    {
+        using var ui = new UiTestKit();
+        var bridge = Bridge(En, s => s.Arms = RecruitGroupArms(s));
+        using var panel = Panel(ui, bridge, En);
+        panel.Show(CityHex.q, CityHex.r);
+        Assert.IsNull(bridge.Queue(new Train(City, "recruit", 1)), "precondition: one group, the whole stock");
+        Assert.IsNull(bridge.Queue(new BuyArms(RecruitGroupArms(bridge.State))), "precondition: a purchase after it");
+        Assert.IsFalse(ui.Q<Button>("city-train-recruit").enabledSelf,
+            "Train(2) would run in the first order's slot, before the purchase, with Arms for one group only");
+    }
+
+    // #2580 review: the press previews Train(2) in Train(1)'s slot, which takes both idle civilians, so End turn would refuse
+    // the reassignment queued after it (R-QUAL-004). That refusal is caused by the press, so it must not free a civilian for
+    // it: #1548 counts the queued reassignment. Red-first prediction at f28230b07: enabled, as the press preview's refusals
+    // were left out of the count.
+    [Test]
+    public void ATrainPressCannotTakeTheCivilianALaterReassignmentNeeds()
+    {
+        using var ui = new UiTestKit();
+        var bridge = Bridge(En, s => { Counts(50, 48)(s); Qualify(1, 0)(s); });
+        using var panel = Panel(ui, bridge, En);
+        panel.Show(CityHex.q, CityHex.r);
+        Assert.AreEqual(2, Training.Idle(bridge.State, bridge.State.Cities[City]), "precondition: two civilians without work");
+        var train = new Train(City, "halutz", 1);
+        var reassign = new ReassignCraftsmen(City, 1);
+        Assert.IsNull(bridge.Queue(train), "precondition: one halutz group takes one of them");
+        Assert.IsNull(bridge.Queue(reassign), "precondition: the reassignment takes the other");
+        CollectionAssert.AreEqual(new Command[] { train, reassign }, bridge.Queued, "precondition: the reassignment is after the Train");
+        Assert.IsEmpty(Simulation.Preview(C, bridge.TurnStart, bridge.Session.Committed.Concat(bridge.Queued).ToList()).Rejected,
+            "precondition: End turn accepts both queued orders");
+        Assert.IsFalse(ui.Q<Button>("city-train-halutz").enabledSelf,
+            "Train(2) would take the reassignment's civilian, and End turn would refuse the reassignment");
+    }
+
+    // #2580 review (auditenable): the press must not take the Arms a later queued Reinforce needs either. Three civilians
+    // without work and Arms for two recruit groups: Train(1) and then Reinforce(1) are both accepted, but Train(2) in the
+    // first order's slot takes both groups' Arms, and End turn would refuse the reinforcement (R-ARMS-003). The idle count
+    // still has one civilian free, so only the previews can see it. Red-first prediction at d3b1fb6e0: enabled.
+    [Test]
+    public void ATrainPressCannotTakeTheArmsALaterReinforcementNeeds()
+    {
+        using var ui = new UiTestKit();
+        var unit = -1;
+        var bridge = Bridge(En, s =>
+        {
+            Counts(50, 47)(s);
+            s.Arms = 2 * RecruitGroupArms(s);
+            var recruit = C.UnitTypes.Single(t => t.Id == "recruit");
+            var u = s.Units.Values.Where(x => x.Side == Movement.PlayerSide && x.Strength >= 2)
+                .First(x => C.UnitTypes.First(t => t.Id == x.Type) is var t && C.UnitTypes.FirstOrDefault(k => k.Side == t.Side && k.Class == t.Class && k.Facility != "") == recruit);
+            s.Units[u.Id] = new Unit(u.Id, u.Type, CityHex.q, CityHex.r, u.Service, u.Side, u.Strength - 1, u.Order, u.OrderTarget, u.HomeCity, u.Strength);
+            unit = u.Id;
+        });
+        using var panel = Panel(ui, bridge, En);
+        panel.Show(CityHex.q, CityHex.r);
+        var train = new Train(City, "recruit", 1);
+        var reinforce = new Reinforce(unit, City, 1);
+        Assert.IsNull(bridge.Queue(train), "precondition: one recruit group takes one group's Arms");
+        Assert.IsNull(bridge.Queue(reinforce), "precondition: the reinforcement, trained as recruits, takes the other");
+        Assert.IsEmpty(Simulation.Preview(C, bridge.TurnStart, bridge.Session.Committed.Concat(bridge.Queued).ToList()).Rejected,
+            "precondition: End turn accepts both queued orders");
+        var pressed = Simulation.Preview(C, bridge.TurnStart,
+            bridge.Session.Committed.Concat(new Command[] { new Train(City, "recruit", 2), reinforce }).ToList());
+        StringAssert.Contains("Arms", pressed.Rejected.Single(x => ReferenceEquals(x.Command, reinforce)).Reason,
+            "precondition: after Train(2), End turn refuses the reinforcement for its Arms");
+        Assert.GreaterOrEqual(Training.Available(bridge.State, City, bridge.Queued), 1, "precondition: a civilian without work is left");
+        Assert.IsFalse(ui.Q<Button>("city-train-recruit").enabledSelf,
+            "Train(2) would take the reinforcement's Arms, and End turn would refuse the reinforcement");
     }
 
     [Test]
@@ -897,6 +1150,39 @@ public class CityPanelTests
         var result = bridge.EndTurn();
         Assert.IsEmpty(result.Rejected, "the sim takes the order");
         Assert.AreEqual(a, result.State.Corridors["burma_road"].Segments[0]?.Unit);
+    }
+
+    // Red-first prediction at 085944e62: the Build button is enabled because the panel does not ask the depopulation rule.
+    [Test]
+    public void ADepopulatedPlaceCrossingDisablesCorridorBuild()
+    {
+        var segment = C.Corridors.Single(x => x.Id == "burma_road").Segments[0];
+        var q = segment.Hexes[0][0];
+        var r = segment.Hexes[0][1];
+        var target = C.SettlementTargets.Single(x => x.Id == "jaffa");
+        var old = (target.Q, target.R);
+        try
+        {
+            target.Q = q;
+            target.R = r;
+            using var ui = new UiTestKit();
+            int pioneer = -1;
+            var bridge = Bridge(En, s =>
+            {
+                pioneer = AddHalutz(s);
+                s.Settlements["jaffa"] = new SettlementControl(depopulated: true);
+            });
+            using var panel = Panel(ui, bridge, En);
+            panel.Show(q, r);
+            var button = SegmentBox(ui, "burma_road", 1).Q<Button>($"corridor-build-{pioneer}");
+            Assert.IsFalse(button.enabledSelf,
+                "R-CTRL-020: the sim refuses a segment crossing a depopulated place");
+        }
+        finally
+        {
+            target.Q = old.Q;
+            target.R = old.R;
+        }
     }
 
     [Test]

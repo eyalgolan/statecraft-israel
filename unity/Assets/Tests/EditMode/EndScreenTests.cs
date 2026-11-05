@@ -247,10 +247,12 @@ public class EndScreenTests
         Assert.IsTrue(k.End.IsOpen, "a loaded ended game opens on its end screen");
         var s = k.Bridge.State; var r = EndReport.For(C, s);
         var names = k.Ui.Q<ScrollView>("end-screen-rows").Children().Select(x => x.name).ToList();
-        var expected = new[] { "outcome", "score", "score-reference" }.Concat(r.Objectives.Select(o => "objective-" + o.Id))
-            .Concat(new[] { "cohesion", "standing", "population" }).Select(n => "end-screen-" + n);
+        var expected = new[] { "outcome", "date", "score", "score-reference" }.Concat(r.Objectives.Select(o => "objective-" + o.Id))
+            .Concat(new[] { "cohesion", "standing", "population", "population-sources" }).Select(n => "end-screen-" + n);
         CollectionAssert.AreEqual(expected, names, "the report's parts, in order");
         Assert.AreEqual(En["end.outcome.mvp_ended"], k.Line("outcome"));
+        string Date(System.DateTime d) => En.Format("date.day_month_year", d.Day, En["date.month_" + d.Month], d.Year);
+        Assert.AreEqual(En.Format("end.date", Date(r.Date)), k.Line("date"), "the end date (R-END-005, #2545)");
         Assert.AreEqual(En.Format("hud.score", s.Score), k.Line("score"));
         Assert.Greater(s.Score, 0);
         Assert.AreEqual(200, r.ReferenceScore, "the reference is the sim's number (Q-SCORE-2)");
@@ -258,7 +260,6 @@ public class EndScreenTests
         StringAssert.Contains("200", k.Line("score-reference"));
         // The first objective: the card's title, the player's date and the historical date (Q-END-1).
         var first = C.Objectives.Single(o => o.Id == "absorb_immigrants");   // by id: the first in id order, as before R-OBJ-007
-        string Date(System.DateTime d) => En.Format("date.day_month_year", d.Day, En["date.month_" + d.Month], d.Year);
         var title = EventSystem.Title(C, s, C.Events.First(e => e.Id == first.Card));
         Assert.AreEqual(En.Format("end.objective_done", title, Date(first.ReferenceDate.AddMonths(-1)), Date(first.ReferenceDate)), k.Line("objective-" + first.Id));
         foreach (var o in C.Objectives.Where(o => o.Id != first.Id))
@@ -269,6 +270,26 @@ public class EndScreenTests
         var anchor = r.PopulationHistory!;
         Assert.AreEqual(En.Format("end.population_history", r.Population.ToString("N0", System.Globalization.CultureInfo.InvariantCulture),
             Date(anchor.Date), anchor.Jews.ToString("N0", System.Globalization.CultureInfo.InvariantCulture)), k.Line("population"));
+        // ...and the anchor's sources (R-END-006, #2545), by host as the unit card gives its sources.
+        Assert.AreEqual(En.Format("unit.sources", "www.cbs.gov.il"), k.Line("population-sources"));
+    }
+
+    /// <summary>#2545 (R-END-006): the sources row follows the anchor. A game that ends before the first anchor has no
+    /// comparison and so no sources row, and an anchor with no readable source URL gets no bare "Sources:" row either.</summary>
+    [Test]
+    public void ThePopulationSourcesRowShowsOnlyAnAnchorsReadableSources()
+    {
+        using (var early = new Kit(En, s => { s.Date = C.PopulationAnchors.Min(a => a.Date).AddDays(-1); s.GameOver = GameOverCodes.DefeatEconomy; }))
+        {
+            Assert.IsNull(EndReport.For(C, early.Bridge.State).PopulationHistory, "precondition: before the first anchor");
+            CollectionAssert.DoesNotContain(early.Ui.Q<ScrollView>("end-screen-rows").Children().Select(x => x.name), "end-screen-population-sources");
+        }
+        var unsourced = ContentLoader.Load(Paths.Content);
+        foreach (var a in unsourced.PopulationAnchors) { a.Sources.Clear(); a.Sources.Add(new Source { Url = "" }); }
+        using var k = new Kit(En, Ended);
+        var names = EndScreenPresenter.Lines(unsourced, k.Bridge.State, En).Select(l => l.Name).ToList();
+        Assert.IsNotNull(EndReport.For(unsourced, k.Bridge.State).PopulationHistory, "precondition: an anchor applies, so only its sources are dropped");
+        CollectionAssert.DoesNotContain(names, "population-sources");
     }
 
     /// <summary>A cause's history note (Q-DEF-4 (b)) sits right under its line when the strings carry one, and nowhere else.
@@ -279,7 +300,7 @@ public class EndScreenTests
         var withNote = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text + "\nend.note.defeat_war: \"Fixture note.\"\n");
         using var k = new Kit(withNote, s => { s.Date = C.End; s.GameOver = GameOverCodes.DefeatWar; });
         var names = k.Ui.Q<ScrollView>("end-screen-rows").Children().Select(x => x.name).ToList();
-        CollectionAssert.AreEqual(new[] { "end-screen-outcome", "end-screen-note", "end-screen-score" }, names.Take(3), "the note follows the outcome line");
+        CollectionAssert.AreEqual(new[] { "end-screen-outcome", "end-screen-note", "end-screen-date", "end-screen-score" }, names.Take(4), "the note follows the outcome line");
         Assert.AreEqual("Fixture note.", k.Line("note"));
         Assert.IsTrue(k.Ui.Q<Label>("end-screen-note").ClassListContains("end-screen-note"));
         using var ended = new Kit(withNote, Ended);
@@ -296,7 +317,7 @@ public class EndScreenTests
         {
             using var k = new Kit(text, s => { s.Date = C.End; s.GameOver = GameOverCodes.DefeatWar; });
             var names = k.Ui.Q<ScrollView>("end-screen-rows").Children().Select(x => x.name).ToList();
-            CollectionAssert.AreEqual(new[] { "end-screen-outcome", "end-screen-score" }, names.Take(2), "the score follows the outcome line");
+            CollectionAssert.AreEqual(new[] { "end-screen-outcome", "end-screen-date", "end-screen-score" }, names.Take(3), "the end date follows the outcome line, then the score");
             CollectionAssert.DoesNotContain(names, "end-screen-note");
         }
     }
@@ -311,7 +332,7 @@ public class EndScreenTests
         using var k = new Kit(withNote, s => { s.Date = C.End; s.GameOver = GameOverCodes.CoalitionCollapse; });
         Assert.AreEqual(withNote["order.game_over"], k.Line("outcome"), "precondition: the generic line shows");
         var names = k.Ui.Q<ScrollView>("end-screen-rows").Children().Select(x => x.name).ToList();
-        CollectionAssert.AreEqual(new[] { "end-screen-outcome", "end-screen-score" }, names.Take(2), "the score follows the generic line");
+        CollectionAssert.AreEqual(new[] { "end-screen-outcome", "end-screen-date", "end-screen-score" }, names.Take(3), "the end date follows the generic line, then the score");
         CollectionAssert.DoesNotContain(names, "end-screen-note");
     }
 
@@ -365,7 +386,49 @@ public class EndScreenTests
         UiTestKit.Press(k.Ui.Q<Button>("end-screen-new-game"));
         Assert.IsNull(k.Bridge.State.GameOver, "the second press starts a new game");
         Assert.IsFalse(k.End.IsOpen, "which has no end screen");
-        Assert.IsFalse(File.Exists(k.Store.AutosavePath), "New Game removes the old save, as it always has");
+        Assert.IsTrue(File.Exists(k.Store.AutosavePath), "New Game saves its replacement immediately");
+        var resumed = GameStart.Begin(C, k.Store, () => 1UL, new List<string>(), En);
+        Assert.AreEqual(k.Bridge.State.Hash(), resumed.State.Hash());
+        Assert.IsNull(resumed.State.GameOver);
+    }
+
+    /// <summary>#2669: the end screen can start New Game while the final turn's report waits underneath it. Red first:
+    /// before TurnReportPresenter listened to Changed, the second press replaced the session but left that report open.</summary>
+    [Test]
+    public void NewGameFromTheEndScreenClosesTheLastTurnsReport()
+    {
+        using var k = new Kit(En, Exhausted);
+        for (int turn = 0; turn < 3 && k.Bridge.State.GameOver == null; turn++) k.Bridge.EndTurn();
+        Assert.IsTrue(k.End.IsOpen && k.Report.IsOpen, "precondition: the end screen covers the final turn's report");
+
+        UiTestKit.Press(k.Ui.Q<Button>("end-screen-new-game"));
+        Assert.IsTrue(k.NewGame.Armed);
+        Assert.IsTrue(k.End.IsOpen && k.Report.IsOpen, "the confirmation press changes no session");
+
+        UiTestKit.Press(k.Ui.Q<Button>("end-screen-new-game"));
+        Assert.IsNull(k.Bridge.State.GameOver, "the second press starts the new game");
+        Assert.IsFalse(k.End.IsOpen);
+        Assert.IsFalse(k.Report.IsOpen, "the old game's report is closed");
+        Assert.IsTrue(k.Q("top-bar").enabledSelf, "the old report does not cover the new game");
+    }
+
+    /// <summary>#2669 with #2536 (Codex review of 17c491b3d): answering the ending turn's card changes nothing in the game, so
+    /// the final turn's report stays open under the end screen; only a replaced session closes it. Red at 17c491b3d: the
+    /// report listened to every Changed, which SeeEndingCard raises.</summary>
+    [Test]
+    public void AnsweringTheEndingTurnsCardKeepsTheLastTurnsReport()
+    {
+        using var k = new Kit(En, Exhausted);
+        for (int turn = 0; turn < 3 && k.Bridge.State.GameOver == null; turn++) k.Bridge.EndTurn();
+        Assert.IsTrue(k.Report.IsOpen, "precondition: the final turn's report is open");
+        EndedWithACard(k.Bridge.State);   // the ending turn also left an objective's card waiting
+        Assert.IsTrue(k.Bridge.EndingCardWaiting, "precondition: a card of the ending turn waits");
+        var session = k.Bridge.Session;
+
+        k.Bridge.SeeEndingCard("railway_complete");
+        Assert.AreSame(session, k.Bridge.Session, "the answer replaces nothing");
+        Assert.IsFalse(k.Bridge.EndingCardWaiting);
+        Assert.IsTrue(k.Report.IsOpen, "the report stays, under the end screen");
     }
 
     [Test]
@@ -461,6 +524,7 @@ public class EndScreenTests
         Assert.AreEqual(He["report.close"], k.Ui.Q<Button>("end-screen-close").text);
         Assert.AreEqual(He["hud.new_game"], k.Ui.Q<Button>("end-screen-new-game").text);
         StringAssert.StartsWith(He["hud.caption.cohesion"] + ":", k.Line("cohesion"));
+        Assert.AreEqual(He.Format("unit.sources", "www.cbs.gov.il"), k.Line("population-sources"));
     }
 
     /// <summary>#2060: in Hebrew each date an end-screen line inserts sits between RLE and PDF (U+202B, U+202C), so it
@@ -486,6 +550,8 @@ public class EndScreenTests
         Assert.IsTrue(string.Equals(openExpected, openLine, System.StringComparison.Ordinal), "expected\n" + Escape(openExpected) + "\nbut was\n" + Escape(openLine));
         var anchor = EndReport.For(C, k.Bridge.State).PopulationHistory!;
         Assert.GreaterOrEqual(k.Line("population").IndexOf(Date(anchor.Date), System.StringComparison.Ordinal), 0, "the population line's date too: " + Escape(k.Line("population")));
+        var endDate = He.Format("end.date", Date(EndReport.For(C, k.Bridge.State).Date));
+        Assert.IsTrue(string.Equals(endDate, k.Line("date"), System.StringComparison.Ordinal), "the end date too: expected\n" + Escape(endDate) + "\nbut was\n" + Escape(k.Line("date")));
     }
 
     /// <summary>The line with its invisible marks spelled out, for a failure message.</summary>

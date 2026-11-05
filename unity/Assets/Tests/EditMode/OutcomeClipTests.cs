@@ -38,6 +38,7 @@ public class OutcomeClipTests
             rows.Select(r => r.Event), "the three of 2026-10-14, the four the owner approved on 2026-10-20 (#1102) and absorb_immigrants (owner, 2026-10-24: \"Add v8, 6 s\")");
         var problems = EventVideoMapping.OutcomeProblems(rows, C, f => File.Exists(Path.Combine(EventVideoMapping.ClipFolder, f)));
         Assert.IsEmpty(problems, string.Join("\n", problems));
+        Assert.IsTrue(rows.All(r => !string.IsNullOrWhiteSpace(r.AltHe) && r.AltHeReview == "agent-checked"), "every shipped outcome has agent-checked Hebrew alt text");
         Assert.AreEqual(8, EventVideoMapping.LoadOutcomes().Count, "the game finds them in Resources");
     }
 
@@ -63,7 +64,8 @@ public class OutcomeClipTests
         public int Closed;
         readonly GameObject go; readonly PanelSettings ps; readonly RenderTexture rt; readonly List<IDisposable> owned = new List<IDisposable>();
 
-        public Rig(string[] events, Func<GameSession, IReadOnlyList<Command>, StepResult>? step = null, UiText? text = null, Content? content = null)
+        public Rig(string[] events, Func<GameSession, IReadOnlyList<Command>, StepResult>? step = null, UiText? text = null,
+            Content? content = null, IReadOnlyList<EventVideoMapping.Row>? outcomes = null)
         {
             var t = text ?? Text; var c = content ?? C;
             rt = new RenderTexture(1920, 1080, 0);
@@ -86,7 +88,7 @@ public class OutcomeClipTests
             owned.Add(new HudPresenter(Root, Bridge, t));
             Nav = new ScreenNav(Root); owned.Add(Nav);
             Card = new EventCardPresenter(Root, Bridge, t, null, null, CardPlayer, _ => null); owned.Add(Card);
-            Outcomes = new OutcomePresenter(Root, Bridge, t, OutcomePlayer, EventVideoMapping.ParseOutcomes(Yaml), () => Closed++, () => Nav.Close());
+            Outcomes = new OutcomePresenter(Root, Bridge, t, OutcomePlayer, outcomes ?? EventVideoMapping.ParseOutcomes(Yaml), () => Closed++, () => Nav.Close());
             owned.Add(Outcomes);
             owned.Add(CardPlayer); owned.Add(OutcomePlayer);
         }
@@ -139,6 +141,7 @@ public class OutcomeClipTests
             r.Order("maabarot_policy", "maabarot");
             r.Bridge.EndTurn();
             Assert.AreEqual(he.Format("outcome.order", option.TextHe), r.Outcomes.Caption);
+            Assert.AreEqual(r.Outcomes.Showing!.AltHe, r.Root.Q("outcome-media").tooltip);
             StringAssert.DoesNotContain(option.Text, r.Outcomes.Caption, "no English in the Hebrew caption");
         }
         var c = ContentLoader.Load(Paths.Content);
@@ -149,6 +152,18 @@ public class OutcomeClipTests
             r.Bridge.EndTurn();
             Assert.AreEqual(he.Format("outcome.order", option.Text), r.Outcomes.Caption, "no text_he: the English");
         }
+    }
+
+    [Test]
+    public void InHebrewABlankOutcomeMediaAltFallsBackToEnglish()
+    {
+        LogAssert.ignoreFailingMessages = true;
+        var source = EventVideoMapping.ParseOutcomes(Yaml).First(r => r.Event == "maabarot_policy");
+        source.AltHe = "  ";
+        using var r = new Rig(new[] { source.Event }, text: He, outcomes: new[] { source });
+        r.Order(source.Event, source.Option);
+        r.Bridge.EndTurn();
+        Assert.AreEqual(source.Alt, r.Root.Q("outcome-media").tooltip);
     }
 
     /// <summary>Scenario A of the review: a screen is open at End Turn. The clip closes it and is drawn over the screens

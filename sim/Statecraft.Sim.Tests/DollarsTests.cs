@@ -186,6 +186,7 @@ options:
     text: The way it went
     historical: true
     set_rung: RUNG
+sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
 ";
 
     // R-MONEY-004: the war is the rung the turn started at. An earlier order of the same turn that moves the rung (an

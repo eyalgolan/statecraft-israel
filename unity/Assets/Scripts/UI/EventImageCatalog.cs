@@ -23,6 +23,8 @@ namespace Statecraft.Game.UI
             public string eventId; public Texture2D image;
             /// <summary>What the picture shows, for accessibility (the element's tooltip).</summary>
             public string alt;
+            /// <summary>The Hebrew description, or empty for English fallback.</summary>
+            public string altHe;
             /// <summary>The credit line shown under the picture (artist, archive, licence, "graded and cropped").</summary>
             public string credit;
             /// <summary>The picture needs the owner's sensitivity review before a shareable build may carry it.</summary>

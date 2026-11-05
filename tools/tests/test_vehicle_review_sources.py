@@ -5,8 +5,12 @@ Dakota followed (owner, 2 November 2026: "Over Tel Aviv, 15 May-11 Jun"; on #227
 its -compatibility.fbx name. This fails when verify stops following
 the move (it would then look for a model that is no longer there, or pass without checking the shipped one)."""
 import importlib.util
+import json
+import shutil
 import sys
 from pathlib import Path
+
+import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "unity/Assets/Editor/VehicleReviewSources.py"
@@ -47,6 +51,43 @@ def test_the_placed_spitfire_is_verified_where_the_game_ships_it():
 def test_verify_passes_on_the_shipped_files():
     # Every archive, GLB, colour map and FBX hash in sources.json against the files where they now are.
     sources().verify(ROOT)
+
+
+def shipped_copy(mod, dest):
+    # Copy exactly what verify() reads (sources.json, the archives, each model's colour map and FBX) into dest.
+    manifest = json.loads((ROOT / mod.SOURCES / "sources.json").read_text())
+    (dest / mod.SOURCES).mkdir(parents=True)
+    shutil.copyfile(ROOT / mod.SOURCES / "sources.json", dest / mod.SOURCES / "sources.json")
+    for item in manifest["items"]:
+        if not (dest / mod.SOURCES / item["archive"]).exists():  # two items share one archive; copy it once
+            shutil.copyfile(ROOT / mod.SOURCES / item["archive"], dest / mod.SOURCES / item["archive"])
+        home = mod.home(item["id"])
+        (dest / home).mkdir(parents=True, exist_ok=True)
+        for name in (item["id"] + "_basecolor.jpg", mod.fbx_name(item["id"])):
+            shutil.copyfile(ROOT / home / name, dest / home / name)
+
+
+@pytest.mark.parametrize("target", [
+    "archive ZIP",
+    "base-colour JPEG",
+    "compatibility FBX",
+])
+def test_verify_fails_on_one_changed_byte(tmp_path, target):
+    # #2737: test_verify_passes_on_the_shipped_files stays green if verify() is a no-op. This one fails then.
+    mod = sources()
+    shipped_copy(mod, tmp_path)
+    mod.verify(tmp_path)  # the untouched copy passes, so a broken copy can't make the raise below pass for the wrong reason
+    path = {
+        "archive ZIP": tmp_path / mod.SOURCES / "statecraft-vehicles-aircraft-01.zip",
+        "base-colour JPEG": tmp_path / mod.home(SPITFIRE) / (SPITFIRE + "_basecolor.jpg"),
+        "compatibility FBX": tmp_path / mod.home(R35) / mod.fbx_name(R35),
+    }[target]
+    assert path.is_relative_to(tmp_path)  # never flip a byte in a committed file
+    blob = bytearray(path.read_bytes())
+    blob[len(blob) // 2] ^= 0xFF
+    path.write_bytes(bytes(blob))
+    with pytest.raises(AssertionError):
+        mod.verify(tmp_path)
 
 
 def test_loading_the_script_writes_no_bytecode_under_assets():

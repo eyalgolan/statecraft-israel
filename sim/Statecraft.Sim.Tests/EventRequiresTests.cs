@@ -18,6 +18,7 @@ options:
   - id: stay
     text: Stay
     alternative: { basis: design }
+sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
 ";
 
     const string Follow = @"
@@ -29,6 +30,7 @@ requires: [{ event: first, option: go }]
 options:
   - id: ok
     text: Fine
+sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
 ";
 
     static Content Load(string follow) =>
@@ -125,6 +127,7 @@ requires: [{{ event: {other}, option: ok }}]
 options:
   - id: ok
     text: Fine
+sources: [{{ url: https://example.org/event, checked: 2026-10-18 }}]
 ";
 
     /// <summary>Re-review N4: a cycle of requirements could never fire; the loader names every file in it.</summary>
@@ -162,6 +165,7 @@ options:
   - id: decline
     text: Decline
     alternative: { basis: design }
+sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
 ";
 
     const string Plain = @"
@@ -174,6 +178,7 @@ options:
     text: One
   - id: two
     text: Two
+sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
 ";
 
     static Content LoadAll(string follow) => ContentLoader.Load(Fixture.Write(events: new Dictionary<string, string>
@@ -267,7 +272,7 @@ options:
     [Fact]
     public void ACycleThroughASecondRequirementIsFound()
     {
-        var a = "id: a\ntitle: a\ntext: x\nfrom: 1948-06-01\nrequires: [{ event: first, option: go }, { event: b, option: ok }]\noptions:\n  - id: ok\n    text: Ok\n";
+        var a = "id: a\ntitle: a\ntext: x\nfrom: 1948-06-01\nrequires: [{ event: first, option: go }, { event: b, option: ok }]\noptions:\n  - id: ok\n    text: Ok\nsources: [{ url: \"https://example.org/event\", checked: 2026-10-18 }]\n";
         var ex = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(events: new Dictionary<string, string>
         {
             ["first.yaml"] = First, ["a.yaml"] = a, ["b.yaml"] = Requiring("b", "a"),

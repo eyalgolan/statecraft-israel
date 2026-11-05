@@ -26,6 +26,7 @@ from: 1948-05-15
 {STRUCTURED}  - id: refuse
     text: Refuse
     alternative: { basis: design }
+sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
 ";
 
     const string Grants = @"    grant_units:

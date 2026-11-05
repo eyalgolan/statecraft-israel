@@ -20,6 +20,7 @@ public class BudgetOwnersTests
       - office: supply_minister
         from: 1948-05-14
         to: 1950-01-01
+        sources: [{ url: https://example.org/term, checked: 2026-10-18 }]
 ";
     const string Shares = "budget_start: { finance_minister: 0.4, defense_minister: 0.4, supply: 0.2 }\n";
     const string Owners = "budget_owners:\n  supply:\n    - { from: 1948-05-15, office: supply_minister }\n    - { from: 1950-01-01, office: prime_minister }\n";

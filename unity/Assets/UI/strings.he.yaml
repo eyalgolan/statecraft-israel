@@ -229,10 +229,16 @@ community.star: "סימון בכוכב בגיטהאב"
 # Hebrew letters, as the static texts carry no Latin (HebrewUiTests). Approved by Beri, a native speaker, on #1179
 # (20 Oct 2026). For the native reviewer (#564).
 feedback.open: "דיווח על באג או רעיון"
-feedback.intro: "הטופס נפתח עם השורות האלה כבר ממולאות. שום דבר לא נשלח לפני השליחה בגיטהאב."
+feedback.intro: "התצוגה המקדימה מציגה את השדות שימולאו. כותרת הבעיה בגיטהאב נשארת באנגלית. שום דבר לא נשלח לפני השליחה בגיטהאב."
 feedback.bug: "דיווח על באג"
 feedback.feature: "הצעה לתכונה חדשה"
 feedback.itch: "אין חשבון בגיטהאב? תגובה בדף המשחק באיץ׳"
+# Agent-drafted for #2630; native review pending under #564.
+feedback.preview.title: "כותרת"
+feedback.preview.version: "גרסה"
+feedback.preview.env: "סביבה"
+feedback.preview.bug_title: "באג: "
+feedback.preview.feature_title: "רעיון: "
 # "Share" (#1170, SharePresenter): the button and the panel's title ("sharing a picture from the game"), the post, Share,
 # "downloading the picture", and the note ("these sites do not take a picture through a link: the downloaded picture is
 # to be attached to the post"). The post opens with a noun phrase ("running the State of Israel in 1948 in the game
@@ -345,10 +351,15 @@ map.control.awaiting_choice: "החלטה ממתינה"
 map.control.occupied: "מוחזק"
 map.control.awaiting_end: "תקופת ההחזקה הסתיימה"
 map.control.depopulated: "מרוקן מתושביו"
+map.control.annexed: "מסופח"
+map.control.lost: "בשליטת האויב"
 info.control.awaiting_choice: "{0}: נכבש, החלטה ממתינה"
 info.control.occupied: "{0}: מוחזק, תורות שנותרו: {1}"
 info.control.awaiting_end: "{0}: תקופת ההחזקה הסתיימה, החלטה ממתינה"
 info.control.depopulated: "{0}: התושבים נעקרו ממקומם, המקום מרוקן מתושביו"
+info.control.annexed: "{0}: סופח"
+info.control.lost: "{0}: אבד, בשליטת האויב"
+info.control.enemy_held: "בשליטת כוחות האויב"
 hud.standing_displaced_places: "מקומות שרוקנו מתושביהם בעקבות גירוש: {0}"
 # [NATIVE REVIEW REQUIRED] native and owner review pending.
 start.listen: "השמעת ההקלטה"
@@ -627,6 +638,9 @@ end.objective_open: "יעד {0}: לא הושלם; בהיסטוריה ב־{1}"
 end.parameter: "{0}: {1}"
 end.population: "אוכלוסייה: {0}"
 end.population_history: "אוכלוסייה: {0}; לפי הלמ״ס {2} ב־{1}"
+# For the native reviewer (#564): the end screen's end date (#2545).
+end.date: "הסתיים ב־{0}"
+
 # For the native reviewer (#564)
 cabinet.coalition: "קואליציה: {0} מתוך {1} {3} · יציבות {2}"
 cabinet.vacant: "(פנוי)"
@@ -774,6 +788,8 @@ info.map_action_reason.action_until: "אפשר היה להקים {0} עד {1}"
 info.map_action_reason.all_from: "אפשר להקים מעברות ומיזמי דיור החל מ־{0}"
 info.map_action_reason.maabarot_policy: "הקמת מעברות מחייבת את מדיניות המעברות"
 info.map_action_reason.not_land: "המשבצת הזאת אינה יבשה"
+# For the native reviewer (#564): agent-drafted, #2573
+info.map_action_reason.depopulated: "אי אפשר לבנות במקום מרוקן מתושבים"
 info.map_action_reason.too_far_one: "המשבצת הזאת נמצאת במרחק של יותר מ־{0} משבצת מיישוב"
 info.map_action_reason.too_far_many: "המשבצת הזאת נמצאת במרחק של יותר מ־{0} משבצות מיישוב"
 info.map_action_reason.occupied: "במשבצת הזאת כבר יש {0}"
@@ -882,8 +898,6 @@ unit.send_home_queued: "ניתנה פקודת שליחה הביתה: היחיד�
 unit.order.reinforce: "תגבור +{0}"
 unit.reinforce_queued: "ניתנה פקודת תגבור: כוח ההשלמה יתחיל באימון בסיום התור"
 newgame.confirm: "יש ללחוץ שוב על משחק חדש כדי לעזוב את המשחק הזה ולהתחיל מחדש."
-# For the native reviewer (#564): agent-drafted, #2552
-newgame.delete_failed: "לא ניתן היה להסיר את השמירה הקודמת; היא תוחלף בפעם הבאה שהמשחק יישמר."
 save.unreadable: "לא ניתן היה לטעון את המשחק השמור ({0}). משחק חדש התחיל."
 save.reason_other: "לא ניתן היה לקרוא את הקובץ או לשחזר את המשחק"
 save.refused.older_rules: "המשחק השמור נוצר בגרסה קודמת של חוקי המשחק ואי אפשר להמשיך אותו. משחק חדש התחיל."

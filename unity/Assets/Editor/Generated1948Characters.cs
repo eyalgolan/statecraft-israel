@@ -14,7 +14,7 @@ using Object = UnityEngine.Object;
 
 namespace Statecraft.Game.EditorTools
 {
-    /// <summary>Explicit seven-character import and asset-preview evidence. Walk is a review clip, not movement behaviour.</summary>
+    /// <summary>Explicit seven-character import and asset-preview evidence. The six token figures among them play their walk when their token moves (UnitTokenMotion).</summary>
     public static class Generated1948Characters
     {
         public static readonly string[] Ids = {

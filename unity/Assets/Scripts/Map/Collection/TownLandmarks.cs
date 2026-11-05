@@ -333,6 +333,8 @@ namespace Statecraft.Game.Map.Collection
         List<Want> wants = new List<Want>();
         DateTime date;
         bool dirty;
+        bool refreshDirty;
+        bool? refreshedAllowed;
 
         /// <summary>The landmarks drawn (key, model, the spot its footprint is centred on, at ground height): a test aid.</summary>
         public readonly List<(string Key, string Model, Vector3 At)> Placed = new List<(string, string, Vector3)>();
@@ -416,18 +418,19 @@ namespace Statecraft.Game.Map.Collection
                     (w.Key, new Bounds(new Vector3(w.At.x, 0, w.At.y), new Vector3(w.Radius * 2, 0, w.Radius * 2)))).ToList());
                 layer.WholeTownReady = WholeReady;
             }
-            dirty = true; RefreshWanted();
+            dirty = true; refreshDirty = true; RefreshWanted();
         }
 
         /// <summary>Whether <see cref="RefreshWanted"/> has work: a redraw, a lease to retire, or a change of the admitted towns
         /// or of the models asked for. RefreshWanted returns at once without it, and the edit-mode render callback asks for a
         /// player-loop update only with it, so a settled layer never keeps the editor updating (#2099).</summary>
-        internal bool RefreshPending => dirty || retiring.Count != 0
-            || !admittedKeys.SetEquals(wants.Where(Allowed).Select(w => w.Key)) || !asked.SetEquals(wants.Where(Allowed).Select(w => w.Model));
+        internal bool RefreshPending => dirty || refreshDirty || retiring.Count != 0 || pendingRetirementLeases != 0
+            || refreshedAllowed != (map?.Residency.Towns.Enabled ?? true);
 
         void RefreshWanted()
         {
             if (!RefreshPending) return;
+            if (pendingRetirementLeases != 0) return;
             var keep = new HashSet<string>(StringComparer.Ordinal);
             var keys = new HashSet<string>(StringComparer.Ordinal);
             foreach (var want in wants) if (Allowed(want)) { keep.Add(want.Model); keys.Add(want.Key); }
@@ -462,6 +465,11 @@ namespace Statecraft.Game.Map.Collection
             {
                 // Admission already validated this camera's production policy. The stream itself waits for GameReady.
                 RequestWanted();
+            }
+            if (retiring.Count == 0 && pendingRetirementLeases == 0)
+            {
+                refreshedAllowed = map?.Residency.Towns.Enabled ?? true;
+                refreshDirty = false;
             }
         }
 
@@ -500,7 +508,7 @@ namespace Statecraft.Game.Map.Collection
             CollectionResidencyMetrics.AfterDestroyed("whole_towns", instances, batch, () =>
             {
                 pendingRetirementLeases -= batch.Length;
-                if (this != null && isActiveAndEnabled) RefreshWanted();
+                if (this != null && isActiveAndEnabled) { refreshDirty = true; RefreshWanted(); }
                 CollectionResidencyMetrics.MarkDirty();
             }, Application.isPlaying && Acquire == CollectionStream.Acquire ? () => CollectionStream.Settled(keys) : (Func<bool>?)null, keys);
         }
@@ -699,11 +707,9 @@ namespace Statecraft.Game.Map.Collection
         }
         void EndCamera(ScriptableRenderContext _, Camera camera) => RestoreRenderers();
 
-        void LateUpdate()
-        {
-            // The layer prunes quiet cameras too; releases must not depend on another camera starting a render.
-            RefreshWanted();
-        }
+        /// <summary>One production frame's reconciliation; exposed internally so allocation tests measure no reflection.</summary>
+        internal void Tick() => RefreshWanted();
+        void LateUpdate() => Tick();
 
         /// <summary>The render callback. Nothing is acquired, instantiated or destroyed while a camera renders, in edit mode
         /// either (a Scene or Game view camera): the change waits for LateUpdate, as in play mode.</summary>
