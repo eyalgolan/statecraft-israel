@@ -51,6 +51,7 @@ def test_generated_icons_are_256_rgb_and_locked_ones_are_grey(tmp_path):
 def test_committed_icons_match_what_the_script_draws_now(tmp_path):
     # #2737: an edit to the drawing code, or a hand-edited PNG, must not leave the committed icons stale. Decoded pixels
     # are compared, not PNG bytes, since compression may differ.
+    # Exact pixels depend on the Pillow version: CI pins pillow==12.3.0, as the script header does.
     icons.main(["steam_achievement_icons.py", str(tmp_path)])
     for api in icons.ICONS:
         for state in ("unlocked", "locked"):

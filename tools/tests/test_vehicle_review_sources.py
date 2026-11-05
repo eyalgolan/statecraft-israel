@@ -59,7 +59,8 @@ def shipped_copy(mod, dest):
     (dest / mod.SOURCES).mkdir(parents=True)
     shutil.copyfile(ROOT / mod.SOURCES / "sources.json", dest / mod.SOURCES / "sources.json")
     for item in manifest["items"]:
-        shutil.copyfile(ROOT / mod.SOURCES / item["archive"], dest / mod.SOURCES / item["archive"])
+        if not (dest / mod.SOURCES / item["archive"]).exists():  # two items share one archive; copy it once
+            shutil.copyfile(ROOT / mod.SOURCES / item["archive"], dest / mod.SOURCES / item["archive"])
         home = mod.home(item["id"])
         (dest / home).mkdir(parents=True, exist_ok=True)
         for name in (item["id"] + "_basecolor.jpg", mod.fbx_name(item["id"])):
@@ -81,6 +82,7 @@ def test_verify_fails_on_one_changed_byte(tmp_path, target):
         "base-colour JPEG": tmp_path / mod.home(SPITFIRE) / (SPITFIRE + "_basecolor.jpg"),
         "compatibility FBX": tmp_path / mod.home(R35) / mod.fbx_name(R35),
     }[target]
+    assert path.is_relative_to(tmp_path)  # never flip a byte in a committed file
     blob = bytearray(path.read_bytes())
     blob[len(blob) // 2] ^= 0xFF
     path.write_bytes(bytes(blob))
