@@ -430,6 +430,35 @@ public class UnitOrdersTests
         }
     }
 
+    // Red-first prediction at ae4bfdaab: the card runs the sim's Reinforce on a copy of the displayed state, without the queue,
+    // so it offers Reinforce even though the earlier craftsman reassignment leaves End turn no idle civilian for it.
+    [Test]
+    public void AQueuedCraftsmanReassignmentHidesReinforceThatEndTurnWouldRefuse()
+    {
+        using var ui = new UiTestKit();
+        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        var bridge = new SimBridge(g, Text);
+        var token = UnitRoster.FromState(Units, C, g.State, _ => true, (row, a, q, r) => a).Single(x => x.Unit.Id == "golani");
+        var id = UnitCard.SimUnit(C, g.State, token.Unit)!.Value;
+        var u = g.State.Units[id];
+        var city = C.SettlementHexes.Single(h => h.Id == "tel_aviv");
+        g.State.Units[id] = new Unit(u.Id, u.Type, city.Q, city.R, u.Service, u.Side, u.Strength - 1, u.Order, u.OrderTarget, u.HomeCity, u.Strength);
+        var telAviv = g.State.Cities[city.Id];
+        g.State.Cities[city.Id] = telAviv.WithCounts(1, 0, 0).WithCraftsmen(0).WithQualified(new Qualified(1, 0, System.Array.Empty<int>()));
+        g.State.Arms = 100;
+        Assert.IsNull(bridge.Queue(new ReassignCraftsmen(city.Id, 1)));
+        Assert.AreEqual(0, Training.Available(g.State, city.Id, bridge.Queued), "the queued reassignment reserves the only idle civilian");
+        var candidate = new Reinforce(id, city.Id, 1);
+        var preview = Simulation.Preview(C, bridge.TurnStart, bridge.Session.Committed.Concat(bridge.Queued).Append(candidate).ToList());
+        var rejected = preview.Rejected.Single(x => ReferenceEquals(x.Command, candidate));
+        StringAssert.Contains("0 civilians without work", rejected.Reason, "precondition: the exact End-turn preview refuses Reinforce");
+
+        PlacedToken? selected = new PlacedToken(token, new AnchorSpot(0, 0, 0, 0, false));
+        using var info = new InfoPanelPresenter(ui.Root, bridge, Text, new Dictionary<string, string>(), selectedUnit: () => selected);
+        info.ShowUnit();
+        Assert.AreEqual(DisplayStyle.None, ui.Q<Button>("info-reinforce").style.display.value);
+    }
+
     /// <summary>#2072, owner review item 1: a Reinforce the sim refuses for Arms ("Tel Aviv: not enough Arms for basic training
     /// (need ..)") reaches the player through SimBridge, in Hebrew whole: the town and the course in Hebrew too, no Latin
     /// letter. The bridge queues it (a Reinforce waits for End turn) and End turn raises the sim's refusal, which the toast
