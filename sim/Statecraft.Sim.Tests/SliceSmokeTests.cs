@@ -239,6 +239,37 @@ public class SliceSmokeTests
         Assert.Equal(straight.Hashes, run.Hashes);                      // reloading every turn changes nothing
     }
 
+    /// <summary>#2621 (R-ENEMY-007): the smoke plays what the WebGL ?smoke run's GameRoot.Smoke can press. The event card
+    /// enables an option from the turn-start state (EventCardPresenter: OperationStatus on bridge.State), and the smoke gives
+    /// no unit orders, so a first option whose units are not in place at the turn's start is not pressed: the smoke stops
+    /// there, as it does when the Attention runs out, and the rest of the turn's cards go to their ministers.</summary>
+    [Fact]
+    public void TheSmokeAnswersOnlyFirstOptionsWhoseUnitsAreInPlaceAtTheTurnStart()
+    {
+        var s = Simulation.NewGame(Real, GoldenRun.Seed, Mode.Historical);
+        int unmet = 0;
+        for (int turn = 0; turn < 5; turn++)
+        {
+            var orders = GoldenRun.SmokeOrders(Real, s);
+            Assert.All(orders, o => Assert.IsType<ChooseEventOption>(o));   // the smoke skips every unit: no Move, no go-to
+            var expected = new List<Command>();
+            var left = s.Attention;
+            foreach (var e in s.PendingEvents.Select(id => Real.Events.First(x => x.Id == id)))
+            {
+                var cmd = new ChooseEventOption(e.Id, e.Options[0].Id);
+                var price = AttentionSystem.Cost(Real, s, cmd.Kind);
+                if (price > left + 1e-9) break;
+                if (!EventSystem.OperationStatus(Real, s, e.Options[0]).Met) { unmet++; break; }
+                left -= price;
+                expected.Add(cmd);
+            }
+            Assert.Equal(expected.Cast<ChooseEventOption>().Select(x => (x.EventId, x.OptionId)),
+                orders.Cast<ChooseEventOption>().Select(x => (x.EventId, x.OptionId)));
+            s = Simulation.Step(Real, s, orders).State;
+        }
+        Assert.True(unmet > 0, "the five turns hold a first option whose units are not in place (ten_days' central_front)");
+    }
+
     [Fact]
     public void TheFirstOptionSmokeRunPlaysTheWholeSliceCleanly()
     {
