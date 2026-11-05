@@ -19,8 +19,9 @@ folder) is left out with a "LEFT OUT Build/<name>" line.
 
 The translations ship twice (#1618, step 2): as files in StreamingAssets/translations, which desktop players and the gate
 read, and as texts packed into StreamingAssets/content/bundle.json, which the web player reads. The zip is refused unless
-manifest.json and bundle.json name exactly the files in StreamingAssets/translations and each packed text is that file's
-text, so the gate checks the translations every player gets and a lost or changed file never falls back silently.
+the repository's translations/, manifest.json, bundle.json and StreamingAssets/translations name exactly the same files,
+and each packed text is that file's text, so the gate checks the translations every player gets and a lost or changed
+file never falls back silently, even when every inventory of the build is empty (#2641).
 """
 import argparse
 import json
@@ -67,8 +68,8 @@ def photo_refusal(build: Path):
 
 
 def _shipped_translations(folder: Path) -> list[str]:
-    """The language files under a build's translations folder as "<lang>/<file>", ordinal order (TranslationLoader.Collect
-    and ContentManifest.Verify: top-level files and hidden names are not translations)."""
+    """The language files under a translations folder (a build's, or the repository's) as "<lang>/<file>", ordinal order
+    (TranslationLoader.Collect and ContentManifest.Verify: top-level files and hidden names are not translations)."""
     if not folder.is_dir():
         return []
     return sorted(p.relative_to(folder).as_posix() for p in folder.rglob("*")
@@ -76,7 +77,8 @@ def _shipped_translations(folder: Path) -> list[str]:
 
 
 def translation_refusal(build: Path):
-    """Why the build's translations do not match what its web bundle carries, or None (see the module docstring)."""
+    """Why the build's translations do not match the repository's translations/ or what its web bundle carries, or None
+    (see the module docstring)."""
     content, folder = build / "StreamingAssets" / "content", build / "StreamingAssets" / "translations"
     try:
         listed = json.loads((content / "manifest.json").read_text(encoding="utf-8")).get("translations") or []
@@ -86,10 +88,11 @@ def translation_refusal(build: Path):
             raise TypeError("translations and translationTexts must be lists")
     except (OSError, ValueError, AttributeError, TypeError) as e:
         return f"{content} has no readable manifest.json and bundle.json ({e}): build it with Build.Web, which writes them"
+    expected = _shipped_translations(REPO / "translations")
     found = _shipped_translations(folder)
-    if not listed == packed == found:
-        return (f"the translations do not match: manifest.json lists {listed}, bundle.json packs {packed}, "
-                f"StreamingAssets/translations holds {found}")
+    if not expected == listed == packed == found:
+        return (f"the translations do not match: the repository's translations/ holds {expected}, "
+                f"manifest.json lists {listed}, bundle.json packs {packed}, StreamingAssets/translations holds {found}")
     if len(texts) != len(packed):
         return f"bundle.json packs {len(packed)} translation files but {len(texts)} texts"
     try:

@@ -5,7 +5,8 @@
 """Copernicus GLO-30 DEM -> Unity heightmap (16-bit grid, row 0 = north, packed by heightmap_codec) + metadata JSON.
 
 Usage: uv run tools/dem_to_heightmap.py
-Tiles are cached in tools/.cache/dem/ (not committed). A tile that returns 404 is open sea."""
+Tiles are cached in tools/.cache/dem/ (not committed). A tile that returns 404 is open sea.
+No tile data at all, or a flat mosaic, is refused rather than written (#2652)."""
 import json
 import math
 from pathlib import Path
@@ -68,6 +69,8 @@ def mosaic(paths: list[Path], b: dict, size: int) -> np.ndarray:
 
 def write_heightmap(elev: np.ndarray, b: dict, out: Path) -> dict:
     lo, hi = float(elev.min()), float(elev.max())
+    if hi == lo:
+        raise ValueError(f"the DEM is flat at {lo:g} m; refusing to write a heightmap")
     raw = np.round((elev - lo) / (hi - lo) * 65535).astype("<u2")
     out.mkdir(parents=True, exist_ok=True)
     heightmap_codec.write(out, raw)   # packed, lossless (issue #44): the raw grid is never written
@@ -88,6 +91,8 @@ def main() -> None:
         print(f"N{lat} E{lon:03d}: {'sea (404)' if p is None else p.name}")
         if p:
             paths.append(p)
+    if not paths:
+        raise RuntimeError("no DEM tile has data (every tile answered 404); refusing to write an all-sea heightmap")
     meta = write_heightmap(mosaic(paths, BOUNDS, SIZE), BOUNDS, OUT)
     print(f"wrote {OUT / heightmap_codec.FILE}: elev {meta['elev_min_m']:.1f}..{meta['elev_max_m']:.1f} m, "
           f"{meta['width_km']:.1f} x {meta['length_km']:.1f} km")

@@ -216,6 +216,26 @@ def test_the_zip_carries_the_translations_the_web_bundle_packs(tmp_path, capsys)
         assert "StreamingAssets/translations/ro/events.yaml" in z.namelist()
 
 
+def test_losing_every_translation_is_refused(tmp_path, capsys):
+    """#2641: a build with no translations folder and no translation lists, absent, null or empty, must not pass while
+    the repository has translation files."""
+    expected = package_release._shipped_translations(REPO / "translations")
+    assert expected, "the repository ships at least one translation, or this test proves nothing"
+    for case in ("missing", "null", "empty"):
+        build = fake_build(tmp_path / case, reviewed=True)
+        shutil.rmtree(build / "StreamingAssets" / "translations")
+        content = build / "StreamingAssets" / "content"
+        for name, fields in (("manifest.json", ("translations",)), ("bundle.json", ("translations", "translationTexts"))):
+            data = json.loads((content / name).read_text(encoding="utf-8"))
+            for field in fields:
+                if case == "missing":
+                    data.pop(field, None)
+                else:
+                    data[field] = None if case == "null" else []
+            (content / name).write_text(json.dumps(data), encoding="utf-8")
+        assert f"the repository's translations/ holds {expected}" in refused(build, tmp_path / case, capsys), case
+
+
 def test_a_lost_changed_or_unlisted_translation_is_refused(tmp_path, capsys):
     """#1618: the gate reads StreamingAssets/translations and the web player bundle.json; they must be one set."""
     build = fake_build(tmp_path, reviewed=True)

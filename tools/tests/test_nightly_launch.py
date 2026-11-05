@@ -103,7 +103,9 @@ def test_a_missing_clone_is_refused_and_recorded_not_cloned(tmp_path, monkeypatc
     assert code == 1 and rec.calls == [] and ran == []
     log = (home / "LOG.md").read_text()
     assert "REFUSED" in log and "gate=clone" in log and "2026-10-28 03:00" in log
-    assert "gate=clone" in cfg.handoff.read_text()
+    evidence = home / "runs/20261028-030000/refused-clone.log"
+    assert f"log={evidence}" in log and evidence.is_file() and "not a git clone" in evidence.read_text()
+    assert "gate=clone" in cfg.handoff.read_text() and f"log={evidence}" in cfg.handoff.read_text()
     assert not cfg.clone.exists()
 
 
@@ -115,7 +117,42 @@ def test_a_corrupt_config_is_refused_not_a_night_on_defaults(tmp_path, monkeypat
     monkeypatch.setattr(nl, "Config", lambda: ns.Config(handoff=tmp_path / "HANDOFF.md"))
     rec, ran = Recorder(), []
     assert nl.main(["--uv", "/opt/uv", "--home", str(home)], git=rec.git, copy=rec.copy, call=ran.append, now=NOW) == 1
-    assert rec.calls == [] and ran == [] and "gate=config" in (home / "LOG.md").read_text()
+    log = (home / "LOG.md").read_text()
+    evidence = home / "runs/20261028-030000/refused-config.log"
+    assert rec.calls == [] and ran == [] and "gate=config" in log
+    assert f"log={evidence}" in log and evidence.is_file() and "unreadable" in evidence.read_text()
+    assert f"log={evidence}" in (tmp_path / "HANDOFF.md").read_text()
+
+
+@pytest.mark.parametrize("failure,gate", [("git", "clone"), ("copy", "clone"), ("call", "launch")])
+def test_a_process_start_failure_is_refused_and_recorded(tmp_path, monkeypatch, failure, gate):
+    home = tmp_path / "job"
+    cfg = cfg_for(tmp_path, library=failure == "copy")
+    write_config(home, cfg)
+    monkeypatch.setattr(nl, "notify", lambda *a, **k: None)
+    rec = Recorder()
+
+    def git(cwd, *args):
+        if failure == "git":
+            raise OSError("git would not start")
+        return rec.git(cwd, *args)
+
+    def copy(cwd, src, dest):
+        if failure == "copy":
+            raise OSError("cp would not start")
+        rec.copy(cwd, src, dest)
+
+    def call(cmd):
+        if failure == "call":
+            raise OSError("uv would not start")
+        pytest.fail("the nightly process must not start after clone preparation fails")
+
+    assert nl.main(["--uv", "/opt/uv", "--home", str(home)], git=git, copy=copy, call=call, now=NOW) == 1
+    log = (home / "LOG.md").read_text()
+    evidence = home / f"runs/20261028-030000/refused-{gate}.log"
+    assert f"gate={gate}" in log and f"log={evidence}" in log
+    assert evidence.is_file() and "would not start" in evidence.read_text()
+    assert f"log={evidence}" in cfg.handoff.read_text()
 
 
 def test_a_run_in_progress_exits_0_and_touches_nothing(tmp_path, capsys):
