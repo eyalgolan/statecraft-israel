@@ -197,7 +197,7 @@ Nothing is generated live while you play.
 - **3D models by Tal Heuberger:** [CC BY-NC-ND 4.0](LICENSES/CC-BY-NC-ND-4.0.txt).
 - **Third-party material:** fonts, public-domain, CC0, CC BY 4.0 and CC BY-SA 4.0 portraits, the archival event photographs, Ben-Gurion's 1948 recording, and the Unity engine and packages are under their own terms.
 
-Details are in [LICENSING.md](LICENSING.md); attributions are in [NOTICE](NOTICE) and [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), and every image's source is in [ASSETS.yaml](ASSETS.yaml).
+Details are in [LICENSING.md](LICENSING.md); attributions are in [NOTICE](NOTICE) and [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), and every image's source is in [ASSETS.yaml](ASSETS.yaml) and [ASSETS.portraits.yaml](ASSETS.portraits.yaml).
 
 ## Community and credits
 
