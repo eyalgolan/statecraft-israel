@@ -200,7 +200,7 @@ public class DollarConversionTests
         Assert.AreEqual(EconomySystem.RefusedDollarsMinimum, SimBridge.ReasonText(En, EconomySystem.RefusedDollarsMinimum));
         foreach (var reason in refusals)
         {
-            var money = PlayerText.Money(c, "fx_reserves", 1);
+            var money = PlayerText.Money(c, "fx_reserves", EconomySystem.DollarsMinimum);   // the constant the sim refuses on (#2704)
             var expected = reason == EconomySystem.RefusedDollarsMinimum ? En.Format("dollars.refused_minimum", money) : reason;
             Assert.AreEqual(expected, SimBridge.ReasonText(En, reason, c), "the English string uses the sim's words and formatted money");
             var he = SimBridge.ReasonText(He, reason, c);
@@ -218,7 +218,7 @@ public class DollarConversionTests
     public void TheCauseLineIsWordedInBothLanguages()
     {
         var b = Bridge(false, false);
-        var line = Simulation.Step(b.Content, b.State, new Command[] { new ConvertDollars(4) }).Why.Single(w => w.Key == CauseKeys.DollarsConverted);
+        var line = Simulation.Step(b.Content, b.State, new Command[] { new ConvertDollars(4) }).Why.Single(w => w.Key == CauseKeys.DollarsConverted && w.Target == "treasury");
         Assert.AreEqual(line.Message, CauseText.Line(line, b.Content, System.Array.Empty<Statecraft.Game.Map.Units.UnitEntry>(), En));
         var he = CauseText.Line(line, b.Content, System.Array.Empty<Statecraft.Game.Map.Units.UnitEntry>(), He);
         StringAssert.IsMatch("[א-ת]", he);
@@ -228,5 +228,20 @@ public class DollarConversionTests
         int at = he.IndexOf(dollars, System.StringComparison.Ordinal), il = he.IndexOf(money, System.StringComparison.Ordinal);
         Assert.GreaterOrEqual(at, 0, he); Assert.Greater(il, at, he);
         StringAssert.DoesNotMatch("[A-Za-z]", he.Replace(dollars, "").Replace(money, ""), he);
+    }
+
+    // #2527: the reserves side of the conversion has its own key, worded as foreign currency, in both languages.
+    [Test]
+    public void TheReservesLineIsWordedAsForeignCurrencyInBothLanguages()
+    {
+        var b = Bridge(false, false);
+        var line = Simulation.Step(b.Content, b.State, new Command[] { new ConvertDollars(4) }).Why.Single(w => w.Key == CauseKeys.DollarsConvertedFx);
+        Assert.AreEqual("fx_reserves", line.Target);
+        Assert.AreEqual(line.Message, CauseText.Line(line, b.Content, System.Array.Empty<Statecraft.Game.Map.Units.UnitEntry>(), En));
+        var he = CauseText.Line(line, b.Content, System.Array.Empty<Statecraft.Game.Map.Units.UnitEntry>(), He);
+        StringAssert.IsMatch("[\u05D0-\u05EA]", he);
+        var drop = PlayerText.MoneyChange(b.Content, "fx_reserves", -4);
+        StringAssert.Contains(drop, he);
+        StringAssert.DoesNotMatch("[A-Za-z]", he.Replace(drop, ""), he);
     }
 }

@@ -10,6 +10,11 @@ namespace Statecraft.Sim
 
         /// <summary>The command kind that converts foreign currency into Money (R-MONEY-004).</summary>
         public const string ConvertDollarsKind = "convert_dollars";
+        /// <summary>R-MONEY-004: the smallest conversion, in US$ millions. DollarsRefusal refuses below it and the UI words that
+        /// refusal from it (SimBridge.ReasonText), so the two cannot drift apart (#2704).</summary>
+        public const int DollarsMinimum = 1;
+        /// <summary>The sim's English for a conversion below <see cref="DollarsMinimum"/>. A constant, since tests name it in
+        /// attributes; DollarsTests pins it to DollarsMinimum.</summary>
         public const string RefusedDollarsMinimum = "Convert at least $1m";
         public const string RefusedDollarsNotAtWar = "Dollars can be converted only during the war";
         public const string RefusedDollarsMonthly = "That is more dollars than may be converted this month";
@@ -114,6 +119,9 @@ namespace Statecraft.Sim
             why.Add(new Cause("economy", "treasury", money,
                 $"Converted {PlayerText.Money(c, "fx_reserves", amount)} of foreign currency into Money: {PlayerText.MoneyChange(c, "treasury", money)}",
                 key: CauseKeys.DollarsConverted, args: new[] { CauseKeys.Number(amount) }));
+            why.Add(new Cause("economy", "fx_reserves", -amount,
+                $"Foreign currency converted into Money: {PlayerText.MoneyChange(c, "fx_reserves", -amount)}",
+                key: CauseKeys.DollarsConvertedFx, args: new[] { CauseKeys.Number(amount) }));
             return null;
         }
 
@@ -125,7 +133,7 @@ namespace Statecraft.Sim
         public static string? DollarsRefusal(Content c, GameState s, int amount, int thisTurn = 0, int? startRung = null)
         {
             var r = c.RulesAt(s.Date).Mvp!;   // the loader requires the three values in the GDD loop
-            if (amount < 1) return RefusedDollarsMinimum;
+            if (amount < DollarsMinimum) return RefusedDollarsMinimum;
             if ((startRung ?? s.Rung) < WarRung) return RefusedDollarsNotAtWar;
             if ((long)thisTurn + amount > r.DollarsPerTurn!.Value) return RefusedDollarsMonthly;
             if ((long)s.DollarsConverted + amount > r.DollarsTotal!.Value) return RefusedDollarsTotal;

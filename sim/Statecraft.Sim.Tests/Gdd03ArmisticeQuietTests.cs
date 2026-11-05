@@ -68,6 +68,23 @@ sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
         Assert.Equal(new[] { 2, 2, 2, 2 }, Counts(s));
     }
 
+    // R-WAR-005 (#2646): counting quiet turns and marking an engagement only update the counts; neither draws a random
+    // number, so the count can never change a later combat's draw.
+    [Fact]
+    public void CountingQuietTurnsDrawsNoRandomNumber()
+    {
+        var c = Load();
+        var s = With(c, Ours(1, 0, 1), Theirs(2, 5, 1, "egypt"));
+        var rng = s.RngState;
+        Armistice.CountQuietTurns(c, s);                            // a quiet turn end
+        Assert.Equal(new[] { 1, 1, 1, 1 }, Counts(s));
+        Assert.Equal(rng, s.RngState);
+        Armistice.Engaged(c, s, s.Units.Values);                    // an engagement on the Egyptian front, then its turn end
+        Armistice.CountQuietTurns(c, s);
+        Assert.Equal(new[] { 0, 2, 2, 2 }, Counts(s));
+        Assert.Equal(rng, s.RngState);
+    }
+
     // R-WAR-005, Q48: an engagement with an Egyptian unit resets Egypt only; an Iraqi unit resets Jordan (the Jordan agreement
     // took over the Iraqi sector); an ALA or local unit belongs to no front and resets none.
     [Theory]
@@ -172,7 +189,7 @@ sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
         Assert.Empty(ended.EngagedFronts);
     }
 
-    // R-WAR-005, R-SAVE-003, plan test 6: a save and reload between an instant attack and End turn, through a real schema-4
+    // R-WAR-005, R-SAVE-003, plan test 6: a save and reload between an instant attack and End turn, through a real schema-5
     // save of the real content, rebuilds the fronts engaged in the open turn and gives the same hash, and End turn from both
     // gives the same counts and hash (the pattern of NoShotArmsSessionTests).
     [Fact]
@@ -197,7 +214,7 @@ sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
         Assert.NotEmpty(engaged);
 
         var text = game.Save.Write();
-        Assert.StartsWith("statecraft-save 4", text);
+        Assert.StartsWith("statecraft-save 5", text);
         var replay = GameSession.Load(c, text, out _);
         Assert.Equal(game.Now.State.EngagedFronts.ToArray(), replay.Now.State.EngagedFronts.ToArray());
         Assert.Equal(game.Now.State.Hash(), replay.Now.State.Hash());
