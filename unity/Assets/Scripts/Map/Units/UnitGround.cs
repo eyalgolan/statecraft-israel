@@ -21,6 +21,9 @@ namespace Statecraft.Game.Map.Units
         public const float FigureClearanceM = 700f;
         /// <summary>A compact token (beside or in a town) draws its ring and trio at this share of the full size.</summary>
         public const float CompactScale = 0.5f;
+        /// <summary>The radius of the largest parked 101 Squadron fighter at the approved aircraft scale: the Spitfire's
+        /// sourced 11.23 m span at 420x. Placement must not depend on which authored mesh has arrived.</summary>
+        public const float ParkedAircraftClearanceM = 11.23f * UnitShowcase.AircraftScale * 0.5f;
 
         readonly IReadOnlyList<(Vector2 centre, float radius)> footprints;
         readonly (List<Vector2> line, float half, Rect bounds)[] corridors;
@@ -44,8 +47,12 @@ namespace Statecraft.Game.Map.Units
         /// <summary>The ground ring's radius of a token (m).</summary>
         public float RingRadius(bool compact) => UnitShowcase.RingRadius * HexSizeM * (compact ? CompactScale : 1f);
 
-        /// <summary>The radius (m) the kits keep clear round a token that stands in a town: its compact ring.</summary>
-        public float ClearingRadius => RingRadius(compact: true);
+        /// <summary>The radius (m) the kits keep clear round a token that stands in a town: the parked fighter's span for an
+        /// air anchor, and the existing compact ring for every other service.</summary>
+        public float ClearingRadius(string service) => service == UnitData.Air ? ParkedAircraftClearanceM : RingRadius(compact: true);
+
+        /// <summary>The footprint placement keeps clear of towns: a parked fighter's span does not compact.</summary>
+        public float ClearanceRadius(string service, bool compact) => service == UnitData.Air ? ParkedAircraftClearanceM : RingRadius(compact);
 
         /// <summary>The figures' ground points of an army token standing at <paramref name="centre"/>: always the full trio,
         /// so a spot does not change with the call-up.</summary>
@@ -64,18 +71,21 @@ namespace Statecraft.Game.Map.Units
             return worst;
         }
 
-        /// <summary>True when a token of <paramref name="service"/> may stand at <paramref name="centre"/>: its ring off every
-        /// town, except, when <paramref name="inTown"/>, the town its anchor <paramref name="anchor"/> stands in (the kits then
-        /// keep a clearing for it there, never in a neighbouring town), and its figures (an army token's trio, a parked
+        /// <summary>True when a token of <paramref name="service"/> may stand at <paramref name="centre"/>: its footprint off every
+        /// town (the full parked-aircraft span for air, the ring for other services), except an army token in
+        /// <paramref name="inTown"/> may enter the town its <paramref name="anchor"/> stands in (the kits then keep a clearing
+        /// for it there, never in a neighbouring town), and its figures (an army token's trio, a parked
         /// aircraft's centre) on land and off the railways and roads. A ship needs only the sea hex the placer already
         /// checked.</summary>
         public bool Clear(string service, Vector2 centre, bool compact, bool inTown, Vector2 anchor)
         {
             if (service == UnitData.Navy) return true;
-            float disc = RingRadius(compact);
+            float disc = ClearanceRadius(service, compact);
             foreach (var (fc, fr) in footprints)
             {
-                bool own = inTown && (fc - anchor).magnitude < fr * FootprintMargin;
+                // A town may make a kit clearing for an army token. An aircraft's whole parked footprint instead has to
+                // clear every town; it must not win round 3 merely because its compact token ring fits at the anchor.
+                bool own = service != UnitData.Air && inTown && (fc - anchor).magnitude < fr * FootprintMargin;
                 if (!own && fr * FootprintMargin + disc - (fc - centre).magnitude > 0f) return false;
             }
             var points = service == UnitData.Army ? FigurePoints(centre, compact) : new[] { centre };
