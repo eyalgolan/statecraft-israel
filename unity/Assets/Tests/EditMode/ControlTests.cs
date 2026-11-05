@@ -169,6 +169,25 @@ public class ControlTests
         Assert.AreNotEqual(Control1948.Side.Israel, c.At(YadMordechaiHex.q, YadMordechaiHex.r, Truce1).side, "fallen on 24 May");
     }
 
+    [Test]
+    public void LiveSettlementControlOverridesOnlyEffectiveHistoricalDifferences()
+    {
+        var m = Regions();
+        var historical = m.LayerOn(Start)!;
+        Assert.AreSame(historical, m.LayerOn(Start, Array.Empty<(int q, int r, bool player)>()));
+        Assert.AreSame(historical, m.LayerOn(Start, new[] { (YadMordechaiHex.q, YadMordechaiHex.r, true) }),
+            "a live holder matching the dated colour is a no-op");
+
+        var captured = m.LayerOn(Start, new[] { (AcreHex.q, AcreHex.r, true) })!;
+        Assert.AreEqual(BorderStyle.Primary, captured.StyleOf(captured.RegionOf(AcreHex.q, AcreHex.r)));
+        Assert.AreEqual(historical.RegionOf(JerusalemHex.q, JerusalemHex.r), captured.RegionOf(JerusalemHex.q, JerusalemHex.r));
+        Assert.AreEqual(Control1948.Side.Contested, m.Control!.At(AcreHex.q, AcreHex.r, Start).side,
+            "the immutable dated source is unchanged");
+
+        var lost = m.LayerOn(Start, new[] { (YadMordechaiHex.q, YadMordechaiHex.r, false) })!;
+        Assert.AreEqual(BorderStyle.Secondary, lost.StyleOf(lost.RegionOf(YadMordechaiHex.q, YadMordechaiHex.r)));
+    }
+
     /// <summary>Kept for a side file whose first period starts later: before it the sub-districts are grey, never blue.</summary>
     [Test]
     public void BeforeAFirstPeriodTheSubdistrictsAreGreyNotBlue()
@@ -239,7 +258,7 @@ public class ControlTests
         StringAssert.DoesNotContain("not held", en, "nothing is ever drawn grey for land held by no one");
         StringAssert.Contains("18 July 1948", en);
         StringAssert.Contains("Israel State Archives", en);
-        StringAssert.StartsWith("בשליטת ישראל: כחול · בשליטת כוחות ערביים: כתום-אדום · שטח שבמחלוקת או שטח הפקר: אפור, מקווקו", he);
+        StringAssert.StartsWith("בשליטת ישראל: כחול · בשליטת כוחות ערביים: כתום־אדום · שטח שבמחלוקת או שטח הפקר: אפור, מקווקו", he);
         StringAssert.Contains("18 ביולי 1948", he, "the date in Hebrew month names (review S5)");
         StringAssert.DoesNotContain("July", he);
         StringAssert.Contains("ארכיון המדינה", he);
@@ -258,7 +277,7 @@ public class ControlTests
         var after = m.ControlLabel(After, k => En[k])!;
         StringAssert.StartsWith("Israeli side of the armistice line: blue · Arab side: orange-red · No-man's land or demilitarized zone: grey, dashed", after);
         StringAssert.Contains("Jordan (low accuracy)", after, "D-A ruling 2: the Jordan line is labelled low-accuracy on the map");
-        StringAssert.StartsWith("הצד הישראלי של קו שביתת הנשק: כחול · הצד הערבי: כתום-אדום · שטח הפקר או אזור מפורז: אפור, מקווקו", m.ControlLabel(After, k => He[k]));
+        StringAssert.StartsWith("הצד הישראלי של קו שביתת הנשק: כחול · הצד הערבי: כתום־אדום · שטח הפקר או אזור מפורז: אפור, מקווקו", m.ControlLabel(After, k => He[k]));
         var mixed = m.ControlLabel(Mixed, k => En[k])!;
         StringAssert.StartsWith("Israeli side of the armistice line", mixed);
         StringAssert.Contains("Egypt, Jordan (low accuracy), Lebanon", mixed);
@@ -331,6 +350,26 @@ public class ControlTests
         StringAssert.StartsWith("control_1948_49:truce2", MapBorders.Current!.Name);
         StringAssert.StartsWith("Held by Israel: blue", label.text);
         StringAssert.Contains("18 July 1948", label.text);
+    }
+
+    [Test]
+    public void ANormalGameRedrawsLiveSettlementControlWithoutChangingDate()
+    {
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        Object.FindFirstObjectByType<MapScene>().Build(Inputs.Map);
+        var root = Object.FindFirstObjectByType<GameRoot>();
+        root.Store = new SaveStore(saveDir);
+        root.Begin(Inputs, 0);
+        var acre = Inputs.Content.SettlementHexes.Single(x => x.Id == "acre");
+        var captured = GameSession.New(Inputs.Content, GoldenRun.Seed, Mode.Historical);
+        captured.State.Settlements["acre"] = new SettlementControl(Movement.PlayerSide, SettlementControl.AwaitingChoice, captured.State.Date);
+        root.Bridge!.Replace(captured);
+        Assert.AreEqual(BorderStyle.Primary, MapBorders.Current!.StyleOf(MapBorders.Current.RegionOf(acre.Q, acre.R)));
+
+        var lost = GameSession.New(Inputs.Content, GoldenRun.Seed, Mode.Historical);
+        lost.State.Settlements["acre"] = new SettlementControl(since: lost.State.Date);
+        root.Bridge!.Replace(lost);
+        Assert.AreEqual(BorderStyle.Secondary, MapBorders.Current!.StyleOf(MapBorders.Current.RegionOf(acre.Q, acre.R)));
     }
 
     [Test]

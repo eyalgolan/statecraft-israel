@@ -90,6 +90,142 @@ public class EndScreenTests
         s.GameOver = GameOverCodes.MvpEnded;
     }
 
+    /// <summary>The state the turn that ends the game leaves when it completes an objective (#2536; the sim's
+    /// LastTurnObjectiveCardTests): on the last day, the railway recorded that day and its card waiting, nothing else waiting.</summary>
+    static void EndedWithACard(GameState s)
+    {
+        var r = C.RulesAt(s.Date).Mvp!;
+        s.PendingEvents.Clear();
+        s.Date = C.End;
+        Objectives.Record(C, s, r, "railway", s.Date, new List<Cause>());
+        s.FiredEvents.Add("railway_complete");
+        s.PendingEvents.Add("railway_complete");
+        s.GameOver = GameOverCodes.MvpEnded;
+    }
+
+    // R-OBJ-003, R-LOOP-004 (#2536; the owner's choice "Show the card (Recommended)", 4 November 2026): the card of an
+    // objective completed on the turn that ended the game shows before the end screen. Its one option is no order and changes
+    // nothing; answering it opens the end screen, and the card does not come back when the screens are built again.
+    [Test]
+    public void AnObjectiveCardOfTheEndingTurnShowsBeforeTheEndScreen()
+    {
+        using var k = new Kit(En, EndedWithACard);
+        using var card = new EventCardPresenter(k.Ui.Root, k.Bridge, En, null);
+        Assert.IsTrue(k.Bridge.EndingCardWaiting);
+        Assert.IsFalse(k.End.IsOpen, "the card comes first");
+        Assert.AreEqual("railway_complete", card.Shown?.Id);
+        var option = k.Ui.Q<Button>("option-continue");
+        Assert.IsTrue(option.enabledSelf, "its one option can be pressed");
+        Assert.AreEqual(C.Events.Single(e => e.Id == "railway_complete").Options.Single().Text, option.text, "with no Attention price");
+        var hash = k.Bridge.State.Hash(); var score = k.Bridge.State.Score;
+
+        UiTestKit.Press(option);
+        Assert.IsNull(card.Shown, "answered, the card goes");
+        Assert.IsFalse(k.Bridge.EndingCardWaiting);
+        Assert.IsTrue(k.End.IsOpen, "and the end screen follows");
+        Assert.IsEmpty(k.Bridge.Queued, "the answer is no order");
+        Assert.AreEqual(hash, k.Bridge.State.Hash(), "and changes nothing in the game");
+        Assert.AreEqual(score, k.Bridge.State.Score, "the score is the one the turn recorded");
+
+        k.Rebuild(He);   // the language switch: the same bridge, so the answered card stays answered
+        Assert.IsTrue(k.End.IsOpen);
+        card.Render();
+        Assert.IsNull(card.Shown);
+    }
+
+    // R-OBJ-003, R-LOOP-004 (#2536): the real autosave/load path replays an ending objective card into a new bridge.
+    // The loaded card still precedes the end screen and its UI answer opens the screen, in both shipped languages.
+    [TestCase(false, TestName = "AnEndingObjectiveCardSurvivesAutosaveAndLoad_English")]
+    [TestCase(true, TestName = "AnEndingObjectiveCardSurvivesAutosaveAndLoad_Hebrew")]
+    public void AnEndingObjectiveCardSurvivesAutosaveAndLoad(bool hebrew)
+    {
+        var text = hebrew ? He : En;
+        var c = ContentLoader.Load(Paths.Content);   // a fresh copy: the fixture below rewrites it in memory, never C
+
+        // A one-turn fixture over a fresh copy of the real content. The objective condition is already true, while its
+        // card cannot fire until step 11 records it; ending the game at that turn's boundary makes it an ending card.
+        var probe = Simulation.NewGame(c, GoldenRun.Seed, Mode.Historical);
+        c.Rules.Mvp!.End = Simulation.TurnEnd(c, probe);
+        var objective = c.Objectives.Single(o => o.Id == "railway");
+        objective.CompletesWhen = new ObjectiveCondition
+        {
+            Absorbed = new AbsorbCondition
+            {
+                PopulationAtLeast = 0,
+                OverflowAtMost = 1m,
+                EmployedAtLeast = 0m,
+            },
+        };
+        var objectiveCard = c.Events.Single(e => e.Id == objective.Card);
+        objectiveCard.From = probe.Date;
+        objectiveCard.To = null;
+        objectiveCard.Requires.Clear();
+        objectiveCard.Conditions.Clear();
+
+        var dir = Path.Combine(Path.GetTempPath(), "statecraft-ending-load-" + System.Guid.NewGuid().ToString("N"));
+        try
+        {
+            var store = new SaveStore(dir);
+            var firstBridge = new SimBridge(GameSession.New(c, GoldenRun.Seed, Mode.Historical), text);
+            using (GameStart.Autosave(firstBridge, store, text))
+            {
+                firstBridge.EndTurn();
+                Assert.AreEqual(GameOverCodes.MvpEnded, firstBridge.State.GameOver);
+                Assert.AreEqual(firstBridge.State.Date, firstBridge.State.Objectives[objective.Id],
+                    "step 11 recorded the objective on the ending date");
+                CollectionAssert.AreEqual(new[] { objectiveCard.Id }, firstBridge.State.PendingEvents,
+                    "the autosaved final state leaves its ending card pending");
+            }
+
+            var savedHash = firstBridge.State.Hash();
+            Assert.IsTrue(File.Exists(store.AutosavePath), "the real autosave path wrote the ending turn");
+
+            var notes = new List<string>();
+            var loadedSession = GameStart.Begin(c, store, () => 1UL, notes, text, out var resumed);
+            Assert.IsTrue(resumed, "launch resumed the autosave");
+            CollectionAssert.IsEmpty(notes);
+            Assert.AreEqual(savedHash, loadedSession.State.Hash(), "the command log replayed the saved final state");
+
+            var loadedBridge = new SimBridge(loadedSession, text);
+            using var ui = new UiTestKit();
+            using var card = new EventCardPresenter(ui.Root, loadedBridge, text, null);
+            using var end = new EndScreenPresenter(ui.Root, loadedBridge, text, null);
+
+            Assert.IsTrue(loadedBridge.EndingCardWaiting);
+            Assert.AreEqual(objectiveCard.Id, card.Shown?.Id);
+            Assert.IsFalse(end.IsOpen, "the loaded ending card comes before the end screen");
+
+            var option = ui.Q<Button>("option-" + objectiveCard.Options.Single().Id);
+            Assert.IsTrue(option.enabledSelf);
+            Assert.IsNotEmpty(option.text);
+            UiTestKit.Press(option);
+
+            Assert.IsNull(card.Shown);
+            Assert.IsFalse(loadedBridge.EndingCardWaiting);
+            Assert.IsTrue(end.IsOpen, "answering the loaded card through its UI button opens the end screen");
+            Assert.AreEqual(text["end.title"], ui.Q<Label>("end-screen-title").text);
+            Assert.AreEqual(savedHash, loadedBridge.State.Hash(), "seeing the card changes no saved simulation state");
+        }
+        finally
+        {
+            try { if (Directory.Exists(dir)) Directory.Delete(dir, true); }
+            catch (IOException) { }
+        }
+    }
+
+    // #2536: SeeEndingCard answers only a waiting card of the ending turn; any other event stays as it was.
+    [Test]
+    public void OnlyAnEndingTurnCardCanBeAnsweredThatWay()
+    {
+        using var k = new Kit(En, Ended);   // the absorb objective recorded a month early, not on the last day
+        var waiting = k.Bridge.State.PendingEvents.ToList();
+        Assert.IsFalse(k.Bridge.EndingCardWaiting);
+        Assert.IsTrue(k.End.IsOpen, "an ended game with no card of its ending turn opens on its end screen");
+        k.Bridge.SeeEndingCard("absorb_immigrants");
+        foreach (var id in waiting) k.Bridge.SeeEndingCard(id);
+        CollectionAssert.IsEmpty(k.Bridge.EndingCardsAnswered);
+    }
+
     [Test]
     public void OpensOnGameOverAndADefeatShowsItsCause()
     {
@@ -111,10 +247,12 @@ public class EndScreenTests
         Assert.IsTrue(k.End.IsOpen, "a loaded ended game opens on its end screen");
         var s = k.Bridge.State; var r = EndReport.For(C, s);
         var names = k.Ui.Q<ScrollView>("end-screen-rows").Children().Select(x => x.name).ToList();
-        var expected = new[] { "outcome", "score", "score-reference" }.Concat(r.Objectives.Select(o => "objective-" + o.Id))
-            .Concat(new[] { "cohesion", "standing", "population" }).Select(n => "end-screen-" + n);
+        var expected = new[] { "outcome", "date", "score", "score-reference" }.Concat(r.Objectives.Select(o => "objective-" + o.Id))
+            .Concat(new[] { "cohesion", "standing", "population", "population-sources" }).Select(n => "end-screen-" + n);
         CollectionAssert.AreEqual(expected, names, "the report's parts, in order");
         Assert.AreEqual(En["end.outcome.mvp_ended"], k.Line("outcome"));
+        string Date(System.DateTime d) => En.Format("date.day_month_year", d.Day, En["date.month_" + d.Month], d.Year);
+        Assert.AreEqual(En.Format("end.date", Date(r.Date)), k.Line("date"), "the end date (R-END-005, #2545)");
         Assert.AreEqual(En.Format("hud.score", s.Score), k.Line("score"));
         Assert.Greater(s.Score, 0);
         Assert.AreEqual(200, r.ReferenceScore, "the reference is the sim's number (Q-SCORE-2)");
@@ -122,7 +260,6 @@ public class EndScreenTests
         StringAssert.Contains("200", k.Line("score-reference"));
         // The first objective: the card's title, the player's date and the historical date (Q-END-1).
         var first = C.Objectives.Single(o => o.Id == "absorb_immigrants");   // by id: the first in id order, as before R-OBJ-007
-        string Date(System.DateTime d) => En.Format("date.day_month_year", d.Day, En["date.month_" + d.Month], d.Year);
         var title = EventSystem.Title(C, s, C.Events.First(e => e.Id == first.Card));
         Assert.AreEqual(En.Format("end.objective_done", title, Date(first.ReferenceDate.AddMonths(-1)), Date(first.ReferenceDate)), k.Line("objective-" + first.Id));
         foreach (var o in C.Objectives.Where(o => o.Id != first.Id))
@@ -133,6 +270,26 @@ public class EndScreenTests
         var anchor = r.PopulationHistory!;
         Assert.AreEqual(En.Format("end.population_history", r.Population.ToString("N0", System.Globalization.CultureInfo.InvariantCulture),
             Date(anchor.Date), anchor.Jews.ToString("N0", System.Globalization.CultureInfo.InvariantCulture)), k.Line("population"));
+        // ...and the anchor's sources (R-END-006, #2545), by host as the unit card gives its sources.
+        Assert.AreEqual(En.Format("unit.sources", "www.cbs.gov.il"), k.Line("population-sources"));
+    }
+
+    /// <summary>#2545 (R-END-006): the sources row follows the anchor. A game that ends before the first anchor has no
+    /// comparison and so no sources row, and an anchor with no readable source URL gets no bare "Sources:" row either.</summary>
+    [Test]
+    public void ThePopulationSourcesRowShowsOnlyAnAnchorsReadableSources()
+    {
+        using (var early = new Kit(En, s => { s.Date = C.PopulationAnchors.Min(a => a.Date).AddDays(-1); s.GameOver = GameOverCodes.DefeatEconomy; }))
+        {
+            Assert.IsNull(EndReport.For(C, early.Bridge.State).PopulationHistory, "precondition: before the first anchor");
+            CollectionAssert.DoesNotContain(early.Ui.Q<ScrollView>("end-screen-rows").Children().Select(x => x.name), "end-screen-population-sources");
+        }
+        var unsourced = ContentLoader.Load(Paths.Content);
+        foreach (var a in unsourced.PopulationAnchors) { a.Sources.Clear(); a.Sources.Add(new Source { Url = "" }); }
+        using var k = new Kit(En, Ended);
+        var names = EndScreenPresenter.Lines(unsourced, k.Bridge.State, En).Select(l => l.Name).ToList();
+        Assert.IsNotNull(EndReport.For(unsourced, k.Bridge.State).PopulationHistory, "precondition: an anchor applies, so only its sources are dropped");
+        CollectionAssert.DoesNotContain(names, "population-sources");
     }
 
     /// <summary>A cause's history note (Q-DEF-4 (b)) sits right under its line when the strings carry one, and nowhere else.
@@ -143,7 +300,7 @@ public class EndScreenTests
         var withNote = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text + "\nend.note.defeat_war: \"Fixture note.\"\n");
         using var k = new Kit(withNote, s => { s.Date = C.End; s.GameOver = GameOverCodes.DefeatWar; });
         var names = k.Ui.Q<ScrollView>("end-screen-rows").Children().Select(x => x.name).ToList();
-        CollectionAssert.AreEqual(new[] { "end-screen-outcome", "end-screen-note", "end-screen-score" }, names.Take(3), "the note follows the outcome line");
+        CollectionAssert.AreEqual(new[] { "end-screen-outcome", "end-screen-note", "end-screen-date", "end-screen-score" }, names.Take(4), "the note follows the outcome line");
         Assert.AreEqual("Fixture note.", k.Line("note"));
         Assert.IsTrue(k.Ui.Q<Label>("end-screen-note").ClassListContains("end-screen-note"));
         using var ended = new Kit(withNote, Ended);
@@ -160,7 +317,7 @@ public class EndScreenTests
         {
             using var k = new Kit(text, s => { s.Date = C.End; s.GameOver = GameOverCodes.DefeatWar; });
             var names = k.Ui.Q<ScrollView>("end-screen-rows").Children().Select(x => x.name).ToList();
-            CollectionAssert.AreEqual(new[] { "end-screen-outcome", "end-screen-score" }, names.Take(2), "the score follows the outcome line");
+            CollectionAssert.AreEqual(new[] { "end-screen-outcome", "end-screen-date", "end-screen-score" }, names.Take(3), "the end date follows the outcome line, then the score");
             CollectionAssert.DoesNotContain(names, "end-screen-note");
         }
     }
@@ -175,7 +332,7 @@ public class EndScreenTests
         using var k = new Kit(withNote, s => { s.Date = C.End; s.GameOver = GameOverCodes.CoalitionCollapse; });
         Assert.AreEqual(withNote["order.game_over"], k.Line("outcome"), "precondition: the generic line shows");
         var names = k.Ui.Q<ScrollView>("end-screen-rows").Children().Select(x => x.name).ToList();
-        CollectionAssert.AreEqual(new[] { "end-screen-outcome", "end-screen-score" }, names.Take(2), "the score follows the generic line");
+        CollectionAssert.AreEqual(new[] { "end-screen-outcome", "end-screen-date", "end-screen-score" }, names.Take(3), "the end date follows the generic line, then the score");
         CollectionAssert.DoesNotContain(names, "end-screen-note");
     }
 
@@ -229,7 +386,49 @@ public class EndScreenTests
         UiTestKit.Press(k.Ui.Q<Button>("end-screen-new-game"));
         Assert.IsNull(k.Bridge.State.GameOver, "the second press starts a new game");
         Assert.IsFalse(k.End.IsOpen, "which has no end screen");
-        Assert.IsFalse(File.Exists(k.Store.AutosavePath), "New Game removes the old save, as it always has");
+        Assert.IsTrue(File.Exists(k.Store.AutosavePath), "New Game saves its replacement immediately");
+        var resumed = GameStart.Begin(C, k.Store, () => 1UL, new List<string>(), En);
+        Assert.AreEqual(k.Bridge.State.Hash(), resumed.State.Hash());
+        Assert.IsNull(resumed.State.GameOver);
+    }
+
+    /// <summary>#2669: the end screen can start New Game while the final turn's report waits underneath it. Red first:
+    /// before TurnReportPresenter listened to Changed, the second press replaced the session but left that report open.</summary>
+    [Test]
+    public void NewGameFromTheEndScreenClosesTheLastTurnsReport()
+    {
+        using var k = new Kit(En, Exhausted);
+        for (int turn = 0; turn < 3 && k.Bridge.State.GameOver == null; turn++) k.Bridge.EndTurn();
+        Assert.IsTrue(k.End.IsOpen && k.Report.IsOpen, "precondition: the end screen covers the final turn's report");
+
+        UiTestKit.Press(k.Ui.Q<Button>("end-screen-new-game"));
+        Assert.IsTrue(k.NewGame.Armed);
+        Assert.IsTrue(k.End.IsOpen && k.Report.IsOpen, "the confirmation press changes no session");
+
+        UiTestKit.Press(k.Ui.Q<Button>("end-screen-new-game"));
+        Assert.IsNull(k.Bridge.State.GameOver, "the second press starts the new game");
+        Assert.IsFalse(k.End.IsOpen);
+        Assert.IsFalse(k.Report.IsOpen, "the old game's report is closed");
+        Assert.IsTrue(k.Q("top-bar").enabledSelf, "the old report does not cover the new game");
+    }
+
+    /// <summary>#2669 with #2536 (Codex review of 17c491b3d): answering the ending turn's card changes nothing in the game, so
+    /// the final turn's report stays open under the end screen; only a replaced session closes it. Red at 17c491b3d: the
+    /// report listened to every Changed, which SeeEndingCard raises.</summary>
+    [Test]
+    public void AnsweringTheEndingTurnsCardKeepsTheLastTurnsReport()
+    {
+        using var k = new Kit(En, Exhausted);
+        for (int turn = 0; turn < 3 && k.Bridge.State.GameOver == null; turn++) k.Bridge.EndTurn();
+        Assert.IsTrue(k.Report.IsOpen, "precondition: the final turn's report is open");
+        EndedWithACard(k.Bridge.State);   // the ending turn also left an objective's card waiting
+        Assert.IsTrue(k.Bridge.EndingCardWaiting, "precondition: a card of the ending turn waits");
+        var session = k.Bridge.Session;
+
+        k.Bridge.SeeEndingCard("railway_complete");
+        Assert.AreSame(session, k.Bridge.Session, "the answer replaces nothing");
+        Assert.IsFalse(k.Bridge.EndingCardWaiting);
+        Assert.IsTrue(k.Report.IsOpen, "the report stays, under the end screen");
     }
 
     [Test]
@@ -325,6 +524,7 @@ public class EndScreenTests
         Assert.AreEqual(He["report.close"], k.Ui.Q<Button>("end-screen-close").text);
         Assert.AreEqual(He["hud.new_game"], k.Ui.Q<Button>("end-screen-new-game").text);
         StringAssert.StartsWith(He["hud.caption.cohesion"] + ":", k.Line("cohesion"));
+        Assert.AreEqual(He.Format("unit.sources", "www.cbs.gov.il"), k.Line("population-sources"));
     }
 
     /// <summary>#2060: in Hebrew each date an end-screen line inserts sits between RLE and PDF (U+202B, U+202C), so it
@@ -350,6 +550,8 @@ public class EndScreenTests
         Assert.IsTrue(string.Equals(openExpected, openLine, System.StringComparison.Ordinal), "expected\n" + Escape(openExpected) + "\nbut was\n" + Escape(openLine));
         var anchor = EndReport.For(C, k.Bridge.State).PopulationHistory!;
         Assert.GreaterOrEqual(k.Line("population").IndexOf(Date(anchor.Date), System.StringComparison.Ordinal), 0, "the population line's date too: " + Escape(k.Line("population")));
+        var endDate = He.Format("end.date", Date(EndReport.For(C, k.Bridge.State).Date));
+        Assert.IsTrue(string.Equals(endDate, k.Line("date"), System.StringComparison.Ordinal), "the end date too: expected\n" + Escape(endDate) + "\nbut was\n" + Escape(k.Line("date")));
     }
 
     /// <summary>The line with its invisible marks spelled out, for a failure message.</summary>

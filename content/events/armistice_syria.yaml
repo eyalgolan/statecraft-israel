@@ -7,6 +7,7 @@ text: 'Negotiators have reached an armistice agreement with Syria. {prime_minist
 title_he: שביתת הנשק עם סוריה
 text_he: 'המשא ומתן הניב הסכם שביתת נשק עם סוריה. על {prime_minister} להחליט אם ישראל תחתום עליו.'
 anchor: hard
+front_quiet: syria
 office: prime_minister
 # R-TURN-002 (#2551; the owner chose "Move them a turn earlier (Recommended)" on 4 November 2026): the window opens on
 # the 15th on or before the decision (signed 20 July 1949; it opened on 1949-07-20), so the card reaches the player on

@@ -16,6 +16,9 @@ namespace Statecraft.Game.UI
         readonly System.Func<(float l, float r, float t, float b)>? readInsets;   // tests feed the insets; production reads the platform
         IVisualElementScheduledItem? poll;
         float appliedL = -1f, appliedR, appliedT, appliedB;   // an impossible start: the first Update always writes
+#if UNITY_WEBGL && !UNITY_EDITOR
+        readonly float[] css = new float[4];   // reused every poll: SafeArea.jslib writes all four entries each call (#2642)
+#endif
 
         public SafeAreaFit(VisualElement root) : this(root, null) { }
 
@@ -41,7 +44,6 @@ namespace Statecraft.Game.UI
 #if UNITY_WEBGL && !UNITY_EDITOR
             // The browser's env(safe-area-inset-*) values come in CSS px (SafeArea.jslib); the canvas is drawn in device
             // pixels, so a CSS px is devicePixelRatio device px (HudPresenter's text floor divides by the same ratio).
-            var css = new float[4];
             StatecraftSafeAreaInsets(css);
             float dpr = StatecraftDevicePixelRatio();
             Apply(Panel(css[3], dpr, scale), Panel(css[1], dpr, scale), Panel(css[0], dpr, scale), Panel(css[2], dpr, scale));

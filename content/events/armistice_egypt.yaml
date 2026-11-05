@@ -7,6 +7,7 @@ text: 'Talks in Rhodes have produced an armistice agreement with Egypt. {prime_m
 title_he: שביתת הנשק עם מצרים
 text_he: 'השיחות ברודוס הניבו הסכם שביתת נשק עם מצרים. על {prime_minister} להחליט אם ישראל תחתום עליו.'
 anchor: hard
+front_quiet: egypt
 office: prime_minister
 # R-TURN-002 (#2551; the owner chose "Move them a turn earlier (Recommended)" on 4 November 2026): the window opens on
 # the 15th on or before the decision (signed 24 February 1949; it opened on 1949-02-24), so the card reaches the player

@@ -8,9 +8,10 @@ fail on a failure line or a timeout. Uses Chrome for Testing from the Playwright
 --enable-logging=stderr --v=1 as INFO:CONSOLE... "text", source: ...
 
 Usage (from the repo root):
-  uv run tools/web_check.py unity/Builds/Web-disabled --query "golden" --expect "GOLDEN OK hash1950 d53edcd56e05f661e3617d680814913e2c42f05f18c6b4317875ea08213c1fa8" --expect "GOLDEN OK hash1952 47595d002c637cf7b9e91ebff96d83df1b7a69847d1c7cf2f75a49824f7bc685"
+  uv run tools/web_check.py unity/Builds/Web-disabled --query "golden" --expect "GOLDEN OK hash1950 a08ff8504d862925563c8523a707b58ebe3bcaac0b504dc9ce7e028fc19eb0e4" --expect "GOLDEN OK hash1952 5561fc51a03a25e7bad499bd2c9d8de156dea241118ac4c80bbf2e0fb50c97ef"
   uv run tools/web_check.py unity/Builds/Web-disabled --query "smoke-orders" --expect "SMOKE ORDERS OK 1948-06-15 08d9800eda4462ef165cc7ea6285fad059c030c0f87ad563e35c9789cc352d78"
   (the smoke-orders golden: one Move given through the unit card, docs/determinism.md)
+Every run needs a positive check: a nonblank --expect, --startscreen, --persistence or --first-save (#2690).
 Options: --query Q (page URL query, without '?'), --expect TEXT (repeatable), --fail REGEX (default: GOLDEN FAIL|SMOKE FAIL|BOOT FAIL),
 --timeout SECONDS (default 300), --stall SECONDS (fail when no console message arrives for that long; 0 = off),
 --swiftshader (software WebGL when there is no GPU), --dpr N (default 1), --shots DIR (reassemble the player's
@@ -410,6 +411,7 @@ NAVLOG = "navlog"
 GAME_STATE = re.compile(r"^GAME OK (\d{4}-\d{2}-\d{2}) turn (\d+) hash ([0-9a-f]+)$")
 TURN_STATE = re.compile(r"^TURN (\d+) (\d{4}-\d{2}-\d{2}) hash ([0-9a-f]+)$")
 SAVE_STATE = re.compile(r"^AUTOSAVE (PENDING|OK|FAIL) ([1-9]\d*) (\d{4}-\d{2}-\d{2}) turn (\d+) hash ([0-9a-f]+)$")
+SAVE_FAILURE_SHOWN = "SAVE FAILURE SHOWN save.write_failed"
 
 
 class StartButtons:
@@ -711,11 +713,15 @@ class PersistenceCheck:
         self.end_turn = EndTurn(action, tail, hebrew=False, settle=settle)
         self.stage, self.saved, self._done = "first_boot", None, False
         self.pending, self.acknowledged, self.deadline = None, None, None
+        self.persistence_failure = None
 
     @property
     def done(self) -> bool:
         # watch polls this even when no more console lines arrive.
         if self.deadline is not None and self.now() >= self.deadline:
+            if self.persistence_failure is not None:
+                raise ValueError("PERSISTENCE FAIL IndexedDB autosave failed but "
+                                 "save.write_failed was not shown to the player")
             raise ValueError(f"PERSISTENCE FAIL no matching IndexedDB commit within {self.save_timeout:g}s: "
                              f"{self.saved}; pending receipt {self.pending}")
         return self._done
@@ -743,7 +749,9 @@ class PersistenceCheck:
             kind, generation, date, turn, digest = receipt.groups()
             value = (int(generation), date, int(turn), digest)
             if kind == "FAIL":
-                raise ValueError(f"PERSISTENCE FAIL IndexedDB autosave failed: {value}")
+                self.persistence_failure = value
+                self.deadline = self.now() + self.save_timeout
+                return
             if kind == "PENDING":
                 if self.pending is None or value[0] > self.pending[0]:
                     self.pending, self.acknowledged = value, None
@@ -751,6 +759,9 @@ class PersistenceCheck:
                 self.acknowledged = value
             self._reload_when_durable()
             return
+        if text == SAVE_FAILURE_SHOWN and self.persistence_failure is not None:
+            raise ValueError("PERSISTENCE FAIL IndexedDB autosave failed and "
+                             f"save.write_failed was shown to the player: {self.persistence_failure}")
         game, turn = GAME_STATE.match(text), TURN_STATE.match(text)
         if game:
             state, kind = (game.group(1), int(game.group(2)), game.group(3)), "GAME"
@@ -983,6 +994,12 @@ def check_source(ap: argparse.ArgumentParser, a) -> None:
         ap.error("give exactly one of build and --url")
 
 
+def check_positive(ap: argparse.ArgumentParser, a) -> None:
+    """Every run must name console evidence to see or a driver whose completion proves success."""
+    if not any(text.strip() for text in a.expect) and not (a.startscreen or a.persistence or a.first_save):
+        ap.error("require at least one positive check: a nonblank --expect, --startscreen, --persistence or --first-save")
+
+
 def with_query(url: str, query: str) -> str:
     """`url` with `query` added: after ? or, when the URL already has a query, after &."""
     if not query:
@@ -1002,6 +1019,7 @@ def main() -> int:
     ap = parser()
     a = ap.parse_args()
     check_source(ap, a)
+    check_positive(ap, a)
     if a.build is not None and not (a.build / "index.html").exists():
         sys.exit(f"{a.build}/index.html not found")
     server, proc, page = None, None, None

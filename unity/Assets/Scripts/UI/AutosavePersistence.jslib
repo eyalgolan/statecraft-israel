@@ -1,14 +1,27 @@
 // Observe Unity 6000.3's existing autosync, never start a concurrent FS.syncfs. SaveStore has already closed and
 // renamed the file; autoPersist queued that mount. Capture requests when its next flush starts, so a request made
-// during an older in-flight flush cannot be acknowledged by the older snapshot. TURN remains a sim diagnostic.
+// during an older in-flight flush cannot be acknowledged by the older snapshot. Report the result to the requesting
+// GameRoot as well as the console. TURN remains a sim diagnostic.
 mergeInto(LibraryManager.library, {
   $StatecraftAutosave: { pending: null, latest: null, installed: false },
   StatecraftPersistAutosave__deps: ["$StatecraftAutosave", "$IDBFS"],
-  StatecraftPersistAutosave: function (receiptPtr) {
-    var receipt = UTF8ToString(receiptPtr);
+  StatecraftPersistAutosave: function (requestPtr, targetPtr) {
+    var request = {
+      value: UTF8ToString(requestPtr),
+      target: UTF8ToString(targetPtr),
+    };
+    function report(saved, error) {
+      var save = saved.value.indexOf("save ") === 0;
+      var receipt = save ? saved.value.substring(5) : null;
+      if (save) {
+        if (error) console.error("AUTOSAVE FAIL " + receipt);
+        else console.log("AUTOSAVE OK " + receipt);
+      }
+      SendMessage(saved.target, "OnSavePersistenceResult", (error ? "fail " : "ok ") + saved.value);
+    }
     var mount = Module.__unityIdbfsMount && Module.__unityIdbfsMount.mount;
     if (!mount || !Module.autoSyncPersistentDataPath) {
-      console.error("AUTOSAVE FAIL " + receipt);
+      report(request, new Error("IndexedDB autosync is unavailable"));
       return;
     }
     var saves = StatecraftAutosave;
@@ -23,8 +36,8 @@ mergeInto(LibraryManager.library, {
           try { callback(error); }
           finally {
             if (saved) {
-              if (error) console.error("AUTOSAVE FAIL " + saved);
-              else if (saved === saves.latest) console.log("AUTOSAVE OK " + saved);
+              if (error) report(saved, error);
+              else if (saved === saves.latest) report(saved, null);
             }
           }
         });
@@ -32,6 +45,6 @@ mergeInto(LibraryManager.library, {
       saves.installed = true;
     }
     // Multiple writes before the queued flush overwrite the same autosave path: only its latest bytes can be durable.
-    saves.pending = saves.latest = receipt;
+    saves.pending = saves.latest = request;
   },
 });

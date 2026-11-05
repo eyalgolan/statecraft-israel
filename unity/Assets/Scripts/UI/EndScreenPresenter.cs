@@ -25,7 +25,7 @@ namespace Statecraft.Game.UI
 
         readonly VisualElement hudRoot, screen; readonly ScrollView rows; readonly SimBridge bridge; readonly UiText text;
         readonly Button close, newGame; readonly Action? pressNewGame;
-        readonly Action<IReadOnlyList<Rejection>> onTurn; readonly Action onChanged;
+        readonly Action<IReadOnlyList<Rejection>> onTurn; readonly Action onChanged, onCardsSeen;
         readonly EventCallback<NavigationCancelEvent> onCancel;
         int closedAt = -1;
 
@@ -54,13 +54,21 @@ namespace Statecraft.Game.UI
             // Guarded as TurnReportPresenter's handler is: TurnEnded's later handlers include the turn's autosave.
             onTurn = _ =>
             {
-                try { if (bridge.State.GameOver != null) Show(); }
+                // #2536: an objective's card raised on the ending turn shows first; the screen follows its answer.
+                try { if (bridge.State.GameOver != null && !bridge.EndingCardWaiting) Show(); }
                 catch (Exception e) { UnityEngine.Debug.LogException(e); Hide(); }
             };
             bridge.TurnEnded += onTurn;
+            onCardsSeen = () =>
+            {
+                try { Show(); }
+                catch (Exception e) { UnityEngine.Debug.LogException(e); Hide(); }
+            };
+            bridge.EndingCardsSeen += onCardsSeen;
             onChanged = () => { if (bridge.State.GameOver == null) Hide(); };   // a new game (New Game's second press) is not over
             bridge.Changed += onChanged;
-            if (bridge.State.GameOver != null && show) Show(); else Hide();   // a loaded or rebuilt ended game opens on its end screen
+            // A loaded or rebuilt ended game opens on its end screen, after any card of its ending turn still waiting (#2536).
+            if (bridge.State.GameOver != null && show && !bridge.EndingCardWaiting) Show(); else Hide();
         }
 
         /// <summary>True while the end screen shows.</summary>
@@ -69,10 +77,10 @@ namespace Statecraft.Game.UI
         /// <summary>True in the frame the screen closed (GameRoot's Escape poll, as TurnReportPresenter.ClosedThisFrame).</summary>
         public bool ClosedThisFrame => closedAt == UnityEngine.Time.frameCount;
 
-        /// <summary>The screen's lines for an ended game, in order: the outcome, its history note when it has one, the score,
-        /// the reference score, one per objective, each Deport card that never fired (its title, then its text), Social
-        /// cohesion, International Support, the population with its CBS anchor and, when some went home, the prisoners
-        /// returned. Every value is the report's.</summary>
+        /// <summary>The screen's lines for an ended game, in order: the outcome, its history note when it has one, the end
+        /// date, the score, the reference score, one per objective, each Deport card that never fired (its title, then its
+        /// text), Social cohesion, International Support, the population with its CBS anchor, that anchor's sources and, when
+        /// some went home, the prisoners returned. Every value is the report's.</summary>
         public static IReadOnlyList<(string Name, string Text)> Lines(Content c, GameState s, UiText t)
         {
             var r = EndReport.For(c, s);
@@ -95,6 +103,7 @@ namespace Statecraft.Game.UI
             // and only under that cause's own line, never under the generic one.
             var note = "end.note." + r.Outcome;
             if (t.Has(outcome) && t.Has(note)) lines.Add(("note", t[note]));
+            lines.Add(("date", t.Format("end.date", Date(r.Date))));   // R-END-005 (#2545)
             lines.Add(("score", t.Format("hud.score", r.Score)));
             // Q-SCORE-2: beside the score, what a run on the historical dates scores (the sim's number; nothing computed here).
             if (r.ReferenceScore > 0) lines.Add(("score-reference", t.Format("end.reference_score", r.ReferenceScore)));
@@ -123,6 +132,11 @@ namespace Statecraft.Game.UI
             lines.Add(("population", r.PopulationHistory is PopulationAnchor a
                 ? t.Format("end.population_history", People(r.Population), Date(a.Date), People(a.Jews))
                 : t.Format("end.population", People(r.Population))));
+            // R-END-006 (#2545): the anchor's sources, by host as the unit card gives its own (UnitCard, unit.sources). The loader
+            // checks no population source, so a row with none (or no readable URL) gets no line rather than a bare "Sources:".
+            var hosts = (r.PopulationHistory?.Sources ?? new List<Source>()).Select(x => Uri.TryCreate(x.Url, UriKind.Absolute, out var u) ? u.Host : "")
+                .Where(h => h != "").Distinct(StringComparer.Ordinal).OrderBy(h => h, StringComparer.Ordinal).ToList();
+            if (hosts.Count > 0) lines.Add(("population-sources", t.Format("unit.sources", string.Join(", ", hosts))));
             if (r.PrisonersReturned > 0) lines.Add(("prisoners", t.Format("defence.prisoners_returned", r.PrisonersReturned)));   // Q-END-3; Defence's own string
             return lines;
         }
@@ -164,6 +178,7 @@ namespace Statecraft.Game.UI
         public void Dispose()
         {
             bridge.TurnEnded -= onTurn;
+            bridge.EndingCardsSeen -= onCardsSeen;
             bridge.Changed -= onChanged;
             close.clicked -= OnClose;
             newGame.clicked -= OnNewGame;

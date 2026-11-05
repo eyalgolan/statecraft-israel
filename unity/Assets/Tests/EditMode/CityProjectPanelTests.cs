@@ -290,6 +290,54 @@ public class CityProjectPanelTests
         finally { C.ProjectKinds.Remove(winery); }
     }
 
+    // Red first on PR #2679 head 4e25f657c: Refusal returns the current state's ma'abarot-policy reason before it previews
+    // the earlier SetPolicy order, so the transit-camp button is absent even though End turn would accept the start.
+    [Test]
+    public void AQueuedMaabarotPolicyEnablesATransitCampProject()
+    {
+        var (q, r) = Lone;
+        var bridge = Bridge(En, s => s.CoalitionStability = 1);
+        Assert.IsTrue(PoliticsSystem.HasMajority(C, bridge.State.Date), "precondition: the policy vote has a majority");
+        Assert.AreEqual("maabarot_policy", Projects.CheckCityReason(C, bridge.State, MapActions.TransitCamp, City, q, r)?.Kind,
+            "precondition: without the queued policy the current state refuses the camp");
+        Assert.IsNull(bridge.Queue(new SetPolicy(MapActions.MaabarotPolicy, 1)));
+        Assert.AreEqual(1.0, Simulation.Preview(C, bridge.TurnStart,
+            bridge.Session.Committed.Concat(bridge.Queued).ToList()).State.Policies[MapActions.MaabarotPolicy],
+            "precondition: the policy vote passes before the project runs");
+
+        using var ui = new UiTestKit();
+        using var panel = Panel(ui, bridge, En);
+        panel.Show(q, r);
+
+        Assert.IsTrue(ui.Q<Button>("city-project-" + MapActions.TransitCamp).enabledSelf);
+        Assert.IsNull(ui.Root.Q("city-project-reason"));
+        Assert.IsNull(ui.Root.Q("city-project-" + MapActions.TransitCamp + "-reason"));
+    }
+
+    // Red-first prediction at 085944e62: the first failure is the missing info.map_action_reason.depopulated text key.
+    [Test]
+    public void TheDepopulatedReasonShowsInThePanelsLanguage([Values] bool hebrew)
+    {
+        var text = hebrew ? He : En;
+        var target = C.SettlementTargets.Single(x => x.Id == "jaffa");
+        using var ui = new UiTestKit();
+        // With the policy the transit camp is refused for the shared reason too, not for the policy first (as the tests above).
+        var bridge = Bridge(text, s => { s.Settlements[target.Id] = new SettlementControl(depopulated: true); s.Policies[MapActions.MaabarotPolicy] = 1; });
+        Assert.IsNotEmpty(Projects.CitiesFor(C, bridge.State, target.Q, target.R),
+            "precondition: a city can otherwise build on the target hex");
+        using var panel = Panel(ui, bridge, text);
+        panel.Show(target.Q, target.R);
+
+        Assert.AreEqual("depopulated", Projects.CheckCityReason(C, bridge.State, "housing",
+            Projects.CitiesFor(C, bridge.State, target.Q, target.R)[0], target.Q, target.R)?.Kind);
+        Assert.AreEqual(text["info.map_action_reason.depopulated"], ui.Q<Label>("city-project-reason").text);
+        Assert.IsNull(ui.Root.Q("city-project-housing"), "the shared refusal replaces the Build buttons");
+        if (hebrew)
+            Assert.IsFalse(System.Text.RegularExpressions.Regex.IsMatch(
+                ui.Q<Label>("city-project-reason").text, "[A-Za-z]"),
+                "the Hebrew panel must not fall back to the sim's English");
+    }
+
     [Test]
     public void AnOrderTheAttentionCannotPayIsRefusedByTheBridge()
     {
@@ -305,6 +353,36 @@ public class CityProjectPanelTests
         ui.Press("city-project-housing");
         Assert.IsEmpty(bridge.Queued);
         Assert.AreEqual(new[] { En.Format("order.no_attention", bridge.Price(order)!.Value, 0.0) }, refusals);
+    }
+
+    // A guard for the Attention path (#2679 review): a start the Attention left cannot pay for keeps its Build buttons only
+    // where the rules allow it. With the queued start the turn's limit is reached, so the turn_cap reason shows instead.
+    [Test]
+    public void WithNoAttentionLeftTheQueuedStartsTurnLimitStillShows()
+    {
+        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        var s = g.State;
+        s.Policies[MapActions.MaabarotPolicy] = 1;   // so the transit camp is not refused for the policy first
+        var hexes = C.Hexes.Where(h => h.Land
+            && Projects.CitiesFor(C, s, h.Q, h.R).SequenceEqual(new[] { City })
+            && Projects.CheckCityReason(C, s, "housing", City, h.Q, h.R) == null).OrderBy(h => h.Q).ThenBy(h => h.R).Take(2).ToList();
+        Assert.AreEqual(2, hexes.Count, "precondition: two hexes only Haifa reaches where it may build");
+        var cap = C.RulesAt(s.Date).MapActionsPerTurn;
+        Assert.Greater(cap, 0, "precondition: the turn allows a start");
+        s.MapActionsTurnDate = s.Date; s.MapActionsThisTurn = cap - 1;
+        s.Attention = AttentionSystem.Price(C, s, new StartProject("housing", City, hexes[0].Q, hexes[0].R));
+
+        var bridge = new SimBridge(g, En);
+        using var ui = new UiTestKit();
+        using var panel = Panel(ui, bridge, En);
+        panel.Show(hexes[0].Q, hexes[0].R);
+        ui.Press("city-project-housing");
+        Assert.AreEqual(1, bridge.Queued.OfType<StartProject>().Count(), "precondition: the Attention paid for the first start");
+        Assert.IsFalse(bridge.CanPay(new StartProject("housing", City, hexes[1].Q, hexes[1].R)), "precondition: none is left for a second");
+
+        panel.Show(hexes[1].Q, hexes[1].R);
+        Assert.AreEqual(En.Format("city.project_reason.turn_cap", cap), ui.Q<Label>("city-project-reason").text);
+        Assert.IsNull(ui.Root.Q("city-project-housing"), "shared refusal: one reason and no Build buttons");
     }
 
     [Test]
@@ -410,6 +488,34 @@ public class WorkshopPanelTests
     static InfoPanelPresenter Panel(UiTestKit ui, SimBridge bridge, UiText text) => new InfoPanelPresenter(ui.Root, bridge, text, Towns, townNamesHe: TownsHe);
 
     static AssignWorkers? Queued(SimBridge b) => b.QueuedLike(new AssignWorkers(City, Workshops.Role, 0)) as AssignWorkers;
+
+    // Red first on origin/main 0c976fb21: after the first press, the second hex still offers enabled Build buttons because the
+    // panel checks the turn-start state without previewing the queued start. Both hexes have exactly Haifa as their first (and
+    // only) Projects.CitiesFor result, so the two UI positions exercise the same city's per-turn cap.
+    [Test]
+    public void AQueuedStartDisablesASecondStartForTheSameCityOnAnotherHex()
+    {
+        var g = GameSession.New(C03, GoldenRun.Seed, Mode.Historical);
+        g.State.Policies[MapActions.MaabarotPolicy] = 1;
+        var hexes = C03.Hexes.Where(h => h.Land
+            && Projects.CitiesFor(C03, g.State, h.Q, h.R).SequenceEqual(new[] { City })
+            && Projects.CheckCityReason(C03, g.State, "industry", City, h.Q, h.R) == null).Take(2).ToList();
+        Assert.AreEqual(2, hexes.Count, "precondition: two hexes whose first city is Haifa");
+
+        var bridge = new SimBridge(g, En) { TownNamesHe = TownsHe };
+        using var ui = new UiTestKit();
+        using var panel = Panel(ui, bridge, En);
+        panel.Show(hexes[0].Q, hexes[0].R);
+        ui.Press("city-project-industry");
+        Assert.AreEqual(City, bridge.Queued.OfType<StartProject>().Single().City,
+            "the first UI press queues Haifa's start");
+        Assert.IsNull(Projects.CheckCityReason(C03, bridge.State, "housing", City, hexes[1].Q, hexes[1].R),
+            "the pre-queue state alone still permits a second start");
+
+        panel.Show(hexes[1].Q, hexes[1].R);
+        Assert.AreEqual(En.Format("city.project_reason.city_cap", Towns[City]), ui.Q<Label>("city-project-reason").text);
+        Assert.IsNull(ui.Root.Q("city-project-housing"), "shared refusal: one reason and no generated Build buttons");
+    }
 
     // R-ARMS-005: the control shows on a built arms workshop under gdd-0.3, and nowhere else: not on a workshop being
     // built, and not on another built kind. The gdd-0.1 row shows that no gdd-0.1 kind shows it: the loader keeps every
