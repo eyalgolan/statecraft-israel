@@ -188,6 +188,25 @@ public class ControlTests
         Assert.AreEqual(BorderStyle.Secondary, lost.StyleOf(lost.RegionOf(YadMordechaiHex.q, YadMordechaiHex.r)));
     }
 
+    /// <summary>#2742: without the side data the dated layer is the sub-districts, where ids 1 and 2 are Acre and Beisan,
+    /// not Israel and Arab. A lost settlement in Acre must restyle its own hex only, not every hex of Beisan.</summary>
+    [Test]
+    public void OnTheSubdistrictLayerTheLiveOverlayLeavesAcreAndBeisanAlone()
+    {
+        var m = new MapRegions(Subdistricts1948.Parse(SubText), Armistice1949.Parse(ArmText));
+        var historical = m.LayerOn(Start)!;
+        var acre = historical.RegionOf(AcreHex.q, AcreHex.r);
+        Assert.AreEqual(1, acre, "Acre's id on the sub-district layer");
+        var otherAcre = historical.Hexes.First(h => h != AcreHex && historical.RegionOf(h.q, h.r) == 1);
+        var beisan = historical.Hexes.First(h => historical.RegionOf(h.q, h.r) == 2);
+
+        var lost = m.LayerOn(Start, new[] { (AcreHex.q, AcreHex.r, false) })!;
+        Assert.AreNotSame(historical, lost);
+        Assert.AreEqual(BorderStyle.Secondary, lost.StyleOf(lost.RegionOf(AcreHex.q, AcreHex.r)), "the lost settlement's hex");
+        Assert.AreEqual(historical.StyleOf(1), lost.StyleOf(lost.RegionOf(otherAcre.q, otherAcre.r)), "the rest of Acre");
+        Assert.AreEqual(historical.StyleOf(2), lost.StyleOf(lost.RegionOf(beisan.q, beisan.r)), "Beisan");
+    }
+
     /// <summary>Kept for a side file whose first period starts later: before it the sub-districts are grey, never blue.</summary>
     [Test]
     public void BeforeAFirstPeriodTheSubdistrictsAreGreyNotBlue()
