@@ -619,6 +619,39 @@ public class EnemyAITests
         Assert.Equal("An enemy unit holds that hex", Assert.Single(Simulation.Preview(c, s, new Command[] { new UnitOrder(0, Movement.GoTo, 4, 0) }).Rejected).Reason);
     }
 
+    // R-ENEMY-005 (#2806 item 10): "the legacy loop has no units and ignores them". In the legacy loop, choosing the probe
+    // card's option with its unit order gives the state the same option with no order gives: the same hash, no card order
+    // and nothing refused. Fixture values.
+    [Fact]
+    public void TheLegacyLoopIgnoresACardsUnitOrders()
+    {
+        static Content Legacy(string orders) => ContentLoader.Load(Fixture.Write(null, new()
+        {
+            ["probe.yaml"] = "id: probe\ntitle: Fixture\ntext: Fixture.\nfrom: 1948-05-15\noptions:\n"
+                + "  - id: ok\n    text: Accept\n    historical: true\n" + orders
+                + "sources: [{ url: \"https://example.org/event\", checked: 2026-10-18 }]\n",
+        }));
+        var withOrders = Legacy("    unit_orders: [{ unit: brig, q: 4, r: 0 }]\n");
+        var without = Legacy("");
+        Assert.Equal(SaveGame.LegacyRuleset, withOrders.Ruleset);
+        Assert.Single(withOrders.Events.Single(e => e.Id == "probe").Options.Single().UnitOrders);
+
+        GameState Chosen(Content c, out IReadOnlyList<Rejection> rejected)
+        {
+            var s = Simulation.NewGame(c, 1, Mode.Historical);
+            Assert.Empty(s.Units);   // the legacy loop has no units
+            Assert.Contains("probe", s.PendingEvents);
+            var r = Simulation.Step(c, s, new Command[] { new ChooseEventOption("probe", "ok") });
+            rejected = r.Rejected;
+            return r.State;
+        }
+        var ordered = Chosen(withOrders, out var refused);
+        var plain = Chosen(without, out _);
+        Assert.Empty(refused);
+        Assert.Empty(ordered.CardOrders);
+        Assert.Equal(plain.Hash(), ordered.Hash());
+    }
+
     // R-ENEMY-005 (owner, 31 October 2026, #749: "Sourced anchors only"; 1 November 2026, #2087: "military operations must
     // have unit orders", "Kiryati to Ramle", Harel toward Latrun; 2 November 2026, option 1: the new ones are order targets,
     // not anchors): only these sourced places receive orders. Every other alternative option gives none until sources are found.
