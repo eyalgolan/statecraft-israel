@@ -271,6 +271,42 @@ public class SliceSmokeTests
         Assert.True(unmet > 0, "the five turns hold a first option whose units are not in place (ten_days' central_front)");
     }
 
+    /// <summary>#2621 review: the card enables an option from what the screen shows (SimBridge.State), which with a unit
+    /// on a standing go-to is the no-orders preview (the routes have moved). So the smoke judges a first option's units on
+    /// that preview too, and the turn's resolution (EventSystem.Choose's re-check after the routes) takes the same answer.
+    /// Here ten_days' central_front is unmet at the turn start, and each missing unit gets a standing go-to into its
+    /// region that it reaches this turn.</summary>
+    [Fact]
+    public void TheSmokeJudgesAnOperationOnTheStateTheCardShows()
+    {
+        var s = Simulation.NewGame(Real, GoldenRun.Seed, Mode.Historical);
+        var ten = Real.Events.First(e => e.Id == "ten_days");
+        var central = ten.Options[0];
+        Assert.Equal("central_front", central.Id);
+        for (int turn = 0; turn < 12 && !(s.PendingEvents.Contains(ten.Id) && !EventSystem.OperationStatus(Real, s, central).Met); turn++)
+            s = Simulation.Step(Real, s, GoldenRun.SmokeOrders(Real, s)).State;
+        var status = EventSystem.OperationStatus(Real, s, central);
+        Assert.True(s.PendingEvents.Contains(ten.Id) && !status.Met, "the smoke reaches a ten_days turn with central_front unmet");
+        var staged = s.Clone();
+        foreach (var need in status.Missing)
+        {
+            int id = Real.StartingForces.FindIndex(f => f.Row == need.Unit);
+            var u = staged.Units[id];
+            var to = Movement.Reachable(Real, staged, id).Keys.OrderBy(h => h.Q).ThenBy(h => h.R)
+                .Where(h => Real.PlayerRegions.AtHex(h.Q, h.R) is PlayerRegionGeography g && need.Regions.Contains(g.Id, StringComparer.Ordinal))
+                .Cast<(int Q, int R)?>().FirstOrDefault();
+            Assert.True(to != null, $"{need.Unit} can reach its region this turn");
+            staged.Units[id] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, Movement.GoTo,
+                FormattableString.Invariant($"{to!.Value.Q},{to.Value.R}"), u.HomeCity, u.Full, u.CombatXp);
+        }
+        var shown = Simulation.Preview(Real, staged, Array.Empty<Command>()).State;
+        Assert.True(EventSystem.OperationStatus(Real, shown, central).Met, "the routes bring the units into place in the shown state");
+        var orders = GoldenRun.SmokeOrders(Real, staged);
+        Assert.Contains(orders, o => o is ChooseEventOption x && x.EventId == ten.Id && x.OptionId == central.Id);
+        var after = Simulation.Step(Real, staged, orders).State;
+        Assert.Equal(central.Id, after.ChosenOptions[ten.Id]);   // the resolution's re-check after the routes takes it too
+    }
+
     [Fact]
     public void TheFirstOptionSmokeRunPlaysTheWholeSliceCleanly()
     {
