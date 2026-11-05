@@ -560,7 +560,8 @@ public class GameSceneTests
             Assert.AreEqual((tlv.Q, tlv.R), Land(onHex), "precondition: the probe is on Tel Aviv's hex");
             InputSystem.QueueStateEvent(mouse, new MouseState { position = onHex });
             InputSystem.Update();
-            yield return null;
+            // In edit mode GameRoot.LateUpdate runs only when the player loop is asked for (as HudTests does).
+            for (int i = 0; i < 5 && !label.ClassListContains(MapLabelsPresenter.HoverClass); i++) { EditorApplication.QueuePlayerLoopUpdate(); yield return null; }
             Assert.IsTrue(label.ClassListContains(MapLabelsPresenter.HoverClass), "lights Tel Aviv's pill");
             Assert.IsTrue(pointer.HandleClick(onHex));
             Assert.AreEqual("Tel Aviv", ui.Q<Label>("info-title").text);
@@ -573,7 +574,7 @@ public class GameSceneTests
             Assert.IsFalse(c.SettlementHexes.Any(x => (x.Q, x.R) == seaHex!.Value && root.Bridge!.State.Cities.ContainsKey(x.Id)), "precondition: no city there");
             InputSystem.QueueStateEvent(mouse, new MouseState { position = sea });
             InputSystem.Update();
-            yield return null;
+            for (int i = 0; i < 5 && label.ClassListContains(MapLabelsPresenter.HoverClass); i++) { EditorApplication.QueuePlayerLoopUpdate(); yield return null; }
             Assert.IsFalse(label.ClassListContains(MapLabelsPresenter.HoverClass), "Tel Aviv's pill is out");
             Assert.IsTrue(pointer.HandleClick(sea));
             Assert.AreNotEqual(DisplayStyle.Flex, host.style.display.value, "precondition: the panel shows the sea, no city");
@@ -587,7 +588,7 @@ public class GameSceneTests
             var onPill = ScreenFor(off!.Value);
             InputSystem.QueueStateEvent(mouse, new MouseState { position = onPill });
             InputSystem.Update();
-            yield return null;
+            for (int i = 0; i < 5 && !label.ClassListContains(MapLabelsPresenter.HoverClass); i++) { EditorApplication.QueuePlayerLoopUpdate(); yield return null; }
             Assert.IsTrue(label.ClassListContains(MapLabelsPresenter.HoverClass), "lights the pill");
             Assert.IsTrue(pointer.HandleClick(onPill), "the pill takes the click");
             Assert.AreEqual("Tel Aviv", ui.Q<Label>("info-title").text);
@@ -611,7 +612,20 @@ public class GameSceneTests
         SpecialBuildingModels.Request = TalModelsShots.Answer(Array.Empty<string>());
         try
         {
-            var root = Boot();
+            // Arms workshops are drawn under gdd-0.3 only (SpecialBuildingModels.ArmsWorkshops), so the game runs gdd-0.3, on a
+            // fresh copy of the inputs (the cached Inputs stay gdd-0.1 for the other tests), as ArmsWorkshopVisibilityTests does.
+            var inputs = GameInputs.FromDisk(Paths.Content, Paths.StreamingMap);
+            foreach (var era in inputs.Content.Eras) { era.Systems.Ruleset = SaveGame.Gdd03Ruleset; era.Systems.Loop = EraSystems.Gdd; }
+            EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+            var map = Object.FindFirstObjectByType<MapScene>();
+            map.Build(inputs.Map);
+            // The layer answers its models through SpecialBuildingModels.Request (stubbed above) at once, as the collection tests'
+            // layer does; GameRoot's ShowAt keeps a layer that is already configured, so the redraw below is still GameRoot's.
+            CollectionGeometryFixture.Special(map, inputs.Content.Rules.Start);
+            var root = Object.FindFirstObjectByType<GameRoot>();
+            root.Store = new SaveStore(saveDir);
+            root.Begin(inputs, 0);
+            Assert.AreEqual(SaveGame.Gdd03Ruleset, root.Bridge!.Content.Ruleset, "precondition: the gdd-0.3 game, which draws arms workshops");
             var state = root.Bridge!.State;
             var city = root.Bridge.Content.SettlementHexes.Single(x => x.Id == "tel_aviv");
             int id = state.NextId++;
