@@ -498,7 +498,7 @@ public class Gdd03EventRulesTests
         while (s.GameOver == null && run.Count < 1000) { s = Simulation.Step(c, s, Array.Empty<Command>()).State; run.Add(s); }
         Assert.Equal(GameOverCodes.MvpEnded, s.GameOver);
         DateTime? CardDate(string id) => run.FirstOrDefault(x => x.FiredEvents.Contains(id))?.Date;
-        Assert.Equal(new DateTime(1949, 5, 15), CardDate("austerity_1949"));
+        Assert.Equal(new DateTime(1949, 4, 15), CardDate("austerity_1949"));   // #2551: a turn earlier (was 15 May)
         Assert.Equal(new DateTime(1950, 4, 15), CardDate("maabarot_policy"));
         Assert.Equal(new DateTime(1951, 3, 15), CardDate("iraqi_exodus"));
         Assert.Equal(new DateTime(1951, 11, 15), CardDate("forex_crisis_1951"));
