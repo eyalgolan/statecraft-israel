@@ -86,6 +86,7 @@ namespace Statecraft.Game.Map
         Terrain? cachedTerrainRoot;
         int cachedHierarchyCount = -1;
         (Terrain terrain, TerrainCollider? collider)[] grounds = Array.Empty<(Terrain, TerrainCollider?)>();
+        GroundSignature[] pickedGrounds = Array.Empty<GroundSignature>();
         Units.UnitLayer? cachedUnits;
         bool pickCached;
         Vector2 pickedAt;
@@ -96,6 +97,13 @@ namespace Statecraft.Game.Map
         long pickedUnitsVersion;
         bool pickedUnitsActive;
         (int q, int r)? pickedHex;
+
+        struct GroundSignature
+        {
+            public bool TerrainActive, DrawHeightmap, ColliderActive;
+            public int TerrainData;
+            public Matrix4x4 LocalToWorld;
+        }
 #if UNITY_EDITOR
         internal long UncachedPicksForTests { get; private set; }
         internal long TerrainCacheBuildsForTests { get; private set; }
@@ -325,6 +333,7 @@ namespace Statecraft.Game.Map
             var found = map.GetComponentsInChildren<Terrain>(true);
             grounds = new (Terrain, TerrainCollider?)[found.Length];
             for (int i = 0; i < found.Length; i++) grounds[i] = (found[i], found[i].GetComponent<TerrainCollider>());
+            pickedGrounds = new GroundSignature[found.Length];
             cachedUnits = map.Terrain.transform.Find(Units.UnitLayer.RootName)?.GetComponent<Units.UnitLayer>();
             pickCached = false;
 #if UNITY_EDITOR
@@ -346,8 +355,10 @@ namespace Statecraft.Game.Map
             var pixelRect = cam.pixelRect;
             long version = layer?.PickVersion ?? 0;
             bool active = layer != null && layer.gameObject.activeInHierarchy;
+            bool groundsUnchanged = UpdateGroundSignatures();
             if (pickCached && pickedAt == pos && pickedCamera == cam && pickedView == view && pickedProjection == projection
-                && pickedPixelRect == pixelRect && pickedUnits == layer && pickedUnitsVersion == version && pickedUnitsActive == active)
+                && pickedPixelRect == pixelRect && pickedUnits == layer && pickedUnitsVersion == version && pickedUnitsActive == active
+                && groundsUnchanged)
                 return pickedHex;
 #if UNITY_EDITOR
             UncachedPicksForTests++;
@@ -360,6 +371,29 @@ namespace Statecraft.Game.Map
             pickedUnitsVersion = layer?.PickVersion ?? 0;
             pickCached = true;
             return pickedHex;
+        }
+
+        bool UpdateGroundSignatures()
+        {
+            bool unchanged = pickCached && pickedGrounds.Length == grounds.Length;
+            for (int i = 0; i < grounds.Length; i++)
+            {
+                var (terrain, collider) = grounds[i];
+                var next = new GroundSignature
+                {
+                    TerrainActive = terrain.isActiveAndEnabled,
+                    DrawHeightmap = terrain.drawHeightmap,
+                    ColliderActive = collider != null && collider.isActiveAndEnabled,
+                    TerrainData = terrain.terrainData != null ? terrain.terrainData.GetInstanceID() : 0,
+                    LocalToWorld = terrain.transform.localToWorldMatrix,
+                };
+                var previous = pickedGrounds[i];
+                if (previous.TerrainActive != next.TerrainActive || previous.DrawHeightmap != next.DrawHeightmap
+                    || previous.ColliderActive != next.ColliderActive || previous.TerrainData != next.TerrainData
+                    || !previous.LocalToWorld.Equals(next.LocalToWorld)) unchanged = false;
+                pickedGrounds[i] = next;
+            }
+            return unchanged;
         }
 
         // The opt-in board draws its own terrain above the lowered real map. Use the nearest displayed ground,

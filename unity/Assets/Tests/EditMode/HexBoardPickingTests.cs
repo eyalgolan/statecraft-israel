@@ -187,4 +187,39 @@ public class HexBoardPickingTests
         }
     }
 
+    [Test]
+    public void ChangingGroundStateInvalidatesThePickAtAnUnmovedPointer()
+    {
+        Vector2 screen = default;
+        (int q, int r) displayed = default, real = default;
+        bool foundDifferentGrounds = false;
+        foreach (var (q, r) in new[] { (1, 15), (4, 15), (4, 19) })
+        foreach (float offset in new[] { -15f, 15f })
+        {
+            var origin = new Vector3(0f, Shader.GetGlobalVector(MapShaderGlobals.Map).z, map.Frame.LengthM);
+            var edge = (origin + HexGeometry.Centre(q, r, HexScale.HexM)
+                + origin + HexGeometry.Centre(q + 1, r, HexScale.HexM)) * 0.5f;
+            var point = edge + Vector3.right * offset;
+            point.y = board.transform.position.y + board.SampleHeight(point);
+            rig.LookAt = point; rig.Distance = 20000f; rig.Yaw = 90f; rig.TopInset = 0f; rig.Apply();
+            screen = cam.WorldToScreenPoint(point);
+            var ray = cam.ScreenPointToRay(screen);
+            if (!board.GetComponent<TerrainCollider>().Raycast(ray, out var boardHit, 1_000_000f)
+                || !map.Terrain.GetComponent<TerrainCollider>().Raycast(ray, out var realHit, 1_000_000f)) continue;
+            displayed = MapPointer.Pick(map, boardHit.point);
+            real = MapPointer.Pick(map, realHit.point);
+            if (displayed != real) { foundDifferentGrounds = true; break; }
+        }
+        Assert.IsTrue(foundDifferentGrounds, "precondition: the displayed board and lowered real terrain pick different hexes somewhere");
+
+        Assert.AreEqual(displayed, pointer.HexAt(screen), "the displayed ground is initially nearest");
+        try
+        {
+            board.drawHeightmap = false;
+            Assert.AreEqual(real, pointer.HexAt(screen),
+                "changing ground state invalidates the same-pointer, same-camera pick and falls through to the real terrain");
+        }
+        finally { board.drawHeightmap = true; }
+    }
+
 }

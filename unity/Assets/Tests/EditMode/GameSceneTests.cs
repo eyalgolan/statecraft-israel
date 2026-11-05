@@ -543,6 +543,8 @@ public class GameSceneTests
 
             int hoverPicks = 0; var realPillHex = pointer.PillHex;
             pointer.PillHex = p => { hoverPicks++; return realPillHex?.Invoke(p); };
+            // LateUpdate reads Pointer.current, which cannot be placed at this projected fixture point without replacing
+            // the test's live Input System device. Drive the exact helper that LateUpdate calls so the coordinate stays deterministic.
             root.UpdateMapHover(onHex);
             Assert.AreEqual(1, hoverPicks, "city, route and hex hover share one map pick");
             Assert.IsTrue(label.ClassListContains(MapLabelsPresenter.HoverClass), "the shared pick still lights the city pill");

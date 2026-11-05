@@ -1554,6 +1554,8 @@ public class MapLabelTests
         {
             yield return Settle(labels);
             long reads = labels.LabelSizeReadsForTests, placements = labels.PlacementVisitsForTests;
+            // This fixture owns a bare presenter, not a GameRoot component; Refresh is the production operation that
+            // GameRoot.LateUpdate calls, without booting an unrelated scene-wide presenter into these counters.
             for (int i = 0; i < 5; i++) labels.Refresh();
             Assert.AreEqual(reads, labels.LabelSizeReadsForTests, "settled refreshes do not poll every label's resolved size");
             Assert.AreEqual(placements, labels.PlacementVisitsForTests, "settled refreshes do no placement work");
@@ -1578,22 +1580,34 @@ public class MapLabelTests
             var locality = labels.LocalitySlots.Single(x => x.name == "slot-beit_shean");
             var hover = locality.Q<Label>().worldBound.center - origin;
             var city = labels.Slots.First(Shown).Q<Label>().worldBound.center - origin;
+            var panel = hd.Root.panel;
+            Assert.IsNotNull(panel, "the labels have a live panel");
+            Vector2 panelZero = UiPointer.ToPanel(panel, Vector2.zero, Screen.height);
+            Vector2 panelX = UiPointer.ToPanel(panel, Vector2.right * 100f, Screen.height) - panelZero;
+            Vector2 panelY = UiPointer.ToPanel(panel, Vector2.up * 100f, Screen.height) - panelZero;
+            Vector2 ScreenPoint(Vector2 layerPoint)
+            {
+                var wanted = layerPoint + origin - panelZero;
+                return new Vector2(wanted.x / panelX.x * 100f, wanted.y / panelY.y * 100f);
+            }
+            var hoverScreen = ScreenPoint(hover); var cityScreen = ScreenPoint(city);
 
-            labels.HoverAt(hover); long hoverVisits = labels.HoverVisitsForTests;
-            labels.HoverAt(hover);
+            labels.Hover(hoverScreen); long hoverVisits = labels.HoverVisitsForTests;
+            labels.Hover(hoverScreen);
             Assert.AreEqual(hoverVisits, labels.HoverVisitsForTests, "the unchanged hover reuses its hit");
-            labels.HoverAt(hover + Vector2.right);
+            labels.Hover(ScreenPoint(hover + Vector2.right));
             Assert.Greater(labels.HoverVisitsForTests, hoverVisits, "a moved hover recomputes");
 
-            labels.PillAtLayer(city); long pillVisits = labels.PillVisitsForTests;
-            labels.PillAtLayer(city);
+            labels.PillAt(cityScreen); long pillVisits = labels.PillVisitsForTests;
+            labels.PillAt(cityScreen);
             Assert.AreEqual(pillVisits, labels.PillVisitsForTests, "the unchanged city-pill hit is reused");
-            labels.PillAtLayer(city + Vector2.right);
+            labels.PillAt(ScreenPoint(city + Vector2.right));
             Assert.Greater(labels.PillVisitsForTests, pillVisits, "a moved pill probe recomputes");
 
+            // As above, the bare presenter has no player-loop method of its own; GameRoot owns this Refresh call in play.
             labels.Refresh(force: true);
             hoverVisits = labels.HoverVisitsForTests; pillVisits = labels.PillVisitsForTests;
-            labels.HoverAt(hover); labels.PillAtLayer(city);
+            labels.Hover(hoverScreen); labels.PillAt(cityScreen);
             Assert.Greater(labels.HoverVisitsForTests, hoverVisits, "new placement invalidates hover hits");
             Assert.Greater(labels.PillVisitsForTests, pillVisits, "new placement invalidates pill hits");
         }
