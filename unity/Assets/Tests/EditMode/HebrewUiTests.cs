@@ -87,6 +87,33 @@ public class HebrewUiTests
 
     static VisualElement Ui => Object.FindFirstObjectByType<UIDocument>().rootVisualElement;
 
+    /// <summary>#2688: the roomy tier reads physical meter bounds and the gap on the navigation's side, so mirroring the
+    /// top-bar rows does not change whether it fits. This boots each language through GameRoot.Begin on the same panel size.
+    /// Red-first: UpdateRoomy measured from the first to last meter and always towards nav.xMin, so Hebrew never added it.</summary>
+    [UnityTest]
+    public IEnumerator TheHebrewTopBarIsRoomyExactlyWhenTheEnglishTopBarIs()
+    {
+        var roomy = new Dictionary<string, bool>();
+        foreach (var language in new[] { UiLanguage.English, UiLanguage.Hebrew })
+        {
+            var restore = OnTexture(1920, 1080);
+            try
+            {
+                var game = Object.FindFirstObjectByType<GameRoot>();
+                game.Store = new SaveStore(saveDir);
+                game.Language = language;
+                game.Begin(Inputs, 0);
+                for (int i = 0; i < 30 && !(Ui.Q("top-bar").worldBound.width > 0); i++) yield return null;
+                for (int i = 0; i < 6; i++) yield return null;          // geometry and the roomy class settle
+                roomy[language] = Ui.Q("top-bar").ClassListContains(HudPresenter.RoomyClass);
+            }
+            finally { restore(); }
+        }
+
+        Assert.IsTrue(roomy[UiLanguage.English], "1920x1080 English is roomy (PromoHudTests' pinned expectation)");
+        Assert.AreEqual(roomy[UiLanguage.English], roomy[UiLanguage.Hebrew], "1920x1080 Hebrew matches English");
+    }
+
     // #2045: every Orders.Check refusal (its Refused* constants) has a string in both files, and the Hebrew one is Hebrew,
     // not the sim's English. A missing key throws in UiText's lookup.
     [Test]
