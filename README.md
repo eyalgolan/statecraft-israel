@@ -147,7 +147,7 @@ Troubleshooting: `error CS0246 'PlayerPrefsBool'` means the Unity-MCP package (`
 
 ## History, sources and accuracy
 
-- Every historical event, minister, date and number in `content/` carries `sources:` with URLs and check dates. Balance values, such as the Attention each turn or a cost, are design values chosen for the game, not historical figures; `content/` marks them `DESIGN VALUE` or `status: design`. Wikipedia (English and Hebrew) is a primary cited source for many facts, which is why `content/` is CC BY-SA 4.0.
+- Every historical event, minister, date and number in `content/` carries `sources:` with URLs and check dates; game-balance values are design choices and need none. Wikipedia (English and Hebrew) is a primary cited source for many facts, which is why `content/` is CC BY-SA 4.0.
 - The model behind the game, and its framing, embed assumptions. It is not neutral, and this page says so.
 - No quotes are invented. Text paraphrases its sources.
 - The framing is Israeli. Contested narratives are not presented as parallel accounts.
