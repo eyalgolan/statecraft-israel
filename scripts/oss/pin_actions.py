@@ -18,6 +18,9 @@ from typing import Callable
 
 import yaml
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tools"))  # tools/yaml12.py
+import yaml12  # noqa: E402
+
 ROOT = Path(__file__).resolve().parents[2]
 USES = re.compile(
     r"""^(?P<lead>\s*-?\s*(?P<kq>["']?)uses(?P=kq)\s*:\s*)(?P<quote>["']?)(?P<action>[\w.-]+/[\w./-]+)"""
@@ -60,7 +63,7 @@ def _uses_by_line(text: str) -> dict[int, str]:
             for value in node.value:
                 walk(value)
 
-    document = yaml.compose(text, Loader=yaml.SafeLoader)
+    document = yaml.compose(text, Loader=yaml12.Core12Loader)   # YAML 1.2 tags, as tools/yaml12.py (#601)
     if document is not None:
         walk(document)
     return found
