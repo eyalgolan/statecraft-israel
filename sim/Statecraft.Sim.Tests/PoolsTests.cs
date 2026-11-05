@@ -441,4 +441,74 @@ public class PoolsTests
         finally { Thread.CurrentThread.CurrentCulture = culture; }
     }
 
+
+    // ---- gdd-0.3: the need from the population ledger (#2470) ----
+
+    static readonly PopulationLocation North = new PopulationLocation("north", 0, 0, "camp");
+
+    static PopulationInventoryRow LedgerRow(int ordinal, PopulationStatus status, PopulationAssignment assignment)
+    {
+        var captured = status == PopulationStatus.Captured;
+        var where = assignment.Kind == PopulationAssignmentKind.Travel ? new PopulationLocation("south", 1, 0, "port") : North;
+        return new PopulationInventoryRow("fixture", ordinal, new PopulationUnit(0, status, 0, captured ? null : where, assignment,
+            CivilianProfession.None, CivilianTier.None, 0, "basic", 0, PopulationEquipment.None, captured ? "captor" : null, captured ? North : null));
+    }
+
+    /// <summary>Eight living own records, each differently assigned: idle, at work, teaching, on a course, travelling,
+    /// serving, in reception and held by the enemy.</summary>
+    static GameState LedgerState() => PopulationLedger.CreateFixture(PopulationLedgerTests.Content(), PopulationLedgerTests.Bindings(), new[] {
+        LedgerRow(0, PopulationStatus.FreeCivilian, PopulationAssignment.Unassigned),
+        LedgerRow(1, PopulationStatus.FreeCivilian, new PopulationAssignment(PopulationAssignmentKind.Work, "field")),
+        LedgerRow(2, PopulationStatus.FreeCivilian, new PopulationAssignment(PopulationAssignmentKind.Teaching, "teacher")),
+        LedgerRow(3, PopulationStatus.Trainee, new PopulationAssignment(PopulationAssignmentKind.Course, "course")),
+        LedgerRow(4, PopulationStatus.CivilianInTransit, new PopulationAssignment(PopulationAssignmentKind.Travel, "travel")),
+        LedgerRow(5, PopulationStatus.ActiveSoldier, new PopulationAssignment(PopulationAssignmentKind.ActiveService, "service")),
+        LedgerRow(6, PopulationStatus.Refugee, new PopulationAssignment(PopulationAssignmentKind.Reception, "reception")),
+        LedgerRow(7, PopulationStatus.Captured, PopulationAssignment.Unassigned) });
+
+    // R-FOOD-001 (one unit is one population unit's food for a month) and R-FOOD-002 under gdd-0.3: every living own ledger
+    // id eats one ration whatever its assignment, the stock stops at 0, and the import refills to cover_months of that need.
+    [Fact]
+    public void ALedgerGameEatsOneRationPerLivingOwnPopulationId()
+    {
+        var s = LedgerState(); s.Food = 5;
+        var people = s.PopulationLedger.Units;
+        var why = new List<Cause>();
+        Pools.Consume(PopulationLedgerTests.Content(), s, new MvpRules { CoverMonths = 3 }, why);
+        Assert.Equal((8, 3), (s.FoodNeed, s.FoodUnmet));   // 5 eaten of 8
+        Assert.Equal(24, s.Food);                          // refilled to 3 months of 8
+        Assert.Contains(why, x => x.Key == CauseKeys.FoodShortage);
+        Assert.Equal(people, s.PopulationLedger.Units);   // counting moves no id, status or assignment
+    }
+
+    // R-FOOD-002: the foreign-currency crisis still stops the import in a ledger game.
+    [Fact]
+    public void ALedgerGameImportsNoFoodInTheForeignCurrencyCrisis()
+    {
+        var s = LedgerState(); s.Food = 20; s.ActiveSituations.Add(EconomySystem.FxCrisis);
+        Pools.Consume(PopulationLedgerTests.Content(), s, new MvpRules { CoverMonths = 3 }, new List<Cause>());
+        Assert.Equal((12, 8, 0), (s.Food, s.FoodNeed, s.FoodUnmet));
+    }
+
+    // R-FOOD-001: the count is one per id whatever order the snapshot holds them in, and a snapshot that repeats an id or
+    // holds no record is refused rather than counted.
+    [Fact]
+    public void LedgerRationsIgnoreOrderAndRefuseARepeatedId()
+    {
+        var people = LedgerState().PopulationLedger.Units;
+        Assert.Equal(8, Pools.Rations(people));
+        Assert.Equal(8, Pools.Rations(people.Reverse()));
+        Assert.Throws<ArgumentException>(() => Pools.Rations(people.Append(people[3])));
+        Assert.Throws<ArgumentException>(() => Pools.Rations(people.Append(null!)));
+        Assert.Throws<ArgumentNullException>(() => Pools.Rations(null!));
+    }
+
+    // R-POP-002: a ledger state given content of another ruleset is still refused before any Food moves.
+    [Fact]
+    public void ALedgerStateUnderAnotherRulesetStillRefusesConsume()
+    {
+        var s = LedgerState(); s.Food = 5; var hash = s.Hash();
+        Assert.Throws<NotSupportedException>(() => Pools.Consume(PopulationLedgerTests.Content(SaveGame.GddRuleset), s, new MvpRules { CoverMonths = 3 }, new List<Cause>()));
+        Assert.Equal(hash, s.Hash());
+    }
 }

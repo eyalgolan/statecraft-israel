@@ -101,13 +101,29 @@ namespace Statecraft.Sim
             }
         }
 
+        /// <summary>R-FOOD-001 under gdd-0.3 (#2470): the month's need of a population ledger, one ration (one population
+        /// unit's food) for each living own population id in <paramref name="snapshot"/>, whatever its status or
+        /// assignment. The order of the snapshot does not matter; a repeated id or a missing record is refused.</summary>
+        internal static int Rations(IEnumerable<PopulationUnit> snapshot)
+        {
+            if (snapshot == null) throw new ArgumentNullException(nameof(snapshot));
+            var ids = new HashSet<int>();
+            foreach (var p in snapshot)
+                if (p == null || !ids.Add(p.Id)) throw new ArgumentException("A Food snapshot holds each population id once.", nameof(snapshot));
+            return ids.Count;
+        }
+
         /// <summary>R-FOOD-002, step 7: the nation eats the turn's need from the stock, as far as the stock goes (it stops at
         /// 0, and the rest is unmet), then the import brings the stock back to cover_months of the need, unless foreign
-        /// currency is exhausted (the fx_crisis situation at the turn's start), when no Food is imported.</summary>
+        /// currency is exhausted (the fx_crisis situation at the turn's start), when no Food is imported. Under gdd-0.3 with
+        /// an initialized population ledger the need is <see cref="Rations"/> of the ledger's records, checked first
+        /// (<see cref="PopulationLedger.Reconcile"/>) so a bad ledger moves no Food (#2470); otherwise the aggregate head count.</summary>
         public static void Consume(Content c, GameState s, MvpRules r, List<Cause> why)
         {
-            PopulationLedger.RefuseAggregate(s);
-            var need = Need(s, r);
+            var ledger = c.UsesPopulationLedger && s.PopulationLedger.IsInitialized;
+            if (!ledger) PopulationLedger.RefuseAggregate(s);
+            else s.PopulationLedger.Reconcile();
+            var need = ledger ? Rations(s.PopulationLedger.Units) : Need(s, r);
             var eaten = Math.Min(need, s.Food);
             s.Food -= eaten;
             s.FoodNeed = need;
