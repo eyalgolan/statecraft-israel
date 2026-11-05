@@ -67,7 +67,7 @@ class Fake:
 
     def __init__(self, dirty="", golden_ok=True, build_ok=True, branch="main", tags=("v0.1.0",), worktrees=None,
                  build_raises=None, dirty_after="", on_origin_main=True, fail_status=False,
-                 fail_status_after=False, fail_worktree_list=False, fail_checkout=False, lipo_code=0):
+                 fail_status_after=False, fail_worktree_list=False, fail_checkout=False, lipo_code=0, lipo_out="x86_64 arm64\n"):
         self.calls: list[list[str]] = []
         self.dirty, self.golden_ok, self.build_ok = dirty, golden_ok, build_ok
         self.branch, self.tags, self.worktrees = branch, tags, worktrees
@@ -78,6 +78,7 @@ class Fake:
         self.fail_worktree_list = fail_worktree_list
         self.fail_checkout = fail_checkout
         self.lipo_code = lipo_code
+        self.lipo_out = lipo_out
 
     def __call__(self, cmd, **kw):
         cmd = [str(c) for c in cmd]
@@ -147,7 +148,7 @@ class Fake:
                     if p.is_file():
                         z.write(p, (Path(src.name) / p.relative_to(src)).as_posix())
         elif cmd[0] == "lipo":
-            out = "x86_64 arm64\n"
+            out = self.lipo_out
             code = self.lipo_code
         return rb.Result(code, out)
 
@@ -342,6 +343,17 @@ def test_a_failed_lipo_with_plausible_output_stops_before_goldens_or_records(rep
     assert run_main(["--platform", "mac", "--out", str(out)], repo, editor, fake, monkeypatch) == 1
     lipo = [c for c in fake.calls if c[0] == "lipo"]
     assert len(lipo) == 1 and lipo[0][1] == "-archs"
+    assert not [c for c in fake.calls if "-golden" in c]
+    assert not (out / "build-record.json").exists()
+    assert "lipo could not inspect" in capsys.readouterr().err
+
+
+def test_a_silent_lipo_that_exits_zero_stops_before_goldens_or_records(repo, editor, monkeypatch, tmp_path, capsys):
+    """#2690 review: an empty architecture list is as unknown as a failed lipo."""
+    fake = Fake(lipo_out="")
+    out = tmp_path / "o"
+    assert run_main(["--platform", "mac", "--out", str(out)], repo, editor, fake, monkeypatch) == 1
+    assert [c for c in fake.calls if c[0] == "lipo"]
     assert not [c for c in fake.calls if "-golden" in c]
     assert not (out / "build-record.json").exists()
     assert "lipo could not inspect" in capsys.readouterr().err

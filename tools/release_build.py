@@ -676,11 +676,11 @@ def main(argv: list[str] | None = None) -> int:
         arch = None
         if p.name == "mac":
             inspected = run(["lipo", "-archs", str(mac_executable(target))], capture=True)
-            if inspected.returncode != 0:
-                print(f"FAILED: lipo could not inspect the macOS player architecture (exit {inspected.returncode}); "
-                      "no build record was written.", file=sys.stderr)
+            arch = inspected.stdout.strip()
+            if inspected.returncode != 0 or not arch:
+                print(f"FAILED: lipo could not inspect the macOS player architecture (exit {inspected.returncode}"
+                      f"{', no output' if not arch else ''}); no build record was written.", file=sys.stderr)
                 return 1
-            arch = inspected.stdout.strip() or None
         golden = {"status": "unchecked", "exit_code": None, "lines": [],
                   "note": "this player cannot run on the Mac; the CI player golden check runs it (spec 6.3)"}
         if p.runs_here:
