@@ -20,8 +20,7 @@ start of M4, as a private Draft (owner ruling, 2026-10-10); their sections below
 - **Verified locally by:** `uv run tools/web_check.py unity/Builds/Web-gzip --query "golden&smoke=5"` with the three
   full `--expect` values pinned in `docs/determinism.md` (both goldens and the smoke line). This runs both golden hashes
   in the WebGL IL2CPP player, then plays five turns through the UI's own buttons (on each turn it presses the first
-  option of every event card shown, while Attention allows
-  (rulesets that have Attention), `GameRoot.Smoke`).
+  option of every event card shown, while Attention allows in rulesets that have it, `GameRoot.Smoke`).
   - **Result at the merge candidate (2026-10-11, commit a099655, Brotli build):** `GOLDEN OK 1950 71e9904d…`,
     `GOLDEN OK 1952 73590e32…`, `SMOKE OK 5 turns 1948-06-19 d3fdd459…` (all three matched in full), then PASS.
   - History: 2026-10-10 at d450566 (Brotli, before the 1948 war-period events): `GOLDEN OK 1950 ee5d0826…`,
@@ -268,7 +267,7 @@ machines or the project's itch.io account.
 
 ## OWNER STEP: sensitivity review before any shared build
 Spec section 5.5 requires a recorded sensitivity review for events with sensitive tags (holocaust, terror, massacre,
-war-casualties, displacement). The owner's sign-off for all seven events below is recorded in commit
+war-casualties; and displacement, R-GATE-001). The owner's sign-off for all seven events below is recorded in commit
 [25d2ef6](https://github.com/eyalgolan/statecraft-israel/commit/25d2ef6004436668b42e289aff3dce06af128e09)
 (2026-10-10; decision D11 in [docs/oss/DECISIONS.md](oss/DECISIONS.md)): each event's YAML `status:` is now
 `sensitivity-reviewed`. For any new sensitive event, the owner records the sign-off **only** by moving its YAML
