@@ -35,6 +35,12 @@ namespace Statecraft.Game.Map.Kits
         /// there, where the kit's 100x houses read better as a mass, and the view's footprint (10,670 km2, about 170 places)
         /// bounds the cost. The band (12%) is wider than one wheel notch.</summary>
         public const float FarEnterM = 100000f, FarExitM = 112000f;
+        /// <summary>The web tier's last runtime quality fallback step (QualityFallback.Steps, TownModelsFar): every camera
+        /// is past the close switch at every zoom, so the towns draw their far-off copies without shadows instead of the
+        /// originals with them, at the 30 km opening too. The fallback reaches it only on a device whose frames stay over the
+        /// 30 fps floor after its other steps; it steps back off it as frames recover, and the map's teardown and a fixed
+        /// quality choice (GraphicsQuality.Apply) clear it. A change takes effect at the camera's next prepare, unmoved.</summary>
+        public static bool LowTier;
         /// <summary>Owner ruling, 31 Oct 2026, "Load all in view (Recommended)": a close camera admits a town or village tile
         /// whose building-model bounds, widened by ViewMarginM on every side, are in its view; an admitted one stays until it
         /// leaves the view widened by ViewKeepM, so a pan does not drop and reload a kind at the margin.</summary>
