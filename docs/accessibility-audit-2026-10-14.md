@@ -473,8 +473,10 @@ gives PageUp, PageDown, Home and End with or without focus. Focusability only: d
 Four views are left out of the sweep, because for them that reasoning does not hold: `turn-report-rows`,
 `end-screen-rows`, `capture-scroll` and, since #1853 (28 October), `info-panel` (`FocusScroll.OnlyReachableByTheirBar`).
 `KeyScroll` has no target for any of them, and `GameRoot` switches the paging keys off entirely while the turn report
-or the end screen is open. The first three hold plain labels, so Tab reaches nothing inside them, and the info panel's
-facts are labels too (#40), so Tab does not reach those either. Taking their bar out would leave no keyboard route at
+or the end screen is open. The turn report and the end screen hold plain labels, so Tab reaches nothing inside them, and the info panel's
+facts are labels too (#40), so Tab does not reach those either. `capture-scroll` is the exception: it holds the capture
+dialog's option buttons (`capture-options`, `Game.uxml:251-255`), so Tab does reach those. Its bar stays a stop for another
+reason: `KeyScroll` has no target for that view, so the bar is the only keyboard way to scroll it. Taking their bar out would leave no keyboard route at
 all, which is worse than a stray stop.
 Giving `KeyScroll` a route to them is the better answer and is its own change.
 
