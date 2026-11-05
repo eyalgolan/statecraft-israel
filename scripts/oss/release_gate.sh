@@ -10,7 +10,13 @@ step() { echo; echo "== $1"; }
 
 step "on main, clean tree"
 [ "$(git rev-parse --abbrev-ref HEAD)" = "main" ] || { echo "not on main"; fail=1; }
-[ -z "$(git status --porcelain --untracked-files=no)" ] || { echo "tracked changes present"; fail=1; }
+if ! status="$(git status --porcelain --untracked-files=no)"; then
+  echo "git status failed: cannot prove the tracked tree is clean"
+  fail=1
+elif [ -n "$status" ]; then
+  echo "tracked changes present"
+  fail=1
+fi
 
 step "tip policy, release mode (open decisions D1-D12, owner-verify and unknown-licence rows refuse)"
 uv run scripts/oss/check_repo.py --release || fail=1
@@ -28,7 +34,10 @@ step "tools tests"
 uv run --with pytest==9.1.1 --with rasterio==1.5.2 --with numpy==2.5.3 --with pyyaml==6.0.3 --with pillow==12.3.0 --with requests==2.32.5 --with pyproj==3.8.0 pytest tools/tests -q || fail=1
 
 step "history scan of main (information; rows in docs/oss/history-accepted.tsv are accepted)"
-uv run scripts/oss/scan_history.py --ref main | tee "$scan_out"
+if ! uv run scripts/oss/scan_history.py --ref main | tee "$scan_out"; then
+  echo "HISTORY SCAN FAILED: cannot prove the history scan is complete"
+  fail=1
+fi
 if ! grep -q ' 0 open secret-shape findings' "$scan_out"; then
   echo "OPEN SECRET-SHAPE FINDING: rotate it at its provider (owner), then add the row to docs/oss/history-accepted.tsv"
   fail=1

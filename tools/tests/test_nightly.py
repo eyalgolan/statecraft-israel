@@ -14,7 +14,7 @@ from types import SimpleNamespace
 
 import pytest
 
-pytest.importorskip("fcntl")   # nightly imports unity_postmerge, which locks with flock
+fcntl = pytest.importorskip("fcntl")   # nightly imports unity_postmerge, which locks with flock
 
 import nightly
 import nightly_state as ns
@@ -675,6 +675,20 @@ def test_editmode_failure_or_missing_results_or_timeout_refuses(night, env):
         assert e.value.gate == "editmode"
 
 
+def test_editmode_unreadable_results_refuse_and_still_restore_settings(night, env, monkeypatch):
+    r = editmode_runner(night)
+
+    def unreadable(path):
+        assert Path(path).name == "editmode.xml"
+        raise OSError("permission denied")
+
+    monkeypatch.setattr(nightly.unity_postmerge.ET, "parse", unreadable)
+    with pytest.raises(Refused) as e:
+        nightly.run_editmode(night, r)
+    assert e.value.gate == "editmode" and "result file could not be read: permission denied" in e.value.detail
+    assert r.envs[-1][0] == nightly.RESTORE_ARGV
+
+
 def test_settings_are_restored_when_the_runner_raises(night, env):
     r = editmode_runner(night)
     real = r.run
@@ -684,8 +698,10 @@ def test_settings_are_restored_when_the_runner_raises(night, env):
             raise OSError("disk gone")
         return real(cmd, **k)
     r.run = boom
-    with pytest.raises(OSError):
+    with pytest.raises(Refused) as e:   # #2667: a runner that cannot start is a recorded refusal with its log
         nightly.run_editmode(night, r)
+    assert e.value.gate == "editmode" and isinstance(e.value.__cause__, OSError)
+    assert e.value.log == night.run_dir / "editmode.out"
     assert r.envs[-1][0][0] == "git"
 
 
@@ -750,11 +766,13 @@ def test_a_pending_error_and_a_failed_restore_keep_the_original(night, env, how)
                 raise OSError("disk gone")
             return real(cmd, **k)
         r.run = boom
-        expect, exc = None, OSError
+        expect, exc = "editmode", Refused   # #2667: the runner's OSError is wrapped, not replaced by the restore failure
     with pytest.raises(exc) as e:
         nightly.run_editmode(night, r)
     if expect:
         assert e.value.gate == expect
+    if how == "runner raises":
+        assert isinstance(e.value.__cause__, OSError)
     assert "restore-settings" in (night.run_dir / "restore-settings.note").read_text()
 
 
@@ -873,11 +891,13 @@ def test_a_build_page_without_tonights_version_refuses(night, env):
         nightly.build_web(night, r, pages=False, free_gb=lambda p: 100.0)
 
 
-def test_a_failed_build_refuses_and_restores(night, env):
+@pytest.mark.parametrize("pages,gate", [(False, "build-web-gz"), (True, "build-web-pages")])
+def test_a_failed_build_refuses_by_variant_and_restores(night, env, pages, gate):
     r = WebRunner(night, build_code=1)
     with pytest.raises(Refused) as e:
-        nightly.build_web(night, r, pages=True, free_gb=lambda p: 100.0)
-    assert e.value.gate == "build-web" and r.restores == 1
+        nightly.build_web(night, r, pages=pages, free_gb=lambda p: 100.0)
+    assert e.value.gate == gate and e.value.log == night.run_dir / f"unity-build-web-{'pages' if pages else 'gz'}.log"
+    assert r.restores == 1
 
 
 def test_low_disk_before_the_second_build_refuses(night, env):
@@ -903,7 +923,7 @@ def test_a_build_timeout_restores_settings_and_refuses(night, env):
     r = WebRunner(night, build_code=124)
     with pytest.raises(Refused) as e:
         nightly.build_web(night, r, pages=False, free_gb=lambda p: 100.0)
-    assert e.value.gate == "build-web" and "timed out" in e.value.detail
+    assert e.value.gate == "build-web-gz" and "timed out" in e.value.detail
     assert r.restores == 1 and r.settings.read_text() == "  bundleVersion: 0.3.1\n"   # no stamp left behind
 
 
@@ -916,7 +936,7 @@ def test_a_failed_restore_does_not_mask_the_build_error(night, env, capsys):
     r.run = run
     with pytest.raises(Refused) as e:
         nightly.build_web(night, r, pages=False, free_gb=lambda p: 100.0)
-    assert e.value.gate == "build-web"
+    assert e.value.gate == "build-web-gz"
     assert (night.run_dir / "restore-settings.note").is_file()
 
 
@@ -928,11 +948,13 @@ def test_packaging_needs_the_notices_line(night, env):
     assert r.calls[-1] == ["bash", "scripts/oss/package_web.sh", str(build), str(z)]
     zp = nightly.package_zip(night, r, night.cfg.clone / "unity/Builds/Web-pages", True)
     assert zp == night.run_dir / f"statecraft-israel-v{STAMPED}-web-pages.zip"
-    for kw in (dict(package_out="PACKAGED x\n"), dict(package_out="OK: notices inside x\n"),
-               dict(package_code=1), dict(package_code=124)):
-        with pytest.raises(Refused) as e:
-            nightly.package_zip(night, WebRunner(night, **kw), build, False)
-        assert e.value.gate == "package"
+    for pages, gate in ((False, "package-gz"), (True, "package-pages")):
+        selected = night.cfg.clone / "unity/Builds" / ("Web-pages" if pages else "Web-gzip")
+        for kw in (dict(package_out="PACKAGED x\n"), dict(package_out="OK: notices inside x\n"),
+                   dict(package_code=1), dict(package_code=124)):
+            with pytest.raises(Refused) as e:
+                nightly.package_zip(night, WebRunner(night, **kw), selected, pages)
+            assert e.value.gate == gate and e.value.log == night.run_dir / f"{gate}.log"
 
 
 def test_the_tree_must_be_clean_after_the_builds(night, env):
@@ -1905,7 +1927,7 @@ def test_a_failed_build_names_the_unity_errors_in_its_refusal(night, env):
     r = LoggingWebRunner(night, build_code=1)
     with pytest.raises(ns.Refused) as e:
         nightly.build_web(night, r, pages=False, free_gb=lambda p: 100.0)
-    assert e.value.gate == "build-web" and "error CS0103" in e.value.detail and "BuildFailedException" in e.value.detail
+    assert e.value.gate == "build-web-gz" and "error CS0103" in e.value.detail and "BuildFailedException" in e.value.detail
     assert "boring" not in e.value.detail
 
 
@@ -1914,6 +1936,14 @@ def test_a_failed_build_without_a_unity_log_says_so(night, env):
     with pytest.raises(ns.Refused) as e:
         nightly.build_web(night, r, pages=False, free_gb=lambda p: 100.0)
     assert "no Unity log" in e.value.detail
+
+
+def test_the_release_runbook_names_each_web_and_package_gate():
+    text = (Path(__file__).resolve().parents[2] / "docs/RELEASING.md").read_text()
+    gates = text.split("The gates, in order.", 1)[1].split("**Size budget.**", 1)[0]
+    for gate in ("build-web-gz", "build-web-pages", "package-gz", "package-pages"):
+        assert f"`{gate}`" in gates
+    assert "`build-web`" not in gates and "`package`" not in gates
 
 
 # --- the clients ----------------------------------------------------------------------------------------------------------
@@ -1953,6 +1983,33 @@ def test_an_unusable_client_is_a_recorded_github_client_refusal_not_internal(env
                             no_publish=False, client_error=err, free_gb=lambda p: 100.0)
     assert out == "REFUSED" and "gate=github-client" in env.log() and "gh is not on PATH" in env.log()
     assert env.runner.calls == [] and len(env_notes) == 1
+
+
+def test_a_refused_night_records_the_real_failing_step_log(env, monkeypatch):
+    clone = str(env.cfg.clone)
+    env.runner.add(["uv", "run", f"{clone}/tools/build_sim_for_unity.py"], code=2, out="compiler exploded\n")
+    env.runner.add(["dotnet", "build-server", "shutdown"], out="servers stopped\n")
+
+    def stages(night, state, runner, gh, itch, *, no_publish, free_gb, save, no_steam=False):
+        nightly.run_gates(night, runner)
+
+    monkeypatch.setattr(nightly, "run_stages", stages)
+    assert env.night() == "REFUSED"
+    step_log = env.job / "runs/20261028-030000/build-sim.log"
+    line = env.log().strip().splitlines()[-1]
+    assert "gate=build-sim" in line and f"log={step_log}" in line
+    assert "compiler exploded" in step_log.read_text()
+    assert "NIGHTLY REFUSED gate=build-sim" in step_log.read_text()
+    assert "build_sim_for_unity exited 2" in step_log.read_text()
+
+
+def test_a_capture_refusal_gets_a_cause_log(env):
+    prefix, _, out, effect = env.runner.rules[0]
+    env.runner.rules[0] = (prefix, 128, out, effect)
+    assert env.night() == "REFUSED"
+    evidence = env.job / "runs/20261028-030000/refused-command.log"
+    assert f"log={evidence}" in env.log() and evidence.is_file()
+    assert "git" in evidence.read_text() and "exited 128" in evidence.read_text()
 
 
 # --- Task 8: the two-upload itch save test ----------------------------------------------------------------------------
@@ -2113,6 +2170,32 @@ def test_savetest_passes_only_with_matching_tuple_new_url_same_origin(saved):
     assert ev["chrome"] == "/fake/chrome" and len(ev["zip_sha256"]) == 64 and ev["result"] == "PASS"
     assert t.enabled() and json.loads(t.config.read_text())["itch_evidence"].endswith("evidence.json")
     assert "SAVETEST PASS" in t.log() and TAG in t.log()
+
+
+def test_savetest_evidence_write_failure_is_recorded_once_as_inconclusive(saved, monkeypatch):
+    t = saved()
+    real_write = Path.write_text
+
+    def write(path, text, *args, **kwargs):
+        if path.name == "evidence.json":
+            raise OSError("evidence disk full")
+        return real_write(path, text, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "write_text", write)
+    assert t.run() == "INCONCLUSIVE" and not t.enabled()
+    lines = [line for line in t.log().splitlines() if "SAVETEST" in line]
+    assert len(lines) == 1 and f"SAVETEST INCONCLUSIVE tag={TAG}" in lines[0]
+    assert "OSError: evidence disk full" in lines[0]
+
+
+def test_savetest_enable_refusal_is_recorded_once_as_inconclusive(saved, monkeypatch):
+    t = saved()
+    monkeypatch.setattr(nightly, "enable_itch",
+                        lambda *a: (_ for _ in ()).throw(ns.Refused("config", "changed during save test")))
+    assert t.run() == "INCONCLUSIVE" and not t.enabled()
+    lines = [line for line in t.log().splitlines() if "SAVETEST" in line]
+    assert len(lines) == 1 and f"SAVETEST INCONCLUSIVE tag={TAG} config: changed during save test" in lines[0]
+    assert t.evidence()["result"] == "INCONCLUSIVE"
 
 
 def test_savetest_same_frame_url_is_inconclusive_and_keeps_itch_off(saved):
@@ -2304,6 +2387,26 @@ def test_the_savetest_command_refuses_before_any_client_without_a_test_target(tm
     cfg = dataclasses.replace(ns.Config(), butler=butler, handoff=tmp_path / "HANDOFF.md")
     assert nightly.run_savetest(cfg, tmp_path, TAG) == 1
     assert built == [] and "savetest_itch_target" in capsys.readouterr().err
+    assert f"SAVETEST INCONCLUSIVE tag={TAG}" in (tmp_path / "LOG.md").read_text()
+    assert "savetest_itch_target" in (tmp_path / "LOG.md").read_text()
+
+
+@pytest.mark.parametrize("missing,gate", [("gh", "github-client"), ("butler", "itch-client")])
+def test_the_savetest_command_records_a_missing_client(tmp_path, monkeypatch, missing, gate):
+    job = tmp_path / "job"
+    job.mkdir()
+    butler = tmp_path / "butler"
+    if missing != "butler":
+        butler.write_text("")
+    handoff = tmp_path / "HANDOFF.md"
+    (job / "config.json").write_text(json.dumps({"butler": str(butler), "handoff": str(handoff),
+                                                  "savetest_itch_target": TEST_TARGET}))
+    monkeypatch.setattr(nightly, "JOB", job)
+    monkeypatch.setattr(nightly.shutil, "which", lambda name: None if missing == "gh" else "/usr/bin/" + name)
+    assert nightly.main(["savetest", "--tag", TAG]) == 1
+    line = (job / "LOG.md").read_text()
+    assert f"SAVETEST INCONCLUSIVE tag={TAG} {gate}:" in line
+    assert f"SAVETEST INCONCLUSIVE tag={TAG} {gate}:" in handoff.read_text()
 
 
 def test_the_savetest_command_builds_its_itch_client_on_the_test_target(tmp_path, monkeypatch):
@@ -2317,6 +2420,29 @@ def test_the_savetest_command_builds_its_itch_client_on_the_test_target(tmp_path
                               itch_page_url="https://eyalgolan.itch.io/statecraft-israel",
                               savetest_itch_target=TEST_TARGET)
     assert nightly.run_savetest(cfg, tmp_path, TAG) == 0 and built == [TEST_TARGET]
+
+
+def test_a_broken_savetest_lock_is_recorded_inconclusive(tmp_path, monkeypatch, no_processes, capsys):
+    butler = tmp_path / "butler"
+    butler.write_text("")
+    monkeypatch.setattr(nightly.shutil, "which", lambda name: "/usr/bin/" + name)
+    stages = []
+    monkeypatch.setattr(nightly, "_savetest", lambda *a, **k: stages.append((a, k)))
+
+    @contextmanager
+    def broken_lock(job):
+        raise ns.Refused("lock", f"cannot take {job / 'savetest.lock'}: denied")
+        yield True
+
+    monkeypatch.setattr(nightly, "savetest_lock", broken_lock)
+    cfg = dataclasses.replace(ns.Config(), butler=butler, handoff=tmp_path / "HANDOFF.md",
+                              itch_page_url="https://eyalgolan.itch.io/statecraft-israel",
+                              savetest_itch_target=TEST_TARGET)
+    assert nightly.run_savetest(cfg, tmp_path, TAG) == 1 and stages == []
+    assert "INCONCLUSIVE" in capsys.readouterr().out
+    log = (tmp_path / "LOG.md").read_text()
+    assert "SAVETEST INCONCLUSIVE" in log and "lock: cannot take" in log and "denied" in log
+    assert "SAVETEST INCONCLUSIVE" in cfg.handoff.read_text()
 
 
 def too_many_requests(retry_after=None):
@@ -2397,7 +2523,11 @@ def test_a_corrupt_config_on_the_savetest_path_is_recorded_not_an_attribute_erro
     monkeypatch.setattr(nightly, "Config", lambda: ns.Config(handoff=tmp_path / "HANDOFF.md"))
     monkeypatch.setattr(nightly, "notify", lambda *a, **k: None)
     assert nightly.main(["savetest", "--tag", "v0.3.1-nightly.20261028"]) == 1
-    assert "gate=config" in (job / "LOG.md").read_text()
+    line = (job / "LOG.md").read_text()
+    assert "gate=config" in line
+    recorded = Path(line.split("log=", 1)[1].split()[0])
+    assert recorded.is_file() and recorded.name == "refused-config.log" and "unreadable" in recorded.read_text()
+    assert f"log={recorded}" in (tmp_path / "HANDOFF.md").read_text()
 
 
 def test_managed_gates_hold_the_canonical_shared_lock_until_shutdown(night, env, monkeypatch):
@@ -3101,7 +3231,9 @@ def test_a_steam_failure_leaves_the_web_nightly_published(env, stages, monkeypat
                                 no_publish=False, free_gb=lambda p: 100.0)
     assert outcome == "PUBLISHED"
     line = env.log().strip().splitlines()[-1]
-    assert "PUBLISHED" in line and line.endswith("steam=failed")
+    assert "PUBLISHED" in line and "steam=failed steam_log=" in line
+    steam_log = Path(line.split("steam_log=", 1)[1].split()[0])
+    assert steam_log.is_file() and "NIGHTLY REFUSED" in steam_log.read_text()
     assert not {"delete_draft", "restore_latest"} & set(stages.gh.names()), "the web nightly is never rolled back"
     assert any("Steam" in note[0] for note in env_notes)
 
@@ -3155,19 +3287,30 @@ def test_the_steam_build_runs_like_the_nightlys_other_unity_steps(night, env):
     assert not night.notes
     env.marker.write_text("x")
     nightly.run_steam(night, env.runner)
-    assert night.notes == ["steam=failed"]
+    assert len(night.notes) == 1 and night.notes[0].startswith("steam=failed steam_log=")
     assert len([e for e in env.runner.envs if e[0][:3] == ["uv", "run", "tools/release_build.py"]]) == 1
 
 
-@pytest.mark.parametrize("text, notes", [('{"app_id": 1, "depots": [1, 2, 3], "branches": []}', ["steam=failed"]),
-                                         ('[1]', ["steam=failed"]), ("not json", [])])
-def test_a_malformed_steam_json_is_a_steam_failure_not_a_refused_night(night, env, text, notes):
+@pytest.mark.parametrize("text,fails", [('{"app_id": 1, "depots": [1, 2, 3], "branches": []}', True),
+                                        ('[1]', True), ("not json", False)])
+def test_a_malformed_steam_json_is_a_steam_failure_not_a_refused_night(night, env, text, fails):
     # Review I3 (#2155): the web nightly is public by now, so even a broken steam.json only marks Steam.
     (env.cfg.clone / "steam").mkdir(exist_ok=True)
     (env.cfg.clone / "steam/steam.json").write_text(text)
     nightly.run_steam(night, env.runner)   # never raises
-    assert night.notes == notes   # unreadable JSON is "not configured yet" (skipped); a wrong shape is a failure
+    assert bool(night.notes) is fails   # unreadable JSON is "not configured yet" (skipped); a wrong shape is a failure
+    if fails:
+        assert night.notes[0].startswith("steam=failed steam_log=")
     assert not [c for c in env.runner.calls if c[:2] == ["uv", "run"]]
+
+
+def test_steam_evidence_write_failure_stays_nonfatal(night, env, monkeypatch):
+    (env.cfg.clone / "steam").mkdir(exist_ok=True)
+    (env.cfg.clone / "steam/steam.json").write_text('[1]')
+    monkeypatch.setattr(nightly, "write_refusal_log", lambda *a, **k: (_ for _ in ()).throw(OSError("disk full")))
+    nightly.run_steam(night, env.runner)
+    assert len(night.notes) == 1 and night.notes[0].startswith("steam=failed detail=")
+    assert "could not write steam evidence: disk full" in night.notes[0]
 
 
 def test_the_steam_content_is_removed_after_the_stage(night, env):
@@ -3184,3 +3327,86 @@ def test_the_steam_content_is_removed_after_the_stage(night, env):
     nightly.run_steam(night, env.runner)
     assert not (out / "steam").exists() and not list(out.glob("*.zip"))
     assert (out / "build-record.json").is_file()
+
+
+def test_a_run_lock_open_failure_in_main_is_a_recorded_refusal(tmp_path, monkeypatch, capsys):
+    """#2644 review: a real run.lock open failure is recorded by nightly.main, not raised as a traceback."""
+    job = tmp_path / "job"
+    job.mkdir()
+    (job / "run.lock").mkdir()
+    monkeypatch.setattr(nightly, "JOB", job)
+    monkeypatch.setattr(nightly, "load_config", lambda p: ns.Config(handoff=tmp_path / "HANDOFF.md"))
+    monkeypatch.setattr(nightly, "notify", lambda *a, **k: None)
+    assert nightly.main(["run"]) == 1
+    assert "gate=lock" in (job / "LOG.md").read_text()
+    assert "REFUSED" in (tmp_path / "HANDOFF.md").read_text()
+    assert "cannot open" in capsys.readouterr().err
+
+
+def test_a_run_lock_open_failure_in_a_no_publish_run_writes_no_record(tmp_path, monkeypatch, capsys):
+    """#2670 review: a by-hand --no-publish run writes nothing to LOG.md or the handoff, a lock failure included."""
+    job = tmp_path / "job"
+    job.mkdir()
+    (job / "run.lock").mkdir()
+    monkeypatch.setattr(nightly, "JOB", job)
+    monkeypatch.setattr(nightly, "load_config", lambda p: ns.Config(handoff=tmp_path / "HANDOFF.md"))
+    sent = []
+    monkeypatch.setattr(nightly, "notify", lambda *a, **k: sent.append(a))
+    assert nightly.main(["run", "--no-publish"]) == 1
+    assert not (job / "LOG.md").exists() and not (tmp_path / "HANDOFF.md").exists() and not sent
+    assert "cannot open" in capsys.readouterr().err
+
+
+def test_a_run_lock_release_failure_does_not_add_a_second_savetest_record(tmp_path, monkeypatch, capsys):
+    job = tmp_path / "job"
+    job.mkdir()
+    butler = tmp_path / "butler"
+    butler.write_text("")
+    cfg = dataclasses.replace(ns.Config(), butler=butler, handoff=tmp_path / "HANDOFF.md",
+                              itch_page_url="https://eyalgolan.itch.io/statecraft-israel",
+                              savetest_itch_target=TEST_TARGET)
+    monkeypatch.setattr(nightly, "JOB", job)
+    monkeypatch.setattr(nightly, "load_config", lambda p: cfg)
+    monkeypatch.setattr(nightly, "notify", lambda *a, **k: None)
+    monkeypatch.setattr(nightly.shutil, "which", lambda name: "/usr/bin/" + name)
+    monkeypatch.setattr(nightly, "_savetest", lambda *a, **k: ("PASS", "completed"))
+    unlocks = 0
+
+    def fail_outer_release(fh, operation):
+        nonlocal unlocks
+        if operation == fcntl.LOCK_UN:
+            unlocks += 1
+        if unlocks == 2:
+            raise PermissionError("denied")
+
+    monkeypatch.setattr(fcntl, "flock", fail_outer_release)
+    assert nightly.main(["savetest", "--tag", TAG]) == 0
+    log = (job / "LOG.md").read_text()
+    assert log.count("SAVETEST PASS") == 1 and "REFUSED" not in log and "gate=lock" not in log
+    assert (tmp_path / "HANDOFF.md").read_text().count("SAVETEST PASS") == 1
+    err = capsys.readouterr().err
+    assert "cannot release" in err and "existing record is unchanged" in err
+
+
+def test_a_run_lock_release_failure_does_not_replace_run_nights_record(tmp_path, monkeypatch, capsys):
+    job = tmp_path / "job"
+    job.mkdir()
+    cfg = ns.Config(handoff=tmp_path / "HANDOFF.md")
+    monkeypatch.setattr(nightly, "JOB", job)
+    monkeypatch.setattr(nightly, "load_config", lambda p: cfg)
+    monkeypatch.setattr(nightly, "notify", lambda *a, **k: None)
+    monkeypatch.setattr(nightly, "_clients", lambda cfg: (_ for _ in ()).throw(ns.Refused("github-client", "offline")))
+    calls = 0
+
+    def fail_release(*args):
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise PermissionError("denied")
+
+    monkeypatch.setattr(fcntl, "flock", fail_release)
+    assert nightly.main(["run"]) == 1
+    log = (job / "LOG.md").read_text()
+    assert log.count("REFUSED") == 1 and "gate=github-client" in log and "gate=lock" not in log
+    err = capsys.readouterr().err
+    assert "cannot release" in err and "existing record is unchanged" in err

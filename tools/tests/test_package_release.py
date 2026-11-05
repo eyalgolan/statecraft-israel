@@ -6,6 +6,8 @@ import shutil
 import zipfile
 from pathlib import Path
 
+import pytest
+
 import package_release
 
 REPO = Path(package_release.REPO)
@@ -28,7 +30,9 @@ def fake_build(tmp_path, reviewed, photos_reviewed=True, forces_checked=True, al
     alternates_reviewed: TEST-ONLY fictional review of the two #939 copies. No real content file is changed."""
     build = tmp_path / "Web-brotli"
     (build / "StreamingAssets").mkdir(parents=True)
-    (build / "index.html").write_text("<html></html>")
+    (build / "Build").mkdir()
+    (build / "Build/game.loader.js").write_bytes(b"\x00")
+    (build / "index.html").write_text('<script src="Build/game.loader.js"></script>')
     content = build / "StreamingAssets" / "content"
     shutil.copytree(REPO / "content", content)
     status = "sensitivity-reviewed" if reviewed else "fact-checked"   # the owner's sign-off (D11), or its absence
@@ -163,7 +167,7 @@ def hashed_build(tmp_path):
         f'<html><script src="Build/{loader}"></script><script>var config = {{\n  dataUrl: "Build/{data}",\n'
         f'  frameworkUrl: "Build/{framework}",\n  codeUrl: "Build/{code}",\n  streamingAssetsUrl: "StreamingAssets",\n}};'
         "</script></html>")
-    (build / "Build").mkdir()
+    (build / "Build").mkdir(exist_ok=True)
     for name in HASHED:
         (build / "Build" / name).write_bytes(b"\x00")
     return build
@@ -171,7 +175,14 @@ def hashed_build(tmp_path):
 
 def test_the_build_files_are_read_from_index_html(tmp_path):
     assert package_release.build_files(hashed_build(tmp_path)) == sorted(HASHED)
-    assert package_release.build_files(fake_build(tmp_path / "plain", reviewed=True)) == []
+    assert package_release.build_files(fake_build(tmp_path / "plain", reviewed=True)) == ["game.loader.js"]
+
+
+@pytest.mark.parametrize("page", ["<html></html>", "<script src='Build/game.loader.js'></script>"])
+def test_a_build_whose_index_names_no_recognised_build_file_is_refused(tmp_path, capsys, page):
+    build = fake_build(tmp_path, reviewed=True)
+    (build / "index.html").write_text(page)
+    assert "index.html names no Build/ files" in refused(build, tmp_path, capsys)
 
 
 def test_the_zip_carries_the_hashed_files_index_html_names(tmp_path, capsys):
