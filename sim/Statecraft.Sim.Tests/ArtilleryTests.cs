@@ -57,7 +57,8 @@ public class ArtilleryTests
         Assert.Contains(now.Why, w => w.Key == WhyKeys.Engagement);
         Assert.Equal(arms - 3, now.State.Arms);
         Assert.Equal(2, now.State.Units[1].Strength);
-        Assert.Equal((2, 0), now.Attacked[1]);
+        var attack = now.Attacked[1];
+        Assert.Equal((2, 0, 2, "egypt"), (attack.Q, attack.R, attack.Unit, attack.Front));
     }
 
     // R-UNIT-005 (spec 4.6): a gun's front is that of the enemy it attacked this turn, two hexes away, though it borders none.

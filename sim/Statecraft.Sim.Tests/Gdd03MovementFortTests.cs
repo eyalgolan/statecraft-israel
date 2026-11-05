@@ -164,7 +164,7 @@ public class Gdd03MovementFortTests
         Assert.Null(Movement.Move(c, s, 1, 3, 1, spent, why));
         Assert.Equal((3, 1), (s.Units[1].Q, s.Units[1].R));
         Assert.Equal(1, Movement.PointsLeft(c, s, 1, spent));
-        Assert.Null(Combat.Strike(c, s, 1, 5, 1, spent, new Dictionary<int, (int Q, int R)>(), why)); // range 2, shared budget
+        Assert.Null(Combat.Strike(c, s, 1, 5, 1, spent, new Dictionary<int, AttackRecord>(), why)); // range 2, shared budget
         Assert.Equal(0, Movement.PointsLeft(c, s, 1, spent));
         Assert.Equal("That unit has no movement points left this turn", Combat.Check(c, s, 1, 5, 1, spent: spent));
         Assert.Empty(Movement.Reachable(c, s, 1, spent));
@@ -313,7 +313,7 @@ public class Gdd03MovementFortTests
         var before = s.RngState; var rng = new Rng(before); rng.NextDouble();
         Assert.Equal(25, Combat.Preview(c, s, 1, 3, 1)!.Value.RatioPercent);
         var why = new List<Cause>();
-        Assert.Null(Combat.Strike(c, s, 1, 3, 1, new Dictionary<int, int>(), new Dictionary<int, (int Q, int R)>(), why));
+        Assert.Null(Combat.Strike(c, s, 1, 3, 1, new Dictionary<int, int>(), new Dictionary<int, AttackRecord>(), why));
         Assert.Equal(rng.State, s.RngState);
         Assert.Contains(why, line => line.Key == WhyKeys.Engagement && line.Args[1] == "25");
         Assert.True(c.HasPermanentFort(3, 1));
@@ -409,7 +409,7 @@ public class Gdd03MovementFortTests
         var state = With(c, Of("recruit"), Of("enemy", 2, 3, side: "egypt"));
         Assert.Equal(100, Combat.Preview(c, state, 1, 3, 1)!.Value.RatioPercent);
         var before = state.Hash();
-        Assert.NotNull(Combat.Strike(c, state, 1, 5, 1, new Dictionary<int,int>(),new Dictionary<int,(int Q,int R)>(),new List<Cause>()));
+        Assert.NotNull(Combat.Strike(c, state, 1, 5, 1, new Dictionary<int,int>(),new Dictionary<int,AttackRecord>(),new List<Cause>()));
         Assert.Equal(before,state.Hash()); Assert.True(c.HasPermanentFort(2,1));
     }
 
