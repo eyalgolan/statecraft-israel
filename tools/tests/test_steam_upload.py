@@ -119,6 +119,12 @@ def test_null_ids_refuse_by_name():
     assert su.refuse(IDS) is None
 
 
+def test_a_malformed_depots_field_is_not_reported_as_the_owners_missing_step():
+    """#2703 review: a non-object depots value is a broken file, not IDs the owner has yet to fill in."""
+    why = su.refuse({**IDS, "depots": [1, 2, 3]})
+    assert "field depots must be an object" in why and "owner's step" not in why
+
+
 @pytest.mark.parametrize(("config", "field"), [
     ({**IDS, "app_id": False}, "app_id"),
     ({**IDS, "app_id": "1000"}, "app_id"),

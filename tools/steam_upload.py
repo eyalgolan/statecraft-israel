@@ -75,8 +75,13 @@ def refuse(config: dict, record: dict | None = None) -> str | None:
     """Why nothing may be uploaded, or None: valid distinct IDs; with a record, a clean, non-dev Steam build for a
     configured branch whose golden checks that ran on this machine passed."""
     problems = []
-    depots = config.get("depots") if isinstance(config.get("depots"), dict) else {}
-    ids = [("app_id", config.get("app_id")), *((f"depots.{p}", depots.get(p)) for p in PLATFORMS)]
+    raw_depots = config.get("depots")
+    depots = raw_depots if isinstance(raw_depots, dict) else {}
+    ids = [("app_id", config.get("app_id"))]
+    if raw_depots is None or isinstance(raw_depots, dict):
+        ids += [(f"depots.{p}", depots.get(p)) for p in PLATFORMS]
+    else:   # not the owner's missing step: the file itself is malformed
+        problems.append(f"steam/steam.json field depots must be an object of platform IDs, not {raw_depots!r}")
     nulls = [name for name, value in ids if value is None]
     if nulls:
         problems.append("steam/steam.json has no " + ", ".join(nulls) + " yet (the owner's step, #2151)")
