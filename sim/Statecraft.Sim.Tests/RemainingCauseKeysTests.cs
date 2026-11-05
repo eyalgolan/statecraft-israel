@@ -394,8 +394,9 @@ public class RemainingCauseKeysTests
             + (fled ? "Its residents fled. " : "") + "It awaits a decision", captured.Message);
         Assert.Equal("TOWN A: Israeli units withdrew and it is under enemy control again. "
             + (fled ? "Its residents fled when it was captured" : "Its residents are unchanged"), withdrawn.Message);
-        // Release leaves no stayed record; the stored line must still carry the prior resident state.
-        if (!fled) Assert.False(result.State.Settlements.ContainsKey("town_a"));
+        // Release leaves an ownerless lost marker with the residents' state (#2542); the stored line must still carry it.
+        var marker = result.State.Settlements["town_a"];
+        Assert.Equal(("", fled), (marker.Owner, marker.Fled));
         result.State.Settlements.Clear();
         Assert.Equal(fled ? "1" : "0", withdrawn.Args[1]);
     }

@@ -72,24 +72,34 @@ public class AdvisorSignalsTests
         CollectionAssert.Contains(Waiting(game.AdvisorSession!, bridge), "meyerson.debt_ceiling");
     }
 
-    /// <summary>Review (must-fix 3): Submit takes the unsubmitted-budget warning back, shown or waiting, as GameRoot wires the
-    /// Budget screen to the advisor.</summary>
+    /// <summary>Review (must-fix 3): Submit takes the unsubmitted-budget warning back, shown or waiting, through the real
+    /// GameRoot.Begin hookup from the Budget screen to the advisor.</summary>
     [Test]
     public void SubmittingTheBudgetTakesItsWarningBack()
     {
-        var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
-        using var rig = new AdvisorPopupTests.Rig(catalog: System.IO.File.ReadAllText(AdvisorCatalog.Path), text: text);
-        using var budget = new BudgetPresenter(rig.Ui.Root, rig.Bridge, text);
-        budget.UnsubmittedChanged += rig.Advisor.BudgetUnsubmitted;
-        rig.Ui.Press("budget-education_minister-up");
-        Assert.AreEqual("meyerson.budget_unsubmitted", rig.Advisor.Shown?.Id, "an edit not submitted");
-        rig.Ui.Press("budget-submit");
-        Assert.AreNotEqual("meyerson.budget_unsubmitted", rig.Advisor.Shown?.Id, "submitted: no longer true");
-        CollectionAssert.DoesNotContain(Drain(rig), "meyerson.budget_unsubmitted", "nor waiting");
+        var store = new SaveStore(TempDir());
+        store.WriteAutosave(GameSession.New(C, 9, Mode.Historical).Save.Write());
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        var inputs = GameInputs.FromDisk(Paths.Content, Paths.StreamingMap);
+        Object.FindFirstObjectByType<MapScene>().Build(inputs.Map);
+        var game = Object.FindFirstObjectByType<GameRoot>();
+        game.Store = store; game.Settings = new SettingsStore(TempDir()); game.Language = UiLanguage.English;
+        game.Begin(inputs, 0, startScreen: true);
+        Assert.IsTrue(game.AdvisorSession!.AutoShow, "precondition: a player boot offers advisor signals");
+        var ui = Object.FindFirstObjectByType<UIDocument>().rootVisualElement;
+        UiTestKit.Press(ui.Q<Button>("start-continue"));
+        game.Card!.Collapse(takeFocus: false);
+        UiTestKit.Press(ui.Q<Button>("nav-budget"));
+        UiTestKit.Press(ui.Q<Button>("budget-education_minister-up"));
+        Assert.AreEqual("meyerson.budget_unsubmitted", game.Advisor!.Shown?.Id, "an edit not submitted");
+        UiTestKit.Press(ui.Q<Button>("budget-submit"));
+        Assert.AreNotEqual("meyerson.budget_unsubmitted", game.Advisor.Shown?.Id, "submitted: no longer true");
+        CollectionAssert.DoesNotContain(Waiting(game.AdvisorSession, game.Bridge!), "meyerson.budget_unsubmitted", "nor waiting");
     }
 
-    /// <summary>Owner, 1 Nov 2026 (#2110): the budget warning's cause is the unsubmitted edit, not the turn its signal fired.
-    /// Put off with Not now, it survives the next turn while the edit is unsubmitted, and goes once it is submitted.</summary>
+    /// <summary>Agent-recorded scope for #2110 (1 Nov 2026): the budget warning's cause is the unsubmitted edit, not the turn its signal fired.
+    /// Put off with Not now, it survives the next turn while the edit is unsubmitted, and goes once it is submitted. This is
+    /// a presenter-level lifetime test; the fixture injects the subscription covered by SubmittingTheBudgetTakesItsWarningBack.</summary>
     [Test]
     public void APutOffBudgetWarningLastsWhileTheEditIsUnsubmitted()
     {
@@ -109,8 +119,9 @@ public class AdvisorSignalsTests
         Assert.AreEqual(AdvisorQueue.Outcome.Missed, rig.Session.Queue.History.Last(h => h.Id == id).Outcome);
     }
 
-    /// <summary>Owner, 1 Nov 2026 (#2110): the cover path checks the same cause. Covered by a layer, the budget warning
-    /// survives End turn while the edit is unsubmitted, and comes back when the layer closes.</summary>
+    /// <summary>Agent-recorded scope for #2110 (1 Nov 2026): the cover path checks the same cause. Covered by a layer, the budget warning
+    /// survives End turn while the edit is unsubmitted, and comes back when the layer closes. This is a presenter-level
+    /// lifetime test; the fixture injects the subscription covered by SubmittingTheBudgetTakesItsWarningBack.</summary>
     [Test]
     public void ACoveredBudgetWarningLastsWhileTheEditIsUnsubmitted()
     {
@@ -236,9 +247,9 @@ public class AdvisorSignalsTests
             Assert.IsTrue(rig.Session.Catalog.Find(id)!.ApprovedIn(hebrew: true), id);
     }
 
-    /// <summary>Task 18: an unsubmitted budget change (BudgetPresenter.UnsubmittedChanged, wired by GameRoot) is a warning.</summary>
+    /// <summary>Task 18: the budget-unsubmitted advisor signal is classified as a warning.</summary>
     [Test]
-    public void AnUnsubmittedBudgetIsAWarning()
+    public void BudgetUnsubmittedSignalIsWarningLevel()
     {
         var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
         using var rig = new AdvisorPopupTests.Rig(catalog: System.IO.File.ReadAllText(AdvisorCatalog.Path), text: text);

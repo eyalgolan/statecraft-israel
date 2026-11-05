@@ -669,6 +669,74 @@ public class Gdd03BasicTrainingFixtureTests
         l.Reconcile();
     }
 
+    // R-TRAIN-002 (docs/rules/mvp.md): "`CancelTraining(cohort)` returns the cohort's people to its city as civilians without
+    // a job and refunds none of the Money paid"; docs/GDD.md:374 (27M-9): "After a cancellation or camp loss, people go to
+    // their city as civilians without a job"; docs/GDD.md:372: "Money and tools are not refunded and Arms return to the pool".
+    // A camp that stops operating cancels every course at it in one step: both cohorts' records stay in place as civilians
+    // without a job, fixture-issued items go back to the spare Arms, the carried item stays, Money and debt are unchanged, and
+    // another camp's trainee is untouched. The loss is applied by the next Advance of any trainee there, the would-be
+    // graduation turn included, so no one graduates. Maintainer reading (not an owner ruling): the loss cancels before the
+    // month ordinal is checked, as a lost training centre does (R-TRAIN-007).
+    [Fact] public void CampLossCancelsEveryTraineeAtTheCamp()
+    {
+        var c = Catalogue(); var s = State(c); var l = s.PopulationLedger; var camps = Camps();
+        var f = new Gdd03BasicTrainingFixture(c, s, camps, Formations(), 10, 1m);
+        f.Start(new[] { 0, 1 }, CampNorth, 0);
+        f.Start(new[] { 2, 3 }, CampNorth, 0);
+        f.Start(new[] { 5 }, CampSouth, 0);
+        f.Advance(0, 0); f.Advance(0, 1); f.Advance(2, 0);
+        Assert.Equal(2, l.Get(0).Assignment.ProgressTicks);
+        Assert.Equal(6, f.SpareArms); Assert.Equal(0m, f.Money); Assert.Equal(1.5m, f.Debt);
+        int total = f.SpareArms + Issued(s), count = l.Units.Count, next = l.NextPopulationId;
+        var before = new[] { 0, 1, 2, 3 }.Select(l.Get).ToArray();
+
+        camps[0].Operating = false;
+        f.Advance(0, 2);
+
+        foreach (var old in before)
+        {
+            var p = l.Get(old.Id);
+            Assert.Equal(PopulationStatus.FreeCivilian, p.Status);
+            Assert.Equal(PopulationAssignmentKind.Unassigned, p.Assignment.Kind);
+            Assert.Null(p.Assignment.Target); Assert.Equal(0, p.Assignment.ProgressTicks);
+            Assert.Same(old.Location, p.Location); Assert.Equal("", p.Qualification);
+            Assert.Equal(old.Equipment.ToolsId, p.Equipment.ToolsId);
+        }
+        Assert.Null(l.Get(0).Equipment.MilitaryId); Assert.Null(l.Get(1).Equipment.MilitaryId); Assert.Null(l.Get(2).Equipment.MilitaryId);
+        Assert.Equal(Carried, l.Get(3).Equipment.MilitaryId); Assert.True(l.Get(3).Equipment.MilitaryPaid);
+        Assert.Equal(9, f.SpareArms); Assert.Equal(total, f.SpareArms + Issued(s));
+        Assert.Equal(0m, f.Money); Assert.Equal(1.5m, f.Debt);
+        Assert.Equal(PopulationStatus.Trainee, l.Get(5).Status);
+        Assert.Empty(Soldiers(s, FormationNorthA)); Assert.Empty(Soldiers(s, FormationNorthB));
+        Assert.Equal(count, l.Units.Count); Assert.Equal(next, l.NextPopulationId);
+        l.Reconcile();
+
+        Unchanged(s, f, () => f.Advance(1, 2), typeof(ArgumentException));
+        Unchanged(s, f, () => f.Cancel(2), typeof(ArgumentException));
+        Unchanged(s, f, () => f.Start(new[] { 0 }, CampNorth, 2), typeof(ArgumentException));
+        f.Advance(5, 0);
+        Assert.Equal(1, l.Get(5).Assignment.ProgressTicks);
+    }
+
+    // R-TRAIN-002 (docs/rules/mvp.md): "A cohort that does not exist, or has finished, is refused with the state unchanged";
+    // 27M-9 camp loss. Every affected trainee is checked before the first write: when one of them no longer holds the item
+    // this fixture issued (as CancelIsRefusedWhenTheIssuedItemWasReplaced), the camp loss is refused and no trainee, Arms,
+    // Money or debt changes. Maintainer reading (not an owner ruling): the refusal covers the whole camp, not only that record.
+    [Fact] public void CampLossThatCannotReleaseOneTraineeChangesNothing()
+    {
+        var c = Catalogue(); var s = State(c); var l = s.PopulationLedger; var camps = Camps();
+        var f = new Gdd03BasicTrainingFixture(c, s, camps, Formations(), 5, 10m);
+        f.Start(new[] { 0, 1, 3 }, CampNorth, 0);
+        l.Replace(WithMilitary(l.Get(1), "fixture-swapped-item"));
+        camps[0].Operating = false;
+
+        Unchanged(s, f, () => f.Advance(0, 1), typeof(InvalidOperationException));
+
+        foreach (var id in new[] { 0, 1, 3 }) Assert.Equal(PopulationStatus.Trainee, l.Get(id).Status);
+        Assert.Equal(Gdd03BasicTrainingFixture.IssuedPrefix + "0", l.Get(0).Equipment.MilitaryId);
+        Assert.Equal(3, f.SpareArms);
+    }
+
     static void Graduate(Gdd03BasicTrainingFixture f, int id, int enrolment, int turns = 3)
     {
         for (int month = enrolment; month < enrolment + turns; month++) f.Advance(id, month);

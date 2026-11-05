@@ -138,14 +138,18 @@ public class AdvisorOpeningParityTests
         Begin(game, Inputs, 0);                                          // the tests' and tools' Begin: no start screen
         UiTestKit.Press(Ui.Q<Button>("new-game")); UiTestKit.Press(Ui.Q<Button>("new-game"));
         Assert.IsFalse(game.Advisor!.InChain, "an automated run");
+        // #2693: the top bar's New Game writes the new game's autosave (it used to delete the old one), so the start screens
+        // below have a save, and their New Game takes a confirming second press (StartScreenPresenter: a resumed screen goes
+        // through NewGamePresenter.Press), as ANewGameFromASavedStartScreen... presses.
+        Assert.IsNotNull(store.ReadAutosave(), "precondition: the top bar's New Game left an autosave");
         game.Settings = null;                                           // EditMode with no settings file
         Begin(game, Inputs, 0, startScreen: true);
-        UiTestKit.Press(Ui.Q<Button>("start-new-game"));
+        UiTestKit.Press(Ui.Q<Button>("start-new-game")); UiTestKit.Press(Ui.Q<Button>("start-new-game"));
         Assert.IsFalse(game.Advisor!.InChain, "nowhere to remember it: never by itself");
 
         game.Settings = settings;
         Begin(game, Inputs, 0, startScreen: true);
-        UiTestKit.Press(Ui.Q<Button>("start-new-game"));
+        UiTestKit.Press(Ui.Q<Button>("start-new-game")); UiTestKit.Press(Ui.Q<Button>("start-new-game"));
         Assert.IsTrue(game.Advisor!.InChain, "the first new game in this profile");
     }
 
@@ -418,7 +422,7 @@ public class AdvisorOpeningParityTests
         Assert.IsTrue(rig.Advisor.Escape(), "Escape skips it");
         Assert.IsFalse(rig.Advisor.InChain);
         // The guide's "Escape does nothing when closed" cannot be asked again here: Time.frameCount does not move in an
-        // edit-mode test, so Escape keeps answering "used this frame" (AdvisorPopupTests.OneEscapeInThePopupLeavesTheScreenUnderItOpen).
+        // edit-mode test, so Escape keeps answering "used this frame" (AdvisorPopupTests.AnInjectedScreenNavHookLeavesTheScreenUnderThePopupOpen).
         Assert.IsFalse(rig.Ui.Root.Q("root").ClassListContains(AdvisorPresenter.OpenClass), "and it stays closed");
 
         rig.Card.Collapse();                                           // the player hid the card before opening the advisor

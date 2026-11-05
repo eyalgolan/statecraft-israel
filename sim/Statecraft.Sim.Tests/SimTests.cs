@@ -113,6 +113,7 @@ options:
     effects:
       - target: fx_reserves
         delta: -10
+sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
 ";
 
     const string Raid = @"
@@ -132,6 +133,7 @@ options:
     effects:
       - target: morale
         delta: 0.05
+sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
 ";
 
     static Content WithEvents() =>
@@ -313,6 +315,7 @@ options:
   - id: push_on
     text: Push on
     alternative: { basis: design }
+sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
 ";
 
     [Fact]
@@ -348,6 +351,7 @@ from: 1948-05-22
 options:
   - id: ok
     text: Fine
+sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
 ";
 
     [Fact]
