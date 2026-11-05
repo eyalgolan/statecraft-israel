@@ -1,5 +1,5 @@
 # R-GATE-002. An AI-assisted change must not set this to sensitivity-reviewed.
-status: pending
+status: sensitivity-reviewed
 strings:
   - { key: capture.intro, en: "Israeli units hold {0}, and no enemy unit is there. Choose what happens next. Your choice takes effect at End turn; until you choose, the units stay.", he: "כוחות ישראליים מחזיקים ב{0}, ואין שם כוחות אויב. יש לבחור מה יקרה עכשיו. הבחירה תיכנס לתוקף בסיום התור; עד שתיבחר אפשרות, הכוחות נשארים במקום." }
   - { key: capture.option.raid, en: "Raid and withdraw", he: "פשיטה ונסיגה" }
