@@ -73,15 +73,19 @@ public class QualityFallbackTests
     }
 
     /// <summary>The towns' far-copy step is undone first as frames recover: after RecoverWindows windows under RecoverMs the
-    /// level steps back to the tilt-shift step, with the town originals back.</summary>
+    /// level steps back to the tilt-shift step, with the town originals back. Whole windows (Windows, as
+    /// ItRecoversInReverseOnlyAfterSustainedComfortableFrames): a time-based run of slow frames would leave a part-window of
+    /// them that spoils the first good window.</summary>
     [Test]
     public void FramesThatRecoverStepOffTheTownsFarStepFirst()
     {
         var q = Started();
-        Run(q, Slow, 60f);
-        Assert.AreEqual(QualityFallback.Steps.Count - 1, q.Level);
-        var levels = Windows(q, Fine, QualityFallback.RecoverWindows);
-        CollectionAssert.AreEqual(new[] { QualityFallback.Steps.Count - 2 }, levels, "one step up after RecoverWindows good windows");
+        int last = QualityFallback.Steps.Count - 1;
+        CollectionAssert.AreEqual(Enumerable.Range(1, last).ToArray(), Windows(q, Slow, last), "one step per slow window, to the last");
+        Assert.IsTrue(q.Current.TownModelsFar);
+        int n = QualityFallback.RecoverWindows;
+        Assert.IsEmpty(Windows(q, Fine, n - 1), "two good windows are not enough");
+        CollectionAssert.AreEqual(new[] { last - 1 }, Windows(q, Fine, 1), "the third one steps up");
         Assert.IsFalse(q.Current.TownModelsFar, "the town originals are back");
         Assert.IsFalse(q.Current.TiltShift, "the tilt-shift step is next");
     }
