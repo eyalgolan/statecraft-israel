@@ -12,6 +12,18 @@ namespace Statecraft.Sim
             foreach (var i in v.Indicators) { s.Indicators[i.Id] = i.Base; s.IndicatorShifts[i.Id] = 0.0; }
             foreach (var p in v.Policies) s.Policies[p.Id] = p.Default;
             foreach (var e in v.Effects) s.EffectContributions[e.Id] = 0;
+            if (c.Ruleset == SaveGame.Gdd03Ruleset)
+            {
+                var opening = Gdd03OpeningIndicators.Read(c);
+                // R-NAT-001/003, Q17: preserve the base and carry the opening through the permanent shift layer.
+                foreach (var i in v.Indicators)
+                {
+                    if (i.Id != "morale" && i.Id != SettlementControl.SupportIndicator) continue;
+                    var level = i.Id == "morale" ? opening.Cohesion : opening.Support;
+                    s.IndicatorShifts[i.Id] = level - i.Base;
+                    s.Indicators[i.Id] = level;
+                }
+            }
         }
 
         /// <summary>The GDD systems a minister's office scales (R-MIN-001; D-H3, Q-MIN-1): the keys of

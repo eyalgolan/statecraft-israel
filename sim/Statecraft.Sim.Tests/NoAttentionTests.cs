@@ -26,6 +26,7 @@ public class NoAttentionTests
     {
         var c = kind is "resolve_capture" or "end_occupation"
             ? CaptureTests.Load(files=>Select(files,modern),CaptureTests.AllTargets) : Load(modern);
+        Fixture.UseModelOpening(c); // Compare Attention rules from identical opening conditions.
         var s=Simulation.NewGame(c,1,Mode.Historical); s.Attention=500; s.NextId=1000;
         Command valid=CommandGuardTests.Samples.Values.Single(x=>x.Kind==kind), invalid=valid;
         switch(kind)

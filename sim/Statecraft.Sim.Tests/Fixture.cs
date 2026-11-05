@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Statecraft.Sim;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 
@@ -390,6 +391,20 @@ sites:
       - { url: ""https://example.org/site_a"", checked: 2026-10-14 }
     status: fact-checked
 ";
+
+    /// <summary>Opt-in equal starting conditions for tests comparing other rules across gdd-0.1 and gdd-0.3.
+    /// Changes only this fixture's catalogue; the dedicated opening tests keep the real 65/60 values.</summary>
+    public static void UseModelOpening(Content c)
+    {
+        if (c.Ruleset != SaveGame.Gdd03Ruleset) return;
+        var catalogue = c.Gdd03Balance!;
+        var maximum = catalogue.Values["indicator.display_max"].Values.Single();
+        foreach (var i in c.Indicators)
+        {
+            var key = i.Id == "morale" ? "start.cohesion" : i.Id == "intl_standing" ? "start.support" : null;
+            if (key != null) catalogue.Values[key].Values = new() { (decimal)i.Base * maximum };
+        }
+    }
 
     // Every Write goes under one root per test run, which FixtureCleanupFramework deletes when the run ends.
     // One folder per call (~1,150 per `dotnet test` run) used to stay behind (#1017).
