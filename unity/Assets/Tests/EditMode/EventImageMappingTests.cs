@@ -64,10 +64,36 @@ public class EventImageMappingTests
         Bad(r => r.Credit = "Meitar Collection · CC BY 4.0 · graded and cropped", "does not name the artist");
         Bad(r => r.Credit = "Benno Rothenberg · graded and cropped", "does not name the licence");
         Bad(r => r.Alt = "", "alt text");
+        var cleared = Good(); cleared.AltHe = "תיאור בעברית";
+        CollectionAssert.IsEmpty(EventImageMapping.Problems(new[] { cleared }, C), "a reviewed Hebrew alt keeps no marker");
+        Bad(r => r.AltHeReview = "agent-checked", "requires alt_he");
+        Bad(r => { r.AltHe = "תיאור בעברית"; r.AltHeReview = "pending"; }, "must be agent-checked");
+        Bad(r => { r.AltHe = "תיאור בעברית"; r.AltHeReview = "   "; }, "must be agent-checked");
         Bad(r => r.Event = "no_such_event", "no such event");
         Bad(r => { r.Event = "altalena"; r.File = "altalena.jpg"; }, "must be sensitive: true");   // tagged war-casualties
         var twice = EventImageMapping.Problems(new[] { Good(), Good() }, C);
         Assert.IsTrue(twice.Any(p => p.Contains("more than one row")));
+    }
+
+    [Test]
+    public void ParseEnforcesTheHebrewReviewLifecycle()
+    {
+        const string cleared = "images:\n  - event: example\n    alt_he: תיאור בעברית\n";
+        Assert.DoesNotThrow(() => EventImageMapping.Parse(cleared));
+        Assert.Throws<InvalidOperationException>(() => EventImageMapping.Parse(
+            "images:\n  - event: example\n    alt_he_review: agent-checked\n"));
+        Assert.Throws<InvalidOperationException>(() => EventImageMapping.Parse(
+            "images:\n  - event: example\n    alt_he: תיאור בעברית\n    alt_he_review: pending\n"));
+    }
+
+    [TestCase("")]
+    [TestCase("\"\"")]
+    [TestCase("'   '")]
+    public void ParseRefusesAPresentBlankHebrewReview(string blank)
+    {
+        var error = Assert.Throws<InvalidOperationException>(() => EventImageMapping.Parse(
+            "images:\n  - event: example\n    alt_he: תיאור בעברית\n    alt_he_review: " + blank + "\n"));
+        StringAssert.Contains("alt_he_review must be agent-checked", error!.Message);
     }
 
     /// <summary>The pictures live outside content/ and nothing in content/ names them, so the content hash, the goldens and
@@ -117,6 +143,9 @@ public class EventImageMappingTests
             Assert.AreEqual(r.Event, e.eventId);
             Assert.AreEqual($"{EventImageMapping.Folder}/{r.File}", AssetDatabase.GetAssetPath(e.image), r.Event);
             Assert.AreEqual(r.Alt, e.alt, r.Event);
+            Assert.IsNotEmpty(r.AltHe, r.Event + ": shipped Hebrew alt");
+            Assert.AreEqual("agent-checked", r.AltHeReview, r.Event);
+            Assert.AreEqual(r.AltHe, e.altHe, r.Event);
             Assert.AreEqual(r.Credit, e.credit, r.Event);
             Assert.AreEqual(r.Sensitive, e.sensitive, r.Event);
             Assert.AreEqual(r.SensitivityReviewed, e.sensitivityReviewed, r.Event);

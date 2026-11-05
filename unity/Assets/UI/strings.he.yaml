@@ -229,10 +229,16 @@ community.star: "סימון בכוכב בגיטהאב"
 # Hebrew letters, as the static texts carry no Latin (HebrewUiTests). Approved by Beri, a native speaker, on #1179
 # (20 Oct 2026). For the native reviewer (#564).
 feedback.open: "דיווח על באג או רעיון"
-feedback.intro: "הטופס נפתח עם השורות האלה כבר ממולאות. שום דבר לא נשלח לפני השליחה בגיטהאב."
+feedback.intro: "התצוגה המקדימה מציגה את השדות שימולאו. כותרת הבעיה בגיטהאב נשארת באנגלית. שום דבר לא נשלח לפני השליחה בגיטהאב."
 feedback.bug: "דיווח על באג"
 feedback.feature: "הצעה לתכונה חדשה"
 feedback.itch: "אין חשבון בגיטהאב? תגובה בדף המשחק באיץ׳"
+# Agent-drafted for #2630; native review pending under #564.
+feedback.preview.title: "כותרת"
+feedback.preview.version: "גרסה"
+feedback.preview.env: "סביבה"
+feedback.preview.bug_title: "באג: "
+feedback.preview.feature_title: "רעיון: "
 # "Share" (#1170, SharePresenter): the button and the panel's title ("sharing a picture from the game"), the post, Share,
 # "downloading the picture", and the note ("these sites do not take a picture through a link: the downloaded picture is
 # to be attached to the post"). The post opens with a noun phrase ("running the State of Israel in 1948 in the game
