@@ -18,9 +18,9 @@ public class UnitAttackPresenterTests
     static UiText Text => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
     static GameSession NewSession() => GameSession.New(C, GoldenRun.Seed, Mode.Historical);
 
-    static Cause Line(string key, string attackers) => new Cause("map", "9,9", 0, "Report text is never read",
+    static Cause Line(string key, string attackers, string defenderLoss = "0") => new Cause("map", "9,9", 0, "Report text is never read",
         key: key, units: new[] { new UnitRef(new Unit(71, "infantry", 0, 0)), new UnitRef(new Unit(72, "guns", 0, 0)),
-            new UnitRef(new Unit(73, "infantry", 0, 0)) }, args: new[] { "9,9", "150", "0", "0", attackers });
+            new UnitRef(new Unit(73, "infantry", 0, 0)) }, args: new[] { "9,9", "150", "0", defenderLoss, attackers });
 
     /// <summary>The first player unit's attack on an enemy next to it at the start of the game.</summary>
     static UnitOrder AttackNextTo(GameSession session, out int attacker)
@@ -57,6 +57,47 @@ public class UnitAttackPresenterTests
     public void OnlyAnEngagementPlays()
     {
         Assert.IsEmpty(UnitAttackPresenter.Attackers(Line(WhyKeys.AttackOrdered, "2")));
+    }
+
+    /// <summary>The production presenter path gives every attacker one shared defender cue. It reacts with the first fire
+    /// take that really starts, or, if none starts, only when the last attack has finished waiting.</summary>
+    [TestCase(true)]
+    [TestCase(false)]
+    public void SeveralAttackersShareOneTimedDefenderReaction(bool aTakeStarts)
+    {
+        var engagement = Line(WhyKeys.Engagement, "3", defenderLoss: "2");
+        var bridge = new SimBridge(NewSession(), Text,
+            (session, orders) => new StepResult(session.State, session.Now.Why.Append(engagement).ToArray(), Array.Empty<Rejection>()));
+        var immediate = new List<int>();
+        var cues = new Dictionary<int, (Action Started, Action Missed)>();
+        var reactions = new List<Statecraft.Game.Map.Units.CombatHit>();
+        using var presenter = new UnitAttackPresenter(bridge,
+            id => { immediate.Add(id); return true; }, _ => true, _ => true,
+            hit => { reactions.Add(hit); return true; },
+            (id, started, missed) => { cues.Add(id, (started, missed)); return true; });
+
+        bridge.EndTurn();
+        CollectionAssert.AreEquivalent(new[] { 71, 72, 73 }, cues.Keys);
+        Assert.IsEmpty(immediate, "positive loss uses the production timed attack path");
+        Assert.IsEmpty(reactions, "the reaction waits for an actual fire take or for every miss");
+
+        cues[71].Missed();
+        Assert.IsEmpty(reactions, "the first miss is not the fallback while attackers remain");
+        if (aTakeStarts)
+        {
+            cues[72].Started();
+            Assert.AreEqual(1, reactions.Count, "the first actual fire take starts the shared reaction");
+            cues[73].Started();
+            Assert.AreEqual(1, reactions.Count, "another actual fire take does not repeat the shared reaction");
+        }
+        else
+        {
+            cues[72].Missed();
+            Assert.IsEmpty(reactions, "the next-to-last miss is still not the fallback");
+            cues[73].Missed();
+            Assert.AreEqual(1, reactions.Count, "only the last miss starts the fallback reaction");
+        }
+        Assert.AreEqual(2, reactions[0].DefenderLoss);
     }
 
     /// <summary>An attack order plays at once, after the map is redrawn for it; End Turn runs it again inside the sim (its

@@ -135,6 +135,7 @@ public class CombatEffectsTests
     {
         var c = Bursts(out _);
         c.Hit(Vector3.zero, guns: true, smallArms: true);
+        Assert.IsTrue(c.March(new Vector3(300f, 0f, -200f)));
         List<object> Drawn()
         {
             var s = new List<object>();
@@ -146,9 +147,11 @@ public class CombatEffectsTests
                 }
             return s;
         }
-        c.Sample(now + 0.7);
+        c.Sample(now + 0.4);
+        Assert.AreEqual(1, c.MoveDust!.Busy, "fixture: movement dust is active in the snapshot");
+        Assert.AreEqual(1, Shown(c.MoveDust), "fixture: the movement puff is drawn, not merely reserved");
         var a = Drawn();
-        c.Sample(now + 0.4); c.Sample(now + 0.7);
+        c.Sample(now + 0.2); c.Sample(now + 0.4);
         CollectionAssert.AreEqual(a, Drawn());
     }
 
