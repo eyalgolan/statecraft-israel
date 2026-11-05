@@ -145,6 +145,7 @@ namespace Statecraft.Sim
             {
                 var x = o.UnitOrders[i];
                 var at = F(FormattableString.Invariant($"options[{o.Id}].unit_orders[{i}]"));
+                if (x.Unit.Trim() == "") throw new ContentException(e.File, at + ".unit", "required");
                 if (!x.QGiven) throw new ContentException(e.File, at + ".q", "required");
                 if (!x.RGiven) throw new ContentException(e.File, at + ".r", "required");
             }

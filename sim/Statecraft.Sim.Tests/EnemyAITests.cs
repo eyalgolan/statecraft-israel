@@ -533,6 +533,13 @@ public class EnemyAITests
         var legacyMissingQ = Assert.Throws<ContentException>(() => ContentLoader.Load(
             Fixture.Write(null, new() { ["probe.yaml"] = Card("{ unit: brig, r: 0 }") })));
         Assert.Equal("events[probe].options[ok].unit_orders[0].q", legacyMissingQ.Field);
+        // R-ENEMY-005: every order names a unit row, in every ruleset (the schema requires unit, q and r).
+        var missingUnit = Refused(Files(), "{ q: 4, r: 0 }");
+        Assert.Equal("events[probe].options[ok].unit_orders[0].unit", missingUnit.Field);
+        Assert.EndsWith(": required", missingUnit.Message);
+        var legacyMissingUnit = Assert.Throws<ContentException>(() => ContentLoader.Load(
+            Fixture.Write(null, new() { ["probe.yaml"] = Card("{ q: 4, r: 0 }") })));
+        Assert.Equal("events[probe].options[ok].unit_orders[0].unit", legacyMissingUnit.Field);
         // The legacy loop reads the shared cards too: the order does not stop it loading, and it has no units to order.
         Assert.Empty(ContentLoader.Load(Fixture.Write(null, new() { ["probe.yaml"] = Card("{ unit: brig, q: 4, r: 0 }") })).StartingForces);
 
