@@ -1058,7 +1058,14 @@ namespace Statecraft.Sim
         public List<Source> Sources { get; set; } = new List<Source>();
     }
 
-    public sealed class OptionEffect { public string Target { get; set; } = ""; public double Delta { get; set; } }
+    public sealed class OptionEffect
+    {
+        // Nullable behind the double so EventRules can refuse a delta the file left out instead of reading it as 0 (#2512).
+        double? delta;
+        public string Target { get; set; } = "";
+        public double Delta { get => delta ?? 0; set => delta = value; }
+        internal bool HasDelta => delta.HasValue;
+    }
 
     public sealed class EventOption
     {
