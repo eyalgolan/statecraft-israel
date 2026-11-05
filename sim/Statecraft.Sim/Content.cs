@@ -206,9 +206,15 @@ namespace Statecraft.Sim
 
     public sealed class Portrait
     {
-        public string File { get; set; } = ""; public string License { get; set; } = ""; public string Source { get; set; } = "";
+        public string File { get => file ?? ""; set => file = value; }
+        public string License { get => license ?? ""; set => license = value; }
+        public string Source { get => source ?? ""; set => source = value; }
+        [YamlIgnore] public bool FileGiven => file != null;
+        [YamlIgnore] public bool LicenseGiven => license != null;
+        [YamlIgnore] public bool SourceGiven => source != null;
+        string? file, license, source;
         /// <summary>Where the face is: its centre's height as a share of the picture (0 = top, 1 = bottom), so the event card
-        /// can keep it in view (playtest 2, P2-5). Required for a portrait with a file.</summary>
+        /// can keep it in view (playtest 2, P2-5). Required whenever a portrait object is present.</summary>
         public double? FocusY { get; set; }
     }
 
@@ -1111,8 +1117,11 @@ namespace Statecraft.Sim
     public sealed class UnitOrderEffect
     {
         public string Unit { get; set; } = "";
-        public int Q { get; set; }
-        public int R { get; set; }
+        public int Q { get => q ?? 0; set => q = value; }
+        public int R { get => r ?? 0; set => r = value; }
+        [YamlIgnore] public bool QGiven => q.HasValue;
+        [YamlIgnore] public bool RGiven => r.HasValue;
+        int? q, r;
     }
 
     /// <summary>An option's change to one field of a city (R-EFX-004): housing_capacity or job_slots by whole units, or the

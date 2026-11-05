@@ -18,7 +18,7 @@ public class ReleaseGateTests
     {
         var files = Fixture.Write(events: new Dictionary<string, string>
         {
-            ["displacement.yaml"] = "id: displacement\ntitle: A decision\ntext: A decision is required.\nfrom: 1948-06-01\ntags: [displacement]\noptions:\n  - id: continue\n    text: Continue\nstatus: fact-checked\n",
+            ["displacement.yaml"] = "id: displacement\ntitle: A decision\ntext: A decision is required.\nfrom: 1948-06-01\ntags: [displacement]\noptions:\n  - id: continue\n    text: Continue\nsources: [{ url: \"https://example.org/event\", checked: 2026-10-18 }]\nstatus: fact-checked\n",
         });
 
         Assert.Equal(new[] { "displacement" }, ReleaseGate.SensitiveUnreviewed(ContentLoader.Load(files)));

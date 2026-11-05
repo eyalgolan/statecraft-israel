@@ -65,7 +65,7 @@ public class EventRulesGddTests
     static string Soft(string id, string from, string? to = null) =>
         $"id: {id}\ntitle: '{id}'\ntext: Something happens.\nfrom: {from}\n" +
         (to == null ? "" : $"to: {to}\n") +
-        "options:\n  - id: ok\n    text: Accept\n    historical: true\n";
+        "options:\n  - id: ok\n    text: Accept\n    historical: true\nsources: [{ url: \"https://example.org/event\", checked: 2026-10-18 }]\n";
 
     // R-EVT-001 (#2605): red before the fix because d's finite window has closed by the second Trigger, so it is lost.
     // Trigger is the shared path: the same wait and once-only result holds for legacy, gdd-0.1 and gdd-0.3 identities.
@@ -279,6 +279,7 @@ options:
     set_policy:
       rationing: 0.4
     set_rung: 3
+sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
 ";
 
     static Content ChoiceContent(string anchor) =>

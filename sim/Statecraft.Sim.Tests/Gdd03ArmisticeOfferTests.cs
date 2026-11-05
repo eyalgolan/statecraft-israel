@@ -20,6 +20,7 @@ office: prime_minister
 anchor: hard
 front_quiet: {front}
 from: {from}
+sources: [{{ url: https://example.org/event, checked: 2026-10-18 }}]
 options:
   - id: sign
     text: Sign the armistice
@@ -35,6 +36,7 @@ title: Parent
 text: 'A real decision.'
 from: 1948-12-01
 to: 1948-12-11
+sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
 options:
   - id: record
     text: What happened
@@ -56,6 +58,7 @@ text: 'What the record says was feared.'
 from: 1948-12-11
 to: 1949-02-01
 requires: [{ event: parent, option: road }]
+sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
 options:
   - id: hold
     text: Hold the course
@@ -67,7 +70,7 @@ options:
 ";
 
     // An ordinary soft event whose `from` is earlier than every armistice's, so ordering by `from` alone would put it first.
-    static string Soft(string id) => $"id: {id}\ntitle: {id}\ntext: 'Ordinary.'\nfrom: 1948-12-01\nto: 1949-02-01\noptions:\n  - id: ok\n    text: Ok\n";
+    static string Soft(string id) => $"id: {id}\ntitle: {id}\ntext: 'Ordinary.'\nfrom: 1948-12-01\nto: 1949-02-01\nsources: [{{ url: \"https://example.org/event\", checked: 2026-10-18 }}]\noptions:\n  - id: ok\n    text: Ok\n";
 
     static Content Load(string ruleset = SaveGame.Gdd03Ruleset, string jordanFrom = "1950-01-01", bool others = true)
     {

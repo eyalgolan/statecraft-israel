@@ -29,6 +29,7 @@ options:
   - id: hold_out
     text: Refuse and keep fighting
     alternative: { basis: design }
+sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
 ";
 
     static Content Load(string ruleset = SaveGame.Gdd03Ruleset)
