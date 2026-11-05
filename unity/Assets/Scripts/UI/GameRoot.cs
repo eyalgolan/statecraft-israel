@@ -310,12 +310,7 @@ namespace Statecraft.Game.UI
             var toast = Own(new ToastPresenter(root, bridge, text));
             savePersistenceResult = result =>
             {
-                if (result == "fail delete")
-                {
-                    toast.Show(text["newgame.delete_failed"]);
-                    Debug.Log("SAVE FAILURE SHOWN newgame.delete_failed");
-                }
-                else if (result.StartsWith("fail save ", StringComparison.Ordinal))
+                if (result.StartsWith("fail save ", StringComparison.Ordinal))
                 {
                     toast.Append(text["save.write_failed"]);
                     Debug.Log("SAVE FAILURE SHOWN save.write_failed");
@@ -491,8 +486,8 @@ namespace Statecraft.Game.UI
                 unitDone: FocusNextUnit, showRoute: map.ShowRoute, showArrow: map.ShowMoveArrow, selectPioneer: FocusPioneer, clearSelection: () => { unitLayer.Select(null); map.ClearSelection(); }));
             toast.Units = unitData; toast.TownNamesHe = townNamesHe; why.TownNamesHe = townNamesHe; bridge.TownNamesHe = townNamesHe;
             report.TownNamesHe = townNamesHe; hudPresenter.TownNamesHe = townNamesHe;
-            // A smoke session never touches the player's save: no autosave, and no New Game (which deletes the autosave).
-            // Leaving New Game out is safer than handing it a throwaway store: no file is ever deleted, no path has to be
+            // A smoke session never touches the player's save: no autosave, and no New Game (which writes the autosave).
+            // Leaving New Game out is safer than handing it a throwaway store: no file is ever written, no path has to be
             // right on every platform, and the scripted run never presses it.
             NewGamePresenter? newGame = null;
             if (smoke == 0)

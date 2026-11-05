@@ -333,7 +333,9 @@ public class StartScreenTests
         rig.Ui.Press("start-new-game");
         Assert.IsFalse(rig.Start.IsOpen);
         Assert.AreEqual(0, rig.Bridge.State.Turn, "a new game");
-        Assert.IsFalse(File.Exists(store.AutosavePath), "the abandoned save is gone");
+        Assert.IsTrue(File.Exists(store.AutosavePath), "the replacement game is saved immediately");
+        var resumed = GameStart.Begin(C, store, () => 1UL, new List<string>(), Text);
+        Assert.AreEqual(rig.Bridge.State.Hash(), resumed.State.Hash());
         Assert.IsFalse(rig.Start.Resumed);
     }
 

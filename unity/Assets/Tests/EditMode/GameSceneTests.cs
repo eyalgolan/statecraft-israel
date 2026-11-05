@@ -677,7 +677,7 @@ public class GameSceneTests
 
     [TestCase(false)]
     [TestCase(true)]
-    public void WebPersistenceFailuresUseTheCurrentLanguagesExistingToasts(bool hebrew)
+    public void WebSavePersistenceFailuresUseTheCurrentLanguagesExistingToast(bool hebrew)
     {
         var language = hebrew ? UiLanguage.Hebrew : UiLanguage.English;
         var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(hebrew ? UiPaths.StringsHebrew : UiPaths.Strings).text,
@@ -687,10 +687,6 @@ public class GameSceneTests
         root.OnSavePersistenceResult("fail save 1 1948-06-15 turn 1 hash aa");
         Assert.AreEqual(text["save.write_failed"], Ui.Q<Label>("toast").text);
         Assert.AreEqual(DisplayStyle.Flex, Ui.Q("toast").style.display.value);
-
-        root.OnSavePersistenceResult("fail delete");
-        Assert.AreEqual(text["newgame.delete_failed"], Ui.Q<Label>("toast").text);
-        Assert.AreEqual(DisplayStyle.Flex, Ui.Q("toast").style.display.value);
     }
 
     [Test]
@@ -698,7 +694,6 @@ public class GameSceneTests
     {
         var root = Boot();
         root.OnSavePersistenceResult("ok save 1 1948-06-15 turn 1 hash aa");
-        root.OnSavePersistenceResult("ok delete");
         Assert.AreEqual("", Ui.Q<Label>("toast").text);
         Assert.AreEqual(DisplayStyle.None, Ui.Q("toast").style.display.value);
     }

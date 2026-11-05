@@ -60,45 +60,44 @@ namespace Statecraft.Game.UI
             return GameSession.New(c, newSeed(), Mode.Historical);
         }
 
-        /// <summary>Writes the save after every committed order and every turn. A write that fails (a full or read-only disk) never stops the game:
-        /// the reason goes to <paramref name="onError"/>. On WebGL <paramref name="persistenceTarget"/> receives the
-        /// asynchronous IndexedDB result. Dispose the result to stop autosaving.</summary>
+        /// <summary>Writes <paramref name="session"/> through the complete autosave path. A failure never stops play: the
+        /// reason goes to <paramref name="onError"/> and false is returned. On WebGL <paramref name="persistenceTarget"/>
+        /// receives the asynchronous IndexedDB result.</summary>
+        internal static bool WriteAutosave(GameSession session, SaveStore store, UiText text, Action<string>? onError = null,
+            string? persistenceTarget = null)
+        {
+            try
+            {
+                store.WriteAutosave(session.Save.Write());
+                // Capture this save, not a bridge whose session may be replaced before an asynchronous commit completes.
+                var state = session.State;
+                var generation = System.Threading.Interlocked.Increment(ref saveGeneration);
+                var receipt = FormattableString.Invariant($"{generation} {state.Date:yyyy-MM-dd} turn {state.Turn} hash {state.Hash()}");
+                UnityEngine.Debug.Log("AUTOSAVE PENDING " + receipt);
+#if UNITY_WEBGL && !UNITY_EDITOR
+                StatecraftPersistAutosave("save " + receipt, persistenceTarget ?? "");
+#else
+                UnityEngine.Debug.Log("AUTOSAVE OK " + receipt);
+#endif
+                return true;
+            }
+            catch (Exception e)
+            {
+                UnityEngine.Debug.LogWarning("Autosave could not be written: " + e);
+                onError?.Invoke(text["save.write_failed"]);
+                return false;
+            }
+        }
+
+        /// <summary>Writes the save after every committed order and every turn. Dispose the result to stop autosaving.</summary>
         public static IDisposable Autosave(SimBridge bridge, SaveStore store, UiText text, Action<string>? onError = null,
             string? persistenceTarget = null)
         {
-            void Save(IReadOnlyList<Rejection> _)
-            {
-                try
-                {
-                    store.WriteAutosave(bridge.Session.Save.Write());
-                    // Capture this save, not the mutable session at an asynchronous commit's completion.
-                    var state = bridge.TurnStart;
-                    var generation = System.Threading.Interlocked.Increment(ref saveGeneration);
-                    var receipt = FormattableString.Invariant($"{generation} {state.Date:yyyy-MM-dd} turn {state.Turn} hash {state.Hash()}");
-                    UnityEngine.Debug.Log("AUTOSAVE PENDING " + receipt);
-#if UNITY_WEBGL && !UNITY_EDITOR
-                    StatecraftPersistAutosave("save " + receipt, persistenceTarget ?? "");
-#else
-                    UnityEngine.Debug.Log("AUTOSAVE OK " + receipt);
-#endif
-                }
-                catch (Exception e)
-                {
-                    UnityEngine.Debug.LogWarning("Autosave could not be written: " + e);
-                    onError?.Invoke(text["save.write_failed"]);
-                }
-            }
+            void Save(IReadOnlyList<Rejection> _) => WriteAutosave(bridge.Session, store, text, onError, persistenceTarget);
             Action<IReadOnlyList<Cause>> onCommit = _ => Save(Array.Empty<Rejection>());
             bridge.Committed += onCommit;
             bridge.TurnEnded += Save;
             return new Unsubscribe(() => { bridge.Committed -= onCommit; bridge.TurnEnded -= Save; });
-        }
-
-        internal static void PersistDelete(string? persistenceTarget)
-        {
-#if UNITY_WEBGL && !UNITY_EDITOR
-            StatecraftPersistAutosave("delete", persistenceTarget ?? "");
-#endif
         }
 
 #if UNITY_WEBGL && !UNITY_EDITOR

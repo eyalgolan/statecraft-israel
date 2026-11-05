@@ -5,9 +5,8 @@ using UnityEngine.UIElements;
 
 namespace Statecraft.Game.UI
 {
-    /// <summary>New Game asks for a second press (no browser confirm dialogs in WebGL), then deletes the autosave and
-    /// starts a new Historical game. WebGL also reports the asynchronous IndexedDB deletion result. Ending a turn in between
-    /// cancels the request. The start screen's New Game goes through
+    /// <summary>New Game asks for a second press (no browser confirm dialogs in WebGL), then starts and immediately saves a
+    /// new Historical game. Ending a turn in between cancels the request. The start screen's New Game goes through
     /// the same two presses (Press), so neither button can wipe the save with one stray press (#175, B6).</summary>
     public sealed class NewGamePresenter : IDisposable
     {
@@ -52,16 +51,9 @@ namespace Statecraft.Game.UI
         {
             if (!Armed) { Armed = true; toast.Show(text["newgame.confirm"]); return; }
             Armed = false;
-            bool deleted = true;
-            // An old autosave that cannot be deleted is overwritten by the next turn's autosave anyway, so the new game still starts.
-            try
-            {
-                store.DeleteAutosave();
-                GameStart.PersistDelete(persistenceTarget);
-            }
-            catch (Exception e) { deleted = false; UnityEngine.Debug.LogWarning("Autosave could not be deleted: " + e); }
-            bridge.Replace(GameSession.New(bridge.Content, seed(), Mode.Historical));
-            if (deleted) toast.Clear(); else toast.Show(text["newgame.delete_failed"]);
+            var fresh = GameSession.New(bridge.Content, seed(), Mode.Historical);
+            bridge.Replace(fresh);
+            if (GameStart.WriteAutosave(fresh, store, text, toast.Show, persistenceTarget)) toast.Clear();
             Started?.Invoke();
         }
     }
