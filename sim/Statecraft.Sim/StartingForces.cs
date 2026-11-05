@@ -24,11 +24,9 @@ namespace Statecraft.Sim
         /// <summary>R-UNIT-009 (#1241): the day a row dated after the start arrives (its strength's as_of), or null for a row
         /// that starts the game. Its unit's id is reserved at the start and the resolver adds it on that day's turn.</summary>
         public DateTime? Arrives { get; set; }
-        /// <summary>The hex of the row's 11 June 1948 anchor that the enemy AI marches on (R-ENEMY-002; Q-ENEMY-1), or null
-        /// when the row has none on two sources.</summary>
-        public (int Q, int R)? Script { get; set; }
-        /// <summary>The end of that anchor's window (its `to`): from a turn starting on it the unit follows the goals.</summary>
-        public DateTime ScriptUntil { get; set; }
+        /// <summary>The enemy AI's script (R-ENEMY-002; Q-ENEMY-1; #1270): the hex and window end (`to`) of each of the row's
+        /// anchors from 11 June 1948 on two sources, in the file's order. Empty when the row has none.</summary>
+        public List<(int Q, int R, DateTime Until)> Script { get; } = new List<(int Q, int R, DateTime Until)>();
     }
 
     /// <summary>The sourced starting forces, both sides (GDD Phase 5 PR 4; docs/rules/mvp.md R-UNIT-006, R-UNIT-007).
@@ -87,6 +85,8 @@ namespace Statecraft.Sim
                 if (people < 0 || people != decimal.Truncate(people)) throw new ContentException(FileName, $"{at}.strength.value", "must be a whole number >= 0");
                 var units = Cities.StartUnits(people, ppu);   // the nearest unit, a half up, at least 1 for a force with people
                 if (units == 0) continue;                     // a strength of nobody starts nothing
+                if (asOf > c.Rules.Start && side != Movement.PlayerSide)
+                    throw new ContentException(FileName, $"{at}.strength.as_of", "an enemy-side force may not arrive after the game starts (R-ENEMY-004)");
                 if (!hexes.TryGetValue((id, k), out var qr))
                     throw new ContentException(HexesFileName, "anchors", $"no hex for {at}.anchors[{k}] ({FileName}); rerun tools/unit_anchor_hexes.py");
                 var (q, r) = qr;
@@ -106,15 +106,15 @@ namespace Statecraft.Sim
         }
 
         /// <summary>R-ENEMY-002 (Q-ENEMY-1: the 15 May and 11 June 1948 positions two sources agree on, arab-forces-1948.md
-        /// section 10). The 15 May position is the start; the script's target is the row's first anchor from 11 June that cites
-        /// at least two sources other than Wikipedia and Wikidata (which the file uses for coordinates only), on that anchor's
-        /// hex. A row with none has no script and its unit follows the goals.</summary>
+        /// section 10; #1270 past 8 July 1948). The 15 May position is the start; the script is every anchor of the row from
+        /// 11 June that cites at least two sources other than Wikipedia and Wikidata (which the file uses for coordinates
+        /// only), on that anchor's hex, in the file's order. A row with none has no script and its unit follows the goals.</summary>
         static void Script(Content c, StartingForce force, List<object> anchors, string id, string at,
             Dictionary<(string id, int anchor), (int q, int r)> hexes)
         {
             for (int j = 0; j < anchors.Count; j++)
             {
-                if (!(anchors[j] is Dictionary<object, object> a) || Text(a, "from") != EnemyAI.ScriptDate) continue;
+                if (!(anchors[j] is Dictionary<object, object> a) || string.CompareOrdinal(Text(a, "from"), EnemyAI.ScriptDate) < 0) continue;
                 var sourced = a.TryGetValue("sources", out var so) && so is List<object> sources ? sources.Count(x =>
                     x is Dictionary<object, object> m && Text(m, "url") is var url && url != ""
                     && !url.Contains("wikipedia.org", StringComparison.Ordinal) && !url.Contains("wikidata.org", StringComparison.Ordinal)) : 0;
@@ -125,9 +125,7 @@ namespace Statecraft.Sim
                     throw new ContentException(FileName, $"{at}.anchors[{j}]", FormattableString.Invariant($"hex q={qr.q} r={qr.r} is not a land hex in {ContentLoader.HexesFile}"));
                 if (!DateTime.TryParseExact(Text(a, "to"), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var until))
                     throw new ContentException(FileName, $"{at}.anchors[{j}].to", "required, a date 'YYYY-MM-DD'");
-                force.Script = (qr.q, qr.r);
-                force.ScriptUntil = until;
-                return;
+                force.Script.Add((qr.q, qr.r, until));
             }
         }
 
@@ -151,11 +149,15 @@ namespace Statecraft.Sim
         public static void Arrive(Content c, GameState s, DateTime next)
         {
             PopulationLedger.RefuseAggregate(s);
+            bool Due(StartingForce f) => f.Arrives is DateTime day && s.Date < day && day <= next;
+            // Every due force is checked before any is added, so a refusal leaves the state unchanged.
+            foreach (var f in c.StartingForces)
+                if (Due(f) && f.Side != Movement.PlayerSide)
+                    throw new InvalidOperationException($"Enemy-side starting force '{f.Row}' may not arrive after the game starts (R-ENEMY-004)");
             for (int i = 0; i < c.StartingForces.Count; i++)
             {
                 var f = c.StartingForces[i];
-                if (f.Arrives is DateTime day && s.Date < day && day <= next)
-                    s.Units.Add(i, new Unit(i, f.Type, f.Q, f.R, side: f.Side, strength: f.Strength));
+                if (Due(f)) s.Units.Add(i, new Unit(i, f.Type, f.Q, f.R, side: f.Side, strength: f.Strength));
             }
         }
 

@@ -52,6 +52,7 @@ namespace Statecraft.Game.UI
         internal MapRegions? Regions { get; private set; }
         MapLabelsPresenter? labels;
         ScreenNav? nav;
+        NavigationGuard? navGuard;
         StartScreenPresenter? start;
         OpeningPresenter? opening;
         EventCardPresenter? card;
@@ -86,8 +87,15 @@ namespace Statecraft.Game.UI
         bool endClosed;
         /// <summary>Set by SwitchLanguage for its Begin (#2054): whether the start screen it rebuilds offered Continue.</summary>
         bool keptResumed = true;
+        /// <summary>The save notices of <see cref="saveNoticeSession"/>, the session Begin last started, as language-independent
+        /// keys, so a language switch can say them again in the new language (#2552). A New game replaces the bridge's session
+        /// without Begin, so the keys are said only while the kept session is still the one that raised them.</summary>
+        readonly List<string> saveNoticeKeys = new List<string>();
+        GameSession? saveNoticeSession;
         AdvisorPresenter? advisor;
         CabinetPresenter? cabinet;
+        /// <summary>The top bar's New Game (none in a smoke run), for Escape's withdrawal of its open request (#2340 L2).</summary>
+        NewGamePresenter? newGame;
         EncyclopediaPresenter? encyclopedia;
         /// <summary>Tests supply an in-memory approval copy for Hebrew layout; the shipped review fields are unchanged.</summary>
         internal AdvisorCatalog? AdvisorCatalogForTests { get; set; }
@@ -255,7 +263,7 @@ namespace Statecraft.Game.UI
         /// (with <paramref name="smokeOrders"/>, the smoke-orders run's one turn instead);
         /// <paramref name="startScreen"/> shows the start screen first (never in a smoke run, which has no New Game).
         /// <paramref name="keep"/> (Settings' language switch) goes on with that bridge's game and its queued orders instead
-        /// of loading the autosave.</summary>
+        /// of loading the autosave; when rebuilding the start screen, its save notices are rendered in the new language.</summary>
         internal void Begin(GameInputs inputs, int smoke, bool startScreen = false, SimBridge? keep = null, bool smokeOrders = false)
         {
             if (inputs == null) throw new ArgumentNullException(nameof(inputs));
@@ -273,13 +281,19 @@ namespace Statecraft.Game.UI
 
             var text = Strings(inputs.Content);
             var store = Store ?? SaveStore.ForPlatform();
-            var notes = new List<string>();
+            if (keep == null) saveNoticeKeys.Clear();
+            var notes = keep != null && startScreen && ReferenceEquals(keep.Session, saveNoticeSession)
+                ? saveNoticeKeys.Select(key => GameStart.NoticeText(text, key)).ToList()
+                : new List<string>();
             // A smoke run is reproducible: a fresh game with the golden seed, never the player's autosave.
             bool resumed = keep == null || keptResumed;   // a language switch offers Continue as the start screen it rebuilds did
             keptResumed = true;
             var session = keep?.Session ?? (smoke > 0
-                ? GameStart.Begin(inputs.Content, store, () => GoldenRun.Seed, notes, text, out resumed, fresh: true)
-                : GameStart.Begin(inputs.Content, store, GameStart.NewSeed, notes, text, out resumed));
+                ? GameStart.Begin(inputs.Content, store, () => GoldenRun.Seed, notes, text, out resumed,
+                    fresh: true, noticeKeys: saveNoticeKeys)
+                : GameStart.Begin(inputs.Content, store, GameStart.NewSeed, notes, text, out resumed,
+                    noticeKeys: saveNoticeKeys));
+            if (keep == null) saveNoticeSession = session;
             DiagLog.BootPhase($"session started (turn {session.State.Turn}, replayed)");
             var bridge = Bridge = new SimBridge(session, text);
             var oldFixedNorth = cameraController.FixedNorth;
@@ -287,6 +301,7 @@ namespace Statecraft.Game.UI
             owned.Add(new Undo(() => cameraController.SetFixedNorth(oldFixedNorth)));
             if (keep != null) foreach (var order in keep.Queued) bridge.Queue(order);   // in their order: each was within the attention left
             if (keep != null) foreach (var unit in keep.Skipped) bridge.Skip(unit);      // this turn's skips too: no reload, no new turn
+            if (keep != null) foreach (var id in keep.EndingCardsAnswered) bridge.SeeEndingCard(id);   // and the ending turn's answered cards (#2536)
             if (Statecraft.HexTiles.HexTilesLook.Requested())   // opt-in hex-tile map (docs/hex-tiles/README.md); presentation only
             {
                 Statecraft.HexTiles.HexTilesLook.Apply(map, true);
@@ -304,11 +319,11 @@ namespace Statecraft.Game.UI
             var toast = Own(new ToastPresenter(root, bridge, text));
             unseenSkipped = () => toast.Show(text["toast.unit_unseen_skipped"]);
             var hudPresenter = Own(new HudPresenter(root, bridge, text, selectUnit: _ => FocusNextUnit()));
-            nav = Own(new ScreenNav(root));                                      // every screen starts hidden (USS); ScreenNav opens one at a time
+            nav = Own(new ScreenNav(root, text));                                // every screen starts hidden (USS); ScreenNav opens one at a time
             Own(new PointerBlur(root));                                    // a mouse click leaves no focus fill behind (keyboard keeps it)
             Own(new FocusScroll(root));                                    // keyboard focus scrolls its ScrollView to it (a11y H1)
             FocusScroll.NoScrollBarIsATabStop(root);                       // no scroll bar takes a Tab stop (#41 K3, widened from the Cabinet's two)
-            Own(new NavigationGuard(root));                                // the camera keys (WASD, arrows) never move UI focus (B6)
+            navGuard = Own(new NavigationGuard(root, () => nav?.Current)); // the camera keys never move UI focus (B6), but Up/Down walk an open screen's rows (L4)
             if (DiagLog.Nav) Own(new NavEventLog(root));                   // ?navlog: every UI pointer/submit event (playtest 2, P2-4)
             // The Illustration switch's silent loops (event-videos.yaml, Resources): none in the automated runs (CardVideo.ForcedOff).
             var video = CardVideo.ForcedOff() ? null : Own(new CardVideo());
@@ -479,6 +494,7 @@ namespace Statecraft.Game.UI
             if (smoke == 0)
             {
                 newGame = Own(new NewGamePresenter(root, bridge, store, toast, text, GameStart.NewSeed));
+                this.newGame = newGame;
                 Own(GameStart.Autosave(bridge, store, text, toast.Append));   // appends: the turn's refusals stay visible
             }
             // Once the game is over, the sim's end report (#812); after the autosave, so the last turn is saved first. New Game
@@ -512,6 +528,9 @@ namespace Statecraft.Game.UI
             Func<bool> holdsMouseDrag = () => pointer.RightTapCandidate || pointer.LeftTapCandidate,
                        holdsTouchDrag = () => pointer.TouchTapCandidate;
             cameraController.HoldsMouseDrag = holdsMouseDrag; cameraController.HoldsTouchDrag = holdsTouchDrag;
+            // Audit L4: while a screen is open, the Up and Down arrows are its rows' (NavigationGuard.Step), not the camera's.
+            Func<bool> screenTakesUpDown = () => nav?.Current != null;
+            cameraController.ScreenTakesUpDown = screenTakesUpDown;
             Action<int, int, bool> onHex = (q, r, cityPill) =>
             {
                 OnHexClicked(map, unitLayer, info, q, r, UnityEngine.InputSystem.Pointer.current is UnityEngine.InputSystem.Touchscreen, cityPill);
@@ -578,6 +597,7 @@ namespace Statecraft.Game.UI
                 if (cameraController.IsOverUi == overUi) cameraController.IsOverUi = null;
                 if (cameraController.HoldsMouseDrag == holdsMouseDrag) cameraController.HoldsMouseDrag = null;
                 if (cameraController.HoldsTouchDrag == holdsTouchDrag) cameraController.HoldsTouchDrag = null;
+                if (cameraController.ScreenTakesUpDown == screenTakesUpDown) cameraController.ScreenTakesUpDown = null;
                 if (pointer.Map == map) pointer.Map = null;
                 cameraController.Bounds = oldBounds;
                 cameraController.Ground = oldGround; cameraController.GroundTop = oldTop;
@@ -760,8 +780,8 @@ namespace Statecraft.Game.UI
         /// <summary>The language switch of Settings (#1036) and of the start screen (#2054): every screen again in
         /// <paramref name="language"/> at once, no reload, over the same game with this turn's orders (Begin's keep), and the
         /// place it was pressed in open again with the focus on the choice just made (for a mouse press too: the rebuilt UI
-        /// has no focus to keep): the start screen, offering Continue only if it did, or else Settings. Not in a smoke run
-        /// (smokeRun).</summary>
+        /// has no focus to keep): the start screen, offering Continue only if it did and repeating its save notices in the
+        /// new language, or else Settings. Not in a smoke run (smokeRun).</summary>
         void SwitchLanguage(GameInputs inputs, string language)
         {
             if (Bridge == null || smokeRun) return;
@@ -953,7 +973,7 @@ namespace Statecraft.Game.UI
             for (int i = owned.Count - 1; i >= 0; i--) owned[i].Dispose();
             owned.Clear();
             if (hoveredCity != null) { hoveredCity = null; HandCursor(false); }   // the next Begin's pills start unlit
-            companion = null; minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; opening = null; card = null; outcomes = null; report = null; end = null; advisor = null; cabinet = null; encyclopedia = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
+            companion = null; minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; opening = null; card = null; outcomes = null; report = null; end = null; advisor = null; cabinet = null; newGame = null; encyclopedia = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
             // A ?profile run cut short (a stopped coroutine never reaches its restore line) must not leave the terrain at the
             // profile's pixel error (Task 24 review M1). Nothing else changes it, so restoring is always right.
             if (map != null && map.Terrain != null) map.Terrain.heightmapPixelError = MapBuilder.TerrainPixelError;
@@ -1155,6 +1175,15 @@ namespace Statecraft.Game.UI
                 done |= start?.Escape() == true;
                 // Escape in the Cabinet's candidate list goes back to the seat, not out of the screen (#2340 M2).
                 done |= cabinet?.Escape() == true || nav?.Close() == true;
+                // With nothing above it to close, Escape withdraws a New Game request armed from the top bar too, the start
+                // screen closed (#2340 L2, #2521), and is used up there, so it does not also clear the map selection. A
+                // decision card or capture dialog open over it is above it (the top bar stays usable under them): that
+                // Escape hides the card or dialog and the request stays armed (#2595 review).
+                if (!done && newGame?.Armed == true)
+                {
+                    done = capture?.Escape() == true || card?.Escape() == true || card?.CollapsedThisFrame == true;
+                    if (!done) { newGame.Cancel(); done = true; }
+                }
                 // A screen/card that consumed this Cancel must not also dismiss the map selection in this frame.
                 if (!done && nav?.ClosedThisFrame != true && document.rootVisualElement.focusController?.focusedElement == null
                     && capture?.Escape() != true && card?.Escape() != true && card?.CollapsedThisFrame != true)
@@ -1162,13 +1191,16 @@ namespace Statecraft.Game.UI
             }
             // PageUp, PageDown, Home and End, with no modifier, scroll the open screen or the open card's text, with or without
             // focus (KeyScroll; accessibility audit H3), but not under an End Turn outcome clip, which covers them. The arrows
-            // stay with the camera (NavigationGuard, B6).
+            // stay with the camera (NavigationGuard, B6), except that Up and Down move between an open screen's rows (audit L4;
+            // the owner's answer on #2340, Q27: "do the recommended for all"). The UI map reads no keyboard key (B6), so they
+            // arrive here.
             var keys = UnityEngine.InputSystem.Keyboard.current;
             if (keys != null && outcomes?.Showing == null && report?.IsOpen != true && end?.IsOpen != true && !(keys.ctrlKey.isPressed || keys.altKey.isPressed || keys.shiftKey.isPressed || keys.leftMetaKey.isPressed || keys.rightMetaKey.isPressed))
             {
                 KeyScroll.Key? page = keys.pageUpKey.wasPressedThisFrame ? KeyScroll.Key.PageUp : keys.pageDownKey.wasPressedThisFrame ? KeyScroll.Key.PageDown
                     : keys.homeKey.wasPressedThisFrame ? KeyScroll.Key.Home : keys.endKey.wasPressedThisFrame ? KeyScroll.Key.End : (KeyScroll.Key?)null;
                 if (page != null) KeyScroll.Press(document.rootVisualElement, nav?.Current, card?.Shown != null && !card.Collapsed, page.Value);
+                if (keys.upArrowKey.wasPressedThisFrame || keys.downArrowKey.wasPressedThisFrame) navGuard?.Step(keys.upArrowKey.wasPressedThisFrame);
             }
             SyncMinimap();
             if (!logCamera || rig == null || (rig.Distance == loggedDistance && rig.Yaw == loggedYaw)) return;

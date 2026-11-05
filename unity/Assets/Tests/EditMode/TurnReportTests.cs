@@ -124,7 +124,11 @@ public class TurnReportTests
         {
             // The heading is the bar's caption and the very change the bar shows next to the number.
             var heading = k.Ui.Q<Label>("turn-report-heading-" + id).text;
-            Assert.AreEqual(En.Format("report.line", En["hud.caption." + id], k.Ui.Q<Label>(id + "-delta").text), heading, id);
+            var expectedHeading = id == "immigration"
+                ? En.Format("report.immigration_line", En["hud.caption.immigration"], k.Ui.Q<Label>("immigration-delta").text,
+                    k.Ui.Q<Label>("immigration-value").text)
+                : En.Format("report.line", En["hud.caption." + id], k.Ui.Q<Label>(id + "-delta").text);
+            Assert.AreEqual(expectedHeading, heading, id);
             var causes = k.Ui.Root.Q("turn-report-causes-" + id);
             var expected = HudModel.Causes(turn, id, C, w => CauseText.Line(w, C, System.Array.Empty<UnitEntry>(), En));
             if (expected.Count == 0) { Assert.IsNull(causes, id + ": no cause line without a cause"); continue; }
@@ -151,6 +155,54 @@ public class TurnReportTests
         var s = k.Bridge.State; var prev = k.Bridge.Session.Previous!;
         Assert.AreEqual((s.Treasury - s.Debt) - (prev.Treasury - prev.Debt), shown.Sum(w => w.Delta), 1e-9, "the lines add up to the Money (net) change");
         Assert.IsNull(k.Ui.Root.Q("turn-report-causes-support"), "no cause names Public support (an average of the indicators)");
+    }
+
+    /// <summary>#2576 shape (b): Immigration keeps the change in arrivals as the report's number, while the current
+    /// arrival count and the population lines below it are labelled as this turn's arrivals, in both UI languages.</summary>
+    [Test]
+    public void ImmigrationReportsTheChangeAndLabelsThisTurnsArrivalsInBothLanguages()
+    {
+        foreach (var (text, heading, causesHeading, cause) in new[]
+        {
+            (En, "Immigration: change +20; arrivals this turn: 120", "Main arrivals this turn:", "120 immigrants arrived (Asia)"),
+            (He, "עלייה: שינוי של +20; עולים שהגיעו בתור הזה: 120", "הגעות עיקריות בתור הזה:", "עולים שהגיעו (אסיה): 120"),
+        })
+        {
+            var arrivals = new Queue<double>(new[] { 100d, 120d, 100d });
+            using var k = new Kit(text, (g, cmds) =>
+            {
+                var result = g.EndTurn(cmds);
+                var n = arrivals.Dequeue();
+                var arrival = new Cause("population", "asia", n,
+                    System.FormattableString.Invariant($"{n:N0} immigrants arrived (Asia)"), key: CauseKeys.Arrived);
+                var controlled = new StepResult(result.State,
+                    result.Why.Where(w => w.System != "population").Concat(new[] { arrival }).ToList(), result.Rejected);
+                typeof(GameSession).GetProperty(nameof(GameSession.Last))!.SetValue(g, controlled);
+                return controlled;
+            });
+
+            k.Bridge.EndTurn();
+            k.Bridge.EndTurn();
+
+            var meter = HudModel.From(k.Bridge, text).Immigration;
+            Assert.AreEqual(text.Format("hud.people", 120), meter.Value);
+            Assert.AreEqual(text.Format("hud.delta_people", 20), meter.Delta);
+            var plain = k.Ui.Q<Label>("turn-report-heading-immigration").text.Replace(UiText.LeftToRightMark.ToString(), "");
+            Assert.AreEqual(heading, plain);
+            var reportCauses = Causes(k.Ui, "immigration");
+            CollectionAssert.AreEqual(new[] { cause }, reportCauses.Select(x => x.Replace(UiText.LeftToRightMark.ToString(), "")).ToList());
+
+            using var tip = new MeterTip(k.Ui.Root, k.Bridge, text, System.Array.Empty<VisualElement>());
+            var tipLines = tip.Lines(k.Q("meter-immigration"));
+            Assert.AreEqual(causesHeading, tipLines.words.Split('\n').Last());
+            CollectionAssert.AreEqual(reportCauses, tipLines.causes, "the report and MeterTip label the same current-turn arrivals");
+
+            // A fall: 120 then 100 reads as a change of -20 beside this turn's 100 arrivals.
+            k.Bridge.EndTurn();
+            var fell = text.Format("report.immigration_line", text["hud.caption.immigration"], text.Format("hud.delta_people", -20),
+                text.Format("hud.people", 100)).Replace(UiText.LeftToRightMark.ToString(), "");
+            Assert.AreEqual(fell, k.Ui.Q<Label>("turn-report-heading-immigration").text.Replace(UiText.LeftToRightMark.ToString(), ""));
+        }
     }
 
     /// <summary>#1293: the opening turn's enemy orders (R-ENEMY-001): the four scripted forces march (R-ENEMY-002) and the

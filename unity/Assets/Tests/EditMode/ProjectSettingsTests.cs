@@ -61,4 +61,38 @@ public class ProjectSettingsTests
         foreach (var t in new[] { UnityEngine.LogType.Error, UnityEngine.LogType.Assert, UnityEngine.LogType.Warning, UnityEngine.LogType.Exception })
             Assert.AreEqual(UnityEngine.StackTraceLogType.ScriptOnly, PlayerSettings.GetStackTraceLogType(t), t.ToString());
     }
+
+    /// <summary>Build.Web rejects invalid settings before its settings lifecycle changes or restores the project.</summary>
+    [TestCase("gzip", "pvrtc")]
+    [TestCase("zip", "astc")]
+    public void InvalidWebArgumentsChangeNoSettings(string compression, string textureSubtarget)
+    {
+        var build = System.Type.GetType("Statecraft.Game.EditorTools.Build, Assembly-CSharp-Editor");
+        var run = build!.GetMethod("WithWebSettings",
+            System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+        Assert.IsNotNull(run);
+        var oldCompression = PlayerSettings.WebGL.compressionFormat;
+        bool oldFallback = PlayerSettings.WebGL.decompressionFallback;
+        var oldSubtarget = EditorUserBuildSettings.webGLBuildSubtarget;
+        bool invoked = false;
+        try
+        {
+            PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Brotli;
+            PlayerSettings.WebGL.decompressionFallback = true;
+            EditorUserBuildSettings.webGLBuildSubtarget = WebGLTextureSubtarget.ETC2;
+            var ex = Assert.Throws<System.Reflection.TargetInvocationException>(() => run!.Invoke(null,
+                new object[] { compression, false, textureSubtarget, (System.Action<WebGLTextureSubtarget?>)(_ => invoked = true) }));
+            Assert.IsInstanceOf<System.ArgumentException>(ex!.InnerException);
+            Assert.IsFalse(invoked, "the build action is not reached");
+            Assert.AreEqual(WebGLCompressionFormat.Brotli, PlayerSettings.WebGL.compressionFormat);
+            Assert.IsTrue(PlayerSettings.WebGL.decompressionFallback);
+            Assert.AreEqual(WebGLTextureSubtarget.ETC2, EditorUserBuildSettings.webGLBuildSubtarget);
+        }
+        finally
+        {
+            PlayerSettings.WebGL.compressionFormat = oldCompression;
+            PlayerSettings.WebGL.decompressionFallback = oldFallback;
+            EditorUserBuildSettings.webGLBuildSubtarget = oldSubtarget;
+        }
+    }
 }

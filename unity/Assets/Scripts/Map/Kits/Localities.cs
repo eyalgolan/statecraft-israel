@@ -290,10 +290,11 @@ namespace Statecraft.Game.Map.Kits
                 if (p.NameHeSources.Count > 0 && string.IsNullOrWhiteSpace(p.NameHe)) throw new InvalidDataException($"{at} name_he_sources without a name_he");
                 // Absent (a person has reviewed the name) or exactly agent-checked: blank, null or a list is neither.
                 if (p.NameHeReviewGiven && p.NameHeReview != "agent-checked")
-                    throw new InvalidDataException($"{at} name_he_review '{p.NameHeReview}' is not agent-checked (delete the line once a person has reviewed the name)");
+                    throw new InvalidDataException($"{at} name_he_review '{p.NameHeReview}' is not agent-checked (delete the line once a native speaker, or an AI-assisted contributor who discloses it, has reviewed the name, #564)");
                 if (p.NameHeReviewGiven && string.IsNullOrWhiteSpace(p.NameHe)) throw new InvalidDataException($"{at} name_he_review without a name_he");
                 for (int i = 0; i < p.NameHeSources.Count; i++)
-                    if (!p.NameHeSources[i].Url.StartsWith("https://") || string.IsNullOrWhiteSpace(p.NameHeSources[i].Checked))
+                    if (!p.NameHeSources[i].Url.StartsWith("https://", System.StringComparison.Ordinal)
+                        || string.IsNullOrWhiteSpace(p.NameHeSources[i].Checked))
                         throw new InvalidDataException($"{at} name_he_sources[{i}] needs an https url and a checked date");
                 doc.Places.Add(new Place
                 {
@@ -455,7 +456,8 @@ namespace Statecraft.Game.Map.Kits
             if (string.IsNullOrWhiteSpace(checkedOn)) throw new InvalidDataException($"{at} has no checked date");
             if (count < 1) throw new InvalidDataException($"{at} sources is empty");
             for (int i = 0; i < sources.Count; i++)
-                if (string.IsNullOrWhiteSpace(sources[i]?.Url) || !sources[i].Url.StartsWith("https://"))
+                if (string.IsNullOrWhiteSpace(sources[i]?.Url)
+                    || !sources[i].Url.StartsWith("https://", System.StringComparison.Ordinal))
                     throw new InvalidDataException($"{at} sources[{i}] is not an https URL");
         }
 

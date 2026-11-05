@@ -46,7 +46,7 @@ public class GameSessionTurnTests
         Assert.NotEqual(Movement.PlayerSide, enemy.Side);
         Assert.Null(session.Commit(new UnitOrder(5, Combat.Attack, enemy.Q, enemy.R)));   // unit 5 stands next to unit 9
         // Unit 6 takes the hex unit 9 marches on (R-ENEMY-002), so no path leads there and it attacks instead (R-ENEMY-003).
-        var march = C.StartingForces[9].Script!.Value;
+        var march = C.StartingForces[9].Script[0];
         Assert.Null(session.Commit(new Move(6, march.Q, march.R)));
         var open = session.Now.Why.ToList();
         Assert.Contains(open, x => x.Key == WhyKeys.Engagement);
@@ -79,6 +79,33 @@ public class GameSessionTurnTests
         Assert.Empty(warnings);
         Assert.Equal(session.Now.State.Hash(), loaded.Now.State.Hash());
         Assert.Equal(new[] { "move" }, loaded.Committed.Select(x => x.Kind));
+    }
+
+    // R-SAVE-003 (#2653): with the same content, an open-turn order the sim refuses on load means the save was edited.
+    [Fact]
+    public void ARefusedOpenOrderWithTheSameContentIsAnError()
+    {
+        var session = Fresh();
+        var unit = session.State.Units[0];
+        session.Save.SetOpen(new Command[] { new Move(0, unit.Q, unit.R) });   // refused: the unit is already there
+        var e = Assert.Throws<SaveException>(() => GameSession.Load(C, session.Save.Write(), out _));
+        Assert.Contains("The open turn's order 'move' was refused", e.Message);
+    }
+
+    // R-SAVE-003 (#2653): with other content, the first refused open order ends the replay: it and every later order
+    // are dropped, and the load warns that the replay differs.
+    [Fact]
+    public void ARefusedOpenOrderWithOtherContentDropsItAndTheRest()
+    {
+        var session = Fresh();
+        var unit = session.State.Units[0];
+        var valid = GoldenRun.SmokeMove(C, session.State);
+        session.Save.SetOpen(new Command[] { new Move(0, unit.Q, unit.R), valid });
+        var text = session.Save.Write().Replace("content " + C.Hash, "content " + new string('0', 64));   // other content
+        var loaded = GameSession.Load(C, text, out var warnings);
+        Assert.Equal(new[] { GameSession.ContentChanged, GameSession.ReplayDiffers }, warnings);
+        Assert.Empty(loaded.Committed);
+        Assert.Null(Fresh().Commit(valid));   // the dropped order after it would have been taken on its own
     }
 
     [Fact]

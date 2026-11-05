@@ -142,6 +142,38 @@ public class PoolsTests
         Assert.Equal(again.FoodNeed, again.FoodUnmet);
     }
 
+    // R-FOOD-001 to R-FOOD-003 under the gdd-0.3 ruleset (#2653): the Food code is shared by every GDD loop, so the same
+    // start stock, monthly eating and imports hold there. The fixture with the real balance catalogue, as DefeatTests does.
+    [Fact]
+    public void TheFoodCasesHoldUnderGdd03()
+    {
+        var files = Fixture.Gdd();
+        files["eras.yaml"] = files["eras.yaml"].Replace("loop: gdd", "loop: gdd, ruleset: " + SaveGame.Gdd03Ruleset);
+        files[Gdd03BalanceCatalogue.FileName] = System.IO.File.ReadAllText(System.IO.Path.Combine(RealContentTests.ContentRoot(), Gdd03BalanceCatalogue.FileName));
+        var c = ContentLoader.Load(Fixture.Write(files));
+        Assert.Equal(SaveGame.Gdd03Ruleset, c.Ruleset);
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        Assert.Equal(100, s.FoodNeed);                              // R-FOOD-001: 1000 people / 10 per unit
+        Assert.Equal(3 * 100, s.Food);                              // cover_months of the start's need
+        Assert.Equal(0, s.FoodUnmet);
+        Assert.Equal(0.4, s.Indicators["food_supply"]);             // R-FOOD-003: a full stock adds no term
+        Assert.Equal(0.0, Pools.FoodTerm(c, s));
+
+        var next = Step(c, s);                                      // R-FOOD-002: imports bring it back to its cover
+        Assert.Equal(next.FoodNeed * 3, next.Food);
+        Assert.Equal(0, next.FoodUnmet);
+        Assert.Equal(0.4, next.Indicators["food_supply"]);
+
+        s.ActiveSituations.Add(EconomySystem.FxCrisis);             // R-FOOD-002: no imports, the stock falls and stops at 0
+        s.FxReserves = -1000;
+        s.Food = 40;
+        var r = StepWithWhy(c, s);
+        Assert.Equal(0, r.State.Food);
+        Assert.Equal(100 - 40, r.State.FoodUnmet);
+        Assert.Contains(r.Why, w => w.System == "economy" && w.Message.Contains("60 of 100"));
+        Assert.Equal(-0.1 - 0.6, Pools.FoodTerm(c, r.State), 12);         // R-FOOD-003: empty, -k_food, and 60% unmet
+    }
+
     // R-FOOD-003
     [Fact]
     public void FoodSupplyFollowsTheStock()
@@ -331,7 +363,8 @@ public class PoolsTests
         var c = Gdd();
         var s = Simulation.NewGame(c, 1, Mode.Historical);
         var after = s.Clone();
-        Assert.Equal("That is more Arms than the stock can hold", Pools.BuyArms(c, after, int.MaxValue, new List<Cause>()));
+        Assert.Equal(Pools.RefusedStockCapacity, Pools.BuyArms(c, after, int.MaxValue, new List<Cause>()));
+        Assert.Equal(Pools.RefusedStockCapacity, Pools.BuyArmsRefusal(c, s, Array.Empty<Command>(), int.MaxValue));
         Assert.Equal(s.Hash(), after.Hash());
     }
 
