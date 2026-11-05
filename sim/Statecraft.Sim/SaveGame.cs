@@ -30,7 +30,7 @@ namespace Statecraft.Sim
     /// <summary>
     /// A save is seed + command log + content hash + schema version (spec section 3); loading replays it. Text format,
     /// one item per line:
-    ///   statecraft-save 4          gdd-0.3; existing rulesets still write schema 3 (a schema 1 save has no ruleset line and is legacy)
+    ///   statecraft-save 5          every ruleset (#2605); earlier: 3 for legacy and gdd-0.1, 4 for gdd-0.3, 1 with no ruleset line (legacy)
     ///   content &lt;hex&gt;             Content.Hash of the content it was played with
     ///   seed &lt;ulong&gt;  /  mode Historical
     ///   ruleset legacy|gdd-0.1|gdd-0.3  the rules it was played under (Content.Ruleset); another ruleset refuses it (R-SAVE-001),
@@ -47,9 +47,11 @@ namespace Statecraft.Sim
     /// </summary>
     public sealed class SaveGame
     {
-        /// <summary>Newest understood schema, reserved for the separate GDD v0.3 ruleset (#1687).</summary>
-        public const int SchemaVersion = 4;
-        const int PreviousSchemaVersion = 3;
+        /// <summary>The schema every new save is written in, whatever its ruleset (#2605: the state now records the soft events
+        /// the cap left waiting, so a replay of an older save can end elsewhere; GameSession.Load says so instead of refusing).</summary>
+        public const int SchemaVersion = 5;
+        /// <summary>The last schema written before <see cref="SchemaVersion"/>: legacy and gdd-0.1 wrote 3, gdd-0.3 wrote 4 (#1687).</summary>
+        const int LegacyPreviousSchemaVersion = 3, Gdd03PreviousSchemaVersion = 4;
         /// <summary>The ruleset of the legacy loop (Content.Ruleset).</summary>
         public const string LegacyRuleset = "legacy";
         /// <summary>The ruleset of the GDD v0.1 loop (eras.yaml systems.loop: gdd).</summary>
@@ -58,7 +60,6 @@ namespace Statecraft.Sim
         public const string Gdd03Ruleset = "gdd-0.3";
 
         static bool KnownRuleset(string ruleset) => ruleset == LegacyRuleset || ruleset == GddRuleset || ruleset == Gdd03Ruleset;
-        static int WritingSchema(string ruleset) => ruleset == Gdd03Ruleset ? SchemaVersion : PreviousSchemaVersion;
         /// <summary>Turns are at least a week long, so 2000 turns is 38 years, far past any content; a save with more is hostile or damaged.</summary>
         public const int MaxTurns = 2000;
         const string Magic = "statecraft-save";
@@ -68,7 +69,7 @@ namespace Statecraft.Sim
         readonly List<List<string>> turns = new List<List<string>>();
         readonly List<string> open = new List<string>();
 
-        /// <summary>The schema version parsed from this save; a new save uses its ruleset's writing schema (4 for gdd-0.3, otherwise 3).</summary>
+        /// <summary>The schema version parsed from this save; a new save uses <see cref="SchemaVersion"/>.</summary>
         public int Version { get; private set; }
         public string ContentHash { get; }
         public ulong Seed { get; }
@@ -87,7 +88,7 @@ namespace Statecraft.Sim
         {
             ContentHash = contentHash ?? throw new ArgumentNullException(nameof(contentHash));
             if (!KnownRuleset(ruleset)) throw new ArgumentException($"unknown ruleset '{ruleset}'", nameof(ruleset));
-            Version = WritingSchema(ruleset); Seed = seed; Mode = mode; Ruleset = ruleset;
+            Version = SchemaVersion; Seed = seed; Mode = mode; Ruleset = ruleset;
             FinalHash = initialHash ?? throw new ArgumentNullException(nameof(initialHash));
         }
 
@@ -114,7 +115,7 @@ namespace Statecraft.Sim
         public string Write()
         {
             var sb = new StringBuilder();
-            sb.Append(Magic).Append(' ').Append(WritingSchema(Ruleset).ToString(CultureInfo.InvariantCulture)).Append('\n');
+            sb.Append(Magic).Append(' ').Append(SchemaVersion.ToString(CultureInfo.InvariantCulture)).Append('\n');
             sb.Append("content ").Append(ContentHash).Append('\n');
             sb.Append("seed ").Append(Seed.ToString(CultureInfo.InvariantCulture)).Append('\n');
             sb.Append("mode ").Append(Mode.ToString()).Append('\n');
@@ -208,12 +209,11 @@ namespace Statecraft.Sim
                     throw new SaveException(5, $"This save was made with a newer version of the game (ruleset '{ruleset}').", SaveException.NewerVersion);
                 first = 5;
             }
-            // #1687, R-SAVE-001/002: schema 4 belongs only to the isolated gdd-0.3 envelope.
-            // No build writes gdd-0.3 under an earlier schema, so such a save was edited: damage, not older or newer rules.
-            if (ruleset == Gdd03Ruleset && version < SchemaVersion)
-                throw new SaveException(1, FormattableString.Invariant($"a gdd-0.3 save is schema {SchemaVersion}, not {version}"));
-            if (version > PreviousSchemaVersion && ruleset != Gdd03Ruleset)
-                throw new SaveException(1, FormattableString.Invariant($"save schema version {version} is newer than this game ({PreviousSchemaVersion})"), SaveException.NewerVersion);
+            // #1687, #2605, R-SAVE-001/002: before schema 5, schema 4 belonged only to the isolated gdd-0.3 envelope, and
+            // legacy and gdd-0.1 wrote 1 to 3. No build wrote another pairing, so such a save was edited: damage, not older or
+            // newer rules.
+            if (version < SchemaVersion && (ruleset == Gdd03Ruleset ? version != Gdd03PreviousSchemaVersion : version > LegacyPreviousSchemaVersion))
+                throw new SaveException(1, FormattableString.Invariant($"no version of the game wrote a {ruleset} save in schema {version}"));
             // Check compatibility before replay, including gdd-0.1 -> gdd-0.3 as earlier rules.
             if (expectedRuleset != null && ruleset != expectedRuleset)
                 throw ruleset == LegacyRuleset || (ruleset == GddRuleset && expectedRuleset == Gdd03Ruleset)

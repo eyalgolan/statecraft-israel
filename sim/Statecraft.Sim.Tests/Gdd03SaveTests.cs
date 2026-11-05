@@ -1,17 +1,18 @@
 using Statecraft.Sim;
 
-/// <summary>#1687, R-SAVE-001/002: a separate envelope, never a live-loop cutover.</summary>
+/// <summary>#1687, R-SAVE-001/002: a separate envelope, never a live-loop cutover. #2605: every ruleset now writes schema 5;
+/// gdd-0.3 wrote 4 before, legacy and gdd-0.1 wrote 1 to 3.</summary>
 public class Gdd03SaveTests
 {
     static string Text(int version, string ruleset) =>
         $"statecraft-save {version}\ncontent {new string('a', 64)}\nseed 1\nmode Historical\nruleset {ruleset}\nend {new string('b', 64)}\n";
 
     [Fact]
-    public void Gdd03WritesSchemaFourAndRoundTrips()
+    public void Gdd03WritesSchemaFiveAndRoundTrips()
     {
         var save = new SaveGame(new string('a', 64), 1, Mode.Historical, "gdd-0.3", new string('b', 64));
-        Assert.Equal(4, save.Version);
-        Assert.StartsWith("statecraft-save 4\n", save.Write());
+        Assert.Equal(5, save.Version);
+        Assert.StartsWith("statecraft-save 5\n", save.Write());
         Assert.Equal("gdd-0.3", SaveGame.Parse(save.Write()).Ruleset);
         Assert.Equal(save.Write(), SaveGame.Parse(save.Write()).Write());
     }
@@ -29,20 +30,41 @@ public class Gdd03SaveTests
 
     [Theory]
     [InlineData(4, "gdd-future")]
-    [InlineData(5, "gdd-0.3")]
-    [InlineData(4, "legacy")]
-    [InlineData(4, "gdd-0.1")]
+    [InlineData(6, "gdd-0.3")]
+    [InlineData(6, "legacy")]
+    [InlineData(6, "gdd-0.1")]
     public void UnknownRulesOrNewerSchemasAreRefused(int schema, string ruleset) =>
         Assert.Equal(SaveException.NewerVersion, Assert.Throws<SaveException>(() => SaveGame.Parse(Text(schema, ruleset))).Code);
+
+    // #2605: schema 4 was gdd-0.3's alone; no build wrote it for the older rules, so such a save was edited.
+    [Theory]
+    [InlineData("legacy")]
+    [InlineData("gdd-0.1")]
+    public void OlderRulesUnderSchemaFourAreDamage(string ruleset) =>
+        Assert.Null(Assert.Throws<SaveException>(() => SaveGame.Parse(Text(4, ruleset))).Code);
 
     [Theory]
     [InlineData("legacy")]
     [InlineData("gdd-0.1")]
-    public void ExistingRulesStillWriteSchemaThree(string ruleset)
+    [InlineData("gdd-0.3")]
+    public void EveryRulesetWritesSchemaFive(string ruleset)
     {
         var save = new SaveGame(new string('a', 64), 1, Mode.Historical, ruleset, new string('b', 64));
-        Assert.Equal(3, save.Version);
-        Assert.StartsWith("statecraft-save 3\n", save.Write());
+        Assert.Equal(5, save.Version);
+        Assert.StartsWith("statecraft-save 5\n", save.Write());
+    }
+
+    // #2605: the earlier schema of each ruleset still reads, keeps its version, and is written back as schema 5.
+    [Theory]
+    [InlineData(3, "legacy")]
+    [InlineData(3, "gdd-0.1")]
+    [InlineData(4, "gdd-0.3")]
+    public void AnEarlierSchemaReadsAndIsWrittenBackAsFive(int schema, string ruleset)
+    {
+        var save = SaveGame.Parse(Text(schema, ruleset));
+        Assert.Equal(schema, save.Version);
+        Assert.Equal(ruleset, save.Ruleset);
+        Assert.StartsWith("statecraft-save 5\n", save.Write());
     }
 
     // R-SAVE-001/002: future gdd-0.3 callers must not replay the live rules' saves.
@@ -51,6 +73,8 @@ public class Gdd03SaveTests
     [InlineData(3, "legacy")]
     [InlineData(2, "gdd-0.1")]
     [InlineData(3, "gdd-0.1")]
+    [InlineData(5, "legacy")]
+    [InlineData(5, "gdd-0.1")]
     public void EarlierRulesAreRefusedByGdd03(int schema, string ruleset)
     {
         var error = Assert.Throws<SaveException>(() => SaveGame.Parse(Text(schema, ruleset), SaveGame.Gdd03Ruleset));
@@ -59,18 +83,22 @@ public class Gdd03SaveTests
     }
 
     [Theory]
-    [InlineData("legacy")]
-    [InlineData("gdd-0.1")]
-    public void ExistingGamesRefuseGdd03AsNewer(string ruleset) =>
-        Assert.Equal(SaveException.NewerVersion, Assert.Throws<SaveException>(() => SaveGame.Parse(Text(4, "gdd-0.3"), ruleset)).Code);
+    [InlineData(4, "legacy")]
+    [InlineData(4, "gdd-0.1")]
+    [InlineData(5, "legacy")]
+    [InlineData(5, "gdd-0.1")]
+    public void ExistingGamesRefuseGdd03AsNewer(int schema, string ruleset) =>
+        Assert.Equal(SaveException.NewerVersion, Assert.Throws<SaveException>(() => SaveGame.Parse(Text(schema, "gdd-0.3"), ruleset)).Code);
 
-    [Fact]
-    public void Gdd03AcceptsItsOwnEnvelope() =>
-        Assert.Equal("gdd-0.3", SaveGame.Parse(Text(4, "gdd-0.3"), SaveGame.Gdd03Ruleset).Ruleset);
+    [Theory]
+    [InlineData(4)]
+    [InlineData(5)]
+    public void Gdd03AcceptsItsOwnEnvelope(int schema) =>
+        Assert.Equal("gdd-0.3", SaveGame.Parse(Text(schema, "gdd-0.3"), SaveGame.Gdd03Ruleset).Ruleset);
 
     [Theory]
     [InlineData(4, "gdd-future")]
-    [InlineData(5, "gdd-0.3")]
+    [InlineData(6, "gdd-0.3")]
     public void Gdd03RefusesUnknownRulesAndFutureSchemas(int schema, string ruleset) =>
         Assert.Equal(SaveException.NewerVersion, Assert.Throws<SaveException>(() => SaveGame.Parse(Text(schema, ruleset), SaveGame.Gdd03Ruleset)).Code);
 }
