@@ -275,7 +275,7 @@ namespace Statecraft.Game.Map.Collection
             for (int i = 0; i < fighters.Length; i++)
             {
                 var f = fighters[i];
-                float reach = f.Half.magnitude + 1f, up = reach;
+                float reach = FighterReach(f.Plane, f.Prop) + 1f, up = reach;
                 if (f.Flag != null)
                 {
                     var fb = f.Flag.GetComponent<MeshFilter>().sharedMesh.bounds; float k = f.Flag.lossyScale.y;
@@ -289,6 +289,21 @@ namespace Statecraft.Game.Map.Collection
         }
 
         Material? fighterPaint; Mesh? s199Mesh, s199PropMesh;
+
+        /// <summary>The farthest any part of a fighter can be from its pivot (world m), at any attitude and any turn of its
+        /// propeller: the airframe mesh's farthest bounds corner from its origin (the centre of gravity, UnitModels.AviaS199),
+        /// and the propeller hub's distance plus the propeller mesh's farthest corner from its own origin (it turns about it),
+        /// times the aircraft's scale. The fighter turns about its pivot, not about its bounds' centre, which lies about a metre
+        /// of the model aft of it (the tail is longer than the nose), so half the bounds' diagonal fell short at some attitudes.</summary>
+        internal static float FighterReach(Transform plane, Transform prop)
+        {
+            static float Far(Bounds b) => new Vector3(Mathf.Abs(b.center.x) + b.extents.x, Mathf.Abs(b.center.y) + b.extents.y, Mathf.Abs(b.center.z) + b.extents.z).magnitude;
+            static float Largest(Vector3 v) => Mathf.Max(Mathf.Abs(v.x), Mathf.Max(Mathf.Abs(v.y), Mathf.Abs(v.z)));
+            float airframe = Far(plane.GetComponent<MeshFilter>().sharedMesh.bounds) * Largest(plane.lossyScale);
+            float blades = Far(prop.GetComponent<MeshFilter>().sharedMesh.bounds) * Largest(prop.lossyScale);
+            float hub = Vector3.Scale(prop.localPosition, plane.lossyScale).magnitude;
+            return Mathf.Max(airframe, hub + blades);
+        }
 
         /// <summary>The box (world) the names keep clear of for fighter <paramref name="fighter"/> through the clock step
         /// <paramref name="step"/> (<see cref="DakotaKeepStepS"/>): its path in that step, sampled, with <paramref name="reach"/>
