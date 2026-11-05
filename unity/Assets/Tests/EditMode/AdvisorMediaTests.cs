@@ -307,7 +307,8 @@ public class AdvisorMediaTests
             var bridge = new SimBridge(GameSession.New(ContentLoader.Load(Paths.Content), GoldenRun.Seed, Mode.Historical), text);
             var hud = new HudPresenter(root, bridge, text); var nav = new ScreenNav(root);
             var card = new EventCardPresenter(root, bridge, text, null); card.Collapse(takeFocus: false);
-            var session = new AdvisorSession(AdvisorCatalog.Parse(AdvisorPopupTests.Fixture), new AdvisorSettings(null), true);
+            // Hebrew shows only approved lines (AdvisorCatalog.ApprovedIn): approve the fixture's, as AdvisorPopupLayoutTests does.
+            var session = new AdvisorSession(AdvisorCatalog.Parse(AdvisorPopupTests.Fixture.Replace("level: new,", "level: new, he_review: approved,")), new AdvisorSettings(null), true);
             var advisor = new AdvisorPresenter(root, bridge, text, session, hooks: new AdvisorHooks { Card = card });
             var direction = hebrew ? new UiDirection(root, bridge) : null;
             var pic = new FakePicture { Ready = true }; var output = new FakeOutput();

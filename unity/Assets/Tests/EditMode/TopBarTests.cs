@@ -623,7 +623,9 @@ public class TopBarTests
                             problems.Add($"{at}: Security caption row is {captionRow.resolvedStyle.flexDirection}, expected {expectedDirection}");
                         var levelStyle = root.Q<Label>("security-level").resolvedStyle;
                         float expectedLeft = hebrew ? 0f : 6f, expectedRight = hebrew ? 6f : 0f;
-                        if (Mathf.Abs(levelStyle.marginLeft - expectedLeft) > 0.1f || Mathf.Abs(levelStyle.marginRight - expectedRight) > 0.1f)
+                        // The panel snaps layout to whole screen pixels, so a stylesheet px reads within one screen pixel of itself.
+                        float snap = 1f / HudPresenter.ScreenPxPerPanelPx(root.panel) + 0.01f;
+                        if (Mathf.Abs(levelStyle.marginLeft - expectedLeft) > snap || Mathf.Abs(levelStyle.marginRight - expectedRight) > snap)
                             problems.Add($"{at}: Security level margins are {levelStyle.marginLeft}px left and {levelStyle.marginRight}px right, expected {expectedLeft}px and {expectedRight}px");
                         int seen = 0;
                         foreach (var l in root.Q("top-bar").Query<Label>(className: "meter-name").ToList())

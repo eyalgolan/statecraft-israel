@@ -526,7 +526,9 @@ public class TurnReportTests
                     var window = root.worldBound; var panel = root.Q("turn-report-panel").worldBound;
                     var causesStyle = root.Q("turn-report-causes-security").resolvedStyle;
                     float expectedLeft = hebrew ? 2f : 14f, expectedRight = hebrew ? 14f : 2f;
-                    if (Mathf.Abs(causesStyle.paddingLeft - expectedLeft) > 0.1f || Mathf.Abs(causesStyle.paddingRight - expectedRight) > 0.1f)
+                    // The panel snaps layout to whole screen pixels, so a stylesheet px reads within one screen pixel of itself.
+                    float snap = 1f / HudPresenter.ScreenPxPerPanelPx(root.panel) + 0.01f;
+                    if (Mathf.Abs(causesStyle.paddingLeft - expectedLeft) > snap || Mathf.Abs(causesStyle.paddingRight - expectedRight) > snap)
                         problems.Add($"{at}: Security causes padding is {causesStyle.paddingLeft}px left and {causesStyle.paddingRight}px right, expected {expectedLeft}px and {expectedRight}px");
                     if (!(panel.width > 0 && panel.height > 0)) problems.Add($"{at}: the report is not shown");
                     if (panel.xMin < window.xMin - 0.5f || panel.yMin < window.yMin - 0.5f || panel.xMax > window.xMax + 0.5f || panel.yMax > window.yMax + 0.5f)

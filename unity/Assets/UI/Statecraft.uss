@@ -115,7 +115,7 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 /* In the bar a long caption wraps rather than widen its meter; on the roomy bar it keeps one line, as in the promo (B8). */
 .meter .meter-name { max-width: 120px; }
 .top-bar--roomy .meter .meter-name { max-width: none; white-space: nowrap; }
-#security-level { font-size: 15px; color: var(--ink-dim); margin-left: 6px; white-space: nowrap; flex-shrink: 0; }
+#security-level { font-size: 15px; color: var(--ink-dim); margin-left: 6px; margin-right: 0; white-space: nowrap; flex-shrink: 0; }   /* margin-right: 0, or the default theme's Label margin stays on the far side (#2687) */
 .meter-row { flex-direction: row; align-items: flex-end; }
 .meter-value { font-size: 21px; color: var(--ink); }
 .meter-delta { font-size: 16px; margin-left: 7px; }
