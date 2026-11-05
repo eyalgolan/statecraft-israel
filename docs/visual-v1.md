@@ -767,9 +767,14 @@ The Deferred row "Runtime quality fallback" (review I1), sized by the DPR-2 stre
 (pure logic) and `QualityFallbackDriver` (feeds it `Time.unscaledDeltaTime`, applies its step), attached by
 `CameraRig.Init` through the map's teardown like the visual toggles.
 - **Steps:** level 0 is the tier (scale 1.0, tilt-shift on); 1: scale 0.9; 2: scale 0.8 (the research's 0.8-1.0 dynamic
-  range, notes 2.3); 3: scale 0.8 and the tilt-shift off. One step per decision, up in reverse. The scale is the active
+  range, notes 2.3); 3: scale 0.8 and the tilt-shift off; 4 (v0.3.7): as 3, and the town building models draw their far-off
+  copies without shadows at every zoom (`TownModelLayer.LowTier`), the 30 km opening too. Since v0.3.5 the opening sits
+  below the close switch (40 km), so the originals and their shadows draw from the first frame; the nightly's start-screen
+  p95 on its software GPU went from 35-88 ms (v0.3.4) to 320-690 ms (v0.3.5, v0.3.6). The opening and the switch stay;
+  only a device still over the floor after step 3 loses the originals. One step per decision, up in reverse. The scale is the active
   URP asset's `renderScale` (never above the tier's own); the tilt-shift uses its own `TiltShift.FallbackOff`, so stepping
-  up never turns on a tilt-shift the player (`?notiltshift`) or a profile turned off. The map's teardown puts both back.
+  up never turns on a tilt-shift the player (`?notiltshift`) or a profile turned off. The map's teardown puts all three
+  back, and a fixed quality choice clears the last two.
 - **Window: 3 s, back to back, one decision each.** The p95 of a 3 s window is over only when at least 5% of its frames
   are (5 of 90 at 30 fps), so a one-off hitch (End Turn's redraw, a GC, a first shader compile) never trips it and a real
   shortfall does within 3 s. Nothing is measured in the first 3 s after the map is built, or 0.5 s after each change; a
@@ -788,19 +793,20 @@ The Deferred row "Runtime quality fallback" (review I1), sized by the DPR-2 stre
   capture target (its renders and `-vprofile` must show the tier's own look), and in the editor a scale change would
   change the URP asset. Even on WebGL it stays off under `?vprofile`, `?profile` and `?shot` (instruments that must see the
   tier as configured) and with `?nofallback`; every change logs `QUALITY level=<n> scale=<s> tiltshift=<on|off>
-  p95_ms=<ms>`.
+  towns=<close|far> p95_ms=<ms>`.
 - **The player's quality choice (#40).** Automatic in Settings is this behaviour. High (the PC tier at render scale 1.0)
   and Low (the Mobile tier at 0.8) fix the quality: the fallback holds while one is set (`QualityFallbackDriver.Feed`),
   and every switch starts it again from the top (`GraphicsQuality.Changed`).
-- **Presentation only:** it reads no sim state and writes only the render scale and the tilt-shift flag, so turns, hashes
+- **Presentation only:** it reads no sim state and writes only the render scale, the tilt-shift flag and the towns' low tier, so turns, hashes
   and saves cannot change. The goldens and the 5-turn smoke match with it in the build: `uv run tools/web_check.py
   unity/Builds/Web-disabled --query "golden&smoke=5"` with the three `--expect` values from `docs/determinism.md`: PASS.
 - **Tests** (`QualityFallbackTests`, EditMode, synthetic frame times): the step order and range, one step per window and
   not before a full window, nothing during start-up, hitches, a pause and 33/34 ms frames do not trigger, recovery in
   reverse only after 3 good windows, the dead band holds and restarts the count, a failed step up doubles the wait (capped);
   integration: no driver in the editor; with the web tier's answer forced, `MapScene.Build` attaches one, its steps reach
-  the URP asset and `TiltShift.FallbackOff` (not `TiltShift.Enabled`), and a rebuild or teardown removes it and restores the
-  scale.
+  the URP asset, `TiltShift.FallbackOff` (not `TiltShift.Enabled`) and `TownModelLayer.LowTier`, and a rebuild or teardown
+  removes it and restores the scale and the town originals. `TownModelResidencyTests` checks that the low tier at the
+  opening draws Tel Aviv's far copies with no shadow casters, and that clearing it puts the originals back.
 - **In a real browser** (headed Chrome for Testing, ANGLE Metal, 1920x1080 at DPR 1, under `machine_lock.py --exclusive
   --wait-unity`, a scratch CDP script on `headed.Browser`): 30 s idle at `--cpu 1`, no `QUALITY` line. With CPU throttling
   at 20x from t = 30 s: `QUALITY level=1 scale=0.90 tiltshift=on p95_ms=97.00`, `level=2 scale=0.80 tiltshift=on

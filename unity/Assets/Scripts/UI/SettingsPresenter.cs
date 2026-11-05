@@ -17,7 +17,7 @@ namespace Statecraft.Game.UI
     /// (#1168, ExternalLink). The blur option turns it off and on: applied at once (TiltShift.Enabled, what the "tiltshift"
     /// toggle sets) and kept in the SettingsStore, so it holds after a reload. A stored "off" only ever turns the blur off, so ?notiltshift still boots without it. The
     /// button says what is set ("On" / "Off"), not only a colour: the player's choice (Enabled), not the web tier's
-    /// automatic last fallback step (TiltShift.FallbackOff), which it never changes.</summary>
+    /// automatic fallback's tilt-shift step (TiltShift.FallbackOff), which it never changes.</summary>
     public sealed class SettingsPresenter : IDisposable
     {
         public const string TiltShiftKey = "tiltshift", QualityKey = "quality", LanguageKey = "lang", UiScaleKey = "uiscale", SoundKey = "sfx", MusicKey = "music", CompanionKey = "companion", SelectedClass = "settings-choice-selected";

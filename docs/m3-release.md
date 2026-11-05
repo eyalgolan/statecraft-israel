@@ -68,7 +68,7 @@ start of M4, as a private Draft (owner ruling, 2026-10-10); their sections below
   - `TURN <n> <date> hash <state hash>` after every End Turn.
   - `CAMERA distance=<m> yaw=<deg>` with `?camlog`.
   - `PROFILE ...` with `?profile`.
-  - `QUALITY level=<n> scale=<s> tiltshift=<on|off> p95_ms=<ms>` whenever the runtime quality fallback steps (WebGL only;
+  - `QUALITY level=<n> scale=<s> tiltshift=<on|off> towns=<close|far> p95_ms=<ms>` whenever the runtime quality fallback steps (WebGL only;
     off with `?nofallback`; docs/visual-v1.md "Runtime quality fallback").
   - `BOOT phase=<name> at=<ms> ms dt=<ms> ms` for each boot phase with `?bootlog` (playtest 2, P2-1).
   - `NAV f=<frame> ...` with `?navlog`: every raw mouse event, UI pointer and submit event, screen toggle and map click,

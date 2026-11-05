@@ -39,10 +39,10 @@ public class QualityFallbackTests
     static QualityFallback Started() { var q = new QualityFallback(); Run(q, Fine, QualityFallback.StartupSeconds); return q; }
 
     [Test]
-    public void TheStepsLowerTheRenderScaleWithinTheResearchRangeThenTurnTheTiltShiftOff()
+    public void TheStepsLowerTheRenderScaleWithinTheResearchRangeThenTurnTheTiltShiftOffThenTheTownModelsGoFar()
     {
         var s = QualityFallback.Steps;
-        Assert.AreEqual(4, s.Count);
+        Assert.AreEqual(5, s.Count);
         Assert.AreEqual((1f, true), (s[0].RenderScale, s[0].TiltShift), "level 0 is the tier's own look");
         for (int i = 1; i < s.Count; i++)
         {
@@ -50,8 +50,15 @@ public class QualityFallbackTests
             Assert.LessOrEqual(s[i].RenderScale, s[i - 1].RenderScale);
         }
         int firstTiltOff = s.ToList().FindIndex(x => !x.TiltShift);
-        Assert.AreEqual(s.Count - 1, firstTiltOff, "the tilt-shift goes last");
+        Assert.AreEqual(s.Count - 2, firstTiltOff, "the tilt-shift goes after the render scale");
         Assert.AreEqual(0.8f, s[firstTiltOff - 1].RenderScale, "only once the scale is at its floor");
+        // The v0.3.7 web perf fix: the town building models' far-off copies at every zoom come last, once the scale and the
+        // tilt-shift are already down, so only a device still over the floor after both loses the 30 km originals.
+        int firstTownsFar = s.ToList().FindIndex(x => x.TownModelsFar);
+        Assert.AreEqual(s.Count - 1, firstTownsFar, "the towns' far copies go last");
+        Assert.AreEqual((0.8f, false), (s[firstTownsFar].RenderScale, s[firstTownsFar].TiltShift), "and keep the other steps");
+        Assert.AreEqual("scale=0.80 tiltshift=off towns=far", s[firstTownsFar].ToString());
+        Assert.AreEqual("scale=1.00 tiltshift=on towns=close", s[0].ToString());
     }
 
     [Test]
@@ -59,9 +66,28 @@ public class QualityFallbackTests
     {
         var q = Started();
         var levels = Run(q, Slow, 60f);
-        CollectionAssert.AreEqual(new[] { 1, 2, 3 }, levels, "one step per window, never past the last");
-        Assert.AreEqual(3, q.Level); Assert.IsFalse(q.Current.TiltShift); Assert.AreEqual(0.8f, q.Current.RenderScale);
+        CollectionAssert.AreEqual(new[] { 1, 2, 3, 4 }, levels, "one step per window, never past the last");
+        Assert.AreEqual(4, q.Level); Assert.IsFalse(q.Current.TiltShift); Assert.AreEqual(0.8f, q.Current.RenderScale);
+        Assert.IsTrue(q.Current.TownModelsFar);
         Assert.AreEqual(Slow, q.LastP95);
+    }
+
+    /// <summary>The towns' far-copy step is undone first as frames recover: after RecoverWindows windows under RecoverMs the
+    /// level steps back to the tilt-shift step, with the town originals back. Whole windows (Windows, as
+    /// ItRecoversInReverseOnlyAfterSustainedComfortableFrames): a time-based run of slow frames would leave a part-window of
+    /// them that spoils the first good window.</summary>
+    [Test]
+    public void FramesThatRecoverStepOffTheTownsFarStepFirst()
+    {
+        var q = Started();
+        int last = QualityFallback.Steps.Count - 1;
+        CollectionAssert.AreEqual(Enumerable.Range(1, last).ToArray(), Windows(q, Slow, last), "one step per slow window, to the last");
+        Assert.IsTrue(q.Current.TownModelsFar);
+        int n = QualityFallback.RecoverWindows;
+        Assert.IsEmpty(Windows(q, Fine, n - 1), "two good windows are not enough");
+        CollectionAssert.AreEqual(new[] { last - 1 }, Windows(q, Fine, 1), "the third one steps up");
+        Assert.IsFalse(q.Current.TownModelsFar, "the town originals are back");
+        Assert.IsFalse(q.Current.TiltShift, "the tilt-shift step is next");
     }
 
     /// <summary>Review M2: the slowest devices (1-3 fps) get the fallback too; a 3 s window of such frames holds only 3-6.</summary>
@@ -71,7 +97,7 @@ public class QualityFallbackTests
     public void VerySlowFramesStillStepDown(float ms)
     {
         var q = new QualityFallback();
-        CollectionAssert.AreEqual(new[] { 1, 2, 3 }, Run(q, ms, 60f));
+        CollectionAssert.AreEqual(new[] { 1, 2, 3, 4 }, Run(q, ms, 60f));
         Assert.AreEqual(ms, q.LastP95);
     }
 
@@ -254,15 +280,17 @@ public class QualityFallbackTests
             Assert.AreEqual(1, drivers.Length, "the rebuild's teardown removed nothing it should keep, and added one driver");
             var driver = drivers[0];
             for (float t = 0; t < 60_000f; t += Slow) driver.Feed(Slow);
-            Assert.AreEqual(3, driver.Controller.Level);
+            Assert.AreEqual(4, driver.Controller.Level);
             Assert.AreEqual(Mathf.Min(tierScale, 0.8f), asset.renderScale, 1e-6f);
             Assert.IsTrue(TiltShift.FallbackOff);
+            Assert.IsTrue(Statecraft.Game.Map.Kits.TownModelLayer.LowTier, "the last step puts the towns' far copies on");
             Assert.IsTrue(TiltShift.Enabled, "the tilt-shift toggle (the player's and the profile's) is left alone");
 
             map.Build();   // a rebuild tears the old map down first: one driver, back at level 0
             Assert.AreEqual(1, cam.GetComponents<QualityFallbackDriver>().Length);
             Assert.AreEqual(tierScale, asset.renderScale, "the old map's teardown put the tier's scale back");
             Assert.IsFalse(TiltShift.FallbackOff);
+            Assert.IsFalse(Statecraft.Game.Map.Kits.TownModelLayer.LowTier, "and the town originals: a new map never starts low");
 
             map.Clear(go => Object.DestroyImmediate(go));
             Assert.IsNull(cam.GetComponent<QualityFallbackDriver>(), "the map's teardown removes the driver");
@@ -272,6 +300,7 @@ public class QualityFallbackTests
         {
             CameraRig.FallbackWanted = wanted;
             asset.renderScale = tierScale;
+            Statecraft.Game.Map.Kits.TownModelLayer.LowTier = false;
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         }
     }
@@ -319,11 +348,13 @@ public class QualityFallbackTests
 
             GraphicsQuality.Apply(GraphicsQuality.Choice.Auto);
             for (float t = 0; t < 60_000f; t += Slow) driver.Feed(Slow);
-            Assert.AreEqual(3, driver.Controller.Level, "on Automatic the fallback steps down as before");
+            Assert.AreEqual(4, driver.Controller.Level, "on Automatic the fallback steps down as before");
             Assert.IsTrue(TiltShift.FallbackOff);
+            Assert.IsTrue(Statecraft.Game.Map.Kits.TownModelLayer.LowTier);
 
             GraphicsQuality.Apply(GraphicsQuality.Choice.Low);
-            Assert.IsFalse(TiltShift.FallbackOff, "a fixed choice ends the fallback's last step");
+            Assert.IsFalse(TiltShift.FallbackOff, "a fixed choice ends the fallback's last steps");
+            Assert.IsFalse(Statecraft.Game.Map.Kits.TownModelLayer.LowTier, "the town originals too");
             GraphicsQuality.Apply(GraphicsQuality.Choice.Auto);
             Assert.AreEqual(tierScale, asset.renderScale, 1e-6f, "Automatic puts the tier's own scale back");
             driver.Feed(Fine);
@@ -333,6 +364,7 @@ public class QualityFallbackTests
         finally
         {
             GraphicsQuality.Apply(GraphicsQuality.Choice.Auto);
+            Statecraft.Game.Map.Kits.TownModelLayer.LowTier = false;
             QualitySettings.SetQualityLevel(level, true);
             asset.renderScale = tierScale; mobile.renderScale = mobileScale;
             Object.DestroyImmediate(go);
