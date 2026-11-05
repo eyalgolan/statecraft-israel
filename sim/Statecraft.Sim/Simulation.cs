@@ -48,7 +48,7 @@ namespace Statecraft.Sim
             }
 
             var spent = new Dictionary<int, int>();
-            RunOrders(c, s, commands, spent, new Dictionary<int, (int Q, int R)>(), why, rejected);
+            RunOrders(c, s, commands, spent, new Dictionary<int, AttackRecord>(), why, rejected);
             EventSystem.Delegate(c, s, why, spent, rejected);   // a delegated card's unit orders share the turn's movement (R-ENEMY-005)
 
             var len = SecuritySystem.TurnLengthFor(c, s.Date, s.Rung);
@@ -80,7 +80,9 @@ namespace Statecraft.Sim
             ContentWindows.Update(c, s, turnStart);
             Cabinet.ExpireOnGovernmentChange(c, s, why);
             if (c.UsesAttention) AttentionSystem.Refill(c, s);
-            if (s.GameOver == null) EventSystem.Trigger(c, s, why, turnStart);   // a game that just ended raises no new events
+            // A game that just ended raises no new events, but the unfired cards of recorded objectives (R-LOOP-004, R-OBJ-003;
+            // the owner's choice "Show the card (Recommended)", 4 November 2026, #2536).
+            EventSystem.Trigger(c, s, why, turnStart, endingTurn: s.GameOver != null);
             return new StepResult(s, why, rejected);
         }
 
@@ -106,7 +108,7 @@ namespace Statecraft.Sim
             PopulationLedger.RefuseAggregate(state);
             CommandText.Validate(commands);
             var s = state.Clone();
-            if (s.GameOver == null) RunOrders(c, s, commands, new Dictionary<int, int>(), new Dictionary<int, (int Q, int R)>(), new List<Cause>(), new List<Rejection>());
+            if (s.GameOver == null) RunOrders(c, s, commands, new Dictionary<int, int>(), new Dictionary<int, AttackRecord>(), new List<Cause>(), new List<Rejection>());
             return EventSystem.DelegatedTo(c, s, c.Events.First(e => e.Id == eventId));
         }
 
@@ -123,7 +125,7 @@ namespace Statecraft.Sim
             CommandText.Validate(commands);
             var s = state.Clone();
             var why = new List<Cause>(); var rejected = new List<Rejection>(); var spent = new Dictionary<int, int>();
-            var attacked = new Dictionary<int, (int Q, int R)>();
+            var attacked = new Dictionary<int, AttackRecord>();
             if (s.GameOver != null)
                 foreach (var cmd in commands) rejected.Add(new Rejection(cmd, $"The game is over: {PlayerText.GameOver(s.GameOver)}"));
             else RunOrders(c, s, commands, spent, attacked, why, rejected);
@@ -138,7 +140,7 @@ namespace Statecraft.Sim
         /// Attention first; one that fails validation is refunded and rejected with its reason. Step, DelegatedTo and Preview
         /// share it, so every dry run sees what End Turn will.</summary>
         static void RunOrders(Content c, GameState s, IReadOnlyList<Command> commands, Dictionary<int, int> spent,
-                              Dictionary<int, (int Q, int R)> attacked, List<Cause> why, List<Rejection> rejected)
+                              Dictionary<int, AttackRecord> attacked, List<Cause> why, List<Rejection> rejected)
         {
             if (c.IsGdd) Movement.ContinueRoutes(c, s, spent, why, rejected);   // R-MOVE-009: the route step, before the turn's orders
             if (c.IsGdd) SettlementControl.CaptureHeld(c, s, why);
@@ -182,7 +184,7 @@ namespace Statecraft.Sim
         /// reported as a politics cause), or the reason it failed validation. A command that fails validation leaves
         /// the state as it found it (attention is refunded by the caller).</summary>
         static string? Execute(Content c, GameState s, Command cmd, Dictionary<int, int> spent,
-                               Dictionary<int, (int Q, int R)> attacked, List<Cause> why, int startRung, int dollarsAtStart,
+                               Dictionary<int, AttackRecord> attacked, List<Cause> why, int startRung, int dollarsAtStart,
                                List<Rejection> rejected)
         {
             switch (cmd)

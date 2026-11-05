@@ -45,7 +45,6 @@ public class Gdd03CraftArithmeticTests
     [Theory]
     [InlineData("Industry")]
     [InlineData("Workshop")]
-    [InlineData("Construction")]
     public void ActualWorkCrossesThresholdAfterOldTierOutput(string activityName)
     {
         var activity = Enum.Parse<CraftTickActivity>(activityName);
@@ -56,24 +55,26 @@ public class Gdd03CraftArithmeticTests
         Assert.Equal(17, crossing.UnitId); Assert.Equal(36, crossing.WorkXp);
         Assert.Equal(CivilianTier.Apprentice, crossing.OutputTier); Assert.Equal(CivilianTier.Expert, crossing.TierAfter);
         Assert.Equal(activity == CraftTickActivity.Industry ? 2m : 0m, crossing.IndustryIncome);
-        Assert.Equal(activity == CraftTickActivity.Construction ? 1.5m : 0m, crossing.BuilderWork);
+        Assert.Equal(0m, crossing.BuilderWork);
         var next = a.WorkTick(17, crossing.TierAfter, crossing.WorkXp, activity, true);
         Assert.Equal(37, next.WorkXp); Assert.Equal(CivilianTier.Expert, next.OutputTier);
         Assert.Equal(activity == CraftTickActivity.Industry ? 3m : 0m, next.IndustryIncome);
-        Assert.Equal(activity == CraftTickActivity.Construction ? 3m : 0m, next.BuilderWork);
+        Assert.Equal(0m, next.BuilderWork);
         // Workshop work has no realized output field: confirmed intermediate/zero-yield turns still count.
         Assert.Equal(0m, a.WorkTick(17, CivilianTier.Apprentice, 0, CraftTickActivity.Workshop, true).IndustryIncome);
     }
 
-    // R-CRAFT-002: synthetic 12+12+12 participation sequence, no second persisted XP store.
+    // R-CRAFT-002: synthetic 18+12+18 participation sequence, no second persisted XP store. The 12 building turns
+    // between them quote builder work but add no XP (#2472).
     [Fact]
     public void MixedWorkSourcesCountOneTickPerExplicitReceipt()
     {
         var a = Arithmetic(); var xp = 0; var tier = CivilianTier.Apprentice;
-        foreach (var activity in new[] { CraftTickActivity.Industry, CraftTickActivity.Workshop, CraftTickActivity.Construction })
-            for (var i = 0; i < 12; i++)
+        foreach (var activity in new[] { CraftTickActivity.Industry, CraftTickActivity.Construction, CraftTickActivity.Workshop })
+            for (var i = 0; i < (activity == CraftTickActivity.Construction ? 12 : 18); i++)
             {
                 var r = a.WorkTick(17, tier, xp, activity, true); xp = r.WorkXp; tier = r.TierAfter;
+                if (activity == CraftTickActivity.Construction) Assert.Equal(1.5m, r.BuilderWork);
             }
         Assert.Equal(36, xp); Assert.Equal(CivilianTier.Expert, tier);
     }

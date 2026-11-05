@@ -153,6 +153,8 @@ namespace Statecraft.Sim
             Scalar(c, "military.fortify_bonus", false);
             Scalar(c, "military.combat_xp_gain"); Scalar(c, "military.combat_xp_full");   // R-UNIT-011
             if (Scalar(c, "military.fortify_turns") != 1) throw Invalid("military.fortify_turns", "only the existing one-turn settlement is implemented");
+            // R-ORDER-002 (#2601): the rule names this value Agreed; Entry alone would also accept a Default row.
+            if (Entry(c, "military.fortify_turns").Basis != "Agreed") throw Invalid("military.fortify_turns", "must be Agreed (R-ORDER-002)");
             foreach (var biome in new[] { "coastal_plain", "lowland", "valley", "hills", "mountains", "desert" })
             {
                 Terrain(c, biome, "infantry"); Terrain(c, biome, "armour"); Defence(c, biome);

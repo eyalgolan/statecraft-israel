@@ -34,7 +34,7 @@ from nightly_publish import (GitHub, Itch, demo_serves, itch_build_frame_url, re
                              unzip_to)
 from nightly_state import (JOB, TZ, Config, LatestRecovery, Missed, Published, Refused, Runner, Skipped, State, Stop,
                            enable_itch, late_start, load_config, load_state, log_line, missed_days, night_of,
-                           notify, record, run_lock, save_state, savetest_lock, tag_for)
+                           notify, record, run_lock, save_state, savetest_lock, tag_for, write_refusal_log)
 from web_check import find_chrome
 
 HOLDER_ENV = unity_postmerge.machine_lock.HOLDER_ENV
@@ -230,11 +230,18 @@ def _limit(night: Night, minutes: float) -> float:
 
 
 def _step(night: Night, runner: Runner, name: str, cmd: list[str], minutes: float,
-          env: dict[str, str] | None = None, *, stop_on_interrupt: bool = False) -> tuple[int, str]:
+          env: dict[str, str] | None = None, *, stop_on_interrupt: bool = False) -> tuple[int, str, Path]:
     log = night.run_dir / f"{name}.log"
     kwargs = {"stop_on_interrupt": True} if stop_on_interrupt else {}
-    code = runner.run(cmd, cwd=night.cfg.clone, log=log, deadline=_limit(night, minutes), env=env, **kwargs)
-    return code, log.read_text(encoding="utf-8", errors="replace") if log.is_file() else ""
+    try:
+        code = runner.run(cmd, cwd=night.cfg.clone, log=log, deadline=_limit(night, minutes), env=env, **kwargs)
+    except (OSError, subprocess.SubprocessError) as error:
+        raise Refused(name, f"{type(error).__name__}: {error}", log=log) from error
+    try:
+        text = log.read_text(encoding="utf-8", errors="replace") if log.is_file() else ""
+    except OSError as error:
+        raise Refused(name, f"could not read command log: {error}", log=log) from error
+    return code, text, log
 
 
 def run_gates(night: Night, runner: Runner) -> None:
@@ -257,28 +264,28 @@ def run_gates(night: Night, runner: Runner) -> None:
         pending = None
         try:
             clone = night.cfg.clone
-            code, _ = step("build-sim", ["uv", "run", str(clone / "tools/build_sim_for_unity.py")], 15)
+            code, _, log = step("build-sim", ["uv", "run", str(clone / "tools/build_sim_for_unity.py")], 15)
             if code != 0:
-                raise Refused("build-sim", "timed out" if code == 124 else f"build_sim_for_unity exited {code}")
-            code, text = step("check", ["bash", "scripts/check.sh", "origin/main"], 45)
+                raise Refused("build-sim", "timed out" if code == 124 else f"build_sim_for_unity exited {code}", log=log)
+            code, text, log = step("check", ["bash", "scripts/check.sh", "origin/main"], 45)
             why = nightly_checks.check_sh_verdict(text, code)
             if why:
-                raise Refused("check", "timed out" if code == 124 else why)
-            code, text = step("release-gate", ["bash", "scripts/oss/release_gate.sh"], 60)
+                raise Refused("check", "timed out" if code == 124 else why, log=log)
+            code, text, log = step("release-gate", ["bash", "scripts/oss/release_gate.sh"], 60)
             why = nightly_checks.release_gate_verdict(text, code)
             if why:
-                raise Refused("release-gate", "timed out" if code == 124 else why)
+                raise Refused("release-gate", "timed out" if code == 124 else why, log=log)
             for locale in ("he_IL", "en_US"):
                 lang = f"{locale}.UTF-8"
                 env = {**base_env, "LANG": lang, "LC_ALL": lang}
-                code, text = step(f"sim-{locale}",
+                code, text, log = step(f"sim-{locale}",
                                    ["dotnet", "test", "sim/Statecraft.sln", "-c", "Release", "--nologo",
                                     "-nodeReuse:false", "-p:UseSharedCompilation=false"], 30, env)
                 failed, total = nightly_checks.dotnet_totals(text)
                 if code == 124:
-                    raise Refused(f"sim-{locale}", "timed out")
+                    raise Refused(f"sim-{locale}", "timed out", log=log)
                 if code != 0 or failed or total == 0:
-                    raise Refused(f"sim-{locale}", f"dotnet test exited {code}: {failed} failed of {total} tests")
+                    raise Refused(f"sim-{locale}", f"dotnet test exited {code}: {failed} failed of {total} tests", log=log)
         except BaseException as primary:
             pending = primary
             raise
@@ -297,7 +304,8 @@ def run_gates(night: Night, runner: Runner) -> None:
                 shutdown_failure = f"compiler server shutdown raised {type(error).__name__}: {error}"
             if shutdown_failure is not None:
                 if pending is None:
-                    raise Refused("build-server-shutdown", shutdown_failure)
+                    raise Refused("build-server-shutdown", shutdown_failure,
+                                  log=night.run_dir / "build-server-shutdown.log")
                 night.notes.append(shutdown_failure)
                 try:
                     (night.run_dir / "build-server-shutdown.note").write_text(shutdown_failure + "\n", encoding="utf-8")
@@ -333,11 +341,14 @@ RESTORE_ARGV = ["git", "checkout", "--", "unity/ProjectSettings", "unity/Assets/
 
 def restore_settings(night: Night, runner: Runner) -> None:
     """Unity rewrites project settings while it runs; put them back so the tree stays clean."""
-    code = runner.run(list(RESTORE_ARGV),
-                      cwd=night.cfg.clone, log=night.run_dir / "restore-settings.log",
-                      deadline=time.monotonic() + 120)
+    log = night.run_dir / "restore-settings.log"
+    try:
+        code = runner.run(list(RESTORE_ARGV), cwd=night.cfg.clone, log=log,
+                          deadline=time.monotonic() + 120)
+    except (OSError, subprocess.SubprocessError) as error:
+        raise Refused("restore-settings", f"{type(error).__name__}: {error}", log=log) from error
     if code != 0:
-        raise Refused("restore-settings", f"git checkout of the Unity settings exited {code}")
+        raise Refused("restore-settings", f"git checkout of the Unity settings exited {code}", log=log)
 
 
 def _note_restore(night: Night, err: Refused) -> None:
@@ -355,20 +366,28 @@ def run_editmode(night: Night, runner: Runner) -> None:
     try:
         warm = unity_argv(night, ["-buildTarget", "OSXUniversal", "-executeMethod", unity_postmerge.WARM_UP,
                                   "-logFile", str(night.run_dir / "warmup.log")], webgl=False)
-        warm_code = runner.run(warm, cwd=night.cfg.clone, log=night.run_dir / "warmup.out",
-                               deadline=_limit(night, 60), env=env, holder=night.run_dir / "lock-holder")
+        warm_out = night.run_dir / "warmup.out"
+        try:
+            warm_code = runner.run(warm, cwd=night.cfg.clone, log=warm_out,
+                                   deadline=_limit(night, 60), env=env, holder=night.run_dir / "lock-holder")
+        except (OSError, subprocess.SubprocessError) as error:
+            raise Refused("editmode", f"{type(error).__name__}: {error}", log=warm_out) from error
         if warm_code == 124:
-            raise Refused("editmode", "the Unity warm-up timed out")
+            raise Refused("editmode", "the Unity warm-up timed out", log=warm_out)
         warm_log = night.run_dir / "warmup.log"
         warm_text = warm_log.read_text(encoding="utf-8", errors="replace") if warm_log.is_file() else ""
         if warm_code != 0 or WARM_UP_OK not in warm_text:
-            raise Refused("editmode", f"the Unity warm-up failed or did not confirm (exit {warm_code})")
+            raise Refused("editmode", f"the Unity warm-up failed or did not confirm (exit {warm_code})", log=warm_out)
         check_window(night)
         argv = unity_argv(night, ["-buildTarget", "OSXUniversal", "-runTests", "-testPlatform", "EditMode",
                                   "-testResults", str(xml), "-logFile", str(night.run_dir / "editmode.log")],
                           webgl=False)
-        code = runner.run(argv, cwd=night.cfg.clone, log=night.run_dir / "editmode.out",
-                          deadline=_limit(night, 150), env=env, holder=night.run_dir / "lock-holder")
+        edit_out = night.run_dir / "editmode.out"
+        try:
+            code = runner.run(argv, cwd=night.cfg.clone, log=edit_out,
+                              deadline=_limit(night, 150), env=env, holder=night.run_dir / "lock-holder")
+        except (OSError, subprocess.SubprocessError) as error:
+            raise Refused("editmode", f"{type(error).__name__}: {error}", log=edit_out) from error
     except BaseException:
         pending = True
         raise
@@ -386,7 +405,7 @@ def run_editmode(night: Night, runner: Runner) -> None:
                or f"exit {code}, {results.failed} failed of {results.total} tests")
         if restore_error is not None:
             _note_restore(night, restore_error)
-        raise Refused("editmode", why)
+        raise Refused("editmode", why, log=night.run_dir / "editmode.out")
     if restore_error is not None:
         raise restore_error
 
@@ -429,9 +448,11 @@ def build_web(night: Night, runner: Runner, *, pages: bool, free_gb: Callable[[P
         raise Refused("disk", f"{free:.1f} GB free, {night.cfg.min_free_gb} GB needed before a WebGL build")
     check_window(night)
     name = "Web-pages" if pages else "Web-gzip"
+    variant = "pages" if pages else "gz"
+    gate = f"build-web-{variant}"
     build = clone / "unity/Builds" / name
     shutil.rmtree(build, ignore_errors=True)   # a page left by an earlier run must not pass the stamp check
-    log = night.run_dir / f"unity-build-web-{'pages' if pages else 'gz'}.log"
+    log = night.run_dir / f"unity-build-web-{variant}.log"
     args = [*BUILD_WEB, "-compression", "gzip"]
     if pages:
         args += ["-decompressionFallback", "-shareable", "-out", f"Builds/{name}"]
@@ -447,9 +468,12 @@ def build_web(night: Night, runner: Runner, *, pages: bool, free_gb: Callable[[P
             stamp_bundle_version(clone / SETTINGS_ASSET, night.version)
         except ValueError as e:
             raise Refused("version-stamp", str(e)) from e
-        code = runner.run(unity_argv(night, args, webgl=True), cwd=clone,
-                          log=night.run_dir / f"unity-build-web-{'pages' if pages else 'gz'}.out",
-                          deadline=_limit(night, 120), env=env, holder=night.run_dir / "lock-holder")
+        out_log = night.run_dir / f"unity-build-web-{variant}.out"
+        try:
+            code = runner.run(unity_argv(night, args, webgl=True), cwd=clone, log=out_log,
+                              deadline=_limit(night, 120), env=env, holder=night.run_dir / "lock-holder")
+        except (OSError, subprocess.SubprocessError) as error:
+            raise Refused(gate, f"{type(error).__name__}: {error}", log=out_log) from error
     except BaseException:
         pending = True
         raise
@@ -465,8 +489,8 @@ def build_web(night: Night, runner: Runner, *, pages: bool, free_gb: Callable[[P
         if restore_error is not None:
             _note_restore(night, restore_error)
         if code == 124:
-            raise Refused("build-web", "the Unity build timed out")
-        raise Refused("build-web", f"the Unity build exited {code}{_build_failure_detail(log)}")
+            raise Refused(gate, "the Unity build timed out", log=log)
+        raise Refused(gate, f"the Unity build exited {code}{_build_failure_detail(log)}", log=log)
     if restore_error is not None:
         raise restore_error
     index = build / "index.html"
@@ -478,13 +502,15 @@ def build_web(night: Night, runner: Runner, *, pages: bool, free_gb: Callable[[P
 
 
 def package_zip(night: Night, runner: Runner, build: Path, pages: bool) -> Path:
+    variant = "pages" if pages else "gz"
+    gate = f"package-{variant}"
     zip_path = night.run_dir / f"statecraft-israel-v{night.version}-web{'-pages' if pages else ''}.zip"
-    code, text = _step(night, runner, f"package-{'pages' if pages else 'gz'}",
-                       ["bash", "scripts/oss/package_web.sh", str(build), str(zip_path)], 20)
+    code, text, log = _step(night, runner, gate,
+                            ["bash", "scripts/oss/package_web.sh", str(build), str(zip_path)], 20)
     if code != 0:
-        raise Refused("package", "timed out" if code == 124 else f"package_web.sh exited {code}")
+        raise Refused(gate, "timed out" if code == 124 else f"package_web.sh exited {code}", log=log)
     if "PACKAGED " not in text or "OK: notices inside" not in text:
-        raise Refused("package", "package_web.sh did not confirm the zip and its notices")
+        raise Refused(gate, "package_web.sh did not confirm the zip and its notices", log=log)
     return zip_path
 
 
@@ -506,11 +532,12 @@ def run_web_checks(night: Night, runner: Runner, build: Path) -> None:
     for i, args in enumerate(passes, 1):
         argv = ["uv", "run", str(clone / "tools/machine_lock.py"), "--shared", "--",
                 "uv", "run", str(clone / "tools/web_check.py"), *args]
-        code, text = _step(night, runner, f"web-check-{build.name}-{i}", argv, 10)
+        name = f"web-check-{build.name}-{i}"
+        code, text, log = _step(night, runner, name, argv, 10)
         if code == 124:
-            raise Refused("web-check", f"{build.name} pass {i} timed out")
+            raise Refused("web-check", f"{build.name} pass {i} timed out", log=log)
         if code != 0 or not re.search(r"^PASS:", text, re.M):
-            raise Refused("web-check", f"{build.name} pass {i} exited {code} without a PASS line")
+            raise Refused("web-check", f"{build.name} pass {i} exited {code} without a PASS line", log=log)
 
 
 def check_sizes(night: Night, gh: GitHub, build: Path, previous_zip: Path, prev_sha: str | None, *,
@@ -545,18 +572,21 @@ def measure_boot(night: Night, runner: Runner, build: Path) -> float:
                 "--", "uv", "run", str(clone / "tools/web_check.py"), str(build), "--query", "bootlog",
                 "--expect", "GAME OK", "--timeout", "300", "--stall", "90"]
         log = night.run_dir / f"boot-{i}.log"
-        code = runner.run(argv, cwd=night.cfg.main_repo, log=log, deadline=_limit(night, 60))
+        try:
+            code = runner.run(argv, cwd=night.cfg.main_repo, log=log, deadline=_limit(night, 60))
+        except (OSError, subprocess.SubprocessError) as error:
+            raise Refused("boot", f"{type(error).__name__}: {error}", log=log) from error
         text = log.read_text(encoding="utf-8", errors="replace") if log.is_file() else ""
         if code == 124:
-            raise Refused("boot", f"boot run {i} timed out")
+            raise Refused("boot", f"boot run {i} timed out", log=log)
         if code == 3:
-            raise Refused("boot", f"boot run {i}: another Unity was still running after 45 minutes")
+            raise Refused("boot", f"boot run {i}: another Unity was still running after 45 minutes", log=log)
         if code != 0:
-            raise Refused("boot", f"boot run {i} exited {code}")
+            raise Refused("boot", f"boot run {i} exited {code}", log=log)
         try:
             runs.append(nightly_checks.boot_ms(text))
         except ValueError as e:
-            raise Refused("boot", f"boot run {i}: {e}") from e
+            raise Refused("boot", f"boot run {i}: {e}", log=log) from e
     return float(statistics.median(runs))
 
 
@@ -672,10 +702,11 @@ def publish_night(night: Night, state: State, gh: GitHub, itch, zips: tuple[Path
     if use_itch and itch is None:   # before any store change: enabled means the push is part of this night
         raise Refused("itch", "itch is enabled but there is no itch client")
     since = prev_sha or prev_tag
-    subjects = [ln for ln in _git(runner, night.cfg.clone, "log", "--format=%s", f"{since}..{night.sha}").splitlines()
-                if ln]
+    # %aN is the author name after .mailmap, so a mailmap entry gives a contributor their credited name (#2654)
+    log = _git(runner, night.cfg.clone, "log", "--format=%s%x1f%aN", f"{since}..{night.sha}")
+    changes = [(s, a) for s, _, a in (ln.partition("\x1f") for ln in log.split("\n") if ln)]
     notes = night.run_dir / "release-notes.md"
-    notes.write_text(release_notes(version=night.version, sha=night.sha, since=since, subjects=subjects,
+    notes.write_text(release_notes(version=night.version, sha=night.sha, since=since, changes=changes,
                                    sha256_lines=sha256_lines(list(zips))), encoding="utf-8")
     gh.ensure_tag_available(night.tag)   # again just before create: a release made since preflight is never ours
     def created(release_id: int) -> None:
@@ -735,8 +766,6 @@ def publish_night(night: Night, state: State, gh: GitHub, itch, zips: tuple[Path
         state.open_draft = None
         state.open_draft_id = None
         state.last_published = Published(night.tag, night.sha, night.version, sizes, boot)
-        if len(state.boot_baseline) < BASELINE_NIGHTS:
-            state.boot_baseline.append(boot)
         state.site_pending = night.version   # until the demo serves this version, a later night retries the deploy
         save()
         if not use_itch:
@@ -748,6 +777,8 @@ def publish_night(night: Night, state: State, gh: GitHub, itch, zips: tuple[Path
             try:
                 gh.dispatch_site(time.monotonic() + SITE_WAIT_SECONDS)
                 demo_serves(night.cfg.site_demo_url, night.version, deadline=time.monotonic() + SITE_WAIT_SECONDS)
+                if len(state.boot_baseline) < BASELINE_NIGHTS:
+                    state.boot_baseline.append(boot)
                 state.site_pending = None
                 return
             except Exception as e:
@@ -800,7 +831,7 @@ def steam_ids_missing(clone: Path) -> str | None:
 def run_steam(night: Night, runner: Runner) -> None:
     """After the web nightly is published: build the Steam players, stage them in a draft release and dispatch the
     upload to the `nightly` branch. It never refuses, unpublishes or rolls back the web nightly: any failure only adds
-    steam=failed to the night's line (the logs are in the run folder) and notifies."""
+    steam=failed and the exact evidence log to the night's line, and notifies."""
     out = night.run_dir / "steam-release"
     try:
         if (why := steam_ids_missing(night.cfg.clone)) is not None:
@@ -809,22 +840,31 @@ def run_steam(night: Night, runner: Runner) -> None:
         check_window(night)
         # tonight's tag was made on GitHub by the publish; release_build.py checks it points at HEAD and never fetches
         _git(runner, night.cfg.clone, "fetch", "--no-tags", "origin", f"refs/tags/{night.tag}:refs/tags/{night.tag}")
-        code, _ = _step(night, runner, "steam-build",
-                        ["uv", "run", "tools/release_build.py", "--platform", "all", "--steam", "--tag", night.tag,
-                         "--nightly-version", night.version, "--out", str(out)], STEAM_BUILD_MINUTES,
-                        unity_env(night), stop_on_interrupt=True)
+        code, _, log = _step(night, runner, "steam-build",
+                             ["uv", "run", "tools/release_build.py", "--platform", "all", "--steam", "--tag", night.tag,
+                              "--nightly-version", night.version, "--out", str(out)], STEAM_BUILD_MINUTES,
+                             unity_env(night), stop_on_interrupt=True)
         if code != 0:
-            raise Refused("steam", "release_build.py timed out" if code == 124 else f"release_build.py exited {code}")
-        code, _ = _step(night, runner, "steam-stage",
-                        ["uv", "run", "tools/steam_upload.py", "stage", "--out", str(out), "--tag", night.tag],
-                        STEAM_STAGE_MINUTES, stop_on_interrupt=True)
+            raise Refused("steam-build", "release_build.py timed out" if code == 124 else f"release_build.py exited {code}",
+                          log=log)
+        code, _, log = _step(night, runner, "steam-stage",
+                             ["uv", "run", "tools/steam_upload.py", "stage", "--out", str(out), "--tag", night.tag],
+                             STEAM_STAGE_MINUTES, stop_on_interrupt=True)
         if code != 0:
-            raise Refused("steam", "steam_upload.py timed out" if code == 124 else f"steam_upload.py exited {code}")
+            raise Refused("steam-stage", "steam_upload.py timed out" if code == 124 else f"steam_upload.py exited {code}",
+                          log=log)
     except Exception as e:
         detail = _detail(e)
         print(f"steam: failed: {detail}", file=sys.stderr)
-        night.notes.append("steam=failed")
-        notify("Nightly Steam stage failed", f"{night.tag} is published; Steam: {detail}; logs in {night.run_dir}"[:200])
+        source = e.log if isinstance(e, Stop) else None
+        try:
+            failure_log = write_refusal_log(night.run_dir, e.gate if isinstance(e, Stop) else "steam", detail, source)
+            night.notes.append(f"steam=failed steam_log={failure_log}")
+            where = str(failure_log)
+        except OSError as error:
+            night.notes.append(f"steam=failed detail={detail}; could not write steam evidence: {error}")
+            where = f"evidence unavailable ({error})"
+        notify("Nightly Steam stage failed", f"{night.tag} is published; Steam: {detail}; log: {where}"[:200])
     finally:
         # Nothing prunes the run folders, and three players and their zips a night would eat the free space the next
         # web nightly's disk gate needs (review of #2155). The draft holds the zips; the record and the logs stay.
@@ -905,6 +945,8 @@ def run_night(cfg: Config, state_path: Path, job: Path, runner: Runner, gh: GitH
     outcome, gate, detail = "REFUSED", "internal", ""
     state: State | None = None
     night: Night | None = None
+    evidence: Path | None = None
+    run_dir = job / "runs" / f"{now.astimezone(TZ):%Y%m%d-%H%M%S}"
     recovery_note = ""
     day = night_of(now)
     try:
@@ -932,6 +974,7 @@ def run_night(cfg: Config, state_path: Path, job: Path, runner: Runner, gh: GitH
             outcome, gate = ("PUBLISHED" if published else "NO-PUBLISH"), "-"
         except Stop as e:
             outcome, gate, detail = e.outcome, e.gate, e.detail
+            evidence = e.log
         except STAGE_ERRORS as e:
             stage = "preflight" if night is None else "run"
             outcome, gate, detail = "REFUSED", stage, str(e)
@@ -946,8 +989,16 @@ def run_night(cfg: Config, state_path: Path, job: Path, runner: Runner, gh: GitH
                 detail = " ".join(filter(None, [detail, recovery_note]))
             if night is not None and night.notes:
                 detail = " ".join(filter(None, [detail, *night.notes]))
+            if outcome == "REFUSED":
+                try:
+                    evidence = write_refusal_log(run_dir, gate, detail, evidence)
+                except OSError as error:
+                    evidence = None
+                    detail = f"{detail}; could not write refusal log: {error}"
+            elif night is not None:
+                evidence = night.run_dir
             line = log_line(now, outcome, tag=night.tag if night else None, sha=night.sha if night else None,
-                            gate=gate, log=night.run_dir if night else None)
+                            gate=gate, log=evidence)
             record(job / "LOG.md", cfg.handoff, f"{line} {detail}".rstrip() if detail else line)
             if state is not None:   # after the record, so a failed save never costs the night its line
                 state.last_run_day = day.isoformat()
@@ -1053,21 +1104,34 @@ def savetest(cfg: Config, config_path: Path, job: Path, runner: Runner, gh: GitH
     work = Path(job) / "savetest" / stamp
     evidence: dict = {"tag": tag, "target": cfg.savetest_itch_target}
     result, detail = "INCONCLUSIVE", ""
-    with savetest_lock(Path(job)) as held:
-        if not held:
-            detail = "another save test is running on this job (savetest.lock); nothing was pushed"
-        else:
-            try:
+    try:
+        with savetest_lock(Path(job)) as held:
+            if not held:
+                detail = "another save test is running on this job (savetest.lock); nothing was pushed"
+            else:
                 result, detail = _savetest(cfg, work, runner, gh, itch, tag, evidence, fetch, sleep)
-            except Stop as e:
-                detail = f"{e.gate}: {e.detail}"
-            except (OSError, SystemExit) as e:   # find_chrome exits when there is no Chrome
-                detail = f"{type(e).__name__}: {e}"
-    evidence.update(result=result, detail=detail)
-    if work.is_dir():
-        (work / "evidence.json").write_text(json.dumps(evidence, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    if result == "PASS":
-        enable_itch(config_path, work / "evidence.json")
+    except Stop as e:
+        result = "INCONCLUSIVE"
+        detail = f"{e.gate}: {e.detail}"
+    except (OSError, SystemExit) as e:   # find_chrome exits when there is no Chrome
+        result = "INCONCLUSIVE"
+        detail = f"{type(e).__name__}: {e}"
+    try:
+        evidence.update(result=result, detail=detail)
+        if work.is_dir():
+            (work / "evidence.json").write_text(json.dumps(evidence, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        if result == "PASS":
+            enable_itch(config_path, work / "evidence.json")
+    except (Stop, OSError) as e:   # #2684 review: a failure after the test still gets its one SAVETEST record
+        result = "INCONCLUSIVE"
+        detail = f"{e.gate}: {e.detail}" if isinstance(e, Stop) else f"{type(e).__name__}: {e}"
+        evidence.update(result=result, detail=detail)
+        if work.is_dir():
+            try:
+                (work / "evidence.json").write_text(json.dumps(evidence, indent=2, sort_keys=True) + "\n",
+                                                     encoding="utf-8")
+            except OSError:
+                pass   # LOG.md stays the record when the evidence file itself cannot be written
     record(Path(job) / "LOG.md", cfg.handoff, f"SAVETEST {result} tag={tag} {detail}".rstrip())
     return result
 
@@ -1210,6 +1274,8 @@ def run_savetest(cfg: Config, job: Path, tag: str) -> int:
         runner = ProcRunner()
         gh, itch = GitHub(runner, cfg.repo_slug, cfg.clone), Itch(runner, cfg.butler, cfg.savetest_itch_target)
     except Refused as e:
+        record(Path(job) / "LOG.md", cfg.handoff,
+               f"SAVETEST INCONCLUSIVE tag={tag} {e.gate}: {e.detail}")
         print(e, file=sys.stderr)
         return 1
     result = savetest(cfg, job / "config.json", job, runner, gh, itch, tag=tag)
@@ -1233,25 +1299,58 @@ def main(argv: list[str] | None = None) -> int:
         cfg = load_config(job / "config.json")
     except Refused as e:   # a corrupt config is a recorded REFUSED night, not a first night on defaults
         if not getattr(args, "no_publish", False):   # the savetest command has no such flag
-            line = log_line(now, "REFUSED", tag=None, sha=None, gate=e.gate, log=None)
-            record(job / "LOG.md", Config().handoff, f"{line} {e.detail}")
+            detail = e.detail
+            try:
+                evidence = write_refusal_log(job / "runs" / f"{now.astimezone(TZ):%Y%m%d-%H%M%S}",
+                                             e.gate, detail, e.log)
+            except OSError as error:
+                evidence = None
+                detail = f"{detail}; could not write refusal log: {error}"
+            line = log_line(now, "REFUSED", tag=None, sha=None, gate=e.gate, log=evidence)
+            record(job / "LOG.md", Config().handoff, f"{line} {detail}")
             notify("Nightly refused", str(e)[:200])
         print(e, file=sys.stderr)
         return 1
-    with run_lock(job) as held:
-        if not held:
-            print("another nightly run holds run.lock", file=sys.stderr)
-            return 1
-        if args.command == "savetest":
-            return run_savetest(cfg, job, args.tag)
-        client_error = None
-        try:
-            gh, itch = _clients(cfg)
-        except Refused as e:   # run_night records the unusable client as a REFUSED night
-            gh = itch = None
-            client_error = e
-        outcome = run_night(cfg, job / "state.json", job, ProcRunner(), gh, itch, now=now, manual=args.manual,
-                            no_publish=args.no_publish, client_error=client_error, no_steam=args.no_steam)
+    # #2644: run_lock raises Refused on a lock-system failure (not contention). Before the operation starts that is
+    # a recorded REFUSED night; after it records its own result, a teardown failure is only an stderr note.
+    operation_finished = False
+    savetest_code: int | None = None
+    outcome: str | None = None
+    try:
+        with run_lock(job) as held:
+            if not held:
+                print("another nightly run holds run.lock", file=sys.stderr)
+                return 1
+            if args.command == "savetest":
+                savetest_code = run_savetest(cfg, job, args.tag)
+            else:
+                client_error = None
+                try:
+                    gh, itch = _clients(cfg)
+                except Refused as e:   # run_night records the unusable client as a REFUSED night
+                    gh = itch = None
+                    client_error = e
+                outcome = run_night(cfg, job / "state.json", job, ProcRunner(), gh, itch, now=now,
+                                    manual=args.manual, no_publish=args.no_publish, client_error=client_error,
+                                    no_steam=args.no_steam)
+            operation_finished = True
+    except Refused as e:
+        if operation_finished:
+            print(f"{e}; the completed operation's existing record is unchanged", file=sys.stderr)
+            if savetest_code is not None:
+                return savetest_code
+            assert outcome is not None
+            print(outcome)
+            return 1 if outcome == "REFUSED" else 0
+        if not getattr(args, "no_publish", False):   # a by-hand --no-publish run writes no record (tools/README.md)
+            line = log_line(now, "REFUSED", tag=None, sha=None, gate=e.gate, log=None)
+            record(job / "LOG.md", cfg.handoff, f"{line} {e.detail}")
+            notify("Nightly refused", str(e)[:200])
+        print(e, file=sys.stderr)
+        return 1
+    if savetest_code is not None:
+        return savetest_code
+    assert outcome is not None
     print(outcome)
     return 1 if outcome == "REFUSED" else 0
 

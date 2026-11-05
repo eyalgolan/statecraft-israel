@@ -195,6 +195,46 @@ offices:
         Assert.Equal(1.5, EffectsSystem.GddSystemMultiplier(succeeded, s, succeeded.RulesAt(s.Date).Mvp!, EffectsSystem.AbsorptionSystem), 9);
     }
 
+    // R-MIN-001 (#2646): a multiplier within 1e-9 of 1.0 reads as exactly 1.0. The able holder (competence 10) is 1.0, and a
+    // budget share a hair over even gives a budget factor of 1.0 + 1e-12. Just outside the band (a share of 0.5 + 1e-8, a
+    // factor of about 1.0 + 1e-8) the multiplier is kept as it is, so the test holds the 1e-9 from both sides.
+    [Fact]
+    public void ANearNeutralMultiplierReadsExactlyOne()
+    {
+        var c = Town(Able);
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        s.Budget["agriculture_minister"] = 0.5 + 1e-12;
+        s.Budget["finance_minister"] = 0.5 - 1e-12;
+        Assert.NotEqual(1.0, EffectsSystem.Multiplier(c, s, "agriculture_minister"));   // the raw product is off by float noise
+        Assert.Equal(1.0, EffectsSystem.GddSystemMultiplier(c, s, c.RulesAt(s.Date).Mvp!, EffectsSystem.YishuvWorkSystem));
+
+        s.Budget["agriculture_minister"] = 0.5 + 1e-8;
+        s.Budget["finance_minister"] = 0.5 - 1e-8;
+        var outside = EffectsSystem.Multiplier(c, s, "agriculture_minister");
+        Assert.InRange(outside - 1.0, 5e-9, 2e-8);   // about 1e-8 off, outside the 1e-9 band
+        Assert.Equal(outside, EffectsSystem.GddSystemMultiplier(c, s, c.RulesAt(s.Date).Mvp!, EffectsSystem.YishuvWorkSystem));
+    }
+
+    // R-MIN-003 (#2646): an office not yet created on the state's date reads as absent, like an ended one: its successor's
+    // multiplier, or neutral 1.0 with none, never the vacant-holder rule (0.5 competence).
+    [Fact]
+    public void AnOfficeNotYetCreatedIsAbsent()
+    {
+        const string Immigration = "- id: immigration_minister\n    title: Minister of Immigration";
+        var future = Town(budget: "immigration_minister",
+            offices: Offices.Replace(Immigration, Immigration + "\n    from: 1949-03-10"));
+        var s = Simulation.NewGame(future, 1, Mode.Historical);
+        Assert.True(s.Date < new DateTime(1949, 3, 10));
+        Assert.Equal(1.0, EffectsSystem.GddSystemMultiplier(future, s, future.RulesAt(s.Date).Mvp!, EffectsSystem.AbsorptionSystem), 9);
+
+        var succeeded = Town(Able.Replace("agriculture_minister", "interior_minister"), budget: "interior_minister",
+            // The loader allows a successor only with until (an abolished office), so this office has both dates.
+            offices: Offices.Replace(Immigration, Immigration + "\n    from: 1949-03-10\n    until: 1951-10-08\n    successor: interior_minister")
+            + "  - id: interior_minister\n    title: Minister of Internal Affairs\n");
+        s = Simulation.NewGame(succeeded, 1, Mode.Historical);
+        Assert.Equal(1.5, EffectsSystem.GddSystemMultiplier(succeeded, s, succeeded.RulesAt(s.Date).Mvp!, EffectsSystem.AbsorptionSystem), 9);
+    }
+
     // R-MIN-001: a system the map does not name is neutral.
     [Fact]
     public void AnUnmappedSystemIsNeutral()
