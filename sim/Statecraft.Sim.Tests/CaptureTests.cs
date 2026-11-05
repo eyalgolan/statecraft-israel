@@ -10,7 +10,7 @@ using Statecraft.Sim;
 /// take it back. The fixture's places are fixture values, not
 /// history: town_a and town_c are arab_town targets the fixture lists as enemy-held, town_d an arab_town target that is
 /// not, and town_e an enemy-held arab_town that is not a target. town_h, a town on (0, 2), is the fixture's one city: the loader
-/// takes the cities from the town rows (R-CITY-006).</summary>
+/// holds cities.yaml to the city and town rows (R-CITY-006).</summary>
 public class CaptureTests
 {
     const string Types = Fixture.GddUnitTypes
