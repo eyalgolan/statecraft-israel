@@ -12,7 +12,7 @@ public class EndOccupationTests
     internal static GameState AwaitingEnd(Content c, bool fled, params Unit[] units) => AwaitingEnd(c, "town_a", fled, units);
 
     /// <summary>A new game with <paramref name="units"/> and <paramref name="id"/> awaiting the end of its occupation. The
-    /// fixture's cities.yaml already has a town_a city, so the stayed annexation tests use town_c (hex 4,0).</summary>
+    /// stayed annexation tests use town_c (hex 4,0).</summary>
     static GameState AwaitingEnd(Content c, string id, bool fled, params Unit[] units)
     {
         var s = CombatTests.With(c, units);
@@ -187,7 +187,8 @@ public class EndOccupationTests
     public void AnnexingOntoAnExistingCityIsRefused()
     {
         var c = CaptureTests.Load(CaptureTests.AllTargets);
-        var s = AwaitingEnd(c, false, Soldier(1, 1, 0));   // the fixture already has a town_a city
+        var s = AwaitingEnd(c, false, Soldier(1, 1, 0));
+        s.Cities["town_a"] = new City("town_a", 12, 8, 10, 6, 0);   // by hand: the loader refuses a target that is a city (R-CITY-006)
         var before = s.Describe();
         Assert.NotNull(SettlementControl.End(c, s, "town_a", SettlementControl.Annex, new List<Cause>()));
         Assert.Equal(before, s.Describe());

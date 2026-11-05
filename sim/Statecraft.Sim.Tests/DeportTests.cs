@@ -186,7 +186,8 @@ public class DeportTests
 
     // R-CTRL-020 (impact plan section 4.1 item 4; Q-DEP-7 (c); Q-SENS-2 (c)): a depopulated place adds nothing. A reflection
     // test over every command kind: each that can name a place or a hex is aimed at the depopulated one and refused, and
-    // every other names none. The fixture puts a road segment on the place's hex, which is also town_a's city's own hex, and
+    // every other names none. The fixture puts a road segment on the place's hex, which is also town_a's city's own hex (the
+    // city put in state by hand: the loader refuses a target that is a city, R-CITY-006), and
     // no site can be on a settlement's hex. No effect target can name a place. The record keeps no timer, so step 10 neither counts it down nor
     // charges upkeep, and a later capture check never takes it again.
     [Fact]
@@ -196,7 +197,9 @@ public class DeportTests
         // No designated site can be on a 1948 settlement's hex at all: the loader refuses it (so no pioneer site needs a check).
         var onThePlace = Assert.Throws<ContentException>(() => Load(files => files["sites.yaml"] = files["sites.yaml"].Replace("q: 2\n    r: 0\n    kinds: [yishuv]", "q: 1\n    r: 0\n    kinds: [yishuv]")));
         Assert.Contains("holds the 1948 settlement town_a", onThePlace.Message);
-        var s = Step(c, Awaiting(c, Soldier(1, 1, 0), new Unit(2, "halutz", 1, 0)), Answer(SettlementControl.Deport)).State;
+        var awaiting = Awaiting(c, Soldier(1, 1, 0), new Unit(2, "halutz", 1, 0));
+        awaiting.Cities["town_a"] = new City("town_a", 12, 8, 10, 6, 0);
+        var s = Step(c, awaiting, Answer(SettlementControl.Deport)).State;
         var ctrl = s.Settlements["town_a"];
         Assert.Equal(("", "", true, 0, ""), (ctrl.Owner, ctrl.State, ctrl.Depopulated, ctrl.Turns, ctrl.Buildings));
         var segment = c.Corridors[0].Id + ":1";

@@ -466,7 +466,7 @@ namespace Statecraft.Sim
                 c.ProjectKindsOfOtherRulesets = kinds.Except(c.ProjectKinds).ToList();
                 c.Corridors = Read<CorridorsFile>(readFile, "corridors.yaml").Corridors;   // sourced, hexes derived (Phase 4 PR 2)
                 if (c.Ruleset == SaveGame.Gdd03Ruleset) ApplyGdd03Start(readFile, c);
-                ValidateGdd(c, settlementIds);
+                ValidateGdd(c, settlementIds, settlements.Where(x => x.type is "city" or "town").Select(x => x.id).ToList());
                 Gdd03Military.Validate(c); // after effective map overrides and role validation, only exact gdd-0.3
                 // The sourced starting forces (Phase 5 PR 4, R-UNIT-006), once the types and people_per_unit are known valid.
                 c.StartingForces = StartingForces.Read(readFile, c);
@@ -1263,7 +1263,7 @@ namespace Statecraft.Sim
         }
 
         /// <summary>The GDD v0.1 city data and rules (Phase 1 PR 3), checked only when systems.loop is gdd.</summary>
-        static void ValidateGdd(Content c, List<string> settlementIds)
+        static void ValidateGdd(Content c, List<string> settlementIds, List<string> cityAndTownIds)
         {
             const string cf = "cities.yaml", uf = "unit_types.yaml";
             Unique(cf, "cities", c.Cities.Select(x => x.Id));
@@ -1361,6 +1361,18 @@ namespace Statecraft.Sim
                 throw new ContentException(uf, "types[veteran_soldier]", "required as an Israeli infantry unit for recruit promotion");
             // R-CITY-003: the arrivals are spread over the cities, so there must be one to take them.
             if (c.Cities.Count == 0) throw new ContentException(cf, "cities", "the GDD loop needs at least one city to take the arrivals");
+            // R-CITY-006 (#2732): the cities are exactly the settlement file's city and town rows, in that file's order.
+            foreach (var x in c.Cities)
+                if (!cityAndTownIds.Contains(x.Id))
+                    throw new ContentException(cf, $"cities[{x.Id}].id", $"is not a city or town row of {SettlementsFileName}");
+            for (int i = 0; i < cityAndTownIds.Count; i++)
+            {
+                if (i >= c.Cities.Count)
+                    throw new ContentException(cf, "cities", $"is missing {cityAndTownIds[i]}, a city or town row of {SettlementsFileName}");
+                if (c.Cities[i].Id != cityAndTownIds[i])
+                    throw new ContentException(cf, FormattableString.Invariant($"cities[{i}].id"),
+                        $"is {c.Cities[i].Id}; {SettlementsFileName}'s city and town rows give {cityAndTownIds[i]} here");
+            }
             foreach (var (file, r) in new[] { ("rules.yaml", c.Rules) }.Concat(c.EraRules.OrderBy(kv => kv.Key, StringComparer.Ordinal).Select(kv => ("rules/" + kv.Key + ".yaml", kv.Value))))
             {
                 var m = r.Mvp ?? throw new ContentException(file, "mvp", "required when eras.yaml systems.loop is gdd");
