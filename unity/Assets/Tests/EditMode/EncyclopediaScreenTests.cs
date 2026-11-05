@@ -176,8 +176,8 @@ public class EncyclopediaScreenTests
                 StringAssert.Contains(kind, text[variantKey]);
             StringAssert.DoesNotContain(gdd03Kinds[language][2], text[baseKey]);
             StringAssert.DoesNotContain(gdd03Kinds[language][3], text[baseKey]);
-            var approvedTail = text[baseKey].Substring(text[baseKey].IndexOf(". "));
-            StringAssert.EndsWith(approvedTail, text[variantKey], "only the first sentence changes");
+            var approvedTail = text[baseKey].Substring(text[baseKey].IndexOf(". ", text[baseKey].IndexOf(". ") + 1));
+            StringAssert.EndsWith(approvedTail, text[variantKey], "only the first two sentences change");
 
             foreach (var ruleset in new[] { SaveGame.Gdd03Ruleset, SaveGame.GddRuleset, SaveGame.LegacyRuleset })
             {
@@ -186,6 +186,56 @@ public class EncyclopediaScreenTests
                 using var nav = new ScreenNav(ui.Root);
                 using var pedia = new EncyclopediaPresenter(ui.Root, text, catalog, nav, null, ruleset);
                 pedia.Open("projects");
+                Assert.AreEqual(text[key], ui.Q<Label>("encyclopedia-page-text").text, key);
+            }
+        }
+    }
+
+    // R-PROJ-003 and R-CITY-011 (a project moves only with a builder), R-CITY-010 (a held city pays no job income), R-ARMS-002
+    // and R-ARMS-006 (no borrowing past the debt ceiling for Arms or a workshop cycle): under gdd-0.3 these pages say so, the
+    // rest of each page is the approved base text word for word, and gdd-0.1 and legacy keep the base text.
+    [Test]
+    public void Gdd03PagesSayWhatGdd03ChangesInBothLanguages([Values("projects", "cities", "money_debt")] string page)
+    {
+        var catalog = AdvisorCatalog.Load();
+        var says = new System.Collections.Generic.Dictionary<string, string[][]>
+        {
+            ["projects"] = new[] { new[] { "builder", "without one it waits" }, new[] { "יש לו בונה", "בלי בונה הוא ממתין" } },
+            ["cities"] = new[] { new[] { "enemy military unit holds that turn" }, new[] { "בשליטת יחידה צבאית של האויב באותו תור" } },
+            ["money_debt"] = new[]
+            {
+                new[] { "enemy military unit holds that turn", "Arms purchase", "arms workshop's cycle", "debt's ceiling" },
+                new[] { "בשליטת יחידה צבאית של האויב באותו תור", "רכישת נשק", "סדנת נשק", "תקרת החוב" },
+            },
+        };
+        var unsaid = new System.Collections.Generic.Dictionary<string, string[]>
+        {
+            ["projects"] = new[] { "needs no workers", "אינו דורש עובדים" },
+        };
+        var texts = new[] { En, He };
+        for (var language = 0; language < texts.Length; language++)
+        {
+            var text = texts[language];
+            var baseKey = "advisor.page." + page + ".text";
+            var variantKey = "advisor.page." + page + ".gdd03.text";
+            Assert.IsTrue(text.Has(variantKey), variantKey + " exists");
+            foreach (var phrase in says[page][language])
+            {
+                StringAssert.Contains(phrase, text[variantKey], variantKey);
+                StringAssert.DoesNotContain(phrase, text[baseKey], baseKey + " is unchanged");
+            }
+            if (unsaid.TryGetValue(page, out var gone)) StringAssert.DoesNotContain(gone[language], text[variantKey]);
+            // Each page changes at most its first two sentences (money_debt adds a sentence after them); the rest is approved text.
+            var approvedTail = text[baseKey].Substring(text[baseKey].IndexOf(". ", text[baseKey].IndexOf(". ") + 1));
+            StringAssert.EndsWith(approvedTail, text[variantKey], "the approved tail is kept word for word");
+
+            foreach (var ruleset in new[] { SaveGame.Gdd03Ruleset, SaveGame.GddRuleset, SaveGame.LegacyRuleset })
+            {
+                var key = ruleset == SaveGame.Gdd03Ruleset ? variantKey : baseKey;
+                using var ui = new UiTestKit();
+                using var nav = new ScreenNav(ui.Root);
+                using var pedia = new EncyclopediaPresenter(ui.Root, text, catalog, nav, null, ruleset);
+                pedia.Open(page);
                 Assert.AreEqual(text[key], ui.Q<Label>("encyclopedia-page-text").text, key);
             }
         }
