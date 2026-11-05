@@ -46,3 +46,15 @@ def test_generated_icons_are_256_rgb_and_locked_ones_are_grey(tmp_path):
             assert unlocked.mode == locked.mode == "RGB"
             r, g, b = locked.split()
         assert ImageChops.difference(r, g).getbbox() is None and ImageChops.difference(g, b).getbbox() is None, f"{api}_locked.png is not greyscale"
+
+
+def test_committed_icons_match_what_the_script_draws_now(tmp_path):
+    # #2737: an edit to the drawing code, or a hand-edited PNG, must not leave the committed icons stale. Decoded pixels
+    # are compared, not PNG bytes, since compression may differ.
+    icons.main(["steam_achievement_icons.py", str(tmp_path)])
+    for api in icons.ICONS:
+        for state in ("unlocked", "locked"):
+            name = f"{api}_{state}.png"
+            with Image.open(tmp_path / name) as fresh, Image.open(COMMITTED / name) as committed:
+                assert fresh.size == committed.size and fresh.mode == committed.mode, name
+                assert ImageChops.difference(fresh, committed).getbbox() is None, f"{name} differs from what the script draws"
