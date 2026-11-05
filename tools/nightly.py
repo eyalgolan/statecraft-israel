@@ -702,10 +702,11 @@ def publish_night(night: Night, state: State, gh: GitHub, itch, zips: tuple[Path
     if use_itch and itch is None:   # before any store change: enabled means the push is part of this night
         raise Refused("itch", "itch is enabled but there is no itch client")
     since = prev_sha or prev_tag
-    subjects = [ln for ln in _git(runner, night.cfg.clone, "log", "--format=%s", f"{since}..{night.sha}").splitlines()
-                if ln]
+    # %aN is the author name after .mailmap, so a mailmap entry gives a contributor their credited name (#2654)
+    log = _git(runner, night.cfg.clone, "log", "--format=%s%x1f%aN", f"{since}..{night.sha}")
+    changes = [(s, a) for s, _, a in (ln.partition("\x1f") for ln in log.splitlines() if ln)]
     notes = night.run_dir / "release-notes.md"
-    notes.write_text(release_notes(version=night.version, sha=night.sha, since=since, subjects=subjects,
+    notes.write_text(release_notes(version=night.version, sha=night.sha, since=since, changes=changes,
                                    sha256_lines=sha256_lines(list(zips))), encoding="utf-8")
     gh.ensure_tag_available(night.tag)   # again just before create: a release made since preflight is never ours
     def created(release_id: int) -> None:

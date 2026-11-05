@@ -530,18 +530,28 @@ def test_demo_serves_refuses_at_the_deadline_and_survives_fetch_errors():
 # --- notes and unzip ------------------------------------------------------------------------------------------------------
 
 def test_release_notes_list_commits_and_hashes_and_say_nightly():
-    text = gp.release_notes(version=VERSION, sha=SHA, since="b" * 40, subjects=["Fix a thing", "Add a thing"],
+    text = gp.release_notes(version=VERSION, sha=SHA, since="b" * 40,
+                            changes=[("Fix a thing", "Beri"), ("Add a thing", "Aviel Cohen")],
                             sha256_lines=["abc  one.zip", "def  two.zip"])
     assert f"Automated nightly build of `main` at {SHA[:12]}." in text
     assert "pre-release" not in text
-    assert "- Fix a thing\n- Add a thing" in text and "abc  one.zip\ndef  two.zip" in text
+    assert "- Fix a thing (by Beri)\n- Add a thing (by Aviel Cohen)" in text and "abc  one.zip\ndef  two.zip" in text
     assert VERSION in text and ("b" * 12) in text and ("b" * 40) not in text
     assert "\u2014" not in text
 
 
 def test_release_notes_with_no_commits_say_so():
-    text = gp.release_notes(version=VERSION, sha=SHA, since="v0.3.1", subjects=[], sha256_lines=[])
+    text = gp.release_notes(version=VERSION, sha=SHA, since="v0.3.1", changes=[], sha256_lines=[])
     assert "v0.3.1" in text and "no commits" in text.lower()
+
+
+def test_release_notes_label_the_list_as_commit_subjects_not_quotes():
+    # Agent-written subjects such as "... is owner-approved" must not read as the owner's own words (#2654).
+    text = gp.release_notes(version=VERSION, sha=SHA, since="v0.3.1",
+                            changes=[("Content: housing_repair's Hebrew name is owner-approved (#2415)", "Beri")],
+                            sha256_lines=[])
+    heading = "Changes since v0.3.1 (commit subjects with each commit's author; they are not quotes of anyone):"
+    assert f"{heading}\n\n- Content: housing_repair's Hebrew name is owner-approved (#2415) (by Beri)\n" in text
 
 
 def test_unzip_extracts_into_the_folder(tmp_path):

@@ -1151,7 +1151,7 @@ SIZES = {"data": 1000, "wasm": 90, "framework": 10}
 def pub(night, env, tmp_path):
     """A night plus two zips, a git log answer and a fake demo check."""
     clone = str(night.cfg.clone)
-    env.runner.add(["git", "-C", clone, "log", "--format=%s"], out="Fix a thing\nAdd a thing\n")
+    env.runner.add(["git", "-C", clone, "log", "--format=%s%x1f%aN"], out="Fix a thing\x1fBeri\nAdd a thing\x1fmoshewe\n")
     zips = (tmp_path / "web.zip", tmp_path / "pages.zip")
     for z in zips:
         z.write_bytes(b"zip")
@@ -1183,10 +1183,10 @@ def test_release_targets_the_preflight_commit(night, env, pub, served):
     publish(night, st, gh, pub, env)   # origin/main may move on after preflight: nothing may follow it
     create = next(c for c in gh.calls if c[0] == "create_draft")
     assert create[1:3] == (TAG, night.sha) and create[4] == list(pub)
-    assert ["git", "-C", clone, "log", "--format=%s", f"{OLD}..{night.sha}"] in env.runner.calls
+    assert ["git", "-C", clone, "log", "--format=%s%x1f%aN", f"{OLD}..{night.sha}"] in env.runner.calls
     assert not any("ls-remote" in c and "refs/heads/main" in c for c in env.runner.calls)
     notes = (night.run_dir / "release-notes.md").read_text()
-    assert "- Fix a thing" in notes and "- Add a thing" in notes and night.sha[:12] in notes
+    assert "- Fix a thing (by Beri)\n- Add a thing (by moshewe)" in notes and night.sha[:12] in notes
     assert gh.names() == ["ensure_tag_available", "create_draft", "verify_draft", "latest_tag", "publish", "dispatch_site"]
     assert gh.latest == TAG and "restore_latest" not in gh.names()
     assert (night.run_dir / "latest-before-publish.txt").read_text() == "v0.3.1\n"
@@ -1217,7 +1217,7 @@ def test_later_nights_use_the_published_commit_and_fetch_nothing(night, env):
 def test_the_notes_log_runs_from_the_previous_commit_or_tag(night, env, pub, served):
     clone = str(night.cfg.clone)
     publish(night, ns.State(), FakeGH(), pub, env, previous=("v0.3.1", None))
-    assert ["git", "-C", clone, "log", "--format=%s", f"v0.3.1..{night.sha}"] in env.runner.calls
+    assert ["git", "-C", clone, "log", "--format=%s%x1f%aN", f"v0.3.1..{night.sha}"] in env.runner.calls
 
 
 def test_a_failed_draft_check_deletes_the_draft_and_refuses(night, env, pub, served):
@@ -1612,7 +1612,7 @@ def itch_night(night, env, tmp_path, served):
     night.cfg = dataclasses.replace(night.cfg, itch_enabled=True, savetest_itch_target=TEST_TARGET,
                                     itch_evidence=evidence_file(tmp_path, "PASS"))
     clone = str(night.cfg.clone)
-    env.runner.add(["git", "-C", clone, "log", "--format=%s"], out="Fix a thing\n")
+    env.runner.add(["git", "-C", clone, "log", "--format=%s%x1f%aN"], out="Fix a thing\x1fBeri\n")
     zips = (zip_of(tmp_path / "web.zip", "tonight"), zip_of(tmp_path / "pages.zip", "pages"))
     gh = FakeGH()
     gh.baseline = zip_of(tmp_path / "previous-web.zip", "previous")

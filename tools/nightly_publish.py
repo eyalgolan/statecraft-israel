@@ -44,11 +44,13 @@ def sha256_lines(files: list[Path]) -> list[str]:
     return [f"{sha256_of(f)}  {Path(f).name}" for f in files]
 
 
-def release_notes(*, version: str, sha: str, since: str, subjects: list[str], sha256_lines: list[str]) -> str:
+def release_notes(*, version: str, sha: str, since: str, changes: list[tuple[str, str]], sha256_lines: list[str]) -> str:
+    """`changes` is (commit subject, commit author) per commit. The heading says the lines are commit subjects, so an
+    agent-written subject such as "... is owner-approved" does not read as the owner's own words (#2654)."""
     shown = since[:SHA_SHOWN] if len(since) == 40 and all(c in "0123456789abcdef" for c in since) else since
-    lines = [f"Automated nightly build of `main` at {sha[:SHA_SHOWN]}.", "",
-             f"Version {version}.", "", f"Changes since {shown}:", ""]
-    lines += [f"- {s}" for s in subjects] or ["- (no commits)"]
+    lines = [f"Automated nightly build of `main` at {sha[:SHA_SHOWN]}.", "", f"Version {version}.", "",
+             f"Changes since {shown} (commit subjects with each commit's author; they are not quotes of anyone):", ""]
+    lines += [f"- {s} (by {a})" for s, a in changes] or ["- (no commits)"]
     lines += ["", "SHA-256:", "", "```", *sha256_lines, "```", ""]
     return "\n".join(lines)
 
