@@ -155,6 +155,42 @@ public class EncyclopediaScreenTests
             StringAssert.Contains(phrase, line);
     }
 
+    // R-PROJ-003, R-ARMS-004, R-HOUSE-006: gdd-0.3 names its extra city-project kinds; older rulesets keep the base text.
+    [Test]
+    public void Gdd03ProjectsPageNamesItsExtraKindsInBothLanguages()
+    {
+        var catalog = AdvisorCatalog.Load();
+        var texts = new[] { En, He };
+        var gdd03Kinds = new[]
+        {
+            new[] { "housing", "industry", "arms workshop", "housing repair" },
+            new[] { "דיור", "תעשייה", "סדנת נשק", "שיפוץ דיור" },
+        };
+        for (var language = 0; language < texts.Length; language++)
+        {
+            var text = texts[language];
+            const string baseKey = "advisor.page.projects.text";
+            const string variantKey = "advisor.page.projects.gdd03.text";
+            Assert.IsTrue(text.Has(variantKey), variantKey + " exists");
+            foreach (var kind in gdd03Kinds[language])
+                StringAssert.Contains(kind, text[variantKey]);
+            StringAssert.DoesNotContain(gdd03Kinds[language][2], text[baseKey]);
+            StringAssert.DoesNotContain(gdd03Kinds[language][3], text[baseKey]);
+            var approvedTail = text[baseKey].Substring(text[baseKey].IndexOf(". "));
+            StringAssert.EndsWith(approvedTail, text[variantKey], "only the first sentence changes");
+
+            foreach (var ruleset in new[] { SaveGame.Gdd03Ruleset, SaveGame.GddRuleset, SaveGame.LegacyRuleset })
+            {
+                var key = ruleset == SaveGame.Gdd03Ruleset ? variantKey : baseKey;
+                using var ui = new UiTestKit();
+                using var nav = new ScreenNav(ui.Root);
+                using var pedia = new EncyclopediaPresenter(ui.Root, text, catalog, nav, null, ruleset);
+                pedia.Open("projects");
+                Assert.AreEqual(text[key], ui.Q<Label>("encyclopedia-page-text").text, key);
+            }
+        }
+    }
+
     /// <summary>On the SHIPPED catalogue (AdvisorCatalog.Load(), not Approved()), the Hebrew encyclopedia lists every
     /// approved page: the nine that replace How to play, which Beri read as a native speaker on #2095 (1 Nov 2026), and the
     /// other 16, which the owner read as a native speaker the same day ("all 16 pages look good"). Security and Public
