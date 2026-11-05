@@ -3187,3 +3187,23 @@ def test_the_steam_content_is_removed_after_the_stage(night, env):
     nightly.run_steam(night, env.runner)
     assert not (out / "steam").exists() and not list(out.glob("*.zip"))
     assert (out / "build-record.json").is_file()
+
+
+def test_a_lock_system_failure_in_main_is_a_recorded_refusal(tmp_path, monkeypatch, capsys):
+    """#2644 review: nightly.main's own run_lock can raise Refused (not contention); it is recorded, not a traceback."""
+    job = tmp_path / "job"
+    job.mkdir()
+    monkeypatch.setattr(nightly, "JOB", job)
+    monkeypatch.setattr(nightly, "load_config", lambda p: ns.Config(handoff=tmp_path / "HANDOFF.md"))
+    monkeypatch.setattr(nightly, "notify", lambda *a, **k: None)
+
+    @contextmanager
+    def broken(_job, *a, **k):
+        raise ns.Refused("lock", "cannot take run.lock: denied")
+        yield True
+
+    monkeypatch.setattr(nightly, "run_lock", broken)
+    assert nightly.main(["run", "--no-publish"]) == 1
+    assert "gate=lock" in (job / "LOG.md").read_text()
+    assert "REFUSED" in (tmp_path / "HANDOFF.md").read_text()
+    assert "cannot take run.lock" in capsys.readouterr().err

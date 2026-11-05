@@ -10,6 +10,7 @@ each one, and any unexpected failure, into one line of record, so no night leave
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import os
 import re
@@ -1240,7 +1241,17 @@ def main(argv: list[str] | None = None) -> int:
             notify("Nightly refused", str(e)[:200])
         print(e, file=sys.stderr)
         return 1
-    with run_lock(job) as held:
+    # #2644: run_lock raises Refused on a lock-system failure (not contention); that is a recorded REFUSED night.
+    lock = contextlib.ExitStack()
+    try:
+        held = lock.enter_context(run_lock(job))
+    except Refused as e:
+        line = log_line(now, "REFUSED", tag=None, sha=None, gate=e.gate, log=None)
+        record(job / "LOG.md", cfg.handoff, f"{line} {e.detail}")
+        notify("Nightly refused", str(e)[:200])
+        print(e, file=sys.stderr)
+        return 1
+    with lock:
         if not held:
             print("another nightly run holds run.lock", file=sys.stderr)
             return 1
