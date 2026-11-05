@@ -1274,13 +1274,13 @@ namespace Statecraft.Sim
         public List<string> SitesBuilt { get; set; } = new List<string>();
     }
 
-    /// <summary>R-OBJ-004 (D-B4; owner, 18 October 2026, #738, option (a)): once the Jewish population has reached
+    /// <summary>R-OBJ-004 (D-B4; owner, 18 October 2026, #738, option (a)): once the population has reached
     /// <see cref="PopulationAtLeast"/>, the cities' overflow is at most <see cref="OverflowAtMost"/> of the people they house
     /// and their employed civilians at least <see cref="EmployedAtLeast"/> of their civilians. The population gate keeps the
     /// start values (already 41% employed, no overflow) from completing it on the first turn.</summary>
     public sealed class AbsorbCondition
     {
-        /// <summary>GameState.TotalPopulation, the national Jewish count, at or above this.</summary>
+        /// <summary>GameState.TotalPopulation, the national count with annexed residents (R-CITY-008), at or above this.</summary>
         public long PopulationAtLeast { get; set; }
         /// <summary>Overflow (R-HOUSE-002) over the housed people (R-HOUSE-003), at or below this share. Required: 0 is a
         /// real value here, so a missing key must not read as 0.</summary>

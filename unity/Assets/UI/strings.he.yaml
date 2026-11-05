@@ -628,7 +628,9 @@ report.workshop_paused_debt: "סדנת נשק ({0}) בהמתנה: תקרת הח�
 report.workshop_arms_n: "סדנאות נשק ({0}) ({1}): תוספת נשק: {1}"
 report.workshop_paused_debt_n: "סדנאות נשק ({0}) ({1}) בהמתנה: תקרת החוב"
 # The end screen (#812; D-H4): the sim's end report, formatted only. For the native reviewer (#564).
-# The nine end.* keys below: native review: owner, 3 Nov 2026 (HE batch 3: "Approve all as they are").
+# The nine end.* keys below: native review: owner, 3 Nov 2026 (HE batch 3: "Approve all as they are"), except
+# end.population_history, reworded for #2608 (#2620: the CBS figure is the Jewish population), which waits for the
+# native reviewer (#564).
 end.title: "המשחק הסתיים"
 end.outcome.mvp_ended: "המשחק הגיע לתורו האחרון."
 end.outcome.defeat_economy: "הכסף והמזון אזלו."
@@ -637,7 +639,7 @@ end.objective_done: "יעד {0}: הושלם ב־{1}; בהיסטוריה ב־{2}"
 end.objective_open: "יעד {0}: לא הושלם; בהיסטוריה ב־{1}"
 end.parameter: "{0}: {1}"
 end.population: "אוכלוסייה: {0}"
-end.population_history: "אוכלוסייה: {0}; לפי הלמ״ס {2} ב־{1}"
+end.population_history: "אוכלוסייה: {0}; האוכלוסייה היהודית לפי הלמ״ס ב־{1}: {2}"
 # For the native reviewer (#564): the end screen's end date (#2545).
 end.date: "הסתיים ב־{0}"
 

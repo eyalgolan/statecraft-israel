@@ -35,7 +35,7 @@ The simulation must produce the same state, bit for bit, on .NET, Unity Mono and
   its hex, with no RNG draw (R-CTRL-011 to R-CTRL-013; `OccupyTests.TheTimerCountsDownInStepTen` and
   `OccupationDrawsNothing`). `mvp-occupy-cost` (#798) is the golden that occupies a place: it plays the real content, moves
   Golani's unit onto Nazareth, answers the capture with Occupy and runs to the end of the timer; `OccupyTests` plays the
-  same run on fixture content. `mvp-annex-nazareth` (#799) plays the same run and annexes Nazareth when the timer ends (R-CTRL-016): one new city from the row's count, with no RNG draw (`EndOccupationTests`). No other golden occupies a place, so none moves.
+  same run on fixture content. `mvp-annex-nazareth` (#799) plays the same run and annexes Nazareth when the timer ends (R-CTRL-016): one new city from the row's count, with no RNG draw (`EndOccupationTests`), and the same count joins `GameState.Population`'s `annexed` group (R-CITY-008, #2608), which moved this golden's population, debt, FX and Food lines. No other golden occupies a place, so none moves.
 - **Deport (resolver step 10, after the occupation timers):** the units leave as in Raid; the costs, the drag (each turn,
   per place in `DisplacedByPlayer`) and the International Support ceiling are plain arithmetic on the indicator's shift,
   with no RNG draw (R-CTRL-018; `DeportTests.DeportDrawsNothing`). `DisplacedByPlayer` is hashed as `displaced=` only when
@@ -511,3 +511,4 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | #1270 (S1), re-pinned on main after #2087: as above | scenario-mvp-defeat | `8c83f6e0` | as absorb-first (was `6782cce4`) |
 | #1270 (S1), re-pinned on main after #2087: as above | scenario-mvp-occupy-cost | `ad9af425` | the Syrian unit on (15, 5) is the only change (was `612e9feb`) |
 | #1270 (S1), re-pinned on main after #2087: as above | scenario-mvp-annex-nazareth | `e8a9dbf1` | the Syrian unit on (15, 5); unit 1, on its card order toward (15, 3), is on (13, 6) at the run's end instead of (15, 5) (was `c8195c09`). No other golden moves: smoke-orders does not reach 15 July 1948 |
+| #2608: the annexed residents join the population (R-CITY-008) | scenario-mvp-annex-nazareth | `d0372ca6` | `end_occupation nazareth annex` adds the row's count to `GameState.Population`'s `annexed` group, so the population gains the annexed residents, and the debt, FX and Food lines move with it; the annexation itself and every unit position are unchanged. No other golden occupies a place, so none moves (was `e8a9dbf1`) |
