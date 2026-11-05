@@ -191,6 +191,43 @@ def test_files_of_an_earlier_build_are_left_out_of_the_zip(tmp_path, capsys):
     assert "LEFT OUT Build/ffffffffffffffffffffffffffffffff.data.br" in capsys.readouterr().out
 
 
+def test_nested_files_of_an_earlier_build_are_left_out_of_the_zip(tmp_path, capsys):
+    build, zip_path = hashed_build(tmp_path), tmp_path / "out.zip"
+    stale = build / "Build" / "old" / "files" / "earlier.data.br"
+    stale.parent.mkdir(parents=True)
+    stale.write_bytes(b"old")
+    assert package_release.main(["--build", str(build), "--zip", str(zip_path)]) == 0
+    with zipfile.ZipFile(zip_path) as z:
+        assert "Build/old/files/earlier.data.br" not in z.namelist()
+    assert "LEFT OUT Build/old/files/earlier.data.br" in capsys.readouterr().out
+
+
+def test_an_index_that_is_not_utf8_is_refused_without_a_zip(tmp_path, capsys):
+    build, zip_path = fake_build(tmp_path, reviewed=True), tmp_path / "out.zip"
+    (build / "index.html").write_bytes(b"<html>\xff</html>")
+    assert package_release.main(["--build", str(build), "--zip", str(zip_path)]) == 1
+    assert not zip_path.exists()
+    out = capsys.readouterr().out
+    assert "PACKAGE REFUSED" in out and "index.html" in out and "UTF-8" in out
+
+
+def test_an_index_that_cannot_be_read_is_refused_without_a_zip(tmp_path, capsys, monkeypatch):
+    build, zip_path = fake_build(tmp_path, reviewed=True), tmp_path / "out.zip"
+    index = build / "index.html"
+    read_text = Path.read_text
+
+    def fail_index(path, *args, **kwargs):
+        if path == index:
+            raise OSError("read failed")
+        return read_text(path, *args, **kwargs)
+
+    monkeypatch.setattr(package_release.Path, "read_text", fail_index)
+    assert package_release.main(["--build", str(build), "--zip", str(zip_path)]) == 1
+    assert not zip_path.exists()
+    out = capsys.readouterr().out
+    assert "PACKAGE REFUSED" in out and "index.html" in out and "UTF-8" in out
+
+
 def test_a_build_missing_a_file_index_html_names_is_refused(tmp_path, capsys):
     build = hashed_build(tmp_path)
     (build / "Build" / HASHED[3]).unlink()

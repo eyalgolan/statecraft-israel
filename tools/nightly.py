@@ -735,8 +735,6 @@ def publish_night(night: Night, state: State, gh: GitHub, itch, zips: tuple[Path
         state.open_draft = None
         state.open_draft_id = None
         state.last_published = Published(night.tag, night.sha, night.version, sizes, boot)
-        if len(state.boot_baseline) < BASELINE_NIGHTS:
-            state.boot_baseline.append(boot)
         state.site_pending = night.version   # until the demo serves this version, a later night retries the deploy
         save()
         if not use_itch:
@@ -748,6 +746,8 @@ def publish_night(night: Night, state: State, gh: GitHub, itch, zips: tuple[Path
             try:
                 gh.dispatch_site(time.monotonic() + SITE_WAIT_SECONDS)
                 demo_serves(night.cfg.site_demo_url, night.version, deadline=time.monotonic() + SITE_WAIT_SECONDS)
+                if len(state.boot_baseline) < BASELINE_NIGHTS:
+                    state.boot_baseline.append(boot)
                 state.site_pending = None
                 return
             except Exception as e:

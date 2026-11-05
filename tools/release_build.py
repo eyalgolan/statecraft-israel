@@ -644,6 +644,9 @@ def main(argv: list[str] | None = None) -> int:
             print(f"FAILED: the {p.name} build (exit {code}); see {log}", file=sys.stderr)
             return 1
         folder = target.parent
+        if not (folder / PHOTOS).is_file():
+            print(f"FAILED: the {p.name} build has no {PHOTOS}", file=sys.stderr)
+            return 1
         if a.steam and (problem := steam_folder_problem(folder, p.name)):
             print(f"FAILED: {problem}", file=sys.stderr)
             return 1
@@ -651,11 +654,9 @@ def main(argv: list[str] | None = None) -> int:
         text, files, size = tree_manifest(folder, mac=p.name == "mac")
         listing = out / f"files-{p.name}.sha256"
         listing.write_text(text)
-        photos = None
-        if (folder / PHOTOS).is_file():
-            copy = out / f"event-photos-{p.name}.json"
-            copy.write_bytes((folder / PHOTOS).read_bytes())
-            photos = {"file": copy.name, "sha256": file_sha256(copy)}
+        copy = out / f"event-photos-{p.name}.json"
+        copy.write_bytes((folder / PHOTOS).read_bytes())
+        photos = {"file": copy.name, "sha256": file_sha256(copy)}
         if problem := player_problem(p, folder):
             print(f"FAILED: {problem}", file=sys.stderr)
             return 1
