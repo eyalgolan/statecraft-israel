@@ -87,6 +87,23 @@ public class GameRootEscapeLayerTests : SharedCameraActionsFixture
         Assert.AreNotEqual(DisplayStyle.Flex, Ui.Q("screen-budget").style.display.value, "the next Escape closes the screen");
     }
 
+    /// <summary>The turn report is over everything under it: the Escape that closes it must not close a side screen under it
+    /// too. A report opens with the screens closed (TurnReportPresenter.Show), so the test puts the report's class over an
+    /// open screen by hand, as SelectThenClickMoveTests does.</summary>
+    [Test]
+    public void EscapeClosesTheReportAndLeavesTheScreenUnderIt()
+    {
+        var root = Open(GameInputs.FromDisk(Paths.Content, Paths.StreamingMap), startScreen: false);
+        GameSceneTests.HideTheOpeningCard(Ui);
+        UiTestKit.Press(Ui.Q<Button>("nav-budget"));
+        Assert.AreEqual(DisplayStyle.Flex, Ui.Q("screen-budget").style.display.value, "precondition: a side screen is open");
+        HudRoot.AddToClassList(TurnReportPresenter.OpenClass);
+
+        Escape(root);
+        Assert.IsFalse(HudRoot.ClassListContains(TurnReportPresenter.OpenClass), "the Escape closes the report");
+        Assert.AreEqual(DisplayStyle.Flex, Ui.Q("screen-budget").style.display.value, "and only the report: the screen stays");
+    }
+
     /// <summary>An ended autosave opens the end screen before the start screen goes up over it. Escape on the start screen
     /// is the start screen's: it withdraws an armed New Game, and never closes the hidden end screen under it.</summary>
     [Test]
