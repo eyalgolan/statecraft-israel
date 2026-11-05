@@ -1,4 +1,5 @@
 #nullable enable
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -966,13 +967,13 @@ namespace Statecraft.Game.UI
             subtitle.text = hex == null ? "" : text.Format("info.hex", text["info.biome." + hex.Biome], hex.ElevM);   // no debug coordinates in player text (playtest 2, P2-6)
             // The armistice zone in force, else the sub-district on 15 May 1948, and any armistice line in force through the
             // hex, each with its agreement (true lines drawn to the nearest hex edge: the owner's ruling).
-            var live = c.SettlementHexes.Where(x => x.Q == q && x.R == r && s.Settlements.ContainsKey(x.Id))
+            var livePlaces = c.SettlementHexes.Where(x => x.Q == q && x.R == r && s.Settlements.ContainsKey(x.Id))
                 .OrderBy(x => x.Id, StringComparer.Ordinal).Select(x => (hex: x, record: s.Settlements[x.Id])).ToList();
-            var liveHolder = live.Select(x => SettlementControlView.PlayerHolds(x.record)).FirstOrDefault(x => x != null);
+            var liveHolder = livePlaces.Select(x => SettlementControlView.PlayerHolds(x.record)).FirstOrDefault(x => x != null);
             region.text = regions == null ? "" : RegionText(regions, text, q, r, s.Date,
                 c.SettlementHexes.Any(x => x.Q == q && x.R == r && x.Id == "jerusalem"), liveHolder);
             settlements.text = owned.Count > 0 ? text.Format("info.owned", string.Join(", ", owned)) : "";
-            foreach (var x in live)
+            foreach (var x in livePlaces)
                 if (SettlementControlView.PanelText(text, TownName(x.hex.Id), x.record) is string detail)
                     settlements.text += (settlements.text == "" ? "" : "\n") + detail;
             // A town in a water hex is drawn on its nearest land hex (Tiberias, in the lake, on the 70 m hex): one line says
