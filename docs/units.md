@@ -242,9 +242,10 @@ deletes it.
 - **One token per military unit** whose row is on the map, grouped per hex ((q, r) order). Unit i of a new game is the
   starting force `Content.StartingForces[i]` (R-UNIT-006), and that row gives the card, the flag, the headgear and the
   vehicles. A halutz draws no token. A raised Israeli recruit, brigade, artillery or armoured-car unit has no starting row; it
-  gets a presentation-only token that uses the first Israeli starting brigade row as its visual default and its sourced
-  strength as the full-strength figure (`UnitRoster.RaisedToken`; nothing is added to the sim state). An Arab force's token still waits for its Collection
-  figure.
+  gets a presentation-only token: a synthetic row with the default headgear (steel helmets for a recruit) and its
+  type's vehicle, placed at the first Israeli starting brigade's start and sized by that brigade's sourced strength
+  (`UnitRoster.RaisedToken`; nothing is added to the sim state). An Arab force's token still waits for its Collection
+  figure or, if that fails, the built-in one.
 - **The sim hex is authoritative.** A unit on its starting hex stands on its starting anchor's spot (UnitPlacer's one-hex
   offset still clears the town kits and the roads). A unit that moved stands within one hex of its new hex, off the
   hexes the other tokens hold. When that search finds no clear spot, the unit stands compact on its own sim hex, apart
@@ -297,7 +298,8 @@ own root rotation kept (the FBX axis turn, -90 degrees about X), so the camera's
   (walk and run only) and keeps his still far model (owner, 18 October 2026, #665: "Keep its still model"); #336's soldier,
   drawn as his rigged copy (#2384), plays C07's idle. The vehicles stay far.
 - **Fail open:** an Israeli figure keeps its code-built mesh until its model arrives, and for good if the bundle is
-  missing or damaged; a vehicle and an Arab force's token are not drawn until their model arrives.
+  missing or damaged; a vehicle is not drawn until its model arrives. An Arab force's token waits for its figure too, and
+  is drawn with the built-in figure if that fails (`UnitLayer.cs:379-381`).
 - Tests: `UnitFiguresTests` (every one of the nine is placed on some day of the war; the table; the swap; arms down;
   fail open; the close-zoom swap and its idle clip, the missing near model and C05).
 
