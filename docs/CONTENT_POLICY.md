@@ -35,8 +35,8 @@ These rules protect the game and the people in it. They are not a viewpoint:
    styled as a quote with its source. The owner reviews every advisor line before it ships.
 3. **Choices never reward atrocities.** No option of an event tagged `holocaust`, `terror`, `massacre`, `war-casualties` or
    `displacement` can raise a resource: the loader refuses a positive effect on money (`treasury`, `fx_reserves`), Food,
-   Arms, morale or international standing (`EventRules`), so `dotnet test` fails on one. Nor can it raise score (when score
-   becomes a target, R-EFX-007), and it carries no unit grant, city-effect gain or project unlock (R-EFX-005; the loader
+   Arms, morale or international standing (`EventRules`), so `dotnet test` fails on one. Nor can a `displacement` option raise score (when score
+   becomes a target, R-EFX-007), and a sensitive option carries no unit grant, city-effect gain or project unlock (R-EFX-005; the loader
    refuses those too). Such an event also needs a recorded sensitivity review.
 4. **The Holocaust is an event the player reacts to, never one the player plays.** It is shown without swastikas.
 5. **Real people.** People appear in their public roles and documented acts. Competence and loyalty values are game
