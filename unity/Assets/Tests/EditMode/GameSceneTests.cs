@@ -526,7 +526,7 @@ public class GameSceneTests
         var mouse = InputSystem.AddDevice<Mouse>();
         try
         {
-            Assert.AreSame(mouse, Pointer.current, "precondition: LateUpdate reads the test mouse");
+            Assert.AreSame(mouse, UnityEngine.InputSystem.Pointer.current, "precondition: LateUpdate reads the test mouse");
             doc.panelSettings = ps;
             cam.targetTexture = camRt;
             var map = Object.FindFirstObjectByType<MapScene>();
