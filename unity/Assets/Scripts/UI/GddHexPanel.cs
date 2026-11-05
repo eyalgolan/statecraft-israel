@@ -135,7 +135,14 @@ namespace Statecraft.Game.UI
 
             // Train, for each facility the city has (Training.HasFacility: its own, D-D5, or a built camp site's, R-CAMP-001):
             // each press orders one more group. The exact preview below asks whether End turn would refuse that order, and
-            // R-TRAIN-001's idle-civilian limit is Training.Available's, over the queue less the orders the preview refuses.
+            // R-TRAIN-001's idle-civilian limit is Training.Available's, over the queue less the orders End turn refuses anyway.
+            // #1548 (owner, 24 October 2026: "Yes, count them"): every queued Train, Reinforce and reassignment still takes
+            // its groups from the civilians without work, as Training.Available counts them (the sim does not take a
+            // reassigned craftsman off them). "Refused anyway" is the current queue's preview, without the press: an order
+            // the press itself would make End turn refuse (a reassignment queued after a Train that takes its civilian) still
+            // counts. The old order's own count is in the queue, so one more group needs one free.
+            var current = Simulation.Preview(c, bridge.TurnStart, bridge.Session.Committed.Concat(bridge.Queued).ToList());
+            var free = Training.Available(s, id, bridge.Queued.Where(x => !current.Rejected.Any(r => ReferenceEquals(r.Command, x))));
             foreach (var type in c.UnitTypes.Where(t => t.Facility != "" && Training.HasFacility(c, s, id, t.Facility)))
             {
                 var old = bridge.QueuedLike(new Train(id, type.Id, 1));
@@ -151,11 +158,6 @@ namespace Statecraft.Game.UI
                 // queue) and as ArmsPurchasePresenter asks it.
                 var preview = Simulation.Preview(c, bridge.TurnStart, bridge.Session.Committed.Concat(queue).ToList());
                 var accepted = !preview.Rejected.Any(x => ReferenceEquals(x.Command, press));
-                // #1548 (owner, 24 October 2026: "Yes, count them"): every queued Train, Reinforce and reassignment still takes
-                // its groups from the civilians without work, as Training.Available counts them (the sim does not take a
-                // reassigned craftsman off them), less only the orders End turn will refuse anyway. The old order's own count
-                // is in the queue, so one more group needs one free.
-                var free = Training.Available(s, id, bridge.Queued.Where(x => !preview.Rejected.Any(r => ReferenceEquals(r.Command, x))));
                 var row = Row(host, $"city-train-{type.Id}-row");
                 Button(row, "city-train-" + type.Id, text.Format("city.train_" + type.Id, PlayerText.Money(c, "treasury", type.TrainingCost), Turns(text, type.TrainingTurns)),
                     () => bridge.Queue(new Train(id, type.Id, ordered + 1)))
