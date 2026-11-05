@@ -1,3 +1,5 @@
+import hashlib
+
 import check_repo
 import oss_policy
 
@@ -144,38 +146,77 @@ def test_large_file_fails(make_repo, capsys):
     assert "sizes: big.bin: over-size-limit" in capsys.readouterr().out
 
 
-def test_owner_approved_original_over_the_limit_passes(make_repo, capsys):
-    rel, size = sorted(oss_policy.OVERSIZE_ALLOWED.items(), key=lambda kv: kv[1])[0]
-    root = make_repo({rel: b"\x00" * size})
+# The real originals are not in the tests, so these give one ruled path an entry for a synthetic payload of its own: the
+# size just over the limit and that payload's SHA-256, exactly as an entry records a real file.
+def _approved(monkeypatch, payload: bytes) -> str:
+    rel = sorted(oss_policy.OVERSIZE_ALLOWED)[0]
+    monkeypatch.setattr(oss_policy, "OVERSIZE_ALLOWED", {rel: (len(payload), hashlib.sha256(payload).hexdigest())})
+    return rel
+
+
+OVER = b"\x01" * (oss_policy.MAX_FILE_BYTES + 1)
+
+
+def test_owner_approved_original_over_the_limit_passes(make_repo, capsys, monkeypatch):
+    rel = _approved(monkeypatch, OVER)
+    root = make_repo({rel: OVER})
     assert run(root, "--only", "sizes") == 0
 
 
-def test_unlisted_file_over_the_limit_still_fails_next_to_an_approved_one(make_repo, capsys):
-    rel, size = sorted(oss_policy.OVERSIZE_ALLOWED.items(), key=lambda kv: kv[1])[0]
+def test_unlisted_file_over_the_limit_still_fails_next_to_an_approved_one(make_repo, capsys, monkeypatch):
+    rel = _approved(monkeypatch, OVER)
     other = rel.replace("-original-", "-copy-")
-    root = make_repo({rel: b"\x00" * size, other: b"\x00" * (oss_policy.MAX_FILE_BYTES + 1)})
+    root = make_repo({rel: OVER, other: b"\x00" * (oss_policy.MAX_FILE_BYTES + 1)})
     assert run(root, "--only", "sizes") == 1
     out = capsys.readouterr().out
     assert f"sizes: {other}: over-size-limit" in out
     assert f"sizes: {rel}:" not in out
 
 
-def test_approved_path_with_different_bytes_still_fails(make_repo, capsys):
-    rel, size = sorted(oss_policy.OVERSIZE_ALLOWED.items(), key=lambda kv: kv[1])[0]
-    root = make_repo({rel: b"\x00" * (size + 1)})
+def test_approved_path_with_different_bytes_still_fails(make_repo, capsys, monkeypatch):
+    rel = _approved(monkeypatch, OVER)
+    root = make_repo({rel: OVER + b"\x01"})
     assert run(root, "--only", "sizes") == 1
     assert f"sizes: {rel}: over-size-limit" in capsys.readouterr().out
 
 
+# #2253 review: the entry records the file's SHA-256, and a different file of the very same size does not pass.
+def test_approved_path_with_the_same_size_but_other_bytes_fails(make_repo, capsys, monkeypatch):
+    rel = _approved(monkeypatch, OVER)
+    root = make_repo({rel: b"\x02" * len(OVER)})
+    assert run(root, "--only", "sizes") == 1
+    assert f"sizes: {rel}: over-size-limit" in capsys.readouterr().out
+
+
+# #2253 review: an entry that no longer matches its file is reported, even when the file now fits under the limit (a
+# re-export), so the exception cannot silently outlive the bytes it was granted for.
+def test_a_listed_file_under_the_limit_that_is_not_the_recorded_one_is_reported(make_repo, capsys, monkeypatch):
+    rel = _approved(monkeypatch, OVER)
+    root = make_repo({rel: b"\x01" * 10})
+    assert run(root, "--only", "sizes") == 1
+    assert f"sizes: {rel}: stale-oversize-allow" in capsys.readouterr().out
+
+
+# While the PR is held for the four files (none is in the tree yet), a listed path with no file is not a finding.
+def test_a_listed_path_with_no_file_is_silent(make_repo, capsys):
+    root = make_repo({"a.txt": "fine\n"})
+    assert run(root, "--only", "sizes") == 0
+
+
 def test_oversize_allowlist_is_exactly_the_four_ruled_originals():
-    assert sorted(oss_policy.OVERSIZE_ALLOWED) == [
-        "asset-sources/prepared-towns-20261031/netanya/statecraft-netanya-original-76df2d06.glb",
-        "asset-sources/prepared-towns-20261031/safed/statecraft-safed-original-6707144a.glb",
-        "asset-sources/prepared-towns-20261031/tiberias/statecraft-tiberias-original-d6c8293a.glb",
-        "asset-sources/prepared-weapons-20261031/k98k/statecraft-k98k-original-64e8aded.glb",
-    ]
+    # Byte counts and SHA-256 as docs/art/recovered-asset-audit-2007.md records them (and as asked of the contributor).
+    assert oss_policy.OVERSIZE_ALLOWED == {
+        "asset-sources/prepared-towns-20261031/netanya/statecraft-netanya-original-76df2d06.glb":
+            (60_575_748, "801ffc2d15b782671c4eaa180a9938063a37efba22f04de85e0f9516a950efd5"),
+        "asset-sources/prepared-towns-20261031/safed/statecraft-safed-original-6707144a.glb":
+            (59_382_140, "4f389ce9fbff53fd577074804954581434aee0ae12a06d84df99168677535303"),
+        "asset-sources/prepared-towns-20261031/tiberias/statecraft-tiberias-original-d6c8293a.glb":
+            (59_533_508, "3d5227a620198c50a134f1e9174e37cdc2d99f6bb57c2a2df4c462efc711de87"),
+        "asset-sources/prepared-weapons-20261031/k98k/statecraft-k98k-original-64e8aded.glb":
+            (63_014_240, "320fd59ec86068936dc3cfd9c23e3549ca7926facdf357ea24c40b08360cffc8"),
+    }
     # Each is over our 10 MiB limit (else it needs no entry) and under the 100 MiB at which GitHub refuses a push.
-    for size in oss_policy.OVERSIZE_ALLOWED.values():
+    for size, _ in oss_policy.OVERSIZE_ALLOWED.values():
         assert oss_policy.MAX_FILE_BYTES < size < 100 * 1024 * 1024
 
 
