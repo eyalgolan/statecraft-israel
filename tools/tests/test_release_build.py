@@ -66,19 +66,27 @@ class Fake:
     steam_library = True
 
     def __init__(self, dirty="", golden_ok=True, build_ok=True, branch="main", tags=("v0.1.0",), worktrees=None,
-                 build_raises=None, dirty_after="", on_origin_main=True):
+                 build_raises=None, dirty_after="", on_origin_main=True, fail_status=False,
+                 fail_status_after=False, fail_worktree_list=False):
         self.calls: list[list[str]] = []
         self.dirty, self.golden_ok, self.build_ok = dirty, golden_ok, build_ok
         self.branch, self.tags, self.worktrees = branch, tags, worktrees
         self.build_raises, self.dirty_after, self.built = build_raises, dirty_after, False
         self.on_origin_main = on_origin_main
+        self.fail_status = fail_status
+        self.fail_status_after = fail_status_after
+        self.fail_worktree_list = fail_worktree_list
 
     def __call__(self, cmd, **kw):
         cmd = [str(c) for c in cmd]
         self.calls.append(cmd)
         out, code = "", 0
         if cmd[:2] == ["git", "status"]:
-            out = self.dirty_after if self.built else self.dirty
+            status_failed = self.fail_status_after if self.built else self.fail_status
+            if status_failed:
+                code = 1
+            else:
+                out = self.dirty_after if self.built else self.dirty
         elif cmd[:2] == ["git", "rev-parse"]:
             out = self.branch + "\n" if "--abbrev-ref" in cmd else SHA + "\n"
         elif cmd[:2] == ["git", "merge-base"]:
@@ -86,7 +94,10 @@ class Fake:
         elif cmd[:3] == ["git", "tag", "--points-at"]:
             out = "".join(t + "\n" for t in self.tags)
         elif cmd[:3] == ["git", "worktree", "list"]:
-            out = "".join(f"worktree {w}\nHEAD {SHA}\nbranch refs/heads/x\n\n" for w in self.worktrees or [])
+            if self.fail_worktree_list:
+                code = 1
+            else:
+                out = "".join(f"worktree {w}\nHEAD {SHA}\nbranch refs/heads/x\n\n" for w in self.worktrees or [])
         elif cmd[:2] == ["git", "describe"]:
             out = "v0.1.0-5-g1b7a36cb\n"
         elif cmd[:2] == ["git", "check-ignore"]:
@@ -223,6 +234,14 @@ def test_every_checkout_of_the_repository_is_refused(repo, editor, monkeypatch, 
         assert unity_calls(fake) == []
 
 
+def test_a_failed_worktree_list_is_refused_before_build(repo, editor, monkeypatch, tmp_path, capsys):
+    fake = Fake(fail_worktree_list=True)
+    assert run_main(["--platform", "mac", "--out", str(tmp_path / "out")],
+                    repo, editor, fake, monkeypatch) == 1
+    assert unity_calls(fake) == []
+    assert "cannot enumerate every checkout" in capsys.readouterr().err
+
+
 def test_a_non_empty_output_folder_is_refused(repo, editor, monkeypatch, tmp_path):
     out = tmp_path / "out"
     (out / "players/linux").mkdir(parents=True)
@@ -330,6 +349,16 @@ def test_the_record_says_whether_the_tree_stayed_clean(repo, editor, monkeypatch
     assert describe < next(i for i, c in enumerate(fake.calls) if "-executeMethod" in c), "describe is taken before"
 
 
+def test_a_failed_postbuild_git_status_writes_no_clean_record(repo, editor, monkeypatch, tmp_path, capsys):
+    out = tmp_path / "out"
+    fake = Fake(fail_status_after=True)
+    assert run_main(["--platform", "mac", "--out", str(out)], repo, editor, fake, monkeypatch) == 1
+    assert len(unity_calls(fake)) == 1
+    assert not (out / "build-record.json").exists()
+    assert not (out / "build-record.md").exists()
+    assert "cannot prove the working tree remained clean" in capsys.readouterr().err
+
+
 # --- what the script reads ------------------------------------------------------------------------------------------------
 
 def test_unity_version_and_goldens_come_from_the_repository(repo, monkeypatch):
@@ -348,6 +377,30 @@ def test_a_dirty_tree_is_refused_before_any_build(repo, editor, monkeypatch, cap
     err = capsys.readouterr().err
     assert "REFUSED" in err and "ProjectSettings.asset" in err
     assert not (tmp_path / "out").exists()
+
+
+def test_a_failed_initial_git_status_is_refused_before_build(repo, editor, monkeypatch, tmp_path, capsys):
+    fake = Fake(fail_status=True)
+    assert run_main(["--platform", "mac", "--out", str(tmp_path / "out")],
+                    repo, editor, fake, monkeypatch) == 1
+    assert unity_calls(fake) == []
+    assert "cannot prove the working tree is clean" in capsys.readouterr().err
+
+
+class GitWontStart(Fake):
+    def __call__(self, cmd, **kw):
+        if [str(c) for c in cmd][:2] == ["git", "status"]:
+            raise FileNotFoundError(2, "No such file or directory", "git")
+        return super().__call__(cmd, **kw)
+
+
+def test_a_git_that_cannot_start_is_refused_with_a_message(repo, editor, monkeypatch, tmp_path, capsys):
+    fake = GitWontStart()
+    assert run_main(["--platform", "mac", "--out", str(tmp_path / "out")],
+                    repo, editor, fake, monkeypatch) == 1
+    assert unity_calls(fake) == []
+    assert "cannot prove the working tree is clean: `git status --porcelain --untracked-files=normal` could not start" \
+        in capsys.readouterr().err
 
 
 def test_untracked_files_count_as_dirty(repo, editor, monkeypatch, tmp_path):

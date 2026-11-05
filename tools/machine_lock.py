@@ -15,7 +15,7 @@ before either child appears in process listings. Ordinary --shared requests and 
 overlap them; --exclusive excludes every participating shared holder. --timeout limits the Unity-process wait, not lock
 acquisition. The lock file is
 ~/.cache/statecraft/machine.lock (fcntl.flock; STATECRAFT_MACHINE_LOCK overrides it), shared by every worktree of this
-user. Exit code: the command's, or 3 when --wait-unity times out.
+user. Exit code: the command's, 3 when --wait-unity times out, or 4 when Unity-process discovery fails.
 
 Unity processes are recognised by their executable (`ps -o comm=`), never by argument text, so queued wrappers that
 name Unity in their command line do not count (review C1). macOS flock does not queue fairly, so every request first
@@ -46,6 +46,22 @@ GATE = LOCK.with_name(LOCK.name + ".gate")
 UNITY_LOCK = LOCK.with_name(LOCK.name + ".unity")
 UNITY_EXE = "/Unity.app/Contents/MacOS/Unity"
 HOLDER_ENV = "STATECRAFT_LOCK_HOLDER"
+
+
+class DiscoveryFailed(RuntimeError):
+    """Unity's state could not be determined, so the guarded command must not start."""
+
+
+def checked_output(command: list[str]) -> str:
+    try:
+        result = subprocess.run(command, capture_output=True, text=True)
+    except OSError as e:
+        raise DiscoveryFailed(f"`{' '.join(command)}` could not start: {e}") from e
+    if result.returncode != 0:
+        detail = result.stderr.strip()
+        suffix = f": {detail}" if detail else ""
+        raise DiscoveryFailed(f"`{' '.join(command)}` exited {result.returncode}{suffix}")
+    return result.stdout
 
 
 def parse(argv: list[str]) -> argparse.Namespace:
@@ -84,14 +100,14 @@ def batch_unity_pids(comm_text: str, args_text: str, exclude: set[int] | frozens
 
 def unity_batch_pids() -> list[int]:
     def ps(field: str) -> str:
-        return subprocess.run(["ps", "-axo", f"pid=,{field}="], capture_output=True, text=True).stdout
+        return checked_output(["ps", "-axo", f"pid=,{field}="])
     return batch_unity_pids(ps("comm"), ps("args"), exclude={os.getpid()})
 
 
 def worktrees() -> list[Path]:
     """Every worktree of this repository, so an editor open in any of them is seen."""
-    r = subprocess.run(["git", "worktree", "list", "--porcelain"], capture_output=True, text=True)
-    return [Path(line[len("worktree "):]) for line in r.stdout.splitlines() if line.startswith("worktree ")]
+    text = checked_output(["git", "worktree", "list", "--porcelain"])
+    return [Path(line[len("worktree "):]) for line in text.splitlines() if line.startswith("worktree ")]
 
 
 def lockfile_holders(roots: list[Path], lsof=None) -> list[int]:
@@ -99,8 +115,23 @@ def lockfile_holders(roots: list[Path], lsof=None) -> list[int]:
     files = [str(p / "unity" / "Temp" / "UnityLockfile") for p in roots if (p / "unity" / "Temp" / "UnityLockfile").exists()]
     if not files:
         return []
-    run = lsof or (lambda fs: subprocess.run(["lsof", "-t", *fs], capture_output=True, text=True).stdout)
+    run = lsof or lsof_holders_output
     return sorted({int(p) for p in run(files).split() if p.isdigit()})
+
+
+def lsof_holders_output(files: list[str]) -> str:
+    """`lsof -t` exits 1 when nothing holds the files, and says "No such file" for one that vanished since the check:
+    both mean no holder. Any other failure is a discovery failure. (macOS ships lsof 4.91, which has no -Q.)"""
+    try:
+        result = subprocess.run(["lsof", "-t", *files], capture_output=True, text=True)
+    except OSError as e:
+        raise DiscoveryFailed(f"`lsof` could not start: {e}") from e
+    if result.returncode == 0:
+        return result.stdout
+    errors = [l for l in result.stderr.splitlines() if l.strip() and "No such file or directory" not in l]
+    if result.returncode == 1 and not errors:
+        return result.stdout
+    raise DiscoveryFailed(f"`lsof` exited {result.returncode}: {result.stderr.strip()}")
 
 
 def unity_pids() -> list[int]:
@@ -175,9 +206,15 @@ def main(argv: list[str] | None = None) -> int:
         if a.shared and a.wait_unity:
             unity_lock = reservations.enter_context(open(UNITY_LOCK, "a+"))
             fcntl.flock(unity_lock, fcntl.LOCK_EX)
-        if a.wait_unity and not wait_for_unity(a.timeout):
-            print("machine_lock: timed out waiting for Unity")
-            return 3
+        if a.wait_unity:
+            try:
+                idle = wait_for_unity(a.timeout)
+            except DiscoveryFailed as e:
+                print(f"machine_lock: refused because Unity-process discovery failed: {e}", file=sys.stderr)
+                return 4
+            if not idle:
+                print("machine_lock: timed out waiting for Unity")
+                return 3
         child = None
         signals = (signal.SIGTERM, signal.SIGHUP, signal.SIGINT)
         previous = {}
