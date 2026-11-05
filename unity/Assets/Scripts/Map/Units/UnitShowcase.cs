@@ -50,8 +50,8 @@ namespace Statecraft.Game.Map.Units
         public const float PropellerBlurOpacity = 0.65f;
 
         /// <summary>The names of the 101 Squadron Spitfire's propeller blur (a child of its propeller) and ground shadow (a child
-        /// of the aircraft).</summary>
-        public const string PropellerBlurName = "PropellerBlur", ShadowName = "Shadow";
+        /// of the aircraft), and of an authored model's propeller (a child of its prefab's root, turned by ShowcaseFlight).</summary>
+        public const string PropellerBlurName = "PropellerBlur", ShadowName = "Shadow", AuthoredPropellerName = "Propeller";
 
         /// <summary>A copy of <paramref name="source"/> (same shader, maps and colours) with <see cref="AircraftSmoothness"/>.
         /// The caller owns it.</summary>
@@ -75,14 +75,14 @@ namespace Statecraft.Game.Map.Units
             new[] { 0f }, Collection.SeaAirCollection.PropBlurColour,
             (r, deg) => r >= 1f ? 0f : PropellerBlurOpacity * Mathf.Min(1f, r / 0.4f) * Collection.SeaAirCollection.PropBlurAlpha(deg, 90f, 70f));
 
-        /// <summary>Puts the light blur <paramref name="mesh"/> on the code-built propeller <paramref name="prop"/> (it turns about
-        /// +z), so it turns with it: the disc (made in XZ) turned to face along +z, <see cref="PropellerBlurRadius"/> across.</summary>
-        internal static Transform PropellerBlur(Transform prop, Mesh mesh, Material blur)
+        /// <summary>Puts the light blur <paramref name="mesh"/> on the propeller <paramref name="prop"/> (it turns about +z), so it
+        /// turns with it: the disc (made in XZ) turned to face along +z, <paramref name="radius"/> across.</summary>
+        internal static Transform PropellerBlur(Transform prop, Mesh mesh, Material blur, float radius = PropellerBlurRadius)
         {
             var go = new GameObject(PropellerBlurName);
             go.transform.SetParent(prop, false);
             go.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-            go.transform.localScale = Vector3.one * PropellerBlurRadius;
+            go.transform.localScale = Vector3.one * radius;
             go.AddComponent<MeshFilter>().sharedMesh = mesh;
             var r = go.AddComponent<MeshRenderer>();
             r.sharedMaterial = blur; r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off; r.receiveShadows = false;
@@ -101,17 +101,69 @@ namespace Statecraft.Game.Map.Units
             return go.transform;
         }
 
+        /// <summary>A flying Spitfire's look, whichever model draws it (the code-built one, or an authored model in
+        /// <see cref="AuthoredFolder"/>, coordinator, 5 November 2026): its propeller (<paramref name="codeProp"/>, or the authored
+        /// prefab's child named <see cref="AuthoredPropellerName"/>) carries the light blur, sized to the propeller's own mesh;
+        /// a soft shadow, sized to the airframe as drawn, lies on the ground (ShowcaseFlight lays it); and the aircraft casts
+        /// no shadow of its own (<see cref="CastNoShadow"/>). Returns the propeller for ShowcaseFlight to turn (null when
+        /// there is none) and the shadow and its half size across and along the heading (m). Call before the aircraft is
+        /// placed or turned: the size is measured in its own frame.</summary>
+        internal static Transform? FlyingSpitfire(Transform plane, GameObject airframe, Transform? codeProp, Mesh blurMesh, Material blur,
+            Mesh shadowMesh, out Transform shadow, out Vector2 shadowHalf)
+        {
+            var size = SizeInFrame(plane);   // before the blur and the shadow are added
+            shadowHalf = 0.5f * Collection.SeaAirCollection.ShadowShare * AircraftScale * new Vector2(size.x, size.z);
+            var prop = codeProp != null ? codeProp : airframe.transform.Find(AuthoredPropellerName);
+            if (prop != null)
+            {
+                // The code-built blades reach 1.6 (UnitModels.SpitfirePropeller); the blur reaches a little beyond any blades.
+                float reach = codeProp != null ? 1.6f : PropellerReach(prop);
+                PropellerBlur(prop, blurMesh, blur, reach > 0f ? reach * PropellerBlurRadius / 1.6f : PropellerBlurRadius);
+            }
+            shadow = GroundShadow(plane, shadowMesh, blur);
+            CastNoShadow(plane);
+            return prop;
+        }
+
+        /// <summary>The meshes under <paramref name="plane"/> measured in its own frame, in the model's units (metres for a
+        /// model to scale: the frame's own scale is taken out), so a code-built and an authored airframe size their shadow alike.</summary>
+        static Vector3 SizeInFrame(Transform plane)
+        {
+            Bounds? box = null;
+            foreach (var p in Corners(plane, plane))
+                if (box is Bounds b) { b.Encapsulate(p); box = b; } else box = new Bounds(p, Vector3.zero);
+            return box?.size ?? Vector3.zero;
+        }
+
+        /// <summary>How far an authored propeller's blades reach from its hub in its turning plane (its local X and Y), in its
+        /// own units: the largest of its meshes' extents along either axis (a bounding box's corner would overstate a
+        /// blade by up to the square root of 2). 0 when it has no mesh.</summary>
+        static float PropellerReach(Transform prop)
+        {
+            float reach = 0f;
+            foreach (var p in Corners(prop, prop)) reach = Mathf.Max(reach, Mathf.Abs(p.x), Mathf.Abs(p.y));
+            return reach;
+        }
+
+        /// <summary>The corners of every mesh's bounds under <paramref name="root"/>, in <paramref name="frame"/>'s local space.</summary>
+        static IEnumerable<Vector3> Corners(Transform root, Transform frame)
+        {
+            foreach (var f in root.GetComponentsInChildren<MeshFilter>(true))
+            {
+                if (f.sharedMesh == null) continue;
+                var m = frame.worldToLocalMatrix * f.transform.localToWorldMatrix;
+                var b = f.sharedMesh.bounds;
+                for (int c = 0; c < 8; c++)
+                    yield return m.MultiplyPoint3x4(new Vector3((c & 1) == 0 ? b.min.x : b.max.x, (c & 2) == 0 ? b.min.y : b.max.y, (c & 4) == 0 ? b.min.z : b.max.z));
+            }
+        }
+
         /// <summary>A flying code-built Spitfire casts no shadow of its own: its soft disc (<see cref="GroundShadow"/>) is its
         /// shadow, and a cast one would lie about 7 km off at its drawn height (e21's AFTER captures of #2728).</summary>
         internal static void CastNoShadow(Transform plane)
         {
             foreach (var r in plane.GetComponentsInChildren<Renderer>(true)) r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         }
-
-        /// <summary>The shadow's half size across and along the heading (m) for a code-built Spitfire mesh drawn at
-        /// <see cref="AircraftScale"/>: a little larger than its span and length (SeaAirCollection.ShadowShare).</summary>
-        internal static Vector2 ShadowHalf(Mesh airframe) =>
-            0.5f * Collection.SeaAirCollection.ShadowShare * AircraftScale * new Vector2(airframe.bounds.size.x, airframe.bounds.size.z);
 
         /// <summary>The sea's surface (world y), as KitGround has it: the heightmap's 0 m.</summary>
         internal static float SeaLevelY(MapScene map) => map.Terrain.transform.position.y - map.ElevMinM * MapBuilder.VerticalExaggeration;
@@ -244,26 +296,22 @@ namespace Statecraft.Game.Map.Units
             // The aircraft and, when code-built, its propeller.
             var plane = new GameObject("Spitfire1948");
             plane.transform.SetParent(root.transform, false);
-            Mesh? airframeMesh = null;
-            Piece(plane.transform, "Airframe", SpitfireType, () => airframeMesh = Built(UnitModels.Spitfire("Spitfire1948")), aircraftPaint,
+            var airframe = Piece(plane.transform, "Airframe", SpitfireType, () => Built(UnitModels.Spitfire("Spitfire1948")), aircraftPaint,
                 Vector3.zero, Quaternion.identity, 1f, out bool authoredAircraft);
-            Transform? prop = null, shadow = null;
+            Transform? codeProp = null;
             if (!authoredAircraft)
             {
-                // The code-built aircraft's own: a light blur on its propeller and a soft shadow on the ground (an authored
-                // model brings its own materials and propeller, AuthoredFolder).
-                prop = Piece(plane.transform, "Propeller", Built(UnitModels.SpitfirePropeller("SpitfirePropeller")), aircraftPaint, Vector3.zero, Quaternion.identity, 1f).transform;
-                prop.localPosition = UnitModels.SpitfirePropellerHub;
-                var blur = assets.Own(BlurMaterial());
-                PropellerBlur(prop, assets.Own(PropellerBlurMesh()), blur);
-                shadow = GroundShadow(plane.transform, assets.Own(Collection.SeaAirCollection.SpitfireShadowDisc()), blur);
-                CastNoShadow(plane.transform);
+                codeProp = Piece(plane.transform, "Propeller", Built(UnitModels.SpitfirePropeller("SpitfirePropeller")), aircraftPaint, Vector3.zero, Quaternion.identity, 1f).transform;
+                codeProp.localPosition = UnitModels.SpitfirePropellerHub;
             }
+            // Its blur, shadow and no cast shadow, whichever model draws it (an authored one brings its own propeller).
+            var prop = FlyingSpitfire(plane.transform, airframe, codeProp, assets.Own(PropellerBlurMesh()), assets.Own(BlurMaterial()),
+                assets.Own(Collection.SeaAirCollection.SpitfireShadowDisc()), out var shadow, out var shadowHalf);
             plane.transform.localScale = Vector3.one * AircraftScale;
             var loopCentre = map.Frame.ToWorld(LoopCentre.lon, LoopCentre.lat, 0);
             var flight = plane.AddComponent<ShowcaseFlight>();
             flight.Configure(loopCentre, LoopRadiusM, LoopFloor(map, loopCentre, LoopRadiusM) + AltitudeM, LoopSeconds, BankDegrees, prop, still ? StillPhase : (float?)null,
-                shadow, map.Terrain, SeaLevelY(map), airframeMesh != null ? ShadowHalf(airframeMesh) : Vector2.zero);
+                shadow, map.Terrain, SeaLevelY(map), shadowHalf);
 
             // The corvette, at the sea surface.
             var ship = Ground(map, map.Frame.ToWorld(ShipAt.lon, ShipAt.lat, 0));

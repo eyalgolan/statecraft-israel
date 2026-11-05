@@ -895,21 +895,23 @@ namespace Statecraft.Game.Map.Units
                 : () => UnitModels.AviaS199(t.ArtType);
             // The code-built Spitfire's satin paint (UnitShowcase.AircraftSmoothness); the S-199 keeps the units' paint.
             var mat = spitfire ? AircraftPaint() : paint;
-            UnitShowcase.Piece(plane.transform, "Airframe", t.ArtType, () => MeshFor(t.ArtType, airframe), mat, Vector3.zero, Quaternion.identity, 1f, out bool authored);
+            var airframeGo = UnitShowcase.Piece(plane.transform, "Airframe", t.ArtType, () => MeshFor(t.ArtType, airframe), mat, Vector3.zero, Quaternion.identity, 1f, out bool authored);
             Transform? prop = null, shadow = null;
+            Vector2 shadowHalf = default;
             if (!authored)
             {
                 var propKey = spitfire ? "spitfire-propeller" : "avia-s199-propeller";
                 var propMesh = MeshFor(propKey, spitfire ? (Func<Mesh>)(() => UnitModels.SpitfirePropeller(propKey)) : () => UnitModels.S199Propeller(propKey));
                 prop = UnitShowcase.Piece(plane.transform, "Propeller", propMesh, mat, Vector3.zero, Quaternion.identity, 1f).transform;
                 prop.localPosition = spitfire ? UnitModels.SpitfirePropellerHub : UnitModels.S199PropellerHub;
-                // A flying code-built Spitfire's light propeller blur and soft ground shadow (an authored model brings its own).
-                if (spitfire && t.Flying)
-                {
-                    UnitShowcase.PropellerBlur(prop, aircraftBlurMesh ??= assets.Own(UnitShowcase.PropellerBlurMesh()), AircraftBlur());
-                    shadow = UnitShowcase.GroundShadow(plane.transform, aircraftShadowMesh ??= assets.Own(Collection.SeaAirCollection.SpitfireShadowDisc()), AircraftBlur());
-                    UnitShowcase.CastNoShadow(plane.transform);
-                }
+            }
+            // A flying Spitfire's light propeller blur, soft ground shadow and no cast shadow, whichever model draws it (an
+            // authored one brings its own propeller, UnitShowcase.AuthoredPropellerName).
+            if (spitfire && t.Flying)
+            {
+                prop = UnitShowcase.FlyingSpitfire(plane.transform, airframeGo, prop, aircraftBlurMesh ??= assets.Own(UnitShowcase.PropellerBlurMesh()), AircraftBlur(),
+                    aircraftShadowMesh ??= assets.Own(Collection.SeaAirCollection.SpitfireShadowDisc()), out var laid, out shadowHalf);
+                shadow = laid;
             }
             plane.transform.localScale = Vector3.one * UnitShowcase.AircraftScale;
             if (t.Flying)
@@ -917,7 +919,7 @@ namespace Statecraft.Game.Map.Units
                 var flight = plane.AddComponent<ShowcaseFlight>();
                 flight.Configure(baseCentre, UnitShowcase.LoopRadiusM, UnitShowcase.LoopFloor(map, baseCentre, UnitShowcase.LoopRadiusM) + UnitShowcase.AltitudeM,
                     UnitShowcase.LoopSeconds, UnitShowcase.BankDegrees, prop, still ? UnitShowcase.StillPhase : (float?)null,
-                    shadow, map.Terrain, UnitShowcase.SeaLevelY(map), shadow != null ? UnitShowcase.ShadowHalf(MeshFor(t.ArtType, airframe)) : Vector2.zero);
+                    shadow, map.Terrain, UnitShowcase.SeaLevelY(map), shadowHalf);
             }
             else
                 plane.transform.SetPositionAndRotation(baseCentre + Vector3.up * ParkedHeightM * UnitShowcase.AircraftScale,

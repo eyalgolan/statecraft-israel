@@ -295,6 +295,11 @@ public class UnitShowcaseTests
         var map = BuildMap();   // first: a new scene would destroy the stand-in models
         var helmet = new GameObject("authored-helmet"); new GameObject("AuthoredMarker").transform.SetParent(helmet.transform);
         var spitfire = new GameObject("authored-spitfire"); new GameObject("AuthoredMarker").transform.SetParent(spitfire.transform);
+        // An authored model's own propeller: a child named UnitShowcase.AuthoredPropellerName, turning about its local +z.
+        var bladesMesh = UnitModels.SpitfirePropeller("authored-blades");
+        var blades = new GameObject(UnitShowcase.AuthoredPropellerName);
+        blades.transform.SetParent(spitfire.transform, false);
+        blades.AddComponent<MeshFilter>().sharedMesh = bladesMesh; blades.AddComponent<MeshRenderer>();
         var saved = UnitShowcase.AuthoredModel;
         UnitShowcase.AuthoredModel = type => type == UnitShowcase.RiflemanHelmetType ? helmet : type == UnitShowcase.SpitfireType ? spitfire : null;
         try
@@ -306,15 +311,27 @@ public class UnitShowcaseTests
             Assert.AreEqual(UnitShowcase.FigureScale, root.transform.Find("Rifleman1").localScale.x, 1e-3f, "placed and scaled as the code-built one");
             Assert.IsNotNull(root.transform.Find("Spitfire1948/Airframe/AuthoredMarker"));
             Assert.IsNull(root.transform.Find("Spitfire1948/Propeller"), "an authored aircraft brings its own propeller");
-            Assert.IsNull(root.transform.Find("Spitfire1948/" + UnitShowcase.ShadowName), "and the code-built one's shadow is not added to it");
             Assert.IsFalse(root.transform.Find("Spitfire1948/Airframe").GetComponentsInChildren<Renderer>(true)
-                .Any(r => r.sharedMaterial != null && r.sharedMaterial.name.EndsWith(" (glossy)")), "nor its glossy paint: it brings its own materials");
+                .Any(r => r.sharedMaterial != null && r.sharedMaterial.name.EndsWith(" (glossy)")), "nor the code-built glossy paint: it brings its own materials");
+            // The flight's look applies to it all the same: its own propeller turns and carries the blur, sized to its blades,
+            // and a soft shadow lies on the ground while it casts none.
+            var ownProp = root.transform.Find("Spitfire1948/Airframe/" + UnitShowcase.AuthoredPropellerName);
+            Assert.IsNotNull(ownProp, "fixture: the authored propeller");
+            var flight = root.GetComponentInChildren<ShowcaseFlight>();
+            Assert.AreSame(ownProp, typeof(ShowcaseFlight).GetField("propeller", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(flight),
+                "the flight turns the authored propeller");
+            var blur = ownProp.Find(UnitShowcase.PropellerBlurName);
+            Assert.IsNotNull(blur, "the blur on the authored propeller");
+            Assert.That(blur.localScale.x, Is.InRange(1.4f, 1.9f), "sized to its blades (the code-built blades here, reaching about 1.6)");
+            Assert.IsNotNull(flight.transform.Find(UnitShowcase.ShadowName), "the soft shadow under an authored aircraft too");
+            Assert.IsTrue(flight.GetComponentsInChildren<Renderer>(true).All(r => r.shadowCastingMode == UnityEngine.Rendering.ShadowCastingMode.Off),
+                "and it casts no shadow of its own");
             Assert.IsNotNull(root.transform.Find("Corvette1948").GetComponent<MeshFilter>());
         }
         finally
         {
             UnitShowcase.AuthoredModel = saved;
-            Object.DestroyImmediate(map.gameObject); Object.DestroyImmediate(helmet); Object.DestroyImmediate(spitfire);
+            Object.DestroyImmediate(map.gameObject); Object.DestroyImmediate(helmet); Object.DestroyImmediate(spitfire); Object.DestroyImmediate(bladesMesh);
         }
     }
 
