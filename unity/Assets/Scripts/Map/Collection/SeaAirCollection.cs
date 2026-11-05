@@ -397,9 +397,16 @@ namespace Statecraft.Game.Map.Collection
                 return keepAll;
             }
         }
-        /// <summary>A new <see cref="KeepClear"/> list from every drawn craft's own boxes.</summary>
-        void RebuildKeepAll() =>
-            keepAll = originals.Values.SelectMany(list => list).Where(go => go != null && keepOf.ContainsKey(go)).Select(go => keepOf[go]).ToList();
+        /// <summary>A new <see cref="KeepClear"/> list from every drawn craft's own boxes, and the air defence's fighters' (keyed
+        /// by each fighter's plane, a child of the air defence, which is one of the Dakotas' originals: kept while it is).</summary>
+        void RebuildKeepAll()
+        {
+            var drawn = originals.Values.SelectMany(list => list).Where(go => go != null).ToList();
+            keepAll = drawn.Where(keepOf.ContainsKey).Select(go => keepOf[go])
+                .Concat(airDefenceKeeps.Where(k => k.Go != null && k.Defence != null && keepOf.ContainsKey(k.Go) && drawn.Contains(k.Defence.gameObject))
+                    .Select(k => keepOf[k.Go]))
+                .ToList();
+        }
         List<Bounds[]> keepAll = new List<Bounds[]>();
         readonly Dictionary<GameObject, Bounds[]> keepOf = new Dictionary<GameObject, Bounds[]>();
         void Keep(GameObject go, Bounds box) { var boxes = new[] { box }; keepAll.Add(boxes); keepOf[go] = boxes; }
