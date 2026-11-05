@@ -438,26 +438,35 @@ public class SaveUiTests
     }
 
     [Test]
-    public void AFailedDeleteStillStartsTheNewGame()
+    public void AFailedWriteStillStartsTheNewGameAndKeepsTheOldAutosave()
     {
         using var ui = new UiTestKit();
         var bridge = new SimBridge(GameSession.New(C, 3, Mode.Historical), Text);
         bridge.EndTurn();
         var toast = new ToastPresenter(ui.Root, bridge, Text);
-        var store = new DeleteFailsStore();
+        var directory = TempStore().Directory;
+        var store = new WriteFailsStore(directory);
+        store.WriteAutosave(bridge.Session.Save.Write());
+        var oldAutosave = File.ReadAllBytes(store.AutosavePath);
+        store.FailNextWrite = true;
         new NewGamePresenter(ui.Root, bridge, store, toast, Text, () => 4UL);
         ui.Press("new-game");
+        LogAssert.Expect(LogType.Warning, new System.Text.RegularExpressions.Regex("^Autosave could not be written"));
         Assert.DoesNotThrow(() => ui.Press("new-game"));
         Assert.AreEqual(0, bridge.State.Turn);
-        Assert.AreEqual("The old saved game could not be removed; it will be replaced the next time the game saves.",
-            ui.Q<Label>("toast").text,
-            "was 'The old saved game could not be removed; it will be replaced after your next turn.'; autosave also runs after committed orders");
+        CollectionAssert.AreEqual(oldAutosave, File.ReadAllBytes(store.AutosavePath));
+        Assert.AreEqual(Text["save.write_failed"], ui.Q<Label>("toast").text);
     }
 
-    sealed class DeleteFailsStore : SaveStore
+    sealed class WriteFailsStore : SaveStore
     {
-        public DeleteFailsStore() : base(Path.Combine(Path.GetTempPath(), "statecraft-faulty")) { }
-        public override void DeleteAutosave() => throw new IOException("locked");
+        public bool FailNextWrite;
+        public WriteFailsStore(string directory) : base(directory) { }
+        public override void WriteAutosave(string text)
+        {
+            if (FailNextWrite) { FailNextWrite = false; throw new IOException("locked"); }
+            base.WriteAutosave(text);
+        }
     }
 
     [Test]
@@ -476,7 +485,10 @@ public class SaveUiTests
         Assert.AreEqual(1, bridge.State.Turn);
         ui.Press("new-game");
         Assert.AreEqual(0, bridge.State.Turn);
-        Assert.IsFalse(File.Exists(store.AutosavePath));
+        Assert.IsTrue(File.Exists(store.AutosavePath));
+        var resumed = GameStart.Begin(C, store, () => 1UL, new List<string>(), Text);
+        Assert.AreEqual(bridge.State.Hash(), resumed.State.Hash());
+        Assert.AreEqual(0, resumed.State.Turn);
     }
 
     [Test]
@@ -606,7 +618,7 @@ public class SaveUiTests
     }
 
     [Test]
-    public void NewGameAlsoRemovesALingeringTmp()
+    public void NewGameOverwritesALingeringTmpWithTheNewSession()
     {
         using var ui = new UiTestKit();
         var store = TempStore();
@@ -619,7 +631,9 @@ public class SaveUiTests
         ui.Press("new-game"); ui.Press("new-game");
         Assert.IsFalse(File.Exists(store.AutosavePath + ".tmp"));
         var notes = new List<string>();
-        Assert.AreEqual(0, GameStart.Begin(C, store, () => 1UL, notes, Text).State.Turn, "the next start does not resurrect the abandoned game");
+        var resumed = GameStart.Begin(C, store, () => 1UL, notes, Text);
+        Assert.AreEqual(0, resumed.State.Turn, "the next start does not resurrect the abandoned game");
+        Assert.AreEqual(played.State.Hash(), resumed.State.Hash(), "the next start loads the replacement written over the .tmp");
         Assert.IsEmpty(notes);
     }
 }

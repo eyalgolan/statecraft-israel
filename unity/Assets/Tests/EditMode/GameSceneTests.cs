@@ -44,12 +44,13 @@ public class GameSceneTests
 
     /// <summary>Opens Map.unity, builds the map from the repository inputs and starts the game the way GameBoot.Ready does,
     /// with the saves in a temporary folder (never the player's real autosave).</summary>
-    GameRoot Boot(SaveStore? store = null)
+    GameRoot Boot(SaveStore? store = null, string? language = null)
     {
         EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
         Object.FindFirstObjectByType<MapScene>().Build(Inputs.Map);
         var root = Object.FindFirstObjectByType<GameRoot>();
         root.Store = store ?? new SaveStore(saveDir);
+        root.Language = language;
         root.Begin(Inputs, 0);
         return root;
     }
@@ -720,6 +721,29 @@ public class GameSceneTests
         StringAssert.StartsWith("Not done: ", lines[0]);
         Assert.AreEqual(Text["save.write_failed"], lines[1]);
         Assert.AreEqual(DisplayStyle.Flex, Ui.Q("toast").style.display.value);
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void WebSavePersistenceFailuresUseTheCurrentLanguagesExistingToast(bool hebrew)
+    {
+        var language = hebrew ? UiLanguage.Hebrew : UiLanguage.English;
+        var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(hebrew ? UiPaths.StringsHebrew : UiPaths.Strings).text,
+            hebrew ? "strings.he.yaml" : "strings.en.yaml");
+        var root = Boot(language: language);
+
+        root.OnSavePersistenceResult("fail save 1 1948-06-15 turn 1 hash aa");
+        Assert.AreEqual(text["save.write_failed"], Ui.Q<Label>("toast").text);
+        Assert.AreEqual(DisplayStyle.Flex, Ui.Q("toast").style.display.value);
+    }
+
+    [Test]
+    public void SuccessfulWebPersistenceResultsDoNotShowAnError()
+    {
+        var root = Boot();
+        root.OnSavePersistenceResult("ok save 1 1948-06-15 turn 1 hash aa");
+        Assert.AreEqual("", Ui.Q<Label>("toast").text);
+        Assert.AreEqual(DisplayStyle.None, Ui.Q("toast").style.display.value);
     }
 
     /// <summary>#2152: the game reports earned achievements to the store set in PlatformServices.Current (a Steam build's).</summary>

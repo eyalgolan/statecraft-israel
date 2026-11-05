@@ -386,7 +386,10 @@ public class EndScreenTests
         UiTestKit.Press(k.Ui.Q<Button>("end-screen-new-game"));
         Assert.IsNull(k.Bridge.State.GameOver, "the second press starts a new game");
         Assert.IsFalse(k.End.IsOpen, "which has no end screen");
-        Assert.IsFalse(File.Exists(k.Store.AutosavePath), "New Game removes the old save, as it always has");
+        Assert.IsTrue(File.Exists(k.Store.AutosavePath), "New Game saves its replacement immediately");
+        var resumed = GameStart.Begin(C, k.Store, () => 1UL, new List<string>(), En);
+        Assert.AreEqual(k.Bridge.State.Hash(), resumed.State.Hash());
+        Assert.IsNull(resumed.State.GameOver);
     }
 
     [Test]
