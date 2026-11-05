@@ -1,0 +1,22 @@
+    0.49s RIG open http://localhost:64612/index.html?navlog&lang=he mode=inject
+    5.54s [log] GAME OK 1948-05-15 turn 0 hash 0065f4bfe60bfd64f9bb999364375915d97d79ccaa4637348f33ec8a060f2c71
+    9.56s RIG IndexedDB put failure armed
+    9.62s [log] NAV f=130 t=8570 ui click count=1 target=start-new-game
+   13.87s [log] NAV f=174 t=12820 ui click count=1 target=opening-skip
+   13.96s [log] RIG forced IndexedDB put failure on FILE_DATA key /idbfs/cd5c2ec95b10f0abca2c9b73b6f47424
+   13.96s [log] RIG forced IndexedDB put failure on FILE_DATA key /idbfs/statecraft-settings
+   13.96s [log] RIG forced IndexedDB put failure on FILE_DATA key /idbfs/statecraft-settings/settings.txt
+   17.01s [log] NAV f=206 t=15956 ui click count=1 target=end-turn
+   20.46s RIG screenshot unit-he.png
+   33.57s [log] AUTOSAVE PENDING 1 1948-05-15 turn 0 hash 0065f4bfe60bfd64f9bb999364375915d97d79ccaa4637348f33ec8a060f2c71
+   33.58s [log] NAV f=713 t=32524 ui click count=1 target=info-hold
+   33.66s [log] RIG forced IndexedDB put failure on FILE_DATA key /idbfs/cd5c2ec95b10f0abca2c9b73b6f47424
+   33.66s [error] AUTOSAVE FAIL 1 1948-05-15 turn 0 hash 0065f4bfe60bfd64f9bb999364375915d97d79ccaa4637348f33ec8a060f2c71
+   33.66s [log] SAVE FAILURE SHOWN save.write_failed
+   33.66s [log] RIG forced IndexedDB put failure on FILE_DATA key /idbfs/statecraft-saves
+   33.66s [log] RIG forced IndexedDB put failure on FILE_DATA key /idbfs/statecraft-saves/autosave.txt
+   33.66s [log] RIG forced IndexedDB put failure on FILE_DATA key /idbfs/statecraft-settings
+   33.66s [log] RIG forced IndexedDB put failure on FILE_DATA key /idbfs/statecraft-settings/settings.txt
+   34.87s RIG screenshot toast-he-a.png
+   36.79s RIG screenshot toast-he-b.png
+   40.19s RIG screenshot toast-he-c.png

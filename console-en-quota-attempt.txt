@@ -1,0 +1,12 @@
+    0.51s RIG open http://localhost:63925/index.html?navlog mode=quota
+    5.56s [log] GAME OK 1948-05-15 turn 0 hash 83ddf1acad474458e3fb992435c529dd95c7891a0520a1b940957900cf1d7e53
+    9.76s RIG Storage.overrideQuotaForOrigin http://localhost:63925 quotaSize=1 -> {}
+   10.03s [log] NAV f=135 t=8971 ui click count=1 target=start-new-game
+   13.78s [log] NAV f=178 t=12718 ui click count=1 target=opening-skip
+   16.81s [log] NAV f=212 t=15751 ui click count=1 target=end-turn
+   20.19s RIG screenshot unit-en.png
+   20.28s [log] AUTOSAVE PENDING 1 1948-05-15 turn 0 hash 83ddf1acad474458e3fb992435c529dd95c7891a0520a1b940957900cf1d7e53
+   20.29s [log] NAV f=282 t=19222 ui click count=1 target=info-hold
+   20.52s [log] AUTOSAVE OK 1 1948-05-15 turn 0 hash 83ddf1acad474458e3fb992435c529dd95c7891a0520a1b940957900cf1d7e53
+   50.80s RIG screenshot nofail-en-quota.png
+   50.80s RIG no failure within 30 s
