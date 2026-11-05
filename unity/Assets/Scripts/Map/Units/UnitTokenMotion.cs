@@ -33,7 +33,7 @@ namespace Statecraft.Game.Map.Units
         internal Renderer? HitFlash;
 
         Vector3 from, moveOffset;
-        float elapsed = Duration, attackLeft, hitLeft;
+        float elapsed = Duration, attackLeft, hitLeft, hitDelay;
         int nextMoveDust;
         bool firing;   // a figure plays the attack (else it waits for one, up to AttackWaitS)
         bool fired;    // an attack just ended: its figures go back to walking or standing
@@ -48,11 +48,13 @@ namespace Statecraft.Game.Map.Units
         /// <summary>An attack plays, or waits for a figure to play it.</summary>
         public bool Attacking => attackLeft > 0f;
         public bool Reacting => hitLeft > 0f;
+        /// <summary>A shake and flash wait to start (<see cref="PlayHit"/> with a delay).</summary>
+        public bool HitPending => hitDelay > 0f;
 
         /// <summary>Starts a slide from <paramref name="offset"/> (the old place less the new) to the unit's place.</summary>
         public void Begin(Vector3 offset)
         {
-            if (offset.sqrMagnitude < MinMoveM * MinMoveM) { if (Moving || Attacking || Reacting) Snap(); return; }
+            if (offset.sqrMagnitude < MinMoveM * MinMoveM) { if (Moving || Attacking || Reacting || HitPending) Snap(); return; }
             from = moveOffset = offset; elapsed = 0f; nextMoveDust = 0;
             ApplyPosition();
             enabled = true;
@@ -127,15 +129,23 @@ namespace Statecraft.Game.Map.Units
             return true;
         }
 
-        /// <summary>Starts the defender's short presentation-only shake and badge flash.</summary>
-        public bool PlayHit()
+        /// <summary>Starts the defender's short presentation-only shake and badge flash, <paramref name="delayS"/> from now
+        /// (when the hit lands on it, CombatBursts.ImpactS), or at once.</summary>
+        public bool PlayHit(float delayS = 0f)
         {
             if (!gameObject.activeInHierarchy) return false;
-            hitLeft = HitDurationS;
             enabled = true;
+            if (delayS > 0f) { hitDelay = delayS; return true; }
+            StartHit(0f);
+            return true;
+        }
+
+        void StartHit(float late)
+        {
+            hitDelay = 0f;
+            hitLeft = Mathf.Max(0f, HitDurationS - late);
             ApplyPosition();
             Changed?.Invoke();
-            return true;
         }
 
         void EmitMoveDustThrough(float share)
@@ -219,6 +229,11 @@ namespace Statecraft.Game.Map.Units
                 EmitMoveDustThrough(share);
             }
             if (Reacting) hitLeft = Mathf.Max(0f, hitLeft - seconds);
+            if (HitPending)
+            {
+                // The hit lands within this step: the shake starts then, already as old as the rest of the step.
+                if (seconds < hitDelay) hitDelay -= seconds; else { StartHit(seconds - hitDelay); wasReacting = false; }
+            }
             if (wasMoving || wasReacting) { ApplyPosition(); Changed?.Invoke(); }
             if (Attacking)
             {
@@ -230,21 +245,21 @@ namespace Statecraft.Game.Map.Units
                 }
             }
             if (wasMoving != Moving || wasFiring != firing) Pose();
-            if (!Moving && !Attacking && !Reacting) enabled = false;   // an idle token costs nothing per frame
+            if (!Moving && !Attacking && !Reacting && !HitPending) enabled = false;   // an idle token costs nothing per frame
         }
 
         void LateUpdate() => Tick(Time.deltaTime);
 
         void OnDisable()
         {
-            if (Moving || Attacking || Reacting) Snap();
+            if (Moving || Attacking || Reacting || HitPending) Snap();
         }
 
         void Snap()
         {
             bool moved = transform.position != Vector3.zero;
             fired = firing;
-            elapsed = Duration; attackLeft = hitLeft = 0f; firing = false; resumeAt = 0f;
+            elapsed = Duration; attackLeft = hitLeft = hitDelay = 0f; firing = false; resumeAt = 0f;
             from = moveOffset = Vector3.zero; nextMoveDust = 0;
             DropAttackCue();
             transform.position = Vector3.zero;

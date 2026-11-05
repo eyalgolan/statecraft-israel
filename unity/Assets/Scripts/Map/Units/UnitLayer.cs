@@ -875,7 +875,7 @@ namespace Statecraft.Game.Map.Units
                 foreach (var motion in motions)
                 {
                     if (motion == null || motion.SimId != id) continue;
-                    played |= motion.PlayHit();
+                    played |= motion.PlayHit(CombatBursts.ImpactS(hit));   // with the hit on it, not the shot
                     break;
                 }
             return played;
@@ -904,11 +904,11 @@ namespace Statecraft.Game.Map.Units
 
         /// <summary>Raises a destroyed sim unit's dust where its token stood when the rebuild dropped it (owner, 4 November
         /// 2026: "Dust when a unit dies"), once. False when its token was not drawn, or nothing plays.</summary>
-        public bool PlayDestroyed(int simId)
+        public bool PlayDestroyed(int simId, float delayS = 0f)
         {
             if (combat == null || !gone.TryGetValue(simId, out var at)) return false;
             gone.Remove(simId);
-            return combat.Destroyed(at);
+            return combat.Destroyed(at, delayS);
         }
 
         /// <summary>The world box of a mesh's bounds through its transform. From the mesh and the transform, not

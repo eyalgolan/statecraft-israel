@@ -115,6 +115,29 @@ public class CombatEffectsTests
         Assert.AreEqual(0, c.Dust.Busy); Assert.AreEqual(0, Shown(c.Dust)); Assert.IsFalse(c.enabled);
     }
 
+    /// <summary>The hit's first sight on its target, from the fire take (e21's capture of #2614): the volley's first puff when
+    /// any small arms fired, else the shell's burst. A destroyed unit's dust and the defenders' shake start then.</summary>
+    [Test]
+    public void TheImpactTimeIsTheFirstHitSeen()
+    {
+        Assert.AreEqual(CombatBursts.ShellFlightS, CombatBursts.ImpactS(new CombatHit(0, 0, true, false, new int[0])));
+        Assert.AreEqual(CombatBursts.VolleyS, CombatBursts.ImpactS(new CombatHit(0, 0, false, true, new int[0])));
+        Assert.AreEqual(CombatBursts.VolleyS, CombatBursts.ImpactS(new CombatHit(0, 0, true, true, new int[0])), "the volley's puff shows first");
+        Assert.AreEqual(0f, CombatBursts.ImpactS(new CombatHit(0, 0, false, false, new int[0])));
+    }
+
+    /// <summary>A destroyed unit's dust given a delay (the hit's impact time) shows nothing before it and rises then.</summary>
+    [Test]
+    public void ADestroyedUnitsDustWaitsForItsDelay()
+    {
+        var c = Bursts(out _);
+        Assert.IsTrue(c.Destroyed(new Vector3(4000f, 120f, 900f), CombatBursts.ShellFlightS));
+        c.Sample(now + CombatBursts.ShellFlightS - 0.01);
+        Assert.AreEqual(0, Shown(c.Dust!), "nothing before the hit lands");
+        c.Sample(now + CombatBursts.ShellFlightS + 0.01);
+        Assert.Greater(Shown(c.Dust!), 0, "the cloud rises with the hit");
+    }
+
     /// <summary>"Dust when a unit dies": the cloud rises at once where the token stood, then ends.</summary>
     [Test]
     public void ADestroyedUnitsDustRisesAtOnceAndEnds()
@@ -286,7 +309,7 @@ public class CombatEffectsTests
         var hits = new List<CombatHit>();
         bool redrawn = false;
         bridge.Changed += () => redrawn = true;
-        using var presenter = new UnitAttackPresenter(bridge, _ => true, h => { Assert.IsTrue(redrawn, "after Changed"); hits.Add(h); return true; }, _ => true);
+        using var presenter = new UnitAttackPresenter(bridge, _ => true, h => { Assert.IsTrue(redrawn, "after Changed"); hits.Add(h); return true; }, (_, _) => true);
         UnitOrder? order = null; Unit? target = null;
         foreach (var u in session.Now.State.Units.Values.Where(u => u.Side == Movement.PlayerSide))
         {
@@ -310,7 +333,7 @@ public class CombatEffectsTests
             units: new[] { new UnitRef(new Unit(73, "infantry", 9, 9)) }) };
         var bridge = new SimBridge(NewSession(), Text,
             (session, orders) => new StepResult(session.State, session.Now.Why.Concat(lines).ToArray(), Array.Empty<Rejection>()));
-        using var presenter = new UnitAttackPresenter(bridge, _ => true, _ => true, id => { destroyed.Add(id); return true; });
+        using var presenter = new UnitAttackPresenter(bridge, _ => true, _ => true, (id, _) => { destroyed.Add(id); return true; });
         bridge.EndTurn();
         CollectionAssert.AreEqual(new[] { 73 }, destroyed);
         bridge.Replace(NewSession());
@@ -352,8 +375,17 @@ public class CombatEffectsTests
                 drawn.Select(u => u.Id).ToArray())), "the five-argument caller means no recorded defender loss");
             Assert.IsTrue(layer.PlayDefenderHit(new CombatHit(defender.Q, defender.R, false, true, 1,
                 drawn.Select(u => u.Id).ToArray())), "all drawn defenders react to the aggregate loss");
+            // They react when the volley's first puff lands (CombatBursts.ImpactS), not with the shot (e21's capture of #2614).
             foreach (var unit in drawn)
-                Assert.IsTrue(layer.GetComponentsInChildren<UnitTokenMotion>().Single(m => m.SimId == unit.Id).Reacting);
+            {
+                var motion = layer.GetComponentsInChildren<UnitTokenMotion>().Single(m => m.SimId == unit.Id);
+                Assert.IsFalse(motion.Reacting, "no shake before the hit lands"); Assert.IsTrue(motion.HitPending);
+                if (motion.HitFlash != null) Assert.IsFalse(motion.HitFlash.enabled, "no flash before the hit lands");
+                motion.Tick(CombatBursts.VolleyS - 0.01f);
+                Assert.IsFalse(motion.Reacting, "still waiting just before it");
+                motion.Tick(0.02f);
+                Assert.IsTrue(motion.Reacting, "the shake starts as it lands");
+            }
             Assert.IsTrue(layer.PlayHit(new CombatHit(defender.Q, defender.R, true, false, new[] { defender.Id })));
             int slot = Enumerable.Range(0, layer.Combat!.Blasts!.Capacity).Single(i => !double.IsNaN(layer.Combat.Blasts.StartOf(i)));
             Assert.Less((XZ(layer.Combat.Blasts.Foot(slot)) - SpotOf(defender)).magnitude, 1f, "on the defender's token");
@@ -370,9 +402,11 @@ public class CombatEffectsTests
             s.Units.Remove(lost.Id);
             Assert.IsTrue(layer.Show(C, s), "fixture: the roster changed");
             Assert.IsFalse(layer.PlayDestroyed(defender.Id), "a unit still drawn raises no dust");
-            Assert.IsTrue(layer.PlayDestroyed(lost.Id));
+            Assert.IsTrue(layer.PlayDestroyed(lost.Id, CombatBursts.ShellFlightS));
             var dust = layer.Combat.Dust!;
             Assert.AreEqual(CombatBursts.DeathPuffs, dust.Busy);
+            var starts = Enumerable.Range(0, dust.Capacity).Select(dust.StartOf).Where(t => !double.IsNaN(t)).ToList();
+            Assert.AreEqual(now + CombatBursts.ShellFlightS, starts.Min(), 1e-9, "the dust rises with the shell's burst, not the shot");
             for (int i = 0; i < dust.Capacity; i++)
                 if (!double.IsNaN(dust.StartOf(i)))
                     Assert.LessOrEqual((XZ(dust.Foot(i)) - was).magnitude, CombatBursts.SpreadShare * CombatBursts.DeathDustM + 1f, "where its token stood");

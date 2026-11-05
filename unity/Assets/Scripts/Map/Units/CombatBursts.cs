@@ -40,10 +40,16 @@ namespace Statecraft.Game.Map.Units
         /// <summary>DESIGN VALUES for the timing, from the attack's start (UnitTokenMotion.PlayAttack, the gun's flash at 0,
         /// UnitGunFire): the shell bursts on the target <see cref="ShellFlightS"/> after the flash; the first puff of the
         /// small-arms volley rises <see cref="VolleyS"/> after the figures' fire take starts, then <see cref="VolleyPuffs"/>
-        /// in all, <see cref="VolleyGapS"/> apart. A destroyed unit's dust rises at once (its token has just gone), in
-        /// <see cref="DeathPuffs"/> puffs <see cref="DeathGapS"/> apart.</summary>
+        /// in all, <see cref="VolleyGapS"/> apart. A destroyed unit's dust rises with the hit that destroyed it
+        /// (<see cref="ImpactS"/>), in <see cref="DeathPuffs"/> puffs <see cref="DeathGapS"/> apart.</summary>
         public const float ShellFlightS = 0.3f, VolleyS = 0.12f, VolleyGapS = 0.22f, DeathGapS = 0.15f;
         public const int VolleyPuffs = 3, DeathPuffs = 3;
+
+        /// <summary>When <paramref name="h"/>'s first hit shows on its target, from the fire take's start: the small-arms
+        /// volley's first puff (<see cref="VolleyS"/>) when any small arms fired, else the shell's burst
+        /// (<see cref="ShellFlightS"/>); 0 for neither. The defenders' shake and flash and the dust of the units it destroyed
+        /// start then, so they land with it (e21's capture of #2614, 5 November 2026: they came with the shot, before it).</summary>
+        public static float ImpactS(CombatHit h) => h.SmallArms ? VolleyS : h.Guns ? ShellFlightS : 0f;
 
         /// <summary>DESIGN VALUES for the sizes (m across), beside a 4.4 km hex and the Dakotas' 2.2 km bomb blast
         /// (SeaAirCollection.DakotaBlastM): a field gun's shell is smaller than an aerial bomb; small arms raise small puffs;
@@ -123,12 +129,12 @@ namespace Statecraft.Game.Map.Units
         }
 
         /// <summary>Raises the dust of a destroyed unit where its token stood, <paramref name="at"/> (world, on the ground),
-        /// from now. False when the effects are hidden.</summary>
-        public bool Destroyed(Vector3 at)
+        /// <paramref name="delayS"/> from now (the hit's <see cref="ImpactS"/>). False when the effects are hidden.</summary>
+        public bool Destroyed(Vector3 at, float delayS = 0f)
         {
             if (!gameObject.activeInHierarchy || dust == null) return false;
             double now = Clock();
-            Puffs(at, DeathDustM, now, DeathPuffs, DeathGapS);
+            Puffs(at, DeathDustM, now + Mathf.Max(0f, delayS), DeathPuffs, DeathGapS);
             Run(now);
             return true;
         }

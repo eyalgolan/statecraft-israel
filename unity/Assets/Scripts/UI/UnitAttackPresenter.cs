@@ -13,24 +13,26 @@ namespace Statecraft.Game.UI
     /// (owner, 4 November 2026: "Hit on target hex": a shell's burst when guns fired, dust when other units did) and the dust
     /// of each unit it destroyed ("Dust when a unit dies"). On the production path the hit, the defenders' reaction and the
     /// dust of the units the engagement destroyed wait for the attackers' first fire take that really starts (or, if none can,
-    /// the last one's wait), so nothing lands before the shot. Presentation only. A unit whose token cannot play now (destroyed, hidden, far, or no
+    /// the last one's wait), so nothing lands before the shot; the reaction and the dust then start when the hit lands on the
+    /// target (CombatBursts.ImpactS), with the volley's first puff or the shell's burst. Presentation only. A unit whose token cannot play now (destroyed, hidden, far, or no
     /// fire take) is skipped and nothing is kept to play later. GameRoot owns it.</summary>
     public sealed class UnitAttackPresenter : IDisposable
     {
         readonly SimBridge bridge;
         readonly Func<int, bool> play;
         readonly Func<CombatHit, bool>? hit;
-        readonly Func<int, bool>? destroyed;
+        readonly Func<int, float, bool>? destroyed;
         readonly Func<CombatHit, bool>? defenderHit;
         readonly Func<int, Action, Action, bool>? timedPlay;
 
         /// <param name="play">Plays a sim unit's attack (UnitLayer.PlayAttack); false when its token cannot.</param>
         /// <param name="hit">Plays an engagement's hit on the hex it attacked (UnitLayer.PlayHit), or null.</param>
-        /// <param name="destroyed">Raises a destroyed sim unit's dust (UnitLayer.PlayDestroyed), or null.</param>
+        /// <param name="destroyed">Raises a destroyed sim unit's dust (UnitLayer.PlayDestroyed), the given seconds from now
+        /// (when the hit that destroyed it lands, CombatBursts.ImpactS), or null.</param>
         /// <param name="defenderHit">Shakes and flashes the drawn defenders after positive aggregate loss, or null.</param>
         /// <param name="timedPlay">Production attack path that reports the actual fire-take start or its missed wait.</param>
         public UnitAttackPresenter(SimBridge bridge, Func<int, bool> play, Func<CombatHit, bool>? hit = null,
-            Func<int, bool>? destroyed = null, Func<CombatHit, bool>? defenderHit = null,
+            Func<int, float, bool>? destroyed = null, Func<CombatHit, bool>? defenderHit = null,
             Func<int, Action, Action, bool>? timedPlay = null)
         {
             this.bridge = bridge ?? throw new ArgumentNullException(nameof(bridge));
@@ -42,29 +44,31 @@ namespace Statecraft.Game.UI
         void Resolved(IReadOnlyList<Cause> lines)
         {
             FireCue? cue = null;   // the timed engagement just before: Combat.Engage adds its Destroyed lines right after it
+            float impactS = 0f;    // and when its hit lands after its fire take starts
             foreach (var line in lines)
             {
                 if (line.Key == WhyKeys.Destroyed)
                 {
-                    if (destroyed is Func<int, bool> dust && line.Units.Count > 0)
+                    if (destroyed is Func<int, float, bool> dust && line.Units.Count > 0)
                     {
-                        int dead = line.Units[0].Id;
-                        if (cue != null) cue.Then(() => dust(dead)); else dust(dead);
+                        int dead = line.Units[0].Id; float delay = impactS;
+                        if (cue != null) cue.Then(() => dust(dead, delay)); else dust(dead, delay);
                     }
                     continue;
                 }
-                cue = null;
+                cue = null; impactS = 0f;
                 var parsed = HitOf(line, IsGuns);
                 if (parsed is CombatHit h && timedPlay != null && Count(line, out int attackerCount))
                 {
                     // The production path: the defenders react (on a loss) and the hit lands with the first real fire take.
                     cue = new FireCue(attackerCount, () => Impact(h));
+                    impactS = CombatBursts.ImpactS(h);
                     foreach (int id in Attackers(line)) timedPlay(id, cue.Started, cue.Missed);
                 }
                 else
                 {
                     foreach (int id in Attackers(line)) play(id);
-                    if (parsed is CombatHit immediate) Impact(immediate);
+                    if (parsed is CombatHit immediate) { Impact(immediate); impactS = CombatBursts.ImpactS(immediate); }
                 }
             }
         }

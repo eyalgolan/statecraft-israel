@@ -341,6 +341,36 @@ public class UnitTokenMotionTests
         Assert.IsFalse(motion.Reacting, "shown again, the hidden reaction does not resume");
     }
 
+    /// <summary>e21's capture of #2614: the shake and flash start when the hit lands (a delay), not with the shot; a token
+    /// hidden while it waits drops the reaction.</summary>
+    [Test]
+    public void ADelayedDefenderReactionStartsWhenTheHitLandsAndIsDroppedWhenHidden()
+    {
+        var motion = token.AddComponent<UnitTokenMotion>();
+        var flash = new GameObject("hit flash").AddComponent<MeshRenderer>();
+        flash.transform.SetParent(token.transform, false); flash.enabled = false;
+        motion.HitFlash = flash;
+        motion.enabled = false;
+        Assert.IsTrue(motion.PlayHit(0.3f));
+        Assert.IsTrue(motion.enabled, "it ticks while it waits");
+        Assert.IsTrue(motion.HitPending); Assert.IsFalse(motion.Reacting); Assert.IsFalse(flash.enabled);
+        Assert.AreEqual(Vector3.zero, token.transform.position, "no shake yet");
+        motion.Tick(0.29f);
+        Assert.IsFalse(motion.Reacting); Assert.IsFalse(flash.enabled); Assert.IsTrue(motion.enabled);
+        motion.Tick(0.02f);
+        Assert.IsFalse(motion.HitPending); Assert.IsTrue(motion.Reacting); Assert.IsTrue(flash.enabled, "the flash starts with the shake");
+        motion.Tick(UnitTokenMotion.HitDurationS);
+        Assert.IsFalse(motion.Reacting); Assert.IsFalse(motion.enabled, "idle again");
+
+        Assert.IsTrue(motion.PlayHit(0.3f)); motion.Tick(0.1f);
+        token.SetActive(false);
+        typeof(UnitTokenMotion).GetMethod("OnDisable", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(motion, null);
+        Assert.IsFalse(motion.HitPending, "hidden while it waits: dropped");
+        token.SetActive(true);
+        motion.Tick(0.5f);
+        Assert.IsFalse(motion.Reacting, "shown again, it does not shake late"); Assert.IsFalse(flash.enabled);
+    }
+
     [Test]
     public void AStationaryDefenderReactionIsDroppedWhenHidden()
     {

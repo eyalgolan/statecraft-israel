@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using Statecraft.Game;
+using Statecraft.Game.Map.Units;
 using Statecraft.Game.UI;
 using Statecraft.Sim;
 using UnityEditor;
@@ -72,7 +73,7 @@ public class UnitAttackPresenterTests
         var cues = new Dictionary<int, (Action Started, Action Missed)>();
         var reactions = new List<Statecraft.Game.Map.Units.CombatHit>();
         using var presenter = new UnitAttackPresenter(bridge,
-            id => { immediate.Add(id); return true; }, _ => true, _ => true,
+            id => { immediate.Add(id); return true; }, _ => true, (_, _) => true,
             hit => { reactions.Add(hit); return true; },
             (id, started, missed) => { cues.Add(id, (started, missed)); return true; });
 
@@ -117,7 +118,7 @@ public class UnitAttackPresenterTests
         var hits = new List<Statecraft.Game.Map.Units.CombatHit>();
         var reactions = new List<Statecraft.Game.Map.Units.CombatHit>();
         using var presenter = new UnitAttackPresenter(bridge,
-            id => { immediate.Add(id); return true; }, h => { hits.Add(h); return true; }, _ => true,
+            id => { immediate.Add(id); return true; }, h => { hits.Add(h); return true; }, (_, _) => true,
             h => { reactions.Add(h); return true; },
             (id, started, missed) => { cues.Add(id, (started, missed)); return true; });
 
@@ -137,7 +138,8 @@ public class UnitAttackPresenterTests
 
     /// <summary>#2614: the dust of a unit the engagement destroyed (its Destroyed line right after it, as Combat.Engage adds
     /// it) waits for the attackers' fire too; a take that starts at once plays it at once. Red at 917ebf2e9: the dust played
-    /// on resolution.</summary>
+    /// on resolution. It rises when the hit lands, CombatBursts.ImpactS of the engagement's hit after the fire, not with the
+    /// shot (e21's capture of 423678c01: the dust came 0.12 s before the first volley puff).</summary>
     [TestCase(false)]
     [TestCase(true)]
     public void ADestroyedUnitsDustWaitsForTheAttackersFire(bool takeStartsAtOnce)
@@ -149,8 +151,9 @@ public class UnitAttackPresenterTests
             (session, orders) => new StepResult(session.State, session.Now.Why.Append(engagement).Append(dead).ToArray(), Array.Empty<Rejection>()));
         var cues = new Dictionary<int, (Action Started, Action Missed)>();
         var order = new List<string>();
+        CombatHit? seen = null; float dustDelay = -1f;
         using var presenter = new UnitAttackPresenter(bridge,
-            _ => true, h => { order.Add("hit"); return true; }, id => { order.Add("dust " + id); return true; }, _ => true,
+            _ => true, h => { order.Add("hit"); seen = h; return true; }, (id, delay) => { order.Add("dust " + id); dustDelay = delay; return true; }, _ => true,
             (id, started, missed) =>
             {
                 cues.Add(id, (started, missed));
@@ -165,6 +168,9 @@ public class UnitAttackPresenterTests
             cues[72].Started();
         }
         CollectionAssert.AreEqual(new[] { "hit", "dust 73" }, order, "the dust lands with the hit, after the fire");
+        Assert.IsTrue(seen.HasValue);
+        Assert.Greater(dustDelay, 0f, "after the fire, when the hit lands");
+        Assert.AreEqual(CombatBursts.ImpactS(seen!.Value), dustDelay, "when the engagement's hit lands");
         cues[71].Started(); cues[72].Missed();
         CollectionAssert.AreEqual(new[] { "hit", "dust 73" }, order, "and only once");
     }
