@@ -217,6 +217,33 @@ public class EnemyAITests
         Assert.Equal(scripted ? new[] { (3, 2, new DateTime(1948, 7, 8)) } : Array.Empty<(int, int, DateTime)>(), f.Script);
     }
 
+    // R-ENEMY-002, R-MOVE-001: under gdd-0.1 too, a scripted unit that has not moved this turn may enter one neighbouring
+    // land hex whose cost exceeds its full allowance, spending all its points. Fixture: two points, adjacent desert costs 3.
+    [Fact]
+    public void AScriptedFirstStepMayCostMoreThanTheUnitsFullPoints()
+    {
+        const string SlowTypes = Fixture.GddUnitTypes
+            + "  - { id: soldier, kind: unit, side: israel, class: infantry, movement_points: 3 }\n"
+            + "  - { id: enemy, kind: unit, side: egypt, class: infantry, movement_points: 2 }\n";
+        const string Two = "[{ url: 'https://example.org/a', checked: '2026-10-13' }, { url: 'https://example.org/b', checked: '2026-10-13' }]";
+        var row = "- id: force\n  service: army\n  side: egypt\n  status: draft\n  strength: { value: 30, as_of: '1948-05-15' }\n  anchors:\n"
+            + "  - { place: Start, lon: 34.29, lat: 33.35, from: '1948-05-15', to: '1948-06-11' }\n"
+            + "  - { place: June, lon: 34.29, lat: 33.35, from: '1948-06-11', to: '1948-07-08', sources: " + Two + " }\n";
+        var c = ContentLoader.Load(Fixture.Write(Fixture.Gdd(new Dictionary<string, string>
+        {
+            ["unit_types.yaml"] = SlowTypes,
+            ["map/hexes.json"] = MovementTests.Board((3, 1, "desert")),
+            ["corridors.yaml"] = "corridors: []\n",
+            ["map/units_1948.yaml"] = "units:\n" + row,
+            ["map/unit_anchor_hexes.yaml"] = "anchors:\n  - { id: force, anchor: 0, q: 2, r: 1 }\n  - { id: force, anchor: 1, q: 3, r: 1 }\n",
+        })));
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var why = new List<Cause>();
+        EnemyAI.Order(c, s, why);
+        Assert.Equal((3, 1), (s.Units[0].Q, s.Units[0].R));
+        Assert.Contains(why, x => x.Message == "Unit 0 moved to hex 3,1 for 2 movement points");
+    }
+
     // R-ENEMY-002 past the first truce (#1270; owner, 31 October 2026, ruling a: "First listed (as today)"): the script is
     // every anchor from 11 June 1948 on two non-wiki sources, in the file's order, and on each turn the unit marches on the
     // first of them whose window has not ended. Fixture: a later anchor on one source is skipped; of two that overlap from
@@ -421,7 +448,7 @@ public class EnemyAITests
         for (int i = 0; i < 8 && s.GameOver == null; i++)
         {
             s = Simulation.Step(Real, s, Array.Empty<Command>()).State;
-            Assert.Subset(ids, s.Units.Values.Where(IsEnemy).Select(u => u.Id).ToHashSet());
+            Assert.Subset(ids, s.Units.Values.Where(IsEnemy).Select(u => u.Id).ToHashSet());   // xUnit: every id now is a starting one (B ⊆ A), so none arrived
         }
     }
 
