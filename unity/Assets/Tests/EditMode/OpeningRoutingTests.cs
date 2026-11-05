@@ -135,6 +135,23 @@ public class OpeningRoutingTests
         Assert.AreEqual(oldHash, restarted.Bridge.State.Hash(), "a second real GameRoot resumes the untouched old autosave");
     }
 
+    /// <summary>#2710: the recording plays over the still painting only (docs/declaration-recording.md), so pressing
+    /// "Replay the opening", whose pictures hide the start screen, stops it although the start screen stays open.</summary>
+    [UnityTest]
+    public IEnumerator ReplayingTheOpeningStopsTheRecording()
+    {
+        var root = Open(saved: true, out _);
+        for (int frame = 0; frame < 6; frame++) yield return null;
+        var start = (StartScreenPresenter)typeof(GameRoot).GetField("start", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(root)!;
+        var recording = (DeclarationRecording)typeof(StartScreenPresenter).GetField("recording", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(start)!;
+        UiTestKit.Press(Ui.Q<Button>("start-listen"));
+        Assert.IsTrue(recording.Playing, "precondition: its button plays it");
+        UiTestKit.Press(Ui.Q<Button>("start-opening-replay"));
+        Assert.IsTrue(Ui.Q("root").ClassListContains(OpeningPresenter.OpenClass), "the opening replays");
+        Assert.IsTrue(StartOpen, "the start screen stays open under it");
+        Assert.IsFalse(recording.Playing, "the opening's pictures cover the painting: the recording stops");
+    }
+
     [UnityTest]
     public IEnumerator FullGameRootOffersReplayToStartScreenNavigation()
     {

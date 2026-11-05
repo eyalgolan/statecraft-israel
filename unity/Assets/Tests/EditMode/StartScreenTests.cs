@@ -290,6 +290,21 @@ public class StartScreenTests
         Assert.IsTrue(rig.Start.IsOpen);
     }
 
+    /// <summary>#2710: the recording plays over the still painting only (docs/declaration-recording.md), so the report
+    /// panel opening over the screen stops it, although the start screen stays open under the panel.</summary>
+    [Test]
+    public void TheReportButtonStopsTheRecording()
+    {
+        using var rig = new Rig(TempStore());
+        using var feedback = new FeedbackPresenter(rig.Ui.Root, null, "0.1.0 / content ab12");
+        rig.Ui.Press("start-listen");
+        Assert.IsTrue(rig.Recording.Playing, "precondition: its button plays it");
+        rig.Ui.Press("start-report");
+        Assert.IsTrue(feedback.IsOpen);
+        Assert.IsTrue(rig.Start.IsOpen, "the start screen stays under it");
+        Assert.IsFalse(rig.Recording.Playing, "the panel covers the painting: the recording stops");
+    }
+
     [Test]
     public void ContinueShowsOnlyWithASaveAndLoadsIt()
     {
