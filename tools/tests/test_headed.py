@@ -135,3 +135,40 @@ def test_wheel_zoom_follows_a_swipe_and_keeps_a_notch_at_one_step():
     assert r["px150,px200,px49"]["px150"][0] == pytest.approx(1, abs=0.02)
     assert r["px150,px200,px49"]["px200"][0] == pytest.approx(1, abs=0.02)
     assert r["px150,px200,px49"]["px49"][0] == pytest.approx(0.49, abs=0.02)
+
+
+def test_loadshot_exits_1_on_a_boot_failure_before_or_after_loading(monkeypatch, tmp_path, capsys):
+    """#2697: loadshot used to take its screenshots and exit 0 after BOOT FAIL."""
+    shots = []
+
+    class FakeBrowser:
+        waits: list[str] = []
+
+        def __init__(self, *args, **kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            return None
+
+        async def open(self, *args):
+            return "sid"
+
+        async def wait_for(self, *args, **kwargs):
+            return FakeBrowser.waits.pop(0)
+
+        async def shot(self, sid, path):
+            shots.append(path)
+            return path
+
+    monkeypatch.setattr(headed, "Browser", FakeBrowser)
+    for waits, expected_shots in ((["BOOT FAIL content missing"], 0),
+                                  (["BOOT phase=player started", "BOOT FAIL scene"], 1)):
+        shots.clear()
+        FakeBrowser.waits = list(waits)
+        assert headed.main(["loadshot", "--build", str(tmp_path), "--out", str(tmp_path / "shot")]) == 1
+        assert len(shots) == expected_shots
+    assert "FAIL: BOOT FAIL" in capsys.readouterr().out
+

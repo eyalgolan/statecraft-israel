@@ -9,7 +9,7 @@ serves a WebGL build with web_check's handler, and drives it over one browser-le
 
   boot      boot-phase timings from ?bootlog (optionally under CPU throttling): where the start-up time goes
   navpairs  pairs of clicks on a screen button and a second target, d ms apart or in one frame, under ?navlog
-  loadshot  screenshots during the load and once ready (the loading line, or the boot-failure line)
+  loadshot  screenshots during the load and once ready; a boot-failure line ends the run with exit 1
   profile   visual v1's ?vprofile in a headed 1920x1080 window at --dpr (frame rate uncapped)
   wheel     wheel zoom under ?camlog (#43): a touchpad-like swipe, mouse notches in pixels and lines, over the map and a panel
 
@@ -382,12 +382,19 @@ async def navpairs(args):
 async def loadshot(args):
     async with Browser(args.build) as b:
         sid = await b.open("bootlog", args.cpu)
-        await b.wait_for(sid, r"BOOT phase=player started|BOOT FAIL")
+        line = await b.wait_for(sid, r"BOOT phase=player started|BOOT FAIL")
+        if "BOOT FAIL" in line:   # #2697: a failed boot is a failed run, not a capture
+            print(f"FAIL: {line}")
+            return 1
         print(await b.shot(sid, args.out + "-loading.png"))
         line = await b.wait_for(sid, r"^GAME OK|BOOT FAIL")
+        if "BOOT FAIL" in line:
+            print(f"FAIL: {line}")
+            return 1
         await asyncio.sleep(2)
         print(line)
         print(await b.shot(sid, args.out + "-after.png"))
+        return 0
 
 
 async def wheel(args):
