@@ -91,7 +91,9 @@ public class CommandGuardTests
         Assert.Equal(AttentionSystem.CommandKinds.OrderBy(k => k, StringComparer.Ordinal), Samples.Values.Select(x => x.Kind).OrderBy(k => k, StringComparer.Ordinal));
 
     // R-CITY-001 (#2733 item 2): ResolveCapture is a GDD order, so the legacy loop refuses it before charging (the legacy
-    // rules give it no price): the reason, and the state exactly as after an empty turn, Attention included.
+    // rules give it no price): the exact reason and the missing resolve_capture price (a charge would throw
+    // KeyNotFoundException) pin the guard; the hash compare shows nothing else changed. Attention is refilled at the end of
+    // every turn, so its compare cannot fail and pins nothing.
     [Fact]
     public void TheLegacyLoopRefusesResolveCaptureBeforeCharging()
     {
