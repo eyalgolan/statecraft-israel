@@ -37,6 +37,13 @@ namespace Statecraft.Sim
                 if (e.Office != "" && !offices.Contains(e.Office)) throw new ContentException(e.File, F("office"), $"unknown office '{e.Office}'");
                 if (c.Offices.Any(o => o.Id == e.Office && o.HistoricalOnly))
                     throw new ContentException(e.File, F("office"), "historical-only titles cannot be delegated events");
+                // R-ENEMY-007 (#2621): an objective, exchange or Deport card is answered with its single option even when it is
+                // delegated (EventSystem's delegation step resolves it at once), so R-ENEMY-007's placement check never runs for
+                // it. Such a card cannot also give unit orders.
+                var single = e.Objective != "" ? "objective" : e.Prisoners != "" ? "prisoners" : e.Deported != "" ? "deported" : null;
+                if (single != null)
+                    foreach (var o in e.Options.Where(o => o.UnitOrders.Count != 0))
+                        throw new ContentException(e.File, F($"options[{o.Id}].unit_orders"), $"a card with {single} cannot give unit_orders (R-ENEMY-007)");
                 CheckPlaceholders(c, e, F("title"), e.Title, offices);
                 CheckPlaceholders(c, e, F("text"), e.Text, offices);
                 CheckHebrew(c, e, offices);

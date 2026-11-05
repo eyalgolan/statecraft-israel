@@ -576,6 +576,17 @@ public class EnemyAITests
 
         var unknown = Refused(Files(), "{ unit: nobody, q: 4, r: 0 }");
         Assert.Equal(("events/probe.yaml", "events[probe].options[ok].unit_orders[0].unit"), (unknown.File, unknown.Field));
+        // R-ENEMY-007 (#2621): an objective, exchange or Deport card skips the placement check when it is delegated, so it
+        // cannot carry unit orders at all; the refusal names the option's unit_orders.
+        foreach (var single in new[] { "prisoners: egypt", "objective: fixture_goal", "deported: fixture_place" })
+        {
+            var special = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(Files(), new()
+            {
+                ["probe.yaml"] = Card("{ unit: brig, q: 4, r: 0 }").Replace("from: 1948-05-15\n", "from: 1948-05-15\n" + single + "\n")
+            })));
+            Assert.Equal(("events/probe.yaml", "events[probe].options[ok].unit_orders"), (special.File, special.Field));
+            Assert.Contains("cannot give unit_orders", special.Message);
+        }
         var invented = Refused(Files(), "{ unit: brig, q: 3, r: 0 }");
         Assert.Equal("events[probe].options[ok].unit_orders[0]", invented.Field);
         Assert.Contains("not an anchor", invented.Message);
