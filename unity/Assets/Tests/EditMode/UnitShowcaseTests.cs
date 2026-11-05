@@ -340,6 +340,11 @@ public class UnitShowcaseTests
             Assert.IsTrue(colours.All(c => c.r > 180 && c.g > 180 && c.b > 180), "light, not the dark rods' colour");
             float max = colours.Max(c => c.a) / 255f;
             Assert.That(max, Is.InRange(0.3f, 0.6f), "see-through");
+            // e21's AFTER captures of #2728: two layers read as a near-opaque plate under the dark rods. One layer, lighter
+            // than the Egyptian Spitfire's haze at the same angle.
+            var positions = blur.GetComponent<MeshFilter>().sharedMesh.vertices;
+            Assert.IsTrue(positions.All(v => Mathf.Abs(v.y - positions[0].y) < 1e-5f), "one layer");
+            Assert.Less(max, Statecraft.Game.Map.Collection.SeaAirCollection.PropBlurAlpha(0f, 90f, 0f) - 0.1f, "lighter than the Egyptian haze at a blade");
             Assert.AreEqual(0, colours.Min(c => c.a), "clear at its rim");
             Assert.Greater(max - colours.Where(c => c.a > 0).Min(c => c.a) / 255f, 0.15f, "brighter at the blades: streaked, not a flat disc");
             // The streaks sit at the four rods (UnitModels.SpitfirePropeller: up turned 90 b + 20 degrees about +z, so at 110 +

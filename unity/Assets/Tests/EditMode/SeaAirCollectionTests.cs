@@ -1269,6 +1269,10 @@ public class SeaAirCollectionTests
             Assert.AreEqual(ShadowCastingMode.Off, renderer.shadowCastingMode); Assert.IsFalse(renderer.receiveShadows);
             var alpha = shadow.GetComponent<MeshFilter>().sharedMesh.colors32.Select(c => c.a / 255f).ToList();
             Assert.That(alpha.Max(), Is.InRange(0.2f, 0.8f), "dark but see-through at its middle");
+            // e21's AFTER captures of #2728: the Dakotas' disc read too faint as the Spitfire's only shadow; its own is darker.
+            var dakota = SeaAirCollection.ShadowDisc();
+            try { Assert.Greater(alpha.Max(), dakota.colors32.Max(c => c.a) / 255f + 0.1f, "darker than the Dakotas' disc"); }
+            finally { Object.DestroyImmediate(dakota); }
             Assert.AreEqual(0f, alpha.Min(), 1e-3f, "nothing at its rim: a soft edge");
             var ground = PlacementLayer.CampGround(map);
             float span = SeaAirCollection.SizeOf(SeaAirCollection.Spitfire), y0 = map.Terrain.transform.position.y;
