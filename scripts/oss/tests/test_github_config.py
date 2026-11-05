@@ -70,9 +70,25 @@ def test_the_secret_exception_names_only_steam_upload():
     assert users <= SECRET_WORKFLOWS, users
 
 
+def _uses_values(node):
+    # Every value of a `uses` key in the parsed workflow (steps and reusable-workflow jobs), however the YAML is quoted;
+    # text in comments or run: blocks is not a key and is not read.
+    if isinstance(node, dict):
+        for key, value in node.items():
+            if key == "uses" and isinstance(value, str):
+                yield value
+            yield from _uses_values(value)
+    elif isinstance(node, list):
+        for item in node:
+            yield from _uses_values(item)
+
+
 def _assert_every_action_is_pinned(root: Path) -> None:
     for wf in pin_actions.workflow_paths(root):
-        for ref in re.findall(r"""uses:\s*["']?[\w.-]+/[\w./-]+@([^\s"'#]+)""", wf.read_text(encoding="utf-8")):
+        for uses in _uses_values(yaml.safe_load(wf.read_text(encoding="utf-8"))):
+            if uses.startswith(("./", "docker://")):
+                continue   # local and docker actions are not pinned (pin_actions.USES needs owner/repo@ref)
+            ref = uses.partition("@")[2]
             assert re.fullmatch(r"[0-9a-f]{40}", ref), f"{wf.name}: {ref}"
 
 
@@ -89,6 +105,19 @@ def test_action_assertion_checks_quoted_uses_in_yaml(tmp_path):
         _assert_every_action_is_pinned(tmp_path)
 
     workflow.write_text(f'steps:\n  - uses: "actions/checkout@{"a" * 40}"\n', encoding="utf-8")
+    _assert_every_action_is_pinned(tmp_path)
+
+
+def test_action_assertion_reads_a_quoted_key_but_not_comments_or_run_text(tmp_path):
+    workflow = tmp_path / ".github/workflows/check.yml"
+    workflow.parent.mkdir(parents=True)
+    workflow.write_text('steps:\n  - "uses": "actions/checkout@v4"\n', encoding="utf-8")
+    with pytest.raises(AssertionError, match=r"check\.yml: v4"):
+        _assert_every_action_is_pinned(tmp_path)
+
+    workflow.write_text('jobs:\n  a:\n    steps:\n      # uses: actions/checkout@v4\n'
+                        '      - run: |\n          echo "uses: actions/checkout@v4"\n      - uses: ./local-action\n',
+                        encoding="utf-8")
     _assert_every_action_is_pinned(tmp_path)
 
 

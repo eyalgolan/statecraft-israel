@@ -18,7 +18,7 @@ from typing import Callable
 
 ROOT = Path(__file__).resolve().parents[2]
 USES = re.compile(
-    r"""^(?P<lead>\s*-?\s*uses:\s*)(?P<quote>["']?)(?P<action>[\w.-]+/[\w./-]+)"""
+    r"""^(?P<lead>\s*-?\s*(?P<kq>["']?)uses(?P=kq):\s*)(?P<quote>["']?)(?P<action>[\w.-]+/[\w./-]+)"""
     r"""@(?P<ref>[^\s#'"]+)(?P=quote)(?P<rest>.*)$"""
 )
 

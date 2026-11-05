@@ -46,3 +46,8 @@ def test_main_pins_yaml_workflows(tmp_path, monkeypatch):
 
     assert pin_actions.main() == 0
     assert workflow.read_text(encoding="utf-8") == f"steps:\n  - uses: actions/checkout@{SHA} # v4\n"
+
+
+def test_a_quoted_uses_key_is_pinned():
+    text = '  - "uses": actions/checkout@v4\n'
+    assert pin_actions.pin_text(text, lambda repo, ref: SHA) == f'  - "uses": actions/checkout@{SHA} # v4\n'
