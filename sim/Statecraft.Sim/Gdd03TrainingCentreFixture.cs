@@ -71,7 +71,7 @@ namespace Statecraft.Sim
         internal const string PupilCityReason = "The pupil lives in the centre's host city (owner ruling Q23, 4 November 2026, #1697) and trains there with no travel (a reading of 27M-7); this fixture checks the centre's region as an approximation of the city.";
         internal const string GraduationMonthReason = "A person released by a graduation can start a course from the next month (#1668 Q43(b), GDD 1 Nov 2026).";
         internal const string CourseAtOpeningReason = "After the enrolment month, a course turn counts only when the month's opening holds the course with the same teacher (#1668 Q43(a), GDD 1 Nov 2026).";
-        const string Q44 = "#1668 Q44 and the GDD novice lock-in decision (when a free entrant becomes a novice; profession change after a cancelled course).";
+        const string Q44 = "#1668 Q44 and the GDD novice lock-in decision (a novice changing profession through a course, also after a cancelled course).";
         // The owner's 4 November 2026 ruling covers a centre that stops operating (Operating false). When a loss inside a
         // month takes effect against the #1716 month freeze, which lists the centre unavailable or without a place, is unruled.
         const string MonthFreeze = "#1716 month freeze: when a centre loss inside a month takes effect is unruled (a centre that stops operating is cancelled, owner 4 Nov 2026).";
@@ -104,9 +104,11 @@ namespace Statecraft.Sim
                     if (n > pupilsPerTeacher || !FarmerOrPioneer(t.Profession) || t.Tier != CivilianTier.Veteran)
                         throw new ArgumentException("Centre teacher must be a matching veteran within the pupil limit.");
                 }
+                // A pupil is a novice of the teacher's profession, or a free civilian with no profession (#2464).
                 foreach (var p in pupils)
-                    if (p.Assignment.TeacherId is not int teacher || state.PopulationLedger.Get(teacher).Profession != p.Profession
-                        || p.Tier != CivilianTier.Novice || p.Assignment.ProgressTicks >= courseTurns)
+                    if (p.Assignment.TeacherId is not int teacher
+                        || p.Profession != CivilianProfession.None && (state.PopulationLedger.Get(teacher).Profession != p.Profession || p.Tier != CivilianTier.Novice)
+                        || p.Assignment.ProgressTicks >= courseTurns)
                         throw new ArgumentException("Centre pupil must be a matching novice with a teacher and an unfinished course.");
                 if (teachers.Any(p => p.Location!.Region != centre.Region)) throw new ArgumentException(TeacherCityReason);
                 if (pupils.Any(p => p.Location!.Region != centre.Region)) throw new ArgumentException(PupilCityReason);
@@ -160,7 +162,9 @@ namespace Statecraft.Sim
                 throw new ArgumentException("A course cannot replace another civilian profession.");
             if (trainee.Profession != CivilianProfession.None && trainee.Tier != CivilianTier.Novice)
                 throw new ArgumentException("Only a novice can gain the trained tier from a course.");
-            if (trainee.Profession != teacher.Profession) throw Deferred(Q44);
+            // #2464: a free civilian with no profession may enter either course (docs/gdd/training.md:48, "An eligible free
+            // civilian may train"); a novice of another profession is still not built here.
+            if (trainee.Profession != CivilianProfession.None && trainee.Profession != teacher.Profession) throw Deferred(Q44);
 
             if (teacher.Location!.Region != centre.Region) throw new ArgumentException(TeacherCityReason);
             if (trainee.Location!.Region != centre.Region) throw new ArgumentException(PupilCityReason);
@@ -232,8 +236,13 @@ namespace Statecraft.Sim
             }
             // Graduation (Q43(b)): the trained tier from the pupil's pre-release course record, then pupil and teacher are
             // released in one commit, so no teacher is left teaching with no pupil. The pupil is the centre's one pupil (Q42).
-            var graduate = Released(CivilianProfessionRules.AfterMatchingCourse(content, state, trainee.Id, trainee.Profession));
+            // A professionless pupil (#2464) takes the course teacher's profession at the trained tier, with work XP 0 as the
+            // ledger requires of a person who had no profession; every other field is kept.
             var teacher = ledger.Get(trainee.Assignment.TeacherId!.Value);
+            var graduate = Released(trainee.Profession == CivilianProfession.None
+                ? new PopulationUnit(trainee.Id, trainee.Status, trainee.ReceptionTicks, trainee.Location, trainee.Assignment,
+                    teacher.Profession, CivilianTier.Trained, 0, trainee.Qualification, trainee.CombatXp, trainee.Equipment, trainee.Captor, trainee.Home)
+                : CivilianProfessionRules.AfterMatchingCourse(content, state, trainee.Id, trainee.Profession));
             Commit(graduate, Released(teacher));
             months.Remove(trainee.Id);
             graduated[trainee.Id] = month.MonthOrdinal;
