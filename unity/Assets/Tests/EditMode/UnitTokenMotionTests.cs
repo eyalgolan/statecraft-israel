@@ -342,6 +342,32 @@ public class UnitTokenMotionTests
     }
 
     [Test]
+    public void AStationaryDefenderReactionIsDroppedWhenHidden()
+    {
+        var motion = token.AddComponent<UnitTokenMotion>();
+        var flash = new GameObject("hit flash").AddComponent<MeshRenderer>();
+        flash.transform.SetParent(token.transform, false); flash.enabled = false;
+        motion.HitFlash = flash;
+        motion.enabled = false;
+        Assert.IsFalse(motion.Moving); Assert.IsFalse(motion.Attacking);
+
+        Assert.IsTrue(motion.PlayHit()); motion.Tick(0.04f);
+        Assert.IsTrue(motion.Reacting); Assert.IsTrue(flash.enabled);
+        Assert.IsFalse(motion.Moving); Assert.IsFalse(motion.Attacking);
+        token.SetActive(false);
+        // EditMode sends no OnDisable to a script without ExecuteAlways: call it as the player would.
+        typeof(UnitTokenMotion).GetMethod("OnDisable", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(motion, null);
+        Assert.IsFalse(motion.Reacting); Assert.IsFalse(flash.enabled);
+        Assert.AreEqual(Vector3.zero, token.transform.position);
+
+        token.SetActive(true);
+        motion.Tick(0f);
+        Assert.IsFalse(motion.Reacting, "shown again, the hidden reaction does not resume");
+        Assert.IsFalse(flash.enabled, "shown again, the hidden flash does not resume");
+        Assert.AreEqual(Vector3.zero, token.transform.position);
+    }
+
+    [Test]
     public void AHiddenTokensAttackIsDroppedNotKept()
     {
         var a = Figure();
