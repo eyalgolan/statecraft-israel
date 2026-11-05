@@ -31,9 +31,10 @@ namespace Statecraft.Sim
             // (Armistice.MayOfferEarly): before its hard-anchor date, and again after a refusal. On that path it is soft.
             var quiet = new HashSet<string>(c.Events.Where(e => e.FrontQuiet != "" && Armistice.MayOfferEarly(c, s, e.FrontQuiet)
                 && (s.FiredEvents.Contains(e.Id) || s.Date < e.From)).Select(e => e.Id));
+            // R-WAR-008 (#2813): a quiet armistice card has no end date, so its `to` (1950-01-01 on the real cards) does not end it.
             var eligible = c.Events
                 .Where(e => (quiet.Contains(e.Id) || !s.FiredEvents.Contains(e.Id) && e.From <= s.Date)
-                            && (s.CappedEvents.Contains(e.Id) || e.To == null || start < e.To.Value))
+                            && (quiet.Contains(e.Id) || s.CappedEvents.Contains(e.Id) || e.To == null || start < e.To.Value))
                 .Where(e => !endingTurn || EndingCard(s, e))
                 .Where(e => Timeline.AllMet(c, s, e))
                 // R-OBJ-003: an objective's card waits for the objective. Only the GDD loop records one, so in the legacy loop it never fires.

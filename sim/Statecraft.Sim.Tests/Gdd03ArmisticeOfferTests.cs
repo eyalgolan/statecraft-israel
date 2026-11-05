@@ -238,6 +238,23 @@ options:
         Assert.Equal(new[] { "armistice_jordan" }, Fire(c, s));
     }
 
+    // R-WAR-008 (#2813): the rule gives a refused card's return no end date, so a quiet front brings it back after its `to`
+    // as well. The real cards all end `to: 1950-01-01`; Syria's (from 1949-07-20) refused on 15 December 1949 must still come.
+    [Fact]
+    public void R_EVT_002_ARefusedCardReturnsAfterItsTo()
+    {
+        var f = Gdd03MovementFortTests.Files(SaveGame.Gdd03Ruleset);
+        f["events/armistice_egypt.yaml"] = Card("egypt", "1949-12-01");
+        f["events/armistice_jordan.yaml"] = Card("jordan", "1949-07-20").Replace("from: 1949-07-20", "from: 1949-07-20\nto: 1950-01-01");
+        var c = ContentLoader.Load(Fixture.Write(f));
+        var s = At(c, new DateTime(1950, 2, 15), 2, 1);
+        s.FiredEvents.Add("armistice_egypt"); s.ChosenOptions["armistice_egypt"] = "sign";
+        s.FiredEvents.Add("armistice_jordan"); s.ChosenOptions["armistice_jordan"] = "hold_out";
+        Assert.Empty(Fire(c, s));
+        s.QuietTurns["jordan"] = 2;
+        Assert.Equal(new[] { "armistice_jordan" }, Fire(c, s));
+    }
+
     // R-WAR-008, R-EVT-003 (owner, 4 November 2026, #2508, option A, "keep early signing"): in Historical mode an early card
     // left unanswered is still a hard anchor for delegation, so it signs on the 15 December 1948 turn, long before its date.
     [Fact]
