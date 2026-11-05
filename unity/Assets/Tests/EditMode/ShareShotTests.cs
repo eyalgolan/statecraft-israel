@@ -497,7 +497,7 @@ public class ShareShotTests
             }
             else if (result != ShareShot.CopyResult.Picture)
                 StringAssert.Contains(hebrew ? "התמונה עדיין זמינה לשיתוף או להורדה" :
-                    "Share or download the picture with the button above", note.text,
+                    "Use Share or Download the picture", note.text,
                     "the note must fit both Share and Download, including a refused share sheet");
             Assert.AreEqual(DisplayStyle.Flex, note.style.display.value);
             share.Close();

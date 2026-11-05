@@ -168,21 +168,49 @@ namespace Statecraft.Sim
             return (ratio, Row(mvp, ratio));
         }
 
+        /// <summary>R-ENEMY-003: the enemy AI's attack preview. Unlike the player's <see cref="Preview"/>, it counts the
+        /// unit plus every other unit on its team that already has a standing attack on this hex and can still reach it, as
+        /// resolver step 2 groups them into the same engagement (the preview before #1454).</summary>
+        internal static (int RatioPercent, int Row)? EnemyPreview(Content c, GameState s, int unitId, int q, int r)
+        {
+            if (!s.Units.TryGetValue(unitId, out var u) || !Military(u) || Player(u) || !InReach(c, u, q, r)) return null;
+            var defenders = Defenders(s, u, q, r);
+            if (defenders.Count == 0) return null;
+            var target = Hex(q, r);
+            var attackers = new List<Unit> { u };
+            attackers.AddRange(s.Units.Values
+                .Where(x => x.Id != unitId && x.Order == Attack && x.OrderTarget == target &&
+                    Player(x) == Player(u) && Military(x) && InReach(c, x, q, r))
+                .OrderBy(x => x.Id));
+            var mvp = c.RulesAt(s.Date).Mvp!;
+            var ratio = Ratio(c, mvp, attackers, defenders, q, r);
+            return (ratio, Row(mvp, ratio));
+        }
+
         /// <summary>The outcome bands of combat_table row <paramref name="row"/> (Q-UI-1: the card shows them beside Preview's
         /// ratio): the row's faces with the same outcome taken together, in the order each first appears, each with how many
         /// faces of <c>Of</c> give it, the people the attackers and the defenders lose (population units times
         /// mvp.people_per_unit, as the engagement's report counts them) and whether the defenders retreat. When <paramref name="unitId"/>
-        /// names an artillery unit its attackers lose nothing (R-COMBAT-007, as <c>Engage</c> counts it: #2040).</summary>
-        public static IReadOnlyList<(int Faces, int Of, int AttackersLose, int DefendersLose, bool Retreat)> Outcomes(Content c, GameState s, int row, int? unitId = null)
+        /// names an artillery unit its attackers lose nothing (R-COMBAT-007, as <c>Engage</c> counts it: #2040). When it also
+        /// names the hex (<paramref name="q"/>, <paramref name="r"/>) and enemy units stand there, each face's losses are the
+        /// ones <see cref="Take"/> can make (#2553): the attacker's at most its strength, the defenders' at most their summed
+        /// strength, and no retreat when the defenders are all lost; faces equal after that share a band.</summary>
+        public static IReadOnlyList<(int Faces, int Of, int AttackersLose, int DefendersLose, bool Retreat)> Outcomes(Content c, GameState s, int row, int? unitId = null, int? q = null, int? r = null)
         {
             PopulationLedger.RefuseAggregate(s);
             var mvp = c.RulesAt(s.Date).Mvp!;
             var t = mvp.CombatTable[row];
-            var guns = unitId is int id && s.Units.TryGetValue(id, out var u) && Guns(c, u);
+            var attacker = unitId is int id && s.Units.TryGetValue(id, out var u) ? u : null;
+            var guns = attacker != null && Guns(c, attacker);
+            // Fight's pools: the attackers that take losses (not the guns) and the defenders on the hex. Uncapped without a hex.
+            var defenders = attacker != null && q is int dq && r is int dr ? Defenders(s, attacker, dq, dr) : new List<Unit>();
+            long attackPool = guns ? 0 : defenders.Count > 0 ? attacker!.Strength : long.MaxValue;
+            long defencePool = defenders.Count > 0 ? defenders.Sum(x => (long)x.Strength) : long.MaxValue;
             var bands = new List<(int Faces, int Of, int AttackersLose, int DefendersLose, bool Retreat)>();
             for (int i = 0; i < t.AttackerLoss.Count; i++)
             {
-                var face = ((guns ? 0 : t.AttackerLoss[i]) * mvp.PeoplePerUnit, t.DefenderLoss[i] * mvp.PeoplePerUnit, t.DefenderRetreats[i] == 1);
+                int attackersLost = Taken(attackPool, t.AttackerLoss[i]), defendersLost = Taken(defencePool, t.DefenderLoss[i]);
+                var face = (attackersLost * mvp.PeoplePerUnit, defendersLost * mvp.PeoplePerUnit, t.DefenderRetreats[i] == 1 && defendersLost < defencePool);
                 var k = bands.FindIndex(b => (b.AttackersLose, b.DefendersLose, b.Retreat) == face);
                 if (k >= 0) bands[k] = (bands[k].Faces + 1, bands[k].Of, bands[k].AttackersLose, bands[k].DefendersLose, bands[k].Retreat);
                 else bands.Add((1, t.AttackerLoss.Count, face.Item1, face.Item2, face.Item3));
@@ -380,6 +408,11 @@ namespace Statecraft.Sim
             }
             return taken;
         }
+
+        /// <summary>What <see cref="Take"/> returns for <paramref name="loss"/> on units of <paramref name="pool"/> summed
+        /// strength: it takes one population unit a time until the loss is met or no unit is left, so the smaller of the two.
+        /// Outcomes reads it so the card's bands are Fight's (#2553).</summary>
+        static int Taken(long pool, int loss) => (int)Math.Min(loss, pool);
 
         /// <summary>R-COMBAT-003 with R-TRAIN-004: the unit one population unit weaker. A player's unit's first loss stores the
         /// strength it had as its Full, the most replacements refill it to; no rule reads an enemy's, so it stores none.</summary>

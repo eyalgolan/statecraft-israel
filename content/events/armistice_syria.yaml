@@ -7,6 +7,7 @@ text: 'Negotiators have reached an armistice agreement with Syria. {prime_minist
 title_he: שביתת הנשק עם סוריה
 text_he: 'המשא ומתן הניב הסכם שביתת נשק עם סוריה. על {prime_minister} להחליט אם ישראל תחתום עליו.'
 anchor: hard
+front_quiet: syria
 office: prime_minister
 from: 1949-07-20
 # Hard anchor: fires on the first turn on or after `from`. `to` (exclusive, end of 1949) only makes the window finite,

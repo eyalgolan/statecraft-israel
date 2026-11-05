@@ -139,10 +139,10 @@ namespace Statecraft.Game.UI
         /// plate grows.</summary>
         readonly List<Label> plateText;
         readonly VisualElement? dateRow, captionRow;
-        /// <summary>The exhausted-turn line under the date (Statecraft.uss #exhausted, 13 px, #812): floored like the date, but from
-        /// its own stylesheet size, since 13 px is already under the floor at the scales where 15 px is not (ExhaustedPx).</summary>
+        /// <summary>The exhausted-turn line under the date (Statecraft.uss #exhausted, #812): floored like the date, from its own
+        /// stylesheet size (ExhaustedPx). 15 px since #2522 (#2340 H4, the audit's 15 px floor); it was 13 px.</summary>
         readonly Label? exhaustedLine;
-        public const float ExhaustedPx = 13f;
+        public const float ExhaustedPx = 15f;
         float exhaustedSize = ExhaustedPx;
         /// <summary>The room before a change that its up or down mark takes (Statecraft.uss .meter-delta.delta-up, 9 px).</summary>
         public const float ChangeMarkPadPx = 9f;
@@ -274,9 +274,20 @@ namespace Statecraft.Game.UI
             foreach (var e in underBar) e.style.marginTop = StyleKeyword.Null;
             bar.style.height = StyleKeyword.Null;
             foreach (var l in plateText) { l.style.fontSize = StyleKeyword.Null; l.style.whiteSpace = StyleKeyword.Null; }
-            exhaustedSize = ExhaustedPx;   // so PadPlate below clears the plate's width
             if (exhaustedLine != null) { exhaustedLine.style.fontSize = StyleKeyword.Null; exhaustedLine.style.whiteSpace = StyleKeyword.Null; }
-            if (dateRow != null) { dateRow.style.flexDirection = StyleKeyword.Null; if (dateRow.parent != null) PadPlate(dateRow.parent, false); }
+            // Cleared here, not by PadPlate: it keeps the plate's width and padding while the exhausted line shows (#2522), and
+            // the line may still show when the presenter goes (review of #2607).
+            if (dateRow != null)
+            {
+                dateRow.style.flexDirection = StyleKeyword.Null;
+                var plate = dateRow.parent;
+                if (plate != null)
+                {
+                    plate.style.width = StyleKeyword.Null; plate.style.minWidth = StyleKeyword.Null;
+                    plate.style.paddingTop = StyleKeyword.Null; plate.style.paddingBottom = StyleKeyword.Null;
+                    plate.style.paddingLeft = StyleKeyword.Null; plate.style.paddingRight = StyleKeyword.Null;
+                }
+            }
             bridge.Changed -= Render; endTurn.clicked -= onEndTurn; endTurn.generateVisualContent -= PaintHourglass;
             foreach (var d in deltas) d.generateVisualContent -= PaintChange;
             bar.UnregisterCallback<GeometryChangedEvent>(OnBarGeometry);
@@ -450,15 +461,16 @@ namespace Statecraft.Game.UI
         void PadPlate(VisualElement plate, bool raised)
         {
             // Raised, the plate sizes to its widest line (the turn and the date, a line each, never wrapped), at least 230 px.
-            // The raised exhausted line (#812) is never wrapped either, so it too lets the plate size to it, but only while it
-            // shows (Render): a hidden line leaves the plate as it was (review of #1961).
-            var lineUp = exhaustedSize > ExhaustedPx && exhaustedLine != null && exhaustedLine.style.display == DisplayStyle.Flex;
+            // The exhausted line (#812) is never wrapped either, so it too lets the plate size to it, but only while it shows
+            // (Render): a hidden line leaves the plate as it was (review of #1961). At 15 px (#2522) it is wider than the 196 px
+            // plate at every scale, not only when raised, so the plate sizes to it whenever it shows.
+            var lineUp = exhaustedLine != null && exhaustedLine.style.display == DisplayStyle.Flex;
             plate.style.width = raised || lineUp ? new StyleLength(StyleKeyword.Auto) : new StyleLength(StyleKeyword.Null);
             // At least the widest date line too, so the plate keeps its width when the month changes (PromoHudTests): at 25 px
             // (a phone upright, #642) the Hebrew 31 October 1956 is about 196 px, wider than 230 px less the padding.
             plate.style.minWidth = raised ? new StyleLength(UnityEngine.Mathf.Max(PlateWidthPx, DateLinePerPx * smallTextSize + 2f * PlateSidePx + 2f))
                                           : lineUp ? new StyleLength(PlateWidthPx + 2f * PlateSidePx - StylesheetPlatePadPx) : new StyleLength(StyleKeyword.Null);
-            // The frame clearance holds when either the 15 px text or the 13 px exhausted line is raised (they floor at different scales).
+            // The frame clearance holds when the 15 px text is raised or the exhausted line shows (#2522: it widens the plate at any scale).
             StyleLength Px(float v) => raised || lineUp ? new StyleLength(v) : new StyleLength(StyleKeyword.Null);
             plate.style.paddingTop = Px(PlateEdgePx); plate.style.paddingBottom = Px(PlateEdgePx);
             plate.style.paddingLeft = Px(PlateSidePx); plate.style.paddingRight = Px(PlateSidePx);
@@ -577,8 +589,9 @@ namespace Statecraft.Game.UI
         /// <summary>The tight three-row bar's values and changes (#40). Statecraft.uss gives them the narrow bar's 22 px and
         /// 15 px, for a phone held upright at 100%, where 22 px is 9 to 11 screen px. At 125% and 150% the same phone's
         /// quarter-width meter is narrower in panel px, and the Hebrew "IL -123.4m" no longer fit it at 360x800 (TopBarTests).
-        /// So each takes the size that keeps it at the 12 px screen floor (FlooredTextSize of the tight bar's 16 px and 12 px),
-        /// no larger than the stylesheet's: 22 px and 15 px on every phone at 100%, 17 to 21 px at 125% and 150%.</summary>
+        /// So each takes the size that keeps it at the 12 px screen floor (FlooredTextSize of the tight bar's 16 px and 15 px),
+        /// no larger than the stylesheet's: 22 px and 15 px on every phone at 100%, values 17 to 21 px at 125% and 150%. The
+        /// changes stay 15 px at every scale since the tight bar's own changes went from 12 to 15 px (#2522, the 15 px floor).</summary>
         void SizeTightValues()
         {
             var p = root.panel;
@@ -594,7 +607,7 @@ namespace Statecraft.Game.UI
             }
         }
         // Statecraft.uss .hud-tight .meter-value / .meter-delta, and the .hud-tight.hud-three-row sizes.
-        const float TightValuePx = 16f, TightDeltaPx = 12f, TightThreeRowValuePx = 22f, TightThreeRowDeltaPx = 15f;
+        const float TightValuePx = 16f, TightDeltaPx = 15f, TightThreeRowValuePx = 22f, TightThreeRowDeltaPx = 15f;
 
         /// <summary>The info panel's caps on a tight window (#40). They are set here from laid-out bounds because the USS
         /// importer of the pinned Unity 6000.3 has no calc() ("Unknown function calc"). The panel's top stays
