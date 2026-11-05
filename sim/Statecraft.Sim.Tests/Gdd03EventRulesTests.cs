@@ -500,8 +500,8 @@ public class Gdd03EventRulesTests
         DateTime? CardDate(string id) => run.FirstOrDefault(x => x.FiredEvents.Contains(id))?.Date;
         Assert.Equal(new DateTime(1949, 4, 15), CardDate("austerity_1949"));   // #2551: a turn earlier (was 15 May)
         Assert.Equal(new DateTime(1950, 4, 15), CardDate("maabarot_policy"));
-        Assert.Equal(new DateTime(1951, 3, 15), CardDate("iraqi_exodus"));
-        Assert.Equal(new DateTime(1951, 11, 15), CardDate("forex_crisis_1951"));
+        Assert.Equal(new DateTime(1951, 2, 15), CardDate("iraqi_exodus"));   // #2833: a turn earlier (was 15 March)
+        Assert.Equal(new DateTime(1951, 10, 15), CardDate("forex_crisis_1951"));   // #2833: a turn earlier (was 15 November)
     }
     static readonly string[] SourceBytes =
     {

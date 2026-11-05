@@ -85,9 +85,9 @@ public class EventRetimingTests
     [InlineData("ministry_supply_crisis", "1950-10-15")]
     [InlineData("education_registration_1951", "1951-01-15")]      // #2551: plenum of 12 February 1951, a turn earlier (was 1951-02-15)
     [InlineData("reparations_claim", "1951-02-15")]                // #2551: note of 12 March 1951, a turn earlier (was 1951-03-15)
-    [InlineData("iraqi_exodus", "1951-03-15")]
+    [InlineData("iraqi_exodus", "1951-02-15")]                     // #2833: the asset-freeze law of 10 March 1951, a turn earlier (was 1951-03-15)
     [InlineData("israel_bonds", "1951-05-15")]                     // late by design, opens on 10 May 1951: owner chose "Keep it on 10 May" (4 November 2026, #2551); maintainer reading: earlier breaks R-TURN-003
-    [InlineData("forex_crisis_1951", "1951-11-15")]
+    [InlineData("forex_crisis_1951", "1951-10-15")]                // #2833: the report of 19 October 1951, a turn earlier (was 1951-11-15)
     [InlineData("reparations_vote", "1951-12-15")]                // #1564: the turn before the Knesset vote of 9 January 1952
     public void EachEventFiresOnItsTurn(string id, string date) =>
         Assert.Equal(DateTime.Parse(date, System.Globalization.CultureInfo.InvariantCulture), CardDate(id));
