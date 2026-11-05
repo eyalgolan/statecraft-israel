@@ -147,7 +147,7 @@ Troubleshooting: `error CS0246 'PlayerPrefsBool'` means the Unity-MCP package (`
 
 ## History, sources and accuracy
 
-- Every event, minister, date and number in `content/` carries `sources:` with URLs and check dates. Wikipedia (English and Hebrew) is a primary cited source for many facts, which is why `content/` is CC BY-SA 4.0.
+- Every historical event, minister, date and number in `content/` carries `sources:` with URLs and check dates; game-balance values are design choices and need none. Wikipedia (English and Hebrew) is a primary cited source for many facts, which is why `content/` is CC BY-SA 4.0.
 - The model behind the game, and its framing, embed assumptions. It is not neutral, and this page says so.
 - No quotes are invented. Text paraphrases its sources.
 - The framing is Israeli. Contested narratives are not presented as parallel accounts.
@@ -197,7 +197,7 @@ Nothing is generated live while you play.
 - **3D models by Tal Heuberger:** [CC BY-NC-ND 4.0](LICENSES/CC-BY-NC-ND-4.0.txt).
 - **Third-party material:** fonts, public-domain, CC0, CC BY 4.0 and CC BY-SA 4.0 portraits, the archival event photographs, Ben-Gurion's 1948 recording, and the Unity engine and packages are under their own terms.
 
-Details are in [LICENSING.md](LICENSING.md); attributions are in [NOTICE](NOTICE) and [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), and every image's source is in [ASSETS.yaml](ASSETS.yaml).
+Details are in [LICENSING.md](LICENSING.md); attributions are in [NOTICE](NOTICE) and [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), and every image's source is in [ASSETS.yaml](ASSETS.yaml) and [ASSETS.portraits.yaml](ASSETS.portraits.yaml).
 
 ## Community and credits
 
