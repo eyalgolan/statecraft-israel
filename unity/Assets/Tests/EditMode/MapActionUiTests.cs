@@ -99,6 +99,29 @@ public class MapActionUiTests
         Assert.AreEqual("A transit camp built here in August 1950", ui.Q<Label>("info-placement").text);
     }
 
+    [Test]
+    public void NoAttentionDisablesMapActionsAndTheirPressesQueueNothing()
+    {
+        using var ui = new UiTestKit();
+        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        while (g.State.Date < new DateTime(1950, 8, 1)) g.Step(HistoricalAI.Commands(C, g.State));
+        g.State.Attention = 0;
+        var bridge = new SimBridge(g, Text);
+        using var info = Panel(ui, bridge);
+        var tlv = C.SettlementHexes.Single(s => s.Id == "tel_aviv");
+        foreach (var action in new[] { MapActions.TransitCamp, MapActions.Housing })
+            Assert.IsNull(MapActions.CheckReason(C, bridge.State, action, tlv.Q, tlv.R), action + ": otherwise legal on this hex");
+
+        info.Show(tlv.Q, tlv.R);
+
+        foreach (var name in new[] { "build-camp", "build-housing" })
+        {
+            Assert.IsFalse(ui.Q<Button>(name).enabledSelf, name + ": unaffordable at turn start");
+            ui.Press(name);
+        }
+        Assert.IsEmpty(bridge.Queued, "disabled map-action presses queue no command");
+    }
+
     // Red first on PR #2679 head 4e25f657c: Refusal returns the current state's ma'abarot-policy reason before it previews
     // the earlier SetPolicy order, so the transit-camp button is disabled even though End turn would accept the action.
     [Test]
