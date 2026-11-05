@@ -92,9 +92,14 @@ public class QualificationTests
         Assert.Equal("Town A has 1 civilians without work", Assert.Single(r.Rejected).Reason);
         Assert.Equal(Step(c, busy).State.Hash(), r.State.Hash());
         var none = WithCity(c, new City("town_a", 12, 8, 4, 0, 0, jobsDefault: false, qualified: q));
-        Assert.Equal("Town A has 2 qualified craftsmen", Assert.Single(Step(c, none, new ReassignCraftsmen("town_a", 3)).Rejected).Reason);
-        Assert.Equal("Reassign at least one group", Assert.Single(Step(c, none, new ReassignCraftsmen("town_a", 0)).Rejected).Reason);
-        Assert.Equal("There is no such city", Assert.Single(Step(c, none, new ReassignCraftsmen("x", 1)).Rejected).Reason);
+        foreach (var (cmd, why) in new (Command, string)[] {
+            (new ReassignCraftsmen("town_a", 3), "Town A has 2 qualified craftsmen"), (new ReassignCraftsmen("town_a", 0), "Reassign at least one group"),
+            (new ReassignCraftsmen("x", 1), "There is no such city") })
+        {
+            var refused = Step(c, none, cmd);
+            Assert.Equal(why, Assert.Single(refused.Rejected).Reason);
+            Assert.Equal(Step(c, none).State.Hash(), refused.State.Hash());   // R-QUAL-004: refused, state untouched
+        }
     }
 
     // Owner ruling 2: a qualified civilian is an ordinary civilian for jobs, income and housing.
