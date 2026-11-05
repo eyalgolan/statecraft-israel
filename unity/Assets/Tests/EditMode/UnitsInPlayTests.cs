@@ -470,7 +470,9 @@ public class UnitsInPlayTests
                 }
                 else
                 {
-                    float disc = UnitShowcase.RingRadius * hex * (s.Compact ? UnitGround.CompactScale : 1f);
+                    // #2729: an air token keeps clear by the larger of its ring and the parked aircraft's span; every other
+                    // service by its ring, as before.
+                    float disc = layer.PlacementGround.ClearanceRadius(u.Service, s.Compact);
                     foreach (var (fc, fr) in map.SettlementFootprints)
                         Assert.GreaterOrEqual((fc - c).magnitude, fr * UnitGround.FootprintMargin + disc, $"{at}: the ring reaches a town's buildings");
                 }
@@ -543,7 +545,7 @@ public class UnitsInPlayTests
                     continue;
                 }
                 outside++;
-                float ring = layer.PlacementGround.RingRadius(s.Compact);
+                float ring = layer.PlacementGround.ClearanceRadius(u.Service, s.Compact);   // #2729: the span for a parked aircraft
                 foreach (var (fc, fr, id) in footprints)
                 {
                     float reach = fr * (id.StartsWith("camp:") ? 1f : UnitGround.FootprintMargin) + ring;
