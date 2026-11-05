@@ -67,7 +67,8 @@ class Fake:
 
     def __init__(self, dirty="", golden_ok=True, build_ok=True, branch="main", tags=("v0.1.0",), worktrees=None,
                  build_raises=None, dirty_after="", on_origin_main=True, fail_status=False,
-                 fail_status_after=False, fail_worktree_list=False, fail_checkout=False, lipo_code=0, lipo_out="x86_64 arm64\n"):
+                 fail_status_after=False, fail_worktree_list=False, sim_ok=True, sim_output="", fail_checkout=False,
+                 lipo_code=0, lipo_out="x86_64 arm64\n"):
         self.calls: list[list[str]] = []
         self.dirty, self.golden_ok, self.build_ok = dirty, golden_ok, build_ok
         self.branch, self.tags, self.worktrees = branch, tags, worktrees
@@ -76,6 +77,7 @@ class Fake:
         self.fail_status = fail_status
         self.fail_status_after = fail_status_after
         self.fail_worktree_list = fail_worktree_list
+        self.sim_ok, self.sim_output = sim_ok, sim_output
         self.fail_checkout = fail_checkout
         self.lipo_code = lipo_code
         self.lipo_out = lipo_out
@@ -84,7 +86,11 @@ class Fake:
         cmd = [str(c) for c in cmd]
         self.calls.append(cmd)
         out, code = "", 0
-        if cmd[:2] == ["git", "status"]:
+        if Path(cmd[-1]).as_posix().endswith("tools/build_sim_for_unity.py"):
+            if "stdout" in kw:
+                kw["stdout"].write(self.sim_output)
+            code = 0 if self.sim_ok else 1
+        elif cmd[:2] == ["git", "status"]:
             status_failed = self.fail_status_after if self.built else self.fail_status
             if status_failed:
                 code = 1
@@ -528,6 +534,16 @@ def test_the_sim_dlls_are_built_before_unity(repo, editor, monkeypatch, tmp_path
     run_main(["--platform", "mac", "--out", str(tmp_path / "out")], repo, editor, fake, monkeypatch)
     sim = next(i for i, c in enumerate(fake.calls) if Path(c[-1]).as_posix().endswith("tools/build_sim_for_unity.py"))
     assert sim < next(i for i, c in enumerate(fake.calls) if "-executeMethod" in c)
+
+
+def test_a_failed_sim_build_has_a_named_log(repo, editor, monkeypatch, tmp_path, capsys):
+    fake = Fake(sim_ok=False, sim_output="sim compiler failure\n")
+    out = tmp_path / "out"
+    assert run_main(["--platform", "mac", "--out", str(out)], repo, editor, fake, monkeypatch) == 1
+    sim_log = out / "logs/build-sim.log"
+    assert sim_log.read_text() == "sim compiler failure\n"
+    assert str(sim_log) in capsys.readouterr().err
+    assert unity_calls(fake) == []
 
 
 def test_no_push_upload_commit_or_network(repo, editor, monkeypatch, tmp_path):

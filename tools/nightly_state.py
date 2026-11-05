@@ -30,20 +30,21 @@ SHA_SHOWN = 12
 
 
 class Stop(Exception):
-    """A night that ends without publishing. `outcome` is REFUSED, SKIPPED or MISSED."""
+    """A night that ends without publishing. A refusal may carry its exact evidence log."""
     outcome = "REFUSED"
 
-    def __init__(self, gate: str, detail: str):
+    def __init__(self, gate: str, detail: str, *, log: Path | None = None):
         super().__init__(f"{gate}: {detail}")
         self.gate = gate
         self.detail = detail
+        self.log = Path(log) if log is not None else None
 
 
 class Refused(Stop):
     outcome = "REFUSED"
 
-    def __init__(self, gate: str, detail: str):
-        super().__init__(gate, detail)
+    def __init__(self, gate: str, detail: str, *, log: Path | None = None):
+        super().__init__(gate, detail, log=log)
 
 
 class Skipped(Stop):
@@ -69,6 +70,16 @@ class Runner(Protocol):
             stop_on_interrupt: bool = False) -> int: ...
 
     def capture(self, cmd: list[str], *, cwd: Path, timeout: float = 300) -> str: ...
+
+
+def write_refusal_log(run_dir: Path, gate: str, detail: str, source: Path | None = None) -> Path:
+    """Append the terminal cause to a command log, or create a refusal evidence file in the timestamped run folder."""
+    safe_gate = re.sub(r"[^A-Za-z0-9_.-]+", "-", gate)
+    log = Path(source) if source is not None else Path(run_dir) / f"refused-{safe_gate}.log"
+    log.parent.mkdir(parents=True, exist_ok=True)
+    with log.open("a", encoding="utf-8") as out:
+        out.write(f"\nNIGHTLY REFUSED gate={gate}\n{detail}\n")
+    return log
 
 
 # --- config -----------------------------------------------------------------------------------------------------
