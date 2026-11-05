@@ -46,8 +46,19 @@ namespace Statecraft.Game.Map.Collection
         Vector3 centre, offset; Quaternion level; bool still;
         Transform? prop, shadow, flag; Terrain? ground; Vector2 shadowHalf; Vector3 half; float flagHalf, seaY;
 
-        /// <summary>DESIGN VALUE: the gap (m) between the aircraft's box top and the flag's lower edge.</summary>
+        /// <summary>DESIGN VALUE: the gap (m) between the top of the aircraft's tail and the flag's lower edge.</summary>
         public const float FlagClearM = 150f;
+
+        /// <summary>DESIGN VALUE (agent-chosen, checked in captures): the tailplane's span over the wing span, for how high the
+        /// banked tail reaches (<see cref="TailTopOver"/>): about a third, as on a Spitfire.</summary>
+        public const float TailplaneSpanShare = 1f / 3f;
+
+        /// <summary>DESIGN VALUE (agent-chosen, coordinator-agreed, 5 November 2026; checked in captures): the shadow is cast as
+        /// if the aircraft flew at this share of its drawn height over the ground under it. The aircraft is drawn 420 times life
+        /// size (UnitShowcase.AircraftScale) at UnitShowcase.AltitudeM, so the true ray lays its shadow about 7 km away at
+        /// MapLighting's 30 degree sun, too far to read as its shadow; at a quarter it lies about 1.8 km away (half an airframe's length), on
+        /// the same sun's line. The Spitfires use it; the Dakotas' shadows keep the full height (1, the default).</summary>
+        public const float ShadowHeightShare = 0.25f;
 
         /// <summary>How far the top of the aircraft's box stands over its centre at <paramref name="bankDegrees"/>: its half box
         /// <paramref name="half"/> (half its length, height and span) rolled about its length.</summary>
@@ -55,6 +66,15 @@ namespace Statecraft.Game.Map.Collection
         {
             float b = bankDegrees * Mathf.Deg2Rad;
             return half.z * Mathf.Abs(Mathf.Sin(b)) + half.y * Mathf.Cos(b);
+        }
+
+        /// <summary>How far the top of the aircraft's tail stands over its centre at <paramref name="bankDegrees"/>: the fin (up to
+        /// the box's top) and the tailplane (<see cref="TailplaneSpanShare"/> of the span) rolled about the length. Lower than
+        /// <see cref="TopOver"/>, whose raised wingtip is nowhere near the tail.</summary>
+        public static float TailTopOver(Vector3 half, float bankDegrees)
+        {
+            float b = bankDegrees * Mathf.Deg2Rad;
+            return TailplaneSpanShare * half.z * Mathf.Abs(Mathf.Sin(b)) + half.y * Mathf.Cos(b);
         }
 
         /// <summary>The animation clock, Time.time. Test seam (internal; the tests see it through InternalsVisibleTo): an
@@ -106,10 +126,11 @@ namespace Statecraft.Game.Map.Collection
             transform.position = drawn - turn * offset;
             // The angle in double: a float product with the clock loses whole degrees after hours (review of #2260).
             if (prop != null) prop.localRotation = Quaternion.AngleAxis(-(float)((double)seconds * PropDegreesPerSecond % 360.0), Vector3.up);
-            // The flag over the tail, its lower edge FlagClearM over the top of the aircraft's box at this bank: clear of the
-            // airframe at every bank and heading.
-            if (flag != null) flag.position = drawn - forward * half.x + Vector3.up * (TopOver(half, bank) + FlagClearM + flagHalf * flag.lossyScale.y);
-            if (shadow != null && ground != null) LayShadow(shadow, ground, seaY, shadowHalf, drawn, forward, bank);
+            // The flag over the tail, its lower edge FlagClearM over the top of the tail at this bank: clear of it at every bank
+            // and heading. Not over the box's top: in a bank that is the raised wingtip, and a flag that high was drawn over the
+            // cockpit from the map's camera (e21's captures, 5 November 2026).
+            if (flag != null) flag.position = drawn - forward * half.x + Vector3.up * (TailTopOver(half, bank) + FlagClearM + flagHalf * flag.lossyScale.y);
+            if (shadow != null && ground != null) LayShadow(shadow, ground, seaY, shadowHalf, drawn, forward, bank, heightShare: ShadowHeightShare);
         }
 
         /// <summary>Lays <paramref name="shadow"/> (half <paramref name="shadowHalf"/> across and along the heading) for an
@@ -129,10 +150,17 @@ namespace Statecraft.Game.Map.Collection
         /// where the ray falls to the lowest surface there can be (the sea's, or the terrain's base), so the ground is crossed
         /// between them whatever its slope or the sun's height; a march in <see cref="ShadowMarchM"/> steps finds the first
         /// crossing, and each halving halves that step, to under
-        /// <see cref="ShadowConvergeM"/> along the ray, at most <see cref="ShadowConvergeSteps"/> halvings.</summary>
+        /// <see cref="ShadowConvergeM"/> along the ray, at most <see cref="ShadowConvergeSteps"/> halvings. With
+        /// <paramref name="heightShare"/> under 1 the ray starts lower, at that share of the aircraft's height over the surface
+        /// under it (<see cref="ShadowHeightShare"/>), so the shadow lies nearer on the same line.</summary>
         internal static void LayShadow(Transform shadow, Terrain ground, float seaY, Vector2 shadowHalf, Vector3 drawn, Vector3 forward, float bank,
-            bool converge = false)
+            bool converge = false, float heightShare = 1f)
         {
+            if (heightShare < 1f)
+            {
+                float under = Surface(ground, seaY, drawn);
+                drawn.y = under + heightShare * (drawn.y - under);
+            }
             var ray = SunNow();
             var hit = drawn;
             float floor;

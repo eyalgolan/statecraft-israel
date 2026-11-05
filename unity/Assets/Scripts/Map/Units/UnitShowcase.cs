@@ -31,6 +31,78 @@ namespace Statecraft.Game.Map.Units
         /// <summary>A figure's height over <see cref="ReferenceHouseM"/>: about 1.8, as T29.</summary>
         public const float HouseRatio = UnitBadge.FigureHeightM * FigureScale / ReferenceHouseM;
         public const float AircraftScale = 420f;        // span 11.2 m x 420 = 4.7 km: wider than a man is tall
+
+        /// <summary>DESIGN VALUE (agent-chosen, coordinator-approved plan, 5 November 2026; checked in captures): the aircraft's
+        /// paint smoothness (URP Lit), a satin sheen in the map's sun. The Egyptian Spitfire's streamed model is fully matte
+        /// (0) and the units' shared paint 0.18; only the code-built 101 Squadron Spitfire and the Egyptian one take it.</summary>
+        public const float AircraftSmoothness = 0.4f;
+
+        /// <summary>The URP Lit smoothness property.</summary>
+        internal const string SmoothnessProperty = "_Smoothness";
+
+        /// <summary>DESIGN VALUE: the 101 Squadron Spitfire's propeller blur radius in the aircraft's frame: the blades' reach
+        /// (UnitModels.SpitfirePropeller, 1.6) and a little more.</summary>
+        public const float PropellerBlurRadius = 1.65f;
+
+        /// <summary>The names of the 101 Squadron Spitfire's propeller blur (a child of its propeller) and ground shadow (a child
+        /// of the aircraft).</summary>
+        public const string PropellerBlurName = "PropellerBlur", ShadowName = "Shadow";
+
+        /// <summary>A copy of <paramref name="source"/> (same shader, maps and colours) with <see cref="AircraftSmoothness"/>.
+        /// The caller owns it.</summary>
+        internal static Material Glossy(Material source)
+        {
+            var m = new Material(source) { name = source.name + " (glossy)" };
+            m.SetFloat(SmoothnessProperty, AircraftSmoothness);
+            return m;
+        }
+
+        /// <summary>The blurs' and the shadow's material: alpha-blended, unlit, both faces, its colour the meshes' vertex colours
+        /// (HexMaterials' shipped under-attack border template, so a player build keeps the shader's variant), as the Egyptian
+        /// Spitfire's (SeaAirCollection). The caller owns it.</summary>
+        internal static Material BlurMaterial() => Statecraft.HexTiles.HexMaterials.New(Statecraft.HexTiles.HexMaterials.AttackBorder);
+
+        /// <summary>DESIGN VALUES: the 101 Squadron Spitfire's propeller blur, the Egyptian Spitfire's light haze
+        /// (SeaAirCollection.PropBlurColour, PropBlurAlpha) for its four blades (UnitModels.SpitfirePropeller: every 90 degrees
+        /// from 20, which this disc, turned to face along +z, sees at 70 degrees and every 90 after), clear at the spinner,
+        /// fading out at the rim, two thin layers either side of the blades. Uploaded; the caller owns it.</summary>
+        internal static Mesh PropellerBlurMesh() => Collection.SeaAirCollection.Disc("SpitfirePropellerBlur101", 48, new[] { 0.15f, 0.4f, 0.7f, 0.9f, 1f },
+            new[] { -0.06f, 0.06f }, Collection.SeaAirCollection.PropBlurColour,
+            (r, deg) => r >= 1f ? 0f : Mathf.Min(1f, r / 0.4f) * Collection.SeaAirCollection.PropBlurAlpha(deg, 90f, 70f));
+
+        /// <summary>Puts the light blur <paramref name="mesh"/> on the code-built propeller <paramref name="prop"/> (it turns about
+        /// +z), so it turns with it: the disc (made in XZ) turned to face along +z, <see cref="PropellerBlurRadius"/> across.</summary>
+        internal static Transform PropellerBlur(Transform prop, Mesh mesh, Material blur)
+        {
+            var go = new GameObject(PropellerBlurName);
+            go.transform.SetParent(prop, false);
+            go.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            go.transform.localScale = Vector3.one * PropellerBlurRadius;
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var r = go.AddComponent<MeshRenderer>();
+            r.sharedMaterial = blur; r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off; r.receiveShadows = false;
+            return go.transform;
+        }
+
+        /// <summary>The flying 101 Squadron Spitfire's soft ground shadow (the Egyptian Spitfire's disc, SeaAirCollection.ShadowDisc),
+        /// a child of <paramref name="plane"/> that ShowcaseFlight lays on the ground each frame, so it goes with the aircraft.</summary>
+        internal static Transform GroundShadow(Transform plane, Mesh mesh, Material blur)
+        {
+            var go = new GameObject(ShadowName);
+            go.transform.SetParent(plane, false);
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var r = go.AddComponent<MeshRenderer>();
+            r.sharedMaterial = blur; r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off; r.receiveShadows = false;
+            return go.transform;
+        }
+
+        /// <summary>The shadow's half size across and along the heading (m) for a code-built Spitfire mesh drawn at
+        /// <see cref="AircraftScale"/>: a little larger than its span and length (SeaAirCollection.ShadowShare).</summary>
+        internal static Vector2 ShadowHalf(Mesh airframe) =>
+            0.5f * Collection.SeaAirCollection.ShadowShare * AircraftScale * new Vector2(airframe.bounds.size.x, airframe.bounds.size.z);
+
+        /// <summary>The sea's surface (world y), as KitGround has it: the heightmap's 0 m.</summary>
+        internal static float SeaLevelY(MapScene map) => map.Terrain.transform.position.y - map.ElevMinM * MapBuilder.VerticalExaggeration;
         public const float ShipScale = 95f;             // 63.4 m x 95 = 6.0 km: about a hex, like the promo's boats
         /// <summary>Trio spacing and the ring, as fractions of the hex circumradius. <see cref="TrioSpread"/> is the spacing
         /// the placer checks a token's spot with (UnitGround), kept so no spot moved.</summary>
@@ -132,6 +204,7 @@ namespace Statecraft.Game.Map.Units
             var palette = assets.Own(UnitPalette.MakeTexture(readable: false));
             var paint = assets.Own(new Material(template) { name = "UnitMiniature (palette)" });
             paint.SetTexture("_BaseMap", palette);
+            var aircraftPaint = assets.Own(Glossy(paint));
             Mesh Built(Mesh m) { assets.Own(m); return UnitPlinth.Upload(m); }   // no CPU copy kept in players
             float hex = map.Hexes.hex_size_km * 1000f;
 
@@ -159,18 +232,25 @@ namespace Statecraft.Game.Map.Units
             // The aircraft and, when code-built, its propeller.
             var plane = new GameObject("Spitfire1948");
             plane.transform.SetParent(root.transform, false);
-            Piece(plane.transform, "Airframe", SpitfireType, () => Built(UnitModels.Spitfire("Spitfire1948")), paint,
+            Mesh? airframeMesh = null;
+            Piece(plane.transform, "Airframe", SpitfireType, () => airframeMesh = Built(UnitModels.Spitfire("Spitfire1948")), aircraftPaint,
                 Vector3.zero, Quaternion.identity, 1f, out bool authoredAircraft);
-            Transform? prop = null;
+            Transform? prop = null, shadow = null;
             if (!authoredAircraft)
             {
-                prop = Piece(plane.transform, "Propeller", Built(UnitModels.SpitfirePropeller("SpitfirePropeller")), paint, Vector3.zero, Quaternion.identity, 1f).transform;
+                // The code-built aircraft's own: a light blur on its propeller and a soft shadow on the ground (an authored
+                // model brings its own materials and propeller, AuthoredFolder).
+                prop = Piece(plane.transform, "Propeller", Built(UnitModels.SpitfirePropeller("SpitfirePropeller")), aircraftPaint, Vector3.zero, Quaternion.identity, 1f).transform;
                 prop.localPosition = UnitModels.SpitfirePropellerHub;
+                var blur = assets.Own(BlurMaterial());
+                PropellerBlur(prop, assets.Own(PropellerBlurMesh()), blur);
+                shadow = GroundShadow(plane.transform, assets.Own(Collection.SeaAirCollection.ShadowDisc()), blur);
             }
             plane.transform.localScale = Vector3.one * AircraftScale;
             var loopCentre = map.Frame.ToWorld(LoopCentre.lon, LoopCentre.lat, 0);
             var flight = plane.AddComponent<ShowcaseFlight>();
-            flight.Configure(loopCentre, LoopRadiusM, LoopFloor(map, loopCentre, LoopRadiusM) + AltitudeM, LoopSeconds, BankDegrees, prop, still ? StillPhase : (float?)null);
+            flight.Configure(loopCentre, LoopRadiusM, LoopFloor(map, loopCentre, LoopRadiusM) + AltitudeM, LoopSeconds, BankDegrees, prop, still ? StillPhase : (float?)null,
+                shadow, map.Terrain, SeaLevelY(map), airframeMesh != null ? ShadowHalf(airframeMesh) : Vector2.zero);
 
             // The corvette, at the sea surface.
             var ship = Ground(map, map.Frame.ToWorld(ShipAt.lon, ShipAt.lat, 0));

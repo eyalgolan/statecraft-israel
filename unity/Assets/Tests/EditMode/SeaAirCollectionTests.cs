@@ -1158,6 +1158,11 @@ public class SeaAirCollectionTests
         var prop = airframe.transform.Find(SeaAirCollection.SpitfirePropellerName);
         Assert.IsNotNull(prop, "a propeller disc, a child of the aircraft's mesh");
         Assert.AreEqual(ShadowCastingMode.Off, prop.GetComponent<MeshRenderer>().shadowCastingMode, "a blur casts no shadow");
+        // The coordinator-approved plan, step 1 (5 November 2026): a light haze, not the dark disc it was.
+        var colours = prop.GetComponent<MeshFilter>().sharedMesh.colors32;
+        Assert.IsTrue(colours.All(c => c.r > 180 && c.g > 180 && c.b > 180), "a light blur");
+        Assert.That(colours.Max(c => c.a) / 255f, Is.InRange(0.3f, 0.6f), "see-through");
+        Assert.AreEqual(0, colours.Min(c => c.a), "clear at its rim");
         float span = SeaAirCollection.SizeOf(SeaAirCollection.Spitfire);
         loop.Place(0f);
         var nose = plane.TransformDirection(Vector3.down);   // the mesh's -y, as the in-flight test reads it
@@ -1213,11 +1218,36 @@ public class SeaAirCollectionTests
         finally { SpitfireLoop.Clock = clock; Object.DestroyImmediate(flying); }
     }
 
+    /// <summary>The coordinator-approved Spitfire plan, step 2 (5 November 2026): the streamed model is fully matte, so the
+    /// layer gives it a glossy copy of its material (the same shader and map, smoothness UnitShowcase.AircraftSmoothness), and
+    /// leaves the streamed material itself as it was.</summary>
+    [Test]
+    public void TheSpitfireWearsAGlossyCopyOfItsMatteMaterial()
+    {
+        var map = OpenMap();
+        var (_, plane, _, _) = DrawnSpitfire(map);
+        var airframe = plane.GetComponentInChildren<MeshFilter>().GetComponent<MeshRenderer>();
+        var gloss = airframe.sharedMaterial;
+        Assert.IsTrue(gloss.name.EndsWith(" (glossy)"), "a copy, not the streamed material");
+        Assert.AreEqual(Statecraft.Game.Map.Units.UnitShowcase.AircraftSmoothness, gloss.GetFloat("_Smoothness"), 1e-6f);
+        var name = gloss.name.Substring(0, gloss.name.Length - " (glossy)".Length);
+        var sources = Resources.FindObjectsOfTypeAll<Material>().Where(m => m.name == name).ToList();
+        Assert.IsNotEmpty(sources, "the streamed material it copies");
+        foreach (var source in sources)
+        {
+            Assert.AreEqual(0f, source.GetFloat("_Smoothness"), 1e-6f, "the streamed material stays matte");
+            Assert.AreSame(source.shader, gloss.shader);
+            Assert.AreSame(source.GetTexture("_BaseMap"), gloss.GetTexture("_BaseMap"), "the same map");
+        }
+    }
+
     /// <summary>The owner's report: "it doesnt look fliying". The aircraft flies well clear of the ground at every point of its
     /// loop (UnitShowcase.AltitudeM over the highest ground under the loop), and a soft dark disc, as long and as wide as the
     /// aircraft seen from above and fading to nothing at its rim, lies on the ground where the map's sun (MapLighting) casts
     /// it: on the sun's ray through the aircraft, east-south-east of it, turned with its heading, a little over the ground
-    /// under it and inside the board.</summary>
+    /// under it and inside the board. The ray starts at SpitfireLoop.ShadowHeightShare of the aircraft's height over the
+    /// surface under it, so the shadow lies near enough to read as the aircraft's (e21's captures, 5 November 2026: about
+    /// 7.5 km away at the full height).</summary>
     [Test]
     public void TheSpitfireFliesHighOverTheGroundAndItsSoftShadowLiesDownSunOnTheBoard()
     {
@@ -1241,6 +1271,9 @@ public class SeaAirCollectionTests
             var ground = PlacementLayer.CampGround(map);
             float span = SeaAirCollection.SizeOf(SeaAirCollection.Spitfire), y0 = map.Terrain.transform.position.y;
             float Height(Vector3 p) => map.Terrain.SampleHeight(p) + y0;
+            // Where the shadow's ray starts: ShadowHeightShare of the way up from the surface (land or sea) under the aircraft.
+            Vector3 Low(Vector3 drawn) { float u = Mathf.Max(Height(drawn), ground.SeaLevelY); drawn.y = u + SpitfireLoop.ShadowHeightShare * (drawn.y - u); return drawn; }
+            Assert.That(SpitfireLoop.ShadowHeightShare, Is.InRange(0.1f, 0.5f), "lower than the drawn height, still well over the ground");
             var sunFlat = new Vector2(SpitfireLoop.SunRay.x, SpitfireLoop.SunRay.z).normalized;
             for (int i = 0; i < 40; i++)
             {
@@ -1252,9 +1285,11 @@ public class SeaAirCollectionTests
                 var at = SeaAirCollection.LoopOffset(t); var drawn = centre + new Vector3(at.x, 0f, at.y);
                 var s = shadow.position; float g = Height(s);
                 Assert.That(s.y - g, Is.InRange(0f, SpitfireLoop.ShadowLiftM + 400f), $"on the ground under it at {t:0.0} s");
-                var cast = drawn + SpitfireLoop.SunRay * ((drawn.y - g) / -SpitfireLoop.SunRay.y);
-                Assert.Less(new Vector2(s.x - cast.x, s.z - cast.z).magnitude, 0.03f * (drawn.y - g), $"on the sun's ray through the aircraft at {t:0.0} s");
-                Assert.Greater(Vector2.Dot(new Vector2(s.x - drawn.x, s.z - drawn.z), sunFlat), 0.9f * (drawn.y - g), "down-sun of it");
+                var low = Low(drawn);
+                var cast = low + SpitfireLoop.SunRay * ((low.y - g) / -SpitfireLoop.SunRay.y);
+                Assert.Less(new Vector2(s.x - cast.x, s.z - cast.z).magnitude, 0.03f * (low.y - g), $"on the sun's ray through the aircraft, from its lowered height, at {t:0.0} s");
+                Assert.Greater(Vector2.Dot(new Vector2(s.x - drawn.x, s.z - drawn.z), sunFlat), 0.9f * (low.y - g), "down-sun of it");
+                Assert.Less(new Vector2(s.x - drawn.x, s.z - drawn.z).magnitude, 0.6f * (drawn.y - g) / Mathf.Tan(MapLighting.SunElevation * Mathf.Deg2Rad), "nearer than the full height's ray would lay it");
                 var heading = SeaAirCollection.LoopHeading(t);
                 Assert.Greater(Vector3.Dot(shadow.forward, new Vector3(heading.x, 0f, heading.y)), 0.999f, "turned with its heading");
                 Assert.That(shadow.lossyScale.z / span, Is.InRange(0.3f, 0.6f), "half as long as the aircraft, about");
@@ -1267,7 +1302,7 @@ public class SeaAirCollectionTests
             // higher sun from the south-west puts it north-east of the aircraft, nearer.
             sun.transform.rotation = Quaternion.Euler(48f, 215f - 180f, 0f);
             loop.Place(0f);
-            var high = centre + new Vector3(SeaAirCollection.LoopOffset(0f).x, 0f, SeaAirCollection.LoopOffset(0f).y);
+            var high = Low(centre + new Vector3(SeaAirCollection.LoopOffset(0f).x, 0f, SeaAirCollection.LoopOffset(0f).y));
             var landed = shadow.position; float under0 = Height(landed);
             var cast0 = high + sun.transform.forward * ((high.y - under0) / -sun.transform.forward.y);
             Assert.Less(new Vector2(landed.x - cast0.x, landed.z - cast0.z).magnitude, 0.03f * (high.y - under0), "on the scene sun's ray, not a fixed one");
@@ -1336,8 +1371,10 @@ public class SeaAirCollectionTests
     /// 15 October 2026). The Spitfire flies the same flag, cloth and colours, but as the owner ruled on #2260 (2 November
     /// 2026, "Smaller flag, no pole": "a small Egyptian flag pennant floating just above the tail (no pole through the
     /// plane)"): the cloth alone, smaller than the tokens' flag, floating over the aircraft's tail. In every pose of the loop
-    /// and facing every way it stays upright, behind the aircraft's middle, wholly above the aircraft's box (so it never
-    /// meets the airframe, banked or not), and inside the box the labels keep clear of.</summary>
+    /// and facing every way it stays upright, behind the aircraft's middle, clear above every part of the airframe under it
+    /// (so it never meets the airframe, banked or not), just above the tail (not over the raised wingtip's height: from
+    /// there the map's camera drew it over the cockpit, e21's captures, 5 November 2026), and inside the box the labels keep
+    /// clear of.</summary>
     [Test]
     public void TheSpitfireFliesEgyptsFlagAsTheEgyptianTokensDo()
     {
@@ -1359,7 +1396,9 @@ public class SeaAirCollectionTests
         float tokens = Statecraft.Game.Map.Units.UnitBadge.FigureHeightM * Statecraft.Game.Map.Units.UnitShowcase.FigureScale;
         Assert.Less(flag.lossyScale.y, 0.75f * tokens, "clearly smaller than the tokens' flag");
         Assert.AreEqual(ShadowCastingMode.Off, flag.GetComponent<MeshRenderer>().shadowCastingMode, "only the aircraft's own shadow on the ground");
-        var airframe = plane.GetComponentInChildren<MeshFilter>().GetComponent<Renderer>();
+        var airframeMesh = plane.GetComponentInChildren<MeshFilter>();
+        var local = airframeMesh.sharedMesh.vertices;   // the streamed model is readable (the propeller test reads it too)
+        float span = SeaAirCollection.SizeOf(SeaAirCollection.Spitfire);
         var keep = layer.KeepClear.Single(k => k[0].Contains(centre))[0];
         for (int i = 0; i < 32; i++)
         {
@@ -1367,16 +1406,20 @@ public class SeaAirCollectionTests
             loop.Place(t);
             var at = SeaAirCollection.LoopOffset(t); var heading = SeaAirCollection.LoopHeading(t);
             var drawn = centre + new Vector3(at.x, 0f, at.y);
-            var body = airframe.bounds;
-            Assert.Less(Vector3.Dot(flag.position - drawn, new Vector3(heading.x, 0f, heading.y)), -0.3f * SeaAirCollection.SizeOf(SeaAirCollection.Spitfire),
-                $"over the tail, behind the aircraft's middle, at {t:0.0} s");
+            var forward = new Vector3(heading.x, 0f, heading.y);
+            var verts = local.Select(airframeMesh.transform.TransformPoint).ToArray();
+            // The tail: the airframe behind 0.3 of the span back from its middle (the wing's root is well forward of it).
+            float tailTop = verts.Where(v => Vector3.Dot(v - drawn, forward) < -0.3f * span).Max(v => v.y);
+            Assert.Less(Vector3.Dot(flag.position - drawn, forward), -0.3f * span, $"over the tail, behind the aircraft's middle, at {t:0.0} s");
             foreach (var look in new[] { Vector3.forward, Vector3.back, Vector3.left, Vector3.right, new Vector3(1f, 0f, 1f).normalized })
             {
                 Statecraft.Game.Map.Units.UnitFlagFacing.Face(flag, flag.position + look * 50000f);
                 Assert.Greater(Vector3.Dot(flag.up, Vector3.up), 0.999f, $"upright at {t:0.0} s");
                 var fb = flag.GetComponent<Renderer>().bounds;
-                Assert.Greater(fb.min.y, body.max.y, $"wholly above the aircraft's box, clear of the airframe, at {t:0.0} s");
-                Assert.Less(fb.min.y - body.max.y, 0.25f * SeaAirCollection.SizeOf(SeaAirCollection.Spitfire), $"just above it, at {t:0.0} s");
+                var under = verts.Where(v => v.x >= fb.min.x && v.x <= fb.max.x && v.z >= fb.min.z && v.z <= fb.max.z).ToArray();
+                if (under.Length > 0) Assert.Greater(fb.min.y, under.Max(v => v.y), $"clear above the airframe under it at {t:0.0} s");
+                Assert.Greater(fb.min.y, tailTop, $"above the tail at {t:0.0} s");
+                Assert.Less(fb.min.y - tailTop, 0.2f * span, $"just above the tail, not up at the raised wingtip's height, at {t:0.0} s");
                 Assert.IsTrue(keep.Contains(fb.min) && keep.Contains(fb.max), $"inside the labels' keep-clear box at {t:0.0} s");
             }
         }
@@ -1409,7 +1452,8 @@ public class SeaAirCollectionTests
     }
 
     /// <summary>Review of #2260: drawing, dropping and drawing the Spitfire again (its dates end and come back, the layer
-    /// redraws) makes no new propeller, shadow or flag meshes or materials past the first: the layer makes them once. When
+    /// redraws) makes no new propeller, shadow or flag meshes or materials (its glossy paint included) past the first: the
+    /// layer makes them once. When
     /// its dates end under residency, the aircraft and its shadow-and-flag object both go, and the labels keep clear of
     /// exactly the craft left.</summary>
     [Test]
@@ -1419,7 +1463,7 @@ public class SeaAirCollectionTests
         int Meshes() => Resources.FindObjectsOfTypeAll<Mesh>().Count(m => m.name == "SpitfirePropellerBlur" || m.name == "SpitfireShadow"
             || m.name == Statecraft.Game.Map.Units.UnitFlags.MeshName(Statecraft.Game.Map.Units.UnitFlags.Egypt));
         int Materials() => Resources.FindObjectsOfTypeAll<Material>().Count(m => m.name.StartsWith("UnitFlag (egypt", StringComparison.Ordinal)
-            || m.name == Statecraft.HexTiles.HexMaterials.AttackBorder);
+            || m.name == Statecraft.HexTiles.HexMaterials.AttackBorder || m.name.EndsWith(" (glossy)", StringComparison.Ordinal));
         SeaAirCollection Show(DateTime date) { var l = CollectionGeometryFixture.Craft(map, date, Array.Empty<Placement>(), C)!; AnswerAll(); return l; }
         var layer = Show(new DateTime(1948, 6, 15));
         Assert.IsNotNull(layer.transform.Find("el-arish-spitfire"));
