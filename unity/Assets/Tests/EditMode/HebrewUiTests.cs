@@ -316,10 +316,54 @@ public class HebrewUiTests
         UiTestKit.Press(Ui.Q<Button>("nav-budget"));
         Assert.AreEqual(He["budget.unsaved"], Ui.Q<Label>("budget-status").text, "the draft is still unsubmitted");
         Assert.IsEmpty(game.Bridge!.Queued, "nothing was submitted by the switch");
+        Assert.IsTrue(game.Advisor!.HoldsBudgetUnsubmitted, "the advisor knows the kept draft is unsubmitted, so a put-off budget warning is not pruned");
 
         UiTestKit.Press(Ui.Q<Button>("budget-submit"));
         var queued = (Statecraft.Sim.AllocateBudget)game.Bridge.Queued.Single();
         foreach (var kv in expected) Assert.AreEqual(kv.Value, queued.Shares[kv.Key], 1e-9, kv.Key + ": the edited draft is what Submit sends");
+    }
+
+    /// <summary>#2708, the other side: the kept draft belongs to the game the switch rebuilt over. A New game or a load right
+    /// after the switch starts from that game's budget, with no draft.</summary>
+    [Test]
+    public void ANewGameOrALoadAfterTheLanguageSwitchStartsWithNoBudgetDraft()
+    {
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        Object.FindFirstObjectByType<MapScene>().Build(Inputs.Map);
+        var game = Object.FindFirstObjectByType<GameRoot>();
+        game.Store = new SaveStore(saveDir);
+        game.Settings = new SettingsStore(Path.Combine(saveDir, "settings"));
+        game.Begin(Inputs, 0);
+        var office = game.Bridge!.State.Budget.Keys.OrderBy(k => k, StringComparer.Ordinal).First();
+        void EditThenSwitch(string language)
+        {
+            UiTestKit.Press(Ui.Q<Button>("nav-budget"));
+            UiTestKit.Press(Ui.Q<Button>("budget-" + office + "-up"));
+            Assert.IsNotEmpty(Ui.Q<Label>("budget-status").text, "precondition: an unsubmitted draft");
+            UiTestKit.Press(Ui.Q<Button>("nav-settings"));
+            UiTestKit.Press(Ui.Q<Button>("settings-language-" + language));
+            Assert.IsNotEmpty(Ui.Q<Label>("budget-status").text, "precondition: the switch kept the draft");
+        }
+        void AssertNoDraft(string what)
+        {
+            Assert.AreEqual("", Ui.Q<Label>("budget-status").text, what + ": no draft");
+            Assert.IsFalse(Ui.Q<Button>("budget-submit").enabledSelf, what + ": nothing to submit");
+            Assert.IsFalse(game.Advisor!.HoldsBudgetUnsubmitted, what + ": the advisor holds no budget warning");
+        }
+
+        EditThenSwitch(UiLanguage.Hebrew);
+        var before = game.Bridge.Session;
+        UiTestKit.Press(Ui.Q<Button>("new-game"));
+        UiTestKit.Press(Ui.Q<Button>("new-game"));
+        Assert.AreNotSame(before, game.Bridge.Session, "precondition: New game replaced the session");
+        AssertNoDraft("a New game");
+
+        EditThenSwitch(UiLanguage.English);
+        Directory.CreateDirectory(saveDir);
+        game.Store!.WriteAutosave(Statecraft.Sim.GameSession.New(Inputs.Content, 9, Statecraft.Sim.Mode.Historical).Save.Write());
+        game.Begin(Inputs, 0, startScreen: true);
+        UiTestKit.Press(Ui.Q<Button>("start-continue"));
+        AssertNoDraft("a load");
     }
 
     /// <summary>A language named in the address or on the command line (the store page's "?lang=he" link) holds for that

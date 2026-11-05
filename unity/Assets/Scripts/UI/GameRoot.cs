@@ -371,7 +371,6 @@ namespace Statecraft.Game.UI
                 () => card?.Render(), () => nav?.Close()));
             Own(new DefencePresenter(root, bridge, text, portraits));
             var budget = budgetScreen = Own(new BudgetPresenter(root, bridge, text, keptBudgetDraft));
-            keptBudgetDraft = null;
             var why = Own(new WhyPresenter(root, bridge, text));
             Own(new TimelinePresenter(root, bridge, text));
             Own(new ObjectivesPresenter(root, bridge, text));
@@ -757,6 +756,9 @@ namespace Statecraft.Game.UI
                     },
                 }));
             budget.UnsubmittedChanged += advisor.BudgetUnsubmitted;
+            // A kept draft (#2708) said "unsubmitted" while the screen was built, before this line listened: the advisor
+            // takes that state without a second Notice, so a put-off budget warning is not pruned after a language switch.
+            advisor.HoldsBudgetUnsubmitted = bridge.BudgetUnsubmitted(budget.Draft);
             // The advisors' encyclopedia (spec 10), which replaces How to play: after the advisor, whose Show me and opening
             // chain its buttons call; an advisor's Tell me more opens its pages (OpenPage above).
             encyclopedia = Own(new EncyclopediaPresenter(root, text, AdvisorSession.Catalog, nav!, advisor, bridge.Content.Ruleset));
@@ -822,7 +824,9 @@ namespace Statecraft.Game.UI
             bool fromStart = start?.IsOpen == true;
             keptResumed = start?.Resumed ?? true;
             keptBudgetDraft = budgetScreen?.Draft;   // read before Begin disposes it; the new screen copies it
-            Begin(inputs, 0, startScreen: fromStart, keep: Bridge);
+            // Cleared even if Begin throws, so the next ordinary Begin (a New game, a load) never picks it up.
+            try { Begin(inputs, 0, startScreen: fromStart, keep: Bridge); }
+            finally { keptBudgetDraft = null; }
             if (!fromStart) nav?.Open("settings");
             // Focus the choice again a frame later: a screen shown this same tick cannot take the focus until its
             // styles resolve, and a bare Focus() then leaves it wherever it was (#1915's tour test read end-turn).
