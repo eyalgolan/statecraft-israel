@@ -990,6 +990,16 @@ namespace Statecraft.Game.UI
                 var old = bridge.QueuedLike(press);
                 var queue = bridge.Queued.ToList();
                 var slot = old == null ? -1 : queue.IndexOf(old);
+                // An action the Attention left cannot pay for keeps its button, as before the preview: the bridge refuses the
+                // press and says why (order.no_attention, SimBridge.Queue). Only the rules are asked, on the state the rest of
+                // the queue leaves (the press replaces this hex's order, so that order is left out too).
+                if (!bridge.CanPay(press))
+                {
+                    if (slot >= 0) queue.RemoveAt(slot);
+                    var rule = MapActions.CheckReason(c, Simulation.Preview(c, bridge.TurnStart, bridge.Session.Committed.Concat(queue).ToList()).State,
+                        action, q, r);
+                    return rule == null ? null : MapActionReasonText(rule, text);
+                }
                 if (slot >= 0) queue[slot] = press; else queue.Add(press);
                 var preview = Simulation.Preview(c, bridge.TurnStart, bridge.Session.Committed.Concat(queue).ToList());
                 var rejected = preview.Rejected.FirstOrDefault(x => ReferenceEquals(x.Command, press));

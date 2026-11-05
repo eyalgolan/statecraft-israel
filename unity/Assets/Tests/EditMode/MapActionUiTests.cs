@@ -99,27 +99,37 @@ public class MapActionUiTests
         Assert.AreEqual("A transit camp built here in August 1950", ui.Q<Label>("info-placement").text);
     }
 
+    // Red first on PR #2679 head 0401491db: the whole-queue preview rejected the unaffordable press for its Attention, so both
+    // buttons were hidden behind one shared reason. As on origin/main 0c976fb21, an action the Attention left cannot pay for
+    // keeps its button and the bridge refuses the press with order.no_attention (SimBridge.Queue).
     [Test]
-    public void NoAttentionDisablesMapActionsAndTheirPressesQueueNothing()
+    public void NoAttentionKeepsMapActionsAndTheBridgeRefusesTheirPresses()
     {
         using var ui = new UiTestKit();
         var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
         while (g.State.Date < new DateTime(1950, 8, 1)) g.Step(HistoricalAI.Commands(C, g.State));
         g.State.Attention = 0;
         var bridge = new SimBridge(g, Text);
+        var refusals = new System.Collections.Generic.List<string>();
+        bridge.Refused += refusals.Add;
         using var info = Panel(ui, bridge);
         var tlv = C.SettlementHexes.Single(s => s.Id == "tel_aviv");
-        foreach (var action in new[] { MapActions.TransitCamp, MapActions.Housing })
-            Assert.IsNull(MapActions.CheckReason(C, bridge.State, action, tlv.Q, tlv.R), action + ": otherwise legal on this hex");
+        var orders = new[] { new MapAction(MapActions.TransitCamp, tlv.Q, tlv.R), new MapAction(MapActions.Housing, tlv.Q, tlv.R) };
+        foreach (var order in orders)
+        {
+            Assert.IsNull(MapActions.CheckReason(C, bridge.State, order.Action, tlv.Q, tlv.R), order.Action + ": otherwise legal on this hex");
+            Assert.IsFalse(bridge.CanPay(order), order.Action + ": precondition: no Attention left");
+        }
 
         info.Show(tlv.Q, tlv.R);
 
         foreach (var name in new[] { "build-camp", "build-housing" })
         {
-            Assert.IsFalse(ui.Q<Button>(name).enabledSelf, name + ": unaffordable at turn start");
+            Assert.IsTrue(ui.Q<Button>(name).enabledSelf, name + ": the rules allow it, so the button stays");
             ui.Press(name);
         }
-        Assert.IsEmpty(bridge.Queued, "disabled map-action presses queue no command");
+        Assert.IsEmpty(bridge.Queued, "the bridge queues no order it cannot pay for");
+        Assert.AreEqual(orders.Select(o => Text.Format("order.no_attention", bridge.Price(o)!.Value, 0.0)).ToArray(), refusals);
     }
 
     // Red first on PR #2679 head 4e25f657c: Refusal returns the current state's ma'abarot-policy reason before it previews

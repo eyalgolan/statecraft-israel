@@ -331,6 +331,36 @@ public class CityProjectPanelTests
         Assert.AreEqual(new[] { En.Format("order.no_attention", bridge.Price(order)!.Value, 0.0) }, refusals);
     }
 
+    // A guard for the Attention path (#2679 review): a start the Attention left cannot pay for keeps its Build buttons only
+    // where the rules allow it. With the queued start the turn's limit is reached, so the turn_cap reason shows instead.
+    [Test]
+    public void WithNoAttentionLeftTheQueuedStartsTurnLimitStillShows()
+    {
+        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        var s = g.State;
+        s.Policies[MapActions.MaabarotPolicy] = 1;   // so the transit camp is not refused for the policy first
+        var hexes = C.Hexes.Where(h => h.Land
+            && Projects.CitiesFor(C, s, h.Q, h.R).SequenceEqual(new[] { City })
+            && Projects.CheckCityReason(C, s, "housing", City, h.Q, h.R) == null).OrderBy(h => h.Q).ThenBy(h => h.R).Take(2).ToList();
+        Assert.AreEqual(2, hexes.Count, "precondition: two hexes only Haifa reaches where it may build");
+        var cap = C.RulesAt(s.Date).MapActionsPerTurn;
+        Assert.Greater(cap, 0, "precondition: the turn allows a start");
+        s.MapActionsTurnDate = s.Date; s.MapActionsThisTurn = cap - 1;
+        s.Attention = AttentionSystem.Price(C, s, new StartProject("housing", City, hexes[0].Q, hexes[0].R));
+
+        var bridge = new SimBridge(g, En);
+        using var ui = new UiTestKit();
+        using var panel = Panel(ui, bridge, En);
+        panel.Show(hexes[0].Q, hexes[0].R);
+        ui.Press("city-project-housing");
+        Assert.AreEqual(1, bridge.Queued.OfType<StartProject>().Count(), "precondition: the Attention paid for the first start");
+        Assert.IsFalse(bridge.CanPay(new StartProject("housing", City, hexes[1].Q, hexes[1].R)), "precondition: none is left for a second");
+
+        panel.Show(hexes[1].Q, hexes[1].R);
+        Assert.AreEqual(En.Format("city.project_reason.turn_cap", cap), ui.Q<Label>("city-project-reason").text);
+        Assert.IsNull(ui.Root.Q("city-project-housing"), "shared refusal: one reason and no Build buttons");
+    }
+
     [Test]
     public void AHexNoCityReachesShowsNoProjects()
     {
