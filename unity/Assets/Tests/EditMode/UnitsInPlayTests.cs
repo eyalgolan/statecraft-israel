@@ -451,6 +451,7 @@ public class UnitsInPlayTests
             var hexAt = C.Hexes.ToDictionary(h => (h.Q, h.R));
             var anchors = units.Where(UnitRoster.OnMap).SelectMany(u => u.Anchors.Select(a => (u, a))).ToList();
             var log = new List<string>();
+            int airChecked = 0;
             foreach (var (u, a) in anchors)
             {
                 var at = $"{u.Id} {a.Place}";
@@ -473,6 +474,9 @@ public class UnitsInPlayTests
                     // #2729: an air token keeps clear by the larger of its ring and the parked aircraft's span; every other
                     // service by its ring, as before.
                     float disc = layer.PlacementGround.ClearanceRadius(u.Service, s.Compact);
+                    // Review (#2751, fresh eyes): the expected clearance comes from the placement's own helper, so pin the air
+                    // span independently of it: a parked aircraft keeps at least its sourced span clear (ParkedSpanRadiusM).
+                    if (u.Service == UnitData.Air) { airChecked++; Assert.GreaterOrEqual(disc, ParkedSpanRadiusM, $"{at}: the air clearance covers the parked span"); }
                     foreach (var (fc, fr) in map.SettlementFootprints)
                         Assert.GreaterOrEqual((fc - c).magnitude, fr * UnitGround.FootprintMargin + disc, $"{at}: the ring reaches a town's buildings");
                 }
@@ -489,6 +493,7 @@ public class UnitsInPlayTests
                     bool overlap = UnitData.Day(a.From) < UnitData.Day(b.To) && UnitData.Day(b.From) < UnitData.Day(a.To);
                     if (overlap) Assert.AreNotEqual((layer.Spots[a].Q, layer.Spots[a].R), (layer.Spots[b].Q, layer.Spots[b].R), $"{anchors[i].u.Id} and {anchors[j].u.Id} share a hex");
                 }
+            Assert.Greater(airChecked, 0, "an air anchor outside the towns was checked against the parked span");
             Debug.Log("UNITS spots\n" + string.Join("\n", log));
             // Review MF1: the anchors whose nearest clear spot was the other side's ground stand on their own side (Etzioni in
             // West Jerusalem; Harel by Saris on the corridor road), and the 7th Brigade is anchored at Hulda, not Latrun.
@@ -546,6 +551,7 @@ public class UnitsInPlayTests
                 }
                 outside++;
                 float ring = layer.PlacementGround.ClearanceRadius(u.Service, s.Compact);   // #2729: the span for a parked aircraft
+                if (u.Service == UnitData.Air) Assert.GreaterOrEqual(ring, ParkedSpanRadiusM, $"{at}: the air clearance covers the parked span");
                 foreach (var (fc, fr, id) in footprints)
                 {
                     float reach = fr * (id.StartsWith("camp:") ? 1f : UnitGround.FootprintMargin) + ring;
