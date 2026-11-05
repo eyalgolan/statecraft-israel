@@ -52,15 +52,146 @@ public class EventRulesGddTests
         Assert.Equal(3, EventSystem.MaxSoftEventsPerTurn);
         for (int i = 0; i < Run.Count; i++)
         {
-            var soft = FiredOn(i).Where(e => e.Anchor != "hard").Select(e => e.Id).ToList();
-            var hard = FiredOn(i).Count(e => e.Anchor == "hard");
+            // R-OBJ-003, R-EVT-007: objective and Deport cards take no slot. R-WAR-008: an armistice before its date is soft.
+            bool Slotless(GameEvent e) => e.Objective != "" || e.Deported != "";
+            bool Hard(GameEvent e) => e.Anchor == "hard" && !(e.FrontQuiet != "" && Run[i].Date < e.From);
+            var soft = FiredOn(i).Where(e => !Slotless(e) && !Hard(e)).Select(e => e.Id).ToList();
+            var hard = FiredOn(i).Count(e => !Slotless(e) && Hard(e));
             // the soft events take only the slots the hard anchors leave
             Assert.True(soft.Count <= Math.Max(0, EventSystem.MaxSoftEventsPerTurn - hard), $"{Run[i].Date:yyyy-MM-dd}: {hard} hard, soft {string.Join(", ", soft)}");
         }
     }
 
-    static string Soft(string id, string from) =>
-        $"id: {id}\ntitle: '{id}'\ntext: Something happens.\nfrom: {from}\noptions:\n  - id: ok\n    text: Accept\n    historical: true\n";
+    static string Soft(string id, string from, string? to = null) =>
+        $"id: {id}\ntitle: '{id}'\ntext: Something happens.\nfrom: {from}\n" +
+        (to == null ? "" : $"to: {to}\n") +
+        "options:\n  - id: ok\n    text: Accept\n    historical: true\n";
+
+    // R-EVT-001 (#2605): red before the fix because d's finite window has closed by the second Trigger, so it is lost.
+    // Trigger is the shared path: the same wait and once-only result holds for legacy, gdd-0.1 and gdd-0.3 identities.
+    [Theory]
+    [InlineData(SaveGame.LegacyRuleset)]
+    [InlineData(SaveGame.GddRuleset)]
+    [InlineData(SaveGame.Gdd03Ruleset)]
+    public void CappedFiniteWindowEventWaitsAcrossEveryRuleset(string ruleset)
+    {
+        var c = ContentLoader.Load(Fixture.Write(events: new Dictionary<string, string>
+        {
+            ["a.yaml"] = Soft("a", "1948-05-15", "1948-05-22"),
+            ["b.yaml"] = Soft("b", "1948-05-15", "1948-05-22"),
+            ["c.yaml"] = Soft("c", "1948-05-15", "1948-05-22"),
+            ["d.yaml"] = Soft("d", "1948-05-15", "1948-05-22"),
+        }));
+        c.Eras[0].Systems.Loop = ruleset == SaveGame.LegacyRuleset ? EraSystems.Legacy : EraSystems.Gdd;
+        c.Eras[0].Systems.Ruleset = ruleset;
+        var s = new GameState(c) { Date = new DateTime(1948, 5, 22) };
+
+        EventSystem.Trigger(c, s, new List<Cause>(), new DateTime(1948, 5, 15));
+        Assert.Equal(new[] { "a", "b", "c" }, s.PendingEvents);
+        Assert.Equal(new[] { "d" }, s.CappedEvents);
+
+        s.PendingEvents.Clear();
+        s.Date = new DateTime(1948, 5, 29);
+        EventSystem.Trigger(c, s, new List<Cause>(), new DateTime(1948, 5, 22));
+        Assert.Equal(new[] { "d" }, s.PendingEvents);
+        Assert.Empty(s.CappedEvents);
+
+        s.PendingEvents.Clear();
+        s.Date = new DateTime(1948, 6, 5);
+        EventSystem.Trigger(c, s, new List<Cause>(), new DateTime(1948, 5, 29));
+        Assert.Empty(s.PendingEvents);
+        Assert.Equal(4, s.FiredEvents.Count);   // the late event fired once
+    }
+
+    // R-EVT-001 (#2605): red before the fix because no capped-out state exists to survive replaying a save.
+    [Fact]
+    public void SaveRoundTripKeepsTheCappedEventSet()
+    {
+        var c = ContentLoader.Load(Fixture.Write(events: new Dictionary<string, string>
+        {
+            ["a.yaml"] = Soft("a", "1948-05-15", "1948-05-16"),
+            ["b.yaml"] = Soft("b", "1948-05-15", "1948-05-16"),
+            ["c.yaml"] = Soft("c", "1948-05-15", "1948-05-16"),
+            ["d.yaml"] = Soft("d", "1948-05-15", "1948-05-16"),
+        }));
+        var played = GameSession.New(c, 1, Mode.Historical);
+        Assert.Equal(new[] { "d" }, played.State.CappedEvents);
+
+        var loaded = GameSession.Load(c, played.Save.Write(), out var warnings);
+        Assert.Empty(warnings);
+        Assert.Equal(played.State.CappedEvents, loaded.State.CappedEvents);
+        Assert.Equal(played.State.Hash(), loaded.State.Hash());
+    }
+
+    // R-EVT-001 (#2605): a waiting event is past only the date gate; its conditions still have to hold when it fires.
+    [Fact]
+    public void CappedEventRechecksItsConditions()
+    {
+        var conditioned = Soft("d", "1948-05-15", "1948-05-22").Replace("options:", "conditions: [{ indicator: food_supply, max: 0.5 }]\noptions:");
+        var c = ContentLoader.Load(Fixture.Write(events: new Dictionary<string, string>
+        {
+            ["a.yaml"] = Soft("a", "1948-05-15", "1948-05-22"),
+            ["b.yaml"] = Soft("b", "1948-05-15", "1948-05-22"),
+            ["c.yaml"] = Soft("c", "1948-05-15", "1948-05-22"),
+            ["d.yaml"] = conditioned,
+        }));
+        var s = new GameState { Date = new DateTime(1948, 5, 22) };
+        EffectsSystem.Init(c, s);
+        EventSystem.Trigger(c, s, new List<Cause>(), new DateTime(1948, 5, 15));
+        Assert.Equal(new[] { "d" }, s.CappedEvents);
+
+        s.PendingEvents.Clear(); s.Date = new DateTime(1948, 5, 29); s.Indicators["food_supply"] = 0.9;
+        EventSystem.Trigger(c, s, new List<Cause>(), new DateTime(1948, 5, 22));
+        Assert.Empty(s.PendingEvents); Assert.Equal(new[] { "d" }, s.CappedEvents);
+
+        s.Date = new DateTime(1948, 6, 5); s.Indicators["food_supply"] = 0.4;
+        EventSystem.Trigger(c, s, new List<Cause>(), new DateTime(1948, 5, 29));
+        Assert.Equal(new[] { "d" }, s.PendingEvents); Assert.Empty(s.CappedEvents);
+    }
+
+    // R-OBJ-003 (#2605): red before the fix because only the three ordinary soft events take the three slots and all
+    // four same-turn objective cards are held back. Objective cards are ordered after the ordinary events as before.
+    // R-OBJ-003: a hard-anchored objective card takes no soft slot and leaves the three slots to the ordinary soft events.
+    [Fact]
+    public void AHardObjectiveCardLeavesAllThreeSoftSlots()
+    {
+        var c = ContentLoader.Load(Fixture.Write());
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        c.Objectives.Add(new Objective { Id = "objective_h", Card = "card_h" });
+        c.Events.Add(new GameEvent { Id = "card_h", Title = "objective_h", Text = "Done.", From = s.Date, Objective = "objective_h", Anchor = "hard",
+            Options = new List<EventOption> { new EventOption { Id = "ok", Text = "Continue", Historical = true } } });
+        s.Objectives["objective_h"] = s.Date;
+        for (int i = 0; i < 3; i++)
+            c.Events.Add(new GameEvent { Id = "soft_" + i, Title = "soft", Text = "Soft.", From = s.Date,
+                Options = new List<EventOption> { new EventOption { Id = "ok", Text = "Continue", Historical = true } } });
+
+        EventSystem.Trigger(c, s, new List<Cause>());
+
+        Assert.Equal(new[] { "soft_0", "soft_1", "soft_2", "card_h" }, s.PendingEvents.OrderBy(x => x == "card_h" ? 1 : 0).ToArray());
+        Assert.Empty(s.CappedEvents);
+    }
+    [Fact]
+    public void FourObjectiveCardsDoNotTakeTheThreeSoftSlots()
+    {
+        var c = ContentLoader.Load(Fixture.Write());
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        for (int i = 0; i < 4; i++)
+        {
+            var id = "objective_" + i;
+            c.Objectives.Add(new Objective { Id = id, Card = "card_" + i });
+            c.Events.Add(new GameEvent { Id = "card_" + i, Title = id, Text = "Done.", From = s.Date, Objective = id,
+                Options = new List<EventOption> { new EventOption { Id = "ok", Text = "Continue", Historical = true } } });
+            s.Objectives[id] = s.Date;   // all four completed on this turn
+        }
+        for (int i = 0; i < 3; i++)
+            c.Events.Add(new GameEvent { Id = "soft_" + i, Title = "soft", Text = "Soft.", From = s.Date,
+                Options = new List<EventOption> { new EventOption { Id = "ok", Text = "Continue", Historical = true } } });
+
+        EventSystem.Trigger(c, s, new List<Cause>());
+
+        Assert.Equal(new[] { "soft_0", "soft_1", "soft_2", "card_0", "card_1", "card_2", "card_3" }, s.PendingEvents);
+        Assert.Empty(s.CappedEvents);
+    }
 
     // R-EVT-001: the soft events take only the slots the hard anchors leave. With 1 hard anchor and 3 soft events
     // eligible on one turn, exactly 2 soft events fire (the mvp-end run has no such turn, so a fixture pins it).

@@ -188,7 +188,7 @@ options:
         Assert.Empty(ended.EngagedFronts);
     }
 
-    // R-WAR-005, R-SAVE-003, plan test 6: a save and reload between an instant attack and End turn, through a real schema-4
+    // R-WAR-005, R-SAVE-003, plan test 6: a save and reload between an instant attack and End turn, through a real schema-5
     // save of the real content, rebuilds the fronts engaged in the open turn and gives the same hash, and End turn from both
     // gives the same counts and hash (the pattern of NoShotArmsSessionTests).
     [Fact]
@@ -213,7 +213,7 @@ options:
         Assert.NotEmpty(engaged);
 
         var text = game.Save.Write();
-        Assert.StartsWith("statecraft-save 4", text);
+        Assert.StartsWith("statecraft-save 5", text);
         var replay = GameSession.Load(c, text, out _);
         Assert.Equal(game.Now.State.EngagedFronts.ToArray(), replay.Now.State.EngagedFronts.ToArray());
         Assert.Equal(game.Now.State.Hash(), replay.Now.State.Hash());
