@@ -127,7 +127,7 @@ The owner adopted GDD 0.3 on 26 October 2026 and set its MVP scope on 1 November
 - [ ] **Open: #2483 (pull request #2505).** Turning on austerity_1949, forex_crisis_1951, iraqi_exodus and maabarot_policy under gdd-0.3 with their Food-supply and housing effects.
 - [ ] **Open: #1687.** The ruleset, save schema and balance catalogue; parts 1 to 3 are on `main` (#1732, #1742, #1745).
 - [ ] **Open: #1689, #1691 and #1717.** The population ledger, the authored regions and prepared fields, and the Historical start.
-- [ ] **Open: #1692, #1693, #1694 and #1713.** Work by tier, professions, farming and pioneer work; #1693's fixture-only pioneer work-XP producer is on `main` (#2421), and #1694's field fixture cites the farmer-only field ruling (#2509).
+- [ ] **Open: #1692, #1693, #1694 and #1713.** Work by tier, professions, farming and pioneer work; #1693's fixture-only pioneer work-XP producer is on `main` (#2421), its farmer counterpart is `Gdd03FieldFixture.ResolveWorkXp` (#2468), and #1694's field fixture cites the farmer-only field ruling (#2509).
 - [ ] **Open: #1697, #1698 and #1699.** Courses, the craftsman and basic training; a slice of each is on `main` (#2461, #2416 and #2439), and the Hakhshara stays the gdd-0.3 pioneer path (#2507).
 - [x] **Done: #1703 and #1701.** Housing condition and repair (#2291, #2409, #2415) and arms workshops (#2270, #2289).
 - [ ] **Open: #1700.** City projects by builders; the housing-repair project is on `main` (#2409, #2415).

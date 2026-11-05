@@ -20,7 +20,7 @@ namespace Statecraft.Sim
 
     /// <summary>#1693 pioneer slice: the turn-end producer R-VET-001 holds, on initialized gdd-0.3 ledger fixtures only.
     /// No game-loop caller: an initialized ledger refuses the aggregate systems (R-POP-002), and the switch is #1689's last
-    /// slice. Farmer work XP follows #1694; the tools charge is post-MVP (owner, 3 November 2026, answer 1).</summary>
+    /// slice. Farmer work XP is Gdd03FieldFixture.ResolveWorkXp (#2468); the tools charge is post-MVP (owner, 3 November 2026, answer 1).</summary>
     internal static class Gdd03PioneerWorkFixture
     {
         /// <summary>The caller supplies the turn-start state and the pioneer projects being built this turn, yishuv sites
