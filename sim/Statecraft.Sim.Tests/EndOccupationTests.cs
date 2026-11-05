@@ -54,7 +54,7 @@ public class EndOccupationTests
     public void TheOptionsAreAnnexThenWithdraw()
     {
         var c = CaptureTests.Load(CaptureTests.AllTargets);
-        var s = AwaitingEnd(c, "town_c", false, Soldier(1, 4, 0));   // town_a is a fixture city
+        var s = AwaitingEnd(c, "town_c", false, Soldier(1, 4, 0));
         var before = s.Describe();
         var options = SettlementControl.EndOptions(c, s, "town_c");
         Assert.Equal(new[] { SettlementControl.Annex, SettlementControl.WithdrawOutcome }, options.Select(x => x.Outcome).ToArray());
@@ -230,7 +230,7 @@ public class EndOccupationTests
     public void TheEndPreviewIsTheOutcome()
     {
         var c = CaptureTests.Load(f => f["rules.yaml"] = f["rules.yaml"].Replace("end_occupation: 0", "end_occupation: 1"), CaptureTests.AllTargets);
-        var s = AwaitingEnd(c, "town_c", false, Soldier(1, 4, 0));   // town_a is a fixture city
+        var s = AwaitingEnd(c, "town_c", false, Soldier(1, 4, 0));
         s.Attention = 5;
         var cost = AttentionSystem.Cost(c, s, SettlementControl.EndKind);
         Assert.True(cost > 0);
