@@ -983,6 +983,12 @@ def check_source(ap: argparse.ArgumentParser, a) -> None:
         ap.error("give exactly one of build and --url")
 
 
+def check_positive(ap: argparse.ArgumentParser, a) -> None:
+    """Every run must name console evidence to see or a driver whose completion proves success."""
+    if not any(text.strip() for text in a.expect) and not (a.startscreen or a.persistence or a.first_save):
+        ap.error("require at least one positive check: a nonblank --expect, --startscreen, --persistence or --first-save")
+
+
 def with_query(url: str, query: str) -> str:
     """`url` with `query` added: after ? or, when the URL already has a query, after &."""
     if not query:
@@ -1002,6 +1008,7 @@ def main() -> int:
     ap = parser()
     a = ap.parse_args()
     check_source(ap, a)
+    check_positive(ap, a)
     if a.build is not None and not (a.build / "index.html").exists():
         sys.exit(f"{a.build}/index.html not found")
     server, proc, page = None, None, None

@@ -300,6 +300,41 @@ def test_a_failed_warm_up_is_a_broken_run_and_the_tests_never_start(tmp_path, mo
     assert launches == ["warm-up"] and code == 1 and "warm-up" in r.broken and not up.passed(r, code)
 
 
+def test_main_records_and_reports_an_unreadable_editmode_result(tmp_path, monkeypatch):
+    home, repo = tmp_path / "home", tmp_path / "repo"
+    wt = home / "worktree"
+    (wt / "unity/ProjectSettings").mkdir(parents=True)
+    (wt / "unity/ProjectSettings/ProjectVersion.txt").write_text("m_EditorVersion: 6000.3.25f1\n")
+    repo.mkdir()
+    gh = FakeGh()
+
+    monkeypatch.setattr(up, "fetch_tip", lambda git: SHA)
+    monkeypatch.setattr(up, "commit_time", lambda git, sha: time.time())
+    monkeypatch.setattr(up, "prepare_worktree", lambda *a: None)
+    monkeypatch.setattr(up.subprocess, "run", lambda *a, **k: subprocess.CompletedProcess(a[0], 0))
+    monkeypatch.setattr(up, "unity_path", lambda version: sys.executable)
+    monkeypatch.setattr(up, "tidy", lambda *a: "library 0 MiB")
+    monkeypatch.setattr(up, "_gh", gh)
+
+    def fake_unity(cmd, record, **kw):
+        if "-runTests" in cmd:
+            Path(cmd[cmd.index("-testResults") + 1]).write_text('<test-run total="1" passed="1" failed="0"/>')
+        return 0, None
+
+    def unreadable(path):
+        assert Path(path).name == "editmode.xml"
+        raise OSError("permission denied")
+
+    monkeypatch.setattr(up, "run_with_timeout", fake_unity)
+    monkeypatch.setattr(up.ET, "parse", unreadable)
+
+    assert up.main(["--repo", str(repo), "--home", str(home)]) == 0
+    log = (home / "results.log").read_text()
+    assert f"{SHA} FAIL" in log and "broken" in log
+    assert len(gh.created) == 1
+    assert "result file could not be read: permission denied" in gh.created[0][1]
+
+
 def test_the_plist_template_polls_no_more_often_than_every_ten_minutes():
     text = (up.TOOLS / "unity_postmerge.plist.in").read_text(encoding="utf-8")
     filled = up.fill_plist(text, uv="/opt/uv", repo="/r", home="/h", path="/usr/bin:/bin")
