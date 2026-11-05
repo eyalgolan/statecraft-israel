@@ -413,6 +413,9 @@ namespace Statecraft.Sim
             return null;
         }
 
+        // #2530: a count of 1 names the singular, as the UI's helper does.
+        static string Groups(int n) => n == 1 ? "1 group" : FormattableString.Invariant($"{n} groups");
+
         /// <summary>R-CITY-011 (#1700; owner, 3 November 2026: "Builders in the MVP (Recommended)", "One builder, today's times
         /// (Recommended)"): AssignWorkers(city, "build", count), gdd-0.3 only, sets how many of the city's projects being built
         /// have a builder. A rise puts builders on the projects that have none, in ascending id; a fall takes them off the
@@ -438,7 +441,7 @@ namespace Statecraft.Sim
             if (employed != x.Employed)
             {
                 s.Cities[city] = x.WithCounts(x.Civilians, employed, x.Refugees);
-                why.Add(new Cause("city", city, employed - x.Employed, FormattableString.Invariant($"{name}: {employed} groups in work"), key: CauseKeys.WorkersAssigned, args: new[] { CauseKeys.Number(employed) }));
+                why.Add(new Cause("city", city, employed - x.Employed, FormattableString.Invariant($"{name}: {Groups(employed)} in work"), key: CauseKeys.WorkersAssigned, args: new[] { CauseKeys.Number(employed) }));
             }
             if (count > builders)
                 foreach (var p in building.Where(p => !p.Builder).Take(count - builders))

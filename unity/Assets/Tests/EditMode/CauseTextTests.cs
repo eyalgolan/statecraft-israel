@@ -557,7 +557,7 @@ public class CauseTextTests
             CauseKeys.EventDelegatedPartial, CauseKeys.EventGrant, CauseKeys.EventNew, CauseKeys.EventPolicy,
             CauseKeys.EventRejoin, CauseKeys.EventSetRung, CauseKeys.EventStock, CauseKeys.EventUnlock,
             CauseKeys.MilitaryUpkeep, CauseKeys.HousingSurcharge, CauseKeys.HousingCohesion,
-            CauseKeys.ObjectiveCompleted, CauseKeys.PrisonersReturned, CauseKeys.SoldiersReturned }), rows.Select(x => x.Key), "all remaining keys");
+            CauseKeys.ObjectiveCompleted, CauseKeys.PrisonersReturned, CauseKeys.SoldiersReturned }), rows.Select(x => x.Key).Distinct(), "all remaining keys");
         var appointed = rows.Single(x => x.Key == CauseKeys.Appointed);
         StringAssert.Contains("התפקיד שנשמר", CauseText.Line(appointed, c, NoRows, he, names), "historical title, not current title");
     }

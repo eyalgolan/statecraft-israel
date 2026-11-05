@@ -136,6 +136,17 @@ public class OccupyTests
         Assert.Equal((SettlementControl.Occupied, 1), (ctrl.State, ctrl.Turns));
     }
 
+    // R-CTRL-012, #2530: a count of 1 names the singular.
+    [Fact]
+    public void TheOccupationCountdownNamesASingleTurn()
+    {
+        var c = Load();
+        var s = Awaiting(c, Soldier(1, 1, 0), Soldier(2, 4, 0));
+        s = Step(c, s, Occupy()).State;   // the timer starts at 2: this turn's step 10 already counts one off
+        var next = Step(c, s);
+        Assert.Contains(next.Why, x => x.Target == "town_a" && x.Message == "TOWN A: 1 turn of occupation left");
+    }
+
     // R-CTRL-013 (Q-OCC-2 (a)): withdrawal before the timer ends is allowed and becomes a Raid. The occupation lasts while
     // an Israeli military unit is on the hex; when step 10 finds none (the player moved them out), the record goes, the
     // place is under enemy control again with its residents unchanged, no upkeep is paid that turn and nothing else

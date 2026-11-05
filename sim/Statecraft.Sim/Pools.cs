@@ -92,6 +92,9 @@ namespace Statecraft.Sim
         /// <summary>The nation's need for one turn: its head count in population units, rounded half away from zero.</summary>
         static int Need(GameState s, MvpRules r) => (int)Math.Round(s.TotalPopulation / r.PeoplePerUnit, MidpointRounding.AwayFromZero);
 
+        // #2530: a count of 1 names the singular, as the UI's helper does.
+        static string Units(int n) => n == 1 ? "1 unit" : FormattableString.Invariant($"{n} units");
+
         /// <summary>R-FIELD-002, step 6 after the cities' production (D-A6): in ordinal site id order, every plowed field (a built
         /// field site, R-FIELD-001) adds field_food_per_turn to the stock, with no workers (Q-FIELD-2). It comes before the
         /// nation eats in step 7, so in a turn with imports the import only tops the stock up by less.</summary>
@@ -104,7 +107,7 @@ namespace Statecraft.Sim
             {
                 if (!(s.Sites.TryGetValue(f.Id, out var w) && w.BuiltOn != null)) continue;
                 s.Food += yield;
-                why.Add(new Cause("economy", "food", yield, FormattableString.Invariant($"{f.Name}: the plowed land yielded {yield} units of Food"), key: CauseKeys.FoodHarvest, args: new[] { f.Id }));
+                why.Add(new Cause("economy", "food", yield, FormattableString.Invariant($"{f.Name}: the plowed land yielded {Units(yield)} of Food"), key: CauseKeys.FoodHarvest, args: new[] { f.Id }));
             }
         }
 
