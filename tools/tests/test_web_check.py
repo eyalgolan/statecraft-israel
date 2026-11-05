@@ -5,6 +5,7 @@ import queue
 import re
 import shutil
 import socket
+import sys
 import threading
 import time
 import urllib.request
@@ -952,6 +953,20 @@ def test_url_and_build_are_exclusive_and_one_is_required(capsys):
         assert "exactly one of build and --url" in capsys.readouterr().err
     wc.check_source(ap, ap.parse_args(["build"]))
     wc.check_source(ap, ap.parse_args(["--url", "https://x.invalid/index.html"]))
+
+
+@pytest.mark.parametrize("expect", [(), ("--expect", ""), ("--expect", "   ")],
+                         ids=["absent", "empty", "whitespace"])
+def test_main_refuses_without_a_positive_check(expect, tmp_path, monkeypatch, capsys):
+    build = tmp_path / "build"
+    build.mkdir()
+    (build / "index.html").write_text("<!doctype html>")
+    monkeypatch.setattr(sys, "argv", ["web_check.py", str(build), *expect])
+    monkeypatch.setattr(wc, "find_chrome", lambda: (_ for _ in ()).throw(AssertionError("Chrome was reached")))
+    with pytest.raises(SystemExit) as e:
+        wc.main()
+    assert e.value.code == 2
+    assert "require at least one positive check" in capsys.readouterr().err
 
 
 def test_a_url_takes_the_query_after_a_question_mark_or_an_ampersand():
