@@ -8,8 +8,7 @@ using Statecraft.Game;
 using Statecraft.Game.UI;
 using Statecraft.Sim;
 
-/// <summary>Final review I4: a shareable build (Build.Web -shareable) is refused while any sensitive event lacks the owner's
-/// sensitivity review, and the refusal names each one.</summary>
+/// <summary>The content and review gates applied by every Unity player build made with -shareable.</summary>
 public class BuildGateTests
 {
     static Type SettlementReview => Type.GetType("Statecraft.Game.EditorTools.SettlementControlStringReview, Assembly-CSharp-Editor")!;
@@ -17,6 +16,9 @@ public class BuildGateTests
         SettlementReview.GetMethod("Parse", BindingFlags.Public | BindingFlags.Static)!.Invoke(null, new object[] { yaml, file })!;
     static string? SettlementReviewRefusal(object? review, UiText en, UiText he) =>
         (string?)SettlementReview.GetMethod("Refusal", BindingFlags.Public | BindingFlags.Static)!.Invoke(null, new[] { review, en, he });
+    static bool IsSettlementControlKey(string key) =>
+        (bool)SettlementReview.GetMethod("IsSettlementControlKey", BindingFlags.Public | BindingFlags.Static)!
+            .Invoke(null, new object[] { key })!;
 
     internal static string? ReviewedSettlementControlStrings()
     {
@@ -77,6 +79,19 @@ public class BuildGateTests
         Assert.IsInstanceOf<InvalidOperationException>(unreadable!.InnerException);
     }
 
+    [TestCase("capture.fixture")]
+    [TestCase("map.control.fixture")]
+    [TestCase("info.control.fixture")]
+    [TestCase("hud.standing_displaced_places")]
+    public void SettlementControlStringsReviewRefusesAnOmittedEligibleKey(string omitted) // R-GATE-002
+    {
+        var en = UiText.Parse("a: English\n" + omitted + ": Fixture\n", "strings.en.yaml");
+        var he = UiText.Parse("a: עברית\n" + omitted + ": בדיקה\n", "strings.he.yaml");
+        var review = ParseSettlementReview(
+            "status: sensitivity-reviewed\nstrings:\n  - { key: a, en: English, he: עברית }\n", "fixture");
+        StringAssert.Contains(omitted, SettlementReviewRefusal(review, en, he));
+    }
+
     [Test]
     public void TheSettlementControlStringsRefusalJoinsTheShareableGateOnly() // R-GATE-002
     {
@@ -115,8 +130,7 @@ public class BuildGateTests
         // A settlement-control key added to either strings file later (U6's dialog, #799's annex words) must join the manifest.
         foreach (var file in new[] { UiPaths.Strings, UiPaths.StringsHebrew })
             foreach (var key in new YamlDotNet.Serialization.Deserializer().Deserialize<System.Collections.Generic.Dictionary<string, string>>(File.ReadAllText(file)).Keys)
-                if (key.StartsWith("capture.", StringComparison.Ordinal) || key.StartsWith("map.control.", StringComparison.Ordinal)
-                    || key.StartsWith("info.control.", StringComparison.Ordinal) || key == "hud.standing_displaced_places")
+                if (IsSettlementControlKey(key))
                     CollectionAssert.Contains(keys, key, file + ": " + key + " is a settlement-control string, so R-GATE-002's manifest lists it");
     }
 
@@ -154,6 +168,19 @@ public class BuildGateTests
         c.SettlementTargets.Add(target);
         StringAssert.Contains("fixture_target", Refusal(c));
         target.Status = ReleaseGate.ReviewedStatus;
+        Assert.IsNull(Refusal(c));
+    }
+
+    /// <summary>R-ALT-011: an unsigned consequence card blocks Unity's shareable-build gate and is named.</summary>
+    [Test]
+    public void AShareableBuildWaitsForAnUnsignedConsequenceCard()
+    {
+        var c = ReviewedContent();
+        var card = c.Events.Single(e => e.Id == "jerusalem_demilitarisation_guard");
+        var signer = card.ReviewedBy;
+        card.ReviewedBy = "";
+        StringAssert.Contains(card.Id, Refusal(c));
+        card.ReviewedBy = signer;
         Assert.IsNull(Refusal(c));
     }
 

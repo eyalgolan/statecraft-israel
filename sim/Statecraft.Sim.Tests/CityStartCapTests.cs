@@ -93,6 +93,34 @@ public class CityStartCapTests
         Assert.Equal("city_cap", Projects.CheckCityReason(c, mid, "housing", "town_a", 0, 1)!.Kind);
     }
 
+    // R-PROJ-001 with R-PROJ-004 (#2466): pioneer work is not a city project, so in either order it takes neither a city's
+    // start nor a national one. Both city starts and the pioneer order are accepted, and a third city start is turn_cap.
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Gdd03PioneerWorkTakesNoCityStart(bool pioneerFirst)
+    {
+        var c = Load(true);
+        var s = New(c);
+        var id = s.NextId++;
+        s.Units.Add(id, new Unit(id, "halutz", 1, 0));
+        var pioneer = new PioneerWork(id, Projects.BuildYishuv, "site_a");
+        var alone = Simulation.Step(c, s, new Command[] { pioneer });
+        Assert.Empty(alone.Rejected);
+        Assert.Empty(alone.State.CityStartsThisTurn);
+        Assert.Equal(0, alone.State.MapActionsTurnDate == s.Date ? alone.State.MapActionsThisTurn : 0);
+
+        var orders = pioneerFirst ? new Command[] { pioneer, A1(), B(), C() } : new Command[] { A1(), B(), pioneer, C() };
+        var r = Simulation.Step(c, s, orders);
+        var refused = Assert.Single(r.Rejected);
+        Assert.Same(orders[3], refused.Command);
+        Assert.Equal("No more than 2 city projects in one turn", refused.Reason);
+        Assert.Equal(id, r.State.Sites["site_a"].Unit);
+        Assert.Equal(new[] { "town_a", "town_b" }, r.State.CityProjects.Values.Select(p => p.City).OrderBy(x => x, System.StringComparer.Ordinal));
+        Assert.Equal(new[] { ("town_a", 1), ("town_b", 1) }, r.State.CityStartsThisTurn.Select(kv => (kv.Key, kv.Value)));
+        Assert.Equal(2, r.State.MapActionsThisTurn);
+    }
+
     [Fact]
     public void Gdd03CityCapResetsNextTurn()
     {
