@@ -46,8 +46,9 @@ namespace Statecraft.Game.Map.Collection
         Vector3 centre, offset; Quaternion level; bool still;
         Transform? prop, shadow, flag; Terrain? ground; Vector2 shadowHalf; Vector3 half; float flagHalf, seaY;
 
-        /// <summary>DESIGN VALUE: the gap (m) between the top of the aircraft's tail and the flag's lower edge.</summary>
-        public const float FlagClearM = 150f;
+        /// <summary>DESIGN VALUE: the gap (m) between the top of the aircraft's tail and the flag's lower edge. 150 m left it
+        /// floating detached above the tail in the end turns (e21's captures of #2728, v2, 5 November 2026).</summary>
+        public const float FlagClearM = 60f;
 
         /// <summary>DESIGN VALUE (agent-chosen, checked in captures): the tailplane's span over the wing span, for how high the
         /// banked tail reaches (<see cref="TailTopOver"/>): about a third, as on a Spitfire.</summary>

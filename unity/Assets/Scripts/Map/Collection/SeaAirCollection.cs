@@ -733,10 +733,11 @@ namespace Statecraft.Game.Map.Collection
             0.42f * Mathf.Pow(1f - r * r, 1.5f));
 
         /// <summary>DESIGN VALUES (agent-chosen, from e21's AFTER captures of #2728, 5 November 2026: the near disc at 0.42 was
-        /// too faint over sand and sea): the Spitfires' shadow, as <see cref="ShadowDisc"/> (the Dakotas', unchanged) but 0.6
-        /// opaque at its middle; it is now their only shadow (they cast none, Fly).</summary>
+        /// too faint over sand and sea, and 0.6 over the brown hills in v2): the Spitfires' shadow, as <see cref="ShadowDisc"/>
+        /// (the Dakotas', unchanged) but 0.75 opaque at its middle, still fading to nothing at its rim; it is now their only
+        /// shadow (they cast none, Fly).</summary>
         internal static Mesh SpitfireShadowDisc() => Disc("SpitfireShadow", 48, new[] { 0.3f, 0.55f, 0.75f, 0.9f, 1f }, new[] { 0f }, new Color(0.10f, 0.08f, 0.06f), (r, _) =>
-            0.6f * Mathf.Pow(1f - r * r, 1.5f));
+            0.75f * Mathf.Pow(1f - r * r, 1.5f));
 
         /// <summary>The ground the other 1948 Collection layers hold (GameRoot shows them first), for the C-54 to keep off, as
         /// SpecialBuildingModels keeps off the people and the wildlife: the civilians (#666), the wildlife (#670), the farm
