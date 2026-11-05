@@ -475,7 +475,7 @@ public class UnitsInPlayTests
                     // service by its ring, as before.
                     float disc = layer.PlacementGround.ClearanceRadius(u.Service, s.Compact);
                     // Review (#2751, fresh eyes): the expected clearance comes from the placement's own helper, so pin the air
-                    // span independently of it: a parked aircraft keeps at least its sourced span clear (ParkedSpanRadiusM).
+                    // span independently of it: a parked aircraft keeps at least its full-wing span clear (ParkedSpanRadiusM).
                     if (u.Service == UnitData.Air) { airChecked++; Assert.GreaterOrEqual(disc, ParkedSpanRadiusM, $"{at}: the air clearance covers the parked span"); }
                     foreach (var (fc, fr) in map.SettlementFootprints)
                         Assert.GreaterOrEqual((fc - c).magnitude, fr * UnitGround.FootprintMargin + disc, $"{at}: the ring reaches a town's buildings");
@@ -755,8 +755,9 @@ public class UnitsInPlayTests
 
     /// <summary>Issue #2729 option 1: the parked fighter's conservative footprint is the sourced 11.23 m span at 420x,
     /// as a disc about its renderer centre; no planned town-model rectangle may meet that disc.</summary>
-    /// <summary>#2729: the parked fighter's span radius at the approved aircraft scale (the Spitfire's sourced 11.23 m span
-    /// at UnitShowcase.AircraftScale), written here so the test builds before the fix too.</summary>
+    /// <summary>#2729: the parked fighter's clearance radius at the approved aircraft scale (the Spitfire's full-wing
+    /// 11.23 m span at UnitShowcase.AircraftScale, a conservative bound above the clipped LF Mk IXe's about 10.2 m, Efrati
+    /// p. 14), written here so the test builds before the fix too.</summary>
     const float ParkedSpanRadiusM = 11.23f * UnitShowcase.AircraftScale * 0.5f;
 
     [Test]

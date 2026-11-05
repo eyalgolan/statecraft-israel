@@ -21,8 +21,10 @@ namespace Statecraft.Game.Map.Units
         public const float FigureClearanceM = 700f;
         /// <summary>A compact token (beside or in a town) draws its ring and trio at this share of the full size.</summary>
         public const float CompactScale = 0.5f;
-        /// <summary>The radius of the largest parked 101 Squadron fighter at the approved aircraft scale: the Spitfire's
-        /// sourced 11.23 m span at 420x. Placement must not depend on which authored mesh has arrived.</summary>
+        /// <summary>The radius a parked 101 Squadron fighter keeps clear at the approved aircraft scale: the Spitfire's
+        /// full-wing 11.23 m span at 420x, a conservative bound above the clipped wing of the LF Mk IXe the token shows
+        /// (about 10.2 m: every Spitfire flown to Israel in the war had it, Efrati p. 14; docs/units.md). Placement must not
+        /// depend on which authored mesh has arrived.</summary>
         public const float ParkedAircraftClearanceM = 11.23f * UnitShowcase.AircraftScale * 0.5f;
 
         readonly IReadOnlyList<(Vector2 centre, float radius)> footprints;
