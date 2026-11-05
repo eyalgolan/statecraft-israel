@@ -2152,6 +2152,32 @@ def test_savetest_passes_only_with_matching_tuple_new_url_same_origin(saved):
     assert "SAVETEST PASS" in t.log() and TAG in t.log()
 
 
+def test_savetest_evidence_write_failure_is_recorded_once_as_inconclusive(saved, monkeypatch):
+    t = saved()
+    real_write = Path.write_text
+
+    def write(path, text, *args, **kwargs):
+        if path.name == "evidence.json":
+            raise OSError("evidence disk full")
+        return real_write(path, text, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "write_text", write)
+    assert t.run() == "INCONCLUSIVE" and not t.enabled()
+    lines = [line for line in t.log().splitlines() if "SAVETEST" in line]
+    assert len(lines) == 1 and f"SAVETEST INCONCLUSIVE tag={TAG}" in lines[0]
+    assert "OSError: evidence disk full" in lines[0]
+
+
+def test_savetest_enable_refusal_is_recorded_once_as_inconclusive(saved, monkeypatch):
+    t = saved()
+    monkeypatch.setattr(nightly, "enable_itch",
+                        lambda *a: (_ for _ in ()).throw(ns.Refused("config", "changed during save test")))
+    assert t.run() == "INCONCLUSIVE" and not t.enabled()
+    lines = [line for line in t.log().splitlines() if "SAVETEST" in line]
+    assert len(lines) == 1 and f"SAVETEST INCONCLUSIVE tag={TAG} config: changed during save test" in lines[0]
+    assert t.evidence()["result"] == "INCONCLUSIVE"
+
+
 def test_savetest_same_frame_url_is_inconclusive_and_keeps_itch_off(saved):
     t = saved(itch_kw={"same": True})
     assert t.run() == "INCONCLUSIVE"

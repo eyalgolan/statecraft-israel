@@ -1113,11 +1113,22 @@ def savetest(cfg: Config, config_path: Path, job: Path, runner: Runner, gh: GitH
                 detail = f"{e.gate}: {e.detail}"
             except (OSError, SystemExit) as e:   # find_chrome exits when there is no Chrome
                 detail = f"{type(e).__name__}: {e}"
-    evidence.update(result=result, detail=detail)
-    if work.is_dir():
-        (work / "evidence.json").write_text(json.dumps(evidence, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    if result == "PASS":
-        enable_itch(config_path, work / "evidence.json")
+    try:
+        evidence.update(result=result, detail=detail)
+        if work.is_dir():
+            (work / "evidence.json").write_text(json.dumps(evidence, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        if result == "PASS":
+            enable_itch(config_path, work / "evidence.json")
+    except (Stop, OSError) as e:   # #2684 review: a failure after the test still gets its one SAVETEST record
+        result = "INCONCLUSIVE"
+        detail = f"{e.gate}: {e.detail}" if isinstance(e, Stop) else f"{type(e).__name__}: {e}"
+        evidence.update(result=result, detail=detail)
+        if work.is_dir():
+            try:
+                (work / "evidence.json").write_text(json.dumps(evidence, indent=2, sort_keys=True) + "\n",
+                                                     encoding="utf-8")
+            except OSError:
+                pass   # LOG.md stays the record when the evidence file itself cannot be written
     record(Path(job) / "LOG.md", cfg.handoff, f"SAVETEST {result} tag={tag} {detail}".rstrip())
     return result
 
