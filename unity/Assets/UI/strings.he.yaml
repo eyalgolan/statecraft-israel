@@ -18,6 +18,8 @@ hud.say_million: "{0}{1} מיליון"
 hud.say_point: "{0:0} נקודה"
 hud.say_points: "{0:0} נקודות"
 hud.causes: "הסיבות העיקריות בתור הזה:"
+# For the native reviewer (#564): agent-drafted, #2576
+hud.arrivals_this_turn: "הגעות עיקריות בתור הזה:"
 # hud.caption.treasury: Money (R-MONEY-001, Q-MONEY-4); the owner's Hebrew word for it, כסף (Q-HUD-3, 15 October 2026, #375).
 hud.caption.treasury: "כסף (נטו)"
 hud.caption.immigration: "עלייה"
@@ -58,6 +60,9 @@ hud.nav.encyclopedia: "אנציקלופדיה"
 hud.nav.objectives: "יעדים"
 # For the native reviewer (#564)
 hud.nav.settings: "הגדרות"
+# An icon-only screen-header button: {0} is that screen's localized rail name (#2566). Agent-composed from the existing
+# report.close and rail-name translations; for the native reviewer (#564).
+screen.close: "סגירה: {0}"
 hud.new_game: "משחק חדש"
 hud.end_turn: "סיום התור"
 # Civ movement U4: agent-drafted Hebrew; native review: owner, 3 Nov 2026 (HE batch 1: "All fine as they are").
@@ -83,7 +88,8 @@ encyclopedia.opening: "הצגת עצות הפתיחה שוב"
 # advisor.page.turns: approved by Beri, a native speaker, on #2095 (1 Nov 2026): title as written, text
 # with its last sentence edited.
 advisor.page.turns.title: "תורות וסיום התור"
-advisor.page.turns.text: "כל תור הוא חודש אחד. בחנו את מצב המדינה, תנו הוראות ואז לחצו על סיום התור כדי לעבור לחודש הבא. תנועה ופקודות ליחידות (התקפה, ביצור, החזקה) מתבצעות מיד ואי אפשר לבטל אותן; שליחה הביתה וכל הוראה אחרת ממתינות לסיום התור, ועד אז אפשר לשנות אותן או להסיר אותן. כל עוד אחת היחידות שלכם ממתינה להוראות, לחיצה על סיום התור לא מסיימת אותו אלא מסמנת את היחידה: הזיזו אותה, תנו לה פקודת ביצור או החזקה, או דלגו עליה בתור הזה."
+# For the native reviewer (#564): agent-drafted, #2570
+advisor.page.turns.text: "כל תור הוא חודש אחד. בחנו את מצב המדינה, תנו הוראות ואז לחצו על סיום התור כדי לעבור לחודש הבא. תנועה ופקודות ליחידות (התקפה, ביצור, החזקה) מתבצעות מיד ואי אפשר לבטל אותן; שליחה הביתה וכל הוראה אחרת ממתינות לסיום התור, ועד אז אפשר לשנות אותן (ולהסיר אותן אם האפשרות מוצעת במסך). כל עוד אחת היחידות שלכם ממתינה להוראות, לחיצה על סיום התור לא מסיימת אותו אלא מסמנת את היחידה: הזיזו אותה, תנו לה פקודת ביצור או החזקה, או דלגו עליה בתור הזה."
 # advisor.page.attention: approved by Beri, a native speaker, on #2095 (1 Nov 2026): title and text as written.
 advisor.page.attention.title: "תשומת לב בכל תור"
 advisor.page.attention.text: "רוב ההוראות עולות תשומת לב, המוצגת בסרגל העליון. היא מתמלאת מחדש בתחילת כל תור, ותשומת לב שלא ניצלתם אינה עוברת לתור הבא. תנועה ופקודות ליחידות אינן עולות תשומת לב, והוראה שנדחתה מחזירה לכם את מה שעלתה. כרטיס שלא נשארה לכם תשומת לב לענות עליו עובר לשר האחראי."
@@ -108,6 +114,8 @@ advisor.page.why.text: "אחרי תור, פתחו את המסך ״למה?״ כד
 # with its first sentence edited.
 advisor.page.cities.title: "ערים, דיור ותעסוקה"
 advisor.page.cities.text: "כשאני בוחנת עיר, אני תמיד מתחילה מהדיור. בחרו עיר במפה כדי לראות את הדיור, המשרות והאנשים בה; כל משרה מאוישת מכניסה כסף. העיר מאיישת את המשרות שלה בעצמה עד שתקבעו אתם את מספר העובדים, והשינוי שלכם יתבצע בסיום התור. אנשים שאין להם מקום בדיור עדיין גרים בעיר, אבל הצפיפות שוחקת את מצב הדיור, והלכידות החברתית יורדת בעקבותיו."
+# For the native reviewer (#564): agent-drafted, #2570
+advisor.page.cities.gdd03.text: "כשאני בוחנת עיר, אני תמיד מתחילה מהדיור. בחרו עיר במפה כדי לראות את הדיור, המשרות והאנשים בה; כל משרה מאוישת מכניסה כסף (אבל משרות בעיר שיש בה יחידה צבאית של האויב אינן מכניסות כסף באותו תור). העיר מאיישת את המשרות שלה בעצמה עד שתקבעו אתם את מספר העובדים, והשינוי שלכם יתבצע בסיום התור. אנשים שאין להם מקום בדיור עדיין גרים בעיר, אבל הצפיפות שוחקת את מצב הדיור, והלכידות החברתית יורדת בעקבותיו."
 advisor.page.immigration.title: "עלייה ופליטים"
 advisor.page.immigration.text: "העולים מגיעים לפי הנתונים ההיסטוריים, וכל עיר מקבלת חלק לפי מספר האנשים בה. הם ממתינים כפליטים, ובכל תור חלק מהם הופכים לאזרחים ללא עבודה; כמה מהם, תלוי בשר האחראי על העלייה. אין תקרה: מי שאין לו מקום בדיור של העיר נשאר בה כעודף."
 # advisor.page.training: approved by Beri, a native speaker, on #2095 (1 Nov 2026): title and text as written.
@@ -121,6 +129,8 @@ advisor.page.corridors.title: "כבישים ומסילות"
 advisor.page.corridors.text: "קבוצות חלוצים בונות כביש או מסילה קטע אחר קטע, בכל סדר, וכמה קטעים במקביל. עצירת העבודה על קטע מאבדת את ההתקדמות ואת הכסף ששולם. כביש או מסילה שהושלמו אינם דורשים אחזקה ואינם מניבים דבר בעצמם, אבל יחידות נעות לאורך הקטעים הבנויים בעלות נמוכה יותר. השלמה של כביש או מסילה יכולה גם להיחשב לטובת יעד."
 advisor.page.money_debt.title: "כסף וחוב"
 advisor.page.money_debt.text: "כסף נכנס ממסים ומכל משרה מאוישת, ויוצא על הוצאות הממשלה, על אחזקת העוצבות הצבאיות שלנו, על אימון ועל בנייה. כשעלות גבוהה ממה שיש לנו, היא משולמת בכל זאת: הכסף נעצר באפס והיתרה הופכת לחוב. החוב ומטבע החוץ נמצאים תחת הכסף, ומסך התקציב מציג אותם. ברגע שהחוב מגיע לתקרה וגם המזון אזל, מונה ההפסד מתחיל לרוץ."
+# For the native reviewer (#564): agent-drafted, #2570
+advisor.page.money_debt.gdd03.text: "כסף נכנס ממסים ומכל משרה מאוישת (אבל משרות בעיר שיש בה יחידה צבאית של האויב אינן מכניסות כסף באותו תור), ויוצא על הוצאות הממשלה, על אחזקת העוצבות הצבאיות שלנו, על אימון ועל בנייה. כשעלות גבוהה ממה שיש לנו, היא משולמת בכל זאת: הכסף נעצר באפס והיתרה הופכת לחוב. החוב ומטבע החוץ נמצאים תחת הכסף, ומסך התקציב מציג אותם. ברגע שהחוב מגיע לתקרה וגם המזון אזל, מונה ההפסד מתחיל לרוץ."
 advisor.page.budget.title: "חלוקת התקציב"
 advisor.page.budget.text: "התקציב מחלק את ההוצאה בין המשרדים, חלק לכל משרד, והחלקים תמיד מסתכמים בשלם. החלק של כל משרד קובע את השפעת ההוצאה שלו, שמאיצה או מאטה את עבודת השר. לחצו על הגשת התקציב והוא ייכנס לתוקף בסיום התור; שינויים שלא הגשתם לא ייכנסו לתוקף. כשהתקציב טעון אישור של בית המחוקקים, הצבעה נגדו משאירה את התקציב הקודם, אלא אם ההצבעה אינה מחייבת."
 advisor.page.cabinet.title: "השרים והממשלה"
@@ -261,7 +271,8 @@ event.office: "{0}: {1}"
 event.more: "החלטות ממתינות נוספות: {0}"
 # Approved: owner, 25 Oct 2026 (recommendations page, item 4).
 event.more_one: "החלטה ממתינה נוספת: {0}"
-event.hide: "הסתר"
+# event.hide: HE-03 action noun; agent-checked, for the native reviewer (#564).
+event.hide: "הסתרה"
 event.reopen: "החלטה ממתינה"
 event.illustration: "איור"
 event.photo: "תצלום"
@@ -574,10 +585,13 @@ why.hex.south: "מדרום"
 why.hex.south_west: "מדרום־מערב"
 why.hex.west: "ממערב"
 why.hex.north_west: "מצפון־מערב"
-# The turn report (#1037, TurnReportPresenter): a line is a top-bar caption and the change the bar shows.
+# The turn report (#1037, TurnReportPresenter): a line is a top-bar caption and the change the bar shows; Immigration also
+# labels the current turn's arrivals, whose lines follow it.
 report.title: "מה קרה בתור הזה"
 report.intro: "מה השתנה בסרגל העליון, ומה הסיבות העיקריות:"
 report.line: "{0}: שינוי של {1}"
+# For the native reviewer (#564): agent-drafted, #2576
+report.immigration_line: "{0}: שינוי של {1}; עולים שהגיעו בתור הזה: {2}"
 # The Why screen named in a sentence goes in gershayim: owner, 25 Oct 2026.
 report.all: "הכול במסך ״למה?״"
 report.close: "סגירה"
@@ -662,10 +676,11 @@ map.layer_with_armistice: "{0} · {1}: {2}"
 map.layer_front_no_data: " · {0}: נפות המנדט, אין נתוני קו שביתת נשק"
 map.layer_front_low: "{0} (דיוק נמוך)"
 map.layer_front_note: "{0} (וגם {1})"
-map.legend_held: "בשליטת ישראל: כחול · בשליטת כוחות ערביים: כתום-אדום · שטח שבמחלוקת או שטח הפקר: אפור, מקווקו"
-map.legend_armistice: "הצד הישראלי של קו שביתת הנשק: כחול · הצד הערבי: כתום-אדום · שטח הפקר או אזור מפורז: אפור, מקווקו"
+# These three HE-07 maqaf changes are agent-checked, for the native reviewer (#564).
+map.legend_held: "בשליטת ישראל: כחול · בשליטת כוחות ערביים: כתום־אדום · שטח שבמחלוקת או שטח הפקר: אפור, מקווקו"
+map.legend_armistice: "הצד הישראלי של קו שביתת הנשק: כחול · הצד הערבי: כתום־אדום · שטח הפקר או אזור מפורז: אפור, מקווקו"
 map.caption_held: "קווי החזית, {0}, בקירוב (ארכיון המדינה)"
-map.caption_adjusted: "קווי החזית של {0}, מותאמים (ארכיון המדינה; מפת ה-CIA מ-18 במאי 1948)"
+map.caption_adjusted: "קווי החזית של {0}, מותאמים (ארכיון המדינה; מפת ה־CIA מ־18 במאי 1948)"
 map.caption_mixed: "קווי שביתת הנשק: {0}; במקומות אחרים קווי החזית של {1}"
 map.front_egypt: "מצרים"
 map.front_lebanon: "לבנון"
@@ -720,7 +735,8 @@ map.mixed: "יישוב מעורב"
 # map.tier: the tooltip of the population-tier badge on a city's pill (#710): {0} its tier, {1} the number of tiers, {2} its
 # 1948 people. For the native reviewer (#564).
 # map.tier: native review: owner, 3 Nov 2026 (HE batch 3: "Approve all as they are").
-map.tier: "דרגת אוכלוסייה {0} מתוך {1}: {2} תושבים ב-1948"
+# The later HE-07 maqaf change is agent-checked, for the native reviewer (#564).
+map.tier: "דרגת אוכלוסייה {0} מתוך {1}: {2} תושבים ב־1948"
 # For the native reviewer (#564)
 minimap.overview: "התרחקות מרבית"
 minimap.labels: "הצגה או הסתרה של שמות היישובים"
@@ -1114,8 +1130,9 @@ advisor.media_label: "הנפשה וקול בבינה מלאכותית. דיאל�
 # Hebrew agent-drafted; native review: owner, 3 Nov 2026 (HE batch 5: "approve all"; recorded on #564,
 # issuecomment-6610635087).
 advisor.credit.ben_gurion: "צילום: דוד בן-גוריון, 16 באפריל 1951, לשכת העיתונות הממשלתית, אוסף התצלומים הלאומי D683-095, נחלת הכלל (PD-Israel). נצבע, הוצב על רקע משרד שנוצר בבינה מלאכותית, והונפש וסונכרן לקול בבינה מלאכותית (Kling 3.0 Pro, Sync 3)."
-advisor.credit.meyerson: "צילום: גולדה מאירסון (לימים מאיר) עם ילדי קיבוץ שפיים, 24 ביולי 1950, תאודור בראונר, לשכת העיתונות הממשלתית, אוסף התצלומים הלאומי D703-086, נחלת הכלל (PD-Israel). נצבע ב-Dreamina, נחתך, והונפש וסונכרן לקול בבינה מלאכותית (Kling 3.0 Pro, Sync 3); הבינה המלאכותית מניעה גם את האנשים סביבה ואת הדגל."
-advisor.credit.dayan: "צילום: משה דיין, 9 בדצמבר 1953, NLI 997008136641805171. Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection / CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). הוחזר לכיוונו הנכון, נצבע ב-Dreamina, נחתך, והונפש וסונכרן לקול בבינה מלאכותית (Kling 3.0 Pro, Sync 3)."
+# The HE-07 maqaf changes in the following two credits are agent-checked, for the native reviewer (#564).
+advisor.credit.meyerson: "צילום: גולדה מאירסון (לימים מאיר) עם ילדי קיבוץ שפיים, 24 ביולי 1950, תאודור בראונר, לשכת העיתונות הממשלתית, אוסף התצלומים הלאומי D703-086, נחלת הכלל (PD-Israel). נצבע ב־Dreamina, נחתך, והונפש וסונכרן לקול בבינה מלאכותית (Kling 3.0 Pro, Sync 3); הבינה המלאכותית מניעה גם את האנשים סביבה ואת הדגל."
+advisor.credit.dayan: "צילום: משה דיין, 9 בדצמבר 1953, NLI 997008136641805171. Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection / CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). הוחזר לכיוונו הנכון, נצבע ב־Dreamina, נחתך, והונפש וסונכרן לקול בבינה מלאכותית (Kling 3.0 Pro, Sync 3)."
 
 # Caption keys: same text as the C68 recorded opening lines. The lines with an English clip (S6b, Task 26) are cut at
 # the clip's sentence and clause pauses; their start times are the media rows' cues.
@@ -1253,6 +1270,8 @@ arms.minimum: "יש לרכוש לפחות יחידת נשק אחת. יש להז�
 arms.no_attention: "אין די תשומת לב לרכישה. יש לבטל הוראה אחרת או להמתין לתור הבא."
 # #2198: agent-drafted Hebrew; native review: owner, 2 Nov 2026, "Hebrew is right (Recommended)".
 arms.refused_debt_ceiling: "רכישת כמות כזאת של נשק תעלה את החוב מעל התקרה"
+# Agent-drafted Hebrew; for the native read in #564.
+arms.refused_stock_capacity: "כמות זו של נשק גדולה מכפי שהמלאי יכול להכיל"
 
 # #731 stock summaries in the report and Why. Native review: owner, 3 Nov 2026 (HE batch 1: "All fine as they are").
 report.stock_line: "{0} במלאי: {1}"
@@ -1450,7 +1469,8 @@ dollars.withdraw: "ביטול ההמרה"
 dollars.queued: "דולרים להמרה: {0}, בסיום התור"
 dollars.wartime_only: "המרת דולרים אפשרית רק בזמן מלחמה."
 dollars.no_attention: "אין די תשומת לב להמרה. יש לבטל הוראה אחרת או להמתין לתור הבא."
-dollars.refused_minimum: "יש להמיר לפחות מיליון דולר"
+# dollars.refused_minimum: the placeholder rewrite is agent-checked, for the native reviewer (#564).
+dollars.refused_minimum: "יש להמיר לפחות {0}"
 dollars.refused_not_at_war: "אפשר להמיר דולרים רק בזמן המלחמה"
 dollars.refused_monthly: "זה יותר מהסכום שמותר להמיר החודש"
 dollars.refused_total: "ההמרה תעבור את הסכום הכולל שמותר להמיר"

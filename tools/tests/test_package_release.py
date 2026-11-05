@@ -6,6 +6,8 @@ import shutil
 import zipfile
 from pathlib import Path
 
+import pytest
+
 import package_release
 
 REPO = Path(package_release.REPO)
@@ -28,7 +30,9 @@ def fake_build(tmp_path, reviewed, photos_reviewed=True, forces_checked=True, al
     alternates_reviewed: TEST-ONLY fictional review of the two #939 copies. No real content file is changed."""
     build = tmp_path / "Web-brotli"
     (build / "StreamingAssets").mkdir(parents=True)
-    (build / "index.html").write_text("<html></html>")
+    (build / "Build").mkdir()
+    (build / "Build/game.loader.js").write_bytes(b"\x00")
+    (build / "index.html").write_text('<script src="Build/game.loader.js"></script>')
     content = build / "StreamingAssets" / "content"
     shutil.copytree(REPO / "content", content)
     status = "sensitivity-reviewed" if reviewed else "fact-checked"   # the owner's sign-off (D11), or its absence
@@ -163,7 +167,7 @@ def hashed_build(tmp_path):
         f'<html><script src="Build/{loader}"></script><script>var config = {{\n  dataUrl: "Build/{data}",\n'
         f'  frameworkUrl: "Build/{framework}",\n  codeUrl: "Build/{code}",\n  streamingAssetsUrl: "StreamingAssets",\n}};'
         "</script></html>")
-    (build / "Build").mkdir()
+    (build / "Build").mkdir(exist_ok=True)
     for name in HASHED:
         (build / "Build" / name).write_bytes(b"\x00")
     return build
@@ -171,7 +175,14 @@ def hashed_build(tmp_path):
 
 def test_the_build_files_are_read_from_index_html(tmp_path):
     assert package_release.build_files(hashed_build(tmp_path)) == sorted(HASHED)
-    assert package_release.build_files(fake_build(tmp_path / "plain", reviewed=True)) == []
+    assert package_release.build_files(fake_build(tmp_path / "plain", reviewed=True)) == ["game.loader.js"]
+
+
+@pytest.mark.parametrize("page", ["<html></html>", "<script src='Build/game.loader.js'></script>"])
+def test_a_build_whose_index_names_no_recognised_build_file_is_refused(tmp_path, capsys, page):
+    build = fake_build(tmp_path, reviewed=True)
+    (build / "index.html").write_text(page)
+    assert "index.html names no Build/ files" in refused(build, tmp_path, capsys)
 
 
 def test_the_zip_carries_the_hashed_files_index_html_names(tmp_path, capsys):
@@ -191,6 +202,58 @@ def test_files_of_an_earlier_build_are_left_out_of_the_zip(tmp_path, capsys):
     assert "LEFT OUT Build/ffffffffffffffffffffffffffffffff.data.br" in capsys.readouterr().out
 
 
+def test_nested_files_of_an_earlier_build_are_left_out_of_the_zip(tmp_path, capsys):
+    build, zip_path = hashed_build(tmp_path), tmp_path / "out.zip"
+    stale = build / "Build" / "old" / "files" / "earlier.data.br"
+    stale.parent.mkdir(parents=True)
+    stale.write_bytes(b"old")
+    assert package_release.main(["--build", str(build), "--zip", str(zip_path)]) == 0
+    with zipfile.ZipFile(zip_path) as z:
+        assert "Build/old/files/earlier.data.br" not in z.namelist()
+    assert "LEFT OUT Build/old/files/earlier.data.br" in capsys.readouterr().out
+
+
+def test_a_nested_file_the_index_names_is_kept(tmp_path, capsys):
+    """#2695 review: only unnamed files are stale; a nested path index.html names still ships."""
+    build, zip_path = hashed_build(tmp_path), tmp_path / "out.zip"
+    named = build / "Build" / "extra" / "module.js"
+    named.parent.mkdir(parents=True)
+    named.write_bytes(b"kept")
+    index = build / "index.html"
+    index.write_text(index.read_text(encoding="utf-8") + '<script src="Build/extra/module.js"></script>\n',
+                     encoding="utf-8")
+    assert package_release.main(["--build", str(build), "--zip", str(zip_path)]) == 0
+    with zipfile.ZipFile(zip_path) as z:
+        assert "Build/extra/module.js" in z.namelist()
+    assert "LEFT OUT Build/extra/module.js" not in capsys.readouterr().out
+
+
+def test_an_index_that_is_not_utf8_is_refused_without_a_zip(tmp_path, capsys):
+    build, zip_path = fake_build(tmp_path, reviewed=True), tmp_path / "out.zip"
+    (build / "index.html").write_bytes(b"<html>\xff</html>")
+    assert package_release.main(["--build", str(build), "--zip", str(zip_path)]) == 1
+    assert not zip_path.exists()
+    out = capsys.readouterr().out
+    assert "PACKAGE REFUSED" in out and "index.html" in out and "UTF-8" in out
+
+
+def test_an_index_that_cannot_be_read_is_refused_without_a_zip(tmp_path, capsys, monkeypatch):
+    build, zip_path = fake_build(tmp_path, reviewed=True), tmp_path / "out.zip"
+    index = build / "index.html"
+    read_text = Path.read_text
+
+    def fail_index(path, *args, **kwargs):
+        if path == index:
+            raise OSError("read failed")
+        return read_text(path, *args, **kwargs)
+
+    monkeypatch.setattr(package_release.Path, "read_text", fail_index)
+    assert package_release.main(["--build", str(build), "--zip", str(zip_path)]) == 1
+    assert not zip_path.exists()
+    out = capsys.readouterr().out
+    assert "PACKAGE REFUSED" in out and "index.html" in out and "UTF-8" in out
+
+
 def test_a_build_missing_a_file_index_html_names_is_refused(tmp_path, capsys):
     build = hashed_build(tmp_path)
     (build / "Build" / HASHED[3]).unlink()
@@ -203,6 +266,26 @@ def test_the_zip_carries_the_translations_the_web_bundle_packs(tmp_path, capsys)
     assert package_release.main(["--build", str(build), "--zip", str(zip_path)]) == 0
     with zipfile.ZipFile(zip_path) as z:
         assert "StreamingAssets/translations/ro/events.yaml" in z.namelist()
+
+
+def test_losing_every_translation_is_refused(tmp_path, capsys):
+    """#2641: a build with no translations folder and no translation lists, absent, null or empty, must not pass while
+    the repository has translation files."""
+    expected = package_release._shipped_translations(REPO / "translations")
+    assert expected, "the repository ships at least one translation, or this test proves nothing"
+    for case in ("missing", "null", "empty"):
+        build = fake_build(tmp_path / case, reviewed=True)
+        shutil.rmtree(build / "StreamingAssets" / "translations")
+        content = build / "StreamingAssets" / "content"
+        for name, fields in (("manifest.json", ("translations",)), ("bundle.json", ("translations", "translationTexts"))):
+            data = json.loads((content / name).read_text(encoding="utf-8"))
+            for field in fields:
+                if case == "missing":
+                    data.pop(field, None)
+                else:
+                    data[field] = None if case == "null" else []
+            (content / name).write_text(json.dumps(data), encoding="utf-8")
+        assert f"the repository's translations/ holds {expected}" in refused(build, tmp_path / case, capsys), case
 
 
 def test_a_lost_changed_or_unlisted_translation_is_refused(tmp_path, capsys):

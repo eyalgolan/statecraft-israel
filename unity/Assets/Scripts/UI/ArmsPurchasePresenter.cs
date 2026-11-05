@@ -28,9 +28,11 @@ namespace Statecraft.Game.UI
             buy.text = text["arms.buy"]; withdraw.text = text["arms.withdraw"];
             onBuy = () =>
             {
+                // An amount End turn already refuses for capacity or the debt ceiling is never queued.
+                if (EndTurnRefusal() != null) { Render(); return; }
                 var reason = bridge.Queue(new BuyArms(count.value));
                 Render();
-                // Only Queue's own refusal replaces Render's line: an accepted order keeps its warning (the debt ceiling, #2198).
+                // Only Queue's own refusal replaces Render's line.
                 if (reason != null) panel.Q<Label>("arms-refusal").text = reason;
             };
             presses = new PressSource(panel);
@@ -48,6 +50,18 @@ namespace Statecraft.Game.UI
             bridge.Changed += Render;
             if (bridge.QueuedLike(new BuyArms(1)) is BuyArms old) count.SetValueWithoutNotify(old.Count);
             Render();
+        }
+
+        string? EndTurnRefusal()
+        {
+            var reason = Pools.BuyArmsRefusal(
+                bridge.Content,
+                bridge.TurnStart,
+                bridge.Session.Committed.Concat(bridge.Queued).ToList(),
+                count.value);
+            return reason == Pools.RefusedDebtCeiling || reason == Pools.RefusedStockCapacity
+                ? SimBridge.ReasonText(text, reason)
+                : null;
         }
 
         public void Render()
@@ -72,10 +86,9 @@ namespace Statecraft.Game.UI
             panel.Q<Label>("arms-refusal").text = s.GameOver != null ? text["order.game_over"]
                 : count.value < 1 ? text["arms.minimum"]
                 : !bridge.CanPay(order) ? text["arms.no_attention"]
-                // #2198, #2206: End turn refuses this amount for the ceiling (Pools.BuyArms) with the turn's orders as they stand:
-                // the committed then queued ones, from the turn's start, as End turn runs them.
-                : Pools.BorrowsPastDebtCeiling(c, bridge.TurnStart, bridge.Session.Committed.Concat(bridge.Queued).ToList(), count.value)
-                    ? text["arms.refused_debt_ceiling"] : "";
+                // #2198, #2206, #2590: End turn refuses this amount for the ceiling or capacity (Pools.BuyArms) with the turn's
+                // orders as they stand: the committed then queued ones, from the turn's start, as End turn runs them.
+                : EndTurnRefusal() ?? "";
         }
 
         public void Dispose()
