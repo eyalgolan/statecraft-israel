@@ -25,17 +25,19 @@ public class DollarsTests
 
     static PreviewResult Orders(Content c, GameState s, params Command[] orders) => Simulation.Preview(c, s, orders);
 
-    // R-MONEY-004: the smallest conversion is US$1m. Two UI strings write that amount as text instead of receiving it:
-    // unity/Assets/UI/strings.en.yaml `dollars.refused_minimum` ("Convert at least $1m") and strings.he.yaml's
-    // ("... מיליון דולר"). If the minimum changes, this test fails so both strings get reviewed with it.
+    // R-MONEY-004: the smallest conversion is EconomySystem.DollarsMinimum (US$1m). The sim refuses below it, the UI words
+    // the refusal from the same constant (SimBridge.ReasonText; DollarConversionTests pins that), and the sim's own English,
+    // a constant tests name in attributes, says the same amount, so none of the three can drift from the others (#2704).
     [Fact]
-    public void TheConversionMinimumIsTheOneMillionTheUiStringsName()
+    public void TheConversionMinimumIsOneConstantTheRefusalAndItsWordingShare()
     {
         var c = Gdd();
         var s = War(c);
-        const string strings = "the minimum moved: review dollars.refused_minimum in strings.en.yaml (\"$1m\") and strings.he.yaml (\"מיליון דולר\")";
-        Assert.True(EconomySystem.DollarsRefusal(c, s, 0) == EconomySystem.RefusedDollarsMinimum, strings);
-        Assert.True(EconomySystem.DollarsRefusal(c, s, 1) != EconomySystem.RefusedDollarsMinimum, strings);
+        Assert.Equal(EconomySystem.RefusedDollarsMinimum, EconomySystem.DollarsRefusal(c, s, EconomySystem.DollarsMinimum - 1));
+        Assert.NotEqual(EconomySystem.RefusedDollarsMinimum, EconomySystem.DollarsRefusal(c, s, EconomySystem.DollarsMinimum));
+        Assert.Equal(EconomySystem.RefusedDollarsMinimum,
+            string.Format(System.Globalization.CultureInfo.InvariantCulture, "Convert at least ${0}m", EconomySystem.DollarsMinimum));
+        Assert.True(EconomySystem.RefusedDollarsMinimum == "Convert at least $1m", "the sim's English stays byte for byte as it was");
     }
 
     // R-MONEY-004: $3m at IL 0.5 per $ moves IL 1.5m into the Treasury and takes $3m from the reserves, with a cause line.
