@@ -15,6 +15,7 @@ COMMITTED = ROOT / "docs" / "steam" / "achievements"
 def readme_api_names():
     # Table rows of "Achievements" in docs/steam/README.md start with the API name in backticks.
     text = (ROOT / "docs" / "steam" / "README.md").read_text(encoding="utf-8")
+    text = text.split("### Achievements", 1)[1].split("\n#", 1)[0]   # only that section: a later table must not count
     return set(re.findall(r"^\| `([A-Z][A-Z0-9_]+)` \|", text, re.M))
 
 
@@ -40,9 +41,8 @@ def test_every_api_name_has_both_committed_pngs():
 def test_generated_icons_are_256_rgb_and_locked_ones_are_grey(tmp_path):
     icons.main(["steam_achievement_icons.py", str(tmp_path)])
     for api in icons.ICONS:
-        unlocked = Image.open(tmp_path / f"{api}_unlocked.png")
-        locked = Image.open(tmp_path / f"{api}_locked.png")
-        assert unlocked.size == locked.size == (256, 256)
-        assert unlocked.mode == locked.mode == "RGB"
-        r, g, b = locked.split()
+        with Image.open(tmp_path / f"{api}_unlocked.png") as unlocked, Image.open(tmp_path / f"{api}_locked.png") as locked:
+            assert unlocked.size == locked.size == (256, 256)
+            assert unlocked.mode == locked.mode == "RGB"
+            r, g, b = locked.split()
         assert ImageChops.difference(r, g).getbbox() is None and ImageChops.difference(g, b).getbbox() is None, f"{api}_locked.png is not greyscale"
