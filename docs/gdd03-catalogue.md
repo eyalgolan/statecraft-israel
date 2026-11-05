@@ -12,11 +12,11 @@ The source's retained approved baselines map to Agreed. Derived values preserve 
 
 `start.army` must be Deferred expression `A`, without any numeric value or parts. The loader refuses numeric substitutions, numeric expressions and relabelling it Default or Agreed. #1717 requires a separate owner decision before this contract can change; only then may the complete population partition and `34 - A >= 0` be validated with an actual integer. This task guesses no army size.
 
-## Six owner rulings and existing keys
+## Six owner rulings, summarised, and existing keys
 
-The coordinator's catalogue citation is **owner ruling, 25 Oct 2026, on #1668**. The public follow-up comments were posted on 26 October; they are [the three changes](https://github.com/eyalgolan/statecraft-israel/pull/1668#issuecomment-6403926601) and [the three retained rules](https://github.com/eyalgolan/statecraft-israel/pull/1668#issuecomment-6403936877).
+The coordinator's catalogue citation is **owner ruling, 25 Oct 2026, on #1668**. The public follow-up comments were posted on 26 October; they are [the three changes](https://github.com/eyalgolan/statecraft-israel/pull/1668#issuecomment-6403926601) and [the three retained rules](https://github.com/eyalgolan/statecraft-israel/pull/1668#issuecomment-6403936877). The table's first column is a short summary of each ruling, not the owner's words; the rulings as posted are in those two comments.
 
-| Owner ruling | Existing catalogue key | Treatment |
+| Decision summary | Existing catalogue key | Treatment |
 | --- | --- | --- |
 | Units move at once | None for order timing | Movement allowances and costs remain their source basis; an instant order does not approve a particular allowance. No timing key invented. |
 | Economic defeat exists | None for defeat thresholds | Rule retained; no numeric threshold invented or borrowed from the old ruleset. New thresholds remain Deferred work outside this catalogue. |

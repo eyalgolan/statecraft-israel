@@ -22,7 +22,7 @@ def test_map_action_reasons_are_hebrew_and_their_english_action_names_are_the_ru
     each action by its rules.yaml name."""
     en, he = strings('strings.en.yaml'), strings('strings.he.yaml')
     keys = [key for key in en if key.startswith('info.map_action')]
-    assert len(keys) == 14             # 2 action names and 12 reasons
+    assert len(keys) == 15             # 2 action names and 13 reasons (depopulated, #2573)
     assert all(not re.search('[A-Za-z]', he[key]) for key in keys)
     rules = yaml12.load((ROOT / 'content/rules.yaml').read_text(encoding='utf-8'))
     actions = rules['map_actions']

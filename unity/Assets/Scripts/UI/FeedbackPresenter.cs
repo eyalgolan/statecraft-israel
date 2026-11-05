@@ -8,9 +8,9 @@ namespace Statecraft.Game.UI
 {
     /// <summary>"Report a bug or idea" (#1169): the button in the Settings screen's Community row and the one under the start
     /// screen's buttons open a small panel over everything, with three choices: GitHub's bug form, its feature form (both
-    /// prefilled, ReportLinks) and the itch page's comments for a player with no GitHub account. The panel shows, under each
-    /// GitHub choice, the exact lines that form opens with, so nothing goes anywhere the player has not seen; the game sends
-    /// nothing itself, the player submits on GitHub. Each choice opens through ExternalLink, inside the real press.
+    /// prefilled, ReportLinks) and the itch page's comments for a player with no GitHub account. The panel previews each
+    /// field in the UI language; GitHub's issue-title value remains English. The game sends nothing itself, the player
+    /// submits on GitHub. Each choice opens through ExternalLink, inside the real press.
     /// <para>While it shows, the root has <see cref="OpenClass"/> and every other part of the UI is disabled, so Tab stays
     /// in the panel; Close, Esc or Cancel give each part its own state back and the focus back to the button that opened it.
     /// The platform line is read on each opening (a resized window changes the screen size).</para></summary>
@@ -23,6 +23,7 @@ namespace Statecraft.Game.UI
         readonly Button bug, feature, itch, close, settingsOpen, startOpen;
         readonly Label bugPreview, featurePreview;
         readonly string version;
+        readonly UiText? text;
         readonly Action unbindFeature, unbindItch;
         readonly EventCallback<NavigationCancelEvent> onCancel;
         Action unbindBug = () => { };
@@ -34,6 +35,7 @@ namespace Statecraft.Game.UI
         public FeedbackPresenter(VisualElement root, UiText? text, string version)
         {
             this.version = version;
+            this.text = text;
             hudRoot = root.Q("root") ?? root;
             layer = root.Q("feedback-layer");
             bug = layer.Q<Button>("feedback-bug"); feature = layer.Q<Button>("feedback-feature");
@@ -47,7 +49,7 @@ namespace Statecraft.Game.UI
                 bug.text = text["feedback.bug"]; feature.text = text["feedback.feature"];
                 itch.text = text["feedback.itch"]; close.text = text["report.close"];
             }
-            featurePreview.text = Preview(ReportLinks.FeatureFields());
+            featurePreview.text = Preview(ReportLinks.FeatureFields(), feature: true);
             unbindFeature = ExternalLink.Bind(feature, ReportLinks.Feature());
             unbindItch = ExternalLink.Bind(itch, ReportLinks.Itch);
             settingsOpen.clicked += OpenFromSettings;
@@ -68,7 +70,7 @@ namespace Statecraft.Game.UI
             if (IsOpen) return;
             opener = from;
             var env = ReportLinks.Environment();
-            bugPreview.text = Preview(ReportLinks.BugFields(version, env));
+            bugPreview.text = Preview(ReportLinks.BugFields(version, env), feature: false);
             unbindBug();
             unbindBug = ExternalLink.Bind(bug, ReportLinks.Bug(version, env));
             // Each part's own state comes back on Close. The panel takes every press meanwhile, so no screen opens or closes
@@ -100,8 +102,11 @@ namespace Statecraft.Game.UI
             return closedAt == UnityEngine.Time.frameCount;
         }
 
-        /// <summary>The lines a form opens with, one per field, by the template's field id ("title: Bug: ").</summary>
-        static string Preview((string id, string value)[] fields) => string.Join("\n", fields.Select(f => $"{f.id}: {f.value}"));
+        /// <summary>The form's fields, one per line. Only the preview labels and title prefix are localized; GitHub keeps
+        /// the English title value supplied by <see cref="ReportLinks"/>.</summary>
+        string Preview((string id, string value)[] fields, bool feature) => string.Join("\n", fields.Select(f =>
+            $"{(text == null ? f.id : text["feedback.preview." + f.id])}: "
+            + (f.id == "title" && text != null ? text[feature ? "feedback.preview.feature_title" : "feedback.preview.bug_title"] : f.value)));
 
         public void Dispose()
         {

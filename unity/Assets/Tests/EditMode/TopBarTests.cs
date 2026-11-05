@@ -71,7 +71,7 @@ public class TopBarTests
         doc.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml);
         go.SetActive(true);
         var root = doc.rootVisualElement;
-        if (hebrew) root.Q("root").AddToClassList(UiLanguage.HebrewClass);
+        root.Q("root").EnableInClassList(UiLanguage.HebrewClass, text["ui.lang"] == UiLanguage.Hebrew);   // as GameRoot
         HudPresenter? hud = null; UiDirection? dir = null; EventCardPresenter? card = null; ScreenNav? nav = null;
         try
         {
@@ -617,6 +617,16 @@ public class TopBarTests
                     {
                         string at = $"{(hebrew ? "he" : "en")} {w}x{h}{(widest ? " widest" : " turn 1")}";
                         if (!root.Q("root").ClassListContains("hud-three-row")) { problems.Add($"{at}: precondition: the three-row bar"); return; }
+                        var captionRow = root.Q(className: "meter-caption-row");
+                        var expectedDirection = hebrew ? FlexDirection.RowReverse : FlexDirection.Row;
+                        if (captionRow.resolvedStyle.flexDirection != expectedDirection)
+                            problems.Add($"{at}: Security caption row is {captionRow.resolvedStyle.flexDirection}, expected {expectedDirection}");
+                        var levelStyle = root.Q<Label>("security-level").resolvedStyle;
+                        float expectedLeft = hebrew ? 0f : 6f, expectedRight = hebrew ? 6f : 0f;
+                        // The panel snaps layout to whole screen pixels, so a stylesheet px reads within one screen pixel of itself.
+                        float snap = 1f / HudPresenter.ScreenPxPerPanelPx(root.panel) + 0.01f;
+                        if (Mathf.Abs(levelStyle.marginLeft - expectedLeft) > snap || Mathf.Abs(levelStyle.marginRight - expectedRight) > snap)
+                            problems.Add($"{at}: Security level margins are {levelStyle.marginLeft}px left and {levelStyle.marginRight}px right, expected {expectedLeft}px and {expectedRight}px");
                         int seen = 0;
                         foreach (var l in root.Q("top-bar").Query<Label>(className: "meter-name").ToList())
                         {

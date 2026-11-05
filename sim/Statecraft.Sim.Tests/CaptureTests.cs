@@ -133,7 +133,7 @@ public class CaptureTests
     }
 
     // R-CTRL-004 (#796, 21 October 2026): a captured target the enemy holds again, with no player combatant there, is back
-    // under enemy control.
+    // under enemy control, with the ownerless lost marker retained.
     [Fact]
     public void AnEnemyUnitHoldingACapturedTargetReturnsItToEnemyControl()
     {
@@ -141,7 +141,23 @@ public class CaptureTests
         var s = With(c, Enemy(1, 1, 0));
         s.Settlements["town_a"] = new SettlementControl(Movement.PlayerSide, SettlementControl.AwaitingChoice, s.Date);
         Capture(c, s);
-        Assert.Empty(s.Settlements);
+        var lost = Assert.Single(s.Settlements).Value;
+        Assert.Equal(("", "", s.Date, false), (lost.Owner, lost.State, lost.Since, lost.Fled));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void AStayedLostMarkerCanBeCapturedAgainWithANewDate(bool gdd03)
+    {
+        var c = OccupyTests.Load(gdd03);
+        var s = With(c, Soldier(1, 1, 0));
+        var old = s.Date.AddDays(-7);
+        s.Settlements["town_a"] = new SettlementControl(since: old);
+        var next = s.Date.AddDays(7);
+        Capture(c, s);
+        var record = s.Settlements["town_a"];
+        Assert.Equal((Movement.PlayerSide, SettlementControl.AwaitingChoice, next), (record.Owner, record.State, record.Since));
     }
 
     // R-CTRL-001: a player unit on a locality that is not on the list changes nothing.
@@ -307,7 +323,7 @@ public class CaptureTests
         var s = With(c, Soldier(1, 0, 1));
         var ended = Simulation.Step(c, s, new Command[] { new Move(1, 1, 0), new ResolveCapture("town_a", SettlementControl.Raid) });
         Assert.Empty(ended.Rejected);
-        Assert.False(ended.State.Settlements.ContainsKey("town_a"));
+        Assert.Equal("", ended.State.Settlements["town_a"].Owner);
     }
 
     // R-CTRL-004: the automatic route stop is checked before any order (spec 4.4, 6.3).

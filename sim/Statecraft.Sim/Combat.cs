@@ -141,7 +141,7 @@ namespace Statecraft.Sim
         /// refused, the state untouched, with <see cref="Check"/>'s reason; else it pays its Arms (R-COMBAT-004; not under gdd-0.3), loses its
         /// order and the rest of its movement points, and fights one engagement alone (OQ-1), drawing once.</summary>
         internal static string? Strike(Content c, GameState s, int unitId, int? q, int? r, Dictionary<int, int> spent,
-                                       Dictionary<int, (int Q, int R)> attacked, List<Cause> why)
+                                       Dictionary<int, AttackRecord> attacked, List<Cause> why)
         {
             var refused = Check(c, s, unitId, q, r, spent: spent);
             if (refused != null) return refused;
@@ -154,8 +154,11 @@ namespace Statecraft.Sim
                 why.Add(UnitLines.Line(WhyKeys.FortifyLost,
                     $"Unit {unitId} left hex {u.OrderTarget} and is no longer fortified", new[] { u }, u.OrderTarget));
             spent[unitId] = Movement.Points(c, attacker);
-            attacked[unitId] = (q!.Value, r!.Value);
-            Engage(c, s, mvp, new List<Unit> { attacker }, Defenders(s, attacker, q.Value, r.Value), q.Value, r.Value, why);
+            var defenders = Defenders(s, attacker, q!.Value, r!.Value);
+            var target = defenders.Where(e => Prisoners.FrontOf.ContainsKey(e.Side)).OrderBy(e => e.Id).FirstOrDefault();
+            attacked[unitId] = new AttackRecord(q.Value, r.Value, target?.Id,
+                target == null ? null : Prisoners.FrontOf[target.Side]);
+            Engage(c, s, mvp, new List<Unit> { attacker }, defenders, q.Value, r.Value, why);
             return null;
         }
 

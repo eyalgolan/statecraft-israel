@@ -75,7 +75,6 @@ Check: a pattern search over the strings files.
 
 ### UI-05 A refusal says what, why and what next
 Status: proposed (observed in the save and start-up strings). Reason: NN/g and GOV.UK agree that an error message should name the specific problem and say how to fix it. Neither requires a separate "why", but in a game the reason is a rule the player can act on, so it is kept. Where nothing can be done, say what happens instead.
-- Good: "The old saved game could not be removed; it will be replaced the next time the game saves." (`newgame.delete_failed`): what happened and what happens next.
 - Good: "Statecraft could not start: {0}. Reload the page." (`boot.failed`): what happened and what to do.
 - Good: "Your saved game could not be loaded ({0}). A new game has started." (`save.unreadable`).
 - Mixed: "Not enough attention (need {0:0.0}, have {1:0.0})" (`order.no_attention`) gives the rule and the numbers but no next step. It is also shown after "Not done: " (`toast.refused`), so the player reads "Not done: Not enough attention (...)".
@@ -167,7 +166,6 @@ Check: manual.
 
 | Key | String | Verdict | Rule |
 |---|---|---|---|
-| `newgame.delete_failed` | The old saved game could not be removed; it will be replaced the next time the game saves. | Good | UI-05 |
 | `boot.failed` | Statecraft could not start: {0}. Reload the page. | Good (the `{0}` is the fixed `boot.reason_other`, #705) | UI-05, UI-07 |
 | `save.reason_other` | the file could not be read or replayed | Good, a fixed player reason | UI-07 |
 | `why.empty` | Nothing has happened yet: end the turn to see its causes. | Good, empty state with a next step | UI-10 |
