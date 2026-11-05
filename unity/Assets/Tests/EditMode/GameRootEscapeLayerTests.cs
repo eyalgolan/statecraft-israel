@@ -104,6 +104,34 @@ public class GameRootEscapeLayerTests : SharedCameraActionsFixture
         Assert.AreEqual(DisplayStyle.Flex, Ui.Q("screen-budget").style.display.value, "and only the report: the screen stays");
     }
 
+    /// <summary>A key press reaches the focused element as the UI Cancel event, which closes the open screen (ScreenNav), before
+    /// GameRoot polls the same Escape. That poll finds the screen closed this frame (ScreenNav.ClosedThisFrame), so the press
+    /// was the screen's: it closes nothing else and leaves a New Game armed from the top bar armed.</summary>
+    [Test]
+    public void EscapeAFocusedElementUsedToCloseTheScreenLeavesAnArmedNewGame()
+    {
+        var root = Open(GameInputs.FromDisk(Paths.Content, Paths.StreamingMap), startScreen: false);
+        GameSceneTests.HideTheOpeningCard(Ui);
+        // The Hide is not this press's: CollapsedThisFrame would otherwise claim it in the single EditMode frame.
+        typeof(EventCardPresenter).GetField("collapsedAt", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(root.Card, -1);
+        var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
+        UiTestKit.Press(Ui.Q<Button>("new-game"));
+        Assert.AreEqual(text["newgame.confirm"], Ui.Q<Label>("toast").text, "precondition: the top bar armed the request");
+        var newGame = (NewGamePresenter)typeof(GameRoot).GetField("newGame", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(root)!;
+        UiTestKit.Press(Ui.Q<Button>("nav-budget"));
+        Assert.AreEqual(DisplayStyle.Flex, Ui.Q("screen-budget").style.display.value, "precondition: a side screen is open");
+
+        var at = Ui.Q<Button>("nav-budget");
+        using (var e = NavigationCancelEvent.GetPooled()) { e.target = at; at.SendEvent(e); }
+        Assert.AreNotEqual(DisplayStyle.Flex, Ui.Q("screen-budget").style.display.value, "precondition: the Cancel closed the screen");
+        Press(keyboard.escapeKey);                                     // the same press, as GameRoot's poll reads it
+        Assert.IsTrue(keyboard.escapeKey.wasPressedThisFrame, "precondition: Escape went down this frame");
+        typeof(GameRoot).GetMethod("Update", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(root, null);
+        Release(keyboard.escapeKey);
+        Assert.IsTrue(newGame.Armed, "the press was the screen's: the request is still armed");
+        Assert.AreEqual(text["newgame.confirm"], Ui.Q<Label>("toast").text, "and its prompt stays on the toast");
+    }
+
     /// <summary>An ended autosave opens the end screen before the start screen goes up over it. Escape on the start screen
     /// is the start screen's: it withdraws an armed New Game, and never closes the hidden end screen under it.</summary>
     [Test]
