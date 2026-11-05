@@ -92,7 +92,7 @@ uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5
 `-smoke-orders`: the golden seed, one turn). It hides the turn's event card (the events go to their ministers), clicks the
 hex of the unit `GoldenRun.SmokeMove` names (the lowest-id unit `Movement.Reachable` has a hex for: unit 0, Golani, on
 11,11, its first anchor in `content/map/unit_anchor_hexes.yaml`), presses the unit card's Move button, clicks the first lit hex in `Reachable`'s (q, r) order that is no enemy-held
-place (7,11; it skips Nazareth's 7,10, so the run captures nothing) and presses End Turn:
+place (8,12, no place, so the run captures nothing) and presses End Turn:
 `SMOKE ORDERS OK 1948-06-15 08d9800eda4462ef165cc7ea6285fad059c030c0f87ad563e35c9789cc352d78`.
 `GoldenRun.PlaySmokeOrders` plays the same turn with that one `Move`, so the value is in the manifest (`SliceSmokeTests.TheSmokeOrdersRunMovesOneUnitAndEndsOnTheGolden`) and the player's golden check
 prints it as `GOLDEN OK smoke-orders`. Re-record it when the sim or the order path on the card changes; the fortify, hold and
@@ -133,7 +133,7 @@ fails too. To add one: write the file, run `STATECRAFT_UPDATE_GOLDEN=1 dotnet te
 manifest line and the snapshot), then run the tests plain. A scenario that moves is re-pinned with the hash goldens by the same
 command; its snapshot diff in the PR shows what moved, and the commit message says why. All six play the real content.
 `cautious` and `reckless` run through March 1949, setting rationing on the first turn after its office opens; `mvp-absorb-first` (GDD Phase 1
-PR 3) puts 90 workers into Tel Aviv's 106 job slots on the first turn and completes the absorb objective on 15 January 1950; `mvp-defeat` (GDD Phase 7 PR 5) overspends and
+PR 3) sets Tel Aviv's workers to 90 of its 106 job slots on the first turn (all are filled at the start), freeing 158 civilians for that turn's halutz training, and completes the absorb objective on 15 January 1950; `mvp-defeat` (GDD Phase 7 PR 5) overspends and
 turns down every source of foreign currency until Money and Food run out, and ends in `defeat_economy` (R-END-002).
 
 **MVP goldens after the cutover.** The real game is the GDD game, so every golden above is an MVP golden. Each PR that
