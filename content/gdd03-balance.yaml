@@ -342,7 +342,7 @@
     "values": [0]
   "military.combat_arms":
     "basis": "Agreed"
-    "note": "Military and control: additional Arms for equipped unit / Arms per attack or artillery firing; Agreed. Documentation only; gdd-0.3 spends no Arms on attacks or artillery fire. In older rules, non-artillery attacks read rules.yaml mvp.arms_per_attack and artillery reads the unit type's arms_per_fire. Source: #1668 balance.md at 605277df. owner ruling, 25 Oct 2026, on #1668; no Arms per attack/artillery fire (#1706 implementation separate)."
+    "note": "Military and control: additional Arms for equipped unit / Arms per attack or artillery firing; Agreed. Documentation only; gdd-0.3 spends no Arms on attacks or artillery fire. In older rules, the player's non-artillery attacks read rules.yaml mvp.arms_per_attack and the player's artillery reads the unit type's arms_per_fire; enemy attacks spend no Arms. Source: #1668 balance.md at 605277df. owner ruling, 25 Oct 2026, on #1668; no Arms per attack/artillery fire (#1706 implementation separate)."
     "values": [0]
   "military.training_money":
     "basis": "Agreed"
