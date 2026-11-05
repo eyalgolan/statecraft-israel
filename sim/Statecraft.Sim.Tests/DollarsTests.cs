@@ -25,6 +25,19 @@ public class DollarsTests
 
     static PreviewResult Orders(Content c, GameState s, params Command[] orders) => Simulation.Preview(c, s, orders);
 
+    // R-MONEY-004: the smallest conversion is US$1m. Two UI strings write that amount as text instead of receiving it:
+    // unity/Assets/UI/strings.en.yaml `dollars.refused_minimum` ("Convert at least $1m") and strings.he.yaml's
+    // ("... מיליון דולר"). If the minimum changes, this test fails so both strings get reviewed with it.
+    [Fact]
+    public void TheConversionMinimumIsTheOneMillionTheUiStringsName()
+    {
+        var c = Gdd();
+        var s = War(c);
+        const string strings = "the minimum moved: review dollars.refused_minimum in strings.en.yaml (\"$1m\") and strings.he.yaml (\"מיליון דולר\")";
+        Assert.True(EconomySystem.DollarsRefusal(c, s, 0) == EconomySystem.RefusedDollarsMinimum, strings);
+        Assert.True(EconomySystem.DollarsRefusal(c, s, 1) != EconomySystem.RefusedDollarsMinimum, strings);
+    }
+
     // R-MONEY-004: $3m at IL 0.5 per $ moves IL 1.5m into the Treasury and takes $3m from the reserves, with a cause line.
     [Fact]
     public void ConvertingMovesTheDollarsTimesTheRateIntoMoney()
