@@ -473,6 +473,42 @@ public class CityPanelTests
             "Train(2) would take the reassignment's civilian, and End turn would refuse the reassignment");
     }
 
+    // #2580 review (auditenable): the press must not take the Arms a later queued Reinforce needs either. Three civilians
+    // without work and Arms for two recruit groups: Train(1) and then Reinforce(1) are both accepted, but Train(2) in the
+    // first order's slot takes both groups' Arms, and End turn would refuse the reinforcement (R-ARMS-003). The idle count
+    // still has one civilian free, so only the previews can see it. Red-first prediction at d3b1fb6e0: enabled.
+    [Test]
+    public void ATrainPressCannotTakeTheArmsALaterReinforcementNeeds()
+    {
+        using var ui = new UiTestKit();
+        var unit = -1;
+        var bridge = Bridge(En, s =>
+        {
+            Counts(50, 47)(s);
+            s.Arms = 2 * RecruitGroupArms(s);
+            var recruit = C.UnitTypes.Single(t => t.Id == "recruit");
+            var u = s.Units.Values.Where(x => x.Side == Movement.PlayerSide && x.Strength >= 2)
+                .First(x => C.UnitTypes.First(t => t.Id == x.Type) is var t && C.UnitTypes.FirstOrDefault(k => k.Side == t.Side && k.Class == t.Class && k.Facility != "") == recruit);
+            s.Units[u.Id] = new Unit(u.Id, u.Type, CityHex.q, CityHex.r, u.Service, u.Side, u.Strength - 1, u.Order, u.OrderTarget, u.HomeCity, u.Strength);
+            unit = u.Id;
+        });
+        using var panel = Panel(ui, bridge, En);
+        panel.Show(CityHex.q, CityHex.r);
+        var train = new Train(City, "recruit", 1);
+        var reinforce = new Reinforce(unit, City, 1);
+        Assert.IsNull(bridge.Queue(train), "precondition: one recruit group takes one group's Arms");
+        Assert.IsNull(bridge.Queue(reinforce), "precondition: the reinforcement, trained as recruits, takes the other");
+        Assert.IsEmpty(Simulation.Preview(C, bridge.TurnStart, bridge.Session.Committed.Concat(bridge.Queued).ToList()).Rejected,
+            "precondition: End turn accepts both queued orders");
+        var pressed = Simulation.Preview(C, bridge.TurnStart,
+            bridge.Session.Committed.Concat(new Command[] { new Train(City, "recruit", 2), reinforce }).ToList());
+        StringAssert.Contains("Arms", pressed.Rejected.Single(x => ReferenceEquals(x.Command, reinforce)).Reason,
+            "precondition: after Train(2), End turn refuses the reinforcement for its Arms");
+        Assert.GreaterOrEqual(Training.Available(bridge.State, City, bridge.Queued), 1, "precondition: a civilian without work is left");
+        Assert.IsFalse(ui.Q<Button>("city-train-recruit").enabledSelf,
+            "Train(2) would take the reinforcement's Arms, and End turn would refuse the reinforcement");
+    }
+
     [Test]
     public void TrainingAcrossBothTracksStopsAtTheIdleCivilianLimit()
     {
