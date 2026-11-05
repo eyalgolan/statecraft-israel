@@ -33,6 +33,10 @@ namespace Statecraft.Game.Map.Units
         internal Renderer? HitFlash;
 
         Vector3 from, moveOffset;
+
+        /// <summary>The slide under way (world offset from the token's place), without the hit's shake: where the token is,
+        /// as the hit's burst and a destroyed unit's dust read it (UnitLayer.DrawnAt).</summary>
+        internal Vector3 SlideOffset => moveOffset;
         float elapsed = Duration, attackLeft, hitLeft, hitDelay;
         int nextMoveDust;
         bool firing;   // a figure plays the attack (else it waits for one, up to AttackWaitS)

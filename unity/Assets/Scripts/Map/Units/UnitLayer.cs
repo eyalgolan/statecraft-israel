@@ -698,8 +698,9 @@ namespace Statecraft.Game.Map.Units
             foreach (int id in drawnSims) gone.Remove(id);
         }
 
-        /// <summary>Where token <paramref name="i"/> is drawn now: its place on the ground plus any slide under way.</summary>
-        Vector3 DrawnAt(int i) => trios[i].centre + (i < motions.Count && motions[i] is UnitTokenMotion m && m != null ? m.transform.position : Vector3.zero);
+        /// <summary>Where token <paramref name="i"/> is now: its place on the ground plus any slide under way, without the hit's
+        /// shake (a defender shaking from one hit still takes the next burst, or raises its dust, on its own spot).</summary>
+        Vector3 DrawnAt(int i) => trios[i].centre + (i < motions.Count && motions[i] is UnitTokenMotion m && m != null ? m.SlideOffset : Vector3.zero);
 
         static (int sim, string row) Key(int simId, string row) => simId >= 0 ? (simId, "") : (-1, row);
 
