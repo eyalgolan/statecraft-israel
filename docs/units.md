@@ -154,8 +154,9 @@ ruled (al-Malikiyya on 15 May is the ALA's, #226 ruling 2).
   The Lebanese army has no sim unit, so its token is map-only (owner, 27 October 2026: "Map-only token (Recommended)"):
   in both loops it stands at its dated anchor, al-Malikiyya from 6 June to 8 July 1948, and never moves or fights
   (`UnitRoster.MapOnly`; it is the only Arab army row with no starting force).
-  A drawn force's token has no code-built figure: it is drawn only once its figure has arrived, so a missing or damaged
-  bundle draws nothing. In the legacy loop, three figures (Q-UI-3 at full strength: the rows give only the sourced 15 May
+  A drawn force's token has no code-built figure: it waits until its figure has arrived. If the figure fails to load
+  (its bundle is missing or damaged), the token is drawn with the plain built-in figure instead (owner, 31 October 2026:
+  "Yes, fallback in v0.3.2"; `UnitFigures.Failed`). In the legacy loop, three figures (Q-UI-3 at full strength: the rows give only the sourced 15 May
   strength; owner, 17 October 2026, #226); in the GDD loop, Q-UI-3 by the sim unit's strength ("Tokens from the state"); under the neutral pennant (Q-ART-1). Its spot never stands on ground Israel held on its
   window's first day (#226, ruling 9; `control_hexes_1948_49.yaml`). The card leaves out Israel's call-up line. The
   goldens do not move. Tests: `UnitsInPlayTests.OnlyTheForcesWithAFigureAreDrawnAndOnlyOnceItHasArrived`,
@@ -240,10 +241,15 @@ dated windows (`UnitRoster.FromState`; impact plan §2.6). The legacy loop keeps
 deletes it.
 - **One token per military unit** whose row is on the map, grouped per hex ((q, r) order). Unit i of a new game is the
   starting force `Content.StartingForces[i]` (R-UNIT-006), and that row gives the card, the flag, the headgear and the
-  vehicles. A halutz, or a unit with no row, draws no token. An Arab force's token still waits for its Collection figure.
+  vehicles. A halutz draws no token. A raised Israeli recruit, brigade, artillery or armoured-car unit has no starting row; it
+  gets a presentation-only token that uses the first Israeli starting brigade row as its visual default and its sourced
+  strength as the full-strength figure (`UnitRoster.RaisedToken`; nothing is added to the sim state). An Arab force's token still waits for its Collection
+  figure.
 - **The sim hex is authoritative.** A unit on its starting hex stands on its starting anchor's spot (UnitPlacer's one-hex
   offset still clears the town kits and the roads). A unit that moved stands within one hex of its new hex, off the
-  hexes the other tokens hold; that spot is placed once and cached, so a rebuild places only the units that moved. Its
+  hexes the other tokens hold. When that search finds no clear spot, the unit stands compact on its own sim hex, apart
+  from the other tokens where it can, and a spot that is not clear is accepted rather than draw nothing, so every unit
+  can be selected (owner, v0.3.0 RC, 25 October 2026; `UnitPlacer.OnOwnHex`). The spot is placed once and cached, so a rebuild places only the units that moved. Its
   card names no place (no source does) and gives the row's sources.
 - **Figures follow Q-UI-3** (owner, 15 October 2026; #226): 3 at two thirds or more of full strength, 2 at a third or
   more, 1 below that. Full strength is the sourced strength the unit started with (Q-UNIT-4), so a new game draws three
@@ -274,9 +280,9 @@ own root rotation kept (the FBX axis turn, -90 degrees about X), so the camera's
 | C09 irregular | the Arab Liberation Army's first two figures | en.wiki Arab Liberation Army: "an irregular army" of volunteers | the row's windows |
 | ALA infantry (Tal Heuberger, generated) | the Arab Liberation Army's third figure, beside two C09; the token waits only for C09, and the third joins when its own bundle arrives | the row; owner, 27 October 2026 (#756: "Sign off all 19"; "Third figure (Recommended)") | the row's windows |
 | Egyptian infantry (Tal Heuberger, generated) | the Egyptian Expeditionary Force's three figures, one token (in the legacy loop the first anchor whose window holds the date) | the row; owner, 27 October 2026 (#756: "Sign off all 19"; "One token") | the row's windows |
-| H02 65 mm gun ("Napoleonchik") | on the base behind the trio: Carmeli, Givati, Harel, Yiftach, Negev | Ben-Gurion's diary, 11 July 1948 (the cannon distribution) | 11 July 1948 |
-| H01 sandwich armoured car | on the base behind the trio: Givati | Wikimedia Commons, "Givati force" (GPO, Zoltan Kluger, 12 June 1948): a jeep leading an armoured unit of the Givati Brigade; the type is read from the picture (#1536) | 12 June 1948 |
-| H03 Willys jeep | on the base behind the trio: Harel, Negev | Harel: the Burma Road jeep convoy (Isseroff); Negev: the Negev Beasts' jeep unit at Negba (en.wiki Battles of Negba) | 1 June and 2 June 1948 |
+| H02 65 mm gun ("Napoleonchik") | on the front of the base, before the trio: Carmeli, Givati, Harel, Yiftach, Negev | Ben-Gurion's diary, 11 July 1948 (the cannon distribution) | 11 July 1948 |
+| H01 sandwich armoured car | on the front of the base, before the trio: Givati | Wikimedia Commons, "Givati force" (GPO, Zoltan Kluger, 12 June 1948): a jeep leading an armoured unit of the Givati Brigade; the type is read from the picture (#1536) | 12 June 1948 |
+| H03 Willys jeep | on the front of the base, before the trio: Harel, Negev | Harel: the Burma Road jeep convoy (Isseroff); Negev: the Negev Beasts' jeep unit at Negba (en.wiki Battles of Negba) | 1 June and 2 June 1948 |
 
 - **The vehicles are data:** `vehicles` in `units_1948.yaml` (`type`, `from`, `note`, `sources`), checked by
   `UnitData.Parse` and `tools/tests/test_units_1948.py`. A vehicle stays for the rest of the row's windows.
@@ -388,7 +394,7 @@ change. If no safe override exists, the token remains drawn at its original spot
 
 The candidates are tried in four rounds:
 1. The centres of the anchor's own hex and its six neighbours, with the token at full size.
-2. If none is clear, those centres plus six points inside each hex, with the token **compact**: half the ring and half
+2. If none is clear, those centres plus 18 points inside each hex (three rings of six, at 0.25, 0.45 and 0.65 of the circumradius: `UnitPlacer.InsideOffsets`), with the token **compact**: half the ring and half
    the trio's spread, to fit beside a town. Yiftach at Lydda and the squadron at Herzliya stand compact.
 3. If the whole neighbourhood is town, the compact point that reaches least deep into it (then the nearest; with a
    `toward` point, the nearest to that). The map then keeps a clearing of the compact ring's radius free of the kits'
