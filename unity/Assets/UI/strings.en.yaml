@@ -1048,6 +1048,7 @@ arms.no_attention: "Not enough Attention for this purchase. Withdraw another ord
 # #2198 (owner, 2 Nov 2026: "Refuse buys over ceiling (Recommended)"): Pools.BuyArms's refusal, word for word, shown in the
 # end-of-turn toast.
 arms.refused_debt_ceiling: "Buying that many Arms would take the debt past its ceiling"
+arms.refused_stock_capacity: "That is more Arms than the stock can hold"
 
 # #731 stock summaries in the report and Why.
 report.stock_line: "{0}: {1}"
