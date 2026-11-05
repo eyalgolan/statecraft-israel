@@ -453,7 +453,7 @@ public class CityPanelTests
     [Test]
     public void TrainingAcrossBothTracksStopsAtTheIdleCivilianLimit()
     {
-        // One civilian without work: once recruits take it, the exact Halutz preview refuses the other track.
+        // One civilian without work: once recruits take it, halutzim cannot (Training.Available counts every track).
         using var ui = new UiTestKit();
         var bridge = Bridge(En, Counts(50, 49));
         using var panel = Panel(ui, bridge, En);
@@ -1292,8 +1292,8 @@ public class CityPanelTests
     [Test]
     public void AQueuedReassignmentIsCountedOnceAgainstTheCiviliansWithoutWork()
     {
-        // #1552: Training.Available (for Reassign) and the exact preview (for Train) each take a queued reassignment off the
-        // idle civilians once. Two without work: one craftsman group ordered leaves one for the halutz group and for a Train.
+        // #1552: Training.Available already takes a queued reassignment off the idle civilians, so the panel must not take it
+        // off again. Two civilians without work: one craftsman group ordered leaves one for the halutz group and for a Train.
         using var ui = new UiTestKit();
         var bridge = Bridge(En, s => { Counts(50, 48)(s); Qualify(2, 0, 3)(s); });
         using var panel = Panel(ui, bridge, En);

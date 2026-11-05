@@ -133,8 +133,8 @@ namespace Statecraft.Game.UI
                 : text.Format("city.workers_ordered", Groups(text, target)));
 
             // Train, for each facility the city has (Training.HasFacility: its own, D-D5, or a built camp site's, R-CAMP-001):
-            // each press orders one more group. The exact preview below applies R-TRAIN-001's idle-civilian limit after any
-            // earlier rejected, state-neutral orders, as End turn does; Training.Available counts every queued order instead.
+            // each press orders one more group. The exact preview below asks whether End turn would refuse that order, and
+            // R-TRAIN-001's idle-civilian limit is Training.Available's, over the queue less the orders the preview refuses.
             foreach (var type in c.UnitTypes.Where(t => t.Facility != "" && Training.HasFacility(c, s, id, t.Facility)))
             {
                 var old = bridge.QueuedLike(new Train(id, type.Id, 1));
@@ -148,12 +148,17 @@ namespace Statecraft.Game.UI
                 if (slot >= 0) queue[slot] = press; else queue.Add(press);
                 // As End turn runs it (GameSession.EndTurn: Step from the turn's start over the committed orders, then the
                 // queue) and as ArmsPurchasePresenter asks it.
-                var accepted = !Simulation.Preview(c, bridge.TurnStart, bridge.Session.Committed.Concat(queue).ToList())
-                    .Rejected.Any(x => ReferenceEquals(x.Command, press));
+                var preview = Simulation.Preview(c, bridge.TurnStart, bridge.Session.Committed.Concat(queue).ToList());
+                var accepted = !preview.Rejected.Any(x => ReferenceEquals(x.Command, press));
+                // #1548 (owner, 24 October 2026: "Yes, count them"): every queued Train, Reinforce and reassignment still takes
+                // its groups from the civilians without work, as Training.Available counts them (the sim does not take a
+                // reassigned craftsman off them), less only the orders End turn will refuse anyway. The old order's own count
+                // is in the queue, so one more group needs one free.
+                var free = Training.Available(s, id, bridge.Queued.Where(x => !preview.Rejected.Any(r => ReferenceEquals(r.Command, x))));
                 var row = Row(host, $"city-train-{type.Id}-row");
                 Button(row, "city-train-" + type.Id, text.Format("city.train_" + type.Id, PlayerText.Money(c, "treasury", type.TrainingCost), Turns(text, type.TrainingTurns)),
                     () => bridge.Queue(new Train(id, type.Id, ordered + 1)))
-                    .SetEnabled(accepted);
+                    .SetEnabled(accepted && free >= 1);
                 if (ordered > 0) Line(row, $"city-train-{type.Id}-ordered", text.Format("city.train_ordered", ordered));
             }
 

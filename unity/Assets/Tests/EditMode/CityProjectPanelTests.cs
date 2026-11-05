@@ -297,7 +297,8 @@ public class CityProjectPanelTests
         var text = hebrew ? He : En;
         var target = C.SettlementTargets.Single(x => x.Id == "jaffa");
         using var ui = new UiTestKit();
-        var bridge = Bridge(text, s => s.Settlements[target.Id] = new SettlementControl(depopulated: true));
+        // With the policy the transit camp is refused for the shared reason too, not for the policy first (as the tests above).
+        var bridge = Bridge(text, s => { s.Settlements[target.Id] = new SettlementControl(depopulated: true); s.Policies[MapActions.MaabarotPolicy] = 1; });
         Assert.IsNotEmpty(Projects.CitiesFor(C, bridge.State, target.Q, target.R),
             "precondition: a city can otherwise build on the target hex");
         using var panel = Panel(ui, bridge, text);
