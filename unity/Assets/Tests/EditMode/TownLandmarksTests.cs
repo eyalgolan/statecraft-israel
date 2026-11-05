@@ -694,7 +694,7 @@ public class TownLandmarksTests
         // LateUpdate is private; invoking it reflectively allocates the argument array/result that this assertion must exclude.
         // Tick is LateUpdate's allocation-free production seam, while the neighbouring residency tests cover their wiring.
         t.Tick();
-        Assert.That(() => { for (int i = 0; i < 8; i++) t.Tick(); }, Is.Not.AllocatingGCMemory());
+        Assert.That(() => { for (int i = 0; i < 8; i++) t.Tick(); }, UnityEngine.TestTools.Constraints.ConstraintExtensions.AllocatingGCMemory(Is.Not));
         Assert.IsFalse(t.RefreshPending, "settled ticks leave no work pending");
     }
 

@@ -383,7 +383,7 @@ namespace Statecraft.Game.Map
                 {
                     TerrainActive = terrain.isActiveAndEnabled,
                     DrawHeightmap = terrain.drawHeightmap,
-                    ColliderActive = collider != null && collider.isActiveAndEnabled,
+                    ColliderActive = collider != null && collider.enabled,   // a Collider is not a Behaviour; the terrain's own check covers the object being active
                     TerrainData = terrain.terrainData != null ? terrain.terrainData.GetInstanceID() : 0,
                     LocalToWorld = terrain.transform.localToWorldMatrix,
                 };
@@ -404,7 +404,7 @@ namespace Statecraft.Game.Map
             bool found = false;
             foreach (var (terrain, collider) in grounds)
             {
-                if (!terrain.isActiveAndEnabled || !terrain.drawHeightmap || collider == null || !collider.isActiveAndEnabled ||
+                if (!terrain.isActiveAndEnabled || !terrain.drawHeightmap || collider == null || !collider.enabled ||
                     !collider.Raycast(ray, out var candidate, found ? hit.distance : 1_000_000f)) continue;
                 hit = candidate;
                 found = true;
