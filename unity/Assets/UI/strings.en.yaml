@@ -1125,6 +1125,7 @@ why.cause.workshop_paused.debt_ceiling: "{0}: an arms workshop's next cycle wait
 why.cause.food_harvest: "{0}: the plowed land yielded {1} units of Food"
 why.cause.food_shortage: "Food ran out: {0} of {1} units of the month's need went unmet"
 why.cause.food_without_imports: "No Food imported (foreign currency crisis): the stock fell to {0} units"
+why.cause.food_imported: "The month's eating and Food imports brought the stock to {0} units"
 why.cause.prisoner_food: "The prisoners held ate {0} units of Food"
 why.cause.prisoner_food_shortage: "The prisoners held went short of {0} units of Food: {1} {2}"
 why.cause.craftsmen_returned: "{0}: {1} of craftsmen returned to civilian life and keep their training"
@@ -1237,6 +1238,7 @@ dollars.refused_monthly: "That is more dollars than may be converted this month"
 dollars.refused_total: "That would pass the total of dollars that may be converted"
 dollars.refused_reserves: "There are not enough dollars in the reserves"
 why.cause.dollars_converted: "Converted {0} of foreign currency into Money: {1}"
+why.cause.dollars_converted_fx: "Foreign currency converted into Money: {1}"
 
 # Read-only WebGL companion (#1119); Hebrew additions await native review.
 companion.title: "Game companion"

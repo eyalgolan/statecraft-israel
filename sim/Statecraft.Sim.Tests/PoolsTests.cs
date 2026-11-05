@@ -62,6 +62,52 @@ public class PoolsTests
         Assert.Equal(0.4, next.Indicators["food_supply"]);
     }
 
+    // #2527: the month's eating and the import top-up add their own Why line, and the Food row's lines add up to the
+    // stock's change (the line nets the eating and the import, so it stays silent in a steady turn and matches the
+    // change when the stock starts under cover).
+    [Fact]
+    public void TheEatingAndImportAddTheirOwnWhyLineAndTheFoodLinesAddUp()
+    {
+        var c = Gdd();
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        s.Food = 150;                   // under the 300 of cover, so the month's eating and import show a net +150
+        var r = StepWithWhy(c, s);
+        Assert.Equal(300, r.State.Food);
+        var line = Assert.Single(r.Why, w => w.Key == CauseKeys.FoodImported);
+        Assert.Equal(("economy", "food", 150.0), (line.System, line.Target, line.Delta));
+        Assert.Equal(new[] { "300" }, line.Args);
+        Assert.Equal(r.State.Food - 150, r.Why.Where(w => w.System == "economy" && w.Target == "food").Sum(w => w.Delta));
+    }
+
+    // #2527 review: below the month's need the shortage line is informational (delta 0, the unmet in its args), so the
+    // Food row's lines still add up to the stock's change: +260 = 0 + 260 for Food 40, need 100, cover 300.
+    [Fact]
+    public void BelowTheNeedTheShortageIsInformationalAndTheFoodLinesStillAddUp()
+    {
+        var c = Gdd();
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        s.Food = 40;                    // below the month's need of 100: 60 go unmet, the import brings the stock to its cover
+        var r = StepWithWhy(c, s);
+        Assert.Equal(300, r.State.Food);
+        Assert.Equal(60, r.State.FoodUnmet);
+        var shortage = Assert.Single(r.Why, w => w.Key == CauseKeys.FoodShortage);
+        Assert.Equal(0.0, shortage.Delta);
+        Assert.Equal(new[] { "60", "100" }, shortage.Args);
+        Assert.Equal("Food ran out: 60 of 100 units of the month's need went unmet", shortage.Message);
+        Assert.Equal(r.State.Food - 40, r.Why.Where(w => w.System == "economy" && w.Target == "food").Sum(w => w.Delta));
+    }
+
+    // #2527: a steady turn (the stock already at its cover) nets to nothing, so no line is invented.
+    [Fact]
+    public void ASteadyTurnAddsNoImportLine()
+    {
+        var c = Gdd();
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var r = StepWithWhy(c, s);
+        Assert.Equal(300, r.State.Food);
+        Assert.DoesNotContain(r.Why, w => w.Key == CauseKeys.FoodImported);
+    }
+
     // R-FOOD-002 (Q-POOL-4: the fx crisis cuts the imports, not food_supply directly)
     [Fact]
     public void ACurrencyCrisisCutsTheImportsSoTheStockFalls()
@@ -455,8 +501,8 @@ public class PoolsTests
             Pools.Consume(c, f, c.RulesAt(f.Date).Mvp!, why);
             var keyed = why.Where(w => w.Key != "").ToList();
             Assert.Equal(new[] { CauseKeys.FoodShortage, CauseKeys.FoodWithoutImports }, keyed.Select(w => w.Key));
-            Assert.Equal(-60.0, keyed[0].Delta);
-            Assert.Equal(new[] { "100" }, keyed[0].Args);              // the need; unmet is -Delta
+            Assert.Equal(0.0, keyed[0].Delta);                         // informational (#2527): the unmet is in the args
+            Assert.Equal(new[] { "60", "100" }, keyed[0].Args);        // the unmet, then the need
             Assert.Equal("Food ran out: 60 of 100 units of the month's need went unmet", keyed[0].Message);
             Assert.Equal(-40.0, keyed[1].Delta);
             Assert.Equal(new[] { "0" }, keyed[1].Args);                // the stock after eating
