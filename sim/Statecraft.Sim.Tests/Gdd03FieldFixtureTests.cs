@@ -154,7 +154,7 @@ public class Gdd03FieldFixtureTests
     }
 
     // Q37 and #1694 ("Enemy control ... disables the slot"): a field staffed at the freeze but no longer Israeli-held
-    // yields nothing while the others still yield. The assignment is not changed: loss and retake (27M-1) are not here.
+    // yields nothing while the others still yield. The assignment is not changed; retaking is in the settlement test below.
     [Fact] public void AFieldNoLongerIsraeliHeldYieldsNothing()
     {
         var c = Real(); var s = State(c, new[] { Person(InValleys), Person(InValleys) });
@@ -214,6 +214,45 @@ public class Gdd03FieldFixtureTests
         Assert.Empty(month.WorkEligibleIds);
         Assert.Equal(0, f.Yield(Rules(c), month, AllHeld(c)).Food);
         Refused(s, () => f.Staff(0, V1, israeliHeld: true));
+    }
+
+    // R-FIELD-002 and R-CITY-010 under gdd-0.3 (#2471): a staffed field still Israeli-held at settlement adds its 2 / 3 / 5
+    // to the national Food stock once, in field-id order, one cause each; an unstaffed field adds nothing. A field lost
+    // (at the freeze or only by settlement) adds nothing and keeps its farmer, tier and assignment (D6: "its people stay");
+    // retaken, it yields again from the next snapshot with no new assignment (D6: "everything resumes and nothing is deleted").
+    [Fact] public void StaffedHeldFieldsSettleIntoTheFoodStockAndALostFieldResumesOnRetaking()
+    {
+        var c = Real();
+        var s = State(c, new[] { Person(InValleys, tier: CivilianTier.Novice), Person(InValleys, tier: CivilianTier.Trained),
+            Person(InValleys, tier: CivilianTier.Veteran) });
+        var f = new Gdd03FieldFixture(c, s, Array.Empty<Gdd03FixtureSlot>());
+        f.Staff(2, V3, israeliHeld: true); f.Staff(0, V1, israeliHeld: true); f.Staff(1, V2, israeliHeld: true);
+        var people = s.PopulationLedger.Units;
+        s.Food = 7;
+
+        var why = new List<Cause>();
+        var settled = f.Settle(Rules(c), Month(c, s), AllHeld(c), why);
+        Assert.Equal(10, settled.Food);
+        Assert.Equal(17, settled.Fields.Values.Count(food => food == 0)); // the unstaffed fields: no Food and no cause
+        Assert.Equal(17, s.Food);
+        Assert.Equal(new[] { (V1, 2.0), (V2, 3.0), (V3, 5.0) }, why.Select(x => (x.Args[0], x.Delta)));
+        Assert.All(why, x => Assert.Equal(("economy", "food", CauseKeys.FieldFood), (x.System, x.Target, x.Key)));
+
+        // Lost after the freeze: control is checked again at settlement.
+        var held = AllHeld(c); held.Remove(V1);
+        why.Clear();
+        f.Settle(Rules(c), Month(c, s), held, why);
+        Assert.Equal(17 + 8, s.Food);
+        Assert.Equal(new[] { V2, V3 }, why.Select(x => x.Args[0]));
+        // Lost at the freeze: the snapshot does not count the farmer as working.
+        f.Settle(Rules(c), Month(c, s, V1), held, new List<Cause>());
+        Assert.Equal(17 + 8 + 8, s.Food);
+        Assert.Equal(people, s.PopulationLedger.Units); // same ids, tiers and assignments
+
+        // Retaken: the next snapshot yields again, with no Staff call.
+        f.Settle(Rules(c), Month(c, s), AllHeld(c), new List<Cause>());
+        Assert.Equal(17 + 8 + 8 + 10, s.Food);
+        Assert.Equal(people, s.PopulationLedger.Units);
     }
 
     // R-FIELD-002 under gdd-0.1 is unchanged: fields need no workers there, and this fixture refuses that ruleset.
