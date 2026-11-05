@@ -18,5 +18,5 @@ The books behind these lines are Hughes, *Middle East Railways* (1981), and Cott
 ## Not checked
 
 - A web-research pass on 4 November 2026 (`.superpowers/coordination/codex-results/railfuel-web.md`, not in the repository) also reported Google Books snippets: the Palestine and Transjordan administration report for 1945, *A Survey of Palestine* (1946: "all locomotives have been converted from coal to oil burning"), Railway Gazette's *Overseas Railways* (1948), and *World Railways* (1956) on Israel Railways' steam stock "(oil burning)" with "Fuel oil, obtained locally". On 2026-11-05 Google Books answered with a robot check, so none of those was opened; they stay unconfirmed.
-- No source found says whether Israel Railways went back to coal in 1948-50, when the Haifa refinery was largely idle. The game's train runs from 2 March 1950 and assumes it still burned oil.
+- No source found says whether Israel Railways went back to coal in 1948-50. The game's train runs from 2 March 1950 and assumes it still burned oil.
 - No period description of the smoke's colour was found. Dark grey-black at the chimney thinning to grey is the general look of oil-fired exhaust, a design choice, not a sourced detail of these locomotives.
