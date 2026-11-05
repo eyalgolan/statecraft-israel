@@ -66,8 +66,11 @@ public class CityPanelTests
     public void GameOverDisablesTheHexPanelsOrderControlsButNotItsDisclosure()
     {
         using var ui = new UiTestKit();
-        Assert.AreEqual(SaveGame.Gdd03Ruleset, C.Ruleset, "precondition: the real content uses the gdd-0.3 panel");
-        var bridge = Bridge(En, s => { s.GameOver = GameOverCodes.MvpEnded; s.Policies[MapActions.MaabarotPolicy] = 1; });
+        var c = Gdd03Content();   // the shipped eras run gdd-0.1; the read-only rule is gdd-0.3's (OrderButton)
+        Assert.AreEqual(SaveGame.Gdd03Ruleset, c.Ruleset, "precondition: the content under test runs gdd-0.3");
+        var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
+        g.State.GameOver = GameOverCodes.MvpEnded; g.State.Policies[MapActions.MaabarotPolicy] = 1;
+        var bridge = new SimBridge(g, En);
         using var panel = Panel(ui, bridge, En);
         using var end = new EndScreenPresenter(ui.Root, bridge, En, null);
         Assert.IsTrue(end.IsOpen, "precondition: the ended game opens its end screen");
