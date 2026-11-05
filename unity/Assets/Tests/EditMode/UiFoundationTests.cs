@@ -40,6 +40,43 @@ public class UiFoundationTests
         }
     }
 
+    /// <summary>#2566: the visible X is not the close button's only name. Static red-first: on main every tooltip is
+    /// empty, so the first English assertion (Cabinet) fails.</summary>
+    [Test]
+    public void EveryScreenCloseButtonHasItsLocalizedNameInEnglishAndHebrew()
+    {
+        var keys = new[] { "hud.nav.cabinet", "hud.nav.budget", "hud.nav.defence", "hud.nav.why", "nav.timeline",
+            "hud.nav.encyclopedia", "hud.nav.objectives", "hud.nav.settings" };
+        var expected = new[]
+        {
+            new[] { "Close Cabinet", "Close Budget", "Close Defence", "Close Why?", "Close Timeline",
+                "Close Encyclopedia", "Close Objectives", "Close Settings" },
+            new[] { "סגירה: ממשלה", "סגירה: תקציב", "סגירה: ביטחון", "סגירה: למה?", "סגירה: ציר הזמן",
+                "סגירה: אנציקלופדיה", "סגירה: יעדים", "סגירה: הגדרות" },
+        };
+        for (int language = 0; language < expected.Length; language++)
+        {
+            var path = language == 0 ? UiPaths.Strings : UiPaths.StringsHebrew;
+            var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(path).text,
+                language == 0 ? "strings.en.yaml" : "strings.he.yaml");
+            using var ui = new UiTestKit();
+            for (int i = 0; i < ScreenNav.Screens.Length; i++)
+                ui.Q<Button>("nav-" + ScreenNav.Screens[i]).text = text[keys[i]];
+            // Reflection keeps this red-first test source-compatible with main, where the UiText overload is absent:
+            // it falls back to main's one-argument constructor and reaches the tooltip assertion below.
+            var localized = typeof(ScreenNav).GetConstructor(new[] { typeof(VisualElement), typeof(UiText) });
+            using var nav = localized == null ? new ScreenNav(ui.Root)
+                : (ScreenNav)localized.Invoke(new object[] { ui.Root, text });
+
+            for (int i = 0; i < ScreenNav.Screens.Length; i++)
+            {
+                var tooltip = ui.Q<Button>("screen-close-" + ScreenNav.Screens[i]).tooltip;
+                Assert.AreEqual(expected[language][i], tooltip, $"{path}: {ScreenNav.Screens[i]}");
+                Assert.AreNotEqual("X", tooltip, $"{path}: {ScreenNav.Screens[i]} is named, not just its glyph");
+            }
+        }
+    }
+
     /// <summary>#1035's ruling: the X's hit area is 44 screen px at every window size, so in panel units it grows as
     /// the panel shrinks. On the web a screen pixel is a CSS pixel, so the device-pixel ratio multiplies the target
     /// (44 device px was about 15 CSS px on a DPR-3 phone; the ruling's own phone figure is in CSS px).</summary>

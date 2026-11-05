@@ -16,6 +16,12 @@ namespace Statecraft.Game.UI
 
         public static ulong NewSeed() => (ulong)DateTime.UtcNow.Ticks;
 
+        /// <summary>Renders a language-independent save-notice key in the current UI language.</summary>
+        internal static string NoticeText(UiText text, string key) =>
+            key == "save.unreadable"
+                ? text.Format(key, text["save.reason_other"])
+                : text[key];
+
         public static GameSession Begin(Content c, SaveStore store, Func<ulong> newSeed, List<string> notes, UiText text, bool fresh = false) =>
             Begin(c, store, newSeed, notes, text, out _, fresh);
 
@@ -23,8 +29,14 @@ namespace Statecraft.Game.UI
         /// new game, whether there was no save, the save was set aside, or <paramref name="fresh"/> ignored it. The start
         /// screen offers Continue only when it is true.</summary>
         public static GameSession Begin(Content c, SaveStore store, Func<ulong> newSeed, List<string> notes, UiText text, out bool resumed,
-            bool fresh = false)
+            bool fresh = false, List<string>? noticeKeys = null)
         {
+            void Note(string key)
+            {
+                noticeKeys?.Add(key);
+                notes.Add(NoticeText(text, key));
+            }
+
             resumed = false;
             if (!fresh)
             {
@@ -38,7 +50,8 @@ namespace Statecraft.Game.UI
                     foreach (var kind in warnings)
                     {
                         UnityEngine.Debug.LogWarning("Autosave loaded with a warning: " + kind);
-                        if (text.Has("save.warning." + kind)) notes.Add(text["save.warning." + kind]);
+                        var key = "save.warning." + kind;
+                        if (text.Has(key)) Note(key);
                     }
                     resumed = true;
                     return loaded;
@@ -52,9 +65,13 @@ namespace Statecraft.Game.UI
                     // A refusal with a code (a save from before the GDD cutover, or from a newer version: R-SAVE-001, R-SAVE-002)
                     // is said once, in the player's language (N4); anything else, and a code with no string, gets one short
                     // localised reason (#631): this path never throws, so the start is never blocked.
-                    if (e is SaveException refused && refused.Code != null && text.Has("save.refused." + refused.Code))
-                        notes.Add(text["save.refused." + refused.Code]);
-                    else notes.Add(text.Format("save.unreadable", text["save.reason_other"]));
+                    var refusedKey = e is SaveException refused && refused.Code != null
+                        ? "save.refused." + refused.Code
+                        : null;
+                    if (refusedKey != null && text.Has(refusedKey))
+                        Note(refusedKey);
+                    else
+                        Note("save.unreadable");
                 }
             }
             return GameSession.New(c, newSeed(), Mode.Historical);

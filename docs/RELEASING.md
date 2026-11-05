@@ -25,7 +25,7 @@ macOS IL2CPP parity check is not an MVP release gate.
    tag after a squash merge. Before building, check that the disk has several GB free for `unity/Library/Bee`.
 
    ```bash
-   "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression gzip -shareable -logFile "$PWD/unity-build-web-gz.log"
+   uv run tools/machine_lock.py --shared --wait-unity -- "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression gzip -shareable -logFile "$PWD/unity-build-web-gz.log"
    git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset
    golden_expect=(); while read -r name hash; do [[ -z "$name" || "$name" == \#* ]] || golden_expect+=(--expect "GOLDEN OK $name $hash"); done < sim/Statecraft.Sim.Tests/golden/manifest.txt
    # one GOLDEN OK line per manifest golden (#394), e.g. "GOLDEN OK hash1950 a08ff8504d862925563c8523a707b58ebe3bcaac0b504dc9ce7e028fc19eb0e4"
@@ -63,7 +63,7 @@ macOS IL2CPP parity check is not an MVP release gate.
    and only a `-shareable` build may be published. Check it and package it the same way:
 
    ```bash
-   "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression gzip -decompressionFallback -shareable -out Builds/Web-pages -logFile "$PWD/unity-build-web-pages.log"
+   uv run tools/machine_lock.py --shared --wait-unity -- "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression gzip -decompressionFallback -shareable -out Builds/Web-pages -logFile "$PWD/unity-build-web-pages.log"
    git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset
    uv run tools/web_check.py unity/Builds/Web-pages --query "golden&smoke=5" "${golden_expect[@]}" \
      --expect "SMOKE OK 5 turns 1948-10-15 d12c83ce94e3940f93ed21abe7c2c9957de099b2653961da90e87785e6405e79"
@@ -226,8 +226,9 @@ The gates, in order. The first one that fails ends the night as REFUSED, and not
    same bar as a release.
 3. The sim tests under `he_IL` and `en_US` (`sim-he_IL`, `sim-en_US`).
 4. The Unity warm-up and the full EditMode run (`editmode`), with at least one test and no failure.
-5. The two WebGL builds, the gzip one and the Pages one (`build-web`), with the nightly version stamped in after the
-   gates; the tree must be clean afterwards, and the stamp is never committed. Then both zips (`package`).
+5. The two WebGL builds, the gzip one (`build-web-gz`) and the Pages one (`build-web-pages`), with the nightly version
+   stamped in after the gates; the tree must be clean afterwards, and the stamp is never committed. Then the gzip
+   zip (`package-gz`) and the Pages zip (`package-pages`).
 6. `web_check.py` on both builds (`web-check`).
 7. Download size (`sizes`): compare the combined total of the data, wasm and framework files with this job's last
    published night (`state.json`'s `last_published`), even if that release is now a draft. On a first night with no
@@ -362,7 +363,7 @@ first (`python3 tools/build_sim_for_unity.py`), run Unity with graphics (not `-n
 `xvfb-run -a`), then encode the frames with ffmpeg:
 
 ```sh
-"$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity \
+uv run tools/machine_lock.py --shared --wait-unity -- "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity \
   -executeMethod MapCapture.Trailer -captureDir "$PWD/captures/<name>" -seed 1948 -logFile "$PWD/unity-trailer.log"
 ffmpeg -framerate 60 -i captures/<name>/frame-%05d.png -vf scale=out_color_matrix=bt709 \
   -c:v libx264 -preset slow -crf 16 -pix_fmt yuv420p -colorspace bt709 -color_primaries bt709 -color_trc bt709 \

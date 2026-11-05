@@ -94,8 +94,10 @@ sign-off.
 the English record's row and sources (an event's `text_he_sources`, else its own `sources`).
 
 A change to `translations/` is a change players get, so it needs a changelog entry (`scripts/oss/changelog_check.py`;
-`translations/README.md` excepted). `tools/package_release.py` refuses a build whose `StreamingAssets/translations`
-files and `bundle.json`'s packed texts differ, so the release gate checks the same translations every player reads.
+`translations/README.md` excepted). `tools/package_release.py` refuses a build unless the repository's `translations/`,
+the build's `manifest.json` and `bundle.json` lists and its `StreamingAssets/translations` files name the same files and
+each packed text matches its file, so the release gate checks the same translations every player reads, and a build that
+lost all of them is refused too (#2641).
 
 ## Order and format
 
