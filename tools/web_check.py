@@ -11,6 +11,7 @@ Usage (from the repo root):
   uv run tools/web_check.py unity/Builds/Web-disabled --query "golden" --expect "GOLDEN OK hash1950 a08ff8504d862925563c8523a707b58ebe3bcaac0b504dc9ce7e028fc19eb0e4" --expect "GOLDEN OK hash1952 5561fc51a03a25e7bad499bd2c9d8de156dea241118ac4c80bbf2e0fb50c97ef"
   uv run tools/web_check.py unity/Builds/Web-disabled --query "smoke-orders" --expect "SMOKE ORDERS OK 1948-06-15 08d9800eda4462ef165cc7ea6285fad059c030c0f87ad563e35c9789cc352d78"
   (the smoke-orders golden: one Move given through the unit card, docs/determinism.md)
+Every run needs a positive check: a nonblank --expect, --startscreen, --persistence or --first-save (#2690).
 Options: --query Q (page URL query, without '?'), --expect TEXT (repeatable), --fail REGEX (default: GOLDEN FAIL|SMOKE FAIL|BOOT FAIL),
 --timeout SECONDS (default 300), --stall SECONDS (fail when no console message arrives for that long; 0 = off),
 --swiftshader (software WebGL when there is no GPU), --dpr N (default 1), --shots DIR (reassemble the player's
@@ -983,6 +984,12 @@ def check_source(ap: argparse.ArgumentParser, a) -> None:
         ap.error("give exactly one of build and --url")
 
 
+def check_positive(ap: argparse.ArgumentParser, a) -> None:
+    """Every run must name console evidence to see or a driver whose completion proves success."""
+    if not any(text.strip() for text in a.expect) and not (a.startscreen or a.persistence or a.first_save):
+        ap.error("require at least one positive check: a nonblank --expect, --startscreen, --persistence or --first-save")
+
+
 def with_query(url: str, query: str) -> str:
     """`url` with `query` added: after ? or, when the URL already has a query, after &."""
     if not query:
@@ -1002,6 +1009,7 @@ def main() -> int:
     ap = parser()
     a = ap.parse_args()
     check_source(ap, a)
+    check_positive(ap, a)
     if a.build is not None and not (a.build / "index.html").exists():
         sys.exit(f"{a.build}/index.html not found")
     server, proc, page = None, None, None

@@ -55,7 +55,8 @@ namespace Statecraft.Game.EditorTools
         };
 
         /// <summary>Why a shareable build may not be made, or null: every event with a sensitive tag needs the owner's
-        /// sensitivity review first (status sensitivity-reviewed; docs/m3-release.md, M3 final review I4), every row the
+        /// sensitivity review first (status sensitivity-reviewed; docs/m3-release.md, M3 final review I4), every consequence
+        /// card and event with variants needs a person's reviewed_by (ReleaseGate.AlternateUnsigned; R-ALT-011), every row the
         /// starting forces come from must be fact-checked (ReleaseGate.StartingForcesUnchecked; R-UNIT-006), every settlement
         /// target row sensitivity-reviewed (ReleaseGate.SettlementTargetsUnchecked; Q-TGT-3 (b)), and so does every
         /// sensitive event photograph the build would carry (EventImageCatalog; docs/event-images.md), and every sensitive
@@ -70,6 +71,10 @@ namespace Statecraft.Game.EditorTools
             var reasons = new List<string>();
             if (open.Count > 0)
                 reasons.Add("a shareable build needs the owner's sensitivity review of: " + string.Join(", ", open) + " (set status: sensitivity-reviewed; see docs/m3-release.md)");
+            // R-ALT-011, Q-ALT-9: every alternate card needs a person's sign-off before it may be shared.
+            if (Statecraft.Sim.ReleaseGate.AlternateUnsigned(c) is { Count: > 0 } unsigned)
+                reasons.Add("a shareable build needs a person's reviewed_by for these alternate cards: "
+                    + string.Join(", ", unsigned) + " (see docs/m3-release.md)");
             // R-UNIT-006, Q-START-3 (#743): the rows a new game starts a unit from are game state, so a person checks them first.
             if (Statecraft.Sim.ReleaseGate.StartingForcesUnchecked(c) is { Count: > 0 } forces)
                 reasons.Add("a shareable build needs these starting forces' rows fact-checked: " + string.Join(", ", forces)
@@ -250,20 +255,41 @@ namespace Statecraft.Game.EditorTools
             File.WriteAllText(Path.Combine(folder, PhotoManifestName), PhotoManifestWithOpeningJson(photos, Flag("-shareable"), opening));
         }
 
+        /// <summary>Validates the Web settings before changing any project setting, applies them for <paramref name="build"/>,
+        /// then restores the committed settings even when the build throws.</summary>
+        static void WithWebSettings(string? compression, bool decompressionFallback, string? textureSubtarget,
+            Action<WebGLTextureSubtarget?> build)
+        {
+            var format = Compression(compression);
+            var sub = TextureSubtarget(textureSubtarget);
+            var savedSubtarget = EditorUserBuildSettings.webGLBuildSubtarget;
+            try
+            {
+                ProjectSetup.Apply();
+                PlayerSettings.WebGL.compressionFormat = format;
+                PlayerSettings.WebGL.decompressionFallback = decompressionFallback;
+                if (sub.HasValue) EditorUserBuildSettings.webGLBuildSubtarget = sub.Value;
+                build(sub);
+            }
+            finally
+            {
+                EditorUserBuildSettings.webGLBuildSubtarget = savedSubtarget;
+                ProjectSetup.Apply();
+            }
+        }
+
         public static void Web()
         {
             if (RefuseUnlessShareable()) return;
             var name = Arg("-compression") ?? "disabled";
-            ProjectSetup.Apply();
-            PlayerSettings.WebGL.compressionFormat = Compression(name);
-            PlayerSettings.WebGL.decompressionFallback = Flag("-decompressionFallback");   // off by default: itch.io and web_check send .gz/.br with Content-Encoding (#879); Pages needs the fallback
-            var savedSubtarget = EditorUserBuildSettings.webGLBuildSubtarget;
-            var sub = TextureSubtarget(Arg("-textureSubtarget"));
-            if (sub.HasValue) EditorUserBuildSettings.webGLBuildSubtarget = sub.Value;
-            bool ok;
+            bool ok = false;
             var web = Arg("-out") ?? "Builds/Web-" + name;
-            try { ok = Run(BuildTarget.WebGL, web, sub.HasValue ? (int)sub.Value : 0); if (ok) WritePhotoManifest(web); }
-            finally { EditorUserBuildSettings.webGLBuildSubtarget = savedSubtarget; ProjectSetup.Apply(); }   // back to the committed settings
+            WithWebSettings(name, Flag("-decompressionFallback"), Arg("-textureSubtarget"), sub =>
+            {
+                // Fallback is off by default: itch.io and web_check send .gz/.br with Content-Encoding (#879); Pages needs it.
+                ok = Run(BuildTarget.WebGL, web, sub.HasValue ? (int)sub.Value : 0);
+                if (ok) WritePhotoManifest(web);
+            });
             ExitIfFailed(ok);
         }
 

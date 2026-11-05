@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using Statecraft.Sim;
@@ -37,6 +38,30 @@ public class PreviewTests
         var before = Snapshot();
         Preview.Run(Root, new DateTime(1949, 1, 1), GoldenRun.Seed, new[] { "tax_per_capita_per_year=0.00007" }, Show, 8);
         Assert.Equal(before, Snapshot());
+    }
+
+    [Fact]
+    public void HeadersUseInvariantDatesAndNumbers()
+    {
+        string Headers(CultureInfo culture)
+        {
+            var previous = CultureInfo.CurrentCulture;
+            try
+            {
+                CultureInfo.CurrentCulture = culture;
+                return string.Join("\n",
+                    Preview.Run(Root, new DateTime(1949, 1, 1), GoldenRun.Seed,
+                            None, Array.Empty<string>(), 8)
+                        .Split('\n')
+                        .Where(line => line.StartsWith("Preview:", StringComparison.Ordinal)
+                            || line.StartsWith("Final state,", StringComparison.Ordinal)));
+            }
+            finally { CultureInfo.CurrentCulture = previous; }
+        }
+
+        Assert.Equal(
+            Headers(CultureInfo.InvariantCulture),
+            Headers(new CultureInfo("ar-SA")));
     }
 
     [Theory]

@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 namespace Statecraft.Game.Map.Collection
@@ -32,7 +33,8 @@ namespace Statecraft.Game.Map.Collection
             public readonly long Bytes;
             public readonly string Sha256;
             public BundleCheck(uint crc, long bytes, string sha256) { Crc = crc; Bytes = bytes; Sha256 = sha256; }
-            public override string ToString() => $"{Crc} {Bytes} {Sha256}";
+            public override string ToString() =>
+                FormattableString.Invariant($"{Crc} {Bytes} {Sha256}");
         }
 
         /// <summary>Reads <see cref="ChecksFile"/>; null when any line is malformed (so a damaged list checks nothing).</summary>
@@ -44,7 +46,10 @@ namespace Statecraft.Game.Map.Collection
                 var line = raw.Trim();
                 if (line.Length == 0) continue;
                 var f = line.Split(' ');
-                if (f.Length != 4 || !uint.TryParse(f[1], out var crc) || !long.TryParse(f[2], out var bytes) || f[3].Length != 64)
+                if (f.Length != 4
+                    || !uint.TryParse(f[1], NumberStyles.None, CultureInfo.InvariantCulture, out var crc)
+                    || !long.TryParse(f[2], NumberStyles.None, CultureInfo.InvariantCulture, out var bytes)
+                    || f[3].Length != 64)
                     return null;
                 found[f[0]] = new BundleCheck(crc, bytes, f[3]);
             }
@@ -56,7 +61,7 @@ namespace Statecraft.Game.Map.Collection
         {
             using var f = System.IO.File.OpenRead(path);
             using var sha = System.Security.Cryptography.SHA256.Create();
-            return string.Concat(sha.ComputeHash(f).Select(x => x.ToString("x2")));
+            return string.Concat(sha.ComputeHash(f).Select(x => x.ToString("x2", CultureInfo.InvariantCulture)));
         }
 
         public const string People = "collection-people", Vehicles = "collection-vehicles", Animals = "collection-animals",
