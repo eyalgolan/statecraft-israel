@@ -19,7 +19,10 @@ namespace Statecraft.Game.Map.Routes
     /// over <see cref="LifeS"/>; so the same time draws the same trail, and sampling allocates nothing. Nothing shows while
     /// the train stands at either end (a puff left while it stood is never drawn), and nothing while it is hidden (the
     /// train's toggle or its date: this lives under the train, so it goes with it). Runs in play only, as the train does.
-    /// Presentation only: it reads no game state.</summary>
+    /// Presentation only: it reads no game state. [ExecuteAlways] only so that hiding or destroying the train in edit mode
+    /// (the EditMode tests, an edit-mode map build) drops the puffs and frees the meshes and materials too, as CombatBursts
+    /// does; the trail itself advances in play only (Update).</summary>
+    [ExecuteAlways]
     public sealed class TrainSteam : MonoBehaviour
     {
         public const string Name = "Steam";
@@ -144,7 +147,7 @@ namespace Statecraft.Game.Map.Routes
 
         void Hide() { for (int i = 0; i < shown.Length; i++) shown[i].enabled = false; }
 
-        void Update() => Sample(Clock());
+        void Update() { if (Application.isPlaying) Sample(Clock()); }
 
         void OnEnable() => RenderPipelineManager.beginCameraRendering += Face;
 
