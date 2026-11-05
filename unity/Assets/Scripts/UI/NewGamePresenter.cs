@@ -48,7 +48,7 @@ namespace Statecraft.Game.UI
             if (!Armed) { Armed = true; toast.Show(text["newgame.confirm"]); return; }
             Armed = false;
             bool deleted = true;
-            // An old autosave that cannot be deleted is overwritten by the next turn's autosave anyway, so the new game still starts.
+            // An old autosave that cannot be deleted is overwritten by the next autosave anyway (after the next order or turn), so the new game still starts.
             try { store.DeleteAutosave(); } catch (Exception e) { deleted = false; UnityEngine.Debug.LogWarning("Autosave could not be deleted: " + e); }
             bridge.Replace(GameSession.New(bridge.Content, seed(), Mode.Historical));
             if (deleted) toast.Clear(); else toast.Show(text["newgame.delete_failed"]);

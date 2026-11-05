@@ -427,6 +427,8 @@ namespace Statecraft.Sim
             //   deported                   a settlement target whose Deport the card follows: it fires only once the
             //                              player's Deport has depopulated that place, carries the displacement tag and
             //                              has exactly one option (R-EVT-007)
+            //   front_quiet                the front (Prisoners.Fronts) of an armistice_<front> card: under gdd-0.3 it may also
+            //                              come early, and again after a refusal, once that front is quiet (R-WAR-008)
             foreach (var rel in eventFiles.OrderBy(p => p, StringComparer.Ordinal))
             {
                 var e = Read<GameEvent>(readFile, rel);
@@ -1290,6 +1292,8 @@ namespace Statecraft.Sim
                 var at = $"types[{x.Id}]";
                 if (x.Kind != "population" && x.Kind != "unit") throw new ContentException(uf, at + ".kind", "must be population or unit");
                 if (x.Id == "recruit" && x.Side != "israel") throw new ContentException(uf, at + ".side", "a recruit must be an Israeli military unit (R-UNIT-003)");
+                // R-UNIT-003 (#2601): a graduating cohort keeps its type (Training.cs), so the recruit itself must be infantry.
+                if (x.Id == "recruit" && x.Class != "infantry") throw new ContentException(uf, at + ".class", "a recruit must be infantry (R-UNIT-003)");
                 // R-UNIT-001: a type with a side or a class is military, and needs both; the sides are units_1948.yaml's.
                 if (x.Side != "" || x.Class != "")
                 {
@@ -1334,6 +1338,9 @@ namespace Statecraft.Sim
                 // Q-CRAFT-1 (owner, 15 October 2026): a craftsman trains in a city with a completed industry project.
                 if (x.Id == Training.Craftsman && x.Facility != Training.Industry)
                     throw new ContentException(uf, at + ".facility", "a craftsman trains at industry (Q-CRAFT-1)");
+                // R-UNIT-008 (Q-ARTY-3, #2601): Training.Start uses whatever facility is configured, so the loader pins the camp.
+                if ((x.Class == Combat.ArtilleryClass || x.Class == "armour") && x.Facility != "military_camp")
+                    throw new ContentException(uf, at + ".facility", "an artillery or armour type trains at a military camp (R-UNIT-008)");
                 // R-UNIT-008 (Q-ARTY-3): a trained military type pays Arms a group; the recruit's is rules.yaml's
                 // arms_per_recruit_group (R-ARMS-003), so a second value on it would be read by nothing.
                 if (x.Side != "" && x.Id != "recruit")
@@ -1549,6 +1556,7 @@ namespace Statecraft.Sim
             ValidateObjectiveConditions(c);
             ValidateEventSites(c);
             ValidateEventPrisoners(c);
+            ValidateEventFrontQuiet(c);
             ValidateEventDeported(c);
             ValidateProjects(c);
             ValidateCorridors(c);
@@ -1563,6 +1571,19 @@ namespace Statecraft.Sim
                     throw new ContentException(e.File, $"events[{e.Id}].prisoners", $"unknown front '{e.Prisoners}' (one of {string.Join(", ", Prisoners.Fronts)})");
                 if (e.Options.Count != 1)
                     throw new ContentException(e.File, $"events[{e.Id}].options", "an exchange card has exactly one option");
+            }
+        }
+
+        /// <summary>An armistice card's front (R-WAR-008): a known front, on that front's own card, since Armistice.Resolved
+        /// reads the refused front from the id (R-WAR-006).</summary>
+        static void ValidateEventFrontQuiet(Content c)
+        {
+            foreach (var e in c.Events.Where(e => e.FrontQuiet != ""))
+            {
+                if (!Prisoners.Fronts.Contains(e.FrontQuiet))
+                    throw new ContentException(e.File, $"events[{e.Id}].front_quiet", $"unknown front '{e.FrontQuiet}' (one of {string.Join(", ", Prisoners.Fronts)})");
+                if (e.Id != "armistice_" + e.FrontQuiet)
+                    throw new ContentException(e.File, $"events[{e.Id}].front_quiet", $"'{e.FrontQuiet}' goes only on its own card, armistice_{e.FrontQuiet}");
             }
         }
 
@@ -1826,6 +1847,12 @@ namespace Statecraft.Sim
                     foreach (var k in CampKinds.Prepend(Projects.YishuvKind))
                         if (x.Kinds.Contains(k))
                             throw new ContentException(sf, at + ".kinds", $"a swamp site cannot also be a {k} site (its built record is its drained state)");
+                // R-SITE-004 (#2599): nor may a yishuv site be a camp site: they would share one built record, so building the yishuv
+                // would give the city the camp's facility (Training.HasFacility) without the camp action.
+                if (x.Kinds.Contains(Projects.YishuvKind))
+                    foreach (var k in CampKinds)
+                        if (x.Kinds.Contains(k))
+                            throw new ContentException(sf, at + ".kinds", $"a yishuv site cannot also be a {k} site (its built record is its built camp)");
                 if (x.Kinds.Contains(Projects.YishuvKind))
                 {
                     // R-SITE-005 (Q-SITE-3): one yishuv per hex, so SettlementPlacer keeps one kit per hex; other kinds may share it.

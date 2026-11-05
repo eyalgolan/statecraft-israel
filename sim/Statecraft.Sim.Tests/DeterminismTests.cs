@@ -69,4 +69,21 @@ public class DeterminismTests
         Assert.Equal(GoldenRun.Hash1950, GoldenHash);
         Assert.Equal(GoldenRun.Hash1952, GoldenHash1952);
     }
+
+    // #2511: a floating-point sum over a Dictionary follows its enumeration order, which .NET does not promise. 0.1, 0.2
+    // and 0.3 add to a different last bit in the two orders, so this fails unless the sum fixes the order (ordinal keys).
+
+    [Fact]
+    public void ApprovalDoesNotDependOnTheWeightsInsertionOrder()
+    {
+        var c = ContentLoader.Load(Fixture.Write());
+        var s = new GameState { Date = new DateTime(1948, 6, 1) };
+        EffectsSystem.Init(c, s);
+        s.Indicators["food_supply"] = s.Indicators["housing"] = s.Indicators["morale"] = 1.0;
+        var group = c.At(s.Date).VoterGroups[0];
+        group.Weights = new Dictionary<string, double> { ["food_supply"] = 0.1, ["housing"] = 0.2, ["morale"] = 0.3 };
+        var forward = EffectsSystem.Approval(c, s);
+        group.Weights = new Dictionary<string, double> { ["morale"] = 0.3, ["housing"] = 0.2, ["food_supply"] = 0.1 };
+        Assert.Equal(forward, EffectsSystem.Approval(c, s));
+    }
 }

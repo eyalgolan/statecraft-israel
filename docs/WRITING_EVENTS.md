@@ -47,6 +47,7 @@ schema too, or that test fails. Keep the comment when you copy a file.
 | `site` | no | A swamp site in `sites.yaml` whose works the event is about. In the GDD loop it fires only while that site is being worked (R-SWAMP-002); the legacy loop ignores it. See `docs/gdd/fields-and-swamps.md`. |
 | `prisoners` | no | Makes the event a front's prisoner-exchange card: `egypt`, `jordan` (which also returns the Iraqi prisoners), `lebanon` or `syria`. It fires only while that front holds prisoners or the player's soldiers (GDD loop only), has exactly one option, and returns them and scores when it resolves (R-POW-004). |
 | `deported` | no | Makes the event Deport's follow-up card for a settlement target whose residents stayed: it fires only once the player's Deport has depopulated that place, carries the `displacement` tag and has exactly one option (R-EVT-007). See "deported". |
+| `front_quiet` | no | On a front's armistice card only (`armistice_<front>`, one of `egypt`, `jordan`, `lebanon`, `syria`). Under `gdd-0.3` the card may also come before its `from`, and again after a refusal, once that front has been quiet long enough; it then takes the first soft slot (R-WAR-008, R-EVT-002). |
 | `options` | yes | One or more options. See below. |
 | `sources` | no by the loader, yes by the rules | A list of `{ url, checked }`. See below. |
 | `status` | no (default `draft`) | The review status. See below. |
@@ -555,18 +556,22 @@ Missing/null manifests, unknown/duplicate ids, blank reasons, and references fro
 rejoin options or objective cards to excluded ids are content errors. Every source file still parses strictly;
 the remaining catalogue receives the usual cross-reference, effect and sensitivity validation.
 
-The approved first slice excludes exactly `austerity_1949`, `forex_crisis_1951`, `iraqi_exodus` and
-`maabarot_policy`, including all their options. `clothing_rationing_1950`, `reparations_claim` and `reparations_vote`
-came back with #2224, and `israel_bonds` with its equal Debt (#2457, R-EFX-009).
-Two of these, `austerity_1949` and `maabarot_policy`, are hard anchors: they are unavailable in 0.3. Shared records, Hebrew, tags, status and human
-sign-offs remain unchanged and available to review tools, except that `israel_bonds` gained `debt_dollars` (its source
-pin changed; its text, Hebrew, sources and status did not). Removing an exclusion requires a reviewed follow-up
+The approved first slice excluded exactly `austerity_1949`, `clothing_rationing_1950`, `forex_crisis_1951`,
+`iraqi_exodus`, `israel_bonds`, `maabarot_policy`, `reparations_claim` and `reparations_vote`, including all their
+options (`reparations_vote` joined with #1575, for the same reason as `reparations_claim`).
+Six of these were hard anchors. Since then #2224 restored `clothing_rationing_1950`, `reparations_claim` and
+`reparations_vote`, `israel_bonds` came back with its equal Debt (#2457, R-EFX-009), and #2483 (owner, 4 November 2026)
+turned on `austerity_1949`, `forex_crisis_1951`, `iraqi_exodus` and `maabarot_policy`; no card is excluded in 0.3.
+Shared records, Hebrew, tags, status and human sign-offs remain unchanged and available to review tools, except that
+`israel_bonds` gained `debt_dollars` (its source pin changed; its text, Hebrew, sources and status did not). Removing
+an exclusion requires a reviewed follow-up
 with approved accounting and authored values; it does not itself approve a replacement or transfer a sign-off.
 There is no automatic review promotion, and all existing release gates still apply.
 
-R-EFX-001 rejects 0.3 writes to `food_supply` and `housing`; `rationing`/`maabarot` policy assignments;
-and Attention and defeat commands even if authored as compatibility indicators. Reserved target spellings are
-`attention`/`attention_*`, `defeat`, `city_loss_defeat` and `any_city_loss`. Under D1 (owner, 1 November 2026)
+R-EFX-001 rejects 0.3 writes to Attention and defeat commands even if authored as compatibility indicators.
+Reserved target spellings are `attention`/`attention_*`, `defeat`, `city_loss_defeat` and `any_city_loss`. Since
+#2483 (owner, 4 November 2026) 0.3 events write `food_supply` and `housing`, and the `rationing`/`maabarot`
+policy, as in 0.1 (maintainer reading: the policy writes come with the cards, #2483). Under D1 (owner, 1 November 2026)
 the passive budget, the monthly Food refill and foreign currency stay: `fx_reserves` and the `budget*`,
 `passive_budget*`, `food_refill` and `automatic_food_refill` spellings load in 0.3 as in 0.1. Other unknown
 targets remain errors. No new alias or conversion is provided.
