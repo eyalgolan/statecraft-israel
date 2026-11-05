@@ -152,7 +152,7 @@ public class EndScreenTests
         foreach (var a in unsourced.PopulationAnchors) { a.Sources.Clear(); a.Sources.Add(new Source { Url = "" }); }
         using var k = new Kit(En, Ended);
         var names = EndScreenPresenter.Lines(unsourced, k.Bridge.State, En).Select(l => l.Name).ToList();
-        CollectionAssert.Contains(names, "population", "precondition: the comparison still shows");
+        Assert.IsNotNull(EndReport.For(unsourced, k.Bridge.State).PopulationHistory, "precondition: an anchor applies, so only its sources are dropped");
         CollectionAssert.DoesNotContain(names, "population-sources");
     }
 
@@ -164,7 +164,7 @@ public class EndScreenTests
         var withNote = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text + "\nend.note.defeat_war: \"Fixture note.\"\n");
         using var k = new Kit(withNote, s => { s.Date = C.End; s.GameOver = GameOverCodes.DefeatWar; });
         var names = k.Ui.Q<ScrollView>("end-screen-rows").Children().Select(x => x.name).ToList();
-        CollectionAssert.AreEqual(new[] { "end-screen-outcome", "end-screen-note", "end-screen-date" }, names.Take(3), "the note follows the outcome line");
+        CollectionAssert.AreEqual(new[] { "end-screen-outcome", "end-screen-note", "end-screen-date", "end-screen-score" }, names.Take(4), "the note follows the outcome line");
         Assert.AreEqual("Fixture note.", k.Line("note"));
         Assert.IsTrue(k.Ui.Q<Label>("end-screen-note").ClassListContains("end-screen-note"));
         using var ended = new Kit(withNote, Ended);
@@ -181,7 +181,7 @@ public class EndScreenTests
         {
             using var k = new Kit(text, s => { s.Date = C.End; s.GameOver = GameOverCodes.DefeatWar; });
             var names = k.Ui.Q<ScrollView>("end-screen-rows").Children().Select(x => x.name).ToList();
-            CollectionAssert.AreEqual(new[] { "end-screen-outcome", "end-screen-date" }, names.Take(2), "the end date follows the outcome line");
+            CollectionAssert.AreEqual(new[] { "end-screen-outcome", "end-screen-date", "end-screen-score" }, names.Take(3), "the end date follows the outcome line, then the score");
             CollectionAssert.DoesNotContain(names, "end-screen-note");
         }
     }
@@ -196,7 +196,7 @@ public class EndScreenTests
         using var k = new Kit(withNote, s => { s.Date = C.End; s.GameOver = GameOverCodes.CoalitionCollapse; });
         Assert.AreEqual(withNote["order.game_over"], k.Line("outcome"), "precondition: the generic line shows");
         var names = k.Ui.Q<ScrollView>("end-screen-rows").Children().Select(x => x.name).ToList();
-        CollectionAssert.AreEqual(new[] { "end-screen-outcome", "end-screen-date" }, names.Take(2), "the end date follows the generic line");
+        CollectionAssert.AreEqual(new[] { "end-screen-outcome", "end-screen-date", "end-screen-score" }, names.Take(3), "the end date follows the generic line, then the score");
         CollectionAssert.DoesNotContain(names, "end-screen-note");
     }
 
