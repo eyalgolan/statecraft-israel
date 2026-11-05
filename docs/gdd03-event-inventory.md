@@ -14,10 +14,13 @@ and review the diff. Do not edit the table by hand.
 
 - **Old target** and **old delta**: the field as authored, which `legacy` and `gdd-0.1` apply (R-EFX-001). The
   exception is `debt_dollars`: those rulesets read it but only `gdd-0.3` applies it (R-EFX-009, #2457). A
-  `set_policy` or `set_rung` field sets a level instead of adding a delta.
+  `set_policy` or `set_rung` field sets a level instead of adding a delta. A `unit_orders` field gives a go-to order
+  under `gdd-0.1` only (R-ENEMY-005), and a `rejoin` field returns a road not taken to the recorded course (R-ALT-009).
 - **gdd-0.3 target**: "same" when the card is in the `gdd-0.3` catalogue. The loader has then validated the field
-  under `gdd-0.3` (R-EFX-001, R-EFX-002) and it applies with the same delta. "Legacy rulesets only" when
-  `content/gdd03-events.yaml` excludes the whole card: none of its options is in play under `gdd-0.3`.
+  under `gdd-0.3` (R-EFX-001, R-EFX-002) and it applies with the same delta. A `unit_orders` field is the exception:
+  the loader still checks it, but `gdd-0.3` gives no order (R-ENEMY-005; owner, 31 October 2026, #749). "Legacy
+  rulesets only" when `content/gdd03-events.yaml` excludes the whole card: none of its options is in play under
+  `gdd-0.3`.
 - **Review reset**: "no" on every row. Only `israel_bonds` changes its source bytes: its `launch` option gains
   `debt_dollars: 52` and a comment (#2457), with its text, Hebrew, sources and review status unchanged. Every card's
   bytes are pinned (`AllFortyOneSourceRecordsIncludingReviewsAndHebrewAreUnchanged`), and the test checks that a kept card keeps its status and human sign-off under `gdd-0.3`. An excluded card keeps
@@ -108,6 +111,7 @@ first-slice availability") describes; this file changes no exclusion.
 | `jerusalem_ceasefire` | `keep` | `effects[0].security` | 0.015 | `effects[0].security` (same) | 0.015 | no |
 | `jerusalem_ceasefire` | `hold_out` | `effects[0].security` | -0.015 | `effects[0].security` (same) | -0.015 | no |
 | `jerusalem_ceasefire` | `hold_out` | `effects[1].intl_standing` | -0.03 | `effects[1].intl_standing` (same) | -0.03 | no |
+| `jerusalem_demilitarisation_guard` | `return_military_government` | `rejoin` | rejoins `jerusalem_military_government` | `rejoin` (same) | rejoins `jerusalem_military_government` | no |
 | `jerusalem_military_government` | `military_government` | `effects[0].security` | 0.01 | `effects[0].security` (same) | 0.01 | no |
 | `jerusalem_military_government` | `military_government` | `effects[1].intl_standing` | -0.02 | `effects[1].intl_standing` (same) | -0.02 | no |
 | `jerusalem_military_government` | `accept_demilitarisation` | `effects[0].security` | -0.015 | `effects[0].security` (same) | -0.015 | no |
@@ -117,6 +121,7 @@ first-slice availability") describes; this file changes no exclusion.
 | `latrun_proposal` | `press_offensive` | `effects[0].security` | 0.025 | `effects[0].security` (same) | 0.025 | no |
 | `latrun_proposal` | `press_offensive` | `effects[1].intl_standing` | -0.1 | `effects[1].intl_standing` (same) | -0.1 | no |
 | `latrun_proposal` | `press_offensive` | `effects[2].morale` | -0.02 | `effects[2].morale` (same) | -0.02 | no |
+| `latrun_proposal` | `press_offensive` | `unit_orders[0].harel` | go to (-3, 25) | `unit_orders[0].harel` (loaded, not run under gdd-0.3) | none (no order given) | no |
 | `law_of_return` | `enact` | `effects[0].morale` | 0.03 | `effects[0].morale` (same) | 0.03 | no |
 | `law_of_return` | `enact` | `effects[1].intl_standing` | 0.01 | `effects[1].intl_standing` (same) | 0.01 | no |
 | `law_of_return` | `quota` | `effects[0].morale` | -0.06 | `effects[0].morale` (same) | -0.06 | no |
@@ -130,17 +135,23 @@ first-slice availability") describes; this file changes no exclusion.
 | `ministry_supply_crisis` | `keep_ministry` | `effects[0].morale` | -0.03 | `effects[0].morale` (same) | -0.03 | no |
 | `operation_hiram` | `stop_at_ceasefire` | `set_rung` | set 5 | `set_rung` (same) | set 5 | no |
 | `operation_hiram` | `stop_at_ceasefire` | `effects[0].security` | 0.02 | `effects[0].security` (same) | 0.02 | no |
+| `operation_hiram` | `stop_at_ceasefire` | `unit_orders[0].carmeli` | go to (15, 3) | `unit_orders[0].carmeli` (loaded, not run under gdd-0.3) | none (no order given) | no |
+| `operation_hiram` | `stop_at_ceasefire` | `unit_orders[1].brigade_7` | go to (14, 4) | `unit_orders[1].brigade_7` (loaded, not run under gdd-0.3) | none (no order given) | no |
 | `operation_hiram` | `advance_into_lebanon` | `set_rung` | set 5 | `set_rung` (same) | set 5 | no |
 | `operation_hiram` | `advance_into_lebanon` | `effects[0].security` | 0.025 | `effects[0].security` (same) | 0.025 | no |
 | `operation_hiram` | `advance_into_lebanon` | `effects[1].intl_standing` | -0.08 | `effects[1].intl_standing` (same) | -0.08 | no |
 | `operation_horev` | `launch` | `set_rung` | set 5 | `set_rung` (same) | set 5 | no |
 | `operation_horev` | `launch` | `effects[0].security` | 0.02 | `effects[0].security` (same) | 0.02 | no |
+| `operation_horev` | `launch` | `unit_orders[0].golani` | go to (-8, 28) | `unit_orders[0].golani` (loaded, not run under gdd-0.3) | none (no order given) | no |
 | `operation_horev` | `hold` | `effects[0].security` | -0.01 | `effects[0].security` (same) | -0.01 | no |
 | `operation_yoav` | `stop_at_ceasefire` | `set_rung` | set 5 | `set_rung` (same) | set 5 | no |
 | `operation_yoav` | `stop_at_ceasefire` | `effects[0].security` | 0.025 | `effects[0].security` (same) | 0.025 | no |
+| `operation_yoav` | `stop_at_ceasefire` | `unit_orders[0].negev` | go to (-10, 35) | `unit_orders[0].negev` (loaded, not run under gdd-0.3) | none (no order given) | no |
+| `operation_yoav` | `stop_at_ceasefire` | `unit_orders[1].givati` | go to (-9, 29) | `unit_orders[1].givati` (loaded, not run under gdd-0.3) | none (no order given) | no |
 | `operation_yoav` | `push_to_hebron` | `set_rung` | set 5 | `set_rung` (same) | set 5 | no |
 | `operation_yoav` | `push_to_hebron` | `effects[0].security` | 0.03 | `effects[0].security` (same) | 0.03 | no |
 | `operation_yoav` | `push_to_hebron` | `effects[1].intl_standing` | -0.08 | `effects[1].intl_standing` (same) | -0.08 | no |
+| `rafah_force_pressure` | `complete_pullback` | `rejoin` | rejoins `sinai_withdrawal` | `rejoin` (same) | rejoins `sinai_withdrawal` | no |
 | `reparations_claim` | `claim` | `effects[0].intl_standing` | 0 | `effects[0].intl_standing` (same) | 0 | no |
 | `reparations_claim` | `claim` | `effects[1].treasury` | -1 | `effects[1].treasury` (same) | -1 | no |
 | `reparations_claim` | `refuse` | `effects[0].intl_standing` | 0 | `effects[0].intl_standing` (same) | 0 | no |
@@ -160,10 +171,12 @@ first-slice availability") describes; this file changes no exclusion.
 | `sinai_withdrawal` | `hold_el_arish` | `effects[1].security` | 0.025 | `effects[1].security` (same) | 0.025 | no |
 | `ten_days` | `central_front` | `set_rung` | set 5 | `set_rung` (same) | set 5 | no |
 | `ten_days` | `central_front` | `effects[0].security` | 0.025 | `effects[0].security` (same) | 0.025 | no |
+| `ten_days` | `central_front` | `unit_orders[0].kiryati` | go to (-3, 24) | `unit_orders[0].kiryati` (loaded, not run under gdd-0.3) | none (no order given) | no |
+| `ten_days` | `central_front` | `unit_orders[1].carmeli` | go to (14, 6) | `unit_orders[1].carmeli` (loaded, not run under gdd-0.3) | none (no order given) | no |
 | `ten_days` | `southern_front` | `set_rung` | set 5 | `set_rung` (same) | set 5 | no |
 | `ten_days` | `southern_front` | `effects[0].security` | 0.015 | `effects[0].security` (same) | 0.015 | no |
 
-122 rows: 41 cards under gdd-0.1, 41 under gdd-0.3.
+132 rows: 41 cards under gdd-0.1, 41 under gdd-0.3.
 
 | Excluded card | gdd-0.3 loader with only this exclusion removed |
 |---|---|
