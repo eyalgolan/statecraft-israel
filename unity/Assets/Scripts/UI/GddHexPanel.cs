@@ -354,13 +354,10 @@ namespace Statecraft.Game.UI
             var queued = bridge.QueuedLike(new StartProject("", "", q, r)) as StartProject;
 
             // Ask the sim about the exact queue a press would leave: replace this hex's order in its current slot, or append it,
-            // after the committed orders. The initial helper check avoids a preview for a kind that is already refused; this code
-            // runs only when the panel renders, not each frame.
+            // after the committed orders. This costs one preview for each project kind the panel considers while it renders, not
+            // on each frame; an earlier order can make a kind that the current state refuses valid.
             (string? kind, string? words) Refusal(ProjectKind k, string city)
             {
-                var reason = Projects.CheckCityReason(c, s, k.Id, city, q, r);
-                if (reason != null) return (reason.Kind, ReasonText(reason, text, c, townName));
-
                 var press = new StartProject(k.Id, city, q, r);
                 var old = bridge.QueuedLike(press);
                 var queue = bridge.Queued.ToList();

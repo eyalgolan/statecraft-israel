@@ -983,11 +983,9 @@ namespace Statecraft.Game.UI
             // button and no reason, so its refusal is not asked for (the UI has no words for it).
             string? Refusal(string action)
             {
-                var reason = MapActions.CheckReason(c, s, action, q, r);
-                if (reason != null) return MapActionReasonText(reason, text);
-
                 // SimBridge.Queue replaces this hex's order in place, or appends it. Preview that exact queue after the committed
-                // orders, only while the selected-hex panel renders (never from a per-frame callback).
+                // orders. This costs one preview for each map-action kind the panel considers while the selected-hex panel renders,
+                // never from a per-frame callback; an earlier order can make an action that the current state refuses valid.
                 var press = new MapAction(action, q, r);
                 var old = bridge.QueuedLike(press);
                 var queue = bridge.Queued.ToList();

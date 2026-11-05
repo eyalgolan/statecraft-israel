@@ -290,6 +290,30 @@ public class CityProjectPanelTests
         finally { C.ProjectKinds.Remove(winery); }
     }
 
+    // Red first on PR #2679 head 4e25f657c: Refusal returns the current state's ma'abarot-policy reason before it previews
+    // the earlier SetPolicy order, so the transit-camp button is absent even though End turn would accept the start.
+    [Test]
+    public void AQueuedMaabarotPolicyEnablesATransitCampProject()
+    {
+        var (q, r) = Lone;
+        var bridge = Bridge(En, s => s.CoalitionStability = 1);
+        Assert.IsTrue(PoliticsSystem.HasMajority(C, bridge.State.Date), "precondition: the policy vote has a majority");
+        Assert.AreEqual("maabarot_policy", Projects.CheckCityReason(C, bridge.State, MapActions.TransitCamp, City, q, r)?.Kind,
+            "precondition: without the queued policy the current state refuses the camp");
+        Assert.IsNull(bridge.Queue(new SetPolicy(MapActions.MaabarotPolicy, 1)));
+        Assert.AreEqual(1.0, Simulation.Preview(C, bridge.TurnStart,
+            bridge.Session.Committed.Concat(bridge.Queued).ToList()).State.Policies[MapActions.MaabarotPolicy],
+            "precondition: the policy vote passes before the project runs");
+
+        using var ui = new UiTestKit();
+        using var panel = Panel(ui, bridge, En);
+        panel.Show(q, r);
+
+        Assert.IsTrue(ui.Q<Button>("city-project-" + MapActions.TransitCamp).enabledSelf);
+        Assert.IsNull(ui.Root.Q("city-project-reason"));
+        Assert.IsNull(ui.Root.Q("city-project-" + MapActions.TransitCamp + "-reason"));
+    }
+
     [Test]
     public void AnOrderTheAttentionCannotPayIsRefusedByTheBridge()
     {

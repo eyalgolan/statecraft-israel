@@ -99,6 +99,31 @@ public class MapActionUiTests
         Assert.AreEqual("A transit camp built here in August 1950", ui.Q<Label>("info-placement").text);
     }
 
+    // Red first on PR #2679 head 4e25f657c: Refusal returns the current state's ma'abarot-policy reason before it previews
+    // the earlier SetPolicy order, so the transit-camp button is disabled even though End turn would accept the action.
+    [Test]
+    public void AQueuedMaabarotPolicyEnablesATransitCampMapAction()
+    {
+        using var ui = new UiTestKit();
+        var bridge = At(new DateTime(1950, 8, 1));
+        bridge.TurnStart.Policies[MapActions.MaabarotPolicy] = 0;
+        bridge.TurnStart.CoalitionStability = 1;
+        Assert.IsTrue(PoliticsSystem.HasMajority(C, bridge.TurnStart.Date), "precondition: the policy vote has a majority");
+        var tlv = C.SettlementHexes.Single(s => s.Id == "tel_aviv");
+        Assert.AreEqual("maabarot_policy", MapActions.CheckReason(C, bridge.State, MapActions.TransitCamp, tlv.Q, tlv.R)?.Kind,
+            "precondition: without the queued policy the current state refuses the camp");
+        Assert.IsNull(bridge.Queue(new SetPolicy(MapActions.MaabarotPolicy, 1)));
+        Assert.AreEqual(1.0, Simulation.Preview(C, bridge.TurnStart,
+            bridge.Session.Committed.Concat(bridge.Queued).ToList()).State.Policies[MapActions.MaabarotPolicy],
+            "precondition: the policy vote passes before the map action runs");
+
+        using var info = Panel(ui, bridge);
+        info.Show(tlv.Q, tlv.R);
+
+        Assert.IsTrue(ui.Q<Button>("build-camp").enabledSelf);
+        Assert.AreEqual("", ui.Q<Label>("info-reason").text);
+    }
+
     /// <summary>#701: in the Hebrew UI the build date names its month in Hebrew (date.month_year), not "August 1950". The line
     /// is a date label with no verb (Beri, 17 October 2026), since a fixed "נבנה" is wrong for a feminine name ("מעברה").</summary>
     [Test]
