@@ -660,6 +660,10 @@ variants:
         }).FirstOrDefault(s => s.FiredEvents.Contains(e.Id));
 
         Assert.NotNull(shown);
+        // AltRun accepts a parent that is still unanswered, so the record road is checked here: with no answer, "no variant"
+        // would hold for the wrong reason (#2685 review).
+        Assert.True(shown!.ChosenOptions.TryGetValue("parent", out var chosen), "the parent card was answered before the outside card showed");
+        Assert.Equal("record", chosen);
         Assert.Null(Timeline.Variant(c, shown!, e));
         Assert.Equal(e.Title, EventSystem.Title(c, shown!, e));
         Assert.StartsWith(e.Text, EventSystem.Render(c, shown!, e));
