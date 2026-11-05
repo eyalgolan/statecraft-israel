@@ -113,12 +113,17 @@ def check_sizes(root: Path, files: list[str], release: bool) -> list[Finding]:
     """A tracked file over MAX_FILE_BYTES is a finding unless P.OVERSIZE_ALLOWED records that path with its exact size and
     SHA-256 (hashed only when the size matches). A listed file that is not the recorded one is reported too: over the
     limit as over-size-limit, under it (a re-export) as stale-oversize-allow, so an entry cannot outlive the bytes it was
-    granted for. A listed path with no file is not reported: the entries arrive before the files they cover (#2253 is
-    held until the contributor's four originals are added in the same PR)."""
+    granted for; so is a listed path that is a symlink, which is not the recorded file either. A listed path with no file
+    is not reported: the entries arrive before the files they cover (#2253 is held until the contributor's four
+    originals are added in the same PR)."""
     found = []
     for rel in files:
         p = root / rel
-        if not p.is_file() or p.is_symlink():
+        if p.is_symlink():
+            if rel in P.OVERSIZE_ALLOWED:
+                found.append(Finding("sizes", rel, 0, "stale-oversize-allow"))
+            continue
+        if not p.is_file():
             continue
         size = p.stat().st_size
         allowed = P.OVERSIZE_ALLOWED.get(rel)

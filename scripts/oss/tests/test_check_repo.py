@@ -197,6 +197,15 @@ def test_a_listed_file_under_the_limit_that_is_not_the_recorded_one_is_reported(
     assert f"sizes: {rel}: stale-oversize-allow" in capsys.readouterr().out
 
 
+# A listed path that is a symlink is not the recorded file: it is reported, never skipped, so a swapped file cannot
+# pass through it (#2253 review).
+def test_a_listed_path_that_is_a_symlink_is_reported(make_repo, capsys, monkeypatch):
+    rel = _approved(monkeypatch, OVER)
+    root = make_repo({rel: "->other.bin", "other.bin": "x"})
+    assert run(root, "--only", "sizes") == 1
+    assert f"sizes: {rel}: stale-oversize-allow" in capsys.readouterr().out
+
+
 # While the PR is held for the four files (none is in the tree yet), a listed path with no file is not a finding.
 def test_a_listed_path_with_no_file_is_silent(make_repo, capsys):
     root = make_repo({"a.txt": "fine\n"})
