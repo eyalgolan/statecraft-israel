@@ -921,7 +921,13 @@ public class UnitsInPlayTests
             Assert.AreEqual(3, kiryati.Cast<Transform>().Count(t => t.name.StartsWith("Rifleman")), "three riflemen at full strength (Q-UI-3)");
             var badge = kiryati.Find("Badge");
             Assert.IsNotNull(badge, "the promo's badge over every token");
-            Assert.AreEqual(2, badge.GetComponentsInChildren<MeshRenderer>().Length, "a plate and a glyph");
+            // A plate and a glyph show; the hit's flash plate (#2614) is there but off until a hit lands, and nothing else is.
+            var badgeRenderers = badge.GetComponentsInChildren<MeshRenderer>();
+            CollectionAssert.AreEqual(new[] { "Plate", "Glyph" }, badgeRenderers.Where(r => r.enabled).Select(r => r.name).ToArray(), "a plate and a glyph");
+            var hitFlash = badge.Find("HitFlash");
+            Assert.IsNotNull(hitFlash, "the hit's flash plate");
+            Assert.IsFalse(hitFlash.GetComponent<MeshRenderer>().enabled, "the hit's flash is off until a hit lands");
+            Assert.AreEqual(3, badgeRenderers.Length, "the plate, the glyph and the flash, nothing else");
             Assert.Greater(badge.position.y, kiryati.Find("Rifleman0").position.y + UnitBadge.FigureHeightM * UnitShowcase.FigureScale, "above the figures");
             for (int i = 0; i < 3; i++)
             {
