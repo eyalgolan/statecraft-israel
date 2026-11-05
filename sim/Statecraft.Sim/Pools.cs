@@ -113,7 +113,9 @@ namespace Statecraft.Sim
             s.FoodNeed = need;
             s.FoodUnmet = need - eaten;
             if (s.FoodUnmet > 0)
-                why.Add(new Cause("economy", "food", -s.FoodUnmet, FormattableString.Invariant($"Food ran out: {s.FoodUnmet} of {need} units of the month's need went unmet"), key: CauseKeys.FoodShortage, args: new[] { CauseKeys.Number(need) }));
+                // #2527 review: informational - the unmet count lives in the line and its args, not the delta, so the Food
+                // row's lines add up to the stock's change on a turn that starts below the need.
+                why.Add(new Cause("economy", "food", 0, FormattableString.Invariant($"Food ran out: {s.FoodUnmet} of {need} units of the month's need went unmet"), key: CauseKeys.FoodShortage, args: new[] { CauseKeys.Number(s.FoodUnmet), CauseKeys.Number(need) }));
             if (s.ActiveSituations.Contains(EconomySystem.FxCrisis))
             {
                 why.Add(new Cause("economy", "food", -eaten, FormattableString.Invariant($"No Food imported (foreign currency crisis): the stock fell to {s.Food} units"), key: CauseKeys.FoodWithoutImports, args: new[] { CauseKeys.Number(s.Food) }));

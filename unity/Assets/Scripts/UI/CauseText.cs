@@ -172,7 +172,7 @@ namespace Statecraft.Game.UI
                 case CauseKeys.FoodHarvest:
                     return text.Format(key, Site(A(0)), cause.Delta);
                 case CauseKeys.FoodShortage:
-                    return text.Format(key, -cause.Delta, A(0));
+                    return text.Format(key, A(0), A(1));   // the unmet, then the need: the line is informational (#2527)
                 case CauseKeys.FoodWithoutImports:
                     return text.Format(key, A(0));
                 case CauseKeys.FoodImported:        // #2527

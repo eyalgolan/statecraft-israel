@@ -333,6 +333,23 @@ public class TurnReportTests
                 new[] { hebrew ? "צבא ההצלה פתח בהתקפה על אחת היחידות שלכם" : "Arab Liberation Army launched an attack on one of your units" },
                 row.Causes, "one line for the unit, though the order and the engagement both name it");
         }
+    /// <summary>#2527 review: the Food shortage's line is informational (delta 0), and the turn report's Food row still
+    /// names it, after the lines that have a number.</summary>
+    [Test]
+    public void AShortageTurnStillNamesTheShortageInTheFoodRow()
+    {
+        using var k = new Kit(En);
+        k.Bridge.EndTurn();
+        var last = k.Bridge.Session.Last!;
+        var shortage = new Cause("economy", "food", 0, "Food ran out: 60 of 100 units of the month's need went unmet",
+            key: CauseKeys.FoodShortage, args: new[] { "60", "100" });
+        var import = new Cause("economy", "food", 260, "The month's eating and Food imports brought the stock to 300 units",
+            key: CauseKeys.FoodImported, args: new[] { "300" });
+        var turn = new StepResult(last.State, new[] { shortage, import }, last.Rejected);
+        CollectionAssert.AreEqual(
+            new[] { "The month's eating and Food imports brought the stock to 300 units",
+                "Food ran out: 60 of 100 units of the month's need went unmet" },
+            TurnReportPresenter.StockCauses(turn, Pools.FoodTarget, w => w.Message));
     }
 
     [Test]
