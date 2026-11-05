@@ -230,7 +230,7 @@ public class OpeningClipTests
         r.Opening.Show(replay: false);
         Assert.AreEqual(r.Data.Panels[0].Image.Alt, r.Photo.tooltip);
         r.Opening.HoldElapsed();
-        Assert.AreEqual(r.Data.Panels[0].Clip.Alt, r.Photo.tooltip);
+        Assert.AreEqual(r.Data.Panels[0].Clip!.Alt, r.Photo.tooltip);
     }
 
     [TestCase("file: law_of_return.mp4", "file: ../law_of_return.mp4", TestName = "ClipFileMustBeABareMp4Name")]
