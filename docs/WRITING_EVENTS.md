@@ -74,8 +74,8 @@ Write plain description. Do not put words in anyone's mouth: no invented quotes
 
 ### anchor
 
-- `soft`: an event that may or may not fire. At most 3 non-hard events fire per turn (the earliest `from` first, then
-  by `order`, then by id), so a soft event can wait for a later turn inside its window.
+- `soft`: an event that may or may not fire. At most 3 non-hard events fire per turn (filled in the order of the `order`
+  row above: early armistice cards, consequence cards, then `from`, objective, `order`, id), so a soft event can wait for a later turn inside its window.
 - `hard`: an event that must happen. Every eligible hard event fires. It needs one option marked `historical: true`;
   in Historical mode, if the player leaves it unanswered it resolves to that option.
 
