@@ -269,7 +269,8 @@ public class LastTurnObjectiveCardTests
 
     /// <summary>#2536: a one-turn game over fresh content that ends on its first turn's boundary with the railway recorded
     /// then, so its card is the ending card. Returns the save as the new rules write it, and the same save with the final
-    /// hash the old rules wrote (the ending card neither fired nor pending).</summary>
+    /// hash the old rules wrote (the ending card neither fired nor pending) and the schema they wrote it in (3, gdd-0.1;
+    /// the current schema came later, #2605).</summary>
     static (Content c, string newSave, string oldSave) FinishedWithAnEndingCard()
     {
         var c = ContentLoader.Load(RealContentTests.ContentRoot());
@@ -296,7 +297,8 @@ public class LastTurnObjectiveCardTests
         var newSave = g.Save.Write();
         var endLine = "end " + g.State.Hash();
         Assert.Contains(endLine + "\n", newSave);
-        return (c, newSave, newSave.Replace(endLine, "end " + old.Hash()));
+        Assert.StartsWith("statecraft-save 5\n", newSave);
+        return (c, newSave, newSave.Replace(endLine, "end " + old.Hash()).Replace("statecraft-save 5\n", "statecraft-save 3\n"));
     }
 
     // #2536: a game finished before the ending turn fired objective cards replays with its ending card added. That is the
@@ -324,6 +326,16 @@ public class LastTurnObjectiveCardTests
         var wrong = newSave.Replace(newSave.Split('\n').Single(l => l.StartsWith("end ", StringComparison.Ordinal)), "end " + new string('b', 64));
         Assert.NotEqual(newSave, wrong);
         Assert.Throws<SaveException>(() => GameSession.Load(c, wrong, out _));
+    }
+
+    // #2605 review: a current-schema save was written after #2536, so it always has its ending cards; one without them was
+    // edited or damaged, and is refused like any other difference.
+    [Fact]
+    public void ACurrentSchemaSaveWithoutItsEndingCardIsRefused()
+    {
+        var (c, _, oldSave) = FinishedWithAnEndingCard();
+        var edited = oldSave.Replace("statecraft-save 3\n", "statecraft-save 5\n");
+        Assert.Null(Assert.Throws<SaveException>(() => GameSession.Load(c, edited, out _)).Code);
     }
 
     // #2536: with other content the same save gives only content_changed, not replay_differs.

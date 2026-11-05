@@ -1,7 +1,7 @@
 using Statecraft.Sim;
 
 /// <summary>#1687, R-SAVE-001/002: a separate envelope, never a live-loop cutover. #2605: every ruleset now writes schema 5;
-/// gdd-0.3 wrote 4 before, legacy and gdd-0.1 wrote 1 to 3.</summary>
+/// gdd-0.3 wrote 4 before, legacy 1 to 3 and gdd-0.1 2 to 3.</summary>
 public class Gdd03SaveTests
 {
     static string Text(int version, string ruleset) =>

@@ -107,7 +107,8 @@ namespace Statecraft.Sim
             catch (Exception e) { throw new SaveException(FormattableString.Invariant($"turn {turnNo + 1}: {e.Message}"), e); }
             // #2536: a game finished before the ending turn fired objective cards replays with those cards added, and only
             // them: the same game, so it loads as saved, with no warning, and shows its ending card(s).
-            if (session.State.Hash() != saved.FinalHash && !OnlyEndingCardsAdded(c, session.State, saved.FinalHash))
+            // Only an older save can be from before #2536: a current-schema save always has its ending cards (#2605 review).
+            if (session.State.Hash() != saved.FinalHash && !(saved.Version < SaveGame.SchemaVersion && OnlyEndingCardsAdded(c, session.State, saved.FinalHash)))
             {
                 if (saved.Version < 3 && saved.Ruleset == SaveGame.GddRuleset)
                     throw new SaveException(0, "This save was made with an earlier version of the game's rules.", SaveException.OlderRules);

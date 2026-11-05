@@ -209,9 +209,9 @@ namespace Statecraft.Sim
                     throw new SaveException(5, $"This save was made with a newer version of the game (ruleset '{ruleset}').", SaveException.NewerVersion);
                 first = 5;
             }
-            // #1687, #2605, R-SAVE-001/002: before schema 5, schema 4 belonged only to the isolated gdd-0.3 envelope, and
-            // legacy and gdd-0.1 wrote 1 to 3. No build wrote another pairing, so such a save was edited: damage, not older or
-            // newer rules.
+            // #1687, #2605, R-SAVE-001/002: before schema 5, schema 4 belonged only to the isolated gdd-0.3 envelope, legacy
+            // wrote 1 to 3 and gdd-0.1 2 to 3 (schema 1 has no ruleset line, so it is legacy). No build wrote another pairing,
+            // so such a save was edited: damage, not older or newer rules.
             if (version < SchemaVersion && (ruleset == Gdd03Ruleset ? version != Gdd03PreviousSchemaVersion : version > LegacyPreviousSchemaVersion))
                 throw new SaveException(1, FormattableString.Invariant($"no version of the game wrote a {ruleset} save in schema {version}"));
             // Check compatibility before replay, including gdd-0.1 -> gdd-0.3 as earlier rules.
