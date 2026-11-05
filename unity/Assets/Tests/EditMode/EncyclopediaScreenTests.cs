@@ -155,6 +155,36 @@ public class EncyclopediaScreenTests
             StringAssert.Contains(phrase, line);
     }
 
+    // R-CITY-010: only gdd-0.3 withholds the job income of a city with an enemy military unit on it; gdd-0.1 and legacy keep the base text.
+    [Test]
+    public void Gdd03HeldCityJobIncomeUsesRulesetTextInBothLanguages()
+    {
+        var texts = new[] { En, He };
+        var heldClauses = new[] { "a city with an enemy military unit on it earns no job income that turn", "משרות בעיר שיש בה יחידה צבאית של האויב אינן מכניסות כסף באותו תור" };
+        for (var language = 0; language < texts.Length; language++)
+        {
+            var text = texts[language];
+            foreach (var page in new[] { "cities", "money_debt" })
+            {
+                var variantKey = "advisor.page." + page + ".gdd03.text";
+                var baseKey = "advisor.page." + page + ".text";
+                Assert.IsTrue(text.Has(variantKey), variantKey + " exists");
+                StringAssert.Contains(heldClauses[language], text[variantKey]);
+                StringAssert.DoesNotContain(heldClauses[language], text[baseKey]);
+                foreach (var ruleset in new[] { SaveGame.Gdd03Ruleset, SaveGame.GddRuleset, SaveGame.LegacyRuleset })
+                {
+                    var key = "advisor.page." + page + (ruleset == SaveGame.Gdd03Ruleset ? ".gdd03.text" : ".text");
+                    Assert.IsTrue(text.Has(key), key + " exists");
+                    using var ui = new UiTestKit();
+                    using var nav = new ScreenNav(ui.Root);
+                    using var pedia = new EncyclopediaPresenter(ui.Root, text, Approved(), nav, null, ruleset);
+                    pedia.Open(page);
+                    Assert.AreEqual(text[key], ui.Q<Label>("encyclopedia-page-text").text, key);
+                }
+            }
+        }
+    }
+
     // R-PROJ-003, R-ARMS-004, R-HOUSE-006: gdd-0.3 names its extra city-project kinds; older rulesets keep the base text.
     // R-PROJ-003, R-CITY-011: under gdd-0.3 a project moves only with a builder, so the variant does not say it needs no workers.
     [Test]
@@ -197,6 +227,16 @@ public class EncyclopediaScreenTests
                 Assert.AreEqual(text[key], ui.Q<Label>("encyclopedia-page-text").text, key);
             }
         }
+    }
+
+    // R-TURN-004: withdrawal is promised only where the panel offers it.
+    [Test]
+    public void TurnsPageDoesNotPromiseEveryWaitingOrderCanBeWithdrawn()
+    {
+        StringAssert.DoesNotContain("until then you can change or withdraw them", En["advisor.page.turns.text"]);
+        StringAssert.DoesNotContain("ועד אז אפשר לשנות אותן או להסיר אותן", He["advisor.page.turns.text"]);
+        StringAssert.Contains("may be changed (and withdrawn where the panel offers it)", En["advisor.page.turns.text"]);
+        StringAssert.Contains("(ולהסיר אותן אם האפשרות מוצעת במסך)", He["advisor.page.turns.text"]);
     }
 
     /// <summary>On the SHIPPED catalogue (AdvisorCatalog.Load(), not Approved()), the Hebrew encyclopedia lists every

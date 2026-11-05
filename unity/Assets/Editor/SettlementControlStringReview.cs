@@ -23,6 +23,13 @@ namespace Statecraft.Game.EditorTools
         public string Status { get; set; } = "";
         public List<Row> Strings { get; set; } = new List<Row>();
 
+        /// <summary>Whether a UI key is part of R-GATE-002's settlement-control review surface.</summary>
+        public static bool IsSettlementControlKey(string key) =>
+            key.StartsWith("capture.", StringComparison.Ordinal)
+            || key.StartsWith("map.control.", StringComparison.Ordinal)
+            || key.StartsWith("info.control.", StringComparison.Ordinal)
+            || key == "hud.standing_displaced_places";
+
         /// <summary>Parses a review manifest, rejecting malformed YAML and unknown fields with the file name.</summary>
         public static SettlementControlStringReview Parse(string yaml, string file)
         {
@@ -52,6 +59,15 @@ namespace Statecraft.Game.EditorTools
             var repeated = review.Strings.GroupBy(x => x.Key, StringComparer.Ordinal).FirstOrDefault(x => x.Count() > 1);
             if (repeated != null)
                 return "the settlement-control strings review has repeated key '" + repeated.Key + "'";
+            var reviewed = new HashSet<string>(review.Strings.Select(x => x.Key), StringComparer.Ordinal);
+            var omitted = en.Keys.Concat(he.Keys)
+                .Where(IsSettlementControlKey)
+                .Distinct(StringComparer.Ordinal)
+                .Where(x => !reviewed.Contains(x))
+                .OrderBy(x => x, StringComparer.Ordinal)
+                .FirstOrDefault();
+            if (omitted != null)
+                return "the settlement-control strings review is missing settlement-control key '" + omitted + "'";
             foreach (var row in review.Strings)
             {
                 if (!en.Has(row.Key)) return "strings.en.yaml is missing settlement-control key '" + row.Key + "'";
