@@ -50,9 +50,13 @@ namespace Statecraft.Game.Map.Collection
         /// floating detached above the tail in the end turns (e21's captures of #2728, v2, 5 November 2026).</summary>
         public const float FlagClearM = 60f;
 
-        /// <summary>DESIGN VALUE (agent-chosen, checked in captures): the tailplane's span over the wing span, for how high the
-        /// banked tail reaches (<see cref="TailTopOver"/>): about a third, as on a Spitfire.</summary>
-        public const float TailplaneSpanShare = 1f / 3f;
+        /// <summary>MEASURED from Tal's model (its FBX's vertices, 5 November 2026), for how high the banked tail reaches
+        /// (<see cref="TailTopOver"/>). The model sits in its ground attitude, tail down, so its box's top is the propeller's tip
+        /// and its bottom the tail wheel. The fin's top stands only 0.19 of the box's half height over the box's centre (0.20,
+        /// with a margin). The tailplane reaches 0.273 of the half span out (0.28), its tips 0.414 of the half height under the
+        /// centre (0.41). With these the estimate meets the measured tail top within 0.003 of the half height at every bank to
+        /// 35 degrees. Taking the whole half height for the fin (as before) put the flag about 600 m too high.</summary>
+        public const float TailFinShare = 0.20f, TailplaneReachShare = 0.28f, TailplaneDropShare = 0.41f;
 
         /// <summary>DESIGN VALUE (agent-chosen, coordinator-agreed, 5 November 2026; checked in captures): the shadow is cast as
         /// if the aircraft flew at this share of its drawn height over the ground under it. The aircraft is drawn 420 times life
@@ -69,13 +73,14 @@ namespace Statecraft.Game.Map.Collection
             return half.z * Mathf.Abs(Mathf.Sin(b)) + half.y * Mathf.Cos(b);
         }
 
-        /// <summary>How far the top of the aircraft's tail stands over its centre at <paramref name="bankDegrees"/>: the fin (up to
-        /// the box's top) and the tailplane (<see cref="TailplaneSpanShare"/> of the span) rolled about the length. Lower than
-        /// <see cref="TopOver"/>, whose raised wingtip is nowhere near the tail.</summary>
+        /// <summary>How far the top of the aircraft's tail stands over its centre at <paramref name="bankDegrees"/>, rolled about
+        /// its length: the higher of the fin's top (<see cref="TailFinShare"/> of the half height) and the raised tailplane tip
+        /// (<see cref="TailplaneReachShare"/> of the half span out, <see cref="TailplaneDropShare"/> of the half height under the
+        /// centre). Far lower than <see cref="TopOver"/>, whose raised wingtip is nowhere near the tail.</summary>
         public static float TailTopOver(Vector3 half, float bankDegrees)
         {
-            float b = bankDegrees * Mathf.Deg2Rad;
-            return TailplaneSpanShare * half.z * Mathf.Abs(Mathf.Sin(b)) + half.y * Mathf.Cos(b);
+            float b = bankDegrees * Mathf.Deg2Rad, cos = Mathf.Cos(b), sin = Mathf.Abs(Mathf.Sin(b));
+            return Mathf.Max(TailFinShare * half.y * cos, TailplaneReachShare * half.z * sin - TailplaneDropShare * half.y * cos);
         }
 
         /// <summary>The animation clock, Time.time. Test seam (internal; the tests see it through InternalsVisibleTo): an
