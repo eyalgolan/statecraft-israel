@@ -131,6 +131,21 @@ public class Gdd03CraftWorkFixtureTests
         Assert.Equal(11, s.PopulationLedger.Get(0).WorkXp);
     }
 
+    // A novice craftsman earns no work XP: the tier check in WorkTick refuses the receipt before any change.
+    [Fact]
+    public void ANoviceCraftsmanReceiptIsRefusedBeforeAnyChange()
+    {
+        var s = State(Craftsman(CivilianTier.Apprentice, 10, At(Industry)), Craftsman(CivilianTier.Novice, 0, At(Industry)));
+        var f = new Gdd03CraftWorkFixture(Content(), s, Slots);
+        var before = s.Describe();
+        Assert.Throws<ArgumentOutOfRangeException>(() => f.Apply(new[]
+        {
+            new Gdd03CraftWorkReceipt(0, 3, CraftTickActivity.Industry),
+            new Gdd03CraftWorkReceipt(1, 3, CraftTickActivity.Industry),
+        }));
+        Assert.Equal(before, s.Describe());
+    }
+
     // gdd-0.1 and legacy are unchanged: the fixture refuses a state without an initialized gdd-0.3 ledger.
     [Fact]
     public void Gdd01IsRefused()

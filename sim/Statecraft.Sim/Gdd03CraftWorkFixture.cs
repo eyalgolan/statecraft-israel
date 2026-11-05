@@ -79,7 +79,7 @@ namespace Statecraft.Sim
                 if (!applied.Contains(key) && !fresh.ContainsKey(key)) fresh.Add(key, r.Activity);
             }
             state.PopulationLedger.Reconcile();
-            var xp = new Dictionary<int, (CivilianTier Tier, int Xp)>();
+            var xp = new SortedDictionary<int, (CivilianTier Tier, int Xp)>();
             foreach (var (key, activity) in fresh)   // ascending id, then month
             {
                 var p = state.PopulationLedger.Get(key.Id);
@@ -89,7 +89,8 @@ namespace Statecraft.Sim
                 var tick = arithmetic.WorkTick(key.Id, tier, workXp, activity, true);
                 xp[key.Id] = (tick.TierAfter, tick.WorkXp);
             }
-            foreach (var (id, after) in xp)
+            // Each Replace only changes tier and XP on a record Reconcile validated above, so it cannot fail partway.
+            foreach (var (id, after) in xp)   // ascending id
             {
                 var p = state.PopulationLedger.Get(id);
                 state.PopulationLedger.Replace(new PopulationUnit(p.Id, p.Status, p.ReceptionTicks, p.Location, p.Assignment,
