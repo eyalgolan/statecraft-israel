@@ -158,10 +158,12 @@ namespace Statecraft.Game.UI
                 // queue) and as ArmsPurchasePresenter asks it.
                 var preview = Simulation.Preview(c, bridge.TurnStart, bridge.Session.Committed.Concat(queue).ToList());
                 var accepted = !preview.Rejected.Any(x => ReferenceEquals(x.Command, press));
+                // Nor may the press make End turn refuse a queued order it accepts now (its civilians, Arms or anything else).
+                var causesNoNewRefusal = !bridge.Queued.Any(x => preview.Rejected.Any(r => ReferenceEquals(r.Command, x)) && !current.Rejected.Any(r => ReferenceEquals(r.Command, x)));
                 var row = Row(host, $"city-train-{type.Id}-row");
                 Button(row, "city-train-" + type.Id, text.Format("city.train_" + type.Id, PlayerText.Money(c, "treasury", type.TrainingCost), Turns(text, type.TrainingTurns)),
                     () => bridge.Queue(new Train(id, type.Id, ordered + 1)))
-                    .SetEnabled(accepted && free >= 1);
+                    .SetEnabled(accepted && causesNoNewRefusal && free >= 1);
                 if (ordered > 0) Line(row, $"city-train-{type.Id}-ordered", text.Format("city.train_ordered", ordered));
             }
 
