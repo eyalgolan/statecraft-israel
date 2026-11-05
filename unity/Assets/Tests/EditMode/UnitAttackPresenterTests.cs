@@ -100,6 +100,41 @@ public class UnitAttackPresenterTests
         Assert.AreEqual(2, reactions[0].DefenderLoss);
     }
 
+    /// <summary>#2614 review: on the production path the hit on the hex waits for the attackers' fire as the defenders'
+    /// reaction does (a shell or dust that lands before the shot reads wrong), with or without a defender loss; if no take
+    /// can start, the last miss plays it. Red at bcff7b8e5: the hit played at once, on resolution.</summary>
+    [TestCase("0", true)]
+    [TestCase("0", false)]
+    [TestCase("2", true)]
+    [TestCase("2", false)]
+    public void TheHitOnTheHexWaitsForTheAttackersFire(string defenderLoss, bool aTakeStarts)
+    {
+        var engagement = Line(WhyKeys.Engagement, "2", defenderLoss);
+        var bridge = new SimBridge(NewSession(), Text,
+            (session, orders) => new StepResult(session.State, session.Now.Why.Append(engagement).ToArray(), Array.Empty<Rejection>()));
+        var immediate = new List<int>();
+        var cues = new Dictionary<int, (Action Started, Action Missed)>();
+        var hits = new List<Statecraft.Game.Map.Units.CombatHit>();
+        var reactions = new List<Statecraft.Game.Map.Units.CombatHit>();
+        using var presenter = new UnitAttackPresenter(bridge,
+            id => { immediate.Add(id); return true; }, h => { hits.Add(h); return true; }, _ => true,
+            h => { reactions.Add(h); return true; },
+            (id, started, missed) => { cues.Add(id, (started, missed)); return true; });
+
+        bridge.EndTurn();
+        CollectionAssert.AreEquivalent(new[] { 71, 72 }, cues.Keys);
+        Assert.IsEmpty(immediate, "the production path times every attack");
+        Assert.IsEmpty(hits, "no hit before an attacker's fire");
+
+        if (aTakeStarts) cues[72].Started();
+        else { cues[71].Missed(); Assert.IsEmpty(hits, "not while an attacker may still fire"); cues[72].Missed(); }
+        Assert.AreEqual(1, hits.Count, aTakeStarts ? "the hit lands with the first fire take" : "the last miss plays the hit");
+        Assert.AreEqual((9, 9), (hits[0].Q, hits[0].R));
+        Assert.AreEqual(defenderLoss == "2" ? 1 : 0, reactions.Count, "the defenders react only to a loss, at the same moment");
+        cues[71].Started();
+        Assert.AreEqual(1, hits.Count, "a later take does not repeat the hit");
+    }
+
     /// <summary>An attack order plays at once, after the map is redrawn for it; End Turn runs it again inside the sim (its
     /// first causes are the open turn's), and that replay does not play it twice.</summary>
     [Test]

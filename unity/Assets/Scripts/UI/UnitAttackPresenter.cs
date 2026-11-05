@@ -11,8 +11,10 @@ namespace Statecraft.Game.UI
     /// <summary>Plays each fresh engagement's attackers' fire take on the map (#1867; design by Tal Heuberger, #2078): the
     /// attacking units' figures, supporting guns included, never the defenders'. With it, the hit on the hex it attacked
     /// (owner, 4 November 2026: "Hit on target hex": a shell's burst when guns fired, dust when other units did) and the dust
-    /// of each unit it destroyed ("Dust when a unit dies"). Presentation only. A unit whose token cannot play now (destroyed,
-    /// hidden, far, or no fire take) is skipped and nothing is kept to play later. GameRoot owns it.</summary>
+    /// of each unit it destroyed ("Dust when a unit dies"). On the production path the hit and the defenders' reaction wait
+    /// for the attackers' first fire take that really starts (or, if none can, the last one's wait), so the shell or dust
+    /// never lands before the shot. Presentation only. A unit whose token cannot play now (destroyed, hidden, far, or no
+    /// fire take) is skipped and nothing is kept to play later. GameRoot owns it.</summary>
     public sealed class UnitAttackPresenter : IDisposable
     {
         readonly SimBridge bridge;
@@ -42,35 +44,40 @@ namespace Statecraft.Game.UI
             foreach (var line in lines)
             {
                 var parsed = HitOf(line, IsGuns);
-                if (parsed is CombatHit h && h.DefenderLoss > 0 && defenderHit != null && timedPlay != null
-                    && Count(line, out int attackerCount))
+                if (parsed is CombatHit h && timedPlay != null && Count(line, out int attackerCount))
                 {
-                    var cue = new DefenderCue(attackerCount, h, defenderHit);
+                    // The production path: the defenders react (on a loss) and the hit lands with the first real fire take.
+                    var cue = new FireCue(attackerCount, () => Impact(h));
                     foreach (int id in Attackers(line)) timedPlay(id, cue.Started, cue.Missed);
                 }
                 else
                 {
                     foreach (int id in Attackers(line)) play(id);
-                    if (parsed is CombatHit immediate && immediate.DefenderLoss > 0) defenderHit?.Invoke(immediate);
+                    if (parsed is CombatHit immediate) Impact(immediate);
                 }
-                if (parsed is CombatHit impact) hit?.Invoke(impact);
                 if (destroyed != null && line.Key == WhyKeys.Destroyed && line.Units.Count > 0) destroyed(line.Units[0].Id);
             }
         }
 
-        /// <summary>One engagement's group cue: the first actual fire take reacts; if none can show, the last miss does.</summary>
-        sealed class DefenderCue
+        /// <summary>The defenders' reaction when the engagement records a loss, then the hit on the hex it attacked.</summary>
+        void Impact(CombatHit h)
+        {
+            if (h.DefenderLoss > 0) defenderHit?.Invoke(h);
+            hit?.Invoke(h);
+        }
+
+        /// <summary>One engagement's group cue: the first actual fire take plays the impact once; if none can show, the last
+        /// miss does. UnitLayer's timed PlayAttack always reports one of the two (a hidden or rebuilt token reports a miss).</summary>
+        sealed class FireCue
         {
             int left;
             bool shown;
-            readonly CombatHit hit;
-            readonly Func<CombatHit, bool> play;
+            readonly Action impact;
 
-            internal DefenderCue(int attackers, CombatHit hit, Func<CombatHit, bool> play)
-            { left = attackers; this.hit = hit; this.play = play; }
+            internal FireCue(int attackers, Action impact) { left = attackers; this.impact = impact; }
 
-            internal void Started() { if (!shown) { shown = true; play(hit); } }
-            internal void Missed() { if (left > 0) left--; if (!shown && left == 0) { shown = true; play(hit); } }
+            internal void Started() { if (!shown) { shown = true; impact(); } }
+            internal void Missed() { if (left > 0) left--; if (!shown && left == 0) { shown = true; impact(); } }
         }
 
         /// <summary>True for a unit type of the guns' class (Combat.ArtilleryClass), as the sim's R-COMBAT-007 reads it.</summary>
