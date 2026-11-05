@@ -21,6 +21,8 @@ and review the diff. Do not edit the table by hand.
   the loader still checks it, but `gdd-0.3` gives no order (R-ENEMY-005; owner, 31 October 2026, #749). "Legacy
   rulesets only" when `content/gdd03-events.yaml` excludes the whole card: none of its options is in play under
   `gdd-0.3`.
+- **Not in the table**: `requires_unit_regions` (from #2621) is an option gate, not an effect field, so it is out of
+  this inventory.
 - **Review reset**: "no" on every row. Only `israel_bonds` changes its source bytes: its `launch` option gains
   `debt_dollars: 52` and a comment (#2457), with its text, Hebrew, sources and review status unchanged. Every card's
   bytes are pinned (`AllFortyOneSourceRecordsIncludingReviewsAndHebrewAreUnchanged`), and the test checks that a kept card keeps its status and human sign-off under `gdd-0.3`. An excluded card keeps
