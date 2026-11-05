@@ -8,11 +8,14 @@ using NUnit.Framework;
 using Statecraft.Game;
 using Statecraft.Game.Boot;
 using Statecraft.Game.Map;
+using Statecraft.Game.Map.Collection;
 using Statecraft.Game.UI;
 using Statecraft.Sim;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.LowLevel;
 using UnityEngine.TestTools;
 using UnityEngine.UIElements;
 using Object = UnityEngine.Object;
@@ -507,7 +510,7 @@ public class GameSceneTests
     }
 
     /// <summary>#1063 (player report: a city is hard to tell from the land round it and hard to click). Hovering Tel Aviv's
-    /// hex or its name pill lights the pill (GameRoot.HoverCity); a hex with no city lights nothing. A click on the hex and a
+    /// hex or its name pill lights the pill through GameRoot.LateUpdate; a hex with no city lights nothing. A click on the hex and a
     /// click on the pill each open the city panel, the pill's also where the land under the pill is another hex.</summary>
     [UnityTest]
     public IEnumerator ACitysHexAndItsNamePillBothOpenTheCityPanel()
@@ -519,8 +522,10 @@ public class GameSceneTests
         var camRt = new RenderTexture(1920, 1080, 24);   // the camera fills the panel, as in the game (MapLabelsPresenter)
         var ps = Object.Instantiate(doc.panelSettings);
         ps.targetTexture = rt;
+        var mouse = InputSystem.AddDevice<Mouse>();
         try
         {
+            Assert.AreSame(mouse, Pointer.current, "precondition: LateUpdate reads the test mouse");
             doc.panelSettings = ps;
             cam.targetTexture = camRt;
             var map = Object.FindFirstObjectByType<MapScene>();
@@ -552,7 +557,9 @@ public class GameSceneTests
 
             // The hex.
             Assert.AreEqual((tlv.Q, tlv.R), Land(onHex), "precondition: the probe is on Tel Aviv's hex");
-            Assert.AreEqual("tel_aviv", root.HoverCity(onHex), "the pointer over Tel Aviv's hex");
+            InputSystem.QueueStateEvent(mouse, new MouseState { position = onHex });
+            InputSystem.Update();
+            yield return null;
             Assert.IsTrue(label.ClassListContains(MapLabelsPresenter.HoverClass), "lights Tel Aviv's pill");
             Assert.IsTrue(pointer.HandleClick(onHex));
             Assert.AreEqual("Tel Aviv", ui.Q<Label>("info-title").text);
@@ -563,7 +570,9 @@ public class GameSceneTests
             var seaHex = Land(sea);
             Assert.IsNotNull(seaHex, "precondition: the sea probe is on the map");
             Assert.IsFalse(c.SettlementHexes.Any(x => (x.Q, x.R) == seaHex!.Value && root.Bridge!.State.Cities.ContainsKey(x.Id)), "precondition: no city there");
-            Assert.IsNull(root.HoverCity(sea), "no city under the pointer");
+            InputSystem.QueueStateEvent(mouse, new MouseState { position = sea });
+            InputSystem.Update();
+            yield return null;
             Assert.IsFalse(label.ClassListContains(MapLabelsPresenter.HoverClass), "Tel Aviv's pill is out");
             Assert.IsTrue(pointer.HandleClick(sea));
             Assert.AreNotEqual(DisplayStyle.Flex, host.style.display.value, "precondition: the panel shows the sea, no city");
@@ -575,7 +584,9 @@ public class GameSceneTests
             var off = points.Where(p => Land(CameraPixel(p)) is (int q, int r) && (q, r) != (tlv.Q, tlv.R)).Cast<Vector2?>().FirstOrDefault();
             Assert.IsNotNull(off, $"precondition: some point of the pill {pill} lies over another hex than Tel Aviv's");
             var onPill = ScreenFor(off!.Value);
-            Assert.AreEqual("tel_aviv", root.HoverCity(onPill), "the pointer over Tel Aviv's pill");
+            InputSystem.QueueStateEvent(mouse, new MouseState { position = onPill });
+            InputSystem.Update();
+            yield return null;
             Assert.IsTrue(label.ClassListContains(MapLabelsPresenter.HoverClass), "lights the pill");
             Assert.IsTrue(pointer.HandleClick(onPill), "the pill takes the click");
             Assert.AreEqual("Tel Aviv", ui.Q<Label>("info-title").text);
@@ -583,12 +594,34 @@ public class GameSceneTests
         }
         finally
         {
+            if (mouse.added) InputSystem.RemoveDevice(mouse);
             cam.targetTexture = null;
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             if (ps != null) Object.DestroyImmediate(ps);
             if (rt != null) { rt.Release(); Object.DestroyImmediate(rt); }
             if (camRt != null) { camRt.Release(); Object.DestroyImmediate(camRt); }
         }
+    }
+
+    [Test]
+    public void ABridgeChangeRunsGameRootsCollectionRedraw()
+    {
+        var saved = SpecialBuildingModels.Request;
+        SpecialBuildingModels.Request = TalModelsShots.Answer(Array.Empty<string>());
+        try
+        {
+            var root = Boot();
+            var state = root.Bridge!.State;
+            var city = root.Bridge.Content.SettlementHexes.Single(x => x.Id == "tel_aviv");
+            int id = state.NextId++;
+            state.CityProjects.Add(id, new CityProject(
+                id, Workshops.ArmsWorkshop, city.Id, city.Q, city.R, 0, state.Date));
+            root.Bridge.Skip(state.Units.Keys.First());
+            var layer = Object.FindFirstObjectByType<MapScene>().Terrain.transform.Find(SpecialBuildingModels.Name);
+            Assert.IsNotNull(layer?.Find(SpecialBuildingModels.WorkshopKey(id)),
+                "the real Changed hookup redraws a newly built workshop");
+        }
+        finally { SpecialBuildingModels.Request = saved; }
     }
 
     // One label each presenter writes on every change: HUD, toast, info panel, Why, Budget, Defence, Cabinet, event card

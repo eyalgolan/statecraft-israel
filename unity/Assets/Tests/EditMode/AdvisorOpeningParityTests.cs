@@ -418,7 +418,7 @@ public class AdvisorOpeningParityTests
         Assert.IsTrue(rig.Advisor.Escape(), "Escape skips it");
         Assert.IsFalse(rig.Advisor.InChain);
         // The guide's "Escape does nothing when closed" cannot be asked again here: Time.frameCount does not move in an
-        // edit-mode test, so Escape keeps answering "used this frame" (AdvisorPopupTests.OneEscapeInThePopupLeavesTheScreenUnderItOpen).
+        // edit-mode test, so Escape keeps answering "used this frame" (AdvisorPopupTests.AnInjectedScreenNavHookLeavesTheScreenUnderThePopupOpen).
         Assert.IsFalse(rig.Ui.Root.Q("root").ClassListContains(AdvisorPresenter.OpenClass), "and it stays closed");
 
         rig.Card.Collapse();                                           // the player hid the card before opening the advisor
