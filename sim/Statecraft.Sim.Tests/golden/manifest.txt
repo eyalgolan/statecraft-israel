@@ -2,6 +2,7 @@
 # Tests read this file. To accept a deliberate change: STATECRAFT_UPDATE_GOLDEN=1 dotnet test sim/Statecraft.sln
 # rewrites this file, the snapshots and the GoldenRun.cs constants; then update docs/determinism.md and tools/web_check.py
 # (GoldenManifestTests names any place that is out of date) and add a row to the rebaseline history.
+# gdd-0.3 has no GoldenRun entries: its reference-player policy is not defined, so GoldenRun refuses that ruleset.
 hash1950 a08ff8504d862925563c8523a707b58ebe3bcaac0b504dc9ce7e028fc19eb0e4
 hash1952 5561fc51a03a25e7bad499bd2c9d8de156dea241118ac4c80bbf2e0fb50c97ef
 smoke5 d12c83ce94e3940f93ed21abe7c2c9957de099b2653961da90e87785e6405e79

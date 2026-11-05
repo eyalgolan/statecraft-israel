@@ -114,6 +114,9 @@ namespace Statecraft.Sim
             why.Add(new Cause("economy", "treasury", money,
                 $"Converted {PlayerText.Money(c, "fx_reserves", amount)} of foreign currency into Money: {PlayerText.MoneyChange(c, "treasury", money)}",
                 key: CauseKeys.DollarsConverted, args: new[] { CauseKeys.Number(amount) }));
+            why.Add(new Cause("economy", "fx_reserves", -amount,
+                $"Foreign currency converted into Money: {PlayerText.MoneyChange(c, "fx_reserves", -amount)}",
+                key: CauseKeys.DollarsConvertedFx, args: new[] { CauseKeys.Number(amount) }));
             return null;
         }
 

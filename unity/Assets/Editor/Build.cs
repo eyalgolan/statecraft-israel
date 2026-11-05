@@ -255,20 +255,41 @@ namespace Statecraft.Game.EditorTools
             File.WriteAllText(Path.Combine(folder, PhotoManifestName), PhotoManifestWithOpeningJson(photos, Flag("-shareable"), opening));
         }
 
+        /// <summary>Validates the Web settings before changing any project setting, applies them for <paramref name="build"/>,
+        /// then restores the committed settings even when the build throws.</summary>
+        static void WithWebSettings(string? compression, bool decompressionFallback, string? textureSubtarget,
+            Action<WebGLTextureSubtarget?> build)
+        {
+            var format = Compression(compression);
+            var sub = TextureSubtarget(textureSubtarget);
+            var savedSubtarget = EditorUserBuildSettings.webGLBuildSubtarget;
+            try
+            {
+                ProjectSetup.Apply();
+                PlayerSettings.WebGL.compressionFormat = format;
+                PlayerSettings.WebGL.decompressionFallback = decompressionFallback;
+                if (sub.HasValue) EditorUserBuildSettings.webGLBuildSubtarget = sub.Value;
+                build(sub);
+            }
+            finally
+            {
+                EditorUserBuildSettings.webGLBuildSubtarget = savedSubtarget;
+                ProjectSetup.Apply();
+            }
+        }
+
         public static void Web()
         {
             if (RefuseUnlessShareable()) return;
             var name = Arg("-compression") ?? "disabled";
-            ProjectSetup.Apply();
-            PlayerSettings.WebGL.compressionFormat = Compression(name);
-            PlayerSettings.WebGL.decompressionFallback = Flag("-decompressionFallback");   // off by default: itch.io and web_check send .gz/.br with Content-Encoding (#879); Pages needs the fallback
-            var savedSubtarget = EditorUserBuildSettings.webGLBuildSubtarget;
-            var sub = TextureSubtarget(Arg("-textureSubtarget"));
-            if (sub.HasValue) EditorUserBuildSettings.webGLBuildSubtarget = sub.Value;
-            bool ok;
+            bool ok = false;
             var web = Arg("-out") ?? "Builds/Web-" + name;
-            try { ok = Run(BuildTarget.WebGL, web, sub.HasValue ? (int)sub.Value : 0); if (ok) WritePhotoManifest(web); }
-            finally { EditorUserBuildSettings.webGLBuildSubtarget = savedSubtarget; ProjectSetup.Apply(); }   // back to the committed settings
+            WithWebSettings(name, Flag("-decompressionFallback"), Arg("-textureSubtarget"), sub =>
+            {
+                // Fallback is off by default: itch.io and web_check send .gz/.br with Content-Encoding (#879); Pages needs it.
+                ok = Run(BuildTarget.WebGL, web, sub.HasValue ? (int)sub.Value : 0);
+                if (ok) WritePhotoManifest(web);
+            });
             ExitIfFailed(ok);
         }
 

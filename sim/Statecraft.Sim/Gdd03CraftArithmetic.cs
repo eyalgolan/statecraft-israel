@@ -7,7 +7,8 @@ namespace Statecraft.Sim
     internal enum CraftTickActivity { Idle, Travel, Course, Industry, Workshop, Construction }
 
     /// <summary>Detached #1698 arithmetic on explicit synthetic inputs. No GameState/ledger mutation,
-    /// reservation, payment, receipt deduplication or live promotion. Future owners supply those contracts.</summary>
+    /// reservation, payment, receipt deduplication or live promotion. Gdd03CraftWorkFixture supplies the work receipts,
+    /// their deduplication and the promotion (#2472).</summary>
     internal sealed class Gdd03CraftArithmetic
     {
         internal decimal CourseCost { get; }
@@ -93,8 +94,11 @@ namespace Statecraft.Sim
             if (!Enum.IsDefined(typeof(CraftTickActivity), activity)) throw new ArgumentOutOfRangeException(nameof(activity));
             var working = activity == CraftTickActivity.Industry || activity == CraftTickActivity.Workshop || activity == CraftTickActivity.Construction;
             if (actualWork && !working) throw new ArgumentException("A nonwork activity cannot carry an actual-work receipt.", nameof(actualWork));
-            var xp = actualWork ? checked(workXp + 1) : workXp;
-            var after = actualWork && tier == CivilianTier.Apprentice && xp >= ExpertWorkTurns ? CivilianTier.Expert : tier;
+            // R-CRAFT-002 (#2472): only Industry and arms-workshop turns count (docs/gdd/training.md: "Apprentices become
+            // experts after `craft.expert_work_turns` actual turns in Industry or an arms workshop"); building gives no XP.
+            var counts = actualWork && (activity == CraftTickActivity.Industry || activity == CraftTickActivity.Workshop);
+            var xp = counts ? checked(workXp + 1) : workXp;
+            var after = counts && tier == CivilianTier.Apprentice && xp >= ExpertWorkTurns ? CivilianTier.Expert : tier;
             var income = actualWork && activity == CraftTickActivity.Industry ? (tier == CivilianTier.Apprentice ? apprenticeIncome : expertIncome) : 0m;
             var work = actualWork && activity == CraftTickActivity.Construction ? (tier == CivilianTier.Apprentice ? apprenticeWork : expertWork) : 0m;
             return new CraftWorkTick(unitId, tier, after, xp, income, work);

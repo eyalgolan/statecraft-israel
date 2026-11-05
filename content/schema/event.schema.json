@@ -29,7 +29,24 @@
             }
           }
         }
-      }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "basis": { "enum": ["proposed", "debated"] },
+            "by": { "type": "string", "pattern": "^[^{}]*\\S[^{}]*$" },
+            "sources": { "minItems": 1 }
+          },
+          "required": ["by", "date", "sources"]
+        },
+        {
+          "properties": {
+            "basis": { "const": "design" },
+            "by": { "const": "" }
+          },
+          "not": { "required": ["date"] }
+        }
+      ]
     },
     "requirement": {
       "type": "object",
@@ -40,7 +57,18 @@
         "event": { "$ref": "#/definitions/id" },
         "option": { "$ref": "#/definitions/id" },
         "diverged": { "type": "boolean" }
-      }
+      },
+      "oneOf": [
+        {
+          "required": ["option"],
+          "properties": { "diverged": { "const": false } }
+        },
+        {
+          "required": ["diverged"],
+          "properties": { "diverged": { "const": true } },
+          "not": { "required": ["option"] }
+        }
+      ]
     },
     "variant": {
       "type": "object",
@@ -127,7 +155,7 @@
               }
             }
           },
-          "set_rung": { "type": "integer" },
+          "set_rung": { "type": "integer", "minimum": 1, "maximum": 5 },
           "set_policy": { "type": "object", "additionalProperties": { "type": "number", "minimum": 0, "maximum": 1 }, "description": "Policy id to a level in [0, 1]." },
           "grant_units": {
             "type": "array",
@@ -200,5 +228,29 @@
     "status": { "enum": ["draft", "fact-checked", "historian-reviewed", "sensitivity-reviewed"], "description": "The review status. Default draft." },
     "reviewed_by": { "type": "string", "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}$", "description": "The GitHub handle of the person who signed this row off (#375): written only by that person, never by an AI agent on its own; an AI-assisted contributor's source check counts when the pull request discloses the AI help and says what was checked; an AI-co-authored commit never removes it (owner, 4 November 2026: \"Yes, it counts\", #2481 comment 6623108295; scripts/oss/reviewed_by_guard.py); never an email. Needs reviewed_on." },
     "reviewed_on": { "$ref": "#/definitions/date", "description": "The day of that sign-off. Needs reviewed_by." }
-  }
+  },
+  "oneOf": [
+    {
+      "required": ["title_he", "text_he"],
+      "properties": {
+        "options": {
+          "items": { "required": ["text_he"] }
+        }
+      }
+    },
+    {
+      "allOf": [
+        { "not": { "required": ["title_he"] } },
+        { "not": { "required": ["text_he"] } },
+        { "not": { "required": ["text_he_review"] } },
+        {
+          "properties": {
+            "options": {
+              "items": { "not": { "required": ["text_he"] } }
+            }
+          }
+        }
+      ]
+    }
+  ]
 }
