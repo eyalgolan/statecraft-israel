@@ -469,7 +469,7 @@ public class StartScreenTests
                           && root.Bridge!.State.Cities.ContainsKey(x.Id))
                       from city in Projects.CitiesFor(Inputs.Content, root.Bridge!.State, hex.Q, hex.R)
                       from kind in Inputs.Content.ProjectKinds
-                      where Projects.CheckCityReason(Inputs.Content, root.Bridge.State, kind.Id, city, hex.Q, hex.R) == null
+                      where Projects.CheckCityReason(Inputs.Content, root.Bridge!.State, kind.Id, city, hex.Q, hex.R) == null
                       select (hex, kind)).ToList();
         Assert.IsNotEmpty(offers, "precondition: the continued current-ruleset state has a build action");
         var offer = offers[0];
