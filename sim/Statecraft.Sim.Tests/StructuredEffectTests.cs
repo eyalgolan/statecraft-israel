@@ -332,6 +332,23 @@ from: 1948-05-15
         Assert.Null(Projects.CheckCity(c, s, "industry", "town_a", 1, 1));
     }
 
+    // R-EFX-008 (#2733 item 16): the refusal of a locked kind changes nothing. Attention is refunded (start_project's base cost is
+    // 1 in the fixture), the state is the no-order preview's, and no project or Why line is added.
+    [Fact]
+    public void ALockedProjectsRefusalChangesNothing()
+    {
+        var c = Load(Event(UnlockIndustry), projects: LockedIndustry);
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        Assert.Equal(1.0, c.Rules.AttentionCost[Projects.StartProjectKind]);
+        var none = Simulation.Preview(c, s, Array.Empty<Command>());
+        var r = Simulation.Preview(c, s, new Command[] { new StartProject("industry", "town_a", 1, 1) });
+        Assert.Equal("An industry project is not available yet", Assert.Single(r.Rejected).Reason);
+        Assert.Equal(s.Attention, r.State.Attention);
+        Assert.Equal(none.State.Hash(), r.State.Hash());
+        Assert.Empty(r.State.CityProjects);
+        Assert.Equal(none.Why.Select(w => (w.Key, w.Target, w.Message)), r.Why.Select(w => (w.Key, w.Target, w.Message)));
+    }
+
     // R-EFX-008: the unlock is game state, so a save replays it to the same hash.
     [Fact]
     public void ASaveWithAnUnlockReplays()
