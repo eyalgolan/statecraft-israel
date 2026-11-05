@@ -293,6 +293,35 @@ public class HebrewUiTests
         CollectionAssert.DoesNotContain(game.Bridge.NeedsOrders.ToList(), skipped);
     }
 
+    /// <summary>#2708: the language switch rebuilds the Budget screen over the same game, and the new screen keeps the
+    /// player's unsubmitted draft (and says it is unsubmitted) instead of starting again from the submitted budget.</summary>
+    [Test]
+    public void TheLanguageSwitchKeepsAnUnsubmittedBudgetDraft()
+    {
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        Object.FindFirstObjectByType<MapScene>().Build(Inputs.Map);
+        var game = Object.FindFirstObjectByType<GameRoot>();
+        game.Store = new SaveStore(saveDir);
+        game.Settings = new SettingsStore(Path.Combine(saveDir, "settings"));
+        game.Begin(Inputs, 0);
+        var office = game.Bridge!.State.Budget.Keys.OrderBy(k => k, StringComparer.Ordinal).First();
+        var expected = BudgetPresenter.Adjust(game.Bridge.State.Budget, office, BudgetPresenter.Step);
+        UiTestKit.Press(Ui.Q<Button>("nav-budget"));
+        UiTestKit.Press(Ui.Q<Button>("budget-" + office + "-up"));
+        Assert.AreEqual(En["budget.unsaved"], Ui.Q<Label>("budget-status").text, "precondition: an unsubmitted draft");
+
+        UiTestKit.Press(Ui.Q<Button>("nav-settings"));
+        UiTestKit.Press(Ui.Q<Button>("settings-language-he"));
+        Assert.IsTrue(Ui.Q("root").ClassListContains(UiLanguage.HebrewClass), "precondition: the UI was rebuilt");
+        UiTestKit.Press(Ui.Q<Button>("nav-budget"));
+        Assert.AreEqual(He["budget.unsaved"], Ui.Q<Label>("budget-status").text, "the draft is still unsubmitted");
+        Assert.IsEmpty(game.Bridge!.Queued, "nothing was submitted by the switch");
+
+        UiTestKit.Press(Ui.Q<Button>("budget-submit"));
+        var queued = (Statecraft.Sim.AllocateBudget)game.Bridge.Queued.Single();
+        foreach (var kv in expected) Assert.AreEqual(kv.Value, queued.Shares[kv.Key], 1e-9, kv.Key + ": the edited draft is what Submit sends");
+    }
+
     /// <summary>A language named in the address or on the command line (the store page's "?lang=he" link) holds for that
     /// visit over the stored choice; without one the stored choice holds; with neither, English.</summary>
     [Test]
