@@ -611,6 +611,9 @@ end.objective_open: "יעד {0}: לא הושלם; בהיסטוריה ב־{1}"
 end.parameter: "{0}: {1}"
 end.population: "אוכלוסייה: {0}"
 end.population_history: "אוכלוסייה: {0}; לפי הלמ״ס {2} ב־{1}"
+# For the native reviewer (#564): the end screen's end date (#2545).
+end.date: "הסתיים ב־{0}"
+
 # For the native reviewer (#564)
 cabinet.coalition: "קואליציה: {0} מתוך {1} {3} · יציבות {2}"
 cabinet.vacant: "(פנוי)"
