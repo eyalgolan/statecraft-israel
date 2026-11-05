@@ -450,6 +450,29 @@ public class CityPanelTests
             "Train(2) would run in the first order's slot, before the purchase, with Arms for one group only");
     }
 
+    // #2580 review: the press previews Train(2) in Train(1)'s slot, which takes both idle civilians, so End turn would refuse
+    // the reassignment queued after it (R-QUAL-004). That refusal is caused by the press, so it must not free a civilian for
+    // it: #1548 counts the queued reassignment. Red-first prediction at f28230b07: enabled, as the press preview's refusals
+    // were left out of the count.
+    [Test]
+    public void ATrainPressCannotTakeTheCivilianALaterReassignmentNeeds()
+    {
+        using var ui = new UiTestKit();
+        var bridge = Bridge(En, s => { Counts(50, 48)(s); Qualify(1, 0)(s); });
+        using var panel = Panel(ui, bridge, En);
+        panel.Show(CityHex.q, CityHex.r);
+        Assert.AreEqual(2, Training.Idle(bridge.State, bridge.State.Cities[City]), "precondition: two civilians without work");
+        var train = new Train(City, "halutz", 1);
+        var reassign = new ReassignCraftsmen(City, 1);
+        Assert.IsNull(bridge.Queue(train), "precondition: one halutz group takes one of them");
+        Assert.IsNull(bridge.Queue(reassign), "precondition: the reassignment takes the other");
+        CollectionAssert.AreEqual(new Command[] { train, reassign }, bridge.Queued, "precondition: the reassignment is after the Train");
+        Assert.IsEmpty(Simulation.Preview(C, bridge.TurnStart, bridge.Session.Committed.Concat(bridge.Queued).ToList()).Rejected,
+            "precondition: End turn accepts both queued orders");
+        Assert.IsFalse(ui.Q<Button>("city-train-halutz").enabledSelf,
+            "Train(2) would take the reassignment's civilian, and End turn would refuse the reassignment");
+    }
+
     [Test]
     public void TrainingAcrossBothTracksStopsAtTheIdleCivilianLimit()
     {
