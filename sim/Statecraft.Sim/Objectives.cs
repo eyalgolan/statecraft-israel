@@ -55,7 +55,7 @@ namespace Statecraft.Sim
             : o.CompletesWhen.SitesBuilt.Count > 0 ? o.CompletesWhen.SitesBuilt.All(id => s.Sites.TryGetValue(id, out var site) && site.BuiltOn != null)
             : s.Sites.TryGetValue(o.CompletesWhen.SiteBuilt, out var w) && w.BuiltOn != null;
 
-        /// <summary>R-OBJ-004 (D-B4; owner, 18 October 2026, #738, option (a)): once the Jewish population (the national count,
+        /// <summary>R-OBJ-004 (D-B4; owner, 18 October 2026, #738, option (a)): once the population (the national count,
         /// as it stands when step 11 runs, before the turn's population step) has reached the gate, the cities' overflow is at
         /// most its share of the people they house and their employed at least its share of their civilians and craftsmen, as
         /// R-CITY-005 counts them (Cities.EmployedShare; owner, 3 November 2026, #1714: "Both rulesets (Recommended)", so

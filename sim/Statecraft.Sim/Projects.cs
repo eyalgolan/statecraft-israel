@@ -307,7 +307,7 @@ namespace Statecraft.Sim
         /// <summary><see cref="CheckCity"/>'s one validator (#1122, owner ruling 2): null when the project may be started, else a
         /// stable kind and invariant values for a UI to word in its language (the map actions' pattern), plus the English text.
         /// The kinds, in check order: unknown_kind, unknown_city, locked (kind), maabarot_policy, no_resource (city, resource, kind), not_land,
-        /// too_far (distance, city), repair_city_hex (city; a housing repair off its city's own hex), occupied (the placement's
+        /// depopulated, too_far (distance, city), repair_city_hex (city; a housing repair off its city's own hex), occupied (the placement's
         /// action), occupied_project (the project's kind), city_cap (city;
         /// gdd-0.3 only), turn_cap (cap).</summary>
         public static MapActionReason? CheckCityReason(Content c, GameState s, string kind, string city, int q, int r)

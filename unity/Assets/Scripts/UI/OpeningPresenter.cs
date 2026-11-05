@@ -118,12 +118,12 @@ namespace Statecraft.Game.UI
             scroll.scrollOffset = Vector2.zero;
         }
 
-        /// <summary>The shown panel's photograph, its English credit line and its alt text as the tooltip.</summary>
+        /// <summary>The shown panel's photograph, its English credit line and its localized alt text as the tooltip.</summary>
         void ShowPhoto()
         {
             var panel = data.Panels[Index];
             photo.style.backgroundImage = new StyleBackground(catalog.photos[Index]);
-            photo.tooltip = panel.Image.Alt;
+            photo.tooltip = LocalAlt(panel.Image.Alt, panel.Image.AltHe);
             SetCredit(panel.Image.Credit, english: true);
             caption.text = ""; caption.style.display = DisplayStyle.None;
         }
@@ -147,7 +147,7 @@ namespace Statecraft.Game.UI
             var panel = data.Panels[Index];
             if (panel.Clip == null || failed.Contains(panel.Id)) return;
             SetCredit(text["event.ai_label"], english: false);
-            photo.tooltip = panel.Clip.Alt;
+            photo.tooltip = LocalAlt(panel.Clip.Alt, panel.Clip.AltHe);
             // The panel's caption line under the clip, as the outcome clips have theirs under the picture: in Hebrew once
             // a native speaker has read it, else in English.
             if (panel.Caption is OpeningContent.Caption line)   // Parse requires one with every clip
@@ -164,6 +164,9 @@ namespace Statecraft.Game.UI
                 if (IsOpen && data.Panels[Index].Id == id) ShowPhoto();
             });
         }
+
+        string LocalAlt(string english, string? hebrewAlt) =>
+            hebrew && !string.IsNullOrWhiteSpace(hebrewAlt) ? hebrewAlt! : english;
 
         /// <summary>Stops the clip, or its pending start; the caller puts the photograph back.</summary>
         void StopClip()

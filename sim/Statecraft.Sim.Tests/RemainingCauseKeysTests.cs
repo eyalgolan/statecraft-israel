@@ -115,7 +115,7 @@ public class RemainingCauseKeysTests
                 sites++;
             }
         }
-        Assert.Equal(122, sites);   // 122 with #2527's FoodImported and the conversion's fx_reserves line; 120 with #2457's event Debt line (R-EFX-009); 119 with #1700 slice B's ProjectBuilderFreed; 118 with #1700's builders (R-CITY-011: two ProjectBuilder lines, ProjectWaiting, the build order's job-default line); 114 with #1703's gdd-0.3 housing surcharge and housing cohesion lines; 112 with the arms workshops' five (R-ARMS-005 with its job-default line, R-ARMS-006; #1701); 107 with R-MONEY-004's DollarsConverted (#813); 106 since #2212: EconomySystem.OtherMoney's line (105 since #2199: PayOrBorrow's Paid line)
+        Assert.Equal(123, sites);   // 123 with #2471's gdd-0.3 field Food line (R-FIELD-002); 122 with #2527's FoodImported and the conversion's fx_reserves line; 120 with #2457's event Debt line (R-EFX-009); 119 with #1700 slice B's ProjectBuilderFreed; 118 with #1700's builders (R-CITY-011: two ProjectBuilder lines, ProjectWaiting, the build order's job-default line); 114 with #1703's gdd-0.3 housing surcharge and housing cohesion lines; 112 with the arms workshops' five (R-ARMS-005 with its job-default line, R-ARMS-006; #1701); 107 with R-MONEY-004's DollarsConverted (#813); 106 since #2212: EconomySystem.OtherMoney's line (105 since #2199: PayOrBorrow's Paid line)
     }
 
     [Fact]
@@ -394,8 +394,9 @@ public class RemainingCauseKeysTests
             + (fled ? "Its residents fled. " : "") + "It awaits a decision", captured.Message);
         Assert.Equal("TOWN A: Israeli units withdrew and it is under enemy control again. "
             + (fled ? "Its residents fled when it was captured" : "Its residents are unchanged"), withdrawn.Message);
-        // Release leaves no stayed record; the stored line must still carry the prior resident state.
-        if (!fled) Assert.False(result.State.Settlements.ContainsKey("town_a"));
+        // Release leaves an ownerless lost marker with the residents' state (#2542); the stored line must still carry it.
+        var marker = result.State.Settlements["town_a"];
+        Assert.Equal(("", fled), (marker.Owner, marker.Fled));
         result.State.Settlements.Clear();
         Assert.Equal(fled ? "1" : "0", withdrawn.Args[1]);
     }

@@ -314,6 +314,30 @@ public class CityProjectPanelTests
         Assert.IsNull(ui.Root.Q("city-project-" + MapActions.TransitCamp + "-reason"));
     }
 
+    // Red-first prediction at 085944e62: the first failure is the missing info.map_action_reason.depopulated text key.
+    [Test]
+    public void TheDepopulatedReasonShowsInThePanelsLanguage([Values] bool hebrew)
+    {
+        var text = hebrew ? He : En;
+        var target = C.SettlementTargets.Single(x => x.Id == "jaffa");
+        using var ui = new UiTestKit();
+        // With the policy the transit camp is refused for the shared reason too, not for the policy first (as the tests above).
+        var bridge = Bridge(text, s => { s.Settlements[target.Id] = new SettlementControl(depopulated: true); s.Policies[MapActions.MaabarotPolicy] = 1; });
+        Assert.IsNotEmpty(Projects.CitiesFor(C, bridge.State, target.Q, target.R),
+            "precondition: a city can otherwise build on the target hex");
+        using var panel = Panel(ui, bridge, text);
+        panel.Show(target.Q, target.R);
+
+        Assert.AreEqual("depopulated", Projects.CheckCityReason(C, bridge.State, "housing",
+            Projects.CitiesFor(C, bridge.State, target.Q, target.R)[0], target.Q, target.R)?.Kind);
+        Assert.AreEqual(text["info.map_action_reason.depopulated"], ui.Q<Label>("city-project-reason").text);
+        Assert.IsNull(ui.Root.Q("city-project-housing"), "the shared refusal replaces the Build buttons");
+        if (hebrew)
+            Assert.IsFalse(System.Text.RegularExpressions.Regex.IsMatch(
+                ui.Q<Label>("city-project-reason").text, "[A-Za-z]"),
+                "the Hebrew panel must not fall back to the sim's English");
+    }
+
     [Test]
     public void AnOrderTheAttentionCannotPayIsRefusedByTheBridge()
     {

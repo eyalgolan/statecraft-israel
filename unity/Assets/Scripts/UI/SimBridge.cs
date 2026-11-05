@@ -312,7 +312,7 @@ namespace Statecraft.Game.UI
             if (ReasonKeys.TryGetValue(reason, out var key))
             {
                 if (reason != EconomySystem.RefusedDollarsMinimum) return text[key];
-                return c == null ? reason : text.Format(key, PlayerText.Money(c, "fx_reserves", 1));
+                return c == null ? reason : text.Format(key, PlayerText.Money(c, "fx_reserves", EconomySystem.DollarsMinimum));
             }
             foreach (var (pattern, format) in ReasonFormats)
                 if (pattern.Match(reason) is { Success: true } m)

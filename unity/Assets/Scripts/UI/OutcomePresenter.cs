@@ -149,7 +149,8 @@ namespace Statecraft.Game.UI
             Showing = row;
             UnityEngine.Debug.Log("OUTCOME showing " + row.Event);
             caption.text = order;
-            media.tooltip = row.Alt;
+            media.tooltip = text["ui.lang"] == UiLanguage.Hebrew && !string.IsNullOrWhiteSpace(row.AltHe)
+                ? row.AltHe : row.Alt;
             media.style.backgroundImage = StyleKeyword.None;
             hudRoot.AddToClassList(OpenClass);
             ScreenNav.DisableCovered(hudRoot);

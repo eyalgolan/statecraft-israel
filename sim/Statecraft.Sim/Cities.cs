@@ -45,7 +45,8 @@ namespace Statecraft.Sim
         /// <summary>R-CTRL-016 (OWNER QUESTION 1 (a) on #799, the starting-city rule): a stayed target joins the player's
         /// population as one new city: its approved people in units (R-CITY-007), homes equal to them, jobs equal to the
         /// employed (people times employed_share to the nearest unit), the usual start condition, and no refugees, recruits or
-        /// craftsmen. Null when added, else the reason with the state unchanged (the id is already a city).</summary>
+        /// craftsmen. Its approved people join GameState.Population's annexed group (R-CITY-008). Null when added, else the
+        /// reason with the state unchanged (the id is already a city).</summary>
         internal static string? Annex(Content c, GameState s, SettlementTarget t)
         {
             if (s.Cities.ContainsKey(t.Id)) return $"{c.SettlementNames[t.Id]} is already a city";
@@ -54,8 +55,17 @@ namespace Statecraft.Sim
             var units = StartUnits(people, r.PeoplePerUnit);
             var employed = NearestUnit(people * t.Annexation.EmployedShare!.Value, r.PeoplePerUnit);
             s.Cities[t.Id] = new City(t.Id, units, employed, units, employed, 0, 0, r.HousingStartCondition!.Value);
+            // R-CITY-008 (owner on #2608, "Yes, add them (Recommended)"): the city's people are part of the nation's record,
+            // so its approved count joins it. Our design, not the ruling: they get their own group, and an initialized gdd-0.3
+            // ledger fixture keeps its own record of people (R-POP-001) and is left alone.
+            if (!s.PopulationLedger.IsInitialized)
+                s.Population[AnnexedGroup] = (s.Population.TryGetValue(AnnexedGroup, out var had) ? had : 0) + (double)people;
             return null;
         }
+
+        /// <summary>R-CITY-008, R-CTRL-016: the GameState.Population group an annexed town's residents join. Their own key,
+        /// not an aliyah origin, so the record of who arrived from where stays the sourced series.</summary>
+        public const string AnnexedGroup = "annexed";
 
         /// <summary>Fills the state's cities from cities.yaml, with no refugees yet and the start housing condition (R-HOUSE-001). Does nothing in the legacy loop.</summary>
         public static void Init(Content c, GameState s)

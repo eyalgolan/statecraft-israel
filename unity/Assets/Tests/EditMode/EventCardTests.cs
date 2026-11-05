@@ -275,6 +275,32 @@ public class EventCardTests
     }
 
     [Test]
+    public void APhotographUsesHebrewAltWithEnglishFallback()
+    {
+        var real = AssetDatabase.LoadAssetAtPath<EventImageCatalog>(PhotosPath);
+        var photos = Object.Instantiate(real);
+        try
+        {
+            using (var ui = new UiTestKit())
+            {
+                var card = new EventCardPresenter(ui.Root, AtArmistice(), He, null, photos);
+                var entry = photos.Find("armistice_egypt")!.Value;
+                Assert.AreEqual(entry.altHe, ui.Q<VisualElement>("event-photo").tooltip);
+                card.Dispose();
+            }
+            int at = photos.entries.FindIndex(e => e.eventId == "armistice_egypt");
+            var blank = photos.entries[at]; blank.altHe = ""; photos.entries[at] = blank;
+            using (var ui = new UiTestKit())
+            {
+                var card = new EventCardPresenter(ui.Root, AtArmistice(), He, null, photos);
+                Assert.AreEqual(blank.alt, ui.Q<VisualElement>("event-photo").tooltip);
+                card.Dispose();
+            }
+        }
+        finally { Object.DestroyImmediate(photos); }
+    }
+
+    [Test]
     public void AnEventWithoutAPhotographFallsBackToTheMinistersPortrait()
     {
         using var ui = new UiTestKit();

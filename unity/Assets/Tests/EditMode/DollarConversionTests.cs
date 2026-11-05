@@ -200,7 +200,7 @@ public class DollarConversionTests
         Assert.AreEqual(EconomySystem.RefusedDollarsMinimum, SimBridge.ReasonText(En, EconomySystem.RefusedDollarsMinimum));
         foreach (var reason in refusals)
         {
-            var money = PlayerText.Money(c, "fx_reserves", 1);
+            var money = PlayerText.Money(c, "fx_reserves", EconomySystem.DollarsMinimum);   // the constant the sim refuses on (#2704)
             var expected = reason == EconomySystem.RefusedDollarsMinimum ? En.Format("dollars.refused_minimum", money) : reason;
             Assert.AreEqual(expected, SimBridge.ReasonText(En, reason, c), "the English string uses the sim's words and formatted money");
             var he = SimBridge.ReasonText(He, reason, c);

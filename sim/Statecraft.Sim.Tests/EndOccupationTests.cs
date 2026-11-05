@@ -103,7 +103,7 @@ public class EndOccupationTests
         Assert.True(s.Settlements["town_a"].Depopulated);
     }
 
-    // R-CTRL-015: withdrawing at the end is the Raid withdrawal: the units leave, the record goes.
+    // R-CTRL-015: withdrawing at the end is the Raid withdrawal: the units leave and the ownerless lost marker remains.
     [Fact]
     public void WithdrawAtTheEndIsTheRaidWithdrawal()
     {
@@ -111,7 +111,8 @@ public class EndOccupationTests
         var s = AwaitingEnd(c, false, Soldier(2, 1, 0));
         var after = Simulation.Step(c, s, new Command[] { new EndOccupation("town_a", SettlementControl.WithdrawOutcome) });
         Assert.Empty(after.Rejected);
-        Assert.False(after.State.Settlements.ContainsKey("town_a"));
+        var lost = after.State.Settlements["town_a"];
+        Assert.Equal(("", "", s.Date, false), (lost.Owner, lost.State, lost.Since, lost.Fled));
         Assert.NotEqual((1, 0), (after.State.Units[2].Q, after.State.Units[2].R));
         Assert.Contains(after.Why, x => x.Target == "town_a" && x.Message.Contains("Its residents are unchanged"));
     }
@@ -180,6 +181,44 @@ public class EndOccupationTests
         Assert.Contains(why, w => w.Target == "town_c" && w.Message.Contains("Its residents join the population"));
         Assert.NotNull(SettlementControl.End(c, s, "town_c", SettlementControl.Annex, new List<Cause>()));   // no second city
         Assert.Equal(cities + 1, s.Cities.Count);
+    }
+
+    // R-CITY-008, R-CTRL-016 (owner on #2608, 4 November 2026: "Yes, add them (Recommended)"): a stayed town's 60 approved
+    // people join GameState.Population (in the annexed group, our design), so the national record still holds every
+    // city's people. A fled town adds no one ("Territory only, no gain").
+    [Fact]
+    public void AnnexingAStayedPlaceAddsItsPeopleToThePopulationAndAFledOneAddsNone()
+    {
+        var c = CaptureTests.Load(CaptureTests.AllTargets);   // fixture rows are stayed, people 60
+        var s = AwaitingEnd(c, "town_c", false, Soldier(1, 4, 0));
+        var (total, before) = (s.TotalPopulation, new Dictionary<string, double>(s.Population));
+        Assert.DoesNotContain(Cities.AnnexedGroup, before.Keys);
+        Assert.Null(SettlementControl.End(c, s, "town_c", SettlementControl.Annex, new List<Cause>()));
+        Assert.Equal(60d, s.Population[Cities.AnnexedGroup]);
+        Assert.Equal(total + 60, s.TotalPopulation);
+        Assert.All(before, kv => Assert.Equal(kv.Value, s.Population[kv.Key]));   // the other groups are untouched
+
+        var fled = CaptureTests.LoadFled(new[] { "town_a" }, CaptureTests.AllTargets);
+        var f = AwaitingEnd(fled, true, Soldier(1, 1, 0));
+        var pop = new Dictionary<string, double>(f.Population);
+        Assert.Null(SettlementControl.End(fled, f, "town_a", SettlementControl.Annex, new List<Cause>()));
+        Assert.Equal(pop, f.Population);
+    }
+
+    // R-CITY-008 (#2620 review): an initialized gdd-0.3 ledger fixture keeps its own record of people (R-POP-001), so
+    // annexing a stayed real town there still adds its city but leaves GameState.Population as it was.
+    [Fact]
+    public void AnnexingIntoAnInitializedGdd03LedgerLeavesThePopulationAlone()
+    {
+        var c = PlayerRegionsContentTests.Load(File.ReadAllText(Path.Combine(RealContentTests.ContentRoot(), "regions.yaml")));
+        var s = PlayerRegions.CreateFixture(c,
+            c.PlayerRegions.Regions.Keys.Select(id => new PlayerRegionPool(id, 0, 0m, 0, 0, Array.Empty<PlayerRegionFacility>())),
+            Array.Empty<PopulationInventoryRow>(), Array.Empty<PopulationTarget>(), Array.Empty<string>(), Array.Empty<string>());
+        Assert.True(s.PopulationLedger.IsInitialized);
+        var pop = new Dictionary<string, double>(s.Population);
+        Assert.Null(Cities.Annex(c, s, c.SettlementTargets.Single(x => x.Id == "nazareth")));
+        Assert.Contains("nazareth", s.Cities.Keys);
+        Assert.Equal(pop, s.Population);
     }
 
     // R-CTRL-016: an id that is already a city is refused, the state unchanged (Cities.Annex adds one city, never two).

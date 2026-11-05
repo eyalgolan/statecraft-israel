@@ -7,11 +7,15 @@ moments.md`, the "Full plan"; plan: `docs/superpowers/plans/2026-10-13-decision-
 ## Rules
 
 - **The archival photograph comes first.** The card always opens on the photograph. The switch shows only for an event
-  that has both a photograph and a clip, and only while the photograph is shown. A clip is never the only picture of a
-  real event (`EventImageCatalog`; GDD: authentic images for history).
+  that has both a photograph and a clip. It stays while the clip plays, and its label then reads "Photograph"
+  (`event.photo`). A clip is never the only picture of a real event (`EventImageCatalog`; GDD: authentic images for history).
 - **The clip is labelled in the card, not in the file.**
-  - While it plays, "AI-generated illustration" replaces the photograph's credit, and the clip's own alt text becomes
-    the header's tooltip.
+  - From the moment play is requested, "AI-generated illustration" replaces the photograph's credit, and the clip's own
+    alt text becomes the header's tooltip. `CardVideo` keeps the photograph in the header until the clip's first frame
+    (up to `CardVideo.PrepareTimeoutMs`, 8 s, after which the clip counts as failed and the photograph and its credit
+    come back), so the photograph can show under the AI label for that time. Hebrew uses `alt_he` when present and otherwise falls back to English; an agent-drafted value
+    carries `alt_he_review: agent-checked` until #564's native read. The reviewer then removes the marker while the
+    cleared `alt_he` remains; `alt_he_review` is invalid without `alt_he`.
   - The files carry **no burned-in caption**. Owner ruling of 14 October 2026, relayed by the coordinator, after
     watching the three sensitive clips: "the 3 ilustration clips are great but no need to say there were created by
     ai". Until then each file carried a small "AI-generated · נוצר בבינה מלאכותית" label; every clip was re-encoded
@@ -111,10 +115,11 @@ loop, and Yemen has one new shot made for it. All three follow the same rules as
   `OpeningPresenter.PhotoHoldMs` (2 s) the clip loops, silent, in the photograph's frame. CardVideo keeps the photograph
   until the clip's first frame.
 - **The hold.** Owner, 2 Nov 2026: "2 s automatic (Recommended)".
-- **The label.** While the clip plays, the cards' `event.ai_label` string replaces the credit, in Hebrew in the Hebrew
-  UI. The clip's alt text becomes the tooltip.
-- **The caption.** One line under the picture, shown only with the clip, as the outcome clips' caption sits under
-  theirs. Each panel's `caption:` (`text`, `text_he`, `he_review`) restates a sentence of the panel's approved text.
+- **The label.** When the hold ends and play is requested, the cards' `event.ai_label` string replaces the credit, in
+  Hebrew in the Hebrew UI; the photograph stays up until the clip's first frame. The clip's localized alt text becomes
+  the tooltip, with the same per-field English fallback as the cards.
+- **The caption.** One line under the picture, shown from the moment play is requested (so the photograph can still be
+  up under it until the clip's first frame), as the outcome clips' caption sits under theirs. Each panel's `caption:` (`text`, `text_he`, `he_review`) restates a sentence of the panel's approved text.
   Owner, 2 Nov 2026: "Version 1, fixed (Recommended)", which is also the owner's native read of the Hebrew.
 - **Stopping and failing.** Back, Next, Skip and Esc stop the clip. A clip that fails or times out puts the photograph
   back for the rest of the session. Video is off in the automated runs, as on the cards.
@@ -134,7 +139,7 @@ loop, and Yemen has one new shot made for it. All three follow the same rules as
   SHA-256s are in the row. The owner reviewed the cleaned clip on 2 November 2026: "Approve it".
 - **The checks.** `OpeningContent.Parse` refuses a malformed row. `tools/tests/test_opening_sources.py` checks each
   clip's file, its `ASSETS.yaml` row and its `docs/ai-disclosure.md` line, and that a reused card clip keeps the card
-  row's shot and alt text. Every opening panel is sensitive, so its clip is `sensitive: true`, and a `-shareable` build
+  row's shot, `alt`, `alt_he` and `alt_he_review`. Every opening panel is sensitive, so its clip is `sensitive: true`, and a `-shareable` build
   refuses it until the owner sets `sensitivity_reviewed: true` (`Build.OpeningShareableRefusal`). The owner reviewed the
   two card clips in the opening on 2 November 2026 ("Approve both") and the Yemen clip the same day ("Approve it"). A
   clip needs its caption, and a shareable build refuses a caption whose Hebrew is not `he_review: approved`.
@@ -143,10 +148,10 @@ loop, and Yemen has one new shot made for it. All three follow the same rules as
 
 | What | Where |
 |---|---|
-| The mapping: event (and, for an outcome, option and window), file, promo shot and its SHA-256, generator, date, alt text, sensitivity flags | `unity/Assets/Resources/EventVideos/event-videos.yaml` |
+| The mapping: event (and, for an outcome, option and window), file, promo shot and its SHA-256, generator, date, English and optional Hebrew alt text, sensitivity flags | `unity/Assets/Resources/EventVideos/event-videos.yaml` |
 | The clips (960x540 H.264, about 0.4 to 1.5 MB each) | `unity/Assets/StreamingAssets/video/<event>.mp4`, and `<event>-outcome.mp4` for the outcome clips, and `opening_yemen.mp4` for the opening's Yemen panel |
 | The encode, pinned (no burned-in caption) | `tools/encode_event_videos.py` |
-| The player: a lazy VideoPlayer playing a URL into a 960x540 RenderTexture; one for the card's loop and one for the outcome clips | `CardVideo` |
+| The player: a lazy VideoPlayer playing a URL into a 960x540 RenderTexture; one for the card's loop, one for the outcome clips and one for the opening (`GameRoot`) | `CardVideo` |
 | The outcome clips at End turn | `OutcomePresenter` |
 | The switch | `EventCardPresenter.ApplyIllustration` |
 

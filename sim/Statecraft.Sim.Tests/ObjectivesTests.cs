@@ -23,6 +23,7 @@ options:
   - id: continue
     text: Continue
     historical: true
+sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
 ";
 
     const string PartsYaml = @"
@@ -61,6 +62,7 @@ options:
   - id: continue
     text: Continue
     historical: true
+sources: [{{ url: https://example.org/event, checked: 2026-10-18 }}]
 ";
 
     static Content LoadParts(string objectives = PartsYaml)
@@ -763,7 +765,7 @@ eras:
 
     static string GddRules(string from, string to) => Fixture.Gdd()["rules.yaml"].Replace(from, to);
 
-    static string TwoOptions => Card + "  - id: refuse\n    text: Refuse\n    alternative: { basis: design }\n";
+    static string TwoOptions => Card.Replace("sources:", "  - id: refuse\n    text: Refuse\n    alternative: { basis: design }\nsources:");
 
     static string Objective(string from, string to) => ObjectivesYaml.Replace(from, to);
 

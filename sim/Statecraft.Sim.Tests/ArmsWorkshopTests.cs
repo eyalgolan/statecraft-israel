@@ -789,6 +789,26 @@ public class ArmsWorkshopTests
         }
     }
 
+    // R-QUAL-004 with R-ARMS-005 and R-CITY-011 (#2730): a craftsmen reassignment cannot take a staffed workshop's worker or
+    // a builder either: like Train and the pioneer reassignment, it counts Training.Idle(s, city). Refused, state unchanged.
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ReassignCraftsmenCannotTakeAStaffedWorkshopsWorkerOrABuilder(bool builder)
+    {
+        var (c, s, id) = Built(civilians: 3, employed: 2, jobs: 2, jobsDefault: false);
+        var x = s.Cities["town_a"];
+        s.Cities["town_a"] = x.WithQualified(new Qualified(1, 0, Array.Empty<int>()));
+        if (builder) s.CityProjects[id] = s.CityProjects[id].WithBuilder(true);
+        else s.Workshops.Add(id, new Workshop(id, true, SyntheticWorkshopTier.Ordinary));
+        Assert.Equal(0, Training.Idle(s, s.Cities["town_a"]));
+        int craftsmen = s.Cities["town_a"].Craftsmen;
+        var r = Step(c, s, new ReassignCraftsmen("town_a", 1));
+        Assert.Equal("Town A has 0 civilians without work", Assert.Single(r.Rejected).Reason);
+        Assert.Equal(1, r.State.Cities["town_a"].Qualified.Craftsmen);   // nobody reassigned
+        Assert.Equal(craftsmen, r.State.Cities["town_a"].Craftsmen);
+    }
+
     // R-TRAIN-001 with R-ARMS-005 (#2270): Training.Idle stops at 0 when a staffed workshop's worker leaves no free civilian,
     // so a Train refusal never names a negative count.
     [Fact]

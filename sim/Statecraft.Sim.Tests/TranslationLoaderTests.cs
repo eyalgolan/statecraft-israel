@@ -253,7 +253,7 @@ public class TranslationLoaderTests
         f["gdd03-events.yaml"] = "ruleset: gdd-0.3\nexclusions:\n  - { id: probe, reason: Fixture }\n";
         var dir = Fixture.Write(f, new Dictionary<string, string>
         {
-            ["probe.yaml"] = "id: probe\ntitle: Fixture\ntext: Fixture.\nfrom: 1948-05-15\noptions:\n  - id: ok\n    text: Accept\n    historical: true\n",
+            ["probe.yaml"] = "id: probe\ntitle: Fixture\ntext: Fixture.\nfrom: 1948-05-15\noptions:\n  - id: ok\n    text: Accept\n    historical: true\nsources: [{ url: \"https://example.org/event\", checked: 2026-10-18 }]\n",
         });
         var c = WithFolder(new Dictionary<string, string> { ["ro/ui.yaml"] = Ro, ["ro/events.yaml"] = RoEvent("probe", "ok") }, t => ContentLoader.Load(dir, t));
         Assert.DoesNotContain(c.Events, e => e.Id == "probe");

@@ -148,7 +148,7 @@ public class OccupyTests
     }
 
     // R-CTRL-013 (Q-OCC-2 (a)): withdrawal before the timer ends is allowed and becomes a Raid. The occupation lasts while
-    // an Israeli military unit is on the hex; when step 10 finds none (the player moved them out), the record goes, the
+    // an Israeli military unit is on the hex; when step 10 finds none (the player moved them out), the lost marker remains, the
     // place is under enemy control again with its residents unchanged, no upkeep is paid that turn and nothing else
     // changes: the turn ends as the twin's that never captured it.
     [Fact]
@@ -158,14 +158,16 @@ public class OccupyTests
         var s = Step(c, Awaiting(c, Soldier(1, 1, 0)), Occupy()).State;
         var result = Step(c, s, new Move(1, 2, 0));
         Assert.Empty(result.Rejected);
-        Assert.Empty(result.State.Settlements);
+        var lost = Assert.Single(result.State.Settlements).Value;
+        Assert.Equal(("", "", s.Settlements["town_a"].Since, false), (lost.Owner, lost.State, lost.Since, lost.Fled));
         Assert.Contains(result.Why, x => x.Target == "town_a" && x.Message.Contains("under enemy control again"));
         Assert.Contains(Movement.NoEntry(c, result.State), h => h == (1, 0));
         // Spec 4.4 now captures a unit already on the target before orders. A never-captured twin must start outside.
         var twin = Without(s);
         Assert.Null(Movement.Move(c, twin, 1, 2, 0, new Dictionary<int, int>(), new List<Cause>()));
         Assert.Equal((2, 0), (result.State.Units[1].Q, result.State.Units[1].R));
-        Assert.Equal(Step(c, twin).State.Describe(), result.State.Describe());
+        var without = result.State.Clone(); without.Settlements.Clear();
+        Assert.Equal(Step(c, twin).State.Describe(), without.Describe());
     }
 
     // R-CTRL-013: a halutz left on the hex holds nothing (#796), so the occupation still ends.
@@ -174,7 +176,7 @@ public class OccupyTests
     {
         var c = Load();
         var s = Step(c, Awaiting(c, Soldier(1, 1, 0), new Unit(2, "halutz", 1, 0)), Occupy()).State;
-        Assert.Empty(Step(c, s, new Move(1, 2, 0)).State.Settlements);
+        Assert.Equal("", Step(c, s, new Move(1, 2, 0)).State.Settlements["town_a"].Owner);
     }
 
     // R-CTRL-003, R-CTRL-011 (Q-OCC-1 (a), "no effect on residents"): Occupy and the occupation change the record's state
@@ -267,7 +269,7 @@ public class OccupyTests
 
     /// <summary>Plays <paramref name="turns"/> from <paramref name="s"/>, running <paramref name="between"/> on the state
     /// before each turn's orders (null leaves it alone), and after each turn records <paramref name="id"/>'s record as
-    /// state/turns ("none" with no record) with soldier 1's hex, and the canonical state with the Attention pool and the
+    /// state/turns (an empty state for a lost marker, "none" with no record) with soldier 1's hex, and the canonical state with the Attention pool and the
     /// ruleset name taken out (NoAttentionTests.WithoutLegacyAccounting).</summary>
     internal static List<(string Trace, string State)> Play(Content c, GameState s, string id, Action<int, GameState>? between, params Command[][] turns)
     {
@@ -299,7 +301,7 @@ public class OccupyTests
             new Command[] { new Move(1, 1, 0) }, new Command[] { Occupy() }, new Command[] { new Move(1, 2, 0) },
             new Command[] { new Move(1, 1, 0) }, new Command[] { Occupy() },
         };
-        var expected = new[] { "awaiting_choice/0@1,0", "occupied/2@1,0", "none@2,0", "awaiting_choice/0@1,0", "occupied/2@1,0" };
+        var expected = new[] { "awaiting_choice/0@1,0", "occupied/2@1,0", "/0@2,0", "awaiting_choice/0@1,0", "occupied/2@1,0" };
         var runs = new[] { false, true }.Select(gdd03 => { var c = Load(gdd03); return Play(c, CombatTests.With(c, Soldier(1, 2, 0)), "town_a", null, turns); }).ToList();
         Assert.Equal(expected, runs[0].Select(x => x.Trace));
         Assert.Equal(expected, runs[1].Select(x => x.Trace));

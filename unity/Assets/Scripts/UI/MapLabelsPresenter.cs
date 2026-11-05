@@ -136,14 +136,23 @@ namespace Statecraft.Game.UI
         readonly List<Rect> keepClearRects = new List<Rect>(); // their screen rectangles, in the layer's coordinates
         IReadOnlyList<Bounds[]>? lastKeepClear;
         Rect layerRect;                                        // the panel in the layer's coordinates: a pill stays inside it
-        readonly EventCallback<GeometryChangedEvent> onOccluderGeometry, onContainerGeometry;
+        readonly EventCallback<GeometryChangedEvent> onOccluderGeometry, onContainerGeometry, onLabelGeometry;
         Matrix4x4 lastViewProjection; Rect lastCameraRect; Vector2 lastPanelSize, lastOrigin; float lastZoom = float.NaN;
         bool lastKitsShown;
-        int lastOccluderMask = -1; float lastLabelSizes = float.NaN; bool sizesKnown, geometryDirty = true;
+        int lastOccluderMask = -1;
+        bool sizesKnown, geometryDirty = true;
+        long placementGeneration;
+        long pillGeneration = -1, hoverGeneration = -1;
+        Vector2 pillPoint, hoverPoint;
+        string? pillResult;
+        Item? hoverResult;
 #if UNITY_EDITOR
         // #1680: observe real projection work without a clock. No callbacks, allocations or player-build instrumentation.
         internal long ProjectedMarkersForTests { get; private set; }
         internal long PlacementVisitsForTests { get; private set; }
+        internal long LabelSizeReadsForTests { get; private set; }
+        internal long PillVisitsForTests { get; private set; }
+        internal long HoverVisitsForTests { get; private set; }
         // ProjectBoxes is static. Tests sample this only around a synchronous main-thread Refresh, with no yield.
         internal static long ProjectedCornersForTests { get; private set; }
 #endif
@@ -203,6 +212,7 @@ namespace Statecraft.Game.UI
             Func<int, decimal, string>? tierTip = null, bool hebrew = false, IReadOnlyList<Statecraft.Sim.MapLocation>? locations = null)
         {
             var tip = tipText ?? DefaultTip;
+            onLabelGeometry = _ => geometryDirty = true;
             this.keepClear = keepClear;
             container = root.Q<VisualElement>(ContainerName) ?? throw new InvalidOperationException($"Game.uxml has no '{ContainerName}' element");
             this.camera = camera;
@@ -225,6 +235,7 @@ namespace Statecraft.Game.UI
                 label.AddToClassList(LabelClass);
                 label.AddToClassList("map-label-" + s.Type);
                 label.AddToClassList(anchorClass);
+                label.RegisterCallback(onLabelGeometry);
                 slot.Add(label);
                 // Issue #710: a pill with a 1948 figure (cities.yaml's people) starts with its tier; the rest have no badge.
                 // The badge is the pill's sibling, drawn over its start padding (left, or right in Hebrew): a child would stop the Label sizing to its text.
@@ -273,6 +284,7 @@ namespace Statecraft.Game.UI
                     slot.AddToClassList(SlotClass);
                     var label = new Label(LocationName(loc, hebrew)) { name = "label-" + s.Id, pickingMode = PickingMode.Ignore };
                     label.AddToClassList(LabelClass); label.AddToClassList("map-label-" + s.Type); label.AddToClassList(LocationClass); label.AddToClassList(Centre);
+                    label.RegisterCallback(onLabelGeometry);
                     slot.Add(label);
                     container.Add(slot);
                     locationLabels.Add(label); locationSlots.Add(slot);
@@ -290,6 +302,7 @@ namespace Statecraft.Game.UI
                 slot.AddToClassList(SlotClass);
                 var label = new Label(hebrew && !string.IsNullOrWhiteSpace(place.NameHe) ? place.NameHe : s.Name) { name = "label-" + s.Id, pickingMode = PickingMode.Ignore };
                 label.AddToClassList(LabelClass); label.AddToClassList(LocalityClass); label.AddToClassList(Centre);
+                label.RegisterCallback(onLabelGeometry);
                 slot.Add(label);
                 container.Add(slot);
                 localityLabels.Add(label); localitySlots.Add(slot);
@@ -354,7 +367,7 @@ namespace Statecraft.Game.UI
         /// (SiteLayer.Columns) or, with none, its marker box, under the same declutter and clearance rules as every pill.</summary>
         public void SetSites(IReadOnlyList<(Settlement place, Bounds[]? columns)> sites)
         {
-            foreach (var it in siteItems) { it.Slot.RemoveFromHierarchy(); items.Remove(it); settlementOrder.Remove(it); }
+            foreach (var it in siteItems) { it.Label.UnregisterCallback(onLabelGeometry); it.Slot.RemoveFromHierarchy(); items.Remove(it); settlementOrder.Remove(it); }
             siteItems.Clear();
             var at = items.FindIndex(x => x.IsLocality);   // the sites go before the localities
             if (at < 0) at = items.Count;
@@ -365,6 +378,7 @@ namespace Statecraft.Game.UI
                 // #1219: the Hebrew UI shows the site's name_he, as the settlements' pills do.
                 var label = new Label(hebrew && !string.IsNullOrWhiteSpace(s.NameHe) ? s.NameHe : s.Name) { name = "label-" + s.Id, pickingMode = PickingMode.Ignore };
                 label.AddToClassList(LabelClass); label.AddToClassList("map-label-" + s.Type); label.AddToClassList(Centre);
+                label.RegisterCallback(onLabelGeometry);
                 slot.Add(label);
                 container.Insert(System.Math.Max(0, container.IndexOf(Tooltip)), slot);   // under the tooltip, as the others
                 var top = MarkerTop(map, s);
@@ -382,7 +396,7 @@ namespace Statecraft.Game.UI
         {
             var route = map.ShownRoute;
             if (route.Count == labelledRoute.Count && route.SequenceEqual(labelledRoute)) return;
-            foreach (var x in routeLabels) x.slot.RemoveFromHierarchy();
+            foreach (var x in routeLabels) { x.label.UnregisterCallback(onLabelGeometry); x.slot.RemoveFromHierarchy(); }
             routeLabels.Clear();
             for (int i = 0; i < route.Count; i++)
             {
@@ -393,6 +407,7 @@ namespace Statecraft.Game.UI
                 var label = new Label(h.turn.ToString(CultureInfo.InvariantCulture))
                     { name = "route-turn-" + h.turn, pickingMode = PickingMode.Ignore };
                 label.AddToClassList(LabelClass); label.AddToClassList(RouteTurnClass);
+                label.RegisterCallback(onLabelGeometry);
                 slot.Add(label); container.Insert(System.Math.Max(0, container.IndexOf(Tooltip)), slot);
                 routeLabels.Add((slot, label, h.q, h.r));
             }
@@ -472,20 +487,14 @@ namespace Statecraft.Game.UI
             float distance = Zoom();
             bool kitsShown = map.KitsShown;   // with the "kits" toggle off the marker boxes are drawn instead
             int mask = OccluderMask();
-            float labelSizes = 0f;   // a pill that grows or shrinks (a late font, a new text) is re-placed (re-review N2)
             bool localities = distance <= LocalityDistanceM;   // farther out the localities are skipped outright (cost)
             var tokens = keepClear?.Invoke();
-            for (int i = 0; i < items.Count; i++)
-            {
-                if (items[i].IsLocality && !localities) continue;
-                var st = items[i].Label.resolvedStyle; if (!float.IsNaN(st.width) && !float.IsNaN(st.height)) labelSizes += st.width + st.height;
-            }
-            if (!force && sizesKnown && !geometryDirty && labelSizes == lastLabelSizes && viewProjection == lastViewProjection && cameraRect == lastCameraRect
+            if (!force && sizesKnown && !geometryDirty && viewProjection == lastViewProjection && cameraRect == lastCameraRect
                 && screen == lastPanelSize && origin == lastOrigin && distance == lastZoom && mask == lastOccluderMask && kitsShown == lastKitsShown
                 && tokens == lastKeepClear) return;
             lastKeepClear = tokens;
             lastViewProjection = viewProjection; lastCameraRect = cameraRect; lastPanelSize = screen; lastOrigin = origin;
-            lastZoom = distance; lastOccluderMask = mask; lastKitsShown = kitsShown; lastLabelSizes = labelSizes; geometryDirty = false;
+            lastZoom = distance; lastOccluderMask = mask; lastKitsShown = kitsShown; geometryDirty = false;
             sizesKnown = true;
             bool laidOut = !(float.IsNaN(screen.x) || screen.x <= 0f || float.IsNaN(origin.x) || float.IsNaN(origin.y));
             if (!laidOut) { sizesKnown = false; origin = Vector2.zero; }   // before the first layout: cull by view only, place later
@@ -541,6 +550,9 @@ namespace Statecraft.Game.UI
                 var shift = Vector2.zero;
                 if (shown)
                 {
+#if UNITY_EDITOR
+                    LabelSizeReadsForTests++;
+#endif
                     var size = new Vector2(it.Label.resolvedStyle.width, it.Label.resolvedStyle.height);
                     if (!laidOut || float.IsNaN(size.x) || size.x <= 0f) sizesKnown = false;   // not laid out yet: show it, place on a later refresh
                     else
@@ -582,6 +594,7 @@ namespace Statecraft.Game.UI
                 x.slot.style.visibility = shown ? Visibility.Visible : Visibility.Hidden;
                 if (shown) x.slot.style.translate = new Translate(at.x, at.y);
             }
+            placementGeneration++;
         }
 
         /// <summary>Whether the pill fits at <paramref name="spot"/>; if so records it as placed and sets the shift from
@@ -636,12 +649,17 @@ namespace Statecraft.Game.UI
         /// order, so a city before a smaller place) that contains it, never a 1948 locality's; null when none does.</summary>
         public string? PillAtLayer(Vector2 layerPoint)
         {
+            if (pillGeneration == placementGeneration && pillPoint == layerPoint) return pillResult;
+            pillGeneration = placementGeneration; pillPoint = layerPoint; pillResult = null;
             for (int i = 0; i < items.Count; i++)
             {
+#if UNITY_EDITOR
+                PillVisitsForTests++;
+#endif
                 var it = items[i];
-                if (!it.IsLocality && it.ShownLast && it.Placed.Contains(layerPoint)) return it.Settlement.Id;
+                if (!it.IsLocality && it.ShownLast && it.Placed.Contains(layerPoint)) { pillResult = it.Settlement.Id; break; }
             }
-            return null;
+            return pillResult;
         }
 
         /// <summary>Lights the pill of game settlement <paramref name="id"/> (HoverClass) and puts out the one lit before; null
@@ -705,12 +723,22 @@ namespace Statecraft.Game.UI
         /// something to say) that contains it, or none.</summary>
         public void HoverAt(Vector2 layerPoint)
         {
+            if (hoverGeneration == placementGeneration && hoverPoint == layerPoint)
+            {
+                ShowTooltipFor(hoverResult);
+                return;
+            }
+            hoverGeneration = placementGeneration; hoverPoint = layerPoint; hoverResult = null;
             Item? over = null;
             for (int i = 0; i < items.Count && over == null; i++)
             {
+#if UNITY_EDITOR
+                HoverVisitsForTests++;
+#endif
                 var it = items[i];
                 if (Hittable(it) && it.Placed.Contains(layerPoint)) over = it;
             }
+            hoverResult = over;
             ShowTooltipFor(over);
         }
 
@@ -783,13 +811,14 @@ namespace Statecraft.Game.UI
             removeToggle?.Invoke(); removeToggle = null;
             foreach (var e in occluders) e.UnregisterCallback(onOccluderGeometry);
             container.UnregisterCallback(onContainerGeometry);
+            foreach (var it in items) it.Label.UnregisterCallback(onLabelGeometry);
             occluders.Clear();
             foreach (var slot in Slots) slot.RemoveFromHierarchy();
             foreach (var slot in LocalitySlots) slot.RemoveFromHierarchy();
             foreach (var slot in LocationSlots) slot.RemoveFromHierarchy();
             foreach (var it in siteItems) it.Slot.RemoveFromHierarchy();
             siteItems.Clear();
-            foreach (var x in routeLabels) x.slot.RemoveFromHierarchy();
+            foreach (var x in routeLabels) { x.label.UnregisterCallback(onLabelGeometry); x.slot.RemoveFromHierarchy(); }
             routeLabels.Clear(); labelledRoute = Array.Empty<(int, int, int)>();
             Tooltip.RemoveFromHierarchy();
             items.Clear(); settlementOrder.Clear();
