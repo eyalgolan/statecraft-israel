@@ -89,4 +89,19 @@ public class CommandGuardTests
     [Fact]
     public void EveryAttentionKindHasACommand() =>
         Assert.Equal(AttentionSystem.CommandKinds.OrderBy(k => k, StringComparer.Ordinal), Samples.Values.Select(x => x.Kind).OrderBy(k => k, StringComparer.Ordinal));
+
+    // R-CITY-001 (#2733 item 2): ResolveCapture is a GDD order, so the legacy loop refuses it before charging (the legacy
+    // rules give it no price): the reason, and the state exactly as after an empty turn, Attention included.
+    [Fact]
+    public void TheLegacyLoopRefusesResolveCaptureBeforeCharging()
+    {
+        var c = ContentLoader.Load(Fixture.Write());   // the legacy loop (a fixture since the cutover)
+        Assert.False(c.IsGdd);
+        var s = Simulation.NewGame(c, GoldenRun.Seed, Mode.Historical);
+        var r = Simulation.Step(c, s, new Command[] { new ResolveCapture("town_a", SettlementControl.Raid) });
+        Assert.Equal("That order is not available in this game", Assert.Single(r.Rejected).Reason);
+        var empty = Simulation.Step(c, s, Array.Empty<Command>());
+        Assert.Equal(empty.State.Attention, r.State.Attention);
+        Assert.Equal(empty.State.Hash(), r.State.Hash());
+    }
 }
