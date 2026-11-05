@@ -69,21 +69,23 @@ namespace Statecraft.Sim
 
         /// <summary>The smoke5 golden's orders for one turn, what the WebGL ?smoke run's GameRoot.Smoke does: each open event is
         /// answered with its first option while the turn's Attention pays and while that option's operation units are in
-        /// place at the turn's start (R-ENEMY-007; the card enables an option from the turn-start state, and the smoke gives no
-        /// unit orders); at the first event that fails either, the rest go to their ministers at turn end. SliceSmokeTests
-        /// plays the same policy.</summary>
+        /// place (R-ENEMY-007), judged on the no-orders preview, the state the card enables its options from (SimBridge.State:
+        /// the turn's start after its standing go-to routes have moved; the smoke itself gives no unit orders); at the first
+        /// event that fails either, the rest go to their ministers at turn end. The Attention is the turn start's.
+        /// SliceSmokeTests plays the same policy.</summary>
         public static List<Command> SmokeOrders(Content c, GameState s)
         {
             if (c == null) throw new ArgumentNullException(nameof(c));
             if (!c.UsesAttention) throw new NotSupportedException("Golden policies are not defined for gdd-0.3.");
             var answers = new List<Command>();
+            var shown = Simulation.Preview(c, s, Array.Empty<Command>()).State;
             var left = s.Attention;
             foreach (var e in s.PendingEvents.Select(id => c.Events.First(x => x.Id == id)))
             {
                 var cmd = new ChooseEventOption(e.Id, e.Options[0].Id);
                 var price = AttentionSystem.Cost(c, s, cmd.Kind);
                 if (price > left + 1e-9) break;
-                if (!EventSystem.OperationStatus(c, s, e.Options[0]).Met) break;
+                if (!EventSystem.OperationStatus(c, shown, e.Options[0]).Met) break;
                 left -= price;
                 answers.Add(cmd);
             }

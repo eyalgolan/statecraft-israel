@@ -253,6 +253,7 @@ public class SliceSmokeTests
         {
             var orders = GoldenRun.SmokeOrders(Real, s);
             Assert.All(orders, o => Assert.IsType<ChooseEventOption>(o));   // the smoke skips every unit: no Move, no go-to
+            var shown = Simulation.Preview(Real, s, Array.Empty<Command>()).State;   // what the card shows (SimBridge.State)
             var expected = new List<Command>();
             var left = s.Attention;
             foreach (var e in s.PendingEvents.Select(id => Real.Events.First(x => x.Id == id)))
@@ -260,7 +261,7 @@ public class SliceSmokeTests
                 var cmd = new ChooseEventOption(e.Id, e.Options[0].Id);
                 var price = AttentionSystem.Cost(Real, s, cmd.Kind);
                 if (price > left + 1e-9) break;
-                if (!EventSystem.OperationStatus(Real, s, e.Options[0]).Met) { unmet++; break; }
+                if (!EventSystem.OperationStatus(Real, shown, e.Options[0]).Met) { unmet++; break; }
                 left -= price;
                 expected.Add(cmd);
             }
