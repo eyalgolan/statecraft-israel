@@ -963,6 +963,25 @@ public class UnitsInPlayTests
         }
     }
 
+    /// <summary>#2735 item 3 (HE-09): a Latin name inside a Hebrew sector goes between left-to-right marks on the Hebrew
+    /// card, so it stays one run in the right-to-left line; the Hebrew text is otherwise as written, and the English card
+    /// keeps its sector unmarked.</summary>
+    [TestCase("ins_haganah", "HMCS Norsyd")]
+    [TestCase("ins_wedgwood", "HMCS Beauharnois")]
+    [TestCase("lebanese_army", "CIA")]
+    public void TheHebrewCardMarksALatinNameInsideAHebrewSector(string id, string latin)
+    {
+        var u = Units.Single(x => x.Id == id);
+        var placed = new PlacedToken(new UnitToken(u, u.Anchors.FirstOrDefault() ?? new UnitAnchor(), 0, "", false), default);
+        var state = StateAt(C.Rules.Start, 5, 0.8);
+        // Ordinal: NUnit's StringAssert compares by culture, which ignores U+200E, so it would pass with no marks at all.
+        var body = UnitCard.For(placed, state, He).Body;
+        Assert.IsTrue(body.Contains(u.SectorHe!.Replace(latin, "\u200E" + latin + "\u200E"), StringComparison.Ordinal), body);
+        var english = UnitCard.For(placed, state, Text).Body;
+        Assert.IsTrue(english.Contains(u.Sector, StringComparison.Ordinal), english);
+        Assert.IsFalse(english.Contains("\u200E", StringComparison.Ordinal), english);
+    }
+
     [Test]
     public void AUnitWithNoHebrewNameKeepsItsEnglishNameInTheHebrewCard()
     {
