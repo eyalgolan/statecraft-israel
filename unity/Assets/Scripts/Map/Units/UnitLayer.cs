@@ -134,10 +134,10 @@ namespace Statecraft.Game.Map.Units
         /// <see cref="BadgeAsideM"/> to the side away from its flag's pole on screen (a compact token's pole cannot stand
         /// further out than its base's edge).</summary>
         public const float BadgeBackShare = 0.6f, BadgeAsideM = 400f, BadgeOverFlagM = 150f;
-        /// <summary>#2729: a parked aircraft's badge stands over its forward fuselage, its middle at this share of the
-        /// length from the tail, and at least <see cref="BadgeTailGapM"/> clear of the rear 40% (the tail), so it neither
-        /// covers the tail nor leaves the aircraft's own footprint (which kept it off the HUD and the neighbouring tokens).</summary>
-        public const float BadgeParkedShare = 0.75f, BadgeTailShare = 0.4f, BadgeTailGapM = 100f;
+        /// <summary>#2729: a parked aircraft's badge must not cover its tail, the rear <see cref="BadgeTailShare"/> of its
+        /// length, as the camera sees it. When it would, the badge moves on screen by the least of down, left or right that
+        /// clears the tail by <see cref="BadgeTailGapPixels"/>, never up, so it stays by the aircraft and under the HUD.</summary>
+        public const float BadgeTailShare = 0.4f, BadgeTailGapPixels = 4f;
         readonly List<(Vector2 centre, float radius)> treeHoles = new List<(Vector2, float)>();
         List<Bounds[]> keepClear = new List<Bounds[]>();
         /// <summary>A slide moves the boxes in place, but the labels re-place only for a new list: FaceCamera then hands
@@ -338,19 +338,22 @@ namespace Statecraft.Game.Map.Units
                 // stays where the full plate's is, clear of the flag and the figures; that move keeps the plate's depth.
                 float size = UnitBadge.SizeFor(Vector3.Dot(at - eye, forward), m11, orthographic);
                 at -= up * (0.5f * (UnitBadge.SizeM - size));
-                if (parkedAircraft && b.parent.Find("Aircraft") is Transform plane && LengthAlongNose(plane) is (Vector3 tail, Vector3 nose))
-                {
-                    // Along the fuselage, at the same height: BadgeParkedShare of the way from the tail, and further forward if
-                    // the plate's half-size would still reach the rear BadgeTailShare.
-                    var line = nose - tail; line.y = 0f;
-                    float length = line.magnitude;
-                    if (length > 1f)
+                if (parkedAircraft && b.parent.Find("Aircraft") is Transform plane && TailScreenRect(plane, cam) is Rect tail)
+                    for (int k = 0; k < 3; k++)
                     {
-                        float fromTail = Mathf.Max(BadgeParkedShare * length, BadgeTailShare * length + 0.5f * size + BadgeTailGapM);
-                        var spot = tail + line / length * Mathf.Min(fromTail, length);
-                        at = new Vector3(spot.x, at.y, spot.z);
+                        float half = 0.5f * size;
+                        var plate = ScreenRect(cam, at - right * half - up * half, at - right * half + up * half,
+                            at + right * half - up * half, at + right * half + up * half);
+                        if (!plate.Overlaps(tail)) break;
+                        var c = cam.WorldToScreenPoint(at);
+                        float perUp = cam.WorldToScreenPoint(at + up).y - c.y, perRight = cam.WorldToScreenPoint(at + right).x - c.x;
+                        if (perUp <= 1e-5f || perRight <= 1e-5f) break;
+                        float down = plate.yMax - tail.yMin + BadgeTailGapPixels;
+                        float left = plate.xMax - tail.xMin + BadgeTailGapPixels, rightward = tail.xMax - plate.xMin + BadgeTailGapPixels;
+                        if (down <= left && down <= rightward) at -= up * (down / perUp);
+                        else if (left <= rightward) at -= right * (left / perRight);
+                        else at += right * (rightward / perRight);
                     }
-                }
                 b.SetPositionAndRotation(at, rotation);
                 b.localScale = Vector3.one * size;
                 var boxes = keepClear[i];
@@ -900,25 +903,40 @@ namespace Statecraft.Game.Map.Units
             r.receiveShadows = false;
         }
 
-        /// <summary>The world points at the tail and the nose of <paramref name="plane"/>'s meshes, on its local z axis (the
-        /// way it faces), or null before any mesh has arrived.</summary>
-        static (Vector3 tail, Vector3 nose)? LengthAlongNose(Transform plane)
+        /// <summary>The screen box of <paramref name="plane"/>'s tail, the rear <see cref="BadgeTailShare"/> of its meshes' box
+        /// along its own z axis (the way it faces), or null before any mesh has arrived.</summary>
+        static Rect? TailScreenRect(Transform plane, Camera cam)
         {
-            float min = float.MaxValue, max = float.MinValue;
-            foreach (var f in plane.GetComponentsInChildren<MeshFilter>())
+            Vector3 min = Vector3.positiveInfinity, max = Vector3.negativeInfinity;
+            foreach (var f in plane.GetComponentsInChildren<MeshFilter>(true))
             {
                 if (f.sharedMesh == null) continue;
                 var bounds = f.sharedMesh.bounds;
                 for (int c = 0; c < 8; c++)
                 {
-                    var corner = new Vector3((c & 1) == 0 ? bounds.min.x : bounds.max.x,
-                        (c & 2) == 0 ? bounds.min.y : bounds.max.y, (c & 4) == 0 ? bounds.min.z : bounds.max.z);
-                    float z = plane.InverseTransformPoint(f.transform.TransformPoint(corner)).z;
-                    min = Mathf.Min(min, z); max = Mathf.Max(max, z);
+                    var p = plane.InverseTransformPoint(f.transform.TransformPoint(new Vector3((c & 1) == 0 ? bounds.min.x : bounds.max.x,
+                        (c & 2) == 0 ? bounds.min.y : bounds.max.y, (c & 4) == 0 ? bounds.min.z : bounds.max.z)));
+                    min = Vector3.Min(min, p); max = Vector3.Max(max, p);
                 }
             }
-            if (min > max) return null;
-            return (plane.TransformPoint(new Vector3(0f, 0f, min)), plane.TransformPoint(new Vector3(0f, 0f, max)));
+            if (min.x > max.x) return null;
+            max.z = Mathf.Lerp(min.z, max.z, BadgeTailShare);
+            var corners = new Vector3[8];
+            for (int c = 0; c < 8; c++)
+                corners[c] = plane.TransformPoint(new Vector3((c & 1) == 0 ? min.x : max.x, (c & 2) == 0 ? min.y : max.y, (c & 4) == 0 ? min.z : max.z));
+            return ScreenRect(cam, corners);
+        }
+
+        /// <summary>The screen box round <paramref name="points"/> as <paramref name="cam"/> projects them.</summary>
+        static Rect ScreenRect(Camera cam, params Vector3[] points)
+        {
+            float x0 = float.MaxValue, y0 = float.MaxValue, x1 = float.MinValue, y1 = float.MinValue;
+            foreach (var p in points)
+            {
+                var q = cam.WorldToScreenPoint(p);
+                x0 = Mathf.Min(x0, q.x); y0 = Mathf.Min(y0, q.y); x1 = Mathf.Max(x1, q.x); y1 = Mathf.Max(y1, q.y);
+            }
+            return Rect.MinMaxRect(x0, y0, x1, y1);
         }
 
         void BuildAircraft(Transform parent, UnitToken t, Vector3 baseCentre)

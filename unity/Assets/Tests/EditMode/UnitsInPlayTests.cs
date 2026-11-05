@@ -805,13 +805,13 @@ public class UnitsInPlayTests
                 badge.position - cam.transform.right * half + cam.transform.up * half, badge.position + cam.transform.right * half - cam.transform.up * half,
                 badge.position + cam.transform.right * half + cam.transform.up * half });
             Assert.IsFalse(badgeRect.Overlaps(ScreenRect(cam, tail)), "the badge does not cover the projected rear 40% of the parked fighter");
-            // #2729 captures: an offset that left the aircraft put the badge under the HUD (12 km) and on a neighbour's plinth
-            // (31 km). It stands over the aircraft's own footprint instead: within half its length of the fuselage's middle.
-            var whole = MeshBounds(aircraft, local: true);
-            var middle = aircraft.TransformPoint(whole.center);
-            float halfLength = 0.5f * whole.size.z * aircraft.lossyScale.z;
-            Assert.LessOrEqual(new Vector2(badge.position.x - middle.x, badge.position.z - middle.z).magnitude, halfLength + 1f,
-                "the badge stays over the parked aircraft, not beyond it");
+            // #2729 captures: a badge pushed up past the whole aircraft went under the HUD (12 km) and onto a neighbour's plinth
+            // (31 km). On screen it now stays within one plate of the aircraft: no higher than one plate above its top (where an
+            // unmoved badge stands), and not beyond its sides.
+            var plane = ScreenRect(cam, Corners(MeshBounds(aircraft, local: true)).Select(aircraft.TransformPoint));
+            Assert.LessOrEqual(badgeRect.yMax, plane.yMax + badgeRect.height + 1f, "the badge is not pushed up past the parked aircraft");
+            Assert.IsTrue(badgeRect.center.x >= plane.xMin - badgeRect.width && badgeRect.center.x <= plane.xMax + badgeRect.width
+                && badgeRect.center.y >= plane.yMin - badgeRect.height, "the badge stays by the parked aircraft");
             int token = layer.Tokens.ToList().FindIndex(p => p.Token.Unit.Id == "squadron_101");
             Assert.AreEqual(badge.position, layer.KeepClear[token][0].center, "the names' keep-clear follows the offset badge");
         }
