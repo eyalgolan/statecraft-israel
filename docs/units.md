@@ -242,7 +242,7 @@ deletes it.
 - **One token per military unit** whose row is on the map, grouped per hex ((q, r) order). Unit i of a new game is the
   starting force `Content.StartingForces[i]` (R-UNIT-006), and that row gives the card, the flag, the headgear and the
   vehicles. A halutz draws no token. A raised Israeli recruit, brigade, artillery or armoured-car unit has no starting row; it
-  gets a presentation-only token: a synthetic row with the default headgear (steel helmets for a recruit) and its
+  gets a presentation-only token: a synthetic row with steel helmets for a recruit and the default headgear otherwise, and its
   type's vehicle, placed at the first Israeli starting brigade's start and sized by that brigade's sourced strength
   (`UnitRoster.RaisedToken`; nothing is added to the sim state). An Arab force's token still waits for its Collection
   figure or, if that fails, the built-in one.
