@@ -52,8 +52,11 @@ public class EventRulesGddTests
         Assert.Equal(3, EventSystem.MaxSoftEventsPerTurn);
         for (int i = 0; i < Run.Count; i++)
         {
-            var soft = FiredOn(i).Where(e => e.Anchor != "hard").Select(e => e.Id).ToList();
-            var hard = FiredOn(i).Count(e => e.Anchor == "hard");
+            // R-OBJ-003, R-EVT-007: objective and Deport cards take no slot. R-WAR-008: an armistice before its date is soft.
+            bool Slotless(GameEvent e) => e.Objective != "" || e.Deported != "";
+            bool Hard(GameEvent e) => e.Anchor == "hard" && !(e.FrontQuiet != "" && Run[i].Date < e.From);
+            var soft = FiredOn(i).Where(e => !Slotless(e) && !Hard(e)).Select(e => e.Id).ToList();
+            var hard = FiredOn(i).Count(e => !Slotless(e) && Hard(e));
             // the soft events take only the slots the hard anchors leave
             Assert.True(soft.Count <= Math.Max(0, EventSystem.MaxSoftEventsPerTurn - hard), $"{Run[i].Date:yyyy-MM-dd}: {hard} hard, soft {string.Join(", ", soft)}");
         }
