@@ -858,17 +858,24 @@ namespace Statecraft.Game.UI
             sendHomeButton.style.display = orderUnit != null && sendHomeWhy == null ? DisplayStyle.Flex : DisplayStyle.None;
             skipButton.style.display = own == true && orderUnit != null && bridge.NeedsOrders.Contains(orderUnit.Value) ? DisplayStyle.Flex : DisplayStyle.None;
             // Reinforce (#1510, R-TRAIN-004): offered for a unit of Israel's that has lost strength and stands in a city, for
-            // the missing strength up to the city's free civilians; the sim's own Reinforce, run on a copy, decides, and its
-            // refusal shows as the other orders' do. None while one is queued for the unit.
+            // the missing strength up to the city's free civilians; a preview of the exact queue a press would leave decides,
+            // and its refusal shows as the other orders' do. None while one is queued for the unit.
             reinforce = null;
             var reinforceQueued = shownUnit is int rq && bridge.QueuedLike(new Reinforce(rq, "", 0)) != null;
             if (orderUnit is int ru && own && !reinforceQueued && s.Units.TryGetValue(ru, out var formation) && Training.Room(s, formation) > 0
                 && c.SettlementHexes.FirstOrDefault(h => h.Q == formation.Q && h.R == formation.R && s.Cities.ContainsKey(h.Id)) is { } home)
             {
+                // At least one group, so a city with no free civilians still shows the sim's refusal; the preview decides.
                 var n = System.Math.Max(1, System.Math.Min(Training.Room(s, formation), Training.Available(s, home.Id, bridge.Queued)));
-                var why = Training.Reinforce(c, s.Clone(), ru, home.Id, n, new List<Cause>());
-                if (why == null) reinforce = new Reinforce(ru, home.Id, n);
-                else if (SimBridge.ReasonText(text, why, c, townNamesHe) is var said && !refusals.Contains(said)) refusals.Add(said);
+                var press = new Reinforce(ru, home.Id, n);
+                var queue = bridge.Queued.ToList();
+                var old = bridge.QueuedLike(press);
+                var slot = old == null ? -1 : queue.IndexOf(old);
+                if (slot >= 0) queue[slot] = press; else queue.Add(press);
+                var preview = Simulation.Preview(c, bridge.TurnStart, bridge.Session.Committed.Concat(queue).ToList());
+                var rejected = preview.Rejected.FirstOrDefault(x => ReferenceEquals(x.Command, press));
+                if (rejected == null) reinforce = press;
+                else if (SimBridge.ReasonText(text, rejected.Reason, c, townNamesHe) is var said && !refusals.Contains(said)) refusals.Add(said);
             }
             reinforceButton.style.display = reinforce != null ? DisplayStyle.Flex : DisplayStyle.None;
             if (reinforce is Reinforce offer) reinforceButton.text = text.Format("unit.order.reinforce", offer.Count);
