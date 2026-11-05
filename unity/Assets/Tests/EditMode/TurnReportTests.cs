@@ -333,6 +333,8 @@ public class TurnReportTests
                 new[] { hebrew ? "צבא ההצלה פתח בהתקפה על אחת היחידות שלכם" : "Arab Liberation Army launched an attack on one of your units" },
                 row.Causes, "one line for the unit, though the order and the engagement both name it");
         }
+    }
+
     /// <summary>#2527 review: the Food shortage's line is informational (delta 0), and the turn report's Food row still
     /// names it, after the lines that have a number.</summary>
     [Test]
