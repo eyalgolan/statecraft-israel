@@ -894,6 +894,22 @@ public class Gdd03TrainingCentreFixtureTests
         Assert.Equal(0, l.Get(6).Assignment.ProgressTicks);
     }
 
+    // R-TRAIN-005 (#2464): a professionless pupil now passes the Q44 check and meets the region, occupancy and one-pupil
+    // checks, each refused with the state unchanged: a pupil outside the centre's region (the owner's Q23 ruling), a second
+    // pupil at an occupied centre (Q42), and a pupil already on a course.
+    [Fact] public void AProfessionlessPupilMeetsTheSameRefusals()
+    {
+        var c = Catalogue(); var s = State(c,
+            Person(CivilianProfession.None, CivilianTier.None, null, region: "south"),   // 6
+            Person(CivilianProfession.None, CivilianTier.None, null),                    // 7
+            Person(CivilianProfession.None, CivilianTier.None, null));                   // 8
+        var f = new Gdd03TrainingCentreFixture(c, s, Centres());
+        Unchanged(s, () => f.Start(6, 0, CentreA, Month(s, 0)), typeof(ArgumentException), PupilCity);
+        f.Start(7, 0, CentreA, Month(s, 0));
+        Unchanged(s, () => f.Start(8, 4, CentreA, Month(s, 0)), typeof(ArgumentException), OneTeacherOnePupil);
+        Unchanged(s, () => f.Start(7, 4, CentreB, Month(s, 0)), typeof(ArgumentException), "The trainee must be a free civilian");
+    }
+
     // R-TRAIN-008: a novice of another profession still does not change profession through a course (cancelled or not),
     // and stays Deferred; a professionless pupil no longer is (#2464, above).
     [Fact] public void ProfessionChangeStaysDeferred()

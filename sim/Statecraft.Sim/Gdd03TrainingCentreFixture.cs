@@ -109,7 +109,7 @@ namespace Statecraft.Sim
                     if (p.Assignment.TeacherId is not int teacher
                         || p.Profession != CivilianProfession.None && (state.PopulationLedger.Get(teacher).Profession != p.Profession || p.Tier != CivilianTier.Novice)
                         || p.Assignment.ProgressTicks >= courseTurns)
-                        throw new ArgumentException("Centre pupil must be a matching novice with a teacher and an unfinished course.");
+                        throw new ArgumentException("Centre pupil must be a matching novice or have no profession, with a teacher and an unfinished course.");
                 if (teachers.Any(p => p.Location!.Region != centre.Region)) throw new ArgumentException(TeacherCityReason);
                 if (pupils.Any(p => p.Location!.Region != centre.Region)) throw new ArgumentException(PupilCityReason);
             }
@@ -137,8 +137,8 @@ namespace Statecraft.Sim
         static PopulationUnit Released(PopulationUnit p)
             => p.WithPlacement(PopulationStatus.FreeCivilian, p.Location, PopulationAssignment.Unassigned, p.Captor, p.Home);
 
-        /// <summary>R-TRAIN-005: enrol a matching novice with a matching veteran teacher at an operating centre, both in the
-        /// centre's region (Q42 for the teacher, the owner's Q23 ruling for the pupil), and only into an empty
+        /// <summary>R-TRAIN-005: enrol a matching novice, or a free civilian with no profession (#2464), with a matching
+        /// veteran teacher at an operating centre, both in the centre's region (Q42 for the teacher, the owner's Q23 ruling for the pupil), and only into an empty
         /// centre: one teacher and one pupil (Q42). Either may leave a job to do so, released in the same commit. No payment, and no tools:
         /// tools are post-MVP (#1693, owner answers of 3 November 2026, answer 1).</summary>
         internal void Start(int traineeId, int teacherId, string centreId, Gdd03SyntheticMonthContext month)
