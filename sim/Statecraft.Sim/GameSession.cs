@@ -108,7 +108,12 @@ namespace Statecraft.Sim
             // #2536: a game finished before the ending turn fired objective cards replays with those cards added, and only
             // them: the same game, so it loads as saved, with no warning, and shows its ending card(s).
             // Only an older save can be from before #2536: a current-schema save always has its ending cards (#2605 review).
-            if (session.State.Hash() != saved.FinalHash && !(saved.Version < SaveGame.SchemaVersion && OnlyEndingCardsAdded(c, session.State, saved.FinalHash)))
+            // #2542: a save made before stayed losses left a marker replays with only those markers added. It is the same
+            // game, so accept that exact same-content difference; every other replay mismatch keeps the existing handling.
+            // Only an older save can be from before the markers: a current-schema save always has them, so one without them
+            // was edited (Codex review of 47da9b207).
+            if (session.State.Hash() != saved.FinalHash && !(saved.Version < SaveGame.SchemaVersion && OnlyEndingCardsAdded(c, session.State, saved.FinalHash))
+                && !(saved.Version < SaveGame.SchemaVersion && sameContent && OnlyLostMarkersAdded(session.State, saved.FinalHash)))
             {
                 if (saved.Version < 3 && saved.Ruleset == SaveGame.GddRuleset)
                     throw new SaveException(0, "This save was made with an earlier version of the game's rules.", SaveException.OlderRules);
@@ -140,6 +145,21 @@ namespace Statecraft.Sim
             var before = s.Clone();
             foreach (var id in s.PendingEvents) before.FiredEvents.Remove(id);
             before.PendingEvents.Clear();
+            return before.Hash() == savedHash;
+        }
+
+        /// <summary>#2542: whether a replay differs from its saved final state only by ownerless, inhabited, stayed markers
+        /// for places captured and later lost. Before this change those records were removed. Narrow by design: remove every
+        /// record having exactly the new lost-marker shape, then require the saved hash to match.</summary>
+        static bool OnlyLostMarkersAdded(GameState s, string savedHash)
+        {
+            var ids = s.Settlements.Where(kv => kv.Value.Owner == "" && kv.Value.State == ""
+                && kv.Value.Since != default && !kv.Value.Depopulated && !kv.Value.Fled
+                && kv.Value.Combatants == 0 && kv.Value.Buildings == "" && kv.Value.Turns == 0)
+                .Select(kv => kv.Key).ToList();
+            if (ids.Count == 0) return false;
+            var before = s.Clone();
+            foreach (var id in ids) before.Settlements.Remove(id);
             return before.Hash() == savedHash;
         }
     }

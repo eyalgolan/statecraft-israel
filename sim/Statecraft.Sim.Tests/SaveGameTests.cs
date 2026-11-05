@@ -108,6 +108,58 @@ public class SaveGameTests
         Assert.Equal(played.Previous!.Hash(), loaded.Previous!.Hash());  // "since last turn" survives a load
     }
 
+    /// <summary>#2542: gdd-0.1 and gdd-0.3 saves replay the stayed lost marker. A same-content save made before the marker
+    /// existed is accepted only when removing that marker reproduces its saved hash.</summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void AStayedLostMarkerRoundTripsAndIsTheOnlyAcceptedOldHashDifference(bool gdd03)
+    {
+        var c = CaptureTests.Load(files =>
+        {
+            NoAttentionTests.Select(files, gdd03);
+            files["map/units_1948.yaml"] = "units:\n- id: starter\n  service: army\n  side: israel\n  status: draft\n  strength: { value: 20, as_of: '1948-05-15' }\n  anchors:\n  - { place: Here, lon: 34.29, lat: 33.35, from: '1948-05-15', to: '1949-01-01' }\n";
+            files["map/unit_anchor_hexes.yaml"] = "anchors:\n  - { id: starter, anchor: 0, q: 0, r: 1 }\n";
+        }, CaptureTests.AllTargets);
+        var played = GameSession.New(c, 1, Mode.Historical);
+        var result = played.Step(new Command[] { new Move(0, 1, 0), new ResolveCapture("town_a", SettlementControl.Raid) });
+        Assert.Empty(result.Rejected);
+        var lost = played.State.Settlements["town_a"];
+        Assert.Equal(("", "", false), (lost.Owner, lost.State, lost.Fled));
+        Assert.Equal(played.State.Date, lost.Since);
+        Assert.Equal(played.State.Hash(), GameSession.Load(c, played.Save.Write(), out var warnings).State.Hash());
+        Assert.Empty(warnings);
+
+        string WithEnd(string text, string hash)
+        {
+            var lines = text.Split('\n');
+            lines[lines.Length - 2] = "end " + hash;
+            return string.Join("\n", lines);
+        }
+        var beforeMarkers = played.State.Clone(); beforeMarkers.Settlements.Remove("town_a");
+        // Only an older save can be from before the markers. A save in the current schema always has them, so one without
+        // them was edited: the damaged-save error (Codex review of 47da9b207). An older save of a valid schema for its
+        // ruleset (gdd-0.1 wrote 3, gdd-0.3 wrote 4, whenever that is under the current schema) is the same game and loads.
+        string text = played.Save.Write();
+        int written = SaveGame.Parse(text).Version, older = gdd03 ? 4 : 3;
+        string Header(string t, int v) => t.Replace(FormattableString.Invariant($"statecraft-save {written}\n"), FormattableString.Invariant($"statecraft-save {v}\n"));
+        if (written >= SaveGame.SchemaVersion)
+        {
+            var current = Assert.Throws<SaveException>(() => GameSession.Load(c, WithEnd(text, beforeMarkers.Hash()), out _));
+            Assert.Equal("The replay does not match the saved game: the save is damaged or was edited, or the game has a bug.", current.Message);
+        }
+        if (older < SaveGame.SchemaVersion)
+        {
+            var accepted = GameSession.Load(c, WithEnd(older < written ? Header(text, older) : text, beforeMarkers.Hash()), out warnings);
+            Assert.Empty(warnings);
+            Assert.Equal(played.State.Hash(), accepted.State.Hash());
+        }
+
+        var other = beforeMarkers.Clone(); other.Treasury += 1;
+        var ex = Assert.Throws<SaveException>(() => GameSession.Load(c, WithEnd(played.Save.Write(), other.Hash()), out _));
+        Assert.Equal("The replay does not match the saved game: the save is damaged or was edited, or the game has a bug.", ex.Message);
+    }
+
     [Fact]
     // R-ALT-009
     public void ARejoinedRoadRoundTripsThroughASave()

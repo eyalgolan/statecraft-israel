@@ -441,7 +441,11 @@ namespace Statecraft.Game.UI
             var layerLabel = root.Q<Label>("map-layer");
             Action onDate = () =>
             {
-                regions.Apply(bridge.State.Date);
+                var live = bridge.State.Settlements.OrderBy(kv => kv.Key, StringComparer.Ordinal)
+                    .Join(bridge.Content.SettlementHexes, kv => kv.Key, h => h.Id,
+                        (kv, h) => (h.Q, h.R, player: SettlementControlView.PlayerHolds(kv.Value)))
+                    .Where(x => x.player != null).Select(x => (x.Q, x.R, x.player!.Value)).ToList();
+                regions.Apply(bridge.State.Date, live);
                 layerLabel.text = regions.ControlLabel(bridge.State.Date, k => text[k])
                     ?? regions.Label(bridge.State.Date, text.Format, text["ui.lang"] == UiLanguage.Hebrew);
                 ShowLayerLabel();
