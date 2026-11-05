@@ -91,8 +91,9 @@ public class EventImageMappingTests
     [TestCase("'   '")]
     public void ParseRefusesAPresentBlankHebrewReview(string blank)
     {
-        Assert.Throws<InvalidOperationException>(() => EventImageMapping.Parse(
+        var error = Assert.Throws<InvalidOperationException>(() => EventImageMapping.Parse(
             "images:\n  - event: example\n    alt_he: תיאור בעברית\n    alt_he_review: " + blank + "\n"));
+        StringAssert.Contains("alt_he_review must be agent-checked", error!.Message);
     }
 
     /// <summary>The pictures live outside content/ and nothing in content/ names them, so the content hash, the goldens and

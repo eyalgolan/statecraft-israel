@@ -105,10 +105,12 @@ public class EventVideoTests
     [TestCase("'   '")]
     public void BothParsePathsRefuseAPresentBlankHebrewReview(string blank)
     {
-        Assert.Throws<InvalidOperationException>(() => EventVideoMapping.Parse(
+        var clipError = Assert.Throws<InvalidOperationException>(() => EventVideoMapping.Parse(
             "clips:\n  - event: example\n    alt_he: תיאור בעברית\n    alt_he_review: " + blank + "\n"));
-        Assert.Throws<InvalidOperationException>(() => EventVideoMapping.ParseOutcomes(
+        StringAssert.Contains("alt_he_review must be agent-checked", clipError!.Message);
+        var outcomeError = Assert.Throws<InvalidOperationException>(() => EventVideoMapping.ParseOutcomes(
             "outcomes:\n  - event: example\n    alt_he: תיאור בעברית\n    alt_he_review: " + blank + "\n"));
+        StringAssert.Contains("alt_he_review must be agent-checked", outcomeError!.Message);
     }
 
     [Test]
