@@ -104,7 +104,7 @@ def translation_refusal(build: Path):
     return None
 
 
-BUILD_FILE = re.compile(r'"Build/([^"/]+)"')   # as the WebGL template writes them (src="Build/..", dataUrl: "Build/..")
+BUILD_FILE = re.compile(r'"Build/([^"]+)"')   # as the WebGL template writes them (src="Build/..", dataUrl: "Build/..")
 
 
 def build_files(build: Path) -> list[str]:

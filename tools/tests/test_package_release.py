@@ -202,6 +202,21 @@ def test_nested_files_of_an_earlier_build_are_left_out_of_the_zip(tmp_path, caps
     assert "LEFT OUT Build/old/files/earlier.data.br" in capsys.readouterr().out
 
 
+def test_a_nested_file_the_index_names_is_kept(tmp_path, capsys):
+    """#2695 review: only unnamed files are stale; a nested path index.html names still ships."""
+    build, zip_path = hashed_build(tmp_path), tmp_path / "out.zip"
+    named = build / "Build" / "extra" / "module.js"
+    named.parent.mkdir(parents=True)
+    named.write_bytes(b"kept")
+    index = build / "index.html"
+    index.write_text(index.read_text(encoding="utf-8") + '<script src="Build/extra/module.js"></script>\n',
+                     encoding="utf-8")
+    assert package_release.main(["--build", str(build), "--zip", str(zip_path)]) == 0
+    with zipfile.ZipFile(zip_path) as z:
+        assert "Build/extra/module.js" in z.namelist()
+    assert "LEFT OUT Build/extra/module.js" not in capsys.readouterr().out
+
+
 def test_an_index_that_is_not_utf8_is_refused_without_a_zip(tmp_path, capsys):
     build, zip_path = fake_build(tmp_path, reviewed=True), tmp_path / "out.zip"
     (build / "index.html").write_bytes(b"<html>\xff</html>")
