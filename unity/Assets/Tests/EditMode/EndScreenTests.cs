@@ -392,6 +392,45 @@ public class EndScreenTests
         Assert.IsNull(resumed.State.GameOver);
     }
 
+    /// <summary>#2669: the end screen can start New Game while the final turn's report waits underneath it. Red first:
+    /// before TurnReportPresenter listened to Changed, the second press replaced the session but left that report open.</summary>
+    [Test]
+    public void NewGameFromTheEndScreenClosesTheLastTurnsReport()
+    {
+        using var k = new Kit(En, Exhausted);
+        for (int turn = 0; turn < 3 && k.Bridge.State.GameOver == null; turn++) k.Bridge.EndTurn();
+        Assert.IsTrue(k.End.IsOpen && k.Report.IsOpen, "precondition: the end screen covers the final turn's report");
+
+        UiTestKit.Press(k.Ui.Q<Button>("end-screen-new-game"));
+        Assert.IsTrue(k.NewGame.Armed);
+        Assert.IsTrue(k.End.IsOpen && k.Report.IsOpen, "the confirmation press changes no session");
+
+        UiTestKit.Press(k.Ui.Q<Button>("end-screen-new-game"));
+        Assert.IsNull(k.Bridge.State.GameOver, "the second press starts the new game");
+        Assert.IsFalse(k.End.IsOpen);
+        Assert.IsFalse(k.Report.IsOpen, "the old game's report is closed");
+        Assert.IsTrue(k.Q("top-bar").enabledSelf, "the old report does not cover the new game");
+    }
+
+    /// <summary>#2669 with #2536 (Codex review of 17c491b3d): answering the ending turn's card changes nothing in the game, so
+    /// the final turn's report stays open under the end screen; only a replaced session closes it. Red at 17c491b3d: the
+    /// report listened to every Changed, which SeeEndingCard raises.</summary>
+    [Test]
+    public void AnsweringTheEndingTurnsCardKeepsTheLastTurnsReport()
+    {
+        using var k = new Kit(En, Exhausted);
+        for (int turn = 0; turn < 3 && k.Bridge.State.GameOver == null; turn++) k.Bridge.EndTurn();
+        Assert.IsTrue(k.Report.IsOpen, "precondition: the final turn's report is open");
+        EndedWithACard(k.Bridge.State);   // the ending turn also left an objective's card waiting
+        Assert.IsTrue(k.Bridge.EndingCardWaiting, "precondition: a card of the ending turn waits");
+        var session = k.Bridge.Session;
+
+        k.Bridge.SeeEndingCard("railway_complete");
+        Assert.AreSame(session, k.Bridge.Session, "the answer replaces nothing");
+        Assert.IsFalse(k.Bridge.EndingCardWaiting);
+        Assert.IsTrue(k.Report.IsOpen, "the report stays, under the end screen");
+    }
+
     [Test]
     public void CancelClosesItAndClosedItTakesNoInput()
     {
