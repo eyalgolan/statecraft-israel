@@ -57,46 +57,54 @@ public class CameraScreenCoverTests : SharedCameraActionsFixture
     static void Send(MonoBehaviour c, string message) =>
         c.GetType().GetMethod(message, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.Invoke(c, null);
 
-    /// <summary>Item 1: with the Budget open, D (pan) and = (zoom in) held for half a second leave the camera where it is in
-    /// the two-row HUD (960x1080) and move it in the one-row one (1920x1080). With the screen closed, both layouts pan.</summary>
+    /// <summary>Item 1: with the Budget open, D (pan), = (zoom in) and Q (orbit) held for half a second leave the camera where
+    /// it is in the two-row HUD and in the three-row one, which also carries the two-row class, and move it in the one-row
+    /// one. The panel scales with the screen (1920x1080 reference, match 0.5; HudPresenter's tier note), so at a height of
+    /// 1080 the logical width is width / ((width/1920 + 1) / 2): 600 is about 914 (three rows), 960 about 1280 (plain two
+    /// rows; 1280 itself would be about 1536, one row), 1920 stays 1920 (one row). With the screen closed, every layout pans.</summary>
     [UnityTest]
-    public IEnumerator TheCameraKeysStopOnlyUnderAScreenThatCoversTheMap([Values(960, 1920)] int width)
+    public IEnumerator TheCameraKeysStopOnlyUnderAScreenThatCoversTheMap([Values(600, 960, 1920)] int width)
     {
         InputSystem.actions = AssetDatabase.LoadAssetAtPath<InputActionAsset>("Assets/InputSystem_Actions.inputactions");
         var keyboard = InputSystem.AddDevice<Keyboard>();
         yield return Boot(width, 1080);
         bool twoRow = width < 1400;
         Assert.AreEqual(twoRow, ui.Q("root").ClassListContains(HudPresenter.TwoRowClass), "precondition: the HUD tier");
+        Assert.AreEqual(width < 960, ui.Q("root").ClassListContains(HudPresenter.ThreeRowClass), "precondition: the HUD tier (three rows)");
         var cam = Object.FindFirstObjectByType<CameraController>();
         var rig = cam.GetComponent<CameraRig>();
         Send(cam, "Awake"); Send(cam, "OnEnable");
+        cam.SetFixedNorth(false);   // the game ruleset holds north, which zeroes Q/E anyway; free it so the orbit gate is what is seen
         try
         {
-            (Vector3 moved, float zoomed) Hold(Key k)
+            (Vector3 moved, float zoomed, float turned) Hold(Key k)
             {
-                var from = rig.LookAt; var distance = rig.Distance;
+                var from = rig.LookAt; var distance = rig.Distance; var yaw = rig.Yaw;
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState(k)); InputSystem.Update();
                 for (int i = 0; i < 5; i++) cam.Tick(0.1f);
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState()); InputSystem.Update();
                 cam.Tick(0.1f);
-                return (rig.LookAt - from, rig.Distance - distance);
+                return (rig.LookAt - from, rig.Distance - distance, Mathf.Abs(Mathf.DeltaAngle(yaw, rig.Yaw)));
             }
             UiTestKit.Press(ui.Q<Button>("nav-budget"));
             for (int i = 0; i < 5; i++) yield return null;
             Assert.IsTrue(ui.Q("root").ClassListContains(ScreenNav.ScreenOpenClass), "precondition: the Budget is open");
             var pan = Hold(Key.D).moved.magnitude;
             var zoom = Mathf.Abs(Hold(Key.Equals).zoomed);
+            var turn = Hold(Key.Q).turned;
             if (twoRow)
             {
                 Assert.AreEqual(0f, pan, "two rows, screen open: D does not pan the hidden map");
                 Assert.AreEqual(0f, zoom, "two rows, screen open: = does not zoom the hidden map");
+                Assert.AreEqual(0f, turn, "two rows, screen open: Q does not orbit the hidden map");
             }
             else
             {
                 Assert.Greater(pan, 1f, "one row, screen open: D still pans (A4)");
                 Assert.Greater(zoom, 1f, "one row, screen open: = still zooms (A4)");
+                Assert.Greater(turn, 1f, "one row, screen open: Q still orbits (A4)");
             }
-            UiTestKit.Press(ui.Q<Button>("nav-budget"));
+            UiTestKit.Press(ui.Q<Button>("screen-close-budget"));   // in three rows the screen is a full window: the top bar is off
             for (int i = 0; i < 5; i++) yield return null;
             Assert.IsFalse(ui.Q("root").ClassListContains(ScreenNav.ScreenOpenClass), "precondition: the Budget is closed");
             Assert.Greater(Hold(Key.D).moved.magnitude, 1f, "no screen open: D pans");
