@@ -1,7 +1,9 @@
 #nullable enable
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 using Statecraft.Game;
 using Statecraft.Game.UI;
@@ -857,5 +859,22 @@ public class UiLayoutTests
                 finally { Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt); }
             }
         Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
+    /// <summary>#2340 H4 (#2522): no visible text in Statecraft.uss is set under 15 px, the floor the audit recommends
+    /// (docs/accessibility-audit-2026-10-14.md, H4), and the exhausted-turn line starts from 15 px too. A rule whose text is
+    /// drawn in a fully transparent colour (the icon-only buttons' 1 px names, kept for the focus order) shows no text.</summary>
+    [Test]
+    public void NoVisibleStylesheetTextIsUnder15Px()
+    {
+        var uss = Regex.Replace(File.ReadAllText(UiPaths.Folder + "/Statecraft.uss"), @"/\*.*?\*/", "", RegexOptions.Singleline);
+        var under = Regex.Matches(uss, @"([^{}]+)\{([^{}]*)\}").Cast<Match>()
+            .Where(m => !Regex.IsMatch(m.Groups[2].Value, @"(?<![\w-])color:\s*rgba\(0, 0, 0, 0\)"))   // not background-color
+            .SelectMany(m => Regex.Matches(m.Groups[2].Value, @"font-size:\s*(\d+(?:\.\d+)?)px").Cast<Match>()
+                .Where(f => float.Parse(f.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture) < 15f)
+                .Select(f => $"{m.Groups[1].Value.Trim()}: {f.Groups[1].Value}px"))
+            .ToList();
+        Assert.IsEmpty(under, string.Join("\n", under));
+        Assert.GreaterOrEqual(HudPresenter.ExhaustedPx, 15f, "HudPresenter.ExhaustedPx");
     }
 }
