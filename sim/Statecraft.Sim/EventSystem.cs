@@ -15,7 +15,7 @@ namespace Statecraft.Sim
         /// <summary>Fires every unfired event whose `requires` (if any) is met, whose window [From, To) overlaps the turn just played,
         /// [<paramref name="turnStart"/>, s.Date), or contains s.Date; <paramref name="turnStart"/> defaults to s.Date
         /// (game start). Every eligible hard anchor fires; MaxSoftEventsPerTurn caps only the non-hard events per turn,
-        /// which fill the slots that remain (max(0, cap - hard count)) in the usual order (consequence cards first, R-ALT-008, then From, objective cards last in objectives.yaml's order, R-OBJ-007, then id). The fired
+        /// which fill the slots that remain (max(0, cap - hard count)) in the usual order (an early armistice first, R-WAR-008, then consequence cards, R-ALT-008, then From, objective cards last in objectives.yaml's order, R-OBJ-007, then id). The fired
         /// events keep the usual order.
         /// Late fire: an event whose window overlapped the turn just played can fire after its window has ended; its
         /// conditions are evaluated at the end of the turn, and its text is filled at the last in-window day
@@ -24,8 +24,12 @@ namespace Statecraft.Sim
         {
             PopulationLedger.RefuseAggregate(s);
             var start = turnStart ?? s.Date;
+            // R-WAR-008 (#2478): under gdd-0.3 an armistice card also comes while its own front may have an early offer
+            // (Armistice.MayOfferEarly): before its hard-anchor date, and again after a refusal. On that path it is soft.
+            var quiet = new HashSet<string>(c.Events.Where(e => e.FrontQuiet != "" && Armistice.MayOfferEarly(c, s, e.FrontQuiet)
+                && (s.FiredEvents.Contains(e.Id) || s.Date < e.From)).Select(e => e.Id));
             var eligible = c.Events
-                .Where(e => !s.FiredEvents.Contains(e.Id) && e.From <= s.Date && (e.To == null || start < e.To.Value))
+                .Where(e => (quiet.Contains(e.Id) || !s.FiredEvents.Contains(e.Id) && e.From <= s.Date) && (e.To == null || start < e.To.Value))
                 .Where(e => Timeline.AllMet(c, s, e))
                 // R-OBJ-003: an objective's card waits for the objective. Only the GDD loop records one, so in the legacy loop it never fires.
                 .Where(e => e.Objective == "" || s.Objectives.ContainsKey(e.Objective))
@@ -45,14 +49,16 @@ namespace Statecraft.Sim
                 // key is the same for every event, and (From, id) is a total order (ids are unique), so the order is as before.
                 // R-OBJ-007 (Q-CARD-2): objective cards of the same From come after that From's other events, in objectives.yaml's order.
                 // R-EVT-006: then an event's `order` (default 0), then the id, so with every order 0 the order is as before.
-                .OrderBy(e => e.Kind == EventKinds.Consequence ? 0 : 1).ThenBy(e => e.From)
+                // R-EVT-002 (Q-EVT-1, Q-OBJ-1): an early armistice comes before even the consequence cards; with none, as before.
+                .OrderBy(e => quiet.Contains(e.Id) ? 0 : e.Kind == EventKinds.Consequence ? 1 : 2).ThenBy(e => e.From)
                 .ThenBy(e => e.Objective == "" ? -1 : c.Objectives.FindIndex(o => o.Id == e.Objective)).ThenBy(e => e.Order)
                 .ThenBy(e => e.Id, StringComparer.Ordinal)
                 .ToList();
             // R-EVT-007: a Deport card takes no soft slot, so it fires on its Deport's turn however full that turn is.
-            var hardCount = eligible.Count(e => e.Anchor == "hard");
-            var chosen = new HashSet<string>(eligible.Where(e => e.Anchor == "hard" || e.Deported != "")
-                .Concat(eligible.Where(e => e.Anchor != "hard" && e.Deported == "").Take(Math.Max(0, MaxSoftEventsPerTurn - hardCount))).Select(e => e.Id));
+            bool Hard(GameEvent e) => e.Anchor == "hard" && !quiet.Contains(e.Id);
+            var hardCount = eligible.Count(Hard);
+            var chosen = new HashSet<string>(eligible.Where(e => Hard(e) || e.Deported != "")
+                .Concat(eligible.Where(e => !Hard(e) && e.Deported == "").Take(Math.Max(0, MaxSoftEventsPerTurn - hardCount))).Select(e => e.Id));
             foreach (var e in eligible.Where(e => chosen.Contains(e.Id)))
             {
                 s.FiredEvents.Add(e.Id);
