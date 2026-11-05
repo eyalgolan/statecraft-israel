@@ -410,6 +410,17 @@ public class CombatEffectsTests
             for (int i = 0; i < dust.Capacity; i++)
                 if (!double.IsNaN(dust.StartOf(i)))
                     Assert.LessOrEqual((XZ(dust.Foot(i)) - was).magnitude, CombatBursts.SpreadShare * CombatBursts.DeathDustM + 1f, "where its token stood");
+            // Exactly where: the same puffs as a cloud raised on the token's spot itself. The lost unit was shaking from the hit
+            // when the rebuild dropped it, so this fails if the spot takes the shake (HitShakeM) as well as the slide.
+            var raised = Enumerable.Range(0, dust.Capacity).Where(i => !double.IsNaN(dust.StartOf(i)))
+                .Select(i => (dust.StartOf(i), XZ(dust.Foot(i)))).OrderBy(x => x.Item1).ToList();
+            dust.Clear();
+            Assert.IsTrue(layer.Combat.Destroyed(new Vector3(was.x, 0f, was.y), CombatBursts.ShellFlightS));
+            var onSpot = Enumerable.Range(0, dust.Capacity).Where(i => !double.IsNaN(dust.StartOf(i)))
+                .Select(i => (dust.StartOf(i), XZ(dust.Foot(i)))).OrderBy(x => x.Item1).ToList();
+            Assert.AreEqual(onSpot.Count, raised.Count);
+            for (int i = 0; i < raised.Count; i++)
+                Assert.Less((raised[i].Item2 - onSpot[i].Item2).magnitude, 1f, $"puff {i} on the token's spot, not where the shake put it");
             Assert.IsFalse(layer.PlayDestroyed(lost.Id), "once");
         }
         finally { Object.DestroyImmediate(map.gameObject); }
