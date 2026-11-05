@@ -279,10 +279,15 @@ namespace Statecraft.Game.UI
         /// <summary>A sim refusal in the UI's language where it has a string (<see cref="ReasonKeys"/>, <see cref="ReasonFormats"/>),
         /// else the sim's English as given. The queue's refusals, the unit card's (InfoPanelPresenter) and the end of turn's
         /// (ToastPresenter) go through it. With <paramref name="c"/> a value that is a settlement's name reads as the UI names the
-        /// town (its Hebrew name from <paramref name="townsHe"/> in Hebrew), and a course's English as why.cause.course.*.</summary>
+        /// town (its Hebrew name from <paramref name="townsHe"/> in Hebrew), a course's English as why.cause.course.* and a money
+        /// amount in the content's format.</summary>
         public static string ReasonText(UiText text, string reason, Content? c = null, IReadOnlyDictionary<string, string>? townsHe = null)
         {
-            if (ReasonKeys.TryGetValue(reason, out var key)) return text[key];
+            if (ReasonKeys.TryGetValue(reason, out var key))
+            {
+                if (reason != EconomySystem.RefusedDollarsMinimum) return text[key];
+                return c == null ? reason : text.Format(key, PlayerText.Money(c, "fx_reserves", 1));
+            }
             foreach (var (pattern, format) in ReasonFormats)
                 if (pattern.Match(reason) is { Success: true } m)
                     return text.Format(format, m.Groups.Cast<Group>().Skip(1).Select(v => (object)ReasonValue(text, v.Value, c, townsHe)).ToArray());
