@@ -86,6 +86,11 @@ namespace Statecraft.Game.UI
         bool endClosed;
         /// <summary>Set by SwitchLanguage for its Begin (#2054): whether the start screen it rebuilds offered Continue.</summary>
         bool keptResumed = true;
+        /// <summary>The save notices of <see cref="saveNoticeSession"/>, the session Begin last started, as language-independent
+        /// keys, so a language switch can say them again in the new language (#2552). A New game replaces the bridge's session
+        /// without Begin, so the keys are said only while the kept session is still the one that raised them.</summary>
+        readonly List<string> saveNoticeKeys = new List<string>();
+        GameSession? saveNoticeSession;
         AdvisorPresenter? advisor;
         CabinetPresenter? cabinet;
         EncyclopediaPresenter? encyclopedia;
@@ -255,7 +260,7 @@ namespace Statecraft.Game.UI
         /// (with <paramref name="smokeOrders"/>, the smoke-orders run's one turn instead);
         /// <paramref name="startScreen"/> shows the start screen first (never in a smoke run, which has no New Game).
         /// <paramref name="keep"/> (Settings' language switch) goes on with that bridge's game and its queued orders instead
-        /// of loading the autosave.</summary>
+        /// of loading the autosave; when rebuilding the start screen, its save notices are rendered in the new language.</summary>
         internal void Begin(GameInputs inputs, int smoke, bool startScreen = false, SimBridge? keep = null, bool smokeOrders = false)
         {
             if (inputs == null) throw new ArgumentNullException(nameof(inputs));
@@ -273,13 +278,19 @@ namespace Statecraft.Game.UI
 
             var text = Strings(inputs.Content);
             var store = Store ?? SaveStore.ForPlatform();
-            var notes = new List<string>();
+            if (keep == null) saveNoticeKeys.Clear();
+            var notes = keep != null && startScreen && ReferenceEquals(keep.Session, saveNoticeSession)
+                ? saveNoticeKeys.Select(key => GameStart.NoticeText(text, key)).ToList()
+                : new List<string>();
             // A smoke run is reproducible: a fresh game with the golden seed, never the player's autosave.
             bool resumed = keep == null || keptResumed;   // a language switch offers Continue as the start screen it rebuilds did
             keptResumed = true;
             var session = keep?.Session ?? (smoke > 0
-                ? GameStart.Begin(inputs.Content, store, () => GoldenRun.Seed, notes, text, out resumed, fresh: true)
-                : GameStart.Begin(inputs.Content, store, GameStart.NewSeed, notes, text, out resumed));
+                ? GameStart.Begin(inputs.Content, store, () => GoldenRun.Seed, notes, text, out resumed,
+                    fresh: true, noticeKeys: saveNoticeKeys)
+                : GameStart.Begin(inputs.Content, store, GameStart.NewSeed, notes, text, out resumed,
+                    noticeKeys: saveNoticeKeys));
+            if (keep == null) saveNoticeSession = session;
             DiagLog.BootPhase($"session started (turn {session.State.Turn}, replayed)");
             var bridge = Bridge = new SimBridge(session, text);
             var oldFixedNorth = cameraController.FixedNorth;
@@ -760,8 +771,8 @@ namespace Statecraft.Game.UI
         /// <summary>The language switch of Settings (#1036) and of the start screen (#2054): every screen again in
         /// <paramref name="language"/> at once, no reload, over the same game with this turn's orders (Begin's keep), and the
         /// place it was pressed in open again with the focus on the choice just made (for a mouse press too: the rebuilt UI
-        /// has no focus to keep): the start screen, offering Continue only if it did, or else Settings. Not in a smoke run
-        /// (smokeRun).</summary>
+        /// has no focus to keep): the start screen, offering Continue only if it did and repeating its save notices in the
+        /// new language, or else Settings. Not in a smoke run (smokeRun).</summary>
         void SwitchLanguage(GameInputs inputs, string language)
         {
             if (Bridge == null || smokeRun) return;
