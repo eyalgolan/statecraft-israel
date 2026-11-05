@@ -497,7 +497,9 @@ namespace Statecraft.Game.Map.Collection
             var centre = new Vector3(at.x, Statecraft.Game.Map.Units.UnitShowcase.LoopFloor(map!, new Vector3(at.x, 0f, at.y), SpitfireLoopHalfLengthM + size)
                 + Statecraft.Game.Map.Units.UnitShowcase.AltitudeM, at.y);
             go.transform.position = centre; b = Bounds(go);
-            foreach (var r in go.GetComponentsInChildren<Renderer>(true)) { r.shadowCastingMode = ShadowCastingMode.On; Gloss(r); }
+            // The soft disc (Shadow) is its shadow: a cast one would lie about 7.7 km off at the drawn height, a second shadow
+            // (e21's AFTER captures of #2728, 5 November 2026).
+            foreach (var r in go.GetComponentsInChildren<Renderer>(true)) { r.shadowCastingMode = ShadowCastingMode.Off; Gloss(r); }
             // The shadow and the flag stand beside the aircraft in this layer, so they neither bank nor turn with it, and go
             // with it (its model's originals) when its dates end.
             var marks = new GameObject(go.name + SpitfireMarksSuffix);
@@ -507,7 +509,7 @@ namespace Statecraft.Game.Map.Collection
             var flag = Flag(marks.transform);
             // The aircraft's half box at level, nose east: half its length, its height and its span.
             var half = 0.5f * new Vector3(b.size.x, b.size.y, b.size.z);
-            loop.Attach(Propeller(go), Shadow(marks.transform), flag, map!.Terrain, 0.5f * ShadowShare * new Vector2(size, b.size.x), half, ground.SeaLevelY);
+            loop.Attach(Propeller(go), Shadow(marks.transform, spitfire: true), flag, map!.Terrain, 0.5f * ShadowShare * new Vector2(size, b.size.x), half, ground.SeaLevelY);
             // Edit mode and screenshots hold the loop's start, as the train does (RouteLayer.ModeFor).
             loop.Configure(centre, level, b.center - go.transform.position, !Application.isPlaying || VisualShots.Requested());
             var cam = Camera.main;
@@ -571,11 +573,12 @@ namespace Statecraft.Game.Map.Collection
 
         /// <summary>The aircraft's soft shadow on the ground (owner's report: "it doesnt look fliying"), placed by SpitfireLoop
         /// where the map's sun casts it.</summary>
-        Transform Shadow(Transform parent)
+        Transform Shadow(Transform parent, bool spitfire = false)
         {
             var go = new GameObject(SpitfireShadowName);
             go.transform.SetParent(parent, false);
-            go.AddComponent<MeshFilter>().sharedMesh = shadowMesh != null ? shadowMesh : shadowMesh = Own(ShadowDisc());
+            go.AddComponent<MeshFilter>().sharedMesh = spitfire ? spitfireShadowMesh != null ? spitfireShadowMesh : spitfireShadowMesh = Own(SpitfireShadowDisc())
+                : shadowMesh != null ? shadowMesh : shadowMesh = Own(ShadowDisc());
             var r = go.AddComponent<MeshRenderer>();
             r.sharedMaterial = Blur(); r.shadowCastingMode = ShadowCastingMode.Off; r.receiveShadows = false;
             return go.transform;
@@ -654,7 +657,7 @@ namespace Statecraft.Game.Map.Collection
 
         MapRuntimeAssets? assets;
         bool flagMissing;
-        Material? blur; Material[]? flagCloth; Mesh? propMesh, spitfirePropMesh, shadowMesh, flagMesh;
+        Material? blur; Material[]? flagCloth; Mesh? propMesh, spitfirePropMesh, shadowMesh, spitfireShadowMesh, flagMesh;
         readonly Dictionary<Material, Material> glossy = new Dictionary<Material, Material>();
 
         /// <summary>Takes <paramref name="o"/>, made once for this layer, to be destroyed with it.</summary>
@@ -724,10 +727,16 @@ namespace Statecraft.Game.Map.Collection
         internal static float PropBlurAlpha(float deg, float spacing, float edge) =>
             0.22f + 0.33f * Mathf.Exp(-Mathf.Repeat(edge - deg, spacing) / (0.25f * spacing));
 
-        /// <summary>DESIGN VALUES: the shadow, a dark warm grey (the map's shadows are warm under its sun), 0.42 opaque at its
+        /// <summary>DESIGN VALUES: the Dakotas' shadow, a dark warm grey (the map's shadows are warm under its sun), 0.42 opaque at its
         /// middle and fading to nothing at its rim, (1 - r²)^1.5.</summary>
-        internal static Mesh ShadowDisc() => Disc("SpitfireShadow", 48, new[] { 0.3f, 0.55f, 0.75f, 0.9f, 1f }, new[] { 0f }, new Color(0.10f, 0.08f, 0.06f), (r, _) =>
+        internal static Mesh ShadowDisc() => Disc("DakotaShadow", 48, new[] { 0.3f, 0.55f, 0.75f, 0.9f, 1f }, new[] { 0f }, new Color(0.10f, 0.08f, 0.06f), (r, _) =>
             0.42f * Mathf.Pow(1f - r * r, 1.5f));
+
+        /// <summary>DESIGN VALUES (agent-chosen, from e21's AFTER captures of #2728, 5 November 2026: the near disc at 0.42 was
+        /// too faint over sand and sea): the Spitfires' shadow, as <see cref="ShadowDisc"/> (the Dakotas', unchanged) but 0.6
+        /// opaque at its middle; it is now their only shadow (they cast none, Fly).</summary>
+        internal static Mesh SpitfireShadowDisc() => Disc("SpitfireShadow", 48, new[] { 0.3f, 0.55f, 0.75f, 0.9f, 1f }, new[] { 0f }, new Color(0.10f, 0.08f, 0.06f), (r, _) =>
+            0.6f * Mathf.Pow(1f - r * r, 1.5f));
 
         /// <summary>The ground the other 1948 Collection layers hold (GameRoot shows them first), for the C-54 to keep off, as
         /// SpecialBuildingModels keeps off the people and the wildlife: the civilians (#666), the wildlife (#670), the farm

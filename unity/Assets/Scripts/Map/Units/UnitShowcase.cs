@@ -34,8 +34,9 @@ namespace Statecraft.Game.Map.Units
 
         /// <summary>DESIGN VALUE (agent-chosen, coordinator-approved plan, 5 November 2026; checked in captures): the aircraft's
         /// paint smoothness (URP Lit), a satin sheen in the map's sun. The Egyptian Spitfire's streamed model is fully matte
-        /// (0) and the units' shared paint 0.18; only the code-built 101 Squadron Spitfire and the Egyptian one take it.</summary>
-        public const float AircraftSmoothness = 0.4f;
+        /// (0) and the units' shared paint 0.18; only the code-built 101 Squadron Spitfire and the Egyptian one take it. 0.4 read
+        /// as still mostly matte at 31 km in e21's AFTER captures (5 November 2026).</summary>
+        public const float AircraftSmoothness = 0.5f;
 
         /// <summary>The URP Lit smoothness property.</summary>
         internal const string SmoothnessProperty = "_Smoothness";
@@ -43,6 +44,10 @@ namespace Statecraft.Game.Map.Units
         /// <summary>DESIGN VALUE: the 101 Squadron Spitfire's propeller blur radius in the aircraft's frame: the blades' reach
         /// (UnitModels.SpitfirePropeller, 1.6) and a little more.</summary>
         public const float PropellerBlurRadius = 1.65f;
+
+        /// <summary>DESIGN VALUE: the 101 Squadron Spitfire's haze over the Egyptian one's opacity, in one layer: at the same
+        /// opacity in two layers it read as a near-opaque white plate under its dark rods (e21's AFTER captures of #2728).</summary>
+        public const float PropellerBlurOpacity = 0.65f;
 
         /// <summary>The names of the 101 Squadron Spitfire's propeller blur (a child of its propeller) and ground shadow (a child
         /// of the aircraft).</summary>
@@ -65,10 +70,10 @@ namespace Statecraft.Game.Map.Units
         /// <summary>DESIGN VALUES: the 101 Squadron Spitfire's propeller blur, the Egyptian Spitfire's light haze
         /// (SeaAirCollection.PropBlurColour, PropBlurAlpha) for its four blades (UnitModels.SpitfirePropeller: every 90 degrees
         /// from 20, which this disc, turned to face along +z, sees at 70 degrees and every 90 after), clear at the spinner,
-        /// fading out at the rim, two thin layers either side of the blades. Uploaded; the caller owns it.</summary>
+        /// fading out at the rim, one layer through the blades' hub, at <see cref="PropellerBlurOpacity"/>. Uploaded; the caller owns it.</summary>
         internal static Mesh PropellerBlurMesh() => Collection.SeaAirCollection.Disc("SpitfirePropellerBlur101", 48, new[] { 0.15f, 0.4f, 0.7f, 0.9f, 1f },
-            new[] { -0.06f, 0.06f }, Collection.SeaAirCollection.PropBlurColour,
-            (r, deg) => r >= 1f ? 0f : Mathf.Min(1f, r / 0.4f) * Collection.SeaAirCollection.PropBlurAlpha(deg, 90f, 70f));
+            new[] { 0f }, Collection.SeaAirCollection.PropBlurColour,
+            (r, deg) => r >= 1f ? 0f : PropellerBlurOpacity * Mathf.Min(1f, r / 0.4f) * Collection.SeaAirCollection.PropBlurAlpha(deg, 90f, 70f));
 
         /// <summary>Puts the light blur <paramref name="mesh"/> on the code-built propeller <paramref name="prop"/> (it turns about
         /// +z), so it turns with it: the disc (made in XZ) turned to face along +z, <see cref="PropellerBlurRadius"/> across.</summary>
@@ -94,6 +99,13 @@ namespace Statecraft.Game.Map.Units
             var r = go.AddComponent<MeshRenderer>();
             r.sharedMaterial = blur; r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off; r.receiveShadows = false;
             return go.transform;
+        }
+
+        /// <summary>A flying code-built Spitfire casts no shadow of its own: its soft disc (<see cref="GroundShadow"/>) is its
+        /// shadow, and a cast one would lie about 7 km off at its drawn height (e21's AFTER captures of #2728).</summary>
+        internal static void CastNoShadow(Transform plane)
+        {
+            foreach (var r in plane.GetComponentsInChildren<Renderer>(true)) r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         }
 
         /// <summary>The shadow's half size across and along the heading (m) for a code-built Spitfire mesh drawn at
@@ -244,7 +256,8 @@ namespace Statecraft.Game.Map.Units
                 prop.localPosition = UnitModels.SpitfirePropellerHub;
                 var blur = assets.Own(BlurMaterial());
                 PropellerBlur(prop, assets.Own(PropellerBlurMesh()), blur);
-                shadow = GroundShadow(plane.transform, assets.Own(Collection.SeaAirCollection.ShadowDisc()), blur);
+                shadow = GroundShadow(plane.transform, assets.Own(Collection.SeaAirCollection.SpitfireShadowDisc()), blur);
+                CastNoShadow(plane.transform);
             }
             plane.transform.localScale = Vector3.one * AircraftScale;
             var loopCentre = map.Frame.ToWorld(LoopCentre.lon, LoopCentre.lat, 0);

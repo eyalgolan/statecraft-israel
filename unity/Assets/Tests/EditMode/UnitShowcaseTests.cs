@@ -398,6 +398,8 @@ public class UnitShowcaseTests
             var flight = root.GetComponentInChildren<ShowcaseFlight>();
             var shadow = flight.transform.Find(UnitShowcase.ShadowName);
             Assert.IsNotNull(shadow, "a shadow, a child of the aircraft, so it goes with it");
+            Assert.IsTrue(flight.GetComponentsInChildren<Renderer>(true).All(x => x.shadowCastingMode == UnityEngine.Rendering.ShadowCastingMode.Off),
+                "its only shadow: the aircraft casts none (one would lie about 7 km off at its drawn height)");
             var r = shadow.GetComponent<MeshRenderer>();
             Assert.AreEqual(UnityEngine.Rendering.ShadowCastingMode.Off, r.shadowCastingMode); Assert.IsFalse(r.receiveShadows);
             var model = UnitModels.Spitfire("span"); float span = model.bounds.size.x * UnitShowcase.AircraftScale; Object.DestroyImmediate(model);

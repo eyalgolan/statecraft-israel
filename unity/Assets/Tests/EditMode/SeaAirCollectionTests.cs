@@ -1263,6 +1263,8 @@ public class SeaAirCollectionTests
             var (layer, plane, loop, centre) = DrawnSpitfire(map);
             var shadow = Marks(layer, SeaAirCollection.SpitfireShadowName);
             Assert.IsNotNull(shadow, "a ground shadow beside the aircraft");
+            Assert.IsTrue(plane.GetComponentsInChildren<Renderer>(true).All(x => x.shadowCastingMode == ShadowCastingMode.Off),
+                "its only shadow: the aircraft casts none (one would lie about 7.7 km off at its drawn height, e21's AFTER captures)");
             var renderer = shadow!.GetComponent<MeshRenderer>();
             Assert.AreEqual(ShadowCastingMode.Off, renderer.shadowCastingMode); Assert.IsFalse(renderer.receiveShadows);
             var alpha = shadow.GetComponent<MeshFilter>().sharedMesh.colors32.Select(c => c.a / 255f).ToList();

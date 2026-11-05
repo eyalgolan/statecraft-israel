@@ -907,7 +907,8 @@ namespace Statecraft.Game.Map.Units
                 if (spitfire && t.Flying)
                 {
                     UnitShowcase.PropellerBlur(prop, aircraftBlurMesh ??= assets.Own(UnitShowcase.PropellerBlurMesh()), AircraftBlur());
-                    shadow = UnitShowcase.GroundShadow(plane.transform, aircraftShadowMesh ??= assets.Own(Collection.SeaAirCollection.ShadowDisc()), AircraftBlur());
+                    shadow = UnitShowcase.GroundShadow(plane.transform, aircraftShadowMesh ??= assets.Own(Collection.SeaAirCollection.SpitfireShadowDisc()), AircraftBlur());
+                    UnitShowcase.CastNoShadow(plane.transform);
                 }
             }
             plane.transform.localScale = Vector3.one * UnitShowcase.AircraftScale;
