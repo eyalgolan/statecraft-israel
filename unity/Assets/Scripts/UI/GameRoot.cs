@@ -558,6 +558,11 @@ namespace Statecraft.Game.UI
             // Audit L4: while a screen is open, the Up and Down arrows are its rows' (NavigationGuard.Step), not the camera's.
             Func<bool> screenTakesUpDown = () => nav?.Current != null;
             cameraController.ScreenTakesUpDown = screenTakesUpDown;
+            // #2712: in the two-row HUD (the tight three-row one too) an open screen covers the whole map, so the camera keys
+            // are off while it shows, as under the start screen; a desktop screen leaves the map beside it (plan amendment A4).
+            var hudRoot = root.Q("root") ?? root;
+            Func<bool> screenCoversMap = () => nav?.Current != null && hudRoot.ClassListContains(HudPresenter.TwoRowClass);
+            cameraController.ScreenCoversMap = screenCoversMap;
             Action<int, int, bool> onHex = (q, r, cityPill) =>
             {
                 OnHexClicked(map, unitLayer, info, q, r, UnityEngine.InputSystem.Pointer.current is UnityEngine.InputSystem.Touchscreen, cityPill);
@@ -625,6 +630,7 @@ namespace Statecraft.Game.UI
                 if (cameraController.HoldsMouseDrag == holdsMouseDrag) cameraController.HoldsMouseDrag = null;
                 if (cameraController.HoldsTouchDrag == holdsTouchDrag) cameraController.HoldsTouchDrag = null;
                 if (cameraController.ScreenTakesUpDown == screenTakesUpDown) cameraController.ScreenTakesUpDown = null;
+                if (cameraController.ScreenCoversMap == screenCoversMap) cameraController.ScreenCoversMap = null;
                 if (pointer.Map == map) { pointer.Map = null; pointer.View = null; }
                 cameraController.Bounds = oldBounds;
                 cameraController.Ground = oldGround; cameraController.GroundTop = oldTop;
@@ -764,10 +770,22 @@ namespace Statecraft.Game.UI
                 // is no opening, so that route only plays the opening.
                 Action freshGame = () => { if (opening != null) opening.Show(replay: false); else advisor?.NewGame(); };
                 Action freshOpened = () => opening?.Show(replay: false);
+                // #2712: a New Game keeps the map, so the camera goes back to the opening view here, as MapScene.Build sets it
+                // at boot: Tel Aviv and Jaffa in frame at the start zoom.
+                Action openingView = () =>
+                {
+                    var cam = cameraController.GetComponent<Camera>();
+                    camRig.LookAt = CameraRig.OpeningLookAt(map.Frame, cam.aspect,
+                        map.Settlements.Single(s => s.Id == "tel_aviv"), map.Settlements.Single(s => s.Id == "jaffa"));
+                    camRig.Distance = CameraRig.StartDistance;
+                    cameraController.Settle(); SyncMinimap(); labels?.Refresh();
+                };
+                newGame.Started += openingView;
                 newGame.Started += freshGame;
                 if (start != null) start.FreshGameOpened += freshOpened;
                 owned.Add(new Undo(() =>
                 {
+                    newGame.Started -= openingView;
                     newGame.Started -= freshGame;
                     if (start != null) start.FreshGameOpened -= freshOpened;
                 }));
