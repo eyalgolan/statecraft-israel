@@ -805,6 +805,13 @@ public class UnitsInPlayTests
                 badge.position - cam.transform.right * half + cam.transform.up * half, badge.position + cam.transform.right * half - cam.transform.up * half,
                 badge.position + cam.transform.right * half + cam.transform.up * half });
             Assert.IsFalse(badgeRect.Overlaps(ScreenRect(cam, tail)), "the badge does not cover the projected rear 40% of the parked fighter");
+            // #2729 captures: an offset that left the aircraft put the badge under the HUD (12 km) and on a neighbour's plinth
+            // (31 km). It stands over the aircraft's own footprint instead: within half its length of the fuselage's middle.
+            var whole = MeshBounds(aircraft, local: true);
+            var middle = aircraft.TransformPoint(whole.center);
+            float halfLength = 0.5f * whole.size.z * aircraft.lossyScale.z;
+            Assert.LessOrEqual(new Vector2(badge.position.x - middle.x, badge.position.z - middle.z).magnitude, halfLength + 1f,
+                "the badge stays over the parked aircraft, not beyond it");
             int token = layer.Tokens.ToList().FindIndex(p => p.Token.Unit.Id == "squadron_101");
             Assert.AreEqual(badge.position, layer.KeepClear[token][0].center, "the names' keep-clear follows the offset badge");
         }

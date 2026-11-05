@@ -440,8 +440,9 @@ and a unit the sim moves is placed without the control layer.
   its two 1948 photographs. Every other brigade has the uniform default (bush hat, steel helmet, bush hat), from the 1948
   photographs listed under "Sources".
 - **Air:** the squadron flies the slice's loop over its base at security level 4 or 5 and stands parked below that.
-  A parked aircraft leaves a circular tree hole covering its drawn world-XZ footprint. Its camera-facing badge moves
-  upward on screen when needed so its lower edge clears the aircraft; a flying aircraft gets neither adjustment.
+  A parked aircraft leaves a circular tree hole covering its drawn world-XZ footprint. Its camera-facing badge stands over the forward
+  fuselage (three quarters of the way from the tail, and clear of the rear 40%), so it covers neither the tail nor
+  anything beyond the aircraft; a flying aircraft gets neither adjustment.
 - **Navy:** a ship is the K-20 corvette model; Wedgwood was the same modified Flower class.
 - **Badge:** each token has the promo's badge (`UnitBadge`): a dark rounded plate with an ivory glyph (two figures, an
   aircraft or a ship). It is turned to face each camera as it renders. On an army token it sits above the flag's top, a little
