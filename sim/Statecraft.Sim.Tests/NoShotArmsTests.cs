@@ -307,11 +307,11 @@ public class NoShotArmsTests
 }
 
 /// <summary>R-COMBAT-001, R-COMBAT-004 on the real content under gdd-0.3: an attack with an empty stock commits, replays
-/// from a schema-4 save and is not fought again at End turn.</summary>
+/// from a schema-5 save and is not fought again at End turn.</summary>
 public class NoShotArmsSessionTests
 {
     [Fact]
-    public void AZeroStockInstantAttackReplaysInSchemaFourAndIsNotRepeatedAtEndTurn()
+    public void AZeroStockInstantAttackReplaysInSchemaFiveAndIsNotRepeatedAtEndTurn()
     {
         var root = RealContentTests.ContentRoot();
         var c = ContentLoader.Load(rel =>
@@ -333,7 +333,7 @@ public class NoShotArmsSessionTests
         Assert.Single(game.Now.Why, w => w.Key == WhyKeys.Engagement);
 
         var text = game.Save.Write();
-        Assert.StartsWith("statecraft-save 4", text);
+        Assert.StartsWith("statecraft-save 5", text);
         var replay = GameSession.Load(c, text, out _);
         Assert.Equal(game.Now.State.Hash(), replay.Now.State.Hash());
         Assert.Single(replay.Committed);

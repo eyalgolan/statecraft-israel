@@ -26,6 +26,12 @@ namespace Statecraft.Game.UI
     [ExecuteAlways]
     public sealed class GameRoot : MonoBehaviour
     {
+        Action<string>? savePersistenceResult;
+
+        /// <summary>Unity WebGL SendMessage entry point for IndexedDB save/delete results.</summary>
+        [UnityEngine.Scripting.Preserve]
+        public void OnSavePersistenceResult(string result) => savePersistenceResult?.Invoke(result);
+
         /// <summary>Turns a bare smoke flag ("?smoke", "-smoke") plays.</summary>
         internal const int DefaultSmokeTurns = 5;
         /// <summary>Maximum time after closing the start screen for the normal-media browser check's first card to become usable.
@@ -80,6 +86,7 @@ namespace Statecraft.Game.UI
         /// <summary>Tests: the minimap of the last Begin.</summary>
         internal MinimapPresenter? Minimap => minimap;
         string? hoveredCity;   // the city HoverCity lit (#1063)
+        readonly Dictionary<(int q, int r), List<string>> citiesByHex = new Dictionary<(int, int), List<string>>();
         OutcomePresenter? outcomes;
         TurnReportPresenter? report;
         EndScreenPresenter? end;
@@ -317,6 +324,14 @@ namespace Statecraft.Game.UI
 
             // The toast first: the autosave (below) must report a failed write after the toast has shown the turn's refusals.
             var toast = Own(new ToastPresenter(root, bridge, text));
+            savePersistenceResult = result =>
+            {
+                if (result.StartsWith("fail save ", StringComparison.Ordinal))
+                {
+                    toast.Append(text["save.write_failed"]);
+                    Debug.Log("SAVE FAILURE SHOWN save.write_failed");
+                }
+            };
             unseenSkipped = () => toast.Show(text["toast.unit_unseen_skipped"]);
             var hudPresenter = Own(new HudPresenter(root, bridge, text, selectUnit: _ => FocusNextUnit()));
             nav = Own(new ScreenNav(root, text));                                // every screen starts hidden (USS); ScreenNav opens one at a time
@@ -426,7 +441,11 @@ namespace Statecraft.Game.UI
             var layerLabel = root.Q<Label>("map-layer");
             Action onDate = () =>
             {
-                regions.Apply(bridge.State.Date);
+                var live = bridge.State.Settlements.OrderBy(kv => kv.Key, StringComparer.Ordinal)
+                    .Join(bridge.Content.SettlementHexes, kv => kv.Key, h => h.Id,
+                        (kv, h) => (h.Q, h.R, player: SettlementControlView.PlayerHolds(kv.Value)))
+                    .Where(x => x.player != null).Select(x => (x.Q, x.R, x.player!.Value)).ToList();
+                regions.Apply(bridge.State.Date, live);
                 layerLabel.text = regions.ControlLabel(bridge.State.Date, k => text[k])
                     ?? regions.Label(bridge.State.Date, text.Format, text["ui.lang"] == UiLanguage.Hebrew);
                 ShowLayerLabel();
@@ -489,15 +508,15 @@ namespace Statecraft.Game.UI
                 unitDone: FocusNextUnit, showRoute: map.ShowRoute, showArrow: map.ShowMoveArrow, selectPioneer: FocusPioneer, clearSelection: () => { unitLayer.Select(null); map.ClearSelection(); }));
             toast.Units = unitData; toast.TownNamesHe = townNamesHe; why.TownNamesHe = townNamesHe; bridge.TownNamesHe = townNamesHe;
             report.TownNamesHe = townNamesHe; hudPresenter.TownNamesHe = townNamesHe;
-            // A smoke session never touches the player's save: no autosave, and no New Game (which deletes the autosave).
-            // Leaving New Game out is safer than handing it a throwaway store: no file is ever deleted, no path has to be
+            // A smoke session never touches the player's save: no autosave, and no New Game (which writes the autosave).
+            // Leaving New Game out is safer than handing it a throwaway store: no file is ever written, no path has to be
             // right on every platform, and the scripted run never presses it.
             NewGamePresenter? newGame = null;
             if (smoke == 0)
             {
-                newGame = Own(new NewGamePresenter(root, bridge, store, toast, text, GameStart.NewSeed));
+                newGame = Own(new NewGamePresenter(root, bridge, store, toast, text, GameStart.NewSeed, gameObject.name));
                 this.newGame = newGame;
-                Own(GameStart.Autosave(bridge, store, text, toast.Append));   // appends: the turn's refusals stay visible
+                Own(GameStart.Autosave(bridge, store, text, toast.Append, gameObject.name));   // appends: the turn's refusals stay visible
             }
             // Once the game is over, the sim's end report (#812); after the autosave, so the last turn is saved first. New Game
             // is its two presses; a smoke run has none.
@@ -518,6 +537,14 @@ namespace Statecraft.Game.UI
             cameraController.Ground = CameraController.GroundOf(terrain);
             cameraController.GroundTop = CameraController.GroundTopOf(terrain);
             pointer.Map = map;
+            pointer.InvalidateSceneCache();
+            pointer.View = cameraController.GetComponent<Camera>();
+            citiesByHex.Clear();
+            foreach (var h in bridge.Content.SettlementHexes)
+            {
+                if (!citiesByHex.TryGetValue((h.Q, h.R), out var ids)) citiesByHex[(h.Q, h.R)] = ids = new List<string>();
+                ids.Add(h.Id);   // preserve content order where settlement rows share a hex
+            }
             // #1617: the lit hexes of a Move or Attack pick show through the unit card, so the map pointer also takes a click
             // on the card's text over one of them (InfoPanelPresenter.TakesClickThrough). The camera does not: no drag or wheel
             // through the card.
@@ -600,7 +627,7 @@ namespace Statecraft.Game.UI
                 if (cameraController.HoldsMouseDrag == holdsMouseDrag) cameraController.HoldsMouseDrag = null;
                 if (cameraController.HoldsTouchDrag == holdsTouchDrag) cameraController.HoldsTouchDrag = null;
                 if (cameraController.ScreenTakesUpDown == screenTakesUpDown) cameraController.ScreenTakesUpDown = null;
-                if (pointer.Map == map) pointer.Map = null;
+                if (pointer.Map == map) { pointer.Map = null; pointer.View = null; }
                 cameraController.Bounds = oldBounds;
                 cameraController.Ground = oldGround; cameraController.GroundTop = oldTop;
             }));
@@ -932,12 +959,30 @@ namespace Statecraft.Game.UI
         /// pointer (a touchscreen). Returns that city's id; called each frame (LateUpdate), it changes the UI only when the city does.</summary>
         internal string? HoverCity(Vector2? screenYUp)
         {
-            var city = screenYUp is Vector2 p && Bridge != null && pointer.HexAt(p) is (int q, int r) ? CityAt(Bridge.Content, Bridge.State, q, r) : null;
+            var under = screenYUp is Vector2 p ? pointer.HexAt(p) : null;
+            return HoverCity(screenYUp, under);
+        }
+
+        internal string? HoverCity(Vector2? screenYUp, (int q, int r)? under)
+        {
+            string? city = null;
+            if (screenYUp.HasValue && under is (int q, int r) && Bridge != null && citiesByHex.TryGetValue((q, r), out var ids))
+                foreach (var id in ids) if (Bridge.State.Cities.ContainsKey(id)) { city = id; break; }
             if (city == hoveredCity) return city;
             hoveredCity = city;
             labels?.Highlight(city);
             HandCursor(city != null);
             return city;
+        }
+
+        internal void UpdateMapHover(Vector2? hover)
+        {
+            labels?.Hover(hover);
+            var under = hover is Vector2 at ? pointer.HexAt(at) : null;
+            HoverCity(hover, under);
+            if (under is (int q, int r)) info?.ShowRouteTo(q, r);
+            else if (UnityEngine.InputSystem.Pointer.current is UnityEngine.InputSystem.Mouse) info?.HideRoute();
+            MarkHover(map, info, under, rig != null ? rig.Distance : float.PositiveInfinity);
         }
 
         /// <summary>The city with a settlement hex at (q, r): one in State.Cities, whose hex opens the city panel (GddHexPanel); or null.</summary>
@@ -974,6 +1019,7 @@ namespace Statecraft.Game.UI
             if (keepCompanionPage && companion != null) { owned.Remove(companion); companion.Dispose(clearPage: false); }
             for (int i = owned.Count - 1; i >= 0; i--) owned[i].Dispose();
             owned.Clear();
+            savePersistenceResult = null;
             if (hoveredCity != null) { hoveredCity = null; HandCursor(false); }   // the next Begin's pills start unlit
             companion = null; minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; opening = null; card = null; outcomes = null; report = null; end = null; advisor = null; cabinet = null; newGame = null; encyclopedia = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
             // A ?profile run cut short (a stopped coroutine never reaches its restore line) must not leave the terrain at the
@@ -1144,12 +1190,7 @@ namespace Statecraft.Game.UI
             // Today's name under a 1948 locality's pill: while a mouse (or pen) is over it (owner ruling 2026-10-11), or after a
             // tap on it (#245). A touchscreen has no hover: its last touch position stays after the finger lifts.
             var hover = MapLabelsPresenter.HoverPosition(UnityEngine.InputSystem.Pointer.current);
-            labels.Hover(hover);
-            HoverCity(hover);
-            var under = hover is Vector2 at ? pointer.HexAt(at) : null;
-            if (under is (int q, int r)) info?.ShowRouteTo(q, r);
-            else if (UnityEngine.InputSystem.Pointer.current is UnityEngine.InputSystem.Mouse) info?.HideRoute();
-            MarkHover(map, info, under, rig != null ? rig.Distance : float.PositiveInfinity);
+            UpdateMapHover(hover);
             var touch = UnityEngine.InputSystem.Touchscreen.current;
             if (touch != null && touch.primaryTouch.press.wasPressedThisFrame) labels.Tap(touch.primaryTouch.position.ReadValue());
         }

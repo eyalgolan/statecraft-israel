@@ -138,6 +138,7 @@ cproj[
   17:housing@tel_aviv,-3,21/4,3FDB851EB851EB88
 next=18
 ctrl{
+  acre=since=1948-06-15
   beersheba=since=1949-01-15,fled=1
   ramla=since=1948-08-15,fled=1
 food=3003,1001,0

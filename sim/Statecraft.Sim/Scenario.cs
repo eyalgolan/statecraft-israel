@@ -23,7 +23,8 @@ namespace Statecraft.Sim
     /// set_mobilization (level), security_order (delta), appoint (office, person), map_action (action, q, r), assign_workers
     /// (city, role, count), train (city, track, count), cancel_training (cohort), return_craftsmen (city, count), reassign_craftsmen (city, count), reassign_pioneers (city, track, count), pioneer_work (unit, action, site), stop_work
     /// (unit), move (unit, q, r; GDD content only), unit_order (unit, order, and q, r for an attack; GDD content only). A turn with no
-    /// scripted command passes; events nobody answered are delegated, as in the game. A command the sim rejects fails the run.</summary>
+    /// scripted command passes; events nobody answered are delegated, as in the game. Instant commands run before deferred
+    /// commands in each turn, as in live play. A command the sim rejects fails the run.</summary>
     public sealed class Scenario
     {
         public string Name { get; set; } = "";
@@ -150,6 +151,7 @@ namespace Statecraft.Sim
                     ?? e.Options.FirstOrDefault(o => o.Recommended) ?? e.Options[0])
                     .Where(x => x is not UnitOrder o || !scriptedThrough.TryGetValue(o.Unit, out var through) || s.Date > through).ToList();
                 while (pending.Count > 0 && pending[0].OnDate <= s.Date) { now.AddRange(pending[0].Built); pending.RemoveAt(0); }
+                now = now.Where(Simulation.IsInstant).Concat(now.Where(x => !Simulation.IsInstant(x))).ToList();
                 var staged = Simulation.Preview(c, s, now).State;
                 var operationChoices = s.PendingEvents.Select(id => c.Events.First(e => e.Id == id))
                     .Select(e => (Event: e, Option: e.Options.FirstOrDefault(o => o.Historical)

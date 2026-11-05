@@ -28,10 +28,10 @@ macOS IL2CPP parity check is not an MVP release gate.
    uv run tools/machine_lock.py --shared --wait-unity -- "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression gzip -shareable -logFile "$PWD/unity-build-web-gz.log"
    git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset
    golden_expect=(); while read -r name hash; do [[ -z "$name" || "$name" == \#* ]] || golden_expect+=(--expect "GOLDEN OK $name $hash"); done < sim/Statecraft.Sim.Tests/golden/manifest.txt
-   # one GOLDEN OK line per manifest golden (#394), e.g. "GOLDEN OK hash1950 066883944756c334b0462c4e60479bd49b6d864afb58c9d862c96e1af5f558bb"
-   # and "GOLDEN OK hash1952 e8077f9744fdfd164a265b9c13b9e388f631cd5352d795f179acaa6f2134f836"
+   # one GOLDEN OK line per manifest golden (#394), e.g. "GOLDEN OK hash1950 e4a90c5b1d0049332cc5036e7951bd008910e2fae46e65c1b1512a7397ec1688"
+   # and "GOLDEN OK hash1952 1712d9f55f9973c77fdca59ea16ef8d978836c4b1c6218163982d75502b3eb69"
    uv run tools/web_check.py unity/Builds/Web-gzip --query "golden&smoke=5" "${golden_expect[@]}" \
-     --expect "SMOKE OK 5 turns 1948-10-15 6f54118bc0fb13b0c3bbaac49bb57dca5ed61e747cd7d351503bfba803e3d120"
+     --expect "SMOKE OK 5 turns 1948-10-15 f3a160004a531c7019f51a56789fb00173db74ea6003de1a69f7b781a4575731"
    uv run tools/web_check.py unity/Builds/Web-gzip --startscreen new --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-gzip --startscreen recording --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-gzip --startscreen new --query lang=he --timeout 300 --stall 90
@@ -66,7 +66,7 @@ macOS IL2CPP parity check is not an MVP release gate.
    uv run tools/machine_lock.py --shared --wait-unity -- "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression gzip -decompressionFallback -shareable -out Builds/Web-pages -logFile "$PWD/unity-build-web-pages.log"
    git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset
    uv run tools/web_check.py unity/Builds/Web-pages --query "golden&smoke=5" "${golden_expect[@]}" \
-     --expect "SMOKE OK 5 turns 1948-10-15 6f54118bc0fb13b0c3bbaac49bb57dca5ed61e747cd7d351503bfba803e3d120"
+     --expect "SMOKE OK 5 turns 1948-10-15 f3a160004a531c7019f51a56789fb00173db74ea6003de1a69f7b781a4575731"
    uv run tools/web_check.py unity/Builds/Web-pages --startscreen new --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-pages --startscreen recording --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-pages --startscreen new --query lang=he --timeout 300 --stall 90

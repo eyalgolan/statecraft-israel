@@ -34,13 +34,13 @@ namespace Statecraft.Sim
         /// <summary>Fires every unfired event whose `requires` (if any) is met, whose window [From, To) overlaps the turn just played,
         /// [<paramref name="turnStart"/>, s.Date), or contains s.Date; <paramref name="turnStart"/> defaults to s.Date
         /// (game start). Every eligible hard anchor fires; MaxSoftEventsPerTurn caps only the non-hard events per turn,
-        /// which fill the slots that remain (max(0, cap - hard count)) in the usual order (an early armistice first, R-WAR-008, then consequence cards, R-ALT-008, then From, objective cards last in objectives.yaml's order, R-OBJ-007, then id). The fired
-        /// events keep the usual order.
+        /// which fill the slots that remain (max(0, cap - hard count)) in the usual order (an early armistice first, R-WAR-008, then consequence cards, R-ALT-008, then From, objective cards last in objectives.yaml's order, R-OBJ-007, then id). Objective and Deport cards take no soft slot. The fired
+        /// events keep the usual order. An eligible soft event left out by the cap waits past its window until it can fire.
         /// Late fire: an event whose window overlapped the turn just played can fire after its window has ended; its
         /// conditions are evaluated at the end of the turn, and its text is filled at the last in-window day
         /// (<see cref="FillDate"/>).
         /// <para>With <paramref name="endingTurn"/> (the turn that ended the game, R-LOOP-004) only the unfired cards of recorded
-        /// objectives fire (those that turn recorded, and any an earlier turn's soft-event cap held back), all of them, uncapped
+        /// objectives fire (those that turn recorded, and any recorded earlier whose card has not fired yet), all of them, uncapped
         /// (R-OBJ-003; the owner's choice "Show the card (Recommended)", 4 November 2026, #2536); no other event does.</para></summary>
         public static void Trigger(Content c, GameState s, List<Cause> why, DateTime? turnStart = null, bool endingTurn = false)
         {
@@ -51,7 +51,8 @@ namespace Statecraft.Sim
             var quiet = new HashSet<string>(c.Events.Where(e => e.FrontQuiet != "" && Armistice.MayOfferEarly(c, s, e.FrontQuiet)
                 && (s.FiredEvents.Contains(e.Id) || s.Date < e.From)).Select(e => e.Id));
             var eligible = c.Events
-                .Where(e => (quiet.Contains(e.Id) || !s.FiredEvents.Contains(e.Id) && e.From <= s.Date) && (e.To == null || start < e.To.Value))
+                .Where(e => (quiet.Contains(e.Id) || !s.FiredEvents.Contains(e.Id) && e.From <= s.Date)
+                            && (s.CappedEvents.Contains(e.Id) || e.To == null || start < e.To.Value))
                 .Where(e => !endingTurn || EndingCard(s, e))
                 // R-ENEMY-007: unlike an ordinary late-fired card, an operation cannot first appear after it is no longer relevant.
                 .Where(e => !c.IsGdd || e.To == null || s.Date < e.To.Value || !e.Options.Any(o => o.RequiresUnitRegions.Count != 0))
@@ -79,13 +80,19 @@ namespace Statecraft.Sim
                 .ThenBy(e => e.Objective == "" ? -1 : c.Objectives.FindIndex(o => o.Id == e.Objective)).ThenBy(e => e.Order)
                 .ThenBy(e => e.Id, StringComparer.Ordinal)
                 .ToList();
-            // R-EVT-007: a Deport card takes no soft slot, so it fires on its Deport's turn however full that turn is.
-            bool Hard(GameEvent e) => e.Anchor == "hard" && !quiet.Contains(e.Id);
+            // R-OBJ-003, R-EVT-007: objective and Deport cards take no soft slot, so they fire however full the turn is.
+            // A hard objective or Deport card takes no soft slot either, so it does not shrink the slots the others share.
+            // R-WAR-008: an early armistice is soft (it takes a slot and can wait); on its date it is a hard anchor.
+            bool Hard(GameEvent e) => e.Anchor == "hard" && !quiet.Contains(e.Id) && e.Objective == "" && e.Deported == "";
+            bool TakesSoftSlot(GameEvent e) => !Hard(e) && e.Objective == "" && e.Deported == "";
             var hardCount = eligible.Count(Hard);
-            var chosen = new HashSet<string>(eligible.Where(e => Hard(e) || e.Deported != "")
-                .Concat(eligible.Where(e => !Hard(e) && e.Deported == "").Take(endingTurn ? int.MaxValue : Math.Max(0, MaxSoftEventsPerTurn - hardCount))).Select(e => e.Id));
+            var chosen = new HashSet<string>(eligible.Where(e => !TakesSoftSlot(e))
+                .Concat(eligible.Where(TakesSoftSlot).Take(endingTurn ? int.MaxValue : Math.Max(0, MaxSoftEventsPerTurn - hardCount))).Select(e => e.Id));
+            // R-EVT-001: only events eligible now can newly enter the wait; every other gate is re-evaluated on later turns.
+            foreach (var e in eligible.Where(e => TakesSoftSlot(e) && !chosen.Contains(e.Id))) s.CappedEvents.Add(e.Id);
             foreach (var e in eligible.Where(e => chosen.Contains(e.Id)))
             {
+                s.CappedEvents.Remove(e.Id);
                 s.FiredEvents.Add(e.Id);
                 s.PendingEvents.Add(e.Id);
                 why.Add(new Cause("events", e.Id, 0, $"New: {Title(c, s, e)}", key: CauseKeys.EventNew, args: Context(Title(c, s, e), HebrewTitle(c, s, e))));
@@ -93,8 +100,8 @@ namespace Statecraft.Sim
         }
 
         /// <summary>Whether <paramref name="e"/> is a card of the turn that ended the game: the card of a recorded objective, in a
-        /// game that is over (R-OBJ-003, R-LOOP-004; #2536). Not only the objectives that turn recorded: a card the soft-event
-        /// cap held back on an earlier turn (R-EVT-001) has no later turn to wait for. Unfired ones are the only events that
+        /// game that is over (R-OBJ-003, R-LOOP-004; #2536). Not only the objectives that turn recorded: the card of one recorded
+        /// earlier that has not fired yet has no later turn to wait for. Unfired ones are the only events that
         /// fire on that turn; Unity shows them before the end screen.</summary>
         public static bool EndingCard(GameState s, GameEvent e) =>
             s.GameOver != null && e.Objective != "" && s.Objectives.ContainsKey(e.Objective);

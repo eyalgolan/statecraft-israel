@@ -172,6 +172,7 @@ next=21
 obj{
   yishuvim=1951-09-15
 ctrl{
+  acre=since=1948-06-15
   beersheba=since=1949-01-15,fled=1
   ramla=since=1948-08-15,fled=1
 food=2733,1390,0

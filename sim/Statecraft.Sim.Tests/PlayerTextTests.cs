@@ -479,6 +479,9 @@ public class PlayerTextTests
     /// <summary>Playtest 2, P2-5: a portrait carries its documented focal point (the face's height as a share of the
     /// picture, 0..1), required, so the event card can keep the face in view.</summary>
     [Theory]
+    [InlineData("    portrait: { license: Public domain, source: s, focus_y: 0.5 }\n", "people[pm_one].portrait.file")]
+    [InlineData("    portrait: { file: a.jpg, source: s, focus_y: 0.5 }\n", "people[pm_one].portrait.license")]
+    [InlineData("    portrait: { file: a.jpg, license: Public domain, focus_y: 0.5 }\n", "people[pm_one].portrait.source")]
     [InlineData("    portrait: { file: a.jpg, license: Public domain, source: s }\n", "people[pm_one].portrait.focus_y")]
     [InlineData("    portrait: { file: a.jpg, license: Public domain, source: s, focus_y: 1.4 }\n", "people[pm_one].portrait.focus_y")]
     public void APortraitNeedsItsFocalPoint(string portrait, string field)
@@ -486,6 +489,15 @@ public class PlayerTextTests
         var ex = ValidationTests.Bad("people.yaml", "  - id: pm_one\n", "  - id: pm_one\n" + portrait);
         Assert.Equal("people.yaml", ex.File);
         Assert.Equal(field, ex.Field);
+    }
+
+    [Fact]
+    public void PresentEmptyPortraitStringsMatchTheSchema()
+    {
+        var yaml = Fixture.Files["people.yaml"].Replace("  - id: pm_one\n",
+            "  - id: pm_one\n    portrait: { file: '', license: '', source: '', focus_y: 0.5 }\n");
+        var portrait = ContentLoader.Load(Fixture.Write(new Dictionary<string, string> { ["people.yaml"] = yaml })).People[0].Portrait!;
+        Assert.Equal(("", "", "", 0.5), (portrait.File, portrait.License, portrait.Source, portrait.FocusY!.Value));
     }
 
     [Fact]

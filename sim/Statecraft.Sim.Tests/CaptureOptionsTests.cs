@@ -93,6 +93,8 @@ public class CaptureOptionsTests
         }
         var next = Simulation.Step(c, s, ReferencePlayer.Commands(c, s));
         Assert.DoesNotContain(next.Rejected, x => x.Command is ResolveCapture);
-        Assert.Empty(next.State.Settlements);
+        // #2542: each raided place keeps only its ownerless lost marker (R-CTRL-010), never a deported one.
+        Assert.Equal(new[] { "town_a", "town_c" }, next.State.Settlements.Keys.ToArray());
+        Assert.All(next.State.Settlements.Values, x => Assert.Equal(("", "", false), (x.Owner, x.State, x.Depopulated)));
     }
 }

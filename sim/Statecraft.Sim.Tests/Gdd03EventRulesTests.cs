@@ -15,7 +15,8 @@ public class Gdd03EventRulesTests
     // turned on". These four, excluded by #1772 for their Food supply, housing and policy writes, are active again.
     static readonly string[] TurnedOn = { "austerity_1949", "forex_crisis_1951", "iraqi_exodus", "maabarot_policy" };
     static string Card(string id = "probe", string option = "") =>
-        $"id: {id}\ntitle: Fixture\ntext: Fixture.\nfrom: 1948-05-15\noptions:\n  - id: ok\n    text: Accept\n    historical: true\n" + option;
+        $"id: {id}\ntitle: Fixture\ntext: Fixture.\nfrom: 1948-05-15\noptions:\n  - id: ok\n    text: Accept\n    historical: true\n" + option
+        + "sources: [{ url: \"https://example.org/event\", checked: 2026-10-18 }]\n";
     static Dictionary<string, string> Files(bool modern = true)
     {
         var f = Fixture.Gdd();
@@ -465,7 +466,7 @@ public class Gdd03EventRulesTests
     public void DebtDollarsThatIsNotANumberIsRefused(bool modern)
     {
         var ex = Assert.Throws<ContentException>(() => Load(Files(modern), Card(option: "    debt_dollars: nope\n")));
-        Assert.Equal(("events/probe.yaml", "line 9"), (ex.File, ex.Field));
+        Assert.Equal(("events/probe.yaml", "debt_dollars (line 9)"), (ex.File, ex.Field));
         Assert.Contains("nope", ex.Message);
     }
     // R-EFX-009 (#2457): on the real card, launch adds the $52m and IL 18.564m of Debt (52 x 0.357, the rate in force on

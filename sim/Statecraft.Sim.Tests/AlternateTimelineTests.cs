@@ -12,6 +12,7 @@ title: Parent
 text: 'A real decision.'
 from: 1948-06-01
 to: 1948-06-11
+sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
 options:
   - id: record
     text: What happened
@@ -122,6 +123,7 @@ text: 'What the record says was feared.'
 from: 1948-06-15
 to: 1948-08-15
 requires: [{ event: parent, option: road }]
+sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
 options:
   - id: hold
     text: Hold the course
@@ -141,6 +143,7 @@ text: 'The next real decision.'
 from: 1948-07-01
 to: 1948-09-15
 requires: [{ event: parent, option: record }]
+sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
 options:
   - id: ok
     text: Ok
@@ -202,7 +205,7 @@ options:
     // R-ALT-009
     public void OnlyAConsequenceCardRejoinsAndOnlyARoadItFollows()
     {
-        var other = "id: other\ntitle: Other\ntext: x\nfrom: 1948-06-01\noptions:\n  - id: a\n    text: A\n    historical: true\n  - id: b\n    text: B\n    alternative: { basis: design }\n";
+        var other = "id: other\ntitle: Other\ntext: x\nfrom: 1948-06-01\nsources: [{ url: \"https://example.org/event\", checked: 2026-10-18 }]\noptions:\n  - id: a\n    text: A\n    historical: true\n  - id: b\n    text: B\n    alternative: { basis: design }\n";
         var ex = Assert.Throws<ContentException>(() => Load(("parent.yaml", Parent), ("other.yaml", other), ("after_road.yaml", WithRejoin.Replace("rejoin: parent", "rejoin: other"))));
         Assert.Contains("rejoins only an event whose road this card follows", ex.Message);
         var onRecord = RecordFollowUp.Replace("    text: Ok\n", "    text: Ok\n    rejoin: parent\n");
@@ -358,7 +361,7 @@ options:
     }
 
     static string Soft(string id) =>
-        $"id: {id}\ntitle: {id}\ntext: 'Ordinary.'\nfrom: 1948-06-01\nto: 1948-08-15\noptions:\n  - id: ok\n    text: Ok\n";
+        $"id: {id}\ntitle: {id}\ntext: 'Ordinary.'\nfrom: 1948-06-01\nto: 1948-08-15\nsources: [{{ url: \"https://example.org/event\", checked: 2026-10-18 }}]\noptions:\n  - id: ok\n    text: Ok\n";
 
     static Content WithThreeSoft() => Load(("parent.yaml", Parent), ("after_road.yaml", Consequence), ("a1.yaml", Soft("a1")), ("a2.yaml", Soft("a2")), ("a3.yaml", Soft("a3")));
 
@@ -391,7 +394,7 @@ options:
     [Fact]
     public void OnlyAConsequenceCardFollowsAConsequenceCard()
     {
-        var historical = "id: later\ntitle: Later\ntext: x\nfrom: 1948-09-01\nrequires: [{ event: after_road, option: hold }]\noptions:\n  - id: ok\n    text: Ok\n";
+        var historical = "id: later\ntitle: Later\ntext: x\nfrom: 1948-09-01\nrequires: [{ event: after_road, option: hold }]\nsources: [{ url: \"https://example.org/event\", checked: 2026-10-18 }]\noptions:\n  - id: ok\n    text: Ok\n";
         var ex = Assert.Throws<ContentException>(() => Load(("parent.yaml", Parent), ("after_road.yaml", Consequence), ("later.yaml", historical)));
         Assert.Equal("events/later.yaml", ex.File);
         Assert.Equal("events[later].requires[0]", ex.Field);
@@ -413,7 +416,7 @@ options:
     [Fact]
     public void AConsequenceCarriesTheTagsOfEveryEventItRequires()
     {
-        var sens = "id: sens\ntitle: Sens\ntext: x\nfrom: 1948-06-01\ntags: [Massacre]\noptions:\n  - id: rec\n    text: Rec\n    historical: true\n";
+        var sens = "id: sens\ntitle: Sens\ntext: x\nfrom: 1948-06-01\ntags: [Massacre]\nsources: [{ url: \"https://example.org/event\", checked: 2026-10-18 }]\noptions:\n  - id: rec\n    text: Rec\n    historical: true\n";
         var both = Consequence.Replace("requires: [{ event: parent, option: road }]", "requires: [{ event: parent, option: road }, { event: sens, option: rec }]");
         var ex = Assert.Throws<ContentException>(() => Load(("parent.yaml", Parent), ("sens.yaml", sens), ("after_road.yaml", both)));
         Assert.Equal("events[after_road].tags", ex.Field);
@@ -522,6 +525,7 @@ title: The outside event
 text: 'It happened regardless.'
 from: 1948-07-01
 to: 1948-08-01
+sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
 options:
   - id: record
     text: As it happened
@@ -554,6 +558,8 @@ variants:
     [InlineData("  - when: [{ event: parent, diverged: true }]", "  - when: [{ event: parent, option: record }]", "variants[0].when", "a variant follows a road not taken")]
     [InlineData("  - when: [{ event: parent, diverged: true }]", "  - when: []", "variants[0].when", "a variant follows a road not taken")]
     [InlineData("    sources: [{ url: \"https://example.org/outside\", checked: 2026-10-17 }]\n", "", "variants[0].sources", "needs at least one source")]
+    [InlineData("https://example.org/outside", "http://example.org/outside", "variants[0].sources[0]", "needs an https url")]
+    [InlineData(", checked: 2026-10-17", "", "variants[0].sources[0]", "needs an https url and a checked date")]
     [InlineData("on your course, the earlier", "on your course, {nobody} and the earlier", "variants[0].text", "unknown office placeholder '{nobody}'")]
     [InlineData("    title: The outside event, on your course\n", "    title: '{nobody} on your course'\n", "variants[0].title", "unknown office placeholder '{nobody}'")]
     [InlineData("    text: 'It happened regardless; on your course, the earlier decision went the other way.'\n", "    text: ' '\n", "variants[0].text", "a variant has text")]
@@ -640,26 +646,50 @@ variants:
             Assert.Single(Load(("parent.yaml", Parent), ("after_road.yaml", withRejoin), ("outside.yaml", onRoad)).Events.Single(x => x.Id == "outside").Variants);
     }
 
+    // #2666: the two variant tests below run on fixture content because no real event has variants yet. This goes red
+    // when the first real variant is authored: then add real-content versions of them alongside the fixture ones.
     [Fact]
-    // R-ALT-012
-    public void TheHistoricalRunShowsNoVariant()
+    public void RealContentHasNoVariantsYet()
     {
-        var end = GoldenRun.PlayToEnd(Real);
-        foreach (var e in Real.Events.Where(x => x.Variants.Count > 0))
-            Assert.Null(Timeline.Variant(Real, end, e));
+        Assert.DoesNotContain(Real.Events, e => e.Variants.Count > 0);
     }
 
-    /// <summary>Review focus 5 on real content: at the state where the card first appears on its road, the variant applies.</summary>
     [Fact]
+    // R-ALT-010
+    public void TheHistoricalRunShowsNoVariant()
+    {
+        var c = Load(("parent.yaml", Parent), ("outside.yaml", Outside));
+        var e = c.Events.Single(x => x.Id == "outside");
+        var shown = AltRun.Play(c, new Dictionary<string, string>
+        {
+            ["parent"] = "record"
+        }).FirstOrDefault(s => s.FiredEvents.Contains(e.Id));
+
+        Assert.NotNull(shown);
+        // AltRun accepts a parent that is still unanswered, so the record road is checked here: with no answer, "no variant"
+        // would hold for the wrong reason (#2685 review).
+        Assert.True(shown!.ChosenOptions.TryGetValue("parent", out var chosen), "the parent card was answered before the outside card showed");
+        Assert.Equal("record", chosen);
+        Assert.Null(Timeline.Variant(c, shown!, e));
+        Assert.Equal(e.Title, EventSystem.Title(c, shown!, e));
+        Assert.StartsWith(e.Text, EventSystem.Render(c, shown!, e));
+    }
+
+    /// <summary>Review focus 5 on fixture content: at the state where the card first appears on its road, the variant applies.</summary>
+    [Fact]
+    // R-ALT-010
     public void EveryVariantShowsWhenItsRoadIsTaken()
     {
-        foreach (var e in Real.Events.Where(x => x.Variants.Count > 0))
+        var c = Load(("parent.yaml", Parent), ("outside.yaml", Outside));
+        var withVariants = c.Events.Where(x => x.Variants.Count > 0).ToList();
+        Assert.NotEmpty(withVariants);
+        foreach (var e in withVariants)
             for (int i = 0; i < e.Variants.Count; i++)
             {
-                var road = AltRun.RoadTo(Real, new GameEvent { Id = e.Id, Requires = e.Variants[i].When });
-                var fired = AltRun.Play(Real, road).FirstOrDefault(s => s.FiredEvents.Contains(e.Id));
+                var road = AltRun.RoadTo(c, new GameEvent { Id = e.Id, Requires = e.Variants[i].When });
+                var fired = AltRun.Play(c, road).FirstOrDefault(s => s.FiredEvents.Contains(e.Id));
                 Assert.NotNull(fired);
-                Assert.Same(e.Variants[i], Timeline.Variant(Real, fired!, e));
+                Assert.Same(e.Variants[i], Timeline.Variant(c, fired!, e));
             }
     }
 
@@ -669,7 +699,9 @@ variants:
     [Fact]
     public void EveryConsequenceCardFiresWhenItsRoadIsTaken()
     {
-        foreach (var e in Real.Events.Where(x => x.Kind == EventKinds.Consequence))
+        var consequenceCards = Real.Events.Where(x => x.Kind == EventKinds.Consequence).ToList();
+        Assert.NotEmpty(consequenceCards);
+        foreach (var e in consequenceCards)
         {
             var forced = AltRun.RoadTo(Real, e);
             var run = AltRun.Play(Real, forced);

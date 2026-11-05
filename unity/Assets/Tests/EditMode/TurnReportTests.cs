@@ -359,6 +359,25 @@ public class TurnReportTests
         Assert.IsFalse(TurnReportPresenter.Lines(k.Bridge, En).Any(l => l.Meter == TurnReportPresenter.EnemyRow));
     }
 
+    /// <summary>#2527 review: the Food shortage's line is informational (delta 0), and the turn report's Food row still
+    /// names it, after the lines that have a number.</summary>
+    [Test]
+    public void AShortageTurnStillNamesTheShortageInTheFoodRow()
+    {
+        using var k = new Kit(En);
+        k.Bridge.EndTurn();
+        var last = k.Bridge.Session.Last!;
+        var shortage = new Cause("economy", "food", 0, "Food ran out: 60 of 100 units of the month's need went unmet",
+            key: CauseKeys.FoodShortage, args: new[] { "60", "100" });
+        var import = new Cause("economy", "food", 260, "The month's eating and Food imports brought the stock to 300 units",
+            key: CauseKeys.FoodImported, args: new[] { "300" });
+        var turn = new StepResult(last.State, new[] { shortage, import }, last.Rejected);
+        CollectionAssert.AreEqual(
+            new[] { "The month's eating and Food imports brought the stock to 300 units",
+                "Food ran out: 60 of 100 units of the month's need went unmet" },
+            TurnReportPresenter.StockCauses(turn, Pools.FoodTarget, w => w.Message));
+    }
+
     [Test]
     public void ItCoversTheHudUntilClosedAndThenTheCardIsBack()
     {
@@ -561,20 +580,27 @@ public class TurnReportTests
                 go.SetActive(true);
                 var root = doc.rootVisualElement;
                 root.Q("root").RemoveFromClassList("loading");
-                if (hebrew) root.Q("root").AddToClassList(UiLanguage.HebrewClass);
                 var text = hebrew ? He : En;
+                root.Q("root").EnableInClassList(UiLanguage.HebrewClass, text["ui.lang"] == UiLanguage.Hebrew);   // as GameRoot
                 var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), text);
                 var owned = new List<System.IDisposable>();
                 owned.Add(new HudPresenter(root, bridge, text));
                 var nav = new ScreenNav(root); owned.Add(nav);
                 owned.Add(new EventCardPresenter(root, bridge, text, null));
                 var report = new TurnReportPresenter(root, bridge, text, nav); owned.Add(report);
+                if (hebrew) owned.Add(new UiDirection(root, bridge));
                 try
                 {
                     bridge.EndTurn();
                     for (int i = 0; i < 30 && !(root.Q("turn-report-panel").layout.width > 0); i++) yield return null;
                     for (int i = 0; i < 3; i++) yield return null;
                     var window = root.worldBound; var panel = root.Q("turn-report-panel").worldBound;
+                    var causesStyle = root.Q("turn-report-causes-security").resolvedStyle;
+                    float expectedLeft = hebrew ? 2f : 14f, expectedRight = hebrew ? 14f : 2f;
+                    // The panel snaps layout to whole screen pixels, so a stylesheet px reads within one screen pixel of itself.
+                    float snap = 1f / HudPresenter.ScreenPxPerPanelPx(root.panel) + 0.01f;
+                    if (Mathf.Abs(causesStyle.paddingLeft - expectedLeft) > snap || Mathf.Abs(causesStyle.paddingRight - expectedRight) > snap)
+                        problems.Add($"{at}: Security causes padding is {causesStyle.paddingLeft}px left and {causesStyle.paddingRight}px right, expected {expectedLeft}px and {expectedRight}px");
                     if (!(panel.width > 0 && panel.height > 0)) problems.Add($"{at}: the report is not shown");
                     if (panel.xMin < window.xMin - 0.5f || panel.yMin < window.yMin - 0.5f || panel.xMax > window.xMax + 0.5f || panel.yMax > window.yMax + 0.5f)
                         problems.Add($"{at}: the report {panel} leaves the window {window}");

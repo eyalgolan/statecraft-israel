@@ -25,6 +25,21 @@ public class DollarsTests
 
     static PreviewResult Orders(Content c, GameState s, params Command[] orders) => Simulation.Preview(c, s, orders);
 
+    // R-MONEY-004: the smallest conversion is EconomySystem.DollarsMinimum (US$1m). The sim refuses below it, the UI words
+    // the refusal from the same constant (SimBridge.ReasonText; DollarConversionTests pins that), and the sim's own English,
+    // a constant tests name in attributes, says the same amount, so none of the three can drift from the others (#2704).
+    [Fact]
+    public void TheConversionMinimumIsOneConstantTheRefusalAndItsWordingShare()
+    {
+        var c = Gdd();
+        var s = War(c);
+        Assert.Equal(EconomySystem.RefusedDollarsMinimum, EconomySystem.DollarsRefusal(c, s, EconomySystem.DollarsMinimum - 1));
+        Assert.NotEqual(EconomySystem.RefusedDollarsMinimum, EconomySystem.DollarsRefusal(c, s, EconomySystem.DollarsMinimum));
+        Assert.Equal(EconomySystem.RefusedDollarsMinimum,
+            string.Format(System.Globalization.CultureInfo.InvariantCulture, "Convert at least ${0}m", EconomySystem.DollarsMinimum));
+        Assert.True(EconomySystem.RefusedDollarsMinimum == "Convert at least $1m", "the sim's English stays byte for byte as it was");
+    }
+
     // R-MONEY-004: $3m at IL 0.5 per $ moves IL 1.5m into the Treasury and takes $3m from the reserves, with a cause line.
     [Fact]
     public void ConvertingMovesTheDollarsTimesTheRateIntoMoney()
@@ -35,11 +50,26 @@ public class DollarsTests
         var r = Orders(c, s, new ConvertDollars(3));
         Assert.Empty(r.Rejected);
         Assert.Equal((2.5, 0.0, 47.0, 3), (r.State.Treasury, r.State.Debt, r.State.FxReserves, r.State.DollarsConverted));
-        var line = Assert.Single(r.Why, w => w.Key == CauseKeys.DollarsConverted);
+        var line = Assert.Single(r.Why, w => w.Key == CauseKeys.DollarsConverted && w.Target == "treasury");
         Assert.Equal(("economy", "treasury", 1.5), (line.System, line.Target, line.Delta));
         Assert.Equal(new[] { "3" }, line.Args);
         Assert.Contains(CauseKeys.DollarsConverted, CauseKeys.All);   // so the UI words it (CauseText)
         Assert.Equal("Converted $3.0m of foreign currency into Money: " + PlayerText.MoneyChange(c, "treasury", 1.5), line.Message);
+    }
+
+    // #2527: the same conversion also explains the reserves' drop, so the HUD's foreign-currency meter (which lists the
+    // causes aimed at fx_reserves, HudModel.cs) shows its reason.
+    [Fact]
+    public void TheConversionAlsoExplainsTheReservesDrop()
+    {
+        var c = Gdd();
+        var s = War(c);
+        var r = Orders(c, s, new ConvertDollars(3));
+        Assert.Empty(r.Rejected);
+        var fx = Assert.Single(r.Why, w => w.Key == CauseKeys.DollarsConvertedFx);
+        Assert.Equal(("economy", -3.0), (fx.System, fx.Delta));
+        Assert.Equal(new[] { "3" }, fx.Args);
+        Assert.Equal("Foreign currency converted into Money: " + PlayerText.MoneyChange(c, "fx_reserves", -3.0), fx.Message);
     }
 
     // R-MONEY-004: the rate is the one in force on the turn's date (mvp.il_per_dollar, each rate from its day on).
@@ -156,6 +186,7 @@ options:
     text: The way it went
     historical: true
     set_rung: RUNG
+sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
 ";
 
     // R-MONEY-004: the war is the rung the turn started at. An earlier order of the same turn that moves the rung (an

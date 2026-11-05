@@ -881,13 +881,13 @@ namespace Statecraft.Game.Tests
             finally { CivilianPeople.Request = savedPeople; RuralLife.Request = savedRural; }
         }
 
-        /// <summary>The layer never rebuilds per frame, only on an event (53 on #2274: "never per frame"). Shown as GameRoot's
-        /// RenderPlacementsIfChanged shows it (the civilians, the farm scenes, then the specials), three frames with the same
+        /// <summary>The layer never rebuilds per frame, only on an event (53 on #2274: "never per frame"). The unit fixture calls
+        /// the three collection helpers in production order, then three frames with the same
         /// inputs and the layers' per-frame LateUpdate keep every drawn model and ask for nothing. Then an event, a change of the
         /// farm scenes' plan while the well (which keeps off the farm scenes) stands, rebuilds it: the old fort is destroyed,
         /// which shows the frames' identity check can see a rebuild.</summary>
         [Test]
-        public void NoRebuildAcrossFramesWithoutAnEventOneOnARuralPlanChange()
+        public void CollectionHelpersDoNotRebuildWithoutAnInputChange()
         {
             var map = OpenMap();
             var c = Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content);

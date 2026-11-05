@@ -6,12 +6,13 @@ using System.Linq;
 namespace Statecraft.Sim
 {
     /// <summary>Synthetic military camp facts supplied by a test: the camp's course target id, its region and whether it
-    /// operates. Real camps are #1719's; this fixture only reads these facts.</summary>
+    /// operates. Real camps are #1719's; this fixture only reads these facts. A test sets <see cref="Operating"/> false to
+    /// stand for a camp lost during a course (27M-9).</summary>
     internal sealed class Gdd03FixtureMilitaryCamp
     {
         internal string Id { get; }
         internal string Region { get; }
-        internal bool Operating { get; }
+        internal bool Operating { get; set; }
         internal Gdd03FixtureMilitaryCamp(string id, string region, bool operating)
         {
             if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(region))
@@ -45,15 +46,14 @@ namespace Statecraft.Sim
     /// Arms (ARMS-1, ARMS-2, 27M-7, R-TRAIN-001, R-ARMS-003), synthetic fixtures only. No command, save, loader, resolver,
     /// Food or UI caller. Like <see cref="Gdd03ProjectBuildFixture"/> it owns its spare Arms, Money and Debt, so the ledger
     /// never touches resources (R-POP-002). Cancel returns an issued item to the spare Arms (R-TRAIN-002, R-ARMS-003,
-    /// docs/GDD.md:372). The last course turn graduates the record into its cohort's formation (R-TRAIN-003, R-UNIT-003), and
-    /// each formation it graduated pays upkeep from its graduation month (27M-8, R-UNIT-010).</summary>
+    /// docs/GDD.md:372), and a camp that stops operating cancels every course at it the same way (27M-9). The last course
+    /// turn graduates the record into its cohort's formation (R-TRAIN-003, R-UNIT-003), and each formation it graduated pays upkeep from its graduation month (27M-8, R-UNIT-010).</summary>
     internal sealed class Gdd03BasicTrainingFixture
     {
         /// <summary>Issued item ids are this prefix plus the population id. It is disjoint from the census and units_1948
         /// source prefixes (<see cref="HistoricalPopulation.CensusPrefix"/>, <see cref="HistoricalPopulation.FormationPrefix"/>),
         /// so no id can equal a starting formation's item; a record holds at most one military item, so no two records are issued the same id.</summary>
         internal const string IssuedPrefix = "basic_training/";
-        const string CampLoss = "Deferred: a camp that stops operating during a course (#1699, 27M-9).";
 
         readonly GameState state;
         readonly SortedDictionary<string, Gdd03FixtureMilitaryCamp> camps = new SortedDictionary<string, Gdd03FixtureMilitaryCamp>(StringComparer.Ordinal);
@@ -192,7 +192,11 @@ namespace Statecraft.Sim
 
         /// <summary>R-TRAIN-001 "counting the turn it was ordered in": count one course turn a month ordinal, the enrolment
         /// month included, each ordinal once and never an earlier one. The turn that reaches <c>military.basic_turns</c>
-        /// graduates the record (<see cref="Graduate"/>).</summary>
+        /// graduates the record (<see cref="Graduate"/>). At a camp that stops operating the turn counts nothing and cancels
+        /// every course at that camp at once, as <see cref="Cancel"/> does (R-TRAIN-002; docs/GDD.md:374, 27M-9: "After a
+        /// cancellation or camp loss, people go to their city as civilians without a job"), the would-be graduation turn
+        /// included. Maintainer reading (not an owner ruling): the loss is checked before the month ordinal, as a lost
+        /// training centre's is (R-TRAIN-007), and it cancels only the trainees this fixture started.</summary>
         internal void Advance(int traineeId, int monthOrdinal)
         {
             ValidateInventory();
@@ -200,7 +204,11 @@ namespace Statecraft.Sim
             if (trainee.Status != PopulationStatus.Trainee || trainee.Assignment.Target == null
                 || !camps.TryGetValue(trainee.Assignment.Target, out var camp) || !months.TryGetValue(traineeId, out var known))
                 throw new ArgumentException("Not a trainee this fixture started.");
-            if (!camp.Operating) throw new NotSupportedException(CampLoss);
+            if (!camp.Operating)
+            {
+                Release(Trainees(camp.Id).Where(p => months.ContainsKey(p.Id)).ToArray());
+                return;
+            }
             if (monthOrdinal < known.enrolment || monthOrdinal <= known.lastCounted)
                 throw new ArgumentException("This month ordinal was already counted or is before enrolment.");
             int progress = checked(trainee.Assignment.ProgressTicks + 1);
@@ -224,20 +232,32 @@ namespace Statecraft.Sim
             if (trainee.Status != PopulationStatus.Trainee || trainee.Assignment.Kind != PopulationAssignmentKind.Course
                 || trainee.Assignment.Target == null || !camps.ContainsKey(trainee.Assignment.Target) || !months.ContainsKey(traineeId))
                 throw new ArgumentException("Not a trainee this fixture started.");
-            var e = trainee.Equipment;
-            bool refund = issued.Contains(traineeId);
-            // Maintainer call (not an owner ruling): no rule covers a trainee whose issued item is gone, and refusing neither
-            // refunds an item the record no longer holds nor loses that Arms. In the tests only a direct ledger write gets here.
-            if (refund && e.MilitaryId != IssuedPrefix + traineeId.ToString(CultureInfo.InvariantCulture))
-                throw new InvalidOperationException("Trainee " + traineeId.ToString(CultureInfo.InvariantCulture) + " no longer holds the item this fixture issued.");
-            int spare = refund ? checked(SpareArms + 1) : SpareArms;
-            var person = !refund ? trainee : new PopulationUnit(trainee.Id, trainee.Status, trainee.ReceptionTicks, trainee.Location,
-                trainee.Assignment, trainee.Profession, trainee.Tier, trainee.WorkXp, trainee.Qualification, trainee.CombatXp,
-                new PopulationEquipment(e.ToolsId, e.ToolsPaid, null, false), trainee.Captor, trainee.Home);
-            Commit(new[] { person.WithPlacement(PopulationStatus.FreeCivilian, trainee.Location, PopulationAssignment.Unassigned,
-                trainee.Captor, trainee.Home) });
+            Release(new[] { trainee });
+        }
+
+        // Cancel's release of the given trainees, all or nothing: every record is checked and the spare stock computed
+        // before the first write, so a camp loss that cannot release one trainee changes no record, Arms, Money or Debt.
+        void Release(IReadOnlyList<PopulationUnit> trainees)
+        {
+            int spare = SpareArms; var released = new List<PopulationUnit>();
+            foreach (var trainee in trainees)
+            {
+                var e = trainee.Equipment;
+                bool refund = issued.Contains(trainee.Id);
+                // Maintainer call (not an owner ruling): no rule covers a trainee whose issued item is gone, and refusing neither
+                // refunds an item the record no longer holds nor loses that Arms. In the tests only a direct ledger write gets here.
+                if (refund && e.MilitaryId != IssuedPrefix + trainee.Id.ToString(CultureInfo.InvariantCulture))
+                    throw new InvalidOperationException("Trainee " + trainee.Id.ToString(CultureInfo.InvariantCulture) + " no longer holds the item this fixture issued.");
+                if (refund) spare = checked(spare + 1);
+                var person = !refund ? trainee : new PopulationUnit(trainee.Id, trainee.Status, trainee.ReceptionTicks, trainee.Location,
+                    trainee.Assignment, trainee.Profession, trainee.Tier, trainee.WorkXp, trainee.Qualification, trainee.CombatXp,
+                    new PopulationEquipment(e.ToolsId, e.ToolsPaid, null, false), trainee.Captor, trainee.Home);
+                released.Add(person.WithPlacement(PopulationStatus.FreeCivilian, trainee.Location, PopulationAssignment.Unassigned,
+                    trainee.Captor, trainee.Home));
+            }
+            Commit(released);
             SpareArms = spare;
-            issued.Remove(traineeId); months.Remove(traineeId); cohortOf.Remove(traineeId);
+            foreach (var trainee in trainees) { issued.Remove(trainee.Id); months.Remove(trainee.Id); cohortOf.Remove(trainee.Id); }
         }
 
         /// <summary>R-TRAIN-003 and R-UNIT-003 under gdd-0.3: the month that counts the last course turn releases the

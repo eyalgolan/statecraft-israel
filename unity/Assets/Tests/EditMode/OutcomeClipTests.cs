@@ -7,9 +7,12 @@ using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
 using Statecraft.Game;
+using Statecraft.Game.Boot;
+using Statecraft.Game.Map;
 using Statecraft.Game.UI;
 using Statecraft.Sim;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.TestTools;
 using UnityEngine.UIElements;
@@ -35,6 +38,7 @@ public class OutcomeClipTests
             rows.Select(r => r.Event), "the three of 2026-10-14, the four the owner approved on 2026-10-20 (#1102) and absorb_immigrants (owner, 2026-10-24: \"Add v8, 6 s\")");
         var problems = EventVideoMapping.OutcomeProblems(rows, C, f => File.Exists(Path.Combine(EventVideoMapping.ClipFolder, f)));
         Assert.IsEmpty(problems, string.Join("\n", problems));
+        Assert.IsTrue(rows.All(r => !string.IsNullOrWhiteSpace(r.AltHe) && r.AltHeReview == "agent-checked"), "every shipped outcome has agent-checked Hebrew alt text");
         Assert.AreEqual(8, EventVideoMapping.LoadOutcomes().Count, "the game finds them in Resources");
     }
 
@@ -60,7 +64,8 @@ public class OutcomeClipTests
         public int Closed;
         readonly GameObject go; readonly PanelSettings ps; readonly RenderTexture rt; readonly List<IDisposable> owned = new List<IDisposable>();
 
-        public Rig(string[] events, Func<GameSession, IReadOnlyList<Command>, StepResult>? step = null, UiText? text = null, Content? content = null)
+        public Rig(string[] events, Func<GameSession, IReadOnlyList<Command>, StepResult>? step = null, UiText? text = null,
+            Content? content = null, IReadOnlyList<EventVideoMapping.Row>? outcomes = null)
         {
             var t = text ?? Text; var c = content ?? C;
             rt = new RenderTexture(1920, 1080, 0);
@@ -83,7 +88,7 @@ public class OutcomeClipTests
             owned.Add(new HudPresenter(Root, Bridge, t));
             Nav = new ScreenNav(Root); owned.Add(Nav);
             Card = new EventCardPresenter(Root, Bridge, t, null, null, CardPlayer, _ => null); owned.Add(Card);
-            Outcomes = new OutcomePresenter(Root, Bridge, t, OutcomePlayer, EventVideoMapping.ParseOutcomes(Yaml), () => Closed++, () => Nav.Close());
+            Outcomes = new OutcomePresenter(Root, Bridge, t, OutcomePlayer, outcomes ?? EventVideoMapping.ParseOutcomes(Yaml), () => Closed++, () => Nav.Close());
             owned.Add(Outcomes);
             owned.Add(CardPlayer); owned.Add(OutcomePlayer);
         }
@@ -136,6 +141,7 @@ public class OutcomeClipTests
             r.Order("maabarot_policy", "maabarot");
             r.Bridge.EndTurn();
             Assert.AreEqual(he.Format("outcome.order", option.TextHe), r.Outcomes.Caption);
+            Assert.AreEqual(r.Outcomes.Showing!.AltHe, r.Root.Q("outcome-media").tooltip);
             StringAssert.DoesNotContain(option.Text, r.Outcomes.Caption, "no English in the Hebrew caption");
         }
         var c = ContentLoader.Load(Paths.Content);
@@ -146,6 +152,18 @@ public class OutcomeClipTests
             r.Bridge.EndTurn();
             Assert.AreEqual(he.Format("outcome.order", option.Text), r.Outcomes.Caption, "no text_he: the English");
         }
+    }
+
+    [Test]
+    public void InHebrewABlankOutcomeMediaAltFallsBackToEnglish()
+    {
+        LogAssert.ignoreFailingMessages = true;
+        var source = EventVideoMapping.ParseOutcomes(Yaml).First(r => r.Event == "maabarot_policy");
+        source.AltHe = "  ";
+        using var r = new Rig(new[] { source.Event }, text: He, outcomes: new[] { source });
+        r.Order(source.Event, source.Option);
+        r.Bridge.EndTurn();
+        Assert.AreEqual(source.Alt, r.Root.Q("outcome-media").tooltip);
     }
 
     /// <summary>Scenario A of the review: a screen is open at End Turn. The clip closes it and is drawn over the screens
@@ -260,8 +278,8 @@ public class OutcomeClipTests
         }
     }
 
-    /// <summary>The outcome code subscribes to TurnEnded before the autosave (as in GameRoot). A throw anywhere in it is
-    /// caught there, so the turn is still saved.</summary>
+    /// <summary>GameRoot subscribes the outcome handler before autosave. SimBridge independently isolates TurnEnded handlers,
+    /// so this observes production order and final saving without attributing autosave survival only to the outcome catch.</summary>
     [Test]
     public void AThrowInTheOutcomeCodeNeverSkipsTheAutosave()
     {
@@ -269,18 +287,35 @@ public class OutcomeClipTests
         try
         {
             var store = new SaveStore(dir);
-            using var r = new Rig(new[] { "maabarot_policy" });
-            using var save = GameStart.Autosave(r.Bridge, store, Text);
-            r.Outcomes.BeforeTurn = () => throw new InvalidOperationException("outcome failure");
-            r.Order("maabarot_policy", "maabarot");
+            Assert.IsFalse(CardVideo.ForcedOff(), "precondition: GameRoot constructs outcomes");
+            EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+            var inputs = GameInputs.FromDisk(Paths.Content, Paths.StreamingMap);
+            Object.FindFirstObjectByType<MapScene>().Build(inputs.Map);
+            var game = Object.FindFirstObjectByType<GameRoot>();
+            game.Store = store;
+            game.Begin(inputs, 0);
+            var outcomes = (OutcomePresenter?)typeof(GameRoot)
+                .GetField("outcomes", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(game);
+            Assert.IsNotNull(outcomes, "production OutcomePresenter was constructed");
+            Assert.IsFalse(File.Exists(store.AutosavePath), "precondition: no turn has been saved");
+            bool savedBeforeOutcome = false;
+            outcomes!.BeforeTurn = () =>
+            {
+                savedBeforeOutcome = File.Exists(store.AutosavePath);
+                throw new InvalidOperationException("outcome failure");
+            };
             LogAssert.Expect(LogType.Exception, new System.Text.RegularExpressions.Regex("outcome failure"));
-            r.Bridge.EndTurn();
+            game.Bridge!.EndTurn();
+            Assert.IsFalse(savedBeforeOutcome, "GameRoot subscribes the outcome before autosave");
             Assert.IsTrue(File.Exists(store.AutosavePath), "the turn was saved");
             Assert.IsNotEmpty(File.ReadAllText(store.AutosavePath));
-            Assert.IsNull(r.Outcomes.Showing);
-            Assert.IsFalse(r.Open, "nothing is left half open");
+            Assert.IsNull(outcomes.Showing);
         }
-        finally { if (Directory.Exists(dir)) Directory.Delete(dir, true); }
+        finally
+        {
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            if (Directory.Exists(dir)) Directory.Delete(dir, true);
+        }
     }
 
     /// <summary>The build gate reads the outcome clips from the mapping (Build.GatedClips, used by RefuseUnlessShareable):

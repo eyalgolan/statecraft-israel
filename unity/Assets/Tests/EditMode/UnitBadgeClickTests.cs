@@ -66,4 +66,38 @@ public class UnitBadgeClickTests
         Assert.Greater(clicked, 2, "the brigades are drawn");
         Assert.IsEmpty(misses, "a click on a unit's badge must pick the unit's hex");
     }
+
+    [Test]
+    public void RepeatedPickAtTheSamePointerAndCameraUsesOneSceneHit()
+    {
+        var content = Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content);
+        var units = UnitData.Parse(File.ReadAllText(Path.Combine(Statecraft.Game.Paths.Content, "map", UnitData.DefaultFileName)));
+        var layer = UnitLayer.Create(map, units, content.Hexes, still: true);
+        layer.AnimateMoves = true;
+        layer.Show(content, Statecraft.Sim.Simulation.NewGame(content, Statecraft.Sim.GoldenRun.Seed, Statecraft.Sim.Mode.Historical));
+        var pointer = pointerGo.AddComponent<MapPointer>(); pointer.Map = map; pointer.View = cam;
+        var badge = GameObject.Find(UnitLayer.RootName).transform.Find("Tokens").GetChild(0).Find("Badge");
+        rig.LookAt = new Vector3(badge.position.x, 0f, badge.position.z); rig.Distance = 90000f; rig.Yaw = 0f; rig.TopInset = 0; rig.Apply();
+        layer.FaceCamera(cam);
+        var projected = cam.WorldToScreenPoint(badge.position); var at = new Vector2(projected.x, projected.y);
+        long picks = pointer.UncachedPicksForTests, hits = layer.TokenHitQueriesForTests;
+
+        pointer.HexAt(at); pointer.HexAt(at);
+        Assert.AreEqual(picks + 1, pointer.UncachedPicksForTests, "the identical pointer and camera reuse the scene hit");
+        Assert.AreEqual(hits + 1, layer.TokenHitQueriesForTests, "and scan token boxes once");
+        pointer.HexAt(at + Vector2.right);
+        Assert.AreEqual(picks + 2, pointer.UncachedPicksForTests, "a moved pointer recomputes");
+        cam.transform.position += Vector3.right;
+        pointer.HexAt(at + Vector2.right);
+        Assert.AreEqual(picks + 3, pointer.UncachedPicksForTests, "a moved camera recomputes");
+        layer.transform.Find("Tokens").GetChild(0).GetComponent<UnitTokenMotion>().Begin(Vector3.right * 100f);
+        pointer.HexAt(at + Vector2.right);
+        Assert.AreEqual(picks + 4, pointer.UncachedPicksForTests, "motion invalidates before the next hover pick");
+        UnitFigures.GeometryChanged();
+        pointer.HexAt(at + Vector2.right);
+        Assert.AreEqual(picks + 5, pointer.UncachedPicksForTests, "new streamed figure geometry invalidates the pick");
+        layer.gameObject.SetActive(false);
+        pointer.HexAt(at + Vector2.right);
+        Assert.AreEqual(picks + 6, pointer.UncachedPicksForTests, "a hidden unit layer recomputes without returning its stale hit");
+    }
 }

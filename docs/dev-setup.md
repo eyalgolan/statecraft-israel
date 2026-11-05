@@ -56,8 +56,9 @@ Not possible without Unity and not in CI: the Unity EditMode tests, player build
   (output `unity/Builds/Mac/Statecraft.app`).
 - Browser check: `uv run tools/web_check.py unity/Builds/Web-disabled --query "golden&smoke=5"` with the three full `--expect`
   values pinned in `docs/determinism.md` (both goldens and the smoke line).
-  It uses Chrome for Testing from the Playwright cache (`~/Library/Caches/ms-playwright/chromium-1228` on this Mac;
-  elsewhere `npx playwright install chromium`).
+  It uses Chrome for Testing: on macOS the newest one in the Playwright cache (`~/Library/Caches/ms-playwright/chromium-1228`
+  on this Mac; `npx playwright install chromium` puts it there). `find_chrome()` looks nowhere else, so on any other
+  platform set `CHROME_PATH` to a Chrome for Testing executable (`tools/web_check.py`).
 - Page flags: `?golden` (golden check), `?smoke=N` (play N turns through the UI; bare `?smoke` = 5, `?smoke=0` = off),
   `?profile` (terrain profile), `?camlog` (log the camera distance), `?bootlog` (each boot phase's timing) and `?navlog`
   (every UI pointer and submit event, screen toggle and map click, with its frame), `?vprofile` (the visual frame-time
@@ -73,7 +74,8 @@ Not possible without Unity and not in CI: the Unity EditMode tests, player build
   (headless), `... -- uv run tools/headed.py profile --build <build> --dpr 1` (headed; `--dpr 2` is the
   fill-rate stress proxy) and `... -- uv run tools/headed.py boot --build <build> --runs 3 --baseline <ms>
   --baseline-first-frame <ms>` (the boot budget: two spans, default allowance max(300 ms, 50%)); all of them fix the
-  viewport to 1920x1080 over CDP and fail on another `res=`; wrap Unity
+  viewport to 1920x1080 over CDP. The headless run and `headed.py profile` fail on a console line with another `res=`;
+  `headed.py boot` never checks `res=`, it only compares the two boot spans with their baselines; wrap Unity
   batch commands in `uv run tools/machine_lock.py --shared -- ...`; `tools/art_checkpoint.sh [--no-build] <name>` for the
   owner's side-by-side images.
 - Quality tiers: `uv run tools/machine_lock.py --shared -- "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -executeMethod Statecraft.Game.EditorTools.QualityTiers.Apply`

@@ -153,6 +153,7 @@ units[
   13:veteran_soldier@8,8|side=israel|strength=2
 next=14
 ctrl{
+  acre=since=1948-06-15
   beersheba=since=1949-01-15,fled=1
   ramla=since=1948-08-15,fled=1
 food=0,1390,1390
