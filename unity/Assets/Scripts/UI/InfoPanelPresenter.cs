@@ -11,7 +11,8 @@ namespace Statecraft.Game.UI
 {
     /// <summary>The info panel (bottom-left): the selected hex's land, height and the settlements it owns, what the player
     /// built there, and the two map actions (transit camp, housing project) with the reason when one is not possible
-    /// (MapActions.Check). Tile yields are deliberately not shown (owner decision, M3 rulings 2). A selected unit
+    /// (MapActions.CheckReason and Simulation.Preview of the exact queue a press would leave). Tile yields are deliberately not
+    /// shown (owner decision, M3 rulings 2). A selected unit
     /// (<see cref="ShowUnit"/>) shows its card instead (<see cref="UnitCard"/>), with a button to the Defence screen (owner
     /// ruling, 2026-10-11) and, in the GDD loop, the Move, Fortify, Hold and Attack orders (GDD Phase 5 PR 15, #754),
     /// and Send home after the unit's front signs its armistice (#1309).</summary>
@@ -980,10 +981,37 @@ namespace Statecraft.Game.UI
                     Control1948.LineDateText(here.Date.ToString("yyyy-MM", System.Globalization.CultureInfo.InvariantCulture), k => text[k])) : "";   // PlayerText.Month is always English (#701)
             // The GDD loop refuses every map action and builds with city projects instead (R-PROJ-004): it has no map-action
             // button and no reason, so its refusal is not asked for (the UI has no words for it).
-            var campReason = c.IsGdd ? null : MapActions.CheckReason(c, s, MapActions.TransitCamp, q, r);
-            var housingReason = c.IsGdd ? null : MapActions.CheckReason(c, s, MapActions.Housing, q, r);
-            var campWhy = campReason == null ? null : MapActionReasonText(campReason, text);
-            var housingWhy = housingReason == null ? null : MapActionReasonText(housingReason, text);
+            string? Refusal(string action)
+            {
+                // SimBridge.Queue replaces this hex's order in place, or appends it. Preview that exact queue after the committed
+                // orders. This costs one preview for each map-action kind the panel considers while the selected-hex panel renders,
+                // never from a per-frame callback; an earlier order can make an action that the current state refuses valid.
+                var press = new MapAction(action, q, r);
+                var old = bridge.QueuedLike(press);
+                var queue = bridge.Queued.ToList();
+                var slot = old == null ? -1 : queue.IndexOf(old);
+                // An action the Attention left cannot pay for keeps its button, as before the preview: the bridge refuses the
+                // press and says why (order.no_attention, SimBridge.Queue). Only the rules are asked, on the state the rest of
+                // the queue leaves (the press replaces this hex's order, so that order is left out too).
+                if (!bridge.CanPay(press))
+                {
+                    if (slot >= 0) queue.RemoveAt(slot);
+                    var rule = MapActions.CheckReason(c, Simulation.Preview(c, bridge.TurnStart, bridge.Session.Committed.Concat(queue).ToList()).State,
+                        action, q, r);
+                    return rule == null ? null : MapActionReasonText(rule, text);
+                }
+                if (slot >= 0) queue[slot] = press; else queue.Add(press);
+                var preview = Simulation.Preview(c, bridge.TurnStart, bridge.Session.Committed.Concat(queue).ToList());
+                var rejected = preview.Rejected.FirstOrDefault(x => ReferenceEquals(x.Command, press));
+                if (rejected == null) return null;
+
+                var exact = MapActions.CheckReason(c, preview.State, action, q, r);
+                return exact != null ? MapActionReasonText(exact, text)
+                    : SimBridge.ReasonText(text, rejected.Reason, c, bridge.TownNamesHe);
+            }
+
+            var campWhy = c.IsGdd ? null : Refusal(MapActions.TransitCamp);
+            var housingWhy = c.IsGdd ? null : Refusal(MapActions.Housing);
             // eras.yaml systems.map_actions (#58): an action the era does not allow has no button and no reason
             var allowed = c.IsGdd ? new System.Collections.Generic.List<string>() : c.SystemsAt(s.Date).MapActions;
             bool campOn = allowed.Contains(MapActions.TransitCamp), housingOn = allowed.Contains(MapActions.Housing);
