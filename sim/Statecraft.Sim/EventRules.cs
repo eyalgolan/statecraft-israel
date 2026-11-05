@@ -95,6 +95,7 @@ namespace Statecraft.Sim
                         if (!indicators.Contains(fx.Target) && !SpecialTargets.Contains(fx.Target))
                             throw new ContentException(e.File, F($"options[{o.Id}].effects.{fx.Target}"), "unknown target");
                         Active(F($"options[{o.Id}].effects.{fx.Target}"), fx.Target);
+                        if (!fx.HasDelta) throw new ContentException(e.File, F($"options[{o.Id}].effects.{fx.Target}.delta"), "required");
                         ContentLoader.Finite(e.File, F($"options[{o.Id}].effects.{fx.Target}.delta"), fx.Delta);
                         if ((fx.Target == Pools.FoodTarget || fx.Target == Pools.ArmsTarget) && Math.Abs(fx.Delta) > int.MaxValue)
                             throw new ContentException(e.File, F($"options[{o.Id}].effects.{fx.Target}"), $"{fx.Target} delta out of range");

@@ -97,7 +97,7 @@ public class UnitAttackPresenterTests
         var nine = session.Now.State.Units[9];
         Assert.AreNotEqual(Movement.PlayerSide, nine.Side, "fixture: unit 9 is an enemy");
         Assert.IsNull(bridge.Queue(new UnitOrder(5, Combat.Attack, nine.Q, nine.R)), "fixture: unit 5 can attack unit 9");
-        var march = C.StartingForces[9].Script.Value;
+        var march = C.StartingForces[9].Script[0];
         Assert.IsNull(bridge.Queue(new Move(6, march.Q, march.R)), "fixture: unit 6 can take unit 9's march hex");
         CollectionAssert.AreEqual(new[] { 5 }, played, "the attack order played at once");
         int openTurn = session.Now.Why.Count;

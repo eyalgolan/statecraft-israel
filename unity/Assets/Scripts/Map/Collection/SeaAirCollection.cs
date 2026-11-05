@@ -22,15 +22,16 @@ namespace Statecraft.Game.Map.Collection
     /// <item>the Egyptian Spitfire flying a slow loop near the western board edge (about 30 km in) toward el-Arish and back (<see cref="SpitfireLoop"/>),
     /// banked into its turns, its propeller turning, its shadow on the ground and a small Egyptian flag over its tail, from 15 May 1948 to 2 January 1949
     /// (<see cref="SpitfireFrom"/>, <see cref="SpitfireTo"/>, #1932), never on a hex or an airfield;</item>
-    /// <item>the Egyptian Dakota flying a slow loop just off Tel Aviv with Egypt's flag over its tail (<see cref="DakotaLoop"/>)
-    /// on the turns of the first bombing period, 15 May to 11 June 1948 (<see cref="DakotaFrom"/>, <see cref="DakotaTo"/>;
-    /// SeaAirCollection.Dakota.cs).</item>
+    /// <item>two Egyptian Dakotas, a pair on one loop over Tel Aviv, bombing the city (<see cref="DakotaLoop"/>; owner, 4
+    /// November 2026, #2482: "1 + make the visual 2 slightly smaller planes and not 0ne big one"), banked into their turns,
+    /// their propellers turning, their shadows on the ground and Egypt's flag over each tail, on the turns of the first
+    /// bombing period, 15 May to 11 June 1948 (<see cref="DakotaFrom"/>, <see cref="DakotaTo"/>; SeaAirCollection.Dakota.cs).</item>
     /// </list>
     /// The boats lie on the open sea past the surf, where SeaCraft's own boats sail (SeaCraft.OffshoreNearM to OffshoreM out
     /// from the same shore points), each hull clear of the harbour works, of SeaCraft's boats and of each other
     /// (SeaCraft.Clear). Every craft is at the one world scale of the map's ambient models (<see cref="SizeOf"/>: 24x real,
     /// set by the steam train; #1030, #1033), except the Spitfire at the unit tokens'
-    /// aircraft scale (420x, #2014). The C-54 stands on the nearest free ground by the airport, clear of the kits,
+    /// aircraft scale (420x, #2014) and the Dakotas a little under it (<see cref="DakotaScale"/>, #2482). The C-54 stands on the nearest free ground by the airport, clear of the kits,
     /// routes, units and the player's placements, with the kit trees under it left out (VegetationLayer.Hide, as under the
     /// unit figures). Every craft draws at every zoom, as SeaCraft's boats do. Each model is the Far mesh, asked of
     /// <see cref="CollectionStream"/> when first wanted, so nothing is fetched before the first frame. It fails open: a model
@@ -89,9 +90,11 @@ namespace Statecraft.Game.Map.Collection
         /// <summary>The model's long side on the map (m): its real size at the one world scale of every Tal Heuberger model that is not
         /// a game piece (SettlementKits.ModelScale, 24x: an 8.5 m house as long as the steam train's 204 m locomotive car; the
         /// owner, 18 October 2026, #1033: "Train scale for all ambient life"). The Altalena is 2.4 km, the C-54 860 m across. The one exception is the
-        /// Spitfire, drawn at the unit tokens' aircraft scale (UnitShowcase.AircraftScale, 420x: 4.7 km across), so it reads at strategic zoom (owner ruling, #2014).</summary>
+        /// Spitfire, drawn at the unit tokens' aircraft scale (UnitShowcase.AircraftScale, 420x: 4.7 km across), so it reads at strategic zoom (owner ruling, #2014),
+    /// and the Dakotas, each <see cref="DakotaScale"/> of that (owner, #2482: "2 slightly smaller planes and not 0ne big one").</summary>
         public static float SizeOf(string model) =>
-            RealLengthM(model) * (model == Spitfire || model == Dakota ? Statecraft.Game.Map.Units.UnitShowcase.AircraftScale : SettlementKits.ModelScale);
+            RealLengthM(model) * (model == Spitfire ? Statecraft.Game.Map.Units.UnitShowcase.AircraftScale
+                : model == Dakota ? Statecraft.Game.Map.Units.UnitShowcase.AircraftScale * DakotaScale : SettlementKits.ModelScale);
 
         /// <summary>DESIGN VALUE: every craft lies with its length east-west (SeaCraft heading 0), side-on to the gameplay
         /// camera looking north, as SeaCraft's boats lie. A model is turned 0 or 90 degrees about the vertical, on top of its
@@ -126,7 +129,7 @@ namespace Statecraft.Game.Map.Collection
                 wants.Add(new Want("tel-aviv-altalena", Altalena, "tel_aviv"));
             if (date >= C54From && date <= C54To) wants.Add(new Want("lod-c54", C54, "lod"));
             if (date >= SpitfireFrom && date <= SpitfireTo) wants.Add(new Want("el-arish-spitfire", Spitfire, "el_arish"));
-            if (date >= DakotaFrom && date <= DakotaTo) wants.Add(new Want(DakotaKey, Dakota, "tel_aviv"));
+            if (date >= DakotaFrom && date <= DakotaTo) foreach (var key in DakotaKeys) wants.Add(new Want(key, Dakota, DakotaTown));
             return wants;
         }
 
@@ -280,9 +283,9 @@ namespace Statecraft.Game.Map.Collection
             for (int i = 0; i < wants.Count; i++)
             {
                 var w = wants[i];
-                if (w.Model == Dakota)   // its anchor is on the ground under its loop's centre; only its distance counts
+                if (w.Model == Dakota)   // its anchor is on the ground under its loop's centre, as far out as it flies (#2482)
                 {
-                    if (DakotaCentre() is Vector2 d) anchors.Add((w.Key, new Vector3(d.x, 0f, d.y), SizeOf(Dakota)));
+                    if (DakotaCentre() is Vector2 d) anchors.Add((w.Key, new Vector3(d.x, 0f, d.y), DakotaSweptHalf.magnitude));
                     continue;
                 }
                 var c = default((string place, double lon, double lat, Vector2 seaward, int boats));
@@ -325,7 +328,7 @@ namespace Statecraft.Game.Map.Collection
             }
             // Each drawn craft's own keep-clear boxes (the Spitfire's cover its whole loop, its flag included); the Spitfire's
             // shadow and flag object has none.
-            keepAll = originals.Values.SelectMany(list => list).Where(go => go != null && keepOf.ContainsKey(go)).Select(go => keepOf[go]).ToList();
+            RebuildKeepAll();
             return removed;
         }
         IReadOnlyList<UnityEngine.Object> ClearForRetirement()
@@ -341,7 +344,7 @@ namespace Statecraft.Game.Map.Collection
                 var old = transform.GetChild(i).gameObject; if (residencyView != null) retired.Add(old);
                 if (Application.isPlaying) { if (gameObject.activeInHierarchy) old.transform.SetParent(null); Destroy(old); } else DestroyImmediate(old);
             }
-            Placed.Clear(); Missing.Clear(); keepAll = new List<Bounds[]>(); keepOf.Clear();
+            Placed.Clear(); Missing.Clear(); keepAll = new List<Bounds[]>(); keepOf.Clear(); dakotaKeeps.Clear();
             originals.Clear();
             if (map != null) Statecraft.Game.Map.Units.UnitShowcase.HideTrees(map, Name, Array.Empty<(Vector2, float)>());
         }
@@ -378,8 +381,20 @@ namespace Statecraft.Game.Map.Collection
 
         /// <summary>Every drawn craft's world box, for the map labels to keep clear of, as they do of the unit tokens
         /// (MapLabelsPresenter's keepClear, issue #197). A new list after every rebuild and the same list otherwise, so the
-        /// labels re-read it only when it changes.</summary>
-        public IReadOnlyList<Bounds[]> KeepClear => !isActiveAndEnabled ? (IReadOnlyList<Bounds[]>)Array.Empty<Bounds[]>() : keepAll;
+        /// labels re-read it only when it changes. The Dakotas' boxes follow them round their loop (FollowDakotas, #2490), so
+        /// while they fly it is a new list once a step (DakotaKeepStepS).</summary>
+        public IReadOnlyList<Bounds[]> KeepClear
+        {
+            get
+            {
+                if (!isActiveAndEnabled) return Array.Empty<Bounds[]>();
+                FollowDakotas();
+                return keepAll;
+            }
+        }
+        /// <summary>A new <see cref="KeepClear"/> list from every drawn craft's own boxes.</summary>
+        void RebuildKeepAll() =>
+            keepAll = originals.Values.SelectMany(list => list).Where(go => go != null && keepOf.ContainsKey(go)).Select(go => keepOf[go]).ToList();
         List<Bounds[]> keepAll = new List<Bounds[]>();
         readonly Dictionary<GameObject, Bounds[]> keepOf = new Dictionary<GameObject, Bounds[]>();
         void Keep(GameObject go, Bounds box) { var boxes = new[] { box }; keepAll.Add(boxes); keepOf[go] = boxes; }
@@ -440,7 +455,7 @@ namespace Statecraft.Game.Map.Collection
                 if (!originals.TryGetValue(w.Model, out var owned)) originals[w.Model] = owned = new List<GameObject>();
                 owned.Add(go);
                 if (w.Model == Spitfire) { Fly(go, prefab!, at.Value, ground); continue; }
-                if (w.Model == Dakota) { FlyDakota(go, prefab!, at.Value); continue; }
+                if (w.Model == Dakota) { FlyDakota(go, prefab!, at.Value, ground, Array.IndexOf(DakotaKeys, w.Key)); continue; }
                 // The yaw goes on top of the prefab's own rotation: every Collection Far prefab's root carries the FBX axis
                 // conversion (-90 degrees about X), and setting the yaw alone lays a model on its side (#979).
                 go.transform.localRotation = prefab!.transform.localRotation;

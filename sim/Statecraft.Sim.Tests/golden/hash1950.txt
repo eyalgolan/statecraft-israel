@@ -117,7 +117,7 @@ city{
   zikhron_yaakov=2,1,2,1,1,c0.35 [3FD6666666666666]
 units[
   0:veteran_soldier@4,14|side=israel|strength=4
-  1:veteran_soldier@15,3|side=israel|strength=2
+  1:veteran_soldier@15,4|side=israel|strength=2
   2:veteran_soldier@0,17|side=israel|strength=4
   3:veteran_soldier@-2,24|side=israel|strength=3
   4:veteran_soldier@-9,29|side=israel|strength=3
@@ -125,7 +125,7 @@ units[
   7:veteran_soldier@-9,35|side=israel|strength=1
   8:egyptian_army@-8,27|side=egypt|strength=10|order=fortify|target=-8,27
   9:arab_legion@-3,25|side=jordan|strength=4|order=fortify|target=-3,25
-  10:syrian_army@15,6|side=syria|strength=3|order=fortify|target=15,6
+  10:syrian_army@15,5|side=syria|strength=3|order=fortify|target=15,5
   11:iraqi_army@6,14|side=iraq|strength=3|order=fortify|target=6,14
   12:arab_liberation_army@14,4|side=ala|strength=4|order=fortify|target=14,4
   13:veteran_soldier@-4,24|side=israel|strength=1|full=2

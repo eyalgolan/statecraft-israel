@@ -190,7 +190,7 @@ public class EnemyPlaybackDataTests
     /// hex when it has one and the hex is empty: no path enters it, so Movement.Toward finds none and the unit takes the
     /// goals (R-ENEMY-002, R-ENEMY-003).</summary>
     static GameState HoldingItsMarch(GameState s, Unit e) =>
-        e.Id < C.StartingForces.Count && C.StartingForces[e.Id].Script is (int q, int r) && !s.Units.Values.Any(u => (u.Q, u.R) == (q, r))
+        e.Id < C.StartingForces.Count && C.StartingForces[e.Id].Script.Count > 0 && C.StartingForces[e.Id].Script[0] is (int q, int r, _) && !s.Units.Values.Any(u => (u.Q, u.R) == (q, r))
             ? WithIsraeli(s, q, r, strength: 1).s
             : s;
 

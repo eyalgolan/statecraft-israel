@@ -9,8 +9,10 @@ The simulation must produce the same state, bit for bit, on .NET, Unity Mono and
 - **Reference vectors:** `DeterminismTests.SplitMix64MatchesTheReferenceVectors` checks the first three outputs for
   seeds 0 and 1234567. The expected values come from Sebastiano Vigna's reference `splitmix64.c`
   (https://prng.di.unimi.it/splitmix64.c), compiled and run separately. They were not copied from this implementation.
-- **No trigonometry in the sim:** the sim calls only `Math.Abs`, `Math.Min` and `Math.Max`. Geometry that needs
-  cos/sin (which hex owns a settlement, which hex a starting force's anchor is on) is precomputed by
+- **No trigonometry in the sim:** paths that change state call only `Math.Abs`, `Math.Floor`, `Math.Max`, `Math.Min`
+  and `Math.Round`, and every such `Math.Round` passes `MidpointRounding.AwayFromZero`. `PlayerText` also rounds, for
+  display only, and `MapOverrides` uses `Math.Sqrt(3)` only to diagnose editor offsets; neither changes state. Geometry
+  that needs cos/sin (which hex owns a settlement, which hex a starting force's anchor is on) is precomputed by
   `tools/settlement_hexes.py` and `tools/unit_anchor_hexes.py` and read as content.
 - **Canonical hash:** `GameState.Hash()` is SHA-256 over a canonical text. Keys are sorted ordinally. Doubles are
   written as IEEE bit patterns, with -0.0 written as 0.0. Culture is invariant. Fractional site and city-project
@@ -38,7 +40,7 @@ The simulation must produce the same state, bit for bit, on .NET, Unity Mono and
   per place in `DisplacedByPlayer`) and the International Support ceiling are plain arithmetic on the indicator's shift,
   with no RNG draw (R-CTRL-018; `DeportTests.DeportDrawsNothing`). `DisplacedByPlayer` is hashed as `displaced=` only when
   non-zero. The real content keeps Deport out of play (`mvp.deport_in_play: false`), and no golden Deports, so
-  none moves. The `mvp-deport-cost` golden, paired with `mvp-occupy-cost`, cannot play the real content, where Deport
+  none moves. The `mvp-deport-cost` fixture comparison (not a manifest golden), paired with `mvp-occupy-cost`, cannot play the real content, where Deport
   is refused (#800);
   `DeportNeverDominatesTests` plays both runs from the same fixture states.
 
@@ -61,9 +63,9 @@ final `GameState.Hash()` is pinned:
 
 | Run | Ends | Hash |
 |---|---|---|
-| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `ac38d6c76c3e0e397365370e63cd23ed00b1b12928cecc4b6aea418440b76d2c` |
-| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `22f2c8da8222e1e87859ef9aae359aa37a04eab34880f65242c4f4d79d5b5c78` |
-| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `22f2c8da8222e1e87859ef9aae359aa37a04eab34880f65242c4f4d79d5b5c78` |
+| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `a08ff8504d862925563c8523a707b58ebe3bcaac0b504dc9ce7e028fc19eb0e4` |
+| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `5561fc51a03a25e7bad499bd2c9d8de156dea241118ac4c80bbf2e0fb50c97ef` |
+| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `5561fc51a03a25e7bad499bd2c9d8de156dea241118ac4c80bbf2e0fb50c97ef` |
 
 `hash1952` stops at the first turn on or after 1 January 1952, which is the game's last turn, so it is the same run as
 `mvp-end` (`DeterminismTests.TheWholeGameToItsEndIsFixed`). Both names are kept (spec 2026-10-12 section 3 step 6): a
@@ -72,7 +74,7 @@ player check enumerate the manifest, so it and every scenario are checked withou
 
 A further value is pinned for the browser smoke run (`?smoke=5`: the golden seed, five turns played through the UI's own
 buttons, answering each event with its first option while the turn's Attention pays for it, the rest left to their
-ministers): `SMOKE OK 5 turns 1948-10-15 803f0f321fe12c056cccbf7adb52027e064ec3afd215717b9816c1122263ace7`.
+ministers): `SMOKE OK 5 turns 1948-10-15 d12c83ce94e3940f93ed21abe7c2c9957de099b2653961da90e87785e6405e79`.
 It depends on the UI path as well as the sim (which option is first, the turn grid), so re-record it when either changes.
 Check every WebGL build with every manifest entry (plus the UI-path smoke line) with:
 
@@ -83,7 +85,7 @@ while read -r name hash; do
   golden_expect+=(--expect "GOLDEN OK $name $hash")
 done < sim/Statecraft.Sim.Tests/golden/manifest.txt
 uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5" "${golden_expect[@]}" \
-  --expect "SMOKE OK 5 turns 1948-10-15 803f0f321fe12c056cccbf7adb52027e064ec3afd215717b9816c1122263ace7"
+  --expect "SMOKE OK 5 turns 1948-10-15 d12c83ce94e3940f93ed21abe7c2c9957de099b2653961da90e87785e6405e79"
 ```
 
 `smoke-orders` (GDD Phase 5 PR 15, #754) is the same kind of browser run for the unit orders (`?smoke-orders`, desktop
@@ -500,3 +502,13 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | #2087, the longer Dani order, as above | scenario-mvp-defeat | `6782cce4` | Ramla taken in the 15 August 1948 turn, then raided, so Kiryati is at -2,24 and Ramla is under enemy control at the end, as hash1950; the defeat is unchanged (was `8435fb3b`) |
 | #2087, the longer Dani order, as above | scenario-mvp-occupy-cost | `612e9feb` | as cautious: Kiryati holds Ramla on (-3,24), awaiting a decision; the run still stops on 15 December 1948 (was `f3bab7ca`) |
 | #2087, the longer Dani order, as above | scenario-mvp-annex-nazareth | `c8195c09` | as cautious: Kiryati holds Ramla on (-3,24), awaiting a decision; Nazareth's annexation is unchanged (was `ca015736`) |
+| #1270 (S1, the Syrian script past the first truce; Beri's choice (a) on #2180, 3 Nov 2026, under the owner's 22 October rule), re-pinned on main after #2087 | hash1950 | `a08ff850` | the Syrian unit's script runs past 8 July 1948 to the bridgehead's anchor S1 (to 20 July 1949). On the 4.4 km grid S1's point falls in Rosh Pinna's hex (14, 6), a player's locality, and (15, 6) is already Syrian anchor 1, so `tools/unit_anchor_hexes.py` puts S1 on the free neighbour (15, 5): on the 15 July 1948 turn the unit steps one hex from its June hex (15, 6) onto (15, 5) and holds it fortified (`10:syrian_army@15,5`). With #2087's operation-card orders, unit 1's card go-to toward (15, 3) now ends at (15, 4), one hex short of (15, 3) (`1:veteran_soldier@15,4`) (was `ac38d6c7`) |
+| #1270 (S1), re-pinned on main after #2087: as above | hash1952 | `5561fc51` | same run as hash1950: the Syrian unit on (15, 5), unit 1 on (15, 4) (was `22f2c8da`) |
+| #1270 (S1), re-pinned on main after #2087: as above | mvp-end | `5561fc51` | same run as hash1952 (was `22f2c8da`) |
+| #1270 (S1), re-pinned on main after #2087: as above | smoke5 | `d12c83ce` | the smoke run's five turns reach 15 October 1948, past the 15 July step; no snapshot is kept for this run (was `803f0f32`) |
+| #1270 (S1), re-pinned on main after #2087: as above | scenario-reckless | `bed7eb74` | the Syrian unit on (15, 5) is the only change (was `4f3ca893`) |
+| #1270 (S1), re-pinned on main after #2087: as above | scenario-cautious | `4f3a0556` | the Syrian unit on (15, 5); unit 1 is still on its card order at the run's end, on (15, 4) toward (15, 3), so the run keeps `cardorders{ 1=1949-03-23 }` (was `0be86235`) |
+| #1270 (S1), re-pinned on main after #2087: as above | scenario-mvp-absorb-first | `f289f897` | the Syrian unit on (15, 5), unit 1 on (15, 4) (was `53c208c2`) |
+| #1270 (S1), re-pinned on main after #2087: as above | scenario-mvp-defeat | `8c83f6e0` | as absorb-first (was `6782cce4`) |
+| #1270 (S1), re-pinned on main after #2087: as above | scenario-mvp-occupy-cost | `ad9af425` | the Syrian unit on (15, 5) is the only change (was `612e9feb`) |
+| #1270 (S1), re-pinned on main after #2087: as above | scenario-mvp-annex-nazareth | `e8a9dbf1` | the Syrian unit on (15, 5); unit 1, on its card order toward (15, 3), is on (13, 6) at the run's end instead of (15, 5) (was `c8195c09`). No other golden moves: smoke-orders does not reach 15 July 1948 |

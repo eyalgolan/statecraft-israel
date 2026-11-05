@@ -179,6 +179,7 @@ namespace Statecraft.Game.UI
         readonly VisualElement root;
         readonly List<(Button, System.Action)> hooks = new List<(Button, System.Action)>();
         readonly List<Button> closes = new List<Button>();
+        readonly HoverTip? closeTips;
         readonly EventCallback<NavigationCancelEvent> onCancel;
         readonly EventCallback<GeometryChangedEvent> onGeometry;
         readonly PressSource presses;
@@ -187,7 +188,9 @@ namespace Statecraft.Game.UI
         /// key, and the open screen under it stays open. This handler trickles down from the root, so it runs before the layer's own.</summary>
         public System.Func<bool>? TakesEscape;
 
-        public ScreenNav(VisualElement root)
+        public ScreenNav(VisualElement root) : this(root, null) { }
+
+        public ScreenNav(VisualElement root, UiText? text)
         {
             this.root = root;
             // Escape (the UI map's Cancel, from any focused element or the panel) closes the open screen. NavigationGuard
@@ -212,10 +215,23 @@ namespace Statecraft.Game.UI
                 // light up and show its tip (#1323).
                 var header = root.Q("screen-" + screen)?.Q(className: "screen-header");
                 if (header == null) continue;
-                var x = new Button(() => Close(handFocus: presses.ByKeyboard)) { name = "screen-close-" + screen, text = "X" };
+                var x = new Button(() => Close(handFocus: presses.ByKeyboard))
+                {
+                    name = "screen-close-" + screen,
+                    text = "X",
+                    // HudPresenter has already localized the rail button. Keep the visible X, but give the icon button
+                    // the screen-specific name HoverTip and the Web companion read (#2566).
+                    tooltip = text == null ? b.text : text.Format("screen.close", b.text),
+                };
                 x.AddToClassList("screen-close");
                 header.Add(x);
                 closes.Add(x);
+            }
+            if (closes.Count > 0 && root.Q<Label>(HoverTip.TipName) != null)
+            {
+                var uiRoot = root.Q("root") ?? root;
+                closeTips = new HoverTip(root, closes,
+                    () => uiRoot.ClassListContains(UiLanguage.HebrewClass) ? HoverTip.Side.Right : HoverTip.Side.Left);
             }
             Open(null);
             FitCloseButtons();
@@ -264,6 +280,7 @@ namespace Statecraft.Game.UI
         {
             foreach (var (b, h) in hooks) b.clicked -= h;
             hooks.Clear();
+            closeTips?.Dispose();
             foreach (var x in closes) x.RemoveFromHierarchy();
             closes.Clear();
             root.UnregisterCallback(onCancel, TrickleDown.TrickleDown);
