@@ -1,0 +1,20 @@
+304c304
+<                 foreach (var row in requirement.Required)
+---
+>                 foreach (var req in requirement.Required)
+306,307c306,307
+<                     var regions = string.Join(" / ", row.Regions.Select(id => text["operation.region." + id]));
+<                     var required = new Label(text.Format("event.operation_requirement", OperationUnitName(row.Unit), regions));
+---
+>                     var regions = string.Join(" / ", req.Regions.Select(id => text["operation.region." + id]));
+>                     var required = new Label(text.Format("event.operation_requirement", OperationUnitName(req.Unit), regions));
+310c310
+<                 foreach (var row in requirement.Missing)
+---
+>                 foreach (var req in requirement.Missing)
+312,313c312,313
+<                     var regions = string.Join(" / ", row.Regions.Select(id => text["operation.region." + id]));
+<                     var missing = new Label(text.Format("event.operation_missing", OperationUnitName(row.Unit), regions));
+---
+>                     var regions = string.Join(" / ", req.Regions.Select(id => text["operation.region." + id]));
+>                     var missing = new Label(text.Format("event.operation_missing", OperationUnitName(req.Unit), regions));
