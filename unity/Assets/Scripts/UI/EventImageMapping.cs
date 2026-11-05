@@ -35,6 +35,8 @@ namespace Statecraft.Game.UI
             public string Artist { get; set; } = "";
             public string Credit { get; set; } = "";
             public string Alt { get; set; } = "";
+            public string AltHe { get; set; } = "";
+            public string AltHeReview { get; set; } = "";
             public List<double> Crop { get; set; } = new List<double>();
             public bool Sensitive { get; set; }
             public bool SensitivityReviewed { get; set; }
@@ -77,6 +79,8 @@ namespace Statecraft.Game.UI
                 if (r.Artist == "" || !r.Credit.Contains(r.Artist)) problems.Add($"{r.Event}: credit does not name the artist '{r.Artist}'");
                 if (!r.Credit.Contains(Adaptation)) problems.Add($"{r.Event}: credit does not say '{Adaptation}'");
                 if (r.Alt.Trim().Length < 20) problems.Add($"{r.Event}: alt text missing or too short");
+                if (AltHebrewProblem(r.AltHe, r.AltHeReview) is string altProblem)
+                    problems.Add($"{r.Event}: {altProblem}");
                 if (!r.Commons.StartsWith("https://commons.wikimedia.org/wiki/File:", StringComparison.Ordinal)) problems.Add($"{r.Event}: commons page missing");
                 if (r.Sha1.Length != 40) problems.Add($"{r.Event}: sha1 of the original missing");
                 if (r.Crop.Count != 3) problems.Add($"{r.Event}: crop must be [centre x, centre y, width]");
@@ -84,6 +88,14 @@ namespace Statecraft.Game.UI
                 if (r.SensitivityReviewed && !r.Sensitive) problems.Add($"{r.Event}: sensitivity_reviewed without sensitive");
             }
             return problems;
+        }
+
+        static string? AltHebrewProblem(string? altHe, string? review)
+        {
+            bool hasAlt = !string.IsNullOrWhiteSpace(altHe), hasReview = !string.IsNullOrWhiteSpace(review);
+            if (hasAlt != hasReview) return "alt_he and alt_he_review must appear together";
+            if (hasReview && review != "agent-checked") return "alt_he_review must be agent-checked";
+            return null;
         }
     }
 }

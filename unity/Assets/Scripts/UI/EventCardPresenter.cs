@@ -253,7 +253,8 @@ namespace Statecraft.Game.UI
             // while the card waits under the start screen (photoWaits): it is not seen, and the catalog is not loaded yet.
             var photo = photoWaits ? null : (photos ?? photosLater?.Invoke())?.Find(e.Id);
             var row = video != null && photo != null && !failed.Contains(e.Id) ? clipFor!(e.Id) : null;
-            clip = row == null ? null : CardVideo.Url(row.File); clipAlt = row?.Alt;
+            clip = row == null ? null : CardVideo.Url(row.File);
+            clipAlt = row == null ? null : LocalAlt(row.Alt, row.AltHe);
             ShowPhoto(photo);
             var image = card.Q<VisualElement>("event-image");
             var entry = photo == null && !photoWaits ? portraits?.Find(holder?.Id) : null;
@@ -415,8 +416,9 @@ namespace Statecraft.Game.UI
             // (1366x657 at 100%, #1853). Dropped, the body shrinks and scrolls as the stylesheet says.
             scroll.style.flexShrink = photo != null ? 0f : (StyleFloat)StyleKeyword.Null;
             band.style.backgroundImage = photo == null ? (StyleBackground)StyleKeyword.None : new StyleBackground(photo.Value.image);
-            band.tooltip = photo?.alt ?? "";
-            PhotoAlt = photo?.alt;
+            var photoAlt = photo == null ? null : LocalAlt(photo.Value.alt, photo.Value.altHe);
+            band.tooltip = photoAlt ?? "";
+            PhotoAlt = photoAlt;
             ApplyMediaHeight();
             ApplyIllustration();
         }
@@ -443,8 +445,11 @@ namespace Statecraft.Game.UI
                 video.Stop();
                 if (current != null && PhotoAlt != null) band.style.backgroundImage = new StyleBackground(current.Value.image);
             }
-            if (current != null) { credit.text = current.Value.credit; if (PhotoAlt != null) band.tooltip = current.Value.alt; }
+            if (current != null) { credit.text = current.Value.credit; if (PhotoAlt != null) band.tooltip = LocalAlt(current.Value.alt, current.Value.altHe); }
         }
+
+        string LocalAlt(string english, string? hebrew) =>
+            text["ui.lang"] == UiLanguage.Hebrew && !string.IsNullOrWhiteSpace(hebrew) ? hebrew! : english;
 
         /// <summary>True while the header plays the event's clip (or is preparing it).</summary>
         public bool IllustrationShown => video?.Current != null;

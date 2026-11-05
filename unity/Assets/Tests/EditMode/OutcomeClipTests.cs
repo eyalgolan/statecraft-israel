@@ -35,6 +35,7 @@ public class OutcomeClipTests
             rows.Select(r => r.Event), "the three of 2026-10-14, the four the owner approved on 2026-10-20 (#1102) and absorb_immigrants (owner, 2026-10-24: \"Add v8, 6 s\")");
         var problems = EventVideoMapping.OutcomeProblems(rows, C, f => File.Exists(Path.Combine(EventVideoMapping.ClipFolder, f)));
         Assert.IsEmpty(problems, string.Join("\n", problems));
+        Assert.IsTrue(rows.All(r => !string.IsNullOrWhiteSpace(r.AltHe) && r.AltHeReview == "agent-checked"), "every shipped outcome has agent-checked Hebrew alt text");
         Assert.AreEqual(8, EventVideoMapping.LoadOutcomes().Count, "the game finds them in Resources");
     }
 
@@ -136,6 +137,7 @@ public class OutcomeClipTests
             r.Order("maabarot_policy", "maabarot");
             r.Bridge.EndTurn();
             Assert.AreEqual(he.Format("outcome.order", option.TextHe), r.Outcomes.Caption);
+            Assert.AreEqual(r.Outcomes.Showing!.AltHe, r.Root.Q("outcome-media").tooltip);
             StringAssert.DoesNotContain(option.Text, r.Outcomes.Caption, "no English in the Hebrew caption");
         }
         var c = ContentLoader.Load(Paths.Content);

@@ -64,6 +64,9 @@ public class EventImageMappingTests
         Bad(r => r.Credit = "Meitar Collection · CC BY 4.0 · graded and cropped", "does not name the artist");
         Bad(r => r.Credit = "Benno Rothenberg · graded and cropped", "does not name the licence");
         Bad(r => r.Alt = "", "alt text");
+        Bad(r => r.AltHe = "תיאור בעברית", "must appear together");
+        Bad(r => r.AltHeReview = "agent-checked", "must appear together");
+        Bad(r => { r.AltHe = "תיאור בעברית"; r.AltHeReview = "pending"; }, "must be agent-checked");
         Bad(r => r.Event = "no_such_event", "no such event");
         Bad(r => { r.Event = "altalena"; r.File = "altalena.jpg"; }, "must be sensitive: true");   // tagged war-casualties
         var twice = EventImageMapping.Problems(new[] { Good(), Good() }, C);
@@ -117,6 +120,9 @@ public class EventImageMappingTests
             Assert.AreEqual(r.Event, e.eventId);
             Assert.AreEqual($"{EventImageMapping.Folder}/{r.File}", AssetDatabase.GetAssetPath(e.image), r.Event);
             Assert.AreEqual(r.Alt, e.alt, r.Event);
+            Assert.IsNotEmpty(r.AltHe, r.Event + ": shipped Hebrew alt");
+            Assert.AreEqual("agent-checked", r.AltHeReview, r.Event);
+            Assert.AreEqual(r.AltHe, e.altHe, r.Event);
             Assert.AreEqual(r.Credit, e.credit, r.Event);
             Assert.AreEqual(r.Sensitive, e.sensitive, r.Event);
             Assert.AreEqual(r.SensitivityReviewed, e.sensitivityReviewed, r.Event);

@@ -11,7 +11,8 @@ moments.md`, the "Full plan"; plan: `docs/superpowers/plans/2026-10-13-decision-
   real event (`EventImageCatalog`; GDD: authentic images for history).
 - **The clip is labelled in the card, not in the file.**
   - While it plays, "AI-generated illustration" replaces the photograph's credit, and the clip's own alt text becomes
-    the header's tooltip.
+    the header's tooltip. Hebrew uses `alt_he` when present and otherwise falls back to English; an agent-drafted value
+    carries `alt_he_review: agent-checked` until #564's native read.
   - The files carry **no burned-in caption**. Owner ruling of 14 October 2026, relayed by the coordinator, after
     watching the three sensitive clips: "the 3 ilustration clips are great but no need to say there were created by
     ai". Until then each file carried a small "AI-generated · נוצר בבינה מלאכותית" label; every clip was re-encoded
@@ -112,7 +113,7 @@ loop, and Yemen has one new shot made for it. All three follow the same rules as
   until the clip's first frame.
 - **The hold.** Owner, 2 Nov 2026: "2 s automatic (Recommended)".
 - **The label.** While the clip plays, the cards' `event.ai_label` string replaces the credit, in Hebrew in the Hebrew
-  UI. The clip's alt text becomes the tooltip.
+  UI. The clip's localized alt text becomes the tooltip, with the same per-field English fallback as the cards.
 - **The caption.** One line under the picture, shown only with the clip, as the outcome clips' caption sits under
   theirs. Each panel's `caption:` (`text`, `text_he`, `he_review`) restates a sentence of the panel's approved text.
   Owner, 2 Nov 2026: "Version 1, fixed (Recommended)", which is also the owner's native read of the Hebrew.
@@ -134,7 +135,7 @@ loop, and Yemen has one new shot made for it. All three follow the same rules as
   SHA-256s are in the row. The owner reviewed the cleaned clip on 2 November 2026: "Approve it".
 - **The checks.** `OpeningContent.Parse` refuses a malformed row. `tools/tests/test_opening_sources.py` checks each
   clip's file, its `ASSETS.yaml` row and its `docs/ai-disclosure.md` line, and that a reused card clip keeps the card
-  row's shot and alt text. Every opening panel is sensitive, so its clip is `sensitive: true`, and a `-shareable` build
+  row's shot, `alt`, `alt_he` and `alt_he_review`. Every opening panel is sensitive, so its clip is `sensitive: true`, and a `-shareable` build
   refuses it until the owner sets `sensitivity_reviewed: true` (`Build.OpeningShareableRefusal`). The owner reviewed the
   two card clips in the opening on 2 November 2026 ("Approve both") and the Yemen clip the same day ("Approve it"). A
   clip needs its caption, and a shareable build refuses a caption whose Hebrew is not `he_review: approved`.
@@ -143,7 +144,7 @@ loop, and Yemen has one new shot made for it. All three follow the same rules as
 
 | What | Where |
 |---|---|
-| The mapping: event (and, for an outcome, option and window), file, promo shot and its SHA-256, generator, date, alt text, sensitivity flags | `unity/Assets/Resources/EventVideos/event-videos.yaml` |
+| The mapping: event (and, for an outcome, option and window), file, promo shot and its SHA-256, generator, date, English and optional Hebrew alt text, sensitivity flags | `unity/Assets/Resources/EventVideos/event-videos.yaml` |
 | The clips (960x540 H.264, about 0.4 to 1.5 MB each) | `unity/Assets/StreamingAssets/video/<event>.mp4`, and `<event>-outcome.mp4` for the outcome clips, and `opening_yemen.mp4` for the opening's Yemen panel |
 | The encode, pinned (no burned-in caption) | `tools/encode_event_videos.py` |
 | The player: a lazy VideoPlayer playing a URL into a 960x540 RenderTexture; one for the card's loop and one for the outcome clips | `CardVideo` |

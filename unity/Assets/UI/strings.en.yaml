@@ -193,10 +193,15 @@ settings.community: "Community"
 community.star: "Star on GitHub"
 # "Report a bug or idea" (#1169, FeedbackPresenter): the button beside Star, the panel's title, and its three choices.
 feedback.open: "Report a bug or idea"
-feedback.intro: "The form opens with these lines filled in. Nothing is sent until you submit it on GitHub."
+feedback.intro: "The preview shows the fields that will be filled in. The GitHub issue title stays in English. Nothing is sent until you submit it on GitHub."
 feedback.bug: "Report a bug"
 feedback.feature: "Suggest a feature"
 feedback.itch: "No GitHub account? Comment on itch"
+feedback.preview.title: "title"
+feedback.preview.version: "version"
+feedback.preview.env: "env"
+feedback.preview.bug_title: "Bug: "
+feedback.preview.feature_title: "Idea: "
 # "Share" (#1170, SharePresenter): the button beside Star and on the turn report, the panel, and the post, which gets the
 # in-game date ({0}), the turn ({1}) and the itch URL ({2}).
 share.open: "Share"

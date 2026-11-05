@@ -113,8 +113,9 @@ def test_photo_credit_and_review_are_checked_separately():
 
 # The panels' illustration clips (owner ruling of 2 November 2026, "B: A + one new Yemen shot (~2,424)"): each `clip:`
 # names an existing file in StreamingAssets/video whose ASSETS.yaml row marks it ai_generated, with its licence, source and
-# a verified status, and which docs/ai-disclosure.md lists; a clip that is a decision card's loop keeps that row's shot and
-# alt text. The C# reader (OpeningContent.Parse) checks the row's own shape; the shareable build gates its review.
+# a verified status, and which docs/ai-disclosure.md lists; a clip that is a decision card's loop keeps that row's shot,
+# English and Hebrew alt text, and Hebrew review marker. The C# reader (OpeningContent.Parse) checks the row's own shape;
+# the shareable build gates its sensitivity review.
 VIDEO = REPO / "unity/Assets/StreamingAssets/video"
 EVENT_VIDEOS = REPO / "unity/Assets/Resources/EventVideos/event-videos.yaml"
 
@@ -144,8 +145,10 @@ def clip_problems(doc, rules, disclosure, card_rows, exists=lambda name: (VIDEO 
         elif f"| {row['glob']} | ASSETS.yaml |" not in disclosure:
             result.append(f"{where}: docs/ai-disclosure.md does not list {row['glob']}")
         card = cards.get(name)
-        if card is not None and (card.get("shot") != clip.get("shot") or card.get("alt") != clip.get("alt")):
-            result.append(f"{where}: shot and alt must match its event-videos.yaml row ({card.get('event')})")
+        if card is not None and (card.get("shot") != clip.get("shot") or card.get("alt") != clip.get("alt")
+                                 or card.get("alt_he") != clip.get("alt_he")
+                                 or card.get("alt_he_review") != clip.get("alt_he_review")):
+            result.append(f"{where}: shot, alt, alt_he and alt_he_review must match its event-videos.yaml row ({card.get('event')})")
     return result
 
 
@@ -184,7 +187,10 @@ def test_a_clip_not_in_the_disclosure_fails():
 def test_a_reused_card_clip_keeps_its_shot_and_alt():
     doc = actual()
     doc["panels"][1]["clip"]["shot"] = "A08"
-    assert any("arab_countries clip: shot and alt must match" in p for p in clip_problems(doc, *clip_inputs()))
+    assert any("arab_countries clip: shot, alt, alt_he and alt_he_review must match" in p for p in clip_problems(doc, *clip_inputs()))
+    doc = actual()
+    doc["panels"][0]["clip"]["alt_he_review"] = "approved"
+    assert any("europe clip: shot, alt, alt_he and alt_he_review must match" in p for p in clip_problems(doc, *clip_inputs()))
 
 
 def test_every_clip_has_its_owner_read_caption():
