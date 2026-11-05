@@ -138,7 +138,7 @@ public class CombatEffectsTests
         List<object> Drawn()
         {
             var s = new List<object>();
-            foreach (var pool in new[] { c.Blasts!, c.Dust! })
+            foreach (var pool in new[] { c.Blasts!, c.Dust!, c.MoveDust! })
                 for (int i = 0; i < pool.Capacity; i++)
                 {
                     var r = pool.Renderers[i];
@@ -163,6 +163,57 @@ public class CombatEffectsTests
         CollectionAssert.Contains(feet, CombatBursts.BlastSlots * 100f, "to the newest");
     }
 
+    [Test]
+    public void MarchingDustUsesAFixedPoolAndReusesItsOldestSlot()
+    {
+        var c = Bursts(out _);
+        for (int i = 0; i <= CombatBursts.MoveDustSlots; i++)
+        {
+            now = 100.0 + i * 0.01;
+            Assert.IsTrue(c.March(new Vector3(i * 100f, 0f, 0f)));
+        }
+        Assert.AreEqual(CombatBursts.MoveDustSlots, c.MoveDust!.Busy);
+        var feet = Enumerable.Range(0, c.MoveDust.Capacity).Select(i => c.MoveDust.Foot(i).x).ToList();
+        CollectionAssert.DoesNotContain(feet, 0f, "the oldest puff gave up its slot");
+        CollectionAssert.Contains(feet, CombatBursts.MoveDustSlots * 100f);
+        c.Sample(now + CombatBursts.MoveDustStyle.LifeS + 0.01);
+        Assert.AreEqual(0, c.MoveDust.Busy);
+        Assert.IsTrue(c.March(Vector3.zero), "a freed slot is reusable");
+    }
+
+    [Test]
+    public void ATokenMoveEmitsThreeOrderedPuffsAndThresholdFramesAllocateNothing()
+    {
+        var c = Bursts(out _);
+        for (int i = 0; i < CombatBursts.MoveDustSlots; i++) c.March(Vector3.zero);
+        c.Sample(now + CombatBursts.MoveDustStyle.LifeS + 0.01);   // warm every slot and return to the idle state
+        Assert.IsFalse(c.enabled, "fixture: the first measured emission wakes the idle effects");
+        var token = new GameObject("moving token"); made.Add(token);
+        var motion = token.AddComponent<UnitTokenMotion>();
+        motion.Effects = c; motion.GroundHome = new Vector3(100f, 0f, 200f); motion.enabled = false;
+        motion.Begin(Vector3.right * 4000f);
+        long betweenBefore = GC.GetAllocatedBytesForCurrentThread();
+        motion.Tick(UnitTokenMotion.Duration / 8f);
+        long betweenAllocated = GC.GetAllocatedBytesForCurrentThread() - betweenBefore;
+        Assert.AreEqual(0, betweenAllocated, "a moving frame between emission thresholds allocates nothing");
+        Assert.AreEqual(0, c.MoveDust!.Busy);
+        for (int i = 0; i < UnitTokenMotion.MoveDustPuffs; i++)
+        {
+            long before = GC.GetAllocatedBytesForCurrentThread();
+            motion.Tick(i == 0 ? UnitTokenMotion.Duration / 8f
+                : UnitTokenMotion.Duration / (UnitTokenMotion.MoveDustPuffs + 1f));
+            long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+            Assert.AreEqual(0, allocated, "emission frame " + i + " allocates nothing");
+            Assert.AreEqual(i + 1, c.MoveDust!.Busy);
+        }
+        motion.Tick(UnitTokenMotion.Duration);
+        Assert.AreEqual(UnitTokenMotion.MoveDustPuffs, c.MoveDust!.Busy, "arrival emits no extra puff");
+        Assert.AreEqual(Vector3.zero, token.transform.position);
+        var xs = Enumerable.Range(0, c.MoveDust.Capacity).Where(i => !double.IsNaN(c.MoveDust.StartOf(i)))
+            .Select(i => c.MoveDust.Foot(i).x).OrderBy(x => x).ToArray();
+        CollectionAssert.AreEqual(new[] { 1100f, 2100f, 3100f }, xs);
+    }
+
     /// <summary>Per-frame garbage stutters on WebGL: sampling the effects, the pools full, allocates nothing.</summary>
     [Test]
     public void SamplingAllocatesNothing()
@@ -179,18 +230,19 @@ public class CombatEffectsTests
     public void HiddenItPlaysNothingAndDropsWhatPlayed()
     {
         var c = Bursts(out var parent);
-        c.Destroyed(Vector3.zero);
+        c.Destroyed(Vector3.zero); c.March(Vector3.zero);
         parent.SetActive(false);
-        Assert.IsFalse(c.Hit(Vector3.zero, true, true)); Assert.IsFalse(c.Destroyed(Vector3.zero));
+        Assert.IsFalse(c.Hit(Vector3.zero, true, true)); Assert.IsFalse(c.Destroyed(Vector3.zero)); Assert.IsFalse(c.March(Vector3.zero));
         parent.SetActive(true);
         Assert.AreEqual(0, c.Dust!.Busy, "the units' toggle dropped the dust that played");
+        Assert.AreEqual(0, c.MoveDust!.Busy, "hidden marching dust does not resume");
     }
 
     [Test]
     public void DestroyedItFreesEveryMeshAndMaterialItMade()
     {
         var c = Bursts(out var parent);
-        var owned = c.Blasts!.Owned.Concat(c.Dust!.Owned).ToList();
+        var owned = c.Blasts!.Owned.Concat(c.Dust!.Owned).Concat(c.MoveDust!.Owned).ToList();
         Assert.Greater(owned.Count, 0);
         Assert.IsTrue(owned.All(o => o is Mesh || o is Material), "the frames and the slots' materials; the flipbooks are assets and stay");
         Object.DestroyImmediate(parent);
@@ -198,9 +250,9 @@ public class CombatEffectsTests
         Assert.IsNotNull(Flipbook.Load(Flipbook.ExplosionResource), "the asset itself is untouched");
     }
 
-    static Cause Line(string key, string attackers, string hex = "9,9") => new Cause("map", hex, 0, "Report text is never read",
+    static Cause Line(string key, string attackers, string hex = "9,9", string defenderLoss = "0") => new Cause("map", hex, 0, "Report text is never read",
         key: key, units: new[] { new UnitRef(new Unit(71, "infantry", 0, 0)), new UnitRef(new Unit(72, "guns", 0, 0)),
-            new UnitRef(new Unit(73, "infantry", 0, 0)) }, args: new[] { hex, "150", "0", "0", attackers });
+            new UnitRef(new Unit(73, "infantry", 0, 0)) }, args: new[] { hex, "150", "0", defenderLoss, attackers });
 
     [Test]
     public void AnEngagementsHitIsItsHexItsGunsAndItsDefenders()
@@ -213,6 +265,9 @@ public class CombatEffectsTests
         var rifles = UnitAttackPresenter.HitOf(Line(WhyKeys.Engagement, "1"), guns)!.Value;
         Assert.IsFalse(rifles.Guns); Assert.IsTrue(rifles.SmallArms);
         CollectionAssert.AreEqual(new[] { 72, 73 }, rifles.Defenders);
+        Assert.AreEqual(7, UnitAttackPresenter.HitOf(Line(WhyKeys.Engagement, "1", defenderLoss: "7"), guns)!.Value.DefenderLoss);
+        Assert.AreEqual(0, UnitAttackPresenter.HitOf(Line(WhyKeys.Engagement, "1", defenderLoss: "lost"), guns)!.Value.DefenderLoss,
+            "a malformed loss suppresses only the reaction, not the existing impact");
         Assert.IsNull(UnitAttackPresenter.HitOf(Line(WhyKeys.AttackOrdered, "2"), guns), "only an engagement hits");
         Assert.IsNull(UnitAttackPresenter.HitOf(Line(WhyKeys.Engagement, "0"), guns), "a malformed count");
         Assert.IsNull(UnitAttackPresenter.HitOf(Line(WhyKeys.Engagement, "2", "nine"), guns), "a malformed hex");
@@ -282,6 +337,7 @@ public class CombatEffectsTests
         {
             var s = Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical).Clone();
             var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.AnimateMoves = true;
             layer.Show(C, s);
             Assert.IsNotNull(layer.Combat, "the layer makes its combat effects");
             var drawn = s.Units.Values.Where(u => u.Side == Movement.PlayerSide && layer.Tokens.Any(t => t.Token.StateUnit?.Id == u.Id)).Take(2).ToArray();
@@ -289,6 +345,12 @@ public class CombatEffectsTests
             Vector2 SpotOf(Unit u) { var spot = layer.Tokens.Single(t => t.Token.StateUnit?.Id == u.Id).Spot; return new Vector2((float)spot.X, (float)spot.Z); }
 
             var defender = drawn[0];
+            Assert.IsFalse(layer.PlayDefenderHit(new CombatHit(defender.Q, defender.R, false, true,
+                drawn.Select(u => u.Id).ToArray())), "the five-argument caller means no recorded defender loss");
+            Assert.IsTrue(layer.PlayDefenderHit(new CombatHit(defender.Q, defender.R, false, true, 1,
+                drawn.Select(u => u.Id).ToArray())), "all drawn defenders react to the aggregate loss");
+            foreach (var unit in drawn)
+                Assert.IsTrue(layer.GetComponentsInChildren<UnitTokenMotion>().Single(m => m.SimId == unit.Id).Reacting);
             Assert.IsTrue(layer.PlayHit(new CombatHit(defender.Q, defender.R, true, false, new[] { defender.Id })));
             int slot = Enumerable.Range(0, layer.Combat!.Blasts!.Capacity).Single(i => !double.IsNaN(layer.Combat.Blasts.StartOf(i)));
             Assert.Less((XZ(layer.Combat.Blasts.Foot(slot)) - SpotOf(defender)).magnitude, 1f, "on the defender's token");

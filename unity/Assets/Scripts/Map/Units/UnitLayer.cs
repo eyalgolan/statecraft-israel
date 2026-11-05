@@ -34,7 +34,7 @@ namespace Statecraft.Game.Map.Units
         UnitGround ground = null!;
         IReadOnlyDictionary<UnitAnchor, AnchorSpot> spots = new Dictionary<UnitAnchor, AnchorSpot>();
         MapRuntimeAssets assets = null!;
-        Material paint = null!, ringTemplate = null!, badgePlate = null!, badgeGlyph = null!, rim = null!;
+        Material paint = null!, ringTemplate = null!, badgePlate = null!, badgeGlyph = null!, hitPlate = null!, rim = null!;
         readonly Dictionary<string, Material[]> flagCloth = new Dictionary<string, Material[]>();   // per side, made on first use
         readonly Dictionary<string, Mesh> meshes = new Dictionary<string, Mesh>();
         /// <summary>The meshes built for the tokens drawn now (each base's draped top, lip and ring follow its own ground):
@@ -233,6 +233,8 @@ namespace Statecraft.Game.Map.Units
             layer.ringTemplate = ringTemplate;
             layer.badgePlate = layer.assets.Own(new Material(ringTemplate) { name = "UnitBadge (plate)", color = UnitBadge.PlateColour });
             layer.badgeGlyph = layer.assets.Own(new Material(ringTemplate) { name = "UnitBadge (glyph)", color = UnitBadge.GlyphColour });
+            layer.hitPlate = layer.assets.Own(new Material(ringTemplate)
+                { name = "UnitBadge (hit flash)", color = new Color(0.86f, 0.12f, 0.08f, 0.92f) });
             layer.rim = layer.assets.Own(new Material(ringTemplate) { name = "UnitPlinthRim", color = UnitPlinth.RimColour });
             layer.tokensRoot = new GameObject("Tokens").transform;
             layer.tokensRoot.SetParent(root.transform, false);
@@ -814,6 +816,9 @@ namespace Statecraft.Game.Map.Units
                 badges.Add(badge.transform); badgeHomes.Add((home, back, pole, flag, standing));
                 trios.Add((centre, plinth, lift, figures, meshes));
                 AddRenderer(badge.transform, "Plate", MeshFor("badge-plate", UnitBadge.PlateMesh), badgePlate, 0f);
+                var hitFlash = AddRenderer(badge.transform, "HitFlash", MeshFor("badge-plate", UnitBadge.PlateMesh),
+                    hitPlate, -UnitBadge.GlyphLift * 0.5f);
+                hitFlash.enabled = false;
                 AddRenderer(badge.transform, "Glyph", MeshFor("badge-" + t.Unit.Service, () => UnitBadge.GlyphMesh(t.Unit.Service)), badgeGlyph, -UnitBadge.GlyphLift);
                 // The badge's cube and the pieces (the flag and the figures as they stand now); FaceCamera moves both with the camera.
                 var pieces = standing;
@@ -831,6 +836,9 @@ namespace Statecraft.Game.Map.Units
                 motion.enabled = false;   // runs only while it moves or attacks
                 motion.SimId = placed[i].Token.StateUnit?.Id ?? -1;
                 motion.Changed = () => { facedFor = null; slid = true; };   // FaceCamera sets the badge and the boxes where the token is drawn
+                motion.Effects = combat;
+                motion.GroundHome = trios[i].centre;
+                motion.HitFlash = badges[i].Find("HitFlash").GetComponent<Renderer>();
                 motions.Add(motion);
                 // With the units hidden the token cannot be seen, and it would slide only once they are shown again.
                 if (tokensRoot.gameObject.activeInHierarchy && drawnAt.TryGetValue(Key(motion.SimId, token.name), out var was))
@@ -846,6 +854,31 @@ namespace Statecraft.Game.Map.Units
             foreach (var motion in motions)
                 if (motion != null && motion.SimId == simId) return motion.PlayAttack();
             return false;
+        }
+
+        /// <summary>Plays an attack and reports its actual visible fire start, or the end of its brief wait without one.</summary>
+        internal bool PlayAttack(int simId, Action started, Action missed)
+        {
+            foreach (var motion in motions)
+                if (motion != null && motion.SimId == simId) return motion.PlayAttack(started, missed);
+            missed();
+            return false;
+        }
+
+        /// <summary>Briefly shakes and flashes every currently drawn defender when the engagement records aggregate
+        /// defender loss. The cause cannot identify an individual damaged unit, so the visible group reacts together.</summary>
+        public bool PlayDefenderHit(CombatHit hit)
+        {
+            if (hit.DefenderLoss <= 0 || !gameObject.activeInHierarchy) return false;
+            bool played = false;
+            foreach (int id in hit.Defenders)
+                foreach (var motion in motions)
+                {
+                    if (motion == null || motion.SimId != id) continue;
+                    played |= motion.PlayHit();
+                    break;
+                }
+            return played;
         }
 
         /// <summary>Plays an attack's hit (owner, 4 November 2026: "Hit on target hex"): a shell's burst and the small arms'
@@ -913,7 +946,7 @@ namespace Statecraft.Game.Map.Units
             return piece;
         }
 
-        static void AddRenderer(Transform parent, string name, Mesh mesh, Material mat, float z)
+        static Renderer AddRenderer(Transform parent, string name, Mesh mesh, Material mat, float z)
         {
             var go = new GameObject(name);
             go.transform.SetParent(parent, false);
@@ -923,6 +956,7 @@ namespace Statecraft.Game.Map.Units
             r.sharedMaterial = mat;
             r.shadowCastingMode = ShadowCastingMode.Off;
             r.receiveShadows = false;
+            return r;
         }
 
         void BuildAircraft(Transform parent, UnitToken t, Vector3 baseCentre)

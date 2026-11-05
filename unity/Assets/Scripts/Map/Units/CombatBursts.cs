@@ -15,15 +15,20 @@ namespace Statecraft.Game.Map.Units
     {
         public readonly int Q, R;
         public readonly bool Guns, SmallArms;
+        /// <summary>The engagement's aggregate defender loss, or zero when the structured value is absent or malformed.</summary>
+        public readonly int DefenderLoss;
         public readonly IReadOnlyList<int> Defenders;
         public CombatHit(int q, int r, bool guns, bool smallArms, IReadOnlyList<int> defenders)
-        { Q = q; R = r; Guns = guns; SmallArms = smallArms; Defenders = defenders; }
+            : this(q, r, guns, smallArms, 0, defenders) { }
+        public CombatHit(int q, int r, bool guns, bool smallArms, int defenderLoss, IReadOnlyList<int> defenders)
+        { Q = q; R = r; Guns = guns; SmallArms = smallArms; DefenderLoss = defenderLoss; Defenders = defenders; }
     }
 
     /// <summary>The combat effects on the map's ground (owner, 4 November 2026: "Hit on target hex" and "Dust when a unit
     /// dies"): a shell's burst where the guns' fire lands, a few puffs of dust where small arms hit, and a cloud of dust where
-    /// a destroyed unit's token stood. All drawn as #2490's Dakota bombs are: Unity Labs' CC0 flipbooks (Flipbook) on unlit
-    /// camera-facing quads, from two small pools made once (<see cref="FlipbookBursts"/>), each burst a pure function of the
+    /// a destroyed unit's token stood, and a lighter trail behind a moving token. All are drawn as #2490's Dakota bombs are:
+    /// Unity Labs' CC0 flipbooks (Flipbook) on unlit camera-facing quads, from three small pools made once
+    /// (<see cref="FlipbookBursts"/>), each burst a pure function of the
     /// clock, so sampling allocates nothing. Presentation only: it reads no state and writes none. It lives under the unit
     /// layer, so the units' toggle hides it (and drops what plays), and it goes with the layer. It runs only while a burst
     /// plays (in play: an edit-mode build, such as the promo captures, never advances it).</summary>
@@ -44,11 +49,11 @@ namespace Statecraft.Game.Map.Units
         /// (SeaAirCollection.DakotaBlastM): a field gun's shell is smaller than an aerial bomb; small arms raise small puffs;
         /// a unit's end raises a cloud about as wide as its token's base. Each puff stands <see cref="SpreadShare"/> of its
         /// size from the spot, each its own way, so the puffs read as several.</summary>
-        public const float BlastM = 1400f, HitDustM = 800f, DeathDustM = 1500f, SpreadShare = 0.45f;
+        public const float BlastM = 1400f, HitDustM = 800f, DeathDustM = 1500f, MoveDustM = 520f, SpreadShare = 0.45f;
 
         /// <summary>DESIGN VALUES: the pools' sizes, as many as can show at once with a few attacks in one turn (an older burst
         /// gives up its slot to a newer one).</summary>
-        public const int BlastSlots = 4, DustSlots = 12;
+        public const int BlastSlots = 4, DustSlots = 12, MoveDustSlots = 8;
 
         /// <summary>DESIGN VALUES: the shell's burst plays the whole explosion flipbook (fire, then black smoke) over 1.8 s,
         /// opening at 0.45 of its size and swelling, as the Dakotas' blast does (BlastTint, DakotaBlastOpenShare and
@@ -58,6 +63,8 @@ namespace Statecraft.Game.Map.Units
             0.45f, 0.12f, 0.1f, 0.35f, new Color(1f, 0.95f, 0.88f, 1f), new Color(1f, 0.95f, 0.88f, 1f), 0.4f);
         public static readonly FlipbookBursts.Style DustStyle = new FlipbookBursts.Style(1.6f, 0, 24,
             0.35f, 0.5f, 0.35f, 0.6f, new Color(1.25f, 1.1f, 0.88f, 0.85f), new Color(1.6f, 1.5f, 1.35f, 0.6f), 0.4f);
+        public static readonly FlipbookBursts.Style MoveDustStyle = new FlipbookBursts.Style(0.7f, 0, 18,
+            0.25f, 0.3f, 0.12f, 0.55f, new Color(1.18f, 1.05f, 0.84f, 0.48f), new Color(1.45f, 1.35f, 1.18f, 0f), 0.3f);
 
         /// <summary>Each puff's direction from the spot (x east, z north) and its turn on the screen (degrees, within 25 either
         /// way so the flipbook's lit side stays up).</summary>
@@ -68,12 +75,13 @@ namespace Statecraft.Game.Map.Units
         /// frame clock.</summary>
         internal static Func<double> Clock = () => Time.timeAsDouble;
 
-        FlipbookBursts? blasts, dust;
+        FlipbookBursts? blasts, dust, moveDust;
         readonly List<Object> owned = new List<Object>();
 
-        /// <summary>The pools (tests): the shells' bursts and the dust.</summary>
+        /// <summary>The pools (tests): the shells' bursts, combat dust and movement dust.</summary>
         internal FlipbookBursts? Blasts => blasts;
         internal FlipbookBursts? Dust => dust;
+        internal FlipbookBursts? MoveDust => moveDust;
 
         /// <summary>Makes the effects under <paramref name="parent"/>, hidden until a burst. Null when the flipbooks are
         /// missing from Resources (a warning says so): nothing plays then.</summary>
@@ -90,10 +98,14 @@ namespace Statecraft.Game.Map.Units
             var c = go.AddComponent<CombatBursts>();
             c.blasts = new FlipbookBursts(go.transform, "ShellBurst", BlastSlots, blast, Flipbook.ExplosionGrid, HexMaterials.AttackBorder, BlastStyle);
             c.dust = new FlipbookBursts(go.transform, "Dust", DustSlots, cloud, Flipbook.SmokeGrid, HexMaterials.AttackBorder, DustStyle);
-            c.owned.AddRange(c.blasts.Owned); c.owned.AddRange(c.dust.Owned);
+            c.moveDust = new FlipbookBursts(go.transform, "MoveDust", MoveDustSlots, cloud, Flipbook.SmokeGrid, HexMaterials.AttackBorder, MoveDustStyle);
+            c.owned.AddRange(c.blasts.Owned); c.owned.AddRange(c.dust.Owned); c.owned.AddRange(c.moveDust.Owned);
             var cam = Camera.main;
             if (cam != null) c.Face(cam.transform.rotation);
             c.enabled = false;   // runs only while a burst plays
+            // Keep the already-created callback registered for this short-lived map child. Re-subscribing on every first
+            // emission would allocate on that frame; OnDestroy removes it, and Face returns immediately while hidden.
+            RenderPipelineManager.beginCameraRendering += c.Face;
             return c;
         }
 
@@ -121,6 +133,16 @@ namespace Statecraft.Game.Map.Units
             return true;
         }
 
+        /// <summary>Raises one light ground-dust puff behind a moving token. False while the unit layer is hidden.</summary>
+        public bool March(Vector3 at)
+        {
+            if (!gameObject.activeInHierarchy || moveDust == null) return false;
+            double now = Clock();
+            moveDust.Start(at, MoveDustM, now);
+            Run(now);
+            return true;
+        }
+
         void Puffs(Vector3 at, float size, double start, int count, float gap)
         {
             for (int i = 0; i < count; i++)
@@ -136,33 +158,31 @@ namespace Statecraft.Game.Map.Units
         /// allocation.</summary>
         internal void Sample(double now)
         {
-            if (blasts == null || dust == null) return;
-            blasts.Sample(now); dust.Sample(now);
-            if (blasts.Busy == 0 && dust.Busy == 0) enabled = false;
+            if (blasts == null || dust == null || moveDust == null) return;
+            blasts.Sample(now); dust.Sample(now); moveDust.Sample(now);
+            if (blasts.Busy == 0 && dust.Busy == 0 && moveDust.Busy == 0) enabled = false;
         }
 
         void Update() { if (Application.isPlaying) Sample(Clock()); }
 
-        void OnEnable() => RenderPipelineManager.beginCameraRendering += Face;
-
         /// <summary>Hidden (the units' toggle) or stopped: whatever played is dropped, as a gun drops its shot.</summary>
         void OnDisable()
         {
-            RenderPipelineManager.beginCameraRendering -= Face;
-            blasts?.Clear(); dust?.Clear();
+            blasts?.Clear(); dust?.Clear(); moveDust?.Clear();
         }
 
         /// <summary>Turns the bursts to the camera about to render, as UnitGunFire.Face does the gun's.</summary>
         void Face(ScriptableRenderContext _, Camera cam)
         {
-            if (cam.cameraType == CameraType.Preview || cam.cameraType == CameraType.Reflection) return;
+            if (!enabled || !gameObject.activeInHierarchy || cam.cameraType == CameraType.Preview || cam.cameraType == CameraType.Reflection) return;
             Face(cam.transform.rotation);
         }
 
-        void Face(Quaternion view) { blasts?.Face(view); dust?.Face(view); }
+        void Face(Quaternion view) { blasts?.Face(view); dust?.Face(view); moveDust?.Face(view); }
 
         void OnDestroy()
         {
+            RenderPipelineManager.beginCameraRendering -= Face;
             foreach (var o in owned) if (o != null) { if (Application.isPlaying) Destroy(o); else DestroyImmediate(o); }
             owned.Clear();
         }

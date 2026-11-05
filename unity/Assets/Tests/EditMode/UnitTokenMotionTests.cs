@@ -286,6 +286,62 @@ public class UnitTokenMotionTests
     }
 
     [Test]
+    public void TheFireCueStartsWithTheActualTakeAndReportsWhenNoneAppears()
+    {
+        var a = Figure();
+        a.enabled = false;
+        var motion = token.AddComponent<UnitTokenMotion>();
+        motion.enabled = false;
+        int started = 0, missed = 0;
+        Assert.IsFalse(motion.PlayAttack(() => started++, () => missed++));
+        Assert.AreEqual((0, 0), (started, missed), "a waiting attack has made neither decision");
+        motion.Tick(0.05f);
+        a.enabled = true; motion.RefreshPose();
+        Assert.AreEqual((1, 0), (started, missed), "the cue starts when the delayed take becomes visible");
+        motion.Tick(1f);
+        Assert.AreEqual((1, 0), (started, missed), "the completed take reports once");
+
+        a.enabled = false;
+        Assert.IsFalse(motion.PlayAttack(() => started++, () => missed++));
+        motion.Tick(UnitTokenMotion.AttackWaitS);
+        Assert.AreEqual((1, 1), (started, missed), "the cue falls back only after the wait finds no take");
+    }
+
+    [Test]
+    public void ADefenderReactionComposesWithItsSlideAndIsDroppedWhenHidden()
+    {
+        var motion = token.AddComponent<UnitTokenMotion>();
+        var flash = new GameObject("hit flash").AddComponent<MeshRenderer>();
+        flash.transform.SetParent(token.transform, false); flash.enabled = false;
+        motion.HitFlash = flash;
+        motion.enabled = false;
+        var from = Vector3.right * 1000f;
+        motion.Begin(from);
+        motion.Tick(UnitTokenMotion.Duration * 0.25f);
+        var slide = Vector3.Lerp(from, Vector3.zero, 0.25f);
+        Assert.IsTrue(motion.PlayHit()); Assert.IsTrue(motion.Reacting); Assert.IsTrue(flash.enabled);
+        motion.Tick(0.04f);
+        slide = Vector3.Lerp(from, Vector3.zero, 0.25f + 0.04f / UnitTokenMotion.Duration);
+        Assert.Greater(Vector3.Distance(slide, token.transform.position), 1f, "the shake is added to the slide");
+        motion.Tick(UnitTokenMotion.HitFlashS);
+        Assert.IsFalse(flash.enabled, "the plate flash is brief");
+        motion.Tick(UnitTokenMotion.HitDurationS - 0.04f - UnitTokenMotion.HitFlashS);
+        slide = Vector3.Lerp(from, Vector3.zero,
+            0.25f + UnitTokenMotion.HitDurationS / UnitTokenMotion.Duration);
+        Assert.IsFalse(motion.Reacting);
+        Assert.Less(Vector3.Distance(slide, token.transform.position), 1e-3f, "the shake returns exactly to the slide");
+
+        Assert.IsTrue(motion.PlayHit()); motion.Tick(0.04f);
+        token.SetActive(false);
+        typeof(UnitTokenMotion).GetMethod("OnDisable", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(motion, null);
+        Assert.IsFalse(motion.Reacting); Assert.IsFalse(motion.Moving);
+        Assert.IsFalse(flash.enabled); Assert.AreEqual(Vector3.zero, token.transform.position);
+        token.SetActive(true);
+        motion.Tick(0f);
+        Assert.IsFalse(motion.Reacting, "shown again, the hidden reaction does not resume");
+    }
+
+    [Test]
     public void AHiddenTokensAttackIsDroppedNotKept()
     {
         var a = Figure();

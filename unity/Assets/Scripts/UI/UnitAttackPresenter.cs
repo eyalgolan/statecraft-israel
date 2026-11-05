@@ -19,15 +19,21 @@ namespace Statecraft.Game.UI
         readonly Func<int, bool> play;
         readonly Func<CombatHit, bool>? hit;
         readonly Func<int, bool>? destroyed;
+        readonly Func<CombatHit, bool>? defenderHit;
+        readonly Func<int, Action, Action, bool>? timedPlay;
 
         /// <param name="play">Plays a sim unit's attack (UnitLayer.PlayAttack); false when its token cannot.</param>
         /// <param name="hit">Plays an engagement's hit on the hex it attacked (UnitLayer.PlayHit), or null.</param>
         /// <param name="destroyed">Raises a destroyed sim unit's dust (UnitLayer.PlayDestroyed), or null.</param>
-        public UnitAttackPresenter(SimBridge bridge, Func<int, bool> play, Func<CombatHit, bool>? hit = null, Func<int, bool>? destroyed = null)
+        /// <param name="defenderHit">Shakes and flashes the drawn defenders after positive aggregate loss, or null.</param>
+        /// <param name="timedPlay">Production attack path that reports the actual fire-take start or its missed wait.</param>
+        public UnitAttackPresenter(SimBridge bridge, Func<int, bool> play, Func<CombatHit, bool>? hit = null,
+            Func<int, bool>? destroyed = null, Func<CombatHit, bool>? defenderHit = null,
+            Func<int, Action, Action, bool>? timedPlay = null)
         {
             this.bridge = bridge ?? throw new ArgumentNullException(nameof(bridge));
             this.play = play ?? throw new ArgumentNullException(nameof(play));
-            this.hit = hit; this.destroyed = destroyed;
+            this.hit = hit; this.destroyed = destroyed; this.defenderHit = defenderHit; this.timedPlay = timedPlay;
             bridge.CombatResolved += Resolved;
         }
 
@@ -35,10 +41,36 @@ namespace Statecraft.Game.UI
         {
             foreach (var line in lines)
             {
-                foreach (int id in Attackers(line)) play(id);
-                if (hit != null && HitOf(line, IsGuns) is CombatHit h) hit(h);
+                var parsed = HitOf(line, IsGuns);
+                if (parsed is CombatHit h && h.DefenderLoss > 0 && defenderHit != null && timedPlay != null
+                    && Count(line, out int attackerCount))
+                {
+                    var cue = new DefenderCue(attackerCount, h, defenderHit);
+                    foreach (int id in Attackers(line)) timedPlay(id, cue.Started, cue.Missed);
+                }
+                else
+                {
+                    foreach (int id in Attackers(line)) play(id);
+                    if (parsed is CombatHit immediate && immediate.DefenderLoss > 0) defenderHit?.Invoke(immediate);
+                }
+                if (parsed is CombatHit impact) hit?.Invoke(impact);
                 if (destroyed != null && line.Key == WhyKeys.Destroyed && line.Units.Count > 0) destroyed(line.Units[0].Id);
             }
+        }
+
+        /// <summary>One engagement's group cue: the first actual fire take reacts; if none can show, the last miss does.</summary>
+        sealed class DefenderCue
+        {
+            int left;
+            bool shown;
+            readonly CombatHit hit;
+            readonly Func<CombatHit, bool> play;
+
+            internal DefenderCue(int attackers, CombatHit hit, Func<CombatHit, bool> play)
+            { left = attackers; this.hit = hit; this.play = play; }
+
+            internal void Started() { if (!shown) { shown = true; play(hit); } }
+            internal void Missed() { if (left > 0) left--; if (!shown && left == 0) { shown = true; play(hit); } }
         }
 
         /// <summary>True for a unit type of the guns' class (Combat.ArtilleryClass), as the sim's R-COMBAT-007 reads it.</summary>
@@ -66,7 +98,9 @@ namespace Statecraft.Game.UI
             for (int i = 0; i < count; i++) { if (isGuns(engagement.Units[i].Type)) guns = true; else smallArms = true; }
             var defenders = new int[engagement.Units.Count - count];
             for (int i = count; i < engagement.Units.Count; i++) defenders[i - count] = engagement.Units[i].Id;
-            return new CombatHit(q, r, guns, smallArms, defenders);
+            int defenderLoss = int.TryParse(engagement.Args[3], NumberStyles.None, CultureInfo.InvariantCulture, out int loss)
+                && loss > 0 ? loss : 0;
+            return new CombatHit(q, r, guns, smallArms, defenderLoss, defenders);
         }
 
         static bool Count(Cause engagement, out int count)

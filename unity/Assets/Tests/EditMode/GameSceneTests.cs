@@ -65,6 +65,14 @@ public class GameSceneTests
         var play = (Func<int, bool>)typeof(UnitAttackPresenter).GetField("play", flags)!.GetValue(presenters[0])!;
         Assert.AreSame(root.Units, play.Target, "it plays on the game's unit layer");
         Assert.AreEqual(nameof(Statecraft.Game.Map.Units.UnitLayer.PlayAttack), play.Method.Name);
+        var defenderHit = (Func<Statecraft.Game.Map.Units.CombatHit, bool>)typeof(UnitAttackPresenter)
+            .GetField("defenderHit", flags)!.GetValue(presenters[0])!;
+        Assert.AreSame(root.Units, defenderHit.Target, "the defender reaction uses the game's unit layer");
+        Assert.AreEqual(nameof(Statecraft.Game.Map.Units.UnitLayer.PlayDefenderHit), defenderHit.Method.Name);
+        var timedPlay = (Func<int, Action, Action, bool>)typeof(UnitAttackPresenter)
+            .GetField("timedPlay", flags)!.GetValue(presenters[0])!;
+        Assert.AreSame(root.Units, timedPlay.Target, "the reaction is timed through the game's attack path");
+        Assert.AreEqual(nameof(Statecraft.Game.Map.Units.UnitLayer.PlayAttack), timedPlay.Method.Name);
     }
 
     [Test]
