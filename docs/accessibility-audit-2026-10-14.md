@@ -470,16 +470,18 @@ The reasoning is K3's, not wider: a bar is always in sight, a list is reached by
 that hold labels only (`why-rows`, `defence-body`, the event card's text) have nothing to Tab to, while `KeyScroll`
 gives PageUp, PageDown, Home and End with or without focus. Focusability only: dragging and the wheel are untouched.
 
-Three views are left out of the sweep, because for them that reasoning does not hold: `turn-report-rows`,
-`end-screen-rows` and `capture-scroll`. `KeyScroll` has no target for any of them, `GameRoot` switches the paging
-keys off entirely while the turn report or the end screen is open, and their rows are plain labels, so Tab reaches
-nothing inside them. Taking their bar out would leave no keyboard route at all, which is worse than a stray stop.
+Four views are left out of the sweep, because for them that reasoning does not hold: `turn-report-rows`,
+`end-screen-rows`, `capture-scroll` and, since #1853 (28 October), `info-panel` (`FocusScroll.OnlyReachableByTheirBar`).
+`KeyScroll` has no target for any of them, and `GameRoot` switches the paging keys off entirely while the turn report
+or the end screen is open. The first three hold plain labels, so Tab reaches nothing inside them, and the info panel's
+facts are labels too (#40), so Tab does not reach those either. Taking their bar out would leave no keyboard route at
+all, which is worse than a stray stop.
 Giving `KeyScroll` a route to them is the better answer and is its own change.
 
 Pinned in EditMode: `ScrollBarTabStopTests` (in a 1280x420 window the Budget's and Defence's bars take no stop,
 with the overflow asserted as a precondition so the test cannot pass vacuously; the Cabinet stays at zero; no
-`ScrollView` in the tree keeps a focusable scroller, slider or arrow button apart from the three above; and those
-three do keep theirs, so the exclusion cannot be dropped by accident). No UI string was added, so nothing goes
+`ScrollView` in the tree keeps a focusable scroller, slider or arrow button apart from the four above; and those
+four do keep theirs, so the exclusion cannot be dropped by accident). No UI string was added, so nothing goes
 to #564.
 
 ## The focus rule looks past the element's own display, 23 October 2026
