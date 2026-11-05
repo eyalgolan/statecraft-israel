@@ -1826,6 +1826,12 @@ namespace Statecraft.Sim
                     foreach (var k in CampKinds.Prepend(Projects.YishuvKind))
                         if (x.Kinds.Contains(k))
                             throw new ContentException(sf, at + ".kinds", $"a swamp site cannot also be a {k} site (its built record is its drained state)");
+                // R-SITE-004 (#2599): nor may a yishuv site be a camp site: they would share one built record, so building the yishuv
+                // would give the city the camp's facility (Training.HasFacility) without the camp action.
+                if (x.Kinds.Contains(Projects.YishuvKind))
+                    foreach (var k in CampKinds)
+                        if (x.Kinds.Contains(k))
+                            throw new ContentException(sf, at + ".kinds", $"a yishuv site cannot also be a {k} site (its built record is its built camp)");
                 if (x.Kinds.Contains(Projects.YishuvKind))
                 {
                     // R-SITE-005 (Q-SITE-3): one yishuv per hex, so SettlementPlacer keeps one kit per hex; other kinds may share it.
