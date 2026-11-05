@@ -9,6 +9,12 @@ using UnityEngine;
 
 public class UnitShowcaseTests
 {
+    // These tests are about the code-built models. An authored model in Resources/Units/Authored (#2734's Spitfire) would
+    // replace one in every Spawn, so each test starts with none; the authored tests set their own (AuthoredModel is a seam).
+    System.Func<string, GameObject> realAuthoredModel;
+    [SetUp] public void CodeBuiltModels() { realAuthoredModel = UnitShowcase.AuthoredModel; UnitShowcase.AuthoredModel = _ => null; }
+    [TearDown] public void RestoreAuthoredModels() { if (realAuthoredModel != null) UnitShowcase.AuthoredModel = realAuthoredModel; }
+
     static Mesh[] AllMeshes() => new[]
     {
         UnitModels.Rifleman(UnitModels.Headgear.SlouchHat, UnitModels.RiflePose.Ready, false, "a"),
@@ -443,6 +449,42 @@ public class UnitShowcaseTests
             }
         }
         finally { RenderSettings.sun = sunWas; Object.DestroyImmediate(sun.gameObject); Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>The authored 101 Squadron Spitfire (#2734), once it is in Resources/Units/Authored: the prefab the game loads
+    /// for the type has a DIRECT child named UnitShowcase.AuthoredPropellerName (UnitShowcase.FlyingSpitfire finds it under
+    /// the root Piece renames "Airframe"), with a mesh, its pivot on the centre line ahead of the airframe, at rest
+    /// (identity rotation, as ShowcaseFlight overwrites it), so the flight turns it and its blur fits its blades. Ignored
+    /// until the model lands.</summary>
+    [Test]
+    public void TheAuthoredSpitfireHasADirectPropellerChildTheFlightCanTurn()
+    {
+        var prefab = Resources.Load<GameObject>(UnitShowcase.AuthoredFolder + UnitShowcase.SpitfireType);
+        if (prefab == null) Assert.Ignore("no authored Spitfire in Resources yet (#2734)");
+        var prop = prefab.transform.Find(UnitShowcase.AuthoredPropellerName);
+        Assert.IsNotNull(prop, $"a direct child named {UnitShowcase.AuthoredPropellerName}");
+        Assert.IsNotNull(prop.GetComponentInChildren<MeshFilter>()?.sharedMesh, "its blades are a mesh");
+        Assert.AreEqual(Quaternion.identity, prop.localRotation, "at rest: ShowcaseFlight sets its turn about local +z");
+        Assert.AreEqual(Vector3.one, prop.localScale);
+        Assert.AreEqual(0f, prop.localPosition.x, 0.01f, "the hub on the centre line");
+        var others = prefab.GetComponentsInChildren<MeshFilter>(true).Where(f => !f.transform.IsChildOf(prop)).Select(f => f.sharedMesh.bounds).ToList();
+        Assert.IsNotEmpty(others, "an airframe besides the propeller");
+        Assert.Greater(prop.localPosition.z, others.Max(b => b.center.z), "the propeller is at the nose (+z)");
+
+        // And through the real showcase: the flight turns that propeller and it carries the blur.
+        UnitShowcase.AuthoredModel = realAuthoredModel;
+        var map = BuildMap();
+        try
+        {
+            var root = UnitShowcase.Spawn(map, still: true);
+            var spawned = root.transform.Find("Spitfire1948/Airframe/" + UnitShowcase.AuthoredPropellerName);
+            Assert.IsNotNull(spawned, "Airframe/Propeller after Piece renames the prefab's root");
+            var flight = root.GetComponentInChildren<ShowcaseFlight>();
+            Assert.AreSame(spawned, typeof(ShowcaseFlight).GetField("propeller", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(flight));
+            Assert.IsNotNull(spawned.Find(UnitShowcase.PropellerBlurName), "the blur on it");
+            Assert.IsNotNull(flight.transform.Find(UnitShowcase.ShadowName), "the soft shadow");
+        }
+        finally { Object.DestroyImmediate(map.gameObject); }
     }
 
     static Material Load(string name) => AssetDatabase.LoadAssetAtPath<Material>($"Assets/Materials/{name}.mat");
