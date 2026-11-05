@@ -41,3 +41,34 @@ The full-resolution frames are in `before/` and `after/`.
 - The token's new spot is next to the army token north of it (soldiers on a plinth, near Netanya). At 31 km the 101 badge now sits on that token's plinth. At 12 km the plinth's rim shows round the badge at the top of the frame.
 - At 6 km the badge is above the frame in both BEFORE and AFTER, so that view shows only the trees.
 - Unity rewrote `prickly_pear-rock.mat`, `tent-rock.mat` and `ProjectSettings.asset` on import in both trees, as on every run. They were restored, and the worktree was left clean.
+
+## v4: re-shot at the new #2751 head (5 Nov)
+
+| | SHA |
+|---|---|
+| BEFORE (origin/main, unchanged) | `ae4bfdaab5e92815faed8515ecc2604aed52c8ea` |
+| AFTER v4 (#2751 head) | `2532a4d05d7c0ec456c9250a3a8dde9363dbc88f` |
+| AFTER v3 (old #2751 head, above) | `b9afed44fface9512f9df6c776254f9295302aa2` |
+
+Between BEFORE and AFTER v4 are only eyalgolan commits (`d18aabe60`, `fa349ee78`, `b9afed44f`, `dc7a50781`, `448b2f2dc`, `2532a4d05`). The three new ones change only `UnitLayer.cs` (the badge), its test and `docs/units.md`.
+
+Same rig and cameras as v3: `E21Park2751.cs` and `run.sh` are byte-identical, so the BEFORE frames in `before/` are reused. Both runs (he_IL and en_US) passed 1/1. Unity rewrote the same three files on import; they were restored. `sbs2751v4.py` is the v3 strip script with the tags and labels as arguments.
+
+- `strips-v4/`: BEFORE ae4bfdaab | AFTER 2532a4d05 (same layout and outlines as `strips/`).
+- `strips-v4-vs-v3/`: old head b9afed44f | new head 2532a4d05, same camera in both panels.
+- `after-v4/`: full-resolution AFTER frames. `crops-v4/`: 2x crops of the badge by the Netanya plinth at 31 km.
+
+What the v4 frames show (EN and HE give the same geometry):
+
+| | v3 (b9afed44f) | v4 (2532a4d05) |
+|---|---|---|
+| Token hex / spot | -1,19 at (61919, 305823) | the same |
+| Badge, 12 km | y -10 to 152, top half under the HUD bar | x 452-614, y 175-337: all of it shows, below the bar |
+| Badge vs tail box, 12 km | above it (bottom 152, tail top 160) | left of it (right edge 614, tail left 625) |
+| Badge, 31 km | x 901-995, y 327-420: on the Netanya soldiers' plinth | x 743-837, y 420-513: clear of the plinth, left of the tail box (848) |
+| Trees on the footprint / houses in the span | 0 / 0 | 0 / 0 |
+
+Odd things seen:
+- The badge now sits beside the aircraft, to the left of its tailplane over the beach, not over the fuselage.
+- In the `sqn101-fixed-normal-31km` view (camera aimed on the BEFORE plane centre, 31 km depth), the badge's top-right corner still overlaps the lower-left rim of the Netanya plinth (`crops-v4/fixed-normal-31km-en-x2.png`). In the view aimed on the plane it is clear by a few pixels.
+- At 6 km the badge is still above the frame.
