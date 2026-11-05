@@ -704,7 +704,7 @@ def publish_night(night: Night, state: State, gh: GitHub, itch, zips: tuple[Path
     since = prev_sha or prev_tag
     # %aN is the author name after .mailmap, so a mailmap entry gives a contributor their credited name (#2654)
     log = _git(runner, night.cfg.clone, "log", "--format=%s%x1f%aN", f"{since}..{night.sha}")
-    changes = [(s, a) for s, _, a in (ln.partition("\x1f") for ln in log.splitlines() if ln)]
+    changes = [(s, a) for s, _, a in (ln.partition("\x1f") for ln in log.split("\n") if ln)]
     notes = night.run_dir / "release-notes.md"
     notes.write_text(release_notes(version=night.version, sha=night.sha, since=since, changes=changes,
                                    sha256_lines=sha256_lines(list(zips))), encoding="utf-8")

@@ -554,6 +554,21 @@ def test_release_notes_label_the_list_as_commit_subjects_not_quotes():
     assert f"{heading}\n\n- Content: housing_repair's Hebrew name is owner-approved (#2415) (by Beri)\n" in text
 
 
+def test_release_notes_neutralise_mentions_and_links_in_author_names():
+    # An author name is a GitHub profile name nobody reviews; in a public release body "@x" would mention and
+    # "[x](url)" would link (#2654 review, SHOULD 1).
+    text = gp.release_notes(version=VERSION, sha=SHA, since="v0.3.1",
+                            changes=[("Fix a thing", "@someone"), ("Add a thing", "[x](https://example.com)")],
+                            sha256_lines=[])
+    assert "(by @someone)" not in text and "@\u200dsomeone" in text
+    assert "[x](" not in text and "\\[x\\](https://example.com)" in text
+    tricky = gp.release_notes(version=VERSION, sha=SHA, since="v0.3.1", changes=[("Fix", "\\[x\\](https://example.com)")],
+                              sha256_lines=[])
+    assert "(by \\\\\\[x\\\\\\](https://example.com))" in tricky   # a name's own backslashes are escaped too
+    assert "(by \\<http://e.com>)" in gp.release_notes(version=VERSION, sha=SHA, since="v0.3.1",
+                                                      changes=[("Fix", "<http://e.com>")], sha256_lines=[])
+
+
 def test_unzip_extracts_into_the_folder(tmp_path):
     z = make_zip(tmp_path / "a.zip")
     out = gp.unzip_to(z, tmp_path / "out")

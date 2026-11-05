@@ -1192,6 +1192,14 @@ def test_release_targets_the_preflight_commit(night, env, pub, served):
     assert (night.run_dir / "latest-before-publish.txt").read_text() == "v0.3.1\n"
 
 
+def test_a_subject_with_a_unicode_line_break_stays_one_line_with_its_author(night, env, pub, served):
+    # str.splitlines() also breaks on U+0085 and U+2028, which would print the first half as "(by )" (#2654 review).
+    clone = str(night.cfg.clone)
+    env.runner.rules.insert(0, (("git", "-C", clone, "log", "--format=%s%x1f%aN"), 0, "Fix\x85a thing\x1fBeri\n", None))
+    publish(night, ns.State(last_published=last_published()), FakeGH(), pub, env)
+    assert "- Fix\x85a thing (by Beri)" in (night.run_dir / "release-notes.md").read_text()
+
+
 def test_the_first_night_fetches_the_release_tag_before_resolving_it(night, env):
     clone = str(night.cfg.clone)
     env.runner.add(["git", "-C", clone, "fetch"])
