@@ -674,6 +674,180 @@ public class UnitsInPlayTests
         return plinths.Any(f => (f.centre - at).sqrMagnitude < (f.radius + crown) * (f.radius + crown));
     }
 
+    static Bounds MeshBounds(Transform root, bool local)
+    {
+        Bounds? all = null;
+        foreach (var f in root.GetComponentsInChildren<MeshFilter>(true))
+        {
+            if (f.sharedMesh == null || f.GetComponentInParent<UnitBadge>(true) != null) continue;
+            var b = f.sharedMesh.bounds;
+            for (int c = 0; c < 8; c++)
+            {
+                var p = f.transform.TransformPoint(new Vector3((c & 1) == 0 ? b.min.x : b.max.x,
+                    (c & 2) == 0 ? b.min.y : b.max.y, (c & 4) == 0 ? b.min.z : b.max.z));
+                if (local) p = root.InverseTransformPoint(p);
+                if (all is Bounds a) { a.Encapsulate(p); all = a; } else all = new Bounds(p, Vector3.zero);
+            }
+        }
+        Assert.IsTrue(all.HasValue, root.name + " has mesh geometry");
+        return all!.Value;
+    }
+
+    static Rect ScreenRect(Camera cam, IEnumerable<Vector3> points)
+    {
+        float x0 = float.MaxValue, y0 = float.MaxValue, x1 = float.MinValue, y1 = float.MinValue;
+        foreach (var p in points)
+        {
+            var q = cam.WorldToScreenPoint(p);
+            x0 = Mathf.Min(x0, q.x); y0 = Mathf.Min(y0, q.y); x1 = Mathf.Max(x1, q.x); y1 = Mathf.Max(y1, q.y);
+        }
+        return Rect.MinMaxRect(x0, y0, x1, y1);
+    }
+
+    static IEnumerable<Vector3> Corners(Bounds b)
+    {
+        for (int c = 0; c < 8; c++)
+            yield return new Vector3((c & 1) == 0 ? b.min.x : b.max.x, (c & 2) == 0 ? b.min.y : b.max.y,
+                (c & 4) == 0 ? b.min.z : b.max.z);
+    }
+
+    static Transform Aircraft(MapScene map) => map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens/squadron_101/Aircraft");
+
+    /// <summary>Issue #2729 option 1: the parked fighter gets one circular tree hole centred on its renderer footprint's
+    /// world-XZ box and reaching all four corners. The planted-tree assertion makes the hide check bite.</summary>
+    [Test]
+    public void ParkedSquadronLeavesNoKitTreeUnderItsFootprint()
+    {
+        // Red-first prediction at ae4bfdaab: fails because the air branch adds no tree hole.
+        var map = BuildMapWithTrees();
+        try
+        {
+            var veg = map.GetComponentInChildren<Statecraft.Game.Map.Kits.VegetationLayer>(true);
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.Show(SimBridgeGddTests.Legacy, StateAt(new DateTime(1948, 10, 20), 1, 0.8));
+            var aircraft = Aircraft(map); Assert.IsNull(aircraft.GetComponent<ShowcaseFlight>(), "security below 4 parks the aircraft");
+            var bounds = MeshBounds(aircraft, local: false);
+            var centre = new Vector2(bounds.center.x, bounds.center.z);
+            var holes = layer.TreeHoles.Where(h => (h.centre - centre).sqrMagnitude < 1f).ToList();
+            Assert.AreEqual(1, holes.Count, "the parked aircraft has exactly one renderer-sized tree hole");
+            foreach (var x in new[] { bounds.min.x, bounds.max.x })
+                foreach (var z in new[] { bounds.min.z, bounds.max.z })
+                    Assert.LessOrEqual((new Vector2(x, z) - holes[0].centre).magnitude, holes[0].radius + 0.1f,
+                        "every corner of the aircraft's world-XZ footprint is in its tree hole");
+            bool Intersects(Statecraft.Game.Map.Kits.TreeKind kind, Matrix4x4 m)
+            {
+                var p = m.GetColumn(3); float crown = Statecraft.Game.Map.Kits.VegetationLayer.CrownRadius(kind, m);
+                return (new Vector2(p.x, p.z) - holes[0].centre).magnitude < holes[0].radius + crown;
+            }
+            Assert.Greater(veg.Planted().Count(t => Intersects(t.kind, t.m)), 0, "some planted tree reaches the aircraft footprint");
+            Assert.IsFalse(veg.Drawable().Any(t => Intersects(t.kind, t.m)), "no drawn crown reaches the parked aircraft footprint");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>Issue #2729 option 1: the parked fighter's conservative footprint is the sourced 11.23 m span at 420x,
+    /// as a disc about its renderer centre; no planned town-model rectangle may meet that disc.</summary>
+    /// <summary>#2729: the parked fighter's span radius at the approved aircraft scale (the Spitfire's sourced 11.23 m span
+    /// at UnitShowcase.AircraftScale), written here so the test builds before the fix too.</summary>
+    const float ParkedSpanRadiusM = 11.23f * UnitShowcase.AircraftScale * 0.5f;
+
+    [Test]
+    public void ParkedSquadronStandsClearOfTownBuildings()
+    {
+        // Red-first prediction at ae4bfdaab: fails at the compact Herzliya-area spot, whose clearing is only the token ring.
+        var map = BuildMapWithTrees();
+        try
+        {
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.Show(SimBridgeGddTests.Legacy, StateAt(new DateTime(1948, 10, 20), 1, 0.8));
+            var aircraft = Aircraft(map); Assert.IsNull(aircraft.GetComponent<ShowcaseFlight>(), "security below 4 parks the aircraft");
+            var b = MeshBounds(aircraft, local: false); var flat = new Vector2(b.center.x, b.center.z);
+            var towns = map.GetComponentInChildren<Statecraft.Game.Map.Kits.TownModelLayer>(true);
+            int examined = 0;
+            foreach (var f in map.KitFootprints)
+                foreach (var house in towns.InstancesOf(f.id))
+                {
+                    examined++;
+                    var local = Quaternion.Euler(0f, -house.Yaw, 0f) * new Vector3(flat.x - house.C.x, 0f, flat.y - house.C.y);
+                    var near = new Vector2(Mathf.Clamp(local.x, -0.5f * house.W, 0.5f * house.W),
+                        Mathf.Clamp(local.z, -0.5f * house.D, 0.5f * house.D));
+                    Assert.GreaterOrEqual((new Vector2(local.x, local.z) - near).magnitude, ParkedSpanRadiusM,
+                        $"the parked fighter overlaps {f.id}'s {house.Model} at {house.C}");
+                }
+            Assert.Greater(examined, 0, "planned town houses were examined");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>Issue #2729: at the reported 12 km close view, the tail region is the rear 40% of the aircraft's local-Z
+    /// mesh box (the model contract faces +Z). Its projected rectangle must not meet the projected badge rectangle.</summary>
+    [Test]
+    public void ParkedAircraftBadgeDoesNotCoverItsTailRegion()
+    {
+        // Red-first prediction at ae4bfdaab: fails because the air badge remains at the token centre with no airframe offset.
+        var map = BuildMap(); var cam = Camera.main; var oldPosition = cam.transform.position; var oldRotation = cam.transform.rotation;
+        var oldTarget = cam.targetTexture; var target = new RenderTexture(1920, 1080, 0); cam.targetTexture = target;
+        try
+        {
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.Show(SimBridgeGddTests.Legacy, StateAt(new DateTime(1948, 10, 20), 1, 0.8));
+            var aircraft = Aircraft(map); Assert.IsNull(aircraft.GetComponent<ShowcaseFlight>(), "security below 4 parks the aircraft");
+            var local = MeshBounds(aircraft, local: true);
+            local.max = new Vector3(local.max.x, local.max.y, Mathf.Lerp(local.min.z, local.max.z, 0.4f));
+            var tail = Corners(local).Select(aircraft.TransformPoint).ToList();
+            cam.transform.rotation = Quaternion.Euler(CameraRig.Pitch, 0f, 0f);
+            cam.transform.position = aircraft.position - cam.transform.forward * 12000f;
+            layer.FaceCamera(cam);
+            var badge = aircraft.parent.Find("Badge"); float half = badge.lossyScale.x * 0.5f;
+            var badgeRect = ScreenRect(cam, new[] { badge.position - cam.transform.right * half - cam.transform.up * half,
+                badge.position - cam.transform.right * half + cam.transform.up * half, badge.position + cam.transform.right * half - cam.transform.up * half,
+                badge.position + cam.transform.right * half + cam.transform.up * half });
+            Assert.IsFalse(badgeRect.Overlaps(ScreenRect(cam, tail)), "the badge does not cover the projected rear 40% of the parked fighter");
+            int token = layer.Tokens.ToList().FindIndex(p => p.Token.Unit.Id == "squadron_101");
+            Assert.AreEqual(badge.position, layer.KeepClear[token][0].center, "the names' keep-clear follows the offset badge");
+        }
+        finally
+        {
+            cam.targetTexture = oldTarget; cam.transform.SetPositionAndRotation(oldPosition, oldRotation);
+            UnityEngine.Object.DestroyImmediate(target); UnityEngine.Object.DestroyImmediate(map.gameObject);
+        }
+    }
+
+    /// <summary>Issue #2729 regression guard: a flying aircraft keeps no tree hole and its badge keeps the old centred home,
+    /// including the existing close-view size adjustment.</summary>
+    [Test]
+    public void FlyingAircraftTokenKeepsItsTreeAndBadgeBehaviour()
+    {
+        // Red-first prediction at ae4bfdaab: passes before the fix; it guards the required flying-token non-change and is
+        // intentionally not weakened.
+        var map = BuildMapWithTrees(); var cam = Camera.main; var oldPosition = cam.transform.position; var oldRotation = cam.transform.rotation;
+        var oldTarget = cam.targetTexture; var target = new RenderTexture(1920, 1080, 0); cam.targetTexture = target;
+        try
+        {
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.Show(SimBridgeGddTests.Legacy, StateAt(new DateTime(1948, 10, 20), 5, 0.8));
+            var aircraft = Aircraft(map); Assert.IsNotNull(aircraft.GetComponent<ShowcaseFlight>(), "security 5 flies the aircraft");
+            var token = aircraft.parent; var badge = token.Find("Badge");
+            var spot = layer.Tokens.Single(p => p.Token.Unit.Id == "squadron_101").Spot;
+            var centre = UnitShowcase.Ground(map, new Vector3((float)spot.X, 0f, (float)spot.Z));
+            cam.transform.rotation = Quaternion.Euler(CameraRig.Pitch, 0f, 0f);
+            cam.transform.position = centre - cam.transform.forward * 12000f;
+            layer.FaceCamera(cam);
+            var home = centre + Vector3.up * (UnitBadge.FigureHeightM * UnitShowcase.FigureScale + UnitBadge.LiftM);
+            float size = UnitBadge.SizeFor(Vector3.Dot(home - cam.transform.position, cam.transform.forward), cam.projectionMatrix[1, 1], cam.orthographic);
+            var expected = home - cam.transform.up * (0.5f * (UnitBadge.SizeM - size));
+            Assert.Less((badge.position - expected).magnitude, 0.1f, "the flying badge retains its centred pre-#2729 position");
+            Assert.AreEqual(size, badge.lossyScale.x, 0.1f, "the flying badge retains its close-view size");
+            var airBounds = MeshBounds(aircraft, local: false); var airCentre = new Vector2(airBounds.center.x, airBounds.center.z);
+            Assert.IsFalse(layer.TreeHoles.Any(h => (h.centre - airCentre).sqrMagnitude < 1f), "a flying aircraft adds no tree hole");
+        }
+        finally
+        {
+            cam.targetTexture = oldTarget; cam.transform.SetPositionAndRotation(oldPosition, oldRotation);
+            UnityEngine.Object.DestroyImmediate(target); UnityEngine.Object.DestroyImmediate(map.gameObject);
+        }
+    }
+
     /// <summary>Issue #249: on every date the units are checked on, no kit tree that is drawn has its crown within a shown
     /// figure's boots (the boot radius plus the tree's crown radius), and some trees were in the way, so the check bites.</summary>
     [Test]
