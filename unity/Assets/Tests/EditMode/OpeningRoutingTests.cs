@@ -11,6 +11,7 @@ using Statecraft.Game.Boot;
 using Statecraft.Game.Map;
 using Statecraft.Game.UI;
 using Statecraft.Sim;
+using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.TestTools;
