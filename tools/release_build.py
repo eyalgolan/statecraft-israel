@@ -624,8 +624,11 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     (out / "logs").mkdir(parents=True, exist_ok=True)
-    if run(sim, cwd=REPO).returncode != 0:
-        print("FAILED: tools/build_sim_for_unity.py", file=sys.stderr)
+    sim_log = out / "logs/build-sim.log"
+    with sim_log.open("w", encoding="utf-8") as log:
+        sim_result = run(sim, cwd=REPO, stdout=log, stderr=subprocess.STDOUT)
+    if sim_result.returncode != 0:
+        print(f"FAILED: tools/build_sim_for_unity.py; see {sim_log}", file=sys.stderr)
         return 1
     expected = expected_goldens()
     artifacts, all_ok = [], True

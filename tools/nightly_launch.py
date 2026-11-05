@@ -21,7 +21,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Callable
 
-from nightly_state import TZ, Config, Refused, load_config, log_line, notify, record, run_lock
+from nightly_state import TZ, Config, Refused, load_config, log_line, notify, record, run_lock, write_refusal_log
 
 # What `git clean -x` keeps in the clone: Unity's import cache and the Unity-MCP plugin's NuGet download. The same
 # list as unity_postmerge.KEEP (a test keeps them equal; this file runs without the checkout, so it cannot import it).
@@ -59,8 +59,15 @@ def prepare_clone(cfg: Config, git: Callable[..., str] = _git,
 
 
 def _refuse(cfg: Config, home: Path, e: Refused, now: datetime) -> None:
-    line = log_line(now, "REFUSED", tag=None, sha=None, gate=e.gate, log=None)
-    record(home / "LOG.md", cfg.handoff, f"{line} {e.detail}")
+    run_dir = home / "runs" / f"{now.astimezone(TZ):%Y%m%d-%H%M%S}"
+    detail = e.detail
+    try:
+        evidence = write_refusal_log(run_dir, e.gate, detail, e.log)
+    except OSError as error:
+        evidence = None
+        detail = f"{detail}; could not write refusal log: {error}"
+    line = log_line(now, "REFUSED", tag=None, sha=None, gate=e.gate, log=evidence)
+    record(home / "LOG.md", cfg.handoff, f"{line} {detail}")
     notify("Nightly refused", str(e)[:200])
     print(e, file=sys.stderr)
 
