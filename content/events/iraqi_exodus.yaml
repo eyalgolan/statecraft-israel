@@ -10,7 +10,10 @@ text_he: 'עיראק הקפיאה את נכסיהם של היהודים שווי
 anchor: soft
 office: immigration_minister
 # The asset-freeze law of 10 March 1951; the mass airlift ran through 1951.
-from: 1951-03-10
+# R-TURN-002 (#2833; the owner chose "Move both (Recommended)" on 5 November 2026): the window opens on the 15th on
+# or before the decision (the law of 10 March 1951; it opened on 1951-03-10), so the card reaches the player on the turn
+# before it.
+from: 1951-02-15
 to: 1951-07-01
 options:
   - id: airlift
