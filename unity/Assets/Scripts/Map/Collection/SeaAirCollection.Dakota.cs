@@ -311,11 +311,10 @@ namespace Statecraft.Game.Map.Collection
         /// the board camera, 50 degrees down, that hid names in frame while the aircraft itself was off the frame's top edge.</summary>
         internal static Bounds DakotaKeepBox(Vector3 centre, float lag, long step, Vector3 half, float flagUp, float flagRadius)
         {
-            const int Samples = 8; const float Pad = 25f;
             var box = new Bounds();
-            for (int i = 0; i <= Samples; i++)
+            for (int i = 0; i <= DakotaKeepSamples; i++)
             {
-                float u = (float)(step * (double)DakotaKeepStepS + i * (double)DakotaKeepStepS / Samples - lag);
+                float u = (float)(step * (double)DakotaKeepStepS + i * (double)DakotaKeepStepS / DakotaKeepSamples - lag);
                 var o = DakotaLoopOffset(u);
                 var turn = DakotaTurn(u, out var forward, out float bank);
                 var at = centre + new Vector3(o.x, 0f, o.y);
@@ -324,9 +323,14 @@ namespace Statecraft.Game.Map.Collection
                     b.Encapsulate(new Bounds(at - forward * half.x + Vector3.up * (SpitfireLoop.TopOver(half, bank) + flagUp), 2f * flagRadius * Vector3.one));
                 if (i == 0) box = b; else box.Encapsulate(b);
             }
-            box.Expand(2f * Pad);
+            box.Expand(2f * DakotaKeepPadM);
             return box;
         }
+
+        /// <summary>DESIGN VALUES for <see cref="DakotaKeepBox"/>: the points of a step's path it samples (every eighth of the step)
+        /// and the pad (m) it keeps on every side beyond the aircraft and its flag there.</summary>
+        internal const int DakotaKeepSamples = 8;
+        internal const float DakotaKeepPadM = 25f;
 
         /// <summary>Half the world box of a box of half size <paramref name="half"/> turned by <paramref name="turn"/>, as a
         /// renderer's bounds are: each axis the sum of the turned half sides' reach along it.</summary>

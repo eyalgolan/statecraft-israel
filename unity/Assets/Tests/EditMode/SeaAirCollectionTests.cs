@@ -503,9 +503,28 @@ public class SeaAirCollectionTests
                 Assert.Greater(keep.min.y, pb.min.y - 400f, $"{planes[p].name}'s box stops near its underside at {t:0.0} s, not 3.7 km under it");
             }
         }
+        // On the pass in (the lead's first step, its clock lag 0): the box may be no wider north-south than the aircraft as drawn
+        // at the box's own sample points through that step (its heading turns about 0.03 rad in the step, so the swept span
+        // is wider than the level wingspan: by about 2 x half its length x 0.03, ~200 m, plus its bank and the path's drift),
+        // plus the pad on both sides (DakotaKeepPadM), plus one more pad's slack for the propeller discs' reach past the
+        // airframe and the bow between samples. #2613's first bound, the level wingspan + 300 m, ignored the step's turn.
+        float step = SeaAirCollection.DakotaKeepStepS; int samples = SeaAirCollection.DakotaKeepSamples;
+        Bounds swept = default;
+        for (int k = 0; k <= samples; k++)
+        {
+            loops[0].Place(Mathf.Min(k * step / samples, step - 1e-3f));   // the step's last point, still in the step
+            var drawn = WorldBounds(planes[0].gameObject);
+            if (k == 0) swept = drawn; else swept.Encapsulate(drawn);
+        }
         loops[0].Place(0f);
         var lead = WorldBounds(planes[0].gameObject); var box = DakotaKeepOf(layer, planes[0].gameObject)!.Value;
-        Assert.Less(box.size.z, lead.size.z + 300f, "on the pass in, no wider north-south than the wingspan and the pad");
+        float widest = swept.size.z + 2f * SeaAirCollection.DakotaKeepPadM + SeaAirCollection.DakotaKeepPadM;
+        Assert.Less(box.size.z, widest, "on the pass in, no wider north-south than the aircraft through the step and the pad");
+        // The bound still catches an oversized box: twice as wide, or only a pad wider on each side.
+        var doubled = box; doubled.size = new Vector3(box.size.x, box.size.y, 2f * box.size.z);
+        Assert.GreaterOrEqual(doubled.size.z, widest, "a doubled box fails the bound");
+        var padded = box; padded.Expand(new Vector3(0f, 0f, 2f * SeaAirCollection.DakotaKeepPadM));
+        Assert.GreaterOrEqual(padded.size.z, widest, "a box a pad wider on each side fails the bound");
         Assert.Less(box.size.x, lead.size.x + 0.5f * SeaAirCollection.SizeOf(SeaAirCollection.Dakota) + 2f * 640f,
             "no longer east-west than its length, the flag over its tail and a step's flight");
     }
