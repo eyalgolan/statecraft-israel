@@ -1,0 +1,7 @@
+start 10:01:49 HEAD=06f4ae6b82ec517c4858bbf6fb551db25c19528e dirty=0
+build-sim exit 0
+warmup exit 0 ok=1 10:02:11
+run exit 0 total="2" passed="2" failed="0" inconclusive="0" skipped="0" 10:03:18
+lines      176
+porcelain=0 
+DONE
