@@ -38,7 +38,8 @@ public class MinimapReliefTests
 
     /// <summary>The real Game.uxml on the real PanelSettings at w x h, out of its loading state, in English or Hebrew, with the
     /// top bar, the info panel on Lydda's hex (its longest region line), the border layer's caption and the minimap.</summary>
-    static IEnumerator Rendered(int w, int h, bool hebrew, System.Action<VisualElement, MinimapPresenter> check, System.Action<VisualElement>? act = null)
+    static IEnumerator Rendered(int w, int h, bool hebrew, System.Action<VisualElement, MinimapPresenter> check,
+        System.Action<VisualElement>? act = null, bool checkDisposesMini = false, bool wireProductionTipGroups = false)
     {
         var text = hebrew ? He : En;
         var rt = new RenderTexture(w, h, 0);
@@ -55,6 +56,15 @@ public class MinimapReliefTests
         if (hebrew) root.Q("root").AddToClassList(UiLanguage.HebrewClass);
         var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), text);
         var hud = new HudPresenter(root, bridge, text);
+        FeedbackPresenter? feedback = null;
+        SharePresenter? share = null;
+        CommunityIconsPresenter? community = null;
+        if (wireProductionTipGroups)
+        {
+            feedback = new FeedbackPresenter(root, text, "v-test");
+            share = new SharePresenter(root, bridge, text, done => done(new byte[] { 1 }));
+            community = new CommunityIconsPresenter(root, text, feedback, share);
+        }
         var info = new InfoPanelPresenter(root, bridge, text, Names(), regions: Regions());
         var mini = new MinimapPresenter(root, Hexes, text);
         var layer = root.Q<Label>("map-layer");
@@ -71,7 +81,8 @@ public class MinimapReliefTests
         }
         finally
         {
-            mini.Dispose(); info.Dispose(); hud.Dispose();
+            if (!checkDisposesMini) mini.Dispose();
+            info.Dispose(); community?.Dispose(); share?.Dispose(); feedback?.Dispose(); hud.Dispose();
             Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt);
         }
     }
@@ -255,6 +266,45 @@ public class MinimapReliefTests
             Leave(b[2]);
             Assert.AreEqual("", Shown(), "nothing hovered or focused: no tip");
         });
+    }
+
+    /// <summary>#2583: the production HUD, community-icon and minimap HoverTip groups share the one hud-tip label.
+    /// Community and minimap hovers win over a focused rail button; leaving either or disposing the minimap restores it.</summary>
+    [UnityTest]
+    public IEnumerator ProductionPresentersShareTheTipAndRestoreTheFocusedRailButton()
+    {
+        yield return Rendered(1920, 1080, false, (root, mini) =>
+        {
+            var tip = root.Q<Label>(HoverTip.TipName);
+            var rail = root.Q<Button>("nav-cabinet");
+            var community = root.Q<Button>("hud-report");
+            var minimap = root.Q<Button>("minimap-overview");
+            void Enter(Button x) { using var e = PointerEnterEvent.GetPooled(new Event { type = EventType.MouseMove, mousePosition = x.worldBound.center }); e.target = x; x.SendEvent(e); }
+            void Leave(Button x) { using var e = PointerLeaveEvent.GetPooled(new Event { type = EventType.MouseMove, mousePosition = Vector2.zero }); e.target = x; x.SendEvent(e); }
+            void AssertShows(Button x, string because)
+            {
+                Assert.AreEqual(DisplayStyle.Flex, tip.style.display.value, because + ": the shared label is visible");
+                Assert.AreEqual(x.tooltip, tip.text, because + ": the shared label has the button's production tooltip");
+            }
+
+            try
+            {
+                rail.Focus();
+                AssertShows(rail, "focusing the real HUD rail button");
+                Enter(community);
+                AssertShows(community, "hovering the real community Report button");
+                Leave(community);
+                AssertShows(rail, "leaving the community icon restores the still-focused HUD rail button");
+                Enter(minimap);
+                AssertShows(minimap, "hovering the real minimap button");
+                Leave(minimap);
+                AssertShows(rail, "leaving the minimap restores the still-focused HUD rail button");
+                Enter(minimap);
+                AssertShows(minimap, "the minimap owns the shared tip before its presenter is disposed");
+            }
+            finally { mini.Dispose(); }
+            AssertShows(rail, "disposing the minimap presenter restores the still-focused HUD rail button");
+        }, checkDisposesMini: true, wireProductionTipGroups: true);
     }
 
     /// <summary>Review of #584: a switched-off layer's button dims, but its glyph keeps at least 3:1 against its disc

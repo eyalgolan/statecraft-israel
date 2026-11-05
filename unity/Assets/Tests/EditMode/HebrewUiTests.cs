@@ -87,6 +87,33 @@ public class HebrewUiTests
 
     static VisualElement Ui => Object.FindFirstObjectByType<UIDocument>().rootVisualElement;
 
+    /// <summary>#2688: the roomy tier reads physical meter bounds and the gap on the navigation's side, so mirroring the
+    /// top-bar rows does not change whether it fits. This boots each language through GameRoot.Begin on the same panel size.
+    /// Red-first: UpdateRoomy measured from the first to last meter and always towards nav.xMin, so Hebrew never added it.</summary>
+    [UnityTest]
+    public IEnumerator TheHebrewTopBarIsRoomyExactlyWhenTheEnglishTopBarIs()
+    {
+        var roomy = new Dictionary<string, bool>();
+        foreach (var language in new[] { UiLanguage.English, UiLanguage.Hebrew })
+        {
+            var restore = OnTexture(1920, 1080);
+            try
+            {
+                var game = Object.FindFirstObjectByType<GameRoot>();
+                game.Store = new SaveStore(saveDir);
+                game.Language = language;
+                game.Begin(Inputs, 0);
+                for (int i = 0; i < 30 && !(Ui.Q("top-bar").worldBound.width > 0); i++) yield return null;
+                for (int i = 0; i < 6; i++) yield return null;          // geometry and the roomy class settle
+                roomy[language] = Ui.Q("top-bar").ClassListContains(HudPresenter.RoomyClass);
+            }
+            finally { restore(); }
+        }
+
+        Assert.IsTrue(roomy[UiLanguage.English], "1920x1080 English is roomy (PromoHudTests' pinned expectation)");
+        Assert.AreEqual(roomy[UiLanguage.English], roomy[UiLanguage.Hebrew], "1920x1080 Hebrew matches English");
+    }
+
     // #2045: every Orders.Check refusal (its Refused* constants) has a string in both files, and the Hebrew one is Hebrew,
     // not the sim's English. A missing key throws in UiText's lookup.
     [Test]
@@ -104,16 +131,22 @@ public class HebrewUiTests
         }
     }
 
-    // #2198: the Arms purchase refused at the debt ceiling reaches the end-of-turn toast (ReasonText) in both languages.
+    // #2198, #2590: every localized Arms-purchase refusal reaches the end-of-turn toast (ReasonText) in both languages.
     [Test]
-    public void TheArmsDebtCeilingRefusalHasAStringInBothLanguages()
+    public void EveryArmsPurchaseRefusalHasAStringInBothLanguages()
     {
-        var reason = Statecraft.Sim.Pools.RefusedDebtCeiling;
-        Assert.AreEqual(reason, SimBridge.ReasonText(En, reason), "the English string is the sim's own");
-        var he = SimBridge.ReasonText(He, reason);
-        Assert.AreNotEqual(reason, he, "no Hebrew string for: " + reason);
-        StringAssert.IsMatch("[א-ת]", he, reason);
-        StringAssert.DoesNotMatch("[A-Za-z]", he, reason);
+        foreach (var reason in new[]
+        {
+            Statecraft.Sim.Pools.RefusedDebtCeiling,
+            Statecraft.Sim.Pools.RefusedStockCapacity,
+        })
+        {
+            Assert.AreEqual(reason, SimBridge.ReasonText(En, reason), "the English string is the sim's own");
+            var he = SimBridge.ReasonText(He, reason);
+            Assert.AreNotEqual(reason, he, "no Hebrew string for: " + reason);
+            StringAssert.IsMatch("[א-ת]", he, reason);
+            StringAssert.DoesNotMatch("[A-Za-z]", he, reason);
+        }
     }
 
     // #2072: every Combat.Check and Training.Reinforce refusal (their Refused* constants) has a string in both files. Each
@@ -314,6 +347,85 @@ public class HebrewUiTests
         Assert.AreEqual("עברית", Ui.Q<Button>("start-language-he").text);
         Assert.IsTrue(Marked("start-language-he"), "Hebrew is marked");
         Assert.IsFalse(Marked("start-language-en"));
+    }
+
+    /// <summary>#2552: a save notice belongs to the session as a language-independent key. Rebuilding the open start
+    /// screen through its language choice keeps the notice and renders it in the newly selected language.</summary>
+    [TestCase(UiLanguage.English, UiLanguage.Hebrew)]
+    [TestCase(UiLanguage.Hebrew, UiLanguage.English)]
+    public void AStartScreenSaveNoticeSurvivesALanguageSwitchInTheNewLanguage(string from, string to)
+    {
+        Directory.CreateDirectory(saveDir);
+        File.WriteAllText(Path.Combine(saveDir, SaveStore.AutosaveName), "not a save");
+        LogAssert.Expect(LogType.Warning, new Regex("Autosave (rejected|could not be loaded)"));   // either path gives save.unreadable
+        var game = BootWithStartScreen(new SettingsStore(Path.Combine(saveDir, "settings")), from);
+        var session = game.Bridge!.Session;
+        var fromText = from == UiLanguage.Hebrew ? He : En;
+        var toText = to == UiLanguage.Hebrew ? He : En;
+        Assert.AreEqual(fromText.Format("save.unreadable", fromText["save.reason_other"]), Ui.Q<Label>("toast").text,
+            "the notice is raised in the starting language");
+
+        UiTestKit.Press(Ui.Q<Button>("start-language-" + to));
+
+        Assert.AreSame(session, game.Bridge!.Session, "the language switch keeps the session that owns the notice");
+        Assert.IsTrue(StartOpen, "the language switch rebuilds the open start screen");
+        Assert.AreEqual(toText.Format("save.unreadable", toText["save.reason_other"]), Ui.Q<Label>("toast").text,
+            "the retained key is rendered in the new language, not kept as already-rendered text");
+    }
+
+    /// <summary>#2552: a New game replaces the bridge's session without Begin, so the old session's save notice must not come
+    /// back when a language switch then rebuilds the start screen over the new game (Begin with keep, as SwitchLanguage
+    /// calls it). The UI can't reach this today (a New game closes the start screen, so a later switch rebuilds without it),
+    /// so the test drives the two steps directly to pin the invariant. Red-first: without the session check the old
+    /// "could not be loaded" notice is shown again.</summary>
+    [Test]
+    public void ANewGameDropsTheOldSessionsSaveNoticeOnALanguageSwitch()
+    {
+        Directory.CreateDirectory(saveDir);
+        File.WriteAllText(Path.Combine(saveDir, SaveStore.AutosaveName), "not a save");
+        LogAssert.Expect(LogType.Warning, new Regex("Autosave (rejected|could not be loaded)"));
+        var game = BootWithStartScreen(new SettingsStore(Path.Combine(saveDir, "settings")), UiLanguage.English);
+        var stale = En.Format("save.unreadable", En["save.reason_other"]);
+        Assert.AreEqual(stale, Ui.Q<Label>("toast").text, "precondition: the first session raised the notice");
+
+        game.Bridge!.Replace(Statecraft.Sim.GameSession.New(Inputs.Content, 1, Statecraft.Sim.Mode.Historical));   // as NewGamePresenter.Press
+        game.Language = UiLanguage.Hebrew;
+        game.Begin(Inputs, 0, startScreen: true, keep: game.Bridge);
+
+        var toast = Ui.Q<Label>("toast");
+        Assert.AreEqual("", toast.text, "the new game's start screen shows no save notice at all");
+        Assert.AreEqual(DisplayStyle.None, toast.style.display.value, "and the toast is hidden");
+    }
+
+    /// <summary>#2552, the player's route beside the test above: after New game replaces a warned-about saved session, a
+    /// language switch must not bring that session's save notice back. Both start-screen New Game presses, then Settings'
+    /// language choice after the start screen closes. It passes with or without the session check (a closed start screen
+    /// rebuilds with no notices), so it pins the visible behaviour, and the test above pins the check itself.</summary>
+    [Test]
+    public void ANewGameFromTheStartScreenShowsNoOldNoticeAfterALanguageSwitch()
+    {
+        Directory.CreateDirectory(saveDir);
+        var saved = Statecraft.Sim.GameSession.New(Inputs.Content, 9, Statecraft.Sim.Mode.Historical).Save.Write()
+            .Replace("content " + Inputs.Content.Hash, "content " + new string('0', Inputs.Content.Hash.Length));
+        new SaveStore(saveDir).WriteAutosave(saved);
+        LogAssert.Expect(LogType.Warning, "Autosave loaded with a warning: " + Statecraft.Sim.GameSession.ContentChanged);
+        var game = BootWithStartScreen(new SettingsStore(Path.Combine(saveDir, "settings")), UiLanguage.English);
+        var oldSession = game.Bridge!.Session;
+        var stale = En["save.warning." + Statecraft.Sim.GameSession.ContentChanged];
+        Assert.AreEqual(stale, Ui.Q<Label>("toast").text, "precondition: the first session raised the notice");
+
+        UiTestKit.Press(Ui.Q<Button>("start-new-game"));
+        Assert.AreEqual(En["newgame.confirm"], Ui.Q<Label>("toast").text, "the first press arms New Game");
+        UiTestKit.Press(Ui.Q<Button>("start-new-game"));
+        Assert.AreNotSame(oldSession, game.Bridge!.Session, "the second press started a new game");
+        Assert.IsFalse(StartOpen, "NewGamePresenter.Started closes the start screen");
+
+        UiTestKit.Press(Ui.Q<Button>("nav-settings"));
+        UiTestKit.Press(Ui.Q<Button>("settings-language-he"));
+
+        var toast = Ui.Q<Label>("toast");
+        Assert.AreEqual("", toast.text, "the new game shows no notice from the replaced saved session");
+        Assert.AreEqual(DisplayStyle.None, toast.style.display.value, "and the toast is hidden");
     }
 
     /// <summary>A choice on the start screen goes through Settings' own switch: the UI changes at once over the same game,

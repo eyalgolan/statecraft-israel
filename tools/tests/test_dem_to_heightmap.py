@@ -52,3 +52,19 @@ def test_write_heightmap_normalises_and_writes_metadata(tmp_path):
     assert meta["width_km"] == pytest.approx(1.7 * 111.32 * np.cos(np.radians(31.4)), rel=1e-6)
     assert meta["length_km"] == pytest.approx(3.9 * 110.57, rel=1e-6)
     assert "Copernicus" in meta["attribution"]
+
+
+def test_main_refuses_when_every_tile_is_missing(monkeypatch):
+    """#2652: every tile answering 404 (a wrong endpoint, say) is refused, not written as an all-sea map."""
+    monkeypatch.setattr(dem, "tiles_for_bounds", lambda _: [(29, 34), (29, 35)])
+    monkeypatch.setattr(dem, "fetch_tile", lambda *_: None)
+    monkeypatch.setattr(dem, "mosaic", lambda *_: pytest.fail("mosaic must not run without tile data"))
+    with pytest.raises(RuntimeError, match="no DEM tile has data"):
+        dem.main()
+
+
+def test_write_heightmap_refuses_a_flat_grid_before_writing(tmp_path):
+    out = tmp_path / "map"
+    with pytest.raises(ValueError, match="the DEM is flat"):
+        dem.write_heightmap(np.zeros((2, 2), dtype="float32"), dem.BOUNDS, out)
+    assert not out.exists()

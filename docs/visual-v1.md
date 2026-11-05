@@ -1014,7 +1014,7 @@ from the Civ-like prototype's sheet (`captures/pr-1794`, `civ-borders/sheet.png`
 otherwise. Next to main's look, A2's bands keep their weight when the camera pulls out (no far fade); the colour stripe
 is never under 6 px, the light stripe 1 px and the wash 12 px, measured across the edge so they hold under the tilt.
 Both sides wash alike at 0.45, falling as 1 - x squared, so the wash holds well into the hex and reaches a quarter of
-its inradius (about 1,080 m); a light tint of the region's colour covers the territory, 0.12 up close and rising to
+its inradius (about 953 m on 4.4 km hexes); a light tint of the region's colour covers the territory, 0.12 up close and rising to
 0.25 at the overview. Band plus wash never pass half the inradius, so a far hex is not filled by its outline. The
 neutral grey keeps its 0.14 wash and its dashes, never shorter than 8 px. The other variants stay selectable for
 comparison: `?bordervariant=legacy` in the WebGL URL (or `-bordervariant legacy` on desktop and in the editor) draws
@@ -1022,7 +1022,7 @@ main's earlier look exactly, and `a`, `b`, `c`, `b2` and `c2` draw the prototype
 (`MapBorders.VariantRequested`). The paragraphs below describe the drawing every variant shares; their widths, wash
 strengths and the 2 px floor are Legacy's.
 
-**What is drawn.** `MapBorders` (C#) bakes one texel per hex (`RegionHexes`, RGBA8 linear, point-sampled, 47 x 58: r + 256 g
+**What is drawn.** `MapBorders` (C#) bakes one texel per hex (`RegionHexes`, RGBA8 linear, point-sampled, 54 x 66 on the current `hexes.json`: r + 256 g
 the region id, b the style; since issue #195, a's low six bits say which edges border another region) and sets the
 globals; `StatecraftBorders.hlsl`'s `ScBorderApply`, called last in the terrain
 function, draws the band along each edge whose neighbour is in another region. A pixel farther from its hex's edges than
@@ -1140,7 +1140,7 @@ the game's start: the Administrative Divisions (Amendment) Proclamation, 1947 (P
   480 px (`.map-layer`, was 160 px), so the longest label is three lines, checked beside a real event card at seven window
   shapes (`ArmisticeTests.TheLongestMapLabelFitsBesideTheEventCard`). The sub-district layer stays as the base
   while the lines leave gaps. A line is visible as a band only where it bounds a zone or is the Mandate frontier; at
-  5-km hexes two of the three Syrian DMZ parts take no hex (true-polyline overlay: #237).
+  4.4-km hexes two of the three Syrian DMZ parts take no hex (true-polyline overlay: #237).
 
 **Shared edges and the far line (refs #196, `.superpowers/borders-routes-r1/PLAN.md` B1 and B3).** Every sub-district
 is Primary, so where two meet both drew their full band: blue, white, white, blue, about 11-13 px across at gameplay03
@@ -2066,7 +2066,9 @@ place carries on; Lydda and Ramle for the game settlements `lod` and `ramla`; Ne
 - **Labels:** smaller pills (`.map-label-locality`), only nearer than 40 km (`MapLabelsPresenter.LocalityDistanceM`), placed
   after every game settlement with the same declutter rules.
   - Hovering one shows its tooltip, in the UI's language (`ui.lang`).
-  - Touch and keyboard players have no route to the tooltip yet (#245).
+  - A touch tap on a pill shows it, and a second tap on the same pill, or a tap anywhere else, hides it (#245;
+    `MapLabelsPresenter.Tap`, called from `GameRoot`). Keyboard players still have no route to it: only a hovering
+    pointer or a touch reaches the pills.
 - **Units in play (review I5, merged with #250):** the unit tokens keep off the villages and camps as they keep off the
   game towns.
   - The units are placed before the kits are built, since their clearings feed the kit build. So
@@ -2999,8 +3001,9 @@ It describes the windows as small and recessed, not ribbon windows. The strips f
 
 ## HUD round 1: the info panel and the gilt trim (#398, #397)
 
-Art-track gap 4, first step. The gap list and the later steps (the minimap and settlement badges; the top bar and card
-head, which wait for owner rulings) are in the issue.
+Art-track gap 4, first step. The gap list and the later steps (the minimap; the top bar and card head, which wait for
+owner rulings) are in the issue. The settlement badge, the population tier in a city's or town's pill, has shipped:
+owner-approved as shipped (#710, 18 October 2026, "Accept as shipped"; `MapLabelsPresenter.TierClass`).
 - The info panel: before a hex is chosen it is a one-line hint (promo 03 shows no panel until a tile is chosen). The
   hex's facts are icon rows with gold signs (`UiIcon` region, house, village, flag): the region, the settlements, the 1948
   localities and the placement. There are no yields (owner ruling) and no land-use name, because the land-use bake is

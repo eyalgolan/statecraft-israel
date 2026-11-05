@@ -44,6 +44,7 @@ options:
   - id: go_on
     text: Go on
     historical: true
+sources: [{{ url: https://example.org/event, checked: 2026-10-18 }}]
 ";
 
     static Dictionary<string, string> Files() => Fixture.Gdd(new Dictionary<string, string> { ["sites.yaml"] = Fixture.GddSites + Marsh });

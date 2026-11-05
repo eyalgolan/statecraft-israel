@@ -85,10 +85,12 @@ namespace Statecraft.Sim
             var a = Play(baseContent, seed, until, every);
             var b = Play(changed, seed, until, every);
             var sb = new StringBuilder();
-            sb.AppendLine($"Preview: seed {seed}, until {until:yyyy-MM-dd}, changes: {(sets.Count == 0 ? "(none)" : string.Join(", ", sets))}");
+            sb.AppendLine(FormattableString.Invariant(
+                $"Preview: seed {seed}, until {until:yyyy-MM-dd}, changes: {(sets.Count == 0 ? "(none)" : string.Join(", ", sets))}"));
             sb.AppendLine("Nothing is written; content/ is untouched.");
             sb.AppendLine();
-            sb.AppendLine($"Final state, base {a[a.Count - 1].Date:yyyy-MM-dd} hash {a[a.Count - 1].Hash().Substring(0, 8)} -> changed {b[b.Count - 1].Date:yyyy-MM-dd} hash {b[b.Count - 1].Hash().Substring(0, 8)}");
+            sb.AppendLine(FormattableString.Invariant(
+                $"Final state, base {a[a.Count - 1].Date:yyyy-MM-dd} hash {a[a.Count - 1].Hash().Substring(0, 8)} -> changed {b[b.Count - 1].Date:yyyy-MM-dd} hash {b[b.Count - 1].Hash().Substring(0, 8)}"));
             sb.Append(StateDiff.Lines(a[a.Count - 1].Describe(), b[b.Count - 1].Describe()));
             if (show.Count > 0)
             {

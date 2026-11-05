@@ -206,9 +206,15 @@ namespace Statecraft.Sim
 
     public sealed class Portrait
     {
-        public string File { get; set; } = ""; public string License { get; set; } = ""; public string Source { get; set; } = "";
+        public string File { get => file ?? ""; set => file = value; }
+        public string License { get => license ?? ""; set => license = value; }
+        public string Source { get => source ?? ""; set => source = value; }
+        [YamlIgnore] public bool FileGiven => file != null;
+        [YamlIgnore] public bool LicenseGiven => license != null;
+        [YamlIgnore] public bool SourceGiven => source != null;
+        string? file, license, source;
         /// <summary>Where the face is: its centre's height as a share of the picture (0 = top, 1 = bottom), so the event card
-        /// can keep it in view (playtest 2, P2-5). Required for a portrait with a file.</summary>
+        /// can keep it in view (playtest 2, P2-5). Required whenever a portrait object is present.</summary>
         public double? FocusY { get; set; }
     }
 
@@ -1058,7 +1064,14 @@ namespace Statecraft.Sim
         public List<Source> Sources { get; set; } = new List<Source>();
     }
 
-    public sealed class OptionEffect { public string Target { get; set; } = ""; public double Delta { get; set; } }
+    public sealed class OptionEffect
+    {
+        // Nullable behind the double so EventRules can refuse a delta the file left out instead of reading it as 0 (#2512).
+        double? delta;
+        public string Target { get; set; } = "";
+        public double Delta { get => delta ?? 0; set => delta = value; }
+        internal bool HasDelta => delta.HasValue;
+    }
 
     public sealed class EventOption
     {
@@ -1104,8 +1117,11 @@ namespace Statecraft.Sim
     public sealed class UnitOrderEffect
     {
         public string Unit { get; set; } = "";
-        public int Q { get; set; }
-        public int R { get; set; }
+        public int Q { get => q ?? 0; set => q = value; }
+        public int R { get => r ?? 0; set => r = value; }
+        [YamlIgnore] public bool QGiven => q.HasValue;
+        [YamlIgnore] public bool RGiven => r.HasValue;
+        int? q, r;
     }
 
     /// <summary>An option's change to one field of a city (R-EFX-004): housing_capacity or job_slots by whole units, or the
@@ -1200,6 +1216,11 @@ namespace Statecraft.Sim
         /// Phase 6 PR 9, #801): it fires only once the player's Deport has depopulated that place, has exactly one option,
         /// resolves without a draw and carries the <c>displacement</c> tag. Empty for every other event.</summary>
         public string Deported { get; set; } = "";
+        /// <summary>The front (one of Prisoners.Fronts) whose armistice this card is, on that front's own card only
+        /// (armistice_&lt;front&gt;; R-WAR-008, #2478): under exact gdd-0.3 it also comes while Armistice.MayOfferEarly holds for
+        /// that front, before its hard-anchor date and again after a refusal, and then takes the first soft slot (R-EVT-002).
+        /// Empty for every other event.</summary>
+        public string FrontQuiet { get; set; } = "";
         /// <summary>The place among the same turn's cards of the same `from` (R-EVT-006): a lower order comes first, before
         /// the id decides. Default 0; degania_defence has 1, so One Army opens the game (owner, 24 October 2026, #1568).</summary>
         public int Order { get; set; }

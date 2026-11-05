@@ -22,6 +22,8 @@
 # and nothing added. They come together or not at all, with he_review: pending until a native speaker who did not write
 # them has read them (then approved); a shareable build needs every panel and the closing approved. The photo credits
 # stay English (a credit line, as the event cards' credits).
+# Each image and clip may likewise carry alt_he beside alt_he_review: agent-checked; the UI falls back to its English alt
+# when that pair is absent. These descriptions remain queued for the native read in #564.
 # Native read: the owner read the four Hebrew texts (europe, arab_countries, yemen, closing) on 2 Nov 2026: "Approve all 4".
 # For the native reviewer (#564): names as the game already writes them: עיראק and מבצע עזרא ונחמיה
 # (content/events/iraqi_exodus.yaml, he.wiki), תימן (content/events/frumkin_commission.yaml), לוד
@@ -55,6 +57,8 @@ panels:
       file: law_of_return.mp4
       shot: K04a
       alt: "Illustration: an immigrant ship crowded with passengers entering Haifa bay."
+      alt_he: "המחשה: אוניית עולים עמוסה בנוסעים נכנסת למפרץ חיפה."
+      alt_he_review: agent-checked
       ai_generated: true
       sensitive: true
       # The owner's sensitivity review of this clip in the opening: owner, 2 Nov 2026: "Approve both".
@@ -76,6 +80,8 @@ panels:
       artist: "Benno Rothenberg"
       credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
       alt: "Jewish detainees with their bundles and crates in front of the huts of a detention camp on Cyprus, February 1949."
+      alt_he: "עצירים יהודים עם צרורותיהם וארגזיהם לפני צריפי מחנה מעצר בקפריסין, פברואר 1949."
+      alt_he_review: agent-checked
       crop: [0.505, 0.56, 0.98]
       sensitive: true
       # The owner's sensitivity review: approved for use: https://github.com/eyalgolan/statecraft-israel/pull/1093#issuecomment-6338281251
@@ -106,6 +112,8 @@ panels:
       file: iraqi_exodus.mp4
       shot: A07
       alt: "Illustration: an airliner on the apron at Lydda at dusk, families coming down the steps with suitcases."
+      alt_he: "המחשה: מטוס נוסעים ברחבת שדה התעופה בלוד בשעת בין ערביים, ומשפחות יורדות במדרגות עם מזוודות."
+      alt_he_review: agent-checked
       ai_generated: true
       sensitive: true
       # The owner's sensitivity review of this clip in the opening: owner, 2 Nov 2026: "Approve both".
@@ -129,6 +137,8 @@ panels:
       artist: "Benno Rothenberg"
       credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
       alt: "Immigrants from Iraq carry blankets and bundles away from the plane that brought them to Lydda airport, April 1951."
+      alt_he: "עולים מעיראק נושאים שמיכות וצרורות הרחק מהמטוס שהביא אותם לשדה התעופה לוד, אפריל 1951."
+      alt_he_review: agent-checked
       crop: [0.495, 0.58, 0.99]
       sensitive: true
       # The owner's sensitivity review: approved for use: https://github.com/eyalgolan/statecraft-israel/pull/1093#issuecomment-6338281251
@@ -159,6 +169,8 @@ panels:
       file: opening_yemen.mp4
       shot: O3
       alt: "Illustration: a parked silver four-engined propeller airliner on a sandy apron, families with bundles walking toward its stair."
+      alt_he: "המחשה: מטוס נוסעים כסוף בעל ארבעה מנועי מדחף חונה ברחבה חולית, ומשפחות עם צרורות הולכות לעבר המדרגות שלו."
+      alt_he_review: agent-checked
       ai_generated: true
       sensitive: true
       # The owner's sensitivity review of this clip in the opening: owner, 2 Nov 2026: "Approve it".
@@ -181,6 +193,8 @@ panels:
       artist: "Benno Rothenberg"
       credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection / Israel State Archives · CC BY 4.0 · graded and cropped"
       alt: "Yemenite Jewish immigrants wait with their bundles in the shade of a four-engined plane at Aden airport, May 1950."
+      alt_he: "עולים יהודים מתימן ממתינים עם צרורותיהם בצל מטוס בעל ארבעה מנועים בנמל התעופה עדן, מאי 1950."
+      alt_he_review: agent-checked
       crop: [0.47, 0.6, 0.94]
       sensitive: true
       # The owner's sensitivity review: approved for use: https://github.com/eyalgolan/statecraft-israel/pull/1093#issuecomment-6338281251

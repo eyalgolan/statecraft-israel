@@ -9,8 +9,10 @@ The simulation must produce the same state, bit for bit, on .NET, Unity Mono and
 - **Reference vectors:** `DeterminismTests.SplitMix64MatchesTheReferenceVectors` checks the first three outputs for
   seeds 0 and 1234567. The expected values come from Sebastiano Vigna's reference `splitmix64.c`
   (https://prng.di.unimi.it/splitmix64.c), compiled and run separately. They were not copied from this implementation.
-- **No trigonometry in the sim:** the sim calls only `Math.Abs`, `Math.Min` and `Math.Max`. Geometry that needs
-  cos/sin (which hex owns a settlement, which hex a starting force's anchor is on) is precomputed by
+- **No trigonometry in the sim:** paths that change state call only `Math.Abs`, `Math.Floor`, `Math.Max`, `Math.Min`
+  and `Math.Round`, and every such `Math.Round` passes `MidpointRounding.AwayFromZero`. `PlayerText` also rounds, for
+  display only, and `MapOverrides` uses `Math.Sqrt(3)` only to diagnose editor offsets; neither changes state. Geometry
+  that needs cos/sin (which hex owns a settlement, which hex a starting force's anchor is on) is precomputed by
   `tools/settlement_hexes.py` and `tools/unit_anchor_hexes.py` and read as content.
 - **Canonical hash:** `GameState.Hash()` is SHA-256 over a canonical text. Keys are sorted ordinally. Doubles are
   written as IEEE bit patterns, with -0.0 written as 0.0. Culture is invariant. Fractional site and city-project
@@ -38,7 +40,7 @@ The simulation must produce the same state, bit for bit, on .NET, Unity Mono and
   per place in `DisplacedByPlayer`) and the International Support ceiling are plain arithmetic on the indicator's shift,
   with no RNG draw (R-CTRL-018; `DeportTests.DeportDrawsNothing`). `DisplacedByPlayer` is hashed as `displaced=` only when
   non-zero. The real content keeps Deport out of play (`mvp.deport_in_play: false`), and no golden Deports, so
-  none moves. The `mvp-deport-cost` golden, paired with `mvp-occupy-cost`, cannot play the real content, where Deport
+  none moves. The `mvp-deport-cost` fixture comparison (not a manifest golden), paired with `mvp-occupy-cost`, cannot play the real content, where Deport
   is refused (#800);
   `DeportNeverDominatesTests` plays both runs from the same fixture states.
 

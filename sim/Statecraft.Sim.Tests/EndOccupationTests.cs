@@ -103,7 +103,7 @@ public class EndOccupationTests
         Assert.True(s.Settlements["town_a"].Depopulated);
     }
 
-    // R-CTRL-015: withdrawing at the end is the Raid withdrawal: the units leave, the record goes.
+    // R-CTRL-015: withdrawing at the end is the Raid withdrawal: the units leave and the ownerless lost marker remains.
     [Fact]
     public void WithdrawAtTheEndIsTheRaidWithdrawal()
     {
@@ -111,7 +111,8 @@ public class EndOccupationTests
         var s = AwaitingEnd(c, false, Soldier(2, 1, 0));
         var after = Simulation.Step(c, s, new Command[] { new EndOccupation("town_a", SettlementControl.WithdrawOutcome) });
         Assert.Empty(after.Rejected);
-        Assert.False(after.State.Settlements.ContainsKey("town_a"));
+        var lost = after.State.Settlements["town_a"];
+        Assert.Equal(("", "", s.Date, false), (lost.Owner, lost.State, lost.Since, lost.Fled));
         Assert.NotEqual((1, 0), (after.State.Units[2].Q, after.State.Units[2].R));
         Assert.Contains(after.Why, x => x.Target == "town_a" && x.Message.Contains("Its residents are unchanged"));
     }

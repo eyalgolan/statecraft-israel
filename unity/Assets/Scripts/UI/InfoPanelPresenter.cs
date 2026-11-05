@@ -1,4 +1,5 @@
 #nullable enable
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -11,7 +12,8 @@ namespace Statecraft.Game.UI
 {
     /// <summary>The info panel (bottom-left): the selected hex's land, height and the settlements it owns, what the player
     /// built there, and the two map actions (transit camp, housing project) with the reason when one is not possible
-    /// (MapActions.Check). Tile yields are deliberately not shown (owner decision, M3 rulings 2). A selected unit
+    /// (MapActions.CheckReason and Simulation.Preview of the exact queue a press would leave). Tile yields are deliberately not
+    /// shown (owner decision, M3 rulings 2). A selected unit
     /// (<see cref="ShowUnit"/>) shows its card instead (<see cref="UnitCard"/>), with a button to the Defence screen (owner
     /// ruling, 2026-10-11) and, in the GDD loop, the Move, Fortify, Hold and Attack orders (GDD Phase 5 PR 15, #754),
     /// and Send home after the unit's front signs its armistice (#1309).</summary>
@@ -363,7 +365,7 @@ namespace Statecraft.Game.UI
         }
 
         /// <summary>Q-UI-1's preview of the shown unit's attack on (q, r), for the card: the defenders' names and the sim's
-        /// strength ratio (Combat.Preview), then its combat_table row's outcome bands (Combat.Outcomes); empty where Preview
+        /// strength ratio (Combat.Preview), then its combat_table row's outcome bands (Combat.Outcomes, capped at what the units can lose: #2553); empty where Preview
         /// has none. Every number is the sim's, read on the state after the turn's committed orders.</summary>
         string Odds(int unit, int q, int r)
         {
@@ -372,7 +374,7 @@ namespace Statecraft.Game.UI
             // The enemy units there (Combat's defenders: a side, not Israel's; Check has made sure there is one).
             var names = s.Units.Values.Where(u => u.Q == q && u.R == r && u.Side != "" && u.Side != Movement.PlayerSide).Select(u => unitName?.Invoke(u.Id)).Where(n => !string.IsNullOrEmpty(n)).ToList();
             var who = names.Count > 0 ? string.Join(", ", names) : string.Format(CultureInfo.InvariantCulture, "{0},{1}", q, r);
-            var bands = Combat.Outcomes(c, s, p.Row, unit).Select(b => text.Format(b.Retreat ? "unit.attack_band_retreat" : "unit.attack_band",
+            var bands = Combat.Outcomes(c, s, p.Row, unit, q, r).Select(b => text.Format(b.Retreat ? "unit.attack_band_retreat" : "unit.attack_band",
                 b.Faces, b.Of, b.AttackersLose, b.DefendersLose));
             return text.Format("unit.attack_odds", who, p.RatioPercent) + "\n" + string.Join("\n", bands);   // one band a line
         }
@@ -676,7 +678,8 @@ namespace Statecraft.Game.UI
         /// <summary>The region lines for a hex on a date: its armistice zone (name, agreement, date) if one is in force, else
         /// its 1948 sub-district; then each armistice line in force through it. <paramref name="jerusalem"/>: the hex is the
         /// Jerusalem settlement's (see ControlText).</summary>
-        public static string RegionText(MapRegions regions, UiText text, int q, int r, System.DateTime date, bool jerusalem = false)
+        public static string RegionText(MapRegions regions, UiText text, int q, int r, System.DateTime date, bool jerusalem = false,
+            bool? livePlayerHolder = null)
         {
             // Isolate a Hebrew date from the surrounding English fallback names: otherwise the row's
             // LTR paragraph can place its day before its year/month (the mixed-language #558 browser regression).
@@ -687,9 +690,9 @@ namespace Statecraft.Game.UI
             }
             var parts = new List<string>();
             var zone = regions.ZoneAt(q, r, date);
-            var control = ControlText(regions, text, q, r, date, jerusalem);
+            var control = ControlText(regions, text, q, r, date, jerusalem, livePlayerHolder);
             // a demilitarized zone is named by its own line below; the control line would only repeat "Demilitarized zone"
-            if (control != "" && !(zone != null && regions.Control?.At(q, r, date).side == Control1948.Side.Dmz)) parts.Add(control);
+            if (control != "" && !(livePlayerHolder == null && zone != null && regions.Control?.At(q, r, date).side == Control1948.Side.Dmz)) parts.Add(control);
             // the sub-district only while the map draws the sub-district bands (before the first sourced line, or with no side data)
             var sub = regions.Subdistricts.ShowsOn(date) && regions.ControlPeriod(date) == null ? regions.Subdistricts.SubdistrictAt(q, r) : null;
             string N(string key, string english) => regions.Names.Pick(key, english, text["ui.lang"] == UiLanguage.Hebrew);
@@ -709,8 +712,10 @@ namespace Statecraft.Game.UI
         /// Jerusalem also holds the Old City, so the data puts it on the Arab side from 11 June 1948; its panel names the
         /// Israeli-held West Jerusalem instead, and the map keeps its colour (#2039, owner ruling 2 Nov 2026: "Keep hexes, fix
         /// the panel").</summary>
-        public static string ControlText(MapRegions regions, UiText text, int q, int r, System.DateTime date, bool jerusalem = false)
+        public static string ControlText(MapRegions regions, UiText text, int q, int r, System.DateTime date, bool jerusalem = false,
+            bool? livePlayerHolder = null)
         {
+            if (livePlayerHolder != null) return text[livePlayerHolder.Value ? "info.control_israel" : "info.control.enemy_held"];
             var p = regions.ControlPeriod(date);
             if (p == null || regions.Control == null) return "";
             var (side, holder) = regions.Control.At(q, r, date);
@@ -963,8 +968,15 @@ namespace Statecraft.Game.UI
             subtitle.text = hex == null ? "" : text.Format("info.hex", text["info.biome." + hex.Biome], hex.ElevM);   // no debug coordinates in player text (playtest 2, P2-6)
             // The armistice zone in force, else the sub-district on 15 May 1948, and any armistice line in force through the
             // hex, each with its agreement (true lines drawn to the nearest hex edge: the owner's ruling).
-            region.text = regions == null ? "" : RegionText(regions, text, q, r, s.Date, c.SettlementHexes.Any(x => x.Q == q && x.R == r && x.Id == "jerusalem"));
+            var livePlaces = c.SettlementHexes.Where(x => x.Q == q && x.R == r && s.Settlements.ContainsKey(x.Id))
+                .OrderBy(x => x.Id, StringComparer.Ordinal).Select(x => (hex: x, record: s.Settlements[x.Id])).ToList();
+            var liveHolder = livePlaces.Select(x => SettlementControlView.PlayerHolds(x.record)).FirstOrDefault(x => x != null);
+            region.text = regions == null ? "" : RegionText(regions, text, q, r, s.Date,
+                c.SettlementHexes.Any(x => x.Q == q && x.R == r && x.Id == "jerusalem"), liveHolder);
             settlements.text = owned.Count > 0 ? text.Format("info.owned", string.Join(", ", owned)) : "";
+            foreach (var x in livePlaces)
+                if (SettlementControlView.PanelText(text, TownName(x.hex.Id), x.record) is string detail)
+                    settlements.text += (settlements.text == "" ? "" : "\n") + detail;
             // A town in a water hex is drawn on its nearest land hex (Tiberias, in the lake, on the 70 m hex): one line says
             // so, so this hex's elevation does not read as the town's (#204).
             if (townHex != null)
@@ -980,10 +992,37 @@ namespace Statecraft.Game.UI
                     Control1948.LineDateText(here.Date.ToString("yyyy-MM", System.Globalization.CultureInfo.InvariantCulture), k => text[k])) : "";   // PlayerText.Month is always English (#701)
             // The GDD loop refuses every map action and builds with city projects instead (R-PROJ-004): it has no map-action
             // button and no reason, so its refusal is not asked for (the UI has no words for it).
-            var campReason = c.IsGdd ? null : MapActions.CheckReason(c, s, MapActions.TransitCamp, q, r);
-            var housingReason = c.IsGdd ? null : MapActions.CheckReason(c, s, MapActions.Housing, q, r);
-            var campWhy = campReason == null ? null : MapActionReasonText(campReason, text);
-            var housingWhy = housingReason == null ? null : MapActionReasonText(housingReason, text);
+            string? Refusal(string action)
+            {
+                // SimBridge.Queue replaces this hex's order in place, or appends it. Preview that exact queue after the committed
+                // orders. This costs one preview for each map-action kind the panel considers while the selected-hex panel renders,
+                // never from a per-frame callback; an earlier order can make an action that the current state refuses valid.
+                var press = new MapAction(action, q, r);
+                var old = bridge.QueuedLike(press);
+                var queue = bridge.Queued.ToList();
+                var slot = old == null ? -1 : queue.IndexOf(old);
+                // An action the Attention left cannot pay for keeps its button, as before the preview: the bridge refuses the
+                // press and says why (order.no_attention, SimBridge.Queue). Only the rules are asked, on the state the rest of
+                // the queue leaves (the press replaces this hex's order, so that order is left out too).
+                if (!bridge.CanPay(press))
+                {
+                    if (slot >= 0) queue.RemoveAt(slot);
+                    var rule = MapActions.CheckReason(c, Simulation.Preview(c, bridge.TurnStart, bridge.Session.Committed.Concat(queue).ToList()).State,
+                        action, q, r);
+                    return rule == null ? null : MapActionReasonText(rule, text);
+                }
+                if (slot >= 0) queue[slot] = press; else queue.Add(press);
+                var preview = Simulation.Preview(c, bridge.TurnStart, bridge.Session.Committed.Concat(queue).ToList());
+                var rejected = preview.Rejected.FirstOrDefault(x => ReferenceEquals(x.Command, press));
+                if (rejected == null) return null;
+
+                var exact = MapActions.CheckReason(c, preview.State, action, q, r);
+                return exact != null ? MapActionReasonText(exact, text)
+                    : SimBridge.ReasonText(text, rejected.Reason, c, bridge.TownNamesHe);
+            }
+
+            var campWhy = c.IsGdd ? null : Refusal(MapActions.TransitCamp);
+            var housingWhy = c.IsGdd ? null : Refusal(MapActions.Housing);
             // eras.yaml systems.map_actions (#58): an action the era does not allow has no button and no reason
             var allowed = c.IsGdd ? new System.Collections.Generic.List<string>() : c.SystemsAt(s.Date).MapActions;
             bool campOn = allowed.Contains(MapActions.TransitCamp), housingOn = allowed.Contains(MapActions.Housing);

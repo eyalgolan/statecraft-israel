@@ -35,6 +35,15 @@ namespace Statecraft.Game.UI
             public string Artist { get; set; } = "";
             public string Credit { get; set; } = "";
             public string Alt { get; set; } = "";
+            public string AltHe { get; set; } = "";
+            // The setter records even an explicit YAML null, which must differ from an omitted post-review marker.
+            string? altHeReview;
+            public string? AltHeReview
+            {
+                get => altHeReview;
+                set { altHeReview = value; AltHeReviewPresent = true; }
+            }
+            [YamlIgnore] public bool AltHeReviewPresent { get; private set; }
             public List<double> Crop { get; set; } = new List<double>();
             public bool Sensitive { get; set; }
             public bool SensitivityReviewed { get; set; }
@@ -54,7 +63,11 @@ namespace Statecraft.Game.UI
             {
                 var doc = new DeserializerBuilder().WithNamingConvention(UnderscoredNamingConvention.Instance)
                     .WithDuplicateKeyChecking().Build().Deserialize<Doc>(yaml ?? "");
-                return doc?.Images ?? new List<Row>();
+                var rows = doc?.Images ?? new List<Row>();
+                foreach (var row in rows)
+                    if (AltHebrewProblem(row.AltHe, row.AltHeReview, row.AltHeReviewPresent) is string problem)
+                        throw new InvalidOperationException($"{Path}: {row.Event}: {problem}");
+                return rows;
             }
             catch (YamlDotNet.Core.YamlException e) { throw new InvalidOperationException($"{Path}: {e.Message}", e); }
         }
@@ -77,6 +90,8 @@ namespace Statecraft.Game.UI
                 if (r.Artist == "" || !r.Credit.Contains(r.Artist)) problems.Add($"{r.Event}: credit does not name the artist '{r.Artist}'");
                 if (!r.Credit.Contains(Adaptation)) problems.Add($"{r.Event}: credit does not say '{Adaptation}'");
                 if (r.Alt.Trim().Length < 20) problems.Add($"{r.Event}: alt text missing or too short");
+                if (AltHebrewProblem(r.AltHe, r.AltHeReview, r.AltHeReviewPresent) is string altProblem)
+                    problems.Add($"{r.Event}: {altProblem}");
                 if (!r.Commons.StartsWith("https://commons.wikimedia.org/wiki/File:", StringComparison.Ordinal)) problems.Add($"{r.Event}: commons page missing");
                 if (r.Sha1.Length != 40) problems.Add($"{r.Event}: sha1 of the original missing");
                 if (r.Crop.Count != 3) problems.Add($"{r.Event}: crop must be [centre x, centre y, width]");
@@ -84,6 +99,13 @@ namespace Statecraft.Game.UI
                 if (r.SensitivityReviewed && !r.Sensitive) problems.Add($"{r.Event}: sensitivity_reviewed without sensitive");
             }
             return problems;
+        }
+
+        static string? AltHebrewProblem(string? altHe, string? review, bool reviewPresent)
+        {
+            if (reviewPresent && string.IsNullOrWhiteSpace(altHe)) return "alt_he_review requires alt_he";
+            if (reviewPresent && review != "agent-checked") return "alt_he_review must be agent-checked";
+            return null;
         }
     }
 }
