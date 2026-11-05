@@ -1200,7 +1200,9 @@ namespace Statecraft.Game.UI
                 KeyScroll.Key? page = keys.pageUpKey.wasPressedThisFrame ? KeyScroll.Key.PageUp : keys.pageDownKey.wasPressedThisFrame ? KeyScroll.Key.PageDown
                     : keys.homeKey.wasPressedThisFrame ? KeyScroll.Key.Home : keys.endKey.wasPressedThisFrame ? KeyScroll.Key.End : (KeyScroll.Key?)null;
                 if (page != null) KeyScroll.Press(document.rootVisualElement, nav?.Current, card?.Shown != null && !card.Collapsed, page.Value);
-                if (keys.upArrowKey.wasPressedThisFrame || keys.downArrowKey.wasPressedThisFrame) navGuard?.Step(keys.upArrowKey.wasPressedThisFrame);
+                // Not under the turn report or the ending: they cover the screen, which ScreenNav.DisableCovered leaves enabled (#2651 review).
+                if (report?.IsOpen != true && end?.IsOpen != true && (keys.upArrowKey.wasPressedThisFrame || keys.downArrowKey.wasPressedThisFrame))
+                    navGuard?.Step(keys.upArrowKey.wasPressedThisFrame);
             }
             SyncMinimap();
             if (!logCamera || rig == null || (rig.Distance == loggedDistance && rig.Yaw == loggedYaw)) return;
