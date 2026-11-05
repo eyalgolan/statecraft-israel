@@ -135,6 +135,40 @@ public class UnitAttackPresenterTests
         Assert.AreEqual(1, hits.Count, "a later take does not repeat the hit");
     }
 
+    /// <summary>#2614: the dust of a unit the engagement destroyed (its Destroyed line right after it, as Combat.Engage adds
+    /// it) waits for the attackers' fire too; a take that starts at once plays it at once. Red at 917ebf2e9: the dust played
+    /// on resolution.</summary>
+    [TestCase(false)]
+    [TestCase(true)]
+    public void ADestroyedUnitsDustWaitsForTheAttackersFire(bool takeStartsAtOnce)
+    {
+        var engagement = Line(WhyKeys.Engagement, "2", defenderLoss: "2");
+        var dead = new Cause("map", "9,9", 0, "Report text is never read", key: WhyKeys.Destroyed,
+            units: new[] { new UnitRef(new Unit(73, "infantry", 0, 0)) });
+        var bridge = new SimBridge(NewSession(), Text,
+            (session, orders) => new StepResult(session.State, session.Now.Why.Append(engagement).Append(dead).ToArray(), Array.Empty<Rejection>()));
+        var cues = new Dictionary<int, (Action Started, Action Missed)>();
+        var order = new List<string>();
+        using var presenter = new UnitAttackPresenter(bridge,
+            _ => true, h => { order.Add("hit"); return true; }, id => { order.Add("dust " + id); return true; }, _ => true,
+            (id, started, missed) =>
+            {
+                cues.Add(id, (started, missed));
+                if (takeStartsAtOnce && id == 71) started();
+                return true;
+            });
+
+        bridge.EndTurn();
+        if (!takeStartsAtOnce)
+        {
+            Assert.IsEmpty(order, "no hit and no dust before an attacker's fire");
+            cues[72].Started();
+        }
+        CollectionAssert.AreEqual(new[] { "hit", "dust 73" }, order, "the dust lands with the hit, after the fire");
+        cues[71].Started(); cues[72].Missed();
+        CollectionAssert.AreEqual(new[] { "hit", "dust 73" }, order, "and only once");
+    }
+
     /// <summary>An attack order plays at once, after the map is redrawn for it; End Turn runs it again inside the sim (its
     /// first causes are the open turn's), and that replay does not play it twice.</summary>
     [Test]

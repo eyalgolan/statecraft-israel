@@ -11,9 +11,9 @@ namespace Statecraft.Game.UI
     /// <summary>Plays each fresh engagement's attackers' fire take on the map (#1867; design by Tal Heuberger, #2078): the
     /// attacking units' figures, supporting guns included, never the defenders'. With it, the hit on the hex it attacked
     /// (owner, 4 November 2026: "Hit on target hex": a shell's burst when guns fired, dust when other units did) and the dust
-    /// of each unit it destroyed ("Dust when a unit dies"). On the production path the hit and the defenders' reaction wait
-    /// for the attackers' first fire take that really starts (or, if none can, the last one's wait), so the shell or dust
-    /// never lands before the shot. Presentation only. A unit whose token cannot play now (destroyed, hidden, far, or no
+    /// of each unit it destroyed ("Dust when a unit dies"). On the production path the hit, the defenders' reaction and the
+    /// dust of the units the engagement destroyed wait for the attackers' first fire take that really starts (or, if none can,
+    /// the last one's wait), so nothing lands before the shot. Presentation only. A unit whose token cannot play now (destroyed, hidden, far, or no
     /// fire take) is skipped and nothing is kept to play later. GameRoot owns it.</summary>
     public sealed class UnitAttackPresenter : IDisposable
     {
@@ -41,13 +41,24 @@ namespace Statecraft.Game.UI
 
         void Resolved(IReadOnlyList<Cause> lines)
         {
+            FireCue? cue = null;   // the timed engagement just before: Combat.Engage adds its Destroyed lines right after it
             foreach (var line in lines)
             {
+                if (line.Key == WhyKeys.Destroyed)
+                {
+                    if (destroyed is Func<int, bool> dust && line.Units.Count > 0)
+                    {
+                        int dead = line.Units[0].Id;
+                        if (cue != null) cue.Then(() => dust(dead)); else dust(dead);
+                    }
+                    continue;
+                }
+                cue = null;
                 var parsed = HitOf(line, IsGuns);
                 if (parsed is CombatHit h && timedPlay != null && Count(line, out int attackerCount))
                 {
                     // The production path: the defenders react (on a loss) and the hit lands with the first real fire take.
-                    var cue = new FireCue(attackerCount, () => Impact(h));
+                    cue = new FireCue(attackerCount, () => Impact(h));
                     foreach (int id in Attackers(line)) timedPlay(id, cue.Started, cue.Missed);
                 }
                 else
@@ -55,7 +66,6 @@ namespace Statecraft.Game.UI
                     foreach (int id in Attackers(line)) play(id);
                     if (parsed is CombatHit immediate) Impact(immediate);
                 }
-                if (destroyed != null && line.Key == WhyKeys.Destroyed && line.Units.Count > 0) destroyed(line.Units[0].Id);
             }
         }
 
@@ -67,17 +77,27 @@ namespace Statecraft.Game.UI
         }
 
         /// <summary>One engagement's group cue: the first actual fire take plays the impact once; if none can show, the last
-        /// miss does. UnitLayer's timed PlayAttack always reports one of the two (a hidden or rebuilt token reports a miss).</summary>
+        /// miss does. UnitLayer's timed PlayAttack always reports one of the two (a hidden or rebuilt token reports a miss).
+        /// <see cref="Then"/> adds to the impact (a destroyed unit's dust): it plays with it, or at once if it already has,
+        /// since a take that starts at once reports during the engagement's own line.</summary>
         sealed class FireCue
         {
             int left;
             bool shown;
-            readonly Action impact;
+            readonly List<Action> impacts = new List<Action>();
 
-            internal FireCue(int attackers, Action impact) { left = attackers; this.impact = impact; }
+            internal FireCue(int attackers, Action impact) { left = attackers; impacts.Add(impact); }
 
-            internal void Started() { if (!shown) { shown = true; impact(); } }
-            internal void Missed() { if (left > 0) left--; if (!shown && left == 0) { shown = true; impact(); } }
+            internal void Then(Action more) { if (shown) more(); else impacts.Add(more); }
+            internal void Started() { if (!shown) Play(); }
+            internal void Missed() { if (left > 0) left--; if (!shown && left == 0) Play(); }
+
+            void Play()
+            {
+                shown = true;
+                foreach (var impact in impacts) impact();
+                impacts.Clear();
+            }
         }
 
         /// <summary>True for a unit type of the guns' class (Combat.ArtilleryClass), as the sim's R-COMBAT-007 reads it.</summary>
