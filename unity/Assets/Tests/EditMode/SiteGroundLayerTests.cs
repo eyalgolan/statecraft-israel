@@ -88,6 +88,42 @@ public class SiteGroundLayerTests
         }
     }
 
+    /// <summary>No sourced field or swamp site has water under its patch, so the water guard is checked on a made-up field
+    /// in the middle of the Sea of Galilee (lake hex 13,9; KitTests.TheLakeIsItsWaterNotItsWholeHex). Only the vertices that
+    /// every other guard leaves whole are asked about (well inside the hex, flat, clear of every footprint): water alone must
+    /// hide them.</summary>
+    [Test]
+    public void TheGroundKeepsOffALakesWater()
+    {
+        var map = OpenMap();
+        var lake = new Site { Id = "lake_probe", Q = 13, R = 9, Kinds = new List<string> { Projects.FieldKind } };
+        var layer = SiteGroundLayer.ShowAt(map, new Content { Sites = new List<Site> { lake } }, new[] { Built(lake.Id) })!;
+        var ground = PlacementLayer.CampGround(map);
+        var hex = map.Hexes.hexes.First(h => h.q == lake.Q && h.r == lake.R);
+        var c3 = map.Frame.ToWorld(hex.lon, hex.lat, 0f);
+        var centre = new Vector2(c3.x, c3.z);
+        float sizeM = map.Hexes.hex_size_km * 1000f;
+        var data = map.Terrain.terrainData; var origin = map.Terrain.transform.position;
+        var around = new[] { new Vector2(0.5f * SiteGroundLayer.StepM, 0f), new Vector2(-0.5f * SiteGroundLayer.StepM, 0f), new Vector2(0f, 0.5f * SiteGroundLayer.StepM), new Vector2(0f, -0.5f * SiteGroundLayer.StepM) };
+        var mesh = layer.MeshOf(lake.Id)!;
+        var v = mesh.vertices; var c = mesh.colors32;
+        int open = 0;
+        for (int i = 0; i < v.Length; i++)
+        {
+            var p = new Vector2(v[i].x, v[i].z);
+            if (!ground.Water(p.x, p.y)) continue;
+            if (SiteGroundLayer.EdgeDistance(p - centre, sizeM) < SiteGroundLayer.EdgeInsetM + SiteGroundLayer.EdgeFadeM + 1f) continue;
+            if (ground.Hex(p.x, p.y) != (lake.Q, lake.R)) continue;
+            float low = RouteLayer.Ground(data, origin, p);
+            foreach (var d in around) low = Mathf.Min(low, RouteLayer.Ground(data, origin, p + d));
+            if (v[i].y - SiteGroundLayer.LiftM - low > SiteGroundLayer.SteepM - 1f) continue;
+            if (map.KitFootprints.Any(f => (f.centre - p).magnitude < SiteGroundLayer.ClearShare * f.radius + SiteGroundLayer.ClearFadeM + 1f)) continue;
+            open++;
+            Assert.AreEqual(0, c[i].a, $"lake vertex {i} at {p}: no field on the water");
+        }
+        Assert.Greater(open, 100, "the probe's hex holds open, flat lake water that only the water guard keeps clear");
+    }
+
     [Test]
     public void TheGroundIsTheSameEveryTime()
     {
