@@ -99,6 +99,17 @@ public class CaptureDialogTests
         return g;
     }
 
+    /// <summary>#2542: a place whose control ended (Raid, Withdraw) keeps an ownerless record with its capture date, so a stayed
+    /// loss stays distinguishable from a place never taken (SettlementControl.Release, R-CTRL-004, R-CTRL-010).</summary>
+    static void AssertStayedLost(GameState s, string id, System.DateTime since, string why)
+    {
+        Assert.IsTrue(s.Settlements.TryGetValue(id, out var x), why + ": the record stays as the ownerless marker");
+        Assert.AreEqual("", x!.Owner, why + ": no owner");
+        Assert.AreEqual("", x.State, why + ": no control state");
+        Assert.AreEqual(since, x.Since, why + ": the capture date is kept");
+        Assert.IsFalse(x.Depopulated, why + ": not depopulated");
+    }
+
     /// <summary>The settlements' Hebrew names as GameRoot hands them over (the map's parse of settlements_1948.yaml).</summary>
     static IReadOnlyDictionary<string, string> NamesHe() =>
         Statecraft.Game.Map.SettlementPlacer.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", "settlements_1948.yaml"))).ToDictionary(s => s.Id, s => s.NameHe);
@@ -450,9 +461,11 @@ public class CaptureDialogTests
         Assert.IsNull(r.Dialog.Shown, "every capture answered");
         Assert.IsFalse(r.Shows("capture-card"));
         Assert.AreSame(r.Root.Q<Button>("end-turn"), r.Focused, "answered from the keyboard, the focus goes to End turn");
+        var lodSince = r.Bridge.State.Settlements["lod"].Since; var ramlaSince = r.Bridge.State.Settlements["ramla"].Since;
         var result = r.Bridge.EndTurn();
         Assert.IsEmpty(result.Rejected.Where(x => x.Command is ResolveCapture), "the sim takes both");
-        Assert.IsFalse(r.Bridge.State.Settlements.ContainsKey("lod") || r.Bridge.State.Settlements.ContainsKey("ramla"), "Raid ended both records");
+        AssertStayedLost(r.Bridge.State, "lod", lodSince, "Raid ended Lydda's control");
+        AssertStayedLost(r.Bridge.State, "ramla", ramlaSince, "Raid ended Ramle's control");
     }
 
     /// <summary>#2023: exactly one more decision waiting is the singular line in both languages (event.more_one, the pick
@@ -731,10 +744,11 @@ public class CaptureDialogTests
         yield return Frames(3);
         Assert.IsNull(r.Dialog.Shown);
         Assert.AreSame(r.Root.Q<Button>("end-turn"), r.Focused, "answered from the keyboard, the focus goes to End turn");
+        var since = r.Bridge.State.Settlements["ramla"].Since;
         var result = r.Bridge.EndTurn();
         Assert.IsEmpty(result.Rejected.Where(x => x.Command is EndOccupation), string.Join("; ", result.Rejected.Select(x => x.Reason)));
         Assert.AreEqual(SettlementControl.Annexed, r.Bridge.State.Settlements["lod"].State, "End turn annexed Lydda (R-CTRL-016)");
-        Assert.IsFalse(r.Bridge.State.Settlements.ContainsKey("ramla"), "and withdrew from Ramle (R-CTRL-010)");
+        AssertStayedLost(r.Bridge.State, "ramla", since, "and withdrew from Ramle (R-CTRL-010)");
     }
 
     /// <summary>Plan PR 10, AQueuedEndDecisionIsNotShownAgain: a place with an EndOccupation queued has had its choice; a new

@@ -411,6 +411,7 @@ NAVLOG = "navlog"
 GAME_STATE = re.compile(r"^GAME OK (\d{4}-\d{2}-\d{2}) turn (\d+) hash ([0-9a-f]+)$")
 TURN_STATE = re.compile(r"^TURN (\d+) (\d{4}-\d{2}-\d{2}) hash ([0-9a-f]+)$")
 SAVE_STATE = re.compile(r"^AUTOSAVE (PENDING|OK|FAIL) ([1-9]\d*) (\d{4}-\d{2}-\d{2}) turn (\d+) hash ([0-9a-f]+)$")
+SAVE_FAILURE_SHOWN = "SAVE FAILURE SHOWN save.write_failed"
 
 
 class StartButtons:
@@ -712,11 +713,15 @@ class PersistenceCheck:
         self.end_turn = EndTurn(action, tail, hebrew=False, settle=settle)
         self.stage, self.saved, self._done = "first_boot", None, False
         self.pending, self.acknowledged, self.deadline = None, None, None
+        self.persistence_failure = None
 
     @property
     def done(self) -> bool:
         # watch polls this even when no more console lines arrive.
         if self.deadline is not None and self.now() >= self.deadline:
+            if self.persistence_failure is not None:
+                raise ValueError("PERSISTENCE FAIL IndexedDB autosave failed but "
+                                 "save.write_failed was not shown to the player")
             raise ValueError(f"PERSISTENCE FAIL no matching IndexedDB commit within {self.save_timeout:g}s: "
                              f"{self.saved}; pending receipt {self.pending}")
         return self._done
@@ -744,7 +749,9 @@ class PersistenceCheck:
             kind, generation, date, turn, digest = receipt.groups()
             value = (int(generation), date, int(turn), digest)
             if kind == "FAIL":
-                raise ValueError(f"PERSISTENCE FAIL IndexedDB autosave failed: {value}")
+                self.persistence_failure = value
+                self.deadline = self.now() + self.save_timeout
+                return
             if kind == "PENDING":
                 if self.pending is None or value[0] > self.pending[0]:
                     self.pending, self.acknowledged = value, None
@@ -752,6 +759,9 @@ class PersistenceCheck:
                 self.acknowledged = value
             self._reload_when_durable()
             return
+        if text == SAVE_FAILURE_SHOWN and self.persistence_failure is not None:
+            raise ValueError("PERSISTENCE FAIL IndexedDB autosave failed and "
+                             f"save.write_failed was shown to the player: {self.persistence_failure}")
         game, turn = GAME_STATE.match(text), TURN_STATE.match(text)
         if game:
             state, kind = (game.group(1), int(game.group(2)), game.group(3)), "GAME"

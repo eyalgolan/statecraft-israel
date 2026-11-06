@@ -334,7 +334,7 @@ public class CombatTests
             while ((int)(new Rng(seed).NextDouble() * faces) != face) seed++;
             s.RngState = seed;
             var why = new List<Cause>();
-            Assert.Null(Combat.Strike(c, s, 1, 3, 1, new Dictionary<int, int>(), new Dictionary<int, (int Q, int R)>(), why));
+            Assert.Null(Combat.Strike(c, s, 1, 3, 1, new Dictionary<int, int>(), new Dictionary<int, AttackRecord>(), why));
             var fight = why.Single(w => w.Key == WhyKeys.Engagement);
             real.Add((int.Parse(fight.Args[2]), int.Parse(fight.Args[3]),
                 why.Any(w => w.Key == WhyKeys.Retreated || w.Key == WhyKeys.SurrenderedPrisoners || w.Key == WhyKeys.SurrenderedHeld)));

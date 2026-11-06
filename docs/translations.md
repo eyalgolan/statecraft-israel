@@ -15,7 +15,9 @@ bytes, so the tool and the game write one format.
 ## The files
 
 Each language has a folder named by its code (`he`, `ro`, `pt-BR`: lowercase ISO 639, then optional `-` subtags). Each of
-the three files may be missing, which means the language has none of that kind.
+`events.yaml` and `content.yaml` may be missing, which means the language has none of that kind. `ui.yaml` may not: every
+language is checked with `CheckDeclaredLanguage`, which refuses one whose `ui.yaml` has no `ui.lang`, so a folder with only
+`events.yaml` or `content.yaml` is refused.
 
 | File | Key | Entry |
 |---|---|---|
@@ -35,7 +37,8 @@ altalena:
 ```
 
 `review` is `agent-checked` until a native speaker has read the text, and is left out after that (#564). It is the only
-value it may have.
+value it may have, except that a region-name entry in `map/region_names_he.yaml` (`names.*.name`) may also be
+`native-review-pending`.
 An AI-assisted contributor may also do that read and remove the line, when the pull request discloses the AI help and
 names the strings read (the owner, 4 November 2026: "AI-assisted can clear it"; [comment](https://github.com/eyalgolan/statecraft-israel/pull/2481#issuecomment-6623108295)).
 
@@ -114,7 +117,8 @@ their capitalised forms). Any other key is double-quoted (`Translations.Key()`, 
 ## What the parser checks, and what it leaves to the content rules
 
 `Translations.Parse` checks the shape: the known fields only, keys of the right form, no key twice, every text a
-non-empty string, `review` only `agent-checked`, and `sources` as a list of `{ url, checked }`. The rules about the
+non-empty string, `review` only `agent-checked` (or `native-review-pending` on a region-name entry), and `sources` as a
+list of `{ url, checked }`. The rules about the
 text itself (an event is all or none, placeholders as in the English, no stray `{` or `}`, Hebrew letters, no direction
 marks, the UI's approved wording) are the content rules. They run on the text where it is used, as they do today.
 
@@ -148,13 +152,19 @@ separate call, made where a language is adopted.
 - **The folder:** a language folder holds only `ui.yaml`, `events.yaml` and `content.yaml`. Any other file or folder there,
   or a folder that is not a language code, is refused rather than skipped. Files at the top (this folder's `README.md`)
   are not languages, and hidden names (`.DS_Store`) are ignored.
-- **The checks:** each language is parsed, must name itself (`CheckDeclaredLanguage`), may not translate the advisors or
-  How to play unless it is Hebrew, translates only events that exist (an event a ruleset leaves out counts) and every
-  option of each, and keys only fields that `Fields` offers. A read failure is reported with its file.
-- **A stale translation:** when an event or a record changes so that a translation no longer matches it, the load is
-  refused (owner, 1 November 2026: "Refuse + say how to fix (Recommended)"), so nothing stale ships. The error says how to
-  unblock without a translator: update the entry, or delete it from the language's file, and that text shows in English.
-  Not for `he/`, which must equal the inline Hebrew.
+- **The checks:** each language is parsed, must name itself (`CheckDeclaredLanguage`), may not translate the advisors,
+  How to play or the encyclopedia unless it is Hebrew, translates only events that exist (an event a ruleset leaves out
+  counts) and every option of each, and keys only fields that `Fields` offers. A read failure is reported with its file. Where the content
+  is a checkout's (`unity/Assets/UI/strings.en.yaml` beside the content folder: the editor, the CLI, the tests and
+  `ContentSync`'s load of the source before every player build), a `ui.yaml` other than Hebrew may key only strings that
+  `strings.en.yaml` has, each with the English one's placeholders, the rule `tools/translate.py` applies to an editor
+  save (#2598). A player has no English table beside its copy, so the build is where it is caught.
+- **A stale translation:** the load is refused (owner, 1 November 2026: "Refuse + say how to fix (Recommended)"), so
+  nothing stale ships. What counts as stale is what the loader checks: an event id no event has, option ids that are not
+  exactly the event's (one it lost or one it gained), or a content key whose file or field is gone (a file in
+  `HebrewOverlay.UnityReads` need not exist in a player). The English text is not compared, so a translation still loads
+  after only the English wording changes. The error says how to unblock without a translator: update the entry, or delete
+  it from the language's file, and that text shows in English. Not for `he/`, which must equal the inline Hebrew.
 - **Hebrew:** a `translations/he/` that is present must match the inline Hebrew of the events and the content exactly:
   the same events, texts, options and review flags, and the same fields and flags, none missing and none extra.
   `he/ui.yaml` is not compared with `strings.he.yaml` yet; that comes with the UI move (step 4).
@@ -172,7 +182,7 @@ The UI strings still come from `strings.en.yaml` and `strings.he.yaml`; which ca
 - `sim/Statecraft.Sim/TranslationLoader.cs`: finds, lists and checks `translations/` ("Loading", above);
   `TranslationLoaderTests` covers it, and `GameInputsTests` (Unity EditMode) the copy, the bundle and the web boot.
 - `sim/Statecraft.Sim/HebrewOverlay.cs`: puts a Hebrew set on the sim's typed `*He` properties. Unity reads the Hebrew of
-  `map/localities_1948.yaml`, `map/settlements_1948.yaml` and `map/units_1948.yaml` itself
+  `map/localities_1948.yaml`, `map/settlements_1948.yaml`, `map/units_1948.yaml` and `map/region_names_he.yaml` itself
   (`HebrewOverlay.UnityReads`).
 - `sim/Statecraft.Sim.Tests/translations_fixture/`: a small checkout with the edge cases and the bodies an
   implementation must write for it. `TranslationsTests` checks the sim's and `tools/tests/test_translate.py` checks

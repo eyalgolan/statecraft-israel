@@ -73,8 +73,8 @@ public class FinalWaveTests
         Assert.Empty(ReleaseGate.SensitiveUnreviewed(Real));
         var reviewed = Fixture.Write(events: new Dictionary<string, string>
         {
-            ["a.yaml"] = "id: a\ntitle: A\ntext: x\nfrom: 1948-06-01\ntags: [terror]\noptions:\n  - id: o\n    text: O\nstatus: sensitivity-reviewed\n",
-            ["b.yaml"] = "id: b\ntitle: B\ntext: x\nfrom: 1948-06-01\ntags: [holocaust]\noptions:\n  - id: o\n    text: O\nstatus: fact-checked\n",
+            ["a.yaml"] = "id: a\ntitle: A\ntext: x\nfrom: 1948-06-01\ntags: [terror]\noptions:\n  - id: o\n    text: O\nsources: [{ url: \"https://example.org/event\", checked: 2026-10-18 }]\nstatus: sensitivity-reviewed\n",
+            ["b.yaml"] = "id: b\ntitle: B\ntext: x\nfrom: 1948-06-01\ntags: [holocaust]\noptions:\n  - id: o\n    text: O\nsources: [{ url: \"https://example.org/event\", checked: 2026-10-18 }]\nstatus: fact-checked\n",
         });
         Assert.Equal(new[] { "b" }, ReleaseGate.SensitiveUnreviewed(ContentLoader.Load(reviewed)));
     }

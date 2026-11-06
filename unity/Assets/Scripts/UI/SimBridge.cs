@@ -312,7 +312,7 @@ namespace Statecraft.Game.UI
             if (ReasonKeys.TryGetValue(reason, out var key))
             {
                 if (reason != EconomySystem.RefusedDollarsMinimum) return text[key];
-                return c == null ? reason : text.Format(key, PlayerText.Money(c, "fx_reserves", 1));
+                return c == null ? reason : text.Format(key, PlayerText.Money(c, "fx_reserves", EconomySystem.DollarsMinimum));
             }
             foreach (var (pattern, format) in ReasonFormats)
                 if (pattern.Match(reason) is { Success: true } m)
@@ -414,7 +414,7 @@ namespace Statecraft.Game.UI
                 if (e is ArgumentException) UnityEngine.Debug.LogWarning("End Turn refused: " + e.Message);
                 else UnityEngine.Debug.LogException(e);
                 deferred.Clear(); skipped.Clear();
-                LastBatch = Array.Empty<Command>();
+                LastBatch = Array.Empty<Command>(); LastBatchDate = default(DateTime);
                 var reason = text["order.failed"];   // the message stays in the log above, not on screen (#622)
                 var failed = new StepResult(State, new Cause[0], batch.Select(x => new Rejection(x, reason)).ToList());
                 Notify(Changed);
@@ -429,11 +429,11 @@ namespace Statecraft.Game.UI
             return r;
         }
 
-        /// <summary>Switches to another session (a loaded save), dropping queued orders.</summary>
+        /// <summary>Switches to another session (a loaded save), dropping queued orders and the last batch's metadata.</summary>
         public void Replace(GameSession session)
         {
             Session = session ?? throw new ArgumentNullException(nameof(session));
-            LastBatch = Array.Empty<Command>();
+            LastBatch = Array.Empty<Command>(); LastBatchDate = default(DateTime);
             deferred.Clear(); skipped.Clear(); endingCardsSeen.Clear();
             Notify(Changed);
         }

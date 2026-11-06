@@ -94,9 +94,9 @@ public class RulesetSelectorTests
     }
 
     [Theory]
-    [InlineData("legacy", null, "legacy", 3)]
-    [InlineData("gdd", null, "gdd-0.1", 3)]
-    [InlineData("gdd", "gdd-0.3", "gdd-0.3", 4)]
+    [InlineData("legacy", null, "legacy", 5)]
+    [InlineData("gdd", null, "gdd-0.1", 5)]
+    [InlineData("gdd", "gdd-0.3", "gdd-0.3", 5)]
     public void SessionAndSaveCarrySelectedIdentity(string loop, string? selector, string expected, int schema)
     {
         var c = Load(loop, selector);

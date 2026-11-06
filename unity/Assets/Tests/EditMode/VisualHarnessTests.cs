@@ -71,6 +71,42 @@ public class VisualHarnessTests
         Assert.AreEqual("grade again True", log.Last());
     }
 
+    /// <summary>Route capture restores its incoming tilt-shift and quality settings after failure without touching another toggle.</summary>
+    [Test]
+    public void RouteCaptureRestoresOnlyItsTemporarySettingsAfterFailure()
+    {
+        bool grade = false;
+        VisualToggles.Register("grade", on => grade = on);
+        VisualToggles.Register("tiltshift", on => TiltShift.Enabled = on);
+        VisualToggles.Set("grade", false);
+        bool oldTiltShift = TiltShift.Enabled;
+        int oldQuality = QualitySettings.GetQualityLevel();
+        Assert.Greater(QualitySettings.names.Length, 1, "the capture test needs a non-Web quality tier");
+        int incomingQuality = QualitySettings.names.Length - 1;
+        var type = System.Type.GetType("RouteCapture, Assembly-CSharp-Editor");
+        var run = type!.GetMethod("WithCaptureSettings",
+            System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+        Assert.IsNotNull(run);
+        bool sawTiltShiftOff = false;
+        try
+        {
+            VisualToggles.Set("tiltshift", false);
+            QualitySettings.SetQualityLevel(incomingQuality, true);
+            var ex = Assert.Throws<System.Reflection.TargetInvocationException>(() => run!.Invoke(null,
+                new object[] { (System.Action)(() => { sawTiltShiftOff = !TiltShift.Enabled; throw new System.InvalidOperationException("capture"); }) }));
+            Assert.IsInstanceOf<System.InvalidOperationException>(ex!.InnerException);
+            Assert.IsTrue(sawTiltShiftOff, "tilt-shift is off during capture");
+            Assert.IsFalse(TiltShift.Enabled, "tilt-shift returns to its incoming value");
+            Assert.IsFalse(grade, "an unrelated toggle keeps its incoming value");
+            Assert.AreEqual(incomingQuality, QualitySettings.GetQualityLevel());
+        }
+        finally
+        {
+            TiltShift.Enabled = oldTiltShift;
+            QualitySettings.SetQualityLevel(oldQuality, true);
+        }
+    }
+
     /// <summary>Audit 2026-10-13: the close checks look at the ground, so the shots turn the haze and the settlement trees
     /// off for them (a kit tree's crown had filled hero06judea) and back on after; other toggles and unregistered names are
     /// left alone.</summary>
