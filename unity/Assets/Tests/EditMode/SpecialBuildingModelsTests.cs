@@ -1148,6 +1148,83 @@ namespace Statecraft.Game.Tests
             Assert.Less(ms, 50.0, "one plan with two workshops among the houses");
         }
 
+        /// <summary>#2876 ("Big blocks, every zoom", owner, 6 November 2026): the four major cities (TownModels.IsMajorCity) draw
+        /// their kit blocks at every zoom and never their building models, so a b21 among their houses (owner, 2 November 2026:
+        /// "Among the houses") and Tal Heuberger's props at their edge keep off those blocks (MapScene.MajorCityBlocks), not off
+        /// the models no longer drawn there. A workshop on each major city's own hex gets a planned spot, wholly on the hex,
+        /// whose ground (its clearance disc, or on a street its square, SizeOf a side, along the street) overlaps no major
+        /// city's kit block; the Altalena sandbags (15 June 1948) and the Haifa quay crates, where planned, keep off them too.
+        /// The plan is the one the layer draws (every model available), placed twice to the same spots.</summary>
+        [Test]
+        public void AWorkshopOrPropInAMajorCityKeepsOffItsKitBlocks()
+        {
+            var map = OpenMap();
+            var c = Rules(Statecraft.Sim.SaveGame.Gdd03Ruleset);
+            var blocks = map.MajorCityBlocks;
+            var majors = c.SettlementHexes.Select(h => h.Id).Where(Statecraft.Game.Map.Kits.TownModels.IsMajorCity).OrderBy(x => x, StringComparer.Ordinal).ToList();
+            CollectionAssert.AreEqual(new[] { "haifa", "jaffa", "jerusalem", "tel_aviv" }, majors, "the major cities with a settlement hex");
+            foreach (var city in majors) Assert.Greater(blocks.Count(b => b.Id == city), 0, city + " has kit blocks to keep clear of");
+            Assert.IsTrue(blocks.All(b => majors.Contains(b.Id) && (b.Kind == "building" || b.Kind == "wing")), "only the major cities' buildings and wings");
+            var projects = majors.Select((city, i) => Workshop(c, 700 + i, city, Built)).ToList();
+            var wants = SpecialBuildingModels.Placements(After).Concat(SpecialBuildingModels.ArmsWorkshops(c, projects)).ToList();
+            var plan = SpecialBuildingModels.PlanWithRoutes(map, After, wants, _ => true, false, null, out var along);
+            var again = SpecialBuildingModels.Plan(map, After, wants, _ => true, log: false);
+            CollectionAssert.AreEqual(plan.Select(x => (x.want.Key, x.at)).ToList(), again.Select(x => (x.want.Key, x.at)).ToList(), "the same spots when planned again");
+            float size = SpecialBuildingModels.SizeOf(SpecialBuildingModels.Workshop), r = SpecialBuildingModels.ClearanceOf(SpecialBuildingModels.Workshop);
+            foreach (var project in projects)
+            {
+                string key = SpecialBuildingModels.WorkshopKey(project.Id);
+                CollectionAssert.Contains(plan.Select(x => x.want.Key).ToList(), key, project.City + "'s workshop gets a planned spot");
+                var at = plan.Single(x => x.want.Key == key).at;
+                var hex = c.HexAt(project.Q, project.R)!; var centre3 = map.Frame.ToWorld(hex.Lon, hex.Lat, 0);
+                float off = (at - new Vector2(centre3.x, centre3.z)).magnitude;
+                Assert.LessOrEqual(off + r, SpecialBuildingModels.HexInnerRadiusM, key + " wholly on its hex");
+                bool street = along.TryGetValue(key, out var dir);
+                float yaw = street ? Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg : 0f;
+                int near = 0;
+                foreach (var b in blocks)
+                {
+                    if ((b.C - at).magnitude > r + 0.5f * (b.W + b.D)) continue;
+                    near++;
+                    if (street)
+                        Assert.IsTrue(BoxesApart(at, yaw, size, size, b.C, b.Yaw, b.W, b.D),
+                            $"{key} ({project.City}): its {size:0} m square along the street at {at} overlaps {b.Id}'s {b.Kind} at {b.C} ({b.W:0} x {b.D:0} m, {b.Yaw:0} deg)");
+                    else
+                        Assert.IsTrue(SpecialBuildingModels.ClearOfBox(at, r, b.C, b.Yaw, b.W, b.D),
+                            $"{key} ({project.City}): its {r:0} m disc at {at} overlaps {b.Id}'s {b.Kind} at {b.C} ({b.W:0} x {b.D:0} m, {b.Yaw:0} deg)");
+                }
+                TestContext.WriteLine($"{key} ({project.City}): {off:0} m from its hex centre{(street ? $", on a street at {yaw:0} deg" : "")}; {near} kit blocks within reach");
+            }
+            // Tal Heuberger's props at a major city's edge (Want.TownEdge), on the day both stand.
+            var date = new DateTime(1948, 6, 15);
+            var props = SpecialBuildingModels.Plan(map, date, SpecialBuildingModels.Placements(date), _ => true, log: false);
+            foreach (var key in new[] { "tel_aviv_altalena_sandbags", "haifa_quay_crates" })
+            {
+                var row = props.Where(x => x.want.Key == key).ToList();
+                if (row.Count == 0) { TestContext.WriteLine($"{key}: not planned on 15 June 1948"); continue; }
+                var (want, at) = row[0]; float pr = SpecialBuildingModels.ClearanceOf(want);
+                foreach (var b in blocks)
+                    Assert.IsTrue(SpecialBuildingModels.ClearOfBox(at, pr, b.C, b.Yaw, b.W, b.D), $"{key} at {at} overlaps {b.Id}'s {b.Kind} at {b.C}");
+                TestContext.WriteLine($"{key}: at {at}, clear of the major cities' kit blocks");
+            }
+        }
+
+        /// <summary>Whether two boxes, each centred at c, turned yaw degrees anticlockwise in x-z (KitMesh.Corners), w along its turn
+        /// and d across, are apart (touching counts as apart): some side's axis separates them (the separating axis test).</summary>
+        static bool BoxesApart(Vector2 c1, float yaw1, float w1, float d1, Vector2 c2, float yaw2, float w2, float d2)
+        {
+            float a1 = yaw1 * Mathf.Deg2Rad, a2 = yaw2 * Mathf.Deg2Rad;
+            var u1 = new Vector2(Mathf.Cos(a1), Mathf.Sin(a1)); var v1 = new Vector2(-u1.y, u1.x);
+            var u2 = new Vector2(Mathf.Cos(a2), Mathf.Sin(a2)); var v2 = new Vector2(-u2.y, u2.x);
+            foreach (var n in new[] { u1, v1, u2, v2 })
+            {
+                float reach1 = 0.5f * w1 * Mathf.Abs(Vector2.Dot(u1, n)) + 0.5f * d1 * Mathf.Abs(Vector2.Dot(v1, n));
+                float reach2 = 0.5f * w2 * Mathf.Abs(Vector2.Dot(u2, n)) + 0.5f * d2 * Mathf.Abs(Vector2.Dot(v2, n));
+                if (Mathf.Abs(Vector2.Dot(c2 - c1, n)) >= reach1 + reach2) return true;
+            }
+            return false;
+        }
+
         /// <summary>Review of #2281 (N3): every building takes its planned ground whether or not its model has streamed. A
         /// workshop model is wanted 400 m from the Tegart fort's planned spot, after the fort; with the fort's bundle failing
         /// (answered null), every building drawn stands exactly where the plan with every model puts it: the workshop does not

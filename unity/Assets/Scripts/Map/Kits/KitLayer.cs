@@ -44,6 +44,11 @@ namespace Statecraft.Game.Map.Kits
             /// works, street palms: SettlementKits.Placed, its yaw as KitMesh.Corners), then each landmark's close copy as its
             /// world box (yaw 0), so a model placed among a town's houses (SpecialBuildingModels.TownGap) keeps off them.</summary>
             public IReadOnlyList<SettlementKits.Placed> Landmarks = System.Array.Empty<SettlementKits.Placed>();
+            /// <summary>#2876: the kit blocks of the major cities (TownModels.IsMajorCity), which draw their kits at every zoom: each
+            /// "building" and "wing" the kits placed for one of them (SettlementKits.Placed, Id the city's, its yaw as
+            /// KitMesh.Corners), in placement order, so a model placed among a major city's houses (SpecialBuildingModels.TownGap)
+            /// keeps off the blocks drawn there, not off the building models it never draws.</summary>
+            public IReadOnlyList<SettlementKits.Placed> MajorCityBlocks = System.Array.Empty<SettlementKits.Placed>();
             public override string ToString() =>
                 $"KITS buildings={Buildings} vertices={Vertices} triangles={Triangles} trees={Trees} route_segments={CorridorSegments} build_ms={BuildMs:0} plant_ms={PlantMs:0} " +
                 $"localities={Localities} locality_buildings={LocalityBuildings} camps={Camps} tents={Tents} boats={Boats} draws={Draws} models={Models} close_vertices={CloseVertices}";
@@ -165,6 +170,9 @@ namespace Statecraft.Game.Map.Kits
             foreach (var p in placed) if (p.Kind != "building" && p.Kind != "wing") landmarks.Add(p);
             foreach (var p in built.CloseLandmarks) landmarks.Add(new SettlementKits.Placed(p.Id, p.Kind, p.C, 0f, p.W, p.D, p.H, p.Wall, p.Y));
             stats.Landmarks = landmarks;
+            var majorBlocks = new List<SettlementKits.Placed>();
+            foreach (var p in placed) if ((p.Kind == "building" || p.Kind == "wing") && TownModels.IsMajorCity(p.Id)) majorBlocks.Add(p);
+            stats.MajorCityBlocks = majorBlocks;
             var localityIds = new HashSet<string>(System.StringComparer.Ordinal);
             foreach (var locality in localities) localityIds.Add(locality.Id);
             towns.ConfigureTownFootprints(stats.Footprints, localityIds);
