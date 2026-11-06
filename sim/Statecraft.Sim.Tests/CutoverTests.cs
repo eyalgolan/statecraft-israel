@@ -97,7 +97,7 @@ public class CutoverTests
     [Fact]
     public void Gdd03EndsOnItsMvpEndWhileTheLegacyLoopReadsOnlyTheLastEra()
     {
-        // The end is read from rules.yaml mvp.end only by the GDD loops (gdd-0.1 too, not exercised here); the same files under the legacy loop run to the last era's end.
+        // The end is read from rules.yaml mvp.end only by the GDD loops (gdd-0.3 and gdd-0.1 alike); the same files under the legacy loop run to the last era's end.
         var files = Gdd03MovementFortTests.Files();
         files["rules.yaml"] += "  end: 1948-08-15\n";
         var end = new DateTime(1948, 8, 15);
@@ -113,6 +113,13 @@ public class CutoverTests
         files["eras.yaml"] = Fixture.Files["eras.yaml"];   // the loop switched off: the same mvp.end is not read
         var legacy = ContentLoader.Load(Fixture.Write(files));
         Assert.False(legacy.IsGdd);
+        Assert.Equal(end, legacy.Rules.Mvp!.End);   // still parsed, only not read
         Assert.Equal(legacy.Eras[legacy.Eras.Count - 1].To, legacy.End);
+
+        var gdd01Files = Gdd03MovementFortTests.Files(SaveGame.GddRuleset);
+        gdd01Files["rules.yaml"] += "  end: 1948-08-15\n";
+        var gdd01 = ContentLoader.Load(Fixture.Write(gdd01Files));
+        Assert.Equal(SaveGame.GddRuleset, gdd01.Ruleset);
+        Assert.Equal(end, gdd01.End);
     }
 }
