@@ -316,7 +316,7 @@ public class GradeTests
     /// blues of the sea and the Israeli stripe, the cyan surf and the reds of the roofs and the other side's stripe the curves
     /// are flat. The land's terracotta moves up to gold and the green fields down to it, without folding (a hue never passes
     /// the next one); the sand keeps its hue and saturation, because the dune coast has to stay bright (SeaTests'
-    /// TheBeachIsWideOnTheDuneCoastAndNarrowUnderTheKurkar, 0.72 of luma: a 0.006 hue shift took it to 0.685). Dark tones
+    /// TheBeachIsWideOnTheDuneCoastAndNarrowUnderTheKurkar, 0.72 of luma: a first fit that shifted it read 0.685). Dark tones
     /// lose a little saturation, so the hill olives stay grey (KitTests' TheHillOliveCrownsAreDarkWithPaleSunlitTops, and the
     /// promo's shade is about 0.3 against our 0.46), and the sea's middle tones do not. The "grade" toggle takes the curves
     /// off with the rest.</summary>

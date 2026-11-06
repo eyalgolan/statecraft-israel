@@ -70,7 +70,7 @@ namespace Statecraft.Game.Map
         /// move down, so they meet at gold. Flat at the reds (roofs, the other side's stripe, up to 0.035), at the sand (0.09-0.13:
         /// shifting it took the dune coast under SeaTests' luma floor) and from 0.38 up (the surf, the sea, the Israeli stripe),
         /// which is what one global grade could not do (#38: warm grades turned the sea grey). Flat keys, so no curve overshoots
-        /// between them: smoothed tangents leaked a shift into the sea's hue, 0.014 of luma. LUT inputs: no pass, no variant.</summary>
+        /// between them: smoothed tangents leaked a shift into the sea's hue, 0.011 of luma. LUT inputs: no pass, no variant.</summary>
         public static readonly Keyframe[] HueVsHue =
         {
             Key(0f, 0f), Key(0.035f, 0f), Key(0.06f, 0.013f), Key(0.08f, 0.002f), Key(0.09f, 0f), Key(0.13f, 0f), Key(0.15f, -0.004f),
@@ -78,7 +78,7 @@ namespace Statecraft.Game.Map
         };
 
         /// <summary>Issue #2427: saturation by hue (0 = no change, 0.5 would double it): richer land, the sand unchanged, so the
-        /// Negev stays clear of mustard. Global Saturation stays -7: raising it moves the sea and the stripe (a +9 trial: sea
+        /// Negev stays clear of mustard. Global Saturation stays -7: raising it moves the sea and the stripe (a trial at +2: sea
         /// warmth -0.216 -> -0.238).</summary>
         public static readonly Keyframe[] HueVsSat =
         {
