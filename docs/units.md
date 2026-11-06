@@ -18,9 +18,9 @@ fight is war mode's job (#104, with the sim side in #21). The golden hashes do n
   editor renders. With `shot` the aircraft holds a fixed point, so the screenshots repeat.
 - **Desktop player:** run with `-units`.
 - **Editor:** `MapCapture.Promo` renders it when given `-units`.
-- **Aircraft close-ups:** `MapCapture.Aircraft` renders the S-199 and the Spitfire alone, from the top, the bottom, the left
-  side and three quarters, into `-captureDir` (default `captures/visual/aircraft`), for checking the markings against the
-  photographs. `MapCapture.Promo -units -unitsDate YYYY-MM-DD` draws the units in play as on that day.
+- **Aircraft close-ups:** `MapCapture.Aircraft` renders the code-built S-199 and the Spitfire's streamed Blender-built model
+  alone, from the top, the bottom, the left side and three quarters, into `-captureDir` (default
+  `captures/visual/aircraft`), for checking the markings against the photographs. `MapCapture.Promo -units -unitsDate YYYY-MM-DD` draws the units in play as on that day.
 - **Frame cost:** `?vprofile&units` prices it as the `unitshowcase` toggle (`median(all) - median(-unitshowcase)`). The
   `units` toggle is the units in play.
 
@@ -34,18 +34,26 @@ Code: `unity/Assets/Scripts/Map/Units/`. The materials are made by `UnitMaterial
 2. **Promo-quality close-zoom models come from a separate track:** a cloud-GPU AI-3D pipeline (TRELLIS, MIT). The
    code-built miniatures here stay as the far-zoom and fallback version.
 
-**The art hook.** An authored model replaces the code-built one for its unit type when a prefab exists at
-`unity/Assets/Resources/Units/Authored/<unit type>`. The unit types are the `*Type` constants in `UnitShowcase`, for
-example `rifleman-1948-steel-helmet` and `spitfire-mk9e-101sqn-1948`.
+**Better models stream in; nothing loads from Resources (#2734).** The code-built models are drawn for every unit type
+at once, and stay as the fallback. No unit model is loaded from a `Resources` folder: everything there ships in the WebGL
+player's first download, which the load-time gate keeps small. The art hook that loaded a prefab from
+`unity/Assets/Resources/Units/Authored/<unit type>` (`UnitShowcase.AuthoredModel`) is gone. Better models come from the
+Collection's bundles after the first frame instead:
+- the riflemen's figures (`UnitFigures`, below);
+- the 101 Squadron Spitfire's Blender-built model (`tools/spitfire_101_model.py`), catalogued as
+  `CollectionCatalog.IsraeliSpitfire` (`spitfire-mk9e-101sqn-1948`, the `SpitfireType`) in a bundle of its own, from
+  `unity/Assets/Art/Collection/spitfire-mk9e-101sqn-1948/`.
 
-An authored model follows the code-built convention:
-- real metres, facing +Z;
-- origin on the ground (an aircraft: its centre of gravity);
-- its own materials;
-- an authored aircraft brings its own propeller.
-
-The showcase places and scales it as it does the code-built model. That is the whole hook: there is no registry beyond
-it, and there are no level-of-detail switches yet.
+The Spitfire's swap (`StreamedAircraft`), on the showcase's Spitfire and on the 101 Squadron token's Spitfire (flying or
+parked; the S-199 stays code-built):
+- the code-built airframe and propeller are built and drawn first;
+- the model is asked for with `CollectionStream.Acquire` (a lease, released when the aircraft is destroyed; an answer after
+  that draws nothing);
+- when it arrives it stands in the code-built model's frame (real metres, facing +Z, its centre of gravity at the
+  origin), the code-built airframe and propeller stop drawing, and the flight turns the model's own `Propeller` child;
+- a missing or damaged bundle, or a model without a `Propeller` child, keeps the whole code-built aircraft;
+- in edit mode nothing is asked for unless `StreamedAircraft.Source` is set: `MapCapture.Promo` and `MapCapture.Aircraft`
+  answer from the AssetDatabase at once.
 
 ## What is in the slice
 
@@ -440,7 +448,7 @@ and a unit the sim moves is placed without the control layer.
 `EveryAnchorStandsWithinOneHexClearOfTheTownsAndTheRoutes` checks every anchor and logs each spot and its distance.
 
 **Look.**
-- **Models:** the slice's models and the authored-prefab hook.
+- **Models:** the slice's models, and the Spitfire's streamed Blender-built model over the code-built one.
 - **Army:** a token is 1 to 3 riflemen, spread across the ring as in promo 03, about 2 km apart, so each figure reads on
   its own.
 - **Headgear:** only the Negev Brigade's is tied to it by a source: knitted stocking caps and Mk II steel helmets, from
@@ -595,7 +603,7 @@ licence question, and the build-size cost is code only.
 
 **Their limit:** close up (the 6 km hero zoom) they look like wooden mannequins, with faceted limbs and no faces or
 folds. The promo's close shots (0:21) show sculpted miniatures. The way past that limit is the owner's close-zoom track,
-which plugs authored models in through the art hook above.
+whose models stream in from the Collection over the code-built ones, as the figures and the Spitfire do (above).
 
 ## Scale
 
